@@ -1,0 +1,7 @@
+export const queryKeys = {
+  activities: ["activities"] as const,
+  health: (days: number) => ["health", days] as const,
+  goals: ["goals"] as const,
+  plannedSessions: ["planned-sessions"] as const,
+  activityStream: (id: string) => ["activity-stream", id] as const,
+};

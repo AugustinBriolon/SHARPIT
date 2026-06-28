@@ -1,0 +1,148 @@
+import { Prisma } from "@prisma/client";
+import { startOfDay, subDays } from "date-fns";
+import { prisma } from "@/lib/prisma";
+import { format } from "date-fns";
+import {
+  clientFromTokens,
+  currentTokens,
+  fetchDailyHealth,
+  fetchWeightRange,
+  loginWithCredentials,
+  type GarminTokens,
+} from "@/lib/garmin";
+
+const ACCOUNT_ID = "default";
+
+export async function getGarminAccount() {
+  return prisma.garminAccount.findUnique({ where: { id: ACCOUNT_ID } });
+}
+
+export async function disconnectGarmin() {
+  await prisma.garminAccount.deleteMany({ where: { id: ACCOUNT_ID } });
+}
+
+export async function connectGarmin(username: string, password: string) {
+  const { tokens, profile } = await loginWithCredentials(username, password);
+
+  await prisma.garminAccount.upsert({
+    where: { id: ACCOUNT_ID },
+    create: {
+      id: ACCOUNT_ID,
+      displayName: profile.displayName,
+      fullName: profile.fullName,
+      oauth1Token: tokens.oauth1 as Prisma.InputJsonValue,
+      oauth2Token: tokens.oauth2 as Prisma.InputJsonValue,
+    },
+    update: {
+      displayName: profile.displayName,
+      fullName: profile.fullName,
+      oauth1Token: tokens.oauth1 as Prisma.InputJsonValue,
+      oauth2Token: tokens.oauth2 as Prisma.InputJsonValue,
+    },
+  });
+
+  return profile;
+}
+
+export interface GarminSyncResult {
+  days: number;
+  updated: number;
+  emptyDays: number;
+}
+
+export async function syncGarminHealth(days = 30): Promise<GarminSyncResult> {
+  const account = await getGarminAccount();
+  if (!account) throw new Error("Compte Garmin non connecté");
+
+  const tokens: GarminTokens = {
+    oauth1: account.oauth1Token,
+    oauth2: account.oauth2Token,
+  };
+  const client = clientFromTokens(tokens);
+
+  const today = startOfDay(new Date());
+  let updated = 0;
+  let emptyDays = 0;
+
+  // Une seule requête pour toutes les pesées de la période
+  const weightMap = await fetchWeightRange(client, subDays(today, days), today);
+
+  for (let i = 0; i < days; i++) {
+    const date = subDays(today, i);
+    const weightKg = weightMap.get(format(date, "yyyy-MM-dd")) ?? null;
+    const health = await fetchDailyHealth(client, date, weightKg);
+
+    const hasData =
+      health.sleepMinutes != null ||
+      health.restingHr != null ||
+      health.hrv != null ||
+      health.weightKg != null ||
+      health.readinessScore != null ||
+      health.hrvStatus != null ||
+      health.stress != null ||
+      health.bodyBattery != null;
+
+    if (!hasData) {
+      emptyDays += 1;
+      continue;
+    }
+
+    const day = startOfDay(date);
+    const factors =
+      health.readinessFactors != null
+        ? (health.readinessFactors as unknown as Prisma.InputJsonValue)
+        : undefined;
+
+    const data: Prisma.DailyHealthUpdateInput = {};
+    if (health.sleepMinutes != null) data.sleepMinutes = health.sleepMinutes;
+    if (health.restingHr != null) data.restingHr = health.restingHr;
+    if (health.hrv != null) data.hrv = health.hrv;
+    if (health.weightKg != null) data.weightKg = health.weightKg;
+    if (health.readinessScore != null) data.recoveryScore = health.readinessScore;
+    if (health.readinessLevel != null) data.readinessLevel = health.readinessLevel;
+    if (health.readinessFeedback != null)
+      data.readinessFeedback = health.readinessFeedback;
+    if (factors != null) data.readinessFactors = factors;
+    if (health.hrvStatus != null) data.hrvStatus = health.hrvStatus;
+    if (health.hrvBaselineLow != null)
+      data.hrvBaselineLow = health.hrvBaselineLow;
+    if (health.hrvBaselineHigh != null)
+      data.hrvBaselineHigh = health.hrvBaselineHigh;
+    if (health.stress != null) data.stress = health.stress;
+    if (health.bodyBattery != null) data.bodyBattery = health.bodyBattery;
+
+    await prisma.dailyHealth.upsert({
+      where: { date: day },
+      create: {
+        date: day,
+        sleepMinutes: health.sleepMinutes,
+        restingHr: health.restingHr,
+        hrv: health.hrv,
+        weightKg: health.weightKg,
+        recoveryScore: health.readinessScore,
+        readinessLevel: health.readinessLevel,
+        readinessFeedback: health.readinessFeedback,
+        readinessFactors: factors,
+        hrvStatus: health.hrvStatus,
+        hrvBaselineLow: health.hrvBaselineLow,
+        hrvBaselineHigh: health.hrvBaselineHigh,
+        stress: health.stress,
+        bodyBattery: health.bodyBattery,
+      },
+      update: data,
+    });
+    updated += 1;
+  }
+
+  const refreshed = currentTokens(client);
+  await prisma.garminAccount.update({
+    where: { id: ACCOUNT_ID },
+    data: {
+      oauth1Token: refreshed.oauth1 as Prisma.InputJsonValue,
+      oauth2Token: refreshed.oauth2 as Prisma.InputJsonValue,
+      lastSyncAt: new Date(),
+    },
+  });
+
+  return { days, updated, emptyDays };
+}

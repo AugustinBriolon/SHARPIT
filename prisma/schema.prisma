@@ -1,0 +1,237 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ActivityType {
+  RUN
+  BIKE
+  SWIM
+  STRENGTH
+}
+
+enum GoalHorizon {
+  LONG_TERM
+  MEDIUM_TERM
+  SHORT_TERM
+  WEEKLY
+}
+
+enum GoalKind {
+  RACE
+  METRIC
+}
+
+enum SessionIntensity {
+  RECOVERY
+  ENDURANCE
+  TEMPO
+  THRESHOLD
+  VO2MAX
+  RACE
+}
+
+model Activity {
+  id       String       @id @default(cuid())
+  type     ActivityType
+  date     DateTime
+  title    String?
+  duration Int?
+  rpe      Int?
+  feeling  String?
+  notes    String?
+  weather  String?
+  load     Float?
+
+  source   String  @default("manual")
+  stravaId String? @unique
+
+  runMetrics   RunMetrics?
+  bikeMetrics  BikeMetrics?
+  swimMetrics  SwimMetrics?
+  strengthSets StrengthSet[]
+  stream       ActivityStream?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@index([type])
+}
+
+model ActivityStream {
+  id         String   @id @default(cuid())
+  activityId String   @unique
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  available Boolean @default(false) // false = pas de GPS/streams (manuel, piscine, erreur définitive)
+  polyline  String? // polyline encodée (fallback carte)
+  data      Json? // séries temporelles : { time, distance, altitude, heartrate, watts, cadence, velocity, latlng }
+
+  fetchedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GarminAccount {
+  id          String    @id @default("default")
+  displayName String?
+  fullName    String?
+  oauth1Token Json
+  oauth2Token Json
+  lastSyncAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model StravaAccount {
+  id           String    @id @default("default")
+  athleteId    String    @unique
+  firstName    String?
+  lastName     String?
+  avatarUrl    String?
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime
+  scope        String?
+  lastSyncAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RunMetrics {
+  id         String   @id @default(cuid())
+  activityId String   @unique
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  distanceM      Float?
+  elevationM     Float?
+  paceSecPerKm   Float?
+  avgHr          Int?
+  avgPower       Float?
+  cadence        Int?
+  shoes          String?
+}
+
+model BikeMetrics {
+  id         String   @id @default(cuid())
+  activityId String   @unique
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  ftpPercent      Float?
+  normalizedPower Float?
+  intensityFactor Float?
+  tss             Float?
+  avgCadence      Int?
+  avgPower        Float?
+  elevationM      Float?
+  calories        Int?
+  bikeName        String?
+}
+
+model SwimMetrics {
+  id         String   @id @default(cuid())
+  activityId String   @unique
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  distanceM         Float?
+  sets              Int?
+  cssSecPer100m     Float?
+  avgPaceSecPer100m Float?
+  swolf             Float?
+  drills            String?
+}
+
+model StrengthSet {
+  id         String   @id @default(cuid())
+  activityId String
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  exercise String
+  sets     Int
+  reps     Int
+  weightKg Float?
+  rpe      Int?
+  restSec  Int?
+  videoUrl String?
+  notes    String?
+  order    Int      @default(0)
+
+  @@index([activityId])
+}
+
+model DailyHealth {
+  id   String   @id @default(cuid())
+  date DateTime @unique @db.Date
+
+  sleepMinutes  Int?
+  hrv           Int?
+  restingHr     Int?
+  weightKg      Float?
+  calories      Int?
+  recoveryScore Int? // Garmin Training Readiness (0-100)
+  stress        Int? // stress moyen sur la journée
+  mood          String?
+
+  // Recovery (Garmin)
+  readinessLevel    String? // LOW / MODERATE / HIGH ...
+  readinessFeedback String? // code feedback court Garmin
+  readinessFactors  Json? // détail des facteurs (sommeil, hrv, charge...)
+  hrvStatus         String? // BALANCED / UNBALANCED_LOW / ...
+  hrvBaselineLow    Int? // borne basse de la zone équilibrée
+  hrvBaselineHigh   Int? // borne haute de la zone équilibrée
+  bodyBattery       Int? // niveau d'énergie le plus haut du jour
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Goal {
+  id           String       @id @default(cuid())
+  title        String
+  kind         GoalKind     @default(METRIC)
+  horizon      GoalHorizon?
+  metricKey    String?
+  startValue   Float?
+  currentValue Float?
+  targetValue  Float?
+  unit         String?
+  lowerIsBetter Boolean     @default(false)
+  targetDate   DateTime?
+  location     String?
+  achieved     Boolean      @default(false)
+  notes        String?
+
+  plannedSessions PlannedSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([kind])
+  @@index([targetDate])
+}
+
+model PlannedSession {
+  id          String            @id @default(cuid())
+  type        ActivityType
+  date        DateTime          @db.Date
+  title       String?
+  description String?
+  durationMin Int? // durée prévue en minutes
+  load        Float? // charge / TSS prévue
+  intensity   SessionIntensity?
+  completed   Boolean           @default(false)
+
+  goalId String?
+  goal   Goal?   @relation(fields: [goalId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}

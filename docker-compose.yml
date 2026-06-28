@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: sharpit
+      POSTGRES_PASSWORD: sharpit
+      POSTGRES_DB: sharpit
+    volumes:
+      - sharpit_pg_data:/var/lib/postgresql/data
+
+volumes:
+  sharpit_pg_data:
