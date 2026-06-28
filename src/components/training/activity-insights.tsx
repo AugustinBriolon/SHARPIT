@@ -3,18 +3,17 @@
 import { ActivityType } from "@prisma/client";
 import { MapPin } from "lucide-react";
 import { ActivityCharts } from "@/components/training/activity-charts";
-import { MetricCard } from "@/components/dashboard/metric-card";
+import { CombinedChart } from "@/components/training/combined-chart";
+import {
+  PerformanceMetrics,
+  ThresholdsHint,
+} from "@/components/training/performance-metrics";
 import { RouteMap } from "@/components/training/route-map";
+import { SplitsTable } from "@/components/training/splits-table";
+import { ZoneDistribution } from "@/components/training/zone-distribution";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActivityStream } from "@/hooks/use-data";
-
-function paceFromSpeed(maxSpeed: number): string {
-  const sec = 1000 / maxSpeed;
-  const m = Math.floor(sec / 60);
-  const s = Math.round(sec % 60);
-  return `${m}'${s.toString().padStart(2, "0")}/km`;
-}
 
 export function ActivityInsights({
   activityId,
@@ -28,12 +27,12 @@ export function ActivityInsights({
   if (isLoading) {
     return (
       <div className="space-y-4">
+        <Skeleton className="h-80 w-full" />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-20" />
           ))}
         </div>
-        <Skeleton className="h-80 w-full" />
         <div className="grid gap-4 lg:grid-cols-2">
           <Skeleton className="h-56" />
           <Skeleton className="h-56" />
@@ -64,72 +63,74 @@ export function ActivityInsights({
     );
   }
 
-  const { stats, path, samples, has } = data;
-
-  const statCards: { label: string; value: string; sublabel?: string; accent: "cyan" | "orange" | "violet" | "default" }[] = [];
-  if (stats?.avgHr)
-    statCards.push({
-      label: "FC moy.",
-      value: `${stats.avgHr}`,
-      sublabel: stats.maxHr ? `max ${stats.maxHr} bpm` : "bpm",
-      accent: "orange",
-    });
-  if (stats?.avgWatts)
-    statCards.push({
-      label: "Puissance moy.",
-      value: `${stats.avgWatts} W`,
-      sublabel: stats.maxWatts ? `max ${stats.maxWatts} W` : undefined,
-      accent: "orange",
-    });
-  if (stats?.totalAscent != null)
-    statCards.push({
-      label: "Dénivelé +",
-      value: `${stats.totalAscent} m`,
-      sublabel:
-        stats.minAlt != null && stats.maxAlt != null
-          ? `${stats.minAlt}–${stats.maxAlt} m`
-          : undefined,
-      accent: "violet",
-    });
-  if (stats?.maxSpeed) {
-    if (type === ActivityType.RUN) {
-      statCards.push({
-        label: "Allure max",
-        value: paceFromSpeed(stats.maxSpeed),
-        accent: "cyan",
-      });
-    } else {
-      statCards.push({
-        label: "Vitesse max",
-        value: `${(stats.maxSpeed * 3.6).toFixed(1)} km/h`,
-        accent: "cyan",
-      });
-    }
-  }
+  const { path, samples, has, analysis } = data;
+  const hrZones = analysis?.hr.zones ?? [];
+  const powerZones = analysis?.power?.zones ?? [];
+  const runSplits = analysis?.run?.splits ?? [];
+  const bikeSplits = analysis?.bike?.splits ?? [];
 
   return (
-    <div className="space-y-6">
-      {statCards.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {statCards.map((c) => (
-            <MetricCard
-              key={c.label}
-              label={c.label}
-              value={c.value}
-              sublabel={c.sublabel}
-              accent={c.accent}
-            />
-          ))}
-        </div>
-      )}
-
+    <div className="space-y-8">
       {path && path.length > 1 && (
         <div className="h-80 w-full sm:h-96">
           <RouteMap path={path} />
         </div>
       )}
 
-      <ActivityCharts samples={samples} has={has} type={type} />
+      {analysis && (
+        <>
+          <PerformanceMetrics analysis={analysis} />
+          <ThresholdsHint analysis={analysis} />
+
+          {(hrZones.some((z) => z.seconds > 0) ||
+            powerZones.some((z) => z.seconds > 0)) && (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {hrZones.some((z) => z.seconds > 0) && (
+                <ZoneDistribution
+                  title="Zones fréquence cardiaque"
+                  subtitle={
+                    analysis.thresholds.lthr
+                      ? `Réf. LTHR ${analysis.thresholds.lthr} bpm`
+                      : undefined
+                  }
+                  zones={hrZones}
+                />
+              )}
+              {powerZones.some((z) => z.seconds > 0) && (
+                <ZoneDistribution
+                  title="Zones de puissance"
+                  subtitle={
+                    analysis.thresholds.ftp
+                      ? `Réf. FTP ${analysis.thresholds.ftp} W`
+                      : undefined
+                  }
+                  zones={powerZones}
+                />
+              )}
+            </div>
+          )}
+        </>
+      )}
+
+      <section className="space-y-4">
+        <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+          Profils
+        </h2>
+        <CombinedChart samples={samples} has={has} type={type} />
+        <ActivityCharts samples={samples} has={has} type={type} />
+      </section>
+
+      {runSplits.length > 0 && (
+        <SplitsTable
+          title="Splits au kilomètre"
+          splits={runSplits}
+          refPaceSecPerKm={analysis?.run?.avgPaceSecPerKm}
+        />
+      )}
+
+      {bikeSplits.length > 0 && (
+        <SplitsTable title="Splits tous les 5 km" splits={bikeSplits} mode="bike" />
+      )}
     </div>
   );
 }

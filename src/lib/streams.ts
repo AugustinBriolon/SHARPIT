@@ -1,6 +1,13 @@
 import { prisma } from "@/lib/prisma";
+import {
+  analyzeActivityStreams,
+  resolveThresholds,
+  type ActivityAnalysis,
+} from "@/lib/activity-analysis";
+import { getAthleteProfile } from "@/lib/queries";
 import { fetchActivityStreams, type StravaStreamSet } from "@/lib/strava";
 import { getValidAccessToken } from "@/lib/strava-sync";
+import type { ActivityType } from "@prisma/client";
 
 /** Séries brutes stockées en base (résolution complète). */
 interface RawStreams {
@@ -43,10 +50,13 @@ export interface ActivityStreamPayload {
     maxWatts: number | null;
     avgCadence: number | null;
     maxSpeed: number | null; // m/s
+    avgSpeed: number | null; // m/s
+    totalDistance: number | null; // m
     totalAscent: number | null; // m
     minAlt: number | null;
     maxAlt: number | null;
   } | null;
+  analysis: ActivityAnalysis | null;
 }
 
 const MAX_SAMPLES = 500;
@@ -101,7 +111,18 @@ function computeAscent(alt: number[]): number | null {
   return Math.round(gain);
 }
 
-function buildPayload(raw: RawStreams): ActivityStreamPayload {
+function buildPayload(
+  raw: RawStreams,
+  activity: {
+    type: ActivityType;
+    duration: number | null;
+    bikeMetrics: {
+      normalizedPower: number | null;
+      intensityFactor: number | null;
+    } | null;
+  },
+  profile: Awaited<ReturnType<typeof getAthleteProfile>>,
+): ActivityStreamPayload {
   const length = Math.max(
     raw.time.length,
     raw.distance.length,
@@ -135,6 +156,14 @@ function buildPayload(raw: RawStreams): ActivityStreamPayload {
   const path =
     raw.latlng.length > 0 ? downsample(raw.latlng, MAX_PATH_POINTS) : null;
 
+  const totalDistance = has.distance ? max(raw.distance) : null;
+  const lastTime = raw.time.length ? max(raw.time) : null;
+  const avgSpeed = has.speed
+    ? mean(raw.velocity)
+    : totalDistance && lastTime
+      ? totalDistance / lastTime
+      : null;
+
   const stats = {
     avgHr: has.hr ? Math.round(mean(raw.heartrate) ?? 0) || null : null,
     maxHr: has.hr ? max(raw.heartrate) : null,
@@ -142,12 +171,34 @@ function buildPayload(raw: RawStreams): ActivityStreamPayload {
     maxWatts: has.watts ? max(raw.watts) : null,
     avgCadence: has.cadence ? Math.round(mean(raw.cadence) ?? 0) || null : null,
     maxSpeed: has.speed ? max(raw.velocity) : null,
+    avgSpeed,
+    totalDistance,
     totalAscent: has.altitude ? computeAscent(raw.altitude) : null,
     minAlt: has.altitude ? Math.round(Math.min(...raw.altitude)) : null,
     maxAlt: has.altitude ? Math.round(Math.max(...raw.altitude)) : null,
   };
 
-  return { available: true, path, samples, has, stats };
+  const analysisCtx = {
+    type: activity.type,
+    durationSec: activity.duration,
+    bikeNormalizedPower: activity.bikeMetrics?.normalizedPower ?? null,
+    bikeIntensityFactor: activity.bikeMetrics?.intensityFactor ?? null,
+  };
+  const thresholds = resolveThresholds(
+    profile
+      ? {
+          ftpW: profile.ftpW,
+          maxHr: profile.maxHr,
+          lthr: profile.lthr,
+          runThresholdPaceSecPerKm: profile.runThresholdPaceSecPerKm,
+        }
+      : null,
+    raw,
+    analysisCtx,
+  );
+  const analysis = analyzeActivityStreams(raw, thresholds, analysisCtx);
+
+  return { available: true, path, samples, has, stats, analysis };
 }
 
 const UNAVAILABLE: ActivityStreamPayload = {
@@ -163,6 +214,7 @@ const UNAVAILABLE: ActivityStreamPayload = {
     speed: false,
   },
   stats: null,
+  analysis: null,
 };
 
 /**
@@ -174,15 +226,28 @@ const UNAVAILABLE: ActivityStreamPayload = {
 export async function getActivityStreams(
   activityId: string,
 ): Promise<ActivityStreamPayload | null> {
-  const activity = await prisma.activity.findUnique({
-    where: { id: activityId },
-    include: { stream: true },
-  });
+  const [activity, profile] = await Promise.all([
+    prisma.activity.findUnique({
+      where: { id: activityId },
+      include: { stream: true, bikeMetrics: true },
+    }),
+    getAthleteProfile(),
+  ]);
   if (!activity) return null;
+
+  const activityCtx = {
+    type: activity.type,
+    duration: activity.duration,
+    bikeMetrics: activity.bikeMetrics,
+  };
 
   if (activity.stream) {
     if (!activity.stream.available || !activity.stream.data) return UNAVAILABLE;
-    return buildPayload(activity.stream.data as unknown as RawStreams);
+    return buildPayload(
+      activity.stream.data as unknown as RawStreams,
+      activityCtx,
+      profile,
+    );
   }
 
   // Pas de source Strava : aucune donnée détaillée possible, on cache l'absence.
@@ -219,7 +284,9 @@ export async function getActivityStreams(
       },
     });
 
-    return available ? buildPayload(raw) : UNAVAILABLE;
+    return available
+      ? buildPayload(raw, activityCtx, profile)
+      : UNAVAILABLE;
   } catch (error) {
     console.error("getActivityStreams", error);
     return null;

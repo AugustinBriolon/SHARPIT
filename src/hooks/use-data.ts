@@ -105,5 +105,22 @@ export function usePlannedSessionMutations() {
     onSuccess: invalidate,
   });
 
-  return { create, update, remove };
+  const link = useMutation({
+    mutationFn: ({
+      id,
+      activityId,
+    }: {
+      id: string;
+      activityId: string | null;
+    }) => sendJson(`/api/planned-sessions/${id}/link`, "POST", { activityId }),
+    onSuccess: invalidate,
+  });
+
+  const analyze = useMutation({
+    mutationFn: (id: string) =>
+      sendJson(`/api/planned-sessions/${id}/analyze`, "POST"),
+    onSuccess: invalidate,
+  });
+
+  return { create, update, remove, link, analyze };
 }

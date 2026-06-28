@@ -2,6 +2,7 @@ import type {
   getActivities,
   getGoals,
   getHealthEntries,
+  getPhysicalNotes,
   getPlannedSessions,
 } from "@/lib/queries";
 
@@ -19,3 +20,7 @@ export type ClientGoal = Awaited<ReturnType<typeof getGoals>>[number];
 export type ClientPlannedSession = Awaited<
   ReturnType<typeof getPlannedSessions>
 >[number];
+export type ClientPhysicalNote = Awaited<
+  ReturnType<typeof getPhysicalNotes>
+>[number];
+export type ClientPhysicalCheckin = ClientPhysicalNote["checkins"][number];

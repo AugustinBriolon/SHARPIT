@@ -139,18 +139,52 @@ export async function getHealthEntries(days = 90) {
   });
 }
 
+const plannedSessionInclude = {
+  activity: { include: activityInclude },
+};
+
 export async function getPlannedSessions(params?: { from?: Date; to?: Date }) {
   return prisma.plannedSession.findMany({
     where:
       params?.from || params?.to
         ? { date: { gte: params?.from, lte: params?.to } }
         : undefined,
+    include: plannedSessionInclude,
     orderBy: { date: "asc" },
   });
 }
 
 export async function getPlannedSessionById(id: string) {
-  return prisma.plannedSession.findUnique({ where: { id } });
+  return prisma.plannedSession.findUnique({
+    where: { id },
+    include: plannedSessionInclude,
+  });
+}
+
+export async function linkPlannedSessionActivity(
+  id: string,
+  activityId: string | null,
+) {
+  return prisma.plannedSession.update({
+    where: { id },
+    data: {
+      activityId,
+      completed: activityId != null,
+      ...(activityId == null ? { analysis: Prisma.DbNull, analyzedAt: null } : {}),
+    },
+    include: plannedSessionInclude,
+  });
+}
+
+export async function setPlannedSessionAnalysis(
+  id: string,
+  analysis: Prisma.InputJsonValue,
+) {
+  return prisma.plannedSession.update({
+    where: { id },
+    data: { analysis, analyzedAt: new Date() },
+    include: plannedSessionInclude,
+  });
 }
 
 export async function createPlannedSession(
@@ -168,4 +202,99 @@ export async function updatePlannedSession(
 
 export async function deletePlannedSession(id: string) {
   return prisma.plannedSession.delete({ where: { id } });
+}
+
+const physicalNoteInclude = {
+  checkins: { orderBy: { date: "desc" as const } },
+};
+
+export async function getPhysicalNotes() {
+  return prisma.physicalNote.findMany({
+    include: physicalNoteInclude,
+    orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
+  });
+}
+
+export async function getPhysicalNoteById(id: string) {
+  return prisma.physicalNote.findUnique({
+    where: { id },
+    include: physicalNoteInclude,
+  });
+}
+
+export async function getActivePhysicalNotes() {
+  return prisma.physicalNote.findMany({
+    where: { status: { not: "RESOLVED" }, affectsTraining: true },
+    include: physicalNoteInclude,
+    orderBy: { severity: "desc" },
+  });
+}
+
+export async function createPhysicalNote(
+  data: Prisma.PhysicalNoteUncheckedCreateInput,
+) {
+  return prisma.physicalNote.create({ data, include: physicalNoteInclude });
+}
+
+export async function updatePhysicalNote(
+  id: string,
+  data: Prisma.PhysicalNoteUncheckedUpdateInput,
+) {
+  return prisma.physicalNote.update({
+    where: { id },
+    data,
+    include: physicalNoteInclude,
+  });
+}
+
+export async function deletePhysicalNote(id: string) {
+  return prisma.physicalNote.delete({ where: { id } });
+}
+
+export async function addPhysicalCheckin(
+  noteId: string,
+  data: { severity?: number | null; comment?: string | null; date?: Date },
+) {
+  await prisma.physicalCheckin.create({
+    data: {
+      noteId,
+      severity: data.severity ?? null,
+      comment: data.comment ?? null,
+      ...(data.date ? { date: data.date } : {}),
+    },
+  });
+  // synchronise la sévérité courante de la note avec le dernier point
+  if (data.severity != null) {
+    await prisma.physicalNote.update({
+      where: { id: noteId },
+      data: { severity: data.severity },
+    });
+  }
+  return getPhysicalNoteById(noteId);
+}
+
+export async function deletePhysicalCheckin(id: string) {
+  return prisma.physicalCheckin.delete({ where: { id } });
+}
+
+const PROFILE_ID = "default";
+
+export async function getAthleteProfile() {
+  return prisma.athleteProfile.findUnique({ where: { id: PROFILE_ID } });
+}
+
+export async function upsertAthleteProfile(
+  data: {
+    ftpW?: number | null;
+    maxHr?: number | null;
+    lthr?: number | null;
+    runThresholdPaceSecPerKm?: number | null;
+    context?: string | null;
+  },
+) {
+  return prisma.athleteProfile.upsert({
+    where: { id: PROFILE_ID },
+    create: { id: PROFILE_ID, ...data },
+    update: data,
+  });
 }

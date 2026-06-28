@@ -2,9 +2,11 @@
 
 import { format, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Plus } from "lucide-react";
+import { CheckCircle2, Plus, Sparkles, Wand2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { PlanAdapter } from "@/components/coach/plan-adapter";
+import { PlanGenerator } from "@/components/coach/plan-generator";
 import { PlannedSessionDialog } from "@/components/planning/planned-session-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +33,8 @@ export function PlanningView() {
   const plannedQuery = usePlannedSessions();
   const goalsQuery = useGoals();
   const [dialog, setDialog] = useState<DialogState>(null);
+  const [generatorOpen, setGeneratorOpen] = useState(false);
+  const [adapterOpen, setAdapterOpen] = useState(false);
 
   if (
     activitiesQuery.isLoading ||
@@ -78,10 +82,20 @@ export function PlanningView() {
               : "Construis tes semaines d'entraînement."}
           </p>
         </div>
-        <Button onClick={() => setDialog({ mode: "create", date: new Date() })}>
-          <Plus className="size-4" />
-          Planifier une séance
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setAdapterOpen(true)}>
+            <Wand2 className="size-4" />
+            Réadapter
+          </Button>
+          <Button variant="outline" onClick={() => setGeneratorOpen(true)}>
+            <Sparkles className="size-4" />
+            Générer ma semaine
+          </Button>
+          <Button onClick={() => setDialog({ mode: "create", date: new Date() })}>
+            <Plus className="size-4" />
+            Planifier une séance
+          </Button>
+        </div>
       </header>
 
       <div className="space-y-4">
@@ -103,6 +117,12 @@ export function PlanningView() {
           onClose={() => setDialog(null)}
         />
       )}
+
+      {generatorOpen && (
+        <PlanGenerator onClose={() => setGeneratorOpen(false)} />
+      )}
+
+      {adapterOpen && <PlanAdapter onClose={() => setAdapterOpen(false)} />}
     </div>
   );
 }
@@ -204,16 +224,39 @@ function WeekCard({
                       title={p.description ?? undefined}
                     >
                       <span className="flex items-center gap-1">
-                        <span
-                          className="size-1.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: accent }}
-                        />
+                        {p.completed ? (
+                          <CheckCircle2 className="size-2.5 shrink-0 text-emerald-400" />
+                        ) : (
+                          <span
+                            className="size-1.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: accent }}
+                          />
+                        )}
                         <span className="truncate">
                           {p.title ?? activityTypeLabels[p.type]}
                         </span>
                       </span>
-                      <span className="mt-0.5 block text-[10px] text-muted-foreground">
-                        {formatPlannedDuration(p.durationMin)}
+                      <span className="mt-0.5 flex items-center justify-between gap-1 text-[10px] text-muted-foreground">
+                        <span>{formatPlannedDuration(p.durationMin)}</span>
+                        {(() => {
+                          const score = (
+                            p.analysis as { complianceScore?: number } | null
+                          )?.complianceScore;
+                          return score != null ? (
+                            <span
+                              className={cn(
+                                "font-mono",
+                                score >= 85
+                                  ? "text-emerald-400"
+                                  : score >= 60
+                                    ? "text-amber-400"
+                                    : "text-red-400",
+                              )}
+                            >
+                              {score}
+                            </span>
+                          ) : null;
+                        })()}
                       </span>
                     </button>
                   );

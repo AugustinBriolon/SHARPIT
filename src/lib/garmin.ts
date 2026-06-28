@@ -75,6 +75,68 @@ async function safeProfile(client: GCClient): Promise<ProfileInfo> {
 }
 
 
+export interface GarminAthleteThresholds {
+  ftpW: number | null;
+  lthr: number | null;
+  runThresholdPaceSecPerKm: number | null;
+  vo2maxRunning: number | null;
+  vo2maxCycling: number | null;
+}
+
+/**
+ * Récupère les seuils de l'athlète depuis Garmin (réglages utilisateur + zones
+ * de puissance vélo). Tout est optionnel : un champ absent renvoie `null`.
+ */
+export async function fetchAthleteThresholds(
+  client: GCClient,
+): Promise<GarminAthleteThresholds> {
+  const result: GarminAthleteThresholds = {
+    ftpW: null,
+    lthr: null,
+    runThresholdPaceSecPerKm: null,
+    vo2maxRunning: null,
+    vo2maxCycling: null,
+  };
+
+  const num = (v: unknown) =>
+    typeof v === "number" && !Number.isNaN(v) && v > 0 ? v : null;
+
+  try {
+    const settings = (await client.get(
+      "https://connectapi.garmin.com/userprofile-service/userprofile/user-settings",
+    )) as { userData?: Record<string, unknown> } | null;
+    const u = settings?.userData;
+    if (u) {
+      result.lthr = num(u.lactateThresholdHeartRate);
+      result.vo2maxRunning = num(u.vo2MaxRunning);
+      result.vo2maxCycling = num(u.vo2MaxCycling);
+
+      // lactateThresholdSpeed : m/s, mais Garmin la renvoie parfois divisée par
+      // 10. On normalise : aucune allure seuil de course n'est < 1,5 m/s
+      // (~11 min/km), donc on remet à l'échelle dans ce cas.
+      let speed = num(u.lactateThresholdSpeed);
+      if (speed != null) {
+        if (speed < 1.5) speed *= 10;
+        result.runThresholdPaceSecPerKm =
+          speed > 0 ? Math.round(1000 / speed) : null;
+      }
+    }
+  } catch {
+    // réglages indisponibles
+  }
+
+  try {
+    const power = (await client.get(
+      "https://connectapi.garmin.com/biometric-service/powerZones/sport/CYCLING",
+    )) as { functionalThresholdPower?: number } | null;
+    result.ftpW = num(power?.functionalThresholdPower);
+  } catch {
+    // pas de zones de puissance
+  }
+
+  return result;
+}
+
 async function fetchHrv(
   client: GCClient,
   date: Date,

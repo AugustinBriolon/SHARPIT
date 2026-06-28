@@ -1,0 +1,130 @@
+"use client";
+
+import type { ActivityAnalysis } from "@/lib/activity-analysis";
+import { MetricCard } from "@/components/dashboard/metric-card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+function decouplingLabel(pct: number): string {
+  if (pct < 5) return "Excellent — peu de dérive cardiaque";
+  if (pct < 10) return "Correct pour une sortie longue";
+  return "Dérive élevée — chaleur, fatigue ou manque d'endurance";
+}
+
+export function PerformanceMetrics({
+  analysis,
+}: {
+  analysis: ActivityAnalysis;
+}) {
+  const { power, hr, load, thresholds } = analysis;
+  const cards: {
+    label: string;
+    value: string;
+    sublabel?: string;
+    accent: "cyan" | "orange" | "violet" | "default";
+  }[] = [];
+
+  if (power?.normalized)
+    cards.push({
+      label: "NP",
+      value: `${power.normalized} W`,
+      sublabel: power.avg ? `moy ${power.avg} W` : undefined,
+      accent: "orange",
+    });
+  if (load.intensityFactor != null)
+    cards.push({
+      label: "IF",
+      value: load.intensityFactor.toFixed(2),
+      sublabel:
+        load.method === "power"
+          ? thresholds.ftp
+            ? `FTP ${thresholds.ftp} W`
+            : undefined
+          : thresholds.lthr
+            ? `LTHR ${thresholds.lthr} bpm`
+            : undefined,
+      accent: "cyan",
+    });
+  if (power?.variabilityIndex != null)
+    cards.push({
+      label: "VI",
+      value: power.variabilityIndex.toFixed(2),
+      sublabel:
+        power.variabilityIndex > 1.1 ? "effort variable" : "effort régulier",
+      accent: "violet",
+    });
+  if (load.tss != null)
+    cards.push({
+      label: load.method === "hr" ? "TSS (FC)" : "TSS",
+      value: String(load.tss),
+      accent: "orange",
+    });
+  if (hr.efficiencyFactor != null)
+    cards.push({
+      label: hr.efficiencyLabel,
+      value: String(hr.efficiencyFactor),
+      accent: "cyan",
+    });
+  if (hr.decouplingPct != null)
+    cards.push({
+      label: "Découplage",
+      value: `${hr.decouplingPct > 0 ? "+" : ""}${hr.decouplingPct}%`,
+      sublabel: decouplingLabel(Math.abs(hr.decouplingPct)),
+      accent: hr.decouplingPct < 5 ? "cyan" : "orange",
+    });
+  if (analysis.run?.paceVariabilityPct != null)
+    cards.push({
+      label: "Variabilité allure",
+      value: `${analysis.run.paceVariabilityPct}%`,
+      sublabel: "écart-type / moyenne",
+      accent: "violet",
+    });
+
+  if (!cards.length) return null;
+
+  return (
+    <section className="space-y-3">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+          Performance
+        </h2>
+        <p className="text-xs text-muted-foreground">
+          Seuils{" "}
+          {thresholds.source === "profile" ? "profil athlète" : "estimés"}
+        </p>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        {cards.map((c) => (
+          <MetricCard key={c.label} {...c} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function ThresholdsHint({ analysis }: { analysis: ActivityAnalysis }) {
+  const { thresholds } = analysis;
+  if (thresholds.source === "profile") return null;
+
+  return (
+    <Card className="border-amber-500/30 bg-amber-500/5">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-amber-200/90">
+          Seuils estimés
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="text-sm text-muted-foreground">
+        Renseigne ton FTP, LTHR et allure seuil dans{" "}
+        <a href="/settings" className="text-primary underline-offset-2 hover:underline">
+          Réglages → Profil athlète
+        </a>{" "}
+        pour des zones et un IF/TSS précis.
+        {thresholds.lthr && (
+          <span className="mt-1 block font-mono text-xs">
+            LTHR estimé : {thresholds.lthr} bpm
+            {thresholds.ftp ? ` · FTP estimé : ${thresholds.ftp} W` : ""}
+          </span>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

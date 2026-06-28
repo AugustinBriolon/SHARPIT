@@ -1,6 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AthleteProfilePanel } from "@/components/settings/athlete-profile-panel";
 import { GarminPanel } from "@/components/settings/garmin-panel";
 import { StravaPanel } from "@/components/settings/strava-panel";
+import { getAthleteProfile } from "@/lib/queries";
 import { getGarminAccount } from "@/lib/garmin-sync";
 import { getStravaAccount } from "@/lib/strava-sync";
 import { isStravaConfigured } from "@/lib/strava";
@@ -21,10 +23,12 @@ type PageProps = {
 
 export default async function SettingsPage({ searchParams }: PageProps) {
   const { strava } = await searchParams;
-  const [stravaAccount, configured, garminAccount] = await Promise.all([
+  const [stravaAccount, configured, garminAccount, athleteProfile] =
+    await Promise.all([
     getStravaAccount(),
     Promise.resolve(isStravaConfigured()),
     getGarminAccount(),
+    getAthleteProfile(),
   ]);
 
   const account = stravaAccount
@@ -57,6 +61,34 @@ export default async function SettingsPage({ searchParams }: PageProps) {
           Connecte tes sources de données et configure ton système.
         </p>
       </header>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Profil athlète</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Seuils pour zones FC/puissance, IF, TSS et découplage
+          </p>
+        </CardHeader>
+        <CardContent>
+          <AthleteProfilePanel
+            initial={
+              athleteProfile
+                ? {
+                    ftpW: athleteProfile.ftpW,
+                    maxHr: athleteProfile.maxHr,
+                    lthr: athleteProfile.lthr,
+                    runThresholdPaceSecPerKm:
+                      athleteProfile.runThresholdPaceSecPerKm,
+                    vo2maxRunning: athleteProfile.vo2maxRunning,
+                    vo2maxCycling: athleteProfile.vo2maxCycling,
+                    thresholdsSyncedAt:
+                      athleteProfile.thresholdsSyncedAt?.toISOString() ?? null,
+                  }
+                : null
+            }
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

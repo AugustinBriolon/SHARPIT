@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { ActivityForm } from "@/components/training/activity-form";
 import { getActivityById } from "@/lib/queries";
 
+export const dynamic = "force-dynamic";
+
 type PageProps = { params: Promise<{ id: string }> };
 
 export default async function EditTrainingPage({ params }: PageProps) {

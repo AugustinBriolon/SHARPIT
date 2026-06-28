@@ -7,6 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/link-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActivities, useGoals, useHealthEntries } from "@/hooks/use-data";
+import { usePhysicalNotes } from "@/hooks/use-physical";
+import { categoryLabels, severityColor, sideLabels } from "@/lib/physical";
+import { cn } from "@/lib/utils";
+import Link from "next/link";
 import { useMounted } from "@/hooks/use-mounted";
 import type { ClientActivity } from "@/lib/client/types";
 import { dayActivities, dayHealth } from "@/lib/day";
@@ -31,6 +35,7 @@ export function DashboardView() {
   const activitiesQuery = useActivities();
   const healthQuery = useHealthEntries();
   const goalsQuery = useGoals();
+  const physicalQuery = usePhysicalNotes();
 
   const header = (
     <header className="flex flex-wrap items-end justify-between gap-4">
@@ -86,6 +91,10 @@ export function DashboardView() {
     health?.readinessLevel ?? null,
   );
   const isCurrentDay = isToday(date);
+
+  const activeNotes = (physicalQuery.data ?? []).filter(
+    (n) => n.status !== "RESOLVED",
+  );
 
   return (
     <div className="space-y-8">
@@ -210,6 +219,51 @@ export function DashboardView() {
           />
         </div>
       </section>
+
+      {activeNotes.length > 0 && (
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+              Condition physique
+            </h2>
+            <Link
+              href="/body"
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Voir le suivi →
+            </Link>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {activeNotes.slice(0, 6).map((note) => (
+              <Link
+                key={note.id}
+                href="/body"
+                className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-card/40 p-3 hover:border-primary/40"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{note.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {categoryLabels[note.category]}
+                    {note.bodyPart
+                      ? ` · ${note.bodyPart}${note.side !== "NA" ? ` (${sideLabels[note.side]})` : ""}`
+                      : ""}
+                  </p>
+                </div>
+                {note.severity != null && (
+                  <span
+                    className={cn(
+                      "shrink-0 font-mono text-lg font-semibold",
+                      severityColor(note.severity),
+                    )}
+                  >
+                    {note.severity}
+                  </span>
+                )}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

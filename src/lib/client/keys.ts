@@ -4,4 +4,6 @@ export const queryKeys = {
   goals: ["goals"] as const,
   plannedSessions: ["planned-sessions"] as const,
   activityStream: (id: string) => ["activity-stream", id] as const,
+  physicalNotes: ["physical-notes"] as const,
+  coachContext: ["coach-context"] as const,
 };

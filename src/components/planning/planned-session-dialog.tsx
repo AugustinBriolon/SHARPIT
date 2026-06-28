@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { SessionRealization } from "@/components/planning/session-realization";
 import type { ClientGoal, ClientPlannedSession } from "@/lib/client/types";
 import { activityTypeLabels } from "@/lib/format";
 import { intensityLabels, intensityOrder } from "@/lib/sessions";
@@ -48,7 +49,6 @@ export function PlannedSessionDialog({
     session?.intensity ?? "ENDURANCE",
   );
   const [goalId, setGoalId] = useState<string>(session?.goalId ?? NO_GOAL);
-  const [completed, setCompleted] = useState(session?.completed ?? false);
   const [error, setError] = useState<string | null>(null);
 
   const initialDate = session?.date
@@ -76,7 +76,6 @@ export function PlannedSessionDialog({
       load: loadRaw ? Number(loadRaw) : null,
       intensity,
       goalId: goalId === NO_GOAL ? null : goalId,
-      completed,
     };
 
     try {
@@ -105,12 +104,14 @@ export function PlannedSessionDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
             {isEdit ? "Modifier la séance" : "Planifier une séance"}
           </DialogTitle>
         </DialogHeader>
+
+        {isEdit && session && <SessionRealization session={session} />}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
@@ -235,18 +236,6 @@ export function PlannedSessionDialog({
               defaultValue={session?.description ?? ""}
             />
           </div>
-
-          {isEdit && (
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">
-              <input
-                type="checkbox"
-                checked={completed}
-                onChange={(e) => setCompleted(e.target.checked)}
-                className="size-4 rounded border-border"
-              />
-              Séance réalisée
-            </label>
-          )}
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 

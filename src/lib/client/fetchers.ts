@@ -3,6 +3,7 @@ import type {
   ClientActivity,
   ClientGoal,
   ClientHealthEntry,
+  ClientPhysicalNote,
   ClientPlannedSession,
 } from "./types";
 
@@ -58,16 +59,44 @@ export async function fetchGoals(): Promise<ClientGoal[]> {
 
 export async function fetchPlannedSessions(): Promise<ClientPlannedSession[]> {
   const data = await fetchJson<RawRecord[]>("/api/planned-sessions");
-  return data.map((s) => ({
-    ...s,
-    date: toDate(s.date),
-    createdAt: toDate(s.createdAt),
-    updatedAt: toDate(s.updatedAt),
-  })) as unknown as ClientPlannedSession[];
+  return data.map((s) => {
+    const activity = s.activity as RawRecord | null;
+    return {
+      ...s,
+      date: toDate(s.date),
+      createdAt: toDate(s.createdAt),
+      updatedAt: toDate(s.updatedAt),
+      analyzedAt: toDateOrNull(s.analyzedAt),
+      activity: activity
+        ? {
+            ...activity,
+            date: toDate(activity.date),
+            createdAt: toDate(activity.createdAt),
+            updatedAt: toDate(activity.updatedAt),
+          }
+        : null,
+    };
+  }) as unknown as ClientPlannedSession[];
 }
 
 export async function fetchActivityStream(
   id: string,
 ): Promise<ActivityStreamPayload> {
   return fetchJson<ActivityStreamPayload>(`/api/activities/${id}/streams`);
+}
+
+export async function fetchPhysicalNotes(): Promise<ClientPhysicalNote[]> {
+  const data = await fetchJson<RawRecord[]>("/api/physical-notes");
+  return data.map((n) => ({
+    ...n,
+    startDate: toDate(n.startDate),
+    resolvedAt: toDateOrNull(n.resolvedAt),
+    createdAt: toDate(n.createdAt),
+    updatedAt: toDate(n.updatedAt),
+    checkins: ((n.checkins as RawRecord[]) ?? []).map((c) => ({
+      ...c,
+      date: toDate(c.date),
+      createdAt: toDate(c.createdAt),
+    })),
+  })) as unknown as ClientPhysicalNote[];
 }

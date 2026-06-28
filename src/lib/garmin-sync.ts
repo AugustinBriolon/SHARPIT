@@ -5,9 +5,11 @@ import { format } from "date-fns";
 import {
   clientFromTokens,
   currentTokens,
+  fetchAthleteThresholds,
   fetchDailyHealth,
   fetchWeightRange,
   loginWithCredentials,
+  type GarminAthleteThresholds,
   type GarminTokens,
 } from "@/lib/garmin";
 
@@ -42,6 +44,63 @@ export async function connectGarmin(username: string, password: string) {
   });
 
   return profile;
+}
+
+export interface GarminThresholdsImport extends GarminAthleteThresholds {
+  imported: boolean;
+}
+
+/**
+ * Importe les seuils de l'athlète depuis Garmin et les enregistre dans le
+ * profil. Seuls les champs renvoyés par Garmin sont écrits (un champ absent ne
+ * remplace pas une valeur existante).
+ */
+export async function importGarminThresholds(): Promise<GarminThresholdsImport> {
+  const account = await getGarminAccount();
+  if (!account) throw new Error("Compte Garmin non connecté");
+
+  const client = clientFromTokens({
+    oauth1: account.oauth1Token,
+    oauth2: account.oauth2Token,
+  });
+
+  const thresholds = await fetchAthleteThresholds(client);
+
+  const data: Prisma.AthleteProfileUncheckedUpdateInput = {
+    thresholdsSyncedAt: new Date(),
+  };
+  if (thresholds.ftpW != null) data.ftpW = thresholds.ftpW;
+  if (thresholds.lthr != null) data.lthr = thresholds.lthr;
+  if (thresholds.runThresholdPaceSecPerKm != null)
+    data.runThresholdPaceSecPerKm = thresholds.runThresholdPaceSecPerKm;
+  if (thresholds.vo2maxRunning != null)
+    data.vo2maxRunning = thresholds.vo2maxRunning;
+  if (thresholds.vo2maxCycling != null)
+    data.vo2maxCycling = thresholds.vo2maxCycling;
+
+  await prisma.athleteProfile.upsert({
+    where: { id: "default" },
+    create: { id: "default", ...data } as Prisma.AthleteProfileUncheckedCreateInput,
+    update: data,
+  });
+
+  const refreshed = currentTokens(client);
+  await prisma.garminAccount.update({
+    where: { id: ACCOUNT_ID },
+    data: {
+      oauth1Token: refreshed.oauth1 as Prisma.InputJsonValue,
+      oauth2Token: refreshed.oauth2 as Prisma.InputJsonValue,
+    },
+  });
+
+  const imported =
+    thresholds.ftpW != null ||
+    thresholds.lthr != null ||
+    thresholds.runThresholdPaceSecPerKm != null ||
+    thresholds.vo2maxRunning != null ||
+    thresholds.vo2maxCycling != null;
+
+  return { ...thresholds, imported };
 }
 
 export interface GarminSyncResult {

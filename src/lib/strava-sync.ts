@@ -1,4 +1,5 @@
 import { ActivityType, Prisma } from "@prisma/client";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { prisma } from "@/lib/prisma";
 import {
   fetchActivities,
@@ -122,6 +123,7 @@ export async function syncStravaActivities(): Promise<SyncResult> {
   let imported = 0;
   let skipped = 0;
   let fetched = 0;
+  const seenStravaIds = new Set<string>();
 
   while (page <= 10) {
     const activities = await fetchActivities(accessToken, { after, page });
@@ -129,6 +131,13 @@ export async function syncStravaActivities(): Promise<SyncResult> {
     fetched += activities.length;
 
     for (const strava of activities) {
+      const stravaId = String(strava.id);
+      if (seenStravaIds.has(stravaId)) {
+        skipped += 1;
+        continue;
+      }
+      seenStravaIds.add(stravaId);
+
       const type = mapStravaType(strava.sport_type ?? strava.type);
       if (!type) {
         skipped += 1;
@@ -136,7 +145,7 @@ export async function syncStravaActivities(): Promise<SyncResult> {
       }
 
       const existing = await prisma.activity.findUnique({
-        where: { stravaId: String(strava.id) },
+        where: { stravaId },
         select: { id: true },
       });
       if (existing) {
@@ -144,8 +153,19 @@ export async function syncStravaActivities(): Promise<SyncResult> {
         continue;
       }
 
-      await prisma.activity.create({ data: buildActivityData(strava, type) });
-      imported += 1;
+      try {
+        await prisma.activity.create({ data: buildActivityData(strava, type) });
+        imported += 1;
+      } catch (error) {
+        if (
+          error instanceof PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        ) {
+          skipped += 1;
+          continue;
+        }
+        throw error;
+      }
     }
 
     if (activities.length < 100) break;
