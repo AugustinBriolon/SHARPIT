@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Athlete OS
 
-## Getting Started
+Operating System de performance — entraînement, analytics, récupération.
 
-First, run the development server:
+## Stack
+
+- Next.js (App Router) + TypeScript
+- Tailwind CSS + shadcn/ui
+- Prisma + PostgreSQL
+- TanStack Query, React Hook Form, Zod
+
+## Démarrage
+
+### PostgreSQL
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Option A — Docker
+npm run db:up
+
+# Option B — Postgres natif (macOS / Homebrew)
+brew install postgresql@16
+brew services start postgresql@16
+createuser sharpit --createdb 2>/dev/null; \
+  psql postgres -c "ALTER ROLE sharpit WITH LOGIN PASSWORD 'sharpit';" && \
+  createdb sharpit -O sharpit
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### App
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cp .env.example .env   # puis renseigne les variables
+npm run db:push        # synchronise le schéma
+npm run db:seed        # données de démo (optionnel)
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Ouvre [http://localhost:3000](http://localhost:3000).
 
-## Learn More
+## Intégration Strava
 
-To learn more about Next.js, take a look at the following resources:
+1. Crée une application sur [strava.com/settings/api](https://www.strava.com/settings/api)
+   (Authorization Callback Domain : `localhost`).
+2. Renseigne dans `.env` :
+   ```
+   STRAVA_CLIENT_ID="..."
+   STRAVA_CLIENT_SECRET="..."
+   STRAVA_REDIRECT_URI="http://localhost:3000/api/strava/callback"
+   ```
+3. Redémarre le serveur, va dans **Settings → Strava → Connecter**, puis
+   **Synchroniser**. Les activités sont importées et dédupliquées par `stravaId`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+> Après toute modification du schéma Prisma, relance `npm run dev` pour que le
+> serveur recharge le client généré.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Modules
 
-## Deploy on Vercel
+- **Dashboard** — séance du jour, recovery, charge d'entraînement (ACWR)
+- **Training** — CRUD Run / Bike / Swim / Strength
+- **Settings** — connexion & synchronisation Strava
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Les autres modules (Analytics, Recovery, Goals…) sont prévus dans la navigation.
+# SHARPIT
