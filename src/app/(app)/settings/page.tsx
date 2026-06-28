@@ -25,11 +25,11 @@ export default async function SettingsPage({ searchParams }: PageProps) {
   const { strava } = await searchParams;
   const [stravaAccount, configured, garminAccount, athleteProfile] =
     await Promise.all([
-    getStravaAccount(),
-    Promise.resolve(isStravaConfigured()),
-    getGarminAccount(),
-    getAthleteProfile(),
-  ]);
+      getStravaAccount(),
+      Promise.resolve(isStravaConfigured()),
+      getGarminAccount(),
+      getAthleteProfile().catch(() => null),
+    ]);
 
   const account = stravaAccount
     ? {
