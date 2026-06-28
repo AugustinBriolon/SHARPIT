@@ -1,11 +1,11 @@
 import { randomBytes } from "crypto";
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { buildAuthorizeUrl, isStravaConfigured } from "@/lib/strava";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   if (!isStravaConfigured()) {
     return NextResponse.json(
       {
@@ -25,5 +25,6 @@ export async function GET() {
     maxAge: 600,
   });
 
-  return NextResponse.redirect(buildAuthorizeUrl(state));
+  const origin = new URL(request.url).origin;
+  return NextResponse.redirect(buildAuthorizeUrl(state, origin));
 }

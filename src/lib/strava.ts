@@ -5,12 +5,24 @@ const STRAVA_API_BASE = "https://www.strava.com/api/v3";
 
 export const STRAVA_SCOPE = "read,activity:read_all";
 
-export function getStravaConfig() {
+/** URL de callback OAuth, déduite du host courant si STRAVA_REDIRECT_URI est absent. */
+export function getStravaRedirectUri(origin?: string) {
+  if (process.env.STRAVA_REDIRECT_URI) {
+    return process.env.STRAVA_REDIRECT_URI;
+  }
+  if (origin) {
+    return `${origin}/api/strava/callback`;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}/api/strava/callback`;
+  }
+  return "http://localhost:3000/api/strava/callback";
+}
+
+export function getStravaConfig(origin?: string) {
   const clientId = process.env.STRAVA_CLIENT_ID;
   const clientSecret = process.env.STRAVA_CLIENT_SECRET;
-  const redirectUri =
-    process.env.STRAVA_REDIRECT_URI ??
-    "http://localhost:3000/api/strava/callback";
+  const redirectUri = getStravaRedirectUri(origin);
 
   if (!clientId || !clientSecret) {
     throw new Error(
@@ -25,8 +37,8 @@ export function isStravaConfigured() {
   return Boolean(process.env.STRAVA_CLIENT_ID && process.env.STRAVA_CLIENT_SECRET);
 }
 
-export function buildAuthorizeUrl(state: string) {
-  const { clientId, redirectUri } = getStravaConfig();
+export function buildAuthorizeUrl(state: string, origin?: string) {
+  const { clientId, redirectUri } = getStravaConfig(origin);
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,

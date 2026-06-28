@@ -12,7 +12,7 @@ interface GarminPanelProps {
   account: {
     displayName: string | null;
     fullName: string | null;
-    lastSyncAt: Date | null;
+    lastSyncAt: string | null;
   } | null;
 }
 

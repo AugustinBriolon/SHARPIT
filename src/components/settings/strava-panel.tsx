@@ -12,7 +12,7 @@ interface StravaPanelProps {
     firstName: string | null;
     lastName: string | null;
     avatarUrl: string | null;
-    lastSyncAt: Date | null;
+    lastSyncAt: string | null;
   } | null;
   statusMessage?: string;
 }

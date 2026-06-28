@@ -11,7 +11,22 @@ import { horizonLabels, horizonOrder } from "@/lib/goals";
 export const dynamic = "force-dynamic";
 
 export default async function GoalsPage() {
-  const goals = (await getGoals()) as unknown as GoalItem[];
+  const rawGoals = await getGoals();
+  const goals: GoalItem[] = rawGoals.map((goal) => ({
+    id: goal.id,
+    title: goal.title,
+    kind: goal.kind,
+    horizon: goal.horizon,
+    startValue: goal.startValue,
+    currentValue: goal.currentValue,
+    targetValue: goal.targetValue,
+    unit: goal.unit,
+    lowerIsBetter: goal.lowerIsBetter,
+    targetDate: goal.targetDate?.toISOString() ?? null,
+    location: goal.location,
+    achieved: goal.achieved,
+    notes: goal.notes,
+  }));
 
   const races = goals
     .filter((g) => g.kind === GoalKind.RACE)

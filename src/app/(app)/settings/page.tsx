@@ -21,11 +21,28 @@ type PageProps = {
 
 export default async function SettingsPage({ searchParams }: PageProps) {
   const { strava } = await searchParams;
-  const [account, configured, garminAccount] = await Promise.all([
+  const [stravaAccount, configured, garminAccount] = await Promise.all([
     getStravaAccount(),
     Promise.resolve(isStravaConfigured()),
     getGarminAccount(),
   ]);
+
+  const account = stravaAccount
+    ? {
+        firstName: stravaAccount.firstName,
+        lastName: stravaAccount.lastName,
+        avatarUrl: stravaAccount.avatarUrl,
+        lastSyncAt: stravaAccount.lastSyncAt?.toISOString() ?? null,
+      }
+    : null;
+
+  const garmin = garminAccount
+    ? {
+        displayName: garminAccount.displayName,
+        fullName: garminAccount.fullName,
+        lastSyncAt: garminAccount.lastSyncAt?.toISOString() ?? null,
+      }
+    : null;
 
   return (
     <div className="space-y-8">
@@ -63,7 +80,7 @@ export default async function SettingsPage({ searchParams }: PageProps) {
           </p>
         </CardHeader>
         <CardContent>
-          <GarminPanel account={garminAccount} />
+          <GarminPanel account={garmin} />
         </CardContent>
       </Card>
     </div>
