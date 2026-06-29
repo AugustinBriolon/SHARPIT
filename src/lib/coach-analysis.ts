@@ -2,6 +2,8 @@ import { generateText, Output } from "ai";
 import { COACH_MODEL, coachGatewayOptions } from "./ai";
 import { getAthleteProfile, getPlannedSessionById } from "./queries";
 import { intensityLabels } from "./sessions";
+import { fetchActivityDetail } from "./strava";
+import { getValidAccessToken } from "./strava-sync";
 import { sessionAnalysisSchema, type SessionAnalysis } from "./validators/coach";
 
 const TYPE_FR: Record<string, string> = {
@@ -35,14 +37,19 @@ function describePlanned(p: PlannedWithActivity): string {
   return bits.join("\n");
 }
 
-function describeActual(a: LinkedActivity): string {
+function describeActual(a: LinkedActivity, description?: string | null): string {
   const bits: string[] = [
     `Sport : ${TYPE_FR[a.type] ?? a.type}`,
     a.duration != null ? `Durée : ${Math.round(a.duration / 60)} min` : null,
     a.load != null ? `Charge : ${Math.round(a.load)} TSS` : null,
     a.rpe != null ? `RPE ressenti : ${a.rpe}/10` : null,
     a.feeling ? `Ressenti : ${a.feeling}` : null,
+    a.notes ? `Notes : ${a.notes}` : null,
   ].filter(Boolean) as string[];
+
+  // Description libre saisie sur Strava (souvent le détail réel des exercices).
+  const desc = description?.trim();
+  if (desc) bits.push(`Description (athlète) : ${desc}`);
 
   if (a.runMetrics) {
     const r = a.runMetrics;
@@ -74,13 +81,20 @@ function describeActual(a: LinkedActivity): string {
   return bits.join("\n");
 }
 
-const ANALYSIS_SYSTEM = `Tu es un entraîneur expert en endurance. On te donne une séance PRÉVUE et la séance RÉELLEMENT réalisée (données objectives Strava/Garmin).
+const ANALYSIS_SYSTEM = `Tu es un entraîneur expert en endurance. On te donne une séance PRÉVUE et la séance RÉELLEMENT réalisée (données objectives Strava/Garmin + éventuelle description libre de l'athlète).
 
 Compare-les et produis une analyse exploitable :
 - complianceScore : 0-100 (100 = exécution parfaite de la consigne).
 - verdict : conforme / plus dur / plus facile / plus court / plus long / différent.
 - Remarques pertinentes et factuelles (intensité, durée, allure/puissance, dérive cardiaque, exécution des intervalles). Appuie-toi sur les chiffres.
 - Une recommandation concrète à retenir.
+
+RÈGLES D'ÉVALUATION IMPORTANTES :
+- Le contenu RÉELLEMENT effectué prime sur les seules métriques. Lis attentivement la "Description (athlète)" et les "Notes" : si l'athlète y indique avoir fait tout le travail prévu, considère la séance comme conforme même si la durée enregistrée diffère.
+- Pour la MUSCULATION / le renforcement : la durée chronométrée n'est PAS un bon indicateur de conformité (temps de repos, montre lancée/arrêtée à des moments variables, exercices non détaillés sur la montre). Ne pénalise PAS le score pour un simple écart de durée si le contenu prévu (exercices, séries, répétitions) a été réalisé. Base-toi sur le travail décrit, pas sur les minutes.
+- Pour les séances d'endurance/intervalles, la durée et l'intensité restent des indicateurs valides.
+- Dans le doute, accorde le bénéfice à l'athlète plutôt que de surpénaliser.
+
 Sois précis, bienveillant et concis. Réponds en français.`;
 
 export async function analyzePlannedSession(
@@ -88,6 +102,20 @@ export async function analyzePlannedSession(
 ): Promise<SessionAnalysis | null> {
   const planned = await getPlannedSessionById(id);
   if (!planned || !planned.activity) return null;
+
+  // Récupère la description libre saisie sur Strava (détail réel de la séance),
+  // absente de la synchro de base. Best-effort : n'échoue pas l'analyse.
+  let stravaDescription: string | null = null;
+  const activity = planned.activity;
+  if (activity.source === "strava" && activity.stravaId) {
+    try {
+      const token = await getValidAccessToken();
+      const detail = await fetchActivityDetail(token, activity.stravaId);
+      stravaDescription = detail?.description ?? detail?.private_note ?? null;
+    } catch (error) {
+      console.error("[analyze] description Strava non récupérée", error);
+    }
+  }
 
   const profile = await getAthleteProfile();
   const seuils = profile
@@ -107,7 +135,7 @@ export async function analyzePlannedSession(
 ${describePlanned(planned)}
 
 # Séance RÉALISÉE
-${describeActual(planned.activity)}`;
+${describeActual(planned.activity, stravaDescription)}`;
 
   const { output } = await generateText({
     model: COACH_MODEL,

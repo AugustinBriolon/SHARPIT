@@ -150,6 +150,30 @@ export async function fetchActivities(
   return response.json();
 }
 
+export interface StravaActivityDetail extends StravaActivity {
+  description?: string;
+  private_note?: string;
+}
+
+/**
+ * Récupère le détail d'une activité Strava (inclut la `description` saisie par
+ * l'athlète, absente de la liste). Renvoie null si indisponible.
+ */
+export async function fetchActivityDetail(
+  accessToken: string,
+  stravaActivityId: string,
+): Promise<StravaActivityDetail | null> {
+  const response = await fetch(
+    `${STRAVA_API_BASE}/activities/${stravaActivityId}`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store",
+    },
+  );
+  if (!response.ok) return null;
+  return response.json();
+}
+
 export const STRAVA_STREAM_KEYS = [
   "time",
   "latlng",

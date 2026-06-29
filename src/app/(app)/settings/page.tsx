@@ -78,7 +78,7 @@ export default async function SettingsPage({ searchParams }: PageProps) {
     : null;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <header>
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">
           Settings

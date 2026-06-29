@@ -133,3 +133,37 @@ export async function fetchPhysicalNotes(): Promise<ClientPhysicalNote[]> {
     })),
   })) as unknown as ClientPhysicalNote[];
 }
+
+export interface ClientConversationSummary {
+  id: string;
+  title: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ClientConversation extends ClientConversationSummary {
+  messages: unknown;
+}
+
+export async function fetchConversations(): Promise<ClientConversationSummary[]> {
+  const data = await fetchJson<RawRecord[]>("/api/coach/conversations");
+  return data.map((c) => ({
+    id: c.id as string,
+    title: c.title as string,
+    createdAt: toDate(c.createdAt),
+    updatedAt: toDate(c.updatedAt),
+  }));
+}
+
+export async function fetchConversation(
+  id: string,
+): Promise<ClientConversation> {
+  const c = await fetchJson<RawRecord>(`/api/coach/conversations/${id}`);
+  return {
+    id: c.id as string,
+    title: c.title as string,
+    messages: c.messages,
+    createdAt: toDate(c.createdAt),
+    updatedAt: toDate(c.updatedAt),
+  };
+}

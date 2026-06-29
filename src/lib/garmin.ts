@@ -338,6 +338,10 @@ export async function fetchDailyHealth(
   date: Date,
   weightKg: number | null = null,
 ): Promise<GarminDailyHealth> {
+  // Garmin utilise la date de RÉVEIL : getSleepData(date) renvoie la nuit
+  // (date-1 → date), qui est précisément celle qui impacte la journée `date`.
+  // Idem pour readiness/HRV/FC repos (valeurs du matin de `date`). Tout est donc
+  // cohérent sur le même jour `date`.
   const [sleepMinutes, restingHr, hrv, readiness, hrvStatus, stressBattery] =
     await Promise.all([
       fetchSleepMinutes(client, date),

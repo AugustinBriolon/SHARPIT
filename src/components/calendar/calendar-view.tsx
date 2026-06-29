@@ -12,6 +12,7 @@ import {
 import { fr } from "date-fns/locale";
 import {
   CalendarCog,
+  Check,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -214,6 +215,14 @@ export function CalendarView() {
     plannedQuery.data ?? [],
   );
 
+  // Activités déjà rattachées à une séance planifiée : on ne les affiche pas en
+  // double — la pastille de la séance planifiée représente les deux.
+  const linkedActivityIds = new Set(
+    (plannedQuery.data ?? [])
+      .map((p) => p.activityId)
+      .filter((id): id is string => Boolean(id)),
+  );
+
   async function handleDrop(dateKey: string, targetDate: Date) {
     setDragOver(null);
     const raw = dragData;
@@ -286,9 +295,11 @@ export function CalendarView() {
                       dayEvent={de}
                     />
                   ))}
-                  {cell.activities.map((a) => (
-                    <ActivityChip key={a.id} activity={a} />
-                  ))}
+                  {cell.activities
+                    .filter((a) => !linkedActivityIds.has(a.id))
+                    .map((a) => (
+                      <ActivityChip key={a.id} activity={a} />
+                    ))}
                   {cell.planned.map((p) => (
                     <PlannedChip
                       key={p.id}
@@ -487,12 +498,20 @@ function PlannedChip({
   const accent = session.intensity
     ? intensityAccent[session.intensity]
     : "#94a3b8";
+
+  // Séance réalisée ET liée à une activité : pastille unique « englobante »
+  // (fond plein, check, score de conformité) au lieu d'un doublon prévu+réalisé.
+  const done = session.completed && Boolean(session.activityId);
+  const score = (session.analysis as { complianceScore?: number } | null)
+    ?.complianceScore;
+  const label = session.title ?? activityTypeLabels[session.type];
+
   return (
     <button
       type="button"
-      draggable
+      draggable={!done}
       onDragStart={() => {
-        dragData = session.id;
+        if (!done) dragData = session.id;
       }}
       onDragEnd={() => {
         dragData = null;
@@ -501,20 +520,34 @@ function PlannedChip({
         e.stopPropagation();
         onEdit();
       }}
-      style={{ borderColor: accent }}
+      style={done ? { backgroundColor: `${accent}22`, borderColor: accent } : { borderColor: accent }}
       className={cn(
-        "flex w-full items-center gap-1 truncate rounded-md border border-dashed bg-transparent px-1.5 py-0.5 text-left text-[11px] hover:bg-muted/40",
-        session.completed && "opacity-50",
+        "flex w-full items-center gap-1 truncate rounded-md border px-1.5 py-0.5 text-left text-[11px] hover:bg-muted/40",
+        done ? "border-solid" : "border-dashed bg-transparent",
       )}
-      title={session.title ?? activityTypeLabels[session.type]}
+      title={`${label}${done ? " — réalisée" : ""}`}
     >
+      {done ? (
+        <Check className="size-3 shrink-0" style={{ color: accent }} />
+      ) : (
+        <span
+          className="size-1.5 shrink-0 rounded-full"
+          style={{ backgroundColor: accent }}
+        />
+      )}
       <span
-        className="size-1.5 shrink-0 rounded-full"
-        style={{ backgroundColor: accent }}
-      />
-      <span className="truncate text-muted-foreground">
-        {session.title ?? activityTypeLabels[session.type]}
+        className={cn(
+          "truncate",
+          done ? "font-medium text-foreground" : "text-muted-foreground",
+        )}
+      >
+        {label}
       </span>
+      {done && score != null && (
+        <span className="ml-auto shrink-0 tabular-nums text-[10px] text-muted-foreground">
+          {score}
+        </span>
+      )}
     </button>
   );
 }

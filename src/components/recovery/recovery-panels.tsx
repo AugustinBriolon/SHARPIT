@@ -43,7 +43,7 @@ export function ReadinessHero({
               background: `conic-gradient(${view.accent} ${ringDeg}deg, color-mix(in srgb, ${view.accent} 12%, transparent) ${ringDeg}deg)`,
             }}
           >
-            <div className="grid size-[88px] place-items-center rounded-full bg-card">
+            <div className="grid size-[88px] place-items-center rounded-full bg-card content-center">
               <span
                 className="font-mono text-3xl font-semibold tabular-nums"
                 style={{ color: view.accent }}
@@ -57,7 +57,7 @@ export function ReadinessHero({
           </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-              Readiness du jour
+              Forme du jour
             </p>
             <p
               className="mt-1 font-heading text-2xl font-semibold"
@@ -74,12 +74,26 @@ export function ReadinessHero({
       </div>
 
       {factors.length > 0 && (
-        <div className="mt-6 grid gap-3 border-t border-border/60 pt-5 sm:grid-cols-2 lg:grid-cols-3">
-          {factors.map((f) => (
-            <FactorRow key={f.key} factor={f} />
-          ))}
+        <div className="mt-6 border-t border-border/60 pt-5">
+          <ReadinessFactorList factors={factors} />
         </div>
       )}
+    </div>
+  );
+}
+
+/** Détail des facteurs Garmin qui composent le score de forme. */
+export function ReadinessFactorList({
+  factors,
+}: {
+  factors: ReadinessFactor[];
+}) {
+  if (factors.length === 0) return null;
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {factors.map((f) => (
+        <FactorRow key={f.key} factor={f} />
+      ))}
     </div>
   );
 }

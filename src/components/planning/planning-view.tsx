@@ -139,10 +139,16 @@ function WeekCard({
   onEdit: (session: ClientPlannedSession) => void;
 }) {
   const isCurrent = week.index === 0;
+  const totalSessions = week.planned.length;
+  const completedSessions = week.planned.filter((p) => p.completed).length;
   const ratio =
-    week.plannedLoad > 0
-      ? Math.min(100, Math.round((week.actualLoad / week.plannedLoad) * 100))
+    totalSessions > 0
+      ? Math.round((completedSessions / totalSessions) * 100)
       : 0;
+  // Temps restant = durée des séances planifiées non encore réalisées.
+  const remainingMin = week.planned
+    .filter((p) => !p.completed)
+    .reduce((sum, p) => sum + (p.durationMin ?? 0), 0);
 
   const days = DAY_LABELS.map((label, i) => {
     const date = new Date(week.start);
@@ -170,16 +176,25 @@ function WeekCard({
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <p className="font-mono text-sm">
-              <span className="text-muted-foreground">Prévu</span>{" "}
-              <span className="text-cyan-400">{week.plannedLoad}</span>
-              <span className="mx-1 text-muted-foreground">·</span>
-              <span className="text-muted-foreground">Réalisé</span>{" "}
-              <span className="text-orange-400">{week.actualLoad}</span>
+            <p className="text-sm">
+              <span className="font-medium text-foreground">
+                {completedSessions}/{totalSessions}
+              </span>{" "}
+              <span className="text-muted-foreground">
+                {totalSessions > 1 ? "séances" : "séance"}
+              </span>
+              {remainingMin > 0 && (
+                <>
+                  <span className="mx-1 text-muted-foreground">·</span>
+                  <span className="text-muted-foreground">
+                    {formatPlannedDuration(remainingMin)} à faire
+                  </span>
+                </>
+              )}
             </p>
             <div className="mt-1 h-1.5 w-40 overflow-hidden rounded-full bg-muted/60">
               <div
-                className="h-full rounded-full bg-orange-400/80"
+                className="h-full rounded-full bg-emerald-400/80"
                 style={{ width: `${ratio}%` }}
               />
             </div>

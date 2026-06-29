@@ -9,4 +9,6 @@ export const queryKeys = {
   googleEvents: (from: string, to: string) =>
     ["google-events", from, to] as const,
   googleCalendars: ["google-calendars"] as const,
+  conversations: ["conversations"] as const,
+  conversation: (id: string) => ["conversation", id] as const,
 };

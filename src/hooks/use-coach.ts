@@ -5,7 +5,14 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import type { UIMessage } from "ai";
 import type { ActivityType, SessionIntensity } from "@prisma/client";
+import {
+  fetchConversation,
+  fetchConversations,
+  type ClientConversation,
+  type ClientConversationSummary,
+} from "@/lib/client/fetchers";
 import { queryKeys } from "@/lib/client/keys";
 
 export interface GeneratedSession {
@@ -117,6 +124,124 @@ export function useSaveCoachContext() {
     },
     onSuccess: (context) => {
       queryClient.setQueryData(queryKeys.coachContext, context);
+    },
+  });
+}
+
+export function useConversations() {
+  return useQuery({
+    queryKey: queryKeys.conversations,
+    queryFn: fetchConversations,
+  });
+}
+
+export function useConversation(id: string | null) {
+  return useQuery({
+    queryKey: queryKeys.conversation(id ?? ""),
+    queryFn: () => fetchConversation(id!),
+    enabled: Boolean(id),
+  });
+}
+
+export function useCreateConversation() {
+  const queryClient = useQueryClient();
+  return useMutation<ClientConversation, Error, void>({
+    mutationFn: async () => {
+      const res = await fetch("/api/coach/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error ?? "Création impossible.");
+      }
+      return {
+        ...data,
+        createdAt: new Date(data.createdAt),
+        updatedAt: new Date(data.updatedAt),
+      } as ClientConversation;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.conversations });
+    },
+  });
+}
+
+export function useSaveConversation() {
+  const queryClient = useQueryClient();
+  return useMutation<
+    ClientConversation,
+    Error,
+    { id: string; messages: UIMessage[] }
+  >({
+    mutationFn: async ({ id, messages }) => {
+      const res = await fetch(`/api/coach/conversations/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error ?? "Enregistrement impossible.");
+      }
+      return {
+        ...data,
+        createdAt: new Date(data.createdAt),
+        updatedAt: new Date(data.updatedAt),
+      } as ClientConversation;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.conversation(data.id), data);
+      queryClient.invalidateQueries({ queryKey: queryKeys.conversations });
+    },
+  });
+}
+
+export function useRenameConversation() {
+  const queryClient = useQueryClient();
+  return useMutation<
+    ClientConversationSummary,
+    Error,
+    { id: string; title: string }
+  >({
+    mutationFn: async ({ id, title }) => {
+      const res = await fetch(`/api/coach/conversations/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error ?? "Renommage impossible.");
+      }
+      return {
+        ...data,
+        createdAt: new Date(data.createdAt),
+        updatedAt: new Date(data.updatedAt),
+      } as ClientConversationSummary;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.conversations });
+    },
+  });
+}
+
+export function useDeleteConversation() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: async (id) => {
+      const res = await fetch(`/api/coach/conversations/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error ?? "Suppression impossible.");
+      }
+    },
+    onSuccess: (_data, id) => {
+      queryClient.removeQueries({ queryKey: queryKeys.conversation(id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.conversations });
     },
   });
 }

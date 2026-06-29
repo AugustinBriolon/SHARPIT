@@ -1,14 +1,59 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CoachChat } from "@/components/coach/coach-chat";
 import { CoachContextPanel } from "@/components/coach/coach-context-panel";
+import { CoachConversationList } from "@/components/coach/coach-conversation-list";
 import { PlanGenerator } from "@/components/coach/plan-generator";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  useConversations,
+  useCreateConversation,
+  useDeleteConversation,
+} from "@/hooks/use-coach";
 
 export function CoachView() {
   const [generatorOpen, setGeneratorOpen] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const initialized = useRef(false);
+
+  const conversationsQuery = useConversations();
+  const createConversation = useCreateConversation();
+  const deleteConversation = useDeleteConversation();
+
+  const conversations = conversationsQuery.data ?? [];
+
+  // Au premier chargement : ouvre la conversation la plus récente, ou en crée une.
+  useEffect(() => {
+    if (initialized.current || conversationsQuery.isLoading) return;
+    initialized.current = true;
+    if (conversations.length > 0) {
+      setActiveId(conversations[0].id);
+    } else {
+      createConversation.mutateAsync().then((c) => setActiveId(c.id));
+    }
+  }, [conversationsQuery.isLoading, conversations, createConversation]);
+
+  async function handleNewConversation() {
+    const c = await createConversation.mutateAsync();
+    setActiveId(c.id);
+  }
+
+  async function handleDeleteConversation(id: string) {
+    if (!confirm("Supprimer cette conversation ?")) return;
+    const remaining = conversations.filter((c) => c.id !== id);
+    await deleteConversation.mutateAsync(id);
+    if (activeId === id) {
+      if (remaining.length > 0) {
+        setActiveId(remaining[0].id);
+      } else {
+        const c = await createConversation.mutateAsync();
+        setActiveId(c.id);
+      }
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -33,7 +78,22 @@ export function CoachView() {
 
       <CoachContextPanel />
 
-      <CoachChat />
+      <div className="flex h-[70vh] flex-col gap-4 lg:flex-row">
+        <CoachConversationList
+          conversations={conversations}
+          activeId={activeId}
+          loading={conversationsQuery.isLoading}
+          creating={createConversation.isPending}
+          onSelect={setActiveId}
+          onNew={handleNewConversation}
+          onDelete={handleDeleteConversation}
+        />
+        {activeId ? (
+          <CoachChat key={activeId} conversationId={activeId} />
+        ) : (
+          <Skeleton className="min-w-0 flex-1 rounded-xl" />
+        )}
+      </div>
 
       {generatorOpen && (
         <PlanGenerator onClose={() => setGeneratorOpen(false)} />

@@ -21,9 +21,11 @@ import {
   formatDuration,
 } from "@/lib/format";
 import { formatSleep } from "@/lib/health";
-import { buildReadinessView } from "@/lib/recovery";
+import { ReadinessFactorList } from "@/components/recovery/recovery-panels";
+import { buildReadinessView, type ReadinessFactor } from "@/lib/recovery";
 import { computeTrainingLoad } from "@/lib/training-load";
-import { differenceInCalendarDays, isToday } from "date-fns";
+import { differenceInCalendarDays, format, isSameDay, isToday } from "date-fns";
+import { fr } from "date-fns/locale";
 import { useState } from "react";
 
 export function DashboardView() {
@@ -90,6 +92,22 @@ export function DashboardView() {
     health?.recoveryScore ?? null,
     health?.readinessLevel ?? null,
   );
+  const readinessFactors = (health?.readinessFactors ??
+    []) as unknown as ReadinessFactor[];
+
+  // Le poids n'est mesuré que certains jours (balance/saisie). À défaut de pesée
+  // le jour sélectionné, on affiche la dernière pesée connue à cette date.
+  const lastWeight = (() => {
+    if (health?.weightKg != null) return { kg: health.weightKg, date };
+    const entry = (healthQuery.data ?? [])
+      .filter((h) => h.weightKg != null && new Date(h.date) <= date)
+      .sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      )[0];
+    return entry
+      ? { kg: entry.weightKg as number, date: new Date(entry.date) }
+      : null;
+  })();
   const isCurrentDay = isToday(date);
 
   const activeNotes = (physicalQuery.data ?? []).filter(
@@ -100,8 +118,8 @@ export function DashboardView() {
     <div className="space-y-8">
       {header}
 
-      <section className="grid gap-4 lg:grid-cols-3">
-        <Card className="min-h-44 border-primary/20 bg-linear-to-br from-primary/5 to-transparent lg:col-span-2">
+      <section className="grid gap-4 lg:grid-cols-2">
+        <Card className="min-h-44 border-primary/20 bg-linear-to-br from-primary/5 to-transparent">
           <CardHeader>
             <CardTitle className="flex items-center justify-between text-base font-medium text-muted-foreground">
               <span>
@@ -141,7 +159,7 @@ export function DashboardView() {
         <Card className="min-h-44">
           <CardHeader>
             <CardTitle className="text-base font-medium text-muted-foreground">
-              Readiness
+              Forme du jour
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -165,10 +183,19 @@ export function DashboardView() {
                 <p className="text-xs leading-relaxed text-muted-foreground">
                   {readiness.recommendation}
                 </p>
+                {readinessFactors.length > 0 && (
+                  <div className="mt-3 border-t border-border/60 pt-3">
+                    <p className="mb-2 text-[11px] text-muted-foreground">
+                      Score Garmin combinant ces facteurs (pas seulement la nuit
+                      dernière) :
+                    </p>
+                    <ReadinessFactorList factors={readinessFactors} />
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Pas de readiness pour ce jour.
+                Pas de donnée de forme pour ce jour.
               </p>
             )}
           </CardContent>
@@ -204,7 +231,12 @@ export function DashboardView() {
           />
           <MetricCard
             label="Poids"
-            value={health?.weightKg != null ? `${health.weightKg} kg` : "—"}
+            value={lastWeight ? `${lastWeight.kg} kg` : "—"}
+            sublabel={
+              lastWeight && !isSameDay(lastWeight.date, date)
+                ? `le ${format(lastWeight.date, "d MMM", { locale: fr })}`
+                : undefined
+            }
           />
           <MetricCard
             label="Charge 7j"

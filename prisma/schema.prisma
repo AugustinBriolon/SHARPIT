@@ -314,6 +314,18 @@ model PhysicalCheckin {
   @@index([date])
 }
 
+model Conversation {
+  id        String   @id @default(cuid())
+  title     String   @default("Nouvelle conversation")
+  // Historique complet des messages UI (UIMessage[] du AI SDK), sérialisé en JSON.
+  messages  Json     @default("[]")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([updatedAt])
+}
+
 model PlannedSession {
   id          String            @id @default(cuid())
   type        ActivityType

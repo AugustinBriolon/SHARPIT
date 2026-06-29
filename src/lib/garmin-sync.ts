@@ -146,7 +146,15 @@ export async function syncGarminHealth(days = 30): Promise<GarminSyncResult> {
       continue;
     }
 
-    const day = startOfDay(date);
+    // Le champ DailyHealth.date est un `@db.Date` : Postgres ne garde que la
+    // partie calendaire et la tronque en UTC. Si on passe un minuit LOCAL
+    // (Europe/Paris = UTC+2), le 29/06 00:00 local devient 28/06 22:00 UTC et
+    // serait stocké au 28/06. On construit donc un minuit UTC à partir des
+    // composantes LOCALES pour stocker le bon jour, quel que soit le fuseau
+    // du serveur (local en dev, UTC sur Vercel).
+    const day = new Date(
+      Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
+    );
     const factors =
       health.readinessFactors != null
         ? (health.readinessFactors as unknown as Prisma.InputJsonValue)
