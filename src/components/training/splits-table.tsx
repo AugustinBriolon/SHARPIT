@@ -77,7 +77,7 @@ export function SplitsTable({
                   <td
                     className={cn(
                       "py-2 pr-4 font-mono",
-                      isBest && mode === "run" && "text-cyan-400",
+                      isBest && mode === "run" && "text-cyan-600",
                     )}
                   >
                     {row.paceSecPerKm != null && row.durationSec > 0
@@ -92,7 +92,7 @@ export function SplitsTable({
                       <span
                         className={cn(
                           "ml-1 text-[10px]",
-                          delta.faster ? "text-emerald-400" : "text-orange-400",
+                          delta.faster ? "text-emerald-600" : "text-orange-600",
                         )}
                       >
                         {delta.faster ? "−" : "+"}

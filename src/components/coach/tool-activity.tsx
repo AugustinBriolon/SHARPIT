@@ -219,7 +219,7 @@ export function ToolActivity({
         failed || koExec
           ? "border-destructive/30 bg-destructive/5 text-destructive"
           : done
-            ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-300"
+            ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-700"
             : "border-border/60 bg-card/40 text-muted-foreground",
       )}
     >

@@ -31,9 +31,9 @@ const ACTION_LABEL: Record<AdaptChange["action"], string> = {
 };
 
 const ACTION_STYLE: Record<AdaptChange["action"], string> = {
-  MODIFY: "bg-amber-400/15 text-amber-400",
-  REMOVE: "bg-red-400/15 text-red-400",
-  ADD: "bg-emerald-400/15 text-emerald-400",
+  MODIFY: "bg-amber-400/15 text-amber-700",
+  REMOVE: "bg-red-400/15 text-red-700",
+  ADD: "bg-emerald-400/15 text-emerald-700",
 };
 
 export function PlanAdapter({ onClose }: { onClose: () => void }) {

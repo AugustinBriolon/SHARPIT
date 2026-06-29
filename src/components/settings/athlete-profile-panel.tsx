@@ -172,7 +172,7 @@ export function AthleteProfilePanel({
               <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
                 VO2max course
               </p>
-              <p className="font-mono text-xl font-semibold text-emerald-400">
+              <p className="font-mono text-xl font-semibold text-emerald-600">
                 {vo2maxRunning}
               </p>
             </div>
@@ -182,7 +182,7 @@ export function AthleteProfilePanel({
               <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
                 VO2max vélo
               </p>
-              <p className="font-mono text-xl font-semibold text-cyan-400">
+              <p className="font-mono text-xl font-semibold text-cyan-600">
                 {vo2maxCycling}
               </p>
             </div>
@@ -234,7 +234,7 @@ export function AthleteProfilePanel({
           />
         </div>
       </div>
-      {message && <p className="text-sm text-emerald-400">{message}</p>}
+      {message && <p className="text-sm text-emerald-600">{message}</p>}
       {error && <p className="text-sm text-destructive">{error}</p>}
       <Button type="submit" disabled={saving}>
         {saving ? "Enregistrement…" : "Enregistrer le profil"}

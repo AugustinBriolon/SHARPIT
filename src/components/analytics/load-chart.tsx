@@ -56,7 +56,7 @@ export function LoadChart({ data }: LoadChartProps) {
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-              <CartesianGrid stroke="oklch(1 0 0 / 6%)" strokeDasharray="3 3" />
+              <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" />
               <XAxis
                 dataKey="label"
                 ticks={ticks.map((d) => d.label)}

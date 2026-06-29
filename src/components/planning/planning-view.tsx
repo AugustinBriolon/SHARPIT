@@ -240,7 +240,7 @@ function WeekCard({
                     >
                       <span className="flex items-center gap-1">
                         {p.completed ? (
-                          <CheckCircle2 className="size-2.5 shrink-0 text-emerald-400" />
+                          <CheckCircle2 className="size-2.5 shrink-0 text-emerald-600" />
                         ) : (
                           <span
                             className="size-1.5 shrink-0 rounded-full"
@@ -265,10 +265,10 @@ function WeekCard({
                               className={cn(
                                 "font-mono",
                                 score >= 85
-                                  ? "text-emerald-400"
+                                  ? "text-emerald-600"
                                   : score >= 60
-                                    ? "text-amber-400"
-                                    : "text-red-400",
+                                    ? "text-amber-600"
+                                    : "text-red-600",
                               )}
                             >
                               {score}

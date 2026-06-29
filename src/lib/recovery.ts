@@ -27,10 +27,10 @@ const FACTOR_LABELS: Record<string, string> = {
 };
 
 const TONE_ACCENT: Record<RecoveryTone, string> = {
-  good: "#34d399",
-  moderate: "#fbbf24",
-  low: "#f87171",
-  neutral: "#94a3b8",
+  good: "#059669",
+  moderate: "#d97706",
+  low: "#dc2626",
+  neutral: "#64748b",
 };
 
 export function factorLabel(key: string): string {

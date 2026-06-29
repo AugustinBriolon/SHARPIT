@@ -20,22 +20,22 @@ export const intensityLabels: Record<SessionIntensity, string> = {
 
 /** Classes Tailwind (texte) par intensité. */
 export const intensityTextColors: Record<SessionIntensity, string> = {
-  RECOVERY: "text-slate-400",
-  ENDURANCE: "text-cyan-400",
-  TEMPO: "text-emerald-400",
-  THRESHOLD: "text-amber-400",
-  VO2MAX: "text-red-400",
-  RACE: "text-violet-400",
+  RECOVERY: "text-slate-600",
+  ENDURANCE: "text-cyan-600",
+  TEMPO: "text-emerald-600",
+  THRESHOLD: "text-amber-600",
+  VO2MAX: "text-red-600",
+  RACE: "text-violet-600",
 };
 
 /** Couleur de référence (CSS) par intensité, pour les accents/points. */
 export const intensityAccent: Record<SessionIntensity, string> = {
-  RECOVERY: "#94a3b8",
-  ENDURANCE: "#22d3ee",
-  TEMPO: "#34d399",
-  THRESHOLD: "#fbbf24",
-  VO2MAX: "#f87171",
-  RACE: "#a78bfa",
+  RECOVERY: "#64748b",
+  ENDURANCE: "#0891b2",
+  TEMPO: "#059669",
+  THRESHOLD: "#d97706",
+  VO2MAX: "#dc2626",
+  RACE: "#7c3aed",
 };
 
 export function intensityLabel(intensity: SessionIntensity | null): string {

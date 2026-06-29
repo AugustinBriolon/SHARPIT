@@ -117,8 +117,8 @@ export function PhysicalNoteCard({
               <p className="text-[10px] text-muted-foreground">/10</p>
             </div>
           )}
-          {trend === "down" && <TrendingDown className="size-4 text-emerald-400" />}
-          {trend === "up" && <TrendingUp className="size-4 text-red-400" />}
+          {trend === "down" && <TrendingDown className="size-4 text-emerald-600" />}
+          {trend === "up" && <TrendingUp className="size-4 text-red-600" />}
           <button
             type="button"
             onClick={onEdit}
@@ -139,7 +139,7 @@ export function PhysicalNoteCard({
           <div className="h-28">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={series} margin={{ top: 5, right: 5, bottom: 0, left: -25 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#00000014" />
                 <XAxis
                   dataKey="date"
                   tick={{ fontSize: 10, fill: "#94a3b8" }}
@@ -154,10 +154,11 @@ export function PhysicalNoteCard({
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#0f172a",
-                    border: "1px solid #ffffff20",
+                    backgroundColor: "#ffffff",
+                    border: "1px solid #00000014",
                     borderRadius: 8,
                     fontSize: 12,
+                    color: "#0f172a",
                   }}
                 />
                 <Line

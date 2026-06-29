@@ -30,7 +30,7 @@ export function CombinedChart({
 
   const secondaryKey = showPower ? "watts" : "alt";
   const secondaryLabel = showPower ? "Puissance (W)" : "Altitude (m)";
-  const secondaryColor = showPower ? "#fbbf24" : "#34d399";
+  const secondaryColor = showPower ? "#d97706" : "#059669";
 
   const data = samples.map((s) => ({
     x: useDistance
@@ -59,7 +59,7 @@ export function CombinedChart({
               data={data}
               margin={{ top: 5, right: 10, left: -8, bottom: 0 }}
             >
-              <CartesianGrid stroke="oklch(1 0 0 / 6%)" strokeDasharray="3 3" />
+              <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" />
               <XAxis
                 dataKey="x"
                 type="number"
@@ -70,7 +70,7 @@ export function CombinedChart({
               />
               <YAxis
                 yAxisId="hr"
-                tick={{ fill: "#f43f5e", fontSize: 11 }}
+                tick={{ fill: "#e11d48", fontSize: 11 }}
                 axisLine={false}
                 tickLine={false}
                 width={36}
@@ -105,7 +105,7 @@ export function CombinedChart({
                 yAxisId="hr"
                 type="monotone"
                 dataKey="hr"
-                stroke="#f43f5e"
+                stroke="#e11d48"
                 strokeWidth={2}
                 dot={false}
                 connectNulls

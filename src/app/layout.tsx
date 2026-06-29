@@ -1,8 +1,8 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { frFR } from "@clerk/localizations";
-import { dark } from "@clerk/themes";
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, Syne } from "next/font/google";
+import { clerkAppearance } from "@/lib/clerk-appearance";
 import { QueryProvider } from "@/providers/query-provider";
 import "./globals.css";
 
@@ -19,8 +19,9 @@ const ibmPlexSans = IBM_Plex_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Athlete OS",
-  description: "Operating System de performance — entraînement, analytics, récupération.",
+  title: "SharpIt",
+  description: "Training intelligence — entraînement, analytics, récupération.",
+  themeColor: "#fafbf9",
 };
 
 export default function RootLayout({
@@ -31,15 +32,15 @@ export default function RootLayout({
   return (
     <ClerkProvider
       localization={frFR}
-      appearance={{ theme: dark }}
+      appearance={clerkAppearance}
       afterSignOutUrl="/sign-in"
       signInFallbackRedirectUrl="/"
     >
-      <html
-        lang="fr"
-        suppressHydrationWarning
-        className={`dark ${syne.variable} ${ibmPlexSans.variable} h-full antialiased`}
-      >
+    <html
+      lang="fr"
+      suppressHydrationWarning
+      className={`${syne.variable} ${ibmPlexSans.variable} h-full antialiased`}
+    >
         <body className="min-h-full bg-background font-sans text-foreground">
           <QueryProvider>{children}</QueryProvider>
         </body>

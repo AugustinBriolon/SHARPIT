@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { clerkAppearance } from "@/lib/clerk-appearance";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -42,7 +43,7 @@ export function Sidebar() {
   const { user } = useUser();
 
   return (
-    <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r border-border/60 bg-card/40">
+    <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r border-border bg-sidebar">
       <div className="border-b border-border/60 px-5 py-6">
         <div className="flex items-center gap-3">
           <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/30">
@@ -50,9 +51,9 @@ export function Sidebar() {
           </div>
           <div>
             <p className="font-heading text-sm font-semibold tracking-wide">
-              Athlete OS
+              SharpIt
             </p>
-            <p className="text-xs text-muted-foreground">Performance system</p>
+            <p className="text-xs text-muted-foreground">Training intelligence</p>
           </div>
         </div>
       </div>
@@ -91,7 +92,15 @@ export function Sidebar() {
       </nav>
 
       <div className="flex items-center gap-3 border-t border-border/60 px-4 py-4">
-        <UserButton appearance={{ elements: { avatarBox: "size-8" } }} />
+        <UserButton
+          appearance={{
+            ...clerkAppearance,
+            elements: {
+              ...clerkAppearance.elements,
+              avatarBox: "size-8 ring-1 ring-border",
+            },
+          }}
+        />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">
             {user?.fullName ?? user?.firstName ?? "Mon compte"}

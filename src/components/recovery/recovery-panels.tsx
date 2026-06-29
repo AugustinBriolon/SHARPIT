@@ -10,9 +10,9 @@ import {
 } from "@/lib/recovery";
 
 const TONE_TEXT: Record<RecoveryTone, string> = {
-  good: "text-emerald-400",
-  moderate: "text-amber-400",
-  low: "text-red-400",
+  good: "text-emerald-600",
+  moderate: "text-amber-600",
+  low: "text-red-600",
   neutral: "text-muted-foreground",
 };
 

@@ -222,11 +222,11 @@ export function computeAnalyticsSummary(
 
 export const CHART_COLORS: Record<ActivityType | "ctl" | "atl" | "tsb", string> =
   {
-    RUN: "#fb923c",
-    BIKE: "#22d3ee",
-    SWIM: "#60a5fa",
-    STRENGTH: "#a78bfa",
-    ctl: "#22d3ee",
-    atl: "#fb923c",
-    tsb: "#a78bfa",
+    RUN: "#ea580c",
+    BIKE: "#0891b2",
+    SWIM: "#2563eb",
+    STRENGTH: "#7c3aed",
+    ctl: "#0891b2",
+    atl: "#ea580c",
+    tsb: "#7c3aed",
   };

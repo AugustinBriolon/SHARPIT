@@ -4,14 +4,15 @@ interface MetricCardProps {
   label: string;
   value: string;
   sublabel?: string;
-  accent?: "cyan" | "orange" | "violet" | "default";
+  accent?: "primary" | "cyan" | "orange" | "violet" | "default";
   className?: string;
 }
 
 const accentMap = {
-  cyan: "text-cyan-400",
-  orange: "text-orange-400",
-  violet: "text-violet-400",
+  primary: "text-primary",
+  cyan: "text-cyan-600",
+  orange: "text-orange-600",
+  violet: "text-violet-600",
   default: "text-foreground",
 };
 
@@ -25,7 +26,7 @@ export function MetricCard({
   return (
     <div
       className={cn(
-        "h-28 rounded-xl border border-border/60 bg-card/50 p-4 backdrop-blur-sm",
+        "h-28 rounded-xl border border-border bg-card p-4",
         className,
       )}
     >

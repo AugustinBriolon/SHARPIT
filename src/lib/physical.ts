@@ -63,14 +63,14 @@ export const COMMON_BODY_PARTS = [
 /** Couleur de sévérité 0-10. */
 export function severityColor(severity?: number | null): string {
   if (severity == null) return "text-muted-foreground";
-  if (severity >= 7) return "text-red-400";
-  if (severity >= 4) return "text-amber-400";
-  return "text-emerald-400";
+  if (severity >= 7) return "text-red-600";
+  if (severity >= 4) return "text-amber-600";
+  return "text-emerald-600";
 }
 
 export function severityAccent(severity?: number | null): string {
-  if (severity == null) return "#94a3b8";
-  if (severity >= 7) return "#f87171";
-  if (severity >= 4) return "#fbbf24";
-  return "#34d399";
+  if (severity == null) return "#64748b";
+  if (severity >= 7) return "#dc2626";
+  if (severity >= 4) return "#d97706";
+  return "#059669";
 }

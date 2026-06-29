@@ -36,10 +36,10 @@ export default function RouteMapInner({ path }: { path: Path }) {
       className="h-full w-full"
       style={{ background: "transparent" }}
     >
-      <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+      <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
       <Polyline
         positions={path}
-        pathOptions={{ color: "#22d3ee", weight: 4, opacity: 0.95 }}
+        pathOptions={{ color: "#0891b2", weight: 4, opacity: 0.95 }}
       />
       <CircleMarker
         center={start}

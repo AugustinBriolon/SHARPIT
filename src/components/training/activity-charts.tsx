@@ -76,21 +76,21 @@ export function ActivityCharts({
     metrics.push({
       key: "alt",
       label: "Altitude",
-      color: "#34d399",
+      color: "#059669",
       unit: "m",
     });
   if (has.hr)
     metrics.push({
       key: "hr",
       label: "Fréquence cardiaque",
-      color: "#f43f5e",
+      color: "#e11d48",
       unit: "bpm",
     });
   if (has.watts)
     metrics.push({
       key: "watts",
       label: "Puissance",
-      color: "#fbbf24",
+      color: "#d97706",
       unit: "W",
     });
   // Course : allure ; autres : vitesse
@@ -98,7 +98,7 @@ export function ActivityCharts({
     metrics.push({
       key: "pace",
       label: "Allure",
-      color: "#fb923c",
+      color: "#ea580c",
       unit: "/km",
       format: paceFmt,
     });
@@ -106,14 +106,14 @@ export function ActivityCharts({
     metrics.push({
       key: "speed",
       label: "Vitesse",
-      color: "#22d3ee",
+      color: "#0891b2",
       unit: "km/h",
     });
   if (has.cadence)
     metrics.push({
       key: "cadence",
       label: "Cadence",
-      color: "#a78bfa",
+      color: "#7c3aed",
       unit: type === ActivityType.RUN ? "spm" : "rpm",
     });
 
@@ -159,7 +159,7 @@ export function ActivityCharts({
                     </linearGradient>
                   </defs>
                   <CartesianGrid
-                    stroke="oklch(1 0 0 / 6%)"
+                    stroke="oklch(0 0 0 / 8%)"
                     strokeDasharray="3 3"
                   />
                   <XAxis

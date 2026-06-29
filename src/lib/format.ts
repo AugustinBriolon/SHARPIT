@@ -49,8 +49,8 @@ export const activityTypeLabels: Record<ActivityType, string> = {
 };
 
 export const activityTypeColors: Record<ActivityType, string> = {
-  RUN: "text-orange-400",
-  BIKE: "text-cyan-400",
-  SWIM: "text-blue-400",
-  STRENGTH: "text-violet-400",
+  RUN: "text-orange-600",
+  BIKE: "text-emerald-600",
+  SWIM: "text-blue-600",
+  STRENGTH: "text-violet-600",
 };

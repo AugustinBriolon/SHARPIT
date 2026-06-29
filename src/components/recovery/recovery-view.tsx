@@ -133,7 +133,7 @@ export function RecoveryView() {
             subtitle="Variabilité cardiaque — 60 jours"
             data={series}
             dataKey="hrv"
-            color="#a78bfa"
+            color="#7c3aed"
             unit="ms"
           />
           <MetricLineChart
@@ -141,7 +141,7 @@ export function RecoveryView() {
             subtitle="Fréquence cardiaque au repos"
             data={series}
             dataKey="restingHr"
-            color="#fb923c"
+            color="#ea580c"
             unit="bpm"
           />
           <MetricLineChart
@@ -149,7 +149,7 @@ export function RecoveryView() {
             subtitle="Heures par nuit"
             data={series}
             dataKey="sleepHours"
-            color="#22d3ee"
+            color="#0891b2"
             unit="h"
           />
           <MetricLineChart
@@ -157,7 +157,7 @@ export function RecoveryView() {
             subtitle="Pesées Garmin"
             data={series}
             dataKey="weightKg"
-            color="#60a5fa"
+            color="#2563eb"
             unit="kg"
           />
         </div>

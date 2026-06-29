@@ -14,10 +14,10 @@ import { cn } from "@/lib/utils";
 type Accent = "cyan" | "orange" | "violet" | "emerald" | "default";
 
 const accentText: Record<Accent, string> = {
-  cyan: "text-cyan-400",
-  orange: "text-orange-400",
-  violet: "text-violet-400",
-  emerald: "text-emerald-400",
+  cyan: "text-cyan-600",
+  orange: "text-orange-600",
+  violet: "text-violet-600",
+  emerald: "text-emerald-600",
   default: "text-foreground",
 };
 

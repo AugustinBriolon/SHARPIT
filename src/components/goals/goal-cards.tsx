@@ -83,7 +83,7 @@ export function RaceCard({ goal }: { goal: GoalItem }) {
           {days != null && (
             <div className="text-right">
               <p
-                className={`font-mono text-3xl font-semibold ${urgent ? "text-orange-400" : "text-primary"}`}
+                className={`font-mono text-3xl font-semibold ${urgent ? "text-orange-600" : "text-primary"}`}
               >
                 {days >= 0 ? `J-${days}` : `J+${Math.abs(days)}`}
               </p>

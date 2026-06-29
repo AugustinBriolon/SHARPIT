@@ -34,9 +34,9 @@ const VERDICT_LABELS: Record<SessionAnalysis["verdict"], string> = {
 };
 
 function scoreColor(score: number): string {
-  if (score >= 85) return "text-emerald-400";
-  if (score >= 60) return "text-amber-400";
-  return "text-red-400";
+  if (score >= 85) return "text-emerald-600";
+  if (score >= 60) return "text-amber-600";
+  return "text-red-600";
 }
 
 function activityMetric(a: ClientActivity): string {
@@ -88,7 +88,7 @@ export function SessionRealization({
     return (
       <div className="space-y-3 rounded-lg border border-border/60 bg-card/30 p-3">
         <div className="flex items-center justify-between gap-2">
-          <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-emerald-400">
+          <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-emerald-600">
             <CheckCircle2 className="size-3.5" /> Séance réalisée
           </span>
           <button

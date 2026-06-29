@@ -61,7 +61,7 @@ export function VolumeChart({ data }: VolumeChartProps) {
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-              <CartesianGrid stroke="oklch(1 0 0 / 6%)" strokeDasharray="3 3" vertical={false} />
+              <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="label"
                 tick={{ fill: "oklch(0.65 0.02 250)", fontSize: 11 }}

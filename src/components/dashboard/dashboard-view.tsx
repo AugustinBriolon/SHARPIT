@@ -43,7 +43,7 @@ export function DashboardView() {
     <header className="flex flex-wrap items-end justify-between gap-4">
       <div>
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">
-          Athlete OS
+          SharpIt
         </p>
         <h1 className="mt-2 font-heading text-3xl font-semibold tracking-tight">
           Dashboard
@@ -223,7 +223,7 @@ export function DashboardView() {
             value={
               health?.bodyBattery != null ? String(health.bodyBattery) : "—"
             }
-            accent="cyan"
+            accent="primary"
           />
           <MetricCard
             label="Stress"
@@ -320,7 +320,7 @@ function ActivityRow({ activity }: { activity: ClientActivity }) {
         <span>{formatDuration(activity.duration)}</span>
         {summary && <span>· {summary}</span>}
         {activity.load != null && (
-          <span className="font-mono text-cyan-400">
+          <span className="font-mono text-primary">
             {Math.round(activity.load)} TSS
           </span>
         )}

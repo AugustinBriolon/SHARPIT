@@ -74,7 +74,7 @@ function ActivityRow({ activity }: { activity: ActivityItem }) {
       </div>
       <div className="text-right">
         {activity.load != null && (
-          <p className="font-mono text-sm text-cyan-400">
+          <p className="font-mono text-sm text-primary">
             {Math.round(activity.load)} TSS
           </p>
         )}

@@ -28,10 +28,10 @@ type Detail = { label: string; value: string | number };
 type Activity = NonNullable<Awaited<ReturnType<typeof getActivityById>>>;
 
 const accentText: Record<Accent, string> = {
-  cyan: "text-cyan-400",
-  orange: "text-orange-400",
-  violet: "text-violet-400",
-  emerald: "text-emerald-400",
+  cyan: "text-cyan-600",
+  orange: "text-orange-600",
+  violet: "text-violet-600",
+  emerald: "text-emerald-600",
   default: "text-foreground",
 };
 
@@ -82,7 +82,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
             <h1 className="mt-2 font-heading text-3xl font-semibold tracking-tight">
               {activity.title ?? activityTypeLabels[activity.type]}
             </h1>
-            <p className="mt-1 font-mono text-cyan-400">
+            <p className="mt-1 font-mono text-cyan-600">
               {formatDuration(activity.duration)}
               {activity.load != null && ` · ${Math.round(activity.load)} TSS`}
             </p>
