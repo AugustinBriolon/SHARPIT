@@ -28,7 +28,7 @@ export function PerformanceMetrics({
       label: "NP",
       value: `${power.normalized} W`,
       sublabel: power.avg ? `moy ${power.avg} W` : undefined,
-      accent: "orange",
+      accent: "default",
     });
   if (load.intensityFactor != null)
     cards.push({
@@ -42,7 +42,7 @@ export function PerformanceMetrics({
           : thresholds.lthr
             ? `LTHR ${thresholds.lthr} bpm`
             : undefined,
-      accent: "cyan",
+      accent: "default",
     });
   if (power?.variabilityIndex != null)
     cards.push({
@@ -50,33 +50,33 @@ export function PerformanceMetrics({
       value: power.variabilityIndex.toFixed(2),
       sublabel:
         power.variabilityIndex > 1.1 ? "effort variable" : "effort régulier",
-      accent: "violet",
+      accent: "default",
     });
   if (load.tss != null)
     cards.push({
       label: load.method === "hr" ? "TSS (FC)" : "TSS",
       value: String(load.tss),
-      accent: "orange",
+      accent: "default",
     });
   if (hr.efficiencyFactor != null)
     cards.push({
       label: hr.efficiencyLabel,
       value: String(hr.efficiencyFactor),
-      accent: "cyan",
+      accent: "default",
     });
   if (hr.decouplingPct != null)
     cards.push({
       label: "Découplage",
       value: `${hr.decouplingPct > 0 ? "+" : ""}${hr.decouplingPct}%`,
       sublabel: decouplingLabel(Math.abs(hr.decouplingPct)),
-      accent: hr.decouplingPct < 5 ? "cyan" : "orange",
+      accent: "default",
     });
   if (analysis.run?.paceVariabilityPct != null)
     cards.push({
       label: "Variabilité allure",
       value: `${analysis.run.paceVariabilityPct}%`,
       sublabel: "écart-type / moyenne",
-      accent: "violet",
+      accent: "default",
     });
 
   if (!cards.length) return null;

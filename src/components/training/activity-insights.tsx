@@ -14,6 +14,8 @@ import { ZoneDistribution } from "@/components/training/zone-distribution";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActivityStream } from "@/hooks/use-data";
+import type { ZoneBucket } from "@/lib/activity-analysis";
+import { cn } from "@/lib/utils";
 
 export function ActivityInsights({
   activityId,
@@ -82,33 +84,12 @@ export function ActivityInsights({
           <PerformanceMetrics analysis={analysis} />
           <ThresholdsHint analysis={analysis} />
 
-          {(hrZones.some((z) => z.seconds > 0) ||
-            powerZones.some((z) => z.seconds > 0)) && (
-            <div className="grid gap-4 lg:grid-cols-2">
-              {hrZones.some((z) => z.seconds > 0) && (
-                <ZoneDistribution
-                  title="Zones fréquence cardiaque"
-                  subtitle={
-                    analysis.thresholds.lthr
-                      ? `Réf. LTHR ${analysis.thresholds.lthr} bpm`
-                      : undefined
-                  }
-                  zones={hrZones}
-                />
-              )}
-              {powerZones.some((z) => z.seconds > 0) && (
-                <ZoneDistribution
-                  title="Zones de puissance"
-                  subtitle={
-                    analysis.thresholds.ftp
-                      ? `Réf. FTP ${analysis.thresholds.ftp} W`
-                      : undefined
-                  }
-                  zones={powerZones}
-                />
-              )}
-            </div>
-          )}
+          <ZoneSection
+            hrZones={hrZones}
+            powerZones={powerZones}
+            lthr={analysis.thresholds.lthr}
+            ftp={analysis.thresholds.ftp}
+          />
         </>
       )}
 
@@ -131,6 +112,52 @@ export function ActivityInsights({
       {bikeSplits.length > 0 && (
         <SplitsTable title="Splits tous les 5 km" splits={bikeSplits} mode="bike" />
       )}
+    </div>
+  );
+}
+
+/**
+ * Affiche les distributions de zones disponibles. N'occupe deux colonnes que si
+ * FC ET puissance existent — sinon la carte unique prend toute la largeur, pour
+ * éviter une demi-colonne vide (typique de la course à pied, sans puissance).
+ */
+function ZoneSection({
+  hrZones,
+  powerZones,
+  lthr,
+  ftp,
+}: {
+  hrZones: ZoneBucket[];
+  powerZones: ZoneBucket[];
+  lthr: number | null;
+  ftp: number | null;
+}) {
+  const blocks: React.ReactNode[] = [];
+  if (hrZones.some((z) => z.seconds > 0)) {
+    blocks.push(
+      <ZoneDistribution
+        key="hr"
+        title="Zones fréquence cardiaque"
+        subtitle={lthr ? `Réf. LTHR ${lthr} bpm` : undefined}
+        zones={hrZones}
+      />,
+    );
+  }
+  if (powerZones.some((z) => z.seconds > 0)) {
+    blocks.push(
+      <ZoneDistribution
+        key="power"
+        title="Zones de puissance"
+        subtitle={ftp ? `Réf. FTP ${ftp} W` : undefined}
+        zones={powerZones}
+      />,
+    );
+  }
+
+  if (blocks.length === 0) return null;
+  return (
+    <div className={cn("grid gap-4", blocks.length > 1 && "lg:grid-cols-2")}>
+      {blocks}
     </div>
   );
 }

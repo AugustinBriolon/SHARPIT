@@ -11,9 +11,11 @@ import {
   fetchConversation,
   fetchConversations,
   fetchDailyBriefing,
+  fetchWeeklyReview,
   type ClientConversation,
   type ClientConversationSummary,
   type ClientDailyBriefing,
+  type ClientWeeklyReview,
 } from "@/lib/client/fetchers";
 import { queryKeys } from "@/lib/client/keys";
 
@@ -161,6 +163,40 @@ export function useGenerateBriefing() {
     },
     onSuccess: (briefing, date) => {
       queryClient.setQueryData(queryKeys.dailyBriefing(date), briefing);
+    },
+  });
+}
+
+export function useWeeklyReview(date: string) {
+  return useQuery({
+    queryKey: queryKeys.weeklyReview(date),
+    queryFn: () => fetchWeeklyReview(date),
+  });
+}
+
+export function useGenerateWeeklyReview() {
+  const queryClient = useQueryClient();
+  return useMutation<ClientWeeklyReview, Error, string>({
+    mutationFn: async (date) => {
+      const res = await fetch("/api/coach/weekly-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error ?? "Génération de la rétro impossible.");
+      }
+      const r = data.review;
+      return {
+        id: r.id,
+        weekStart: r.weekStart,
+        content: r.content,
+        generatedAt: new Date(r.generatedAt),
+      } as ClientWeeklyReview;
+    },
+    onSuccess: (review, date) => {
+      queryClient.setQueryData(queryKeys.weeklyReview(date), review);
     },
   });
 }

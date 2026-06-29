@@ -1,10 +1,12 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { queryKeys } from "@/lib/client/keys";
+import type { RecordChange } from "@/lib/records";
 
 interface StravaPanelProps {
   configured: boolean;
@@ -17,6 +19,44 @@ interface StravaPanelProps {
   statusMessage?: string;
 }
 
+function RecordChangesBanner({ changes }: { changes: RecordChange[] }) {
+  if (changes.length === 0) return null;
+
+  return (
+    <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+      <p className="font-medium text-primary">
+        {changes.length} record{changes.length > 1 ? "s" : ""} battu
+        {changes.length > 1 ? "s" : ""}
+      </p>
+      <ul className="mt-2 space-y-1.5">
+        {changes.map((c) => (
+          <li key={c.category} className="flex flex-wrap items-baseline gap-x-1">
+            {c.activityId ? (
+              <Link
+                href={`/training/${c.activityId}`}
+                className="font-medium hover:text-primary hover:underline"
+              >
+                {c.label}
+              </Link>
+            ) : (
+              <span className="font-medium">{c.label}</span>
+            )}
+            <span className="text-muted-foreground">—</span>
+            <span className="font-mono font-semibold tabular-nums">
+              {c.displayValue}
+            </span>
+            {c.previousDisplayValue && (
+              <span className="text-xs text-muted-foreground">
+                (avant : {c.previousDisplayValue})
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function StravaPanel({
   configured,
   account,
@@ -26,10 +66,17 @@ export function StravaPanel({
   const queryClient = useQueryClient();
   const [syncing, setSyncing] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [syncRecordChanges, setSyncRecordChanges] = useState<RecordChange[]>([]);
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillResult, setBackfillResult] = useState<string | null>(null);
+  const [backfillRecordChanges, setBackfillRecordChanges] = useState<
+    RecordChange[]
+  >([]);
 
   async function handleSync() {
     setSyncing(true);
     setResult(null);
+    setSyncRecordChanges([]);
     try {
       const response = await fetch("/api/strava/sync", { method: "POST" });
       const data = await response.json();
@@ -39,13 +86,45 @@ export function StravaPanel({
         setResult(
           `${data.imported} importée(s), ${data.skipped} ignorée(s) sur ${data.fetched} récupérée(s).`,
         );
-        await queryClient.invalidateQueries({
-          queryKey: queryKeys.activities,
-        });
+        setSyncRecordChanges(
+          Array.isArray(data.recordChanges) ? data.recordChanges : [],
+        );
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: queryKeys.activities }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.records }),
+        ]);
         router.refresh();
       }
     } finally {
       setSyncing(false);
+    }
+  }
+
+  async function handleBackfill() {
+    setBackfilling(true);
+    setBackfillResult(null);
+    setBackfillRecordChanges([]);
+    try {
+      const response = await fetch("/api/strava/backfill", { method: "POST" });
+      const data = await response.json();
+      if (!response.ok) {
+        setBackfillResult(data.error ?? "Backfill échoué");
+      } else {
+        const base = `${data.processed} séance(s) traitée(s), ${data.withData} avec données détaillées.`;
+        const tail =
+          data.remaining > 0
+            ? data.stopped === "rate_limited"
+              ? ` Limite Strava atteinte, ${data.remaining} restante(s) — réessaie dans ~15 min.`
+              : ` ${data.remaining} restante(s), relance pour continuer.`
+            : " Historique complet ✓";
+        setBackfillResult(base + tail);
+        setBackfillRecordChanges(
+          Array.isArray(data.recordChanges) ? data.recordChanges : [],
+        );
+        await queryClient.invalidateQueries({ queryKey: queryKeys.records });
+      }
+    } finally {
+      setBackfilling(false);
     }
   }
 
@@ -113,12 +192,29 @@ STRAVA_REDIRECT_URI="http://localhost:3000/api/strava/callback"`}
           <Button onClick={handleSync} disabled={syncing}>
             {syncing ? "Synchronisation…" : "Synchroniser maintenant"}
           </Button>
+          <Button
+            variant="outline"
+            onClick={handleBackfill}
+            disabled={backfilling}
+          >
+            {backfilling ? "Récupération…" : "Récupérer les données détaillées"}
+          </Button>
           <Button variant="outline" onClick={handleDisconnect}>
             Déconnecter
           </Button>
         </div>
 
+        <p className="text-xs text-muted-foreground">
+          La récupération détaillée alimente les records et les courbes de
+          puissance/allure (par lots, pour respecter les limites Strava).
+        </p>
+
         {result && <p className="text-sm text-muted-foreground">{result}</p>}
+        <RecordChangesBanner changes={syncRecordChanges} />
+        {backfillResult && (
+          <p className="text-sm text-muted-foreground">{backfillResult}</p>
+        )}
+        <RecordChangesBanner changes={backfillRecordChanges} />
         {statusMessage && (
           <p className="text-sm text-muted-foreground">{statusMessage}</p>
         )}

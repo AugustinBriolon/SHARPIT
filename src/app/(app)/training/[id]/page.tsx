@@ -16,30 +16,63 @@ import {
 import { getActivityById } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { ActivityType } from "@prisma/client";
+import {
+  Bike,
+  CloudSun,
+  Dumbbell,
+  Footprints,
+  Gauge,
+  Smile,
+  Waves,
+  type LucideIcon,
+} from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 type PageProps = { params: Promise<{ id: string }> };
 
-type Accent = "cyan" | "orange" | "violet" | "emerald" | "default";
-type Stat = { label: string; value: string; accent: Accent };
-type Detail = { label: string; value: string | number };
+type Stat = { label: string; value: string };
+type Spec = { label: string; value: string | number };
+type ChipTone = "neutral" | "emerald" | "amber" | "orange" | "red";
 
 type Activity = NonNullable<Awaited<ReturnType<typeof getActivityById>>>;
 
-const accentText: Record<Accent, string> = {
-  cyan: "text-cyan-600",
-  orange: "text-orange-600",
-  violet: "text-violet-600",
-  emerald: "text-emerald-600",
-  default: "text-foreground",
+const sportIcon: Record<ActivityType, LucideIcon> = {
+  RUN: Footprints,
+  BIKE: Bike,
+  SWIM: Waves,
+  STRENGTH: Dumbbell,
 };
+
+const sportIconWrap: Record<ActivityType, string> = {
+  RUN: "bg-orange-500/10 text-orange-600",
+  BIKE: "bg-emerald-500/10 text-emerald-600",
+  SWIM: "bg-blue-500/10 text-blue-600",
+  STRENGTH: "bg-violet-500/10 text-violet-600",
+};
+
+const chipDot: Record<ChipTone, string> = {
+  neutral: "bg-muted-foreground",
+  emerald: "bg-emerald-500",
+  amber: "bg-amber-500",
+  orange: "bg-orange-500",
+  red: "bg-red-500",
+};
+
+function rpeTone(rpe: number): ChipTone {
+  if (rpe <= 3) return "emerald";
+  if (rpe <= 6) return "amber";
+  if (rpe <= 8) return "orange";
+  return "red";
+}
 
 export default async function ActivityDetailPage({ params }: PageProps) {
   const { id } = await params;
   const activity = await getActivityById(id);
 
   if (!activity) notFound();
+
+  const Icon = sportIcon[activity.type];
 
   const heroActivity: HeroActivity = {
     type: activity.type,
@@ -64,122 +97,253 @@ export default async function ActivityDetailPage({ params }: PageProps) {
   };
 
   const strengthStats = buildStrengthStats(activity);
-  const details = buildDetails(activity);
+  const specs = buildSpecs(activity);
+  const isStrength = activity.type === ActivityType.STRENGTH;
 
   return (
     <div className="space-y-8">
-      <header className="space-y-6">
+      <header className="space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <Badge variant="outline">
-                {activityTypeLabels[activity.type]}
-              </Badge>
-              <p className="text-sm text-muted-foreground">
-                {formatDate(new Date(activity.date))}
-              </p>
+          <div className="flex items-start gap-4">
+            <span
+              className={cn(
+                "grid size-12 shrink-0 place-items-center rounded-2xl",
+                sportIconWrap[activity.type],
+              )}
+            >
+              <Icon className="size-6" />
+            </span>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline">
+                  {activityTypeLabels[activity.type]}
+                </Badge>
+                <span className="text-sm text-muted-foreground">
+                  {formatDate(new Date(activity.date))}
+                </span>
+                <span className="text-xs uppercase tracking-wider text-muted-foreground/70">
+                  · {activity.stravaId ? "Strava" : "Manuel"}
+                </span>
+              </div>
+              <h1 className="mt-2 font-heading text-3xl font-semibold tracking-tight">
+                {activity.title ?? activityTypeLabels[activity.type]}
+              </h1>
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-sm">
+                <span className="text-foreground/80">
+                  {formatDuration(activity.duration)}
+                </span>
+                {activity.load != null && (
+                  <span className="text-primary">
+                    · {Math.round(activity.load)} TSS
+                  </span>
+                )}
+              </div>
             </div>
-            <h1 className="mt-2 font-heading text-3xl font-semibold tracking-tight">
-              {activity.title ?? activityTypeLabels[activity.type]}
-            </h1>
-            <p className="mt-1 font-mono text-cyan-600">
-              {formatDuration(activity.duration)}
-              {activity.load != null && ` · ${Math.round(activity.load)} TSS`}
-            </p>
           </div>
           <div className="flex gap-2">
-            <LinkButton href={`/training/${activity.id}/edit`} variant="outline">
+            <LinkButton
+              href={`/training/${activity.id}/edit`}
+              variant="outline"
+            >
               Modifier
             </LinkButton>
             <DeleteActivityButton id={activity.id} />
           </div>
         </div>
 
-        {activity.type === ActivityType.STRENGTH ? (
-          strengthStats.length > 0 && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {strengthStats.map((stat) => (
-                <HeroStat key={stat.label} {...stat} />
-              ))}
-            </div>
-          )
-        ) : (
-          <ActivityHeroStats activityId={activity.id} activity={heroActivity} />
-        )}
+        <ContextChips activity={activity} />
+
+        {isStrength
+          ? strengthStats.length > 0 && (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {strengthStats.map((stat) => (
+                  <HeroStat key={stat.label} {...stat} />
+                ))}
+              </div>
+            )
+          : (
+              <ActivityHeroStats
+                activityId={activity.id}
+                activity={heroActivity}
+              />
+            )}
       </header>
 
-      {activity.type !== ActivityType.STRENGTH && (
+      {!isStrength && (
         <ActivityInsights activityId={activity.id} type={activity.type} />
       )}
 
-      {activity.type === ActivityType.STRENGTH && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Exercices</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {activity.strengthSets.length > 0 ? (
-              activity.strengthSets.map((set) => (
-                <div
-                  key={set.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 px-4 py-3 text-sm"
-                >
-                  <span className="font-medium">{set.exercise}</span>
-                  <span className="font-mono text-muted-foreground">
-                    {set.sets}×{set.reps}
-                    {set.weightKg ? ` @ ${set.weightKg} kg` : ""}
-                    {set.rpe ? ` · RPE ${set.rpe}` : ""}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Aucun exercice enregistré pour cette séance.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      )}
+      {isStrength && <StrengthExercises activity={activity} />}
 
-      {details.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base font-medium text-muted-foreground">
-              Détails
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
-            {details.map((row) => (
-              <div
-                key={row.label}
-                className="flex justify-between gap-4 border-b border-border/40 py-1.5 last:border-0"
-              >
-                <span className="text-muted-foreground">{row.label}</span>
-                <span className="text-right">{row.value}</span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+      {(specs.length > 0 || activity.notes) && (
+        <section className="grid gap-4 lg:grid-cols-3">
+          {specs.length > 0 && (
+            <Card className={cn(activity.notes ? "lg:col-span-2" : "lg:col-span-3")}>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                  Caractéristiques
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-x-8 gap-y-1 text-sm sm:grid-cols-2">
+                {specs.map((row) => (
+                  <div
+                    key={row.label}
+                    className="flex justify-between gap-4 border-b border-border/40 py-2 last:border-0 sm:[&:nth-last-child(2)]:border-0"
+                  >
+                    <span className="text-muted-foreground">{row.label}</span>
+                    <span className="text-right font-medium">{row.value}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+          {activity.notes && (
+            <Card className={cn(specs.length === 0 && "lg:col-span-3")}>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                  Notes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/80">
+                  {activity.notes}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </section>
       )}
     </div>
   );
 }
 
-function HeroStat({ label, value, accent }: Stat) {
+function ContextChips({ activity }: { activity: Activity }) {
+  const chips: React.ReactNode[] = [];
+
+  if (activity.rpe != null) {
+    chips.push(
+      <Chip
+        key="rpe"
+        icon={Gauge}
+        label="RPE"
+        value={`${activity.rpe}/10`}
+        tone={rpeTone(activity.rpe)}
+      />,
+    );
+  }
+  if (activity.feeling) {
+    chips.push(
+      <Chip key="feeling" icon={Smile} label="Ressenti" value={activity.feeling} />,
+    );
+  }
+  if (activity.weather) {
+    chips.push(
+      <Chip
+        key="weather"
+        icon={CloudSun}
+        label="Météo"
+        value={activity.weather}
+      />,
+    );
+  }
+
+  if (chips.length === 0) return null;
+  return <div className="flex flex-wrap gap-2">{chips}</div>;
+}
+
+function Chip({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  tone?: ChipTone;
+}) {
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs">
+      {tone ? (
+        <span className={cn("size-2 rounded-full", chipDot[tone])} />
+      ) : (
+        <Icon className="size-3.5 text-muted-foreground" />
+      )}
+      <span className="font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
+      <span className="font-medium text-foreground">{value}</span>
+    </span>
+  );
+}
+
+function HeroStat({ label, value }: Stat) {
   return (
     <div className="rounded-2xl border border-border bg-card px-5 py-4">
       <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
         {label}
       </p>
-      <p
-        className={cn(
-          "mt-1.5 font-mono text-3xl font-semibold tabular-nums",
-          accentText[accent],
-        )}
-      >
+      <p className="mt-1.5 font-mono text-3xl font-semibold tabular-nums text-foreground">
         {value}
       </p>
     </div>
+  );
+}
+
+function StrengthExercises({ activity }: { activity: Activity }) {
+  const sets = activity.strengthSets;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base font-medium text-muted-foreground">
+          <Dumbbell className="size-4 text-violet-600" />
+          Exercices
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {sets.length > 0 ? (
+          sets.map((set, i) => {
+            const volume = set.sets * set.reps * (set.weightKg ?? 0);
+            return (
+              <div
+                key={set.id}
+                className="flex flex-wrap items-center gap-3 rounded-xl border border-border/60 px-4 py-3"
+              >
+                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-violet-500/10 font-mono text-xs font-semibold text-violet-600">
+                  {i + 1}
+                </span>
+                <span className="min-w-0 flex-1 font-medium">
+                  {set.exercise}
+                  {set.notes && (
+                    <span className="block truncate text-xs font-normal text-muted-foreground">
+                      {set.notes}
+                    </span>
+                  )}
+                </span>
+                <span className="font-mono text-sm tabular-nums">
+                  {set.sets}×{set.reps}
+                  {set.weightKg ? ` @ ${set.weightKg} kg` : ""}
+                </span>
+                <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                  {volume > 0 && (
+                    <span className="font-mono">{Math.round(volume)} kg</span>
+                  )}
+                  {set.rpe != null && (
+                    <span className="rounded-full border border-border px-2 py-0.5 font-mono">
+                      RPE {set.rpe}
+                    </span>
+                  )}
+                </span>
+              </div>
+            );
+          })
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Aucun exercice enregistré pour cette séance.
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -195,24 +359,22 @@ function buildStrengthStats(activity: Activity): Stat[] {
   );
 
   const stats: Stat[] = [
-    { label: "Exercices", value: String(sets.length), accent: "cyan" },
-    { label: "Séries", value: String(totalSets), accent: "violet" },
+    { label: "Exercices", value: String(sets.length) },
+    { label: "Séries", value: String(totalSets) },
   ];
   if (volume > 0)
-    stats.push({
-      label: "Volume",
-      value: `${Math.round(volume)} kg`,
-      accent: "orange",
-    });
+    stats.push({ label: "Volume", value: `${Math.round(volume)} kg` });
+  if (activity.duration != null)
+    stats.push({ label: "Temps", value: formatDuration(activity.duration) });
 
   return stats;
 }
 
-function buildDetails(activity: Activity): Detail[] {
-  const details: Detail[] = [];
+function buildSpecs(activity: Activity): Spec[] {
+  const specs: Spec[] = [];
   const push = (label: string, value: string | number | null | undefined) => {
     if (value === null || value === undefined || value === "") return;
-    details.push({ label, value });
+    specs.push({ label, value });
   };
 
   if (activity.type === ActivityType.RUN && activity.runMetrics) {
@@ -254,10 +416,5 @@ function buildDetails(activity: Activity): Detail[] {
     push("Drills", m.drills);
   }
 
-  push("RPE", activity.rpe);
-  push("Ressenti", activity.feeling);
-  push("Météo", activity.weather);
-  push("Notes", activity.notes);
-
-  return details;
+  return specs;
 }

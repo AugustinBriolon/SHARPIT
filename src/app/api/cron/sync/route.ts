@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import { isCoachConfigured } from "@/lib/ai";
 import { generateAndStoreDailyBriefing } from "@/lib/daily-briefing";
 import { getGarminAccount, syncGarminHealth } from "@/lib/garmin-sync";
+import { recomputeRecordsSafe } from "@/lib/records";
+import { backfillActivityStreams } from "@/lib/stream-backfill";
 import { getStravaAccount, syncStravaActivities } from "@/lib/strava-sync";
+import {
+  generateAndStoreWeeklyReview,
+  isSunday,
+} from "@/lib/weekly-review";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,9 +28,18 @@ export async function GET(request: Request) {
   const result: {
     strava: Awaited<ReturnType<typeof syncStravaActivities>> | null;
     garmin: Awaited<ReturnType<typeof syncGarminHealth>> | null;
+    backfill: Awaited<ReturnType<typeof backfillActivityStreams>> | null;
     briefing: boolean;
+    weeklyReview: boolean;
     errors: string[];
-  } = { strava: null, garmin: null, briefing: false, errors: [] };
+  } = {
+    strava: null,
+    garmin: null,
+    backfill: null,
+    briefing: false,
+    weeklyReview: false,
+    errors: [],
+  };
 
   const [stravaAccount, garminAccount] = await Promise.all([
     getStravaAccount(),
@@ -54,6 +69,21 @@ export async function GET(request: Request) {
     }
   }
 
+  // Backfill progressif des streams (records & courbes) : un lot par exécution
+  // pour rester sous le rate-limit Strava.
+  if (stravaAccount) {
+    try {
+      result.backfill = await backfillActivityStreams(25);
+    } catch (error) {
+      const msg =
+        error instanceof Error ? error.message : "Backfill streams échoué";
+      console.error("[cron/sync] Backfill:", msg);
+      result.errors.push(`backfill: ${msg}`);
+    }
+    // Recalcule les records (nouvelles activités + nouveaux streams).
+    await recomputeRecordsSafe();
+  }
+
   // Bilan du jour : généré après la synchro pour s'appuyer sur des données à jour.
   if (isCoachConfigured()) {
     try {
@@ -64,6 +94,21 @@ export async function GET(request: Request) {
         error instanceof Error ? error.message : "Génération du bilan échouée";
       console.error("[cron/sync] Briefing:", msg);
       result.errors.push(`briefing: ${msg}`);
+    }
+
+    // Rétro hebdo : le dimanche, on génère le bilan de la semaine écoulée.
+    if (isSunday()) {
+      try {
+        await generateAndStoreWeeklyReview(new Date(), { current: true });
+        result.weeklyReview = true;
+      } catch (error) {
+        const msg =
+          error instanceof Error
+            ? error.message
+            : "Génération de la rétro hebdo échouée";
+        console.error("[cron/sync] WeeklyReview:", msg);
+        result.errors.push(`weeklyReview: ${msg}`);
+      }
     }
   }
 

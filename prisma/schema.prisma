@@ -239,6 +239,18 @@ model DailyHealth {
   stress        Int? // stress moyen sur la journée
   mood          String?
 
+  // Sommeil détaillé (Garmin)
+  sleepScore       Int? // score de sommeil Garmin (0-100)
+  sleepDeepMin     Int? // sommeil profond (min)
+  sleepLightMin    Int? // sommeil léger (min)
+  sleepRemMin      Int? // sommeil paradoxal / REM (min)
+  sleepAwakeMin    Int? // éveil pendant la nuit (min)
+  sleepBedtimeMin  Int? // heure de coucher en minutes depuis minuit (heure locale)
+  sleepWakeMin     Int? // heure de réveil en minutes depuis minuit (heure locale)
+  sleepRespiration Float? // respiration moyenne (resp/min)
+  sleepAvgStress   Int? // stress moyen pendant le sommeil
+  sleepScoreFeedback String? // code feedback qualité Garmin
+
   // Recovery (Garmin)
   readinessLevel    String? // LOW / MODERATE / HIGH ...
   readinessFeedback String? // code feedback court Garmin
@@ -322,6 +334,34 @@ model DailyBriefing {
   generatedAt DateTime @default(now())
 
   @@index([date])
+}
+
+model WeeklyReview {
+  id          String   @id @default(cuid())
+  weekStart   DateTime @unique @db.Date // lundi de la semaine concernée
+  content     String   @db.Text // rétro hebdo en markdown générée par le coach IA
+  stats       Json? // statistiques de la semaine (volume, conformité, sommeil...)
+  generatedAt DateTime @default(now())
+
+  @@index([weekStart])
+}
+
+model PerformanceRecord {
+  id            String   @id @default(cuid())
+  group         String // "run" | "bike" | "swim" | "power" | "run-best"
+  category      String // clé unique du record, ex: "run-distance", "power-300", "run-best-5000"
+  label         String
+  rank          Int // 1 = meilleur (top 5)
+  value         Float // valeur brute pour le tri/comparaison
+  displayValue  String // valeur formatée pour l'affichage
+  sublabel      String?
+  activityId    String? // séance à l'origine du record (lien)
+  activityDate  DateTime
+  activityTitle String?
+  createdAt     DateTime @default(now())
+
+  @@unique([category, rank])
+  @@index([group])
 }
 
 model Conversation {

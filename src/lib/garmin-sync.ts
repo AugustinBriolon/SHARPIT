@@ -139,7 +139,8 @@ export async function syncGarminHealth(days = 30): Promise<GarminSyncResult> {
       health.readinessScore != null ||
       health.hrvStatus != null ||
       health.stress != null ||
-      health.bodyBattery != null;
+      health.bodyBattery != null ||
+      health.sleep.sleepScore != null;
 
     if (!hasData) {
       emptyDays += 1;
@@ -177,6 +178,21 @@ export async function syncGarminHealth(days = 30): Promise<GarminSyncResult> {
       data.hrvBaselineHigh = health.hrvBaselineHigh;
     if (health.stress != null) data.stress = health.stress;
     if (health.bodyBattery != null) data.bodyBattery = health.bodyBattery;
+    const sleep = health.sleep;
+    if (sleep.sleepScore != null) data.sleepScore = sleep.sleepScore;
+    if (sleep.sleepDeepMin != null) data.sleepDeepMin = sleep.sleepDeepMin;
+    if (sleep.sleepLightMin != null) data.sleepLightMin = sleep.sleepLightMin;
+    if (sleep.sleepRemMin != null) data.sleepRemMin = sleep.sleepRemMin;
+    if (sleep.sleepAwakeMin != null) data.sleepAwakeMin = sleep.sleepAwakeMin;
+    if (sleep.sleepBedtimeMin != null)
+      data.sleepBedtimeMin = sleep.sleepBedtimeMin;
+    if (sleep.sleepWakeMin != null) data.sleepWakeMin = sleep.sleepWakeMin;
+    if (sleep.sleepRespiration != null)
+      data.sleepRespiration = sleep.sleepRespiration;
+    if (sleep.sleepAvgStress != null)
+      data.sleepAvgStress = sleep.sleepAvgStress;
+    if (sleep.sleepScoreFeedback != null)
+      data.sleepScoreFeedback = sleep.sleepScoreFeedback;
 
     await prisma.dailyHealth.upsert({
       where: { date: day },
@@ -195,6 +211,16 @@ export async function syncGarminHealth(days = 30): Promise<GarminSyncResult> {
         hrvBaselineHigh: health.hrvBaselineHigh,
         stress: health.stress,
         bodyBattery: health.bodyBattery,
+        sleepScore: sleep.sleepScore,
+        sleepDeepMin: sleep.sleepDeepMin,
+        sleepLightMin: sleep.sleepLightMin,
+        sleepRemMin: sleep.sleepRemMin,
+        sleepAwakeMin: sleep.sleepAwakeMin,
+        sleepBedtimeMin: sleep.sleepBedtimeMin,
+        sleepWakeMin: sleep.sleepWakeMin,
+        sleepRespiration: sleep.sleepRespiration,
+        sleepAvgStress: sleep.sleepAvgStress,
+        sleepScoreFeedback: sleep.sleepScoreFeedback,
       },
       update: data,
     });

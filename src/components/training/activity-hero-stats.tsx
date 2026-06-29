@@ -13,12 +13,13 @@ import { cn } from "@/lib/utils";
 
 type Accent = "cyan" | "orange" | "violet" | "emerald" | "default";
 
-const accentText: Record<Accent, string> = {
-  cyan: "text-cyan-600",
-  orange: "text-orange-600",
-  violet: "text-violet-600",
-  emerald: "text-emerald-600",
-  default: "text-foreground",
+// Largeur de grille calée sur le nombre de stats réellement affichées : évite
+// les cases vides quand une métrique est absente (ex. pas de cadence).
+const SM_COLS: Record<number, string> = {
+  1: "sm:grid-cols-1",
+  2: "sm:grid-cols-2",
+  3: "sm:grid-cols-3",
+  4: "sm:grid-cols-4",
 };
 
 export interface HeroActivity {
@@ -167,7 +168,7 @@ export function ActivityHeroStats({
   if (visible.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className={cn("grid grid-cols-2 gap-3", SM_COLS[visible.length] ?? "sm:grid-cols-4")}>
       {visible.map((slot) => (
         <div
           key={slot.label}
@@ -177,12 +178,7 @@ export function ActivityHeroStats({
             {slot.label}
           </p>
           {slot.value != null ? (
-            <p
-              className={cn(
-                "mt-1.5 font-mono text-3xl font-semibold tabular-nums",
-                accentText[slot.accent],
-              )}
-            >
+            <p className="mt-1.5 font-mono text-3xl font-semibold tabular-nums text-foreground">
               {slot.value}
             </p>
           ) : (

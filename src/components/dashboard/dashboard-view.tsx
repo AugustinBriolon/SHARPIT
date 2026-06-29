@@ -1,6 +1,8 @@
 "use client";
 
+import { AlertsBanner } from "@/components/dashboard/alerts-banner";
 import { BriefingCard } from "@/components/dashboard/briefing-card";
+import { WeeklyReviewCard } from "@/components/dashboard/weekly-review-card";
 import {
   FormPillar,
   LoadPillar,
@@ -37,6 +39,7 @@ import {
 } from "@/lib/recovery";
 import { ReadinessFactorList } from "@/components/recovery/recovery-panels";
 import { acwrZone, buildTrainingVerdict, trendInfo } from "@/lib/dashboard";
+import { computeAlerts } from "@/lib/alerts";
 import { computePmcSeries } from "@/lib/analytics";
 import { computeTrainingLoad } from "@/lib/training-load";
 import {
@@ -47,7 +50,7 @@ import {
 } from "date-fns";
 import { fr } from "date-fns/locale";
 import { CalendarDays } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 export function DashboardView() {
   // `mounted` reste false côté serveur et à l'hydratation : on évite ainsi tout
@@ -59,6 +62,33 @@ export function DashboardView() {
   const healthQuery = useHealthEntries();
   const goalsQuery = useGoals();
   const physicalQuery = usePhysicalNotes();
+
+  // Calculs lourds mémoïsés (déclarés avant tout early-return pour respecter les
+  // règles des hooks). Ils ne se recalculent que si leurs données changent.
+  const pmc = useMemo(
+    () => computePmcSeries(activitiesQuery.data ?? []),
+    [activitiesQuery.data],
+  );
+  const load = useMemo(
+    () => computeTrainingLoad(activitiesQuery.data ?? [], date),
+    [activitiesQuery.data, date],
+  );
+  const alerts = useMemo(
+    () =>
+      computeAlerts({
+        activities: activitiesQuery.data ?? [],
+        health: (healthQuery.data ?? []) as unknown as Parameters<
+          typeof computeAlerts
+        >[0]["health"],
+        physicalNotes: (physicalQuery.data ?? []).map((n) => ({
+          title: n.title,
+          severity: n.severity,
+          status: n.status,
+        })),
+        refDate: date,
+      }),
+    [activitiesQuery.data, healthQuery.data, physicalQuery.data, date],
+  );
 
   const header = (
     <header className="flex flex-wrap items-end justify-between gap-4">
@@ -97,12 +127,10 @@ export function DashboardView() {
   const activities = activitiesQuery.data ?? [];
   const todayActivities = dayActivities(activities, date);
   const health = dayHealth(healthQuery.data, date);
-  const load = computeTrainingLoad(activities, date);
   const zone = acwrZone(load.acwr);
 
   // Forme (PMC) telle qu'elle était le jour sélectionné.
   const dateStr = format(date, "yyyy-MM-dd");
-  const pmc = computePmcSeries(activities);
   const pmcUpTo = pmc.filter((p) => p.date <= dateStr);
   const form = buildFormView(pmcUpTo);
   const pmcPoint = pmcUpTo[pmcUpTo.length - 1];
@@ -176,6 +204,8 @@ export function DashboardView() {
       <BriefingCard date={date} />
 
       <VerdictBanner verdict={verdict} />
+
+      <AlertsBanner alerts={alerts} />
 
       <section className="grid gap-4 lg:grid-cols-3">
         <ReadinessPillar
@@ -325,6 +355,8 @@ export function DashboardView() {
           </CardContent>
         </Card>
       </section>
+
+      <WeeklyReviewCard date={date} />
 
       {readinessFactors.length > 0 && (
         <section>

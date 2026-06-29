@@ -5,6 +5,7 @@ import {
   getActivityById,
   updateActivity,
 } from "@/lib/queries";
+import { updateRecordsForTypesSafe } from "@/lib/records";
 import { updateActivitySchema } from "@/lib/validators/activity";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -46,13 +47,17 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Séance introuvable" }, { status: 404 });
     }
 
+    const newType = parsed.data.type ?? existing.type;
     const activity = await updateActivity(
       id,
       buildActivityUpdateData({
         ...parsed.data,
-        type: parsed.data.type ?? existing.type,
+        type: newType,
       }) as Parameters<typeof updateActivity>[1],
     );
+
+    // L'ancien et le nouveau type peuvent différer : on recalcule les deux.
+    await updateRecordsForTypesSafe([existing.type, newType]);
 
     return NextResponse.json(activity);
   } catch (error) {
@@ -67,7 +72,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
+    const existing = await getActivityById(id);
     await deleteActivity(id);
+    if (existing) await updateRecordsForTypesSafe([existing.type]);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);

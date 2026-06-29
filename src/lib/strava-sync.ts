@@ -109,6 +109,8 @@ export interface SyncResult {
   fetched: number;
   imported: number;
   skipped: number;
+  importedTypes: ActivityType[];
+  importedActivityIds: string[];
 }
 
 export async function syncStravaActivities(): Promise<SyncResult> {
@@ -124,12 +126,17 @@ export async function syncStravaActivities(): Promise<SyncResult> {
   let skipped = 0;
   let fetched = 0;
   const seenStravaIds = new Set<string>();
+  const importedTypes = new Set<ActivityType>();
+  const importedActivityIds: string[] = [];
 
   while (page <= 10) {
     const activities = await fetchActivities(accessToken, { after, page });
     if (!activities.length) break;
     fetched += activities.length;
 
+    // 1) Dédoublonnage intra-sync + mapping de type.
+    const candidates: { stravaId: string; type: ActivityType; strava: StravaActivity }[] =
+      [];
     for (const strava of activities) {
       const stravaId = String(strava.id);
       if (seenStravaIds.has(stravaId)) {
@@ -143,19 +150,32 @@ export async function syncStravaActivities(): Promise<SyncResult> {
         skipped += 1;
         continue;
       }
+      candidates.push({ stravaId, type, strava });
+    }
 
-      const existing = await prisma.activity.findUnique({
-        where: { stravaId },
-        select: { id: true },
-      });
-      if (existing) {
+    // 2) Un seul SELECT pour savoir lesquels existent déjà (évite le N+1).
+    const existingIds = new Set(
+      (
+        await prisma.activity.findMany({
+          where: { stravaId: { in: candidates.map((c) => c.stravaId) } },
+          select: { stravaId: true },
+        })
+      ).map((r) => r.stravaId),
+    );
+
+    // 3) Création des nouvelles activités.
+    for (const { stravaId, type, strava } of candidates) {
+      if (existingIds.has(stravaId)) {
         skipped += 1;
         continue;
       }
-
       try {
-        await prisma.activity.create({ data: buildActivityData(strava, type) });
+        const created = await prisma.activity.create({
+          data: buildActivityData(strava, type),
+        });
         imported += 1;
+        importedTypes.add(type);
+        importedActivityIds.push(created.id);
       } catch (error) {
         if (
           error instanceof PrismaClientKnownRequestError &&
@@ -177,5 +197,11 @@ export async function syncStravaActivities(): Promise<SyncResult> {
     data: { lastSyncAt: new Date() },
   });
 
-  return { fetched, imported, skipped };
+  return {
+    fetched,
+    imported,
+    skipped,
+    importedTypes: [...importedTypes],
+    importedActivityIds,
+  };
 }

@@ -1,7 +1,11 @@
 import { LoadChart } from "@/components/analytics/load-chart";
 import { SportDistributionChart } from "@/components/analytics/sport-distribution-chart";
 import { VolumeChart } from "@/components/analytics/volume-chart";
-import { MetricCard } from "@/components/dashboard/metric-card";
+import {
+  AnalyticsSection,
+  AnalyticsStat,
+  FormStatusBanner,
+} from "@/components/analytics/analytics-cards";
 import {
   computeAnalyticsSummary,
   computePmcSeries,
@@ -20,15 +24,6 @@ export function AnalyticsView({ activities }: AnalyticsViewProps) {
   const distribution = computeSportDistribution(activities);
   const summary = computeAnalyticsSummary(activities, pmc);
 
-  const tsbLabel =
-    summary.tsb > 10
-      ? "Frais"
-      : summary.tsb > -10
-        ? "Optimal"
-        : summary.tsb > -25
-          ? "Fatigué"
-          : "Surchargé";
-
   return (
     <div className="space-y-8">
       <header>
@@ -39,42 +34,52 @@ export function AnalyticsView({ activities }: AnalyticsViewProps) {
           Performance
         </h1>
         <p className="mt-1 text-muted-foreground">
-          {summary.totalActivities} séances analysées sur {summary.periodDays} jours.
+          Ta charge, ton volume et ta répartition par sport sur les{" "}
+          {summary.periodDays} derniers jours.
         </p>
       </header>
 
+      <FormStatusBanner pmc={pmc} />
+
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          label="CTL — Forme"
+        <AnalyticsStat
+          label="CTL · Forme"
           value={String(summary.ctl)}
-          sublabel="Charge chronique (42j)"
-          accent="cyan"
+          hint="Charge chronique (42 j)"
         />
-        <MetricCard
-          label="ATL — Fatigue"
+        <AnalyticsStat
+          label="ATL · Fatigue"
           value={String(summary.atl)}
-          sublabel="Charge aiguë (7j)"
-          accent="orange"
+          hint="Charge aiguë (7 j)"
         />
-        <MetricCard
-          label="TSB — Fraîcheur"
-          value={String(summary.tsb)}
-          sublabel={tsbLabel}
-          accent="violet"
+        <AnalyticsStat
+          label="TSB · Fraîcheur"
+          value={`${summary.tsb > 0 ? "+" : ""}${summary.tsb}`}
+          hint="CTL − ATL"
         />
-        <MetricCard
-          label="Volume 7j"
-          value={`${summary.weeklyHours}h`}
-          sublabel={`${summary.weeklyLoad} charge estimée`}
+        <AnalyticsStat
+          label="Volume 7 j"
+          value={`${summary.weeklyHours} h`}
+          hint={`${summary.weeklyLoad} TSS estimés · ${summary.totalActivities} séances`}
         />
       </section>
 
-      <LoadChart data={pmc} />
+      <AnalyticsSection
+        title="Modèle de charge (PMC)"
+        description="Évolution de ta forme (CTL), fatigue (ATL) et fraîcheur (TSB) — modèle Banister sur 6 mois."
+      >
+        <LoadChart data={pmc} />
+      </AnalyticsSection>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <VolumeChart data={weeklyVolume} />
-        <SportDistributionChart data={distribution} />
-      </div>
+      <AnalyticsSection
+        title="Volume & répartition"
+        description="Heures par semaine et part de chaque sport sur les 90 derniers jours."
+      >
+        <div className="grid gap-4 lg:grid-cols-2">
+          <VolumeChart data={weeklyVolume} />
+          <SportDistributionChart data={distribution} />
+        </div>
+      </AnalyticsSection>
     </div>
   );
 }

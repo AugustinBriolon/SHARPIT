@@ -1,3 +1,4 @@
+import type { RecordsPayload } from "@/lib/records";
 import type { ActivityStreamPayload } from "@/lib/streams";
 import type {
   ClientActivity,
@@ -83,6 +84,10 @@ export async function fetchActivityStream(
   id: string,
 ): Promise<ActivityStreamPayload> {
   return fetchJson<ActivityStreamPayload>(`/api/activities/${id}/streams`);
+}
+
+export async function fetchRecords(): Promise<RecordsPayload> {
+  return fetchJson<RecordsPayload>("/api/records");
 }
 
 export interface GoogleCalendarEvent {
@@ -190,5 +195,28 @@ export async function fetchDailyBriefing(
     content: b.content as string,
     readiness: (b.readiness as number | null) ?? null,
     generatedAt: toDate(b.generatedAt),
+  };
+}
+
+export interface ClientWeeklyReview {
+  id: string;
+  weekStart: string;
+  content: string;
+  generatedAt: Date;
+}
+
+export async function fetchWeeklyReview(
+  date: string,
+): Promise<ClientWeeklyReview | null> {
+  const data = await fetchJson<{ review: RawRecord | null }>(
+    `/api/coach/weekly-review?date=${encodeURIComponent(date)}`,
+  );
+  if (!data.review) return null;
+  const r = data.review;
+  return {
+    id: r.id as string,
+    weekStart: r.weekStart as string,
+    content: r.content as string,
+    generatedAt: toDate(r.generatedAt),
   };
 }

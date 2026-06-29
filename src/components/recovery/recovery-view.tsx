@@ -5,6 +5,8 @@ import {
   ReadinessHero,
   RecoveryStat,
 } from "@/components/recovery/recovery-panels";
+import { SleepCoachPanel } from "@/components/recovery/sleep-coach-panel";
+import type { SleepEntryInput } from "@/lib/sleep";
 import { Skeleton } from "@/components/ui/skeleton";
 import { computePmcSeries } from "@/lib/analytics";
 import { buildHealthSeries, computeTrend, formatSleep } from "@/lib/health";
@@ -124,6 +126,8 @@ export function RecoveryView() {
           tone="neutral"
         />
       </section>
+
+      <SleepCoachPanel entries={entries as unknown as SleepEntryInput[]} />
 
       <section className="space-y-4">
         <h2 className="font-heading text-lg font-medium">Tendances</h2>

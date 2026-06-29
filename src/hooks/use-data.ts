@@ -9,6 +9,7 @@ import {
   fetchGoogleEvents,
   fetchHealthEntries,
   fetchPlannedSessions,
+  fetchRecords,
 } from "@/lib/client/fetchers";
 import { queryKeys } from "@/lib/client/keys";
 import type { ActivityType, SessionIntensity } from "@prisma/client";
@@ -19,6 +20,9 @@ export function useActivities() {
   return useQuery({
     queryKey: queryKeys.activities,
     queryFn: fetchActivities,
+    // Historique partagé par 8 vues : on évite un refetch complet à chaque
+    // montage / retour de focus. Les mutations invalident explicitement.
+    staleTime: 2 * 60 * 1000,
   });
 }
 
@@ -26,6 +30,7 @@ export function useHealthEntries(days = DEFAULT_HEALTH_DAYS) {
   return useQuery({
     queryKey: queryKeys.health(days),
     queryFn: () => fetchHealthEntries(days),
+    staleTime: 2 * 60 * 1000,
   });
 }
 
@@ -40,6 +45,15 @@ export function usePlannedSessions() {
   return useQuery({
     queryKey: queryKeys.plannedSessions,
     queryFn: fetchPlannedSessions,
+  });
+}
+
+export function useRecords() {
+  return useQuery({
+    queryKey: queryKeys.records,
+    // Records persistés en base : on évite de refetcher à chaque visite.
+    queryFn: fetchRecords,
+    staleTime: 30 * 60 * 1000,
   });
 }
 

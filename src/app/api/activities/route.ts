@@ -4,6 +4,7 @@ import {
   buildActivityCreateData,
 } from "@/lib/activity-service";
 import { createActivity } from "@/lib/queries";
+import { updateRecordsForTypesSafe } from "@/lib/records";
 import { createActivitySchema } from "@/lib/validators/activity";
 
 export async function GET(request: NextRequest) {
@@ -43,6 +44,8 @@ export async function POST(request: NextRequest) {
     const activity = await createActivity(
       buildActivityCreateData(parsed.data) as Parameters<typeof createActivity>[0],
     );
+
+    await updateRecordsForTypesSafe([parsed.data.type]);
 
     return NextResponse.json(activity, { status: 201 });
   } catch (error) {

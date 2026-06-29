@@ -12,6 +12,20 @@ export interface GarminReadinessFactor {
   feedback: string | null;
 }
 
+export interface GarminSleepDetail {
+  sleepMinutes: number | null;
+  sleepScore: number | null;
+  sleepDeepMin: number | null;
+  sleepLightMin: number | null;
+  sleepRemMin: number | null;
+  sleepAwakeMin: number | null;
+  sleepBedtimeMin: number | null;
+  sleepWakeMin: number | null;
+  sleepRespiration: number | null;
+  sleepAvgStress: number | null;
+  sleepScoreFeedback: string | null;
+}
+
 export interface GarminDailyHealth {
   date: string;
   sleepMinutes: number | null;
@@ -27,6 +41,7 @@ export interface GarminDailyHealth {
   hrvBaselineHigh: number | null;
   stress: number | null;
   bodyBattery: number | null;
+  sleep: GarminSleepDetail;
 }
 
 type GCClient = InstanceType<typeof GarminConnect>;
@@ -152,7 +167,37 @@ async function fetchHrv(
   }
 }
 
-async function fetchSleepMinutes(
+const EMPTY_SLEEP: GarminSleepDetail = {
+  sleepMinutes: null,
+  sleepScore: null,
+  sleepDeepMin: null,
+  sleepLightMin: null,
+  sleepRemMin: null,
+  sleepAwakeMin: null,
+  sleepBedtimeMin: null,
+  sleepWakeMin: null,
+  sleepRespiration: null,
+  sleepAvgStress: null,
+  sleepScoreFeedback: null,
+};
+
+/** Minutes depuis minuit (heure locale) à partir d'un timestamp local Garmin.
+ * Les `*TimestampLocal` Garmin incluent déjà l'offset : lire les composantes
+ * UTC donne donc l'heure murale locale. */
+function localMinutesOfDay(localEpochMs: unknown): number | null {
+  const ms = Number(localEpochMs);
+  if (!Number.isFinite(ms) || ms <= 0) return null;
+  const d = new Date(ms);
+  return d.getUTCHours() * 60 + d.getUTCMinutes();
+}
+
+function secToMin(v: unknown): number | null {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return Math.round(n / 60);
+}
+
+async function fetchSleepDuration(
   client: GCClient,
   date: Date,
 ): Promise<number | null> {
@@ -167,6 +212,70 @@ async function fetchSleepMinutes(
     return total > 0 ? total : null;
   } catch {
     return null;
+  }
+}
+
+async function fetchSleepDetail(
+  client: GCClient,
+  date: Date,
+): Promise<GarminSleepDetail> {
+  try {
+    const data = (await client.getSleepData(date)) as {
+      dailySleepDTO?: {
+        sleepTimeSeconds?: number;
+        deepSleepSeconds?: number;
+        lightSleepSeconds?: number;
+        remSleepSeconds?: number;
+        awakeSleepSeconds?: number;
+        sleepStartTimestampLocal?: number;
+        sleepEndTimestampLocal?: number;
+        averageRespirationValue?: number;
+        avgSleepStress?: number;
+        sleepScoreFeedback?: string;
+        sleepScores?: { overall?: { value?: number } };
+      };
+    } | null;
+
+    const dto = data?.dailySleepDTO;
+    if (!dto) {
+      // Fallback : au moins la durée totale.
+      const minutes = await fetchSleepDuration(client, date);
+      return { ...EMPTY_SLEEP, sleepMinutes: minutes };
+    }
+
+    const num = (v: unknown) =>
+      typeof v === "number" && Number.isFinite(v) && v > 0 ? v : null;
+
+    const deep = secToMin(dto.deepSleepSeconds);
+    const light = secToMin(dto.lightSleepSeconds);
+    const rem = secToMin(dto.remSleepSeconds);
+    const awake = secToMin(dto.awakeSleepSeconds);
+
+    let sleepMinutes = secToMin(dto.sleepTimeSeconds);
+    if (sleepMinutes == null) {
+      const sum = (deep ?? 0) + (light ?? 0) + (rem ?? 0);
+      sleepMinutes = sum > 0 ? sum : await fetchSleepDuration(client, date);
+    }
+
+    return {
+      sleepMinutes,
+      sleepScore: num(dto.sleepScores?.overall?.value),
+      sleepDeepMin: deep,
+      sleepLightMin: light,
+      sleepRemMin: rem,
+      sleepAwakeMin: awake,
+      sleepBedtimeMin: localMinutesOfDay(dto.sleepStartTimestampLocal),
+      sleepWakeMin: localMinutesOfDay(dto.sleepEndTimestampLocal),
+      sleepRespiration: num(dto.averageRespirationValue),
+      sleepAvgStress: num(dto.avgSleepStress),
+      sleepScoreFeedback:
+        typeof dto.sleepScoreFeedback === "string"
+          ? dto.sleepScoreFeedback
+          : null,
+    };
+  } catch {
+    const minutes = await fetchSleepDuration(client, date);
+    return { ...EMPTY_SLEEP, sleepMinutes: minutes };
   }
 }
 
@@ -342,9 +451,9 @@ export async function fetchDailyHealth(
   // (date-1 → date), qui est précisément celle qui impacte la journée `date`.
   // Idem pour readiness/HRV/FC repos (valeurs du matin de `date`). Tout est donc
   // cohérent sur le même jour `date`.
-  const [sleepMinutes, restingHr, hrv, readiness, hrvStatus, stressBattery] =
+  const [sleep, restingHr, hrv, readiness, hrvStatus, stressBattery] =
     await Promise.all([
-      fetchSleepMinutes(client, date),
+      fetchSleepDetail(client, date),
       fetchRestingHr(client, date),
       fetchHrv(client, date),
       fetchTrainingReadiness(client, date),
@@ -354,7 +463,7 @@ export async function fetchDailyHealth(
 
   return {
     date: format(date, "yyyy-MM-dd"),
-    sleepMinutes,
+    sleepMinutes: sleep.sleepMinutes,
     restingHr,
     hrv,
     weightKg,
@@ -367,5 +476,6 @@ export async function fetchDailyHealth(
     hrvBaselineHigh: hrvStatus.hrvBaselineHigh,
     stress: stressBattery.stress,
     bodyBattery: stressBattery.bodyBattery,
+    sleep,
   };
 }
