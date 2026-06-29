@@ -34,7 +34,7 @@ export function ReadinessHero({
   const ringDeg = score != null ? (score / 100) * 360 : 0;
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-card/50 p-6 backdrop-blur-sm">
+    <div className="rounded-2xl border border-border bg-card p-6">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
         <div className="flex items-center gap-5">
           <div
@@ -136,7 +136,7 @@ export function RecoveryStat({
   footer?: string;
 }) {
   return (
-    <div className="rounded-xl border border-border/60 bg-card/50 p-4 backdrop-blur-sm">
+    <div className="rounded-xl border border-border bg-card p-4">
       <div className="flex items-center gap-2">
         <span className={cn("size-2 rounded-full", TONE_DOT[tone])} />
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">

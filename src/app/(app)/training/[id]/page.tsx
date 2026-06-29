@@ -167,7 +167,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
 function HeroStat({ label, value, accent }: Stat) {
   return (
-    <div className="rounded-2xl border border-border/60 bg-card/40 px-5 py-4 backdrop-blur-sm">
+    <div className="rounded-2xl border border-border bg-card px-5 py-4">
       <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
         {label}
       </p>

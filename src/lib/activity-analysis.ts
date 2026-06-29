@@ -81,21 +81,21 @@ interface ZoneDef {
 }
 
 const HR_ZONE_DEFS: ZoneDef[] = [
-  { id: "z1", label: "Récupération", shortLabel: "Z1", color: "#94a3b8", minPct: 0, maxPct: 81 },
-  { id: "z2", label: "Endurance", shortLabel: "Z2", color: "#22d3ee", minPct: 81, maxPct: 89 },
-  { id: "z3", label: "Tempo", shortLabel: "Z3", color: "#34d399", minPct: 89, maxPct: 93 },
-  { id: "z4", label: "Seuil", shortLabel: "Z4", color: "#fbbf24", minPct: 93, maxPct: 100 },
-  { id: "z5", label: "VO2max+", shortLabel: "Z5", color: "#f87171", minPct: 100, maxPct: null },
+  { id: "z1", label: "Récupération", shortLabel: "Z1", color: "#64748b", minPct: 0, maxPct: 81 },
+  { id: "z2", label: "Endurance", shortLabel: "Z2", color: "#059669", minPct: 81, maxPct: 89 },
+  { id: "z3", label: "Tempo", shortLabel: "Z3", color: "#0891b2", minPct: 89, maxPct: 93 },
+  { id: "z4", label: "Seuil", shortLabel: "Z4", color: "#d97706", minPct: 93, maxPct: 100 },
+  { id: "z5", label: "VO2max+", shortLabel: "Z5", color: "#dc2626", minPct: 100, maxPct: null },
 ];
 
 const POWER_ZONE_DEFS: ZoneDef[] = [
-  { id: "z1", label: "Récupération active", shortLabel: "Z1", color: "#94a3b8", minPct: 0, maxPct: 55 },
-  { id: "z2", label: "Endurance", shortLabel: "Z2", color: "#3b82f6", minPct: 55, maxPct: 75 },
-  { id: "z3", label: "Tempo", shortLabel: "Z3", color: "#22d3ee", minPct: 75, maxPct: 90 },
-  { id: "z4", label: "Seuil lactique", shortLabel: "Z4", color: "#34d399", minPct: 90, maxPct: 105 },
-  { id: "z5", label: "VO2max", shortLabel: "Z5", color: "#fbbf24", minPct: 105, maxPct: 120 },
-  { id: "z6", label: "Capacité anaérobie", shortLabel: "Z6", color: "#fb923c", minPct: 120, maxPct: 150 },
-  { id: "z7", label: "Neuromusculaire", shortLabel: "Z7", color: "#f87171", minPct: 150, maxPct: null },
+  { id: "z1", label: "Récupération active", shortLabel: "Z1", color: "#64748b", minPct: 0, maxPct: 55 },
+  { id: "z2", label: "Endurance", shortLabel: "Z2", color: "#2563eb", minPct: 55, maxPct: 75 },
+  { id: "z3", label: "Tempo", shortLabel: "Z3", color: "#0891b2", minPct: 75, maxPct: 90 },
+  { id: "z4", label: "Seuil lactique", shortLabel: "Z4", color: "#059669", minPct: 90, maxPct: 105 },
+  { id: "z5", label: "VO2max", shortLabel: "Z5", color: "#d97706", minPct: 105, maxPct: 120 },
+  { id: "z6", label: "Capacité anaérobie", shortLabel: "Z6", color: "#ea580c", minPct: 120, maxPct: 150 },
+  { id: "z7", label: "Neuromusculaire", shortLabel: "Z7", color: "#dc2626", minPct: 150, maxPct: null },
 ];
 
 function mean(arr: number[]): number {

@@ -167,3 +167,28 @@ export async function fetchConversation(
     updatedAt: toDate(c.updatedAt),
   };
 }
+
+export interface ClientDailyBriefing {
+  id: string;
+  date: string;
+  content: string;
+  readiness: number | null;
+  generatedAt: Date;
+}
+
+export async function fetchDailyBriefing(
+  date: string,
+): Promise<ClientDailyBriefing | null> {
+  const data = await fetchJson<{ briefing: RawRecord | null }>(
+    `/api/coach/briefing?date=${encodeURIComponent(date)}`,
+  );
+  if (!data.briefing) return null;
+  const b = data.briefing;
+  return {
+    id: b.id as string,
+    date: b.date as string,
+    content: b.content as string,
+    readiness: (b.readiness as number | null) ?? null,
+    generatedAt: toDate(b.generatedAt),
+  };
+}

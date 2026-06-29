@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { isCoachConfigured } from "@/lib/ai";
+import { generateAndStoreDailyBriefing } from "@/lib/daily-briefing";
 import { getGarminAccount, syncGarminHealth } from "@/lib/garmin-sync";
 import { getStravaAccount, syncStravaActivities } from "@/lib/strava-sync";
 
@@ -20,8 +22,9 @@ export async function GET(request: Request) {
   const result: {
     strava: Awaited<ReturnType<typeof syncStravaActivities>> | null;
     garmin: Awaited<ReturnType<typeof syncGarminHealth>> | null;
+    briefing: boolean;
     errors: string[];
-  } = { strava: null, garmin: null, errors: [] };
+  } = { strava: null, garmin: null, briefing: false, errors: [] };
 
   const [stravaAccount, garminAccount] = await Promise.all([
     getStravaAccount(),
@@ -48,6 +51,19 @@ export async function GET(request: Request) {
         error instanceof Error ? error.message : "Sync Garmin échouée";
       console.error("[cron/sync] Garmin:", msg);
       result.errors.push(`garmin: ${msg}`);
+    }
+  }
+
+  // Bilan du jour : généré après la synchro pour s'appuyer sur des données à jour.
+  if (isCoachConfigured()) {
+    try {
+      await generateAndStoreDailyBriefing();
+      result.briefing = true;
+    } catch (error) {
+      const msg =
+        error instanceof Error ? error.message : "Génération du bilan échouée";
+      console.error("[cron/sync] Briefing:", msg);
+      result.errors.push(`briefing: ${msg}`);
     }
   }
 

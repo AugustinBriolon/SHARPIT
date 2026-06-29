@@ -56,7 +56,7 @@ function ActivityRow({ activity }: { activity: ActivityItem }) {
   return (
     <Link
       href={`/training/${activity.id}`}
-      className="group flex items-center justify-between rounded-xl border border-border/60 bg-card/40 px-5 py-4 transition-colors hover:border-primary/30 hover:bg-card/70"
+      className="group flex items-center justify-between rounded-xl border border-border bg-card px-5 py-4 transition-colors hover:border-primary/30 hover:bg-muted/30"
     >
       <div className="space-y-1">
         <div className="flex items-center gap-3">

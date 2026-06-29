@@ -171,7 +171,7 @@ export function ActivityHeroStats({
       {visible.map((slot) => (
         <div
           key={slot.label}
-          className="rounded-2xl border border-border/60 bg-card/40 px-5 py-4 backdrop-blur-sm"
+          className="rounded-2xl border border-border bg-card px-5 py-4"
         >
           <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
             {slot.label}

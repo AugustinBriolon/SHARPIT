@@ -1,5 +1,6 @@
 "use client";
 
+import type { UIMessage } from "ai";
 import { Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { CoachChat } from "@/components/coach/coach-chat";
@@ -9,6 +10,7 @@ import { PlanGenerator } from "@/components/coach/plan-generator";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  useConversation,
   useConversations,
   useCreateConversation,
   useDeleteConversation,
@@ -25,16 +27,17 @@ export function CoachView() {
 
   const conversations = conversationsQuery.data ?? [];
 
-  // Au premier chargement : ouvre la conversation la plus récente, ou en crée une.
+  // Conversation affichée : sélection explicite, sinon la plus récente.
+  const selectedId = activeId ?? conversations[0]?.id ?? null;
+  const activeConversation = useConversation(selectedId);
+
+  // Crée automatiquement une première conversation si l'historique est vide.
   useEffect(() => {
-    if (initialized.current || conversationsQuery.isLoading) return;
+    if (conversationsQuery.isLoading || conversations.length > 0) return;
+    if (initialized.current) return;
     initialized.current = true;
-    if (conversations.length > 0) {
-      setActiveId(conversations[0].id);
-    } else {
-      createConversation.mutateAsync().then((c) => setActiveId(c.id));
-    }
-  }, [conversationsQuery.isLoading, conversations, createConversation]);
+    createConversation.mutateAsync().then((c) => setActiveId(c.id));
+  }, [conversationsQuery.isLoading, conversations.length, createConversation]);
 
   async function handleNewConversation() {
     const c = await createConversation.mutateAsync();
@@ -43,16 +46,10 @@ export function CoachView() {
 
   async function handleDeleteConversation(id: string) {
     if (!confirm("Supprimer cette conversation ?")) return;
-    const remaining = conversations.filter((c) => c.id !== id);
     await deleteConversation.mutateAsync(id);
-    if (activeId === id) {
-      if (remaining.length > 0) {
-        setActiveId(remaining[0].id);
-      } else {
-        const c = await createConversation.mutateAsync();
-        setActiveId(c.id);
-      }
-    }
+    // Si on supprime la conversation affichée, on retombe sur la plus récente
+    // (dérivée) ; l'effet recrée une conversation si l'historique devient vide.
+    if (selectedId === id) setActiveId(null);
   }
 
   return (
@@ -81,15 +78,23 @@ export function CoachView() {
       <div className="flex h-[70vh] flex-col gap-4 lg:flex-row">
         <CoachConversationList
           conversations={conversations}
-          activeId={activeId}
+          activeId={selectedId}
           loading={conversationsQuery.isLoading}
           creating={createConversation.isPending}
           onSelect={setActiveId}
           onNew={handleNewConversation}
           onDelete={handleDeleteConversation}
         />
-        {activeId ? (
-          <CoachChat key={activeId} conversationId={activeId} />
+        {selectedId && activeConversation.data ? (
+          <CoachChat
+            key={selectedId}
+            conversationId={selectedId}
+            initialMessages={
+              (Array.isArray(activeConversation.data.messages)
+                ? activeConversation.data.messages
+                : []) as UIMessage[]
+            }
+          />
         ) : (
           <Skeleton className="min-w-0 flex-1 rounded-xl" />
         )}

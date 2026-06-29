@@ -1,6 +1,6 @@
-import type { Appearance } from "@clerk/types";
+import { shadcn } from "@clerk/themes";
 
-/** Palette SharpIt — alignée sur globals.css (light Bevel / vert pousse). */
+/** Tokens SharpIt — alignés sur globals.css (light Bevel / vert pousse). */
 const SHARPIT = {
   primary: "#3a9e6a",
   primaryHover: "#2f8558",
@@ -16,7 +16,42 @@ const SHARPIT = {
   radius: "0.625rem",
 } as const;
 
-export const clerkAppearance: Appearance = {
+const elements = {
+  rootBox: "mx-auto w-full max-w-[420px]",
+  cardBox: "shadow-none border border-border/80 rounded-xl bg-card",
+  card: "rounded-xl border-0 bg-transparent shadow-none gap-4",
+  header: "gap-1",
+  headerTitle: "font-heading text-lg font-semibold tracking-tight text-foreground",
+  headerSubtitle: "text-sm text-muted-foreground",
+  socialButtonsBlockButton:
+    "rounded-lg border border-border bg-background text-foreground shadow-none hover:bg-muted/60",
+  socialButtonsBlockButtonText: "font-medium text-foreground",
+  formButtonPrimary:
+    "rounded-lg bg-primary text-primary-foreground shadow-none hover:bg-primary/90",
+  formFieldInput:
+    "rounded-lg border border-input bg-background text-foreground shadow-none focus:ring-2 focus:ring-ring/30",
+  formFieldLabel: "font-medium text-foreground",
+  footerActionLink: "text-primary hover:text-primary/80 font-medium",
+  identityPreviewEditButton: "text-primary",
+  dividerLine: "bg-border",
+  dividerText: "text-muted-foreground text-xs uppercase tracking-wider",
+  navbar: "hidden",
+  footer: "bg-transparent",
+  footerActionText: "text-muted-foreground",
+  formFieldAction: "text-primary",
+  otpCodeFieldInput: "rounded-lg border border-input bg-background",
+  alertText: "text-foreground",
+  formResendCodeLink: "text-primary",
+  userButtonPopoverCard: "rounded-xl border border-border/80 bg-card shadow-lg",
+  userButtonPopoverActionButton: "hover:bg-muted/60",
+  userButtonPopoverActionButtonText: "text-foreground",
+  userButtonPopoverFooter: "hidden",
+  userPreviewMainIdentifier: "font-medium text-foreground",
+  userPreviewSecondaryIdentifier: "text-muted-foreground",
+} as const;
+
+export const clerkAppearance = {
+  theme: shadcn,
   variables: {
     colorPrimary: SHARPIT.primary,
     colorBackground: SHARPIT.card,
@@ -34,28 +69,17 @@ export const clerkAppearance: Appearance = {
     fontFamilyButtons: "var(--font-sans), ui-sans-serif, system-ui, sans-serif",
     fontSize: "0.875rem",
   },
+  elements,
+};
+
+/** Auth pages : branding déjà dans AuthShell → header Clerk allégé. */
+export const authAppearance = {
+  ...clerkAppearance,
   elements: {
-    rootBox: "mx-auto w-full max-w-[420px]",
-    card: "rounded-xl border border-border/80 bg-card shadow-none",
-    headerTitle: "font-heading text-xl font-semibold tracking-tight text-foreground",
-    headerSubtitle: "text-muted-foreground",
-    socialButtonsBlockButton:
-      "rounded-lg border border-border bg-background text-foreground hover:bg-muted/60",
-    socialButtonsBlockButtonText: "font-medium text-foreground",
-    formButtonPrimary:
-      "rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 shadow-none",
-    formFieldInput:
-      "rounded-lg border border-input bg-background text-foreground focus:ring-ring/50",
-    formFieldLabel: "text-foreground font-medium",
-    footerActionLink: "text-primary hover:text-primary/80",
-    identityPreviewEditButton: "text-primary",
-    dividerLine: "bg-border",
-    dividerText: "text-muted-foreground",
-    navbar: "hidden",
-    footer: "bg-transparent",
-    userButtonPopoverCard: "rounded-xl border border-border/80 shadow-lg",
-    userButtonPopoverActionButton: "hover:bg-muted/60",
-    userButtonPopoverActionButtonText: "text-foreground",
-    userButtonPopoverFooter: "hidden",
+    ...elements,
+    headerTitle: "hidden",
+    headerSubtitle: "hidden",
+    logoBox: "hidden",
+    footer: "bg-transparent pt-2",
   },
 };

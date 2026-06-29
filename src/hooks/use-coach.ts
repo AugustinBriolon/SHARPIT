@@ -10,8 +10,10 @@ import type { ActivityType, SessionIntensity } from "@prisma/client";
 import {
   fetchConversation,
   fetchConversations,
+  fetchDailyBriefing,
   type ClientConversation,
   type ClientConversationSummary,
+  type ClientDailyBriefing,
 } from "@/lib/client/fetchers";
 import { queryKeys } from "@/lib/client/keys";
 
@@ -124,6 +126,41 @@ export function useSaveCoachContext() {
     },
     onSuccess: (context) => {
       queryClient.setQueryData(queryKeys.coachContext, context);
+    },
+  });
+}
+
+export function useDailyBriefing(date: string) {
+  return useQuery({
+    queryKey: queryKeys.dailyBriefing(date),
+    queryFn: () => fetchDailyBriefing(date),
+  });
+}
+
+export function useGenerateBriefing() {
+  const queryClient = useQueryClient();
+  return useMutation<ClientDailyBriefing, Error, string>({
+    mutationFn: async (date) => {
+      const res = await fetch("/api/coach/briefing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error ?? "Génération du bilan impossible.");
+      }
+      const b = data.briefing;
+      return {
+        id: b.id,
+        date: b.date,
+        content: b.content,
+        readiness: b.readiness ?? null,
+        generatedAt: new Date(b.generatedAt),
+      } as ClientDailyBriefing;
+    },
+    onSuccess: (briefing, date) => {
+      queryClient.setQueryData(queryKeys.dailyBriefing(date), briefing);
     },
   });
 }

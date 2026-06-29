@@ -1,17 +1,24 @@
 "use client";
 
+import { BriefingCard } from "@/components/dashboard/briefing-card";
+import {
+  FormPillar,
+  LoadPillar,
+  ReadinessPillar,
+  VerdictBanner,
+  WellnessTile,
+} from "@/components/dashboard/dashboard-cards";
 import { DateSelector } from "@/components/dashboard/date-selector";
-import { MetricCard } from "@/components/dashboard/metric-card";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/link-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActivities, useGoals, useHealthEntries } from "@/hooks/use-data";
 import { usePhysicalNotes } from "@/hooks/use-physical";
+import { useMounted } from "@/hooks/use-mounted";
 import { categoryLabels, severityColor, sideLabels } from "@/lib/physical";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { useMounted } from "@/hooks/use-mounted";
 import type { ClientActivity } from "@/lib/client/types";
 import { dayActivities, dayHealth } from "@/lib/day";
 import {
@@ -20,12 +27,26 @@ import {
   formatDistance,
   formatDuration,
 } from "@/lib/format";
-import { formatSleep } from "@/lib/health";
+import { computeTrend, formatSleep, type HealthEntry } from "@/lib/health";
+import {
+  buildFormView,
+  buildReadinessView,
+  bodyBatteryTone,
+  stressTone,
+  type ReadinessFactor,
+} from "@/lib/recovery";
 import { ReadinessFactorList } from "@/components/recovery/recovery-panels";
-import { buildReadinessView, type ReadinessFactor } from "@/lib/recovery";
+import { acwrZone, buildTrainingVerdict, trendInfo } from "@/lib/dashboard";
+import { computePmcSeries } from "@/lib/analytics";
 import { computeTrainingLoad } from "@/lib/training-load";
-import { differenceInCalendarDays, format, isSameDay, isToday } from "date-fns";
+import {
+  differenceInCalendarDays,
+  format,
+  isSameDay,
+  isToday,
+} from "date-fns";
 import { fr } from "date-fns/locale";
+import { CalendarDays } from "lucide-react";
 import { useState } from "react";
 
 export function DashboardView() {
@@ -48,7 +69,9 @@ export function DashboardView() {
         <h1 className="mt-2 font-heading text-3xl font-semibold tracking-tight">
           Dashboard
         </h1>
-        <p className="mt-1 text-muted-foreground">Votre journée en un coup d&apos;œil</p>
+        <p className="mt-1 text-muted-foreground">
+          Ton readiness, ta forme et ta charge en un coup d&apos;œil
+        </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">
         {mounted && <DateSelector date={date} onChange={setDate} />}
@@ -71,9 +94,48 @@ export function DashboardView() {
     );
   }
 
-  const todayActivities = dayActivities(activitiesQuery.data, date);
+  const activities = activitiesQuery.data ?? [];
+  const todayActivities = dayActivities(activities, date);
   const health = dayHealth(healthQuery.data, date);
-  const load = computeTrainingLoad(activitiesQuery.data ?? [], date);
+  const load = computeTrainingLoad(activities, date);
+  const zone = acwrZone(load.acwr);
+
+  // Forme (PMC) telle qu'elle était le jour sélectionné.
+  const dateStr = format(date, "yyyy-MM-dd");
+  const pmc = computePmcSeries(activities);
+  const pmcUpTo = pmc.filter((p) => p.date <= dateStr);
+  const form = buildFormView(pmcUpTo);
+  const pmcPoint = pmcUpTo[pmcUpTo.length - 1];
+
+  const readiness = buildReadinessView(
+    health?.recoveryScore ?? null,
+    health?.readinessLevel ?? null,
+  );
+  const readinessFactors = (health?.readinessFactors ??
+    []) as unknown as ReadinessFactor[];
+
+  const verdict = buildTrainingVerdict({
+    readinessScore: readiness.score,
+    readinessTone: readiness.tone,
+    tsb: form.tsb,
+    acwr: load.acwr,
+  });
+
+  // Tendances bien-être : moyenne 7j vs 7j précédents, à la date sélectionnée.
+  const history = (healthQuery.data ?? []).filter(
+    (h) => new Date(h.date) <= date,
+  ) as unknown as HealthEntry[];
+  const hrvTrend = trendInfo(computeTrend(history, "hrv").delta, true, " ms");
+  const rhrTrend = trendInfo(
+    computeTrend(history, "restingHr").delta,
+    false,
+    " bpm",
+  );
+  const sleepTrend = trendInfo(
+    computeTrend(history, "sleepMinutes").delta,
+    true,
+    " min",
+  );
 
   const upcomingRaces = (goalsQuery.data ?? [])
     .flatMap((g) =>
@@ -88,15 +150,8 @@ export function DashboardView() {
     ? differenceInCalendarDays(upcomingRaces[0].target, date)
     : null;
 
-  const readiness = buildReadinessView(
-    health?.recoveryScore ?? null,
-    health?.readinessLevel ?? null,
-  );
-  const readinessFactors = (health?.readinessFactors ??
-    []) as unknown as ReadinessFactor[];
-
-  // Le poids n'est mesuré que certains jours (balance/saisie). À défaut de pesée
-  // le jour sélectionné, on affiche la dernière pesée connue à cette date.
+  // Le poids n'est mesuré que certains jours. À défaut de pesée le jour
+  // sélectionné, on affiche la dernière pesée connue jusqu'à cette date.
   const lastWeight = (() => {
     if (health?.weightKg != null) return { kg: health.weightKg, date };
     const entry = (healthQuery.data ?? [])
@@ -118,13 +173,88 @@ export function DashboardView() {
     <div className="space-y-8">
       {header}
 
-      <section className="grid gap-4 lg:grid-cols-2">
-        <Card className="min-h-44 border-primary/20 bg-linear-to-br from-primary/5 to-transparent">
+      <BriefingCard date={date} />
+
+      <VerdictBanner verdict={verdict} />
+
+      <section className="grid gap-4 lg:grid-cols-3">
+        <ReadinessPillar
+          score={readiness.score}
+          levelLabel={readiness.levelLabel}
+          recommendation={
+            readiness.score != null
+              ? readiness.recommendation
+              : "Pas de score de récupération pour ce jour."
+          }
+          accent={readiness.accent}
+        />
+        <FormPillar
+          tsb={form.tsb}
+          label={form.label}
+          tone={form.tone}
+          description={
+            form.description || "Pas assez d'historique pour estimer la forme."
+          }
+          ctl={pmcPoint?.ctl ?? 0}
+          atl={pmcPoint?.atl ?? 0}
+        />
+        <LoadPillar weeklyLoad={load.weeklyLoad} acwr={load.acwr} zone={zone} />
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+          Bien-être du jour
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <WellnessTile
+            label="Sommeil"
+            value={formatSleep(health?.sleepMinutes)}
+            trend={health?.sleepMinutes != null ? sleepTrend : undefined}
+          />
+          <WellnessTile
+            label="HRV"
+            value={health?.hrv != null ? `${health.hrv} ms` : "—"}
+            trend={health?.hrv != null ? hrvTrend : undefined}
+            sublabel={
+              health?.hrvBaselineLow != null && health?.hrvBaselineHigh != null
+                ? `base ${health.hrvBaselineLow}–${health.hrvBaselineHigh}`
+                : undefined
+            }
+          />
+          <WellnessTile
+            label="FC repos"
+            value={health?.restingHr != null ? `${health.restingHr} bpm` : "—"}
+            trend={health?.restingHr != null ? rhrTrend : undefined}
+          />
+          <WellnessTile
+            label="Body Battery"
+            value={
+              health?.bodyBattery != null ? String(health.bodyBattery) : "—"
+            }
+            tone={bodyBatteryTone(health?.bodyBattery ?? null)}
+          />
+          <WellnessTile
+            label="Stress"
+            value={health?.stress != null ? String(health.stress) : "—"}
+            tone={stressTone(health?.stress ?? null)}
+          />
+          <WellnessTile
+            label="Poids"
+            value={lastWeight ? `${lastWeight.kg} kg` : "—"}
+            sublabel={
+              lastWeight && !isSameDay(lastWeight.date, date)
+                ? `le ${format(lastWeight.date, "d MMM", { locale: fr })}`
+                : undefined
+            }
+          />
+        </div>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-3">
+        <Card className="min-h-44 lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center justify-between text-base font-medium text-muted-foreground">
-              <span>
-                Séance(s) du jour
-              </span>
+              <span>Séance(s) du jour</span>
               {todayActivities.length > 1 && (
                 <Badge variant="outline">
                   {todayActivities.length} séances
@@ -158,99 +288,60 @@ export function DashboardView() {
 
         <Card className="min-h-44">
           <CardHeader>
-            <CardTitle className="text-base font-medium text-muted-foreground">
-              Forme du jour
+            <CardTitle className="flex items-center gap-2 text-base font-medium text-muted-foreground">
+              <CalendarDays className="size-4 text-primary" />
+              Prochaine échéance
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {readiness.score != null ? (
-              <div className="space-y-2">
+            {nextRace ? (
+              <Link href="/goals" className="group block space-y-1">
                 <div className="flex items-baseline gap-2">
-                  <span
-                    className="font-mono text-4xl font-semibold"
-                    style={{ color: readiness.accent }}
-                  >
-                    {readiness.score}
+                  <span className="font-mono text-4xl font-semibold tabular-nums text-primary">
+                    J-{daysToRace}
                   </span>
-                  <span className="text-sm text-muted-foreground">/ 100</span>
                 </div>
-                <p
-                  className="text-sm font-medium"
-                  style={{ color: readiness.accent }}
-                >
-                  {readiness.levelLabel}
+                <p className="font-medium group-hover:underline">
+                  {nextRace.title}
                 </p>
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  {readiness.recommendation}
-                </p>
-                {readinessFactors.length > 0 && (
-                  <div className="mt-3 border-t border-border/60 pt-3">
-                    <p className="mb-2 text-[11px] text-muted-foreground">
-                      Score Garmin combinant ces facteurs (pas seulement la nuit
-                      dernière) :
-                    </p>
-                    <ReadinessFactorList factors={readinessFactors} />
-                  </div>
+                {upcomingRaces[0] && (
+                  <p className="text-xs text-muted-foreground">
+                    {format(upcomingRaces[0].target, "EEEE d MMMM yyyy", {
+                      locale: fr,
+                    })}
+                  </p>
                 )}
-              </div>
+              </Link>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                Pas de donnée de forme pour ce jour.
-              </p>
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Aucune course planifiée.
+                </p>
+                <LinkButton href="/goals" variant="outline" size="sm">
+                  Définir un objectif
+                </LinkButton>
+              </div>
             )}
           </CardContent>
         </Card>
       </section>
 
-      <section>
-        <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-muted-foreground">
-          Santé du jour
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <MetricCard label="Sommeil" value={formatSleep(health?.sleepMinutes)} />
-          <MetricCard
-            label="HRV"
-            value={health?.hrv != null ? `${health.hrv} ms` : "—"}
-            accent="violet"
-          />
-          <MetricCard
-            label="FC repos"
-            value={health?.restingHr != null ? `${health.restingHr} bpm` : "—"}
-            accent="orange"
-          />
-          <MetricCard
-            label="Body Battery"
-            value={
-              health?.bodyBattery != null ? String(health.bodyBattery) : "—"
-            }
-            accent="primary"
-          />
-          <MetricCard
-            label="Stress"
-            value={health?.stress != null ? String(health.stress) : "—"}
-          />
-          <MetricCard
-            label="Poids"
-            value={lastWeight ? `${lastWeight.kg} kg` : "—"}
-            sublabel={
-              lastWeight && !isSameDay(lastWeight.date, date)
-                ? `le ${format(lastWeight.date, "d MMM", { locale: fr })}`
-                : undefined
-            }
-          />
-          <MetricCard
-            label="Charge 7j"
-            value={String(load.weeklyLoad)}
-            sublabel={`ACWR ${load.acwr} · ${load.fatigue}`}
-            accent="orange"
-          />
-          <MetricCard
-            label="Prochaine course"
-            value={daysToRace != null ? `J-${daysToRace}` : "—"}
-            sublabel={nextRace?.title ?? "Aucune course"}
-          />
-        </div>
-      </section>
+      {readinessFactors.length > 0 && (
+        <section>
+          <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+            Facteurs de readiness
+          </h2>
+          <Card>
+            <CardContent className="py-5">
+              <p className="mb-3 text-xs text-muted-foreground">
+                Score Garmin combinant ces facteurs (pas seulement la nuit
+                dernière) :
+              </p>
+              <ReadinessFactorList factors={readinessFactors} />
+            </CardContent>
+          </Card>
+        </section>
+      )}
 
       {activeNotes.length > 0 && (
         <section>
@@ -270,7 +361,7 @@ export function DashboardView() {
               <Link
                 key={note.id}
                 href="/body"
-                className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-card/40 p-3 hover:border-primary/40"
+                className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-3 hover:border-primary/30"
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{note.title}</p>
@@ -355,17 +446,23 @@ function activitySummary(activity: ClientActivity): string | undefined {
 function DashboardSkeleton() {
   return (
     <div className="space-y-8">
+      <Skeleton className="h-28 rounded-xl" />
       <section className="grid gap-4 lg:grid-cols-3">
-        <Skeleton className="h-44 lg:col-span-2" />
-        <Skeleton className="h-44" />
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-44 rounded-xl" />
+        ))}
       </section>
       <section>
         <Skeleton className="mb-4 h-4 w-32" />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-28" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 rounded-xl" />
           ))}
         </div>
+      </section>
+      <section className="grid gap-4 lg:grid-cols-3">
+        <Skeleton className="h-44 rounded-xl lg:col-span-2" />
+        <Skeleton className="h-44 rounded-xl" />
       </section>
     </div>
   );

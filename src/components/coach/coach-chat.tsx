@@ -13,7 +13,7 @@ import { Markdown } from "@/components/coach/markdown";
 import { ToolActivity, type KnownSession } from "@/components/coach/tool-activity";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useConversation, useSaveConversation } from "@/hooks/use-coach";
+import { useSaveConversation } from "@/hooks/use-coach";
 import { queryKeys } from "@/lib/client/keys";
 
 const SUGGESTIONS = [
@@ -48,12 +48,15 @@ function buildKnownSessions(
   return known;
 }
 
-export function CoachChat({ conversationId }: { conversationId: string }) {
+export function CoachChat({
+  conversationId,
+  initialMessages,
+}: {
+  conversationId: string;
+  initialMessages: UIMessage[];
+}) {
   const queryClient = useQueryClient();
-  const conversationQuery = useConversation(conversationId);
-  const saveConversation = useSaveConversation();
-  const saveRef = useRef(saveConversation.mutateAsync);
-  saveRef.current = saveConversation.mutateAsync;
+  const { mutateAsync: saveMessages } = useSaveConversation();
 
   const {
     messages,
@@ -62,42 +65,25 @@ export function CoachChat({ conversationId }: { conversationId: string }) {
     stop,
     error,
     addToolApprovalResponse,
-    setMessages,
   } = useChat({
     id: conversationId,
+    messages: initialMessages,
     transport: new DefaultChatTransport({ api: "/api/coach/chat" }),
   // Quand l'athlète valide/refuse une proposition, on renvoie automatiquement
   // sa décision au serveur pour exécuter (ou non) l'action.
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
     onFinish: ({ messages: all, isAbort, isError, isDisconnect }) => {
       if (isAbort || isError || isDisconnect) return;
-      saveRef
-        .current({ id: conversationId, messages: all })
-        .catch((err) => console.error("[coach-chat] save", err));
+      saveMessages({ id: conversationId, messages: all }).catch((err) =>
+        console.error("[coach-chat] save", err),
+      );
       queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
     },
   });
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
-  const hydratedRef = useRef(false);
 
   const isBusy = status === "submitted" || status === "streaming";
-  const isHydrating =
-    conversationQuery.isLoading ||
-    (!hydratedRef.current && conversationQuery.data?.id !== conversationId);
-
-  useEffect(() => {
-    hydratedRef.current = false;
-  }, [conversationId]);
-
-  useEffect(() => {
-    if (conversationQuery.isLoading || !conversationQuery.data) return;
-    if (hydratedRef.current) return;
-    const stored = conversationQuery.data.messages;
-    const msgs = Array.isArray(stored) ? (stored as UIMessage[]) : [];
-    setMessages(msgs);
-    hydratedRef.current = true;
-  }, [conversationId, conversationQuery.isLoading, conversationQuery.data, setMessages]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({
@@ -136,13 +122,7 @@ export function CoachChat({ conversationId }: { conversationId: string }) {
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col rounded-xl border border-border/60 bg-card/30">
       <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-4">
-        {isHydrating && (
-          <div className="flex h-full items-center justify-center">
-            <Loader2 className="size-5 animate-spin text-muted-foreground" />
-          </div>
-        )}
-
-        {!isHydrating && messages.length === 0 && (
+        {messages.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
             <p className="max-w-sm text-sm text-muted-foreground">
               Pose une question à ton coach. Il connaît ta forme, ta
@@ -163,8 +143,7 @@ export function CoachChat({ conversationId }: { conversationId: string }) {
           </div>
         )}
 
-        {!isHydrating &&
-          messages.map((message) => {
+        {messages.map((message) => {
           const isUser = message.role === "user";
           const text = message.parts
             .filter((p) => p.type === "text")

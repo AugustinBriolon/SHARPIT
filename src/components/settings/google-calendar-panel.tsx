@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Select,
@@ -10,13 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-interface GoogleCalendar {
-  id: string;
-  summary: string;
-  primary: boolean;
-  backgroundColor: string | null;
-}
+import { useGoogleCalendars } from "@/hooks/use-data";
 
 interface GoogleCalendarPanelProps {
   configured: boolean;
@@ -35,41 +29,27 @@ export function GoogleCalendarPanel({
   statusMessage,
 }: GoogleCalendarPanelProps) {
   const router = useRouter();
-  const [calendars, setCalendars] = useState<GoogleCalendar[]>([]);
-  const [calendarId, setCalendarId] = useState(account?.targetCalendarId ?? "");
-  const [loadingCalendars, setLoadingCalendars] = useState(false);
+  const connected = Boolean(account);
+
+  // Liste des calendriers via react-query (évite un fetch manuel en effet).
+  const calendarsQuery = useGoogleCalendars(connected);
+  const calendars = calendarsQuery.data ?? [];
+  const loadingCalendars = calendarsQuery.isLoading;
+
+  // Sélection : override local optimiste, sinon valeur serveur (prop account).
+  const [pendingCalendarId, setPendingCalendarId] = useState<string | null>(
+    null,
+  );
+  const calendarId = pendingCalendarId ?? account?.targetCalendarId ?? "";
+
   const [savingTarget, setSavingTarget] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
-  const connected = Boolean(account);
-
-  useEffect(() => {
-    setCalendarId(account?.targetCalendarId ?? "");
-  }, [account?.targetCalendarId]);
-
-  useEffect(() => {
-    if (!connected) return;
-    let cancelled = false;
-    setLoadingCalendars(true);
-    fetch("/api/google/calendars")
-      .then((r) => (r.ok ? r.json() : []))
-      .then((data) => {
-        if (!cancelled && Array.isArray(data)) setCalendars(data);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setLoadingCalendars(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [connected]);
-
   async function handleSelectCalendar(nextCalendarId: string | null) {
     if (!nextCalendarId) return;
     const calendar = calendars.find((c) => c.id === nextCalendarId);
-    setCalendarId(nextCalendarId);
+    setPendingCalendarId(nextCalendarId);
     setSavingTarget(true);
     setResult(null);
     try {

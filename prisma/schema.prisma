@@ -314,6 +314,16 @@ model PhysicalCheckin {
   @@index([date])
 }
 
+model DailyBriefing {
+  id          String   @id @default(cuid())
+  date        DateTime @unique @db.Date
+  content     String   @db.Text // bilan du jour en markdown généré par le coach IA
+  readiness   Int? // readiness Garmin du jour au moment de la génération
+  generatedAt DateTime @default(now())
+
+  @@index([date])
+}
+
 model Conversation {
   id        String   @id @default(cuid())
   title     String   @default("Nouvelle conversation")
