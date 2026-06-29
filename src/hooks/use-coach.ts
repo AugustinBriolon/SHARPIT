@@ -11,6 +11,7 @@ import { queryKeys } from "@/lib/client/keys";
 export interface GeneratedSession {
   dayOffset: number;
   date: string; // yyyy-MM-dd
+  startTime: string | null; // HH:mm
   type: ActivityType;
   intensity: SessionIntensity;
   title: string;
@@ -30,6 +31,7 @@ export interface GeneratePlanParams {
   startDate?: string;
   days?: number;
   focus?: string;
+  goalId?: string | null;
 }
 
 export function useCoachPlan() {

@@ -237,7 +237,10 @@ function WeekCard({
                         </span>
                       </span>
                       <span className="mt-0.5 flex items-center justify-between gap-1 text-[10px] text-muted-foreground">
-                        <span>{formatPlannedDuration(p.durationMin)}</span>
+                        <span>
+                          {p.startTime ? `${p.startTime} · ` : ""}
+                          {formatPlannedDuration(p.durationMin)}
+                        </span>
                         {(() => {
                           const score = (
                             p.analysis as { complianceScore?: number } | null

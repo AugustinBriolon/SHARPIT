@@ -143,6 +143,28 @@ model StravaAccount {
   updatedAt DateTime @updatedAt
 }
 
+model GoogleAccount {
+  id           String   @id @default("default")
+  email        String?
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime
+  scope        String?
+
+  // Calendrier cible où le coach écrit les séances (ex: calendrier "SPORT")
+  targetCalendarId   String?
+  targetCalendarName String?
+  // Calendriers Google masqués dans la page Calendrier de l'app
+  hiddenCalendarIds String[] @default([])
+  // Fuseau horaire utilisé pour créer les événements
+  timeZone String @default("Europe/Paris")
+
+  lastSyncAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model RunMetrics {
   id         String   @id @default(cuid())
   activityId String   @unique
@@ -296,6 +318,7 @@ model PlannedSession {
   id          String            @id @default(cuid())
   type        ActivityType
   date        DateTime          @db.Date
+  startTime   String? // heure de début planifiée "HH:mm" (locale) — choisie pour caser la séance dans l'agenda Google
   title       String?
   description String?
   durationMin Int? // durée prévue en minutes
@@ -311,6 +334,9 @@ model PlannedSession {
   activity   Activity? @relation(fields: [activityId], references: [id], onDelete: SetNull)
   analysis   Json? // { complianceScore, verdict, summary, remarks[], recommendation }
   analyzedAt DateTime?
+
+  // Lien vers l'événement créé dans Google Calendar (calendrier SPORT)
+  googleEventId String? @unique
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

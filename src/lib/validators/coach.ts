@@ -16,6 +16,13 @@ export const coachPlanSchema = z.object({
           .min(0)
           .max(27)
           .describe("Nombre de jours après la date de début du plan (0 = jour de début)."),
+        startTime: z
+          .string()
+          .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+          .nullable()
+          .describe(
+            "Heure de début 'HH:mm' choisie dans un créneau LIBRE de l'agenda (entre 06:00 et 21:00, jamais la nuit). null si aucune contrainte d'agenda.",
+          ),
         type: z.enum(["RUN", "BIKE", "SWIM", "STRENGTH"]),
         intensity: z.enum([
           "RECOVERY",
@@ -54,6 +61,7 @@ export const coachPlanRequestSchema = z.object({
   startDate: z.coerce.date().optional(),
   days: z.coerce.number().int().min(1).max(28).optional(),
   focus: z.string().optional().nullable(),
+  goalId: z.string().optional().nullable(),
 });
 
 /** Analyse d'une séance réalisée vs prévue. */

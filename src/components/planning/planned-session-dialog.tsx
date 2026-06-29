@@ -64,12 +64,14 @@ export function PlannedSessionDialog({
     const formData = new FormData(e.currentTarget);
 
     const dateValue = String(formData.get("date") || "");
+    const startTimeValue = String(formData.get("startTime") || "");
     const durationRaw = formData.get("durationMin");
     const loadRaw = formData.get("load");
 
     const payload = {
       type,
       date: new Date(`${dateValue}T12:00:00`),
+      startTime: startTimeValue || null,
       title: (formData.get("title") as string) || null,
       description: (formData.get("description") as string) || null,
       durationMin: durationRaw ? Number(durationRaw) : null,
@@ -143,6 +145,20 @@ export function PlannedSessionDialog({
                 defaultValue={format(initialDate, "yyyy-MM-dd")}
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="startTime">Heure (optionnel)</Label>
+            <Input
+              id="startTime"
+              name="startTime"
+              type="time"
+              defaultValue={session?.startTime ?? ""}
+            />
+            <p className="text-xs text-muted-foreground">
+              Laisse vide pour que le créneau soit choisi automatiquement dans
+              ton agenda Google.
+            </p>
           </div>
 
           <div className="space-y-2">

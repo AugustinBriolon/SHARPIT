@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  deleteSessionFromGoogle,
+  pushSessionToGoogle,
+} from "@/lib/google-sync";
+import {
   deletePlannedSession,
   getPlannedSessionById,
   updatePlannedSession,
@@ -33,7 +37,16 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       id,
       parsed.data as Parameters<typeof updatePlannedSession>[1],
     );
-    return NextResponse.json(session);
+
+    // Reflète la modification dans Google Calendar (best-effort).
+    try {
+      await pushSessionToGoogle(session);
+    } catch (syncError) {
+      console.error("Push Google Calendar échoué", syncError);
+    }
+
+    const fresh = await getPlannedSessionById(id);
+    return NextResponse.json(fresh ?? session);
   } catch (error) {
     console.error(error);
     return NextResponse.json(
@@ -46,6 +59,17 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
+
+    // Supprime l'événement Google associé avant de supprimer la séance (best-effort).
+    const existing = await getPlannedSessionById(id);
+    if (existing?.googleEventId) {
+      try {
+        await deleteSessionFromGoogle(existing);
+      } catch (syncError) {
+        console.error("Suppression Google Calendar échouée", syncError);
+      }
+    }
+
     await deletePlannedSession(id);
     return NextResponse.json({ success: true });
   } catch (error) {

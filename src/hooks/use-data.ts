@@ -5,6 +5,8 @@ import {
   fetchActivities,
   fetchActivityStream,
   fetchGoals,
+  fetchGoogleCalendars,
+  fetchGoogleEvents,
   fetchHealthEntries,
   fetchPlannedSessions,
 } from "@/lib/client/fetchers";
@@ -50,9 +52,29 @@ export function useActivityStream(id: string) {
   });
 }
 
+export function useGoogleEvents(from: string, to: string) {
+  return useQuery({
+    queryKey: queryKeys.googleEvents(from, to),
+    queryFn: () => fetchGoogleEvents(from, to),
+    staleTime: 5 * 60 * 1000, // 5 min : évite de spammer l'API Google
+    retry: 1,
+  });
+}
+
+export function useGoogleCalendars(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.googleCalendars,
+    queryFn: fetchGoogleCalendars,
+    enabled,
+    staleTime: 0,
+    retry: 1,
+  });
+}
+
 export interface PlannedSessionPayload {
   type: ActivityType;
   date: Date;
+  startTime?: string | null;
   title?: string | null;
   description?: string | null;
   durationMin?: number | null;

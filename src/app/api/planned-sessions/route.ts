@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { pushSessionToGoogle } from "@/lib/google-sync";
 import {
   createPlannedSession,
+  getPlannedSessionById,
   getPlannedSessions,
 } from "@/lib/queries";
 import { createPlannedSessionSchema } from "@/lib/validators/planned-session";
@@ -41,7 +43,16 @@ export async function POST(request: NextRequest) {
     const session = await createPlannedSession(
       parsed.data as Parameters<typeof createPlannedSession>[0],
     );
-    return NextResponse.json(session, { status: 201 });
+
+    // Synchro App → Google Calendar (best-effort : n'échoue pas la création).
+    try {
+      await pushSessionToGoogle(session);
+    } catch (syncError) {
+      console.error("Push Google Calendar échoué", syncError);
+    }
+
+    const fresh = await getPlannedSessionById(session.id);
+    return NextResponse.json(fresh ?? session, { status: 201 });
   } catch (error) {
     console.error(error);
     return NextResponse.json(

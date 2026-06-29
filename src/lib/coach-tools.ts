@@ -3,6 +3,12 @@ import { tool } from "ai";
 import { addDays, format, startOfDay } from "date-fns";
 import { z } from "zod";
 import {
+  deleteSessionFromGoogle,
+  getGoogleAccount,
+  getUpcomingBusy,
+  pushSessionToGoogle,
+} from "./google-sync";
+import {
   createPlannedSession,
   deletePlannedSession,
   getPlannedSessionById,
@@ -21,6 +27,15 @@ const intensityEnum = z.enum([
 ]);
 
 const toDate = (d: string) => new Date(`${d}T12:00:00`);
+
+const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
+const startTimeSchema = z
+  .string()
+  .regex(timeRegex, "Heure au format HH:mm")
+  .optional()
+  .describe(
+    "Heure de début 'HH:mm' (locale). Laisse vide pour que l'app place automatiquement la séance sur un créneau libre de l'agenda Google.",
+  );
 
 /**
  * Outils donnés au Coach IA pour agir directement sur les séances planifiées.
@@ -60,9 +75,10 @@ export const coachTools = {
 
   createPlannedSession: tool({
     description:
-      "Crée une nouvelle séance planifiée dans le calendrier de l'athlète.",
+      "Crée une nouvelle séance planifiée dans le calendrier de l'athlète. Si Google Calendar est connecté, la séance est aussi ajoutée au calendrier cible (créneau libre choisi automatiquement si l'heure n'est pas fournie).",
     inputSchema: z.object({
       date: z.string().describe("Date au format yyyy-MM-dd."),
+      startTime: startTimeSchema,
       type: typeEnum,
       intensity: intensityEnum.optional(),
       title: z.string().describe("Titre court de la séance."),
@@ -77,19 +93,31 @@ export const coachTools = {
       const s = await createPlannedSession({
         type: input.type,
         date: toDate(input.date),
+        startTime: input.startTime ?? null,
         title: input.title,
         description: input.description ?? null,
         durationMin: input.durationMin ?? null,
         load: input.load ?? null,
         intensity: input.intensity ?? null,
       });
+
+      let googleTime: string | undefined;
+      try {
+        const push = await pushSessionToGoogle(s);
+        if (push.synced) googleTime = push.startTime;
+      } catch (error) {
+        console.error("Push Google Calendar échoué", error);
+      }
+
       return {
         ok: true,
         id: s.id,
         action: "created" as const,
         date: input.date,
+        startTime: googleTime ?? input.startTime ?? null,
         type: input.type,
         title: input.title,
+        addedToGoogle: googleTime != null,
       };
     },
   }),
@@ -100,6 +128,7 @@ export const coachTools = {
     inputSchema: z.object({
       id: z.string().describe("id de la séance (via listPlannedSessions)."),
       date: z.string().optional().describe("Nouvelle date yyyy-MM-dd."),
+      startTime: startTimeSchema,
       type: typeEnum.optional(),
       intensity: intensityEnum.optional(),
       title: z.string().optional(),
@@ -114,6 +143,7 @@ export const coachTools = {
       }
       const data: Prisma.PlannedSessionUncheckedUpdateInput = {};
       if (input.date) data.date = toDate(input.date);
+      if (input.startTime !== undefined) data.startTime = input.startTime;
       if (input.type) data.type = input.type;
       if (input.intensity) data.intensity = input.intensity;
       if (input.title !== undefined) data.title = input.title;
@@ -122,11 +152,21 @@ export const coachTools = {
       if (input.load !== undefined) data.load = input.load;
 
       const s = await updatePlannedSession(input.id, data);
+
+      let googleTime: string | undefined;
+      try {
+        const push = await pushSessionToGoogle(s);
+        if (push.synced) googleTime = push.startTime;
+      } catch (error) {
+        console.error("Push Google Calendar échoué", error);
+      }
+
       return {
         ok: true,
         id: s.id,
         action: "updated" as const,
         date: format(s.date, "yyyy-MM-dd"),
+        startTime: googleTime ?? s.startTime,
         type: s.type,
         title: s.title,
       };
@@ -143,6 +183,15 @@ export const coachTools = {
       if (!existing) {
         return { ok: false as const, error: "Séance introuvable" };
       }
+
+      if (existing.googleEventId) {
+        try {
+          await deleteSessionFromGoogle(existing);
+        } catch (error) {
+          console.error("Suppression Google Calendar échouée", error);
+        }
+      }
+
       await deletePlannedSession(id);
       return {
         ok: true,
@@ -151,6 +200,37 @@ export const coachTools = {
         title: existing.title,
         date: format(existing.date, "yyyy-MM-dd"),
       };
+    },
+  }),
+
+  getCalendarAvailability: tool({
+    description:
+      "Liste les créneaux OCCUPÉS de l'agenda Google de l'athlète (tous calendriers confondus) sur les prochains jours, pour placer les séances sur des créneaux libres. À appeler avant de proposer des horaires précis. Renvoie une liste vide si Google Calendar n'est pas connecté.",
+    inputSchema: z.object({
+      days: z
+        .number()
+        .int()
+        .min(1)
+        .max(30)
+        .optional()
+        .describe("Horizon en jours (défaut 14)."),
+    }),
+    execute: async ({ days = 14 }) => {
+      const account = await getGoogleAccount();
+      if (!account) {
+        return { connected: false as const, busy: [] };
+      }
+      try {
+        const busy = await getUpcomingBusy(days);
+        return {
+          connected: true as const,
+          timeZone: account.timeZone,
+          busy,
+        };
+      } catch (error) {
+        console.error("Lecture agenda Google échouée", error);
+        return { connected: true as const, busy: [], error: "fetch_failed" };
+      }
     },
   }),
 };

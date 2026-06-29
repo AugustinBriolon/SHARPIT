@@ -14,6 +14,7 @@ export const sessionIntensitySchema = z.nativeEnum(SessionIntensity);
 const basePlannedSessionSchema = z.object({
   type: activityTypeSchema,
   date: z.coerce.date(),
+  startTime: optionalString,
   title: optionalString,
   description: optionalString,
   durationMin: optionalNumber,

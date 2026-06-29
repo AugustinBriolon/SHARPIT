@@ -1,9 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AthleteProfilePanel } from "@/components/settings/athlete-profile-panel";
 import { GarminPanel } from "@/components/settings/garmin-panel";
+import { GoogleCalendarPanel } from "@/components/settings/google-calendar-panel";
 import { StravaPanel } from "@/components/settings/strava-panel";
 import { getAthleteProfile } from "@/lib/queries";
 import { getGarminAccount } from "@/lib/garmin-sync";
+import { isGoogleConfigured } from "@/lib/google";
+import { getGoogleAccount } from "@/lib/google-sync";
 import { getStravaAccount } from "@/lib/strava-sync";
 import { isStravaConfigured } from "@/lib/strava";
 
@@ -17,19 +20,45 @@ const statusMessages: Record<string, string> = {
   error: "Une erreur est survenue lors de la connexion.",
 };
 
+const googleStatusMessages: Record<string, string> = {
+  connected: "Google Calendar connecté.",
+  denied: "Connexion refusée sur Google.",
+  invalid_state: "Session expirée, réessaie la connexion.",
+  no_refresh:
+    "Google n'a pas renvoyé de jeton de rafraîchissement. Réessaie en autorisant l'accès hors-ligne.",
+  error: "Une erreur est survenue lors de la connexion à Google.",
+};
+
 type PageProps = {
-  searchParams: Promise<{ strava?: string }>;
+  searchParams: Promise<{ strava?: string; google?: string; google_detail?: string }>;
 };
 
 export default async function SettingsPage({ searchParams }: PageProps) {
-  const { strava } = await searchParams;
-  const [stravaAccount, configured, garminAccount, athleteProfile] =
-    await Promise.all([
-      getStravaAccount(),
-      Promise.resolve(isStravaConfigured()),
-      getGarminAccount(),
-      getAthleteProfile().catch(() => null),
-    ]);
+  const { strava, google, google_detail } = await searchParams;
+  const [
+    stravaAccount,
+    configured,
+    garminAccount,
+    athleteProfile,
+    googleAccount,
+    googleConfigured,
+  ] = await Promise.all([
+    getStravaAccount(),
+    Promise.resolve(isStravaConfigured()),
+    getGarminAccount(),
+    getAthleteProfile().catch(() => null),
+    getGoogleAccount().catch(() => null),
+    Promise.resolve(isGoogleConfigured()),
+  ]);
+
+  const google_ = googleAccount
+    ? {
+        email: googleAccount.email,
+        targetCalendarId: googleAccount.targetCalendarId,
+        targetCalendarName: googleAccount.targetCalendarName,
+        lastSyncAt: googleAccount.lastSyncAt?.toISOString() ?? null,
+      }
+    : null;
 
   const account = stravaAccount
     ? {
@@ -113,6 +142,34 @@ export default async function SettingsPage({ searchParams }: PageProps) {
         </CardHeader>
         <CardContent>
           <GarminPanel account={garmin} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Google Calendar</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Le coach planifie tes séances dans ton agenda en évitant tes
+            créneaux occupés
+          </p>
+        </CardHeader>
+        <CardContent>
+          <GoogleCalendarPanel
+            configured={googleConfigured}
+            account={google_}
+            statusMessage={
+              google
+                ? [
+                    googleStatusMessages[google],
+                    google === "error" && google_detail
+                      ? `Détail : ${google_detail}`
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" ")
+                : undefined
+            }
+          />
         </CardContent>
       </Card>
     </div>

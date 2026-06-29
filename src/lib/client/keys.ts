@@ -6,4 +6,7 @@ export const queryKeys = {
   activityStream: (id: string) => ["activity-stream", id] as const,
   physicalNotes: ["physical-notes"] as const,
   coachContext: ["coach-context"] as const,
+  googleEvents: (from: string, to: string) =>
+    ["google-events", from, to] as const,
+  googleCalendars: ["google-calendars"] as const,
 };

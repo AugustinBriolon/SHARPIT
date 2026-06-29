@@ -1,0 +1,230 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+interface GoogleCalendar {
+  id: string;
+  summary: string;
+  primary: boolean;
+  backgroundColor: string | null;
+}
+
+interface GoogleCalendarPanelProps {
+  configured: boolean;
+  account: {
+    email: string | null;
+    targetCalendarId: string | null;
+    targetCalendarName: string | null;
+    lastSyncAt: string | null;
+  } | null;
+  statusMessage?: string;
+}
+
+export function GoogleCalendarPanel({
+  configured,
+  account,
+  statusMessage,
+}: GoogleCalendarPanelProps) {
+  const router = useRouter();
+  const [calendars, setCalendars] = useState<GoogleCalendar[]>([]);
+  const [calendarId, setCalendarId] = useState(account?.targetCalendarId ?? "");
+  const [loadingCalendars, setLoadingCalendars] = useState(false);
+  const [savingTarget, setSavingTarget] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+
+  const connected = Boolean(account);
+
+  useEffect(() => {
+    setCalendarId(account?.targetCalendarId ?? "");
+  }, [account?.targetCalendarId]);
+
+  useEffect(() => {
+    if (!connected) return;
+    let cancelled = false;
+    setLoadingCalendars(true);
+    fetch("/api/google/calendars")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        if (!cancelled && Array.isArray(data)) setCalendars(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoadingCalendars(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [connected]);
+
+  async function handleSelectCalendar(nextCalendarId: string | null) {
+    if (!nextCalendarId) return;
+    const calendar = calendars.find((c) => c.id === nextCalendarId);
+    setCalendarId(nextCalendarId);
+    setSavingTarget(true);
+    setResult(null);
+    try {
+      await fetch("/api/google/select-calendar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          calendarId: nextCalendarId,
+          calendarName: calendar?.summary ?? null,
+        }),
+      });
+      router.refresh();
+    } finally {
+      setSavingTarget(false);
+    }
+  }
+
+  async function handleSync() {
+    setSyncing(true);
+    setResult(null);
+    try {
+      const response = await fetch("/api/google/sync", { method: "POST" });
+      const data = await response.json();
+      if (!response.ok) {
+        setResult(data.error ?? "Synchronisation échouée");
+      } else {
+        setResult(
+          `${data.pushed} ajoutée(s) à Google, ${data.updated} mise(s) à jour, ${data.unlinked} déliée(s).`,
+        );
+        router.refresh();
+      }
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    if (
+      !confirm(
+        "Déconnecter Google Calendar ? Les événements déjà créés restent dans ton agenda, mais l'app oubliera le lien.",
+      )
+    )
+      return;
+    await fetch("/api/google/disconnect", { method: "POST" });
+    router.refresh();
+  }
+
+  if (!configured) {
+    return (
+      <div className="space-y-3 text-sm text-muted-foreground">
+        <p>
+          Google Calendar n&apos;est pas encore configuré. Crée des identifiants
+          OAuth dans la{" "}
+          <a
+            href="https://console.cloud.google.com/apis/credentials"
+            target="_blank"
+            rel="noreferrer"
+            className="text-primary underline"
+          >
+            Google Cloud Console
+          </a>{" "}
+          (type «&nbsp;Application Web&nbsp;»), active l&apos;API Google Calendar,
+          puis ajoute ces variables dans <code>.env</code> :
+        </p>
+        <pre className="overflow-x-auto rounded-lg border border-border/60 bg-muted/40 p-3 font-mono text-xs">
+{`GOOGLE_CLIENT_ID="ton_client_id"
+GOOGLE_CLIENT_SECRET="ton_client_secret"`}
+        </pre>
+        <p>
+          Dans les identifiants OAuth, ajoute comme URI de redirection autorisée
+          :
+        </p>
+        <pre className="overflow-x-auto rounded-lg border border-border/60 bg-muted/40 p-3 font-mono text-xs">
+{`http://localhost:3000/api/google/callback
+https://ton-domaine.vercel.app/api/google/callback`}
+        </pre>
+      </div>
+    );
+  }
+
+  if (!connected) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Connecte ton compte Google pour que le coach planifie tes séances dans
+          ton agenda en évitant tes créneaux déjà occupés.
+        </p>
+        <a href="/api/google/connect" className={buttonVariants()}>
+          Connecter Google Calendar
+        </a>
+        {statusMessage && (
+          <p className="text-sm text-destructive">{statusMessage}</p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <p className="font-medium">{account?.email ?? "Compte Google"}</p>
+        <p className="text-xs text-muted-foreground">
+          {account?.lastSyncAt
+            ? `Dernière synchro : ${new Date(account.lastSyncAt).toLocaleString("fr-FR")}`
+            : "Jamais synchronisé depuis Google"}
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">
+          Calendrier où créer les séances
+        </label>
+        <Select value={calendarId} onValueChange={handleSelectCalendar}>
+          <SelectTrigger disabled={loadingCalendars || savingTarget}>
+            <SelectValue>
+              {calendarId
+                ? (calendars.find((c) => c.id === calendarId)?.summary ??
+                  account?.targetCalendarName ??
+                  calendarId)
+                : loadingCalendars
+                  ? "Chargement…"
+                  : "Choisir un calendrier (ex: SPORT)"}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {calendars.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.summary}
+                {c.primary ? " (principal)" : ""}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          Le coach lit tous tes calendriers pour connaître tes disponibilités,
+          mais n&apos;écrit que dans celui-ci.
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-3">
+        <Button
+          onClick={handleSync}
+          disabled={syncing || !calendarId}
+        >
+          {syncing ? "Synchronisation…" : "Synchroniser depuis Google"}
+        </Button>
+        <Button variant="outline" onClick={handleDisconnect}>
+          Déconnecter
+        </Button>
+      </div>
+
+      {result && <p className="text-sm text-muted-foreground">{result}</p>}
+      {statusMessage && (
+        <p className="text-sm text-muted-foreground">{statusMessage}</p>
+      )}
+    </div>
+  );
+}

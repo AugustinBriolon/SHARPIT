@@ -29,13 +29,15 @@ import {
 } from "@/lib/sessions";
 import { cn } from "@/lib/utils";
 import { useCoachPlan, type GeneratedSession } from "@/hooks/use-coach";
-import { usePlannedSessionMutations } from "@/hooks/use-data";
+import { useGoals, usePlannedSessionMutations } from "@/hooks/use-data";
 
 const DAYS_OPTIONS = [
   { value: "7", label: "1 semaine" },
   { value: "14", label: "2 semaines" },
   { value: "3", label: "3 jours" },
 ];
+
+const NO_GOAL = "none";
 
 interface PlanGeneratorProps {
   startDate?: string; // yyyy-MM-dd
@@ -45,13 +47,20 @@ interface PlanGeneratorProps {
 export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
   const [days, setDays] = useState("7");
   const [focus, setFocus] = useState("");
+  const [goalId, setGoalId] = useState<string>(NO_GOAL);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [insertError, setInsertError] = useState<string | null>(null);
   const [inserted, setInserted] = useState(false);
 
   const coachPlan = useCoachPlan();
   const { create } = usePlannedSessionMutations();
+  const goalsQuery = useGoals();
   const plan = coachPlan.data;
+
+  // Objectifs datés (courses à venir) sélectionnables comme cible du bloc.
+  const datedGoals = (goalsQuery.data ?? [])
+    .filter((g) => !g.achieved && g.targetDate)
+    .filter((g) => new Date(g.targetDate as unknown as string) >= new Date());
 
   async function handleGenerate() {
     setInsertError(null);
@@ -60,6 +69,7 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
       days: Number(days),
       focus: focus.trim() || undefined,
       startDate,
+      goalId: goalId === NO_GOAL ? null : goalId,
     });
     // tout sélectionner par défaut
     setSelected(new Set(result.sessions.map((_, i) => i)));
@@ -83,11 +93,13 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
         await create.mutateAsync({
           type: s.type,
           date: new Date(`${s.date}T12:00:00`),
+          startTime: s.startTime,
           title: s.title,
           description: s.description,
           durationMin: s.durationMin,
           load: s.load,
           intensity: s.intensity,
+          goalId: goalId === NO_GOAL ? null : goalId,
         });
       }
       setInserted(true);
@@ -132,7 +144,31 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={handleGenerate} disabled={isGenerating}>
+          <div className="space-y-2">
+            <Label>Objectif ciblé</Label>
+            <Select value={goalId} onValueChange={(v) => setGoalId(v ?? NO_GOAL)}>
+              <SelectTrigger className="w-56">
+                <SelectValue>
+                  {goalId === NO_GOAL
+                    ? "Aucun (forme générale)"
+                    : (datedGoals.find((g) => g.id === goalId)?.title ??
+                      "Aucun")}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_GOAL}>Aucun (forme générale)</SelectItem>
+                {datedGoals.map((g) => (
+                  <SelectItem key={g.id} value={g.id}>
+                    {g.title}
+                    {g.targetDate
+                      ? ` — ${format(new Date(g.targetDate as unknown as string), "d MMM yyyy", { locale: fr })}`
+                      : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button onClick={handleGenerate} disabled={isGenerating} className="mb-2">
             {isGenerating ? (
               <>
                 <Loader2 className="size-4 animate-spin" />
@@ -263,6 +299,7 @@ function SessionRow({
             {intensityLabels[session.intensity]}
           </span>
           <span className="text-xs text-muted-foreground">
+            {session.startTime ? `${session.startTime} · ` : ""}
             {activityTypeLabels[session.type]} ·{" "}
             {formatPlannedDuration(session.durationMin)} · {session.load} TSS
           </span>
