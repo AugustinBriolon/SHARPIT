@@ -171,7 +171,7 @@ export function CoachChat() {
         )}
 
         {pendingApprovals.length > 0 && (
-          <div className="space-y-2 rounded-xl border border-primary/30 bg-primary/[0.04] p-3">
+          <div className="space-y-2 rounded-xl border border-primary/30 bg-primary/4 p-3">
             <p className="text-xs font-medium uppercase tracking-wide text-primary">
               {pendingApprovals.length === 1
                 ? "1 proposition à valider"

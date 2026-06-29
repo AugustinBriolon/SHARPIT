@@ -13,11 +13,15 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "db:up": "docker compose up -d"
+    "db:up": "docker compose up -d",
+    "db:migrate-neon": "bash scripts/migrate-to-neon.sh"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.5",
     "@base-ui/react": "^1.6.0",
+    "@clerk/localizations": "^4.11.0",
+    "@clerk/nextjs": "^7.5.9",
+    "@clerk/themes": "2.4.57",
     "@flow-js/garmin-connect": "^1.6.17",
     "@hookform/resolvers": "^5.4.0",
     "@prisma/client": "^6.19.3",

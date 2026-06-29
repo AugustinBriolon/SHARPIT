@@ -1,3 +1,6 @@
+import { ClerkProvider } from "@clerk/nextjs";
+import { frFR } from "@clerk/localizations";
+import { dark } from "@clerk/themes";
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, Syne } from "next/font/google";
 import { QueryProvider } from "@/providers/query-provider";
@@ -26,14 +29,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="fr"
-      suppressHydrationWarning
-      className={`dark ${syne.variable} ${ibmPlexSans.variable} h-full antialiased`}
+    <ClerkProvider
+      localization={frFR}
+      appearance={{ theme: dark }}
+      afterSignOutUrl="/sign-in"
+      signInFallbackRedirectUrl="/"
     >
-      <body className="min-h-full bg-background font-sans text-foreground">
-        <QueryProvider>{children}</QueryProvider>
-      </body>
-    </html>
+      <html
+        lang="fr"
+        suppressHydrationWarning
+        className={`dark ${syne.variable} ${ibmPlexSans.variable} h-full antialiased`}
+      >
+        <body className="min-h-full bg-background font-sans text-foreground">
+          <QueryProvider>{children}</QueryProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

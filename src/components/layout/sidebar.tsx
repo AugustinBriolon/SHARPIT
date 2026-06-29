@@ -1,5 +1,6 @@
 "use client";
 
+import { UserButton, useUser } from "@clerk/nextjs";
 import {
   Activity,
   BarChart3,
@@ -38,6 +39,7 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user } = useUser();
 
   return (
     <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r border-border/60 bg-card/40">
@@ -87,6 +89,18 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      <div className="flex items-center gap-3 border-t border-border/60 px-4 py-4">
+        <UserButton appearance={{ elements: { avatarBox: "size-8" } }} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium">
+            {user?.fullName ?? user?.firstName ?? "Mon compte"}
+          </p>
+          <p className="truncate text-xs text-muted-foreground">
+            {user?.primaryEmailAddress?.emailAddress ?? ""}
+          </p>
+        </div>
+      </div>
     </aside>
   );
 }
