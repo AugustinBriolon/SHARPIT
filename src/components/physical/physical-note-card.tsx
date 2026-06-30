@@ -1,6 +1,6 @@
 "use client";
 
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
   ChevronDown,
@@ -68,6 +68,15 @@ export function PhysicalNoteCard({
           return "flat" as const;
         })()
       : null;
+
+  // checkins triés du plus récent au plus ancien (ordre API) : [0] = dernier
+  const lastCheckin = note.checkins[0] ?? null;
+  const lastCheckinAgo = lastCheckin
+    ? formatDistanceToNow(new Date(lastCheckin.date), {
+        locale: fr,
+        addSuffix: true,
+      })
+    : null;
 
   async function handleCheckin() {
     await addCheckin.mutateAsync({
@@ -176,14 +185,22 @@ export function PhysicalNoteCard({
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          className="flex w-full items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
         >
           {open ? (
             <ChevronUp className="size-3" />
           ) : (
             <ChevronDown className="size-3" />
           )}
-          Suivi ({note.checkins.length} point{note.checkins.length > 1 ? "s" : ""})
+          <span>
+            Suivi ({note.checkins.length} point
+            {note.checkins.length > 1 ? "s" : ""})
+          </span>
+          {lastCheckinAgo && (
+            <span className="ml-auto text-muted-foreground/70">
+              dernier {lastCheckinAgo}
+            </span>
+          )}
         </button>
 
         {open && (
@@ -220,26 +237,32 @@ export function PhysicalNoteCard({
             </div>
 
             {note.checkins.length > 0 && (
-              <ul className="space-y-1">
+              <ul className="space-y-1.5">
                 {note.checkins.map((c) => (
                   <li
                     key={c.id}
                     className="flex items-center gap-2 text-xs text-muted-foreground"
                   >
-                    <span className="w-16 shrink-0">
+                    <span
+                      className="size-1.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: severityAccent(c.severity) }}
+                    />
+                    <span className="w-16 shrink-0 tabular-nums">
                       {format(new Date(c.date), "d MMM", { locale: fr })}
                     </span>
                     {c.severity != null && (
                       <span
                         className={cn(
-                          "font-mono font-medium",
+                          "w-12 shrink-0 font-mono font-medium tabular-nums",
                           severityColor(c.severity),
                         )}
                       >
                         {c.severity}/10
                       </span>
                     )}
-                    {c.comment && <span className="truncate">— {c.comment}</span>}
+                    {c.comment && (
+                      <span className="truncate">— {c.comment}</span>
+                    )}
                   </li>
                 ))}
               </ul>

@@ -62,6 +62,9 @@ export const coachPlanRequestSchema = z.object({
   days: z.coerce.number().int().min(1).max(28).optional(),
   focus: z.string().optional().nullable(),
   goalId: z.string().optional().nullable(),
+  targetLoad: z.coerce.number().int().min(0).max(1200).optional().nullable(),
+  planPhase: z.string().optional().nullable(),
+  planFocus: z.string().optional().nullable(),
 });
 
 /** Analyse d'une séance réalisée vs prévue. */
@@ -92,11 +95,124 @@ export const sessionAnalysisSchema = z.object({
   recommendation: z
     .string()
     .describe("Conseil concret à retenir pour la suite."),
+  physicalReassessments: z
+    .array(
+      z.object({
+        noteId: z
+          .string()
+          .describe(
+            "ID EXACT d'une douleur/blessure ACTIVE fournie dans le contexte. N'invente jamais d'ID : recopie-le tel quel.",
+          ),
+        noteTitle: z
+          .string()
+          .describe("Titre de la note physique concernée (pour l'affichage)."),
+        question: z
+          .string()
+          .describe(
+            "Question courte et ciblée à poser à l'athlète pour réévaluer cette douleur après cette séance.",
+          ),
+        suggestedSeverity: z
+          .number()
+          .int()
+          .min(0)
+          .max(10)
+          .nullable()
+          .describe(
+            "Sévérité 0-10 suggérée UNIQUEMENT si l'athlète l'a explicitement indiquée dans ses notes/ressenti. Sinon null (l'athlète renseignera lui-même).",
+          ),
+        comment: z
+          .string()
+          .describe(
+            "Commentaire pré-rempli pour le point de suivi, rappelant le contexte de la séance (ex. test diagnostique réalisé).",
+          ),
+      }),
+    )
+    .max(3)
+    .optional()
+    .describe(
+      "Propositions de réévaluation du suivi physique, UNIQUEMENT pour les douleurs/blessures actives dont la zone est explicitement sollicitée ou mentionnée par la consigne / les notes de cette séance. Laisse vide ou omets si rien de pertinent.",
+    ),
 });
 
 export type SessionAnalysis = z.infer<typeof sessionAnalysisSchema>;
 
+/** Analyse GLOBALE d'un brick (enchaînement multisport). */
+export const brickAnalysisSchema = z.object({
+  overallScore: z
+    .number()
+    .int()
+    .min(0)
+    .max(100)
+    .describe("Score global d'exécution du brick 0-100 (transitions incluses)."),
+  summary: z
+    .string()
+    .describe("Synthèse globale du brick en 1-2 phrases."),
+  transition: z
+    .string()
+    .describe(
+      "Analyse de l'enchaînement / des transitions : dérive cardiaque, perte d'allure en sortie de vélo, sensations dans les premières minutes du sport suivant.",
+    ),
+  remarks: z
+    .array(z.string())
+    .max(5)
+    .describe("Remarques exploitables sur l'ensemble du brick."),
+  recommendation: z
+    .string()
+    .describe("Conseil concret pour améliorer les prochains bricks."),
+});
+
+export type BrickAnalysis = z.infer<typeof brickAnalysisSchema>;
+
 /** Réadaptation des séances à venir. */
+const nullableAdaptString = z.preprocess(
+  (v) => (v === "" || v === "null" ? null : v),
+  z.string().nullable(),
+);
+
+const nullableAdaptInt = z.preprocess((v) => {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.round(n) : null;
+}, z.number().int().nullable());
+
+const adaptChangeBase = {
+  action: z.enum(["MODIFY", "REMOVE", "ADD"]),
+  sessionId: z
+    .string()
+    .nullable()
+    .describe(
+      "ID de la séance existante (pour MODIFY/REMOVE), null pour ADD.",
+    ),
+  date: z.string().nullable().describe("Date yyyy-MM-dd (requise pour ADD)."),
+  type: z.enum(["RUN", "BIKE", "SWIM", "STRENGTH"]).nullable(),
+  intensity: z
+    .enum([
+      "RECOVERY",
+      "ENDURANCE",
+      "TEMPO",
+      "THRESHOLD",
+      "VO2MAX",
+      "RACE",
+    ])
+    .nullable(),
+  title: z.string().nullable(),
+  description: z.string().nullable(),
+  durationMin: z
+    .number()
+    .nullable()
+    .describe("Durée en minutes (entier)."),
+  load: z.number().nullable().describe("Charge TSS (entier)."),
+  reason: z.string().describe("Pourquoi cet ajustement."),
+};
+
+/** Schéma permissif pour la génération IA (accepte les décimales). */
+export const adaptPlanGenerationSchema = z.object({
+  summary: z
+    .string()
+    .describe("Synthèse des ajustements proposés et de leur logique."),
+  changes: z.array(z.object(adaptChangeBase)).max(20),
+});
+
 export const adaptPlanSchema = z.object({
   summary: z
     .string()
@@ -104,31 +220,21 @@ export const adaptPlanSchema = z.object({
   changes: z
     .array(
       z.object({
-        action: z.enum(["MODIFY", "REMOVE", "ADD"]),
-        sessionId: z
-          .string()
-          .nullable()
-          .describe("ID de la séance existante (pour MODIFY/REMOVE), null pour ADD."),
-        date: z
-          .string()
-          .nullable()
-          .describe("Date yyyy-MM-dd (requise pour ADD)."),
-        type: z.enum(["RUN", "BIKE", "SWIM", "STRENGTH"]).nullable(),
-        intensity: z
-          .enum([
-            "RECOVERY",
-            "ENDURANCE",
-            "TEMPO",
-            "THRESHOLD",
-            "VO2MAX",
-            "RACE",
-          ])
-          .nullable(),
-        title: z.string().nullable(),
-        description: z.string().nullable(),
-        durationMin: z.number().int().nullable(),
-        load: z.number().int().nullable(),
-        reason: z.string().describe("Pourquoi cet ajustement."),
+        action: adaptChangeBase.action,
+        sessionId: z.preprocess(
+          (v) => (v === "" || v === "null" ? null : v),
+          adaptChangeBase.sessionId,
+        ),
+        date: nullableAdaptString.describe(
+          "Date yyyy-MM-dd (requise pour ADD).",
+        ),
+        type: adaptChangeBase.type,
+        intensity: adaptChangeBase.intensity,
+        title: nullableAdaptString,
+        description: nullableAdaptString,
+        durationMin: nullableAdaptInt,
+        load: nullableAdaptInt,
+        reason: adaptChangeBase.reason,
       }),
     )
     .max(20),

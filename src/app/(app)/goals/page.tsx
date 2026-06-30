@@ -1,4 +1,5 @@
 import { GoalKind } from "@prisma/client";
+import { StickyHeader } from "@/components/layout/sticky-header";
 import {
   GoalsToolbar,
   MetricGoalCard,
@@ -40,7 +41,7 @@ export default async function GoalsPage() {
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+      <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">
             Goals
@@ -53,7 +54,7 @@ export default async function GoalsPage() {
           </p>
         </div>
         <GoalsToolbar />
-      </header>
+      </StickyHeader>
 
       <section className="space-y-4">
         <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">

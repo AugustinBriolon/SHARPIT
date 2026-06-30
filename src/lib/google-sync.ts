@@ -232,6 +232,13 @@ export async function pushSessionToGoogle(
   };
 }
 
+/** Push Google en arrière-plan (ne bloque pas l'outil coach ni l'API). */
+export function pushSessionToGoogleInBackground(session: PlannedSession): void {
+  void pushSessionToGoogle(session).catch((error) => {
+    console.error("Push Google Calendar échoué", error);
+  });
+}
+
 export async function deleteSessionFromGoogle(
   session: Pick<PlannedSession, "googleEventId">,
 ): Promise<void> {

@@ -193,6 +193,52 @@ export async function createPlannedSession(
   return prisma.plannedSession.create({ data });
 }
 
+/**
+ * Crée plusieurs séances liées en un seul "brick" (enchaînement multisport,
+ * ex. vélo → course). Chaque jambe reste une séance autonome mais partage un
+ * `brickGroupId` commun ; `brickOrder` suit l'ordre du tableau fourni.
+ */
+export async function createBrickSessions(
+  legs: Omit<
+    Prisma.PlannedSessionUncheckedCreateInput,
+    "brickGroupId" | "brickOrder"
+  >[],
+) {
+  const brickGroupId = crypto.randomUUID();
+  const created = [];
+  for (let i = 0; i < legs.length; i++) {
+    created.push(
+      await prisma.plannedSession.create({
+        data: { ...legs[i], brickGroupId, brickOrder: i },
+      }),
+    );
+  }
+  return created;
+}
+
+export async function getBrickSessions(brickGroupId: string) {
+  return prisma.plannedSession.findMany({
+    where: { brickGroupId },
+    include: plannedSessionInclude,
+    orderBy: { brickOrder: "asc" },
+  });
+}
+
+export async function getBrickAnalysis(brickGroupId: string) {
+  return prisma.brickAnalysis.findUnique({ where: { brickGroupId } });
+}
+
+export async function setBrickAnalysis(
+  brickGroupId: string,
+  content: Prisma.InputJsonValue,
+) {
+  return prisma.brickAnalysis.upsert({
+    where: { brickGroupId },
+    create: { brickGroupId, content },
+    update: { content, generatedAt: new Date() },
+  });
+}
+
 export async function updatePlannedSession(
   id: string,
   data: Prisma.PlannedSessionUncheckedUpdateInput,
@@ -290,11 +336,71 @@ export async function upsertAthleteProfile(
     lthr?: number | null;
     runThresholdPaceSecPerKm?: number | null;
     context?: string | null;
+    thresholdsSyncedAt?: Date | null;
   },
 ) {
   return prisma.athleteProfile.upsert({
     where: { id: PROFILE_ID },
     create: { id: PROFILE_ID, ...data },
     update: data,
+  });
+}
+
+export async function createThresholdSnapshot(data: {
+  source: string;
+  ftpW?: number | null;
+  lthr?: number | null;
+  runThresholdPaceSecPerKm?: number | null;
+}) {
+  return prisma.athleteThresholdSnapshot.create({
+    data: { profileId: PROFILE_ID, ...data },
+  });
+}
+
+export async function getThresholdSnapshots(limit = 12) {
+  return prisma.athleteThresholdSnapshot.findMany({
+    where: { profileId: PROFILE_ID },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
+}
+
+const planWeekInclude = { weeks: { orderBy: { weekIndex: "asc" as const } } };
+
+export async function getActiveTrainingPlan() {
+  return prisma.trainingPlan.findFirst({
+    where: { status: "ACTIVE" },
+    include: planWeekInclude,
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function archiveActiveTrainingPlans() {
+  return prisma.trainingPlan.updateMany({
+    where: { status: "ACTIVE" },
+    data: { status: "ARCHIVED" },
+  });
+}
+
+export async function createTrainingPlan(
+  data: Prisma.TrainingPlanUncheckedCreateInput & {
+    weeks: Omit<Prisma.PlanWeekUncheckedCreateInput, "planId">[];
+  },
+) {
+  const { weeks, ...planData } = data;
+  return prisma.trainingPlan.create({
+    data: {
+      ...planData,
+      weeks: { create: weeks },
+    },
+    include: planWeekInclude,
+  });
+}
+
+export async function archiveTrainingPlan(id: string) {
+  return prisma.trainingPlan.update({
+    where: { id },
+    data: { status: "ARCHIVED" },
+    include: planWeekInclude,
   });
 }

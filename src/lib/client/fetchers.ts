@@ -6,6 +6,9 @@ import type {
   ClientHealthEntry,
   ClientPhysicalNote,
   ClientPlannedSession,
+  ClientPlanWeek,
+  ClientThresholdSnapshot,
+  ClientTrainingPlan,
 } from "./types";
 
 async function fetchJson<T>(url: string): Promise<T> {
@@ -200,7 +203,7 @@ export async function fetchDailyBriefing(
 
 export interface ClientWeeklyReview {
   id: string;
-  weekStart: string;
+  weekStart: Date;
   content: string;
   generatedAt: Date;
 }
@@ -215,8 +218,60 @@ export async function fetchWeeklyReview(
   const r = data.review;
   return {
     id: r.id as string,
-    weekStart: r.weekStart as string,
+    weekStart: toDate(r.weekStart),
     content: r.content as string,
     generatedAt: toDate(r.generatedAt),
   };
+}
+
+export interface ThresholdApplyPreview {
+  estimates: {
+    ftpW: number | null;
+    ftpSource: string | null;
+    runThresholdPaceSecPerKm: number | null;
+  };
+  current: {
+    ftpW: number | null;
+    runThresholdPaceSecPerKm: number | null;
+  };
+  changes: {
+    field: "ftpW" | "runThresholdPaceSecPerKm";
+    label: string;
+    from: string;
+    to: string;
+  }[];
+  hasChanges: boolean;
+}
+
+export async function fetchThresholdPreview(): Promise<ThresholdApplyPreview> {
+  return fetchJson<ThresholdApplyPreview>("/api/athlete-profile/apply-estimates");
+}
+
+export async function fetchThresholdHistory(): Promise<ClientThresholdSnapshot[]> {
+  const data = await fetchJson<RawRecord[]>(
+    "/api/athlete-profile/threshold-history",
+  );
+  return data.map((s) => ({
+    ...s,
+    createdAt: toDate(s.createdAt),
+  })) as unknown as ClientThresholdSnapshot[];
+}
+
+export async function fetchTrainingPlan(): Promise<ClientTrainingPlan | null> {
+  const plan = await fetchJson<RawRecord | null>("/api/training-plans");
+  if (!plan) return null;
+  return {
+    ...plan,
+    raceDate: toDate(plan.raceDate),
+    startDate: toDate(plan.startDate),
+    createdAt: toDate(plan.createdAt),
+    updatedAt: toDate(plan.updatedAt),
+    weeks: ((plan.weeks as RawRecord[]) ?? []).map(
+      (w): ClientPlanWeek =>
+        ({
+          ...w,
+          weekStart: toDate(w.weekStart),
+        }) as ClientPlanWeek,
+    ),
+  } as ClientTrainingPlan;
 }

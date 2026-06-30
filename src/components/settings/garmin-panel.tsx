@@ -6,7 +6,21 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/toast";
 import { queryKeys } from "@/lib/client/keys";
+
+async function runGarminSync(): Promise<{ updated: number; days: number }> {
+  const response = await fetch("/api/garmin/sync", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ days: 60 }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "Synchronisation échouée");
+  }
+  return data;
+}
 
 interface GarminPanelProps {
   account: {
@@ -22,7 +36,6 @@ export function GarminPanel({ account }: GarminPanelProps) {
   const [connecting, setConnecting] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<string | null>(null);
 
   async function handleConnect(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -52,27 +65,23 @@ export function GarminPanel({ account }: GarminPanelProps) {
 
   async function handleSync() {
     setSyncing(true);
-    setResult(null);
-    setError(null);
     try {
-      const response = await fetch("/api/garmin/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ days: 60 }),
+      await toast.promise(runGarminSync(), {
+        loading: "Synchronisation Garmin en cours…",
+        success: (data) => ({
+          title: "Garmin synchronisé",
+          description: `${data.updated} jour(s) mis à jour sur ${data.days} analysés.`,
+        }),
+        error: (err) => ({
+          title: "Synchronisation Garmin échouée",
+          description: err instanceof Error ? err.message : undefined,
+        }),
       });
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.error ?? "Synchronisation échouée");
-      } else {
-        setResult(
-          `${data.updated} jour(s) mis à jour sur ${data.days} analysés.`,
-        );
-        await queryClient.invalidateQueries({ queryKey: ["health"] });
-        await queryClient.invalidateQueries({
-          queryKey: queryKeys.activities,
-        });
-        router.refresh();
-      }
+      await queryClient.invalidateQueries({ queryKey: ["health"] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.activities });
+      router.refresh();
+    } catch {
+      // L'échec est déjà signalé par le toast d'erreur.
     } finally {
       setSyncing(false);
     }
@@ -107,9 +116,6 @@ export function GarminPanel({ account }: GarminPanelProps) {
             Déconnecter
           </Button>
         </div>
-
-        {result && <p className="text-sm text-muted-foreground">{result}</p>}
-        {error && <p className="text-sm text-destructive">{error}</p>}
       </div>
     );
   }

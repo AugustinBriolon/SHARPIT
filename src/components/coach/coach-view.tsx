@@ -3,6 +3,7 @@
 import type { UIMessage } from "ai";
 import { Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { StickyHeader } from "@/components/layout/sticky-header";
 import { CoachChat } from "@/components/coach/coach-chat";
 import { CoachContextPanel } from "@/components/coach/coach-context-panel";
 import { CoachConversationList } from "@/components/coach/coach-conversation-list";
@@ -54,7 +55,7 @@ export function CoachView() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+      <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">
             Coach IA
@@ -71,7 +72,7 @@ export function CoachView() {
           <Sparkles className="size-4" />
           Générer ma semaine
         </Button>
-      </header>
+      </StickyHeader>
 
       <CoachContextPanel />
 

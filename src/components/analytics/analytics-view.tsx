@@ -1,3 +1,4 @@
+import { StickyHeader } from "@/components/layout/sticky-header";
 import { LoadChart } from "@/components/analytics/load-chart";
 import { SportDistributionChart } from "@/components/analytics/sport-distribution-chart";
 import { VolumeChart } from "@/components/analytics/volume-chart";
@@ -26,7 +27,7 @@ export function AnalyticsView({ activities }: AnalyticsViewProps) {
 
   return (
     <div className="space-y-8">
-      <header>
+      <StickyHeader>
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">
           Analytics
         </p>
@@ -37,7 +38,7 @@ export function AnalyticsView({ activities }: AnalyticsViewProps) {
           Ta charge, ton volume et ta répartition par sport sur les{" "}
           {summary.periodDays} derniers jours.
         </p>
-      </header>
+      </StickyHeader>
 
       <FormStatusBanner pmc={pmc} />
 

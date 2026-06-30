@@ -83,7 +83,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Paramètres invalides." }, { status: 400 });
   }
 
-  const { startDate, days = 7, focus, goalId } = parsed.data;
+  const { startDate, days = 7, focus, goalId, targetLoad, planPhase, planFocus } =
+    parsed.data;
   const start = startOfDay(startDate ?? new Date());
 
   const [ctx, busySummary, goal] = await Promise.all([
@@ -115,6 +116,20 @@ ${bits}
 Périodise IMPÉRATIVEMENT ce bloc en fonction de cette échéance (base → spécifique → affûtage selon les semaines restantes). Oriente le contenu des séances vers les exigences de cet objectif.`;
   }
 
+  let macroBlock = "";
+  if (targetLoad != null || planPhase || planFocus) {
+    const bits = [
+      planPhase ? `Phase du macro-plan : ${planPhase}` : null,
+      targetLoad != null
+        ? `Charge hebdomadaire cible : ${targetLoad} TSS (répartis sur les séances du bloc)`
+        : null,
+      planFocus ? `Focus de la semaine : ${planFocus}` : null,
+    ].filter(Boolean);
+    macroBlock = `\n\n## Macro-plan de la semaine
+${bits.join("\n")}
+Calibre le volume et l'intensité des séances pour approcher cette charge cible sans la dépasser de plus de 10 %.`;
+  }
+
   const agendaBlock = busySummary
     ? `\n\n## Agenda de l'athlète (créneaux occupés à éviter)
 Place chaque séance à une heure LIBRE ('startTime' au format HH:mm), entre 06:00 et 21:00, jamais la nuit. Ne surcharge pas un jour déjà très occupé : si une journée est pleine, allège ou déplace la séance. Vérifie que la durée de la séance tient dans un créneau libre.
@@ -130,7 +145,7 @@ Aucun agenda connecté : propose des heures réalistes ('startTime' entre 06:00 
 
 ${focus ? `Demande spécifique de l'athlète : ${focus}\n\n` : ""}Données de l'athlète :
 
-${contextText}${goalBlock}${agendaBlock}`;
+${contextText}${goalBlock}${macroBlock}${agendaBlock}`;
 
   try {
     const { output } = await generateText({

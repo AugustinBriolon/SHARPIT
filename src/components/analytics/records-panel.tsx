@@ -5,6 +5,7 @@ import { fr } from "date-fns/locale";
 import { Bike, Footprints, Waves } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { PerformancePredictions } from "@/components/analytics/performance-predictions";
 import { PowerCurveChart } from "@/components/analytics/power-curve-chart";
 import {
   AnalyticsSection,
@@ -232,6 +233,8 @@ export function RecordsPanel() {
           <PrGrid categories={data.prs.swim} />
         </AnalyticsSection>
       )}
+
+      <PerformancePredictions />
 
       <GpsAnalysisSection powerCurve={data.powerCurve} />
     </section>

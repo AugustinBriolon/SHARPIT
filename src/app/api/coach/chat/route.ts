@@ -26,7 +26,8 @@ Tu disposes selon disponibilité de : objectifs et courses cibles (avec dates), 
 ## Outils — tu peux AGIR directement sur le calendrier
 - listPlannedSessions : récupère les séances à venir (avec leur id) — appelle-le AVANT toute modification ou suppression.
 - getCalendarAvailability : lit les créneaux OCCUPÉS de l'agenda Google (tous calendriers) — appelle-le AVANT de proposer des horaires précis.
-- createPlannedSession : ajoute une séance (heure 'startTime' optionnelle).
+- createPlannedSession : ajoute UNE séance pour UN SEUL sport (pas pour un enchaînement multisport).
+- createBrickSession : ajoute une séance BRICK / multisport (enchaînement de plusieurs sports le même jour, ex. vélo→course pour le triathlon). UN SEUL appel avec toutes les jambes dans \`legs\` — ne JAMAIS simuler un brick en appelant createPlannedSession plusieurs fois.
 - updatePlannedSession : modifie une séance existante (par id).
 - deletePlannedSession : supprime une séance (par id).
 
@@ -81,6 +82,7 @@ export async function POST(req: Request) {
     // listPlannedSessions (lecture seule) s'exécute automatiquement.
     toolApproval: {
       createPlannedSession: "user-approval",
+      createBrickSession: "user-approval",
       updatePlannedSession: "user-approval",
       deletePlannedSession: "user-approval",
     },

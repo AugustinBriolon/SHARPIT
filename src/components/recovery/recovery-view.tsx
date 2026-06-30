@@ -6,6 +6,7 @@ import {
   RecoveryStat,
 } from "@/components/recovery/recovery-panels";
 import { SleepCoachPanel } from "@/components/recovery/sleep-coach-panel";
+import { StickyHeader } from "@/components/layout/sticky-header";
 import type { SleepEntryInput } from "@/lib/sleep";
 import { Skeleton } from "@/components/ui/skeleton";
 import { computePmcSeries } from "@/lib/analytics";
@@ -62,7 +63,7 @@ export function RecoveryView() {
 
   return (
     <div className="space-y-8">
-      <header>
+      <StickyHeader>
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">
           Recovery
         </p>
@@ -73,7 +74,7 @@ export function RecoveryView() {
           Es-tu prêt à pousser aujourd&apos;hui ? Lecture combinée de ta charge
           et de tes constantes Garmin.
         </p>
-      </header>
+      </StickyHeader>
 
       <ReadinessHero view={readiness} factors={factors} />
 

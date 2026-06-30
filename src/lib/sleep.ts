@@ -13,6 +13,11 @@ import type { RecoveryTone } from "@/lib/recovery";
 
 const TARGET_DURATION_MIN = 480; // 8 h
 const FALL_ASLEEP_BUFFER_MIN = 20; // marge d'endormissement
+// État récent (durée, phases, score, stress) : on reste sur la dernière semaine.
+const RECENT_WINDOW_NIGHTS = 7;
+// Habitudes (coucher conseillé & régularité) : fenêtre large + médiane, pour ne
+// pas être faussé par une période atypique (vacances, déplacements…).
+const HABIT_WINDOW_NIGHTS = 30;
 
 export interface SleepEntryInput {
   date: Date;
@@ -100,12 +105,23 @@ function avg(values: number[]): number | null {
   return values.reduce((s, v) => s + v, 0) / values.length;
 }
 
-function stdev(values: number[]): number | null {
+function median(values: number[]): number | null {
+  if (!values.length) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2
+    ? sorted[mid]
+    : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+/**
+ * Écart absolu médian (MAD) : mesure de dispersion robuste aux valeurs
+ * aberrantes, contrairement à l'écart-type. Sert d'indicateur de régularité.
+ */
+function medianAbsoluteDeviation(values: number[]): number | null {
   if (values.length < 2) return null;
-  const m = avg(values)!;
-  const variance =
-    values.reduce((s, v) => s + (v - m) ** 2, 0) / values.length;
-  return Math.sqrt(variance);
+  const m = median(values)!;
+  return median(values.map((v) => Math.abs(v - m)));
 }
 
 /** Normalise une heure de coucher pour la moyenne autour de minuit
@@ -290,7 +306,7 @@ export function analyzeSleep(entries: SleepEntryInput[]): SleepCoachView {
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
 
-  // Nuits exploitables récentes (14 dernières avec au moins des phases ou un score).
+  // Nuits exploitables (fenêtre "habitudes") avec au moins des phases ou un score.
   const nights = sorted
     .filter(
       (e) =>
@@ -299,7 +315,7 @@ export function analyzeSleep(entries: SleepEntryInput[]): SleepCoachView {
         e.sleepRemMin != null ||
         e.sleepMinutes != null,
     )
-    .slice(0, 14);
+    .slice(0, HABIT_WINDOW_NIGHTS);
 
   const empty: SleepCoachView = {
     hasData: false,
@@ -320,7 +336,7 @@ export function analyzeSleep(entries: SleepEntryInput[]): SleepCoachView {
 
   if (!nights.length) return empty;
 
-  const recent7 = nights.slice(0, 7);
+  const recent7 = nights.slice(0, RECENT_WINDOW_NIGHTS);
 
   const avgScore = avg(
     recent7.map((n) => n.sleepScore).filter((v): v is number => v != null),
@@ -342,25 +358,27 @@ export function analyzeSleep(entries: SleepEntryInput[]): SleepCoachView {
   const avgDeepPct = avg(deepPcts);
   const avgRemPct = avg(remPcts);
 
+  // Coucher conseillé & régularité : calculés sur la fenêtre "habitudes" (jusqu'à
+  // HABIT_WINDOW_NIGHTS nuits) avec la médiane, pour ignorer les nuits atypiques.
   const bedtimes = nights
     .map((n) => n.sleepBedtimeMin)
     .filter((v): v is number => v != null)
     .map(normalizeBedtime);
-  const wakes = recent7
+  const wakes = nights
     .map((n) => n.sleepWakeMin)
     .filter((v): v is number => v != null);
   const stresses = recent7
     .map((n) => n.sleepAvgStress)
     .filter((v): v is number => v != null);
 
-  const regularity = stdev(bedtimes);
-  const avgBedtimeNorm = avg(bedtimes);
-  const avgBedtime = avgBedtimeNorm != null ? avgBedtimeNorm % 1440 : null;
-  const avgWake = avg(wakes);
+  const regularity = medianAbsoluteDeviation(bedtimes);
+  const medianBedtimeNorm = median(bedtimes);
+  const avgBedtime = medianBedtimeNorm != null ? medianBedtimeNorm % 1440 : null;
+  const medianWake = median(wakes);
 
   let recommendedBedtime: number | null = null;
-  if (avgWake != null) {
-    const raw = avgWake - TARGET_DURATION_MIN - FALL_ASLEEP_BUFFER_MIN;
+  if (medianWake != null) {
+    const raw = medianWake - TARGET_DURATION_MIN - FALL_ASLEEP_BUFFER_MIN;
     recommendedBedtime = ((raw % 1440) + 1440) % 1440;
   }
 

@@ -2,16 +2,20 @@
 
 import { differenceInCalendarDays } from "date-fns";
 import {
+  Check,
   CheckCircle2,
+  HeartPulse,
   Link2,
   Loader2,
   RefreshCw,
   Sparkles,
   Unlink,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import type { ClientActivity, ClientPlannedSession } from "@/lib/client/types";
 import {
   activityTypeColors,
@@ -20,9 +24,14 @@ import {
   formatDistance,
   formatDuration,
 } from "@/lib/format";
+import { severityColor } from "@/lib/physical";
 import { cn } from "@/lib/utils";
 import type { SessionAnalysis } from "@/lib/validators/coach";
 import { useActivities, usePlannedSessionMutations } from "@/hooks/use-data";
+import {
+  usePhysicalNoteMutations,
+  usePhysicalNotes,
+} from "@/hooks/use-physical";
 
 const VERDICT_LABELS: Record<SessionAnalysis["verdict"], string> = {
   AS_PLANNED: "Conforme",
@@ -45,6 +54,99 @@ function activityMetric(a: ClientActivity): string {
     return `${Math.round(a.bikeMetrics.avgPower)} W`;
   if (a.swimMetrics?.distanceM) return formatDistance(a.swimMetrics.distanceM);
   return formatDuration(a.duration);
+}
+
+type PhysicalReassessment = NonNullable<
+  SessionAnalysis["physicalReassessments"]
+>[number];
+
+function PhysicalReassessmentCard({ item }: { item: PhysicalReassessment }) {
+  const notesQuery = usePhysicalNotes();
+  const { addCheckin } = usePhysicalNoteMutations();
+  const note = notesQuery.data?.find((n) => n.id === item.noteId);
+
+  const [dismissed, setDismissed] = useState(false);
+  const [done, setDone] = useState(false);
+  const [severity, setSeverity] = useState<number>(
+    item.suggestedSeverity ?? note?.severity ?? 5,
+  );
+  const [comment, setComment] = useState(item.comment ?? "");
+
+  // La note peut avoir été résolue/supprimée depuis l'analyse, ou l'id être
+  // invalide : on n'affiche rien dans ce cas.
+  if (!note || dismissed) return null;
+
+  const isSaving = addCheckin.isPending;
+
+  function handleSave() {
+    addCheckin.mutate(
+      {
+        id: item.noteId,
+        data: { severity, comment: comment.trim() || null },
+      },
+      { onSuccess: () => setDone(true) },
+    );
+  }
+
+  if (done) {
+    return (
+      <div className="flex items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2 text-xs text-emerald-600">
+        <Check className="size-3.5 shrink-0" />
+        <span>
+          Suivi mis à jour : {item.noteTitle} ({severity}/10)
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2 rounded-md border border-border/50 bg-card/50 p-2.5">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-medium">{item.noteTitle}</p>
+        <button
+          type="button"
+          onClick={() => setDismissed(true)}
+          className="text-muted-foreground hover:text-foreground"
+          aria-label="Ignorer"
+        >
+          <X className="size-3.5" />
+        </button>
+      </div>
+      <p className="text-xs text-muted-foreground">{item.question}</p>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-muted-foreground">Sévérité ressentie</span>
+          <span className={cn("font-mono font-semibold", severityColor(severity))}>
+            {severity}/10
+          </span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={10}
+          step={1}
+          value={severity}
+          onChange={(e) => setSeverity(Number(e.target.value))}
+          className="w-full accent-primary"
+        />
+      </div>
+      <Textarea
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        rows={2}
+        placeholder="Ressenti pendant la séance…"
+        className="min-h-0 text-xs"
+      />
+      <Button type="button" size="sm" onClick={handleSave} disabled={isSaving}>
+        {isSaving ? (
+          <Loader2 className="size-3.5 animate-spin" />
+        ) : (
+          <Check className="size-3.5" />
+        )}
+        Enregistrer le point
+      </Button>
+    </div>
+  );
 }
 
 export function SessionRealization({
@@ -154,6 +256,17 @@ export function SessionRealization({
               <p className="rounded-md border border-primary/20 bg-primary/5 p-2 text-xs">
                 💡 {analysis.recommendation}
               </p>
+            )}
+            {(analysis.physicalReassessments?.length ?? 0) > 0 && (
+              <div className="space-y-2 rounded-md border border-amber-500/20 bg-amber-500/5 p-2.5">
+                <p className="flex items-center gap-1.5 text-xs font-medium text-amber-600">
+                  <HeartPulse className="size-3.5" />
+                  Réévaluer ton suivi physique
+                </p>
+                {analysis.physicalReassessments?.map((item) => (
+                  <PhysicalReassessmentCard key={item.noteId} item={item} />
+                ))}
+              </div>
             )}
             <button
               type="button"

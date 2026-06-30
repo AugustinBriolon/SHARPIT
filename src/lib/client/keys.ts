@@ -3,6 +3,7 @@ export const queryKeys = {
   health: (days: number) => ["health", days] as const,
   goals: ["goals"] as const,
   plannedSessions: ["planned-sessions"] as const,
+  brickAnalysis: (groupId: string) => ["brick-analysis", groupId] as const,
   activityStream: (id: string) => ["activity-stream", id] as const,
   physicalNotes: ["physical-notes"] as const,
   coachContext: ["coach-context"] as const,
@@ -14,4 +15,7 @@ export const queryKeys = {
   dailyBriefing: (date: string) => ["daily-briefing", date] as const,
   weeklyReview: (date: string) => ["weekly-review", date] as const,
   records: ["records"] as const,
+  trainingPlan: ["training-plan"] as const,
+  thresholdHistory: ["threshold-history"] as const,
+  thresholdPreview: ["threshold-preview"] as const,
 };

@@ -54,7 +54,20 @@ enum BodySide {
 enum PhysicalStatus {
   ACTIVE // en cours
   MONITORING // sous surveillance
-  RESOLVED // résolu
+  RESOLVED // résolue
+}
+
+enum PlanPhase {
+  BASE
+  BUILD
+  PEAK
+  TAPER
+  RACE
+}
+
+enum TrainingPlanStatus {
+  ACTIVE
+  ARCHIVED
 }
 
 model Activity {
@@ -98,8 +111,25 @@ model AthleteProfile {
 
   context String? @db.Text // contexte libre éditable (dispos, contraintes pro, préférences) injecté dans le coach IA
 
+  thresholdSnapshots AthleteThresholdSnapshot[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model AthleteThresholdSnapshot {
+  id                       String         @id @default(cuid())
+  profileId                String         @default("default")
+  profile                  AthleteProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  source                   String // estimated | garmin | manual
+  ftpW                     Int?
+  lthr                     Int?
+  runThresholdPaceSecPerKm Float?
+
+  createdAt DateTime @default(now())
+
+  @@index([profileId])
+  @@index([createdAt])
 }
 
 model ActivityStream {
@@ -281,12 +311,49 @@ model Goal {
   notes        String?
 
   plannedSessions PlannedSession[]
+  trainingPlans   TrainingPlan[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([kind])
   @@index([targetDate])
+}
+
+model TrainingPlan {
+  id          String             @id @default(cuid())
+  goalId      String?
+  goal        Goal?              @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  raceDate    DateTime           @db.Date
+  startDate   DateTime           @db.Date
+  status      TrainingPlanStatus @default(ACTIVE)
+  baselineCtl Int?
+  summary     String?            @db.Text
+
+  weeks PlanWeek[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([raceDate])
+}
+
+model PlanWeek {
+  id          String       @id @default(cuid())
+  planId      String
+  plan        TrainingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  weekStart   DateTime     @db.Date
+  weekIndex   Int
+  phase       PlanPhase
+  targetLoad  Int // TSS cible de la semaine
+  targetHours Float?
+  focus       String?
+  isDeload    Boolean      @default(false)
+
+  @@unique([planId, weekIndex])
+  @@index([planId])
+  @@index([weekStart])
 }
 
 model PhysicalNote {
@@ -391,6 +458,12 @@ model PlannedSession {
   goalId String?
   goal   Goal?   @relation(fields: [goalId], references: [id], onDelete: SetNull)
 
+  // Brick / multisport : les jambes d'un même enchaînement (ex. vélo→course)
+  // partagent un brickGroupId. brickOrder donne l'ordre des jambes (0 = première).
+  // Chaque jambe reste une séance autonome (un sport, une activité liée, une analyse).
+  brickGroupId String?
+  brickOrder   Int?
+
   // Réalisation : activité Strava/Garmin liée + analyse IA prévu vs réalisé
   activityId String?   @unique
   activity   Activity? @relation(fields: [activityId], references: [id], onDelete: SetNull)
@@ -404,4 +477,15 @@ model PlannedSession {
   updatedAt DateTime @updatedAt
 
   @@index([date])
+  @@index([brickGroupId])
+}
+
+// Analyse globale d'un brick (enchaînement multisport) : agrège les jambes
+// pour évaluer transitions, dérive cardiaque vélo→course et gestion d'ensemble.
+// Une analyse par brickGroupId (les jambes gardent par ailleurs leur analyse
+// individuelle dans PlannedSession.analysis).
+model BrickAnalysis {
+  brickGroupId String   @id
+  content      Json // { overallScore, summary, transition, remarks[], recommendation }
+  generatedAt  DateTime @default(now())
 }

@@ -5,6 +5,7 @@ import {
   CalendarPlus,
   CalendarX2,
   Check,
+  Layers,
   ListChecks,
   Loader2,
   PencilLine,
@@ -50,6 +51,12 @@ const META: Record<string, Meta> = {
     running: "Ajout de la séance…",
     proposal: "Ajouter une séance",
   },
+  "tool-createBrickSession": {
+    label: "Brick ajouté",
+    icon: Layers,
+    running: "Ajout du brick…",
+    proposal: "Ajouter un brick (multisport)",
+  },
   "tool-updatePlannedSession": {
     label: "Séance modifiée",
     icon: PencilLine,
@@ -91,6 +98,34 @@ function describeInput(
       ? `${ref.title ?? "Séance"}${ref.date ? ` — ${ref.date}` : ""}`
       : "Séance ciblée";
     return { headline, lines: [] };
+  }
+
+  if (type === "tool-createBrickSession") {
+    const brick = input as unknown as {
+      date?: string;
+      title?: string;
+      legs?: {
+        type?: ActivityType;
+        intensity?: keyof typeof intensityLabels;
+        title?: string;
+        durationMin?: number;
+        load?: number;
+      }[];
+    };
+    const headline = brick.title ?? "Brick (multisport)";
+    if (brick.date) lines.push(brick.date);
+    for (const leg of brick.legs ?? []) {
+      const legMeta = [
+        fmtType(leg.type),
+        leg.intensity ? intensityLabels[leg.intensity] : null,
+        leg.durationMin ? `${leg.durationMin} min` : null,
+        leg.load ? `${leg.load} TSS` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      lines.push(`${leg.title ?? fmtType(leg.type) ?? "Étape"}${legMeta ? ` — ${legMeta}` : ""}`);
+    }
+    return { headline, lines };
   }
 
   if (type === "tool-createPlannedSession") {
@@ -201,15 +236,28 @@ export function ToolActivity({
   const done = state === "output-available";
   const failed = state === "output-error";
   const output = part.output as
-    | { ok?: boolean; error?: string; title?: string | null; date?: string }
+    | {
+        ok?: boolean;
+        error?: string;
+        title?: string | null;
+        date?: string;
+        legs?: { title?: string | null; type?: string }[];
+      }
     | undefined;
   const koExec = done && output?.ok === false;
 
   let detail: string | null = null;
   if (done && !isList && output) {
-    detail = koExec
-      ? (output.error ?? "échec")
-      : [output.title, output.date].filter(Boolean).join(" · ") || null;
+    if (koExec) {
+      detail = output.error ?? "échec";
+    } else if (part.type === "tool-createBrickSession" && output.legs?.length) {
+      const legLabels = output.legs
+        .map((l) => l.title ?? (l.type ? activityTypeLabels[l.type as ActivityType] : null))
+        .filter(Boolean);
+      detail = [output.date, legLabels.join(" → ")].filter(Boolean).join(" · ") || null;
+    } else {
+      detail = [output.title, output.date].filter(Boolean).join(" · ") || null;
+    }
   }
 
   return (

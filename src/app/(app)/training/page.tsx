@@ -1,10 +1,11 @@
+import { StickyHeader } from "@/components/layout/sticky-header";
 import { TrainingList } from "@/components/training/training-list";
 import { LinkButton } from "@/components/ui/link-button";
 
 export default function TrainingPage() {
   return (
     <div className="space-y-8">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+      <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">
             Training
@@ -17,7 +18,7 @@ export default function TrainingPage() {
           </p>
         </div>
         <LinkButton href="/training/new">Nouvelle séance</LinkButton>
-      </header>
+      </StickyHeader>
 
       <TrainingList />
     </div>

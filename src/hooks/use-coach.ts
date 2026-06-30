@@ -43,6 +43,9 @@ export interface GeneratePlanParams {
   days?: number;
   focus?: string;
   goalId?: string | null;
+  targetLoad?: number | null;
+  planPhase?: string | null;
+  planFocus?: string | null;
 }
 
 export function useCoachPlan() {
@@ -190,7 +193,7 @@ export function useGenerateWeeklyReview() {
       const r = data.review;
       return {
         id: r.id,
-        weekStart: r.weekStart,
+        weekStart: new Date(r.weekStart),
         content: r.content,
         generatedAt: new Date(r.generatedAt),
       } as ClientWeeklyReview;

@@ -1,11 +1,19 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Download } from "lucide-react";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { Check, Download, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  useApplyThresholdEstimates,
+  useThresholdHistory,
+  useThresholdPreview,
+} from "@/hooks/use-data";
+import { queryKeys } from "@/lib/client/keys";
 
 interface ProfileData {
   ftpW: number | null;
@@ -65,6 +73,9 @@ export function AthleteProfilePanel({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const previewQuery = useThresholdPreview();
+  const historyQuery = useThresholdHistory();
+  const applyEstimates = useApplyThresholdEstimates();
 
   async function handleGarminImport() {
     setImporting(true);
@@ -123,12 +134,33 @@ export function AthleteProfilePanel({
       }
       setMessage("Profil enregistré — les zones et métriques seront recalculées.");
       await queryClient.invalidateQueries({ queryKey: ["activity-stream"] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.thresholdPreview });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur");
     } finally {
       setSaving(false);
     }
   }
+
+  async function handleApplyEstimates() {
+    setError(null);
+    setMessage(null);
+    try {
+      const result = await applyEstimates.mutateAsync();
+      const applied = result as { profile?: { ftpW?: number | null; runThresholdPaceSecPerKm?: number | null } };
+      if (applied.profile?.ftpW != null) setFtpW(String(applied.profile.ftpW));
+      if (applied.profile?.runThresholdPaceSecPerKm != null) {
+        setThresholdPace(paceToInput(applied.profile.runThresholdPaceSecPerKm));
+      }
+      setMessage("Seuils estimés appliqués depuis tes records.");
+      await queryClient.invalidateQueries({ queryKey: ["activity-stream"] });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur");
+    }
+  }
+
+  const preview = previewQuery.data;
+  const history = historyQuery.data ?? [];
 
   const syncedLabel = initial?.thresholdsSyncedAt
     ? new Date(initial.thresholdsSyncedAt).toLocaleDateString("fr-FR", {
@@ -164,6 +196,68 @@ export function AthleteProfilePanel({
           )}
         </div>
       </div>
+
+      {preview?.hasChanges && (
+        <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-4">
+          <p className="text-sm font-medium">Seuils estimés depuis tes records</p>
+          <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+            {preview.changes.map((c) => (
+              <li key={c.field}>
+                {c.label} : {c.from} →{" "}
+                <span className="font-medium text-foreground">{c.to}</span>
+              </li>
+            ))}
+          </ul>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-3"
+            onClick={handleApplyEstimates}
+            disabled={applyEstimates.isPending}
+          >
+            {applyEstimates.isPending ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Check className="size-3.5" />
+            )}
+            Appliquer les estimations
+          </Button>
+        </div>
+      )}
+
+      {history.length > 0 && (
+        <div className="rounded-lg border border-border/60 bg-card/30 p-3">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Historique des seuils
+          </p>
+          <ul className="mt-2 space-y-1.5">
+            {history.slice(0, 5).map((s) => (
+              <li
+                key={s.id}
+                className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"
+              >
+                <span>
+                  {format(s.createdAt, "d MMM yyyy", {
+                    locale: fr,
+                  })}{" "}
+                  · {s.source}
+                </span>
+                <span className="font-mono text-foreground">
+                  {[
+                    s.ftpW != null ? `FTP ${s.ftpW}W` : null,
+                    s.runThresholdPaceSecPerKm != null
+                      ? paceToInput(s.runThresholdPaceSecPerKm)
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || "—"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {(vo2maxRunning != null || vo2maxCycling != null) && (
         <div className="flex flex-wrap gap-3">

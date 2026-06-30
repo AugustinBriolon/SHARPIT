@@ -6,9 +6,10 @@ import {
   deleteSessionFromGoogle,
   getGoogleAccount,
   getUpcomingBusy,
-  pushSessionToGoogle,
+  pushSessionToGoogleInBackground,
 } from "./google-sync";
 import {
+  createBrickSessions,
   createPlannedSession,
   deletePlannedSession,
   getPlannedSessionById,
@@ -69,13 +70,15 @@ export const coachTools = {
         durationMin: s.durationMin,
         load: s.load,
         completed: s.completed,
+        brickGroupId: s.brickGroupId,
+        brickOrder: s.brickOrder,
       }));
     },
   }),
 
   createPlannedSession: tool({
     description:
-      "Crée une nouvelle séance planifiée dans le calendrier de l'athlète. Si Google Calendar est connecté, la séance est aussi ajoutée au calendrier cible (créneau libre choisi automatiquement si l'heure n'est pas fournie).",
+      "Crée UNE séance planifiée pour UN SEUL sport. Ne pas utiliser pour un enchaînement multisport (vélo+course, etc.) : utilise createBrickSession à la place.",
     inputSchema: z.object({
       date: z.string().describe("Date au format yyyy-MM-dd."),
       startTime: startTimeSchema,
@@ -86,8 +89,8 @@ export const coachTools = {
         .string()
         .optional()
         .describe("Structure détaillée (échauffement, corps, récup)."),
-      durationMin: z.number().int().min(5).max(420).optional(),
-      load: z.number().int().min(0).max(400).optional().describe("TSS estimé."),
+      durationMin: z.number().min(5).max(420).optional(),
+      load: z.number().min(0).max(400).optional().describe("TSS estimé."),
     }),
     execute: async (input) => {
       const s = await createPlannedSession({
@@ -96,29 +99,106 @@ export const coachTools = {
         startTime: input.startTime ?? null,
         title: input.title,
         description: input.description ?? null,
-        durationMin: input.durationMin ?? null,
-        load: input.load ?? null,
+        durationMin:
+          input.durationMin != null ? Math.round(input.durationMin) : null,
+        load: input.load != null ? Math.round(input.load) : null,
         intensity: input.intensity ?? null,
       });
 
-      let googleTime: string | undefined;
-      try {
-        const push = await pushSessionToGoogle(s);
-        if (push.synced) googleTime = push.startTime;
-      } catch (error) {
-        console.error("Push Google Calendar échoué", error);
-      }
+      pushSessionToGoogleInBackground(s);
 
       return {
         ok: true,
         id: s.id,
         action: "created" as const,
         date: input.date,
-        startTime: googleTime ?? input.startTime ?? null,
+        startTime: input.startTime ?? null,
         type: input.type,
         title: input.title,
-        addedToGoogle: googleTime != null,
+        addedToGoogle: false,
       };
+    },
+  }),
+
+  createBrickSession: tool({
+    description:
+      "Crée une séance BRICK / multisport : un enchaînement de plusieurs jambes le même jour (ex. vélo puis course à pied), à utiliser pour le triathlon. Chaque jambe est créée comme une séance autonome (un sport chacune) mais elles sont regroupées : l'athlète pourra ainsi lier l'activité Strava correspondante à CHAQUE jambe et obtenir une analyse par sport. Préfère cet outil à createPlannedSession dès que la séance combine plusieurs sports enchaînés.",
+    inputSchema: z.object({
+      date: z.string().describe("Date commune au format yyyy-MM-dd."),
+      startTime: startTimeSchema,
+      title: z
+        .string()
+        .optional()
+        .describe(
+          "Titre global du brick (ex. « Brick vélo+course T2 »). Optionnel.",
+        ),
+      legs: z
+        .array(
+          z.object({
+            type: typeEnum,
+            intensity: intensityEnum.optional(),
+            title: z.string().describe("Titre court de la jambe."),
+            description: z
+              .string()
+              .optional()
+              .describe("Structure de la jambe (échauffement, corps, récup)."),
+            durationMin: z.number().min(5).max(420).optional(),
+            load: z
+              .number()
+              .min(0)
+              .max(400)
+              .optional()
+              .describe("TSS estimé de la jambe."),
+          }),
+        )
+        .min(2)
+        .describe(
+          "Les jambes du brick, dans l'ordre d'enchaînement (ex. [vélo, course]).",
+        ),
+    }),
+    execute: async (input) => {
+      try {
+        const created = await createBrickSessions(
+          input.legs.map((leg) => ({
+            type: leg.type,
+            date: toDate(input.date),
+            startTime: input.startTime ?? null,
+            title: leg.title,
+            description: leg.description ?? null,
+            durationMin:
+              leg.durationMin != null ? Math.round(leg.durationMin) : null,
+            load: leg.load != null ? Math.round(leg.load) : null,
+            intensity: leg.intensity ?? null,
+          })),
+        );
+
+        for (const s of created) {
+          pushSessionToGoogleInBackground(s);
+        }
+
+        const brickGroupId = created[0]?.brickGroupId ?? null;
+
+        return {
+          ok: true as const,
+          action: "created" as const,
+          brickGroupId,
+          date: input.date,
+          title: input.title ?? created[0]?.title ?? "Brick",
+          legs: created.map((s) => ({
+            id: s.id,
+            type: s.type,
+            title: s.title,
+            brickOrder: s.brickOrder,
+          })),
+        };
+      } catch (error) {
+        console.error("[coach] createBrickSession", error);
+        const detail = error instanceof Error ? error.message : String(error);
+        return {
+          ok: false as const,
+          error: `Impossible de créer le brick : ${detail}`,
+        };
+      }
     },
   }),
 
@@ -153,20 +233,14 @@ export const coachTools = {
 
       const s = await updatePlannedSession(input.id, data);
 
-      let googleTime: string | undefined;
-      try {
-        const push = await pushSessionToGoogle(s);
-        if (push.synced) googleTime = push.startTime;
-      } catch (error) {
-        console.error("Push Google Calendar échoué", error);
-      }
+      pushSessionToGoogleInBackground(s);
 
       return {
         ok: true,
         id: s.id,
         action: "updated" as const,
         date: format(s.date, "yyyy-MM-dd"),
-        startTime: googleTime ?? s.startTime,
+        startTime: s.startTime,
         type: s.type,
         title: s.title,
       };

@@ -20,7 +20,7 @@ export default async function DashboardLayout({
       <div className="relative flex min-h-screen flex-col items-center justify-center gap-4 overflow-hidden bg-background p-6 text-center">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_oklch(0.68_0.16_150_/_0.08),_transparent_55%)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,oklch(0.68_0.16_150/0.08),transparent_55%)]"
         />
         <div className="relative z-10 flex flex-col items-center gap-4">
           <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10 ring-1 ring-destructive/20">

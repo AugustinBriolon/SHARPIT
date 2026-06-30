@@ -31,6 +31,13 @@ type ToolPartLite = {
   approval?: { id: string; isAutomatic?: boolean };
 };
 
+const CALENDAR_TOOL_TYPES = new Set([
+  "tool-createPlannedSession",
+  "tool-createBrickSession",
+  "tool-updatePlannedSession",
+  "tool-deletePlannedSession",
+]);
+
 function buildKnownSessions(
   toolParts: ToolPartLite[],
 ): Record<string, KnownSession> {
@@ -91,6 +98,25 @@ export function CoachChat({
       behavior: "smooth",
     });
   }, [messages]);
+
+  useEffect(() => {
+    const changed = messages.some(
+      (m) =>
+        m.role === "assistant" &&
+        m.parts.some((p) => {
+          if (!p.type.startsWith("tool-")) return false;
+          const part = p as ToolPartLite;
+          return (
+            CALENDAR_TOOL_TYPES.has(part.type) &&
+            part.state === "output-available" &&
+            (part.output as { ok?: boolean } | undefined)?.ok !== false
+          );
+        }),
+    );
+    if (changed) {
+      queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
+    }
+  }, [messages, queryClient]);
 
   function submit(text: string) {
     const value = text.trim();
@@ -204,9 +230,14 @@ export function CoachChat({
                 part={part}
                 knownSessions={known}
                 disabled={isBusy}
-                onApproval={(id, approved) =>
-                  addToolApprovalResponse({ id, approved })
-                }
+                onApproval={(id, approved) => {
+                  addToolApprovalResponse({ id, approved });
+                  if (approved) {
+                    queryClient.invalidateQueries({
+                      queryKey: queryKeys.plannedSessions,
+                    });
+                  }
+                }}
               />
             ))}
           </div>

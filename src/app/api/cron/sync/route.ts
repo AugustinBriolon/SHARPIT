@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isCoachConfigured } from "@/lib/ai";
 import { generateAndStoreDailyBriefing } from "@/lib/daily-briefing";
 import { getGarminAccount, syncGarminHealth } from "@/lib/garmin-sync";
+import { getGoogleAccount, syncFromGoogle } from "@/lib/google-sync";
 import { recomputeRecordsSafe } from "@/lib/records";
 import { backfillActivityStreams } from "@/lib/stream-backfill";
 import { getStravaAccount, syncStravaActivities } from "@/lib/strava-sync";
@@ -28,6 +29,7 @@ export async function GET(request: Request) {
   const result: {
     strava: Awaited<ReturnType<typeof syncStravaActivities>> | null;
     garmin: Awaited<ReturnType<typeof syncGarminHealth>> | null;
+    google: Awaited<ReturnType<typeof syncFromGoogle>> | null;
     backfill: Awaited<ReturnType<typeof backfillActivityStreams>> | null;
     briefing: boolean;
     weeklyReview: boolean;
@@ -35,15 +37,17 @@ export async function GET(request: Request) {
   } = {
     strava: null,
     garmin: null,
+    google: null,
     backfill: null,
     briefing: false,
     weeklyReview: false,
     errors: [],
   };
 
-  const [stravaAccount, garminAccount] = await Promise.all([
+  const [stravaAccount, garminAccount, googleAccount] = await Promise.all([
     getStravaAccount(),
     getGarminAccount(),
+    getGoogleAccount(),
   ]);
 
   if (stravaAccount) {
@@ -66,6 +70,19 @@ export async function GET(request: Request) {
         error instanceof Error ? error.message : "Sync Garmin échouée";
       console.error("[cron/sync] Garmin:", msg);
       result.errors.push(`garmin: ${msg}`);
+    }
+  }
+
+  // Calendrier Google : synchro bidirectionnelle (séances ↔ events) si un
+  // calendrier cible est configuré.
+  if (googleAccount?.targetCalendarId) {
+    try {
+      result.google = await syncFromGoogle();
+    } catch (error) {
+      const msg =
+        error instanceof Error ? error.message : "Sync Google échouée";
+      console.error("[cron/sync] Google:", msg);
+      result.errors.push(`google: ${msg}`);
     }
   }
 
@@ -112,7 +129,7 @@ export async function GET(request: Request) {
     }
   }
 
-  if (!stravaAccount && !garminAccount) {
+  if (!stravaAccount && !garminAccount && !googleAccount?.targetCalendarId) {
     return NextResponse.json({
       ok: true,
       message: "Aucune source connectée, rien à synchroniser.",

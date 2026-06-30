@@ -52,11 +52,8 @@ export function WeeklyReviewCard({ date }: { date: Date }) {
               <Markdown>{review.content}</Markdown>
             </div>
             <p className="text-[11px] text-muted-foreground">
-              Semaine du{" "}
-              {format(new Date(`${review.weekStart}T00:00:00`), "d MMM", {
-                locale: fr,
-              })}{" "}
-              · générée le{" "}
+              Semaine du {format(review.weekStart, "d MMM", { locale: fr })} ·
+              générée le{" "}
               {format(review.generatedAt, "d MMM 'à' HH:mm", { locale: fr })}
             </p>
           </div>

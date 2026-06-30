@@ -33,3 +33,20 @@ export type CreatePlannedSessionInput = z.infer<
 export type UpdatePlannedSessionInput = z.infer<
   typeof updatePlannedSessionSchema
 >;
+
+const brickLegSchema = z.object({
+  type: activityTypeSchema,
+  title: optionalString,
+  description: optionalString,
+  durationMin: optionalNumber,
+  load: optionalNumber,
+  intensity: sessionIntensitySchema.optional().nullable(),
+});
+
+export const createBrickSchema = z.object({
+  date: z.coerce.date(),
+  startTime: optionalString,
+  legs: z.array(brickLegSchema).min(2, "Un brick nécessite au moins 2 jambes"),
+});
+
+export type CreateBrickInput = z.infer<typeof createBrickSchema>;

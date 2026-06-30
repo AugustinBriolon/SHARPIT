@@ -4,6 +4,7 @@ import {
   type HeroActivity,
 } from "@/components/training/activity-hero-stats";
 import { ActivityInsights } from "@/components/training/activity-insights";
+import { StickyHeader } from "@/components/layout/sticky-header";
 import { DeleteActivityButton } from "@/components/training/activity-list";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/link-button";
@@ -102,7 +103,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
   return (
     <div className="space-y-8">
-      <header className="space-y-5">
+      <StickyHeader>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-start gap-4">
             <span
@@ -150,7 +151,9 @@ export default async function ActivityDetailPage({ params }: PageProps) {
             <DeleteActivityButton id={activity.id} />
           </div>
         </div>
+      </StickyHeader>
 
+      <div className="space-y-5">
         <ContextChips activity={activity} />
 
         {isStrength
@@ -167,7 +170,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
                 activity={heroActivity}
               />
             )}
-      </header>
+      </div>
 
       {!isStrength && (
         <ActivityInsights activityId={activity.id} type={activity.type} />

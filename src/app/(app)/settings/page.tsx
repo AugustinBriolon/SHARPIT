@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StickyHeader } from "@/components/layout/sticky-header";
 import { AthleteProfilePanel } from "@/components/settings/athlete-profile-panel";
 import { GarminPanel } from "@/components/settings/garmin-panel";
 import { GoogleCalendarPanel } from "@/components/settings/google-calendar-panel";
@@ -79,7 +80,7 @@ export default async function SettingsPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <header>
+      <StickyHeader>
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">
           Settings
         </p>
@@ -89,7 +90,7 @@ export default async function SettingsPage({ searchParams }: PageProps) {
         <p className="mt-1 text-muted-foreground">
           Connecte tes sources de données et configure ton système.
         </p>
-      </header>
+      </StickyHeader>
 
       <Card>
         <CardHeader>

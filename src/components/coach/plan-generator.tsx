@@ -1,9 +1,9 @@
 "use client";
 
-import { format, parseISO } from "date-fns";
+import { format, parseISO, startOfWeek } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Check, Loader2, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,8 +28,11 @@ import {
   intensityLabels,
 } from "@/lib/sessions";
 import { cn } from "@/lib/utils";
+import { phaseLabels } from "@/lib/periodization";
 import { useCoachPlan, type GeneratedSession } from "@/hooks/use-coach";
-import { useGoals, usePlannedSessionMutations } from "@/hooks/use-data";
+import { useGoals, usePlannedSessionMutations, useTrainingPlan } from "@/hooks/use-data";
+
+const WEEK_OPTS = { weekStartsOn: 1 as const };
 
 const DAYS_OPTIONS = [
   { value: "7", label: "1 semaine" },
@@ -55,7 +58,18 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
   const coachPlan = useCoachPlan();
   const { create } = usePlannedSessionMutations();
   const goalsQuery = useGoals();
+  const planQuery = useTrainingPlan();
   const plan = coachPlan.data;
+
+  const planWeek = useMemo(() => {
+    const active = planQuery.data;
+    if (!active?.weeks?.length) return null;
+    const blockStart = startDate ? parseISO(startDate) : new Date();
+    const ws = format(startOfWeek(blockStart, WEEK_OPTS), "yyyy-MM-dd");
+    return active.weeks.find(
+      (w) => format(new Date(w.weekStart), "yyyy-MM-dd") === ws,
+    );
+  }, [planQuery.data, startDate]);
 
   // Objectifs datés (courses à venir) sélectionnables comme cible du bloc.
   const datedGoals = (goalsQuery.data ?? [])
@@ -70,6 +84,9 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
       focus: focus.trim() || undefined,
       startDate,
       goalId: goalId === NO_GOAL ? null : goalId,
+      targetLoad: planWeek?.targetLoad ?? null,
+      planPhase: planWeek ? phaseLabels[planWeek.phase] : null,
+      planFocus: planWeek?.focus ?? null,
     });
     // tout sélectionner par défaut
     setSelected(new Set(result.sessions.map((_, i) => i)));
@@ -182,6 +199,16 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
             )}
           </Button>
         </div>
+
+        {planWeek && (
+          <p className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-2 text-xs text-muted-foreground">
+            Macro-plan : {phaseLabels[planWeek.phase]} — cible{" "}
+            <span className="font-mono font-medium text-foreground">
+              {planWeek.targetLoad} TSS
+            </span>
+            {planWeek.isDeload ? " (semaine de récup)" : ""}
+          </p>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="focus">Demande spécifique (optionnel)</Label>

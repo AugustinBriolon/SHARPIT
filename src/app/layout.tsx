@@ -3,6 +3,7 @@ import { frFR } from "@clerk/localizations";
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, Syne } from "next/font/google";
 import { clerkAppearance } from "@/lib/clerk-appearance";
+import { Toaster } from "@/components/ui/toast";
 import { QueryProvider } from "@/providers/query-provider";
 import "./globals.css";
 
@@ -46,6 +47,7 @@ export default function RootLayout({
     >
         <body className="min-h-full bg-background font-sans text-foreground">
           <QueryProvider>{children}</QueryProvider>
+          <Toaster />
         </body>
       </html>
     </ClerkProvider>

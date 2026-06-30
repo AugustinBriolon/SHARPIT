@@ -1,5 +1,6 @@
 "use client";
 
+import { StickyHeader } from "@/components/layout/sticky-header";
 import { AlertsBanner } from "@/components/dashboard/alerts-banner";
 import { BriefingCard } from "@/components/dashboard/briefing-card";
 import { WeeklyReviewCard } from "@/components/dashboard/weekly-review-card";
@@ -91,7 +92,7 @@ export function DashboardView() {
   );
 
   const header = (
-    <header className="flex flex-wrap items-end justify-between gap-4">
+    <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
       <div>
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">
           SharpIt
@@ -107,7 +108,7 @@ export function DashboardView() {
         {mounted && <DateSelector date={date} onChange={setDate} />}
         <LinkButton href="/training/new">Nouvelle séance</LinkButton>
       </div>
-    </header>
+    </StickyHeader>
   );
 
   if (

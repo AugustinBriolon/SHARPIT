@@ -10,8 +10,12 @@ import {
   fetchHealthEntries,
   fetchPlannedSessions,
   fetchRecords,
+  fetchThresholdHistory,
+  fetchThresholdPreview,
+  fetchTrainingPlan,
 } from "@/lib/client/fetchers";
 import { queryKeys } from "@/lib/client/keys";
+import type { BrickAnalysis } from "@/lib/validators/coach";
 import type { ActivityType, SessionIntensity } from "@prisma/client";
 
 const DEFAULT_HEALTH_DAYS = 365;
@@ -57,6 +61,61 @@ export function useRecords() {
   });
 }
 
+export function useThresholdPreview() {
+  return useQuery({
+    queryKey: queryKeys.thresholdPreview,
+    queryFn: fetchThresholdPreview,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useThresholdHistory() {
+  return useQuery({
+    queryKey: queryKeys.thresholdHistory,
+    queryFn: fetchThresholdHistory,
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useTrainingPlan() {
+  return useQuery({
+    queryKey: queryKeys.trainingPlan,
+    queryFn: fetchTrainingPlan,
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useTrainingPlanMutations() {
+  const queryClient = useQueryClient();
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.trainingPlan });
+
+  const generate = useMutation({
+    mutationFn: (goalId: string) =>
+      sendJson("/api/training-plans", "POST", { goalId }),
+    onSuccess: invalidate,
+  });
+
+  const archive = useMutation({
+    mutationFn: (id: string) =>
+      sendJson(`/api/training-plans/${id}`, "DELETE"),
+    onSuccess: invalidate,
+  });
+
+  return { generate, archive };
+}
+
+export function useApplyThresholdEstimates() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => sendJson("/api/athlete-profile/apply-estimates", "POST"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.thresholdPreview });
+      queryClient.invalidateQueries({ queryKey: queryKeys.thresholdHistory });
+    },
+  });
+}
+
 export function useActivityStream(id: string) {
   return useQuery({
     queryKey: queryKeys.activityStream(id),
@@ -98,6 +157,21 @@ export interface PlannedSessionPayload {
   completed?: boolean;
 }
 
+export interface BrickLegPayload {
+  type: ActivityType;
+  title?: string | null;
+  description?: string | null;
+  durationMin?: number | null;
+  load?: number | null;
+  intensity?: SessionIntensity | null;
+}
+
+export interface CreateBrickPayload {
+  date: Date;
+  startTime?: string | null;
+  legs: BrickLegPayload[];
+}
+
 async function sendJson(url: string, method: string, body?: unknown) {
   const res = await fetch(url, {
     method,
@@ -121,6 +195,12 @@ export function usePlannedSessionMutations() {
   const create = useMutation({
     mutationFn: (payload: PlannedSessionPayload) =>
       sendJson("/api/planned-sessions", "POST", payload),
+    onSuccess: invalidate,
+  });
+
+  const createBrick = useMutation({
+    mutationFn: (payload: CreateBrickPayload) =>
+      sendJson("/api/planned-sessions/brick", "POST", payload),
     onSuccess: invalidate,
   });
 
@@ -158,5 +238,53 @@ export function usePlannedSessionMutations() {
     onSuccess: invalidate,
   });
 
-  return { create, update, remove, link, analyze };
+  return { create, createBrick, update, remove, link, analyze };
+}
+
+export interface ClientBrickAnalysis {
+  brickGroupId: string;
+  content: BrickAnalysis;
+  generatedAt: string;
+}
+
+export function useBrickAnalysis(brickGroupId: string | null | undefined) {
+  return useQuery({
+    queryKey: queryKeys.brickAnalysis(brickGroupId ?? ""),
+    enabled: Boolean(brickGroupId),
+    queryFn: async (): Promise<ClientBrickAnalysis | null> => {
+      const res = await fetch(
+        `/api/planned-sessions/brick/analyze?groupId=${encodeURIComponent(brickGroupId!)}`,
+      );
+      if (!res.ok) throw new Error("Impossible de charger l'analyse du brick.");
+      const data = (await res.json()) as { analysis: ClientBrickAnalysis | null };
+      return data.analysis ?? null;
+    },
+  });
+}
+
+export function useAnalyzeBrick() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (brickGroupId: string) => {
+      const res = await fetch("/api/planned-sessions/brick/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brickGroupId }),
+      });
+      const data = (await res.json().catch(() => null)) as {
+        analysis?: ClientBrickAnalysis;
+        error?: string;
+      } | null;
+      if (!res.ok) {
+        throw new Error(data?.error ?? "L'analyse du brick a échoué.");
+      }
+      return data!.analysis as ClientBrickAnalysis;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(
+        queryKeys.brickAnalysis(data.brickGroupId),
+        data,
+      );
+    },
+  });
 }

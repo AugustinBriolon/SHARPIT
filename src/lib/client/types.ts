@@ -1,9 +1,11 @@
 import type {
+  getActiveTrainingPlan,
   getActivities,
   getGoals,
   getHealthEntries,
   getPhysicalNotes,
   getPlannedSessions,
+  getThresholdSnapshots,
 } from "@/lib/queries";
 
 /**
@@ -24,3 +26,10 @@ export type ClientPhysicalNote = Awaited<
   ReturnType<typeof getPhysicalNotes>
 >[number];
 export type ClientPhysicalCheckin = ClientPhysicalNote["checkins"][number];
+export type ClientTrainingPlan = NonNullable<
+  Awaited<ReturnType<typeof getActiveTrainingPlan>>
+>;
+export type ClientPlanWeek = ClientTrainingPlan["weeks"][number];
+export type ClientThresholdSnapshot = Awaited<
+  ReturnType<typeof getThresholdSnapshots>
+>[number];

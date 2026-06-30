@@ -15,12 +15,14 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Layers,
   Plus,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PlannedSessionDialog } from "@/components/planning/planned-session-dialog";
+import { StickyHeader } from "@/components/layout/sticky-header";
 import { useMounted } from "@/hooks/use-mounted";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buildCalendarMonth, weekDayLabels } from "@/lib/calendar";
+import { groupPlannedSessions } from "@/lib/brick-sessions";
 import type {
   GoogleCalendarEvent,
   GoogleCalendarInfo,
@@ -140,7 +143,7 @@ export function CalendarView() {
   const [dragOver, setDragOver] = useState<string | null>(null);
 
   const header = (
-    <header className="flex flex-wrap items-end justify-between gap-4">
+    <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
       <div>
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">
           Calendar
@@ -192,7 +195,7 @@ export function CalendarView() {
           Planifier
         </Button>
       </div>
-    </header>
+    </StickyHeader>
   );
 
   if (
@@ -273,7 +276,7 @@ export function CalendarView() {
                   dragOver === dateKey && "bg-primary/10",
                 )}
               >
-                <div className="mb-1 flex items-center justify-between px-1">
+                <div className="mb-1 flex items-center justify-between px-1 h-5">
                   <span
                     className={cn(
                       "text-xs",
@@ -300,13 +303,25 @@ export function CalendarView() {
                     .map((a) => (
                       <ActivityChip key={a.id} activity={a} />
                     ))}
-                  {cell.planned.map((p) => (
-                    <PlannedChip
-                      key={p.id}
-                      session={p}
-                      onEdit={() => setDialog({ mode: "edit", session: p })}
-                    />
-                  ))}
+                  {groupPlannedSessions(cell.planned).map((item) =>
+                    item.kind === "single" ? (
+                      <PlannedChip
+                        key={item.session.id}
+                        session={item.session}
+                        onEdit={() =>
+                          setDialog({ mode: "edit", session: item.session })
+                        }
+                      />
+                    ) : (
+                      <BrickChip
+                        key={item.id}
+                        sessions={item.sessions}
+                        onEdit={(session) =>
+                          setDialog({ mode: "edit", session })
+                        }
+                      />
+                    ),
+                  )}
                 </div>
               </div>
             );
@@ -485,6 +500,106 @@ function ActivityChip({ activity }: { activity: ClientActivity }) {
     >
       {activity.title ?? activityTypeLabels[activity.type]}
     </Link>
+  );
+}
+
+/**
+ * Bloc « brick » : affiche les jambes d'un enchaînement comme une séquence
+ * connectée (ex. Vélo → Course) plutôt que des séances indépendantes.
+ */
+function BrickChip({
+  sessions,
+  onEdit,
+}: {
+  sessions: ClientPlannedSession[];
+  onEdit: (session: ClientPlannedSession) => void;
+}) {
+  const totalMin = sessions.reduce((sum, p) => sum + (p.durationMin ?? 0), 0);
+  const allDone = sessions.every(
+    (p) => p.completed && Boolean(p.activityId),
+  );
+
+  return (
+    <div
+      onClick={(e) => e.stopPropagation()}
+      className={cn(
+        "rounded-md border bg-primary/5 p-1",
+        allDone ? "border-primary/50" : "border-primary/30",
+      )}
+    >
+      <div className="mb-0.5 flex items-center gap-1 px-0.5">
+        <Layers className="size-2.5 text-primary" />
+        <span className="text-[9px] font-semibold uppercase tracking-wider text-primary">
+          Brick
+        </span>
+        {totalMin > 0 && (
+          <span className="ml-auto shrink-0 text-[9px] tabular-nums text-muted-foreground">
+            {totalMin} min
+          </span>
+        )}
+      </div>
+      <div className="flex flex-wrap items-center gap-x-0.5 gap-y-1">
+        {sessions.map((p, i) => (
+          <Fragment key={p.id}>
+            {i > 0 && (
+              <ChevronRight className="size-2.5 shrink-0 text-primary/50" />
+            )}
+            <BrickLeg session={p} onEdit={() => onEdit(p)} />
+          </Fragment>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BrickLeg({
+  session,
+  onEdit,
+}: {
+  session: ClientPlannedSession;
+  onEdit: () => void;
+}) {
+  const accent = session.intensity
+    ? intensityAccent[session.intensity]
+    : "#94a3b8";
+  const done = session.completed && Boolean(session.activityId);
+  const label = session.title ?? activityTypeLabels[session.type];
+
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onEdit();
+      }}
+      style={
+        done
+          ? { backgroundColor: `${accent}22`, borderColor: accent }
+          : { borderColor: accent }
+      }
+      className={cn(
+        "flex min-w-0 items-center gap-1 truncate rounded border px-1 py-0.5 text-left text-[11px] hover:bg-muted/40",
+        done ? "border-solid" : "border-dashed bg-transparent",
+      )}
+      title={`${activityTypeLabels[session.type]}${session.durationMin ? ` · ${session.durationMin} min` : ""}${done ? " — réalisée" : ""}`}
+    >
+      {done ? (
+        <Check className="size-3 shrink-0" style={{ color: accent }} />
+      ) : (
+        <span
+          className="size-1.5 shrink-0 rounded-full"
+          style={{ backgroundColor: accent }}
+        />
+      )}
+      <span
+        className={cn(
+          "truncate",
+          done ? "font-medium text-foreground" : "text-muted-foreground",
+        )}
+      >
+        {label}
+      </span>
+    </button>
   );
 }
 
