@@ -9,8 +9,8 @@ export interface ThresholdEstimates {
 }
 
 export function computeThresholdEstimates(records: RecordsPayload): ThresholdEstimates {
-  const ftp = estimateFtp(records.powerCurve);
-  const pace = estimateRunThresholdPace(records.runBests);
+  const ftp = estimateFtp(records.powerCurve, records.bikeEfforts);
+  const pace = estimateRunThresholdPace(records.runBests, records.runEfforts);
   return {
     ftpW: ftp?.watts ?? null,
     ftpSource: ftp?.source ?? null,

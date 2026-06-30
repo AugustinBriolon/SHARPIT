@@ -124,11 +124,11 @@ export function PlanAdapter({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Wand2 className="text-primary size-4" />
-            Réadapter mes séances
+            Ajuster mon planning
           </DialogTitle>
           <DialogDescription>
-            Le coach analyse ce que tu as réellement réalisé et propose des ajustements de tes
-            séances des 14 prochains jours.
+            Le coach analyse ce que tu as réellement fait et propose des modifications sur tes
+            séances déjà planifiées (14 prochains jours) — sans tout recréer.
           </DialogDescription>
         </DialogHeader>
 

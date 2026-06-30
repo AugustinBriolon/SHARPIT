@@ -246,7 +246,12 @@ export function computeProactiveActions(params: {
 
   // ---- Réévaluation : toute note active suivie, sans point récent ----
   const [staleNote] = params.physicalNotes
-    .filter((n) => n.status !== 'RESOLVED' && (n.severity ?? 0) >= 3)
+    .filter(
+      (n) =>
+        n.status !== 'RESOLVED' &&
+        (n.severity ?? 0) >= 3 &&
+        PAIN_LIKE_CATEGORIES.includes(n.category as (typeof PAIN_LIKE_CATEGORIES)[number]),
+    )
     .map((n) => {
       const [lastCheckin] = n.checkins;
       const daysSince = lastCheckin

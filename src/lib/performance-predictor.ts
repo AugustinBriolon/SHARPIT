@@ -1,4 +1,4 @@
-import type { PowerCurvePoint, RunBestCategory } from './records';
+import type { BikeEffort, PowerCurvePoint, RunBestCategory, RunEffort } from './records';
 
 /**
  * Prédiction de performance & estimation des seuils à partir des records déjà
@@ -42,6 +42,14 @@ interface RunReference {
   label: string;
 }
 
+function runDistanceLabel(meters: number): string {
+  if (meters >= 1000) {
+    const km = meters / 1000;
+    return `${Number.isInteger(km) ? km : km.toFixed(1)} km`;
+  }
+  return `${Math.round(meters)} m`;
+}
+
 /** Niveau de confiance selon l'écart entre la distance de référence et la cible. */
 export type PredictionConfidence = 'high' | 'medium' | 'low';
 
@@ -56,16 +64,74 @@ export interface RunPrediction {
   confidence: PredictionConfidence;
 }
 
-/** Référence d'effort réel (meilleur #1) par distance, triée. */
-function collectRunReferences(runBests: RunBestCategory[]): RunReference[] {
-  return runBests
-    .map((cat) => {
-      const [best] = cat.entries;
-      if (!best || best.value <= 0) return null;
-      return { meters: cat.meters, seconds: best.value, label: cat.label };
-    })
-    .filter((r): r is RunReference => r != null)
-    .sort((a, b) => a.meters - b.meters);
+/**
+ * Construit l'ensemble des références d'effort réel :
+ * - segments glissants précis issus des streams (quand dispo)
+ * - efforts d'activité entière (distance + temps) issus des métriques
+ *
+ * Les efforts métriques couvrent tout l'historique, pas seulement les rares
+ * activités avec trace GPS — c'est ce qui rend les prédictions fiables.
+ */
+function collectRunReferences(
+  runBests: RunBestCategory[],
+  runEfforts: RunEffort[],
+): RunReference[] {
+  const refs: RunReference[] = [];
+
+  for (const cat of runBests) {
+    const [best] = cat.entries;
+    if (best && best.value > 0) {
+      refs.push({ meters: cat.meters, seconds: best.value, label: cat.label });
+    }
+  }
+
+  for (const e of runEfforts) {
+    if (e.meters > 0 && e.seconds > 0) {
+      refs.push({ meters: e.meters, seconds: e.seconds, label: runDistanceLabel(e.meters) });
+    }
+  }
+
+  refs.sort((a, b) => a.meters - b.meters);
+
+  // À distance proche (±15 %), on ne garde que l'effort le plus rapide.
+  // Évite qu'un segment GPS lent (ex. 5 km dans un footing) masque un vrai 5 km.
+  const deduped: RunReference[] = [];
+  for (const ref of refs) {
+    const last = deduped[deduped.length - 1];
+    if (last && ref.meters <= last.meters * 1.15) {
+      if (ref.seconds / ref.meters < last.seconds / last.meters) {
+        deduped[deduped.length - 1] = ref;
+      }
+    } else {
+      deduped.push(ref);
+    }
+  }
+
+  return deduped;
+}
+
+/**
+ * Choisit la meilleure référence pour extrapoler vers la distance cible.
+ * On ne garde que les efforts dans une bande de distance autour de la cible
+ * (0,7×–3×) pour limiter l'erreur d'extrapolation, puis on retient celui
+ * dont la distance est la plus proche (échelle log). Hors bande, on extrapole
+ * depuis l'effort le plus long disponible.
+ */
+function bestReferenceFor(
+  refs: RunReference[],
+  target: number,
+): { ref: RunReference; seconds: number } | null {
+  if (refs.length === 0) return null;
+
+  const band = refs.filter((r) => r.meters >= 0.7 * target && r.meters <= 3 * target);
+  const pool = band.length > 0 ? band : [refs[refs.length - 1]];
+
+  const ref = pool.reduce((best, cur) =>
+    Math.abs(Math.log(cur.meters / target)) < Math.abs(Math.log(best.meters / target)) ? cur : best,
+  );
+
+  const seconds = ref.seconds * (target / ref.meters) ** RIEGEL_EXPONENT;
+  return { ref, seconds };
 }
 
 function confidenceFromRatio(ratio: number): PredictionConfidence {
@@ -76,22 +142,19 @@ function confidenceFromRatio(ratio: number): PredictionConfidence {
 }
 
 /**
- * Prédit les temps de course sur les distances standard.
- * Pour chaque cible, on choisit la référence réelle la plus proche (échelle log)
- * afin de minimiser l'erreur d'extrapolation.
+ * Prédit les temps de course sur les distances standard à partir des meilleurs
+ * efforts réels (streams + métriques d'activité), via la loi de Riegel.
  */
-export function predictRunRaces(runBests: RunBestCategory[]): RunPrediction[] {
-  const refs = collectRunReferences(runBests);
+export function predictRunRaces(
+  runBests: RunBestCategory[],
+  runEfforts: RunEffort[] = [],
+): RunPrediction[] {
+  const refs = collectRunReferences(runBests, runEfforts);
   if (refs.length === 0) return [];
 
   return RACE_TARGETS.map(({ meters, label }) => {
-    const ref = refs.reduce((best, cur) =>
-      Math.abs(Math.log(cur.meters / meters)) < Math.abs(Math.log(best.meters / meters))
-        ? cur
-        : best,
-    );
-
-    const seconds = ref.seconds * (meters / ref.meters) ** RIEGEL_EXPONENT;
+    const picked = bestReferenceFor(refs, meters)!;
+    const { seconds } = picked;
     const paceSecPerKm = (seconds / meters) * 1000;
 
     return {
@@ -101,27 +164,29 @@ export function predictRunRaces(runBests: RunBestCategory[]): RunPrediction[] {
       displayTime: fmtTime(seconds),
       paceSecPerKm: Math.round(paceSecPerKm),
       pace: fmtPaceSecPerKm(paceSecPerKm),
-      referenceLabel: ref.label,
-      confidence: confidenceFromRatio(meters / ref.meters),
+      referenceLabel: picked.ref.label,
+      confidence: confidenceFromRatio(meters / picked.ref.meters),
     };
   });
 }
 
+/** Distance proxy d'un effort ~1 h, représentative de l'allure seuil. */
+const THRESHOLD_PROXY_METERS = 15000;
+
 /**
  * Allure seuil estimée (s/km) ≈ allure soutenable ~1 h.
- * On extrapole la distance couverte en 3600 s depuis la meilleure référence,
- * puis on en déduit l'allure.
+ * On prédit le temps sur ~15 km (effort d'environ 1 h pour un coureur entraîné)
+ * à partir des meilleurs efforts réels, puis on en déduit l'allure. Bien plus
+ * stable que d'extrapoler depuis un unique segment GPS.
  */
-export function estimateRunThresholdPace(runBests: RunBestCategory[]): number | null {
-  const refs = collectRunReferences(runBests);
-  if (refs.length === 0) return null;
-
-  // Référence la plus proche d'un effort d'1 h (la plus longue est la plus
-  // représentative du seuil).
-  const ref = refs[refs.length - 1];
-  const distanceIn1h = ref.meters * (3600 / ref.seconds) ** (1 / RIEGEL_EXPONENT);
-  if (distanceIn1h <= 0) return null;
-  return Math.round((3600 / distanceIn1h) * 1000);
+export function estimateRunThresholdPace(
+  runBests: RunBestCategory[],
+  runEfforts: RunEffort[] = [],
+): number | null {
+  const refs = collectRunReferences(runBests, runEfforts);
+  const picked = bestReferenceFor(refs, THRESHOLD_PROXY_METERS);
+  if (!picked) return null;
+  return Math.round((picked.seconds / THRESHOLD_PROXY_METERS) * 1000);
 }
 
 export interface FtpEstimate {
@@ -137,8 +202,8 @@ const FTP_FACTORS: { seconds: number; factor: number; label: string }[] = [
   { seconds: 600, factor: 0.9, label: 'meilleur 10 min' },
 ];
 
-/** Estime la FTP vélo depuis la courbe de puissance (meilleure source dispo). */
-export function estimateFtp(powerCurve: PowerCurvePoint[]): FtpEstimate | null {
+/** Estime la FTP depuis la courbe de puissance (streams, source précise). */
+function ftpFromPowerCurve(powerCurve: PowerCurvePoint[]): FtpEstimate | null {
   const byDuration = new Map(powerCurve.map((p) => [p.seconds, p.watts]));
   for (const { seconds, factor, label } of FTP_FACTORS) {
     const watts = byDuration.get(seconds);
@@ -147,4 +212,45 @@ export function estimateFtp(powerCurve: PowerCurvePoint[]): FtpEstimate | null {
     }
   }
   return null;
+}
+
+/** Facteur appliqué à la puissance normalisée d'un ride entier selon sa durée. */
+function rideFtpFactor(seconds: number): number | null {
+  if (seconds >= 3600) return 0.97;
+  if (seconds >= 2400) return 0.94;
+  if (seconds >= 1800) return 0.92;
+  if (seconds >= 1200) return 0.9;
+  return null;
+}
+
+/** Estime la FTP depuis la NP des rides entiers (couvre tout l'historique). */
+function ftpFromBikeEfforts(bikeEfforts: BikeEffort[]): FtpEstimate | null {
+  let best: FtpEstimate | null = null;
+  for (const e of bikeEfforts) {
+    const factor = rideFtpFactor(e.seconds);
+    if (factor == null || e.watts <= 0) continue;
+    const watts = Math.round(e.watts * factor);
+    if (!best || watts > best.watts) {
+      const mins = Math.round(e.seconds / 60);
+      best = { watts, source: `meilleur effort ~${mins} min` };
+    }
+  }
+  return best;
+}
+
+/**
+ * Estime la FTP vélo. On combine la courbe de puissance (streams, précise mais
+ * souvent absente) et les rides entiers (NP × facteur de durée, dispo partout),
+ * et on retient la meilleure capacité démontrée.
+ */
+export function estimateFtp(
+  powerCurve: PowerCurvePoint[],
+  bikeEfforts: BikeEffort[] = [],
+): FtpEstimate | null {
+  const fromCurve = ftpFromPowerCurve(powerCurve);
+  const fromEfforts = ftpFromBikeEfforts(bikeEfforts);
+  if (fromCurve && fromEfforts) {
+    return fromCurve.watts >= fromEfforts.watts ? fromCurve : fromEfforts;
+  }
+  return fromCurve ?? fromEfforts;
 }

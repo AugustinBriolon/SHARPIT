@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Markdown } from '@/components/coach/markdown';
 import { ToolActivity, type KnownSession } from '@/components/coach/tool-activity';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useSaveConversation } from '@/hooks/use-coach';
 import { queryKeys } from '@/lib/client/keys';
 
@@ -53,9 +53,11 @@ function buildKnownSessions(toolParts: ToolPartLite[]): Record<string, KnownSess
 export function CoachChat({
   conversationId,
   initialMessages,
+  bootstrapPrompt,
 }: {
   conversationId: string;
   initialMessages: UIMessage[];
+  bootstrapPrompt?: string;
 }) {
   const queryClient = useQueryClient();
   const { mutateAsync: saveMessages } = useSaveConversation();
@@ -76,15 +78,26 @@ export function CoachChat({
     },
   });
   const [input, setInput] = useState('');
+  const prefilled = useRef(false);
+
+  useEffect(() => {
+    if (!bootstrapPrompt || prefilled.current || initialMessages.length > 0) return;
+    setInput(bootstrapPrompt);
+    prefilled.current = true;
+  }, [bootstrapPrompt, initialMessages.length]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const initialScrollDone = useRef(false);
 
   const isBusy = status === 'submitted' || status === 'streaming';
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({
-      top: scrollRef.current.scrollHeight,
-      behavior: 'smooth',
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({
+      top: el.scrollHeight,
+      behavior: initialScrollDone.current ? 'smooth' : 'instant',
     });
+    initialScrollDone.current = true;
   }, [messages]);
 
   useEffect(() => {
@@ -237,11 +250,19 @@ export function CoachChat({
           submit(input);
         }}
       >
-        <Input
+        <Textarea
+          className="max-h-40 min-h-10 resize-y"
           disabled={isBusy}
           placeholder="Demande conseil à ton coach…"
+          rows={bootstrapPrompt ? 6 : 1}
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              submit(input);
+            }
+          }}
         />
         {isBusy ? (
           <Button size="icon" type="button" variant="outline" onClick={() => stop()}>

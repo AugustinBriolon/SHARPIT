@@ -62,6 +62,21 @@ export interface RunBestCategory {
   entries: RecordEntry[]; // top 5, value = secondes
 }
 
+/**
+ * Effort issu des métriques d'activité (pas des streams) : distance réelle +
+ * temps. Couvre TOUTES les activités, pas seulement celles avec trace GPS.
+ * Sert de référence robuste aux prédictions quand les streams manquent.
+ */
+export interface RunEffort {
+  meters: number;
+  seconds: number;
+}
+
+export interface BikeEffort {
+  seconds: number; // durée du ride
+  watts: number; // NP si dispo, sinon puissance moyenne
+}
+
 export interface RecordsPayload {
   prs: {
     run: RecordCategory[];
@@ -70,6 +85,10 @@ export interface RecordsPayload {
   };
   powerCurve: PowerCurvePoint[];
   runBests: RunBestCategory[];
+  /** Efforts course (distance + temps) depuis les métriques — référence robuste. */
+  runEfforts: RunEffort[];
+  /** Efforts vélo (durée + puissance) depuis les métriques — référence robuste. */
+  bikeEfforts: BikeEffort[];
   streamsAnalyzed: number;
   totalActivities: number;
   generatedAt: string | null;
@@ -443,6 +462,39 @@ function computeRunBestsFrom(streamActivities: StreamActivity[]): RunBestCategor
   }).filter((r): r is RunBestCategory => r != null);
 }
 
+/**
+ * Construit les efforts course/vélo depuis les métriques d'activité.
+ * Indépendant des streams : couvre tout l'historique. On privilégie la durée
+ * réelle (temps de séance) et on retombe sur l'allure Garmin si besoin.
+ */
+function computeMetricEfforts(metrics: MetricActivity[]): {
+  runEfforts: RunEffort[];
+  bikeEfforts: BikeEffort[];
+} {
+  const runEfforts: RunEffort[] = [];
+  const bikeEfforts: BikeEffort[] = [];
+
+  for (const a of metrics) {
+    if (a.type === ActivityType.RUN) {
+      const meters = a.runMetrics?.distanceM ?? null;
+      if (!meters || meters < 1500) continue; // bruit en dessous de 1,5 km
+      let seconds: number | null = null;
+      if (a.duration && a.duration > 0) {
+        seconds = a.duration;
+      } else if (a.runMetrics?.paceSecPerKm) {
+        seconds = (a.runMetrics.paceSecPerKm * meters) / 1000;
+      }
+      if (seconds && seconds > 0) runEfforts.push({ meters, seconds });
+    } else if (a.type === ActivityType.BIKE) {
+      const watts = a.bikeMetrics?.normalizedPower ?? a.bikeMetrics?.avgPower ?? null;
+      if (!watts || watts <= 0 || !a.duration || a.duration < 1200) continue; // >=20 min
+      bikeEfforts.push({ seconds: a.duration, watts });
+    }
+  }
+
+  return { runEfforts, bikeEfforts };
+}
+
 /** Calcule l'intégralité des records (top 5) — sans écrire en base. */
 export async function computeRankedRecords(): Promise<RecordsPayload> {
   const [metricActivities, streamActivities, totalActivities, streamsAnalyzed] = await Promise.all([
@@ -491,11 +543,14 @@ export async function computeRankedRecords(): Promise<RecordsPayload> {
   const streams = streamActivities as StreamActivity[];
   const powerCurve = computePowerCurveFrom(streams);
   const runBests = computeRunBestsFrom(streams);
+  const { runEfforts, bikeEfforts } = computeMetricEfforts(metrics);
 
   return {
     prs,
     powerCurve,
     runBests,
+    runEfforts,
+    bikeEfforts,
     streamsAnalyzed,
     totalActivities,
     generatedAt: new Date().toISOString(),
@@ -770,6 +825,8 @@ function emptyPayload(totalActivities = 0, streamsAnalyzed = 0): RecordsPayload 
     },
     powerCurve: [],
     runBests: [],
+    runEfforts: [],
+    bikeEfforts: [],
     streamsAnalyzed,
     totalActivities,
     generatedAt: null,
@@ -778,13 +835,28 @@ function emptyPayload(totalActivities = 0, streamsAnalyzed = 0): RecordsPayload 
 
 /** Lit les records stockés et les remet en forme pour le client. */
 export async function getStoredRecords(): Promise<RecordsPayload> {
-  const [rows, totalActivities, streamsAnalyzed] = await Promise.all([
+  const [rows, totalActivities, streamsAnalyzed, effortMetrics] = await Promise.all([
     prisma.performanceRecord.findMany({
       orderBy: [{ category: 'asc' }, { rank: 'asc' }],
     }),
     prisma.activity.count(),
     prisma.activityStream.count({ where: { available: true } }),
+    prisma.activity.findMany({
+      where: { type: { in: [ActivityType.RUN, ActivityType.BIKE] } },
+      select: {
+        id: true,
+        type: true,
+        date: true,
+        title: true,
+        duration: true,
+        runMetrics: { select: { distanceM: true, elevationM: true, paceSecPerKm: true } },
+        bikeMetrics: { select: { normalizedPower: true, avgPower: true, elevationM: true } },
+        swimMetrics: { select: { distanceM: true, avgPaceSecPer100m: true } },
+      },
+    }),
   ]);
+
+  const { runEfforts, bikeEfforts } = computeMetricEfforts(effortMetrics as MetricActivity[]);
 
   // Premier accès (rien de stocké) : on calcule à la volée puis on stocke.
   if (rows.length === 0) {
@@ -862,6 +934,8 @@ export async function getStoredRecords(): Promise<RecordsPayload> {
     prs,
     powerCurve,
     runBests,
+    runEfforts,
+    bikeEfforts,
     streamsAnalyzed,
     totalActivities,
     generatedAt: generatedAt ? generatedAt.toISOString() : null,

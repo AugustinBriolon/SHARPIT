@@ -120,6 +120,9 @@ model AthleteProfile {
 
   context String? @db.Text // contexte libre éditable (dispos, contraintes pro, préférences) injecté dans le coach IA
 
+  sleepTargetMinutes    Int? // durée de sommeil visée (min)
+  sleepBedtimeTargetMin Int? // heure de coucher visée (minutes depuis minuit, locale)
+
   thresholdSnapshots AthleteThresholdSnapshot[]
 
   createdAt DateTime @default(now())

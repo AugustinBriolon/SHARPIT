@@ -5,6 +5,7 @@ import { toast } from '@/components/ui/toast';
 import {
   fetchActivities,
   fetchActivityStream,
+  fetchAthleteProfile,
   fetchGoals,
   fetchGoogleCalendars,
   fetchGoogleEvents,
@@ -166,6 +167,14 @@ export function useRecords() {
     // Records persistés en base : on évite de refetcher à chaque visite.
     queryFn: fetchRecords,
     staleTime: 30 * 60 * 1000,
+  });
+}
+
+export function useAthleteProfile() {
+  return useQuery({
+    queryKey: queryKeys.athleteProfile,
+    queryFn: fetchAthleteProfile,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

@@ -129,11 +129,11 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="text-primary size-4" />
-            Générer mes séances
+            Remplir ma semaine
           </DialogTitle>
           <DialogDescription>
-            Le coach IA analyse ta forme, ta récupération et ton objectif pour proposer un bloc
-            d&apos;entraînement. Tu valides avant ajout.
+            Le coach propose de nouvelles séances à ajouter au calendrier, selon ta forme et ton
+            objectif. Tu valides avant insertion — idéal quand la semaine est vide ou incomplète.
           </DialogDescription>
         </DialogHeader>
 

@@ -5,13 +5,10 @@ import { cn } from '@/lib/utils';
 
 /**
  * En-tête de page collant. Au repos il est transparent et fondu dans la page ;
- * dès que la page défile, un fond translucide flouté apparaît en douceur et un
- * léger dégradé fait « disparaître » le contenu qui passe derrière.
+ * dès que la page défile, un fond translucide flouté apparaît en douceur.
  *
- * À placer comme premier enfant du conteneur de page (padding `p-6` côté
- * AppShell). Les marges négatives `-mx-6` étendent le fond flouté sur toute la
- * largeur du contenu. Le composant rend un unique élément racine pour rester
- * compatible avec un parent en `space-y-*`.
+ * Utiliser `embedded` dans les vues imbriquées (hubs à onglets) pour éviter
+ * l'empilement de plusieurs barres sticky sur le même scroll.
  */
 export function StickyHeader({
   children,
@@ -59,4 +56,20 @@ export function StickyHeader({
       />
     </header>
   );
+}
+
+/** En-tête statique pour vues imbriquées dans un hub (évite les sticky empilés). */
+export function PageHeader({
+  children,
+  className,
+  embedded = false,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  embedded?: boolean;
+}) {
+  if (embedded) {
+    return <div className={cn('pb-2', className)}>{children}</div>;
+  }
+  return <StickyHeader className={className}>{children}</StickyHeader>;
 }

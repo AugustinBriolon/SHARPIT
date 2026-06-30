@@ -2,7 +2,7 @@
 
 import { HeartPulse, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { StickyHeader } from '@/components/layout/sticky-header';
+import { PageHeader } from '@/components/layout/sticky-header';
 import { PhysicalNoteCard } from '@/components/physical/physical-note-card';
 import { PhysicalNoteDialog } from '@/components/physical/physical-note-dialog';
 import { Button } from '@/components/ui/button';
@@ -46,24 +46,30 @@ function CategoryDivider({ label, count }: { label: string; count: number }) {
   );
 }
 
-export function PhysicalView() {
+export function PhysicalView({ embedded = false }: { embedded?: boolean }) {
   const notesQuery = usePhysicalNotes();
   const [dialog, setDialog] = useState<DialogState>(null);
 
   const header = (
-    <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <p className="text-primary text-xs font-medium tracking-[0.2em] uppercase">Corps</p>
-        <h1 className="font-heading mt-2 text-3xl font-semibold tracking-tight">Suivi physique</h1>
-        <p className="text-muted-foreground mt-1">
-          Douleurs, blessures, mobilité et posture — pris en compte par le coach.
-        </p>
-      </div>
+    <PageHeader className="flex flex-wrap items-end justify-between gap-4" embedded={embedded}>
+      {!embedded ? (
+        <div>
+          <p className="text-primary text-xs font-medium tracking-[0.2em] uppercase">Corps</p>
+          <h1 className="font-heading mt-2 text-3xl font-semibold tracking-tight">
+            Suivi physique
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Douleurs, blessures, mobilité et posture — pris en compte par le coach.
+          </p>
+        </div>
+      ) : (
+        <p className="text-muted-foreground text-sm">Douleurs, blessures et suivi corporel.</p>
+      )}
       <Button onClick={() => setDialog({ mode: 'create' })}>
         <Plus className="size-4" />
         Nouvelle note
       </Button>
-    </StickyHeader>
+    </PageHeader>
   );
 
   if (notesQuery.isLoading) {

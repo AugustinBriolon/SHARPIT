@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { MetricLineChart } from '@/components/recovery/health-charts';
 import { ReadinessHero, RecoveryStat } from '@/components/recovery/recovery-panels';
 import { SleepCoachPanel } from '@/components/recovery/sleep-coach-panel';
-import { StickyHeader } from '@/components/layout/sticky-header';
+import { PageHeader } from '@/components/layout/sticky-header';
 import type { SleepEntryInput } from '@/lib/sleep';
 import { Skeleton } from '@/components/ui/skeleton';
 import { computePmcSeries } from '@/lib/analytics';
@@ -17,11 +17,12 @@ import {
   stressTone,
   type ReadinessFactor,
 } from '@/lib/recovery';
-import { useActivities, useHealthEntries } from '@/hooks/use-data';
+import { useActivities, useAthleteProfile, useHealthEntries } from '@/hooks/use-data';
 
-export function RecoveryView() {
+export function RecoveryView({ embedded = false }: { embedded?: boolean }) {
   const healthQuery = useHealthEntries();
   const activitiesQuery = useActivities();
+  const profileQuery = useAthleteProfile();
 
   const entries = useMemo(() => healthQuery.data ?? [], [healthQuery.data]);
   const activities = useMemo(() => activitiesQuery.data ?? [], [activitiesQuery.data]);
@@ -61,14 +62,16 @@ export function RecoveryView() {
 
   return (
     <div className="space-y-8">
-      <StickyHeader>
-        <p className="text-primary text-xs font-medium tracking-[0.2em] uppercase">Recovery</p>
-        <h1 className="font-heading mt-2 text-3xl font-semibold tracking-tight">Récupération</h1>
-        <p className="text-muted-foreground mt-1">
-          Es-tu prêt à pousser aujourd&apos;hui ? Lecture combinée de ta charge et de tes constantes
-          Garmin.
-        </p>
-      </StickyHeader>
+      {!embedded && (
+        <PageHeader embedded={embedded}>
+          <p className="text-primary text-xs font-medium tracking-[0.2em] uppercase">Recovery</p>
+          <h1 className="font-heading mt-2 text-3xl font-semibold tracking-tight">Récupération</h1>
+          <p className="text-muted-foreground mt-1">
+            Es-tu prêt à pousser aujourd&apos;hui ? Lecture combinée de ta charge et de tes
+            constantes Garmin.
+          </p>
+        </PageHeader>
+      )}
 
       <ReadinessHero factors={factors} view={readiness} />
 
@@ -120,7 +123,13 @@ export function RecoveryView() {
         />
       </section>
 
-      <SleepCoachPanel entries={entries as unknown as SleepEntryInput[]} />
+      <SleepCoachPanel
+        entries={entries as unknown as SleepEntryInput[]}
+        sleepGoals={{
+          targetDurationMin: profileQuery.data?.sleepTargetMinutes ?? null,
+          bedtimeTargetMin: profileQuery.data?.sleepBedtimeTargetMin ?? null,
+        }}
+      />
 
       <section className="space-y-4">
         <h2 className="font-heading text-lg font-medium">Tendances</h2>

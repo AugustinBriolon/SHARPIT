@@ -89,6 +89,23 @@ describe('computeProactiveActions', () => {
     expect(actions.some((a) => a.kind === 'link_session')).toBe(true);
   });
 
+  it('ne propose pas de check-in pour une posture stale', () => {
+    const past = new Date(REF.getTime() - 10 * 24 * 3600 * 1000);
+    const actions = computeProactiveActions({
+      ...BASE,
+      physicalNotes: [
+        note({
+          id: 'posture',
+          category: 'POSTURE',
+          severity: 5,
+          updatedAt: past,
+          checkins: [],
+        }),
+      ],
+    });
+    expect(actions.some((a) => a.kind === 'physical_checkin')).toBe(false);
+  });
+
   it('plafonne à 6 actions', () => {
     const actions = computeProactiveActions({
       ...BASE,

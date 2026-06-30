@@ -199,6 +199,8 @@ function buildInsights(params: {
   avgBedtime: number | null;
   recommendedBedtime: number | null;
   avgStress: number | null;
+  targetDuration: number;
+  bedtimeGoal: number | null;
 }): SleepInsight[] {
   const insights: SleepInsight[] = [];
   const {
@@ -209,24 +211,39 @@ function buildInsights(params: {
     avgBedtime,
     recommendedBedtime,
     avgStress,
+    targetDuration,
+    bedtimeGoal,
   } = params;
 
-  if (avgDuration != null && avgDuration < 420) {
+  const targetLabel = formatDuration(targetDuration);
+
+  if (avgDuration != null && avgDuration < targetDuration - 30) {
     insights.push({
       tone: 'low',
-      title: 'Durée de sommeil insuffisante',
+      title: 'Sous ton objectif de sommeil',
       detail: `Tu dors en moyenne ${formatDuration(
         Math.round(avgDuration),
-      )} par nuit. Vise 7h30-8h30 : avance ton coucher de 30 à 60 min pour laisser plus de place au sommeil profond et au REM.`,
+      )} par nuit, sous ton objectif de ${targetLabel}. Avance ton coucher pour combler l'écart.`,
     });
-  } else if (avgDuration != null && avgDuration < 450) {
+  } else if (avgDuration != null && avgDuration < targetDuration) {
     insights.push({
       tone: 'moderate',
-      title: 'Durée un peu juste',
+      title: "Proche de l'objectif",
       detail: `Moyenne de ${formatDuration(
         Math.round(avgDuration),
-      )}. Gagner 15-30 min de sommeil améliorerait nettement ta récupération.`,
+      )} — objectif ${targetLabel}. Quelques minutes de plus par nuit feraient la différence.`,
     });
+  }
+
+  if (bedtimeGoal != null && avgBedtime != null) {
+    const diff = Math.abs(normalizeBedtime(avgBedtime) - normalizeBedtime(bedtimeGoal));
+    if (diff > 45) {
+      insights.push({
+        tone: 'moderate',
+        title: 'Coucher décalé vs objectif',
+        detail: `Tu te couches vers ${formatClock(avgBedtime)} en moyenne, objectif ${formatClock(bedtimeGoal)}. La régularité aide la récupération.`,
+      });
+    }
   }
 
   if (avgDeepPct != null && avgDeepPct < 13) {
@@ -297,7 +314,13 @@ function buildInsights(params: {
   return insights.slice(0, 4);
 }
 
-export function analyzeSleep(entries: SleepEntryInput[]): SleepCoachView {
+export interface SleepGoals {
+  targetDurationMin?: number | null;
+  bedtimeTargetMin?: number | null;
+}
+
+export function analyzeSleep(entries: SleepEntryInput[], goals?: SleepGoals): SleepCoachView {
+  const targetDuration = goals?.targetDurationMin ?? TARGET_DURATION_MIN;
   const sorted = [...entries].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
@@ -326,7 +349,7 @@ export function analyzeSleep(entries: SleepEntryInput[]): SleepCoachView {
     },
     regularityMin: null,
     recommendedBedtimeMin: null,
-    targetDurationMin: TARGET_DURATION_MIN,
+    targetDurationMin: targetDuration,
     insights: [],
   };
 
@@ -365,7 +388,7 @@ export function analyzeSleep(entries: SleepEntryInput[]): SleepCoachView {
 
   let recommendedBedtime: number | null = null;
   if (medianWake != null) {
-    const raw = medianWake - TARGET_DURATION_MIN - FALL_ASLEEP_BUFFER_MIN;
+    const raw = medianWake - targetDuration - FALL_ASLEEP_BUFFER_MIN;
     recommendedBedtime = ((raw % 1440) + 1440) % 1440;
   }
 
@@ -388,6 +411,8 @@ export function analyzeSleep(entries: SleepEntryInput[]): SleepCoachView {
     avgBedtime,
     recommendedBedtime,
     avgStress: avg(stresses),
+    targetDuration,
+    bedtimeGoal: goals?.bedtimeTargetMin ?? null,
   });
 
   const hasDetailedData = nights.some(
@@ -411,7 +436,7 @@ export function analyzeSleep(entries: SleepEntryInput[]): SleepCoachView {
     },
     regularityMin: regularity != null ? Math.round(regularity) : null,
     recommendedBedtimeMin: recommendedBedtime,
-    targetDurationMin: TARGET_DURATION_MIN,
+    targetDurationMin: targetDuration,
     insights,
   };
 }

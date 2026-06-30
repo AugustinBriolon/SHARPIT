@@ -354,6 +354,8 @@ export async function upsertAthleteProfile(data: {
   runThresholdPaceSecPerKm?: number | null;
   context?: string | null;
   thresholdsSyncedAt?: Date | null;
+  sleepTargetMinutes?: number | null;
+  sleepBedtimeTargetMin?: number | null;
 }) {
   return prisma.athleteProfile.upsert({
     where: { id: PROFILE_ID },

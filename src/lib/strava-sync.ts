@@ -2,6 +2,7 @@ import { ActivityType, Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { findMatchingActivity, mergedSource } from '@/lib/activity-dedup';
 import { prisma } from '@/lib/prisma';
+import { autoLinkActivities } from '@/lib/session-linking';
 import {
   fetchActivities,
   mapStravaType,
@@ -299,6 +300,10 @@ export async function syncStravaActivities(): Promise<SyncResult> {
     where: { id: ACCOUNT_ID },
     data: { lastSyncAt: new Date() },
   });
+
+  if (importedActivityIds.length > 0) {
+    await autoLinkActivities(importedActivityIds);
+  }
 
   return {
     fetched,

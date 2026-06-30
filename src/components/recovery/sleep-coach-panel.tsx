@@ -25,8 +25,14 @@ const TONE_DOT: Record<string, string> = {
   neutral: 'bg-muted-foreground',
 };
 
-export function SleepCoachPanel({ entries }: { entries: SleepEntryInput[] }) {
-  const view = analyzeSleep(entries);
+export function SleepCoachPanel({
+  entries,
+  sleepGoals,
+}: {
+  entries: SleepEntryInput[];
+  sleepGoals?: { targetDurationMin?: number | null; bedtimeTargetMin?: number | null };
+}) {
+  const view = analyzeSleep(entries, sleepGoals);
 
   if (!view.hasData) {
     return (

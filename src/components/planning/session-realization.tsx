@@ -1,12 +1,13 @@
 'use client';
 
-import { differenceInCalendarDays } from 'date-fns';
+import { differenceInCalendarDays, startOfDay } from 'date-fns';
 import {
   Check,
   CheckCircle2,
   HeartPulse,
   Link2,
   Loader2,
+  MessageCircle,
   RefreshCw,
   Sparkles,
   Unlink,
@@ -15,8 +16,9 @@ import {
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { LinkButton } from '@/components/ui/link-button';
 import { Textarea } from '@/components/ui/textarea';
-import type { ClientActivity, ClientPlannedSession } from '@/lib/client/types';
+import type { ClientActivity, ClientPhysicalNote, ClientPlannedSession } from '@/lib/client/types';
 import {
   activityTypeColors,
   activityTypeLabels,
@@ -54,6 +56,17 @@ function activityMetric(a: ClientActivity): string {
 
 type PhysicalReassessment = NonNullable<SessionAnalysis['physicalReassessments']>[number];
 
+/** Réévaluation déjà enregistrée via un point de suivi post-analyse. */
+function isReassessmentAnswered(
+  note: ClientPhysicalNote,
+  analyzedAt: Date | null,
+  sessionDate: Date,
+): boolean {
+  if (note.checkins.length === 0) return false;
+  const since = analyzedAt ?? startOfDay(sessionDate);
+  return note.checkins.some((c) => new Date(c.createdAt) >= since);
+}
+
 function PhysicalReassessmentCard({ item }: { item: PhysicalReassessment }) {
   const notesQuery = usePhysicalNotes();
   const { addCheckin } = usePhysicalNoteMutations();
@@ -64,9 +77,8 @@ function PhysicalReassessmentCard({ item }: { item: PhysicalReassessment }) {
   const [severity, setSeverity] = useState<number>(item.suggestedSeverity ?? note?.severity ?? 5);
   const [comment, setComment] = useState(item.comment ?? '');
 
-  // La note peut avoir été résolue/supprimée depuis l'analyse, ou l'id être
-  // invalide : on n'affiche rien dans ce cas.
-  if (!note || dismissed) return null;
+  // Afficher uniquement les douleurs / blessures, pas posture ou mobilité.
+  if (!note || dismissed || (note.category !== 'PAIN' && note.category !== 'INJURY')) return null;
 
   const isSaving = addCheckin.isPending;
 
@@ -139,12 +151,25 @@ function PhysicalReassessmentCard({ item }: { item: PhysicalReassessment }) {
 
 export function SessionRealization({ session }: { session: ClientPlannedSession }) {
   const activitiesQuery = useActivities();
+  const notesQuery = usePhysicalNotes();
   const { link, analyze } = usePlannedSessionMutations();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
 
   const linked = session.activity;
   const analysis = session.analysis as unknown as SessionAnalysis | null;
+
+  const painReassessments = useMemo(() => {
+    const notes = notesQuery.data ?? [];
+    const analyzedAt = session.analyzedAt ? new Date(session.analyzedAt) : null;
+    const sessionDate = new Date(session.date);
+    return (analysis?.physicalReassessments ?? []).filter((item) => {
+      const note = notes.find((n) => n.id === item.noteId);
+      if (!note || (note.category !== 'PAIN' && note.category !== 'INJURY')) return false;
+      if (isReassessmentAnswered(note, analyzedAt, sessionDate)) return false;
+      return true;
+    });
+  }, [analysis?.physicalReassessments, notesQuery.data, session.analyzedAt, session.date]);
 
   const candidates = useMemo(() => {
     const all = activitiesQuery.data ?? [];
@@ -236,13 +261,17 @@ export function SessionRealization({ session }: { session: ClientPlannedSession 
                 💡 {analysis.recommendation}
               </p>
             )}
-            {(analysis.physicalReassessments?.length ?? 0) > 0 && (
+            <LinkButton href={`/coach?discuss=${session.id}`} size="sm" variant="outline">
+              <MessageCircle className="size-3.5" />
+              Discuter avec le coach
+            </LinkButton>
+            {painReassessments.length > 0 && (
               <div className="space-y-2 rounded-md border border-amber-500/20 bg-amber-500/5 p-2.5">
                 <p className="flex items-center gap-1.5 text-xs font-medium text-amber-600">
                   <HeartPulse className="size-3.5" />
-                  Réévaluer ton suivi physique
+                  Réévaluer une douleur ou blessure
                 </p>
-                {analysis.physicalReassessments?.map((item) => (
+                {painReassessments.map((item) => (
                   <PhysicalReassessmentCard key={item.noteId} item={item} />
                 ))}
               </div>

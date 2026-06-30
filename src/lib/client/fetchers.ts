@@ -98,6 +98,19 @@ export async function fetchRecords(): Promise<RecordsPayload> {
   return fetchJson<RecordsPayload>('/api/records');
 }
 
+export interface AthleteProfilePayload {
+  ftpW: number | null;
+  maxHr: number | null;
+  lthr: number | null;
+  runThresholdPaceSecPerKm: number | null;
+  sleepTargetMinutes: number | null;
+  sleepBedtimeTargetMin: number | null;
+}
+
+export async function fetchAthleteProfile(): Promise<AthleteProfilePayload> {
+  return fetchJson<AthleteProfilePayload>('/api/athlete-profile');
+}
+
 export interface GoogleCalendarEvent {
   id: string;
   calendarId: string;

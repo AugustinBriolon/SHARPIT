@@ -107,6 +107,8 @@ export default async function SettingsPage({ searchParams }: PageProps) {
                     vo2maxRunning: athleteProfile.vo2maxRunning,
                     vo2maxCycling: athleteProfile.vo2maxCycling,
                     thresholdsSyncedAt: athleteProfile.thresholdsSyncedAt?.toISOString() ?? null,
+                    sleepTargetMinutes: athleteProfile.sleepTargetMinutes,
+                    sleepBedtimeTargetMin: athleteProfile.sleepBedtimeTargetMin,
                   }
                 : null
             }

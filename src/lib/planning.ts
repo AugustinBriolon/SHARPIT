@@ -4,6 +4,7 @@ import {
   differenceInCalendarWeeks,
   eachWeekOfInterval,
   endOfWeek,
+  format,
   isWithinInterval,
   startOfWeek,
 } from 'date-fns';
@@ -90,4 +91,38 @@ export function buildPlanningWeeks(
       plannedDurationMin,
     };
   });
+}
+
+/** Données d'une semaine (lundi) : réutilise buildPlanningWeeks ou calcule à la volée. */
+export function resolvePlanningWeek(
+  weekStart: Date,
+  activities: ClientActivity[],
+  planned: ClientPlannedSession[],
+  raceDate: Date | null,
+  builtWeeks?: PlanningWeek[],
+): PlanningWeek {
+  const key = format(startOfWeek(weekStart, WEEK_OPTS), 'yyyy-MM-dd');
+  const existing = builtWeeks?.find((w) => format(w.start, 'yyyy-MM-dd') === key);
+  if (existing) return existing;
+
+  const ws = startOfWeek(weekStart, WEEK_OPTS);
+  const we = endOfWeek(ws, WEEK_OPTS);
+  const inWeek = (d: Date) => isWithinInterval(new Date(d), { start: ws, end: we });
+  const wkPlanned = planned.filter((p) => inWeek(p.date));
+  const wkActivities = activities.filter((a) => inWeek(a.date));
+  const raceWeekStart = raceDate ? startOfWeek(raceDate, WEEK_OPTS) : null;
+  const currentWeekStart = startOfWeek(new Date(), WEEK_OPTS);
+  const index = differenceInCalendarWeeks(ws, currentWeekStart, WEEK_OPTS);
+
+  return {
+    start: ws,
+    end: we,
+    index,
+    weeksToRace: raceWeekStart ? differenceInCalendarWeeks(raceWeekStart, ws, WEEK_OPTS) : null,
+    planned: wkPlanned,
+    activities: wkActivities,
+    plannedLoad: wkPlanned.reduce((sum, p) => sum + estimatePlannedLoad(p), 0),
+    actualLoad: Math.round(wkActivities.reduce((sum, a) => sum + estimateActivityLoad(a), 0)),
+    plannedDurationMin: wkPlanned.reduce((sum, p) => sum + (p.durationMin ?? 0), 0),
+  };
 }

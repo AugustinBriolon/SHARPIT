@@ -94,11 +94,18 @@ function describeActual(a: LinkedActivity, description?: string | null): string 
 
 type ActivePhysicalNote = Awaited<ReturnType<typeof getActivePhysicalNotes>>[number];
 
+const REASSESSMENT_CATEGORIES = new Set<ActivePhysicalNote['category']>(['PAIN', 'INJURY']);
+
+function painInjuryNotes(notes: ActivePhysicalNote[]): ActivePhysicalNote[] {
+  return notes.filter((n) => REASSESSMENT_CATEGORIES.has(n.category));
+}
+
 function describePhysicalNotes(notes: ActivePhysicalNote[]): string {
-  if (notes.length === 0) {
-    return 'Aucune douleur / blessure active enregistrée — ne propose aucune réévaluation.';
+  const relevant = painInjuryNotes(notes);
+  if (relevant.length === 0) {
+    return 'Aucune douleur / blessure active — ne propose aucune réévaluation (ignore posture, mobilité et autres suivis généraux).';
   }
-  return notes
+  return relevant
     .map((n) => {
       const bits = [
         `id=${n.id}`,
@@ -129,8 +136,9 @@ RÈGLES D'ÉVALUATION IMPORTANTES :
 - Dans le doute, accorde le bénéfice à l'athlète plutôt que de surpénaliser.
 
 RÉÉVALUATION DU SUIVI PHYSIQUE (champ "physicalReassessments") :
-- On te fournit la liste des douleurs / blessures ACTIVES de l'athlète, chacune avec son id.
+- On te fournit UNIQUEMENT les douleurs et blessures ACTIVES (pas la posture, la mobilité ni autres suivis généraux).
 - Propose une réévaluation UNIQUEMENT lorsque la consigne de la séance OU les notes/description de l'athlète sollicitent ou mentionnent explicitement la zone concernée (ex. test ciblant une douleur, consigne « arrêt immédiat si douleur fesse/ischio », gêne rapportée pendant la séance).
+- Ne JAMAIS proposer de réévaluation pour la posture, la mobilité ou un suivi technique non lié à une douleur.
 - Pour chaque réévaluation pertinente : recopie l'id EXACT de la note, pose une question courte et ciblée sur le ressenti pendant cette séance précise, et pré-remplis un commentaire rappelant le contexte (type de test, structure).
 - Ne renseigne "suggestedSeverity" QUE si l'athlète a explicitement indiqué l'état de sa douleur dans ses notes/ressenti ; sinon mets null (c'est lui qui complétera).
 - Si aucune douleur active n'est concernée par cette séance, laisse "physicalReassessments" vide.
@@ -190,7 +198,14 @@ ${describePhysicalNotes(physicalNotes)}`;
     providerOptions: coachGatewayOptions,
   });
 
-  return output;
+  if (!output) return null;
+
+  const painIds = new Set(painInjuryNotes(physicalNotes).map((n) => n.id));
+  const physicalReassessments = (output.physicalReassessments ?? []).filter((r) =>
+    painIds.has(r.noteId),
+  );
+
+  return { ...output, physicalReassessments };
 }
 
 const BRICK_SYSTEM = `Tu es un entraîneur expert en triathlon et en sports d'enchaînement (brick). On te donne un enchaînement multisport (ex. vélo → course) avec, pour chaque sport, ce qui était PRÉVU et ce qui a été RÉELLEMENT réalisé, dans l'ordre.

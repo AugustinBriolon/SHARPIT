@@ -23,6 +23,8 @@ interface ProfileData {
   vo2maxRunning: number | null;
   vo2maxCycling: number | null;
   thresholdsSyncedAt: string | null;
+  sleepTargetMinutes: number | null;
+  sleepBedtimeTargetMin: number | null;
 }
 
 interface GarminImportResult {
@@ -41,6 +43,23 @@ function paceToInput(secPerKm: number | null): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+function parseClockInput(value: string): number | null {
+  if (!value.trim()) return null;
+  const parts = value.split(':');
+  if (parts.length !== 2) return null;
+  const h = Number(parts[0]);
+  const m = Number(parts[1]);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+  return h * 60 + m;
+}
+
+function clockToInput(min: number | null): string {
+  if (min == null) return '';
+  const h = Math.floor(min / 60);
+  const m = Math.round(min % 60);
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
 function parsePaceInput(value: string): number | null {
   if (!value.trim()) return null;
   const parts = value.split(':');
@@ -57,6 +76,12 @@ export function AthleteProfilePanel({ initial }: { initial: ProfileData | null }
   const [lthr, setLthr] = useState(initial?.lthr?.toString() ?? '');
   const [thresholdPace, setThresholdPace] = useState(
     paceToInput(initial?.runThresholdPaceSecPerKm ?? null),
+  );
+  const [sleepHours, setSleepHours] = useState(
+    initial?.sleepTargetMinutes != null ? String(initial.sleepTargetMinutes / 60) : '8',
+  );
+  const [sleepBedtime, setSleepBedtime] = useState(
+    clockToInput(initial?.sleepBedtimeTargetMin ?? null),
   );
   const [vo2maxRunning, setVo2maxRunning] = useState<number | null>(initial?.vo2maxRunning ?? null);
   const [vo2maxCycling, setVo2maxCycling] = useState<number | null>(initial?.vo2maxCycling ?? null);
@@ -107,6 +132,18 @@ export function AthleteProfilePanel({ initial }: { initial: ProfileData | null }
     setError(null);
     setMessage(null);
     try {
+      const sleepMinutes = sleepHours.trim() ? Math.round(Number(sleepHours) * 60) : null;
+      if (
+        sleepMinutes != null &&
+        (!Number.isFinite(sleepMinutes) || sleepMinutes < 240 || sleepMinutes > 720)
+      ) {
+        throw new Error('Objectif sommeil invalide (entre 4 h et 12 h).');
+      }
+      const bedtimeMin = parseClockInput(sleepBedtime);
+      if (sleepBedtime.trim() && bedtimeMin == null) {
+        throw new Error('Heure de coucher invalide (format HH:mm).');
+      }
+
       const res = await fetch('/api/athlete-profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -115,17 +152,25 @@ export function AthleteProfilePanel({ initial }: { initial: ProfileData | null }
           maxHr: maxHr ? Number(maxHr) : null,
           lthr: lthr ? Number(lthr) : null,
           runThresholdPaceSecPerKm: parsePaceInput(thresholdPace),
+          sleepTargetMinutes: sleepMinutes,
+          sleepBedtimeTargetMin: bedtimeMin,
         }),
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => null)) as {
           error?: string;
+          detail?: string;
+          details?: { fieldErrors?: Record<string, string[]> };
         } | null;
-        throw new Error(data?.error ?? 'Erreur');
+        const fieldMsg = data?.details?.fieldErrors
+          ? Object.values(data.details.fieldErrors).flat().join(' · ')
+          : null;
+        throw new Error(fieldMsg || data?.detail || data?.error || 'Erreur');
       }
       setMessage('Profil enregistré — les zones et métriques seront recalculées.');
       await queryClient.invalidateQueries({ queryKey: ['activity-stream'] });
       await queryClient.invalidateQueries({ queryKey: queryKeys.thresholdPreview });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.athleteProfile });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur');
     } finally {
@@ -310,6 +355,28 @@ export function AthleteProfilePanel({ initial }: { initial: ProfileData | null }
             placeholder="4:15"
             value={thresholdPace}
             onChange={(e) => setThresholdPace(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="sleepHours">Objectif sommeil (heures)</Label>
+          <Input
+            id="sleepHours"
+            max={12}
+            min={5}
+            placeholder="8"
+            step={0.25}
+            type="number"
+            value={sleepHours}
+            onChange={(e) => setSleepHours(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="sleepBedtime">Heure de coucher visée (HH:mm)</Label>
+          <Input
+            id="sleepBedtime"
+            placeholder="22:30"
+            value={sleepBedtime}
+            onChange={(e) => setSleepBedtime(e.target.value)}
           />
         </div>
       </div>

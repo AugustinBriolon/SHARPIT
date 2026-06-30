@@ -33,9 +33,9 @@ export function PerformancePredictions() {
 
   if (!data) return null;
 
-  const predictions = predictRunRaces(data.runBests);
-  const thresholdPace = estimateRunThresholdPace(data.runBests);
-  const ftp = estimateFtp(data.powerCurve);
+  const predictions = predictRunRaces(data.runBests, data.runEfforts);
+  const thresholdPace = estimateRunThresholdPace(data.runBests, data.runEfforts);
+  const ftp = estimateFtp(data.powerCurve, data.bikeEfforts);
   const preview = previewQuery.data;
   const canApply = preview?.hasChanges && (ftp || thresholdPace != null);
 

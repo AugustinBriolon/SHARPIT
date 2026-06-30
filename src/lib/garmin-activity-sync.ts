@@ -14,6 +14,7 @@ import {
 import { clientFromTokens, currentTokens, type GarminTokens } from '@/lib/garmin';
 import { getGarminAccount } from '@/lib/garmin-sync';
 import { prisma } from '@/lib/prisma';
+import { autoLinkActivities } from '@/lib/session-linking';
 
 const ACCOUNT_ID = 'default';
 const PAGE_SIZE = 50;
@@ -192,6 +193,10 @@ export async function syncGarminActivities(options?: {
       lastActivitySyncAt: new Date(),
     },
   });
+
+  if (result.importedActivityIds.length > 0) {
+    await autoLinkActivities(result.importedActivityIds);
+  }
 
   return result;
 }

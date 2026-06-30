@@ -17,4 +17,5 @@ export const queryKeys = {
   trainingPlan: ['training-plan'] as const,
   thresholdHistory: ['threshold-history'] as const,
   thresholdPreview: ['threshold-preview'] as const,
+  athleteProfile: ['athlete-profile'] as const,
 };

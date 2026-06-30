@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { Fragment, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { PlannedSessionDialog } from '@/components/planning/planned-session-dialog';
-import { StickyHeader } from '@/components/layout/sticky-header';
+import { PageHeader } from '@/components/layout/sticky-header';
 import { useMounted } from '@/hooks/use-mounted';
 import { Button } from '@/components/ui/button';
 import {
@@ -49,7 +49,7 @@ const WEEK_OPTS = { weekStartsOn: 1 as const };
 type DialogState =
   { mode: 'create'; date: Date } | { mode: 'edit'; session: ClientPlannedSession } | null;
 
-export function CalendarView() {
+export function CalendarView({ embedded = false }: { embedded?: boolean }) {
   const mounted = useMounted();
   const queryClient = useQueryClient();
   const [month, setMonth] = useState<Date>(() => startOfMonth(new Date()));
@@ -118,10 +118,17 @@ export function CalendarView() {
   const [dragOver, setDragOver] = useState<string | null>(null);
 
   const header = (
-    <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
+    <PageHeader className="flex flex-wrap items-end justify-between gap-4" embedded={embedded}>
       <div>
-        <p className="text-primary text-xs font-medium tracking-[0.2em] uppercase">Calendar</p>
-        <h1 className="font-heading mt-2 text-3xl font-semibold tracking-tight capitalize">
+        {!embedded && (
+          <p className="text-primary text-xs font-medium tracking-[0.2em] uppercase">Calendar</p>
+        )}
+        <h1
+          className={cn(
+            'font-heading font-semibold tracking-tight capitalize',
+            embedded ? 'text-xl' : 'mt-2 text-3xl',
+          )}
+        >
           {mounted ? format(month, 'MMMM yyyy', { locale: fr }) : 'Calendrier'}
         </h1>
       </div>
@@ -165,7 +172,7 @@ export function CalendarView() {
           Planifier
         </Button>
       </div>
-    </StickyHeader>
+    </PageHeader>
   );
 
   if (!mounted || activitiesQuery.isLoading || plannedQuery.isLoading || goalsQuery.isLoading) {

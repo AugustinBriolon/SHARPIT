@@ -71,11 +71,12 @@ export function MacroPlanDialog({ goals, onClose }: MacroPlanDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CalendarRange className="text-primary size-4" />
-            Macro-plan périodisé
+            Macro-plan jusqu&apos;à la course
           </DialogTitle>
           <DialogDescription>
-            Génère un plan multi-semaines (base → développement → spécifique → affûtage) calibré sur
-            ta CTL actuelle, jusqu&apos;à la date de ton objectif.
+            Structure ton entraînement sur plusieurs semaines (phases et charge cible par semaine),
+            calibré sur ta forme actuelle jusqu&apos;à la date de ton objectif. Ensuite, utilise «
+            Remplir ma semaine » pour détailler les séances.
           </DialogDescription>
         </DialogHeader>
 
@@ -183,8 +184,8 @@ function ActivePlanView({
       </div>
 
       <p className="text-muted-foreground text-xs">
-        Utilise « Générer ma semaine » pour remplir chaque semaine selon la charge cible. Les phases
-        s&apos;affichent sur le planning.
+        Utilise « Remplir ma semaine » sur le planning pour ajouter les séances concrètes selon la
+        charge cible de chaque semaine. Les phases s&apos;affichent sur le calendrier.
       </p>
 
       <div className="flex justify-end">
