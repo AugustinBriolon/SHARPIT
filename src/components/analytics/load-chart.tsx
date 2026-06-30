@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   CartesianGrid,
@@ -9,9 +9,9 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CHART_COLORS, type PmcPoint } from "@/lib/analytics";
+} from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CHART_COLORS, type PmcPoint } from '@/lib/analytics';
 
 interface LoadChartProps {
   data: PmcPoint[];
@@ -28,8 +28,8 @@ function ChartTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-border/60 bg-card px-3 py-2 text-xs shadow-lg">
-      <p className="mb-1 font-medium text-muted-foreground">{label}</p>
+    <div className="border-border/60 bg-card rounded-lg border px-3 py-2 text-xs shadow-lg">
+      <p className="text-muted-foreground mb-1 font-medium">{label}</p>
       {payload.map((entry) => (
         <p key={entry.name} style={{ color: entry.color }}>
           {entry.name}: <span className="font-mono font-semibold">{entry.value}</span>
@@ -45,61 +45,57 @@ export function LoadChart({ data }: LoadChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base font-medium">
-          Charge d&apos;entraînement
-        </CardTitle>
-        <p className="text-xs text-muted-foreground">
+        <CardTitle className="text-base font-medium">Charge d&apos;entraînement</CardTitle>
+        <p className="text-muted-foreground text-xs">
           CTL (forme) · ATL (fatigue) · TSB (fraîcheur) — modèle Banister
         </p>
       </CardHeader>
       <CardContent>
         <div className="h-72 w-full">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer height="100%" width="100%">
             <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
               <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" />
               <XAxis
-                dataKey="label"
-                ticks={ticks.map((d) => d.label)}
-                tick={{ fill: "oklch(0.65 0.02 250)", fontSize: 11 }}
                 axisLine={false}
+                dataKey="label"
+                tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
                 tickLine={false}
+                ticks={ticks.map((d) => d.label)}
               />
               <YAxis
-                tick={{ fill: "oklch(0.65 0.02 250)", fontSize: 11 }}
                 axisLine={false}
+                tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
                 tickLine={false}
               />
               <Tooltip content={<ChartTooltip />} />
               <Legend
+                formatter={(value) => <span className="text-muted-foreground">{value}</span>}
                 wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
-                formatter={(value) => (
-                  <span className="text-muted-foreground">{value}</span>
-                )}
               />
               <Line
-                type="monotone"
                 dataKey="ctl"
+                dot={false}
                 name="CTL"
                 stroke={CHART_COLORS.ctl}
                 strokeWidth={2}
-                dot={false}
+                type="monotone"
               />
               <Line
-                type="monotone"
                 dataKey="atl"
+                dot={false}
                 name="ATL"
                 stroke={CHART_COLORS.atl}
                 strokeWidth={2}
-                dot={false}
+                type="monotone"
               />
               <Line
-                type="monotone"
                 dataKey="tsb"
+                dot={false}
                 name="TSB"
                 stroke={CHART_COLORS.tsb}
-                strokeWidth={2}
-                dot={false}
                 strokeDasharray="4 4"
+                strokeWidth={2}
+                type="monotone"
               />
             </LineChart>
           </ResponsiveContainer>

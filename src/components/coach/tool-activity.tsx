@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import type { ActivityType } from "@prisma/client";
+import type { ActivityType } from '@prisma/client';
 import {
   CalendarPlus,
   CalendarX2,
@@ -10,11 +10,11 @@ import {
   Loader2,
   PencilLine,
   X,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { activityTypeLabels } from "@/lib/format";
-import { intensityLabels } from "@/lib/sessions";
-import { cn } from "@/lib/utils";
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { activityTypeLabels } from '@/lib/format';
+import { intensityLabels } from '@/lib/sessions';
+import { cn } from '@/lib/utils';
 
 export type KnownSession = {
   id: string;
@@ -39,35 +39,35 @@ type Meta = {
 };
 
 const META: Record<string, Meta> = {
-  "tool-listPlannedSessions": {
-    label: "Calendrier consulté",
+  'tool-listPlannedSessions': {
+    label: 'Calendrier consulté',
     icon: ListChecks,
-    running: "Consultation des séances…",
-    proposal: "",
+    running: 'Consultation des séances…',
+    proposal: '',
   },
-  "tool-createPlannedSession": {
-    label: "Séance ajoutée",
+  'tool-createPlannedSession': {
+    label: 'Séance ajoutée',
     icon: CalendarPlus,
-    running: "Ajout de la séance…",
-    proposal: "Ajouter une séance",
+    running: 'Ajout de la séance…',
+    proposal: 'Ajouter une séance',
   },
-  "tool-createBrickSession": {
-    label: "Brick ajouté",
+  'tool-createBrickSession': {
+    label: 'Brick ajouté',
     icon: Layers,
-    running: "Ajout du brick…",
-    proposal: "Ajouter un brick (multisport)",
+    running: 'Ajout du brick…',
+    proposal: 'Ajouter un brick (multisport)',
   },
-  "tool-updatePlannedSession": {
-    label: "Séance modifiée",
+  'tool-updatePlannedSession': {
+    label: 'Séance modifiée',
     icon: PencilLine,
-    running: "Modification de la séance…",
-    proposal: "Modifier une séance",
+    running: 'Modification de la séance…',
+    proposal: 'Modifier une séance',
   },
-  "tool-deletePlannedSession": {
-    label: "Séance supprimée",
+  'tool-deletePlannedSession': {
+    label: 'Séance supprimée',
     icon: CalendarX2,
-    running: "Suppression de la séance…",
-    proposal: "Supprimer une séance",
+    running: 'Suppression de la séance…',
+    proposal: 'Supprimer une séance',
   },
 };
 
@@ -93,14 +93,14 @@ function describeInput(
 
   const fmtType = (t?: ActivityType) => (t ? activityTypeLabels[t] : null);
 
-  if (type === "tool-deletePlannedSession") {
+  if (type === 'tool-deletePlannedSession') {
     const headline = ref
-      ? `${ref.title ?? "Séance"}${ref.date ? ` — ${ref.date}` : ""}`
-      : "Séance ciblée";
+      ? `${ref.title ?? 'Séance'}${ref.date ? ` — ${ref.date}` : ''}`
+      : 'Séance ciblée';
     return { headline, lines: [] };
   }
 
-  if (type === "tool-createBrickSession") {
+  if (type === 'tool-createBrickSession') {
     const brick = input as unknown as {
       date?: string;
       title?: string;
@@ -112,7 +112,7 @@ function describeInput(
         load?: number;
       }[];
     };
-    const headline = brick.title ?? "Brick (multisport)";
+    const headline = brick.title ?? 'Brick (multisport)';
     if (brick.date) lines.push(brick.date);
     for (const leg of brick.legs ?? []) {
       const legMeta = [
@@ -122,14 +122,14 @@ function describeInput(
         leg.load ? `${leg.load} TSS` : null,
       ]
         .filter(Boolean)
-        .join(" · ");
-      lines.push(`${leg.title ?? fmtType(leg.type) ?? "Étape"}${legMeta ? ` — ${legMeta}` : ""}`);
+        .join(' · ');
+      lines.push(`${leg.title ?? fmtType(leg.type) ?? 'Étape'}${legMeta ? ` — ${legMeta}` : ''}`);
     }
     return { headline, lines };
   }
 
-  if (type === "tool-createPlannedSession") {
-    const headline = input.title ?? "Nouvelle séance";
+  if (type === 'tool-createPlannedSession') {
+    const headline = input.title ?? 'Nouvelle séance';
     const meta = [
       input.date,
       fmtType(input.type),
@@ -138,7 +138,7 @@ function describeInput(
       input.load ? `${input.load} TSS` : null,
     ]
       .filter(Boolean)
-      .join(" · ");
+      .join(' · ');
     if (meta) lines.push(meta);
     if (input.description) lines.push(input.description);
     return { headline, lines };
@@ -146,8 +146,8 @@ function describeInput(
 
   // update : on n'affiche que ce qui change
   const headline = ref
-    ? `${ref.title ?? "Séance"}${ref.date ? ` — ${ref.date}` : ""}`
-    : (input.title ?? "Séance");
+    ? `${ref.title ?? 'Séance'}${ref.date ? ` — ${ref.date}` : ''}`
+    : (input.title ?? 'Séance');
   if (input.date) lines.push(`Date → ${input.date}`);
   if (input.type) lines.push(`Type → ${fmtType(input.type)}`);
   if (input.intensity) lines.push(`Intensité → ${intensityLabels[input.intensity]}`);
@@ -173,26 +173,26 @@ export function ToolActivity({
   if (!meta) return null;
 
   const Icon = meta.icon;
-  const state = part.state;
-  const isList = part.type === "tool-listPlannedSessions";
+  const { state } = part;
+  const isList = part.type === 'tool-listPlannedSessions';
 
   // 1) Demande de validation : on affiche la proposition + boutons
-  if (state === "approval-requested" && part.approval && !part.approval.isAutomatic) {
+  if (state === 'approval-requested' && part.approval && !part.approval.isAutomatic) {
     const { headline, lines } = describeInput(
       part.type,
       (part.input ?? {}) as SessionInput,
       knownSessions,
     );
-    const isDelete = part.type === "tool-deletePlannedSession";
+    const isDelete = part.type === 'tool-deletePlannedSession';
     return (
-      <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
-        <div className="flex items-center gap-2 text-xs font-medium text-foreground">
-          <Icon className="size-3.5 shrink-0 text-primary" />
+      <div className="border-primary/30 bg-primary/5 rounded-lg border p-3">
+        <div className="text-foreground flex items-center gap-2 text-xs font-medium">
+          <Icon className="text-primary size-3.5 shrink-0" />
           {meta.proposal}
         </div>
-        <p className="mt-1.5 text-sm font-medium text-foreground">{headline}</p>
+        <p className="text-foreground mt-1.5 text-sm font-medium">{headline}</p>
         {lines.length > 0 && (
-          <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+          <ul className="text-muted-foreground mt-1 space-y-0.5 text-xs">
             {lines.map((l, i) => (
               <li key={i}>{l}</li>
             ))}
@@ -200,18 +200,18 @@ export function ToolActivity({
         )}
         <div className="mt-3 flex gap-2">
           <Button
-            size="sm"
-            variant={isDelete ? "destructive" : "default"}
             disabled={disabled}
+            size="sm"
+            variant={isDelete ? 'destructive' : 'default'}
             onClick={() => onApproval?.(part.approval!.id, true)}
           >
             <Check className="size-3.5" />
-            {isDelete ? "Supprimer" : "Valider"}
+            {isDelete ? 'Supprimer' : 'Valider'}
           </Button>
           <Button
+            disabled={disabled}
             size="sm"
             variant="outline"
-            disabled={disabled}
             onClick={() => onApproval?.(part.approval!.id, false)}
           >
             <X className="size-3.5" />
@@ -223,9 +223,9 @@ export function ToolActivity({
   }
 
   // 2) Refusé
-  if (state === "output-denied") {
+  if (state === 'output-denied') {
     return (
-      <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-card/40 px-2.5 py-1.5 text-xs text-muted-foreground">
+      <div className="border-border/60 bg-card/40 text-muted-foreground flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs">
         <X className="size-3.5 shrink-0" />
         <span className="line-through">{meta.proposal}</span>
         <span className="opacity-70">— proposition refusée</span>
@@ -233,8 +233,8 @@ export function ToolActivity({
     );
   }
 
-  const done = state === "output-available";
-  const failed = state === "output-error";
+  const done = state === 'output-available';
+  const failed = state === 'output-error';
   const output = part.output as
     | {
         ok?: boolean;
@@ -249,26 +249,26 @@ export function ToolActivity({
   let detail: string | null = null;
   if (done && !isList && output) {
     if (koExec) {
-      detail = output.error ?? "échec";
-    } else if (part.type === "tool-createBrickSession" && output.legs?.length) {
+      detail = output.error ?? 'échec';
+    } else if (part.type === 'tool-createBrickSession' && output.legs?.length) {
       const legLabels = output.legs
         .map((l) => l.title ?? (l.type ? activityTypeLabels[l.type as ActivityType] : null))
         .filter(Boolean);
-      detail = [output.date, legLabels.join(" → ")].filter(Boolean).join(" · ") || null;
+      detail = [output.date, legLabels.join(' → ')].filter(Boolean).join(' · ') || null;
     } else {
-      detail = [output.title, output.date].filter(Boolean).join(" · ") || null;
+      detail = [output.title, output.date].filter(Boolean).join(' · ') || null;
     }
   }
 
   return (
     <div
       className={cn(
-        "flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs",
+        'flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs',
         failed || koExec
-          ? "border-destructive/30 bg-destructive/5 text-destructive"
+          ? 'border-destructive/30 bg-destructive/5 text-destructive'
           : done
-            ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-700"
-            : "border-border/60 bg-card/40 text-muted-foreground",
+            ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-700'
+            : 'border-border/60 bg-card/40 text-muted-foreground',
       )}
     >
       {done ? (
@@ -278,9 +278,7 @@ export function ToolActivity({
       )}
       <span className="font-medium">{done ? meta.label : meta.running}</span>
       {detail && <span className="truncate opacity-80">— {detail}</span>}
-      {done && !failed && !koExec && (
-        <Check className="ml-auto size-3 shrink-0" />
-      )}
+      {done && !failed && !koExec && <Check className="ml-auto size-3 shrink-0" />}
     </div>
   );
 }

@@ -5,11 +5,11 @@ import {
   streamText,
   toUIMessageStream,
   type UIMessage,
-} from "ai";
-import { NextResponse } from "next/server";
-import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from "@/lib/ai";
-import { buildCoachContext, formatCoachContext } from "@/lib/coach-context";
-import { coachTools } from "@/lib/coach-tools";
+} from 'ai';
+import { NextResponse } from 'next/server';
+import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from '@/lib/ai';
+import { buildCoachContext, formatCoachContext } from '@/lib/coach-context';
+import { coachTools } from '@/lib/coach-tools';
 
 export const maxDuration = 60;
 
@@ -61,8 +61,7 @@ export async function POST(req: Request) {
   if (!isCoachConfigured()) {
     return NextResponse.json(
       {
-        error:
-          "Coach IA non configuré. Ajoute une clé AI_GATEWAY_API_KEY dans .env.",
+        error: 'Coach IA non configuré. Ajoute une clé AI_GATEWAY_API_KEY dans .env.',
       },
       { status: 503 },
     );
@@ -81,10 +80,10 @@ export async function POST(req: Request) {
     // Les actions qui modifient le calendrier nécessitent la validation de l'athlète.
     // listPlannedSessions (lecture seule) s'exécute automatiquement.
     toolApproval: {
-      createPlannedSession: "user-approval",
-      createBrickSession: "user-approval",
-      updatePlannedSession: "user-approval",
-      deletePlannedSession: "user-approval",
+      createPlannedSession: 'user-approval',
+      createBrickSession: 'user-approval',
+      updatePlannedSession: 'user-approval',
+      deletePlannedSession: 'user-approval',
     },
     stopWhen: stepCountIs(8),
     providerOptions: coachGatewayOptions,

@@ -1,0 +1,197 @@
+import { ActivityType, Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { subDays } from 'date-fns';
+import { findMatchingActivity } from '@/lib/activity-dedup';
+import {
+  buildGarminActivityData,
+  fetchGarminActivityEvaluation,
+  fetchGarminExerciseSets,
+  garminEnrichmentUpdate,
+  garminSessionDurationSec,
+  mapGarminType,
+  type ParsedStrengthSet,
+} from '@/lib/garmin-activities';
+import { clientFromTokens, currentTokens, type GarminTokens } from '@/lib/garmin';
+import { getGarminAccount } from '@/lib/garmin-sync';
+import { prisma } from '@/lib/prisma';
+
+const ACCOUNT_ID = 'default';
+const PAGE_SIZE = 50;
+/** Limite par défaut (fenêtre glissante) : ~600 activités suffisent largement. */
+const MAX_PAGES = 12;
+/** Mode historique complet : plafond de sécurité (~10 000 activités). */
+const MAX_PAGES_FULL = 200;
+
+/** Crée les séries de muscu si l'activité n'en a pas encore. Renvoie true si ajout. */
+async function backfillStrengthSets(
+  activityId: string,
+  sets: ParsedStrengthSet[],
+): Promise<boolean> {
+  if (sets.length === 0) return false;
+  const count = await prisma.strengthSet.count({ where: { activityId } });
+  if (count > 0) return false;
+  await prisma.strengthSet.createMany({
+    data: sets.map((s) => ({
+      activityId,
+      exercise: s.exercise,
+      sets: s.sets,
+      reps: s.reps,
+      weightKg: s.weightKg,
+      restSec: s.restSec,
+      order: s.order,
+    })),
+  });
+  return true;
+}
+
+export interface GarminActivitySyncResult {
+  fetched: number;
+  imported: number;
+  updated: number;
+  merged: number;
+  skipped: number;
+  importedActivityIds: string[];
+}
+
+export async function syncGarminActivities(options?: {
+  /** Fenêtre en jours. Ignoré si `full` est vrai. */
+  sinceDays?: number;
+  /** Récupère tout l'historique (aucune limite de date). */
+  full?: boolean;
+}): Promise<GarminActivitySyncResult> {
+  const account = await getGarminAccount();
+  if (!account) throw new Error('Compte Garmin non connecté');
+
+  const tokens: GarminTokens = {
+    oauth1: account.oauth1Token,
+    oauth2: account.oauth2Token,
+  };
+  const client = clientFromTokens(tokens);
+
+  const full = options?.full ?? false;
+  // En mode complet, pas de borne de date. Sinon fenêtre glissante (60j défaut).
+  const cutoff = full ? null : subDays(new Date(), options?.sinceDays ?? 60);
+  const maxPages = full ? MAX_PAGES_FULL : MAX_PAGES;
+
+  const result: GarminActivitySyncResult = {
+    fetched: 0,
+    imported: 0,
+    updated: 0,
+    merged: 0,
+    skipped: 0,
+    importedActivityIds: [],
+  };
+
+  let start = 0;
+
+  for (let page = 0; page < maxPages; page++) {
+    const batch = await client.getActivities(start, PAGE_SIZE);
+    if (!batch.length) break;
+
+    result.fetched += batch.length;
+    let reachedCutoff = false;
+
+    for (const activity of batch) {
+      const date = new Date(activity.startTimeLocal);
+      if (cutoff && date < cutoff) {
+        reachedCutoff = true;
+        break;
+      }
+
+      const garminId = String(activity.activityId);
+      const type = mapGarminType(activity.activityType?.typeKey ?? '');
+      if (!type) {
+        result.skipped += 1;
+        continue;
+      }
+
+      const duration = garminSessionDurationSec(activity, type);
+
+      const evaluation = await fetchGarminActivityEvaluation(client, activity.activityId);
+      const strengthSets =
+        type === ActivityType.STRENGTH
+          ? await fetchGarminExerciseSets(client, activity.activityId)
+          : [];
+
+      const existingByGarmin = await prisma.activity.findUnique({
+        where: { garminId },
+        select: { id: true, rpe: true, feeling: true, stravaId: true },
+      });
+
+      if (existingByGarmin) {
+        const patch: Prisma.ActivityUpdateInput = {};
+        if (evaluation.rpe != null && evaluation.rpe !== existingByGarmin.rpe) {
+          patch.rpe = evaluation.rpe;
+        }
+        if (evaluation.feeling != null && evaluation.feeling !== existingByGarmin.feeling) {
+          patch.feeling = evaluation.feeling;
+        }
+        if (evaluation.notes) patch.notes = evaluation.notes;
+
+        const addedSets = await backfillStrengthSets(existingByGarmin.id, strengthSets);
+
+        if (Object.keys(patch).length > 0) {
+          await prisma.activity.update({
+            where: { id: existingByGarmin.id },
+            data: patch,
+          });
+          result.updated += 1;
+        } else if (addedSets) {
+          result.updated += 1;
+        } else {
+          result.skipped += 1;
+        }
+        continue;
+      }
+
+      const fingerprint = { type, date, duration, garminId };
+      const match = await findMatchingActivity(fingerprint);
+
+      if (match) {
+        if (match.garminId && match.garminId !== garminId) {
+          result.skipped += 1;
+          continue;
+        }
+
+        await prisma.activity.update({
+          where: { id: match.id },
+          data: garminEnrichmentUpdate(activity, evaluation, type, match.stravaId),
+        });
+        await backfillStrengthSets(match.id, strengthSets);
+        await prisma.activityStream.deleteMany({ where: { activityId: match.id } });
+        result.merged += 1;
+        result.importedActivityIds.push(match.id);
+        continue;
+      }
+
+      try {
+        const created = await prisma.activity.create({
+          data: buildGarminActivityData(activity, evaluation, type, strengthSets),
+        });
+        result.imported += 1;
+        result.importedActivityIds.push(created.id);
+      } catch (error) {
+        if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+          result.skipped += 1;
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    if (reachedCutoff || batch.length < PAGE_SIZE) break;
+    start += PAGE_SIZE;
+  }
+
+  const refreshed = currentTokens(client);
+  await prisma.garminAccount.update({
+    where: { id: ACCOUNT_ID },
+    data: {
+      oauth1Token: refreshed.oauth1 as Prisma.InputJsonValue,
+      oauth2Token: refreshed.oauth2 as Prisma.InputJsonValue,
+      lastActivitySyncAt: new Date(),
+    },
+  });
+
+  return result;
+}

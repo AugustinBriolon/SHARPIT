@@ -1,4 +1,4 @@
-import { ActivityType } from "@prisma/client";
+import { ActivityType } from '@prisma/client';
 import {
   addWeeks,
   differenceInCalendarWeeks,
@@ -6,9 +6,9 @@ import {
   endOfWeek,
   isWithinInterval,
   startOfWeek,
-} from "date-fns";
-import { estimateActivityLoad } from "@/lib/analytics";
-import type { ClientActivity, ClientPlannedSession } from "@/lib/client/types";
+} from 'date-fns';
+import { estimateActivityLoad } from '@/lib/analytics';
+import type { ClientActivity, ClientPlannedSession } from '@/lib/client/types';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 
@@ -60,30 +60,20 @@ export function buildPlanningWeeks(
     if (raceWeek > lastWeekStart) lastWeekStart = raceWeek;
   }
 
-  const weekStarts = eachWeekOfInterval(
-    { start, end: lastWeekStart },
-    WEEK_OPTS,
-  );
+  const weekStarts = eachWeekOfInterval({ start, end: lastWeekStart }, WEEK_OPTS);
   const raceWeekStart = raceDate ? startOfWeek(raceDate, WEEK_OPTS) : null;
 
   return weekStarts.map((ws, index) => {
     const we = endOfWeek(ws, WEEK_OPTS);
-    const inWeek = (d: Date) =>
-      isWithinInterval(new Date(d), { start: ws, end: we });
+    const inWeek = (d: Date) => isWithinInterval(new Date(d), { start: ws, end: we });
 
     const wkPlanned = planned.filter((p) => inWeek(p.date));
     const wkActivities = activities.filter((a) => inWeek(a.date));
-    const plannedLoad = wkPlanned.reduce(
-      (sum, p) => sum + estimatePlannedLoad(p),
-      0,
-    );
+    const plannedLoad = wkPlanned.reduce((sum, p) => sum + estimatePlannedLoad(p), 0);
     const actualLoad = Math.round(
       wkActivities.reduce((sum, a) => sum + estimateActivityLoad(a), 0),
     );
-    const plannedDurationMin = wkPlanned.reduce(
-      (sum, p) => sum + (p.durationMin ?? 0),
-      0,
-    );
+    const plannedDurationMin = wkPlanned.reduce((sum, p) => sum + (p.durationMin ?? 0), 0);
     const weeksToRace = raceWeekStart
       ? differenceInCalendarWeeks(raceWeekStart, ws, WEEK_OPTS)
       : null;

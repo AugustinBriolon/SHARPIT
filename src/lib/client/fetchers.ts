@@ -1,5 +1,5 @@
-import type { RecordsPayload } from "@/lib/records";
-import type { ActivityStreamPayload } from "@/lib/streams";
+import type { RecordsPayload } from '@/lib/records';
+import type { ActivityStreamPayload } from '@/lib/streams';
 import type {
   ClientActivity,
   ClientGoal,
@@ -9,7 +9,7 @@ import type {
   ClientPlanWeek,
   ClientThresholdSnapshot,
   ClientTrainingPlan,
-} from "./types";
+} from './types';
 
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url);
@@ -19,78 +19,83 @@ async function fetchJson<T>(url: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-type RawRecord = Record<string, unknown>;
+/**
+ * Représentation « sur le fil » d'un type client : les `Date` deviennent des
+ * `string` (JSON), récursivement. Typer le payload reçu avec `Serialized<T>` puis
+ * réhydrater les champs date donne un résultat structurellement égal à `T`, sans
+ * aucun cast `as unknown as` (les erreurs de mapping redeviennent visibles).
+ */
+type Serialized<T> = T extends Date
+  ? string
+  : T extends (infer U)[]
+    ? Serialized<U>[]
+    : T extends object
+      ? { [K in keyof T]: Serialized<T[K]> }
+      : T;
 
-function toDate(value: unknown): Date {
-  return new Date(value as string);
+function toDate(value: string): Date {
+  return new Date(value);
 }
 
-function toDateOrNull(value: unknown): Date | null {
-  return value == null ? null : new Date(value as string);
+function toDateOrNull(value: string | null): Date | null {
+  return value == null ? null : new Date(value);
 }
 
 export async function fetchActivities(): Promise<ClientActivity[]> {
-  const data = await fetchJson<RawRecord[]>("/api/activities");
+  const data = await fetchJson<Serialized<ClientActivity>[]>('/api/activities');
   return data.map((a) => ({
     ...a,
     date: toDate(a.date),
     createdAt: toDate(a.createdAt),
     updatedAt: toDate(a.updatedAt),
-  })) as unknown as ClientActivity[];
+  }));
 }
 
-export async function fetchHealthEntries(
-  days: number,
-): Promise<ClientHealthEntry[]> {
-  const data = await fetchJson<RawRecord[]>(`/api/health?days=${days}`);
+export async function fetchHealthEntries(days: number): Promise<ClientHealthEntry[]> {
+  const data = await fetchJson<Serialized<ClientHealthEntry>[]>(`/api/health?days=${days}`);
   return data.map((h) => ({
     ...h,
     date: toDate(h.date),
     createdAt: toDate(h.createdAt),
     updatedAt: toDate(h.updatedAt),
-  })) as unknown as ClientHealthEntry[];
+  }));
 }
 
 export async function fetchGoals(): Promise<ClientGoal[]> {
-  const data = await fetchJson<RawRecord[]>("/api/goals");
+  const data = await fetchJson<Serialized<ClientGoal>[]>('/api/goals');
   return data.map((g) => ({
     ...g,
     targetDate: toDateOrNull(g.targetDate),
     createdAt: toDate(g.createdAt),
     updatedAt: toDate(g.updatedAt),
-  })) as unknown as ClientGoal[];
+  }));
 }
 
 export async function fetchPlannedSessions(): Promise<ClientPlannedSession[]> {
-  const data = await fetchJson<RawRecord[]>("/api/planned-sessions");
-  return data.map((s) => {
-    const activity = s.activity as RawRecord | null;
-    return {
-      ...s,
-      date: toDate(s.date),
-      createdAt: toDate(s.createdAt),
-      updatedAt: toDate(s.updatedAt),
-      analyzedAt: toDateOrNull(s.analyzedAt),
-      activity: activity
-        ? {
-            ...activity,
-            date: toDate(activity.date),
-            createdAt: toDate(activity.createdAt),
-            updatedAt: toDate(activity.updatedAt),
-          }
-        : null,
-    };
-  }) as unknown as ClientPlannedSession[];
+  const data = await fetchJson<Serialized<ClientPlannedSession>[]>('/api/planned-sessions');
+  return data.map((s) => ({
+    ...s,
+    date: toDate(s.date),
+    createdAt: toDate(s.createdAt),
+    updatedAt: toDate(s.updatedAt),
+    analyzedAt: toDateOrNull(s.analyzedAt),
+    activity: s.activity
+      ? {
+          ...s.activity,
+          date: toDate(s.activity.date),
+          createdAt: toDate(s.activity.createdAt),
+          updatedAt: toDate(s.activity.updatedAt),
+        }
+      : null,
+  }));
 }
 
-export async function fetchActivityStream(
-  id: string,
-): Promise<ActivityStreamPayload> {
+export async function fetchActivityStream(id: string): Promise<ActivityStreamPayload> {
   return fetchJson<ActivityStreamPayload>(`/api/activities/${id}/streams`);
 }
 
 export async function fetchRecords(): Promise<RecordsPayload> {
-  return fetchJson<RecordsPayload>("/api/records");
+  return fetchJson<RecordsPayload>('/api/records');
 }
 
 export interface GoogleCalendarEvent {
@@ -123,23 +128,23 @@ export interface GoogleCalendarInfo {
 }
 
 export async function fetchGoogleCalendars(): Promise<GoogleCalendarInfo[]> {
-  return fetchJson<GoogleCalendarInfo[]>("/api/google/calendars");
+  return fetchJson<GoogleCalendarInfo[]>('/api/google/calendars');
 }
 
 export async function fetchPhysicalNotes(): Promise<ClientPhysicalNote[]> {
-  const data = await fetchJson<RawRecord[]>("/api/physical-notes");
+  const data = await fetchJson<Serialized<ClientPhysicalNote>[]>('/api/physical-notes');
   return data.map((n) => ({
     ...n,
     startDate: toDate(n.startDate),
     resolvedAt: toDateOrNull(n.resolvedAt),
     createdAt: toDate(n.createdAt),
     updatedAt: toDate(n.updatedAt),
-    checkins: ((n.checkins as RawRecord[]) ?? []).map((c) => ({
+    checkins: (n.checkins ?? []).map((c) => ({
       ...c,
       date: toDate(c.date),
       createdAt: toDate(c.createdAt),
     })),
-  })) as unknown as ClientPhysicalNote[];
+  }));
 }
 
 export interface ClientConversationSummary {
@@ -154,22 +159,20 @@ export interface ClientConversation extends ClientConversationSummary {
 }
 
 export async function fetchConversations(): Promise<ClientConversationSummary[]> {
-  const data = await fetchJson<RawRecord[]>("/api/coach/conversations");
+  const data = await fetchJson<Serialized<ClientConversationSummary>[]>('/api/coach/conversations');
   return data.map((c) => ({
-    id: c.id as string,
-    title: c.title as string,
+    id: c.id,
+    title: c.title,
     createdAt: toDate(c.createdAt),
     updatedAt: toDate(c.updatedAt),
   }));
 }
 
-export async function fetchConversation(
-  id: string,
-): Promise<ClientConversation> {
-  const c = await fetchJson<RawRecord>(`/api/coach/conversations/${id}`);
+export async function fetchConversation(id: string): Promise<ClientConversation> {
+  const c = await fetchJson<Serialized<ClientConversation>>(`/api/coach/conversations/${id}`);
   return {
-    id: c.id as string,
-    title: c.title as string,
+    id: c.id,
+    title: c.title,
     messages: c.messages,
     createdAt: toDate(c.createdAt),
     updatedAt: toDate(c.updatedAt),
@@ -184,19 +187,17 @@ export interface ClientDailyBriefing {
   generatedAt: Date;
 }
 
-export async function fetchDailyBriefing(
-  date: string,
-): Promise<ClientDailyBriefing | null> {
-  const data = await fetchJson<{ briefing: RawRecord | null }>(
-    `/api/coach/briefing?date=${encodeURIComponent(date)}`,
-  );
+export async function fetchDailyBriefing(date: string): Promise<ClientDailyBriefing | null> {
+  const data = await fetchJson<{
+    briefing: Serialized<ClientDailyBriefing> | null;
+  }>(`/api/coach/briefing?date=${encodeURIComponent(date)}`);
   if (!data.briefing) return null;
   const b = data.briefing;
   return {
-    id: b.id as string,
-    date: b.date as string,
-    content: b.content as string,
-    readiness: (b.readiness as number | null) ?? null,
+    id: b.id,
+    date: b.date,
+    content: b.content,
+    readiness: b.readiness ?? null,
     generatedAt: toDate(b.generatedAt),
   };
 }
@@ -208,18 +209,16 @@ export interface ClientWeeklyReview {
   generatedAt: Date;
 }
 
-export async function fetchWeeklyReview(
-  date: string,
-): Promise<ClientWeeklyReview | null> {
-  const data = await fetchJson<{ review: RawRecord | null }>(
-    `/api/coach/weekly-review?date=${encodeURIComponent(date)}`,
-  );
+export async function fetchWeeklyReview(date: string): Promise<ClientWeeklyReview | null> {
+  const data = await fetchJson<{
+    review: Serialized<ClientWeeklyReview> | null;
+  }>(`/api/coach/weekly-review?date=${encodeURIComponent(date)}`);
   if (!data.review) return null;
   const r = data.review;
   return {
-    id: r.id as string,
+    id: r.id,
     weekStart: toDate(r.weekStart),
-    content: r.content as string,
+    content: r.content,
     generatedAt: toDate(r.generatedAt),
   };
 }
@@ -235,7 +234,7 @@ export interface ThresholdApplyPreview {
     runThresholdPaceSecPerKm: number | null;
   };
   changes: {
-    field: "ftpW" | "runThresholdPaceSecPerKm";
+    field: 'ftpW' | 'runThresholdPaceSecPerKm';
     label: string;
     from: string;
     to: string;
@@ -244,21 +243,21 @@ export interface ThresholdApplyPreview {
 }
 
 export async function fetchThresholdPreview(): Promise<ThresholdApplyPreview> {
-  return fetchJson<ThresholdApplyPreview>("/api/athlete-profile/apply-estimates");
+  return fetchJson<ThresholdApplyPreview>('/api/athlete-profile/apply-estimates');
 }
 
 export async function fetchThresholdHistory(): Promise<ClientThresholdSnapshot[]> {
-  const data = await fetchJson<RawRecord[]>(
-    "/api/athlete-profile/threshold-history",
+  const data = await fetchJson<Serialized<ClientThresholdSnapshot>[]>(
+    '/api/athlete-profile/threshold-history',
   );
   return data.map((s) => ({
     ...s,
     createdAt: toDate(s.createdAt),
-  })) as unknown as ClientThresholdSnapshot[];
+  }));
 }
 
 export async function fetchTrainingPlan(): Promise<ClientTrainingPlan | null> {
-  const plan = await fetchJson<RawRecord | null>("/api/training-plans");
+  const plan = await fetchJson<Serialized<ClientTrainingPlan> | null>('/api/training-plans');
   if (!plan) return null;
   return {
     ...plan,
@@ -266,12 +265,9 @@ export async function fetchTrainingPlan(): Promise<ClientTrainingPlan | null> {
     startDate: toDate(plan.startDate),
     createdAt: toDate(plan.createdAt),
     updatedAt: toDate(plan.updatedAt),
-    weeks: ((plan.weeks as RawRecord[]) ?? []).map(
-      (w): ClientPlanWeek =>
-        ({
-          ...w,
-          weekStart: toDate(w.weekStart),
-        }) as ClientPlanWeek,
-    ),
-  } as ClientTrainingPlan;
+    weeks: (plan.weeks ?? []).map((w): ClientPlanWeek => ({
+      ...w,
+      weekStart: toDate(w.weekStart),
+    })),
+  };
 }

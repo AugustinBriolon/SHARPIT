@@ -1,18 +1,18 @@
-import { BodySide, PhysicalCategory, PhysicalStatus } from "@prisma/client";
-import { z } from "zod";
+import { BodySide, PhysicalCategory, PhysicalStatus } from '@prisma/client';
+import { z } from 'zod';
 
 const optionalString = z
   .string()
   .optional()
   .nullable()
-  .transform((v) => (v === "" ? null : v));
+  .transform((v) => (v === '' ? null : v));
 
 const optionalSeverity = z.coerce.number().int().min(0).max(10).optional().nullable();
 
 const baseSchema = z.object({
   category: z.nativeEnum(PhysicalCategory),
   status: z.nativeEnum(PhysicalStatus).optional(),
-  title: z.string().min(1, "Titre requis"),
+  title: z.string().min(1, 'Titre requis'),
   bodyPart: optionalString,
   side: z.nativeEnum(BodySide).optional(),
   severity: optionalSeverity,

@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { deleteGoal, getGoalById, updateGoal } from "@/lib/queries";
-import { updateGoalSchema } from "@/lib/validators/goal";
+import { NextRequest, NextResponse } from 'next/server';
+import { deleteGoal, getGoalById, updateGoal } from '@/lib/queries';
+import { updateGoalSchema } from '@/lib/validators/goal';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -12,27 +12,23 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Données invalides", details: parsed.error.flatten() },
+        { error: 'Données invalides', details: parsed.error.flatten() },
         { status: 400 },
       );
     }
 
     const existing = await getGoalById(id);
     if (!existing) {
-      return NextResponse.json({ error: "Objectif introuvable" }, { status: 404 });
+      return NextResponse.json({ error: 'Objectif introuvable' }, { status: 404 });
     }
 
-    const goal = await updateGoal(
-      id,
-      parsed.data as Parameters<typeof updateGoal>[1],
-    );
+    const goal = await updateGoal(id, parsed.data as Parameters<typeof updateGoal>[1]);
     return NextResponse.json(goal);
   } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { error: "Impossible de mettre à jour l'objectif" },
-      { status: 500 },
-    );
+    console.error('[goals/PATCH]', error);
+    const message =
+      error instanceof Error ? error.message : "Impossible de mettre à jour l'objectif";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -43,9 +39,6 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { error: "Impossible de supprimer l'objectif" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Impossible de supprimer l'objectif" }, { status: 500 });
   }
 }

@@ -1,13 +1,13 @@
-import type { Prisma } from "@prisma/client";
-import { tool } from "ai";
-import { addDays, format, startOfDay } from "date-fns";
-import { z } from "zod";
+import type { Prisma } from '@prisma/client';
+import { tool } from 'ai';
+import { addDays, format, startOfDay } from 'date-fns';
+import { z } from 'zod';
 import {
   deleteSessionFromGoogle,
   getGoogleAccount,
   getUpcomingBusy,
   pushSessionToGoogleInBackground,
-} from "./google-sync";
+} from './google-sync';
 import {
   createBrickSessions,
   createPlannedSession,
@@ -15,24 +15,17 @@ import {
   getPlannedSessionById,
   getPlannedSessions,
   updatePlannedSession,
-} from "./queries";
+} from './queries';
 
-const typeEnum = z.enum(["RUN", "BIKE", "SWIM", "STRENGTH"]);
-const intensityEnum = z.enum([
-  "RECOVERY",
-  "ENDURANCE",
-  "TEMPO",
-  "THRESHOLD",
-  "VO2MAX",
-  "RACE",
-]);
+const typeEnum = z.enum(['RUN', 'BIKE', 'SWIM', 'STRENGTH']);
+const intensityEnum = z.enum(['RECOVERY', 'ENDURANCE', 'TEMPO', 'THRESHOLD', 'VO2MAX', 'RACE']);
 
 const toDate = (d: string) => new Date(`${d}T12:00:00`);
 
 const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
 const startTimeSchema = z
   .string()
-  .regex(timeRegex, "Heure au format HH:mm")
+  .regex(timeRegex, 'Heure au format HH:mm')
   .optional()
   .describe(
     "Heure de début 'HH:mm' (locale). Laisse vide pour que l'app place automatiquement la séance sur un créneau libre de l'agenda Google.",
@@ -45,15 +38,9 @@ const startTimeSchema = z
 export const coachTools = {
   listPlannedSessions: tool({
     description:
-      "Liste les séances planifiées à venir avec leur id, pour pouvoir les modifier ou supprimer. À appeler avant toute modification/suppression pour récupérer les bons id.",
+      'Liste les séances planifiées à venir avec leur id, pour pouvoir les modifier ou supprimer. À appeler avant toute modification/suppression pour récupérer les bons id.',
     inputSchema: z.object({
-      days: z
-        .number()
-        .int()
-        .min(1)
-        .max(60)
-        .optional()
-        .describe("Horizon en jours (défaut 21)."),
+      days: z.number().int().min(1).max(60).optional().describe('Horizon en jours (défaut 21).'),
     }),
     execute: async ({ days = 21 }) => {
       const today = startOfDay(new Date());
@@ -63,7 +50,7 @@ export const coachTools = {
       });
       return sessions.map((s) => ({
         id: s.id,
-        date: format(s.date, "yyyy-MM-dd"),
+        date: format(s.date, 'yyyy-MM-dd'),
         type: s.type,
         intensity: s.intensity,
         title: s.title,
@@ -78,19 +65,19 @@ export const coachTools = {
 
   createPlannedSession: tool({
     description:
-      "Crée UNE séance planifiée pour UN SEUL sport. Ne pas utiliser pour un enchaînement multisport (vélo+course, etc.) : utilise createBrickSession à la place.",
+      'Crée UNE séance planifiée pour UN SEUL sport. Ne pas utiliser pour un enchaînement multisport (vélo+course, etc.) : utilise createBrickSession à la place.',
     inputSchema: z.object({
-      date: z.string().describe("Date au format yyyy-MM-dd."),
+      date: z.string().describe('Date au format yyyy-MM-dd.'),
       startTime: startTimeSchema,
       type: typeEnum,
       intensity: intensityEnum.optional(),
-      title: z.string().describe("Titre court de la séance."),
+      title: z.string().describe('Titre court de la séance.'),
       description: z
         .string()
         .optional()
-        .describe("Structure détaillée (échauffement, corps, récup)."),
+        .describe('Structure détaillée (échauffement, corps, récup).'),
       durationMin: z.number().min(5).max(420).optional(),
-      load: z.number().min(0).max(400).optional().describe("TSS estimé."),
+      load: z.number().min(0).max(400).optional().describe('TSS estimé.'),
     }),
     execute: async (input) => {
       const s = await createPlannedSession({
@@ -99,8 +86,7 @@ export const coachTools = {
         startTime: input.startTime ?? null,
         title: input.title,
         description: input.description ?? null,
-        durationMin:
-          input.durationMin != null ? Math.round(input.durationMin) : null,
+        durationMin: input.durationMin != null ? Math.round(input.durationMin) : null,
         load: input.load != null ? Math.round(input.load) : null,
         intensity: input.intensity ?? null,
       });
@@ -110,7 +96,7 @@ export const coachTools = {
       return {
         ok: true,
         id: s.id,
-        action: "created" as const,
+        action: 'created' as const,
         date: input.date,
         startTime: input.startTime ?? null,
         type: input.type,
@@ -124,37 +110,28 @@ export const coachTools = {
     description:
       "Crée une séance BRICK / multisport : un enchaînement de plusieurs jambes le même jour (ex. vélo puis course à pied), à utiliser pour le triathlon. Chaque jambe est créée comme une séance autonome (un sport chacune) mais elles sont regroupées : l'athlète pourra ainsi lier l'activité Strava correspondante à CHAQUE jambe et obtenir une analyse par sport. Préfère cet outil à createPlannedSession dès que la séance combine plusieurs sports enchaînés.",
     inputSchema: z.object({
-      date: z.string().describe("Date commune au format yyyy-MM-dd."),
+      date: z.string().describe('Date commune au format yyyy-MM-dd.'),
       startTime: startTimeSchema,
       title: z
         .string()
         .optional()
-        .describe(
-          "Titre global du brick (ex. « Brick vélo+course T2 »). Optionnel.",
-        ),
+        .describe('Titre global du brick (ex. « Brick vélo+course T2 »). Optionnel.'),
       legs: z
         .array(
           z.object({
             type: typeEnum,
             intensity: intensityEnum.optional(),
-            title: z.string().describe("Titre court de la jambe."),
+            title: z.string().describe('Titre court de la jambe.'),
             description: z
               .string()
               .optional()
-              .describe("Structure de la jambe (échauffement, corps, récup)."),
+              .describe('Structure de la jambe (échauffement, corps, récup).'),
             durationMin: z.number().min(5).max(420).optional(),
-            load: z
-              .number()
-              .min(0)
-              .max(400)
-              .optional()
-              .describe("TSS estimé de la jambe."),
+            load: z.number().min(0).max(400).optional().describe('TSS estimé de la jambe.'),
           }),
         )
         .min(2)
-        .describe(
-          "Les jambes du brick, dans l'ordre d'enchaînement (ex. [vélo, course]).",
-        ),
+        .describe("Les jambes du brick, dans l'ordre d'enchaînement (ex. [vélo, course])."),
     }),
     execute: async (input) => {
       try {
@@ -165,8 +142,7 @@ export const coachTools = {
             startTime: input.startTime ?? null,
             title: leg.title,
             description: leg.description ?? null,
-            durationMin:
-              leg.durationMin != null ? Math.round(leg.durationMin) : null,
+            durationMin: leg.durationMin != null ? Math.round(leg.durationMin) : null,
             load: leg.load != null ? Math.round(leg.load) : null,
             intensity: leg.intensity ?? null,
           })),
@@ -180,10 +156,10 @@ export const coachTools = {
 
         return {
           ok: true as const,
-          action: "created" as const,
+          action: 'created' as const,
           brickGroupId,
           date: input.date,
-          title: input.title ?? created[0]?.title ?? "Brick",
+          title: input.title ?? created[0]?.title ?? 'Brick',
           legs: created.map((s) => ({
             id: s.id,
             type: s.type,
@@ -192,7 +168,7 @@ export const coachTools = {
           })),
         };
       } catch (error) {
-        console.error("[coach] createBrickSession", error);
+        console.error('[coach] createBrickSession', error);
         const detail = error instanceof Error ? error.message : String(error);
         return {
           ok: false as const,
@@ -204,10 +180,10 @@ export const coachTools = {
 
   updatePlannedSession: tool({
     description:
-      "Modifie une séance planifiée existante (identifiée par son id). Ne renseigne que les champs à changer.",
+      'Modifie une séance planifiée existante (identifiée par son id). Ne renseigne que les champs à changer.',
     inputSchema: z.object({
-      id: z.string().describe("id de la séance (via listPlannedSessions)."),
-      date: z.string().optional().describe("Nouvelle date yyyy-MM-dd."),
+      id: z.string().describe('id de la séance (via listPlannedSessions).'),
+      date: z.string().optional().describe('Nouvelle date yyyy-MM-dd.'),
       startTime: startTimeSchema,
       type: typeEnum.optional(),
       intensity: intensityEnum.optional(),
@@ -219,7 +195,7 @@ export const coachTools = {
     execute: async (input) => {
       const existing = await getPlannedSessionById(input.id);
       if (!existing) {
-        return { ok: false as const, error: "Séance introuvable" };
+        return { ok: false as const, error: 'Séance introuvable' };
       }
       const data: Prisma.PlannedSessionUncheckedUpdateInput = {};
       if (input.date) data.date = toDate(input.date);
@@ -238,8 +214,8 @@ export const coachTools = {
       return {
         ok: true,
         id: s.id,
-        action: "updated" as const,
-        date: format(s.date, "yyyy-MM-dd"),
+        action: 'updated' as const,
+        date: format(s.date, 'yyyy-MM-dd'),
         startTime: s.startTime,
         type: s.type,
         title: s.title,
@@ -248,21 +224,21 @@ export const coachTools = {
   }),
 
   deletePlannedSession: tool({
-    description: "Supprime une séance planifiée (identifiée par son id).",
+    description: 'Supprime une séance planifiée (identifiée par son id).',
     inputSchema: z.object({
-      id: z.string().describe("id de la séance (via listPlannedSessions)."),
+      id: z.string().describe('id de la séance (via listPlannedSessions).'),
     }),
     execute: async ({ id }) => {
       const existing = await getPlannedSessionById(id);
       if (!existing) {
-        return { ok: false as const, error: "Séance introuvable" };
+        return { ok: false as const, error: 'Séance introuvable' };
       }
 
       if (existing.googleEventId) {
         try {
           await deleteSessionFromGoogle(existing);
         } catch (error) {
-          console.error("Suppression Google Calendar échouée", error);
+          console.error('Suppression Google Calendar échouée', error);
         }
       }
 
@@ -270,9 +246,9 @@ export const coachTools = {
       return {
         ok: true,
         id,
-        action: "deleted" as const,
+        action: 'deleted' as const,
         title: existing.title,
-        date: format(existing.date, "yyyy-MM-dd"),
+        date: format(existing.date, 'yyyy-MM-dd'),
       };
     },
   }),
@@ -281,13 +257,7 @@ export const coachTools = {
     description:
       "Liste les créneaux OCCUPÉS de l'agenda Google de l'athlète (tous calendriers confondus) sur les prochains jours, pour placer les séances sur des créneaux libres. À appeler avant de proposer des horaires précis. Renvoie une liste vide si Google Calendar n'est pas connecté.",
     inputSchema: z.object({
-      days: z
-        .number()
-        .int()
-        .min(1)
-        .max(30)
-        .optional()
-        .describe("Horizon en jours (défaut 14)."),
+      days: z.number().int().min(1).max(30).optional().describe('Horizon en jours (défaut 14).'),
     }),
     execute: async ({ days = 14 }) => {
       const account = await getGoogleAccount();
@@ -302,8 +272,8 @@ export const coachTools = {
           busy,
         };
       } catch (error) {
-        console.error("Lecture agenda Google échouée", error);
-        return { connected: true as const, busy: [], error: "fetch_failed" };
+        console.error('Lecture agenda Google échouée', error);
+        return { connected: true as const, busy: [], error: 'fetch_failed' };
       }
     },
   }),

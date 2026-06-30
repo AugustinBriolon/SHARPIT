@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
+import { useEffect, useRef, useState } from 'react';
+import { cn } from '@/lib/utils';
 
 /**
  * En-tête de page collant. Au repos il est transparent et fondu dans la page ;
@@ -30,10 +30,10 @@ export function StickyHeader({
     // d'intersection. Tant que l'en-tête est au repos il est entièrement
     // visible (ratio 1) ; dès qu'il se colle à `top-0`, ce 1px sort de la zone
     // observée et le ratio passe sous 1 → état « collé ».
-    const observer = new IntersectionObserver(
-      ([entry]) => setStuck(entry.intersectionRatio < 1),
-      { threshold: [1], rootMargin: "-1px 0px 0px 0px" },
-    );
+    const observer = new IntersectionObserver(([entry]) => setStuck(entry.intersectionRatio < 1), {
+      threshold: [1],
+      rootMargin: '-1px 0px 0px 0px',
+    });
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
@@ -42,20 +42,20 @@ export function StickyHeader({
     <header
       ref={ref}
       className={cn(
-        "sticky top-0 z-30 -mx-6 px-6 py-4 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300 ease-out",
+        'sticky top-0 z-30 -mx-6 px-6 py-4 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300 ease-out',
         stuck
-          ? "border-b border-border/60 bg-background/70 shadow-sm backdrop-blur-xl supports-backdrop-filter:bg-background/55"
-          : "border-b border-transparent bg-transparent",
+          ? 'border-border/60 bg-background/70 supports-backdrop-filter:bg-background/55 border-b shadow-sm backdrop-blur-xl'
+          : 'border-b border-transparent bg-transparent',
         className,
       )}
     >
       {children}
       <div
-        aria-hidden
         className={cn(
-          "pointer-events-none absolute inset-x-0 top-full h-6 bg-linear-to-b from-background/80 to-transparent transition-opacity duration-300",
-          stuck ? "opacity-100" : "opacity-0",
+          'from-background/80 pointer-events-none absolute inset-x-0 top-full h-6 bg-linear-to-b to-transparent transition-opacity duration-300',
+          stuck ? 'opacity-100' : 'opacity-0',
         )}
+        aria-hidden
       />
     </header>
   );

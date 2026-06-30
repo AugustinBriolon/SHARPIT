@@ -1,5 +1,5 @@
-import { GarminConnect } from "@flow-js/garmin-connect";
-import { format } from "date-fns";
+import { GarminConnect } from '@flow-js/garmin-connect';
+import { format } from 'date-fns';
 
 export interface GarminTokens {
   oauth1: unknown;
@@ -58,7 +58,7 @@ export async function loginWithCredentials(
 }
 
 export function clientFromTokens(tokens: GarminTokens): GCClient {
-  const client = new GarminConnect({ username: "", password: "" });
+  const client = new GarminConnect({ username: '', password: '' });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   client.loadToken(tokens.oauth1 as any, tokens.oauth2 as any);
   return client;
@@ -89,7 +89,6 @@ async function safeProfile(client: GCClient): Promise<ProfileInfo> {
   }
 }
 
-
 export interface GarminAthleteThresholds {
   ftpW: number | null;
   lthr: number | null;
@@ -102,9 +101,7 @@ export interface GarminAthleteThresholds {
  * Récupère les seuils de l'athlète depuis Garmin (réglages utilisateur + zones
  * de puissance vélo). Tout est optionnel : un champ absent renvoie `null`.
  */
-export async function fetchAthleteThresholds(
-  client: GCClient,
-): Promise<GarminAthleteThresholds> {
+export async function fetchAthleteThresholds(client: GCClient): Promise<GarminAthleteThresholds> {
   const result: GarminAthleteThresholds = {
     ftpW: null,
     lthr: null,
@@ -113,12 +110,11 @@ export async function fetchAthleteThresholds(
     vo2maxCycling: null,
   };
 
-  const num = (v: unknown) =>
-    typeof v === "number" && !Number.isNaN(v) && v > 0 ? v : null;
+  const num = (v: unknown) => (typeof v === 'number' && !Number.isNaN(v) && v > 0 ? v : null);
 
   try {
     const settings = (await client.get(
-      "https://connectapi.garmin.com/userprofile-service/userprofile/user-settings",
+      'https://connectapi.garmin.com/userprofile-service/userprofile/user-settings',
     )) as { userData?: Record<string, unknown> } | null;
     const u = settings?.userData;
     if (u) {
@@ -132,8 +128,7 @@ export async function fetchAthleteThresholds(
       let speed = num(u.lactateThresholdSpeed);
       if (speed != null) {
         if (speed < 1.5) speed *= 10;
-        result.runThresholdPaceSecPerKm =
-          speed > 0 ? Math.round(1000 / speed) : null;
+        result.runThresholdPaceSecPerKm = speed > 0 ? Math.round(1000 / speed) : null;
       }
     }
   } catch {
@@ -142,7 +137,7 @@ export async function fetchAthleteThresholds(
 
   try {
     const power = (await client.get(
-      "https://connectapi.garmin.com/biometric-service/powerZones/sport/CYCLING",
+      'https://connectapi.garmin.com/biometric-service/powerZones/sport/CYCLING',
     )) as { functionalThresholdPower?: number } | null;
     result.ftpW = num(power?.functionalThresholdPower);
   } catch {
@@ -152,12 +147,9 @@ export async function fetchAthleteThresholds(
   return result;
 }
 
-async function fetchHrv(
-  client: GCClient,
-  date: Date,
-): Promise<number | null> {
+async function fetchHrv(client: GCClient, date: Date): Promise<number | null> {
   try {
-    const dateString = format(date, "yyyy-MM-dd");
+    const dateString = format(date, 'yyyy-MM-dd');
     const result = (await client.get(
       `https://connectapi.garmin.com/hrv-service/hrv/${dateString}`,
     )) as { hrvSummary?: { lastNightAvg?: number; weeklyAvg?: number } } | null;
@@ -197,10 +189,7 @@ function secToMin(v: unknown): number | null {
   return Math.round(n / 60);
 }
 
-async function fetchSleepDuration(
-  client: GCClient,
-  date: Date,
-): Promise<number | null> {
+async function fetchSleepDuration(client: GCClient, date: Date): Promise<number | null> {
   try {
     const sleep = (await client.getSleepDuration(date)) as {
       hours?: number | string;
@@ -215,10 +204,7 @@ async function fetchSleepDuration(
   }
 }
 
-async function fetchSleepDetail(
-  client: GCClient,
-  date: Date,
-): Promise<GarminSleepDetail> {
+async function fetchSleepDetail(client: GCClient, date: Date): Promise<GarminSleepDetail> {
   try {
     const data = (await client.getSleepData(date)) as {
       dailySleepDTO?: {
@@ -243,8 +229,7 @@ async function fetchSleepDetail(
       return { ...EMPTY_SLEEP, sleepMinutes: minutes };
     }
 
-    const num = (v: unknown) =>
-      typeof v === "number" && Number.isFinite(v) && v > 0 ? v : null;
+    const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null);
 
     const deep = secToMin(dto.deepSleepSeconds);
     const light = secToMin(dto.lightSleepSeconds);
@@ -269,9 +254,7 @@ async function fetchSleepDetail(
       sleepRespiration: num(dto.averageRespirationValue),
       sleepAvgStress: num(dto.avgSleepStress),
       sleepScoreFeedback:
-        typeof dto.sleepScoreFeedback === "string"
-          ? dto.sleepScoreFeedback
-          : null,
+        typeof dto.sleepScoreFeedback === 'string' ? dto.sleepScoreFeedback : null,
     };
   } catch {
     const minutes = await fetchSleepDuration(client, date);
@@ -279,10 +262,7 @@ async function fetchSleepDetail(
   }
 }
 
-async function fetchRestingHr(
-  client: GCClient,
-  date: Date,
-): Promise<number | null> {
+async function fetchRestingHr(client: GCClient, date: Date): Promise<number | null> {
   try {
     const hr = (await client.getHeartRate(date)) as {
       restingHeartRate?: number | null;
@@ -306,8 +286,8 @@ export async function fetchWeightRange(
 ): Promise<Map<string, number>> {
   const map = new Map<string, number>();
   try {
-    const s = format(start, "yyyy-MM-dd");
-    const e = format(end, "yyyy-MM-dd");
+    const s = format(start, 'yyyy-MM-dd');
+    const e = format(end, 'yyyy-MM-dd');
     const data = (await client.get(
       `https://connectapi.garmin.com/weight-service/weight/range/${s}/${e}?includeAll=true`,
     )) as {
@@ -337,10 +317,7 @@ interface ReadinessResult {
   readinessFactors: GarminReadinessFactor[] | null;
 }
 
-async function fetchTrainingReadiness(
-  client: GCClient,
-  date: Date,
-): Promise<ReadinessResult> {
+async function fetchTrainingReadiness(client: GCClient, date: Date): Promise<ReadinessResult> {
   const empty: ReadinessResult = {
     readinessScore: null,
     readinessLevel: null,
@@ -348,24 +325,39 @@ async function fetchTrainingReadiness(
     readinessFactors: null,
   };
   try {
-    const ds = format(date, "yyyy-MM-dd");
+    const ds = format(date, 'yyyy-MM-dd');
     const raw = (await client.get(
       `https://connectapi.garmin.com/metrics-service/metrics/trainingreadiness/${ds}`,
     )) as Array<Record<string, unknown>> | null;
     const r = Array.isArray(raw) ? raw[0] : null;
     if (!r) return empty;
 
-    const num = (v: unknown) =>
-      typeof v === "number" && !Number.isNaN(v) ? v : null;
-    const str = (v: unknown) => (typeof v === "string" ? v : null);
+    const num = (v: unknown) => (typeof v === 'number' && !Number.isNaN(v) ? v : null);
+    const str = (v: unknown) => (typeof v === 'string' ? v : null);
 
     const factors: GarminReadinessFactor[] = [
-      { key: "sleep", percent: num(r.sleepScoreFactorPercent), feedback: str(r.sleepScoreFactorFeedback) },
-      { key: "hrv", percent: num(r.hrvFactorPercent), feedback: str(r.hrvFactorFeedback) },
-      { key: "recoveryTime", percent: num(r.recoveryTimeFactorPercent), feedback: str(r.recoveryTimeFactorFeedback) },
-      { key: "acwr", percent: num(r.acwrFactorPercent), feedback: str(r.acwrFactorFeedback) },
-      { key: "stressHistory", percent: num(r.stressHistoryFactorPercent), feedback: str(r.stressHistoryFactorFeedback) },
-      { key: "sleepHistory", percent: num(r.sleepHistoryFactorPercent), feedback: str(r.sleepHistoryFactorFeedback) },
+      {
+        key: 'sleep',
+        percent: num(r.sleepScoreFactorPercent),
+        feedback: str(r.sleepScoreFactorFeedback),
+      },
+      { key: 'hrv', percent: num(r.hrvFactorPercent), feedback: str(r.hrvFactorFeedback) },
+      {
+        key: 'recoveryTime',
+        percent: num(r.recoveryTimeFactorPercent),
+        feedback: str(r.recoveryTimeFactorFeedback),
+      },
+      { key: 'acwr', percent: num(r.acwrFactorPercent), feedback: str(r.acwrFactorFeedback) },
+      {
+        key: 'stressHistory',
+        percent: num(r.stressHistoryFactorPercent),
+        feedback: str(r.stressHistoryFactorFeedback),
+      },
+      {
+        key: 'sleepHistory',
+        percent: num(r.sleepHistoryFactorPercent),
+        feedback: str(r.sleepHistoryFactorFeedback),
+      },
     ].filter((f) => f.percent != null || f.feedback != null);
 
     return {
@@ -385,15 +377,10 @@ interface HrvStatusResult {
   hrvBaselineHigh: number | null;
 }
 
-async function fetchHrvStatus(
-  client: GCClient,
-  date: Date,
-): Promise<HrvStatusResult> {
+async function fetchHrvStatus(client: GCClient, date: Date): Promise<HrvStatusResult> {
   try {
-    const ds = format(date, "yyyy-MM-dd");
-    const r = (await client.get(
-      `https://connectapi.garmin.com/hrv-service/hrv/${ds}`,
-    )) as {
+    const ds = format(date, 'yyyy-MM-dd');
+    const r = (await client.get(`https://connectapi.garmin.com/hrv-service/hrv/${ds}`)) as {
       hrvSummary?: {
         status?: string;
         baseline?: { balancedLow?: number; balancedUpper?: number };
@@ -414,7 +401,7 @@ async function fetchStressAndBattery(
   date: Date,
 ): Promise<{ stress: number | null; bodyBattery: number | null }> {
   try {
-    const ds = format(date, "yyyy-MM-dd");
+    const ds = format(date, 'yyyy-MM-dd');
     const r = (await client.get(
       `https://connectapi.garmin.com/wellness-service/wellness/dailyStress/${ds}`,
     )) as {
@@ -423,9 +410,7 @@ async function fetchStressAndBattery(
     } | null;
 
     const stress =
-      typeof r?.avgStressLevel === "number" && r.avgStressLevel >= 0
-        ? r.avgStressLevel
-        : null;
+      typeof r?.avgStressLevel === 'number' && r.avgStressLevel >= 0 ? r.avgStressLevel : null;
 
     // Format: [timestamp, statut, niveau, version] -> niveau à l'index 2
     let bodyBattery: number | null = null;
@@ -451,18 +436,17 @@ export async function fetchDailyHealth(
   // (date-1 → date), qui est précisément celle qui impacte la journée `date`.
   // Idem pour readiness/HRV/FC repos (valeurs du matin de `date`). Tout est donc
   // cohérent sur le même jour `date`.
-  const [sleep, restingHr, hrv, readiness, hrvStatus, stressBattery] =
-    await Promise.all([
-      fetchSleepDetail(client, date),
-      fetchRestingHr(client, date),
-      fetchHrv(client, date),
-      fetchTrainingReadiness(client, date),
-      fetchHrvStatus(client, date),
-      fetchStressAndBattery(client, date),
-    ]);
+  const [sleep, restingHr, hrv, readiness, hrvStatus, stressBattery] = await Promise.all([
+    fetchSleepDetail(client, date),
+    fetchRestingHr(client, date),
+    fetchHrv(client, date),
+    fetchTrainingReadiness(client, date),
+    fetchHrvStatus(client, date),
+    fetchStressAndBattery(client, date),
+  ]);
 
   return {
-    date: format(date, "yyyy-MM-dd"),
+    date: format(date, 'yyyy-MM-dd'),
     sleepMinutes: sleep.sleepMinutes,
     restingHr,
     hrv,

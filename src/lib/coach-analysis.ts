@@ -1,44 +1,38 @@
-import { generateText, Output } from "ai";
-import { COACH_MODEL, coachGatewayOptions } from "./ai";
-import {
-  categoryLabels,
-  sideLabels,
-  statusLabels,
-} from "./physical";
+import { generateText, Output } from 'ai';
+import { COACH_MODEL, coachGatewayOptions } from './ai';
+import { categoryLabels, sideLabels, statusLabels } from './physical';
 import {
   getActivePhysicalNotes,
   getAthleteProfile,
   getBrickSessions,
   getPlannedSessionById,
-} from "./queries";
-import { intensityLabels } from "./sessions";
-import { fetchActivityDetail } from "./strava";
-import { getValidAccessToken } from "./strava-sync";
+} from './queries';
+import { intensityLabels } from './sessions';
+import { fetchActivityDetail } from './strava';
+import { getValidAccessToken } from './strava-sync';
 import {
   brickAnalysisSchema,
   sessionAnalysisSchema,
   type BrickAnalysis,
   type SessionAnalysis,
-} from "./validators/coach";
+} from './validators/coach';
 
 const TYPE_FR: Record<string, string> = {
-  RUN: "Course",
-  BIKE: "Vélo",
-  SWIM: "Natation",
-  STRENGTH: "Renfo",
+  RUN: 'Course',
+  BIKE: 'Vélo',
+  SWIM: 'Natation',
+  STRENGTH: 'Renfo',
 };
 
 function fmtPace(secPerKm?: number | null): string | null {
   if (secPerKm == null || secPerKm <= 0) return null;
   const m = Math.floor(secPerKm / 60);
   const s = Math.round(secPerKm % 60);
-  return `${m}:${s.toString().padStart(2, "0")}/km`;
+  return `${m}:${s.toString().padStart(2, '0')}/km`;
 }
 
-type PlannedWithActivity = NonNullable<
-  Awaited<ReturnType<typeof getPlannedSessionById>>
->;
-type LinkedActivity = NonNullable<PlannedWithActivity["activity"]>;
+type PlannedWithActivity = NonNullable<Awaited<ReturnType<typeof getPlannedSessionById>>>;
+type LinkedActivity = NonNullable<PlannedWithActivity['activity']>;
 
 function describePlanned(p: PlannedWithActivity): string {
   const bits = [
@@ -52,7 +46,7 @@ function describePlanned(p: PlannedWithActivity): string {
     p.title ? `Titre : ${p.title}` : null,
     p.description ? `Consigne : ${p.description}` : null,
   ].filter(Boolean);
-  return bits.join("\n");
+  return bits.join('\n');
 }
 
 function describeActual(a: LinkedActivity, description?: string | null): string {
@@ -81,8 +75,7 @@ function describeActual(a: LinkedActivity, description?: string | null): string 
   if (a.bikeMetrics) {
     const b = a.bikeMetrics;
     if (b.avgPower) bits.push(`Puissance moyenne : ${Math.round(b.avgPower)} W`);
-    if (b.normalizedPower)
-      bits.push(`NP : ${Math.round(b.normalizedPower)} W`);
+    if (b.normalizedPower) bits.push(`NP : ${Math.round(b.normalizedPower)} W`);
     if (b.intensityFactor) bits.push(`IF : ${b.intensityFactor.toFixed(2)}`);
     if (b.tss) bits.push(`TSS : ${Math.round(b.tss)}`);
     if (b.elevationM) bits.push(`D+ : ${Math.round(b.elevationM)} m`);
@@ -93,19 +86,17 @@ function describeActual(a: LinkedActivity, description?: string | null): string 
     if (s.avgPaceSecPer100m) {
       const m = Math.floor(s.avgPaceSecPer100m / 60);
       const sec = Math.round(s.avgPaceSecPer100m % 60);
-      bits.push(`Allure : ${m}:${sec.toString().padStart(2, "0")}/100m`);
+      bits.push(`Allure : ${m}:${sec.toString().padStart(2, '0')}/100m`);
     }
   }
-  return bits.join("\n");
+  return bits.join('\n');
 }
 
-type ActivePhysicalNote = Awaited<
-  ReturnType<typeof getActivePhysicalNotes>
->[number];
+type ActivePhysicalNote = Awaited<ReturnType<typeof getActivePhysicalNotes>>[number];
 
 function describePhysicalNotes(notes: ActivePhysicalNote[]): string {
   if (notes.length === 0) {
-    return "Aucune douleur / blessure active enregistrée — ne propose aucune réévaluation.";
+    return 'Aucune douleur / blessure active enregistrée — ne propose aucune réévaluation.';
   }
   return notes
     .map((n) => {
@@ -113,14 +104,14 @@ function describePhysicalNotes(notes: ActivePhysicalNote[]): string {
         `id=${n.id}`,
         `${categoryLabels[n.category]} : ${n.title}`,
         n.bodyPart
-          ? `zone ${n.bodyPart}${n.side && n.side !== "NA" ? ` (${sideLabels[n.side]})` : ""}`
+          ? `zone ${n.bodyPart}${n.side && n.side !== 'NA' ? ` (${sideLabels[n.side]})` : ''}`
           : null,
         n.severity != null ? `sévérité actuelle ${n.severity}/10` : null,
         `statut ${statusLabels[n.status]}`,
       ].filter(Boolean);
-      return `- ${bits.join(" · ")}`;
+      return `- ${bits.join(' · ')}`;
     })
-    .join("\n");
+    .join('\n');
 }
 
 const ANALYSIS_SYSTEM = `Tu es un entraîneur expert en endurance. On te donne une séance PRÉVUE et la séance RÉELLEMENT réalisée (données objectives Strava/Garmin + éventuelle description libre de l'athlète).
@@ -147,23 +138,19 @@ RÉÉVALUATION DU SUIVI PHYSIQUE (champ "physicalReassessments") :
 Sois précis, bienveillant et concis. Réponds en français.`;
 
 /** Description libre Strava (détail réel). Best-effort : ne lève jamais. */
-async function fetchStravaDescription(
-  activity: LinkedActivity,
-): Promise<string | null> {
-  if (activity.source !== "strava" || !activity.stravaId) return null;
+async function fetchStravaDescription(activity: LinkedActivity): Promise<string | null> {
+  if (activity.source !== 'strava' || !activity.stravaId) return null;
   try {
     const token = await getValidAccessToken();
     const detail = await fetchActivityDetail(token, activity.stravaId);
     return detail?.description ?? detail?.private_note ?? null;
   } catch (error) {
-    console.error("[analyze] description Strava non récupérée", error);
+    console.error('[analyze] description Strava non récupérée', error);
     return null;
   }
 }
 
-export async function analyzePlannedSession(
-  id: string,
-): Promise<SessionAnalysis | null> {
+export async function analyzePlannedSession(id: string): Promise<SessionAnalysis | null> {
   const planned = await getPlannedSessionById(id);
   if (!planned || !planned.activity) return null;
 
@@ -183,10 +170,10 @@ export async function analyzePlannedSession(
           : null,
       ]
         .filter(Boolean)
-        .join(", ")
-    : "";
+        .join(', ')
+    : '';
 
-  const prompt = `${seuils ? `Seuils de l'athlète : ${seuils}.\n\n` : ""}# Séance PRÉVUE
+  const prompt = `${seuils ? `Seuils de l'athlète : ${seuils}.\n\n` : ''}# Séance PRÉVUE
 ${describePlanned(planned)}
 
 # Séance RÉALISÉE
@@ -218,10 +205,10 @@ Analyse l'enchaînement DANS SON ENSEMBLE, pas chaque sport isolément :
 Réponds en français, sois précis et concis.`;
 
 function fmtClock(d: Date): string {
-  return `${d.getHours().toString().padStart(2, "0")}:${d
+  return `${d.getHours().toString().padStart(2, '0')}:${d
     .getMinutes()
     .toString()
-    .padStart(2, "0")}`;
+    .padStart(2, '0')}`;
 }
 
 /**
@@ -229,9 +216,7 @@ function fmtClock(d: Date): string {
  * les transitions (dérive FC, sortie de vélo). Renvoie null si le brick n'a pas
  * au moins 2 jambes toutes liées à une activité réalisée.
  */
-export async function analyzeBrick(
-  brickGroupId: string,
-): Promise<BrickAnalysis | null> {
+export async function analyzeBrick(brickGroupId: string): Promise<BrickAnalysis | null> {
   const legs = await getBrickSessions(brickGroupId);
   if (legs.length < 2) return null;
   if (legs.some((l) => !l.activity)) return null;
@@ -251,8 +236,8 @@ export async function analyzeBrick(
           : null,
       ]
         .filter(Boolean)
-        .join(", ")
-    : "";
+        .join(', ')
+    : '';
 
   const legBlocks = legs.map((leg, i) => {
     const a = leg.activity!;
@@ -271,13 +256,9 @@ ${describeActual(a, descriptions[i])}`;
     const prev = legs[i - 1].activity!;
     const curr = legs[i].activity!;
     if (prev.duration == null) continue;
-    const prevEnd = new Date(
-      new Date(prev.date).getTime() + prev.duration * 1000,
-    );
+    const prevEnd = new Date(new Date(prev.date).getTime() + prev.duration * 1000);
     const currStart = new Date(curr.date);
-    const gapMin = Math.round(
-      (currStart.getTime() - prevEnd.getTime()) / 60000,
-    );
+    const gapMin = Math.round((currStart.getTime() - prevEnd.getTime()) / 60000);
     const label = `${TYPE_FR[legs[i - 1].type]} → ${TYPE_FR[legs[i].type]}`;
     if (gapMin >= 0 && gapMin <= 120) {
       transitions.push(
@@ -290,12 +271,12 @@ ${describeActual(a, descriptions[i])}`;
     }
   }
 
-  const prompt = `${seuils ? `Seuils de l'athlète : ${seuils}.\n\n` : ""}# Brick : ${legs.length} sports enchaînés (${legs.map((l) => TYPE_FR[l.type] ?? l.type).join(" → ")})
+  const prompt = `${seuils ? `Seuils de l'athlète : ${seuils}.\n\n` : ''}# Brick : ${legs.length} sports enchaînés (${legs.map((l) => TYPE_FR[l.type] ?? l.type).join(' → ')})
 
-${legBlocks.join("\n\n")}
+${legBlocks.join('\n\n')}
 
 # Transitions estimées
-${transitions.length ? transitions.join("\n") : "Aucune donnée de transition exploitable."}`;
+${transitions.length ? transitions.join('\n') : 'Aucune donnée de transition exploitable.'}`;
 
   const { output } = await generateText({
     model: COACH_MODEL,

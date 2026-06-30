@@ -1,22 +1,15 @@
-import { notFound } from "next/navigation";
-import {
-  ActivityHeroStats,
-  type HeroActivity,
-} from "@/components/training/activity-hero-stats";
-import { ActivityInsights } from "@/components/training/activity-insights";
-import { StickyHeader } from "@/components/layout/sticky-header";
-import { DeleteActivityButton } from "@/components/training/activity-list";
-import { Badge } from "@/components/ui/badge";
-import { LinkButton } from "@/components/ui/link-button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  activityTypeLabels,
-  formatDate,
-  formatDuration,
-} from "@/lib/format";
-import { getActivityById } from "@/lib/queries";
-import { cn } from "@/lib/utils";
-import { ActivityType } from "@prisma/client";
+import { notFound } from 'next/navigation';
+import { ActivityHeroStats, type HeroActivity } from '@/components/training/activity-hero-stats';
+import { ActivityInsights } from '@/components/training/activity-insights';
+import { StickyHeader } from '@/components/layout/sticky-header';
+import { DeleteActivityButton } from '@/components/training/activity-list';
+import { Badge } from '@/components/ui/badge';
+import { LinkButton } from '@/components/ui/link-button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
+import { getActivityById } from '@/lib/queries';
+import { cn } from '@/lib/utils';
+import { ActivityType } from '@prisma/client';
 import {
   Bike,
   CloudSun,
@@ -26,15 +19,15 @@ import {
   Smile,
   Waves,
   type LucideIcon,
-} from "lucide-react";
+} from 'lucide-react';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 type PageProps = { params: Promise<{ id: string }> };
 
 type Stat = { label: string; value: string };
 type Spec = { label: string; value: string | number };
-type ChipTone = "neutral" | "emerald" | "amber" | "orange" | "red";
+type ChipTone = 'neutral' | 'emerald' | 'amber' | 'orange' | 'red';
 
 type Activity = NonNullable<Awaited<ReturnType<typeof getActivityById>>>;
 
@@ -46,25 +39,38 @@ const sportIcon: Record<ActivityType, LucideIcon> = {
 };
 
 const sportIconWrap: Record<ActivityType, string> = {
-  RUN: "bg-orange-500/10 text-orange-600",
-  BIKE: "bg-emerald-500/10 text-emerald-600",
-  SWIM: "bg-blue-500/10 text-blue-600",
-  STRENGTH: "bg-violet-500/10 text-violet-600",
+  RUN: 'bg-orange-500/10 text-orange-600',
+  BIKE: 'bg-emerald-500/10 text-emerald-600',
+  SWIM: 'bg-blue-500/10 text-blue-600',
+  STRENGTH: 'bg-violet-500/10 text-violet-600',
 };
 
 const chipDot: Record<ChipTone, string> = {
-  neutral: "bg-muted-foreground",
-  emerald: "bg-emerald-500",
-  amber: "bg-amber-500",
-  orange: "bg-orange-500",
-  red: "bg-red-500",
+  neutral: 'bg-muted-foreground',
+  emerald: 'bg-emerald-500',
+  amber: 'bg-amber-500',
+  orange: 'bg-orange-500',
+  red: 'bg-red-500',
 };
 
+function activitySourceLabel(activity: {
+  source: string;
+  garminId?: string | null;
+  stravaId?: string | null;
+}): string {
+  if (activity.source === 'both' || (activity.garminId && activity.stravaId)) {
+    return 'Garmin + Strava';
+  }
+  if (activity.garminId || activity.source === 'garmin') return 'Garmin';
+  if (activity.stravaId || activity.source === 'strava') return 'Strava';
+  return 'Manuel';
+}
+
 function rpeTone(rpe: number): ChipTone {
-  if (rpe <= 3) return "emerald";
-  if (rpe <= 6) return "amber";
-  if (rpe <= 8) return "orange";
-  return "red";
+  if (rpe <= 3) return 'emerald';
+  if (rpe <= 6) return 'amber';
+  if (rpe <= 8) return 'orange';
+  return 'red';
 }
 
 export default async function ActivityDetailPage({ params }: PageProps) {
@@ -86,9 +92,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
           cadence: activity.runMetrics.cadence,
         }
       : null,
-    bikeMetrics: activity.bikeMetrics
-      ? { elevationM: activity.bikeMetrics.elevationM }
-      : null,
+    bikeMetrics: activity.bikeMetrics ? { elevationM: activity.bikeMetrics.elevationM } : null,
     swimMetrics: activity.swimMetrics
       ? {
           distanceM: activity.swimMetrics.distanceM,
@@ -108,7 +112,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
           <div className="flex items-start gap-4">
             <span
               className={cn(
-                "grid size-12 shrink-0 place-items-center rounded-2xl",
+                'grid size-12 shrink-0 place-items-center rounded-2xl',
                 sportIconWrap[activity.type],
               )}
             >
@@ -116,36 +120,27 @@ export default async function ActivityDetailPage({ params }: PageProps) {
             </span>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline">
-                  {activityTypeLabels[activity.type]}
-                </Badge>
-                <span className="text-sm text-muted-foreground">
+                <Badge variant="outline">{activityTypeLabels[activity.type]}</Badge>
+                <span className="text-muted-foreground text-sm">
                   {formatDate(new Date(activity.date))}
                 </span>
-                <span className="text-xs uppercase tracking-wider text-muted-foreground/70">
-                  · {activity.stravaId ? "Strava" : "Manuel"}
+                <span className="text-muted-foreground/70 text-xs tracking-wider uppercase">
+                  · {activitySourceLabel(activity)}
                 </span>
               </div>
-              <h1 className="mt-2 font-heading text-3xl font-semibold tracking-tight">
+              <h1 className="font-heading mt-2 text-3xl font-semibold tracking-tight">
                 {activity.title ?? activityTypeLabels[activity.type]}
               </h1>
               <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-sm">
-                <span className="text-foreground/80">
-                  {formatDuration(activity.duration)}
-                </span>
+                <span className="text-foreground/80">{formatDuration(activity.duration)}</span>
                 {activity.load != null && (
-                  <span className="text-primary">
-                    · {Math.round(activity.load)} TSS
-                  </span>
+                  <span className="text-primary">· {Math.round(activity.load)} TSS</span>
                 )}
               </div>
             </div>
           </div>
           <div className="flex gap-2">
-            <LinkButton
-              href={`/training/${activity.id}/edit`}
-              variant="outline"
-            >
+            <LinkButton href={`/training/${activity.id}/edit`} variant="outline">
               Modifier
             </LinkButton>
             <DeleteActivityButton id={activity.id} />
@@ -156,34 +151,29 @@ export default async function ActivityDetailPage({ params }: PageProps) {
       <div className="space-y-5">
         <ContextChips activity={activity} />
 
-        {isStrength
-          ? strengthStats.length > 0 && (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {strengthStats.map((stat) => (
-                  <HeroStat key={stat.label} {...stat} />
-                ))}
-              </div>
-            )
-          : (
-              <ActivityHeroStats
-                activityId={activity.id}
-                activity={heroActivity}
-              />
-            )}
+        {isStrength ? (
+          strengthStats.length > 0 && (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {strengthStats.map((stat) => (
+                <HeroStat key={stat.label} {...stat} />
+              ))}
+            </div>
+          )
+        ) : (
+          <ActivityHeroStats activity={heroActivity} activityId={activity.id} />
+        )}
       </div>
 
-      {!isStrength && (
-        <ActivityInsights activityId={activity.id} type={activity.type} />
-      )}
+      {!isStrength && <ActivityInsights activityId={activity.id} type={activity.type} />}
 
       {isStrength && <StrengthExercises activity={activity} />}
 
       {(specs.length > 0 || activity.notes) && (
         <section className="grid gap-4 lg:grid-cols-3">
           {specs.length > 0 && (
-            <Card className={cn(activity.notes ? "lg:col-span-2" : "lg:col-span-3")}>
+            <Card className={cn(activity.notes ? 'lg:col-span-2' : 'lg:col-span-3')}>
               <CardHeader>
-                <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                <CardTitle className="text-muted-foreground text-sm font-medium tracking-wider uppercase">
                   Caractéristiques
                 </CardTitle>
               </CardHeader>
@@ -191,7 +181,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
                 {specs.map((row) => (
                   <div
                     key={row.label}
-                    className="flex justify-between gap-4 border-b border-border/40 py-2 last:border-0 sm:[&:nth-last-child(2)]:border-0"
+                    className="border-border/40 flex justify-between gap-4 border-b py-2 last:border-0 sm:[&:nth-last-child(2)]:border-0"
                   >
                     <span className="text-muted-foreground">{row.label}</span>
                     <span className="text-right font-medium">{row.value}</span>
@@ -201,14 +191,14 @@ export default async function ActivityDetailPage({ params }: PageProps) {
             </Card>
           )}
           {activity.notes && (
-            <Card className={cn(specs.length === 0 && "lg:col-span-3")}>
+            <Card className={cn(specs.length === 0 && 'lg:col-span-3')}>
               <CardHeader>
-                <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                <CardTitle className="text-muted-foreground text-sm font-medium tracking-wider uppercase">
                   Notes
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/80">
+                <p className="text-foreground/80 text-sm leading-relaxed whitespace-pre-wrap">
                   {activity.notes}
                 </p>
               </CardContent>
@@ -229,25 +219,16 @@ function ContextChips({ activity }: { activity: Activity }) {
         key="rpe"
         icon={Gauge}
         label="RPE"
-        value={`${activity.rpe}/10`}
         tone={rpeTone(activity.rpe)}
+        value={`${activity.rpe}/10`}
       />,
     );
   }
   if (activity.feeling) {
-    chips.push(
-      <Chip key="feeling" icon={Smile} label="Ressenti" value={activity.feeling} />,
-    );
+    chips.push(<Chip key="feeling" icon={Smile} label="Ressenti" value={activity.feeling} />);
   }
   if (activity.weather) {
-    chips.push(
-      <Chip
-        key="weather"
-        icon={CloudSun}
-        label="Météo"
-        value={activity.weather}
-      />,
-    );
+    chips.push(<Chip key="weather" icon={CloudSun} label="Météo" value={activity.weather} />);
   }
 
   if (chips.length === 0) return null;
@@ -266,27 +247,25 @@ function Chip({
   tone?: ChipTone;
 }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs">
+    <span className="border-border bg-card inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs">
       {tone ? (
-        <span className={cn("size-2 rounded-full", chipDot[tone])} />
+        <span className={cn('size-2 rounded-full', chipDot[tone])} />
       ) : (
-        <Icon className="size-3.5 text-muted-foreground" />
+        <Icon className="text-muted-foreground size-3.5" />
       )}
-      <span className="font-medium uppercase tracking-wider text-muted-foreground">
-        {label}
-      </span>
-      <span className="font-medium text-foreground">{value}</span>
+      <span className="text-muted-foreground font-medium tracking-wider uppercase">{label}</span>
+      <span className="text-foreground font-medium">{value}</span>
     </span>
   );
 }
 
 function HeroStat({ label, value }: Stat) {
   return (
-    <div className="rounded-2xl border border-border bg-card px-5 py-4">
-      <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+    <div className="border-border bg-card rounded-2xl border px-5 py-4">
+      <p className="text-muted-foreground text-[11px] font-medium tracking-[0.18em] uppercase">
         {label}
       </p>
-      <p className="mt-1.5 font-mono text-3xl font-semibold tabular-nums text-foreground">
+      <p className="text-foreground mt-1.5 font-mono text-3xl font-semibold tabular-nums">
         {value}
       </p>
     </div>
@@ -298,7 +277,7 @@ function StrengthExercises({ activity }: { activity: Activity }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base font-medium text-muted-foreground">
+        <CardTitle className="text-muted-foreground flex items-center gap-2 text-base font-medium">
           <Dumbbell className="size-4 text-violet-600" />
           Exercices
         </CardTitle>
@@ -310,7 +289,7 @@ function StrengthExercises({ activity }: { activity: Activity }) {
             return (
               <div
                 key={set.id}
-                className="flex flex-wrap items-center gap-3 rounded-xl border border-border/60 px-4 py-3"
+                className="border-border/60 flex flex-wrap items-center gap-3 rounded-xl border px-4 py-3"
               >
                 <span className="grid size-7 shrink-0 place-items-center rounded-full bg-violet-500/10 font-mono text-xs font-semibold text-violet-600">
                   {i + 1}
@@ -318,21 +297,19 @@ function StrengthExercises({ activity }: { activity: Activity }) {
                 <span className="min-w-0 flex-1 font-medium">
                   {set.exercise}
                   {set.notes && (
-                    <span className="block truncate text-xs font-normal text-muted-foreground">
+                    <span className="text-muted-foreground block truncate text-xs font-normal">
                       {set.notes}
                     </span>
                   )}
                 </span>
                 <span className="font-mono text-sm tabular-nums">
                   {set.sets}×{set.reps}
-                  {set.weightKg ? ` @ ${set.weightKg} kg` : ""}
+                  {set.weightKg ? ` @ ${set.weightKg} kg` : ''}
                 </span>
-                <span className="flex items-center gap-2 text-xs text-muted-foreground">
-                  {volume > 0 && (
-                    <span className="font-mono">{Math.round(volume)} kg</span>
-                  )}
+                <span className="text-muted-foreground flex items-center gap-2 text-xs">
+                  {volume > 0 && <span className="font-mono">{Math.round(volume)} kg</span>}
                   {set.rpe != null && (
-                    <span className="rounded-full border border-border px-2 py-0.5 font-mono">
+                    <span className="border-border rounded-full border px-2 py-0.5 font-mono">
                       RPE {set.rpe}
                     </span>
                   )}
@@ -341,7 +318,7 @@ function StrengthExercises({ activity }: { activity: Activity }) {
             );
           })
         ) : (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Aucun exercice enregistré pour cette séance.
           </p>
         )}
@@ -356,19 +333,15 @@ function buildStrengthStats(activity: Activity): Stat[] {
   if (sets.length === 0) return [];
 
   const totalSets = sets.reduce((acc, s) => acc + s.sets, 0);
-  const volume = sets.reduce(
-    (acc, s) => acc + s.sets * s.reps * (s.weightKg ?? 0),
-    0,
-  );
+  const volume = sets.reduce((acc, s) => acc + s.sets * s.reps * (s.weightKg ?? 0), 0);
 
   const stats: Stat[] = [
-    { label: "Exercices", value: String(sets.length) },
-    { label: "Séries", value: String(totalSets) },
+    { label: 'Exercices', value: String(sets.length) },
+    { label: 'Séries', value: String(totalSets) },
   ];
-  if (volume > 0)
-    stats.push({ label: "Volume", value: `${Math.round(volume)} kg` });
+  if (volume > 0) stats.push({ label: 'Volume', value: `${Math.round(volume)} kg` });
   if (activity.duration != null)
-    stats.push({ label: "Temps", value: formatDuration(activity.duration) });
+    stats.push({ label: 'Temps', value: formatDuration(activity.duration) });
 
   return stats;
 }
@@ -376,47 +349,42 @@ function buildStrengthStats(activity: Activity): Stat[] {
 function buildSpecs(activity: Activity): Spec[] {
   const specs: Spec[] = [];
   const push = (label: string, value: string | number | null | undefined) => {
-    if (value === null || value === undefined || value === "") return;
+    if (value === null || value === undefined || value === '') return;
     specs.push({ label, value });
   };
 
   if (activity.type === ActivityType.RUN && activity.runMetrics) {
     const m = activity.runMetrics;
-    push("Dénivelé", m.elevationM != null ? `${m.elevationM} m` : null);
-    push(
-      "Puissance moy.",
-      m.avgPower != null ? `${Math.round(m.avgPower)} W` : null,
-    );
-    push("Chaussures", m.shoes);
+    push('Dénivelé', m.elevationM != null ? `${m.elevationM} m` : null);
+    push('Puissance moy.', m.avgPower != null ? `${Math.round(m.avgPower)} W` : null);
+    push('Chaussures', m.shoes);
   }
 
   if (activity.type === ActivityType.BIKE && activity.bikeMetrics) {
     const m = activity.bikeMetrics;
-    push("FTP %", m.ftpPercent);
-    push(
-      "NP",
-      m.normalizedPower != null ? `${Math.round(m.normalizedPower)} W` : null,
-    );
-    push("IF", m.intensityFactor != null ? m.intensityFactor.toFixed(2) : null);
-    push("TSS", m.tss != null ? Math.round(m.tss) : null);
-    push("Cadence", m.avgCadence != null ? `${m.avgCadence} rpm` : null);
-    push("Calories", m.calories);
-    push("Vélo", m.bikeName);
+    push('FTP %', m.ftpPercent);
+    push('NP', m.normalizedPower != null ? `${Math.round(m.normalizedPower)} W` : null);
+    push('IF', m.intensityFactor != null ? m.intensityFactor.toFixed(2) : null);
+    push('TSS', m.tss != null ? Math.round(m.tss) : null);
+    push('Cadence', m.avgCadence != null ? `${m.avgCadence} rpm` : null);
+    push('Calories', m.calories);
+    push('Vélo', m.bikeName);
   }
 
   if (activity.type === ActivityType.SWIM && activity.swimMetrics) {
     const m = activity.swimMetrics;
-    push("Séries", m.sets);
+    push('Séries', m.sets);
     push(
-      "CSS",
+      'CSS',
       m.cssSecPer100m != null
-        ? `${Math.floor(m.cssSecPer100m / 60)}:${String(
-            Math.round(m.cssSecPer100m % 60),
-          ).padStart(2, "0")}/100m`
+        ? `${Math.floor(m.cssSecPer100m / 60)}:${String(Math.round(m.cssSecPer100m % 60)).padStart(
+            2,
+            '0',
+          )}/100m`
         : null,
     );
-    push("SWOLF", m.swolf);
-    push("Drills", m.drills);
+    push('SWOLF', m.swolf);
+    push('Drills', m.drills);
   }
 
   return specs;

@@ -1,5 +1,5 @@
-import { AnalyticsClient } from "@/components/analytics/analytics-client";
-import { RecordsPanel } from "@/components/analytics/records-panel";
+import { AnalyticsClient } from '@/components/analytics/analytics-client';
+import { RecordsPanel } from '@/components/analytics/records-panel';
 
 export default function AnalyticsPage() {
   return (

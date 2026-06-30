@@ -1,9 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { isCoachConfigured } from "@/lib/ai";
-import {
-  generateAndStoreDailyBriefing,
-  getDailyBriefing,
-} from "@/lib/daily-briefing";
+import { NextRequest, NextResponse } from 'next/server';
+import { isCoachConfigured } from '@/lib/ai';
+import { generateAndStoreDailyBriefing, getDailyBriefing } from '@/lib/daily-briefing';
 
 export const maxDuration = 60;
 
@@ -17,19 +14,19 @@ function parseDate(value: string | null): Date {
 
 export async function GET(request: NextRequest) {
   try {
-    const date = parseDate(request.nextUrl.searchParams.get("date"));
+    const date = parseDate(request.nextUrl.searchParams.get('date'));
     const briefing = await getDailyBriefing(date);
     return NextResponse.json({ briefing: briefing ?? null });
   } catch (error) {
-    console.error("[coach/briefing] GET", error);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    console.error('[coach/briefing] GET', error);
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   if (!isCoachConfigured()) {
     return NextResponse.json(
-      { error: "Coach IA non configuré. Ajoute AI_GATEWAY_API_KEY dans .env." },
+      { error: 'Coach IA non configuré. Ajoute AI_GATEWAY_API_KEY dans .env.' },
       { status: 503 },
     );
   }
@@ -39,9 +36,8 @@ export async function POST(request: NextRequest) {
     const briefing = await generateAndStoreDailyBriefing(date);
     return NextResponse.json({ briefing });
   } catch (error) {
-    console.error("[coach/briefing] POST", error);
-    const message =
-      error instanceof Error ? error.message : "Génération impossible";
+    console.error('[coach/briefing] POST', error);
+    const message = error instanceof Error ? error.message : 'Génération impossible';
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

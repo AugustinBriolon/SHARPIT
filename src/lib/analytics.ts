@@ -1,12 +1,6 @@
-import { ActivityType } from "@prisma/client";
-import {
-  eachDayOfInterval,
-  format,
-  startOfDay,
-  startOfWeek,
-  subDays,
-} from "date-fns";
-import { fr } from "date-fns/locale";
+import { ActivityType } from '@prisma/client';
+import { eachDayOfInterval, format, startOfDay, startOfWeek, subDays } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 export interface ActivityForAnalytics {
   date: Date;
@@ -42,20 +36,17 @@ export interface PmcPoint {
   tsb: number;
 }
 
-export function computePmcSeries(
-  activities: ActivityForAnalytics[],
-  days = 180,
-): PmcPoint[] {
+export function computePmcSeries(activities: ActivityForAnalytics[], days = 180): PmcPoint[] {
   const end = startOfDay(new Date());
   const start = subDays(end, days);
 
   const dailyTss = new Map<string, number>();
   for (const day of eachDayOfInterval({ start, end })) {
-    dailyTss.set(format(day, "yyyy-MM-dd"), 0);
+    dailyTss.set(format(day, 'yyyy-MM-dd'), 0);
   }
 
   for (const activity of activities) {
-    const key = format(startOfDay(activity.date), "yyyy-MM-dd");
+    const key = format(startOfDay(activity.date), 'yyyy-MM-dd');
     if (!dailyTss.has(key)) continue;
     dailyTss.set(key, (dailyTss.get(key) ?? 0) + estimateActivityLoad(activity));
   }
@@ -69,7 +60,7 @@ export function computePmcSeries(
     atl += (tss - atl) / 7;
     series.push({
       date,
-      label: format(new Date(date), "d MMM", { locale: fr }),
+      label: format(new Date(date), 'd MMM', { locale: fr }),
       tss,
       ctl: Math.round(ctl),
       atl: Math.round(atl),
@@ -102,11 +93,11 @@ export function computeWeeklyVolume(
   for (const activity of activities) {
     if (activity.date < start) continue;
     const weekStart = startOfWeek(activity.date, { weekStartsOn: 1 });
-    const key = format(weekStart, "yyyy-MM-dd");
+    const key = format(weekStart, 'yyyy-MM-dd');
     if (!buckets.has(key)) {
       buckets.set(key, {
         week: key,
-        label: format(weekStart, "d MMM", { locale: fr }),
+        label: format(weekStart, 'd MMM', { locale: fr }),
         total: 0,
         RUN: 0,
         BIKE: 0,
@@ -163,10 +154,10 @@ export function computeSportDistribution(
   }
 
   const labels: Record<ActivityType, string> = {
-    RUN: "Course",
-    BIKE: "Vélo",
-    SWIM: "Natation",
-    STRENGTH: "Musculation",
+    RUN: 'Course',
+    BIKE: 'Vélo',
+    SWIM: 'Natation',
+    STRENGTH: 'Musculation',
   };
 
   return (Object.keys(totals) as ActivityType[])
@@ -175,10 +166,7 @@ export function computeSportDistribution(
       label: labels[type],
       hours: Number(totals[type].hours.toFixed(1)),
       count: totals[type].count,
-      percent:
-        totalHours > 0
-          ? Math.round((totals[type].hours / totalHours) * 100)
-          : 0,
+      percent: totalHours > 0 ? Math.round((totals[type].hours / totalHours) * 100) : 0,
     }))
     .filter((s) => s.count > 0)
     .sort((a, b) => b.hours - a.hours);
@@ -202,12 +190,8 @@ export function computeAnalyticsSummary(
   const weekAgo = subDays(startOfDay(new Date()), 7);
 
   const weekActivities = activities.filter((a) => a.date >= weekAgo);
-  const weeklyHours =
-    weekActivities.reduce((s, a) => s + (a.duration ?? 0), 0) / 3600;
-  const weeklyLoad = weekActivities.reduce(
-    (s, a) => s + estimateActivityLoad(a),
-    0,
-  );
+  const weeklyHours = weekActivities.reduce((s, a) => s + (a.duration ?? 0), 0) / 3600;
+  const weeklyLoad = weekActivities.reduce((s, a) => s + estimateActivityLoad(a), 0);
 
   return {
     ctl: latest?.ctl ?? 0,
@@ -220,13 +204,12 @@ export function computeAnalyticsSummary(
   };
 }
 
-export const CHART_COLORS: Record<ActivityType | "ctl" | "atl" | "tsb", string> =
-  {
-    RUN: "#ea580c",
-    BIKE: "#0891b2",
-    SWIM: "#2563eb",
-    STRENGTH: "#7c3aed",
-    ctl: "#0891b2",
-    atl: "#ea580c",
-    tsb: "#7c3aed",
-  };
+export const CHART_COLORS: Record<ActivityType | 'ctl' | 'atl' | 'tsb', string> = {
+  RUN: '#ea580c',
+  BIKE: '#0891b2',
+  SWIM: '#2563eb',
+  STRENGTH: '#7c3aed',
+  ctl: '#0891b2',
+  atl: '#ea580c',
+  tsb: '#7c3aed',
+};

@@ -1,10 +1,10 @@
-import { ActivityType } from "@prisma/client";
-import type { CreateActivityInput, UpdateActivityInput } from "@/lib/validators/activity";
+import { ActivityType } from '@prisma/client';
+import type { CreateActivityInput, UpdateActivityInput } from '@/lib/validators/activity';
 
 function cleanMetrics<T extends Record<string, unknown>>(metrics?: T | null) {
   if (!metrics) return undefined;
   const entries = Object.entries(metrics).filter(
-    ([, value]) => value !== null && value !== undefined && value !== "",
+    ([, value]) => value !== null && value !== undefined && value !== '',
   );
   return entries.length ? (Object.fromEntries(entries) as T) : undefined;
 }
@@ -14,15 +14,18 @@ export function buildActivityCreateData(input: CreateActivityInput) {
 
   return {
     ...base,
-    runMetrics: input.type === ActivityType.RUN && runMetrics
-      ? { create: cleanMetrics(runMetrics) }
-      : undefined,
-    bikeMetrics: input.type === ActivityType.BIKE && bikeMetrics
-      ? { create: cleanMetrics(bikeMetrics) }
-      : undefined,
-    swimMetrics: input.type === ActivityType.SWIM && swimMetrics
-      ? { create: cleanMetrics(swimMetrics) }
-      : undefined,
+    runMetrics:
+      input.type === ActivityType.RUN && runMetrics
+        ? { create: cleanMetrics(runMetrics) }
+        : undefined,
+    bikeMetrics:
+      input.type === ActivityType.BIKE && bikeMetrics
+        ? { create: cleanMetrics(bikeMetrics) }
+        : undefined,
+    swimMetrics:
+      input.type === ActivityType.SWIM && swimMetrics
+        ? { create: cleanMetrics(swimMetrics) }
+        : undefined,
     strengthSets:
       input.type === ActivityType.STRENGTH && strengthSets?.length
         ? {
@@ -36,8 +39,7 @@ export function buildActivityCreateData(input: CreateActivityInput) {
 }
 
 export function buildActivityUpdateData(input: UpdateActivityInput) {
-  const { runMetrics, bikeMetrics, swimMetrics, strengthSets, type, ...base } =
-    input;
+  const { runMetrics, bikeMetrics, swimMetrics, strengthSets, type, ...base } = input;
 
   const data: Record<string, unknown> = { ...base };
   if (type) data.type = type;

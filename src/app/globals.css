@@ -1,7 +1,7 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
-@import "@clerk/themes/shadcn.css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@clerk/themes/shadcn.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -129,12 +129,12 @@
      On le rétablit pour les boutons et les éléments interactifs base-ui
      (menus, onglets, options), sauf lorsqu'ils sont désactivés. */
   button:not(:disabled):not([data-disabled]),
-  [role="button"]:not([data-disabled]):not([aria-disabled="true"]),
-  [role="menuitem"]:not([data-disabled]),
-  [role="menuitemcheckbox"]:not([data-disabled]),
-  [role="menuitemradio"]:not([data-disabled]),
-  [role="option"]:not([data-disabled]),
-  [role="tab"]:not([data-disabled]),
+  [role='button']:not([data-disabled]):not([aria-disabled='true']),
+  [role='menuitem']:not([data-disabled]),
+  [role='menuitemcheckbox']:not([data-disabled]),
+  [role='menuitemradio']:not([data-disabled]),
+  [role='option']:not([data-disabled]),
+  [role='tab']:not([data-disabled]),
   summary,
   select:not(:disabled) {
     cursor: pointer;

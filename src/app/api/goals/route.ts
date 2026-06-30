@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createGoal, getGoals } from "@/lib/queries";
-import { createGoalSchema } from "@/lib/validators/goal";
+import { NextRequest, NextResponse } from 'next/server';
+import { createGoal, getGoals } from '@/lib/queries';
+import { createGoalSchema } from '@/lib/validators/goal';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
@@ -10,10 +10,7 @@ export async function GET() {
     return NextResponse.json(goals);
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { error: "Impossible de charger les objectifs" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Impossible de charger les objectifs' }, { status: 500 });
   }
 }
 
@@ -24,20 +21,16 @@ export async function POST(request: NextRequest) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Données invalides", details: parsed.error.flatten() },
+        { error: 'Données invalides', details: parsed.error.flatten() },
         { status: 400 },
       );
     }
 
-    const goal = await createGoal(
-      parsed.data as Parameters<typeof createGoal>[0],
-    );
+    const goal = await createGoal(parsed.data as Parameters<typeof createGoal>[0]);
     return NextResponse.json(goal, { status: 201 });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { error: "Impossible de créer l'objectif" },
-      { status: 500 },
-    );
+    console.error('[goals/POST]', error);
+    const message = error instanceof Error ? error.message : "Impossible de créer l'objectif";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -1,12 +1,12 @@
-import { ActivityType, SessionIntensity } from "@prisma/client";
-import { z } from "zod";
+import { ActivityType, SessionIntensity } from '@prisma/client';
+import { z } from 'zod';
 
 const optionalNumber = z.coerce.number().optional().nullable();
 const optionalString = z
   .string()
   .optional()
   .nullable()
-  .transform((v) => (v === "" ? null : v));
+  .transform((v) => (v === '' ? null : v));
 
 export const activityTypeSchema = z.nativeEnum(ActivityType);
 export const sessionIntensitySchema = z.nativeEnum(SessionIntensity);
@@ -27,12 +27,8 @@ const basePlannedSessionSchema = z.object({
 export const createPlannedSessionSchema = basePlannedSessionSchema;
 export const updatePlannedSessionSchema = basePlannedSessionSchema.partial();
 
-export type CreatePlannedSessionInput = z.infer<
-  typeof createPlannedSessionSchema
->;
-export type UpdatePlannedSessionInput = z.infer<
-  typeof updatePlannedSessionSchema
->;
+export type CreatePlannedSessionInput = z.infer<typeof createPlannedSessionSchema>;
+export type UpdatePlannedSessionInput = z.infer<typeof updatePlannedSessionSchema>;
 
 const brickLegSchema = z.object({
   type: activityTypeSchema,
@@ -46,7 +42,7 @@ const brickLegSchema = z.object({
 export const createBrickSchema = z.object({
   date: z.coerce.date(),
   startTime: optionalString,
-  legs: z.array(brickLegSchema).min(2, "Un brick nécessite au moins 2 jambes"),
+  legs: z.array(brickLegSchema).min(2, 'Un brick nécessite au moins 2 jambes'),
 });
 
 export type CreateBrickInput = z.infer<typeof createBrickSchema>;

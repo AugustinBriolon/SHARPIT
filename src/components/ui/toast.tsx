@@ -1,15 +1,9 @@
-"use client";
+'use client';
 
-import { Toast as ToastPrimitive } from "@base-ui/react/toast";
-import {
-  CircleCheckIcon,
-  CircleXIcon,
-  InfoIcon,
-  LoaderIcon,
-  XIcon,
-} from "lucide-react";
+import { Toast as ToastPrimitive } from '@base-ui/react/toast';
+import { CircleCheckIcon, CircleXIcon, InfoIcon, LoaderIcon, XIcon } from 'lucide-react';
 
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
 /**
  * Manager global : permet de déclencher des toasts depuis n'importe où, y
@@ -30,27 +24,25 @@ export const toast = {
   update: toastManager.update,
   promise: toastManager.promise,
   success: (title: React.ReactNode, options?: ToastInput) =>
-    toastManager.add({ type: "success", title, ...options }),
+    toastManager.add({ type: 'success', title, ...options }),
   error: (title: React.ReactNode, options?: ToastInput) =>
-    toastManager.add({ type: "error", title, ...options }),
+    toastManager.add({ type: 'error', title, ...options }),
   info: (title: React.ReactNode, options?: ToastInput) =>
-    toastManager.add({ type: "info", title, ...options }),
+    toastManager.add({ type: 'info', title, ...options }),
   loading: (title: React.ReactNode, options?: ToastInput) =>
-    toastManager.add({ type: "loading", title, timeout: 0, ...options }),
+    toastManager.add({ type: 'loading', title, timeout: 0, ...options }),
 };
 
 function ToastIcon({ type }: { type: string | undefined }) {
   switch (type) {
-    case "success":
-      return <CircleCheckIcon className="size-5 shrink-0 text-primary" />;
-    case "error":
-      return <CircleXIcon className="size-5 shrink-0 text-destructive" />;
-    case "loading":
-      return (
-        <LoaderIcon className="size-5 shrink-0 animate-spin text-muted-foreground" />
-      );
-    case "info":
-      return <InfoIcon className="size-5 shrink-0 text-muted-foreground" />;
+    case 'success':
+      return <CircleCheckIcon className="text-primary size-5 shrink-0" />;
+    case 'error':
+      return <CircleXIcon className="text-destructive size-5 shrink-0" />;
+    case 'loading':
+      return <LoaderIcon className="text-muted-foreground size-5 shrink-0 animate-spin" />;
+    case 'info':
+      return <InfoIcon className="text-muted-foreground size-5 shrink-0" />;
     default:
       return null;
   }
@@ -62,8 +54,8 @@ function ToastList() {
   return toasts.map((item) => (
     <ToastPrimitive.Root
       key={item.id}
+      className="bg-popover text-popover-foreground ring-foreground/10 absolute right-0 bottom-0 left-auto z-[calc(1000-var(--toast-index))] mr-0 h-[var(--height)] w-full origin-bottom [transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)-(var(--toast-index)*var(--peek))-(var(--shrink)*var(--height))))_scale(var(--scale))] rounded-xl border shadow-lg ring-1 select-none [--gap:0.75rem] [--height:var(--toast-frontmost-height,var(--toast-height))] [--offset-y:calc(var(--toast-offset-y)*-1+calc(var(--toast-index)*var(--gap)*-1)+var(--toast-swipe-movement-y))] [--peek:0.75rem] [--scale:calc(max(0,1-(var(--toast-index)*0.1)))] [--shrink:calc(1-var(--scale))] [transition:transform_0.5s_cubic-bezier(0.22,1,0.36,1),opacity_0.5s,height_0.15s] after:absolute after:top-full after:left-0 after:h-[calc(var(--gap)+1px)] after:w-full after:content-[''] data-ending-style:opacity-0 data-expanded:h-[var(--toast-height)] data-expanded:[transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--offset-y)))] data-limited:opacity-0 data-starting-style:[transform:translateY(150%)] data-ending-style:data-[swipe-direction=down]:[transform:translateY(calc(var(--toast-swipe-movement-y)+150%))] data-expanded:data-ending-style:data-[swipe-direction=down]:[transform:translateY(calc(var(--toast-swipe-movement-y)+150%))] data-ending-style:data-[swipe-direction=left]:[transform:translateX(calc(var(--toast-swipe-movement-x)-150%))_translateY(var(--offset-y))] data-expanded:data-ending-style:data-[swipe-direction=left]:[transform:translateX(calc(var(--toast-swipe-movement-x)-150%))_translateY(var(--offset-y))] data-ending-style:data-[swipe-direction=right]:[transform:translateX(calc(var(--toast-swipe-movement-x)+150%))_translateY(var(--offset-y))] data-expanded:data-ending-style:data-[swipe-direction=right]:[transform:translateX(calc(var(--toast-swipe-movement-x)+150%))_translateY(var(--offset-y))] data-ending-style:data-[swipe-direction=up]:[transform:translateY(calc(var(--toast-swipe-movement-y)-150%))] data-expanded:data-ending-style:data-[swipe-direction=up]:[transform:translateY(calc(var(--toast-swipe-movement-y)-150%))] [&[data-ending-style]:not([data-limited]):not([data-swipe-direction])]:[transform:translateY(150%)]"
       toast={item}
-      className="[--gap:0.75rem] [--peek:0.75rem] [--scale:calc(max(0,1-(var(--toast-index)*0.1)))] [--shrink:calc(1-var(--scale))] [--height:var(--toast-frontmost-height,var(--toast-height))] [--offset-y:calc(var(--toast-offset-y)*-1+calc(var(--toast-index)*var(--gap)*-1)+var(--toast-swipe-movement-y))] absolute right-0 bottom-0 left-auto z-[calc(1000-var(--toast-index))] mr-0 w-full origin-bottom select-none rounded-xl border bg-popover text-popover-foreground shadow-lg ring-1 ring-foreground/10 [transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)-(var(--toast-index)*var(--peek))-(var(--shrink)*var(--height))))_scale(var(--scale))] after:absolute after:top-full after:left-0 after:h-[calc(var(--gap)+1px)] after:w-full after:content-[''] data-ending-style:opacity-0 data-expanded:[transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--offset-y)))] data-limited:opacity-0 data-starting-style:[transform:translateY(150%)] [&[data-ending-style]:not([data-limited]):not([data-swipe-direction])]:[transform:translateY(150%)] data-ending-style:data-[swipe-direction=down]:[transform:translateY(calc(var(--toast-swipe-movement-y)+150%))] data-expanded:data-ending-style:data-[swipe-direction=down]:[transform:translateY(calc(var(--toast-swipe-movement-y)+150%))] data-ending-style:data-[swipe-direction=left]:[transform:translateX(calc(var(--toast-swipe-movement-x)-150%))_translateY(var(--offset-y))] data-expanded:data-ending-style:data-[swipe-direction=left]:[transform:translateX(calc(var(--toast-swipe-movement-x)-150%))_translateY(var(--offset-y))] data-ending-style:data-[swipe-direction=right]:[transform:translateX(calc(var(--toast-swipe-movement-x)+150%))_translateY(var(--offset-y))] data-expanded:data-ending-style:data-[swipe-direction=right]:[transform:translateX(calc(var(--toast-swipe-movement-x)+150%))_translateY(var(--offset-y))] data-ending-style:data-[swipe-direction=up]:[transform:translateY(calc(var(--toast-swipe-movement-y)-150%))] data-expanded:data-ending-style:data-[swipe-direction=up]:[transform:translateY(calc(var(--toast-swipe-movement-y)-150%))] h-[var(--height)] data-expanded:h-[var(--toast-height)] [transition:transform_0.5s_cubic-bezier(0.22,1,0.36,1),opacity_0.5s,height_0.15s]"
     >
       <ToastPrimitive.Content className="flex h-full items-start gap-3 overflow-hidden p-3 transition-opacity duration-[250ms] ease-[cubic-bezier(0.22,1,0.36,1)] data-behind:opacity-0 data-expanded:opacity-100">
         <ToastIcon type={item.type} />
@@ -72,12 +64,12 @@ function ToastList() {
             <ToastPrimitive.Title className="font-heading text-sm leading-snug font-medium" />
           )}
           {item.description && (
-            <ToastPrimitive.Description className="text-sm leading-snug text-muted-foreground" />
+            <ToastPrimitive.Description className="text-muted-foreground text-sm leading-snug" />
           )}
         </div>
         <ToastPrimitive.Close
           aria-label="Fermer"
-          className="-mt-1 -mr-1 flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:-outline-offset-1 focus-visible:outline-ring"
+          className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-ring -mt-1 -mr-1 flex size-7 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:outline-2 focus-visible:-outline-offset-1"
         >
           <XIcon className="size-4" />
         </ToastPrimitive.Close>

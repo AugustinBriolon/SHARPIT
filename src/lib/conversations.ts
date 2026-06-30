@@ -1,7 +1,7 @@
-import type { Prisma } from "@prisma/client";
-import { prisma } from "./prisma";
+import type { Prisma } from '@prisma/client';
+import { prisma } from './prisma';
 
-const DEFAULT_TITLE = "Nouvelle conversation";
+const DEFAULT_TITLE = 'Nouvelle conversation';
 const TITLE_MAX = 60;
 
 /** Dérive un titre lisible à partir du premier message utilisateur. */
@@ -9,24 +9,24 @@ function deriveTitle(messages: unknown): string {
   if (!Array.isArray(messages)) return DEFAULT_TITLE;
   for (const message of messages) {
     if (
-      typeof message !== "object" ||
+      typeof message !== 'object' ||
       message === null ||
-      (message as { role?: string }).role !== "user"
+      (message as { role?: string }).role !== 'user'
     ) {
       continue;
     }
-    const parts = (message as { parts?: unknown }).parts;
+    const { parts } = message as { parts?: unknown };
     if (!Array.isArray(parts)) continue;
     const text = parts
       .filter(
-        (p): p is { type: "text"; text: string } =>
-          typeof p === "object" &&
+        (p): p is { type: 'text'; text: string } =>
+          typeof p === 'object' &&
           p !== null &&
-          (p as { type?: string }).type === "text" &&
-          typeof (p as { text?: unknown }).text === "string",
+          (p as { type?: string }).type === 'text' &&
+          typeof (p as { text?: unknown }).text === 'string',
       )
       .map((p) => p.text)
-      .join(" ")
+      .join(' ')
       .trim();
     if (text) {
       return text.length > TITLE_MAX ? `${text.slice(0, TITLE_MAX)}…` : text;
@@ -38,7 +38,7 @@ function deriveTitle(messages: unknown): string {
 /** Liste des conversations (sans les messages, pour la sidebar). */
 export async function listConversations() {
   return prisma.conversation.findMany({
-    orderBy: { updatedAt: "desc" },
+    orderBy: { updatedAt: 'desc' },
     select: { id: true, title: true, createdAt: true, updatedAt: true },
   });
 }

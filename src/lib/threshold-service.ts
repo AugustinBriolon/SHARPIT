@@ -1,36 +1,23 @@
-import {
-  createThresholdSnapshot,
-  getAthleteProfile,
-  upsertAthleteProfile,
-} from "@/lib/queries";
-import { getStoredRecords } from "@/lib/records";
-import {
-  computeThresholdEstimates,
-  previewThresholdApply,
-} from "@/lib/threshold-estimates";
+import { createThresholdSnapshot, getAthleteProfile, upsertAthleteProfile } from '@/lib/queries';
+import { getStoredRecords } from '@/lib/records';
+import { computeThresholdEstimates, previewThresholdApply } from '@/lib/threshold-estimates';
 
 export async function getThresholdApplyPreview() {
-  const [records, profile] = await Promise.all([
-    getStoredRecords(),
-    getAthleteProfile(),
-  ]);
+  const [records, profile] = await Promise.all([getStoredRecords(), getAthleteProfile()]);
   return previewThresholdApply(records, profile);
 }
 
 export async function applyEstimatedThresholds() {
-  const [records, profile] = await Promise.all([
-    getStoredRecords(),
-    getAthleteProfile(),
-  ]);
+  const [records, profile] = await Promise.all([getStoredRecords(), getAthleteProfile()]);
   const preview = previewThresholdApply(records, profile);
   const { estimates } = preview;
 
   if (!estimates.ftpW && !estimates.runThresholdPaceSecPerKm) {
-    return { applied: false as const, reason: "no_estimates" as const, preview };
+    return { applied: false as const, reason: 'no_estimates' as const, preview };
   }
 
   if (!preview.hasChanges) {
-    return { applied: false as const, reason: "unchanged" as const, preview };
+    return { applied: false as const, reason: 'unchanged' as const, preview };
   }
 
   const update: {
@@ -44,7 +31,7 @@ export async function applyEstimatedThresholds() {
 
   const updated = await upsertAthleteProfile(update);
   await createThresholdSnapshot({
-    source: "estimated",
+    source: 'estimated',
     ftpW: estimates.ftpW,
     runThresholdPaceSecPerKm: estimates.runThresholdPaceSecPerKm,
   });

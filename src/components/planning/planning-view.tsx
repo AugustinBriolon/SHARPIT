@@ -1,37 +1,30 @@
-"use client";
+'use client';
 
-import { format, isSameDay } from "date-fns";
-import { fr } from "date-fns/locale";
-import { CalendarRange, CheckCircle2, Layers, Plus, Sparkles, Wand2 } from "lucide-react";
-import Link from "next/link";
-import { useMemo, useState } from "react";
-import { StickyHeader } from "@/components/layout/sticky-header";
-import { PlanAdapter } from "@/components/coach/plan-adapter";
-import { PlanGenerator } from "@/components/coach/plan-generator";
-import { MacroPlanDialog } from "@/components/planning/macro-plan-dialog";
-import { PlannedSessionDialog } from "@/components/planning/planned-session-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import type { ClientPlannedSession, ClientPlanWeek } from "@/lib/client/types";
-import { groupPlannedSessions } from "@/lib/brick-sessions";
-import { activityTypeColors, activityTypeLabels } from "@/lib/format";
-import { buildPlanningWeeks, type PlanningWeek } from "@/lib/planning";
-import { phaseColors, phaseLabels } from "@/lib/periodization";
-import { intensityAccent, formatPlannedDuration } from "@/lib/sessions";
-import { cn } from "@/lib/utils";
-import {
-  useActivities,
-  useGoals,
-  usePlannedSessions,
-  useTrainingPlan,
-} from "@/hooks/use-data";
+import { format, isSameDay } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { CalendarRange, CheckCircle2, Layers, Plus, Sparkles, Wand2 } from 'lucide-react';
+import Link from 'next/link';
+import { useMemo, useState } from 'react';
+import { StickyHeader } from '@/components/layout/sticky-header';
+import { PlanAdapter } from '@/components/coach/plan-adapter';
+import { PlanGenerator } from '@/components/coach/plan-generator';
+import { MacroPlanDialog } from '@/components/planning/macro-plan-dialog';
+import { PlannedSessionDialog } from '@/components/planning/planned-session-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { ClientPlannedSession, ClientPlanWeek } from '@/lib/client/types';
+import { groupPlannedSessions } from '@/lib/brick-sessions';
+import { activityTypeColors, activityTypeLabels } from '@/lib/format';
+import { buildPlanningWeeks, type PlanningWeek } from '@/lib/planning';
+import { phaseColors, phaseLabels } from '@/lib/periodization';
+import { intensityAccent, formatPlannedDuration } from '@/lib/sessions';
+import { cn } from '@/lib/utils';
+import { useActivities, useGoals, usePlannedSessions, useTrainingPlan } from '@/hooks/use-data';
 
 type DialogState =
-  | { mode: "create"; date: Date }
-  | { mode: "edit"; session: ClientPlannedSession }
-  | null;
+  { mode: 'create'; date: Date } | { mode: 'edit'; session: ClientPlannedSession } | null;
 
 export function PlanningView() {
   const activitiesQuery = useActivities();
@@ -48,16 +41,12 @@ export function PlanningView() {
     const plan = planQuery.data;
     if (!plan?.weeks) return map;
     for (const w of plan.weeks) {
-      map.set(format(new Date(w.weekStart), "yyyy-MM-dd"), w);
+      map.set(format(new Date(w.weekStart), 'yyyy-MM-dd'), w);
     }
     return map;
   }, [planQuery.data]);
 
-  if (
-    activitiesQuery.isLoading ||
-    plannedQuery.isLoading ||
-    goalsQuery.isLoading
-  ) {
+  if (activitiesQuery.isLoading || plannedQuery.isLoading || goalsQuery.isLoading) {
     return (
       <div className="space-y-8">
         <Skeleton className="h-9 w-48" />
@@ -68,14 +57,14 @@ export function PlanningView() {
     );
   }
 
-  const nextRace = (goalsQuery.data ?? [])
+  const [nextRace] = (goalsQuery.data ?? [])
     .flatMap((g) =>
-      g.kind === "RACE" && !g.achieved && g.targetDate != null
+      g.kind === 'RACE' && !g.achieved && g.targetDate != null
         ? [{ goal: g, target: new Date(g.targetDate) }]
         : [],
     )
     .filter(({ target }) => target >= new Date())
-    .sort((a, b) => a.target.getTime() - b.target.getTime())[0];
+    .sort((a, b) => a.target.getTime() - b.target.getTime());
 
   const weeks = buildPlanningWeeks(
     activitiesQuery.data ?? [],
@@ -87,15 +76,13 @@ export function PlanningView() {
     <div className="space-y-6">
       <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">
-            Planning
-          </p>
-          <h1 className="mt-2 font-heading text-3xl font-semibold tracking-tight">
+          <p className="text-primary text-xs font-medium tracking-[0.2em] uppercase">Planning</p>
+          <h1 className="font-heading mt-2 text-3xl font-semibold tracking-tight">
             Plan d&apos;entraînement
           </h1>
-          <p className="mt-1 text-muted-foreground">
+          <p className="text-muted-foreground mt-1">
             {nextRace
-              ? `Objectif : ${nextRace.goal.title} — ${format(nextRace.target, "d MMMM yyyy", { locale: fr })}`
+              ? `Objectif : ${nextRace.goal.title} — ${format(nextRace.target, 'd MMMM yyyy', { locale: fr })}`
               : "Construis tes semaines d'entraînement."}
           </p>
         </div>
@@ -112,7 +99,7 @@ export function PlanningView() {
             <Sparkles className="size-4" />
             Générer ma semaine
           </Button>
-          <Button onClick={() => setDialog({ mode: "create", date: new Date() })}>
+          <Button onClick={() => setDialog({ mode: 'create', date: new Date() })}>
             <Plus className="size-4" />
             Planifier une séance
           </Button>
@@ -123,40 +110,35 @@ export function PlanningView() {
         {weeks.map((week) => (
           <WeekCard
             key={week.start.toISOString()}
+            planWeek={planWeekByStart.get(format(week.start, 'yyyy-MM-dd'))}
             week={week}
-            planWeek={planWeekByStart.get(format(week.start, "yyyy-MM-dd"))}
-            onAdd={(date) => setDialog({ mode: "create", date })}
-            onEdit={(session) => setDialog({ mode: "edit", session })}
+            onAdd={(date) => setDialog({ mode: 'create', date })}
+            onEdit={(session) => setDialog({ mode: 'edit', session })}
           />
         ))}
       </div>
 
       {dialog && (
         <PlannedSessionDialog
+          defaultDate={dialog.mode === 'create' ? dialog.date : undefined}
           goals={goalsQuery.data ?? []}
-          session={dialog.mode === "edit" ? dialog.session : undefined}
-          defaultDate={dialog.mode === "create" ? dialog.date : undefined}
+          session={dialog.mode === 'edit' ? dialog.session : undefined}
           onClose={() => setDialog(null)}
         />
       )}
 
-      {generatorOpen && (
-        <PlanGenerator onClose={() => setGeneratorOpen(false)} />
-      )}
+      {generatorOpen && <PlanGenerator onClose={() => setGeneratorOpen(false)} />}
 
       {adapterOpen && <PlanAdapter onClose={() => setAdapterOpen(false)} />}
 
       {macroPlanOpen && (
-        <MacroPlanDialog
-          goals={goalsQuery.data ?? []}
-          onClose={() => setMacroPlanOpen(false)}
-        />
+        <MacroPlanDialog goals={goalsQuery.data ?? []} onClose={() => setMacroPlanOpen(false)} />
       )}
     </div>
   );
 }
 
-const DAY_LABELS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+const DAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
 function PlannedSessionChip({
   session: p,
@@ -165,45 +147,37 @@ function PlannedSessionChip({
   session: ClientPlannedSession;
   onEdit: (session: ClientPlannedSession) => void;
 }) {
-  const accent = p.intensity ? intensityAccent[p.intensity] : "#94a3b8";
-  const score = (p.analysis as { complianceScore?: number } | null)
-    ?.complianceScore;
+  const accent = p.intensity ? intensityAccent[p.intensity] : '#94a3b8';
+  const score = (p.analysis as { complianceScore?: number } | null)?.complianceScore;
   return (
     <button
-      type="button"
-      onClick={() => onEdit(p)}
       style={{ borderColor: accent }}
-      className={cn(
-        "block w-full truncate rounded-md border border-dashed px-1.5 py-1 text-left text-[11px] hover:bg-muted/40",
-        p.completed && "opacity-50",
-      )}
       title={p.description ?? undefined}
+      type="button"
+      className={cn(
+        'hover:bg-muted/40 block w-full truncate rounded-md border border-dashed px-1.5 py-1 text-left text-[11px]',
+        p.completed && 'opacity-50',
+      )}
+      onClick={() => onEdit(p)}
     >
       <span className="flex items-center gap-1">
         {p.completed ? (
           <CheckCircle2 className="size-2.5 shrink-0 text-emerald-600" />
         ) : (
-          <span
-            className="size-1.5 shrink-0 rounded-full"
-            style={{ backgroundColor: accent }}
-          />
+          <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
         )}
         <span className="truncate">{p.title ?? activityTypeLabels[p.type]}</span>
       </span>
-      <span className="mt-0.5 flex items-center justify-between gap-1 text-[10px] text-muted-foreground">
+      <span className="text-muted-foreground mt-0.5 flex items-center justify-between gap-1 text-[10px]">
         <span>
-          {p.startTime ? `${p.startTime} · ` : ""}
+          {p.startTime ? `${p.startTime} · ` : ''}
           {formatPlannedDuration(p.durationMin)}
         </span>
         {score != null ? (
           <span
             className={cn(
-              "font-mono",
-              score >= 85
-                ? "text-emerald-600"
-                : score >= 60
-                  ? "text-amber-600"
-                  : "text-red-600",
+              'font-mono',
+              score >= 85 ? 'text-emerald-600' : score >= 60 ? 'text-amber-600' : 'text-red-600',
             )}
           >
             {score}
@@ -229,10 +203,7 @@ function WeekCard({
   const phaseAccent = planWeek ? phaseColors[planWeek.phase] : null;
   const totalSessions = week.planned.length;
   const completedSessions = week.planned.filter((p) => p.completed).length;
-  const ratio =
-    totalSessions > 0
-      ? Math.round((completedSessions / totalSessions) * 100)
-      : 0;
+  const ratio = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
   // Temps restant = durée des séances planifiées non encore réalisées.
   const remainingMin = week.planned
     .filter((p) => !p.completed)
@@ -242,23 +213,21 @@ function WeekCard({
     const date = new Date(week.start);
     date.setDate(date.getDate() + i);
     const planned = week.planned.filter((p) => isSameDay(new Date(p.date), date));
-    const activities = week.activities.filter((a) =>
-      isSameDay(new Date(a.date), date),
-    );
+    const activities = week.activities.filter((a) => isSameDay(new Date(a.date), date));
     return { label, date, planned, activities };
   });
 
   return (
-    <Card className={cn(isCurrent && "border-primary/40")}>
+    <Card className={cn(isCurrent && 'border-primary/40')}>
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <h2 className="font-heading text-base font-medium">
-            Semaine du {format(week.start, "d MMM", { locale: fr })}
+            Semaine du {format(week.start, 'd MMM', { locale: fr })}
           </h2>
           {isCurrent && <Badge variant="outline">En cours</Badge>}
           {week.weeksToRace != null && week.weeksToRace >= 0 && (
-            <Badge variant="outline" className="text-primary">
-              {week.weeksToRace === 0 ? "Semaine course" : `S-${week.weeksToRace}`}
+            <Badge className="text-primary" variant="outline">
+              {week.weeksToRace === 0 ? 'Semaine course' : `S-${week.weeksToRace}`}
             </Badge>
           )}
           {planWeek && phaseAccent && (
@@ -270,29 +239,29 @@ function WeekCard({
               }}
             >
               {phaseLabels[planWeek.phase]}
-              {planWeek.isDeload ? " · deload" : ""}
+              {planWeek.isDeload ? ' · deload' : ''}
             </Badge>
           )}
         </div>
         <div className="flex items-center gap-3">
           {planWeek && (
-            <p className="text-xs text-muted-foreground">
-              Cible{" "}
-              <span className="font-mono font-medium text-foreground">
+            <p className="text-muted-foreground text-xs">
+              Cible{' '}
+              <span className="text-foreground font-mono font-medium">
                 {planWeek.targetLoad} TSS
               </span>
               {week.plannedLoad > 0 && (
                 <>
-                  {" "}
-                  · planifié{" "}
+                  {' '}
+                  · planifié{' '}
                   <span
                     className={cn(
-                      "font-mono font-medium",
+                      'font-mono font-medium',
                       week.plannedLoad > planWeek.targetLoad * 1.15
-                        ? "text-amber-600"
+                        ? 'text-amber-600'
                         : week.plannedLoad < planWeek.targetLoad * 0.7
-                          ? "text-muted-foreground"
-                          : "text-emerald-600",
+                          ? 'text-muted-foreground'
+                          : 'text-emerald-600',
                     )}
                   >
                     {Math.round(week.plannedLoad)}
@@ -303,22 +272,22 @@ function WeekCard({
           )}
           <div className="text-right">
             <p className="text-sm">
-              <span className="font-medium text-foreground">
+              <span className="text-foreground font-medium">
                 {completedSessions}/{totalSessions}
-              </span>{" "}
+              </span>{' '}
               <span className="text-muted-foreground">
-                {totalSessions > 1 ? "séances" : "séance"}
+                {totalSessions > 1 ? 'séances' : 'séance'}
               </span>
               {remainingMin > 0 && (
                 <>
-                  <span className="mx-1 text-muted-foreground">·</span>
+                  <span className="text-muted-foreground mx-1">·</span>
                   <span className="text-muted-foreground">
                     {formatPlannedDuration(remainingMin)} à faire
                   </span>
                 </>
               )}
             </p>
-            <div className="mt-1 h-1.5 w-40 overflow-hidden rounded-full bg-muted/60">
+            <div className="bg-muted/60 mt-1 h-1.5 w-40 overflow-hidden rounded-full">
               <div
                 className="h-full rounded-full bg-emerald-400/80"
                 style={{ width: `${ratio}%` }}
@@ -330,26 +299,23 @@ function WeekCard({
       <CardContent>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-7">
           {days.map((day) => (
-            <div
-              key={day.label}
-              className="rounded-lg border border-border/40 bg-card/30 p-2"
-            >
+            <div key={day.label} className="border-border/40 bg-card/30 rounded-lg border p-2">
               <div className="mb-1.5 flex items-center justify-between">
-                <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
                   {day.label} {day.date.getDate()}
                 </span>
                 <button
+                  aria-label="Ajouter une séance"
+                  className="text-muted-foreground hover:text-foreground"
                   type="button"
                   onClick={() => onAdd(day.date)}
-                  className="text-muted-foreground hover:text-foreground"
-                  aria-label="Ajouter une séance"
                 >
                   <Plus className="size-3" />
                 </button>
               </div>
               <div className="space-y-1">
                 {groupPlannedSessions(day.planned).map((item) =>
-                  item.kind === "single" ? (
+                  item.kind === 'single' ? (
                     <PlannedSessionChip
                       key={item.session.id}
                       session={item.session}
@@ -358,17 +324,13 @@ function WeekCard({
                   ) : (
                     <div
                       key={item.id}
-                      className="space-y-1 rounded-md border border-primary/30 bg-primary/5 p-1"
+                      className="border-primary/30 bg-primary/5 space-y-1 rounded-md border p-1"
                     >
-                      <span className="flex items-center gap-1 px-0.5 text-[9px] font-medium uppercase tracking-wider text-primary">
+                      <span className="text-primary flex items-center gap-1 px-0.5 text-[9px] font-medium tracking-wider uppercase">
                         <Layers className="size-2.5" /> Brick
                       </span>
                       {item.sessions.map((s) => (
-                        <PlannedSessionChip
-                          key={s.id}
-                          session={s}
-                          onEdit={onEdit}
-                        />
+                        <PlannedSessionChip key={s.id} session={s} onEdit={onEdit} />
                       ))}
                     </div>
                   ),
@@ -377,11 +339,11 @@ function WeekCard({
                   <Link
                     key={a.id}
                     href={`/training/${a.id}`}
+                    title={a.title ?? activityTypeLabels[a.type]}
                     className={cn(
-                      "block truncate rounded-md border border-border/60 bg-card/80 px-1.5 py-0.5 text-[11px] font-medium hover:border-primary/40",
+                      'border-border/60 bg-card/80 hover:border-primary/40 block truncate rounded-md border px-1.5 py-0.5 text-[11px] font-medium',
                       activityTypeColors[a.type],
                     )}
-                    title={a.title ?? activityTypeLabels[a.type]}
                   >
                     ✓ {a.title ?? activityTypeLabels[a.type]}
                   </Link>

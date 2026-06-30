@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { ActivityType } from "@prisma/client";
+import { ActivityType } from '@prisma/client';
 import {
   CartesianGrid,
   Line,
@@ -9,9 +9,9 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { StreamSample } from "@/lib/streams";
+} from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { StreamSample } from '@/lib/streams';
 
 export function CombinedChart({
   samples,
@@ -28,72 +28,67 @@ export function CombinedChart({
 
   if (!showAlt && !showPower) return null;
 
-  const secondaryKey = showPower ? "watts" : "alt";
-  const secondaryLabel = showPower ? "Puissance (W)" : "Altitude (m)";
-  const secondaryColor = showPower ? "#d97706" : "#059669";
+  const secondaryKey = showPower ? 'watts' : 'alt';
+  const secondaryLabel = showPower ? 'Puissance (W)' : 'Altitude (m)';
+  const secondaryColor = showPower ? '#d97706' : '#059669';
 
   const data = samples.map((s) => ({
-    x: useDistance
-      ? Number((s.d / 1000).toFixed(2))
-      : Number((s.t / 60).toFixed(1)),
+    x: useDistance ? Number((s.d / 1000).toFixed(2)) : Number((s.t / 60).toFixed(1)),
     hr: s.hr,
     [secondaryKey]: showPower ? s.watts : s.alt,
   }));
 
-  const xLabel = useDistance ? "km" : "min";
+  const xLabel = useDistance ? 'km' : 'min';
 
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium">
-          FC + {showPower ? "puissance" : "altitude"}
+          FC + {showPower ? 'puissance' : 'altitude'}
         </CardTitle>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-muted-foreground text-xs">
           Corrélation effort / réponse cardiovasculaire
         </p>
       </CardHeader>
       <CardContent>
         <div className="h-52 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={data}
-              margin={{ top: 5, right: 10, left: -8, bottom: 0 }}
-            >
+          <ResponsiveContainer height="100%" width="100%">
+            <LineChart data={data} margin={{ top: 5, right: 10, left: -8, bottom: 0 }}>
               <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" />
               <XAxis
-                dataKey="x"
-                type="number"
-                domain={["dataMin", "dataMax"]}
-                tick={{ fill: "oklch(0.65 0.02 250)", fontSize: 11 }}
                 axisLine={false}
+                dataKey="x"
+                domain={['dataMin', 'dataMax']}
+                tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
                 tickLine={false}
+                type="number"
               />
               <YAxis
-                yAxisId="hr"
-                tick={{ fill: "#e11d48", fontSize: 11 }}
                 axisLine={false}
+                tick={{ fill: '#e11d48', fontSize: 11 }}
                 tickLine={false}
                 width={36}
+                yAxisId="hr"
               />
               <YAxis
-                yAxisId="sec"
+                axisLine={false}
                 orientation="right"
                 tick={{ fill: secondaryColor, fontSize: 11 }}
-                axisLine={false}
                 tickLine={false}
                 width={40}
+                yAxisId="sec"
               />
               <Tooltip
                 content={({ active, payload, label }) => {
                   if (!active || !payload?.length) return null;
                   return (
-                    <div className="rounded-lg border border-border/60 bg-card px-3 py-2 text-xs shadow-lg">
-                      <p className="mb-1 text-muted-foreground">
+                    <div className="border-border/60 bg-card rounded-lg border px-3 py-2 text-xs shadow-lg">
+                      <p className="text-muted-foreground mb-1">
                         {label} {xLabel}
                       </p>
                       {payload.map((p) => (
                         <p key={String(p.dataKey)} style={{ color: p.color }}>
-                          {p.dataKey === "hr" ? "FC" : secondaryLabel.split(" ")[0]}:{" "}
+                          {p.dataKey === 'hr' ? 'FC' : secondaryLabel.split(' ')[0]}:{' '}
                           <span className="font-mono font-semibold">{p.value}</span>
                         </p>
                       ))}
@@ -102,24 +97,24 @@ export function CombinedChart({
                 }}
               />
               <Line
-                yAxisId="hr"
-                type="monotone"
                 dataKey="hr"
+                dot={false}
+                isAnimationActive={false}
                 stroke="#e11d48"
                 strokeWidth={2}
-                dot={false}
+                type="monotone"
+                yAxisId="hr"
                 connectNulls
-                isAnimationActive={false}
               />
               <Line
-                yAxisId="sec"
-                type="monotone"
                 dataKey={secondaryKey}
+                dot={false}
+                isAnimationActive={false}
                 stroke={secondaryColor}
                 strokeWidth={2}
-                dot={false}
+                type="monotone"
+                yAxisId="sec"
                 connectNulls
-                isAnimationActive={false}
               />
             </LineChart>
           </ResponsiveContainer>

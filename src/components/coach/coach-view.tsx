@@ -1,21 +1,21 @@
-"use client";
+'use client';
 
-import type { UIMessage } from "ai";
-import { Sparkles } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { StickyHeader } from "@/components/layout/sticky-header";
-import { CoachChat } from "@/components/coach/coach-chat";
-import { CoachContextPanel } from "@/components/coach/coach-context-panel";
-import { CoachConversationList } from "@/components/coach/coach-conversation-list";
-import { PlanGenerator } from "@/components/coach/plan-generator";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import type { UIMessage } from 'ai';
+import { Sparkles } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { StickyHeader } from '@/components/layout/sticky-header';
+import { CoachChat } from '@/components/coach/coach-chat';
+import { CoachContextPanel } from '@/components/coach/coach-context-panel';
+import { CoachConversationList } from '@/components/coach/coach-conversation-list';
+import { PlanGenerator } from '@/components/coach/plan-generator';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   useConversation,
   useConversations,
   useCreateConversation,
   useDeleteConversation,
-} from "@/hooks/use-coach";
+} from '@/hooks/use-coach';
 
 export function CoachView() {
   const [generatorOpen, setGeneratorOpen] = useState(false);
@@ -46,7 +46,7 @@ export function CoachView() {
   }
 
   async function handleDeleteConversation(id: string) {
-    if (!confirm("Supprimer cette conversation ?")) return;
+    if (!confirm('Supprimer cette conversation ?')) return;
     await deleteConversation.mutateAsync(id);
     // Si on supprime la conversation affichée, on retombe sur la plus récente
     // (dérivée) ; l'effet recrée une conversation si l'historique devient vide.
@@ -57,15 +57,13 @@ export function CoachView() {
     <div className="space-y-6">
       <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">
-            Coach IA
-          </p>
-          <h1 className="mt-2 font-heading text-3xl font-semibold tracking-tight">
+          <p className="text-primary text-xs font-medium tracking-[0.2em] uppercase">Coach IA</p>
+          <h1 className="font-heading mt-2 text-3xl font-semibold tracking-tight">
             Ton coach personnel
           </h1>
-          <p className="mt-1 text-muted-foreground">
-            Discute avec ton coach ou laisse-le construire tes prochaines
-            séances à partir de tes données.
+          <p className="text-muted-foreground mt-1">
+            Discute avec ton coach ou laisse-le construire tes prochaines séances à partir de tes
+            données.
           </p>
         </div>
         <Button onClick={() => setGeneratorOpen(true)}>
@@ -78,13 +76,13 @@ export function CoachView() {
 
       <div className="flex h-[70vh] flex-col gap-4 lg:flex-row">
         <CoachConversationList
-          conversations={conversations}
           activeId={selectedId}
-          loading={conversationsQuery.isLoading}
+          conversations={conversations}
           creating={createConversation.isPending}
-          onSelect={setActiveId}
-          onNew={handleNewConversation}
+          loading={conversationsQuery.isLoading}
           onDelete={handleDeleteConversation}
+          onNew={handleNewConversation}
+          onSelect={setActiveId}
         />
         {selectedId && activeConversation.data ? (
           <CoachChat
@@ -101,9 +99,7 @@ export function CoachView() {
         )}
       </div>
 
-      {generatorOpen && (
-        <PlanGenerator onClose={() => setGeneratorOpen(false)} />
-      )}
+      {generatorOpen && <PlanGenerator onClose={() => setGeneratorOpen(false)} />}
     </div>
   );
 }

@@ -1,0 +1,12 @@
+node_modules
+.next
+.vercel
+out
+build
+coverage
+next-env.d.ts
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
+prisma/migrations
+.yarn

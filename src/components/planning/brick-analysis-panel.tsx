@@ -1,20 +1,16 @@
-"use client";
+'use client';
 
-import { ArrowLeftRight, Layers, Loader2, RefreshCw, Sparkles } from "lucide-react";
-import { useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { activityTypeLabels } from "@/lib/format";
-import { cn } from "@/lib/utils";
-import {
-  useAnalyzeBrick,
-  useBrickAnalysis,
-  usePlannedSessions,
-} from "@/hooks/use-data";
+import { ArrowLeftRight, Layers, Loader2, RefreshCw, Sparkles } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { activityTypeLabels } from '@/lib/format';
+import { cn } from '@/lib/utils';
+import { useAnalyzeBrick, useBrickAnalysis, usePlannedSessions } from '@/hooks/use-data';
 
 function scoreColor(score: number): string {
-  if (score >= 85) return "text-emerald-600";
-  if (score >= 60) return "text-amber-600";
-  return "text-red-600";
+  if (score >= 85) return 'text-emerald-600';
+  if (score >= 60) return 'text-amber-600';
+  return 'text-red-600';
 }
 
 export function BrickAnalysisPanel({ brickGroupId }: { brickGroupId: string }) {
@@ -46,53 +42,45 @@ export function BrickAnalysisPanel({ brickGroupId }: { brickGroupId: string }) {
   }
 
   return (
-    <div className="space-y-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
-      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-primary">
+    <div className="border-primary/30 bg-primary/5 space-y-3 rounded-lg border p-3">
+      <div className="text-primary flex items-center gap-2 text-xs font-medium tracking-wide uppercase">
         <Layers className="size-3.5 shrink-0" />
         Analyse de l&apos;enchaînement
-        <span className="ml-auto font-normal normal-case text-muted-foreground">
-          {legs.map((l) => activityTypeLabels[l.type]).join(" → ")}
+        <span className="text-muted-foreground ml-auto font-normal normal-case">
+          {legs.map((l) => activityTypeLabels[l.type]).join(' → ')}
         </span>
       </div>
 
       {!allLinked ? (
-        <p className="text-xs text-muted-foreground">
-          Lie chaque sport du brick à son activité réalisée pour analyser
-          l&apos;enchaînement ({linkedCount}/{legs.length} lié
-          {linkedCount > 1 ? "s" : ""}).
+        <p className="text-muted-foreground text-xs">
+          Lie chaque sport du brick à son activité réalisée pour analyser l&apos;enchaînement (
+          {linkedCount}/{legs.length} lié
+          {linkedCount > 1 ? 's' : ''}).
         </p>
       ) : analysis ? (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span
-              className={cn(
-                "font-mono text-2xl font-semibold",
-                scoreColor(analysis.overallScore),
-              )}
+              className={cn('font-mono text-2xl font-semibold', scoreColor(analysis.overallScore))}
             >
               {analysis.overallScore}
             </span>
-            <span className="text-xs text-muted-foreground">/100</span>
+            <span className="text-muted-foreground text-xs">/100</span>
           </div>
-          <p className="text-sm text-muted-foreground">{analysis.summary}</p>
+          <p className="text-muted-foreground text-sm">{analysis.summary}</p>
 
-          <div className="rounded-md border border-primary/20 bg-background/60 p-2.5">
-            <p className="flex items-center gap-1.5 text-xs font-medium text-primary">
+          <div className="border-primary/20 bg-background/60 rounded-md border p-2.5">
+            <p className="text-primary flex items-center gap-1.5 text-xs font-medium">
               <ArrowLeftRight className="size-3.5" />
               Transition
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {analysis.transition}
-            </p>
+            <p className="text-muted-foreground mt-1 text-xs">{analysis.transition}</p>
           </div>
 
           {analysis.remarks.length > 0 && (
             <ul className="space-y-1">
               {analysis.remarks.map((r, i) => (
-                <li
-                  key={i}
-                  className="flex gap-1.5 text-xs text-muted-foreground"
-                >
+                <li key={i} className="text-muted-foreground flex gap-1.5 text-xs">
                   <span className="text-primary">•</span>
                   <span>{r}</span>
                 </li>
@@ -101,16 +89,16 @@ export function BrickAnalysisPanel({ brickGroupId }: { brickGroupId: string }) {
           )}
 
           {analysis.recommendation && (
-            <p className="rounded-md border border-primary/20 bg-primary/5 p-2 text-xs">
+            <p className="border-primary/20 bg-primary/5 rounded-md border p-2 text-xs">
               💡 {analysis.recommendation}
             </p>
           )}
 
           <button
+            className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
+            disabled={isAnalyzing}
             type="button"
             onClick={handleAnalyze}
-            disabled={isAnalyzing}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
           >
             {isAnalyzing ? (
               <Loader2 className="size-3 animate-spin" />
@@ -122,11 +110,11 @@ export function BrickAnalysisPanel({ brickGroupId }: { brickGroupId: string }) {
         </div>
       ) : (
         <Button
+          disabled={isAnalyzing}
+          size="sm"
           type="button"
           variant="outline"
-          size="sm"
           onClick={handleAnalyze}
-          disabled={isAnalyzing}
         >
           {isAnalyzing ? (
             <>
@@ -140,7 +128,7 @@ export function BrickAnalysisPanel({ brickGroupId }: { brickGroupId: string }) {
         </Button>
       )}
 
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p className="text-destructive text-xs">{error}</p>}
     </div>
   );
 }

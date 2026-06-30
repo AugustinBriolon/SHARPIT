@@ -1,5 +1,5 @@
-import { ActivityType } from "@prisma/client";
-import { z } from "zod";
+import { ActivityType } from '@prisma/client';
+import { z } from 'zod';
 
 const optionalNumber = z.coerce.number().optional().nullable();
 const optionalInt = z.coerce.number().int().optional().nullable();
@@ -81,5 +81,5 @@ export const activityInclude = {
   runMetrics: true,
   bikeMetrics: true,
   swimMetrics: true,
-  strengthSets: { orderBy: { order: "asc" as const } },
+  strengthSets: { orderBy: { order: 'asc' as const } },
 } as const;

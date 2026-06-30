@@ -1,46 +1,42 @@
-"use client";
+'use client';
 
-import { format, parseISO, startOfWeek } from "date-fns";
-import { fr } from "date-fns/locale";
-import { Check, Loader2, Sparkles } from "lucide-react";
-import { useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { format, parseISO, startOfWeek } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { Check, Loader2, Sparkles } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { activityTypeLabels } from "@/lib/format";
-import {
-  formatPlannedDuration,
-  intensityAccent,
-  intensityLabels,
-} from "@/lib/sessions";
-import { cn } from "@/lib/utils";
-import { phaseLabels } from "@/lib/periodization";
-import { useCoachPlan, type GeneratedSession } from "@/hooks/use-coach";
-import { useGoals, usePlannedSessionMutations, useTrainingPlan } from "@/hooks/use-data";
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { activityTypeLabels } from '@/lib/format';
+import { formatPlannedDuration, intensityAccent, intensityLabels } from '@/lib/sessions';
+import { cn } from '@/lib/utils';
+import { phaseLabels } from '@/lib/periodization';
+import { useCoachPlan, type GeneratedSession } from '@/hooks/use-coach';
+import { useGoals, usePlannedSessionMutations, useTrainingPlan } from '@/hooks/use-data';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 
 const DAYS_OPTIONS = [
-  { value: "7", label: "1 semaine" },
-  { value: "14", label: "2 semaines" },
-  { value: "3", label: "3 jours" },
+  { value: '7', label: '1 semaine' },
+  { value: '14', label: '2 semaines' },
+  { value: '3', label: '3 jours' },
 ];
 
-const NO_GOAL = "none";
+const NO_GOAL = 'none';
 
 interface PlanGeneratorProps {
   startDate?: string; // yyyy-MM-dd
@@ -48,8 +44,8 @@ interface PlanGeneratorProps {
 }
 
 export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
-  const [days, setDays] = useState("7");
-  const [focus, setFocus] = useState("");
+  const [days, setDays] = useState('7');
+  const [focus, setFocus] = useState('');
   const [goalId, setGoalId] = useState<string>(NO_GOAL);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [insertError, setInsertError] = useState<string | null>(null);
@@ -65,10 +61,8 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
     const active = planQuery.data;
     if (!active?.weeks?.length) return null;
     const blockStart = startDate ? parseISO(startDate) : new Date();
-    const ws = format(startOfWeek(blockStart, WEEK_OPTS), "yyyy-MM-dd");
-    return active.weeks.find(
-      (w) => format(new Date(w.weekStart), "yyyy-MM-dd") === ws,
-    );
+    const ws = format(startOfWeek(blockStart, WEEK_OPTS), 'yyyy-MM-dd');
+    return active.weeks.find((w) => format(new Date(w.weekStart), 'yyyy-MM-dd') === ws);
   }, [planQuery.data, startDate]);
 
   // Objectifs datés (courses à venir) sélectionnables comme cible du bloc.
@@ -134,23 +128,21 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="size-4 text-primary" />
+            <Sparkles className="text-primary size-4" />
             Générer mes séances
           </DialogTitle>
           <DialogDescription>
-            Le coach IA analyse ta forme, ta récupération et ton objectif pour
-            proposer un bloc d&apos;entraînement. Tu valides avant ajout.
+            Le coach IA analyse ta forme, ta récupération et ton objectif pour proposer un bloc
+            d&apos;entraînement. Tu valides avant ajout.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-2">
             <Label>Durée du bloc</Label>
-            <Select value={days} onValueChange={(v) => setDays(v ?? "7")}>
+            <Select value={days} onValueChange={(v) => setDays(v ?? '7')}>
               <SelectTrigger className="w-40">
-                <SelectValue>
-                  {DAYS_OPTIONS.find((o) => o.value === days)?.label}
-                </SelectValue>
+                <SelectValue>{DAYS_OPTIONS.find((o) => o.value === days)?.label}</SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {DAYS_OPTIONS.map((o) => (
@@ -167,9 +159,8 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
               <SelectTrigger className="w-56">
                 <SelectValue>
                   {goalId === NO_GOAL
-                    ? "Aucun (forme générale)"
-                    : (datedGoals.find((g) => g.id === goalId)?.title ??
-                      "Aucun")}
+                    ? 'Aucun (forme générale)'
+                    : (datedGoals.find((g) => g.id === goalId)?.title ?? 'Aucun')}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -178,14 +169,14 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
                   <SelectItem key={g.id} value={g.id}>
                     {g.title}
                     {g.targetDate
-                      ? ` — ${format(new Date(g.targetDate as unknown as string), "d MMM yyyy", { locale: fr })}`
-                      : ""}
+                      ? ` — ${format(new Date(g.targetDate as unknown as string), 'd MMM yyyy', { locale: fr })}`
+                      : ''}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={handleGenerate} disabled={isGenerating} className="mb-2">
+          <Button className="mb-2" disabled={isGenerating} onClick={handleGenerate}>
             {isGenerating ? (
               <>
                 <Loader2 className="size-4 animate-spin" />
@@ -194,19 +185,17 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
             ) : (
               <>
                 <Sparkles className="size-4" />
-                {plan ? "Régénérer" : "Générer"}
+                {plan ? 'Régénérer' : 'Générer'}
               </>
             )}
           </Button>
         </div>
 
         {planWeek && (
-          <p className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-2 text-xs text-muted-foreground">
-            Macro-plan : {phaseLabels[planWeek.phase]} — cible{" "}
-            <span className="font-mono font-medium text-foreground">
-              {planWeek.targetLoad} TSS
-            </span>
-            {planWeek.isDeload ? " (semaine de récup)" : ""}
+          <p className="text-muted-foreground rounded-md border border-cyan-500/20 bg-cyan-500/5 p-2 text-xs">
+            Macro-plan : {phaseLabels[planWeek.phase]} — cible{' '}
+            <span className="text-foreground font-mono font-medium">{planWeek.targetLoad} TSS</span>
+            {planWeek.isDeload ? ' (semaine de récup)' : ''}
           </p>
         )}
 
@@ -214,22 +203,22 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
           <Label htmlFor="focus">Demande spécifique (optionnel)</Label>
           <Textarea
             id="focus"
+            placeholder="Ex : je veux deux grosses séances vélo, repos le vendredi, je pars en voyage samedi…"
             rows={2}
             value={focus}
             onChange={(e) => setFocus(e.target.value)}
-            placeholder="Ex : je veux deux grosses séances vélo, repos le vendredi, je pars en voyage samedi…"
           />
         </div>
 
         {coachPlan.error && (
-          <p className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+          <p className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
             {coachPlan.error.message}
           </p>
         )}
 
         {plan && (
           <div className="space-y-3">
-            <p className="rounded-md border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
+            <p className="border-primary/20 bg-primary/5 text-muted-foreground rounded-md border p-3 text-sm">
               {plan.summary}
             </p>
 
@@ -237,19 +226,17 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
               {plan.sessions.map((s, i) => (
                 <SessionRow
                   key={i}
-                  session={s}
                   selected={selected.has(i)}
+                  session={s}
                   onToggle={() => toggle(i)}
                 />
               ))}
             </div>
 
-            {insertError && (
-              <p className="text-sm text-destructive">{insertError}</p>
-            )}
+            {insertError && <p className="text-destructive text-sm">{insertError}</p>}
 
-            <div className="flex items-center justify-between gap-2 border-t border-border/60 pt-3">
-              <span className="text-xs text-muted-foreground">
+            <div className="border-border/60 flex items-center justify-between gap-2 border-t pt-3">
+              <span className="text-muted-foreground text-xs">
                 {selected.size} séance(s) sélectionnée(s)
               </span>
               <div className="flex gap-2">
@@ -257,8 +244,8 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
                   Fermer
                 </Button>
                 <Button
-                  onClick={handleInsert}
                   disabled={isInserting || selected.size === 0 || inserted}
+                  onClick={handleInsert}
                 >
                   {inserted ? (
                     <>
@@ -271,7 +258,7 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
                       Ajout…
                     </>
                   ) : (
-                    "Ajouter au planning"
+                    'Ajouter au planning'
                   )}
                 </Button>
               </div>
@@ -298,26 +285,26 @@ function SessionRow({
   return (
     <button
       type="button"
-      onClick={onToggle}
       className={cn(
-        "flex w-full gap-3 rounded-lg border p-3 text-left transition-colors",
+        'flex w-full gap-3 rounded-lg border p-3 text-left transition-colors',
         selected
-          ? "border-primary/40 bg-primary/5"
-          : "border-border/50 bg-card/30 opacity-60 hover:opacity-100",
+          ? 'border-primary/40 bg-primary/5'
+          : 'border-border/50 bg-card/30 opacity-60 hover:opacity-100',
       )}
+      onClick={onToggle}
     >
       <span
         className={cn(
-          "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border",
-          selected ? "border-primary bg-primary text-primary-foreground" : "border-border",
+          'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border',
+          selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border',
         )}
       >
         {selected && <Check className="size-3.5" />}
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {format(date, "EEE d MMM", { locale: fr })}
+          <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+            {format(date, 'EEE d MMM', { locale: fr })}
           </span>
           <span
             className="rounded-full px-1.5 py-0.5 text-[10px] font-medium"
@@ -325,20 +312,16 @@ function SessionRow({
           >
             {intensityLabels[session.intensity]}
           </span>
-          <span className="text-xs text-muted-foreground">
-            {session.startTime ? `${session.startTime} · ` : ""}
-            {activityTypeLabels[session.type]} ·{" "}
-            {formatPlannedDuration(session.durationMin)} · {session.load} TSS
+          <span className="text-muted-foreground text-xs">
+            {session.startTime ? `${session.startTime} · ` : ''}
+            {activityTypeLabels[session.type]} · {formatPlannedDuration(session.durationMin)} ·{' '}
+            {session.load} TSS
           </span>
         </div>
         <p className="mt-1 text-sm font-medium">{session.title}</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          {session.description}
-        </p>
+        <p className="text-muted-foreground mt-0.5 text-xs">{session.description}</p>
         {session.rationale && (
-          <p className="mt-1 text-xs italic text-muted-foreground/80">
-            → {session.rationale}
-          </p>
+          <p className="text-muted-foreground/80 mt-1 text-xs italic">→ {session.rationale}</p>
         )}
       </div>
     </button>

@@ -1,12 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { buildActivityUpdateData } from "@/lib/activity-service";
-import {
-  deleteActivity,
-  getActivityById,
-  updateActivity,
-} from "@/lib/queries";
-import { updateRecordsForTypesSafe } from "@/lib/records";
-import { updateActivitySchema } from "@/lib/validators/activity";
+import { NextRequest, NextResponse } from 'next/server';
+import { buildActivityUpdateData } from '@/lib/activity-service';
+import { deleteActivity, getActivityById, updateActivity } from '@/lib/queries';
+import { updateRecordsForTypesSafe } from '@/lib/records';
+import { updateActivitySchema } from '@/lib/validators/activity';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -16,16 +12,13 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     const activity = await getActivityById(id);
 
     if (!activity) {
-      return NextResponse.json({ error: "Séance introuvable" }, { status: 404 });
+      return NextResponse.json({ error: 'Séance introuvable' }, { status: 404 });
     }
 
     return NextResponse.json(activity);
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { error: "Impossible de charger la séance" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Impossible de charger la séance' }, { status: 500 });
   }
 }
 
@@ -37,14 +30,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Données invalides", details: parsed.error.flatten() },
+        { error: 'Données invalides', details: parsed.error.flatten() },
         { status: 400 },
       );
     }
 
     const existing = await getActivityById(id);
     if (!existing) {
-      return NextResponse.json({ error: "Séance introuvable" }, { status: 404 });
+      return NextResponse.json({ error: 'Séance introuvable' }, { status: 404 });
     }
 
     const newType = parsed.data.type ?? existing.type;
@@ -62,10 +55,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     return NextResponse.json(activity);
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { error: "Impossible de mettre à jour la séance" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Impossible de mettre à jour la séance' }, { status: 500 });
   }
 }
 
@@ -78,9 +68,6 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { error: "Impossible de supprimer la séance" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Impossible de supprimer la séance' }, { status: 500 });
   }
 }

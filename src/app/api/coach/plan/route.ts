@@ -1,21 +1,18 @@
-import { generateText, Output } from "ai";
-import { addDays, format, startOfDay } from "date-fns";
-import { fr } from "date-fns/locale";
-import { NextResponse } from "next/server";
-import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from "@/lib/ai";
-import { buildCoachContext, formatCoachContext } from "@/lib/coach-context";
-import { getUpcomingBusy } from "@/lib/google-sync";
-import { getGoalById } from "@/lib/queries";
-import {
-  coachPlanRequestSchema,
-  coachPlanSchema,
-} from "@/lib/validators/coach";
+import { generateText, Output } from 'ai';
+import { addDays, format, startOfDay } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { NextResponse } from 'next/server';
+import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from '@/lib/ai';
+import { buildCoachContext, formatCoachContext } from '@/lib/coach-context';
+import { getUpcomingBusy } from '@/lib/google-sync';
+import { getGoalById } from '@/lib/queries';
+import { coachPlanRequestSchema, coachPlanSchema } from '@/lib/validators/coach';
 
 /** Résume les créneaux occupés Google par jour, sur la fenêtre du plan. */
 async function buildBusySummary(start: Date, days: number): Promise<string> {
   try {
     const busy = await getUpcomingBusy(days + 1);
-    if (busy.length === 0) return "";
+    if (busy.length === 0) return '';
 
     const byDay = new Map<string, string[]>();
     for (const b of busy) {
@@ -27,19 +24,19 @@ async function buildBusySummary(start: Date, days: number): Promise<string> {
     const lines: string[] = [];
     for (let i = 0; i <= days; i += 1) {
       const day = addDays(start, i);
-      const key = format(day, "yyyy-MM-dd");
+      const key = format(day, 'yyyy-MM-dd');
       const slots = byDay.get(key);
-      const label = `${format(day, "EEE d MMM", { locale: fr })} (dayOffset ${i})`;
+      const label = `${format(day, 'EEE d MMM', { locale: fr })} (dayOffset ${i})`;
       if (slots && slots.length) {
-        lines.push(`- ${label} : occupé ${slots.join(", ")}`);
+        lines.push(`- ${label} : occupé ${slots.join(', ')}`);
       } else {
         lines.push(`- ${label} : libre toute la journée`);
       }
     }
-    return lines.join("\n");
+    return lines.join('\n');
   } catch (error) {
-    console.error("[coach/plan] busy summary", error);
-    return "";
+    console.error('[coach/plan] busy summary', error);
+    return '';
   }
 }
 
@@ -71,7 +68,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         error:
-          "Coach IA non configuré. Ajoute une clé AI_GATEWAY_API_KEY dans le fichier .env (Vercel → AI Gateway → API Keys), puis redémarre le serveur.",
+          'Coach IA non configuré. Ajoute une clé AI_GATEWAY_API_KEY dans le fichier .env (Vercel → AI Gateway → API Keys), puis redémarre le serveur.',
       },
       { status: 503 },
     );
@@ -80,11 +77,10 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const parsed = coachPlanRequestSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Paramètres invalides." }, { status: 400 });
+    return NextResponse.json({ error: 'Paramètres invalides.' }, { status: 400 });
   }
 
-  const { startDate, days = 7, focus, goalId, targetLoad, planPhase, planFocus } =
-    parsed.data;
+  const { startDate, days = 7, focus, goalId, targetLoad, planPhase, planFocus } = parsed.data;
   const start = startOfDay(startDate ?? new Date());
 
   const [ctx, busySummary, goal] = await Promise.all([
@@ -94,29 +90,25 @@ export async function POST(req: Request) {
   ]);
   const contextText = formatCoachContext(ctx);
 
-  let goalBlock = "";
+  let goalBlock = '';
   if (goal) {
     const daysToGo = goal.targetDate
-      ? Math.round(
-          (startOfDay(goal.targetDate).getTime() - start.getTime()) / 86400_000,
-        )
+      ? Math.round((startOfDay(goal.targetDate).getTime() - start.getTime()) / 86400_000)
       : null;
     const bits = [
       `Objectif ciblé : ${goal.title}`,
       goal.location ? `lieu ${goal.location}` : null,
-      goal.targetDate
-        ? `date ${format(goal.targetDate, "d MMMM yyyy", { locale: fr })}`
-        : null,
+      goal.targetDate ? `date ${format(goal.targetDate, 'd MMMM yyyy', { locale: fr })}` : null,
       daysToGo != null ? `dans ${daysToGo} jours (~${Math.round(daysToGo / 7)} semaines)` : null,
     ]
       .filter(Boolean)
-      .join(" · ");
+      .join(' · ');
     goalBlock = `\n\n## Objectif prioritaire pour ce bloc
 ${bits}
 Périodise IMPÉRATIVEMENT ce bloc en fonction de cette échéance (base → spécifique → affûtage selon les semaines restantes). Oriente le contenu des séances vers les exigences de cet objectif.`;
   }
 
-  let macroBlock = "";
+  let macroBlock = '';
   if (targetLoad != null || planPhase || planFocus) {
     const bits = [
       planPhase ? `Phase du macro-plan : ${planPhase}` : null,
@@ -126,7 +118,7 @@ Périodise IMPÉRATIVEMENT ce bloc en fonction de cette échéance (base → sp�
       planFocus ? `Focus de la semaine : ${planFocus}` : null,
     ].filter(Boolean);
     macroBlock = `\n\n## Macro-plan de la semaine
-${bits.join("\n")}
+${bits.join('\n')}
 Calibre le volume et l'intensité des séances pour approcher cette charge cible sans la dépasser de plus de 10 %.`;
   }
 
@@ -139,11 +131,11 @@ Aucun agenda connecté : propose des heures réalistes ('startTime' entre 06:00 
 
   const prompt = `Génère un plan d'entraînement couvrant ${days} jour(s) à partir du ${format(
     start,
-    "EEEE d MMMM yyyy",
+    'EEEE d MMMM yyyy',
     { locale: fr },
   )} (dayOffset 0 = ce jour-là, dayOffset 1 = lendemain, etc.).
 
-${focus ? `Demande spécifique de l'athlète : ${focus}\n\n` : ""}Données de l'athlète :
+${focus ? `Demande spécifique de l'athlète : ${focus}\n\n` : ''}Données de l'athlète :
 
 ${contextText}${goalBlock}${macroBlock}${agendaBlock}`;
 
@@ -160,19 +152,19 @@ ${contextText}${goalBlock}${macroBlock}${agendaBlock}`;
       .sort((a, b) => a.dayOffset - b.dayOffset)
       .map((s) => ({
         ...s,
-        date: format(addDays(start, s.dayOffset), "yyyy-MM-dd"),
+        date: format(addDays(start, s.dayOffset), 'yyyy-MM-dd'),
         startTime: s.startTime ?? null,
       }));
 
     return NextResponse.json({
       summary: output.summary,
-      startDate: format(start, "yyyy-MM-dd"),
+      startDate: format(start, 'yyyy-MM-dd'),
       sessions,
     });
   } catch (error) {
-    console.error("[coach/plan]", error);
+    console.error('[coach/plan]', error);
     return NextResponse.json(
-      { error: "La génération a échoué. Réessaie dans un instant." },
+      { error: 'La génération a échoué. Réessaie dans un instant.' },
       { status: 500 },
     );
   }

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   CartesianGrid,
@@ -8,9 +8,9 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { HealthChartPoint } from "@/lib/health";
+} from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { HealthChartPoint } from '@/lib/health';
 
 interface MetricLineChartProps {
   title: string;
@@ -34,11 +34,11 @@ function Tip({
 }) {
   if (!active || !payload?.length || payload[0].value == null) return null;
   return (
-    <div className="rounded-lg border border-border/60 bg-card px-3 py-2 text-xs shadow-lg">
+    <div className="border-border/60 bg-card rounded-lg border px-3 py-2 text-xs shadow-lg">
       <p className="text-muted-foreground">{label}</p>
       <p className="font-mono font-semibold" style={{ color: payload[0].color }}>
         {payload[0].value}
-        {unit ? ` ${unit}` : ""}
+        {unit ? ` ${unit}` : ''}
       </p>
     </div>
   );
@@ -59,40 +59,40 @@ export function MetricLineChart({
     <Card>
       <CardHeader>
         <CardTitle className="text-base font-medium">{title}</CardTitle>
-        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+        {subtitle && <p className="text-muted-foreground text-xs">{subtitle}</p>}
       </CardHeader>
       <CardContent>
         <div className="h-48 w-full">
           {hasData ? (
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer height="100%" width="100%">
               <LineChart data={data} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
                 <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" />
                 <XAxis
-                  dataKey="label"
-                  ticks={ticks.map((d) => d.label)}
-                  tick={{ fill: "oklch(0.65 0.02 250)", fontSize: 10 }}
                   axisLine={false}
+                  dataKey="label"
+                  tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 10 }}
                   tickLine={false}
+                  ticks={ticks.map((d) => d.label)}
                 />
                 <YAxis
-                  domain={["auto", "auto"]}
-                  tick={{ fill: "oklch(0.65 0.02 250)", fontSize: 10 }}
                   axisLine={false}
+                  domain={['auto', 'auto']}
+                  tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 10 }}
                   tickLine={false}
                 />
                 <Tooltip content={<Tip unit={unit} />} />
                 <Line
-                  type="monotone"
                   dataKey={dataKey}
+                  dot={false}
                   stroke={color}
                   strokeWidth={2}
-                  dot={false}
+                  type="monotone"
                   connectNulls
                 />
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
               Pas encore de données
             </div>
           )}

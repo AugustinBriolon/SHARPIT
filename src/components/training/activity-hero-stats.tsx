@@ -1,25 +1,20 @@
-"use client";
+'use client';
 
-import { ActivityType } from "@prisma/client";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useActivityStream } from "@/hooks/use-data";
-import {
-  formatDistance,
-  formatDuration,
-  formatPace,
-  formatSwimPace,
-} from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { ActivityType } from '@prisma/client';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useActivityStream } from '@/hooks/use-data';
+import { formatDistance, formatDuration, formatPace, formatSwimPace } from '@/lib/format';
+import { cn } from '@/lib/utils';
 
-type Accent = "cyan" | "orange" | "violet" | "emerald" | "default";
+type Accent = 'cyan' | 'orange' | 'violet' | 'emerald' | 'default';
 
 // Largeur de grille calée sur le nombre de stats réellement affichées : évite
 // les cases vides quand une métrique est absente (ex. pas de cadence).
 const SM_COLS: Record<number, string> = {
-  1: "sm:grid-cols-1",
-  2: "sm:grid-cols-2",
-  3: "sm:grid-cols-3",
-  4: "sm:grid-cols-4",
+  1: 'sm:grid-cols-1',
+  2: 'sm:grid-cols-2',
+  3: 'sm:grid-cols-3',
+  4: 'sm:grid-cols-4',
 };
 
 export interface HeroActivity {
@@ -60,8 +55,7 @@ function formatSpeed(metersPerSec: number | null): string | null {
 }
 
 function buildSlots(activity: HeroActivity, stream: StreamStats | null): Slot[] {
-  const duration =
-    activity.duration != null ? formatDuration(activity.duration) : null;
+  const duration = activity.duration != null ? formatDuration(activity.duration) : null;
 
   switch (activity.type) {
     case ActivityType.RUN: {
@@ -69,25 +63,25 @@ function buildSlots(activity: HeroActivity, stream: StreamStats | null): Slot[] 
       const avgHr = m?.avgHr ?? stream?.avgHr ?? null;
       return [
         {
-          label: "Distance",
+          label: 'Distance',
           value: m?.distanceM != null ? formatDistance(m.distanceM) : null,
-          accent: "cyan",
+          accent: 'cyan',
         },
         {
-          label: "Allure",
+          label: 'Allure',
           value: m?.paceSecPerKm != null ? formatPace(m.paceSecPerKm) : null,
-          accent: "emerald",
+          accent: 'emerald',
         },
         {
-          label: "FC moy.",
+          label: 'FC moy.',
           value: avgHr != null ? `${avgHr} bpm` : null,
-          accent: "orange",
+          accent: 'orange',
           needsStream: m?.avgHr == null,
         },
         {
-          label: "Cadence",
+          label: 'Cadence',
           value: m?.cadence != null ? `${m.cadence} spm` : null,
-          accent: "violet",
+          accent: 'violet',
         },
       ];
     }
@@ -96,25 +90,22 @@ function buildSlots(activity: HeroActivity, stream: StreamStats | null): Slot[] 
       const elevation = activity.bikeMetrics?.elevationM ?? stream?.totalAscent;
       return [
         {
-          label: "Distance",
-          value:
-            stream?.totalDistance != null
-              ? formatDistance(stream.totalDistance)
-              : null,
-          accent: "cyan",
+          label: 'Distance',
+          value: stream?.totalDistance != null ? formatDistance(stream.totalDistance) : null,
+          accent: 'cyan',
           needsStream: true,
         },
-        { label: "Temps", value: duration, accent: "default" },
+        { label: 'Temps', value: duration, accent: 'default' },
         {
-          label: "Vitesse moy.",
+          label: 'Vitesse moy.',
           value: formatSpeed(stream?.avgSpeed ?? null),
-          accent: "emerald",
+          accent: 'emerald',
           needsStream: true,
         },
         {
-          label: "Dénivelé",
+          label: 'Dénivelé',
           value: elevation != null ? `${Math.round(elevation)} m` : null,
-          accent: "violet",
+          accent: 'violet',
           needsStream: activity.bikeMetrics?.elevationM == null,
         },
       ];
@@ -124,23 +115,20 @@ function buildSlots(activity: HeroActivity, stream: StreamStats | null): Slot[] 
       const m = activity.swimMetrics;
       return [
         {
-          label: "Distance",
+          label: 'Distance',
           value: m?.distanceM != null ? formatDistance(m.distanceM) : null,
-          accent: "cyan",
+          accent: 'cyan',
         },
-        { label: "Temps", value: duration, accent: "default" },
+        { label: 'Temps', value: duration, accent: 'default' },
         {
-          label: "Allure moy.",
-          value:
-            m?.avgPaceSecPer100m != null
-              ? formatSwimPace(m.avgPaceSecPer100m)
-              : null,
-          accent: "emerald",
+          label: 'Allure moy.',
+          value: m?.avgPaceSecPer100m != null ? formatSwimPace(m.avgPaceSecPer100m) : null,
+          accent: 'emerald',
         },
         {
-          label: "FC moy.",
+          label: 'FC moy.',
           value: stream?.avgHr != null ? `${stream.avgHr} bpm` : null,
-          accent: "orange",
+          accent: 'orange',
           needsStream: true,
         },
       ];
@@ -161,24 +149,19 @@ export function ActivityHeroStats({
   const { data, isLoading } = useActivityStream(activityId);
   const slots = buildSlots(activity, data?.stats ?? null);
 
-  const visible = slots.filter(
-    (slot) => slot.value != null || (slot.needsStream && isLoading),
-  );
+  const visible = slots.filter((slot) => slot.value != null || (slot.needsStream && isLoading));
 
   if (visible.length === 0) return null;
 
   return (
-    <div className={cn("grid grid-cols-2 gap-3", SM_COLS[visible.length] ?? "sm:grid-cols-4")}>
+    <div className={cn('grid grid-cols-2 gap-3', SM_COLS[visible.length] ?? 'sm:grid-cols-4')}>
       {visible.map((slot) => (
-        <div
-          key={slot.label}
-          className="rounded-2xl border border-border bg-card px-5 py-4"
-        >
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+        <div key={slot.label} className="border-border bg-card rounded-2xl border px-5 py-4">
+          <p className="text-muted-foreground text-[11px] font-medium tracking-[0.18em] uppercase">
             {slot.label}
           </p>
           {slot.value != null ? (
-            <p className="mt-1.5 font-mono text-3xl font-semibold tabular-nums text-foreground">
+            <p className="text-foreground mt-1.5 font-mono text-3xl font-semibold tabular-nums">
               {slot.value}
             </p>
           ) : (

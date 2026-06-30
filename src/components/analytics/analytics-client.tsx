@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { AnalyticsView } from "@/components/analytics/analytics-view";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useActivities } from "@/hooks/use-data";
+import { AnalyticsView } from '@/components/analytics/analytics-view';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useActivities } from '@/hooks/use-data';
 
 export function AnalyticsClient() {
   const { data, isLoading } = useActivities();

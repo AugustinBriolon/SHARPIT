@@ -1,5 +1,5 @@
-import { format, subDays } from "date-fns";
-import { fr } from "date-fns/locale";
+import { format, subDays } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 export interface HealthEntry {
   date: Date;
@@ -21,10 +21,10 @@ export interface HealthEntry {
 }
 
 export function formatSleep(minutes?: number | null): string {
-  if (minutes == null) return "—";
+  if (minutes == null) return '—';
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  return `${h}h${m.toString().padStart(2, "0")}`;
+  return `${h}h${m.toString().padStart(2, '0')}`;
 }
 
 export interface TrendStat {
@@ -40,25 +40,17 @@ function average(values: number[]): number | null {
 
 export function computeTrend(
   entries: HealthEntry[],
-  key: keyof Pick<
-    HealthEntry,
-    "hrv" | "restingHr" | "weightKg" | "sleepMinutes" | "recoveryScore"
-  >,
+  key: keyof Pick<HealthEntry, 'hrv' | 'restingHr' | 'weightKg' | 'sleepMinutes' | 'recoveryScore'>,
 ): TrendStat {
-  const sorted = [...entries].sort(
-    (a, b) => b.date.getTime() - a.date.getTime(),
-  );
-  const values = sorted
-    .map((e) => e[key])
-    .filter((v): v is number => v != null);
+  const sorted = [...entries].sort((a, b) => b.date.getTime() - a.date.getTime());
+  const values = sorted.map((e) => e[key]).filter((v): v is number => v != null);
 
   const latest = values[0] ?? null;
   const last7 = values.slice(0, 7);
   const prev7 = values.slice(7, 14);
   const avg7 = average(last7);
   const avgPrev = average(prev7);
-  const delta =
-    avg7 != null && avgPrev != null ? Number((avg7 - avgPrev).toFixed(1)) : null;
+  const delta = avg7 != null && avgPrev != null ? Number((avg7 - avgPrev).toFixed(1)) : null;
 
   return { latest, avg7: avg7 != null ? Number(avg7.toFixed(1)) : null, delta };
 }
@@ -72,31 +64,25 @@ export interface HealthChartPoint {
   sleepHours: number | null;
 }
 
-export function buildHealthSeries(
-  entries: HealthEntry[],
-  days = 60,
-): HealthChartPoint[] {
+export function buildHealthSeries(entries: HealthEntry[], days = 60): HealthChartPoint[] {
   const byDate = new Map<string, HealthEntry>();
   for (const entry of entries) {
-    byDate.set(format(entry.date, "yyyy-MM-dd"), entry);
+    byDate.set(format(entry.date, 'yyyy-MM-dd'), entry);
   }
 
   const series: HealthChartPoint[] = [];
   const today = new Date();
   for (let i = days - 1; i >= 0; i--) {
     const day = subDays(today, i);
-    const key = format(day, "yyyy-MM-dd");
+    const key = format(day, 'yyyy-MM-dd');
     const entry = byDate.get(key);
     series.push({
       date: key,
-      label: format(day, "d MMM", { locale: fr }),
+      label: format(day, 'd MMM', { locale: fr }),
       hrv: entry?.hrv ?? null,
       restingHr: entry?.restingHr ?? null,
       weightKg: entry?.weightKg ?? null,
-      sleepHours:
-        entry?.sleepMinutes != null
-          ? Number((entry.sleepMinutes / 60).toFixed(1))
-          : null,
+      sleepHours: entry?.sleepMinutes != null ? Number((entry.sleepMinutes / 60).toFixed(1)) : null,
     });
   }
 

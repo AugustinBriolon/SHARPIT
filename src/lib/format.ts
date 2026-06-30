@@ -1,56 +1,56 @@
-import { ActivityType } from "@prisma/client";
+import { ActivityType } from '@prisma/client';
 
 export function formatDuration(seconds?: number | null): string {
-  if (!seconds) return "—";
+  if (!seconds) return '—';
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
-  if (h > 0) return `${h}h${m.toString().padStart(2, "0")}`;
+  if (h > 0) return `${h}h${m.toString().padStart(2, '0')}`;
   return `${m} min`;
 }
 
 export function formatPace(secPerKm?: number | null): string {
-  if (!secPerKm) return "—";
+  if (!secPerKm) return '—';
   const m = Math.floor(secPerKm / 60);
   const s = Math.round(secPerKm % 60);
-  return `${m}'${s.toString().padStart(2, "0")}/km`;
+  return `${m}'${s.toString().padStart(2, '0')}/km`;
 }
 
 export function formatSwimPace(secPer100m?: number | null): string {
-  if (!secPer100m) return "—";
+  if (!secPer100m) return '—';
   const m = Math.floor(secPer100m / 60);
   const s = Math.round(secPer100m % 60);
-  return `${m}:${s.toString().padStart(2, "0")}/100m`;
+  return `${m}:${s.toString().padStart(2, '0')}/100m`;
 }
 
 export function formatDistance(meters?: number | null): string {
-  if (!meters) return "—";
+  if (!meters) return '—';
   if (meters >= 1000) return `${(meters / 1000).toFixed(2)} km`;
   return `${Math.round(meters)} m`;
 }
 
 export function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat("fr-FR", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
+  return new Intl.DateTimeFormat('fr-FR', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
   }).format(date);
 }
 
 export function formatDateTimeLocal(date: Date): string {
-  const pad = (n: number) => n.toString().padStart(2, "0");
+  const pad = (n: number) => n.toString().padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 export const activityTypeLabels: Record<ActivityType, string> = {
-  RUN: "Course",
-  BIKE: "Vélo",
-  SWIM: "Natation",
-  STRENGTH: "Musculation",
+  RUN: 'Course',
+  BIKE: 'Vélo',
+  SWIM: 'Natation',
+  STRENGTH: 'Musculation',
 };
 
 export const activityTypeColors: Record<ActivityType, string> = {
-  RUN: "text-orange-600",
-  BIKE: "text-emerald-600",
-  SWIM: "text-blue-600",
-  STRENGTH: "text-violet-600",
+  RUN: 'text-orange-600',
+  BIKE: 'text-emerald-600',
+  SWIM: 'text-blue-600',
+  STRENGTH: 'text-violet-600',
 };

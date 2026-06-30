@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { pushSessionToGoogleInBackground } from "@/lib/google-sync";
-import { createBrickSessions, getPlannedSessionById } from "@/lib/queries";
-import { createBrickSchema } from "@/lib/validators/planned-session";
+import { NextRequest, NextResponse } from 'next/server';
+import { pushSessionToGoogleInBackground } from '@/lib/google-sync';
+import { createBrickSessions, getPlannedSessionById } from '@/lib/queries';
+import { createBrickSchema } from '@/lib/validators/planned-session';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Données invalides", details: parsed.error.flatten() },
+        { error: 'Données invalides', details: parsed.error.flatten() },
         { status: 400 },
       );
     }
@@ -35,15 +35,10 @@ export async function POST(request: NextRequest) {
       pushSessionToGoogleInBackground(session);
     }
 
-    const fresh = await Promise.all(
-      created.map((s) => getPlannedSessionById(s.id)),
-    );
+    const fresh = await Promise.all(created.map((s) => getPlannedSessionById(s.id)));
     return NextResponse.json(fresh.filter(Boolean), { status: 201 });
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { error: "Impossible de créer le brick" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Impossible de créer le brick' }, { status: 500 });
   }
 }

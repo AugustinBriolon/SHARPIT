@@ -1,25 +1,21 @@
-import { prisma } from "@/lib/prisma";
+import { prisma } from '@/lib/prisma';
 import {
   analyzeActivityStreams,
   resolveThresholds,
   type ActivityAnalysis,
-} from "@/lib/activity-analysis";
-import { getAthleteProfile } from "@/lib/queries";
-import { fetchActivityStreams, type StravaStreamSet } from "@/lib/strava";
-import { getValidAccessToken } from "@/lib/strava-sync";
-import type { ActivityType } from "@prisma/client";
+} from '@/lib/activity-analysis';
+import {
+  fetchGarminActivityStreams,
+  rawStreamsHaveSignal,
+  type RawStreams,
+} from '@/lib/garmin-streams';
+import { getGarminClient } from '@/lib/garmin-sync';
+import { getAthleteProfile } from '@/lib/queries';
+import { fetchActivityStreams, type StravaStreamSet } from '@/lib/strava';
+import { getValidAccessToken } from '@/lib/strava-sync';
+import type { ActivityType } from '@prisma/client';
 
-/** Séries brutes stockées en base (résolution complète). */
-interface RawStreams {
-  time: number[];
-  distance: number[];
-  altitude: number[];
-  heartrate: number[];
-  watts: number[];
-  cadence: number[];
-  velocity: number[];
-  latlng: [number, number][];
-}
+export type { RawStreams };
 
 export interface StreamSample {
   t: number; // temps (s)
@@ -123,11 +119,7 @@ function buildPayload(
   },
   profile: Awaited<ReturnType<typeof getAthleteProfile>>,
 ): ActivityStreamPayload {
-  const length = Math.max(
-    raw.time.length,
-    raw.distance.length,
-    raw.latlng.length,
-  );
+  const length = Math.max(raw.time.length, raw.distance.length, raw.latlng.length);
 
   const has = {
     distance: hasSignal(raw.distance),
@@ -153,8 +145,7 @@ function buildPayload(
     speed: has.speed ? (raw.velocity[i] ?? null) : null,
   }));
 
-  const path =
-    raw.latlng.length > 0 ? downsample(raw.latlng, MAX_PATH_POINTS) : null;
+  const path = raw.latlng.length > 0 ? downsample(raw.latlng, MAX_PATH_POINTS) : null;
 
   const totalDistance = has.distance ? max(raw.distance) : null;
   const lastTime = raw.time.length ? max(raw.time) : null;
@@ -217,11 +208,51 @@ const UNAVAILABLE: ActivityStreamPayload = {
   analysis: null,
 };
 
+async function fetchRawStreams(activity: {
+  garminId: string | null;
+  stravaId: string | null;
+}): Promise<RawStreams | null> {
+  // Garmin en priorité (ressenti + source de vérité), Strava en complément streams.
+  if (activity.garminId) {
+    try {
+      const client = await getGarminClient();
+      const garmin = await fetchGarminActivityStreams(client, activity.garminId);
+      if (garmin && rawStreamsHaveSignal(garmin)) return garmin;
+    } catch (error) {
+      console.error('fetchRawStreams garmin', error);
+    }
+  }
+
+  if (activity.stravaId) {
+    try {
+      const token = await getValidAccessToken();
+      const set = await fetchActivityStreams(token, activity.stravaId);
+      if (set) return normalizeStravaStreams(set);
+    } catch (error) {
+      console.error('fetchRawStreams strava', error);
+      throw error;
+    }
+  }
+
+  return null;
+}
+
+async function persistStream(activityId: string, raw: RawStreams | null): Promise<boolean> {
+  const available = raw != null && rawStreamsHaveSignal(raw);
+  await prisma.activityStream.create({
+    data: {
+      activityId,
+      available,
+      data: raw ? (raw as unknown as object) : undefined,
+    },
+  });
+  return available;
+}
+
 /**
  * Renvoie les streams d'une activité (carte + graphes), en les récupérant
- * depuis Strava à la première demande puis en les mettant en cache en base.
- * Les erreurs transitoires (réseau, rate-limit, token) renvoient `null` sans
- * cacher, pour autoriser une nouvelle tentative plus tard.
+ * depuis Garmin ou Strava à la première demande puis en les mettant en cache.
+ * Les erreurs transitoires renvoient `null` sans cacher, pour autoriser une retry.
  */
 export async function getActivityStreams(
   activityId: string,
@@ -242,16 +273,18 @@ export async function getActivityStreams(
   };
 
   if (activity.stream) {
-    if (!activity.stream.available || !activity.stream.data) return UNAVAILABLE;
-    return buildPayload(
-      activity.stream.data as unknown as RawStreams,
-      activityCtx,
-      profile,
-    );
+    if (activity.stream.available && activity.stream.data) {
+      return buildPayload(activity.stream.data as unknown as RawStreams, activityCtx, profile);
+    }
+    // Cache « indisponible » avant liaison Garmin : retenter le fetch.
+    if (activity.garminId) {
+      await prisma.activityStream.delete({ where: { id: activity.stream.id } });
+    } else {
+      return UNAVAILABLE;
+    }
   }
 
-  // Pas de source Strava : aucune donnée détaillée possible, on cache l'absence.
-  if (!activity.stravaId) {
+  if (!activity.garminId && !activity.stravaId) {
     await prisma.activityStream.create({
       data: { activityId, available: false },
     });
@@ -259,36 +292,21 @@ export async function getActivityStreams(
   }
 
   try {
-    const token = await getValidAccessToken();
-    const set = await fetchActivityStreams(token, activity.stravaId);
-
-    if (!set) {
-      await prisma.activityStream.create({
-        data: { activityId, available: false },
-      });
-      return UNAVAILABLE;
-    }
-
-    const raw = normalizeStravaStreams(set);
-    const available =
-      raw.latlng.length > 0 ||
-      hasSignal(raw.heartrate) ||
-      hasSignal(raw.watts) ||
-      hasSignal(raw.altitude);
-
-    await prisma.activityStream.create({
-      data: {
-        activityId,
-        available,
-        data: raw as unknown as object,
-      },
-    });
-
-    return available
-      ? buildPayload(raw, activityCtx, profile)
-      : UNAVAILABLE;
+    const raw = await fetchRawStreams(activity);
+    const available = await persistStream(activityId, raw);
+    return available && raw ? buildPayload(raw, activityCtx, profile) : UNAVAILABLE;
   } catch (error) {
-    console.error("getActivityStreams", error);
+    console.error('getActivityStreams', error);
     return null;
   }
+}
+
+/** Utilitaire backfill : récupère et persiste les streams d'une activité. */
+export async function fetchAndCacheActivityStreams(
+  activityId: string,
+  sources: { garminId: string | null; stravaId: string | null },
+): Promise<{ available: boolean; raw: RawStreams | null }> {
+  const raw = await fetchRawStreams(sources);
+  const available = await persistStream(activityId, raw);
+  return { available, raw };
 }

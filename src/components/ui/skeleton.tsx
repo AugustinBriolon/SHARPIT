@@ -1,9 +1,9 @@
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
 export function Skeleton({ className }: { className?: string }) {
   return (
     <div
-      className={cn("animate-pulse rounded-xl border border-border/60 bg-muted/60", className)}
+      className={cn('border-border/60 bg-muted/60 animate-pulse rounded-xl border', className)}
       aria-hidden
     />
   );

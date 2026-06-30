@@ -1,38 +1,38 @@
-import { cookies } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { exchangeCodeForToken } from "@/lib/strava";
+import { cookies } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { exchangeCodeForToken } from '@/lib/strava';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const code = searchParams.get("code");
-  const state = searchParams.get("state");
-  const error = searchParams.get("error");
+  const code = searchParams.get('code');
+  const state = searchParams.get('state');
+  const error = searchParams.get('error');
 
-  const settingsUrl = new URL("/settings", request.url);
+  const settingsUrl = new URL('/settings', request.url);
 
   if (error) {
-    settingsUrl.searchParams.set("strava", "denied");
+    settingsUrl.searchParams.set('strava', 'denied');
     return NextResponse.redirect(settingsUrl);
   }
 
   const cookieStore = await cookies();
-  const storedState = cookieStore.get("strava_oauth_state")?.value;
-  cookieStore.delete("strava_oauth_state");
+  const storedState = cookieStore.get('strava_oauth_state')?.value;
+  cookieStore.delete('strava_oauth_state');
 
   if (!code || !state || state !== storedState) {
-    settingsUrl.searchParams.set("strava", "invalid_state");
+    settingsUrl.searchParams.set('strava', 'invalid_state');
     return NextResponse.redirect(settingsUrl);
   }
 
   try {
     const token = await exchangeCodeForToken(code);
-    const athlete = token.athlete;
+    const { athlete } = token;
 
     if (!athlete) {
-      settingsUrl.searchParams.set("strava", "no_athlete");
+      settingsUrl.searchParams.set('strava', 'no_athlete');
       return NextResponse.redirect(settingsUrl);
     }
 
@@ -47,16 +47,16 @@ export async function GET(request: NextRequest) {
     };
 
     await prisma.stravaAccount.upsert({
-      where: { id: "default" },
-      create: { id: "default", ...data },
+      where: { id: 'default' },
+      create: { id: 'default', ...data },
       update: data,
     });
 
-    settingsUrl.searchParams.set("strava", "connected");
+    settingsUrl.searchParams.set('strava', 'connected');
     return NextResponse.redirect(settingsUrl);
   } catch (err) {
     console.error(err);
-    settingsUrl.searchParams.set("strava", "error");
+    settingsUrl.searchParams.set('strava', 'error');
     return NextResponse.redirect(settingsUrl);
   }
 }

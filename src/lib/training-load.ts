@@ -1,4 +1,4 @@
-import { endOfDay, startOfDay, subDays } from "date-fns";
+import { endOfDay, startOfDay, subDays } from 'date-fns';
 
 export function computeTrainingLoad(
   activities: { load: number | null; date: Date }[],
@@ -22,9 +22,9 @@ export function computeTrainingLoad(
       .reduce((sum, a) => sum + (a.load ?? 0), 0) / 6 || 0;
   const acwr = chronicLoad > 0 ? acuteLoad / chronicLoad : 0;
 
-  let fatigue: "Low" | "Medium" | "High" = "Low";
-  if (acwr >= 1.3) fatigue = "High";
-  else if (acwr >= 0.9) fatigue = "Medium";
+  let fatigue: 'Low' | 'Medium' | 'High' = 'Low';
+  if (acwr >= 1.3) fatigue = 'High';
+  else if (acwr >= 0.9) fatigue = 'Medium';
 
   return {
     weeklyLoad: Math.round(acuteLoad),

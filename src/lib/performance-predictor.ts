@@ -1,4 +1,4 @@
-import type { PowerCurvePoint, RunBestCategory } from "./records";
+import type { PowerCurvePoint, RunBestCategory } from './records';
 
 /**
  * Prédiction de performance & estimation des seuils à partir des records déjà
@@ -14,10 +14,10 @@ const RIEGEL_EXPONENT = 1.06;
 
 /** Distances cibles standard pour les prédictions de course (mètres). */
 const RACE_TARGETS: { meters: number; label: string }[] = [
-  { meters: 5000, label: "5 km" },
-  { meters: 10000, label: "10 km" },
-  { meters: 21097, label: "Semi" },
-  { meters: 42195, label: "Marathon" },
+  { meters: 5000, label: '5 km' },
+  { meters: 10000, label: '10 km' },
+  { meters: 21097, label: 'Semi' },
+  { meters: 42195, label: 'Marathon' },
 ];
 
 function fmtTime(sec: number): string {
@@ -25,15 +25,15 @@ function fmtTime(sec: number): string {
   const m = Math.floor((sec % 3600) / 60);
   const s = Math.round(sec % 60);
   if (h > 0) {
-    return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   }
-  return `${m}:${String(s).padStart(2, "0")}`;
+  return `${m}:${String(s).padStart(2, '0')}`;
 }
 
 export function fmtPaceSecPerKm(secPerKm: number): string {
   const m = Math.floor(secPerKm / 60);
   const s = Math.round(secPerKm % 60);
-  return `${m}:${String(s).padStart(2, "0")}/km`;
+  return `${m}:${String(s).padStart(2, '0')}/km`;
 }
 
 interface RunReference {
@@ -43,7 +43,7 @@ interface RunReference {
 }
 
 /** Niveau de confiance selon l'écart entre la distance de référence et la cible. */
-export type PredictionConfidence = "high" | "medium" | "low";
+export type PredictionConfidence = 'high' | 'medium' | 'low';
 
 export interface RunPrediction {
   meters: number;
@@ -60,7 +60,7 @@ export interface RunPrediction {
 function collectRunReferences(runBests: RunBestCategory[]): RunReference[] {
   return runBests
     .map((cat) => {
-      const best = cat.entries[0];
+      const [best] = cat.entries;
       if (!best || best.value <= 0) return null;
       return { meters: cat.meters, seconds: best.value, label: cat.label };
     })
@@ -70,9 +70,9 @@ function collectRunReferences(runBests: RunBestCategory[]): RunReference[] {
 
 function confidenceFromRatio(ratio: number): PredictionConfidence {
   const r = ratio >= 1 ? ratio : 1 / ratio;
-  if (r <= 1.6) return "high";
-  if (r <= 3) return "medium";
-  return "low";
+  if (r <= 1.6) return 'high';
+  if (r <= 3) return 'medium';
+  return 'low';
 }
 
 /**
@@ -86,8 +86,7 @@ export function predictRunRaces(runBests: RunBestCategory[]): RunPrediction[] {
 
   return RACE_TARGETS.map(({ meters, label }) => {
     const ref = refs.reduce((best, cur) =>
-      Math.abs(Math.log(cur.meters / meters)) <
-      Math.abs(Math.log(best.meters / meters))
+      Math.abs(Math.log(cur.meters / meters)) < Math.abs(Math.log(best.meters / meters))
         ? cur
         : best,
     );
@@ -113,17 +112,14 @@ export function predictRunRaces(runBests: RunBestCategory[]): RunPrediction[] {
  * On extrapole la distance couverte en 3600 s depuis la meilleure référence,
  * puis on en déduit l'allure.
  */
-export function estimateRunThresholdPace(
-  runBests: RunBestCategory[],
-): number | null {
+export function estimateRunThresholdPace(runBests: RunBestCategory[]): number | null {
   const refs = collectRunReferences(runBests);
   if (refs.length === 0) return null;
 
   // Référence la plus proche d'un effort d'1 h (la plus longue est la plus
   // représentative du seuil).
   const ref = refs[refs.length - 1];
-  const distanceIn1h =
-    ref.meters * (3600 / ref.seconds) ** (1 / RIEGEL_EXPONENT);
+  const distanceIn1h = ref.meters * (3600 / ref.seconds) ** (1 / RIEGEL_EXPONENT);
   if (distanceIn1h <= 0) return null;
   return Math.round((3600 / distanceIn1h) * 1000);
 }
@@ -135,10 +131,10 @@ export interface FtpEstimate {
 
 /** Facteur appliqué au meilleur effort d'une durée pour estimer la FTP. */
 const FTP_FACTORS: { seconds: number; factor: number; label: string }[] = [
-  { seconds: 3600, factor: 0.97, label: "meilleur 60 min" },
-  { seconds: 1800, factor: 0.95, label: "meilleur 30 min" },
-  { seconds: 1200, factor: 0.95, label: "meilleur 20 min" },
-  { seconds: 600, factor: 0.9, label: "meilleur 10 min" },
+  { seconds: 3600, factor: 0.97, label: 'meilleur 60 min' },
+  { seconds: 1800, factor: 0.95, label: 'meilleur 30 min' },
+  { seconds: 1200, factor: 0.95, label: 'meilleur 20 min' },
+  { seconds: 600, factor: 0.9, label: 'meilleur 10 min' },
 ];
 
 /** Estime la FTP vélo depuis la courbe de puissance (meilleure source dispo). */

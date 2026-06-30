@@ -1,4 +1,4 @@
-import type { User } from "@clerk/backend";
+import type { User } from '@clerk/backend';
 
 /**
  * App mono-utilisateur : seuls les emails listés dans ALLOWED_EMAILS
@@ -9,8 +9,8 @@ import type { User } from "@clerk/backend";
  * mais pense à le renseigner ensuite).
  */
 export function getAllowedEmails(): string[] {
-  return (process.env.ALLOWED_EMAILS ?? "")
-    .split(",")
+  return (process.env.ALLOWED_EMAILS ?? '')
+    .split(',')
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
 }
@@ -21,8 +21,6 @@ export function isAllowedUser(user: User | null): boolean {
   const allowed = getAllowedEmails();
   if (allowed.length === 0) return true; // pas de restriction configurée
 
-  const emails = user.emailAddresses.map((e) =>
-    e.emailAddress.toLowerCase(),
-  );
+  const emails = user.emailAddresses.map((e) => e.emailAddress.toLowerCase());
   return emails.some((email) => allowed.includes(email));
 }

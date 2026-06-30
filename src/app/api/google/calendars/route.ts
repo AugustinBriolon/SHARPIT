@@ -1,14 +1,11 @@
-import { NextResponse } from "next/server";
-import { getGoogleAccount, listGoogleCalendars } from "@/lib/google-sync";
+import { NextResponse } from 'next/server';
+import { getGoogleAccount, listGoogleCalendars } from '@/lib/google-sync';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const [calendars, account] = await Promise.all([
-      listGoogleCalendars(),
-      getGoogleAccount(),
-    ]);
+    const [calendars, account] = await Promise.all([listGoogleCalendars(), getGoogleAccount()]);
     const hidden = new Set(account?.hiddenCalendarIds ?? []);
     const targetId = account?.targetCalendarId ?? null;
     return NextResponse.json(
@@ -24,7 +21,7 @@ export async function GET() {
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { error: "Impossible de récupérer les calendriers Google" },
+      { error: 'Impossible de récupérer les calendriers Google' },
       { status: 500 },
     );
   }

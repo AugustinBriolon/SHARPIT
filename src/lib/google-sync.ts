@@ -1,5 +1,5 @@
-import type { PlannedSession } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import type { PlannedSession } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import {
   createEvent,
   deleteEvent,
@@ -9,9 +9,9 @@ import {
   refreshAccessToken,
   updateEvent,
   type BusyInterval,
-} from "@/lib/google";
+} from '@/lib/google';
 
-const ACCOUNT_ID = "default";
+const ACCOUNT_ID = 'default';
 
 // Fenêtre horaire par défaut pour caser une séance (heure locale).
 const DAY_START_MIN = 6 * 60; // 06:00
@@ -20,10 +20,10 @@ const DEFAULT_DURATION_MIN = 60;
 const SLOT_STEP_MIN = 15;
 
 const TYPE_LABELS: Record<string, string> = {
-  RUN: "Course",
-  BIKE: "Vélo",
-  SWIM: "Natation",
-  STRENGTH: "Renfo",
+  RUN: 'Course',
+  BIKE: 'Vélo',
+  SWIM: 'Natation',
+  STRENGTH: 'Renfo',
 };
 
 export async function getGoogleAccount() {
@@ -39,10 +39,7 @@ export async function disconnectGoogle() {
   });
 }
 
-export async function setTargetCalendar(
-  calendarId: string | null,
-  calendarName: string | null,
-) {
+export async function setTargetCalendar(calendarId: string | null, calendarName: string | null) {
   return prisma.googleAccount.update({
     where: { id: ACCOUNT_ID },
     data: { targetCalendarId: calendarId, targetCalendarName: calendarName },
@@ -52,7 +49,7 @@ export async function setTargetCalendar(
 export async function setHiddenCalendars(ids: string[]) {
   const account = await getGoogleAccount();
   if (!account) {
-    throw new Error("Compte Google non connecté");
+    throw new Error('Compte Google non connecté');
   }
   return prisma.googleAccount.update({
     where: { id: ACCOUNT_ID },
@@ -62,7 +59,7 @@ export async function setHiddenCalendars(ids: string[]) {
 
 export async function getValidAccessToken() {
   const account = await getGoogleAccount();
-  if (!account) throw new Error("Compte Google non connecté");
+  if (!account) throw new Error('Compte Google non connecté');
 
   const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
   if (!expiresSoon) return account.accessToken;
@@ -74,9 +71,7 @@ export async function getValidAccessToken() {
       accessToken: refreshed.access_token,
       expiresAt: new Date(Date.now() + refreshed.expires_in * 1000),
       // Google ne renvoie pas toujours un nouveau refresh_token : on garde l'ancien.
-      ...(refreshed.refresh_token
-        ? { refreshToken: refreshed.refresh_token }
-        : {}),
+      ...(refreshed.refresh_token ? { refreshToken: refreshed.refresh_token } : {}),
     },
   });
   return refreshed.access_token;
@@ -92,34 +87,31 @@ export async function listGoogleCalendars() {
 /** Clé jour "YYYY-MM-DD" à partir des composantes UTC de la date (stockée en @db.Date). */
 function dayKeyFromDate(date: Date): string {
   const y = date.getUTCFullYear();
-  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const d = String(date.getUTCDate()).padStart(2, "0");
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
 }
 
 /** Composantes (jour local + minutes) d'un instant dans un fuseau donné. */
-function zonedDayAndMinutes(
-  instant: Date,
-  timeZone: string,
-): { dayKey: string; minutes: number } {
-  const parts = new Intl.DateTimeFormat("en-CA", {
+function zonedDayAndMinutes(instant: Date, timeZone: string): { dayKey: string; minutes: number } {
+  const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
     hour12: false,
   }).formatToParts(instant);
-  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "00";
-  const dayKey = `${get("year")}-${get("month")}-${get("day")}`;
-  const minutes = Number(get("hour")) * 60 + Number(get("minute"));
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '00';
+  const dayKey = `${get('year')}-${get('month')}-${get('day')}`;
+  const minutes = Number(get('hour')) * 60 + Number(get('minute'));
   return { dayKey, minutes };
 }
 
 function minutesToHHmm(minutes: number): string {
-  const hh = String(Math.floor(minutes / 60)).padStart(2, "0");
-  const mm = String(minutes % 60).padStart(2, "0");
+  const hh = String(Math.floor(minutes / 60)).padStart(2, '0');
+  const mm = String(minutes % 60).padStart(2, '0');
   return `${hh}:${mm}`;
 }
 
@@ -145,14 +137,9 @@ export function findFreeSlot(
   }
   intervals.sort((a, b) => a[0] - b[0]);
 
-  const overlaps = (s: number, e: number) =>
-    intervals.some(([bs, be]) => s < be && e > bs);
+  const overlaps = (s: number, e: number) => intervals.some(([bs, be]) => s < be && e > bs);
 
-  for (
-    let start = DAY_START_MIN;
-    start + durationMin <= DAY_END_MIN;
-    start += SLOT_STEP_MIN
-  ) {
+  for (let start = DAY_START_MIN; start + durationMin <= DAY_END_MIN; start += SLOT_STEP_MIN) {
     if (!overlaps(start, start + durationMin)) {
       return minutesToHHmm(start);
     }
@@ -175,16 +162,13 @@ interface PushResult {
  * dans le calendrier cible. Choisit automatiquement un créneau libre si l'heure
  * n'est pas déjà fixée. Met à jour la séance en base (googleEventId, startTime).
  */
-export async function pushSessionToGoogle(
-  session: PlannedSession,
-): Promise<PushResult> {
+export async function pushSessionToGoogle(session: PlannedSession): Promise<PushResult> {
   const account = await getGoogleAccount();
-  if (!account) return { synced: false, reason: "not_connected" };
-  if (!account.targetCalendarId)
-    return { synced: false, reason: "no_target_calendar" };
+  if (!account) return { synced: false, reason: 'not_connected' };
+  if (!account.targetCalendarId) return { synced: false, reason: 'no_target_calendar' };
 
   const token = await getValidAccessToken();
-  const timeZone = account.timeZone;
+  const { timeZone } = account;
   const duration = session.durationMin ?? DEFAULT_DURATION_MIN;
   const dayKey = dayKeyFromDate(session.date);
 
@@ -201,12 +185,12 @@ export async function pushSessionToGoogle(
       calendarIds = [account.targetCalendarId];
     }
     const busy = await getFreeBusy(token, start, end, calendarIds);
-    startTime = findFreeSlot(dayKey, duration, busy, timeZone) ?? "07:00";
+    startTime = findFreeSlot(dayKey, duration, busy, timeZone) ?? '07:00';
   }
 
   const startMin = Number(startTime.slice(0, 2)) * 60 + Number(startTime.slice(3, 5));
   const endMin = startMin + duration;
-  const summary = `[${TYPE_LABELS[session.type] ?? session.type}] ${session.title ?? "Séance"}`;
+  const summary = `[${TYPE_LABELS[session.type] ?? session.type}] ${session.title ?? 'Séance'}`;
   const input = {
     summary,
     description: session.description,
@@ -235,12 +219,12 @@ export async function pushSessionToGoogle(
 /** Push Google en arrière-plan (ne bloque pas l'outil coach ni l'API). */
 export function pushSessionToGoogleInBackground(session: PlannedSession): void {
   void pushSessionToGoogle(session).catch((error) => {
-    console.error("Push Google Calendar échoué", error);
+    console.error('Push Google Calendar échoué', error);
   });
 }
 
 export async function deleteSessionFromGoogle(
-  session: Pick<PlannedSession, "googleEventId">,
+  session: Pick<PlannedSession, 'googleEventId'>,
 ): Promise<void> {
   if (!session.googleEventId) return;
   const account = await getGoogleAccount();
@@ -267,10 +251,10 @@ export interface GooglePullResult {
 export async function syncFromGoogle(): Promise<GooglePullResult> {
   const account = await getGoogleAccount();
   if (!account?.targetCalendarId) {
-    throw new Error("Aucun calendrier cible sélectionné");
+    throw new Error('Aucun calendrier cible sélectionné');
   }
   const token = await getValidAccessToken();
-  const timeZone = account.timeZone;
+  const { timeZone } = account;
 
   const now = new Date();
   const from = new Date(now.getTime() - 7 * 86400_000);
@@ -288,7 +272,7 @@ export async function syncFromGoogle(): Promise<GooglePullResult> {
       const result = await pushSessionToGoogle(session);
       if (result.synced) pushed += 1;
     } catch (error) {
-      console.error("Push séance vers Google échoué", error);
+      console.error('Push séance vers Google échoué', error);
     }
   }
 
@@ -308,7 +292,7 @@ export async function syncFromGoogle(): Promise<GooglePullResult> {
     if (!session.googleEventId) continue;
     const event = eventById.get(session.googleEventId);
 
-    if (!event || event.status === "cancelled") {
+    if (!event || event.status === 'cancelled') {
       await prisma.plannedSession.update({
         where: { id: session.id },
         data: { googleEventId: null },
@@ -324,8 +308,7 @@ export async function syncFromGoogle(): Promise<GooglePullResult> {
     const newDate = new Date(`${dayKey}T12:00:00Z`);
     const newStartTime = event.start?.dateTime ? minutesToHHmm(minutes) : null;
 
-    const dateChanged =
-      dayKeyFromDate(session.date) !== dayKey;
+    const dateChanged = dayKeyFromDate(session.date) !== dayKey;
     const timeChanged = session.startTime !== newStartTime;
 
     if (dateChanged || timeChanged) {
@@ -364,10 +347,7 @@ export interface CalendarEventView {
  * déjà représenté par les séances planifiées) sur une période, pour les afficher
  * dans la page Calendrier et visualiser les occupations perso.
  */
-export async function getCalendarEvents(
-  from: Date,
-  to: Date,
-): Promise<CalendarEventView[]> {
+export async function getCalendarEvents(from: Date, to: Date): Promise<CalendarEventView[]> {
   const account = await getGoogleAccount();
   if (!account) return [];
   const token = await getValidAccessToken();
@@ -384,7 +364,7 @@ export async function getCalendarEvents(
       try {
         const events = await listEvents(token, cal.id, from, to);
         for (const e of events) {
-          if (e.status === "cancelled") continue;
+          if (e.status === 'cancelled') continue;
           const startIso = e.start?.dateTime ?? e.start?.date;
           const endIso = e.end?.dateTime ?? e.end?.date;
           if (!startIso) continue;
@@ -393,7 +373,7 @@ export async function getCalendarEvents(
             calendarId: cal.id,
             calendarName: cal.summary,
             color: cal.backgroundColor ?? null,
-            summary: e.summary ?? "(sans titre)",
+            summary: e.summary ?? '(sans titre)',
             start: startIso,
             end: endIso ?? startIso,
             allDay: !e.start?.dateTime,
@@ -408,9 +388,9 @@ export async function getCalendarEvents(
 }
 
 /** Intervalles occupés à venir, résumés pour le contexte du coach. */
-export async function getUpcomingBusy(days = 21): Promise<
-  Array<{ dayKey: string; start: string; end: string }>
-> {
+export async function getUpcomingBusy(
+  days = 21,
+): Promise<Array<{ dayKey: string; start: string; end: string }>> {
   const account = await getGoogleAccount();
   if (!account) return [];
   const token = await getValidAccessToken();
@@ -431,7 +411,7 @@ export async function getUpcomingBusy(days = 21): Promise<
     return {
       dayKey: s.dayKey,
       start: minutesToHHmm(s.minutes),
-      end: e.dayKey === s.dayKey ? minutesToHHmm(e.minutes) : "24:00",
+      end: e.dayKey === s.dayKey ? minutesToHHmm(e.minutes) : '24:00',
     };
   });
 }

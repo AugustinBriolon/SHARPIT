@@ -1,30 +1,30 @@
-"use client";
+'use client';
 
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-import { CalendarRange, Check, Loader2 } from "lucide-react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { CalendarRange, Check, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import type { ClientGoal, ClientTrainingPlan } from "@/lib/client/types";
-import { phaseColors, phaseLabels } from "@/lib/periodization";
-import { useTrainingPlan, useTrainingPlanMutations } from "@/hooks/use-data";
+} from '@/components/ui/select';
+import type { ClientGoal, ClientTrainingPlan } from '@/lib/client/types';
+import { phaseColors, phaseLabels } from '@/lib/periodization';
+import { useTrainingPlan, useTrainingPlanMutations } from '@/hooks/use-data';
 
-const NO_GOAL = "none";
+const NO_GOAL = 'none';
 
 interface MacroPlanDialogProps {
   goals: ClientGoal[];
@@ -51,7 +51,7 @@ export function MacroPlanDialog({ goals, onClose }: MacroPlanDialogProps) {
     try {
       await generate.mutateAsync(goalId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur");
+      setError(err instanceof Error ? err.message : 'Erreur');
     }
   }
 
@@ -61,7 +61,7 @@ export function MacroPlanDialog({ goals, onClose }: MacroPlanDialogProps) {
     try {
       await archive.mutateAsync(activePlan.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur");
+      setError(err instanceof Error ? err.message : 'Erreur');
     }
   }
 
@@ -70,22 +70,17 @@ export function MacroPlanDialog({ goals, onClose }: MacroPlanDialogProps) {
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CalendarRange className="size-4 text-primary" />
+            <CalendarRange className="text-primary size-4" />
             Macro-plan périodisé
           </DialogTitle>
           <DialogDescription>
-            Génère un plan multi-semaines (base → développement → spécifique →
-            affûtage) calibré sur ta CTL actuelle, jusqu&apos;à la date de ton
-            objectif.
+            Génère un plan multi-semaines (base → développement → spécifique → affûtage) calibré sur
+            ta CTL actuelle, jusqu&apos;à la date de ton objectif.
           </DialogDescription>
         </DialogHeader>
 
         {activePlan ? (
-          <ActivePlanView
-            plan={activePlan}
-            onArchive={handleArchive}
-            isArchiving={isArchiving}
-          />
+          <ActivePlanView isArchiving={isArchiving} plan={activePlan} onArchive={handleArchive} />
         ) : (
           <div className="space-y-4">
             <div className="space-y-2">
@@ -94,9 +89,8 @@ export function MacroPlanDialog({ goals, onClose }: MacroPlanDialogProps) {
                 <SelectTrigger>
                   <SelectValue>
                     {goalId === NO_GOAL
-                      ? "Choisir un objectif…"
-                      : (datedGoals.find((g) => g.id === goalId)?.title ??
-                        "Choisir")}
+                      ? 'Choisir un objectif…'
+                      : (datedGoals.find((g) => g.id === goalId)?.title ?? 'Choisir')}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -109,8 +103,8 @@ export function MacroPlanDialog({ goals, onClose }: MacroPlanDialogProps) {
                       <SelectItem key={g.id} value={g.id}>
                         {g.title}
                         {g.targetDate
-                          ? ` — ${format(new Date(g.targetDate as unknown as string), "d MMM yyyy", { locale: fr })}`
-                          : ""}
+                          ? ` — ${format(new Date(g.targetDate as unknown as string), 'd MMM yyyy', { locale: fr })}`
+                          : ''}
                       </SelectItem>
                     ))
                   )}
@@ -118,25 +112,20 @@ export function MacroPlanDialog({ goals, onClose }: MacroPlanDialogProps) {
               </Select>
             </div>
 
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
-            )}
+            {error && <p className="text-destructive text-sm">{error}</p>}
 
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={onClose}>
                 Fermer
               </Button>
-              <Button
-                onClick={handleGenerate}
-                disabled={isGenerating || goalId === NO_GOAL}
-              >
+              <Button disabled={isGenerating || goalId === NO_GOAL} onClick={handleGenerate}>
                 {isGenerating ? (
                   <>
                     <Loader2 className="size-4 animate-spin" />
                     Génération…
                   </>
                 ) : (
-                  "Générer le macro-plan"
+                  'Générer le macro-plan'
                 )}
               </Button>
             </div>
@@ -159,7 +148,7 @@ function ActivePlanView({
   return (
     <div className="space-y-4">
       {plan.summary && (
-        <p className="rounded-md border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
+        <p className="border-primary/20 bg-primary/5 text-muted-foreground rounded-md border p-3 text-sm">
           {plan.summary}
         </p>
       )}
@@ -170,15 +159,13 @@ function ActivePlanView({
           return (
             <div
               key={w.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-card/40 px-3 py-2"
+              className="border-border/50 bg-card/40 flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
             >
               <div className="min-w-0">
                 <p className="text-sm font-medium">
-                  {format(new Date(w.weekStart), "d MMM yyyy", { locale: fr })}
+                  {format(new Date(w.weekStart), 'd MMM yyyy', { locale: fr })}
                 </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {w.focus}
-                </p>
+                <p className="text-muted-foreground truncate text-xs">{w.focus}</p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <span
@@ -186,29 +173,23 @@ function ActivePlanView({
                   style={{ backgroundColor: `${accent}22`, color: accent }}
                 >
                   {phaseLabels[w.phase]}
-                  {w.isDeload ? " · deload" : ""}
+                  {w.isDeload ? ' · deload' : ''}
                 </span>
-                <span className="font-mono text-xs text-muted-foreground">
-                  {w.targetLoad} TSS
-                </span>
+                <span className="text-muted-foreground font-mono text-xs">{w.targetLoad} TSS</span>
               </div>
             </div>
           );
         })}
       </div>
 
-      <p className="text-xs text-muted-foreground">
-        Utilise « Générer ma semaine » pour remplir chaque semaine selon la
-        charge cible. Les phases s&apos;affichent sur le planning.
+      <p className="text-muted-foreground text-xs">
+        Utilise « Générer ma semaine » pour remplir chaque semaine selon la charge cible. Les phases
+        s&apos;affichent sur le planning.
       </p>
 
       <div className="flex justify-end">
-        <Button variant="outline" onClick={onArchive} disabled={isArchiving}>
-          {isArchiving ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Check className="size-4" />
-          )}
+        <Button disabled={isArchiving} variant="outline" onClick={onArchive}>
+          {isArchiving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
           Archiver ce plan
         </Button>
       </div>

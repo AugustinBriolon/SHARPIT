@@ -1,29 +1,20 @@
-"use client";
+'use client';
 
-import { ActivityType } from "@prisma/client";
-import { MapPin } from "lucide-react";
-import { ActivityCharts } from "@/components/training/activity-charts";
-import { CombinedChart } from "@/components/training/combined-chart";
-import {
-  PerformanceMetrics,
-  ThresholdsHint,
-} from "@/components/training/performance-metrics";
-import { RouteMap } from "@/components/training/route-map";
-import { SplitsTable } from "@/components/training/splits-table";
-import { ZoneDistribution } from "@/components/training/zone-distribution";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useActivityStream } from "@/hooks/use-data";
-import type { ZoneBucket } from "@/lib/activity-analysis";
-import { cn } from "@/lib/utils";
+import { ActivityType } from '@prisma/client';
+import { MapPin } from 'lucide-react';
+import { ActivityCharts } from '@/components/training/activity-charts';
+import { CombinedChart } from '@/components/training/combined-chart';
+import { PerformanceMetrics, ThresholdsHint } from '@/components/training/performance-metrics';
+import { RouteMap } from '@/components/training/route-map';
+import { SplitsTable } from '@/components/training/splits-table';
+import { ZoneDistribution } from '@/components/training/zone-distribution';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useActivityStream } from '@/hooks/use-data';
+import type { ZoneBucket } from '@/lib/activity-analysis';
+import { cn } from '@/lib/utils';
 
-export function ActivityInsights({
-  activityId,
-  type,
-}: {
-  activityId: string;
-  type: ActivityType;
-}) {
+export function ActivityInsights({ activityId, type }: { activityId: string; type: ActivityType }) {
   const { data, isLoading, isError } = useActivityStream(activityId);
 
   if (isLoading) {
@@ -46,9 +37,9 @@ export function ActivityInsights({
   if (isError) {
     return (
       <Card>
-        <CardContent className="py-6 text-sm text-muted-foreground">
-          Données détaillées indisponibles pour le moment (Strava non connecté ou
-          quota atteint). Réessaie plus tard.
+        <CardContent className="text-muted-foreground py-6 text-sm">
+          Données détaillées indisponibles pour le moment (pas de trace GPS ni capteurs sur cette
+          séance, ou synchronisation Garmin en cours). Réessaie plus tard.
         </CardContent>
       </Card>
     );
@@ -57,7 +48,7 @@ export function ActivityInsights({
   if (!data || !data.available) {
     return (
       <Card>
-        <CardContent className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+        <CardContent className="text-muted-foreground flex items-center gap-2 py-6 text-sm">
           <MapPin className="size-4" />
           Pas de données GPS ni de capteurs pour cette séance.
         </CardContent>
@@ -85,32 +76,32 @@ export function ActivityInsights({
           <ThresholdsHint analysis={analysis} />
 
           <ZoneSection
-            hrZones={hrZones}
-            powerZones={powerZones}
-            lthr={analysis.thresholds.lthr}
             ftp={analysis.thresholds.ftp}
+            hrZones={hrZones}
+            lthr={analysis.thresholds.lthr}
+            powerZones={powerZones}
           />
         </>
       )}
 
       <section className="space-y-4">
-        <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+        <h2 className="text-muted-foreground text-sm font-medium tracking-wider uppercase">
           Profils
         </h2>
-        <CombinedChart samples={samples} has={has} type={type} />
-        <ActivityCharts samples={samples} has={has} type={type} />
+        <CombinedChart has={has} samples={samples} type={type} />
+        <ActivityCharts has={has} samples={samples} type={type} />
       </section>
 
       {runSplits.length > 0 && (
         <SplitsTable
-          title="Splits au kilomètre"
-          splits={runSplits}
           refPaceSecPerKm={analysis?.run?.avgPaceSecPerKm}
+          splits={runSplits}
+          title="Splits au kilomètre"
         />
       )}
 
       {bikeSplits.length > 0 && (
-        <SplitsTable title="Splits tous les 5 km" splits={bikeSplits} mode="bike" />
+        <SplitsTable mode="bike" splits={bikeSplits} title="Splits tous les 5 km" />
       )}
     </div>
   );
@@ -137,8 +128,8 @@ function ZoneSection({
     blocks.push(
       <ZoneDistribution
         key="hr"
-        title="Zones fréquence cardiaque"
         subtitle={lthr ? `Réf. LTHR ${lthr} bpm` : undefined}
+        title="Zones fréquence cardiaque"
         zones={hrZones}
       />,
     );
@@ -147,17 +138,13 @@ function ZoneSection({
     blocks.push(
       <ZoneDistribution
         key="power"
-        title="Zones de puissance"
         subtitle={ftp ? `Réf. FTP ${ftp} W` : undefined}
+        title="Zones de puissance"
         zones={powerZones}
       />,
     );
   }
 
   if (blocks.length === 0) return null;
-  return (
-    <div className={cn("grid gap-4", blocks.length > 1 && "lg:grid-cols-2")}>
-      {blocks}
-    </div>
-  );
+  return <div className={cn('grid gap-4', blocks.length > 1 && 'lg:grid-cols-2')}>{blocks}</div>;
 }

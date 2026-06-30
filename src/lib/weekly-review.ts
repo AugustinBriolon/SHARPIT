@@ -1,4 +1,4 @@
-import { generateText } from "ai";
+import { generateText } from 'ai';
 import {
   addDays,
   differenceInCalendarDays,
@@ -6,19 +6,19 @@ import {
   startOfDay,
   startOfWeek,
   subDays,
-} from "date-fns";
-import { fr } from "date-fns/locale";
-import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from "./ai";
-import { buildCoachContext, formatCoachContext } from "./coach-context";
-import { prisma } from "./prisma";
-import { getActivities, getHealthEntries, getPlannedSessions } from "./queries";
-import { analyzeSleep, formatClock, formatDuration, type SleepEntryInput } from "./sleep";
+} from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from './ai';
+import { buildCoachContext, formatCoachContext } from './coach-context';
+import { prisma } from './prisma';
+import { getActivities, getHealthEntries, getPlannedSessions } from './queries';
+import { analyzeSleep, formatClock, formatDuration, type SleepEntryInput } from './sleep';
 
 const TYPE_FR: Record<string, string> = {
-  RUN: "Course",
-  BIKE: "Vélo",
-  SWIM: "Natation",
-  STRENGTH: "Renfo",
+  RUN: 'Course',
+  BIKE: 'Vélo',
+  SWIM: 'Natation',
+  STRENGTH: 'Renfo',
 };
 
 const WEEKLY_SYSTEM = `Tu es le coach d'endurance personnel de l'athlète. Tu rédiges sa RÉTROSPECTIVE HEBDOMADAIRE : un bilan de la semaine écoulée, factuel et actionnable, basé uniquement sur ses données réelles fournies plus bas.
@@ -124,8 +124,8 @@ async function buildWeeklyStats(weekStart: Date): Promise<WeeklyStats> {
   const sleepView = analyzeSleep(weekHealth as unknown as SleepEntryInput[]);
 
   return {
-    weekStart: format(weekStart, "yyyy-MM-dd"),
-    weekEnd: format(weekEnd, "yyyy-MM-dd"),
+    weekStart: format(weekStart, 'yyyy-MM-dd'),
+    weekEnd: format(weekEnd, 'yyyy-MM-dd'),
     sessionsDone: inWeek.length,
     sessionsPlanned: planned.length,
     sessionsCompleted: planned.filter((p) => p.completed).length,
@@ -133,8 +133,7 @@ async function buildWeeklyStats(weekStart: Date): Promise<WeeklyStats> {
     totalDurationMin: Math.round(sum(inWeek.map((a) => a.duration)) / 60),
     prevTotalLoad: Math.round(sum(inPrev.map((a) => a.load))),
     byType: [...byTypeMap.entries()].map(([type, v]) => ({ type, ...v })),
-    avgComplianceScore:
-      compliance.length ? Math.round(avg(compliance)!) : null,
+    avgComplianceScore: compliance.length ? Math.round(avg(compliance)!) : null,
     sleep: {
       avgDurationMin: sleepView.avg.durationMin,
       avgScore: sleepView.avg.score,
@@ -156,34 +155,30 @@ function formatWeeklyStats(stats: WeeklyStats): string {
   const start = new Date(`${stats.weekStart}T00:00:00`);
   const end = new Date(`${stats.weekEnd}T00:00:00`);
   lines.push(
-    `## Semaine du ${format(start, "d MMM", { locale: fr })} au ${format(end, "d MMM yyyy", { locale: fr })}`,
+    `## Semaine du ${format(start, 'd MMM', { locale: fr })} au ${format(end, 'd MMM yyyy', { locale: fr })}`,
   );
 
   const loadDelta =
     stats.prevTotalLoad > 0
-      ? Math.round(
-          ((stats.totalLoad - stats.prevTotalLoad) / stats.prevTotalLoad) * 100,
-        )
+      ? Math.round(((stats.totalLoad - stats.prevTotalLoad) / stats.prevTotalLoad) * 100)
       : null;
   lines.push(
     `Volume : ${stats.sessionsDone} séance(s), ${formatDuration(stats.totalDurationMin)}, charge ${stats.totalLoad}${
       loadDelta != null
-        ? ` (${loadDelta > 0 ? "+" : ""}${loadDelta}% vs semaine précédente ${stats.prevTotalLoad})`
-        : ""
+        ? ` (${loadDelta > 0 ? '+' : ''}${loadDelta}% vs semaine précédente ${stats.prevTotalLoad})`
+        : ''
     }.`,
   );
   if (stats.byType.length) {
     lines.push(
       `Répartition : ${stats.byType
         .map((t) => `${t.type} ${t.count} (${formatDuration(t.durationMin)})`)
-        .join(" · ")}.`,
+        .join(' · ')}.`,
     );
   }
   lines.push(
     `Plan : ${stats.sessionsCompleted}/${stats.sessionsPlanned} séance(s) planifiée(s) réalisée(s)${
-      stats.avgComplianceScore != null
-        ? `, conformité moyenne ${stats.avgComplianceScore}/100`
-        : ""
+      stats.avgComplianceScore != null ? `, conformité moyenne ${stats.avgComplianceScore}/100` : ''
     }.`,
   );
 
@@ -198,9 +193,7 @@ function formatWeeklyStats(stats: WeeklyStats): string {
       ? `coucher conseillé ${formatClock(s.recommendedBedtimeMin)}`
       : null,
   ].filter(Boolean);
-  lines.push(
-    `Sommeil : ${sleepBits.length ? sleepBits.join(" · ") : "données limitées"}.`,
-  );
+  lines.push(`Sommeil : ${sleepBits.length ? sleepBits.join(' · ') : 'données limitées'}.`);
 
   const r = stats.recovery;
   const recBits = [
@@ -208,9 +201,9 @@ function formatWeeklyStats(stats: WeeklyStats): string {
     r.avgHrv != null ? `HRV moy ${Math.round(r.avgHrv)} ms` : null,
     r.avgRestingHr != null ? `FC repos moy ${Math.round(r.avgRestingHr)} bpm` : null,
   ].filter(Boolean);
-  if (recBits.length) lines.push(`Récupération : ${recBits.join(" · ")}.`);
+  if (recBits.length) lines.push(`Récupération : ${recBits.join(' · ')}.`);
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 /** Génère le texte de la rétro hebdo (sans la persister). */
@@ -254,7 +247,7 @@ export async function generateAndStoreWeeklyReview(
   options: { current?: boolean } = {},
 ) {
   if (!isCoachConfigured()) {
-    throw new Error("Coach IA non configuré (AI_GATEWAY_API_KEY manquante).");
+    throw new Error('Coach IA non configuré (AI_GATEWAY_API_KEY manquante).');
   }
   const base = options.current ? refDate : subDays(weekStartFor(refDate), 1);
   const weekStart = weekStartFor(base);

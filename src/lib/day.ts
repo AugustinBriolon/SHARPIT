@@ -1,5 +1,5 @@
-import { isSameDay } from "date-fns";
-import type { ClientActivity, ClientHealthEntry } from "@/lib/client/types";
+import { isSameDay } from 'date-fns';
+import type { ClientActivity, ClientHealthEntry } from '@/lib/client/types';
 
 export function dayActivities(
   activities: ClientActivity[] | undefined,
@@ -12,7 +12,5 @@ export function dayHealth(
   entries: ClientHealthEntry[] | undefined,
   date: Date,
 ): ClientHealthEntry | null {
-  return (
-    (entries ?? []).find((h) => isSameDay(new Date(h.date), date)) ?? null
-  );
+  return (entries ?? []).find((h) => isSameDay(new Date(h.date), date)) ?? null;
 }

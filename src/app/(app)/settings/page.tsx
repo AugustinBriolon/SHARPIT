@@ -1,33 +1,33 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StickyHeader } from "@/components/layout/sticky-header";
-import { AthleteProfilePanel } from "@/components/settings/athlete-profile-panel";
-import { GarminPanel } from "@/components/settings/garmin-panel";
-import { GoogleCalendarPanel } from "@/components/settings/google-calendar-panel";
-import { StravaPanel } from "@/components/settings/strava-panel";
-import { getAthleteProfile } from "@/lib/queries";
-import { getGarminAccount } from "@/lib/garmin-sync";
-import { isGoogleConfigured } from "@/lib/google";
-import { getGoogleAccount } from "@/lib/google-sync";
-import { getStravaAccount } from "@/lib/strava-sync";
-import { isStravaConfigured } from "@/lib/strava";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { StickyHeader } from '@/components/layout/sticky-header';
+import { AthleteProfilePanel } from '@/components/settings/athlete-profile-panel';
+import { GarminPanel } from '@/components/settings/garmin-panel';
+import { GoogleCalendarPanel } from '@/components/settings/google-calendar-panel';
+import { StravaPanel } from '@/components/settings/strava-panel';
+import { getAthleteProfile } from '@/lib/queries';
+import { getGarminAccount } from '@/lib/garmin-sync';
+import { isGoogleConfigured } from '@/lib/google';
+import { getGoogleAccount } from '@/lib/google-sync';
+import { getStravaAccount } from '@/lib/strava-sync';
+import { isStravaConfigured } from '@/lib/strava';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 const statusMessages: Record<string, string> = {
-  connected: "Compte Strava connecté.",
-  denied: "Connexion refusée sur Strava.",
-  invalid_state: "Session expirée, réessaie la connexion.",
+  connected: 'Compte Strava connecté.',
+  denied: 'Connexion refusée sur Strava.',
+  invalid_state: 'Session expirée, réessaie la connexion.',
   no_athlete: "Strava n'a pas renvoyé d'athlète.",
-  error: "Une erreur est survenue lors de la connexion.",
+  error: 'Une erreur est survenue lors de la connexion.',
 };
 
 const googleStatusMessages: Record<string, string> = {
-  connected: "Google Calendar connecté.",
-  denied: "Connexion refusée sur Google.",
-  invalid_state: "Session expirée, réessaie la connexion.",
+  connected: 'Google Calendar connecté.',
+  denied: 'Connexion refusée sur Google.',
+  invalid_state: 'Session expirée, réessaie la connexion.',
   no_refresh:
     "Google n'a pas renvoyé de jeton de rafraîchissement. Réessaie en autorisant l'accès hors-ligne.",
-  error: "Une erreur est survenue lors de la connexion à Google.",
+  error: 'Une erreur est survenue lors de la connexion à Google.',
 };
 
 type PageProps = {
@@ -81,13 +81,9 @@ export default async function SettingsPage({ searchParams }: PageProps) {
   return (
     <div className="space-y-6">
       <StickyHeader>
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">
-          Settings
-        </p>
-        <h1 className="mt-2 font-heading text-3xl font-semibold tracking-tight">
-          Réglages
-        </h1>
-        <p className="mt-1 text-muted-foreground">
+        <p className="text-primary text-xs font-medium tracking-[0.2em] uppercase">Settings</p>
+        <h1 className="font-heading mt-2 text-3xl font-semibold tracking-tight">Réglages</h1>
+        <p className="text-muted-foreground mt-1">
           Connecte tes sources de données et configure ton système.
         </p>
       </StickyHeader>
@@ -95,7 +91,7 @@ export default async function SettingsPage({ searchParams }: PageProps) {
       <Card>
         <CardHeader>
           <CardTitle>Profil athlète</CardTitle>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             Seuils pour zones FC/puissance, IF, TSS et découplage
           </p>
         </CardHeader>
@@ -107,12 +103,10 @@ export default async function SettingsPage({ searchParams }: PageProps) {
                     ftpW: athleteProfile.ftpW,
                     maxHr: athleteProfile.maxHr,
                     lthr: athleteProfile.lthr,
-                    runThresholdPaceSecPerKm:
-                      athleteProfile.runThresholdPaceSecPerKm,
+                    runThresholdPaceSecPerKm: athleteProfile.runThresholdPaceSecPerKm,
                     vo2maxRunning: athleteProfile.vo2maxRunning,
                     vo2maxCycling: athleteProfile.vo2maxCycling,
-                    thresholdsSyncedAt:
-                      athleteProfile.thresholdsSyncedAt?.toISOString() ?? null,
+                    thresholdsSyncedAt: athleteProfile.thresholdsSyncedAt?.toISOString() ?? null,
                   }
                 : null
             }
@@ -123,12 +117,12 @@ export default async function SettingsPage({ searchParams }: PageProps) {
       <Card>
         <CardHeader>
           <CardTitle>Strava</CardTitle>
-          <p className="text-xs text-muted-foreground">Source des activités</p>
+          <p className="text-muted-foreground text-xs">Source des activités</p>
         </CardHeader>
         <CardContent>
           <StravaPanel
-            configured={configured}
             account={account}
+            configured={configured}
             statusMessage={strava ? statusMessages[strava] : undefined}
           />
         </CardContent>
@@ -137,7 +131,7 @@ export default async function SettingsPage({ searchParams }: PageProps) {
       <Card>
         <CardHeader>
           <CardTitle>Garmin</CardTitle>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             Source des données santé (sommeil, HRV, FC repos, poids)
           </p>
         </CardHeader>
@@ -149,25 +143,22 @@ export default async function SettingsPage({ searchParams }: PageProps) {
       <Card>
         <CardHeader>
           <CardTitle>Google Calendar</CardTitle>
-          <p className="text-xs text-muted-foreground">
-            Le coach planifie tes séances dans ton agenda en évitant tes
-            créneaux occupés
+          <p className="text-muted-foreground text-xs">
+            Le coach planifie tes séances dans ton agenda en évitant tes créneaux occupés
           </p>
         </CardHeader>
         <CardContent>
           <GoogleCalendarPanel
-            configured={googleConfigured}
             account={google_}
+            configured={googleConfigured}
             statusMessage={
               google
                 ? [
                     googleStatusMessages[google],
-                    google === "error" && google_detail
-                      ? `Détail : ${google_detail}`
-                      : null,
+                    google === 'error' && google_detail ? `Détail : ${google_detail}` : null,
                   ]
                     .filter(Boolean)
-                    .join(" ")
+                    .join(' ')
                 : undefined
             }
           />

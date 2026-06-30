@@ -27,6 +27,14 @@ enum GoalKind {
   METRIC
 }
 
+// Priorité d'une course (standard triathlon) :
+// A = objectif principal de la saison, B = course intermédiaire, C = test / entraînement.
+enum GoalPriority {
+  A
+  B
+  C
+}
+
 enum SessionIntensity {
   RECOVERY
   ENDURANCE
@@ -82,8 +90,9 @@ model Activity {
   weather  String?
   load     Float?
 
-  source   String  @default("manual")
+  source   String  @default("manual") // manual | garmin | strava | both
   stravaId String? @unique
+  garminId String? @unique
 
   runMetrics     RunMetrics?
   bikeMetrics    BikeMetrics?
@@ -151,7 +160,8 @@ model GarminAccount {
   fullName    String?
   oauth1Token Json
   oauth2Token Json
-  lastSyncAt  DateTime?
+  lastSyncAt         DateTime?
+  lastActivitySyncAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -309,6 +319,11 @@ model Goal {
   location     String?
   achieved     Boolean      @default(false)
   notes        String?
+
+  // Détails spécifiques aux courses (kind = RACE) — tous optionnels :
+  priority          GoalPriority? // importance A/B/C dans la périodisation
+  raceFormat        String? // format / distance (ex. "Half Ironman", "10 km", "Marathon")
+  targetPerformance String? // objectif visé (ex. "Sub 5h00", "Top 10", "Terminer")
 
   plannedSessions PlannedSession[]
   trainingPlans   TrainingPlan[]

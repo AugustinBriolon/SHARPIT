@@ -1,22 +1,62 @@
-import { ActivityType, Prisma } from "@prisma/client";
-import { addDays, startOfDay } from "date-fns";
-import { prisma } from "./prisma";
+import { ActivityType, Prisma } from '@prisma/client';
+import { addDays, startOfDay } from 'date-fns';
+import { prisma } from './prisma';
 
 const activityInclude = {
   runMetrics: true,
   bikeMetrics: true,
   swimMetrics: true,
-  strengthSets: { orderBy: { order: "asc" as const } },
+  strengthSets: { orderBy: { order: 'asc' as const } },
 };
 
-export async function getActivities(params?: {
-  type?: ActivityType;
-  limit?: number;
-}) {
+export async function getActivities(params?: { type?: ActivityType; limit?: number }) {
   return prisma.activity.findMany({
     where: params?.type ? { type: params.type } : undefined,
     include: activityInclude,
-    orderBy: { date: "desc" },
+    orderBy: { date: 'desc' },
+    take: params?.limit,
+  });
+}
+
+/**
+ * Sélection LÉGÈRE pour les listes/analytics côté client : uniquement les
+ * champs réellement affichés ou agrégés (PMC, charge, résumé de ligne). Évite de
+ * transférer toutes les sous-métriques de chaque activité (payload ÷ ~3).
+ */
+const activityListSelect = {
+  id: true,
+  type: true,
+  date: true,
+  title: true,
+  duration: true,
+  load: true,
+  rpe: true,
+  feeling: true,
+  source: true,
+  stravaId: true,
+  garminId: true,
+  createdAt: true,
+  updatedAt: true,
+  runMetrics: { select: { distanceM: true } },
+  bikeMetrics: { select: { tss: true, avgPower: true } },
+  swimMetrics: { select: { distanceM: true } },
+  strengthSets: { select: { exercise: true }, orderBy: { order: 'asc' as const } },
+} satisfies Prisma.ActivitySelect;
+
+export async function getActivitiesList(params?: {
+  type?: ActivityType;
+  limit?: number;
+  sinceDays?: number;
+}) {
+  const where: Prisma.ActivityWhereInput = {};
+  if (params?.type) where.type = params.type;
+  if (params?.sinceDays) {
+    where.date = { gte: startOfDay(addDays(new Date(), -params.sinceDays)) };
+  }
+  return prisma.activity.findMany({
+    where,
+    select: activityListSelect,
+    orderBy: { date: 'desc' },
     take: params?.limit,
   });
 }
@@ -35,10 +75,7 @@ export async function createActivity(data: Prisma.ActivityCreateInput) {
   });
 }
 
-export async function updateActivity(
-  id: string,
-  data: Prisma.ActivityUpdateInput,
-) {
+export async function updateActivity(id: string, data: Prisma.ActivityUpdateInput) {
   return prisma.activity.update({
     where: { id },
     data,
@@ -54,28 +91,27 @@ export async function getDashboardData() {
   const today = startOfDay(new Date());
   const weekAgo = addDays(today, -42);
 
-  const [todayActivities, recentActivities, todayHealth, primaryGoal] =
-    await Promise.all([
-      prisma.activity.findMany({
-        where: { date: { gte: today, lt: addDays(today, 1) } },
-        include: activityInclude,
-        orderBy: { date: "asc" },
-      }),
-      prisma.activity.findMany({
-        where: { date: { gte: weekAgo } },
-        select: { load: true, date: true },
-        orderBy: { date: "desc" },
-      }),
-      prisma.dailyHealth.findUnique({ where: { date: today } }),
-      prisma.goal.findFirst({
-        where: {
-          kind: "RACE",
-          achieved: false,
-          targetDate: { gte: today },
-        },
-        orderBy: { targetDate: "asc" },
-      }),
-    ]);
+  const [todayActivities, recentActivities, todayHealth, primaryGoal] = await Promise.all([
+    prisma.activity.findMany({
+      where: { date: { gte: today, lt: addDays(today, 1) } },
+      include: activityInclude,
+      orderBy: { date: 'asc' },
+    }),
+    prisma.activity.findMany({
+      where: { date: { gte: weekAgo } },
+      select: { load: true, date: true },
+      orderBy: { date: 'desc' },
+    }),
+    prisma.dailyHealth.findUnique({ where: { date: today } }),
+    prisma.goal.findFirst({
+      where: {
+        kind: 'RACE',
+        achieved: false,
+        targetDate: { gte: today },
+      },
+      orderBy: { targetDate: 'asc' },
+    }),
+  ]);
 
   return {
     todayActivities,
@@ -94,13 +130,13 @@ export async function getAnalyticsActivities() {
       load: true,
       bikeMetrics: { select: { tss: true } },
     },
-    orderBy: { date: "asc" },
+    orderBy: { date: 'asc' },
   });
 }
 
 export async function getGoals() {
   return prisma.goal.findMany({
-    orderBy: [{ achieved: "asc" }, { targetDate: "asc" }, { createdAt: "desc" }],
+    orderBy: [{ achieved: 'asc' }, { targetDate: 'asc' }, { createdAt: 'desc' }],
   });
 }
 
@@ -123,11 +159,11 @@ export async function deleteGoal(id: string) {
 export async function getNextRace() {
   return prisma.goal.findFirst({
     where: {
-      kind: "RACE",
+      kind: 'RACE',
       achieved: false,
       targetDate: { gte: startOfDay(new Date()) },
     },
-    orderBy: { targetDate: "asc" },
+    orderBy: { targetDate: 'asc' },
   });
 }
 
@@ -135,7 +171,7 @@ export async function getHealthEntries(days = 90) {
   const since = startOfDay(addDays(new Date(), -days));
   return prisma.dailyHealth.findMany({
     where: { date: { gte: since } },
-    orderBy: { date: "desc" },
+    orderBy: { date: 'desc' },
   });
 }
 
@@ -146,11 +182,9 @@ const plannedSessionInclude = {
 export async function getPlannedSessions(params?: { from?: Date; to?: Date }) {
   return prisma.plannedSession.findMany({
     where:
-      params?.from || params?.to
-        ? { date: { gte: params?.from, lte: params?.to } }
-        : undefined,
+      params?.from || params?.to ? { date: { gte: params?.from, lte: params?.to } } : undefined,
     include: plannedSessionInclude,
-    orderBy: { date: "asc" },
+    orderBy: { date: 'asc' },
   });
 }
 
@@ -161,10 +195,7 @@ export async function getPlannedSessionById(id: string) {
   });
 }
 
-export async function linkPlannedSessionActivity(
-  id: string,
-  activityId: string | null,
-) {
+export async function linkPlannedSessionActivity(id: string, activityId: string | null) {
   return prisma.plannedSession.update({
     where: { id },
     data: {
@@ -176,10 +207,7 @@ export async function linkPlannedSessionActivity(
   });
 }
 
-export async function setPlannedSessionAnalysis(
-  id: string,
-  analysis: Prisma.InputJsonValue,
-) {
+export async function setPlannedSessionAnalysis(id: string, analysis: Prisma.InputJsonValue) {
   return prisma.plannedSession.update({
     where: { id },
     data: { analysis, analyzedAt: new Date() },
@@ -187,9 +215,7 @@ export async function setPlannedSessionAnalysis(
   });
 }
 
-export async function createPlannedSession(
-  data: Prisma.PlannedSessionUncheckedCreateInput,
-) {
+export async function createPlannedSession(data: Prisma.PlannedSessionUncheckedCreateInput) {
   return prisma.plannedSession.create({ data });
 }
 
@@ -199,10 +225,7 @@ export async function createPlannedSession(
  * `brickGroupId` commun ; `brickOrder` suit l'ordre du tableau fourni.
  */
 export async function createBrickSessions(
-  legs: Omit<
-    Prisma.PlannedSessionUncheckedCreateInput,
-    "brickGroupId" | "brickOrder"
-  >[],
+  legs: Omit<Prisma.PlannedSessionUncheckedCreateInput, 'brickGroupId' | 'brickOrder'>[],
 ) {
   const brickGroupId = crypto.randomUUID();
   const created = [];
@@ -220,7 +243,7 @@ export async function getBrickSessions(brickGroupId: string) {
   return prisma.plannedSession.findMany({
     where: { brickGroupId },
     include: plannedSessionInclude,
-    orderBy: { brickOrder: "asc" },
+    orderBy: { brickOrder: 'asc' },
   });
 }
 
@@ -228,10 +251,7 @@ export async function getBrickAnalysis(brickGroupId: string) {
   return prisma.brickAnalysis.findUnique({ where: { brickGroupId } });
 }
 
-export async function setBrickAnalysis(
-  brickGroupId: string,
-  content: Prisma.InputJsonValue,
-) {
+export async function setBrickAnalysis(brickGroupId: string, content: Prisma.InputJsonValue) {
   return prisma.brickAnalysis.upsert({
     where: { brickGroupId },
     create: { brickGroupId, content },
@@ -251,13 +271,13 @@ export async function deletePlannedSession(id: string) {
 }
 
 const physicalNoteInclude = {
-  checkins: { orderBy: { date: "desc" as const } },
+  checkins: { orderBy: { date: 'desc' as const } },
 };
 
 export async function getPhysicalNotes() {
   return prisma.physicalNote.findMany({
     include: physicalNoteInclude,
-    orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
+    orderBy: [{ status: 'asc' }, { updatedAt: 'desc' }],
   });
 }
 
@@ -270,15 +290,13 @@ export async function getPhysicalNoteById(id: string) {
 
 export async function getActivePhysicalNotes() {
   return prisma.physicalNote.findMany({
-    where: { status: { not: "RESOLVED" }, affectsTraining: true },
+    where: { status: { not: 'RESOLVED' }, affectsTraining: true },
     include: physicalNoteInclude,
-    orderBy: { severity: "desc" },
+    orderBy: { severity: 'desc' },
   });
 }
 
-export async function createPhysicalNote(
-  data: Prisma.PhysicalNoteUncheckedCreateInput,
-) {
+export async function createPhysicalNote(data: Prisma.PhysicalNoteUncheckedCreateInput) {
   return prisma.physicalNote.create({ data, include: physicalNoteInclude });
 }
 
@@ -323,22 +341,20 @@ export async function deletePhysicalCheckin(id: string) {
   return prisma.physicalCheckin.delete({ where: { id } });
 }
 
-const PROFILE_ID = "default";
+const PROFILE_ID = 'default';
 
 export async function getAthleteProfile() {
   return prisma.athleteProfile.findUnique({ where: { id: PROFILE_ID } });
 }
 
-export async function upsertAthleteProfile(
-  data: {
-    ftpW?: number | null;
-    maxHr?: number | null;
-    lthr?: number | null;
-    runThresholdPaceSecPerKm?: number | null;
-    context?: string | null;
-    thresholdsSyncedAt?: Date | null;
-  },
-) {
+export async function upsertAthleteProfile(data: {
+  ftpW?: number | null;
+  maxHr?: number | null;
+  lthr?: number | null;
+  runThresholdPaceSecPerKm?: number | null;
+  context?: string | null;
+  thresholdsSyncedAt?: Date | null;
+}) {
   return prisma.athleteProfile.upsert({
     where: { id: PROFILE_ID },
     create: { id: PROFILE_ID, ...data },
@@ -360,31 +376,31 @@ export async function createThresholdSnapshot(data: {
 export async function getThresholdSnapshots(limit = 12) {
   return prisma.athleteThresholdSnapshot.findMany({
     where: { profileId: PROFILE_ID },
-    orderBy: { createdAt: "desc" },
+    orderBy: { createdAt: 'desc' },
     take: limit,
   });
 }
 
-const planWeekInclude = { weeks: { orderBy: { weekIndex: "asc" as const } } };
+const planWeekInclude = { weeks: { orderBy: { weekIndex: 'asc' as const } } };
 
 export async function getActiveTrainingPlan() {
   return prisma.trainingPlan.findFirst({
-    where: { status: "ACTIVE" },
+    where: { status: 'ACTIVE' },
     include: planWeekInclude,
-    orderBy: { createdAt: "desc" },
+    orderBy: { createdAt: 'desc' },
   });
 }
 
 export async function archiveActiveTrainingPlans() {
   return prisma.trainingPlan.updateMany({
-    where: { status: "ACTIVE" },
-    data: { status: "ARCHIVED" },
+    where: { status: 'ACTIVE' },
+    data: { status: 'ARCHIVED' },
   });
 }
 
 export async function createTrainingPlan(
   data: Prisma.TrainingPlanUncheckedCreateInput & {
-    weeks: Omit<Prisma.PlanWeekUncheckedCreateInput, "planId">[];
+    weeks: Omit<Prisma.PlanWeekUncheckedCreateInput, 'planId'>[];
   },
 ) {
   const { weeks, ...planData } = data;
@@ -400,7 +416,7 @@ export async function createTrainingPlan(
 export async function archiveTrainingPlan(id: string) {
   return prisma.trainingPlan.update({
     where: { id },
-    data: { status: "ARCHIVED" },
+    data: { status: 'ARCHIVED' },
     include: planWeekInclude,
   });
 }

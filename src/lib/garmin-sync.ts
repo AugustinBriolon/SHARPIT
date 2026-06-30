@@ -1,7 +1,7 @@
-import { Prisma } from "@prisma/client";
-import { startOfDay, subDays } from "date-fns";
-import { prisma } from "@/lib/prisma";
-import { format } from "date-fns";
+import { Prisma } from '@prisma/client';
+import { startOfDay, subDays } from 'date-fns';
+import { prisma } from '@/lib/prisma';
+import { format } from 'date-fns';
 import {
   clientFromTokens,
   currentTokens,
@@ -11,12 +11,22 @@ import {
   loginWithCredentials,
   type GarminAthleteThresholds,
   type GarminTokens,
-} from "@/lib/garmin";
+} from '@/lib/garmin';
 
-const ACCOUNT_ID = "default";
+const ACCOUNT_ID = 'default';
 
 export async function getGarminAccount() {
   return prisma.garminAccount.findUnique({ where: { id: ACCOUNT_ID } });
+}
+
+/** Client Garmin authentifié (tokens en base). */
+export async function getGarminClient() {
+  const account = await getGarminAccount();
+  if (!account) throw new Error('Compte Garmin non connecté');
+  return clientFromTokens({
+    oauth1: account.oauth1Token as GarminTokens['oauth1'],
+    oauth2: account.oauth2Token as GarminTokens['oauth2'],
+  });
 }
 
 export async function disconnectGarmin() {
@@ -57,7 +67,7 @@ export interface GarminThresholdsImport extends GarminAthleteThresholds {
  */
 export async function importGarminThresholds(): Promise<GarminThresholdsImport> {
   const account = await getGarminAccount();
-  if (!account) throw new Error("Compte Garmin non connecté");
+  if (!account) throw new Error('Compte Garmin non connecté');
 
   const client = clientFromTokens({
     oauth1: account.oauth1Token,
@@ -73,14 +83,12 @@ export async function importGarminThresholds(): Promise<GarminThresholdsImport> 
   if (thresholds.lthr != null) data.lthr = thresholds.lthr;
   if (thresholds.runThresholdPaceSecPerKm != null)
     data.runThresholdPaceSecPerKm = thresholds.runThresholdPaceSecPerKm;
-  if (thresholds.vo2maxRunning != null)
-    data.vo2maxRunning = thresholds.vo2maxRunning;
-  if (thresholds.vo2maxCycling != null)
-    data.vo2maxCycling = thresholds.vo2maxCycling;
+  if (thresholds.vo2maxRunning != null) data.vo2maxRunning = thresholds.vo2maxRunning;
+  if (thresholds.vo2maxCycling != null) data.vo2maxCycling = thresholds.vo2maxCycling;
 
   await prisma.athleteProfile.upsert({
-    where: { id: "default" },
-    create: { id: "default", ...data } as Prisma.AthleteProfileUncheckedCreateInput,
+    where: { id: 'default' },
+    create: { id: 'default', ...data } as Prisma.AthleteProfileUncheckedCreateInput,
     update: data,
   });
 
@@ -111,7 +119,7 @@ export interface GarminSyncResult {
 
 export async function syncGarminHealth(days = 30): Promise<GarminSyncResult> {
   const account = await getGarminAccount();
-  if (!account) throw new Error("Compte Garmin non connecté");
+  if (!account) throw new Error('Compte Garmin non connecté');
 
   const tokens: GarminTokens = {
     oauth1: account.oauth1Token,
@@ -128,7 +136,7 @@ export async function syncGarminHealth(days = 30): Promise<GarminSyncResult> {
 
   for (let i = 0; i < days; i++) {
     const date = subDays(today, i);
-    const weightKg = weightMap.get(format(date, "yyyy-MM-dd")) ?? null;
+    const weightKg = weightMap.get(format(date, 'yyyy-MM-dd')) ?? null;
     const health = await fetchDailyHealth(client, date, weightKg);
 
     const hasData =
@@ -153,9 +161,7 @@ export async function syncGarminHealth(days = 30): Promise<GarminSyncResult> {
     // serait stocké au 28/06. On construit donc un minuit UTC à partir des
     // composantes LOCALES pour stocker le bon jour, quel que soit le fuseau
     // du serveur (local en dev, UTC sur Vercel).
-    const day = new Date(
-      Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
-    );
+    const day = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     const factors =
       health.readinessFactors != null
         ? (health.readinessFactors as unknown as Prisma.InputJsonValue)
@@ -168,31 +174,24 @@ export async function syncGarminHealth(days = 30): Promise<GarminSyncResult> {
     if (health.weightKg != null) data.weightKg = health.weightKg;
     if (health.readinessScore != null) data.recoveryScore = health.readinessScore;
     if (health.readinessLevel != null) data.readinessLevel = health.readinessLevel;
-    if (health.readinessFeedback != null)
-      data.readinessFeedback = health.readinessFeedback;
+    if (health.readinessFeedback != null) data.readinessFeedback = health.readinessFeedback;
     if (factors != null) data.readinessFactors = factors;
     if (health.hrvStatus != null) data.hrvStatus = health.hrvStatus;
-    if (health.hrvBaselineLow != null)
-      data.hrvBaselineLow = health.hrvBaselineLow;
-    if (health.hrvBaselineHigh != null)
-      data.hrvBaselineHigh = health.hrvBaselineHigh;
+    if (health.hrvBaselineLow != null) data.hrvBaselineLow = health.hrvBaselineLow;
+    if (health.hrvBaselineHigh != null) data.hrvBaselineHigh = health.hrvBaselineHigh;
     if (health.stress != null) data.stress = health.stress;
     if (health.bodyBattery != null) data.bodyBattery = health.bodyBattery;
-    const sleep = health.sleep;
+    const { sleep } = health;
     if (sleep.sleepScore != null) data.sleepScore = sleep.sleepScore;
     if (sleep.sleepDeepMin != null) data.sleepDeepMin = sleep.sleepDeepMin;
     if (sleep.sleepLightMin != null) data.sleepLightMin = sleep.sleepLightMin;
     if (sleep.sleepRemMin != null) data.sleepRemMin = sleep.sleepRemMin;
     if (sleep.sleepAwakeMin != null) data.sleepAwakeMin = sleep.sleepAwakeMin;
-    if (sleep.sleepBedtimeMin != null)
-      data.sleepBedtimeMin = sleep.sleepBedtimeMin;
+    if (sleep.sleepBedtimeMin != null) data.sleepBedtimeMin = sleep.sleepBedtimeMin;
     if (sleep.sleepWakeMin != null) data.sleepWakeMin = sleep.sleepWakeMin;
-    if (sleep.sleepRespiration != null)
-      data.sleepRespiration = sleep.sleepRespiration;
-    if (sleep.sleepAvgStress != null)
-      data.sleepAvgStress = sleep.sleepAvgStress;
-    if (sleep.sleepScoreFeedback != null)
-      data.sleepScoreFeedback = sleep.sleepScoreFeedback;
+    if (sleep.sleepRespiration != null) data.sleepRespiration = sleep.sleepRespiration;
+    if (sleep.sleepAvgStress != null) data.sleepAvgStress = sleep.sleepAvgStress;
+    if (sleep.sleepScoreFeedback != null) data.sleepScoreFeedback = sleep.sleepScoreFeedback;
 
     await prisma.dailyHealth.upsert({
       where: { date: day },

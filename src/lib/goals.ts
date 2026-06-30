@@ -1,5 +1,5 @@
-import { GoalHorizon } from "@prisma/client";
-import { differenceInCalendarDays } from "date-fns";
+import { GoalHorizon, GoalPriority } from '@prisma/client';
+import { differenceInCalendarDays } from 'date-fns';
 
 export interface GoalLike {
   startValue: number | null;
@@ -38,16 +38,16 @@ export function formatRemaining(goal: GoalLike): string | null {
   if (goal.currentValue == null || goal.targetValue == null) return null;
   const remaining = goal.targetValue - goal.currentValue;
   if (goal.lowerIsBetter) {
-    return remaining >= 0 ? "Atteint" : `${Math.abs(remaining)} à gagner`;
+    return remaining >= 0 ? 'Atteint' : `${Math.abs(remaining)} à gagner`;
   }
-  return remaining <= 0 ? "Atteint" : `${remaining} restant`;
+  return remaining <= 0 ? 'Atteint' : `${remaining} restant`;
 }
 
 export const horizonLabels: Record<GoalHorizon, string> = {
-  LONG_TERM: "Long terme",
-  MEDIUM_TERM: "Moyen terme",
-  SHORT_TERM: "Court terme",
-  WEEKLY: "Hebdomadaire",
+  LONG_TERM: 'Long terme',
+  MEDIUM_TERM: 'Moyen terme',
+  SHORT_TERM: 'Court terme',
+  WEEKLY: 'Hebdomadaire',
 };
 
 export const horizonOrder: GoalHorizon[] = [
@@ -56,3 +56,23 @@ export const horizonOrder: GoalHorizon[] = [
   GoalHorizon.SHORT_TERM,
   GoalHorizon.WEEKLY,
 ];
+
+export const priorityLabels: Record<GoalPriority, string> = {
+  A: 'Objectif A',
+  B: 'Objectif B',
+  C: 'Objectif C',
+};
+
+export const priorityDescriptions: Record<GoalPriority, string> = {
+  A: 'Course principale — affûtage complet',
+  B: 'Course intermédiaire — affûtage léger',
+  C: "Test / entraînement — pas d'affûtage",
+};
+
+export const priorityOrder: GoalPriority[] = [GoalPriority.A, GoalPriority.B, GoalPriority.C];
+
+export const priorityAccent: Record<GoalPriority, string> = {
+  A: '#ef4444',
+  B: '#f59e0b',
+  C: '#64748b',
+};

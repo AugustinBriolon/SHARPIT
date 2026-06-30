@@ -1,14 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import {
-  deleteSessionFromGoogle,
-  pushSessionToGoogle,
-} from "@/lib/google-sync";
-import {
-  deletePlannedSession,
-  getPlannedSessionById,
-  updatePlannedSession,
-} from "@/lib/queries";
-import { updatePlannedSessionSchema } from "@/lib/validators/planned-session";
+import { NextRequest, NextResponse } from 'next/server';
+import { deleteSessionFromGoogle, pushSessionToGoogle } from '@/lib/google-sync';
+import { deletePlannedSession, getPlannedSessionById, updatePlannedSession } from '@/lib/queries';
+import { updatePlannedSessionSchema } from '@/lib/validators/planned-session';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -20,17 +13,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Données invalides", details: parsed.error.flatten() },
+        { error: 'Données invalides', details: parsed.error.flatten() },
         { status: 400 },
       );
     }
 
     const existing = await getPlannedSessionById(id);
     if (!existing) {
-      return NextResponse.json(
-        { error: "Séance planifiée introuvable" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: 'Séance planifiée introuvable' }, { status: 404 });
     }
 
     const session = await updatePlannedSession(
@@ -42,7 +32,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     try {
       await pushSessionToGoogle(session);
     } catch (syncError) {
-      console.error("Push Google Calendar échoué", syncError);
+      console.error('Push Google Calendar échoué', syncError);
     }
 
     const fresh = await getPlannedSessionById(id);
@@ -50,7 +40,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { error: "Impossible de mettre à jour la séance planifiée" },
+      { error: 'Impossible de mettre à jour la séance planifiée' },
       { status: 500 },
     );
   }
@@ -66,7 +56,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
       try {
         await deleteSessionFromGoogle(existing);
       } catch (syncError) {
-        console.error("Suppression Google Calendar échouée", syncError);
+        console.error('Suppression Google Calendar échouée', syncError);
       }
     }
 
@@ -75,7 +65,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { error: "Impossible de supprimer la séance planifiée" },
+      { error: 'Impossible de supprimer la séance planifiée' },
       { status: 500 },
     );
   }

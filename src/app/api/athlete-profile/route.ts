@@ -1,19 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getAthleteProfile, upsertAthleteProfile } from "@/lib/queries";
-import { athleteProfileSchema } from "@/lib/validators/athlete-profile";
+import { NextRequest, NextResponse } from 'next/server';
+import { getAthleteProfile, upsertAthleteProfile } from '@/lib/queries';
+import { athleteProfileSchema } from '@/lib/validators/athlete-profile';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
     const profile = await getAthleteProfile();
-    return NextResponse.json(profile ?? { id: "default" });
+    return NextResponse.json(profile ?? { id: 'default' });
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { error: "Impossible de charger le profil athlète" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Impossible de charger le profil athlète' }, { status: 500 });
   }
 }
 
@@ -23,7 +20,7 @@ export async function PATCH(request: NextRequest) {
     const parsed = athleteProfileSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Données invalides", details: parsed.error.flatten() },
+        { error: 'Données invalides', details: parsed.error.flatten() },
         { status: 400 },
       );
     }
@@ -33,7 +30,7 @@ export async function PATCH(request: NextRequest) {
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { error: "Impossible de mettre à jour le profil athlète" },
+      { error: 'Impossible de mettre à jour le profil athlète' },
       { status: 500 },
     );
   }

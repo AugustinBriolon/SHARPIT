@@ -1,14 +1,8 @@
-"use client";
+'use client';
 
-import {
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CHART_COLORS, type SportDistribution } from "@/lib/analytics";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CHART_COLORS, type SportDistribution } from '@/lib/analytics';
 
 interface SportDistributionChartProps {
   data: SportDistribution[];
@@ -24,7 +18,7 @@ function ChartTooltip({
   if (!active || !payload?.[0]) return null;
   const item = payload[0].payload;
   return (
-    <div className="rounded-lg border border-border/60 bg-card px-3 py-2 text-xs shadow-lg">
+    <div className="border-border/60 bg-card rounded-lg border px-3 py-2 text-xs shadow-lg">
       <p className="font-medium">{item.label}</p>
       <p className="text-muted-foreground">
         {item.hours}h · {item.count} séances · {item.percent}%
@@ -38,20 +32,20 @@ export function SportDistributionChart({ data }: SportDistributionChartProps) {
     <Card>
       <CardHeader>
         <CardTitle className="text-base font-medium">Répartition par sport</CardTitle>
-        <p className="text-xs text-muted-foreground">90 derniers jours — en heures</p>
+        <p className="text-muted-foreground text-xs">90 derniers jours — en heures</p>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col items-center gap-6 md:flex-row">
           <div className="h-56 w-full md:w-1/2">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer height="100%" width="100%">
               <PieChart>
                 <Pie
-                  data={data}
-                  dataKey="hours"
-                  nameKey="label"
                   cx="50%"
                   cy="50%"
+                  data={data}
+                  dataKey="hours"
                   innerRadius={55}
+                  nameKey="label"
                   outerRadius={85}
                   paddingAngle={2}
                   strokeWidth={0}
@@ -74,7 +68,7 @@ export function SportDistributionChart({ data }: SportDistributionChartProps) {
                   />
                   <span>{sport.label}</span>
                 </div>
-                <div className="font-mono text-muted-foreground">
+                <div className="text-muted-foreground font-mono">
                   {sport.hours}h · {sport.percent}%
                 </div>
               </div>

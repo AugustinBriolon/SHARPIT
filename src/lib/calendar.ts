@@ -5,8 +5,8 @@ import {
   isSameDay,
   startOfMonth,
   startOfWeek,
-} from "date-fns";
-import type { ClientActivity, ClientPlannedSession } from "@/lib/client/types";
+} from 'date-fns';
+import type { ClientActivity, ClientPlannedSession } from '@/lib/client/types';
 
 export interface CalendarDay {
   date: Date;
@@ -18,7 +18,7 @@ export interface CalendarDay {
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 
-export const weekDayLabels = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+export const weekDayLabels = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
 /**
  * Construit la grille du mois (semaines de 7 jours, du lundi au dimanche)

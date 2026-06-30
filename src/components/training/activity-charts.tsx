@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { ActivityType } from "@prisma/client";
+import { ActivityType } from '@prisma/client';
 import {
   Area,
   AreaChart,
@@ -9,9 +9,9 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { StreamSample } from "@/lib/streams";
+} from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { StreamSample } from '@/lib/streams';
 
 interface ChartPoint {
   x: number; // distance (km) ou temps (min)
@@ -24,7 +24,7 @@ interface ChartPoint {
 }
 
 interface MetricConfig {
-  key: keyof Omit<ChartPoint, "x">;
+  key: keyof Omit<ChartPoint, 'x'>;
   label: string;
   color: string;
   unit: string;
@@ -34,7 +34,7 @@ interface MetricConfig {
 function paceFmt(secPerKm: number): string {
   const m = Math.floor(secPerKm / 60);
   const s = Math.round(secPerKm % 60);
-  return `${m}'${s.toString().padStart(2, "0")}`;
+  return `${m}'${s.toString().padStart(2, '0')}`;
 }
 
 export function ActivityCharts({
@@ -59,9 +59,7 @@ export function ActivityCharts({
     const speedKmh = s.speed != null ? s.speed * 3.6 : null;
     const pace = s.speed != null && s.speed > 0.3 ? 1000 / s.speed : null;
     return {
-      x: useDistance
-        ? Number((s.d / 1000).toFixed(3))
-        : Number((s.t / 60).toFixed(2)),
+      x: useDistance ? Number((s.d / 1000).toFixed(3)) : Number((s.t / 60).toFixed(2)),
       alt: s.alt,
       hr: s.hr,
       watts: s.watts,
@@ -74,54 +72,53 @@ export function ActivityCharts({
   const metrics: MetricConfig[] = [];
   if (has.altitude)
     metrics.push({
-      key: "alt",
-      label: "Altitude",
-      color: "#059669",
-      unit: "m",
+      key: 'alt',
+      label: 'Altitude',
+      color: '#059669',
+      unit: 'm',
     });
   if (has.hr)
     metrics.push({
-      key: "hr",
-      label: "Fréquence cardiaque",
-      color: "#e11d48",
-      unit: "bpm",
+      key: 'hr',
+      label: 'Fréquence cardiaque',
+      color: '#e11d48',
+      unit: 'bpm',
     });
   if (has.watts)
     metrics.push({
-      key: "watts",
-      label: "Puissance",
-      color: "#d97706",
-      unit: "W",
+      key: 'watts',
+      label: 'Puissance',
+      color: '#d97706',
+      unit: 'W',
     });
   // Course : allure ; autres : vitesse
   if (has.speed && type === ActivityType.RUN)
     metrics.push({
-      key: "pace",
-      label: "Allure",
-      color: "#ea580c",
-      unit: "/km",
+      key: 'pace',
+      label: 'Allure',
+      color: '#ea580c',
+      unit: '/km',
       format: paceFmt,
     });
   else if (has.speed)
     metrics.push({
-      key: "speed",
-      label: "Vitesse",
-      color: "#0891b2",
-      unit: "km/h",
+      key: 'speed',
+      label: 'Vitesse',
+      color: '#0891b2',
+      unit: 'km/h',
     });
   if (has.cadence)
     metrics.push({
-      key: "cadence",
-      label: "Cadence",
-      color: "#7c3aed",
-      unit: type === ActivityType.RUN ? "spm" : "rpm",
+      key: 'cadence',
+      label: 'Cadence',
+      color: '#7c3aed',
+      unit: type === ActivityType.RUN ? 'spm' : 'rpm',
     });
 
   if (!metrics.length) return null;
 
-  const xLabel = useDistance ? "km" : "min";
-  const xFmt = (v: number) =>
-    useDistance ? `${v.toFixed(0)}` : `${Math.round(v)}`;
+  const xLabel = useDistance ? 'km' : 'min';
+  const xFmt = (v: number) => (useDistance ? `${v.toFixed(0)}` : `${Math.round(v)}`);
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -129,60 +126,37 @@ export function ActivityCharts({
         <Card key={m.key}>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <span
-                className="size-2.5 rounded-full"
-                style={{ backgroundColor: m.color }}
-              />
+              <span className="size-2.5 rounded-full" style={{ backgroundColor: m.color }} />
               {m.label}
-              <span className="text-xs font-normal text-muted-foreground">
-                ({m.unit})
-              </span>
+              <span className="text-muted-foreground text-xs font-normal">({m.unit})</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-44 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={data}
-                  margin={{ top: 5, right: 10, left: -12, bottom: 0 }}
-                >
+              <ResponsiveContainer height="100%" width="100%">
+                <AreaChart data={data} margin={{ top: 5, right: 10, left: -12, bottom: 0 }}>
                   <defs>
-                    <linearGradient
-                      id={`grad-${m.key}`}
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
+                    <linearGradient id={`grad-${m.key}`} x1="0" x2="0" y1="0" y2="1">
                       <stop offset="0%" stopColor={m.color} stopOpacity={0.35} />
                       <stop offset="100%" stopColor={m.color} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid
-                    stroke="oklch(0 0 0 / 8%)"
-                    strokeDasharray="3 3"
-                  />
+                  <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" />
                   <XAxis
-                    dataKey="x"
-                    type="number"
-                    domain={["dataMin", "dataMax"]}
-                    tickFormatter={xFmt}
-                    tick={{ fill: "oklch(0.65 0.02 250)", fontSize: 11 }}
                     axisLine={false}
+                    dataKey="x"
+                    domain={['dataMin', 'dataMax']}
+                    tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
+                    tickFormatter={xFmt}
                     tickLine={false}
-                    unit={xLabel === "km" ? "" : ""}
+                    type="number"
+                    unit={xLabel === 'km' ? '' : ''}
                   />
                   <YAxis
-                    domain={
-                      m.key === "pace"
-                        ? ["dataMax", "dataMin"]
-                        : ["auto", "auto"]
-                    }
-                    tickFormatter={
-                      m.format ? (v: number) => m.format!(v) : undefined
-                    }
-                    tick={{ fill: "oklch(0.65 0.02 250)", fontSize: 11 }}
                     axisLine={false}
+                    domain={m.key === 'pace' ? ['dataMax', 'dataMin'] : ['auto', 'auto']}
+                    tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
+                    tickFormatter={m.format ? (v: number) => m.format!(v) : undefined}
                     tickLine={false}
                     width={44}
                   />
@@ -191,14 +165,14 @@ export function ActivityCharts({
                       if (!active || !payload?.length) return null;
                       const v = payload[0].value as number;
                       return (
-                        <div className="rounded-lg border border-border/60 bg-card px-3 py-2 text-xs shadow-lg">
-                          <p className="mb-1 text-muted-foreground">
+                        <div className="border-border/60 bg-card rounded-lg border px-3 py-2 text-xs shadow-lg">
+                          <p className="text-muted-foreground mb-1">
                             {xFmt(Number(label))} {xLabel}
                           </p>
                           <p style={{ color: m.color }}>
                             <span className="font-mono font-semibold">
                               {m.format ? m.format(v) : v}
-                            </span>{" "}
+                            </span>{' '}
                             {m.unit}
                           </p>
                         </div>
@@ -206,14 +180,14 @@ export function ActivityCharts({
                     }}
                   />
                   <Area
-                    type="monotone"
                     dataKey={m.key}
+                    dot={false}
+                    fill={`url(#grad-${m.key})`}
+                    isAnimationActive={false}
                     stroke={m.color}
                     strokeWidth={2}
-                    fill={`url(#grad-${m.key})`}
-                    dot={false}
+                    type="monotone"
                     connectNulls
-                    isAnimationActive={false}
                   />
                 </AreaChart>
               </ResponsiveContainer>

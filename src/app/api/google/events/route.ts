@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getCalendarEvents, getGoogleAccount } from "@/lib/google-sync";
+import { NextRequest, NextResponse } from 'next/server';
+import { getCalendarEvents, getGoogleAccount } from '@/lib/google-sync';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,13 +11,10 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const from = searchParams.get("from");
-    const to = searchParams.get("to");
+    const from = searchParams.get('from');
+    const to = searchParams.get('to');
     if (!from || !to) {
-      return NextResponse.json(
-        { error: "Paramètres 'from' et 'to' requis" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Paramètres 'from' et 'to' requis" }, { status: 400 });
     }
 
     const events = await getCalendarEvents(new Date(from), new Date(to));
@@ -25,7 +22,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { error: "Impossible de récupérer les événements Google" },
+      { error: 'Impossible de récupérer les événements Google' },
       { status: 500 },
     );
   }

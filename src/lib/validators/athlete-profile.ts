@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 const optionalInt = z.coerce.number().int().positive().optional().nullable();
 const optionalPace = z.coerce.number().positive().optional().nullable();

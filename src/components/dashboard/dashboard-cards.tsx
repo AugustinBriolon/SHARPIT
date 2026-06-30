@@ -1,52 +1,47 @@
-"use client";
+'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { AcwrZone, TrainingVerdict, TrendInfo } from "@/lib/dashboard";
-import { accentForTone, type RecoveryTone } from "@/lib/recovery";
-import { cn } from "@/lib/utils";
-import { Gauge, Minus, TrendingDown, TrendingUp } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { AcwrZone, TrainingVerdict, TrendInfo } from '@/lib/dashboard';
+import { accentForTone, type RecoveryTone } from '@/lib/recovery';
+import { cn } from '@/lib/utils';
+import { Gauge, Minus, TrendingDown, TrendingUp } from 'lucide-react';
 
 const TONE_TEXT: Record<RecoveryTone, string> = {
-  good: "text-emerald-600",
-  moderate: "text-amber-600",
-  low: "text-red-600",
-  neutral: "text-muted-foreground",
+  good: 'text-emerald-600',
+  moderate: 'text-amber-600',
+  low: 'text-red-600',
+  neutral: 'text-muted-foreground',
 };
 
 const TONE_DOT: Record<RecoveryTone, string> = {
-  good: "bg-emerald-500",
-  moderate: "bg-amber-500",
-  low: "bg-red-500",
-  neutral: "bg-muted-foreground",
+  good: 'bg-emerald-500',
+  moderate: 'bg-amber-500',
+  low: 'bg-red-500',
+  neutral: 'bg-muted-foreground',
 };
 
 const TONE_SURFACE: Record<RecoveryTone, string> = {
-  good: "border-emerald-500/30 from-emerald-500/10",
-  moderate: "border-amber-500/30 from-amber-500/10",
-  low: "border-red-500/30 from-red-500/10",
-  neutral: "border-border from-muted/40",
+  good: 'border-emerald-500/30 from-emerald-500/10',
+  moderate: 'border-amber-500/30 from-amber-500/10',
+  low: 'border-red-500/30 from-red-500/10',
+  neutral: 'border-border from-muted/40',
 };
 
-const TREND_TONE: Record<TrendInfo["tone"], string> = {
-  good: "text-emerald-600",
-  bad: "text-red-600",
-  neutral: "text-muted-foreground",
+const TREND_TONE: Record<TrendInfo['tone'], string> = {
+  good: 'text-emerald-600',
+  bad: 'text-red-600',
+  neutral: 'text-muted-foreground',
 };
 
 // ---- Bannière verdict : la synthèse actionnable ----
 
 export function VerdictBanner({ verdict }: { verdict: TrainingVerdict }) {
   return (
-    <Card
-      className={cn(
-        "bg-linear-to-br to-transparent",
-        TONE_SURFACE[verdict.tone],
-      )}
-    >
+    <Card className={cn('bg-linear-to-br to-transparent', TONE_SURFACE[verdict.tone])}>
       <CardContent className="flex flex-col gap-4 py-5 sm:flex-row sm:items-start sm:gap-5">
         <span
           className={cn(
-            "mt-1 grid size-11 shrink-0 place-items-center rounded-full",
+            'mt-1 grid size-11 shrink-0 place-items-center rounded-full',
             TONE_DOT[verdict.tone],
           )}
         >
@@ -54,27 +49,25 @@ export function VerdictBanner({ verdict }: { verdict: TrainingVerdict }) {
         </span>
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+            <p className="text-muted-foreground text-[11px] font-medium tracking-[0.2em] uppercase">
               Recommandation du jour
             </p>
           </div>
           <h2
             className={cn(
-              "font-heading text-xl font-semibold tracking-tight",
+              'font-heading text-xl font-semibold tracking-tight',
               TONE_TEXT[verdict.tone],
             )}
           >
             {verdict.title}
           </h2>
-          <p className="text-sm leading-relaxed text-foreground/80">
-            {verdict.message}
-          </p>
+          <p className="text-foreground/80 text-sm leading-relaxed">{verdict.message}</p>
           {verdict.cues.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-1">
               {verdict.cues.map((cue) => (
                 <span
                   key={cue}
-                  className="rounded-full border border-border bg-card/60 px-2.5 py-1 text-xs font-medium text-muted-foreground"
+                  className="border-border bg-card/60 text-muted-foreground rounded-full border px-2.5 py-1 text-xs font-medium"
                 >
                   {cue}
                 </span>
@@ -89,17 +82,11 @@ export function VerdictBanner({ verdict }: { verdict: TrainingVerdict }) {
 
 // ---- Pilier générique (Disponibilité / Forme / Charge) ----
 
-function PillarShell({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function PillarShell({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <Card className="min-h-44">
       <CardHeader>
-        <CardTitle className="text-xs font-medium uppercase tracking-[0.15em] text-muted-foreground">
+        <CardTitle className="text-muted-foreground text-xs font-medium tracking-[0.15em] uppercase">
           {label}
         </CardTitle>
       </CardHeader>
@@ -129,25 +116,20 @@ export function ReadinessPillar({
             background: `conic-gradient(${accent} ${ringDeg}deg, color-mix(in srgb, ${accent} 12%, transparent) ${ringDeg}deg)`,
           }}
         >
-          <div className="grid size-[62px] place-items-center rounded-full bg-card">
+          <div className="bg-card grid size-[62px] place-items-center rounded-full">
             <span
               className="font-mono text-2xl font-semibold tabular-nums"
               style={{ color: accent }}
             >
-              {score ?? "—"}
+              {score ?? '—'}
             </span>
           </div>
         </div>
         <div className="min-w-0">
-          <p
-            className="text-sm font-semibold"
-            style={{ color: accent }}
-          >
+          <p className="text-sm font-semibold" style={{ color: accent }}>
             {levelLabel}
           </p>
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            {recommendation}
-          </p>
+          <p className="text-muted-foreground mt-1 text-xs leading-relaxed">{recommendation}</p>
         </div>
       </div>
     </PillarShell>
@@ -172,30 +154,21 @@ export function FormPillar({
   return (
     <PillarShell label="Forme (TSB)">
       <div className="flex items-baseline gap-2">
-        <span
-          className={cn(
-            "font-mono text-4xl font-semibold tabular-nums",
-            TONE_TEXT[tone],
-          )}
-        >
-          {tsb != null ? `${tsb > 0 ? "+" : ""}${tsb}` : "—"}
+        <span className={cn('font-mono text-4xl font-semibold tabular-nums', TONE_TEXT[tone])}>
+          {tsb != null ? `${tsb > 0 ? '+' : ''}${tsb}` : '—'}
         </span>
-        <span className={cn("text-sm font-medium", TONE_TEXT[tone])}>
-          {label}
-        </span>
+        <span className={cn('text-sm font-medium', TONE_TEXT[tone])}>{label}</span>
       </div>
-      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-        {description}
-      </p>
-      <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border/60 pt-3">
+      <p className="text-muted-foreground mt-1 text-xs leading-relaxed">{description}</p>
+      <div className="border-border/60 mt-3 grid grid-cols-2 gap-3 border-t pt-3">
         <div>
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+          <p className="text-muted-foreground text-[11px] tracking-wider uppercase">
             Fitness · CTL
           </p>
           <p className="font-mono text-lg font-semibold tabular-nums">{ctl}</p>
         </div>
         <div>
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+          <p className="text-muted-foreground text-[11px] tracking-wider uppercase">
             Fatigue · ATL
           </p>
           <p className="font-mono text-lg font-semibold tabular-nums">{atl}</p>
@@ -219,31 +192,27 @@ export function LoadPillar({
   return (
     <PillarShell label="Charge 7 jours">
       <div className="flex items-baseline gap-2">
-        <span className="font-mono text-4xl font-semibold tabular-nums">
-          {weeklyLoad}
-        </span>
-        <span className="text-sm text-muted-foreground">TSS</span>
+        <span className="font-mono text-4xl font-semibold tabular-nums">{weeklyLoad}</span>
+        <span className="text-muted-foreground text-sm">TSS</span>
       </div>
       <div className="mt-1 flex items-center gap-2">
-        <span className={cn("size-2 rounded-full", TONE_DOT[zone.tone])} />
-        <p className={cn("text-sm font-medium", TONE_TEXT[zone.tone])}>
-          {zone.label}
-        </p>
-        <span className="text-xs text-muted-foreground">· ACWR {acwr}</span>
+        <span className={cn('size-2 rounded-full', TONE_DOT[zone.tone])} />
+        <p className={cn('text-sm font-medium', TONE_TEXT[zone.tone])}>{zone.label}</p>
+        <span className="text-muted-foreground text-xs">· ACWR {acwr}</span>
       </div>
-      <div className="mt-3 border-t border-border/60 pt-3">
-        <div className="relative h-1.5 rounded-full bg-muted">
+      <div className="border-border/60 mt-3 border-t pt-3">
+        <div className="bg-muted relative h-1.5 rounded-full">
           {/* zone optimale 0.8–1.3 sur l'échelle 0–2 */}
-          <div className="absolute inset-y-0 left-[40%] right-[35%] rounded-full bg-emerald-500/25" />
+          <div className="absolute inset-y-0 right-[35%] left-[40%] rounded-full bg-emerald-500/25" />
           <div
-            className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-card"
+            className="border-card absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2"
             style={{
               left: `${pct}%`,
               backgroundColor: accentForTone(zone.tone),
             }}
           />
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">{zone.hint}</p>
+        <p className="text-muted-foreground mt-2 text-xs">{zone.hint}</p>
       </div>
     </PillarShell>
   );
@@ -256,7 +225,7 @@ export function WellnessTile({
   value,
   sublabel,
   trend,
-  tone = "neutral",
+  tone = 'neutral',
 }: {
   label: string;
   value: string;
@@ -265,24 +234,20 @@ export function WellnessTile({
   tone?: RecoveryTone;
 }) {
   const TrendIcon =
-    trend?.direction === "up"
-      ? TrendingUp
-      : trend?.direction === "down"
-        ? TrendingDown
-        : Minus;
+    trend?.direction === 'up' ? TrendingUp : trend?.direction === 'down' ? TrendingDown : Minus;
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="border-border bg-card rounded-xl border p-4">
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-2">
-          <span className={cn("size-2 rounded-full", TONE_DOT[tone])} />
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <span className={cn('size-2 rounded-full', TONE_DOT[tone])} />
+          <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
             {label}
           </p>
         </span>
         {trend && (
           <span
             className={cn(
-              "flex items-center gap-0.5 text-xs font-medium tabular-nums",
+              'flex items-center gap-0.5 text-xs font-medium tabular-nums',
               TREND_TONE[trend.tone],
             )}
           >
@@ -291,12 +256,8 @@ export function WellnessTile({
           </span>
         )}
       </div>
-      <p className="mt-2 font-mono text-2xl font-semibold tabular-nums">
-        {value}
-      </p>
-      {sublabel && (
-        <p className="mt-0.5 text-xs text-muted-foreground">{sublabel}</p>
-      )}
+      <p className="mt-2 font-mono text-2xl font-semibold tabular-nums">{value}</p>
+      {sublabel && <p className="text-muted-foreground mt-0.5 text-xs">{sublabel}</p>}
     </div>
   );
 }

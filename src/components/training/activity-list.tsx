@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import { ActivityType } from "@prisma/client";
-import { useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { LinkButton } from "@/components/ui/link-button";
-import { queryKeys } from "@/lib/client/keys";
+import { ActivityType } from '@prisma/client';
+import { useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { LinkButton } from '@/components/ui/link-button';
+import { queryKeys } from '@/lib/client/keys';
 import {
   activityTypeColors,
   activityTypeLabels,
   formatDate,
   formatDistance,
   formatDuration,
-} from "@/lib/format";
+} from '@/lib/format';
 
 type ActivityItem = {
   id: string;
@@ -32,9 +32,9 @@ type ActivityItem = {
 export function ActivityList({ activities }: { activities: ActivityItem[] }) {
   if (!activities.length) {
     return (
-      <div className="rounded-xl border border-dashed border-border/80 p-12 text-center">
+      <div className="border-border/80 rounded-xl border border-dashed p-12 text-center">
         <p className="text-muted-foreground">Aucune séance enregistrée.</p>
-        <LinkButton href="/training/new" className="mt-4">
+        <LinkButton className="mt-4" href="/training/new">
           Ajouter une séance
         </LinkButton>
       </div>
@@ -55,28 +55,24 @@ function ActivityRow({ activity }: { activity: ActivityItem }) {
 
   return (
     <Link
+      className="group border-border bg-card hover:border-primary/30 hover:bg-muted/30 flex items-center justify-between rounded-xl border px-5 py-4 transition-colors"
       href={`/training/${activity.id}`}
-      className="group flex items-center justify-between rounded-xl border border-border bg-card px-5 py-4 transition-colors hover:border-primary/30 hover:bg-muted/30"
     >
       <div className="space-y-1">
         <div className="flex items-center gap-3">
-          <Badge variant="outline" className={activityTypeColors[activity.type]}>
+          <Badge className={activityTypeColors[activity.type]} variant="outline">
             {activityTypeLabels[activity.type]}
           </Badge>
-          <span className="font-medium">
-            {activity.title ?? activityTypeLabels[activity.type]}
-          </span>
+          <span className="font-medium">{activity.title ?? activityTypeLabels[activity.type]}</span>
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           {formatDate(new Date(activity.date))} · {formatDuration(activity.duration)}
-          {summary ? ` · ${summary}` : ""}
+          {summary ? ` · ${summary}` : ''}
         </p>
       </div>
       <div className="text-right">
         {activity.load != null && (
-          <p className="font-mono text-sm text-primary">
-            {Math.round(activity.load)} TSS
-          </p>
+          <p className="text-primary font-mono text-sm">{Math.round(activity.load)} TSS</p>
         )}
       </div>
     </Link>
@@ -88,13 +84,11 @@ function getActivitySummary(activity: ActivityItem) {
     case ActivityType.RUN:
       return formatDistance(activity.runMetrics?.distanceM);
     case ActivityType.BIKE:
-      return activity.bikeMetrics?.tss
-        ? `${Math.round(activity.bikeMetrics.tss)} TSS`
-        : undefined;
+      return activity.bikeMetrics?.tss ? `${Math.round(activity.bikeMetrics.tss)} TSS` : undefined;
     case ActivityType.SWIM:
       return formatDistance(activity.swimMetrics?.distanceM);
     case ActivityType.STRENGTH:
-      return activity.strengthSets.map((s) => s.exercise).join(", ");
+      return activity.strengthSets.map((s) => s.exercise).join(', ');
     default:
       return undefined;
   }
@@ -105,15 +99,16 @@ export function DeleteActivityButton({ id }: { id: string }) {
   const queryClient = useQueryClient();
 
   async function handleDelete() {
-    if (!confirm("Supprimer cette séance ?")) return;
-    await fetch(`/api/activities/${id}`, { method: "DELETE" });
+    if (!confirm('Supprimer cette séance ?')) return;
+    await fetch(`/api/activities/${id}`, { method: 'DELETE' });
     await queryClient.invalidateQueries({ queryKey: queryKeys.activities });
-    router.push("/training");
-    router.refresh();
+    // La liste /training est pilotée par React Query : l'invalidation suffit,
+    // pas besoin de router.refresh() (qui re-render inutilement l'arbre serveur).
+    router.push('/training');
   }
 
   return (
-    <Button variant="destructive" size="sm" onClick={handleDelete}>
+    <Button size="sm" variant="destructive" onClick={handleDelete}>
       Supprimer
     </Button>
   );

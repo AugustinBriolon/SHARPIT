@@ -1,19 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
-import { pushSessionToGoogle } from "@/lib/google-sync";
-import {
-  createPlannedSession,
-  getPlannedSessionById,
-  getPlannedSessions,
-} from "@/lib/queries";
-import { createPlannedSessionSchema } from "@/lib/validators/planned-session";
+import { NextRequest, NextResponse } from 'next/server';
+import { pushSessionToGoogle } from '@/lib/google-sync';
+import { createPlannedSession, getPlannedSessionById, getPlannedSessions } from '@/lib/queries';
+import { createPlannedSessionSchema } from '@/lib/validators/planned-session';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const fromParam = searchParams.get("from");
-    const toParam = searchParams.get("to");
+    const fromParam = searchParams.get('from');
+    const toParam = searchParams.get('to');
     const sessions = await getPlannedSessions({
       from: fromParam ? new Date(fromParam) : undefined,
       to: toParam ? new Date(toParam) : undefined,
@@ -22,7 +18,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { error: "Impossible de charger les séances planifiées" },
+      { error: 'Impossible de charger les séances planifiées' },
       { status: 500 },
     );
   }
@@ -35,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Données invalides", details: parsed.error.flatten() },
+        { error: 'Données invalides', details: parsed.error.flatten() },
         { status: 400 },
       );
     }
@@ -48,16 +44,13 @@ export async function POST(request: NextRequest) {
     try {
       await pushSessionToGoogle(session);
     } catch (syncError) {
-      console.error("Push Google Calendar échoué", syncError);
+      console.error('Push Google Calendar échoué', syncError);
     }
 
     const fresh = await getPlannedSessionById(session.id);
     return NextResponse.json(fresh ?? session, { status: 201 });
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { error: "Impossible de créer la séance planifiée" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Impossible de créer la séance planifiée' }, { status: 500 });
   }
 }

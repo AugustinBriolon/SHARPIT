@@ -1,9 +1,9 @@
-import { ActivityType } from "@prisma/client";
+import { ActivityType } from '@prisma/client';
 
-const STRAVA_OAUTH_BASE = "https://www.strava.com/oauth";
-const STRAVA_API_BASE = "https://www.strava.com/api/v3";
+const STRAVA_OAUTH_BASE = 'https://www.strava.com/oauth';
+const STRAVA_API_BASE = 'https://www.strava.com/api/v3';
 
-export const STRAVA_SCOPE = "read,activity:read_all";
+export const STRAVA_SCOPE = 'read,activity:read_all';
 
 /** URL de callback OAuth, déduite du host courant si STRAVA_REDIRECT_URI est absent. */
 export function getStravaRedirectUri(origin?: string) {
@@ -16,7 +16,7 @@ export function getStravaRedirectUri(origin?: string) {
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}/api/strava/callback`;
   }
-  return "http://localhost:3000/api/strava/callback";
+  return 'http://localhost:3000/api/strava/callback';
 }
 
 export function getStravaConfig(origin?: string) {
@@ -25,9 +25,7 @@ export function getStravaConfig(origin?: string) {
   const redirectUri = getStravaRedirectUri(origin);
 
   if (!clientId || !clientSecret) {
-    throw new Error(
-      "STRAVA_CLIENT_ID et STRAVA_CLIENT_SECRET doivent être définis dans .env",
-    );
+    throw new Error('STRAVA_CLIENT_ID et STRAVA_CLIENT_SECRET doivent être définis dans .env');
   }
 
   return { clientId, clientSecret, redirectUri };
@@ -42,8 +40,8 @@ export function buildAuthorizeUrl(state: string, origin?: string) {
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
-    response_type: "code",
-    approval_prompt: "auto",
+    response_type: 'code',
+    approval_prompt: 'auto',
     scope: STRAVA_SCOPE,
     state,
   });
@@ -62,18 +60,16 @@ export interface StravaTokenResponse {
   };
 }
 
-export async function exchangeCodeForToken(
-  code: string,
-): Promise<StravaTokenResponse> {
+export async function exchangeCodeForToken(code: string): Promise<StravaTokenResponse> {
   const { clientId, clientSecret } = getStravaConfig();
   const response = await fetch(`${STRAVA_OAUTH_BASE}/token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       client_id: clientId,
       client_secret: clientSecret,
       code,
-      grant_type: "authorization_code",
+      grant_type: 'authorization_code',
     }),
   });
 
@@ -84,18 +80,16 @@ export async function exchangeCodeForToken(
   return response.json();
 }
 
-export async function refreshAccessToken(
-  refreshToken: string,
-): Promise<StravaTokenResponse> {
+export async function refreshAccessToken(refreshToken: string): Promise<StravaTokenResponse> {
   const { clientId, clientSecret } = getStravaConfig();
   const response = await fetch(`${STRAVA_OAUTH_BASE}/token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       client_id: clientId,
       client_secret: clientSecret,
       refresh_token: refreshToken,
-      grant_type: "refresh_token",
+      grant_type: 'refresh_token',
     }),
   });
 
@@ -133,15 +127,12 @@ export async function fetchActivities(
     per_page: String(options.perPage ?? 100),
     page: String(options.page ?? 1),
   });
-  if (options.after) params.set("after", String(options.after));
+  if (options.after) params.set('after', String(options.after));
 
-  const response = await fetch(
-    `${STRAVA_API_BASE}/athlete/activities?${params.toString()}`,
-    {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      cache: "no-store",
-    },
-  );
+  const response = await fetch(`${STRAVA_API_BASE}/athlete/activities?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: 'no-store',
+  });
 
   if (!response.ok) {
     throw new Error(`Récupération des activités Strava échouée (${response.status})`);
@@ -163,27 +154,24 @@ export async function fetchActivityDetail(
   accessToken: string,
   stravaActivityId: string,
 ): Promise<StravaActivityDetail | null> {
-  const response = await fetch(
-    `${STRAVA_API_BASE}/activities/${stravaActivityId}`,
-    {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      cache: "no-store",
-    },
-  );
+  const response = await fetch(`${STRAVA_API_BASE}/activities/${stravaActivityId}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: 'no-store',
+  });
   if (!response.ok) return null;
   return response.json();
 }
 
 export const STRAVA_STREAM_KEYS = [
-  "time",
-  "latlng",
-  "distance",
-  "altitude",
-  "heartrate",
-  "watts",
-  "cadence",
-  "velocity_smooth",
-  "temp",
+  'time',
+  'latlng',
+  'distance',
+  'altitude',
+  'heartrate',
+  'watts',
+  'cadence',
+  'velocity_smooth',
+  'temp',
 ] as const;
 
 export type StravaStreamKey = (typeof STRAVA_STREAM_KEYS)[number];
@@ -218,15 +206,15 @@ export async function fetchActivityStreams(
   stravaActivityId: string,
 ): Promise<StravaStreamSet | null> {
   const params = new URLSearchParams({
-    keys: STRAVA_STREAM_KEYS.join(","),
-    key_by_type: "true",
+    keys: STRAVA_STREAM_KEYS.join(','),
+    key_by_type: 'true',
   });
 
   const response = await fetch(
     `${STRAVA_API_BASE}/activities/${stravaActivityId}/streams?${params.toString()}`,
     {
       headers: { Authorization: `Bearer ${accessToken}` },
-      cache: "no-store",
+      cache: 'no-store',
     },
   );
 
@@ -240,21 +228,17 @@ export async function fetchActivityStreams(
 
 export function mapStravaType(stravaType: string): ActivityType | null {
   const type = stravaType.toLowerCase();
-  if (type.includes("run")) return ActivityType.RUN;
+  if (type.includes('run')) return ActivityType.RUN;
   if (
-    type.includes("ride") ||
-    type.includes("bike") ||
-    type.includes("cycling") ||
-    type.includes("velomobile")
+    type.includes('ride') ||
+    type.includes('bike') ||
+    type.includes('cycling') ||
+    type.includes('velomobile')
   ) {
     return ActivityType.BIKE;
   }
-  if (type.includes("swim")) return ActivityType.SWIM;
-  if (
-    type.includes("weighttraining") ||
-    type.includes("workout") ||
-    type.includes("crossfit")
-  ) {
+  if (type.includes('swim')) return ActivityType.SWIM;
+  if (type.includes('weighttraining') || type.includes('workout') || type.includes('crossfit')) {
     return ActivityType.STRENGTH;
   }
   return null;

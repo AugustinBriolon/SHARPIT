@@ -1,26 +1,21 @@
-"use client";
+'use client';
 
-import { BodySide, PhysicalCategory, PhysicalStatus } from "@prisma/client";
-import { format } from "date-fns";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { BodySide, PhysicalCategory, PhysicalStatus } from '@prisma/client';
+import { format } from 'date-fns';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import type { ClientPhysicalNote } from "@/lib/client/types";
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import type { ClientPhysicalNote } from '@/lib/client/types';
 import {
   categoryLabels,
   categoryOrder,
@@ -29,8 +24,8 @@ import {
   sideOrder,
   statusLabels,
   statusOrder,
-} from "@/lib/physical";
-import { usePhysicalNoteMutations } from "@/hooks/use-physical";
+} from '@/lib/physical';
+import { usePhysicalNoteMutations } from '@/hooks/use-physical';
 
 interface Props {
   note?: ClientPhysicalNote | null;
@@ -41,15 +36,11 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
   const isEdit = Boolean(note);
   const { create, update, remove } = usePhysicalNoteMutations();
 
-  const [category, setCategory] = useState<PhysicalCategory>(
-    note?.category ?? "PAIN",
-  );
-  const [status, setStatus] = useState<PhysicalStatus>(note?.status ?? "ACTIVE");
-  const [side, setSide] = useState<BodySide>(note?.side ?? "NA");
+  const [category, setCategory] = useState<PhysicalCategory>(note?.category ?? 'PAIN');
+  const [status, setStatus] = useState<PhysicalStatus>(note?.status ?? 'ACTIVE');
+  const [side, setSide] = useState<BodySide>(note?.side ?? 'NA');
   const [severity, setSeverity] = useState<number>(note?.severity ?? 3);
-  const [affectsTraining, setAffectsTraining] = useState(
-    note?.affectsTraining ?? true,
-  );
+  const [affectsTraining, setAffectsTraining] = useState(note?.affectsTraining ?? true);
   const [error, setError] = useState<string | null>(null);
 
   const pending = create.isPending || update.isPending || remove.isPending;
@@ -64,13 +55,13 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
       side,
       severity,
       affectsTraining,
-      title: String(fd.get("title") || "").trim(),
-      bodyPart: (fd.get("bodyPart") as string) || null,
-      description: (fd.get("description") as string) || null,
-      startDate: new Date(`${String(fd.get("startDate"))}T12:00:00`),
+      title: String(fd.get('title') || '').trim(),
+      bodyPart: (fd.get('bodyPart') as string) || null,
+      description: (fd.get('description') as string) || null,
+      startDate: new Date(`${String(fd.get('startDate'))}T12:00:00`),
     };
     if (!payload.title) {
-      setError("Le titre est requis");
+      setError('Le titre est requis');
       return;
     }
     try {
@@ -81,18 +72,18 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
       }
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur");
+      setError(err instanceof Error ? err.message : 'Erreur');
     }
   }
 
   async function handleDelete() {
     if (!note) return;
-    if (!confirm("Supprimer cette note et son historique ?")) return;
+    if (!confirm('Supprimer cette note et son historique ?')) return;
     try {
       await remove.mutateAsync(note.id);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur");
+      setError(err instanceof Error ? err.message : 'Erreur');
     }
   }
 
@@ -102,19 +93,17 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>
-            {isEdit ? "Modifier la note" : "Nouvelle note physique"}
-          </DialogTitle>
+          <DialogTitle>{isEdit ? 'Modifier la note' : 'Nouvelle note physique'}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <Label htmlFor="title">Titre</Label>
             <Input
+              defaultValue={note?.title ?? ''}
               id="title"
               name="title"
               placeholder="Ex : Tendinite genou droit"
-              defaultValue={note?.title ?? ""}
               required
             />
           </div>
@@ -122,10 +111,7 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Catégorie</Label>
-              <Select
-                value={category}
-                onValueChange={(v) => setCategory(v as PhysicalCategory)}
-              >
+              <Select value={category} onValueChange={(v) => setCategory(v as PhysicalCategory)}>
                 <SelectTrigger>
                   <SelectValue>{categoryLabels[category]}</SelectValue>
                 </SelectTrigger>
@@ -140,10 +126,7 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
             </div>
             <div className="space-y-2">
               <Label>Statut</Label>
-              <Select
-                value={status}
-                onValueChange={(v) => setStatus(v as PhysicalStatus)}
-              >
+              <Select value={status} onValueChange={(v) => setStatus(v as PhysicalStatus)}>
                 <SelectTrigger>
                   <SelectValue>{statusLabels[status]}</SelectValue>
                 </SelectTrigger>
@@ -162,11 +145,11 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
             <div className="space-y-2">
               <Label htmlFor="bodyPart">Zone du corps</Label>
               <Input
+                defaultValue={note?.bodyPart ?? ''}
                 id="bodyPart"
-                name="bodyPart"
                 list="body-parts"
+                name="bodyPart"
                 placeholder="Genou, bassin, pied…"
-                defaultValue={note?.bodyPart ?? ""}
               />
               <datalist id="body-parts">
                 {COMMON_BODY_PARTS.map((p) => (
@@ -197,13 +180,13 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
               <span className="font-mono text-sm">{severity}/10</span>
             </div>
             <input
+              className="accent-primary w-full"
               id="severity"
-              type="range"
-              min={0}
               max={10}
+              min={0}
+              type="range"
               value={severity}
               onChange={(e) => setSeverity(Number(e.target.value))}
-              className="w-full accent-primary"
             />
           </div>
 
@@ -211,18 +194,18 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
             <div className="space-y-2">
               <Label htmlFor="startDate">Depuis le</Label>
               <Input
+                defaultValue={format(initialDate, 'yyyy-MM-dd')}
                 id="startDate"
                 name="startDate"
                 type="date"
-                defaultValue={format(initialDate, "yyyy-MM-dd")}
               />
             </div>
-            <label className="flex items-end gap-2 pb-2 text-sm text-muted-foreground">
+            <label className="text-muted-foreground flex items-end gap-2 pb-2 text-sm">
               <input
-                type="checkbox"
                 checked={affectsTraining}
+                className="border-border size-4 rounded"
+                type="checkbox"
                 onChange={(e) => setAffectsTraining(e.target.checked)}
-                className="size-4 rounded border-border"
               />
               Pris en compte par le coach
             </label>
@@ -231,41 +214,36 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea
+              defaultValue={note?.description ?? ''}
               id="description"
               name="description"
-              rows={2}
               placeholder="Contexte, déclencheur, ressenti…"
-              defaultValue={note?.description ?? ""}
+              rows={2}
             />
           </div>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && <p className="text-destructive text-sm">{error}</p>}
 
           <div className="flex items-center justify-between gap-2">
             <div>
               {isEdit && (
                 <Button
+                  disabled={pending}
+                  size="sm"
                   type="button"
                   variant="destructive"
-                  size="sm"
                   onClick={handleDelete}
-                  disabled={pending}
                 >
                   Supprimer
                 </Button>
               )}
             </div>
             <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                disabled={pending}
-              >
+              <Button disabled={pending} type="button" variant="outline" onClick={onClose}>
                 Annuler
               </Button>
-              <Button type="submit" disabled={pending}>
-                {pending ? "Enregistrement…" : isEdit ? "Mettre à jour" : "Créer"}
+              <Button disabled={pending} type="submit">
+                {pending ? 'Enregistrement…' : isEdit ? 'Mettre à jour' : 'Créer'}
               </Button>
             </div>
           </div>

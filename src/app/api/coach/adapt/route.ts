@@ -1,20 +1,24 @@
-import { generateText, Output } from "ai";
-import { addDays, format, startOfDay } from "date-fns";
-import { fr } from "date-fns/locale";
-import { NextResponse } from "next/server";
-import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from "@/lib/ai";
-import { buildCoachContext, formatCoachContext } from "@/lib/coach-context";
-import { getPlannedSessions } from "@/lib/queries";
-import { intensityLabels } from "@/lib/sessions";
-import { adaptPlanGenerationSchema, adaptPlanSchema, adaptRequestSchema } from "@/lib/validators/coach";
+import { generateText, Output } from 'ai';
+import { addDays, format, startOfDay } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { NextResponse } from 'next/server';
+import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from '@/lib/ai';
+import { buildCoachContext, formatCoachContext } from '@/lib/coach-context';
+import { getPlannedSessions } from '@/lib/queries';
+import { intensityLabels } from '@/lib/sessions';
+import {
+  adaptPlanGenerationSchema,
+  adaptPlanSchema,
+  adaptRequestSchema,
+} from '@/lib/validators/coach';
 
 export const maxDuration = 60;
 
 const TYPE_FR: Record<string, string> = {
-  RUN: "Course",
-  BIKE: "Vélo",
-  SWIM: "Natation",
-  STRENGTH: "Renfo",
+  RUN: 'Course',
+  BIKE: 'Vélo',
+  SWIM: 'Natation',
+  STRENGTH: 'Renfo',
 };
 
 const SYSTEM_PROMPT = `Tu es un entraîneur expert en endurance. À partir de l'état de forme de l'athlète, de ce qu'il a RÉELLEMENT réalisé récemment (avec analyses prévu/réalisé) et de ses séances DÉJÀ PLANIFIÉES à venir, propose des ajustements pertinents du plan.
@@ -36,20 +40,19 @@ Réponds en français.`;
 function adaptErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   if (/gateway|fetch failed|ECONNREFUSED|ETIMEDOUT|network/i.test(message)) {
-    return "Connexion au coach IA impossible. Vérifie ta connexion réseau (proxy, VPN, partage de connexion).";
+    return 'Connexion au coach IA impossible. Vérifie ta connexion réseau (proxy, VPN, partage de connexion).';
   }
   if (/schema|validation|object/i.test(message)) {
-    return "Le coach a renvoyé une réponse invalide. Réessaie dans un instant.";
+    return 'Le coach a renvoyé une réponse invalide. Réessaie dans un instant.';
   }
-  return "La réadaptation a échoué. Réessaie dans un instant.";
+  return 'La réadaptation a échoué. Réessaie dans un instant.';
 }
 
 export async function POST(req: Request) {
   if (!isCoachConfigured()) {
     return NextResponse.json(
       {
-        error:
-          "Coach IA non configuré. Ajoute une clé AI_GATEWAY_API_KEY dans .env.",
+        error: 'Coach IA non configuré. Ajoute une clé AI_GATEWAY_API_KEY dans .env.',
       },
       { status: 503 },
     );
@@ -59,7 +62,7 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}));
     const parsed = adaptRequestSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ error: "Paramètres invalides." }, { status: 400 });
+      return NextResponse.json({ error: 'Paramètres invalides.' }, { status: 400 });
     }
     const { days = 14, focus } = parsed.data;
 
@@ -74,26 +77,26 @@ export async function POST(req: Request) {
     const upcomingLines = upcoming.map((p) => {
       const bits = [
         `id=${p.id}`,
-        format(p.date, "EEE d MMM", { locale: fr }),
+        format(p.date, 'EEE d MMM', { locale: fr }),
         TYPE_FR[p.type] ?? p.type,
         p.intensity ? intensityLabels[p.intensity] : null,
         p.durationMin ? `${p.durationMin} min` : null,
         p.load ? `${Math.round(p.load)} TSS` : null,
         p.title ? `"${p.title}"` : null,
-        p.brickGroupId ? "[brick]" : null,
-        p.completed ? "[réalisée]" : null,
+        p.brickGroupId ? '[brick]' : null,
+        p.completed ? '[réalisée]' : null,
       ]
         .filter(Boolean)
-        .join(" · ");
+        .join(' · ');
       return `- ${bits}`;
     });
 
-    const prompt = `${focus ? `Demande de l'athlète : ${focus}\n\n` : ""}Fenêtre d'ajustement : du ${format(today, "d MMM", { locale: fr })} au ${format(horizon, "d MMM yyyy", { locale: fr })} (dates ADD au format yyyy-MM-dd dans cette fenêtre).
+    const prompt = `${focus ? `Demande de l'athlète : ${focus}\n\n` : ''}Fenêtre d'ajustement : du ${format(today, 'd MMM', { locale: fr })} au ${format(horizon, 'd MMM yyyy', { locale: fr })} (dates ADD au format yyyy-MM-dd dans cette fenêtre).
 
 ${formatCoachContext(ctx)}
 
 ## Séances déjà planifiées à venir (à ajuster)
-${upcomingLines.length ? upcomingLines.join("\n") : "Aucune séance planifiée à venir."}`;
+${upcomingLines.length ? upcomingLines.join('\n') : 'Aucune séance planifiée à venir.'}`;
 
     const { output } = await generateText({
       model: COACH_MODEL,
@@ -105,19 +108,16 @@ ${upcomingLines.length ? upcomingLines.join("\n") : "Aucune séance planifiée �
 
     const validated = adaptPlanSchema.safeParse(output);
     if (!validated.success) {
-      console.error("[coach/adapt] validation", validated.error.flatten());
+      console.error('[coach/adapt] validation', validated.error.flatten());
       return NextResponse.json(
-        { error: "Le coach a renvoyé une réponse invalide. Réessaie." },
+        { error: 'Le coach a renvoyé une réponse invalide. Réessaie.' },
         { status: 500 },
       );
     }
 
     return NextResponse.json(validated.data);
   } catch (error) {
-    console.error("[coach/adapt]", error);
-    return NextResponse.json(
-      { error: adaptErrorMessage(error) },
-      { status: 500 },
-    );
+    console.error('[coach/adapt]', error);
+    return NextResponse.json({ error: adaptErrorMessage(error) }, { status: 500 });
   }
 }

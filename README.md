@@ -59,4 +59,5 @@ Ouvre [http://localhost:3000](http://localhost:3000).
 - **Settings** — connexion & synchronisation Strava
 
 Les autres modules (Analytics, Recovery, Goals…) sont prévus dans la navigation.
+
 # SHARPIT

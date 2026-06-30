@@ -1,14 +1,11 @@
-"use client";
+'use client';
 
-import type { SplitRow } from "@/lib/activity-analysis";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDuration, formatPace } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import type { SplitRow } from '@/lib/activity-analysis';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatDuration, formatPace } from '@/lib/format';
+import { cn } from '@/lib/utils';
 
-function paceDelta(
-  pace: number,
-  ref: number | null,
-): { pct: number; faster: boolean } | null {
+function paceDelta(pace: number, ref: number | null): { pct: number; faster: boolean } | null {
   if (!ref || ref <= 0) return null;
   const pct = ((pace - ref) / ref) * 100;
   return { pct: Math.abs(pct), faster: pct < 0 };
@@ -18,18 +15,16 @@ export function SplitsTable({
   splits,
   refPaceSecPerKm,
   title,
-  mode = "run",
+  mode = 'run',
 }: {
   splits: SplitRow[];
   refPaceSecPerKm?: number | null;
   title: string;
-  mode?: "run" | "bike";
+  mode?: 'run' | 'bike';
 }) {
   if (!splits.length) return null;
 
-  const paces = splits
-    .map((s) => s.paceSecPerKm)
-    .filter((p): p is number => p != null);
+  const paces = splits.map((s) => s.paceSecPerKm).filter((p): p is number => p != null);
   const bestPace = paces.length ? Math.min(...paces) : null;
 
   return (
@@ -40,16 +35,12 @@ export function SplitsTable({
       <CardContent className="overflow-x-auto">
         <table className="w-full min-w-[480px] text-sm">
           <thead>
-            <tr className="border-b border-border/60 text-left text-xs uppercase tracking-wider text-muted-foreground">
-              <th className="pb-2 pr-4 font-medium">Split</th>
-              <th className="pb-2 pr-4 font-medium">Temps</th>
-              <th className="pb-2 pr-4 font-medium">
-                {mode === "bike" ? "Vitesse" : "Allure"}
-              </th>
-              <th className="pb-2 pr-4 font-medium">FC</th>
-              {mode === "bike" && (
-                <th className="pb-2 pr-4 font-medium">W moy.</th>
-              )}
+            <tr className="border-border/60 text-muted-foreground border-b text-left text-xs tracking-wider uppercase">
+              <th className="pr-4 pb-2 font-medium">Split</th>
+              <th className="pr-4 pb-2 font-medium">Temps</th>
+              <th className="pr-4 pb-2 font-medium">{mode === 'bike' ? 'Vitesse' : 'Allure'}</th>
+              <th className="pr-4 pb-2 font-medium">FC</th>
+              {mode === 'bike' && <th className="pr-4 pb-2 font-medium">W moy.</th>}
               <th className="pb-2 font-medium">D+</th>
             </tr>
           </thead>
@@ -59,61 +50,45 @@ export function SplitsTable({
                 ? paceDelta(row.paceSecPerKm, refPaceSecPerKm ?? bestPace)
                 : null;
               const isBest =
-                row.paceSecPerKm != null &&
-                bestPace != null &&
-                row.paceSecPerKm === bestPace;
+                row.paceSecPerKm != null && bestPace != null && row.paceSecPerKm === bestPace;
 
               return (
-                <tr
-                  key={row.index}
-                  className="border-b border-border/30 last:border-0"
-                >
-                  <td className="py-2 pr-4 font-mono text-muted-foreground">
-                    {row.label}
-                  </td>
-                  <td className="py-2 pr-4 font-mono">
-                    {formatDuration(row.durationSec)}
-                  </td>
+                <tr key={row.index} className="border-border/30 border-b last:border-0">
+                  <td className="text-muted-foreground py-2 pr-4 font-mono">{row.label}</td>
+                  <td className="py-2 pr-4 font-mono">{formatDuration(row.durationSec)}</td>
                   <td
                     className={cn(
-                      "py-2 pr-4 font-mono",
-                      isBest && mode === "run" && "text-cyan-600",
+                      'py-2 pr-4 font-mono',
+                      isBest && mode === 'run' && 'text-cyan-600',
                     )}
                   >
                     {row.paceSecPerKm != null && row.durationSec > 0
-                      ? mode === "bike"
-                        ? `${(
-                            (row.distanceM / row.durationSec) *
-                            3.6
-                          ).toFixed(1)} km/h`
+                      ? mode === 'bike'
+                        ? `${((row.distanceM / row.durationSec) * 3.6).toFixed(1)} km/h`
                         : formatPace(row.paceSecPerKm)
-                      : "—"}
-                    {delta && refPaceSecPerKm && mode === "run" && (
+                      : '—'}
+                    {delta && refPaceSecPerKm && mode === 'run' && (
                       <span
                         className={cn(
-                          "ml-1 text-[10px]",
-                          delta.faster ? "text-emerald-600" : "text-orange-600",
+                          'ml-1 text-[10px]',
+                          delta.faster ? 'text-emerald-600' : 'text-orange-600',
                         )}
                       >
-                        {delta.faster ? "−" : "+"}
+                        {delta.faster ? '−' : '+'}
                         {delta.pct.toFixed(0)}%
                       </span>
                     )}
                   </td>
                   <td className="py-2 pr-4 font-mono">
-                    {row.avgHr != null ? `${Math.round(row.avgHr)}` : "—"}
+                    {row.avgHr != null ? `${Math.round(row.avgHr)}` : '—'}
                   </td>
-                  {mode === "bike" && (
+                  {mode === 'bike' && (
                     <td className="py-2 pr-4 font-mono">
-                      {row.avgWatts != null
-                        ? `${Math.round(row.avgWatts)} W`
-                        : "—"}
+                      {row.avgWatts != null ? `${Math.round(row.avgWatts)} W` : '—'}
                     </td>
                   )}
-                  <td className="py-2 font-mono text-muted-foreground">
-                    {row.elevationGainM != null
-                      ? `+${row.elevationGainM} m`
-                      : "—"}
+                  <td className="text-muted-foreground py-2 font-mono">
+                    {row.elevationGainM != null ? `+${row.elevationGainM} m` : '—'}
                   </td>
                 </tr>
               );

@@ -1,10 +1,6 @@
-import type { AthleteProfile } from "@prisma/client";
-import {
-  estimateFtp,
-  estimateRunThresholdPace,
-  fmtPaceSecPerKm,
-} from "./performance-predictor";
-import type { RecordsPayload } from "./records";
+import type { AthleteProfile } from '@prisma/client';
+import { estimateFtp, estimateRunThresholdPace, fmtPaceSecPerKm } from './performance-predictor';
+import type { RecordsPayload } from './records';
 
 export interface ThresholdEstimates {
   ftpW: number | null;
@@ -12,9 +8,7 @@ export interface ThresholdEstimates {
   runThresholdPaceSecPerKm: number | null;
 }
 
-export function computeThresholdEstimates(
-  records: RecordsPayload,
-): ThresholdEstimates {
+export function computeThresholdEstimates(records: RecordsPayload): ThresholdEstimates {
   const ftp = estimateFtp(records.powerCurve);
   const pace = estimateRunThresholdPace(records.runBests);
   return {
@@ -31,7 +25,7 @@ export interface ThresholdApplyPreview {
     runThresholdPaceSecPerKm: number | null;
   };
   changes: {
-    field: "ftpW" | "runThresholdPaceSecPerKm";
+    field: 'ftpW' | 'runThresholdPaceSecPerKm';
     label: string;
     from: string;
     to: string;
@@ -40,16 +34,13 @@ export interface ThresholdApplyPreview {
 }
 
 function fmtFtp(w: number | null): string {
-  return w != null ? `${w} W` : "—";
+  return w != null ? `${w} W` : '—';
 }
 
 /** Compare les estimations aux seuils actuels du profil. */
 export function previewThresholdApply(
   records: RecordsPayload,
-  profile: Pick<
-    AthleteProfile,
-    "ftpW" | "runThresholdPaceSecPerKm"
-  > | null,
+  profile: Pick<AthleteProfile, 'ftpW' | 'runThresholdPaceSecPerKm'> | null,
 ): ThresholdApplyPreview {
   const estimates = computeThresholdEstimates(records);
   const current = {
@@ -57,15 +48,12 @@ export function previewThresholdApply(
     runThresholdPaceSecPerKm: profile?.runThresholdPaceSecPerKm ?? null,
   };
 
-  const changes: ThresholdApplyPreview["changes"] = [];
+  const changes: ThresholdApplyPreview['changes'] = [];
 
-  if (
-    estimates.ftpW != null &&
-    estimates.ftpW !== current.ftpW
-  ) {
+  if (estimates.ftpW != null && estimates.ftpW !== current.ftpW) {
     changes.push({
-      field: "ftpW",
-      label: "FTP vélo",
+      field: 'ftpW',
+      label: 'FTP vélo',
       from: fmtFtp(current.ftpW),
       to: fmtFtp(estimates.ftpW),
     });
@@ -76,11 +64,11 @@ export function previewThresholdApply(
     estimates.runThresholdPaceSecPerKm !== current.runThresholdPaceSecPerKm
   ) {
     changes.push({
-      field: "runThresholdPaceSecPerKm",
-      label: "Allure seuil",
+      field: 'runThresholdPaceSecPerKm',
+      label: 'Allure seuil',
       from: current.runThresholdPaceSecPerKm
         ? fmtPaceSecPerKm(current.runThresholdPaceSecPerKm)
-        : "—",
+        : '—',
       to: fmtPaceSecPerKm(estimates.runThresholdPaceSecPerKm),
     });
   }

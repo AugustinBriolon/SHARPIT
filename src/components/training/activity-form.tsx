@@ -1,26 +1,26 @@
-"use client";
+'use client';
 
-import { ActivityType } from "@prisma/client";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { useFieldArray, useForm } from "react-hook-form";
-import { z } from "zod";
-import { queryKeys } from "@/lib/client/keys";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ActivityType } from '@prisma/client';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
+import { useFieldArray, useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { queryKeys } from '@/lib/client/keys';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { activityTypeLabels, formatDateTimeLocal } from "@/lib/format";
-import { createActivitySchema } from "@/lib/validators/activity";
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { activityTypeLabels, formatDateTimeLocal } from '@/lib/format';
+import { createActivitySchema } from '@/lib/validators/activity';
 
 type ActivityFormValues = z.input<typeof createActivitySchema>;
 
@@ -42,19 +42,19 @@ type ActivityWithRelations = {
 };
 
 interface ActivityFormProps {
-  mode: "create" | "edit";
+  mode: 'create' | 'edit';
   initialData?: ActivityWithRelations;
 }
 
 const defaultStrengthSet = {
-  exercise: "",
+  exercise: '',
   sets: 3,
   reps: 8,
   weightKg: undefined,
   rpe: undefined,
   restSec: 90,
-  videoUrl: "",
-  notes: "",
+  videoUrl: '',
+  notes: '',
 };
 
 export function ActivityForm({ mode, initialData }: ActivityFormProps) {
@@ -66,12 +66,12 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
       ? {
           type: initialData.type,
           date: new Date(initialData.date),
-          title: initialData.title ?? "",
+          title: initialData.title ?? '',
           duration: initialData.duration ?? undefined,
           rpe: initialData.rpe ?? undefined,
-          feeling: initialData.feeling ?? "",
-          notes: initialData.notes ?? "",
-          weather: initialData.weather ?? "",
+          feeling: initialData.feeling ?? '',
+          notes: initialData.notes ?? '',
+          weather: initialData.weather ?? '',
           load: initialData.load ?? undefined,
           runMetrics: initialData.runMetrics ?? undefined,
           bikeMetrics: initialData.bikeMetrics ?? undefined,
@@ -87,29 +87,26 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
         },
   });
 
-  const activityType = form.watch("type");
+  const activityType = form.watch('type');
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: "strengthSets",
+    name: 'strengthSets',
   });
 
   const onSubmit = form.handleSubmit(async (values) => {
-    const url =
-      mode === "create"
-        ? "/api/activities"
-        : `/api/activities/${initialData?.id}`;
-    const method = mode === "create" ? "POST" : "PATCH";
+    const url = mode === 'create' ? '/api/activities' : `/api/activities/${initialData?.id}`;
+    const method = mode === 'create' ? 'POST' : 'PATCH';
 
     const response = await fetch(url, {
       method,
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(values),
     });
 
     if (!response.ok) {
       const error = await response.json();
-      form.setError("root", {
-        message: error.error ?? "Une erreur est survenue",
+      form.setError('root', {
+        message: error.error ?? 'Une erreur est survenue',
       });
       return;
     }
@@ -121,7 +118,7 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
   });
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
+    <form className="space-y-6" onSubmit={onSubmit}>
       <Card>
         <CardHeader>
           <CardTitle>Informations générales</CardTitle>
@@ -131,9 +128,7 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
             <Label>Type</Label>
             <Select
               value={activityType}
-              onValueChange={(value) =>
-                form.setValue("type", value as ActivityType)
-              }
+              onValueChange={(value) => form.setValue('type', value as ActivityType)}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -156,13 +151,13 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
               defaultValue={formatDateTimeLocal(
                 initialData?.date ? new Date(initialData.date) : new Date(),
               )}
-              onChange={(e) => form.setValue("date", new Date(e.target.value))}
+              onChange={(e) => form.setValue('date', new Date(e.target.value))}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="title">Titre</Label>
-            <Input id="title" {...form.register("title")} placeholder="Z2 endurance" />
+            <Input id="title" {...form.register('title')} placeholder="Z2 endurance" />
           </div>
 
           <div className="space-y-2">
@@ -170,43 +165,38 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
             <Input
               id="duration"
               type="number"
-              onChange={(e) =>
-                form.setValue(
-                  "duration",
-                  e.target.value ? Number(e.target.value) * 60 : undefined,
-                )
-              }
               defaultValue={
-                initialData?.duration
-                  ? Math.round(initialData.duration / 60)
-                  : undefined
+                initialData?.duration ? Math.round(initialData.duration / 60) : undefined
+              }
+              onChange={(e) =>
+                form.setValue('duration', e.target.value ? Number(e.target.value) * 60 : undefined)
               }
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="rpe">RPE (1-10)</Label>
-            <Input id="rpe" type="number" min={1} max={10} {...form.register("rpe")} />
+            <Input id="rpe" max={10} min={1} type="number" {...form.register('rpe')} />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="load">Charge (TSS)</Label>
-            <Input id="load" type="number" step="0.1" {...form.register("load")} />
+            <Input id="load" step="0.1" type="number" {...form.register('load')} />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="feeling">Ressenti</Label>
-            <Input id="feeling" {...form.register("feeling")} placeholder="Bien, fatigué..." />
+            <Input id="feeling" {...form.register('feeling')} placeholder="Bien, fatigué..." />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="weather">Météo</Label>
-            <Input id="weather" {...form.register("weather")} placeholder="12°C, vent léger" />
+            <Input id="weather" {...form.register('weather')} placeholder="12°C, vent léger" />
           </div>
 
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="notes">Notes</Label>
-            <Textarea id="notes" rows={3} {...form.register("notes")} />
+            <Textarea id="notes" rows={3} {...form.register('notes')} />
           </div>
         </CardContent>
       </Card>
@@ -217,15 +207,15 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
             <CardTitle>Course</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
-            <Field label="Distance (km)" name="runMetrics.distanceM" form={form} factor={1000} />
-            <Field label="Dénivelé (m)" name="runMetrics.elevationM" form={form} />
-            <Field label="Allure (sec/km)" name="runMetrics.paceSecPerKm" form={form} />
-            <Field label="FC moy." name="runMetrics.avgHr" form={form} />
-            <Field label="Puissance" name="runMetrics.avgPower" form={form} />
-            <Field label="Cadence" name="runMetrics.cadence" form={form} />
+            <Field factor={1000} form={form} label="Distance (km)" name="runMetrics.distanceM" />
+            <Field form={form} label="Dénivelé (m)" name="runMetrics.elevationM" />
+            <Field form={form} label="Allure (sec/km)" name="runMetrics.paceSecPerKm" />
+            <Field form={form} label="FC moy." name="runMetrics.avgHr" />
+            <Field form={form} label="Puissance" name="runMetrics.avgPower" />
+            <Field form={form} label="Cadence" name="runMetrics.cadence" />
             <div className="space-y-2 md:col-span-2">
               <Label>Chaussures</Label>
-              <Input {...form.register("runMetrics.shoes")} />
+              <Input {...form.register('runMetrics.shoes')} />
             </div>
           </CardContent>
         </Card>
@@ -237,17 +227,17 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
             <CardTitle>Vélo</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
-            <Field label="FTP %" name="bikeMetrics.ftpPercent" form={form} />
-            <Field label="NP (W)" name="bikeMetrics.normalizedPower" form={form} />
-            <Field label="IF" name="bikeMetrics.intensityFactor" form={form} />
-            <Field label="TSS" name="bikeMetrics.tss" form={form} />
-            <Field label="Cadence" name="bikeMetrics.avgCadence" form={form} />
-            <Field label="Puissance moy." name="bikeMetrics.avgPower" form={form} />
-            <Field label="Dénivelé (m)" name="bikeMetrics.elevationM" form={form} />
-            <Field label="Calories" name="bikeMetrics.calories" form={form} />
+            <Field form={form} label="FTP %" name="bikeMetrics.ftpPercent" />
+            <Field form={form} label="NP (W)" name="bikeMetrics.normalizedPower" />
+            <Field form={form} label="IF" name="bikeMetrics.intensityFactor" />
+            <Field form={form} label="TSS" name="bikeMetrics.tss" />
+            <Field form={form} label="Cadence" name="bikeMetrics.avgCadence" />
+            <Field form={form} label="Puissance moy." name="bikeMetrics.avgPower" />
+            <Field form={form} label="Dénivelé (m)" name="bikeMetrics.elevationM" />
+            <Field form={form} label="Calories" name="bikeMetrics.calories" />
             <div className="space-y-2 md:col-span-2">
               <Label>Vélo</Label>
-              <Input {...form.register("bikeMetrics.bikeName")} />
+              <Input {...form.register('bikeMetrics.bikeName')} />
             </div>
           </CardContent>
         </Card>
@@ -259,14 +249,18 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
             <CardTitle>Natation</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
-            <Field label="Distance (m)" name="swimMetrics.distanceM" form={form} />
-            <Field label="Séries" name="swimMetrics.sets" form={form} />
-            <Field label="CSS (sec/100m)" name="swimMetrics.cssSecPer100m" form={form} />
-            <Field label="Allure moy. (sec/100m)" name="swimMetrics.avgPaceSecPer100m" form={form} />
-            <Field label="SWOLF" name="swimMetrics.swolf" form={form} />
+            <Field form={form} label="Distance (m)" name="swimMetrics.distanceM" />
+            <Field form={form} label="Séries" name="swimMetrics.sets" />
+            <Field form={form} label="CSS (sec/100m)" name="swimMetrics.cssSecPer100m" />
+            <Field
+              form={form}
+              label="Allure moy. (sec/100m)"
+              name="swimMetrics.avgPaceSecPer100m"
+            />
+            <Field form={form} label="SWOLF" name="swimMetrics.swolf" />
             <div className="space-y-2 md:col-span-2">
               <Label>Drills</Label>
-              <Input {...form.register("swimMetrics.drills")} />
+              <Input {...form.register('swimMetrics.drills')} />
             </div>
           </CardContent>
         </Card>
@@ -277,9 +271,9 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Musculation</CardTitle>
             <Button
+              size="sm"
               type="button"
               variant="outline"
-              size="sm"
               onClick={() => append(defaultStrengthSet)}
             >
               Ajouter exercice
@@ -289,7 +283,7 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
             {fields.map((field, index) => (
               <div
                 key={field.id}
-                className="grid gap-3 rounded-lg border border-border/60 p-4 md:grid-cols-4"
+                className="border-border/60 grid gap-3 rounded-lg border p-4 md:grid-cols-4"
               >
                 <div className="space-y-2 md:col-span-2">
                   <Label>Exercice</Label>
@@ -305,11 +299,20 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
                 </div>
                 <div className="space-y-2">
                   <Label>Poids (kg)</Label>
-                  <Input type="number" step="0.5" {...form.register(`strengthSets.${index}.weightKg`)} />
+                  <Input
+                    step="0.5"
+                    type="number"
+                    {...form.register(`strengthSets.${index}.weightKg`)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>RPE</Label>
-                  <Input type="number" min={1} max={10} {...form.register(`strengthSets.${index}.rpe`)} />
+                  <Input
+                    max={10}
+                    min={1}
+                    type="number"
+                    {...form.register(`strengthSets.${index}.rpe`)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Repos (sec)</Label>
@@ -321,12 +324,7 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
                 </div>
                 {fields.length > 1 && (
                   <div className="flex items-end md:col-span-4">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => remove(index)}
-                    >
+                    <Button size="sm" type="button" variant="ghost" onClick={() => remove(index)}>
                       Supprimer
                     </Button>
                   </div>
@@ -338,14 +336,12 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
       )}
 
       {form.formState.errors.root && (
-        <p className="text-sm text-destructive">
-          {form.formState.errors.root.message}
-        </p>
+        <p className="text-destructive text-sm">{form.formState.errors.root.message}</p>
       )}
 
       <div className="flex gap-3">
-        <Button type="submit" disabled={form.formState.isSubmitting}>
-          {mode === "create" ? "Enregistrer la séance" : "Mettre à jour"}
+        <Button disabled={form.formState.isSubmitting} type="submit">
+          {mode === 'create' ? 'Enregistrer la séance' : 'Mettre à jour'}
         </Button>
         <Button type="button" variant="outline" onClick={() => router.back()}>
           Annuler
@@ -366,47 +362,50 @@ function Field({
   form: ReturnType<typeof useForm<ActivityFormValues>>;
   factor?: number;
 }) {
-  const parts = name.split(".");
+  const parts = name.split('.');
   const fieldName = parts[parts.length - 1];
 
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
       <Input
-        type="number"
+        name={fieldName}
         step="any"
-        onChange={(e) => {
-          const raw = e.target.value;
-          const value = raw ? Number(raw) : undefined;
-          const finalValue =
-            value !== undefined && factor ? value * factor : value;
-
-          if (parts.length === 2) {
-            const [group, key] = parts as [string, string];
-            const current = (form.getValues(group as keyof ActivityFormValues) ??
-              {}) as Record<string, unknown>;
-            form.setValue(group as keyof ActivityFormValues, {
-              ...current,
-              [key]: finalValue,
-            } as ActivityFormValues[keyof ActivityFormValues]);
-          } else {
-            form.setValue(name as keyof ActivityFormValues, finalValue as never);
-          }
-        }}
+        type="number"
         defaultValue={
           parts.length === 2
             ? (() => {
                 const [group, key] = parts;
-                const groupValue = form.getValues(
-                  group as keyof ActivityFormValues,
-                ) as Record<string, number> | undefined;
+                const groupValue = form.getValues(group as keyof ActivityFormValues) as
+                  Record<string, number> | undefined;
                 const val = groupValue?.[key];
                 if (val === undefined || val === null) return undefined;
                 return factor ? val / factor : val;
               })()
             : undefined
         }
-        name={fieldName}
+        onChange={(e) => {
+          const raw = e.target.value;
+          const value = raw ? Number(raw) : undefined;
+          const finalValue = value !== undefined && factor ? value * factor : value;
+
+          if (parts.length === 2) {
+            const [group, key] = parts as [string, string];
+            const current = (form.getValues(group as keyof ActivityFormValues) ?? {}) as Record<
+              string,
+              unknown
+            >;
+            form.setValue(
+              group as keyof ActivityFormValues,
+              {
+                ...current,
+                [key]: finalValue,
+              } as ActivityFormValues[keyof ActivityFormValues],
+            );
+          } else {
+            form.setValue(name as keyof ActivityFormValues, finalValue as never);
+          }
+        }}
       />
     </div>
   );

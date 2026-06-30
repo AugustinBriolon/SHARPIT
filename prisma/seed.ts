@@ -1,5 +1,5 @@
-import { ActivityType, GoalHorizon, PrismaClient } from "@prisma/client";
-import { addDays, startOfDay, subDays } from "date-fns";
+import { ActivityType, GoalHorizon, PrismaClient } from '@prisma/client';
+import { addDays, startOfDay, subDays } from 'date-fns';
 
 const prisma = new PrismaClient();
 
@@ -16,12 +16,12 @@ async function main() {
 
   await prisma.goal.create({
     data: {
-      title: "Ironman < 10h",
+      title: 'Ironman < 10h',
       horizon: GoalHorizon.LONG_TERM,
-      metricKey: "ironman_time",
+      metricKey: 'ironman_time',
       currentValue: null,
       targetValue: 36000,
-      unit: "seconds",
+      unit: 'seconds',
       targetDate: addDays(today, 94),
     },
   });
@@ -36,7 +36,7 @@ async function main() {
       calories: 3400,
       recoveryScore: 87,
       stress: 3,
-      mood: "Bien",
+      mood: 'Bien',
     },
   });
 
@@ -44,10 +44,10 @@ async function main() {
     data: {
       type: ActivityType.BIKE,
       date: today,
-      title: "Bike Z2",
+      title: 'Bike Z2',
       duration: 90 * 60,
       rpe: 5,
-      feeling: "Fluide",
+      feeling: 'Fluide',
       load: 72,
       bikeMetrics: {
         create: {
@@ -59,7 +59,7 @@ async function main() {
           avgPower: 185,
           elevationM: 320,
           calories: 980,
-          bikeName: "Canyon",
+          bikeName: 'Canyon',
         },
       },
     },
@@ -69,10 +69,10 @@ async function main() {
     data: {
       type: ActivityType.RUN,
       date: subDays(today, 1),
-      title: "Sortie endurance",
+      title: 'Sortie endurance',
       duration: 55 * 60,
       rpe: 6,
-      feeling: "Solide",
+      feeling: 'Solide',
       load: 58,
       runMetrics: {
         create: {
@@ -81,7 +81,7 @@ async function main() {
           paceSecPerKm: 314,
           avgHr: 142,
           cadence: 176,
-          shoes: "Nike Vaporfly",
+          shoes: 'Nike Vaporfly',
         },
       },
     },
@@ -91,7 +91,7 @@ async function main() {
     data: {
       type: ActivityType.SWIM,
       date: subDays(today, 2),
-      title: "CSS intervals",
+      title: 'CSS intervals',
       duration: 45 * 60,
       rpe: 7,
       load: 45,
@@ -102,7 +102,7 @@ async function main() {
           cssSecPer100m: 98,
           avgPaceSecPer100m: 102,
           swolf: 42,
-          drills: "Catch-up, sculling",
+          drills: 'Catch-up, sculling',
         },
       },
     },
@@ -112,21 +112,37 @@ async function main() {
     data: {
       type: ActivityType.STRENGTH,
       date: subDays(today, 3),
-      title: "Force bas du corps",
+      title: 'Force bas du corps',
       duration: 50 * 60,
       rpe: 7,
       load: 35,
       strengthSets: {
         create: [
-          { exercise: "Squat", sets: 4, reps: 6, weightKg: 120, rpe: 8, restSec: 180, order: 0 },
-          { exercise: "Romanian Deadlift", sets: 3, reps: 8, weightKg: 100, rpe: 7, restSec: 120, order: 1 },
-          { exercise: "Bulgarian Split Squat", sets: 3, reps: 10, weightKg: 24, rpe: 7, restSec: 90, order: 2 },
+          { exercise: 'Squat', sets: 4, reps: 6, weightKg: 120, rpe: 8, restSec: 180, order: 0 },
+          {
+            exercise: 'Romanian Deadlift',
+            sets: 3,
+            reps: 8,
+            weightKg: 100,
+            rpe: 7,
+            restSec: 120,
+            order: 1,
+          },
+          {
+            exercise: 'Bulgarian Split Squat',
+            sets: 3,
+            reps: 10,
+            weightKg: 24,
+            rpe: 7,
+            restSec: 90,
+            order: 2,
+          },
         ],
       },
     },
   });
 
-  console.log("Seed terminé.");
+  console.log('Seed terminé.');
 }
 
 main()

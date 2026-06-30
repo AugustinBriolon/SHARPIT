@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { ActivityList } from "@/components/training/activity-list";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useActivities } from "@/hooks/use-data";
+import { ActivityList } from '@/components/training/activity-list';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useActivities } from '@/hooks/use-data';
 
 export function TrainingList() {
   const { data, isLoading } = useActivities();

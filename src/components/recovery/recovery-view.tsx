@@ -1,16 +1,14 @@
-"use client";
+'use client';
 
-import { MetricLineChart } from "@/components/recovery/health-charts";
-import {
-  ReadinessHero,
-  RecoveryStat,
-} from "@/components/recovery/recovery-panels";
-import { SleepCoachPanel } from "@/components/recovery/sleep-coach-panel";
-import { StickyHeader } from "@/components/layout/sticky-header";
-import type { SleepEntryInput } from "@/lib/sleep";
-import { Skeleton } from "@/components/ui/skeleton";
-import { computePmcSeries } from "@/lib/analytics";
-import { buildHealthSeries, computeTrend, formatSleep } from "@/lib/health";
+import { useMemo } from 'react';
+import { MetricLineChart } from '@/components/recovery/health-charts';
+import { ReadinessHero, RecoveryStat } from '@/components/recovery/recovery-panels';
+import { SleepCoachPanel } from '@/components/recovery/sleep-coach-panel';
+import { StickyHeader } from '@/components/layout/sticky-header';
+import type { SleepEntryInput } from '@/lib/sleep';
+import { Skeleton } from '@/components/ui/skeleton';
+import { computePmcSeries } from '@/lib/analytics';
+import { buildHealthSeries, computeTrend, formatSleep } from '@/lib/health';
 import {
   bodyBatteryTone,
   buildFormView,
@@ -18,32 +16,32 @@ import {
   buildReadinessView,
   stressTone,
   type ReadinessFactor,
-} from "@/lib/recovery";
-import { useActivities, useHealthEntries } from "@/hooks/use-data";
+} from '@/lib/recovery';
+import { useActivities, useHealthEntries } from '@/hooks/use-data';
 
 export function RecoveryView() {
   const healthQuery = useHealthEntries();
   const activitiesQuery = useActivities();
 
+  const entries = useMemo(() => healthQuery.data ?? [], [healthQuery.data]);
+  const activities = useMemo(() => activitiesQuery.data ?? [], [activitiesQuery.data]);
+
+  const series = useMemo(() => buildHealthSeries(entries, 60), [entries]);
+  const pmc = useMemo(() => computePmcSeries(activities, 90), [activities]);
+
+  const hrv = useMemo(() => computeTrend(entries, 'hrv'), [entries]);
+  const restingHr = useMemo(() => computeTrend(entries, 'restingHr'), [entries]);
+  const weight = useMemo(() => computeTrend(entries, 'weightKg'), [entries]);
+  const sleep = useMemo(() => computeTrend(entries, 'sleepMinutes'), [entries]);
+
+  const latest = useMemo(
+    () => [...entries].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0],
+    [entries],
+  );
+
   if (healthQuery.isLoading || activitiesQuery.isLoading) {
     return <RecoverySkeleton />;
   }
-
-  const entries = healthQuery.data ?? [];
-  const activities = activitiesQuery.data ?? [];
-
-  const series = buildHealthSeries(entries, 60);
-  const pmc = computePmcSeries(activities, 90);
-
-  const hrv = computeTrend(entries, "hrv");
-  const restingHr = computeTrend(entries, "restingHr");
-  const weight = computeTrend(entries, "weightKg");
-  const sleep = computeTrend(entries, "sleepMinutes");
-
-  const sorted = [...entries].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-  );
-  const latest = sorted[0];
 
   const readiness = buildReadinessView(
     latest?.recoveryScore ?? null,
@@ -64,67 +62,61 @@ export function RecoveryView() {
   return (
     <div className="space-y-8">
       <StickyHeader>
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">
-          Recovery
-        </p>
-        <h1 className="mt-2 font-heading text-3xl font-semibold tracking-tight">
-          Récupération
-        </h1>
-        <p className="mt-1 text-muted-foreground">
-          Es-tu prêt à pousser aujourd&apos;hui ? Lecture combinée de ta charge
-          et de tes constantes Garmin.
+        <p className="text-primary text-xs font-medium tracking-[0.2em] uppercase">Recovery</p>
+        <h1 className="font-heading mt-2 text-3xl font-semibold tracking-tight">Récupération</h1>
+        <p className="text-muted-foreground mt-1">
+          Es-tu prêt à pousser aujourd&apos;hui ? Lecture combinée de ta charge et de tes constantes
+          Garmin.
         </p>
       </StickyHeader>
 
-      <ReadinessHero view={readiness} factors={factors} />
+      <ReadinessHero factors={factors} view={readiness} />
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <RecoveryStat
+          footer={hrvBaseline}
           label="Statut HRV"
-          value={hrvStatus.label}
           sublabel={hrv.latest != null ? `${hrv.latest} ms` : undefined}
           tone={hrvStatus.tone}
-          footer={hrvBaseline}
+          value={hrvStatus.label}
         />
         <RecoveryStat
+          footer={form.description}
           label="Forme (TSB)"
-          value={
-            form.tsb != null ? `${form.tsb > 0 ? "+" : ""}${form.tsb}` : "—"
-          }
           sublabel={form.label}
           tone={form.tone}
-          footer={form.description}
+          value={form.tsb != null ? `${form.tsb > 0 ? '+' : ''}${form.tsb}` : '—'}
         />
         <RecoveryStat
-          label="Body Battery"
-          value={bodyBattery != null ? `${bodyBattery}` : "—"}
-          tone={bodyBatteryTone(bodyBattery)}
           footer="Énergie max du jour"
+          label="Body Battery"
+          tone={bodyBatteryTone(bodyBattery)}
+          value={bodyBattery != null ? `${bodyBattery}` : '—'}
         />
         <RecoveryStat
-          label="Stress moyen"
-          value={stress != null ? `${stress}` : "—"}
-          tone={stressTone(stress)}
           footer="Sur la journée"
+          label="Stress moyen"
+          tone={stressTone(stress)}
+          value={stress != null ? `${stress}` : '—'}
         />
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <RecoveryStat
-          label="FC repos"
-          value={restingHr.latest != null ? `${restingHr.latest} bpm` : "—"}
-          tone="neutral"
           footer="Fréquence cardiaque au repos"
+          label="FC repos"
+          tone="neutral"
+          value={restingHr.latest != null ? `${restingHr.latest} bpm` : '—'}
         />
         <RecoveryStat
           label="Sommeil moy. 7j"
-          value={sleep.avg7 != null ? formatSleep(Math.round(sleep.avg7)) : "—"}
           tone="neutral"
+          value={sleep.avg7 != null ? formatSleep(Math.round(sleep.avg7)) : '—'}
         />
         <RecoveryStat
           label="Poids"
-          value={weight.latest != null ? `${weight.latest} kg` : "—"}
           tone="neutral"
+          value={weight.latest != null ? `${weight.latest} kg` : '—'}
         />
       </section>
 
@@ -134,35 +126,35 @@ export function RecoveryView() {
         <h2 className="font-heading text-lg font-medium">Tendances</h2>
         <div className="grid gap-4 md:grid-cols-2">
           <MetricLineChart
-            title="HRV"
-            subtitle="Variabilité cardiaque — 60 jours"
+            color="#7c3aed"
             data={series}
             dataKey="hrv"
-            color="#7c3aed"
+            subtitle="Variabilité cardiaque — 60 jours"
+            title="HRV"
             unit="ms"
           />
           <MetricLineChart
-            title="FC repos"
-            subtitle="Fréquence cardiaque au repos"
+            color="#ea580c"
             data={series}
             dataKey="restingHr"
-            color="#ea580c"
+            subtitle="Fréquence cardiaque au repos"
+            title="FC repos"
             unit="bpm"
           />
           <MetricLineChart
-            title="Sommeil"
-            subtitle="Heures par nuit"
+            color="#0891b2"
             data={series}
             dataKey="sleepHours"
-            color="#0891b2"
+            subtitle="Heures par nuit"
+            title="Sommeil"
             unit="h"
           />
           <MetricLineChart
-            title="Poids"
-            subtitle="Pesées Garmin"
+            color="#2563eb"
             data={series}
             dataKey="weightKg"
-            color="#2563eb"
+            subtitle="Pesées Garmin"
+            title="Poids"
             unit="kg"
           />
         </div>
