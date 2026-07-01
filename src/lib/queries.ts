@@ -175,6 +175,14 @@ export async function getHealthEntries(days = 90) {
   });
 }
 
+export async function getBodyCompositionMeasurements(days = 90) {
+  const since = startOfDay(addDays(new Date(), -days));
+  return prisma.bodyCompositionMeasurement.findMany({
+    where: { measuredAt: { gte: since } },
+    orderBy: { measuredAt: 'desc' },
+  });
+}
+
 const plannedSessionInclude = {
   activity: { include: activityInclude },
 };

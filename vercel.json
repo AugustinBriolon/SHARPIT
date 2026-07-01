@@ -3,11 +3,22 @@
   "crons": [
     {
       "path": "/api/cron/sync",
-      "schedule": "0 6 * * *"
+      "schedule": "30 6 * * *"
+    },
+    {
+      "path": "/api/cron/sync",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/sync",
+      "schedule": "0 18 * * *"
     }
   ],
   "functions": {
     "src/app/api/cron/sync/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/renpho/sync/route.ts": {
       "maxDuration": 300
     }
   }

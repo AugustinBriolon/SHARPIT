@@ -4,6 +4,7 @@ import type {
   ClientActivity,
   ClientGoal,
   ClientHealthEntry,
+  ClientBodyCompositionEntry,
   ClientPhysicalNote,
   ClientPlannedSession,
   ClientPlanWeek,
@@ -58,6 +59,20 @@ export async function fetchHealthEntries(days: number): Promise<ClientHealthEntr
     date: toDate(h.date),
     createdAt: toDate(h.createdAt),
     updatedAt: toDate(h.updatedAt),
+  }));
+}
+
+export async function fetchBodyCompositionEntries(
+  days = 90,
+): Promise<ClientBodyCompositionEntry[]> {
+  const data = await fetchJson<Serialized<ClientBodyCompositionEntry>[]>(
+    `/api/body-composition?days=${days}`,
+  );
+  return data.map((entry) => ({
+    ...entry,
+    measuredAt: toDate(entry.measuredAt),
+    createdAt: toDate(entry.createdAt),
+    updatedAt: toDate(entry.updatedAt),
   }));
 }
 

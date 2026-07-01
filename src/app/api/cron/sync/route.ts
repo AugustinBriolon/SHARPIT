@@ -5,6 +5,7 @@ import { getGarminAccount, syncGarminHealth } from '@/lib/garmin-sync';
 import { syncGarminActivities } from '@/lib/garmin-activity-sync';
 import { getGoogleAccount, syncFromGoogle } from '@/lib/google-sync';
 import { recomputeRecordsSafe } from '@/lib/records';
+import { getRenphoAccount, syncRenphoHealth } from '@/lib/renpho-sync';
 import { backfillActivityStreams } from '@/lib/stream-backfill';
 import { getStravaAccount, syncStravaActivities } from '@/lib/strava-sync';
 import { generateAndStoreWeeklyReview, isSunday } from '@/lib/weekly-review';
@@ -17,7 +18,7 @@ function unauthorized() {
   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 }
 
-/** Synchro planifiée (Vercel Cron) : Strava + Garmin si connectés. */
+/** Synchro planifiée (Vercel Cron) : Strava, Garmin, Renpho, Google si connectés. */
 export async function GET(request: Request) {
   const auth = request.headers.get('authorization');
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -28,6 +29,7 @@ export async function GET(request: Request) {
     strava: Awaited<ReturnType<typeof syncStravaActivities>> | null;
     garmin: Awaited<ReturnType<typeof syncGarminHealth>> | null;
     garminActivities: Awaited<ReturnType<typeof syncGarminActivities>> | null;
+    renpho: Awaited<ReturnType<typeof syncRenphoHealth>> | null;
     google: Awaited<ReturnType<typeof syncFromGoogle>> | null;
     backfill: Awaited<ReturnType<typeof backfillActivityStreams>> | null;
     briefing: boolean;
@@ -37,6 +39,7 @@ export async function GET(request: Request) {
     strava: null,
     garmin: null,
     garminActivities: null,
+    renpho: null,
     google: null,
     backfill: null,
     briefing: false,
@@ -44,9 +47,10 @@ export async function GET(request: Request) {
     errors: [],
   };
 
-  const [stravaAccount, garminAccount, googleAccount] = await Promise.all([
+  const [stravaAccount, garminAccount, renphoAccount, googleAccount] = await Promise.all([
     getStravaAccount(),
     getGarminAccount(),
+    getRenphoAccount(),
     getGoogleAccount(),
   ]);
 
@@ -79,17 +83,31 @@ export async function GET(request: Request) {
     }
   }
 
-  // Calendrier Google : synchro bidirectionnelle (séances ↔ events) si un
-  // calendrier cible est configuré.
-  if (googleAccount?.targetCalendarId) {
-    try {
-      result.google = await syncFromGoogle();
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Sync Google échouée';
-      console.error('[cron/sync] Google:', msg);
-      result.errors.push(`google: ${msg}`);
-    }
-  }
+  // Renpho (composition) + Google Calendar : fetch incrémental si compte connecté.
+  await Promise.all([
+    renphoAccount
+      ? syncRenphoHealth({ days: 14 })
+          .then((renpho) => {
+            result.renpho = renpho;
+          })
+          .catch((error) => {
+            const msg = error instanceof Error ? error.message : 'Sync Renpho échouée';
+            console.error('[cron/sync] Renpho:', msg);
+            result.errors.push(`renpho: ${msg}`);
+          })
+      : Promise.resolve(),
+    googleAccount?.targetCalendarId
+      ? syncFromGoogle()
+          .then((google) => {
+            result.google = google;
+          })
+          .catch((error) => {
+            const msg = error instanceof Error ? error.message : 'Sync Google échouée';
+            console.error('[cron/sync] Google:', msg);
+            result.errors.push(`google: ${msg}`);
+          })
+      : Promise.resolve(),
+  ]);
 
   // Backfill progressif des streams (records & courbes) : un lot par exécution
   // pour rester sous le rate-limit Strava.
@@ -129,7 +147,7 @@ export async function GET(request: Request) {
     }
   }
 
-  if (!stravaAccount && !garminAccount && !googleAccount?.targetCalendarId) {
+  if (!stravaAccount && !garminAccount && !renphoAccount && !googleAccount?.targetCalendarId) {
     return NextResponse.json({
       ok: true,
       message: 'Aucune source connectée, rien à synchroniser.',

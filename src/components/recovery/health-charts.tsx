@@ -10,13 +10,12 @@ import {
   YAxis,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { HealthChartPoint } from '@/lib/health';
 
-interface MetricLineChartProps {
+interface MetricLineChartProps<T extends { label: string }> {
   title: string;
   subtitle?: string;
-  data: HealthChartPoint[];
-  dataKey: keyof HealthChartPoint;
+  data: T[];
+  dataKey: keyof T & string;
   color: string;
   unit?: string;
 }
@@ -44,14 +43,14 @@ function Tip({
   );
 }
 
-export function MetricLineChart({
+export function MetricLineChart<T extends { label: string }>({
   title,
   subtitle,
   data,
   dataKey,
   color,
   unit,
-}: MetricLineChartProps) {
+}: MetricLineChartProps<T>) {
   const ticks = data.filter((_, i) => i % 10 === 0 || i === data.length - 1);
   const hasData = data.some((d) => d[dataKey] != null);
 

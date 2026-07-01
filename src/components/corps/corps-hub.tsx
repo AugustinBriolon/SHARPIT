@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AnalyticsClient } from '@/components/analytics/analytics-client';
 import { RecordsPanel } from '@/components/analytics/records-panel';
+import { CompositionView } from '@/components/corps/composition-view';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { PhysicalView } from '@/components/physical/physical-view';
 import { RecoveryView } from '@/components/recovery/recovery-view';
@@ -10,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const TABS = [
   { id: 'recuperation', label: 'Récupération' },
+  { id: 'composition', label: 'Composition' },
   { id: 'suivi', label: 'Suivi physique' },
   { id: 'stats', label: 'Statistiques' },
 ] as const;
@@ -52,6 +54,9 @@ export function CorpsHub() {
         </TabsList>
         <TabsContent className="mt-6" value="recuperation">
           <RecoveryView embedded />
+        </TabsContent>
+        <TabsContent className="mt-6" value="composition">
+          <CompositionView embedded />
         </TabsContent>
         <TabsContent className="mt-6" value="suivi">
           <PhysicalView embedded />

@@ -30,15 +30,6 @@ export function AnalyticsView({ activities }: AnalyticsViewProps) {
 
   return (
     <div className="space-y-8">
-      <StickyHeader>
-        <p className="text-primary text-xs font-medium tracking-[0.2em] uppercase">Analytics</p>
-        <h1 className="font-heading mt-2 text-3xl font-semibold tracking-tight">Performance</h1>
-        <p className="text-muted-foreground mt-1">
-          Ta charge, ton volume et ta répartition par sport sur les {summary.periodDays} derniers
-          jours.
-        </p>
-      </StickyHeader>
-
       <FormStatusBanner pmc={pmc} />
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

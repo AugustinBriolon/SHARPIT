@@ -3,6 +3,7 @@ import type {
   getActivitiesList,
   getGoals,
   getHealthEntries,
+  getBodyCompositionMeasurements,
   getPhysicalNotes,
   getPlannedSessions,
   getThresholdSnapshots,
@@ -16,6 +17,9 @@ import type {
  */
 export type ClientActivity = Awaited<ReturnType<typeof getActivitiesList>>[number];
 export type ClientHealthEntry = Awaited<ReturnType<typeof getHealthEntries>>[number];
+export type ClientBodyCompositionEntry = Awaited<
+  ReturnType<typeof getBodyCompositionMeasurements>
+>[number];
 export type ClientGoal = Awaited<ReturnType<typeof getGoals>>[number];
 export type ClientPlannedSession = Awaited<ReturnType<typeof getPlannedSessions>>[number];
 export type ClientPhysicalNote = Awaited<ReturnType<typeof getPhysicalNotes>>[number];

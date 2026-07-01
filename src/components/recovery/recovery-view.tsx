@@ -162,7 +162,7 @@ export function RecoveryView({ embedded = false }: { embedded?: boolean }) {
             color="#2563eb"
             data={series}
             dataKey="weightKg"
-            subtitle="Pesées Garmin"
+            subtitle="Pesées (Renpho ou Garmin)"
             title="Poids"
             unit="kg"
           />

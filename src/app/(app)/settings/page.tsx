@@ -3,11 +3,13 @@ import { StickyHeader } from '@/components/layout/sticky-header';
 import { AthleteProfilePanel } from '@/components/settings/athlete-profile-panel';
 import { GarminPanel } from '@/components/settings/garmin-panel';
 import { GoogleCalendarPanel } from '@/components/settings/google-calendar-panel';
+import { RenphoPanel } from '@/components/settings/renpho-panel';
 import { StravaPanel } from '@/components/settings/strava-panel';
 import { getAthleteProfile } from '@/lib/queries';
 import { getGarminAccount } from '@/lib/garmin-sync';
 import { isGoogleConfigured } from '@/lib/google';
 import { getGoogleAccount } from '@/lib/google-sync';
+import { getRenphoAccount } from '@/lib/renpho-sync';
 import { getStravaAccount } from '@/lib/strava-sync';
 import { isStravaConfigured } from '@/lib/strava';
 
@@ -40,6 +42,7 @@ export default async function SettingsPage({ searchParams }: PageProps) {
     stravaAccount,
     configured,
     garminAccount,
+    renphoAccount,
     athleteProfile,
     googleAccount,
     googleConfigured,
@@ -47,6 +50,7 @@ export default async function SettingsPage({ searchParams }: PageProps) {
     getStravaAccount(),
     Promise.resolve(isStravaConfigured()),
     getGarminAccount(),
+    getRenphoAccount(),
     getAthleteProfile().catch(() => null),
     getGoogleAccount().catch(() => null),
     Promise.resolve(isGoogleConfigured()),
@@ -75,6 +79,14 @@ export default async function SettingsPage({ searchParams }: PageProps) {
         displayName: garminAccount.displayName,
         fullName: garminAccount.fullName,
         lastSyncAt: garminAccount.lastSyncAt?.toISOString() ?? null,
+      }
+    : null;
+
+  const renpho = renphoAccount
+    ? {
+        email: renphoAccount.email,
+        displayName: renphoAccount.displayName,
+        lastSyncAt: renphoAccount.lastSyncAt?.toISOString() ?? null,
       }
     : null;
 
@@ -139,6 +151,18 @@ export default async function SettingsPage({ searchParams }: PageProps) {
         </CardHeader>
         <CardContent>
           <GarminPanel account={garmin} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Renpho</CardTitle>
+          <p className="text-muted-foreground text-xs">
+            Balance connectée — composition corporelle (poids, masse grasse, muscle…)
+          </p>
+        </CardHeader>
+        <CardContent>
+          <RenphoPanel account={renpho} />
         </CardContent>
       </Card>
 

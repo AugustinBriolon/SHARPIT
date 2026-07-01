@@ -10,6 +10,7 @@ import {
   fetchGoogleCalendars,
   fetchGoogleEvents,
   fetchHealthEntries,
+  fetchBodyCompositionEntries,
   fetchPlannedSessions,
   fetchRecords,
   fetchThresholdHistory,
@@ -40,6 +41,14 @@ export function useHealthEntries(days = DEFAULT_HEALTH_DAYS) {
   return useQuery({
     queryKey: queryKeys.health(days),
     queryFn: () => fetchHealthEntries(days),
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useBodyComposition(days = 90) {
+  return useQuery({
+    queryKey: queryKeys.bodyComposition(days),
+    queryFn: () => fetchBodyCompositionEntries(days),
     staleTime: 2 * 60 * 1000,
   });
 }
