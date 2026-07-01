@@ -51,10 +51,14 @@ export function LoadChart({ data }: LoadChartProps) {
         </p>
       </CardHeader>
       <CardContent>
-        <div className="h-72 w-full">
+        <div
+          aria-label="Charge d'entraînement — CTL (forme), ATL (fatigue), TSB (fraîcheur)"
+          className="h-72 w-full"
+          role="img"
+        >
           <ResponsiveContainer height="100%" width="100%">
             <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-              <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" />
+              <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
               <XAxis
                 axisLine={false}
                 dataKey="label"

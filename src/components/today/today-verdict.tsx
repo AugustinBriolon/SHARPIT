@@ -86,15 +86,24 @@ export function TodayVerdict({
                 />
               )}
               {metrics.tsb != null && (
-                <MetricChip label="TSB" value={`${metrics.tsb > 0 ? '+' : ''}${metrics.tsb}`} />
+                <MetricChip
+                  label="TSB"
+                  tooltip="Training Stress Balance — différence CTL/ATL (fraîcheur)"
+                  value={`${metrics.tsb > 0 ? '+' : ''}${metrics.tsb}`}
+                />
               )}
               {metrics.acwr > 0 && (
-                <MetricChip label="ACWR" value={`${metrics.acwr} · ${zone.label}`} />
+                <MetricChip
+                  label="ACWR"
+                  tooltip="Acute:Chronic Workload Ratio — rapport charge aiguë / chronique"
+                  value={`${metrics.acwr} · ${zone.label}`}
+                />
               )}
             </div>
 
             <button
-              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs font-medium transition-colors"
+              aria-expanded={open}
+              className="text-muted-foreground hover:text-foreground flex min-h-[44px] items-center gap-1 text-xs font-medium transition-colors"
               type="button"
               onClick={() => setOpen((v) => !v)}
             >
@@ -131,9 +140,22 @@ export function TodayVerdict({
   );
 }
 
-function MetricChip({ label, value, accent }: { label: string; value: string; accent?: string }) {
+function MetricChip({
+  label,
+  value,
+  accent,
+  tooltip,
+}: {
+  label: string;
+  value: string;
+  accent?: string;
+  tooltip?: string;
+}) {
   return (
-    <span className="border-border bg-card/60 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium">
+    <span
+      className="border-border bg-card/60 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
+      title={tooltip}
+    >
       <span className="text-muted-foreground">{label}</span>
       <span className="font-mono tabular-nums" style={accent ? { color: accent } : undefined}>
         {value}
