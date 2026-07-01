@@ -33,6 +33,8 @@
     "@clerk/themes": "2.4.57",
     "@flow-js/garmin-connect": "^1.6.17",
     "@hookform/resolvers": "^5.4.0",
+    "@neondatabase/serverless": "^1.1.0",
+    "@prisma/adapter-neon": "^6.19.3",
     "@prisma/client": "^6.19.3",
     "@tanstack/react-query": "^5.101.2",
     "ai": "^7.0.4",

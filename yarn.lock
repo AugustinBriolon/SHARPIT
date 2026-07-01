@@ -1367,6 +1367,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@neondatabase/serverless@npm:>0.6.0 <2, @neondatabase/serverless@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "@neondatabase/serverless@npm:1.1.0"
+  checksum: 10c0/ba24391bd53f94b76a817c9bfd09f91259024119b51e64192f2f97f627253d4370699e051d73918352e71fb93ae4575177ca1f5b38f2c27fcf5dc1adda70c677
+  languageName: node
+  linkType: hard
+
 "@next/env@npm:16.2.9":
   version: 16.2.9
   resolution: "@next/env@npm:16.2.9"
@@ -1487,6 +1494,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@prisma/adapter-neon@npm:^6.19.3":
+  version: 6.19.3
+  resolution: "@prisma/adapter-neon@npm:6.19.3"
+  dependencies:
+    "@neondatabase/serverless": "npm:>0.6.0 <2"
+    "@prisma/driver-adapter-utils": "npm:6.19.3"
+    postgres-array: "npm:3.0.4"
+  checksum: 10c0/b4db8006df4d0a7ff1410852462601fe89ba6405c23fd937a23cf448d8b15e6e732c1af4bfececc61d13823977d911925607b12d129960fd6b3733a06fe815f8
+  languageName: node
+  linkType: hard
+
 "@prisma/client@npm:^6.19.3":
   version: 6.19.3
   resolution: "@prisma/client@npm:6.19.3"
@@ -1518,6 +1536,15 @@ __metadata:
   version: 6.19.3
   resolution: "@prisma/debug@npm:6.19.3"
   checksum: 10c0/5be746e0c2a1bb4c10eaa5e6584c90626090d437b4570503845e31776239fa52f04cf224cf8278e3f738c9e7e39ab78594dd7a4db2cd4ae8ddf863ef1f8c18a1
+  languageName: node
+  linkType: hard
+
+"@prisma/driver-adapter-utils@npm:6.19.3":
+  version: 6.19.3
+  resolution: "@prisma/driver-adapter-utils@npm:6.19.3"
+  dependencies:
+    "@prisma/debug": "npm:6.19.3"
+  checksum: 10c0/46604cff3f592786ca945e87bac210b245600312e738b3f389e80aec5f87d1b9ece478daf4902237039a54849abecad3b35de0f97441719f20af5efc84652cb2
   languageName: node
   linkType: hard
 
@@ -7935,6 +7962,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"postgres-array@npm:3.0.4":
+  version: 3.0.4
+  resolution: "postgres-array@npm:3.0.4"
+  checksum: 10c0/47f3e648da512bacdd6a5ed55cf770605ec271330789faeece0fd13805a49f376d6e5c9e0e353377be11a9545e727dceaa2473566c505432bf06366ccd04c6b2
+  languageName: node
+  linkType: hard
+
 "powershell-utils@npm:^0.1.0":
   version: 0.1.0
   resolution: "powershell-utils@npm:0.1.0"
@@ -8861,7 +8895,9 @@ __metadata:
     "@eslint/js": "npm:^9.39.0"
     "@flow-js/garmin-connect": "npm:^1.6.17"
     "@hookform/resolvers": "npm:^5.4.0"
+    "@neondatabase/serverless": "npm:^1.1.0"
     "@next/eslint-plugin-next": "npm:^16.2.9"
+    "@prisma/adapter-neon": "npm:^6.19.3"
     "@prisma/client": "npm:^6.19.3"
     "@tailwindcss/postcss": "npm:^4"
     "@tanstack/react-query": "npm:^5.101.2"
