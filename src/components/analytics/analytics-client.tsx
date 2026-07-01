@@ -17,12 +17,6 @@ export function AnalyticsClient() {
 function AnalyticsSkeleton() {
   return (
     <div className="space-y-8">
-      <header className="space-y-2">
-        <Skeleton className="h-4 w-24" />
-        <Skeleton className="h-9 w-48" />
-        <Skeleton className="h-4 w-72" />
-      </header>
-
       <Skeleton className="h-28 rounded-xl" />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

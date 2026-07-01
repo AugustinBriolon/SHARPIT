@@ -186,12 +186,31 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
 function CompositionSkeleton() {
   return (
     <div className="space-y-8">
-      <Skeleton className="h-24 w-full" />
-      <Skeleton className="h-40 w-full" />
-      <div className="grid gap-4 md:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-64" />
+      <Skeleton className="h-24 w-full rounded-xl" />
+      <div className="border-border rounded-2xl border p-6">
+        <div className="mb-4 space-y-1">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-3 w-36" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 rounded-xl" />
+          ))}
+        </div>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-28 rounded-xl" />
         ))}
+      </div>
+      <div className="space-y-4">
+        <Skeleton className="h-5 w-48" />
+        <Skeleton className="h-3 w-96 max-w-full" />
+        <div className="grid gap-4 md:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-64 rounded-xl" />
+          ))}
+        </div>
       </div>
     </div>
   );

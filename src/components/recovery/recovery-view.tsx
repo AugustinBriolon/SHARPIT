@@ -41,7 +41,7 @@ export function RecoveryView({ embedded = false }: { embedded?: boolean }) {
   );
 
   if (healthQuery.isLoading || activitiesQuery.isLoading) {
-    return <RecoverySkeleton />;
+    return <RecoverySkeleton embedded={embedded} />;
   }
 
   const readiness = buildReadinessView(
@@ -172,20 +172,35 @@ export function RecoveryView({ embedded = false }: { embedded?: boolean }) {
   );
 }
 
-function RecoverySkeleton() {
+function RecoverySkeleton({ embedded = false }: { embedded?: boolean }) {
   return (
     <div className="space-y-8">
-      <Skeleton className="h-9 w-48" />
-      <Skeleton className="h-40 w-full" />
+      {!embedded && (
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-9 w-40" />
+          <Skeleton className="h-4 w-80" />
+        </div>
+      )}
+      <Skeleton className="h-56 w-full rounded-xl" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-28" />
+          <Skeleton key={i} className="h-28 rounded-xl" />
         ))}
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        {Array.from({ length: 2 }).map((_, i) => (
-          <Skeleton key={i} className="h-64" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-28 rounded-xl" />
         ))}
+      </div>
+      <Skeleton className="h-40 w-full rounded-xl" />
+      <div className="space-y-4">
+        <Skeleton className="h-5 w-28" />
+        <div className="grid gap-4 md:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-64 rounded-xl" />
+          ))}
+        </div>
       </div>
     </div>
   );
