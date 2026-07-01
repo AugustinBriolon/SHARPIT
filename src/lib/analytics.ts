@@ -10,10 +10,36 @@ export interface ActivityForAnalytics {
   bikeMetrics: { tss: number | null } | null;
 }
 
+/**
+ * Facteurs d'estimation de charge (TSS) quand aucune métrique précise disponible.
+ * Basé sur intensité moyenne typique de chaque discipline.
+ *
+ * Formule : TSS estimé = (durée_min × facteur)
+ *
+ * Note : Ce sont des APPROXIMATIONS grossières. TSS réel devrait être calculé depuis :
+ * - Vélo : puissance (NP / FTP)
+ * - Course/Autre : fréquence cardiaque (avgHR / LTHR)
+ *
+ * Sources :
+ * - Coggan & Allen (2006) "Training and Racing with a Power Meter"
+ * - Friel, J. (2009) "The Triathlete's Training Bible" (hrTSS)
+ *
+ * LIMITATIONS :
+ * - Suppose intensité moyenne constante (réalité : très variable)
+ * - Pas de distinction selon zones (Z2 vs VO2max)
+ * - Erreur peut atteindre ±30% selon profil réel séance
+ * - À utiliser uniquement quand pas de données FC/puissance
+ *
+ * Voir SCIENCE.md section "Training Stress Score (TSS)" pour détails complets.
+ */
 const LOAD_FACTOR: Record<ActivityType, number> = {
+  /** Course : 1.0 TSS/min (intensité moyenne type tempo/seuil pour séance typique) */
   RUN: 1.0,
+  /** Vélo : 0.85 TSS/min (légèrement moins intense que course en moyenne) */
   BIKE: 0.85,
+  /** Natation : 1.1 TSS/min (plus exigeant métaboliquement à puissance perçue équivalente) */
   SWIM: 1.1,
+  /** Musculation : 0.7 TSS/min (repos entre séries, charge intermittente) */
   STRENGTH: 0.7,
 };
 
@@ -36,35 +62,100 @@ export interface PmcPoint {
   tsb: number;
 }
 
+/**
+ * Constantes du modèle Performance Management Chart (PMC).
+ *
+ * Le modèle utilise des moyennes mobiles exponentiellement pondérées (EWMA)
+ * pour suivre l'adaptation à l'entraînement.
+ *
+ * Sources : Coggan (2003), TrainingPeaks, WKO5
+ * Voir SCIENCE.md section "Performance Management Chart (PMC)" pour détails complets.
+ */
+const PMC_MODEL = {
+  /**
+   * τ (tau) pour CTL : 42 jours
+   * Chronic Training Load = "forme" à long terme, fitness de base.
+   * Constante de temps 42 jours = environ 6 semaines d'adaptation.
+   */
+  CTL_TAU: 42,
+
+  /**
+   * τ (tau) pour ATL : 7 jours
+   * Acute Training Load = "fatigue" récente immédiate.
+   * Constante de temps 7 jours = charge de la semaine en cours.
+   */
+  ATL_TAU: 7,
+} as const;
+
+/**
+ * Calcule la série temporelle du Performance Management Chart (PMC) :
+ * CTL / ATL / TSB sur une période donnée.
+ *
+ * Modèle mathématique (EWMA - Exponentially Weighted Moving Average) :
+ * - CTL(t) = CTL(t-1) + (TSS(t) - CTL(t-1)) / τ_ctl
+ * - ATL(t) = ATL(t-1) + (TSS(t) - ATL(t-1)) / τ_atl
+ * - TSB(t) = CTL(t) - ATL(t)
+ *
+ * Où :
+ * - CTL = Chronic Training Load ("forme", fitness de base)
+ * - ATL = Acute Training Load ("fatigue" récente)
+ * - TSB = Training Stress Balance ("fraîcheur", TSB = CTL - ATL)
+ * - TSS = Training Stress Score (charge quotidienne)
+ * - τ = constante de temps (42j pour CTL, 7j pour ATL)
+ *
+ * Interprétation TSB :
+ * - TSB > +15 : Frais, affûté (bon pour course)
+ * - TSB -10 à +5 : Zone optimale progression
+ * - TSB -10 à -30 : Fatigue accumulée (surveiller récupération)
+ * - TSB < -30 : Surcharge importante (risque surentraînement)
+ *
+ * LIMITATIONS :
+ * - Suppose réponse linéaire (réalité plus complexe)
+ * - Constantes τ non individualisées (peuvent varier selon athlète)
+ * - Ne remplace pas l'écoute du ressenti, HRV, sommeil
+ *
+ * Sources :
+ * - Banister et al. (1975, 1991) — Modèle impulse-response original
+ * - Coggan, A. (2003) — Popularisation via TrainingPeaks
+ * - Busso, T. (2003) "Variable dose-response relationship between exercise training
+ *   and performance" — Med Sci Sports Exerc
+ */
 export function computePmcSeries(activities: ActivityForAnalytics[], days = 180): PmcPoint[] {
   const end = startOfDay(new Date());
   const start = subDays(end, days);
 
+  // Initialiser TSS quotidien à 0 pour chaque jour de la période
   const dailyTss = new Map<string, number>();
   for (const day of eachDayOfInterval({ start, end })) {
     dailyTss.set(format(day, 'yyyy-MM-dd'), 0);
   }
 
+  // Agréger charge quotidienne (somme des TSS des activités du jour)
   for (const activity of activities) {
     const key = format(startOfDay(activity.date), 'yyyy-MM-dd');
     if (!dailyTss.has(key)) continue;
     dailyTss.set(key, (dailyTss.get(key) ?? 0) + estimateActivityLoad(activity));
   }
 
-  let ctl = 0;
-  let atl = 0;
+  // Calcul itératif du modèle EWMA
+  let ctl = 0; // Chronic Training Load (forme)
+  let atl = 0; // Acute Training Load (fatigue)
   const series: PmcPoint[] = [];
 
   for (const [date, tss] of [...dailyTss.entries()].sort()) {
-    ctl += (tss - ctl) / 42;
-    atl += (tss - atl) / 7;
+    // Mise à jour CTL : moyenne pondérée sur 42 jours
+    ctl += (tss - ctl) / PMC_MODEL.CTL_TAU;
+
+    // Mise à jour ATL : moyenne pondérée sur 7 jours
+    atl += (tss - atl) / PMC_MODEL.ATL_TAU;
+
     series.push({
       date,
       label: format(new Date(date), 'd MMM', { locale: fr }),
       tss,
       ctl: Math.round(ctl),
       atl: Math.round(atl),
-      tsb: Math.round(ctl - atl),
+      tsb: Math.round(ctl - atl), // Training Stress Balance = forme - fatigue
     });
   }
 

@@ -69,10 +69,41 @@ export function feedbackLabel(feedback: string | null): string {
   return '—';
 }
 
+/**
+ * Seuils de classification du Garmin Training Readiness Score.
+ *
+ * ⚠️ ATTENTION : Ces seuils sont EMPIRIQUES et NON validés scientifiquement.
+ * L'algorithme Garmin Training Readiness est propriétaire (non publié).
+ *
+ * Sources consultées :
+ * - Aucune publication peer-reviewed disponible sur ce score spécifique
+ * - Basé sur observation utilisateurs et feedback terrain
+ * - Calibration initiale par développeur (à ajuster selon données réelles)
+ *
+ * Recommandation : Utiliser en complément d'autres signaux objectifs :
+ * - HRV (Heart Rate Variability) — bien validé scientifiquement
+ * - Sommeil (durée, qualité)
+ * - RPE (Rate of Perceived Exertion)
+ * - Ressenti subjectif de l'athlète (PRIMORDIAL)
+ *
+ * TODO : Implémenter modèle HRV transparent basé sur recherche publique
+ * (Plews et al. 2013, Buchheit 2014) pour remplacer dépendance Garmin.
+ *
+ * Voir SCIENCE.md section "Récupération et readiness" pour détails complets.
+ */
+const READINESS_THRESHOLDS = {
+  /** Score >= 75 : Bien récupéré (seuil empirique, pas de source scientifique) */
+  GOOD: 75,
+  /** Score >= 50 : Récupération partielle (seuil empirique) */
+  MODERATE: 50,
+  /** Score < 50 : Fatigue marquée (seuil empirique) */
+  // LOW impliqué par défaut
+} as const;
+
 function scoreTone(score: number | null): RecoveryTone {
   if (score == null) return 'neutral';
-  if (score >= 75) return 'good';
-  if (score >= 50) return 'moderate';
+  if (score >= READINESS_THRESHOLDS.GOOD) return 'good';
+  if (score >= READINESS_THRESHOLDS.MODERATE) return 'moderate';
   return 'low';
 }
 
@@ -151,12 +182,46 @@ export interface FormView {
   description: string;
 }
 
+/**
+ * Seuils d'interprétation du Training Stress Balance (TSB).
+ *
+ * TSB = CTL - ATL (forme - fatigue)
+ *
+ * Sources :
+ * - Coggan, A. (2003) — TrainingPeaks, popularisation modèle PMC
+ * - Banister et al. (1975, 1991) — Modèle Fitness-Fatigue original
+ * - Pratique terrain : valeurs standards utilisées par coaches élites
+ *
+ * Interprétation validée :
+ * - TSB > +15 : Frais, affûté — optimal pour course / test
+ * - TSB -10 à +5 : "Sweet spot" — zone optimale progression
+ * - TSB -10 à -30 : Fatigue accumulée — surveiller récupération
+ * - TSB < -30 : Surcharge importante — risque surentraînement
+ *
+ * LIMITATIONS :
+ * - Variation individuelle : certains performent mieux à TSB -5, d'autres +10
+ * - Contexte important : TSB -30 après bloc intensif planifié ≠ TSB -30 accumulé progressivement
+ * - À combiner avec HRV, sommeil, RPE, ressenti
+ *
+ * Voir SCIENCE.md section "Performance Management Chart (PMC)" pour détails complets.
+ */
+const TSB_THRESHOLDS = {
+  /** TSB > +15 : Frais, affûté (peu de fatigue résiduelle) */
+  FRESH: 15,
+  /** TSB >= -10 : Zone neutre optimale pour progresser */
+  OPTIMAL: -10,
+  /** TSB >= -30 : Fatigue marquée (surveiller) */
+  FATIGUED: -30,
+  /** TSB < -30 : Surcharge importante (risque surentraînement) */
+  // OVERLOAD impliqué par défaut
+} as const;
+
 export function buildFormView(pmc: PmcPoint[]): FormView {
   const tsb = pmc.length ? pmc[pmc.length - 1].tsb : null;
   if (tsb == null) {
     return { tsb: null, label: '—', tone: 'neutral', description: '' };
   }
-  if (tsb > 15) {
+  if (tsb > TSB_THRESHOLDS.FRESH) {
     return {
       tsb,
       label: 'Frais',
@@ -164,7 +229,7 @@ export function buildFormView(pmc: PmcPoint[]): FormView {
       description: 'Tu es affûté, peu de fatigue résiduelle.',
     };
   }
-  if (tsb >= -10) {
+  if (tsb >= TSB_THRESHOLDS.OPTIMAL) {
     return {
       tsb,
       label: 'Optimal',
@@ -172,7 +237,7 @@ export function buildFormView(pmc: PmcPoint[]): FormView {
       description: 'Zone idéale pour progresser.',
     };
   }
-  if (tsb >= -30) {
+  if (tsb >= TSB_THRESHOLDS.FATIGUED) {
     return {
       tsb,
       label: 'Fatigue',
