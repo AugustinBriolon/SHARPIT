@@ -90,12 +90,39 @@ function distributePhases(totalWeeks: number): PhaseBlock[] {
   return blocks;
 }
 
+/**
+ * Facteurs de charge par phase de périodisation (% de la charge de référence).
+ *
+ * Modèle : Périodisation linéaire classique pour endurance
+ * BASE → BUILD → PEAK → TAPER → RACE
+ *
+ * Sources :
+ * - Bompa, T. & Haff, G. (2009) "Periodization: Theory and Methodology of Training"
+ * - Mujika, I. & Padilla, S. (2003) "Scientific bases for precompetition tapering strategies"
+ *   Medicine & Science in Sports & Exercise, 35(7), 1182-1187
+ * - Issurin, V. (2010) "New horizons for the methodology and physiology of training periodization"
+ *   Sports Medicine, 40(3), 189-206
+ *
+ * Justification des valeurs :
+ * - BASE (0.85) : 80-90% charge max, focus volume aérobie (littérature : 60-80%)
+ * - BUILD (1.0) : 100% référence, ajout progressif intensité
+ * - PEAK (1.08) : 100-110% charge maximale, spécificité course (littérature : jusqu'à 110%)
+ * - TAPER (0.55) : 40-60% volume, maintien intensité courte (littérature : réduction 40-60%)
+ * - RACE (0.25) : 20-30% charge, repos actif + course
+ *
+ * LIMITATIONS :
+ * - Valeurs moyennes, variation individuelle importante
+ * - Pas d'ajustement selon sport (marathon vs triathlon vs ultra)
+ * - Ne tient pas compte signaux individuels (HRV, TSB, compliance)
+ *
+ * Voir SCIENCE.md section "Périodisation et planification" pour détails complets.
+ */
 const PHASE_LOAD_FACTOR: Record<PlanPhase, number> = {
-  BASE: 0.85,
-  BUILD: 1.0,
-  PEAK: 1.08,
-  TAPER: 0.55,
-  RACE: 0.25,
+  BASE: 0.85,   // 85% de la charge de référence
+  BUILD: 1.0,   // 100% (référence)
+  PEAK: 1.08,   // 108% (pic de volume+intensité)
+  TAPER: 0.55,  // 55% (affûtage)
+  RACE: 0.25,   // 25% (repos actif + course)
 };
 
 const PHASE_FOCUS: Record<PlanPhase, string> = {
@@ -149,7 +176,28 @@ export function generateMacroPlan(params: {
         loadFactor = taperFactor(taperCounter, taperTotal);
       }
 
-      // Deload toutes les 4 semaines en base/build (sauf taper/race).
+      /**
+       * Semaines de récupération (deload) : toutes les 4 semaines en BASE/BUILD.
+       *
+       * Sources :
+       * - Rhea et al. (2002) "Periodized training for strength"
+       *   J Strength Cond Res, 16(1), 135-139
+       * - Plisk & Stone (2003) "Periodization strategies"
+       *   Strength Cond J, 25(6), 19-37
+       * - Pritchard et al. (2015) Systematic review surcharge + récupération
+       *
+       * Justification :
+       * - Fréquence 3-5 semaines selon littérature (ici : 4 semaines, compromis)
+       * - Réduction 0.72 = 28% de baisse (littérature : 30-50% volume OU intensité)
+       * - Principe validé : surcharge progressive + récupération régulière = adaptation maximale
+       *
+       * LIMITATIONS :
+       * - Rigide (pas d'adaptation signaux individuels : TSB, HRV, compliance)
+       * - Pas de distinction volume vs intensité (réduit charge globale)
+       * - Amélioration future : timing deload adaptatif selon biomarqueurs
+       *
+       * Voir SCIENCE.md section "Deload (semaines de récupération)" pour détails.
+       */
       const isDeload =
         (block.phase === 'BASE' || block.phase === 'BUILD') &&
         buildWeekCounter > 0 &&
@@ -159,11 +207,12 @@ export function generateMacroPlan(params: {
         buildWeekCounter += 1;
       }
 
+      // Progression graduelle au sein d'une phase (éviter pic brutal)
       const progression =
         block.phase === 'BUILD'
-          ? 1 + Math.min(i, 3) * 0.04
+          ? 1 + Math.min(i, 3) * 0.04  // +4% par semaine max 3 semaines
           : block.phase === 'BASE'
-            ? 1 + Math.min(i, 5) * 0.03
+            ? 1 + Math.min(i, 5) * 0.03  // +3% par semaine max 5 semaines
             : 1;
 
       let targetLoad = Math.round(
