@@ -222,7 +222,7 @@ export function DashboardView() {
         <CardHeader className="pb-3">
           <CardTitle className="text-muted-foreground flex items-center gap-2 text-base font-medium">
             <CalendarDays className="text-primary size-4" />
-            Prochaine événement
+            Prochain événement
           </CardTitle>
         </CardHeader>
         <CardContent>

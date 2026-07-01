@@ -100,13 +100,10 @@ export function TodayTodoList({ items }: { items: TodayTodoItem[] }) {
           )}
         </div>
         <div className="space-y-2">
-          {shown.map((item, index) => (
+          {shown.map((item) => (
             <Card key={item.id} className={cn('border', SEVERITY_STYLE[item.severity])}>
               <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 space-y-1">
-                  <p className="text-muted-foreground font-mono text-[10px] tabular-nums">
-                    {index + 1}.
-                  </p>
                   <p className="text-sm font-medium">{item.title}</p>
                   <p className="text-muted-foreground text-sm">{item.detail}</p>
                 </div>
