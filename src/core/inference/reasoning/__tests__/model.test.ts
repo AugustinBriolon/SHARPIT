@@ -462,9 +462,17 @@ describe('runReasoningModel', () => {
     expect(sum).toBeLessThanOrEqual(1.05);
   });
 
-  it('explanation is a non-empty string', () => {
-    const output = runReasoningModel(makeInput(makeRecovery(), makeFatigue(), makeAdaptation()));
-    expect(typeof output.explanation).toBe('string');
-    expect(output.explanation.length).toBeGreaterThan(10);
+  it('output has structured i18n codes (no NL explanation)', () => {
+    // Use LOW readiness to guarantee at least one finding is produced
+    const lowRecovery = makeRecovery({ readinessCategory: 'LOW', readinessScore: 40 });
+    const output = runReasoningModel(makeInput(lowRecovery, makeFatigue(), makeAdaptation()));
+    expect(output).not.toHaveProperty('explanation');
+    expect(output.reasoningState.topAction).not.toBeNull();
+    expect(output.reasoningState.topAction!.verbCode).toBeTruthy();
+    expect(output.reasoningState.topAction!.focusCode).toBeTruthy();
+    expect(output.reasoningState.keyFindings.length).toBeGreaterThan(0);
+    expect(output.reasoningState.keyFindings[0].title.code).toBeTruthy();
+    expect(output.reasoningState.keyFindings[0].evidenceItems.length).toBeGreaterThan(0);
+    expect(output.reasoningState.keyFindings[0].evidenceItems[0].code).toBeTruthy();
   });
 });

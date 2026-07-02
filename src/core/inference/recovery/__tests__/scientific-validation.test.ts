@@ -900,7 +900,7 @@ describe('Scenario 10 — Cold start: beginner athlete, day 7, no baseline estab
     // Graceful degradation — the model produces a result even with sparse inputs
     expect(result.recoveryState.readinessCategory).toBeDefined();
     expect(result.recommendation.type).toBeDefined();
-    expect(result.explanation).toBeDefined();
+    expect(result.recommendation.keyEvidence).toBeDefined();
   });
 
   it('recommendation is conservative — EASY or more conservative', () => {

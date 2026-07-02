@@ -485,22 +485,11 @@ describe('runRecoveryModel', () => {
       expect(output.recoveryState.confidence).toBeLessThanOrEqual(1);
     });
 
-    it('recommendation always has non-empty title and summary', () => {
+    it('recommendation has a type and at least one evidence item', () => {
       const output = runRecoveryModel(makeDayFeatures(), DEFAULT_CONTEXT);
-      expect(output.recommendation.title.length).toBeGreaterThan(0);
-      expect(output.recommendation.summary.length).toBeGreaterThan(0);
-    });
-
-    it('explanation is always non-empty', () => {
-      const output = runRecoveryModel(makeDayFeatures(), DEFAULT_CONTEXT);
-      expect(output.explanation.length).toBeGreaterThan(10);
-    });
-
-    it('explanation mentions the readiness score when non-null', () => {
-      const output = runRecoveryModel(makeDayFeatures(), DEFAULT_CONTEXT);
-      if (output.recoveryState.readinessScore !== null) {
-        expect(output.explanation).toContain(String(output.recoveryState.readinessScore));
-      }
+      expect(output.recommendation.type).toBeDefined();
+      expect(output.recommendation.keyEvidence.length).toBeGreaterThan(0);
+      expect(output.recommendation.keyEvidence[0].code).toBeTruthy();
     });
 
     it('primaryLimitingFactor is the dimension with the lowest score', () => {

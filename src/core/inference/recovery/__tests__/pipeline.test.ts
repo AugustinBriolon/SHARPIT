@@ -308,7 +308,7 @@ describe('RecoveryInferenceOrchestrator — full pipeline integration', () => {
       expect(record!.trainingDayId).toBe(TRAINING_DAY);
     });
 
-    it('Decision Record contains non-empty explanation', async () => {
+    it('Decision Record explanation is absent for recovery model', async () => {
       const { orchestrator, decisionRecordRepo } = createPipeline();
       await orchestrator.run(ATHLETE_ID, TRAINING_DAY);
 
@@ -317,7 +317,7 @@ describe('RecoveryInferenceOrchestrator — full pipeline integration', () => {
         'recovery-synthesis-v1',
         TRAINING_DAY,
       );
-      expect(record!.explanation.length).toBeGreaterThan(20);
+      expect(record!.explanation).toBeUndefined();
     });
 
     it('Decision Record confidence matches model output', async () => {
@@ -394,12 +394,14 @@ describe('RecoveryInferenceOrchestrator — full pipeline integration', () => {
       expect(cached!.trainingDayId).toBe(TRAINING_DAY);
     });
 
-    it('cached result explanation matches original run explanation', async () => {
+    it('cached result readiness score matches original run', async () => {
       const { orchestrator } = createPipeline();
       const original = await orchestrator.run(ATHLETE_ID, TRAINING_DAY);
       const cached = await orchestrator.getLatest(ATHLETE_ID, TRAINING_DAY);
 
-      expect(cached!.output.explanation).toBe(original.output.explanation);
+      expect(cached!.output.recoveryState.readinessScore).toBe(
+        original.output.recoveryState.readinessScore,
+      );
     });
   });
 
@@ -443,8 +445,8 @@ describe('RecoveryInferenceOrchestrator — full pipeline integration', () => {
       // With only load data, we can't compute a full score
       expect(result.output.recoveryState.readinessScore).toBeNull();
       // But we should still get a recommendation
-      expect(result.output.recommendation.title.length).toBeGreaterThan(0);
-      expect(result.output.explanation.length).toBeGreaterThan(0);
+      expect(result.output.recommendation.type).toBeDefined();
+      expect(result.output.recommendation.keyEvidence.length).toBeGreaterThan(0);
     });
   });
 
