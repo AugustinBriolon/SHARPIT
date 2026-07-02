@@ -44,7 +44,7 @@ import {
   signalConsistencyFactor,
 } from './scoring';
 
-import { generateExplanation } from './explanation';
+import type { I18nItem } from '@/core/inference/shared/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Signals
@@ -179,58 +179,55 @@ function makeDecision(
   signals: RecoverySignals,
   dissonanceType: 'OBJECTIVE_POOR_SUBJECTIVE_GOOD' | 'OBJECTIVE_GOOD_SUBJECTIVE_POOR' | 'NONE',
 ): RecoveryDecision {
-  const rationale: string[] = [];
+  const rationale: I18nItem[] = [];
 
-  // Illness override (mandatory REST)
   if (signals.illnessRisk === 'HIGH') {
     return {
       verdict: 'OVERREACHED',
       recommendedIntensity: 'REST',
       rationale: [
-        'Acute HRV suppression without corresponding training load — possible immune activation.',
-        'Mandatory rest day. Do not train.',
-        'Consult a healthcare professional if systemic symptoms are present.',
+        { code: 'recovery.rationale.illnessRisk.acute' },
+        { code: 'recovery.rationale.illnessRisk.mandatory' },
+        { code: 'recovery.rationale.illnessRisk.consult' },
       ],
     };
   }
 
-  // Determine verdict and intensity from readiness category
   let verdict: RecoveryVerdict;
   let recommendedIntensity: RecommendedIntensity;
 
   switch (category) {
     case 'OPTIMAL':
       verdict = 'RECOVERED';
-      // Protective bias if overreaching risk is elevated or dissonance present
       recommendedIntensity =
         signals.overreachingRisk === 'LOW' && dissonanceType !== 'OBJECTIVE_POOR_SUBJECTIVE_GOOD'
           ? 'HARD'
           : 'MODERATE';
-      rationale.push('Recovery indicators are excellent.');
+      rationale.push({ code: 'recovery.rationale.excellent' });
       break;
 
     case 'ADEQUATE':
       verdict = 'PARTIALLY_RECOVERED';
       recommendedIntensity = 'MODERATE';
-      rationale.push('Good recovery — normal training is appropriate.');
+      rationale.push({ code: 'recovery.rationale.good' });
       break;
 
     case 'REDUCED':
       verdict = 'PARTIALLY_RECOVERED';
       recommendedIntensity = 'EASY';
-      rationale.push('Partial recovery — moderate-intensity work preferred.');
+      rationale.push({ code: 'recovery.rationale.partial' });
       break;
 
     case 'LOW':
       verdict = 'FATIGUED';
       recommendedIntensity = 'VERY_EASY';
-      rationale.push('Incomplete recovery — easy movement only.');
+      rationale.push({ code: 'recovery.rationale.incomplete' });
       break;
 
     case 'VERY_LOW':
       verdict = 'FATIGUED';
       recommendedIntensity = 'REST';
-      rationale.push('Insufficient recovery — rest is the most productive choice.');
+      rationale.push({ code: 'recovery.rationale.insufficient' });
       break;
 
     case 'BASELINE_PENDING':
@@ -238,28 +235,27 @@ function makeDecision(
     default:
       verdict = 'INSUFFICIENT_DATA';
       recommendedIntensity = 'EASY';
-      rationale.push('Insufficient recovery data. Conservative recommendation applies.');
+      rationale.push({ code: 'recovery.rationale.noData' });
       break;
   }
 
-  // Add signal-specific rationale
   if (
     signals.autonomicBalance === 'SUPPRESSED' ||
     signals.autonomicBalance === 'CRITICALLY_SUPPRESSED'
   ) {
-    rationale.push('Autonomic nervous system suppression detected (HRV/RHR).');
+    rationale.push({ code: 'recovery.rationale.autonomicSuppressed' });
   }
   if (
     signals.sleepAdequacy === 'SEVERELY_INSUFFICIENT' ||
     signals.sleepAdequacy === 'INSUFFICIENT'
   ) {
-    rationale.push('Sleep quality is limiting recovery.');
+    rationale.push({ code: 'recovery.rationale.sleepLimiting' });
   }
   if (signals.overreachingRisk === 'HIGH' || signals.overreachingRisk === 'CRITICAL') {
-    rationale.push('Multiple recovery dimensions indicate overreaching risk.');
+    rationale.push({ code: 'recovery.rationale.overreachingRisk' });
   }
   if (signals.dissonanceDetected) {
-    rationale.push('Subjective and objective markers disagree — conservative bias applied.');
+    rationale.push({ code: 'recovery.rationale.dissonance' });
   }
 
   return { verdict, recommendedIntensity, rationale: rationale.slice(0, 3) };
@@ -269,64 +265,21 @@ function makeDecision(
 // Recommendation
 // ─────────────────────────────────────────────────────────────────────────────
 
-const INTENSITY_CONFIG: Record<RecommendedIntensity, { title: string; summary: string }> = {
-  REST: {
-    title: 'Rest day — recovery is the priority',
-    summary:
-      'Your recovery indicators suggest that additional training stress would be counterproductive today. Rest actively: prioritize sleep, nutrition, and light mobility work.',
-  },
-  VERY_EASY: {
-    title: 'Active recovery — light movement only',
-    summary:
-      'Easy walking, yoga, or gentle cycling at conversational pace. The goal is circulation, not stimulus. Keep RPE below 3/10.',
-  },
-  EASY: {
-    title: 'Easy session — aerobic base',
-    summary:
-      'Zone 1–2 only. Conversational pace throughout. No sustained efforts above aerobic threshold. RPE 4–5/10. Duration can be normal.',
-  },
-  MODERATE: {
-    title: 'Moderate training — controlled stimulus',
-    summary:
-      'You are ready for a structured workout. Include some quality work at threshold or tempo, but avoid all-out efforts. RPE 6–7/10.',
-  },
-  HARD: {
-    title: 'High-intensity session — optimal timing',
-    summary:
-      'Your recovery indicators are excellent. This is an ideal window for high-intensity work, race simulation, or key sessions. Maximize quality.',
-  },
-};
-
 function makeRecommendation(
   decision: RecoveryDecision,
   score: number | null,
-  limitingFactor: DimensionKey | null,
   confidence: number,
 ): RecoveryRecommendation {
-  const config = INTENSITY_CONFIG[decision.recommendedIntensity];
-
-  const keyEvidence = decision.rationale.slice(0, 2) as string[];
+  const keyEvidence: I18nItem[] = [];
   if (score !== null) {
-    keyEvidence.unshift(`Recovery score: ${score}/100`);
+    keyEvidence.push({ code: 'recovery.evidence.score', params: { score } });
   }
-
-  const limitingFactorLabel =
-    limitingFactor !== null
-      ? {
-          autonomic: 'Autonomic balance (HRV/RHR)',
-          sleep: 'Sleep quality',
-          subjective: 'Subjective wellbeing',
-          loadContext: 'Training load context',
-        }[limitingFactor]
-      : null;
+  keyEvidence.push(...decision.rationale.slice(0, 2));
 
   return {
     type: decision.recommendedIntensity,
-    title: config.title,
-    summary: config.summary,
     keyEvidence: keyEvidence.slice(0, 3),
     confidence,
-    limitingFactor: limitingFactorLabel,
   };
 }
 
@@ -499,28 +452,12 @@ export function runRecoveryModel(
   const decision = makeDecision(effectiveCategory, signals, dissonanceType);
 
   // ── Recommendation ────────────────────────────────────────────────────────
-  const recommendation = makeRecommendation(
-    decision,
-    effectiveScore,
-    limitingFactor,
-    finalConfidence,
-  );
-
-  // ── Explanation ───────────────────────────────────────────────────────────
-  const explanation = generateExplanation(
-    effectiveScore,
-    effectiveCategory,
-    signals,
-    dims,
-    decision,
-    finalConfidence,
-  );
+  const recommendation = makeRecommendation(decision, effectiveScore, finalConfidence);
 
   return {
     signals,
     recoveryState,
     decision,
     recommendation,
-    explanation,
   };
 }

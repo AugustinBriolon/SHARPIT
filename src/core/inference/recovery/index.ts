@@ -6,7 +6,6 @@
  */
 
 export { runRecoveryModel } from './model';
-export { generateExplanation } from './explanation';
 export {
   scoreAutonomic,
   scoreSleep,

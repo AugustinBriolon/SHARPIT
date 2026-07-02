@@ -14,6 +14,7 @@ import type {
   RecoveryState,
   DimensionResult,
 } from '@/core/digital-twin/types';
+import type { I18nItem } from '@/core/inference/shared/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Re-export digital twin types for convenience
@@ -75,8 +76,8 @@ export type RecommendedIntensity = 'REST' | 'VERY_EASY' | 'EASY' | 'MODERATE' | 
 export type RecoveryDecision = {
   readonly verdict: RecoveryVerdict;
   readonly recommendedIntensity: RecommendedIntensity;
-  /** Evidence points driving this decision (max 3, for UI display). */
-  readonly rationale: readonly string[];
+  /** Localizable evidence points driving this decision (max 3). */
+  readonly rationale: readonly I18nItem[];
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -85,15 +86,9 @@ export type RecoveryDecision = {
 
 export type RecoveryRecommendation = {
   readonly type: RecommendedIntensity;
-  /** Short athlete-facing title (< 60 chars). */
-  readonly title: string;
-  /** One-paragraph summary. */
-  readonly summary: string;
-  /** 2–3 evidence points surfaced to the athlete. */
-  readonly keyEvidence: readonly string[];
+  /** 2–3 localizable evidence items surfaced to the athlete. */
+  readonly keyEvidence: readonly I18nItem[];
   readonly confidence: number;
-  /** The dimension most limiting recovery today (null if full recovery). */
-  readonly limitingFactor: string | null;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -114,7 +109,6 @@ export type RecoveryModelOutput = {
   readonly recoveryState: RecoveryState;
   readonly decision: RecoveryDecision;
   readonly recommendation: RecoveryRecommendation;
-  readonly explanation: string;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
