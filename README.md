@@ -8,7 +8,7 @@ Performance operating system for endurance athletes — training load management
 
 - Tracks training activities (run, bike, swim, strength) with load and performance metrics
 - Monitors health, recovery, and sleep via Garmin, Strava, and Renpho integrations
-- Computes three scientific intelligence states via a Digital Twin: Recovery, Fatigue, and Adaptation
+- Computes four scientific intelligence states via a Digital Twin: Recovery, Fatigue, Adaptation, and cross-model Reasoning
 - Provides AI-powered coaching recommendations via the Claude API
 - Manages training planning, periodization, and race goal tracking
 
@@ -36,10 +36,11 @@ Observation       Raw data normalization and validation (src/core/observation/)
       │
 Feature Engine    Structured feature extraction per training day (src/core/features/)
       │
-Intelligence      Three scientific models (src/core/inference/)
-  ├── Recovery v1  readiness · sleep · HRV · accumulation
-  ├── Fatigue v1   load · neuromuscular · metabolic · cumulative · psychological
-  └── Adaptation v1  load progression · neuromuscular efficiency · autonomic · recovery quality
+Intelligence      Scientific inference models (src/core/inference/)
+  ├── Recovery v1    readiness · sleep · HRV · accumulation
+  ├── Fatigue v1     load · neuromuscular · metabolic · cumulative · psychological
+  ├── Adaptation v1  load progression · neuromuscular efficiency · autonomic · recovery quality
+  └── Reasoning v1   cross-model synthesis — OverallVerdict, conflicts, opportunities (reads Digital Twin)
       │
 Digital Twin      Persistent athlete state — updated after each inference (src/core/digital-twin/)
       │
@@ -114,7 +115,7 @@ yarn benchmark:json         # JSON output for CI parsing
 yarn benchmark:compare      # compare v1 vs v2 model versions
 ```
 
-Scientific benchmarks gate intelligence model deployment. All three models (Recovery, Fatigue, Adaptation) must score **100/100 scientific regression score** and **1.0 safety score** to pass.
+Scientific benchmarks gate intelligence model deployment. All four models (Recovery, Fatigue, Adaptation, Reasoning) must score **100/100 scientific regression score** and **1.0 safety score** to pass.
 
 ## Development
 
@@ -133,15 +134,15 @@ Scientific benchmarks gate intelligence model deployment. All three models (Reco
 
 ## Modules
 
-| Module        | Description                                                                   |
-| ------------- | ----------------------------------------------------------------------------- |
-| **Dashboard** | Daily training view with Recovery, Fatigue, and Adaptation intelligence cards |
-| **Training**  | Activity CRUD (run, bike, swim, strength) with load and stream analysis       |
-| **Analytics** | PMC chart (CTL, ATL, TSB), performance metrics, personal records              |
-| **Planning**  | Macrocycle planning with brick analysis                                       |
-| **Goals**     | Race goals and countdown tracking                                             |
-| **Calendar**  | Month view of planned and completed sessions                                  |
-| **Settings**  | Strava, Garmin, Renpho, Google Calendar integrations                          |
+| Module        | Description                                                                              |
+| ------------- | ---------------------------------------------------------------------------------------- |
+| **Dashboard** | Daily training view with Recovery, Fatigue, Adaptation, and Reasoning intelligence cards |
+| **Training**  | Activity CRUD (run, bike, swim, strength) with load and stream analysis                  |
+| **Analytics** | PMC chart (CTL, ATL, TSB), performance metrics, personal records                         |
+| **Planning**  | Macrocycle planning with brick analysis                                                  |
+| **Goals**     | Race goals and countdown tracking                                                        |
+| **Calendar**  | Month view of planned and completed sessions                                             |
+| **Settings**  | Strava, Garmin, Renpho, Google Calendar integrations                                     |
 
 ## Integrations
 
@@ -162,6 +163,6 @@ Connect via **Settings → Renpho**. Body composition observations are automatic
 ## Related documentation
 
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) — full system architecture and component interactions
-- [`docs/models/`](./docs/models/) — scientific model specifications (Recovery, Fatigue, Adaptation)
+- [`docs/models/`](./docs/models/) — scientific model specifications (Recovery, Fatigue, Adaptation, Reasoning)
 - [`docs/adr/`](./docs/adr/) — Architecture Decision Records
 - [`knowledge/`](./knowledge/) — domain knowledge and scientific references
