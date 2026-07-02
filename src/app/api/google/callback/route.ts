@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     settingsUrl.searchParams.set('google', 'error');
     // En dev, on affiche le détail pour diagnostiquer (redirect_uri, etc.)
     if (process.env.NODE_ENV === 'development') {
-      settingsUrl.searchParams.set('google_detail', message.slice(0, 300));
+      settingsUrl.searchParams.set('googleDetail', message.slice(0, 300));
     }
     return NextResponse.redirect(settingsUrl);
   }

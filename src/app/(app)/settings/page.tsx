@@ -33,11 +33,11 @@ const googleStatusMessages: Record<string, string> = {
 };
 
 type PageProps = {
-  searchParams: Promise<{ strava?: string; google?: string; google_detail?: string }>;
+  searchParams: Promise<{ strava?: string; google?: string; googleDetail?: string }>;
 };
 
 export default async function SettingsPage({ searchParams }: PageProps) {
-  const { strava, google, google_detail } = await searchParams;
+  const { strava, google, googleDetail } = await searchParams;
   const [
     stravaAccount,
     configured,
@@ -56,7 +56,7 @@ export default async function SettingsPage({ searchParams }: PageProps) {
     Promise.resolve(isGoogleConfigured()),
   ]);
 
-  const google_ = googleAccount
+  const googleData = googleAccount
     ? {
         email: googleAccount.email,
         targetCalendarId: googleAccount.targetCalendarId,
@@ -175,13 +175,13 @@ export default async function SettingsPage({ searchParams }: PageProps) {
         </CardHeader>
         <CardContent>
           <GoogleCalendarPanel
-            account={google_}
+            account={googleData}
             configured={googleConfigured}
             statusMessage={
               google
                 ? [
                     googleStatusMessages[google],
-                    google === 'error' && google_detail ? `Détail : ${google_detail}` : null,
+                    google === 'error' && googleDetail ? `Détail : ${googleDetail}` : null,
                   ]
                     .filter(Boolean)
                     .join(' ')
