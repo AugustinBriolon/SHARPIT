@@ -141,8 +141,6 @@ async function main() {
       },
     },
   });
-
-  console.log('Seed terminé.');
 }
 
 main()
