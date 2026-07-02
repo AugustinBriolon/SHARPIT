@@ -11,6 +11,7 @@ import {
 } from './queries';
 import { categoryLabels, sideLabels, statusLabels } from './physical';
 import { computeTrainingLoad } from './training-load';
+import { prisma } from './prisma';
 
 const WEEKDAYS_FR = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
@@ -72,16 +73,30 @@ export async function buildCoachContext(refDate: Date = new Date()): Promise<Coa
 async function buildCoachContextUncached(refDate: Date = new Date()) {
   const today = startOfDay(refDate);
 
-  const [activities, healthEntries, goals, planned, pastPlanned, profile, physicalNotes] =
-    await Promise.all([
-      getActivities({ limit: 120 }),
-      getHealthEntries(30),
-      getGoals(),
-      getPlannedSessions({ from: today, to: subDays(today, -21) }),
-      getPlannedSessions({ from: subDays(today, 14), to: today }),
-      getAthleteProfile(),
-      getActivePhysicalNotes(),
-    ]);
+  const [
+    activities,
+    healthEntries,
+    goals,
+    planned,
+    pastPlanned,
+    profile,
+    physicalNotes,
+    digitalTwin,
+  ] = await Promise.all([
+    getActivities({ limit: 120 }),
+    getHealthEntries(30),
+    getGoals(),
+    getPlannedSessions({ from: today, to: subDays(today, -21) }),
+    getPlannedSessions({ from: subDays(today, 14), to: today }),
+    getAthleteProfile(),
+    getActivePhysicalNotes(),
+    prisma.digitalTwin
+      .findUnique({
+        where: { athleteId: 'default' },
+        select: { fatigueState: true, adaptationState: true },
+      })
+      .catch(() => null),
+  ]);
 
   // ---- Fitness (PMC : CTL / ATL / TSB) ----
   const pmcInput: ActivityForAnalytics[] = activities.map((a) => ({
@@ -251,6 +266,40 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
     };
   });
 
+  // ---- Fatigue Intelligence (Digital Twin) ----
+  const rawFatigue = digitalTwin?.fatigueState;
+  const fatigue =
+    rawFatigue && typeof rawFatigue === 'object'
+      ? (rawFatigue as {
+          fatigueIndex?: number | null;
+          fatigueLevel?: string;
+          trainingCapacity?: string;
+          trajectory?: string;
+          primaryLimitingFactor?: string | null;
+          functionalOverreachingRisk?: string;
+          estimatedTimeToFresh?: number | null;
+          performanceImpairmentEstimate?: number;
+          confidence?: number;
+        })
+      : null;
+
+  // ---- Adaptation Intelligence (Digital Twin) ----
+  const rawAdaptation = digitalTwin?.adaptationState;
+  const adaptation =
+    rawAdaptation && typeof rawAdaptation === 'object'
+      ? (rawAdaptation as {
+          adaptationIndex?: number | null;
+          adaptationStatus?: string;
+          adaptationTrend?: string;
+          limitingFactor?: string | null;
+          estimatedAdaptationPeak?: number | null;
+          plateauRisk?: boolean;
+          overreachingWithoutAdaptationDetected?: boolean;
+          confidence?: number;
+          decision?: { verdict?: string; loadMultiplier?: number };
+        })
+      : null;
+
   return {
     today: format(today, 'EEEE d MMMM yyyy', { locale: fr }),
     note: profile?.context?.trim() || null,
@@ -275,6 +324,8 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
     realizedSessions,
     upcomingPlanned,
     physical,
+    fatigue,
+    adaptation,
   };
 }
 
@@ -316,6 +367,109 @@ export function formatCoachContext(ctx: CoachContext): string {
     `Charge 7j : ${ctx.load.weeklyLoad} · ratio aigu/chronique ${ctx.load.acwr} · fatigue ${ctx.load.fatigue}.`,
   );
   lines.push(`Interprétation TSB : >5 frais, -10..5 neutre, <-10 fatigué, <-30 surcharge.`);
+
+  // Fatigue Intelligence (multi-dimensional model)
+  if (ctx.fatigue && ctx.fatigue.fatigueLevel && ctx.fatigue.fatigueLevel !== 'INSUFFICIENT_DATA') {
+    const f = ctx.fatigue;
+    const LEVEL_FR: Record<string, string> = {
+      FRESH: 'Frais (0-20)',
+      FUNCTIONAL_LOW: 'Fatigue normale (21-40)',
+      FUNCTIONAL_HIGH: 'Charge productive (41-60)',
+      ACCUMULATED: 'Fatigue accumulée (61-75)',
+      NON_FUNCTIONAL_RISK: 'Risque surcharge (76-88)',
+      OVERREACHING_RISK: 'Surentraînement (89-100)',
+    };
+    const CAPACITY_FR: Record<string, string> = {
+      FULL: 'totale',
+      REDUCED: 'réduite (éviter haute intensité)',
+      LIGHT_ONLY: "légère uniquement (Z1-Z2, pas d'intervalles)",
+      REST_ONLY: 'repos uniquement',
+    };
+    const bits = [
+      f.fatigueIndex != null ? `Index ${f.fatigueIndex}/100` : null,
+      f.fatigueLevel ? (LEVEL_FR[f.fatigueLevel] ?? f.fatigueLevel) : null,
+      f.trainingCapacity
+        ? `Capacité d'entraînement ${CAPACITY_FR[f.trainingCapacity] ?? f.trainingCapacity}`
+        : null,
+      f.trajectory ? `Tendance : ${f.trajectory}` : null,
+    ].filter(Boolean);
+    lines.push(
+      `\n## Fatigue Intelligence (modèle multi-dimensionnel SHARPIT)\n${bits.join(' · ')}.`,
+    );
+    if (f.primaryLimitingFactor) {
+      lines.push(`Facteur limitant principal : ${f.primaryLimitingFactor}.`);
+    }
+    if (f.functionalOverreachingRisk && f.functionalOverreachingRisk !== 'LOW') {
+      lines.push(
+        `⚠ Risque de surentraînement fonctionnel : ${f.functionalOverreachingRisk}. Priorise la récupération avant d'augmenter la charge.`,
+      );
+    }
+    if (f.estimatedTimeToFresh != null && f.fatigueLevel !== 'FRESH') {
+      lines.push(`Retour à l'état frais estimé dans ${f.estimatedTimeToFresh} jour(s).`);
+    }
+    if (f.performanceImpairmentEstimate && f.performanceImpairmentEstimate > 0.1) {
+      lines.push(
+        `Capacité de performance estimée à ~${Math.round((1 - f.performanceImpairmentEstimate) * 100)}% du maximum.`,
+      );
+    }
+  }
+
+  // Adaptation Intelligence (multi-dimensional model)
+  if (
+    ctx.adaptation &&
+    ctx.adaptation.adaptationStatus &&
+    ctx.adaptation.adaptationStatus !== 'INSUFFICIENT_DATA'
+  ) {
+    const a = ctx.adaptation;
+    const STATUS_FR: Record<string, string> = {
+      POSITIVELY_ADAPTING: 'Adaptation positive',
+      MAINTAINING: 'Maintien',
+      PLATEAUING: 'Plateau',
+      MALADAPTING: 'Maladaptation',
+      DETRAINING: 'Désentraînement',
+    };
+    const TREND_FR: Record<string, string> = {
+      IMPROVING: 'En progression',
+      STABLE: 'Stable',
+      DECLINING: 'En déclin',
+    };
+    const VERDICT_FR: Record<string, string> = {
+      INCREASE_LOAD: 'Augmenter la charge',
+      SUSTAIN: 'Maintenir la progression',
+      CONSOLIDATE: 'Consolider avant de progresser',
+      REDUCE_LOAD: 'Réduire la charge',
+      RECOVERY_PRIORITY: 'Priorité récupération (fenêtre supercompensation)',
+    };
+    const bits = [
+      a.adaptationIndex != null ? `Index ${a.adaptationIndex}/100` : null,
+      a.adaptationStatus ? (STATUS_FR[a.adaptationStatus] ?? a.adaptationStatus) : null,
+      a.adaptationTrend ? (TREND_FR[a.adaptationTrend] ?? a.adaptationTrend) : null,
+    ].filter(Boolean);
+    lines.push(
+      `\n## Adaptation Intelligence (modèle multi-dimensionnel SHARPIT)\n${bits.join(' · ')}.`,
+    );
+    if (a.limitingFactor) {
+      lines.push(`Facteur limitant : ${a.limitingFactor}.`);
+    }
+    if (a.decision?.verdict) {
+      const multiplier =
+        a.decision.loadMultiplier != null ? ` (×${a.decision.loadMultiplier.toFixed(2)})` : '';
+      lines.push(`Verdict : ${VERDICT_FR[a.decision.verdict] ?? a.decision.verdict}${multiplier}.`);
+    }
+    if (a.overreachingWithoutAdaptationDetected) {
+      lines.push(
+        `⚠ Surentraînement sans adaptation détecté : charge élevée sans réponse autonomique. Réduire immédiatement.`,
+      );
+    }
+    if (a.plateauRisk) {
+      lines.push(
+        `⚠ Risque de plateau : ≥ 14 jours sans progression d'adaptation. Un changement de stimulus est nécessaire.`,
+      );
+    }
+    if (a.estimatedAdaptationPeak != null) {
+      lines.push(`Pic de forme estimé dans ${a.estimatedAdaptationPeak} jour(s).`);
+    }
+  }
 
   // Santé
   const h = ctx.health;
