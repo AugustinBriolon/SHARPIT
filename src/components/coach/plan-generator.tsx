@@ -38,6 +38,26 @@ const DAYS_OPTIONS = [
 
 const NO_GOAL = 'none';
 
+function renderInsertButtonContent(inserted: boolean, isInserting: boolean) {
+  if (inserted) {
+    return (
+      <>
+        <Check className="size-4" />
+        Ajouté
+      </>
+    );
+  }
+  if (isInserting) {
+    return (
+      <>
+        <Loader2 className="size-4 animate-spin" />
+        Ajout…
+      </>
+    );
+  }
+  return 'Ajouter au planning';
+}
+
 interface PlanGeneratorProps {
   startDate?: string; // yyyy-MM-dd
   onClose: () => void;
@@ -247,19 +267,7 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
                   disabled={isInserting || selected.size === 0 || inserted}
                   onClick={handleInsert}
                 >
-                  {inserted ? (
-                    <>
-                      <Check className="size-4" />
-                      Ajouté
-                    </>
-                  ) : isInserting ? (
-                    <>
-                      <Loader2 className="size-4 animate-spin" />
-                      Ajout…
-                    </>
-                  ) : (
-                    'Ajouter au planning'
-                  )}
+                  {renderInsertButtonContent(inserted, isInserting)}
                 </Button>
               </div>
             </div>

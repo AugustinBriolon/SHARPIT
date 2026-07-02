@@ -89,6 +89,12 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
 
   const initialDate = note?.startDate ? new Date(note.startDate) : new Date();
 
+  function getSubmitButtonLabel(): string {
+    if (pending) return 'Enregistrement…';
+    if (isEdit) return 'Mettre à jour';
+    return 'Créer';
+  }
+
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
@@ -243,7 +249,7 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
                 Annuler
               </Button>
               <Button disabled={pending} type="submit">
-                {pending ? 'Enregistrement…' : isEdit ? 'Mettre à jour' : 'Créer'}
+                {getSubmitButtonLabel()}
               </Button>
             </div>
           </div>

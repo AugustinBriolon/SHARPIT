@@ -58,6 +58,19 @@ function defaultBrickLegs(): BrickLegForm[] {
   ];
 }
 
+function brickLegTitlePlaceholder(type: ActivityType): string {
+  if (type === 'BIKE') return 'Vélo';
+  if (type === 'RUN') return 'Course';
+  return activityTypeLabels[type];
+}
+
+function submitButtonLabel(pending: boolean, isEdit: boolean, createMode: CreateMode): string {
+  if (pending) return 'Enregistrement…';
+  if (isEdit) return 'Mettre à jour';
+  if (createMode === 'brick') return 'Créer le brick';
+  return 'Planifier';
+}
+
 interface PlannedSessionDialogProps {
   session?: ClientPlannedSession | null;
   defaultDate?: Date;
@@ -443,14 +456,8 @@ export function PlannedSessionDialog({
                   <div className="space-y-2">
                     <Label>Titre</Label>
                     <Input
+                      placeholder={brickLegTitlePlaceholder(leg.type)}
                       value={leg.title}
-                      placeholder={
-                        leg.type === 'BIKE'
-                          ? 'Vélo'
-                          : leg.type === 'RUN'
-                            ? 'Course'
-                            : activityTypeLabels[leg.type]
-                      }
                       onChange={(e) => updateLeg(index, { title: e.target.value })}
                     />
                   </div>
@@ -515,13 +522,7 @@ export function PlannedSessionDialog({
                 Annuler
               </Button>
               <Button disabled={pending} type="submit">
-                {pending
-                  ? 'Enregistrement…'
-                  : isEdit
-                    ? 'Mettre à jour'
-                    : createMode === 'brick'
-                      ? 'Créer le brick'
-                      : 'Planifier'}
+                {submitButtonLabel(pending, isEdit, createMode)}
               </Button>
             </div>
           </div>

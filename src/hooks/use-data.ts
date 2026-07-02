@@ -105,6 +105,12 @@ function optimisticGoal(payload: GoalPayload): ClientGoal {
 }
 
 function mergeGoal(goal: ClientGoal, data: Partial<GoalPayload>): ClientGoal {
+  const { targetDate: existingTargetDate } = goal;
+  let targetDate = existingTargetDate;
+  if (data.targetDate !== undefined) {
+    targetDate = data.targetDate ? new Date(data.targetDate) : null;
+  }
+
   return {
     ...goal,
     ...data,
@@ -113,12 +119,7 @@ function mergeGoal(goal: ClientGoal, data: Partial<GoalPayload>): ClientGoal {
       data.priority !== undefined
         ? ((data.priority as GoalPriority | null) ?? null)
         : goal.priority,
-    targetDate:
-      data.targetDate !== undefined
-        ? data.targetDate
-          ? new Date(data.targetDate)
-          : null
-        : goal.targetDate,
+    targetDate,
     updatedAt: new Date(),
   } as ClientGoal;
 }

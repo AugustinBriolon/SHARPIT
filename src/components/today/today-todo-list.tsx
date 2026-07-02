@@ -2,7 +2,7 @@
 
 import { Check, HeartPulse, Link2, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { PlanAdapter } from '@/components/coach/plan-adapter';
 import { PlanGenerator } from '@/components/coach/plan-generator';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,30 @@ const SEVERITY_STYLE = {
 };
 
 const VISIBLE_MAX = 3;
+
+type ActionableTodoKind = Exclude<
+  NonNullable<TodayTodoItem['action']>['kind'],
+  'physical_checkin' | 'link_session' | 'info'
+>;
+
+function todoActionLabel(kind: ActionableTodoKind): string {
+  switch (kind) {
+    case 'remove_session':
+      return 'Supprimer';
+    case 'open_adapt':
+      return 'Réadapter';
+    case 'open_plan_generator':
+      return 'Générer';
+    default:
+      return 'Appliquer';
+  }
+}
+
+function todoActionIcon(kind: ActionableTodoKind): ReactNode {
+  if (kind === 'open_adapt') return <Wand2 className="size-3.5" />;
+  if (kind === 'open_plan_generator') return <Sparkles className="size-3.5" />;
+  return <Check className="size-3.5" />;
+}
 
 export function TodayTodoList({ items }: { items: TodayTodoItem[] }) {
   const [done, setDone] = useState<Set<string>>(new Set());
@@ -190,24 +214,14 @@ function TodoActions({
     );
   }
 
-  const label =
-    action.kind === 'downgrade_session'
-      ? 'Appliquer'
-      : action.kind === 'remove_session'
-        ? 'Supprimer'
-        : action.kind === 'open_adapt'
-          ? 'Réadapter'
-          : action.kind === 'open_plan_generator'
-            ? 'Générer'
-            : 'Appliquer';
-
-  const Icon =
-    action.kind === 'open_adapt' ? Wand2 : action.kind === 'open_plan_generator' ? Sparkles : Check;
+  // À ce stade, action.kind est garanti d'être ActionableTodoKind
+  const actionable = action as { kind: ActionableTodoKind };
+  const label = todoActionLabel(actionable.kind);
 
   return (
     <div className="flex shrink-0 flex-wrap gap-2">
       <Button disabled={pending} size="sm" onClick={onApply}>
-        {pending ? <Loader2 className="size-3.5 animate-spin" /> : <Icon className="size-3.5" />}
+        {pending ? <Loader2 className="size-3.5 animate-spin" /> : todoActionIcon(actionable.kind)}
         {label}
       </Button>
       <Button size="sm" variant="ghost" onClick={onDismiss}>

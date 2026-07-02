@@ -10,6 +10,16 @@ function decouplingLabel(pct: number): string {
   return "Dérive élevée — chaleur, fatigue ou manque d'endurance";
 }
 
+function intensityFactorSublabel(
+  method: ActivityAnalysis['load']['method'],
+  thresholds: ActivityAnalysis['thresholds'],
+): string | undefined {
+  if (method === 'power') {
+    return thresholds.ftp ? `FTP ${thresholds.ftp} W` : undefined;
+  }
+  return thresholds.lthr ? `LTHR ${thresholds.lthr} bpm` : undefined;
+}
+
 export function PerformanceMetrics({ analysis }: { analysis: ActivityAnalysis }) {
   const { power, hr, load, thresholds } = analysis;
   const cards: {
@@ -30,14 +40,7 @@ export function PerformanceMetrics({ analysis }: { analysis: ActivityAnalysis })
     cards.push({
       label: 'IF',
       value: load.intensityFactor.toFixed(2),
-      sublabel:
-        load.method === 'power'
-          ? thresholds.ftp
-            ? `FTP ${thresholds.ftp} W`
-            : undefined
-          : thresholds.lthr
-            ? `LTHR ${thresholds.lthr} bpm`
-            : undefined,
+      sublabel: intensityFactorSublabel(load.method, thresholds),
       accent: 'default',
     });
   if (power?.variabilityIndex != null)

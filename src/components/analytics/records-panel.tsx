@@ -118,14 +118,15 @@ function RecordRow({ entry, compact = false }: { entry: RecordEntry; compact?: b
 
 function PrGrid({ categories }: { categories: RecordCategory[] }) {
   const filled = categories.filter((c) => c.entries.length > 0).length;
-  const cols =
-    filled <= 1
-      ? 'sm:grid-cols-1'
-      : filled === 2
-        ? 'sm:grid-cols-2'
-        : filled === 3
-          ? 'sm:grid-cols-2 lg:grid-cols-3'
-          : 'sm:grid-cols-2 lg:grid-cols-4';
+
+  function getGridCols(count: number): string {
+    if (count <= 1) return 'sm:grid-cols-1';
+    if (count === 2) return 'sm:grid-cols-2';
+    if (count === 3) return 'sm:grid-cols-2 lg:grid-cols-3';
+    return 'sm:grid-cols-2 lg:grid-cols-4';
+  }
+
+  const cols = getGridCols(filled);
 
   return (
     <div className={cn('grid gap-3', cols)}>

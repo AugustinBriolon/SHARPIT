@@ -36,6 +36,37 @@ const ACTION_STYLE: Record<AdaptChange['action'], string> = {
   ADD: 'bg-emerald-400/15 text-emerald-700',
 };
 
+function formatChangeDate(
+  date: string | null | undefined,
+  existing: ClientPlannedSession | null | undefined,
+): string {
+  if (date) {
+    return format(parseISO(date), 'EEE d MMM', { locale: fr });
+  }
+  if (existing?.date) {
+    return format(existing.date, 'EEE d MMM', { locale: fr });
+  }
+  return '';
+}
+
+function renderApplyButtonContent(applied: boolean, isApplying: boolean) {
+  if (applied) {
+    return (
+      <>
+        <Check className="size-4" /> Appliqué
+      </>
+    );
+  }
+  if (isApplying) {
+    return (
+      <>
+        <Loader2 className="size-4 animate-spin" /> Application…
+      </>
+    );
+  }
+  return 'Appliquer';
+}
+
 export function PlanAdapter({
   onClose,
   initialFocus,
@@ -173,11 +204,7 @@ export function PlanAdapter({
             <div className="space-y-2">
               {result.changes.map((c, i) => {
                 const existing = c.sessionId ? sessionsById.get(c.sessionId) : null;
-                const dateStr = c.date
-                  ? format(parseISO(c.date), 'EEE d MMM', { locale: fr })
-                  : existing?.date
-                    ? format(existing.date, 'EEE d MMM', { locale: fr })
-                    : '';
+                const dateStr = formatChangeDate(c.date, existing);
                 const fields = [
                   c.type ? activityTypeLabels[c.type] : null,
                   c.intensity ? intensityLabels[c.intensity] : null,
@@ -253,17 +280,7 @@ export function PlanAdapter({
                     disabled={isApplying || selected.size === 0 || applied}
                     onClick={handleApply}
                   >
-                    {applied ? (
-                      <>
-                        <Check className="size-4" /> Appliqué
-                      </>
-                    ) : isApplying ? (
-                      <>
-                        <Loader2 className="size-4 animate-spin" /> Application…
-                      </>
-                    ) : (
-                      'Appliquer'
-                    )}
+                    {renderApplyButtonContent(applied, isApplying)}
                   </Button>
                 </div>
               </div>

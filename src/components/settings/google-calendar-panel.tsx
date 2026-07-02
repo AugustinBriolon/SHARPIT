@@ -11,6 +11,20 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useGoogleCalendars } from '@/hooks/use-data';
+import type { GoogleCalendarInfo } from '@/lib/client/fetchers';
+
+function calendarSelectLabel(
+  calendarId: string,
+  calendars: GoogleCalendarInfo[],
+  targetCalendarName: string | null | undefined,
+  loadingCalendars: boolean,
+): string {
+  if (!calendarId) {
+    if (loadingCalendars) return 'Chargement…';
+    return 'Choisir un calendrier (ex: SPORT)';
+  }
+  return calendars.find((c) => c.id === calendarId)?.summary ?? targetCalendarName ?? calendarId;
+}
 
 interface GoogleCalendarPanelProps {
   configured: boolean;
@@ -155,13 +169,12 @@ https://ton-domaine.vercel.app/api/google/callback`}
         <Select value={calendarId} onValueChange={handleSelectCalendar}>
           <SelectTrigger disabled={loadingCalendars || savingTarget}>
             <SelectValue>
-              {calendarId
-                ? (calendars.find((c) => c.id === calendarId)?.summary ??
-                  account?.targetCalendarName ??
-                  calendarId)
-                : loadingCalendars
-                  ? 'Chargement…'
-                  : 'Choisir un calendrier (ex: SPORT)'}
+              {calendarSelectLabel(
+                calendarId,
+                calendars,
+                account?.targetCalendarName,
+                loadingCalendars,
+              )}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>

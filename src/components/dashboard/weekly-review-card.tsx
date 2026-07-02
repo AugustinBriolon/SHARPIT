@@ -16,6 +16,51 @@ export function WeeklyReviewCard({ date }: { date: Date }) {
   const review = reviewQuery.data;
   const isBusy = generate.isPending;
 
+  const renderContent = () => {
+    if (reviewQuery.isLoading) {
+      return (
+        <div className="text-muted-foreground flex items-center gap-2 text-sm">
+          <Loader2 className="size-4 animate-spin" /> Chargement…
+        </div>
+      );
+    }
+
+    if (review) {
+      return (
+        <div className="space-y-2">
+          <div className="[&_h2]:text-foreground text-sm leading-relaxed [&_h2]:mt-3 [&_h2]:mb-1 [&_h2]:text-sm [&_h2]:font-semibold [&_p]:my-1 [&_ul]:my-1">
+            <Markdown>{review.content}</Markdown>
+          </div>
+          <p className="text-muted-foreground text-[11px]">
+            Semaine du {format(review.weekStart, 'd MMM', { locale: fr })} · générée le{' '}
+            {format(review.generatedAt, "d MMM 'à' HH:mm", { locale: fr })}
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col items-start gap-3">
+        <p className="text-muted-foreground text-sm">
+          Aucune rétro pour cette semaine. Génère un bilan complet : volume réalisé vs prévu,
+          sommeil, récupération et plan pour la suite.
+        </p>
+        <Button disabled={isBusy} onClick={() => generate.mutate(dateStr)}>
+          {isBusy ? (
+            <>
+              <Loader2 className="size-4 animate-spin" /> Génération…
+            </>
+          ) : (
+            <>
+              <CalendarRange className="size-4" /> Générer la rétro
+            </>
+          )}
+        </Button>
+        {generate.isError && <p className="text-destructive text-xs">{generate.error.message}</p>}
+      </div>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -41,44 +86,7 @@ export function WeeklyReviewCard({ date }: { date: Date }) {
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        {reviewQuery.isLoading ? (
-          <div className="text-muted-foreground flex items-center gap-2 text-sm">
-            <Loader2 className="size-4 animate-spin" /> Chargement…
-          </div>
-        ) : review ? (
-          <div className="space-y-2">
-            <div className="[&_h2]:text-foreground text-sm leading-relaxed [&_h2]:mt-3 [&_h2]:mb-1 [&_h2]:text-sm [&_h2]:font-semibold [&_p]:my-1 [&_ul]:my-1">
-              <Markdown>{review.content}</Markdown>
-            </div>
-            <p className="text-muted-foreground text-[11px]">
-              Semaine du {format(review.weekStart, 'd MMM', { locale: fr })} · générée le{' '}
-              {format(review.generatedAt, "d MMM 'à' HH:mm", { locale: fr })}
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-col items-start gap-3">
-            <p className="text-muted-foreground text-sm">
-              Aucune rétro pour cette semaine. Génère un bilan complet : volume réalisé vs prévu,
-              sommeil, récupération et plan pour la suite.
-            </p>
-            <Button disabled={isBusy} onClick={() => generate.mutate(dateStr)}>
-              {isBusy ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" /> Génération…
-                </>
-              ) : (
-                <>
-                  <CalendarRange className="size-4" /> Générer la rétro
-                </>
-              )}
-            </Button>
-            {generate.isError && (
-              <p className="text-destructive text-xs">{generate.error.message}</p>
-            )}
-          </div>
-        )}
-      </CardContent>
+      <CardContent>{renderContent()}</CardContent>
     </Card>
   );
 }

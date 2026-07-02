@@ -17,6 +17,59 @@ export function TodayCoachMessage({ date }: { date: Date }) {
   const briefing = briefingQuery.data;
   const isBusy = generate.isPending;
 
+  const renderContent = () => {
+    if (briefingQuery.isLoading) {
+      return (
+        <div className="text-muted-foreground flex items-center gap-2 text-sm">
+          <Loader2 className="size-4 animate-spin" /> Chargement…
+        </div>
+      );
+    }
+
+    if (briefing) {
+      return (
+        <>
+          <div className="text-sm leading-relaxed [&_p]:my-1.5 [&_ul]:my-1.5">
+            <Markdown>{briefing.content}</Markdown>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <LinkButton href="/coach" size="sm" variant="outline">
+              <MessageCircle className="size-3.5" />
+              Discuter avec le coach
+            </LinkButton>
+            <LinkButton href="/seances?tab=planning" size="sm" variant="ghost">
+              Voir le planning
+            </LinkButton>
+          </div>
+          <p className="text-muted-foreground text-[11px]">
+            Généré le {format(briefing.generatedAt, "d MMM 'à' HH:mm", { locale: fr })}
+          </p>
+        </>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        <p className="text-muted-foreground text-sm">
+          Pas encore de message pour ce jour. Génère une synthèse à partir de ta forme, ta charge et
+          ta séance prévue.
+        </p>
+        <Button disabled={isBusy} onClick={() => generate.mutate(dateStr)}>
+          {isBusy ? (
+            <>
+              <Loader2 className="size-4 animate-spin" /> Génération…
+            </>
+          ) : (
+            <>
+              <Sparkles className="size-4" /> Générer le message
+            </>
+          )}
+        </Button>
+        {generate.isError && <p className="text-destructive text-xs">{generate.error.message}</p>}
+      </div>
+    );
+  };
+
   return (
     <Card className="border-primary/20 from-primary/5 bg-linear-to-br to-transparent">
       <CardHeader className="pb-3">
@@ -42,52 +95,7 @@ export function TodayCoachMessage({ date }: { date: Date }) {
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {briefingQuery.isLoading ? (
-          <div className="text-muted-foreground flex items-center gap-2 text-sm">
-            <Loader2 className="size-4 animate-spin" /> Chargement…
-          </div>
-        ) : briefing ? (
-          <>
-            <div className="text-sm leading-relaxed [&_p]:my-1.5 [&_ul]:my-1.5">
-              <Markdown>{briefing.content}</Markdown>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <LinkButton href="/coach" size="sm" variant="outline">
-                <MessageCircle className="size-3.5" />
-                Discuter avec le coach
-              </LinkButton>
-              <LinkButton href="/seances?tab=planning" size="sm" variant="ghost">
-                Voir le planning
-              </LinkButton>
-            </div>
-            <p className="text-muted-foreground text-[11px]">
-              Généré le {format(briefing.generatedAt, "d MMM 'à' HH:mm", { locale: fr })}
-            </p>
-          </>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-muted-foreground text-sm">
-              Pas encore de message pour ce jour. Génère une synthèse à partir de ta forme, ta
-              charge et ta séance prévue.
-            </p>
-            <Button disabled={isBusy} onClick={() => generate.mutate(dateStr)}>
-              {isBusy ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" /> Génération…
-                </>
-              ) : (
-                <>
-                  <Sparkles className="size-4" /> Générer le message
-                </>
-              )}
-            </Button>
-            {generate.isError && (
-              <p className="text-destructive text-xs">{generate.error.message}</p>
-            )}
-          </div>
-        )}
-      </CardContent>
+      <CardContent className="space-y-4">{renderContent()}</CardContent>
     </Card>
   );
 }

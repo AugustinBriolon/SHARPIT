@@ -45,13 +45,13 @@ async function runStravaBackfill(): Promise<StravaBackfillResult> {
 
 function backfillSummary(data: StravaBackfillResult): string {
   const base = `${data.processed} séance(s) traitée(s), ${data.withData} avec données détaillées.`;
-  const tail =
-    data.remaining > 0
-      ? data.stopped === 'rate_limited'
-        ? ` Limite Strava atteinte, ${data.remaining} restante(s) — réessaie dans ~15 min.`
-        : ` ${data.remaining} restante(s), relance pour continuer.`
-      : ' Historique complet ✓';
-  return base + tail;
+  if (data.remaining <= 0) {
+    return `${base} Historique complet ✓`;
+  }
+  if (data.stopped === 'rate_limited') {
+    return `${base} Limite Strava atteinte, ${data.remaining} restante(s) — réessaie dans ~15 min.`;
+  }
+  return `${base} ${data.remaining} restante(s), relance pour continuer.`;
 }
 
 interface StravaPanelProps {

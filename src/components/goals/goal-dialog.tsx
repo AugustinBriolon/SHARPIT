@@ -64,6 +64,12 @@ function toDateInput(value: string | Date | null | undefined): string {
   return d.toISOString().slice(0, 10);
 }
 
+function getSubmitButtonLabel(pending: boolean, isEdit: boolean): string {
+  if (pending) return 'Enregistrement…';
+  if (isEdit) return 'Enregistrer';
+  return 'Créer';
+}
+
 export function GoalDialog({ goal, onClose }: GoalDialogProps) {
   const isEdit = Boolean(goal);
   const { create, update } = useGoalMutations();
@@ -353,7 +359,7 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
               Annuler
             </Button>
             <Button disabled={pending} type="submit">
-              {pending ? 'Enregistrement…' : isEdit ? 'Enregistrer' : 'Créer'}
+              {getSubmitButtonLabel(pending, isEdit)}
             </Button>
           </div>
         </form>

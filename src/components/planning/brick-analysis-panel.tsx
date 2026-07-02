@@ -6,11 +6,101 @@ import { Button } from '@/components/ui/button';
 import { activityTypeLabels } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useAnalyzeBrick, useBrickAnalysis, usePlannedSessions } from '@/hooks/use-data';
+import type { BrickAnalysis } from '@/lib/validators/coach';
+import type { ClientPlannedSession } from '@/lib/client/types';
 
 function scoreColor(score: number): string {
   if (score >= 85) return 'text-emerald-600';
   if (score >= 60) return 'text-amber-600';
   return 'text-red-600';
+}
+
+function renderAnalysisContent(
+  allLinked: boolean,
+  analysis: BrickAnalysis | null,
+  linkedCount: number,
+  legs: ClientPlannedSession[],
+  isAnalyzing: boolean,
+  onAnalyze: () => void,
+) {
+  if (!allLinked) {
+    return (
+      <p className="text-muted-foreground text-xs">
+        Lie chaque sport du brick à son activité réalisée pour analyser l&apos;enchaînement (
+        {linkedCount}/{legs.length} lié
+        {linkedCount > 1 ? 's' : ''}).
+      </p>
+    );
+  }
+
+  if (analysis) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <span
+            className={cn('font-mono text-2xl font-semibold', scoreColor(analysis.overallScore))}
+          >
+            {analysis.overallScore}
+          </span>
+          <span className="text-muted-foreground text-xs">/100</span>
+        </div>
+        <p className="text-muted-foreground text-sm">{analysis.summary}</p>
+
+        <div className="border-primary/20 bg-background/60 rounded-md border p-2.5">
+          <p className="text-primary flex items-center gap-1.5 text-xs font-medium">
+            <ArrowLeftRight className="size-3.5" />
+            Transition
+          </p>
+          <p className="text-muted-foreground mt-1 text-xs">{analysis.transition}</p>
+        </div>
+
+        {analysis.remarks.length > 0 && (
+          <ul className="space-y-1">
+            {analysis.remarks.map((r, i) => (
+              <li key={i} className="text-muted-foreground flex gap-1.5 text-xs">
+                <span className="text-primary">•</span>
+                <span>{r}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {analysis.recommendation && (
+          <p className="border-primary/20 bg-primary/5 rounded-md border p-2 text-xs">
+            💡 {analysis.recommendation}
+          </p>
+        )}
+
+        <button
+          className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
+          disabled={isAnalyzing}
+          type="button"
+          onClick={onAnalyze}
+        >
+          {isAnalyzing ? (
+            <Loader2 className="size-3 animate-spin" />
+          ) : (
+            <RefreshCw className="size-3" />
+          )}
+          Ré-analyser l&apos;enchaînement
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <Button disabled={isAnalyzing} size="sm" type="button" variant="outline" onClick={onAnalyze}>
+      {isAnalyzing ? (
+        <>
+          <Loader2 className="size-4 animate-spin" /> Analyse de l&apos;enchaînement…
+        </>
+      ) : (
+        <>
+          <Sparkles className="size-4" /> Analyser l&apos;enchaînement
+        </>
+      )}
+    </Button>
+  );
 }
 
 export function BrickAnalysisPanel({ brickGroupId }: { brickGroupId: string }) {
@@ -51,82 +141,7 @@ export function BrickAnalysisPanel({ brickGroupId }: { brickGroupId: string }) {
         </span>
       </div>
 
-      {!allLinked ? (
-        <p className="text-muted-foreground text-xs">
-          Lie chaque sport du brick à son activité réalisée pour analyser l&apos;enchaînement (
-          {linkedCount}/{legs.length} lié
-          {linkedCount > 1 ? 's' : ''}).
-        </p>
-      ) : analysis ? (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <span
-              className={cn('font-mono text-2xl font-semibold', scoreColor(analysis.overallScore))}
-            >
-              {analysis.overallScore}
-            </span>
-            <span className="text-muted-foreground text-xs">/100</span>
-          </div>
-          <p className="text-muted-foreground text-sm">{analysis.summary}</p>
-
-          <div className="border-primary/20 bg-background/60 rounded-md border p-2.5">
-            <p className="text-primary flex items-center gap-1.5 text-xs font-medium">
-              <ArrowLeftRight className="size-3.5" />
-              Transition
-            </p>
-            <p className="text-muted-foreground mt-1 text-xs">{analysis.transition}</p>
-          </div>
-
-          {analysis.remarks.length > 0 && (
-            <ul className="space-y-1">
-              {analysis.remarks.map((r, i) => (
-                <li key={i} className="text-muted-foreground flex gap-1.5 text-xs">
-                  <span className="text-primary">•</span>
-                  <span>{r}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {analysis.recommendation && (
-            <p className="border-primary/20 bg-primary/5 rounded-md border p-2 text-xs">
-              💡 {analysis.recommendation}
-            </p>
-          )}
-
-          <button
-            className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
-            disabled={isAnalyzing}
-            type="button"
-            onClick={handleAnalyze}
-          >
-            {isAnalyzing ? (
-              <Loader2 className="size-3 animate-spin" />
-            ) : (
-              <RefreshCw className="size-3" />
-            )}
-            Ré-analyser l&apos;enchaînement
-          </button>
-        </div>
-      ) : (
-        <Button
-          disabled={isAnalyzing}
-          size="sm"
-          type="button"
-          variant="outline"
-          onClick={handleAnalyze}
-        >
-          {isAnalyzing ? (
-            <>
-              <Loader2 className="size-4 animate-spin" /> Analyse de l&apos;enchaînement…
-            </>
-          ) : (
-            <>
-              <Sparkles className="size-4" /> Analyser l&apos;enchaînement
-            </>
-          )}
-        </Button>
-      )}
+      {renderAnalysisContent(allLinked, analysis, linkedCount, legs, isAnalyzing, handleAnalyze)}
 
       {error && <p className="text-destructive text-xs">{error}</p>}
     </div>

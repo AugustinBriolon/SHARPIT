@@ -4,7 +4,7 @@ import { ActivityType } from '@prisma/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { queryKeys } from '@/lib/client/keys';
 import { Button } from '@/components/ui/button';
@@ -87,7 +87,10 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
         },
   });
 
-  const activityType = form.watch('type');
+  const activityType = useWatch({
+    control: form.control,
+    name: 'type',
+  });
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'strengthSets',

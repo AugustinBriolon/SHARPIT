@@ -46,6 +46,16 @@ import {
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 
+function getDayCellDateClassName(isToday: boolean, inMonth: boolean): string {
+  if (isToday) {
+    return 'bg-primary text-primary-foreground flex size-5 items-center justify-center rounded-full font-semibold';
+  }
+  if (inMonth) {
+    return 'text-foreground';
+  }
+  return 'text-muted-foreground/50';
+}
+
 type DialogState =
   { mode: 'create'; date: Date } | { mode: 'edit'; session: ClientPlannedSession } | null;
 
@@ -242,14 +252,7 @@ export function CalendarView({ embedded = false }: { embedded?: boolean }) {
               >
                 <div className="mb-1 flex h-5 items-center justify-between px-1">
                   <span
-                    className={cn(
-                      'text-xs',
-                      cell.isToday
-                        ? 'bg-primary text-primary-foreground flex size-5 items-center justify-center rounded-full font-semibold'
-                        : cell.inMonth
-                          ? 'text-foreground'
-                          : 'text-muted-foreground/50',
-                    )}
+                    className={cn('text-xs', getDayCellDateClassName(cell.isToday, cell.inMonth))}
                   >
                     {cell.date.getDate()}
                   </span>

@@ -260,15 +260,21 @@ export function ToolActivity({
     }
   }
 
+  function getStatusClassName(): string {
+    if (failed || koExec) {
+      return 'border-destructive/30 bg-destructive/5 text-destructive';
+    }
+    if (done) {
+      return 'border-emerald-500/30 bg-emerald-500/5 text-emerald-700';
+    }
+    return 'border-border/60 bg-card/40 text-muted-foreground';
+  }
+
   return (
     <div
       className={cn(
         'flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs',
-        failed || koExec
-          ? 'border-destructive/30 bg-destructive/5 text-destructive'
-          : done
-            ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-700'
-            : 'border-border/60 bg-card/40 text-muted-foreground',
+        getStatusClassName(),
       )}
     >
       {done ? (

@@ -1,15 +1,13 @@
 'use client';
 
-import { useMemo } from 'react';
-import { StickyHeader } from '@/components/layout/sticky-header';
-import { LoadChart } from '@/components/analytics/load-chart';
-import { SportDistributionChart } from '@/components/analytics/sport-distribution-chart';
-import { VolumeChart } from '@/components/analytics/volume-chart';
 import {
   AnalyticsSection,
   AnalyticsStat,
   FormStatusBanner,
 } from '@/components/analytics/analytics-cards';
+import { LoadChart } from '@/components/analytics/load-chart';
+import { SportDistributionChart } from '@/components/analytics/sport-distribution-chart';
+import { VolumeChart } from '@/components/analytics/volume-chart';
 import {
   computeAnalyticsSummary,
   computePmcSeries,
@@ -17,6 +15,7 @@ import {
   computeWeeklyVolume,
   type ActivityForAnalytics,
 } from '@/lib/analytics';
+import { useMemo } from 'react';
 
 interface AnalyticsViewProps {
   activities: ActivityForAnalytics[];

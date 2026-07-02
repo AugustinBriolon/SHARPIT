@@ -11,6 +11,14 @@ function paceDelta(pace: number, ref: number | null): { pct: number; faster: boo
   return { pct: Math.abs(pct), faster: pct < 0 };
 }
 
+function formatSplitPace(row: SplitRow, mode: 'run' | 'bike'): string {
+  if (row.paceSecPerKm == null || row.durationSec <= 0) return '—';
+  if (mode === 'bike') {
+    return `${((row.distanceM / row.durationSec) * 3.6).toFixed(1)} km/h`;
+  }
+  return formatPace(row.paceSecPerKm);
+}
+
 export function SplitsTable({
   splits,
   refPaceSecPerKm,
@@ -62,11 +70,7 @@ export function SplitsTable({
                       isBest && mode === 'run' && 'text-cyan-600',
                     )}
                   >
-                    {row.paceSecPerKm != null && row.durationSec > 0
-                      ? mode === 'bike'
-                        ? `${((row.distanceM / row.durationSec) * 3.6).toFixed(1)} km/h`
-                        : formatPace(row.paceSecPerKm)
-                      : '—'}
+                    {formatSplitPace(row, mode)}
                     {delta && refPaceSecPerKm && mode === 'run' && (
                       <span
                         className={cn(
