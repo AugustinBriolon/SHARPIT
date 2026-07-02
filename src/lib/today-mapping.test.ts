@@ -6,6 +6,9 @@ import {
   mapFatigueTrajectoryToArrow,
   mapFatigueToSignal,
   mapAdaptationToSignal,
+  mapAdaptationDecisionToObjective,
+  mapDeviationRisk,
+  mapConsistencyToDisplay,
   extractPrimaryInsight,
 } from './today-mapping';
 
@@ -211,5 +214,106 @@ describe('extractPrimaryInsight', () => {
   it('trims whitespace from extracted sentence', () => {
     const result = extractPrimaryInsight(null, null, '  Trimmed sentence.  rest');
     expect(result).toBe('Trimmed sentence');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// mapAdaptationDecisionToObjective
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('mapAdaptationDecisionToObjective', () => {
+  it('INCREASE_LOAD → Build fitness', () => {
+    expect(mapAdaptationDecisionToObjective('INCREASE_LOAD')).toBe('Build fitness');
+  });
+
+  it('SUSTAIN → Maintain gains', () => {
+    expect(mapAdaptationDecisionToObjective('SUSTAIN')).toBe('Maintain gains');
+  });
+
+  it('CONSOLIDATE → Reinforce adaptations', () => {
+    expect(mapAdaptationDecisionToObjective('CONSOLIDATE')).toBe('Reinforce adaptations');
+  });
+
+  it('REDUCE_LOAD → Absorb training stress', () => {
+    expect(mapAdaptationDecisionToObjective('REDUCE_LOAD')).toBe('Absorb training stress');
+  });
+
+  it('RECOVERY_PRIORITY → Active recovery', () => {
+    expect(mapAdaptationDecisionToObjective('RECOVERY_PRIORITY')).toBe('Active recovery');
+  });
+
+  it('INSUFFICIENT_DATA → null', () => {
+    expect(mapAdaptationDecisionToObjective('INSUFFICIENT_DATA')).toBeNull();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// mapDeviationRisk
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('mapDeviationRisk', () => {
+  it('LOW risk + stable trajectory → safe', () => {
+    const result = mapDeviationRisk('LOW', 'LOW', 'STABLE');
+    expect(result.level).toBe('safe');
+    expect(result.message).toBe('');
+  });
+
+  it('MODERATE risk + accumulating fatigue → caution', () => {
+    const result = mapDeviationRisk('MODERATE', 'LOW', 'ACCUMULATING');
+    expect(result.level).toBe('caution');
+  });
+
+  it('HIGH risk + stable trajectory → caution', () => {
+    const result = mapDeviationRisk('HIGH', 'LOW', 'STABLE');
+    expect(result.level).toBe('caution');
+  });
+
+  it('HIGH risk + accumulating trajectory → warning', () => {
+    const result = mapDeviationRisk('HIGH', 'LOW', 'ACCUMULATING');
+    expect(result.level).toBe('warning');
+  });
+
+  it('CRITICAL risk → warning regardless of trajectory', () => {
+    const result = mapDeviationRisk('CRITICAL', 'LOW', 'RESOLVING');
+    expect(result.level).toBe('warning');
+  });
+
+  it('functional overreaching risk drives result when higher', () => {
+    const result = mapDeviationRisk('LOW', 'CRITICAL', 'STABLE');
+    expect(result.level).toBe('warning');
+  });
+
+  it('warning message is non-empty', () => {
+    const result = mapDeviationRisk('CRITICAL', 'CRITICAL', 'ACCELERATING');
+    expect(result.message.length).toBeGreaterThan(0);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// mapConsistencyToDisplay
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('mapConsistencyToDisplay', () => {
+  it('ALIGNED includes score in label', () => {
+    const result = mapConsistencyToDisplay('ALIGNED', 91);
+    expect(result.label).toContain('91');
+    expect(result.colorClass).toContain('emerald');
+  });
+
+  it('PARTIALLY_ALIGNED includes score in label with amber colour', () => {
+    const result = mapConsistencyToDisplay('PARTIALLY_ALIGNED', 65);
+    expect(result.label).toContain('65');
+    expect(result.colorClass).toContain('amber');
+  });
+
+  it('CONFLICTING uses orange colour', () => {
+    const result = mapConsistencyToDisplay('CONFLICTING', 40);
+    expect(result.colorClass).toContain('orange');
+  });
+
+  it('INSUFFICIENT_DATA returns muted colour and no score', () => {
+    const result = mapConsistencyToDisplay('INSUFFICIENT_DATA', 0);
+    expect(result.colorClass).toBe('text-muted-foreground');
+    expect(result.label).not.toContain('0');
   });
 });
