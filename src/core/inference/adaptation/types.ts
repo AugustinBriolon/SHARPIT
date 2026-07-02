@@ -14,6 +14,7 @@ import type {
   RecoveryState,
   FatigueState,
 } from '@/core/digital-twin/types';
+import type { I18nItem } from '@/core/inference/shared/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Re-export digital twin types for convenience
@@ -59,15 +60,12 @@ export type AdaptationVerdict =
 export type AdaptationDecision = {
   readonly verdict: AdaptationVerdict;
   readonly loadMultiplier: number;
-  readonly rationale: readonly string[];
+  readonly rationale: readonly I18nItem[];
 };
 
 export type AdaptationRecommendation = {
   readonly type: AdaptationVerdict;
-  readonly title: string;
-  readonly summary: string;
-  readonly keyEvidence: readonly string[];
-  readonly limitingFactor: string | null;
+  readonly keyEvidence: readonly I18nItem[];
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -79,7 +77,6 @@ export type AdaptationModelOutput = {
   readonly adaptationState: import('@/core/digital-twin/types').AdaptationState;
   readonly decision: AdaptationDecision;
   readonly recommendation: AdaptationRecommendation;
-  readonly explanation: string;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
