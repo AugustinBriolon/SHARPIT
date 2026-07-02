@@ -487,6 +487,137 @@ model PerformanceRecord {
   @@index([group])
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Observation Engine — primary store
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// All incoming data passes through the Observation Engine and lands here.
+// Each row represents one normalized, validated observation.
+//
+// The `data` JSONB column holds the type-specific fields (everything not already
+// captured by the indexed columns). Date fields inside `data` are stored as
+// ISO-8601 strings and deserialized back by the repository.
+//
+// Legacy tables (Activity, DailyHealth, BodyCompositionMeasurement, PhysicalNote)
+// remain active during the migration period. They will be removed once all
+// read paths have been ported to consume Observation directly.
+
+model Observation {
+  id            String   @id          // UUID assigned by the engine
+  athleteId     String   @default("default")
+  type          String               // ObservationType literal
+  source        String               // ObservationSource literal
+  timestamp     DateTime             // when the observation was physically recorded
+  receivedAt    DateTime             // when SHARPIT received it
+  trainingDayId String               // YYYY-MM-DD in athlete's timezone
+  quality       String               // ObservationQuality literal
+  qualityFlags  Json     @default("[]") // QualityFlag[]
+  normalizedAt  DateTime
+  externalId    String?              // garminId | stravaId | renphoId (for dedup)
+  data          Json                 // type-specific fields (JSONB)
+
+  createdAt     DateTime @default(now())
+
+  @@index([athleteId, type])
+  @@index([athleteId, trainingDayId])
+  @@index([type, externalId])
+  @@index([timestamp])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Feature Extraction Layer — Feature Set store
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Each row represents one computed (or pending) FeatureSetRecord.
+// Categories: SESSION | LOAD | RECOVERY | BODY | CONDITION
+//
+// Scoping:
+//   SESSION category  → sessionObsId is set (one record per session)
+//   BODY category     → sessionObsId is set (reused for observationId)
+//   All other cats    → trainingDayId is the scope key
+//
+// Versioning: version is monotonically increasing per (athleteId, category, scope).
+// Old versions are retained for audit. Only the latest COMPUTED version is canonical.
+//
+// The data column holds the category-specific FeatureSet payload as JSONB.
+// Confidence and algorithmId are also persisted for auditability.
+
+model FeatureSet {
+  id             String    @id          // UUID assigned by FeatureEngine
+  athleteId      String    @default("default")
+  category       String                 // 'SESSION' | 'LOAD' | 'RECOVERY' | 'BODY' | 'CONDITION'
+  trainingDayId  String?                // YYYY-MM-DD (null only for legacy compat — always set in v1)
+  sessionObsId   String?                // Observation.id — set for SESSION and BODY categories
+  version        Int       @default(1) // monotonically increasing
+  status         String                 // 'PENDING' | 'COMPUTING' | 'COMPUTED' | 'INVALIDATED'
+  confidence     Float
+  algorithmId    String                 // e.g. 'session-features-v1'
+  data           Json                   // FeatureSet payload
+  sourceObsIds   String[]  @default([]) // Observation IDs that contributed
+  computedAt     DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([athleteId, category, trainingDayId])
+  @@index([athleteId, category, sessionObsId])
+  @@index([athleteId, trainingDayId])
+  @@index([athleteId, status])
+  @@index([sessionObsId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INFERENCE LAYER — Digital Twin + Decision Records
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * One Digital Twin per athlete.
+ * Mutable — updated in place by the Inference Orchestrator after each model run.
+ *
+ * The `recoveryState` column stores the complete RecoveryState JSON.
+ * Future models add new nullable columns (e.g. fatigueState) without
+ * touching existing data.
+ */
+model DigitalTwin {
+  id             String    @id @default(cuid())
+  athleteId      String    @unique
+  recoveryState   Json?     // RecoveryState | null
+  fatigueState    Json?     // FatigueState | null  (Fatigue Intelligence v1)
+  adaptationState Json?     // AdaptationState | null  (Adaptation Intelligence v1)
+  updatedAt       DateTime  @updatedAt
+  createdAt      DateTime  @default(now())
+
+  @@index([athleteId])
+}
+
+/**
+ * Immutable audit trail of every inference pass.
+ * Created when any model runs — never updated, never deleted.
+ *
+ * Stores the complete inference snapshot (signals, state update, decision,
+ * recommendation, explanation) for auditability and historical replay.
+ *
+ * Per ADR-004: ephemeral Signals are embedded here, NOT persisted independently.
+ */
+model DecisionRecord {
+  id              String    @id
+  athleteId       String
+  trainingDayId   String
+  modelId         String    // 'recovery-synthesis-v1'
+  modelVersion    String    // 'v1'
+  confidence      Float
+  signals         Json      // { autonomicBalance, sleepAdequacy, ... }
+  stateUpdate     Json      // the RecoveryState written to Digital Twin
+  decision        Json      // { verdict, recommendedIntensity, rationale }
+  recommendation  Json      // { type, title, summary, keyEvidence }
+  explanation     String    // human-readable explanation text
+  inputSummary    Json      // key feature values used for audit/replay
+  computedAt      DateTime
+  createdAt       DateTime  @default(now())
+
+  @@index([athleteId, trainingDayId])
+  @@index([athleteId, modelId])
+  @@index([computedAt])
+}
+
 model Conversation {
   id        String   @id @default(cuid())
   title     String   @default("Nouvelle conversation")
