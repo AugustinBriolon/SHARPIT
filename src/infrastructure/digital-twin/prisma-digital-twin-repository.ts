@@ -16,6 +16,7 @@ import type {
   RecoveryState,
   FatigueState,
   AdaptationState,
+  ReasoningState,
 } from '@/core/digital-twin/types';
 
 export class PrismaDigitalTwinRepository implements DigitalTwinRepository {
@@ -100,12 +101,35 @@ export class PrismaDigitalTwinRepository implements DigitalTwinRepository {
     return this.deserializeAdaptationState(row.adaptationState as Record<string, unknown>);
   }
 
+  async updateReasoning(athleteId: string, reasoningState: ReasoningState): Promise<DigitalTwin> {
+    const serialized = {
+      ...reasoningState,
+      computedAt: reasoningState.computedAt.toISOString(),
+    };
+    const row = await this.prisma.digitalTwin.upsert({
+      where: { athleteId },
+      create: { athleteId, reasoningState: serialized },
+      update: { reasoningState: serialized },
+    });
+    return this.toDomain(row);
+  }
+
+  async getPreviousReasoningState(athleteId: string): Promise<ReasoningState | null> {
+    const row = await this.prisma.digitalTwin.findUnique({
+      where: { athleteId },
+      select: { reasoningState: true },
+    });
+    if (!row?.reasoningState || typeof row.reasoningState !== 'object') return null;
+    return this.deserializeReasoningState(row.reasoningState as Record<string, unknown>);
+  }
+
   private toDomain(row: {
     id: string;
     athleteId: string;
     recoveryState: unknown;
     fatigueState?: unknown;
     adaptationState?: unknown;
+    reasoningState?: unknown;
     updatedAt: Date;
     createdAt: Date;
   }): DigitalTwin {
@@ -124,10 +148,16 @@ export class PrismaDigitalTwinRepository implements DigitalTwinRepository {
         ? this.deserializeAdaptationState(row.adaptationState as Record<string, unknown>)
         : null;
 
+    const reasoningState =
+      row.reasoningState && typeof row.reasoningState === 'object'
+        ? this.deserializeReasoningState(row.reasoningState as Record<string, unknown>)
+        : null;
+
     const state: AthleteState = {
       recovery: recoveryState,
       fatigue: fatigueState,
       adaptation: adaptationState,
+      reasoning: reasoningState,
     };
 
     return {
@@ -158,5 +188,12 @@ export class PrismaDigitalTwinRepository implements DigitalTwinRepository {
       ...(raw as Omit<AdaptationState, 'computedAt'>),
       computedAt: new Date(raw.computedAt as string),
     } as AdaptationState;
+  }
+
+  private deserializeReasoningState(raw: Record<string, unknown>): ReasoningState {
+    return {
+      ...(raw as Omit<ReasoningState, 'computedAt'>),
+      computedAt: new Date(raw.computedAt as string),
+    } as ReasoningState;
   }
 }

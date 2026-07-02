@@ -12,7 +12,13 @@
  *     other sub-dimensions (future models must follow the same pattern).
  */
 
-import type { DigitalTwin, RecoveryState, FatigueState, AdaptationState } from './types';
+import type {
+  DigitalTwin,
+  RecoveryState,
+  FatigueState,
+  AdaptationState,
+  ReasoningState,
+} from './types';
 
 export interface DigitalTwinRepository {
   /**
@@ -55,4 +61,16 @@ export interface DigitalTwinRepository {
    * Returns null on cold start.
    */
   getPreviousAdaptationState(athleteId: string): Promise<AdaptationState | null>;
+
+  /**
+   * Update the ReasoningState sub-dimension of the Digital Twin.
+   * Other sub-dimensions are left unchanged.
+   */
+  updateReasoning(athleteId: string, reasoningState: ReasoningState): Promise<DigitalTwin>;
+
+  /**
+   * Get the current reasoning state.
+   * Returns null on cold start.
+   */
+  getPreviousReasoningState(athleteId: string): Promise<ReasoningState | null>;
 }

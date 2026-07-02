@@ -182,6 +182,95 @@ export type AdaptationState = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Reasoning State (produced by the Reasoning Engine v1)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type OverallVerdict =
+  | 'TRAIN_HARD'
+  | 'TRAIN_SMART'
+  | 'TRAIN_EASY'
+  | 'RECOVER'
+  | 'RACE_READY'
+  | 'CAUTION'
+  | 'INSUFFICIENT_DATA';
+
+export type SystemAttentionPriority = 'RECOVERY' | 'FATIGUE' | 'ADAPTATION' | 'BALANCED';
+
+export type PhysiologicalConsistency =
+  'ALIGNED' | 'PARTIALLY_ALIGNED' | 'CONFLICTING' | 'INSUFFICIENT_DATA';
+
+export type FindingSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
+export type FindingCategory = 'RECOVERY' | 'FATIGUE' | 'ADAPTATION' | 'CROSS_SYSTEM';
+
+export type ReasoningFinding = {
+  readonly id: string;
+  readonly category: FindingCategory;
+  readonly severity: FindingSeverity;
+  readonly title: string;
+  readonly evidence: readonly string[];
+  readonly confidence: number;
+};
+
+export type OpportunityType =
+  'LOAD_INCREASE' | 'QUALITY_SESSION' | 'DELOAD' | 'RACE_READINESS' | 'RECOVERY_WINDOW';
+
+export type OpportunityTimeWindow = 'TODAY' | 'THIS_WEEK' | 'NEXT_WEEK';
+
+export type ReasoningOpportunity = {
+  readonly id: string;
+  readonly type: OpportunityType;
+  readonly title: string;
+  readonly rationale: string;
+  readonly expectedBenefit: number;
+  readonly timeWindow: OpportunityTimeWindow;
+};
+
+export type ConflictType = 'CAPACITY_CONFLICT' | 'TIMING_CONFLICT' | 'SIGNAL_CONFLICT';
+
+export type ReasoningConflict = {
+  readonly id: string;
+  readonly type: ConflictType;
+  readonly description: string;
+  readonly models: readonly string[];
+  readonly resolution: string;
+};
+
+export type ReasoningState = {
+  readonly overallVerdict: OverallVerdict;
+  readonly systemAttentionPriority: SystemAttentionPriority;
+  readonly physiologicalConsistency: PhysiologicalConsistency;
+  readonly consistencyScore: number;
+
+  readonly keyFindings: readonly ReasoningFinding[];
+  readonly limitingFactor: {
+    readonly system: 'RECOVERY' | 'FATIGUE' | 'ADAPTATION' | null;
+    readonly description: string | null;
+    readonly actionable: boolean;
+  };
+  readonly opportunities: readonly ReasoningOpportunity[];
+  readonly conflicts: readonly ReasoningConflict[];
+
+  readonly topAction: {
+    readonly verb: string;
+    readonly focus: string;
+    readonly rationale: string;
+    readonly expectedBenefit: number;
+  } | null;
+
+  readonly evidenceGraph: {
+    readonly recoveryContribution: number;
+    readonly fatigueContribution: number;
+    readonly adaptationContribution: number;
+  };
+
+  readonly confidence: number;
+  readonly dataCompleteness: DataCompleteness;
+  readonly modelId: 'reasoning-v1';
+  readonly computedAt: Date;
+  readonly trainingDayId: string;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Athlete State (aggregated view across all models)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -195,6 +284,7 @@ export type AthleteState = {
   readonly recovery: RecoveryState | null;
   readonly fatigue: FatigueState | null;
   readonly adaptation: AdaptationState | null;
+  readonly reasoning: ReasoningState | null;
   // trainingStress: TrainingStressState | null → future
   // performance: PerformanceState | null  → future
 };

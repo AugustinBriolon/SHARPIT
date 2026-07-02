@@ -582,6 +582,7 @@ model DigitalTwin {
   recoveryState   Json?     // RecoveryState | null
   fatigueState    Json?     // FatigueState | null  (Fatigue Intelligence v1)
   adaptationState Json?     // AdaptationState | null  (Adaptation Intelligence v1)
+  reasoningState  Json?     // ReasoningState | null   (Reasoning Engine v1)
   updatedAt       DateTime  @updatedAt
   createdAt      DateTime  @default(now())
 
