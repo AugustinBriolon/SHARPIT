@@ -8,6 +8,8 @@ import { TodayPlannedSessions } from '@/components/today/today-planned';
 import { TodayTodoSection } from '@/components/today/today-todo';
 import { TodayVerdict } from '@/components/today/today-verdict';
 import { WeeklyReviewCard } from '@/components/dashboard/weekly-review-card';
+import { FatigueCard } from '@/components/dashboard/fatigue-card';
+import { AdaptationCard } from '@/components/dashboard/adaptation-card';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LinkButton } from '@/components/ui/link-button';
@@ -252,6 +254,10 @@ export function DashboardView() {
         </CardContent>
       </Card>
 
+      <FatigueCard date={date} />
+
+      <AdaptationCard date={date} />
+
       <WeeklyReviewCard date={date} />
 
       <p className="text-muted-foreground text-center text-xs">
@@ -268,7 +274,7 @@ export function DashboardView() {
 function DashboardSkeleton() {
   return (
     <div className="mx-auto space-y-6">
-      <Skeleton className="h-36 rounded-xl" />
+      <Skeleton className="h-67 rounded-xl" />
       <Skeleton className="h-32 rounded-xl" />
       <Skeleton className="h-28 rounded-xl" />
       <Skeleton className="h-40 rounded-xl" />
