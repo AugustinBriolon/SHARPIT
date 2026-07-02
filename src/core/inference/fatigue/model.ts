@@ -45,7 +45,7 @@ import {
   estimateTimeToFresh,
   applyDissonanceBias,
 } from './scoring';
-import { generateFatigueExplanation } from './explanation';
+import type { I18nItem } from '@/core/inference/shared/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main entry point
@@ -142,17 +142,7 @@ export function runFatigueModel(
   // ── Step 9: Build recommendation ─────────────────────────────────────────
   const recommendation = buildRecommendation(signals, decision, confidence);
 
-  // ── Step 10: Build explanation ────────────────────────────────────────────
-  const explanation = generateFatigueExplanation(
-    fatigueIndex,
-    fatigueLevel,
-    signals,
-    dims,
-    decision,
-    confidence,
-  );
-
-  // ── Step 11: Build FatigueState ───────────────────────────────────────────
+  // ── Step 10: Build FatigueState ───────────────────────────────────────────
   const fatigueState: FatigueState = {
     fatigueIndex,
     fatigueLevel,
@@ -179,7 +169,7 @@ export function runFatigueModel(
     trainingDayId: context.trainingDayId,
   };
 
-  return { signals, fatigueState, decision, recommendation, explanation };
+  return { signals, fatigueState, decision, recommendation };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -234,14 +224,14 @@ function buildPrimaryLimitingFactor(
   dims: ScoredFatigueDimensions,
   dominant: import('./types').FatigueDominantDimension,
 ): string {
-  const LABELS: Record<import('./types').FatigueDominantDimension, string> = {
-    LOAD: 'Elevated training load (ACWR)',
-    NEUROMUSCULAR: 'Neuromuscular stress (HRV suppression + mechanical loading)',
-    METABOLIC: 'Metabolic depletion (high-intensity session impact)',
-    CUMULATIVE: 'Accumulated multi-day fatigue',
-    PSYCHOLOGICAL: 'Psychological/motivational fatigue',
+  const CODES: Record<import('./types').FatigueDominantDimension, string> = {
+    LOAD: 'fatigue.primaryLimitingFactor.load',
+    NEUROMUSCULAR: 'fatigue.primaryLimitingFactor.neuromuscular',
+    METABOLIC: 'fatigue.primaryLimitingFactor.metabolic',
+    CUMULATIVE: 'fatigue.primaryLimitingFactor.cumulative',
+    PSYCHOLOGICAL: 'fatigue.primaryLimitingFactor.psychological',
   };
-  return LABELS[dominant] ?? 'Multiple contributing factors';
+  return CODES[dominant] ?? 'fatigue.primaryLimitingFactor.multiple';
 }
 
 function buildDecision(
@@ -249,46 +239,47 @@ function buildDecision(
   dims: ScoredFatigueDimensions,
   load: import('@/core/features/types').LoadFeatureSet | null,
 ): FatigueDecision {
-  const rationale: string[] = [];
+  const rationale: I18nItem[] = [];
   let verdict: FatigueVerdict;
-  let capacity: TrainingCapacity = signals.trainingCapacity;
+  const capacity: TrainingCapacity = signals.trainingCapacity;
 
   if (signals.fatigueLevel === 'INSUFFICIENT_DATA') {
     return {
       verdict: 'INSUFFICIENT_DATA',
       trainingCapacity: 'FULL',
-      rationale: ['Insufficient data to assess fatigue — connect a training device.'],
+      rationale: [{ code: 'fatigue.rationale.noData' }],
     };
   }
 
   if (signals.functionalOverreachingRisk === 'CRITICAL') {
     verdict = 'REST_WEEK';
-    rationale.push('Critical overreaching risk: mandatory extended rest required.');
-    rationale.push(
-      `${signals.consecutiveAccumulationDays} consecutive days of high fatigue accumulation.`,
-    );
+    rationale.push({ code: 'fatigue.rationale.criticalOverreaching' });
+    rationale.push({
+      code: 'fatigue.rationale.consecutiveDays',
+      params: { days: signals.consecutiveAccumulationDays },
+    });
   } else if (
     signals.fatigueLevel === 'OVERREACHING_RISK' ||
     signals.fatigueLevel === 'NON_FUNCTIONAL_RISK'
   ) {
     verdict = signals.fatigueLevel === 'OVERREACHING_RISK' ? 'REST_WEEK' : 'REDUCE';
-    rationale.push(
-      `FatigueIndex ${signals.fatigueLevel.replace('_', ' ').toLowerCase()} — load reduction required.`,
-    );
-    if (signals.isAccumulating)
-      rationale.push('Fatigue is still accumulating — reduce before the trajectory worsens.');
+    rationale.push({ code: 'fatigue.rationale.loadReductionRequired' });
+    if (signals.isAccumulating) rationale.push({ code: 'fatigue.rationale.stillAccumulating' });
   } else if (signals.fatigueLevel === 'ACCUMULATED') {
     verdict = 'REDUCE';
-    rationale.push('Accumulated fatigue exceeds normal training levels — reduce intensity.');
+    rationale.push({ code: 'fatigue.rationale.accumulatedFatigue' });
     if (signals.estimatedTimeToFresh !== null) {
-      rationale.push(`Estimated ${signals.estimatedTimeToFresh} day(s) to return to fresh state.`);
+      rationale.push({
+        code: 'fatigue.rationale.estimatedFresh',
+        params: { days: signals.estimatedTimeToFresh },
+      });
     }
   } else if (signals.fatigueLevel === 'FUNCTIONAL_HIGH') {
     verdict = 'MAINTAIN';
-    rationale.push('Productive training state — load is challenging but manageable.');
+    rationale.push({ code: 'fatigue.rationale.productiveState' });
     if (signals.fatigueTrajectory === 'ACCUMULATING') {
       verdict = 'REDUCE';
-      rationale.push('Fatigue is increasing — avoid adding load this week.');
+      rationale.push({ code: 'fatigue.rationale.avoidAddingLoad' });
     }
   } else if (signals.fatigueLevel === 'FUNCTIONAL_LOW') {
     verdict = 'MAINTAIN';
@@ -296,29 +287,24 @@ function buildDecision(
       signals.fatigueTrajectory === 'ACCUMULATING' || signals.fatigueTrajectory === 'ACCELERATING';
     if (load?.acwr !== null && load?.acwr !== undefined && load.acwr < 0.8 && !isRising) {
       verdict = 'BUILD';
-      rationale.push(
-        'Training load is below optimal — this is a window to increase volume safely.',
-      );
+      rationale.push({ code: 'fatigue.rationale.loadBelowOptimal' });
     } else {
-      rationale.push('Normal training fatigue — maintain current load.');
+      rationale.push({ code: 'fatigue.rationale.maintainCurrent' });
     }
   } else {
-    // FRESH or INSUFFICIENT_DATA handled above
     verdict = 'BUILD';
-    rationale.push('Low fatigue — this is an ideal window to increase training stimulus.');
+    rationale.push({ code: 'fatigue.rationale.lowFatigue' });
     if (load?.acwr !== null && load?.acwr !== undefined && load.acwr > 1.2) {
       verdict = 'MAINTAIN';
-      rationale[0] =
-        'Low fatigue but load ratio is already elevated — maintain rather than build further.';
+      rationale[0] = { code: 'fatigue.rationale.loadRatioElevated' };
     }
   }
 
-  // Secondary rationale points
   if (signals.fatigueType === 'NEUROMUSCULAR_DOMINANT' && rationale.length < 3) {
-    rationale.push('Neuromuscular fatigue is the primary concern — avoid high-impact sessions.');
+    rationale.push({ code: 'fatigue.rationale.neuromuscularDominant' });
   }
   if (signals.fatigueType === 'METABOLIC_DOMINANT' && rationale.length < 3) {
-    rationale.push('High anaerobic load today — metabolic recovery is the priority.');
+    rationale.push({ code: 'fatigue.rationale.metabolicDominant' });
   }
 
   return {
@@ -333,49 +319,28 @@ function buildRecommendation(
   decision: FatigueDecision,
   confidence: number,
 ): FatigueRecommendation {
-  const TITLES: Record<FatigueVerdict, string> = {
-    BUILD: 'Build phase — increase training load',
-    MAINTAIN: 'Maintain — sustain current training load',
-    REDUCE: 'Reduce load — fatigue accumulation detected',
-    REST_WEEK: 'Full deload week — mandatory rest required',
-    TAPER: 'Taper — race preparation phase',
-    INSUFFICIENT_DATA: 'Connect a training device for fatigue assessment',
-  };
-
-  const SUMMARIES: Record<FatigueVerdict, string> = {
-    BUILD:
-      'Your fatigue level is low and your training capacity is full. This is the optimal window to increase training stimulus for adaptation.',
-    MAINTAIN:
-      'You are in a productive training state. Fatigue is manageable — sustain your current load without adding volume or intensity.',
-    REDUCE:
-      'Accumulated fatigue is limiting your training capacity. Reduce intensity and/or volume this week to allow recovery to catch up.',
-    REST_WEEK:
-      'Your fatigue indicators suggest non-functional overreaching. A full deload week (no structured training or only light active recovery) is required.',
-    TAPER:
-      'Reduce training volume while maintaining some intensity to allow fatigue to dissipate and fitness to emerge. Race form is the objective.',
-    INSUFFICIENT_DATA:
-      'Connect a heart rate monitor and log training sessions to enable personalized fatigue assessment.',
-  };
-
-  const keyEvidence: string[] = [signals.primaryLimitingFactor];
+  const keyEvidence: I18nItem[] = [
+    {
+      code: 'fatigue.evidence.limitingFactor',
+      params: { dimension: signals.dominantFatigueDimension },
+    },
+  ];
   if (signals.estimatedTimeToFresh !== null) {
-    keyEvidence.push(`Estimated ${signals.estimatedTimeToFresh} day(s) to reach fresh state`);
+    keyEvidence.push({
+      code: 'fatigue.evidence.timeToFresh',
+      params: { days: signals.estimatedTimeToFresh },
+    });
   }
   if (signals.performanceImpairmentEstimate > 0.1) {
-    keyEvidence.push(
-      `Performance capacity estimated at ~${Math.round((1 - signals.performanceImpairmentEstimate) * 100)}% of maximum`,
-    );
+    keyEvidence.push({
+      code: 'fatigue.evidence.performanceCapacity',
+      params: { pct: Math.round((1 - signals.performanceImpairmentEstimate) * 100) },
+    });
   }
 
   return {
     type: decision.verdict,
-    title: TITLES[decision.verdict],
-    summary: SUMMARIES[decision.verdict],
     keyEvidence: keyEvidence.slice(0, 3),
     confidence,
-    limitingFactor:
-      signals.fatigueLevel !== 'FRESH' && signals.fatigueLevel !== 'INSUFFICIENT_DATA'
-        ? signals.primaryLimitingFactor
-        : null,
   };
 }

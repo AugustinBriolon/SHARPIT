@@ -14,6 +14,7 @@ import type {
   DimensionResult,
 } from '@/core/digital-twin/types';
 import type { RecoveryState } from '@/core/digital-twin/types';
+import type { I18nItem } from '@/core/inference/shared/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Re-export digital twin types for convenience
@@ -123,20 +124,15 @@ export type FatigueVerdict =
 export type FatigueDecision = {
   readonly verdict: FatigueVerdict;
   readonly trainingCapacity: TrainingCapacity;
-  /** Evidence points driving this decision (max 3, for UI display). */
-  readonly rationale: readonly string[];
+  /** Localizable evidence points driving this decision (max 3). */
+  readonly rationale: readonly I18nItem[];
 };
 
 export type FatigueRecommendation = {
   readonly type: FatigueVerdict;
-  /** Short athlete-facing title (< 60 chars). */
-  readonly title: string;
-  /** One-paragraph summary. */
-  readonly summary: string;
-  /** 2–3 evidence points surfaced to the athlete. */
-  readonly keyEvidence: readonly string[];
+  /** 2–3 localizable evidence items surfaced to the athlete. */
+  readonly keyEvidence: readonly I18nItem[];
   readonly confidence: number;
-  readonly limitingFactor: string | null;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -148,7 +144,6 @@ export type FatigueModelOutput = {
   readonly fatigueState: FatigueState;
   readonly decision: FatigueDecision;
   readonly recommendation: FatigueRecommendation;
-  readonly explanation: string;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
