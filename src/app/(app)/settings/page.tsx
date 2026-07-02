@@ -6,12 +6,12 @@ import { GoogleCalendarPanel } from '@/components/settings/google-calendar-panel
 import { RenphoPanel } from '@/components/settings/renpho-panel';
 import { StravaPanel } from '@/components/settings/strava-panel';
 import { getAthleteProfile } from '@/lib/queries';
-import { getGarminAccount } from '@/lib/garmin-sync';
-import { isGoogleConfigured } from '@/lib/google';
-import { getGoogleAccount } from '@/lib/google-sync';
-import { getRenphoAccount } from '@/lib/renpho-sync';
-import { getStravaAccount } from '@/lib/strava-sync';
-import { isStravaConfigured } from '@/lib/strava';
+import { getGarminAccount } from '@/lib/integrations/garmin-sync';
+import { isGoogleConfigured } from '@/lib/integrations/google';
+import { getGoogleAccount } from '@/lib/integrations/google-sync';
+import { getRenphoAccount } from '@/lib/integrations/renpho-sync';
+import { getStravaAccount } from '@/lib/integrations/strava-sync';
+import { isStravaConfigured } from '@/lib/integrations/strava';
 
 export const dynamic = 'force-dynamic';
 

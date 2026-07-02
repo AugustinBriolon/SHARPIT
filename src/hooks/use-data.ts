@@ -16,10 +16,10 @@ import {
   fetchThresholdHistory,
   fetchThresholdPreview,
   fetchTrainingPlan,
-} from '@/lib/client/fetchers';
-import { queryKeys } from '@/lib/client/keys';
-import { listOptimistic, tempId } from '@/lib/client/optimistic';
-import type { ClientGoal, ClientPlannedSession } from '@/lib/client/types';
+} from '@/lib/query/fetchers';
+import { queryKeys } from '@/lib/query/keys';
+import { listOptimistic, tempId } from '@/lib/query/optimistic';
+import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import type { BrickAnalysis } from '@/lib/validators/coach';
 import type { ActivityType, GoalHorizon, GoalPriority, SessionIntensity } from '@prisma/client';
 

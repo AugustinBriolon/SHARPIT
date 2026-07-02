@@ -7,7 +7,7 @@ import {
   getGoogleAccount,
   getUpcomingBusy,
   pushSessionToGoogleInBackground,
-} from './google-sync';
+} from './integrations/google-sync';
 import {
   createBrickSessions,
   createPlannedSession,

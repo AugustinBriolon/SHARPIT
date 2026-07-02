@@ -8,7 +8,7 @@ import {
   startOfWeek,
 } from 'date-fns';
 import type { SmartAlert } from './alerts';
-import type { ClientPhysicalNote, ClientPlannedSession, ClientTrainingPlan } from './client/types';
+import type { ClientPhysicalNote, ClientPlannedSession, ClientTrainingPlan } from './query/types';
 import { estimatePlannedLoad } from './planning';
 import { findPlanWeekForDate } from './periodization';
 import { categoryLabels } from './physical';

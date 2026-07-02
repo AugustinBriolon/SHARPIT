@@ -1,4 +1,4 @@
-import type { ClientPlannedSession } from '@/lib/client/types';
+import type { ClientPlannedSession } from '@/lib/query/types';
 
 export type DayPlannedItem =
   | { kind: 'single'; session: ClientPlannedSession }

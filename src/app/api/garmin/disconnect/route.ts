@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { disconnectGarmin } from '@/lib/garmin-sync';
+import { disconnectGarmin } from '@/lib/integrations/garmin-sync';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

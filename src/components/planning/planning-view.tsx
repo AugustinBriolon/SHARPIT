@@ -13,7 +13,7 @@ import { PlanningCoachMenu } from '@/components/planning/planning-coach-menu';
 import { PlannedSessionDialog } from '@/components/planning/planned-session-dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { ClientActivity, ClientPlannedSession, ClientPlanWeek } from '@/lib/client/types';
+import type { ClientActivity, ClientPlannedSession, ClientPlanWeek } from '@/lib/query/types';
 import { groupPlannedSessions } from '@/lib/brick-sessions';
 import { activityTypeColors, activityTypeLabels } from '@/lib/format';
 import { buildPlanningWeeks, resolvePlanningWeek } from '@/lib/planning';

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { connectRenpho, syncRenphoHealth } from '@/lib/renpho-sync';
+import { connectRenpho, syncRenphoHealth } from '@/lib/integrations/renpho-sync';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

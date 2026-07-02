@@ -4,14 +4,14 @@
  * Wires the production infrastructure to the Fatigue Inference Orchestrator.
  *
  * Usage:
- *   import { fatigueEngine } from '@/lib/fatigue-engine'
+ *   import { fatigueEngine } from '@/lib/engines/fatigue-engine'
  *   const result = await fatigueEngine.run(athleteId, trainingDayId)
  */
 
 import { FatigueInferenceOrchestrator } from '@/core/inference/fatigue-orchestrator';
 import { PrismaDigitalTwinRepository } from '@/infrastructure/digital-twin/prisma-digital-twin-repository';
 import { PrismaDecisionRecordRepository } from '@/infrastructure/inference/prisma-decision-record-repository';
-import { featureEngine } from '@/lib/feature-engine';
+import { featureEngine } from '@/lib/engines/feature-engine';
 import { prisma } from '@/lib/prisma';
 
 function createFatigueEngine(): FatigueInferenceOrchestrator {

@@ -18,7 +18,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { BrickAnalysisPanel } from '@/components/planning/brick-analysis-panel';
 import { SessionRealization } from '@/components/planning/session-realization';
-import type { ClientGoal, ClientPlannedSession } from '@/lib/client/types';
+import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import { activityTypeLabels } from '@/lib/format';
 import { intensityLabels, intensityOrder } from '@/lib/sessions';
 import { cn } from '@/lib/utils';

@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { toast } from '@/components/ui/toast';
-import { queryKeys } from '@/lib/client/keys';
+import { queryKeys } from '@/lib/query/keys';
 import type { RecordChange } from '@/lib/records';
 
 type StravaSyncResult = {

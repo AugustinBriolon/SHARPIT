@@ -8,11 +8,11 @@ import {
   fetchGarminActivityStreams,
   rawStreamsHaveSignal,
   type RawStreams,
-} from '@/lib/garmin-streams';
-import { getGarminClient } from '@/lib/garmin-sync';
+} from '@/lib/integrations/garmin-streams';
+import { getGarminClient } from '@/lib/integrations/garmin-sync';
 import { getAthleteProfile } from '@/lib/queries';
-import { fetchActivityStreams, type StravaStreamSet } from '@/lib/strava';
-import { getValidAccessToken } from '@/lib/strava-sync';
+import { fetchActivityStreams, type StravaStreamSet } from '@/lib/integrations/strava';
+import { getValidAccessToken } from '@/lib/integrations/strava-sync';
 import type { ActivityType } from '@prisma/client';
 
 export type { RawStreams };

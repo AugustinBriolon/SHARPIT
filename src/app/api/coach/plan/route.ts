@@ -4,7 +4,7 @@ import { fr } from 'date-fns/locale';
 import { NextResponse } from 'next/server';
 import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from '@/lib/ai';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach-context';
-import { getUpcomingBusy } from '@/lib/google-sync';
+import { getUpcomingBusy } from '@/lib/integrations/google-sync';
 import { getGoalById } from '@/lib/queries';
 import { coachPlanRequestSchema, coachPlanSchema } from '@/lib/validators/coach';
 

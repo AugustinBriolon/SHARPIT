@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { disconnectRenpho } from '@/lib/renpho-sync';
+import { disconnectRenpho } from '@/lib/integrations/renpho-sync';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

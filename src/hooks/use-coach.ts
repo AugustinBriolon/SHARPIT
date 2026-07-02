@@ -12,8 +12,8 @@ import {
   type ClientConversationSummary,
   type ClientDailyBriefing,
   type ClientWeeklyReview,
-} from '@/lib/client/fetchers';
-import { queryKeys } from '@/lib/client/keys';
+} from '@/lib/query/fetchers';
+import { queryKeys } from '@/lib/query/keys';
 
 export interface GeneratedSession {
   dayOffset: number;

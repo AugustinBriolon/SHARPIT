@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { garminHealthToObservations } from './garmin-health-adapter';
-import type { GarminDailyHealth } from '@/lib/garmin';
+import type { GarminDailyHealth } from '@/lib/integrations/garmin';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Fixtures

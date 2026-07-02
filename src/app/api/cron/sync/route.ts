@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
 import { generateAndStoreDailyBriefing } from '@/lib/daily-briefing';
-import { getGarminAccount, syncGarminHealth } from '@/lib/garmin-sync';
-import { syncGarminActivities } from '@/lib/garmin-activity-sync';
-import { getGoogleAccount, syncFromGoogle } from '@/lib/google-sync';
+import { getGarminAccount, syncGarminHealth } from '@/lib/integrations/garmin-sync';
+import { syncGarminActivities } from '@/lib/integrations/garmin-activity-sync';
+import { getGoogleAccount, syncFromGoogle } from '@/lib/integrations/google-sync';
 import { recomputeRecordsSafe } from '@/lib/records';
-import { getRenphoAccount, syncRenphoHealth } from '@/lib/renpho-sync';
+import { getRenphoAccount, syncRenphoHealth } from '@/lib/integrations/renpho-sync';
 import { backfillActivityStreams } from '@/lib/stream-backfill';
-import { getStravaAccount, syncStravaActivities } from '@/lib/strava-sync';
+import { getStravaAccount, syncStravaActivities } from '@/lib/integrations/strava-sync';
 import { generateAndStoreWeeklyReview, isSunday } from '@/lib/weekly-review';
 
 export const runtime = 'nodejs';

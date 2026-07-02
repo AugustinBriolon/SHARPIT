@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { recoveryEngine } from '@/lib/recovery-engine';
+import { recoveryEngine } from '@/lib/engines/recovery-engine';
 
 export const dynamic = 'force-dynamic';
 

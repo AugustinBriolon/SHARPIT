@@ -7,7 +7,7 @@ import { activityTypeLabels } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useAnalyzeBrick, useBrickAnalysis, usePlannedSessions } from '@/hooks/use-data';
 import type { BrickAnalysis } from '@/lib/validators/coach';
-import type { ClientPlannedSession } from '@/lib/client/types';
+import type { ClientPlannedSession } from '@/lib/query/types';
 
 function scoreColor(score: number): string {
   if (score >= 85) return 'text-emerald-600';

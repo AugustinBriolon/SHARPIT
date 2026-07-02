@@ -10,12 +10,12 @@ import {
   garminSessionDurationSec,
   mapGarminType,
   type ParsedStrengthSet,
-} from '@/lib/garmin-activities';
-import { clientFromTokens, currentTokens, type GarminTokens } from '@/lib/garmin';
-import { getGarminAccount } from '@/lib/garmin-sync';
+} from '@/lib/integrations/garmin-activities';
+import { clientFromTokens, currentTokens, type GarminTokens } from '@/lib/integrations/garmin';
+import { getGarminAccount } from '@/lib/integrations/garmin-sync';
 import { prisma } from '@/lib/prisma';
 import { autoLinkActivities } from '@/lib/session-linking';
-import { observationEngine } from '@/lib/observation-engine';
+import { observationEngine } from '@/lib/engines/observation-engine';
 import {
   garminActivityToSession,
   garminEvaluationToSubjective,

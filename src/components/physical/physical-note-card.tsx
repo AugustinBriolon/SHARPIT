@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import type { ClientPhysicalNote } from '@/lib/client/types';
+import type { ClientPhysicalNote } from '@/lib/query/types';
 import {
   categoryLabels,
   severityAccent,

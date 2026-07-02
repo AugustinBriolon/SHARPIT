@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/toast';
-import { queryKeys } from '@/lib/client/keys';
+import { queryKeys } from '@/lib/query/keys';
 
 async function runRenphoSync(options?: { full?: boolean }): Promise<{
   imported: number;

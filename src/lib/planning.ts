@@ -9,7 +9,7 @@ import {
   startOfWeek,
 } from 'date-fns';
 import { estimateActivityLoad } from '@/lib/analytics';
-import type { ClientActivity, ClientPlannedSession } from '@/lib/client/types';
+import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 

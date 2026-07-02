@@ -9,7 +9,7 @@ import {
   refreshAccessToken,
   updateEvent,
   type BusyInterval,
-} from '@/lib/google';
+} from '@/lib/integrations/google';
 
 const ACCOUNT_ID = 'default';
 

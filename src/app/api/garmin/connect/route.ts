@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { connectGarmin } from '@/lib/garmin-sync';
+import { connectGarmin } from '@/lib/integrations/garmin-sync';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

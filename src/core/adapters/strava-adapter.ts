@@ -14,7 +14,7 @@
  * "perceived exertion" field (if available) is not exposed in the API we use.
  */
 
-import type { StravaActivity } from '@/lib/strava';
+import type { StravaActivity } from '@/lib/integrations/strava';
 
 import type {
   RawSessionObservation,

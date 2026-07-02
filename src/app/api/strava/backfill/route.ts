@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { filterRecordChangesByActivities, recomputeRecordGroups } from '@/lib/records';
 import { backfillActivityStreams } from '@/lib/stream-backfill';
-import { getStravaAccount } from '@/lib/strava-sync';
+import { getStravaAccount } from '@/lib/integrations/strava-sync';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

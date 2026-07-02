@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { syncGarminActivities } from '@/lib/garmin-activity-sync';
-import { syncGarminHealth } from '@/lib/garmin-sync';
+import { syncGarminActivities } from '@/lib/integrations/garmin-activity-sync';
+import { syncGarminHealth } from '@/lib/integrations/garmin-sync';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

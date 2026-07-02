@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { disconnectGoogle } from '@/lib/google-sync';
+import { disconnectGoogle } from '@/lib/integrations/google-sync';
 
 export const dynamic = 'force-dynamic';
 

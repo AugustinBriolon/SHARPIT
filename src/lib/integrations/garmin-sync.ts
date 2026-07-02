@@ -12,8 +12,8 @@ import {
   type GarminAthleteThresholds,
   type GarminDailyHealth,
   type GarminTokens,
-} from '@/lib/garmin';
-import { observationEngine } from '@/lib/observation-engine';
+} from '@/lib/integrations/garmin';
+import { observationEngine } from '@/lib/engines/observation-engine';
 import { garminHealthToObservations } from '@/core/adapters/garmin-health-adapter';
 
 const ATHLETE_ID = 'default';

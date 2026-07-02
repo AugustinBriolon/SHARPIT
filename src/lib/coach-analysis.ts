@@ -8,8 +8,8 @@ import {
   getPlannedSessionById,
 } from './queries';
 import { intensityLabels } from './sessions';
-import { fetchActivityDetail } from './strava';
-import { getValidAccessToken } from './strava-sync';
+import { fetchActivityDetail } from './integrations/strava';
+import { getValidAccessToken } from './integrations/strava-sync';
 import {
   brickAnalysisSchema,
   sessionAnalysisSchema,

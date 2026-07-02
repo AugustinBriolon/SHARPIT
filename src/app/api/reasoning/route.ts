@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { reasoningEngine } from '@/lib/reasoning-engine';
+import { reasoningEngine } from '@/lib/engines/reasoning-engine';
 
 export const dynamic = 'force-dynamic';
 

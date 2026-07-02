@@ -14,7 +14,7 @@ import { ToolActivity, type KnownSession } from '@/components/coach/tool-activit
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useSaveConversation } from '@/hooks/use-coach';
-import { queryKeys } from '@/lib/client/keys';
+import { queryKeys } from '@/lib/query/keys';
 
 const SUGGESTIONS = [
   "Comment se présente ma forme aujourd'hui ?",

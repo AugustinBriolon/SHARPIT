@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adaptationEngine } from '@/lib/adaptation-engine';
+import { adaptationEngine } from '@/lib/engines/adaptation-engine';
 
 export const dynamic = 'force-dynamic';
 

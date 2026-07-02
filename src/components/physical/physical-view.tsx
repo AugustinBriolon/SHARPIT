@@ -7,7 +7,7 @@ import { PhysicalNoteCard } from '@/components/physical/physical-note-card';
 import { PhysicalNoteDialog } from '@/components/physical/physical-note-dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { ClientPhysicalNote } from '@/lib/client/types';
+import type { ClientPhysicalNote } from '@/lib/query/types';
 import { categoryLabels, categoryOrder, severityColor } from '@/lib/physical';
 import { cn } from '@/lib/utils';
 import { usePhysicalNotes } from '@/hooks/use-physical';

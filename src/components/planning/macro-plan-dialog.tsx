@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { ClientGoal, ClientTrainingPlan } from '@/lib/client/types';
+import type { ClientGoal, ClientTrainingPlan } from '@/lib/query/types';
 import { phaseColors, phaseLabels } from '@/lib/periodization';
 import { useTrainingPlan, useTrainingPlanMutations } from '@/hooks/use-data';
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fatigueEngine } from '@/lib/fatigue-engine';
+import { fatigueEngine } from '@/lib/engines/fatigue-engine';
 
 export const dynamic = 'force-dynamic';
 

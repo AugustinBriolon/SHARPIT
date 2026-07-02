@@ -1,6 +1,6 @@
 import { ActivityType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { rawStreamsHaveSignal } from '@/lib/garmin-streams';
+import { rawStreamsHaveSignal } from '@/lib/integrations/garmin-streams';
 import { fetchAndCacheActivityStreams } from '@/lib/streams';
 
 /**

@@ -1,7 +1,7 @@
 import { randomBytes } from 'crypto';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { buildAuthorizeUrl, isStravaConfigured } from '@/lib/strava';
+import { buildAuthorizeUrl, isStravaConfigured } from '@/lib/integrations/strava';
 
 export const dynamic = 'force-dynamic';
 

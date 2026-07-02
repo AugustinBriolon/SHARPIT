@@ -10,7 +10,7 @@
  *   See src/lib/feature-engine.ts and INFERENCE_ARCHITECTURE_REVIEW.md §12.4.
  *
  * Usage:
- *   import { observationEngine } from '@/lib/observation-engine'
+ *   import { observationEngine } from '@/lib/engines/observation-engine'
  *   await observationEngine.ingest(athleteId, rawObservation)
  */
 
@@ -18,7 +18,7 @@ import { ObservationEngine } from '@/core/observation';
 import { PrismaObservationRepository } from '@/infrastructure/observation/prisma-observation-repository';
 import { createFeatureEngineBus } from '@/infrastructure/events/in-process-event-bus';
 import { prisma } from '@/lib/prisma';
-import { featureEngine, isFeatureEngineEnabled } from '@/lib/feature-engine';
+import { featureEngine, isFeatureEngineEnabled } from '@/lib/engines/feature-engine';
 
 const globalForEngine = globalThis as unknown as {
   observationEngine: ObservationEngine | undefined;

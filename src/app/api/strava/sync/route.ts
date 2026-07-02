@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { filterRecordChangesByActivities, updateRecordsForTypes } from '@/lib/records';
-import { syncStravaActivities } from '@/lib/strava-sync';
+import { syncStravaActivities } from '@/lib/integrations/strava-sync';
 
 export const dynamic = 'force-dynamic';
 

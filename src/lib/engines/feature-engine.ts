@@ -12,7 +12,7 @@
  * See INFERENCE_ARCHITECTURE_REVIEW.md §12.4 — Migration from existing UI read paths.
  *
  * Usage:
- *   import { featureEngine } from '@/lib/feature-engine'
+ *   import { featureEngine } from '@/lib/engines/feature-engine'
  *   await featureEngine.getDayFeatures(athleteId, trainingDayId)
  */
 

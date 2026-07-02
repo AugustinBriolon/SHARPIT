@@ -1,7 +1,7 @@
 import { randomBytes } from 'crypto';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { buildAuthorizeUrl, isGoogleConfigured } from '@/lib/google';
+import { buildAuthorizeUrl, isGoogleConfigured } from '@/lib/integrations/google';
 
 export const dynamic = 'force-dynamic';
 

@@ -3,7 +3,7 @@
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { MessageSquarePlus, Trash2 } from 'lucide-react';
-import type { ClientConversationSummary } from '@/lib/client/fetchers';
+import type { ClientConversationSummary } from '@/lib/query/fetchers';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 

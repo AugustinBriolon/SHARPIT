@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { computeProactiveActions } from './proactive-coach';
-import type { ClientPhysicalNote, ClientPlannedSession } from './client/types';
+import type { ClientPhysicalNote, ClientPlannedSession } from './query/types';
 
 const REF = new Date('2026-01-31T12:00:00');
 

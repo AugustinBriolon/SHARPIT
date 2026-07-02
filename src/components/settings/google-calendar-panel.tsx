@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useGoogleCalendars } from '@/hooks/use-data';
-import type { GoogleCalendarInfo } from '@/lib/client/fetchers';
+import type { GoogleCalendarInfo } from '@/lib/query/fetchers';
 
 function calendarSelectLabel(
   calendarId: string,

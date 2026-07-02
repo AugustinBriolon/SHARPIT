@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { exchangeCodeForToken } from '@/lib/strava';
+import { exchangeCodeForToken } from '@/lib/integrations/strava';
 
 export const dynamic = 'force-dynamic';
 

@@ -13,7 +13,7 @@ import {
   useThresholdHistory,
   useThresholdPreview,
 } from '@/hooks/use-data';
-import { queryKeys } from '@/lib/client/keys';
+import { queryKeys } from '@/lib/query/keys';
 
 interface ProfileData {
   ftpW: number | null;

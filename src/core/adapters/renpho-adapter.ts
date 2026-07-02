@@ -8,7 +8,7 @@
  * Exception: bone mass is in kg.
  */
 
-import type { RenphoMeasurement } from '@/lib/renpho';
+import type { RenphoMeasurement } from '@/lib/integrations/renpho';
 
 import type { RawBodyCompositionObservation } from '@/core/observation/types';
 

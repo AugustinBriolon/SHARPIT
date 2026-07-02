@@ -5,14 +5,14 @@
  * All production dependencies are injected here.
  *
  * Usage:
- *   import { recoveryEngine } from '@/lib/recovery-engine'
+ *   import { recoveryEngine } from '@/lib/engines/recovery-engine'
  *   const result = await recoveryEngine.run(athleteId, trainingDayId)
  */
 
 import { RecoveryInferenceOrchestrator } from '@/core/inference/orchestrator';
 import { PrismaDigitalTwinRepository } from '@/infrastructure/digital-twin/prisma-digital-twin-repository';
 import { PrismaDecisionRecordRepository } from '@/infrastructure/inference/prisma-decision-record-repository';
-import { featureEngine } from '@/lib/feature-engine';
+import { featureEngine } from '@/lib/engines/feature-engine';
 import { prisma } from '@/lib/prisma';
 
 function createRecoveryEngine(): RecoveryInferenceOrchestrator {

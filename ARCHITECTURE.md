@@ -90,7 +90,7 @@ The pattern for handling this is non-negotiable:
 | Server data          | PostgreSQL via Prisma                    |
 | Client cache         | TanStack Query                           |
 | Type definitions     | Query function return types (inferred)   |
-| Query cache keys     | `src/lib/client/keys.ts`                 |
+| Query cache keys     | `src/lib/query/keys.ts`                  |
 | Validation schemas   | `src/lib/validators/` (Zod)              |
 | Scientific constants | Domain function file with source comment |
 
@@ -122,31 +122,28 @@ prisma/
 scripts/
 ```
 
-### 3.2 Target structure for `src/lib/`
+### 3.2 Current `src/lib/` structure
 
-The flat `src/lib/` is the primary architectural liability. It must be migrated to this namespace structure:
+`src/lib/` is organized into four committed subdirectories plus the remaining flat files:
 
 ```
 src/lib/
-  domain/
-    training/       ← analytics.ts, training-load.ts, periodization.ts, records.ts
-    recovery/       ← recovery.ts, sleep.ts, alerts.ts
-    performance/    ← performance-predictor.ts, body-composition.ts
-    coaching/       ← dashboard.ts, proactive-coach.ts, goals.ts, sessions.ts
-  ai/               ← ai.ts, coach-tools.ts, coach-session-thread.ts, coach-analysis.ts,
-                       coach-context.ts, daily-briefing.ts, weekly-review.ts, conversations.ts
-  sync/             ← garmin.ts, garmin-sync.ts, garmin-activities.ts, garmin-activity-sync.ts,
-                       garmin-streams.ts, garmin-feel.ts, strava.ts, strava-sync.ts,
-                       renpho.ts, renpho-sync.ts, google.ts, google-sync.ts, calendar.ts
-  data/
-    server/         ← queries.ts (split by domain), prisma.ts, activity-service.ts,
-                       threshold-service.ts, stream-backfill.ts, streams.ts
-    client/         ← types.ts, fetchers.ts, optimistic.ts, keys.ts
-  validators/       ← Zod schemas (already organized)
-  utils/            ← auth.ts, utils.ts, format.ts, secret-box.ts (genuinely shared)
+  integrations/     ← Garmin, Strava, Renpho, Google adapters and sync logic
+                       garmin.ts, garmin-sync.ts, garmin-activities.ts,
+                       garmin-activity-sync.ts, garmin-streams.ts, garmin-feel.ts,
+                       strava.ts, strava-sync.ts, renpho.ts, renpho-sync.ts,
+                       google.ts, google-sync.ts
+  engines/          ← Intelligence engine singletons (lazy-init wrappers)
+                       recovery-engine.ts, fatigue-engine.ts, adaptation-engine.ts,
+                       reasoning-engine.ts, feature-engine.ts, observation-engine.ts
+  query/            ← TanStack Query infrastructure (client-side only)
+                       types.ts, fetchers.ts, optimistic.ts, keys.ts
+  validators/       ← Zod schemas, one file per domain entity
+  [flat]            ← domain utilities, AI coaching, data access, and shared utils
+                       (further subdivision deferred — no functional need yet)
 ```
 
-**Migration rule:** when editing any file in `src/lib/`, move it to its target namespace as part of the same PR. Do not reorganize files without a code change — do it together with the functional edit to keep PRs reviewable.
+**Rule:** integration adapters go in `integrations/`, engine singletons go in `engines/`, React Query infrastructure goes in `query/`. Do not add new files to these subdirectories without that clear classification.
 
 ### 3.3 Route handler organization
 
@@ -404,7 +401,7 @@ There is no global client state store (no Redux, no Zustand, no Jotai). Do not a
 
 ### 7.2 Query keys
 
-All query keys live in `src/lib/client/keys.ts`. Never write a query key inline.
+All query keys live in `src/lib/query/keys.ts`. Never write a query key inline.
 
 ```ts
 // Good
@@ -503,6 +500,8 @@ Do not add JSON columns for structured data that will be filtered, sorted, or jo
 
 Every schema change requires a Prisma migration. Never modify the production schema without a migration file. Every migration must be reversible or include a comment explaining why reversal is not possible.
 
+**Migration naming convention:** all migration directories must use the format `YYYYMMDDHHmmss_<description>` (e.g. `20260702110023_add_feature_set_table`). Do not use sequential integer names. The timestamp is generated automatically by `prisma migrate dev`.
+
 ### 8.6 Indexes
 
 Every field used in a `WHERE` clause must have an index. Minimum requirements:
@@ -553,14 +552,14 @@ If the feature reads from or writes to the database:
 
 ### Step 5 — Write the fetcher
 
-1. Add the fetcher to `src/lib/data/client/fetchers.ts`.
+1. Add the fetcher to `src/lib/query/fetchers.ts`.
 2. Type the wire format with `Serialized<ClientX>`.
 3. Re-hydrate all `Date` fields explicitly using `toDate()` / `toDateOrNull()`.
-4. Export the client type in `src/lib/data/client/types.ts` if it is a new entity.
+4. Export the client type in `src/lib/query/types.ts` if it is a new entity.
 
 ### Step 6 — Write the query key
 
-Add the new key to `src/lib/client/keys.ts`. Never use inline key arrays.
+Add the new key to `src/lib/query/keys.ts`. Never use inline key arrays.
 
 ### Step 7 — Write the hook
 
@@ -591,7 +590,7 @@ Use this list on every pull request. A PR is not mergeable until all items are s
 - [ ] No business logic in components (computation lives in hooks or domain functions)
 - [ ] No direct `fetch()` calls in components or hooks (use fetchers)
 - [ ] No Prisma types in domain function signatures
-- [ ] No inline query keys (all keys in `src/lib/client/keys.ts`)
+- [ ] No inline query keys (all keys in `src/lib/query/keys.ts`)
 - [ ] No magic numbers without source comments
 - [ ] Domain functions cross no domain boundaries (see §4)
 - [ ] `'use client'` boundary is as deep as possible
@@ -644,7 +643,7 @@ useQuery({ queryKey: ['activities'], ... })
 queryClient.invalidateQueries({ queryKey: ['activites'] }) // silent typo
 ```
 
-**Fix:** always use `queryKeys.*` from `src/lib/client/keys.ts`.
+**Fix:** always use `queryKeys.*` from `src/lib/query/keys.ts`.
 
 ### M4 — Accepting Prisma types in domain functions
 
@@ -705,7 +704,7 @@ Next.js App Router on Vercel creates a new isolate per cold start. Module-level 
 
 ### M10 — Duplicate type definitions
 
-Client entity types are inferred from query function return types. They are never manually written. If you find yourself writing `interface Activity { id: string; date: Date; ... }` in a client file, stop — use `ClientActivity` from `src/lib/client/types.ts`.
+Client entity types are inferred from query function return types. They are never manually written. If you find yourself writing `interface Activity { id: string; date: Date; ... }` in a client file, stop — use `ClientActivity` from `src/lib/query/types.ts`.
 
 ---
 

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { disconnectStrava } from '@/lib/strava-sync';
+import { disconnectStrava } from '@/lib/integrations/strava-sync';
 
 export const dynamic = 'force-dynamic';
 

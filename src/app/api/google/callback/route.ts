@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { emailFromIdToken, exchangeCodeForToken } from '@/lib/google';
+import { emailFromIdToken, exchangeCodeForToken } from '@/lib/integrations/google';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';

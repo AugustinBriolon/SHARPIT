@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getGoogleAccount, listGoogleCalendars } from '@/lib/google-sync';
+import { getGoogleAccount, listGoogleCalendars } from '@/lib/integrations/google-sync';
 
 export const dynamic = 'force-dynamic';
 

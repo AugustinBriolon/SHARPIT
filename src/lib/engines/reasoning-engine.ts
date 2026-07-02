@@ -5,7 +5,7 @@
  * No FeatureEngine dependency — reads exclusively from the Digital Twin.
  *
  * Usage:
- *   import { reasoningEngine } from '@/lib/reasoning-engine'
+ *   import { reasoningEngine } from '@/lib/engines/reasoning-engine'
  *   const result = await reasoningEngine.run(athleteId, trainingDayId)
  */
 

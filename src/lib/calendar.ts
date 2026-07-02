@@ -6,7 +6,7 @@ import {
   startOfMonth,
   startOfWeek,
 } from 'date-fns';
-import type { ClientActivity, ClientPlannedSession } from '@/lib/client/types';
+import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 
 export interface CalendarDay {
   date: Date;

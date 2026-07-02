@@ -8,8 +8,8 @@ import {
   mapStravaType,
   refreshAccessToken,
   type StravaActivity,
-} from '@/lib/strava';
-import { observationEngine } from '@/lib/observation-engine';
+} from '@/lib/integrations/strava';
+import { observationEngine } from '@/lib/engines/observation-engine';
 import { stravaActivityToSession } from '@/core/adapters/strava-adapter';
 
 const ATHLETE_ID = 'default';

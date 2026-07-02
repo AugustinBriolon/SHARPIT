@@ -19,7 +19,7 @@
  * performed here preserves this convention.
  */
 
-import type { GarminDailyHealth } from '@/lib/garmin';
+import type { GarminDailyHealth } from '@/lib/integrations/garmin';
 
 import type {
   RawSleepObservation,

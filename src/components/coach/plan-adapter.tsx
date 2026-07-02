@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import type { ClientPlannedSession } from '@/lib/client/types';
+import type { ClientPlannedSession } from '@/lib/query/types';
 import { activityTypeLabels } from '@/lib/format';
 import { intensityLabels } from '@/lib/sessions';
 import { cn } from '@/lib/utils';

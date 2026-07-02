@@ -29,9 +29,9 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { buildCalendarMonth, weekDayLabels } from '@/lib/calendar';
 import { groupPlannedSessions } from '@/lib/brick-sessions';
-import type { GoogleCalendarEvent, GoogleCalendarInfo } from '@/lib/client/fetchers';
-import { queryKeys } from '@/lib/client/keys';
-import type { ClientActivity, ClientPlannedSession } from '@/lib/client/types';
+import type { GoogleCalendarEvent, GoogleCalendarInfo } from '@/lib/query/fetchers';
+import { queryKeys } from '@/lib/query/keys';
+import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import { activityTypeColors, activityTypeLabels } from '@/lib/format';
 import { intensityAccent } from '@/lib/sessions';
 import { cn } from '@/lib/utils';

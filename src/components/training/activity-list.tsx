@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { LinkButton } from '@/components/ui/link-button';
-import { queryKeys } from '@/lib/client/keys';
+import { queryKeys } from '@/lib/query/keys';
 import {
   activityTypeColors,
   activityTypeLabels,

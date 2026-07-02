@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteSessionFromGoogle, pushSessionToGoogle } from '@/lib/google-sync';
+import { deleteSessionFromGoogle, pushSessionToGoogle } from '@/lib/integrations/google-sync';
 import { deletePlannedSession, getPlannedSessionById, updatePlannedSession } from '@/lib/queries';
 import { updatePlannedSessionSchema } from '@/lib/validators/planned-session';
 

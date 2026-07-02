@@ -1,9 +1,9 @@
 import { Prisma } from '@prisma/client';
 import { format, startOfDay, subDays } from 'date-fns';
 import { prisma } from '@/lib/prisma';
-import { type RenphoMeasurement, renphoClientFromCredentials } from '@/lib/renpho';
+import { type RenphoMeasurement, renphoClientFromCredentials } from '@/lib/integrations/renpho';
 import { decryptSecret, encryptSecret } from '@/lib/secret-box';
-import { observationEngine } from '@/lib/observation-engine';
+import { observationEngine } from '@/lib/engines/observation-engine';
 import { renphoMeasurementToBodyComposition } from '@/core/adapters/renpho-adapter';
 
 const ATHLETE_ID = 'default';

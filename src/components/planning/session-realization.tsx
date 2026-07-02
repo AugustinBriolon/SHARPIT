@@ -18,7 +18,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { LinkButton } from '@/components/ui/link-button';
 import { Textarea } from '@/components/ui/textarea';
-import type { ClientActivity, ClientPhysicalNote, ClientPlannedSession } from '@/lib/client/types';
+import type { ClientActivity, ClientPhysicalNote, ClientPlannedSession } from '@/lib/query/types';
 import {
   activityTypeColors,
   activityTypeLabels,

@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LinkButton } from '@/components/ui/link-button';
-import type { ClientPlannedSession } from '@/lib/client/types';
+import type { ClientPlannedSession } from '@/lib/query/types';
 import { groupPlannedSessions } from '@/lib/brick-sessions';
 import { activityTypeColors, activityTypeLabels } from '@/lib/format';
 import { intensityLabels, formatPlannedDuration } from '@/lib/sessions';
