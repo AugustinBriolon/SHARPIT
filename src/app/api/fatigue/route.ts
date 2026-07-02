@@ -15,8 +15,7 @@ export const dynamic = 'force-dynamic';
  *   - dimension breakdown (load, neuromuscular, metabolic, cumulative, psychological)
  *   - trajectory (RESOLVING / STABLE / ACCUMULATING / ACCELERATING)
  *   - trainingCapacity (FULL / REDUCED / LIGHT_ONLY / REST_ONLY)
- *   - recommendation (type, title, summary, evidence)
- *   - explanation (human-readable)
+ *   - recommendation (type, keyEvidence as I18nItem[])
  *   - confidence
  */
 export async function GET(request: NextRequest) {
@@ -53,7 +52,7 @@ function formatResult(
   result: import('@/core/inference/fatigue-orchestrator').FatigueInferenceResult,
 ) {
   const { output, athleteId, trainingDayId, computedAt, decisionRecordId } = result;
-  const { fatigueState, recommendation, explanation, signals, decision } = output;
+  const { fatigueState, recommendation, signals, decision } = output;
 
   return {
     athleteId,
@@ -100,12 +99,8 @@ function formatResult(
 
     recommendation: {
       type: recommendation.type,
-      title: recommendation.title,
-      summary: recommendation.summary,
       keyEvidence: recommendation.keyEvidence,
-      limitingFactor: recommendation.limitingFactor,
+      confidence: recommendation.confidence,
     },
-
-    explanation,
   };
 }

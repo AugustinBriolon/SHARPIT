@@ -18,7 +18,6 @@ export const dynamic = 'force-dynamic';
  *   - conflicts
  *   - topAction
  *   - evidenceGraph (contribution weights per model)
- *   - explanation (human-readable)
  *   - confidence
  */
 export async function GET(request: NextRequest) {
@@ -60,7 +59,7 @@ function formatResult(
   result: import('@/core/inference/reasoning-orchestrator').ReasoningInferenceResult,
 ) {
   const { output, athleteId, trainingDayId, computedAt, decisionRecordId } = result;
-  const { reasoningState, explanation, signals } = output;
+  const { reasoningState, signals } = output;
 
   return {
     athleteId,
@@ -93,7 +92,5 @@ function formatResult(
       hasFatigueState: signals.hasFatigueState,
       hasAdaptationState: signals.hasAdaptationState,
     },
-
-    explanation,
   };
 }

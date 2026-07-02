@@ -15,8 +15,7 @@ export const dynamic = 'force-dynamic';
  *   - dimension breakdown (loadProgression, neuromuscularEfficiency, autonomicAdaptation, recoveryQuality)
  *   - flags (plateauRisk, overreachingWithoutAdaptationDetected)
  *   - verdict (INCREASE_LOAD / SUSTAIN / CONSOLIDATE / REDUCE_LOAD / RECOVERY_PRIORITY)
- *   - recommendation (type, title, summary, keyEvidence)
- *   - explanation (human-readable)
+ *   - recommendation (type, keyEvidence as I18nItem[])
  *   - confidence
  */
 export async function GET(request: NextRequest) {
@@ -53,7 +52,7 @@ function formatResult(
   result: import('@/core/inference/adaptation-orchestrator').AdaptationInferenceResult,
 ) {
   const { output, athleteId, trainingDayId, computedAt, decisionRecordId } = result;
-  const { adaptationState, recommendation, explanation, signals, decision } = output;
+  const { adaptationState, recommendation, signals, decision } = output;
 
   return {
     athleteId,
@@ -97,12 +96,7 @@ function formatResult(
 
     recommendation: {
       type: recommendation.type,
-      title: recommendation.title,
-      summary: recommendation.summary,
       keyEvidence: recommendation.keyEvidence,
-      limitingFactor: recommendation.limitingFactor,
     },
-
-    explanation,
   };
 }

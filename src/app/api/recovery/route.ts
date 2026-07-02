@@ -12,8 +12,7 @@ export const dynamic = 'force-dynamic';
  *   - readinessScore (0–100)
  *   - readinessCategory
  *   - dimension breakdown (autonomic, sleep, subjective, load)
- *   - recommendation (type, title, summary, evidence)
- *   - explanation (human-readable)
+ *   - recommendation (type, keyEvidence as I18nItem[])
  *   - signals (autonomicBalance, overreachingRisk, illnessRisk, ...)
  *   - confidence
  *
@@ -63,7 +62,7 @@ export async function GET(request: NextRequest) {
 
 function formatResult(result: import('@/core/inference/orchestrator').RecoveryInferenceResult) {
   const { output, athleteId, trainingDayId, computedAt, decisionRecordId } = result;
-  const { recoveryState, recommendation, explanation, signals, decision } = output;
+  const { recoveryState, recommendation, signals, decision } = output;
 
   return {
     athleteId,
@@ -108,13 +107,8 @@ function formatResult(result: import('@/core/inference/orchestrator').RecoveryIn
     // ── Recommendation ───────────────────────────────────────────────────────
     recommendation: {
       type: recommendation.type,
-      title: recommendation.title,
-      summary: recommendation.summary,
       keyEvidence: recommendation.keyEvidence,
-      limitingFactor: recommendation.limitingFactor,
+      confidence: recommendation.confidence,
     },
-
-    // ── Explanation ──────────────────────────────────────────────────────────
-    explanation,
   };
 }
