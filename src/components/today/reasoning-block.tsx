@@ -2,41 +2,7 @@
 
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import {
-  mapRecoveryToSignal,
-  mapFatigueToSignal,
-  mapAdaptationToSignal,
-  type ReadinessCategory,
-  type FatigueLevel,
-  type FatigueTrajectory,
-  type AdaptationStatus,
-  type AdaptationTrend,
-} from '@/lib/today-mapping';
 import type { KeyFinding } from '@/hooks/use-today';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Inline dimension badge (Recovery / Fatigue / Adaptation as evidence)
-// ─────────────────────────────────────────────────────────────────────────────
-
-function DimensionBadge({
-  label,
-  value,
-  arrow,
-  colorClass,
-}: {
-  label: string;
-  value: string;
-  arrow: string;
-  colorClass: string;
-}) {
-  return (
-    <span className="bg-background/60 flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={cn('font-medium', colorClass)}>{value}</span>
-      <span className={cn('text-[10px]', colorClass)}>{arrow}</span>
-    </span>
-  );
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Severity indicator dot
@@ -58,33 +24,16 @@ const SEVERITY_TEXT: Record<string, string> = {
 // ReasoningBlock — Q2: Why?
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface DimensionSignals {
-  readinessCategory: ReadinessCategory;
-  fatigueLevel: FatigueLevel;
-  fatigueTrajectory: FatigueTrajectory;
-  adaptationStatus: AdaptationStatus;
-  adaptationTrend: AdaptationTrend;
-}
-
 interface ReasoningBlockProps {
   keyFindings: KeyFinding[];
   explanation: string;
-  dimensions: DimensionSignals | null;
 }
 
-export function ReasoningBlock({ keyFindings, explanation, dimensions }: ReasoningBlockProps) {
+export function ReasoningBlock({ keyFindings, explanation }: ReasoningBlockProps) {
   const [expanded, setExpanded] = useState(false);
 
   const [primary, ...rest] = keyFindings;
   const supporting = rest.slice(0, 4);
-
-  const recoverySignal = dimensions ? mapRecoveryToSignal(dimensions.readinessCategory) : null;
-  const fatigueSignal = dimensions
-    ? mapFatigueToSignal(dimensions.fatigueLevel, dimensions.fatigueTrajectory)
-    : null;
-  const adaptationSignal = dimensions
-    ? mapAdaptationToSignal(dimensions.adaptationStatus, dimensions.adaptationTrend)
-    : null;
 
   return (
     <div className="bg-card/60 space-y-3 rounded-2xl border px-5 py-5">
@@ -114,38 +63,6 @@ export function ReasoningBlock({ keyFindings, explanation, dimensions }: Reasoni
                 </li>
               ))}
             </ul>
-          )}
-        </div>
-      )}
-
-      {/* Dimension signals — physiological evidence */}
-      {(recoverySignal?.isAvailable ||
-        fatigueSignal?.isAvailable ||
-        adaptationSignal?.isAvailable) && (
-        <div className="flex flex-wrap gap-2 border-t pt-3">
-          {recoverySignal?.isAvailable && (
-            <DimensionBadge
-              arrow={recoverySignal.arrow}
-              colorClass={recoverySignal.qualityClass}
-              label="Recovery"
-              value={recoverySignal.label}
-            />
-          )}
-          {fatigueSignal?.isAvailable && (
-            <DimensionBadge
-              arrow={fatigueSignal.arrow}
-              colorClass={fatigueSignal.qualityClass}
-              label="Fatigue"
-              value={fatigueSignal.label}
-            />
-          )}
-          {adaptationSignal?.isAvailable && (
-            <DimensionBadge
-              arrow={adaptationSignal.arrow}
-              colorClass={adaptationSignal.qualityClass}
-              label="Adaptation"
-              value={adaptationSignal.label}
-            />
           )}
         </div>
       )}

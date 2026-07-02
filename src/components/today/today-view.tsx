@@ -1,13 +1,13 @@
 'use client';
 
 import { useToday } from '@/hooks/use-today';
-import { mapDeviationRisk } from '@/lib/today-mapping';
 import { NarrativeHeader } from './narrative-header';
 import { ReasoningBlock } from './reasoning-block';
 import { SessionBlock } from './session-block';
-import { OutcomeBlock } from './outcome-block';
+import { ExpectedOutcomeBlock } from './expected-outcome-block';
 import { BottleneckBlock } from './bottleneck-block';
 import { ConfidenceBlock } from './confidence-block';
+import { SupportingEvidenceBlock } from './supporting-evidence-block';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Skeleton
@@ -28,11 +28,7 @@ function TodaySkeleton() {
       <div className="bg-card/40 space-y-3 rounded-2xl border px-5 py-5">
         <div className="bg-muted h-3 w-12 rounded" />
         <div className="bg-muted h-4 w-full rounded" />
-        <div className="flex gap-2">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="bg-muted h-7 w-24 rounded-lg" />
-          ))}
-        </div>
+        <div className="bg-muted h-4 w-3/4 rounded" />
       </div>
 
       <div className="bg-card/40 space-y-3 rounded-2xl border px-5 py-5">
@@ -86,7 +82,9 @@ function InsufficientDataState({ onRetry }: { onRetry: () => void }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Today View — narrative decision center
+// Today View — athlete-first decision center (V3)
+// Hierarchy: Decision → Reasoning → Recommendation → Expected Outcome →
+//            Primary Limiter → Confidence → Supporting Evidence
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function TodayView() {
@@ -113,35 +111,13 @@ export function TodayView() {
     primaryRecommendation = fatigue?.recommendation ?? null;
   }
 
-  // Deviation risk inputs (fall back to LOW when engines not yet available)
   const overreachingRisk = recovery?.overreachingRisk ?? 'LOW';
   const functionalOverreachingRisk = fatigue?.functionalOverreachingRisk ?? 'LOW';
   const fatigueTrajectory = fatigue?.trajectory ?? 'STABLE';
 
-  const deviation = mapDeviationRisk(
-    overreachingRisk,
-    functionalOverreachingRisk,
-    fatigueTrajectory,
-  );
-  const showOutcomes =
-    reasoning.opportunities.length > 0 ||
-    deviation.level !== 'safe' ||
-    reasoning.conflicts.length > 0;
-
-  const dimensions =
-    recovery && fatigue && adaptation
-      ? {
-          readinessCategory: recovery.readinessCategory,
-          fatigueLevel: fatigue.fatigueLevel,
-          fatigueTrajectory: fatigue.trajectory,
-          adaptationStatus: adaptation.adaptationStatus,
-          adaptationTrend: adaptation.adaptationTrend,
-        }
-      : null;
-
   return (
     <div className="space-y-3">
-      {/* Q1 — What should I do today? */}
+      {/* 1 — Decision: what should I do today? */}
       <NarrativeHeader
         computedAt={reasoning.computedAt}
         confidence={reasoning.confidence}
@@ -149,14 +125,10 @@ export function TodayView() {
         verdict={reasoning.overallVerdict}
       />
 
-      {/* Q2 — Why? */}
-      <ReasoningBlock
-        dimensions={dimensions}
-        explanation={reasoning.explanation}
-        keyFindings={reasoning.keyFindings}
-      />
+      {/* 2 — Reasoning: why? */}
+      <ReasoningBlock explanation={reasoning.explanation} keyFindings={reasoning.keyFindings} />
 
-      {/* Q3 + Q4 — Objective + Session */}
+      {/* 3 — Recommendation: what session? */}
       {(adaptation?.decision || primaryRecommendation) && (
         <SessionBlock
           adaptationVerdict={adaptation?.decision?.verdict ?? null}
@@ -165,21 +137,23 @@ export function TodayView() {
         />
       )}
 
-      {/* Q5 + Q6 — If I follow / If I deviate */}
-      {showOutcomes && (
-        <OutcomeBlock
-          conflicts={reasoning.conflicts}
-          fatigueTrajectory={fatigueTrajectory}
-          functionalOverreachingRisk={functionalOverreachingRisk}
-          opportunities={reasoning.opportunities}
-          overreachingRisk={overreachingRisk}
-        />
-      )}
+      {/* 4 — Expected outcome: what will happen if I follow the plan? */}
+      <ExpectedOutcomeBlock
+        adaptationVerdict={adaptation?.decision?.verdict ?? null}
+        fatigueTrajectory={fatigueTrajectory}
+        fatigueVerdict={fatigue?.decision?.verdict ?? null}
+        functionalOverreachingRisk={functionalOverreachingRisk}
+        loadMultiplier={adaptation?.decision?.loadMultiplier ?? 1}
+        opportunities={reasoning.opportunities}
+        overreachingRisk={overreachingRisk}
+        recoveryVerdict={recovery?.decision?.verdict ?? null}
+        trainingCapacity={fatigue?.trainingCapacity ?? 'FULL'}
+      />
 
-      {/* Q7 — What's limiting me? */}
+      {/* 5 — Primary limiter: what's holding me back? */}
       <BottleneckBlock limitingFactor={reasoning.limitingFactor} />
 
-      {/* Q8 — How confident is SHARPIT? */}
+      {/* 6 — Confidence: how sure is SHARPIT? */}
       <ConfidenceBlock
         availableModelCount={reasoning.signals.availableModelCount}
         confidence={reasoning.confidence}
@@ -187,6 +161,9 @@ export function TodayView() {
         dataCompleteness={reasoning.dataCompleteness}
         physiologicalConsistency={reasoning.physiologicalConsistency}
       />
+
+      {/* 7 — Supporting evidence: physiological detail for inspection */}
+      <SupportingEvidenceBlock adaptation={adaptation} fatigue={fatigue} recovery={recovery} />
 
       <p className="text-muted-foreground pt-1 text-center text-xs">
         <button className="underline-offset-2 hover:underline" type="button" onClick={refresh}>

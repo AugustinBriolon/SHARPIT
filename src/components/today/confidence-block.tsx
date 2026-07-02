@@ -76,7 +76,7 @@ export function ConfidenceBlock({
       </div>
 
       <div className="text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
-        <span>{availableModelCount}/3 models</span>
+        <span>{availableModelCount}/3 physiological signals</span>
         {dataCompleteness && <span>{dataCompleteness}</span>}
       </div>
     </div>
