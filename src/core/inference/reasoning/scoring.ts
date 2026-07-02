@@ -26,6 +26,7 @@ import type {
   ReasoningConflict,
   DataCompleteness,
 } from '@/core/digital-twin/types';
+import type { I18nItem } from '@/core/inference/shared/types';
 import type { PhysiologicalDirection, ModelDirections } from './types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -212,11 +213,9 @@ export function detectConflicts(
     conflicts.push({
       id: 'CAPACITY_CONFLICT_01',
       type: 'CAPACITY_CONFLICT',
-      description:
-        'Recovery markers indicate readiness, but fatigue load demands complete rest. Objective markers are contradicting subjective capacity.',
+      descriptionCode: 'reasoning.conflict.capacityConflict01.description',
       models: ['Recovery', 'Fatigue'],
-      resolution:
-        'Trust the fatigue model — physiological load overrides readiness readiness. Rest today, reassess tomorrow.',
+      resolutionCode: 'reasoning.conflict.capacityConflict01.resolution',
     });
   }
 
@@ -225,11 +224,9 @@ export function detectConflicts(
     conflicts.push({
       id: 'TIMING_CONFLICT_01',
       type: 'TIMING_CONFLICT',
-      description:
-        'Adaptation plateau detected — a load increase stimulus is needed — but fatigue capacity is currently REST_ONLY. The body needs more training and rest simultaneously.',
+      descriptionCode: 'reasoning.conflict.timingConflict01.description',
       models: ['Adaptation', 'Fatigue'],
-      resolution:
-        'Prioritise recovery for 3–5 days to restore fatigue capacity, then introduce a controlled load increase.',
+      resolutionCode: 'reasoning.conflict.timingConflict01.resolution',
     });
   }
 
@@ -243,11 +240,9 @@ export function detectConflicts(
     conflicts.push({
       id: 'SIGNAL_CONFLICT_01',
       type: 'SIGNAL_CONFLICT',
-      description:
-        'Fatigue model detects critical overreaching risk, but adaptation model shows positive adaptation. This pattern can occur in the early supercompensation window — but also signals data lag.',
+      descriptionCode: 'reasoning.conflict.signalConflict01.description',
       models: ['Fatigue', 'Adaptation'],
-      resolution:
-        'Treat this as a supercompensation window if recent load was intentional. Introduce a recovery day before the next hard session.',
+      resolutionCode: 'reasoning.conflict.signalConflict01.resolution',
     });
   }
 
@@ -277,9 +272,8 @@ export function detectOpportunities(
     opportunities.push({
       id: 'OPP_LOAD_INCREASE',
       type: 'LOAD_INCREASE',
-      title: 'Load increase window',
-      rationale:
-        'Recovery is adequate and fatigue is low, but adaptation has plateaued. This is the optimal window to introduce a progressive overload stimulus.',
+      title: { code: 'reasoning.opportunity.loadIncrease.title' },
+      rationale: { code: 'reasoning.opportunity.loadIncrease.rationale' },
       expectedBenefit: 82,
       timeWindow: 'THIS_WEEK',
     });
@@ -294,9 +288,8 @@ export function detectOpportunities(
     opportunities.push({
       id: 'OPP_QUALITY_SESSION',
       type: 'QUALITY_SESSION',
-      title: 'Optimal quality session window',
-      rationale:
-        'Recovery is optimal and fatigue is minimal. Today is a high-value day for a key quality session — interval, threshold, or race-pace effort.',
+      title: { code: 'reasoning.opportunity.qualitySession.title' },
+      rationale: { code: 'reasoning.opportunity.qualitySession.rationale' },
       expectedBenefit: 90,
       timeWindow: 'TODAY',
     });
@@ -311,8 +304,11 @@ export function detectOpportunities(
     opportunities.push({
       id: 'OPP_DELOAD',
       type: 'DELOAD',
-      title: 'Deload week — fatigue is accumulating',
-      rationale: `Fatigue has been accumulating for ${f.consecutiveAccumulationDays} consecutive days. A deload week now will produce a supercompensation response.`,
+      title: { code: 'reasoning.opportunity.deload.title' },
+      rationale: {
+        code: 'reasoning.opportunity.deload.rationale',
+        params: { days: f.consecutiveAccumulationDays },
+      },
       expectedBenefit: 75,
       timeWindow: 'THIS_WEEK',
     });
@@ -330,9 +326,11 @@ export function detectOpportunities(
     opportunities.push({
       id: 'OPP_RACE_READINESS',
       type: 'RACE_READINESS',
-      title: `Peak form in ~${a.estimatedAdaptationPeak} day(s)`,
-      rationale:
-        'Adaptation signals indicate peak form is imminent. Protect this window — avoid high training stress and prioritise sleep and nutrition.',
+      title: {
+        code: 'reasoning.opportunity.raceReadiness.title',
+        params: { days: a.estimatedAdaptationPeak },
+      },
+      rationale: { code: 'reasoning.opportunity.raceReadiness.rationale' },
       expectedBenefit: 95,
       timeWindow: a.estimatedAdaptationPeak <= 2 ? 'TODAY' : 'THIS_WEEK',
     });
@@ -343,9 +341,8 @@ export function detectOpportunities(
     opportunities.push({
       id: 'OPP_RECOVERY_WINDOW',
       type: 'RECOVERY_WINDOW',
-      title: 'Recovery window — protect rest today',
-      rationale:
-        'Readiness is critically low. Additional training today will deepen the deficit. Protecting this rest period is the highest-value action.',
+      title: { code: 'reasoning.opportunity.recoveryWindow.title' },
+      rationale: { code: 'reasoning.opportunity.recoveryWindow.rationale' },
       expectedBenefit: 80,
       timeWindow: 'TODAY',
     });
@@ -373,11 +370,14 @@ export function buildKeyFindings(
       id: 'FINDING_OVERREACHING_NO_ADAPT',
       category: 'CROSS_SYSTEM',
       severity: 'CRITICAL',
-      title: 'Overreaching without adaptive response',
-      evidence: [
-        `Fatigue index: ${f.fatigueIndex ?? '—'}/100`,
-        'Autonomic adaptation score suppressed',
-        'Training load is not producing positive physiological adaptation',
+      title: { code: 'reasoning.finding.overreachingNoAdapt.title' },
+      evidenceItems: [
+        {
+          code: 'reasoning.finding.overreachingNoAdapt.evidence.fatigueIndex',
+          params: { index: f.fatigueIndex ?? 0 },
+        },
+        { code: 'reasoning.finding.overreachingNoAdapt.evidence.autonomicSuppressed' },
+        { code: 'reasoning.finding.overreachingNoAdapt.evidence.noAdaptation' },
       ],
       confidence: Math.min(f.confidence, a.confidence),
     });
@@ -389,11 +389,20 @@ export function buildKeyFindings(
       id: 'FINDING_OVERREACHING_RISK',
       category: 'FATIGUE',
       severity: 'CRITICAL',
-      title: 'Overreaching risk — mandatory rest required',
-      evidence: [
-        `Fatigue index: ${f.fatigueIndex ?? '—'}/100`,
-        `${f.consecutiveAccumulationDays} consecutive accumulation days`,
-        `Performance impairment estimated: ${Math.round(f.performanceImpairmentEstimate * 100)}%`,
+      title: { code: 'reasoning.finding.overreachingRisk.title' },
+      evidenceItems: [
+        {
+          code: 'reasoning.finding.overreachingRisk.evidence.fatigueIndex',
+          params: { index: f.fatigueIndex ?? 0 },
+        },
+        {
+          code: 'reasoning.finding.overreachingRisk.evidence.accumulationDays',
+          params: { days: f.consecutiveAccumulationDays },
+        },
+        {
+          code: 'reasoning.finding.overreachingRisk.evidence.performanceImpairment',
+          params: { percent: Math.round(f.performanceImpairmentEstimate * 100) },
+        },
       ],
       confidence: f.confidence,
     });
@@ -401,20 +410,35 @@ export function buildKeyFindings(
 
   // Recovery: very low readiness
   if (r?.readinessCategory === 'VERY_LOW' || r?.readinessCategory === 'LOW') {
+    const evidenceItems: I18nItem[] = [
+      {
+        code: 'reasoning.finding.lowReadiness.evidence.score',
+        params: { score: r.readinessScore ?? 0 },
+      },
+      r.primaryLimitingFactor
+        ? {
+            code: 'reasoning.finding.lowReadiness.evidence.limiter',
+            params: { limiter: r.primaryLimitingFactor },
+          }
+        : { code: 'reasoning.finding.lowReadiness.evidence.multipleAffected' },
+      r.estimatedTimeToFullRecovery
+        ? {
+            code: 'reasoning.finding.lowReadiness.evidence.estimatedRecovery',
+            params: { days: r.estimatedTimeToFullRecovery },
+          }
+        : { code: 'reasoning.finding.lowReadiness.evidence.recoveryUnclear' },
+    ];
     findings.push({
       id: 'FINDING_LOW_READINESS',
       category: 'RECOVERY',
       severity: r.readinessCategory === 'VERY_LOW' ? 'CRITICAL' : 'WARNING',
-      title: `Readiness ${r.readinessCategory === 'VERY_LOW' ? 'critically' : ''} low`,
-      evidence: [
-        `Readiness score: ${r.readinessScore ?? '—'}/100`,
-        r.primaryLimitingFactor
-          ? `Primary limiter: ${r.primaryLimitingFactor}`
-          : 'Multiple systems affected',
-        r.estimatedTimeToFullRecovery
-          ? `Estimated recovery: ${r.estimatedTimeToFullRecovery} day(s)`
-          : 'Recovery timeline unclear',
-      ],
+      title: {
+        code:
+          r.readinessCategory === 'VERY_LOW'
+            ? 'reasoning.finding.lowReadiness.titleCritical'
+            : 'reasoning.finding.lowReadiness.title',
+      },
+      evidenceItems,
       confidence: r.confidence,
     });
   }
@@ -425,11 +449,11 @@ export function buildKeyFindings(
       id: 'FINDING_DISSONANCE',
       category: 'CROSS_SYSTEM',
       severity: 'WARNING',
-      title: 'Objective–subjective dissonance detected',
-      evidence: [
-        'HRV and subjective wellness markers disagree by > 20 points',
-        'This pattern may indicate early illness, elevated stress, or underperformance on subjective report',
-        'Prioritise objective markers (HRV, RHR) for training decisions today',
+      title: { code: 'reasoning.finding.dissonance.title' },
+      evidenceItems: [
+        { code: 'reasoning.finding.dissonance.evidence.disagreement' },
+        { code: 'reasoning.finding.dissonance.evidence.causes' },
+        { code: 'reasoning.finding.dissonance.evidence.prioritiseObjective' },
       ],
       confidence: r.confidence,
     });
@@ -441,11 +465,25 @@ export function buildKeyFindings(
       id: 'FINDING_FATIGUE_ACCUMULATING',
       category: 'FATIGUE',
       severity: 'WARNING',
-      title: `Fatigue accumulating — ${f.consecutiveAccumulationDays} consecutive days`,
-      evidence: [
-        `Fatigue index: ${f.fatigueIndex ?? '—'}/100`,
-        `Dominant system: ${f.dominantDimension}`,
-        `Estimated time to fresh: ${f.estimatedTimeToFresh ?? '—'} day(s)`,
+      title: {
+        code: 'reasoning.finding.fatigueAccumulating.title',
+        params: { days: f.consecutiveAccumulationDays },
+      },
+      evidenceItems: [
+        {
+          code: 'reasoning.finding.fatigueAccumulating.evidence.fatigueIndex',
+          params: { index: f.fatigueIndex ?? 0 },
+        },
+        {
+          code: 'reasoning.finding.fatigueAccumulating.evidence.dominantSystem',
+          params: { system: f.dominantDimension },
+        },
+        f.estimatedTimeToFresh
+          ? {
+              code: 'reasoning.finding.fatigueAccumulating.evidence.timeToFresh',
+              params: { days: f.estimatedTimeToFresh },
+            }
+          : { code: 'reasoning.finding.fatigueAccumulating.evidence.timeToFreshUnknown' },
       ],
       confidence: f.confidence,
     });
@@ -457,11 +495,14 @@ export function buildKeyFindings(
       id: 'FINDING_PLATEAU_RISK',
       category: 'ADAPTATION',
       severity: 'WARNING',
-      title: 'Adaptation plateau risk — ≥ 14 days without improvement',
-      evidence: [
-        `Adaptation index: ${a.adaptationIndex ?? '—'}/100`,
-        'Load progression is not generating new adaptive stimulus',
-        'A change in training stimulus is recommended',
+      title: { code: 'reasoning.finding.plateauRisk.title' },
+      evidenceItems: [
+        {
+          code: 'reasoning.finding.plateauRisk.evidence.adaptationIndex',
+          params: { index: a.adaptationIndex ?? 0 },
+        },
+        { code: 'reasoning.finding.plateauRisk.evidence.noStimulus' },
+        { code: 'reasoning.finding.plateauRisk.evidence.changeRecommended' },
       ],
       confidence: a.confidence,
     });
@@ -474,11 +515,17 @@ export function buildKeyFindings(
       id: 'FINDING_CROSS_SYSTEM_CONFLICT',
       category: 'CROSS_SYSTEM',
       severity: 'WARNING',
-      title: `Cross-system conflict: ${conflict.type.replace('_', ' ').toLowerCase()}`,
-      evidence: [
-        conflict.description,
-        `Affected models: ${conflict.models.join(', ')}`,
-        conflict.resolution,
+      title: {
+        code: 'reasoning.finding.crossSystemConflict.title',
+        params: { conflictType: conflict.type.replace('_', ' ').toLowerCase() },
+      },
+      evidenceItems: [
+        { code: conflict.descriptionCode },
+        {
+          code: 'reasoning.finding.crossSystemConflict.evidence.affectedModels',
+          params: { models: conflict.models.join(', ') },
+        },
+        { code: conflict.resolutionCode },
       ],
       confidence: 0.8,
     });
@@ -490,11 +537,17 @@ export function buildKeyFindings(
       id: 'FINDING_OPTIMAL_STATE',
       category: 'CROSS_SYSTEM',
       severity: 'INFO',
-      title: 'Optimal readiness and minimal fatigue',
-      evidence: [
-        `Readiness: ${r.readinessScore ?? '—'}/100 (OPTIMAL)`,
-        `Fatigue index: ${f.fatigueIndex ?? '—'}/100 (FRESH)`,
-        'All physiological systems indicate high training capacity',
+      title: { code: 'reasoning.finding.optimalState.title' },
+      evidenceItems: [
+        {
+          code: 'reasoning.finding.optimalState.evidence.readiness',
+          params: { score: r.readinessScore ?? 0 },
+        },
+        {
+          code: 'reasoning.finding.optimalState.evidence.fatigueIndex',
+          params: { index: f.fatigueIndex ?? 0 },
+        },
+        { code: 'reasoning.finding.optimalState.evidence.highCapacity' },
       ],
       confidence: Math.min(r.confidence, f.confidence),
     });
@@ -506,13 +559,22 @@ export function buildKeyFindings(
       id: 'FINDING_POSITIVE_ADAPTATION',
       category: 'ADAPTATION',
       severity: 'INFO',
-      title: 'Supercompensation occurring',
-      evidence: [
-        `Adaptation index: ${a.adaptationIndex ?? '—'}/100`,
-        `Trend: ${a.adaptationTrend}`,
+      title: { code: 'reasoning.finding.positiveAdaptation.title' },
+      evidenceItems: [
+        {
+          code: 'reasoning.finding.positiveAdaptation.evidence.adaptationIndex',
+          params: { index: a.adaptationIndex ?? 0 },
+        },
+        {
+          code: 'reasoning.finding.positiveAdaptation.evidence.trend',
+          params: { trend: a.adaptationTrend },
+        },
         a.estimatedAdaptationPeak
-          ? `Peak form estimated in ${a.estimatedAdaptationPeak} day(s)`
-          : 'Adaptation trajectory positive',
+          ? {
+              code: 'reasoning.finding.positiveAdaptation.evidence.peakEstimate',
+              params: { days: a.estimatedAdaptationPeak },
+            }
+          : { code: 'reasoning.finding.positiveAdaptation.evidence.trajectoryPositive' },
       ],
       confidence: a.confidence,
     });
@@ -548,7 +610,10 @@ export function selectLimitingFactor(
   if (f && (f.fatigueLevel === 'OVERREACHING_RISK' || f.fatigueLevel === 'NON_FUNCTIONAL_RISK')) {
     return {
       system: 'FATIGUE',
-      description: f.primaryLimitingFactor ?? `${f.dominantDimension.toLowerCase()} fatigue`,
+      description: {
+        code: 'reasoning.limitingFactor.fatigue.overreaching',
+        params: { dimension: f.dominantDimension },
+      },
       actionable: true,
     };
   }
@@ -556,7 +621,10 @@ export function selectLimitingFactor(
   if (f && f.fatigueLevel === 'ACCUMULATED') {
     return {
       system: 'FATIGUE',
-      description: `${f.dominantDimension.toLowerCase()} fatigue accumulation (${f.consecutiveAccumulationDays} days)`,
+      description: {
+        code: 'reasoning.limitingFactor.fatigue.accumulated',
+        params: { dimension: f.dominantDimension, days: f.consecutiveAccumulationDays },
+      },
       actionable: true,
     };
   }
@@ -566,8 +634,11 @@ export function selectLimitingFactor(
     return {
       system: 'RECOVERY',
       description: r.primaryLimitingFactor
-        ? `${r.primaryLimitingFactor} recovery deficit`
-        : 'readiness critically low',
+        ? {
+            code: 'reasoning.limitingFactor.recovery.deficit',
+            params: { limiter: r.primaryLimitingFactor },
+          }
+        : { code: 'reasoning.limitingFactor.recovery.criticallyLow' },
       actionable: true,
     };
   }
@@ -575,7 +646,12 @@ export function selectLimitingFactor(
   if (r && r.readinessCategory === 'REDUCED') {
     return {
       system: 'RECOVERY',
-      description: r.primaryLimitingFactor ?? 'reduced readiness',
+      description: r.primaryLimitingFactor
+        ? {
+            code: 'reasoning.limitingFactor.recovery.deficit',
+            params: { limiter: r.primaryLimitingFactor },
+          }
+        : { code: 'reasoning.limitingFactor.recovery.reduced' },
       actionable: true,
     };
   }
@@ -584,7 +660,12 @@ export function selectLimitingFactor(
   if (a && (a.adaptationStatus === 'MALADAPTING' || a.adaptationStatus === 'DETRAINING')) {
     return {
       system: 'ADAPTATION',
-      description: a.limitingFactor ?? 'insufficient adaptive stimulus',
+      description: a.limitingFactor
+        ? {
+            code: 'reasoning.limitingFactor.adaptation.factor',
+            params: { factor: a.limitingFactor },
+          }
+        : { code: 'reasoning.limitingFactor.adaptation.insufficientStimulus' },
       actionable: true,
     };
   }
@@ -592,7 +673,7 @@ export function selectLimitingFactor(
   if (a?.plateauRisk) {
     return {
       system: 'ADAPTATION',
-      description: 'adaptation plateau — load increase needed',
+      description: { code: 'reasoning.limitingFactor.adaptation.plateau' },
       actionable: true,
     };
   }
@@ -625,50 +706,47 @@ export function buildTopAction(
   switch (verdict) {
     case 'TRAIN_HARD':
       return {
-        verb: 'Train',
-        focus:
-          a?.adaptationStatus === 'POSITIVELY_ADAPTING' ? 'progressive overload' : 'aerobic base',
-        rationale: 'All physiological systems are green. Maximise the training stimulus today.',
+        verbCode: 'reasoning.topAction.trainHard.verb',
+        focusCode:
+          a?.adaptationStatus === 'POSITIVELY_ADAPTING'
+            ? 'reasoning.topAction.trainHard.focus.progressiveOverload'
+            : 'reasoning.topAction.trainHard.focus.aerobicBase',
+        rationaleCode: 'reasoning.topAction.trainHard.rationale',
         expectedBenefit: 90,
       };
     case 'TRAIN_SMART':
       return {
-        verb: 'Train',
-        focus: 'quality over volume',
-        rationale:
-          'Conditions are adequate but not optimal. Prioritise quality and technique over raw volume.',
+        verbCode: 'reasoning.topAction.trainSmart.verb',
+        focusCode: 'reasoning.topAction.trainSmart.focus',
+        rationaleCode: 'reasoning.topAction.trainSmart.rationale',
         expectedBenefit: 72,
       };
     case 'TRAIN_EASY':
       return {
-        verb: 'Train',
-        focus: 'easy endurance',
-        rationale:
-          'Training capacity is reduced. A low-intensity aerobic session maintains fitness without deepening fatigue.',
+        verbCode: 'reasoning.topAction.trainEasy.verb',
+        focusCode: 'reasoning.topAction.trainEasy.focus',
+        rationaleCode: 'reasoning.topAction.trainEasy.rationale',
         expectedBenefit: 55,
       };
     case 'RECOVER':
       return {
-        verb: 'Rest',
-        focus: limitingFactor.description ?? 'full recovery',
-        rationale:
-          'One or more physiological systems require rest. Training today will deepen the deficit and delay adaptation.',
+        verbCode: 'reasoning.topAction.recover.verb',
+        focusCode: limitingFactor.description?.code ?? 'reasoning.topAction.recover.focusDefault',
+        rationaleCode: 'reasoning.topAction.recover.rationale',
         expectedBenefit: 80,
       };
     case 'RACE_READY':
       return {
-        verb: 'Protect',
-        focus: 'peak form',
-        rationale:
-          'You are approaching peak form. Avoid unnecessary training stress and prioritise sleep and nutrition.',
+        verbCode: 'reasoning.topAction.raceReady.verb',
+        focusCode: 'reasoning.topAction.raceReady.focus',
+        rationaleCode: 'reasoning.topAction.raceReady.rationale',
         expectedBenefit: 95,
       };
     case 'CAUTION':
       return {
-        verb: 'Train',
-        focus: 'controlled easy session',
-        rationale:
-          'Cross-system conflicts detected. A conservative easy session avoids worsening the conflicting signals.',
+        verbCode: 'reasoning.topAction.caution.verb',
+        focusCode: 'reasoning.topAction.caution.focus',
+        rationaleCode: 'reasoning.topAction.caution.rationale',
         expectedBenefit: 50,
       };
     default:

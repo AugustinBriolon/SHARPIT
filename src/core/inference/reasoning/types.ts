@@ -77,5 +77,4 @@ export type ReasoningSignals = {
 export type ReasoningModelOutput = {
   readonly signals: ReasoningSignals;
   readonly reasoningState: import('@/core/digital-twin/types').ReasoningState;
-  readonly explanation: string;
 };

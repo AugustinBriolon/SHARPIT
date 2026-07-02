@@ -17,6 +17,8 @@
  * added without touching existing dimensions.
  */
 
+import type { I18nItem } from '@/core/inference/shared/types';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared dimension primitives
 // ─────────────────────────────────────────────────────────────────────────────
@@ -206,8 +208,8 @@ export type ReasoningFinding = {
   readonly id: string;
   readonly category: FindingCategory;
   readonly severity: FindingSeverity;
-  readonly title: string;
-  readonly evidence: readonly string[];
+  readonly title: I18nItem;
+  readonly evidenceItems: readonly I18nItem[];
   readonly confidence: number;
 };
 
@@ -219,8 +221,8 @@ export type OpportunityTimeWindow = 'TODAY' | 'THIS_WEEK' | 'NEXT_WEEK';
 export type ReasoningOpportunity = {
   readonly id: string;
   readonly type: OpportunityType;
-  readonly title: string;
-  readonly rationale: string;
+  readonly title: I18nItem;
+  readonly rationale: I18nItem;
   readonly expectedBenefit: number;
   readonly timeWindow: OpportunityTimeWindow;
 };
@@ -230,9 +232,9 @@ export type ConflictType = 'CAPACITY_CONFLICT' | 'TIMING_CONFLICT' | 'SIGNAL_CON
 export type ReasoningConflict = {
   readonly id: string;
   readonly type: ConflictType;
-  readonly description: string;
+  readonly descriptionCode: string;
   readonly models: readonly string[];
-  readonly resolution: string;
+  readonly resolutionCode: string;
 };
 
 export type ReasoningState = {
@@ -244,16 +246,16 @@ export type ReasoningState = {
   readonly keyFindings: readonly ReasoningFinding[];
   readonly limitingFactor: {
     readonly system: 'RECOVERY' | 'FATIGUE' | 'ADAPTATION' | null;
-    readonly description: string | null;
+    readonly description: I18nItem | null;
     readonly actionable: boolean;
   };
   readonly opportunities: readonly ReasoningOpportunity[];
   readonly conflicts: readonly ReasoningConflict[];
 
   readonly topAction: {
-    readonly verb: string;
-    readonly focus: string;
-    readonly rationale: string;
+    readonly verbCode: string;
+    readonly focusCode: string;
+    readonly rationaleCode: string;
     readonly expectedBenefit: number;
   } | null;
 

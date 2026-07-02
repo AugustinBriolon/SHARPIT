@@ -23,8 +23,6 @@ import {
   buildEvidenceGraph,
   computeReasoningConfidence,
 } from './scoring';
-import { generateReasoningExplanation } from './explanation';
-
 export function runReasoningModel(input: ReasoningModelInput): ReasoningModelOutput {
   const { trainingDayId, athleteId, athleteState } = input;
   const { recovery: r, fatigue: f, adaptation: a } = athleteState;
@@ -98,12 +96,8 @@ export function runReasoningModel(input: ReasoningModelInput): ReasoningModelOut
     trainingDayId,
   };
 
-  // Step 11 — explanation
-  const explanation = generateReasoningExplanation(reasoningState, signals, athleteId);
-
   return {
     signals,
     reasoningState,
-    explanation,
   };
 }
