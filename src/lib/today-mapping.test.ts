@@ -10,6 +10,11 @@ import {
   mapDeviationRisk,
   mapConsistencyToDisplay,
   extractPrimaryInsight,
+  mapRecoveryProjection,
+  mapFatigueProjection,
+  mapAdaptationProjection,
+  mapRecoveryIntensityLabel,
+  mapFatigueCapacityLabel,
 } from './today-mapping';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -316,4 +321,158 @@ describe('mapConsistencyToDisplay', () => {
     expect(result.colorClass).toBe('text-muted-foreground');
     expect(result.label).not.toContain('0');
   });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// mapRecoveryProjection
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('mapRecoveryProjection', () => {
+  it('OVERREACHED → rest message regardless of risk', () => {
+    const result = mapRecoveryProjection('OVERREACHED', 'CRITICAL');
+    expect(result).toContain('2–3 days');
+  });
+
+  it('FATIGUED → active recovery message', () => {
+    const result = mapRecoveryProjection('FATIGUED', 'MODERATE');
+    expect(result).toContain('accelerates');
+  });
+
+  it('PARTIALLY_RECOVERED + HIGH risk → manage load message', () => {
+    const result = mapRecoveryProjection('PARTIALLY_RECOVERED', 'HIGH');
+    expect(result).toContain('in check');
+  });
+
+  it('PARTIALLY_RECOVERED + LOW risk → 24–48h recovery message', () => {
+    const result = mapRecoveryProjection('PARTIALLY_RECOVERED', 'LOW');
+    expect(result).toContain('24–48');
+  });
+
+  it('RECOVERED + LOW risk → hold message', () => {
+    const result = mapRecoveryProjection('RECOVERED', 'LOW');
+    expect(result).toContain('hold');
+  });
+
+  it('RECOVERED + MODERATE risk → manage intensity message', () => {
+    const result = mapRecoveryProjection('RECOVERED', 'MODERATE');
+    expect(result).toContain('intensity');
+  });
+
+  it('INSUFFICIENT_DATA → empty string', () => {
+    expect(mapRecoveryProjection('INSUFFICIENT_DATA', 'LOW')).toBe('');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// mapFatigueProjection
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('mapFatigueProjection', () => {
+  it('REST_WEEK → rest message', () => {
+    const result = mapFatigueProjection('REST_WEEK', 'STABLE', 'FULL');
+    expect(result).toContain('clear');
+  });
+
+  it('TAPER → rest message', () => {
+    const result = mapFatigueProjection('TAPER', 'RESOLVING', 'REDUCED');
+    expect(result).toContain('clear');
+  });
+
+  it('REDUCE + ACCELERATING → non-functional overreaching warning', () => {
+    const result = mapFatigueProjection('REDUCE', 'ACCELERATING', 'REDUCED');
+    expect(result).toContain('overreaching');
+  });
+
+  it('REDUCE + ACCUMULATING → compounding message', () => {
+    const result = mapFatigueProjection('REDUCE', 'ACCUMULATING', 'REDUCED');
+    expect(result).toContain('compounding');
+  });
+
+  it('MAINTAIN → functional range message', () => {
+    const result = mapFatigueProjection('MAINTAIN', 'STABLE', 'FULL');
+    expect(result).toContain('functional');
+  });
+
+  it('BUILD + RESOLVING → maximises adaptation message', () => {
+    const result = mapFatigueProjection('BUILD', 'RESOLVING', 'FULL');
+    expect(result).toContain('adaptation');
+  });
+
+  it('BUILD + STABLE + FULL → full capacity message', () => {
+    const result = mapFatigueProjection('BUILD', 'STABLE', 'FULL');
+    expect(result).toContain('full');
+  });
+
+  it('INSUFFICIENT_DATA → empty string', () => {
+    expect(mapFatigueProjection('INSUFFICIENT_DATA', 'STABLE', 'FULL')).toBe('');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// mapAdaptationProjection
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('mapAdaptationProjection', () => {
+  it('RECOVERY_PRIORITY → protect fitness base message', () => {
+    const result = mapAdaptationProjection('RECOVERY_PRIORITY', 1.0);
+    expect(result).toContain('fitness base');
+  });
+
+  it('REDUCE_LOAD → adaptations take root message', () => {
+    const result = mapAdaptationProjection('REDUCE_LOAD', 0.8);
+    expect(result).toContain('take root');
+  });
+
+  it('CONSOLIDATE → consolidates message', () => {
+    const result = mapAdaptationProjection('CONSOLIDATE', 1.0);
+    expect(result).toContain('consolidates');
+  });
+
+  it('SUSTAIN → sustains gains message', () => {
+    const result = mapAdaptationProjection('SUSTAIN', 1.0);
+    expect(result).toContain('sustains');
+  });
+
+  it('INCREASE_LOAD + multiplier > 1.1 → 10–14 days message', () => {
+    const result = mapAdaptationProjection('INCREASE_LOAD', 1.2);
+    expect(result).toContain('10–14 days');
+  });
+
+  it('INCREASE_LOAD + multiplier ≤ 1.1 → compound message', () => {
+    const result = mapAdaptationProjection('INCREASE_LOAD', 1.05);
+    expect(result).toContain('compound');
+  });
+
+  it('INSUFFICIENT_DATA → empty string', () => {
+    expect(mapAdaptationProjection('INSUFFICIENT_DATA', 1.0)).toBe('');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// mapRecoveryIntensityLabel
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('mapRecoveryIntensityLabel', () => {
+  it('REST → Full rest', () => expect(mapRecoveryIntensityLabel('REST')).toBe('Full rest'));
+  it('VERY_EASY → Very easy movement', () =>
+    expect(mapRecoveryIntensityLabel('VERY_EASY')).toBe('Very easy movement'));
+  it('EASY → Easy effort', () => expect(mapRecoveryIntensityLabel('EASY')).toBe('Easy effort'));
+  it('MODERATE → Moderate effort', () =>
+    expect(mapRecoveryIntensityLabel('MODERATE')).toBe('Moderate effort'));
+  it('HARD → High intensity', () =>
+    expect(mapRecoveryIntensityLabel('HARD')).toBe('High intensity'));
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// mapFatigueCapacityLabel
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('mapFatigueCapacityLabel', () => {
+  it('FULL → Full training capacity', () =>
+    expect(mapFatigueCapacityLabel('FULL')).toBe('Full training capacity'));
+  it('REDUCED → Reduced capacity', () =>
+    expect(mapFatigueCapacityLabel('REDUCED')).toBe('Reduced capacity'));
+  it('LIGHT_ONLY → Light activity only', () =>
+    expect(mapFatigueCapacityLabel('LIGHT_ONLY')).toBe('Light activity only'));
+  it('REST_ONLY → Rest only', () => expect(mapFatigueCapacityLabel('REST_ONLY')).toBe('Rest only'));
 });
