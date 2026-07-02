@@ -37,7 +37,12 @@ export async function GET(request: NextRequest) {
   try {
     if (!forceRefresh) {
       const cached = await reasoningEngine.getLatest(athleteId, trainingDayId);
-      if (cached) return NextResponse.json(formatResult(cached));
+      // Don't serve stale INSUFFICIENT_DATA from cache — always re-run so the engine
+      // picks up recovery/fatigue/adaptation states that may have been written after
+      // the first (parallel) request.
+      if (cached && cached.output.reasoningState.overallVerdict !== 'INSUFFICIENT_DATA') {
+        return NextResponse.json(formatResult(cached));
+      }
     }
 
     const result = await reasoningEngine.run(athleteId, trainingDayId);
