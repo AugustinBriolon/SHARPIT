@@ -1,0 +1,526 @@
+/**
+ * RECOVERY MODEL v1 — Main inference function
+ *
+ * Entry point: `runRecoveryModel(features, context) → RecoveryModelOutput`
+ *
+ * This is a pure function. It:
+ *   1. Computes dimension scores (scoring.ts)
+ *   2. Synthesizes the composite ReadinessScore
+ *   3. Generates ephemeral Signals
+ *   4. Determines the RecoveryState (for Digital Twin update)
+ *   5. Makes a Decision (verdict + recommended intensity)
+ *   6. Generates a Recommendation (athlete-facing)
+ *   7. Generates a human-readable Explanation
+ *
+ * No side effects. No database calls. No randomness.
+ * Running this function twice with identical inputs always produces identical outputs.
+ *
+ * Model ID: recovery-synthesis-v1
+ * Reference: docs/models/RECOVERY_MODEL.md
+ */
+
+import type { DayFeatures, RecoveryFeatureSet, LoadFeatureSet } from '@/core/features/types';
+import type {
+  RecoveryModelOutput,
+  RecoveryModelContext,
+  RecoverySignals,
+  RecoveryDecision,
+  RecoveryRecommendation,
+  RecoveryVerdict,
+  RecommendedIntensity,
+  DimensionResult,
+} from './types';
+import type {
+  RecoveryState,
+  ReadinessCategory,
+  OverreachingRisk,
+  IllnessRisk,
+} from '@/core/digital-twin/types';
+
+import {
+  scoreAllDimensions,
+  synthesizeScore,
+  baselineMaturityFactor,
+  signalConsistencyFactor,
+} from './scoring';
+
+import { generateExplanation } from './explanation';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Signals
+// ─────────────────────────────────────────────────────────────────────────────
+
+function classifyAutonomicBalance(score: number | null): RecoverySignals['autonomicBalance'] {
+  if (score === null) return 'SUPPRESSED'; // treat unknown as suppressed (conservative)
+  if (score >= 85) return 'ENHANCED';
+  if (score >= 65) return 'NORMAL';
+  if (score >= 45) return 'MILDLY_SUPPRESSED';
+  if (score >= 25) return 'SUPPRESSED';
+  return 'CRITICALLY_SUPPRESSED';
+}
+
+function classifySleepAdequacy(score: number | null): RecoverySignals['sleepAdequacy'] {
+  if (score === null) return 'INSUFFICIENT';
+  if (score >= 90) return 'EXCELLENT';
+  if (score >= 70) return 'ADEQUATE';
+  if (score >= 40) return 'INSUFFICIENT';
+  return 'SEVERELY_INSUFFICIENT';
+}
+
+function classifySubjectiveWellness(score: number | null): RecoverySignals['subjectiveWellness'] {
+  if (score === null) return 'NORMAL'; // unknown = neutral
+  if (score >= 75) return 'HIGH';
+  if (score >= 50) return 'NORMAL';
+  if (score >= 25) return 'LOW';
+  return 'VERY_LOW';
+}
+
+function classifyLoadContext(score: number | null): RecoverySignals['loadStressContext'] {
+  if (score === null) return 'OPTIMAL';
+  if (score >= 85) return 'UNDERTRAINED';
+  if (score >= 75) return 'OPTIMAL';
+  if (score >= 55) return 'ELEVATED';
+  if (score >= 25) return 'HIGH';
+  return 'CRITICAL';
+}
+
+function computeOverreachingRisk(
+  autonomic: number | null,
+  sleep: number | null,
+  subjective: number | null,
+  loadContext: number | null,
+): OverreachingRisk {
+  const scores = [autonomic, sleep, subjective, loadContext].filter((s): s is number => s !== null);
+
+  // CRITICAL: 3+ dimensions < 30 (OTS territory — Meeusen et al. 2013)
+  if (scores.filter((s) => s < 30).length >= 3) return 'CRITICAL';
+
+  // HIGH: autonomic < 30 AND sleep < 40 simultaneously (autonomic + sleep crisis)
+  if (autonomic !== null && autonomic < 30 && sleep !== null && sleep < 40) return 'HIGH';
+
+  // MODERATE: any 2 primary dimensions < 45
+  const primaryScores = [autonomic, sleep, subjective].filter((s): s is number => s !== null);
+  if (primaryScores.filter((s) => s < 45).length >= 2) return 'MODERATE';
+
+  return 'LOW';
+}
+
+function computeIllnessRisk(
+  recovery: RecoveryFeatureSet,
+  load: LoadFeatureSet | 'PENDING',
+): IllnessRisk {
+  const { hrvDeltaFromBaseline } = recovery;
+  if (hrvDeltaFromBaseline === null) return 'LOW';
+
+  const acuteLoad = load !== 'PENDING' ? load.acuteLoad : null;
+  const chronicLoad = load !== 'PENDING' ? load.chronicLoad : null;
+
+  // HIGH: HRV drop > 30% without training load explanation (immune activation pattern)
+  if (
+    hrvDeltaFromBaseline < -30 &&
+    acuteLoad !== null &&
+    chronicLoad !== null &&
+    acuteLoad < chronicLoad * 0.7
+  ) {
+    return 'HIGH';
+  }
+
+  // ELEVATED: HRV drop > 20%
+  if (hrvDeltaFromBaseline < -20) return 'ELEVATED';
+
+  return 'LOW';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ReadinessCategory mapping
+// ─────────────────────────────────────────────────────────────────────────────
+
+function mapScoreToCategory(score: number | null, availableCount: number): ReadinessCategory {
+  if (score === null) {
+    return availableCount === 0 ? 'INSUFFICIENT_DATA' : 'BASELINE_PENDING';
+  }
+  if (score >= 85) return 'OPTIMAL';
+  if (score >= 70) return 'ADEQUATE';
+  if (score >= 50) return 'REDUCED';
+  if (score >= 30) return 'LOW';
+  return 'VERY_LOW';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Limiting factor
+// ─────────────────────────────────────────────────────────────────────────────
+
+type DimensionKey = 'autonomic' | 'sleep' | 'subjective' | 'loadContext';
+
+function findPrimaryLimitingFactor(scores: {
+  autonomic: number | null;
+  sleep: number | null;
+  subjective: number | null;
+  loadContext: number | null;
+}): DimensionKey | null {
+  const entries = Object.entries(scores) as Array<[DimensionKey, number | null]>;
+  const available = entries.filter(([, s]) => s !== null);
+  if (available.length === 0) return null;
+
+  return available.reduce((lowest, [key, score]) => {
+    const lowestScore = scores[lowest];
+    return score !== null && (lowestScore === null || score < (lowestScore ?? Infinity))
+      ? key
+      : lowest;
+  }, available[0][0]);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Decision
+// ─────────────────────────────────────────────────────────────────────────────
+
+function makeDecision(
+  category: ReadinessCategory,
+  signals: RecoverySignals,
+  dissonanceType: 'OBJECTIVE_POOR_SUBJECTIVE_GOOD' | 'OBJECTIVE_GOOD_SUBJECTIVE_POOR' | 'NONE',
+): RecoveryDecision {
+  const rationale: string[] = [];
+
+  // Illness override (mandatory REST)
+  if (signals.illnessRisk === 'HIGH') {
+    return {
+      verdict: 'OVERREACHED',
+      recommendedIntensity: 'REST',
+      rationale: [
+        'Acute HRV suppression without corresponding training load — possible immune activation.',
+        'Mandatory rest day. Do not train.',
+        'Consult a healthcare professional if systemic symptoms are present.',
+      ],
+    };
+  }
+
+  // Determine verdict and intensity from readiness category
+  let verdict: RecoveryVerdict;
+  let recommendedIntensity: RecommendedIntensity;
+
+  switch (category) {
+    case 'OPTIMAL':
+      verdict = 'RECOVERED';
+      // Protective bias if overreaching risk is elevated or dissonance present
+      recommendedIntensity =
+        signals.overreachingRisk === 'LOW' && dissonanceType !== 'OBJECTIVE_POOR_SUBJECTIVE_GOOD'
+          ? 'HARD'
+          : 'MODERATE';
+      rationale.push('Recovery indicators are excellent.');
+      break;
+
+    case 'ADEQUATE':
+      verdict = 'PARTIALLY_RECOVERED';
+      recommendedIntensity = 'MODERATE';
+      rationale.push('Good recovery — normal training is appropriate.');
+      break;
+
+    case 'REDUCED':
+      verdict = 'PARTIALLY_RECOVERED';
+      recommendedIntensity = 'EASY';
+      rationale.push('Partial recovery — moderate-intensity work preferred.');
+      break;
+
+    case 'LOW':
+      verdict = 'FATIGUED';
+      recommendedIntensity = 'VERY_EASY';
+      rationale.push('Incomplete recovery — easy movement only.');
+      break;
+
+    case 'VERY_LOW':
+      verdict = 'FATIGUED';
+      recommendedIntensity = 'REST';
+      rationale.push('Insufficient recovery — rest is the most productive choice.');
+      break;
+
+    case 'BASELINE_PENDING':
+    case 'INSUFFICIENT_DATA':
+    default:
+      verdict = 'INSUFFICIENT_DATA';
+      recommendedIntensity = 'EASY';
+      rationale.push('Insufficient recovery data. Conservative recommendation applies.');
+      break;
+  }
+
+  // Add signal-specific rationale
+  if (
+    signals.autonomicBalance === 'SUPPRESSED' ||
+    signals.autonomicBalance === 'CRITICALLY_SUPPRESSED'
+  ) {
+    rationale.push('Autonomic nervous system suppression detected (HRV/RHR).');
+  }
+  if (
+    signals.sleepAdequacy === 'SEVERELY_INSUFFICIENT' ||
+    signals.sleepAdequacy === 'INSUFFICIENT'
+  ) {
+    rationale.push('Sleep quality is limiting recovery.');
+  }
+  if (signals.overreachingRisk === 'HIGH' || signals.overreachingRisk === 'CRITICAL') {
+    rationale.push('Multiple recovery dimensions indicate overreaching risk.');
+  }
+  if (signals.dissonanceDetected) {
+    rationale.push('Subjective and objective markers disagree — conservative bias applied.');
+  }
+
+  return { verdict, recommendedIntensity, rationale: rationale.slice(0, 3) };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Recommendation
+// ─────────────────────────────────────────────────────────────────────────────
+
+const INTENSITY_CONFIG: Record<RecommendedIntensity, { title: string; summary: string }> = {
+  REST: {
+    title: 'Rest day — recovery is the priority',
+    summary:
+      'Your recovery indicators suggest that additional training stress would be counterproductive today. Rest actively: prioritize sleep, nutrition, and light mobility work.',
+  },
+  VERY_EASY: {
+    title: 'Active recovery — light movement only',
+    summary:
+      'Easy walking, yoga, or gentle cycling at conversational pace. The goal is circulation, not stimulus. Keep RPE below 3/10.',
+  },
+  EASY: {
+    title: 'Easy session — aerobic base',
+    summary:
+      'Zone 1–2 only. Conversational pace throughout. No sustained efforts above aerobic threshold. RPE 4–5/10. Duration can be normal.',
+  },
+  MODERATE: {
+    title: 'Moderate training — controlled stimulus',
+    summary:
+      'You are ready for a structured workout. Include some quality work at threshold or tempo, but avoid all-out efforts. RPE 6–7/10.',
+  },
+  HARD: {
+    title: 'High-intensity session — optimal timing',
+    summary:
+      'Your recovery indicators are excellent. This is an ideal window for high-intensity work, race simulation, or key sessions. Maximize quality.',
+  },
+};
+
+function makeRecommendation(
+  decision: RecoveryDecision,
+  score: number | null,
+  limitingFactor: DimensionKey | null,
+  confidence: number,
+): RecoveryRecommendation {
+  const config = INTENSITY_CONFIG[decision.recommendedIntensity];
+
+  const keyEvidence = decision.rationale.slice(0, 2) as string[];
+  if (score !== null) {
+    keyEvidence.unshift(`Recovery score: ${score}/100`);
+  }
+
+  const limitingFactorLabel =
+    limitingFactor !== null
+      ? {
+          autonomic: 'Autonomic balance (HRV/RHR)',
+          sleep: 'Sleep quality',
+          subjective: 'Subjective wellbeing',
+          loadContext: 'Training load context',
+        }[limitingFactor]
+      : null;
+
+  return {
+    type: decision.recommendedIntensity,
+    title: config.title,
+    summary: config.summary,
+    keyEvidence: keyEvidence.slice(0, 3),
+    confidence,
+    limitingFactor: limitingFactorLabel,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Time to full recovery
+// ─────────────────────────────────────────────────────────────────────────────
+
+function estimateTimeToFullRecovery(score: number | null): number | null {
+  if (score === null || score >= 70) return null; // already recovered
+  return Math.ceil((70 - score) / 10); // rough: ~1 day per 10 points below threshold
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main model function
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Run one complete inference pass of the Recovery Model.
+ *
+ * @param features - DayFeatures for the training day being inferred.
+ * @param context - Non-feature inputs (previous score from Digital Twin).
+ * @returns Complete model output including state update, decision, and recommendation.
+ */
+export function runRecoveryModel(
+  features: DayFeatures,
+  context: RecoveryModelContext,
+): RecoveryModelOutput {
+  const recovery = features.recovery !== 'PENDING' ? features.recovery : null;
+  const { load } = features;
+
+  // ── Dimension scoring ─────────────────────────────────────────────────────
+  const dims = recovery
+    ? scoreAllDimensions(recovery, load)
+    : {
+        autonomic: { score: null, available: false, qualityFactor: 0 } as const,
+        sleep: { score: null, available: false, qualityFactor: 0 } as const,
+        subjective: { score: null, available: false, qualityFactor: 0 } as const,
+        loadContext: { score: 75, available: true, qualityFactor: 0.4 } as const,
+      };
+
+  // ── Synthesis ─────────────────────────────────────────────────────────────
+  const synthesis = synthesizeScore({
+    autonomic: dims.autonomic,
+    sleep: dims.sleep,
+    subjective: dims.subjective,
+    loadContext: dims.loadContext,
+  });
+
+  // ── Confidence factors ─────────────────────────────────────────────────────
+  const maturity = recovery ? baselineMaturityFactor(recovery) : 0.4;
+  const { factor: consistency, dissonanceDetected } = signalConsistencyFactor(
+    dims.autonomic.score,
+    dims.sleep.score,
+    dims.subjective.score,
+  );
+
+  // Adjust for dissonance direction
+  let dissonanceType: 'OBJECTIVE_POOR_SUBJECTIVE_GOOD' | 'OBJECTIVE_GOOD_SUBJECTIVE_POOR' | 'NONE' =
+    'NONE';
+  if (dissonanceDetected && dims.autonomic.score !== null && dims.subjective.score !== null) {
+    const objAvg = [dims.autonomic.score, dims.sleep.score].filter((s): s is number => s !== null);
+    const objectiveAvg = objAvg.reduce((a, b) => a + b, 0) / objAvg.length;
+    dissonanceType =
+      objectiveAvg > dims.subjective.score
+        ? 'OBJECTIVE_GOOD_SUBJECTIVE_POOR'
+        : 'OBJECTIVE_POOR_SUBJECTIVE_GOOD';
+  }
+
+  const finalConfidence =
+    Math.round(Math.min(synthesis.confidence * maturity * consistency, 1.0) * 100) / 100;
+
+  // ── Score adjustment for dissonance ───────────────────────────────────────
+  // Per RECOVERY_MODEL.md §9.1: conservative bias when "objective poor, subjective good"
+  let finalScore = synthesis.score;
+  if (finalScore !== null && dissonanceType === 'OBJECTIVE_POOR_SUBJECTIVE_GOOD') {
+    finalScore = Math.round(finalScore * 0.9);
+  }
+
+  // ── ReadinessCategory ─────────────────────────────────────────────────────
+  const category = mapScoreToCategory(finalScore, synthesis.availableCount);
+
+  // ── Illness risk detection ─────────────────────────────────────────────────
+  const illnessRisk: IllnessRisk = recovery ? computeIllnessRisk(recovery, load) : 'LOW';
+
+  // Override to VERY_LOW when illness risk is HIGH
+  const effectiveScore =
+    illnessRisk === 'HIGH' ? (finalScore !== null ? Math.min(finalScore, 25) : 25) : finalScore;
+
+  const effectiveCategory: ReadinessCategory = illnessRisk === 'HIGH' ? 'VERY_LOW' : category;
+
+  // ── Signals ───────────────────────────────────────────────────────────────
+  const overreachingRisk = computeOverreachingRisk(
+    dims.autonomic.score,
+    dims.sleep.score,
+    dims.subjective.score,
+    dims.loadContext.score,
+  );
+
+  const signals: RecoverySignals = {
+    autonomicBalance: classifyAutonomicBalance(dims.autonomic.score),
+    sleepAdequacy: classifySleepAdequacy(dims.sleep.score),
+    subjectiveWellness: classifySubjectiveWellness(dims.subjective.score),
+    loadStressContext: classifyLoadContext(dims.loadContext.score),
+    overreachingRisk,
+    illnessRisk,
+    dissonanceDetected,
+  };
+
+  // ── Data completeness ─────────────────────────────────────────────────────
+  const { availableCount } = synthesis;
+  const completeness =
+    availableCount >= 4
+      ? 'FULL'
+      : availableCount >= 2
+        ? 'PARTIAL'
+        : availableCount === 1
+          ? 'SPARSE'
+          : 'INSUFFICIENT';
+
+  // ── Dimension results (for Digital Twin) ──────────────────────────────────
+  const dimensionResults: RecoveryState['dimensions'] = {
+    autonomic: {
+      score: dims.autonomic.score,
+      status: signals.autonomicBalance,
+      available: dims.autonomic.available,
+    },
+    sleep: {
+      score: dims.sleep.score,
+      status: signals.sleepAdequacy,
+      available: dims.sleep.available,
+    },
+    subjective: {
+      score: dims.subjective.score,
+      status: signals.subjectiveWellness,
+      available: dims.subjective.available,
+    },
+    loadContext: {
+      score: dims.loadContext.score,
+      status: signals.loadStressContext,
+      available: dims.loadContext.available,
+    },
+  };
+
+  // ── Primary limiting factor ───────────────────────────────────────────────
+  const limitingFactor = findPrimaryLimitingFactor({
+    autonomic: dims.autonomic.score,
+    sleep: dims.sleep.score,
+    subjective: dims.subjective.score,
+    loadContext: dims.loadContext.score,
+  });
+
+  // ── RecoveryState (for Digital Twin update) ───────────────────────────────
+  const recoveryState: RecoveryState = {
+    readinessScore: effectiveScore,
+    readinessCategory: effectiveCategory,
+    dimensions: dimensionResults,
+    primaryLimitingFactor: limitingFactor,
+    estimatedTimeToFullRecovery: estimateTimeToFullRecovery(effectiveScore),
+    overreachingRisk,
+    illnessRisk,
+    dissonanceDetected,
+    confidence: finalConfidence,
+    dataCompleteness: completeness,
+    modelId: 'recovery-synthesis-v1',
+    computedAt: new Date(),
+    trainingDayId: context.trainingDayId,
+  };
+
+  // ── Decision ──────────────────────────────────────────────────────────────
+  const decision = makeDecision(effectiveCategory, signals, dissonanceType);
+
+  // ── Recommendation ────────────────────────────────────────────────────────
+  const recommendation = makeRecommendation(
+    decision,
+    effectiveScore,
+    limitingFactor,
+    finalConfidence,
+  );
+
+  // ── Explanation ───────────────────────────────────────────────────────────
+  const explanation = generateExplanation(
+    effectiveScore,
+    effectiveCategory,
+    signals,
+    dims,
+    decision,
+    finalConfidence,
+  );
+
+  return {
+    signals,
+    recoveryState,
+    decision,
+    recommendation,
+    explanation,
+  };
+}
