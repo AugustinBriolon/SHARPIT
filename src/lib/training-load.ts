@@ -54,8 +54,10 @@ export function computeTrainingLoad(
   refDate: Date = new Date(),
 ) {
   const end = endOfDay(refDate);
-  const acuteStart = startOfDay(subDays(refDate, ACUTE_DAYS));
-  const chronicStart = startOfDay(subDays(refDate, CHRONIC_DAYS));
+  // Use N-1 so the window spans exactly N calendar days (today inclusive).
+  // subDays(ref, N) would make the window N+1 days wide.
+  const acuteStart = startOfDay(subDays(refDate, ACUTE_DAYS - 1));
+  const chronicStart = startOfDay(subDays(refDate, CHRONIC_DAYS - 1));
 
   const inRange = (d: Date, start: Date) => {
     const date = new Date(d);

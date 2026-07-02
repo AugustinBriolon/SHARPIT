@@ -90,6 +90,19 @@ function toneAfterTraining(
   return 'good';
 }
 
+function toneFromTsb(tsb: number): RecoveryTone {
+  if (tsb >= -10) return 'good';
+  if (tsb >= -30) return 'moderate';
+  return 'low';
+}
+
+function tsbFormLabel(tsb: number): string {
+  if (tsb > 15) return 'frais';
+  if (tsb >= -10) return 'optimal';
+  if (tsb >= -30) return 'fatigue';
+  return 'surcharge';
+}
+
 function applyDayContext(
   verdict: TrainingVerdict,
   ctx: DayVerdictContext | undefined,
@@ -170,16 +183,14 @@ export function buildTrainingVerdict(input: {
   const deepFatigue = tsb != null && tsb <= -30;
   const highLoad = acwr >= 1.5;
 
-  let tone: RecoveryTone =
-    readinessScore != null
-      ? readinessTone
-      : tsb != null
-        ? tsb >= -10
-          ? 'good'
-          : tsb >= -30
-            ? 'moderate'
-            : 'low'
-        : 'neutral';
+  let tone: RecoveryTone;
+  if (readinessScore != null) {
+    tone = readinessTone;
+  } else if (tsb != null) {
+    tone = toneFromTsb(tsb);
+  } else {
+    tone = 'neutral';
+  }
 
   // Garde-fous : on ne laisse pas un "feu vert" masquer une surcharge.
   if (tone === 'good' && (deepFatigue || highLoad)) tone = 'moderate';
@@ -191,7 +202,7 @@ export function buildTrainingVerdict(input: {
     cues.push(`Readiness ${readinessScore}/100`);
   }
   if (tsb != null) {
-    const form = tsb > 15 ? 'frais' : tsb >= -10 ? 'optimal' : tsb >= -30 ? 'fatigue' : 'surcharge';
+    const form = tsbFormLabel(tsb);
     cues.push(`Forme ${tsb > 0 ? '+' : ''}${tsb} (${form})`);
   }
   if (acwr > 0) {

@@ -120,8 +120,12 @@ const PMC_MODEL = {
  * - Busso, T. (2003) "Variable dose-response relationship between exercise training
  *   and performance" — Med Sci Sports Exerc
  */
-export function computePmcSeries(activities: ActivityForAnalytics[], days = 180): PmcPoint[] {
-  const end = startOfDay(new Date());
+export function computePmcSeries(
+  activities: ActivityForAnalytics[],
+  days = 180,
+  refDate?: Date,
+): PmcPoint[] {
+  const end = startOfDay(refDate ?? new Date());
   const start = subDays(end, days);
 
   // Initialiser TSS quotidien à 0 pour chaque jour de la période

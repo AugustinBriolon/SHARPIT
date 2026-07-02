@@ -33,7 +33,12 @@ describe('computeAlerts', () => {
       // Total chronique = 770 + 1750 = 2520, avg hebdo = 420
       // ACWR = 770/420 = 1.83 ✅ danger
 
-      const alerts = computeAlerts({ activities, health: [], physicalNotes: [] });
+      const alerts = computeAlerts({
+        activities,
+        health: [],
+        physicalNotes: [],
+        refDate: REF_DATE,
+      });
       const acwrAlert = alerts.find((a) => a.id === 'acwr-high');
 
       expect(acwrAlert).toBeDefined();
@@ -42,36 +47,44 @@ describe('computeAlerts', () => {
     });
 
     it('alerte warning si ACWR >= 1.5 et < 1.8', () => {
-      // ACWR = 1.6 environ
+      // Acute : 7 × 100 = 700 | Chronic : 700 + 35 × 60 = 2800 | avg/6 = 466.67
+      // ACWR = 700 / 466.67 = 1.50 ✅ warning (≥ 1.5 et < 1.8)
       const activities = [
         ...Array.from({ length: 7 }, (_, i) => ({
-          load: 95, // 665
+          load: 100,
           date: new Date(REF_DATE.getTime() - i * 24 * 3600 * 1000),
         })),
         ...Array.from({ length: 35 }, (_, i) => ({
-          load: 60, // 2100
+          load: 60,
           date: new Date(REF_DATE.getTime() - (i + 7) * 24 * 3600 * 1000),
         })),
       ];
-      // Total = 2765, avg = 460, ACWR = 665/460 = 1.45 (ajustons)
-      // Refaisons : acute 100*7=700, chronic 60*35=2100, total 2800, avg 467
-      // ACWR = 700/467 = 1.50 ✅ warning
 
-      const alerts = computeAlerts({ activities, health: [], physicalNotes: [] });
+      const alerts = computeAlerts({
+        activities,
+        health: [],
+        physicalNotes: [],
+        refDate: REF_DATE,
+      });
       const acwrAlert = alerts.find((a) => a.id === 'acwr-high');
 
       expect(acwrAlert).toBeDefined();
       expect(acwrAlert?.severity).toBe('warning');
     });
 
-    it('pas d'alerte ACWR si 0.8 <= ACWR < 1.5', () => {
+    it("pas d'alerte ACWR si 0.8 <= ACWR < 1.5", () => {
       // ACWR = 1.0 (équilibre)
       const activities = Array.from({ length: 42 }, (_, i) => ({
         load: 50,
         date: new Date(REF_DATE.getTime() - i * 24 * 3600 * 1000),
       }));
 
-      const alerts = computeAlerts({ activities, health: [], physicalNotes: [] });
+      const alerts = computeAlerts({
+        activities,
+        health: [],
+        physicalNotes: [],
+        refDate: REF_DATE,
+      });
       const acwrHigh = alerts.find((a) => a.id === 'acwr-high');
 
       expect(acwrHigh).toBeUndefined();
@@ -91,7 +104,12 @@ describe('computeAlerts', () => {
       ];
       // Total = 2240, avg = 373, ACWR = 140/373 = 0.38 ✅ sous-charge
 
-      const alerts = computeAlerts({ activities, health: [], physicalNotes: [] });
+      const alerts = computeAlerts({
+        activities,
+        health: [],
+        physicalNotes: [],
+        refDate: REF_DATE,
+      });
       const acwrLow = alerts.find((a) => a.id === 'acwr-low');
 
       expect(acwrLow).toBeDefined();
@@ -103,9 +121,30 @@ describe('computeAlerts', () => {
   describe('Readiness alerts', () => {
     it('alerte danger si readiness < 40 pendant 3+ jours consécutifs', () => {
       const health = [
-        { date: REF_DATE, recoveryScore: 35, hrv: null, hrvStatus: null, restingHr: null, sleepMinutes: null },
-        { date: new Date(REF_DATE.getTime() - 1 * 24 * 3600 * 1000), recoveryScore: 38, hrv: null, hrvStatus: null, restingHr: null, sleepMinutes: null },
-        { date: new Date(REF_DATE.getTime() - 2 * 24 * 3600 * 1000), recoveryScore: 32, hrv: null, hrvStatus: null, restingHr: null, sleepMinutes: null },
+        {
+          date: REF_DATE,
+          recoveryScore: 35,
+          hrv: null,
+          hrvStatus: null,
+          restingHr: null,
+          sleepMinutes: null,
+        },
+        {
+          date: new Date(REF_DATE.getTime() - 1 * 24 * 3600 * 1000),
+          recoveryScore: 38,
+          hrv: null,
+          hrvStatus: null,
+          restingHr: null,
+          sleepMinutes: null,
+        },
+        {
+          date: new Date(REF_DATE.getTime() - 2 * 24 * 3600 * 1000),
+          recoveryScore: 32,
+          hrv: null,
+          hrvStatus: null,
+          restingHr: null,
+          sleepMinutes: null,
+        },
       ];
 
       const alerts = computeAlerts({ activities: [], health, physicalNotes: [] });
@@ -113,14 +152,35 @@ describe('computeAlerts', () => {
 
       expect(readinessAlert).toBeDefined();
       expect(readinessAlert?.severity).toBe('danger');
-      expect(readinessAlert?.title).toContain('3 jours d\'affilée');
+      expect(readinessAlert?.title).toContain("3 jours d'affilée");
     });
 
     it('alerte warning si readiness < 40 pendant 2 jours consécutifs', () => {
       const health = [
-        { date: REF_DATE, recoveryScore: 38, hrv: null, hrvStatus: null, restingHr: null, sleepMinutes: null },
-        { date: new Date(REF_DATE.getTime() - 1 * 24 * 3600 * 1000), recoveryScore: 35, hrv: null, hrvStatus: null, restingHr: null, sleepMinutes: null },
-        { date: new Date(REF_DATE.getTime() - 2 * 24 * 3600 * 1000), recoveryScore: 60, hrv: null, hrvStatus: null, restingHr: null, sleepMinutes: null },
+        {
+          date: REF_DATE,
+          recoveryScore: 38,
+          hrv: null,
+          hrvStatus: null,
+          restingHr: null,
+          sleepMinutes: null,
+        },
+        {
+          date: new Date(REF_DATE.getTime() - 1 * 24 * 3600 * 1000),
+          recoveryScore: 35,
+          hrv: null,
+          hrvStatus: null,
+          restingHr: null,
+          sleepMinutes: null,
+        },
+        {
+          date: new Date(REF_DATE.getTime() - 2 * 24 * 3600 * 1000),
+          recoveryScore: 60,
+          hrv: null,
+          hrvStatus: null,
+          restingHr: null,
+          sleepMinutes: null,
+        },
       ];
 
       const alerts = computeAlerts({ activities: [], health, physicalNotes: [] });
@@ -132,9 +192,30 @@ describe('computeAlerts', () => {
 
     it('alerte warning si readiness moyenne < 45 sur derniers jours', () => {
       const health = [
-        { date: REF_DATE, recoveryScore: 42, hrv: null, hrvStatus: null, restingHr: null, sleepMinutes: null },
-        { date: new Date(REF_DATE.getTime() - 1 * 24 * 3600 * 1000), recoveryScore: 43, hrv: null, hrvStatus: null, restingHr: null, sleepMinutes: null },
-        { date: new Date(REF_DATE.getTime() - 2 * 24 * 3600 * 1000), recoveryScore: 44, hrv: null, hrvStatus: null, restingHr: null, sleepMinutes: null },
+        {
+          date: REF_DATE,
+          recoveryScore: 42,
+          hrv: null,
+          hrvStatus: null,
+          restingHr: null,
+          sleepMinutes: null,
+        },
+        {
+          date: new Date(REF_DATE.getTime() - 1 * 24 * 3600 * 1000),
+          recoveryScore: 43,
+          hrv: null,
+          hrvStatus: null,
+          restingHr: null,
+          sleepMinutes: null,
+        },
+        {
+          date: new Date(REF_DATE.getTime() - 2 * 24 * 3600 * 1000),
+          recoveryScore: 44,
+          hrv: null,
+          hrvStatus: null,
+          restingHr: null,
+          sleepMinutes: null,
+        },
       ];
       // Moyenne = 43 < 45 ✅
 
@@ -145,10 +226,24 @@ describe('computeAlerts', () => {
       expect(readinessAlert?.severity).toBe('warning');
     });
 
-    it('pas d'alerte readiness si score OK', () => {
+    it("pas d'alerte readiness si score OK", () => {
       const health = [
-        { date: REF_DATE, recoveryScore: 70, hrv: null, hrvStatus: null, restingHr: null, sleepMinutes: null },
-        { date: new Date(REF_DATE.getTime() - 1 * 24 * 3600 * 1000), recoveryScore: 65, hrv: null, hrvStatus: null, restingHr: null, sleepMinutes: null },
+        {
+          date: REF_DATE,
+          recoveryScore: 70,
+          hrv: null,
+          hrvStatus: null,
+          restingHr: null,
+          sleepMinutes: null,
+        },
+        {
+          date: new Date(REF_DATE.getTime() - 1 * 24 * 3600 * 1000),
+          recoveryScore: 65,
+          hrv: null,
+          hrvStatus: null,
+          restingHr: null,
+          sleepMinutes: null,
+        },
       ];
 
       const alerts = computeAlerts({ activities: [], health, physicalNotes: [] });
@@ -161,7 +256,14 @@ describe('computeAlerts', () => {
   describe('HRV alerts', () => {
     it('alerte si HRV status = UNBALANCED_LOW', () => {
       const health = [
-        { date: REF_DATE, recoveryScore: null, hrv: 45, hrvStatus: 'UNBALANCED_LOW', restingHr: null, sleepMinutes: null },
+        {
+          date: REF_DATE,
+          recoveryScore: null,
+          hrv: 45,
+          hrvStatus: 'UNBALANCED_LOW',
+          restingHr: null,
+          sleepMinutes: null,
+        },
       ];
 
       const alerts = computeAlerts({ activities: [], health, physicalNotes: [] });
@@ -174,12 +276,47 @@ describe('computeAlerts', () => {
 
     it('alerte si HRV baisse >15% vs moyenne précédente', () => {
       const health = [
-        { date: REF_DATE, recoveryScore: null, hrv: 40, hrvStatus: null, restingHr: null, sleepMinutes: null },
-        { date: new Date(REF_DATE.getTime() - 1 * 24 * 3600 * 1000), recoveryScore: null, hrv: 42, hrvStatus: null, restingHr: null, sleepMinutes: null },
-        { date: new Date(REF_DATE.getTime() - 2 * 24 * 3600 * 1000), recoveryScore: null, hrv: 41, hrvStatus: null, restingHr: null, sleepMinutes: null },
+        {
+          date: REF_DATE,
+          recoveryScore: null,
+          hrv: 40,
+          hrvStatus: null,
+          restingHr: null,
+          sleepMinutes: null,
+        },
+        {
+          date: new Date(REF_DATE.getTime() - 1 * 24 * 3600 * 1000),
+          recoveryScore: null,
+          hrv: 42,
+          hrvStatus: null,
+          restingHr: null,
+          sleepMinutes: null,
+        },
+        {
+          date: new Date(REF_DATE.getTime() - 2 * 24 * 3600 * 1000),
+          recoveryScore: null,
+          hrv: 41,
+          hrvStatus: null,
+          restingHr: null,
+          sleepMinutes: null,
+        },
         // Moyenne 3 derniers : 41
-        { date: new Date(REF_DATE.getTime() - 3 * 24 * 3600 * 1000), recoveryScore: null, hrv: 55, hrvStatus: null, restingHr: null, sleepMinutes: null },
-        { date: new Date(REF_DATE.getTime() - 4 * 24 * 3600 * 1000), recoveryScore: null, hrv: 52, hrvStatus: null, restingHr: null, sleepMinutes: null },
+        {
+          date: new Date(REF_DATE.getTime() - 3 * 24 * 3600 * 1000),
+          recoveryScore: null,
+          hrv: 55,
+          hrvStatus: null,
+          restingHr: null,
+          sleepMinutes: null,
+        },
+        {
+          date: new Date(REF_DATE.getTime() - 4 * 24 * 3600 * 1000),
+          recoveryScore: null,
+          hrv: 52,
+          hrvStatus: null,
+          restingHr: null,
+          sleepMinutes: null,
+        },
         // Moyenne précédente : ~53
         // 41 < 53*0.85 = 45.05 ✅ baisse >15%
       ];
@@ -195,9 +332,30 @@ describe('computeAlerts', () => {
   describe('FC repos alerts', () => {
     it('alerte si FC repos élevée +5 bpm vs baseline', () => {
       const health = [
-        { date: REF_DATE, recoveryScore: null, hrv: null, hrvStatus: null, restingHr: 60, sleepMinutes: null },
-        { date: new Date(REF_DATE.getTime() - 1 * 24 * 3600 * 1000), recoveryScore: null, hrv: null, hrvStatus: null, restingHr: 61, sleepMinutes: null },
-        { date: new Date(REF_DATE.getTime() - 2 * 24 * 3600 * 1000), recoveryScore: null, hrv: null, hrvStatus: null, restingHr: 59, sleepMinutes: null },
+        {
+          date: REF_DATE,
+          recoveryScore: null,
+          hrv: null,
+          hrvStatus: null,
+          restingHr: 60,
+          sleepMinutes: null,
+        },
+        {
+          date: new Date(REF_DATE.getTime() - 1 * 24 * 3600 * 1000),
+          recoveryScore: null,
+          hrv: null,
+          hrvStatus: null,
+          restingHr: 61,
+          sleepMinutes: null,
+        },
+        {
+          date: new Date(REF_DATE.getTime() - 2 * 24 * 3600 * 1000),
+          recoveryScore: null,
+          hrv: null,
+          hrvStatus: null,
+          restingHr: 59,
+          sleepMinutes: null,
+        },
         // Moyenne récente = 60
         ...Array.from({ length: 10 }, (_, i) => ({
           date: new Date(REF_DATE.getTime() - (i + 3) * 24 * 3600 * 1000),
@@ -255,7 +413,7 @@ describe('computeAlerts', () => {
       expect(sleepAlert?.severity).toBe('warning');
     });
 
-    it('pas d'alerte sommeil si moyenne >= 6h30', () => {
+    it("pas d'alerte sommeil si moyenne >= 6h30", () => {
       const health = Array.from({ length: 7 }, (_, i) => ({
         date: new Date(REF_DATE.getTime() - i * 24 * 3600 * 1000),
         recoveryScore: null,
@@ -291,7 +449,7 @@ describe('computeAlerts', () => {
       expect(painAlert?.title).toContain('Douleur');
     });
 
-    it('pas d'alerte pour douleur résolue', () => {
+    it("pas d'alerte pour douleur résolue", () => {
       const physicalNotes = [
         {
           title: 'Ancienne douleur',
@@ -307,7 +465,7 @@ describe('computeAlerts', () => {
       expect(painAlert).toBeUndefined();
     });
 
-    it('pas d'alerte douleur pour problème mobilité/posture', () => {
+    it("pas d'alerte douleur pour problème mobilité/posture", () => {
       // Mobilité/posture n'est pas une douleur → pas d'alerte "pain-severe"
       const physicalNotes = [
         {
@@ -339,9 +497,30 @@ describe('computeAlerts', () => {
     ];
 
     const health = [
-      { date: REF_DATE, recoveryScore: 35, hrv: null, hrvStatus: null, restingHr: null, sleepMinutes: 350 },
-      { date: new Date(REF_DATE.getTime() - 1 * 24 * 3600 * 1000), recoveryScore: 32, hrv: null, hrvStatus: null, restingHr: null, sleepMinutes: 340 },
-      { date: new Date(REF_DATE.getTime() - 2 * 24 * 3600 * 1000), recoveryScore: 38, hrv: null, hrvStatus: null, restingHr: null, sleepMinutes: 360 },
+      {
+        date: REF_DATE,
+        recoveryScore: 35,
+        hrv: null,
+        hrvStatus: null,
+        restingHr: null,
+        sleepMinutes: 350,
+      },
+      {
+        date: new Date(REF_DATE.getTime() - 1 * 24 * 3600 * 1000),
+        recoveryScore: 32,
+        hrv: null,
+        hrvStatus: null,
+        restingHr: null,
+        sleepMinutes: 340,
+      },
+      {
+        date: new Date(REF_DATE.getTime() - 2 * 24 * 3600 * 1000),
+        recoveryScore: 38,
+        hrv: null,
+        hrvStatus: null,
+        restingHr: null,
+        sleepMinutes: 360,
+      },
     ];
 
     const physicalNotes = [

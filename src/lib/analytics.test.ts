@@ -68,7 +68,7 @@ describe('estimateActivityLoad', () => {
 });
 
 describe('computePmcSeries', () => {
-  it('renvoie série vide si pas d'activité sur la période', () => {
+  it("renvoie série vide si pas d'activité sur la période", () => {
     const series = computePmcSeries([], 7);
     // 7 jours + aujourd'hui = 8 points
     expect(series).toHaveLength(8);
@@ -82,7 +82,7 @@ describe('computePmcSeries', () => {
   it('calcule correctement CTL avec constante τ=42 jours', () => {
     // Une séance de 100 TSS aujourd'hui
     const activities = [makeActivity(REF_DATE, 'RUN', 100)];
-    const series = computePmcSeries(activities, 2);
+    const series = computePmcSeries(activities, 2, REF_DATE);
 
     // Jour 0 (avant séance) : CTL = 0
     // Jour 1 (jour séance) : CTL = 0 + (100 - 0) / 42 = 2.38
@@ -95,7 +95,7 @@ describe('computePmcSeries', () => {
   it('calcule correctement ATL avec constante τ=7 jours', () => {
     // Une séance de 100 TSS aujourd'hui
     const activities = [makeActivity(REF_DATE, 'RUN', 100)];
-    const series = computePmcSeries(activities, 2);
+    const series = computePmcSeries(activities, 2, REF_DATE);
 
     // Jour 0 : ATL = 0
     // Jour 1 : ATL = 0 + (100 - 0) / 7 = 14.29
@@ -111,7 +111,7 @@ describe('computePmcSeries', () => {
       makeActivity(new Date('2026-01-29T12:00:00'), 'RUN', 80),
       makeActivity(new Date('2026-01-30T12:00:00'), 'BIKE', 60),
     ];
-    const series = computePmcSeries(activities, 5);
+    const series = computePmcSeries(activities, 5, REF_DATE);
 
     // Vérifier que TSB = CTL - ATL pour tous les points
     for (const point of series) {
@@ -128,7 +128,7 @@ describe('computePmcSeries', () => {
       return makeActivity(date, 'RUN', 100);
     });
 
-    const series = computePmcSeries(activities, 15);
+    const series = computePmcSeries(activities, 15, REF_DATE);
     const ctlValues = series.slice(-5).map((p) => p.ctl);
 
     // CTL doit augmenter progressivement
@@ -140,7 +140,7 @@ describe('computePmcSeries', () => {
   it('ATL réagit plus rapidement que CTL (constante plus courte)', () => {
     // Grosse séance soudaine après repos
     const activities = [makeActivity(REF_DATE, 'RUN', 200)];
-    const series = computePmcSeries(activities, 3);
+    const series = computePmcSeries(activities, 3, REF_DATE);
     const lastPoint = series[series.length - 1];
 
     // ATL devrait être beaucoup plus élevé que CTL après une séance unique
@@ -155,7 +155,7 @@ describe('computePmcSeries', () => {
       return makeActivity(date, 'RUN', 70);
     });
 
-    const series = computePmcSeries(activities, 10);
+    const series = computePmcSeries(activities, 10, REF_DATE);
     const lastPoint = series[series.length - 1];
 
     // ATL devrait être élevé, CTL faible (pas d'historique) → TSB négatif
@@ -170,7 +170,7 @@ describe('computePmcSeries', () => {
       return makeActivity(date, 'RUN', 80);
     });
 
-    const series = computePmcSeries(activities, 35);
+    const series = computePmcSeries(activities, 35, REF_DATE);
     const lastPoint = series[series.length - 1];
 
     // CTL résiduel, ATL décrue → TSB devrait être positif
@@ -186,12 +186,9 @@ describe('computePmcSeries', () => {
 
   it('agrège correctement plusieurs activités le même jour', () => {
     // 2 séances le même jour
-    const activities = [
-      makeActivity(REF_DATE, 'RUN', 50),
-      makeActivity(REF_DATE, 'BIKE', 40),
-    ];
+    const activities = [makeActivity(REF_DATE, 'RUN', 50), makeActivity(REF_DATE, 'BIKE', 40)];
 
-    const series = computePmcSeries(activities, 2);
+    const series = computePmcSeries(activities, 2, REF_DATE);
     const dayPoint = series.find((p) => p.date === '2026-01-31')!;
 
     // TSS du jour devrait être 50 + 40 = 90
