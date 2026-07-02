@@ -16,10 +16,32 @@ export type OverallVerdict =
   | 'CAUTION'
   | 'INSUFFICIENT_DATA';
 
+export type SystemAttentionPriority = 'RECOVERY' | 'FATIGUE' | 'ADAPTATION' | 'BALANCED';
+
 export type PhysiologicalConsistency =
   'ALIGNED' | 'PARTIALLY_ALIGNED' | 'CONFLICTING' | 'INSUFFICIENT_DATA';
 
 export type FindingSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
+
+export type OverreachingRisk = 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
+
+export type TrainingCapacity = 'FULL' | 'REDUCED' | 'LIGHT_ONLY' | 'REST_ONLY';
+
+export type RecommendedIntensity = 'REST' | 'VERY_EASY' | 'EASY' | 'MODERATE' | 'HARD';
+
+export type AdaptationDecisionVerdict =
+  | 'INCREASE_LOAD'
+  | 'SUSTAIN'
+  | 'CONSOLIDATE'
+  | 'REDUCE_LOAD'
+  | 'RECOVERY_PRIORITY'
+  | 'INSUFFICIENT_DATA';
+
+export type RecoveryDecisionVerdict =
+  'RECOVERED' | 'PARTIALLY_RECOVERED' | 'FATIGUED' | 'OVERREACHED' | 'INSUFFICIENT_DATA';
+
+export type FatigueDecisionVerdict =
+  'BUILD' | 'MAINTAIN' | 'REDUCE' | 'REST_WEEK' | 'TAPER' | 'INSUFFICIENT_DATA';
 
 export interface KeyFinding {
   id: string;
@@ -43,8 +65,30 @@ export interface LimitingFactor {
   actionable: boolean;
 }
 
+export interface Opportunity {
+  type: string;
+  timeWindow: string;
+  expectedBenefit: number;
+  description?: string;
+}
+
+export interface Conflict {
+  description: string;
+  models: string[];
+  resolution: string;
+}
+
+export interface EngineRecommendation {
+  type: string;
+  title: string;
+  summary: string;
+  keyEvidence: string[];
+  limitingFactor?: string | null;
+}
+
 export interface ReasoningData {
   overallVerdict: OverallVerdict;
+  systemAttentionPriority: SystemAttentionPriority;
   physiologicalConsistency: PhysiologicalConsistency;
   consistencyScore: number;
   confidence: number;
@@ -52,8 +96,16 @@ export interface ReasoningData {
   keyFindings: KeyFinding[];
   limitingFactor: LimitingFactor;
   topAction: TopAction | null;
+  opportunities: Opportunity[];
+  conflicts: Conflict[];
   explanation: string;
   computedAt: string;
+  signals: {
+    availableModelCount: number;
+    hasRecoveryState: boolean;
+    hasFatigueState: boolean;
+    hasAdaptationState: boolean;
+  };
 }
 
 export type ReadinessCategory =
@@ -69,6 +121,13 @@ export interface RecoveryData {
   readinessScore: number | null;
   readinessCategory: ReadinessCategory;
   confidence: number;
+  recommendation: EngineRecommendation;
+  decision: {
+    verdict: RecoveryDecisionVerdict;
+    recommendedIntensity: RecommendedIntensity;
+    rationale: string[];
+  };
+  overreachingRisk: OverreachingRisk;
   computedAt: string;
 }
 
@@ -86,7 +145,15 @@ export type FatigueTrajectory = 'RESOLVING' | 'STABLE' | 'ACCUMULATING' | 'ACCEL
 export interface FatigueData {
   fatigueLevel: FatigueLevel;
   trajectory: FatigueTrajectory;
+  trainingCapacity: TrainingCapacity;
   confidence: number;
+  recommendation: EngineRecommendation;
+  decision: {
+    verdict: FatigueDecisionVerdict;
+    trainingCapacity: TrainingCapacity;
+    rationale: string[];
+  };
+  functionalOverreachingRisk: OverreachingRisk;
   computedAt: string;
 }
 
@@ -104,6 +171,15 @@ export interface AdaptationData {
   adaptationStatus: AdaptationStatus;
   adaptationTrend: AdaptationTrend;
   confidence: number;
+  decision: {
+    verdict: AdaptationDecisionVerdict;
+    loadMultiplier: number;
+    rationale: string[];
+  };
+  recommendation: {
+    title: string;
+    summary: string;
+  };
   computedAt: string;
 }
 
@@ -156,12 +232,16 @@ export function useToday(date: Date = new Date()): UseTodayResult {
     const refreshParam = refreshKey > 0 ? '&refresh=true' : '';
     const base = `trainingDayId=${trainingDayId}&athleteId=default${refreshParam}`;
 
+    // Step 1 — recovery/fatigue/adaptation in parallel: they update the Digital Twin.
+    // Step 2 — reasoning runs after, so it reads the freshly updated Digital Twin states.
+    // This ordering prevents the race condition where reasoning reads an empty twin.
     Promise.all([
-      fetchEngine<ReasoningData>(`/api/reasoning?${base}`),
       fetchEngine<RecoveryData>(`/api/recovery?${base}`),
       fetchEngine<FatigueData>(`/api/fatigue?${base}`),
       fetchEngine<AdaptationData>(`/api/adaptation?${base}`),
-    ]).then(([reasoning, recovery, fatigue, adaptation]) => {
+    ]).then(async ([recovery, fatigue, adaptation]) => {
+      if (cancelled) return;
+      const reasoning = await fetchEngine<ReasoningData>(`/api/reasoning?${base}`);
       if (cancelled) return;
 
       if (!reasoning && !recovery && !fatigue && !adaptation) {

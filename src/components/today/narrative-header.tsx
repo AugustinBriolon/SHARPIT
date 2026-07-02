@@ -4,14 +4,13 @@ import { cn } from '@/lib/utils';
 import {
   mapVerdictToDisplay,
   mapConfidenceToTier,
-  extractPrimaryInsight,
   type OverallVerdict,
   type ConfidenceTier,
 } from '@/lib/today-mapping';
-import type { KeyFinding, TopAction } from '@/hooks/use-today';
+import type { TopAction } from '@/hooks/use-today';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Confidence bar
+// Confidence bar (extracted from old verdict-zone)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const CONFIDENCE_BARS: Record<ConfidenceTier, { filled: number; label: string }> = {
@@ -39,18 +38,20 @@ function ConfidenceBar({ tier }: { tier: ConfidenceTier }) {
           )}
         />
       ))}
-      {isLow && (
-        <span className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
-          Limited data
-        </span>
-      )}
     </span>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Zone A — Verdict
+// NarrativeHeader — Q1: What should I do today?
 // ─────────────────────────────────────────────────────────────────────────────
+
+interface NarrativeHeaderProps {
+  verdict: OverallVerdict;
+  topAction: TopAction;
+  confidence: number;
+  computedAt: string;
+}
 
 function getFreshnessLabel(hoursAgo: number): string {
   if (hoursAgo < 1) return 'Updated just now';
@@ -59,26 +60,14 @@ function getFreshnessLabel(hoursAgo: number): string {
   return "Based on yesterday's data";
 }
 
-interface VerdictZoneProps {
-  verdict: OverallVerdict;
-  confidence: number;
-  keyFindings: KeyFinding[];
-  topAction: TopAction | null;
-  explanation: string;
-  computedAt: string;
-}
-
-export function VerdictZone({
+export function NarrativeHeader({
   verdict,
-  confidence,
-  keyFindings,
   topAction,
-  explanation,
+  confidence,
   computedAt,
-}: VerdictZoneProps) {
+}: NarrativeHeaderProps) {
   const display = mapVerdictToDisplay(verdict);
   const tier = mapConfidenceToTier(confidence);
-  const insight = extractPrimaryInsight(topAction?.rationale, keyFindings[0]?.title, explanation);
 
   const updatedAt = new Date(computedAt);
   const hoursAgo = Math.round((Date.now() - updatedAt.getTime()) / (1000 * 60 * 60));
@@ -93,19 +82,22 @@ export function VerdictZone({
         isStale && 'opacity-80',
       )}
     >
-      {/* Verdict label + confidence */}
-      <div className="mb-4 flex items-center gap-3">
-        <span className={cn('h-3 w-3 shrink-0 rounded-full', display.dotClass)} aria-hidden />
-        <h1 className={cn('font-heading text-2xl font-bold tracking-tight', display.colorClass)}>
+      {/* Verdict badge */}
+      <div className="mb-3 flex items-center gap-2">
+        <span className={cn('h-2.5 w-2.5 shrink-0 rounded-full', display.dotClass)} aria-hidden />
+        <span className={cn('text-xs font-semibold tracking-widest uppercase', display.colorClass)}>
           {display.label}
-        </h1>
-        <span className={cn(display.colorClass)}>
+        </span>
+        <span className={cn('ml-1', display.colorClass)}>
           <ConfidenceBar tier={tier} />
         </span>
       </div>
 
-      {/* Primary insight */}
-      {insight && <p className="text-foreground/80 text-base leading-relaxed">{insight}</p>}
+      {/* Hero action — the answer to Q1 */}
+      <p className="font-heading text-[1.65rem] leading-tight font-bold tracking-tight">
+        <span className="text-foreground/50 font-normal">{topAction.verb} </span>
+        {topAction.focus}
+      </p>
 
       {/* Freshness */}
       <p

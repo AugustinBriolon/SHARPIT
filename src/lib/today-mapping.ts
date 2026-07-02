@@ -358,6 +358,114 @@ export function mapAdaptationToSignal(
 // The API surfaces this via topAction.rationale or first keyFinding title.
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Adaptation decision → training objective label (Q3)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type AdaptationDecisionVerdict =
+  | 'INCREASE_LOAD'
+  | 'SUSTAIN'
+  | 'CONSOLIDATE'
+  | 'REDUCE_LOAD'
+  | 'RECOVERY_PRIORITY'
+  | 'INSUFFICIENT_DATA';
+
+const ADAPTATION_OBJECTIVE: Record<AdaptationDecisionVerdict, string | null> = {
+  INCREASE_LOAD: 'Build fitness',
+  SUSTAIN: 'Maintain gains',
+  CONSOLIDATE: 'Reinforce adaptations',
+  REDUCE_LOAD: 'Absorb training stress',
+  RECOVERY_PRIORITY: 'Active recovery',
+  INSUFFICIENT_DATA: null,
+};
+
+export function mapAdaptationDecisionToObjective(
+  verdict: AdaptationDecisionVerdict,
+): string | null {
+  return ADAPTATION_OBJECTIVE[verdict];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Deviation risk assessment (Q6)
+// Takes the worst risk across recovery + fatigue dimensions and trajectory.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type DeviationRiskLevel = 'safe' | 'caution' | 'warning';
+
+const RISK_RANK: Record<string, number> = {
+  LOW: 0,
+  MODERATE: 1,
+  HIGH: 2,
+  CRITICAL: 3,
+};
+
+export function mapDeviationRisk(
+  overreachingRisk: string,
+  functionalOverreachingRisk: string,
+  fatigueTrajectory: FatigueTrajectory,
+): { level: DeviationRiskLevel; message: string } {
+  const worst = Math.max(
+    RISK_RANK[overreachingRisk] ?? 0,
+    RISK_RANK[functionalOverreachingRisk] ?? 0,
+  );
+  const accumulating = fatigueTrajectory === 'ACCUMULATING' || fatigueTrajectory === 'ACCELERATING';
+
+  if (worst >= 3 || (worst >= 2 && accumulating)) {
+    return {
+      level: 'warning',
+      message: 'Going harder risks overreaching — fatigue is already accumulating.',
+    };
+  }
+  if (worst >= 2 || (worst >= 1 && accumulating)) {
+    return {
+      level: 'caution',
+      message: 'Pushing beyond the prescription could delay recovery.',
+    };
+  }
+  return { level: 'safe', message: '' };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Physiological consistency display (Q8)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type PhysiologicalConsistency =
+  'ALIGNED' | 'PARTIALLY_ALIGNED' | 'CONFLICTING' | 'INSUFFICIENT_DATA';
+
+export function mapConsistencyToDisplay(
+  consistency: PhysiologicalConsistency,
+  score: number,
+): { label: string; colorClass: string } {
+  switch (consistency) {
+    case 'ALIGNED':
+      return {
+        label: `Systems aligned (${score}/100)`,
+        colorClass: 'text-emerald-600 dark:text-emerald-400',
+      };
+    case 'PARTIALLY_ALIGNED':
+      return {
+        label: `Partially aligned (${score}/100)`,
+        colorClass: 'text-amber-600 dark:text-amber-400',
+      };
+    case 'CONFLICTING':
+      return {
+        label: `Systems conflicting (${score}/100)`,
+        colorClass: 'text-orange-600 dark:text-orange-400',
+      };
+    case 'INSUFFICIENT_DATA':
+      return {
+        label: 'Not enough data to assess',
+        colorClass: 'text-muted-foreground',
+      };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Primary insight extraction
+// Spec: "one-sentence summary generated from primaryInsight"
+// The API surfaces this via topAction.rationale or first keyFinding title.
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function extractPrimaryInsight(
   topActionRationale: string | null | undefined,
   firstFindingTitle: string | null | undefined,
