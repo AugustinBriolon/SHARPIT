@@ -21,7 +21,13 @@ import { randomUUID } from 'node:crypto';
 import { RecoveryInferenceOrchestrator } from '../../orchestrator';
 import type { DigitalTwinRepository } from '@/core/digital-twin/repository';
 import type { DecisionRecordRepository, DecisionRecord, ModelId } from '../../types';
-import type { DigitalTwin, RecoveryState, FatigueState } from '@/core/digital-twin/types';
+import type {
+  DigitalTwin,
+  RecoveryState,
+  FatigueState,
+  AdaptationState,
+  ReasoningState,
+} from '@/core/digital-twin/types';
 import type { DayFeatures, RecoveryFeatureSet, LoadFeatureSet } from '@/core/features/types';
 import type { FeatureEngine } from '@/core/features/engine';
 
@@ -37,7 +43,7 @@ class InMemoryDigitalTwinRepository implements DigitalTwinRepository {
       const twin: DigitalTwin = {
         id: randomUUID(),
         athleteId,
-        state: { recovery: null, fatigue: null },
+        state: { recovery: null, fatigue: null, adaptation: null, reasoning: null },
         updatedAt: new Date(),
         createdAt: new Date(),
       };
@@ -76,6 +82,39 @@ class InMemoryDigitalTwinRepository implements DigitalTwinRepository {
   async getPreviousFatigueState(athleteId: string): Promise<FatigueState | null> {
     const twin = this.store.get(athleteId);
     return twin?.state.fatigue ?? null;
+  }
+
+  async updateAdaptation(
+    athleteId: string,
+    adaptationState: AdaptationState,
+  ): Promise<DigitalTwin> {
+    const existing = await this.findOrCreate(athleteId);
+    const updated: DigitalTwin = {
+      ...existing,
+      state: { ...existing.state, adaptation: adaptationState },
+      updatedAt: new Date(),
+    };
+    this.store.set(athleteId, updated);
+    return updated;
+  }
+
+  async getPreviousAdaptationState(athleteId: string): Promise<AdaptationState | null> {
+    return this.store.get(athleteId)?.state.adaptation ?? null;
+  }
+
+  async updateReasoning(athleteId: string, reasoningState: ReasoningState): Promise<DigitalTwin> {
+    const existing = await this.findOrCreate(athleteId);
+    const updated: DigitalTwin = {
+      ...existing,
+      state: { ...existing.state, reasoning: reasoningState },
+      updatedAt: new Date(),
+    };
+    this.store.set(athleteId, updated);
+    return updated;
+  }
+
+  async getPreviousReasoningState(athleteId: string): Promise<ReasoningState | null> {
+    return this.store.get(athleteId)?.state.reasoning ?? null;
   }
 
   getAll(): DigitalTwin[] {
