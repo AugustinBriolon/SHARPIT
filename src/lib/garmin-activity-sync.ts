@@ -15,6 +15,39 @@ import { clientFromTokens, currentTokens, type GarminTokens } from '@/lib/garmin
 import { getGarminAccount } from '@/lib/garmin-sync';
 import { prisma } from '@/lib/prisma';
 import { autoLinkActivities } from '@/lib/session-linking';
+import { observationEngine } from '@/lib/observation-engine';
+import {
+  garminActivityToSession,
+  garminEvaluationToSubjective,
+} from '@/core/adapters/garmin-activity-adapter';
+
+const ATHLETE_ID = 'default';
+
+/** Fires an observation into the engine. Errors are logged but never propagate to the sync. */
+async function ingestGarminActivity(
+  activity: Parameters<typeof garminActivityToSession>[0],
+  evaluation: Parameters<typeof garminEvaluationToSubjective>[0],
+  receivedAt: Date,
+): Promise<void> {
+  try {
+    const rawSession = garminActivityToSession(activity, receivedAt);
+    if (!rawSession) return;
+
+    await observationEngine.ingest(ATHLETE_ID, rawSession);
+
+    const rawSubjective = garminEvaluationToSubjective(
+      evaluation,
+      String(activity.activityId),
+      rawSession.timestamp,
+      receivedAt,
+    );
+    if (rawSubjective) {
+      await observationEngine.ingest(ATHLETE_ID, rawSubjective);
+    }
+  } catch (err) {
+    console.error('[ObservationEngine] garmin-activity ingest failed:', err);
+  }
+}
 
 const ACCOUNT_ID = 'default';
 const PAGE_SIZE = 50;
@@ -162,6 +195,7 @@ export async function syncGarminActivities(options?: {
         await prisma.activityStream.deleteMany({ where: { activityId: match.id } });
         result.merged += 1;
         result.importedActivityIds.push(match.id);
+        await ingestGarminActivity(activity, evaluation, new Date());
         continue;
       }
 
@@ -171,6 +205,7 @@ export async function syncGarminActivities(options?: {
         });
         result.imported += 1;
         result.importedActivityIds.push(created.id);
+        await ingestGarminActivity(activity, evaluation, new Date());
       } catch (error) {
         if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
           result.skipped += 1;

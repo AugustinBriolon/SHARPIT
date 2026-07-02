@@ -9,6 +9,20 @@ import {
   refreshAccessToken,
   type StravaActivity,
 } from '@/lib/strava';
+import { observationEngine } from '@/lib/observation-engine';
+import { stravaActivityToSession } from '@/core/adapters/strava-adapter';
+
+const ATHLETE_ID = 'default';
+
+async function ingestStravaActivity(activity: StravaActivity): Promise<void> {
+  try {
+    const raw = stravaActivityToSession(activity, new Date());
+    if (!raw) return;
+    await observationEngine.ingest(ATHLETE_ID, raw);
+  } catch (err) {
+    console.error('[ObservationEngine] strava ingest failed:', err);
+  }
+}
 
 const ACCOUNT_ID = 'default';
 
@@ -266,6 +280,10 @@ export async function syncStravaActivities(): Promise<SyncResult> {
           merged += 1;
           importedTypes.add(type);
           importedActivityIds.push(match.id);
+          // Only ingest into observation engine if Garmin didn't already handle this session
+          if (!match.garminId) {
+            await ingestStravaActivity(strava);
+          }
         } catch (error) {
           if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
             skipped += 1;
@@ -283,6 +301,7 @@ export async function syncStravaActivities(): Promise<SyncResult> {
         imported += 1;
         importedTypes.add(type);
         importedActivityIds.push(created.id);
+        await ingestStravaActivity(strava);
       } catch (error) {
         if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
           skipped += 1;

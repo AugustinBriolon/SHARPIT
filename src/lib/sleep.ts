@@ -135,6 +135,12 @@ function scoreTone(score: number | null): RecoveryTone {
   return 'low';
 }
 
+function phaseTone(pct: number, goodMin: number, moderateMin: number): RecoveryTone {
+  if (pct >= goodMin) return 'good';
+  if (pct >= moderateMin) return 'moderate';
+  return 'low';
+}
+
 function buildPhases(entry: SleepEntryInput): SleepPhase[] {
   const deep = entry.sleepDeepMin ?? 0;
   const rem = entry.sleepRemMin ?? 0;
@@ -148,8 +154,8 @@ function buildPhases(entry: SleepEntryInput): SleepPhase[] {
   const deepPct = sleep > 0 ? (deep / sleep) * 100 : 0;
   const remPct = sleep > 0 ? (rem / sleep) * 100 : 0;
 
-  const deepTone: RecoveryTone = deepPct >= 13 ? 'good' : deepPct >= 9 ? 'moderate' : 'low';
-  const remTone: RecoveryTone = remPct >= 20 ? 'good' : remPct >= 15 ? 'moderate' : 'low';
+  const deepTone = phaseTone(deepPct, 13, 9);
+  const remTone = phaseTone(remPct, 20, 15);
 
   return [
     {

@@ -3,6 +3,20 @@ import { format, startOfDay, subDays } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import { type RenphoMeasurement, renphoClientFromCredentials } from '@/lib/renpho';
 import { decryptSecret, encryptSecret } from '@/lib/secret-box';
+import { observationEngine } from '@/lib/observation-engine';
+import { renphoMeasurementToBodyComposition } from '@/core/adapters/renpho-adapter';
+
+const ATHLETE_ID = 'default';
+
+async function ingestRenphoMeasurement(measurement: RenphoMeasurement): Promise<void> {
+  try {
+    const raw = renphoMeasurementToBodyComposition(measurement, new Date());
+    if (!raw) return;
+    await observationEngine.ingest(ATHLETE_ID, raw);
+  } catch (err) {
+    console.error('[ObservationEngine] renpho ingest failed:', err);
+  }
+}
 
 const ACCOUNT_ID = 'default';
 
@@ -118,6 +132,7 @@ export async function syncRenphoHealth(options?: {
       updated += 1;
     } else {
       await prisma.bodyCompositionMeasurement.create({ data });
+      await ingestRenphoMeasurement(measurement);
       imported += 1;
     }
 

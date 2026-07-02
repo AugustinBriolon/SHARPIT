@@ -10,8 +10,23 @@ import {
   fetchWeightRange,
   loginWithCredentials,
   type GarminAthleteThresholds,
+  type GarminDailyHealth,
   type GarminTokens,
 } from '@/lib/garmin';
+import { observationEngine } from '@/lib/observation-engine';
+import { garminHealthToObservations } from '@/core/adapters/garmin-health-adapter';
+
+const ATHLETE_ID = 'default';
+
+async function ingestGarminHealth(health: GarminDailyHealth, calendarDate: Date): Promise<void> {
+  try {
+    const raws = garminHealthToObservations(health, calendarDate, new Date());
+    if (raws.length === 0) return;
+    await observationEngine.ingestBatch(ATHLETE_ID, raws);
+  } catch (err) {
+    console.error('[ObservationEngine] garmin-health ingest failed:', err);
+  }
+}
 
 const ACCOUNT_ID = 'default';
 
@@ -223,6 +238,7 @@ export async function syncGarminHealth(days = 30): Promise<GarminSyncResult> {
       },
       update: data,
     });
+    await ingestGarminHealth(health, day);
     updated += 1;
   }
 
