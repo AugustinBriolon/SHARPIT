@@ -136,7 +136,6 @@ export class AdaptationInferenceOrchestrator {
       } as unknown as Record<string, unknown>,
       decision: output.decision as unknown as Record<string, unknown>,
       recommendation: output.recommendation as unknown as Record<string, unknown>,
-      explanation: output.explanation,
       inputSummary: buildInputSummary(features, context),
       computedAt,
       createdAt: computedAt,
@@ -195,7 +194,6 @@ export class AdaptationInferenceOrchestrator {
       decision: record.decision as import('./adaptation/types').AdaptationDecision,
       recommendation:
         record.recommendation as import('./adaptation/types').AdaptationRecommendation,
-      explanation: record.explanation,
     };
 
     return {

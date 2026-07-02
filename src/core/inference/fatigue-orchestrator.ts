@@ -140,7 +140,6 @@ export class FatigueInferenceOrchestrator {
       } as unknown as Record<string, unknown>,
       decision: output.decision as unknown as Record<string, unknown>,
       recommendation: output.recommendation as unknown as Record<string, unknown>,
-      explanation: output.explanation,
       inputSummary: buildInputSummary(features, context),
       computedAt,
       createdAt: computedAt,
@@ -195,7 +194,6 @@ export class FatigueInferenceOrchestrator {
       } as import('./fatigue/types').FatigueState,
       decision: record.decision as import('./fatigue/types').FatigueDecision,
       recommendation: record.recommendation as import('./fatigue/types').FatigueRecommendation,
-      explanation: record.explanation,
     };
 
     return {

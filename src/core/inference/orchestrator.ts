@@ -144,7 +144,6 @@ export class RecoveryInferenceOrchestrator {
       stateUpdate: output.recoveryState as unknown as Record<string, unknown>,
       decision: output.decision as unknown as Record<string, unknown>,
       recommendation: output.recommendation as unknown as Record<string, unknown>,
-      explanation: output.explanation,
       inputSummary: buildInputSummary(features),
       computedAt,
       createdAt: computedAt,
@@ -204,7 +203,6 @@ export class RecoveryInferenceOrchestrator {
       } as import('@/core/digital-twin/types').RecoveryState,
       decision: record.decision as import('./recovery/types').RecoveryDecision,
       recommendation: record.recommendation as import('./recovery/types').RecoveryRecommendation,
-      explanation: record.explanation,
     };
 
     return {

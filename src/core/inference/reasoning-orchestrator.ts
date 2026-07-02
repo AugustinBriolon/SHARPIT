@@ -95,7 +95,6 @@ export class ReasoningInferenceOrchestrator {
         opportunities: output.reasoningState.opportunities,
         keyFindings: output.reasoningState.keyFindings,
       } as unknown as Record<string, unknown>,
-      explanation: output.explanation,
       inputSummary: {
         trainingDayId,
         hasRecoveryState: output.signals.hasRecoveryState,
@@ -153,7 +152,6 @@ export class ReasoningInferenceOrchestrator {
         ...(stateUpdate as Omit<import('@/core/digital-twin/types').ReasoningState, 'computedAt'>),
         computedAt: new Date((stateUpdate.computedAt as string) ?? record.computedAt),
       } as import('@/core/digital-twin/types').ReasoningState,
-      explanation: record.explanation,
     };
 
     return {

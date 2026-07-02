@@ -62,8 +62,8 @@ export type DecisionRecord = {
   /** The recommendation surfaced to the athlete. */
   readonly recommendation: Record<string, unknown>;
 
-  /** Human-readable explanation (template-based in v1). */
-  readonly explanation: string;
+  /** Human-readable explanation. Set only by the reasoning model; omitted by recovery/fatigue/adaptation models. */
+  readonly explanation?: string;
 
   /** 0.0–1.0 — how much to trust this decision. */
   readonly confidence: number;

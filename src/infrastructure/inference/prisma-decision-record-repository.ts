@@ -25,7 +25,7 @@ export class PrismaDecisionRecordRepository implements DecisionRecordRepository 
         stateUpdate: record.stateUpdate as object,
         decision: record.decision as object,
         recommendation: record.recommendation as object,
-        explanation: record.explanation,
+        explanation: record.explanation ?? '',
         inputSummary: record.inputSummary as object,
         computedAt: record.computedAt,
         createdAt: record.createdAt,
@@ -85,7 +85,7 @@ export class PrismaDecisionRecordRepository implements DecisionRecordRepository 
     stateUpdate: unknown;
     decision: unknown;
     recommendation: unknown;
-    explanation: string;
+    explanation: string | null;
     inputSummary: unknown;
     computedAt: Date;
     createdAt: Date;
@@ -101,7 +101,7 @@ export class PrismaDecisionRecordRepository implements DecisionRecordRepository 
       stateUpdate: (row.stateUpdate ?? {}) as Record<string, unknown>,
       decision: (row.decision ?? {}) as Record<string, unknown>,
       recommendation: (row.recommendation ?? {}) as Record<string, unknown>,
-      explanation: row.explanation,
+      explanation: row.explanation ?? undefined,
       inputSummary: (row.inputSummary ?? {}) as Record<string, unknown>,
       computedAt: row.computedAt,
       createdAt: row.createdAt,
