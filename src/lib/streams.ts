@@ -149,11 +149,12 @@ function buildPayload(
 
   const totalDistance = has.distance ? max(raw.distance) : null;
   const lastTime = raw.time.length ? max(raw.time) : null;
-  const avgSpeed = has.speed
-    ? mean(raw.velocity)
-    : totalDistance && lastTime
-      ? totalDistance / lastTime
-      : null;
+  let avgSpeed: number | null = null;
+  if (has.speed) {
+    avgSpeed = mean(raw.velocity);
+  } else if (totalDistance && lastTime) {
+    avgSpeed = totalDistance / lastTime;
+  }
 
   const stats = {
     avgHr: has.hr ? Math.round(mean(raw.heartrate) ?? 0) || null : null,

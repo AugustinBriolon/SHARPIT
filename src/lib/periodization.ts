@@ -47,7 +47,14 @@ interface PhaseBlock {
 function distributePhases(totalWeeks: number): PhaseBlock[] {
   if (totalWeeks <= 0) return [{ phase: 'RACE', weeks: 1 }];
 
-  const taperWeeks = totalWeeks <= 6 ? 1 : totalWeeks <= 12 ? 2 : 3;
+  let taperWeeks: number;
+  if (totalWeeks <= 6) {
+    taperWeeks = 1;
+  } else if (totalWeeks <= 12) {
+    taperWeeks = 2;
+  } else {
+    taperWeeks = 3;
+  }
   const raceWeeks = 1;
   const remaining = Math.max(0, totalWeeks - taperWeeks - raceWeeks);
 
@@ -118,11 +125,11 @@ function distributePhases(totalWeeks: number): PhaseBlock[] {
  * Voir SCIENCE.md section "Périodisation et planification" pour détails complets.
  */
 const PHASE_LOAD_FACTOR: Record<PlanPhase, number> = {
-  BASE: 0.85,   // 85% de la charge de référence
-  BUILD: 1.0,   // 100% (référence)
-  PEAK: 1.08,   // 108% (pic de volume+intensité)
-  TAPER: 0.55,  // 55% (affûtage)
-  RACE: 0.25,   // 25% (repos actif + course)
+  BASE: 0.85, // 85% de la charge de référence
+  BUILD: 1.0, // 100% (référence)
+  PEAK: 1.08, // 108% (pic de volume+intensité)
+  TAPER: 0.55, // 55% (affûtage)
+  RACE: 0.25, // 25% (repos actif + course)
 };
 
 const PHASE_FOCUS: Record<PlanPhase, string> = {
@@ -208,12 +215,12 @@ export function generateMacroPlan(params: {
       }
 
       // Progression graduelle au sein d'une phase (éviter pic brutal)
-      const progression =
-        block.phase === 'BUILD'
-          ? 1 + Math.min(i, 3) * 0.04  // +4% par semaine max 3 semaines
-          : block.phase === 'BASE'
-            ? 1 + Math.min(i, 5) * 0.03  // +3% par semaine max 5 semaines
-            : 1;
+      let progression = 1;
+      if (block.phase === 'BUILD') {
+        progression = 1 + Math.min(i, 3) * 0.04; // +4% par semaine max 3 semaines
+      } else if (block.phase === 'BASE') {
+        progression = 1 + Math.min(i, 5) * 0.03; // +3% par semaine max 5 semaines
+      }
 
       let targetLoad = Math.round(
         baseWeeklyLoad * loadFactor * progression * (isDeload ? 0.72 : 1),
