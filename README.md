@@ -134,15 +134,15 @@ Scientific benchmarks gate intelligence model deployment. All four models (Recov
 
 ## Modules
 
-| Module        | Description                                                                                                                                     |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Today**     | Daily Brief — Today Experience surfacing the Reasoning Engine verdict, state summary (Recovery / Fatigue / Adaptation), and recommended session |
-| **Training**  | Activity CRUD (run, bike, swim, strength) with load and stream analysis                                                                         |
-| **Analytics** | PMC chart (CTL, ATL, TSB), performance metrics, personal records                                                                                |
-| **Planning**  | Macrocycle planning with brick analysis                                                                                                         |
-| **Goals**     | Race goals and countdown tracking                                                                                                               |
-| **Calendar**  | Month view of planned and completed sessions                                                                                                    |
-| **Settings**  | Strava, Garmin, Renpho, Google Calendar integrations                                                                                            |
+| Module        | Description                                                                                                                                                                          |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Today**     | Daily Brief — narrative decision center answering 8 ordered athlete questions (what to do, why, session, outcomes, bottleneck, confidence) via the Reasoning Engine and Digital Twin |
+| **Training**  | Activity CRUD (run, bike, swim, strength) with load and stream analysis                                                                                                              |
+| **Analytics** | PMC chart (CTL, ATL, TSB), performance metrics, personal records                                                                                                                     |
+| **Planning**  | Macrocycle planning with brick analysis                                                                                                                                              |
+| **Goals**     | Race goals and countdown tracking                                                                                                                                                    |
+| **Calendar**  | Month view of planned and completed sessions                                                                                                                                         |
+| **Settings**  | Strava, Garmin, Renpho, Google Calendar integrations                                                                                                                                 |
 
 ## Integrations
 
