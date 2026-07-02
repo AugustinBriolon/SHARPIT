@@ -134,15 +134,15 @@ Scientific benchmarks gate intelligence model deployment. All four models (Recov
 
 ## Modules
 
-| Module        | Description                                                                              |
-| ------------- | ---------------------------------------------------------------------------------------- |
-| **Dashboard** | Daily training view with Recovery, Fatigue, Adaptation, and Reasoning intelligence cards |
-| **Training**  | Activity CRUD (run, bike, swim, strength) with load and stream analysis                  |
-| **Analytics** | PMC chart (CTL, ATL, TSB), performance metrics, personal records                         |
-| **Planning**  | Macrocycle planning with brick analysis                                                  |
-| **Goals**     | Race goals and countdown tracking                                                        |
-| **Calendar**  | Month view of planned and completed sessions                                             |
-| **Settings**  | Strava, Garmin, Renpho, Google Calendar integrations                                     |
+| Module        | Description                                                                                                                                     |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Today**     | Daily Brief — Today Experience surfacing the Reasoning Engine verdict, state summary (Recovery / Fatigue / Adaptation), and recommended session |
+| **Training**  | Activity CRUD (run, bike, swim, strength) with load and stream analysis                                                                         |
+| **Analytics** | PMC chart (CTL, ATL, TSB), performance metrics, personal records                                                                                |
+| **Planning**  | Macrocycle planning with brick analysis                                                                                                         |
+| **Goals**     | Race goals and countdown tracking                                                                                                               |
+| **Calendar**  | Month view of planned and completed sessions                                                                                                    |
+| **Settings**  | Strava, Garmin, Renpho, Google Calendar integrations                                                                                            |
 
 ## Integrations
 
@@ -165,4 +165,6 @@ Connect via **Settings → Renpho**. Body composition observations are automatic
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) — full system architecture and component interactions
 - [`docs/models/`](./docs/models/) — scientific model specifications (Recovery, Fatigue, Adaptation, Reasoning)
 - [`docs/adr/`](./docs/adr/) — Architecture Decision Records
+- [`docs/PRODUCT_EXPERIENCE_V2.md`](./docs/PRODUCT_EXPERIENCE_V2.md) — Today Experience product spec
+- [`docs/USER_JOURNEYS.md`](./docs/USER_JOURNEYS.md) — user journeys for the Today Experience
 - [`knowledge/`](./knowledge/) — domain knowledge and scientific references
