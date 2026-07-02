@@ -359,6 +359,23 @@ export function mapAdaptationToSignal(
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Decision verdict types (mirroring API shapes, duplicated here to keep
+// this module free of cross-file imports)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type OverreachingRisk = 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
+
+export type TrainingCapacity = 'FULL' | 'REDUCED' | 'LIGHT_ONLY' | 'REST_ONLY';
+
+export type RecommendedIntensity = 'REST' | 'VERY_EASY' | 'EASY' | 'MODERATE' | 'HARD';
+
+export type RecoveryDecisionVerdict =
+  'RECOVERED' | 'PARTIALLY_RECOVERED' | 'FATIGUED' | 'OVERREACHED' | 'INSUFFICIENT_DATA';
+
+export type FatigueDecisionVerdict =
+  'BUILD' | 'MAINTAIN' | 'REDUCE' | 'REST_WEEK' | 'TAPER' | 'INSUFFICIENT_DATA';
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Adaptation decision → training objective label (Q3)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -478,4 +495,96 @@ export function extractPrimaryInsight(
     return firstSentence ? firstSentence.trim() : null;
   }
   return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Expected outcome projections — what happens if the athlete follows the plan
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function mapRecoveryProjection(
+  verdict: RecoveryDecisionVerdict,
+  overreachingRisk: OverreachingRisk,
+): string {
+  if (verdict === 'OVERREACHED')
+    return 'Physiological recovery requires 2–3 days — rest is the fastest path forward.';
+  if (verdict === 'FATIGUED') return 'Active recovery today accelerates readiness for tomorrow.';
+  if (verdict === 'PARTIALLY_RECOVERED') {
+    if (overreachingRisk === 'HIGH' || overreachingRisk === 'CRITICAL') {
+      return 'Recovery will improve if load is kept in check today.';
+    }
+    return 'Readiness will recover fully within 24–48 hours.';
+  }
+  if (verdict === 'RECOVERED') {
+    if (overreachingRisk === 'LOW') return 'Full recovery expected to hold through tomorrow.';
+    return 'Recovery is sufficient — manage session intensity to stay there.';
+  }
+  return '';
+}
+
+export function mapFatigueProjection(
+  verdict: FatigueDecisionVerdict,
+  trajectory: FatigueTrajectory,
+  capacity: TrainingCapacity,
+): string {
+  if (verdict === 'REST_WEEK' || verdict === 'TAPER') {
+    return 'Rest allows accumulated fatigue to fully clear.';
+  }
+  if (verdict === 'REDUCE') {
+    if (trajectory === 'ACCELERATING')
+      return 'Load reduction now prevents non-functional overreaching.';
+    return 'Backing off today stops fatigue from compounding.';
+  }
+  if (verdict === 'MAINTAIN') return 'Fatigue will remain in the functional range.';
+  if (verdict === 'BUILD') {
+    if (trajectory === 'RESOLVING')
+      return 'Fatigue is resolving — a well-dosed session now maximises adaptation.';
+    if (capacity === 'FULL') return 'Fatigue is manageable — full training capacity available.';
+    return 'Manageable fatigue — training capacity within normal range.';
+  }
+  return '';
+}
+
+export function mapAdaptationProjection(
+  verdict: AdaptationDecisionVerdict,
+  loadMultiplier: number,
+): string {
+  if (verdict === 'RECOVERY_PRIORITY')
+    return 'Recovery investment protects your long-term fitness base.';
+  if (verdict === 'REDUCE_LOAD') return 'Reducing load now allows recent adaptations to take root.';
+  if (verdict === 'CONSOLIDATE')
+    return 'Consistent load consolidates the adaptations from recent weeks.';
+  if (verdict === 'SUSTAIN') return 'Current training load sustains your fitness gains.';
+  if (verdict === 'INCREASE_LOAD') {
+    if (loadMultiplier > 1.1)
+      return 'A quality training stimulus today drives measurable fitness gains in 10–14 days.';
+    return 'Progressive overload will compound into fitness gains over the coming weeks.';
+  }
+  return '';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Human-readable intensity and capacity labels
+// ─────────────────────────────────────────────────────────────────────────────
+
+const INTENSITY_LABEL: Record<RecommendedIntensity, string> = {
+  REST: 'Full rest',
+  VERY_EASY: 'Very easy movement',
+  EASY: 'Easy effort',
+  MODERATE: 'Moderate effort',
+  HARD: 'High intensity',
+};
+
+export function mapRecoveryIntensityLabel(intensity: RecommendedIntensity): string {
+  return INTENSITY_LABEL[intensity];
+}
+
+const CAPACITY_LABEL: Record<TrainingCapacity, string> = {
+  FULL: 'Full training capacity',
+  REDUCED: 'Reduced capacity',
+  LIGHT_ONLY: 'Light activity only',
+  REST_ONLY: 'Rest only',
+};
+
+export function mapFatigueCapacityLabel(capacity: TrainingCapacity): string {
+  return CAPACITY_LABEL[capacity];
 }
