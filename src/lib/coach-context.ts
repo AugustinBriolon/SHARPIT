@@ -93,7 +93,7 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
     prisma.digitalTwin
       .findUnique({
         where: { athleteId: 'default' },
-        select: { fatigueState: true, adaptationState: true },
+        select: { fatigueState: true, adaptationState: true, reasoningState: true },
       })
       .catch(() => null),
   ]);
@@ -300,6 +300,24 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
         })
       : null;
 
+  // ---- Reasoning Engine (Digital Twin) ----
+  const rawReasoning = digitalTwin?.reasoningState;
+  const reasoning =
+    rawReasoning && typeof rawReasoning === 'object'
+      ? (rawReasoning as {
+          overallVerdict?: string;
+          physiologicalConsistency?: string;
+          consistencyScore?: number;
+          systemAttentionPriority?: string;
+          limitingFactor?: { system: string | null; description: string | null };
+          topAction?: { verb: string; focus: string; rationale: string } | null;
+          keyFindings?: Array<{ severity: string; title: string }>;
+          conflicts?: Array<{ type: string; description: string }>;
+          opportunities?: Array<{ title: string; timeWindow: string }>;
+          confidence?: number;
+        })
+      : null;
+
   return {
     today: format(today, 'EEEE d MMMM yyyy', { locale: fr }),
     note: profile?.context?.trim() || null,
@@ -326,6 +344,7 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
     physical,
     fatigue,
     adaptation,
+    reasoning,
   };
 }
 
@@ -468,6 +487,59 @@ export function formatCoachContext(ctx: CoachContext): string {
     }
     if (a.estimatedAdaptationPeak != null) {
       lines.push(`Pic de forme estimé dans ${a.estimatedAdaptationPeak} jour(s).`);
+    }
+  }
+
+  // Reasoning Engine (cross-model synthesis)
+  if (
+    ctx.reasoning &&
+    ctx.reasoning.overallVerdict &&
+    ctx.reasoning.overallVerdict !== 'INSUFFICIENT_DATA'
+  ) {
+    const re = ctx.reasoning;
+    const VERDICT_FR: Record<string, string> = {
+      TRAIN_HARD: 'Entraîne-toi fort',
+      TRAIN_SMART: 'Entraîne-toi malin',
+      TRAIN_EASY: 'Entraîne-toi doucement',
+      RECOVER: 'Récupère',
+      RACE_READY: 'Pic de forme',
+      CAUTION: 'Prudence (conflits détectés)',
+    };
+    const CONSISTENCY_FR: Record<string, string> = {
+      ALIGNED: 'Alignés',
+      PARTIALLY_ALIGNED: 'Partiellement alignés',
+      CONFLICTING: 'En conflit',
+    };
+    const bits = [
+      re.overallVerdict ? `Verdict : ${VERDICT_FR[re.overallVerdict] ?? re.overallVerdict}` : null,
+      re.physiologicalConsistency
+        ? `Modèles : ${CONSISTENCY_FR[re.physiologicalConsistency] ?? re.physiologicalConsistency} (score ${re.consistencyScore ?? '—'}/100)`
+        : null,
+    ].filter(Boolean);
+    lines.push(`\n## Reasoning Engine (synthèse inter-modèles SHARPIT)\n${bits.join(' · ')}.`);
+    if (re.topAction) {
+      lines.push(
+        `Action prioritaire : ${re.topAction.verb} — ${re.topAction.focus}. ${re.topAction.rationale}`,
+      );
+    }
+    if (re.limitingFactor?.system && re.limitingFactor.description) {
+      lines.push(
+        `Facteur limitant : ${re.limitingFactor.system.toLowerCase()} — ${re.limitingFactor.description}.`,
+      );
+    }
+    const criticalFinding = re.keyFindings?.find((f) => f.severity === 'CRITICAL');
+    if (criticalFinding) {
+      lines.push(`⚠ CRITIQUE : ${criticalFinding.title}.`);
+    }
+    if (re.conflicts && re.conflicts.length > 0) {
+      lines.push(
+        `Conflit inter-modèles détecté (${re.conflicts[0].type.replace(/_/g, ' ').toLowerCase()}) : ${re.conflicts[0].description}`,
+      );
+    }
+    if (re.opportunities && re.opportunities.length > 0) {
+      lines.push(
+        `Opportunité : ${re.opportunities[0].title} (${re.opportunities[0].timeWindow.toLowerCase().replace('_', ' ')}).`,
+      );
     }
   }
 

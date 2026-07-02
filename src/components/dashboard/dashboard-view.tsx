@@ -10,6 +10,7 @@ import { TodayVerdict } from '@/components/today/today-verdict';
 import { WeeklyReviewCard } from '@/components/dashboard/weekly-review-card';
 import { FatigueCard } from '@/components/dashboard/fatigue-card';
 import { AdaptationCard } from '@/components/dashboard/adaptation-card';
+import { ReasoningCard } from '@/components/dashboard/reasoning-card';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LinkButton } from '@/components/ui/link-button';
@@ -257,6 +258,8 @@ export function DashboardView() {
       <FatigueCard date={date} />
 
       <AdaptationCard date={date} />
+
+      <ReasoningCard date={date} />
 
       <WeeklyReviewCard date={date} />
 
