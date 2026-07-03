@@ -27,7 +27,7 @@ export function BottleneckBlock({ limitingFactor }: BottleneckBlockProps) {
       </p>
 
       {limitingFactor.system && (
-        <p className="text-[11px] font-semibold tracking-[0.12em] uppercase">
+        <p className="text-sm font-bold tracking-tight">
           {SYSTEM_LABEL[limitingFactor.system] ?? limitingFactor.system}
         </p>
       )}
