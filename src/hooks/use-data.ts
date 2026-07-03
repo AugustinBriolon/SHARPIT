@@ -274,7 +274,7 @@ export function useGoogleCalendars(enabled = true) {
     queryKey: queryKeys.googleCalendars,
     queryFn: fetchGoogleCalendars,
     enabled,
-    staleTime: 0,
+    staleTime: 5 * 60 * 1000,
     retry: 1,
   });
 }

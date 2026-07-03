@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { ArcGauge } from '@/components/ui/arc-gauge';
+import { MobileDrillDownHeader } from '@/components/layout/mobile-drill-down-header';
 import { useAthleteProfile, useHealthEntries } from '@/hooks/use-data';
 import { useToday } from '@/hooks/use-today';
 import { resolve } from '@/lib/french';
@@ -22,17 +23,8 @@ import {
 import { cn } from '@/lib/utils';
 import { format, isSameDay, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import Link from 'next/link';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { Bar, BarChart, CartesianGrid, ReferenceLine, Tooltip, XAxis, YAxis } from 'recharts';
+import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sleep analytical dashboard — /today/sleep
@@ -178,7 +170,7 @@ function SleepDurationBars({ data }: { data: BarPoint[] }) {
   if (!hasData) return <p className="text-muted-foreground/40 text-xs">Pas de données</p>;
 
   return (
-    <ResponsiveContainer height={100} width="100%">
+    <ResponsiveChartFrame height={100}>
       <BarChart data={data} margin={{ top: 4, right: 2, bottom: 2, left: 2 }}>
         <XAxis
           axisLine={false}
@@ -212,7 +204,7 @@ function SleepDurationBars({ data }: { data: BarPoint[] }) {
           ))}
         </Bar>
       </BarChart>
-    </ResponsiveContainer>
+    </ResponsiveChartFrame>
   );
 }
 
@@ -244,10 +236,8 @@ export default function TodaySleepPage() {
 
   if (!recovery) {
     return (
-      <div className="space-y-4 p-4">
-        <Link className="text-muted-foreground block text-sm" href="/">
-          ← Aujourd'hui
-        </Link>
+      <div className="space-y-4">
+        <MobileDrillDownHeader title="Sommeil" />
         <p className="text-muted-foreground text-sm">Données de sommeil indisponibles.</p>
       </div>
     );
@@ -319,13 +309,8 @@ export default function TodaySleepPage() {
   });
 
   return (
-    <div className="space-y-4 p-4">
-      <Link
-        className="text-muted-foreground hover:text-foreground block text-sm transition-colors"
-        href="/"
-      >
-        ← Aujourd'hui
-      </Link>
+    <div className="space-y-4">
+      <MobileDrillDownHeader title="Sommeil" />
 
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
         {/* ── LEFT COLUMN ─────────────────────────────────────────────────── */}

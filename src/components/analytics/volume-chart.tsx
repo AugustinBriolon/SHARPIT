@@ -1,16 +1,8 @@
 'use client';
 
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 import { CHART_COLORS, type WeeklyVolumePoint } from '@/lib/analytics';
 
 interface VolumeChartProps {
@@ -58,40 +50,38 @@ export function VolumeChart({ data }: VolumeChartProps) {
         <p className="text-muted-foreground text-xs">Heures par sport — 16 dernières semaines</p>
       </CardHeader>
       <CardContent>
-        <div className="h-72 w-full">
-          <ResponsiveContainer height="100%" width="100%">
-            <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-              <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" vertical={false} />
-              <XAxis
-                axisLine={false}
-                dataKey="label"
-                tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
-                tickLine={false}
+        <ResponsiveChartFrame height={288}>
+          <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+            <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" vertical={false} />
+            <XAxis
+              axisLine={false}
+              dataKey="label"
+              tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
+              tickLine={false}
+            />
+            <YAxis
+              axisLine={false}
+              tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
+              tickLine={false}
+              unit="h"
+            />
+            <Tooltip content={<ChartTooltip />} />
+            <Legend
+              formatter={(value) => <span className="text-muted-foreground">{value}</span>}
+              wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
+            />
+            {SPORTS.map((sport) => (
+              <Bar
+                key={sport.key}
+                dataKey={sport.key}
+                fill={CHART_COLORS[sport.key]}
+                name={sport.label}
+                radius={sport.key === 'STRENGTH' ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                stackId="volume"
               />
-              <YAxis
-                axisLine={false}
-                tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
-                tickLine={false}
-                unit="h"
-              />
-              <Tooltip content={<ChartTooltip />} />
-              <Legend
-                formatter={(value) => <span className="text-muted-foreground">{value}</span>}
-                wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
-              />
-              {SPORTS.map((sport) => (
-                <Bar
-                  key={sport.key}
-                  dataKey={sport.key}
-                  fill={CHART_COLORS[sport.key]}
-                  name={sport.label}
-                  radius={sport.key === 'STRENGTH' ? [4, 4, 0, 0] : [0, 0, 0, 0]}
-                  stackId="volume"
-                />
-              ))}
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+            ))}
+          </BarChart>
+        </ResponsiveChartFrame>
       </CardContent>
     </Card>
   );

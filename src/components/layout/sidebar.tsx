@@ -1,71 +1,15 @@
 'use client';
 
-import { UserButton, useUser } from '@clerk/nextjs';
-import {
-  Activity,
-  CalendarRange,
-  PersonStanding,
-  Settings,
-  Sparkles,
-  Target,
-  Sun,
-} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { clerkAppearance } from '@/lib/clerk-appearance';
+import { UserButton, useUser } from '@clerk/nextjs';
+import { Activity } from 'lucide-react';
+import { sidebarNavItems, settingsNavItem } from '@/lib/app-navigation';
 import { navLinkClass } from '@/lib/nav-pill';
+import { clerkAppearance } from '@/lib/clerk-appearance';
+import type { AppNavItem } from '@/lib/app-navigation';
 
-type NavItem = {
-  href: string;
-  label: string;
-  icon: typeof Sun;
-  match: (pathname: string) => boolean;
-};
-
-const mainNavItems: NavItem[] = [
-  { href: '/', label: "Aujourd'hui", icon: Sun, match: (p) => p === '/' },
-  {
-    href: '/seances',
-    label: 'Séances',
-    icon: CalendarRange,
-    match: (p) =>
-      p.startsWith('/seances') ||
-      p.startsWith('/training') ||
-      p.startsWith('/calendar') ||
-      p.startsWith('/planning'),
-  },
-  {
-    href: '/corps',
-    label: 'Mon corps',
-    icon: PersonStanding,
-    match: (p) =>
-      p.startsWith('/corps') ||
-      p.startsWith('/recovery') ||
-      p.startsWith('/body') ||
-      p.startsWith('/analytics'),
-  },
-  {
-    href: '/goals',
-    label: 'Objectifs',
-    icon: Target,
-    match: (p) => p.startsWith('/goals'),
-  },
-  {
-    href: '/coach',
-    label: 'Coach',
-    icon: Sparkles,
-    match: (p) => p.startsWith('/coach'),
-  },
-];
-
-const settingsNavItem: NavItem = {
-  href: '/settings',
-  label: 'Réglages',
-  icon: Settings,
-  match: (p) => p.startsWith('/settings'),
-};
-
-function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
+function NavLink({ item, pathname }: { item: AppNavItem; pathname: string }) {
   const isActive = item.match(pathname);
   const Icon = item.icon;
 
@@ -106,7 +50,7 @@ export function Sidebar() {
 
       <nav aria-label="Navigation principale" className="flex flex-1 flex-col overflow-y-auto px-3">
         <div className="space-y-1">
-          {mainNavItems.map((item) => (
+          {sidebarNavItems.map((item) => (
             <NavLink key={item.href} item={item} pathname={pathname} />
           ))}
         </div>

@@ -3,6 +3,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function Loading() {
   return (
     <div className="space-y-8">
+      {/* Retour mobile */}
+      <div className="flex items-center gap-1 lg:hidden">
+        <Skeleton className="size-4 shrink-0 rounded-sm" />
+        <Skeleton className="h-4 w-20" />
+      </div>
+
       {/* Header : icône sport + titre + actions */}
       <div className="space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-4">

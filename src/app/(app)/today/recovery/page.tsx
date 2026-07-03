@@ -1,17 +1,10 @@
 'use client';
 
-import Link from 'next/link';
+import { MobileDrillDownHeader } from '@/components/layout/mobile-drill-down-header';
 import { format, subDays, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  ResponsiveContainer,
-  Tooltip,
-  ReferenceArea,
-} from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceArea } from 'recharts';
+import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 import { cn } from '@/lib/utils';
 import { ArcGauge } from '@/components/ui/arc-gauge';
 import { useToday } from '@/hooks/use-today';
@@ -190,7 +183,7 @@ function MiniSparkline({
           </span>
         )}
       </div>
-      <ResponsiveContainer height={52} width="100%">
+      <ResponsiveChartFrame height={52}>
         <LineChart data={data} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
           <XAxis dataKey="date" hide />
           <YAxis domain={['auto', 'auto']} hide />
@@ -211,7 +204,7 @@ function MiniSparkline({
           )}
           <Line dataKey="value" dot={false} stroke={color} strokeWidth={1.5} type="monotone" />
         </LineChart>
-      </ResponsiveContainer>
+      </ResponsiveChartFrame>
     </div>
   );
 }
@@ -248,7 +241,7 @@ function DualSparkline({
           {labelB}
         </span>
       </div>
-      <ResponsiveContainer height={52} width="100%">
+      <ResponsiveChartFrame height={52}>
         <LineChart data={data} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
           <XAxis dataKey="date" hide />
           <YAxis domain={['auto', 'auto']} hide />
@@ -272,7 +265,7 @@ function DualSparkline({
           <Line dataKey="a" dot={false} stroke={colorA} strokeWidth={1.5} type="monotone" />
           <Line dataKey="b" dot={false} stroke={colorB} strokeWidth={1.5} type="monotone" />
         </LineChart>
-      </ResponsiveContainer>
+      </ResponsiveChartFrame>
     </div>
   );
 }
@@ -296,10 +289,8 @@ export default function TodayRecoveryPage() {
 
   if (!recovery) {
     return (
-      <div className="space-y-4 p-4">
-        <Link className="text-muted-foreground block text-sm" href="/">
-          ← Aujourd'hui
-        </Link>
+      <div className="space-y-4">
+        <MobileDrillDownHeader title="Récupération" />
         <p className="text-muted-foreground text-sm">Données de récupération indisponibles.</p>
       </div>
     );
@@ -367,13 +358,8 @@ export default function TodayRecoveryPage() {
   );
 
   return (
-    <div className="space-y-4 p-4">
-      <Link
-        className="text-muted-foreground hover:text-foreground block text-sm transition-colors"
-        href="/"
-      >
-        ← Aujourd'hui
-      </Link>
+    <div className="space-y-4">
+      <MobileDrillDownHeader title="Récupération" />
 
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
         {/* ── LEFT COLUMN ─────────────────────────────────────────────────── */}

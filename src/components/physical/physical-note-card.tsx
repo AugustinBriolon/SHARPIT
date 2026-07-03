@@ -4,15 +4,8 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ChevronDown, ChevronUp, Pencil, Plus, TrendingDown, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
+import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -139,41 +132,39 @@ export function PhysicalNoteCard({
         {note.description && <p className="text-muted-foreground text-sm">{note.description}</p>}
 
         {series.length >= 2 && (
-          <div className="h-28">
-            <ResponsiveContainer height="100%" width="100%">
-              <LineChart data={series} margin={{ top: 5, right: 5, bottom: 0, left: -25 }}>
-                <CartesianGrid stroke="#00000014" strokeDasharray="3 3" />
-                <XAxis
-                  axisLine={false}
-                  dataKey="date"
-                  tick={{ fontSize: 10, fill: '#94a3b8' }}
-                  tickLine={false}
-                />
-                <YAxis
-                  axisLine={false}
-                  domain={[0, 10]}
-                  tick={{ fontSize: 10, fill: '#94a3b8' }}
-                  tickLine={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #00000014',
-                    borderRadius: 8,
-                    fontSize: 12,
-                    color: '#0f172a',
-                  }}
-                />
-                <Line
-                  dataKey="severity"
-                  dot={{ r: 3 }}
-                  stroke={severityAccent(note.severity)}
-                  strokeWidth={2}
-                  type="monotone"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          <ResponsiveChartFrame height={112}>
+            <LineChart data={series} margin={{ top: 5, right: 5, bottom: 0, left: -25 }}>
+              <CartesianGrid stroke="#00000014" strokeDasharray="3 3" />
+              <XAxis
+                axisLine={false}
+                dataKey="date"
+                tick={{ fontSize: 10, fill: '#94a3b8' }}
+                tickLine={false}
+              />
+              <YAxis
+                axisLine={false}
+                domain={[0, 10]}
+                tick={{ fontSize: 10, fill: '#94a3b8' }}
+                tickLine={false}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #00000014',
+                  borderRadius: 8,
+                  fontSize: 12,
+                  color: '#0f172a',
+                }}
+              />
+              <Line
+                dataKey="severity"
+                dot={{ r: 3 }}
+                stroke={severityAccent(note.severity)}
+                strokeWidth={2}
+                type="monotone"
+              />
+            </LineChart>
+          </ResponsiveChartFrame>
         )}
 
         <button

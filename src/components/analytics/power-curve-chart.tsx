@@ -1,15 +1,8 @@
 'use client';
 
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 import type { PowerCurvePoint } from '@/lib/records';
 
 interface PowerCurveChartProps {
@@ -50,35 +43,33 @@ export function PowerCurveChart({ data }: PowerCurveChartProps) {
             pour alimenter la courbe.
           </p>
         ) : (
-          <div className="h-72 w-full">
-            <ResponsiveContainer height="100%" width="100%">
-              <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" />
-                <XAxis
-                  axisLine={false}
-                  dataKey="label"
-                  tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
-                  tickLine={false}
-                />
-                <YAxis
-                  axisLine={false}
-                  tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
-                  tickLine={false}
-                  unit=" W"
-                  width={44}
-                />
-                <Tooltip content={<ChartTooltip />} />
-                <Line
-                  dataKey="watts"
-                  dot={{ r: 3, fill: '#ea580c' }}
-                  name="Puissance"
-                  stroke="#ea580c"
-                  strokeWidth={2}
-                  type="monotone"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          <ResponsiveChartFrame height={288}>
+            <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+              <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" />
+              <XAxis
+                axisLine={false}
+                dataKey="label"
+                tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
+                tickLine={false}
+              />
+              <YAxis
+                axisLine={false}
+                tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
+                tickLine={false}
+                unit=" W"
+                width={44}
+              />
+              <Tooltip content={<ChartTooltip />} />
+              <Line
+                dataKey="watts"
+                dot={{ r: 3, fill: '#ea580c' }}
+                name="Puissance"
+                stroke="#ea580c"
+                strokeWidth={2}
+                type="monotone"
+              />
+            </LineChart>
+          </ResponsiveChartFrame>
         )}
       </CardContent>
     </Card>

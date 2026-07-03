@@ -6,9 +6,11 @@ import { Sparkline } from './sparkline';
 export function HealthMonitorPanel({
   entry,
   entries,
+  compact = false,
 }: {
   entry: ClientHealthEntry | null;
   entries: ClientHealthEntry[];
+  compact?: boolean;
 }) {
   const today = new Date();
   const last7 = Array.from({ length: 7 }, (_, i) => subDays(today, 6 - i));
@@ -92,9 +94,12 @@ export function HealthMonitorPanel({
       <p className="mb-4 text-[10px] font-semibold text-slate-500 uppercase dark:text-slate-400">
         Moniteur de santé
       </p>
-      <div className="space-y-3">
+      <div className={cn('space-y-3', compact && 'space-y-1')}>
         {visible.map((m) => (
-          <div key={m.label} className="flex items-center gap-3">
+          <div
+            key={m.label}
+            className={cn('flex items-center gap-3', compact && 'min-h-11 rounded-lg px-1 py-1')}
+          >
             <span className="w-24 shrink-0 text-xs text-slate-500 dark:text-slate-400">
               {m.label}
             </span>

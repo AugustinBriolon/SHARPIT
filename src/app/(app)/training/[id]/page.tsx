@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { ActivityHeroStats, type HeroActivity } from '@/components/training/activity-hero-stats';
 import { ActivityInsights } from '@/components/training/activity-insights';
+import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { DeleteActivityButton } from '@/components/training/activity-list';
 import { Badge } from '@/components/ui/badge';
@@ -107,6 +108,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
   return (
     <div className="space-y-8">
+      <MobileBackLink href="/seances?tab=activites" label="Activités" />
       <StickyHeader>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-start gap-4">

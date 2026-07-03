@@ -1,7 +1,8 @@
 'use client';
 
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
+import { Cell, Pie, PieChart, Tooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 import { CHART_COLORS, type SportDistribution } from '@/lib/analytics';
 
 interface SportDistributionChartProps {
@@ -36,28 +37,26 @@ export function SportDistributionChart({ data }: SportDistributionChartProps) {
       </CardHeader>
       <CardContent>
         <div className="flex flex-col items-center gap-6 md:flex-row">
-          <div className="h-56 w-full md:w-1/2">
-            <ResponsiveContainer height="100%" width="100%">
-              <PieChart>
-                <Pie
-                  cx="50%"
-                  cy="50%"
-                  data={data}
-                  dataKey="hours"
-                  innerRadius={55}
-                  nameKey="label"
-                  outerRadius={85}
-                  paddingAngle={2}
-                  strokeWidth={0}
-                >
-                  {data.map((entry) => (
-                    <Cell key={entry.type} fill={CHART_COLORS[entry.type]} />
-                  ))}
-                </Pie>
-                <Tooltip content={<ChartTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+          <ResponsiveChartFrame className="md:w-1/2" height={224}>
+            <PieChart>
+              <Pie
+                cx="50%"
+                cy="50%"
+                data={data}
+                dataKey="hours"
+                innerRadius={55}
+                nameKey="label"
+                outerRadius={85}
+                paddingAngle={2}
+                strokeWidth={0}
+              >
+                {data.map((entry) => (
+                  <Cell key={entry.type} fill={CHART_COLORS[entry.type]} />
+                ))}
+              </Pie>
+              <Tooltip content={<ChartTooltip />} />
+            </PieChart>
+          </ResponsiveChartFrame>
           <div className="w-full space-y-3 md:w-1/2">
             {data.map((sport) => (
               <div key={sport.type} className="flex items-center justify-between text-sm">

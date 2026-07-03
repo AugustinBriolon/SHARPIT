@@ -1,15 +1,8 @@
 'use client';
 
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
 import { CorpsPanel } from '@/components/corps/corps-ui';
+import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 
 interface MetricLineChartProps<T extends { label: string }> {
   title: string;
@@ -61,9 +54,9 @@ export function MetricLineChart<T extends { label: string }>({
         {subtitle && <p className="text-muted-foreground mt-0.5 text-[10px]">{subtitle}</p>}
       </div>
       <div className="px-2 pt-1 pb-3">
-        <div className="h-48 w-full">
+        <div className="w-full">
           {hasData ? (
-            <ResponsiveContainer height="100%" width="100%">
+            <ResponsiveChartFrame height={192}>
               <LineChart data={data} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
                 <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" />
                 <XAxis
@@ -89,9 +82,9 @@ export function MetricLineChart<T extends { label: string }>({
                   connectNulls
                 />
               </LineChart>
-            </ResponsiveContainer>
+            </ResponsiveChartFrame>
           ) : (
-            <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
+            <div className="text-muted-foreground flex h-48 items-center justify-center text-sm">
               Pas encore de données
             </div>
           )}

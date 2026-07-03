@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { MobileDrillDownHeader } from '@/components/layout/mobile-drill-down-header';
 import {
   LineChart,
   Line,
@@ -9,11 +9,11 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  ResponsiveContainer,
   Tooltip,
   ReferenceLine,
   Legend,
 } from 'recharts';
+import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 import { cn } from '@/lib/utils';
 import { ArcGauge } from '@/components/ui/arc-gauge';
 import { useToday } from '@/hooks/use-today';
@@ -288,10 +288,8 @@ export default function TodayEffortPage() {
 
   if (!fatigue) {
     return (
-      <div className="space-y-4 p-4">
-        <Link className="text-muted-foreground block text-sm" href="/">
-          ← Aujourd'hui
-        </Link>
+      <div className="space-y-4">
+        <MobileDrillDownHeader title="Charge d'effort" />
         <p className="text-muted-foreground text-sm">Données de fatigue indisponibles.</p>
       </div>
     );
@@ -360,13 +358,8 @@ export default function TodayEffortPage() {
   const dominantLabelMap = isLowFatigue ? DOMINANT_LABEL_LOW_FATIGUE : DOMINANT_LABEL;
 
   return (
-    <div className="space-y-4 p-4">
-      <Link
-        className="text-muted-foreground hover:text-foreground block text-sm transition-colors"
-        href="/"
-      >
-        ← Aujourd'hui
-      </Link>
+    <div className="space-y-4">
+      <MobileDrillDownHeader title="Charge d'effort" />
 
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
         {/* ── LEFT COLUMN ─────────────────────────────────────────────────── */}
@@ -569,7 +562,7 @@ export default function TodayEffortPage() {
               <p className="text-muted-foreground mb-2 text-[11px] font-medium uppercase">
                 PMC — 28 jours
               </p>
-              <ResponsiveContainer height={120} width="100%">
+              <ResponsiveChartFrame height={120}>
                 <LineChart data={pmcSeries} margin={{ top: 4, right: 4, bottom: 2, left: 2 }}>
                   <XAxis
                     axisLine={false}
@@ -630,7 +623,7 @@ export default function TodayEffortPage() {
                   />
                   <Legend iconSize={8} wrapperStyle={{ fontSize: 9 }} />
                 </LineChart>
-              </ResponsiveContainer>
+              </ResponsiveChartFrame>
               <p className="text-muted-foreground/50 mt-1 text-[10px]">
                 CTL = forme · ATL = fatigue · TSB = forme − fatigue
               </p>
@@ -643,7 +636,7 @@ export default function TodayEffortPage() {
               <p className="text-muted-foreground mb-2 text-[11px] font-medium uppercase">
                 TSS hebdomadaire — 8 semaines
               </p>
-              <ResponsiveContainer height={90} width="100%">
+              <ResponsiveChartFrame height={90}>
                 <BarChart data={weeklyTss} margin={{ top: 4, right: 2, bottom: 2, left: 2 }}>
                   <XAxis
                     axisLine={false}
@@ -675,7 +668,7 @@ export default function TodayEffortPage() {
                   />
                   <Bar dataKey="tss" fill="#3b82f6" fillOpacity={0.7} radius={[2, 2, 0, 0]} />
                 </BarChart>
-              </ResponsiveContainer>
+              </ResponsiveChartFrame>
               {avgWeeklyTss > 0 && (
                 <p className="text-muted-foreground/50 mt-1 text-[10px]">
                   Moy. {avgWeeklyTss} TSS/sem (ligne pointillée)

@@ -1,15 +1,8 @@
 'use client';
 
 import { ActivityType } from '@prisma/client';
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
+import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { StreamSample } from '@/lib/streams';
 
@@ -51,74 +44,72 @@ export function CombinedChart({
         </p>
       </CardHeader>
       <CardContent>
-        <div className="h-52 w-full">
-          <ResponsiveContainer height="100%" width="100%">
-            <LineChart data={data} margin={{ top: 5, right: 10, left: -8, bottom: 0 }}>
-              <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" />
-              <XAxis
-                axisLine={false}
-                dataKey="x"
-                domain={['dataMin', 'dataMax']}
-                tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
-                tickLine={false}
-                type="number"
-              />
-              <YAxis
-                axisLine={false}
-                tick={{ fill: '#e11d48', fontSize: 11 }}
-                tickLine={false}
-                width={36}
-                yAxisId="hr"
-              />
-              <YAxis
-                axisLine={false}
-                orientation="right"
-                tick={{ fill: secondaryColor, fontSize: 11 }}
-                tickLine={false}
-                width={40}
-                yAxisId="sec"
-              />
-              <Tooltip
-                content={({ active, payload, label }) => {
-                  if (!active || !payload?.length) return null;
-                  return (
-                    <div className="border-border/60 bg-card rounded-lg border px-3 py-2 text-xs shadow-lg">
-                      <p className="text-muted-foreground mb-1">
-                        {label} {xLabel}
+        <ResponsiveChartFrame height={208}>
+          <LineChart data={data} margin={{ top: 5, right: 10, left: -8, bottom: 0 }}>
+            <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" />
+            <XAxis
+              axisLine={false}
+              dataKey="x"
+              domain={['dataMin', 'dataMax']}
+              tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
+              tickLine={false}
+              type="number"
+            />
+            <YAxis
+              axisLine={false}
+              tick={{ fill: '#e11d48', fontSize: 11 }}
+              tickLine={false}
+              width={36}
+              yAxisId="hr"
+            />
+            <YAxis
+              axisLine={false}
+              orientation="right"
+              tick={{ fill: secondaryColor, fontSize: 11 }}
+              tickLine={false}
+              width={40}
+              yAxisId="sec"
+            />
+            <Tooltip
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null;
+                return (
+                  <div className="border-border/60 bg-card rounded-lg border px-3 py-2 text-xs shadow-lg">
+                    <p className="text-muted-foreground mb-1">
+                      {label} {xLabel}
+                    </p>
+                    {payload.map((p) => (
+                      <p key={String(p.dataKey)} style={{ color: p.color }}>
+                        {p.dataKey === 'hr' ? 'FC' : secondaryLabel.split(' ')[0]}:{' '}
+                        <span className="font-mono font-semibold">{p.value}</span>
                       </p>
-                      {payload.map((p) => (
-                        <p key={String(p.dataKey)} style={{ color: p.color }}>
-                          {p.dataKey === 'hr' ? 'FC' : secondaryLabel.split(' ')[0]}:{' '}
-                          <span className="font-mono font-semibold">{p.value}</span>
-                        </p>
-                      ))}
-                    </div>
-                  );
-                }}
-              />
-              <Line
-                dataKey="hr"
-                dot={false}
-                isAnimationActive={false}
-                stroke="#e11d48"
-                strokeWidth={2}
-                type="monotone"
-                yAxisId="hr"
-                connectNulls
-              />
-              <Line
-                dataKey={secondaryKey}
-                dot={false}
-                isAnimationActive={false}
-                stroke={secondaryColor}
-                strokeWidth={2}
-                type="monotone"
-                yAxisId="sec"
-                connectNulls
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+                    ))}
+                  </div>
+                );
+              }}
+            />
+            <Line
+              dataKey="hr"
+              dot={false}
+              isAnimationActive={false}
+              stroke="#e11d48"
+              strokeWidth={2}
+              type="monotone"
+              yAxisId="hr"
+              connectNulls
+            />
+            <Line
+              dataKey={secondaryKey}
+              dot={false}
+              isAnimationActive={false}
+              stroke={secondaryColor}
+              strokeWidth={2}
+              type="monotone"
+              yAxisId="sec"
+              connectNulls
+            />
+          </LineChart>
+        </ResponsiveChartFrame>
       </CardContent>
     </Card>
   );

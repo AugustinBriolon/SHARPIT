@@ -1,16 +1,8 @@
 'use client';
 
-import {
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { CartesianGrid, Legend, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 import { CHART_COLORS, type PmcPoint } from '@/lib/analytics';
 
 interface LoadChartProps {
@@ -53,10 +45,9 @@ export function LoadChart({ data }: LoadChartProps) {
       <CardContent>
         <div
           aria-label="Charge d'entraînement — CTL (forme), ATL (fatigue), TSB (fraîcheur)"
-          className="h-72 w-full"
           role="img"
         >
-          <ResponsiveContainer height="100%" width="100%">
+          <ResponsiveChartFrame height={288}>
             <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
               <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
               <XAxis
@@ -102,7 +93,7 @@ export function LoadChart({ data }: LoadChartProps) {
                 type="monotone"
               />
             </LineChart>
-          </ResponsiveContainer>
+          </ResponsiveChartFrame>
         </div>
       </CardContent>
     </Card>

@@ -4,8 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
- * En-tête de page collant. Au repos il est transparent et fondu dans la page ;
+ * En-tête de page collant (desktop uniquement). Au repos il est transparent ;
  * dès que la page défile, un fond translucide flouté apparaît en douceur.
+ *
+ * Sur mobile : en-tête statique, sans blur ni fondu (gain de place, pas de bug visuel).
  *
  * Utiliser `embedded` dans les vues imbriquées (hubs à onglets) pour éviter
  * l'empilement de plusieurs barres sticky sur le même scroll.
@@ -23,25 +25,34 @@ export function StickyHeader({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    // Astuce « position: sticky collé » : on retire 1px en haut de la zone
-    // d'intersection. Tant que l'en-tête est au repos il est entièrement
-    // visible (ratio 1) ; dès qu'il se colle à `top-0`, ce 1px sort de la zone
-    // observée et le ratio passe sous 1 → état « collé ».
+
+    const mq = window.matchMedia('(min-width: 1024px)');
+    if (!mq.matches) return;
+
     const observer = new IntersectionObserver(([entry]) => setStuck(entry.intersectionRatio < 1), {
       threshold: [1],
       rootMargin: '-1px 0px 0px 0px',
     });
     observer.observe(el);
-    return () => observer.disconnect();
+
+    const onBreakpoint = () => {
+      if (!mq.matches) setStuck(false);
+    };
+    mq.addEventListener('change', onBreakpoint);
+
+    return () => {
+      observer.disconnect();
+      mq.removeEventListener('change', onBreakpoint);
+    };
   }, []);
 
   return (
     <header
       ref={ref}
       className={cn(
-        'sticky top-0 z-30 -mx-6 px-6 py-4 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300 ease-out',
+        'z-30 py-3 lg:sticky lg:top-0 lg:-mx-6 lg:px-6 lg:py-4 lg:transition-[background-color,border-color,box-shadow,backdrop-filter] lg:duration-300 lg:ease-out',
         stuck
-          ? 'border-border/60 bg-background/70 supports-backdrop-filter:bg-background/55 border-b shadow-sm backdrop-blur-xl'
+          ? 'lg:border-border/60 lg:bg-background/70 lg:supports-backdrop-filter:bg-background/55 lg:border-b lg:shadow-sm lg:backdrop-blur-xl'
           : 'border-b border-transparent bg-transparent',
         className,
       )}
@@ -49,7 +60,7 @@ export function StickyHeader({
       {children}
       <div
         className={cn(
-          'from-background/80 pointer-events-none absolute inset-x-0 top-full h-6 bg-linear-to-b to-transparent transition-opacity duration-300',
+          'from-background/80 pointer-events-none absolute inset-x-0 top-full hidden h-6 bg-linear-to-b to-transparent transition-opacity duration-300 lg:block',
           stuck ? 'opacity-100' : 'opacity-0',
         )}
         aria-hidden

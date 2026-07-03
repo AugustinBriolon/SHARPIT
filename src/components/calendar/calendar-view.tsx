@@ -1,23 +1,7 @@
 'use client';
 
-import {
-  addMonths,
-  endOfMonth,
-  endOfWeek,
-  format,
-  startOfMonth,
-  startOfWeek,
-  subMonths,
-} from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { CalendarCog, Check, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import Link from 'next/link';
-import { Fragment, useMemo, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { BrickChipHeader, BrickDialog } from '@/components/planning/brick-dialog';
 import { PlannedSessionDialog } from '@/components/planning/planned-session-dialog';
-import { PageHeader } from '@/components/layout/sticky-header';
-import { useMounted } from '@/hooks/use-mounted';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -28,22 +12,45 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
-import { buildCalendarMonth, weekDayLabels } from '@/lib/calendar';
-import { groupPlannedSessions } from '@/lib/brick-sessions';
-import type { GoogleCalendarEvent, GoogleCalendarInfo } from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
-import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
-import { activityTypeColors, activityTypeLabels } from '@/lib/format';
-import { intensityAccent } from '@/lib/sessions';
-import { cn } from '@/lib/utils';
 import {
   useActivities,
   useGoals,
   useGoogleCalendars,
   useGoogleEvents,
-  usePlannedSessions,
   usePlannedSessionMutations,
+  usePlannedSessions,
 } from '@/hooks/use-data';
+import { useMounted } from '@/hooks/use-mounted';
+import { useIsMobile } from '@/hooks/use-viewport';
+import { groupPlannedSessions } from '@/lib/brick-sessions';
+import {
+  buildCalendarMonth,
+  buildCalendarWeek,
+  weekDayLabels,
+  type CalendarDay,
+} from '@/lib/calendar';
+import { activityTypeColors, activityTypeLabels } from '@/lib/format';
+import type { GoogleCalendarEvent, GoogleCalendarInfo } from '@/lib/query/fetchers';
+import { queryKeys } from '@/lib/query/keys';
+import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
+import { intensityAccent } from '@/lib/sessions';
+import { cn } from '@/lib/utils';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  addMonths,
+  addWeeks,
+  endOfMonth,
+  endOfWeek,
+  format,
+  startOfMonth,
+  startOfWeek,
+  subMonths,
+  subWeeks,
+} from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { CalendarCog, Check, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import Link from 'next/link';
+import { Fragment, useMemo, useState } from 'react';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 
@@ -57,6 +64,22 @@ function getDayCellDateClassName(isToday: boolean, inMonth: boolean): string {
   return 'text-muted-foreground/50';
 }
 
+function calendarToolbarTitle(
+  isMobile: boolean,
+  mounted: boolean,
+  gridStart: Date,
+  gridEnd: Date,
+  month: Date,
+): string {
+  if (isMobile) {
+    return `${format(gridStart, 'd MMM', { locale: fr })} – ${format(gridEnd, 'd MMM yyyy', { locale: fr })}`;
+  }
+  if (mounted) {
+    return format(month, 'MMMM yyyy', { locale: fr });
+  }
+  return 'Calendrier';
+}
+
 type DialogState =
   | { mode: 'create'; date: Date }
   | { mode: 'edit'; session: ClientPlannedSession }
@@ -65,8 +88,10 @@ type DialogState =
 
 export function CalendarView({ embedded = false }: { embedded?: boolean }) {
   const mounted = useMounted();
+  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const [month, setMonth] = useState<Date>(() => startOfMonth(new Date()));
+  const [weekAnchor, setWeekAnchor] = useState<Date>(() => startOfWeek(new Date(), WEEK_OPTS));
   const [visibilityError, setVisibilityError] = useState<string | null>(null);
 
   const activitiesQuery = useActivities();
@@ -74,14 +99,19 @@ export function CalendarView({ embedded = false }: { embedded?: boolean }) {
   const goalsQuery = useGoals();
   const { update } = usePlannedSessionMutations();
 
-  const gridStart = startOfWeek(startOfMonth(month), WEEK_OPTS);
-  const gridEnd = endOfWeek(endOfMonth(month), WEEK_OPTS);
+  const gridStart = isMobile
+    ? startOfWeek(weekAnchor, WEEK_OPTS)
+    : startOfWeek(startOfMonth(month), WEEK_OPTS);
+  const gridEnd = isMobile
+    ? endOfWeek(weekAnchor, WEEK_OPTS)
+    : endOfWeek(endOfMonth(month), WEEK_OPTS);
   const gridFrom = gridStart.toISOString();
   const gridTo = gridEnd.toISOString();
 
   const googleQuery = useGoogleEvents(gridFrom, gridTo);
-  const googleConnected = googleQuery.data?.connected ?? false;
-  const calendarsQuery = useGoogleCalendars(googleConnected);
+  const calendarsQuery = useGoogleCalendars(true);
+  const googleConnected =
+    (calendarsQuery.data?.length ?? 0) > 0 || googleQuery.data?.connected === true;
 
   const hiddenCalendarIds = useMemo(
     () => new Set((calendarsQuery.data ?? []).filter((c) => c.hidden).map((c) => c.id)),
@@ -132,59 +162,29 @@ export function CalendarView({ embedded = false }: { embedded?: boolean }) {
   const [dragOver, setDragOver] = useState<string | null>(null);
 
   const header = (
-    <PageHeader className="flex flex-wrap items-end justify-between gap-4" embedded={embedded}>
-      <div>
-        {!embedded && <p className="text-primary text-xs font-medium uppercase">Calendar</p>}
-        <h1
-          className={cn(
-            'font-heading font-semibold capitalize',
-            embedded ? 'text-xl' : 'mt-2 text-3xl',
-          )}
-        >
-          {mounted ? format(month, 'MMMM yyyy', { locale: fr }) : 'Calendrier'}
-        </h1>
-      </div>
-      <div className="flex items-center gap-2">
-        {googleConnected && (
-          <CalendarVisibilityMenu
-            calendars={calendarsQuery.data ?? []}
-            error={visibilityError}
-            loading={calendarsQuery.isLoading}
-            onToggle={toggleCalendarVisibility}
-          />
-        )}
-        <Button
-          aria-label="Mois précédent"
-          disabled={!mounted}
-          size="icon"
-          variant="outline"
-          onClick={() => setMonth((m) => subMonths(m, 1))}
-        >
-          <ChevronLeft className="size-4" />
-        </Button>
-        <Button
-          disabled={!mounted}
-          size="sm"
-          variant="outline"
-          onClick={() => setMonth(startOfMonth(new Date()))}
-        >
-          Aujourd&apos;hui
-        </Button>
-        <Button
-          aria-label="Mois suivant"
-          disabled={!mounted}
-          size="icon"
-          variant="outline"
-          onClick={() => setMonth((m) => addMonths(m, 1))}
-        >
-          <ChevronRight className="size-4" />
-        </Button>
-        <Button disabled={!mounted} onClick={() => setDialog({ mode: 'create', date: new Date() })}>
-          <Plus className="size-4" />
-          Planifier
-        </Button>
-      </div>
-    </PageHeader>
+    <CalendarToolbar
+      calendars={calendarsQuery.data ?? []}
+      calendarsLoading={calendarsQuery.isLoading && !calendarsQuery.data}
+      embedded={embedded}
+      googleConnected={googleConnected}
+      isMobile={isMobile}
+      mounted={mounted}
+      title={calendarToolbarTitle(isMobile, mounted, gridStart, gridEnd, month)}
+      visibilityError={visibilityError}
+      onPlan={() => setDialog({ mode: 'create', date: new Date() })}
+      onToggleCalendar={toggleCalendarVisibility}
+      onNext={() =>
+        isMobile ? setWeekAnchor((w) => addWeeks(w, 1)) : setMonth((m) => addMonths(m, 1))
+      }
+      onPrev={() =>
+        isMobile ? setWeekAnchor((w) => subWeeks(w, 1)) : setMonth((m) => subMonths(m, 1))
+      }
+      onToday={() => {
+        const today = new Date();
+        setMonth(startOfMonth(today));
+        setWeekAnchor(startOfWeek(today, WEEK_OPTS));
+      }}
+    />
   );
 
   if (!mounted || activitiesQuery.isLoading || plannedQuery.isLoading || goalsQuery.isLoading) {
@@ -197,6 +197,11 @@ export function CalendarView({ embedded = false }: { embedded?: boolean }) {
   }
 
   const weeks = buildCalendarMonth(month, activitiesQuery.data ?? [], plannedQuery.data ?? []);
+  const weekDays = buildCalendarWeek(
+    weekAnchor,
+    activitiesQuery.data ?? [],
+    plannedQuery.data ?? [],
+  );
 
   // Activités déjà rattachées à une séance planifiée : on ne les affiche pas en
   // double — la pastille de la séance planifiée représente les deux.
@@ -218,79 +223,54 @@ export function CalendarView({ embedded = false }: { embedded?: boolean }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 lg:space-y-6">
       {header}
 
-      <div className="border-border/60 overflow-hidden rounded-xl border">
-        <div className="border-border/60 bg-card/40 grid grid-cols-7 border-b">
-          {weekDayLabels.map((d) => (
-            <div
-              key={d}
-              className="text-muted-foreground px-3 py-2 text-center text-xs font-medium tracking-wider uppercase"
-            >
-              {d}
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-7">
-          {weeks.flat().map((cell) => {
-            const dateKey = format(cell.date, 'yyyy-MM-dd');
-            return (
+      {isMobile ? (
+        <CalendarWeekList
+          days={weekDays}
+          dragOver={dragOver}
+          eventsByDay={eventsByDay}
+          linkedActivityIds={linkedActivityIds}
+          onCreate={(date) => setDialog({ mode: 'create', date })}
+          onDragLeave={() => setDragOver(null)}
+          onDragOver={setDragOver}
+          onDrop={handleDrop}
+          onEdit={(session) => setDialog({ mode: 'edit', session })}
+          onOpenBrick={(sessions) => setDialog({ mode: 'brick', sessions })}
+        />
+      ) : (
+        <div className="border-border/60 overflow-hidden rounded-xl border">
+          <div className="border-border/60 bg-card/40 grid grid-cols-7 border-b">
+            {weekDayLabels.map((d) => (
               <div
-                key={dateKey}
-                className={cn(
-                  'border-border/40 min-h-28 cursor-pointer border-r border-b p-1.5 transition-colors last:border-r-0',
-                  !cell.inMonth && 'bg-muted/20',
-                  dragOver === dateKey && 'bg-primary/10',
-                )}
-                onClick={() => setDialog({ mode: 'create', date: cell.date })}
-                onDragLeave={() => setDragOver((k) => (k === dateKey ? null : k))}
-                onDrop={() => handleDrop(dateKey, cell.date)}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragOver(dateKey);
-                }}
+                key={d}
+                className="text-muted-foreground px-3 py-2 text-center text-xs font-medium tracking-wider uppercase"
               >
-                <div className="mb-1 flex h-5 items-center justify-between px-1">
-                  <span
-                    className={cn('text-xs', getDayCellDateClassName(cell.isToday, cell.inMonth))}
-                  >
-                    {cell.date.getDate()}
-                  </span>
-                </div>
-
-                <div className="space-y-1">
-                  {(eventsByDay[dateKey] ?? []).map((de) => (
-                    <GoogleEventChip key={`${de.event.id}-${dateKey}`} dayEvent={de} />
-                  ))}
-                  {cell.activities
-                    .filter((a) => !linkedActivityIds.has(a.id))
-                    .map((a) => (
-                      <ActivityChip key={a.id} activity={a} />
-                    ))}
-                  {groupPlannedSessions(cell.planned).map((item) =>
-                    item.kind === 'single' ? (
-                      <PlannedChip
-                        key={item.session.id}
-                        session={item.session}
-                        onEdit={() => setDialog({ mode: 'edit', session: item.session })}
-                      />
-                    ) : (
-                      <BrickChip
-                        key={item.id}
-                        sessions={item.sessions}
-                        onEdit={(session) => setDialog({ mode: 'edit', session })}
-                        onOpen={() => setDialog({ mode: 'brick', sessions: item.sessions })}
-                      />
-                    ),
-                  )}
-                </div>
+                {d}
               </div>
-            );
-          })}
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7">
+            {weeks.flat().map((cell) => (
+              <CalendarMonthCell
+                key={format(cell.date, 'yyyy-MM-dd')}
+                cell={cell}
+                dragOver={dragOver}
+                eventsByDay={eventsByDay}
+                linkedActivityIds={linkedActivityIds}
+                onCreate={(date) => setDialog({ mode: 'create', date })}
+                onDragLeave={() => setDragOver(null)}
+                onDragOver={setDragOver}
+                onDrop={handleDrop}
+                onEdit={(session) => setDialog({ mode: 'edit', session })}
+                onOpenBrick={(sessions) => setDialog({ mode: 'brick', sessions })}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {dialog?.mode === 'brick' && (
         <BrickDialog
@@ -308,6 +288,307 @@ export function CalendarView({ embedded = false }: { embedded?: boolean }) {
           onClose={() => setDialog(null)}
         />
       )}
+    </div>
+  );
+}
+
+function CalendarToolbar({
+  embedded,
+  isMobile,
+  mounted,
+  title,
+  googleConnected,
+  calendars,
+  calendarsLoading,
+  visibilityError,
+  onPlan,
+  onPrev,
+  onNext,
+  onToday,
+  onToggleCalendar,
+}: {
+  embedded: boolean;
+  isMobile: boolean;
+  mounted: boolean;
+  title: string;
+  googleConnected: boolean;
+  calendars: GoogleCalendarInfo[];
+  calendarsLoading: boolean;
+  visibilityError: string | null;
+  onPlan: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+  onToday: () => void;
+  onToggleCalendar: (calendarId: string, visible: boolean) => Promise<void>;
+}) {
+  const showTitle = isMobile || !embedded;
+
+  const navButtons = (
+    <>
+      <Button
+        aria-label="Période précédente"
+        disabled={!mounted}
+        size="icon"
+        variant="outline"
+        onClick={onPrev}
+      >
+        <ChevronLeft className="size-4" />
+      </Button>
+      <Button disabled={!mounted} size="sm" variant="outline" onClick={onToday}>
+        {isMobile ? 'Auj.' : "Aujourd'hui"}
+      </Button>
+      <Button
+        aria-label="Période suivante"
+        disabled={!mounted}
+        size="icon"
+        variant="outline"
+        onClick={onNext}
+      >
+        <ChevronRight className="size-4" />
+      </Button>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-end gap-2">
+          {!showTitle && <div className="min-w-0 flex-1" />}
+          {googleConnected && (
+            <CalendarVisibilityMenu
+              calendars={calendars}
+              error={visibilityError}
+              loading={calendarsLoading}
+              compact
+              onToggle={onToggleCalendar}
+            />
+          )}
+          <div className="flex shrink-0 items-center gap-1">{navButtons}</div>
+          <Button
+            aria-label="Planifier une séance"
+            disabled={!mounted}
+            size="icon"
+            onClick={onPlan}
+          >
+            <Plus className="size-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          {!embedded && <p className="text-primary text-xs font-medium uppercase">Calendar</p>}
+          <h1
+            className={cn(
+              'font-heading font-semibold capitalize',
+              embedded ? 'text-xl' : 'mt-2 text-3xl',
+            )}
+          >
+            {title}
+          </h1>
+        </div>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {googleConnected && (
+            <CalendarVisibilityMenu
+              calendars={calendars}
+              error={visibilityError}
+              loading={calendarsLoading}
+              onToggle={onToggleCalendar}
+            />
+          )}
+          {navButtons}
+          <Button disabled={!mounted} onClick={onPlan}>
+            <Plus className="size-4" />
+            Planifier
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CalendarDayContent({
+  cell,
+  dateKey,
+  eventsByDay,
+  linkedActivityIds,
+  onEdit,
+  onOpenBrick,
+}: {
+  cell: CalendarDay;
+  dateKey: string;
+  eventsByDay: Record<string, DayEvent[]>;
+  linkedActivityIds: Set<string>;
+  onEdit: (session: ClientPlannedSession) => void;
+  onOpenBrick: (sessions: ClientPlannedSession[]) => void;
+}) {
+  return (
+    <>
+      {(eventsByDay[dateKey] ?? []).map((de) => (
+        <GoogleEventChip key={`${de.event.id}-${dateKey}`} dayEvent={de} />
+      ))}
+      {cell.activities
+        .filter((a) => !linkedActivityIds.has(a.id))
+        .map((a) => (
+          <ActivityChip key={a.id} activity={a} />
+        ))}
+      {groupPlannedSessions(cell.planned).map((item) =>
+        item.kind === 'single' ? (
+          <PlannedChip
+            key={item.session.id}
+            session={item.session}
+            onEdit={() => onEdit(item.session)}
+          />
+        ) : (
+          <BrickChip
+            key={item.id}
+            sessions={item.sessions}
+            onEdit={onEdit}
+            onOpen={() => onOpenBrick(item.sessions)}
+          />
+        ),
+      )}
+    </>
+  );
+}
+
+function CalendarWeekList({
+  days,
+  eventsByDay,
+  linkedActivityIds,
+  dragOver,
+  onCreate,
+  onDrop,
+  onDragOver,
+  onDragLeave,
+  onEdit,
+  onOpenBrick,
+}: {
+  days: CalendarDay[];
+  eventsByDay: Record<string, DayEvent[]>;
+  linkedActivityIds: Set<string>;
+  dragOver: string | null;
+  onCreate: (date: Date) => void;
+  onDrop: (dateKey: string, date: Date) => void;
+  onDragOver: (dateKey: string) => void;
+  onDragLeave: () => void;
+  onEdit: (session: ClientPlannedSession) => void;
+  onOpenBrick: (sessions: ClientPlannedSession[]) => void;
+}) {
+  return (
+    <div className="border-border/60 divide-border/60 divide-y overflow-hidden rounded-xl border">
+      {days.map((cell) => {
+        const dateKey = format(cell.date, 'yyyy-MM-dd');
+        const hasItems =
+          (eventsByDay[dateKey]?.length ?? 0) > 0 ||
+          cell.activities.some((a) => !linkedActivityIds.has(a.id)) ||
+          cell.planned.length > 0;
+
+        return (
+          <div
+            key={dateKey}
+            className={cn(
+              'cursor-pointer px-3 py-3 transition-colors',
+              cell.isToday && 'bg-primary/5',
+              dragOver === dateKey && 'bg-primary/10',
+            )}
+            onClick={() => onCreate(cell.date)}
+            onDragLeave={onDragLeave}
+            onDrop={() => onDrop(dateKey, cell.date)}
+            onDragOver={(e) => {
+              e.preventDefault();
+              onDragOver(dateKey);
+            }}
+          >
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="text-sm font-medium capitalize">
+                {format(cell.date, 'EEEE d MMM', { locale: fr })}
+                {cell.isToday && (
+                  <span className="text-primary ml-2 text-xs font-semibold tracking-wide uppercase">
+                    Aujourd&apos;hui
+                  </span>
+                )}
+              </p>
+              {!hasItems && (
+                <span className="text-muted-foreground text-xs">Repos · planifier</span>
+              )}
+            </div>
+            <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
+              <CalendarDayContent
+                cell={cell}
+                dateKey={dateKey}
+                eventsByDay={eventsByDay}
+                linkedActivityIds={linkedActivityIds}
+                onEdit={onEdit}
+                onOpenBrick={onOpenBrick}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function CalendarMonthCell({
+  cell,
+  eventsByDay,
+  linkedActivityIds,
+  dragOver,
+  onCreate,
+  onDrop,
+  onDragOver,
+  onDragLeave,
+  onEdit,
+  onOpenBrick,
+}: {
+  cell: CalendarDay;
+  eventsByDay: Record<string, DayEvent[]>;
+  linkedActivityIds: Set<string>;
+  dragOver: string | null;
+  onCreate: (date: Date) => void;
+  onDrop: (dateKey: string, date: Date) => void;
+  onDragOver: (dateKey: string) => void;
+  onDragLeave: () => void;
+  onEdit: (session: ClientPlannedSession) => void;
+  onOpenBrick: (sessions: ClientPlannedSession[]) => void;
+}) {
+  const dateKey = format(cell.date, 'yyyy-MM-dd');
+
+  return (
+    <div
+      className={cn(
+        'border-border/40 min-h-28 cursor-pointer border-r border-b p-1.5 transition-colors last:border-r-0',
+        !cell.inMonth && 'bg-muted/20',
+        dragOver === dateKey && 'bg-primary/10',
+      )}
+      onClick={() => onCreate(cell.date)}
+      onDragLeave={onDragLeave}
+      onDrop={() => onDrop(dateKey, cell.date)}
+      onDragOver={(e) => {
+        e.preventDefault();
+        onDragOver(dateKey);
+      }}
+    >
+      <div className="mb-1 flex h-5 items-center justify-between px-1">
+        <span className={cn('text-xs', getDayCellDateClassName(cell.isToday, cell.inMonth))}>
+          {cell.date.getDate()}
+        </span>
+      </div>
+      <div className="space-y-1">
+        <CalendarDayContent
+          cell={cell}
+          dateKey={dateKey}
+          eventsByDay={eventsByDay}
+          linkedActivityIds={linkedActivityIds}
+          onEdit={onEdit}
+          onOpenBrick={onOpenBrick}
+        />
+      </div>
     </div>
   );
 }
@@ -397,11 +678,13 @@ function CalendarVisibilityMenu({
   loading,
   error,
   onToggle,
+  compact = false,
 }: {
   calendars: GoogleCalendarInfo[];
   loading: boolean;
   error: string | null;
   onToggle: (calendarId: string, visible: boolean) => Promise<void>;
+  compact?: boolean;
 }) {
   const selectable = calendars.filter((c) => !c.isTarget);
 
@@ -409,9 +692,14 @@ function CalendarVisibilityMenu({
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button disabled={loading} size="sm" variant="outline">
+          <Button
+            aria-label="Calendriers Google"
+            disabled={loading}
+            size={compact ? 'icon' : 'sm'}
+            variant="outline"
+          >
             <CalendarCog className="size-4" />
-            Calendriers
+            {!compact && 'Calendriers'}
           </Button>
         }
       />

@@ -5,7 +5,12 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const [calendars, account] = await Promise.all([listGoogleCalendars(), getGoogleAccount()]);
+    const account = await getGoogleAccount();
+    if (!account) {
+      return NextResponse.json([]);
+    }
+
+    const [calendars] = await Promise.all([listGoogleCalendars()]);
     const hidden = new Set(account?.hiddenCalendarIds ?? []);
     const targetId = account?.targetCalendarId ?? null;
     return NextResponse.json(

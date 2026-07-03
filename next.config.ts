@@ -1,11 +1,29 @@
+import { spawnSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
+import withSerwistInit from '@serwist/next';
 import type { NextConfig } from 'next';
 
-// Accès dev depuis le téléphone sur le LAN (ex. http://192.168.1.187:3000).
-// Définir DEV_LAN_HOST dans .env avec l’IP locale du Mac (ifconfig en0).
-const devLanHost = process.env.DEV_LAN_HOST?.trim();
+const revision =
+  spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf-8' }).stdout.trim() || randomUUID();
+
+const withSerwist = withSerwistInit({
+  swSrc: 'src/sw.ts',
+  swDest: 'public/sw.js',
+  disable: process.env.NODE_ENV === 'development',
+  additionalPrecacheEntries: [{ url: '/~offline', revision }],
+  globPublicPatterns: ['icons/*.{png,svg}', 'favicon.svg'],
+});
+
+function loadAllowedDevOrigins(): string[] {
+  const hosts = new Set<string>(['localhost']);
+  const lanHost = process.env.DEV_LAN_HOST?.trim();
+  if (lanHost) hosts.add(lanHost);
+  return [...hosts];
+}
 
 const nextConfig: NextConfig = {
-  ...(devLanHost ? { allowedDevOrigins: [devLanHost] } : {}),
+  turbopack: {},
+  allowedDevOrigins: loadAllowedDevOrigins(),
   images: {
     remotePatterns: [
       {
@@ -17,4 +35,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);

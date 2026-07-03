@@ -15,6 +15,8 @@ const eslintConfig = [
       '**/.next',
       '**/.vercel',
       './next-env.d.ts',
+      // Service worker bundle généré par Serwist (src/sw.ts → public/sw.js)
+      'public/sw.js',
       // Config and tooling files (not app code; avoids React plugin + ESLint 10 API issues)
       '.prettierrc.js',
       'eslint.config.mjs',
@@ -206,6 +208,16 @@ const eslintConfig = [
     files: ['next-env.d.ts'],
     rules: {
       '@typescript-eslint/triple-slash-reference': 'off',
+    },
+  },
+  {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      sourceType: 'module',
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+      },
     },
   },
 ];

@@ -49,3 +49,25 @@ export function buildCalendarMonth(
   }
   return weeks;
 }
+
+/**
+ * Construit les 7 jours d'une semaine (lundi → dimanche).
+ */
+export function buildCalendarWeek(
+  weekAnchor: Date,
+  activities: ClientActivity[],
+  planned: ClientPlannedSession[],
+): CalendarDay[] {
+  const gridStart = startOfWeek(weekAnchor, WEEK_OPTS);
+  const gridEnd = endOfWeek(weekAnchor, WEEK_OPTS);
+  const days = eachDayOfInterval({ start: gridStart, end: gridEnd });
+  const today = new Date();
+
+  return days.map((date) => ({
+    date,
+    inMonth: true,
+    isToday: isSameDay(date, today),
+    activities: activities.filter((a) => isSameDay(new Date(a.date), date)),
+    planned: planned.filter((p) => isSameDay(new Date(p.date), date)),
+  }));
+}

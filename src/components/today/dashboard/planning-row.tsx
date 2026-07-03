@@ -7,7 +7,13 @@ import {
 import { ACTIVITY_COLOR, ACTIVITY_LABEL, INTENSITY_LABEL } from '@/lib/today-dashboard-labels';
 import type { ClientPlannedSession } from '@/lib/query/types';
 
-export function PlanningRow({ sessions }: { sessions: ClientPlannedSession[] }) {
+export function PlanningRow({
+  sessions,
+  mobile = false,
+}: {
+  sessions: ClientPlannedSession[];
+  mobile?: boolean;
+}) {
   const today = new Date();
   const upcoming = filterUpcomingPlannedSessions(sessions, today).slice(0, 4);
 
@@ -18,7 +24,7 @@ export function PlanningRow({ sessions }: { sessions: ClientPlannedSession[] }) 
       <p className="text-[10px] font-semibold text-slate-500 uppercase dark:text-slate-400">
         Prochaines séances
       </p>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className={cn('grid gap-3', mobile ? 'grid-cols-1' : 'grid-cols-2 sm:grid-cols-4')}>
         {upcoming.map((s) => {
           const typeLabel = ACTIVITY_LABEL[s.type as string] ?? s.type;
           const typeColor =
@@ -31,8 +37,11 @@ export function PlanningRow({ sessions }: { sessions: ClientPlannedSession[] }) 
           return (
             <Link
               key={s.id}
-              className="bg-card hover:bg-muted/30 flex flex-col gap-2 rounded-xl border p-4 transition-colors"
               href="/planning"
+              className={cn(
+                'bg-card hover:bg-muted/30 flex flex-col gap-2 rounded-xl border p-4 transition-colors',
+                mobile && 'min-h-11 active:opacity-80',
+              )}
             >
               <div className="flex items-center justify-between">
                 <span

@@ -149,3 +149,11 @@
     color: oklch(0.27 0.034 158);
   }
 }
+
+@utility safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+@utility safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}

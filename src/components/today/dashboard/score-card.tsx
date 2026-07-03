@@ -17,6 +17,7 @@ export interface ScoreCardProps {
   cardClass: string;
   subMetrics: { label: string; value: string }[];
   deltaVariant?: DeltaBadgeVariant;
+  variant?: 'default' | 'mobile';
 }
 
 export function ScoreCard({
@@ -33,25 +34,36 @@ export function ScoreCard({
   cardClass,
   subMetrics,
   deltaVariant = 'emerald',
+  variant = 'default',
 }: ScoreCardProps) {
+  const isMobile = variant === 'mobile';
+
   return (
     <Link
       href={href}
       className={cn(
-        'group relative flex flex-col overflow-hidden rounded-2xl border transition-opacity hover:opacity-90',
+        'group relative flex min-h-11 overflow-hidden rounded-2xl border transition-opacity hover:opacity-90 active:opacity-80',
+        isMobile ? 'flex-row items-center gap-3 px-4 py-3' : 'flex-col',
         cardClass,
       )}
     >
-      <div className="flex flex-col gap-3 px-5 pt-6 pb-4">
+      <div
+        className={cn('flex flex-col', isMobile ? 'min-w-0 flex-1 gap-1' : 'gap-3 px-5 pt-6 pb-4')}
+      >
         <p className="text-[10px] font-semibold text-slate-500 uppercase dark:text-slate-400">
           {label}
         </p>
 
-        <div className="flex items-end gap-2">
-          <span className="text-5xl leading-none font-bold tabular-nums">
+        <div className={cn('flex items-end gap-2', isMobile && 'items-center')}>
+          <span
+            className={cn(
+              'leading-none font-bold tabular-nums',
+              isMobile ? 'text-3xl' : 'text-5xl',
+            )}
+          >
             {score !== null ? score : '—'}%
           </span>
-          <div className="mb-1 flex flex-col gap-1">
+          <div className={cn('flex flex-col gap-1', isMobile ? '' : 'mb-1')}>
             <DeltaBadge delta={delta} higherIsBetter={higherIsBetter} variant={deltaVariant} />
             <span className={cn('flex items-center gap-0.5 text-xs font-medium', trendClass)}>
               {trendLabel}
@@ -62,7 +74,7 @@ export function ScoreCard({
           </div>
         </div>
 
-        {subMetrics.length > 0 && (
+        {!isMobile && subMetrics.length > 0 && (
           <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-current/10 pt-3">
             {subMetrics.map((m) => (
               <div key={m.label}>
@@ -76,8 +88,8 @@ export function ScoreCard({
         )}
       </div>
 
-      <div className="mt-auto px-1 pb-1">
-        <Sparkline h={36} stroke={sparklineStroke} values={sparklineValues} />
+      <div className={cn(isMobile ? 'w-24 shrink-0' : 'mt-auto px-1 pb-1')}>
+        <Sparkline h={isMobile ? 32 : 36} stroke={sparklineStroke} values={sparklineValues} />
       </div>
     </Link>
   );

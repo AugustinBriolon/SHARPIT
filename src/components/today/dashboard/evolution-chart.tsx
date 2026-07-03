@@ -2,7 +2,8 @@
 
 import { format, subDays, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { LineChart, Line, XAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
+import { LineChart, Line, XAxis, CartesianGrid, Tooltip } from 'recharts';
+import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 import type { ClientHealthEntry } from '@/lib/query/types';
 
 import { computeSharpitSleepScoreForDay, SLEEP_TARGET_MIN } from '@/lib/sleep-scoring';
@@ -45,7 +46,7 @@ export function EvolutionChart({
         </div>
       </div>
       {hasData ? (
-        <ResponsiveContainer height="100%" width="100%">
+        <ResponsiveChartFrame height={160}>
           <LineChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
             <CartesianGrid stroke="currentColor" strokeDasharray="3 3" strokeOpacity={0.07} />
             <XAxis
@@ -87,7 +88,7 @@ export function EvolutionChart({
               connectNulls
             />
           </LineChart>
-        </ResponsiveContainer>
+        </ResponsiveChartFrame>
       ) : (
         <div className="flex h-[140px] items-center justify-center">
           <p className="text-xs text-slate-400">Pas encore de données sur 7 jours</p>

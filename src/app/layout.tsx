@@ -1,8 +1,7 @@
-import { ClerkProvider } from '@clerk/nextjs';
-import { frFR } from '@clerk/localizations';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { IBM_Plex_Sans, Syne } from 'next/font/google';
-import { clerkAppearance } from '@/lib/clerk-appearance';
+import { AppClerkProvider } from '@/providers/clerk-provider';
+import { SwRegister } from '@/components/pwa/sw-register';
 import { Toaster } from '@/components/ui/toast';
 import { QueryProvider } from '@/providers/query-provider';
 import './globals.css';
@@ -22,10 +21,26 @@ const ibmPlexSans = IBM_Plex_Sans({
 export const metadata: Metadata = {
   title: 'SharpIt',
   description: 'Training intelligence — entraînement, analytics, récupération.',
-  themeColor: '#f8faf8',
-  icons: {
-    icon: '/favicon.svg',
+  applicationName: 'SHARPIT',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'SHARPIT',
   },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
+    apple: [{ url: '/apple-icon', type: 'image/png' }],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#f8faf8',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
@@ -34,12 +49,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider
-      afterSignOutUrl="/sign-in"
-      appearance={clerkAppearance}
-      localization={frFR}
-      signInFallbackRedirectUrl="/"
-    >
+    <AppClerkProvider>
       <html
         className={`${syne.variable} ${ibmPlexSans.variable} h-full antialiased`}
         lang="fr"
@@ -48,8 +58,9 @@ export default function RootLayout({
         <body className="bg-background text-foreground min-h-full font-sans">
           <QueryProvider>{children}</QueryProvider>
           <Toaster />
+          <SwRegister />
         </body>
       </html>
-    </ClerkProvider>
+    </AppClerkProvider>
   );
 }
