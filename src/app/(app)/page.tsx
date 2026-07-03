@@ -1,5 +1,5 @@
-import { TodayView } from '@/components/today/today-view';
+import { TodayDashboard } from '@/components/today/today-dashboard';
 
 export default function TodayPage() {
-  return <TodayView />;
+  return <TodayDashboard />;
 }
