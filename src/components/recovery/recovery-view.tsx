@@ -61,11 +61,11 @@ export function RecoveryView({ embedded = false }: { embedded?: boolean }) {
       : undefined;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {!embedded && (
         <PageHeader embedded={embedded}>
-          <p className="text-primary text-xs font-medium tracking-[0.2em] uppercase">Recovery</p>
-          <h1 className="font-heading mt-2 text-3xl font-semibold tracking-tight">Récupération</h1>
+          <p className="text-primary text-xs font-medium uppercase">Recovery</p>
+          <h1 className="font-heading mt-2 text-3xl font-semibold">Récupération</h1>
           <p className="text-muted-foreground mt-1">
             Es-tu prêt à pousser aujourd&apos;hui ? Lecture combinée de ta charge et de tes
             constantes Garmin.
@@ -75,52 +75,62 @@ export function RecoveryView({ embedded = false }: { embedded?: boolean }) {
 
       <ReadinessHero factors={factors} view={readiness} />
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <RecoveryStat
-          footer={hrvBaseline}
-          label="Statut HRV"
-          sublabel={hrv.latest != null ? `${hrv.latest} ms` : undefined}
-          tone={hrvStatus.tone}
-          value={hrvStatus.label}
-        />
-        <RecoveryStat
-          footer={form.description}
-          label="Forme (TSB)"
-          sublabel={form.label}
-          tone={form.tone}
-          value={form.tsb != null ? `${form.tsb > 0 ? '+' : ''}${form.tsb}` : '—'}
-        />
-        <RecoveryStat
-          footer="Énergie max du jour"
-          label="Body Battery"
-          tone={bodyBatteryTone(bodyBattery)}
-          value={bodyBattery != null ? `${bodyBattery}` : '—'}
-        />
-        <RecoveryStat
-          footer="Sur la journée"
-          label="Stress moyen"
-          tone={stressTone(stress)}
-          value={stress != null ? `${stress}` : '—'}
-        />
+      <section className="space-y-3">
+        <h2 className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+          Signaux du jour
+        </h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <RecoveryStat
+            footer={hrvBaseline}
+            label="Statut HRV"
+            sublabel={hrv.latest != null ? `${hrv.latest} ms` : undefined}
+            tone={hrvStatus.tone}
+            value={hrvStatus.label}
+          />
+          <RecoveryStat
+            footer={form.description}
+            label="Forme (TSB)"
+            sublabel={form.label}
+            tone={form.tone}
+            value={form.tsb != null ? `${form.tsb > 0 ? '+' : ''}${form.tsb}` : '—'}
+          />
+          <RecoveryStat
+            footer="Énergie max du jour"
+            label="Body Battery"
+            tone={bodyBatteryTone(bodyBattery)}
+            value={bodyBattery != null ? `${bodyBattery}` : '—'}
+          />
+          <RecoveryStat
+            footer="Sur la journée"
+            label="Stress moyen"
+            tone={stressTone(stress)}
+            value={stress != null ? `${stress}` : '—'}
+          />
+        </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <RecoveryStat
-          footer="Fréquence cardiaque au repos"
-          label="FC repos"
-          tone="neutral"
-          value={restingHr.latest != null ? `${restingHr.latest} bpm` : '—'}
-        />
-        <RecoveryStat
-          label="Sommeil moy. 7j"
-          tone="neutral"
-          value={sleep.avg7 != null ? formatSleep(Math.round(sleep.avg7)) : '—'}
-        />
-        <RecoveryStat
-          label="Poids"
-          tone="neutral"
-          value={weight.latest != null ? `${weight.latest} kg` : '—'}
-        />
+      <section className="space-y-3">
+        <h2 className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+          Constantes
+        </h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <RecoveryStat
+            footer="Fréquence cardiaque au repos"
+            label="FC repos"
+            tone="neutral"
+            value={restingHr.latest != null ? `${restingHr.latest} bpm` : '—'}
+          />
+          <RecoveryStat
+            label="Sommeil moy. 7j"
+            tone="neutral"
+            value={sleep.avg7 != null ? formatSleep(Math.round(sleep.avg7)) : '—'}
+          />
+          <RecoveryStat
+            label="Poids"
+            tone="neutral"
+            value={weight.latest != null ? `${weight.latest} kg` : '—'}
+          />
+        </div>
       </section>
 
       <SleepCoachPanel
@@ -131,9 +141,11 @@ export function RecoveryView({ embedded = false }: { embedded?: boolean }) {
         }}
       />
 
-      <section className="space-y-4">
-        <h2 className="font-heading text-lg font-medium">Tendances</h2>
-        <div className="grid gap-4 md:grid-cols-2">
+      <section className="space-y-3">
+        <h2 className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+          Tendances — 60 jours
+        </h2>
+        <div className="grid gap-3 md:grid-cols-2">
           <MetricLineChart
             color="#7c3aed"
             data={series}
@@ -162,7 +174,7 @@ export function RecoveryView({ embedded = false }: { embedded?: boolean }) {
             color="#2563eb"
             data={series}
             dataKey="weightKg"
-            subtitle="Pesées (Renpho ou Garmin)"
+            subtitle="Pesées (Withings, Renpho ou Garmin)"
             title="Poids"
             unit="kg"
           />
@@ -174,7 +186,7 @@ export function RecoveryView({ embedded = false }: { embedded?: boolean }) {
 
 function RecoverySkeleton({ embedded = false }: { embedded?: boolean }) {
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {!embedded && (
         <div className="space-y-2">
           <Skeleton className="h-4 w-20" />

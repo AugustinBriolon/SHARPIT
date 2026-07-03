@@ -10,7 +10,7 @@ export function AuthShell({
   return (
     <div className="bg-background relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-12">
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_oklch(0.68_0.16_150_/_0.08),_transparent_55%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_oklch(0.58_0.12_156_/_0.1),_transparent_55%)]"
         aria-hidden
       />
       <div className="relative z-10 flex w-full max-w-[420px] flex-col items-center gap-8">
@@ -19,9 +19,7 @@ export function AuthShell({
             <Activity className="text-primary size-6" strokeWidth={2.25} />
           </div>
           <div>
-            <h1 className="font-heading text-foreground text-2xl font-semibold tracking-tight">
-              SharpIt
-            </h1>
+            <h1 className="font-heading text-foreground text-2xl font-semibold">SharpIt</h1>
             <p className="text-muted-foreground mt-1 text-sm">{subtitle}</p>
           </div>
         </div>

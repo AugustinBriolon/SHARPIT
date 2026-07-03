@@ -38,7 +38,7 @@ export function SleepCoachPanel({
     return (
       <section className="space-y-4">
         <SleepHeader />
-        <div className="border-border bg-card text-muted-foreground rounded-2xl border p-6 text-sm">
+        <div className="border-border bg-card/60 text-muted-foreground rounded-2xl border p-6 text-sm">
           Pas encore de données de sommeil. Connecte et synchronise Garmin depuis les Réglages.
         </div>
       </section>
@@ -71,7 +71,7 @@ export function SleepCoachPanel({
 
 function SyncBanner() {
   return (
-    <div className="border-border bg-card text-muted-foreground rounded-xl border px-4 py-3 text-sm">
+    <div className="border-border bg-card/60 text-muted-foreground rounded-2xl border px-4 py-3 text-sm">
       <span className="text-foreground font-medium">Données limitées.</span> Seule la durée est
       disponible pour l&apos;instant. Va dans{' '}
       <span className="text-foreground font-medium">Réglages → Garmin</span> et lance{' '}
@@ -92,9 +92,9 @@ function SleepHeader() {
 
 function BedtimeCard({ view }: { view: SleepCoachView }) {
   return (
-    <div className="border-border bg-card flex flex-col justify-between rounded-2xl border p-6">
+    <div className="border-border bg-card/60 flex flex-col justify-between rounded-2xl border p-6">
       <div>
-        <p className="text-muted-foreground text-xs font-medium tracking-[0.2em] uppercase">
+        <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
           Heure de coucher conseillée
         </p>
         <p className="text-primary mt-3 font-mono text-4xl font-semibold tabular-nums">
@@ -123,10 +123,10 @@ function LastNightCard({ view }: { view: SleepCoachView }) {
   if (!latest) return null;
 
   return (
-    <div className="border-border bg-card rounded-2xl border p-6 lg:col-span-2">
+    <div className="border-border bg-card/60 rounded-2xl border p-6 lg:col-span-2">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+          <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
             Dernière nuit
           </p>
           <p className="text-foreground/80 mt-1 text-sm">
@@ -231,8 +231,8 @@ function AveragesRow({
       )}
     >
       {items.map((it) => (
-        <div key={it.label} className="border-border bg-card rounded-xl border p-4">
-          <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+        <div key={it.label} className="border-border bg-card/60 rounded-2xl border p-4">
+          <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
             {it.label}
           </p>
           <p className="mt-2 font-mono text-2xl font-semibold tabular-nums">{it.value}</p>
@@ -247,7 +247,7 @@ function InsightsList({ insights }: { insights: SleepInsight[] }) {
   return (
     <div className="space-y-3">
       {insights.map((insight, i) => (
-        <div key={i} className="border-border bg-card flex gap-3 rounded-xl border p-4">
+        <div key={i} className="border-border bg-card/60 flex gap-3 rounded-2xl border p-4">
           <span className={cn('mt-1.5 size-2 shrink-0 rounded-full', TONE_DOT[insight.tone])} />
           <div className="space-y-0.5">
             <p className={cn('text-sm font-medium', TONE_TEXT[insight.tone])}>{insight.title}</p>

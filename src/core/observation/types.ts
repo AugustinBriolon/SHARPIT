@@ -27,7 +27,8 @@ export type ObservationType =
   | 'GARMIN_READINESS'
   | 'GARMIN_BATTERY';
 
-export type ObservationSource = 'GARMIN' | 'STRAVA' | 'MANUAL' | 'RENPHO' | 'GOOGLE_FIT';
+export type ObservationSource =
+  'GARMIN' | 'STRAVA' | 'MANUAL' | 'RENPHO' | 'WITHINGS' | 'GOOGLE_FIT';
 
 export type SportType =
   | 'RUN'

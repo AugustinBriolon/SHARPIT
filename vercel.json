@@ -20,6 +20,9 @@
     },
     "src/app/api/renpho/sync/route.ts": {
       "maxDuration": 300
+    },
+    "src/app/api/withings/sync/route.ts": {
+      "maxDuration": 300
     }
   }
 }

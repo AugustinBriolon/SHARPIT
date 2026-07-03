@@ -20,7 +20,7 @@ import { useToday } from '@/hooks/use-today';
 import { useActivities } from '@/hooks/use-data';
 import { computeTrainingLoad } from '@/lib/training-load';
 import { computePmcSeries } from '@/lib/analytics';
-import { resolve } from '@/lib/french';
+import { resolve, resolveCode } from '@/lib/french';
 import {
   mapFatigueToSignal,
   mapFatigueCapacityLabel,
@@ -55,11 +55,29 @@ const DIMENSION_DESCRIPTION: Record<string, string> = {
 };
 
 const DOMINANT_LABEL: Record<string, string> = {
+  LOAD: 'Charge excessive',
+  NEUROMUSCULAR: 'Fatigue neuromusculaire',
+  METABOLIC: 'Fatigue métabolique',
+  CUMULATIVE: 'Accumulation chronique',
+  PSYCHOLOGICAL: 'Fatigue psychologique',
   load: 'Charge excessive',
   neuromuscular: 'Fatigue neuromusculaire',
   metabolic: 'Fatigue métabolique',
   cumulative: 'Accumulation chronique',
   psychological: 'Fatigue psychologique',
+};
+
+const DOMINANT_LABEL_LOW_FATIGUE: Record<string, string> = {
+  LOAD: 'Charge actuelle',
+  NEUROMUSCULAR: 'Neuromusculaire',
+  METABOLIC: 'Métabolique',
+  CUMULATIVE: 'Historique de charge',
+  PSYCHOLOGICAL: 'Psychologique',
+  load: 'Charge actuelle',
+  neuromuscular: 'Neuromusculaire',
+  metabolic: 'Métabolique',
+  cumulative: 'Historique de charge',
+  psychological: 'Psychologique',
 };
 
 const OVERREACHING_RISK_DISPLAY: Record<string, { label: string; colorClass: string } | undefined> =
@@ -201,14 +219,12 @@ function AcwrZoneBar({ acwr }: { acwr: number }) {
 
   const totalRange = 2.0;
   const markerPct = Math.min((acwr / totalRange) * 100, 100);
-
   const activeZone = zones.find((z) => acwr >= z.min && acwr < z.max) ?? zones[zones.length - 1];
 
   return (
-    <div className="space-y-2">
-      <div className="relative">
-        {/* Zone bar */}
-        <div className="flex h-3 w-full overflow-hidden rounded-full">
+    <>
+      <div className="relative h-3">
+        <div className="absolute inset-x-0 top-1/2 flex h-3 w-full -translate-y-1/2 overflow-hidden rounded-full">
           {zones.map((z) => {
             const width = ((z.max - z.min) / totalRange) * 100;
             return (
@@ -220,11 +236,23 @@ function AcwrZoneBar({ acwr }: { acwr: number }) {
             );
           })}
         </div>
-        {/* Current position marker */}
+
         <div
-          className="absolute top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-white shadow-md"
+          className="pointer-events-none absolute top-0 z-10 flex h-6 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-between"
           style={{ left: `${markerPct}%` }}
-        />
+          aria-hidden
+        >
+          <span
+            className="rounded-full px-1.5 py-0.5 text-[10px] leading-none font-bold text-white tabular-nums shadow-sm"
+            style={{ backgroundColor: activeZone.color }}
+          >
+            {acwr.toFixed(2)}
+          </span>
+          <span
+            className="h-full w-1 rounded-full border-2 border-white shadow-md"
+            style={{ backgroundColor: activeZone.color }}
+          />
+        </div>
       </div>
       <div className="flex items-center justify-between">
         <span className="text-muted-foreground text-[10px]">0.0</span>
@@ -233,15 +261,11 @@ function AcwrZoneBar({ acwr }: { acwr: number }) {
         <span className="text-muted-foreground text-[10px]">1.5</span>
         <span className="text-muted-foreground text-[10px]">2.0</span>
       </div>
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-bold tabular-nums" style={{ color: activeZone.color }}>
-          {acwr.toFixed(2)}
-        </span>
-        <span className="text-xs font-medium" style={{ color: activeZone.color }}>
-          {activeZone.label}
-        </span>
-      </div>
-    </div>
+
+      <p className="text-center text-xs font-medium" style={{ color: activeZone.color }}>
+        {activeZone.label}
+      </p>
+    </>
   );
 }
 
@@ -265,7 +289,7 @@ export default function TodayEffortPage() {
   if (!fatigue) {
     return (
       <div className="space-y-4 p-4">
-        <Link className="text-muted-foreground text-sm" href="/">
+        <Link className="text-muted-foreground block text-sm" href="/">
           ← Aujourd'hui
         </Link>
         <p className="text-muted-foreground text-sm">Données de fatigue indisponibles.</p>
@@ -331,11 +355,14 @@ export default function TodayEffortPage() {
     COMPLETENESS_LABEL[fatigue.dataCompleteness] ?? fatigue.dataCompleteness;
 
   const availableDimCount = Object.values(fatigue.dimensions).filter((d) => d.available).length;
+  const isLowFatigue =
+    fatigue.fatigueLevel === 'FRESH' || fatigue.fatigueLevel === 'FUNCTIONAL_LOW';
+  const dominantLabelMap = isLowFatigue ? DOMINANT_LABEL_LOW_FATIGUE : DOMINANT_LABEL;
 
   return (
     <div className="space-y-4 p-4">
       <Link
-        className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+        className="text-muted-foreground hover:text-foreground block text-sm transition-colors"
         href="/"
       >
         ← Aujourd'hui
@@ -346,7 +373,7 @@ export default function TodayEffortPage() {
         <div className="space-y-4">
           {/* Score hero */}
           <div className="bg-card/60 rounded-2xl border px-5 py-5">
-            <p className="text-muted-foreground mb-3 text-[11px] font-medium tracking-[0.15em] uppercase">
+            <p className="text-muted-foreground mb-3 text-[11px] font-medium uppercase">
               Charge d'effort
             </p>
             <div className="flex items-center gap-5">
@@ -399,7 +426,7 @@ export default function TodayEffortPage() {
               verdictDisplay.bgClass,
             )}
           >
-            <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+            <p className="text-muted-foreground text-[11px] font-medium uppercase">
               Directive de charge
             </p>
             <p className={cn('mt-1 text-sm font-semibold', verdictDisplay.colorClass)}>
@@ -422,7 +449,7 @@ export default function TodayEffortPage() {
 
           {/* Training capacity */}
           <div className="bg-card/60 rounded-2xl border px-5 py-4">
-            <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+            <p className="text-muted-foreground text-[11px] font-medium uppercase">
               Capacité d'entraînement
             </p>
             <p className="mt-1 text-sm font-semibold">
@@ -433,7 +460,7 @@ export default function TodayEffortPage() {
           {/* ACWR zone gauge */}
           {trainingLoad.acwr > 0 && (
             <div className="bg-card/60 rounded-2xl border px-5 py-4">
-              <p className="text-muted-foreground mb-3 text-[11px] font-medium tracking-[0.15em] uppercase">
+              <p className="text-muted-foreground mb-6 text-[11px] font-medium uppercase">
                 ACWR — Ratio charge aiguë / chronique
               </p>
               <AcwrZoneBar acwr={trainingLoad.acwr} />
@@ -459,7 +486,7 @@ export default function TodayEffortPage() {
 
           {/* 5 Dimension bars */}
           <div className="bg-card/60 space-y-3 rounded-2xl border px-5 py-4">
-            <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+            <p className="text-muted-foreground text-[11px] font-medium uppercase">
               Détail par dimension
             </p>
             <div className="space-y-3">
@@ -477,16 +504,26 @@ export default function TodayEffortPage() {
 
           {/* Dominant dimension callout */}
           {fatigue.dominantDimension && (
-            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/8 px-5 py-4">
-              <p className="text-[11px] font-medium tracking-[0.15em] text-amber-600 uppercase dark:text-amber-400">
-                Dimension dominante
+            <div
+              className={cn(
+                'rounded-2xl border px-5 py-4',
+                isLowFatigue ? 'bg-card/60' : 'border-amber-500/30 bg-amber-500/8',
+              )}
+            >
+              <p
+                className={cn(
+                  'text-[11px] font-medium uppercase',
+                  isLowFatigue ? 'text-muted-foreground' : 'text-amber-600 dark:text-amber-400',
+                )}
+              >
+                {isLowFatigue ? 'Dimension la plus contributive' : 'Dimension dominante'}
               </p>
               <p className="mt-1 text-sm font-semibold">
-                {DOMINANT_LABEL[fatigue.dominantDimension] ?? fatigue.dominantDimension}
+                {dominantLabelMap[fatigue.dominantDimension] ?? fatigue.dominantDimension}
               </p>
               {fatigue.primaryLimitingFactor && (
                 <p className="text-muted-foreground mt-0.5 text-xs">
-                  {fatigue.primaryLimitingFactor}
+                  {resolveCode(fatigue.primaryLimitingFactor)}
                 </p>
               )}
             </div>
@@ -495,7 +532,7 @@ export default function TodayEffortPage() {
           {/* Key evidence */}
           {fatigue.recommendation.keyEvidence.length > 0 && (
             <div className="bg-card/40 space-y-2 rounded-2xl border px-5 py-4">
-              <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+              <p className="text-muted-foreground text-[11px] font-medium uppercase">
                 Signaux clés
               </p>
               <ul className="space-y-1">
@@ -514,7 +551,7 @@ export default function TodayEffortPage() {
           {/* Overreaching alert */}
           {overreachingDisplay && (
             <div className="space-y-1 rounded-2xl border border-orange-500/20 bg-orange-500/5 px-5 py-4">
-              <p className="text-[11px] font-medium tracking-[0.15em] text-orange-600 uppercase dark:text-orange-400">
+              <p className="text-[11px] font-medium text-orange-600 uppercase dark:text-orange-400">
                 Alerte
               </p>
               <p className={cn('text-xs font-medium', overreachingDisplay.colorClass)}>
@@ -529,7 +566,7 @@ export default function TodayEffortPage() {
           {/* PMC chart — CTL / ATL / TSB */}
           {pmcSeries.length > 0 && (
             <div className="bg-card/60 rounded-2xl border px-4 py-4">
-              <p className="text-muted-foreground mb-2 text-[11px] font-medium tracking-[0.15em] uppercase">
+              <p className="text-muted-foreground mb-2 text-[11px] font-medium uppercase">
                 PMC — 28 jours
               </p>
               <ResponsiveContainer height={120} width="100%">
@@ -603,7 +640,7 @@ export default function TodayEffortPage() {
           {/* Weekly TSS bars */}
           {weeklyTss.some((w) => w.tss > 0) && (
             <div className="bg-card/60 rounded-2xl border px-4 py-4">
-              <p className="text-muted-foreground mb-2 text-[11px] font-medium tracking-[0.15em] uppercase">
+              <p className="text-muted-foreground mb-2 text-[11px] font-medium uppercase">
                 TSS hebdomadaire — 8 semaines
               </p>
               <ResponsiveContainer height={90} width="100%">
@@ -649,7 +686,7 @@ export default function TodayEffortPage() {
 
           {/* Confidence block */}
           <div className="bg-card/40 rounded-2xl border px-4 py-4">
-            <p className="text-muted-foreground mb-3 text-[11px] font-medium tracking-[0.15em] uppercase">
+            <p className="text-muted-foreground mb-3 text-[11px] font-medium uppercase">
               Fiabilité
             </p>
             <div className="grid grid-cols-3 gap-3">

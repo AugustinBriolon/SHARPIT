@@ -28,10 +28,10 @@ export function AnalyticsView({ activities }: AnalyticsViewProps) {
   const summary = useMemo(() => computeAnalyticsSummary(activities, pmc), [activities, pmc]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       <FormStatusBanner pmc={pmc} />
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <AnalyticsStat
           hint="Charge chronique (42 j)"
           label="CTL · Forme"
@@ -65,7 +65,7 @@ export function AnalyticsView({ activities }: AnalyticsViewProps) {
         description="Heures par semaine et part de chaque sport sur les 90 derniers jours."
         title="Volume & répartition"
       >
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-2">
           <VolumeChart data={weeklyVolume} />
           <SportDistributionChart data={distribution} />
         </div>

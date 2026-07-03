@@ -167,28 +167,27 @@ describe('scoreAutonomic', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('scoreSleep', () => {
-  it('returns 100 for excellent sleep efficiency ≥ 85%', () => {
-    const dim = scoreSleep(makeRecovery({ sleepEfficiencyPercent: 90, sleepDebtMin: 0 }));
+  it('returns 100 for excellent restorative ratio ≥ 55%', () => {
+    const dim = scoreSleep(makeRecovery({ sleepEfficiencyPercent: 58, sleepDebtMin: 0 }));
     expect(dim.score).toBe(100);
   });
 
-  it('returns 80 for good sleep efficiency 75–85%', () => {
-    const dim = scoreSleep(makeRecovery({ sleepEfficiencyPercent: 80, sleepDebtMin: 0 }));
-    expect(dim.score).toBe(80);
-  });
-
-  it('applies sleep debt modifier: 60–120 min debt = ×0.80', () => {
-    // efficiency 85% → raw 100. Debt 90min → ×0.80 → 80
-    const dim = scoreSleep(makeRecovery({ sleepEfficiencyPercent: 87, sleepDebtMin: 90 }));
-    expect(dim.score).toBeCloseTo(100 * 0.8, 0);
-  });
-
-  it('applies severe debt modifier: > 240 min = ×0.50', () => {
-    const dim = scoreSleep(makeRecovery({ sleepEfficiencyPercent: 87, sleepDebtMin: 300 }));
+  it('returns 50 for ratio 32–39% without debt', () => {
+    const dim = scoreSleep(makeRecovery({ sleepEfficiencyPercent: 36, sleepDebtMin: 0 }));
     expect(dim.score).toBe(50);
   });
 
-  it('returns unavailable when sleep efficiency is null', () => {
+  it('applies sleep debt modifier: 60–120 min debt = ×0.95', () => {
+    const dim = scoreSleep(makeRecovery({ sleepEfficiencyPercent: 36, sleepDebtMin: 90 }));
+    expect(dim.score).toBeCloseTo(50 * 0.95, 0);
+  });
+
+  it('applies severe debt modifier: > 300 min = ×0.75', () => {
+    const dim = scoreSleep(makeRecovery({ sleepEfficiencyPercent: 36, sleepDebtMin: 300 }));
+    expect(dim.score).toBeCloseTo(50 * 0.75, 0);
+  });
+
+  it('returns unavailable when restorative ratio is null', () => {
     const dim = scoreSleep(makeRecovery({ sleepEfficiencyPercent: null }));
     expect(dim.available).toBe(false);
     expect(dim.score).toBeNull();

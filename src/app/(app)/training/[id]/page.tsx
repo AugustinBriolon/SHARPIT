@@ -128,7 +128,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
                   · {activitySourceLabel(activity)}
                 </span>
               </div>
-              <h1 className="font-heading mt-2 text-3xl font-semibold tracking-tight">
+              <h1 className="font-heading mt-2 text-3xl font-semibold">
                 {activity.title ?? activityTypeLabels[activity.type]}
               </h1>
               <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-sm">
@@ -262,9 +262,7 @@ function Chip({
 function HeroStat({ label, value }: Stat) {
   return (
     <div className="border-border bg-card rounded-2xl border px-5 py-4">
-      <p className="text-muted-foreground text-[11px] font-medium tracking-[0.18em] uppercase">
-        {label}
-      </p>
+      <p className="text-muted-foreground text-[11px] font-medium uppercase">{label}</p>
       <p className="text-foreground mt-1.5 font-mono text-3xl font-semibold tabular-nums">
         {value}
       </p>

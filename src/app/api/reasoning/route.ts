@@ -1,7 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { reasoningEngine } from '@/lib/engines/reasoning-engine';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
+
+function readStateComputedAt(state: unknown): Date | null {
+  if (!state || typeof state !== 'object') return null;
+  const raw = (state as { computedAt?: unknown }).computedAt;
+  if (typeof raw !== 'string' && !(raw instanceof Date)) return null;
+  const date = new Date(raw);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/** Re-run reasoning when any sub-model in the Digital Twin is newer than the cached record. */
+async function isReasoningStale(athleteId: string, reasoningComputedAt: Date): Promise<boolean> {
+  const twin = await prisma.digitalTwin.findUnique({
+    where: { athleteId },
+    select: { recoveryState: true, fatigueState: true, adaptationState: true },
+  });
+  if (!twin) return true;
+
+  const subModelTimes = [
+    readStateComputedAt(twin.recoveryState),
+    readStateComputedAt(twin.fatigueState),
+    readStateComputedAt(twin.adaptationState),
+  ].filter((d): d is Date => d !== null);
+
+  return subModelTimes.some((computedAt) => computedAt > reasoningComputedAt);
+}
 
 /**
  * Reasoning Engine API
@@ -42,10 +68,12 @@ export async function GET(request: NextRequest) {
       // Also reject pre-i18n cache: old records have topAction.{verb,focus} instead
       // of topAction.{verbCode,focusCode} — serving them renders empty UI.
       const cachedHasI18nTopAction = cached?.output.reasoningState.topAction?.verbCode != null;
+      const stale = cached != null && (await isReasoningStale(athleteId, cached.computedAt));
       if (
         cached &&
         cached.output.reasoningState.overallVerdict !== 'INSUFFICIENT_DATA' &&
-        cachedHasI18nTopAction
+        cachedHasI18nTopAction &&
+        !stale
       ) {
         return NextResponse.json(formatResult(cached));
       }

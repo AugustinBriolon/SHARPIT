@@ -53,9 +53,6 @@ let report: BenchmarkReport;
 
 beforeAll(() => {
   report = runBenchmark(CURRENT_MODEL, BENCHMARK_SCENARIOS);
-  // Print the full report to the test output for visibility
-  console.log('\n' + formatBenchmarkReport(report));
-  console.log('\nCompact summary:', formatCompactSummary(report));
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

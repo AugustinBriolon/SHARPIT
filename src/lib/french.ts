@@ -15,14 +15,25 @@ const DIMENSION_FR: Record<string, string> = {
   LOAD: 'charge',
   NEUROMUSCULAR: 'neuromusculaire',
   METABOLIC: 'métabolique',
-  CUMULATIVE: 'cumulative',
+  CUMULATIVE: 'accumulation multi-semaines',
   PSYCHOLOGICAL: 'psychologique',
+  load: 'charge',
+  neuromuscular: 'neuromusculaire',
+  metabolic: 'métabolique',
+  cumulative: 'accumulation multi-semaines',
+  psychological: 'psychologique',
 };
 
 const TREND_FR: Record<string, string> = {
   IMPROVING: 'en progression',
   STABLE: 'stable',
   DECLINING: 'en déclin',
+};
+
+const MODEL_SYSTEM_FR: Record<string, string> = {
+  RECOVERY: 'récupération',
+  FATIGUE: 'fatigue',
+  ADAPTATION: 'adaptation',
 };
 
 const LIMITER_FR: Record<string, string> = {
@@ -174,6 +185,71 @@ const STRINGS: Record<string, string> = {
   'reasoning.conflict.signalConflict01.description': 'Signaux physiologiques contradictoires',
   'reasoning.conflict.signalConflict01.resolution':
     "Maintenir une intensité modérée jusqu'à résolution",
+
+  // ── Arbitration (resolved disagreement) ───────────────────────────────────
+  'reasoning.finding.arbitration.title': 'Décision retenue après analyse croisée',
+  'reasoning.finding.arbitration.evidence.verdict': 'Orientation du jour : {verdict}',
+  'reasoning.finding.arbitration.evidence.priority':
+    'Priorité au modèle {system} en cas de désaccord',
+
+  // ── Model direction conflict (legacy — no longer surfaced to athletes) ───
+  'reasoning.finding.modelDirectionConflict.title': 'Les modèles ne s’accordent pas',
+  'reasoning.finding.modelDirectionConflict.evidence.recovery':
+    'Récupération : tendance à {direction}',
+  'reasoning.finding.modelDirectionConflict.evidence.fatigue': 'Fatigue : tendance à {direction}',
+  'reasoning.finding.modelDirectionConflict.evidence.adaptation':
+    'Adaptation : tendance à {direction}',
+
+  // ── Fatigue evidence ─────────────────────────────────────────────────────
+  'fatigue.evidence.limitingFactor': 'Facteur limitant : {dimension}',
+  'fatigue.evidence.timeToFresh': 'Retour à la fraîcheur estimé dans {days} jour(s)',
+  'fatigue.evidence.performanceCapacity': 'Capacité estimée : {pct} %',
+
+  // ── Fatigue rationale (directive de charge) ───────────────────────────────
+  'fatigue.rationale.noData': 'Données insuffisantes — prudence par défaut.',
+  'fatigue.rationale.criticalOverreaching':
+    'Surmenage fonctionnel critique — décharge obligatoire.',
+  'fatigue.rationale.consecutiveDays': '{days} jours consécutifs d’accumulation de fatigue.',
+  'fatigue.rationale.loadReductionRequired':
+    'La charge doit être réduite pour permettre l’absorption.',
+  'fatigue.rationale.stillAccumulating':
+    'La fatigue continue de s’accumuler — ne pas ajouter de stress.',
+  'fatigue.rationale.accumulatedFatigue': 'Fatigue accumulée au-delà du seuil de récupération.',
+  'fatigue.rationale.estimatedFresh': 'Retour à la fraîcheur estimé dans {days} jour(s).',
+  'fatigue.rationale.productiveState':
+    'Fatigue fonctionnelle élevée — état productif si bien géré.',
+  'fatigue.rationale.avoidAddingLoad': 'Tendance à l’accumulation — éviter d’ajouter de la charge.',
+  'fatigue.rationale.loadBelowOptimal': 'Charge sous le sweet spot — marge pour progresser.',
+  'fatigue.rationale.maintainCurrent': 'Charge actuelle adaptée — maintenir le niveau.',
+  'fatigue.rationale.lowFatigue': 'Fatigue basse — capacité disponible pour augmenter la charge.',
+  'fatigue.rationale.loadRatioElevated':
+    'Ratio charge aiguë/chronique élevé — prudence malgré une fatigue basse.',
+  'fatigue.rationale.neuromuscularDominant': 'La composante neuromusculaire domine la fatigue.',
+  'fatigue.rationale.metabolicDominant': 'La composante métabolique domine la fatigue.',
+
+  // ── Fatigue primary limiting factor ───────────────────────────────────────
+  'fatigue.primaryLimitingFactor.load':
+    'La charge d’entraînement est le principal levier aujourd’hui.',
+  'fatigue.primaryLimitingFactor.neuromuscular':
+    'La récupération neuromusculaire est le principal levier.',
+  'fatigue.primaryLimitingFactor.metabolic': 'La fatigue métabolique est le principal levier.',
+  'fatigue.primaryLimitingFactor.cumulative':
+    'L’historique de charge sur plusieurs semaines pèse le plus.',
+  'fatigue.primaryLimitingFactor.psychological': 'Le stress psychologique est le principal levier.',
+  'fatigue.primaryLimitingFactor.multiple': 'Plusieurs dimensions contribuent à la fatigue.',
+
+  // ── Recovery evidence & rationale ────────────────────────────────────────
+  'recovery.evidence.score': 'Score de récupération : {score}/100',
+  'recovery.rationale.excellent': 'Récupération excellente — intensité élevée possible.',
+  'recovery.rationale.good': 'Bonne récupération — entraînement normal indiqué.',
+  'recovery.rationale.partial': 'Récupération partielle — privilégier une intensité modérée.',
+  'recovery.rationale.incomplete': 'Récupération incomplète — séance légère recommandée.',
+  'recovery.rationale.insufficient': 'Récupération insuffisante — repos ou très léger.',
+  'recovery.rationale.noData': 'Données insuffisantes — prudence par défaut.',
+  'recovery.rationale.autonomicSuppressed': 'Système nerveux autonome en tension.',
+  'recovery.rationale.sleepLimiting': 'Le sommeil limite la récupération aujourd’hui.',
+  'recovery.rationale.overreachingRisk': 'Risque de surmenage détecté.',
+  'recovery.rationale.dissonance': 'Écart entre signaux objectifs et ressenti.',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -189,8 +265,11 @@ export function resolve(item: I18nItem): string {
     const raw = item.params![key];
     if (raw === undefined) return `{${key}}`;
 
-    if (key === 'dimension' || key === 'system') {
+    if (key === 'dimension') {
       return DIMENSION_FR[String(raw)] ?? String(raw);
+    }
+    if (key === 'system') {
+      return MODEL_SYSTEM_FR[String(raw)] ?? DIMENSION_FR[String(raw)] ?? String(raw);
     }
     if (key === 'trend') {
       return TREND_FR[String(raw)] ?? String(raw);

@@ -1,10 +1,10 @@
 import { shadcn } from '@clerk/themes';
 
-/** Tokens SharpIt — alignés sur globals.css (light Bevel / vert pousse). */
+/** Tokens SharpIt — alignés sur globals.css (sauge bien-être #3a9e6a). */
 const SHARPIT = {
   primary: '#3a9e6a',
   primaryHover: '#2f8558',
-  background: '#fafbf9',
+  background: '#f8faf8',
   foreground: '#1a2e24',
   muted: '#6b7c72',
   card: '#ffffff',
@@ -21,7 +21,7 @@ const elements = {
   cardBox: 'shadow-none border border-border/80 rounded-xl bg-card',
   card: 'rounded-xl border-0 bg-transparent shadow-none gap-4',
   header: 'gap-1',
-  headerTitle: 'font-heading text-lg font-semibold tracking-tight text-foreground',
+  headerTitle: 'font-heading text-lg font-semibold  text-foreground',
   headerSubtitle: 'text-sm text-muted-foreground',
   socialButtonsBlockButton:
     'rounded-lg border border-border bg-background text-foreground shadow-none hover:bg-muted/60',

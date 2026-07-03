@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
+import type { ModelDirections } from '@/core/inference/reasoning/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // API response types (no server imports — mirrors API route response shapes)
@@ -124,6 +125,7 @@ export interface ReasoningData {
     hasRecoveryState: boolean;
     hasFatigueState: boolean;
     hasAdaptationState: boolean;
+    modelDirections?: ModelDirections;
   };
 }
 

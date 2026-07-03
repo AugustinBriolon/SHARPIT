@@ -192,14 +192,14 @@ describe('extractRecoveryFeatures — sleepDebtMin', () => {
     expect(result.sleepDebtMin).toBeNull();
   });
 
-  it('defaults to 480 min target when no sleepTargetMinutes set', () => {
+  it('defaults to 7h30 target when no sleepTargetMinutes set', () => {
     const sleep14d = Array.from({ length: 7 }, (_, i) => {
       const d = new Date('2026-07-02');
       d.setDate(d.getDate() - i);
-      return { totalMinutes: 480, timestamp: d };
+      return { totalMinutes: 450, timestamp: d };
     });
     const history: RecoveryHistory = { ...EMPTY_HISTORY, sleep14d };
-    // No sleepTargetMinutes in context → defaults to 480
+    // No sleepTargetMinutes in context → defaults to 450 (7h30)
     const result = extractRecoveryFeatures(
       null,
       null,

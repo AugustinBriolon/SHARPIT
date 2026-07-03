@@ -13,7 +13,7 @@ import type {
   FatigueBenchmarkScenario,
   FatiguePhysiologicalExpectations,
 } from './fatigue-scenarios';
-import type { ValueExpectation, RangeExpectation, LiteratureReference } from './types';
+import type { RangeExpectation, ValueExpectation } from './types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Result types

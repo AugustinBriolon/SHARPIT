@@ -1,3 +1,4 @@
+import { BodyCompositionSource, type BodyCompositionMeasurement } from '@prisma/client';
 import { format, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -34,6 +35,31 @@ export interface CompositionTrend {
   latest: number | null;
   avg7: number | null;
   delta: number | null;
+}
+
+/** Withings l'emporte sur Renpho pour une même journée calendaire. */
+export function dedupeBodyCompositionByDay(
+  rows: BodyCompositionMeasurement[],
+): BodyCompositionMeasurement[] {
+  const byDay = new Map<string, BodyCompositionMeasurement[]>();
+
+  for (const row of rows) {
+    const dayKey = format(row.measuredAt, 'yyyy-MM-dd');
+    const bucket = byDay.get(dayKey);
+    if (bucket) bucket.push(row);
+    else byDay.set(dayKey, [row]);
+  }
+
+  const picked: BodyCompositionMeasurement[] = [];
+
+  for (const dayRows of byDay.values()) {
+    const withings = dayRows.filter((r) => r.source === BodyCompositionSource.WITHINGS);
+    const pool = withings.length > 0 ? withings : dayRows;
+    pool.sort((a, b) => b.measuredAt.getTime() - a.measuredAt.getTime());
+    picked.push(pool[0]!);
+  }
+
+  return picked.sort((a, b) => b.measuredAt.getTime() - a.measuredAt.getTime());
 }
 
 function average(values: number[]): number | null {

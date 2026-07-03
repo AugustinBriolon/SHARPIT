@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { getDevTools, isDevToolsEnabled } from '@/lib/dev-tools';
+import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
  *
  * For in-process comparison, use ReplayEngine.compareChecksums() directly.
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   if (!isDevToolsEnabled) {
     return NextResponse.json({ error: 'Developer tools are not enabled.' }, { status: 404 });
   }

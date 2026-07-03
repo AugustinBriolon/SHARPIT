@@ -22,37 +22,35 @@ import { randomUUID } from 'node:crypto';
 
 import type { ObservationRepository } from '@/core/observation/repository';
 import type {
+  BodyCompositionObservation,
+  HrvObservation,
   Observation,
+  PhysicalConditionObservation,
+  RestingHrObservation,
   SessionObservation,
   SleepObservation,
-  HrvObservation,
-  RestingHrObservation,
   SubjectiveObservation,
-  BodyCompositionObservation,
-  PhysicalConditionObservation,
 } from '@/core/observation/types';
 
 import type { MetricsCollector } from '@/core/dev/metrics';
 
-import type { FeatureRepository } from './repository';
 import type { ExtractionContext } from './context';
+import type { FeatureRepository } from './repository';
 import type {
-  DayFeatures,
-  SessionFeatureSet,
-  FeatureSetRecord,
-  RecoveryHistory,
-  LoadHistory,
   BodyHistory,
   ConditionHistory,
-  SessionFeatureSetRecord,
+  DayFeatures,
+  FeatureSetRecord,
   LoadFeatureSet,
+  LoadHistory,
+  RecoveryHistory,
 } from './types';
 
-import { extractSessionFeatures } from './extractors/session-extractor';
-import { extractLoadFeatures } from './extractors/load-extractor';
-import { extractRecoveryFeatures, computeRpeVsTargetZone } from './extractors/recovery-extractor';
 import { extractBodyFeatures } from './extractors/body-extractor';
 import { extractConditionFeatures } from './extractors/condition-extractor';
+import { extractLoadFeatures } from './extractors/load-extractor';
+import { computeRpeVsTargetZone, extractRecoveryFeatures } from './extractors/recovery-extractor';
+import { extractSessionFeatures } from './extractors/session-extractor';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Ports

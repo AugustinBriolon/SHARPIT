@@ -94,7 +94,7 @@ export function runFatigueModel(
 
   // Maturity modifier: < 7 days history → 60%, 7-14 → 80%, 14+ → 100%
   const historyDays = context.recentFatigueHistory.length;
-  const maturityModifier = historyDays >= 14 ? 1.0 : historyDays >= 7 ? 0.8 : 0.6;
+  const maturityModifier = fatigueHistoryMaturityModifier(historyDays);
   const confidence = rawConfidence * maturityModifier;
 
   // ── Step 4: Classify ──────────────────────────────────────────────────────
@@ -176,11 +176,23 @@ export function runFatigueModel(
 // Internal helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
+function fatigueHistoryMaturityModifier(historyDays: number): number {
+  if (historyDays >= 14) return 1.0;
+  if (historyDays >= 7) return 0.8;
+  return 0.6;
+}
+
+function dimensionResultStatus(d: import('./types').DimensionScore): string {
+  if (!d.available) return 'unavailable';
+  if (d.score !== null) return `score=${d.score}`;
+  return 'computed';
+}
+
 function toDimensionResult(d: import('./types').DimensionScore): DimensionResult {
   return {
     score: d.score,
     available: d.available,
-    status: d.available ? (d.score !== null ? `score=${d.score}` : 'computed') : 'unavailable',
+    status: dimensionResultStatus(d),
   };
 }
 

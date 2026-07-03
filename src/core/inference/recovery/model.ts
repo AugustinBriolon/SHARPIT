@@ -19,29 +19,29 @@
  * Reference: docs/models/RECOVERY_MODEL.md
  */
 
-import type { DayFeatures, RecoveryFeatureSet, LoadFeatureSet } from '@/core/features/types';
 import type {
-  RecoveryModelOutput,
-  RecoveryModelContext,
-  RecoverySignals,
-  RecoveryDecision,
-  RecoveryRecommendation,
-  RecoveryVerdict,
-  RecommendedIntensity,
-  DimensionResult,
-} from './types';
-import type {
-  RecoveryState,
-  ReadinessCategory,
-  OverreachingRisk,
+  DataCompleteness,
   IllnessRisk,
+  OverreachingRisk,
+  ReadinessCategory,
+  RecoveryState,
 } from '@/core/digital-twin/types';
+import type { DayFeatures, LoadFeatureSet, RecoveryFeatureSet } from '@/core/features/types';
+import type {
+  RecommendedIntensity,
+  RecoveryDecision,
+  RecoveryModelContext,
+  RecoveryModelOutput,
+  RecoveryRecommendation,
+  RecoverySignals,
+  RecoveryVerdict,
+} from './types';
 
 import {
-  scoreAllDimensions,
-  synthesizeScore,
   baselineMaturityFactor,
+  scoreAllDimensions,
   signalConsistencyFactor,
+  synthesizeScore,
 } from './scoring';
 
 import type { I18nItem } from '@/core/inference/shared/types';
@@ -144,6 +144,22 @@ function mapScoreToCategory(score: number | null, availableCount: number): Readi
   if (score >= 50) return 'REDUCED';
   if (score >= 30) return 'LOW';
   return 'VERY_LOW';
+}
+
+function capScoreForHighIllnessRisk(
+  illnessRisk: IllnessRisk,
+  finalScore: number | null,
+): number | null {
+  if (illnessRisk !== 'HIGH') return finalScore;
+  if (finalScore === null) return 25;
+  return Math.min(finalScore, 25);
+}
+
+function classifyDataCompleteness(availableCount: number): DataCompleteness {
+  if (availableCount >= 4) return 'FULL';
+  if (availableCount >= 2) return 'PARTIAL';
+  if (availableCount === 1) return 'SPARSE';
+  return 'INSUFFICIENT';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -365,8 +381,7 @@ export function runRecoveryModel(
   const illnessRisk: IllnessRisk = recovery ? computeIllnessRisk(recovery, load) : 'LOW';
 
   // Override to VERY_LOW when illness risk is HIGH
-  const effectiveScore =
-    illnessRisk === 'HIGH' ? (finalScore !== null ? Math.min(finalScore, 25) : 25) : finalScore;
+  const effectiveScore = capScoreForHighIllnessRisk(illnessRisk, finalScore);
 
   const effectiveCategory: ReadinessCategory = illnessRisk === 'HIGH' ? 'VERY_LOW' : category;
 
@@ -390,14 +405,7 @@ export function runRecoveryModel(
 
   // ── Data completeness ─────────────────────────────────────────────────────
   const { availableCount } = synthesis;
-  const completeness =
-    availableCount >= 4
-      ? 'FULL'
-      : availableCount >= 2
-        ? 'PARTIAL'
-        : availableCount === 1
-          ? 'SPARSE'
-          : 'INSUFFICIENT';
+  const completeness = classifyDataCompleteness(availableCount);
 
   // ── Dimension results (for Digital Twin) ──────────────────────────────────
   const dimensionResults: RecoveryState['dimensions'] = {

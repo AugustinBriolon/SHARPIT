@@ -1,10 +1,11 @@
-import { Prisma } from '@prisma/client';
+import { BodyCompositionSource, Prisma } from '@prisma/client';
 import { format, startOfDay, subDays } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import { type RenphoMeasurement, renphoClientFromCredentials } from '@/lib/integrations/renpho';
 import { decryptSecret, encryptSecret } from '@/lib/secret-box';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { renphoMeasurementToBodyComposition } from '@/core/adapters/renpho-adapter';
+import { withingsWeighInDayKeys } from '@/lib/integrations/withings-sync';
 
 const ATHLETE_ID = 'default';
 
@@ -58,7 +59,8 @@ export async function disconnectRenpho() {
 
 function measurementToPrisma(m: RenphoMeasurement): Prisma.BodyCompositionMeasurementCreateInput {
   return {
-    renphoId: m.id,
+    source: BodyCompositionSource.RENPHO,
+    externalId: m.id,
     measuredAt: new Date(m.time_stamp * 1000),
     weightKg: m.weight ?? null,
     bmi: m.bmi ?? null,
@@ -77,11 +79,14 @@ function measurementToPrisma(m: RenphoMeasurement): Prisma.BodyCompositionMeasur
   };
 }
 
-/** Met à jour le poids du jour dans DailyHealth à partir d'une pesée Renpho. */
-async function upsertDailyWeightFromMeasurement(m: RenphoMeasurement) {
+/** Met à jour le poids du jour dans DailyHealth — sauf si Withings a déjà une pesée ce jour-là. */
+async function upsertDailyWeightFromMeasurement(m: RenphoMeasurement, withingsDays: Set<string>) {
   if (m.weight == null) return;
 
   const local = new Date(m.time_stamp * 1000);
+  const dayKey = format(local, 'yyyy-MM-dd');
+  if (withingsDays.has(dayKey)) return;
+
   const day = new Date(Date.UTC(local.getFullYear(), local.getMonth(), local.getDate()));
 
   await prisma.dailyHealth.upsert({
@@ -112,6 +117,7 @@ export async function syncRenphoHealth(options?: {
   const limit = options?.full ? 2000 : Math.max(days * 2, 100);
 
   const measurements = await client.getMeasurements({ sinceTimestamp, limit });
+  const withingsDays = await withingsWeighInDayKeys(subDays(startOfDay(new Date()), days));
 
   let imported = 0;
   let updated = 0;
@@ -120,13 +126,23 @@ export async function syncRenphoHealth(options?: {
   for (const measurement of measurements) {
     const data = measurementToPrisma(measurement);
     const existing = await prisma.bodyCompositionMeasurement.findUnique({
-      where: { renphoId: measurement.id },
+      where: {
+        source_externalId: {
+          source: BodyCompositionSource.RENPHO,
+          externalId: measurement.id,
+        },
+      },
       select: { id: true },
     });
 
     if (existing) {
       await prisma.bodyCompositionMeasurement.update({
-        where: { renphoId: measurement.id },
+        where: {
+          source_externalId: {
+            source: BodyCompositionSource.RENPHO,
+            externalId: measurement.id,
+          },
+        },
         data,
       });
       updated += 1;
@@ -144,7 +160,7 @@ export async function syncRenphoHealth(options?: {
   }
 
   for (const measurement of weightByDay.values()) {
-    await upsertDailyWeightFromMeasurement(measurement);
+    await upsertDailyWeightFromMeasurement(measurement, withingsDays);
   }
 
   await prisma.renphoAccount.update({

@@ -108,8 +108,8 @@ export function GoalsView() {
     <div className="space-y-8">
       <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-primary text-xs font-medium tracking-[0.2em] uppercase">Goals</p>
-          <h1 className="font-heading mt-2 text-3xl font-semibold tracking-tight">Objectifs</h1>
+          <p className="text-primary text-xs font-medium uppercase">Goals</p>
+          <h1 className="font-heading mt-2 text-3xl font-semibold">Objectifs</h1>
           <p className="text-muted-foreground mt-1">
             Des courses aux objectifs hebdomadaires — toute la hiérarchie.
           </p>

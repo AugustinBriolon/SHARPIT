@@ -7,14 +7,15 @@
  * References: docs/models/ADAPTATION_MODEL.md §4.1–4.4
  */
 
-import type { LoadFeatureSet, RecoveryFeatureSet, SessionFeatureSet } from '@/core/features/types';
-import type { RecoveryState, FatigueState } from '@/core/digital-twin/types';
-import type { DimensionScore, ScoredAdaptationDimensions } from './types';
 import type {
   AdaptationStatus,
   AdaptationTrend,
   DataCompleteness,
+  FatigueState,
+  RecoveryState,
 } from '@/core/digital-twin/types';
+import type { LoadFeatureSet, RecoveryFeatureSet, SessionFeatureSet } from '@/core/features/types';
+import type { DimensionScore, ScoredAdaptationDimensions } from './types';
 
 // Dimension weights (must sum to 1.0)
 const WEIGHTS = {
@@ -198,7 +199,7 @@ export function scoreRecoveryQuality(
     score = readiness !== null ? Math.min(30, readiness * 0.3) : 10;
   } else if (readiness !== null && readiness >= 75 && capacity === 'FULL') {
     score = lerp(80, 100, 75, readiness - 75);
-  } else if (readiness !== null && readiness >= 50 && capacity !== 'REST_ONLY') {
+  } else if (readiness !== null && readiness >= 50) {
     score = lerp(50, 75, 50, readiness - 50);
   } else if (readiness !== null) {
     score = lerp(20, 50, 0, readiness);

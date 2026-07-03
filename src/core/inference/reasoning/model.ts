@@ -24,7 +24,7 @@ import {
   computeReasoningConfidence,
 } from './scoring';
 export function runReasoningModel(input: ReasoningModelInput): ReasoningModelOutput {
-  const { trainingDayId, athleteId, athleteState } = input;
+  const { trainingDayId, athleteState } = input;
   const { recovery: r, fatigue: f, adaptation: a } = athleteState;
 
   const availableCount = [r, f, a].filter(Boolean).length;
@@ -41,20 +41,31 @@ export function runReasoningModel(input: ReasoningModelInput): ReasoningModelOut
   const conflicts = detectConflicts(r, f, a);
   const opportunities = detectOpportunities(r, f, a);
 
-  // Step 4 — key findings
-  const keyFindings = buildKeyFindings(r, f, a, conflicts);
-
-  // Step 5 — limiting factor + attention priority
+  // Step 4 — limiting factor (needed before key findings for arbitration)
   const limitingFactor = selectLimitingFactor(r, f, a, overallVerdict);
+
+  // Step 5 — key findings
+  const keyFindings = buildKeyFindings(
+    r,
+    f,
+    a,
+    conflicts,
+    modelDirections,
+    physiologicalConsistency,
+    overallVerdict,
+    limitingFactor,
+  );
+
+  // Step 6 — attention priority
   const systemAttentionPriority = selectAttentionPriority(limitingFactor, overallVerdict);
 
-  // Step 6 — top action
+  // Step 7 — top action
   const topAction = buildTopAction(overallVerdict, limitingFactor, a);
 
-  // Step 7 — evidence graph
+  // Step 8 — evidence graph
   const evidenceGraph = buildEvidenceGraph(r, f, a, overallVerdict, limitingFactor);
 
-  // Step 8 — confidence + data completeness
+  // Step 9 — confidence + data completeness
   const { confidence, dataCompleteness } = computeReasoningConfidence(
     r,
     f,
@@ -62,7 +73,7 @@ export function runReasoningModel(input: ReasoningModelInput): ReasoningModelOut
     physiologicalConsistency,
   );
 
-  // Step 9 — build signals (ephemeral, not persisted)
+  // Step 10 — build signals (ephemeral, not persisted)
   const signals: ReasoningSignals = {
     overallVerdict,
     physiologicalConsistency,
@@ -77,7 +88,7 @@ export function runReasoningModel(input: ReasoningModelInput): ReasoningModelOut
     hasAdaptationState: a !== null,
   };
 
-  // Step 10 — build ReasoningState (persisted to Digital Twin)
+  // Step 11 — build ReasoningState (persisted to Digital Twin)
   const reasoningState: ReasoningState = {
     overallVerdict,
     systemAttentionPriority,

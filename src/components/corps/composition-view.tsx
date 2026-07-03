@@ -1,7 +1,13 @@
 'use client';
 
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Scale } from 'lucide-react';
 import { useMemo } from 'react';
+import {
+  CorpsDisclaimer,
+  CorpsEmptyState,
+  CorpsPanel,
+  CorpsSectionHeader,
+} from '@/components/corps/corps-ui';
 import { MetricLineChart } from '@/components/recovery/health-charts';
 import { RecoveryStat } from '@/components/recovery/recovery-panels';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -25,6 +31,9 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
   const visceral = useMemo(() => computeCompositionTrend(entries, 'visceralFat'), [entries]);
   const bmi = useMemo(() => computeCompositionTrend(entries, 'bmi'), [entries]);
 
+  const bmiDisplay = latest?.bmi ?? bmi.latest;
+  const metabolicAgeDisplay = latest?.metabolicAge ?? latest?.bodyAge;
+
   if (query.isLoading) {
     return <CompositionSkeleton />;
   }
@@ -32,49 +41,36 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
   const empty = entries.length === 0;
 
   return (
-    <div className="space-y-8">
-      <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
-        <div className="flex gap-3">
-          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
-          <div className="space-y-1 text-sm">
-            <p className="font-medium text-amber-800 dark:text-amber-300">
-              Lecture indicative, pas une mesure médicale
-            </p>
-            <p className="text-muted-foreground text-xs leading-relaxed">
-              Les balances à impédancemétrie (dont Renpho) estiment la composition à partir du
-              courant électrique : utile pour suivre les <em>tendances</em>, mais plusieurs études
-              montrent un écart notable avec la référence DEXA — surtout sur la masse grasse, la
-              masse maigre et la graisse viscérale. Hydratation, repas récents, heure de pesée et
-              posture influencent aussi le résultat. Utilise ces chiffres comme un fil conducteur,
-              pas comme une vérité absolue.
-            </p>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <CorpsDisclaimer icon={AlertTriangle} title="Lecture indicative, pas une mesure médicale">
+        Les balances à impédancemétrie (Withings, Renpho…) estiment la composition à partir du
+        courant électrique : utile pour suivre les <em>tendances</em>, mais plusieurs études
+        montrent un écart notable avec la référence DEXA — surtout sur la masse grasse, la masse
+        maigre et la graisse viscérale. Hydratation, repas récents, heure de pesée et posture
+        influencent aussi le résultat.
+      </CorpsDisclaimer>
 
       {empty ? (
-        <div className="border-border bg-card text-muted-foreground rounded-xl border p-8 text-center text-sm">
-          <p className="text-foreground font-medium">Aucune mesure importée</p>
-          <p className="mt-2">
-            Connecte Renpho dans les réglages pour synchroniser ta balance et voir l&apos;historique
-            ici.
-          </p>
-        </div>
+        <CorpsEmptyState
+          description="Connecte Withings ou Renpho dans les réglages pour synchroniser ta balance."
+          icon={Scale}
+          title="Aucune mesure importée"
+        />
       ) : (
         <>
-          <section className="border-border bg-card rounded-2xl border p-6">
-            <p className="text-muted-foreground text-xs font-medium tracking-[0.2em] uppercase">
-              Dernière pesée
-            </p>
-            {latest && (
-              <p className="text-muted-foreground mt-1 text-xs">
-                {new Date(latest.measuredAt).toLocaleString('fr-FR', {
-                  dateStyle: 'medium',
-                  timeStyle: 'short',
-                })}
-              </p>
-            )}
-            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <CorpsPanel>
+            <CorpsSectionHeader
+              label="Dernière pesée"
+              title={
+                latest
+                  ? new Date(latest.measuredAt).toLocaleString('fr-FR', {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    })
+                  : '—'
+              }
+            />
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <RecoveryStat
                 footer={formatCompositionDelta(weight.delta, ' kg')}
                 label="Poids"
@@ -100,13 +96,13 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
                 value={visceral.latest != null ? `${visceral.latest}` : '—'}
               />
             </div>
-          </section>
+          </CorpsPanel>
 
-          <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <RecoveryStat
               label="IMC"
               tone="neutral"
-              value={bmi.latest != null ? `${bmi.latest}` : '—'}
+              value={bmiDisplay != null ? `${bmiDisplay}` : '—'}
             />
             <RecoveryStat
               label="Masse maigre"
@@ -133,22 +129,87 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
             <RecoveryStat
               label="Âge métabolique"
               tone="neutral"
-              value={latest?.bodyAge != null ? `${latest.bodyAge} ans` : '—'}
+              value={metabolicAgeDisplay != null ? `${metabolicAgeDisplay} ans` : '—'}
             />
           </section>
 
-          <section className="space-y-4">
-            <h2 className="font-heading text-lg font-medium">Tendances — 90 jours</h2>
-            <p className="text-muted-foreground text-xs">
-              Une mesure par jour (la plus récente). Les variations jour à jour peuvent refléter le
-              bruit de mesure autant qu&apos;un vrai changement corporel.
-            </p>
-            <div className="grid gap-4 md:grid-cols-2">
+          {(latest?.vascularAgeYears != null ||
+            latest?.nerveHealthScore != null ||
+            latest?.pulseWaveVelocity != null ||
+            latest?.skinConductance != null ||
+            latest?.vo2Max != null) && (
+            <CorpsPanel>
+              <CorpsSectionHeader
+                description="Métriques avancées Body Scan (Withings)."
+                label="Cardio & nerveux"
+                title="Signaux Withings"
+              />
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {latest.vascularAgeYears != null && (
+                  <RecoveryStat
+                    label="Âge vasculaire"
+                    tone="neutral"
+                    value={`${latest.vascularAgeYears} ans`}
+                  />
+                )}
+                {latest.pulseWaveVelocity != null && (
+                  <RecoveryStat
+                    label="Vitesse d'onde de pouls"
+                    tone="neutral"
+                    value={`${latest.pulseWaveVelocity.toFixed(1)} m/s`}
+                  />
+                )}
+                {latest.nerveHealthScore != null && (
+                  <RecoveryStat
+                    label="Santé nerveuse (pieds)"
+                    tone="neutral"
+                    value={`${Math.round(latest.nerveHealthScore)}`}
+                  />
+                )}
+                {latest.nerveResponseScore != null && (
+                  <RecoveryStat
+                    label="Score réponse nerveuse"
+                    tone="neutral"
+                    value={`${Math.round(latest.nerveResponseScore)}`}
+                  />
+                )}
+                {latest.skinConductance != null && (
+                  <RecoveryStat
+                    label="Conductance cutanée (ESC)"
+                    tone="neutral"
+                    value={`${latest.skinConductance.toFixed(0)}`}
+                  />
+                )}
+                {latest.vo2Max != null && (
+                  <RecoveryStat
+                    label="VO₂ max estimé"
+                    tone="neutral"
+                    value={`${latest.vo2Max.toFixed(1)} ml/kg/min`}
+                  />
+                )}
+                {latest.heartRate != null && (
+                  <RecoveryStat
+                    label="FC debout"
+                    tone="neutral"
+                    value={`${latest.heartRate} bpm`}
+                  />
+                )}
+              </div>
+            </CorpsPanel>
+          )}
+
+          <section className="space-y-3">
+            <CorpsSectionHeader
+              description="Une mesure par jour (la plus récente). Les variations jour à jour peuvent refléter le bruit de mesure autant qu'un vrai changement corporel."
+              label="Tendances"
+              title="90 jours"
+            />
+            <div className="grid gap-3 md:grid-cols-2">
               <MetricLineChart
                 color="#2563eb"
                 data={series}
                 dataKey="weightKg"
-                subtitle="Pesées Renpho"
+                subtitle="Pesées balance"
                 title="Poids"
                 unit="kg"
               />
@@ -172,7 +233,7 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
                 color="#ea580c"
                 data={series}
                 dataKey="visceralFat"
-                subtitle="Indice viscéral Renpho"
+                subtitle="Indice viscéral"
                 title="Graisse viscérale"
               />
             </div>
@@ -185,32 +246,18 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
 
 function CompositionSkeleton() {
   return (
-    <div className="space-y-8">
-      <Skeleton className="h-24 w-full rounded-xl" />
-      <div className="border-border rounded-2xl border p-6">
-        <div className="mb-4 space-y-1">
-          <Skeleton className="h-3 w-24" />
-          <Skeleton className="h-3 w-36" />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-xl" />
-          ))}
-        </div>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="space-y-4">
+      <Skeleton className="h-20 w-full rounded-2xl" />
+      <Skeleton className="h-40 w-full rounded-2xl" />
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-28 rounded-xl" />
+          <Skeleton key={i} className="h-24 rounded-2xl" />
         ))}
       </div>
-      <div className="space-y-4">
-        <Skeleton className="h-5 w-48" />
-        <Skeleton className="h-3 w-96 max-w-full" />
-        <div className="grid gap-4 md:grid-cols-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-64 rounded-xl" />
-          ))}
-        </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-56 rounded-2xl" />
+        ))}
       </div>
     </div>
   );

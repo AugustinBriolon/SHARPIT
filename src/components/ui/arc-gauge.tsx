@@ -23,6 +23,7 @@ export function ArcGauge({
   size = 72,
   strokeWidth = 5,
   invertColor = false,
+  strokeColor,
   children,
 }: {
   score: number | null;
@@ -32,7 +33,8 @@ export function ArcGauge({
   strokeWidth?: number;
   /** When true, a high score is bad (fatigue). Color logic uses 100 - score. */
   invertColor?: boolean;
-  /** Custom center content. Defaults to score number. */
+  /** Override arc stroke color (e.g. restorative ratio uses different thresholds). */
+  strokeColor?: string;
   children?: React.ReactNode;
 }) {
   const displayScore = invertColor && score !== null ? 100 - score : score;
@@ -45,7 +47,7 @@ export function ArcGauge({
   const cx = size / 2;
   const cy = size / 2;
 
-  const strokeColor = arcStrokeColor(displayScore);
+  const resolvedStrokeColor = strokeColor ?? arcStrokeColor(displayScore);
   const colorClass = mapScoreToColorClass(displayScore);
 
   function fontSize() {
@@ -82,7 +84,7 @@ export function ArcGauge({
             cy={cy}
             fill="none"
             r={r}
-            stroke={strokeColor}
+            stroke={resolvedStrokeColor}
             strokeDasharray={`${filled} ${gap + (circ - arcLen)}`}
             strokeLinecap="round"
             strokeWidth={strokeWidth}

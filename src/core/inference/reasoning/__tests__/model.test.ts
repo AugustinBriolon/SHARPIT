@@ -19,6 +19,7 @@ import {
   mapFatigueDirection,
   mapAdaptationDirection,
   computeConsistency,
+  arbitrateModelConflict,
   synthesizeVerdict,
   detectConflicts,
   detectOpportunities,
@@ -226,6 +227,19 @@ describe('computeConsistency', () => {
       adaptation: 'TRAIN',
     });
     expect(result.consistency).toBe('CONFLICTING');
+  });
+
+  it('arbitrateModelConflict: fatigue TRAIN + adaptation REST → recovery wins when sleep limits', () => {
+    const winner = arbitrateModelConflict(
+      { recovery: 'EASY', fatigue: 'TRAIN', adaptation: 'REST' },
+      'TRAIN_EASY',
+      {
+        system: 'RECOVERY',
+        description: { code: 'recovery.rationale.sleepLimiting' },
+        actionable: true,
+      },
+    );
+    expect(winner).toBe('RECOVERY');
   });
 
   it('TRAIN + REST + REST → CONFLICTING or PARTIALLY_ALIGNED', () => {

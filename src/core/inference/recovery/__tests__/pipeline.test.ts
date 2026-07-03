@@ -15,21 +15,21 @@
  *   6. Pipeline works with minimal data (only load features available)
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { randomUUID } from 'node:crypto';
+import { describe, expect, it } from 'vitest';
 
-import { RecoveryInferenceOrchestrator } from '../../orchestrator';
 import type { DigitalTwinRepository } from '@/core/digital-twin/repository';
-import type { DecisionRecordRepository, DecisionRecord, ModelId } from '../../types';
 import type {
-  DigitalTwin,
-  RecoveryState,
-  FatigueState,
   AdaptationState,
+  DigitalTwin,
+  FatigueState,
   ReasoningState,
+  RecoveryState,
 } from '@/core/digital-twin/types';
-import type { DayFeatures, RecoveryFeatureSet, LoadFeatureSet } from '@/core/features/types';
 import type { FeatureEngine } from '@/core/features/engine';
+import type { DayFeatures, LoadFeatureSet, RecoveryFeatureSet } from '@/core/features/types';
+import { RecoveryInferenceOrchestrator } from '../../orchestrator';
+import type { DecisionRecord, DecisionRecordRepository, ModelId } from '../../types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // In-memory repositories

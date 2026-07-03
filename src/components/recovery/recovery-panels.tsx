@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { CorpsPanel, CorpsStatCard } from '@/components/corps/corps-ui';
 import {
   accentForTone,
   factorLabel,
@@ -16,13 +17,6 @@ const TONE_TEXT: Record<RecoveryTone, string> = {
   neutral: 'text-muted-foreground',
 };
 
-const TONE_DOT: Record<RecoveryTone, string> = {
-  good: 'bg-emerald-400',
-  moderate: 'bg-amber-400',
-  low: 'bg-red-400',
-  neutral: 'bg-muted-foreground',
-};
-
 export function ReadinessHero({
   view,
   factors,
@@ -34,7 +28,7 @@ export function ReadinessHero({
   const ringDeg = score != null ? (score / 100) * 360 : 0;
 
   return (
-    <div className="border-border bg-card rounded-2xl border p-6">
+    <CorpsPanel className="p-5">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
         <div className="flex items-center gap-5">
           <div
@@ -43,7 +37,7 @@ export function ReadinessHero({
               background: `conic-gradient(${view.accent} ${ringDeg}deg, color-mix(in srgb, ${view.accent} 12%, transparent) ${ringDeg}deg)`,
             }}
           >
-            <div className="bg-card grid size-[88px] place-items-center content-center rounded-full">
+            <div className="grid size-[88px] place-items-center content-center rounded-full bg-white">
               <span
                 className="font-mono text-3xl font-semibold tabular-nums"
                 style={{ color: view.accent }}
@@ -56,7 +50,7 @@ export function ReadinessHero({
             </div>
           </div>
           <div>
-            <p className="text-muted-foreground text-xs font-medium tracking-[0.2em] uppercase">
+            <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
               Forme du jour
             </p>
             <p className="font-heading mt-1 text-2xl font-semibold" style={{ color: view.accent }}>
@@ -71,15 +65,13 @@ export function ReadinessHero({
       </div>
 
       {factors.length > 0 && (
-        <div className="border-border/60 mt-6 border-t pt-5">
+        <div className="border-border/50 mt-6 border-t pt-5">
           <ReadinessFactorList factors={factors} />
         </div>
       )}
-    </div>
+    </CorpsPanel>
   );
 }
-
-/** Détail des facteurs Garmin qui composent le score de forme. */
 export function ReadinessFactorList({ factors }: { factors: ReadinessFactor[] }) {
   if (factors.length === 0) return null;
   return (
@@ -127,18 +119,6 @@ export function RecoveryStat({
   footer?: string;
 }) {
   return (
-    <div className="border-border bg-card rounded-xl border p-4">
-      <div className="flex items-center gap-2">
-        <span className={cn('size-2 rounded-full', TONE_DOT[tone])} />
-        <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-          {label}
-        </p>
-      </div>
-      <p className={cn('mt-2 font-mono text-2xl font-semibold tabular-nums', TONE_TEXT[tone])}>
-        {value}
-      </p>
-      {sublabel && <p className="text-foreground/80 mt-0.5 text-sm">{sublabel}</p>}
-      {footer && <p className="text-muted-foreground mt-1 text-xs">{footer}</p>}
-    </div>
+    <CorpsStatCard footer={footer} label={label} sublabel={sublabel} tone={tone} value={value} />
   );
 }

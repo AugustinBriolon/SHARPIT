@@ -12,7 +12,7 @@
  *   console.log(formatModelComparison(comparison))
  */
 
-import type { BenchmarkReport, ScenarioResult, ModelComparison, BenchmarkMetrics } from './types';
+import type { BenchmarkReport, ModelComparison, ScenarioResult } from './types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Formatting utilities

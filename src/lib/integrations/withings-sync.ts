@@ -1,0 +1,190 @@
+import { BodyCompositionSource, Prisma } from '@prisma/client';
+import { format, startOfDay, subDays } from 'date-fns';
+import { prisma } from '@/lib/prisma';
+import { observationEngine } from '@/lib/engines/observation-engine';
+import { withingsMeasurementToBodyComposition } from '@/core/adapters/withings-adapter';
+import {
+  fetchWithingsMeasurements,
+  refreshWithingsToken,
+  type WithingsParsedMeasurement,
+} from '@/lib/integrations/withings';
+
+const ATHLETE_ID = 'default';
+const ACCOUNT_ID = 'default';
+
+async function ingestWithingsMeasurement(measurement: WithingsParsedMeasurement): Promise<void> {
+  try {
+    const raw = withingsMeasurementToBodyComposition(measurement, new Date());
+    if (!raw) return;
+    await observationEngine.ingest(ATHLETE_ID, raw);
+  } catch (err) {
+    console.error('[ObservationEngine] withings ingest failed:', err);
+  }
+}
+
+export async function getWithingsAccount() {
+  return prisma.withingsAccount.findUnique({ where: { id: ACCOUNT_ID } });
+}
+
+export async function disconnectWithings() {
+  await prisma.withingsAccount.deleteMany({ where: { id: ACCOUNT_ID } });
+}
+
+export async function getValidWithingsAccessToken(): Promise<string> {
+  const account = await getWithingsAccount();
+  if (!account) throw new Error('Compte Withings non connecté');
+
+  const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
+  if (!expiresSoon) return account.accessToken;
+
+  const refreshed = await refreshWithingsToken(account.refreshToken);
+  await prisma.withingsAccount.update({
+    where: { id: ACCOUNT_ID },
+    data: {
+      accessToken: refreshed.access_token,
+      refreshToken: refreshed.refresh_token,
+      expiresAt: new Date(Date.now() + refreshed.expires_in * 1000),
+      withingsUserId: String(refreshed.userid),
+    },
+  });
+  return refreshed.access_token;
+}
+
+function measurementToPrisma(
+  m: WithingsParsedMeasurement,
+): Prisma.BodyCompositionMeasurementCreateInput {
+  const musclePct =
+    m.muscleKg != null && m.weightKg != null && m.weightKg > 0
+      ? (m.muscleKg / m.weightKg) * 100
+      : null;
+
+  return {
+    source: BodyCompositionSource.WITHINGS,
+    externalId: m.grpid,
+    measuredAt: m.measuredAt,
+    weightKg: m.weightKg,
+    bmi: m.bmi,
+    bodyFatPct: m.bodyFatPct,
+    musclePct,
+    boneKg: m.boneKg,
+    bmr: m.bmr,
+    visceralFat: m.visceralFat,
+    waterPct: m.waterPct,
+    fatFreeWeightKg: m.fatFreeWeightKg,
+    heartRate: m.heartRate != null ? Math.round(m.heartRate) : null,
+    bodyAge: m.metabolicAge != null ? Math.round(m.metabolicAge) : null,
+    vascularAgeYears: m.vascularAgeYears != null ? Math.round(m.vascularAgeYears) : null,
+    pulseWaveVelocity: m.pulseWaveVelocity,
+    vo2Max: m.vo2Max,
+    nerveHealthScore: m.nerveHealthScore,
+    nerveHealthLeft: m.nerveHealthLeft,
+    nerveHealthRight: m.nerveHealthRight,
+    nerveResponseScore: m.nerveResponseScore,
+    skinConductance: m.skinConductance,
+    metabolicAge: m.metabolicAge != null ? Math.round(m.metabolicAge) : null,
+    hydrationKg: m.hydrationKg,
+    fatMassKg: m.fatMassKg,
+    extracellularWaterKg: m.extracellularWaterKg,
+    intracellularWaterKg: m.intracellularWaterKg,
+    withingsExtras: (m.withingsExtras ?? Prisma.JsonNull) as Prisma.InputJsonValue,
+  };
+}
+
+async function upsertDailyWeightFromWithings(m: WithingsParsedMeasurement) {
+  if (m.weightKg == null) return;
+
+  const local = m.measuredAt;
+  const day = new Date(Date.UTC(local.getFullYear(), local.getMonth(), local.getDate()));
+
+  await prisma.dailyHealth.upsert({
+    where: { date: day },
+    create: { date: day, weightKg: m.weightKg },
+    update: { weightKg: m.weightKg },
+  });
+}
+
+export interface WithingsSyncResult {
+  imported: number;
+  updated: number;
+  days: number;
+}
+
+export async function syncWithingsHealth(options?: {
+  days?: number;
+  full?: boolean;
+}): Promise<WithingsSyncResult> {
+  const account = await getWithingsAccount();
+  if (!account) throw new Error('Compte Withings non connecté');
+
+  const accessToken = await getValidWithingsAccessToken();
+  const days = options?.full ? 365 * 3 : Math.min(options?.days ?? 90, 365 * 3);
+  const range = {
+    startdate: Math.floor(subDays(startOfDay(new Date()), days).getTime() / 1000),
+    enddate: Math.floor(Date.now() / 1000),
+  };
+
+  const measurements = await fetchWithingsMeasurements(accessToken, range);
+
+  let imported = 0;
+  let updated = 0;
+  const weightByDay = new Map<string, WithingsParsedMeasurement>();
+
+  for (const measurement of measurements) {
+    const data = measurementToPrisma(measurement);
+    const existing = await prisma.bodyCompositionMeasurement.findUnique({
+      where: {
+        source_externalId: {
+          source: BodyCompositionSource.WITHINGS,
+          externalId: measurement.grpid,
+        },
+      },
+      select: { id: true },
+    });
+
+    if (existing) {
+      await prisma.bodyCompositionMeasurement.update({
+        where: {
+          source_externalId: {
+            source: BodyCompositionSource.WITHINGS,
+            externalId: measurement.grpid,
+          },
+        },
+        data,
+      });
+      updated += 1;
+    } else {
+      await prisma.bodyCompositionMeasurement.create({ data });
+      await ingestWithingsMeasurement(measurement);
+      imported += 1;
+    }
+
+    const dayKey = format(measurement.measuredAt, 'yyyy-MM-dd');
+    const prev = weightByDay.get(dayKey);
+    if (!prev || measurement.measuredAt.getTime() > prev.measuredAt.getTime()) {
+      weightByDay.set(dayKey, measurement);
+    }
+  }
+
+  for (const measurement of weightByDay.values()) {
+    await upsertDailyWeightFromWithings(measurement);
+  }
+
+  await prisma.withingsAccount.update({
+    where: { id: ACCOUNT_ID },
+    data: { lastSyncAt: new Date() },
+  });
+
+  return { imported, updated, days };
+}
+
+/** Jours où Withings a une pesée (priorité sur Renpho pour DailyHealth). */
+export async function withingsWeighInDayKeys(since: Date): Promise<Set<string>> {
+  const rows = await prisma.bodyCompositionMeasurement.findMany({
+    where: {
+      source: BodyCompositionSource.WITHINGS,
+      measuredAt: { gte: since },
+    },
+    select: { measuredAt: true },
+  });
+  return new Set(rows.map((r) => format(r.measuredAt, 'yyyy-MM-dd')));
+}

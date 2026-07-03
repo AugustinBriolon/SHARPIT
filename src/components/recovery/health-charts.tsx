@@ -9,7 +9,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CorpsPanel } from '@/components/corps/corps-ui';
 
 interface MetricLineChartProps<T extends { label: string }> {
   title: string;
@@ -55,12 +55,12 @@ export function MetricLineChart<T extends { label: string }>({
   const hasData = data.some((d) => d[dataKey] != null);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base font-medium">{title}</CardTitle>
-        {subtitle && <p className="text-muted-foreground text-xs">{subtitle}</p>}
-      </CardHeader>
-      <CardContent>
+    <CorpsPanel className="overflow-hidden p-0">
+      <div className="border-border/50 border-b px-4 py-3">
+        <p className="text-sm font-semibold">{title}</p>
+        {subtitle && <p className="text-muted-foreground mt-0.5 text-[10px]">{subtitle}</p>}
+      </div>
+      <div className="px-2 pt-1 pb-3">
         <div className="h-48 w-full">
           {hasData ? (
             <ResponsiveContainer height="100%" width="100%">
@@ -96,7 +96,7 @@ export function MetricLineChart<T extends { label: string }>({
             </div>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </CorpsPanel>
   );
 }

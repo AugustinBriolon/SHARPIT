@@ -1,5 +1,6 @@
 'use client';
 
+import { Activity, BarChart3, HeartPulse, Scale } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AnalyticsClient } from '@/components/analytics/analytics-client';
 import { RecordsPanel } from '@/components/analytics/records-panel';
@@ -7,13 +8,33 @@ import { CompositionView } from '@/components/corps/composition-view';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { PhysicalView } from '@/components/physical/physical-view';
 import { RecoveryView } from '@/components/recovery/recovery-view';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { navPillClass } from '@/lib/nav-pill';
 
 const TABS = [
-  { id: 'recuperation', label: 'Récupération' },
-  { id: 'composition', label: 'Composition' },
-  { id: 'suivi', label: 'Suivi physique' },
-  { id: 'stats', label: 'Statistiques' },
+  {
+    id: 'recuperation',
+    label: 'Récupération',
+    description: 'Readiness, VFC, sommeil et tendances santé.',
+    icon: HeartPulse,
+  },
+  {
+    id: 'composition',
+    label: 'Composition',
+    description: 'Poids, masse grasse et tendances impédancemétrie.',
+    icon: Scale,
+  },
+  {
+    id: 'suivi',
+    label: 'Suivi physique',
+    description: 'Douleurs, blessures et points de vigilance.',
+    icon: Activity,
+  },
+  {
+    id: 'stats',
+    label: 'Statistiques',
+    description: "Charge, volume et records d'entraînement.",
+    icon: BarChart3,
+  },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -27,45 +48,55 @@ export function CorpsHub() {
   const searchParams = useSearchParams();
   const raw = searchParams.get('tab');
   const tab: TabId = isTabId(raw) ? raw : 'recuperation';
+  const activeTab = TABS.find((t) => t.id === tab) ?? TABS[0];
 
   function setTab(next: string) {
     router.replace(`/corps?tab=${next}`, { scroll: false });
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <StickyHeader>
-        <p className="text-primary text-xs font-medium tracking-[0.2em] uppercase">Mon corps</p>
-        <h1 className="font-heading mt-2 text-3xl font-semibold tracking-tight">
-          Forme & bien-être
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Readiness, tendances santé, blessures et statistiques d&apos;entraînement.
+        <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+          Mon corps
         </p>
+        <h1 className="font-heading mt-1 text-2xl font-semibold">Forme & bien-être</h1>
+        <p className="text-muted-foreground mt-1 text-sm">{activeTab.description}</p>
+
+        <nav
+          aria-label="Sections Mon corps"
+          className="-mx-1 mt-4 flex scrollbar-none gap-1.5 overflow-x-auto pb-0.5"
+        >
+          {TABS.map((t) => {
+            const Icon = t.icon;
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                aria-current={active ? 'page' : undefined}
+                className={navPillClass(active)}
+                type="button"
+                onClick={() => setTab(t.id)}
+              >
+                <Icon className="size-3.5" aria-hidden />
+                {t.label}
+              </button>
+            );
+          })}
+        </nav>
       </StickyHeader>
 
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          {TABS.map((t) => (
-            <TabsTrigger key={t.id} value={t.id}>
-              {t.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        <TabsContent className="mt-6" value="recuperation">
-          <RecoveryView embedded />
-        </TabsContent>
-        <TabsContent className="mt-6" value="composition">
-          <CompositionView embedded />
-        </TabsContent>
-        <TabsContent className="mt-6" value="suivi">
-          <PhysicalView embedded />
-        </TabsContent>
-        <TabsContent className="mt-6 space-y-8" value="stats">
-          <AnalyticsClient />
-          <RecordsPanel />
-        </TabsContent>
-      </Tabs>
+      <div className="space-y-4">
+        {tab === 'recuperation' && <RecoveryView embedded />}
+        {tab === 'composition' && <CompositionView embedded />}
+        {tab === 'suivi' && <PhysicalView embedded />}
+        {tab === 'stats' && (
+          <div className="space-y-6">
+            <AnalyticsClient />
+            <RecordsPanel />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

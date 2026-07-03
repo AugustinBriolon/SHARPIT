@@ -24,6 +24,7 @@ import type {
   ReasoningFinding,
   ReasoningOpportunity,
   ReasoningConflict,
+  ReasoningState,
   DataCompleteness,
 } from '@/core/digital-twin/types';
 import type { I18nItem } from '@/core/inference/shared/types';
@@ -134,6 +135,40 @@ export function computeConsistency(dirs: ModelDirections): {
   return { consistency, score };
 }
 
+export type ArbitrationSystem = 'RECOVERY' | 'FATIGUE' | 'ADAPTATION';
+
+/** When models disagree (TRAIN vs REST), pick who has the last word — safety-first. */
+export function arbitrateModelConflict(
+  dirs: ModelDirections,
+  verdict: OverallVerdict,
+  limitingFactor: ReasoningState['limitingFactor'],
+): ArbitrationSystem | null {
+  const known = [dirs.recovery, dirs.fatigue, dirs.adaptation].filter(
+    (d) => d !== 'UNKNOWN',
+  ) as PhysiologicalDirection[];
+  const trainCount = known.filter((d) => d === 'TRAIN').length;
+  const restCount = known.filter((d) => d === 'REST').length;
+  if (restCount === 0 || trainCount === 0) return null;
+
+  if (dirs.fatigue === 'REST') return 'FATIGUE';
+  if (dirs.recovery === 'REST') return 'RECOVERY';
+
+  if (dirs.adaptation === 'REST' && dirs.fatigue === 'TRAIN') {
+    if (limitingFactor.system === 'RECOVERY' || limitingFactor.system === 'ADAPTATION') {
+      return limitingFactor.system;
+    }
+    return 'RECOVERY';
+  }
+
+  if (limitingFactor.system) return limitingFactor.system;
+
+  if (verdict === 'RECOVER' || verdict === 'TRAIN_EASY' || verdict === 'CAUTION') {
+    return 'RECOVERY';
+  }
+  if (verdict === 'TRAIN_HARD') return 'FATIGUE';
+  return 'RECOVERY';
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Verdict synthesis (safety-first)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -153,10 +188,18 @@ export function synthesizeVerdict(
 
   if (a?.overreachingWithoutAdaptationDetected) return 'CAUTION';
 
-  // Capacity conflict → CAUTION
   const recoveryDir = mapRecoveryDirection(r);
   const fatigueDir = mapFatigueDirection(f);
+  const adaptationDir = mapAdaptationDirection(a);
+
+  // Capacity conflict → CAUTION
   if (recoveryDir === 'TRAIN' && fatigueDir === 'REST') return 'CAUTION';
+
+  // Fatigue says go, adaptation says stop → moderate (safety-first)
+  if (fatigueDir === 'TRAIN' && adaptationDir === 'REST') {
+    if (recoveryDir === 'REST' || recoveryDir === 'EASY') return 'TRAIN_EASY';
+    return 'CAUTION';
+  }
 
   // Race ready: recovery optimal, fatigue fresh, adaptation peak imminent
   if (
@@ -361,6 +404,10 @@ export function buildKeyFindings(
   f: FatigueState | null,
   a: AdaptationState | null,
   conflicts: ReasoningConflict[],
+  modelDirections?: ModelDirections,
+  physiologicalConsistency?: PhysiologicalConsistency,
+  overallVerdict?: OverallVerdict,
+  limitingFactor?: ReasoningState['limitingFactor'],
 ): ReasoningFinding[] {
   const findings: ReasoningFinding[] = [];
 
@@ -506,6 +553,37 @@ export function buildKeyFindings(
       ],
       confidence: a.confidence,
     });
+  }
+
+  // Resolved disagreement — athlete sees the decision, not raw model directions
+  if (
+    physiologicalConsistency === 'CONFLICTING' &&
+    modelDirections &&
+    conflicts.length === 0 &&
+    overallVerdict &&
+    limitingFactor
+  ) {
+    const winner = arbitrateModelConflict(modelDirections, overallVerdict, limitingFactor);
+    if (winner) {
+      findings.push({
+        id: 'FINDING_ARBITRATION',
+        category: 'CROSS_SYSTEM',
+        severity: 'INFO',
+        title: { code: 'reasoning.finding.arbitration.title' },
+        evidenceItems: [
+          {
+            code: 'reasoning.finding.arbitration.evidence.verdict',
+            params: { verdict: overallVerdict },
+          },
+          {
+            code: 'reasoning.finding.arbitration.evidence.priority',
+            params: { system: winner },
+          },
+          ...(limitingFactor.description ? [limitingFactor.description] : []),
+        ],
+        confidence: 0.85,
+      });
+    }
   }
 
   // Cross-system: conflict detected
@@ -848,6 +926,3 @@ export function computeReasoningConfidence(
 
   return { confidence: Math.round(base * 100) / 100, dataCompleteness };
 }
-
-// Re-export for use in model.ts
-import type { ReasoningState } from '@/core/digital-twin/types';

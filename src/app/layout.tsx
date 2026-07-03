@@ -22,7 +22,7 @@ const ibmPlexSans = IBM_Plex_Sans({
 export const metadata: Metadata = {
   title: 'SharpIt',
   description: 'Training intelligence — entraînement, analytics, récupération.',
-  themeColor: '#fafbf9',
+  themeColor: '#f8faf8',
   icons: {
     icon: '/favicon.svg',
   },

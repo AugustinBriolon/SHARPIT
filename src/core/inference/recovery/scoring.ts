@@ -115,14 +115,15 @@ export function scoreAutonomic(features: RecoveryFeatureSet): DimensionScore {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Map sleep efficiency percentage to SleepEfficiencyRaw.
- * Thresholds based on Walker 2017, AASM guidelines (Level 2-3).
+ * Map restorative sleep ratio (deep + REM) / total × 100 to a raw score.
+ * Norme adulte typique pour le ratio restaurateur : 40–55 %.
  */
-function mapSleepEfficiencyToRaw(efficiency: number): number {
-  if (efficiency >= 85) return 100;
-  if (efficiency >= 75) return 80;
-  if (efficiency >= 65) return 60;
-  if (efficiency >= 55) return 40;
+export function mapRestorativeSleepRatioToRaw(ratioPercent: number): number {
+  if (ratioPercent >= 55) return 100;
+  if (ratioPercent >= 45) return 85;
+  if (ratioPercent >= 40) return 70;
+  if (ratioPercent >= 32) return 50;
+  if (ratioPercent >= 25) return 35;
   return 20;
 }
 
@@ -130,13 +131,15 @@ function mapSleepEfficiencyToRaw(efficiency: number): number {
  * Debt modifier based on 7-day cumulative sleep debt.
  * Van Dongen et al. 2003: 6h/night × 14 days ≈ 24h total deprivation (Level 2).
  */
-function sleepDebtModifier(debtMinutes: number | null): number {
+export function sleepDebtModifier(debtMinutes: number | null): number {
   if (debtMinutes === null) return 1.0;
   if (debtMinutes <= 30) return 1.0;
-  if (debtMinutes <= 60) return 0.9;
-  if (debtMinutes <= 120) return 0.8;
-  if (debtMinutes <= 240) return 0.65;
-  return 0.5;
+  if (debtMinutes <= 90) return 0.95;
+  if (debtMinutes <= 150) return 0.9;
+  if (debtMinutes <= 210) return 0.85;
+  if (debtMinutes <= 300) return 0.75;
+  if (debtMinutes <= 420) return 0.65;
+  return 0.55;
 }
 
 export function scoreSleep(features: RecoveryFeatureSet): DimensionScore {
@@ -146,7 +149,7 @@ export function scoreSleep(features: RecoveryFeatureSet): DimensionScore {
     return { score: null, available: false, qualityFactor: 0.0 };
   }
 
-  const raw = mapSleepEfficiencyToRaw(sleepEfficiencyPercent);
+  const raw = mapRestorativeSleepRatioToRaw(sleepEfficiencyPercent);
   const modifier = sleepDebtModifier(sleepDebtMin);
   const score = clamp(raw * modifier, 0, 100);
 

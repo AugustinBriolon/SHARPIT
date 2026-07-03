@@ -1,7 +1,7 @@
 'use client';
 
 import type { ActivityAnalysis } from '@/lib/activity-analysis';
-import { MetricCard } from '@/components/dashboard/metric-card';
+import { MetricCard } from '@/components/ui/metric-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 function decouplingLabel(pct: number): string {

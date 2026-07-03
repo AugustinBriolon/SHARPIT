@@ -92,7 +92,7 @@ The visual layout follows the logic of explanation. Each block flows causally fr
 
 - Role: metadata, secondary classification, dimension names
 - Usage: section labels, signal labels, confidence tiers
-- Treatment: `text-[11px] tracking-[0.15em] uppercase font-medium text-muted-foreground` — this exact pattern is canonical
+- Treatment: `text-[11px]  uppercase font-medium text-muted-foreground` — this exact pattern is canonical
 
 **Data / Numeric** — tabular figures, monospace where precision matters
 

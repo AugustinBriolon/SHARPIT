@@ -13,15 +13,22 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { clerkAppearance } from '@/lib/clerk-appearance';
-import { cn } from '@/lib/utils';
+import { navLinkClass } from '@/lib/nav-pill';
 
-const navItems = [
-  { href: '/', label: "Aujourd'hui", icon: Sun, match: (p: string) => p === '/' },
+type NavItem = {
+  href: string;
+  label: string;
+  icon: typeof Sun;
+  match: (pathname: string) => boolean;
+};
+
+const mainNavItems: NavItem[] = [
+  { href: '/', label: "Aujourd'hui", icon: Sun, match: (p) => p === '/' },
   {
     href: '/seances',
     label: 'Séances',
     icon: CalendarRange,
-    match: (p: string) =>
+    match: (p) =>
       p.startsWith('/seances') ||
       p.startsWith('/training') ||
       p.startsWith('/calendar') ||
@@ -31,7 +38,7 @@ const navItems = [
     href: '/corps',
     label: 'Mon corps',
     icon: PersonStanding,
-    match: (p: string) =>
+    match: (p) =>
       p.startsWith('/corps') ||
       p.startsWith('/recovery') ||
       p.startsWith('/body') ||
@@ -41,64 +48,76 @@ const navItems = [
     href: '/goals',
     label: 'Objectifs',
     icon: Target,
-    match: (p: string) => p.startsWith('/goals'),
+    match: (p) => p.startsWith('/goals'),
   },
   {
     href: '/coach',
     label: 'Coach',
     icon: Sparkles,
-    match: (p: string) => p.startsWith('/coach'),
-  },
-  {
-    href: '/settings',
-    label: 'Réglages',
-    icon: Settings,
-    match: (p: string) => p.startsWith('/settings'),
+    match: (p) => p.startsWith('/coach'),
   },
 ];
+
+const settingsNavItem: NavItem = {
+  href: '/settings',
+  label: 'Réglages',
+  icon: Settings,
+  match: (p) => p.startsWith('/settings'),
+};
+
+function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
+  const isActive = item.match(pathname);
+  const Icon = item.icon;
+
+  return (
+    <Link
+      aria-current={isActive ? 'page' : undefined}
+      className={navLinkClass(isActive, 'bg-sidebar')}
+      href={item.href}
+    >
+      <Icon className="size-4 shrink-0" aria-hidden />
+      <span>{item.label}</span>
+    </Link>
+  );
+}
 
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useUser();
 
   return (
-    <aside className="border-border bg-sidebar sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r">
-      <div className="border-border/60 border-b px-5 py-6">
-        <div className="flex items-center gap-3">
-          <div className="bg-primary/10 ring-primary/30 flex size-9 items-center justify-center rounded-lg ring-1">
-            <Activity className="text-primary size-4" />
+    <aside className="border-sidebar-border bg-sidebar sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r">
+      <div className="px-4 pt-6 pb-5">
+        <Link
+          className="hover:bg-sidebar-accent/50 flex items-center gap-3 rounded-2xl px-2 py-2 transition-colors"
+          href="/"
+        >
+          <div className="bg-primary/10 ring-primary/25 flex size-9 items-center justify-center rounded-xl ring-1">
+            <Activity className="text-primary size-4" aria-hidden />
           </div>
           <div>
-            <p className="font-heading text-sm font-semibold tracking-wide">SharpIt</p>
-            <p className="text-muted-foreground text-xs">Training intelligence</p>
+            <p className="font-heading text-sm font-semibold tracking-tight">SHARPIT</p>
+            <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+              Intelligence sportive
+            </p>
           </div>
-        </div>
+        </Link>
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-        {navItems.map((item) => {
-          const isActive = item.match(pathname);
+      <nav aria-label="Navigation principale" className="flex flex-1 flex-col overflow-y-auto px-3">
+        <div className="space-y-1">
+          {mainNavItems.map((item) => (
+            <NavLink key={item.href} item={item} pathname={pathname} />
+          ))}
+        </div>
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
-                isActive
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
-              )}
-            >
-              <item.icon className="size-4 shrink-0" />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
+        <div className="border-sidebar-border mt-4 space-y-1 border-t pt-4">
+          <NavLink item={settingsNavItem} pathname={pathname} />
+        </div>
       </nav>
 
-      <div className="border-border/60 border-t px-4 py-4">
-        <div className="flex items-center gap-3">
+      <div className="border-sidebar-border border-t p-3">
+        <div className="border-border/60 bg-card/40 flex items-center gap-3 rounded-2xl border p-3">
           <UserButton
             appearance={{
               ...clerkAppearance,

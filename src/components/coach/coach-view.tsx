@@ -99,10 +99,8 @@ export function CoachView() {
     <div className="space-y-6">
       <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-primary text-xs font-medium tracking-[0.2em] uppercase">Coach</p>
-          <h1 className="font-heading mt-2 text-3xl font-semibold tracking-tight">
-            Fil & conversations
-          </h1>
+          <p className="text-primary text-xs font-medium uppercase">Coach</p>
+          <h1 className="font-heading mt-2 text-3xl font-semibold">Fil & conversations</h1>
           <p className="text-muted-foreground mt-1">
             Messages du jour et chat libre avec ton coach.
           </p>

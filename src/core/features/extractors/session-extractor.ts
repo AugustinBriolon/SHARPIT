@@ -380,7 +380,6 @@ export function extractSessionFeatures(
   const mechanicalLoad = computeMechanicalLoad(session.durationSec, session.powerData?.avgWatts);
   const elevationStressScore = computeElevationStressScore(session.elevationM, session.sportType);
   const efficiencyFactor = computeEfficiencyFactor(input);
-  const rpeVsTargetZone = computeRpeVsTargetZone(session.sportType, linkedSubjective);
 
   const sourceObsIds: string[] = [session.id];
   if (linkedSubjective) sourceObsIds.push(linkedSubjective.id);

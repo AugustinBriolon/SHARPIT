@@ -1,18 +1,14 @@
 'use client';
 
-import { cn } from '@/lib/utils';
-import {
-  mapVerdictToDisplay,
-  mapConfidenceToTier,
-  type OverallVerdict,
-  type ConfidenceTier,
-} from '@/lib/today-mapping';
-import { resolveCode } from '@/lib/french';
 import type { TopAction } from '@/hooks/use-today';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Confidence bar (extracted from old verdict-zone)
-// ─────────────────────────────────────────────────────────────────────────────
+import { resolveCode } from '@/lib/french';
+import {
+  mapConfidenceToTier,
+  mapVerdictToDisplay,
+  type ConfidenceTier,
+  type OverallVerdict,
+} from '@/lib/today-mapping';
+import { cn } from '@/lib/utils';
 
 const CONFIDENCE_BARS: Record<ConfidenceTier, { filled: number; label: string }> = {
   high: { filled: 3, label: 'Confiance élevée' },
@@ -20,32 +16,30 @@ const CONFIDENCE_BARS: Record<ConfidenceTier, { filled: number; label: string }>
   low: { filled: 1, label: 'Données limitées' },
 };
 
-function ConfidenceBar({ tier }: { tier: ConfidenceTier }) {
+function ConfidenceIndicator({ tier }: { tier: ConfidenceTier }) {
   const { filled, label } = CONFIDENCE_BARS[tier];
-  const isLow = tier === 'low';
 
   return (
     <span
       aria-label={label}
-      className={cn('inline-flex items-center gap-1.5', isLow && 'opacity-60')}
-      title={label}
+      className="inline-flex items-center gap-1.5"
+      title={`Fiabilité de l'analyse : ${label.toLowerCase()}`}
     >
-      {[1, 2, 3].map((i) => (
-        <span
-          key={i}
-          className={cn(
-            'h-2 w-1.5 rounded-full transition-opacity',
-            i <= filled ? 'bg-current opacity-90' : 'bg-current opacity-20',
-          )}
-        />
-      ))}
+      <span className="inline-flex items-center gap-0.5" aria-hidden>
+        {[1, 2, 3].map((i) => (
+          <span
+            key={i}
+            className={cn(
+              'h-2 w-1.5 rounded-full bg-current transition-opacity',
+              i <= filled ? 'opacity-90' : 'opacity-20',
+            )}
+          />
+        ))}
+      </span>
+      <span className="text-[10px] font-medium opacity-75">{label}</span>
     </span>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// NarrativeHeader — Q1: What should I do today?
-// ─────────────────────────────────────────────────────────────────────────────
 
 interface NarrativeHeaderProps {
   verdict: OverallVerdict;
@@ -69,6 +63,7 @@ export function NarrativeHeader({
 }: NarrativeHeaderProps) {
   const display = mapVerdictToDisplay(verdict);
   const tier = mapConfidenceToTier(confidence);
+  const rationale = resolveCode(topAction.rationaleCode);
 
   const updatedAt = new Date(computedAt);
   const hoursAgo = Math.round((Date.now() - updatedAt.getTime()) / (1000 * 60 * 60));
@@ -79,28 +74,22 @@ export function NarrativeHeader({
     <div
       className={cn(
         'relative overflow-hidden rounded-2xl border bg-linear-to-br to-transparent px-6 py-7',
-        display.bgClass,
         isStale && 'opacity-80',
       )}
     >
-      {/* Verdict badge */}
-      <div className="mb-3 flex items-center gap-2">
-        <span className={cn('h-2.5 w-2.5 shrink-0 rounded-full', display.dotClass)} aria-hidden />
+      <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
         <span className={cn('text-xs font-semibold tracking-widest uppercase', display.colorClass)}>
           {display.label}
         </span>
-        <span className={cn('ml-1', display.colorClass)}>
-          <ConfidenceBar tier={tier} />
+        <span className={cn(display.colorClass)}>
+          <ConfidenceIndicator tier={tier} />
         </span>
       </div>
 
-      {/* Hero action — the answer to Q1 */}
-      <p className="font-heading text-[1.65rem] leading-tight font-bold tracking-tight">
-        <span className="text-foreground/50 font-normal">{resolveCode(topAction.verbCode)} </span>
-        {resolveCode(topAction.focusCode)}
+      <p className="font-heading text-foreground text-[1.65rem] leading-tight font-bold">
+        {rationale}
       </p>
 
-      {/* Freshness */}
       <p
         className={cn(
           'mt-4 text-xs',

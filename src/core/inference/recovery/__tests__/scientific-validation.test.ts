@@ -27,10 +27,11 @@
  *   RHR modifier:     > +7 bpm → 0.65 | > +5 → 0.75 | > +3 → 0.85
  *                     > -2 → 1.00 | > -5 → 1.05 | ≤ -5 → 1.10
  *
- * Sleep dimension:
- *   Efficiency → raw: ≥ 85% → 100 | ≥ 75% → 80 | ≥ 65% → 60 | ≥ 55% → 40 | < 55% → 20
- *   Debt modifier:    ≤ 30min → 1.00 | ≤ 60min → 0.90 | ≤ 120min → 0.80
- *                     ≤ 240min → 0.65 | > 240min → 0.50
+ * Sleep dimension (restorative ratio = deep+REM / total):
+ *   Ratio → raw:      ≥ 55% → 100 | ≥ 45% → 85 | ≥ 40% → 70 | ≥ 32% → 50
+ *                     ≥ 25% → 35 | < 25% → 20
+ *   Debt modifier:    ≤ 30min → 1.00 | ≤ 90min → 0.95 | ≤ 150min → 0.90
+ *                     ≤ 210min → 0.85 | ≤ 300min → 0.75 | ≤ 420min → 0.65 | > 420min → 0.55
  *
  * Subjective dimension:
  *   Wellness → raw:   ≥ 8.0 → 100 | ≥ 6.5 → 80 | ≥ 5.0 → 60 | ≥ 3.5 → 40
@@ -155,14 +156,14 @@ const CTX: RecoveryModelContext = {
 
 describe('Scenario 1 — Acute overload: three consecutive hard training days', () => {
   // HRV delta -18% → autonomicRaw = 25 × rhrModifier(+2 bpm = 1.00) = 25
-  // sleep efficiency 70% → sleepRaw = 60 × debtModifier(90min = 0.80) = 48
+  // restorative 38% → sleepRaw = 50 × debtModifier(90min = 0.95) = 48
   // wellness 4.5 → subjectiveRaw = 40
   // ACWR 1.65 → loadContextRaw = 40
   // composite = 25×0.35 + 48×0.30 + 40×0.25 + 40×0.10 = 37
   const recovery = makeRecovery({
     hrvDeltaFromBaseline: -18,
     rhrDeltaFromBaseline: 2,
-    sleepEfficiencyPercent: 70,
+    sleepEfficiencyPercent: 38,
     sleepDebtMin: 90,
     subjectiveWellnessIndex: 4.5,
   });
@@ -239,14 +240,12 @@ describe('Scenario 1 — Acute overload: three consecutive hard training days', 
 
 describe('Scenario 2 — Progressive overload: BASE phase week 6, successful adaptation', () => {
   // HRV delta +3% → autonomicRaw = 80 × rhrModifier(0 = 1.00) = 80
-  // sleep efficiency 83% → sleepRaw = 80 × debtModifier(15min = 1.00) = 80
-  // wellness 7.0 → subjectiveRaw = 80
-  // ACWR 1.15 → loadContextRaw = 100
-  // composite = 80×0.35 + 80×0.30 + 80×0.25 + 100×0.10 = 82
+  // restorative 48% → sleepRaw = 85 × debtModifier(15min = 1.00) = 85
+  // composite ≈ 80×0.35 + 85×0.30 + 80×0.25 + 100×0.10 = 84
   const recovery = makeRecovery({
     hrvDeltaFromBaseline: 3,
     rhrDeltaFromBaseline: 0,
-    sleepEfficiencyPercent: 83,
+    sleepEfficiencyPercent: 48,
     sleepDebtMin: 15,
     subjectiveWellnessIndex: 7.0,
   });
@@ -314,16 +313,15 @@ describe('Scenario 2 — Progressive overload: BASE phase week 6, successful ada
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('Scenario 3 — Sleep deprivation: 5-night work sprint, 6.5h average', () => {
-  // HRV delta 0% → autonomicRaw = 70 × rhrModifier(+1 = 1.00) = 70
-  // sleep efficiency 73% → sleepRaw = 60 × debtModifier(300min = 0.50) = 30
+  // restorative 38% → sleepRaw = 50 × debtModifier(300min = 0.75) = 38
   // wellness 5.0 → subjectiveRaw = 60
   // ACWR 1.1 → loadContextRaw = 100
-  // composite = 70×0.35 + 30×0.30 + 60×0.25 + 100×0.10 = 58.5 → 59
+  // composite ≈ 70×0.35 + 25×0.30 + 60×0.25 + 100×0.10 = 57
   const recovery = makeRecovery({
     hrvDeltaFromBaseline: 0,
     rhrDeltaFromBaseline: 1,
-    sleepEfficiencyPercent: 73,
-    sleepDebtMin: 300, // 7 nights × (480 - 390min) = 630... using 300 for moderate scenario
+    sleepEfficiencyPercent: 38,
+    sleepDebtMin: 300,
     subjectiveWellnessIndex: 5.0,
   });
   const load = makeLoad({ acuteLoad: 308, chronicLoad: 280, acwr: 1.1 });
@@ -388,14 +386,11 @@ describe('Scenario 3 — Sleep deprivation: 5-night work sprint, 6.5h average', 
 
 describe('Scenario 4 — Post high-intensity: HRV suppressed, sleep preserved', () => {
   // HRV delta -14% → autonomicRaw = 40 × rhrModifier(+4 bpm = 0.85) = 34
-  // sleep efficiency 80% → sleepRaw = 80 × debtModifier(60min = 0.90) = 72
-  // wellness 6.5 → subjectiveRaw = 80
-  // ACWR 1.35 → loadContextRaw = 65
-  // composite = 34×0.35 + 72×0.30 + 80×0.25 + 65×0.10 = 60
+  // restorative 44% → sleepRaw = 85 × debtModifier(60min = 0.90) = 76
   const recovery = makeRecovery({
     hrvDeltaFromBaseline: -14,
     rhrDeltaFromBaseline: 4,
-    sleepEfficiencyPercent: 80,
+    sleepEfficiencyPercent: 46,
     sleepDebtMin: 60,
     subjectiveWellnessIndex: 6.5,
     rpeVsTargetZone: 1.5,
@@ -624,18 +619,14 @@ describe('Scenario 6 — Taper before race: supercompensation achieved', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('Scenario 7 — Functional overreaching: end of BUILD block week 3', () => {
-  // HRV delta -22% → autonomicRaw = 25 × rhrModifier(+4 = 0.85) = 21.25
-  // sleep efficiency 74% → sleepRaw = 60 × debtModifier(180min = 0.65) = 39
-  // wellness 3.5, RPE +2.5 → subjectiveRaw = 40 × 0.90 = 36
-  // ACWR 1.70, monotony 2.8 → loadContextRaw = 40 × 0.80 = 32
-  // composite = 21.25×0.35 + 39×0.30 + 36×0.25 + 32×0.10 = 31.3 → 31
-  // overreachingRisk = HIGH: autonomic (21.25 < 30) AND sleep (39 < 40)
+  // HRV delta -21% → autonomicRaw = 25 × rhrModifier(+4 = 0.85) ≈ 21.25
+  // restorative 30% → sleepRaw = 35 × debtModifier(180min = 0.85) ≈ 30
   const recovery = makeRecovery({
-    hrvDeltaFromBaseline: -22,
+    hrvDeltaFromBaseline: -21,
     rhrDeltaFromBaseline: 4,
-    sleepEfficiencyPercent: 74,
+    sleepEfficiencyPercent: 30,
     sleepDebtMin: 180,
-    subjectiveWellnessIndex: 3.5,
+    subjectiveWellnessIndex: 5.0,
     rpeVsTargetZone: 2.5,
   });
   const load = makeLoad({
@@ -869,17 +860,13 @@ describe('Scenario 9 — Chronic high load: elite athlete, stable adaptation at 
 describe('Scenario 10 — Cold start: beginner athlete, day 7, no baseline established', () => {
   // No HRV delta (baseline not established) → fallback path
   // hrvAbsolute = 48 ms (near population norm for recreational) → autonomicRaw = 55 (fallback)
-  // sleep efficiency 77% → sleepRaw = 80 × debtModifier(120min = 0.80) = 64
-  // subjectiveWellnessIndex = null (no subjective observation yet)
-  // ACWR = null (chronic window not yet complete) → loadContextRaw = 75 (neutral)
-  // confidence = synthesis_quality × baselineMaturity × consistency
-  //            = 0.55 × 0.40 × 1.00 ≈ 0.22
+  // restorative 36% → sleepRaw = 50 × debtModifier(150min = 0.90) = 45
   const recovery = makeRecovery({
     hrvAbsolute: 48,
     hrvDeltaFromBaseline: null, // no baseline established
     rhrDeltaFromBaseline: null,
-    sleepEfficiencyPercent: 77,
-    sleepDebtMin: 120,
+    sleepEfficiencyPercent: 36,
+    sleepDebtMin: 150,
     subjectiveWellnessIndex: null, // no subjective observation yet
   });
   const load = makeLoad({

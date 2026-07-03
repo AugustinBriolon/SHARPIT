@@ -1,43 +1,42 @@
 'use client';
 
-import Link from 'next/link';
-import { format, isSameDay, subDays } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  ReferenceLine,
-} from 'recharts';
-import { cn } from '@/lib/utils';
+import { useEffect, useRef } from 'react';
 import { ArcGauge } from '@/components/ui/arc-gauge';
+import { useAthleteProfile, useHealthEntries } from '@/hooks/use-data';
 import { useToday } from '@/hooks/use-today';
-import { useHealthEntries } from '@/hooks/use-data';
 import { resolve } from '@/lib/french';
 import {
+  buildSleepScoreBreakdown,
+  computeSleepDebt7d,
+  formatSleepDuration,
+  mapSleepScoreToAdequacy,
+  restorativeRatioLabel,
+  SLEEP_TARGET_MIN,
+} from '@/lib/sleep-scoring';
+import {
+  mapRecoveryToSignal,
   mapScoreToColorClass,
   mapSleepAdequacySignalToDisplay,
-  type SleepAdequacySignal,
+  type ReadinessCategory,
 } from '@/lib/today-mapping';
+import { cn } from '@/lib/utils';
+import { format, isSameDay, subDays } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import Link from 'next/link';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sleep analytical dashboard — /today/sleep
 // ─────────────────────────────────────────────────────────────────────────────
-
-const SLEEP_TARGET_MIN = 450; // 7h 30m
-
-function formatSleepDuration(minutes: number | null): string {
-  if (minutes === null) return '—';
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return `${h}h ${m.toString().padStart(2, '0')}m`;
-}
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function StageStack({
   deepMin,
@@ -92,8 +91,7 @@ function StageStack({
   }
 
   return (
-    <div className="space-y-2">
-      {/* Stacked bar */}
+    <div className="w-full">
       <div className="flex h-5 w-full overflow-hidden rounded-full">
         {segments.map((s) => {
           const pct = totalMin > 0 ? (s.minutes! / totalMin) * 100 : 0;
@@ -106,19 +104,33 @@ function StageStack({
           );
         })}
       </div>
-      {/* Legend */}
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+      <div className="mt-1.5 flex w-full">
         {segments.map((s) => {
           const pct = totalMin > 0 ? Math.round((s.minutes! / totalMin) * 100) : 0;
+          const narrow = pct < 14;
           return (
-            <div key={s.key} className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-[11px]">
-                <span className={cn('inline-block h-2 w-2 rounded-full', s.bg)} />
-                <span className="text-muted-foreground">{s.label}</span>
-              </span>
-              <span className={cn('text-[11px] font-semibold tabular-nums', s.text)}>
+            <div
+              key={s.key}
+              className="min-w-0 px-0.5"
+              style={{ width: `${totalMin > 0 ? (s.minutes! / totalMin) * 100 : 0}%` }}
+            >
+              <p
+                className={cn(
+                  'text-muted-foreground truncate text-center leading-tight',
+                  narrow ? 'text-[9px]' : 'text-[10px]',
+                )}
+              >
+                {s.label}
+              </p>
+              <p
+                className={cn(
+                  'truncate text-center leading-tight font-semibold tabular-nums',
+                  narrow ? 'text-[9px]' : 'text-[10px]',
+                  s.text,
+                )}
+              >
                 {formatSleepDuration(s.minutes)} · {pct}%
-              </span>
+              </p>
             </div>
           );
         })}
@@ -127,20 +139,26 @@ function StageStack({
   );
 }
 
-function sleepEfficiencyColor(efficiency: number): string {
-  if (efficiency >= 45) return 'text-emerald-600 dark:text-emerald-400';
-  if (efficiency >= 35) return 'text-blue-600 dark:text-blue-400';
-  if (efficiency >= 25) return 'text-amber-600 dark:text-amber-400';
-  return 'text-red-600 dark:text-red-400';
+function restorativeRatioColors(ratio: number): { textClass: string; stroke: string } {
+  if (ratio >= 45) {
+    return { textClass: 'text-emerald-600 dark:text-emerald-400', stroke: '#10b981' };
+  }
+  if (ratio >= 35) {
+    return { textClass: 'text-blue-600 dark:text-blue-400', stroke: '#3b82f6' };
+  }
+  if (ratio >= 25) {
+    return { textClass: 'text-amber-600 dark:text-amber-400', stroke: '#f59e0b' };
+  }
+  return { textClass: 'text-red-600 dark:text-red-400', stroke: '#ef4444' };
 }
 
 function SleepEfficiencyGauge({ efficiency }: { efficiency: number }) {
-  const colorClass = sleepEfficiencyColor(efficiency);
+  const { textClass, stroke } = restorativeRatioColors(efficiency);
 
   return (
     <div className="flex items-center gap-4">
-      <ArcGauge score={efficiency} size={64} strokeWidth={5}>
-        <span className={cn('text-sm leading-none font-bold tabular-nums', colorClass)}>
+      <ArcGauge score={efficiency} size={64} strokeColor={stroke} strokeWidth={5}>
+        <span className={cn('text-sm leading-none font-bold tabular-nums', textClass)}>
           {efficiency}%
         </span>
       </ArcGauge>
@@ -201,9 +219,18 @@ function SleepDurationBars({ data }: { data: BarPoint[] }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function TodaySleepPage() {
-  const { data, loading } = useToday();
+  const { data, loading, refresh } = useToday();
   const { recovery } = data;
   const { data: healthEntries = [] } = useHealthEntries(14);
+  const { data: athleteProfile } = useAthleteProfile();
+  const refreshed = useRef(false);
+
+  useEffect(() => {
+    if (!refreshed.current) {
+      refreshed.current = true;
+      refresh();
+    }
+  }, [refresh]);
 
   if (loading) {
     return (
@@ -218,7 +245,7 @@ export default function TodaySleepPage() {
   if (!recovery) {
     return (
       <div className="space-y-4 p-4">
-        <Link className="text-muted-foreground text-sm" href="/">
+        <Link className="text-muted-foreground block text-sm" href="/">
           ← Aujourd'hui
         </Link>
         <p className="text-muted-foreground text-sm">Données de sommeil indisponibles.</p>
@@ -239,13 +266,12 @@ export default function TodaySleepPage() {
       ? Math.max(0, totalSleepMin - deepMin - remMin - lightMin)
       : null;
 
-  // Sleep efficiency (deep + REM) / total
-  const sleepEfficiency =
-    deepMin != null && remMin != null && totalSleepMin != null && totalSleepMin > 0
-      ? Math.round(((deepMin + remMin) / totalSleepMin) * 100)
-      : null;
+  const sleepTargetMin = athleteProfile?.sleepTargetMinutes ?? SLEEP_TARGET_MIN;
 
-  // 7-day average (excluding today)
+  const sleepDebt7d = computeSleepDebt7d(healthEntries, today, sleepTargetMin);
+  const scoreBreakdown = buildSleepScoreBreakdown(deepMin, remMin, totalSleepMin, sleepDebt7d);
+  const sleepEfficiency = scoreBreakdown.restorativeRatio;
+
   const last7 = healthEntries.filter((e) => {
     const d = new Date(e.date);
     return d >= subDays(today, 6) && !isSameDay(d, today) && e.sleepMinutes != null;
@@ -257,15 +283,30 @@ export default function TodaySleepPage() {
 
   const sleepDelta =
     totalSleepMin != null && avgSleepMinutes7d != null ? totalSleepMin - avgSleepMinutes7d : null;
-  const targetDeltaMin = totalSleepMin != null ? totalSleepMin - SLEEP_TARGET_MIN : null;
+  const targetDeltaMin = totalSleepMin != null ? totalSleepMin - sleepTargetMin : null;
 
-  // Scores
+  // Score live depuis les données Garmin (même formule que le moteur recovery)
   const sleepDim = recovery.dimensions.sleep;
-  const sleepScore = sleepDim.available ? sleepDim.score : null;
+  const sleepScore =
+    scoreBreakdown.sharpitScore ?? (sleepDim.available ? (sleepDim.score ?? null) : null);
   const scoreClass = mapScoreToColorClass(sleepScore);
-  const adequacyDisplay = mapSleepAdequacySignalToDisplay(
-    recovery.signals.sleepAdequacy as SleepAdequacySignal,
-  );
+  const adequacyDisplay = mapSleepAdequacySignalToDisplay(mapSleepScoreToAdequacy(sleepScore));
+
+  const autonomicScore = recovery.dimensions.autonomic.available
+    ? recovery.dimensions.autonomic.score
+    : null;
+  const recoverySignal = mapRecoveryToSignal(recovery.readinessCategory as ReadinessCategory);
+
+  const filteredEvidence = recovery.recommendation.keyEvidence
+    .map((e) => resolve(e))
+    .filter((line, index, arr) => {
+      const lower = line.toLowerCase();
+      if (lower.includes('sommeil limite') && recovery.primaryLimitingFactor === 'sleep') {
+        return false;
+      }
+      return arr.indexOf(line) === index;
+    })
+    .slice(0, 3);
 
   // 14-day bar chart data
   const days14 = Array.from({ length: 14 }, (_, i) => subDays(today, 13 - i));
@@ -280,7 +321,7 @@ export default function TodaySleepPage() {
   return (
     <div className="space-y-4 p-4">
       <Link
-        className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+        className="text-muted-foreground hover:text-foreground block text-sm transition-colors"
         href="/"
       >
         ← Aujourd'hui
@@ -291,9 +332,7 @@ export default function TodaySleepPage() {
         <div className="space-y-4">
           {/* Score hero */}
           <div className="bg-card/60 rounded-2xl border px-5 py-5">
-            <p className="text-muted-foreground mb-3 text-[11px] font-medium tracking-[0.15em] uppercase">
-              Sommeil
-            </p>
+            <p className="text-muted-foreground mb-3 text-[11px] font-medium uppercase">Sommeil</p>
             <div className="flex items-center gap-5">
               <ArcGauge score={sleepScore} size={96} strokeWidth={7} />
               <div className="space-y-1.5">
@@ -339,7 +378,7 @@ export default function TodaySleepPage() {
           {/* Stage composition */}
           {totalSleepMin != null && totalSleepMin > 0 && (
             <div className="bg-card/60 rounded-2xl border px-5 py-4">
-              <p className="text-muted-foreground mb-3 text-[11px] font-medium tracking-[0.15em] uppercase">
+              <p className="text-muted-foreground mb-3 text-[11px] font-medium uppercase">
                 Architecture du sommeil
               </p>
               <StageStack
@@ -359,16 +398,72 @@ export default function TodaySleepPage() {
             </div>
           )}
 
-          {/* Dual scores */}
+          {/* Pourquoi ce score SHARPIT */}
+          {sleepScore !== null && scoreBreakdown.restorativeRatio != null && (
+            <div className="bg-card/60 space-y-3 rounded-2xl border px-5 py-4">
+              <p className="text-muted-foreground text-[11px] font-medium uppercase">
+                Pourquoi ce score SHARPIT
+              </p>
+              <ul className="text-muted-foreground space-y-1.5 text-xs leading-relaxed">
+                <li>
+                  <span className="text-foreground font-medium">Architecture restauratrice :</span>{' '}
+                  {scoreBreakdown.restorativeRatio} % (
+                  {restorativeRatioLabel(scoreBreakdown.restorativeRatio)})
+                  {remMin != null && remMin < 45 && ' — paradoxal faible'}
+                </li>
+                {scoreBreakdown.debtMin != null && scoreBreakdown.debtMin > 30 && (
+                  <li>
+                    <span className="text-foreground font-medium">Dette 7 jours :</span>{' '}
+                    {formatSleepDuration(scoreBreakdown.debtMin)} sous la cible cumulée
+                  </li>
+                )}
+                {todayEntry?.sleepScore != null && (
+                  <li>
+                    <span className="text-foreground font-medium">
+                      Garmin {todayEntry.sleepScore}
+                    </span>{' '}
+                    = qualité perçue par l&apos;appareil. SHARPIT croise architecture + dette pour
+                    l&apos;impact récupération.
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
+
+          {/* Récupération globale */}
+          {recovery.readinessScore != null && (
+            <div className="bg-card/60 rounded-2xl border px-5 py-4">
+              <p className="text-muted-foreground text-[11px] font-medium uppercase">
+                Lien récupération globale
+              </p>
+              <p className="mt-2 text-sm font-semibold tabular-nums">
+                {recovery.readinessScore}/100 — {recoverySignal.label.toLowerCase()}
+              </p>
+              <p className="text-muted-foreground mt-1.5 text-xs leading-relaxed">
+                {autonomicScore != null && sleepScore != null && autonomicScore > sleepScore
+                  ? `VFC et autres signaux (${autonomicScore}/100) compensent partiellement un sommeil à ${sleepScore}/100.`
+                  : 'Le sommeil pèse fortement dans le score récupération du jour.'}
+                {recovery.primaryLimitingFactor === 'sleep' &&
+                  ' C’est le facteur limitant principal aujourd’hui.'}
+              </p>
+              {recovery.signals.dissonanceDetected && (
+                <p className="mt-2 text-xs font-medium text-amber-600 dark:text-amber-400">
+                  Signaux contradictoires entre dimensions — prudence recommandée.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Scores côte à côte */}
           {(todayEntry?.sleepScore != null || sleepScore !== null) && (
             <div className="bg-card/60 rounded-2xl border px-5 py-4">
-              <p className="text-muted-foreground mb-3 text-[11px] font-medium tracking-[0.15em] uppercase">
-                Scores sommeil
+              <p className="text-muted-foreground mb-3 text-[11px] font-medium uppercase">
+                Deux lectures du sommeil
               </p>
               <div className="grid grid-cols-2 gap-4">
                 {todayEntry?.sleepScore != null && (
                   <div>
-                    <p className="text-muted-foreground text-[10px]">Score Garmin</p>
+                    <p className="text-muted-foreground text-[10px]">Garmin</p>
                     <p
                       className={cn(
                         'text-2xl font-bold tabular-nums',
@@ -377,70 +472,35 @@ export default function TodaySleepPage() {
                     >
                       {todayEntry.sleepScore}
                     </p>
-                    <p className="text-muted-foreground text-[10px]">évaluation appareil</p>
+                    <p className="text-muted-foreground text-[10px]">qualité globale</p>
                   </div>
                 )}
                 {sleepScore !== null && (
                   <div>
-                    <p className="text-muted-foreground text-[10px]">Score SHARPIT</p>
+                    <p className="text-muted-foreground text-[10px]">SHARPIT</p>
                     <p className={cn('text-2xl font-bold tabular-nums', scoreClass)}>
                       {sleepScore}
                     </p>
-                    <p className="text-muted-foreground text-[10px]">impact récupération</p>
+                    <p className="text-muted-foreground text-[10px]">{adequacyDisplay.label}</p>
                   </div>
                 )}
               </div>
-              {todayEntry?.sleepScore != null && sleepScore !== null && (
-                <p className="text-muted-foreground/60 mt-2 text-[10px]">
-                  Garmin évalue la qualité. SHARPIT mesure la contribution à la récupération.
-                </p>
-              )}
             </div>
           )}
 
-          {/* Recovery impact */}
-          <div className="bg-card/60 rounded-2xl border px-5 py-4">
-            <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-              Impact sur la récupération
-            </p>
-            <div className="mt-2 space-y-1.5">
-              <div className="flex items-center justify-between">
-                <p className="text-muted-foreground text-xs">Adéquation</p>
-                <span className={cn('text-xs font-medium', adequacyDisplay.colorClass)}>
-                  {adequacyDisplay.label}
-                </span>
-              </div>
-              {recovery.signals.dissonanceDetected && (
-                <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
-                  ⚡ Signaux contradictoires détectés
-                </p>
-              )}
-              {recovery.primaryLimitingFactor === 'sleep' && (
-                <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
-                  ↑ Sommeil = principal facteur limitant aujourd'hui
-                </p>
-              )}
-            </div>
-            {sleepDim.status && (
-              <p className="text-muted-foreground mt-2 text-xs">
-                Statut : <span className="text-foreground font-medium">{sleepDim.status}</span>
-              </p>
-            )}
-          </div>
-
-          {/* Key evidence */}
-          {recovery.recommendation.keyEvidence.length > 0 && (
+          {/* Key evidence (sans doublons) */}
+          {filteredEvidence.length > 0 && (
             <div className="bg-card/40 space-y-2 rounded-2xl border px-5 py-4">
-              <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-                Signaux de récupération
+              <p className="text-muted-foreground text-[11px] font-medium uppercase">
+                Contexte récupération
               </p>
               <ul className="space-y-1">
-                {recovery.recommendation.keyEvidence.map((e, i) => (
+                {filteredEvidence.map((line, i) => (
                   <li
                     key={i}
                     className="text-muted-foreground text-xs before:mr-1.5 before:content-['·']"
                   >
-                    {resolve(e)}
+                    {line}
                   </li>
                 ))}
               </ul>
@@ -452,7 +512,7 @@ export default function TodaySleepPage() {
         <div className="space-y-4">
           {/* 14-day duration bars */}
           <div className="bg-card/60 rounded-2xl border px-4 py-4">
-            <p className="text-muted-foreground mb-2 text-[11px] font-medium tracking-[0.15em] uppercase">
+            <p className="text-muted-foreground mb-2 text-[11px] font-medium uppercase">
               Durée — 14 jours
             </p>
             <SleepDurationBars data={barData} />
@@ -470,7 +530,7 @@ export default function TodaySleepPage() {
           {/* 7-day context */}
           {avgSleepMinutes7d !== null && (
             <div className="bg-card/60 rounded-2xl border px-4 py-4">
-              <p className="text-muted-foreground mb-2 text-[11px] font-medium tracking-[0.15em] uppercase">
+              <p className="text-muted-foreground mb-2 text-[11px] font-medium uppercase">
                 Moyenne 7 jours
               </p>
               <p className="text-sm font-semibold tabular-nums">

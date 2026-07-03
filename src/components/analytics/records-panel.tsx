@@ -11,6 +11,7 @@ import { AnalyticsSection, RecordsSectionHeader } from '@/components/analytics/a
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRecords } from '@/hooks/use-data';
+import { navPillClass } from '@/lib/nav-pill';
 import type { RecordCategory, RecordEntry } from '@/lib/records';
 import { cn } from '@/lib/utils';
 
@@ -39,9 +40,9 @@ function RecordCategoryCard({ category }: { category: RecordCategory }) {
   const [best] = category.entries;
 
   return (
-    <div className="border-border bg-card rounded-xl border p-4">
+    <div className="bg-card/60 rounded-2xl border p-4">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+        <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.15em] uppercase">
           {category.label}
         </p>
         {best && isRecent(best.date) && (
@@ -165,7 +166,7 @@ export function RecordsPanel() {
   if (!data) return null;
 
   return (
-    <section className="border-border space-y-6 border-t pt-12">
+    <section className="space-y-4 border-t pt-6">
       <RecordsSectionHeader
         streamsAnalyzed={data.streamsAnalyzed}
         totalActivities={data.totalActivities}
@@ -175,13 +176,8 @@ export function RecordsPanel() {
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
+            className={navPillClass(tab === id, 'gap-2')}
             type="button"
-            className={cn(
-              'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors',
-              tab === id
-                ? 'border-primary/30 bg-primary/10 text-primary'
-                : 'border-border bg-card text-muted-foreground hover:text-foreground',
-            )}
             onClick={() => setTab(id)}
           >
             <Icon className="size-4" />

@@ -19,10 +19,6 @@
  */
 
 import type { LoadFeatureSet, LoadHistory } from '../types';
-import type { SportType } from '@/core/observation/types';
-
-const RUN_SPORTS: SportType[] = ['RUN', 'TRAIL_RUN'];
-const BIKE_SPORTS: SportType[] = ['BIKE', 'MTB'];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Rolling window helpers

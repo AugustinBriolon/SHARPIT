@@ -80,7 +80,12 @@ export function PhysicalNoteCard({
   }
 
   return (
-    <Card className={cn(note.status === 'RESOLVED' && 'opacity-70')}>
+    <Card
+      className={cn(
+        'bg-card/60 rounded-2xl border shadow-none',
+        note.status === 'RESOLVED' && 'opacity-70',
+      )}
+    >
       <CardHeader className="flex flex-row items-start justify-between gap-3 pb-3">
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">

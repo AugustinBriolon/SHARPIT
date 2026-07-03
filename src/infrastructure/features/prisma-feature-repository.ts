@@ -15,19 +15,19 @@ import { Prisma, type PrismaClient } from '@prisma/client';
 
 import type { FeatureRepository } from '@/core/features/repository';
 import type {
+  BodyFeatureSet,
+  BodyFeatureSetRecord,
+  ConditionFeatureSet,
+  ConditionFeatureSetRecord,
   FeatureCategory,
   FeatureSetRecord,
-  SessionFeatureSetRecord,
-  LoadFeatureSetRecord,
-  RecoveryFeatureSetRecord,
-  BodyFeatureSetRecord,
-  ConditionFeatureSetRecord,
   FeatureStatus,
-  SessionFeatureSet,
   LoadFeatureSet,
+  LoadFeatureSetRecord,
   RecoveryFeatureSet,
-  BodyFeatureSet,
-  ConditionFeatureSet,
+  RecoveryFeatureSetRecord,
+  SessionFeatureSet,
+  SessionFeatureSetRecord,
 } from '@/core/features/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -120,23 +120,6 @@ function toConditionRecord(row: PrismaFeatureSetRow): ConditionFeatureSetRecord 
     createdAt: row.createdAt,
     data: row.data as ConditionFeatureSet,
   };
-}
-
-function toRecord(row: PrismaFeatureSetRow): FeatureSetRecord {
-  switch (row.category) {
-    case 'SESSION':
-      return toSessionRecord(row);
-    case 'LOAD':
-      return toLoadRecord(row);
-    case 'RECOVERY':
-      return toRecoveryRecord(row);
-    case 'BODY':
-      return toBodyRecord(row);
-    case 'CONDITION':
-      return toConditionRecord(row);
-    default:
-      throw new Error(`Unknown FeatureSet category: ${row.category}`);
-  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

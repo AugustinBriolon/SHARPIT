@@ -11,26 +11,24 @@
  *   - Determinism: identical inputs always produce identical outputs
  */
 
-import { describe, it, expect } from 'vitest';
-import {
-  scoreLoadFatigue,
-  scoreNeuromuscularFatigue,
-  scoreMetabolicFatigue,
-  scoreCumulativeTrajectory,
-  scorePsychologicalFatigue,
-  synthesizeFatigueIndex,
-  classifyFatigueLevel,
-  computeFatigueTrajectory,
-} from '../scoring';
-import { runFatigueModel } from '../model';
+import type { RecoveryState } from '@/core/digital-twin/types';
 import type {
+  DayFeatures,
   LoadFeatureSet,
   RecoveryFeatureSet,
   SessionFeatureSet,
-  DayFeatures,
 } from '@/core/features/types';
+import { describe, expect, it } from 'vitest';
+import { runFatigueModel } from '../model';
+import {
+  classifyFatigueLevel,
+  computeFatigueTrajectory,
+  scoreCumulativeTrajectory,
+  scoreLoadFatigue,
+  scoreMetabolicFatigue,
+  scorePsychologicalFatigue,
+} from '../scoring';
 import type { FatigueModelContext } from '../types';
-import type { RecoveryState } from '@/core/digital-twin/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Fixtures

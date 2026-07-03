@@ -20,16 +20,16 @@
  *   - Sleep efficiency: Rechtschaffen & Kales (1968); AASM criteria
  */
 
-import type { RecoveryFeatureSet, RecoveryHistory, SubjectiveWellnessComponents } from '../types';
-import type { ExtractionContext } from '../context';
 import type {
   HrvObservation,
   RestingHrObservation,
   SleepObservation,
   SubjectiveObservation,
 } from '@/core/observation/types';
-import { QUALITY_CONFIDENCE } from '../types';
+import type { ExtractionContext } from '../context';
 import { effectiveSleepTarget } from '../context';
+import type { RecoveryFeatureSet, RecoveryHistory, SubjectiveWellnessComponents } from '../types';
+import { QUALITY_CONFIDENCE } from '../types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Statistical helpers

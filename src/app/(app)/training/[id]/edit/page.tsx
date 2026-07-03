@@ -16,10 +16,8 @@ export default async function EditTrainingPage({ params }: PageProps) {
   return (
     <div className="space-y-8">
       <StickyHeader>
-        <p className="text-primary text-xs font-medium tracking-[0.2em] uppercase">Training</p>
-        <h1 className="font-heading mt-2 text-3xl font-semibold tracking-tight">
-          Modifier la séance
-        </h1>
+        <p className="text-primary text-xs font-medium uppercase">Training</p>
+        <h1 className="font-heading mt-2 text-3xl font-semibold">Modifier la séance</h1>
       </StickyHeader>
       <ActivityForm initialData={activity} mode="edit" />
     </div>

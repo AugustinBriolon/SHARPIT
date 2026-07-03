@@ -479,6 +479,31 @@ export function mapConsistencyToDisplay(
   }
 }
 
+const ARBITRATION_SYSTEM_FR: Record<string, string> = {
+  RECOVERY: 'récupération',
+  FATIGUE: 'fatigue',
+  ADAPTATION: 'adaptation',
+};
+
+/** Athlete-facing consistency line — never exposes raw inter-model conflict. */
+export function mapConsistencyToAthleteDisplay(
+  consistency: PhysiologicalConsistency,
+  score: number,
+  verdict: OverallVerdict,
+  arbitrationWinner: 'RECOVERY' | 'FATIGUE' | 'ADAPTATION' | null,
+): { label: string; detail: string | null; colorClass: string } {
+  if (consistency === 'CONFLICTING' && arbitrationWinner) {
+    const verdictDisplay = mapVerdictToDisplay(verdict);
+    return {
+      label: `Décision : ${verdictDisplay.label}`,
+      detail: `Priorité au modèle ${ARBITRATION_SYSTEM_FR[arbitrationWinner] ?? arbitrationWinner}`,
+      colorClass: verdictDisplay.colorClass,
+    };
+  }
+  const base = mapConsistencyToDisplay(consistency, score);
+  return { label: base.label, detail: null, colorClass: base.colorClass };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Expected outcome projections — what happens if the athlete follows the plan
 // ─────────────────────────────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 import { ActivityType, Prisma } from '@prisma/client';
 import { addDays, startOfDay } from 'date-fns';
+import { dedupeBodyCompositionByDay } from '@/lib/body-composition';
 import { prisma } from './prisma';
 
 const activityInclude = {
@@ -177,10 +178,11 @@ export async function getHealthEntries(days = 90) {
 
 export async function getBodyCompositionMeasurements(days = 90) {
   const since = startOfDay(addDays(new Date(), -days));
-  return prisma.bodyCompositionMeasurement.findMany({
+  const rows = await prisma.bodyCompositionMeasurement.findMany({
     where: { measuredAt: { gte: since } },
     orderBy: { measuredAt: 'desc' },
   });
+  return dedupeBodyCompositionByDay(rows);
 }
 
 const plannedSessionInclude = {

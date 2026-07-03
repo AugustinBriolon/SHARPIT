@@ -44,6 +44,18 @@ const DIMENSION_WEIGHTS = {
 /** Accumulation threshold: FatigueIndex > this → counts as accumulation day. */
 const ACCUMULATION_THRESHOLD = 55;
 
+function accumulationQualityFactor(consecutiveAccumulationDays: number): number {
+  if (consecutiveAccumulationDays >= 7) return 0.85;
+  if (consecutiveAccumulationDays >= 3) return 0.6;
+  return 0.3;
+}
+
+function classifyFatigueDataCompleteness(dimensionCount: number): DataCompleteness {
+  if (dimensionCount >= 5) return 'FULL';
+  if (dimensionCount >= 3) return 'PARTIAL';
+  return 'SPARSE';
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Sport-specific mechanical stress factor (v1 approximation)
 // Higher values → more eccentric / mechanical loading per TSS unit
@@ -261,8 +273,7 @@ export function scoreCumulativeTrajectory(
   const score = Math.min(accumulationPressure + sleepDebtContribution + dissonancePenalty, 100);
 
   const hasData = sleepDebtMin !== null || consecutiveAccumulationDays > 0;
-  const qualityFactor =
-    consecutiveAccumulationDays >= 7 ? 0.85 : consecutiveAccumulationDays >= 3 ? 0.6 : 0.3;
+  const qualityFactor = accumulationQualityFactor(consecutiveAccumulationDays);
 
   return {
     score: Math.round(score),
@@ -346,7 +357,7 @@ export function synthesizeFatigueIndex(dims: ScoredFatigueDimensions): Synthesis
   );
 
   const n = available.length;
-  const dataCompleteness: DataCompleteness = n >= 5 ? 'FULL' : n >= 3 ? 'PARTIAL' : 'SPARSE';
+  const dataCompleteness = classifyFatigueDataCompleteness(n);
 
   return { score: Math.round(score), confidence, dataCompleteness };
 }

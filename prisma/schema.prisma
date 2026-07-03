@@ -220,6 +220,19 @@ model RenphoAccount {
   updatedAt DateTime @updatedAt
 }
 
+model WithingsAccount {
+  id             String    @id @default("default")
+  withingsUserId String
+  accessToken    String
+  refreshToken   String
+  expiresAt      DateTime
+  displayName    String?
+  lastSyncAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model RunMetrics {
   id         String   @id @default(cuid())
   activityId String   @unique
@@ -319,9 +332,15 @@ model DailyHealth {
   updatedAt DateTime @updatedAt
 }
 
+enum BodyCompositionSource {
+  RENPHO
+  WITHINGS
+}
+
 model BodyCompositionMeasurement {
-  id         String   @id @default(cuid())
-  renphoId   String   @unique
+  id         String                @id @default(cuid())
+  source     BodyCompositionSource
+  externalId String
   measuredAt DateTime
 
   weightKg           Float?
@@ -339,10 +358,28 @@ model BodyCompositionMeasurement {
   fatFreeWeightKg    Float?
   heartRate          Int?
 
+  // Withings Body Scan — cardio & nerve health
+  vascularAgeYears      Int?
+  pulseWaveVelocity     Float?
+  vo2Max                Float?
+  nerveHealthScore      Float?
+  nerveHealthLeft       Float?
+  nerveHealthRight      Float?
+  nerveResponseScore    Float?
+  skinConductance       Float?
+  metabolicAge          Int?
+  hydrationKg           Float?
+  fatMassKg               Float?
+  extracellularWaterKg    Float?
+  intracellularWaterKg    Float?
+  withingsExtras          Json?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([source, externalId])
   @@index([measuredAt])
+  @@index([source, measuredAt])
 }
 
 model Goal {

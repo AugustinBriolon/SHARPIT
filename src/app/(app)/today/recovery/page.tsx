@@ -297,7 +297,7 @@ export default function TodayRecoveryPage() {
   if (!recovery) {
     return (
       <div className="space-y-4 p-4">
-        <Link className="text-muted-foreground text-sm" href="/">
+        <Link className="text-muted-foreground block text-sm" href="/">
           ← Aujourd'hui
         </Link>
         <p className="text-muted-foreground text-sm">Données de récupération indisponibles.</p>
@@ -369,7 +369,7 @@ export default function TodayRecoveryPage() {
   return (
     <div className="space-y-4 p-4">
       <Link
-        className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+        className="text-muted-foreground hover:text-foreground block text-sm transition-colors"
         href="/"
       >
         ← Aujourd'hui
@@ -380,7 +380,7 @@ export default function TodayRecoveryPage() {
         <div className="space-y-4">
           {/* Score hero */}
           <div className="bg-card/60 rounded-2xl border px-5 py-5">
-            <p className="text-muted-foreground mb-3 text-[11px] font-medium tracking-[0.15em] uppercase">
+            <p className="text-muted-foreground mb-3 text-[11px] font-medium uppercase">
               Récupération
             </p>
             <div className="flex items-center gap-5">
@@ -432,7 +432,7 @@ export default function TodayRecoveryPage() {
 
           {/* 4 Dimension bars */}
           <div className="bg-card/60 space-y-3 rounded-2xl border px-5 py-4">
-            <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+            <p className="text-muted-foreground text-[11px] font-medium uppercase">
               Contribution au score
             </p>
             <div className="space-y-3">
@@ -447,7 +447,7 @@ export default function TodayRecoveryPage() {
 
           {/* Signal chips */}
           <div className="bg-card/60 space-y-3 rounded-2xl border px-5 py-4">
-            <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+            <p className="text-muted-foreground text-[11px] font-medium uppercase">
               Signaux physiologiques
             </p>
             <div className="flex flex-wrap gap-2">
@@ -473,7 +473,7 @@ export default function TodayRecoveryPage() {
 
           {/* Decision */}
           <div className="bg-card/60 rounded-2xl border px-5 py-4">
-            <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+            <p className="text-muted-foreground text-[11px] font-medium uppercase">
               Intensité recommandée
             </p>
             <p className={cn('mt-1 text-sm font-semibold', scoreClass)}>{intensityLabel}</p>
@@ -494,7 +494,7 @@ export default function TodayRecoveryPage() {
           {/* Risk alerts */}
           {(overreachingDisplay || illnessDisplay) && (
             <div className="space-y-2 rounded-2xl border border-orange-500/20 bg-orange-500/5 px-5 py-4">
-              <p className="text-[11px] font-medium tracking-[0.15em] text-orange-600 uppercase dark:text-orange-400">
+              <p className="text-[11px] font-medium text-orange-600 uppercase dark:text-orange-400">
                 Alertes
               </p>
               {overreachingDisplay && (
@@ -515,7 +515,7 @@ export default function TodayRecoveryPage() {
         <div className="space-y-4">
           {/* HRV sparkline */}
           <div className="bg-card/60 rounded-2xl border px-4 py-4">
-            <p className="text-muted-foreground mb-2 text-[11px] font-medium tracking-[0.15em] uppercase">
+            <p className="text-muted-foreground mb-2 text-[11px] font-medium uppercase">
               VFC — 14 jours
             </p>
             <MiniSparkline
@@ -534,7 +534,7 @@ export default function TodayRecoveryPage() {
 
           {/* RHR sparkline */}
           <div className="bg-card/60 rounded-2xl border px-4 py-4">
-            <p className="text-muted-foreground mb-2 text-[11px] font-medium tracking-[0.15em] uppercase">
+            <p className="text-muted-foreground mb-2 text-[11px] font-medium uppercase">
               FC repos — 14 jours
             </p>
             <MiniSparkline color="#f59e0b" data={sparkRhr} unit="bpm" invertDelta />
@@ -542,7 +542,7 @@ export default function TodayRecoveryPage() {
 
           {/* Body battery + Stress dual */}
           <div className="bg-card/60 rounded-2xl border px-4 py-4">
-            <p className="text-muted-foreground mb-2 text-[11px] font-medium tracking-[0.15em] uppercase">
+            <p className="text-muted-foreground mb-2 text-[11px] font-medium uppercase">
               Énergie & Stress — 14 jours
             </p>
             <DualSparkline
@@ -561,7 +561,7 @@ export default function TodayRecoveryPage() {
 
           {/* Confidence block */}
           <div className="bg-card/40 rounded-2xl border px-4 py-4">
-            <p className="text-muted-foreground mb-3 text-[11px] font-medium tracking-[0.15em] uppercase">
+            <p className="text-muted-foreground mb-3 text-[11px] font-medium uppercase">
               Fiabilité
             </p>
             <div className="grid grid-cols-3 gap-3">
@@ -587,7 +587,7 @@ export default function TodayRecoveryPage() {
           {/* Key evidence */}
           {recovery.recommendation.keyEvidence.length > 0 && (
             <div className="bg-card/40 space-y-2 rounded-2xl border px-4 py-4">
-              <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+              <p className="text-muted-foreground text-[11px] font-medium uppercase">
                 Signaux clés
               </p>
               <ul className="space-y-1">

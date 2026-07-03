@@ -9,6 +9,7 @@ import {
   mapAdaptationDecisionToObjective,
   mapDeviationRisk,
   mapConsistencyToDisplay,
+  mapConsistencyToAthleteDisplay,
   mapRecoveryProjection,
   mapFatigueProjection,
   mapAdaptationProjection,
@@ -283,6 +284,13 @@ describe('mapConsistencyToDisplay', () => {
   it('CONFLICTING uses orange colour', () => {
     const result = mapConsistencyToDisplay('CONFLICTING', 40);
     expect(result.colorClass).toContain('orange');
+  });
+
+  it('mapConsistencyToAthleteDisplay hides raw conflict and shows verdict', () => {
+    const result = mapConsistencyToAthleteDisplay('CONFLICTING', 33, 'TRAIN_EASY', 'RECOVERY');
+    expect(result.label).toBe('Décision : Entraîne-toi légèrement');
+    expect(result.detail).toContain('récupération');
+    expect(result.label).not.toContain('conflit');
   });
 
   it('INSUFFICIENT_DATA returns muted colour and no score', () => {

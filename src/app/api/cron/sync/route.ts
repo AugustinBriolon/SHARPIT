@@ -6,6 +6,7 @@ import { syncGarminActivities } from '@/lib/integrations/garmin-activity-sync';
 import { getGoogleAccount, syncFromGoogle } from '@/lib/integrations/google-sync';
 import { recomputeRecordsSafe } from '@/lib/records';
 import { getRenphoAccount, syncRenphoHealth } from '@/lib/integrations/renpho-sync';
+import { getWithingsAccount, syncWithingsHealth } from '@/lib/integrations/withings-sync';
 import { backfillActivityStreams } from '@/lib/stream-backfill';
 import { getStravaAccount, syncStravaActivities } from '@/lib/integrations/strava-sync';
 import { generateAndStoreWeeklyReview, isSunday } from '@/lib/weekly-review';
@@ -30,6 +31,7 @@ export async function GET(request: Request) {
     garmin: Awaited<ReturnType<typeof syncGarminHealth>> | null;
     garminActivities: Awaited<ReturnType<typeof syncGarminActivities>> | null;
     renpho: Awaited<ReturnType<typeof syncRenphoHealth>> | null;
+    withings: Awaited<ReturnType<typeof syncWithingsHealth>> | null;
     google: Awaited<ReturnType<typeof syncFromGoogle>> | null;
     backfill: Awaited<ReturnType<typeof backfillActivityStreams>> | null;
     briefing: boolean;
@@ -40,6 +42,7 @@ export async function GET(request: Request) {
     garmin: null,
     garminActivities: null,
     renpho: null,
+    withings: null,
     google: null,
     backfill: null,
     briefing: false,
@@ -47,12 +50,14 @@ export async function GET(request: Request) {
     errors: [],
   };
 
-  const [stravaAccount, garminAccount, renphoAccount, googleAccount] = await Promise.all([
-    getStravaAccount(),
-    getGarminAccount(),
-    getRenphoAccount(),
-    getGoogleAccount(),
-  ]);
+  const [stravaAccount, garminAccount, renphoAccount, withingsAccount, googleAccount] =
+    await Promise.all([
+      getStravaAccount(),
+      getGarminAccount(),
+      getRenphoAccount(),
+      getWithingsAccount(),
+      getGoogleAccount(),
+    ]);
 
   if (stravaAccount) {
     try {
@@ -83,8 +88,19 @@ export async function GET(request: Request) {
     }
   }
 
-  // Renpho (composition) + Google Calendar : fetch incrémental si compte connecté.
+  // Composition corporelle + Google Calendar : fetch incrémental si compte connecté.
   await Promise.all([
+    withingsAccount
+      ? syncWithingsHealth({ days: 14 })
+          .then((withings) => {
+            result.withings = withings;
+          })
+          .catch((error) => {
+            const msg = error instanceof Error ? error.message : 'Sync Withings échouée';
+            console.error('[cron/sync] Withings:', msg);
+            result.errors.push(`withings: ${msg}`);
+          })
+      : Promise.resolve(),
     renphoAccount
       ? syncRenphoHealth({ days: 14 })
           .then((renpho) => {
@@ -147,7 +163,13 @@ export async function GET(request: Request) {
     }
   }
 
-  if (!stravaAccount && !garminAccount && !renphoAccount && !googleAccount?.targetCalendarId) {
+  if (
+    !stravaAccount &&
+    !garminAccount &&
+    !renphoAccount &&
+    !withingsAccount &&
+    !googleAccount?.targetCalendarId
+  ) {
     return NextResponse.json({
       ok: true,
       message: 'Aucune source connectée, rien à synchroniser.',

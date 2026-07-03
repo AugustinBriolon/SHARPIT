@@ -130,12 +130,10 @@ export function CalendarView({ embedded = false }: { embedded?: boolean }) {
   const header = (
     <PageHeader className="flex flex-wrap items-end justify-between gap-4" embedded={embedded}>
       <div>
-        {!embedded && (
-          <p className="text-primary text-xs font-medium tracking-[0.2em] uppercase">Calendar</p>
-        )}
+        {!embedded && <p className="text-primary text-xs font-medium uppercase">Calendar</p>}
         <h1
           className={cn(
-            'font-heading font-semibold tracking-tight capitalize',
+            'font-heading font-semibold capitalize',
             embedded ? 'text-xl' : 'mt-2 text-3xl',
           )}
         >
