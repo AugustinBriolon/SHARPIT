@@ -9,21 +9,29 @@ import { LineChart, Line, XAxis, CartesianGrid, ResponsiveContainer, Tooltip } f
 import { useToday } from '@/hooks/use-today';
 import { useHealthEntries, useActivities, usePlannedSessions } from '@/hooks/use-data';
 import { computeTrainingLoad } from '@/lib/training-load';
+import { resolve } from '@/lib/french';
 import {
   mapScoreToColorClass,
   mapRecoveryToSignal,
   mapFatigueToSignal,
   mapConfidenceToTier,
   mapConsistencyToDisplay,
+  mapFatigueCapacityLabel,
   type ReadinessCategory,
   type FatigueLevel,
   type FatigueTrajectory,
   type PhysiologicalConsistency,
+  type TrainingCapacity,
 } from '@/lib/today-mapping';
 import { NarrativeHeader } from './narrative-header';
 import { SessionBlock } from './session-block';
 import type { ClientHealthEntry, ClientPlannedSession } from '@/lib/query/types';
-import type { AdaptationDecisionVerdict } from '@/hooks/use-today';
+import type {
+  AdaptationDecisionVerdict,
+  AutonomicBalance,
+  EvidenceGraph,
+  LimitingFactor,
+} from '@/hooks/use-today';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared helpers
@@ -50,6 +58,40 @@ const INTENSITY_LABEL: Record<string, string> = {
   THRESHOLD: 'Seuil',
   VO2MAX: 'VO2 Max',
   RACE: 'Compétition',
+};
+
+const AUTONOMIC_SIGNAL: Record<string, { label: string; colorClass: string }> = {
+  ENHANCED: { label: 'SNV: Optimal', colorClass: 'text-emerald-600 dark:text-emerald-400' },
+  NORMAL: { label: 'SNV: Normal', colorClass: 'text-slate-500 dark:text-slate-400' },
+  MILDLY_SUPPRESSED: { label: 'SNV: Réduit', colorClass: 'text-amber-600 dark:text-amber-400' },
+  SUPPRESSED: { label: 'SNV: Supprimé', colorClass: 'text-orange-600 dark:text-orange-400' },
+  CRITICALLY_SUPPRESSED: { label: 'SNV: Critique', colorClass: 'text-red-600 dark:text-red-400' },
+};
+
+const ADAPTATION_STATUS_SIGNAL: Record<string, { label: string; colorClass: string }> = {
+  POSITIVELY_ADAPTING: {
+    label: 'Progression',
+    colorClass: 'text-emerald-600 dark:text-emerald-400',
+  },
+  MAINTAINING: { label: 'Maintien', colorClass: 'text-blue-600 dark:text-blue-400' },
+  PLATEAUING: { label: 'Plateau', colorClass: 'text-amber-600 dark:text-amber-400' },
+  MALADAPTING: { label: 'Inadaptation', colorClass: 'text-orange-600 dark:text-orange-400' },
+  DETRAINING: { label: 'Désentraînement', colorClass: 'text-red-600 dark:text-red-400' },
+};
+
+const DOMINANT_DIMENSION_LABEL: Record<string, string> = {
+  load: 'Charge',
+  neuromuscular: 'Neuromusculaire',
+  metabolic: 'Métabolique',
+  cumulative: 'Cumulative',
+  psychological: 'Psychologique',
+};
+
+const RECOVERY_DIMENSION_NAME: Record<string, string> = {
+  autonomic: 'VFC',
+  sleep: 'Sommeil',
+  subjective: 'Ressenti',
+  loadContext: 'Charge',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -178,7 +220,6 @@ interface ScoreCardProps {
   trendClass: string;
   sparklineValues: (number | null)[];
   sparklineStroke: string;
-  accentClass: string;
   cardClass: string;
   subMetrics: { label: string; value: string }[];
 }
@@ -194,7 +235,6 @@ function ScoreCard({
   trendClass,
   sparklineValues,
   sparklineStroke,
-  accentClass,
   cardClass,
   subMetrics,
 }: ScoreCardProps) {
@@ -208,8 +248,6 @@ function ScoreCard({
         cardClass,
       )}
     >
-      <span className={cn('absolute inset-x-0 top-0 h-[3px]', accentClass)} aria-hidden />
-
       <div className="flex flex-col gap-3 px-5 pt-6 pb-4">
         <p className="text-[10px] font-semibold tracking-[0.15em] text-slate-500 uppercase dark:text-slate-400">
           {label}
@@ -340,22 +378,56 @@ function PhysioGaugePanel({
   recoveryScore,
   fatigueIndex,
   adaptationIndex,
+  autonomicBalance,
+  trainingCapacity,
+  adaptationStatusKey,
 }: {
   recoveryScore: number | null;
   fatigueIndex: number | null;
   adaptationIndex: number | null;
+  autonomicBalance: AutonomicBalance | null;
+  trainingCapacity: TrainingCapacity | null;
+  adaptationStatusKey: string | null;
 }) {
   const capacityScore = fatigueIndex !== null ? 100 - fatigueIndex : null;
+  const autonomicDisplay = autonomicBalance ? (AUTONOMIC_SIGNAL[autonomicBalance] ?? null) : null;
+  const capacityLabel = trainingCapacity ? mapFatigueCapacityLabel(trainingCapacity) : null;
+  const adaptationDisplay = adaptationStatusKey
+    ? (ADAPTATION_STATUS_SIGNAL[adaptationStatusKey] ?? null)
+    : null;
 
   return (
     <div className="bg-card flex flex-col rounded-2xl border px-5 py-5">
       <p className="mb-4 text-[10px] font-semibold tracking-[0.15em] text-slate-500 uppercase dark:text-slate-400">
         Signaux physiologiques
       </p>
-      <div className="flex flex-1 items-center justify-around gap-2">
-        <ArcGauge href="/today/recovery" label="Récupération" score={recoveryScore} size={76} />
-        <ArcGauge href="/today/effort" label="Capacité" score={capacityScore} size={76} />
-        <ArcGauge label="Adaptation" score={adaptationIndex} size={76} />
+      <div className="flex flex-1 items-start justify-around gap-2">
+        <div className="flex flex-col items-center gap-1">
+          <ArcGauge href="/today/recovery" label="Récupération" score={recoveryScore} size={76} />
+          {autonomicDisplay && (
+            <span className={cn('text-center text-[9px] font-medium', autonomicDisplay.colorClass)}>
+              {autonomicDisplay.label}
+            </span>
+          )}
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <ArcGauge href="/today/effort" label="Capacité" score={capacityScore} size={76} />
+          {capacityLabel && (
+            <span className="text-center text-[9px] font-medium text-slate-500 dark:text-slate-400">
+              {capacityLabel}
+            </span>
+          )}
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <ArcGauge label="Adaptation" score={adaptationIndex} size={76} />
+          {adaptationDisplay && (
+            <span
+              className={cn('text-center text-[9px] font-medium', adaptationDisplay.colorClass)}
+            >
+              {adaptationDisplay.label}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -383,7 +455,31 @@ function HealthMonitorPanel({
       return typeof v === 'number' ? v : null;
     });
 
-  const metrics: { label: string; value: string; data: (number | null)[]; stroke: string }[] = [
+  const hrvBaselineContext = (() => {
+    const hrv = entry?.hrv;
+    const low = entry?.hrvBaselineLow;
+    const high = entry?.hrvBaselineHigh;
+    if (hrv == null || low == null || high == null) return null;
+    if (hrv < low)
+      return {
+        label: `↓ sous base (${low}–${high})`,
+        colorClass: 'text-amber-600 dark:text-amber-400',
+      };
+    if (hrv > high)
+      return {
+        label: `↑ au-dessus (${low}–${high})`,
+        colorClass: 'text-emerald-600 dark:text-emerald-400',
+      };
+    return { label: `→ norme (${low}–${high} ms)`, colorClass: 'text-slate-400' };
+  })();
+
+  const metrics: {
+    label: string;
+    value: string;
+    data: (number | null)[];
+    stroke: string;
+    context?: { label: string; colorClass: string } | null;
+  }[] = [
     {
       label: 'FC repos',
       value: entry?.restingHr != null ? `${entry.restingHr} bpm` : '—',
@@ -395,6 +491,7 @@ function HealthMonitorPanel({
       value: entry?.hrv != null ? `${entry.hrv} ms` : '—',
       data: numSeries('hrv'),
       stroke: '#10b981',
+      context: hrvBaselineContext,
     },
     {
       label: 'Body Battery',
@@ -440,9 +537,16 @@ function HealthMonitorPanel({
                 <Sparkline h={20} stroke={m.stroke} values={m.data} />
               </div>
             </div>
-            <span className="w-20 shrink-0 text-right text-xs font-semibold text-slate-700 tabular-nums dark:text-slate-200">
-              {m.value}
-            </span>
+            <div className="flex w-20 shrink-0 flex-col items-end">
+              <span className="text-xs font-semibold text-slate-700 tabular-nums dark:text-slate-200">
+                {m.value}
+              </span>
+              {m.context && (
+                <span className={cn('text-[9px] font-medium', m.context.colorClass)}>
+                  {m.context.label}
+                </span>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -547,11 +651,15 @@ function ConfidencePanel({
   availableModelCount,
   physiologicalConsistency,
   consistencyScore,
+  evidenceGraph,
+  limitingFactor,
 }: {
   confidence: number;
   availableModelCount: number;
   physiologicalConsistency: PhysiologicalConsistency;
   consistencyScore: number;
+  evidenceGraph: EvidenceGraph | null;
+  limitingFactor: LimitingFactor;
 }) {
   const pct = Math.round(confidence * 100);
   const tier = mapConfidenceToTier(confidence);
@@ -575,6 +683,14 @@ function ConfidencePanel({
   const circ = 2 * Math.PI * r;
   const filled = circ * (pct / 100);
   const gap = circ - filled;
+
+  const contributions = evidenceGraph
+    ? [
+        { label: 'Récup.', value: evidenceGraph.recoveryContribution, color: '#10b981' },
+        { label: 'Fatigue', value: evidenceGraph.fatigueContribution, color: '#f59e0b' },
+        { label: 'Adapt.', value: evidenceGraph.adaptationContribution, color: '#3b82f6' },
+      ]
+    : null;
 
   return (
     <div className="bg-card flex flex-col rounded-2xl border px-5 py-5">
@@ -623,6 +739,34 @@ function ConfidencePanel({
             {consistencyDisplay.label}
           </p>
         </div>
+
+        {contributions && (
+          <div className="border-border/60 w-full space-y-2 border-t pt-3">
+            <p className="text-[10px] text-slate-400">Contribution des modèles</p>
+            {contributions.map(({ label, value, color }) => (
+              <div key={label} className="flex items-center gap-2">
+                <span className="w-12 shrink-0 text-[10px] text-slate-500">{label}</span>
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                  <div
+                    className="h-full rounded-full"
+                    style={{ width: `${Math.round(value * 100)}%`, backgroundColor: color }}
+                  />
+                </div>
+                <span className="w-7 shrink-0 text-right text-[10px] text-slate-400 tabular-nums">
+                  {Math.round(value * 100)}%
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {limitingFactor.actionable && limitingFactor.description && (
+          <div className="border-border/60 w-full border-t pt-3">
+            <p className="text-[9px] leading-snug text-amber-600 dark:text-amber-400">
+              ⚠ {resolve(limitingFactor.description)}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -845,12 +989,91 @@ export function TodayDashboard() {
     ? (recovery.dimensions.sleep.score ?? null)
     : null;
 
+  // ── Enriched sub-metrics ──────────────────────────────────────────────────
+
+  const recoverySubMetrics = (() => {
+    if (recovery?.readinessCategory === 'BASELINE_PENDING' && recovery.dimensions) {
+      const dims = recovery.dimensions;
+      const dimEntries = Object.entries(dims) as [string, { available: boolean }][];
+      const availableCount = dimEntries.filter(([, d]) => d.available).length;
+      const missingNames = dimEntries
+        .filter(([, d]) => !d.available)
+        .map(([k]) => RECOVERY_DIMENSION_NAME[k] ?? k)
+        .slice(0, 3);
+      return [
+        { label: 'Signaux actifs', value: `${availableCount} / 4` },
+        { label: 'Manquants', value: missingNames.join(' · ') || '—' },
+      ];
+    }
+    const autonomicEntry =
+      recovery?.signals.autonomicBalance && recovery.signals.autonomicBalance !== 'NORMAL'
+        ? {
+            label: 'Autonomique',
+            value: (AUTONOMIC_SIGNAL[recovery.signals.autonomicBalance]?.label ?? '—').replace(
+              'SNV: ',
+              '',
+            ),
+          }
+        : null;
+    const recovTimeEntry =
+      recovery?.estimatedTimeToFullRecovery != null && recovery.estimatedTimeToFullRecovery > 0
+        ? { label: 'Récup. complète', value: `${recovery.estimatedTimeToFullRecovery}j` }
+        : null;
+    return [
+      { label: 'VFC', value: todayEntry?.hrv != null ? `${todayEntry.hrv} ms` : '—' },
+      {
+        label: 'FC repos',
+        value: todayEntry?.restingHr != null ? `${todayEntry.restingHr} bpm` : '—',
+      },
+      ...(autonomicEntry ? [autonomicEntry] : []),
+      ...(recovTimeEntry ? [recovTimeEntry] : []),
+    ];
+  })();
+
+  const effortSubMetrics = (() => {
+    const base = [
+      {
+        label: 'TSS sem.',
+        value: trainingLoad.weeklyLoad > 0 ? String(trainingLoad.weeklyLoad) : '—',
+      },
+      { label: 'ACWR', value: trainingLoad.acwr > 0 ? String(trainingLoad.acwr) : '—' },
+    ];
+    const capacityEntry =
+      fatigue != null && fatigue.performanceImpairmentEstimate > 0
+        ? {
+            label: 'Capacité',
+            value: `~${Math.round((1 - fatigue.performanceImpairmentEstimate) * 100)}%`,
+          }
+        : null;
+    const dominantEntry =
+      fatigue?.dominantDimension != null
+        ? {
+            label: 'Dominante',
+            value: DOMINANT_DIMENSION_LABEL[fatigue.dominantDimension] ?? fatigue.dominantDimension,
+          }
+        : null;
+    return [
+      ...base,
+      ...(capacityEntry ? [capacityEntry] : []),
+      ...(dominantEntry ? [dominantEntry] : []),
+    ];
+  })();
+
+  const sleepSubMetrics = [
+    { label: 'Durée', value: formatSleep(todayEntry?.sleepMinutes ?? null) },
+    { label: 'Profond', value: formatSleep(todayEntry?.sleepDeepMin ?? null) },
+    { label: 'Paradoxal', value: formatSleep(todayEntry?.sleepRemMin ?? null) },
+    ...(adaptation?.dimensions.recoveryQuality.available &&
+    adaptation.dimensions.recoveryQuality.score != null
+      ? [{ label: 'Qualité adapt.', value: String(adaptation.dimensions.recoveryQuality.score) }]
+      : []),
+  ];
+
   return (
     <div className="space-y-4">
       {/* Row 1: Score cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <ScoreCard
-          accentClass="bg-emerald-500"
           cardClass="bg-emerald-50/80 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-800/40"
           delta={recoveryDelta}
           href="/today/recovery"
@@ -858,23 +1081,13 @@ export function TodayDashboard() {
           score={recovery?.readinessScore ?? null}
           sparklineStroke="#10b981"
           sparklineValues={recoverySpark}
+          subMetrics={recoverySubMetrics}
           trendArrow={recoverySignal.arrow}
           trendClass={recoverySignal.qualityClass}
           trendLabel={recoverySignal.label}
-          subMetrics={[
-            {
-              label: 'VFC',
-              value: todayEntry?.hrv != null ? `${todayEntry.hrv} ms` : '—',
-            },
-            {
-              label: 'FC repos',
-              value: todayEntry?.restingHr != null ? `${todayEntry.restingHr} bpm` : '—',
-            },
-          ]}
           higherIsBetter
         />
         <ScoreCard
-          accentClass="bg-amber-500"
           cardClass="bg-amber-50/80 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800/40"
           delta={null}
           higherIsBetter={false}
@@ -883,22 +1096,12 @@ export function TodayDashboard() {
           score={fatigue?.fatigueIndex ?? null}
           sparklineStroke="#f59e0b"
           sparklineValues={effortSpark}
+          subMetrics={effortSubMetrics}
           trendArrow={fatigueSignal.arrow}
           trendClass={fatigueSignal.qualityClass}
           trendLabel={fatigueSignal.label}
-          subMetrics={[
-            {
-              label: 'TSS sem.',
-              value: trainingLoad.weeklyLoad > 0 ? String(trainingLoad.weeklyLoad) : '—',
-            },
-            {
-              label: 'ACWR',
-              value: trainingLoad.acwr > 0 ? String(trainingLoad.acwr) : '—',
-            },
-          ]}
         />
         <ScoreCard
-          accentClass="bg-blue-500"
           cardClass="bg-blue-50/80 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800/40"
           delta={sleepDelta}
           href="/today/sleep"
@@ -906,19 +1109,10 @@ export function TodayDashboard() {
           score={sleepScore}
           sparklineStroke="#3b82f6"
           sparklineValues={sleepSpark}
+          subMetrics={sleepSubMetrics}
           trendArrow={sleepSignal.arrow}
           trendClass={sleepSignal.colorClass}
           trendLabel={sleepSignal.label}
-          subMetrics={[
-            {
-              label: 'Durée',
-              value: formatSleep(todayEntry?.sleepMinutes ?? null),
-            },
-            {
-              label: 'Profond',
-              value: formatSleep(todayEntry?.sleepDeepMin ?? null),
-            },
-          ]}
           higherIsBetter
         />
       </div>
@@ -945,14 +1139,19 @@ export function TodayDashboard() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_2fr_1fr]">
         <PhysioGaugePanel
           adaptationIndex={adaptation?.adaptationIndex ?? null}
+          adaptationStatusKey={adaptation?.adaptationStatus ?? null}
+          autonomicBalance={(recovery?.signals.autonomicBalance as AutonomicBalance) ?? null}
           fatigueIndex={fatigue?.fatigueIndex ?? null}
           recoveryScore={recovery?.readinessScore ?? null}
+          trainingCapacity={(fatigue?.trainingCapacity as TrainingCapacity) ?? null}
         />
         <EvolutionChart entries={healthEntries} />
         <ConfidencePanel
           availableModelCount={reasoning.signals.availableModelCount}
           confidence={reasoning.confidence}
           consistencyScore={reasoning.consistencyScore}
+          evidenceGraph={reasoning.evidenceGraph}
+          limitingFactor={reasoning.limitingFactor}
           physiologicalConsistency={reasoning.physiologicalConsistency as PhysiologicalConsistency}
         />
       </div>
