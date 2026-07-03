@@ -19,7 +19,7 @@ interface SessionBlockProps {
 
 export function SessionBlock({ adaptationVerdict, recommendation, topAction }: SessionBlockProps) {
   const objective = adaptationVerdict ? mapAdaptationDecisionToObjective(adaptationVerdict) : null;
-  const sessionTitle = resolveCode(topAction.focusCode);
+  const sessionTitle = `${resolveCode(topAction.verbCode)} ${resolveCode(topAction.focusCode)}`;
   const sessionSummary = resolveCode(topAction.rationaleCode);
 
   return (
