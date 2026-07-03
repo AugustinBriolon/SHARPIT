@@ -59,6 +59,7 @@ export type VerdictDisplay = {
   colorClass: string;
   bgClass: string;
   dotClass: string;
+  accentBarClass: string;
 };
 
 export type DimensionSignal = {
@@ -77,44 +78,51 @@ const VERDICT_DISPLAY: Record<OverallVerdict, VerdictDisplay> = {
   TRAIN_HARD: {
     label: 'Entraîne-toi fort',
     colorClass: 'text-emerald-600 dark:text-emerald-400',
-    bgClass: 'from-emerald-500/10 border-emerald-500/30',
+    bgClass: 'from-emerald-500/12 border-emerald-500/30',
     dotClass: 'bg-emerald-500',
+    accentBarClass: 'bg-emerald-500/80',
   },
   RACE_READY: {
     label: 'Prêt à courir',
     colorClass: 'text-emerald-600 dark:text-emerald-400',
-    bgClass: 'from-emerald-500/10 border-emerald-500/30',
+    bgClass: 'from-emerald-500/12 border-emerald-500/30',
     dotClass: 'bg-emerald-400',
+    accentBarClass: 'bg-emerald-400/80',
   },
   TRAIN_SMART: {
     label: 'Entraîne-toi finement',
     colorClass: 'text-blue-600 dark:text-blue-400',
-    bgClass: 'from-blue-500/10 border-blue-500/30',
+    bgClass: 'from-blue-500/12 border-blue-500/30',
     dotClass: 'bg-blue-500',
+    accentBarClass: 'bg-blue-500/80',
   },
   TRAIN_EASY: {
     label: 'Entraîne-toi légèrement',
     colorClass: 'text-amber-600 dark:text-amber-400',
-    bgClass: 'from-amber-500/10 border-amber-500/30',
+    bgClass: 'from-amber-500/12 border-amber-500/30',
     dotClass: 'bg-amber-500',
+    accentBarClass: 'bg-amber-500/80',
   },
   CAUTION: {
     label: 'Prudence',
     colorClass: 'text-orange-600 dark:text-orange-400',
-    bgClass: 'from-orange-500/10 border-orange-500/30',
+    bgClass: 'from-orange-500/12 border-orange-500/30',
     dotClass: 'bg-orange-500',
+    accentBarClass: 'bg-orange-500/80',
   },
   RECOVER: {
     label: 'Récupère',
     colorClass: 'text-red-600 dark:text-red-400',
-    bgClass: 'from-red-500/10 border-red-500/30',
+    bgClass: 'from-red-500/12 border-red-500/30',
     dotClass: 'bg-red-500',
+    accentBarClass: 'bg-red-500/80',
   },
   INSUFFICIENT_DATA: {
     label: 'Données insuffisantes',
     colorClass: 'text-muted-foreground',
     bgClass: 'from-muted/30 border-border',
     dotClass: 'bg-muted-foreground',
+    accentBarClass: 'bg-muted-foreground/30',
   },
 };
 
