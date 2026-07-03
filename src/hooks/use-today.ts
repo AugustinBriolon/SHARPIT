@@ -154,6 +154,7 @@ export interface RecoveryData {
   primaryLimitingFactor: 'autonomic' | 'sleep' | 'subjective' | 'loadContext' | null;
   estimatedTimeToFullRecovery: number | null;
   confidence: number;
+  dataCompleteness: string;
   recommendation: EngineRecommendation;
   decision: {
     verdict: RecoveryDecisionVerdict;
@@ -210,6 +211,7 @@ export interface FatigueData {
   estimatedTimeToFresh: number | null;
   performanceImpairmentEstimate: number;
   confidence: number;
+  dataCompleteness: string;
   recommendation: EngineRecommendation;
   decision: {
     verdict: FatigueDecisionVerdict;

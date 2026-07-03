@@ -188,7 +188,7 @@ export function mapRecoveryToSignal(category: ReadinessCategory): DimensionSigna
       };
     case 'BASELINE_PENDING':
       return {
-        label: 'Modèle en cours',
+        label: 'Calibration',
         arrow: '…',
         arrowDirection: 'neutral',
         qualityClass: 'text-muted-foreground',
