@@ -8,6 +8,13 @@ import {
   type PhysiologicalConsistency,
 } from '@/lib/today-mapping';
 
+const DATA_COMPLETENESS_LABEL: Record<string, string> = {
+  FULL: 'Données complètes',
+  PARTIAL: 'Données partielles',
+  SPARSE: 'Données éparses',
+  INSUFFICIENT: 'Données insuffisantes',
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Confidence tier bar (reused from narrative-header)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -77,7 +84,9 @@ export function ConfidenceBlock({
 
       <div className="text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
         <span>{availableModelCount}/3 signaux physiologiques</span>
-        {dataCompleteness && <span>{dataCompleteness}</span>}
+        {dataCompleteness && (
+          <span>{DATA_COMPLETENESS_LABEL[dataCompleteness] ?? dataCompleteness}</span>
+        )}
       </div>
     </div>
   );
