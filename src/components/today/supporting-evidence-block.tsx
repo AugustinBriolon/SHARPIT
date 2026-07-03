@@ -63,10 +63,11 @@ function EvidencePanel({
       {evidence && evidence.length > 0 && (
         <ul className="space-y-0.5">
           {evidence.slice(0, 3).map((e, i) => (
-            <li
-              key={i}
-              className="text-muted-foreground text-xs before:mr-1.5 before:content-['·']"
-            >
+            <li key={i} className="text-muted-foreground flex items-start gap-2 text-xs">
+              <span
+                className="mt-[0.35em] h-[3px] w-[3px] shrink-0 rounded-full bg-current opacity-50"
+                aria-hidden
+              />
               {e}
             </li>
           ))}
@@ -130,55 +131,64 @@ export function SupportingEvidenceBlock({
         </span>
       </button>
 
-      {expanded && (
-        <div className="mt-4 space-y-4 border-t pt-4">
-          {recovery && recoverySignal?.isAvailable && (
-            <EvidencePanel
-              evidence={recovery.recommendation.keyEvidence.map((e) => resolve(e))}
-              title="Récupération"
-              intensityLabel={mapRecoveryIntensityLabel(
-                recovery.decision.recommendedIntensity as RecommendedIntensity,
-              )}
-              statusChip={
-                <StatusChip
-                  arrow={recoverySignal.arrow}
-                  label={recoverySignal.label}
-                  qualityClass={recoverySignal.qualityClass}
-                />
-              }
-            />
-          )}
+      <div
+        className={cn(
+          'grid transition-all duration-300 ease-out',
+          expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
+        )}
+      >
+        <div className="overflow-hidden">
+          <div className="mt-4 space-y-4 border-t pt-4">
+            {recovery && recoverySignal?.isAvailable && (
+              <EvidencePanel
+                evidence={recovery.recommendation.keyEvidence.map((e) => resolve(e))}
+                title="Récupération"
+                intensityLabel={mapRecoveryIntensityLabel(
+                  recovery.decision.recommendedIntensity as RecommendedIntensity,
+                )}
+                statusChip={
+                  <StatusChip
+                    arrow={recoverySignal.arrow}
+                    label={recoverySignal.label}
+                    qualityClass={recoverySignal.qualityClass}
+                  />
+                }
+              />
+            )}
 
-          {fatigue && fatigueSignal?.isAvailable && (
-            <EvidencePanel
-              evidence={fatigue.recommendation.keyEvidence.map((e) => resolve(e))}
-              intensityLabel={mapFatigueCapacityLabel(fatigue.trainingCapacity as TrainingCapacity)}
-              title="Fatigue"
-              statusChip={
-                <StatusChip
-                  arrow={fatigueSignal.arrow}
-                  label={fatigueSignal.label}
-                  qualityClass={fatigueSignal.qualityClass}
-                />
-              }
-            />
-          )}
+            {fatigue && fatigueSignal?.isAvailable && (
+              <EvidencePanel
+                evidence={fatigue.recommendation.keyEvidence.map((e) => resolve(e))}
+                title="Fatigue"
+                intensityLabel={mapFatigueCapacityLabel(
+                  fatigue.trainingCapacity as TrainingCapacity,
+                )}
+                statusChip={
+                  <StatusChip
+                    arrow={fatigueSignal.arrow}
+                    label={fatigueSignal.label}
+                    qualityClass={fatigueSignal.qualityClass}
+                  />
+                }
+              />
+            )}
 
-          {adaptation && adaptationSignal?.isAvailable && (
-            <EvidencePanel
-              evidence={adaptation.recommendation.keyEvidence.map((e) => resolve(e))}
-              title="Adaptation"
-              statusChip={
-                <StatusChip
-                  arrow={adaptationSignal.arrow}
-                  label={adaptationSignal.label}
-                  qualityClass={adaptationSignal.qualityClass}
-                />
-              }
-            />
-          )}
+            {adaptation && adaptationSignal?.isAvailable && (
+              <EvidencePanel
+                evidence={adaptation.recommendation.keyEvidence.map((e) => resolve(e))}
+                title="Adaptation"
+                statusChip={
+                  <StatusChip
+                    arrow={adaptationSignal.arrow}
+                    label={adaptationSignal.label}
+                    qualityClass={adaptationSignal.qualityClass}
+                  />
+                }
+              />
+            )}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

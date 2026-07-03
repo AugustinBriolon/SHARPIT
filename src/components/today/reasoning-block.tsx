@@ -55,10 +55,11 @@ export function ReasoningBlock({ keyFindings }: ReasoningBlockProps) {
           {primary.evidenceItems.length > 0 && (
             <ul className="mt-1.5 space-y-0.5">
               {primary.evidenceItems.map((e, i) => (
-                <li
-                  key={i}
-                  className="text-muted-foreground text-xs before:mr-1.5 before:content-['·']"
-                >
+                <li key={i} className="text-muted-foreground flex items-start gap-2 text-xs">
+                  <span
+                    className="mt-[0.35em] h-[3px] w-[3px] shrink-0 rounded-full bg-current opacity-50"
+                    aria-hidden
+                  />
                   {resolve(e)}
                 </li>
               ))}
@@ -83,25 +84,34 @@ export function ReasoningBlock({ keyFindings }: ReasoningBlockProps) {
       )}
 
       {/* Expanded: supporting findings */}
-      {expanded && supporting.length > 0 && (
-        <div className="space-y-3 border-t pt-3">
-          <ul className="space-y-2">
-            {supporting.map((f) => (
-              <li key={f.id} className="flex items-start gap-2">
-                <span
-                  className={cn(
-                    'mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full',
-                    SEVERITY_DOT[f.severity],
-                  )}
-                />
-                <span className="text-muted-foreground text-xs leading-relaxed">
-                  {resolve(f.title)}
-                </span>
-              </li>
-            ))}
-          </ul>
+      <div
+        className={cn(
+          'grid transition-all duration-300 ease-out',
+          expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
+        )}
+      >
+        <div className="overflow-hidden">
+          {supporting.length > 0 && (
+            <div className="space-y-3 border-t pt-3">
+              <ul className="space-y-2">
+                {supporting.map((f) => (
+                  <li key={f.id} className="flex items-start gap-2">
+                    <span
+                      className={cn(
+                        'mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full',
+                        SEVERITY_DOT[f.severity],
+                      )}
+                    />
+                    <span className="text-muted-foreground text-xs leading-relaxed">
+                      {resolve(f.title)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
