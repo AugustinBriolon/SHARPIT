@@ -134,15 +134,15 @@ Scientific benchmarks gate intelligence model deployment. All four models (Recov
 
 ## Modules
 
-| Module        | Description                                                                                                                                                                          |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Today**     | Daily Brief — narrative decision center answering 8 ordered athlete questions (what to do, why, session, outcomes, bottleneck, confidence) via the Reasoning Engine and Digital Twin |
-| **Training**  | Activity CRUD (run, bike, swim, strength) with load and stream analysis                                                                                                              |
-| **Analytics** | PMC chart (CTL, ATL, TSB), performance metrics, personal records                                                                                                                     |
-| **Planning**  | Macrocycle planning with brick analysis                                                                                                                                              |
-| **Goals**     | Race goals and countdown tracking                                                                                                                                                    |
-| **Calendar**  | Month view of planned and completed sessions                                                                                                                                         |
-| **Settings**  | Strava, Garmin, Renpho, Google Calendar integrations                                                                                                                                 |
+| Module        | Description                                                                                                                                                                                    |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Today**     | Daily Brief — physiological score cards (Recovery, Effort, Sleep) + narrative decision center (what to do, why, session, health signals, confidence) via the Reasoning Engine and Digital Twin |
+| **Training**  | Activity CRUD (run, bike, swim, strength) with load and stream analysis                                                                                                                        |
+| **Analytics** | PMC chart (CTL, ATL, TSB), performance metrics, personal records                                                                                                                               |
+| **Planning**  | Macrocycle planning with brick analysis                                                                                                                                                        |
+| **Goals**     | Race goals and countdown tracking                                                                                                                                                              |
+| **Calendar**  | Month view of planned and completed sessions                                                                                                                                                   |
+| **Settings**  | Strava, Garmin, Renpho, Google Calendar integrations                                                                                                                                           |
 
 ## Integrations
 
@@ -168,4 +168,5 @@ Connect via **Settings → Renpho**. Body composition observations are automatic
 - [`docs/PRODUCT_EXPERIENCE_V2.md`](./docs/PRODUCT_EXPERIENCE_V2.md) — Today Experience product spec
 - [`docs/USER_JOURNEYS.md`](./docs/USER_JOURNEYS.md) — user journeys for the Today Experience
 - [`docs/design/DESIGN_LANGUAGE.md`](./docs/design/DESIGN_LANGUAGE.md) — design language: visual identity, color philosophy, typography, spacing, and motion principles
+- [`docs/DATA_EXPOSURE_AUDIT.md`](./docs/DATA_EXPOSURE_AUDIT.md) — complete inventory of every physiological metric computed by the inference pipeline, with visibility tier and recommended product placement
 - [`knowledge/`](./knowledge/) — domain knowledge and scientific references
