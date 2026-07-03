@@ -30,7 +30,9 @@ export function SessionBlock({ adaptationVerdict, recommendation, topAction }: S
           <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
             Objectif
           </p>
-          <span className="bg-accent rounded-md px-2 py-0.5 text-xs font-medium">{objective}</span>
+          <span className="bg-muted text-foreground rounded-md px-2 py-0.5 text-xs font-medium">
+            {objective}
+          </span>
         </div>
       )}
 
