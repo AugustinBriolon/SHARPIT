@@ -23,6 +23,7 @@ import {
   type PhysiologicalConsistency,
   type TrainingCapacity,
 } from '@/lib/today-mapping';
+import { ArcGauge } from '@/components/ui/arc-gauge';
 import { NarrativeHeader } from './narrative-header';
 import { SessionBlock } from './session-block';
 import type { ClientHealthEntry, ClientPlannedSession } from '@/lib/query/types';
@@ -286,91 +287,6 @@ function ScoreCard({
       </div>
     </Link>
   );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ArcGauge — SVG 270° arc
-// ─────────────────────────────────────────────────────────────────────────────
-
-function ArcGauge({
-  score,
-  label,
-  href,
-  size = 72,
-}: {
-  score: number | null;
-  label: string;
-  href?: string;
-  size?: number;
-}) {
-  const pct = score ?? 0;
-  const r = size * 0.35;
-  const circ = 2 * Math.PI * r;
-  const arcFraction = 0.75;
-  const arcLen = circ * arcFraction;
-  const filled = arcLen * (pct / 100);
-  const gap = arcLen - filled;
-
-  const strokeColor = (() => {
-    if (score === null) return '#94a3b8';
-    if (score >= 80) return '#10b981';
-    if (score >= 60) return '#3b82f6';
-    if (score >= 40) return '#f59e0b';
-    return '#ef4444';
-  })();
-
-  const cx = size / 2;
-  const cy = size / 2;
-  const colorClass = mapScoreToColorClass(score);
-
-  const content = (
-    <div className="flex flex-col items-center gap-1.5">
-      <div className="relative">
-        <svg height={size} viewBox={`0 0 ${size} ${size}`} width={size} aria-hidden>
-          <circle
-            cx={cx}
-            cy={cy}
-            fill="none"
-            r={r}
-            stroke="currentColor"
-            strokeDasharray={`${arcLen} ${circ - arcLen}`}
-            strokeLinecap="round"
-            strokeOpacity={0.1}
-            strokeWidth={5}
-            transform={`rotate(135 ${cx} ${cy})`}
-          />
-          <circle
-            cx={cx}
-            cy={cy}
-            fill="none"
-            r={r}
-            stroke={strokeColor}
-            strokeDasharray={`${filled} ${gap + (circ - arcLen)}`}
-            strokeLinecap="round"
-            strokeWidth={5}
-            transform={`rotate(135 ${cx} ${cy})`}
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className={cn('text-sm leading-none font-bold tabular-nums', colorClass)}>
-            {score !== null ? score : '—'}
-          </span>
-        </div>
-      </div>
-      <span className="text-center text-[10px] font-medium text-slate-500 dark:text-slate-400">
-        {label}
-      </span>
-    </div>
-  );
-
-  if (href) {
-    return (
-      <Link className="transition-opacity hover:opacity-80" href={href}>
-        {content}
-      </Link>
-    );
-  }
-  return content;
 }
 
 function PhysioGaugePanel({
