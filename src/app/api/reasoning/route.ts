@@ -39,7 +39,14 @@ export async function GET(request: NextRequest) {
       // Don't serve stale INSUFFICIENT_DATA from cache — always re-run so the engine
       // picks up recovery/fatigue/adaptation states that may have been written after
       // the first (parallel) request.
-      if (cached && cached.output.reasoningState.overallVerdict !== 'INSUFFICIENT_DATA') {
+      // Also reject pre-i18n cache: old records have topAction.{verb,focus} instead
+      // of topAction.{verbCode,focusCode} — serving them renders empty UI.
+      const cachedHasI18nTopAction = cached?.output.reasoningState.topAction?.verbCode != null;
+      if (
+        cached &&
+        cached.output.reasoningState.overallVerdict !== 'INSUFFICIENT_DATA' &&
+        cachedHasI18nTopAction
+      ) {
         return NextResponse.json(formatResult(cached));
       }
     }
