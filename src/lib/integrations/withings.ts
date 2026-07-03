@@ -79,20 +79,26 @@ async function withingsFormPost<T>(
 
   const json = (await response.json()) as WithingsApiResponse<T>;
   if (!response.ok || json.status !== 0 || !json.body) {
-    throw new Error(json.error ?? `Withings API error (status ${json.status})`);
+    throw new Error(
+      json.error ?? `Withings API error (HTTP ${response.status}, status ${json.status})`,
+    );
   }
   return json.body;
 }
 
-export async function exchangeWithingsCode(code: string): Promise<WithingsTokenBody> {
-  const { clientId, clientSecret, redirectUri } = getWithingsConfig();
+export async function exchangeWithingsCode(
+  code: string,
+  redirectUri?: string,
+): Promise<WithingsTokenBody> {
+  const { clientId, clientSecret } = getWithingsConfig();
+  const resolvedRedirectUri = redirectUri ?? getWithingsRedirectUri();
   return withingsFormPost<WithingsTokenBody>(WITHINGS_OAUTH_TOKEN, {
     action: 'requesttoken',
     grant_type: 'authorization_code',
     client_id: clientId,
     client_secret: clientSecret,
     code,
-    redirect_uri: redirectUri,
+    redirect_uri: resolvedRedirectUri,
   });
 }
 

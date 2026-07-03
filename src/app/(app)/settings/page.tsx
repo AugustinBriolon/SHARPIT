@@ -44,11 +44,12 @@ type PageProps = {
     google?: string;
     googleDetail?: string;
     withings?: string;
+    withingsDetail?: string;
   }>;
 };
 
 export default async function SettingsPage({ searchParams }: PageProps) {
-  const { strava, google, googleDetail, withings } = await searchParams;
+  const { strava, google, googleDetail, withings, withingsDetail } = await searchParams;
   const [
     stravaAccount,
     configured,
@@ -101,7 +102,14 @@ export default async function SettingsPage({ searchParams }: PageProps) {
             lastSyncAt: withingsAccount.lastSyncAt?.toISOString() ?? null,
           }
         : null,
-      statusMessage: withings ? withingsStatusMessages[withings] : undefined,
+      statusMessage: withings
+        ? [
+            withingsStatusMessages[withings],
+            withings === 'error' && withingsDetail ? `Détail : ${withingsDetail}` : null,
+          ]
+            .filter(Boolean)
+            .join(' ')
+        : undefined,
     },
     renpho: {
       account: renphoAccount

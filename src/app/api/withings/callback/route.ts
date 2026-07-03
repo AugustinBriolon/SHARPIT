@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { exchangeWithingsCode } from '@/lib/integrations/withings';
+import { exchangeWithingsCode, getWithingsRedirectUri } from '@/lib/integrations/withings';
 import { syncWithingsHealth } from '@/lib/integrations/withings-sync';
 
 export const dynamic = 'force-dynamic';
@@ -21,15 +21,19 @@ export async function GET(request: NextRequest) {
 
   const cookieStore = await cookies();
   const storedState = cookieStore.get('withings_oauth_state')?.value;
+  const storedRedirectUri = cookieStore.get('withings_oauth_redirect')?.value;
   cookieStore.delete('withings_oauth_state');
+  cookieStore.delete('withings_oauth_redirect');
 
   if (!code || !state || state !== storedState) {
     settingsUrl.searchParams.set('withings', 'invalid_state');
     return NextResponse.redirect(settingsUrl);
   }
 
+  const redirectUri = storedRedirectUri ?? getWithingsRedirectUri(new URL(request.url).origin);
+
   try {
-    const token = await exchangeWithingsCode(code);
+    const token = await exchangeWithingsCode(code, redirectUri);
 
     await prisma.withingsAccount.upsert({
       where: { id: 'default' },
@@ -58,8 +62,10 @@ export async function GET(request: NextRequest) {
     settingsUrl.searchParams.set('withings', 'connected');
     return NextResponse.redirect(settingsUrl);
   } catch (err) {
-    console.error(err);
+    const message = err instanceof Error ? err.message : 'Erreur inconnue';
+    console.error('[withings/callback]', message, err);
     settingsUrl.searchParams.set('withings', 'error');
+    settingsUrl.searchParams.set('withingsDetail', message.slice(0, 300));
     return NextResponse.redirect(settingsUrl);
   }
 }
