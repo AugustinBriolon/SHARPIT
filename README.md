@@ -167,4 +167,5 @@ Connect via **Settings → Renpho**. Body composition observations are automatic
 - [`docs/adr/`](./docs/adr/) — Architecture Decision Records
 - [`docs/PRODUCT_EXPERIENCE_V2.md`](./docs/PRODUCT_EXPERIENCE_V2.md) — Today Experience product spec
 - [`docs/USER_JOURNEYS.md`](./docs/USER_JOURNEYS.md) — user journeys for the Today Experience
+- [`docs/design/DESIGN_LANGUAGE.md`](./docs/design/DESIGN_LANGUAGE.md) — design language: visual identity, color philosophy, typography, spacing, and motion principles
 - [`knowledge/`](./knowledge/) — domain knowledge and scientific references
