@@ -25,9 +25,8 @@ import type {
   SessionFeatureSet,
   DayFeatures,
 } from '@/core/features/types';
-import type { RecoveryState, FatigueState } from '@/core/digital-twin/types';
-import type { AdaptationModelContext } from '@/core/inference/adaptation/types';
-import type { AdaptationStatus, AdaptationVerdict } from '@/core/digital-twin/types';
+import type { RecoveryState, FatigueState, AdaptationStatus } from '@/core/digital-twin/types';
+import type { AdaptationModelContext, AdaptationVerdict } from '@/core/inference/adaptation/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Adaptation-specific expectation + scenario types
