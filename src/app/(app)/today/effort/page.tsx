@@ -3,12 +3,15 @@
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useToday } from '@/hooks/use-today';
+import { useActivities } from '@/hooks/use-data';
+import { computeTrainingLoad } from '@/lib/training-load';
 import { resolve } from '@/lib/french';
 import {
   mapFatigueToSignal,
   mapFatigueCapacityLabel,
   mapFatigueTypeToLabel,
   mapScoreToColorClass,
+  mapConfidenceToTier,
   type FatigueLevel,
   type FatigueTrajectory,
   type TrainingCapacity,
@@ -28,6 +31,14 @@ const DIMENSION_LABEL: Record<string, string> = {
   psychological: 'Psychologique',
 };
 
+const DIMENSION_DESCRIPTION: Record<string, string> = {
+  load: 'TSS récent, ACWR, tendance de charge',
+  neuromuscular: 'Charge en force et vitesse, temps de récupération musculaire',
+  metabolic: 'Volume à haute intensité, dette lactique estimée',
+  cumulative: 'Accumulation sur plusieurs semaines',
+  psychological: 'Stress perçu, motivation, charge mentale',
+};
+
 const DOMINANT_LABEL: Record<string, string> = {
   load: 'Charge excessive',
   neuromuscular: 'Fatigue neuromusculaire',
@@ -43,15 +54,96 @@ const OVERREACHING_RISK_DISPLAY: Record<string, { label: string; colorClass: str
     CRITICAL: { label: 'Risque critique', colorClass: 'text-red-600 dark:text-red-400' },
   };
 
+const FATIGUE_VERDICT_DISPLAY: Record<
+  string,
+  { label: string; colorClass: string; description: string }
+> = {
+  BUILD: {
+    label: 'Progresser',
+    colorClass: 'text-emerald-600 dark:text-emerald-400',
+    description: 'La charge peut être augmentée pour stimuler les adaptations.',
+  },
+  MAINTAIN: {
+    label: 'Maintenir',
+    colorClass: 'text-blue-600 dark:text-blue-400',
+    description: 'La charge actuelle est adaptée — ne pas augmenter ni réduire.',
+  },
+  REDUCE: {
+    label: 'Réduire la charge',
+    colorClass: 'text-amber-600 dark:text-amber-400',
+    description: 'La fatigue dépasse la capacité de récupération — lever le pied.',
+  },
+  REST_WEEK: {
+    label: 'Semaine de récupération',
+    colorClass: 'text-orange-600 dark:text-orange-400',
+    description: 'La fatigue accumulée nécessite une semaine de décharge complète.',
+  },
+  TAPER: {
+    label: 'Affûtage',
+    colorClass: 'text-blue-600 dark:text-blue-400',
+    description: 'Réduction progressive de la charge pour optimiser la forme en compétition.',
+  },
+  INSUFFICIENT_DATA: {
+    label: 'Données insuffisantes',
+    colorClass: 'text-muted-foreground',
+    description: 'Pas assez de données pour formuler une directive de charge.',
+  },
+};
+
+const CONFIDENCE_TIER_LABEL: Record<string, { label: string; colorClass: string }> = {
+  high: { label: 'Élevée', colorClass: 'text-emerald-600 dark:text-emerald-400' },
+  medium: { label: 'Modérée', colorClass: 'text-amber-600 dark:text-amber-400' },
+  low: { label: 'Faible', colorClass: 'text-slate-400' },
+};
+
+const COMPLETENESS_LABEL: Record<string, string> = {
+  FULL: 'Complètes',
+  PARTIAL: 'Partielles',
+  SPARSE: 'Éparses',
+  INSUFFICIENT: 'Insuffisantes',
+};
+
+function acwrZoneDisplay(acwr: number): { label: string; colorClass: string; description: string } {
+  if (acwr <= 0) return { label: '—', colorClass: 'text-muted-foreground', description: '' };
+  if (acwr < 0.9)
+    return {
+      label: 'Sous-charge',
+      colorClass: 'text-blue-600 dark:text-blue-400',
+      description: 'Charge insuffisante — risque de désentraînement progressif.',
+    };
+  if (acwr <= 1.3)
+    return {
+      label: 'Zone optimale',
+      colorClass: 'text-emerald-600 dark:text-emerald-400',
+      description: 'Sweet spot de progression — risque de blessure minimal.',
+    };
+  if (acwr <= 1.5)
+    return {
+      label: "Zone d'alerte",
+      colorClass: 'text-amber-600 dark:text-amber-400',
+      description: 'Charge aiguë élevée par rapport à la base — surveiller la récupération.',
+    };
+  return {
+    label: 'Zone de risque',
+    colorClass: 'text-red-600 dark:text-red-400',
+    description: 'Surcharge acute marquée — risque blessure × 2-4 selon littérature.',
+  };
+}
+
 function DimensionBar({ name, dim }: { name: string; dim: DimensionResult }) {
   if (!dim.available) return null;
   const { score } = dim;
   const colorClass = mapScoreToColorClass(score !== null ? 100 - score : null);
   return (
     <div className="space-y-1">
-      <div className="flex items-center justify-between">
-        <p className="text-muted-foreground text-xs">{DIMENSION_LABEL[name] ?? name}</p>
-        <div className="flex items-center gap-2">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-muted-foreground text-xs">{DIMENSION_LABEL[name] ?? name}</p>
+          {DIMENSION_DESCRIPTION[name] && (
+            <p className="text-muted-foreground/50 text-[10px]">{DIMENSION_DESCRIPTION[name]}</p>
+          )}
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
           {dim.status && (
             <span className="text-muted-foreground text-[10px] tracking-wide uppercase">
               {dim.status}
@@ -80,6 +172,7 @@ function DimensionBar({ name, dim }: { name: string; dim: DimensionResult }) {
 export default function TodayEffortPage() {
   const { data, loading } = useToday();
   const { fatigue } = data;
+  const { data: activities = [] } = useActivities();
 
   if (loading) {
     return (
@@ -102,6 +195,16 @@ export default function TodayEffortPage() {
     );
   }
 
+  const today = new Date();
+  const trainingLoad = computeTrainingLoad(
+    activities.map((a) => ({ load: a.load, date: new Date(a.date) })),
+    today,
+  );
+
+  // Chronic weekly average derived from acute/ACWR relationship
+  const chronicWeeklyAvg =
+    trainingLoad.acwr > 0 ? Math.round(trainingLoad.weeklyLoad / trainingLoad.acwr) : null;
+
   const signal = mapFatigueToSignal(
     fatigue.fatigueLevel as FatigueLevel,
     fatigue.trajectory as FatigueTrajectory,
@@ -115,6 +218,19 @@ export default function TodayEffortPage() {
     fatigue.performanceImpairmentEstimate > 0
       ? Math.round((1 - fatigue.performanceImpairmentEstimate) * 100)
       : null;
+
+  const verdictDisplay =
+    FATIGUE_VERDICT_DISPLAY[fatigue.decision.verdict] ?? FATIGUE_VERDICT_DISPLAY.INSUFFICIENT_DATA;
+
+  const acwrZone = acwrZoneDisplay(trainingLoad.acwr);
+
+  const confidencePct = Math.round(fatigue.confidence * 100);
+  const confidenceTier = mapConfidenceToTier(fatigue.confidence);
+  const confidenceDisplay = CONFIDENCE_TIER_LABEL[confidenceTier];
+  const completenessLabel =
+    COMPLETENESS_LABEL[fatigue.dataCompleteness] ?? fatigue.dataCompleteness;
+
+  const availableDimCount = Object.values(fatigue.dimensions).filter((d) => d.available).length;
 
   return (
     <div className="space-y-6 p-4">
@@ -173,6 +289,30 @@ export default function TodayEffortPage() {
         </div>
       </div>
 
+      {/* Decision directive */}
+      <div
+        className={cn(
+          'rounded-2xl border px-5 py-4',
+          fatigue.decision.verdict === 'BUILD'
+            ? 'border-emerald-500/30 bg-emerald-500/8'
+            : fatigue.decision.verdict === 'MAINTAIN'
+              ? 'border-blue-500/30 bg-blue-500/8'
+              : fatigue.decision.verdict === 'REDUCE' ||
+                  fatigue.decision.verdict === 'REST_WEEK' ||
+                  fatigue.decision.verdict === 'TAPER'
+                ? 'border-amber-500/30 bg-amber-500/8'
+                : 'bg-card/60',
+        )}
+      >
+        <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+          Directive de charge
+        </p>
+        <p className={cn('mt-1 text-sm font-semibold', verdictDisplay.colorClass)}>
+          {verdictDisplay.label}
+        </p>
+        <p className="text-muted-foreground mt-1 text-xs">{verdictDisplay.description}</p>
+      </div>
+
       {/* Training capacity */}
       <div className="bg-card/60 rounded-2xl border px-5 py-4">
         <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
@@ -195,6 +335,54 @@ export default function TodayEffortPage() {
         )}
       </div>
 
+      {/* Load metrics — ACWR with zone context */}
+      {(trainingLoad.weeklyLoad > 0 || trainingLoad.acwr > 0) && (
+        <div className="bg-card/60 space-y-3 rounded-2xl border px-5 py-4">
+          <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+            Charge d'entraînement
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-muted-foreground text-[10px]">Charge 7 jours</p>
+              <p className="text-sm font-semibold tabular-nums">
+                {trainingLoad.weeklyLoad > 0 ? `${trainingLoad.weeklyLoad} TSS` : '—'}
+              </p>
+              <p className="text-muted-foreground text-[10px]">charge aiguë</p>
+            </div>
+            {chronicWeeklyAvg !== null && (
+              <div>
+                <p className="text-muted-foreground text-[10px]">Charge base (42j)</p>
+                <p className="text-sm font-semibold tabular-nums">{chronicWeeklyAvg} TSS/sem</p>
+                <p className="text-muted-foreground text-[10px]">charge chronique</p>
+              </div>
+            )}
+          </div>
+          {trainingLoad.acwr > 0 && (
+            <div className="border-border/50 border-t pt-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-muted-foreground text-[10px]">ACWR (ratio aigu / chronique)</p>
+                  <p className="text-muted-foreground/60 text-[10px]">
+                    Source : Gabbett 2016 — sweet spot 0.8–1.3
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className={cn('text-sm font-semibold tabular-nums', acwrZone.colorClass)}>
+                    {trainingLoad.acwr.toFixed(2)}
+                  </p>
+                  <p className={cn('text-[10px] font-medium', acwrZone.colorClass)}>
+                    {acwrZone.label}
+                  </p>
+                </div>
+              </div>
+              {acwrZone.description && (
+                <p className="text-muted-foreground mt-1.5 text-[10px]">{acwrZone.description}</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Dominant dimension callout */}
       {fatigue.dominantDimension && (
         <div className="rounded-2xl border border-amber-500/30 bg-amber-500/8 px-5 py-4">
@@ -215,7 +403,7 @@ export default function TodayEffortPage() {
         <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
           Détail par dimension
         </p>
-        <div className="space-y-3">
+        <div className="space-y-4">
           {Object.entries(fatigue.dimensions).map(([key, dim]) => (
             <DimensionBar key={key} dim={dim} name={key} />
           ))}
@@ -240,6 +428,30 @@ export default function TodayEffortPage() {
           </ul>
         </div>
       )}
+
+      {/* Confidence + data quality */}
+      <div className="bg-card/40 rounded-2xl border px-5 py-4">
+        <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+          Fiabilité du score
+        </p>
+        <div className="mt-3 grid grid-cols-3 gap-4">
+          <div>
+            <p className="text-muted-foreground text-[10px]">Confiance</p>
+            <p className={cn('text-sm font-semibold tabular-nums', confidenceDisplay?.colorClass)}>
+              {confidencePct}%
+            </p>
+            <p className="text-muted-foreground text-[10px]">{confidenceDisplay?.label}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground text-[10px]">Dimensions actives</p>
+            <p className="text-sm font-semibold tabular-nums">{availableDimCount} / 5</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground text-[10px]">Données</p>
+            <p className="text-sm font-semibold">{completenessLabel}</p>
+          </div>
+        </div>
+      </div>
 
       {/* Functional overreaching risk — show MODERATE+ */}
       {overreachingDisplay && (
