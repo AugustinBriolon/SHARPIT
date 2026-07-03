@@ -574,3 +574,156 @@ const CAPACITY_LABEL: Record<TrainingCapacity, string> = {
 export function mapFatigueCapacityLabel(capacity: TrainingCapacity): string {
   return CAPACITY_LABEL[capacity];
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Score color — maps a 0–100 score to a Tailwind color class
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function mapScoreToColorClass(score: number | null): string {
+  if (score === null) return 'text-muted-foreground';
+  if (score >= 80) return 'text-emerald-600 dark:text-emerald-400';
+  if (score >= 60) return 'text-blue-600 dark:text-blue-400';
+  if (score >= 40) return 'text-amber-600 dark:text-amber-400';
+  return 'text-red-600 dark:text-red-400';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Autonomic balance — HRV + RHR system status
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type AutonomicBalance =
+  'ENHANCED' | 'NORMAL' | 'MILDLY_SUPPRESSED' | 'SUPPRESSED' | 'CRITICALLY_SUPPRESSED';
+
+const AUTONOMIC_BALANCE_DISPLAY: Record<AutonomicBalance, { label: string; colorClass: string }> = {
+  ENHANCED: {
+    label: 'Système nerveux optimisé',
+    colorClass: 'text-emerald-600 dark:text-emerald-400',
+  },
+  NORMAL: { label: 'Équilibre normal', colorClass: 'text-blue-600 dark:text-blue-400' },
+  MILDLY_SUPPRESSED: {
+    label: 'Légèrement supprimé',
+    colorClass: 'text-amber-600 dark:text-amber-400',
+  },
+  SUPPRESSED: { label: 'Supprimé', colorClass: 'text-orange-600 dark:text-orange-400' },
+  CRITICALLY_SUPPRESSED: {
+    label: 'Critique',
+    colorClass: 'text-red-600 dark:text-red-400',
+  },
+};
+
+export function mapAutonomicBalanceToDisplay(balance: AutonomicBalance): {
+  label: string;
+  colorClass: string;
+} {
+  return AUTONOMIC_BALANCE_DISPLAY[balance];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Subjective wellness — self-reported readiness
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type SubjectiveWellness = 'HIGH' | 'NORMAL' | 'LOW' | 'VERY_LOW';
+
+const SUBJECTIVE_WELLNESS_DISPLAY: Record<
+  SubjectiveWellness,
+  { label: string; colorClass: string }
+> = {
+  HIGH: { label: 'Bien-être élevé', colorClass: 'text-emerald-600 dark:text-emerald-400' },
+  NORMAL: { label: 'Bien-être normal', colorClass: 'text-blue-600 dark:text-blue-400' },
+  LOW: { label: 'Bien-être faible', colorClass: 'text-amber-600 dark:text-amber-400' },
+  VERY_LOW: { label: 'Bien-être très faible', colorClass: 'text-red-600 dark:text-red-400' },
+};
+
+export function mapSubjectiveWellnessToDisplay(wellness: SubjectiveWellness): {
+  label: string;
+  colorClass: string;
+} {
+  return SUBJECTIVE_WELLNESS_DISPLAY[wellness];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Load stress context — training load vs recovery capacity
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type LoadStressContext = 'UNDERTRAINED' | 'OPTIMAL' | 'ELEVATED' | 'HIGH' | 'CRITICAL';
+
+const LOAD_STRESS_CONTEXT_DISPLAY: Record<
+  LoadStressContext,
+  { label: string; colorClass: string }
+> = {
+  UNDERTRAINED: {
+    label: 'Charge insuffisante',
+    colorClass: 'text-blue-600 dark:text-blue-400',
+  },
+  OPTIMAL: { label: 'Charge optimale', colorClass: 'text-emerald-600 dark:text-emerald-400' },
+  ELEVATED: { label: 'Charge élevée', colorClass: 'text-amber-600 dark:text-amber-400' },
+  HIGH: { label: 'Charge très élevée', colorClass: 'text-orange-600 dark:text-orange-400' },
+  CRITICAL: { label: 'Charge critique', colorClass: 'text-red-600 dark:text-red-400' },
+};
+
+export function mapLoadStressContextToDisplay(context: LoadStressContext): {
+  label: string;
+  colorClass: string;
+} {
+  return LOAD_STRESS_CONTEXT_DISPLAY[context];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sleep adequacy signal — from recovery model signals
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type SleepAdequacySignal =
+  'EXCELLENT' | 'ADEQUATE' | 'INSUFFICIENT' | 'SEVERELY_INSUFFICIENT';
+
+const SLEEP_ADEQUACY_SIGNAL_DISPLAY: Record<
+  SleepAdequacySignal,
+  { label: string; colorClass: string }
+> = {
+  EXCELLENT: {
+    label: 'Sommeil excellent',
+    colorClass: 'text-emerald-600 dark:text-emerald-400',
+  },
+  ADEQUATE: { label: 'Sommeil suffisant', colorClass: 'text-blue-600 dark:text-blue-400' },
+  INSUFFICIENT: {
+    label: 'Sommeil insuffisant',
+    colorClass: 'text-amber-600 dark:text-amber-400',
+  },
+  SEVERELY_INSUFFICIENT: {
+    label: 'Sommeil très insuffisant',
+    colorClass: 'text-red-600 dark:text-red-400',
+  },
+};
+
+export function mapSleepAdequacySignalToDisplay(adequacy: SleepAdequacySignal): {
+  label: string;
+  colorClass: string;
+} {
+  return SLEEP_ADEQUACY_SIGNAL_DISPLAY[adequacy];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fatigue type — dominant fatigue mechanism
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type FatigueType =
+  | 'LOAD_DOMINANT'
+  | 'NEUROMUSCULAR_DOMINANT'
+  | 'METABOLIC_DOMINANT'
+  | 'PSYCHOLOGICAL_DOMINANT'
+  | 'CUMULATIVE_MULTI_SYSTEM'
+  | 'MIXED'
+  | 'UNDETERMINED';
+
+const FATIGUE_TYPE_LABEL: Record<FatigueType, string> = {
+  LOAD_DOMINANT: "Surcharge d'entraînement",
+  NEUROMUSCULAR_DOMINANT: 'Fatigue neuromusculaire',
+  METABOLIC_DOMINANT: 'Fatigue métabolique',
+  PSYCHOLOGICAL_DOMINANT: 'Fatigue psychologique',
+  CUMULATIVE_MULTI_SYSTEM: 'Accumulation multi-systèmes',
+  MIXED: 'Fatigue mixte',
+  UNDETERMINED: 'Non déterminé',
+};
+
+export function mapFatigueTypeToLabel(type: FatigueType): string {
+  return FATIGUE_TYPE_LABEL[type];
+}

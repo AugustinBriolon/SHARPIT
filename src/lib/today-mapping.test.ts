@@ -14,6 +14,7 @@ import {
   mapAdaptationProjection,
   mapRecoveryIntensityLabel,
   mapFatigueCapacityLabel,
+  mapScoreToColorClass,
 } from './today-mapping';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -444,4 +445,19 @@ describe('mapFatigueCapacityLabel', () => {
     expect(mapFatigueCapacityLabel('LIGHT_ONLY')).toBe('Activité légère uniquement'));
   it('REST_ONLY → Repos uniquement', () =>
     expect(mapFatigueCapacityLabel('REST_ONLY')).toBe('Repos uniquement'));
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// mapScoreToColorClass
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('mapScoreToColorClass', () => {
+  it('null → muted', () => expect(mapScoreToColorClass(null)).toBe('text-muted-foreground'));
+  it('85 → emerald', () => expect(mapScoreToColorClass(85)).toContain('emerald'));
+  it('65 → blue', () => expect(mapScoreToColorClass(65)).toContain('blue'));
+  it('45 → amber', () => expect(mapScoreToColorClass(45)).toContain('amber'));
+  it('20 → red', () => expect(mapScoreToColorClass(20)).toContain('red'));
+  it('80 boundary → emerald', () => expect(mapScoreToColorClass(80)).toContain('emerald'));
+  it('60 boundary → blue', () => expect(mapScoreToColorClass(60)).toContain('blue'));
+  it('40 boundary → amber', () => expect(mapScoreToColorClass(40)).toContain('amber'));
 });
