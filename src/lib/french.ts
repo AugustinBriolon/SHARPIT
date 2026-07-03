@@ -1,0 +1,209 @@
+// French string resolver for domain I18nItem codes.
+// Maps all codes emitted by the inference layer to natural French.
+// To add a language: duplicate this file, translate the strings.
+
+export type I18nItem = {
+  code: string;
+  params?: Record<string, string | number>;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enum param translations
+// ─────────────────────────────────────────────────────────────────────────────
+
+const DIMENSION_FR: Record<string, string> = {
+  LOAD: 'charge',
+  NEUROMUSCULAR: 'neuromusculaire',
+  METABOLIC: 'métabolique',
+  CUMULATIVE: 'cumulative',
+  PSYCHOLOGICAL: 'psychologique',
+};
+
+const TREND_FR: Record<string, string> = {
+  IMPROVING: 'en progression',
+  STABLE: 'stable',
+  DECLINING: 'en déclin',
+};
+
+const LIMITER_FR: Record<string, string> = {
+  autonomic: 'le système autonome',
+  sleep: 'le sommeil',
+  subjective: 'le ressenti subjectif',
+  loadContext: "la charge d'entraînement",
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Lookup table — code → French template string
+// Use {param} placeholders matching I18nItem.params keys.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const STRINGS: Record<string, string> = {
+  // ── Top actions ────────────────────────────────────────────────────────────
+  'reasoning.topAction.trainHard.verb': 'Entraîne-toi',
+  'reasoning.topAction.trainHard.focus.progressiveOverload': 'avec une surcharge progressive',
+  'reasoning.topAction.trainHard.focus.aerobicBase': 'sur la base aérobie',
+  'reasoning.topAction.trainHard.rationale':
+    'Tes systèmes physiologiques sont prêts pour une charge élevée.',
+
+  'reasoning.topAction.trainSmart.verb': 'Entraîne-toi',
+  'reasoning.topAction.trainSmart.focus': 'avec intelligence',
+  'reasoning.topAction.trainSmart.rationale': "Cible la qualité plutôt que le volume aujourd'hui.",
+
+  'reasoning.topAction.trainEasy.verb': 'Entraîne-toi',
+  'reasoning.topAction.trainEasy.focus': 'légèrement',
+  'reasoning.topAction.trainEasy.rationale':
+    "Préserve de l'énergie — ta récupération est prioritaire.",
+
+  'reasoning.topAction.recover.verb': 'Récupère',
+  'reasoning.topAction.recover.focusDefault': 'activement',
+  'reasoning.topAction.recover.rationale': 'Tes systèmes ont besoin de repos pour rebondir.',
+
+  'reasoning.topAction.raceReady.verb': 'Tu es prêt',
+  'reasoning.topAction.raceReady.focus': 'à performer',
+  'reasoning.topAction.raceReady.rationale':
+    'Tous tes indicateurs pointent vers une forme optimale.',
+
+  'reasoning.topAction.caution.verb': 'Sois',
+  'reasoning.topAction.caution.focus': "prudent aujourd'hui",
+  'reasoning.topAction.caution.rationale': 'Des signaux contradictoires appellent à la modération.',
+
+  // ── Findings — overreaching without adaptation ──────────────────────────
+  'reasoning.finding.overreachingNoAdapt.title': 'Surcharge sans adaptation détectée',
+  'reasoning.finding.overreachingNoAdapt.evidence.fatigueIndex': 'Index de fatigue à {index}',
+  'reasoning.finding.overreachingNoAdapt.evidence.autonomicSuppressed': 'Système autonome supprimé',
+  'reasoning.finding.overreachingNoAdapt.evidence.noAdaptation': 'Aucune adaptation mesurée',
+
+  // ── Findings — overreaching risk ────────────────────────────────────────
+  'reasoning.finding.overreachingRisk.title': 'Risque de surmenage',
+  'reasoning.finding.overreachingRisk.evidence.fatigueIndex': 'Index de fatigue à {index}',
+  'reasoning.finding.overreachingRisk.evidence.accumulationDays':
+    'Accumulation depuis {days} jour(s)',
+  'reasoning.finding.overreachingRisk.evidence.performanceImpairment':
+    'Performance réduite de {percent}%',
+
+  // ── Findings — low readiness ─────────────────────────────────────────────
+  'reasoning.finding.lowReadiness.title': 'Forme réduite',
+  'reasoning.finding.lowReadiness.titleCritical': 'Forme très basse',
+  'reasoning.finding.lowReadiness.evidence.score': 'Score de forme : {score}/100',
+  'reasoning.finding.lowReadiness.evidence.limiter': 'Facteur limitant : {limiter}',
+  'reasoning.finding.lowReadiness.evidence.multipleAffected': 'Plusieurs dimensions affectées',
+  'reasoning.finding.lowReadiness.evidence.estimatedRecovery':
+    'Récupération estimée dans {days} jour(s)',
+  'reasoning.finding.lowReadiness.evidence.recoveryUnclear': 'Délai de récupération indéterminé',
+
+  // ── Findings — dissonance ────────────────────────────────────────────────
+  'reasoning.finding.dissonance.title': 'Signaux contradictoires',
+  'reasoning.finding.dissonance.evidence.disagreement': 'Les modèles ne sont pas alignés',
+  'reasoning.finding.dissonance.evidence.causes':
+    'Peut refléter une adaptation ou un stress atypique',
+  'reasoning.finding.dissonance.evidence.prioritiseObjective':
+    'Privilégie une séance à intensité maîtrisée',
+
+  // ── Findings — fatigue accumulating ─────────────────────────────────────
+  'reasoning.finding.fatigueAccumulating.title': 'Fatigue en accumulation depuis {days} jour(s)',
+  'reasoning.finding.fatigueAccumulating.evidence.fatigueIndex': 'Index de fatigue à {index}',
+  'reasoning.finding.fatigueAccumulating.evidence.dominantSystem': 'Dimension dominante : {system}',
+  'reasoning.finding.fatigueAccumulating.evidence.timeToFresh':
+    'Délai estimé avant récupération : {days} jour(s)',
+  'reasoning.finding.fatigueAccumulating.evidence.timeToFreshUnknown':
+    'Délai de récupération indéterminé',
+
+  // ── Findings — plateau risk ──────────────────────────────────────────────
+  'reasoning.finding.plateauRisk.title': 'Risque de plateau',
+  'reasoning.finding.plateauRisk.evidence.adaptationIndex': "Index d'adaptation : {index}",
+  'reasoning.finding.plateauRisk.evidence.noStimulus': 'Stimulation insuffisante récemment',
+  'reasoning.finding.plateauRisk.evidence.changeRecommended':
+    'Un changement de stimulus est recommandé',
+
+  // ── Findings — cross-system conflict ────────────────────────────────────
+  'reasoning.finding.crossSystemConflict.title': 'Conflit entre systèmes ({conflictType})',
+  'reasoning.finding.crossSystemConflict.evidence.affectedModels': 'Modèles concernés : {models}',
+
+  // ── Findings — optimal state ─────────────────────────────────────────────
+  'reasoning.finding.optimalState.title': 'État optimal détecté',
+  'reasoning.finding.optimalState.evidence.readiness': 'Score de forme : {score}/100',
+  'reasoning.finding.optimalState.evidence.fatigueIndex': 'Index de fatigue : {index}',
+  'reasoning.finding.optimalState.evidence.highCapacity':
+    "Pleine capacité d'entraînement disponible",
+
+  // ── Findings — positive adaptation ─────────────────────────────────────
+  'reasoning.finding.positiveAdaptation.title': 'Adaptation positive en cours',
+  'reasoning.finding.positiveAdaptation.evidence.adaptationIndex': "Index d'adaptation : {index}",
+  'reasoning.finding.positiveAdaptation.evidence.trend': 'Tendance : {trend}',
+  'reasoning.finding.positiveAdaptation.evidence.peakEstimate':
+    "Pic d'adaptation estimé dans {days} jour(s)",
+  'reasoning.finding.positiveAdaptation.evidence.trajectoryPositive': 'Trajectoire favorable',
+
+  // ── Limiting factors ─────────────────────────────────────────────────────
+  'reasoning.limitingFactor.fatigue.overreaching':
+    'Surmenage — la dimension {dimension} est le facteur limitant',
+  'reasoning.limitingFactor.fatigue.accumulated':
+    'Fatigue accumulée ({dimension}) depuis {days} jour(s)',
+  'reasoning.limitingFactor.recovery.deficit':
+    'Déficit de récupération — facteur limitant : {limiter}',
+  'reasoning.limitingFactor.recovery.criticallyLow':
+    'Forme critique — facteur limitant : {limiter}',
+  'reasoning.limitingFactor.recovery.reduced': 'Forme réduite — facteur limitant : {limiter}',
+  'reasoning.limitingFactor.adaptation.factor': "Facteur limitant l'adaptation : {factor}",
+  'reasoning.limitingFactor.adaptation.insufficientStimulus':
+    'Stimulus insuffisant — la progression stagne',
+  'reasoning.limitingFactor.adaptation.plateau': "Plateau d'adaptation atteint",
+
+  // ── Opportunities ────────────────────────────────────────────────────────
+  'reasoning.opportunity.loadIncrease.title': "Fenêtre d'augmentation de charge",
+  'reasoning.opportunity.loadIncrease.rationale':
+    "Tes systèmes tolèrent une progression — c'est le bon moment pour augmenter.",
+  'reasoning.opportunity.qualitySession.title': 'Séance de qualité possible',
+  'reasoning.opportunity.qualitySession.rationale':
+    'La forme et la fraîcheur sont réunies pour une séance de haute qualité.',
+  'reasoning.opportunity.deload.title': 'Semaine allégée recommandée dans {days} jour(s)',
+  'reasoning.opportunity.deload.rationale': "Planifier un déload maintenant optimise l'adaptation.",
+  'reasoning.opportunity.raceReadiness.title': 'Pic de forme dans {days} jour(s)',
+  'reasoning.opportunity.raceReadiness.rationale': "Tu approches d'un pic — affine et préserve.",
+  'reasoning.opportunity.recoveryWindow.title': 'Fenêtre de récupération',
+  'reasoning.opportunity.recoveryWindow.rationale':
+    'La charge doit être réduite pour permettre une récupération complète.',
+
+  // ── Conflicts ────────────────────────────────────────────────────────────
+  'reasoning.conflict.capacityConflict01.description':
+    'Conflit de capacité entre les modèles de fatigue et de récupération',
+  'reasoning.conflict.capacityConflict01.resolution':
+    'Priorité à la récupération — réduire la charge',
+  'reasoning.conflict.timingConflict01.description': "Fenêtres d'adaptation contradictoires",
+  'reasoning.conflict.timingConflict01.resolution': "S'appuyer sur le modèle le plus récent",
+  'reasoning.conflict.signalConflict01.description': 'Signaux physiologiques contradictoires',
+  'reasoning.conflict.signalConflict01.resolution':
+    "Maintenir une intensité modérée jusqu'à résolution",
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Resolve an I18nItem to French
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function resolve(item: I18nItem): string {
+  const template = STRINGS[item.code];
+  if (!template) return item.code;
+  if (!item.params) return template;
+
+  return template.replace(/\{(\w+)\}/g, (_, key) => {
+    const raw = item.params![key];
+    if (raw === undefined) return `{${key}}`;
+
+    if (key === 'dimension' || key === 'system') {
+      return DIMENSION_FR[String(raw)] ?? String(raw);
+    }
+    if (key === 'trend') {
+      return TREND_FR[String(raw)] ?? String(raw);
+    }
+    if (key === 'limiter') {
+      return LIMITER_FR[String(raw)] ?? String(raw);
+    }
+
+    return String(raw);
+  });
+}
+
+// Convenience: resolve a plain code string (for TopAction verbCode / focusCode / rationaleCode)
+export function resolveCode(code: string): string {
+  return resolve({ code });
+}
