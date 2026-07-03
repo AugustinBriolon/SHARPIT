@@ -9,7 +9,6 @@ import {
   mapAdaptationDecisionToObjective,
   mapDeviationRisk,
   mapConsistencyToDisplay,
-  extractPrimaryInsight,
   mapRecoveryProjection,
   mapFatigueProjection,
   mapAdaptationProjection,
@@ -23,11 +22,11 @@ import {
 
 describe('mapVerdictToDisplay', () => {
   it('returns correct label for TRAIN_HARD', () => {
-    expect(mapVerdictToDisplay('TRAIN_HARD').label).toBe('Train Hard');
+    expect(mapVerdictToDisplay('TRAIN_HARD').label).toBe('Entraîne-toi fort');
   });
 
   it('returns correct label for RECOVER', () => {
-    expect(mapVerdictToDisplay('RECOVER').label).toBe('Recover');
+    expect(mapVerdictToDisplay('RECOVER').label).toBe('Récupère');
   });
 
   it('TRAIN_HARD and RACE_READY share emerald colour', () => {
@@ -148,8 +147,8 @@ describe('mapFatigueToSignal', () => {
     expect(s.qualityClass).toContain('emerald');
   });
 
-  it('OVERREACHING_RISK → label=Critical', () => {
-    expect(mapFatigueToSignal('OVERREACHING_RISK', 'ACCELERATING').label).toBe('Critical');
+  it('OVERREACHING_RISK → label=Critique', () => {
+    expect(mapFatigueToSignal('OVERREACHING_RISK', 'ACCELERATING').label).toBe('Critique');
   });
 
   it('INSUFFICIENT_DATA → isAvailable=false regardless of trajectory', () => {
@@ -167,15 +166,15 @@ describe('mapFatigueToSignal', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('mapAdaptationToSignal', () => {
-  it('POSITIVELY_ADAPTING → label=Growing, emerald', () => {
+  it('POSITIVELY_ADAPTING → label=Progression, emerald', () => {
     const s = mapAdaptationToSignal('POSITIVELY_ADAPTING', 'IMPROVING');
-    expect(s.label).toBe('Growing');
+    expect(s.label).toBe('Progression');
     expect(s.qualityClass).toContain('emerald');
   });
 
-  it('DETRAINING → label=Detraining, red', () => {
+  it('DETRAINING → label=Désentraînement, red', () => {
     const s = mapAdaptationToSignal('DETRAINING', 'DECLINING');
-    expect(s.label).toBe('Detraining');
+    expect(s.label).toBe('Désentraînement');
     expect(s.qualityClass).toContain('red');
   });
 
@@ -190,61 +189,30 @@ describe('mapAdaptationToSignal', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// extractPrimaryInsight
-// ─────────────────────────────────────────────────────────────────────────────
-
-describe('extractPrimaryInsight', () => {
-  it('returns topAction rationale first', () => {
-    expect(extractPrimaryInsight('rationale', 'finding', 'explanation')).toBe('rationale');
-  });
-
-  it('falls back to firstFindingTitle when rationale is null', () => {
-    expect(extractPrimaryInsight(null, 'finding title', 'explanation')).toBe('finding title');
-  });
-
-  it('falls back to first sentence of explanation when both null', () => {
-    expect(extractPrimaryInsight(null, null, 'First sentence. Second sentence.')).toBe(
-      'First sentence',
-    );
-  });
-
-  it('returns null when all inputs are null', () => {
-    expect(extractPrimaryInsight(null, null, null)).toBeNull();
-  });
-
-  it('handles empty rationale string by falling through', () => {
-    expect(extractPrimaryInsight('', 'finding', 'explanation')).toBe('finding');
-  });
-
-  it('trims whitespace from extracted sentence', () => {
-    const result = extractPrimaryInsight(null, null, '  Trimmed sentence.  rest');
-    expect(result).toBe('Trimmed sentence');
-  });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
 // mapAdaptationDecisionToObjective
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('mapAdaptationDecisionToObjective', () => {
-  it('INCREASE_LOAD → Build fitness', () => {
-    expect(mapAdaptationDecisionToObjective('INCREASE_LOAD')).toBe('Build fitness');
+  it('INCREASE_LOAD → Développer ta condition', () => {
+    expect(mapAdaptationDecisionToObjective('INCREASE_LOAD')).toBe('Développer ta condition');
   });
 
-  it('SUSTAIN → Maintain gains', () => {
-    expect(mapAdaptationDecisionToObjective('SUSTAIN')).toBe('Maintain gains');
+  it('SUSTAIN → Maintenir les acquis', () => {
+    expect(mapAdaptationDecisionToObjective('SUSTAIN')).toBe('Maintenir les acquis');
   });
 
-  it('CONSOLIDATE → Reinforce adaptations', () => {
-    expect(mapAdaptationDecisionToObjective('CONSOLIDATE')).toBe('Reinforce adaptations');
+  it('CONSOLIDATE → Consolider les adaptations', () => {
+    expect(mapAdaptationDecisionToObjective('CONSOLIDATE')).toBe('Consolider les adaptations');
   });
 
-  it('REDUCE_LOAD → Absorb training stress', () => {
-    expect(mapAdaptationDecisionToObjective('REDUCE_LOAD')).toBe('Absorb training stress');
+  it("REDUCE_LOAD → Absorber le stress d'entraînement", () => {
+    expect(mapAdaptationDecisionToObjective('REDUCE_LOAD')).toBe(
+      "Absorber le stress d'entraînement",
+    );
   });
 
-  it('RECOVERY_PRIORITY → Active recovery', () => {
-    expect(mapAdaptationDecisionToObjective('RECOVERY_PRIORITY')).toBe('Active recovery');
+  it('RECOVERY_PRIORITY → Récupération active', () => {
+    expect(mapAdaptationDecisionToObjective('RECOVERY_PRIORITY')).toBe('Récupération active');
   });
 
   it('INSUFFICIENT_DATA → null', () => {
@@ -328,34 +296,34 @@ describe('mapConsistencyToDisplay', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('mapRecoveryProjection', () => {
-  it('OVERREACHED → rest message regardless of risk', () => {
+  it('OVERREACHED → rest message with day count', () => {
     const result = mapRecoveryProjection('OVERREACHED', 'CRITICAL');
-    expect(result).toContain('2–3 days');
+    expect(result).toContain('2 à 3 jours');
   });
 
   it('FATIGUED → active recovery message', () => {
     const result = mapRecoveryProjection('FATIGUED', 'MODERATE');
-    expect(result).toContain('accelerates');
+    expect(result).toContain('accélère');
   });
 
   it('PARTIALLY_RECOVERED + HIGH risk → manage load message', () => {
     const result = mapRecoveryProjection('PARTIALLY_RECOVERED', 'HIGH');
-    expect(result).toContain('in check');
+    expect(result).toContain('maîtrisée');
   });
 
   it('PARTIALLY_RECOVERED + LOW risk → 24–48h recovery message', () => {
     const result = mapRecoveryProjection('PARTIALLY_RECOVERED', 'LOW');
-    expect(result).toContain('24–48');
+    expect(result).toContain('24 à 48');
   });
 
   it('RECOVERED + LOW risk → hold message', () => {
     const result = mapRecoveryProjection('RECOVERED', 'LOW');
-    expect(result).toContain('hold');
+    expect(result).toContain('maintenir');
   });
 
   it('RECOVERED + MODERATE risk → manage intensity message', () => {
     const result = mapRecoveryProjection('RECOVERED', 'MODERATE');
-    expect(result).toContain('intensity');
+    expect(result).toContain('intensité');
   });
 
   it('INSUFFICIENT_DATA → empty string', () => {
@@ -370,27 +338,27 @@ describe('mapRecoveryProjection', () => {
 describe('mapFatigueProjection', () => {
   it('REST_WEEK → rest message', () => {
     const result = mapFatigueProjection('REST_WEEK', 'STABLE', 'FULL');
-    expect(result).toContain('clear');
+    expect(result).toContain('dissiper');
   });
 
   it('TAPER → rest message', () => {
     const result = mapFatigueProjection('TAPER', 'RESOLVING', 'REDUCED');
-    expect(result).toContain('clear');
+    expect(result).toContain('dissiper');
   });
 
   it('REDUCE + ACCELERATING → non-functional overreaching warning', () => {
     const result = mapFatigueProjection('REDUCE', 'ACCELERATING', 'REDUCED');
-    expect(result).toContain('overreaching');
+    expect(result).toContain('surmenage');
   });
 
   it('REDUCE + ACCUMULATING → compounding message', () => {
     const result = mapFatigueProjection('REDUCE', 'ACCUMULATING', 'REDUCED');
-    expect(result).toContain('compounding');
+    expect(result).toContain("s'aggrave");
   });
 
   it('MAINTAIN → functional range message', () => {
     const result = mapFatigueProjection('MAINTAIN', 'STABLE', 'FULL');
-    expect(result).toContain('functional');
+    expect(result).toContain('fonctionnelle');
   });
 
   it('BUILD + RESOLVING → maximises adaptation message', () => {
@@ -400,7 +368,7 @@ describe('mapFatigueProjection', () => {
 
   it('BUILD + STABLE + FULL → full capacity message', () => {
     const result = mapFatigueProjection('BUILD', 'STABLE', 'FULL');
-    expect(result).toContain('full');
+    expect(result).toContain('pleine');
   });
 
   it('INSUFFICIENT_DATA → empty string', () => {
@@ -415,32 +383,32 @@ describe('mapFatigueProjection', () => {
 describe('mapAdaptationProjection', () => {
   it('RECOVERY_PRIORITY → protect fitness base message', () => {
     const result = mapAdaptationProjection('RECOVERY_PRIORITY', 1.0);
-    expect(result).toContain('fitness base');
+    expect(result).toContain('forme');
   });
 
   it('REDUCE_LOAD → adaptations take root message', () => {
     const result = mapAdaptationProjection('REDUCE_LOAD', 0.8);
-    expect(result).toContain('take root');
+    expect(result).toContain("s'ancrer");
   });
 
   it('CONSOLIDATE → consolidates message', () => {
     const result = mapAdaptationProjection('CONSOLIDATE', 1.0);
-    expect(result).toContain('consolidates');
+    expect(result).toContain('consolide');
   });
 
   it('SUSTAIN → sustains gains message', () => {
     const result = mapAdaptationProjection('SUSTAIN', 1.0);
-    expect(result).toContain('sustains');
+    expect(result).toContain('maintient');
   });
 
   it('INCREASE_LOAD + multiplier > 1.1 → 10–14 days message', () => {
     const result = mapAdaptationProjection('INCREASE_LOAD', 1.2);
-    expect(result).toContain('10–14 days');
+    expect(result).toContain('10 à 14 jours');
   });
 
   it('INCREASE_LOAD + multiplier ≤ 1.1 → compound message', () => {
     const result = mapAdaptationProjection('INCREASE_LOAD', 1.05);
-    expect(result).toContain('compound');
+    expect(result).toContain('cumulera');
   });
 
   it('INSUFFICIENT_DATA → empty string', () => {
@@ -453,14 +421,14 @@ describe('mapAdaptationProjection', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('mapRecoveryIntensityLabel', () => {
-  it('REST → Full rest', () => expect(mapRecoveryIntensityLabel('REST')).toBe('Full rest'));
-  it('VERY_EASY → Very easy movement', () =>
-    expect(mapRecoveryIntensityLabel('VERY_EASY')).toBe('Very easy movement'));
-  it('EASY → Easy effort', () => expect(mapRecoveryIntensityLabel('EASY')).toBe('Easy effort'));
-  it('MODERATE → Moderate effort', () =>
-    expect(mapRecoveryIntensityLabel('MODERATE')).toBe('Moderate effort'));
-  it('HARD → High intensity', () =>
-    expect(mapRecoveryIntensityLabel('HARD')).toBe('High intensity'));
+  it('REST → Repos complet', () => expect(mapRecoveryIntensityLabel('REST')).toBe('Repos complet'));
+  it('VERY_EASY → Mouvement très léger', () =>
+    expect(mapRecoveryIntensityLabel('VERY_EASY')).toBe('Mouvement très léger'));
+  it('EASY → Effort facile', () => expect(mapRecoveryIntensityLabel('EASY')).toBe('Effort facile'));
+  it('MODERATE → Effort modéré', () =>
+    expect(mapRecoveryIntensityLabel('MODERATE')).toBe('Effort modéré'));
+  it('HARD → Haute intensité', () =>
+    expect(mapRecoveryIntensityLabel('HARD')).toBe('Haute intensité'));
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -468,11 +436,12 @@ describe('mapRecoveryIntensityLabel', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('mapFatigueCapacityLabel', () => {
-  it('FULL → Full training capacity', () =>
-    expect(mapFatigueCapacityLabel('FULL')).toBe('Full training capacity'));
-  it('REDUCED → Reduced capacity', () =>
-    expect(mapFatigueCapacityLabel('REDUCED')).toBe('Reduced capacity'));
-  it('LIGHT_ONLY → Light activity only', () =>
-    expect(mapFatigueCapacityLabel('LIGHT_ONLY')).toBe('Light activity only'));
-  it('REST_ONLY → Rest only', () => expect(mapFatigueCapacityLabel('REST_ONLY')).toBe('Rest only'));
+  it('FULL → Capacité totale', () =>
+    expect(mapFatigueCapacityLabel('FULL')).toBe('Capacité totale'));
+  it('REDUCED → Capacité réduite', () =>
+    expect(mapFatigueCapacityLabel('REDUCED')).toBe('Capacité réduite'));
+  it('LIGHT_ONLY → Activité légère uniquement', () =>
+    expect(mapFatigueCapacityLabel('LIGHT_ONLY')).toBe('Activité légère uniquement'));
+  it('REST_ONLY → Repos uniquement', () =>
+    expect(mapFatigueCapacityLabel('REST_ONLY')).toBe('Repos uniquement'));
 });
