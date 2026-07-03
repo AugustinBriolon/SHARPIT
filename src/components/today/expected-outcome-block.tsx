@@ -13,7 +13,18 @@ import {
   type TrainingCapacity,
   type FatigueTrajectory,
 } from '@/lib/today-mapping';
+import { resolve } from '@/lib/french';
 import type { Opportunity } from '@/hooks/use-today';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Time window labels
+// ─────────────────────────────────────────────────────────────────────────────
+
+const TIME_WINDOW_FR: Record<string, string> = {
+  TODAY: "aujourd'hui",
+  THIS_WEEK: 'cette semaine',
+  NEXT_WEEK: 'la semaine prochaine',
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ExpectedOutcomeBlock — what will happen if the athlete follows the plan
@@ -39,7 +50,7 @@ interface ProjectionRowProps {
 function ProjectionRow({ dimension, projection }: ProjectionRowProps) {
   return (
     <div className="flex items-start gap-2.5">
-      <span className="text-muted-foreground mt-0.5 w-20 shrink-0 text-[10px] font-medium tracking-wide uppercase">
+      <span className="text-muted-foreground mt-0.5 w-24 shrink-0 text-[10px] font-medium tracking-wide uppercase">
         {dimension}
       </span>
       <p className="text-sm leading-snug">{projection}</p>
@@ -82,7 +93,7 @@ export function ExpectedOutcomeBlock({
   return (
     <div className="bg-card/60 space-y-4 rounded-2xl border px-5 py-5">
       <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-        Expected outcome
+        Résultat attendu
       </p>
 
       {/* Primary opportunity */}
@@ -92,13 +103,10 @@ export function ExpectedOutcomeBlock({
             ✓
           </span>
           <div>
-            <p className="text-sm font-medium">
-              {primary.description ??
-                `+${Math.round(primary.expectedBenefit * 100)}% expected benefit`}
-            </p>
+            <p className="text-sm font-medium">{resolve(primary.title)}</p>
             {primary.timeWindow && (
               <p className="text-muted-foreground mt-0.5 text-xs">
-                Expected within {primary.timeWindow}
+                Attendu {TIME_WINDOW_FR[primary.timeWindow] ?? primary.timeWindow}
               </p>
             )}
           </div>
@@ -109,7 +117,7 @@ export function ExpectedOutcomeBlock({
       {hasProjections && (
         <div className="space-y-2.5 border-t pt-3">
           {recoveryProjection && (
-            <ProjectionRow dimension="Recovery" projection={recoveryProjection} />
+            <ProjectionRow dimension="Récupération" projection={recoveryProjection} />
           )}
           {fatigueProjection && (
             <ProjectionRow dimension="Fatigue" projection={fatigueProjection} />

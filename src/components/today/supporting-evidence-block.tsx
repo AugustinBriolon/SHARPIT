@@ -16,6 +16,7 @@ import {
   type RecommendedIntensity,
   type TrainingCapacity,
 } from '@/lib/today-mapping';
+import { resolve } from '@/lib/french';
 import type { RecoveryData, FatigueData, AdaptationData } from '@/hooks/use-today';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -43,13 +44,11 @@ function EvidencePanel({
   title,
   statusChip,
   intensityLabel,
-  summary,
   evidence,
 }: {
   title: string;
   statusChip: React.ReactNode;
   intensityLabel?: string;
-  summary?: string;
   evidence?: string[];
 }) {
   return (
@@ -61,7 +60,6 @@ function EvidencePanel({
         {statusChip}
       </div>
       {intensityLabel && <p className="text-muted-foreground text-xs">{intensityLabel}</p>}
-      {summary && <p className="text-muted-foreground text-xs leading-relaxed">{summary}</p>}
       {evidence && evidence.length > 0 && (
         <ul className="space-y-0.5">
           {evidence.slice(0, 3).map((e, i) => (
@@ -119,7 +117,7 @@ export function SupportingEvidenceBlock({
         onClick={() => setExpanded((v) => !v)}
       >
         <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-          Physiological detail
+          Détail physiologique
         </p>
         <span
           className={cn(
@@ -136,9 +134,8 @@ export function SupportingEvidenceBlock({
         <div className="mt-4 space-y-4 border-t pt-4">
           {recovery && recoverySignal?.isAvailable && (
             <EvidencePanel
-              evidence={recovery.recommendation.keyEvidence}
-              summary={recovery.recommendation.summary}
-              title="Recovery"
+              evidence={recovery.recommendation.keyEvidence.map((e) => resolve(e))}
+              title="Récupération"
               intensityLabel={mapRecoveryIntensityLabel(
                 recovery.decision.recommendedIntensity as RecommendedIntensity,
               )}
@@ -154,9 +151,8 @@ export function SupportingEvidenceBlock({
 
           {fatigue && fatigueSignal?.isAvailable && (
             <EvidencePanel
-              evidence={fatigue.recommendation.keyEvidence}
+              evidence={fatigue.recommendation.keyEvidence.map((e) => resolve(e))}
               intensityLabel={mapFatigueCapacityLabel(fatigue.trainingCapacity as TrainingCapacity)}
-              summary={fatigue.recommendation.summary}
               title="Fatigue"
               statusChip={
                 <StatusChip
@@ -170,7 +166,7 @@ export function SupportingEvidenceBlock({
 
           {adaptation && adaptationSignal?.isAvailable && (
             <EvidencePanel
-              summary={adaptation.recommendation.summary}
+              evidence={adaptation.recommendation.keyEvidence.map((e) => resolve(e))}
               title="Adaptation"
               statusChip={
                 <StatusChip

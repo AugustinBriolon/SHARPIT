@@ -1,5 +1,6 @@
 'use client';
 
+import { resolve } from '@/lib/french';
 import type { LimitingFactor } from '@/hooks/use-today';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -7,7 +8,7 @@ import type { LimitingFactor } from '@/hooks/use-today';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SYSTEM_LABEL: Record<string, string> = {
-  RECOVERY: 'Recovery',
+  RECOVERY: 'Récupération',
   FATIGUE: 'Fatigue',
   ADAPTATION: 'Adaptation',
 };
@@ -22,7 +23,7 @@ export function BottleneckBlock({ limitingFactor }: BottleneckBlockProps) {
   return (
     <div className="bg-card/60 space-y-2 rounded-2xl border px-5 py-5">
       <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-        What&apos;s limiting you
+        Ce qui te limite
       </p>
 
       {limitingFactor.system && (
@@ -32,12 +33,12 @@ export function BottleneckBlock({ limitingFactor }: BottleneckBlockProps) {
       )}
 
       {limitingFactor.description && (
-        <p className="text-sm leading-relaxed">{limitingFactor.description}</p>
+        <p className="text-sm leading-relaxed">{resolve(limitingFactor.description)}</p>
       )}
 
       {limitingFactor.actionable && (
         <p className="text-muted-foreground text-xs">
-          Actionable — focus here for the fastest improvement.
+          Actionnable — concentre-toi ici pour progresser le plus vite.
         </p>
       )}
     </div>

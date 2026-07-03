@@ -4,6 +4,7 @@ import {
   mapAdaptationDecisionToObjective,
   type AdaptationDecisionVerdict,
 } from '@/lib/today-mapping';
+import { resolve, resolveCode } from '@/lib/french';
 import type { EngineRecommendation, TopAction } from '@/hooks/use-today';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -18,8 +19,8 @@ interface SessionBlockProps {
 
 export function SessionBlock({ adaptationVerdict, recommendation, topAction }: SessionBlockProps) {
   const objective = adaptationVerdict ? mapAdaptationDecisionToObjective(adaptationVerdict) : null;
-  const sessionTitle = recommendation?.title ?? topAction.focus;
-  const sessionSummary = recommendation?.summary ?? topAction.rationale;
+  const sessionTitle = resolveCode(topAction.focusCode);
+  const sessionSummary = resolveCode(topAction.rationaleCode);
 
   return (
     <div className="bg-card/60 space-y-4 rounded-2xl border px-5 py-5">
@@ -27,7 +28,7 @@ export function SessionBlock({ adaptationVerdict, recommendation, topAction }: S
       {objective && (
         <div className="flex items-center gap-2">
           <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-            Objective
+            Objectif
           </p>
           <span className="bg-accent rounded-md px-2 py-0.5 text-xs font-medium">{objective}</span>
         </div>
@@ -36,7 +37,7 @@ export function SessionBlock({ adaptationVerdict, recommendation, topAction }: S
       {/* Q4 — Recommended session */}
       <div>
         <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-          Recommended session
+          Séance recommandée
         </p>
         <p className="mt-1 text-sm leading-snug font-semibold">{sessionTitle}</p>
         {sessionSummary && (
@@ -52,7 +53,7 @@ export function SessionBlock({ adaptationVerdict, recommendation, topAction }: S
               key={i}
               className="text-muted-foreground text-xs before:mr-1.5 before:content-['·']"
             >
-              {e}
+              {resolve(e)}
             </li>
           ))}
         </ul>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { resolve } from '@/lib/french';
 import type { KeyFinding } from '@/hooks/use-today';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -26,10 +27,9 @@ const SEVERITY_TEXT: Record<string, string> = {
 
 interface ReasoningBlockProps {
   keyFindings: KeyFinding[];
-  explanation: string;
 }
 
-export function ReasoningBlock({ keyFindings, explanation }: ReasoningBlockProps) {
+export function ReasoningBlock({ keyFindings }: ReasoningBlockProps) {
   const [expanded, setExpanded] = useState(false);
 
   const [primary, ...rest] = keyFindings;
@@ -38,7 +38,7 @@ export function ReasoningBlock({ keyFindings, explanation }: ReasoningBlockProps
   return (
     <div className="bg-card/60 space-y-3 rounded-2xl border px-5 py-5">
       <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-        Why this?
+        Pourquoi ?
       </p>
 
       {/* Primary finding */}
@@ -50,16 +50,16 @@ export function ReasoningBlock({ keyFindings, explanation }: ReasoningBlockProps
               SEVERITY_TEXT[primary.severity] ?? 'text-foreground',
             )}
           >
-            {primary.title}
+            {resolve(primary.title)}
           </p>
-          {primary.evidence.length > 0 && (
+          {primary.evidenceItems.length > 0 && (
             <ul className="mt-1.5 space-y-0.5">
-              {primary.evidence.map((e, i) => (
+              {primary.evidenceItems.map((e, i) => (
                 <li
                   key={i}
                   className="text-muted-foreground text-xs before:mr-1.5 before:content-['·']"
                 >
-                  {e}
+                  {resolve(e)}
                 </li>
               ))}
             </ul>
@@ -68,41 +68,38 @@ export function ReasoningBlock({ keyFindings, explanation }: ReasoningBlockProps
       )}
 
       {/* Expand toggle */}
-      {(supporting.length > 0 || explanation) && (
+      {supporting.length > 0 && (
         <button
           aria-expanded={expanded}
           className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs font-medium transition-colors"
           type="button"
           onClick={() => setExpanded((v) => !v)}
         >
-          {expanded ? 'Show less' : 'More detail'}
+          {expanded ? 'Réduire' : 'Plus de détails'}
           <span className={cn('transition-transform', expanded && 'rotate-180')} aria-hidden>
             ↓
           </span>
         </button>
       )}
 
-      {/* Expanded: supporting findings + explanation */}
-      {expanded && (
+      {/* Expanded: supporting findings */}
+      {expanded && supporting.length > 0 && (
         <div className="space-y-3 border-t pt-3">
-          {supporting.length > 0 && (
-            <ul className="space-y-2">
-              {supporting.map((f) => (
-                <li key={f.id} className="flex items-start gap-2">
-                  <span
-                    className={cn(
-                      'mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full',
-                      SEVERITY_DOT[f.severity],
-                    )}
-                  />
-                  <span className="text-muted-foreground text-xs leading-relaxed">{f.title}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-          {explanation && (
-            <p className="text-muted-foreground text-xs leading-relaxed">{explanation}</p>
-          )}
+          <ul className="space-y-2">
+            {supporting.map((f) => (
+              <li key={f.id} className="flex items-start gap-2">
+                <span
+                  className={cn(
+                    'mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full',
+                    SEVERITY_DOT[f.severity],
+                  )}
+                />
+                <span className="text-muted-foreground text-xs leading-relaxed">
+                  {resolve(f.title)}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

@@ -75,43 +75,43 @@ export type DimensionSignal = {
 
 const VERDICT_DISPLAY: Record<OverallVerdict, VerdictDisplay> = {
   TRAIN_HARD: {
-    label: 'Train Hard',
+    label: 'Entraîne-toi fort',
     colorClass: 'text-emerald-600 dark:text-emerald-400',
     bgClass: 'from-emerald-500/10 border-emerald-500/30',
     dotClass: 'bg-emerald-500',
   },
   RACE_READY: {
-    label: 'Race Ready',
+    label: 'Prêt à courir',
     colorClass: 'text-emerald-600 dark:text-emerald-400',
     bgClass: 'from-emerald-500/10 border-emerald-500/30',
     dotClass: 'bg-emerald-400',
   },
   TRAIN_SMART: {
-    label: 'Train Smart',
+    label: 'Entraîne-toi finement',
     colorClass: 'text-blue-600 dark:text-blue-400',
     bgClass: 'from-blue-500/10 border-blue-500/30',
     dotClass: 'bg-blue-500',
   },
   TRAIN_EASY: {
-    label: 'Train Easy',
+    label: 'Entraîne-toi légèrement',
     colorClass: 'text-amber-600 dark:text-amber-400',
     bgClass: 'from-amber-500/10 border-amber-500/30',
     dotClass: 'bg-amber-500',
   },
   CAUTION: {
-    label: 'Caution',
+    label: 'Prudence',
     colorClass: 'text-orange-600 dark:text-orange-400',
     bgClass: 'from-orange-500/10 border-orange-500/30',
     dotClass: 'bg-orange-500',
   },
   RECOVER: {
-    label: 'Recover',
+    label: 'Récupère',
     colorClass: 'text-red-600 dark:text-red-400',
     bgClass: 'from-red-500/10 border-red-500/30',
     dotClass: 'bg-red-500',
   },
   INSUFFICIENT_DATA: {
-    label: 'Insufficient Data',
+    label: 'Données insuffisantes',
     colorClass: 'text-muted-foreground',
     bgClass: 'from-muted/30 border-border',
     dotClass: 'bg-muted-foreground',
@@ -148,7 +148,7 @@ export function mapRecoveryToSignal(category: ReadinessCategory): DimensionSigna
       };
     case 'ADEQUATE':
       return {
-        label: 'Adequate',
+        label: 'Correct',
         arrow: '→',
         arrowDirection: 'neutral',
         qualityClass: 'text-blue-600 dark:text-blue-400',
@@ -156,7 +156,7 @@ export function mapRecoveryToSignal(category: ReadinessCategory): DimensionSigna
       };
     case 'REDUCED':
       return {
-        label: 'Restoring',
+        label: 'En récupération',
         arrow: '↗',
         arrowDirection: 'up',
         qualityClass: 'text-amber-600 dark:text-amber-400',
@@ -164,7 +164,7 @@ export function mapRecoveryToSignal(category: ReadinessCategory): DimensionSigna
       };
     case 'LOW':
       return {
-        label: 'Reduced',
+        label: 'Réduit',
         arrow: '↘',
         arrowDirection: 'down',
         qualityClass: 'text-orange-600 dark:text-orange-400',
@@ -172,7 +172,7 @@ export function mapRecoveryToSignal(category: ReadinessCategory): DimensionSigna
       };
     case 'VERY_LOW':
       return {
-        label: 'Depleted',
+        label: 'Épuisé',
         arrow: '↘',
         arrowDirection: 'down',
         qualityClass: 'text-red-600 dark:text-red-400',
@@ -180,7 +180,7 @@ export function mapRecoveryToSignal(category: ReadinessCategory): DimensionSigna
       };
     case 'BASELINE_PENDING':
       return {
-        label: 'Building model',
+        label: 'Modèle en cours',
         arrow: '…',
         arrowDirection: 'neutral',
         qualityClass: 'text-muted-foreground',
@@ -188,7 +188,7 @@ export function mapRecoveryToSignal(category: ReadinessCategory): DimensionSigna
       };
     case 'INSUFFICIENT_DATA':
       return {
-        label: 'No data',
+        label: 'Aucune donnée',
         arrow: '—',
         arrowDirection: 'neutral',
         qualityClass: 'text-muted-foreground',
@@ -226,7 +226,7 @@ export function mapFatigueToSignal(
   switch (level) {
     case 'FRESH':
       return {
-        label: 'Fresh',
+        label: 'Frais',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
         qualityClass: 'text-emerald-600 dark:text-emerald-400',
@@ -234,7 +234,7 @@ export function mapFatigueToSignal(
       };
     case 'FUNCTIONAL_LOW':
       return {
-        label: 'Functional',
+        label: 'Fonctionnelle',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
         qualityClass: 'text-blue-600 dark:text-blue-400',
@@ -242,7 +242,7 @@ export function mapFatigueToSignal(
       };
     case 'FUNCTIONAL_HIGH':
       return {
-        label: 'Functional',
+        label: 'Fonctionnelle',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
         qualityClass: 'text-amber-600 dark:text-amber-400',
@@ -250,7 +250,7 @@ export function mapFatigueToSignal(
       };
     case 'ACCUMULATED':
       return {
-        label: 'Building',
+        label: 'Accumulée',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
         qualityClass: 'text-orange-600 dark:text-orange-400',
@@ -258,7 +258,7 @@ export function mapFatigueToSignal(
       };
     case 'NON_FUNCTIONAL_RISK':
       return {
-        label: 'Accumulated',
+        label: 'Importante',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
         qualityClass: 'text-red-600 dark:text-red-400',
@@ -266,7 +266,7 @@ export function mapFatigueToSignal(
       };
     case 'OVERREACHING_RISK':
       return {
-        label: 'Critical',
+        label: 'Critique',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
         qualityClass: 'text-red-700 dark:text-red-300',
@@ -274,7 +274,7 @@ export function mapFatigueToSignal(
       };
     case 'INSUFFICIENT_DATA':
       return {
-        label: 'No data',
+        label: 'Aucune donnée',
         arrow: '—',
         arrowDirection: 'neutral',
         qualityClass: 'text-muted-foreground',
@@ -303,7 +303,7 @@ export function mapAdaptationToSignal(
   switch (status) {
     case 'POSITIVELY_ADAPTING':
       return {
-        label: 'Growing',
+        label: 'Progression',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
         qualityClass: 'text-emerald-600 dark:text-emerald-400',
@@ -311,7 +311,7 @@ export function mapAdaptationToSignal(
       };
     case 'MAINTAINING':
       return {
-        label: 'Maintaining',
+        label: 'Maintien',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
         qualityClass: 'text-blue-600 dark:text-blue-400',
@@ -319,7 +319,7 @@ export function mapAdaptationToSignal(
       };
     case 'PLATEAUING':
       return {
-        label: 'Plateauing',
+        label: 'Plateau',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
         qualityClass: 'text-amber-600 dark:text-amber-400',
@@ -327,7 +327,7 @@ export function mapAdaptationToSignal(
       };
     case 'MALADAPTING':
       return {
-        label: 'Maladapting',
+        label: 'Inadaptation',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
         qualityClass: 'text-orange-600 dark:text-orange-400',
@@ -335,7 +335,7 @@ export function mapAdaptationToSignal(
       };
     case 'DETRAINING':
       return {
-        label: 'Detraining',
+        label: 'Désentraînement',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
         qualityClass: 'text-red-600 dark:text-red-400',
@@ -343,7 +343,7 @@ export function mapAdaptationToSignal(
       };
     case 'INSUFFICIENT_DATA':
       return {
-        label: 'No data',
+        label: 'Aucune donnée',
         arrow: '—',
         arrowDirection: 'neutral',
         qualityClass: 'text-muted-foreground',
@@ -351,12 +351,6 @@ export function mapAdaptationToSignal(
       };
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Primary insight extraction
-// Spec: "one-sentence summary generated from primaryInsight"
-// The API surfaces this via topAction.rationale or first keyFinding title.
-// ─────────────────────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Decision verdict types (mirroring API shapes, duplicated here to keep
@@ -388,11 +382,11 @@ export type AdaptationDecisionVerdict =
   | 'INSUFFICIENT_DATA';
 
 const ADAPTATION_OBJECTIVE: Record<AdaptationDecisionVerdict, string | null> = {
-  INCREASE_LOAD: 'Build fitness',
-  SUSTAIN: 'Maintain gains',
-  CONSOLIDATE: 'Reinforce adaptations',
-  REDUCE_LOAD: 'Absorb training stress',
-  RECOVERY_PRIORITY: 'Active recovery',
+  INCREASE_LOAD: 'Développer ta condition',
+  SUSTAIN: 'Maintenir les acquis',
+  CONSOLIDATE: 'Consolider les adaptations',
+  REDUCE_LOAD: "Absorber le stress d'entraînement",
+  RECOVERY_PRIORITY: 'Récupération active',
   INSUFFICIENT_DATA: null,
 };
 
@@ -430,13 +424,13 @@ export function mapDeviationRisk(
   if (worst >= 3 || (worst >= 2 && accumulating)) {
     return {
       level: 'warning',
-      message: 'Going harder risks overreaching — fatigue is already accumulating.',
+      message: "Forcer davantage risque le surmenage — la fatigue s'accumule déjà.",
     };
   }
   if (worst >= 2 || (worst >= 1 && accumulating)) {
     return {
       level: 'caution',
-      message: 'Pushing beyond the prescription could delay recovery.',
+      message: 'Dépasser la prescription pourrait retarder ta récupération.',
     };
   }
   return { level: 'safe', message: '' };
@@ -456,45 +450,25 @@ export function mapConsistencyToDisplay(
   switch (consistency) {
     case 'ALIGNED':
       return {
-        label: `Systems aligned (${score}/100)`,
+        label: `Systèmes alignés (${score}/100)`,
         colorClass: 'text-emerald-600 dark:text-emerald-400',
       };
     case 'PARTIALLY_ALIGNED':
       return {
-        label: `Partially aligned (${score}/100)`,
+        label: `Partiellement alignés (${score}/100)`,
         colorClass: 'text-amber-600 dark:text-amber-400',
       };
     case 'CONFLICTING':
       return {
-        label: `Systems conflicting (${score}/100)`,
+        label: `Systèmes en conflit (${score}/100)`,
         colorClass: 'text-orange-600 dark:text-orange-400',
       };
     case 'INSUFFICIENT_DATA':
       return {
-        label: 'Not enough data to assess',
+        label: 'Données insuffisantes pour évaluer',
         colorClass: 'text-muted-foreground',
       };
   }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Primary insight extraction
-// Spec: "one-sentence summary generated from primaryInsight"
-// The API surfaces this via topAction.rationale or first keyFinding title.
-// ─────────────────────────────────────────────────────────────────────────────
-
-export function extractPrimaryInsight(
-  topActionRationale: string | null | undefined,
-  firstFindingTitle: string | null | undefined,
-  explanation: string | null | undefined,
-): string | null {
-  if (topActionRationale) return topActionRationale;
-  if (firstFindingTitle) return firstFindingTitle;
-  if (explanation) {
-    const [firstSentence] = explanation.split(/[.!?]/);
-    return firstSentence ? firstSentence.trim() : null;
-  }
-  return null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -506,17 +480,19 @@ export function mapRecoveryProjection(
   overreachingRisk: OverreachingRisk,
 ): string {
   if (verdict === 'OVERREACHED')
-    return 'Physiological recovery requires 2–3 days — rest is the fastest path forward.';
-  if (verdict === 'FATIGUED') return 'Active recovery today accelerates readiness for tomorrow.';
+    return 'La récupération physiologique nécessite 2 à 3 jours — le repos est la voie la plus rapide.';
+  if (verdict === 'FATIGUED')
+    return "Une récupération active aujourd'hui accélère la forme pour demain.";
   if (verdict === 'PARTIALLY_RECOVERED') {
     if (overreachingRisk === 'HIGH' || overreachingRisk === 'CRITICAL') {
-      return 'Recovery will improve if load is kept in check today.';
+      return "La récupération s'améliorera si la charge est maîtrisée aujourd'hui.";
     }
-    return 'Readiness will recover fully within 24–48 hours.';
+    return 'La forme se rétablira complètement dans 24 à 48 heures.';
   }
   if (verdict === 'RECOVERED') {
-    if (overreachingRisk === 'LOW') return 'Full recovery expected to hold through tomorrow.';
-    return 'Recovery is sufficient — manage session intensity to stay there.';
+    if (overreachingRisk === 'LOW')
+      return "La bonne récupération devrait se maintenir jusqu'à demain.";
+    return "La récupération est suffisante — gérez l'intensité de la séance pour la préserver.";
   }
   return '';
 }
@@ -527,19 +503,20 @@ export function mapFatigueProjection(
   capacity: TrainingCapacity,
 ): string {
   if (verdict === 'REST_WEEK' || verdict === 'TAPER') {
-    return 'Rest allows accumulated fatigue to fully clear.';
+    return 'Le repos permet à la fatigue accumulée de se dissiper complètement.';
   }
   if (verdict === 'REDUCE') {
     if (trajectory === 'ACCELERATING')
-      return 'Load reduction now prevents non-functional overreaching.';
-    return 'Backing off today stops fatigue from compounding.';
+      return 'Réduire la charge maintenant prévient le surmenage non fonctionnel.';
+    return "Lever le pied aujourd'hui évite que la fatigue ne s'aggrave.";
   }
-  if (verdict === 'MAINTAIN') return 'Fatigue will remain in the functional range.';
+  if (verdict === 'MAINTAIN') return 'La fatigue restera dans la plage fonctionnelle.';
   if (verdict === 'BUILD') {
     if (trajectory === 'RESOLVING')
-      return 'Fatigue is resolving — a well-dosed session now maximises adaptation.';
-    if (capacity === 'FULL') return 'Fatigue is manageable — full training capacity available.';
-    return 'Manageable fatigue — training capacity within normal range.';
+      return "La fatigue se dissipe — une séance bien dosée maintenant maximise l'adaptation.";
+    if (capacity === 'FULL')
+      return "La fatigue est gérable — pleine capacité d'entraînement disponible.";
+    return "Fatigue gérable — capacité d'entraînement dans la plage normale.";
   }
   return '';
 }
@@ -549,15 +526,16 @@ export function mapAdaptationProjection(
   loadMultiplier: number,
 ): string {
   if (verdict === 'RECOVERY_PRIORITY')
-    return 'Recovery investment protects your long-term fitness base.';
-  if (verdict === 'REDUCE_LOAD') return 'Reducing load now allows recent adaptations to take root.';
+    return "L'investissement en récupération protège ta base de forme à long terme.";
+  if (verdict === 'REDUCE_LOAD')
+    return "Réduire la charge maintenant laisse les adaptations récentes s'ancrer.";
   if (verdict === 'CONSOLIDATE')
-    return 'Consistent load consolidates the adaptations from recent weeks.';
-  if (verdict === 'SUSTAIN') return 'Current training load sustains your fitness gains.';
+    return 'Une charge régulière consolide les adaptations des dernières semaines.';
+  if (verdict === 'SUSTAIN') return 'La charge actuelle maintient tes gains de forme.';
   if (verdict === 'INCREASE_LOAD') {
     if (loadMultiplier > 1.1)
-      return 'A quality training stimulus today drives measurable fitness gains in 10–14 days.';
-    return 'Progressive overload will compound into fitness gains over the coming weeks.';
+      return "Un stimulus de qualité aujourd'hui entraîne des gains mesurables dans 10 à 14 jours.";
+    return 'Une surcharge progressive se cumulera en gains de forme dans les semaines à venir.';
   }
   return '';
 }
@@ -567,11 +545,11 @@ export function mapAdaptationProjection(
 // ─────────────────────────────────────────────────────────────────────────────
 
 const INTENSITY_LABEL: Record<RecommendedIntensity, string> = {
-  REST: 'Full rest',
-  VERY_EASY: 'Very easy movement',
-  EASY: 'Easy effort',
-  MODERATE: 'Moderate effort',
-  HARD: 'High intensity',
+  REST: 'Repos complet',
+  VERY_EASY: 'Mouvement très léger',
+  EASY: 'Effort facile',
+  MODERATE: 'Effort modéré',
+  HARD: 'Haute intensité',
 };
 
 export function mapRecoveryIntensityLabel(intensity: RecommendedIntensity): string {
@@ -579,10 +557,10 @@ export function mapRecoveryIntensityLabel(intensity: RecommendedIntensity): stri
 }
 
 const CAPACITY_LABEL: Record<TrainingCapacity, string> = {
-  FULL: 'Full training capacity',
-  REDUCED: 'Reduced capacity',
-  LIGHT_ONLY: 'Light activity only',
-  REST_ONLY: 'Rest only',
+  FULL: 'Capacité totale',
+  REDUCED: 'Capacité réduite',
+  LIGHT_ONLY: 'Activité légère uniquement',
+  REST_ONLY: 'Repos uniquement',
 };
 
 export function mapFatigueCapacityLabel(capacity: TrainingCapacity): string {

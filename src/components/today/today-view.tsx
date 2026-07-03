@@ -15,7 +15,7 @@ import { SupportingEvidenceBlock } from './supporting-evidence-block';
 
 function TodaySkeleton() {
   return (
-    <div aria-label="Loading today's assessment" className="animate-pulse space-y-4" aria-busy>
+    <div aria-label="Chargement de ton bilan" className="animate-pulse space-y-4" aria-busy>
       <div className="bg-card/40 space-y-3 rounded-2xl border px-6 py-7">
         <div className="flex items-center gap-3">
           <div className="bg-muted h-2.5 w-2.5 rounded-full" />
@@ -53,7 +53,7 @@ function TodayError({ message, onRetry }: { message: string; onRetry: () => void
         type="button"
         onClick={onRetry}
       >
-        Try again
+        Réessayer
       </button>
     </div>
   );
@@ -66,16 +66,16 @@ function TodayError({ message, onRetry }: { message: string; onRetry: () => void
 function InsufficientDataState({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="bg-card/30 space-y-3 rounded-2xl border border-dashed px-6 py-10 text-center">
-      <p className="font-medium">Building your model</p>
+      <p className="font-medium">Construction de ton profil</p>
       <p className="text-muted-foreground text-sm">
-        Log at least 7 days of training to unlock your Daily Brief.
+        Connecte au moins 7 jours de séances pour débloquer ton Bilan Quotidien.
       </p>
       <button
         className="hover:bg-accent rounded-lg border px-4 py-2 text-sm font-medium transition-colors"
         type="button"
         onClick={onRetry}
       >
-        Refresh assessment
+        Actualiser
       </button>
     </div>
   );
@@ -111,8 +111,8 @@ export function TodayView() {
     primaryRecommendation = fatigue?.recommendation ?? null;
   }
 
-  const overreachingRisk = recovery?.overreachingRisk ?? 'LOW';
-  const functionalOverreachingRisk = fatigue?.functionalOverreachingRisk ?? 'LOW';
+  const overreachingRisk = recovery?.signals?.overreachingRisk ?? 'LOW';
+  const functionalOverreachingRisk = fatigue?.signals?.functionalOverreachingRisk ?? 'LOW';
   const fatigueTrajectory = fatigue?.trajectory ?? 'STABLE';
 
   return (
@@ -126,7 +126,7 @@ export function TodayView() {
       />
 
       {/* 2 — Reasoning: why? */}
-      <ReasoningBlock explanation={reasoning.explanation} keyFindings={reasoning.keyFindings} />
+      <ReasoningBlock keyFindings={reasoning.keyFindings} />
 
       {/* 3 — Recommendation: what session? */}
       {(adaptation?.decision || primaryRecommendation) && (
@@ -167,7 +167,7 @@ export function TodayView() {
 
       <p className="text-muted-foreground pt-1 text-center text-xs">
         <button className="underline-offset-2 hover:underline" type="button" onClick={refresh}>
-          Refresh assessment
+          Actualiser l'évaluation
         </button>
       </p>
     </div>

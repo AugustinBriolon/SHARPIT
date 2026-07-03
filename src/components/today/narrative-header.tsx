@@ -7,6 +7,7 @@ import {
   type OverallVerdict,
   type ConfidenceTier,
 } from '@/lib/today-mapping';
+import { resolveCode } from '@/lib/french';
 import type { TopAction } from '@/hooks/use-today';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -14,9 +15,9 @@ import type { TopAction } from '@/hooks/use-today';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const CONFIDENCE_BARS: Record<ConfidenceTier, { filled: number; label: string }> = {
-  high: { filled: 3, label: 'High confidence' },
-  medium: { filled: 2, label: 'Medium confidence' },
-  low: { filled: 1, label: 'Limited data' },
+  high: { filled: 3, label: 'Confiance élevée' },
+  medium: { filled: 2, label: 'Confiance moyenne' },
+  low: { filled: 1, label: 'Données limitées' },
 };
 
 function ConfidenceBar({ tier }: { tier: ConfidenceTier }) {
@@ -54,10 +55,10 @@ interface NarrativeHeaderProps {
 }
 
 function getFreshnessLabel(hoursAgo: number): string {
-  if (hoursAgo < 1) return 'Updated just now';
-  if (hoursAgo === 1) return 'Updated 1 hour ago';
-  if (hoursAgo <= 24) return `Updated ${hoursAgo} hours ago`;
-  return "Based on yesterday's data";
+  if (hoursAgo < 1) return "Mis à jour à l'instant";
+  if (hoursAgo === 1) return 'Mis à jour il y a 1 heure';
+  if (hoursAgo <= 24) return `Mis à jour il y a ${hoursAgo} heures`;
+  return "Basé sur les données d'hier";
 }
 
 export function NarrativeHeader({
@@ -95,8 +96,8 @@ export function NarrativeHeader({
 
       {/* Hero action — the answer to Q1 */}
       <p className="font-heading text-[1.65rem] leading-tight font-bold tracking-tight">
-        <span className="text-foreground/50 font-normal">{topAction.verb} </span>
-        {topAction.focus}
+        <span className="text-foreground/50 font-normal">{resolveCode(topAction.verbCode)} </span>
+        {resolveCode(topAction.focusCode)}
       </p>
 
       {/* Freshness */}

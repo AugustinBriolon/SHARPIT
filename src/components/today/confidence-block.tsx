@@ -13,9 +13,9 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const CONFIDENCE_BARS: Record<ConfidenceTier, { filled: number; label: string }> = {
-  high: { filled: 3, label: 'High confidence' },
-  medium: { filled: 2, label: 'Medium confidence' },
-  low: { filled: 1, label: 'Limited data' },
+  high: { filled: 3, label: 'Confiance élevée' },
+  medium: { filled: 2, label: 'Confiance moyenne' },
+  low: { filled: 1, label: 'Données limitées' },
 };
 
 function ConfidenceBar({ tier, colorClass }: { tier: ConfidenceTier; colorClass: string }) {
@@ -65,7 +65,7 @@ export function ConfidenceBlock({
   return (
     <div className="bg-card/40 space-y-3 rounded-2xl border px-5 py-5">
       <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-        SHARPIT&apos;s confidence
+        Confiance de SHARPIT
       </p>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -76,7 +76,7 @@ export function ConfidenceBlock({
       </div>
 
       <div className="text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
-        <span>{availableModelCount}/3 physiological signals</span>
+        <span>{availableModelCount}/3 signaux physiologiques</span>
         {dataCompleteness && <span>{dataCompleteness}</span>}
       </div>
     </div>
