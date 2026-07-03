@@ -1,11 +1,11 @@
 'use client';
 
 import { useToday } from '@/hooks/use-today';
+import { ScoreCardRow } from './score-card-row';
 import { NarrativeHeader } from './narrative-header';
 import { ReasoningBlock } from './reasoning-block';
 import { SessionBlock } from './session-block';
-import { ExpectedOutcomeBlock } from './expected-outcome-block';
-import { BottleneckBlock } from './bottleneck-block';
+import { HealthMonitorBlock } from './health-monitor-block';
 import { ConfidenceBlock } from './confidence-block';
 import { SupportingEvidenceBlock } from './supporting-evidence-block';
 
@@ -111,13 +111,20 @@ export function TodayView() {
     primaryRecommendation = fatigue?.recommendation ?? null;
   }
 
-  const overreachingRisk = recovery?.signals?.overreachingRisk ?? 'LOW';
-  const functionalOverreachingRisk = fatigue?.signals?.functionalOverreachingRisk ?? 'LOW';
-  const fatigueTrajectory = fatigue?.trajectory ?? 'STABLE';
-
   return (
     <div className="space-y-3">
-      {/* 1 — Decision: what should I do today? */}
+      {/* 1 — Score cards: instant physiological state */}
+      <ScoreCardRow
+        effortScore={fatigue?.fatigueIndex ?? null}
+        fatigueLevel={fatigue?.fatigueLevel ?? 'INSUFFICIENT_DATA'}
+        fatigueTrajectory={fatigue?.trajectory ?? 'STABLE'}
+        recoveryCategory={recovery?.readinessCategory ?? 'INSUFFICIENT_DATA'}
+        recoveryScore={recovery?.readinessScore ?? null}
+        sleepAdequacy={recovery?.signals?.sleepAdequacy ?? ''}
+        sleepScore={recovery?.dimensions?.sleep?.score ?? null}
+      />
+
+      {/* 2 — Decision: what should I do today? */}
       <NarrativeHeader
         computedAt={reasoning.computedAt}
         confidence={reasoning.confidence}
@@ -125,10 +132,10 @@ export function TodayView() {
         verdict={reasoning.overallVerdict}
       />
 
-      {/* 2 — Reasoning: why? */}
+      {/* 3 — Reasoning: why? */}
       <ReasoningBlock keyFindings={reasoning.keyFindings} />
 
-      {/* 3 — Recommendation: what session? */}
+      {/* 4 — Recommendation: what session? */}
       {(adaptation?.decision || primaryRecommendation) && (
         <SessionBlock
           adaptationVerdict={adaptation?.decision?.verdict ?? null}
@@ -137,21 +144,15 @@ export function TodayView() {
         />
       )}
 
-      {/* 4 — Expected outcome: what will happen if I follow the plan? */}
-      <ExpectedOutcomeBlock
-        adaptationVerdict={adaptation?.decision?.verdict ?? null}
-        fatigueTrajectory={fatigueTrajectory}
-        fatigueVerdict={fatigue?.decision?.verdict ?? null}
-        functionalOverreachingRisk={functionalOverreachingRisk}
-        loadMultiplier={adaptation?.decision?.loadMultiplier ?? 1}
-        opportunities={reasoning.opportunities}
-        overreachingRisk={overreachingRisk}
-        recoveryVerdict={recovery?.decision?.verdict ?? null}
-        trainingCapacity={fatigue?.trainingCapacity ?? 'FULL'}
-      />
-
-      {/* 5 — Primary limiter: what's holding me back? */}
-      <BottleneckBlock limitingFactor={reasoning.limitingFactor} />
+      {/* 5 — Health monitor: key physiological signals */}
+      {(recovery || fatigue || adaptation) && (
+        <HealthMonitorBlock
+          adaptation={adaptation}
+          fatigue={fatigue}
+          limitingFactor={reasoning.limitingFactor}
+          recovery={recovery}
+        />
+      )}
 
       {/* 6 — Confidence: how sure is SHARPIT? */}
       <ConfidenceBlock
