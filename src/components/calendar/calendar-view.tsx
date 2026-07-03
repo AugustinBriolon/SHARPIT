@@ -10,10 +10,11 @@ import {
   subMonths,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CalendarCog, Check, ChevronLeft, ChevronRight, Layers, Plus } from 'lucide-react';
+import { CalendarCog, Check, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { Fragment, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { BrickChipHeader, BrickDialog } from '@/components/planning/brick-dialog';
 import { PlannedSessionDialog } from '@/components/planning/planned-session-dialog';
 import { PageHeader } from '@/components/layout/sticky-header';
 import { useMounted } from '@/hooks/use-mounted';
@@ -57,7 +58,10 @@ function getDayCellDateClassName(isToday: boolean, inMonth: boolean): string {
 }
 
 type DialogState =
-  { mode: 'create'; date: Date } | { mode: 'edit'; session: ClientPlannedSession } | null;
+  | { mode: 'create'; date: Date }
+  | { mode: 'edit'; session: ClientPlannedSession }
+  | { mode: 'brick'; sessions: ClientPlannedSession[] }
+  | null;
 
 export function CalendarView({ embedded = false }: { embedded?: boolean }) {
   const mounted = useMounted();
@@ -277,6 +281,7 @@ export function CalendarView({ embedded = false }: { embedded?: boolean }) {
                         key={item.id}
                         sessions={item.sessions}
                         onEdit={(session) => setDialog({ mode: 'edit', session })}
+                        onOpen={() => setDialog({ mode: 'brick', sessions: item.sessions })}
                       />
                     ),
                   )}
@@ -287,7 +292,15 @@ export function CalendarView({ embedded = false }: { embedded?: boolean }) {
         </div>
       </div>
 
-      {dialog && (
+      {dialog?.mode === 'brick' && (
+        <BrickDialog
+          sessions={dialog.sessions}
+          onClose={() => setDialog(null)}
+          onEditLeg={(session) => setDialog({ mode: 'edit', session })}
+        />
+      )}
+
+      {dialog && dialog.mode !== 'brick' && (
         <PlannedSessionDialog
           defaultDate={dialog.mode === 'create' ? dialog.date : undefined}
           goals={goalsQuery.data ?? []}
@@ -455,9 +468,11 @@ function ActivityChip({ activity }: { activity: ClientActivity }) {
 function BrickChip({
   sessions,
   onEdit,
+  onOpen,
 }: {
   sessions: ClientPlannedSession[];
   onEdit: (session: ClientPlannedSession) => void;
+  onOpen: () => void;
 }) {
   const totalMin = sessions.reduce((sum, p) => sum + (p.durationMin ?? 0), 0);
   const allDone = sessions.every((p) => p.completed && Boolean(p.activityId));
@@ -468,19 +483,12 @@ function BrickChip({
         'bg-primary/5 rounded-md border p-1',
         allDone ? 'border-primary/50' : 'border-primary/30',
       )}
-      onClick={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpen();
+      }}
     >
-      <div className="mb-0.5 flex items-center gap-1 px-0.5">
-        <Layers className="text-primary size-2.5" />
-        <span className="text-primary text-[9px] font-semibold tracking-wider uppercase">
-          Brick
-        </span>
-        {totalMin > 0 && (
-          <span className="text-muted-foreground ml-auto shrink-0 text-[9px] tabular-nums">
-            {totalMin} min
-          </span>
-        )}
-      </div>
+      <BrickChipHeader allDone={allDone} totalMin={totalMin} onOpen={onOpen} />
       <div className="flex flex-wrap items-center gap-x-0.5 gap-y-1">
         {sessions.map((p, i) => (
           <Fragment key={p.id}>

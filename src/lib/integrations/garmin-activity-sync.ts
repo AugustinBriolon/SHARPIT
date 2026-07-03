@@ -1,6 +1,6 @@
 import { ActivityType, Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { subDays } from 'date-fns';
+import { syncSinceFromLastSync } from '@/lib/integrations/sync-since';
 import { findMatchingActivity } from '@/lib/activity-dedup';
 import {
   buildGarminActivityData,
@@ -88,8 +88,10 @@ export interface GarminActivitySyncResult {
 }
 
 export async function syncGarminActivities(options?: {
-  /** Fenêtre en jours. Ignoré si `full` est vrai. */
+  /** Fenêtre en jours (fallback si jamais sync). Ignoré si `full` ou `since`. */
   sinceDays?: number;
+  /** Borne basse explicite (prioritaire sur sinceDays). */
+  since?: Date;
   /** Récupère tout l'historique (aucune limite de date). */
   full?: boolean;
 }): Promise<GarminActivitySyncResult> {
@@ -103,8 +105,10 @@ export async function syncGarminActivities(options?: {
   const client = clientFromTokens(tokens);
 
   const full = options?.full ?? false;
-  // En mode complet, pas de borne de date. Sinon fenêtre glissante (60j défaut).
-  const cutoff = full ? null : subDays(new Date(), options?.sinceDays ?? 60);
+  const lastActivitySync = account.lastActivitySyncAt ?? account.lastSyncAt;
+  const cutoff = full
+    ? null
+    : (options?.since ?? syncSinceFromLastSync(lastActivitySync, options?.sinceDays ?? 60));
   const maxPages = full ? MAX_PAGES_FULL : MAX_PAGES;
 
   const result: GarminActivitySyncResult = {

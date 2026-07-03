@@ -56,4 +56,23 @@ describe('dedupeBodyCompositionByDay', () => {
     const result = dedupeBodyCompositionByDay([row(BodyCompositionSource.RENPHO, '2026-06-01', 8)]);
     expect(result[0]?.source).toBe(BodyCompositionSource.RENPHO);
   });
+
+  it('merges split Withings measure groups on the same day', () => {
+    const composition = row(BodyCompositionSource.WITHINGS, '2026-07-03', 9);
+    const cardio = {
+      ...row(BodyCompositionSource.WITHINGS, '2026-07-03', 9),
+      id: 'withings-cardio',
+      externalId: 'grp-cardio',
+      weightKg: null,
+      bodyFatPct: null,
+      vascularAgeYears: 42,
+      nerveHealthScore: 88,
+      measuredAt: new Date('2026-07-03T09:01:00'),
+    };
+    const result = dedupeBodyCompositionByDay([composition, cardio]);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.weightKg).toBe(75);
+    expect(result[0]?.vascularAgeYears).toBe(42);
+    expect(result[0]?.nerveHealthScore).toBe(88);
+  });
 });

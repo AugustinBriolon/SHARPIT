@@ -68,21 +68,21 @@ function main(): void {
   if (flags.has('--json')) {
     const output =
       reports.length === 1 ? serializeReport(reports[0]!) : reports.map(serializeReport);
-    console.log(JSON.stringify(output, null, 2));
+    console.info(JSON.stringify(output, null, 2));
   } else if (flags.has('--compact')) {
     for (const report of reports) {
-      console.log(formatCompactSummary(report));
+      console.info(formatCompactSummary(report));
     }
   } else {
     for (const report of reports) {
-      console.log(formatBenchmarkReport(report));
+      console.info(formatBenchmarkReport(report));
     }
 
     // If multiple models, show comparison
     if (reports.length === 2) {
-      console.log('\n');
+      console.info('\n');
       const comparison = compareModels(reports[0]!, reports[1]!);
-      console.log(formatModelComparison(comparison));
+      console.info(formatModelComparison(comparison));
     }
   }
 

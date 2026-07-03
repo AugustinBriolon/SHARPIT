@@ -386,7 +386,7 @@ function GarminContent({
       </div>
       <ModalActions>
         <Button disabled={syncing || importingAll} onClick={() => handleSync(false)}>
-          {syncing ? 'Sync…' : 'Sync 60 jours'}
+          {syncing ? 'Sync…' : 'Synchroniser'}
         </Button>
         <Button
           disabled={syncing || importingAll}
@@ -506,7 +506,7 @@ function WithingsContent({
       </div>
       <ModalActions>
         <Button disabled={syncing || importingAll} onClick={() => handleSync(false)}>
-          {syncing ? 'Sync…' : 'Sync 90 jours'}
+          {syncing ? 'Sync…' : 'Synchroniser'}
         </Button>
         <Button
           disabled={syncing || importingAll}
@@ -635,7 +635,7 @@ function RenphoContent({
       </div>
       <ModalActions>
         <Button disabled={syncing || importingAll} onClick={() => handleSync(false)}>
-          {syncing ? 'Sync…' : 'Sync 90 jours'}
+          {syncing ? 'Sync…' : 'Synchroniser'}
         </Button>
         <Button
           disabled={syncing || importingAll}

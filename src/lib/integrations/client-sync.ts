@@ -68,7 +68,7 @@ export async function runGarminSync(options?: { full?: boolean }): Promise<Garmi
   const response = await fetch('/api/garmin/sync', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(options?.full ? { full: true } : { days: 60 }),
+    body: JSON.stringify(options?.full ? { full: true } : {}),
   });
   return parseJson(response, 'Synchronisation Garmin échouée');
 }
@@ -77,7 +77,7 @@ export async function runRenphoSync(options?: { full?: boolean }): Promise<Renph
   const response = await fetch('/api/renpho/sync', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(options?.full ? { full: true } : { days: 90 }),
+    body: JSON.stringify(options?.full ? { full: true } : {}),
   });
   return parseJson(response, 'Synchronisation Renpho échouée');
 }
@@ -86,7 +86,7 @@ export async function runWithingsSync(options?: { full?: boolean }): Promise<Wit
   const response = await fetch('/api/withings/sync', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(options?.full ? { full: true } : { days: 90 }),
+    body: JSON.stringify(options?.full ? { full: true } : {}),
   });
   return parseJson(response, 'Synchronisation Withings échouée');
 }

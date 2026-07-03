@@ -82,7 +82,12 @@ export function extractConditionFeatures(
 
   // Confidence: physical conditions are MANUAL observations
   // Low active severity → higher confidence (less ambiguity)
-  const confidence = activeConditionCount === 0 ? 0.95 : maxActiveSeverity >= 7 ? 0.75 : 0.85;
+  let confidence = 0.85;
+  if (activeConditionCount === 0) {
+    confidence = 0.95;
+  } else if (maxActiveSeverity >= 7) {
+    confidence = 0.75;
+  }
 
   return {
     trainingDayId,

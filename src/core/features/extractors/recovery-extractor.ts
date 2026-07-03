@@ -213,7 +213,7 @@ function computeConfidence(
   sleep: SleepObservation | null,
   subjective: SubjectiveObservation | null,
   hrv14dCount: number,
-  rhr14dCount: number,
+  _rhr14dCount: number,
 ): number {
   const confidences: number[] = [];
 

@@ -58,6 +58,12 @@ function statusIcon(passed: boolean): string {
   return passed ? '✓' : '✗';
 }
 
+function formatVerdictSymbol(verdict: ModelComparison['verdict']): string {
+  if (verdict === 'DEPLOY') return '✓';
+  if (verdict === 'REJECT') return '✗';
+  return '⚠';
+}
+
 function scenarioLine(result: ScenarioResult): string {
   const icon = statusIcon(result.passed);
   const idPart = result.scenarioId.slice(0, 3); // 'S01', 'S02' etc.
@@ -172,8 +178,8 @@ export function formatModelComparison(comparison: ModelComparison): string {
   lines.push(divider());
 
   // Verdict
-  const verdictSymbol = verdict === 'DEPLOY' ? '✓' : verdict === 'REJECT' ? '✗' : '⚠';
-  lines.push(header(`  Verdict: ${verdictSymbol} ${verdict}`));
+  const symbol = formatVerdictSymbol(verdict);
+  lines.push(header(`  Verdict: ${symbol} ${verdict}`));
   lines.push(divider());
   lines.push(line(`  ${comparison.summary}`));
 

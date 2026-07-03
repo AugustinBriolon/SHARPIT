@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
-import { startOfDay, subDays } from 'date-fns';
+import { format, startOfDay, subDays } from 'date-fns';
 import { prisma } from '@/lib/prisma';
-import { format } from 'date-fns';
+import { syncSinceFromLastSync, syncWindowDays } from '@/lib/integrations/sync-since';
 import {
   clientFromTokens,
   currentTokens,
@@ -132,7 +132,10 @@ export interface GarminSyncResult {
   emptyDays: number;
 }
 
-export async function syncGarminHealth(days = 30): Promise<GarminSyncResult> {
+export async function syncGarminHealth(options?: {
+  days?: number;
+  full?: boolean;
+}): Promise<GarminSyncResult> {
   const account = await getGarminAccount();
   if (!account) throw new Error('Compte Garmin non connecté');
 
@@ -143,14 +146,16 @@ export async function syncGarminHealth(days = 30): Promise<GarminSyncResult> {
   const client = clientFromTokens(tokens);
 
   const today = startOfDay(new Date());
+  const since = options?.full
+    ? subDays(today, 365)
+    : syncSinceFromLastSync(account.lastSyncAt, options?.days ?? 60);
+  const days = syncWindowDays(since);
   let updated = 0;
   let emptyDays = 0;
 
-  // Une seule requête pour toutes les pesées de la période
-  const weightMap = await fetchWeightRange(client, subDays(today, days), today);
+  const weightMap = await fetchWeightRange(client, since, today);
 
-  for (let i = 0; i < days; i++) {
-    const date = subDays(today, i);
+  for (let date = today; date >= since; date = subDays(date, 1)) {
     const weightKg = weightMap.get(format(date, 'yyyy-MM-dd')) ?? null;
     const health = await fetchDailyHealth(client, date, weightKg);
 

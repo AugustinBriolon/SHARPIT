@@ -167,11 +167,17 @@ export function runAdaptationModel(
 // Internal helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
+function dimensionStatus(d: DimensionScore): string {
+  if (!d.available) return 'unavailable';
+  if (d.score !== null) return `score=${d.score}`;
+  return 'computed';
+}
+
 function toDimensionResult(d: DimensionScore): DimensionResult {
   return {
     score: d.score,
     available: d.available,
-    status: d.available ? (d.score !== null ? `score=${d.score}` : 'computed') : 'unavailable',
+    status: dimensionStatus(d),
   };
 }
 

@@ -24,6 +24,16 @@ import type {
   SessionPaceData,
 } from '@/core/observation/types';
 
+function resolveGarminTrainingStress(activity: IActivity): number | undefined {
+  if (typeof activity.trainingStressScore === 'number' && activity.trainingStressScore > 0) {
+    return activity.trainingStressScore;
+  }
+  if (typeof activity.activityTrainingLoad === 'number' && activity.activityTrainingLoad > 0) {
+    return activity.activityTrainingLoad;
+  }
+  return undefined;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SportType mapping
 // ─────────────────────────────────────────────────────────────────────────────
@@ -121,12 +131,7 @@ export function garminActivityToSession(
       typeof activity.normPower === 'number' && activity.normPower > 0
         ? activity.normPower
         : undefined;
-    const tss =
-      typeof activity.trainingStressScore === 'number' && activity.trainingStressScore > 0
-        ? activity.trainingStressScore
-        : typeof activity.activityTrainingLoad === 'number' && activity.activityTrainingLoad > 0
-          ? activity.activityTrainingLoad
-          : undefined;
+    const tss = resolveGarminTrainingStress(activity);
     powerData = {
       avgWatts: avgPower,
       normalizedPower: normPower,
@@ -161,12 +166,7 @@ export function garminActivityToSession(
   // Source-provided stress (TSS from Garmin, without power data)
   let sourceProvidedStress: RawSessionObservation['sourceProvidedStress'];
   if (!powerData) {
-    const tss =
-      typeof activity.trainingStressScore === 'number' && activity.trainingStressScore > 0
-        ? activity.trainingStressScore
-        : typeof activity.activityTrainingLoad === 'number' && activity.activityTrainingLoad > 0
-          ? activity.activityTrainingLoad
-          : null;
+    const tss = resolveGarminTrainingStress(activity) ?? null;
     if (tss) {
       sourceProvidedStress = {
         value: tss,

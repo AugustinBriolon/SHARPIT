@@ -38,6 +38,14 @@ function syncLabel(lastSyncAt: string | null): string {
   return formatDistanceToNow(new Date(lastSyncAt), { addSuffix: true, locale: fr });
 }
 
+function integrationStatusLabel(integration: IntegrationDefinition): string {
+  if (integration.connected) {
+    return syncLabel(integration.account?.lastSyncAt ?? null);
+  }
+  if (integration.configured) return 'Clique pour connecter';
+  return 'Configuration serveur requise';
+}
+
 function StatusBadge({ integration }: { integration: IntegrationDefinition }) {
   if (!integration.configured) {
     return (
@@ -98,13 +106,7 @@ function IntegrationCard({
           {integration.connected && integration.account?.label && (
             <p className="text-sm font-medium">{integration.account.label}</p>
           )}
-          <p className="text-muted-foreground text-xs">
-            {integration.connected
-              ? syncLabel(integration.account?.lastSyncAt ?? null)
-              : integration.configured
-                ? 'Clique pour connecter'
-                : 'Configuration serveur requise'}
-          </p>
+          <p className="text-muted-foreground text-xs">{integrationStatusLabel(integration)}</p>
         </div>
         <span className="text-primary inline-flex items-center gap-0.5 text-xs font-medium opacity-0 transition-opacity group-hover:opacity-100">
           Gérer

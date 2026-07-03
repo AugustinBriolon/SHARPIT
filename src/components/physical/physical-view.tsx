@@ -18,6 +18,13 @@ import { usePhysicalNotes } from '@/hooks/use-physical';
 
 type DialogState = { mode: 'create' } | { mode: 'edit'; note: ClientPhysicalNote } | null;
 
+function severityTone(avgSeverity: number | null): 'low' | 'moderate' | 'neutral' {
+  if (avgSeverity == null) return 'neutral';
+  if (avgSeverity >= 7) return 'low';
+  if (avgSeverity >= 4) return 'moderate';
+  return 'neutral';
+}
+
 export function PhysicalView({ embedded = false }: { embedded?: boolean }) {
   const notesQuery = usePhysicalNotes();
   const [dialog, setDialog] = useState<DialogState>(null);
@@ -107,14 +114,8 @@ export function PhysicalView({ embedded = false }: { embedded?: boolean }) {
             <CorpsStatCard
               footer={avgSeverity != null ? '/10 sur les notes actives' : undefined}
               label="Sévérité moy."
+              tone={severityTone(avgSeverity)}
               value={avgSeverity != null ? `${avgSeverity}` : '—'}
-              tone={
-                avgSeverity != null && avgSeverity >= 7
-                  ? 'low'
-                  : avgSeverity != null && avgSeverity >= 4
-                    ? 'moderate'
-                    : 'neutral'
-              }
             />
             <CorpsStatCard label="Sous surveillance" value={String(monitoring.length)} />
             <CorpsStatCard label="Résolues" tone="good" value={String(resolved.length)} />

@@ -7,17 +7,15 @@ export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   try {
-    let days = 60;
     let full = false;
     try {
       const body = await request.json();
       if (body?.full) full = true;
-      if (body?.days) days = Math.min(Number(body.days), 365 * 3);
     } catch {
-      // pas de body
+      // pas de body → sync incrémentale depuis dernière sync
     }
 
-    const result = await syncRenphoHealth(full ? { full: true } : { days });
+    const result = await syncRenphoHealth(full ? { full: true } : {});
     return NextResponse.json(result);
   } catch (error) {
     console.error(error);

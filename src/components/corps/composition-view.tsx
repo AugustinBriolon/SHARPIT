@@ -1,27 +1,78 @@
 'use client';
 
 import { AlertTriangle, Scale } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { CompositionMetricCard } from '@/components/corps/composition-metric-card';
+import { CompositionMetricExplainer } from '@/components/corps/composition-metric-explainer';
 import {
   CorpsDisclaimer,
+  CorpsDivider,
   CorpsEmptyState,
   CorpsPanel,
-  CorpsSectionHeader,
+  type CorpsTone,
 } from '@/components/corps/corps-ui';
 import { MetricLineChart } from '@/components/recovery/health-charts';
-import { RecoveryStat } from '@/components/recovery/recovery-panels';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   buildCompositionSeries,
   computeCompositionTrend,
   formatCompositionDelta,
 } from '@/lib/body-composition';
-import { useBodyComposition } from '@/hooks/use-data';
+import {
+  getGuide,
+  type CompositionContext,
+  type CompositionMetricId,
+} from '@/lib/composition-metric-guides';
+import { useBodyComposition, useAthleteProfile } from '@/hooks/use-data';
+import { athleteCompositionContext } from '@/lib/athlete-profile-utils';
+import { parseWithingsEcgStats } from '@/lib/withings-ecg-display';
+import { cn } from '@/lib/utils';
+import type { ClientBodyCompositionEntry } from '@/lib/query/types';
+
+function heightFromEntry(entry: ClientBodyCompositionEntry | null): number | null {
+  if (entry?.withingsExtras == null || typeof entry.withingsExtras !== 'object') return null;
+  const h = (entry.withingsExtras as { heightM?: number }).heightM;
+  return h != null && h > 0 ? h : null;
+}
+
+function sourceLabel(source: ClientBodyCompositionEntry['source']): string {
+  return source === 'WITHINGS' ? 'Withings' : 'Renpho';
+}
+
+function toneFromGuide(id: CompositionMetricId, value: number, ctx: CompositionContext): CorpsTone {
+  return getGuide(id).interpret(value, ctx).tone;
+}
+
+type ExplainState = {
+  id: CompositionMetricId;
+  value: number;
+  displayValue: string;
+};
+
+function CompositionSection({
+  label,
+  description,
+  children,
+}: {
+  label: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-3">
+      <CorpsDivider label={label} />
+      {description && (
+        <p className="text-muted-foreground -mt-1 text-xs leading-relaxed">{description}</p>
+      )}
+      <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
+    </section>
+  );
+}
 
 export function CompositionView({ embedded: _embedded = false }: { embedded?: boolean }) {
   const query = useBodyComposition();
+  const profileQuery = useAthleteProfile();
   const entries = useMemo(() => query.data ?? [], [query.data]);
-
   const latest = useMemo(() => entries[0] ?? null, [entries]);
   const series = useMemo(() => buildCompositionSeries(entries, 90), [entries]);
 
@@ -31,227 +82,394 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
   const visceral = useMemo(() => computeCompositionTrend(entries, 'visceralFat'), [entries]);
   const bmi = useMemo(() => computeCompositionTrend(entries, 'bmi'), [entries]);
 
+  const context = useMemo<CompositionContext>(() => {
+    const profileCtx = athleteCompositionContext(profileQuery.data);
+    return {
+      heightM: profileCtx.heightM ?? heightFromEntry(latest),
+      weightKg: latest?.weightKg ?? null,
+      chronologicalAgeYears: profileCtx.chronoAge,
+    };
+  }, [latest, profileQuery.data]);
+
+  const ecgStats = useMemo(
+    () => parseWithingsEcgStats(latest?.withingsExtras),
+    [latest?.withingsExtras],
+  );
   const bmiDisplay = latest?.bmi ?? bmi.latest;
   const metabolicAgeDisplay = latest?.metabolicAge ?? latest?.bodyAge;
 
-  if (query.isLoading) {
-    return <CompositionSkeleton />;
+  const [explain, setExplain] = useState<ExplainState | null>(null);
+
+  function openExplain(id: CompositionMetricId, value: number, displayValue: string) {
+    setExplain({ id, value, displayValue });
   }
 
-  const empty = entries.length === 0;
+  const hasBodyScan =
+    latest?.vascularAgeYears != null ||
+    latest?.nerveHealthScore != null ||
+    latest?.pulseWaveVelocity != null ||
+    latest?.skinConductance != null ||
+    latest?.vo2Max != null ||
+    ecgStats.length > 0;
 
-  return (
-    <div className="space-y-4">
-      <CorpsDisclaimer icon={AlertTriangle} title="Lecture indicative, pas une mesure médicale">
-        Les balances à impédancemétrie (Withings, Renpho…) estiment la composition à partir du
-        courant électrique : utile pour suivre les <em>tendances</em>, mais plusieurs études
-        montrent un écart notable avec la référence DEXA — surtout sur la masse grasse, la masse
-        maigre et la graisse viscérale. Hydratation, repas récents, heure de pesée et posture
-        influencent aussi le résultat.
-      </CorpsDisclaimer>
+  if (query.isLoading) return <CompositionSkeleton />;
 
-      {empty ? (
+  if (entries.length === 0) {
+    return (
+      <div className="space-y-4">
+        <CorpsDisclaimer icon={AlertTriangle} title="Lecture indicative, pas une mesure médicale">
+          Les balances estiment la composition via impédancemétrie : utile pour les{' '}
+          <em>tendances</em>, pas comme référence médicale.
+        </CorpsDisclaimer>
         <CorpsEmptyState
           description="Connecte Withings ou Renpho dans les réglages pour synchroniser ta balance."
           icon={Scale}
           title="Aucune mesure importée"
         />
-      ) : (
-        <>
-          <CorpsPanel>
-            <CorpsSectionHeader
-              label="Dernière pesée"
-              title={
-                latest
-                  ? new Date(latest.measuredAt).toLocaleString('fr-FR', {
-                      dateStyle: 'medium',
-                      timeStyle: 'short',
-                    })
-                  : '—'
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <CorpsDisclaimer icon={AlertTriangle} title="Lecture indicative, pas une mesure médicale">
+        Impédancemétrie = tendances utiles, écart possible vs DEXA. Hydratation, repas et heure de
+        pesée influencent le résultat du jour.
+      </CorpsDisclaimer>
+
+      {/* Hero — synthèse du jour */}
+      <CorpsPanel className="overflow-hidden p-0">
+        <div className="flex flex-col gap-5 px-5 py-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+              Dernière pesée
+            </p>
+            <p className="font-heading mt-1 text-4xl font-semibold tabular-nums">
+              {weight.latest != null ? `${weight.latest}` : '—'}
+              <span className="text-muted-foreground ml-1 text-lg font-normal">kg</span>
+            </p>
+            <p className="text-muted-foreground mt-1 text-sm">
+              {latest
+                ? new Date(latest.measuredAt).toLocaleString('fr-FR', {
+                    dateStyle: 'medium',
+                    timeStyle: 'short',
+                  })
+                : '—'}
+              {latest && (
+                <span className="bg-muted text-muted-foreground ml-2 inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium uppercase">
+                  {sourceLabel(latest.source)}
+                </span>
+              )}
+            </p>
+            {weight.delta != null && (
+              <p
+                className={cn(
+                  'mt-2 text-xs font-medium',
+                  weight.delta > 0 && 'text-amber-600',
+                  weight.delta < 0 && 'text-emerald-600',
+                )}
+              >
+                {formatCompositionDelta(weight.delta, ' kg')} vs 7 jours
+              </p>
+            )}
+          </div>
+
+          <div className="grid min-w-[min(100%,280px)] grid-cols-3 gap-3 sm:gap-4">
+            <HeroMini
+              delta={formatCompositionDelta(bodyFat.delta, ' pts')}
+              label="Masse grasse"
+              unit="%"
+              value={bodyFat.latest}
+            />
+            <HeroMini
+              delta={formatCompositionDelta(muscle.delta, ' pts')}
+              label="Muscle"
+              unit="%"
+              value={muscle.latest}
+            />
+            <HeroMini
+              delta={formatCompositionDelta(visceral.delta, ' pts')}
+              label="Viscéral"
+              value={visceral.latest}
+            />
+          </div>
+        </div>
+      </CorpsPanel>
+
+      <CompositionSection label="Composition corporelle">
+        {bmiDisplay != null && (
+          <CompositionMetricCard
+            footer="Repère poids / taille²"
+            guideId="bmi"
+            label="IMC"
+            tone={toneFromGuide('bmi', bmiDisplay, context)}
+            value={`${bmiDisplay}`}
+            onExplain={(id) => openExplain(id, bmiDisplay, `${bmiDisplay}`)}
+          />
+        )}
+        {bodyFat.latest != null && (
+          <CompositionMetricCard
+            footer={formatCompositionDelta(bodyFat.delta, ' pts vs 7j')}
+            guideId="bodyFatPct"
+            label="Masse grasse"
+            tone={toneFromGuide('bodyFatPct', bodyFat.latest, context)}
+            value={`${bodyFat.latest} %`}
+            onExplain={(id) => openExplain(id, bodyFat.latest!, `${bodyFat.latest} %`)}
+          />
+        )}
+        {muscle.latest != null && (
+          <CompositionMetricCard
+            footer={formatCompositionDelta(muscle.delta, ' pts vs 7j')}
+            guideId="musclePct"
+            label="Muscle"
+            tone={toneFromGuide('musclePct', muscle.latest, context)}
+            value={`${muscle.latest} %`}
+            onExplain={(id) => openExplain(id, muscle.latest!, `${muscle.latest} %`)}
+          />
+        )}
+        {visceral.latest != null && (
+          <CompositionMetricCard
+            footer={formatCompositionDelta(visceral.delta, ' pts vs 7j')}
+            guideId="visceralFat"
+            label="Graisse viscérale"
+            tone={toneFromGuide('visceralFat', visceral.latest, context)}
+            value={`${visceral.latest}`}
+            onExplain={(id) => openExplain(id, visceral.latest!, `${visceral.latest}`)}
+          />
+        )}
+        {latest?.fatFreeWeightKg != null && (
+          <CompositionMetricCard
+            label="Masse maigre"
+            value={`${latest.fatFreeWeightKg.toFixed(1)} kg`}
+          />
+        )}
+        {latest?.boneKg != null && (
+          <CompositionMetricCard label="Masse osseuse" value={`${latest.boneKg.toFixed(2)} kg`} />
+        )}
+      </CompositionSection>
+
+      <CompositionSection label="Métabolisme & hydratation">
+        {latest?.waterPct != null && (
+          <CompositionMetricCard
+            guideId="waterPct"
+            label="Eau corporelle"
+            tone={toneFromGuide('waterPct', latest.waterPct, context)}
+            value={`${latest.waterPct.toFixed(1)} %`}
+            onExplain={(id) => {
+              const v = latest.waterPct!;
+              openExplain(id, v, `${v.toFixed(1)} %`);
+            }}
+          />
+        )}
+        {latest?.bmr != null && (
+          <CompositionMetricCard
+            guideId="bmr"
+            label="Métabolisme basal"
+            tone={toneFromGuide('bmr', latest.bmr, context)}
+            value={`${Math.round(latest.bmr)} kcal`}
+            onExplain={(id) => openExplain(id, latest.bmr!, `${Math.round(latest.bmr!)} kcal`)}
+          />
+        )}
+        {metabolicAgeDisplay != null && (
+          <CompositionMetricCard
+            guideId="metabolicAge"
+            label="Âge métabolique"
+            tone={toneFromGuide('metabolicAge', metabolicAgeDisplay, context)}
+            value={`${metabolicAgeDisplay} ans`}
+            onExplain={(id) => openExplain(id, metabolicAgeDisplay, `${metabolicAgeDisplay} ans`)}
+          />
+        )}
+      </CompositionSection>
+
+      {hasBodyScan && latest && (
+        <CompositionSection label="Cardio & nerveux">
+          {latest.vascularAgeYears != null && (
+            <CompositionMetricCard
+              guideId="vascularAgeYears"
+              label="Âge vasculaire"
+              tone={toneFromGuide('vascularAgeYears', latest.vascularAgeYears, context)}
+              value={`${latest.vascularAgeYears} ans`}
+              onExplain={(id) =>
+                openExplain(id, latest.vascularAgeYears!, `${latest.vascularAgeYears} ans`)
               }
             />
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <RecoveryStat
-                footer={formatCompositionDelta(weight.delta, ' kg')}
-                label="Poids"
-                tone="neutral"
-                value={weight.latest != null ? `${weight.latest} kg` : '—'}
-              />
-              <RecoveryStat
-                footer={formatCompositionDelta(bodyFat.delta, ' pts')}
-                label="Masse grasse"
-                tone="neutral"
-                value={bodyFat.latest != null ? `${bodyFat.latest} %` : '—'}
-              />
-              <RecoveryStat
-                footer={formatCompositionDelta(muscle.delta, ' pts')}
-                label="Muscle"
-                tone="neutral"
-                value={muscle.latest != null ? `${muscle.latest} %` : '—'}
-              />
-              <RecoveryStat
-                footer={formatCompositionDelta(visceral.delta, ' pts')}
-                label="Graisse viscérale"
-                tone="neutral"
-                value={visceral.latest != null ? `${visceral.latest}` : '—'}
-              />
-            </div>
-          </CorpsPanel>
-
-          <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <RecoveryStat
-              label="IMC"
-              tone="neutral"
-              value={bmiDisplay != null ? `${bmiDisplay}` : '—'}
-            />
-            <RecoveryStat
-              label="Masse maigre"
-              tone="neutral"
-              value={
-                latest?.fatFreeWeightKg != null ? `${latest.fatFreeWeightKg.toFixed(1)} kg` : '—'
-              }
-            />
-            <RecoveryStat
-              label="Eau corporelle"
-              tone="neutral"
-              value={latest?.waterPct != null ? `${latest.waterPct.toFixed(1)} %` : '—'}
-            />
-            <RecoveryStat
-              label="Masse osseuse"
-              tone="neutral"
-              value={latest?.boneKg != null ? `${latest.boneKg.toFixed(2)} kg` : '—'}
-            />
-            <RecoveryStat
-              label="Métabolisme basal"
-              tone="neutral"
-              value={latest?.bmr != null ? `${Math.round(latest.bmr)} kcal` : '—'}
-            />
-            <RecoveryStat
-              label="Âge métabolique"
-              tone="neutral"
-              value={metabolicAgeDisplay != null ? `${metabolicAgeDisplay} ans` : '—'}
-            />
-          </section>
-
-          {(latest?.vascularAgeYears != null ||
-            latest?.nerveHealthScore != null ||
-            latest?.pulseWaveVelocity != null ||
-            latest?.skinConductance != null ||
-            latest?.vo2Max != null) && (
-            <CorpsPanel>
-              <CorpsSectionHeader
-                description="Métriques avancées Body Scan (Withings)."
-                label="Cardio & nerveux"
-                title="Signaux Withings"
-              />
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {latest.vascularAgeYears != null && (
-                  <RecoveryStat
-                    label="Âge vasculaire"
-                    tone="neutral"
-                    value={`${latest.vascularAgeYears} ans`}
-                  />
-                )}
-                {latest.pulseWaveVelocity != null && (
-                  <RecoveryStat
-                    label="Vitesse d'onde de pouls"
-                    tone="neutral"
-                    value={`${latest.pulseWaveVelocity.toFixed(1)} m/s`}
-                  />
-                )}
-                {latest.nerveHealthScore != null && (
-                  <RecoveryStat
-                    label="Santé nerveuse (pieds)"
-                    tone="neutral"
-                    value={`${Math.round(latest.nerveHealthScore)}`}
-                  />
-                )}
-                {latest.nerveResponseScore != null && (
-                  <RecoveryStat
-                    label="Score réponse nerveuse"
-                    tone="neutral"
-                    value={`${Math.round(latest.nerveResponseScore)}`}
-                  />
-                )}
-                {latest.skinConductance != null && (
-                  <RecoveryStat
-                    label="Conductance cutanée (ESC)"
-                    tone="neutral"
-                    value={`${latest.skinConductance.toFixed(0)}`}
-                  />
-                )}
-                {latest.vo2Max != null && (
-                  <RecoveryStat
-                    label="VO₂ max estimé"
-                    tone="neutral"
-                    value={`${latest.vo2Max.toFixed(1)} ml/kg/min`}
-                  />
-                )}
-                {latest.heartRate != null && (
-                  <RecoveryStat
-                    label="FC debout"
-                    tone="neutral"
-                    value={`${latest.heartRate} bpm`}
-                  />
-                )}
-              </div>
-            </CorpsPanel>
           )}
-
-          <section className="space-y-3">
-            <CorpsSectionHeader
-              description="Une mesure par jour (la plus récente). Les variations jour à jour peuvent refléter le bruit de mesure autant qu'un vrai changement corporel."
-              label="Tendances"
-              title="90 jours"
+          {latest.pulseWaveVelocity != null && (
+            <CompositionMetricCard
+              guideId="pulseWaveVelocity"
+              label="Onde de pouls (PWV)"
+              tone={toneFromGuide('pulseWaveVelocity', latest.pulseWaveVelocity, context)}
+              value={`${latest.pulseWaveVelocity.toFixed(1)} m/s`}
+              onExplain={(id) =>
+                openExplain(
+                  id,
+                  latest.pulseWaveVelocity!,
+                  `${latest.pulseWaveVelocity!.toFixed(1)} m/s`,
+                )
+              }
             />
-            <div className="grid gap-3 md:grid-cols-2">
-              <MetricLineChart
-                color="#2563eb"
-                data={series}
-                dataKey="weightKg"
-                subtitle="Pesées balance"
-                title="Poids"
-                unit="kg"
-              />
-              <MetricLineChart
-                color="#dc2626"
-                data={series}
-                dataKey="bodyFatPct"
-                subtitle="Estimation impédancemétrie"
-                title="Masse grasse"
-                unit="%"
-              />
-              <MetricLineChart
-                color="#16a34a"
-                data={series}
-                dataKey="musclePct"
-                subtitle="Part du poids total"
-                title="Muscle"
-                unit="%"
-              />
-              <MetricLineChart
-                color="#ea580c"
-                data={series}
-                dataKey="visceralFat"
-                subtitle="Indice viscéral"
-                title="Graisse viscérale"
-              />
-            </div>
-          </section>
-        </>
+          )}
+          {latest.nerveHealthScore != null && (
+            <CompositionMetricCard
+              guideId="nerveHealthScore"
+              label="Santé nerveuse"
+              tone={toneFromGuide('nerveHealthScore', latest.nerveHealthScore, context)}
+              value={`${Math.round(latest.nerveHealthScore)}`}
+              onExplain={(id) =>
+                openExplain(id, latest.nerveHealthScore!, `${Math.round(latest.nerveHealthScore!)}`)
+              }
+            />
+          )}
+          {latest.nerveResponseScore != null && (
+            <CompositionMetricCard
+              guideId="nerveResponseScore"
+              label="Réponse nerveuse"
+              tone={toneFromGuide('nerveResponseScore', latest.nerveResponseScore, context)}
+              value={`${Math.round(latest.nerveResponseScore)}`}
+              onExplain={(id) =>
+                openExplain(
+                  id,
+                  latest.nerveResponseScore!,
+                  `${Math.round(latest.nerveResponseScore!)}`,
+                )
+              }
+            />
+          )}
+          {latest.skinConductance != null && (
+            <CompositionMetricCard
+              guideId="skinConductance"
+              label="Conductance (ESC)"
+              tone={toneFromGuide('skinConductance', latest.skinConductance, context)}
+              value={`${latest.skinConductance.toFixed(0)}`}
+              onExplain={(id) =>
+                openExplain(id, latest.skinConductance!, `${latest.skinConductance!.toFixed(0)}`)
+              }
+            />
+          )}
+          {latest.vo2Max != null && (
+            <CompositionMetricCard
+              guideId="vo2Max"
+              label="VO₂ max est."
+              tone={toneFromGuide('vo2Max', latest.vo2Max, context)}
+              value={`${latest.vo2Max.toFixed(1)}`}
+              onExplain={(id) =>
+                openExplain(id, latest.vo2Max!, `${latest.vo2Max!.toFixed(1)} ml/kg/min`)
+              }
+            />
+          )}
+          {latest.heartRate != null && (
+            <CompositionMetricCard
+              guideId="heartRate"
+              label="FC debout"
+              tone={toneFromGuide('heartRate', latest.heartRate, context)}
+              value={`${latest.heartRate} bpm`}
+              onExplain={(id) => openExplain(id, latest.heartRate!, `${latest.heartRate} bpm`)}
+            />
+          )}
+          {ecgStats.map((stat) => (
+            <CompositionMetricCard
+              key={stat.type}
+              guideId={stat.guideId}
+              label={stat.label}
+              tone={toneFromGuide(stat.guideId, stat.value, context)}
+              value={stat.displayValue}
+              onExplain={(id) => openExplain(id, stat.value, stat.displayValue)}
+            />
+          ))}
+        </CompositionSection>
       )}
+
+      <section className="space-y-3">
+        <CorpsDivider label="Tendances · 90 jours" />
+        <p className="text-muted-foreground text-xs leading-relaxed">
+          Une mesure par jour (la plus récente). Les variations peuvent refléter le bruit autant
+          qu&apos;un vrai changement.
+        </p>
+        <div className="grid gap-3 md:grid-cols-2">
+          <MetricLineChart
+            color="#2563eb"
+            data={series}
+            dataKey="weightKg"
+            subtitle="Pesées balance"
+            title="Poids"
+            unit="kg"
+          />
+          <MetricLineChart
+            color="#dc2626"
+            data={series}
+            dataKey="bodyFatPct"
+            subtitle="Estimation impédancemétrie"
+            title="Masse grasse"
+            unit="%"
+          />
+          <MetricLineChart
+            color="#16a34a"
+            data={series}
+            dataKey="musclePct"
+            subtitle="Part du poids total"
+            title="Muscle"
+            unit="%"
+          />
+          <MetricLineChart
+            color="#ea580c"
+            data={series}
+            dataKey="visceralFat"
+            subtitle="Indice viscéral"
+            title="Graisse viscérale"
+          />
+        </div>
+      </section>
+
+      {explain && (
+        <CompositionMetricExplainer
+          context={context}
+          displayValue={explain.displayValue}
+          metricId={explain.id}
+          open={explain != null}
+          value={explain.value}
+          onOpenChange={(open) => !open && setExplain(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function HeroMini({
+  label,
+  value,
+  unit,
+  delta,
+}: {
+  label: string;
+  value: number | null;
+  unit?: string;
+  delta?: string | null;
+}) {
+  return (
+    <div className="bg-background/50 rounded-xl border px-3 py-2.5 text-center">
+      <p className="text-muted-foreground text-[9px] font-semibold tracking-[0.12em] uppercase">
+        {label}
+      </p>
+      <p className="mt-1 text-lg font-bold tabular-nums">
+        {value != null ? value : '—'}
+        {unit && value != null && (
+          <span className="text-muted-foreground text-xs font-normal"> {unit}</span>
+        )}
+      </p>
+      {delta && delta !== '—' && <p className="text-muted-foreground mt-0.5 text-[9px]">{delta}</p>}
     </div>
   );
 }
 
 function CompositionSkeleton() {
   return (
-    <div className="space-y-4">
-      <Skeleton className="h-20 w-full rounded-2xl" />
-      <Skeleton className="h-40 w-full rounded-2xl" />
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="space-y-6">
+      <Skeleton className="h-16 w-full rounded-2xl" />
+      <Skeleton className="h-36 w-full rounded-2xl" />
+      <Skeleton className="h-4 w-40" />
+      <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-24 rounded-2xl" />
+          <Skeleton key={i} className="h-20 rounded-xl" />
         ))}
       </div>
       <div className="grid gap-3 md:grid-cols-2">

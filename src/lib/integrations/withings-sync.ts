@@ -5,9 +5,12 @@ import { observationEngine } from '@/lib/engines/observation-engine';
 import { withingsMeasurementToBodyComposition } from '@/core/adapters/withings-adapter';
 import {
   fetchWithingsMeasurements,
+  fetchWithingsHeartList,
   refreshWithingsToken,
   type WithingsParsedMeasurement,
 } from '@/lib/integrations/withings';
+import { enrichMeasurementsWithHeartEcg } from '@/lib/integrations/withings-measures';
+import { syncSinceFromLastSync, syncWindowDays } from '@/lib/integrations/sync-since';
 
 const ATHLETE_ID = 'default';
 const ACCOUNT_ID = 'default';
@@ -117,13 +120,26 @@ export async function syncWithingsHealth(options?: {
   if (!account) throw new Error('Compte Withings non connecté');
 
   const accessToken = await getValidWithingsAccessToken();
-  const days = options?.full ? 365 * 3 : Math.min(options?.days ?? 90, 365 * 3);
+  const since = options?.full
+    ? subDays(startOfDay(new Date()), 365 * 3)
+    : syncSinceFromLastSync(account.lastSyncAt, options?.days ?? 90);
+  const days = syncWindowDays(since);
   const range = {
-    startdate: Math.floor(subDays(startOfDay(new Date()), days).getTime() / 1000),
+    startdate: Math.floor(since.getTime() / 1000),
     enddate: Math.floor(Date.now() / 1000),
   };
 
-  const measurements = await fetchWithingsMeasurements(accessToken, range);
+  const measurementsRaw = await fetchWithingsMeasurements(accessToken, range);
+  let measurements = measurementsRaw;
+  try {
+    const heartRecords = await fetchWithingsHeartList(accessToken, range);
+    measurements = enrichMeasurementsWithHeartEcg(measurementsRaw, heartRecords);
+  } catch (err) {
+    console.warn(
+      '[withings-sync] Heart v2 list unavailable, ECG classification from getmeas only:',
+      err,
+    );
+  }
 
   let imported = 0;
   let updated = 0;

@@ -358,6 +358,8 @@ export async function getAthleteProfile() {
 }
 
 export async function upsertAthleteProfile(data: {
+  heightCm?: number | null;
+  birthDate?: Date | null;
   ftpW?: number | null;
   maxHr?: number | null;
   lthr?: number | null;

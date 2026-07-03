@@ -1,10 +1,5 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { Check, Download, Loader2 } from 'lucide-react';
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,9 +8,17 @@ import {
   useThresholdHistory,
   useThresholdPreview,
 } from '@/hooks/use-data';
+import { birthDateToInput } from '@/lib/athlete-profile-utils';
 import { queryKeys } from '@/lib/query/keys';
+import { useQueryClient } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { Check, Download, Loader2 } from 'lucide-react';
+import { useState } from 'react';
 
 interface ProfileData {
+  heightCm: number | null;
+  birthDate: string | null;
   ftpW: number | null;
   maxHr: number | null;
   lthr: number | null;
@@ -71,6 +74,8 @@ function parsePaceInput(value: string): number | null {
 }
 
 export function AthleteProfilePanel({ initial }: { initial: ProfileData | null }) {
+  const [heightCm, setHeightCm] = useState(initial?.heightCm?.toString() ?? '');
+  const [birthDate, setBirthDate] = useState(birthDateToInput(initial?.birthDate ?? null));
   const [ftpW, setFtpW] = useState(initial?.ftpW?.toString() ?? '');
   const [maxHr, setMaxHr] = useState(initial?.maxHr?.toString() ?? '');
   const [lthr, setLthr] = useState(initial?.lthr?.toString() ?? '');
@@ -144,10 +149,19 @@ export function AthleteProfilePanel({ initial }: { initial: ProfileData | null }
         throw new Error('Heure de coucher invalide (format HH:mm).');
       }
 
+      if (heightCm.trim()) {
+        const h = Number(heightCm);
+        if (!Number.isFinite(h) || h < 100 || h > 250) {
+          throw new Error('Taille invalide (entre 100 et 250 cm).');
+        }
+      }
+
       const res = await fetch('/api/athlete-profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          heightCm: heightCm.trim() ? Number(heightCm) : null,
+          birthDate: birthDate.trim() || null,
           ftpW: ftpW ? Number(ftpW) : null,
           maxHr: maxHr ? Number(maxHr) : null,
           lthr: lthr ? Number(lthr) : null,
@@ -212,8 +226,9 @@ export function AthleteProfilePanel({ initial }: { initial: ProfileData | null }
     <form className="space-y-4" onSubmit={handleSubmit}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <p className="text-muted-foreground max-w-md text-sm">
-          Ces seuils alimentent les zones FC/puissance, l&apos;IF, le TSS et le découplage sur
-          chaque séance. Sans profil, des estimations sont utilisées.
+          Taille et date de naissance alimentent les comparaisons de composition (IMC, âge
+          vasculaire, etc.). Les seuils alimentent les zones FC/puissance, l&apos;IF, le TSS et le
+          découplage sur chaque séance.
         </p>
         <div className="flex flex-col items-end gap-1">
           <Button
@@ -315,6 +330,27 @@ export function AthleteProfilePanel({ initial }: { initial: ProfileData | null }
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="heightCm">Taille (cm)</Label>
+          <Input
+            id="heightCm"
+            max={250}
+            min={100}
+            placeholder="178"
+            type="number"
+            value={heightCm}
+            onChange={(e) => setHeightCm(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="birthDate">Date de naissance</Label>
+          <Input
+            id="birthDate"
+            type="date"
+            value={birthDate}
+            onChange={(e) => setBirthDate(e.target.value)}
+          />
+        </div>
         <div className="space-y-2">
           <Label htmlFor="ftpW">FTP vélo (W)</Label>
           <Input

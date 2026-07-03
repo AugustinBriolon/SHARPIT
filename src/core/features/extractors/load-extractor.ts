@@ -197,12 +197,6 @@ export function extractLoadFeatures(history: LoadHistory, trainingDayId: string)
   if (dataPoints7d < 3) confidence *= 0.5; // SPARSE_DATA penalty
   if (dataPoints42d < 14) confidence *= 0.75; // insufficient chronic baseline
 
-  // ── Source observation IDs ────────────────────────────────────────────────
-
-  const sourceObsIds = dailyLoad42d
-    .filter((e) => isWithinWindow(e.trainingDayId, trainingDayId, 42))
-    .flatMap(() => []); // session obs IDs not carried here — injected by FeatureEngine
-
   return {
     trainingDayId,
 

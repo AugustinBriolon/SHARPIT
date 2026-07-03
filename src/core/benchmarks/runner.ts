@@ -169,6 +169,45 @@ function evaluateExpectations(
 // Metrics computation
 // ─────────────────────────────────────────────────────────────────────────────
 
+function classifyConfidenceCalibration(
+  confidenceExps: readonly ExpectationResult[],
+): ConfidenceCalibration {
+  if (confidenceExps.length < 3) return 'INSUFFICIENT_DATA';
+  const passRate = confidenceExps.filter((e) => e.met).length / confidenceExps.length;
+  return passRate >= 0.8 ? 'WELL_CALIBRATED' : 'MISCALIBRATED';
+}
+
+function comparisonVerdict(
+  regressions: readonly BenchmarkRegression[],
+): ModelComparison['verdict'] {
+  if (regressions.length === 0) return 'DEPLOY';
+  if (regressions.some((r) => r.isSafetyCritical)) return 'REJECT';
+  return 'INVESTIGATE';
+}
+
+function comparisonSummary(
+  verdict: ModelComparison['verdict'],
+  regressions: readonly BenchmarkRegression[],
+  candidate: BenchmarkReport,
+  deltaScore: number,
+): string {
+  if (verdict === 'DEPLOY') {
+    return (
+      `No regressions detected. Candidate (${candidate.modelVersion}) is safe to deploy. ` +
+      `Score: ${candidate.metrics.scientificRegressionScore}/100 ` +
+      `(${deltaScore >= 0 ? '+' : ''}${deltaScore} vs baseline).`
+    );
+  }
+  if (verdict === 'REJECT') {
+    const safetyCount = regressions.filter((r) => r.isSafetyCritical).length;
+    return (
+      `DEPLOYMENT BLOCKED. ${safetyCount} safety-critical ` +
+      `regression(s) detected in candidate ${candidate.modelVersion}.`
+    );
+  }
+  return `${regressions.length} regression(s) require investigation before deploying ${candidate.modelVersion}.`;
+}
+
 function computeMetrics(results: readonly ScenarioResult[]): BenchmarkMetrics {
   const all = results.flatMap((r) => r.expectations);
 
@@ -186,12 +225,7 @@ function computeMetrics(results: readonly ScenarioResult[]): BenchmarkMetrics {
 
   // Confidence calibration: proportion of confidence range expectations met
   const confidenceExps = all.filter((e) => e.expectationId === 'confidence');
-  const confidenceCalibration: ConfidenceCalibration =
-    confidenceExps.length < 3
-      ? 'INSUFFICIENT_DATA'
-      : confidenceExps.filter((e) => e.met).length / confidenceExps.length >= 0.8
-        ? 'WELL_CALIBRATED'
-        : 'MISCALIBRATED';
+  const confidenceCalibration = classifyConfidenceCalibration(confidenceExps);
 
   // Decision consistency: verdict + intensity
   const decisionExps = all.filter(
@@ -357,22 +391,12 @@ export function compareModels(
     }
   }
 
-  const hasSafetyRegression = regressions.some((r) => r.isSafetyCritical);
-  const verdict: ModelComparison['verdict'] =
-    regressions.length === 0 ? 'DEPLOY' : hasSafetyRegression ? 'REJECT' : 'INVESTIGATE';
+  const verdict = comparisonVerdict(regressions);
 
   const deltaScore =
     candidate.metrics.scientificRegressionScore - baseline.metrics.scientificRegressionScore;
 
-  const summary =
-    verdict === 'DEPLOY'
-      ? `No regressions detected. Candidate (${candidate.modelVersion}) is safe to deploy. ` +
-        `Score: ${candidate.metrics.scientificRegressionScore}/100 ` +
-        `(${deltaScore >= 0 ? '+' : ''}${deltaScore} vs baseline).`
-      : verdict === 'REJECT'
-        ? `DEPLOYMENT BLOCKED. ${regressions.filter((r) => r.isSafetyCritical).length} safety-critical ` +
-          `regression(s) detected in candidate ${candidate.modelVersion}.`
-        : `${regressions.length} regression(s) require investigation before deploying ${candidate.modelVersion}.`;
+  const summary = comparisonSummary(verdict, regressions, candidate, deltaScore);
 
   return {
     baseline,

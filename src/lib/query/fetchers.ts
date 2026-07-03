@@ -114,6 +114,8 @@ export async function fetchRecords(): Promise<RecordsPayload> {
 }
 
 export interface AthleteProfilePayload {
+  heightCm: number | null;
+  birthDate: string | null;
   ftpW: number | null;
   maxHr: number | null;
   lthr: number | null;

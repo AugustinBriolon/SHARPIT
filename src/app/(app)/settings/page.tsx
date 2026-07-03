@@ -3,6 +3,7 @@ import { StickyHeader } from '@/components/layout/sticky-header';
 import { AthleteProfilePanel } from '@/components/settings/athlete-profile-panel';
 import { IntegrationsHub } from '@/components/settings/integrations-hub';
 import { getAthleteProfile } from '@/lib/queries';
+import { birthDateToInput } from '@/lib/athlete-profile-utils';
 import { getGarminAccount } from '@/lib/integrations/garmin-sync';
 import { isGoogleConfigured } from '@/lib/integrations/google';
 import { getGoogleAccount } from '@/lib/integrations/google-sync';
@@ -157,7 +158,7 @@ export default async function SettingsPage({ searchParams }: PageProps) {
 
       <CorpsPanel className="space-y-4 py-5">
         <CorpsSectionHeader
-          description="Seuils FC, puissance, allure, TSS et objectifs sommeil pour les calculs SHARPIT."
+          description="Taille, date de naissance, seuils FC/puissance, allure, TSS et objectifs sommeil pour les calculs SHARPIT."
           label="Profil"
           title="Profil athlète"
         />
@@ -165,6 +166,8 @@ export default async function SettingsPage({ searchParams }: PageProps) {
           initial={
             athleteProfile
               ? {
+                  heightCm: athleteProfile.heightCm,
+                  birthDate: birthDateToInput(athleteProfile.birthDate),
                   ftpW: athleteProfile.ftpW,
                   maxHr: athleteProfile.maxHr,
                   lthr: athleteProfile.lthr,

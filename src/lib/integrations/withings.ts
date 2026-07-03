@@ -1,6 +1,7 @@
 const WITHINGS_OAUTH_AUTHORIZE = 'https://account.withings.com/oauth2_user/authorize2';
 const WITHINGS_OAUTH_TOKEN = 'https://wbsapi.withings.net/v2/oauth2';
 const WITHINGS_MEASURE = 'https://wbsapi.withings.net/measure';
+const WITHINGS_HEART = 'https://wbsapi.withings.net/v2/heart';
 
 export const WITHINGS_SCOPE = 'user.info,user.metrics';
 
@@ -130,8 +131,10 @@ export interface WithingsMeasureGroup {
 }
 
 import {
+  mergeWithingsMeasureGroups,
   parseWithingsMeasureGroup,
   WITHINGS_BODY_SCAN_MEASTYPES,
+  type WithingsHeartRecord,
   type WithingsParsedMeasurement,
 } from '@/lib/integrations/withings-measures';
 
@@ -141,9 +144,11 @@ export type {
 } from '@/lib/integrations/withings-measures';
 export {
   decodeWithingsValue,
+  enrichMeasurementsWithHeartEcg,
   parseWithingsMeasureGroup,
   WITHINGS_BODY_SCAN_MEASTYPES,
 } from '@/lib/integrations/withings-measures';
+export type { WithingsHeartRecord } from '@/lib/integrations/withings-measures';
 
 export async function fetchWithingsMeasurements(
   accessToken: string,
@@ -151,6 +156,7 @@ export async function fetchWithingsMeasurements(
 ): Promise<WithingsParsedMeasurement[]> {
   const params: Record<string, string> = {
     action: 'getmeas',
+    category: '1',
     meastypes: WITHINGS_BODY_SCAN_MEASTYPES,
   };
 
@@ -174,8 +180,8 @@ export async function fetchWithingsMeasurements(
       offset?: number;
     }>(WITHINGS_MEASURE, params, accessToken);
 
-    for (const group of body.measuregrps ?? []) {
-      if (group.category !== 1) continue;
+    const mergedGroups = mergeWithingsMeasureGroups(body.measuregrps ?? []);
+    for (const group of mergedGroups) {
       all.push(parseWithingsMeasureGroup(group));
     }
 
@@ -185,4 +191,34 @@ export async function fetchWithingsMeasurements(
   }
 
   return all.sort((a, b) => b.measuredAt.getTime() - a.measuredAt.getTime());
+}
+
+export async function fetchWithingsHeartList(
+  accessToken: string,
+  options?: { startdate?: number; enddate?: number },
+): Promise<WithingsHeartRecord[]> {
+  const params: Record<string, string> = { action: 'list' };
+  if (options?.startdate != null) params.startdate = String(options.startdate);
+  if (options?.enddate != null) params.enddate = String(options.enddate);
+
+  const all: WithingsHeartRecord[] = [];
+  let offset = 0;
+
+  for (;;) {
+    if (offset > 0) params.offset = String(offset);
+
+    const body = await withingsFormPost<{
+      series: WithingsHeartRecord[];
+      more?: number;
+      offset?: number;
+    }>(WITHINGS_HEART, params, accessToken);
+
+    all.push(...(body.series ?? []));
+
+    const { more, offset: nextOffset } = body;
+    if (more !== 1 || nextOffset == null) break;
+    offset = nextOffset;
+  }
+
+  return all;
 }

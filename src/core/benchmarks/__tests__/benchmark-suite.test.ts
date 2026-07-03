@@ -31,7 +31,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { runRecoveryModel } from '@/core/inference/recovery/model';
 import { runBenchmark, BENCHMARK_SCENARIOS } from '../index';
-import { formatBenchmarkReport, formatCompactSummary } from '../report';
 import type { BenchmarkReport } from '../types';
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -110,6 +110,8 @@ model Activity {
 
 model AthleteProfile {
   id                       String @id @default("default")
+  heightCm                 Int? // taille (cm) — comparaisons composition (IMC, etc.)
+  birthDate                DateTime? @db.Date // date de naissance — âge calculé dynamiquement
   ftpW                     Int? // FTP vélo (W)
   maxHr                    Int? // FC max (bpm)
   lthr                     Int? // FC seuil lactique (bpm)

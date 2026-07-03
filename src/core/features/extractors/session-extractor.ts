@@ -63,24 +63,6 @@ const ELEVATION_STRESS_FACTOR: Record<SportType, number> = {
   OTHER: 0.06,
 };
 
-/**
- * Expected RPE for each sport type (v1 simplification for rpeVsTargetZone).
- * Used when no session-type classification from the Training Stress Model is available.
- * See INFERENCE_ARCHITECTURE_REVIEW.md §4.4.
- */
-const EXPECTED_RPE_BY_SPORT: Record<SportType, number> = {
-  RUN: 5.5,
-  BIKE: 5.0,
-  SWIM: 5.5,
-  STRENGTH: 6.0,
-  OPEN_WATER: 6.0,
-  TRAIL_RUN: 6.5,
-  MTB: 6.0,
-  TRIATHLON: 6.0,
-  YOGA: 2.0,
-  OTHER: 5.0,
-};
-
 // ─────────────────────────────────────────────────────────────────────────────
 // TSS computation — 5-tier hierarchy
 // ─────────────────────────────────────────────────────────────────────────────
@@ -345,19 +327,6 @@ function computeEfficiencyFactor(input: SessionExtractorInput): number | null {
   }
 
   return null;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Subjective features
-// ─────────────────────────────────────────────────────────────────────────────
-
-function computeRpeVsTargetZone(
-  sportType: SportType,
-  linkedSubjective: SessionExtractorInput['linkedSubjective'],
-): number | null {
-  if (!linkedSubjective?.rpe) return null;
-  const expectedRpe = EXPECTED_RPE_BY_SPORT[sportType];
-  return linkedSubjective.rpe - expectedRpe;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

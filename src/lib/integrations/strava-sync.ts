@@ -2,6 +2,7 @@ import { ActivityType, Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { findMatchingActivity, mergedSource } from '@/lib/activity-dedup';
 import { prisma } from '@/lib/prisma';
+import { syncSinceFromLastSync } from '@/lib/integrations/sync-since';
 import { autoLinkActivities } from '@/lib/session-linking';
 import {
   fetchActivities,
@@ -207,7 +208,7 @@ export async function syncStravaActivities(): Promise<SyncResult> {
   const accessToken = await getValidAccessToken();
   const account = await getStravaAccount();
 
-  const after = account?.lastSyncAt ? Math.floor(account.lastSyncAt.getTime() / 1000) : undefined;
+  const after = Math.floor(syncSinceFromLastSync(account?.lastSyncAt, 90).getTime() / 1000);
 
   let page = 1;
   let imported = 0;

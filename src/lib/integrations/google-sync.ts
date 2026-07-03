@@ -11,9 +11,9 @@ import {
   type BusyInterval,
 } from '@/lib/integrations/google';
 
-const ACCOUNT_ID = 'default';
+import { syncSinceFromLastSync } from '@/lib/integrations/sync-since';
 
-// Fenêtre horaire par défaut pour caser une séance (heure locale).
+const ACCOUNT_ID = 'default';
 const DAY_START_MIN = 6 * 60; // 06:00
 const DAY_END_MIN = 21 * 60; // 21:00
 const DEFAULT_DURATION_MIN = 60;
@@ -257,7 +257,7 @@ export async function syncFromGoogle(): Promise<GooglePullResult> {
   const { timeZone } = account;
 
   const now = new Date();
-  const from = new Date(now.getTime() - 7 * 86400_000);
+  const from = syncSinceFromLastSync(account.lastSyncAt, 7);
   const to = new Date(now.getTime() + 90 * 86400_000);
 
   // ---- 1. Push des séances futures non encore synchronisées ----

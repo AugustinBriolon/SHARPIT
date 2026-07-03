@@ -55,11 +55,102 @@ export function dedupeBodyCompositionByDay(
   for (const dayRows of byDay.values()) {
     const withings = dayRows.filter((r) => r.source === BodyCompositionSource.WITHINGS);
     const pool = withings.length > 0 ? withings : dayRows;
-    pool.sort((a, b) => b.measuredAt.getTime() - a.measuredAt.getTime());
-    picked.push(pool[0]!);
+    if (withings.length > 1) {
+      picked.push(mergeWithingsDayRows(withings));
+    } else {
+      pool.sort((a, b) => b.measuredAt.getTime() - a.measuredAt.getTime());
+      picked.push(pool[0]!);
+    }
   }
 
   return picked.sort((a, b) => b.measuredAt.getTime() - a.measuredAt.getTime());
+}
+
+const WITHINGS_MERGE_SCALAR_KEYS = [
+  'weightKg',
+  'bmi',
+  'bodyFatPct',
+  'waterPct',
+  'musclePct',
+  'boneKg',
+  'bmr',
+  'visceralFat',
+  'proteinPct',
+  'bodyAge',
+  'subcutaneousFatPct',
+  'skeletalMusclePct',
+  'fatFreeWeightKg',
+  'heartRate',
+  'vascularAgeYears',
+  'pulseWaveVelocity',
+  'vo2Max',
+  'nerveHealthScore',
+  'nerveHealthLeft',
+  'nerveHealthRight',
+  'nerveResponseScore',
+  'skinConductance',
+  'metabolicAge',
+  'hydrationKg',
+  'fatMassKg',
+  'extracellularWaterKg',
+  'intracellularWaterKg',
+] as const satisfies ReadonlyArray<keyof BodyCompositionMeasurement>;
+
+/** Fusionne plusieurs lignes Withings du même jour (measuregrps API séparés). */
+function mergeWithingsDayRows(rows: BodyCompositionMeasurement[]): BodyCompositionMeasurement {
+  const sorted = [...rows].sort((a, b) => b.measuredAt.getTime() - a.measuredAt.getTime());
+  const merged: BodyCompositionMeasurement = { ...sorted[0]! };
+
+  for (const key of WITHINGS_MERGE_SCALAR_KEYS) {
+    if (merged[key] != null) continue;
+    for (const row of sorted) {
+      const value = row[key];
+      if (value != null) {
+        (merged as Record<string, unknown>)[key] = value;
+        break;
+      }
+    }
+  }
+
+  let extras = merged.withingsExtras;
+  for (const row of sorted) {
+    if (row.withingsExtras == null) continue;
+    extras = mergeWithingsExtrasJson(extras, row.withingsExtras);
+  }
+  merged.withingsExtras = extras;
+
+  return merged;
+}
+
+function mergeWithingsExtrasJson(
+  a: BodyCompositionMeasurement['withingsExtras'],
+  b: BodyCompositionMeasurement['withingsExtras'],
+): BodyCompositionMeasurement['withingsExtras'] {
+  if (a == null) return b;
+  if (b == null) return a;
+  const objA = a as Record<string, unknown>;
+  const objB = b as Record<string, unknown>;
+  const ecgA = (objA.ecg as Record<string, number> | undefined) ?? {};
+  const ecgB = (objB.ecg as Record<string, number> | undefined) ?? {};
+  const segmentalA = (objA.segmental as unknown[] | undefined) ?? [];
+  const segmentalB = (objB.segmental as unknown[] | undefined) ?? [];
+  return {
+    ...objA,
+    ...objB,
+    ...(objA.ecgAfibClassification != null || objB.ecgAfibClassification != null
+      ? {
+          ecgAfibClassification:
+            (objB.ecgAfibClassification as number | undefined) ??
+            (objA.ecgAfibClassification as number | undefined),
+        }
+      : {}),
+    ...(Object.keys(ecgA).length + Object.keys(ecgB).length > 0
+      ? { ecg: { ...ecgA, ...ecgB } }
+      : {}),
+    ...(segmentalA.length + segmentalB.length > 0
+      ? { segmental: [...segmentalA, ...segmentalB] }
+      : {}),
+  } as BodyCompositionMeasurement['withingsExtras'];
 }
 
 function average(values: number[]): number | null {

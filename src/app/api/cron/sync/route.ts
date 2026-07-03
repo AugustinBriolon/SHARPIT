@@ -72,7 +72,7 @@ export async function GET(request: Request) {
   if (garminAccount) {
     try {
       // 7 jours suffisent pour le cron quotidien (données déjà en base).
-      result.garmin = await syncGarminHealth(7);
+      result.garmin = await syncGarminHealth();
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Sync Garmin échouée';
       console.error('[cron/sync] Garmin:', msg);
@@ -80,7 +80,7 @@ export async function GET(request: Request) {
     }
 
     try {
-      result.garminActivities = await syncGarminActivities({ sinceDays: 14 });
+      result.garminActivities = await syncGarminActivities();
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Sync activités Garmin échouée';
       console.error('[cron/sync] Garmin activities:', msg);
@@ -91,7 +91,7 @@ export async function GET(request: Request) {
   // Composition corporelle + Google Calendar : fetch incrémental si compte connecté.
   await Promise.all([
     withingsAccount
-      ? syncWithingsHealth({ days: 14 })
+      ? syncWithingsHealth()
           .then((withings) => {
             result.withings = withings;
           })
@@ -102,7 +102,7 @@ export async function GET(request: Request) {
           })
       : Promise.resolve(),
     renphoAccount
-      ? syncRenphoHealth({ days: 14 })
+      ? syncRenphoHealth()
           .then((renpho) => {
             result.renpho = renpho;
           })

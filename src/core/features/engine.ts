@@ -295,13 +295,7 @@ export class FeatureEngine {
       success: true,
       confidence: loadFeatureSet.confidence,
     });
-    const loadRecord = await this.saveFeatureSet(
-      athleteId,
-      'LOAD',
-      trainingDayId,
-      null,
-      loadFeatureSet,
-    );
+    await this.saveFeatureSet(athleteId, 'LOAD', trainingDayId, null, loadFeatureSet);
 
     // ── Recovery features ─────────────────────────────────────────────────
     const recoveryObs = await this.loadRecoveryObservations(athleteId, trainingDayId);
@@ -337,13 +331,7 @@ export class FeatureEngine {
       confidence: recoveryFeatureSet.confidence,
     });
 
-    const recoveryRecord = await this.saveFeatureSet(
-      athleteId,
-      'RECOVERY',
-      trainingDayId,
-      null,
-      recoveryFeatureSet,
-    );
+    await this.saveFeatureSet(athleteId, 'RECOVERY', trainingDayId, null, recoveryFeatureSet);
 
     // ── Body features ─────────────────────────────────────────────────────
     const bodyObs = await this.loadBodyObservation(athleteId, trainingDayId);

@@ -6,6 +6,7 @@ import { decryptSecret, encryptSecret } from '@/lib/secret-box';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { renphoMeasurementToBodyComposition } from '@/core/adapters/renpho-adapter';
 import { withingsWeighInDayKeys } from '@/lib/integrations/withings-sync';
+import { syncSinceFromLastSync, syncWindowDays } from '@/lib/integrations/sync-since';
 
 const ATHLETE_ID = 'default';
 
@@ -110,14 +111,15 @@ export async function syncRenphoHealth(options?: {
   if (!account) throw new Error('Compte Renpho non connecté');
 
   const client = getRenphoClientFromAccount(account);
-  const days = options?.full ? 365 * 3 : Math.min(options?.days ?? 60, 365 * 3);
-  const sinceTimestamp = options?.full
-    ? undefined
-    : Math.floor(subDays(startOfDay(new Date()), days).getTime() / 1000);
+  const since = options?.full
+    ? subDays(startOfDay(new Date()), 365 * 3)
+    : syncSinceFromLastSync(account.lastSyncAt, options?.days ?? 60);
+  const days = syncWindowDays(since);
+  const sinceTimestamp = options?.full ? undefined : Math.floor(since.getTime() / 1000);
   const limit = options?.full ? 2000 : Math.max(days * 2, 100);
 
   const measurements = await client.getMeasurements({ sinceTimestamp, limit });
-  const withingsDays = await withingsWeighInDayKeys(subDays(startOfDay(new Date()), days));
+  const withingsDays = await withingsWeighInDayKeys(since);
 
   let imported = 0;
   let updated = 0;

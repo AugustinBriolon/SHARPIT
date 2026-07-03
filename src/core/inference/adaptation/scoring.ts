@@ -25,6 +25,25 @@ const WEIGHTS = {
   recoveryQuality: 0.2,
 } as const;
 
+function scoreFromRhrDeltaOnly(rhrDeltaFromBaseline: number): number {
+  if (rhrDeltaFromBaseline < -2) return 65;
+  if (rhrDeltaFromBaseline > 2) return 35;
+  return 50;
+}
+
+function scoreFromCapacityOnly(capacity: FatigueState['trainingCapacity']): number {
+  if (capacity === 'FULL') return 65;
+  if (capacity === 'REDUCED') return 50;
+  return 30;
+}
+
+function classifyDataCompleteness(availableDimensionCount: number): DataCompleteness {
+  if (availableDimensionCount === 4) return 'FULL';
+  if (availableDimensionCount >= 2) return 'PARTIAL';
+  if (availableDimensionCount === 1) return 'SPARSE';
+  return 'INSUFFICIENT';
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Individual dimension scorers
 // ─────────────────────────────────────────────────────────────────────────────
@@ -165,7 +184,7 @@ export function scoreAutonomicAdaptation(recovery: RecoveryFeatureSet | 'PENDING
     else score = Math.max(10, 30 + (hrvDeltaFromBaseline + 10) * 2);
   } else {
     partial = true;
-    score = rhrDeltaFromBaseline! < -2 ? 65 : rhrDeltaFromBaseline! > 2 ? 35 : 50;
+    score = scoreFromRhrDeltaOnly(rhrDeltaFromBaseline!);
   }
 
   if (partial) score = Math.max(0, score - 20);
@@ -204,7 +223,7 @@ export function scoreRecoveryQuality(
   } else if (readiness !== null) {
     score = lerp(20, 50, 0, readiness);
   } else {
-    score = capacity === 'FULL' ? 65 : capacity === 'REDUCED' ? 50 : 30;
+    score = scoreFromCapacityOnly(capacity!);
   }
 
   if (accumulationDays > 7) {
@@ -240,14 +259,7 @@ export function synthesizeAdaptationIndex(dims: ScoredAdaptationDimensions): {
   const totalAvailableWeight = available.reduce((s, e) => s + e.weight, 0);
   const availableDimensionCount = available.length;
 
-  const dataCompleteness: DataCompleteness =
-    availableDimensionCount === 4
-      ? 'FULL'
-      : availableDimensionCount >= 2
-        ? 'PARTIAL'
-        : availableDimensionCount === 1
-          ? 'SPARSE'
-          : 'INSUFFICIENT';
+  const dataCompleteness = classifyDataCompleteness(availableDimensionCount);
 
   if (totalAvailableWeight < 0.5) {
     return {
