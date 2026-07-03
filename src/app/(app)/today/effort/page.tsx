@@ -1,10 +1,25 @@
 'use client';
 
 import Link from 'next/link';
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  ReferenceLine,
+  Legend,
+} from 'recharts';
 import { cn } from '@/lib/utils';
+import { ArcGauge } from '@/components/ui/arc-gauge';
 import { useToday } from '@/hooks/use-today';
 import { useActivities } from '@/hooks/use-data';
 import { computeTrainingLoad } from '@/lib/training-load';
+import { computePmcSeries } from '@/lib/analytics';
 import { resolve } from '@/lib/french';
 import {
   mapFatigueToSignal,
@@ -20,7 +35,7 @@ import {
 import type { DimensionResult } from '@/hooks/use-today';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Effort detail page — /today/effort
+// Effort analytical dashboard — /today/effort
 // ─────────────────────────────────────────────────────────────────────────────
 
 const DIMENSION_LABEL: Record<string, string> = {
@@ -32,11 +47,11 @@ const DIMENSION_LABEL: Record<string, string> = {
 };
 
 const DIMENSION_DESCRIPTION: Record<string, string> = {
-  load: 'TSS récent, ACWR, tendance de charge',
-  neuromuscular: 'Charge en force et vitesse, temps de récupération musculaire',
-  metabolic: 'Volume à haute intensité, dette lactique estimée',
-  cumulative: 'Accumulation sur plusieurs semaines',
-  psychological: 'Stress perçu, motivation, charge mentale',
+  load: 'TSS, ACWR, tendance',
+  neuromuscular: 'Force, vitesse, récupération musculaire',
+  metabolic: 'Volume intensité, dette lactique',
+  cumulative: 'Accumulation multi-semaines',
+  psychological: 'Stress, motivation, charge mentale',
 };
 
 const DOMINANT_LABEL: Record<string, string> = {
@@ -56,38 +71,53 @@ const OVERREACHING_RISK_DISPLAY: Record<string, { label: string; colorClass: str
 
 const FATIGUE_VERDICT_DISPLAY: Record<
   string,
-  { label: string; colorClass: string; description: string }
+  { label: string; colorClass: string; borderClass: string; bgClass: string }
 > = {
   BUILD: {
     label: 'Progresser',
     colorClass: 'text-emerald-600 dark:text-emerald-400',
-    description: 'La charge peut être augmentée pour stimuler les adaptations.',
+    borderClass: 'border-emerald-500/30',
+    bgClass: 'bg-emerald-500/8',
   },
   MAINTAIN: {
     label: 'Maintenir',
     colorClass: 'text-blue-600 dark:text-blue-400',
-    description: 'La charge actuelle est adaptée — ne pas augmenter ni réduire.',
+    borderClass: 'border-blue-500/30',
+    bgClass: 'bg-blue-500/8',
   },
   REDUCE: {
     label: 'Réduire la charge',
     colorClass: 'text-amber-600 dark:text-amber-400',
-    description: 'La fatigue dépasse la capacité de récupération — lever le pied.',
+    borderClass: 'border-amber-500/30',
+    bgClass: 'bg-amber-500/8',
   },
   REST_WEEK: {
     label: 'Semaine de récupération',
     colorClass: 'text-orange-600 dark:text-orange-400',
-    description: 'La fatigue accumulée nécessite une semaine de décharge complète.',
+    borderClass: 'border-amber-500/30',
+    bgClass: 'bg-amber-500/8',
   },
   TAPER: {
     label: 'Affûtage',
     colorClass: 'text-blue-600 dark:text-blue-400',
-    description: 'Réduction progressive de la charge pour optimiser la forme en compétition.',
+    borderClass: 'border-blue-500/30',
+    bgClass: 'bg-blue-500/8',
   },
   INSUFFICIENT_DATA: {
     label: 'Données insuffisantes',
     colorClass: 'text-muted-foreground',
-    description: 'Pas assez de données pour formuler une directive de charge.',
+    borderClass: '',
+    bgClass: 'bg-card/60',
   },
+};
+
+const VERDICT_DESCRIPTION: Record<string, string> = {
+  BUILD: 'La charge peut être augmentée pour stimuler les adaptations.',
+  MAINTAIN: 'La charge actuelle est adaptée — ne pas augmenter ni réduire.',
+  REDUCE: 'La fatigue dépasse la capacité de récupération — lever le pied.',
+  REST_WEEK: 'La fatigue accumulée nécessite une semaine de décharge complète.',
+  TAPER: 'Réduction progressive de la charge pour optimiser la forme en compétition.',
+  INSUFFICIENT_DATA: 'Pas assez de données pour formuler une directive de charge.',
 };
 
 const CONFIDENCE_TIER_LABEL: Record<string, { label: string; colorClass: string }> = {
@@ -103,45 +133,38 @@ const COMPLETENESS_LABEL: Record<string, string> = {
   INSUFFICIENT: 'Insuffisantes',
 };
 
-function acwrZoneDisplay(acwr: number): { label: string; colorClass: string; description: string } {
-  if (acwr <= 0) return { label: '—', colorClass: 'text-muted-foreground', description: '' };
-  if (acwr < 0.9)
-    return {
-      label: 'Sous-charge',
-      colorClass: 'text-blue-600 dark:text-blue-400',
-      description: 'Charge insuffisante — risque de désentraînement progressif.',
-    };
-  if (acwr <= 1.3)
-    return {
-      label: 'Zone optimale',
-      colorClass: 'text-emerald-600 dark:text-emerald-400',
-      description: 'Sweet spot de progression — risque de blessure minimal.',
-    };
-  if (acwr <= 1.5)
-    return {
-      label: "Zone d'alerte",
-      colorClass: 'text-amber-600 dark:text-amber-400',
-      description: 'Charge aiguë élevée par rapport à la base — surveiller la récupération.',
-    };
-  return {
-    label: 'Zone de risque',
-    colorClass: 'text-red-600 dark:text-red-400',
-    description: 'Surcharge acute marquée — risque blessure × 2-4 selon littérature.',
-  };
-}
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
-function DimensionBar({ name, dim }: { name: string; dim: DimensionResult }) {
-  if (!dim.available) return null;
+function DimensionRow({ name, dim }: { name: string; dim: DimensionResult }) {
+  if (!dim.available) {
+    return (
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <p className="text-muted-foreground/50 text-xs">{DIMENSION_LABEL[name] ?? name}</p>
+            <p className="text-muted-foreground/30 text-[10px]">{DIMENSION_DESCRIPTION[name]}</p>
+          </div>
+          <span className="text-muted-foreground/40 text-[10px]">Signal manquant</span>
+        </div>
+        <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
+          <div className="bg-muted-foreground/10 h-full w-0 rounded-full" />
+        </div>
+      </div>
+    );
+  }
+
   const { score } = dim;
-  const colorClass = mapScoreToColorClass(score !== null ? 100 - score : null);
+  // Fatigue dimension: high score = bad → invert color
+  const colorScore = score !== null ? 100 - score : null;
+  const colorClass = mapScoreToColorClass(colorScore);
+  const [barColorClass] = colorClass.replace('text-', 'bg-').split(' ');
+
   return (
     <div className="space-y-1">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-muted-foreground text-xs">{DIMENSION_LABEL[name] ?? name}</p>
-          {DIMENSION_DESCRIPTION[name] && (
-            <p className="text-muted-foreground/50 text-[10px]">{DIMENSION_DESCRIPTION[name]}</p>
-          )}
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <p className="text-xs font-medium">{DIMENSION_LABEL[name] ?? name}</p>
+          <p className="text-muted-foreground/50 text-[10px]">{DIMENSION_DESCRIPTION[name]}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {dim.status && (
@@ -149,25 +172,80 @@ function DimensionBar({ name, dim }: { name: string; dim: DimensionResult }) {
               {dim.status}
             </span>
           )}
-          <span className={cn('text-xs font-semibold tabular-nums', colorClass)}>
+          <span className={cn('w-6 text-right text-sm font-bold tabular-nums', colorClass)}>
             {score !== null ? score : '—'}
           </span>
         </div>
       </div>
       {score !== null && (
-        <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
+        <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
           <div
+            className={cn('h-full rounded-full transition-all duration-500', barColorClass)}
             style={{ width: `${score}%` }}
-            className={cn(
-              'h-full rounded-full transition-all',
-              colorClass.replace('text-', 'bg-').split(' ')[0],
-            )}
           />
         </div>
       )}
     </div>
   );
 }
+
+function AcwrZoneBar({ acwr }: { acwr: number }) {
+  if (acwr <= 0) return null;
+
+  const zones = [
+    { label: 'Sous-charge', min: 0, max: 0.9, color: '#3b82f6' },
+    { label: 'Optimal', min: 0.9, max: 1.3, color: '#10b981' },
+    { label: 'Alerte', min: 1.3, max: 1.5, color: '#f59e0b' },
+    { label: 'Danger', min: 1.5, max: 2.0, color: '#ef4444' },
+  ];
+
+  const totalRange = 2.0;
+  const markerPct = Math.min((acwr / totalRange) * 100, 100);
+
+  const activeZone = zones.find((z) => acwr >= z.min && acwr < z.max) ?? zones[zones.length - 1];
+
+  return (
+    <div className="space-y-2">
+      <div className="relative">
+        {/* Zone bar */}
+        <div className="flex h-3 w-full overflow-hidden rounded-full">
+          {zones.map((z) => {
+            const width = ((z.max - z.min) / totalRange) * 100;
+            return (
+              <div
+                key={z.label}
+                className="h-full"
+                style={{ width: `${width}%`, background: z.color, opacity: 0.7 }}
+              />
+            );
+          })}
+        </div>
+        {/* Current position marker */}
+        <div
+          className="absolute top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-white shadow-md"
+          style={{ left: `${markerPct}%` }}
+        />
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-muted-foreground text-[10px]">0.0</span>
+        <span className="text-muted-foreground text-[10px]">0.9</span>
+        <span className="text-muted-foreground text-[10px]">1.3</span>
+        <span className="text-muted-foreground text-[10px]">1.5</span>
+        <span className="text-muted-foreground text-[10px]">2.0</span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-bold tabular-nums" style={{ color: activeZone.color }}>
+          {acwr.toFixed(2)}
+        </span>
+        <span className="text-xs font-medium" style={{ color: activeZone.color }}>
+          {activeZone.label}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function TodayEffortPage() {
   const { data, loading } = useToday();
@@ -196,21 +274,43 @@ export default function TodayEffortPage() {
   }
 
   const today = new Date();
-  const trainingLoad = computeTrainingLoad(
-    activities.map((a) => ({ load: a.load, date: new Date(a.date) })),
+  const activityInputs = activities.map((a) => ({ load: a.load, date: new Date(a.date) }));
+  const trainingLoad = computeTrainingLoad(activityInputs, today);
+
+  // PMC series — last 28 days for chart
+  const pmcSeries = computePmcSeries(
+    activities.map((a) => ({ ...a, date: new Date(a.date) })),
+    28,
     today,
   );
 
-  // Chronic weekly average derived from acute/ACWR relationship
+  // Weekly TSS bars — last 8 weeks
+  const weeklyTss: { week: string; tss: number }[] = [];
+  for (let w = 7; w >= 0; w--) {
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - w * 7 - 6);
+    const weekEnd = new Date(today);
+    weekEnd.setDate(today.getDate() - w * 7);
+    const total = activities
+      .filter((a) => {
+        const d = new Date(a.date);
+        return d >= weekStart && d <= weekEnd;
+      })
+      .reduce((s, a) => s + (a.load ?? 0), 0);
+    const label = `S-${w}`;
+    weeklyTss.push({ week: w === 0 ? 'Cette sem.' : label, tss: Math.round(total) });
+  }
+  const avgWeeklyTss =
+    weeklyTss.length > 0
+      ? Math.round(weeklyTss.reduce((s, w) => s + w.tss, 0) / weeklyTss.length)
+      : 0;
+
   const chronicWeeklyAvg =
     trainingLoad.acwr > 0 ? Math.round(trainingLoad.weeklyLoad / trainingLoad.acwr) : null;
 
   const signal = mapFatigueToSignal(
     fatigue.fatigueLevel as FatigueLevel,
     fatigue.trajectory as FatigueTrajectory,
-  );
-  const scoreClass = mapScoreToColorClass(
-    fatigue.fatigueIndex !== null ? 100 - fatigue.fatigueIndex : null,
   );
   const fatigueTypeLabel = mapFatigueTypeToLabel(fatigue.fatigueType as FatigueType);
   const overreachingDisplay = OVERREACHING_RISK_DISPLAY[fatigue.signals.functionalOverreachingRisk];
@@ -221,8 +321,8 @@ export default function TodayEffortPage() {
 
   const verdictDisplay =
     FATIGUE_VERDICT_DISPLAY[fatigue.decision.verdict] ?? FATIGUE_VERDICT_DISPLAY.INSUFFICIENT_DATA;
-
-  const acwrZone = acwrZoneDisplay(trainingLoad.acwr);
+  const verdictDescription =
+    VERDICT_DESCRIPTION[fatigue.decision.verdict] ?? VERDICT_DESCRIPTION.INSUFFICIENT_DATA;
 
   const confidencePct = Math.round(fatigue.confidence * 100);
   const confidenceTier = mapConfidenceToTier(fatigue.confidence);
@@ -233,7 +333,7 @@ export default function TodayEffortPage() {
   const availableDimCount = Object.values(fatigue.dimensions).filter((d) => d.available).length;
 
   return (
-    <div className="space-y-6 p-4">
+    <div className="space-y-4 p-4">
       <Link
         className="text-muted-foreground hover:text-foreground text-sm transition-colors"
         href="/"
@@ -241,229 +341,337 @@ export default function TodayEffortPage() {
         ← Aujourd'hui
       </Link>
 
-      {/* Score header */}
-      <div className="space-y-1">
-        <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-          Charge d'effort
-        </p>
-        <div className="flex items-baseline gap-3">
-          <span className={cn('text-5xl font-bold tabular-nums', scoreClass)}>
-            {fatigue.fatigueIndex !== null ? fatigue.fatigueIndex : '—'}
-          </span>
-          <span className={cn('flex items-center gap-1 text-sm font-medium', signal.qualityClass)}>
-            {signal.label}
-            <span aria-hidden>{signal.arrow}</span>
-          </span>
-        </div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1">
-          {fatigueTypeLabel && fatigue.fatigueType !== 'UNDETERMINED' && (
-            <span className="text-muted-foreground text-xs">
-              Type : <span className="text-foreground font-medium">{fatigueTypeLabel}</span>
-            </span>
-          )}
-          {fatigue.consecutiveAccumulationDays > 0 && (
-            <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
-              {fatigue.consecutiveAccumulationDays === 1
-                ? "1 jour d'accumulation consécutif"
-                : `${fatigue.consecutiveAccumulationDays} jours d'accumulation consécutifs`}
-            </span>
-          )}
-        </div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          {fatigue.estimatedTimeToFresh !== null && fatigue.estimatedTimeToFresh > 0 && (
-            <span className="text-muted-foreground text-xs">
-              Récupération estimée dans{' '}
-              <span className="text-foreground font-medium">
-                {fatigue.estimatedTimeToFresh === 1
-                  ? '1 jour'
-                  : `${fatigue.estimatedTimeToFresh} jours`}
-              </span>
-            </span>
-          )}
-          {performancePercent !== null && performancePercent < 100 && (
-            <span className="text-muted-foreground text-xs">
-              Capacité actuelle :{' '}
-              <span className="text-foreground font-medium">~{performancePercent}%</span>
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Decision directive */}
-      <div
-        className={cn(
-          'rounded-2xl border px-5 py-4',
-          fatigue.decision.verdict === 'BUILD'
-            ? 'border-emerald-500/30 bg-emerald-500/8'
-            : fatigue.decision.verdict === 'MAINTAIN'
-              ? 'border-blue-500/30 bg-blue-500/8'
-              : fatigue.decision.verdict === 'REDUCE' ||
-                  fatigue.decision.verdict === 'REST_WEEK' ||
-                  fatigue.decision.verdict === 'TAPER'
-                ? 'border-amber-500/30 bg-amber-500/8'
-                : 'bg-card/60',
-        )}
-      >
-        <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-          Directive de charge
-        </p>
-        <p className={cn('mt-1 text-sm font-semibold', verdictDisplay.colorClass)}>
-          {verdictDisplay.label}
-        </p>
-        <p className="text-muted-foreground mt-1 text-xs">{verdictDisplay.description}</p>
-      </div>
-
-      {/* Training capacity */}
-      <div className="bg-card/60 rounded-2xl border px-5 py-4">
-        <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-          Capacité d'entraînement
-        </p>
-        <p className="mt-1 text-sm font-semibold">
-          {mapFatigueCapacityLabel(fatigue.trainingCapacity as TrainingCapacity)}
-        </p>
-        {fatigue.decision.rationale.length > 0 && (
-          <ul className="mt-2 space-y-1">
-            {fatigue.decision.rationale.map((r, i) => (
-              <li
-                key={i}
-                className="text-muted-foreground text-xs before:mr-1.5 before:content-['·']"
-              >
-                {resolve(r)}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {/* Load metrics — ACWR with zone context */}
-      {(trainingLoad.weeklyLoad > 0 || trainingLoad.acwr > 0) && (
-        <div className="bg-card/60 space-y-3 rounded-2xl border px-5 py-4">
-          <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-            Charge d'entraînement
-          </p>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-muted-foreground text-[10px]">Charge 7 jours</p>
-              <p className="text-sm font-semibold tabular-nums">
-                {trainingLoad.weeklyLoad > 0 ? `${trainingLoad.weeklyLoad} TSS` : '—'}
-              </p>
-              <p className="text-muted-foreground text-[10px]">charge aiguë</p>
-            </div>
-            {chronicWeeklyAvg !== null && (
-              <div>
-                <p className="text-muted-foreground text-[10px]">Charge base (42j)</p>
-                <p className="text-sm font-semibold tabular-nums">{chronicWeeklyAvg} TSS/sem</p>
-                <p className="text-muted-foreground text-[10px]">charge chronique</p>
+      <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
+        {/* ── LEFT COLUMN ─────────────────────────────────────────────────── */}
+        <div className="space-y-4">
+          {/* Score hero */}
+          <div className="bg-card/60 rounded-2xl border px-5 py-5">
+            <p className="text-muted-foreground mb-3 text-[11px] font-medium tracking-[0.15em] uppercase">
+              Charge d'effort
+            </p>
+            <div className="flex items-center gap-5">
+              <ArcGauge score={fatigue.fatigueIndex} size={96} strokeWidth={7} invertColor />
+              <div className="space-y-1.5">
+                <span
+                  className={cn(
+                    'flex items-center gap-1 text-sm font-semibold',
+                    signal.qualityClass,
+                  )}
+                >
+                  {signal.label}
+                  <span aria-hidden>{signal.arrow}</span>
+                </span>
+                {fatigueTypeLabel && fatigue.fatigueType !== 'UNDETERMINED' && (
+                  <p className="text-muted-foreground text-xs">
+                    Type : <span className="text-foreground font-medium">{fatigueTypeLabel}</span>
+                  </p>
+                )}
+                {performancePercent !== null && performancePercent < 100 && (
+                  <p className="text-muted-foreground text-xs">
+                    Capacité :{' '}
+                    <span className="text-foreground font-medium">~{performancePercent}%</span>
+                  </p>
+                )}
+                {fatigue.consecutiveAccumulationDays > 0 && (
+                  <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                    {fatigue.consecutiveAccumulationDays}j d'accumulation consécutifs
+                  </p>
+                )}
+                {fatigue.estimatedTimeToFresh !== null && fatigue.estimatedTimeToFresh > 0 && (
+                  <p className="text-muted-foreground text-xs">
+                    Frais dans{' '}
+                    <span className="text-foreground font-medium">
+                      {fatigue.estimatedTimeToFresh === 1
+                        ? '1 jour'
+                        : `${fatigue.estimatedTimeToFresh} jours`}
+                    </span>
+                  </p>
+                )}
               </div>
+            </div>
+          </div>
+
+          {/* Load directive */}
+          <div
+            className={cn(
+              'rounded-2xl border px-5 py-4',
+              verdictDisplay.borderClass,
+              verdictDisplay.bgClass,
+            )}
+          >
+            <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+              Directive de charge
+            </p>
+            <p className={cn('mt-1 text-sm font-semibold', verdictDisplay.colorClass)}>
+              {verdictDisplay.label}
+            </p>
+            <p className="text-muted-foreground mt-0.5 text-xs">{verdictDescription}</p>
+            {fatigue.decision.rationale.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {fatigue.decision.rationale.slice(0, 3).map((r, i) => (
+                  <li
+                    key={i}
+                    className="text-muted-foreground text-xs before:mr-1.5 before:content-['·']"
+                  >
+                    {resolve(r)}
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
+
+          {/* Training capacity */}
+          <div className="bg-card/60 rounded-2xl border px-5 py-4">
+            <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+              Capacité d'entraînement
+            </p>
+            <p className="mt-1 text-sm font-semibold">
+              {mapFatigueCapacityLabel(fatigue.trainingCapacity as TrainingCapacity)}
+            </p>
+          </div>
+
+          {/* ACWR zone gauge */}
           {trainingLoad.acwr > 0 && (
-            <div className="border-border/50 border-t pt-3">
-              <div className="flex items-start justify-between gap-2">
+            <div className="bg-card/60 rounded-2xl border px-5 py-4">
+              <p className="text-muted-foreground mb-3 text-[11px] font-medium tracking-[0.15em] uppercase">
+                ACWR — Ratio charge aiguë / chronique
+              </p>
+              <AcwrZoneBar acwr={trainingLoad.acwr} />
+              <p className="text-muted-foreground/50 mt-2 text-[10px]">
+                Source: Gabbett 2016 · Sweet spot 0.9–1.3
+              </p>
+              <div className="mt-2 grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-muted-foreground text-[10px]">ACWR (ratio aigu / chronique)</p>
-                  <p className="text-muted-foreground/60 text-[10px]">
-                    Source : Gabbett 2016 — sweet spot 0.8–1.3
+                  <p className="text-muted-foreground text-[10px]">Charge 7j (aiguë)</p>
+                  <p className="text-sm font-semibold tabular-nums">
+                    {trainingLoad.weeklyLoad > 0 ? `${trainingLoad.weeklyLoad} TSS` : '—'}
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className={cn('text-sm font-semibold tabular-nums', acwrZone.colorClass)}>
-                    {trainingLoad.acwr.toFixed(2)}
-                  </p>
-                  <p className={cn('text-[10px] font-medium', acwrZone.colorClass)}>
-                    {acwrZone.label}
-                  </p>
-                </div>
+                {chronicWeeklyAvg !== null && (
+                  <div>
+                    <p className="text-muted-foreground text-[10px]">Base 42j (chronique)</p>
+                    <p className="text-sm font-semibold tabular-nums">{chronicWeeklyAvg} TSS/sem</p>
+                  </div>
+                )}
               </div>
-              {acwrZone.description && (
-                <p className="text-muted-foreground mt-1.5 text-[10px]">{acwrZone.description}</p>
+            </div>
+          )}
+
+          {/* 5 Dimension bars */}
+          <div className="bg-card/60 space-y-3 rounded-2xl border px-5 py-4">
+            <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+              Détail par dimension
+            </p>
+            <div className="space-y-3">
+              {Object.entries(fatigue.dimensions).map(([key, dim]) => (
+                <DimensionRow key={key} dim={dim} name={key} />
+              ))}
+            </div>
+            {availableDimCount < 5 && (
+              <p className="text-muted-foreground/50 text-[10px]">
+                {5 - availableDimCount} dimension{5 - availableDimCount > 1 ? 's' : ''} manquante
+                {5 - availableDimCount > 1 ? 's' : ''} (pas de données subjectives).
+              </p>
+            )}
+          </div>
+
+          {/* Dominant dimension callout */}
+          {fatigue.dominantDimension && (
+            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/8 px-5 py-4">
+              <p className="text-[11px] font-medium tracking-[0.15em] text-amber-600 uppercase dark:text-amber-400">
+                Dimension dominante
+              </p>
+              <p className="mt-1 text-sm font-semibold">
+                {DOMINANT_LABEL[fatigue.dominantDimension] ?? fatigue.dominantDimension}
+              </p>
+              {fatigue.primaryLimitingFactor && (
+                <p className="text-muted-foreground mt-0.5 text-xs">
+                  {fatigue.primaryLimitingFactor}
+                </p>
               )}
             </div>
           )}
-        </div>
-      )}
 
-      {/* Dominant dimension callout */}
-      {fatigue.dominantDimension && (
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/8 px-5 py-4">
-          <p className="text-[11px] font-medium tracking-[0.15em] text-amber-600 uppercase dark:text-amber-400">
-            Dimension dominante
-          </p>
-          <p className="mt-1 text-sm font-semibold">
-            {DOMINANT_LABEL[fatigue.dominantDimension] ?? fatigue.dominantDimension}
-          </p>
-          {fatigue.primaryLimitingFactor && (
-            <p className="text-muted-foreground mt-1 text-xs">{fatigue.primaryLimitingFactor}</p>
+          {/* Key evidence */}
+          {fatigue.recommendation.keyEvidence.length > 0 && (
+            <div className="bg-card/40 space-y-2 rounded-2xl border px-5 py-4">
+              <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+                Signaux clés
+              </p>
+              <ul className="space-y-1">
+                {fatigue.recommendation.keyEvidence.map((e, i) => (
+                  <li
+                    key={i}
+                    className="text-muted-foreground text-xs before:mr-1.5 before:content-['·']"
+                  >
+                    {resolve(e)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Overreaching alert */}
+          {overreachingDisplay && (
+            <div className="space-y-1 rounded-2xl border border-orange-500/20 bg-orange-500/5 px-5 py-4">
+              <p className="text-[11px] font-medium tracking-[0.15em] text-orange-600 uppercase dark:text-orange-400">
+                Alerte
+              </p>
+              <p className={cn('text-xs font-medium', overreachingDisplay.colorClass)}>
+                ⚠ Surmenage fonctionnel — {overreachingDisplay.label}
+              </p>
+            </div>
           )}
         </div>
-      )}
 
-      {/* Dimension breakdown */}
-      <div className="bg-card/60 space-y-4 rounded-2xl border px-5 py-4">
-        <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-          Détail par dimension
-        </p>
+        {/* ── RIGHT COLUMN ────────────────────────────────────────────────── */}
         <div className="space-y-4">
-          {Object.entries(fatigue.dimensions).map(([key, dim]) => (
-            <DimensionBar key={key} dim={dim} name={key} />
-          ))}
-        </div>
-      </div>
+          {/* PMC chart — CTL / ATL / TSB */}
+          {pmcSeries.length > 0 && (
+            <div className="bg-card/60 rounded-2xl border px-4 py-4">
+              <p className="text-muted-foreground mb-2 text-[11px] font-medium tracking-[0.15em] uppercase">
+                PMC — 28 jours
+              </p>
+              <ResponsiveContainer height={120} width="100%">
+                <LineChart data={pmcSeries} margin={{ top: 4, right: 4, bottom: 2, left: 2 }}>
+                  <XAxis
+                    axisLine={false}
+                    dataKey="label"
+                    interval="preserveStartEnd"
+                    tick={{ fontSize: 8, fill: 'currentColor' }}
+                    tickLine={false}
+                  />
+                  <YAxis hide />
+                  <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} vertical={false} />
+                  <ReferenceLine stroke="currentColor" strokeOpacity={0.2} y={0} />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (!active || !payload?.length) return null;
+                      const pt = payload[0]?.payload as {
+                        label: string;
+                        ctl: number;
+                        atl: number;
+                        tsb: number;
+                      };
+                      return (
+                        <div className="bg-popover border-border rounded-lg border px-2 py-1 text-[10px] shadow-sm">
+                          <p className="font-medium">{pt.label}</p>
+                          <p className="text-blue-500">CTL {pt.ctl}</p>
+                          <p className="text-orange-500">ATL {pt.atl}</p>
+                          <p className={pt.tsb >= 0 ? 'text-emerald-500' : 'text-red-500'}>
+                            TSB {pt.tsb > 0 ? '+' : ''}
+                            {pt.tsb}
+                          </p>
+                        </div>
+                      );
+                    }}
+                  />
+                  <Line
+                    dataKey="ctl"
+                    dot={false}
+                    name="CTL"
+                    stroke="#3b82f6"
+                    strokeWidth={1.5}
+                    type="monotone"
+                  />
+                  <Line
+                    dataKey="atl"
+                    dot={false}
+                    name="ATL"
+                    stroke="#f97316"
+                    strokeWidth={1.5}
+                    type="monotone"
+                  />
+                  <Line
+                    dataKey="tsb"
+                    dot={false}
+                    name="TSB"
+                    stroke="#10b981"
+                    strokeDasharray="3 2"
+                    strokeWidth={1}
+                    type="monotone"
+                  />
+                  <Legend iconSize={8} wrapperStyle={{ fontSize: 9 }} />
+                </LineChart>
+              </ResponsiveContainer>
+              <p className="text-muted-foreground/50 mt-1 text-[10px]">
+                CTL = forme · ATL = fatigue · TSB = forme − fatigue
+              </p>
+            </div>
+          )}
 
-      {/* Key evidence */}
-      {fatigue.recommendation.keyEvidence.length > 0 && (
-        <div className="bg-card/40 space-y-2 rounded-2xl border px-5 py-4">
-          <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-            Signaux clés
-          </p>
-          <ul className="space-y-1">
-            {fatigue.recommendation.keyEvidence.map((e, i) => (
-              <li
-                key={i}
-                className="text-muted-foreground text-xs before:mr-1.5 before:content-['·']"
-              >
-                {resolve(e)}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+          {/* Weekly TSS bars */}
+          {weeklyTss.some((w) => w.tss > 0) && (
+            <div className="bg-card/60 rounded-2xl border px-4 py-4">
+              <p className="text-muted-foreground mb-2 text-[11px] font-medium tracking-[0.15em] uppercase">
+                TSS hebdomadaire — 8 semaines
+              </p>
+              <ResponsiveContainer height={90} width="100%">
+                <BarChart data={weeklyTss} margin={{ top: 4, right: 2, bottom: 2, left: 2 }}>
+                  <XAxis
+                    axisLine={false}
+                    dataKey="week"
+                    tick={{ fontSize: 8, fill: 'currentColor' }}
+                    tickLine={false}
+                  />
+                  <YAxis hide />
+                  <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} vertical={false} />
+                  {avgWeeklyTss > 0 && (
+                    <ReferenceLine
+                      stroke="#94a3b8"
+                      strokeDasharray="4 2"
+                      strokeOpacity={0.5}
+                      y={avgWeeklyTss}
+                    />
+                  )}
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (!active || !payload?.[0]) return null;
+                      const pt = payload[0].payload as { week: string; tss: number };
+                      return (
+                        <div className="bg-popover border-border rounded-lg border px-2 py-1 text-[10px] shadow-sm">
+                          <p className="font-medium">{pt.tss} TSS</p>
+                          <p className="text-muted-foreground">{pt.week}</p>
+                        </div>
+                      );
+                    }}
+                  />
+                  <Bar dataKey="tss" fill="#3b82f6" fillOpacity={0.7} radius={[2, 2, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+              {avgWeeklyTss > 0 && (
+                <p className="text-muted-foreground/50 mt-1 text-[10px]">
+                  Moy. {avgWeeklyTss} TSS/sem (ligne pointillée)
+                </p>
+              )}
+            </div>
+          )}
 
-      {/* Confidence + data quality */}
-      <div className="bg-card/40 rounded-2xl border px-5 py-4">
-        <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-          Fiabilité du score
-        </p>
-        <div className="mt-3 grid grid-cols-3 gap-4">
-          <div>
-            <p className="text-muted-foreground text-[10px]">Confiance</p>
-            <p className={cn('text-sm font-semibold tabular-nums', confidenceDisplay?.colorClass)}>
-              {confidencePct}%
+          {/* Confidence block */}
+          <div className="bg-card/40 rounded-2xl border px-4 py-4">
+            <p className="text-muted-foreground mb-3 text-[11px] font-medium tracking-[0.15em] uppercase">
+              Fiabilité
             </p>
-            <p className="text-muted-foreground text-[10px]">{confidenceDisplay?.label}</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground text-[10px]">Dimensions actives</p>
-            <p className="text-sm font-semibold tabular-nums">{availableDimCount} / 5</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground text-[10px]">Données</p>
-            <p className="text-sm font-semibold">{completenessLabel}</p>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <p className="text-muted-foreground text-[10px]">Confiance</p>
+                <p className={cn('text-sm font-bold tabular-nums', confidenceDisplay?.colorClass)}>
+                  {confidencePct}%
+                </p>
+                <p className="text-muted-foreground text-[10px]">{confidenceDisplay?.label}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-[10px]">Dims actives</p>
+                <p className="text-sm font-bold tabular-nums">{availableDimCount} / 5</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-[10px]">Données</p>
+                <p className="text-sm font-bold">{completenessLabel}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Functional overreaching risk — show MODERATE+ */}
-      {overreachingDisplay && (
-        <div className="space-y-1 rounded-2xl border border-orange-500/20 bg-orange-500/5 px-5 py-4">
-          <p className="text-[11px] font-medium tracking-[0.15em] text-orange-600 uppercase dark:text-orange-400">
-            Alerte
-          </p>
-          <p className={cn('text-xs font-medium', overreachingDisplay.colorClass)}>
-            ⚠ Surmenage fonctionnel — {overreachingDisplay.label}
-          </p>
-        </div>
-      )}
     </div>
   );
 }
