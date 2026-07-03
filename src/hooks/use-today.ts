@@ -7,6 +7,11 @@ import { format } from 'date-fns';
 // API response types (no server imports — mirrors API route response shapes)
 // ─────────────────────────────────────────────────────────────────────────────
 
+export type I18nItem = {
+  code: string;
+  params?: Record<string, string | number>;
+};
+
 export type OverallVerdict =
   | 'TRAIN_HARD'
   | 'TRAIN_SMART'
@@ -47,43 +52,45 @@ export interface KeyFinding {
   id: string;
   category: string;
   severity: FindingSeverity;
-  title: string;
-  evidence: string[];
+  title: I18nItem;
+  evidenceItems: I18nItem[];
   confidence: number;
 }
 
 export interface TopAction {
-  verb: string;
-  focus: string;
-  rationale: string;
+  verbCode: string;
+  focusCode: string;
+  rationaleCode: string;
   expectedBenefit: number;
 }
 
 export interface LimitingFactor {
   system: 'RECOVERY' | 'FATIGUE' | 'ADAPTATION' | null;
-  description: string | null;
+  description: I18nItem | null;
   actionable: boolean;
 }
 
 export interface Opportunity {
+  id: string;
   type: string;
-  timeWindow: string;
+  title: I18nItem;
+  rationale: I18nItem;
   expectedBenefit: number;
-  description?: string;
+  timeWindow: string;
 }
 
 export interface Conflict {
-  description: string;
+  id: string;
+  type: string;
+  descriptionCode: string;
   models: string[];
-  resolution: string;
+  resolutionCode: string;
 }
 
 export interface EngineRecommendation {
   type: string;
-  title: string;
-  summary: string;
-  keyEvidence: string[];
-  limitingFactor?: string | null;
+  keyEvidence: I18nItem[];
+  confidence?: number;
 }
 
 export interface ReasoningData {
@@ -98,7 +105,6 @@ export interface ReasoningData {
   topAction: TopAction | null;
   opportunities: Opportunity[];
   conflicts: Conflict[];
-  explanation: string;
   computedAt: string;
   signals: {
     availableModelCount: number;
@@ -125,9 +131,11 @@ export interface RecoveryData {
   decision: {
     verdict: RecoveryDecisionVerdict;
     recommendedIntensity: RecommendedIntensity;
-    rationale: string[];
+    rationale: I18nItem[];
   };
-  overreachingRisk: OverreachingRisk;
+  signals: {
+    overreachingRisk: OverreachingRisk;
+  };
   computedAt: string;
 }
 
@@ -151,9 +159,11 @@ export interface FatigueData {
   decision: {
     verdict: FatigueDecisionVerdict;
     trainingCapacity: TrainingCapacity;
-    rationale: string[];
+    rationale: I18nItem[];
   };
-  functionalOverreachingRisk: OverreachingRisk;
+  signals: {
+    functionalOverreachingRisk: OverreachingRisk;
+  };
   computedAt: string;
 }
 
@@ -174,12 +184,9 @@ export interface AdaptationData {
   decision: {
     verdict: AdaptationDecisionVerdict;
     loadMultiplier: number;
-    rationale: string[];
+    rationale: I18nItem[];
   };
-  recommendation: {
-    title: string;
-    summary: string;
-  };
+  recommendation: EngineRecommendation;
   computedAt: string;
 }
 
@@ -245,7 +252,7 @@ export function useToday(date: Date = new Date()): UseTodayResult {
       if (cancelled) return;
 
       if (!reasoning && !recovery && !fatigue && !adaptation) {
-        setError("Unable to load today's assessment. Please try again.");
+        setError('Impossible de charger ton bilan du jour. Réessaie.');
       }
 
       setData({ reasoning, recovery, fatigue, adaptation });
