@@ -1,5 +1,6 @@
 'use client';
 
+import { CheckCircle2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   mapRecoveryProjection,
@@ -99,9 +100,7 @@ export function ExpectedOutcomeBlock({
       {/* Primary opportunity */}
       {primary && (
         <div className="flex items-start gap-3">
-          <span className="mt-0.5 text-emerald-500" aria-hidden>
-            ✓
-          </span>
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" aria-hidden />
           <div>
             <p className="text-sm font-medium">{resolve(primary.title)}</p>
             {primary.timeWindow && (
@@ -130,17 +129,19 @@ export function ExpectedOutcomeBlock({
 
       {/* Deviation warning */}
       {deviation.level !== 'safe' && (
-        <p
+        <div
           className={cn(
-            'border-t pt-3 text-xs leading-relaxed',
+            'flex items-start gap-2 border-t pt-3',
             deviation.level === 'warning'
               ? 'text-red-600 dark:text-red-400'
               : 'text-amber-600 dark:text-amber-400',
           )}
         >
-          {deviation.level === 'warning' ? '⚠ ' : ''}
-          {deviation.message}
-        </p>
+          {deviation.level === 'warning' && (
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+          )}
+          <p className="text-xs leading-relaxed">{deviation.message}</p>
+        </div>
       )}
     </div>
   );
