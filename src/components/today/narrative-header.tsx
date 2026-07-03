@@ -83,10 +83,6 @@ export function NarrativeHeader({
         isStale && 'opacity-80',
       )}
     >
-      <span
-        className={cn('absolute inset-x-0 top-0 h-[2px] rounded-t-2xl', display.accentBarClass)}
-        aria-hidden
-      />
       {/* Verdict badge */}
       <div className="mb-3 flex items-center gap-2">
         <span className={cn('h-2.5 w-2.5 shrink-0 rounded-full', display.dotClass)} aria-hidden />
