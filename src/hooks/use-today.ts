@@ -87,10 +87,22 @@ export interface Conflict {
   resolutionCode: string;
 }
 
+export interface DimensionResult {
+  score: number | null;
+  status: string;
+  available: boolean;
+}
+
 export interface EngineRecommendation {
   type: string;
   keyEvidence: I18nItem[];
   confidence?: number;
+}
+
+export interface EvidenceGraph {
+  recoveryContribution: number;
+  fatigueContribution: number;
+  adaptationContribution: number;
 }
 
 export interface ReasoningData {
@@ -105,6 +117,7 @@ export interface ReasoningData {
   topAction: TopAction | null;
   opportunities: Opportunity[];
   conflicts: Conflict[];
+  evidenceGraph: EvidenceGraph | null;
   computedAt: string;
   signals: {
     availableModelCount: number;
@@ -123,9 +136,23 @@ export type ReadinessCategory =
   | 'BASELINE_PENDING'
   | 'INSUFFICIENT_DATA';
 
+export type AutonomicBalance =
+  'ENHANCED' | 'NORMAL' | 'MILDLY_SUPPRESSED' | 'SUPPRESSED' | 'CRITICALLY_SUPPRESSED';
+
+export type SubjectiveWellness = 'HIGH' | 'NORMAL' | 'LOW' | 'VERY_LOW';
+
+export type LoadStressContext = 'UNDERTRAINED' | 'OPTIMAL' | 'ELEVATED' | 'HIGH' | 'CRITICAL';
+
+export type SleepAdequacySignal =
+  'EXCELLENT' | 'ADEQUATE' | 'INSUFFICIENT' | 'SEVERELY_INSUFFICIENT';
+
+export type IllnessRisk = 'LOW' | 'ELEVATED' | 'HIGH';
+
 export interface RecoveryData {
   readinessScore: number | null;
   readinessCategory: ReadinessCategory;
+  primaryLimitingFactor: 'autonomic' | 'sleep' | 'subjective' | 'loadContext' | null;
+  estimatedTimeToFullRecovery: number | null;
   confidence: number;
   recommendation: EngineRecommendation;
   decision: {
@@ -133,8 +160,20 @@ export interface RecoveryData {
     recommendedIntensity: RecommendedIntensity;
     rationale: I18nItem[];
   };
+  dimensions: {
+    autonomic: DimensionResult;
+    sleep: DimensionResult;
+    subjective: DimensionResult;
+    loadContext: DimensionResult;
+  };
   signals: {
+    autonomicBalance: AutonomicBalance;
+    sleepAdequacy: SleepAdequacySignal;
+    subjectiveWellness: SubjectiveWellness;
+    loadStressContext: LoadStressContext;
     overreachingRisk: OverreachingRisk;
+    illnessRisk: IllnessRisk;
+    dissonanceDetected: boolean;
   };
   computedAt: string;
 }
@@ -150,10 +189,26 @@ export type FatigueLevel =
 
 export type FatigueTrajectory = 'RESOLVING' | 'STABLE' | 'ACCUMULATING' | 'ACCELERATING';
 
+export type FatigueType =
+  | 'LOAD_DOMINANT'
+  | 'NEUROMUSCULAR_DOMINANT'
+  | 'METABOLIC_DOMINANT'
+  | 'PSYCHOLOGICAL_DOMINANT'
+  | 'CUMULATIVE_MULTI_SYSTEM'
+  | 'MIXED'
+  | 'UNDETERMINED';
+
 export interface FatigueData {
+  fatigueIndex: number | null;
   fatigueLevel: FatigueLevel;
+  fatigueType: FatigueType;
   trajectory: FatigueTrajectory;
   trainingCapacity: TrainingCapacity;
+  consecutiveAccumulationDays: number;
+  dominantDimension: string | null;
+  primaryLimitingFactor: string | null;
+  estimatedTimeToFresh: number | null;
+  performanceImpairmentEstimate: number;
   confidence: number;
   recommendation: EngineRecommendation;
   decision: {
@@ -161,8 +216,16 @@ export interface FatigueData {
     trainingCapacity: TrainingCapacity;
     rationale: I18nItem[];
   };
+  dimensions: {
+    load: DimensionResult;
+    neuromuscular: DimensionResult;
+    metabolic: DimensionResult;
+    cumulative: DimensionResult;
+    psychological: DimensionResult;
+  };
   signals: {
     functionalOverreachingRisk: OverreachingRisk;
+    isAccumulating: boolean;
   };
   computedAt: string;
 }
@@ -178,9 +241,24 @@ export type AdaptationStatus =
 export type AdaptationTrend = 'IMPROVING' | 'STABLE' | 'DECLINING';
 
 export interface AdaptationData {
+  adaptationIndex: number | null;
   adaptationStatus: AdaptationStatus;
   adaptationTrend: AdaptationTrend;
+  dimensions: {
+    loadProgression: DimensionResult;
+    neuromuscularEfficiency: DimensionResult;
+    autonomicAdaptation: DimensionResult;
+    recoveryQuality: DimensionResult;
+  };
+  limitingFactor: string | null;
+  estimatedAdaptationPeak: number | null;
+  plateauRisk: boolean;
+  overreachingWithoutAdaptationDetected: boolean;
   confidence: number;
+  signals: {
+    availableDimensionCount: number;
+    historyLength: number;
+  };
   decision: {
     verdict: AdaptationDecisionVerdict;
     loadMultiplier: number;
