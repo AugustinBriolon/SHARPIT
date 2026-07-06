@@ -177,14 +177,10 @@ describe('scoreSleep', () => {
     expect(dim.score).toBe(50);
   });
 
-  it('applies sleep debt modifier: 60–120 min debt = ×0.95', () => {
-    const dim = scoreSleep(makeRecovery({ sleepEfficiencyPercent: 36, sleepDebtMin: 90 }));
-    expect(dim.score).toBeCloseTo(50 * 0.95, 0);
-  });
-
-  it('applies severe debt modifier: > 300 min = ×0.75', () => {
-    const dim = scoreSleep(makeRecovery({ sleepEfficiencyPercent: 36, sleepDebtMin: 300 }));
-    expect(dim.score).toBeCloseTo(50 * 0.75, 0);
+  it('ignores sleep debt — score reflects night architecture only', () => {
+    const withoutDebt = scoreSleep(makeRecovery({ sleepEfficiencyPercent: 36, sleepDebtMin: 0 }));
+    const withDebt = scoreSleep(makeRecovery({ sleepEfficiencyPercent: 36, sleepDebtMin: 300 }));
+    expect(withDebt.score).toBe(withoutDebt.score);
   });
 
   it('returns unavailable when restorative ratio is null', () => {
@@ -335,7 +331,7 @@ describe('runRecoveryModel', () => {
       makeRecovery({
         hrvDeltaFromBaseline: -18,
         rhrDeltaFromBaseline: 6,
-        sleepEfficiencyPercent: 60,
+        sleepEfficiencyPercent: 28,
         sleepDebtMin: 150,
         subjectiveWellnessIndex: 3.5,
       }),
@@ -492,11 +488,10 @@ describe('runRecoveryModel', () => {
     });
 
     it('primaryLimitingFactor is the dimension with the lowest score', () => {
-      // Force sleep to be the worst dimension
       const features = makeDayFeatures(
         makeRecovery({
-          hrvDeltaFromBaseline: 8, // autonomic: good
-          sleepEfficiencyPercent: 50, // sleep: very poor
+          hrvDeltaFromBaseline: 8,
+          sleepEfficiencyPercent: 24,
           sleepDebtMin: 200,
           subjectiveWellnessIndex: 7.0,
         }),

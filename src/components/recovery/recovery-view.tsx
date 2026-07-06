@@ -3,10 +3,9 @@
 import { useMemo } from 'react';
 import { MetricLineChart } from '@/components/recovery/health-charts';
 import { ReadinessHero, RecoveryStat } from '@/components/recovery/recovery-panels';
-import { SleepCoachPanel } from '@/components/recovery/sleep-coach-panel';
 import { PageHeader } from '@/components/layout/sticky-header';
-import type { SleepEntryInput } from '@/lib/sleep';
 import { Skeleton } from '@/components/ui/skeleton';
+import { isAnyInitialQueryLoad } from '@/hooks/use-query-status';
 import { computePmcSeries } from '@/lib/analytics';
 import { buildHealthSeries, computeTrend, formatSleep } from '@/lib/health';
 import {
@@ -17,12 +16,11 @@ import {
   stressTone,
   type ReadinessFactor,
 } from '@/lib/recovery';
-import { useActivities, useAthleteProfile, useHealthEntries } from '@/hooks/use-data';
+import { useActivities, useHealthEntries } from '@/hooks/use-data';
 
 export function RecoveryView({ embedded = false }: { embedded?: boolean }) {
   const healthQuery = useHealthEntries();
   const activitiesQuery = useActivities();
-  const profileQuery = useAthleteProfile();
 
   const entries = useMemo(() => healthQuery.data ?? [], [healthQuery.data]);
   const activities = useMemo(() => activitiesQuery.data ?? [], [activitiesQuery.data]);
@@ -40,7 +38,7 @@ export function RecoveryView({ embedded = false }: { embedded?: boolean }) {
     [entries],
   );
 
-  if (healthQuery.isLoading || activitiesQuery.isLoading) {
+  if (isAnyInitialQueryLoad([healthQuery, activitiesQuery])) {
     return <RecoverySkeleton embedded={embedded} />;
   }
 
@@ -132,14 +130,6 @@ export function RecoveryView({ embedded = false }: { embedded?: boolean }) {
           />
         </div>
       </section>
-
-      <SleepCoachPanel
-        entries={entries as unknown as SleepEntryInput[]}
-        sleepGoals={{
-          targetDurationMin: profileQuery.data?.sleepTargetMinutes ?? null,
-          bedtimeTargetMin: profileQuery.data?.sleepBedtimeTargetMin ?? null,
-        }}
-      />
 
       <section className="space-y-3">
         <h2 className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">

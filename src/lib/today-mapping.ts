@@ -606,14 +606,28 @@ export function mapFatigueCapacityLabel(capacity: TrainingCapacity): string {
 
 export function mapScoreToColorClass(score: number | null): string {
   if (score === null) return 'text-muted-foreground';
-  if (score >= 80) return 'text-emerald-600 dark:text-emerald-400';
-  if (score >= 60) return 'text-blue-600 dark:text-blue-400';
-  if (score >= 40) return 'text-amber-600 dark:text-amber-400';
+  if (score >= 67) return 'text-emerald-600 dark:text-emerald-400';
+  if (score >= 34) return 'text-amber-600 dark:text-amber-400';
   return 'text-red-600 dark:text-red-400';
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Autonomic balance — HRV + RHR system status
+/** Bar fill for score gauges — literals required for Tailwind class detection. */
+export function mapScoreToBarColorClass(score: number | null): string {
+  if (score === null) return 'bg-muted-foreground/10';
+  if (score >= 67) return 'bg-emerald-600 dark:bg-emerald-400';
+  if (score >= 34) return 'bg-amber-600 dark:bg-amber-400';
+  return 'bg-red-600 dark:bg-red-400';
+}
+
+/** Fatigue dimension intensity — higher score = more fatigue. */
+export function mapFatigueDimensionIntensity(score: number | null): string | null {
+  if (score === null) return null;
+  if (score <= 15) return 'Faible';
+  if (score <= 40) return 'Modérée';
+  if (score <= 70) return 'Élevée';
+  return 'Critique';
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type AutonomicBalance =

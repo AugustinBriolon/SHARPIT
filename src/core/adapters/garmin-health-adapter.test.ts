@@ -12,6 +12,7 @@ const RECEIVED_AT = new Date('2026-07-02T10:00:00Z');
 
 const EMPTY_SLEEP = {
   sleepMinutes: null,
+  napMinutes: null,
   sleepScore: null,
   sleepDeepMin: null,
   sleepLightMin: null,
@@ -28,6 +29,7 @@ function buildHealth(overrides: Partial<GarminDailyHealth> = {}): GarminDailyHea
   return {
     date: '2026-07-02',
     sleepMinutes: null,
+    napMinutes: null,
     restingHr: null,
     hrv: null,
     weightKg: null,
@@ -112,6 +114,36 @@ describe('garminHealthToObservations — SLEEP', () => {
     expect(sleep.timestamp.toISOString()).toBe('2026-07-02T00:30:00.000Z');
     // Wake: 2026-07-02 05:30 UTC
     expect(sleep.wakeTimestamp.toISOString()).toBe('2026-07-02T05:30:00.000Z');
+  });
+
+  it('adds nap minutes to total sleep duration for recovery', () => {
+    const health = buildHealth({
+      sleepMinutes: 420,
+      napMinutes: 30,
+      sleep: {
+        ...EMPTY_SLEEP,
+        sleepWakeMin: 390,
+        napMinutes: 30,
+      },
+    });
+    const observations = garminHealthToObservations(health, CALENDAR_DATE, RECEIVED_AT);
+    const sleep = observations.find((o) => o.type === 'SLEEP');
+    expect(sleep?.type).toBe('SLEEP');
+    if (sleep?.type !== 'SLEEP') return;
+    expect(sleep.totalMinutes).toBe(450);
+  });
+
+  it('produces SLEEP observation when only a nap is recorded', () => {
+    const health = buildHealth({
+      sleepMinutes: null,
+      napMinutes: 25,
+      sleep: { ...EMPTY_SLEEP, napMinutes: 25 },
+    });
+    const observations = garminHealthToObservations(health, CALENDAR_DATE, RECEIVED_AT);
+    const sleep = observations.find((o) => o.type === 'SLEEP');
+    expect(sleep?.type).toBe('SLEEP');
+    if (sleep?.type !== 'SLEEP') return;
+    expect(sleep.totalMinutes).toBe(25);
   });
 });
 

@@ -3,15 +3,16 @@
 import { AnalyticsView } from '@/components/analytics/analytics-view';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useActivities } from '@/hooks/use-data';
+import { isInitialQueryLoad } from '@/hooks/use-query-status';
 
 export function AnalyticsClient() {
-  const { data, isLoading } = useActivities();
+  const query = useActivities();
 
-  if (isLoading) {
+  if (isInitialQueryLoad(query)) {
     return <AnalyticsSkeleton />;
   }
 
-  return <AnalyticsView activities={data ?? []} />;
+  return <AnalyticsView activities={query.data ?? []} />;
 }
 
 function AnalyticsSkeleton() {

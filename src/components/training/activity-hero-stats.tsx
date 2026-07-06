@@ -146,10 +146,10 @@ export function ActivityHeroStats({
   activityId: string;
   activity: HeroActivity;
 }) {
-  const { data, isLoading } = useActivityStream(activityId);
+  const { data, isPending } = useActivityStream(activityId);
   const slots = buildSlots(activity, data?.stats ?? null);
 
-  const visible = slots.filter((slot) => slot.value != null || (slot.needsStream && isLoading));
+  const visible = slots.filter((slot) => slot.value != null || (slot.needsStream && isPending));
 
   if (visible.length === 0) return null;
 

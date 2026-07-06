@@ -5,6 +5,7 @@ import { StickyHeader } from '@/components/layout/sticky-header';
 import { PlanningView } from '@/components/planning/planning-view';
 import { TrainingList } from '@/components/training/training-list';
 import { LinkButton } from '@/components/ui/link-button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { navPillClass } from '@/lib/nav-pill';
 import { CalendarRange, ClipboardList, List } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -34,6 +35,26 @@ type TabId = (typeof TABS)[number]['id'];
 
 function isTabId(value: string | null): value is TabId {
   return TABS.some((t) => t.id === value);
+}
+
+export function SessionsHubSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-8 w-52" />
+        </div>
+        <Skeleton className="h-8 w-32 rounded-lg" />
+      </div>
+      <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-9 w-28 shrink-0 rounded-full" />
+        ))}
+      </div>
+      <Skeleton className="h-96 w-full rounded-2xl" />
+    </div>
+  );
 }
 
 export function SessionsHub() {

@@ -1,4 +1,5 @@
 import type { RecoveryTone } from '@/lib/recovery';
+import { buildSleepScoreBreakdown } from '@/lib/sleep-scoring';
 
 /**
  * Coach de sommeil : analyse déterministe des phases de sommeil (Garmin) et
@@ -11,13 +12,11 @@ import type { RecoveryTone } from '@/lib/recovery';
  *  - Régularité des horaires : pilier majeur de la qualité du sommeil.
  */
 
-const TARGET_DURATION_MIN = 480; // 8 h
-const FALL_ASLEEP_BUFFER_MIN = 20; // marge d'endormissement
-// État récent (durée, phases, score, stress) : on reste sur la dernière semaine.
+const TARGET_DURATION_MIN = 480; // 8 h — défaut si pas d'objectif profil
+const FALL_ASLEEP_BUFFER_MIN = 20;
 const RECENT_WINDOW_NIGHTS = 7;
-// Habitudes (coucher conseillé & régularité) : fenêtre large + médiane, pour ne
-// pas être faussé par une période atypique (vacances, déplacements…).
-const HABIT_WINDOW_NIGHTS = 30;
+const COACH_WINDOW_NIGHTS = 14;
+const MAX_RECOVERY_BOOST_MIN = 60;
 
 export interface SleepEntryInput {
   date: Date;
@@ -52,8 +51,12 @@ export interface SleepInsight {
 
 export interface SleepLatest {
   date: Date;
-  score: number | null;
-  scoreTone: RecoveryTone;
+  /** Score SHARPIT (architecture restauratrice de la nuit). */
+  sharpitScore: number | null;
+  sharpitScoreTone: RecoveryTone;
+  restorativeRatio: number | null;
+  /** Score Garmin brut, si disponible. */
+  garminScore: number | null;
   durationMin: number | null;
   bedtimeMin: number | null;
   wakeMin: number | null;
@@ -74,7 +77,11 @@ export interface SleepCoachView {
   };
   regularityMin: number | null;
   recommendedBedtimeMin: number | null;
+  /** Durée visée ce soir (objectif + rattrapage dette si besoin). */
+  recommendedDurationMin: number;
   targetDurationMin: number;
+  debt7Min: number | null;
+  debt14Min: number | null;
   insights: SleepInsight[];
 }
 
@@ -206,7 +213,10 @@ function buildInsights(params: {
   recommendedBedtime: number | null;
   avgStress: number | null;
   targetDuration: number;
+  recommendedDuration: number;
   bedtimeGoal: number | null;
+  debt7Min: number | null;
+  debt14Min: number | null;
 }): SleepInsight[] {
   const insights: SleepInsight[] = [];
   const {
@@ -218,10 +228,33 @@ function buildInsights(params: {
     recommendedBedtime,
     avgStress,
     targetDuration,
+    recommendedDuration,
     bedtimeGoal,
+    debt7Min,
+    debt14Min,
   } = params;
 
   const targetLabel = formatDuration(targetDuration);
+
+  if (debt7Min != null && debt7Min > 60) {
+    insights.push({
+      tone: debt7Min > 180 ? 'low' : 'moderate',
+      title: 'Dette de sommeil sur 7 nuits',
+      detail: `Tu as environ ${formatDuration(
+        Math.round(debt7Min),
+      )} de retard cumulé sur 7 nuits (objectif ${targetLabel}/nuit). Ce soir, vise ${formatDuration(
+        recommendedDuration,
+      )} pour rattraper progressivement.`,
+    });
+  } else if (debt14Min != null && debt14Min > 120) {
+    insights.push({
+      tone: 'moderate',
+      title: 'Dette sur 14 nuits',
+      detail: `Sur 14 nuits, tu es en retard d'environ ${formatDuration(
+        Math.round(debt14Min),
+      )} par rapport à ton objectif. Priorise la régularité et la durée les prochains jours.`,
+    });
+  }
 
   if (avgDuration != null && avgDuration < targetDuration - 30) {
     insights.push({
@@ -325,6 +358,46 @@ export interface SleepGoals {
   bedtimeTargetMin?: number | null;
 }
 
+function computeCumulativeDebt(nights: SleepEntryInput[], targetMin: number): number | null {
+  const valid = nights.filter((n) => n.sleepMinutes != null);
+  if (valid.length === 0) return null;
+  const totalActual = valid.reduce((sum, n) => sum + (n.sleepMinutes ?? 0), 0);
+  return Math.max(0, targetMin * valid.length - totalActual);
+}
+
+/** Mappe les entrées santé API vers le format du coach sommeil. */
+export function toSleepEntryInputs(
+  entries: Array<{
+    date: Date | string;
+    sleepMinutes?: number | null;
+    sleepScore?: number | null;
+    sleepDeepMin?: number | null;
+    sleepLightMin?: number | null;
+    sleepRemMin?: number | null;
+    sleepAwakeMin?: number | null;
+    sleepBedtimeMin?: number | null;
+    sleepWakeMin?: number | null;
+    sleepRespiration?: number | null;
+    sleepAvgStress?: number | null;
+    sleepScoreFeedback?: string | null;
+  }>,
+): SleepEntryInput[] {
+  return entries.map((e) => ({
+    date: new Date(e.date),
+    sleepMinutes: e.sleepMinutes ?? null,
+    sleepScore: e.sleepScore ?? null,
+    sleepDeepMin: e.sleepDeepMin ?? null,
+    sleepLightMin: e.sleepLightMin ?? null,
+    sleepRemMin: e.sleepRemMin ?? null,
+    sleepAwakeMin: e.sleepAwakeMin ?? null,
+    sleepBedtimeMin: e.sleepBedtimeMin ?? null,
+    sleepWakeMin: e.sleepWakeMin ?? null,
+    sleepRespiration: e.sleepRespiration ?? null,
+    sleepAvgStress: e.sleepAvgStress ?? null,
+    sleepScoreFeedback: e.sleepScoreFeedback ?? null,
+  }));
+}
+
 export function analyzeSleep(entries: SleepEntryInput[], goals?: SleepGoals): SleepCoachView {
   const targetDuration = goals?.targetDurationMin ?? TARGET_DURATION_MIN;
   const sorted = [...entries].sort(
@@ -340,7 +413,7 @@ export function analyzeSleep(entries: SleepEntryInput[], goals?: SleepGoals): Sl
         e.sleepRemMin != null ||
         e.sleepMinutes != null,
     )
-    .slice(0, HABIT_WINDOW_NIGHTS);
+    .slice(0, COACH_WINDOW_NIGHTS);
 
   const empty: SleepCoachView = {
     hasData: false,
@@ -355,13 +428,24 @@ export function analyzeSleep(entries: SleepEntryInput[], goals?: SleepGoals): Sl
     },
     regularityMin: null,
     recommendedBedtimeMin: null,
+    recommendedDurationMin: targetDuration,
     targetDurationMin: targetDuration,
+    debt7Min: null,
+    debt14Min: null,
     insights: [],
   };
 
   if (!nights.length) return empty;
 
   const recent7 = nights.slice(0, RECENT_WINDOW_NIGHTS);
+  const debt7Min = computeCumulativeDebt(recent7, targetDuration);
+  const debt14Min = computeCumulativeDebt(nights, targetDuration);
+
+  const recoveryBoost =
+    debt7Min != null && debt7Min > 30
+      ? Math.min(Math.ceil(debt7Min / RECENT_WINDOW_NIGHTS), MAX_RECOVERY_BOOST_MIN)
+      : 0;
+  const recommendedDurationMin = targetDuration + recoveryBoost;
 
   const avgScore = avg(recent7.map((n) => n.sleepScore).filter((v): v is number => v != null));
   const avgDuration = avg(recent7.map((n) => n.sleepMinutes).filter((v): v is number => v != null));
@@ -378,8 +462,7 @@ export function analyzeSleep(entries: SleepEntryInput[], goals?: SleepGoals): Sl
   const avgDeepPct = avg(deepPcts);
   const avgRemPct = avg(remPcts);
 
-  // Coucher conseillé & régularité : calculés sur la fenêtre "habitudes" (jusqu'à
-  // HABIT_WINDOW_NIGHTS nuits) avec la médiane, pour ignorer les nuits atypiques.
+  // Coucher conseillé & régularité : médiane sur 14 nuits (habitudes récentes).
   const bedtimes = nights
     .map((n) => n.sleepBedtimeMin)
     .filter((v): v is number => v != null)
@@ -394,15 +477,26 @@ export function analyzeSleep(entries: SleepEntryInput[], goals?: SleepGoals): Sl
 
   let recommendedBedtime: number | null = null;
   if (medianWake != null) {
-    const raw = medianWake - targetDuration - FALL_ASLEEP_BUFFER_MIN;
+    const raw = medianWake - recommendedDurationMin - FALL_ASLEEP_BUFFER_MIN;
     recommendedBedtime = ((raw % 1440) + 1440) % 1440;
+  }
+  if (goals?.bedtimeTargetMin != null && debt7Min != null && debt7Min <= 30) {
+    recommendedBedtime = goals.bedtimeTargetMin;
   }
 
   const [latestNight] = nights;
+  const latestBreakdown = buildSleepScoreBreakdown(
+    latestNight.sleepDeepMin,
+    latestNight.sleepRemMin,
+    latestNight.sleepMinutes,
+    null,
+  );
   const latest: SleepLatest = {
     date: latestNight.date,
-    score: latestNight.sleepScore,
-    scoreTone: scoreTone(latestNight.sleepScore),
+    sharpitScore: latestBreakdown.sharpitScore,
+    sharpitScoreTone: scoreTone(latestBreakdown.sharpitScore),
+    restorativeRatio: latestBreakdown.restorativeRatio,
+    garminScore: latestNight.sleepScore,
     durationMin: latestNight.sleepMinutes,
     bedtimeMin: latestNight.sleepBedtimeMin,
     wakeMin: latestNight.sleepWakeMin,
@@ -418,7 +512,10 @@ export function analyzeSleep(entries: SleepEntryInput[], goals?: SleepGoals): Sl
     recommendedBedtime,
     avgStress: avg(stresses),
     targetDuration,
+    recommendedDuration: recommendedDurationMin,
     bedtimeGoal: goals?.bedtimeTargetMin ?? null,
+    debt7Min,
+    debt14Min,
   });
 
   const hasDetailedData = nights.some(
@@ -442,7 +539,10 @@ export function analyzeSleep(entries: SleepEntryInput[], goals?: SleepGoals): Sl
     },
     regularityMin: regularity != null ? Math.round(regularity) : null,
     recommendedBedtimeMin: recommendedBedtime,
+    recommendedDurationMin,
     targetDurationMin: targetDuration,
+    debt7Min: debt7Min != null ? Math.round(debt7Min) : null,
+    debt14Min: debt14Min != null ? Math.round(debt14Min) : null,
     insights,
   };
 }

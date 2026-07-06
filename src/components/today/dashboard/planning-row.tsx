@@ -1,19 +1,11 @@
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
-import {
-  filterUpcomingPlannedSessions,
-  formatPlannedSessionRelativeDay,
-} from '@/lib/planned-session-dates';
-import { ACTIVITY_COLOR, ACTIVITY_LABEL, INTENSITY_LABEL } from '@/lib/today-dashboard-labels';
+import { EyebrowLabel } from '@/components/ui/eyebrow-label';
+import { filterUpcomingPlannedSessions } from '@/lib/planned-session-dates';
+import { resolvePlannedSessionDisplay } from '@/lib/planned-session-display';
 import type { ClientPlannedSession } from '@/lib/query/types';
+import { PlannedSessionTypeBadge } from './planned-session-type-badge';
 
-export function PlanningRow({
-  sessions,
-  mobile = false,
-}: {
-  sessions: ClientPlannedSession[];
-  mobile?: boolean;
-}) {
+export function PlanningRow({ sessions }: { sessions: ClientPlannedSession[] }) {
   const today = new Date();
   const upcoming = filterUpcomingPlannedSessions(sessions, today).slice(0, 4);
 
@@ -21,37 +13,19 @@ export function PlanningRow({
 
   return (
     <div className="space-y-3">
-      <p className="text-[10px] font-semibold text-slate-500 uppercase dark:text-slate-400">
-        Prochaines séances
-      </p>
-      <div className={cn('grid gap-3', mobile ? 'grid-cols-1' : 'grid-cols-2 sm:grid-cols-4')}>
+      <EyebrowLabel variant="dashboard">Prochaines séances</EyebrowLabel>
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-4">
         {upcoming.map((s) => {
-          const typeLabel = ACTIVITY_LABEL[s.type as string] ?? s.type;
-          const typeColor =
-            ACTIVITY_COLOR[s.type as string] ?? 'bg-slate-100 text-slate-600 dark:bg-slate-800';
-          const intensityLabel = s.intensity
-            ? (INTENSITY_LABEL[s.intensity as string] ?? s.intensity)
-            : null;
-          const dateStr = formatPlannedSessionRelativeDay(s.date, today);
+          const { intensityLabel, dateStr, title } = resolvePlannedSessionDisplay(s, today);
 
           return (
             <Link
               key={s.id}
+              className="bg-card hover:bg-muted/30 flex min-h-11 flex-col gap-2 rounded-xl border p-4 transition-colors active:opacity-80 lg:min-h-0"
               href="/planning"
-              className={cn(
-                'bg-card hover:bg-muted/30 flex flex-col gap-2 rounded-xl border p-4 transition-colors',
-                mobile && 'min-h-11 active:opacity-80',
-              )}
             >
               <div className="flex items-center justify-between">
-                <span
-                  className={cn(
-                    'rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase',
-                    typeColor,
-                  )}
-                >
-                  {typeLabel}
-                </span>
+                <PlannedSessionTypeBadge referenceDate={today} session={s} />
                 {s.durationMin && (
                   <span className="text-[10px] font-medium text-slate-400">
                     {s.durationMin} min
@@ -59,7 +33,7 @@ export function PlanningRow({
                 )}
               </div>
               <p className="line-clamp-1 text-xs leading-snug font-semibold text-slate-700 dark:text-slate-200">
-                {s.title ?? typeLabel}
+                {title}
               </p>
               <p className="text-[10px] text-slate-400">{dateStr}</p>
               {intensityLabel && (

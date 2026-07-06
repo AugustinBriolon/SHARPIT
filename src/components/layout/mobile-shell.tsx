@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { UserButton } from '@clerk/nextjs';
 import { useEffect, useState } from 'react';
 import {
   bottomNavItems,
@@ -13,8 +12,7 @@ import {
 } from '@/lib/app-navigation';
 import { navLinkClass } from '@/lib/nav-pill';
 import { cn } from '@/lib/utils';
-import { clerkAppearance } from '@/lib/clerk-appearance';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTrigger } from '@/components/ui/sheet';
 import { OfflineBanner } from '@/components/pwa/offline-banner';
 
 function BottomNavLink({
@@ -66,9 +64,7 @@ function MoreNavSheet({ pathname }: { pathname: string }) {
         <span>{moreNavTrigger.label}</span>
       </SheetTrigger>
       <SheetContent className="pb-[calc(1rem+env(safe-area-inset-bottom))]" side="bottom">
-        <SheetHeader>
-          <SheetTitle>Plus</SheetTitle>
-        </SheetHeader>
+        <SheetHeader />
         <div className="mt-4 space-y-1">
           {moreNavItems.map((item) => {
             const Icon = item.icon;
@@ -85,18 +81,6 @@ function MoreNavSheet({ pathname }: { pathname: string }) {
               </Link>
             );
           })}
-        </div>
-        <div className="border-border/60 mt-6 flex items-center gap-3 rounded-2xl border p-3">
-          <UserButton
-            appearance={{
-              ...clerkAppearance,
-              elements: {
-                ...clerkAppearance.elements,
-                avatarBox: 'size-9 ring-1 ring-border',
-              },
-            }}
-          />
-          <p className="text-muted-foreground text-xs">Compte et déconnexion</p>
         </div>
       </SheetContent>
     </Sheet>
@@ -124,10 +108,10 @@ export function BottomNav() {
 
 export function MobileShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-background flex min-h-dvh flex-col lg:hidden">
+    <div className="bg-background flex h-dvh flex-col lg:hidden">
       <OfflineBanner />
       <main
-        className="flex-1 overflow-y-auto overscroll-y-contain"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain"
         style={{
           paddingBottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))',
         }}

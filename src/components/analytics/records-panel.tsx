@@ -156,10 +156,10 @@ function GpsAnalysisSection({
 }
 
 export function RecordsPanel() {
-  const { data, isLoading } = useRecords();
+  const { data, isPending } = useRecords();
   const [tab, setTab] = useState<SportTab>('run');
 
-  if (isLoading) {
+  if (isPending) {
     return <RecordsSkeleton />;
   }
 

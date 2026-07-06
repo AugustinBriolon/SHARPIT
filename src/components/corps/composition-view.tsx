@@ -112,7 +112,7 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
     latest?.vo2Max != null ||
     ecgStats.length > 0;
 
-  if (query.isLoading) return <CompositionSkeleton />;
+  if (query.isPending) return <CompositionSkeleton />;
 
   if (entries.length === 0) {
     return (

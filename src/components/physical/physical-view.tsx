@@ -36,7 +36,7 @@ export function PhysicalView({ embedded = false }: { embedded?: boolean }) {
     </Button>
   );
 
-  if (notesQuery.isLoading) {
+  if (notesQuery.isPending) {
     return (
       <div className="space-y-4">
         {!embedded && (

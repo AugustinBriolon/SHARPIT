@@ -53,7 +53,7 @@ function toGoalItem(goal: {
 export function GoalsView() {
   const goalsQuery = useGoals();
 
-  if (goalsQuery.isLoading) {
+  if (goalsQuery.isPending) {
     return (
       <div className="space-y-8">
         <div className="flex flex-wrap items-end justify-between gap-4">

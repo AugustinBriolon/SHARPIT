@@ -554,6 +554,21 @@ export class FeatureEngine {
     };
   }
 
+  private pickDailySubjectiveObservation(
+    observations: SubjectiveObservation[],
+  ): SubjectiveObservation | null {
+    if (observations.length === 0) return null;
+
+    const sorted = [...observations].sort((a, b) => {
+      const aMorning = a.sessionExternalId ? 0 : 1;
+      const bMorning = b.sessionExternalId ? 0 : 1;
+      if (aMorning !== bMorning) return bMorning - aMorning;
+      return b.timestamp.getTime() - a.timestamp.getTime();
+    });
+
+    return sorted[0] ?? null;
+  }
+
   private async loadRecoveryObservations(
     athleteId: string,
     trainingDayId: string,
@@ -572,8 +587,9 @@ export class FeatureEngine {
     const rhr =
       (obs.find((o) => o.type === 'RESTING_HR') as RestingHrObservation | undefined) ?? null;
     const sleep = (obs.find((o) => o.type === 'SLEEP') as SleepObservation | undefined) ?? null;
-    const subjective =
-      (obs.find((o) => o.type === 'SUBJECTIVE') as SubjectiveObservation | undefined) ?? null;
+    const subjective = this.pickDailySubjectiveObservation(
+      obs.filter((o) => o.type === 'SUBJECTIVE') as SubjectiveObservation[],
+    );
 
     return { hrv, rhr, sleep, subjective };
   }

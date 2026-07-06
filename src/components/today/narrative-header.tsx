@@ -2,50 +2,14 @@
 
 import type { TopAction } from '@/hooks/use-today';
 import { resolveCode } from '@/lib/french';
-import {
-  mapConfidenceToTier,
-  mapVerdictToDisplay,
-  type ConfidenceTier,
-  type OverallVerdict,
-} from '@/lib/today-mapping';
+import { mapVerdictToDisplay, type OverallVerdict } from '@/lib/today-mapping';
 import { cn } from '@/lib/utils';
-
-const CONFIDENCE_BARS: Record<ConfidenceTier, { filled: number; label: string }> = {
-  high: { filled: 3, label: 'Confiance élevée' },
-  medium: { filled: 2, label: 'Confiance moyenne' },
-  low: { filled: 1, label: 'Données limitées' },
-};
-
-function ConfidenceIndicator({ tier }: { tier: ConfidenceTier }) {
-  const { filled, label } = CONFIDENCE_BARS[tier];
-
-  return (
-    <span
-      aria-label={label}
-      className="inline-flex items-center gap-1.5"
-      title={`Fiabilité de l'analyse : ${label.toLowerCase()}`}
-    >
-      <span className="inline-flex items-center gap-0.5" aria-hidden>
-        {[1, 2, 3].map((i) => (
-          <span
-            key={i}
-            className={cn(
-              'h-2 w-1.5 rounded-full bg-current transition-opacity',
-              i <= filled ? 'opacity-90' : 'opacity-20',
-            )}
-          />
-        ))}
-      </span>
-      <span className="text-[10px] font-medium opacity-75">{label}</span>
-    </span>
-  );
-}
 
 interface NarrativeHeaderProps {
   verdict: OverallVerdict;
   topAction: TopAction;
-  confidence: number;
   computedAt: string;
+  className?: string;
 }
 
 function getFreshnessLabel(hoursAgo: number): string {
@@ -58,11 +22,10 @@ function getFreshnessLabel(hoursAgo: number): string {
 export function NarrativeHeader({
   verdict,
   topAction,
-  confidence,
   computedAt,
+  className,
 }: NarrativeHeaderProps) {
   const display = mapVerdictToDisplay(verdict);
-  const tier = mapConfidenceToTier(confidence);
   const rationale = resolveCode(topAction.rationaleCode);
 
   const updatedAt = new Date(computedAt);
@@ -75,14 +38,12 @@ export function NarrativeHeader({
       className={cn(
         'relative overflow-hidden rounded-2xl border bg-linear-to-br to-transparent px-6 py-7',
         isStale && 'opacity-80',
+        className,
       )}
     >
-      <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+      <div className="mb-3">
         <span className={cn('text-xs font-semibold tracking-widest uppercase', display.colorClass)}>
           {display.label}
-        </span>
-        <span className={cn(display.colorClass)}>
-          <ConfidenceIndicator tier={tier} />
         </span>
       </div>
 

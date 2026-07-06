@@ -4,6 +4,7 @@ import { format, subDays, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { LineChart, Line, XAxis, CartesianGrid, Tooltip } from 'recharts';
 import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
+import { EyebrowLabel } from '@/components/ui/eyebrow-label';
 import type { ClientHealthEntry } from '@/lib/query/types';
 
 import { computeSharpitSleepScoreForDay, SLEEP_TARGET_MIN } from '@/lib/sleep-scoring';
@@ -31,16 +32,14 @@ export function EvolutionChart({
   return (
     <div className="bg-card flex flex-col rounded-2xl border px-5 py-5">
       <div className="mb-4 flex items-center justify-between">
-        <p className="text-[10px] font-semibold text-slate-500 uppercase dark:text-slate-400">
-          Évolution 7 jours
-        </p>
+        <EyebrowLabel variant="dashboard">Évolution 7 jours</EyebrowLabel>
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1.5 text-[10px] text-emerald-600 dark:text-emerald-400">
-            <span className="inline-block h-1.5 w-3 rounded-full bg-emerald-500" />
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
             Récup
           </span>
           <span className="flex items-center gap-1.5 text-[10px] text-blue-600 dark:text-blue-400">
-            <span className="inline-block h-1.5 w-3 rounded-full bg-blue-500" />
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500" />
             Sommeil
           </span>
         </div>

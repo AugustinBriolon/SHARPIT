@@ -54,9 +54,9 @@ export function buildSleepScoreBreakdown(
   const restorativeRatio = computeRestorativeRatio(deepMin, remMin, totalMin);
   const rawScore =
     restorativeRatio != null ? mapRestorativeSleepRatioToRaw(restorativeRatio) : null;
-  const debtModifier = sleepDebtModifier(debtMin);
-  const sharpitScore =
-    rawScore != null ? Math.round(Math.min(100, Math.max(0, rawScore * debtModifier))) : null;
+  // Dette : contexte coach uniquement — n'impacte plus le score de la nuit.
+  const debtModifier = debtMin != null && debtMin > 30 ? sleepDebtModifier(debtMin) : 1;
+  const sharpitScore = rawScore != null ? Math.round(Math.min(100, Math.max(0, rawScore))) : null;
 
   return { restorativeRatio, rawScore, debtMin, debtModifier, sharpitScore };
 }

@@ -14,7 +14,8 @@ import type {
   RecoveryData,
 } from '@/hooks/use-today';
 import { useToday } from '@/hooks/use-today';
-import type { ClientHealthEntry } from '@/lib/query/types';
+import type { ClientActivity, ClientHealthEntry } from '@/lib/query/types';
+import { effectiveSleepMinutes } from '@/lib/health';
 import {
   AUTONOMIC_SIGNAL,
   ADAPTATION_STATUS_SIGNAL,
@@ -67,6 +68,7 @@ export interface TodayDashboardViewModel {
   effortSubMetrics: { label: string; value: string }[];
   sleepSubMetrics: { label: string; value: string }[];
   daySummary: TodayDaySummary;
+  activities: ClientActivity[];
   primaryRecommendation: EngineRecommendation | null;
 }
 
@@ -231,7 +233,7 @@ export function useTodayDashboardViewModel(): TodayDashboardViewModel {
   })();
 
   const sleepSubMetrics = [
-    { label: 'Durée', value: formatSleepDuration(todayEntry?.sleepMinutes ?? null) },
+    { label: 'Durée', value: formatSleepDuration(effectiveSleepMinutes(todayEntry ?? {})) },
     { label: 'Profond', value: formatSleepDuration(todayEntry?.sleepDeepMin ?? null) },
     { label: 'Paradoxal', value: formatSleepDuration(todayEntry?.sleepRemMin ?? null) },
     ...(adaptation?.dimensions.recoveryQuality.available &&
@@ -281,6 +283,7 @@ export function useTodayDashboardViewModel(): TodayDashboardViewModel {
     effortSubMetrics,
     sleepSubMetrics,
     daySummary,
+    activities,
     primaryRecommendation,
   };
 }

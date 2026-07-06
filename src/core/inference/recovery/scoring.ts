@@ -143,15 +143,13 @@ export function sleepDebtModifier(debtMinutes: number | null): number {
 }
 
 export function scoreSleep(features: RecoveryFeatureSet): DimensionScore {
-  const { sleepEfficiencyPercent, sleepDebtMin } = features;
+  const { sleepEfficiencyPercent } = features;
 
   if (sleepEfficiencyPercent === null) {
     return { score: null, available: false, qualityFactor: 0.0 };
   }
 
-  const raw = mapRestorativeSleepRatioToRaw(sleepEfficiencyPercent);
-  const modifier = sleepDebtModifier(sleepDebtMin);
-  const score = clamp(raw * modifier, 0, 100);
+  const score = clamp(mapRestorativeSleepRatioToRaw(sleepEfficiencyPercent), 0, 100);
 
   return {
     score,

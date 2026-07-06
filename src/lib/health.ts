@@ -4,6 +4,7 @@ import { fr } from 'date-fns/locale';
 export interface HealthEntry {
   date: Date;
   sleepMinutes: number | null;
+  napMinutes?: number | null;
   hrv: number | null;
   restingHr: number | null;
   weightKg: number | null;
@@ -25,6 +26,17 @@ export function formatSleep(minutes?: number | null): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return `${h}h${m.toString().padStart(2, '0')}`;
+}
+
+/** Sommeil total (nuit + sieste) pour les calculs de récupération et l'affichage. */
+export function effectiveSleepMinutes(entry: {
+  sleepMinutes?: number | null;
+  napMinutes?: number | null;
+}): number | null {
+  const night = entry.sleepMinutes ?? 0;
+  const nap = entry.napMinutes ?? 0;
+  const total = night + nap;
+  return total > 0 ? total : null;
 }
 
 export interface TrendStat {
@@ -76,13 +88,14 @@ export function buildHealthSeries(entries: HealthEntry[], days = 60): HealthChar
     const day = subDays(today, i);
     const key = format(day, 'yyyy-MM-dd');
     const entry = byDate.get(key);
+    const total = entry ? effectiveSleepMinutes(entry) : null;
     series.push({
       date: key,
       label: format(day, 'd MMM', { locale: fr }),
       hrv: entry?.hrv ?? null,
       restingHr: entry?.restingHr ?? null,
       weightKg: entry?.weightKg ?? null,
-      sleepHours: entry?.sleepMinutes != null ? Number((entry.sleepMinutes / 60).toFixed(1)) : null,
+      sleepHours: total != null ? Number((total / 60).toFixed(1)) : null,
     });
   }
 

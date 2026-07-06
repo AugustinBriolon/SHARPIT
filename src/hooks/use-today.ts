@@ -1,8 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import { useCallback } from 'react';
 import type { ModelDirections } from '@/core/inference/reasoning/types';
+import { queryKeys } from '@/lib/query/keys';
+import { fetchTodayState } from '@/lib/query/today-fetch';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // API response types (no server imports — mirrors API route response shapes)
@@ -279,77 +282,49 @@ export interface TodayState {
   adaptation: AdaptationData | null;
 }
 
+const EMPTY_TODAY_STATE: TodayState = {
+  reasoning: null,
+  recovery: null,
+  fatigue: null,
+  adaptation: null,
+};
+
 export interface UseTodayResult {
   data: TodayState;
+  /** True only on first load (no cache). Prefer over legacy isLoading patterns. */
   loading: boolean;
+  isPending: boolean;
+  isFetching: boolean;
   error: string | null;
-  refresh: () => void;
+  refresh: () => Promise<TodayState>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Hook
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function fetchEngine<T>(url: string): Promise<T | null> {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    return res.json() as Promise<T>;
-  } catch {
-    return null;
-  }
-}
-
 export function useToday(date: Date = new Date()): UseTodayResult {
   const trainingDayId = format(date, 'yyyy-MM-dd');
+  const queryClient = useQueryClient();
 
-  const [data, setData] = useState<TodayState>({
-    reasoning: null,
-    recovery: null,
-    fatigue: null,
-    adaptation: null,
+  const query = useQuery({
+    queryKey: queryKeys.today(trainingDayId),
+    queryFn: () => fetchTodayState(trainingDayId),
+    staleTime: 5 * 60_000,
   });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-
-    const refreshParam = refreshKey > 0 ? '&refresh=true' : '';
-    const base = `trainingDayId=${trainingDayId}&athleteId=default${refreshParam}`;
-
-    // Step 1 — recovery/fatigue/adaptation in parallel: they update the Digital Twin.
-    // Step 2 — reasoning runs after, so it reads the freshly updated Digital Twin states.
-    // This ordering prevents the race condition where reasoning reads an empty twin.
-    Promise.all([
-      fetchEngine<RecoveryData>(`/api/recovery?${base}`),
-      fetchEngine<FatigueData>(`/api/fatigue?${base}`),
-      fetchEngine<AdaptationData>(`/api/adaptation?${base}`),
-    ]).then(async ([recovery, fatigue, adaptation]) => {
-      if (cancelled) return;
-      const reasoning = await fetchEngine<ReasoningData>(`/api/reasoning?${base}`);
-      if (cancelled) return;
-
-      if (!reasoning && !recovery && !fatigue && !adaptation) {
-        setError('Impossible de charger ton bilan du jour. Réessaie.');
-      }
-
-      setData({ reasoning, recovery, fatigue, adaptation });
-      setLoading(false);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [trainingDayId, refreshKey]);
+  const refresh = useCallback(async () => {
+    const fresh = await fetchTodayState(trainingDayId, { refresh: true });
+    queryClient.setQueryData(queryKeys.today(trainingDayId), fresh);
+    return fresh;
+  }, [queryClient, trainingDayId]);
 
   return {
-    data,
-    loading,
-    error,
-    refresh: () => setRefreshKey((k) => k + 1),
+    data: query.data ?? EMPTY_TODAY_STATE,
+    loading: query.isPending,
+    isPending: query.isPending,
+    isFetching: query.isFetching,
+    error: query.error instanceof Error ? query.error.message : null,
+    refresh,
   };
 }

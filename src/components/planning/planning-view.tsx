@@ -21,6 +21,7 @@ import { phaseColors, phaseLabels } from '@/lib/periodization';
 import { formatPlannedDuration, intensityAccent } from '@/lib/sessions';
 import { cn } from '@/lib/utils';
 import { useActivities, useGoals, usePlannedSessions, useTrainingPlan } from '@/hooks/use-data';
+import { isAnyInitialQueryLoad } from '@/hooks/use-query-status';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 
@@ -87,7 +88,7 @@ export function PlanningView({ embedded = false }: { embedded?: boolean }) {
     });
   }, [week]);
 
-  const isLoading = activitiesQuery.isLoading || plannedQuery.isLoading || goalsQuery.isLoading;
+  const isLoading = isAnyInitialQueryLoad([activitiesQuery, plannedQuery, goalsQuery]);
   const isCurrentWeek = week.index === 0;
   const weekEnd = endOfWeek(week.start, WEEK_OPTS);
   const completed = week.planned.filter((p) => p.completed).length;
@@ -345,7 +346,7 @@ function DayRow({
         )}
       </div>
 
-      <Button
+      {/* <Button
         aria-label="Ajouter une séance"
         className="shrink-0 self-start"
         size="icon"
@@ -353,7 +354,7 @@ function DayRow({
         onClick={onAdd}
       >
         <Plus className="size-4" />
-      </Button>
+      </Button> */}
     </div>
   );
 }

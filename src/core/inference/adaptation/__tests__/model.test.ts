@@ -84,16 +84,23 @@ function makeRecovery(overrides: Partial<RecoveryFeatureSet> = {}): RecoveryFeat
 
 function makeSession(overrides: Partial<SessionFeatureSet> = {}): SessionFeatureSet {
   return {
+    sessionObsId: 'sess-1',
     trainingDayId: '2026-07-02',
-    activityId: 'act-001',
-    activityType: 'RUN',
-    load: 280,
-    durationMin: 60,
+    sportType: 'RUN',
+    durationSec: 3600,
+    tssScore: 280,
+    tssMethod: 'PACE_BASED',
     intensityFactor: 0.78,
-    normalizedPower: null,
+    aerobicLoadFactor: 0.8,
+    anaerobicLoadFactor: 0.2,
+    timeInZones: null,
     hrDriftPercent: null,
-    decouplingPercent: null,
-    effortIndex: null,
+    mechanicalLoad: null,
+    elevationStressScore: null,
+    efficiencyFactor: null,
+    paceVariabilityIndex: null,
+    subjectiveRpe: null,
+    sourceProvidedTss: null,
     confidence: 0.85,
     algorithmId: 'session-features-v1',
     sourceObsIds: [],
@@ -103,11 +110,14 @@ function makeSession(overrides: Partial<SessionFeatureSet> = {}): SessionFeature
 
 function makeFeatures(overrides: Partial<DayFeatures> = {}): DayFeatures {
   return {
-    trainingDayId: '2026-07-02',
     athleteId: 'test-athlete',
+    trainingDayId: '2026-07-02',
+    retrievedAt: new Date('2026-07-02'),
     load: makeLoad(),
     recovery: makeRecovery({ hrvDeltaFromBaseline: 8, rhrDeltaFromBaseline: -3 }),
     sessions: [makeSession({ hrDriftPercent: 2.0, intensityFactor: 0.78 })],
+    body: 'PENDING',
+    condition: 'PENDING',
     ...overrides,
   };
 }
@@ -115,12 +125,18 @@ function makeFeatures(overrides: Partial<DayFeatures> = {}): DayFeatures {
 function makeRecoveryState(overrides: Partial<RecoveryState> = {}): RecoveryState {
   return {
     readinessScore: 80,
-    readinessLevel: 'GOOD',
-    recoveryIndex: 75,
-    sleepScore: 70,
-    hrvScore: 80,
-    wellnessScore: null,
-    limitingFactor: null,
+    readinessCategory: 'ADEQUATE',
+    dimensions: {
+      autonomic: { score: 80, status: 'NORMAL', available: true },
+      sleep: { score: 70, status: 'adequate', available: true },
+      subjective: { score: 75, status: 'NORMAL', available: true },
+      loadContext: { score: 65, status: 'ELEVATED', available: true },
+    },
+    primaryLimitingFactor: null,
+    estimatedTimeToFullRecovery: null,
+    overreachingRisk: 'LOW',
+    illnessRisk: 'LOW',
+    dissonanceDetected: false,
     confidence: 0.85,
     dataCompleteness: 'FULL',
     modelId: 'recovery-synthesis-v1',
@@ -489,9 +505,12 @@ describe('runAdaptationModel', () => {
     const features: DayFeatures = {
       trainingDayId: '2026-07-02',
       athleteId: 'test-athlete',
+      retrievedAt: new Date('2026-07-02'),
       load: 'PENDING',
       recovery: 'PENDING',
       sessions: [],
+      body: 'PENDING',
+      condition: 'PENDING',
     };
     const context: AdaptationModelContext = {
       trainingDayId: '2026-07-02',

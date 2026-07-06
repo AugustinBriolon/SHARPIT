@@ -27,7 +27,11 @@ const BASE_META = {
   normalizedAt: new Date('2026-07-02T08:00:01Z'),
 };
 
-function makeHrv(value: number, timestamp = new Date('2026-07-02T06:00:00Z')): HrvObservation {
+function makeHrv(
+  value: number,
+  timestamp = new Date('2026-07-02T06:00:00Z'),
+  opts?: { garminBaselineLow?: number; garminBaselineHigh?: number },
+): HrvObservation {
   return {
     ...BASE_META,
     id: `hrv-${value}`,
@@ -36,6 +40,8 @@ function makeHrv(value: number, timestamp = new Date('2026-07-02T06:00:00Z')): H
     valueMsRmssd: value,
     measurementMethod: 'OVERNIGHT_AVERAGE',
     timestamp,
+    garminBaselineLow: opts?.garminBaselineLow,
+    garminBaselineHigh: opts?.garminBaselineHigh,
   };
 }
 
@@ -263,7 +269,7 @@ describe('extractRecoveryFeatures — hrvDeltaFromBaseline', () => {
     expect(result.hrvDeltaFromBaseline).toBeCloseTo(-16.67, 1);
   });
 
-  it('returns null when fewer than 7 prior data points', () => {
+  it('returns null when fewer than 7 prior data points and no Garmin baseline', () => {
     const todayHrv = makeHrv(65);
     const hrv14d = [
       { valueMsRmssd: 65, timestamp: new Date('2026-07-02T06:00:00Z') },
@@ -274,6 +280,22 @@ describe('extractRecoveryFeatures — hrvDeltaFromBaseline', () => {
 
     const result = extractRecoveryFeatures(todayHrv, null, null, null, history, makeContext());
     expect(result.hrvDeltaFromBaseline).toBeNull();
+  });
+
+  it('falls back to Garmin baseline when rolling baseline is unavailable', () => {
+    const todayHrv = makeHrv(55, new Date('2026-07-02T06:00:00Z'), {
+      garminBaselineLow: 40,
+      garminBaselineHigh: 60,
+    });
+    const hrv14d = [
+      { valueMsRmssd: 55, timestamp: new Date('2026-07-02T06:00:00Z') },
+      { valueMsRmssd: 52, timestamp: new Date('2026-07-01T06:00:00Z') },
+    ];
+    const history: RecoveryHistory = { ...EMPTY_HISTORY, hrv14d };
+
+    const result = extractRecoveryFeatures(todayHrv, null, null, null, history, makeContext());
+    // Garmin midpoint = 50 → (55 - 50) / 50 × 100 = +10%
+    expect(result.hrvDeltaFromBaseline).toBeCloseTo(10, 1);
   });
 
   it('returns null when no HRV observation today', () => {

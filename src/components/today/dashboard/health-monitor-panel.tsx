@@ -1,4 +1,5 @@
 import { subDays, isSameDay } from 'date-fns';
+import { EyebrowLabel } from '@/components/ui/eyebrow-label';
 import { cn } from '@/lib/utils';
 import type { ClientHealthEntry } from '@/lib/query/types';
 import { Sparkline } from './sparkline';
@@ -6,11 +7,9 @@ import { Sparkline } from './sparkline';
 export function HealthMonitorPanel({
   entry,
   entries,
-  compact = false,
 }: {
   entry: ClientHealthEntry | null;
   entries: ClientHealthEntry[];
-  compact?: boolean;
 }) {
   const today = new Date();
   const last7 = Array.from({ length: 7 }, (_, i) => subDays(today, 6 - i));
@@ -91,14 +90,14 @@ export function HealthMonitorPanel({
 
   return (
     <div className="bg-card flex flex-col rounded-2xl border px-5 py-5">
-      <p className="mb-4 text-[10px] font-semibold text-slate-500 uppercase dark:text-slate-400">
+      <EyebrowLabel className="mb-4" variant="dashboard">
         Moniteur de santé
-      </p>
-      <div className={cn('space-y-3', compact && 'space-y-1')}>
+      </EyebrowLabel>
+      <div className="space-y-1 lg:space-y-3">
         {visible.map((m) => (
           <div
             key={m.label}
-            className={cn('flex items-center gap-3', compact && 'min-h-11 rounded-lg px-1 py-1')}
+            className="flex min-h-11 items-center gap-3 rounded-lg px-1 py-1 lg:min-h-0 lg:rounded-none lg:px-0 lg:py-0"
           >
             <span className="w-24 shrink-0 text-xs text-slate-500 dark:text-slate-400">
               {m.label}

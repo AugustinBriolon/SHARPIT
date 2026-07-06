@@ -1,0 +1,69 @@
+import type { DimensionResult } from '@/hooks/use-today';
+import { mapScoreToBarColorClass, mapScoreToColorClass } from '@/lib/today-mapping';
+import { cn } from '@/lib/utils';
+
+function resolveColorScore(
+  available: boolean,
+  score: number | null,
+  higherIsWorse?: boolean,
+): number | null {
+  if (!available || score === null) return null;
+  return higherIsWorse ? 100 - score : score;
+}
+
+export function DrillDownDimensionRow({
+  label,
+  description,
+  dim,
+  higherIsWorse,
+  /** @deprecated use higherIsWorse */
+  invertScore,
+  intensityLabel,
+}: {
+  label: string;
+  description: string;
+  dim: DimensionResult;
+  higherIsWorse?: boolean;
+  invertScore?: boolean;
+  intensityLabel?: string | null;
+}) {
+  const invert = higherIsWorse ?? invertScore;
+  const { score, available } = dim;
+  const colorScore = resolveColorScore(available, score, invert);
+  const colorClass =
+    colorScore !== null ? mapScoreToColorClass(colorScore) : 'text-muted-foreground/40';
+  const barColorClass =
+    colorScore !== null ? mapScoreToBarColorClass(colorScore) : 'bg-muted-foreground/10';
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className={cn('text-sm font-medium', !available && 'text-muted-foreground/50')}>
+            {label}
+          </p>
+          <p className="text-muted-foreground text-[10px]">{description}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {!available && (
+            <span className="text-muted-foreground/40 text-[10px]">Signal manquant</span>
+          )}
+          {available && intensityLabel && (
+            <span className={cn('text-[10px] font-medium tracking-wide uppercase', colorClass)}>
+              {intensityLabel}
+            </span>
+          )}
+          <span className={cn('w-7 text-right text-sm font-bold tabular-nums', colorClass)}>
+            {available && score !== null ? score : '—'}
+          </span>
+        </div>
+      </div>
+      <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
+        <div
+          className={cn('h-full rounded-full transition-all duration-500', barColorClass)}
+          style={{ width: available && score !== null ? `${score}%` : '0%' }}
+        />
+      </div>
+    </div>
+  );
+}

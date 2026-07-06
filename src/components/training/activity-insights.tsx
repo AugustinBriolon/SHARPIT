@@ -15,9 +15,9 @@ import type { ZoneBucket } from '@/lib/activity-analysis';
 import { cn } from '@/lib/utils';
 
 export function ActivityInsights({ activityId, type }: { activityId: string; type: ActivityType }) {
-  const { data, isLoading, isError } = useActivityStream(activityId);
+  const { data, isPending, isError } = useActivityStream(activityId);
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-80 w-full" />

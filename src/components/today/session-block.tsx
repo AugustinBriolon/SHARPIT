@@ -10,12 +10,16 @@ import {
 import { resolve } from '@/lib/french';
 import type { EngineRecommendation, KeyFinding } from '@/hooks/use-today';
 import type { TodayDaySummary } from '@/lib/today-day-summary';
+import { MorningWellnessDialog } from './dashboard/morning-wellness-dialog';
+import { PlannedSessionPrimary } from './dashboard/planned-session-primary';
 
 interface SessionBlockProps {
   adaptationVerdict: AdaptationDecisionVerdict | null;
   recommendation: EngineRecommendation | null;
   daySummary: TodayDaySummary;
   keyFindings?: KeyFinding[];
+  onWellnessCompleted?: () => void;
+  className?: string;
 }
 
 function buildWhyLines(
@@ -47,60 +51,67 @@ export function SessionBlock({
   recommendation,
   daySummary,
   keyFindings = [],
+  onWellnessCompleted,
+  className,
 }: SessionBlockProps) {
   const objective = adaptationVerdict ? mapAdaptationDecisionToObjective(adaptationVerdict) : null;
   const whyLines = buildWhyLines(keyFindings, recommendation);
 
   return (
-    <div className="bg-card/60 space-y-4 rounded-2xl border px-5 py-5">
-      <div>
+    <div className={cn('bg-card/60 space-y-4 rounded-2xl border px-5 py-5', className)}>
+      <div className="flex min-h-6.5 items-center justify-between gap-3">
         <p className="text-muted-foreground text-[11px] font-medium uppercase">
           {daySummary.sectionLabel}
         </p>
-
-        {daySummary.isEmpty ? (
-          <div className="mt-2 space-y-2">
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              Aucune séance réalisée ni planifiée pour aujourd&apos;hui.
-            </p>
-            <Link
-              className="text-primary inline-flex items-center gap-1.5 text-xs font-medium hover:underline"
-              href="/seances?tab=planning"
-            >
-              <CalendarClock className="size-3.5" />
-              Ouvrir le planning
-            </Link>
-          </div>
-        ) : (
-          <ul className="mt-2 space-y-2">
-            {daySummary.lines.map((line) => (
-              <li
-                key={line.id}
-                className={cn(
-                  'flex items-start justify-between gap-3 rounded-xl border px-3 py-2.5',
-                  line.kind === 'done'
-                    ? 'border-emerald-500/25 bg-emerald-500/5'
-                    : 'border-border/60 bg-background/40',
-                )}
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    {line.kind === 'done' && (
-                      <CheckCircle2 className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                    )}
-                    <p className="text-sm leading-snug font-medium">{line.primary}</p>
-                  </div>
-                </div>
-                {line.secondary && (
-                  <p className="text-muted-foreground shrink-0 text-right text-xs">
-                    {line.secondary}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
+        <MorningWellnessDialog onCompleted={onWellnessCompleted} />
       </div>
+
+      {daySummary.isEmpty ? (
+        <div className="mt-2 space-y-2">
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            Aucune séance réalisée ni planifiée pour aujourd&apos;hui.
+          </p>
+          <Link
+            className="text-primary inline-flex items-center gap-1.5 text-xs font-medium hover:underline"
+            href="/seances?tab=planning"
+          >
+            <CalendarClock className="size-3.5" />
+            Ouvrir le planning
+          </Link>
+        </div>
+      ) : (
+        <ul className="mt-2 space-y-2">
+          {daySummary.lines.map((line) => (
+            <li
+              key={line.id}
+              className={cn(
+                'flex items-start justify-between gap-3 rounded-xl border px-3 py-2.5',
+                line.kind === 'done'
+                  ? 'border-emerald-500/25 bg-emerald-500/5'
+                  : 'border-border/60 bg-background/40',
+              )}
+            >
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  {line.kind === 'done' && (
+                    <CheckCircle2 className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  )}
+                  {line.plannedSession ? (
+                    <PlannedSessionPrimary session={line.plannedSession} />
+                  ) : (
+                    <p className="text-sm leading-snug font-medium">{line.primary}</p>
+                  )}
+                </div>
+              </div>
+              {line.secondary && (
+                <p className="text-muted-foreground shrink-0 text-right text-xs">
+                  {line.secondary}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
 
       {objective && (
         <div className="flex items-center justify-between gap-2 border-t pt-3">

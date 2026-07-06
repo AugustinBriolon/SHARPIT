@@ -14,7 +14,7 @@ const PLACEHOLDER = `Ex. :
 - Charge de travail intense en ce moment, garder de la marge.`;
 
 export function CoachContextPanel() {
-  const { data, isLoading } = useCoachContext();
+  const { data, isPending } = useCoachContext();
   const save = useSaveCoachContext();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
@@ -64,7 +64,7 @@ export function CoachContextPanel() {
 
       {open && (
         <div className="border-border/60 space-y-3 border-t p-4">
-          {isLoading ? (
+          {isPending ? (
             <div className="text-muted-foreground flex items-center gap-2 text-sm">
               <Loader2 className="size-4 animate-spin" /> Chargement…
             </div>

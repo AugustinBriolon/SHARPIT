@@ -301,6 +301,7 @@ model DailyHealth {
   date DateTime @unique @db.Date
 
   sleepMinutes  Int?
+  napMinutes    Int? // sieste (Garmin napTimeSeconds, hors sommeil nocturne)
   hrv           Int?
   restingHr     Int?
   weightKg      Float?

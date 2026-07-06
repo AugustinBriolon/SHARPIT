@@ -67,20 +67,20 @@ export function CoachView() {
 
   // Depuis « Discuter avec le coach », on ouvre une conversation vierge avec le contexte.
   useEffect(() => {
-    if (!discussId || discussBootstrapped.current || plannedQuery.isLoading) return;
+    if (!discussId || discussBootstrapped.current || plannedQuery.isPending) return;
     const session = (plannedQuery.data ?? []).find((s) => s.id === discussId);
     if (!session?.analysis) return;
     discussBootstrapped.current = true;
     createConversation.mutateAsync().then((c) => setActiveId(c.id));
-  }, [discussId, plannedQuery.isLoading, plannedQuery.data, createConversation]);
+  }, [discussId, plannedQuery.isPending, plannedQuery.data, createConversation]);
 
   // Crée automatiquement une première conversation si l'historique est vide.
   useEffect(() => {
-    if (conversationsQuery.isLoading || conversations.length > 0) return;
+    if (conversationsQuery.isPending || conversations.length > 0) return;
     if (initialized.current) return;
     initialized.current = true;
     createConversation.mutateAsync().then((c) => setActiveId(c.id));
-  }, [conversationsQuery.isLoading, conversations.length, createConversation]);
+  }, [conversationsQuery.isPending, conversations.length, createConversation]);
 
   async function handleNewConversation() {
     const c = await createConversation.mutateAsync();
@@ -118,7 +118,7 @@ export function CoachView() {
           activeId={selectedId}
           conversations={conversations}
           creating={createConversation.isPending}
-          loading={conversationsQuery.isLoading}
+          loading={conversationsQuery.isPending}
           onDelete={handleDeleteConversation}
           onNew={handleNewConversation}
           onSelect={setActiveId}

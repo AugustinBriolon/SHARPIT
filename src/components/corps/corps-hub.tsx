@@ -87,7 +87,7 @@ export function CorpsHub() {
       </StickyHeader>
 
       <div className="space-y-4">
-        {tab === 'recuperation' && <RecoveryView embedded />}
+        {tab === 'recuperation' && <RecoveryView />}
         {tab === 'composition' && <CompositionView embedded />}
         {tab === 'suivi' && <PhysicalView embedded />}
         {tab === 'stats' && (

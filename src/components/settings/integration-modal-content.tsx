@@ -1,10 +1,14 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import {
+  IntegrationAccountCard,
+  IntegrationAccountSummary,
+  IntegrationSyncActions,
+} from '@/components/settings/integration-modal-parts';
 import { IntegrationLogo } from '@/components/settings/integration-logos';
 import type { IntegrationDefinition } from '@/components/settings/integrations-types';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -80,10 +84,6 @@ function RecordChangesBanner({ changes }: { changes: RecordChange[] }) {
 
 function EnvSetupBlock({ children }: { children: React.ReactNode }) {
   return <div className="text-muted-foreground space-y-3 text-sm leading-relaxed">{children}</div>;
-}
-
-function ModalActions({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-wrap gap-2 pt-1">{children}</div>;
 }
 
 export function IntegrationModalContent({
@@ -242,36 +242,20 @@ function StravaContent({
   return (
     <div className="space-y-4">
       <IntegrationModalHeader integration={integration} />
-      <div className="bg-muted/40 flex items-center gap-3 rounded-xl border p-3">
-        {avatarUrl && (
-          <Image
-            alt=""
-            className="size-10 rounded-full object-cover"
-            height={40}
-            src={avatarUrl}
-            width={40}
-          />
-        )}
-        <div>
-          <p className="font-medium">{integration.account?.label}</p>
-          <p className="text-muted-foreground text-xs">
-            {integration.account?.lastSyncAt
-              ? `Dernière sync : ${new Date(integration.account.lastSyncAt).toLocaleString('fr-FR')}`
-              : 'Jamais synchronisé'}
-          </p>
-        </div>
-      </div>
-      <ModalActions>
-        <Button disabled={syncing} onClick={handleSync}>
-          {syncing ? 'Sync…' : 'Synchroniser'}
-        </Button>
-        <Button disabled={backfilling} variant="outline" onClick={handleBackfill}>
-          {backfilling ? 'Récupération…' : 'Données détaillées'}
-        </Button>
-        <Button variant="outline" onClick={handleDisconnect}>
-          Déconnecter
-        </Button>
-      </ModalActions>
+      <IntegrationAccountCard
+        avatarUrl={avatarUrl}
+        label={integration.account?.label}
+        lastSyncAt={integration.account?.lastSyncAt}
+      />
+      <IntegrationSyncActions
+        fullImportingLabel="Récupération…"
+        fullImportLabel="Données détaillées"
+        importingAll={backfilling}
+        syncing={syncing}
+        onDisconnect={handleDisconnect}
+        onFullImport={handleBackfill}
+        onSync={handleSync}
+      />
       <RecordChangesBanner changes={syncRecordChanges} />
       {integration.statusMessage && (
         <p className="text-muted-foreground text-sm">{integration.statusMessage}</p>
@@ -376,29 +360,17 @@ function GarminContent({
   return (
     <div className="space-y-4">
       <IntegrationModalHeader integration={integration} />
-      <div className="bg-muted/40 rounded-xl border p-3">
-        <p className="font-medium">{integration.account?.label}</p>
-        <p className="text-muted-foreground text-xs">
-          {integration.account?.lastSyncAt
-            ? `Dernière sync : ${new Date(integration.account.lastSyncAt).toLocaleString('fr-FR')}`
-            : 'Jamais synchronisé'}
-        </p>
-      </div>
-      <ModalActions>
-        <Button disabled={syncing || importingAll} onClick={() => handleSync(false)}>
-          {syncing ? 'Sync…' : 'Synchroniser'}
-        </Button>
-        <Button
-          disabled={syncing || importingAll}
-          variant="outline"
-          onClick={() => handleSync(true)}
-        >
-          {importingAll ? 'Import…' : 'Tout l’historique'}
-        </Button>
-        <Button variant="outline" onClick={handleDisconnect}>
-          Déconnecter
-        </Button>
-      </ModalActions>
+      <IntegrationAccountSummary
+        label={integration.account?.label}
+        lastSyncAt={integration.account?.lastSyncAt}
+      />
+      <IntegrationSyncActions
+        importingAll={importingAll}
+        syncing={syncing}
+        onDisconnect={handleDisconnect}
+        onFullImport={() => handleSync(true)}
+        onSync={() => handleSync(false)}
+      />
     </div>
   );
 }
@@ -496,29 +468,17 @@ function WithingsContent({
   return (
     <div className="space-y-4">
       <IntegrationModalHeader integration={integration} />
-      <div className="bg-muted/40 rounded-xl border p-3">
-        <p className="font-medium">{integration.account?.label}</p>
-        <p className="text-muted-foreground text-xs">
-          {integration.account?.lastSyncAt
-            ? `Dernière sync : ${new Date(integration.account.lastSyncAt).toLocaleString('fr-FR')}`
-            : 'Jamais synchronisé'}
-        </p>
-      </div>
-      <ModalActions>
-        <Button disabled={syncing || importingAll} onClick={() => handleSync(false)}>
-          {syncing ? 'Sync…' : 'Synchroniser'}
-        </Button>
-        <Button
-          disabled={syncing || importingAll}
-          variant="outline"
-          onClick={() => handleSync(true)}
-        >
-          {importingAll ? 'Import…' : 'Tout l’historique'}
-        </Button>
-        <Button variant="outline" onClick={handleDisconnect}>
-          Déconnecter
-        </Button>
-      </ModalActions>
+      <IntegrationAccountSummary
+        label={integration.account?.label}
+        lastSyncAt={integration.account?.lastSyncAt}
+      />
+      <IntegrationSyncActions
+        importingAll={importingAll}
+        syncing={syncing}
+        onDisconnect={handleDisconnect}
+        onFullImport={() => handleSync(true)}
+        onSync={() => handleSync(false)}
+      />
       {integration.statusMessage && (
         <p className="text-muted-foreground text-sm">{integration.statusMessage}</p>
       )}
@@ -625,29 +585,17 @@ function RenphoContent({
   return (
     <div className="space-y-4">
       <IntegrationModalHeader integration={integration} />
-      <div className="bg-muted/40 rounded-xl border p-3">
-        <p className="font-medium">{integration.account?.label}</p>
-        <p className="text-muted-foreground text-xs">
-          {integration.account?.lastSyncAt
-            ? `Dernière sync : ${new Date(integration.account.lastSyncAt).toLocaleString('fr-FR')}`
-            : 'Jamais synchronisé'}
-        </p>
-      </div>
-      <ModalActions>
-        <Button disabled={syncing || importingAll} onClick={() => handleSync(false)}>
-          {syncing ? 'Sync…' : 'Synchroniser'}
-        </Button>
-        <Button
-          disabled={syncing || importingAll}
-          variant="outline"
-          onClick={() => handleSync(true)}
-        >
-          {importingAll ? 'Import…' : 'Tout l’historique'}
-        </Button>
-        <Button variant="outline" onClick={handleDisconnect}>
-          Déconnecter
-        </Button>
-      </ModalActions>
+      <IntegrationAccountSummary
+        label={integration.account?.label}
+        lastSyncAt={integration.account?.lastSyncAt}
+      />
+      <IntegrationSyncActions
+        importingAll={importingAll}
+        syncing={syncing}
+        onDisconnect={handleDisconnect}
+        onFullImport={() => handleSync(true)}
+        onSync={() => handleSync(false)}
+      />
     </div>
   );
 }
@@ -754,24 +702,20 @@ function GoogleContent({
   return (
     <div className="space-y-4">
       <IntegrationModalHeader integration={integration} />
-      <div className="bg-muted/40 rounded-xl border p-3">
-        <p className="font-medium">{integration.account?.label}</p>
-        <p className="text-muted-foreground text-xs">
-          {integration.account?.lastSyncAt
-            ? `Dernière sync : ${new Date(integration.account.lastSyncAt).toLocaleString('fr-FR')}`
-            : 'Jamais synchronisé'}
-        </p>
-      </div>
+      <IntegrationAccountSummary
+        label={integration.account?.label}
+        lastSyncAt={integration.account?.lastSyncAt}
+      />
       <div className="space-y-2">
         <label className="text-sm font-medium">Calendrier des séances</label>
         <Select value={calendarId} onValueChange={handleSelectCalendar}>
-          <SelectTrigger disabled={calendarsQuery.isLoading || savingTarget}>
+          <SelectTrigger disabled={calendarsQuery.isPending || savingTarget}>
             <SelectValue>
               {calendarSelectLabel(
                 calendarId,
                 calendars,
                 targetCalendarName,
-                calendarsQuery.isLoading,
+                calendarsQuery.isPending,
               )}
             </SelectValue>
           </SelectTrigger>
@@ -785,14 +729,12 @@ function GoogleContent({
           </SelectContent>
         </Select>
       </div>
-      <ModalActions>
-        <Button disabled={syncing || !calendarId} onClick={handleSync}>
-          {syncing ? 'Sync…' : 'Synchroniser'}
-        </Button>
-        <Button variant="outline" onClick={handleDisconnect}>
-          Déconnecter
-        </Button>
-      </ModalActions>
+      <IntegrationSyncActions
+        syncDisabled={!calendarId}
+        syncing={syncing}
+        onDisconnect={handleDisconnect}
+        onSync={handleSync}
+      />
     </div>
   );
 }

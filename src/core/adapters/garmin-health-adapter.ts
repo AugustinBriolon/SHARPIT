@@ -72,7 +72,10 @@ function toSleepObservation(
   calendarDate: Date,
   receivedAt: Date,
 ): RawSleepObservation | null {
-  if (health.sleepMinutes == null || health.sleepMinutes <= 0) return null;
+  const nightMinutes = health.sleepMinutes ?? 0;
+  const napMinutes = health.napMinutes ?? health.sleep.napMinutes ?? 0;
+  const totalMinutes = nightMinutes + napMinutes;
+  if (totalMinutes <= 0) return null;
 
   const { sleep } = health;
 
@@ -84,13 +87,13 @@ function toSleepObservation(
     timestamp = bedtimeToDate(calendarDate, sleep.sleepBedtimeMin);
     wakeTimestamp = addMinutes(calendarDate, sleep.sleepWakeMin);
   } else if (sleep.sleepWakeMin != null) {
-    // Know wake time, estimate bedtime from total duration
+    // Know wake time, estimate bedtime from night sleep duration
     wakeTimestamp = addMinutes(calendarDate, sleep.sleepWakeMin);
-    timestamp = new Date(wakeTimestamp.getTime() - health.sleepMinutes * 60_000);
+    timestamp = new Date(wakeTimestamp.getTime() - nightMinutes * 60_000);
   } else {
-    // No timing data: use midnight as wake time, estimate bedtime
+    // No timing data: use midnight as wake time, estimate bedtime from night sleep
     wakeTimestamp = calendarDate;
-    timestamp = new Date(calendarDate.getTime() - health.sleepMinutes * 60_000);
+    timestamp = new Date(calendarDate.getTime() - nightMinutes * 60_000);
   }
 
   return {
@@ -99,7 +102,7 @@ function toSleepObservation(
     timestamp,
     receivedAt,
     wakeTimestamp,
-    totalMinutes: health.sleepMinutes,
+    totalMinutes,
     deepMin: sleep.sleepDeepMin ?? undefined,
     remMin: sleep.sleepRemMin ?? undefined,
     lightMin: sleep.sleepLightMin ?? undefined,

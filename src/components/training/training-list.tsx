@@ -5,9 +5,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useActivities } from '@/hooks/use-data';
 
 export function TrainingList() {
-  const { data, isLoading } = useActivities();
+  const { data, isPending } = useActivities();
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="space-y-3">
         {Array.from({ length: 6 }).map((_, i) => (

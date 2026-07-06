@@ -13,11 +13,12 @@ describe('mapRestorativeSleepRatioToRaw', () => {
 });
 
 describe('buildSleepScoreBreakdown', () => {
-  it('applies debt modifier to restorative raw score', () => {
+  it('scores only from restorative ratio — debt does not affect sharpitScore', () => {
     const result = buildSleepScoreBreakdown(105, 28, 366, 300);
     expect(result.restorativeRatio).toBe(36);
     expect(result.rawScore).toBe(50);
-    expect(result.sharpitScore).toBe(38);
+    expect(result.sharpitScore).toBe(50);
+    expect(result.debtModifier).toBeLessThan(1);
   });
 });
 

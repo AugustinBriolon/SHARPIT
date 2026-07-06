@@ -14,6 +14,7 @@ export interface GarminReadinessFactor {
 
 export interface GarminSleepDetail {
   sleepMinutes: number | null;
+  napMinutes: number | null;
   sleepScore: number | null;
   sleepDeepMin: number | null;
   sleepLightMin: number | null;
@@ -29,6 +30,7 @@ export interface GarminSleepDetail {
 export interface GarminDailyHealth {
   date: string;
   sleepMinutes: number | null;
+  napMinutes: number | null;
   restingHr: number | null;
   hrv: number | null;
   weightKg: number | null;
@@ -161,6 +163,7 @@ async function fetchHrv(client: GCClient, date: Date): Promise<number | null> {
 
 const EMPTY_SLEEP: GarminSleepDetail = {
   sleepMinutes: null,
+  napMinutes: null,
   sleepScore: null,
   sleepDeepMin: null,
   sleepLightMin: null,
@@ -209,6 +212,7 @@ async function fetchSleepDetail(client: GCClient, date: Date): Promise<GarminSle
     const data = (await client.getSleepData(date)) as {
       dailySleepDTO?: {
         sleepTimeSeconds?: number;
+        napTimeSeconds?: number;
         deepSleepSeconds?: number;
         lightSleepSeconds?: number;
         remSleepSeconds?: number;
@@ -242,8 +246,12 @@ async function fetchSleepDetail(client: GCClient, date: Date): Promise<GarminSle
       sleepMinutes = sum > 0 ? sum : await fetchSleepDuration(client, date);
     }
 
+    const napMinutesRaw = secToMin(dto.napTimeSeconds);
+    const napMinutes = napMinutesRaw != null && napMinutesRaw > 0 ? napMinutesRaw : null;
+
     return {
       sleepMinutes,
+      napMinutes,
       sleepScore: num(dto.sleepScores?.overall?.value),
       sleepDeepMin: deep,
       sleepLightMin: light,
@@ -448,6 +456,7 @@ export async function fetchDailyHealth(
   return {
     date: format(date, 'yyyy-MM-dd'),
     sleepMinutes: sleep.sleepMinutes,
+    napMinutes: sleep.napMinutes,
     restingHr,
     hrv,
     weightKg,

@@ -1,0 +1,120 @@
+import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
+import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
+import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ReferenceLine,
+  Legend,
+} from 'recharts';
+
+type PmcPoint = { label: string; ctl: number; atl: number; tsb: number };
+type WeeklyTssPoint = { week: string; tss: number };
+
+export function EffortPmcSection({ data }: { data: PmcPoint[] }) {
+  if (data.length === 0) return null;
+
+  return (
+    <DrillDownSectionCard>
+      <DrillDownSectionLabel>PMC — 28 jours</DrillDownSectionLabel>
+      <ResponsiveChartFrame height={120}>
+        <LineChart data={data} margin={{ top: 4, right: 4, bottom: 2, left: 2 }}>
+          <XAxis
+            axisLine={false}
+            dataKey="label"
+            interval="preserveStartEnd"
+            tick={{ fontSize: 9, fill: '#94a3b8' }}
+            tickLine={false}
+          />
+          <YAxis hide />
+          <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.08} vertical={false} />
+          <ReferenceLine stroke="#cbd5e1" y={0} />
+          <Tooltip
+            content={({ active, payload }) => {
+              if (!active || !payload?.length) return null;
+              const pt = payload[0]?.payload as PmcPoint;
+              return (
+                <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs shadow-md">
+                  <p className="font-medium">{pt.label}</p>
+                  <p className="text-blue-500">CTL {pt.ctl}</p>
+                  <p className="text-orange-500">ATL {pt.atl}</p>
+                  <p className={pt.tsb >= 0 ? 'text-emerald-500' : 'text-red-500'}>
+                    TSB {pt.tsb > 0 ? '+' : ''}
+                    {pt.tsb}
+                  </p>
+                </div>
+              );
+            }}
+          />
+          <Line dataKey="ctl" dot={false} stroke="#3b82f6" strokeWidth={1.5} type="monotone" />
+          <Line dataKey="atl" dot={false} stroke="#f97316" strokeWidth={1.5} type="monotone" />
+          <Line
+            dataKey="tsb"
+            dot={false}
+            stroke="#10b981"
+            strokeDasharray="3 2"
+            strokeWidth={1}
+            type="monotone"
+          />
+          <Legend iconSize={8} wrapperStyle={{ fontSize: 9 }} />
+        </LineChart>
+      </ResponsiveChartFrame>
+      <p className="text-muted-foreground/60 mt-2 text-[10px]">
+        CTL = forme · ATL = fatigue · TSB = forme − fatigue
+      </p>
+    </DrillDownSectionCard>
+  );
+}
+
+export function EffortWeeklyTssSection({
+  data,
+  avgWeeklyTss,
+}: {
+  data: WeeklyTssPoint[];
+  avgWeeklyTss: number;
+}) {
+  if (!data.some((w) => w.tss > 0)) return null;
+
+  return (
+    <DrillDownSectionCard>
+      <DrillDownSectionLabel>TSS hebdomadaire — 8 semaines</DrillDownSectionLabel>
+      <ResponsiveChartFrame height={100}>
+        <BarChart data={data} margin={{ top: 4, right: 2, bottom: 2, left: 2 }}>
+          <XAxis
+            axisLine={false}
+            dataKey="week"
+            tick={{ fontSize: 9, fill: '#94a3b8' }}
+            tickLine={false}
+          />
+          <YAxis hide />
+          <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.08} vertical={false} />
+          {avgWeeklyTss > 0 && (
+            <ReferenceLine stroke="#cbd5e1" strokeDasharray="3 3" y={avgWeeklyTss} />
+          )}
+          <Tooltip
+            content={({ active, payload }) => {
+              if (!active || !payload?.[0]) return null;
+              const pt = payload[0].payload as WeeklyTssPoint;
+              return (
+                <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs shadow-md">
+                  <p className="font-semibold tabular-nums">{pt.tss} TSS</p>
+                  <p className="text-muted-foreground">{pt.week}</p>
+                </div>
+              );
+            }}
+          />
+          <Bar dataKey="tss" fill="#3b82f6" fillOpacity={0.75} radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ResponsiveChartFrame>
+      {avgWeeklyTss > 0 && (
+        <p className="text-muted-foreground/60 mt-2 text-[10px]">Moyenne {avgWeeklyTss} TSS/sem</p>
+      )}
+    </DrillDownSectionCard>
+  );
+}

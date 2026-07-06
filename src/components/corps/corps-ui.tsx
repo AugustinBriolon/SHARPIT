@@ -1,21 +1,10 @@
-import type { LucideIcon } from 'lucide-react';
+import { EyebrowLabel } from '@/components/ui/eyebrow-label';
+import { MetricCell } from '@/components/ui/metric-cell';
+import type { CorpsTone } from '@/lib/metric-tone';
+import { CORPS_TONE_DOT, CORPS_TONE_TEXT } from '@/lib/metric-tone';
 import { cn } from '@/lib/utils';
 
-export type CorpsTone = 'good' | 'moderate' | 'low' | 'neutral';
-
-const TONE_DOT: Record<CorpsTone, string> = {
-  good: 'bg-emerald-500',
-  moderate: 'bg-amber-500',
-  low: 'bg-red-500',
-  neutral: 'bg-muted-foreground/40',
-};
-
-const TONE_TEXT: Record<CorpsTone, string> = {
-  good: 'text-emerald-600 dark:text-emerald-400',
-  moderate: 'text-amber-600 dark:text-amber-400',
-  low: 'text-red-600 dark:text-red-400',
-  neutral: 'text-foreground',
-};
+export type { CorpsTone };
 
 export function CorpsPanel({
   className,
@@ -41,11 +30,7 @@ export function CorpsSectionHeader({
   return (
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="space-y-1">
-        {label && (
-          <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-            {label}
-          </p>
-        )}
+        {label && <EyebrowLabel variant="corps">{label}</EyebrowLabel>}
         <h2 className="text-sm font-semibold">{title}</h2>
         {description && (
           <p className="text-muted-foreground max-w-2xl text-xs leading-relaxed">{description}</p>
@@ -70,21 +55,19 @@ export function CorpsStatCard({
   tone?: CorpsTone;
 }) {
   return (
-    <div className="bg-card/60 rounded-2xl border px-4 py-4">
-      <div className="flex items-center gap-2">
-        <span className={cn('size-1.5 shrink-0 rounded-full', TONE_DOT[tone])} />
-        <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.15em] uppercase">
-          {label}
-        </p>
-      </div>
-      <p className={cn('mt-2 text-2xl leading-none font-bold tabular-nums', TONE_TEXT[tone])}>
-        {value}
-      </p>
-      {sublabel && <p className="text-foreground/80 mt-1 text-xs">{sublabel}</p>}
-      {footer && <p className="text-muted-foreground mt-1 text-[10px]">{footer}</p>}
-    </div>
+    <MetricCell
+      footer={footer}
+      label={label}
+      layout="card"
+      sub={sublabel}
+      tone={tone}
+      value={value}
+      showToneDot
+    />
   );
 }
+
+export { CORPS_TONE_DOT, CORPS_TONE_TEXT };
 
 export function CorpsDisclaimer({
   title,
@@ -93,7 +76,7 @@ export function CorpsDisclaimer({
 }: {
   title: string;
   children: React.ReactNode;
-  icon?: LucideIcon;
+  icon?: import('lucide-react').LucideIcon;
 }) {
   return (
     <div className="rounded-2xl border border-amber-500/25 bg-amber-500/5 px-4 py-3.5">
@@ -114,7 +97,7 @@ export function CorpsEmptyState({
   description,
   action,
 }: {
-  icon: LucideIcon;
+  icon: import('lucide-react').LucideIcon;
   title: string;
   description: string;
   action?: React.ReactNode;
@@ -134,14 +117,14 @@ export function CorpsEmptyState({
 export function CorpsDivider({ label, count }: { label: string; count?: number }) {
   return (
     <div className="flex items-center gap-3">
-      <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
+      <EyebrowLabel variant="corps">
         {label}
         {count != null && (
           <span className="text-foreground/60 ml-1.5 font-mono text-[10px] tabular-nums">
             {count}
           </span>
         )}
-      </p>
+      </EyebrowLabel>
       <div className="bg-border/60 h-px flex-1" />
     </div>
   );

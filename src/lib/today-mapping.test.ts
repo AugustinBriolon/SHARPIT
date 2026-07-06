@@ -16,6 +16,8 @@ import {
   mapRecoveryIntensityLabel,
   mapFatigueCapacityLabel,
   mapScoreToColorClass,
+  mapScoreToBarColorClass,
+  mapFatigueDimensionIntensity,
 } from './today-mapping';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -468,4 +470,19 @@ describe('mapScoreToColorClass', () => {
   it('80 boundary → emerald', () => expect(mapScoreToColorClass(80)).toContain('emerald'));
   it('60 boundary → blue', () => expect(mapScoreToColorClass(60)).toContain('blue'));
   it('40 boundary → amber', () => expect(mapScoreToColorClass(40)).toContain('amber'));
+});
+
+describe('mapScoreToBarColorClass', () => {
+  it('null → muted bar', () =>
+    expect(mapScoreToBarColorClass(null)).toBe('bg-muted-foreground/10'));
+  it('85 → emerald bar', () => expect(mapScoreToBarColorClass(85)).toContain('bg-emerald'));
+  it('45 → amber bar', () => expect(mapScoreToBarColorClass(45)).toContain('bg-amber'));
+  it('20 → red bar', () => expect(mapScoreToBarColorClass(20)).toContain('bg-red'));
+});
+
+describe('mapFatigueDimensionIntensity', () => {
+  it('0 → Faible', () => expect(mapFatigueDimensionIntensity(0)).toBe('Faible'));
+  it('30 → Modérée', () => expect(mapFatigueDimensionIntensity(30)).toBe('Modérée'));
+  it('55 → Élevée', () => expect(mapFatigueDimensionIntensity(55)).toBe('Élevée'));
+  it('80 → Critique', () => expect(mapFatigueDimensionIntensity(80)).toBe('Critique'));
 });

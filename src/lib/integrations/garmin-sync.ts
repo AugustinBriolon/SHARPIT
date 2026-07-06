@@ -15,6 +15,7 @@ import {
 } from '@/lib/integrations/garmin';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { garminHealthToObservations } from '@/core/adapters/garmin-health-adapter';
+import { backfillHealthObservationsFromDailyHealth } from './health-observation-backfill';
 
 const ATHLETE_ID = 'default';
 
@@ -130,6 +131,7 @@ export interface GarminSyncResult {
   days: number;
   updated: number;
   emptyDays: number;
+  observationsBackfilled?: number;
 }
 
 export async function syncGarminHealth(options?: {
@@ -161,6 +163,7 @@ export async function syncGarminHealth(options?: {
 
     const hasData =
       health.sleepMinutes != null ||
+      health.napMinutes != null ||
       health.restingHr != null ||
       health.hrv != null ||
       health.weightKg != null ||
@@ -189,6 +192,7 @@ export async function syncGarminHealth(options?: {
 
     const data: Prisma.DailyHealthUpdateInput = {};
     if (health.sleepMinutes != null) data.sleepMinutes = health.sleepMinutes;
+    if (health.napMinutes != null) data.napMinutes = health.napMinutes;
     if (health.restingHr != null) data.restingHr = health.restingHr;
     if (health.hrv != null) data.hrv = health.hrv;
     if (health.weightKg != null) data.weightKg = health.weightKg;
@@ -218,6 +222,7 @@ export async function syncGarminHealth(options?: {
       create: {
         date: day,
         sleepMinutes: health.sleepMinutes,
+        napMinutes: health.napMinutes,
         restingHr: health.restingHr,
         hrv: health.hrv,
         weightKg: health.weightKg,
@@ -257,5 +262,9 @@ export async function syncGarminHealth(options?: {
     },
   });
 
-  return { days, updated, emptyDays };
+  const backfill = await backfillHealthObservationsFromDailyHealth(ATHLETE_ID, {
+    days: options?.full ? 365 : (options?.days ?? 60),
+  });
+
+  return { days, updated, emptyDays, observationsBackfilled: backfill.ingested };
 }

@@ -9,6 +9,8 @@ export type DaySummaryLine = {
   kind: 'done' | 'planned';
   primary: string;
   secondary?: string;
+  /** Set for single planned sessions — enables shared label atoms in the UI. */
+  plannedSession?: ClientPlannedSession;
 };
 
 export type TodayDaySummary = {
@@ -68,6 +70,7 @@ export function buildTodayDaySummary(
           kind: 'planned',
           primary: plannedLabel(session),
           secondary: plannedMeta(session),
+          plannedSession: session,
         });
       }
     }

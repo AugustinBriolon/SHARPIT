@@ -111,13 +111,29 @@ function computeHrvDelta(
   hrv14d: RecoveryHistory['hrv14d'],
 ): number | null {
   if (!hrv) return null;
-  // Exclude today from baseline calculation
-  const prior = hrv14d.filter((h) => h.timestamp.getTime() !== hrv.timestamp.getTime());
-  if (prior.length < HRV_BASELINE_MIN_POINTS) return null; // baseline not established
 
-  const baseline = mean(prior.map((h) => h.valueMsRmssd));
-  if (baseline <= 0) return null;
-  return ((hrv.valueMsRmssd - baseline) / baseline) * 100;
+  // Primary: SHARPIT 14-day rolling personal baseline (≥ 7 prior nights)
+  const prior = hrv14d.filter((h) => h.timestamp.getTime() !== hrv.timestamp.getTime());
+  if (prior.length >= HRV_BASELINE_MIN_POINTS) {
+    const baseline = mean(prior.map((h) => h.valueMsRmssd));
+    if (baseline > 0) {
+      return ((hrv.valueMsRmssd - baseline) / baseline) * 100;
+    }
+  }
+
+  // Fallback: Garmin personal baseline band (midpoint of balanced zone)
+  const { garminBaselineLow, garminBaselineHigh } = hrv;
+  if (
+    garminBaselineLow != null &&
+    garminBaselineHigh != null &&
+    garminBaselineLow > 0 &&
+    garminBaselineHigh > 0
+  ) {
+    const garminBaseline = (garminBaselineLow + garminBaselineHigh) / 2;
+    return ((hrv.valueMsRmssd - garminBaseline) / garminBaseline) * 100;
+  }
+
+  return null;
 }
 
 function computeHrvCv(hrv14d: RecoveryHistory['hrv14d']): number | null {

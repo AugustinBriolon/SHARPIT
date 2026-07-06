@@ -91,3 +91,28 @@ export function computeTrainingLoad(
     fatigue,
   };
 }
+
+type FatigueDimensionResult = {
+  score: number | null;
+  status: string;
+  available: boolean;
+};
+
+/** Complète la dimension charge quand le moteur fatigue n'a pas d'ACWR en features. */
+export function enrichFatigueLoadDimension<T extends Record<string, FatigueDimensionResult>>(
+  dimensions: T,
+  acwr: number,
+): T {
+  const { load } = dimensions;
+  if (!load || load.available || acwr <= 0) return dimensions;
+
+  const score = Math.round(Math.max(Math.min((acwr / 1.5) * 100, 100), 0));
+  return {
+    ...dimensions,
+    load: {
+      score,
+      available: true,
+      status: `ACWR ${acwr.toFixed(2)}`,
+    },
+  };
+}
