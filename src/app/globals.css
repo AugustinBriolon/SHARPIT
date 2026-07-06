@@ -126,6 +126,9 @@
   body {
     @apply bg-background text-foreground;
   }
+  body:has([data-slot='dialog-content'][data-open]) {
+    overflow-x: clip;
+  }
   /* Tailwind v4 ne met plus `cursor: pointer` sur les contrôles interactifs.
      On le rétablit pour les boutons et les éléments interactifs base-ui
      (menus, onglets, options), sauf lorsqu'ils sont désactivés. */

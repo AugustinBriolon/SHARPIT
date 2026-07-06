@@ -1,17 +1,19 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Flame } from 'lucide-react';
 import { EyebrowLabel } from '@/components/ui/eyebrow-label';
+import { useIsMobile } from '@/hooks/use-viewport';
 import {
   buildActivityConsistencyStats,
+  formatHeatmapRangeLabel,
+  HEATMAP_DAYS_MOBILE,
   HEATMAP_LEVEL_CLASS,
   type ActivityConsistencyStats,
   type HeatmapCell,
 } from '@/lib/activity-consistency';
 import type { ClientActivity } from '@/lib/query/types';
 import { cn } from '@/lib/utils';
-
-const WEEKDAY_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
 function formatCellTitle(cell: HeatmapCell): string {
   const [y, m, d] = cell.date.split('-');
@@ -50,6 +52,27 @@ function StreakBadge({ stats }: { stats: ActivityConsistencyStats }) {
   );
 }
 
+function HeatmapGrid({ weekColumns }: { weekColumns: HeatmapCell[][] }) {
+  return (
+    <div className="flex w-full gap-[2px]">
+      {weekColumns.map((column, colIdx) => (
+        <div key={colIdx} className="flex min-w-0 flex-1 flex-col gap-[2px]">
+          {column.map((cell) => (
+            <div
+              key={cell.date}
+              title={cell.inRange ? formatCellTitle(cell) : undefined}
+              className={cn(
+                'aspect-square min-h-[6px] w-full rounded-[2px]',
+                cell.inRange ? HEATMAP_LEVEL_CLASS[cell.level] : 'bg-transparent',
+              )}
+            />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function ActivityConsistencyPanel({
   activities,
   className,
@@ -57,7 +80,16 @@ export function ActivityConsistencyPanel({
   activities: ClientActivity[];
   className?: string;
 }) {
-  const stats = buildActivityConsistencyStats(activities);
+  const isMobile = useIsMobile();
+  const stats = useMemo(
+    () =>
+      buildActivityConsistencyStats(activities, undefined, {
+        heatmapDays: isMobile ? HEATMAP_DAYS_MOBILE : undefined,
+      }),
+    [activities, isMobile],
+  );
+
+  const rangeLabel = formatHeatmapRangeLabel(stats.heatmapDays);
 
   return (
     <div
@@ -71,53 +103,24 @@ export function ActivityConsistencyPanel({
           <EyebrowLabel variant="dashboard">Régularité</EyebrowLabel>
           <p className="text-muted-foreground mt-0.5 text-[11px]">
             {stats.trailingYearActivityCount} séance
-            {stats.trailingYearActivityCount > 1 ? 's' : ''} sur 12 mois
+            {stats.trailingYearActivityCount > 1 ? 's' : ''} sur {rangeLabel}
             {' · '}
-            {stats.activeDays} {stats.activeDays > 1 ? 'jours actifs' : 'jour actif'} sur 12 mois
+            {stats.activeDays} {stats.activeDays > 1 ? 'jours actifs' : 'jour actif'} sur{' '}
+            {HEATMAP_DAYS_MOBILE}
           </p>
         </div>
         <StreakBadge stats={stats} />
       </div>
 
-      <div className="max-w-full overflow-x-auto overscroll-x-contain pb-1 [-webkit-overflow-scrolling:touch]">
-        <div className="inline-flex w-max gap-[2px] min-[1200px]:gap-[3px]">
-          {stats.weekColumns.map((column, colIdx) => (
-            <div key={colIdx} className="flex flex-col gap-[2px] min-[1200px]:gap-[3px]">
-              {column.map((cell) => (
-                <div
-                  key={cell.date}
-                  title={cell.inRange ? formatCellTitle(cell) : undefined}
-                  className={cn(
-                    'size-[8px] rounded-[2px] min-[1200px]:size-[10px] sm:size-[9px]',
-                    cell.inRange ? HEATMAP_LEVEL_CLASS[cell.level] : 'bg-transparent',
-                  )}
-                />
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
+      <HeatmapGrid weekColumns={stats.weekColumns} />
 
-      <div className="mt-3 flex items-center justify-between gap-3 border-t pt-3">
-        <div className="text-muted-foreground hidden gap-1 sm:flex">
-          {WEEKDAY_LABELS.map((label, i) => (
-            <span
-              key={`${label}-${i}`}
-              className="w-[8px] text-center text-[9px] min-[1200px]:w-[10px] sm:w-[9px]"
-            >
-              {label}
-            </span>
-          ))}
-        </div>
-        <div className="ml-auto flex items-center gap-1.5">
+      <div className="mt-3 flex items-center justify-end gap-3 border-t pt-3">
+        <div className="flex items-center gap-1.5">
           <span className="text-muted-foreground text-[10px]">Moins</span>
           {([0, 1, 2, 3, 4] as const).map((level) => (
             <div
               key={level}
-              className={cn(
-                'size-[8px] rounded-[2px] min-[1200px]:size-[10px] sm:size-[9px]',
-                HEATMAP_LEVEL_CLASS[level],
-              )}
+              className={cn('size-2.5 rounded-[2px] sm:size-[9px]', HEATMAP_LEVEL_CLASS[level])}
             />
           ))}
           <span className="text-muted-foreground text-[10px]">Plus</span>

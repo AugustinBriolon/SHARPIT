@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo } from 'react';
 import {
   Dialog,
@@ -137,8 +138,10 @@ export function CompositionMetricExplainer({
           {needsProfileAge && (
             <p className="text-muted-foreground rounded-xl border border-dashed px-3 py-2.5 text-xs leading-relaxed">
               Renseigne ta date de naissance dans{' '}
-              <span className="text-foreground font-medium">Réglages → Profil athlète</span> pour
-              personnaliser la comparaison avec ton âge réel.
+              <Link className="text-foreground font-medium hover:underline" href="/profil">
+                Profil
+              </Link>{' '}
+              pour personnaliser la comparaison avec ton âge réel.
             </p>
           )}
 

@@ -109,8 +109,8 @@ export function ThresholdsHint({ analysis }: { analysis: ActivityAnalysis }) {
       </CardHeader>
       <CardContent className="text-muted-foreground text-sm">
         Renseigne ton FTP, LTHR et allure seuil dans{' '}
-        <a className="text-primary underline-offset-2 hover:underline" href="/settings">
-          Réglages → Profil athlète
+        <a className="text-primary underline-offset-2 hover:underline" href="/profil">
+          Profil
         </a>{' '}
         pour des zones et un IF/TSS précis.
         {thresholds.lthr && (

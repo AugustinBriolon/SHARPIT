@@ -1,4 +1,13 @@
-import { CalendarRange, Menu, PersonStanding, Settings, Sparkles, Sun, Target } from 'lucide-react';
+import {
+  CalendarRange,
+  Menu,
+  PersonStanding,
+  Settings,
+  Sparkles,
+  Sun,
+  Target,
+  User,
+} from 'lucide-react';
 
 export type NavIcon = typeof Sun;
 
@@ -52,6 +61,13 @@ export const coachNavItem: AppNavItem = {
   match: (p) => p.startsWith('/coach'),
 };
 
+export const profileNavItem: AppNavItem = {
+  href: '/profil',
+  label: 'Profil',
+  icon: User,
+  match: (p) => p.startsWith('/profil'),
+};
+
 export const settingsNavItem: AppNavItem = {
   href: '/settings',
   label: 'Réglages',
@@ -76,7 +92,7 @@ export const bottomNavItems: AppNavItem[] = [
   coachNavItem,
 ];
 
-export const moreNavItems: AppNavItem[] = [goalsNavItem, settingsNavItem];
+export const moreNavItems: AppNavItem[] = [goalsNavItem, profileNavItem, settingsNavItem];
 
 export const moreNavTrigger: AppNavItem = {
   href: '#more',

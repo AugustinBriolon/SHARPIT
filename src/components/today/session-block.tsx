@@ -81,17 +81,16 @@ export function SessionBlock({
         </div>
       ) : (
         <ul className="mt-2 space-y-2">
-          {daySummary.lines.map((line) => (
-            <li
-              key={line.id}
-              className={cn(
-                'flex items-start justify-between gap-3 rounded-xl border px-3 py-2.5',
-                line.kind === 'done'
-                  ? 'border-emerald-500/25 bg-emerald-500/5'
-                  : 'border-border/60 bg-background/40',
-              )}
-            >
-              <div className="min-w-0">
+          {daySummary.lines.map((line) => {
+            const rowClass = cn(
+              'flex items-start justify-between gap-3 rounded-xl border px-3 py-2.5',
+              line.kind === 'done'
+                ? 'border-emerald-500/25 bg-emerald-500/5'
+                : 'border-border/60 bg-background/40',
+            );
+
+            const content = (
+              <div className="flex min-w-0 items-center justify-between gap-1.5">
                 <div className="flex items-center gap-1.5">
                   {line.kind === 'done' && (
                     <CheckCircle2 className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
@@ -102,14 +101,36 @@ export function SessionBlock({
                     <p className="text-sm leading-snug font-medium">{line.primary}</p>
                   )}
                 </div>
+                {line.secondary && (
+                  <p className="text-muted-foreground shrink-0 text-right text-xs">
+                    {line.secondary}
+                  </p>
+                )}
               </div>
-              {line.secondary && (
-                <p className="text-muted-foreground shrink-0 text-right text-xs">
-                  {line.secondary}
-                </p>
-              )}
-            </li>
-          ))}
+            );
+
+            if (line.kind === 'done') {
+              return (
+                <li key={line.id}>
+                  <Link
+                    href={`/training/${line.id}`}
+                    className={cn(
+                      rowClass,
+                      'block transition-colors hover:bg-emerald-500/10 active:opacity-80',
+                    )}
+                  >
+                    {content}
+                  </Link>
+                </li>
+              );
+            }
+
+            return (
+              <li key={line.id} className={rowClass}>
+                {content}
+              </li>
+            );
+          })}
         </ul>
       )}
 

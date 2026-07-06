@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton, useUser } from '@clerk/nextjs';
 import { Activity } from 'lucide-react';
-import { sidebarNavItems, settingsNavItem } from '@/lib/app-navigation';
+import { sidebarNavItems, profileNavItem, settingsNavItem } from '@/lib/app-navigation';
 import { navLinkClass } from '@/lib/nav-pill';
 import { clerkAppearance } from '@/lib/clerk-appearance';
 import type { AppNavItem } from '@/lib/app-navigation';
@@ -36,14 +36,11 @@ export function Sidebar() {
           className="hover:bg-sidebar-accent/50 flex items-center gap-3 rounded-2xl px-2 py-2 transition-colors"
           href="/"
         >
-          <div className="bg-primary/10 ring-primary/25 flex size-9 items-center justify-center rounded-xl ring-1">
+          <div className="bg-primary/10 ring-primary/25 flex size-9 items-center justify-center rounded-lg ring-1">
             <Activity className="text-primary size-4" aria-hidden />
           </div>
           <div>
             <p className="font-heading text-sm font-semibold tracking-tight">SHARPIT</p>
-            <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-              Intelligence sportive
-            </p>
           </div>
         </Link>
       </div>
@@ -56,6 +53,7 @@ export function Sidebar() {
         </div>
 
         <div className="border-sidebar-border mt-4 space-y-1 border-t pt-4">
+          <NavLink item={profileNavItem} pathname={pathname} />
           <NavLink item={settingsNavItem} pathname={pathname} />
         </div>
       </nav>

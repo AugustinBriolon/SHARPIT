@@ -4,6 +4,7 @@ import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Check, Loader2, Wand2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { ProfileContextBanner } from '@/components/profile/profile-context-banner';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -151,7 +152,7 @@ export function PlanAdapter({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="max-h-[90vh] overflow-x-hidden overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Wand2 className="text-primary size-4" />
@@ -162,6 +163,8 @@ export function PlanAdapter({
             séances déjà planifiées (14 prochains jours) — sans tout recréer.
           </DialogDescription>
         </DialogHeader>
+
+        <ProfileContextBanner />
 
         <Textarea
           placeholder="Contexte optionnel : fatigue, blessure, contrainte d'agenda…"

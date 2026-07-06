@@ -2,11 +2,11 @@
 
 import type { UIMessage } from 'ai';
 import { Sparkles } from 'lucide-react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { CoachChat } from '@/components/coach/coach-chat';
-import { CoachContextPanel } from '@/components/coach/coach-context-panel';
 import { CoachConversationList } from '@/components/coach/coach-conversation-list';
 import { PlanGenerator } from '@/components/coach/plan-generator';
 import { Button } from '@/components/ui/button';
@@ -102,7 +102,10 @@ export function CoachView() {
           <p className="text-primary text-xs font-medium uppercase">Coach</p>
           <h1 className="font-heading mt-2 text-3xl font-semibold">Fil & conversations</h1>
           <p className="text-muted-foreground mt-1">
-            Messages du jour et chat libre avec ton coach.
+            Messages du jour et chat libre avec ton coach.{' '}
+            <Link className="text-primary hover:underline" href="/profil">
+              Mon profil
+            </Link>
           </p>
         </div>
         <Button onClick={() => setGeneratorOpen(true)}>
@@ -111,9 +114,7 @@ export function CoachView() {
         </Button>
       </StickyHeader>
 
-      <CoachContextPanel />
-
-      <div className="flex h-[70vh] flex-col gap-4 lg:flex-row">
+      <div className="flex min-h-[70vh] flex-col gap-3 lg:h-[70vh] lg:flex-row lg:gap-4">
         <CoachConversationList
           activeId={selectedId}
           conversations={conversations}
@@ -135,7 +136,7 @@ export function CoachView() {
             }
           />
         ) : (
-          <Skeleton className="min-w-0 flex-1 rounded-xl" />
+          <Skeleton className="min-h-[50vh] min-w-0 flex-1 rounded-xl lg:min-h-0" />
         )}
       </div>
 

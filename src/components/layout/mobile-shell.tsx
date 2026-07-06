@@ -111,7 +111,7 @@ export function MobileShell({ children }: { children: React.ReactNode }) {
     <div className="bg-background flex h-dvh flex-col lg:hidden">
       <OfflineBanner />
       <main
-        className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain"
+        className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain"
         style={{
           paddingBottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))',
         }}

@@ -1,9 +1,5 @@
-import { CorpsPanel, CorpsSectionHeader } from '@/components/corps/corps-ui';
 import { StickyHeader } from '@/components/layout/sticky-header';
-import { AthleteProfilePanel } from '@/components/settings/athlete-profile-panel';
 import { IntegrationsHub } from '@/components/settings/integrations-hub';
-import { getAthleteProfile } from '@/lib/queries';
-import { birthDateToInput } from '@/lib/athlete-profile-utils';
 import { getGarminAccount } from '@/lib/integrations/garmin-sync';
 import { isGoogleConfigured } from '@/lib/integrations/google';
 import { getGoogleAccount } from '@/lib/integrations/google-sync';
@@ -57,7 +53,6 @@ export default async function SettingsPage({ searchParams }: PageProps) {
     garminAccount,
     renphoAccount,
     withingsAccount,
-    athleteProfile,
     googleAccount,
     googleConfigured,
     withingsConfigured,
@@ -67,7 +62,6 @@ export default async function SettingsPage({ searchParams }: PageProps) {
     getGarminAccount(),
     getRenphoAccount(),
     getWithingsAccount(),
-    getAthleteProfile().catch(() => null),
     getGoogleAccount().catch(() => null),
     Promise.resolve(isGoogleConfigured()),
     Promise.resolve(isWithingsConfigured()),
@@ -150,38 +144,12 @@ export default async function SettingsPage({ searchParams }: PageProps) {
         </p>
         <h1 className="font-heading mt-1 text-2xl font-semibold">Compte & données</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Connecte tes applications, synchronise tes données et configure ton profil athlète.
+          Connecte tes applications et synchronise tes données. Ton profil sportif se configure sur
+          la page Profil.
         </p>
       </StickyHeader>
 
       <IntegrationsHub payload={integrationsPayload} />
-
-      <CorpsPanel className="space-y-4 py-5">
-        <CorpsSectionHeader
-          description="Taille, date de naissance, seuils FC/puissance, allure, TSS et objectifs sommeil pour les calculs SHARPIT."
-          label="Profil"
-          title="Profil athlète"
-        />
-        <AthleteProfilePanel
-          initial={
-            athleteProfile
-              ? {
-                  heightCm: athleteProfile.heightCm,
-                  birthDate: birthDateToInput(athleteProfile.birthDate),
-                  ftpW: athleteProfile.ftpW,
-                  maxHr: athleteProfile.maxHr,
-                  lthr: athleteProfile.lthr,
-                  runThresholdPaceSecPerKm: athleteProfile.runThresholdPaceSecPerKm,
-                  vo2maxRunning: athleteProfile.vo2maxRunning,
-                  vo2maxCycling: athleteProfile.vo2maxCycling,
-                  thresholdsSyncedAt: athleteProfile.thresholdsSyncedAt?.toISOString() ?? null,
-                  sleepTargetMinutes: athleteProfile.sleepTargetMinutes,
-                  sleepBedtimeTargetMin: athleteProfile.sleepBedtimeTargetMin,
-                }
-              : null
-          }
-        />
-      </CorpsPanel>
     </div>
   );
 }

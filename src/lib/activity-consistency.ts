@@ -29,6 +29,7 @@ export interface ActivityConsistencyStats {
   activeThisWeek: boolean;
   trailingYearActivityCount: number;
   activeDays: number;
+  heatmapDays: number;
 }
 
 export interface ActivityForConsistency {
@@ -37,6 +38,7 @@ export interface ActivityForConsistency {
 }
 
 const HEATMAP_DAYS = 365;
+export const HEATMAP_DAYS_MOBILE = 184;
 
 function isoWeekKey(date: Date): string {
   return `${getISOWeekYear(date)}-W${String(getISOWeek(date)).padStart(2, '0')}`;
@@ -128,9 +130,11 @@ export function computeWeeklyActivityStreak(
 export function buildActivityConsistencyStats(
   activities: ActivityForConsistency[],
   refDate: Date = new Date(),
+  options?: { heatmapDays?: number },
 ): ActivityConsistencyStats {
+  const heatmapDays = options?.heatmapDays ?? HEATMAP_DAYS;
   const ref = startOfDay(refDate);
-  const rangeStart = subDays(ref, HEATMAP_DAYS - 1);
+  const rangeStart = subDays(ref, heatmapDays - 1);
   const gridStart = startOfWeek(rangeStart, { weekStartsOn: 1 });
   const gridEnd = endOfWeek(ref, { weekStartsOn: 1 });
 
@@ -163,7 +167,14 @@ export function buildActivityConsistencyStats(
     activeThisWeek,
     trailingYearActivityCount,
     activeDays: inRangeCells.filter((c) => c.count > 0).length,
+    heatmapDays,
   };
+}
+
+export function formatHeatmapRangeLabel(days: number): string {
+  if (days >= 360) return '12 mois';
+  const weeks = Math.round(days / 7);
+  return weeks === 1 ? '1 semaine' : `${weeks} semaines`;
 }
 
 export const HEATMAP_LEVEL_CLASS: Record<HeatmapLevel, string> = {

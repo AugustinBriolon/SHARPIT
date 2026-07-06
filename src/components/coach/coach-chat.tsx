@@ -140,7 +140,7 @@ export function CoachChat({
   }
 
   return (
-    <div className="border-border/60 bg-card/30 flex h-full min-h-0 min-w-0 flex-1 flex-col rounded-xl border">
+    <div className="border-border/60 bg-card/30 flex h-full min-h-[80vh] min-w-0 flex-1 flex-col rounded-xl border">
       <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-4">
         {messages.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center gap-4 text-center">

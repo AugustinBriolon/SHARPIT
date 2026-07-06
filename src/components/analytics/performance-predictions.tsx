@@ -85,11 +85,8 @@ export function PerformancePredictions() {
                 )}
                 Appliquer les seuils estimés
               </Button>
-              <Link
-                className="text-muted-foreground hover:text-foreground text-xs"
-                href="/settings"
-              >
-                Voir dans Paramètres →
+              <Link className="text-muted-foreground hover:text-foreground text-xs" href="/profil">
+                Voir dans Profil →
               </Link>
             </div>
             {apply.isSuccess && (

@@ -4,6 +4,7 @@ import { format, parseISO, startOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Check, Loader2, Sparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { ProfileContextBanner } from '@/components/profile/profile-context-banner';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -145,7 +146,7 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="max-h-[90vh] overflow-x-hidden overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="text-primary size-4" />
@@ -157,11 +158,13 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="space-y-2">
+        <ProfileContextBanner />
+
+        <div className="flex min-w-0 flex-wrap items-end gap-3">
+          <div className="min-w-0 flex-1 space-y-2 sm:flex-none">
             <Label>Durée du bloc</Label>
             <Select value={days} onValueChange={(v) => setDays(v ?? '7')}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full min-w-0 sm:w-40">
                 <SelectValue>{DAYS_OPTIONS.find((o) => o.value === days)?.label}</SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -173,10 +176,10 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
+          <div className="min-w-0 flex-1 space-y-2 sm:flex-none">
             <Label>Objectif ciblé</Label>
             <Select value={goalId} onValueChange={(v) => setGoalId(v ?? NO_GOAL)}>
-              <SelectTrigger className="w-56">
+              <SelectTrigger className="w-full min-w-0 sm:w-56">
                 <SelectValue>
                   {goalId === NO_GOAL
                     ? 'Aucun (forme générale)'
