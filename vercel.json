@@ -1,5 +1,6 @@
 {
-  "buildCommand": "prisma generate && prisma migrate deploy && next build",
+  "installCommand": "corepack enable && HUSKY=0 yarn install --immutable",
+  "buildCommand": "yarn db:migrate:deploy && yarn build",
   "crons": [
     {
       "path": "/api/cron/sync",
