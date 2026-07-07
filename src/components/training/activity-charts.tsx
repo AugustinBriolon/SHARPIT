@@ -1,10 +1,11 @@
 'use client';
 
 import { ActivityType } from '@prisma/client';
+import { memo } from 'react';
 import { Area, AreaChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts';
 import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { StreamSample } from '@/lib/streams';
+import type { NormalizedStreamChartPoint } from '@/lib/stream-chart-data';
 
 interface ChartPoint {
   x: number; // distance (km) ou temps (min)
@@ -30,12 +31,12 @@ function paceFmt(secPerKm: number): string {
   return `${m}'${s.toString().padStart(2, '0')}`;
 }
 
-export function ActivityCharts({
+function ActivityChartsComponent({
   samples,
   has,
   type,
 }: {
-  samples: StreamSample[];
+  samples: NormalizedStreamChartPoint[];
   has: {
     distance: boolean;
     altitude: boolean;
@@ -48,19 +49,15 @@ export function ActivityCharts({
 }) {
   const useDistance = has.distance;
 
-  const data: ChartPoint[] = samples.map((s) => {
-    const speedKmh = s.speed != null ? s.speed * 3.6 : null;
-    const pace = s.speed != null && s.speed > 0.3 ? 1000 / s.speed : null;
-    return {
-      x: useDistance ? Number((s.d / 1000).toFixed(3)) : Number((s.t / 60).toFixed(2)),
-      alt: s.alt,
-      hr: s.hr,
-      watts: s.watts,
-      cadence: s.cadence,
-      speed: speedKmh != null ? Number(speedKmh.toFixed(1)) : null,
-      pace: pace != null ? Math.round(pace) : null,
-    };
-  });
+  const data: ChartPoint[] = samples.map((point) => ({
+    x: useDistance ? point.xDistanceKm : point.xTimeMin,
+    alt: point.alt,
+    hr: point.hr,
+    watts: point.watts,
+    cadence: point.cadence,
+    speed: point.speed,
+    pace: point.pace,
+  }));
 
   const metrics: MetricConfig[] = [];
   if (has.altitude)
@@ -189,3 +186,5 @@ export function ActivityCharts({
     </div>
   );
 }
+
+export const ActivityCharts = memo(ActivityChartsComponent);

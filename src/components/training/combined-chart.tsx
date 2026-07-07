@@ -1,17 +1,18 @@
 'use client';
 
 import { ActivityType } from '@prisma/client';
+import { memo } from 'react';
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
 import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { StreamSample } from '@/lib/streams';
+import type { NormalizedStreamChartPoint } from '@/lib/stream-chart-data';
 
-export function CombinedChart({
+function CombinedChartComponent({
   samples,
   has,
   type,
 }: {
-  samples: StreamSample[];
+  samples: NormalizedStreamChartPoint[];
   has: { distance: boolean; altitude: boolean; hr: boolean; watts: boolean };
   type: ActivityType;
 }) {
@@ -25,10 +26,10 @@ export function CombinedChart({
   const secondaryLabel = showPower ? 'Puissance (W)' : 'Altitude (m)';
   const secondaryColor = showPower ? '#d97706' : '#059669';
 
-  const data = samples.map((s) => ({
-    x: useDistance ? Number((s.d / 1000).toFixed(2)) : Number((s.t / 60).toFixed(1)),
-    hr: s.hr,
-    [secondaryKey]: showPower ? s.watts : s.alt,
+  const data = samples.map((point) => ({
+    x: useDistance ? Number(point.xDistanceKm.toFixed(2)) : Number(point.xTimeMin.toFixed(1)),
+    hr: point.hr,
+    [secondaryKey]: showPower ? point.watts : point.alt,
   }));
 
   const xLabel = useDistance ? 'km' : 'min';
@@ -114,3 +115,5 @@ export function CombinedChart({
     </Card>
   );
 }
+
+export const CombinedChart = memo(CombinedChartComponent);

@@ -1,10 +1,12 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { format } from 'date-fns';
 import { toast } from '@/components/ui/toast';
 import {
   fetchActivities,
   fetchActivityStream,
+  fetchMultisportStreams,
   fetchAthleteProfile,
   fetchGoals,
   fetchGoogleCalendars,
@@ -37,18 +39,21 @@ export function useActivities() {
   });
 }
 
-export function useHealthEntries(days = DEFAULT_HEALTH_DAYS) {
+export function useHealthEntries(days = DEFAULT_HEALTH_DAYS, refDate?: Date) {
+  const dateKey = refDate ? format(refDate, 'yyyy-MM-dd') : undefined;
   return useQuery({
-    queryKey: queryKeys.health(days),
-    queryFn: () => fetchHealthEntries(days),
+    placeholderData: keepPreviousData,
+    queryKey: queryKeys.health(days, dateKey),
+    queryFn: () => fetchHealthEntries(days, dateKey),
     staleTime: 2 * 60 * 1000,
   });
 }
 
-export function useBodyComposition(days = 90) {
+export function useBodyComposition(days?: number) {
   return useQuery({
     queryKey: queryKeys.bodyComposition(days),
     queryFn: () => fetchBodyCompositionEntries(days),
+    placeholderData: keepPreviousData,
     staleTime: 2 * 60 * 1000,
   });
 }
@@ -256,6 +261,15 @@ export function useActivityStream(id: string) {
     queryKey: queryKeys.activityStream(id),
     queryFn: () => fetchActivityStream(id),
     staleTime: Infinity, // données figées d'une activité passée
+    retry: 1,
+  });
+}
+
+export function useMultisportStreams(id: string) {
+  return useQuery({
+    queryKey: queryKeys.multisportStreams(id),
+    queryFn: () => fetchMultisportStreams(id),
+    staleTime: Infinity,
     retry: 1,
   });
 }

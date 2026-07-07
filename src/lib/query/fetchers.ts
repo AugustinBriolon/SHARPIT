@@ -1,5 +1,5 @@
 import type { RecordsPayload } from '@/lib/records';
-import type { ActivityStreamPayload } from '@/lib/streams';
+import type { ActivityStreamPayload, MultisportStreamsPayload } from '@/lib/streams';
 import type {
   ClientActivity,
   ClientGoal,
@@ -52,8 +52,14 @@ export async function fetchActivities(): Promise<ClientActivity[]> {
   }));
 }
 
-export async function fetchHealthEntries(days: number): Promise<ClientHealthEntry[]> {
-  const data = await fetchJson<Serialized<ClientHealthEntry>[]>(`/api/health?days=${days}`);
+export async function fetchHealthEntries(
+  days: number,
+  refDate?: string,
+): Promise<ClientHealthEntry[]> {
+  const suffix = refDate ? `&date=${encodeURIComponent(refDate)}` : '';
+  const data = await fetchJson<Serialized<ClientHealthEntry>[]>(
+    `/api/health?days=${days}${suffix}`,
+  );
   return data.map((h) => ({
     ...h,
     date: toDate(h.date),
@@ -63,11 +69,10 @@ export async function fetchHealthEntries(days: number): Promise<ClientHealthEntr
 }
 
 export async function fetchBodyCompositionEntries(
-  days = 90,
+  days?: number,
 ): Promise<ClientBodyCompositionEntry[]> {
-  const data = await fetchJson<Serialized<ClientBodyCompositionEntry>[]>(
-    `/api/body-composition?days=${days}`,
-  );
+  const url = days != null ? `/api/body-composition?days=${days}` : '/api/body-composition';
+  const data = await fetchJson<Serialized<ClientBodyCompositionEntry>[]>(url);
   return data.map((entry) => ({
     ...entry,
     measuredAt: toDate(entry.measuredAt),
@@ -107,6 +112,10 @@ export async function fetchPlannedSessions(): Promise<ClientPlannedSession[]> {
 
 export async function fetchActivityStream(id: string): Promise<ActivityStreamPayload> {
   return fetchJson<ActivityStreamPayload>(`/api/activities/${id}/streams`);
+}
+
+export async function fetchMultisportStreams(id: string): Promise<MultisportStreamsPayload> {
+  return fetchJson<MultisportStreamsPayload>(`/api/activities/${id}/multisport-streams`);
 }
 
 export async function fetchRecords(): Promise<RecordsPayload> {

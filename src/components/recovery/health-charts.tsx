@@ -1,8 +1,14 @@
 'use client';
 
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
 import { CorpsPanel } from '@/components/corps/corps-ui';
 import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
+
+function formatMetricValue(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '');
+}
 
 interface MetricLineChartProps<T extends { label: string }> {
   title: string;
@@ -11,25 +17,32 @@ interface MetricLineChartProps<T extends { label: string }> {
   dataKey: keyof T & string;
   color: string;
   unit?: string;
+  loading?: boolean;
 }
 
 function Tip({
   active,
   payload,
-  label,
   unit,
 }: {
   active?: boolean;
-  payload?: Array<{ value: number; color: string }>;
-  label?: string;
+  payload?: Array<{ value: number; color: string; payload?: { date?: string; label?: string } }>;
   unit?: string;
 }) {
   if (!active || !payload?.length || payload[0].value == null) return null;
+  const rawDate = payload[0]?.payload?.date;
+  const displayLabel = rawDate
+    ? new Date(rawDate).toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
+    : payload[0]?.payload?.label;
   return (
     <div className="border-border/60 bg-card rounded-lg border px-3 py-2 text-xs shadow-lg">
-      <p className="text-muted-foreground">{label}</p>
+      <p className="text-muted-foreground">{displayLabel}</p>
       <p className="font-mono font-semibold" style={{ color: payload[0].color }}>
-        {payload[0].value}
+        {formatMetricValue(payload[0].value)}
         {unit ? ` ${unit}` : ''}
       </p>
     </div>
@@ -43,8 +56,10 @@ export function MetricLineChart<T extends { label: string }>({
   dataKey,
   color,
   unit,
+  loading = false,
 }: MetricLineChartProps<T>) {
-  const ticks = data.filter((_, i) => i % 10 === 0 || i === data.length - 1);
+  const tickStep = data.length > 240 ? 24 : data.length > 120 ? 16 : data.length > 60 ? 10 : 6;
+  const ticks = data.filter((_, i) => i % tickStep === 0 || i === data.length - 1);
   const hasData = data.some((d) => d[dataKey] != null);
 
   return (
@@ -54,38 +69,55 @@ export function MetricLineChart<T extends { label: string }>({
         {subtitle && <p className="text-muted-foreground mt-0.5 text-[10px]">{subtitle}</p>}
       </div>
       <div className="px-2 pt-1 pb-3">
-        <div className="w-full">
+        <div className="relative w-full">
           {hasData ? (
-            <ResponsiveChartFrame height={192}>
-              <LineChart data={data} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
-                <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" />
-                <XAxis
-                  axisLine={false}
-                  dataKey="label"
-                  tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 10 }}
-                  tickLine={false}
-                  ticks={ticks.map((d) => d.label)}
-                />
-                <YAxis
-                  axisLine={false}
-                  domain={['auto', 'auto']}
-                  tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 10 }}
-                  tickLine={false}
-                />
-                <Tooltip content={<Tip unit={unit} />} />
-                <Line
-                  dataKey={dataKey}
-                  dot={false}
-                  stroke={color}
-                  strokeWidth={2}
-                  type="monotone"
-                  connectNulls
-                />
-              </LineChart>
-            </ResponsiveChartFrame>
+            <div className={cn('transition-opacity', loading && 'opacity-45')}>
+              <ResponsiveChartFrame height={192}>
+                <LineChart data={data} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
+                  <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" />
+                  <XAxis
+                    axisLine={false}
+                    dataKey="label"
+                    tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 10 }}
+                    tickLine={false}
+                    ticks={ticks.map((d) => d.label)}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    domain={['auto', 'auto']}
+                    tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 10 }}
+                    tickFormatter={(value: number) => formatMetricValue(value)}
+                    tickLine={false}
+                  />
+                  <Tooltip content={<Tip unit={unit} />} />
+                  <Line
+                    activeDot={{ r: 4, stroke: color, strokeWidth: 1.5, fill: 'white' }}
+                    dataKey={dataKey}
+                    dot={{ r: 2, strokeWidth: 0, fill: color }}
+                    isAnimationActive={false}
+                    stroke={color}
+                    strokeWidth={2}
+                    type="monotone"
+                    connectNulls
+                  />
+                </LineChart>
+              </ResponsiveChartFrame>
+            </div>
           ) : (
             <div className="text-muted-foreground flex h-48 items-center justify-center text-sm">
               Pas encore de données
+            </div>
+          )}
+          {loading && (
+            <div className="pointer-events-none absolute inset-0 flex flex-col justify-between px-2 py-2">
+              <Skeleton className="mx-2 h-3 w-20" />
+              <Skeleton className="mx-1 h-36 w-[calc(100%-0.5rem)] rounded-lg" />
+              <div className="mx-2 flex justify-between gap-2">
+                <Skeleton className="h-2 w-8" />
+                <Skeleton className="h-2 w-8" />
+                <Skeleton className="h-2 w-8" />
+                <Skeleton className="h-2 w-8" />
+              </div>
             </div>
           )}
         </div>

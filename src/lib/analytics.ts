@@ -41,6 +41,10 @@ const LOAD_FACTOR: Record<ActivityType, number> = {
   SWIM: 1.1,
   /** Musculation : 0.7 TSS/min (repos entre séries, charge intermittente) */
   STRENGTH: 0.7,
+  /** Multisport course : fallback conservateur quand Garmin ne fournit que la séance globale. */
+  TRIATHLON: 0.95,
+  /** Autre : proxy prudent quand aucun modèle spécifique n'existe encore. */
+  OTHER: 0.75,
 };
 
 export function estimateActivityLoad(activity: ActivityForAnalytics): number {
@@ -174,6 +178,8 @@ export interface WeeklyVolumePoint {
   BIKE: number;
   SWIM: number;
   STRENGTH: number;
+  TRIATHLON: number;
+  OTHER: number;
 }
 
 export function computeWeeklyVolume(
@@ -198,6 +204,8 @@ export function computeWeeklyVolume(
         BIKE: 0,
         SWIM: 0,
         STRENGTH: 0,
+        TRIATHLON: 0,
+        OTHER: 0,
       });
     }
     const hours = (activity.duration ?? 0) / 3600;
@@ -215,6 +223,8 @@ export function computeWeeklyVolume(
       BIKE: Number(b.BIKE.toFixed(1)),
       SWIM: Number(b.SWIM.toFixed(1)),
       STRENGTH: Number(b.STRENGTH.toFixed(1)),
+      TRIATHLON: Number(b.TRIATHLON.toFixed(1)),
+      OTHER: Number(b.OTHER.toFixed(1)),
     }));
 }
 
@@ -238,6 +248,8 @@ export function computeSportDistribution(
     BIKE: { hours: 0, count: 0 },
     SWIM: { hours: 0, count: 0 },
     STRENGTH: { hours: 0, count: 0 },
+    TRIATHLON: { hours: 0, count: 0 },
+    OTHER: { hours: 0, count: 0 },
   };
 
   let totalHours = 0;
@@ -253,6 +265,8 @@ export function computeSportDistribution(
     BIKE: 'Vélo',
     SWIM: 'Natation',
     STRENGTH: 'Musculation',
+    TRIATHLON: 'Triathlon',
+    OTHER: 'Autre',
   };
 
   return (Object.keys(totals) as ActivityType[])
@@ -277,6 +291,201 @@ export interface AnalyticsSummary {
   periodDays: number;
 }
 
+export interface AnalyticsViewModel {
+  pmc: PmcPoint[];
+  weeklyVolume: WeeklyVolumePoint[];
+  distribution: SportDistribution[];
+  summary: AnalyticsSummary;
+}
+
+type AnalyticsAggregates = {
+  dailyLoadByDay: Map<string, number>;
+  weeklyVolumeByWeek: Map<string, WeeklyVolumePoint>;
+  sportTotals: Record<ActivityType, { hours: number; count: number }>;
+  weeklyHours: number;
+  weeklyLoad: number;
+  totalActivities: number;
+};
+
+function emptySportTotals(): Record<ActivityType, { hours: number; count: number }> {
+  return {
+    RUN: { hours: 0, count: 0 },
+    BIKE: { hours: 0, count: 0 },
+    SWIM: { hours: 0, count: 0 },
+    STRENGTH: { hours: 0, count: 0 },
+    TRIATHLON: { hours: 0, count: 0 },
+    OTHER: { hours: 0, count: 0 },
+  };
+}
+
+function aggregateAnalytics(
+  activities: ActivityForAnalytics[],
+  options?: {
+    pmcDays?: number;
+    weeklyVolumeWeeks?: number;
+    distributionDays?: number;
+    refDate?: Date;
+  },
+): AnalyticsAggregates {
+  const refDate = startOfDay(options?.refDate ?? new Date());
+  const pmcDays = options?.pmcDays ?? 180;
+  const weeklyVolumeWeeks = options?.weeklyVolumeWeeks ?? 16;
+  const distributionDays = options?.distributionDays ?? 90;
+
+  const pmcStart = subDays(refDate, pmcDays);
+  const weeklyVolumeStart = startOfWeek(subDays(refDate, weeklyVolumeWeeks * 7), {
+    weekStartsOn: 1,
+  });
+  const distributionSince = subDays(refDate, distributionDays);
+  const weekAgo = subDays(refDate, 7);
+
+  const dailyLoadByDay = new Map<string, number>();
+  const weeklyVolumeByWeek = new Map<string, WeeklyVolumePoint>();
+  const sportTotals = emptySportTotals();
+  let weeklyHours = 0;
+  let weeklyLoad = 0;
+
+  for (const activity of activities) {
+    const activityDay = startOfDay(activity.date);
+    const hours = (activity.duration ?? 0) / 3600;
+    const load = estimateActivityLoad(activity);
+
+    if (activityDay >= pmcStart && activityDay <= refDate) {
+      const dayKey = format(activityDay, 'yyyy-MM-dd');
+      dailyLoadByDay.set(dayKey, (dailyLoadByDay.get(dayKey) ?? 0) + load);
+    }
+
+    if (activity.date >= weeklyVolumeStart) {
+      const weekStart = startOfWeek(activity.date, { weekStartsOn: 1 });
+      const key = format(weekStart, 'yyyy-MM-dd');
+      let bucket = weeklyVolumeByWeek.get(key);
+      if (!bucket) {
+        bucket = {
+          week: key,
+          label: format(weekStart, 'd MMM', { locale: fr }),
+          total: 0,
+          RUN: 0,
+          BIKE: 0,
+          SWIM: 0,
+          STRENGTH: 0,
+          TRIATHLON: 0,
+          OTHER: 0,
+        };
+        weeklyVolumeByWeek.set(key, bucket);
+      }
+      bucket[activity.type] += hours;
+      bucket.total += hours;
+    }
+
+    if (activity.date >= distributionSince) {
+      sportTotals[activity.type].hours += hours;
+      sportTotals[activity.type].count += 1;
+    }
+
+    if (activity.date >= weekAgo) {
+      weeklyHours += hours;
+      weeklyLoad += load;
+    }
+  }
+
+  return {
+    dailyLoadByDay,
+    weeklyVolumeByWeek,
+    sportTotals,
+    weeklyHours,
+    weeklyLoad,
+    totalActivities: activities.length,
+  };
+}
+
+function computePmcSeriesFromDailyLoad(
+  dailyLoadByDay: Map<string, number>,
+  days = 180,
+  refDate?: Date,
+): PmcPoint[] {
+  const end = startOfDay(refDate ?? new Date());
+  const start = subDays(end, days);
+
+  let ctl = 0;
+  let atl = 0;
+  const series: PmcPoint[] = [];
+
+  for (const day of eachDayOfInterval({ start, end })) {
+    const date = format(day, 'yyyy-MM-dd');
+    const tss = dailyLoadByDay.get(date) ?? 0;
+    ctl += (tss - ctl) / PMC_MODEL.CTL_TAU;
+    atl += (tss - atl) / PMC_MODEL.ATL_TAU;
+    series.push({
+      date,
+      label: format(day, 'd MMM', { locale: fr }),
+      tss,
+      ctl: Math.round(ctl),
+      atl: Math.round(atl),
+      tsb: Math.round(ctl - atl),
+    });
+  }
+
+  return series;
+}
+
+function computeWeeklyVolumeFromBuckets(
+  buckets: Map<string, WeeklyVolumePoint>,
+): WeeklyVolumePoint[] {
+  return [...buckets.values()]
+    .sort((a, b) => a.week.localeCompare(b.week))
+    .map((bucket) => ({
+      ...bucket,
+      total: Number(bucket.total.toFixed(1)),
+      RUN: Number(bucket.RUN.toFixed(1)),
+      BIKE: Number(bucket.BIKE.toFixed(1)),
+      SWIM: Number(bucket.SWIM.toFixed(1)),
+      STRENGTH: Number(bucket.STRENGTH.toFixed(1)),
+      TRIATHLON: Number(bucket.TRIATHLON.toFixed(1)),
+      OTHER: Number(bucket.OTHER.toFixed(1)),
+    }));
+}
+
+function computeSportDistributionFromTotals(
+  totals: Record<ActivityType, { hours: number; count: number }>,
+): SportDistribution[] {
+  const totalHours = Object.values(totals).reduce((sum, sport) => sum + sport.hours, 0);
+  const labels: Record<ActivityType, string> = {
+    RUN: 'Course',
+    BIKE: 'Vélo',
+    SWIM: 'Natation',
+    STRENGTH: 'Musculation',
+    TRIATHLON: 'Triathlon',
+    OTHER: 'Autre',
+  };
+
+  return (Object.keys(totals) as ActivityType[])
+    .map((type) => ({
+      type,
+      label: labels[type],
+      hours: Number(totals[type].hours.toFixed(1)),
+      count: totals[type].count,
+      percent: totalHours > 0 ? Math.round((totals[type].hours / totalHours) * 100) : 0,
+    }))
+    .filter((sport) => sport.count > 0)
+    .sort((a, b) => b.hours - a.hours);
+}
+
+function buildAnalyticsSummary(
+  pmc: PmcPoint[],
+  aggregates: Pick<AnalyticsAggregates, 'weeklyHours' | 'weeklyLoad' | 'totalActivities'>,
+): AnalyticsSummary {
+  const latest = pmc[pmc.length - 1];
+  return {
+    ctl: latest?.ctl ?? 0,
+    atl: latest?.atl ?? 0,
+    tsb: latest?.tsb ?? 0,
+    weeklyHours: Number(aggregates.weeklyHours.toFixed(1)),
+    weeklyLoad: Math.round(aggregates.weeklyLoad),
+    totalActivities: aggregates.totalActivities,
+    periodDays: 180,
+  };
+}
+
 export function computeAnalyticsSummary(
   activities: ActivityForAnalytics[],
   pmc: PmcPoint[],
@@ -299,11 +508,40 @@ export function computeAnalyticsSummary(
   };
 }
 
+export function buildAnalyticsViewModel(
+  activities: ActivityForAnalytics[],
+  options?: {
+    pmcDays?: number;
+    weeklyVolumeWeeks?: number;
+    distributionDays?: number;
+    refDate?: Date;
+  },
+): AnalyticsViewModel {
+  const aggregates = aggregateAnalytics(activities, options);
+  const pmc = computePmcSeriesFromDailyLoad(
+    aggregates.dailyLoadByDay,
+    options?.pmcDays ?? 180,
+    options?.refDate,
+  );
+  const weeklyVolume = computeWeeklyVolumeFromBuckets(aggregates.weeklyVolumeByWeek);
+  const distribution = computeSportDistributionFromTotals(aggregates.sportTotals);
+  const summary = buildAnalyticsSummary(pmc, aggregates);
+
+  return {
+    pmc,
+    weeklyVolume,
+    distribution,
+    summary,
+  };
+}
+
 export const CHART_COLORS: Record<ActivityType | 'ctl' | 'atl' | 'tsb', string> = {
   RUN: '#ea580c',
   BIKE: '#0891b2',
   SWIM: '#2563eb',
   STRENGTH: '#7c3aed',
+  TRIATHLON: '#c026d3',
+  OTHER: '#64748b',
   ctl: '#0891b2',
   atl: '#ea580c',
   tsb: '#7c3aed',

@@ -60,6 +60,16 @@ describe('estimateRunThresholdPace', () => {
     expect(pace!).toBeGreaterThan(180);
     expect(pace!).toBeLessThan(600);
   });
+
+  it("n'est pas tirée vers le bas par un long run facile proche de 15 km", () => {
+    const pace = estimateRunThresholdPace(
+      [runBest(10000, 2781, '10 km'), runBest(21097, 5958, 'Semi')],
+      [{ meters: 15064.88, seconds: 4793 }],
+    );
+    expect(pace).not.toBeNull();
+    expect(pace!).toBeLessThan(300);
+    expect(fmtPaceSecPerKm(pace!)).toBe('4:37/km');
+  });
 });
 
 describe('estimateFtp', () => {

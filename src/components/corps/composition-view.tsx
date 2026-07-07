@@ -29,6 +29,16 @@ import { parseWithingsEcgStats } from '@/lib/withings-ecg-display';
 import { cn } from '@/lib/utils';
 import type { ClientBodyCompositionEntry } from '@/lib/query/types';
 
+const TREND_WINDOWS = [
+  { id: '14d', label: '14 j', days: 14 },
+  { id: '30d', label: '30 j', days: 30 },
+  { id: '90d', label: '90 j', days: 90 },
+  { id: '1y', label: '1 an', days: 365 },
+  { id: 'all', label: 'Tout', days: null },
+] as const;
+
+type TrendWindowId = (typeof TREND_WINDOWS)[number]['id'];
+
 function heightFromEntry(entry: ClientBodyCompositionEntry | null): number | null {
   if (entry?.withingsExtras == null || typeof entry.withingsExtras !== 'object') return null;
   const h = (entry.withingsExtras as { heightM?: number }).heightM;
@@ -70,11 +80,17 @@ function CompositionSection({
 }
 
 export function CompositionView({ embedded: _embedded = false }: { embedded?: boolean }) {
-  const query = useBodyComposition();
+  const [trendWindow, setTrendWindow] = useState<TrendWindowId>('90d');
+  const selectedWindow = useMemo(
+    () => TREND_WINDOWS.find((window) => window.id === trendWindow) ?? TREND_WINDOWS[2],
+    [trendWindow],
+  );
+
+  const query = useBodyComposition(selectedWindow.days ?? undefined);
   const profileQuery = useAthleteProfile();
   const entries = useMemo(() => query.data ?? [], [query.data]);
   const latest = useMemo(() => entries[0] ?? null, [entries]);
-  const series = useMemo(() => buildCompositionSeries(entries, 90), [entries]);
+  const series = useMemo(() => buildCompositionSeries(entries), [entries]);
 
   const weight = useMemo(() => computeCompositionTrend(entries, 'weightKg'), [entries]);
   const bodyFat = useMemo(() => computeCompositionTrend(entries, 'bodyFatPct'), [entries]);
@@ -99,6 +115,7 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
   const metabolicAgeDisplay = latest?.metabolicAge ?? latest?.bodyAge;
 
   const [explain, setExplain] = useState<ExplainState | null>(null);
+  const isWindowRefreshing = query.isFetching && !query.isPending;
 
   function openExplain(id: CompositionMetricId, value: number, displayValue: string) {
     setExplain({ id, value, displayValue });
@@ -380,16 +397,42 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
       )}
 
       <section className="space-y-3">
-        <CorpsDivider label="Tendances · 90 jours" />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <CorpsDivider label="Tendances" />
+          <div className="bg-muted/40 inline-flex flex-wrap gap-1 rounded-full border p-1">
+            {TREND_WINDOWS.map((window) => {
+              const active = window.id === trendWindow;
+              return (
+                <button
+                  key={window.id}
+                  aria-pressed={active}
+                  type="button"
+                  className={cn(
+                    'rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
+                    active
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                  onClick={() => setTrendWindow(window.id)}
+                >
+                  {window.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
         <p className="text-muted-foreground text-xs leading-relaxed">
-          Une mesure par jour (la plus récente). Les variations peuvent refléter le bruit autant
-          qu&apos;un vrai changement.
+          Une mesure par jour (la plus récente).{' '}
+          {selectedWindow.id === 'all'
+            ? "La vue 'Tout' remonte jusqu'aux plus anciennes mesures enregistrées."
+            : 'Les variations peuvent refléter le bruit autant qu&apos;un vrai changement.'}
         </p>
         <div className="grid gap-3 md:grid-cols-2">
           <MetricLineChart
             color="#2563eb"
             data={series}
             dataKey="weightKg"
+            loading={isWindowRefreshing}
             subtitle="Pesées balance"
             title="Poids"
             unit="kg"
@@ -398,6 +441,7 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
             color="#dc2626"
             data={series}
             dataKey="bodyFatPct"
+            loading={isWindowRefreshing}
             subtitle="Estimation impédancemétrie"
             title="Masse grasse"
             unit="%"
@@ -406,6 +450,7 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
             color="#16a34a"
             data={series}
             dataKey="musclePct"
+            loading={isWindowRefreshing}
             subtitle="Part du poids total"
             title="Muscle"
             unit="%"
@@ -414,6 +459,7 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
             color="#ea580c"
             data={series}
             dataKey="visceralFat"
+            loading={isWindowRefreshing}
             subtitle="Indice viscéral"
             title="Graisse viscérale"
           />
@@ -446,8 +492,8 @@ function HeroMini({
   delta?: string | null;
 }) {
   return (
-    <div className="bg-background/50 rounded-xl border px-3 py-2.5 text-center">
-      <p className="text-muted-foreground text-[9px] font-semibold tracking-[0.12em] uppercase">
+    <div className="bg-background/50 px-3 py-2.5 text-center">
+      <p className="text-muted-foreground min-h-6.5 text-[9px] font-semibold tracking-[0.12em] uppercase md:min-h-fit">
         {label}
       </p>
       <p className="mt-1 text-lg font-bold tabular-nums">

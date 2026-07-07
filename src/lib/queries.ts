@@ -1,6 +1,10 @@
 import { ActivityType, Prisma } from '@prisma/client';
-import { addDays, startOfDay } from 'date-fns';
+import { addDays, endOfDay, startOfDay } from 'date-fns';
 import { dedupeBodyCompositionByDay } from '@/lib/body-composition';
+import { clientFromTokens } from '@/lib/integrations/garmin';
+import { fetchGarminMultisportLegs } from '@/lib/integrations/garmin-multisport';
+import { getGarminAccount } from '@/lib/integrations/garmin-sync';
+import { isMultisportLegArray, type MultisportLeg } from '@/lib/multisport';
 import { prisma } from './prisma';
 
 const activityInclude = {
@@ -67,6 +71,40 @@ export async function getActivityById(id: string) {
     where: { id },
     include: activityInclude,
   });
+}
+
+/** Jambes multisport persistées ou récupérées depuis Garmin si absentes. */
+export async function getMultisportLegsForActivity(activity: {
+  id: string;
+  type: ActivityType;
+  garminId: string | null;
+  multisportLegs: unknown;
+}): Promise<MultisportLeg[] | null> {
+  if (activity.type !== ActivityType.TRIATHLON) return null;
+
+  if (isMultisportLegArray(activity.multisportLegs)) {
+    return activity.multisportLegs;
+  }
+
+  if (!activity.garminId) return null;
+
+  const account = await getGarminAccount();
+  if (!account) return null;
+
+  const client = clientFromTokens({
+    oauth1: account.oauth1Token,
+    oauth2: account.oauth2Token,
+  });
+
+  const legs = await fetchGarminMultisportLegs(client, Number(activity.garminId));
+  if (!legs) return null;
+
+  await prisma.activity.update({
+    where: { id: activity.id },
+    data: { multisportLegs: legs as unknown as Prisma.InputJsonValue },
+  });
+
+  return legs;
 }
 
 export async function createActivity(data: Prisma.ActivityCreateInput) {
@@ -168,18 +206,19 @@ export async function getNextRace() {
   });
 }
 
-export async function getHealthEntries(days = 90) {
-  const since = startOfDay(addDays(new Date(), -days));
+export async function getHealthEntries(days = 90, refDate: Date = new Date()) {
+  const end = endOfDay(refDate);
+  const since = startOfDay(addDays(refDate, -(days - 1)));
   return prisma.dailyHealth.findMany({
-    where: { date: { gte: since } },
+    where: { date: { gte: since, lte: end } },
     orderBy: { date: 'desc' },
   });
 }
 
-export async function getBodyCompositionMeasurements(days = 90) {
-  const since = startOfDay(addDays(new Date(), -days));
+export async function getBodyCompositionMeasurements(days?: number) {
+  const since = days != null ? startOfDay(addDays(new Date(), -days)) : null;
   const rows = await prisma.bodyCompositionMeasurement.findMany({
-    where: { measuredAt: { gte: since } },
+    where: since ? { measuredAt: { gte: since } } : undefined,
     orderBy: { measuredAt: 'desc' },
   });
   return dedupeBodyCompositionByDay(rows);

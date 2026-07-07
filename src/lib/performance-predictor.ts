@@ -184,9 +184,24 @@ export function estimateRunThresholdPace(
   runEfforts: RunEffort[] = [],
 ): number | null {
   const refs = collectRunReferences(runBests, runEfforts);
-  const picked = bestReferenceFor(refs, THRESHOLD_PROXY_METERS);
-  if (!picked) return null;
-  return Math.round((picked.seconds / THRESHOLD_PROXY_METERS) * 1000);
+  if (refs.length === 0) return null;
+
+  // Pour l'allure seuil, on cherche l'enveloppe de performance démontrée autour
+  // d'un effort ~1 h, pas l'effort de distance la plus proche. Sinon un long run
+  // d'endurance ~15 km peut "écraser" un vrai niveau seuil/compétition.
+  const pool = refs.filter(
+    (r) => r.meters >= 0.7 * THRESHOLD_PROXY_METERS && r.meters <= 3 * THRESHOLD_PROXY_METERS,
+  );
+  const candidates = pool.length > 0 ? pool : [refs[refs.length - 1]];
+
+  let bestPace: number | null = null;
+  for (const ref of candidates) {
+    const predictedSeconds = ref.seconds * (THRESHOLD_PROXY_METERS / ref.meters) ** RIEGEL_EXPONENT;
+    const predictedPace = Math.round((predictedSeconds / THRESHOLD_PROXY_METERS) * 1000);
+    if (bestPace == null || predictedPace < bestPace) bestPace = predictedPace;
+  }
+
+  return bestPace;
 }
 
 export interface FtpEstimate {

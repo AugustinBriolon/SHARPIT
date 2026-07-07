@@ -76,28 +76,50 @@ export interface HealthChartPoint {
   sleepHours: number | null;
 }
 
-export function buildHealthSeries(entries: HealthEntry[], days = 60): HealthChartPoint[] {
-  const byDate = new Map<string, HealthEntry>();
-  for (const entry of entries) {
-    byDate.set(format(entry.date, 'yyyy-MM-dd'), entry);
-  }
+export function healthDayKey(date: Date | string): string {
+  return format(new Date(date), 'yyyy-MM-dd');
+}
 
-  const series: HealthChartPoint[] = [];
-  const today = new Date();
-  for (let i = days - 1; i >= 0; i--) {
-    const day = subDays(today, i);
-    const key = format(day, 'yyyy-MM-dd');
-    const entry = byDate.get(key);
+export function indexHealthEntriesByDay<T extends { date: Date | string }>(
+  entries: T[],
+): Map<string, T> {
+  const byDay = new Map<string, T>();
+  for (const entry of entries) {
+    byDay.set(healthDayKey(entry.date), entry);
+  }
+  return byDay;
+}
+
+export function getIndexedHealthEntry<T extends { date: Date | string }>(
+  byDay: Map<string, T>,
+  date: Date,
+): T | null {
+  return byDay.get(healthDayKey(date)) ?? null;
+}
+
+export function buildDailyWindowSeries<T extends { date: Date | string }, R>(
+  byDay: Map<string, T>,
+  days: number,
+  buildPoint: (date: Date, entry: T | null) => R,
+  refDate: Date = new Date(),
+): R[] {
+  return Array.from({ length: days }, (_, i) => {
+    const day = subDays(refDate, days - 1 - i);
+    return buildPoint(day, getIndexedHealthEntry(byDay, day));
+  });
+}
+
+export function buildHealthSeries(entries: HealthEntry[], days = 60): HealthChartPoint[] {
+  const byDay = indexHealthEntriesByDay(entries);
+  return buildDailyWindowSeries(byDay, days, (day, entry) => {
     const total = entry ? effectiveSleepMinutes(entry) : null;
-    series.push({
-      date: key,
+    return {
+      date: healthDayKey(day),
       label: format(day, 'd MMM', { locale: fr }),
       hrv: entry?.hrv ?? null,
       restingHr: entry?.restingHr ?? null,
       weightKg: entry?.weightKg ?? null,
       sleepHours: total != null ? Number((total / 60).toFixed(1)) : null,
-    });
-  }
-
-  return series;
+    };
+  });
 }

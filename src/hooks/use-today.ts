@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { useCallback } from 'react';
 import type { ModelDirections } from '@/core/inference/reasoning/types';
@@ -237,6 +237,35 @@ export interface FatigueData {
   computedAt: string;
 }
 
+export type DailyStrainTier = 'STRUCTURED_SESSION' | 'HEART_RATE' | 'MOVEMENT' | 'UNKNOWN';
+export type DailyStrainSource =
+  | 'SESSION_FEATURE_POWER'
+  | 'SESSION_FEATURE_TRIMP'
+  | 'SESSION_FEATURE_PACE'
+  | 'SESSION_FEATURE_RPE'
+  | 'SESSION_FEATURE_DURATION'
+  | 'LEGACY_POWER_TSS'
+  | 'LEGACY_SOURCE_TSS'
+  | 'LEGACY_TRIMP'
+  | 'LEGACY_DURATION'
+  | 'UNKNOWN';
+
+export interface DailyStrainData {
+  available: boolean;
+  dailyTss: number | null;
+  strainScore: number | null;
+  tier: DailyStrainTier;
+  source: DailyStrainSource;
+  confidence: number;
+  structuredSessionDetected: boolean;
+  fallbackUsed: boolean;
+  trace: {
+    sessionCount: number;
+    activityCount: number;
+    sessionMethods: string[];
+  };
+}
+
 export type AdaptationStatus =
   | 'POSITIVELY_ADAPTING'
   | 'MAINTAINING'
@@ -280,6 +309,7 @@ export interface TodayState {
   recovery: RecoveryData | null;
   fatigue: FatigueData | null;
   adaptation: AdaptationData | null;
+  dailyStrain: DailyStrainData | null;
 }
 
 const EMPTY_TODAY_STATE: TodayState = {
@@ -287,6 +317,7 @@ const EMPTY_TODAY_STATE: TodayState = {
   recovery: null,
   fatigue: null,
   adaptation: null,
+  dailyStrain: null,
 };
 
 export interface UseTodayResult {
@@ -310,6 +341,7 @@ export function useToday(date: Date = new Date()): UseTodayResult {
   const query = useQuery({
     queryKey: queryKeys.today(trainingDayId),
     queryFn: () => fetchTodayState(trainingDayId),
+    placeholderData: keepPreviousData,
     staleTime: 5 * 60_000,
   });
 

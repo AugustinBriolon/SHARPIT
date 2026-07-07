@@ -17,7 +17,13 @@ function FitBounds({ path }: { path: Path }) {
   return null;
 }
 
-export default function RouteMapInner({ path }: { path: Path }) {
+export default function RouteMapInner({
+  path,
+  lineColor = '#0891b2',
+}: {
+  path: Path;
+  lineColor?: string;
+}) {
   const [start] = path;
   const end = path[path.length - 1];
 
@@ -31,7 +37,7 @@ export default function RouteMapInner({ path }: { path: Path }) {
       zoom={13}
     >
       <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
-      <Polyline pathOptions={{ color: '#0891b2', weight: 4, opacity: 0.95 }} positions={path} />
+      <Polyline pathOptions={{ color: lineColor, weight: 4, opacity: 0.95 }} positions={path} />
       <CircleMarker
         center={start}
         radius={6}

@@ -15,6 +15,11 @@ import {
 
 export type RecoveryPageViewProps = {
   date: Date;
+  isToday?: boolean;
+  maxDate?: Date;
+  onDateChange?: (date: Date) => void;
+  onPreviousDay?: () => void;
+  onNextDay?: () => void;
   readinessScore: number | null;
   signal: { label: string; qualityClass: string; arrow: string };
   limiterLabel: string | null;
@@ -51,6 +56,11 @@ export type RecoveryPageViewProps = {
 export function RecoveryPageView(props: RecoveryPageViewProps) {
   const {
     date,
+    isToday,
+    maxDate,
+    onDateChange,
+    onPreviousDay,
+    onNextDay,
     readinessScore,
     signal,
     limiterLabel,
@@ -100,9 +110,14 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
         date={date}
         estimatedRecoveryDays={estimatedRecoveryDays}
         isCalibrating={isCalibrating}
+        isToday={isToday}
         limiterLabel={limiterLabel}
+        maxDate={maxDate}
         readinessScore={readinessScore}
         signal={signal}
+        onDateChange={onDateChange}
+        onNextDay={onNextDay}
+        onPreviousDay={onPreviousDay}
       />
 
       <RecoveryStatsStrip

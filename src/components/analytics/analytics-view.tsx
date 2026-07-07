@@ -8,13 +8,7 @@ import {
 import { LoadChart } from '@/components/analytics/load-chart';
 import { SportDistributionChart } from '@/components/analytics/sport-distribution-chart';
 import { VolumeChart } from '@/components/analytics/volume-chart';
-import {
-  computeAnalyticsSummary,
-  computePmcSeries,
-  computeSportDistribution,
-  computeWeeklyVolume,
-  type ActivityForAnalytics,
-} from '@/lib/analytics';
+import { buildAnalyticsViewModel, type ActivityForAnalytics } from '@/lib/analytics';
 import { useMemo } from 'react';
 
 interface AnalyticsViewProps {
@@ -22,10 +16,10 @@ interface AnalyticsViewProps {
 }
 
 export function AnalyticsView({ activities }: AnalyticsViewProps) {
-  const pmc = useMemo(() => computePmcSeries(activities), [activities]);
-  const weeklyVolume = useMemo(() => computeWeeklyVolume(activities), [activities]);
-  const distribution = useMemo(() => computeSportDistribution(activities), [activities]);
-  const summary = useMemo(() => computeAnalyticsSummary(activities, pmc), [activities, pmc]);
+  const { pmc, weeklyVolume, distribution, summary } = useMemo(
+    () => buildAnalyticsViewModel(activities),
+    [activities],
+  );
 
   return (
     <div className="space-y-4">

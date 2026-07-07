@@ -64,7 +64,9 @@ export function SessionsHub() {
   const tab: TabId = isTabId(raw) ? raw : 'calendrier';
 
   function setTab(next: string) {
-    router.replace(`/seances?tab=${next}`, { scroll: false });
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', next);
+    router.replace(`/seances?${params.toString()}`, { scroll: false });
   }
 
   return (

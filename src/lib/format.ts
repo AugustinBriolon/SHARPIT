@@ -46,6 +46,8 @@ export const activityTypeLabels: Record<ActivityType, string> = {
   BIKE: 'Vélo',
   SWIM: 'Natation',
   STRENGTH: 'Musculation',
+  TRIATHLON: 'Triathlon',
+  OTHER: 'Autre',
 };
 
 export const activityTypeColors: Record<ActivityType, string> = {
@@ -53,4 +55,6 @@ export const activityTypeColors: Record<ActivityType, string> = {
   BIKE: 'text-emerald-600',
   SWIM: 'text-blue-600',
   STRENGTH: 'text-violet-600',
+  TRIATHLON: 'text-fuchsia-600',
+  OTHER: 'text-slate-600',
 };

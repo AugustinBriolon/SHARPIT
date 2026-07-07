@@ -2,20 +2,26 @@
 
 import { ActivityType } from '@prisma/client';
 import { MapPin } from 'lucide-react';
+import { useMemo } from 'react';
 import { ActivityCharts } from '@/components/training/activity-charts';
 import { CombinedChart } from '@/components/training/combined-chart';
 import { PerformanceMetrics, ThresholdsHint } from '@/components/training/performance-metrics';
-import { RouteMap } from '@/components/training/route-map';
+import { MemoizedRouteMap as RouteMap } from '@/components/training/route-map';
 import { SplitsTable } from '@/components/training/splits-table';
 import { ZoneDistribution } from '@/components/training/zone-distribution';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useActivityStream } from '@/hooks/use-data';
 import type { ZoneBucket } from '@/lib/activity-analysis';
+import { normalizeStreamChartData } from '@/lib/stream-chart-data';
 import { cn } from '@/lib/utils';
 
 export function ActivityInsights({ activityId, type }: { activityId: string; type: ActivityType }) {
   const { data, isPending, isError } = useActivityStream(activityId);
+  const normalizedSamples = useMemo(
+    () => (data?.available && data.samples ? normalizeStreamChartData(data.samples) : []),
+    [data],
+  );
 
   if (isPending) {
     return (
@@ -56,7 +62,7 @@ export function ActivityInsights({ activityId, type }: { activityId: string; typ
     );
   }
 
-  const { path, samples, has, analysis } = data;
+  const { path, has, analysis } = data;
   const hrZones = analysis?.hr.zones ?? [];
   const powerZones = analysis?.power?.zones ?? [];
   const runSplits = analysis?.run?.splits ?? [];
@@ -88,8 +94,8 @@ export function ActivityInsights({ activityId, type }: { activityId: string; typ
         <h2 className="text-muted-foreground text-sm font-medium tracking-wider uppercase">
           Profils
         </h2>
-        <CombinedChart has={has} samples={samples} type={type} />
-        <ActivityCharts has={has} samples={samples} type={type} />
+        <CombinedChart has={has} samples={normalizedSamples} type={type} />
+        <ActivityCharts has={has} samples={normalizedSamples} type={type} />
       </section>
 
       {runSplits.length > 0 && (

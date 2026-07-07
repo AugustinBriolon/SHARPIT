@@ -12,6 +12,11 @@ export function SleepHero({
   bedtimeMin,
   wakeMin,
   garminScore,
+  onDateChange,
+  onPreviousDay,
+  onNextDay,
+  isToday,
+  maxDate,
 }: {
   date: Date;
   sleepScore: number | null;
@@ -20,6 +25,11 @@ export function SleepHero({
   bedtimeMin: number | null;
   wakeMin: number | null;
   garminScore: number | null;
+  onDateChange?: (date: Date) => void;
+  onPreviousDay?: () => void;
+  onNextDay?: () => void;
+  isToday?: boolean;
+  maxDate?: Date;
 }) {
   const subtitle =
     bedtimeMin != null && wakeMin != null
@@ -31,6 +41,8 @@ export function SleepHero({
       colorMode="neutral"
       date={date}
       format="percent"
+      isToday={isToday}
+      maxDate={maxDate}
       primaryCaption="temps de sommeil"
       primaryValue={totalSleepMin != null ? formatSleepDuration(totalSleepMin) : null}
       score={sleepScore}
@@ -47,6 +59,9 @@ export function SleepHero({
           </span>
         ) : undefined
       }
+      onDateChange={onDateChange}
+      onNextDay={onNextDay}
+      onPreviousDay={onPreviousDay}
     />
   );
 }

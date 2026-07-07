@@ -1,5 +1,5 @@
-import { subDays, isSameDay } from 'date-fns';
 import { EyebrowLabel } from '@/components/ui/eyebrow-label';
+import { buildDailyWindowSeries, indexHealthEntriesByDay } from '@/lib/health';
 import { cn } from '@/lib/utils';
 import type { ClientHealthEntry } from '@/lib/query/types';
 import { Sparkline } from './sparkline';
@@ -12,15 +12,19 @@ export function HealthMonitorPanel({
   entries: ClientHealthEntry[];
 }) {
   const today = new Date();
-  const last7 = Array.from({ length: 7 }, (_, i) => subDays(today, 6 - i));
+  const healthByDay = indexHealthEntriesByDay(entries);
 
   const numSeries = (key: keyof ClientHealthEntry) =>
-    last7.map((d) => {
-      const e = entries.find((en) => isSameDay(new Date(en.date), d));
-      if (!e) return null;
-      const v = e[key];
-      return typeof v === 'number' ? v : null;
-    });
+    buildDailyWindowSeries(
+      healthByDay,
+      7,
+      (_d, e) => {
+        if (!e) return null;
+        const v = e[key];
+        return typeof v === 'number' ? v : null;
+      },
+      today,
+    );
 
   const hrvBaselineContext = (() => {
     const hrv = entry?.hrv;

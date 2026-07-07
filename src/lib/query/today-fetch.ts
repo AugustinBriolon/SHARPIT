@@ -1,5 +1,6 @@
 import type {
   AdaptationData,
+  DailyStrainData,
   FatigueData,
   ReasoningData,
   RecoveryData,
@@ -23,17 +24,18 @@ export async function fetchTodayState(
   const refreshParam = options?.refresh ? '&refresh=true' : '';
   const base = `trainingDayId=${trainingDayId}&athleteId=default${refreshParam}`;
 
-  const [recovery, fatigue, adaptation] = await Promise.all([
+  const [recovery, fatigue, adaptation, dailyStrain] = await Promise.all([
     fetchEngine<RecoveryData>(`/api/recovery?${base}`),
     fetchEngine<FatigueData>(`/api/fatigue?${base}`),
     fetchEngine<AdaptationData>(`/api/adaptation?${base}`),
+    fetchEngine<DailyStrainData>(`/api/daily-strain?${base}`),
   ]);
 
   const reasoning = await fetchEngine<ReasoningData>(`/api/reasoning?${base}`);
 
-  if (!reasoning && !recovery && !fatigue && !adaptation) {
+  if (!reasoning && !recovery && !fatigue && !adaptation && !dailyStrain) {
     throw new Error('Impossible de charger ton bilan du jour. Réessaie.');
   }
 
-  return { reasoning, recovery, fatigue, adaptation };
+  return { reasoning, recovery, fatigue, adaptation, dailyStrain };
 }

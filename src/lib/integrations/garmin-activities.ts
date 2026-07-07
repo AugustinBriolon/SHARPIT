@@ -164,6 +164,19 @@ export function mapGarminType(typeKey: string): ActivityType | null {
   const k = typeKey.toLowerCase();
 
   if (
+    k === 'triathlon' ||
+    k === 'duathlon' ||
+    k === 'multisport' ||
+    k === 'multi_sport' ||
+    k.includes('triathlon') ||
+    k.includes('duathlon') ||
+    k.includes('multisport') ||
+    k.includes('multi_sport')
+  ) {
+    return ActivityType.TRIATHLON;
+  }
+
+  if (
     k.includes('run') ||
     k === 'trail_running' ||
     k === 'treadmill_running' ||
@@ -203,7 +216,7 @@ export function mapGarminType(typeKey: string): ActivityType | null {
     return ActivityType.STRENGTH;
   }
 
-  return null;
+  return ActivityType.OTHER;
 }
 
 export async function fetchGarminActivityEvaluation(
@@ -310,6 +323,9 @@ export function buildGarminActivityData(
         };
       }
       break;
+    case ActivityType.TRIATHLON:
+    case ActivityType.OTHER:
+      break;
   }
 
   return base;
@@ -371,6 +387,10 @@ export function garminEnrichmentUpdate(
         },
       },
     };
+  }
+
+  if (type === ActivityType.TRIATHLON || type === ActivityType.OTHER) {
+    return data;
   }
 
   return data;

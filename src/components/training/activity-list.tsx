@@ -29,14 +29,22 @@ type ActivityItem = {
   strengthSets: { exercise: string }[];
 };
 
-export function ActivityList({ activities }: { activities: ActivityItem[] }) {
+export function ActivityList({
+  activities,
+  emptyLabel,
+}: {
+  activities: ActivityItem[];
+  emptyLabel?: string;
+}) {
   if (!activities.length) {
     return (
       <div className="border-border/80 rounded-xl border border-dashed p-12 text-center">
-        <p className="text-muted-foreground">Aucune séance enregistrée.</p>
-        <LinkButton className="mt-4" href="/training/new">
-          Ajouter une séance
-        </LinkButton>
+        <p className="text-muted-foreground">{emptyLabel ?? 'Aucune séance enregistrée.'}</p>
+        {!emptyLabel && (
+          <LinkButton className="mt-4" href="/training/new">
+            Ajouter une séance
+          </LinkButton>
+        )}
       </div>
     );
   }
@@ -89,6 +97,10 @@ function getActivitySummary(activity: ActivityItem) {
       return formatDistance(activity.swimMetrics?.distanceM);
     case ActivityType.STRENGTH:
       return activity.strengthSets.map((s) => s.exercise).join(', ');
+    case ActivityType.TRIATHLON:
+      return activity.load != null ? `${Math.round(activity.load)} TSS` : 'Multisport';
+    case ActivityType.OTHER:
+      return activity.load != null ? `${Math.round(activity.load)} TSS` : undefined;
     default:
       return undefined;
   }

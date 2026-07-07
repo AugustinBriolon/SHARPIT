@@ -4,11 +4,18 @@ import type { TodayDashboardViewModel } from './use-today-dashboard-view-model';
 
 type MetricsVm = Pick<
   TodayDashboardViewModel,
-  'sleepScore' | 'recovery' | 'fatigue' | 'sleepSignal' | 'recoverySignal' | 'fatigueSignal'
+  | 'sleepScore'
+  | 'recovery'
+  | 'fatigue'
+  | 'dailyStrain'
+  | 'sleepSignal'
+  | 'recoverySignal'
+  | 'fatigueSignal'
 >;
 
 function MetricsCards({ vm, compact }: { vm: MetricsVm; compact: boolean }) {
-  const strainScore = fatigueIndexToWhoopStrain(vm.fatigue?.fatigueIndex ?? null);
+  const strainScore =
+    vm.dailyStrain?.strainScore ?? fatigueIndexToWhoopStrain(vm.fatigue?.fatigueIndex ?? null);
 
   return (
     <>

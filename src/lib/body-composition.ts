@@ -1,5 +1,5 @@
 import { BodyCompositionSource, type BodyCompositionMeasurement } from '@prisma/client';
-import { format, subDays } from 'date-fns';
+import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 export interface BodyCompositionEntry {
@@ -184,11 +184,8 @@ export function computeCompositionTrend(
   };
 }
 
-/** Une mesure par jour (la plus récente) pour les courbes. */
-export function buildCompositionSeries(
-  entries: BodyCompositionEntry[],
-  days = 90,
-): CompositionChartPoint[] {
+/** Une mesure par jour (la plus récente) pour les courbes, sans remplir les jours vides. */
+export function buildCompositionSeries(entries: BodyCompositionEntry[]): CompositionChartPoint[] {
   const byDay = new Map<string, BodyCompositionEntry>();
   for (const entry of entries) {
     const key = format(entry.measuredAt, 'yyyy-MM-dd');
@@ -198,24 +195,17 @@ export function buildCompositionSeries(
     }
   }
 
-  const series: CompositionChartPoint[] = [];
-  const today = new Date();
-  for (let i = days - 1; i >= 0; i--) {
-    const day = subDays(today, i);
-    const key = format(day, 'yyyy-MM-dd');
-    const entry = byDay.get(key);
-    series.push({
-      date: key,
-      label: format(day, 'd MMM', { locale: fr }),
-      weightKg: entry?.weightKg ?? null,
-      bodyFatPct: entry?.bodyFatPct ?? null,
-      musclePct: entry?.musclePct ?? null,
-      visceralFat: entry?.visceralFat ?? null,
-      waterPct: entry?.waterPct ?? null,
-    });
-  }
-
-  return series;
+  return [...byDay.entries()]
+    .sort((a, b) => a[1].measuredAt.getTime() - b[1].measuredAt.getTime())
+    .map(([date, entry]) => ({
+      date,
+      label: format(entry.measuredAt, 'd MMM', { locale: fr }),
+      weightKg: entry.weightKg ?? null,
+      bodyFatPct: entry.bodyFatPct ?? null,
+      musclePct: entry.musclePct ?? null,
+      visceralFat: entry.visceralFat ?? null,
+      waterPct: entry.waterPct ?? null,
+    }));
 }
 
 export function formatCompositionDelta(delta: number | null, unit = ''): string | undefined {

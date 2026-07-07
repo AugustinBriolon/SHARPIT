@@ -8,6 +8,7 @@ import {
 } from '@/hooks/use-data';
 import type {
   AdaptationData,
+  DailyStrainData,
   EngineRecommendation,
   FatigueData,
   ReasoningData,
@@ -50,6 +51,7 @@ export interface TodayDashboardViewModel {
   recovery: RecoveryData | null;
   fatigue: FatigueData | null;
   adaptation: AdaptationData | null;
+  dailyStrain: DailyStrainData | null;
   healthEntries: ClientHealthEntry[];
   plannedSessions: NonNullable<ReturnType<typeof usePlannedSessions>['data']>;
   todayEntry: ClientHealthEntry | null;
@@ -74,7 +76,7 @@ export interface TodayDashboardViewModel {
 
 export function useTodayDashboardViewModel(): TodayDashboardViewModel {
   const { data, loading, refresh } = useToday();
-  const { reasoning, recovery, fatigue, adaptation } = data;
+  const { reasoning, recovery, fatigue, adaptation, dailyStrain } = data;
   const { data: healthEntries = [] } = useHealthEntries(14);
   const { data: athleteProfile } = useAthleteProfile();
   const { data: activities = [] } = useActivities();
@@ -265,6 +267,7 @@ export function useTodayDashboardViewModel(): TodayDashboardViewModel {
     recovery,
     fatigue,
     adaptation,
+    dailyStrain,
     healthEntries,
     plannedSessions,
     todayEntry,

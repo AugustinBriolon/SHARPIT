@@ -11,6 +11,7 @@ import {
   mapGarminType,
   type ParsedStrengthSet,
 } from '@/lib/integrations/garmin-activities';
+import { fetchGarminMultisportLegs } from '@/lib/integrations/garmin-multisport';
 import { clientFromTokens, currentTokens, type GarminTokens } from '@/lib/integrations/garmin';
 import { getGarminAccount } from '@/lib/integrations/garmin-sync';
 import { prisma } from '@/lib/prisma';
@@ -55,6 +56,27 @@ const PAGE_SIZE = 50;
 const MAX_PAGES = 12;
 /** Mode historique complet : plafond de sécurité (~10 000 activités). */
 const MAX_PAGES_FULL = 200;
+
+async function backfillMultisportLegs(
+  activityId: string,
+  garminId: number,
+  client: ReturnType<typeof clientFromTokens>,
+): Promise<boolean> {
+  const existing = await prisma.activity.findUnique({
+    where: { id: activityId },
+    select: { multisportLegs: true },
+  });
+  if (existing?.multisportLegs != null) return false;
+
+  const legs = await fetchGarminMultisportLegs(client, garminId);
+  if (!legs) return false;
+
+  await prisma.activity.update({
+    where: { id: activityId },
+    data: { multisportLegs: legs as unknown as Prisma.InputJsonValue },
+  });
+  return true;
+}
 
 /** Crée les séries de muscu si l'activité n'en a pas encore. Renvoie true si ajout. */
 async function backfillStrengthSets(
@@ -167,6 +189,10 @@ export async function syncGarminActivities(options?: {
         if (evaluation.notes) patch.notes = evaluation.notes;
 
         const addedSets = await backfillStrengthSets(existingByGarmin.id, strengthSets);
+        const addedLegs =
+          type === ActivityType.TRIATHLON
+            ? await backfillMultisportLegs(existingByGarmin.id, activity.activityId, client)
+            : false;
 
         if (Object.keys(patch).length > 0) {
           await prisma.activity.update({
@@ -174,7 +200,7 @@ export async function syncGarminActivities(options?: {
             data: patch,
           });
           result.updated += 1;
-        } else if (addedSets) {
+        } else if (addedSets || addedLegs) {
           result.updated += 1;
         } else {
           result.skipped += 1;
@@ -204,8 +230,18 @@ export async function syncGarminActivities(options?: {
       }
 
       try {
+        const multisportLegs =
+          type === ActivityType.TRIATHLON
+            ? await fetchGarminMultisportLegs(client, activity.activityId)
+            : null;
+
         const created = await prisma.activity.create({
-          data: buildGarminActivityData(activity, evaluation, type, strengthSets),
+          data: {
+            ...buildGarminActivityData(activity, evaluation, type, strengthSets),
+            ...(multisportLegs
+              ? { multisportLegs: multisportLegs as unknown as Prisma.InputJsonValue }
+              : {}),
+          },
         });
         result.imported += 1;
         result.importedActivityIds.push(created.id);

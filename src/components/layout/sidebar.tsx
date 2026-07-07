@@ -30,7 +30,7 @@ export function Sidebar() {
   const { user } = useUser();
 
   return (
-    <aside className="border-sidebar-border bg-sidebar sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r">
+    <aside className="border-sidebar-border bg-sidebar sticky top-0 flex h-dvh w-60 shrink-0 flex-col border-r">
       <div className="px-4 pt-6 pb-5">
         <Link
           className="hover:bg-sidebar-accent/50 flex items-center gap-3 rounded-2xl px-2 py-2 transition-colors"

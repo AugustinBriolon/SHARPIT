@@ -18,6 +18,8 @@ const PLANNED_LOAD_FACTOR: Record<ActivityType, number> = {
   BIKE: 0.85,
   SWIM: 1.1,
   STRENGTH: 0.7,
+  TRIATHLON: 0.95,
+  OTHER: 0.75,
 };
 
 export function estimatePlannedLoad(session: {

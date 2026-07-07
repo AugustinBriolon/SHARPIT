@@ -13,6 +13,8 @@ enum ActivityType {
   BIKE
   SWIM
   STRENGTH
+  TRIATHLON
+  OTHER
 }
 
 enum GoalHorizon {
@@ -93,6 +95,9 @@ model Activity {
   source   String  @default("manual") // manual | garmin | strava | both
   stravaId String? @unique
   garminId String? @unique
+
+  /// Jambes et transitions d'un multisport Garmin (natation, T1, vélo, T2, course…)
+  multisportLegs Json?
 
   runMetrics     RunMetrics?
   bikeMetrics    BikeMetrics?

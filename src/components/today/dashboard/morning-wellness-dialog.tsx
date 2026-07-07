@@ -108,14 +108,14 @@ export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => voi
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <button
-        className="text-muted-foreground hover:text-foreground inline-flex shrink-0 items-center gap-1 rounded-full border border-dashed border-neutral-300/90 bg-white px-2.5 py-1 text-[10px] font-medium transition-colors hover:border-neutral-400 hover:bg-neutral-50"
+      <Button
+        // className="text-muted-foreground hover:text-foreground inline-flex shrink-0 items-center gap-1 rounded-full border border-dashed border-neutral-300/90 bg-white px-2.5 py-1 text-[10px] font-medium transition-colors hover:border-neutral-400 hover:bg-neutral-50"
         type="button"
         onClick={() => setOpen(true)}
       >
         <Smile className="size-3" aria-hidden />
         Ressenti
-      </button>
+      </Button>
 
       <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-md">
         <DialogHeader className="space-y-1 border-b px-5 py-4 text-left">

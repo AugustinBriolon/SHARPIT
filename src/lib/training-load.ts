@@ -1,4 +1,4 @@
-import { endOfDay, startOfDay, subDays } from 'date-fns';
+import { format as formatDate } from 'date-fns';
 
 /**
  * Calcul de la charge d'entraînement via le ratio Acute:Chronic Workload Ratio (ACWR).
@@ -49,33 +49,106 @@ const ACWR_THRESHOLDS = {
   OVERLOAD_HIGH: 1.5,
 } as const;
 
+const DEFAULT_TRAINING_DAY_START_HOUR = 4;
+const DEFAULT_TIMEZONE = 'Europe/Paris';
+
+function dayIdToEpochDays(trainingDayId: string): number {
+  const [year, month, day] = trainingDayId.split('-').map(Number);
+  const d = new Date(Date.UTC(year, month - 1, day));
+  return Math.floor(d.getTime() / 86_400_000);
+}
+
+function addTrainingDays(trainingDayId: string, days: number): string {
+  const [year, month, day] = trainingDayId.split('-').map(Number);
+  const d = new Date(Date.UTC(year, month - 1, day));
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().split('T')[0];
+}
+
+function isWithinWindow(trainingDayId: string, anchorDayId: string, windowDays: number) {
+  const anchorEpoch = dayIdToEpochDays(anchorDayId);
+  const dayEpoch = dayIdToEpochDays(trainingDayId);
+  const diff = anchorEpoch - dayEpoch;
+  return diff >= 0 && diff < windowDays;
+}
+
+function computeTrainingDayId(
+  timestamp: Date,
+  trainingDayStartHour = DEFAULT_TRAINING_DAY_START_HOUR,
+  timezone = DEFAULT_TIMEZONE,
+) {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    hour12: false,
+  });
+
+  const parts = Object.fromEntries(
+    formatter.formatToParts(timestamp).map(({ type, value }) => [type, value]),
+  );
+  const localHour = parseInt(parts.hour, 10);
+
+  if (localHour < trainingDayStartHour) {
+    const prevDayAnchor = new Date(timestamp.getTime() - 24 * 60 * 60_000);
+    const prevParts = Object.fromEntries(
+      formatter.formatToParts(prevDayAnchor).map(({ type, value }) => [type, value]),
+    );
+    return `${prevParts.year}-${prevParts.month}-${prevParts.day}`;
+  }
+
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+function mean(values: number[]) {
+  if (values.length === 0) return 0;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function stdDev(values: number[]) {
+  if (values.length === 0) return 0;
+  const avg = mean(values);
+  const variance = values.reduce((sum, value) => sum + (value - avg) ** 2, 0) / values.length;
+  return Math.sqrt(variance);
+}
+
 export function computeTrainingLoad(
   activities: { load: number | null; date: Date }[],
   refDate: Date = new Date(),
 ) {
-  const end = endOfDay(refDate);
-  // Use N-1 so the window spans exactly N calendar days (today inclusive).
-  // subDays(ref, N) would make the window N+1 days wide.
-  const acuteStart = startOfDay(subDays(refDate, ACUTE_DAYS - 1));
-  const chronicStart = startOfDay(subDays(refDate, CHRONIC_DAYS - 1));
+  const refTrainingDayId = formatDate(refDate, 'yyyy-MM-dd');
+  const loadByTrainingDay = new Map<string, number>();
+  for (const activity of activities) {
+    const trainingDayId = computeTrainingDayId(new Date(activity.date));
+    loadByTrainingDay.set(
+      trainingDayId,
+      (loadByTrainingDay.get(trainingDayId) ?? 0) + (activity.load ?? 0),
+    );
+  }
 
-  const inRange = (d: Date, start: Date) => {
-    const date = new Date(d);
-    return date >= start && date <= end;
-  };
+  const acuteLoad = Array.from(loadByTrainingDay.entries())
+    .filter(([trainingDayId]) => isWithinWindow(trainingDayId, refTrainingDayId, ACUTE_DAYS))
+    .reduce((sum, [, load]) => sum + load, 0);
 
-  // Charge aiguë : somme des 7 derniers jours (TSS total sur la semaine)
-  const acuteLoad = activities
-    .filter((a) => inRange(a.date, acuteStart))
-    .reduce((sum, a) => sum + (a.load ?? 0), 0);
+  const dailyLoad = loadByTrainingDay.get(refTrainingDayId) ?? 0;
 
-  // Charge chronique : MOYENNE HEBDOMADAIRE sur les 6 dernières semaines (42 jours)
-  // On divise la somme des 42 jours par 6 semaines pour obtenir la charge hebdo moyenne
-  const chronicTotalLoad = activities
-    .filter((a) => inRange(a.date, chronicStart))
-    .reduce((sum, a) => sum + (a.load ?? 0), 0);
+  const chronicTotalLoad = Array.from(loadByTrainingDay.entries())
+    .filter(([trainingDayId]) => isWithinWindow(trainingDayId, refTrainingDayId, CHRONIC_DAYS))
+    .reduce((sum, [, load]) => sum + load, 0);
 
   const chronicWeeklyAvg = chronicTotalLoad / CHRONIC_WEEKS;
+
+  const dailyLoads7d = Array.from({ length: ACUTE_DAYS }, (_, index) => {
+    const dayId = addTrainingDays(refTrainingDayId, -(ACUTE_DAYS - 1 - index));
+    return loadByTrainingDay.get(dayId) ?? 0;
+  });
+
+  const avgDailyLoad = mean(dailyLoads7d);
+  const sdDailyLoad = stdDev(dailyLoads7d);
+  const loadMonotony = sdDailyLoad > 0 ? avgDailyLoad / sdDailyLoad : null;
+  const loadStrain = loadMonotony != null ? acuteLoad * loadMonotony : null;
 
   // ACWR : ratio de la charge aiguë (7j) sur la charge chronique moyenne hebdo
   const acwr = chronicWeeklyAvg > 0 ? acuteLoad / chronicWeeklyAvg : 0;
@@ -86,9 +159,12 @@ export function computeTrainingLoad(
   else if (acwr >= ACWR_THRESHOLDS.UNDERLOAD) fatigue = 'Medium';
 
   return {
+    dailyLoad: Math.round(dailyLoad),
     weeklyLoad: Math.round(acuteLoad),
     acwr: Number(acwr.toFixed(2)),
     fatigue,
+    loadMonotony: loadMonotony != null ? Number(loadMonotony.toFixed(2)) : null,
+    loadStrain: loadStrain != null ? Math.round(loadStrain) : null,
   };
 }
 

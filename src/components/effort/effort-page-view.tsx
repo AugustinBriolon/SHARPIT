@@ -21,14 +21,18 @@ import type { FatigueType, TrainingCapacity } from '@/lib/today-mapping';
 
 export type EffortPageViewProps = {
   date: Date;
-  fatigueIndex: number | null;
-  signal: { label: string; qualityClass: string; arrow: string };
+  isToday?: boolean;
+  maxDate?: Date;
+  onDateChange?: (date: Date) => void;
+  onPreviousDay?: () => void;
+  onNextDay?: () => void;
+  dailyLoad: number;
+  weeklyLoad: number;
   fatigueType: FatigueType | string;
   performancePercent: number | null;
   consecutiveDays: number;
   estimatedDaysToFresh: number | null;
   acwr: number;
-  weeklyLoad: number;
   chronicWeeklyAvg: number | null;
   tsb: number | null;
   confidencePct: number;
@@ -55,14 +59,18 @@ export type EffortPageViewProps = {
 export function EffortPageView(props: EffortPageViewProps) {
   const {
     date,
-    fatigueIndex,
-    signal,
+    isToday,
+    maxDate,
+    onDateChange,
+    onPreviousDay,
+    onNextDay,
+    dailyLoad,
+    weeklyLoad,
     fatigueType,
     performancePercent,
     consecutiveDays,
     estimatedDaysToFresh,
     acwr,
-    weeklyLoad,
     chronicWeeklyAvg,
     tsb,
     confidencePct,
@@ -99,12 +107,16 @@ export function EffortPageView(props: EffortPageViewProps) {
     >
       <EffortHero
         consecutiveDays={consecutiveDays}
+        dailyLoad={dailyLoad}
         date={date}
         estimatedDaysToFresh={estimatedDaysToFresh}
-        fatigueIndex={fatigueIndex}
         fatigueType={fatigueType}
+        isToday={isToday}
+        maxDate={maxDate}
         performancePercent={performancePercent}
-        signal={signal}
+        onDateChange={onDateChange}
+        onNextDay={onNextDay}
+        onPreviousDay={onPreviousDay}
       />
 
       <EffortStatsStrip

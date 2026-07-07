@@ -41,7 +41,9 @@ export function MetricCell({
     return (
       <div className="flex min-w-0 flex-1 flex-col items-center justify-center px-3 py-4 text-center">
         <EyebrowLabel variant="metric">{label}</EyebrowLabel>
-        <p className={cn('mt-1 text-lg font-semibold tabular-nums', valueClass)}>{value}</p>
+        <p className={cn('mt-1 text-base font-semibold tabular-nums lg:text-lg', valueClass)}>
+          {value}
+        </p>
         {sub && <p className="text-muted-foreground mt-0.5 text-[10px]">{sub}</p>}
       </div>
     );

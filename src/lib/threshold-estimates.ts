@@ -37,6 +37,18 @@ function fmtFtp(w: number | null): string {
   return w != null ? `${w} W` : '—';
 }
 
+function shouldSuggestFtp(current: number | null, estimated: number | null): boolean {
+  if (estimated == null) return false;
+  if (current == null) return true;
+  return estimated > current;
+}
+
+function shouldSuggestThresholdPace(current: number | null, estimated: number | null): boolean {
+  if (estimated == null) return false;
+  if (current == null) return true;
+  return estimated < current;
+}
+
 /** Compare les estimations aux seuils actuels du profil. */
 export function previewThresholdApply(
   records: RecordsPayload,
@@ -50,18 +62,17 @@ export function previewThresholdApply(
 
   const changes: ThresholdApplyPreview['changes'] = [];
 
-  if (estimates.ftpW != null && estimates.ftpW !== current.ftpW) {
+  if (shouldSuggestFtp(current.ftpW, estimates.ftpW)) {
     changes.push({
       field: 'ftpW',
       label: 'FTP vélo',
       from: fmtFtp(current.ftpW),
-      to: fmtFtp(estimates.ftpW),
+      to: fmtFtp(estimates.ftpW ?? null),
     });
   }
 
   if (
-    estimates.runThresholdPaceSecPerKm != null &&
-    estimates.runThresholdPaceSecPerKm !== current.runThresholdPaceSecPerKm
+    shouldSuggestThresholdPace(current.runThresholdPaceSecPerKm, estimates.runThresholdPaceSecPerKm)
   ) {
     changes.push({
       field: 'runThresholdPaceSecPerKm',
@@ -69,7 +80,7 @@ export function previewThresholdApply(
       from: current.runThresholdPaceSecPerKm
         ? fmtPaceSecPerKm(current.runThresholdPaceSecPerKm)
         : '—',
-      to: fmtPaceSecPerKm(estimates.runThresholdPaceSecPerKm),
+      to: fmtPaceSecPerKm(estimates.runThresholdPaceSecPerKm!),
     });
   }
 

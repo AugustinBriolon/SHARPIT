@@ -44,7 +44,7 @@ export function SleepStatsStrip({
         },
         {
           label: 'Restaurateur',
-          sub: restorativeRatio != null ? restorativeRatioLabel(restorativeRatio) : undefined,
+          // sub: restorativeRatio != null ? restorativeRatioLabel(restorativeRatio) : undefined,
           tone: restorativeRatioTone(restorativeRatio),
           value: restorativeRatio != null ? `${restorativeRatio} %` : '—',
         },
@@ -55,7 +55,7 @@ export function SleepStatsStrip({
         },
         {
           label: 'Objectif',
-          sub: formatSleepDuration(sleepTargetMin),
+          // sub: formatSleepDuration(sleepTargetMin),
           tone: deltaTone(targetDeltaMin, 'good', 'warn'),
           value: targetDeltaMin != null ? signedSleepDuration(targetDeltaMin) : '—',
         },

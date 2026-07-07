@@ -3,18 +3,12 @@
 import { MobileDrillDownHeader } from '@/components/layout/mobile-drill-down-header';
 import { EffortPageView } from '@/components/effort/effort-page-view';
 import { useActivities } from '@/hooks/use-data';
+import { useTodaySelectedDate } from '@/hooks/use-today-selected-date';
 import { useToday } from '@/hooks/use-today';
 import { computePmcSeries } from '@/lib/analytics';
 import { resolve } from '@/lib/french';
 import { computeTrainingLoad, enrichFatigueLoadDimension } from '@/lib/training-load';
-import {
-  mapConfidenceToTier,
-  mapFatigueToSignal,
-  type FatigueLevel,
-  type FatigueTrajectory,
-  type FatigueType,
-  type TrainingCapacity,
-} from '@/lib/today-mapping';
+import { mapConfidenceToTier, type FatigueType, type TrainingCapacity } from '@/lib/today-mapping';
 import type { MetricTone } from '@/components/today/drill-down/metric-cell';
 
 const OVERREACHING_RISK_DISPLAY: Record<string, { label: string; colorClass: string } | undefined> =
@@ -47,8 +41,9 @@ const CONFIDENCE_TONE: Record<string, MetricTone> = {
 };
 
 export default function TodayEffortPage() {
-  const { data, loading } = useToday();
-  const { fatigue } = data;
+  const { date, isToday, maxDate, setDate, goToNextDay, goToPreviousDay } = useTodaySelectedDate();
+  const { data, loading } = useToday(date);
+  const { fatigue, dailyStrain } = data;
   const { data: activities = [] } = useActivities();
 
   if (loading) {
@@ -73,22 +68,22 @@ export default function TodayEffortPage() {
     );
   }
 
-  const today = new Date();
   const activityInputs = activities.map((a) => ({ load: a.load, date: new Date(a.date) }));
-  const trainingLoad = computeTrainingLoad(activityInputs, today);
+  const trainingLoad = computeTrainingLoad(activityInputs, date);
+  const dailyLoad = dailyStrain?.dailyTss ?? trainingLoad.dailyLoad;
 
   const pmcSeries = computePmcSeries(
     activities.map((a) => ({ ...a, date: new Date(a.date) })),
     28,
-    today,
+    date,
   );
 
   const weeklyTss: { week: string; tss: number }[] = [];
   for (let w = 7; w >= 0; w--) {
-    const weekStart = new Date(today);
-    weekStart.setDate(today.getDate() - w * 7 - 6);
-    const weekEnd = new Date(today);
-    weekEnd.setDate(today.getDate() - w * 7);
+    const weekStart = new Date(date);
+    weekStart.setDate(date.getDate() - w * 7 - 6);
+    const weekEnd = new Date(date);
+    weekEnd.setDate(date.getDate() - w * 7);
     const total = activities
       .filter((a) => {
         const d = new Date(a.date);
@@ -106,11 +101,6 @@ export default function TodayEffortPage() {
     trainingLoad.acwr > 0 ? Math.round(trainingLoad.weeklyLoad / trainingLoad.acwr) : null;
 
   const lastTsb = pmcSeries.length > 0 ? (pmcSeries[pmcSeries.length - 1]?.tsb ?? null) : null;
-
-  const signal = mapFatigueToSignal(
-    fatigue.fatigueLevel as FatigueLevel,
-    fatigue.trajectory as FatigueTrajectory,
-  );
 
   const performancePercent =
     fatigue.performanceImpairmentEstimate > 0
@@ -143,21 +133,22 @@ export default function TodayEffortPage() {
         confidencePct={confidencePct}
         confidenceTone={CONFIDENCE_TONE[confidenceTier] ?? 'neutral'}
         consecutiveDays={fatigue.consecutiveAccumulationDays}
-        date={today}
+        dailyLoad={dailyLoad}
+        date={date}
         dimensions={dimensions}
         dominantDimension={fatigue.dominantDimension}
         estimatedDaysToFresh={fatigue.estimatedTimeToFresh}
-        fatigueIndex={fatigue.fatigueIndex}
         fatigueType={fatigue.fatigueType as FatigueType}
         isLowFatigue={isLowFatigue}
+        isToday={isToday}
         keyEvidence={fatigue.recommendation.keyEvidence.map((e) => resolve(e))}
+        maxDate={maxDate}
         missingDimCount={5 - availableDimCount}
         overreaching={OVERREACHING_RISK_DISPLAY[fatigue.signals.functionalOverreachingRisk]}
         performancePercent={performancePercent}
         pmcSeries={pmcSeries}
         primaryLimitingFactor={fatigue.primaryLimitingFactor}
         rationale={fatigue.decision.rationale.map((r) => resolve(r))}
-        signal={signal}
         trainingCapacity={fatigue.trainingCapacity as TrainingCapacity}
         tsb={lastTsb}
         verdict={verdictDisplay.label}
@@ -165,6 +156,9 @@ export default function TodayEffortPage() {
         verdictKey={fatigue.decision.verdict}
         weeklyLoad={trainingLoad.weeklyLoad}
         weeklyTss={weeklyTss}
+        onDateChange={setDate}
+        onNextDay={goToNextDay}
+        onPreviousDay={goToPreviousDay}
       />
     </div>
   );

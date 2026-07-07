@@ -7,6 +7,11 @@ export type MetricTone = 'good' | 'warn' | 'bad' | 'neutral';
 
 export type SleepPageViewProps = {
   date: Date;
+  isToday?: boolean;
+  maxDate?: Date;
+  onDateChange?: (date: Date) => void;
+  onPreviousDay?: () => void;
+  onNextDay?: () => void;
   sleepScore: number | null;
   adequacyDisplay: { label: string; colorClass: string };
   scoreBreakdown: SleepScoreBreakdown;

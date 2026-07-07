@@ -119,6 +119,23 @@ function enumerateDays(from: string, to: string): string[] {
   return result;
 }
 
+function hasValidSessionFeatureShape(data: Record<string, unknown> | null | undefined): data is {
+  trainingDayId: string;
+  sportType: string;
+  durationSec: number;
+  tssScore: number;
+} {
+  return (
+    data != null &&
+    typeof data.trainingDayId === 'string' &&
+    typeof data.sportType === 'string' &&
+    typeof data.durationSec === 'number' &&
+    Number.isFinite(data.durationSec) &&
+    typeof data.tssScore === 'number' &&
+    Number.isFinite(data.tssScore)
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // FeatureEngine
 // ─────────────────────────────────────────────────────────────────────────────
@@ -240,6 +257,40 @@ export class FeatureEngine {
     await this.featureRepo.save(record);
   }
 
+  private async ensureSessionFeaturesInRange(
+    athleteId: string,
+    fromTrainingDayId: string,
+    toTrainingDayId: string,
+  ) {
+    const trainingDayIds = enumerateDays(fromTrainingDayId, toTrainingDayId);
+    const [sessionObs, sessionRecords] = await Promise.all([
+      this.obsRepo.find(athleteId, { types: ['SESSION'], trainingDayIds }),
+      this.featureRepo.findSessionFeaturesByRange(athleteId, fromTrainingDayId, toTrainingDayId),
+    ]);
+
+    const latestBySessionObsId = new Map(
+      sessionRecords.map((record) => [record.sessionObsId, record]),
+    );
+    let repaired = false;
+
+    for (const observation of sessionObs) {
+      if (observation.type !== 'SESSION') continue;
+      const existing = latestBySessionObsId.get(observation.id);
+      if (existing && hasValidSessionFeatureShape(existing.data as Record<string, unknown>))
+        continue;
+      await this.computeSessionFeatures(athleteId, observation);
+      repaired = true;
+    }
+
+    if (!repaired) return sessionRecords;
+
+    return this.featureRepo.findSessionFeaturesByRange(
+      athleteId,
+      fromTrainingDayId,
+      toTrainingDayId,
+    );
+  }
+
   private async findLinkedSubjective(
     athleteId: string,
     session: SessionObservation,
@@ -276,7 +327,7 @@ export class FeatureEngine {
     const ctx = await this.ctxProvider.getContext(athleteId, trainingDayId);
 
     // ── Session features (may already be COMPUTED from event handler) ─────
-    const sessionRecords = await this.featureRepo.findSessionFeaturesByRange(
+    const sessionRecords = await this.ensureSessionFeaturesInRange(
       athleteId,
       trainingDayId,
       trainingDayId,
@@ -388,8 +439,9 @@ export class FeatureEngine {
    */
   async getDayFeatures(athleteId: string, trainingDayId: string): Promise<DayFeatures> {
     // Check if we have fresh COMPUTED records for all categories
-    const [sessionRecords, loadRecord, recoveryRecord, bodyRecord, conditionRecord] =
+    const [sessionObs, sessionRecords, loadRecord, recoveryRecord, bodyRecord, conditionRecord] =
       await Promise.all([
+        this.obsRepo.find(athleteId, { types: ['SESSION'], trainingDayId }),
         this.featureRepo.findSessionFeaturesByRange(athleteId, trainingDayId, trainingDayId),
         this.featureRepo.findLoadFeatures(athleteId, trainingDayId),
         this.featureRepo.findRecoveryFeatures(athleteId, trainingDayId),
@@ -397,8 +449,14 @@ export class FeatureEngine {
         this.featureRepo.findConditionFeatures(athleteId, trainingDayId),
       ]);
 
-    // If any window feature is missing, trigger lazy computation
-    if (!loadRecord || !recoveryRecord || !conditionRecord) {
+    const hasSessionMismatch =
+      sessionObs.length !== sessionRecords.length ||
+      sessionRecords.some(
+        (record) => !hasValidSessionFeatureShape(record.data as Record<string, unknown>),
+      );
+
+    // If any window feature is missing or cached session features are malformed, trigger lazy computation
+    if (!loadRecord || !recoveryRecord || !conditionRecord || hasSessionMismatch) {
       return this.computeDayFeatures(athleteId, trainingDayId);
     }
 
@@ -461,7 +519,7 @@ export class FeatureEngine {
     const fromDayId = subtractDays(trainingDayId, 42);
 
     // Get all session features in the 42-day window
-    const sessionRecords = await this.featureRepo.findSessionFeaturesByRange(
+    const sessionRecords = await this.ensureSessionFeaturesInRange(
       athleteId,
       fromDayId,
       trainingDayId,
@@ -481,6 +539,7 @@ export class FeatureEngine {
 
     // Aggregate session TSS per day
     for (const record of sessionRecords) {
+      if (!hasValidSessionFeatureShape(record.data as Record<string, unknown>)) continue;
       const day = record.data.trainingDayId;
       const entry = tssMap.get(day) ?? { tssScore: 0, run: 0, bike: 0, other: 0 };
       const tss = record.data.tssScore;

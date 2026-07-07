@@ -14,6 +14,12 @@ import { getAthleteProfile } from '@/lib/queries';
 import { fetchActivityStreams, type StravaStreamSet } from '@/lib/integrations/strava';
 import { getValidAccessToken } from '@/lib/integrations/strava-sync';
 import type { ActivityType } from '@prisma/client';
+import {
+  isMultisportLegArray,
+  legKindToActivityType,
+  sportLegsOnly,
+  type MultisportLeg,
+} from '@/lib/multisport';
 
 export type { RawStreams };
 
@@ -56,7 +62,7 @@ export interface ActivityStreamPayload {
 }
 
 const MAX_SAMPLES = 500;
-const MAX_PATH_POINTS = 2000;
+const MAX_PATH_POINTS = 800;
 
 function normalizeStravaStreams(set: StravaStreamSet): RawStreams {
   return {
@@ -208,6 +214,72 @@ const UNAVAILABLE: ActivityStreamPayload = {
   stats: null,
   analysis: null,
 };
+
+export interface MultisportLegStream {
+  leg: MultisportLeg;
+  type: ActivityType;
+  stream: ActivityStreamPayload;
+}
+
+export interface MultisportStreamsPayload {
+  legs: MultisportLegStream[];
+}
+
+async function fetchGarminLegRaw(garminId: string): Promise<RawStreams | null> {
+  try {
+    const client = await getGarminClient();
+    const garmin = await fetchGarminActivityStreams(client, garminId);
+    if (garmin && rawStreamsHaveSignal(garmin)) return garmin;
+  } catch (error) {
+    console.error('fetchGarminLegRaw', garminId, error);
+  }
+  return null;
+}
+
+function buildLegStreamPayload(
+  raw: RawStreams,
+  type: ActivityType,
+  durationSec: number | null,
+  profile: Awaited<ReturnType<typeof getAthleteProfile>>,
+): ActivityStreamPayload {
+  return buildPayload(raw, { type, duration: durationSec, bikeMetrics: null }, profile);
+}
+
+/** Streams Garmin par jambe sportive d'un triathlon (natation, vélo, course). */
+export async function getMultisportLegStreams(
+  activityId: string,
+): Promise<MultisportStreamsPayload | null> {
+  const [activity, profile] = await Promise.all([
+    prisma.activity.findUnique({
+      where: { id: activityId },
+      select: { multisportLegs: true, garminId: true },
+    }),
+    getAthleteProfile(),
+  ]);
+
+  if (!activity?.multisportLegs || !isMultisportLegArray(activity.multisportLegs)) {
+    return null;
+  }
+
+  const sportLegs = sportLegsOnly(activity.multisportLegs);
+  const results: MultisportLegStream[] = [];
+
+  for (const leg of sportLegs) {
+    const type = legKindToActivityType(leg.kind);
+    if (!type || !leg.garminActivityId) continue;
+
+    const raw = await fetchGarminLegRaw(leg.garminActivityId);
+    if (!raw) continue;
+
+    results.push({
+      leg,
+      type,
+      stream: buildLegStreamPayload(raw, type, leg.durationSec, profile),
+    });
+  }
+
+  return results.length > 0 ? { legs: results } : null;
+}
 
 async function fetchRawStreams(activity: {
   garminId: string | null;

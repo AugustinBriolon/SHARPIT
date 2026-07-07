@@ -15,6 +15,11 @@ export type { SleepPageViewProps } from '@/components/sleep/types';
 export function SleepPageView(props: SleepPageViewProps) {
   const {
     date,
+    isToday,
+    maxDate,
+    onDateChange,
+    onPreviousDay,
+    onNextDay,
     sleepScore,
     adequacyDisplay,
     scoreBreakdown,
@@ -49,9 +54,14 @@ export function SleepPageView(props: SleepPageViewProps) {
         bedtimeMin={bedtimeMin}
         date={date}
         garminScore={garminScore}
+        isToday={isToday}
+        maxDate={maxDate}
         sleepScore={sleepScore}
         totalSleepMin={totalSleepMin}
         wakeMin={wakeMin}
+        onDateChange={onDateChange}
+        onNextDay={onNextDay}
+        onPreviousDay={onPreviousDay}
       />
 
       <SleepStatsStrip

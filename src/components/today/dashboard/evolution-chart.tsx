@@ -1,13 +1,18 @@
 'use client';
 
-import { format, subDays, isSameDay } from 'date-fns';
+import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { LineChart, Line, XAxis, CartesianGrid, Tooltip } from 'recharts';
 import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 import { EyebrowLabel } from '@/components/ui/eyebrow-label';
+import { buildDailyWindowSeries, indexHealthEntriesByDay } from '@/lib/health';
 import type { ClientHealthEntry } from '@/lib/query/types';
 
-import { computeSharpitSleepScoreForDay, SLEEP_TARGET_MIN } from '@/lib/sleep-scoring';
+import {
+  buildSleepScoreBreakdown,
+  computeSleepDebt7d,
+  SLEEP_TARGET_MIN,
+} from '@/lib/sleep-scoring';
 
 export function EvolutionChart({
   entries,
@@ -17,15 +22,24 @@ export function EvolutionChart({
   sleepTargetMin?: number;
 }) {
   const today = new Date();
-  const chartData = Array.from({ length: 7 }, (_, i) => {
-    const d = subDays(today, 6 - i);
-    const e = entries.find((en) => isSameDay(new Date(en.date), d));
-    return {
+  const byDay = indexHealthEntriesByDay(entries);
+  const chartData = buildDailyWindowSeries(
+    byDay,
+    7,
+    (d, e) => ({
       day: format(d, 'EEE', { locale: fr }),
       recovery: e?.recoveryScore ?? null,
-      sleep: computeSharpitSleepScoreForDay(entries, d, sleepTargetMin),
-    };
-  });
+      sleep: e
+        ? buildSleepScoreBreakdown(
+            e.sleepDeepMin ?? null,
+            e.sleepRemMin ?? null,
+            e.sleepMinutes ?? null,
+            computeSleepDebt7d(entries, d, sleepTargetMin),
+          ).sharpitScore
+        : null,
+    }),
+    today,
+  );
 
   const hasData = chartData.some((p) => p.recovery !== null || p.sleep !== null);
 

@@ -60,6 +60,8 @@ describe('mapGarminSportType', () => {
     ['strength_training', 'STRENGTH'],
     ['yoga', 'YOGA'],
     ['triathlon', 'TRIATHLON'],
+    ['multisport', 'TRIATHLON'],
+    ['multi_sport', 'TRIATHLON'],
   ])('%s → %s', (typeKey, expected) => {
     expect(mapGarminSportType(typeKey)).toBe(expected);
   });

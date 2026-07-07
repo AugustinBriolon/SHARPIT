@@ -44,6 +44,11 @@ export class InMemoryObservationRepository implements ObservationRepository {
       results = results.filter((o) => o.trainingDayId === filter.trainingDayId);
     }
 
+    if (filter.trainingDayIds && filter.trainingDayIds.length > 0) {
+      const daySet = new Set(filter.trainingDayIds);
+      results = results.filter((o) => daySet.has(o.trainingDayId));
+    }
+
     if (filter.since) {
       results = results.filter((o) => o.timestamp >= filter.since!);
     }

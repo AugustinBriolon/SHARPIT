@@ -4,6 +4,12 @@ import { useEffect, useMemo, useRef } from 'react';
 import { MobileDrillDownHeader } from '@/components/layout/mobile-drill-down-header';
 import { SleepPageView } from '@/components/sleep/sleep-page-view';
 import { useAthleteProfile, useHealthEntries } from '@/hooks/use-data';
+import { useTodaySelectedDate } from '@/hooks/use-today-selected-date';
+import {
+  buildDailyWindowSeries,
+  getIndexedHealthEntry,
+  indexHealthEntriesByDay,
+} from '@/lib/health';
 import { useToday } from '@/hooks/use-today';
 import { analyzeSleep, toSleepEntryInputs } from '@/lib/sleep';
 import { effectiveSleepMinutes } from '@/lib/health';
@@ -14,13 +20,14 @@ import {
 } from '@/lib/sleep-scoring';
 import { mapRecoveryToSignal, mapSleepAdequacySignalToDisplay } from '@/lib/today-mapping';
 import type { ReadinessCategory } from '@/lib/today-mapping';
-import { format, isSameDay, subDays } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 export default function TodaySleepPage() {
-  const { data, loading, refresh } = useToday();
+  const { date, isToday, maxDate, setDate, goToNextDay, goToPreviousDay } = useTodaySelectedDate();
+  const { data, loading, refresh } = useToday(date);
   const { recovery } = data;
-  const { data: healthEntries = [] } = useHealthEntries(30);
+  const { data: healthEntries = [] } = useHealthEntries(30, date);
   const { data: athleteProfile } = useAthleteProfile();
   const refreshed = useRef(false);
 
@@ -31,7 +38,7 @@ export default function TodaySleepPage() {
     }
   }, [refresh]);
 
-  const today = new Date();
+  const healthByDay = useMemo(() => indexHealthEntriesByDay(healthEntries), [healthEntries]);
 
   const sleepGoals = useMemo(
     () => ({
@@ -68,7 +75,7 @@ export default function TodaySleepPage() {
     );
   }
 
-  const todayEntry = healthEntries.find((e) => isSameDay(new Date(e.date), today)) ?? null;
+  const todayEntry = getIndexedHealthEntry(healthByDay, date);
 
   const deepMin = todayEntry?.sleepDeepMin ?? null;
   const remMin = todayEntry?.sleepRemMin ?? null;
@@ -82,13 +89,18 @@ export default function TodaySleepPage() {
   const sleepTargetMin = athleteProfile?.sleepTargetMinutes ?? SLEEP_TARGET_MIN;
   const scoreBreakdown = buildSleepScoreBreakdown(deepMin, remMin, totalSleepMin, null);
 
-  const last7 = healthEntries.filter((e) => {
-    const d = new Date(e.date);
-    return d >= subDays(today, 6) && !isSameDay(d, today) && effectiveSleepMinutes(e) != null;
-  });
+  const last7Sleep = buildDailyWindowSeries(
+    healthByDay,
+    7,
+    (d, e) => {
+      if (isSameDay(d, date)) return null;
+      return e ? effectiveSleepMinutes(e) : null;
+    },
+    date,
+  ).filter((value): value is number => value != null);
   const avgSleepMinutes7d =
-    last7.length > 0
-      ? Math.round(last7.reduce((s, e) => s + (effectiveSleepMinutes(e) ?? 0), 0) / last7.length)
+    last7Sleep.length > 0
+      ? Math.round(last7Sleep.reduce((sum, value) => sum + value, 0) / last7Sleep.length)
       : null;
 
   const sleepDelta7d =
@@ -114,14 +126,17 @@ export default function TodaySleepPage() {
     }
   }
 
-  const days14 = Array.from({ length: 14 }, (_, i) => subDays(today, 13 - i));
-  const barData = days14.map((d) => {
-    const e = healthEntries.find((h) => isSameDay(new Date(h.date), d));
-    const mins = e?.sleepMinutes ?? null;
-    let fill = '#e2e8f0';
-    if (mins !== null) fill = mins >= sleepTargetMin ? '#34d399' : '#fbbf24';
-    return { date: format(d, 'dd/MM', { locale: fr }), minutes: mins, fill };
-  });
+  const barData = buildDailyWindowSeries(
+    healthByDay,
+    14,
+    (d, e) => {
+      const mins = e?.sleepMinutes ?? null;
+      let fill = '#e2e8f0';
+      if (mins !== null) fill = mins >= sleepTargetMin ? '#34d399' : '#fbbf24';
+      return { date: format(d, 'dd/MM', { locale: fr }), minutes: mins, fill };
+    },
+    date,
+  );
 
   return (
     <div className="space-y-4">
@@ -132,10 +147,12 @@ export default function TodaySleepPage() {
         barData={barData}
         bedtimeMin={todayEntry?.sleepBedtimeMin ?? null}
         coachView={coachView}
-        date={today}
+        date={date}
         deepMin={deepMin}
         garminScore={todayEntry?.sleepScore ?? null}
+        isToday={isToday}
         lightMin={lightMin}
+        maxDate={maxDate}
         recoveryNote={recoveryNote}
         remMin={remMin}
         scoreBreakdown={scoreBreakdown}
@@ -145,6 +162,9 @@ export default function TodaySleepPage() {
         targetDeltaMin={targetDeltaMin}
         totalSleepMin={totalSleepMin}
         wakeMin={todayEntry?.sleepWakeMin ?? null}
+        onDateChange={setDate}
+        onNextDay={goToNextDay}
+        onPreviousDay={goToPreviousDay}
       />
     </div>
   );

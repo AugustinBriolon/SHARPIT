@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import type { SplitRow } from '@/lib/activity-analysis';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDuration, formatPace } from '@/lib/format';
@@ -19,7 +20,7 @@ function formatSplitPace(row: SplitRow, mode: 'run' | 'bike'): string {
   return formatPace(row.paceSecPerKm);
 }
 
-export function SplitsTable({
+function SplitsTableComponent({
   splits,
   refPaceSecPerKm,
   title,
@@ -103,3 +104,5 @@ export function SplitsTable({
     </Card>
   );
 }
+
+export const SplitsTable = memo(SplitsTableComponent);

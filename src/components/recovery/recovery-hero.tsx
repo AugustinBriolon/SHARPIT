@@ -8,6 +8,11 @@ export function RecoveryHero({
   estimatedRecoveryDays,
   isCalibrating,
   availableDimCount,
+  onDateChange,
+  onPreviousDay,
+  onNextDay,
+  isToday,
+  maxDate,
 }: {
   date: Date;
   readinessScore: number | null;
@@ -16,16 +21,22 @@ export function RecoveryHero({
   estimatedRecoveryDays: number | null;
   isCalibrating: boolean;
   availableDimCount: number;
+  onDateChange?: (date: Date) => void;
+  onPreviousDay?: () => void;
+  onNextDay?: () => void;
+  isToday?: boolean;
+  maxDate?: Date;
 }) {
   return (
     <DrillDownHero
       colorMode="dynamic"
       date={date}
       format="percent"
+      isToday={isToday}
+      maxDate={maxDate}
       primaryCaption="score récupération"
       primaryValue={readinessScore != null ? `${readinessScore}` : null}
       score={readinessScore}
-      statusArrow={signal.arrow}
       statusClassName={signal.qualityClass}
       statusLabel={signal.label}
       badge={
@@ -52,6 +63,9 @@ export function RecoveryHero({
           )}
         </>
       }
+      onDateChange={onDateChange}
+      onNextDay={onNextDay}
+      onPreviousDay={onPreviousDay}
     />
   );
 }

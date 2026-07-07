@@ -1,6 +1,9 @@
 import { notFound } from 'next/navigation';
 import { ActivityHeroStats, type HeroActivity } from '@/components/training/activity-hero-stats';
 import { ActivityInsights } from '@/components/training/activity-insights';
+import { TriathlonActivityInsights } from '@/components/training/triathlon-activity-insights';
+import { TriathlonHeroCards } from '@/components/training/triathlon-hero-cards';
+import { TriathlonLegsPanel } from '@/components/training/triathlon-legs-panel';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { DeleteActivityButton } from '@/components/training/activity-list';
@@ -8,7 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { LinkButton } from '@/components/ui/link-button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
-import { getActivityById } from '@/lib/queries';
+import { getActivityById, getMultisportLegsForActivity } from '@/lib/queries';
+import type { MultisportLeg } from '@/lib/multisport';
 import { cn } from '@/lib/utils';
 import { ActivityType } from '@prisma/client';
 import {
@@ -17,8 +21,10 @@ import {
   Dumbbell,
   Footprints,
   Gauge,
+  Medal,
   Smile,
   Waves,
+  Shapes,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -37,6 +43,8 @@ const sportIcon: Record<ActivityType, LucideIcon> = {
   BIKE: Bike,
   SWIM: Waves,
   STRENGTH: Dumbbell,
+  TRIATHLON: Medal,
+  OTHER: Shapes,
 };
 
 const sportIconWrap: Record<ActivityType, string> = {
@@ -44,6 +52,8 @@ const sportIconWrap: Record<ActivityType, string> = {
   BIKE: 'bg-emerald-500/10 text-emerald-600',
   SWIM: 'bg-blue-500/10 text-blue-600',
   STRENGTH: 'bg-violet-500/10 text-violet-600',
+  TRIATHLON: 'bg-fuchsia-500/10 text-fuchsia-600',
+  OTHER: 'bg-slate-500/10 text-slate-600',
 };
 
 const chipDot: Record<ChipTone, string> = {
@@ -105,10 +115,12 @@ export default async function ActivityDetailPage({ params }: PageProps) {
   const strengthStats = buildStrengthStats(activity);
   const specs = buildSpecs(activity);
   const isStrength = activity.type === ActivityType.STRENGTH;
+  const isTriathlon = activity.type === ActivityType.TRIATHLON;
+  const multisportLegs = isTriathlon ? await getMultisportLegsForActivity(activity) : null;
 
   return (
     <div className="space-y-8">
-      <MobileBackLink href="/seances?tab=activites" label="Activités" />
+      <MobileBackLink href="/seances?tab=activites" label="Activités" showOnDesktop />
       <StickyHeader>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-start gap-4">
@@ -153,20 +165,23 @@ export default async function ActivityDetailPage({ params }: PageProps) {
       <div className="space-y-5">
         <ContextChips activity={activity} />
 
-        {isStrength ? (
-          strengthStats.length > 0 && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {strengthStats.map((stat) => (
-                <HeroStat key={stat.label} {...stat} />
-              ))}
-            </div>
-          )
-        ) : (
-          <ActivityHeroStats activity={heroActivity} activityId={activity.id} />
-        )}
+        {renderActivityHero({
+          isStrength,
+          isTriathlon,
+          strengthStats,
+          multisportLegs,
+          heroActivity,
+          activityId: activity.id,
+        })}
       </div>
 
-      {!isStrength && <ActivityInsights activityId={activity.id} type={activity.type} />}
+      {isTriathlon && multisportLegs && <TriathlonLegsPanel legs={multisportLegs} />}
+
+      {isTriathlon ? (
+        <TriathlonActivityInsights activityId={activity.id} />
+      ) : (
+        !isStrength && <ActivityInsights activityId={activity.id} type={activity.type} />
+      )}
 
       {isStrength && <StrengthExercises activity={activity} />}
 
@@ -183,7 +198,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
                 {specs.map((row) => (
                   <div
                     key={row.label}
-                    className="border-border/40 flex justify-between gap-4 border-b py-2 last:border-0 sm:[&:nth-last-child(2)]:border-0"
+                    className="border-border/40 flex justify-between gap-4 border-b py-2 last:border-0 sm:nth-last-2:border-0"
                   >
                     <span className="text-muted-foreground">{row.label}</span>
                     <span className="text-right font-medium">{row.value}</span>
@@ -325,6 +340,36 @@ function StrengthExercises({ activity }: { activity: Activity }) {
       </CardContent>
     </Card>
   );
+}
+
+function renderActivityHero({
+  isStrength,
+  isTriathlon,
+  strengthStats,
+  multisportLegs,
+  heroActivity,
+  activityId,
+}: {
+  isStrength: boolean;
+  isTriathlon: boolean;
+  strengthStats: Stat[];
+  multisportLegs: MultisportLeg[] | null;
+  heroActivity: HeroActivity;
+  activityId: string;
+}) {
+  if (isStrength && strengthStats.length > 0) {
+    return (
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {strengthStats.map((stat) => (
+          <HeroStat key={stat.label} {...stat} />
+        ))}
+      </div>
+    );
+  }
+  if (isTriathlon && multisportLegs) {
+    return <TriathlonHeroCards legs={multisportLegs} />;
+  }
+  return <ActivityHeroStats activity={heroActivity} activityId={activityId} />;
 }
 
 function buildStrengthStats(activity: Activity): Stat[] {

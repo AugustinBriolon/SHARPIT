@@ -1,22 +1,15 @@
 'use client';
 
-import { Activity, BarChart3, HeartPulse, Scale } from 'lucide-react';
+import { Activity, BarChart3, Scale } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AnalyticsClient } from '@/components/analytics/analytics-client';
 import { RecordsPanel } from '@/components/analytics/records-panel';
 import { CompositionView } from '@/components/corps/composition-view';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { PhysicalView } from '@/components/physical/physical-view';
-import { RecoveryView } from '@/components/recovery/recovery-view';
 import { navPillClass } from '@/lib/nav-pill';
 
 const TABS = [
-  {
-    id: 'recuperation',
-    label: 'Récupération',
-    description: 'Readiness, VFC, sommeil et tendances santé.',
-    icon: HeartPulse,
-  },
   {
     id: 'composition',
     label: 'Composition',
@@ -47,7 +40,7 @@ export function CorpsHub() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const raw = searchParams.get('tab');
-  const tab: TabId = isTabId(raw) ? raw : 'recuperation';
+  const tab: TabId = isTabId(raw) ? raw : 'composition';
   const activeTab = TABS.find((t) => t.id === tab) ?? TABS[0];
 
   function setTab(next: string) {
@@ -87,7 +80,6 @@ export function CorpsHub() {
       </StickyHeader>
 
       <div className="space-y-4">
-        {tab === 'recuperation' && <RecoveryView />}
         {tab === 'composition' && <CompositionView embedded />}
         {tab === 'suivi' && <PhysicalView embedded />}
         {tab === 'stats' && (

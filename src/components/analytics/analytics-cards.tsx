@@ -94,11 +94,6 @@ export function RecordsSectionHeader({
       description={`Top 5 par catégorie sur ${totalActivities} séances (${streamsAnalyzed} avec données détaillées).`}
       label="Records"
       title="Meilleures performances"
-      action={
-        <span className="bg-primary/10 grid size-10 place-items-center rounded-full">
-          <Activity className="text-primary size-4" />
-        </span>
-      }
     />
   );
 }

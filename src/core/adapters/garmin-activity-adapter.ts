@@ -65,7 +65,17 @@ export function mapGarminSportType(typeKey: string): SportType | null {
     return 'BIKE';
   if (k === 'open_water_swimming') return 'OPEN_WATER';
   if (k.includes('swim') || k === 'lap_swimming') return 'SWIM';
-  if (k === 'triathlon' || k === 'duathlon') return 'TRIATHLON';
+  if (
+    k === 'triathlon' ||
+    k === 'duathlon' ||
+    k === 'multisport' ||
+    k === 'multi_sport' ||
+    k.includes('triathlon') ||
+    k.includes('duathlon') ||
+    k.includes('multisport') ||
+    k.includes('multi_sport')
+  )
+    return 'TRIATHLON';
   if (k === 'yoga' || k === 'pilates') return 'YOGA';
   if (
     k.includes('strength') ||
