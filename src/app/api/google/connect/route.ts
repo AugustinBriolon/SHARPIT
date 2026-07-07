@@ -1,11 +1,22 @@
 import { randomBytes } from 'crypto';
 import { cookies } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
-import { buildAuthorizeUrl, isGoogleConfigured } from '@/lib/integrations/google';
+import { NextResponse } from 'next/server';
+import {
+  buildAuthorizeUrl,
+  getGoogleRedirectUri,
+  isGoogleConfigured,
+} from '@/lib/integrations/google';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+const OAUTH_COOKIE_OPTS = {
+  httpOnly: true,
+  sameSite: 'lax' as const,
+  path: '/',
+  maxAge: 600,
+};
+
+export async function GET() {
   if (!isGoogleConfigured()) {
     return NextResponse.json(
       {
@@ -16,14 +27,10 @@ export async function GET(request: NextRequest) {
   }
 
   const state = randomBytes(16).toString('hex');
+  const redirectUri = getGoogleRedirectUri();
   const cookieStore = await cookies();
-  cookieStore.set('google_oauth_state', state, {
-    httpOnly: true,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 600,
-  });
+  cookieStore.set('google_oauth_state', state, OAUTH_COOKIE_OPTS);
+  cookieStore.set('google_oauth_redirect', redirectUri, OAUTH_COOKIE_OPTS);
 
-  const { origin } = new URL(request.url);
-  return NextResponse.redirect(buildAuthorizeUrl(state, origin));
+  return NextResponse.redirect(buildAuthorizeUrl(state, redirectUri));
 }

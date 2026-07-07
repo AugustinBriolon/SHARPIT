@@ -17,15 +17,18 @@ import {
   useCreateConversation,
   useDeleteConversation,
 } from '@/hooks/use-coach';
-import { usePlannedSessions } from '@/hooks/use-data';
-import { buildSessionDiscussPrompt } from '@/lib/coach-session-thread';
+import { useActivities, usePlannedSessions } from '@/hooks/use-data';
+import { buildActivityDiscussPrompt, buildSessionDiscussPrompt } from '@/lib/coach-session-thread';
 import { activityTypeLabels } from '@/lib/format';
+import { parseSessionAnalysis } from '@/lib/session-analysis-display';
 import type { SessionAnalysis } from '@/lib/validators/coach';
 
 export function CoachView() {
   const searchParams = useSearchParams();
   const discussId = searchParams.get('discuss');
+  const discussActivityId = searchParams.get('discussActivity');
   const plannedQuery = usePlannedSessions();
+  const activitiesQuery = useActivities();
   const [generatorOpen, setGeneratorOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const initialized = useRef(false);
@@ -36,45 +39,88 @@ export function CoachView() {
 
   const conversations = conversationsQuery.data ?? [];
 
-  // Conversation affichée : sélection explicite, sinon la plus récente.
   const selectedId = activeId ?? conversations[0]?.id ?? null;
   const activeConversation = useConversation(selectedId);
 
   const discussBootstrapped = useRef(false);
 
   const bootstrapPrompt = useMemo(() => {
-    if (!discussId) return undefined;
-    const session = (plannedQuery.data ?? []).find((s) => s.id === discussId);
-    if (!session?.analysis) return undefined;
-    return buildSessionDiscussPrompt({
-      title: session.title,
-      sportLabel: activityTypeLabels[session.type],
-      analysis: session.analysis as unknown as SessionAnalysis,
-      planned: {
-        durationMin: session.durationMin,
-        description: session.description,
-        intensity: session.intensity,
-      },
-      actual: session.activity
+    if (discussId) {
+      const session = (plannedQuery.data ?? []).find((s) => s.id === discussId);
+      if (!session?.analysis) return undefined;
+      return buildSessionDiscussPrompt({
+        title: session.title,
+        sportLabel: activityTypeLabels[session.type],
+        analysis: session.analysis as unknown as SessionAnalysis,
+        planned: {
+          durationMin: session.durationMin,
+          description: session.description,
+          intensity: session.intensity,
+        },
+        actual: session.activity
+          ? {
+              title: session.activity.title,
+              durationSec: session.activity.duration,
+              notes: session.activity.notes,
+            }
+          : undefined,
+      });
+    }
+
+    if (!discussActivityId) return undefined;
+    const activity = (activitiesQuery.data ?? []).find((a) => a.id === discussActivityId);
+    if (!activity) return undefined;
+
+    const planned = activity.plannedSession;
+    const analysis = planned ? parseSessionAnalysis(planned.analysis) : null;
+
+    return buildActivityDiscussPrompt({
+      title: activity.title,
+      sportLabel: activityTypeLabels[activity.type],
+      date: activity.date,
+      durationSec: activity.duration,
+      load: activity.load,
+      rpe: activity.rpe,
+      notes: activity.notes,
+      analysis,
+      planned: planned
         ? {
-            title: session.activity.title,
-            durationSec: session.activity.duration,
-            notes: session.activity.notes,
+            title: planned.title,
+            durationMin: planned.durationMin,
+            description: planned.description,
+            intensity: planned.intensity,
           }
         : undefined,
     });
-  }, [discussId, plannedQuery.data]);
+  }, [discussId, discussActivityId, plannedQuery.data, activitiesQuery.data]);
 
-  // Depuis « Discuter avec le coach », on ouvre une conversation vierge avec le contexte.
   useEffect(() => {
-    if (!discussId || discussBootstrapped.current || plannedQuery.isPending) return;
-    const session = (plannedQuery.data ?? []).find((s) => s.id === discussId);
-    if (!session?.analysis) return;
-    discussBootstrapped.current = true;
-    createConversation.mutateAsync().then((c) => setActiveId(c.id));
-  }, [discussId, plannedQuery.isPending, plannedQuery.data, createConversation]);
+    if (discussBootstrapped.current) return;
+    if (discussId) {
+      if (plannedQuery.isPending) return;
+      const session = (plannedQuery.data ?? []).find((s) => s.id === discussId);
+      if (!session?.analysis) return;
+      discussBootstrapped.current = true;
+      createConversation.mutateAsync().then((c) => setActiveId(c.id));
+      return;
+    }
+    if (discussActivityId) {
+      if (activitiesQuery.isPending) return;
+      const activity = (activitiesQuery.data ?? []).find((a) => a.id === discussActivityId);
+      if (!activity) return;
+      discussBootstrapped.current = true;
+      createConversation.mutateAsync().then((c) => setActiveId(c.id));
+    }
+  }, [
+    discussId,
+    discussActivityId,
+    plannedQuery.isPending,
+    plannedQuery.data,
+    activitiesQuery.isPending,
+    activitiesQuery.data,
+    createConversation,
+  ]);
 
-  // Crée automatiquement une première conversation si l'historique est vide.
   useEffect(() => {
     if (conversationsQuery.isPending || conversations.length > 0) return;
     if (initialized.current) return;
@@ -90,10 +136,10 @@ export function CoachView() {
   async function handleDeleteConversation(id: string) {
     if (!confirm('Supprimer cette conversation ?')) return;
     await deleteConversation.mutateAsync(id);
-    // Si on supprime la conversation affichée, on retombe sur la plus récente
-    // (dérivée) ; l'effet recrée une conversation si l'historique devient vide.
     if (selectedId === id) setActiveId(null);
   }
+
+  const discussKey = discussId ?? discussActivityId ?? 'free';
 
   return (
     <div className="space-y-6">
@@ -126,7 +172,7 @@ export function CoachView() {
         />
         {selectedId && activeConversation.data ? (
           <CoachChat
-            key={`${selectedId}-${discussId ?? 'free'}`}
+            key={`${selectedId}-${discussKey}`}
             bootstrapPrompt={bootstrapPrompt}
             conversationId={selectedId}
             initialMessages={

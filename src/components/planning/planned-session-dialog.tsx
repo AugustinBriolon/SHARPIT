@@ -20,7 +20,7 @@ import { BrickAnalysisPanel } from '@/components/planning/brick-analysis-panel';
 import { SessionRealization } from '@/components/planning/session-realization';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import { activityTypeLabels } from '@/lib/format';
-import { intensityLabels, intensityOrder } from '@/lib/sessions';
+import { intensityLabels, intensityOrder, brickLegActivityTypes } from '@/lib/sessions';
 import { cn } from '@/lib/utils';
 import { usePlannedSessionMutations } from '@/hooks/use-data';
 
@@ -199,7 +199,7 @@ export function PlannedSessionDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="no-scrollbar max-h-[90vh] min-w-0 overflow-x-hidden overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{isEdit ? 'Modifier la séance' : 'Planifier une séance'}</DialogTitle>
         </DialogHeader>
@@ -247,32 +247,34 @@ export function PlannedSessionDialog({
           </div>
         )}
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="grid grid-cols-2 gap-3">
-            {createMode === 'single' && (
-              <div className="space-y-2">
-                <Label>Sport</Label>
-                <Select
-                  disabled={isEdit}
-                  value={type}
-                  onValueChange={(v) => setType(v as ActivityType)}
-                >
-                  <SelectTrigger>
-                    <SelectValue>{activityTypeLabels[type]}</SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.values(ActivityType).map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {activityTypeLabels[t]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <div className={cn('space-y-2', createMode === 'brick' && !isEdit && 'col-span-2')}>
+        <form className="min-w-0 space-y-4" onSubmit={handleSubmit}>
+          {createMode === 'single' && (
+            <div className="min-w-0 space-y-2">
+              <Label>Sport</Label>
+              <Select
+                disabled={isEdit}
+                value={type}
+                onValueChange={(v) => setType(v as ActivityType)}
+              >
+                <SelectTrigger className="w-full min-w-0">
+                  <SelectValue>{activityTypeLabels[type]}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(ActivityType).map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {activityTypeLabels[t]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="min-w-0 space-y-2">
               <Label htmlFor="date">Date</Label>
               <Input
+                className="min-w-0"
                 defaultValue={format(initialDate, 'yyyy-MM-dd')}
                 id="date"
                 name="date"
@@ -280,20 +282,21 @@ export function PlannedSessionDialog({
                 required
               />
             </div>
+            <div className="min-w-0 space-y-2">
+              <Label htmlFor="startTime">Heure (optionnel)</Label>
+              <Input
+                className="min-w-0"
+                defaultValue={session?.startTime ?? ''}
+                id="startTime"
+                name="startTime"
+                type="time"
+              />
+            </div>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="startTime">Heure (optionnel)</Label>
-            <Input
-              defaultValue={session?.startTime ?? ''}
-              id="startTime"
-              name="startTime"
-              type="time"
-            />
-            <p className="text-muted-foreground text-xs">
-              Laisse vide pour que le créneau soit choisi automatiquement dans ton agenda Google.
-            </p>
-          </div>
+          <p className="text-muted-foreground -mt-1 text-xs">
+            Laisse l&apos;heure vide pour que le créneau soit choisi automatiquement dans ton agenda
+            Google.
+          </p>
 
           {createMode === 'single' ? (
             <>
@@ -307,14 +310,14 @@ export function PlannedSessionDialog({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
+              <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="min-w-0 space-y-2">
                   <Label>Intensité</Label>
                   <Select
                     value={intensity}
                     onValueChange={(v) => setIntensity(v as SessionIntensity)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full min-w-0">
                       <SelectValue>{intensityLabels[intensity]}</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
@@ -326,10 +329,10 @@ export function PlannedSessionDialog({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
+                <div className="min-w-0 space-y-2">
                   <Label>Objectif lié</Label>
                   <Select value={goalId} onValueChange={(v) => setGoalId(v ?? NO_GOAL)}>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full min-w-0">
                       <SelectValue>
                         {goalId === NO_GOAL
                           ? 'Aucun'
@@ -348,8 +351,8 @@ export function PlannedSessionDialog({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
+              <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="min-w-0 space-y-2">
                   <Label htmlFor="durationMin">Durée (min)</Label>
                   <Input
                     defaultValue={session?.durationMin ?? ''}
@@ -360,7 +363,7 @@ export function PlannedSessionDialog({
                     type="number"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="min-w-0 space-y-2">
                   <Label htmlFor="load">Charge prévue (TSS)</Label>
                   <Input
                     defaultValue={session?.load ?? ''}
@@ -411,18 +414,18 @@ export function PlannedSessionDialog({
                       </button>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
+                  <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="min-w-0 space-y-2">
                       <Label>Sport</Label>
                       <Select
                         value={leg.type}
                         onValueChange={(v) => updateLeg(index, { type: v as ActivityType })}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full min-w-0">
                           <SelectValue>{activityTypeLabels[leg.type]}</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          {Object.values(ActivityType).map((t) => (
+                          {brickLegActivityTypes.map((t) => (
                             <SelectItem key={t} value={t}>
                               {activityTypeLabels[t]}
                             </SelectItem>
@@ -430,7 +433,7 @@ export function PlannedSessionDialog({
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
+                    <div className="min-w-0 space-y-2">
                       <Label>Intensité</Label>
                       <Select
                         value={leg.intensity}
@@ -440,7 +443,7 @@ export function PlannedSessionDialog({
                           })
                         }
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full min-w-0">
                           <SelectValue>{intensityLabels[leg.intensity]}</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
@@ -461,8 +464,8 @@ export function PlannedSessionDialog({
                       onChange={(e) => updateLeg(index, { title: e.target.value })}
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
+                  <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="min-w-0 space-y-2">
                       <Label>Durée (min)</Label>
                       <Input
                         min={0}
@@ -472,7 +475,7 @@ export function PlannedSessionDialog({
                         onChange={(e) => updateLeg(index, { durationMin: e.target.value })}
                       />
                     </div>
-                    <div className="space-y-2">
+                    <div className="min-w-0 space-y-2">
                       <Label>TSS</Label>
                       <Input
                         min={0}

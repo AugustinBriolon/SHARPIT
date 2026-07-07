@@ -1,17 +1,30 @@
-import { ActivityType, Prisma } from '@prisma/client';
-import { addDays, endOfDay, startOfDay } from 'date-fns';
 import { dedupeBodyCompositionByDay } from '@/lib/body-composition';
-import { clientFromTokens } from '@/lib/integrations/garmin';
+import { clientFromTokens, garminTokensFromStorage } from '@/lib/integrations/garmin';
 import { fetchGarminMultisportLegs } from '@/lib/integrations/garmin-multisport';
 import { getGarminAccount } from '@/lib/integrations/garmin-sync';
 import { isMultisportLegArray, type MultisportLeg } from '@/lib/multisport';
+import { ActivityType, Prisma } from '@prisma/client';
+import { addDays, endOfDay, startOfDay } from 'date-fns';
 import { prisma } from './prisma';
+
+const plannedSessionSummarySelect = {
+  id: true,
+  title: true,
+  date: true,
+  type: true,
+  durationMin: true,
+  description: true,
+  intensity: true,
+  analysis: true,
+  analyzedAt: true,
+} satisfies Prisma.PlannedSessionSelect;
 
 const activityInclude = {
   runMetrics: true,
   bikeMetrics: true,
   swimMetrics: true,
   strengthSets: { orderBy: { order: 'asc' as const } },
+  plannedSession: { select: plannedSessionSummarySelect },
 };
 
 export async function getActivities(params?: { type?: ActivityType; limit?: number }) {
@@ -37,6 +50,7 @@ const activityListSelect = {
   load: true,
   rpe: true,
   feeling: true,
+  notes: true,
   source: true,
   stravaId: true,
   garminId: true,
@@ -46,6 +60,7 @@ const activityListSelect = {
   bikeMetrics: { select: { tss: true, avgPower: true } },
   swimMetrics: { select: { distanceM: true } },
   strengthSets: { select: { exercise: true }, orderBy: { order: 'asc' as const } },
+  plannedSession: { select: plannedSessionSummarySelect },
 } satisfies Prisma.ActivitySelect;
 
 export async function getActivitiesList(params?: {
@@ -91,10 +106,9 @@ export async function getMultisportLegsForActivity(activity: {
   const account = await getGarminAccount();
   if (!account) return null;
 
-  const client = clientFromTokens({
-    oauth1: account.oauth1Token,
-    oauth2: account.oauth2Token,
-  });
+  const client = clientFromTokens(
+    garminTokensFromStorage(account.oauth1Token, account.oauth2Token),
+  );
 
   const legs = await fetchGarminMultisportLegs(client, Number(activity.garminId));
   if (!legs) return null;

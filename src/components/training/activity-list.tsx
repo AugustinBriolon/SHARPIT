@@ -15,6 +15,8 @@ import {
   formatDistance,
   formatDuration,
 } from '@/lib/format';
+import type { PlannedSessionSummary } from '@/components/training/planned-session-link-card';
+import { parseSessionAnalysis, sessionScoreColor } from '@/lib/session-analysis-display';
 
 type ActivityItem = {
   id: string;
@@ -27,6 +29,7 @@ type ActivityItem = {
   bikeMetrics: { tss: number | null } | null;
   swimMetrics: { distanceM: number | null } | null;
   strengthSets: { exercise: string }[];
+  plannedSession: PlannedSessionSummary | null;
 };
 
 export function ActivityList({
@@ -41,8 +44,8 @@ export function ActivityList({
       <div className="border-border/80 rounded-xl border border-dashed p-12 text-center">
         <p className="text-muted-foreground">{emptyLabel ?? 'Aucune séance enregistrée.'}</p>
         {!emptyLabel && (
-          <LinkButton className="mt-4" href="/training/new">
-            Ajouter une séance
+          <LinkButton className="mt-4" href="/training/manual">
+            Saisir une séance manuellement
           </LinkButton>
         )}
       </div>
@@ -60,25 +63,39 @@ export function ActivityList({
 
 function ActivityRow({ activity }: { activity: ActivityItem }) {
   const summary = getActivitySummary(activity);
+  const analysis = activity.plannedSession
+    ? parseSessionAnalysis(activity.plannedSession.analysis)
+    : null;
 
   return (
     <Link
-      className="group border-border bg-card hover:border-primary/30 hover:bg-muted/30 flex items-center justify-between rounded-xl border px-5 py-4 transition-colors"
+      className="group border-border bg-card hover:border-primary/30 hover:bg-muted/30 flex items-center justify-between gap-4 rounded-xl border px-5 py-4 transition-colors"
       href={`/training/${activity.id}`}
     >
-      <div className="space-y-1">
-        <div className="flex items-center gap-3">
+      <div className="min-w-0 space-y-1">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge className={activityTypeColors[activity.type]} variant="outline">
             {activityTypeLabels[activity.type]}
           </Badge>
           <span className="font-medium">{activity.title ?? activityTypeLabels[activity.type]}</span>
+          {activity.plannedSession && (
+            <span className="border-primary/20 bg-primary/5 text-primary rounded-full border px-2 py-0.5 text-[10px] font-medium">
+              Planifiée
+              {analysis ? (
+                <span className={sessionScoreColor(analysis.complianceScore)}>
+                  {' '}
+                  · {analysis.complianceScore}/100
+                </span>
+              ) : null}
+            </span>
+          )}
         </div>
         <p className="text-muted-foreground text-sm">
           {formatDate(new Date(activity.date))} · {formatDuration(activity.duration)}
           {summary ? ` · ${summary}` : ''}
         </p>
       </div>
-      <div className="text-right">
+      <div className="shrink-0 text-right">
         {activity.load != null && (
           <p className="text-primary font-mono text-sm">{Math.round(activity.load)} TSS</p>
         )}

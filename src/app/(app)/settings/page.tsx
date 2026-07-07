@@ -2,7 +2,7 @@ import { StickyHeader } from '@/components/layout/sticky-header';
 import { IntegrationsHub } from '@/components/settings/integrations-hub';
 import { getGarminAccount } from '@/lib/integrations/garmin-sync';
 import { isGoogleConfigured } from '@/lib/integrations/google';
-import { getGoogleAccount } from '@/lib/integrations/google-sync';
+import { getGoogleAccount, isGoogleConnected } from '@/lib/integrations/google-sync';
 import { getRenphoAccount } from '@/lib/integrations/renpho-sync';
 import { getStravaAccount } from '@/lib/integrations/strava-sync';
 import { isStravaConfigured } from '@/lib/integrations/strava';
@@ -117,14 +117,15 @@ export default async function SettingsPage({ searchParams }: PageProps) {
     },
     google: {
       configured: googleConfigured,
-      account: googleAccount
-        ? {
-            email: googleAccount.email,
-            targetCalendarId: googleAccount.targetCalendarId,
-            targetCalendarName: googleAccount.targetCalendarName,
-            lastSyncAt: googleAccount.lastSyncAt?.toISOString() ?? null,
-          }
-        : null,
+      account:
+        isGoogleConnected(googleAccount) && googleAccount
+          ? {
+              email: googleAccount.email,
+              targetCalendarId: googleAccount.targetCalendarId,
+              targetCalendarName: googleAccount.targetCalendarName,
+              lastSyncAt: googleAccount.lastSyncAt?.toISOString() ?? null,
+            }
+          : null,
       statusMessage: google
         ? [
             googleStatusMessages[google],

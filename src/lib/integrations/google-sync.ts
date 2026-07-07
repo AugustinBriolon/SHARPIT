@@ -4,6 +4,7 @@ import {
   createEvent,
   deleteEvent,
   getFreeBusy,
+  GoogleOAuthError,
   listCalendars,
   listEvents,
   refreshAccessToken,
@@ -28,6 +29,26 @@ const TYPE_LABELS: Record<string, string> = {
 
 export async function getGoogleAccount() {
   return prisma.googleAccount.findUnique({ where: { id: ACCOUNT_ID } });
+}
+
+export function isGoogleConnected(
+  account: { refreshToken: string } | null | undefined,
+): account is { refreshToken: string } {
+  return Boolean(account?.refreshToken);
+}
+
+/** Invalide les jetons OAuth tout en conservant le calendrier cible et les préférences. */
+export async function revokeGoogleCredentials() {
+  const account = await getGoogleAccount();
+  if (!account) return;
+  await prisma.googleAccount.update({
+    where: { id: ACCOUNT_ID },
+    data: {
+      accessToken: '',
+      refreshToken: '',
+      expiresAt: new Date(0),
+    },
+  });
 }
 
 export async function disconnectGoogle() {
@@ -59,22 +80,29 @@ export async function setHiddenCalendars(ids: string[]) {
 
 export async function getValidAccessToken() {
   const account = await getGoogleAccount();
-  if (!account) throw new Error('Compte Google non connecté');
+  if (!isGoogleConnected(account)) throw new Error('Compte Google non connecté');
 
   const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
   if (!expiresSoon) return account.accessToken;
 
-  const refreshed = await refreshAccessToken(account.refreshToken);
-  await prisma.googleAccount.update({
-    where: { id: ACCOUNT_ID },
-    data: {
-      accessToken: refreshed.access_token,
-      expiresAt: new Date(Date.now() + refreshed.expires_in * 1000),
-      // Google ne renvoie pas toujours un nouveau refresh_token : on garde l'ancien.
-      ...(refreshed.refresh_token ? { refreshToken: refreshed.refresh_token } : {}),
-    },
-  });
-  return refreshed.access_token;
+  try {
+    const refreshed = await refreshAccessToken(account.refreshToken);
+    await prisma.googleAccount.update({
+      where: { id: ACCOUNT_ID },
+      data: {
+        accessToken: refreshed.access_token,
+        expiresAt: new Date(Date.now() + refreshed.expires_in * 1000),
+        // Google ne renvoie pas toujours un nouveau refresh_token : on garde l'ancien.
+        ...(refreshed.refresh_token ? { refreshToken: refreshed.refresh_token } : {}),
+      },
+    });
+    return refreshed.access_token;
+  } catch (error) {
+    if (error instanceof GoogleOAuthError && error.needsReconnect) {
+      await revokeGoogleCredentials();
+    }
+    throw error;
+  }
 }
 
 export async function listGoogleCalendars() {

@@ -50,7 +50,7 @@ export function StickyHeader({
     <header
       ref={ref}
       className={cn(
-        'z-30 py-3 lg:sticky lg:top-0 lg:-mx-6 lg:px-6 lg:py-4 lg:transition-[background-color,border-color,box-shadow,backdrop-filter] lg:duration-300 lg:ease-out',
+        'relative z-40 py-3 lg:sticky lg:top-0 lg:-mx-6 lg:px-6 lg:py-4 lg:transition-[background-color,border-color,box-shadow,backdrop-filter] lg:duration-300 lg:ease-out',
         stuck
           ? 'lg:border-border/60 lg:bg-background/70 lg:supports-backdrop-filter:bg-background/55 lg:border-b lg:shadow-sm lg:backdrop-blur-xl'
           : 'border-b border-transparent bg-transparent',

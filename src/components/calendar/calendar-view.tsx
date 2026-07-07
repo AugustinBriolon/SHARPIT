@@ -122,6 +122,7 @@ export function CalendarView({ embedded = false }: { embedded?: boolean }) {
       googleConnected={googleConnected}
       isMobile={isMobile}
       mounted={mounted}
+      showPlanButton={!embedded}
       title={calendarToolbarTitle(isMobile, mounted, gridStart, gridEnd, month)}
       visibilityError={visibilityError}
       onPlan={() => setDialog({ mode: 'create', date: new Date() })}

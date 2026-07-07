@@ -1,8 +1,9 @@
 'use client';
 
 import { GoalHorizon, GoalKind, GoalPriority } from '@prisma/client';
-import { Flag, Target } from 'lucide-react';
-import { useState } from 'react';
+import { Calendar, Flag, Repeat, Timer } from 'lucide-react';
+import { useId, useState } from 'react';
+import { MetricGoalForm, type MetricGoalFormResult } from '@/components/goals/metric-goal-form';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -28,10 +29,22 @@ import {
   priorityLabels,
   priorityOrder,
 } from '@/lib/goals';
+import { parseGoalMetricConfig } from '@/lib/goal-metric-config';
 import { cn } from '@/lib/utils';
 import { useGoalMutations, type GoalPayload } from '@/hooks/use-data';
 
 const NO_PRIORITY = 'none';
+
+type GoalFormVariant = 'race' | 'performance' | 'period' | 'legacy';
+
+function initialVariant(goal: GoalForEdit | null | undefined): GoalFormVariant {
+  if (!goal) return 'race';
+  if (goal.kind === GoalKind.RACE) return 'race';
+  const config = parseGoalMetricConfig(goal.metricKey);
+  if (config?.template === 'performance') return 'performance';
+  if (config?.template === 'period') return 'period';
+  return 'legacy';
+}
 
 export interface GoalForEdit {
   id: string;
@@ -70,19 +83,38 @@ function getSubmitButtonLabel(pending: boolean, isEdit: boolean): string {
   return 'Créer';
 }
 
+function getPriorityLabel(priority: string): string {
+  if (priority === NO_PRIORITY) return 'Non définie';
+  const p = priority as GoalPriority;
+  return `${priorityLabels[p]} — ${priorityDescriptions[p]}`;
+}
+
 export function GoalDialog({ goal, onClose }: GoalDialogProps) {
   const isEdit = Boolean(goal);
+  const metricFormId = useId();
   const { create, update } = useGoalMutations();
 
-  const [kind, setKind] = useState<GoalKind>(goal?.kind ?? GoalKind.RACE);
-  const [horizon, setHorizon] = useState<GoalHorizon>(goal?.horizon ?? GoalHorizon.MEDIUM_TERM);
+  const [variant, setVariant] = useState<GoalFormVariant>(initialVariant(goal));
   const [priority, setPriority] = useState<string>(goal?.priority ?? 'A');
-  const [lowerIsBetter, setLowerIsBetter] = useState(goal?.lowerIsBetter ?? false);
   const [error, setError] = useState<string | null>(null);
+
+  const [legacyHorizon, setLegacyHorizon] = useState<GoalHorizon>(
+    goal?.horizon ?? GoalHorizon.MEDIUM_TERM,
+  );
+  const [legacyLowerIsBetter, setLegacyLowerIsBetter] = useState(goal?.lowerIsBetter ?? false);
 
   const pending = create.isPending || update.isPending;
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function submitPayload(payload: GoalPayload) {
+    if (isEdit && goal) {
+      await update.mutateAsync({ id: goal.id, data: payload });
+    } else {
+      await create.mutateAsync(payload);
+    }
+    onClose();
+  }
+
+  async function handleRaceSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     const fd = new FormData(e.currentTarget);
@@ -94,275 +126,366 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
 
     const payload: GoalPayload = {
       title: (fd.get('title') as string)?.trim() ?? '',
-      kind,
+      kind: GoalKind.RACE,
       notes: str('notes'),
+      location: str('location'),
+      targetDate: str('targetDate'),
+      priority: priority === NO_PRIORITY ? null : (priority as GoalPayload['priority']),
+      raceFormat: str('raceFormat'),
+      targetPerformance: str('targetPerformance'),
     };
 
-    if (kind === GoalKind.RACE) {
-      payload.location = str('location');
-      payload.targetDate = str('targetDate');
-      payload.priority = priority === NO_PRIORITY ? null : (priority as GoalPayload['priority']);
-      payload.raceFormat = str('raceFormat');
-      payload.targetPerformance = str('targetPerformance');
-    } else {
-      payload.horizon = horizon;
-      payload.metricKey = str('metricKey');
-      payload.unit = str('unit');
-      payload.startValue = str('startValue') ? Number(str('startValue')) : null;
-      payload.currentValue = str('currentValue') ? Number(str('currentValue')) : null;
-      payload.targetValue = str('targetValue') ? Number(str('targetValue')) : null;
-      payload.lowerIsBetter = lowerIsBetter;
-      payload.targetDate = str('targetDate');
-    }
-
     try {
-      if (isEdit && goal) {
-        await update.mutateAsync({ id: goal.id, data: payload });
-      } else {
-        await create.mutateAsync(payload);
-      }
-      onClose();
+      await submitPayload(payload);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
     }
   }
 
-  return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{isEdit ? "Modifier l'objectif" : 'Nouvel objectif'}</DialogTitle>
-          <DialogDescription>
-            {kind === GoalKind.RACE
-              ? 'Une course cible, avec ton objectif de performance.'
-              : 'Un objectif chiffré à suivre dans le temps.'}
-          </DialogDescription>
-        </DialogHeader>
+  async function handleLegacyMetricSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    const fd = new FormData(e.currentTarget);
+    const str = (k: string) => {
+      const v = fd.get(k);
+      const s = typeof v === 'string' ? v.trim() : '';
+      return s === '' ? null : s;
+    };
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          {!isEdit && (
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                className={cn(
-                  'flex items-center gap-2 rounded-lg border p-3 text-left text-sm transition-colors',
-                  kind === GoalKind.RACE
-                    ? 'border-primary/50 bg-primary/5'
-                    : 'border-border/60 hover:border-border',
-                )}
-                onClick={() => setKind(GoalKind.RACE)}
-              >
-                <Flag className="text-primary size-4 shrink-0" />
-                <span>
-                  <span className="block font-medium">Course</span>
-                  <span className="text-muted-foreground block text-xs">Événement daté</span>
-                </span>
-              </button>
-              <button
-                type="button"
-                className={cn(
-                  'flex items-center gap-2 rounded-lg border p-3 text-left text-sm transition-colors',
-                  kind === GoalKind.METRIC
-                    ? 'border-primary/50 bg-primary/5'
-                    : 'border-border/60 hover:border-border',
-                )}
-                onClick={() => setKind(GoalKind.METRIC)}
-              >
-                <Target className="text-primary size-4 shrink-0" />
-                <span>
-                  <span className="block font-medium">Objectif chiffré</span>
-                  <span className="text-muted-foreground block text-xs">Valeur à atteindre</span>
-                </span>
-              </button>
-            </div>
-          )}
+    const payload: GoalPayload = {
+      title: (fd.get('title') as string)?.trim() ?? '',
+      kind: GoalKind.METRIC,
+      notes: str('notes'),
+      horizon: legacyHorizon,
+      metricKey: str('metricKey'),
+      unit: str('unit'),
+      startValue: str('startValue') ? Number(str('startValue')) : null,
+      currentValue: str('currentValue') ? Number(str('currentValue')) : null,
+      targetValue: str('targetValue') ? Number(str('targetValue')) : null,
+      lowerIsBetter: legacyLowerIsBetter,
+      targetDate: str('targetDate'),
+    };
 
+    try {
+      await submitPayload(payload);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+    }
+  }
+
+  async function handleStructuredMetricSubmit(result: MetricGoalFormResult) {
+    try {
+      await submitPayload({
+        title: result.title,
+        kind: GoalKind.METRIC,
+        horizon: result.horizon,
+        metricKey: result.metricKey,
+        startValue: result.startValue,
+        currentValue: result.currentValue,
+        targetValue: result.targetValue,
+        unit: result.unit,
+        lowerIsBetter: result.lowerIsBetter,
+        notes: result.notes,
+        targetDate: result.targetDate,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+    }
+  }
+
+  const useStructuredMetricForm = variant === 'performance' || variant === 'period';
+
+  function renderFormActions(submitType: 'submit' | { form: string }) {
+    return (
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onClose}>
+          Annuler
+        </Button>
+        <Button
+          disabled={pending}
+          form={typeof submitType === 'object' ? submitType.form : undefined}
+          type="submit"
+        >
+          {getSubmitButtonLabel(pending, isEdit)}
+        </Button>
+      </div>
+    );
+  }
+
+  function renderRaceForm() {
+    return (
+      <form className="space-y-4" onSubmit={handleRaceSubmit}>
+        <div className="space-y-2">
+          <Label htmlFor="title">Nom de la course</Label>
+          <Input
+            defaultValue={goal?.title ?? ''}
+            id="title"
+            name="title"
+            placeholder="Half Ironman de Versailles"
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
-            <Label htmlFor="title">{kind === GoalKind.RACE ? 'Nom de la course' : 'Titre'}</Label>
+            <Label htmlFor="targetDate">Date</Label>
             <Input
-              defaultValue={goal?.title ?? ''}
-              id="title"
-              name="title"
-              placeholder={kind === GoalKind.RACE ? 'Half Ironman de Versailles' : 'FTP 340 W'}
+              defaultValue={toDateInput(goal?.targetDate)}
+              id="targetDate"
+              name="targetDate"
+              type="date"
               required
             />
           </div>
-
-          {kind === GoalKind.RACE ? (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="targetDate">Date</Label>
-                  <Input
-                    defaultValue={toDateInput(goal?.targetDate)}
-                    id="targetDate"
-                    name="targetDate"
-                    type="date"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="location">Lieu</Label>
-                  <Input
-                    defaultValue={goal?.location ?? ''}
-                    id="location"
-                    name="location"
-                    placeholder="Versailles"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Priorité</Label>
-                <Select value={priority} onValueChange={(v) => setPriority(v ?? NO_PRIORITY)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {priorityOrder.map((p) => (
-                      <SelectItem key={p} value={p}>
-                        {priorityLabels[p]} — {priorityDescriptions[p]}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value={NO_PRIORITY}>Non définie</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="raceFormat">Format / distance</Label>
-                <Input
-                  defaultValue={goal?.raceFormat ?? ''}
-                  id="raceFormat"
-                  name="raceFormat"
-                  placeholder="Half Ironman, 10 km, Marathon…"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="targetPerformance">Objectif visé</Label>
-                <Input
-                  defaultValue={goal?.targetPerformance ?? ''}
-                  id="targetPerformance"
-                  name="targetPerformance"
-                  placeholder="Sub 5h00, Top 10, Terminer…"
-                />
-                <p className="text-muted-foreground text-xs">
-                  Le résultat que tu vises : chrono, classement, ou simplement finir.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="notes">Stratégie &amp; remarques</Label>
-                <Textarea
-                  defaultValue={goal?.notes ?? ''}
-                  id="notes"
-                  name="notes"
-                  placeholder="Pacing, nutrition, matériel, parcours, points de vigilance…"
-                  rows={3}
-                />
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="space-y-2">
-                <Label>Horizon</Label>
-                <Select value={horizon} onValueChange={(v) => setHorizon(v as GoalHorizon)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {horizonOrder.map((h) => (
-                      <SelectItem key={h} value={h}>
-                        {horizonLabels[h]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="startValue">Départ</Label>
-                  <Input
-                    defaultValue={goal?.startValue ?? ''}
-                    id="startValue"
-                    name="startValue"
-                    step="any"
-                    type="number"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="currentValue">Actuel</Label>
-                  <Input
-                    defaultValue={goal?.currentValue ?? ''}
-                    id="currentValue"
-                    name="currentValue"
-                    step="any"
-                    type="number"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="targetValue">Cible</Label>
-                  <Input
-                    defaultValue={goal?.targetValue ?? ''}
-                    id="targetValue"
-                    name="targetValue"
-                    step="any"
-                    type="number"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="unit">Unité</Label>
-                  <Input
-                    defaultValue={goal?.unit ?? ''}
-                    id="unit"
-                    name="unit"
-                    placeholder="W, kg, min…"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="targetDate">Échéance</Label>
-                  <Input
-                    defaultValue={toDateInput(goal?.targetDate)}
-                    id="targetDate"
-                    name="targetDate"
-                    type="date"
-                  />
-                </div>
-              </div>
-
-              <label className="text-muted-foreground flex items-center gap-2 text-sm">
-                <input
-                  checked={lowerIsBetter}
-                  className="border-border size-4 rounded"
-                  type="checkbox"
-                  onChange={(e) => setLowerIsBetter(e.target.checked)}
-                />
-                Plus bas = meilleur (ex : chrono, poids, FC repos)
-              </label>
-
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea defaultValue={goal?.notes ?? ''} id="notes" name="notes" rows={2} />
-              </div>
-            </>
-          )}
-
-          {error && <p className="text-destructive text-sm">{error}</p>}
-
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Annuler
-            </Button>
-            <Button disabled={pending} type="submit">
-              {getSubmitButtonLabel(pending, isEdit)}
-            </Button>
+          <div className="space-y-2">
+            <Label htmlFor="location">Lieu</Label>
+            <Input
+              defaultValue={goal?.location ?? ''}
+              id="location"
+              name="location"
+              placeholder="Versailles"
+            />
           </div>
-        </form>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Priorité</Label>
+          <Select value={priority} onValueChange={(v) => setPriority(v ?? NO_PRIORITY)}>
+            <SelectTrigger className="w-full min-w-0">
+              <SelectValue>{getPriorityLabel(priority)}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {priorityOrder.map((p) => (
+                <SelectItem key={p} value={p}>
+                  {priorityLabels[p]} — {priorityDescriptions[p]}
+                </SelectItem>
+              ))}
+              <SelectItem value={NO_PRIORITY}>Non définie</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="raceFormat">Format / distance</Label>
+          <Input
+            defaultValue={goal?.raceFormat ?? ''}
+            id="raceFormat"
+            name="raceFormat"
+            placeholder="Half Ironman, 10 km, Marathon…"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="targetPerformance">Objectif visé</Label>
+          <Input
+            defaultValue={goal?.targetPerformance ?? ''}
+            id="targetPerformance"
+            name="targetPerformance"
+            placeholder="Sub 5h00, Top 10, Terminer…"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="notes">Stratégie &amp; remarques</Label>
+          <Textarea defaultValue={goal?.notes ?? ''} id="notes" name="notes" rows={3} />
+        </div>
+
+        {error && <p className="text-destructive text-sm">{error}</p>}
+        {renderFormActions('submit')}
+      </form>
+    );
+  }
+
+  function renderStructuredMetricForm() {
+    const template = variant === 'performance' ? 'performance' : 'period';
+    return (
+      <>
+        <MetricGoalForm
+          formId={metricFormId}
+          goal={goal}
+          template={template}
+          onError={setError}
+          onSubmit={handleStructuredMetricSubmit}
+        />
+        {error && <p className="text-destructive text-sm">{error}</p>}
+        {renderFormActions({ form: metricFormId })}
+      </>
+    );
+  }
+
+  function renderLegacyMetricForm() {
+    return (
+      <form className="space-y-4" onSubmit={handleLegacyMetricSubmit}>
+        <div className="space-y-2">
+          <Label htmlFor="title">Titre</Label>
+          <Input defaultValue={goal?.title ?? ''} id="title" name="title" required />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Horizon</Label>
+          <Select
+            value={legacyHorizon}
+            onValueChange={(v) => v && setLegacyHorizon(v as GoalHorizon)}
+          >
+            <SelectTrigger className="w-full min-w-0">
+              <SelectValue>{horizonLabels[legacyHorizon]}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {horizonOrder.map((h) => (
+                <SelectItem key={h} value={h}>
+                  {horizonLabels[h]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="startValue">Départ</Label>
+            <Input
+              defaultValue={goal?.startValue ?? ''}
+              id="startValue"
+              name="startValue"
+              step="any"
+              type="number"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="currentValue">Actuel</Label>
+            <Input
+              defaultValue={goal?.currentValue ?? ''}
+              id="currentValue"
+              name="currentValue"
+              step="any"
+              type="number"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="targetValue">Cible</Label>
+            <Input
+              defaultValue={goal?.targetValue ?? ''}
+              id="targetValue"
+              name="targetValue"
+              step="any"
+              type="number"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="unit">Unité</Label>
+            <Input defaultValue={goal?.unit ?? ''} id="unit" name="unit" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="targetDate">Échéance</Label>
+            <Input
+              defaultValue={toDateInput(goal?.targetDate)}
+              id="targetDate"
+              name="targetDate"
+              type="date"
+            />
+          </div>
+        </div>
+
+        <label className="text-muted-foreground flex items-center gap-2 text-sm">
+          <input
+            checked={legacyLowerIsBetter}
+            className="border-border size-4 rounded"
+            type="checkbox"
+            onChange={(e) => setLegacyLowerIsBetter(e.target.checked)}
+          />
+          Plus bas = meilleur
+        </label>
+
+        <div className="space-y-2">
+          <Label htmlFor="notes">Notes</Label>
+          <Textarea defaultValue={goal?.notes ?? ''} id="notes" name="notes" rows={2} />
+        </div>
+
+        {error && <p className="text-destructive text-sm">{error}</p>}
+        {renderFormActions('submit')}
+      </form>
+    );
+  }
+
+  function renderGoalForm() {
+    if (variant === 'race') return renderRaceForm();
+    if (useStructuredMetricForm) return renderStructuredMetricForm();
+    return renderLegacyMetricForm();
+  }
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>{isEdit ? "Modifier l'objectif" : 'Nouvel objectif'}</DialogTitle>
+          <DialogDescription />
+        </DialogHeader>
+
+        {!isEdit && (
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <button
+              type="button"
+              className={cn(
+                'flex items-start gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors',
+                variant === 'race'
+                  ? 'border-primary/50 bg-primary/5'
+                  : 'border-border/60 hover:border-border',
+              )}
+              onClick={() => setVariant('race')}
+            >
+              <Flag className="text-primary mt-0.5 size-4 shrink-0" />
+              <span>
+                <span className="block font-medium">Course</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              className={cn(
+                'flex items-start gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors',
+                variant === 'performance'
+                  ? 'border-primary/50 bg-primary/5'
+                  : 'border-border/60 hover:border-border',
+              )}
+              onClick={() => setVariant('performance')}
+            >
+              <Timer className="text-primary mt-0.5 size-4 shrink-0" />
+              <span>
+                <span className="block font-medium">Temps sur distance</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              className={cn(
+                'flex items-start gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors',
+                variant === 'period'
+                  ? 'border-primary/50 bg-primary/5'
+                  : 'border-border/60 hover:border-border',
+              )}
+              onClick={() => setVariant('period')}
+            >
+              <Repeat className="text-primary mt-0.5 size-4 shrink-0" />
+              <span>
+                <span className="block font-medium">Objectif récurrent</span>
+              </span>
+            </button>
+          </div>
+        )}
+
+        {isEdit && variant !== 'race' && variant !== 'legacy' && (
+          <p className="text-muted-foreground flex items-center gap-2 text-sm">
+            {variant === 'performance' ? (
+              <Timer className="size-4 shrink-0" />
+            ) : (
+              <Calendar className="size-4 shrink-0" />
+            )}
+            {variant === 'performance' ? 'Temps sur distance' : 'Objectif récurrent'}
+          </p>
+        )}
+
+        {renderGoalForm()}
       </DialogContent>
     </Dialog>
   );

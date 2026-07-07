@@ -1,4 +1,4 @@
-import { SessionIntensity } from '@prisma/client';
+import { ActivityType, SessionIntensity } from '@prisma/client';
 
 export const intensityOrder: SessionIntensity[] = [
   'RECOVERY',
@@ -37,6 +37,14 @@ export const intensityAccent: Record<SessionIntensity, string> = {
   VO2MAX: '#dc2626',
   RACE: '#7c3aed',
 };
+
+/** Sports autorisés pour une étape de brick (pas triathlon ni muscu). */
+export const brickLegActivityTypes: ActivityType[] = [
+  ActivityType.BIKE,
+  ActivityType.RUN,
+  ActivityType.SWIM,
+  ActivityType.OTHER,
+];
 
 export function intensityLabel(intensity: SessionIntensity | null): string {
   return intensity ? intensityLabels[intensity] : '—';

@@ -12,8 +12,16 @@ export function computeGoalProgress(goal: GoalLike): number | null {
   const { startValue, currentValue, targetValue, lowerIsBetter } = goal;
   if (currentValue == null || targetValue == null) return null;
 
-  const start = startValue ?? (lowerIsBetter ? currentValue : 0);
+  if (lowerIsBetter) {
+    if (currentValue <= targetValue) return 100;
+    const baseline = startValue ?? Math.max(currentValue, targetValue * 1.15);
+    const span = baseline - targetValue;
+    if (span <= 0) return 0;
+    const progressed = baseline - currentValue;
+    return Math.max(0, Math.min(100, Math.round((progressed / span) * 100)));
+  }
 
+  const start = startValue ?? 0;
   const span = targetValue - start;
   if (span === 0) return currentValue === targetValue ? 100 : 0;
 
@@ -48,13 +56,17 @@ export const horizonLabels: Record<GoalHorizon, string> = {
   MEDIUM_TERM: 'Moyen terme',
   SHORT_TERM: 'Court terme',
   WEEKLY: 'Hebdomadaire',
+  MONTHLY: 'Mensuel',
+  YEARLY: 'Annuel',
 };
 
 export const horizonOrder: GoalHorizon[] = [
-  GoalHorizon.LONG_TERM,
-  GoalHorizon.MEDIUM_TERM,
-  GoalHorizon.SHORT_TERM,
   GoalHorizon.WEEKLY,
+  GoalHorizon.MONTHLY,
+  GoalHorizon.YEARLY,
+  GoalHorizon.SHORT_TERM,
+  GoalHorizon.MEDIUM_TERM,
+  GoalHorizon.LONG_TERM,
 ];
 
 export const priorityLabels: Record<GoalPriority, string> = {

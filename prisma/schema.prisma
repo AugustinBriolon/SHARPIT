@@ -22,6 +22,8 @@ enum GoalHorizon {
   MEDIUM_TERM
   SHORT_TERM
   WEEKLY
+  MONTHLY
+  YEARLY
 }
 
 enum GoalKind {
@@ -105,6 +107,7 @@ model Activity {
   strengthSets   StrengthSet[]
   stream         ActivityStream?
   plannedSession PlannedSession?
+  goalAchievements GoalAchievement[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -413,12 +416,34 @@ model Goal {
 
   plannedSessions PlannedSession[]
   trainingPlans   TrainingPlan[]
+  achievements    GoalAchievement[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([kind])
   @@index([targetDate])
+}
+
+model GoalAchievement {
+  id          String    @id @default(cuid())
+  goalId      String
+  goal        Goal      @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  activityId  String?
+  activity    Activity? @relation(fields: [activityId], references: [id], onDelete: SetNull)
+
+  source      String // auto | manual
+  value       Float?
+  targetValue Float?
+  /// Période ISO (2026-W27, 2026-07, 2026) ou _performance pour chrono distance
+  periodKey   String
+
+  achievedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@unique([goalId, periodKey])
+  @@index([goalId, achievedAt])
+  @@index([activityId])
 }
 
 model TrainingPlan {

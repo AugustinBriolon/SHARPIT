@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
   const state = searchParams.get('state');
   const error = searchParams.get('error');
@@ -20,7 +20,9 @@ export async function GET(request: NextRequest) {
 
   const cookieStore = await cookies();
   const storedState = cookieStore.get('google_oauth_state')?.value;
+  const storedRedirect = cookieStore.get('google_oauth_redirect')?.value;
   cookieStore.delete('google_oauth_state');
+  cookieStore.delete('google_oauth_redirect');
 
   if (!code || !state || state !== storedState) {
     settingsUrl.searchParams.set('google', 'invalid_state');
@@ -28,7 +30,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const token = await exchangeCodeForToken(code, origin);
+    const token = await exchangeCodeForToken(code, storedRedirect ?? undefined);
 
     if (!token.refresh_token) {
       // Sans refresh_token on ne peut pas garder l'accès : on force reconsentement.

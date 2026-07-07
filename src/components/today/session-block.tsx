@@ -9,7 +9,7 @@ import {
 } from '@/lib/today-mapping';
 import { resolve } from '@/lib/french';
 import type { EngineRecommendation, KeyFinding } from '@/hooks/use-today';
-import type { TodayDaySummary } from '@/lib/today-day-summary';
+import type { DaySummaryLine, TodayDaySummary } from '@/lib/today-day-summary';
 import { MorningWellnessDialog } from './dashboard/morning-wellness-dialog';
 import { PlannedSessionPrimary } from './dashboard/planned-session-primary';
 
@@ -46,6 +46,35 @@ function buildWhyLines(
   return lines;
 }
 
+function SessionLineContent({ line }: { line: DaySummaryLine }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+      <div className="flex min-w-0 items-start gap-1.5">
+        {line.kind === 'done' && (
+          <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+        )}
+        {line.plannedSession ? (
+          <PlannedSessionPrimary className="flex-1" session={line.plannedSession} />
+        ) : (
+          <p className="line-clamp-2 min-w-0 text-sm leading-snug font-medium wrap-break-word">
+            {line.primary}
+          </p>
+        )}
+      </div>
+      {line.secondary && (
+        <p
+          className={cn(
+            'text-muted-foreground shrink-0 text-xs tabular-nums',
+            line.kind === 'done' ? 'pl-5 sm:pl-0 sm:text-right' : 'sm:text-right',
+          )}
+        >
+          {line.secondary}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function SessionBlock({
   adaptationVerdict,
   recommendation,
@@ -58,12 +87,16 @@ export function SessionBlock({
   const whyLines = buildWhyLines(keyFindings, recommendation);
 
   return (
-    <div className={cn('bg-card/60 space-y-4 rounded-2xl border px-5 py-5', className)}>
-      <div className="flex min-h-6.5 items-center justify-between gap-3">
-        <p className="text-muted-foreground text-[11px] font-medium uppercase">
+    <div
+      className={cn('bg-card/60 space-y-4 rounded-2xl border px-4 py-4 sm:px-5 sm:py-5', className)}
+    >
+      <div className="flex min-h-6.5 items-start justify-between gap-2 sm:items-center sm:gap-3">
+        <p className="text-muted-foreground min-w-0 flex-1 text-[11px] leading-snug font-medium uppercase">
           {daySummary.sectionLabel}
         </p>
-        <MorningWellnessDialog onCompleted={onWellnessCompleted} />
+        <div className="shrink-0">
+          <MorningWellnessDialog onCompleted={onWellnessCompleted} />
+        </div>
       </div>
 
       {daySummary.isEmpty ? (
@@ -75,7 +108,7 @@ export function SessionBlock({
             className="text-primary inline-flex items-center gap-1.5 text-xs font-medium hover:underline"
             href="/seances?tab=planning"
           >
-            <CalendarClock className="size-3.5" />
+            <CalendarClock className="size-3.5 shrink-0" />
             Ouvrir le planning
           </Link>
         </div>
@@ -83,30 +116,10 @@ export function SessionBlock({
         <ul className="mt-2 space-y-2">
           {daySummary.lines.map((line) => {
             const rowClass = cn(
-              'flex items-start justify-between gap-3 rounded-xl border px-3 py-2.5',
+              'rounded-xl border px-3 py-2.5',
               line.kind === 'done'
                 ? 'border-emerald-500/25 bg-emerald-500/5'
                 : 'border-border/60 bg-background/40',
-            );
-
-            const content = (
-              <div className="flex min-w-0 items-center justify-between gap-1.5">
-                <div className="flex items-center gap-1.5">
-                  {line.kind === 'done' && (
-                    <CheckCircle2 className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                  )}
-                  {line.plannedSession ? (
-                    <PlannedSessionPrimary session={line.plannedSession} />
-                  ) : (
-                    <p className="text-sm leading-snug font-medium">{line.primary}</p>
-                  )}
-                </div>
-                {line.secondary && (
-                  <p className="text-muted-foreground shrink-0 text-right text-xs">
-                    {line.secondary}
-                  </p>
-                )}
-              </div>
             );
 
             if (line.kind === 'done') {
@@ -119,7 +132,7 @@ export function SessionBlock({
                       'block transition-colors hover:bg-emerald-500/10 active:opacity-80',
                     )}
                   >
-                    {content}
+                    <SessionLineContent line={line} />
                   </Link>
                 </li>
               );
@@ -127,7 +140,7 @@ export function SessionBlock({
 
             return (
               <li key={line.id} className={rowClass}>
-                {content}
+                <SessionLineContent line={line} />
               </li>
             );
           })}
@@ -135,9 +148,11 @@ export function SessionBlock({
       )}
 
       {objective && (
-        <div className="flex items-center justify-between gap-2 border-t pt-3">
-          <p className="text-muted-foreground text-[11px] font-medium uppercase">Objectif</p>
-          <span className="bg-muted text-foreground rounded-md px-2 py-0.5 text-xs font-medium">
+        <div className="flex flex-col gap-2 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-muted-foreground shrink-0 text-[11px] font-medium uppercase">
+            Objectif
+          </p>
+          <span className="bg-muted text-foreground w-fit max-w-full rounded-md px-2 py-0.5 text-xs leading-snug font-medium break-words">
             {objective}
           </span>
         </div>
@@ -146,16 +161,15 @@ export function SessionBlock({
       {whyLines.length > 0 && (
         <div className="border-t pt-3">
           <p className="text-muted-foreground mb-2 text-[11px] font-medium uppercase">Pourquoi</p>
-          <ul className="space-y-1">
+          <ul className="space-y-1.5">
             {whyLines.map((line, i) => (
               <li
                 key={i}
                 className={cn(
-                  'text-xs leading-relaxed',
+                  'text-xs leading-relaxed break-words',
                   i === 0 ? 'text-foreground font-medium' : 'text-muted-foreground',
                 )}
               >
-                {i > 0 && <span className="mr-1.5">·</span>}
                 {line}
               </li>
             ))}

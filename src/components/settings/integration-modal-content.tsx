@@ -5,6 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import {
+  GOOGLE_OAUTH_LAN_HINT,
+  googleOAuthLocalConnectHref,
+  isGoogleOAuthBlockedOnCurrentHost,
+} from '@/lib/integrations/google-oauth-hint';
+import {
   IntegrationAccountCard,
   IntegrationAccountSummary,
   IntegrationSyncActions,
@@ -649,12 +654,17 @@ function GoogleContent({
         }),
         error: (err) => ({
           title: 'Échec Google',
-          description: err instanceof Error ? err.message : undefined,
+          description:
+            err instanceof Error && err.message.includes('Reconnecte')
+              ? `${err.message} Utilise le bouton « Connecter Google Calendar » ci-dessous.`
+              : err instanceof Error
+                ? err.message
+                : undefined,
         }),
       });
+    } finally {
       router.refresh();
       onUpdated?.();
-    } finally {
       setSyncing(false);
     }
   }
@@ -683,13 +693,21 @@ function GoogleContent({
   }
 
   if (!integration.connected) {
+    const blockedOnLan = isGoogleOAuthBlockedOnCurrentHost();
+    const connectHref = blockedOnLan ? googleOAuthLocalConnectHref() : '/api/google/connect';
+
     return (
       <div className="space-y-4">
         <IntegrationModalHeader integration={integration} />
         <p className="text-muted-foreground text-sm leading-relaxed">
           Le coach planifie tes séances dans ton agenda en évitant tes créneaux occupés.
         </p>
-        <a className={cn(buttonVariants(), 'w-full sm:w-auto')} href="/api/google/connect">
+        {blockedOnLan && (
+          <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm leading-relaxed text-amber-700 dark:text-amber-300">
+            {GOOGLE_OAUTH_LAN_HINT}
+          </p>
+        )}
+        <a className={cn(buttonVariants(), 'w-full sm:w-auto')} href={connectHref}>
           Connecter Google Calendar
         </a>
         {integration.statusMessage && (

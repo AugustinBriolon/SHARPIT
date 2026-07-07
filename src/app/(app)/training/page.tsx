@@ -16,7 +16,7 @@ export default function TrainingPage() {
             Course, vélo, natation et musculation — tout est historisé.
           </p>
         </div>
-        <LinkButton href="/training/new">Nouvelle séance</LinkButton>
+        <LinkButton href="/seances?tab=planning&create=1">Planifier une séance</LinkButton>
       </StickyHeader>
 
       <Suspense fallback={<TrainingListFallback />}>

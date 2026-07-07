@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { deleteGoal, getGoalById, updateGoal } from '@/lib/queries';
+import { recordManualGoalAchievement } from '@/lib/goal-achievements';
 import { updateGoalSchema } from '@/lib/validators/goal';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -23,6 +24,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     const goal = await updateGoal(id, parsed.data as Parameters<typeof updateGoal>[1]);
+
+    if (parsed.data.achieved === true && !existing.achieved) {
+      await recordManualGoalAchievement({ ...existing, ...goal });
+    }
+
     return NextResponse.json(goal);
   } catch (error) {
     console.error('[goals/PATCH]', error);

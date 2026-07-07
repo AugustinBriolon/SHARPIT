@@ -15,9 +15,9 @@ export function PlannedSessionPrimary({
   const { title } = resolvePlannedSessionDisplay(session, referenceDate);
 
   return (
-    <div className={cn('flex min-w-0 items-center gap-1.5', className)}>
+    <div className={cn('flex min-w-0 flex-1 items-start gap-1.5', className)}>
       <PlannedSessionTypeBadge referenceDate={referenceDate} session={session} />
-      <p className="truncate text-sm leading-snug font-medium">{title}</p>
+      <p className="line-clamp-2 min-w-0 text-sm leading-snug font-medium break-words">{title}</p>
     </div>
   );
 }

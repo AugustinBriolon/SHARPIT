@@ -85,6 +85,7 @@ export function CalendarToolbar({
   onNext,
   onToday,
   onToggleCalendar,
+  showPlanButton = true,
 }: {
   embedded: boolean;
   isMobile: boolean;
@@ -99,6 +100,7 @@ export function CalendarToolbar({
   onNext: () => void;
   onToday: () => void;
   onToggleCalendar: (calendarId: string, visible: boolean) => Promise<void>;
+  showPlanButton?: boolean;
 }) {
   const showTitle = isMobile || !embedded;
 
@@ -130,19 +132,19 @@ export function CalendarToolbar({
 
   if (isMobile) {
     return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-end gap-2">
-          {!showTitle && <div className="min-w-0 flex-1" />}
-          {googleConnected && (
-            <CalendarVisibilityMenu
-              calendars={calendars}
-              error={visibilityError}
-              loading={calendarsLoading}
-              compact
-              onToggle={onToggleCalendar}
-            />
-          )}
-          <div className="flex shrink-0 items-center gap-1">{navButtons}</div>
+      <div className="flex items-center justify-end gap-2">
+        {!showTitle && <div className="min-w-0 flex-1" />}
+        {googleConnected && (
+          <CalendarVisibilityMenu
+            calendars={calendars}
+            error={visibilityError}
+            loading={calendarsLoading}
+            compact
+            onToggle={onToggleCalendar}
+          />
+        )}
+        <div className="flex shrink-0 items-center gap-1">{navButtons}</div>
+        {showPlanButton && (
           <Button
             aria-label="Planifier une séance"
             disabled={!mounted}
@@ -151,7 +153,7 @@ export function CalendarToolbar({
           >
             <Plus className="size-4" />
           </Button>
-        </div>
+        )}
       </div>
     );
   }
@@ -180,10 +182,12 @@ export function CalendarToolbar({
             />
           )}
           {navButtons}
-          <Button disabled={!mounted} onClick={onPlan}>
-            <Plus className="size-4" />
-            Planifier
-          </Button>
+          {showPlanButton && (
+            <Button disabled={!mounted} onClick={onPlan}>
+              <Plus className="size-4" />
+              Planifier
+            </Button>
+          )}
         </div>
       </div>
     </div>

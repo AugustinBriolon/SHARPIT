@@ -62,5 +62,70 @@ export function buildSessionDiscussPrompt(input: {
 
 ${input.analysis.summary}${context}${remarks}${reco}
 
-J'aimerais en discuter avec toi : qu'est-ce que tu en retires pour la suite de ma semaine ?`;
+J'aimerais en discuter avec toi. De quoi souhaites-tu qu'on parle pour mieux comprendre cette séance ?`;
+}
+
+/** Contexte coach pour une activité réalisée (avec ou sans séance planifiée liée). */
+export function buildActivityDiscussPrompt(input: {
+  title: string | null;
+  sportLabel: string;
+  date: Date;
+  durationSec: number | null;
+  load: number | null;
+  rpe: number | null;
+  notes: string | null;
+  analysis?: SessionAnalysis | null;
+  planned?: {
+    title?: string | null;
+    durationMin?: number | null;
+    description?: string | null;
+    intensity?: string | null;
+  };
+}): string {
+  const name = input.title ?? input.sportLabel;
+  const dateLabel = input.date.toLocaleDateString('fr-FR', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+
+  const actualBits = [
+    dateLabel,
+    input.durationSec != null ? `${Math.round(input.durationSec / 60)} min` : null,
+    input.load != null ? `${Math.round(input.load)} TSS` : null,
+    input.rpe != null ? `RPE ${input.rpe}/10` : null,
+    input.notes ? `notes : ${input.notes}` : null,
+  ].filter(Boolean);
+
+  const plannedBits = input.planned
+    ? [
+        input.planned.title ? `« ${input.planned.title} »` : null,
+        input.planned.durationMin != null ? `${input.planned.durationMin} min prévues` : null,
+        input.planned.intensity
+          ? `intensité ${intensityLabels[input.planned.intensity as keyof typeof intensityLabels] ?? input.planned.intensity}`
+          : null,
+        input.planned.description ? `consigne : ${input.planned.description}` : null,
+      ].filter(Boolean)
+    : [];
+
+  const plannedBlock =
+    plannedBits.length > 0 ? `\n\nSéance programmée liée :\n- ${plannedBits.join('\n- ')}` : '';
+
+  if (input.analysis) {
+    const verdict = VERDICT_FR[input.analysis.verdict] ?? input.analysis.verdict;
+    const remarks =
+      input.analysis.remarks.length > 0
+        ? `\n\nPoints notables :\n${input.analysis.remarks.map((r) => `- ${r}`).join('\n')}`
+        : '';
+    const reco = input.analysis.recommendation
+      ? `\n\nRecommandation : ${input.analysis.recommendation}`
+      : '';
+
+    return `Je consulte ma séance réalisée « ${name} » (${input.sportLabel}). Réalisé : ${actualBits.join(' · ') || '—'}.${plannedBlock}
+
+Analyse automatique (score ${input.analysis.complianceScore}/100 — ${verdict}) :
+${input.analysis.summary}${remarks}${reco}`;
+  }
+
+  return `Je consulte ma séance réalisée « ${name} » (${input.sportLabel}). Réalisé : ${actualBits.join(' · ') || '—'}.${plannedBlock}`;
 }

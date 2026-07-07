@@ -43,13 +43,13 @@ export function RouteMap({
   }, []);
 
   return (
-    <div className="border-border/60 relative h-full w-full overflow-hidden rounded-xl border">
+    <div className="border-border/60 relative isolate z-0 h-full w-full overflow-hidden rounded-xl border [&_.leaflet-bottom]:z-[2] [&_.leaflet-pane]:z-[1] [&_.leaflet-top]:z-[2]">
       {ready ? (
         <RouteMapInner lineColor={lineColor} path={path} />
       ) : (
         <Skeleton className="h-full w-full" />
       )}
-      <span className="text-muted-foreground/70 pointer-events-none absolute right-2 bottom-1 z-400 text-[9px]">
+      <span className="text-muted-foreground/70 pointer-events-none absolute right-2 bottom-1 z-[3] text-[9px]">
         © OpenStreetMap · CARTO
       </span>
     </div>

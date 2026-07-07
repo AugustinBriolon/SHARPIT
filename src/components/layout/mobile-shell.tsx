@@ -63,9 +63,12 @@ function MoreNavSheet({ pathname }: { pathname: string }) {
         <moreNavTrigger.icon className="size-5 shrink-0" aria-hidden />
         <span>{moreNavTrigger.label}</span>
       </SheetTrigger>
-      <SheetContent className="pb-[calc(1rem+env(safe-area-inset-bottom))]" side="bottom">
+      <SheetContent
+        className="rounded-t-3xl pb-[calc(1rem+env(safe-area-inset-bottom))]"
+        side="bottom"
+      >
         <SheetHeader />
-        <div className="mt-4 space-y-1">
+        <div className="space-y-1 px-2">
           {moreNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = item.match(pathname);
@@ -96,7 +99,7 @@ export function BottomNav() {
       className="border-border/60 bg-background/95 supports-backdrop-filter:bg-background/80 fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur-md"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      <div className="mx-auto flex max-w-lg items-stretch justify-around px-1 pt-1">
+      <div className="mx-auto flex max-w-lg items-stretch justify-around p-2">
         {bottomNavItems.map((item) => (
           <BottomNavLink key={item.href} item={item} pathname={pathname} />
         ))}

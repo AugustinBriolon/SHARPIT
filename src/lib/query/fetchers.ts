@@ -49,6 +49,13 @@ export async function fetchActivities(): Promise<ClientActivity[]> {
     date: toDate(a.date),
     createdAt: toDate(a.createdAt),
     updatedAt: toDate(a.updatedAt),
+    plannedSession: a.plannedSession
+      ? {
+          ...a.plannedSession,
+          date: toDate(a.plannedSession.date),
+          analyzedAt: toDateOrNull(a.plannedSession.analyzedAt),
+        }
+      : null,
   }));
 }
 
@@ -86,8 +93,44 @@ export async function fetchGoals(): Promise<ClientGoal[]> {
   return data.map((g) => ({
     ...g,
     targetDate: toDateOrNull(g.targetDate),
+    lastAchievedAt: toDateOrNull((g as { lastAchievedAt?: string | null }).lastAchievedAt),
     createdAt: toDate(g.createdAt),
     updatedAt: toDate(g.updatedAt),
+  }));
+}
+
+export interface ClientGoalAchievement {
+  id: string;
+  goalId: string;
+  activityId: string | null;
+  source: string;
+  value: number | null;
+  targetValue: number | null;
+  periodKey: string;
+  achievedAt: Date;
+  goal: {
+    id: string;
+    title: string;
+    unit: string | null;
+    metricKey: string | null;
+    kind: string;
+  };
+  activity: {
+    id: string;
+    title: string | null;
+    type: string;
+    date: Date;
+  } | null;
+}
+
+export async function fetchGoalAchievements(limit = 20): Promise<ClientGoalAchievement[]> {
+  const data = await fetchJson<Serialized<ClientGoalAchievement>[]>(
+    `/api/goals/achievements?limit=${limit}`,
+  );
+  return data.map((a) => ({
+    ...a,
+    achievedAt: toDate(a.achievedAt),
+    activity: a.activity ? { ...a.activity, date: toDate(a.activity.date) } : null,
   }));
 }
 
@@ -105,6 +148,13 @@ export async function fetchPlannedSessions(): Promise<ClientPlannedSession[]> {
           date: toDate(s.activity.date),
           createdAt: toDate(s.activity.createdAt),
           updatedAt: toDate(s.activity.updatedAt),
+          plannedSession: s.activity.plannedSession
+            ? {
+                ...s.activity.plannedSession,
+                date: toDate(s.activity.plannedSession.date),
+                analyzedAt: toDateOrNull(s.activity.plannedSession.analyzedAt),
+              }
+            : null,
         }
       : null,
   }));

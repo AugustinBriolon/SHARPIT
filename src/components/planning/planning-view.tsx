@@ -4,13 +4,17 @@ import { addWeeks, endOfWeek, format, isSameDay, isToday, startOfWeek, subWeeks 
 import { fr } from 'date-fns/locale';
 import { CheckCircle2, ChevronLeft, ChevronRight, Layers, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/layout/sticky-header';
 import { PlanAdapter } from '@/components/coach/plan-adapter';
 import { PlanGenerator } from '@/components/coach/plan-generator';
 import { MacroPlanDialog } from '@/components/planning/macro-plan-dialog';
-import { PlanningCoachMenu } from '@/components/planning/planning-coach-menu';
 import { PlannedSessionDialog } from '@/components/planning/planned-session-dialog';
+import {
+  SessionsCoachMenu,
+  type SessionsCoachAction,
+} from '@/components/sessions/sessions-coach-menu';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ClientActivity, ClientPlannedSession, ClientPlanWeek } from '@/lib/query/types';
@@ -29,6 +33,10 @@ type DialogState =
   { mode: 'create'; date: Date } | { mode: 'edit'; session: ClientPlannedSession } | null;
 
 export function PlanningView({ embedded = false }: { embedded?: boolean }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const plannedIdFromUrl = embedded ? searchParams.get('planned') : null;
+  const createFromUrl = !embedded && searchParams.has('create');
   const activitiesQuery = useActivities();
   const plannedQuery = usePlannedSessions();
   const goalsQuery = useGoals();
@@ -94,6 +102,48 @@ export function PlanningView({ embedded = false }: { embedded?: boolean }) {
   const completed = week.planned.filter((p) => p.completed).length;
   const total = week.planned.length;
 
+  const deepLinkSession = useMemo(() => {
+    if (!plannedIdFromUrl || plannedQuery.isPending) return null;
+    return planned.find((s) => s.id === plannedIdFromUrl) ?? null;
+  }, [plannedIdFromUrl, plannedQuery.isPending, planned]);
+
+  function closePlannedDialog() {
+    setDialog(null);
+    const params = new URLSearchParams(searchParams.toString());
+    const hadPlanned = params.has('planned');
+    const hadCreate = !embedded && params.has('create');
+    if (!hadPlanned && !hadCreate) return;
+    params.delete('planned');
+    if (hadCreate) params.delete('create');
+    const query = params.toString();
+    router.replace(query ? `/seances?${query}` : '/seances', { scroll: false });
+  }
+
+  function handleCoachAction(action: SessionsCoachAction) {
+    switch (action) {
+      case 'plan':
+        setDialog({ mode: 'create', date: new Date() });
+        break;
+      case 'manual':
+        router.push('/training/manual');
+        break;
+      case 'generate':
+        setGeneratorOpen(true);
+        break;
+      case 'adapt':
+        setAdapterOpen(true);
+        break;
+      case 'macro':
+        setMacroPlanOpen(true);
+        break;
+    }
+  }
+
+  const isCreateDialog = dialog?.mode === 'create' || createFromUrl;
+  const showPlannedDialog = isCreateDialog || dialog?.mode === 'edit' || deepLinkSession != null;
+  const editSession = dialog?.mode === 'edit' ? dialog.session : deepLinkSession;
+  const createDefaultDate = dialog?.mode === 'create' ? dialog.date : new Date();
+
   if (isLoading) {
     return (
       <div className="space-y-5">
@@ -149,7 +199,7 @@ export function PlanningView({ embedded = false }: { embedded?: boolean }) {
           >
             <ChevronLeft className="size-4" />
           </Button>
-          <div className="min-w-[11rem] text-center">
+          <div className="min-w-44 text-center">
             <p className="text-sm font-medium">
               {format(week.start, 'd MMM', { locale: fr })}
               {' — '}
@@ -169,17 +219,11 @@ export function PlanningView({ embedded = false }: { embedded?: boolean }) {
           </Button>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <PlanningCoachMenu
-            onAdapt={() => setAdapterOpen(true)}
-            onGenerate={() => setGeneratorOpen(true)}
-            onMacroPlan={() => setMacroPlanOpen(true)}
-          />
-          <Button onClick={() => setDialog({ mode: 'create', date: new Date() })}>
-            <Plus className="size-4" />
-            Séance
-          </Button>
-        </div>
+        {!embedded && (
+          <div className="flex flex-wrap gap-2">
+            <SessionsCoachMenu onAction={handleCoachAction} />
+          </div>
+        )}
       </div>
 
       <WeekSummary
@@ -203,12 +247,12 @@ export function PlanningView({ embedded = false }: { embedded?: boolean }) {
         ))}
       </div>
 
-      {dialog && (
+      {showPlannedDialog && (
         <PlannedSessionDialog
-          defaultDate={dialog.mode === 'create' ? dialog.date : undefined}
+          defaultDate={isCreateDialog ? createDefaultDate : undefined}
           goals={goals}
-          session={dialog.mode === 'edit' ? dialog.session : undefined}
-          onClose={() => setDialog(null)}
+          session={editSession ?? undefined}
+          onClose={closePlannedDialog}
         />
       )}
 

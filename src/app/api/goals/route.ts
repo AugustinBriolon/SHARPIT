@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { enrichGoalsWithProgress } from '@/lib/goal-achievements';
 import { createGoal, getGoals } from '@/lib/queries';
 import { createGoalSchema } from '@/lib/validators/goal';
 
@@ -7,7 +8,8 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const goals = await getGoals();
-    return NextResponse.json(goals);
+    const enriched = await enrichGoalsWithProgress(goals);
+    return NextResponse.json(enriched);
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Impossible de charger les objectifs' }, { status: 500 });

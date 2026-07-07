@@ -18,7 +18,7 @@ export function DashboardSkeleton() {
           <MetricRingSkeleton key={i} />
         ))}
       </div>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[3fr_2fr]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="space-y-3">
           <div className="bg-muted h-48 rounded-2xl" />
           <div className="bg-muted h-68.5 rounded-2xl" />

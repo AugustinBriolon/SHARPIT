@@ -3,6 +3,7 @@ export const queryKeys = {
   health: (days: number, date?: string) => ['health', days, date ?? 'today'] as const,
   bodyComposition: (days?: number | 'all') => ['body-composition', days ?? 'all'] as const,
   goals: ['goals'] as const,
+  goalAchievements: (limit?: number) => ['goals', 'achievements', limit ?? 20] as const,
   plannedSessions: ['planned-sessions'] as const,
   brickAnalysis: (groupId: string) => ['brick-analysis', groupId] as const,
   activityStream: (id: string) => ['activity-stream', id] as const,

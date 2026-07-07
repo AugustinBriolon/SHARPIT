@@ -12,7 +12,11 @@ import {
   type ParsedStrengthSet,
 } from '@/lib/integrations/garmin-activities';
 import { fetchGarminMultisportLegs } from '@/lib/integrations/garmin-multisport';
-import { clientFromTokens, currentTokens, type GarminTokens } from '@/lib/integrations/garmin';
+import {
+  clientFromTokens,
+  currentTokens,
+  garminTokensFromStorage,
+} from '@/lib/integrations/garmin';
 import { getGarminAccount } from '@/lib/integrations/garmin-sync';
 import { prisma } from '@/lib/prisma';
 import { autoLinkActivities } from '@/lib/session-linking';
@@ -120,11 +124,9 @@ export async function syncGarminActivities(options?: {
   const account = await getGarminAccount();
   if (!account) throw new Error('Compte Garmin non connecté');
 
-  const tokens: GarminTokens = {
-    oauth1: account.oauth1Token,
-    oauth2: account.oauth2Token,
-  };
-  const client = clientFromTokens(tokens);
+  const client = clientFromTokens(
+    garminTokensFromStorage(account.oauth1Token, account.oauth2Token),
+  );
 
   const full = options?.full ?? false;
   const lastActivitySync = account.lastActivitySyncAt ?? account.lastSyncAt;
@@ -263,8 +265,8 @@ export async function syncGarminActivities(options?: {
   await prisma.garminAccount.update({
     where: { id: ACCOUNT_ID },
     data: {
-      oauth1Token: refreshed.oauth1 as Prisma.InputJsonValue,
-      oauth2Token: refreshed.oauth2 as Prisma.InputJsonValue,
+      oauth1Token: refreshed.oauth1 as unknown as Prisma.InputJsonValue,
+      oauth2Token: refreshed.oauth2 as unknown as Prisma.InputJsonValue,
       lastActivitySyncAt: new Date(),
     },
   });

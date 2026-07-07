@@ -5,13 +5,13 @@ import { syncSinceFromLastSync, syncWindowDays } from '@/lib/integrations/sync-s
 import {
   clientFromTokens,
   currentTokens,
+  garminTokensFromStorage,
   fetchAthleteThresholds,
   fetchDailyHealth,
   fetchWeightRange,
   loginWithCredentials,
   type GarminAthleteThresholds,
   type GarminDailyHealth,
-  type GarminTokens,
 } from '@/lib/integrations/garmin';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { garminHealthToObservations } from '@/core/adapters/garmin-health-adapter';
@@ -39,10 +39,7 @@ export async function getGarminAccount() {
 export async function getGarminClient() {
   const account = await getGarminAccount();
   if (!account) throw new Error('Compte Garmin non connecté');
-  return clientFromTokens({
-    oauth1: account.oauth1Token as GarminTokens['oauth1'],
-    oauth2: account.oauth2Token as GarminTokens['oauth2'],
-  });
+  return clientFromTokens(garminTokensFromStorage(account.oauth1Token, account.oauth2Token));
 }
 
 export async function disconnectGarmin() {
@@ -58,14 +55,14 @@ export async function connectGarmin(username: string, password: string) {
       id: ACCOUNT_ID,
       displayName: profile.displayName,
       fullName: profile.fullName,
-      oauth1Token: tokens.oauth1 as Prisma.InputJsonValue,
-      oauth2Token: tokens.oauth2 as Prisma.InputJsonValue,
+      oauth1Token: tokens.oauth1 as unknown as Prisma.InputJsonValue,
+      oauth2Token: tokens.oauth2 as unknown as Prisma.InputJsonValue,
     },
     update: {
       displayName: profile.displayName,
       fullName: profile.fullName,
-      oauth1Token: tokens.oauth1 as Prisma.InputJsonValue,
-      oauth2Token: tokens.oauth2 as Prisma.InputJsonValue,
+      oauth1Token: tokens.oauth1 as unknown as Prisma.InputJsonValue,
+      oauth2Token: tokens.oauth2 as unknown as Prisma.InputJsonValue,
     },
   });
 
@@ -85,10 +82,9 @@ export async function importGarminThresholds(): Promise<GarminThresholdsImport> 
   const account = await getGarminAccount();
   if (!account) throw new Error('Compte Garmin non connecté');
 
-  const client = clientFromTokens({
-    oauth1: account.oauth1Token,
-    oauth2: account.oauth2Token,
-  });
+  const client = clientFromTokens(
+    garminTokensFromStorage(account.oauth1Token, account.oauth2Token),
+  );
 
   const thresholds = await fetchAthleteThresholds(client);
 
@@ -112,8 +108,8 @@ export async function importGarminThresholds(): Promise<GarminThresholdsImport> 
   await prisma.garminAccount.update({
     where: { id: ACCOUNT_ID },
     data: {
-      oauth1Token: refreshed.oauth1 as Prisma.InputJsonValue,
-      oauth2Token: refreshed.oauth2 as Prisma.InputJsonValue,
+      oauth1Token: refreshed.oauth1 as unknown as Prisma.InputJsonValue,
+      oauth2Token: refreshed.oauth2 as unknown as Prisma.InputJsonValue,
     },
   });
 
@@ -141,11 +137,9 @@ export async function syncGarminHealth(options?: {
   const account = await getGarminAccount();
   if (!account) throw new Error('Compte Garmin non connecté');
 
-  const tokens: GarminTokens = {
-    oauth1: account.oauth1Token,
-    oauth2: account.oauth2Token,
-  };
-  const client = clientFromTokens(tokens);
+  const client = clientFromTokens(
+    garminTokensFromStorage(account.oauth1Token, account.oauth2Token),
+  );
 
   const today = startOfDay(new Date());
   const since = options?.full
@@ -256,8 +250,8 @@ export async function syncGarminHealth(options?: {
   await prisma.garminAccount.update({
     where: { id: ACCOUNT_ID },
     data: {
-      oauth1Token: refreshed.oauth1 as Prisma.InputJsonValue,
-      oauth2Token: refreshed.oauth2 as Prisma.InputJsonValue,
+      oauth1Token: refreshed.oauth1 as unknown as Prisma.InputJsonValue,
+      oauth2Token: refreshed.oauth2 as unknown as Prisma.InputJsonValue,
       lastSyncAt: new Date(),
     },
   });

@@ -1,11 +1,19 @@
 'use client';
 
 import { CalendarView } from '@/components/calendar/calendar-view';
+import { PlanAdapter } from '@/components/coach/plan-adapter';
+import { PlanGenerator } from '@/components/coach/plan-generator';
 import { StickyHeader } from '@/components/layout/sticky-header';
+import { MacroPlanDialog } from '@/components/planning/macro-plan-dialog';
+import { PlannedSessionDialog } from '@/components/planning/planned-session-dialog';
 import { PlanningView } from '@/components/planning/planning-view';
+import {
+  SessionsCoachMenu,
+  type SessionsCoachAction,
+} from '@/components/sessions/sessions-coach-menu';
 import { TrainingList } from '@/components/training/training-list';
-import { LinkButton } from '@/components/ui/link-button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useGoals } from '@/hooks/use-data';
 import { navPillClass } from '@/lib/nav-pill';
 import { CalendarRange, ClipboardList, List } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -37,6 +45,10 @@ function isTabId(value: string | null): value is TabId {
   return TABS.some((t) => t.id === value);
 }
 
+function isCoachOverlay(value: string | null): value is 'generate' | 'adapt' | 'macro' {
+  return value === 'generate' || value === 'adapt' || value === 'macro';
+}
+
 export function SessionsHubSkeleton() {
   return (
     <div className="space-y-4">
@@ -60,28 +72,72 @@ export function SessionsHubSkeleton() {
 export function SessionsHub() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: goals = [] } = useGoals();
   const raw = searchParams.get('tab');
   const tab: TabId = isTabId(raw) ? raw : 'calendrier';
+  const createFromUrl = searchParams.has('create');
+  const coachOverlay = searchParams.get('coach');
+  const coachAction = isCoachOverlay(coachOverlay) ? coachOverlay : null;
+
+  function replaceParams(mutate: (params: URLSearchParams) => void) {
+    const params = new URLSearchParams(searchParams.toString());
+    mutate(params);
+    const query = params.toString();
+    router.replace(query ? `/seances?${query}` : '/seances', { scroll: false });
+  }
 
   function setTab(next: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('tab', next);
-    router.replace(`/seances?${params.toString()}`, { scroll: false });
+    replaceParams((params) => {
+      params.set('tab', next);
+    });
+  }
+
+  function closeOverlays() {
+    replaceParams((params) => {
+      params.delete('create');
+      params.delete('coach');
+    });
+  }
+
+  function handleCoachAction(action: SessionsCoachAction) {
+    switch (action) {
+      case 'plan':
+        replaceParams((params) => {
+          params.set('create', '1');
+        });
+        break;
+      case 'manual':
+        router.push('/training/manual');
+        break;
+      case 'generate':
+        replaceParams((params) => {
+          params.set('coach', 'generate');
+        });
+        break;
+      case 'adapt':
+        replaceParams((params) => {
+          params.set('coach', 'adapt');
+        });
+        break;
+      case 'macro':
+        replaceParams((params) => {
+          params.set('coach', 'macro');
+        });
+        break;
+    }
   }
 
   return (
     <div className="space-y-4">
       <StickyHeader>
-        <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-end justify-between lg:gap-4">
           <div>
             <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
               Séances
             </p>
             <h1 className="font-heading mt-1 text-2xl font-semibold">Historique & planning</h1>
           </div>
-          <LinkButton className="shrink-0" href="/training/new">
-            Nouvelle séance
-          </LinkButton>
+          <SessionsCoachMenu onAction={handleCoachAction} />
         </div>
 
         <nav
@@ -112,6 +168,14 @@ export function SessionsHub() {
         {tab === 'activites' && <TrainingList />}
         {tab === 'planning' && <PlanningView embedded />}
       </div>
+
+      {createFromUrl && (
+        <PlannedSessionDialog defaultDate={new Date()} goals={goals} onClose={closeOverlays} />
+      )}
+
+      {coachAction === 'generate' && <PlanGenerator onClose={closeOverlays} />}
+      {coachAction === 'adapt' && <PlanAdapter onClose={closeOverlays} />}
+      {coachAction === 'macro' && <MacroPlanDialog goals={goals} onClose={closeOverlays} />}
     </div>
   );
 }

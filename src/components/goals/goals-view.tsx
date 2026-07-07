@@ -8,6 +8,7 @@ import {
   RaceCard,
   type GoalItem,
 } from '@/components/goals/goal-cards';
+import { GoalAchievementsHistory } from '@/components/goals/goal-achievements-history';
 import { Skeleton } from '@/components/ui/skeleton';
 import { horizonLabels, horizonOrder } from '@/lib/goals';
 import { useGoals } from '@/hooks/use-data';
@@ -17,6 +18,7 @@ function toGoalItem(goal: {
   title: string;
   kind: GoalKind;
   horizon: GoalItem['horizon'];
+  metricKey?: string | null;
   startValue: number | null;
   currentValue: number | null;
   targetValue: number | null;
@@ -29,12 +31,15 @@ function toGoalItem(goal: {
   priority: GoalItem['priority'];
   raceFormat: string | null;
   targetPerformance: string | null;
+  validatingActivityId?: string | null;
+  lastAchievedAt?: Date | string | null;
 }): GoalItem {
   return {
     id: goal.id,
     title: goal.title,
     kind: goal.kind,
     horizon: goal.horizon,
+    metricKey: goal.metricKey,
     startValue: goal.startValue,
     currentValue: goal.currentValue,
     targetValue: goal.targetValue,
@@ -47,6 +52,8 @@ function toGoalItem(goal: {
     priority: goal.priority,
     raceFormat: goal.raceFormat,
     targetPerformance: goal.targetPerformance,
+    validatingActivityId: goal.validatingActivityId,
+    lastAchievedAt: goal.lastAchievedAt,
   };
 }
 
@@ -139,28 +146,46 @@ export function GoalsView() {
           Objectifs chiffrés
         </h2>
         {metrics.length ? (
-          horizonOrder.map((horizon) => {
-            const group = metrics.filter((g) => g.horizon === horizon);
-            if (!group.length) return null;
-            return (
-              <div key={horizon} className="space-y-3">
+          <>
+            {horizonOrder.map((horizon) => {
+              const group = metrics.filter((g) => g.horizon === horizon);
+              if (!group.length) return null;
+              return (
+                <div key={horizon} className="space-y-3">
+                  <h3 className="text-primary/80 text-xs font-medium tracking-wider uppercase">
+                    {horizonLabels[horizon]}
+                  </h3>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {group.map((goal) => (
+                      <MetricGoalCard key={goal.id} goal={goal} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+            {metrics.some((g) => !g.horizon) && (
+              <div className="space-y-3">
                 <h3 className="text-primary/80 text-xs font-medium tracking-wider uppercase">
-                  {horizonLabels[horizon]}
+                  Autres
                 </h3>
                 <div className="grid gap-3 md:grid-cols-2">
-                  {group.map((goal) => (
-                    <MetricGoalCard key={goal.id} goal={goal} />
-                  ))}
+                  {metrics
+                    .filter((g) => !g.horizon)
+                    .map((goal) => (
+                      <MetricGoalCard key={goal.id} goal={goal} />
+                    ))}
                 </div>
               </div>
-            );
-          })
+            )}
+          </>
         ) : (
           <p className="border-border/80 text-muted-foreground rounded-xl border border-dashed p-8 text-center text-sm">
             Aucun objectif chiffré. Crée-en un pour suivre ta progression.
           </p>
         )}
       </section>
+
+      <GoalAchievementsHistory />
     </div>
   );
 }

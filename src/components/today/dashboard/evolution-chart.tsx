@@ -69,8 +69,7 @@ export function EvolutionChart({
               tickLine={false}
             />
             <Tooltip
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              formatter={(v: any) => (v != null ? v : '—') as any}
+              formatter={(v) => (v != null ? v : '—')}
               itemStyle={{ color: 'hsl(var(--foreground))' }}
               labelStyle={{ color: 'hsl(var(--muted-foreground))' }}
               contentStyle={{

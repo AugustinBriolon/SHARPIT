@@ -2,6 +2,7 @@
 
 import { GoalHorizon, GoalKind, GoalPriority } from '@prisma/client';
 import { Calendar, MapPin, Pencil, Target, Trash2, Trophy } from 'lucide-react';
+import Link from 'next/link';
 import { useState } from 'react';
 import { GoalDialog, type GoalForEdit } from '@/components/goals/goal-dialog';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,11 @@ import {
   priorityAccent,
   priorityLabels,
 } from '@/lib/goals';
+import {
+  describeMetricGoal,
+  formatGoalDisplayValue,
+  parseGoalMetricConfig,
+} from '@/lib/goal-metric-config';
 import { cn } from '@/lib/utils';
 import { useGoalMutations } from '@/hooks/use-data';
 
@@ -22,6 +28,7 @@ export interface GoalItem {
   title: string;
   kind: GoalKind;
   horizon: GoalHorizon | null;
+  metricKey?: string | null;
   startValue: number | null;
   currentValue: number | null;
   targetValue: number | null;
@@ -34,6 +41,8 @@ export interface GoalItem {
   priority: GoalPriority | null;
   raceFormat: string | null;
   targetPerformance: string | null;
+  validatingActivityId?: string | null;
+  lastAchievedAt?: string | Date | null;
 }
 
 function toEdit(goal: GoalItem): GoalForEdit {
@@ -42,6 +51,7 @@ function toEdit(goal: GoalItem): GoalForEdit {
     title: goal.title,
     kind: goal.kind,
     horizon: goal.horizon,
+    metricKey: goal.metricKey,
     startValue: goal.startValue,
     currentValue: goal.currentValue,
     targetValue: goal.targetValue,
@@ -53,12 +63,14 @@ function toEdit(goal: GoalItem): GoalForEdit {
     priority: goal.priority,
     raceFormat: goal.raceFormat,
     targetPerformance: goal.targetPerformance,
+    validatingActivityId: goal.validatingActivityId,
+    lastAchievedAt: goal.lastAchievedAt,
   };
 }
 
-function formatValue(value: number | null, unit: string | null) {
-  if (value == null) return '—';
-  return unit ? `${value} ${unit}` : String(value);
+function formatValue(value: number | null, unit: string | null, metricKey?: string | null) {
+  const config = parseGoalMetricConfig(metricKey);
+  return formatGoalDisplayValue(value, unit, config);
 }
 
 function PriorityBadge({ priority }: { priority: GoalPriority }) {
@@ -188,9 +200,12 @@ export function RaceCard({ goal }: { goal: GoalItem }) {
 export function MetricGoalCard({ goal }: { goal: GoalItem }) {
   const { update, remove } = useGoalMutations();
   const [editing, setEditing] = useState(false);
+  const metricConfig = parseGoalMetricConfig(goal.metricKey);
+  const subtitle = describeMetricGoal(metricConfig, goal.targetDate);
   const progress = computeGoalProgress(goal);
   const remaining = formatRemaining(goal);
   const days = daysUntil(goal.targetDate ? new Date(goal.targetDate) : null);
+  const isAutoTracked = Boolean(metricConfig);
 
   function handleDelete() {
     if (!confirm(`Supprimer « ${goal.title} » ?`)) return;
@@ -211,11 +226,13 @@ export function MetricGoalCard({ goal }: { goal: GoalItem }) {
                 <Target className="text-primary size-3.5 shrink-0" />
                 {goal.title}
               </h3>
-              {goal.horizon && (
+              {subtitle ? (
+                <p className="text-muted-foreground mt-0.5 text-xs">{subtitle}</p>
+              ) : goal.horizon ? (
                 <p className="text-muted-foreground mt-0.5 text-xs">
                   {horizonLabels[goal.horizon]}
                 </p>
-              )}
+              ) : null}
             </div>
             <button
               className="bg-muted/60 text-muted-foreground hover:text-primary shrink-0 rounded-full px-2 py-0.5 text-xs"
@@ -226,7 +243,34 @@ export function MetricGoalCard({ goal }: { goal: GoalItem }) {
             </button>
           </div>
 
-          {progress != null && (
+          {goal.achieved && isAutoTracked && (
+            <div className="border-primary/20 bg-primary/5 flex flex-col gap-1 rounded-lg border p-2.5 text-xs">
+              <p className="text-primary flex items-center gap-1.5 font-medium">
+                <Trophy className="size-3.5" />
+                Objectif atteint
+                {goal.lastAchievedAt && (
+                  <span className="text-muted-foreground font-normal">
+                    ·{' '}
+                    {new Intl.DateTimeFormat('fr-FR', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    }).format(new Date(goal.lastAchievedAt))}
+                  </span>
+                )}
+              </p>
+              {goal.validatingActivityId && metricConfig?.template === 'performance' && (
+                <Link
+                  className="text-primary font-medium hover:underline"
+                  href={`/training/${goal.validatingActivityId}`}
+                >
+                  Voir la séance validante →
+                </Link>
+              )}
+            </div>
+          )}
+
+          {progress != null && !goal.achieved && (
             <div className="space-y-1.5">
               <div className="bg-muted h-2 overflow-hidden rounded-full">
                 <div
@@ -243,22 +287,39 @@ export function MetricGoalCard({ goal }: { goal: GoalItem }) {
 
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
-              Actuel{' '}
+              {metricConfig?.template === 'performance' ? 'Meilleur' : 'Actuel'}{' '}
               <span className="text-foreground font-mono">
-                {formatValue(goal.currentValue, goal.unit)}
+                {formatValue(goal.currentValue, goal.unit, goal.metricKey)}
               </span>
             </span>
             <span className="text-muted-foreground">
               Cible{' '}
               <span className="text-primary font-mono">
-                {formatValue(goal.targetValue, goal.unit)}
+                {formatValue(goal.targetValue, goal.unit, goal.metricKey)}
               </span>
             </span>
           </div>
 
-          {days != null && (
+          {isAutoTracked && (
+            <p className="text-muted-foreground text-xs">
+              Progression calculée depuis tes activités synchronisées.
+            </p>
+          )}
+
+          {days != null && !isAutoTracked && goal.targetDate && (
             <p className="text-muted-foreground text-xs">
               Échéance dans {days} jour{days > 1 ? 's' : ''}
+            </p>
+          )}
+
+          {isAutoTracked && goal.targetDate && (
+            <p className="text-muted-foreground text-xs">
+              Jusqu&apos;au{' '}
+              {new Intl.DateTimeFormat('fr-FR', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              }).format(new Date(goal.targetDate))}
             </p>
           )}
 

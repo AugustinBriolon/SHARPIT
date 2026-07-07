@@ -6,12 +6,16 @@ import { TriathlonHeroCards } from '@/components/training/triathlon-hero-cards';
 import { TriathlonLegsPanel } from '@/components/training/triathlon-legs-panel';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
+import { DiscussCoachLink } from '@/components/training/discuss-coach-link';
 import { DeleteActivityButton } from '@/components/training/activity-list';
+import { PlannedSessionLinkCard } from '@/components/training/planned-session-link-card';
 import { Badge } from '@/components/ui/badge';
 import { LinkButton } from '@/components/ui/link-button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
 import { getActivityById, getMultisportLegsForActivity } from '@/lib/queries';
+import { getGoalAchievementsForActivity } from '@/lib/goal-achievements';
+import { ActivityGoalValidationsCard } from '@/components/goals/activity-goal-validations-card';
 import type { MultisportLeg } from '@/lib/multisport';
 import { cn } from '@/lib/utils';
 import { ActivityType } from '@prisma/client';
@@ -117,9 +121,10 @@ export default async function ActivityDetailPage({ params }: PageProps) {
   const isStrength = activity.type === ActivityType.STRENGTH;
   const isTriathlon = activity.type === ActivityType.TRIATHLON;
   const multisportLegs = isTriathlon ? await getMultisportLegsForActivity(activity) : null;
+  const goalValidations = await getGoalAchievementsForActivity(activity.id);
 
   return (
-    <div className="space-y-8">
+    <div className="relative z-0 space-y-8">
       <MobileBackLink href="/seances?tab=activites" label="Activités" showOnDesktop />
       <StickyHeader>
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -153,7 +158,11 @@ export default async function ActivityDetailPage({ params }: PageProps) {
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <DiscussCoachLink
+              activityId={activity.id}
+              plannedSessionId={activity.plannedSession?.id}
+            />
             <LinkButton href={`/training/${activity.id}/edit`} variant="outline">
               Modifier
             </LinkButton>
@@ -162,8 +171,14 @@ export default async function ActivityDetailPage({ params }: PageProps) {
         </div>
       </StickyHeader>
 
-      <div className="space-y-5">
+      <div className="relative z-0 space-y-5">
         <ContextChips activity={activity} />
+
+        {activity.plannedSession && (
+          <PlannedSessionLinkCard plannedSession={activity.plannedSession} />
+        )}
+
+        <ActivityGoalValidationsCard validations={goalValidations} />
 
         {renderActivityHero({
           isStrength,

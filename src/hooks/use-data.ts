@@ -9,6 +9,7 @@ import {
   fetchMultisportStreams,
   fetchAthleteProfile,
   fetchGoals,
+  fetchGoalAchievements,
   fetchGoogleCalendars,
   fetchGoogleEvents,
   fetchHealthEntries,
@@ -62,6 +63,13 @@ export function useGoals() {
   return useQuery({
     queryKey: queryKeys.goals,
     queryFn: fetchGoals,
+  });
+}
+
+export function useGoalAchievements(limit = 20) {
+  return useQuery({
+    queryKey: queryKeys.goalAchievements(limit),
+    queryFn: () => fetchGoalAchievements(limit),
   });
 }
 
@@ -132,38 +140,59 @@ function mergeGoal(goal: ClientGoal, data: Partial<GoalPayload>): ClientGoal {
 export function useGoalMutations() {
   const queryClient = useQueryClient();
   const key = queryKeys.goals;
+  const invalidateAchievements = () => {
+    void queryClient.invalidateQueries({ queryKey: ['goals', 'achievements'] });
+  };
+
+  const createOptimistic = listOptimistic<ClientGoal, GoalPayload>({
+    queryClient,
+    queryKey: key,
+    apply: (prev, payload) => [optimisticGoal(payload), ...prev],
+    success: (p) => (p.kind === 'RACE' ? 'Course ajoutée' : 'Objectif créé'),
+    error: "Impossible de créer l'objectif.",
+  });
 
   const create = useMutation({
     mutationFn: (payload: GoalPayload) => sendJson('/api/goals', 'POST', payload),
-    ...listOptimistic<ClientGoal, GoalPayload>({
-      queryClient,
-      queryKey: key,
-      apply: (prev, payload) => [optimisticGoal(payload), ...prev],
-      success: (p) => (p.kind === 'RACE' ? 'Course ajoutée' : 'Objectif créé'),
-      error: "Impossible de créer l'objectif.",
-    }),
+    ...createOptimistic,
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+      invalidateAchievements();
+    },
+  });
+
+  const updateOptimistic = listOptimistic<ClientGoal, { id: string; data: Partial<GoalPayload> }>({
+    queryClient,
+    queryKey: key,
+    apply: (prev, { id, data }) => prev.map((g) => (g.id === id ? mergeGoal(g, data) : g)),
+    error: "Impossible de mettre à jour l'objectif.",
   });
 
   const update = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<GoalPayload> }) =>
       sendJson(`/api/goals/${id}`, 'PATCH', data),
-    ...listOptimistic<ClientGoal, { id: string; data: Partial<GoalPayload> }>({
-      queryClient,
-      queryKey: key,
-      apply: (prev, { id, data }) => prev.map((g) => (g.id === id ? mergeGoal(g, data) : g)),
-      error: "Impossible de mettre à jour l'objectif.",
-    }),
+    ...updateOptimistic,
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+      invalidateAchievements();
+    },
+  });
+
+  const removeOptimistic = listOptimistic<ClientGoal, string>({
+    queryClient,
+    queryKey: key,
+    apply: (prev, id) => prev.filter((g) => g.id !== id),
+    success: 'Objectif supprimé',
+    error: "Impossible de supprimer l'objectif.",
   });
 
   const remove = useMutation({
     mutationFn: (id: string) => sendJson(`/api/goals/${id}`, 'DELETE'),
-    ...listOptimistic<ClientGoal, string>({
-      queryClient,
-      queryKey: key,
-      apply: (prev, id) => prev.filter((g) => g.id !== id),
-      success: 'Objectif supprimé',
-      error: "Impossible de supprimer l'objectif.",
-    }),
+    ...removeOptimistic,
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+      invalidateAchievements();
+    },
   });
 
   return { create, update, remove };

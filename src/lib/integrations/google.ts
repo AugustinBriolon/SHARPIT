@@ -9,53 +9,60 @@
 const GOOGLE_OAUTH_AUTH = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const CALENDAR_API = 'https://www.googleapis.com/calendar/v3';
+const DEFAULT_DEV_PORT = 3000;
 
 /**
  * Scope unique "calendar" (lecture + écriture) : couvre la liste des
- * calendriers, le free/busy et le CRUD d'événements. `openid email` permet
- * d'afficher le compte connecté.
+ * calendriers, le free/busy et le CRUD d'événements. `openid` + userinfo email
+ * permettent d'afficher le compte connecté.
  */
-export const GOOGLE_SCOPES = ['openid', 'email', 'https://www.googleapis.com/auth/calendar'].join(
-  ' ',
-);
+export const GOOGLE_SCOPES = [
+  'openid',
+  'https://www.googleapis.com/auth/userinfo.email',
+  'https://www.googleapis.com/auth/calendar',
+].join(' ');
 
 export function isGoogleConfigured() {
   return Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 }
 
-/** URL de callback OAuth, déduite du host courant si GOOGLE_REDIRECT_URI est absent. */
-export function getGoogleRedirectUri(origin?: string) {
+/**
+ * URI de redirection OAuth. En dev local, Google n'accepte en HTTP que
+ * localhost / 127.0.0.1 — pas une IP LAN (ex. 192.168.x.x).
+ */
+export function getGoogleRedirectUri(): string {
   if (process.env.GOOGLE_REDIRECT_URI) {
     return process.env.GOOGLE_REDIRECT_URI;
-  }
-  if (origin) {
-    return `${origin}/api/google/callback`;
   }
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}/api/google/callback`;
   }
-  return 'http://localhost:3000/api/google/callback';
+  const port = process.env.PORT?.trim() || String(DEFAULT_DEV_PORT);
+  return `http://localhost:${port}/api/google/callback`;
 }
 
-function getGoogleConfig(origin?: string) {
+function getGoogleConfig(redirectUriOverride?: string) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
     throw new Error('GOOGLE_CLIENT_ID et GOOGLE_CLIENT_SECRET doivent être définis dans .env');
   }
-  return { clientId, clientSecret, redirectUri: getGoogleRedirectUri(origin) };
+  return {
+    clientId,
+    clientSecret,
+    redirectUri: redirectUriOverride ?? getGoogleRedirectUri(),
+  };
 }
 
-export function buildAuthorizeUrl(state: string, origin?: string) {
-  const { clientId, redirectUri } = getGoogleConfig(origin);
+export function buildAuthorizeUrl(state: string, redirectUri?: string) {
+  const { clientId, redirectUri: resolvedRedirectUri } = getGoogleConfig(redirectUri);
   const params = new URLSearchParams({
     client_id: clientId,
-    redirect_uri: redirectUri,
+    redirect_uri: resolvedRedirectUri,
     response_type: 'code',
     scope: GOOGLE_SCOPES,
     access_type: 'offline',
     prompt: 'consent',
-    include_granted_scopes: 'true',
     state,
   });
   return `${GOOGLE_OAUTH_AUTH}?${params.toString()}`;
@@ -68,6 +75,39 @@ export interface GoogleTokenResponse {
   scope?: string;
   token_type: string;
   id_token?: string;
+}
+
+export class GoogleOAuthError extends Error {
+  readonly code?: string;
+  readonly needsReconnect: boolean;
+
+  constructor(message: string, code?: string, needsReconnect = false) {
+    super(message);
+    this.name = 'GoogleOAuthError';
+    this.code = code;
+    this.needsReconnect = needsReconnect;
+  }
+}
+
+async function parseGoogleTokenError(response: Response, context: string): Promise<never> {
+  const body = await response.text().catch(() => '');
+  let code: string | undefined;
+  let description: string | undefined;
+  try {
+    const json = JSON.parse(body) as { error?: string; error_description?: string };
+    code = json.error;
+    description = json.error_description;
+  } catch {
+    // corps non-JSON
+  }
+
+  const needsReconnect = code === 'invalid_grant';
+  const detail = [code, description].filter(Boolean).join(' — ');
+  const message = needsReconnect
+    ? 'Session Google expirée ou révoquée. Reconnecte Google Calendar dans les paramètres.'
+    : `${context} (${response.status})${detail ? ` : ${detail}` : ''}`;
+
+  throw new GoogleOAuthError(message, code, needsReconnect);
 }
 
 /** Extrait l'email du compte depuis l'id_token (JWT) sans appel réseau supplémentaire. */
@@ -86,9 +126,9 @@ export function emailFromIdToken(idToken?: string): string | null {
 
 export async function exchangeCodeForToken(
   code: string,
-  origin?: string,
+  redirectUri?: string,
 ): Promise<GoogleTokenResponse> {
-  const { clientId, clientSecret, redirectUri } = getGoogleConfig(origin);
+  const { clientId, clientSecret, redirectUri: resolvedRedirectUri } = getGoogleConfig(redirectUri);
   const response = await fetch(GOOGLE_TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -96,22 +136,12 @@ export async function exchangeCodeForToken(
       code,
       client_id: clientId,
       client_secret: clientSecret,
-      redirect_uri: redirectUri,
+      redirect_uri: resolvedRedirectUri,
       grant_type: 'authorization_code',
     }),
   });
   if (!response.ok) {
-    const body = await response.text().catch(() => '');
-    let detail = body;
-    try {
-      const json = JSON.parse(body) as { error?: string; error_description?: string };
-      detail = [json.error, json.error_description].filter(Boolean).join(' — ');
-    } catch {
-      // corps non-JSON
-    }
-    throw new Error(
-      `Échange du code Google échoué (${response.status})${detail ? ` : ${detail}` : ''} [redirect_uri=${redirectUri}]`,
-    );
+    await parseGoogleTokenError(response, 'Échange du code Google échoué');
   }
   return response.json();
 }
@@ -129,7 +159,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<GoogleTo
     }),
   });
   if (!response.ok) {
-    throw new Error(`Rafraîchissement du token Google échoué (${response.status})`);
+    await parseGoogleTokenError(response, 'Rafraîchissement du token Google échoué');
   }
   return response.json();
 }

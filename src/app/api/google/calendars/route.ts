@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server';
-import { getGoogleAccount, listGoogleCalendars } from '@/lib/integrations/google-sync';
+import { GoogleOAuthError } from '@/lib/integrations/google';
+import {
+  getGoogleAccount,
+  isGoogleConnected,
+  listGoogleCalendars,
+} from '@/lib/integrations/google-sync';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
     const account = await getGoogleAccount();
-    if (!account) {
+    if (!isGoogleConnected(account)) {
       return NextResponse.json([]);
     }
 
@@ -25,6 +30,9 @@ export async function GET() {
     );
   } catch (error) {
     console.error(error);
+    if (error instanceof GoogleOAuthError && error.needsReconnect) {
+      return NextResponse.json({ error: error.message, needsReconnect: true }, { status: 401 });
+    }
     return NextResponse.json(
       { error: 'Impossible de récupérer les calendriers Google' },
       { status: 500 },

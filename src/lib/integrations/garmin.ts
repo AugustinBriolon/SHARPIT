@@ -1,10 +1,7 @@
-import { GarminConnect } from '@flow-js/garmin-connect';
+import { GarminConnect, type IGarminTokens } from '@flow-js/garmin-connect';
 import { format } from 'date-fns';
 
-export interface GarminTokens {
-  oauth1: unknown;
-  oauth2: unknown;
-}
+export type GarminTokens = IGarminTokens;
 
 export interface GarminReadinessFactor {
   key: string;
@@ -54,20 +51,27 @@ export async function loginWithCredentials(
 ): Promise<{ client: GCClient; tokens: GarminTokens; profile: ProfileInfo }> {
   const client = new GarminConnect({ username, password });
   await client.login();
-  const tokens = client.exportToken() as unknown as GarminTokens;
+  const tokens = client.exportToken();
   const profile = await safeProfile(client);
   return { client, tokens, profile };
 }
 
 export function clientFromTokens(tokens: GarminTokens): GCClient {
   const client = new GarminConnect({ username: '', password: '' });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  client.loadToken(tokens.oauth1 as any, tokens.oauth2 as any);
+  client.loadToken(tokens.oauth1, tokens.oauth2);
   return client;
 }
 
+/** Tokens OAuth sérialisés en base (Prisma Json). */
+export function garminTokensFromStorage(oauth1: unknown, oauth2: unknown): GarminTokens {
+  return {
+    oauth1: oauth1 as GarminTokens['oauth1'],
+    oauth2: oauth2 as GarminTokens['oauth2'],
+  };
+}
+
 export function currentTokens(client: GCClient): GarminTokens {
-  return client.exportToken() as unknown as GarminTokens;
+  return client.exportToken();
 }
 
 interface ProfileInfo {
