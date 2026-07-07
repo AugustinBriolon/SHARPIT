@@ -55,3 +55,14 @@ export type AthleteSnapshotEnvelope = {
   /** True when a newer snapshot may arrive after background refresh. */
   isRefreshing: boolean;
 };
+
+export function snapshotHasDisplayableContent(snapshot: AthleteSnapshot): boolean {
+  if (snapshot.reasoning?.topAction && snapshot.reasoning.overallVerdict !== 'INSUFFICIENT_DATA') {
+    return true;
+  }
+  if (snapshot.recovery?.readinessScore != null) return true;
+  if (snapshot.fatigue?.fatigueIndex != null) return true;
+  if (snapshot.briefing?.content) return true;
+  if (snapshot.primaryProductMessage) return true;
+  return false;
+}

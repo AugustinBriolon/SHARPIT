@@ -4,7 +4,7 @@ import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-quer
 import { format } from 'date-fns';
 import { useCallback } from 'react';
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
-import { snapshotHasDisplayableContent } from '@/lib/athlete-state/snapshot-builder';
+import { snapshotHasDisplayableContent } from '@/core/athlete-state/snapshot';
 import { fetchAthleteSnapshot, refreshAthleteSnapshot } from '@/lib/query/athlete-snapshot-fetch';
 import { queryKeys } from '@/lib/query/keys';
 
