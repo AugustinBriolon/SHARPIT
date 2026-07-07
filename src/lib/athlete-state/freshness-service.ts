@@ -43,6 +43,113 @@ function providerStale(lastSync: Date | null, thresholdHours: number): boolean {
 type ComputingFlags = Partial<Record<AthleteStateDomain, boolean>>;
 type SyncingFlags = Partial<Record<string, boolean>>;
 
+function syncOrComputing(computing: boolean, syncing: boolean): FreshnessLevel | null {
+  if (!computing && !syncing) return null;
+  if (computing) return 'computing';
+  return 'syncing';
+}
+
+function resolveSleepFreshness(
+  syncingGarmin: boolean,
+  expectSleep: boolean,
+  sleepEvidence: Date | null,
+  recoveryAt: Date | null,
+): FreshnessLevel {
+  if (syncingGarmin) return 'syncing';
+  if (expectSleep && !sleepEvidence) return 'awaiting_data';
+  if (isStale(recoveryAt, sleepEvidence)) return 'stale';
+  if (recoveryAt) return 'fresh';
+  return 'awaiting_data';
+}
+
+function resolveRecoveryFreshness(
+  computingRecovery: boolean,
+  syncingGarmin: boolean,
+  recoveryAt: Date | null,
+  sleepEvidence: Date | null,
+  subjectiveEvidence: Date | null,
+): FreshnessLevel {
+  const busy = syncOrComputing(computingRecovery, syncingGarmin);
+  if (busy) return busy;
+  if (!recoveryAt) return 'unavailable';
+  if (isStale(recoveryAt, sleepEvidence) || isStale(recoveryAt, subjectiveEvidence)) {
+    return 'stale';
+  }
+  return 'fresh';
+}
+
+function resolveTrainingFreshness(
+  computingTraining: boolean,
+  syncingGarmin: boolean,
+  syncingStrava: boolean,
+  sessionEvidence: Date | null,
+  dailyStrainUpdatedAt: Date | null,
+  dailyStrainAvailable: boolean,
+): FreshnessLevel {
+  const busy = syncOrComputing(computingTraining, syncingGarmin || syncingStrava);
+  if (busy) return busy;
+  if (sessionEvidence && dailyStrainUpdatedAt && sessionEvidence > dailyStrainUpdatedAt) {
+    return 'stale';
+  }
+  if (sessionEvidence && !dailyStrainAvailable) return 'computing';
+  if (dailyStrainAvailable || sessionEvidence) return 'fresh';
+  return 'awaiting_data';
+}
+
+function resolveReasoningFreshness(
+  computingReasoning: boolean,
+  reasoningAt: Date | null,
+  recoveryAt: Date | null,
+  fatigueAt: Date | null,
+  adaptationAt: Date | null,
+): FreshnessLevel {
+  if (computingReasoning) return 'computing';
+  if (!reasoningAt) return 'unavailable';
+  if (
+    isStale(reasoningAt, recoveryAt) ||
+    isStale(reasoningAt, fatigueAt) ||
+    isStale(reasoningAt, adaptationAt)
+  ) {
+    return 'stale';
+  }
+  return 'fresh';
+}
+
+function resolveRecommendationsFreshness(
+  computingRecommendations: boolean,
+  briefingAt: Date | null,
+  reasoningAt: Date | null,
+  sessionEvidence: Date | null,
+): FreshnessLevel {
+  if (computingRecommendations) return 'computing';
+  if (!briefingAt) return 'awaiting_data';
+  if (reasoningAt && briefingAt < reasoningAt) return 'stale';
+  if (sessionEvidence && briefingAt < sessionEvidence) return 'stale';
+  return 'fresh';
+}
+
+function resolveBodyFreshness(
+  syncingRenpho: boolean,
+  syncingWithings: boolean,
+  renphoConnected: boolean,
+  withingsConnected: boolean,
+  bodyEvidence: Date | null,
+): FreshnessLevel {
+  if (syncingRenpho || syncingWithings) return 'syncing';
+  if (!renphoConnected && !withingsConnected) return 'unavailable';
+  if (bodyEvidence && hoursSince(bodyEvidence)! < 24 * 14) return 'fresh';
+  return 'awaiting_data';
+}
+
+function resolvePlanningFreshness(
+  syncingGoogle: boolean,
+  googleLastSync: Date | null,
+): FreshnessLevel {
+  if (syncingGoogle) return 'syncing';
+  if (googleLastSync) return 'fresh';
+  return 'awaiting_data';
+}
+
 export async function computeFreshnessSnapshot(params: {
   trainingDayId: string;
   athleteId?: string;
@@ -66,6 +173,7 @@ export async function computeFreshnessSnapshot(params: {
     withings,
     google,
     briefing,
+    latestSnapshot,
   ] = await Promise.all([
     prisma.digitalTwin.findUnique({ where: { athleteId } }),
     prisma.observation.findFirst({
@@ -100,6 +208,12 @@ export async function computeFreshnessSnapshot(params: {
       where: { date: new Date(`${trainingDayId}T12:00:00.000Z`) },
       select: { generatedAt: true },
     }),
+    prisma.athleteSnapshotRecord.findUnique({
+      where: {
+        athleteId_trainingDayId: { athleteId, trainingDayId },
+      },
+      select: { generatedAt: true, payload: true },
+    }),
   ]);
 
   const recoveryAt = readComputedAt(twin?.recoveryState);
@@ -111,6 +225,15 @@ export async function computeFreshnessSnapshot(params: {
   const sessionEvidence = latestSession?.timestamp ?? null;
   const subjectiveEvidence = latestSubjective?.timestamp ?? null;
   const bodyEvidence = latestBody?.timestamp ?? null;
+
+  const snapshotPayload = latestSnapshot?.payload as
+    { dailyStrain?: { available?: boolean; strainScore?: number | null } } | undefined;
+  const dailyStrainAvailable = Boolean(
+    snapshotPayload?.dailyStrain?.available && snapshotPayload.dailyStrain.strainScore != null,
+  );
+  const dailyStrainUpdatedAt =
+    dailyStrainAvailable && latestSnapshot?.generatedAt ? latestSnapshot.generatedAt : null;
+  const trainingEvidenceAt = sessionEvidence ?? dailyStrainUpdatedAt;
 
   const providers: ProviderFreshness[] = [
     {
@@ -171,78 +294,68 @@ export async function computeFreshnessSnapshot(params: {
     };
   }
 
-  const sleepFreshness: FreshnessLevel = syncing.garmin
-    ? 'syncing'
-    : expectSleep && !sleepEvidence
-      ? 'awaiting_data'
-      : isStale(recoveryAt, sleepEvidence)
-        ? 'stale'
-        : recoveryAt
-          ? 'fresh'
-          : 'awaiting_data';
+  const sleepFreshness = resolveSleepFreshness(
+    syncing.garmin === true,
+    expectSleep,
+    sleepEvidence,
+    recoveryAt,
+  );
 
-  const recoveryFreshness: FreshnessLevel =
-    computing.recovery || syncing.garmin
-      ? computing.recovery
-        ? 'computing'
-        : 'syncing'
-      : !recoveryAt
-        ? 'unavailable'
-        : isStale(recoveryAt, sleepEvidence) || isStale(recoveryAt, subjectiveEvidence)
-          ? 'stale'
-          : 'fresh';
+  const recoveryFreshness = resolveRecoveryFreshness(
+    computing.recovery === true,
+    syncing.garmin === true,
+    recoveryAt,
+    sleepEvidence,
+    subjectiveEvidence,
+  );
 
-  const trainingFreshness: FreshnessLevel =
-    computing.training || syncing.garmin || syncing.strava
-      ? computing.training
-        ? 'computing'
-        : 'syncing'
-      : isStale(fatigueAt, sessionEvidence)
-        ? 'stale'
-        : fatigueAt
-          ? 'fresh'
-          : 'awaiting_data';
+  const trainingFreshness = resolveTrainingFreshness(
+    computing.training === true,
+    syncing.garmin === true,
+    syncing.strava === true,
+    sessionEvidence,
+    dailyStrainUpdatedAt,
+    dailyStrainAvailable,
+  );
 
-  const reasoningFreshness: FreshnessLevel = computing.reasoning
-    ? 'computing'
-    : !reasoningAt
-      ? 'unavailable'
-      : isStale(reasoningAt, recoveryAt) ||
-          isStale(reasoningAt, fatigueAt) ||
-          isStale(reasoningAt, adaptationAt)
-        ? 'stale'
-        : 'fresh';
+  const reasoningFreshness = resolveReasoningFreshness(
+    computing.reasoning === true,
+    reasoningAt,
+    recoveryAt,
+    fatigueAt,
+    adaptationAt,
+  );
 
   const briefingAt = briefing?.generatedAt ?? null;
-  const recommendationsFreshness: FreshnessLevel = computing.recommendations
-    ? 'computing'
-    : !briefingAt
-      ? 'awaiting_data'
-      : reasoningAt && briefingAt < reasoningAt
-        ? 'stale'
-        : sessionEvidence && briefingAt < sessionEvidence
-          ? 'stale'
-          : 'fresh';
+  const recommendationsFreshness = resolveRecommendationsFreshness(
+    computing.recommendations === true,
+    briefingAt,
+    reasoningAt,
+    sessionEvidence,
+  );
 
-  const bodyFreshness: FreshnessLevel =
-    syncing.renpho || syncing.withings
-      ? 'syncing'
-      : !renpho && !withings
-        ? 'unavailable'
-        : bodyEvidence && hoursSince(bodyEvidence)! < 24 * 14
-          ? 'fresh'
-          : 'awaiting_data';
+  const bodyFreshness = resolveBodyFreshness(
+    syncing.renpho === true,
+    syncing.withings === true,
+    renpho != null,
+    withings != null,
+    bodyEvidence,
+  );
 
-  const planningFreshness: FreshnessLevel = syncing.google
-    ? 'syncing'
-    : google?.lastSyncAt
-      ? 'fresh'
-      : 'awaiting_data';
+  const planningFreshness = resolvePlanningFreshness(
+    syncing.google === true,
+    google?.lastSyncAt ?? null,
+  );
 
   const domains: DomainFreshness[] = [
     domain('sleep', recoveryAt, sleepFreshness, `sleep_obs=${sleepEvidence != null}`),
     domain('recovery', recoveryAt, recoveryFreshness, `recovery_computed=${recoveryAt != null}`),
-    domain('training', fatigueAt, trainingFreshness, `fatigue_computed=${fatigueAt != null}`),
+    domain(
+      'training',
+      trainingEvidenceAt,
+      trainingFreshness,
+      `session_obs=${sessionEvidence != null},strain=${dailyStrainAvailable}`,
+    ),
     domain('body', bodyEvidence, bodyFreshness, `body_obs=${bodyEvidence != null}`),
     domain(
       'reasoning',

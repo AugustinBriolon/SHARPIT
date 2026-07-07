@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { useCallback } from 'react';
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
 import { snapshotHasDisplayableContent } from '@/core/athlete-state/snapshot';
+import { shouldRefreshSnapshotForPhaseDrift } from '@/lib/athlete-state/snapshot-phase';
 import { fetchAthleteSnapshot, refreshAthleteSnapshot } from '@/lib/query/athlete-snapshot-fetch';
 import { queryKeys } from '@/lib/query/keys';
 
@@ -39,6 +40,9 @@ export function useAthleteSnapshot(date: Date = new Date()): UseAthleteSnapshotR
           rec.freshness === 'computing')
       ) {
         return 12_000;
+      }
+      if (snap && shouldRefreshSnapshotForPhaseDrift(snap)) {
+        return 60_000;
       }
       return false;
     },

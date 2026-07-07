@@ -2,9 +2,12 @@ import { differenceInCalendarDays, format, isSameDay, startOfDay, subDays } from
 import { fr } from 'date-fns/locale';
 import {
   BRIEFING_PHASE_LABELS,
+  DAILY_PHASE_BRIEFING_LABELS,
   resolveBriefingPhase,
+  resolveBriefingPhaseFromDailyPhase,
   type BriefingPhase,
 } from '@/lib/briefing-phase';
+import type { DailyPhase } from '@/lib/daily-phase/types';
 import { getActivities, getPlannedSessions } from '@/lib/queries';
 import { intensityLabels } from '@/lib/sessions';
 
@@ -66,6 +69,7 @@ function formatActivityLine(a: ActivityWithMetrics, refDate: Date): string {
 
 export type BriefingDayContext = {
   phase: BriefingPhase;
+  dailyPhase: DailyPhase | null;
   phaseLabel: string;
   todayLabel: string;
   sessionsDoneToday: string[];
@@ -77,6 +81,7 @@ export type BriefingDayContext = {
 /** Contexte structuré pour le briefing — sépare strictement aujourd'hui / hier / prévu. */
 export async function buildBriefingDayContext(
   refDate: Date = new Date(),
+  dailyPhase: DailyPhase | null = null,
 ): Promise<BriefingDayContext> {
   const today = startOfDay(refDate);
   const yesterday = subDays(today, 1);
@@ -96,11 +101,14 @@ export async function buildBriefingDayContext(
 
   const stillPlanned = plannedToday.filter((p) => !p.completed && !p.activityId);
 
-  const phase = resolveBriefingPhase(refDate);
+  const phase = dailyPhase
+    ? resolveBriefingPhaseFromDailyPhase(dailyPhase)
+    : resolveBriefingPhase(refDate);
 
   return {
     phase,
-    phaseLabel: BRIEFING_PHASE_LABELS[phase],
+    dailyPhase,
+    phaseLabel: dailyPhase ? DAILY_PHASE_BRIEFING_LABELS[dailyPhase] : BRIEFING_PHASE_LABELS[phase],
     todayLabel: format(today, 'EEEE d MMMM yyyy', { locale: fr }),
     sessionsDoneToday: doneToday.map((a) => formatActivityLine(a, refDate)),
     sessionsYesterday: doneYesterday.map((a) => formatActivityLine(a, refDate)),

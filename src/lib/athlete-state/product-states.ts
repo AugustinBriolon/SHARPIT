@@ -11,7 +11,7 @@ const MESSAGES: Record<FreshnessLevel, Partial<Record<AthleteStateDomain, string
   awaiting_data: {
     sleep: 'Les données de sommeil de la nuit ne sont pas encore arrivées.',
     recovery: 'En attente des signaux de récupération (sommeil, VFC).',
-    training: "Aucune séance enregistrée aujourd'hui pour l'instant.",
+    training: "La charge d'entraînement du jour n'a pas encore été mesurée.",
     body: 'Pas de nouvelle mesure corporelle récente.',
   },
   syncing: {

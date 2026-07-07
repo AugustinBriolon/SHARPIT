@@ -1,22 +1,19 @@
 'use client';
 
-import { ActivityConsistencyPanel } from './dashboard/activity-consistency-panel';
-import { EvolutionChart } from './dashboard/evolution-chart';
-import { HealthMonitorPanel } from './dashboard/health-monitor-panel';
-import { PlanningRow } from './dashboard/planning-row';
 import {
   DashboardSkeleton,
   PartialSnapshotFallback,
   SnapshotStatusBanner,
 } from './dashboard/today-dashboard-states';
-import { TodayMetricsRow } from './dashboard/today-metrics-row';
 import { useTodayDashboardViewModel } from './dashboard/use-today-dashboard-view-model';
-import { NarrativeHeader } from './narrative-header';
-import { SessionBlock } from './session-block';
+import { TodayActionRow } from './rich/today-action-row';
+import { TodayVerdictHero } from './rich/today-verdict-hero';
+import { TodayWeeklyTrajectory } from './rich/today-weekly-trajectory';
+import { TodayWhyBlock } from './rich/today-why-block';
 
 export function TodayDashboard() {
   const vm = useTodayDashboardViewModel();
-  const { reasoning, snapshot } = vm;
+  const { snapshot } = vm;
 
   if (vm.loading && !snapshot) return <DashboardSkeleton />;
 
@@ -24,58 +21,18 @@ export function TodayDashboard() {
     return <PartialSnapshotFallback snapshot={snapshot} onRetry={vm.refresh} />;
   }
 
-  if (!reasoning?.topAction) {
-    return (
-      <div className="space-y-4">
-        {vm.primaryProductMessage ? (
-          <SnapshotStatusBanner isRefreshing={vm.isRefreshing} message={vm.primaryProductMessage} />
-        ) : null}
-        <TodayMetricsRow vm={vm} />
-        <PlanningRow sessions={vm.plannedSessions} />
-      </div>
-    );
-  }
+  const statusMessage = vm.primaryProductMessage ?? vm.insufficientDataMessage;
 
   return (
-    <div className="space-y-4 lg:space-y-4">
-      {vm.primaryProductMessage && !vm.isRefreshing ? (
-        <SnapshotStatusBanner message={vm.primaryProductMessage} />
+    <div className="mx-auto max-w-3xl space-y-3 sm:space-y-4">
+      {statusMessage ? (
+        <SnapshotStatusBanner isRefreshing={vm.isRefreshing} message={statusMessage} />
       ) : null}
 
-      <TodayMetricsRow vm={vm} />
-
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-4">
-        <NarrativeHeader
-          activities={vm.activities}
-          briefing={vm.briefing?.content}
-          briefingGeneratedAt={vm.briefing?.generatedAt}
-          className="row-span-2 lg:col-start-1 lg:row-start-1"
-          computedAt={reasoning.computedAt}
-          daySummary={vm.daySummary}
-          topAction={reasoning.topAction}
-          verdict={reasoning.overallVerdict}
-        />
-
-        <SessionBlock
-          className="lg:col-start-2 lg:row-span-1 lg:row-start-1"
-          daySummary={vm.daySummary}
-          keyFindings={reasoning.keyFindings}
-          recommendation={vm.primaryRecommendation}
-          onWellnessCompleted={vm.refresh}
-        />
-
-        <ActivityConsistencyPanel
-          activities={vm.activities}
-          className="lg:col-start-2 lg:row-start-2"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <EvolutionChart entries={vm.healthEntries} sleepTargetMin={vm.sleepTargetMin} />
-        <HealthMonitorPanel entries={vm.healthEntries} entry={vm.todayEntry} />
-      </div>
-
-      <PlanningRow sessions={vm.plannedSessions} />
+      <TodayVerdictHero vm={vm} />
+      <TodayWhyBlock vm={vm} />
+      <TodayActionRow vm={vm} onWellnessCompleted={vm.refresh} />
+      <TodayWeeklyTrajectory vm={vm} />
     </div>
   );
 }

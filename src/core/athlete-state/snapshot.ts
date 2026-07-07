@@ -1,4 +1,6 @@
 import type { AthleteFreshnessSnapshot } from '@/core/athlete-state/freshness';
+import type { DailyPhaseResolution } from '@/lib/daily-phase/types';
+import type { PhaseNarrative } from '@/lib/daily-phase/narrative';
 import type {
   AdaptationData,
   DailyStrainData,
@@ -48,6 +50,20 @@ export type AthleteSnapshot = {
 
   /** Per-domain athlete-facing messages for graceful degradation. */
   domainMessages: Partial<Record<string, string>>;
+
+  /** True when verdict, recommendation and training advice meet minimum confidence. */
+  adviceActionable: boolean;
+  /** Athlete-facing explanation when advice is withheld. */
+  insufficientDataMessage: string | null;
+  /** Shown under Effort ring when daily strain is not yet measured. */
+  effortUnavailableMessage: string | null;
+  /** Human-readable confidence tier for Today UI. */
+  confidenceLabel: string | null;
+
+  /** Athlete-centric moment of the training day (session status → athlete state → time). */
+  dailyPhase: DailyPhaseResolution;
+  /** Deterministic copy for hero / product surfaces for the current phase. */
+  phaseNarrative: PhaseNarrative;
 };
 
 export type AthleteSnapshotEnvelope = {
@@ -57,12 +73,14 @@ export type AthleteSnapshotEnvelope = {
 };
 
 export function snapshotHasDisplayableContent(snapshot: AthleteSnapshot): boolean {
-  if (snapshot.reasoning?.topAction && snapshot.reasoning.overallVerdict !== 'INSUFFICIENT_DATA') {
+  if (snapshot.adviceActionable) return true;
+  if (snapshot.briefing?.content) return true;
+  if (
+    snapshot.recovery?.readinessScore != null &&
+    snapshot.recovery.readinessCategory !== 'INSUFFICIENT_DATA'
+  ) {
     return true;
   }
-  if (snapshot.recovery?.readinessScore != null) return true;
-  if (snapshot.fatigue?.fatigueIndex != null) return true;
-  if (snapshot.briefing?.content) return true;
-  if (snapshot.primaryProductMessage) return true;
+  if (snapshot.primaryProductMessage || snapshot.insufficientDataMessage) return true;
   return false;
 }

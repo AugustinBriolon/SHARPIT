@@ -77,12 +77,14 @@ async function main(): Promise<void> {
   const complete = await migrationArtifactsExist();
 
   if (complete) {
-    console.log(`[migrate-repair] ${MIGRATION_NAME} failed but schema exists — marking as applied`);
+    console.info(
+      `[migrate-repair] ${MIGRATION_NAME} failed but schema exists — marking as applied`,
+    );
     runResolve('--applied');
     return;
   }
 
-  console.log(`[migrate-repair] ${MIGRATION_NAME} failed — marking as rolled back for retry`);
+  console.info(`[migrate-repair] ${MIGRATION_NAME} failed — marking as rolled back for retry`);
   runResolve('--rolled-back');
 }
 

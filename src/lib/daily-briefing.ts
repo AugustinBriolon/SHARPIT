@@ -1,11 +1,53 @@
-import { generateText } from 'ai';
-import { format, startOfDay } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import { buildBriefingDayContext, formatBriefingDayContext } from '@/lib/briefing-context';
-import { resolveBriefingPhase } from '@/lib/briefing-phase';
+import { resolveBriefingPhase, resolveBriefingPhaseFromDailyPhase } from '@/lib/briefing-phase';
+import { buildDailyPhaseDayContext } from '@/lib/daily-phase/day-context';
+import { resolveDailyPhase } from '@/lib/daily-phase/resolve';
+import {
+  buildDeterministicBriefingFallback,
+  validateBriefingContent,
+} from '@/lib/briefing-validation';
+import { generateText } from 'ai';
 import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from './ai';
 import { buildCoachContext, formatCoachContext, invalidateCoachContext } from './coach-context';
 import { prisma } from './prisma';
+import { getActivities, getPlannedSessions } from './queries';
+import { startOfDay } from 'date-fns';
+
+async function resolveAthleteCentricBriefingPhase(refDate: Date) {
+  const dayStart = startOfDay(refDate);
+  const [activities, plannedSessions] = await Promise.all([
+    getActivities({ limit: 40 }),
+    getPlannedSessions({ from: dayStart, to: dayStart }),
+  ]);
+  const dayContext = buildDailyPhaseDayContext(
+    refDate,
+    activities as never,
+    plannedSessions as never,
+  );
+  const resolution = resolveDailyPhase(
+    {
+      dayContext,
+      athlete: {
+        recommendationAvailable: true,
+        adviceActionable: true,
+        dailyStrainAvailable: false,
+        newSessionSincePriorSnapshot: false,
+        newInferenceSincePriorSnapshot: false,
+        newObservationsSincePriorSnapshot: false,
+        minutesSinceLastActivity: null,
+        minutesSinceSnapshotGenerated: null,
+        priorPhase: null,
+        sleepLoggedTonight: false,
+      },
+      localHour: refDate.getHours(),
+    },
+    refDate,
+  );
+  return {
+    briefingPhase: resolveBriefingPhaseFromDailyPhase(resolution.phase),
+    dailyPhase: resolution.phase,
+  };
+}
 
 function buildBriefingSystem(phase: ReturnType<typeof resolveBriefingPhase>): string {
   const phaseRules: Record<typeof phase, string> = {
@@ -46,10 +88,10 @@ export async function generateDailyBriefingContent(
   refDate: Date = new Date(),
 ): Promise<{ content: string; readiness: number | null }> {
   invalidateCoachContext();
-  const phase = resolveBriefingPhase(refDate);
+  const { briefingPhase: phase, dailyPhase } = await resolveAthleteCentricBriefingPhase(refDate);
   const [ctx, dayCtx] = await Promise.all([
     buildCoachContext(refDate),
-    buildBriefingDayContext(refDate),
+    buildBriefingDayContext(refDate, dailyPhase),
   ]);
 
   const prompt = `${formatCoachContext(ctx)}
@@ -65,7 +107,15 @@ Rédige le ${dayCtx.phaseLabel} en suivant la structure imposée et les règles 
     providerOptions: coachGatewayOptions,
   });
 
-  return { content: text.trim(), readiness: ctx.health.readinessToday };
+  const llmContent = text.trim();
+  const validation = validateBriefingContent(llmContent, dayCtx, ctx);
+  const content = validation.valid ? llmContent : buildDeterministicBriefingFallback(dayCtx, ctx);
+
+  if (!validation.valid) {
+    console.warn('[daily-briefing] validation failed:', validation.reason);
+  }
+
+  return { content, readiness: ctx.health.readinessToday };
 }
 
 /** Lit le bilan stocké pour une date (null si absent). */

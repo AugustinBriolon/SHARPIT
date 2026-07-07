@@ -26,6 +26,8 @@ import {
   SLEEP_TREND,
 } from '@/lib/today-dashboard-labels';
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import type { DailyPhaseResolution } from '@/lib/daily-phase/types';
+import type { PhaseNarrative } from '@/lib/daily-phase/narrative';
 import type { TodayDaySummary } from '@/lib/today-day-summary';
 import { buildTodayDaySummary } from '@/lib/today-day-summary';
 import {
@@ -49,8 +51,14 @@ export interface TodayDashboardViewModel {
   isRefreshing: boolean;
   refresh: () => void;
   hasContent: boolean;
+  adviceActionable: boolean;
   snapshot: AthleteSnapshot | null;
   primaryProductMessage: string | null;
+  insufficientDataMessage: string | null;
+  effortUnavailableMessage: string | null;
+  confidence: number | null;
+  confidenceLabel: string | null;
+  limitingFactor: AthleteSnapshot['limitingFactor'];
   briefing: AthleteSnapshot['briefing'];
   reasoning: ReasoningData | null;
   recovery: RecoveryData | null;
@@ -77,6 +85,9 @@ export interface TodayDashboardViewModel {
   daySummary: TodayDaySummary;
   activities: ClientActivity[];
   primaryRecommendation: EngineRecommendation | null;
+  weeklyLoad: number;
+  dailyPhase: DailyPhaseResolution | null;
+  phaseNarrative: PhaseNarrative | null;
 }
 
 export function useTodayDashboardViewModel(): TodayDashboardViewModel {
@@ -256,26 +267,23 @@ export function useTodayDashboardViewModel(): TodayDashboardViewModel {
 
   const daySummary = buildTodayDaySummary(today, activities, plannedSessions);
 
-  let primaryRecommendation = recovery?.recommendation ?? fatigue?.recommendation ?? null;
-  if (reasoning?.systemAttentionPriority === 'RECOVERY') {
-    primaryRecommendation = recovery?.recommendation ?? null;
-  } else if (reasoning?.systemAttentionPriority === 'FATIGUE') {
-    primaryRecommendation = fatigue?.recommendation ?? null;
-  } else if (reasoning?.systemAttentionPriority === 'ADAPTATION') {
-    primaryRecommendation = adaptation?.recommendation ?? null;
-  }
+  let primaryRecommendation = snapshot?.recommendation ?? null;
 
-  const ready = Boolean(
-    reasoning && reasoning.overallVerdict !== 'INSUFFICIENT_DATA' && reasoning.topAction,
-  );
+  const ready = Boolean(snapshot?.adviceActionable);
 
   return {
     loading,
     isRefreshing,
     refresh,
     hasContent: hasContent || ready,
+    adviceActionable: snapshot?.adviceActionable ?? false,
     snapshot,
     primaryProductMessage: snapshot?.primaryProductMessage ?? null,
+    insufficientDataMessage: snapshot?.insufficientDataMessage ?? null,
+    effortUnavailableMessage: snapshot?.effortUnavailableMessage ?? null,
+    confidence: snapshot?.confidence ?? null,
+    confidenceLabel: snapshot?.confidenceLabel ?? null,
+    limitingFactor: snapshot?.limitingFactor ?? null,
     briefing: snapshot?.briefing ?? null,
     reasoning,
     recovery,
@@ -302,6 +310,9 @@ export function useTodayDashboardViewModel(): TodayDashboardViewModel {
     daySummary,
     activities,
     primaryRecommendation,
+    weeklyLoad: trainingLoad.weeklyLoad,
+    dailyPhase: snapshot?.dailyPhase ?? null,
+    phaseNarrative: snapshot?.phaseNarrative ?? null,
   };
 }
 

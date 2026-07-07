@@ -1,10 +1,11 @@
 import type { AthleteSnapshot, AthleteSnapshotBriefing } from '@/core/athlete-state/snapshot';
 import {
   buildAthleteSnapshot,
-  computeSnapshotId,
   type SnapshotBuildInput,
 } from '@/lib/athlete-state/snapshot-builder';
 import { computeFreshnessSnapshot } from '@/lib/athlete-state/freshness-service';
+import { shouldRefreshSnapshotForPhaseDrift } from '@/lib/athlete-state/snapshot-phase';
+import { isForwardAdvicePhase } from '@/lib/daily-phase/resolve';
 import { getDailyBriefing } from '@/lib/daily-briefing';
 import {
   getLatestAthleteSnapshot,
@@ -13,8 +14,18 @@ import {
 } from '@/infrastructure/athlete-state/snapshot-repository';
 import { loadTodayState } from '@/lib/today-state-server';
 import type { TodayState } from '@/hooks/use-today';
+import { getActivities, getPlannedSessions } from '@/lib/queries';
+import { startOfDay } from 'date-fns';
+import { prisma } from '@/lib/prisma';
 
 const ATHLETE_ID = 'default';
+
+function phaseNarrativeNeedsUpgrade(snapshot: AthleteSnapshot): boolean {
+  const phase = snapshot.dailyPhase?.phase;
+  if (!phase || !snapshot.phaseNarrative) return false;
+  if (isForwardAdvicePhase(phase)) return false;
+  return /entraîne-toi|train hard/i.test(snapshot.phaseNarrative.heroSubline);
+}
 
 async function loadBriefingForDay(trainingDayId: string): Promise<AthleteSnapshotBriefing | null> {
   const refDate = new Date(`${trainingDayId}T12:00:00.000Z`);
@@ -27,12 +38,75 @@ async function loadBriefingForDay(trainingDayId: string): Promise<AthleteSnapsho
   };
 }
 
+async function loadPhaseObservationSignals(trainingDayId: string) {
+  const [latestSession, latestSleep] = await Promise.all([
+    prisma.observation.findFirst({
+      where: { athleteId: ATHLETE_ID, type: 'SESSION', trainingDayId },
+      orderBy: { timestamp: 'desc' },
+      select: { timestamp: true },
+    }),
+    prisma.observation.findFirst({
+      where: { athleteId: ATHLETE_ID, type: 'SLEEP', trainingDayId },
+      orderBy: { timestamp: 'desc' },
+      select: { timestamp: true },
+    }),
+  ]);
+
+  const sleepLoggedTonight = Boolean(
+    latestSleep?.timestamp && latestSleep.timestamp.getHours() >= 18,
+  );
+
+  return {
+    latestSessionObservationAt: latestSession?.timestamp ?? null,
+    sleepLoggedTonight,
+  };
+}
+
+async function loadSnapshotPhaseContext(
+  trainingDayId: string,
+  priorSnapshot: AthleteSnapshot | null,
+  refDate: Date = new Date(),
+) {
+  const dayStart = startOfDay(refDate);
+  const [activities, plannedSessions, observationSignals] = await Promise.all([
+    getActivities({ limit: 40 }),
+    getPlannedSessions({ from: dayStart, to: dayStart }),
+    loadPhaseObservationSignals(trainingDayId),
+  ]);
+
+  return {
+    refDate,
+    activities: activities.map((a) => ({
+      id: a.id,
+      date: a.date,
+      type: a.type,
+      load: a.load,
+      duration: a.duration,
+      title: a.title,
+    })),
+    plannedSessions: plannedSessions.map((p) => ({
+      id: p.id,
+      date: p.date,
+      type: p.type,
+      startTime: p.startTime,
+      completed: p.completed,
+      activityId: p.activityId,
+      title: p.title,
+    })),
+    priorSnapshot: priorSnapshot
+      ? { generatedAt: priorSnapshot.generatedAt, dailyPhase: priorSnapshot.dailyPhase }
+      : null,
+    ...observationSignals,
+  };
+}
+
 export type GenerateSnapshotOptions = {
   athleteId?: string;
   trainingDayId: string;
   todayState?: TodayState;
   forceRefresh?: boolean;
   skipPersist?: boolean;
+  refDate?: Date;
 };
 
 /**
@@ -43,8 +117,11 @@ export async function generateAthleteSnapshot(
 ): Promise<AthleteSnapshot> {
   const athleteId = options.athleteId ?? ATHLETE_ID;
   const { trainingDayId } = options;
+  const refDate = options.refDate ?? new Date();
 
-  const [todayState, freshness, briefing] = await Promise.all([
+  const priorSnapshot = await getLatestAthleteSnapshot({ athleteId, trainingDayId });
+
+  const [todayState, freshness, briefing, phaseContext] = await Promise.all([
     options.todayState ??
       loadTodayState({
         athleteId,
@@ -53,6 +130,7 @@ export async function generateAthleteSnapshot(
       }),
     computeFreshnessSnapshot({ athleteId, trainingDayId }),
     loadBriefingForDay(trainingDayId),
+    loadSnapshotPhaseContext(trainingDayId, priorSnapshot, refDate),
   ]);
 
   const buildInput: SnapshotBuildInput = {
@@ -61,13 +139,12 @@ export async function generateAthleteSnapshot(
     todayState,
     freshness,
     briefing,
+    phaseContext,
   };
 
-  const snapshotId = computeSnapshotId(buildInput);
-  const existing = await getSnapshotByFingerprint(athleteId, trainingDayId, snapshotId);
-  if (existing) return existing;
-
   const snapshot = buildAthleteSnapshot(buildInput);
+  const existing = await getSnapshotByFingerprint(athleteId, trainingDayId, snapshot.snapshotId);
+  if (existing) return existing;
 
   if (!options.skipPersist) {
     await saveAthleteSnapshot(snapshot);
@@ -87,8 +164,20 @@ export async function getOrBuildAthleteSnapshot(trainingDayId: string): Promise<
     const briefingChanged =
       latestBriefing?.generatedAt !== persisted.briefing?.generatedAt ||
       (latestBriefing && !persisted.briefing);
+    const needsTruthfulnessUpgrade = typeof persisted.adviceActionable !== 'boolean';
+    const needsDailyPhase = !persisted.dailyPhase || !persisted.phaseNarrative;
+    const needsPhaseDrift = shouldRefreshSnapshotForPhaseDrift(persisted);
+    const needsNarrativeUpgrade = phaseNarrativeNeedsUpgrade(persisted);
 
-    if (!briefingChanged) return persisted;
+    if (
+      !briefingChanged &&
+      !needsTruthfulnessUpgrade &&
+      !needsDailyPhase &&
+      !needsPhaseDrift &&
+      !needsNarrativeUpgrade
+    ) {
+      return persisted;
+    }
 
     return generateAthleteSnapshot({
       trainingDayId,
@@ -140,3 +229,5 @@ export async function regenerateAthleteSnapshotAfterBriefing(
     forceRefresh: false,
   });
 }
+
+export { shouldRefreshSnapshotForPhaseDrift };

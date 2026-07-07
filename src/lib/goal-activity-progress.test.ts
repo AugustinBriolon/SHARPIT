@@ -9,7 +9,11 @@ import {
 import { isGoalReached } from '@/lib/goals';
 
 function runActivity(
-  partial: Partial<ActivityRow> & { id: string; date: string; duration: number },
+  partial: Omit<Partial<ActivityRow>, 'date'> & {
+    id: string;
+    date: string | Date;
+    duration: number;
+  },
 ): ActivityRow {
   const paceSecPerKm = partial.duration / (10_000 / 1000);
   return {

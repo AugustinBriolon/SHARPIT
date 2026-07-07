@@ -38,6 +38,8 @@ Type: `src/core/athlete-state/snapshot.ts`
 | `recommendation`                                      | Derived from attention priority | Actionable guidance                          |
 | `primaryProductMessage`                               | Freshness + degradation         | Athlete-facing status                        |
 | `domainMessages`                                      | Per-domain freshness            | Section-level explanations                   |
+| `dailyPhase`                                          | `resolveDailyPhase` at build    | Athlete-centric moment of day                |
+| `phaseNarrative`                                      | `buildPhaseNarrative`           | Hero copy, why focus, adaptation reminders   |
 
 ---
 

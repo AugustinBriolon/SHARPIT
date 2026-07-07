@@ -1,0 +1,294 @@
+import { describe, expect, it } from 'vitest';
+import { buildDailyPhaseDayContext } from '@/lib/daily-phase/day-context';
+import {
+  assertPhaseNarrativeConsistency,
+  buildPhaseNarrative,
+  pickAdaptationReminders,
+} from '@/lib/daily-phase/narrative';
+import { resolveDailyPhase } from '@/lib/daily-phase/resolve';
+import type {
+  DailyPhaseAthleteSignals,
+  DailyPhaseInput,
+  DailyPhase,
+} from '@/lib/daily-phase/types';
+import { DAILY_PHASE_PRIMARY_QUESTION } from '@/lib/daily-phase/types';
+
+function minutesSinceLastActivityForPhase(phase: DailyPhase): number | null {
+  if (phase === 'SESSION_COMPLETED') return 30;
+  if (phase === 'RECOVERY_WINDOW') return 120;
+  return null;
+}
+
+function narrativeForPhase(
+  phase: ReturnType<typeof resolveDailyPhase>['phase'],
+  overrides: Partial<DailyPhaseAthleteSignals> & {
+    sportLabel?: string | null;
+    totalTss?: number | null;
+  } = {},
+) {
+  const ref = new Date('2026-07-07T10:00:00');
+  const activities =
+    phase !== 'MORNING' && phase !== 'BEFORE_SESSION'
+      ? [
+          {
+            id: 'a1',
+            type: 'RUN',
+            date: new Date('2026-07-07T08:00:00'),
+            load: 65,
+            duration: 3600,
+            title: 'Sortie',
+          } as never,
+        ]
+      : [];
+
+  const planned =
+    phase === 'BEFORE_SESSION'
+      ? [
+          {
+            id: 'p1',
+            type: 'BIKE',
+            date: ref,
+            startTime: '18:00',
+            completed: false,
+            activityId: null,
+          } as never,
+        ]
+      : [];
+
+  const dayContext = buildDailyPhaseDayContext(ref, activities, planned);
+  const athlete: DailyPhaseAthleteSignals = {
+    recommendationAvailable: true,
+    adviceActionable: true,
+    dailyStrainAvailable: phase === 'RECOVERY_WINDOW' || phase === 'SESSION_COMPLETED',
+    newSessionSincePriorSnapshot: phase === 'SESSION_COMPLETED',
+    newInferenceSincePriorSnapshot: false,
+    newObservationsSincePriorSnapshot: false,
+    minutesSinceLastActivity: minutesSinceLastActivityForPhase(phase),
+    minutesSinceSnapshotGenerated: 60,
+    priorPhase: phase === 'RECOVERY_WINDOW' ? 'SESSION_COMPLETED' : null,
+    sleepLoggedTonight: phase === 'END_OF_DAY',
+    ...overrides,
+  };
+
+  const input: DailyPhaseInput = {
+    dayContext,
+    athlete,
+    localHour: ref.getHours(),
+  };
+
+  const resolution = resolveDailyPhase(input, ref);
+  return buildPhaseNarrative({
+    resolution: { ...resolution, phase },
+    verdict: 'TRAIN_HARD',
+    adviceActionable: true,
+    actionLine: 'Entraîne-toi — endurance',
+    sportLabel: overrides.sportLabel ?? 'Course',
+    totalTssToday: overrides.totalTss ?? 65,
+    dailyStrainScore: 12,
+    dailyStrainAvailable: athlete.dailyStrainAvailable,
+  });
+}
+
+describe('buildPhaseNarrative', () => {
+  it('morning uses matters-today question', () => {
+    const n = narrativeForPhase('MORNING');
+    expect(n.heroEyebrow).toBe(DAILY_PHASE_PRIMARY_QUESTION.MORNING);
+    expect(n.heroHeadline).toContain('effort');
+  });
+
+  it('before session uses approach question', () => {
+    const ref = new Date('2026-07-07T16:00:00');
+    const dayContext = buildDailyPhaseDayContext(
+      ref,
+      [],
+      [
+        {
+          id: 'p1',
+          type: 'BIKE',
+          date: ref,
+          startTime: '18:00',
+          completed: false,
+          activityId: null,
+        } as never,
+      ],
+    );
+    const resolution = resolveDailyPhase(
+      {
+        dayContext,
+        athlete: {
+          recommendationAvailable: true,
+          adviceActionable: true,
+          dailyStrainAvailable: false,
+          newSessionSincePriorSnapshot: false,
+          newInferenceSincePriorSnapshot: false,
+          newObservationsSincePriorSnapshot: false,
+          minutesSinceLastActivity: null,
+          minutesSinceSnapshotGenerated: 30,
+          priorPhase: null,
+          sleepLoggedTonight: false,
+        },
+        localHour: 16,
+      },
+      ref,
+    );
+    const n = buildPhaseNarrative({
+      resolution,
+      verdict: 'TRAIN_SMART',
+      adviceActionable: true,
+      actionLine: null,
+      sportLabel: 'Vélo',
+      totalTssToday: null,
+      dailyStrainScore: null,
+      dailyStrainAvailable: false,
+    });
+    expect(n.heroEyebrow).toBe(DAILY_PHASE_PRIMARY_QUESTION.BEFORE_SESSION);
+    expect(n.heroHeadline).toContain('Vélo');
+  });
+
+  it('session completed debriefs accomplishment not adaptation', () => {
+    const n = narrativeForPhase('SESSION_COMPLETED');
+    expect(n.heroEyebrow).toBe(DAILY_PHASE_PRIMARY_QUESTION.SESSION_COMPLETED);
+    expect(n.heroHeadline).toContain('TSS');
+    expect(n.adaptationReminders).toHaveLength(0);
+  });
+
+  it('recovery window focuses on adaptation levers', () => {
+    const n = narrativeForPhase('RECOVERY_WINDOW');
+    expect(n.heroEyebrow).toBe(DAILY_PHASE_PRIMARY_QUESTION.RECOVERY_WINDOW);
+    expect(n.adaptationReminders.length).toBeGreaterThan(0);
+    expect(n.heroSubline).toMatch(/Nutrition|hydratation|sommeil/i);
+  });
+
+  it('end of day targets tomorrow impact', () => {
+    const ref = new Date('2026-07-07T22:30:00');
+    const dayContext = buildDailyPhaseDayContext(
+      ref,
+      [{ id: 'a1', type: 'RUN', date: new Date('2026-07-07T08:00:00'), load: 50 } as never],
+      [],
+    );
+    const resolution = resolveDailyPhase(
+      {
+        dayContext,
+        athlete: {
+          recommendationAvailable: true,
+          adviceActionable: true,
+          dailyStrainAvailable: true,
+          newSessionSincePriorSnapshot: false,
+          newInferenceSincePriorSnapshot: false,
+          newObservationsSincePriorSnapshot: false,
+          minutesSinceLastActivity: 500,
+          minutesSinceSnapshotGenerated: 120,
+          priorPhase: 'RECOVERY_WINDOW',
+          sleepLoggedTonight: false,
+        },
+        localHour: 22,
+      },
+      ref,
+    );
+    const n = buildPhaseNarrative({
+      resolution,
+      verdict: 'RECOVER',
+      adviceActionable: true,
+      actionLine: null,
+      sportLabel: 'Course',
+      totalTssToday: 50,
+      dailyStrainScore: 10,
+      dailyStrainAvailable: true,
+    });
+    expect(n.heroEyebrow).toBe(DAILY_PHASE_PRIMARY_QUESTION.END_OF_DAY);
+    expect(n.heroHeadline).toMatch(/demain/i);
+    expect(n.heroSubline).not.toMatch(/Entraîne-toi/i);
+  });
+
+  it('end of day ignores stale forward action line in input', () => {
+    const ref = new Date('2026-07-07T22:30:00');
+    const resolution = resolveDailyPhase(
+      {
+        dayContext: buildDailyPhaseDayContext(
+          ref,
+          [{ id: 'a1', type: 'BIKE', date: new Date('2026-07-07T12:00:00'), load: 9 } as never],
+          [],
+        ),
+        athlete: {
+          recommendationAvailable: true,
+          adviceActionable: true,
+          dailyStrainAvailable: true,
+          newSessionSincePriorSnapshot: false,
+          newInferenceSincePriorSnapshot: false,
+          newObservationsSincePriorSnapshot: false,
+          minutesSinceLastActivity: 600,
+          minutesSinceSnapshotGenerated: 120,
+          priorPhase: 'RECOVERY_WINDOW',
+          sleepLoggedTonight: false,
+        },
+        localHour: 22,
+      },
+      ref,
+    );
+    const n = buildPhaseNarrative({
+      resolution,
+      verdict: 'TRAIN_HARD',
+      adviceActionable: true,
+      actionLine: 'Entraîne-toi — sur la base aérobie',
+      sportLabel: 'Vélo',
+      totalTssToday: 9,
+      dailyStrainScore: 4,
+      dailyStrainAvailable: true,
+    });
+    expect(n.heroSubline).toBe('Ce que tu fais ce soir influence demain matin.');
+  });
+
+  it('never uses forward training question in post-training phases', () => {
+    for (const phase of ['SESSION_COMPLETED', 'RECOVERY_WINDOW', 'END_OF_DAY'] as const) {
+      const n = narrativeForPhase(phase);
+      expect(() => assertPhaseNarrativeConsistency(phase, n.heroEyebrow)).not.toThrow();
+      expect(n.heroEyebrow).not.toMatch(/entraîner fort/i);
+    }
+  });
+
+  it('does not congratulate session before completion', () => {
+    const ref = new Date('2026-07-07T09:00:00');
+    const dayContext = buildDailyPhaseDayContext(
+      ref,
+      [],
+      [{ id: 'p1', type: 'RUN', date: ref, startTime: '18:00', completed: false } as never],
+    );
+    const resolution = resolveDailyPhase(
+      {
+        dayContext,
+        athlete: {
+          recommendationAvailable: true,
+          adviceActionable: true,
+          dailyStrainAvailable: false,
+          newSessionSincePriorSnapshot: false,
+          newInferenceSincePriorSnapshot: false,
+          newObservationsSincePriorSnapshot: false,
+          minutesSinceLastActivity: null,
+          minutesSinceSnapshotGenerated: 20,
+          priorPhase: null,
+          sleepLoggedTonight: false,
+        },
+        localHour: 9,
+      },
+      ref,
+    );
+    const n = buildPhaseNarrative({
+      resolution,
+      verdict: 'TRAIN_HARD',
+      adviceActionable: true,
+      actionLine: null,
+      sportLabel: 'Course',
+      totalTssToday: null,
+      dailyStrainScore: null,
+      dailyStrainAvailable: false,
+    });
+    expect(n.heroHeadline).not.toMatch(/enregistrée|fait|TSS/i);
+  });
+});
+
+describe('pickAdaptationReminders', () => {
+  it('returns reminders only for recovery and end of day', () => {
+    expect(pickAdaptationReminders('RECOVERY_WINDOW').length).toBeGreaterThan(0);
+    expect(pickAdaptationReminders('MORNING')).toHaveLength(0);
+  });
+});

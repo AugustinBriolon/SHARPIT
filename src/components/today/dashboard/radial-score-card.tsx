@@ -21,6 +21,7 @@ export function RadialScoreCard({
   format,
   colorMode = 'dynamic',
   compact = false,
+  unavailableCaption,
 }: {
   href: string;
   label: string;
@@ -29,6 +30,8 @@ export function RadialScoreCard({
   format: RadialScoreFormat;
   colorMode?: RadialColorMode;
   compact?: boolean;
+  /** Shown under the label when value is null — never a fake score. */
+  unavailableCaption?: string | null;
 }) {
   const ringSize = compact ? 72 : 88;
   const strokeWidth = compact ? 5 : 6;
@@ -86,6 +89,11 @@ export function RadialScoreCard({
             {'>'}
           </span>
         </p>
+        {value === null && unavailableCaption ? (
+          <p className="mt-1 max-w-[9rem] text-[10px] leading-snug font-normal tracking-normal text-neutral-400 normal-case">
+            {unavailableCaption}
+          </p>
+        ) : null}
       </div>
     </Link>
   );

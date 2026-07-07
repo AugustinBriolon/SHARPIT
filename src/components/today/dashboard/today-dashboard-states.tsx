@@ -2,13 +2,12 @@
 
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
 import { Skeleton } from '@/components/ui/skeleton';
-import { EyebrowLabel } from '@/components/ui/eyebrow-label';
 
 function MetricRingSkeleton() {
   return (
-    <div className="flex flex-col items-center rounded-2xl px-2 py-3 sm:px-3 sm:py-4">
-      <Skeleton className="m-1 size-[72px] rounded-full sm:size-[80px]" />
-      <Skeleton className="mt-2 h-3.5 w-16" />
+    <div className="flex flex-col items-center rounded-2xl px-2 py-3">
+      <Skeleton className="m-1 size-[72px] rounded-full" />
+      <Skeleton className="mt-2 h-3.5 w-14" />
     </div>
   );
 }
@@ -16,19 +15,23 @@ function MetricRingSkeleton() {
 /** Shown only on first visit when no snapshot exists yet. */
 export function DashboardSkeleton() {
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
-        {[0, 1, 2].map((i) => (
-          <MetricRingSkeleton key={i} />
-        ))}
-      </div>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="bg-muted h-120 rounded-2xl" />
-        <div className="space-y-3">
-          <div className="bg-muted h-68.5 rounded-2xl" />
-          <div className="bg-muted h-48 rounded-2xl" />
+    <div className="mx-auto max-w-3xl space-y-3 sm:space-y-4">
+      <div className="rounded-2xl border px-5 py-6">
+        <Skeleton className="mb-2 h-3 w-48" />
+        <Skeleton className="mb-2 h-8 w-56" />
+        <Skeleton className="h-4 w-full max-w-md" />
+        <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+          {[0, 1, 2, 3].map((i) => (
+            <MetricRingSkeleton key={i} />
+          ))}
         </div>
       </div>
+      <div className="bg-muted h-24 rounded-2xl" />
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <div className="bg-muted h-28 rounded-2xl" />
+        <div className="bg-muted h-28 rounded-2xl" />
+      </div>
+      <div className="bg-muted h-32 rounded-2xl" />
     </div>
   );
 }
@@ -56,13 +59,14 @@ export function PartialSnapshotFallback({
   onRetry: () => void;
 }) {
   const message =
+    snapshot.insufficientDataMessage ??
     snapshot.primaryProductMessage ??
     snapshot.domainMessages.sleep ??
     snapshot.domainMessages.recovery ??
-    'Ton bilan se construit au fil de l’arrivée de tes données.';
+    'SHARPIT attend tes premières données physiologiques pour établir ton bilan.';
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-3xl space-y-4">
       <SnapshotStatusBanner message={message} />
       <div className="flex justify-center">
         <button
