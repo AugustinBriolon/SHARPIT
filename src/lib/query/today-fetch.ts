@@ -1,41 +1,27 @@
-import type {
-  AdaptationData,
-  DailyStrainData,
-  FatigueData,
-  ReasoningData,
-  RecoveryData,
-  TodayState,
-} from '@/hooks/use-today';
+import type { TodayState } from '@/hooks/use-today';
+import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
 
-async function fetchEngine<T>(url: string): Promise<T | null> {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    return res.json() as Promise<T>;
-  } catch {
-    return null;
-  }
+export function snapshotToTodayState(snapshot: AthleteSnapshot): TodayState {
+  return {
+    reasoning: snapshot.reasoning,
+    recovery: snapshot.recovery,
+    fatigue: snapshot.fatigue,
+    adaptation: snapshot.adaptation,
+    dailyStrain: snapshot.dailyStrain,
+  };
 }
 
 export async function fetchTodayState(
   trainingDayId: string,
   options?: { refresh?: boolean },
 ): Promise<TodayState> {
-  const refreshParam = options?.refresh ? '&refresh=true' : '';
-  const base = `trainingDayId=${trainingDayId}&athleteId=default${refreshParam}`;
-
-  const [recovery, fatigue, adaptation, dailyStrain] = await Promise.all([
-    fetchEngine<RecoveryData>(`/api/recovery?${base}`),
-    fetchEngine<FatigueData>(`/api/fatigue?${base}`),
-    fetchEngine<AdaptationData>(`/api/adaptation?${base}`),
-    fetchEngine<DailyStrainData>(`/api/daily-strain?${base}`),
-  ]);
-
-  const reasoning = await fetchEngine<ReasoningData>(`/api/reasoning?${base}`);
-
-  if (!reasoning && !recovery && !fatigue && !adaptation && !dailyStrain) {
-    throw new Error('Impossible de charger ton bilan du jour. Réessaie.');
+  if (options?.refresh) {
+    const { refreshAthleteSnapshot } = await import('@/lib/query/athlete-snapshot-fetch');
+    const { snapshot } = await refreshAthleteSnapshot(trainingDayId);
+    return snapshotToTodayState(snapshot);
   }
 
-  return { reasoning, recovery, fatigue, adaptation, dailyStrain };
+  const { fetchAthleteSnapshot } = await import('@/lib/query/athlete-snapshot-fetch');
+  const { snapshot } = await fetchAthleteSnapshot(trainingDayId);
+  return snapshotToTodayState(snapshot);
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ActivityType } from '@prisma/client';
 import { buildActivityCreateData } from '@/lib/activity-service';
+import { runActivityNarrativeAnalysis } from '@/lib/activity-narrative';
 import { createActivity, getActivitiesList } from '@/lib/queries';
 import { updateRecordsForTypesSafe } from '@/lib/records';
 import { createActivitySchema } from '@/lib/validators/activity';
@@ -42,6 +43,12 @@ export async function POST(request: NextRequest) {
     );
 
     await updateRecordsForTypesSafe([parsed.data.type]);
+
+    try {
+      await runActivityNarrativeAnalysis(activity.id);
+    } catch (error) {
+      console.error('[activities/POST] narrative', error);
+    }
 
     return NextResponse.json(activity, { status: 201 });
   } catch (error) {

@@ -9,6 +9,7 @@ import {
 } from '@/lib/session-analysis-display';
 import { cn } from '@/lib/utils';
 import type { ActivityType } from '@prisma/client';
+import { ActivityMetaChip } from '@/components/training/activity-detail/activity-meta-chip';
 
 export type PlannedSessionSummary = {
   id: string;
@@ -22,32 +23,23 @@ export function PlannedSessionLinkCard({
   plannedSession,
   variant = 'card',
 }: {
-  plannedSession: PlannedSessionSummary;
+  plannedSession: PlannedSessionSummary | undefined;
   variant?: 'card' | 'inline';
 }) {
+  if (!plannedSession) return null;
+
   const analysis = parseSessionAnalysis(plannedSession.analysis);
   const label = plannedSession.title ?? activityTypeLabels[plannedSession.type];
   const href = plannedSessionHref(plannedSession.id);
 
   if (variant === 'inline') {
     return (
-      <Link
-        className="border-primary/20 bg-primary/5 hover:bg-primary/10 inline-flex max-w-full items-center gap-2 rounded-full border px-2.5 py-1 text-xs transition-colors"
+      <ActivityMetaChip
         href={href}
-      >
-        <CalendarCheck className="text-primary size-3.5 shrink-0" />
-        <span className="truncate">Planifiée · {label}</span>
-        {analysis && (
-          <span
-            className={cn(
-              'font-mono font-semibold tabular-nums',
-              sessionScoreColor(analysis.complianceScore),
-            )}
-          >
-            {analysis.complianceScore}/100
-          </span>
-        )}
-      </Link>
+        icon={CalendarCheck}
+        label="Planifiée"
+        value={analysis ? `${analysis.complianceScore}/100` : '—'}
+      />
     );
   }
 

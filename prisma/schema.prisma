@@ -109,6 +109,10 @@ model Activity {
   plannedSession PlannedSession?
   goalAchievements GoalAchievement[]
 
+  /// Analyse narrative coach (figée une fois générée)
+  narrativeAnalysis   Json?
+  narrativeAnalyzedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -687,6 +691,25 @@ model DecisionRecord {
   @@index([athleteId, trainingDayId])
   @@index([athleteId, modelId])
   @@index([computedAt])
+}
+
+/**
+ * Latest Athlete Snapshot per training day — canonical product state.
+ * Each regeneration replaces the row; snapshotId fingerprints inputs for idempotency.
+ */
+model AthleteSnapshotRecord {
+  id            String   @id @default(cuid())
+  athleteId     String
+  trainingDayId String
+  snapshotId    String
+  payload       Json
+  generatedAt   DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([athleteId, trainingDayId])
+  @@index([snapshotId])
+  @@index([generatedAt])
 }
 
 model Conversation {

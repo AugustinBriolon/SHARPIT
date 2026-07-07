@@ -49,6 +49,13 @@ function Tip({
   );
 }
 
+function chartTickStep(dataLength: number): number {
+  if (dataLength > 240) return 24;
+  if (dataLength > 120) return 16;
+  if (dataLength > 60) return 10;
+  return 6;
+}
+
 export function MetricLineChart<T extends { label: string }>({
   title,
   subtitle,
@@ -58,7 +65,7 @@ export function MetricLineChart<T extends { label: string }>({
   unit,
   loading = false,
 }: MetricLineChartProps<T>) {
-  const tickStep = data.length > 240 ? 24 : data.length > 120 ? 16 : data.length > 60 ? 10 : 6;
+  const tickStep = chartTickStep(data.length);
   const ticks = data.filter((_, i) => i % tickStep === 0 || i === data.length - 1);
   const hasData = data.some((d) => d[dataKey] != null);
 

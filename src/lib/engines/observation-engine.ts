@@ -16,9 +16,9 @@
 
 import { ObservationEngine } from '@/core/observation';
 import { PrismaObservationRepository } from '@/infrastructure/observation/prisma-observation-repository';
-import { createFeatureEngineBus } from '@/infrastructure/events/in-process-event-bus';
+import { createObservationPipelineBus } from '@/infrastructure/events/observation-pipeline-bus';
 import { prisma } from '@/lib/prisma';
-import { featureEngine, isFeatureEngineEnabled } from '@/lib/engines/feature-engine';
+import { featureEngine } from '@/lib/engines/feature-engine';
 
 const globalForEngine = globalThis as unknown as {
   observationEngine: ObservationEngine | undefined;
@@ -26,10 +26,7 @@ const globalForEngine = globalThis as unknown as {
 
 function createEngine(): ObservationEngine {
   const repository = new PrismaObservationRepository(prisma);
-
-  // Strangler Fig: wire FeatureEngine when feature flag is enabled
-  const eventBus = isFeatureEngineEnabled ? createFeatureEngineBus(featureEngine) : undefined;
-
+  const eventBus = createObservationPipelineBus(featureEngine);
   return new ObservationEngine({ repository, eventBus });
 }
 

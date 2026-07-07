@@ -1,5 +1,5 @@
-import { PlanningView } from '@/components/planning/planning-view';
+import { redirect } from 'next/navigation';
 
 export default function PlanningPage() {
-  return <PlanningView />;
+  redirect('/seances?tab=planning');
 }

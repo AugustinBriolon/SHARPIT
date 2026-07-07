@@ -47,8 +47,25 @@ Digital Twin      Persistent athlete state — updated after each inference (src
 Decision Layer    AI coach context + training recommendations (src/lib/coach-context.ts)
 ```
 
-See [`ARCHITECTURE.md`](./ARCHITECTURE.md) and [`docs/models/`](./docs/models/) for scientific model specifications.
-ADRs are in [`docs/adr/`](./docs/adr/).
+See [`ARCHITECTURE.md`](./ARCHITECTURE.md) (code conventions) and [`docs/domain/DOMAIN.md`](./docs/domain/DOMAIN.md) (domain concepts and pipeline).
+Model specs: [`docs/models/README.md`](./docs/models/README.md). ADRs: [`docs/adr/`](./docs/adr/).
+
+## Documentation — start here
+
+Read these **six documents** in order (~4–6 hours):
+
+| #   | Document                                                             | Purpose                                    |
+| --- | -------------------------------------------------------------------- | ------------------------------------------ |
+| 0   | This README                                                          | Setup and orientation                      |
+| 1   | [`docs/product/PRODUCT.md`](./docs/product/PRODUCT.md)               | Constitution, execution, athlete journey   |
+| 2   | [`ARCHITECTURE.md`](./ARCHITECTURE.md)                               | Code structure and conventions             |
+| 3   | [`docs/domain/DOMAIN.md`](./docs/domain/DOMAIN.md)                   | Domain concepts, Digital Twin, system flow |
+| 4   | [`docs/models/README.md`](./docs/models/README.md)                   | Inference model index                      |
+| 5   | [`docs/design/DESIGN_LANGUAGE.md`](./docs/design/DESIGN_LANGUAGE.md) | Visual and interaction law                 |
+
+**Supporting:** [`knowledge/README.md`](./knowledge/README.md) · [`docs/engineering/`](./docs/engineering/) · [`docs/audits/`](./docs/audits/) · [`docs/archive/`](./docs/archive/)
+
+Moved documents leave a redirect stub at their old path.
 
 ## Getting Started
 
@@ -162,11 +179,11 @@ Connect via **Settings → Renpho**. Body composition observations are automatic
 
 ## Related documentation
 
-- [`ARCHITECTURE.md`](./ARCHITECTURE.md) — full system architecture and component interactions
-- [`docs/models/`](./docs/models/) — scientific model specifications (Recovery, Fatigue, Adaptation, Reasoning)
+- [`docs/product/PRODUCT.md`](./docs/product/PRODUCT.md) — canonical product document
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md) — engineering handbook
+- [`docs/domain/DOMAIN.md`](./docs/domain/DOMAIN.md) — domain concepts and Digital Twin
+- [`docs/models/README.md`](./docs/models/README.md) — inference model index
 - [`docs/adr/`](./docs/adr/) — Architecture Decision Records
-- [`docs/PRODUCT_EXPERIENCE_V2.md`](./docs/PRODUCT_EXPERIENCE_V2.md) — Today Experience product spec
-- [`docs/USER_JOURNEYS.md`](./docs/USER_JOURNEYS.md) — user journeys for the Today Experience
-- [`docs/design/DESIGN_LANGUAGE.md`](./docs/design/DESIGN_LANGUAGE.md) — design language: visual identity, color philosophy, typography, spacing, and motion principles
-- [`docs/DATA_EXPOSURE_AUDIT.md`](./docs/DATA_EXPOSURE_AUDIT.md) — complete inventory of every physiological metric computed by the inference pipeline, with visibility tier and recommended product placement
-- [`knowledge/`](./knowledge/) — domain knowledge and scientific references
+- [`docs/design/DESIGN_LANGUAGE.md`](./docs/design/DESIGN_LANGUAGE.md) — design language
+- [`knowledge/README.md`](./knowledge/README.md) — scientific reference corpus
+- [`docs/DOCUMENTATION_MIGRATION_PLAN.md`](./docs/DOCUMENTATION_MIGRATION_PLAN.md) — consolidation map (July 2026)

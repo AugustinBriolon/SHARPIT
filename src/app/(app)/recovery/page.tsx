@@ -1,5 +1,5 @@
-import { RecoveryScreen } from '@/components/recovery/recovery-screen';
+import { redirect } from 'next/navigation';
 
 export default function RecoveryPage() {
-  return <RecoveryScreen />;
+  redirect('/today/recovery');
 }

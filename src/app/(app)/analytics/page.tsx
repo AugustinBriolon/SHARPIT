@@ -1,11 +1,5 @@
-import { AnalyticsClient } from '@/components/analytics/analytics-client';
-import { RecordsPanel } from '@/components/analytics/records-panel';
+import { redirect } from 'next/navigation';
 
 export default function AnalyticsPage() {
-  return (
-    <div className="space-y-0">
-      <AnalyticsClient />
-      <RecordsPanel />
-    </div>
-  );
+  redirect('/corps?tab=stats');
 }

@@ -5,6 +5,21 @@ export const DAILY_STRAIN_MAX = 21;
 const DAILY_TSS_UPPER_REFERENCE = 300;
 const DAILY_TSS_LOG_SCALE = 25;
 
+function legacyDurationTssPerHour(type: ActivityType): number {
+  switch (type) {
+    case 'RUN':
+      return 60;
+    case 'BIKE':
+      return 55;
+    case 'SWIM':
+      return 65;
+    case 'STRENGTH':
+      return 35;
+    default:
+      return 45;
+  }
+}
+
 export type DailyStrainTier = 'STRUCTURED_SESSION' | 'HEART_RATE' | 'MOVEMENT' | 'UNKNOWN';
 
 export type DailyStrainSource =
@@ -228,16 +243,7 @@ function computeFromLegacyActivities(
 
       if (durationSec > 0) {
         const durationHours = durationSec / 3600;
-        const perHour =
-          activity.type === 'RUN'
-            ? 60
-            : activity.type === 'BIKE'
-              ? 55
-              : activity.type === 'SWIM'
-                ? 65
-                : activity.type === 'STRENGTH'
-                  ? 35
-                  : 45;
+        const perHour = legacyDurationTssPerHour(activity.type);
 
         return {
           tss: durationHours * perHour,

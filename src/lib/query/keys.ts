@@ -21,6 +21,7 @@ export const queryKeys = {
   thresholdHistory: ['threshold-history'] as const,
   thresholdPreview: ['threshold-preview'] as const,
   athleteProfile: ['athlete-profile'] as const,
+  athleteSnapshot: (trainingDayId: string) => ['athlete-snapshot', trainingDayId] as const,
   today: (trainingDayId: string) => ['today', trainingDayId] as const,
   wellnessCheckin: (trainingDayId: string) => ['wellness-checkin', trainingDayId] as const,
 };

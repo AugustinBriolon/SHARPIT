@@ -1,7 +1,7 @@
 import { CorpsPanel, CorpsSectionHeader, CorpsStatCard } from '@/components/corps/corps-ui';
 import { buildFormView } from '@/lib/recovery';
 import type { PmcPoint } from '@/lib/analytics';
-import { Activity, Gauge } from 'lucide-react';
+import { Gauge } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TONE_TEXT = {

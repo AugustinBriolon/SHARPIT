@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isCoachConfigured } from '@/lib/ai';
-import { generateAndStoreDailyBriefing } from '@/lib/daily-briefing';
+import { refreshAthleteState } from '@/lib/athlete-state/orchestrator';
 import { getGarminAccount, syncGarminHealth } from '@/lib/integrations/garmin-sync';
 import { syncGarminActivities } from '@/lib/integrations/garmin-activity-sync';
 import { getGoogleAccount, syncFromGoogle } from '@/lib/integrations/google-sync';
@@ -10,6 +9,7 @@ import { getWithingsAccount, syncWithingsHealth } from '@/lib/integrations/withi
 import { backfillActivityStreams } from '@/lib/stream-backfill';
 import { getStravaAccount, syncStravaActivities } from '@/lib/integrations/strava-sync';
 import { generateAndStoreWeeklyReview, isSunday } from '@/lib/weekly-review';
+import { isCoachConfigured } from '@/lib/ai';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -139,27 +139,25 @@ export async function GET(request: Request) {
     await recomputeRecordsSafe();
   }
 
-  // Bilan du jour : généré après la synchro pour s'appuyer sur des données à jour.
-  if (isCoachConfigured()) {
-    try {
-      await generateAndStoreDailyBriefing();
-      result.briefing = true;
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Génération du bilan échouée';
-      console.error('[cron/sync] Briefing:', msg);
-      result.errors.push(`briefing: ${msg}`);
-    }
+  // Inference + briefing background after sync (athlete state orchestrator).
+  try {
+    await refreshAthleteState({ skipSync: true, source: 'cron' });
+    result.briefing = true;
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Mise à jour état athlète échouée';
+    console.error('[cron/sync] athlete-state:', msg);
+    result.errors.push(`athleteState: ${msg}`);
+  }
 
-    // Rétro hebdo : le dimanche, on génère le bilan de la semaine écoulée.
-    if (isSunday()) {
-      try {
-        await generateAndStoreWeeklyReview(new Date(), { current: true });
-        result.weeklyReview = true;
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : 'Génération de la rétro hebdo échouée';
-        console.error('[cron/sync] WeeklyReview:', msg);
-        result.errors.push(`weeklyReview: ${msg}`);
-      }
+  // Rétro hebdo : le dimanche uniquement.
+  if (isCoachConfigured() && isSunday()) {
+    try {
+      await generateAndStoreWeeklyReview(new Date(), { current: true });
+      result.weeklyReview = true;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Génération de la rétro hebdo échouée';
+      console.error('[cron/sync] WeeklyReview:', msg);
+      result.errors.push(`weeklyReview: ${msg}`);
     }
   }
 

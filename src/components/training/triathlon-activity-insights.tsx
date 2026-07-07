@@ -16,7 +16,7 @@ import type { ZoneBucket } from '@/lib/activity-analysis';
 import { formatDistance, formatDuration } from '@/lib/format';
 import type { MultisportLegKind } from '@/lib/multisport';
 import { normalizeStreamChartData } from '@/lib/stream-chart-data';
-import type { MultisportLegStream } from '@/lib/streams';
+import type { MultisportLegStream, ActivityStreamPayload } from '@/lib/streams';
 import { cn } from '@/lib/utils';
 
 const sportHeader: Record<
@@ -83,6 +83,15 @@ function ZoneSection({
   return <div className={cn('grid gap-4', blocks.length > 1 && 'lg:grid-cols-2')}>{blocks}</div>;
 }
 
+function shouldShowCombinedLegChart(
+  kind: MultisportLegKind,
+  has: ActivityStreamPayload['has'],
+): boolean {
+  if (kind === 'bike') return has.watts && has.hr;
+  if (kind === 'run') return has.altitude && has.hr;
+  return false;
+}
+
 function SportLegInsights({ entry }: { entry: MultisportLegStream }) {
   const { leg, type, stream } = entry;
   const header = sportHeader[leg.kind as Exclude<MultisportLegKind, 'transition'>];
@@ -111,8 +120,7 @@ function SportLegInsights({ entry }: { entry: MultisportLegStream }) {
   const bikeSplits = analysis?.bike?.splits ?? [];
 
   const showMap = path != null && path.length > 1;
-  const showCombined =
-    leg.kind === 'bike' ? has.watts && has.hr : leg.kind === 'run' ? has.altitude && has.hr : false;
+  const showCombined = shouldShowCombinedLegChart(leg.kind, has);
 
   return (
     <div className="space-y-5">

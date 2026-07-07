@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { onProviderSyncCompleted } from '@/lib/athlete-state/orchestrator';
 import { syncGarminActivities } from '@/lib/integrations/garmin-activity-sync';
 import { syncGarminHealth } from '@/lib/integrations/garmin-sync';
 
@@ -18,6 +19,15 @@ export async function POST(request: NextRequest) {
 
     const health = await syncGarminHealth(full ? { full: true } : {});
     const activities = await syncGarminActivities(full ? { full: true } : {});
+    await onProviderSyncCompleted([
+      {
+        provider: 'garmin',
+        imported: activities.imported,
+        updated: activities.updated + activities.merged,
+        observationCount: health.updated,
+        activityIds: activities.importedActivityIds,
+      },
+    ]);
     return NextResponse.json({ ...health, activities });
   } catch (error) {
     console.error(error);

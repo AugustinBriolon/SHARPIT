@@ -1,13 +1,14 @@
 import type {
   getActiveTrainingPlan,
   getActivitiesList,
-  getGoals,
   getHealthEntries,
   getBodyCompositionMeasurements,
   getPhysicalNotes,
   getPlannedSessions,
   getThresholdSnapshots,
 } from '@/lib/queries';
+import type { enrichGoalsWithProgress } from '@/lib/goal-achievements';
+import type { Goal } from '@prisma/client';
 
 /**
  * Types côté client. Les fonctions de query renvoient des objets Prisma avec des
@@ -20,7 +21,7 @@ export type ClientHealthEntry = Awaited<ReturnType<typeof getHealthEntries>>[num
 export type ClientBodyCompositionEntry = Awaited<
   ReturnType<typeof getBodyCompositionMeasurements>
 >[number];
-export type ClientGoal = Awaited<ReturnType<typeof getGoals>>[number];
+export type ClientGoal = Awaited<ReturnType<typeof enrichGoalsWithProgress<Goal>>>[number];
 export type ClientPlannedSession = Awaited<ReturnType<typeof getPlannedSessions>>[number];
 export type ClientPhysicalNote = Awaited<ReturnType<typeof getPhysicalNotes>>[number];
 export type ClientPhysicalCheckin = ClientPhysicalNote['checkins'][number];

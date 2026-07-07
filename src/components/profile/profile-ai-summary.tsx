@@ -14,6 +14,12 @@ function formatPace(secPerKm: number | null | undefined): string | null {
   return `${m}:${s.toString().padStart(2, '0')}/km`;
 }
 
+function ProfileStatusIcon({ loading, isComplete }: { loading: boolean; isComplete: boolean }) {
+  if (loading) return <Loader2 className="size-4 animate-spin" />;
+  if (isComplete) return <Check className="size-4" />;
+  return <AlertCircle className="size-4" />;
+}
+
 export function ProfileAiSummary() {
   const profileQuery = useAthleteProfile();
   const contextQuery = useCoachContext();
@@ -44,13 +50,7 @@ export function ProfileAiSummary() {
             isComplete ? 'bg-emerald-500/10 text-emerald-700' : 'bg-amber-500/10 text-amber-700',
           )}
         >
-          {loading ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : isComplete ? (
-            <Check className="size-4" />
-          ) : (
-            <AlertCircle className="size-4" />
-          )}
+          <ProfileStatusIcon isComplete={isComplete} loading={loading} />
         </div>
         <div className="min-w-0 space-y-1">
           <p className="text-sm font-medium">Ce que le coach utilise</p>

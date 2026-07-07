@@ -19,7 +19,6 @@ import {
 } from '@/lib/integrations/garmin';
 import { getGarminAccount } from '@/lib/integrations/garmin-sync';
 import { prisma } from '@/lib/prisma';
-import { autoLinkActivities } from '@/lib/session-linking';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import {
   garminActivityToSession,
@@ -270,10 +269,6 @@ export async function syncGarminActivities(options?: {
       lastActivitySyncAt: new Date(),
     },
   });
-
-  if (result.importedActivityIds.length > 0) {
-    await autoLinkActivities(result.importedActivityIds);
-  }
 
   return result;
 }

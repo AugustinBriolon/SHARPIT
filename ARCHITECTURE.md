@@ -1,7 +1,11 @@
 # SHARPIT Architecture Handbook
 
-> This document is the architectural reference for every contributor and AI agent working on SHARPIT.
+> This document is the **engineering** reference for every contributor and AI agent working on SHARPIT.
 > Every pull request is evaluated against it. When this document and the code disagree, fix the code.
+>
+> **Domain concepts, Digital Twin, and pipeline flow:** [`docs/domain/DOMAIN.md`](docs/domain/DOMAIN.md)  
+> **Inference execution platform:** [`docs/engineering/INFERENCE_PLATFORM.md`](docs/engineering/INFERENCE_PLATFORM.md)  
+> **Product law:** [`docs/product/PRODUCT.md`](docs/product/PRODUCT.md)
 
 ---
 

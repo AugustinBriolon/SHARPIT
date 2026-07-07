@@ -1,5 +1,5 @@
-import { CalendarView } from '@/components/calendar/calendar-view';
+import { redirect } from 'next/navigation';
 
 export default function CalendarPage() {
-  return <CalendarView />;
+  redirect('/seances?tab=calendrier');
 }

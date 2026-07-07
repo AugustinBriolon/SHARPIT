@@ -2,6 +2,7 @@ import { SignOutButton } from '@clerk/nextjs';
 import { currentUser } from '@clerk/nextjs/server';
 import { ShieldX } from 'lucide-react';
 import { redirect } from 'next/navigation';
+import { AthleteStateInitializer } from '@/components/athlete-state/athlete-state-initializer';
 import { AppShell } from '@/components/layout/app-shell';
 import { Button } from '@/components/ui/button';
 import { isAllowedUser } from '@/lib/auth';
@@ -36,5 +37,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
     );
   }
 
-  return <AppShell>{children}</AppShell>;
+  return (
+    <>
+      <AthleteStateInitializer />
+      <AppShell>{children}</AppShell>
+    </>
+  );
 }

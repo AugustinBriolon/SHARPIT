@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { onProviderSyncCompleted } from '@/lib/athlete-state/orchestrator';
 import { filterRecordChangesByActivities, updateRecordsForTypes } from '@/lib/records';
 import { syncStravaActivities } from '@/lib/integrations/strava-sync';
 
@@ -13,6 +14,16 @@ export async function POST() {
       const allChanges = await updateRecordsForTypes(result.importedTypes);
       recordChanges = filterRecordChangesByActivities(allChanges, result.importedActivityIds);
     }
+
+    await onProviderSyncCompleted([
+      {
+        provider: 'strava',
+        imported: result.imported,
+        updated: result.merged,
+        observationCount: 0,
+        activityIds: result.importedActivityIds,
+      },
+    ]);
 
     return NextResponse.json({ ...result, recordChanges });
   } catch (error) {

@@ -605,6 +605,14 @@ function RenphoContent({
   );
 }
 
+function googleSyncErrorDescription(err: unknown): string | undefined {
+  if (!(err instanceof Error)) return undefined;
+  if (err.message.includes('Reconnecte')) {
+    return `${err.message} Utilise le bouton « Connecter Google Calendar » ci-dessous.`;
+  }
+  return err.message;
+}
+
 function GoogleContent({
   integration,
   onUpdated,
@@ -654,12 +662,7 @@ function GoogleContent({
         }),
         error: (err) => ({
           title: 'Échec Google',
-          description:
-            err instanceof Error && err.message.includes('Reconnecte')
-              ? `${err.message} Utilise le bouton « Connecter Google Calendar » ci-dessous.`
-              : err instanceof Error
-                ? err.message
-                : undefined,
+          description: googleSyncErrorDescription(err),
         }),
       });
     } finally {

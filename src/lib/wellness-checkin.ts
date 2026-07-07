@@ -2,9 +2,7 @@ import { format } from 'date-fns';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { prisma } from '@/lib/prisma';
 import type { WellnessCheckinPayload } from '@/lib/validators/wellness-checkin';
-import { fatigueEngine } from '@/lib/engines/fatigue-engine';
-import { reasoningEngine } from '@/lib/engines/reasoning-engine';
-import { recoveryEngine } from '@/lib/engines/recovery-engine';
+import { onWellnessSubmitted } from '@/lib/athlete-state/orchestrator';
 
 const ATHLETE_ID = 'default';
 
@@ -53,11 +51,7 @@ export async function submitMorningWellnessCheckin(
     throw new Error(`Observation rejetée (${result.reason.code})`);
   }
 
-  await Promise.all([
-    recoveryEngine.run(athleteId, trainingDayId),
-    fatigueEngine.run(athleteId, trainingDayId),
-  ]);
-  await reasoningEngine.run(athleteId, trainingDayId);
+  await onWellnessSubmitted(trainingDayId);
 
   return { alreadyCompleted: false };
 }

@@ -1,5 +1,5 @@
-import { PhysicalView } from '@/components/physical/physical-view';
+import { redirect } from 'next/navigation';
 
 export default function BodyPage() {
-  return <PhysicalView />;
+  redirect('/corps?tab=suivi');
 }

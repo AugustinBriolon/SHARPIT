@@ -4,7 +4,7 @@ import { analyzePlannedSession } from '@/lib/coach-analysis';
 import { linkPlannedSessionActivity, setPlannedSessionAnalysis } from '@/lib/queries';
 import { prisma } from '@/lib/prisma';
 
-function matchScore(
+export function scorePlannedActivityMatch(
   session: { date: Date; durationMin: number | null },
   activity: { date: Date; duration: number | null },
 ): number {
@@ -52,7 +52,7 @@ async function autoLinkOneActivity(
   });
 
   const ranked = candidates
-    .map((s) => ({ s, score: matchScore(s, activity) }))
+    .map((s) => ({ s, score: scorePlannedActivityMatch(s, activity) }))
     .filter((x) => x.score > 0)
     .sort((a, b) => b.score - a.score);
   const [best] = ranked;

@@ -23,6 +23,16 @@ import {
 import { cn } from '@/lib/utils';
 import { useGoalMutations } from '@/hooks/use-data';
 
+function metricGoalSubtitle(goal: GoalItem, subtitle: string | null): React.ReactNode {
+  if (subtitle) {
+    return <p className="text-muted-foreground mt-0.5 text-xs">{subtitle}</p>;
+  }
+  if (goal.horizon) {
+    return <p className="text-muted-foreground mt-0.5 text-xs">{horizonLabels[goal.horizon]}</p>;
+  }
+  return null;
+}
+
 export interface GoalItem {
   id: string;
   title: string;
@@ -226,13 +236,7 @@ export function MetricGoalCard({ goal }: { goal: GoalItem }) {
                 <Target className="text-primary size-3.5 shrink-0" />
                 {goal.title}
               </h3>
-              {subtitle ? (
-                <p className="text-muted-foreground mt-0.5 text-xs">{subtitle}</p>
-              ) : goal.horizon ? (
-                <p className="text-muted-foreground mt-0.5 text-xs">
-                  {horizonLabels[goal.horizon]}
-                </p>
-              ) : null}
+              {metricGoalSubtitle(goal, subtitle)}
             </div>
             <button
               className="bg-muted/60 text-muted-foreground hover:text-primary shrink-0 rounded-full px-2 py-0.5 text-xs"

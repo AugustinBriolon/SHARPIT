@@ -132,6 +132,12 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
 
   // ---- Activités récentes (14 dernières) ----
   const recent = activities.slice(0, 14).map((a) => {
+    const rel = (() => {
+      const diff = differenceInCalendarDays(today, startOfDay(a.date));
+      if (diff === 0) return "aujourd'hui";
+      if (diff === 1) return 'hier';
+      return null;
+    })();
     const parts: string[] = [];
     if (a.runMetrics) {
       if (a.runMetrics.distanceM) parts.push(`${(a.runMetrics.distanceM / 1000).toFixed(1)} km`);
@@ -158,6 +164,7 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
     }
     return {
       date: format(a.date, 'EEE d MMM', { locale: fr }),
+      relativeDay: rel,
       type: TYPE_FR[a.type] ?? a.type,
       title: a.title ?? '',
       duration: formatMin(a.duration),
@@ -606,7 +613,9 @@ export function formatCoachContext(ctx: CoachContext): string {
       ]
         .filter(Boolean)
         .join(' · ');
-      lines.push(`- ${a.date} · ${a.type} ${a.title} (${a.duration})${extra ? ` — ${extra}` : ''}`);
+      lines.push(
+        `- ${a.date}${a.relativeDay ? ` (${a.relativeDay})` : ''} · ${a.type} ${a.title} (${a.duration})${extra ? ` — ${extra}` : ''}`,
+      );
     }
   }
 

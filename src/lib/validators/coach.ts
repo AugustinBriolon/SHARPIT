@@ -131,6 +131,20 @@ export const brickAnalysisSchema = z.object({
 
 export type BrickAnalysis = z.infer<typeof brickAnalysisSchema>;
 
+/** Analyse narrative contextuelle d'une activité (figée en base). */
+export const activityNarrativeSchema = z.object({
+  headline: z.string().describe('Titre accrocheur en une phrase.'),
+  narrative: z
+    .string()
+    .describe('2 à 4 phrases style coach : comparaisons factuelles, contexte, ton bienveillant.'),
+  highlights: z
+    .array(z.string())
+    .max(4)
+    .describe('Points marquants courts (comparatifs chiffrés si possible).'),
+});
+
+export type ActivityNarrative = z.infer<typeof activityNarrativeSchema>;
+
 /** Réadaptation des séances à venir. */
 const nullableAdaptString = z.preprocess(
   (v) => (v === '' || v === 'null' ? null : v),

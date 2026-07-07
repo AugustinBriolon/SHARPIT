@@ -1,13 +1,7 @@
-Every feature must improve a decision.
+# Moved
 
-Recommendations are always explainable.
+Superseded by [`docs/product/PRODUCT.md`](product/PRODUCT.md) Part I.
 
-Metrics require an action.
+**Archived:** [`docs/archive/PRODUCT_PRINCIPLES.md`](archive/PRODUCT_PRINCIPLES.md)
 
-No black-box AI.
-
-Personalization before optimization.
-
-Long-term adaptation over short-term performance.
-
-Evidence over popularity.
+_Migration: July 2026 documentation consolidation._

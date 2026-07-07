@@ -108,27 +108,25 @@ export function CoachConversationList({
               {conversations.map((c) => {
                 const isActive = c.id === activeId;
                 return (
-                  <li key={c.id} className="group relative">
+                  <li key={c.id} className="group flex items-center">
                     <button
                       type="button"
                       className={cn(
-                        'w-full rounded-lg px-2 py-2 text-left text-sm transition-colors',
+                        'min-w-0 flex-1 rounded-lg px-2 py-2 text-left text-sm transition-colors',
                         isActive
                           ? 'bg-primary/10 text-foreground'
                           : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
                       )}
                       onClick={() => onSelect(c.id)}
                     >
-                      <span className="block truncate pr-7 font-medium">
-                        {conversationLabel(c)}
-                      </span>
+                      <span className="block truncate font-medium">{conversationLabel(c)}</span>
                       <span className="text-muted-foreground block text-xs">
                         {formatDistanceToNow(c.updatedAt, { addSuffix: true, locale: fr })}
                       </span>
                     </button>
                     <Button
                       aria-label="Supprimer la conversation"
-                      className="text-muted-foreground hover:text-destructive absolute top-1/2 right-1 size-7 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100"
+                      className="text-muted-foreground hover:text-destructive shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
                       size="icon-sm"
                       type="button"
                       variant="ghost"

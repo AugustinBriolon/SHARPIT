@@ -1,6 +1,6 @@
 import { DrillDownStatsStrip } from '@/components/today/drill-down/stats-strip';
 import type { MetricTone } from '@/components/today/drill-down/metric-cell';
-import { formatSleepDuration, restorativeRatioLabel } from '@/lib/sleep-scoring';
+import { formatSleepDuration } from '@/lib/sleep-scoring';
 
 function restorativeRatioTone(ratio: number | null): MetricTone {
   if (ratio == null || ratio >= 40) return 'good';
@@ -27,7 +27,7 @@ export function SleepStatsStrip({
   restorativeRatio,
   sleepDelta7d,
   targetDeltaMin,
-  sleepTargetMin,
+  sleepTargetMin: _sleepTargetMin,
 }: {
   totalSleepMin: number | null;
   restorativeRatio: number | null;

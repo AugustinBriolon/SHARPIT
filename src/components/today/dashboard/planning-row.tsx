@@ -22,7 +22,7 @@ export function PlanningRow({ sessions }: { sessions: ClientPlannedSession[] }) 
             <Link
               key={s.id}
               className="bg-card hover:bg-muted/30 flex min-h-11 flex-col gap-2 rounded-xl border p-4 transition-colors active:opacity-80 lg:min-h-0"
-              href="/planning"
+              href="/seances?tab=planning"
             >
               <div className="flex items-center justify-between">
                 <PlannedSessionTypeBadge referenceDate={today} session={s} />

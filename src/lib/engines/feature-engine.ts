@@ -45,7 +45,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 /**
- * Whether the Feature Engine is actively subscribed to observation events.
- * Controlled by the FEATURE_ENGINE_ENABLED environment variable.
+ * Feature Engine event subscription.
+ * Disabled only when FEATURE_ENGINE_ENABLED=false (opt-out).
  */
-export const isFeatureEngineEnabled = process.env.FEATURE_ENGINE_ENABLED === 'true';
+export const isFeatureEngineEnabled = process.env.FEATURE_ENGINE_ENABLED !== 'false';

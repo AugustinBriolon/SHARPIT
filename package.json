@@ -13,6 +13,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
+    "clean": "rm -rf .next out build coverage .vercel node_modules/.cache tsconfig.tsbuildinfo next-env.d.ts public/sw.js public/sw.js.map",
     "test": "vitest run",
     "test:watch": "vitest",
     "benchmark": "tsx src/core/benchmarks/cli.ts",
@@ -25,6 +26,7 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:clean:activities": "tsx scripts/clean-activities.ts",
+    "db:backfill:narratives": "tsx scripts/backfill-activity-narratives.ts",
     "db:studio": "prisma studio",
     "db:up": "docker compose up -d",
     "db:migrate-neon": "bash scripts/migrate-to-neon.sh"

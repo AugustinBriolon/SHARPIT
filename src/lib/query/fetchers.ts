@@ -93,7 +93,7 @@ export async function fetchGoals(): Promise<ClientGoal[]> {
   return data.map((g) => ({
     ...g,
     targetDate: toDateOrNull(g.targetDate),
-    lastAchievedAt: toDateOrNull((g as { lastAchievedAt?: string | null }).lastAchievedAt),
+    lastAchievedAt: toDateOrNull(g.lastAchievedAt),
     createdAt: toDate(g.createdAt),
     updatedAt: toDate(g.updatedAt),
   }));
@@ -148,6 +148,7 @@ export async function fetchPlannedSessions(): Promise<ClientPlannedSession[]> {
           date: toDate(s.activity.date),
           createdAt: toDate(s.activity.createdAt),
           updatedAt: toDate(s.activity.updatedAt),
+          narrativeAnalyzedAt: toDateOrNull(s.activity.narrativeAnalyzedAt),
           plannedSession: s.activity.plannedSession
             ? {
                 ...s.activity.plannedSession,

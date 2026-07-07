@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDistance, formatDuration, formatPace, formatSwimPace } from '@/lib/format';
 import {
   legDisplayDurationSec,
-  sportLegsOnly,
   totalTransitionSec,
   type MultisportLeg,
   type MultisportLegKind,

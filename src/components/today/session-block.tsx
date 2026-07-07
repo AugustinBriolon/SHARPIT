@@ -3,18 +3,14 @@
 import Link from 'next/link';
 import { CheckCircle2, CalendarClock } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  mapAdaptationDecisionToObjective,
-  type AdaptationDecisionVerdict,
-} from '@/lib/today-mapping';
 import { resolve } from '@/lib/french';
 import type { EngineRecommendation, KeyFinding } from '@/hooks/use-today';
 import type { DaySummaryLine, TodayDaySummary } from '@/lib/today-day-summary';
 import { MorningWellnessDialog } from './dashboard/morning-wellness-dialog';
 import { PlannedSessionPrimary } from './dashboard/planned-session-primary';
+import { TodayGoalsStrip } from './dashboard/today-goals-strip';
 
 interface SessionBlockProps {
-  adaptationVerdict: AdaptationDecisionVerdict | null;
   recommendation: EngineRecommendation | null;
   daySummary: TodayDaySummary;
   keyFindings?: KeyFinding[];
@@ -76,14 +72,12 @@ function SessionLineContent({ line }: { line: DaySummaryLine }) {
 }
 
 export function SessionBlock({
-  adaptationVerdict,
   recommendation,
   daySummary,
   keyFindings = [],
   onWellnessCompleted,
   className,
 }: SessionBlockProps) {
-  const objective = adaptationVerdict ? mapAdaptationDecisionToObjective(adaptationVerdict) : null;
   const whyLines = buildWhyLines(keyFindings, recommendation);
 
   return (
@@ -147,16 +141,7 @@ export function SessionBlock({
         </ul>
       )}
 
-      {objective && (
-        <div className="flex flex-col gap-2 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-muted-foreground shrink-0 text-[11px] font-medium uppercase">
-            Objectif
-          </p>
-          <span className="bg-muted text-foreground w-fit max-w-full rounded-md px-2 py-0.5 text-xs leading-snug font-medium break-words">
-            {objective}
-          </span>
-        </div>
-      )}
+      <TodayGoalsStrip />
 
       {whyLines.length > 0 && (
         <div className="border-t pt-3">

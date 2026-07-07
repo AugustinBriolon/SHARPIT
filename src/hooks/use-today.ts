@@ -5,7 +5,8 @@ import { format } from 'date-fns';
 import { useCallback } from 'react';
 import type { ModelDirections } from '@/core/inference/reasoning/types';
 import { queryKeys } from '@/lib/query/keys';
-import { fetchTodayState } from '@/lib/query/today-fetch';
+import { fetchAthleteSnapshot, refreshAthleteSnapshot } from '@/lib/query/athlete-snapshot-fetch';
+import { snapshotToTodayState } from '@/lib/query/today-fetch';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // API response types (no server imports — mirrors API route response shapes)
@@ -339,21 +340,28 @@ export function useToday(date: Date = new Date()): UseTodayResult {
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: queryKeys.today(trainingDayId),
-    queryFn: () => fetchTodayState(trainingDayId),
+    queryKey: queryKeys.athleteSnapshot(trainingDayId),
+    queryFn: () => fetchAthleteSnapshot(trainingDayId),
     placeholderData: keepPreviousData,
     staleTime: 5 * 60_000,
+    select: (envelope) => ({
+      reasoning: envelope.snapshot.reasoning,
+      recovery: envelope.snapshot.recovery,
+      fatigue: envelope.snapshot.fatigue,
+      adaptation: envelope.snapshot.adaptation,
+      dailyStrain: envelope.snapshot.dailyStrain,
+    }),
   });
 
   const refresh = useCallback(async () => {
-    const fresh = await fetchTodayState(trainingDayId, { refresh: true });
-    queryClient.setQueryData(queryKeys.today(trainingDayId), fresh);
-    return fresh;
+    const result = await refreshAthleteSnapshot(trainingDayId);
+    queryClient.setQueryData(queryKeys.athleteSnapshot(trainingDayId), result);
+    return snapshotToTodayState(result.snapshot);
   }, [queryClient, trainingDayId]);
 
   return {
     data: query.data ?? EMPTY_TODAY_STATE,
-    loading: query.isPending,
+    loading: query.isPending && query.data == null,
     isPending: query.isPending,
     isFetching: query.isFetching,
     error: query.error instanceof Error ? query.error.message : null,

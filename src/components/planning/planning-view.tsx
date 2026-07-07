@@ -2,7 +2,7 @@
 
 import { addWeeks, endOfWeek, format, isSameDay, isToday, startOfWeek, subWeeks } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CheckCircle2, ChevronLeft, ChevronRight, Layers, Plus } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, Layers } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';

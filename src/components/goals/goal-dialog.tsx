@@ -63,6 +63,8 @@ export interface GoalForEdit {
   priority: GoalPriority | null;
   raceFormat: string | null;
   targetPerformance: string | null;
+  validatingActivityId?: string | null;
+  lastAchievedAt?: string | Date | null;
 }
 
 interface GoalDialogProps {

@@ -6,6 +6,7 @@ import {
   useHealthEntries,
   usePlannedSessions,
 } from '@/hooks/use-data';
+import { useAthleteSnapshot } from '@/hooks/use-athlete-snapshot';
 import type {
   AdaptationData,
   DailyStrainData,
@@ -14,7 +15,6 @@ import type {
   ReasoningData,
   RecoveryData,
 } from '@/hooks/use-today';
-import { useToday } from '@/hooks/use-today';
 import type { ClientActivity, ClientHealthEntry } from '@/lib/query/types';
 import { effectiveSleepMinutes } from '@/lib/health';
 import {
@@ -25,6 +25,7 @@ import {
   RECOVERY_DIMENSION_NAME,
   SLEEP_TREND,
 } from '@/lib/today-dashboard-labels';
+import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
 import type { TodayDaySummary } from '@/lib/today-day-summary';
 import { buildTodayDaySummary } from '@/lib/today-day-summary';
 import {
@@ -45,9 +46,13 @@ import { isSameDay, subDays } from 'date-fns';
 
 export interface TodayDashboardViewModel {
   loading: boolean;
+  isRefreshing: boolean;
   refresh: () => void;
-  ready: boolean;
-  reasoning: ReasoningData;
+  hasContent: boolean;
+  snapshot: AthleteSnapshot | null;
+  primaryProductMessage: string | null;
+  briefing: AthleteSnapshot['briefing'];
+  reasoning: ReasoningData | null;
   recovery: RecoveryData | null;
   fatigue: FatigueData | null;
   adaptation: AdaptationData | null;
@@ -75,8 +80,13 @@ export interface TodayDashboardViewModel {
 }
 
 export function useTodayDashboardViewModel(): TodayDashboardViewModel {
-  const { data, loading, refresh } = useToday();
-  const { reasoning, recovery, fatigue, adaptation, dailyStrain } = data;
+  const { snapshot, loading, isRefreshing, hasContent, refresh } = useAthleteSnapshot();
+
+  const reasoning = snapshot?.reasoning ?? null;
+  const recovery = snapshot?.recovery ?? null;
+  const fatigue = snapshot?.fatigue ?? null;
+  const adaptation = snapshot?.adaptation ?? null;
+  const dailyStrain = snapshot?.dailyStrain ?? null;
   const { data: healthEntries = [] } = useHealthEntries(14);
   const { data: athleteProfile } = useAthleteProfile();
   const { data: activities = [] } = useActivities();
@@ -261,9 +271,13 @@ export function useTodayDashboardViewModel(): TodayDashboardViewModel {
 
   return {
     loading,
+    isRefreshing,
     refresh,
-    ready,
-    reasoning: reasoning!,
+    hasContent: hasContent || ready,
+    snapshot,
+    primaryProductMessage: snapshot?.primaryProductMessage ?? null,
+    briefing: snapshot?.briefing ?? null,
+    reasoning,
     recovery,
     fatigue,
     adaptation,
