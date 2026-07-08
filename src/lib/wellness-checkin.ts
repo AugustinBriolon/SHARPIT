@@ -1,8 +1,8 @@
-import { format } from 'date-fns';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { prisma } from '@/lib/prisma';
 import type { WellnessCheckinPayload } from '@/lib/validators/wellness-checkin';
 import { onWellnessSubmitted } from '@/lib/athlete-state/orchestrator';
+import { trainingDayIdForNow } from '@/lib/training-day';
 
 const ATHLETE_ID = 'default';
 
@@ -45,6 +45,8 @@ export async function submitMorningWellnessCheckin(
     mood: payload.mood,
     energyLevel: payload.energyLevel,
     perceivedSoreness: payload.perceivedSoreness,
+    stressLevel: payload.stressLevel,
+    notes: payload.notes ?? undefined,
   });
 
   if (result.status === 'REJECTED') {
@@ -57,5 +59,5 @@ export async function submitMorningWellnessCheckin(
 }
 
 export function todayTrainingDayId(date = new Date()): string {
-  return format(date, 'yyyy-MM-dd');
+  return trainingDayIdForNow({}, date);
 }

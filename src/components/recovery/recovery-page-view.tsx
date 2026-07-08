@@ -7,6 +7,8 @@ import { RecoverySignalsSection } from '@/components/recovery/recovery-signals-s
 import { RecoveryStatsStrip } from '@/components/recovery/recovery-stats-strip';
 import { RecoveryEvidenceSection } from '@/components/recovery/recovery-evidence-section';
 import { RecoveryTrendsSection } from '@/components/recovery/recovery-trends-section';
+import { InsightList } from '@/components/product-insight/insight-list';
+import type { ProductInsightBundle } from '@/core/product-insight/types';
 import {
   DataReliabilityFooter,
   MetricDrillDownPage,
@@ -51,6 +53,7 @@ export type RecoveryPageViewProps = {
   overreaching?: { label: string; colorClass: string };
   illness?: { label: string; colorClass: string };
   keyEvidence: string[];
+  insights: ProductInsightBundle;
 };
 
 export function RecoveryPageView(props: RecoveryPageViewProps) {
@@ -92,6 +95,7 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
     overreaching,
     illness,
     keyEvidence,
+    insights,
   } = props;
 
   return (
@@ -120,21 +124,15 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
         onPreviousDay={onPreviousDay}
       />
 
-      <RecoveryStatsStrip
-        bodyBattery={bodyBattery}
-        confidencePct={confidencePct}
-        confidenceTone={confidenceTone}
-        hrv={hrv}
-        restingHr={restingHr}
-      />
-
-      <RecoveryDimensionsSection dimensions={dimensions} />
-
       <RecoveryDecisionSection
         intensityClassName={intensityClassName}
         intensityLabel={intensityLabel}
         rationale={rationale}
       />
+
+      <InsightList insights={insights.primary} label="Ce que SHARPIT comprend" />
+
+      <InsightList insights={insights.supporting} label="Ce qui guide la lecture" />
 
       <RecoverySignalsSection
         autonomicClass={autonomicClass}
@@ -146,6 +144,16 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
         wellnessLabel={wellnessLabel}
       />
 
+      <RecoveryStatsStrip
+        bodyBattery={bodyBattery}
+        confidencePct={confidencePct}
+        confidenceTone={confidenceTone}
+        hrv={hrv}
+        restingHr={restingHr}
+      />
+
+      <RecoveryDimensionsSection dimensions={dimensions} />
+
       <RecoveryTrendsSection
         baselineHigh={baselineHigh}
         baselineLow={baselineLow}
@@ -155,6 +163,8 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
       />
 
       <RecoveryAlertsSection illness={illness} overreaching={overreaching} />
+
+      <InsightList insights={insights.contextual} label="Vigilance et contexte" />
 
       <RecoveryEvidenceSection lines={keyEvidence} />
     </MetricDrillDownPage>

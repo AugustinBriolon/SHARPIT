@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { syncPhysicalConditionObservation } from '@/lib/manual-observation-sync';
 import { addPhysicalCheckin, getPhysicalNoteById } from '@/lib/queries';
 import { createCheckinSchema } from '@/lib/validators/physical-note';
 
@@ -22,6 +23,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     const note = await addPhysicalCheckin(id, parsed.data);
+    if (note) {
+      await syncPhysicalConditionObservation(note);
+    }
     return NextResponse.json(note, { status: 201 });
   } catch (error) {
     console.error(error);

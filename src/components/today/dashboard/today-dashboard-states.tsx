@@ -1,6 +1,5 @@
 'use client';
 
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
 import { Skeleton } from '@/components/ui/skeleton';
 
 function MetricRingSkeleton() {
@@ -15,7 +14,7 @@ function MetricRingSkeleton() {
 /** Shown only on first visit when no snapshot exists yet. */
 export function DashboardSkeleton() {
   return (
-    <div className="mx-auto max-w-3xl space-y-3 sm:space-y-4">
+    <div className="mx-auto space-y-3 sm:space-y-4">
       <div className="rounded-2xl border px-5 py-6">
         <Skeleton className="mb-2 h-3 w-48" />
         <Skeleton className="mb-2 h-8 w-56" />
@@ -47,36 +46,6 @@ export function SnapshotStatusBanner({
     <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 text-sm text-slate-600 dark:border-slate-700/60 dark:bg-slate-900/40 dark:text-slate-300">
       <p>{message}</p>
       {isRefreshing ? <p className="mt-1 text-xs text-slate-400">Mise à jour en cours…</p> : null}
-    </div>
-  );
-}
-
-export function PartialSnapshotFallback({
-  snapshot,
-  onRetry,
-}: {
-  snapshot: AthleteSnapshot;
-  onRetry: () => void;
-}) {
-  const message =
-    snapshot.insufficientDataMessage ??
-    snapshot.primaryProductMessage ??
-    snapshot.domainMessages.sleep ??
-    snapshot.domainMessages.recovery ??
-    'SHARPIT attend tes premières données physiologiques pour établir ton bilan.';
-
-  return (
-    <div className="mx-auto max-w-3xl space-y-4">
-      <SnapshotStatusBanner message={message} />
-      <div className="flex justify-center">
-        <button
-          className="text-xs text-slate-400 underline-offset-4 transition-colors hover:text-slate-600 hover:underline"
-          type="button"
-          onClick={onRetry}
-        >
-          Actualiser
-        </button>
-      </div>
     </div>
   );
 }

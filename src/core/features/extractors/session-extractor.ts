@@ -342,7 +342,7 @@ export function extractSessionFeatures(
   input: SessionExtractorInput,
   ctx: ExtractionContext,
 ): SessionFeatureSet {
-  const { session, linkedSubjective } = input;
+  const { session, linkedSubjective, stream } = input;
 
   const tssResult = selectBestTss(input, ctx);
   const intensityFactor = computeIntensityFactor(input, ctx);
@@ -363,11 +363,11 @@ export function extractSessionFeatures(
     tssMethod: tssResult.method,
 
     intensityFactor,
-    aerobicLoadFactor: null, // requires stream data — v2 enhancement
-    anaerobicLoadFactor: null, // requires stream data — v2 enhancement
-    timeInZones: null, // requires stream data — v2 enhancement
-    hrDriftPercent: null, // requires stream data — v2 enhancement
-    paceVariabilityIndex: null, // requires stream data — v2 enhancement
+    aerobicLoadFactor: stream?.aerobicLoadFactor ?? null,
+    anaerobicLoadFactor: stream?.anaerobicLoadFactor ?? null,
+    timeInZones: stream?.timeInZones ?? null,
+    hrDriftPercent: stream?.hrDriftPercent ?? null,
+    paceVariabilityIndex: stream?.paceVariabilityIndex ?? null,
 
     mechanicalLoad,
     elevationStressScore,

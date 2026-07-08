@@ -6,7 +6,7 @@ const REF = new Date('2026-01-31T12:00:00');
 describe('computeTrainingLoad', () => {
   it('renvoie des valeurs neutres sans activité', () => {
     const res = computeTrainingLoad([], REF);
-    expect(res).toEqual({ weeklyLoad: 0, acwr: 0, fatigue: 'Low' });
+    expect(res).toMatchObject({ weeklyLoad: 0, acwr: 0, fatigue: 'Low' });
   });
 
   it("calcule l'ACWR et marque une charge aiguë élevée", () => {

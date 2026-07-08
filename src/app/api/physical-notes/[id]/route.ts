@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  removePhysicalConditionObservations,
+  syncPhysicalConditionObservation,
+} from '@/lib/manual-observation-sync';
 import { deletePhysicalNote, getPhysicalNoteById, updatePhysicalNote } from '@/lib/queries';
 import { updatePhysicalNoteSchema } from '@/lib/validators/physical-note';
 
@@ -35,6 +39,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     const note = await updatePhysicalNote(id, data);
+    await syncPhysicalConditionObservation(note);
     return NextResponse.json(note);
   } catch (error) {
     console.error(error);
@@ -46,6 +51,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
     await deletePhysicalNote(id);
+    await removePhysicalConditionObservations(id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);

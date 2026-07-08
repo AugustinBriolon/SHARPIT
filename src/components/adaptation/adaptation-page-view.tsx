@@ -3,6 +3,8 @@
 import { DrillDownHero } from '@/components/today/drill-down/hero';
 import { DrillDownDimensionRow } from '@/components/today/drill-down/dimension-row';
 import { DrillDownHighlightSection } from '@/components/today/drill-down/highlight-section';
+import { InsightList } from '@/components/product-insight/insight-list';
+import type { ProductInsightBundle } from '@/core/product-insight/types';
 import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
 import {
@@ -41,6 +43,7 @@ export type AdaptationPageViewProps = {
   historyLength: number;
   confidencePct: number;
   confidenceTone: MetricTone;
+  insights: ProductInsightBundle;
 };
 
 export function AdaptationPageView({
@@ -66,6 +69,7 @@ export function AdaptationPageView({
   availableDimCount,
   historyLength,
   confidencePct,
+  insights,
 }: AdaptationPageViewProps) {
   return (
     <MetricDrillDownPage
@@ -78,34 +82,35 @@ export function AdaptationPageView({
         />
       }
     >
-      <DrillDownSectionCard padding="hero">
-        <DrillDownHero
-          date={date}
-          format="percent"
-          isToday={isToday}
-          max={100}
-          maxDate={maxDate}
-          primaryCaption={trendLabel}
-          score={adaptationIndex}
-          statusClassName={statusClassName}
-          statusLabel={statusLabel}
-          subtitle="Modèle d’adaptation"
-          onDateChange={onDateChange}
-          onNextDay={onNextDay}
-          onPreviousDay={onPreviousDay}
-        />
-      </DrillDownSectionCard>
+      <DrillDownHero
+        date={date}
+        format="percent"
+        isToday={isToday}
+        max={100}
+        maxDate={maxDate}
+        primaryCaption={trendLabel}
+        score={adaptationIndex}
+        statusClassName={statusClassName}
+        statusLabel={statusLabel}
+        subtitle="Modèle d’adaptation"
+        onDateChange={onDateChange}
+        onNextDay={onNextDay}
+        onPreviousDay={onPreviousDay}
+      />
 
       <DrillDownHighlightSection
         bullets={rationale}
-        label="Prescription de charge"
+        description="La meilleure facon d'ajuster le bloc a partir de ce que le modele voit."
+        label="Décision de progression"
         title={verdictLabel}
         titleClassName={verdictClassName}
       />
 
+      <InsightList insights={insights.primary} label="Lecture primaire du bloc" />
+
       {(plateauRisk || overreachingWithoutAdaptation || limitingFactor) && (
         <DrillDownSectionCard>
-          <DrillDownSectionLabel>Signaux d’attention</DrillDownSectionLabel>
+          <DrillDownSectionLabel>Ce qui freine le bloc</DrillDownSectionLabel>
           <ul className="text-foreground mt-3 space-y-2 text-sm leading-relaxed">
             {limitingFactor ? <li>· {limitingFactor}</li> : null}
             {plateauRisk ? <li>· Risque de plateau détecté</li> : null}
@@ -116,8 +121,10 @@ export function AdaptationPageView({
         </DrillDownSectionCard>
       )}
 
+      <InsightList insights={insights.supporting} label="Freins et leviers" />
+
       <DrillDownSectionCard>
-        <DrillDownSectionLabel>Dimensions d’adaptation</DrillDownSectionLabel>
+        <DrillDownSectionLabel>Ce qui nourrit ou freine l'adaptation</DrillDownSectionLabel>
         <div className="mt-4 space-y-4">
           {dimensions.map((d) => (
             <DrillDownDimensionRow
@@ -132,7 +139,7 @@ export function AdaptationPageView({
 
       {keyEvidence.length > 0 ? (
         <DrillDownSectionCard>
-          <DrillDownSectionLabel>Éléments clés</DrillDownSectionLabel>
+          <DrillDownSectionLabel>Pourquoi cette lecture</DrillDownSectionLabel>
           <ul className="text-muted-foreground mt-3 space-y-1.5 text-sm leading-relaxed">
             {keyEvidence.map((line) => (
               <li key={line}>· {line}</li>
@@ -145,6 +152,8 @@ export function AdaptationPageView({
           ) : null}
         </DrillDownSectionCard>
       ) : null}
+
+      <InsightList insights={insights.contextual} label="Contexte utile" />
     </MetricDrillDownPage>
   );
 }

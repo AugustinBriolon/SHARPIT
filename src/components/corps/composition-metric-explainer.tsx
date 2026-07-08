@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,14 +9,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import type { CorpsTone } from '@/components/corps/corps-ui';
-import {
-  getGuide,
-  metricScalePosition,
-  type CompositionContext,
-  type CompositionMetricId,
-  type MetricGuide,
-} from '@/lib/composition-metric-guides';
+import type { BodyMetricExplainerVm } from '@/core/presentation/body-view-model';
+import type { CorpsTone } from '@/lib/metric-tone';
 
 const TONE_BG: Record<CorpsTone, string> = {
   good: 'bg-emerald-500/80',
@@ -33,37 +26,44 @@ const TONE_BADGE: Record<CorpsTone, string> = {
   neutral: 'bg-muted text-muted-foreground',
 };
 
-function MetricScale({ guide, value }: { guide: MetricGuide; value: number }) {
-  const scaleInput = guide.scaleValue ? guide.scaleValue(value) : value;
-  const marker = metricScalePosition(scaleInput, guide.zones);
+function MetricScale({
+  zones,
+  markerPct,
+  unit,
+}: {
+  zones: BodyMetricExplainerVm['zones'];
+  markerPct: number | null;
+  unit: string;
+}) {
   return (
     <div className="space-y-3">
       <div className="relative h-2.5 overflow-hidden rounded-full">
         <div className="flex h-full w-full">
-          {guide.zones.map((zone) => (
+          {zones.map((zone) => (
             <div
               key={zone.label}
+              style={{ flex: zone.max - zone.min }}
               className={cn(
                 'h-full flex-1 first:rounded-l-full last:rounded-r-full',
                 TONE_BG[zone.tone],
               )}
-              style={{
-                flex: zone.max - zone.min,
-              }}
             />
           ))}
         </div>
-        <div
-          className="border-background bg-foreground absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 shadow-sm"
-          style={{ left: `${marker}%` }}
-        />
+        {markerPct != null ? (
+          <div
+            className="border-background bg-foreground absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 shadow-sm"
+            style={{ left: `${markerPct}%` }}
+          />
+        ) : null}
       </div>
+
       <div className="flex flex-wrap gap-x-3 gap-y-1">
-        {guide.zones.map((zone) => (
+        {zones.map((zone) => (
           <span key={zone.label} className="text-muted-foreground text-[10px]">
             <span className={cn('mr-1 inline-block size-1.5 rounded-full', TONE_BG[zone.tone])} />
             {zone.label}
-            {zone.max < 999 && guide.unit ? ` (< ${zone.max} ${guide.unit})` : null}
+            {zone.max < 999 && unit ? ` (< ${zone.max} ${unit})` : null}
           </span>
         ))}
       </div>
@@ -71,36 +71,36 @@ function MetricScale({ guide, value }: { guide: MetricGuide; value: number }) {
   );
 }
 
-const AGE_COMPARED_METRICS: CompositionMetricId[] = ['vascularAgeYears', 'metabolicAge', 'bmi'];
-
 export function CompositionMetricExplainer({
   open,
   onOpenChange,
-  metricId,
-  value,
-  displayValue,
-  context,
+  explainer,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  metricId: CompositionMetricId;
-  value: number;
-  displayValue: string;
-  context: CompositionContext;
+  explainer: BodyMetricExplainerVm;
 }) {
-  const guide = getGuide(metricId);
-
-  const interpretation = useMemo(() => guide.interpret(value, context), [guide, value, context]);
-
-  const needsProfileAge =
-    AGE_COMPARED_METRICS.includes(metricId) && context.chronologicalAgeYears == null;
+  const {
+    interpretation,
+    guideTitle,
+    guideSummary,
+    displayValue,
+    hideScale,
+    zones,
+    scaleMarkerPct,
+    guideUnit,
+    guideExplanation,
+    showProfileAgeHint,
+    chronologicalAgeYears,
+    showAgeComparisonNote,
+  } = explainer;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[min(90vh,640px)] overflow-y-auto sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{guide.title}</DialogTitle>
-          <DialogDescription>{guide.summary}</DialogDescription>
+          <DialogTitle>{guideTitle}</DialogTitle>
+          <DialogDescription>{guideSummary}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5">
@@ -123,19 +123,19 @@ export function CompositionMetricExplainer({
             </span>
           </div>
 
-          {!guide.hideScale && guide.zones.length > 0 && (
-            <MetricScale guide={guide} value={value} />
-          )}
+          {!hideScale && zones.length > 0 ? (
+            <MetricScale markerPct={scaleMarkerPct} unit={guideUnit} zones={zones} />
+          ) : null}
 
-          <p className="text-muted-foreground text-sm leading-relaxed">{guide.explanation}</p>
+          <p className="text-muted-foreground text-sm leading-relaxed">{guideExplanation}</p>
 
-          {interpretation.personalizedNote && (
+          {interpretation.personalizedNote ? (
             <p className="bg-primary/5 text-foreground rounded-xl border px-3 py-2.5 text-sm leading-relaxed">
               {interpretation.personalizedNote}
             </p>
-          )}
+          ) : null}
 
-          {needsProfileAge && (
+          {showProfileAgeHint ? (
             <p className="text-muted-foreground rounded-xl border border-dashed px-3 py-2.5 text-xs leading-relaxed">
               Renseigne ta date de naissance dans{' '}
               <Link className="text-foreground font-medium hover:underline" href="/profil">
@@ -143,13 +143,13 @@ export function CompositionMetricExplainer({
               </Link>{' '}
               pour personnaliser la comparaison avec ton âge réel.
             </p>
-          )}
+          ) : null}
 
-          {context.chronologicalAgeYears != null && AGE_COMPARED_METRICS.includes(metricId) && (
+          {showAgeComparisonNote && chronologicalAgeYears != null ? (
             <p className="text-muted-foreground text-[11px]">
-              Comparaison basée sur ton profil athlète ({context.chronologicalAgeYears} ans).
+              Comparaison basée sur ton profil athlète ({chronologicalAgeYears} ans).
             </p>
-          )}
+          ) : null}
 
           <p className="text-muted-foreground text-[11px] leading-relaxed">
             Indication sportive et éducative — ne remplace pas un avis médical. Les seuils sont des

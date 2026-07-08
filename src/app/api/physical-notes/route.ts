@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { syncPhysicalConditionObservation } from '@/lib/manual-observation-sync';
 import { createPhysicalNote, getPhysicalNotes } from '@/lib/queries';
 import { createPhysicalNoteSchema } from '@/lib/validators/physical-note';
 
@@ -28,6 +29,7 @@ export async function POST(request: NextRequest) {
       );
     }
     const note = await createPhysicalNote(parsed.data as Parameters<typeof createPhysicalNote>[0]);
+    await syncPhysicalConditionObservation(note);
     return NextResponse.json(note, { status: 201 });
   } catch (error) {
     console.error(error);

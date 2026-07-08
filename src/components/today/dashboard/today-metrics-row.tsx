@@ -1,18 +1,10 @@
 import { TWIN_DRILL_DOWN } from '@/lib/today-twin-navigation';
 import { RadialScoreCard } from './radial-score-card';
-import type { TodayDashboardViewModel } from './use-today-dashboard-view-model';
+import type { TodayViewModel } from '@/core/presentation/today-view-model';
 
-type MetricsVm = Pick<
-  TodayDashboardViewModel,
-  'sleepScore' | 'recovery' | 'dailyStrain' | 'effortUnavailableMessage' | 'adaptation'
->;
+type MetricsRowVm = TodayViewModel['hero']['metricsRow'];
 
-function MetricsCards({ vm, compact }: { vm: MetricsVm; compact: boolean }) {
-  const strainScore =
-    vm.dailyStrain?.available && vm.dailyStrain.strainScore != null
-      ? vm.dailyStrain.strainScore
-      : null;
-
+function MetricsCards({ metricsRow, compact }: { metricsRow: MetricsRowVm; compact: boolean }) {
   return (
     <>
       <RadialScoreCard
@@ -22,7 +14,7 @@ function MetricsCards({ vm, compact }: { vm: MetricsVm; compact: boolean }) {
         href={TWIN_DRILL_DOWN.sleep}
         label="Sommeil"
         max={100}
-        value={vm.sleepScore}
+        value={metricsRow.sleepScore}
       />
       <RadialScoreCard
         colorMode="dynamic"
@@ -31,7 +23,7 @@ function MetricsCards({ vm, compact }: { vm: MetricsVm; compact: boolean }) {
         href={TWIN_DRILL_DOWN.recovery}
         label="Récupération"
         max={100}
-        value={vm.recovery?.readinessScore ?? null}
+        value={metricsRow.recoveryScore}
       />
       <RadialScoreCard
         colorMode="strain"
@@ -40,8 +32,8 @@ function MetricsCards({ vm, compact }: { vm: MetricsVm; compact: boolean }) {
         href={TWIN_DRILL_DOWN.effort}
         label="Effort"
         max={21}
-        unavailableCaption={strainScore == null ? vm.effortUnavailableMessage : null}
-        value={strainScore}
+        unavailableCaption={metricsRow.effortUnavailableCaption}
+        value={metricsRow.effortScore}
       />
       <RadialScoreCard
         colorMode="dynamic"
@@ -50,19 +42,17 @@ function MetricsCards({ vm, compact }: { vm: MetricsVm; compact: boolean }) {
         href={TWIN_DRILL_DOWN.adaptation}
         label="Adaptation"
         max={100}
-        value={vm.adaptation?.adaptationIndex ?? null}
-        unavailableCaption={
-          vm.adaptation?.adaptationIndex == null ? 'Historique insuffisant' : null
-        }
+        unavailableCaption={metricsRow.adaptationUnavailableCaption}
+        value={metricsRow.adaptationScore}
       />
     </>
   );
 }
 
-export function TodayMetricsRow({ vm }: { vm: MetricsVm }) {
+export function TodayMetricsRow({ metricsRow }: { metricsRow: MetricsRowVm }) {
   return (
     <div className="grid grid-cols-2 gap-1 sm:grid-cols-4 sm:gap-3">
-      <MetricsCards vm={vm} compact />
+      <MetricsCards compact={false} metricsRow={metricsRow} />
     </div>
   );
 }

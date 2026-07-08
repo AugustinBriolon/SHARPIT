@@ -172,7 +172,7 @@ export function RecoveryTrendsSection({
 }) {
   return (
     <DrillDownSectionCard>
-      <DrillDownSectionLabel>14 derniers jours</DrillDownSectionLabel>
+      <DrillDownSectionLabel>Tendances qui confirment ou nuancent</DrillDownSectionLabel>
       <div className="space-y-6">
         <div>
           <p className="text-muted-foreground mb-2 text-xs font-medium">VFC</p>

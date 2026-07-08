@@ -250,6 +250,33 @@ const STRINGS: Record<string, string> = {
   'recovery.rationale.sleepLimiting': 'Le sommeil limite la récupération aujourd’hui.',
   'recovery.rationale.overreachingRisk': 'Risque de surmenage détecté.',
   'recovery.rationale.dissonance': 'Écart entre signaux objectifs et ressenti.',
+
+  // ── Adaptation evidence & rationale ────────────────────────────────────────
+  'adaptation.rationale.noData': 'Données insuffisantes pour lire ton adaptation.',
+  'adaptation.rationale.overreachingDetected':
+    'La charge récente dépasse ce que ton organisme semble absorber.',
+  'adaptation.rationale.autonomicSuppressed':
+    'Le système nerveux montre des signes de suppression.',
+  'adaptation.rationale.immediateReduction':
+    'Réduire la charge maintenant favorise le rebond adaptatif.',
+  'adaptation.rationale.supercompensation':
+    'Tu es dans une phase d’assimilation productive : maintiens le cap.',
+  'adaptation.rationale.restrictedCapacity':
+    'L’adaptation reste positive, mais la capacité du jour est limitée.',
+  'adaptation.rationale.plateauRisk':
+    'La trajectoire se maintient, mais un nouveau stimulus devient utile.',
+  'adaptation.rationale.stableLoad': 'La charge actuelle soutient encore la progression.',
+  'adaptation.rationale.stalled': 'L’adaptation semble plafonner sur les derniers jours.',
+  'adaptation.rationale.loadProgressionLow':
+    'La progression de charge est trop faible pour relancer l’adaptation.',
+  'adaptation.rationale.maladaptation':
+    'Les signaux montrent une réponse défavorable à la charge actuelle.',
+  'adaptation.rationale.detraining':
+    'Le niveau de stimulation récent paraît insuffisant pour entretenir les acquis.',
+  'adaptation.evidence.index': 'Index d’adaptation : {index}/100',
+  'adaptation.evidence.overreachingPattern': 'Le stress accumulé dépasse les gains observés.',
+  'adaptation.evidence.plateauRisk': 'La trajectoire récente suggère un risque de plateau.',
+  'adaptation.evidence.trend': 'Tendance {trend} sur {days} jour(s).',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

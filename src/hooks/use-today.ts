@@ -249,7 +249,21 @@ export type DailyStrainSource =
   | 'LEGACY_SOURCE_TSS'
   | 'LEGACY_TRIMP'
   | 'LEGACY_DURATION'
+  | 'DAILY_HEALTH_STRESS'
+  | 'DAILY_HEALTH_RECOVERY'
+  | 'DAILY_HEALTH_BODY_BATTERY'
   | 'UNKNOWN';
+
+export type DailyStrainContributor = 'TRAINING' | 'CARDIOVASCULAR' | 'MOVEMENT' | 'UNKNOWN';
+
+export interface DailyStrainContribution {
+  available: boolean;
+  contributor: DailyStrainContributor;
+  load: number | null;
+  score: number | null;
+  confidence: number;
+  source: DailyStrainSource;
+}
 
 export interface DailyStrainData {
   available: boolean;
@@ -257,13 +271,25 @@ export interface DailyStrainData {
   strainScore: number | null;
   tier: DailyStrainTier;
   source: DailyStrainSource;
+  dominantContributor: DailyStrainContributor;
   confidence: number;
   structuredSessionDetected: boolean;
   fallbackUsed: boolean;
+  contributions: {
+    training: DailyStrainContribution;
+    cardiovascular: DailyStrainContribution;
+    movement: DailyStrainContribution;
+  };
   trace: {
     sessionCount: number;
     activityCount: number;
     sessionMethods: string[];
+    cardiovascularSignals: {
+      stress: number | null;
+      recoveryScore: number | null;
+      bodyBattery: number | null;
+      calories: number | null;
+    };
   };
 }
 

@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { useWellnessCheckin } from '@/hooks/use-wellness-checkin';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/toast';
@@ -38,6 +39,14 @@ const SORENESS_OPTIONS: ScaleOption[] = [
   { value: 5, label: 'Modérée', icon: '😣' },
   { value: 8, label: 'Forte', icon: '🔥' },
   { value: 10, label: 'Max', icon: '🛑' },
+];
+
+const STRESS_OPTIONS: ScaleOption[] = [
+  { value: 1, label: 'Calme', icon: '🫧' },
+  { value: 2, label: 'Léger', icon: '🙂' },
+  { value: 3, label: 'Modéré', icon: '😐' },
+  { value: 4, label: 'Élevé', icon: '😵' },
+  { value: 5, label: 'Très haut', icon: '🚨' },
 ];
 
 function ScalePicker({
@@ -91,12 +100,20 @@ export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => voi
   const [mood, setMood] = useState(3);
   const [energyLevel, setEnergyLevel] = useState(3);
   const [perceivedSoreness, setPerceivedSoreness] = useState(2);
+  const [stressLevel, setStressLevel] = useState(2);
+  const [notes, setNotes] = useState('');
 
   if (loading || completed) return null;
 
   async function handleSubmit() {
     try {
-      await submit({ mood, energyLevel, perceivedSoreness });
+      await submit({
+        mood,
+        energyLevel,
+        perceivedSoreness,
+        stressLevel,
+        notes: notes.trim() || null,
+      });
       setOpen(false);
       onCompleted?.();
     } catch {
@@ -147,6 +164,26 @@ export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => voi
             value={perceivedSoreness}
             onChange={setPerceivedSoreness}
           />
+          <ScalePicker
+            hint="Charge mentale, tension ou pression ressentie."
+            label="Stress"
+            options={STRESS_OPTIONS}
+            value={stressLevel}
+            onChange={setStressLevel}
+          />
+          <div className="space-y-2.5">
+            <div>
+              <p className="text-sm font-medium text-neutral-800">Note libre</p>
+              <p className="text-muted-foreground text-xs">
+                Un contexte utile pour interpréter ta journée.
+              </p>
+            </div>
+            <Textarea
+              placeholder="Ex: nuit hachée, pression pro, jambes lourdes..."
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+            />
+          </div>
 
           {error && <p className="text-xs text-red-600">{error}</p>}
         </div>

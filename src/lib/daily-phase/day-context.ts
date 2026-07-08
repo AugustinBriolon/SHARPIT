@@ -1,6 +1,7 @@
 import type { DailyPhaseDayContext, DailyPhaseSessionStatus } from '@/lib/daily-phase/types';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
-import { isSameDay, startOfDay } from 'date-fns';
+import { format, isSameDay, startOfDay } from 'date-fns';
+import { activityMatchesTrainingDay } from '@/lib/training-day';
 
 function deriveSessionStatus(
   completedCount: number,
@@ -31,22 +32,35 @@ export function buildDailyPhaseDayContext(
   refDate: Date,
   activities: ClientActivity[],
   plannedSessions: ClientPlannedSession[],
+  options?: { trainingDayId?: string },
 ): DailyPhaseDayContext {
   const refDay = startOfDay(refDate);
+  const resolvedTrainingDayId = options?.trainingDayId ?? format(refDate, 'yyyy-MM-dd');
 
   const todayActivities = activities
-    .filter((a) => isSameDay(new Date(a.date), refDay))
+    .filter((a) =>
+      options?.trainingDayId
+        ? activityMatchesTrainingDay(a.date, resolvedTrainingDayId)
+        : isSameDay(new Date(a.date), refDay),
+    )
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const remainingPlanned = plannedSessions
-    .filter((s) => isSameDay(new Date(s.date), refDay) && !s.completed && !s.activityId)
+    .filter(
+      (s) =>
+        format(new Date(s.date), 'yyyy-MM-dd') === resolvedTrainingDayId &&
+        !s.completed &&
+        !s.activityId,
+    )
     .sort((a, b) => {
       const ta = parsePlannedStart(refDay, a.startTime)?.getTime() ?? Number.MAX_SAFE_INTEGER;
       const tb = parsePlannedStart(refDay, b.startTime)?.getTime() ?? Number.MAX_SAFE_INTEGER;
       return ta - tb;
     });
 
-  const plannedToday = plannedSessions.filter((s) => isSameDay(new Date(s.date), refDay));
+  const plannedToday = plannedSessions.filter(
+    (s) => format(new Date(s.date), 'yyyy-MM-dd') === resolvedTrainingDayId,
+  );
   const completedSessionCount = todayActivities.length;
   const remainingPlannedCount = remainingPlanned.length;
 

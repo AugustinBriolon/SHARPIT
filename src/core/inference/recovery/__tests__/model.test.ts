@@ -177,10 +177,16 @@ describe('scoreSleep', () => {
     expect(dim.score).toBe(50);
   });
 
-  it('ignores sleep debt — score reflects night architecture only', () => {
+  it('applies sleep debt — score is reduced with cumulative debt', () => {
     const withoutDebt = scoreSleep(makeRecovery({ sleepEfficiencyPercent: 36, sleepDebtMin: 0 }));
     const withDebt = scoreSleep(makeRecovery({ sleepEfficiencyPercent: 36, sleepDebtMin: 300 }));
-    expect(withDebt.score).toBe(withoutDebt.score);
+    const withoutDebtScore = withoutDebt.score;
+    const withDebtScore = withDebt.score;
+    expect(withoutDebtScore).not.toBeNull();
+    expect(withDebtScore).not.toBeNull();
+    // sleepDebtModifier(300) = 0.75, baseScore(36) = 50 → 37.5
+    expect(withDebtScore!).toBeLessThan(withoutDebtScore!);
+    expect(withDebtScore!).toBeCloseTo(withoutDebtScore! * 0.75, 5);
   });
 
   it('returns unavailable when restorative ratio is null', () => {

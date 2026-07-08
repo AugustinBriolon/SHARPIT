@@ -1,4 +1,5 @@
 import { format as formatDate } from 'date-fns';
+import { addTrainingDays, computeTrainingDayId } from '@/lib/training-day';
 
 /**
  * Calcul de la charge d'entraînement via le ratio Acute:Chronic Workload Ratio (ACWR).
@@ -49,20 +50,10 @@ const ACWR_THRESHOLDS = {
   OVERLOAD_HIGH: 1.5,
 } as const;
 
-const DEFAULT_TRAINING_DAY_START_HOUR = 4;
-const DEFAULT_TIMEZONE = 'Europe/Paris';
-
 function dayIdToEpochDays(trainingDayId: string): number {
   const [year, month, day] = trainingDayId.split('-').map(Number);
   const d = new Date(Date.UTC(year, month - 1, day));
   return Math.floor(d.getTime() / 86_400_000);
-}
-
-function addTrainingDays(trainingDayId: string, days: number): string {
-  const [year, month, day] = trainingDayId.split('-').map(Number);
-  const d = new Date(Date.UTC(year, month - 1, day));
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().split('T')[0];
 }
 
 function isWithinWindow(trainingDayId: string, anchorDayId: string, windowDays: number) {
@@ -70,36 +61,6 @@ function isWithinWindow(trainingDayId: string, anchorDayId: string, windowDays: 
   const dayEpoch = dayIdToEpochDays(trainingDayId);
   const diff = anchorEpoch - dayEpoch;
   return diff >= 0 && diff < windowDays;
-}
-
-function computeTrainingDayId(
-  timestamp: Date,
-  trainingDayStartHour = DEFAULT_TRAINING_DAY_START_HOUR,
-  timezone = DEFAULT_TIMEZONE,
-) {
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    hour12: false,
-  });
-
-  const parts = Object.fromEntries(
-    formatter.formatToParts(timestamp).map(({ type, value }) => [type, value]),
-  );
-  const localHour = parseInt(parts.hour, 10);
-
-  if (localHour < trainingDayStartHour) {
-    const prevDayAnchor = new Date(timestamp.getTime() - 24 * 60 * 60_000);
-    const prevParts = Object.fromEntries(
-      formatter.formatToParts(prevDayAnchor).map(({ type, value }) => [type, value]),
-    );
-    return `${prevParts.year}-${prevParts.month}-${prevParts.day}`;
-  }
-
-  return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
 function mean(values: number[]) {

@@ -1,5 +1,6 @@
 import type { SleepCoachView } from '@/lib/sleep';
 import type { SleepScoreBreakdown } from '@/lib/sleep-scoring';
+import type { ProductInsightBundle } from '@/core/product-insight/types';
 
 export type SleepBarPoint = { date: string; minutes: number | null; fill: string };
 
@@ -29,4 +30,5 @@ export type SleepPageViewProps = {
   coachView: SleepCoachView;
   barData: SleepBarPoint[];
   recoveryNote?: string | null;
+  insights: ProductInsightBundle;
 };

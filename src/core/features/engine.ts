@@ -67,6 +67,19 @@ export interface ExtractionContextProvider {
   getContext(athleteId: string, trainingDayId: string): Promise<ExtractionContext>;
 }
 
+export interface SessionStreamProvider {
+  getSessionStream(
+    session: SessionObservation,
+    ctx: ExtractionContext,
+  ): Promise<{
+    aerobicLoadFactor: number | null;
+    anaerobicLoadFactor: number | null;
+    timeInZones: readonly [number, number, number, number, number] | null;
+    hrDriftPercent: number | null;
+    paceVariabilityIndex: number | null;
+  } | null>;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Dependencies
 // ─────────────────────────────────────────────────────────────────────────────
@@ -75,6 +88,7 @@ export type FeatureEngineDeps = {
   featureRepository: FeatureRepository;
   observationRepository: ObservationRepository;
   contextProvider: ExtractionContextProvider;
+  sessionStreamProvider?: SessionStreamProvider;
   /** Optional metrics collector — no-op when absent. */
   metrics?: MetricsCollector;
 };
@@ -144,12 +158,14 @@ export class FeatureEngine {
   private readonly featureRepo: FeatureRepository;
   private readonly obsRepo: ObservationRepository;
   private readonly ctxProvider: ExtractionContextProvider;
+  private readonly sessionStreamProvider: SessionStreamProvider | undefined;
   private readonly metrics: MetricsCollector | undefined;
 
   constructor(deps: FeatureEngineDeps) {
     this.featureRepo = deps.featureRepository;
     this.obsRepo = deps.observationRepository;
     this.ctxProvider = deps.contextProvider;
+    this.sessionStreamProvider = deps.sessionStreamProvider;
     this.metrics = deps.metrics;
   }
 
@@ -219,9 +235,12 @@ export class FeatureEngine {
 
     // Find linked subjective observation (if any)
     const linkedSubjective = await this.findLinkedSubjective(athleteId, session);
+    const stream = this.sessionStreamProvider
+      ? await this.sessionStreamProvider.getSessionStream(session, ctx)
+      : null;
 
     const t0 = Date.now();
-    const features = extractSessionFeatures({ session, linkedSubjective }, ctx);
+    const features = extractSessionFeatures({ session, linkedSubjective, stream }, ctx);
     const durationMs = Date.now() - t0;
 
     this.metrics?.recordExtraction({

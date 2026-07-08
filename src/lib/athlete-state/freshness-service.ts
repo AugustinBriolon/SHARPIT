@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { trainingDayIdForNow } from '@/lib/training-day';
 import type {
   AthleteFreshnessSnapshot,
   AthleteStateDomain,
@@ -422,7 +422,7 @@ export function providersNeedingSync(
 }
 
 export function trainingDayIdNow(): string {
-  return format(new Date(), 'yyyy-MM-dd');
+  return trainingDayIdForNow();
 }
 
 export function shouldSyncOnOpen(snapshot: AthleteFreshnessSnapshot): boolean {

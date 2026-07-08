@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildActivityUpdateData } from '@/lib/activity-service';
+import {
+  removeManualActivityObservations,
+  syncManualActivityObservations,
+} from '@/lib/manual-observation-sync';
 import { deleteActivity, getActivityById, updateActivity } from '@/lib/queries';
 import { updateRecordsForTypesSafe } from '@/lib/records';
 import { updateActivitySchema } from '@/lib/validators/activity';
@@ -48,6 +52,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         type: newType,
       }) as Parameters<typeof updateActivity>[1],
     );
+    await syncManualActivityObservations(activity);
 
     // L'ancien et le nouveau type peuvent différer : on recalcule les deux.
     await updateRecordsForTypesSafe([existing.type, newType]);
@@ -64,6 +69,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     const { id } = await context.params;
     const existing = await getActivityById(id);
     await deleteActivity(id);
+    await removeManualActivityObservations(id);
     if (existing) await updateRecordsForTypesSafe([existing.type]);
     return NextResponse.json({ success: true });
   } catch (error) {

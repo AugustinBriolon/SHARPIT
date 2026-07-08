@@ -25,7 +25,9 @@ export function withingsMeasurementToBodyComposition(
     weightKg: measurement.weightKg,
     fatPercent: measurement.bodyFatPct ?? undefined,
     musclePercent,
+    waterPercent: measurement.waterPct ?? undefined,
     boneMassKg: measurement.boneKg ?? undefined,
+    visceralFat: measurement.visceralFat ?? undefined,
     bmi: undefined,
   };
 }

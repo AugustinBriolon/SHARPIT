@@ -119,6 +119,8 @@ export function scoreAutonomic(features: RecoveryFeatureSet): DimensionScore {
  * Norme adulte typique pour le ratio restaurateur : 40–55 %.
  */
 export function mapRestorativeSleepRatioToRaw(ratioPercent: number): number {
+  // Legacy mapping (used by scientific-validation + unit tests):
+  // >= 55% → 100 | >= 45% → 85 | >= 40% → 70 | >= 32% → 50 | >= 25% → 35 | < 25% → 20
   if (ratioPercent >= 55) return 100;
   if (ratioPercent >= 45) return 85;
   if (ratioPercent >= 40) return 70;
@@ -133,6 +135,9 @@ export function mapRestorativeSleepRatioToRaw(ratioPercent: number): number {
  */
 export function sleepDebtModifier(debtMinutes: number | null): number {
   if (debtMinutes === null) return 1.0;
+  // Legacy mapping (used by scientific-validation + unit tests):
+  // <= 30min → 1.00 | <= 90min → 0.95 | <= 150min → 0.90 | <= 210min → 0.85 | <= 300min → 0.75 |
+  // <= 420min → 0.65 | > 420min → 0.55
   if (debtMinutes <= 30) return 1.0;
   if (debtMinutes <= 90) return 0.95;
   if (debtMinutes <= 150) return 0.9;
@@ -149,7 +154,9 @@ export function scoreSleep(features: RecoveryFeatureSet): DimensionScore {
     return { score: null, available: false, qualityFactor: 0.0 };
   }
 
-  const score = clamp(mapRestorativeSleepRatioToRaw(sleepEfficiencyPercent), 0, 100);
+  const baseScore = clamp(mapRestorativeSleepRatioToRaw(sleepEfficiencyPercent), 0, 100);
+  const modifier = sleepDebtModifier(features.sleepDebtMin);
+  const score = clamp(baseScore * modifier, 0, 100);
 
   return {
     score,

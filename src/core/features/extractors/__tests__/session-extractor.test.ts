@@ -61,10 +61,12 @@ function makeSubjective(overrides: Partial<SubjectiveObservation> = {}): Subject
 function input(
   session: Partial<SessionObservation> = {},
   subjective: Partial<SubjectiveObservation> | null = null,
+  stream: SessionExtractorInput['stream'] = null,
 ): SessionExtractorInput {
   return {
     session: makeSession(session),
     linkedSubjective: subjective ? makeSubjective(subjective) : null,
+    stream,
   };
 }
 
@@ -411,33 +413,36 @@ describe('extractSessionFeatures — subjective features', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Stream-dependent features (v1 = null)
+// Stream-dependent features
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('extractSessionFeatures — stream-dependent features (null in v1)', () => {
-  it('hrDriftPercent is null (requires HR stream)', () => {
+describe('extractSessionFeatures — stream-dependent features', () => {
+  it('keeps nulls when no cached stream is available', () => {
     const result = extractSessionFeatures(input(), makeContext());
     expect(result.hrDriftPercent).toBeNull();
-  });
-
-  it('aerobicLoadFactor is null (requires HR stream)', () => {
-    const result = extractSessionFeatures(input(), makeContext());
     expect(result.aerobicLoadFactor).toBeNull();
-  });
-
-  it('anaerobicLoadFactor is null (requires HR stream)', () => {
-    const result = extractSessionFeatures(input(), makeContext());
     expect(result.anaerobicLoadFactor).toBeNull();
-  });
-
-  it('timeInZones is null (requires HR/power stream)', () => {
-    const result = extractSessionFeatures(input(), makeContext());
     expect(result.timeInZones).toBeNull();
+    expect(result.paceVariabilityIndex).toBeNull();
   });
 
-  it('paceVariabilityIndex is null (requires pace stream)', () => {
-    const result = extractSessionFeatures(input(), makeContext());
-    expect(result.paceVariabilityIndex).toBeNull();
+  it('prefers direct stream metrics over null fallbacks', () => {
+    const result = extractSessionFeatures(
+      input({ sportType: 'RUN', durationSec: 3600 }, null, {
+        aerobicLoadFactor: 0.62,
+        anaerobicLoadFactor: 0.18,
+        timeInZones: [18, 19.2, 10.8, 6, 3.6],
+        hrDriftPercent: 4.7,
+        paceVariabilityIndex: 0.054,
+      }),
+      makeContext(),
+    );
+
+    expect(result.aerobicLoadFactor).toBe(0.62);
+    expect(result.anaerobicLoadFactor).toBe(0.18);
+    expect(result.timeInZones).toEqual([18, 19.2, 10.8, 6, 3.6]);
+    expect(result.hrDriftPercent).toBe(4.7);
+    expect(result.paceVariabilityIndex).toBe(0.054);
   });
 });
 

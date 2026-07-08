@@ -15,6 +15,8 @@ type WellnessCheckinStatus = {
     mood: number;
     energyLevel: number;
     perceivedSoreness: number;
+    stressLevel: number;
+    notes?: string | null;
   }) => Promise<void>;
   refresh: () => void;
 };
@@ -40,6 +42,8 @@ export function useWellnessCheckin(date: Date = new Date()): WellnessCheckinStat
       mood: number;
       energyLevel: number;
       perceivedSoreness: number;
+      stressLevel: number;
+      notes?: string | null;
     }) => {
       const res = await fetch('/api/wellness-checkin', {
         method: 'POST',
@@ -55,7 +59,13 @@ export function useWellnessCheckin(date: Date = new Date()): WellnessCheckinStat
   });
 
   const submit = useCallback(
-    async (payload: { mood: number; energyLevel: number; perceivedSoreness: number }) => {
+    async (payload: {
+      mood: number;
+      energyLevel: number;
+      perceivedSoreness: number;
+      stressLevel: number;
+      notes?: string | null;
+    }) => {
       await mutation.mutateAsync(payload);
     },
     [mutation],

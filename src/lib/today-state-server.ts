@@ -8,6 +8,12 @@ import { featureEngine } from '@/lib/engines/feature-engine';
 import { reasoningEngine } from '@/lib/engines/reasoning-engine';
 import { recoveryEngine } from '@/lib/engines/recovery-engine';
 import { computeDailyStrain } from '@/lib/daily-strain';
+import {
+  activityMatchesTrainingDay,
+  approximateTrainingDayUtcRange,
+  DEFAULT_TRAINING_DAY_START_HOUR,
+  DEFAULT_TRAINING_DAY_TIMEZONE,
+} from '@/lib/training-day';
 import type {
   AdaptationData,
   DailyStrainData,
@@ -247,14 +253,11 @@ async function loadDailyStrainState(
   trainingDayId: string,
 ): Promise<DailyStrainData | null> {
   try {
-    const [features, activities, athleteProfile] = await Promise.all([
+    const [features, activities, athleteProfile, googleAccount, healthEntry] = await Promise.all([
       featureEngine.getDayFeatures(athleteId, trainingDayId),
       prisma.activity.findMany({
         where: {
-          date: {
-            gte: new Date(`${trainingDayId}T00:00:00.000Z`),
-            lte: new Date(`${trainingDayId}T23:59:59.999Z`),
-          },
+          date: approximateTrainingDayUtcRange(trainingDayId),
         },
         include: {
           runMetrics: true,
@@ -264,11 +267,32 @@ async function loadDailyStrainState(
         orderBy: { date: 'asc' },
       }),
       prisma.athleteProfile.findUnique({ where: { id: athleteId } }),
+      prisma.googleAccount.findFirst({ select: { timeZone: true } }),
+      prisma.dailyHealth.findUnique({
+        where: { date: new Date(`${trainingDayId}T00:00:00.000Z`) },
+      }),
     ]);
+    const trainingDayOptions = {
+      timezone: googleAccount?.timeZone ?? DEFAULT_TRAINING_DAY_TIMEZONE,
+      trainingDayStartHour: DEFAULT_TRAINING_DAY_START_HOUR,
+    };
+    const filteredActivities = activities.filter((activity) =>
+      activityMatchesTrainingDay(activity.date, trainingDayId, trainingDayOptions),
+    );
 
     return computeDailyStrain({
       sessionFeatures: features.sessions,
-      legacyActivities: activities,
+      legacyActivities: filteredActivities,
+      healthSignals: healthEntry
+        ? {
+            calories: healthEntry.calories,
+            recoveryScore: healthEntry.recoveryScore,
+            stress: healthEntry.stress,
+            bodyBattery: healthEntry.bodyBattery,
+            restingHr: healthEntry.restingHr,
+            hrv: healthEntry.hrv,
+          }
+        : null,
       thresholds: {
         ftpW: athleteProfile?.ftpW ?? null,
         maxHr: athleteProfile?.maxHr ?? null,

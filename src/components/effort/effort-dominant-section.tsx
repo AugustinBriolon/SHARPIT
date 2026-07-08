@@ -47,7 +47,7 @@ export function EffortDominantSection({
       className={!isLowFatigue ? 'border border-amber-500/20 bg-amber-500/5 ring-0' : undefined}
     >
       <DrillDownSectionLabel>
-        {isLowFatigue ? 'Dimension contributive' : 'Dimension dominante'}
+        {isLowFatigue ? 'Systeme a surveiller' : 'Systeme qui paie le plus'}
       </DrillDownSectionLabel>
       <p className={cn('text-lg font-semibold', !isLowFatigue && 'text-amber-700')}>
         {labelMap[dominantDimension] ?? dominantDimension}

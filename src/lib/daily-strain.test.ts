@@ -109,6 +109,42 @@ describe('computeDailyStrain', () => {
     expect(result.strainScore).toBeNull();
     expect(result.tier).toBe('UNKNOWN');
   });
+
+  it('derives measurable cardiovascular strain from daily health on non-training days', () => {
+    const result = computeDailyStrain({
+      sessionFeatures: [],
+      legacyActivities: [],
+      healthSignals: {
+        stress: 42,
+        recoveryScore: 58,
+        bodyBattery: 61,
+      },
+    });
+
+    expect(result.available).toBe(true);
+    expect(result.dominantContributor).toBe('CARDIOVASCULAR');
+    expect(result.contributions.cardiovascular.available).toBe(true);
+    expect(result.contributions.cardiovascular.load).toBeGreaterThan(0);
+    expect(result.strainScore).toBeGreaterThan(0);
+  });
+
+  it('keeps structured training dominant while exposing side contributions', () => {
+    const result = computeDailyStrain({
+      sessionFeatures: [makeSessionFeature({ tssScore: 110, tssMethod: 'POWER_BASED' })],
+      legacyActivities: [makeLegacyActivity({ duration: 1800, load: null })],
+      healthSignals: {
+        stress: 55,
+        recoveryScore: 52,
+        bodyBattery: 45,
+      },
+    });
+
+    expect(result.available).toBe(true);
+    expect(result.dominantContributor).toBe('TRAINING');
+    expect(result.contributions.training.load).toBe(110);
+    expect(result.contributions.cardiovascular.available).toBe(true);
+    expect(result.dailyTss ?? 0).toBeGreaterThan(110);
+  });
 });
 
 describe('dailyTssToStrainScore invariants', () => {

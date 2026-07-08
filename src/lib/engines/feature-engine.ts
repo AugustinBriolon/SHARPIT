@@ -19,6 +19,7 @@
 import { FeatureEngine } from '@/core/features';
 import { PrismaFeatureRepository } from '@/infrastructure/features/prisma-feature-repository';
 import { AthleteContextProvider } from '@/infrastructure/features/athlete-context-provider';
+import { PrismaSessionStreamProvider } from '@/infrastructure/features/prisma-session-stream-provider';
 import { PrismaObservationRepository } from '@/infrastructure/observation/prisma-observation-repository';
 import { prisma } from '@/lib/prisma';
 
@@ -30,11 +31,13 @@ function createFeatureEngine(): FeatureEngine {
   const featureRepository = new PrismaFeatureRepository(prisma);
   const observationRepository = new PrismaObservationRepository(prisma);
   const contextProvider = new AthleteContextProvider(prisma);
+  const sessionStreamProvider = new PrismaSessionStreamProvider(prisma);
 
   return new FeatureEngine({
     featureRepository,
     observationRepository,
     contextProvider,
+    sessionStreamProvider,
   });
 }
 

@@ -10,8 +10,10 @@ import { EffortDimensionsSection } from '@/components/effort/effort-dimensions-s
 import { EffortDominantSection } from '@/components/effort/effort-dominant-section';
 import { EffortEvidenceSection } from '@/components/effort/effort-evidence-section';
 import { EffortHero } from '@/components/effort/effort-hero';
+import { InsightList } from '@/components/product-insight/insight-list';
 import { EffortStatsStrip } from '@/components/effort/effort-stats-strip';
 import { EffortVerdictSection } from '@/components/effort/effort-verdict-section';
+import type { ProductInsightBundle } from '@/core/product-insight/types';
 import {
   DataReliabilityFooter,
   MetricDrillDownPage,
@@ -26,12 +28,18 @@ export type EffortPageViewProps = {
   onDateChange?: (date: Date) => void;
   onPreviousDay?: () => void;
   onNextDay?: () => void;
+  strainScore: number | null;
   dailyLoad: number;
   weeklyLoad: number;
   fatigueType: FatigueType | string;
+  fatigueTypeLabel: string | null;
   performancePercent: number | null;
   consecutiveDays: number;
   estimatedDaysToFresh: number | null;
+  strainSubtitle: string;
+  strainStatusLabel: string;
+  strainStatusClassName: string;
+  strainStrokeColor: string;
   acwr: number;
   chronicWeeklyAvg: number | null;
   tsb: number | null;
@@ -54,6 +62,7 @@ export type EffortPageViewProps = {
   keyEvidence: string[];
   completenessLabel: string;
   availableDimCount: number;
+  insights: ProductInsightBundle;
 };
 
 export function EffortPageView(props: EffortPageViewProps) {
@@ -64,12 +73,18 @@ export function EffortPageView(props: EffortPageViewProps) {
     onDateChange,
     onPreviousDay,
     onNextDay,
+    strainScore,
     dailyLoad,
     weeklyLoad,
     fatigueType,
+    fatigueTypeLabel,
     performancePercent,
     consecutiveDays,
     estimatedDaysToFresh,
+    strainSubtitle,
+    strainStatusLabel,
+    strainStatusClassName,
+    strainStrokeColor,
     acwr,
     chronicWeeklyAvg,
     tsb,
@@ -92,6 +107,7 @@ export function EffortPageView(props: EffortPageViewProps) {
     keyEvidence,
     completenessLabel,
     availableDimCount,
+    insights,
   } = props;
 
   return (
@@ -111,12 +127,37 @@ export function EffortPageView(props: EffortPageViewProps) {
         date={date}
         estimatedDaysToFresh={estimatedDaysToFresh}
         fatigueType={fatigueType}
+        fatigueTypeLabel={fatigueTypeLabel}
         isToday={isToday}
         maxDate={maxDate}
         performancePercent={performancePercent}
+        strainScore={strainScore}
+        strainStatusClassName={strainStatusClassName}
+        strainStatusLabel={strainStatusLabel}
+        strainStrokeColor={strainStrokeColor}
+        strainSubtitle={strainSubtitle}
         onDateChange={onDateChange}
         onNextDay={onNextDay}
         onPreviousDay={onPreviousDay}
+      />
+
+      <EffortVerdictSection
+        rationale={rationale}
+        verdict={verdict}
+        verdictClass={verdictClass}
+        verdictKey={verdictKey}
+      />
+
+      <InsightList insights={insights.primary} label="Ce que SHARPIT comprend" />
+
+      <EffortCapacitySection trainingCapacity={trainingCapacity} />
+
+      <InsightList insights={insights.supporting} label="Soutenabilite du cout" />
+
+      <EffortDominantSection
+        dominantDimension={dominantDimension}
+        isLowFatigue={isLowFatigue}
+        primaryLimitingFactor={primaryLimitingFactor}
       />
 
       <EffortStatsStrip
@@ -127,30 +168,17 @@ export function EffortPageView(props: EffortPageViewProps) {
         weeklyTss={weeklyLoad}
       />
 
-      <EffortVerdictSection
-        rationale={rationale}
-        verdict={verdict}
-        verdictClass={verdictClass}
-        verdictKey={verdictKey}
-      />
-
-      <EffortCapacitySection trainingCapacity={trainingCapacity} />
-
       <EffortAcwrSection acwr={acwr} chronicWeeklyAvg={chronicWeeklyAvg} weeklyLoad={weeklyLoad} />
 
       <EffortDimensionsSection dimensions={dimensions} missingCount={missingDimCount} />
-
-      <EffortDominantSection
-        dominantDimension={dominantDimension}
-        isLowFatigue={isLowFatigue}
-        primaryLimitingFactor={primaryLimitingFactor}
-      />
 
       <EffortPmcSection data={pmcSeries} />
 
       <EffortWeeklyTssSection avgWeeklyTss={avgWeeklyTss} data={weeklyTss} />
 
       <EffortAlertsSection overreaching={overreaching} />
+
+      <InsightList insights={insights.contextual} label="Contexte utile" />
 
       <EffortEvidenceSection lines={keyEvidence} />
     </MetricDrillDownPage>

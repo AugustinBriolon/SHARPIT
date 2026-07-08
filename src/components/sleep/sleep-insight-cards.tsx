@@ -6,7 +6,7 @@ export function SleepInsightCards({ insights }: { insights: SleepInsight[] }) {
 
   return (
     <section className="space-y-2">
-      <SleepSectionLabel>Insights</SleepSectionLabel>
+      <SleepSectionLabel>Ce que cette nuit change</SleepSectionLabel>
       {insights.slice(0, 3).map((insight, i) => (
         <div
           key={i}

@@ -8,7 +8,7 @@ import { buildTopActionLine } from '@/lib/today-rich-view';
 import { buildTodayEffortSnapshot } from '@/lib/today-narrative-context';
 import type { TodayState } from '@/hooks/use-today';
 import type { OverallVerdict } from '@/lib/today-mapping';
-import { isSameDay, startOfDay } from 'date-fns';
+import { activityMatchesTrainingDay } from '@/lib/training-day';
 
 export type SnapshotActivityInput = {
   id: string;
@@ -41,9 +41,8 @@ export type SnapshotPhaseBuildParams = {
   adviceActionable: boolean;
 };
 
-function totalTssToday(activities: SnapshotActivityInput[], refDate: Date): number | null {
-  const refDay = startOfDay(refDate);
-  const today = activities.filter((a) => isSameDay(new Date(a.date), refDay));
+function totalTssToday(activities: SnapshotActivityInput[], trainingDayId: string): number | null {
+  const today = activities.filter((a) => activityMatchesTrainingDay(a.date, trainingDayId));
   if (today.length === 0) return null;
   return Math.round(today.reduce((sum, a) => sum + (a.load ?? 0), 0));
 }
@@ -54,6 +53,7 @@ export function buildSnapshotDailyPhase(params: SnapshotPhaseBuildParams): {
 } {
   const {
     refDate,
+    trainingDayId,
     todayState,
     activities,
     plannedSessions,
@@ -67,6 +67,7 @@ export function buildSnapshotDailyPhase(params: SnapshotPhaseBuildParams): {
     refDate,
     activities as never,
     plannedSessions as never,
+    { trainingDayId },
   );
 
   const priorGeneratedAt = priorSnapshot?.generatedAt ?? null;
@@ -133,7 +134,7 @@ export function buildSnapshotDailyPhase(params: SnapshotPhaseBuildParams): {
     adviceActionable,
     actionLine,
     sportLabel: effort?.sportLabel ?? null,
-    totalTssToday: totalTssToday(activities, refDate),
+    totalTssToday: totalTssToday(activities, trainingDayId),
     dailyStrainScore: todayState.dailyStrain?.strainScore ?? null,
     dailyStrainAvailable,
   });

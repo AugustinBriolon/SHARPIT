@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ActivityType } from '@prisma/client';
 import { buildActivityCreateData } from '@/lib/activity-service';
 import { runActivityNarrativeAnalysis } from '@/lib/activity-narrative';
+import { syncManualActivityObservations } from '@/lib/manual-observation-sync';
 import { createActivity, getActivitiesList } from '@/lib/queries';
 import { updateRecordsForTypesSafe } from '@/lib/records';
 import { createActivitySchema } from '@/lib/validators/activity';
@@ -41,6 +42,7 @@ export async function POST(request: NextRequest) {
     const activity = await createActivity(
       buildActivityCreateData(parsed.data) as Parameters<typeof createActivity>[0],
     );
+    await syncManualActivityObservations(activity);
 
     await updateRecordsForTypesSafe([parsed.data.type]);
 

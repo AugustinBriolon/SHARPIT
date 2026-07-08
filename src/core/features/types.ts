@@ -517,6 +517,14 @@ export type SessionExtractorInput = {
   readonly session: import('@/core/observation/types').SessionObservation;
   /** Null when no SUBJECTIVE observation links to this session. */
   readonly linkedSubjective: import('@/core/observation/types').SubjectiveObservation | null;
+  /** Null when no activity stream is cached for this session. */
+  readonly stream: {
+    readonly aerobicLoadFactor: number | null;
+    readonly anaerobicLoadFactor: number | null;
+    readonly timeInZones: readonly [number, number, number, number, number] | null;
+    readonly hrDriftPercent: number | null;
+    readonly paceVariabilityIndex: number | null;
+  } | null;
 };
 
 /**

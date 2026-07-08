@@ -26,7 +26,7 @@ export function EffortVerdictSection({
     <DrillDownHighlightSection
       bullets={rationale}
       description={description}
-      label="Directive de charge"
+      label="Décision de charge"
       title={verdict}
       titleClassName={verdictClass}
     />

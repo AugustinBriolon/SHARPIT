@@ -42,9 +42,9 @@ export type SportType =
   | 'YOGA'
   | 'OTHER';
 
-export type BodySide = 'LEFT' | 'RIGHT' | 'BILATERAL';
+export type BodySide = 'LEFT' | 'RIGHT' | 'BILATERAL' | 'NA';
 
-export type PhysicalCategory = 'PAIN' | 'INJURY' | 'MOBILITY' | 'POSTURE';
+export type PhysicalCategory = 'PAIN' | 'INJURY' | 'MOBILITY' | 'POSTURE' | 'OTHER';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Quality system

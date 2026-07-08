@@ -1,28 +1,20 @@
 import { DrillDownHero } from '@/components/today/drill-down/hero';
-import { mapFatigueTypeToLabel, type FatigueType } from '@/lib/today-mapping';
 
-const DAILY_LOAD_GAUGE_MAX = 300;
-
-function mapDailyLoadToDisplay(dailyLoad: number) {
-  if (dailyLoad >= 220)
-    return { label: 'Très élevé', colorClass: 'text-red-600', strokeColor: '#dc2626' };
-  if (dailyLoad >= 140)
-    return { label: 'Élevé', colorClass: 'text-orange-600', strokeColor: '#ea580c' };
-  if (dailyLoad >= 80)
-    return { label: 'Soutenu', colorClass: 'text-amber-600', strokeColor: '#d97706' };
-  if (dailyLoad >= 30)
-    return { label: 'Modéré', colorClass: 'text-emerald-600', strokeColor: '#059669' };
-  if (dailyLoad > 0) return { label: 'Léger', colorClass: 'text-blue-600', strokeColor: '#2563eb' };
-  return { label: 'Repos', colorClass: 'text-muted-foreground', strokeColor: '#94a3b8' };
-}
+const DAILY_STRAIN_GAUGE_MAX = 21;
 
 export function EffortHero({
   date,
+  strainScore,
   dailyLoad,
   fatigueType,
+  fatigueTypeLabel,
   performancePercent,
   consecutiveDays,
   estimatedDaysToFresh,
+  strainSubtitle,
+  strainStatusLabel,
+  strainStatusClassName,
+  strainStrokeColor,
   onDateChange,
   onPreviousDay,
   onNextDay,
@@ -30,33 +22,37 @@ export function EffortHero({
   maxDate,
 }: {
   date: Date;
+  strainScore: number | null;
   dailyLoad: number;
-  fatigueType: FatigueType | string;
+  fatigueType: string;
+  fatigueTypeLabel: string | null;
   performancePercent: number | null;
   consecutiveDays: number;
   estimatedDaysToFresh: number | null;
+  strainSubtitle: string;
+  strainStatusLabel: string;
+  strainStatusClassName: string;
+  strainStrokeColor: string;
   onDateChange?: (date: Date) => void;
   onPreviousDay?: () => void;
   onNextDay?: () => void;
   isToday?: boolean;
   maxDate?: Date;
 }) {
-  const fatigueTypeLabel = mapFatigueTypeToLabel(fatigueType as FatigueType);
-  const loadDisplay = mapDailyLoadToDisplay(dailyLoad);
-
   return (
     <DrillDownHero
       colorMode="neutral"
       date={date}
-      format="number"
+      format="strain"
       isToday={isToday}
-      max={DAILY_LOAD_GAUGE_MAX}
+      max={DAILY_STRAIN_GAUGE_MAX}
       maxDate={maxDate}
-      score={dailyLoad}
-      statusClassName={loadDisplay.colorClass}
-      statusLabel={loadDisplay.label}
-      strokeColor={loadDisplay.strokeColor}
-      subtitle={dailyLoad > 0 ? 'effort réalisé ce jour' : 'aucun effort détecté ce jour'}
+      primaryCaption={dailyLoad > 0 ? `${dailyLoad} TSS cumulés` : '0 TSS cumulés'}
+      score={strainScore}
+      statusClassName={strainStatusClassName}
+      statusLabel={strainStatusLabel}
+      strokeColor={strainStrokeColor}
+      subtitle={strainSubtitle}
       meta={
         <>
           {fatigueTypeLabel && fatigueType !== 'UNDETERMINED' && (

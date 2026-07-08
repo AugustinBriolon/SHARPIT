@@ -34,7 +34,7 @@ export function RecoverySignalsSection({
 }) {
   return (
     <DrillDownSectionCard>
-      <DrillDownSectionLabel>Signaux physiologiques</DrillDownSectionLabel>
+      <DrillDownSectionLabel>Ce qui guide la décision</DrillDownSectionLabel>
       <div className="flex flex-wrap gap-2">
         <SignalChip colorClass={autonomicClass} label={autonomicLabel} />
         <SignalChip colorClass={wellnessClass} label={wellnessLabel} />
@@ -42,7 +42,8 @@ export function RecoverySignalsSection({
       </div>
       {dissonanceDetected && (
         <p className="mt-3 text-sm font-medium text-amber-600">
-          Signaux contradictoires — marqueurs objectifs et subjectifs divergent.
+          Tes sensations et les marqueurs physiologiques ne racontent pas la meme histoire
+          aujourd'hui.
         </p>
       )}
     </DrillDownSectionCard>
