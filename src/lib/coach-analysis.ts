@@ -162,9 +162,8 @@ export async function analyzePlannedSession(id: string): Promise<SessionAnalysis
   const planned = await getPlannedSessionById(id);
   if (!planned || !planned.activity) return null;
 
-  const stravaDescription = await fetchStravaDescription(planned.activity);
-
-  const [profile, physicalNotes] = await Promise.all([
+  const [stravaDescription, profile, physicalNotes] = await Promise.all([
+    fetchStravaDescription(planned.activity),
     getAthleteProfile(),
     getActivePhysicalNotes(),
   ]);

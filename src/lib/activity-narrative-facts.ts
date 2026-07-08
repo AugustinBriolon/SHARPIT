@@ -213,14 +213,17 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
   });
 
   const healthDay = startOfDay(subDays(activity.date, 1));
-  const health = await prisma.dailyHealth.findFirst({
-    where: { date: healthDay },
-  });
-
-  const goalHits = await prisma.goalAchievement.findMany({
-    where: { activityId: activity.id },
-    include: { goal: { select: { title: true, unit: true, metricKey: true, targetValue: true } } },
-  });
+  const [health, goalHits] = await Promise.all([
+    prisma.dailyHealth.findFirst({
+      where: { date: healthDay },
+    }),
+    prisma.goalAchievement.findMany({
+      where: { activityId: activity.id },
+      include: {
+        goal: { select: { title: true, unit: true, metricKey: true, targetValue: true } },
+      },
+    }),
+  ]);
 
   const contextLines: string[] = [];
   if (health) {

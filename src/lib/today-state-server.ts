@@ -341,14 +341,13 @@ export async function loadTodayState(params: {
 }): Promise<TodayState> {
   const { athleteId, trainingDayId, forceRefresh = false } = params;
 
-  const [recovery, fatigue, adaptation, dailyStrain] = await Promise.all([
+  const [recovery, fatigue, adaptation, dailyStrain, reasoning] = await Promise.all([
     loadRecoveryState(athleteId, trainingDayId, forceRefresh),
     loadFatigueState(athleteId, trainingDayId, forceRefresh),
     loadAdaptationState(athleteId, trainingDayId, forceRefresh),
     loadDailyStrainState(athleteId, trainingDayId),
+    loadReasoningState(athleteId, trainingDayId, forceRefresh),
   ]);
-
-  const reasoning = await loadReasoningState(athleteId, trainingDayId, forceRefresh);
 
   return { reasoning, recovery, fatigue, adaptation, dailyStrain };
 }

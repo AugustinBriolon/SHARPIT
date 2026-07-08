@@ -20,6 +20,11 @@ jobs:
       - name: Enable Corepack (Yarn 4)
         run: corepack enable
 
+      - name: Install OS dependencies (sharp/prisma)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3 make g++ libvips-dev
+
       - name: Install (immutable)
         run: yarn install --immutable
 

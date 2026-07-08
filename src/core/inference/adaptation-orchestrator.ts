@@ -96,10 +96,12 @@ export class AdaptationInferenceOrchestrator {
     const computedAt = new Date();
 
     // ── Step 1: Get DayFeatures ────────────────────────────────────────────
-    const features = await this.deps.featureEngine.getDayFeatures(athleteId, trainingDayId);
+    const [features, twin] = await Promise.all([
+      this.deps.featureEngine.getDayFeatures(athleteId, trainingDayId),
+      this.deps.digitalTwinRepo.findOrCreate(athleteId),
+    ]);
 
     // ── Step 2: Get context from Digital Twin ──────────────────────────────
-    const twin = await this.deps.digitalTwinRepo.findOrCreate(athleteId);
     const recoveryState = twin.state.recovery;
     const fatigueState = twin.state.fatigue;
 

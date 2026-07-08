@@ -98,10 +98,12 @@ export class FatigueInferenceOrchestrator {
     const computedAt = new Date();
 
     // ── Step 1: Get DayFeatures ────────────────────────────────────────────
-    const features = await this.deps.featureEngine.getDayFeatures(athleteId, trainingDayId);
+    const [features, previousFatigueState] = await Promise.all([
+      this.deps.featureEngine.getDayFeatures(athleteId, trainingDayId),
+      this.deps.digitalTwinRepo.getPreviousFatigueState(athleteId),
+    ]);
 
     // ── Step 2: Get context from Digital Twin ──────────────────────────────
-    const previousFatigueState = await this.deps.digitalTwinRepo.getPreviousFatigueState(athleteId);
     const recoveryState = (await this.deps.digitalTwinRepo.findOrCreate(athleteId)).state.recovery;
 
     // ── Step 3: Reconstruct fatigue history from Decision Records ──────────

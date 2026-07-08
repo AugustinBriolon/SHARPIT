@@ -1,0 +1,880 @@
+npm warn exec The following package was not found and will be installed: react-doctor@0.7.2
+React Doctor v0.7.2
+
+  
+
+  ✖ Security: Side effect in GET handler ×3
+    This GET handler's side effect (cookies().set()) is prone
+    to CSRF vulnerabilities, since prefetching or a forged
+    request can trigger it.
+    → GET requests can be prefetched and are open to CSRF. Move
+    the side effect to a POST handler.
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/nextjs-no-side-effect-in-get-handler
+
+    src/app/api/google/connect/route.ts:19
+    ┌──────────────────────────────────────────────────────────────┐
+    │   18 |                                                       │
+    │ > 19 | export async function GET() {                         │
+    │      | ^                                                     │
+    │   20 |   if (!isGoogleConfigured()) {                        │
+    └──────────────────────────────────────────────────────────────┘
+
+    src/app/api/strava/connect/route.ts:8
+    ┌──────────────────────────────────────────────────────────────┐
+    │   7 |                                                        │
+    │ > 8 | export async function GET(request: NextRequest) {      │
+    │     | ^                                                      │
+    │   9 |   if (!isStravaConfigured()) {                         │
+    └──────────────────────────────────────────────────────────────┘
+
+    src/app/api/withings/connect/route.ts:12
+    ┌──────────────────────────────────────────────────────────────┐
+    │   11 |                                                       │
+    │ > 12 | export async function GET(request: NextRequest) {     │
+    │      | ^                                                     │
+    │   13 |   if (!isWithingsConfigured()) {                      │
+    └──────────────────────────────────────────────────────────────┘
+
+  ⚠ Bugs: Array index used as a key ×14
+    Your users can see & submit the wrong data when this list
+    reorders or filters, so use a stable id like
+    `key={item.id}`, not the array index "i".
+    → Use a stable id from the item, like `key={item.id}` or
+    `key={item.slug}`. Index keys break when the list reorders
+    or filters.
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/no-array-index-as-key
+
+    src/components/coach/coach-chat.tsx:197
+
+    src/components/coach/coach-chat.tsx:221
+
+    src/components/coach/plan-adapter.tsx:221
+
+    src/components/coach/plan-generator.tsx:251
+
+    src/components/coach/tool-activity.tsx:197
+
+    src/components/planning/brick-analysis-panel.tsx:60
+
+    src/components/planning/planned-session-dialog.tsx:399
+
+    src/components/planning/session-realization.tsx:252
+
+    src/components/sleep/sleep-insight-cards.tsx:12
+
+    src/components/today/drill-down/bullet-section.tsx:22
+
+    src/components/today/drill-down/highlight-section.tsx:28
+
+    src/components/today/rich/today-why-block.tsx:14
+
+    src/components/today/session-block.tsx:152
+
+    src/components/training/triathlon-legs-panel.tsx:125
+
+  ⚠ Bugs: Missing effect dependencies ×9
+    `useMemo` can run with a stale `resolveDistanceM` & show
+    your users old data.
+    → Don't blindly add missing dependencies. Read the hook
+    callback first.
+    
+    Bad:
+    useEffect(() => {
+      setCount(count + 1);
+    }, [count]);
+    
+    Better:
+    useEffect(() => {
+      setCount((currentCount) => currentCount + 1);
+    }, []);
+    
+    If the missing value is recreated every render, move it
+    inside the hook or stabilize it before adding it to deps.
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/exhaustive-deps
+
+    src/components/goals/metric-goal-form.tsx:266
+
+    src/components/planning/planning-view.tsx:64
+
+    src/components/planning/planning-view.tsx:69
+
+    src/components/planning/planning-view.tsx:74
+
+    src/components/planning/planning-view.tsx:108
+
+    src/components/training/training-list.tsx:181
+
+    src/components/training/training-list.tsx:185
+
+    src/components/training/triathlon-activity-insights.tsx:230
+
+    src/components/training/triathlon-activity-insights.tsx:234
+
+  ⚠ Bugs: Time or random value in JSX ×3
+    This can cause a hydration mismatch because new Date() in
+    JSX gives a different value on the server than in the
+    browser. Move it into useEffect+useState to run only in the
+    browser, or add suppressHydrationWarning to the parent if
+    it's on purpose.
+    → Move time or random values into useEffect+useState so
+    they only run in the browser, or add
+    suppressHydrationWarning to the parent if it's intentional
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/rendering-hydration-mismatch-time
+
+    src/components/sessions/sessions-hub.tsx:173
+
+    src/components/training/activity-form.tsx:155
+
+  ⚠ Accessibility: Label missing associated control ×2
+    Screen reader users can't tell which input this label names
+    because it's tied to none, so add `htmlFor` or wrap the
+    input inside it.
+    → Tie every label to a control with `htmlFor`, or by
+    nesting the input.
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/label-has-associated-control
+
+    src/components/physical/physical-note-card.tsx:189
+
+    src/components/settings/integration-modal-content.tsx:731
+
+  ⚠ Bugs: Derived state stored in an effect
+    Your users briefly see stale state on every prop change.
+    → Work out derived values while rendering: `const x =
+    fn(dep)`. To reset a component's state when a prop changes,
+    give it a key prop: `<Component key={prop} />`. See
+    https://react.dev/learn/you-might-not-need-an-effect
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/no-derived-state-effect
+
+    src/components/layout/mobile-shell.tsx:50
+
+  ⚠ Bugs: Mutation without cache invalidation ×10
+    useMutation with no cache update here can leave your users
+    looking at stale data after it runs.
+    → Add `onSuccess: () => queryClient.invalidateQueries({
+    queryKey: ['...'] })` so cached data stays in sync after
+    the mutation
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/query-mutation-missing-invalidation
+
+    src/hooks/use-coach.ts:48
+
+    src/hooks/use-coach.ts:85
+
+    src/hooks/use-data.ts:409
+
+    src/hooks/use-data.ts:421
+
+    src/hooks/use-data.ts:451
+
+    src/hooks/use-data.ts:465
+
+    src/hooks/use-physical.ts:75
+
+    src/hooks/use-physical.ts:86
+
+    src/hooks/use-physical.ts:100
+
+    src/hooks/use-physical.ts:111
+
+  ⚠ Performance: await inside a loop ×29
+    This makes the for…of loop slow because each await runs one
+    after another, so collect the independent calls & run them
+    together with `await Promise.all(items.map(...))`
+    → Collect the items, then use `await
+    Promise.all(items.map(...))` so independent work runs at
+    the same time
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/async-await-in-loop
+
+    src/components/coach/plan-adapter.tsx:120
+
+    src/components/coach/plan-generator.tsx:125
+
+    src/components/settings/integrations-hub.tsx:169
+
+    src/core/dev/replay-engine.ts:194-196
+
+    src/core/features/engine.ts:302
+
+    src/core/features/engine.ts:517
+
+    src/core/observation/engine.ts:197
+
+    src/lib/activity-narrative.ts:84
+
+    src/lib/activity-narrative.ts:111
+
+    src/lib/athlete-state/sync-providers.ts:28
+
+    src/lib/goal-achievements.ts:205
+
+    src/lib/integrations/garmin-activity-sync.ts:171
+
+    src/lib/integrations/garmin-multisport.ts:89
+
+    src/lib/integrations/garmin-sync.ts:156
+
+    src/lib/integrations/google-sync.ts:300
+
+    src/lib/integrations/google-sync.ts:324
+
+    src/lib/integrations/health-observation-backfill.ts:77
+
+    src/lib/integrations/renpho-sync.ts:132
+
+    src/lib/integrations/renpho-sync.ts:167
+
+    src/lib/integrations/strava-sync.ts:262
+
+    src/lib/integrations/withings-sync.ts:150
+
+    src/lib/integrations/withings-sync.ts:185
+
+    src/lib/integrations/withings.ts:176
+
+    src/lib/integrations/withings.ts:210
+
+    src/lib/queries.ts:297
+
+    src/lib/session-linking.ts:90
+
+    src/lib/stream-backfill.ts:57
+
+    src/lib/streams.ts:271
+
+  ⚠ Performance: Heavy library loaded eagerly ×13
+    "recharts" ships extra code to your users up front & slows
+    page load. Load it on demand with React.lazy() or
+    next/dynamic.
+    → Load it only when needed: `const Component = dynamic(()
+    => import('library'), { ssr: false })` from next/dynamic,
+    or React.lazy().
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/prefer-dynamic-import
+
+    src/components/analytics/load-chart.tsx:3
+
+    src/components/analytics/power-curve-chart.tsx:3
+
+    src/components/analytics/sport-distribution-chart.tsx:3
+
+    src/components/analytics/volume-chart.tsx:3
+
+    src/components/effort/effort-charts-section.tsx:4
+
+    src/components/physical/physical-note-card.tsx:7
+
+    src/components/recovery/health-charts.tsx:5
+
+    src/components/recovery/recovery-trends-section.tsx:5
+
+    src/components/sleep/sleep-trend-chart.tsx:6
+
+    src/components/today/dashboard/evolution-chart.tsx:5
+
+    src/components/training/activity-charts.tsx:5
+
+    src/components/training/combined-chart.tsx:5
+
+    src/components/ui/responsive-chart-frame.tsx:4
+
+  ⚠ Maintainability: Component rendered by inline function call ×4
+    "renderFormActions()" hides a component behind an inline
+    call, so pull it into its own component and render it as
+    JSX so React can track it.
+    → Make it a named component rendered as JSX so React can
+    track it and preserve its state.
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/no-render-in-render
+
+    src/components/goals/goal-dialog.tsx:296
+
+    src/components/goals/goal-dialog.tsx:313
+
+    src/components/goals/goal-dialog.tsx:410
+
+    src/components/goals/goal-dialog.tsx:490
+
+  ⚠ Bugs: Data fetching inside an effect
+    fetch() inside useEffect can race, double-fire, or leak.
+    Use a data-fetching layer or Server Component instead.
+    → Use a data-fetching layer or Server Component so fetches
+    do not race, double-fire, or leak from `useEffect`.
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/no-fetch-in-effect
+
+    src/components/athlete-state/athlete-state-initializer.tsx:16
+
+  ⚠ Accessibility: Control missing accessible label ×3
+    Blind users can't tell what this control does because
+    screen readers find no label, so add visible text,
+    `aria-label`, or `aria-labelledby`.
+    → Give every interactive control a label screen readers can
+    read.
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/control-has-associated-label
+
+    src/components/physical/physical-note-card.tsx:192
+
+    src/components/physical/physical-note-dialog.tsx:188
+
+    src/components/planning/session-realization.tsx:127
+
+  ⚠ Bugs: Plain anchor reloads internal Next.js links ×3
+    Plain <a> reloads the whole page for internal links, so
+    Next.js loses client-side navigation and prefetching.
+    → `import Link from 'next/link'` for client-side
+    navigation, prefetching, and preserved scroll position
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/nextjs-no-a-element
+
+    src/components/settings/integration-modal-content.tsx:237
+
+    src/components/settings/integration-modal-content.tsx:463
+
+    src/components/training/performance-metrics.tsx:112
+
+  ⚠ Accessibility: Interaction on static element ×3
+    Screen reader users can't tell this click handler is
+    interactive because it has no `role`, so add a `role` or
+    use a button or link.
+    → Give clickable static elements a `role`, or use a button
+    or link.
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/no-static-element-interactions
+
+    src/components/calendar/calendar-chips.tsx:62
+
+    src/components/calendar/calendar-month-grid.tsx:35
+
+    src/components/calendar/calendar-week-list.tsx:42
+
+  ⚠ Bugs: All state reset on prop change
+    Your users briefly see stale state when a prop changes
+    because this useEffect clears all state.
+    → Pass the prop as `key` so React resets the component for
+    you when the prop changes, instead of clearing every state
+    value by hand in a useEffect. See
+    https://react.dev/learn/you-might-not-need-an-effect#resetting-all-state-when-a-prop-changes
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/no-reset-all-state-on-prop-change
+
+    src/components/layout/mobile-shell.tsx:50
+
+  ⚠ Maintainability: deslop/unused-file ×24
+    Unused file is not reachable from any entry point, so it
+    adds maintenance surface without shipping any code.
+    → Delete the file if it is truly unreachable, or import it
+    from an entry point.
+
+    src/components/recovery/recovery-panels.tsx
+
+    src/components/today/dashboard/activity-consistency-panel.tsx
+
+    src/components/today/dashboard/evolution-chart.tsx
+
+    src/components/today/dashboard/health-monitor-panel.tsx
+
+    src/components/today/dashboard/planned-session-primary.tsx
+
+    src/components/today/dashboard/planned-session-type-badge.tsx
+
+    src/components/today/dashboard/planning-row.tsx
+
+    src/components/today/dashboard/today-goals-strip.tsx
+
+    src/components/today/session-block.tsx
+
+    src/core/adapters/index.ts
+
+    src/core/dev/index.ts
+
+    src/core/inference/adaptation/index.ts
+
+    src/core/inference/fatigue/index.ts
+
+    src/core/inference/reasoning/index.ts
+
+    src/core/inference/recovery/index.ts
+
+    src/hooks/use-athlete-snapshot.ts
+
+    src/hooks/use-chart-dimensions.ts
+
+    src/lib/daily-phase/index.ts
+
+    src/lib/day-page-title.ts
+
+    src/lib/day.ts
+
+    src/lib/dev-lan.ts
+
+    src/lib/dismissed-todos.ts
+
+    src/lib/planned-session-display.ts
+
+    src/lib/strain.ts
+
+  ⚠ Performance: Array lookup inside a loop ×3
+    This scales poorly because `array.includes()` inside a loop
+    scans the whole list every time. Use a Set for
+    constant-time lookups.
+    → Use a `Set` or `Map` when you check for the same items
+    over and over. `Array.includes`/`find` scans the whole list
+    each time
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/js-set-map-lookups
+
+    src/core/dev/pipeline-inspector.ts:279
+
+    src/core/dev/pipeline-inspector.ts:312
+
+    src/lib/auth.ts:25
+
+  ✖ Bugs: State synced to a prop inside an effect
+    This effect adjusts state after a prop changes, so users
+    briefly see the stale value.
+    → Adjust the state inline during render with a `prev`-prop
+    comparison (`if (prop !== prevProp) { setPrevProp(prop);
+    setX(...); }`), or refactor to remove the duplicated state.
+    Routing the adjustment through a useEffect forces an extra
+    render with a stale UI between the two commits. See
+    https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/no-adjust-state-on-prop-change
+
+    src/components/layout/mobile-shell.tsx:51
+    ┌──────────────────────────────────────────────────────────────┐
+    │   50 |   useEffect(() => {                                   │
+    │ > 51 |     setOpen(false);                                   │
+    │      |     ^                                                 │
+    │   52 |   }, [pathname]);                                     │
+    └──────────────────────────────────────────────────────────────┘
+
+  ⚠ Bugs: Button missing explicit type
+    Your users can submit the form by accident because a
+    `<button>` with no `type` defaults to submit.
+    → Set an explicit button `type` so plain buttons do not
+    submit forms by accident: `type="button"`, `"submit"`, or
+    `"reset"`.
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/button-has-type
+
+    src/components/goals/goal-cards.tsx:241
+
+  ⚠ Accessibility: Click handler missing keyboard handler ×3
+    Keyboard users can't trigger this click handler because
+    there's no keyboard one, so add `onKeyUp`, `onKeyDown`, or
+    `onKeyPress`.
+    → Pair `onClick` with a key handler so keyboard users can
+    trigger it.
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/click-events-have-key-events
+
+    src/components/calendar/calendar-chips.tsx:62
+
+    src/components/calendar/calendar-month-grid.tsx:35
+
+    src/components/calendar/calendar-week-list.tsx:42
+
+  ⚠ Performance: State initializer runs on every render ×8
+    useState(initialVariant()) re-runs initialVariant() on
+    every render & throws the result away.
+    → Wrap expensive initial state in an arrow function so the
+    initializer does not rerun and get thrown away on every
+    render.
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/rerender-lazy-state-init
+
+    src/components/goals/goal-dialog.tsx:99
+
+    src/components/settings/athlete-profile-panel.tsx:77-83
+
+    src/components/settings/athlete-profile-panel.tsx:89
+
+  ⚠ Maintainability: Zod 3 schema API breaks in Zod 4 ×9
+    This Zod 3 schema API changed in Zod 4, so this schema can
+    fail after the upgrade.
+    → Switch to the Zod 4 versions: top-level factories like
+    `z.enum()`, object helpers like `z.strictObject()`, the new
+    `z.function({ input, output })` form, and explicit
+    key/value schemas for `z.record()`.
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/zod-v4-no-deprecated-schema-apis
+
+    src/lib/validators/activity.ts:8
+
+    src/lib/validators/goal.ts:11-13
+
+    src/lib/validators/physical-note.ts:13-17
+
+    src/lib/validators/planned-session.ts:11-12
+
+  ⚠ Maintainability: Static value rebuilt every render ×2
+    `validCategories` inside `GET` uses no local state but is
+    rebuilt every render, so it looks new each time & breaks
+    memoized children. Move it to the top of the file, outside
+    the component.
+    → Move the value above the component, at the top of the
+    file. It doesn't use local state, so rebuilding it each
+    update is wasted and makes it look new every time.
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/prefer-module-scope-static-value
+
+    src/app/api/dev/features/route.ts:50
+
+    src/components/effort/effort-acwr-section.tsx:5
+
+  ⚠ Maintainability: deslop/unused-export ×55
+    Unused export: `CORPS_TONE_DOT` is exported but no module
+    imports it, so it expands the public surface and can
+    mislead callers about supported API.
+    → Drop the `export` keyword (or remove the declaration) if
+    no other module uses this symbol.
+
+    src/components/corps/corps-ui.tsx:70
+
+    src/components/effort/effort-acwr-section.tsx:4
+
+    src/components/layout/mobile-shell.tsx:93
+
+    src/components/settings/integration-modal-content.tsx:763
+
+    src/components/today/drill-down/metric-drill-down-page.tsx:42
+
+    src/core/athlete-state/freshness.ts:41
+
+    src/core/dev/checksum.ts:68
+
+    src/core/inference/fatigue/scoring.ts:488
+
+    src/hooks/use-coach.ts:134
+
+    src/hooks/use-coach.ts:141
+
+    src/hooks/use-coach.ts:169
+
+    src/hooks/use-coach.ts:176
+
+    src/hooks/use-coach.ts:269
+
+    src/hooks/use-data.ts:43
+
+    src/hooks/use-data.ts:53
+
+    src/hooks/use-today.ts:364
+
+    src/lib/alerts.ts:191
+
+    src/lib/analytics.ts:185
+
+    src/lib/analytics.ts:239
+
+    src/lib/analytics.ts:489
+
+    src/lib/athlete-state/orchestrator.ts:138
+
+    src/lib/athlete-state/orchestrator.ts:173
+
+    src/lib/athlete-state/sync-providers.ts:106
+
+    src/lib/briefing-context.ts:158
+
+    src/lib/briefing-phase.ts:26
+
+    src/lib/daily-phase/session-window.ts:40
+
+    src/lib/daily-phase/session-window.ts:45
+
+    src/lib/dashboard.ts:252
+
+    src/lib/engines/feature-engine.ts:54
+
+    src/lib/health.ts:24
+
+    src/lib/health.ts:53
+
+    src/lib/health.ts:112
+
+    src/lib/integrations/garmin-streams.ts:229
+
+    src/lib/queries.ts:143
+
+    src/lib/queries.ts:177
+
+    src/lib/queries.ts:212
+
+    src/lib/queries.ts:403
+
+    src/lib/query/optimistic.ts:11
+
+    src/lib/query/today-fetch.ts:14
+
+    src/lib/recovery.ts:258
+
+    src/lib/recovery.ts:267
+
+    src/lib/sessions.ts:22
+
+    src/lib/sessions.ts:49
+
+    src/lib/threshold-service.ts:42
+
+    src/lib/today-dashboard-labels.ts:24
+
+    src/lib/today-dashboard-labels.ts:43
+
+    src/lib/today-dashboard-labels.ts:51
+
+    src/lib/today-dashboard-labels.ts:58
+
+    src/lib/today-dashboard-labels.ts:77
+
+    src/lib/today-narrative-context.ts:251
+
+    src/lib/today-twin-navigation.ts:27
+
+    src/lib/validators/activity.ts:80
+
+    src/lib/weekly-review.ts:271
+
+    src/lib/withings-ecg-display.ts:128
+
+  ⚠ Performance: Intl formatter rebuilt each call ×12
+    This is slow because new Intl.DateTimeFormat() rebuilds on
+    every call inside a function, so move it to the top of the
+    file, or wrap it in useMemo
+    → Move `new Intl.NumberFormat(...)` to the top of the file
+    or wrap it in `useMemo`. Building one is slow, so don't
+    redo it on every call
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/js-hoist-intl
+
+    src/components/goals/activity-goal-validations-card.tsx:54
+
+    src/components/goals/goal-achievements-history.tsx:58
+
+    src/components/goals/goal-cards.tsx:104
+
+    src/components/goals/goal-cards.tsx:258
+
+    src/components/goals/goal-cards.tsx:322
+
+    src/components/training/activity-narrative-card.tsx:22
+
+    src/core/observation/normalization.ts:49
+
+    src/lib/format.ts:32
+
+    src/lib/goal-metric-config.ts:255
+
+    src/lib/goal-metric-config.ts:269
+
+    src/lib/integrations/google-sync.ts:125
+
+    src/lib/training-day.ts:10
+
+  ⚠ Maintainability: Format method on z.string()
+    This `z.string().<format>()` check is deprecated in Zod 4,
+    so it can break during the upgrade.
+    → Use the Zod 4 top-level format checks like `z.email()`,
+    `z.uuid()`, or `z.ipv4()` instead of
+    `z.string().<format>()`.
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/zod-v4-prefer-top-level-string-formats
+
+    src/app/api/renpho/connect/route.ts:9
+
+  ⚠ Maintainability: Pure function rebuilt every render
+    `getGridCols` inside `PrGrid` uses no local state but is
+    rebuilt on every render, so it wastes work & breaks
+    memoized children. Move it to the top of the file, outside
+    the component.
+    → Move the function above the component, at the top of the
+    file. It doesn't use local state, so rebuilding it each
+    update is wasted work.
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/prefer-module-scope-pure-function
+
+    src/components/analytics/records-panel.tsx:123
+
+  ⚠ Maintainability: Large component is hard to read and change ×4
+    Component "GoalDialog" is 401 lines long, which is hard to
+    read & change. Split it into a few smaller components.
+    → Pull each section into its own component so the parent is
+    easier to read, test, and change.
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/no-giant-component
+
+    src/components/goals/goal-dialog.tsx:94
+
+    src/components/goals/metric-goal-form.tsx:107
+
+    src/components/planning/planned-session-dialog.tsx:81
+
+    src/components/settings/athlete-profile-panel.tsx:76
+
+  ⚠ Performance: .map().filter(Boolean) loops twice ×5
+    This loops over your list twice because
+    .map().filter(Boolean) makes two passes, so use .flatMap()
+    to change & drop items in one pass
+    → Use `.flatMap(item => condition ? [value] : [])` to
+    change and drop items in one pass, instead of building a
+    throwaway array in between
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/js-flatmap-filter
+
+    src/components/coach/tool-activity.tsx:254
+
+    src/lib/auth.ts:12
+
+    src/lib/briefing-validation.ts:29
+
+    src/lib/today-rich-view.ts:38
+
+    src/lib/today-rich-view.ts:47
+
+  ⚠ Performance: Chained array iterations ×40
+    This loops over your list twice because .filter().map()
+    makes two passes, so do it in one pass with .reduce() or a
+    for...of loop
+    → Combine `.map().filter()` style chains into one pass with
+    `.reduce()` or a `for...of` loop, so you only loop over the
+    list once
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/js-combine-iterations
+
+    src/components/calendar/calendar-day-content.tsx:27
+
+    src/components/calendar/calendar-view.tsx:70
+
+    src/components/calendar/calendar-view.tsx:88
+
+    src/components/coach/coach-chat.tsx:168
+
+    src/components/coach/plan-generator.tsx:90
+
+    src/components/goals/goals-view.tsx:172
+
+    src/components/physical/physical-view.tsx:76
+
+    src/components/planning/macro-plan-dialog.tsx:40
+
+    src/components/planning/planning-view.tsx:56
+
+    src/components/sleep/sleep-stage-breakdown.tsx:32
+
+    src/core/dev/pipeline-inspector.ts:329-332
+
+    src/lib/activity-analysis.ts:238
+
+    src/lib/activity-analysis.ts:242
+
+    src/lib/activity-analysis.ts:246
+
+    src/lib/analytics.ts:272
+
+    src/lib/analytics.ts:461
+
+    src/lib/athlete-state/freshness-service.ts:401
+
+    src/lib/coach-context.ts:128
+
+    src/lib/coach-context.ts:179
+
+    src/lib/coach-context.ts:217
+
+    src/lib/coach-context.ts:233
+
+    src/lib/daily-strain.ts:198
+
+    src/lib/manual-observation-sync.ts:197
+
+    src/lib/manual-observation-sync.ts:284
+
+    src/lib/proactive-coach.ts:248
+
+    src/lib/records.ts:538-540
+
+    src/lib/records.ts:659
+
+    src/lib/records.ts:810
+
+    src/lib/records.ts:815
+
+    src/lib/records.ts:820
+
+    src/lib/records.ts:894-899
+
+    src/lib/session-linking.ts:54
+
+    src/lib/today-narrative-context.ts:88
+
+    src/lib/weekly-review.ts:114
+
+  ⚠ Bugs: Unversioned localStorage key
+    localStorage.setItem("sharpit:dismissed-todos",
+    JSON.stringify(...)) has no version, so changing the data
+    shape later crashes your users' saved sessions. Add one to
+    the key (e.g. "sharpit:dismissed-todos:v1").
+    → Put a version in the storage key (e.g. "myKey:v1"). If
+    you change the data shape later, old saved data can be
+    ignored instead of crashing the app.
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/client-localstorage-no-version
+
+    src/lib/dismissed-todos.ts:19
+
+  ⚠ Maintainability: Non-component export in component file ×5
+    This file exports non-components, so Fast Refresh can't
+    safely preserve component state.
+    → Move non-component exports out of component files so Fast
+    Refresh can preserve component state instead of
+    full-reloading.
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/only-export-components
+
+    src/components/settings/integration-modal-content.tsx:763
+
+    src/components/settings/integration-modal-parts.tsx:4
+
+    src/components/today/drill-down/metric-drill-down-page.tsx:42
+
+    src/components/ui/badge.tsx:49
+
+    src/components/ui/button.tsx:58
+
+  ⚠ Performance: JSON parse/stringify deep clone
+    `JSON.parse(JSON.stringify(x))` deep-clones by
+    re-serializing: it is slow on large objects and silently
+    drops `undefined`, functions, `Date`/`Map`/`Set`, and
+    cyclic references. Use `structuredClone(x)`.
+    → Replace `JSON.parse(JSON.stringify(value))` with
+    `structuredClone(value)`. It is faster and preserves Dates,
+    Maps, Sets, and cyclic references.
+    Curl with no cache & follow the canonical fix and false positive check recipe before fixing: https://react.doctor/docs/rules/react-doctor/no-json-parse-stringify-clone
+
+    src/infrastructure/observation/prisma-observation-repository.ts:92
+
+
+  ────────────────────────────────────────────────────────────
+
+  All 275 issues
+
+  Security › 3 errors
+  Bugs › 1 error, 44 warnings
+  Performance › 111 warnings
+  Accessibility › 11 warnings
+  Maintainability › 105 warnings
+
+Agent guidance
+  - Treat React Doctor diagnostics as starting hypotheses. Read the relevant code before confirming or suppressing each finding.
+  - For each group, decide true positive, false positive, or needs-human-review, then assign high/medium/low confidence.
+  - Do not suppress a finding without evidence from the file in question. Confidence requires code context.
+  - Understand the root cause before editing. Fix the underlying code instead of changing react-doctor config or suppressing rules unless explicitly asked.
+  - Investigate deeply where relevant: race conditions, security-sensitive flows, state propagation, multi-file refactors, and downstream dependency chains.
+  - Ignore pure style preferences, theoretical issues without real impact, missing features, and unrelated pre-existing code.
+  - Start with high-confidence fixes that preserve behavior. Leave low-confidence or product-dependent changes as notes.
+  - Run `npx react-doctor@latest --verbose --scope changed` before and after changes, plus relevant tests after each focused batch.
+  - When available, spawn subagents or isolated worktrees for independent rule families, then review and merge only the best safe fixes.
+  - Split unrelated, broad, or behavior-changing work into separate PRs/branches instead of one large cleanup.
+  - When one rule spans dozens of files (a migration-scale change), fix a representative sample first, confirm the recipe holds, and get the code owner's sign-off before changing the rest. Don't mass-fix a broad pattern in one unreviewed pass.
+  - For confirmed issues that cannot be fixed now, create GitHub issues with the rule, file/line, confidence, impact, and proposed fix.
+  - If a fix needs an API, UX, or architecture decision, stop and ask before editing.
+
+  ┌─────┐  43 / 100 Critical
+  │ x x │  ██████████████████████▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░
+  │  ▽  │  React Doctor (https://react.doctor)
+  └─────┘
+
+  You could improve +15% by fixing the top 3 issues
+  Full diagnostics written to /var/folders/pn/pk1j9w3x6wn4bm828x3gr3_40000gp/T/react-doctor-91b11d08-ac64-4205-8c28-0651b0b81bdd
+
+  ────────────────────────────────────────────────────────────
+
+  Share: https://react.doctor/share?p=sharpit&s=43&e=4&w=271&f=153
+  Tell others how you did on socials
+
+  Docs: https://react.doctor/docs
+  Learn more about fixing issues, setting up CI/CD, and
+  configuring rules with a config file
+
+  GitHub: https://github.com/millionco/react-doctor
+  Report issues and star the repository!
+

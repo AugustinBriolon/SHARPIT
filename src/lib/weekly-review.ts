@@ -210,10 +210,12 @@ function formatWeeklyStats(stats: WeeklyStats): string {
 export async function generateWeeklyReviewContent(
   weekStart: Date,
 ): Promise<{ content: string; stats: WeeklyStats }> {
-  const stats = await buildWeeklyStats(weekStart);
+  const [stats, ctx] = await Promise.all([
+    buildWeeklyStats(weekStart),
+    buildCoachContext(addDays(weekStart, 6)),
+  ]);
   // Contexte global de l'athlète (objectifs, forme, blessures, planifié à venir),
   // pris à la fin de la semaine concernée.
-  const ctx = await buildCoachContext(addDays(weekStart, 6));
 
   const prompt = `${formatCoachContext(ctx)}
 

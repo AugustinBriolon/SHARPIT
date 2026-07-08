@@ -114,11 +114,12 @@ export class RecoveryInferenceOrchestrator {
     const computedAt = new Date();
 
     // ── Step 1: Get DayFeatures ────────────────────────────────────────────
-    const features = await this.deps.featureEngine.getDayFeatures(athleteId, trainingDayId);
+    const [features, previousScore] = await Promise.all([
+      this.deps.featureEngine.getDayFeatures(athleteId, trainingDayId),
+      this.deps.digitalTwinRepo.getPreviousRecoveryScore(athleteId),
+    ]);
 
     // ── Step 2: Get previous recovery score for trend computation ──────────
-    const previousScore = await this.deps.digitalTwinRepo.getPreviousRecoveryScore(athleteId);
-
     const context: RecoveryModelContext = {
       athleteId,
       trainingDayId,

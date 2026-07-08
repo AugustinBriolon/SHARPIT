@@ -67,9 +67,10 @@ export async function POST(req: Request) {
     );
   }
 
-  const { messages }: { messages: UIMessage[] } = await req.json();
-
-  const ctx = await buildCoachContext();
+  const [{ messages }, ctx] = await Promise.all([
+    req.json() as Promise<{ messages: UIMessage[] }>,
+    buildCoachContext(),
+  ]);
   const system = `${SYSTEM_PROMPT}\n\n---\n${formatCoachContext(ctx)}`;
 
   const result = streamText({

@@ -46,7 +46,21 @@ type PageProps = {
 };
 
 export default async function SettingsPage({ searchParams }: PageProps) {
-  const { strava, google, googleDetail, withings, withingsDetail } = await searchParams;
+  const [params, accounts] = await Promise.all([
+    searchParams,
+    Promise.all([
+      getStravaAccount(),
+      Promise.resolve(isStravaConfigured()),
+      getGarminAccount(),
+      getRenphoAccount(),
+      getWithingsAccount(),
+      getGoogleAccount().catch(() => null),
+      Promise.resolve(isGoogleConfigured()),
+      Promise.resolve(isWithingsConfigured()),
+    ]),
+  ]);
+
+  const { strava, google, googleDetail, withings, withingsDetail } = params;
   const [
     stravaAccount,
     configured,
@@ -56,16 +70,7 @@ export default async function SettingsPage({ searchParams }: PageProps) {
     googleAccount,
     googleConfigured,
     withingsConfigured,
-  ] = await Promise.all([
-    getStravaAccount(),
-    Promise.resolve(isStravaConfigured()),
-    getGarminAccount(),
-    getRenphoAccount(),
-    getWithingsAccount(),
-    getGoogleAccount().catch(() => null),
-    Promise.resolve(isGoogleConfigured()),
-    Promise.resolve(isWithingsConfigured()),
-  ]);
+  ] = accounts;
 
   const integrationsPayload = {
     strava: {

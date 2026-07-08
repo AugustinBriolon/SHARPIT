@@ -204,8 +204,7 @@ export interface SyncResult {
 }
 
 export async function syncStravaActivities(): Promise<SyncResult> {
-  const accessToken = await getValidAccessToken();
-  const account = await getStravaAccount();
+  const [accessToken, account] = await Promise.all([getValidAccessToken(), getStravaAccount()]);
 
   const after = Math.floor(syncSinceFromLastSync(account?.lastSyncAt, 90).getTime() / 1000);
 

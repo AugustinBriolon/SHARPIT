@@ -18,19 +18,20 @@ export class AthleteContextProvider implements ExtractionContextProvider {
 
   async getContext(athleteId: string, trainingDayId: string): Promise<ExtractionContext> {
     // AthleteProfile uses id = 'default' (single-athlete app)
-    const profile = await this.prisma.athleteProfile.findUnique({
-      where: { id: 'default' },
-    });
-
-    // Use most recent resting HR observation as restingHr proxy
-    const recentRhrObs = await this.prisma.observation.findFirst({
-      where: {
-        athleteId,
-        type: 'RESTING_HR',
-      },
-      orderBy: { timestamp: 'desc' },
-      select: { data: true },
-    });
+    const [profile, recentRhrObs] = await Promise.all([
+      this.prisma.athleteProfile.findUnique({
+        where: { id: 'default' },
+      }),
+      // Use most recent resting HR observation as restingHr proxy
+      this.prisma.observation.findFirst({
+        where: {
+          athleteId,
+          type: 'RESTING_HR',
+        },
+        orderBy: { timestamp: 'desc' },
+        select: { data: true },
+      }),
+    ]);
 
     const restingHr = recentRhrObs?.data
       ? (recentRhrObs.data as { valueBpm?: number }).valueBpm

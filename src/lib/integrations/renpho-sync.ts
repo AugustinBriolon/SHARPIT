@@ -118,8 +118,10 @@ export async function syncRenphoHealth(options?: {
   const sinceTimestamp = options?.full ? undefined : Math.floor(since.getTime() / 1000);
   const limit = options?.full ? 2000 : Math.max(days * 2, 100);
 
-  const measurements = await client.getMeasurements({ sinceTimestamp, limit });
-  const withingsDays = await withingsWeighInDayKeys(since);
+  const [measurements, withingsDays] = await Promise.all([
+    client.getMeasurements({ sinceTimestamp, limit }),
+    withingsWeighInDayKeys(since),
+  ]);
 
   let imported = 0;
   let updated = 0;

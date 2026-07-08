@@ -231,10 +231,12 @@ export class FeatureEngine {
     athleteId: string,
     session: SessionObservation,
   ): Promise<void> {
-    const ctx = await this.ctxProvider.getContext(athleteId, session.trainingDayId);
+    const [ctx, linkedSubjective] = await Promise.all([
+      this.ctxProvider.getContext(athleteId, session.trainingDayId),
+      this.findLinkedSubjective(athleteId, session),
+    ]);
 
     // Find linked subjective observation (if any)
-    const linkedSubjective = await this.findLinkedSubjective(athleteId, session);
     const stream = this.sessionStreamProvider
       ? await this.sessionStreamProvider.getSessionStream(session, ctx)
       : null;
@@ -343,14 +345,12 @@ export class FeatureEngine {
    * Returns the freshly computed DayFeatures.
    */
   async computeDayFeatures(athleteId: string, trainingDayId: string): Promise<DayFeatures> {
-    const ctx = await this.ctxProvider.getContext(athleteId, trainingDayId);
+    const [ctx, sessionRecords] = await Promise.all([
+      this.ctxProvider.getContext(athleteId, trainingDayId),
+      this.ensureSessionFeaturesInRange(athleteId, trainingDayId, trainingDayId),
+    ]);
 
     // ── Session features (may already be COMPUTED from event handler) ─────
-    const sessionRecords = await this.ensureSessionFeaturesInRange(
-      athleteId,
-      trainingDayId,
-      trainingDayId,
-    );
     const sessionFeatures = sessionRecords.map((r) => r.data);
 
     // ── Load features ─────────────────────────────────────────────────────
@@ -368,8 +368,10 @@ export class FeatureEngine {
     await this.saveFeatureSet(athleteId, 'LOAD', trainingDayId, null, loadFeatureSet);
 
     // ── Recovery features ─────────────────────────────────────────────────
-    const recoveryObs = await this.loadRecoveryObservations(athleteId, trainingDayId);
-    const recoveryHistory = await this.buildRecoveryHistory(athleteId, trainingDayId);
+    const [recoveryObs, recoveryHistory] = await Promise.all([
+      this.loadRecoveryObservations(athleteId, trainingDayId),
+      this.buildRecoveryHistory(athleteId, trainingDayId),
+    ]);
     const t0Recovery = Date.now();
     let recoveryFeatureSet = extractRecoveryFeatures(
       recoveryObs.hrv,
