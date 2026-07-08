@@ -14,8 +14,16 @@ import {
 } from '@/infrastructure/athlete-state/snapshot-repository';
 import { loadTodayState } from '@/lib/today-state-server';
 import type { TodayState } from '@/hooks/use-today';
-import { getActivities, getPlannedSessions } from '@/lib/queries';
-import { startOfDay } from 'date-fns';
+import { enrichGoalsWithProgress } from '@/lib/goal-achievements';
+import {
+  getActivities,
+  getAthleteProfile,
+  getGoals,
+  getHealthEntries,
+  getPlannedSessions,
+} from '@/lib/queries';
+import { analyzeSleep, toSleepEntryInputs } from '@/lib/sleep';
+import { addDays, startOfDay } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 
 const ATHLETE_ID = 'default';
@@ -23,6 +31,9 @@ const ATHLETE_ID = 'default';
 function phaseNarrativeNeedsUpgrade(snapshot: AthleteSnapshot): boolean {
   const phase = snapshot.dailyPhase?.phase;
   if (!phase || !snapshot.phaseNarrative) return false;
+  if (!snapshot.phaseNarrative.posture) return true;
+  if (/à protéger|demain à protéger|demain : ménage/i.test(snapshot.phaseNarrative.heroHeadline))
+    return true;
   if (isForwardAdvicePhase(phase)) return false;
   return /entraîne-toi|train hard/i.test(snapshot.phaseNarrative.heroSubline);
 }
@@ -68,11 +79,22 @@ async function loadSnapshotPhaseContext(
   refDate: Date = new Date(),
 ) {
   const dayStart = startOfDay(refDate);
-  const [activities, plannedSessions, observationSignals] = await Promise.all([
-    getActivities({ limit: 40 }),
-    getPlannedSessions({ from: dayStart, to: dayStart }),
-    loadPhaseObservationSignals(trainingDayId),
-  ]);
+  const dayEnd = startOfDay(addDays(refDate, 1));
+  const [activities, plannedSessions, rawGoals, athleteProfile, healthEntries, observationSignals] =
+    await Promise.all([
+      getActivities({ limit: 40 }),
+      getPlannedSessions({ from: dayStart, to: dayEnd }),
+      getGoals(),
+      getAthleteProfile(),
+      getHealthEntries(14, refDate),
+      loadPhaseObservationSignals(trainingDayId),
+    ]);
+  const goals = await enrichGoalsWithProgress(rawGoals);
+
+  const sleepCoach = analyzeSleep(toSleepEntryInputs(healthEntries), {
+    targetDurationMin: athleteProfile?.sleepTargetMinutes,
+    bedtimeTargetMin: athleteProfile?.sleepBedtimeTargetMin,
+  });
 
   return {
     refDate,
@@ -92,7 +114,11 @@ async function loadSnapshotPhaseContext(
       completed: p.completed,
       activityId: p.activityId,
       title: p.title,
+      goalId: p.goalId,
     })),
+    goals,
+    sleepCoach,
+    sleepBedtimeTargetMin: athleteProfile?.sleepBedtimeTargetMin ?? null,
     priorSnapshot: priorSnapshot
       ? { generatedAt: priorSnapshot.generatedAt, dailyPhase: priorSnapshot.dailyPhase }
       : null,

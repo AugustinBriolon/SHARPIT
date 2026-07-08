@@ -17,6 +17,7 @@ import {
 import { IntegrationLogo } from '@/components/settings/integration-logos';
 import type { IntegrationDefinition } from '@/components/settings/integrations-types';
 import { Button, buttonVariants } from '@/components/ui/button';
+import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -145,6 +146,7 @@ function StravaContent({
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { confirm, dialog } = useConfirmDialog();
   const [syncing, setSyncing] = useState(false);
   const [backfilling, setBackfilling] = useState(false);
   const [syncRecordChanges, setSyncRecordChanges] = useState<RecordChange[]>([]);
@@ -198,7 +200,13 @@ function StravaContent({
   }
 
   async function handleDisconnect() {
-    if (!confirm('Déconnecter Strava ? Les séances importées sont conservées.')) return;
+    const confirmed = await confirm({
+      title: 'Déconnecter Strava ?',
+      description: 'Les séances importées sont conservées.',
+      confirmLabel: 'Déconnecter',
+      variant: 'destructive',
+    });
+    if (!confirmed) return;
     await fetch('/api/strava/disconnect', { method: 'POST' });
     router.refresh();
     onUpdated?.();
@@ -245,27 +253,30 @@ function StravaContent({
   }
 
   return (
-    <div className="space-y-4">
-      <IntegrationModalHeader integration={integration} />
-      <IntegrationAccountCard
-        avatarUrl={avatarUrl}
-        label={integration.account?.label}
-        lastSyncAt={integration.account?.lastSyncAt}
-      />
-      <IntegrationSyncActions
-        fullImportingLabel="Récupération…"
-        fullImportLabel="Données détaillées"
-        importingAll={backfilling}
-        syncing={syncing}
-        onDisconnect={handleDisconnect}
-        onFullImport={handleBackfill}
-        onSync={handleSync}
-      />
-      <RecordChangesBanner changes={syncRecordChanges} />
-      {integration.statusMessage && (
-        <p className="text-muted-foreground text-sm">{integration.statusMessage}</p>
-      )}
-    </div>
+    <>
+      <div className="space-y-4">
+        <IntegrationModalHeader integration={integration} />
+        <IntegrationAccountCard
+          avatarUrl={avatarUrl}
+          label={integration.account?.label}
+          lastSyncAt={integration.account?.lastSyncAt}
+        />
+        <IntegrationSyncActions
+          fullImportingLabel="Récupération…"
+          fullImportLabel="Données détaillées"
+          importingAll={backfilling}
+          syncing={syncing}
+          onDisconnect={handleDisconnect}
+          onFullImport={handleBackfill}
+          onSync={handleSync}
+        />
+        <RecordChangesBanner changes={syncRecordChanges} />
+        {integration.statusMessage && (
+          <p className="text-muted-foreground text-sm">{integration.statusMessage}</p>
+        )}
+      </div>
+      {dialog}
+    </>
   );
 }
 
@@ -278,6 +289,7 @@ function GarminContent({
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { confirm, dialog } = useConfirmDialog();
   const [connecting, setConnecting] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [importingAll, setImportingAll] = useState(false);
@@ -329,7 +341,12 @@ function GarminContent({
   }
 
   async function handleDisconnect() {
-    if (!confirm('Déconnecter Garmin ?')) return;
+    const confirmed = await confirm({
+      title: 'Déconnecter Garmin ?',
+      confirmLabel: 'Déconnecter',
+      variant: 'destructive',
+    });
+    if (!confirmed) return;
     await fetch('/api/garmin/disconnect', { method: 'POST' });
     router.refresh();
     onUpdated?.();
@@ -363,20 +380,23 @@ function GarminContent({
   }
 
   return (
-    <div className="space-y-4">
-      <IntegrationModalHeader integration={integration} />
-      <IntegrationAccountSummary
-        label={integration.account?.label}
-        lastSyncAt={integration.account?.lastSyncAt}
-      />
-      <IntegrationSyncActions
-        importingAll={importingAll}
-        syncing={syncing}
-        onDisconnect={handleDisconnect}
-        onFullImport={() => handleSync(true)}
-        onSync={() => handleSync(false)}
-      />
-    </div>
+    <>
+      <div className="space-y-4">
+        <IntegrationModalHeader integration={integration} />
+        <IntegrationAccountSummary
+          label={integration.account?.label}
+          lastSyncAt={integration.account?.lastSyncAt}
+        />
+        <IntegrationSyncActions
+          importingAll={importingAll}
+          syncing={syncing}
+          onDisconnect={handleDisconnect}
+          onFullImport={() => handleSync(true)}
+          onSync={() => handleSync(false)}
+        />
+      </div>
+      {dialog}
+    </>
   );
 }
 
@@ -389,6 +409,7 @@ function WithingsContent({
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { confirm, dialog } = useConfirmDialog();
   const [syncing, setSyncing] = useState(false);
   const [importingAll, setImportingAll] = useState(false);
 
@@ -418,7 +439,13 @@ function WithingsContent({
   }
 
   async function handleDisconnect() {
-    if (!confirm('Déconnecter Withings ? Les mesures importées sont conservées.')) return;
+    const confirmed = await confirm({
+      title: 'Déconnecter Withings ?',
+      description: 'Les mesures importées sont conservées.',
+      confirmLabel: 'Déconnecter',
+      variant: 'destructive',
+    });
+    if (!confirmed) return;
     await fetch('/api/withings/disconnect', { method: 'POST' });
     router.refresh();
     onUpdated?.();
@@ -471,23 +498,26 @@ function WithingsContent({
   }
 
   return (
-    <div className="space-y-4">
-      <IntegrationModalHeader integration={integration} />
-      <IntegrationAccountSummary
-        label={integration.account?.label}
-        lastSyncAt={integration.account?.lastSyncAt}
-      />
-      <IntegrationSyncActions
-        importingAll={importingAll}
-        syncing={syncing}
-        onDisconnect={handleDisconnect}
-        onFullImport={() => handleSync(true)}
-        onSync={() => handleSync(false)}
-      />
-      {integration.statusMessage && (
-        <p className="text-muted-foreground text-sm">{integration.statusMessage}</p>
-      )}
-    </div>
+    <>
+      <div className="space-y-4">
+        <IntegrationModalHeader integration={integration} />
+        <IntegrationAccountSummary
+          label={integration.account?.label}
+          lastSyncAt={integration.account?.lastSyncAt}
+        />
+        <IntegrationSyncActions
+          importingAll={importingAll}
+          syncing={syncing}
+          onDisconnect={handleDisconnect}
+          onFullImport={() => handleSync(true)}
+          onSync={() => handleSync(false)}
+        />
+        {integration.statusMessage && (
+          <p className="text-muted-foreground text-sm">{integration.statusMessage}</p>
+        )}
+      </div>
+      {dialog}
+    </>
   );
 }
 
@@ -500,6 +530,7 @@ function RenphoContent({
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { confirm, dialog } = useConfirmDialog();
   const [connecting, setConnecting] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [importingAll, setImportingAll] = useState(false);
@@ -556,7 +587,12 @@ function RenphoContent({
   }
 
   async function handleDisconnect() {
-    if (!confirm('Déconnecter Renpho ?')) return;
+    const confirmed = await confirm({
+      title: 'Déconnecter Renpho ?',
+      confirmLabel: 'Déconnecter',
+      variant: 'destructive',
+    });
+    if (!confirmed) return;
     await fetch('/api/renpho/disconnect', { method: 'POST' });
     router.refresh();
     onUpdated?.();
@@ -588,20 +624,23 @@ function RenphoContent({
   }
 
   return (
-    <div className="space-y-4">
-      <IntegrationModalHeader integration={integration} />
-      <IntegrationAccountSummary
-        label={integration.account?.label}
-        lastSyncAt={integration.account?.lastSyncAt}
-      />
-      <IntegrationSyncActions
-        importingAll={importingAll}
-        syncing={syncing}
-        onDisconnect={handleDisconnect}
-        onFullImport={() => handleSync(true)}
-        onSync={() => handleSync(false)}
-      />
-    </div>
+    <>
+      <div className="space-y-4">
+        <IntegrationModalHeader integration={integration} />
+        <IntegrationAccountSummary
+          label={integration.account?.label}
+          lastSyncAt={integration.account?.lastSyncAt}
+        />
+        <IntegrationSyncActions
+          importingAll={importingAll}
+          syncing={syncing}
+          onDisconnect={handleDisconnect}
+          onFullImport={() => handleSync(true)}
+          onSync={() => handleSync(false)}
+        />
+      </div>
+      {dialog}
+    </>
   );
 }
 
@@ -622,6 +661,7 @@ function GoogleContent({
 }) {
   const router = useRouter();
   const calendarsQuery = useGoogleCalendars(integration.connected);
+  const { confirm, dialog } = useConfirmDialog();
   const calendars = calendarsQuery.data ?? [];
   const [pendingCalendarId, setPendingCalendarId] = useState<string | null>(null);
   const targetCalendarId = integration.account?.extra?.targetCalendarId as string | null;
@@ -673,7 +713,12 @@ function GoogleContent({
   }
 
   async function handleDisconnect() {
-    if (!confirm('Déconnecter Google Calendar ?')) return;
+    const confirmed = await confirm({
+      title: 'Déconnecter Google Calendar ?',
+      confirmLabel: 'Déconnecter',
+      variant: 'destructive',
+    });
+    if (!confirmed) return;
     await fetch('/api/google/disconnect', { method: 'POST' });
     router.refresh();
     onUpdated?.();
@@ -721,42 +766,45 @@ function GoogleContent({
   }
 
   return (
-    <div className="space-y-4">
-      <IntegrationModalHeader integration={integration} />
-      <IntegrationAccountSummary
-        label={integration.account?.label}
-        lastSyncAt={integration.account?.lastSyncAt}
-      />
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Calendrier des séances</label>
-        <Select value={calendarId} onValueChange={handleSelectCalendar}>
-          <SelectTrigger disabled={calendarsQuery.isPending || savingTarget}>
-            <SelectValue>
-              {calendarSelectLabel(
-                calendarId,
-                calendars,
-                targetCalendarName,
-                calendarsQuery.isPending,
-              )}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {calendars.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.summary}
-                {c.primary ? ' (principal)' : ''}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    <>
+      <div className="space-y-4">
+        <IntegrationModalHeader integration={integration} />
+        <IntegrationAccountSummary
+          label={integration.account?.label}
+          lastSyncAt={integration.account?.lastSyncAt}
+        />
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Calendrier des séances</label>
+          <Select value={calendarId} onValueChange={handleSelectCalendar}>
+            <SelectTrigger disabled={calendarsQuery.isPending || savingTarget}>
+              <SelectValue>
+                {calendarSelectLabel(
+                  calendarId,
+                  calendars,
+                  targetCalendarName,
+                  calendarsQuery.isPending,
+                )}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {calendars.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.summary}
+                  {c.primary ? ' (principal)' : ''}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <IntegrationSyncActions
+          syncDisabled={!calendarId}
+          syncing={syncing}
+          onDisconnect={handleDisconnect}
+          onSync={handleSync}
+        />
       </div>
-      <IntegrationSyncActions
-        syncDisabled={!calendarId}
-        syncing={syncing}
-        onDisconnect={handleDisconnect}
-        onSync={handleSync}
-      />
-    </div>
+      {dialog}
+    </>
   );
 }
 

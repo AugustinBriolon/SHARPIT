@@ -5,11 +5,20 @@ import { usePathname } from 'next/navigation';
 import { UserButton, useUser } from '@clerk/nextjs';
 import { Activity } from 'lucide-react';
 import { sidebarNavItems, profileNavItem, settingsNavItem } from '@/lib/app-navigation';
+import { usePrefetchNavQuery } from '@/hooks/use-prefetch-nav';
 import { navLinkClass } from '@/lib/nav-pill';
 import { clerkAppearance } from '@/lib/clerk-appearance';
 import type { AppNavItem } from '@/lib/app-navigation';
 
-function NavLink({ item, pathname }: { item: AppNavItem; pathname: string }) {
+function NavLink({
+  item,
+  pathname,
+  onPrefetch,
+}: {
+  item: AppNavItem;
+  pathname: string;
+  onPrefetch: (href: string) => void;
+}) {
   const isActive = item.match(pathname);
   const Icon = item.icon;
 
@@ -18,6 +27,7 @@ function NavLink({ item, pathname }: { item: AppNavItem; pathname: string }) {
       aria-current={isActive ? 'page' : undefined}
       className={navLinkClass(isActive, 'bg-sidebar')}
       href={item.href}
+      onMouseEnter={() => onPrefetch(item.href)}
     >
       <Icon className="size-4 shrink-0" aria-hidden />
       <span>{item.label}</span>
@@ -28,6 +38,7 @@ function NavLink({ item, pathname }: { item: AppNavItem; pathname: string }) {
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useUser();
+  const prefetch = usePrefetchNavQuery();
 
   return (
     <aside className="border-sidebar-border bg-sidebar sticky top-0 flex h-dvh w-60 shrink-0 flex-col border-r">
@@ -48,13 +59,13 @@ export function Sidebar() {
       <nav aria-label="Navigation principale" className="flex flex-1 flex-col overflow-y-auto px-3">
         <div className="space-y-1">
           {sidebarNavItems.map((item) => (
-            <NavLink key={item.href} item={item} pathname={pathname} />
+            <NavLink key={item.href} item={item} pathname={pathname} onPrefetch={prefetch} />
           ))}
         </div>
 
         <div className="border-sidebar-border mt-4 space-y-1 border-t pt-4">
-          <NavLink item={profileNavItem} pathname={pathname} />
-          <NavLink item={settingsNavItem} pathname={pathname} />
+          <NavLink item={profileNavItem} pathname={pathname} onPrefetch={prefetch} />
+          <NavLink item={settingsNavItem} pathname={pathname} onPrefetch={prefetch} />
         </div>
       </nav>
 

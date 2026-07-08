@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { refreshAthleteState } from '@/lib/athlete-state/orchestrator';
 import { computeFreshnessSnapshot, trainingDayIdNow } from '@/lib/athlete-state/freshness-service';
+import { buildTodayPresentationViewModel } from '@/lib/presentation/today';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
@@ -29,7 +30,16 @@ export async function POST(request: NextRequest) {
       forceSync,
     });
 
-    return NextResponse.json(result);
+    // Compute presentation alongside so the client seeds both caches from one request.
+    // Failure is non-blocking — the client falls back to /api/presentation/today.
+    let todayPresentation = null;
+    try {
+      todayPresentation = await buildTodayPresentationViewModel(trainingDayId);
+    } catch {
+      // non-blocking
+    }
+
+    return NextResponse.json({ ...result, todayPresentation });
   } catch (error) {
     console.error('[api/athlete-state/refresh]', error);
     return NextResponse.json(

@@ -55,6 +55,10 @@ export default function RootLayout({
         lang="fr"
         suppressHydrationWarning
       >
+        <head>
+          <link crossOrigin="anonymous" href="https://basemaps.cartocdn.com" rel="preconnect" />
+          <link href="https://basemaps.cartocdn.com" rel="dns-prefetch" />
+        </head>
         <body className="bg-background text-foreground min-h-full font-sans">
           <QueryProvider>{children}</QueryProvider>
           <Toaster />

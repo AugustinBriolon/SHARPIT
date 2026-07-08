@@ -118,9 +118,16 @@ export async function buildTodayPresentationViewModel(
   const heroSubline =
     snapshot.phaseNarrative?.heroSubline ?? snapshot.insufficientDataMessage ?? '';
   const heroEyebrow = snapshot.phaseNarrative?.heroEyebrow ?? "Qu'est-ce qui compte aujourd'hui ?";
-  const actionLine =
-    adviceActionable && forward ? buildTopActionLine(snapshot.reasoning?.topAction ?? null) : null;
-  const adaptationReminders = snapshot.phaseNarrative?.adaptationReminders?.slice(0, 2) ?? [];
+  const posture = snapshot.phaseNarrative?.posture ?? 'uncertain';
+  const postureLabel = snapshot.phaseNarrative?.postureLabel ?? '';
+  const focusPriority =
+    snapshot.phaseNarrative?.focusPriority ??
+    (adviceActionable && forward
+      ? buildTopActionLine(snapshot.reasoning?.topAction ?? null)
+      : null);
+  const goalLine = snapshot.phaseNarrative?.goalLine ?? null;
+  const actionLine = focusPriority;
+  const adaptationReminders: string[] = [];
 
   const confidenceLabel = snapshot.confidenceLabel ?? null;
   const confidencePctRounded =
@@ -133,6 +140,7 @@ export async function buildTodayPresentationViewModel(
 
   const whyFocus = snapshot.dailyPhase?.whyFocus ?? 'readiness';
   const whyLines = buildWhyEvidence(snapshot.reasoning, snapshot.briefing?.content, whyFocus);
+  const whyVisible = whyLines.length > 0 && !(phase === 'END_OF_DAY' && focusPriority != null);
 
   const daySummary = buildTodayDaySummary(
     day,
@@ -148,7 +156,9 @@ export async function buildTodayPresentationViewModel(
   let limitingText: string | null = null;
   let limitingHref: string | null = null;
 
-  if (phase === 'RECOVERY_WINDOW' && adaptationHints.length > 0) {
+  if (phase === 'END_OF_DAY') {
+    limitingMode = 'none';
+  } else if (phase === 'RECOVERY_WINDOW' && adaptationHints.length > 0 && !focusPriority) {
     limitingMode = 'list';
     limitingLines = adaptationHints;
   } else if (snapshot.limitingFactor) {
@@ -168,7 +178,10 @@ export async function buildTodayPresentationViewModel(
 
   const hasSparks = recoverySpark.some((v) => v != null) || effortSpark.some((v) => v != null);
 
-  const statusMessage = snapshot.primaryProductMessage ?? snapshot.insufficientDataMessage ?? null;
+  const statusMessage =
+    phase === 'END_OF_DAY' && snapshotHasDisplayableContent(snapshot)
+      ? null
+      : (snapshot.primaryProductMessage ?? snapshot.insufficientDataMessage ?? null);
   const emptyState =
     !snapshotHasDisplayableContent(snapshot) && (statusMessage || snapshot.primaryProductMessage)
       ? {
@@ -201,6 +214,10 @@ export async function buildTodayPresentationViewModel(
       eyebrow: heroEyebrow,
       headline: heroHeadline,
       subline: heroSubline,
+      posture,
+      postureLabel,
+      focusPriority,
+      goalLine,
       actionLine,
       adaptationReminders,
       verdictStyle: {
@@ -226,8 +243,10 @@ export async function buildTodayPresentationViewModel(
     whyBlock: {
       title: whyBlockTitle(phase),
       lines: whyLines,
+      visible: whyVisible,
     },
     actionRow: {
+      showLimitingColumn: limitingMode !== 'none',
       limitingLabel: labels.limiting,
       limitingMode,
       limitingLines,

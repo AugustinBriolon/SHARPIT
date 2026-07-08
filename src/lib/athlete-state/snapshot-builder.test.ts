@@ -20,6 +20,13 @@ const baseTodayState: TodayState = {
   dailyStrain: null,
 };
 
+const baseSleepCoach = {
+  recommendedBedtimeMin: 22 * 60 + 30,
+  recommendedDurationMin: 480,
+  debt7Min: null,
+  hasData: false,
+};
+
 describe('buildAthleteSnapshot daily phase', () => {
   it('embeds dailyPhase and phaseNarrative on snapshot', () => {
     const refDate = new Date('2026-07-07T08:00:00');
@@ -33,6 +40,9 @@ describe('buildAthleteSnapshot daily phase', () => {
         refDate,
         activities: [],
         plannedSessions: [],
+        goals: [],
+        sleepCoach: baseSleepCoach,
+        sleepBedtimeTargetMin: null,
         priorSnapshot: null,
         latestSessionObservationAt: null,
         sleepLoggedTonight: false,
@@ -114,6 +124,9 @@ describe('buildAthleteSnapshot daily phase', () => {
           },
         ],
         plannedSessions: [],
+        goals: [],
+        sleepCoach: baseSleepCoach,
+        sleepBedtimeTargetMin: null,
         priorSnapshot: null,
         latestSessionObservationAt: new Date('2026-07-07T08:00:00'),
         sleepLoggedTonight: false,

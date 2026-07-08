@@ -6,9 +6,14 @@ import { resolveDailyPhase, isForwardAdvicePhase } from '@/lib/daily-phase/resol
 import type { DailyPhaseResolution } from '@/lib/daily-phase/types';
 import { buildTopActionLine } from '@/lib/today-rich-view';
 import { buildTodayEffortSnapshot } from '@/lib/today-narrative-context';
+import type { ClientGoal } from '@/lib/query/types';
+import { resolveTodayGoalContext } from '@/lib/daily-phase/goal-context';
+import { pickTomorrowSessionHint } from '@/lib/daily-phase/evening-context';
+import { formatLimitingFactorMessage } from '@/lib/athlete-state/snapshot-truthfulness';
 import type { TodayState } from '@/hooks/use-today';
 import type { OverallVerdict } from '@/lib/today-mapping';
 import { activityMatchesTrainingDay } from '@/lib/training-day';
+import type { SleepCoachView } from '@/lib/sleep';
 
 export type SnapshotActivityInput = {
   id: string;
@@ -27,6 +32,7 @@ export type SnapshotPlannedSessionInput = {
   completed?: boolean;
   activityId?: string | null;
   title?: string | null;
+  goalId?: string | null;
 };
 
 export type SnapshotPhaseBuildParams = {
@@ -35,6 +41,12 @@ export type SnapshotPhaseBuildParams = {
   todayState: TodayState;
   activities: SnapshotActivityInput[];
   plannedSessions: SnapshotPlannedSessionInput[];
+  goals: ClientGoal[];
+  sleepCoach: Pick<
+    SleepCoachView,
+    'recommendedBedtimeMin' | 'recommendedDurationMin' | 'debt7Min' | 'hasData'
+  >;
+  sleepBedtimeTargetMin: number | null;
   priorSnapshot: Pick<AthleteSnapshot, 'generatedAt' | 'dailyPhase'> | null;
   latestSessionObservationAt: Date | string | null;
   sleepLoggedTonight: boolean;
@@ -57,6 +69,9 @@ export function buildSnapshotDailyPhase(params: SnapshotPhaseBuildParams): {
     todayState,
     activities,
     plannedSessions,
+    goals,
+    sleepCoach,
+    sleepBedtimeTargetMin,
     priorSnapshot,
     latestSessionObservationAt,
     sleepLoggedTonight,
@@ -128,6 +143,11 @@ export function buildSnapshotDailyPhase(params: SnapshotPhaseBuildParams): {
     ? buildTopActionLine(todayState.reasoning?.topAction ?? null)
     : null;
 
+  const goalContext = resolveTodayGoalContext(goals ?? [], plannedSessions, trainingDayId);
+  const limitingFactorMessage = todayState.reasoning?.limitingFactor?.description
+    ? formatLimitingFactorMessage(todayState.reasoning.limitingFactor)
+    : null;
+
   const phaseNarrative = buildPhaseNarrative({
     resolution,
     verdict,
@@ -137,21 +157,31 @@ export function buildSnapshotDailyPhase(params: SnapshotPhaseBuildParams): {
     totalTssToday: totalTssToday(activities, trainingDayId),
     dailyStrainScore: todayState.dailyStrain?.strainScore ?? null,
     dailyStrainAvailable,
+    limitingFactorMessage,
+    goalContext,
+    evening: {
+      effortLevel: effort?.level ?? null,
+      totalDurationMin:
+        effort?.totalDurationSec != null ? Math.round(effort.totalDurationSec / 60) : null,
+      completedSessionCount: resolution.signals.completedSessionCount,
+      tomorrowSession: pickTomorrowSessionHint(refDate, plannedSessions),
+      sleep: {
+        recommendedBedtimeMin: sleepCoach.recommendedBedtimeMin,
+        recommendedDurationMin: sleepCoach.recommendedDurationMin,
+        debt7Min: sleepCoach.debt7Min,
+        hasSleepHistory: sleepCoach.hasData,
+        bedtimeTargetMin: sleepBedtimeTargetMin,
+      },
+    },
   });
 
   return { dailyPhase: resolution, phaseNarrative };
 }
 
-function effortLevelLabel(level: 'high' | 'moderate' | 'light'): string {
-  if (level === 'high') return 'chargée';
-  if (level === 'moderate') return 'modérée';
-  return 'légère';
-}
-
 export function buildPhasePrimaryProductMessage(
   phase: DailyPhaseResolution['phase'],
   phaseNarrative: PhaseNarrative,
-  effort: ReturnType<typeof buildTodayEffortSnapshot>,
+  _effort: ReturnType<typeof buildTodayEffortSnapshot>,
 ): string | null {
   switch (phase) {
     case 'SESSION_COMPLETED':
@@ -159,9 +189,7 @@ export function buildPhasePrimaryProductMessage(
     case 'RECOVERY_WINDOW':
       return phaseNarrative.heroSubline;
     case 'END_OF_DAY':
-      return effort
-        ? `Journée ${effortLevelLabel(effort.level)} · ${effort.totalTss} TSS`
-        : phaseNarrative.heroSubline;
+      return null;
     case 'BEFORE_SESSION':
       return phaseNarrative.heroHeadline;
     default:

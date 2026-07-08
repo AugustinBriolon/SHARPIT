@@ -10,6 +10,7 @@ import {
   moreNavTrigger,
   type AppNavItem,
 } from '@/lib/app-navigation';
+import { usePrefetchNavQuery } from '@/hooks/use-prefetch-nav';
 import { navLinkClass } from '@/lib/nav-pill';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetHeader, SheetTrigger } from '@/components/ui/sheet';
@@ -19,13 +20,16 @@ function BottomNavLink({
   item,
   pathname,
   onNavigate,
+  onPrefetch,
 }: {
   item: AppNavItem;
   pathname: string;
   onNavigate?: () => void;
+  onPrefetch: (href: string) => void;
 }) {
   const isActive = item.match(pathname);
   const Icon = item.icon;
+  const hint = () => onPrefetch(item.href);
 
   return (
     <Link
@@ -36,6 +40,8 @@ function BottomNavLink({
         isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
       )}
       onClick={onNavigate}
+      onMouseEnter={hint}
+      onTouchStart={hint}
     >
       <Icon className="size-5 shrink-0" aria-hidden />
       <span className="truncate">{item.label}</span>
@@ -43,7 +49,13 @@ function BottomNavLink({
   );
 }
 
-function MoreNavSheet({ pathname }: { pathname: string }) {
+function MoreNavSheet({
+  pathname,
+  onPrefetch,
+}: {
+  pathname: string;
+  onPrefetch: (href: string) => void;
+}) {
   const [open, setOpen] = useState(false);
   const moreActive = isMoreNavActive(pathname);
 
@@ -72,12 +84,15 @@ function MoreNavSheet({ pathname }: { pathname: string }) {
           {moreNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = item.match(pathname);
+            const hint = () => onPrefetch(item.href);
             return (
               <Link
                 key={item.href}
                 className={navLinkClass(isActive, 'bg-background')}
                 href={item.href}
                 onClick={() => setOpen(false)}
+                onMouseEnter={hint}
+                onTouchStart={hint}
               >
                 <Icon className="size-4 shrink-0" aria-hidden />
                 <span>{item.label}</span>
@@ -92,6 +107,7 @@ function MoreNavSheet({ pathname }: { pathname: string }) {
 
 export function BottomNav() {
   const pathname = usePathname();
+  const prefetch = usePrefetchNavQuery();
 
   return (
     <nav
@@ -101,9 +117,9 @@ export function BottomNav() {
     >
       <div className="mx-auto flex max-w-lg items-stretch justify-around p-2">
         {bottomNavItems.map((item) => (
-          <BottomNavLink key={item.href} item={item} pathname={pathname} />
+          <BottomNavLink key={item.href} item={item} pathname={pathname} onPrefetch={prefetch} />
         ))}
-        <MoreNavSheet pathname={pathname} />
+        <MoreNavSheet pathname={pathname} onPrefetch={prefetch} />
       </div>
     </nav>
   );

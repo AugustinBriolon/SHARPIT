@@ -151,6 +151,12 @@
     background: oklch(0.58 0.12 156 / 22%);
     color: oklch(0.27 0.034 158);
   }
+  .maplibregl-popup-content {
+    @apply bg-transparent! shadow-none! p-0! rounded-none!;
+  }
+  .maplibregl-popup-tip {
+    @apply hidden!;
+  }
 }
 
 @utility safe-area-top {
@@ -159,4 +165,39 @@
 
 @utility safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) {
+    animation: 120ms ease-out both vt-fade-out;
+  }
+  ::view-transition-new(root) {
+    animation: 160ms ease-in both vt-fade-in;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+@keyframes vt-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }

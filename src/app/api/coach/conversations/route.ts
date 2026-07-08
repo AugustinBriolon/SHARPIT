@@ -14,8 +14,14 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
-    const { messages } = body as { messages?: unknown };
-    const conversation = await createConversation(messages);
+    const { messages, bootstrapKey } = body as {
+      messages?: unknown;
+      bootstrapKey?: string;
+    };
+    const conversation = await createConversation(
+      messages,
+      typeof bootstrapKey === 'string' && bootstrapKey.trim() ? bootstrapKey.trim() : undefined,
+    );
     return NextResponse.json(conversation, { status: 201 });
   } catch (error) {
     console.error('[coach/conversations] POST', error);

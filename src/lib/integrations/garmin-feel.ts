@@ -1,7 +1,9 @@
 /** RPE Garmin (directWorkoutRpe) : entier 10–100, échelle 1–10. */
 export function garminRpeToScale(raw: number | null | undefined): number | null {
   if (raw == null || !Number.isFinite(raw) || raw <= 0) return null;
-  const scaled = raw > 10 ? Math.round(raw / 10) : Math.round(raw);
+  // Garmin can encode RPE on a 10–100 scale (10 => 1/10, 100 => 10/10).
+  // Some paths may already expose a direct 1–10 value, so preserve sub-10 inputs.
+  const scaled = raw >= 10 ? Math.round(raw / 10) : Math.round(raw);
   return Math.min(10, Math.max(1, scaled));
 }
 

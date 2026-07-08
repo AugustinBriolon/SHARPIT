@@ -1,19 +1,31 @@
 'use client';
 
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
-import { useEffect } from 'react';
-import { CircleMarker, MapContainer, Polyline, TileLayer, useMap } from 'react-leaflet';
+import MapLibreGL from 'maplibre-gl';
+import { useEffect, useMemo, useState } from 'react';
+import { Map, MapMarker, MapRoute, MarkerContent, useMap } from '@/components/ui/map';
 
 type Path = [number, number][];
 
-function FitBounds({ path }: { path: Path }) {
-  const map = useMap();
+type LngLat = [number, number];
+
+function toLngLat(path: Path): LngLat[] {
+  // Le repo stocke les coordonnées en [lat, lng] (Leaflet). MapLibre attend [lng, lat].
+  return path.map(([lat, lng]) => [lng, lat]);
+}
+
+function FitBounds({ coordinates }: { coordinates: LngLat[] }) {
+  const { map, isLoaded } = useMap();
+
   useEffect(() => {
-    if (path.length > 1) {
-      map.fitBounds(L.latLngBounds(path), { padding: [24, 24] });
-    }
-  }, [map, path]);
+    if (!isLoaded || !map) return;
+    if (coordinates.length < 2) return;
+
+    const bounds = new MapLibreGL.LngLatBounds(coordinates[0], coordinates[0]);
+    for (const [lng, lat] of coordinates) bounds.extend([lng, lat]);
+
+    map.fitBounds(bounds, { padding: 24, maxZoom: 15 });
+  }, [coordinates, isLoaded, map]);
+
   return null;
 }
 
@@ -24,41 +36,41 @@ export default function RouteMapInner({
   path: Path;
   lineColor?: string;
 }) {
-  const [start] = path;
-  const end = path[path.length - 1];
+  const coordinates = useMemo(() => toLngLat(path), [path]);
+  const start = path[0] ?? [0, 0];
+  const end = path[path.length - 1] ?? start;
+  const [startLat, startLng] = start;
+  const [endLat, endLng] = end;
+  const [hovered, setHovered] = useState(false);
 
   return (
-    <MapContainer
+    <Map
       attributionControl={false}
-      center={start}
+      center={coordinates[0] ?? [0, 0]}
       className="h-full w-full"
-      scrollWheelZoom={false}
-      style={{ background: 'transparent' }}
+      scrollZoom={false}
       zoom={13}
     >
-      <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
-      <Polyline pathOptions={{ color: lineColor, weight: 4, opacity: 0.95 }} positions={path} />
-      <CircleMarker
-        center={start}
-        radius={6}
-        pathOptions={{
-          color: '#fff',
-          weight: 2,
-          fillColor: '#10b981',
-          fillOpacity: 1,
-        }}
+      <FitBounds coordinates={coordinates} />
+      <MapRoute
+        color={lineColor}
+        coordinates={coordinates}
+        opacity={hovered ? 1 : 0.9}
+        width={hovered ? 6 : 4}
+        interactive
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
       />
-      <CircleMarker
-        center={end}
-        radius={6}
-        pathOptions={{
-          color: '#fff',
-          weight: 2,
-          fillColor: '#f43f5e',
-          fillOpacity: 1,
-        }}
-      />
-      <FitBounds path={path} />
-    </MapContainer>
+      <MapMarker latitude={startLat} longitude={startLng}>
+        <MarkerContent>
+          <div className="h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500 shadow" />
+        </MarkerContent>
+      </MapMarker>
+      <MapMarker latitude={endLat} longitude={endLng}>
+        <MarkerContent>
+          <div className="h-3.5 w-3.5 rounded-full border-2 border-white bg-rose-500 shadow" />
+        </MarkerContent>
+      </MapMarker>
+    </Map>
   );
 }

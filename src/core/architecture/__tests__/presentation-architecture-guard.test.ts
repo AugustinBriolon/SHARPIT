@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import type * as Ts from 'typescript';
 
 // Important: use Node's resolver at runtime so Vite doesn't try to parse/transform
 // `node_modules/typescript/lib/typescript.js` during import-analysis.
@@ -74,7 +75,7 @@ function isForbiddenBySpecifier(specifier: string): string | null {
   return null;
 }
 
-function isImportDeclarationTypeOnly(node: ts.ImportDeclaration): boolean {
+function isImportDeclarationTypeOnly(node: Ts.ImportDeclaration): boolean {
   const clause = node.importClause;
   // Side-effect import: `import 'x'`.
   if (!clause) return false;
@@ -83,7 +84,8 @@ function isImportDeclarationTypeOnly(node: ts.ImportDeclaration): boolean {
   // TS supports `import { type X } from '...'`.
   if (clause.namedBindings && ts.isNamedImports(clause.namedBindings)) {
     return clause.namedBindings.elements.every(
-      (e) => (e as ts.ImportSpecifier & { isTypeOnly?: boolean }).isTypeOnly === true,
+      (e: Ts.ImportSpecifier) =>
+        (e as Ts.ImportSpecifier & { isTypeOnly?: boolean }).isTypeOnly === true,
     );
   }
   return false;
@@ -180,7 +182,7 @@ function collectViolationsInFile(filePath: string): Violation[] {
   const rel = path.relative(REPO_ROOT, filePath).replaceAll(path.sep, '/');
   const violations: Violation[] = [];
 
-  const visit = (node: ts.Node) => {
+  const visit = (node: Ts.Node) => {
     if (ts.isImportDeclaration(node)) {
       const specifierNode = node.moduleSpecifier;
       if (specifierNode && ts.isStringLiteral(specifierNode)) {
@@ -224,7 +226,7 @@ function collectViolationsInFile(filePath: string): Violation[] {
         const specifier = moduleSpecifier.text;
         // `export type { X } from '...'` => node.isTypeOnly is true.
         const isTypeOnly =
-          (node as ts.ExportDeclaration & { isTypeOnly?: boolean }).isTypeOnly === true;
+          (node as Ts.ExportDeclaration & { isTypeOnly?: boolean }).isTypeOnly === true;
         if (!isTypeOnly) {
           const forbiddenReason = isForbiddenBySpecifier(specifier);
           if (forbiddenReason) {

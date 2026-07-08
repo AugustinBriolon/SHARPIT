@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { GoalDialog, type GoalForEdit } from '@/components/goals/goal-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   computeGoalProgress,
   daysUntil,
@@ -98,6 +99,7 @@ function PriorityBadge({ priority }: { priority: GoalPriority }) {
 export function RaceCard({ goal }: { goal: GoalItem }) {
   const { remove } = useGoalMutations();
   const [editing, setEditing] = useState(false);
+  const { confirm, dialog } = useConfirmDialog();
   const date = goal.targetDate ? new Date(goal.targetDate) : null;
   const days = daysUntil(date);
   const dateLabel = date
@@ -109,8 +111,14 @@ export function RaceCard({ goal }: { goal: GoalItem }) {
       }).format(date)
     : null;
 
-  function handleDelete() {
-    if (!confirm(`Supprimer « ${goal.title} » ?`)) return;
+  async function handleDelete() {
+    const confirmed = await confirm({
+      title: `Supprimer « ${goal.title} » ?`,
+      description: 'Cette action est définitive.',
+      confirmLabel: 'Supprimer',
+      variant: 'destructive',
+    });
+    if (!confirmed) return;
     remove.mutate(goal.id);
   }
 
@@ -203,6 +211,7 @@ export function RaceCard({ goal }: { goal: GoalItem }) {
         </CardContent>
       </Card>
       {editing && <GoalDialog goal={toEdit(goal)} onClose={() => setEditing(false)} />}
+      {dialog}
     </>
   );
 }
@@ -210,6 +219,7 @@ export function RaceCard({ goal }: { goal: GoalItem }) {
 export function MetricGoalCard({ goal }: { goal: GoalItem }) {
   const { update, remove } = useGoalMutations();
   const [editing, setEditing] = useState(false);
+  const { confirm, dialog } = useConfirmDialog();
   const metricConfig = parseGoalMetricConfig(goal.metricKey);
   const subtitle = describeMetricGoal(metricConfig, goal.targetDate);
   const progress = computeGoalProgress(goal);
@@ -217,8 +227,14 @@ export function MetricGoalCard({ goal }: { goal: GoalItem }) {
   const days = daysUntil(goal.targetDate ? new Date(goal.targetDate) : null);
   const isAutoTracked = Boolean(metricConfig);
 
-  function handleDelete() {
-    if (!confirm(`Supprimer « ${goal.title} » ?`)) return;
+  async function handleDelete() {
+    const confirmed = await confirm({
+      title: `Supprimer « ${goal.title} » ?`,
+      description: 'Cette action est définitive.',
+      confirmLabel: 'Supprimer',
+      variant: 'destructive',
+    });
+    if (!confirmed) return;
     remove.mutate(goal.id);
   }
 
@@ -353,6 +369,7 @@ export function MetricGoalCard({ goal }: { goal: GoalItem }) {
         </CardContent>
       </Card>
       {editing && <GoalDialog goal={toEdit(goal)} onClose={() => setEditing(false)} />}
+      {dialog}
     </>
   );
 }

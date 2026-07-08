@@ -10,6 +10,7 @@ import { CoachChat } from '@/components/coach/coach-chat';
 import { CoachConversationList } from '@/components/coach/coach-conversation-list';
 import { PlanGenerator } from '@/components/coach/plan-generator';
 import { Button } from '@/components/ui/button';
+import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   useConversation,
@@ -23,6 +24,8 @@ import { activityTypeLabels } from '@/lib/format';
 import { parseSessionAnalysis } from '@/lib/session-analysis-display';
 import type { SessionAnalysis } from '@/lib/validators/coach';
 
+const inFlightDiscussBootstraps = new Set<string>();
+
 export function CoachView() {
   const searchParams = useSearchParams();
   const discussId = searchParams.get('discuss');
@@ -31,7 +34,11 @@ export function CoachView() {
   const activitiesQuery = useActivities();
   const [generatorOpen, setGeneratorOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [latchedBootstrapPrompt, setLatchedBootstrapPrompt] = useState<string | undefined>(
+    undefined,
+  );
   const initialized = useRef(false);
+  const { confirm, dialog } = useConfirmDialog();
 
   const conversationsQuery = useConversations();
   const createConversation = useCreateConversation();
@@ -43,6 +50,25 @@ export function CoachView() {
   const activeConversation = useConversation(selectedId);
 
   const discussBootstrapped = useRef(false);
+
+  function bootstrapDiscussConversation(bootstrapKey: string) {
+    if (inFlightDiscussBootstraps.has(bootstrapKey)) return;
+    inFlightDiscussBootstraps.add(bootstrapKey);
+    discussBootstrapped.current = true;
+    initialized.current = true;
+
+    createConversation
+      .mutateAsync({ bootstrapKey })
+      .then((c) => {
+        setActiveId(c.id);
+        if (typeof window !== 'undefined') {
+          window.history.replaceState(window.history.state, '', '/coach');
+        }
+      })
+      .finally(() => {
+        inFlightDiscussBootstraps.delete(bootstrapKey);
+      });
+  }
 
   const bootstrapPrompt = useMemo(() => {
     if (discussId) {
@@ -95,21 +121,24 @@ export function CoachView() {
   }, [discussId, discussActivityId, plannedQuery.data, activitiesQuery.data]);
 
   useEffect(() => {
+    if (!bootstrapPrompt || latchedBootstrapPrompt) return;
+    setLatchedBootstrapPrompt(bootstrapPrompt);
+  }, [bootstrapPrompt, latchedBootstrapPrompt]);
+
+  useEffect(() => {
     if (discussBootstrapped.current) return;
     if (discussId) {
       if (plannedQuery.isPending) return;
       const session = (plannedQuery.data ?? []).find((s) => s.id === discussId);
       if (!session?.analysis) return;
-      discussBootstrapped.current = true;
-      createConversation.mutateAsync().then((c) => setActiveId(c.id));
+      bootstrapDiscussConversation(`session:${discussId}`);
       return;
     }
     if (discussActivityId) {
       if (activitiesQuery.isPending) return;
       const activity = (activitiesQuery.data ?? []).find((a) => a.id === discussActivityId);
       if (!activity) return;
-      discussBootstrapped.current = true;
-      createConversation.mutateAsync().then((c) => setActiveId(c.id));
+      bootstrapDiscussConversation(`activity:${discussActivityId}`);
     }
   }, [
     discussId,
@@ -122,11 +151,18 @@ export function CoachView() {
   ]);
 
   useEffect(() => {
+    if (discussId || discussActivityId) return;
     if (conversationsQuery.isPending || conversations.length > 0) return;
     if (initialized.current) return;
     initialized.current = true;
     createConversation.mutateAsync().then((c) => setActiveId(c.id));
-  }, [conversationsQuery.isPending, conversations.length, createConversation]);
+  }, [
+    conversationsQuery.isPending,
+    conversations.length,
+    createConversation,
+    discussId,
+    discussActivityId,
+  ]);
 
   async function handleNewConversation() {
     const c = await createConversation.mutateAsync();
@@ -134,7 +170,13 @@ export function CoachView() {
   }
 
   async function handleDeleteConversation(id: string) {
-    if (!confirm('Supprimer cette conversation ?')) return;
+    const confirmed = await confirm({
+      title: 'Supprimer cette conversation ?',
+      description: 'Cette action supprime définitivement son historique.',
+      confirmLabel: 'Supprimer',
+      variant: 'destructive',
+    });
+    if (!confirmed) return;
     await deleteConversation.mutateAsync(id);
     if (selectedId === id) setActiveId(null);
   }
@@ -173,7 +215,7 @@ export function CoachView() {
         {selectedId && activeConversation.data ? (
           <CoachChat
             key={`${selectedId}-${discussKey}`}
-            bootstrapPrompt={bootstrapPrompt}
+            bootstrapPrompt={latchedBootstrapPrompt}
             conversationId={selectedId}
             initialMessages={
               (Array.isArray(activeConversation.data.messages)
@@ -187,6 +229,7 @@ export function CoachView() {
       </div>
 
       {generatorOpen && <PlanGenerator onClose={() => setGeneratorOpen(false)} />}
+      {dialog}
     </div>
   );
 }

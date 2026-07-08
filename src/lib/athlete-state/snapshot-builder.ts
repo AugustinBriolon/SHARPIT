@@ -59,7 +59,7 @@ function buildDomainMessages(freshness: AthleteFreshnessSnapshot): Partial<Recor
 }
 
 /** Bump when phase narrative copy rules change — forces snapshot regen. */
-const PHASE_NARRATIVE_VERSION = 'v2';
+const PHASE_NARRATIVE_VERSION = 'v6';
 
 function fingerprintParts(
   input: SnapshotBuildInput,

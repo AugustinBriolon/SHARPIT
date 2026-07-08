@@ -29,7 +29,7 @@ export function ActivityNarrativeCard({
 
   return (
     <Card className="border-primary/25 from-primary/5 bg-linear-to-br to-transparent">
-      <CardContent className="space-y-3 py-5">
+      <CardContent className="space-y-3">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex items-center gap-2">
             <Sparkles className="text-primary size-4 shrink-0" />

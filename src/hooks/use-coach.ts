@@ -15,6 +15,8 @@ import {
 } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 
+let createConversationPromise: Promise<ClientConversation> | null = null;
+
 export interface GeneratedSession {
   dayOffset: number;
   date: string; // yyyy-MM-dd
@@ -217,24 +219,53 @@ export function useConversation(id: string | null) {
 
 export function useCreateConversation() {
   const queryClient = useQueryClient();
-  return useMutation<ClientConversation, Error, void>({
-    mutationFn: async () => {
-      const res = await fetch('/api/coach/conversations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        throw new Error(data?.error ?? 'Création impossible.');
+  return useMutation<ClientConversation, Error, { bootstrapKey?: string } | void>({
+    mutationFn: async (input) => {
+      if (createConversationPromise) return createConversationPromise;
+
+      createConversationPromise = (async () => {
+        const res = await fetch('/api/coach/conversations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(
+            input && typeof input === 'object' && 'bootstrapKey' in input
+              ? { bootstrapKey: input.bootstrapKey }
+              : {},
+          ),
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          throw new Error(data?.error ?? 'Création impossible.');
+        }
+        return {
+          ...data,
+          createdAt: new Date(data.createdAt),
+          updatedAt: new Date(data.updatedAt),
+        } as ClientConversation;
+      })();
+
+      try {
+        return await createConversationPromise;
+      } finally {
+        createConversationPromise = null;
       }
-      return {
-        ...data,
-        createdAt: new Date(data.createdAt),
-        updatedAt: new Date(data.updatedAt),
-      } as ClientConversation;
     },
-    onSuccess: () => {
+    onSuccess: (conversation) => {
+      queryClient.setQueryData(queryKeys.conversation(conversation.id), conversation);
+      queryClient.setQueryData<ClientConversationSummary[] | undefined>(
+        queryKeys.conversations,
+        (existing) => {
+          const summary: ClientConversationSummary = {
+            id: conversation.id,
+            title: conversation.title,
+            createdAt: conversation.createdAt,
+            updatedAt: conversation.updatedAt,
+          };
+          if (!existing || existing.length === 0) return [summary];
+          const withoutDuplicate = existing.filter((item) => item.id !== conversation.id);
+          return [summary, ...withoutDuplicate];
+        },
+      );
       queryClient.invalidateQueries({ queryKey: queryKeys.conversations });
     },
   });

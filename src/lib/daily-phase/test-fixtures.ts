@@ -40,6 +40,10 @@ export function mockPhaseNarrative(overrides: Partial<PhaseNarrative> = {}): Pha
     heroHeadline: 'Journée propice à l’effort',
     heroSubline: 'Synchronise ton état avant de décider.',
     whyFocus: 'readiness',
+    posture: 'push',
+    postureLabel: 'Feu vert',
+    focusPriority: null,
+    goalLine: null,
     adaptationReminders: [],
     ...overrides,
   };

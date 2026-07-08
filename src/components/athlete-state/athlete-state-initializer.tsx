@@ -31,6 +31,7 @@ export function AthleteStateInitializer() {
         const data = (await res.json()) as {
           athleteSnapshot?: unknown;
           todayState?: unknown;
+          todayPresentation?: unknown;
         };
 
         if (data.athleteSnapshot) {
@@ -41,6 +42,12 @@ export function AthleteStateInitializer() {
         }
         if (data.todayState) {
           queryClient.setQueryData(queryKeys.today(trainingDayId), data.todayState);
+        }
+        if (data.todayPresentation) {
+          queryClient.setQueryData(
+            ['presentation', 'today', trainingDayId],
+            data.todayPresentation,
+          );
         }
         if (!data.athleteSnapshot) {
           await queryClient.invalidateQueries({

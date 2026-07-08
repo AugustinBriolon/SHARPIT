@@ -63,6 +63,7 @@ export function useGoals() {
   return useQuery({
     queryKey: queryKeys.goals,
     queryFn: fetchGoals,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -70,6 +71,7 @@ export function useGoalAchievements(limit = 20) {
   return useQuery({
     queryKey: queryKeys.goalAchievements(limit),
     queryFn: () => fetchGoalAchievements(limit),
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -202,6 +204,7 @@ export function usePlannedSessions() {
   return useQuery({
     queryKey: queryKeys.plannedSessions,
     queryFn: fetchPlannedSessions,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

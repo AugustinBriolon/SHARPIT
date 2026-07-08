@@ -4,6 +4,7 @@ import { BodySide, PhysicalCategory, PhysicalStatus } from '@prisma/client';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,6 +43,7 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
   const [severity, setSeverity] = useState<number>(note?.severity ?? 3);
   const [affectsTraining, setAffectsTraining] = useState(note?.affectsTraining ?? true);
   const [error, setError] = useState<string | null>(null);
+  const { confirm, dialog } = useConfirmDialog();
 
   const pending = create.isPending || update.isPending || remove.isPending;
 
@@ -78,7 +80,13 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
 
   async function handleDelete() {
     if (!note) return;
-    if (!confirm('Supprimer cette note et son historique ?')) return;
+    const confirmed = await confirm({
+      title: 'Supprimer cette note et son historique ?',
+      description: 'Toutes les check-ins associés seront aussi supprimés.',
+      confirmLabel: 'Supprimer',
+      variant: 'destructive',
+    });
+    if (!confirmed) return;
     try {
       await remove.mutateAsync(note.id);
       onClose();
@@ -96,165 +104,168 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
   }
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{isEdit ? 'Modifier la note' : 'Nouvelle note physique'}</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{isEdit ? 'Modifier la note' : 'Nouvelle note physique'}</DialogTitle>
+          </DialogHeader>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-2">
-            <Label htmlFor="title">Titre</Label>
-            <Input
-              defaultValue={note?.title ?? ''}
-              id="title"
-              name="title"
-              placeholder="Ex : Tendinite genou droit"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <Label>Catégorie</Label>
-              <Select value={category} onValueChange={(v) => setCategory(v as PhysicalCategory)}>
-                <SelectTrigger>
-                  <SelectValue>{categoryLabels[category]}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {categoryOrder.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {categoryLabels[c]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Statut</Label>
-              <Select value={status} onValueChange={(v) => setStatus(v as PhysicalStatus)}>
-                <SelectTrigger>
-                  <SelectValue>{statusLabels[status]}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOrder.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {statusLabels[s]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="bodyPart">Zone du corps</Label>
+              <Label htmlFor="title">Titre</Label>
               <Input
-                defaultValue={note?.bodyPart ?? ''}
-                id="bodyPart"
-                list="body-parts"
-                name="bodyPart"
-                placeholder="Genou, bassin, pied…"
-              />
-              <datalist id="body-parts">
-                {COMMON_BODY_PARTS.map((p) => (
-                  <option key={p} value={p} />
-                ))}
-              </datalist>
-            </div>
-            <div className="space-y-2">
-              <Label>Côté</Label>
-              <Select value={side} onValueChange={(v) => setSide(v as BodySide)}>
-                <SelectTrigger>
-                  <SelectValue>{sideLabels[side]}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {sideOrder.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {sideLabels[s]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="severity">Sévérité actuelle</Label>
-              <span className="font-mono text-sm">{severity}/10</span>
-            </div>
-            <input
-              className="accent-primary w-full"
-              id="severity"
-              max={10}
-              min={0}
-              type="range"
-              value={severity}
-              onChange={(e) => setSeverity(Number(e.target.value))}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="startDate">Depuis le</Label>
-              <Input
-                defaultValue={format(initialDate, 'yyyy-MM-dd')}
-                id="startDate"
-                name="startDate"
-                type="date"
+                defaultValue={note?.title ?? ''}
+                id="title"
+                name="title"
+                placeholder="Ex : Tendinite genou droit"
+                required
               />
             </div>
-            <label className="text-muted-foreground flex items-end gap-2 pb-2 text-sm">
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Catégorie</Label>
+                <Select value={category} onValueChange={(v) => setCategory(v as PhysicalCategory)}>
+                  <SelectTrigger>
+                    <SelectValue>{categoryLabels[category]}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categoryOrder.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {categoryLabels[c]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Statut</Label>
+                <Select value={status} onValueChange={(v) => setStatus(v as PhysicalStatus)}>
+                  <SelectTrigger>
+                    <SelectValue>{statusLabels[status]}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOrder.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {statusLabels[s]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="bodyPart">Zone du corps</Label>
+                <Input
+                  defaultValue={note?.bodyPart ?? ''}
+                  id="bodyPart"
+                  list="body-parts"
+                  name="bodyPart"
+                  placeholder="Genou, bassin, pied…"
+                />
+                <datalist id="body-parts">
+                  {COMMON_BODY_PARTS.map((p) => (
+                    <option key={p} value={p} />
+                  ))}
+                </datalist>
+              </div>
+              <div className="space-y-2">
+                <Label>Côté</Label>
+                <Select value={side} onValueChange={(v) => setSide(v as BodySide)}>
+                  <SelectTrigger>
+                    <SelectValue>{sideLabels[side]}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sideOrder.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {sideLabels[s]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="severity">Sévérité actuelle</Label>
+                <span className="font-mono text-sm">{severity}/10</span>
+              </div>
               <input
-                checked={affectsTraining}
-                className="border-border size-4 rounded"
-                type="checkbox"
-                onChange={(e) => setAffectsTraining(e.target.checked)}
+                className="accent-primary w-full"
+                id="severity"
+                max={10}
+                min={0}
+                type="range"
+                value={severity}
+                onChange={(e) => setSeverity(Number(e.target.value))}
               />
-              Pris en compte par le coach
-            </label>
-          </div>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              defaultValue={note?.description ?? ''}
-              id="description"
-              name="description"
-              placeholder="Contexte, déclencheur, ressenti…"
-              rows={2}
-            />
-          </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="startDate">Depuis le</Label>
+                <Input
+                  defaultValue={format(initialDate, 'yyyy-MM-dd')}
+                  id="startDate"
+                  name="startDate"
+                  type="date"
+                />
+              </div>
+              <label className="text-muted-foreground flex items-end gap-2 pb-2 text-sm">
+                <input
+                  checked={affectsTraining}
+                  className="border-border size-4 rounded"
+                  type="checkbox"
+                  onChange={(e) => setAffectsTraining(e.target.checked)}
+                />
+                Pris en compte par le coach
+              </label>
+            </div>
 
-          {error && <p className="text-destructive text-sm">{error}</p>}
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                defaultValue={note?.description ?? ''}
+                id="description"
+                name="description"
+                placeholder="Contexte, déclencheur, ressenti…"
+                rows={2}
+              />
+            </div>
 
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              {isEdit && (
-                <Button
-                  disabled={pending}
-                  size="sm"
-                  type="button"
-                  variant="destructive"
-                  onClick={handleDelete}
-                >
-                  Supprimer
+            {error && <p className="text-destructive text-sm">{error}</p>}
+
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                {isEdit && (
+                  <Button
+                    disabled={pending}
+                    size="sm"
+                    type="button"
+                    variant="destructive"
+                    onClick={handleDelete}
+                  >
+                    Supprimer
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button disabled={pending} type="button" variant="outline" onClick={onClose}>
+                  Annuler
                 </Button>
-              )}
+                <Button disabled={pending} type="submit">
+                  {getSubmitButtonLabel()}
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button disabled={pending} type="button" variant="outline" onClick={onClose}>
-                Annuler
-              </Button>
-              <Button disabled={pending} type="submit">
-                {getSubmitButtonLabel()}
-              </Button>
-            </div>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </form>
+        </DialogContent>
+      </Dialog>
+      {dialog}
+    </>
   );
 }

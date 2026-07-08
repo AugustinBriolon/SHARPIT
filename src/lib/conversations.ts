@@ -3,6 +3,8 @@ import { prisma } from './prisma';
 
 const DEFAULT_TITLE = 'Nouvelle conversation';
 const TITLE_MAX = 60;
+const BOOTSTRAP_TTL_MS = 60_000;
+const bootstrapConversationIds = new Map<string, { id: string; createdAtMs: number }>();
 
 /** Dérive un titre lisible à partir du premier message utilisateur. */
 function deriveTitle(messages: unknown): string {
@@ -48,14 +50,40 @@ export async function getConversation(id: string) {
 }
 
 /** Crée une conversation, en option avec des messages initiaux (titre auto). */
-export async function createConversation(messages?: unknown) {
+export async function createConversation(messages?: unknown, bootstrapKey?: string) {
   const hasMessages = Array.isArray(messages) && messages.length > 0;
-  return prisma.conversation.create({
+  const now = Date.now();
+
+  if (bootstrapKey) {
+    for (const [key, value] of bootstrapConversationIds.entries()) {
+      if (now - value.createdAtMs > BOOTSTRAP_TTL_MS) {
+        bootstrapConversationIds.delete(key);
+      }
+    }
+
+    const cached = bootstrapConversationIds.get(bootstrapKey);
+    if (cached) {
+      const existing = await prisma.conversation.findUnique({ where: { id: cached.id } });
+      if (existing) return existing;
+      bootstrapConversationIds.delete(bootstrapKey);
+    }
+  }
+
+  const conversation = await prisma.conversation.create({
     data: {
       title: hasMessages ? deriveTitle(messages) : DEFAULT_TITLE,
       messages: (hasMessages ? messages : []) as Prisma.InputJsonValue,
     },
   });
+
+  if (bootstrapKey) {
+    bootstrapConversationIds.set(bootstrapKey, {
+      id: conversation.id,
+      createdAtMs: now,
+    });
+  }
+
+  return conversation;
 }
 
 /** Enregistre l'historique complet ; régénère le titre s'il est encore par défaut. */

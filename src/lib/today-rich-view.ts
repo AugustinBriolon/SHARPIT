@@ -99,7 +99,7 @@ export function actionRowLabels(phase: DailyPhase): {
       };
     case 'END_OF_DAY':
       return {
-        limiting: 'Ce qui influence demain',
+        limiting: 'Détail',
         action: 'Bilan du jour',
       };
     default:
@@ -129,7 +129,7 @@ export function whyBlockTitle(phase: DailyPhase): string {
     case 'RECOVERY_WINDOW':
       return 'Pourquoi récupérer maintenant ?';
     case 'END_OF_DAY':
-      return 'Ce que la journée implique';
+      return 'Pourquoi ?';
     case 'BEFORE_SESSION':
       return 'Contexte avant séance';
     default:

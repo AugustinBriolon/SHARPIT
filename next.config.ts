@@ -22,6 +22,9 @@ function loadAllowedDevOrigins(): string[] {
 }
 
 const nextConfig: NextConfig = {
+  experimental: {
+    viewTransition: true,
+  },
   turbopack: {},
   allowedDevOrigins: loadAllowedDevOrigins(),
   images: {

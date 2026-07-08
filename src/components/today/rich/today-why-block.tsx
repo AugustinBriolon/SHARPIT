@@ -3,7 +3,7 @@
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 
 export function TodayWhyBlock({ vm }: { vm: TodayViewModel }) {
-  return vm.whyBlock.lines.length === 0 ? null : (
+  return !vm.whyBlock.visible || vm.whyBlock.lines.length === 0 ? null : (
     <section className="bg-card rounded-2xl border px-5 py-4 sm:px-6">
       <p className="text-muted-foreground mb-3 text-[10px] font-semibold tracking-[0.14em] uppercase">
         {vm.whyBlock.title}

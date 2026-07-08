@@ -34,6 +34,10 @@ export type TodayViewModel = {
     eyebrow: string;
     headline: string;
     subline: string;
+    posture: 'protect' | 'steady' | 'push' | 'uncertain';
+    postureLabel: string;
+    focusPriority: string | null;
+    goalLine: string | null;
     actionLine: string | null;
     adaptationReminders: string[];
     verdictStyle: {
@@ -60,9 +64,11 @@ export type TodayViewModel = {
   whyBlock: {
     title: string;
     lines: string[];
+    visible: boolean;
   };
 
   actionRow: {
+    showLimitingColumn: boolean;
     limitingLabel: string;
     limitingMode: 'list' | 'link' | 'text' | 'none';
     limitingLines: string[];

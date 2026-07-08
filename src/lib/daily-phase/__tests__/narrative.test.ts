@@ -154,9 +154,10 @@ describe('buildPhaseNarrative', () => {
 
   it('recovery window focuses on adaptation levers', () => {
     const n = narrativeForPhase('RECOVERY_WINDOW');
-    expect(n.heroEyebrow).toBe(DAILY_PHASE_PRIMARY_QUESTION.RECOVERY_WINDOW);
+    expect(n.heroEyebrow).toBe('Après la séance');
     expect(n.adaptationReminders.length).toBeGreaterThan(0);
-    expect(n.heroSubline).toMatch(/Nutrition|hydratation|sommeil/i);
+    expect(n.focusPriority).toMatch(/Hydrate|sommeil/i);
+    expect(n.posture).toBe('steady');
   });
 
   it('end of day targets tomorrow impact', () => {
@@ -194,10 +195,26 @@ describe('buildPhaseNarrative', () => {
       totalTssToday: 50,
       dailyStrainScore: 10,
       dailyStrainAvailable: true,
+      evening: {
+        effortLevel: 'moderate',
+        totalDurationMin: 50,
+        completedSessionCount: 1,
+        tomorrowSession: null,
+        sleep: {
+          recommendedBedtimeMin: 22 * 60,
+          recommendedDurationMin: 480,
+          debt7Min: null,
+          hasSleepHistory: true,
+          bedtimeTargetMin: 22 * 60,
+        },
+      },
     });
-    expect(n.heroEyebrow).toBe(DAILY_PHASE_PRIMARY_QUESTION.END_OF_DAY);
-    expect(n.heroHeadline).toMatch(/demain/i);
-    expect(n.heroSubline).not.toMatch(/Entraîne-toi/i);
+    expect(n.heroEyebrow).toBe('Ce soir');
+    expect(n.heroHeadline).toMatch(/Journée modérée/);
+    expect(n.posture).toBe('protect');
+    expect(n.postureLabel).toBe('');
+    expect(n.focusPriority).toMatch(/Coucher vers/);
+    expect(n.heroSubline).toBe('');
   });
 
   it('end of day ignores stale forward action line in input', () => {
@@ -234,8 +251,78 @@ describe('buildPhaseNarrative', () => {
       totalTssToday: 9,
       dailyStrainScore: 4,
       dailyStrainAvailable: true,
+      evening: {
+        effortLevel: 'light',
+        totalDurationMin: 14,
+        completedSessionCount: 1,
+        tomorrowSession: null,
+        sleep: {
+          recommendedBedtimeMin: 22 * 60 + 15,
+          recommendedDurationMin: 480,
+          debt7Min: null,
+          hasSleepHistory: false,
+          bedtimeTargetMin: null,
+        },
+      },
     });
-    expect(n.heroSubline).toBe('Ce que tu fais ce soir influence demain matin.');
+    expect(n.focusPriority).toMatch(/Coucher vers/);
+    expect(n.heroSubline).toBe('');
+  });
+
+  it('end of day uses plain language for limiting factor', () => {
+    const ref = new Date('2026-07-07T22:30:00');
+    const resolution = resolveDailyPhase(
+      {
+        dayContext: buildDailyPhaseDayContext(
+          ref,
+          [{ id: 'a1', type: 'RUN', date: new Date('2026-07-07T08:00:00'), load: 28 } as never],
+          [],
+        ),
+        athlete: {
+          recommendationAvailable: true,
+          adviceActionable: true,
+          dailyStrainAvailable: true,
+          newSessionSincePriorSnapshot: false,
+          newInferenceSincePriorSnapshot: false,
+          newObservationsSincePriorSnapshot: false,
+          minutesSinceLastActivity: 600,
+          minutesSinceSnapshotGenerated: 120,
+          priorPhase: 'RECOVERY_WINDOW',
+          sleepLoggedTonight: false,
+        },
+        localHour: 22,
+      },
+      ref,
+    );
+    const n = buildPhaseNarrative({
+      resolution,
+      verdict: 'TRAIN_EASY',
+      adviceActionable: true,
+      actionLine: null,
+      sportLabel: 'Course',
+      totalTssToday: 28,
+      dailyStrainScore: 10,
+      dailyStrainAvailable: true,
+      limitingFactorMessage:
+        "Déficit de récupération — facteur limitant : la charge d'entraînement",
+      evening: {
+        effortLevel: 'light',
+        totalDurationMin: 14,
+        completedSessionCount: 1,
+        tomorrowSession: null,
+        sleep: {
+          recommendedBedtimeMin: 22 * 60 + 30,
+          recommendedDurationMin: 480,
+          debt7Min: 120,
+          hasSleepHistory: true,
+          bedtimeTargetMin: 22 * 60 + 30,
+        },
+      },
+    });
+    expect(n.heroHeadline).toBe('Journée légère — 14 min de course');
+    expect(n.focusPriority).toMatch(/Coucher vers/);
+    expect(n.focusPriority).toMatch(/récupérer/);
+    expect(n.heroHeadline).not.toMatch(/protéger|Demain :|TSS/i);
   });
 
   it('never uses forward training question in post-training phases', () => {

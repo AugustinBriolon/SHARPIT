@@ -9,22 +9,27 @@ export function TwinTrustStrip({
   confidenceHref,
   limitingFactorText,
   className,
+  variant = 'default',
 }: {
   confidenceLabel: string | null;
   confidencePctRounded: number | null;
   confidenceHref: string | null;
   limitingFactorText: string | null;
   className?: string;
+  variant?: 'default' | 'subtle';
 }) {
   const showConfidence = confidenceLabel != null;
   const showLimiting = limitingFactorText != null;
 
   if (!showConfidence && !showLimiting) return null;
 
+  const confidenceClass =
+    variant === 'subtle' ? 'text-muted-foreground' : 'text-amber-700 dark:text-amber-400';
+
   return (
-    <div className={cn('space-y-1.5 text-xs leading-relaxed', className)}>
+    <div className={cn('text-muted-foreground text-xs leading-relaxed', className)}>
       {showConfidence ? (
-        <p className="text-amber-700 dark:text-amber-400">
+        <p className={confidenceClass}>
           {confidenceHref ? (
             <Link
               className="underline-offset-2 transition-colors hover:underline"
@@ -42,12 +47,7 @@ export function TwinTrustStrip({
         </p>
       ) : null}
 
-      {showLimiting ? (
-        <p className="text-muted-foreground">
-          <span className="text-foreground font-medium">Facteur limitant :</span>{' '}
-          {limitingFactorText}
-        </p>
-      ) : null}
+      {showLimiting ? <p className="mt-1">{limitingFactorText}</p> : null}
     </div>
   );
 }

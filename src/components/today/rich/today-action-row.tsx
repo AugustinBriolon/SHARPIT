@@ -73,13 +73,17 @@ export function TodayActionRow({
   const daySummaryEmpty = vm.actionRow.daySummaryLines.length === 0;
 
   return (
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-      <section className="bg-card flex flex-col rounded-2xl border px-5 py-4 sm:px-6">
-        <p className="text-muted-foreground mb-2 text-[10px] font-semibold tracking-[0.14em] uppercase">
-          {vm.actionRow.limitingLabel}
-        </p>
-        <LimitingContent vm={vm} />
-      </section>
+    <div
+      className={cn('grid grid-cols-1 gap-3', vm.actionRow.showLimitingColumn && 'lg:grid-cols-2')}
+    >
+      {vm.actionRow.showLimitingColumn ? (
+        <section className="bg-card flex flex-col rounded-2xl border px-5 py-4 sm:px-6">
+          <p className="text-muted-foreground mb-2 text-[10px] font-semibold tracking-[0.14em] uppercase">
+            {vm.actionRow.limitingLabel}
+          </p>
+          <LimitingContent vm={vm} />
+        </section>
+      ) : null}
 
       <section className="bg-card flex flex-col rounded-2xl border px-5 py-4 sm:px-6">
         <div className="mb-3 flex items-start justify-between gap-2">

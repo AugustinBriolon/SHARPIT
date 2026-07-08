@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { LinkButton } from '@/components/ui/link-button';
 import { queryKeys } from '@/lib/query/keys';
 import {
@@ -126,9 +127,16 @@ function getActivitySummary(activity: ActivityItem) {
 export function DeleteActivityButton({ id }: { id: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { confirm, dialog } = useConfirmDialog();
 
   async function handleDelete() {
-    if (!confirm('Supprimer cette séance ?')) return;
+    const confirmed = await confirm({
+      title: 'Supprimer cette séance ?',
+      description: 'Cette action est définitive.',
+      confirmLabel: 'Supprimer',
+      variant: 'destructive',
+    });
+    if (!confirmed) return;
     await fetch(`/api/activities/${id}`, { method: 'DELETE' });
     await queryClient.invalidateQueries({ queryKey: queryKeys.activities });
     // La liste /training est pilotée par React Query : l'invalidation suffit,
@@ -137,8 +145,11 @@ export function DeleteActivityButton({ id }: { id: string }) {
   }
 
   return (
-    <Button size="sm" variant="destructive" onClick={handleDelete}>
-      Supprimer
-    </Button>
+    <>
+      <Button size="sm" variant="destructive" onClick={handleDelete}>
+        Supprimer
+      </Button>
+      {dialog}
+    </>
   );
 }

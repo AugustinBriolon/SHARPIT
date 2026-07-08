@@ -11,12 +11,14 @@ export {
   minutesBetween,
   parsePlannedStart,
 } from '@/lib/daily-phase/day-context';
+export { resolveTodayGoalContext, type TodayGoalContext } from '@/lib/daily-phase/goal-context';
 export {
   assertPhaseNarrativeConsistency,
   buildPhaseNarrative,
   pickAdaptationReminders,
   type PhaseNarrative,
   type PhaseNarrativeInput,
+  type TodayPosture,
 } from '@/lib/daily-phase/narrative';
 export {
   isForwardAdvicePhase,
