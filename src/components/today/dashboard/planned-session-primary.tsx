@@ -16,8 +16,10 @@ export function PlannedSessionPrimary({
 
   return (
     <div className={cn('flex min-w-0 flex-1 items-start gap-1.5', className)}>
-      <PlannedSessionTypeBadge referenceDate={referenceDate} session={session} />
-      <p className="line-clamp-2 min-w-0 text-sm leading-snug font-medium break-words">{title}</p>
+      <PlannedSessionTypeBadge session={session} />
+      <p className="line-clamp-2 min-w-0 text-sm leading-snug font-medium wrap-break-word">
+        {title}
+      </p>
     </div>
   );
 }
