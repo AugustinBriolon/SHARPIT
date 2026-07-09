@@ -1,6 +1,6 @@
 'use client';
 
-import { differenceInCalendarDays, format } from 'date-fns';
+import { differenceInCalendarDays, format, formatDistanceToNowStrict } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Bike, Footprints, Waves } from 'lucide-react';
 import Link from 'next/link';
@@ -21,10 +21,11 @@ const TABS: {
   id: SportTab;
   label: string;
   icon: typeof Footprints;
+  code: string;
 }[] = [
-  { id: 'run', label: 'Course', icon: Footprints },
-  { id: 'bike', label: 'Vélo', icon: Bike },
-  { id: 'swim', label: 'Natation', icon: Waves },
+  { id: 'run', label: 'Course', icon: Footprints, code: 'CO' },
+  { id: 'bike', label: 'Vélo', icon: Bike, code: 'VE' },
+  { id: 'swim', label: 'Natation', icon: Waves, code: 'NA' },
 ];
 
 function isRecent(dateIso: string): boolean {
@@ -36,15 +37,22 @@ function entryMeta(entry: RecordEntry): string {
   return entry.sublabel ? `${entry.sublabel} · ${date}` : date;
 }
 
+function recordNarrative(entry: RecordEntry): string {
+  const daysSince = differenceInCalendarDays(new Date(), new Date(entry.date));
+  if (daysSince <= 120) {
+    return `il y a ${formatDistanceToNowStrict(new Date(entry.date), { locale: fr })}`;
+  }
+  if (daysSince <= 365) return 'record de la saison';
+  return `il y a ${formatDistanceToNowStrict(new Date(entry.date), { locale: fr })}`;
+}
+
 function RecordCategoryCard({ category }: { category: RecordCategory }) {
   const [best] = category.entries;
 
   return (
-    <div className="bg-card/60 rounded-2xl border p-4">
+    <div className="analysis-panel rounded-analysis-lg p-4">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.15em] uppercase">
-          {category.label}
-        </p>
+        <p className="text-label">{category.label}</p>
         {best && isRecent(best.date) && (
           <Badge className="border-primary/30 text-primary" variant="outline">
             Nouveau
@@ -56,7 +64,7 @@ function RecordCategoryCard({ category }: { category: RecordCategory }) {
         <>
           <RecordValue entry={best} />
           {category.entries.length > 1 && (
-            <div className="border-border/60 mt-3 space-y-0.5 border-t pt-2">
+            <div className="border-analysis-border mt-3 space-y-0.5 border-t pt-2">
               {category.entries.slice(1).map((entry) => (
                 <RecordRow key={entry.rank} entry={entry} compact />
               ))}
@@ -64,9 +72,7 @@ function RecordCategoryCard({ category }: { category: RecordCategory }) {
           )}
         </>
       ) : (
-        <p className="text-muted-foreground/50 mt-3 font-mono text-2xl font-semibold tabular-nums">
-          —
-        </p>
+        <p className="text-data text-muted-foreground/50 mt-3 text-2xl font-semibold">—</p>
       )}
     </div>
   );
@@ -74,18 +80,23 @@ function RecordCategoryCard({ category }: { category: RecordCategory }) {
 
 function RecordValue({ entry }: { entry: RecordEntry }) {
   const inner = (
-    <>
-      <p className="text-foreground mt-2 font-mono text-2xl font-semibold tabular-nums">
+    <div
+      className="rounded-analysis bg-analysis-surface-alt/80 mt-3 px-3 py-3"
+      style={{ boxShadow: 'inset 3px 0 0 var(--color-chart-5)' }}
+    >
+      {/* Records are the one deliberate exception: each #1 uses the rare warm accent as an achievement cue. */}
+      <p className="text-data mt-1 text-3xl font-semibold text-(--color-chart-5)">
         {entry.displayValue}
       </p>
-      <p className="text-muted-foreground mt-1 text-xs">{entryMeta(entry)}</p>
-    </>
+      <p className="text-data text-muted-foreground mt-1 text-xs">{entryMeta(entry)}</p>
+      <p className="text-muted-foreground mt-1 text-[11px]">{recordNarrative(entry)}</p>
+    </div>
   );
 
   if (!entry.activityId) return <div>{inner}</div>;
   return (
     <Link
-      className="hover:text-primary block rounded-md transition-colors"
+      className="rounded-analysis hover:bg-analysis-surface-alt/60 block px-1 py-1 transition-colors"
       href={`/training/${entry.activityId}`}
     >
       {inner}
@@ -99,17 +110,19 @@ function RecordRow({ entry, compact = false }: { entry: RecordEntry; compact?: b
       className={cn('flex items-center justify-between gap-3 py-1.5 text-sm', compact && 'text-xs')}
     >
       <span className="flex min-w-0 items-center gap-2">
-        <span className="text-muted-foreground w-5 shrink-0 font-mono">#{entry.rank}</span>
-        <span className="font-mono font-semibold tabular-nums">{entry.displayValue}</span>
+        <span className="text-data text-muted-foreground w-5 shrink-0">#{entry.rank}</span>
+        <span className="text-data font-semibold">{entry.displayValue}</span>
       </span>
-      <span className="text-muted-foreground truncate text-right">{entryMeta(entry)}</span>
+      <span className="text-data text-muted-foreground truncate text-right">
+        {entryMeta(entry)}
+      </span>
     </div>
   );
 
   if (!entry.activityId) return row;
   return (
     <Link
-      className="hover:bg-muted/50 block rounded-md px-1 transition-colors"
+      className="rounded-analysis hover:bg-analysis-surface-alt/60 block px-1 transition-colors"
       href={`/training/${entry.activityId}`}
     >
       {row}
@@ -173,7 +186,7 @@ export function RecordsPanel() {
       />
 
       <div className="flex flex-wrap gap-2">
-        {TABS.map(({ id, label, icon: Icon }) => (
+        {TABS.map(({ id, label, icon: Icon, code }) => (
           <button
             key={id}
             className={navPillClass(tab === id, 'gap-2')}
@@ -238,7 +251,7 @@ function RecordsSkeleton() {
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-28 rounded-xl" />
+          <Skeleton key={i} className="rounded-analysis-lg h-28" />
         ))}
       </div>
     </section>

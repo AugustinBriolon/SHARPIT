@@ -129,7 +129,7 @@ function goalLineForPhase(input: PhaseNarrativeInput): string | null {
   const badge = goalContext.badge ? ` (${goalContext.badge})` : '';
 
   if (goalContext.linkedToTodaySession && isForwardAdvicePhase(phase)) {
-    return `Objectif du jour : ${goalContext.title}${badge}`;
+    return `Objectif : ${goalContext.title}${badge}`;
   }
 
   if (phase === 'SESSION_COMPLETED' && goalContext.linkedToTodaySession) {

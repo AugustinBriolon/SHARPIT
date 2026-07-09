@@ -1,25 +1,26 @@
-import {
-  buildCompositionSeries,
-  computeCompositionTrend,
-  formatCompositionDelta,
-} from '@/lib/body-composition';
-import { athleteCompositionContext } from '@/lib/athlete-profile-utils';
-import { getAthleteProfile, getBodyCompositionMeasurements } from '@/lib/queries';
-import { dedupeBodyCompositionByDay } from '@/lib/body-composition';
-import { parseWithingsEcgStats } from '@/lib/withings-ecg-display';
-import {
-  getGuide,
-  metricScalePosition,
-  type CompositionContext,
-  type CompositionMetricId,
-} from '@/lib/composition-metric-guides';
-import { buildBodyPageInsights } from '@/lib/product-insight/body-page-insights';
 import type {
   BodyMetricCardVm,
   BodyMetricExplainerVm,
   BodyTrendWindowId,
   BodyViewModel,
 } from '@/core/presentation/body-view-model';
+import { athleteCompositionContext } from '@/lib/athlete-profile-utils';
+import {
+  buildCompositionSeries,
+  computeCompositionTrend,
+  dedupeBodyCompositionByDay,
+  formatCompositionDelta,
+} from '@/lib/body-composition';
+import {
+  getGuide,
+  metricScalePosition,
+  type CompositionContext,
+  type CompositionMetricId,
+} from '@/lib/composition-metric-guides';
+import { buildWeeklyDeltaPresentation, resolveMetricValueTone } from '@/lib/health-status';
+import { buildBodyPageInsights } from '@/lib/product-insight/body-page-insights';
+import { getAthleteProfile, getBodyCompositionMeasurements } from '@/lib/queries';
+import { parseWithingsEcgStats } from '@/lib/withings-ecg-display';
 
 const TREND_WINDOWS = [
   { id: '14d', label: '14 j', days: 14 },
@@ -115,11 +116,30 @@ export async function buildBodyPresentationViewModel(days?: number | null): Prom
         measuredAtLabel: null,
         sourceLabel: null,
         weightDeltaDisplay: null,
-        weightDeltaColorClass: null,
+        weightDeltaTone: null,
+        weightDeltaHint: null,
         heroMini: {
-          bodyFatPct: { value: null, deltaDisplay: null },
-          musclePct: { value: null, deltaDisplay: null },
-          visceralFat: { value: null, deltaDisplay: null },
+          bodyFatPct: {
+            value: null,
+            deltaDisplay: null,
+            deltaTone: 'ok',
+            deltaHint: null,
+            tone: 'neutral',
+          },
+          musclePct: {
+            value: null,
+            deltaDisplay: null,
+            deltaTone: 'ok',
+            deltaHint: null,
+            tone: 'neutral',
+          },
+          visceralFat: {
+            value: null,
+            deltaDisplay: null,
+            deltaTone: 'ok',
+            deltaHint: null,
+            tone: 'neutral',
+          },
         },
       },
       context: { chronologicalAgeYears: null },
@@ -158,9 +178,23 @@ export async function buildBodyPresentationViewModel(days?: number | null): Prom
 
   const chartData = buildCompositionSeries(entriesDedup);
 
-  let weightDeltaColorClass: string | null = null;
-  if (weight.delta != null) {
-    weightDeltaColorClass = weight.delta > 0 ? 'text-amber-600' : 'text-emerald-600';
+  const weightDelta = buildWeeklyDeltaPresentation('weightKg', weight.delta, (delta) =>
+    formatCompositionDelta(delta, ' kg'),
+  );
+
+  function buildMetricDeltaFooter(
+    metricId: 'bmi' | 'bodyFatPct' | 'musclePct' | 'visceralFat',
+    delta7d: number | null | undefined,
+  ) {
+    const presentation = buildWeeklyDeltaPresentation(metricId, delta7d, (delta) =>
+      formatCompositionDelta(delta, ' pts vs 7j'),
+    );
+    if (presentation.deltaDisplay == null) return null;
+    return {
+      footer: presentation.deltaDisplay,
+      footerTone: presentation.deltaTone,
+      footerHint: presentation.deltaHint,
+    };
   }
 
   const hero: BodyViewModel['hero'] = {
@@ -168,25 +202,67 @@ export async function buildBodyPresentationViewModel(days?: number | null): Prom
     latestWeightDisplay: latest.weightKg != null ? `${latest.weightKg}` : '—',
     measuredAtLabel: displayMeasuredAt(latest.measuredAt),
     sourceLabel: sourceLabel(latest.source),
-    weightDeltaDisplay:
-      weight.delta != null ? (formatCompositionDelta(weight.delta, ' kg') ?? null) : null,
-    weightDeltaColorClass,
+    weightDeltaDisplay: weightDelta.deltaDisplay,
+    weightDeltaTone: weight.delta != null ? weightDelta.deltaTone : null,
+    weightDeltaHint: weightDelta.deltaHint,
     heroMini: {
-      bodyFatPct: {
-        value: bodyFat.latest,
-        deltaDisplay:
-          bodyFat.delta != null ? (formatCompositionDelta(bodyFat.delta, ' pts') ?? null) : null,
-      },
-      musclePct: {
-        value: muscle.latest,
-        deltaDisplay:
-          muscle.delta != null ? (formatCompositionDelta(muscle.delta, ' pts') ?? null) : null,
-      },
-      visceralFat: {
-        value: visceral.latest,
-        deltaDisplay:
-          visceral.delta != null ? (formatCompositionDelta(visceral.delta, ' pts') ?? null) : null,
-      },
+      bodyFatPct: (() => {
+        const delta = buildWeeklyDeltaPresentation('bodyFatPct', bodyFat.delta, (d) =>
+          formatCompositionDelta(d, ' pts'),
+        );
+        const zoneTone =
+          bodyFat.latest != null
+            ? getGuide('bodyFatPct').interpret(bodyFat.latest, compositionContext).tone
+            : 'neutral';
+        return {
+          value: bodyFat.latest,
+          deltaDisplay: delta.deltaDisplay,
+          deltaTone: delta.deltaTone,
+          deltaHint: delta.deltaHint,
+          tone:
+            bodyFat.latest != null
+              ? resolveMetricValueTone(zoneTone, 'bodyFatPct', bodyFat.delta)
+              : 'neutral',
+        };
+      })(),
+      musclePct: (() => {
+        const delta = buildWeeklyDeltaPresentation('musclePct', muscle.delta, (d) =>
+          formatCompositionDelta(d, ' pts'),
+        );
+        const zoneTone =
+          muscle.latest != null
+            ? getGuide('musclePct').interpret(muscle.latest, compositionContext).tone
+            : 'neutral';
+        return {
+          value: muscle.latest,
+          deltaDisplay: delta.deltaDisplay,
+          deltaTone: delta.deltaTone,
+          deltaHint: delta.deltaHint,
+          tone:
+            muscle.latest != null
+              ? resolveMetricValueTone(zoneTone, 'musclePct', muscle.delta)
+              : 'neutral',
+        };
+      })(),
+      visceralFat: (() => {
+        const delta = buildWeeklyDeltaPresentation('visceralFat', visceral.delta, (d) =>
+          formatCompositionDelta(d, ' pts'),
+        );
+        const zoneTone =
+          visceral.latest != null
+            ? getGuide('visceralFat').interpret(visceral.latest, compositionContext).tone
+            : 'neutral';
+        return {
+          value: visceral.latest,
+          deltaDisplay: delta.deltaDisplay,
+          deltaTone: delta.deltaTone,
+          deltaHint: delta.deltaHint,
+          tone:
+            visceral.latest != null
+              ? resolveMetricValueTone(zoneTone, 'visceralFat', visceral.delta)
+              : 'neutral',
+        };
+      })(),
     },
   };
 
@@ -226,21 +302,23 @@ export async function buildBodyPresentationViewModel(days?: number | null): Prom
     const guide = getGuide(metricId);
     const interpretation = guide.interpret(latestBmiDisplay, compositionContext);
     ensureExplainer(metricId, latestBmiDisplay, valueDisplay);
+    const bmiDeltaFooter = buildMetricDeltaFooter('bmi', bmi.delta);
     trajectoryCards.push({
       cardId: metricId,
       guideId: metricId,
       label: 'IMC',
       valueDisplay,
-      footer: 'Repère poids / taille²',
-      tone: interpretation.tone,
+      footer: bmiDeltaFooter?.footer ?? 'Repère poids / taille²',
+      footerTone: bmiDeltaFooter?.footerTone,
+      footerHint: bmiDeltaFooter?.footerHint ?? undefined,
+      tone: resolveMetricValueTone(interpretation.tone, metricId, bmi.delta),
     });
   }
 
   if (bodyFat.latest != null) {
     const metricId: CompositionMetricId = 'bodyFatPct';
     const valueDisplay = `${bodyFat.latest} %`;
-    const footer =
-      bodyFat.delta != null ? formatCompositionDelta(bodyFat.delta, ' pts vs 7j') : undefined;
+    const deltaFooter = buildMetricDeltaFooter(metricId, bodyFat.delta);
     const interpretation = getGuide(metricId).interpret(bodyFat.latest, compositionContext);
     ensureExplainer(metricId, bodyFat.latest, valueDisplay);
     trajectoryCards.push({
@@ -248,16 +326,17 @@ export async function buildBodyPresentationViewModel(days?: number | null): Prom
       guideId: metricId,
       label: 'Masse grasse',
       valueDisplay,
-      footer: footer ?? undefined,
-      tone: interpretation.tone,
+      footer: deltaFooter?.footer,
+      footerTone: deltaFooter?.footerTone,
+      footerHint: deltaFooter?.footerHint ?? undefined,
+      tone: resolveMetricValueTone(interpretation.tone, metricId, bodyFat.delta),
     });
   }
 
   if (muscle.latest != null) {
     const metricId: CompositionMetricId = 'musclePct';
     const valueDisplay = `${muscle.latest} %`;
-    const footer =
-      muscle.delta != null ? formatCompositionDelta(muscle.delta, ' pts vs 7j') : undefined;
+    const deltaFooter = buildMetricDeltaFooter(metricId, muscle.delta);
     const interpretation = getGuide(metricId).interpret(muscle.latest, compositionContext);
     ensureExplainer(metricId, muscle.latest, valueDisplay);
     trajectoryCards.push({
@@ -265,16 +344,17 @@ export async function buildBodyPresentationViewModel(days?: number | null): Prom
       guideId: metricId,
       label: 'Muscle',
       valueDisplay,
-      footer: footer ?? undefined,
-      tone: interpretation.tone,
+      footer: deltaFooter?.footer,
+      footerTone: deltaFooter?.footerTone,
+      footerHint: deltaFooter?.footerHint ?? undefined,
+      tone: resolveMetricValueTone(interpretation.tone, metricId, muscle.delta),
     });
   }
 
   if (visceral.latest != null) {
     const metricId: CompositionMetricId = 'visceralFat';
     const valueDisplay = `${visceral.latest}`;
-    const footer =
-      visceral.delta != null ? formatCompositionDelta(visceral.delta, ' pts vs 7j') : undefined;
+    const deltaFooter = buildMetricDeltaFooter(metricId, visceral.delta);
     const interpretation = getGuide(metricId).interpret(visceral.latest, compositionContext);
     ensureExplainer(metricId, visceral.latest, valueDisplay);
     trajectoryCards.push({
@@ -282,8 +362,10 @@ export async function buildBodyPresentationViewModel(days?: number | null): Prom
       guideId: metricId,
       label: 'Graisse viscérale',
       valueDisplay,
-      footer: footer ?? undefined,
-      tone: interpretation.tone,
+      footer: deltaFooter?.footer,
+      footerTone: deltaFooter?.footerTone,
+      footerHint: deltaFooter?.footerHint ?? undefined,
+      tone: resolveMetricValueTone(interpretation.tone, metricId, visceral.delta),
     });
   }
 

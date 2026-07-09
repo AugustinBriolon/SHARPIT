@@ -178,25 +178,6 @@ export function buildSnapshotDailyPhase(params: SnapshotPhaseBuildParams): {
   return { dailyPhase: resolution, phaseNarrative };
 }
 
-export function buildPhasePrimaryProductMessage(
-  phase: DailyPhaseResolution['phase'],
-  phaseNarrative: PhaseNarrative,
-  _effort: ReturnType<typeof buildTodayEffortSnapshot>,
-): string | null {
-  switch (phase) {
-    case 'SESSION_COMPLETED':
-      return phaseNarrative.heroHeadline;
-    case 'RECOVERY_WINDOW':
-      return phaseNarrative.heroSubline;
-    case 'END_OF_DAY':
-      return null;
-    case 'BEFORE_SESSION':
-      return phaseNarrative.heroHeadline;
-    default:
-      return null;
-  }
-}
-
 export function shouldRefreshSnapshotForPhaseDrift(
   snapshot: AthleteSnapshot,
   now: Date = new Date(),

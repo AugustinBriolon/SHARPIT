@@ -2,7 +2,6 @@ import { createHash } from 'node:crypto';
 import type { AthleteFreshnessSnapshot } from '@/core/athlete-state/freshness';
 import type { AthleteSnapshot, AthleteSnapshotBriefing } from '@/core/athlete-state/snapshot';
 import {
-  buildPhasePrimaryProductMessage,
   buildSnapshotDailyPhase,
   type SnapshotActivityInput,
   type SnapshotPhaseBuildParams,
@@ -13,7 +12,6 @@ import {
   isAdviceActionable,
 } from '@/lib/athlete-state/snapshot-truthfulness';
 import type { EngineRecommendation, ReasoningData, TodayState } from '@/hooks/use-today';
-import { buildTodayEffortSnapshot } from '@/lib/today-narrative-context';
 
 export type SnapshotBuildInput = {
   athleteId: string;
@@ -124,16 +122,8 @@ export function buildAthleteSnapshot(input: SnapshotBuildInput): AthleteSnapshot
   );
 
   const domainMessages = buildDomainMessages(freshness);
-  const effort = buildTodayEffortSnapshot(phaseContext.activities as never, phaseContext.refDate);
-
-  const phaseProductMessage = buildPhasePrimaryProductMessage(
-    dailyPhase.phase,
-    phaseNarrative,
-    effort,
-  );
 
   const basePrimaryProductMessage =
-    phaseProductMessage ??
     freshness.primaryProductMessage ??
     (reasoning?.overallVerdict === 'INSUFFICIENT_DATA'
       ? (domainMessages.recovery ?? domainMessages.sleep ?? domainMessages.reasoning ?? null)

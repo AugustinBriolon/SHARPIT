@@ -16,7 +16,7 @@ import {
   severityAccent,
   severityColor,
   sideLabels,
-  statusColors,
+  statusBadgeClass,
   statusLabels,
 } from '@/lib/physical';
 import { cn } from '@/lib/utils';
@@ -83,7 +83,12 @@ export function PhysicalNoteCard({
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline">{categoryLabels[note.category]}</Badge>
-            <span className={cn('text-xs font-medium', statusColors[note.status])}>
+            <span
+              className={cn(
+                'rounded-full px-2 py-0.5 text-[11px] font-medium',
+                statusBadgeClass[note.status],
+              )}
+            >
               {statusLabels[note.status]}
             </span>
             {!note.affectsTraining && (

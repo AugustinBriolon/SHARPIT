@@ -30,12 +30,12 @@ export const intensityTextColors: Record<SessionIntensity, string> = {
 
 /** Couleur de référence (CSS) par intensité, pour les accents/points. */
 export const intensityAccent: Record<SessionIntensity, string> = {
-  RECOVERY: '#64748b',
-  ENDURANCE: '#0891b2',
-  TEMPO: '#059669',
-  THRESHOLD: '#d97706',
-  VO2MAX: '#dc2626',
-  RACE: '#7c3aed',
+  RECOVERY: 'var(--color-signal-recovery)',
+  ENDURANCE: 'var(--color-signal-base)',
+  TEMPO: 'var(--color-signal-tempo)',
+  THRESHOLD: 'var(--color-signal-threshold)',
+  VO2MAX: 'var(--color-signal-vo2)',
+  RACE: 'var(--color-primary)',
 };
 
 /** Sports autorisés pour une étape de brick (pas triathlon ni muscu). */

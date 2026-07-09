@@ -21,15 +21,15 @@ function ChartTooltip({
   if (!active || !payload?.length) return null;
   const total = payload.reduce((s, e) => s + e.value, 0);
   return (
-    <div className="border-border/60 bg-card rounded-lg border px-3 py-2 text-xs shadow-lg">
+    <div className="analysis-panel rounded-analysis px-3 py-2 text-xs">
       <p className="text-muted-foreground mb-1 font-medium">{label}</p>
       {payload.map((entry) => (
         <p key={entry.name} style={{ color: entry.color }}>
-          {entry.name}: <span className="font-mono">{entry.value}h</span>
+          {entry.name}: <span className="text-data">{entry.value}h</span>
         </p>
       ))}
       <p className="border-border/40 text-muted-foreground mt-1 border-t pt-1">
-        Total: <span className="text-foreground font-mono font-semibold">{total.toFixed(1)}h</span>
+        Total: <span className="text-data text-foreground font-semibold">{total.toFixed(1)}h</span>
       </p>
     </div>
   );
@@ -52,16 +52,20 @@ export function VolumeChart({ data }: VolumeChartProps) {
       <CardContent>
         <ResponsiveChartFrame height={288}>
           <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-            <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" vertical={false} />
+            <CartesianGrid
+              stroke="var(--color-analysis-grid)"
+              strokeDasharray="3 3"
+              vertical={false}
+            />
             <XAxis
               axisLine={false}
               dataKey="label"
-              tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
+              tick={{ fill: 'var(--color-muted-foreground)', fontSize: 11 }}
               tickLine={false}
             />
             <YAxis
               axisLine={false}
-              tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
+              tick={{ fill: 'var(--color-muted-foreground)', fontSize: 11 }}
               tickLine={false}
               unit="h"
             />

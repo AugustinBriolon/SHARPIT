@@ -298,6 +298,7 @@ model StrengthSet {
   exercise String
   sets     Int
   reps     Int
+  durationSec Int?
   weightKg Float?
   rpe      Int?
   restSec  Int?

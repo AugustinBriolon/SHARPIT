@@ -1,5 +1,6 @@
 import { BrickChipHeader } from '@/components/planning/brick-dialog';
-import { activityTypeColors, activityTypeLabels } from '@/lib/format';
+import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
+import { activityTypeLabels } from '@/lib/format';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import { intensityAccent } from '@/lib/sessions';
 import { cn } from '@/lib/utils';
@@ -10,21 +11,23 @@ import { Fragment } from 'react';
 import type { DayEvent } from './calendar-types';
 import { setDragSessionId } from './calendar-utils';
 
+const NEUTRAL_ACCENT = 'var(--color-signal-neutral)';
+
 export function GoogleEventChip({ dayEvent }: { dayEvent: DayEvent }) {
   const { event, isStart, isEnd } = dayEvent;
-  const color = event.color ?? '#9ca3af';
+  const color = event.color ?? NEUTRAL_ACCENT;
   const time = event.allDay || !isStart ? null : format(new Date(event.start), 'HH:mm');
   const multiDay = !(isStart && isEnd);
   const label = multiDay && !isStart ? `… ${event.summary}` : event.summary;
 
   return (
     <div
-      className="bg-muted/50 text-muted-foreground flex items-center gap-1 truncate rounded-md border-l-2 px-1.5 py-0.5 text-[11px]"
+      className="bg-muted/50 text-muted-foreground flex items-center gap-1 truncate rounded-[6px] border-l-2 px-1.5 py-0.5 text-[11px]"
       style={{ borderLeftColor: color }}
       title={`${event.calendarName}${time ? ` · ${time}` : ''} — ${event.summary}`}
       onClick={(e) => e.stopPropagation()}
     >
-      {time && <span className="shrink-0 tabular-nums opacity-70">{time}</span>}
+      {time && <span className="text-data shrink-0 opacity-70">{time}</span>}
       <span className="truncate">{label}</span>
     </div>
   );
@@ -33,15 +36,13 @@ export function GoogleEventChip({ dayEvent }: { dayEvent: DayEvent }) {
 export function ActivityChip({ activity }: { activity: ClientActivity }) {
   return (
     <Link
+      className="border-analysis-border bg-analysis-surface-alt/70 hover:border-primary/40 text-foreground flex items-center gap-1 truncate rounded-[6px] border px-1.5 py-0.5 text-[11px] font-medium"
       href={`/training/${activity.id}`}
       title={activity.title ?? activityTypeLabels[activity.type]}
-      className={cn(
-        'border-border/60 bg-card/80 hover:border-primary/40 block truncate rounded-md border px-1.5 py-0.5 text-[11px] font-medium',
-        activityTypeColors[activity.type],
-      )}
       onClick={(e) => e.stopPropagation()}
     >
-      {activity.title ?? activityTypeLabels[activity.type]}
+      <ActivityTypeIndicator type={activity.type} />
+      <span className="truncate">{activity.title ?? activityTypeLabels[activity.type]}</span>
     </Link>
   );
 }
@@ -60,10 +61,7 @@ export function BrickChip({
 
   return (
     <div
-      className={cn(
-        'bg-primary/5 rounded-md border p-1',
-        allDone ? 'border-primary/50' : 'border-primary/30',
-      )}
+      className="border-analysis-border bg-analysis-surface-alt/70 rounded-[8px] border p-1"
       onClick={(e) => {
         e.stopPropagation();
         onOpen();
@@ -83,7 +81,7 @@ export function BrickChip({
 }
 
 function BrickLeg({ session, onEdit }: { session: ClientPlannedSession; onEdit: () => void }) {
-  const accent = session.intensity ? intensityAccent[session.intensity] : '#94a3b8';
+  const accent = session.intensity ? intensityAccent[session.intensity] : NEUTRAL_ACCENT;
   const done = session.completed && Boolean(session.activityId);
   const label = session.title ?? activityTypeLabels[session.type];
 
@@ -92,17 +90,15 @@ function BrickLeg({ session, onEdit }: { session: ClientPlannedSession; onEdit: 
       title={`${activityTypeLabels[session.type]}${session.durationMin ? ` · ${session.durationMin} min` : ''}${done ? ' — réalisée' : ''}`}
       type="button"
       className={cn(
-        'hover:bg-muted/40 flex min-w-0 items-center gap-1 truncate rounded border px-1 py-0.5 text-left text-[11px]',
-        done ? 'border-solid' : 'border-dashed bg-transparent',
+        'border-analysis-border bg-analysis-surface hover:border-primary/30 hover:bg-analysis-surface-alt flex min-w-0 items-center gap-1 truncate rounded-[6px] border px-1 py-0.5 text-left text-[11px]',
+        done ? 'border-solid' : 'border-dashed',
       )}
-      style={
-        done ? { backgroundColor: `${accent}22`, borderColor: accent } : { borderColor: accent }
-      }
       onClick={(e) => {
         e.stopPropagation();
         onEdit();
       }}
     >
+      <ActivityTypeIndicator type={session.type} />
       {done ? (
         <Check className="size-3 shrink-0" style={{ color: accent }} />
       ) : (
@@ -124,7 +120,7 @@ export function PlannedChip({
   session: ClientPlannedSession;
   onEdit: () => void;
 }) {
-  const accent = session.intensity ? intensityAccent[session.intensity] : '#94a3b8';
+  const accent = session.intensity ? intensityAccent[session.intensity] : NEUTRAL_ACCENT;
   const done = session.completed && Boolean(session.activityId);
   const score = (session.analysis as { complianceScore?: number } | null)?.complianceScore;
   const label = session.title ?? activityTypeLabels[session.type];
@@ -135,12 +131,9 @@ export function PlannedChip({
       title={`${label}${done ? ' — réalisée' : ''}`}
       type="button"
       className={cn(
-        'hover:bg-muted/40 flex w-full items-center gap-1 truncate rounded-md border px-1.5 py-0.5 text-left text-[11px]',
-        done ? 'border-solid' : 'border-dashed bg-transparent',
+        'border-analysis-border bg-analysis-surface-alt/70 hover:border-primary/30 hover:bg-analysis-surface flex w-full items-center gap-1 truncate rounded-[6px] border px-1.5 py-0.5 text-left text-[11px]',
+        done ? 'border-solid' : 'border-dashed',
       )}
-      style={
-        done ? { backgroundColor: `${accent}22`, borderColor: accent } : { borderColor: accent }
-      }
       onDragEnd={() => setDragSessionId(null)}
       onClick={(e) => {
         e.stopPropagation();
@@ -150,6 +143,7 @@ export function PlannedChip({
         if (!done) setDragSessionId(session.id);
       }}
     >
+      <ActivityTypeIndicator type={session.type} />
       {done ? (
         <Check className="size-3 shrink-0" style={{ color: accent }} />
       ) : (
@@ -161,7 +155,7 @@ export function PlannedChip({
         {label}
       </span>
       {done && score != null && (
-        <span className="text-muted-foreground ml-auto shrink-0 text-[10px] tabular-nums">
+        <span className="text-data text-muted-foreground ml-auto shrink-0 text-[10px]">
           {score}
         </span>
       )}

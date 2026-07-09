@@ -7,15 +7,15 @@ import { DrillDownSectionLabel } from '@/components/today/drill-down/section-lab
 function impactLabel(value: ProductInsight['decisionImpact']): string {
   switch (value) {
     case 'TRAINING_TODAY':
-      return "Decision d'aujourd'hui";
+      return "Décision d'aujourd'hui";
     case 'RECOVERY_BEHAVIOR':
-      return 'Comportement de recuperation';
+      return 'Comportement de récupération';
     case 'LOAD_PROGRESSION':
       return 'Progression du bloc';
     case 'BODY_TRAJECTORY':
       return 'Trajectoire corporelle';
     case 'HEALTH_AWARENESS':
-      return 'Contexte sante';
+      return 'Contexte santé';
     case 'TRUST':
       return 'Confiance de lecture';
     case 'INFORMATIVE':

@@ -7,8 +7,9 @@ import { RecoverySignalsSection } from '@/components/recovery/recovery-signals-s
 import { RecoveryStatsStrip } from '@/components/recovery/recovery-stats-strip';
 import { RecoveryEvidenceSection } from '@/components/recovery/recovery-evidence-section';
 import { RecoveryTrendsSection } from '@/components/recovery/recovery-trends-section';
-import { InsightList } from '@/components/product-insight/insight-list';
+import { InsightNarrative } from '@/components/product-insight/insight-narrative';
 import type { ProductInsightBundle } from '@/core/product-insight/types';
+import { defaultInsightNarrativeSections } from '@/lib/product-insight/narrative-sections';
 import {
   DataReliabilityFooter,
   MetricDrillDownPage,
@@ -130,9 +131,7 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
         rationale={rationale}
       />
 
-      <InsightList insights={insights.primary} label="Ce que SHARPIT comprend" />
-
-      <InsightList insights={insights.supporting} label="Ce qui guide la lecture" />
+      <InsightNarrative sections={defaultInsightNarrativeSections(insights)} />
 
       <RecoverySignalsSection
         autonomicClass={autonomicClass}
@@ -163,8 +162,6 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
       />
 
       <RecoveryAlertsSection illness={illness} overreaching={overreaching} />
-
-      <InsightList insights={insights.contextual} label="Vigilance et contexte" />
 
       <RecoveryEvidenceSection lines={keyEvidence} />
     </MetricDrillDownPage>

@@ -116,7 +116,7 @@ export function CalendarToolbar({
         <ChevronLeft className="size-4" />
       </Button>
       <Button disabled={!mounted} size="sm" variant="outline" onClick={onToday}>
-        {isMobile ? 'Auj.' : "Aujourd'hui"}
+        <span className="text-data">{isMobile ? 'Auj.' : "Aujourd'hui"}</span>
       </Button>
       <Button
         aria-label="Période suivante"
@@ -132,7 +132,7 @@ export function CalendarToolbar({
 
   if (isMobile) {
     return (
-      <div className="flex items-center justify-end gap-2">
+      <div className="surface-shell flex items-center justify-end gap-2 rounded-3xl px-3 py-2">
         {!showTitle && <div className="min-w-0 flex-1" />}
         {googleConnected && (
           <CalendarVisibilityMenu
@@ -160,9 +160,9 @@ export function CalendarToolbar({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="surface-shell flex flex-wrap items-end justify-between gap-4 rounded-3xl px-4 py-4">
         <div>
-          {!embedded && <p className="text-primary text-xs font-medium uppercase">Calendar</p>}
+          {!embedded && <p className="text-label text-primary">Calendar</p>}
           <h1
             className={cn(
               'font-heading font-semibold capitalize',

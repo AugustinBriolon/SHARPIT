@@ -4,20 +4,16 @@ import { ActivityType } from '@prisma/client';
 import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Badge } from '@/components/ui/badge';
+import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
 import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { LinkButton } from '@/components/ui/link-button';
+import { PhysioRail } from '@/components/ui/physio-rail';
 import { queryKeys } from '@/lib/query/keys';
-import {
-  activityTypeColors,
-  activityTypeLabels,
-  formatDate,
-  formatDistance,
-  formatDuration,
-} from '@/lib/format';
+import { activityTypeLabels, formatDate, formatDistance, formatDuration } from '@/lib/format';
 import type { PlannedSessionSummary } from '@/components/training/planned-session-link-card';
-import { parseSessionAnalysis, sessionScoreColor } from '@/lib/session-analysis-display';
+import { parseSessionAnalysis } from '@/lib/session-analysis-display';
+import { cn } from '@/lib/utils';
 
 type ActivityItem = {
   id: string;
@@ -36,9 +32,11 @@ type ActivityItem = {
 export function ActivityList({
   activities,
   emptyLabel,
+  compact = false,
 }: {
   activities: ActivityItem[];
   emptyLabel?: string;
+  compact?: boolean;
 }) {
   if (!activities.length) {
     return (
@@ -56,49 +54,60 @@ export function ActivityList({
   return (
     <div className="space-y-3">
       {activities.map((activity) => (
-        <ActivityRow key={activity.id} activity={activity} />
+        <ActivityRow key={activity.id} activity={activity} compact={compact} />
       ))}
     </div>
   );
 }
 
-function ActivityRow({ activity }: { activity: ActivityItem }) {
+function ActivityRow({ activity, compact = false }: { activity: ActivityItem; compact?: boolean }) {
   const summary = getActivitySummary(activity);
   const analysis = activity.plannedSession
     ? parseSessionAnalysis(activity.plannedSession.analysis)
     : null;
+  const loadValue = activity.load != null ? Math.round(activity.load) : null;
+  let railLabel = 'charge non disponible';
+  if (loadValue != null) {
+    railLabel = `charge estimée ${loadValue} tss`;
+  }
+  const summaryLine =
+    analysis?.summary ?? 'Lecture rapide de la charge et de la conformité de séance.';
 
   return (
     <Link
-      className="group border-border bg-card hover:border-primary/30 hover:bg-muted/30 flex items-center justify-between gap-4 rounded-xl border px-5 py-4 transition-colors"
       href={`/training/${activity.id}`}
+      className={[
+        'analysis-panel group hover:border-primary/30 hover:bg-analysis-surface-alt/60 rounded-analysis flex flex-col gap-3 transition-colors',
+        compact ? 'px-4 py-3' : 'px-5 py-4',
+      ].join(' ')}
     >
-      <div className="min-w-0 space-y-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge className={activityTypeColors[activity.type]} variant="outline">
-            {activityTypeLabels[activity.type]}
-          </Badge>
-          <span className="font-medium">{activity.title ?? activityTypeLabels[activity.type]}</span>
-          {activity.plannedSession && (
-            <span className="border-primary/20 bg-primary/5 text-primary rounded-full border px-2 py-0.5 text-[10px] font-medium">
-              Planifiée
-              {analysis ? (
-                <span className={sessionScoreColor(analysis.complianceScore)}>
-                  {' '}
-                  · {analysis.complianceScore}/100
-                </span>
-              ) : null}
+      <div className="flex items-start justify-between gap-4">
+        <div className="w-full min-w-0 space-y-1">
+          <div className="flex w-full items-center justify-between gap-2">
+            <span className={compact ? 'text-sm font-medium' : 'font-medium'}>
+              {activity.title ?? activityTypeLabels[activity.type]}
             </span>
-          )}
+            {activity.plannedSession && (
+              <span className="border-analysis-border bg-analysis-surface-alt text-muted-foreground rounded-full border px-2 py-0.5 text-[10px] font-medium">
+                Planifiée{' '}
+                {analysis ? (
+                  <span className="text-data text-foreground">{analysis.complianceScore}/100</span>
+                ) : null}
+              </span>
+            )}
+          </div>
+          <p
+            className={compact ? 'text-muted-foreground text-xs' : 'text-muted-foreground text-sm'}
+          >
+            {formatDate(new Date(activity.date))} · {formatDuration(activity.duration)}
+            {summary && !compact ? ` · ${summary}` : ''}
+          </p>
         </div>
-        <p className="text-muted-foreground text-sm">
-          {formatDate(new Date(activity.date))} · {formatDuration(activity.duration)}
-          {summary ? ` · ${summary}` : ''}
-        </p>
       </div>
-      <div className="shrink-0 text-right">
-        {activity.load != null && (
-          <p className="text-primary font-mono text-sm">{Math.round(activity.load)} TSS</p>
+      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_12rem] sm:items-end">
+        <PhysioRail markerLabel={railLabel} max={180} value={loadValue} />
+        {!compact && (
+          <div className="text-muted-foreground truncate text-xs sm:text-right">{summaryLine}</div>
         )}
       </div>
     </Link>

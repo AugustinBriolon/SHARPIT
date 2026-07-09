@@ -1,4 +1,5 @@
 import type { CorpsTone } from '@/components/corps/corps-ui';
+import { corpsToneFromAgeDelta, maxCorpsTone } from '@/lib/health-status';
 import { getAfibInterpretation, afibToScaleValue } from '@/lib/withings-ecg-display';
 
 export type CompositionMetricId =
@@ -86,10 +87,10 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
     explanation:
       "L'IMC classe le poids par rapport à la taille. Chez un sportif musclé, il peut être « élevé » sans excès de graisse. Utilise-le surtout pour suivre une tendance, pas comme verdict isolé.",
     zones: [
-      { label: 'Insuffisance', min: 0, max: 18.5, tone: 'moderate' },
-      { label: 'Normal', min: 18.5, max: 25, tone: 'good' },
-      { label: 'Surpoids', min: 25, max: 30, tone: 'moderate' },
-      { label: 'Obésité', min: 30, max: 50, tone: 'low' },
+      { label: 'Insuffisance', min: 0, max: 18.5, tone: 'watch' },
+      { label: 'Normal', min: 18.5, max: 25, tone: 'ok' },
+      { label: 'Surpoids', min: 25, max: 30, tone: 'watch' },
+      { label: 'Obésité', min: 30, max: 50, tone: 'attention' },
     ],
     interpret(value, ctx) {
       const zone = pickZone(value, COMPOSITION_METRIC_GUIDES.bmi.zones);
@@ -108,10 +109,10 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
     explanation:
       'La balance estime la graisse via un courant électrique faible. L’hydratation, l’heure de pesée et la posture modifient le résultat. La tendance sur plusieurs semaines est plus fiable qu’une mesure isolée.',
     zones: [
-      { label: 'Très basse', min: 0, max: 8, tone: 'moderate' },
-      { label: 'Athlétique', min: 8, max: 15, tone: 'good' },
-      { label: 'Modérée', min: 15, max: 22, tone: 'good' },
-      { label: 'Élevée', min: 22, max: 100, tone: 'moderate' },
+      { label: 'Très basse', min: 0, max: 8, tone: 'watch' },
+      { label: 'Athlétique', min: 8, max: 15, tone: 'ok' },
+      { label: 'Modérée', min: 15, max: 22, tone: 'ok' },
+      { label: 'Élevée', min: 22, max: 100, tone: 'watch' },
     ],
     interpret(value) {
       const zone = pickZone(value, COMPOSITION_METRIC_GUIDES.bodyFatPct.zones);
@@ -126,9 +127,9 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
     explanation:
       'Withings calcule un pourcentage à partir de la masse musculaire en kg. Ce n’est pas identique au « muscle squelettique » Renpho : compare surtout l’évolution dans le temps, pas les valeurs absolues entre marques.',
     zones: [
-      { label: 'Bas', min: 0, max: 65, tone: 'moderate' },
-      { label: 'Typique', min: 65, max: 80, tone: 'good' },
-      { label: 'Élevé', min: 80, max: 100, tone: 'good' },
+      { label: 'Bas', min: 0, max: 65, tone: 'watch' },
+      { label: 'Typique', min: 65, max: 80, tone: 'ok' },
+      { label: 'Élevé', min: 80, max: 100, tone: 'ok' },
     ],
     interpret(value) {
       const zone = pickZone(value, COMPOSITION_METRIC_GUIDES.musclePct.zones);
@@ -143,9 +144,9 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
     explanation:
       'Plus l’indice est bas, mieux c’est en général. C’est une estimation : repas récents, stress et entraînement peuvent influencer la mesure du jour.',
     zones: [
-      { label: 'Optimal', min: 0, max: 6, tone: 'good' },
-      { label: 'Modéré', min: 6, max: 12, tone: 'moderate' },
-      { label: 'Élevé', min: 12, max: 30, tone: 'low' },
+      { label: 'Optimal', min: 0, max: 6, tone: 'ok' },
+      { label: 'Modéré', min: 6, max: 12, tone: 'watch' },
+      { label: 'Élevé', min: 12, max: 30, tone: 'attention' },
     ],
     interpret(value) {
       const zone = pickZone(value, COMPOSITION_METRIC_GUIDES.visceralFat.zones);
@@ -160,9 +161,9 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
     explanation:
       'L’eau corporelle reflète surtout l’hydratation du moment. Pesée le matin à jeun donne des comparaisons plus stables qu’après un repas ou une séance.',
     zones: [
-      { label: 'Bas', min: 0, max: 50, tone: 'moderate' },
-      { label: 'Typique', min: 50, max: 65, tone: 'good' },
-      { label: 'Élevé', min: 65, max: 100, tone: 'good' },
+      { label: 'Bas', min: 0, max: 50, tone: 'watch' },
+      { label: 'Typique', min: 50, max: 65, tone: 'ok' },
+      { label: 'Élevé', min: 65, max: 100, tone: 'ok' },
     ],
     interpret(value) {
       const zone = pickZone(value, COMPOSITION_METRIC_GUIDES.waterPct.zones);
@@ -177,9 +178,9 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
     explanation:
       'Le BMR est une estimation de tes besoins caloriques au repos complet. Utile pour le suivi nutritionnel ; la dépense réelle inclut activité, NEAT et entraînement.',
     zones: [
-      { label: 'Bas', min: 0, max: 1400, tone: 'moderate' },
-      { label: 'Typique', min: 1400, max: 2200, tone: 'good' },
-      { label: 'Élevé', min: 2200, max: 4000, tone: 'good' },
+      { label: 'Bas', min: 0, max: 1400, tone: 'watch' },
+      { label: 'Typique', min: 1400, max: 2200, tone: 'ok' },
+      { label: 'Élevé', min: 2200, max: 4000, tone: 'ok' },
     ],
     interpret(value, ctx) {
       const zone = pickZone(value, COMPOSITION_METRIC_GUIDES.bmr.zones);
@@ -198,15 +199,24 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
     explanation:
       'Withings compare ton profil (masse maigre, graisse, BMR…) à des références populationnelles. Un âge métabolique inférieur à ton âge chronologique est généralement interprété positivement.',
     zones: [
-      { label: 'Jeune', min: 0, max: 30, tone: 'good' },
-      { label: 'Modéré', min: 30, max: 45, tone: 'good' },
-      { label: 'Élevé', min: 45, max: 100, tone: 'moderate' },
+      { label: 'Jeune', min: 0, max: 30, tone: 'ok' },
+      { label: 'Modéré', min: 30, max: 45, tone: 'ok' },
+      { label: 'Élevé', min: 45, max: 100, tone: 'watch' },
     ],
     interpret(value, ctx) {
+      if (ctx.chronologicalAgeYears == null) {
+        return {
+          zoneLabel: 'Âge estimé',
+          tone: 'neutral',
+          personalizedNote: null,
+        };
+      }
       const zone = pickZone(value, COMPOSITION_METRIC_GUIDES.metabolicAge.zones);
+      const ageTone = corpsToneFromAgeDelta(value, ctx.chronologicalAgeYears) ?? 'ok';
+      const tone = maxCorpsTone(zone.tone, ageTone);
       return {
         zoneLabel: zone.label,
-        tone: zone.tone,
+        tone,
         personalizedNote: ageDeltaNote(value, ctx.chronologicalAgeYears, 'Âge métabolique'),
       };
     },
@@ -219,15 +229,17 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
     explanation:
       'Dérivé de la vitesse d’onde de pouls (PWV) et d’algorithmes Withings. Un âge vasculaire proche ou inférieur à ton âge chronologique suggère une bonne souplesse vasculaire. Une mesure isolée ne remplace pas un avis médical.',
     zones: [
-      { label: 'Favorable', min: 0, max: 35, tone: 'good' },
-      { label: 'Modéré', min: 35, max: 50, tone: 'moderate' },
-      { label: 'Élevé', min: 50, max: 100, tone: 'low' },
+      { label: 'Favorable', min: 0, max: 35, tone: 'ok' },
+      { label: 'Modéré', min: 35, max: 50, tone: 'watch' },
+      { label: 'Élevé', min: 50, max: 100, tone: 'attention' },
     ],
     interpret(value, ctx) {
       const zone = pickZone(value, COMPOSITION_METRIC_GUIDES.vascularAgeYears.zones);
+      const ageTone = corpsToneFromAgeDelta(value, ctx.chronologicalAgeYears);
+      const tone = ageTone != null ? maxCorpsTone(zone.tone, ageTone) : zone.tone;
       return {
         zoneLabel: zone.label,
-        tone: zone.tone,
+        tone,
         personalizedNote: ageDeltaNote(value, ctx.chronologicalAgeYears, 'Âge vasculaire'),
       };
     },
@@ -240,10 +252,10 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
     explanation:
       'Mesurée debout sur la Body Scan. Des valeurs plus basses sont associées à une meilleure souplesse artérielle. Hydratation, caféine, stress et effort récent peuvent la modifier.',
     zones: [
-      { label: 'Optimal', min: 0, max: 7.1, tone: 'good' },
-      { label: 'Normal', min: 7.1, max: 8.5, tone: 'good' },
-      { label: 'Modéré', min: 8.5, max: 10, tone: 'moderate' },
-      { label: 'Élevé', min: 10, max: 20, tone: 'low' },
+      { label: 'Optimal', min: 0, max: 7.1, tone: 'ok' },
+      { label: 'Normal', min: 7.1, max: 8.5, tone: 'ok' },
+      { label: 'Modéré', min: 8.5, max: 10, tone: 'watch' },
+      { label: 'Élevé', min: 10, max: 20, tone: 'attention' },
     ],
     interpret(value) {
       const zone = pickZone(value, COMPOSITION_METRIC_GUIDES.pulseWaveVelocity.zones);
@@ -258,9 +270,9 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
     explanation:
       'Withings évalue la réponse des glandes sudoripares des pieds via conductance cutanée. Un score plus élevé est généralement interprété positivement. Facteurs externes : température, peau sèche, callosités.',
     zones: [
-      { label: 'À surveiller', min: 0, max: 50, tone: 'low' },
-      { label: 'Modéré', min: 50, max: 75, tone: 'moderate' },
-      { label: 'Bon', min: 75, max: 101, tone: 'good' },
+      { label: 'À surveiller', min: 0, max: 50, tone: 'attention' },
+      { label: 'Modéré', min: 50, max: 75, tone: 'watch' },
+      { label: 'Bon', min: 75, max: 101, tone: 'ok' },
     ],
     interpret(value) {
       const zone = pickZone(value, COMPOSITION_METRIC_GUIDES.nerveHealthScore.zones);
@@ -275,9 +287,9 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
     explanation:
       'Complète le score de santé nerveuse des pieds. Suis surtout l’évolution dans le temps plutôt qu’une valeur isolée.',
     zones: [
-      { label: 'Bas', min: 0, max: 50, tone: 'moderate' },
-      { label: 'Typique', min: 50, max: 75, tone: 'good' },
-      { label: 'Élevé', min: 75, max: 101, tone: 'good' },
+      { label: 'Bas', min: 0, max: 50, tone: 'watch' },
+      { label: 'Typique', min: 50, max: 75, tone: 'ok' },
+      { label: 'Élevé', min: 75, max: 101, tone: 'ok' },
     ],
     interpret(value) {
       const zone = pickZone(value, COMPOSITION_METRIC_GUIDES.nerveResponseScore.zones);
@@ -292,9 +304,9 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
     explanation:
       'L’ESC reflète la capacité de la peau des pieds à conduire un faible courant. Withings l’utilise dans le calcul de la santé nerveuse. Peau très sèche ou froide peut abaisser la valeur.',
     zones: [
-      { label: 'Bas', min: 0, max: 40, tone: 'moderate' },
-      { label: 'Typique', min: 40, max: 70, tone: 'good' },
-      { label: 'Élevé', min: 70, max: 200, tone: 'good' },
+      { label: 'Bas', min: 0, max: 40, tone: 'watch' },
+      { label: 'Typique', min: 40, max: 70, tone: 'ok' },
+      { label: 'Élevé', min: 70, max: 200, tone: 'ok' },
     ],
     interpret(value) {
       const zone = pickZone(value, COMPOSITION_METRIC_GUIDES.skinConductance.zones);
@@ -309,10 +321,10 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
     explanation:
       'Estimation basée sur plusieurs signaux Withings. Pour un suivi précis de performance, un test effort (lactate, analyse respiratoire) ou une montre Garmin reste plus fiable.',
     zones: [
-      { label: 'Bas', min: 0, max: 35, tone: 'moderate' },
-      { label: 'Correct', min: 35, max: 45, tone: 'good' },
-      { label: 'Bon', min: 45, max: 55, tone: 'good' },
-      { label: 'Excellent', min: 55, max: 100, tone: 'good' },
+      { label: 'Bas', min: 0, max: 35, tone: 'watch' },
+      { label: 'Correct', min: 35, max: 45, tone: 'ok' },
+      { label: 'Bon', min: 45, max: 55, tone: 'ok' },
+      { label: 'Excellent', min: 55, max: 100, tone: 'ok' },
     ],
     interpret(value) {
       const zone = pickZone(value, COMPOSITION_METRIC_GUIDES.vo2Max.zones);
@@ -327,9 +339,9 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
     explanation:
       'Une FC debout au repos typique se situe souvent entre 50 et 80 bpm chez un adulte entraîné. Caféine, manque de sommeil ou stress du jour influencent la mesure.',
     zones: [
-      { label: 'Bas', min: 0, max: 50, tone: 'good' },
-      { label: 'Typique', min: 50, max: 80, tone: 'good' },
-      { label: 'Élevé', min: 80, max: 200, tone: 'moderate' },
+      { label: 'Bas', min: 0, max: 50, tone: 'ok' },
+      { label: 'Typique', min: 50, max: 80, tone: 'ok' },
+      { label: 'Élevé', min: 80, max: 200, tone: 'watch' },
     ],
     interpret(value) {
       const zone = pickZone(value, COMPOSITION_METRIC_GUIDES.heartRate.zones);
@@ -345,9 +357,9 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
       'L’ECG mesure l’activité électrique du cœur. Withings compare ton enregistrement à un rythme sinusal normal (battements réguliers, sans fibrillation auriculaire). Mesure ponctuelle — ne remplace pas un avis médical.',
     scaleValue: afibToScaleValue,
     zones: [
-      { label: 'Rythme normal', min: 0, max: 34, tone: 'good' },
-      { label: 'Non concluant', min: 34, max: 67, tone: 'moderate' },
-      { label: 'FA détectée', min: 67, max: 100, tone: 'low' },
+      { label: 'Rythme normal', min: 0, max: 34, tone: 'ok' },
+      { label: 'Non concluant', min: 34, max: 67, tone: 'watch' },
+      { label: 'FA détectée', min: 67, max: 100, tone: 'attention' },
     ],
     interpret(value) {
       return getAfibInterpretation(value);
@@ -362,9 +374,9 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
       'Analyse du pouls pour repérer une fibrillation auriculaire. Moins précis qu’un ECG complet, utile comme alerte complémentaire.',
     scaleValue: afibToScaleValue,
     zones: [
-      { label: 'Rythme normal', min: 0, max: 34, tone: 'good' },
-      { label: 'Non concluant', min: 34, max: 67, tone: 'moderate' },
-      { label: 'FA détectée', min: 67, max: 100, tone: 'low' },
+      { label: 'Rythme normal', min: 0, max: 34, tone: 'ok' },
+      { label: 'Non concluant', min: 34, max: 67, tone: 'watch' },
+      { label: 'FA détectée', min: 67, max: 100, tone: 'attention' },
     ],
     interpret(value) {
       return getAfibInterpretation(value);
@@ -378,9 +390,9 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
     explanation:
       'Le QRS correspond à l’activation des ventricules. Un intervalle trop large peut suggérer un bloc de branche ou une conduction lente. Les valeurs normales adultes sont souvent entre 80 et 120 ms.',
     zones: [
-      { label: 'Étroit', min: 0, max: 80, tone: 'good' },
-      { label: 'Normal', min: 80, max: 120, tone: 'good' },
-      { label: 'Large', min: 120, max: 200, tone: 'moderate' },
+      { label: 'Étroit', min: 0, max: 80, tone: 'ok' },
+      { label: 'Normal', min: 80, max: 120, tone: 'ok' },
+      { label: 'Large', min: 120, max: 200, tone: 'watch' },
     ],
     interpret(value) {
       const zone = pickZone(value, COMPOSITION_METRIC_GUIDES.qrsInterval.zones);
@@ -395,9 +407,9 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
     explanation:
       'Mesure la conduction atrio-ventriculaire. Typiquement 120–200 ms au repos. Un PR allongé peut refléter un ralentissement de conduction (ex. bloc AV du 1er degré).',
     zones: [
-      { label: 'Court', min: 0, max: 120, tone: 'moderate' },
-      { label: 'Normal', min: 120, max: 200, tone: 'good' },
-      { label: 'Allongé', min: 200, max: 320, tone: 'moderate' },
+      { label: 'Court', min: 0, max: 120, tone: 'watch' },
+      { label: 'Normal', min: 120, max: 200, tone: 'ok' },
+      { label: 'Allongé', min: 200, max: 320, tone: 'watch' },
     ],
     interpret(value) {
       const zone = pickZone(value, COMPOSITION_METRIC_GUIDES.prInterval.zones);
@@ -412,9 +424,9 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
     explanation:
       'Le QT varie avec la fréquence cardiaque — il faut le lire avec le QTc pour comparer entre mesures. Seul, il sert surtout de repère brut sur une même séance.',
     zones: [
-      { label: 'Court', min: 0, max: 350, tone: 'good' },
-      { label: 'Typique', min: 350, max: 450, tone: 'good' },
-      { label: 'Long', min: 450, max: 600, tone: 'moderate' },
+      { label: 'Court', min: 0, max: 350, tone: 'ok' },
+      { label: 'Typique', min: 350, max: 450, tone: 'ok' },
+      { label: 'Long', min: 450, max: 600, tone: 'watch' },
     ],
     interpret(value) {
       const zone = pickZone(value, COMPOSITION_METRIC_GUIDES.qtInterval.zones);
@@ -433,9 +445,9 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
     explanation:
       'Le QTc corrige le QT selon la FC. En pratique clinique, un QTc > 450 ms (homme) ou > 460 ms (femme) mérite attention. Ici, c’est un repère sportif/éducatif issu de l’ECG balance.',
     zones: [
-      { label: 'Normal', min: 0, max: 450, tone: 'good' },
-      { label: 'Limite', min: 450, max: 480, tone: 'moderate' },
-      { label: 'Allongé', min: 480, max: 600, tone: 'low' },
+      { label: 'Normal', min: 0, max: 450, tone: 'ok' },
+      { label: 'Limite', min: 450, max: 480, tone: 'watch' },
+      { label: 'Allongé', min: 480, max: 600, tone: 'attention' },
     ],
     interpret(value) {
       const zone = pickZone(value, COMPOSITION_METRIC_GUIDES.qtcInterval.zones);

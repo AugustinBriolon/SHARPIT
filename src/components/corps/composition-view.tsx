@@ -15,6 +15,9 @@ import {
 } from '@/components/corps/corps-ui';
 import { MetricLineChart } from '@/components/recovery/health-charts';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CORPS_TONE_TEXT } from '@/lib/metric-tone';
+import type { CorpsTone } from '@/lib/metric-tone';
+import { isDeltaStatusTone } from '@/lib/health-status';
 import { cn } from '@/lib/utils';
 
 const TREND_WINDOWS = [
@@ -52,25 +55,41 @@ function HeroMini({
   value,
   unit,
   deltaDisplay,
+  deltaTone = 'ok',
+  deltaHint,
+  tone = 'neutral',
 }: {
   label: string;
   value: number | null;
   unit: string;
   deltaDisplay: string | null;
+  deltaTone?: CorpsTone;
+  deltaHint?: string | null;
+  tone?: CorpsTone;
 }) {
   return (
     <div className="bg-background/50 px-3 py-2.5 text-center">
       <p className="text-muted-foreground min-h-6.5 text-[9px] font-semibold tracking-[0.12em] uppercase md:min-h-fit">
         {label}
       </p>
-      <p className="mt-1 text-lg font-bold tabular-nums">
+      <p className={cn('mt-1 text-lg font-bold tabular-nums', CORPS_TONE_TEXT[tone])}>
         {value != null ? value : '—'}
         {unit && value != null ? (
           <span className="text-muted-foreground text-xs font-normal"> {unit}</span>
         ) : null}
       </p>
       {deltaDisplay && deltaDisplay !== '—' ? (
-        <p className="text-muted-foreground mt-0.5 text-[9px]">{deltaDisplay}</p>
+        <p
+          className={cn(
+            'mt-0.5 text-[9px]',
+            isDeltaStatusTone(deltaTone) ? CORPS_TONE_TEXT[deltaTone] : 'text-muted-foreground',
+          )}
+        >
+          {deltaDisplay}
+        </p>
+      ) : null}
+      {deltaHint ? (
+        <p className="text-muted-foreground mt-1 text-[8px] leading-snug">{deltaHint}</p>
       ) : null}
     </div>
   );
@@ -162,33 +181,51 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
             </p>
 
             {vm.hero.weightDeltaDisplay ? (
-              <p
-                className={cn(
-                  'mt-2 text-xs font-medium',
-                  vm.hero.weightDeltaColorClass ?? 'text-muted-foreground',
-                )}
-              >
-                {vm.hero.weightDeltaDisplay}
-              </p>
+              <div className="mt-2 space-y-1">
+                <p
+                  className={cn(
+                    'text-xs font-medium',
+                    vm.hero.weightDeltaTone && isDeltaStatusTone(vm.hero.weightDeltaTone)
+                      ? CORPS_TONE_TEXT[vm.hero.weightDeltaTone]
+                      : 'text-muted-foreground',
+                  )}
+                >
+                  {vm.hero.weightDeltaDisplay}
+                </p>
+                {vm.hero.weightDeltaHint ? (
+                  <p className="text-muted-foreground text-[10px] leading-snug">
+                    {vm.hero.weightDeltaHint}
+                  </p>
+                ) : null}
+              </div>
             ) : null}
           </div>
 
           <div className="grid min-w-[min(100%,280px)] grid-cols-3 gap-3 sm:gap-4">
             <HeroMini
               deltaDisplay={vm.hero.heroMini.bodyFatPct.deltaDisplay}
+              deltaHint={vm.hero.heroMini.bodyFatPct.deltaHint}
+              deltaTone={vm.hero.heroMini.bodyFatPct.deltaTone}
               label="Masse grasse"
+              tone={vm.hero.heroMini.bodyFatPct.tone}
               unit="%"
               value={vm.hero.heroMini.bodyFatPct.value}
             />
             <HeroMini
               deltaDisplay={vm.hero.heroMini.musclePct.deltaDisplay}
+              deltaHint={vm.hero.heroMini.musclePct.deltaHint}
+              deltaTone={vm.hero.heroMini.musclePct.deltaTone}
               label="Muscle"
+              tone={vm.hero.heroMini.musclePct.tone}
               unit="%"
               value={vm.hero.heroMini.musclePct.value}
             />
             <HeroMini
               deltaDisplay={vm.hero.heroMini.visceralFat.deltaDisplay}
+              deltaHint={vm.hero.heroMini.visceralFat.deltaHint}
+              deltaTone={vm.hero.heroMini.visceralFat.deltaTone}
               label="Viscéral"
+              tone={vm.hero.heroMini.visceralFat.tone}
               unit=""
               value={vm.hero.heroMini.visceralFat.value}
             />
@@ -207,6 +244,8 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
           <CompositionMetricCard
             key={card.cardId}
             footer={card.footer}
+            footerHint={card.footerHint}
+            footerTone={card.footerTone}
             guideId={card.guideId}
             label={card.label}
             tone={card.tone}
@@ -227,6 +266,8 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
             <CompositionMetricCard
               key={card.cardId}
               footer={card.footer}
+              footerHint={card.footerHint}
+              footerTone={card.footerTone}
               guideId={card.guideId}
               label={card.label}
               tone={card.tone}
@@ -251,6 +292,8 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
               <CompositionMetricCard
                 key={card.cardId}
                 footer={card.footer}
+                footerHint={card.footerHint}
+                footerTone={card.footerTone}
                 guideId={card.guideId}
                 label={card.label}
                 tone={card.tone}

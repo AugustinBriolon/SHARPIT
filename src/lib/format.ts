@@ -8,6 +8,14 @@ export function formatDuration(seconds?: number | null): string {
   return `${m} min`;
 }
 
+/** Format mm:ss pour séries chronométrées (muscu, étirements). */
+export function formatClockDuration(seconds?: number | null): string {
+  if (!seconds) return '—';
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 export function formatPace(secPerKm?: number | null): string {
   if (!secPerKm) return '—';
   const m = Math.floor(secPerKm / 60);

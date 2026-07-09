@@ -1,5 +1,7 @@
 'use client';
 
+import { ActivityType } from '@prisma/client';
+import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,11 +12,14 @@ import {
 } from '@/hooks/use-data';
 import { birthDateToInput } from '@/lib/athlete-profile-utils';
 import { queryKeys } from '@/lib/query/keys';
+import type { ClientThresholdSnapshot } from '@/lib/query/types';
+import { dedupeThresholdHistory, describeThresholdChanges } from '@/lib/threshold-history';
+import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Check, Download, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { Check, ChevronDown, Download, Loader2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 interface ProfileData {
   heightCm: number | null;
@@ -38,6 +43,14 @@ interface GarminImportResult {
   vo2maxRunning: number | null;
   vo2maxCycling: number | null;
 }
+
+const THRESHOLD_SOURCE_LABELS: Record<string, string> = {
+  estimated: 'estimé',
+  garmin: 'Garmin',
+  manual: 'manuel',
+};
+
+const NUMERIC_INPUT_CLASS = 'text-data tabular-nums';
 
 function paceToInput(secPerKm: number | null): string {
   if (secPerKm == null) return '';
@@ -71,6 +84,148 @@ function parsePaceInput(value: string): number | null {
   const s = Number(parts[1]);
   if (!Number.isFinite(m) || !Number.isFinite(s)) return null;
   return m * 60 + s;
+}
+
+function formatThresholdSource(source: string): string {
+  return THRESHOLD_SOURCE_LABELS[source] ?? source;
+}
+
+function ProfileFormSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="border-analysis-border/60 rounded-analysis space-y-4 border px-4 py-4">
+      <div>
+        <h3 className="text-sm font-semibold tracking-tight">{title}</h3>
+        {description ? (
+          <p className="text-muted-foreground mt-1 text-xs leading-relaxed">{description}</p>
+        ) : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function ThresholdHistoryPanel({ history }: { history: ClientThresholdSnapshot[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const deduped = useMemo(() => dedupeThresholdHistory(history), [history]);
+
+  if (deduped.length === 0) return null;
+
+  const entries = deduped.map((snapshot, index) => ({
+    snapshot,
+    changes: describeThresholdChanges(snapshot, deduped[index + 1]),
+  }));
+
+  const latest = entries[0]!;
+  const olderCount = entries.length - 1;
+
+  return (
+    <div className="bg-muted/30 rounded-analysis border-analysis-border/60 space-y-2 border px-3 py-3">
+      <p className="text-muted-foreground text-[11px] font-medium tracking-[0.12em] uppercase">
+        Historique des seuils
+      </p>
+
+      <div className="space-y-1">
+        <p className="text-muted-foreground text-xs">
+          {format(latest.snapshot.createdAt, 'd MMM yyyy', { locale: fr })} ·{' '}
+          {formatThresholdSource(latest.snapshot.source)}
+        </p>
+        <ul className="space-y-0.5">
+          {latest.changes.map((change) => (
+            <li key={change} className="text-foreground text-sm leading-snug">
+              <span className="text-data">{change}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {olderCount > 0 ? (
+        <div className="space-y-2">
+          <Button
+            className="h-8 px-2 text-xs"
+            size="sm"
+            type="button"
+            variant="ghost"
+            onClick={() => setExpanded((open) => !open)}
+          >
+            <ChevronDown
+              className={cn('size-3.5 transition-transform', expanded && 'rotate-180')}
+            />
+            {expanded
+              ? 'Masquer l’historique'
+              : `Voir l’historique complet (${olderCount} mise${olderCount > 1 ? 's' : ''} antérieure${olderCount > 1 ? 's' : ''})`}
+          </Button>
+
+          {expanded ? (
+            <ul className="border-analysis-border/60 space-y-3 border-t pt-3">
+              {entries.slice(1).map(({ snapshot, changes }) => (
+                <li key={snapshot.id} className="space-y-1">
+                  <p className="text-muted-foreground text-xs">
+                    {format(snapshot.createdAt, 'd MMM yyyy', { locale: fr })} ·{' '}
+                    {formatThresholdSource(snapshot.source)}
+                  </p>
+                  <ul className="space-y-0.5">
+                    {changes.map((change) => (
+                      <li key={change} className="text-sm leading-snug">
+                        <span className="text-data text-foreground">{change}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function Vo2maxIndicators({
+  vo2maxRunning,
+  vo2maxCycling,
+}: {
+  vo2maxRunning: number | null;
+  vo2maxCycling: number | null;
+}) {
+  if (vo2maxRunning == null && vo2maxCycling == null) return null;
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2">
+        {vo2maxRunning != null ? (
+          <div className="bg-muted/40 rounded-analysis border-analysis-border/60 border px-3 py-2">
+            <p className="text-muted-foreground flex items-center gap-1.5 text-[11px] tracking-wider uppercase">
+              <ActivityTypeIndicator type={ActivityType.RUN} />
+              VO2max
+            </p>
+            <p className="text-data text-foreground mt-0.5 text-lg font-semibold tabular-nums">
+              {vo2maxRunning}
+            </p>
+          </div>
+        ) : null}
+        {vo2maxCycling != null ? (
+          <div className="bg-muted/40 rounded-analysis border-analysis-border/60 border px-3 py-2">
+            <p className="text-muted-foreground flex items-center gap-1.5 text-[11px] tracking-wider uppercase">
+              <ActivityTypeIndicator type={ActivityType.BIKE} />
+              VO2max
+            </p>
+            <p className="text-data text-foreground mt-0.5 text-lg font-semibold tabular-nums">
+              {vo2maxCycling}
+            </p>
+          </div>
+        ) : null}
+      </div>
+      <p className="text-muted-foreground text-[11px]">Import Garmin — lecture seule</p>
+    </div>
+  );
 }
 
 export function AthleteProfilePanel({ initial }: { initial: ProfileData | null }) {
@@ -118,12 +273,15 @@ export function AthleteProfilePanel({ initial }: { initial: ProfileData | null }
       }
       if (data.ftpW != null) setFtpW(String(data.ftpW));
       if (data.lthr != null) setLthr(String(data.lthr));
-      if (data.runThresholdPaceSecPerKm != null)
+      if (data.runThresholdPaceSecPerKm != null) {
         setThresholdPace(paceToInput(data.runThresholdPaceSecPerKm));
+      }
       setVo2maxRunning(data.vo2maxRunning);
       setVo2maxCycling(data.vo2maxCycling);
       setMessage('Seuils importés depuis Garmin et enregistrés.');
       await queryClient.invalidateQueries({ queryKey: ['activity-stream'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.thresholdHistory });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.athleteProfile });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur');
     } finally {
@@ -184,6 +342,7 @@ export function AthleteProfilePanel({ initial }: { initial: ProfileData | null }
       setMessage('Profil enregistré — les zones et métriques seront recalculées.');
       await queryClient.invalidateQueries({ queryKey: ['activity-stream'] });
       await queryClient.invalidateQueries({ queryKey: queryKeys.thresholdPreview });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.thresholdHistory });
       await queryClient.invalidateQueries({ queryKey: queryKeys.athleteProfile });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur');
@@ -206,8 +365,11 @@ export function AthleteProfilePanel({ initial }: { initial: ProfileData | null }
       }
       setMessage('Seuils estimés appliqués depuis tes records.');
       await queryClient.invalidateQueries({ queryKey: ['activity-stream'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.athleteProfile });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur');
+    } finally {
+      // applyEstimates mutation already invalidates history
     }
   }
 
@@ -223,12 +385,11 @@ export function AthleteProfilePanel({ initial }: { initial: ProfileData | null }
     : null;
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
+    <form className="space-y-5" onSubmit={handleSubmit}>
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <p className="text-muted-foreground max-w-md text-sm">
-          Taille et date de naissance alimentent les comparaisons de composition (IMC, âge
-          vasculaire, etc.). Les seuils alimentent les zones FC/puissance, l&apos;IF, le TSS et le
-          découplage sur chaque séance.
+        <p className="text-muted-foreground max-w-lg text-sm leading-relaxed">
+          Plus ton profil est juste, plus le coach calibre bien tes zones et tes conseils du jour.
+          Mets à jour ici ce qui a changé — le reste s&apos;enrichit avec tes séances.
         </p>
         <div className="flex flex-col items-end gap-1">
           <Button
@@ -241,183 +402,165 @@ export function AthleteProfilePanel({ initial }: { initial: ProfileData | null }
             <Download className="size-4" />
             {importing ? 'Import…' : 'Importer depuis Garmin'}
           </Button>
-          {syncedLabel && (
-            <span className="text-muted-foreground text-[11px]">Importé le {syncedLabel}</span>
-          )}
+          {syncedLabel ? (
+            <span className="text-muted-foreground text-[11px]">
+              Dernier import Garmin · <span className="text-data">{syncedLabel}</span>
+            </span>
+          ) : null}
         </div>
       </div>
 
-      {preview?.hasChanges && (
-        <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-4">
-          <p className="text-sm font-medium">Seuils estimés depuis tes records</p>
-          <ul className="text-muted-foreground mt-2 space-y-1 text-xs">
-            {preview.changes.map((c) => (
-              <li key={c.field}>
-                {c.label} : {c.from} → <span className="text-foreground font-medium">{c.to}</span>
-              </li>
-            ))}
-          </ul>
-          <Button
-            className="mt-3"
-            disabled={applyEstimates.isPending}
-            size="sm"
-            type="button"
-            variant="outline"
-            onClick={handleApplyEstimates}
-          >
-            {applyEstimates.isPending ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <Check className="size-3.5" />
-            )}
-            Appliquer les estimations
-          </Button>
+      <ProfileFormSection
+        description="Pour contextualiser ta composition corporelle et ton âge physiologique."
+        title="Identité"
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="heightCm">Taille (cm)</Label>
+            <Input
+              className={NUMERIC_INPUT_CLASS}
+              id="heightCm"
+              max={250}
+              min={100}
+              placeholder="178"
+              type="number"
+              value={heightCm}
+              onChange={(e) => setHeightCm(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="birthDate">Date de naissance</Label>
+            <Input
+              className={NUMERIC_INPUT_CLASS}
+              id="birthDate"
+              type="date"
+              value={birthDate}
+              onChange={(e) => setBirthDate(e.target.value)}
+            />
+          </div>
         </div>
-      )}
+      </ProfileFormSection>
 
-      {history.length > 0 && (
-        <div className="border-border/60 bg-card/30 rounded-lg border p-3">
-          <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-            Historique des seuils
-          </p>
-          <ul className="mt-2 space-y-1.5">
-            {history.slice(0, 5).map((s) => (
-              <li
-                key={s.id}
-                className="text-muted-foreground flex flex-wrap items-center justify-between gap-2 text-xs"
-              >
-                <span>
-                  {format(s.createdAt, 'd MMM yyyy', {
-                    locale: fr,
-                  })}{' '}
-                  · {s.source}
-                </span>
-                <span className="text-foreground font-mono">
-                  {[
-                    s.ftpW != null ? `FTP ${s.ftpW}W` : null,
-                    s.runThresholdPaceSecPerKm != null
-                      ? paceToInput(s.runThresholdPaceSecPerKm)
-                      : null,
-                  ]
-                    .filter(Boolean)
-                    .join(' · ') || '—'}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <ProfileFormSection
+        description="Ces repères pilotent tes zones, l’intensité des séances et la charge calculée."
+        title="Seuils de performance"
+      >
+        {preview?.hasChanges ? (
+          <div className="analysis-panel rounded-analysis space-y-3 px-3.5 py-3.5">
+            <p className="text-sm font-medium">Proposition depuis tes records</p>
+            <ul className="text-muted-foreground space-y-1 text-xs">
+              {preview.changes.map((c) => (
+                <li key={c.field}>
+                  {c.label} : <span className="text-data">{c.from}</span> →{' '}
+                  <span className="text-data text-foreground font-medium">{c.to}</span>
+                </li>
+              ))}
+            </ul>
+            <Button
+              disabled={applyEstimates.isPending}
+              size="sm"
+              type="button"
+              variant="outline"
+              onClick={handleApplyEstimates}
+            >
+              {applyEstimates.isPending ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Check className="size-3.5" />
+              )}
+              Appliquer les estimations
+            </Button>
+          </div>
+        ) : null}
 
-      {(vo2maxRunning != null || vo2maxCycling != null) && (
-        <div className="flex flex-wrap gap-3">
-          {vo2maxRunning != null && (
-            <div className="border-border/60 bg-card/40 rounded-lg border px-4 py-2">
-              <p className="text-muted-foreground text-[11px] tracking-wider uppercase">
-                VO2max course
-              </p>
-              <p className="font-mono text-xl font-semibold text-emerald-600">{vo2maxRunning}</p>
-            </div>
-          )}
-          {vo2maxCycling != null && (
-            <div className="border-border/60 bg-card/40 rounded-lg border px-4 py-2">
-              <p className="text-muted-foreground text-[11px] tracking-wider uppercase">
-                VO2max vélo
-              </p>
-              <p className="font-mono text-xl font-semibold text-cyan-600">{vo2maxCycling}</p>
-            </div>
-          )}
-        </div>
-      )}
+        {history.length > 0 ? <ThresholdHistoryPanel history={history} /> : null}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="heightCm">Taille (cm)</Label>
-          <Input
-            id="heightCm"
-            max={250}
-            min={100}
-            placeholder="178"
-            type="number"
-            value={heightCm}
-            onChange={(e) => setHeightCm(e.target.value)}
-          />
+        <Vo2maxIndicators vo2maxCycling={vo2maxCycling} vo2maxRunning={vo2maxRunning} />
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="ftpW">FTP vélo (W)</Label>
+            <Input
+              className={NUMERIC_INPUT_CLASS}
+              id="ftpW"
+              min={1}
+              placeholder="280"
+              type="number"
+              value={ftpW}
+              onChange={(e) => setFtpW(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="maxHr">FC max (bpm)</Label>
+            <Input
+              className={NUMERIC_INPUT_CLASS}
+              id="maxHr"
+              min={1}
+              placeholder="190"
+              type="number"
+              value={maxHr}
+              onChange={(e) => setMaxHr(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="lthr">FC seuil / LTHR (bpm)</Label>
+            <Input
+              className={NUMERIC_INPUT_CLASS}
+              id="lthr"
+              min={1}
+              placeholder="168"
+              type="number"
+              value={lthr}
+              onChange={(e) => setLthr(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="thresholdPace">Allure seuil (min:sec/km)</Label>
+            <Input
+              className={NUMERIC_INPUT_CLASS}
+              id="thresholdPace"
+              placeholder="4:15"
+              value={thresholdPace}
+              onChange={(e) => setThresholdPace(e.target.value)}
+            />
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="birthDate">Date de naissance</Label>
-          <Input
-            id="birthDate"
-            type="date"
-            value={birthDate}
-            onChange={(e) => setBirthDate(e.target.value)}
-          />
+      </ProfileFormSection>
+
+      <ProfileFormSection
+        description="Pour calibrer tes objectifs de récupération et les conseils sommeil."
+        title="Sommeil"
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="sleepHours">Objectif sommeil (heures)</Label>
+            <Input
+              className={NUMERIC_INPUT_CLASS}
+              id="sleepHours"
+              max={12}
+              min={5}
+              placeholder="8"
+              step={0.25}
+              type="number"
+              value={sleepHours}
+              onChange={(e) => setSleepHours(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="sleepBedtime">Heure de coucher visée (HH:mm)</Label>
+            <Input
+              className={NUMERIC_INPUT_CLASS}
+              id="sleepBedtime"
+              placeholder="22:30"
+              value={sleepBedtime}
+              onChange={(e) => setSleepBedtime(e.target.value)}
+            />
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="ftpW">FTP vélo (W)</Label>
-          <Input
-            id="ftpW"
-            min={1}
-            placeholder="280"
-            type="number"
-            value={ftpW}
-            onChange={(e) => setFtpW(e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="maxHr">FC max (bpm)</Label>
-          <Input
-            id="maxHr"
-            min={1}
-            placeholder="190"
-            type="number"
-            value={maxHr}
-            onChange={(e) => setMaxHr(e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="lthr">FC seuil / LTHR (bpm)</Label>
-          <Input
-            id="lthr"
-            min={1}
-            placeholder="168"
-            type="number"
-            value={lthr}
-            onChange={(e) => setLthr(e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="thresholdPace">Allure seuil (min:sec/km)</Label>
-          <Input
-            id="thresholdPace"
-            placeholder="4:15"
-            value={thresholdPace}
-            onChange={(e) => setThresholdPace(e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="sleepHours">Objectif sommeil (heures)</Label>
-          <Input
-            id="sleepHours"
-            max={12}
-            min={5}
-            placeholder="8"
-            step={0.25}
-            type="number"
-            value={sleepHours}
-            onChange={(e) => setSleepHours(e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="sleepBedtime">Heure de coucher visée (HH:mm)</Label>
-          <Input
-            id="sleepBedtime"
-            placeholder="22:30"
-            value={sleepBedtime}
-            onChange={(e) => setSleepBedtime(e.target.value)}
-          />
-        </div>
-      </div>
-      {message && <p className="text-sm text-emerald-600">{message}</p>}
-      {error && <p className="text-destructive text-sm">{error}</p>}
+      </ProfileFormSection>
+
+      {message ? <p className="text-sm text-emerald-600">{message}</p> : null}
+      {error ? <p className="text-destructive text-sm">{error}</p> : null}
       <Button disabled={saving} type="submit">
         {saving ? 'Enregistrement…' : 'Enregistrer le profil'}
       </Button>

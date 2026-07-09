@@ -10,7 +10,7 @@ export type StatsStripItem = {
 
 export function DrillDownStatsStrip({ items }: { items: StatsStripItem[] }) {
   return (
-    <section className="dark:bg-card dark:ring-border flex divide-x rounded-3xl bg-white shadow-sm ring-1 ring-black/4">
+    <section className="analysis-panel rounded-analysis-lg grid grid-cols-2 gap-3 px-4 py-4 sm:grid-cols-4">
       {items.map((item) => (
         <MetricCell
           key={item.label}

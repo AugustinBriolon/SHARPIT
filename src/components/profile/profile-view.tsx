@@ -34,12 +34,7 @@ export function ProfileView({ initial }: { initial: ProfileData | null }) {
 
       <ProfileAiSummary />
 
-      <CorpsPanel className="space-y-4 py-5">
-        <CorpsSectionHeader
-          description="Taille, date de naissance, seuils FC/puissance, allure et objectifs sommeil pour les calculs SHARPIT."
-          label="Physiologie"
-          title="Profil athlète"
-        />
+      <CorpsPanel className="py-5">
         <AthleteProfilePanel initial={initial} />
       </CorpsPanel>
 

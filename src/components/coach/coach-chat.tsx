@@ -9,7 +9,7 @@ import {
 } from 'ai';
 import { Loader2, Send, Square } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Markdown } from '@/components/coach/markdown';
+import { CoachMessage } from '@/components/coach/coach-message';
 import { ToolActivity, type KnownSession } from '@/components/coach/tool-activity';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -192,7 +192,7 @@ export function CoachChat({
           return (
             <div key={message.id} className="flex justify-start">
               <div className="bg-muted/60 text-foreground w-full max-w-[90%] space-y-2 rounded-2xl px-4 py-3">
-                {text && <Markdown>{text}</Markdown>}
+                {text && <CoachMessage>{text}</CoachMessage>}
                 {inlineParts.map((part, i) => (
                   <ToolActivity key={i} part={part} />
                 ))}

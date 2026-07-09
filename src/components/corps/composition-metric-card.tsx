@@ -8,6 +8,8 @@ export function CompositionMetricCard({
   label,
   value,
   footer,
+  footerTone,
+  footerHint,
   tone = 'neutral',
   guideId,
   onExplain,
@@ -15,6 +17,8 @@ export function CompositionMetricCard({
   label: string;
   value: string;
   footer?: string;
+  footerTone?: CorpsTone;
+  footerHint?: string;
   tone?: CorpsTone;
   guideId?: CompositionMetricId;
   onExplain?: (id: CompositionMetricId) => void;
@@ -22,6 +26,8 @@ export function CompositionMetricCard({
   return (
     <MetricCell
       footer={footer}
+      footerHint={footerHint}
+      footerTone={footerTone}
       label={label}
       layout="card"
       tone={tone}

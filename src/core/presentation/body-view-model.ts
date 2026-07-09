@@ -33,6 +33,8 @@ export type BodyMetricCardVm = {
   label: string;
   valueDisplay: string;
   footer?: string;
+  footerTone?: CorpsTone;
+  footerHint?: string;
   tone: CorpsTone;
 };
 
@@ -68,11 +70,30 @@ export type BodyViewModel = {
     measuredAtLabel: string | null;
     sourceLabel: string | null;
     weightDeltaDisplay: string | null;
-    weightDeltaColorClass: string | null;
+    weightDeltaTone: CorpsTone | null;
+    weightDeltaHint: string | null;
     heroMini: {
-      bodyFatPct: { value: number | null; deltaDisplay: string | null };
-      musclePct: { value: number | null; deltaDisplay: string | null };
-      visceralFat: { value: number | null; deltaDisplay: string | null };
+      bodyFatPct: {
+        value: number | null;
+        deltaDisplay: string | null;
+        deltaTone: CorpsTone;
+        deltaHint: string | null;
+        tone: CorpsTone;
+      };
+      musclePct: {
+        value: number | null;
+        deltaDisplay: string | null;
+        deltaTone: CorpsTone;
+        deltaHint: string | null;
+        tone: CorpsTone;
+      };
+      visceralFat: {
+        value: number | null;
+        deltaDisplay: string | null;
+        deltaTone: CorpsTone;
+        deltaHint: string | null;
+        tone: CorpsTone;
+      };
     };
   };
 

@@ -18,13 +18,7 @@ export function DrillDownSectionCard({
   const paddingClass = sectionPaddingClass(padding);
 
   return (
-    <section
-      className={cn(
-        'dark:bg-card dark:ring-border rounded-3xl bg-white shadow-sm ring-1 ring-black/4',
-        paddingClass,
-        className,
-      )}
-    >
+    <section className={cn('analysis-panel rounded-analysis-lg', paddingClass, className)}>
       {children}
     </section>
   );

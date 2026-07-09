@@ -12,13 +12,11 @@ function SessionLine({ line }: { line: TodayViewModel['actionRow']['daySummaryLi
       {line.isDone && (
         <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
       )}
-      <p className="line-clamp-2 min-w-0 text-sm leading-snug font-medium break-words">
+      <p className="line-clamp-2 min-w-0 text-sm leading-snug font-medium wrap-break-word">
         {line.primary}
       </p>
       {line.secondary ? (
-        <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
-          {line.secondary}
-        </span>
+        <span className="text-data text-muted-foreground shrink-0 text-xs">{line.secondary}</span>
       ) : null}
     </div>
   );
@@ -77,19 +75,15 @@ export function TodayActionRow({
       className={cn('grid grid-cols-1 gap-3', vm.actionRow.showLimitingColumn && 'lg:grid-cols-2')}
     >
       {vm.actionRow.showLimitingColumn ? (
-        <section className="bg-card flex flex-col rounded-2xl border px-5 py-4 sm:px-6">
-          <p className="text-muted-foreground mb-2 text-[10px] font-semibold tracking-[0.14em] uppercase">
-            {vm.actionRow.limitingLabel}
-          </p>
+        <section className="analysis-panel rounded-analysis-lg flex flex-col px-5 py-4 sm:px-6">
+          <p className="text-label mb-2">{vm.actionRow.limitingLabel}</p>
           <LimitingContent vm={vm} />
         </section>
       ) : null}
 
-      <section className="bg-card flex flex-col rounded-2xl border px-5 py-4 sm:px-6">
+      <section className="analysis-panel rounded-analysis-lg flex flex-col px-5 py-4 sm:px-6">
         <div className="mb-3 flex items-start justify-between gap-2">
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.14em] uppercase">
-            {vm.actionRow.actionLabel}
-          </p>
+          <p className="text-label">{vm.actionRow.actionLabel}</p>
           <MorningWellnessDialog onCompleted={onWellnessCompleted} />
         </div>
 

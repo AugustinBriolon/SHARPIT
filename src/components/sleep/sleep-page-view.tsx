@@ -2,13 +2,13 @@
 
 import { SleepCoachTonight } from '@/components/sleep/sleep-coach-tonight';
 import { SleepHero } from '@/components/sleep/sleep-hero';
-import { SleepInsightCards } from '@/components/sleep/sleep-insight-cards';
 import { SleepPhasesSection } from '@/components/sleep/sleep-phases-section';
 import { SleepScoreExplainer } from '@/components/sleep/sleep-score-explainer';
 import { SleepStatsStrip } from '@/components/sleep/sleep-stats-strip';
 import { SleepTrendSection } from '@/components/sleep/sleep-trend-chart';
-import { InsightList } from '@/components/product-insight/insight-list';
+import { InsightNarrative } from '@/components/product-insight/insight-narrative';
 import { MetricDrillDownPage } from '@/components/today/drill-down/metric-drill-down-page';
+import { sleepInsightNarrativeSections } from '@/lib/product-insight/narrative-sections';
 import type { SleepPageViewProps } from '@/components/sleep/types';
 
 export type { SleepPageViewProps } from '@/components/sleep/types';
@@ -74,17 +74,13 @@ export function SleepPageView(props: SleepPageViewProps) {
         totalSleepMin={totalSleepMin}
       />
 
-      <InsightList insights={insights.primary} label="Ce que cette nuit change" />
+      <InsightNarrative sections={sleepInsightNarrativeSections(insights)} />
 
       <SleepCoachTonight view={coachView} />
 
-      <InsightList insights={insights.supporting} label="Action et architecture de la nuit" />
-
-      <SleepInsightCards insights={coachView.insights} />
-
       <SleepTrendSection data={barData} targetMin={sleepTargetMin} />
 
-      {totalSleepMin != null && totalSleepMin > 0 && (
+      {totalSleepMin != null && totalSleepMin > 0 ? (
         <SleepPhasesSection
           awakeMin={awakeMin}
           deepMin={deepMin}
@@ -92,9 +88,7 @@ export function SleepPageView(props: SleepPageViewProps) {
           remMin={remMin}
           totalMin={totalSleepMin}
         />
-      )}
-
-      <InsightList insights={insights.contextual} label="Contexte utile" />
+      ) : null}
 
       <SleepScoreExplainer garminScore={garminScore} scoreBreakdown={scoreBreakdown} />
     </MetricDrillDownPage>

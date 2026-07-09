@@ -1,10 +1,11 @@
 'use client';
 
-import { DrillDownHero } from '@/components/today/drill-down/hero';
+import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
 import { DrillDownDimensionRow } from '@/components/today/drill-down/dimension-row';
 import { DrillDownHighlightSection } from '@/components/today/drill-down/highlight-section';
-import { InsightList } from '@/components/product-insight/insight-list';
+import { InsightNarrative } from '@/components/product-insight/insight-narrative';
 import type { ProductInsightBundle } from '@/core/product-insight/types';
+import { defaultInsightNarrativeSections } from '@/lib/product-insight/narrative-sections';
 import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
 import {
@@ -82,17 +83,18 @@ export function AdaptationPageView({
         />
       }
     >
-      <DrillDownHero
+      <PhysioDrillDownHero
         date={date}
-        format="percent"
+        headline={statusLabel}
+        headlineClassName={statusClassName}
         isToday={isToday}
-        max={100}
         maxDate={maxDate}
-        primaryCaption={trendLabel}
-        score={adaptationIndex}
-        statusClassName={statusClassName}
-        statusLabel={statusLabel}
-        subtitle="Modèle d’adaptation"
+        quickReadCaption={trendLabel}
+        quickReadLabel="indice d'adaptation"
+        quickReadSuffix="%"
+        quickReadValue={adaptationIndex != null ? String(Math.round(adaptationIndex)) : '—'}
+        railValue={adaptationIndex}
+        subline="Modèle d'adaptation"
         onDateChange={onDateChange}
         onNextDay={onNextDay}
         onPreviousDay={onPreviousDay}
@@ -100,13 +102,13 @@ export function AdaptationPageView({
 
       <DrillDownHighlightSection
         bullets={rationale}
-        description="La meilleure facon d'ajuster le bloc a partir de ce que le modele voit."
+        description="La meilleure façon d'ajuster le bloc à partir de ce que le modèle voit."
         label="Décision de progression"
         title={verdictLabel}
         titleClassName={verdictClassName}
       />
 
-      <InsightList insights={insights.primary} label="Lecture primaire du bloc" />
+      <InsightNarrative sections={defaultInsightNarrativeSections(insights)} />
 
       {(plateauRisk || overreachingWithoutAdaptation || limitingFactor) && (
         <DrillDownSectionCard>
@@ -121,10 +123,8 @@ export function AdaptationPageView({
         </DrillDownSectionCard>
       )}
 
-      <InsightList insights={insights.supporting} label="Freins et leviers" />
-
       <DrillDownSectionCard>
-        <DrillDownSectionLabel>Ce qui nourrit ou freine l'adaptation</DrillDownSectionLabel>
+        <DrillDownSectionLabel>Ce qui nourrit ou freine l&apos;adaptation</DrillDownSectionLabel>
         <div className="mt-4 space-y-4">
           {dimensions.map((d) => (
             <DrillDownDimensionRow
@@ -152,8 +152,6 @@ export function AdaptationPageView({
           ) : null}
         </DrillDownSectionCard>
       ) : null}
-
-      <InsightList insights={insights.contextual} label="Contexte utile" />
     </MetricDrillDownPage>
   );
 }

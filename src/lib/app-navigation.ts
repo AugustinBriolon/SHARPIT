@@ -1,13 +1,4 @@
-import {
-  CalendarRange,
-  Menu,
-  PersonStanding,
-  Settings,
-  Sparkles,
-  Sun,
-  Target,
-  User,
-} from 'lucide-react';
+import { Dumbbell, HeartPulse, Settings, Sparkles, Sun } from 'lucide-react';
 
 export type NavIcon = typeof Sun;
 
@@ -20,38 +11,36 @@ export type AppNavItem = {
 
 export const todayNavItem: AppNavItem = {
   href: '/',
-  label: "Aujourd'hui",
+  label: 'Accueil',
   icon: Sun,
   match: (p) => p === '/' || p.startsWith('/today'),
 };
 
-export const sessionsNavItem: AppNavItem = {
-  href: '/seances',
-  label: 'Séances',
-  icon: CalendarRange,
+export const trainingNavItem: AppNavItem = {
+  href: '/training',
+  label: 'Entraînement',
+  icon: Dumbbell,
   match: (p) =>
-    p.startsWith('/seances') ||
     p.startsWith('/training') ||
+    p.startsWith('/seances') ||
     p.startsWith('/calendar') ||
     p.startsWith('/planning'),
 };
 
-export const corpsNavItem: AppNavItem = {
-  href: '/corps',
-  label: 'Mon corps',
-  icon: PersonStanding,
+export const biologyNavItem: AppNavItem = {
+  href: '/biology',
+  label: 'Physiologie',
+  icon: HeartPulse,
   match: (p) =>
+    p.startsWith('/biology') ||
     p.startsWith('/corps') ||
     p.startsWith('/recovery') ||
     p.startsWith('/body') ||
-    p.startsWith('/analytics'),
-};
-
-export const goalsNavItem: AppNavItem = {
-  href: '/goals',
-  label: 'Objectifs',
-  icon: Target,
-  match: (p) => p.startsWith('/goals'),
+    p.startsWith('/analytics') ||
+    p.startsWith('/today/sleep') ||
+    p.startsWith('/today/recovery') ||
+    p.startsWith('/today/effort') ||
+    p.startsWith('/today/adaptation'),
 };
 
 export const coachNavItem: AppNavItem = {
@@ -61,46 +50,27 @@ export const coachNavItem: AppNavItem = {
   match: (p) => p.startsWith('/coach'),
 };
 
-export const profileNavItem: AppNavItem = {
-  href: '/profil',
-  label: 'Profil',
-  icon: User,
-  match: (p) => p.startsWith('/profil'),
-};
-
 export const settingsNavItem: AppNavItem = {
   href: '/settings',
   label: 'Réglages',
   icon: Settings,
-  match: (p) => p.startsWith('/settings'),
+  match: (p) => p.startsWith('/settings') || p.startsWith('/profil') || p.startsWith('/goals'),
 };
 
 /** Navigation sidebar desktop (ordre complet). */
 export const sidebarNavItems: AppNavItem[] = [
   todayNavItem,
-  sessionsNavItem,
-  corpsNavItem,
-  goalsNavItem,
+  trainingNavItem,
+  biologyNavItem,
   coachNavItem,
+  settingsNavItem,
 ];
 
-/** Onglets bottom bar mobile (4 + Plus). */
+/** Onglets bottom bar mobile. */
 export const bottomNavItems: AppNavItem[] = [
   todayNavItem,
-  sessionsNavItem,
-  { ...corpsNavItem, label: 'Corps' },
+  trainingNavItem,
+  biologyNavItem,
   coachNavItem,
+  settingsNavItem,
 ];
-
-export const moreNavItems: AppNavItem[] = [goalsNavItem, profileNavItem, settingsNavItem];
-
-export const moreNavTrigger: AppNavItem = {
-  href: '#more',
-  label: 'Plus',
-  icon: Menu,
-  match: (p) => moreNavItems.some((item) => item.match(p)),
-};
-
-export function isMoreNavActive(pathname: string): boolean {
-  return moreNavItems.some((item) => item.match(pathname));
-}

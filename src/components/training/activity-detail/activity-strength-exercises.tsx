@@ -1,6 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dumbbell } from 'lucide-react';
+import { formatClockDuration } from '@/lib/format';
 import type { ActivityDetail } from './types';
+
+function formatStrengthSetDetail(set: ActivityDetail['strengthSets'][number]): string {
+  if (set.durationSec && set.durationSec > 0 && !set.weightKg) {
+    const perSet = formatClockDuration(set.durationSec);
+    return set.sets > 1 ? `${set.sets} × ${perSet}` : perSet;
+  }
+
+  const base = `${set.sets}×${set.reps}`;
+  return set.weightKg ? `${base} @ ${set.weightKg} kg` : base;
+}
 
 export function ActivityStrengthExercises({ activity }: { activity: ActivityDetail }) {
   const sets = activity.strengthSets;
@@ -34,8 +45,7 @@ export function ActivityStrengthExercises({ activity }: { activity: ActivityDeta
                   )}
                 </span>
                 <span className="font-mono text-sm tabular-nums">
-                  {set.sets}×{set.reps}
-                  {set.weightKg ? ` @ ${set.weightKg} kg` : ''}
+                  {formatStrengthSetDetail(set)}
                 </span>
                 <span className="text-muted-foreground flex items-center gap-2 text-xs">
                   {volume > 0 && <span className="font-mono">{Math.round(volume)} kg</span>}

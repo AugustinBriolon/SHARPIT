@@ -1,4 +1,6 @@
 import { BodySide, PhysicalCategory, PhysicalStatus } from '@prisma/client';
+import { corpsToneFromPhysicalSeverity, PHYSICAL_SEVERITY_CHART_STROKE } from '@/lib/health-status';
+import { CORPS_TONE_TEXT } from '@/lib/metric-tone';
 
 export const categoryLabels: Record<PhysicalCategory, string> = {
   PAIN: 'Douleur',
@@ -18,10 +20,11 @@ export const statusLabels: Record<PhysicalStatus, string> = {
 
 export const statusOrder: PhysicalStatus[] = ['ACTIVE', 'MONITORING', 'RESOLVED'];
 
-export const statusColors: Record<PhysicalStatus, string> = {
-  ACTIVE: 'text-red-400',
-  MONITORING: 'text-amber-400',
-  RESOLVED: 'text-emerald-400',
+/** Badge de workflow (statut de suivi) — neutre, distinct des teintes de sévérité. */
+export const statusBadgeClass: Record<PhysicalStatus, string> = {
+  ACTIVE: 'bg-muted text-muted-foreground',
+  MONITORING: 'bg-muted text-foreground/75',
+  RESOLVED: 'bg-muted/70 text-muted-foreground/80',
 };
 
 export const sideLabels: Record<BodySide, string> = {
@@ -50,17 +53,13 @@ export const COMMON_BODY_PARTS = [
   "Tendon d'Achille",
 ];
 
-/** Couleur de sévérité 0-10. */
+/** Couleur de sévérité 0–10 — via corpsToneFromPhysicalSeverity (health-status). */
 export function severityColor(severity?: number | null): string {
-  if (severity == null) return 'text-muted-foreground';
-  if (severity >= 7) return 'text-red-600';
-  if (severity >= 4) return 'text-amber-600';
-  return 'text-emerald-600';
+  return CORPS_TONE_TEXT[corpsToneFromPhysicalSeverity(severity)];
 }
 
 export function severityAccent(severity?: number | null): string {
-  if (severity == null) return '#64748b';
-  if (severity >= 7) return '#dc2626';
-  if (severity >= 4) return '#d97706';
-  return '#059669';
+  const tone = corpsToneFromPhysicalSeverity(severity);
+  if (tone === 'neutral' || tone === 'verify') return PHYSICAL_SEVERITY_CHART_STROKE.ok;
+  return PHYSICAL_SEVERITY_CHART_STROKE[tone];
 }

@@ -19,7 +19,7 @@ export interface WithingsEcgClassification {
 const BODY_SCAN_ECG_1_BASED: Record<number, WithingsEcgClassification> = {
   1: {
     label: 'FC basse',
-    tone: 'moderate',
+    tone: 'watch',
     meaning:
       'Fréquence cardiaque inférieure à 50 bpm pendant l’enregistrement. L’algorithme ne peut pas classifier le rythme dans ces conditions.',
     action:
@@ -27,7 +27,7 @@ const BODY_SCAN_ECG_1_BASED: Record<number, WithingsEcgClassification> = {
   },
   2: {
     label: 'FC très élevée',
-    tone: 'moderate',
+    tone: 'watch',
     meaning:
       'Fréquence cardiaque supérieure à 150 bpm. L’enregistrement ne peut pas être classifié (effort, stress, caféine, etc.).',
     action:
@@ -35,7 +35,7 @@ const BODY_SCAN_ECG_1_BASED: Record<number, WithingsEcgClassification> = {
   },
   3: {
     label: 'FC élevée — sans signe de FA',
-    tone: 'good',
+    tone: 'ok',
     meaning:
       'FC entre 100 et 150 bpm, rythme régulier, aucun signe de fibrillation auriculaire détecté sur cet enregistrement.',
     action:
@@ -43,7 +43,7 @@ const BODY_SCAN_ECG_1_BASED: Record<number, WithingsEcgClassification> = {
   },
   4: {
     label: 'Rythme sinusal',
-    tone: 'good',
+    tone: 'ok',
     meaning:
       'FC entre 50 et 99 bpm, battements réguliers. Aucun signe de fibrillation auriculaire sur cet enregistrement.',
     action:
@@ -51,7 +51,7 @@ const BODY_SCAN_ECG_1_BASED: Record<number, WithingsEcgClassification> = {
   },
   5: {
     label: 'Fibrillation auriculaire',
-    tone: 'low',
+    tone: 'attention',
     meaning:
       'FC entre 50 et 99 bpm avec rythme irrégulier compatible avec une fibrillation auriculaire.',
     action:
@@ -59,7 +59,7 @@ const BODY_SCAN_ECG_1_BASED: Record<number, WithingsEcgClassification> = {
   },
   6: {
     label: 'FA — FC élevée',
-    tone: 'low',
+    tone: 'attention',
     meaning:
       'FC entre 100 et 150 bpm avec rythme irrégulier compatible avec une fibrillation auriculaire.',
     action:
@@ -67,7 +67,7 @@ const BODY_SCAN_ECG_1_BASED: Record<number, WithingsEcgClassification> = {
   },
   7: {
     label: 'Non concluant',
-    tone: 'moderate',
+    tone: 'watch',
     meaning:
       'Enregistrement de bonne qualité, mais le signal ne peut être classé en rythme sinusal ou FA (arythmie autre, bloc de branche, etc.).',
     action:
@@ -75,7 +75,7 @@ const BODY_SCAN_ECG_1_BASED: Record<number, WithingsEcgClassification> = {
   },
   8: {
     label: 'Autre arythmie détectée',
-    tone: 'moderate',
+    tone: 'watch',
     meaning:
       'Signes d’arythmie autre que la FA (extrasystoles, bloc de branche…). L’appareil ne diagnostique que la FA, pas les autres arythmies.',
     action:
@@ -101,7 +101,7 @@ const LEGACY_ECG: Record<number, WithingsEcgClassification> = {
   5: BODY_SCAN_ECG_1_BASED[3]!,
   6: {
     label: 'FC basse (legacy)',
-    tone: 'moderate',
+    tone: 'watch',
     meaning: 'Fréquence cardiaque trop basse pour classifier le rythme (< 50 bpm).',
     action: 'Mesure au repos complet, puis refais un enregistrement.',
   },
@@ -136,13 +136,13 @@ export function getAfibInterpretation(value: number): {
 } {
   const info = resolveWithingsEcgClassification(value);
   let note: string | null = null;
-  if (info.tone === 'good') {
+  if (info.tone === 'ok') {
     note =
       'Comparé au rythme sinusal normal : aucun signe de fibrillation auriculaire sur cette mesure.';
-  } else if (info.tone === 'low') {
+  } else if (info.tone === 'attention') {
     note =
       'Écart par rapport au normal : signes compatibles avec une fibrillation auriculaire. Consulte si ce résultat est nouveau pour toi.';
-  } else if (info.tone === 'moderate') {
+  } else if (info.tone === 'watch') {
     note =
       'Non classifiable comme rythme sinusal ou FA — refaire une mesure au calme ou consulter si ça se répète.';
   } else if (info.tone === 'neutral') {
@@ -154,9 +154,9 @@ export function getAfibInterpretation(value: number): {
 /** Position sur l'échelle 0–100 pour l'explainer (3 zones : normal / non concluant / FA). */
 export function afibToScaleValue(value: number): number {
   const { tone } = resolveWithingsEcgClassification(value);
-  if (tone === 'good') return 15;
-  if (tone === 'low') return 85;
-  if (tone === 'moderate') return 50;
+  if (tone === 'ok') return 15;
+  if (tone === 'attention') return 85;
+  if (tone === 'watch') return 50;
   return 25;
 }
 

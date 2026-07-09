@@ -1,4 +1,5 @@
 import type { CorpsTone } from '@/lib/metric-tone';
+import { isDeltaStatusTone } from '@/lib/health-status';
 import {
   CORPS_TONE_DOT,
   CORPS_TONE_TEXT,
@@ -15,6 +16,8 @@ export function MetricCell({
   value,
   sub,
   footer,
+  footerTone,
+  footerHint,
   tone = 'neutral',
   layout = 'strip',
   showToneDot = false,
@@ -25,6 +28,8 @@ export function MetricCell({
   value: string;
   sub?: string;
   footer?: string;
+  footerTone?: CorpsTone;
+  footerHint?: string;
   tone?: MetricTone | CorpsTone;
   layout?: 'strip' | 'card' | 'compact';
   showToneDot?: boolean;
@@ -89,7 +94,21 @@ export function MetricCell({
         {value}
       </p>
       {sub && <p className={cn('text-foreground/80 mt-1 text-xs', footer && 'mt-1.5')}>{sub}</p>}
-      {footer && <p className="text-muted-foreground mt-1 text-[10px] leading-snug">{footer}</p>}
+      {footer && (
+        <p
+          className={cn(
+            'mt-1 text-[10px] leading-snug',
+            footerTone && isDeltaStatusTone(footerTone)
+              ? CORPS_TONE_TEXT[footerTone]
+              : 'text-muted-foreground',
+          )}
+        >
+          {footer}
+        </p>
+      )}
+      {footerHint && (
+        <p className="text-muted-foreground mt-1 text-[9px] leading-snug">{footerHint}</p>
+      )}
       {onExplain && (
         <button
           aria-label={explainLabel}

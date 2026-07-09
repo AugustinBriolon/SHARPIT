@@ -4,17 +4,18 @@ import Link from 'next/link';
 import { Sparkline } from '@/components/today/dashboard/sparkline';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { cn } from '@/lib/utils';
+import { PhysioRail } from '@/components/ui/physio-rail';
 
 export function TodayWeeklyTrajectory({ vm }: { vm: TodayViewModel }) {
   const t = vm.weeklyTrajectory;
+  const recoveryStroke = 'var(--color-chart-1)';
+  const loadStroke = 'var(--color-chart-4)';
 
   return (
-    <section className="bg-card rounded-2xl border px-5 py-4 sm:px-6">
+    <section className="analysis-panel rounded-analysis-lg px-5 py-4 sm:px-6">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.14em] uppercase">
-            {t.eyebrow}
-          </p>
+          <p className="text-label">{t.eyebrow}</p>
           <p className="text-foreground mt-1 text-sm font-semibold">
             <span className={cn('mr-1.5', t.trendClass)}>{t.trendArrow}</span>
             {t.headline}
@@ -34,15 +35,23 @@ export function TodayWeeklyTrajectory({ vm }: { vm: TodayViewModel }) {
         </div>
       </div>
 
+      <div className="mb-3">
+        <PhysioRail
+          markerLabel="repère visuel de la fenêtre de charge récente"
+          max={100}
+          value={t.hasSparks ? 50 : null}
+        />
+      </div>
+
       {t.hasSparks ? (
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-muted-foreground mb-1 text-[10px] uppercase">Récup. 14j</p>
-            <Sparkline stroke="#10b981" values={t.sparks.recoveryValues} />
+          <div className="analysis-panel rounded-analysis px-3 py-3">
+            <p className="text-label mb-1">Récup. 14j</p>
+            <Sparkline stroke={recoveryStroke} values={t.sparks.recoveryValues} />
           </div>
-          <div>
-            <p className="text-muted-foreground mb-1 text-[10px] uppercase">Charge 14j</p>
-            <Sparkline stroke="#3b82f6" values={t.sparks.effortValues} />
+          <div className="analysis-panel rounded-analysis px-3 py-3">
+            <p className="text-label mb-1">Charge 14j</p>
+            <Sparkline stroke={loadStroke} values={t.sparks.effortValues} />
           </div>
         </div>
       ) : (

@@ -51,7 +51,7 @@ function ActivityTypeFilterPills({
   const total = TYPE_ORDER.reduce((sum, type) => sum + counts[type], 0);
 
   return (
-    <div className="bg-muted/40 flex w-fit flex-wrap gap-1 rounded-full border p-1">
+    <div className="surface-shell flex w-fit flex-wrap gap-1 rounded-full p-1">
       <button
         aria-pressed={selected == null}
         type="button"

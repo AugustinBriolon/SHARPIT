@@ -8,13 +8,13 @@ export function buildEffortInsightBundle(input: EffortInsightInput) {
 
   primary.push({
     id: 'effort:daily-cost',
-    title: 'Cout du jour',
+    title: 'Coût du jour',
     summary:
       input.strainScore != null
         ? `${input.strainScore}/21 · ${input.fatigueTypeLabel}`
         : input.fatigueTypeLabel,
     explanation:
-      'La lecture utile n est pas seulement la charge accomplie, mais le type de cout que cette charge impose a ton organisme.',
+      "La lecture utile n'est pas seulement la charge accomplie, mais le type de coût que cette charge impose à ton organisme.",
     evidence: input.rationale,
     confidence: input.confidence,
     importance: 'HIGH',
@@ -28,8 +28,8 @@ export function buildEffortInsightBundle(input: EffortInsightInput) {
     summary: input.trainingCapacityLabel,
     explanation:
       input.performancePercent != null
-        ? `La capacite utile du jour est estimee autour de ${input.performancePercent} % de ton niveau frais.`
-        : 'La capacite traduit ce que le corps peut encore absorber sans payer trop cher ensuite.',
+        ? `La capacité utile du jour est estimée autour de ${input.performancePercent} % de ton niveau frais.`
+        : 'La capacité traduit ce que le corps peut encore absorber sans payer trop cher ensuite.',
     evidence: [
       input.estimatedDaysToFresh != null
         ? `${input.estimatedDaysToFresh} jour(s) pour revenir frais`
@@ -45,12 +45,12 @@ export function buildEffortInsightBundle(input: EffortInsightInput) {
   if (input.dominantDimensionLabel) {
     supporting.push({
       id: 'effort:dominant-system',
-      title: 'Systeme qui paie le plus',
+      title: 'Système qui paie le plus',
       summary: input.dominantDimensionLabel,
       explanation:
         input.limitingFactorLabel != null
           ? `Le facteur limitant principal est ${input.limitingFactorLabel.toLowerCase()}.`
-          : 'Identifier le systeme dominant aide a savoir quoi proteger sur la prochaine seance.',
+          : 'Identifier le système dominant aide à savoir quoi protéger sur la prochaine séance.',
       evidence: input.keyEvidence.slice(0, 3),
       confidence: input.confidence,
       importance: 'MEDIUM',
@@ -64,7 +64,7 @@ export function buildEffortInsightBundle(input: EffortInsightInput) {
     title: 'Contexte de charge',
     summary: `ACWR ${input.acwr > 0 ? input.acwr.toFixed(2) : '—'} · ${input.weeklyLoad} TSS / 7j`,
     explanation:
-      'Le contexte hebdomadaire sert surtout a juger si le cout du jour reste soutenable dans le bloc actuel.',
+      'Le contexte hebdomadaire sert surtout à juger si le coût du jour reste soutenable dans le bloc actuel.',
     evidence: [
       input.tsb != null ? `TSB ${input.tsb > 0 ? '+' : ''}${input.tsb}` : null,
       input.overreachingLabel,

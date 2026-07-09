@@ -1,10 +1,26 @@
 import { formatSleepDuration } from '@/lib/sleep-scoring';
 
 const STAGE_STYLES = {
-  deep: { color: '#1e3a8a', label: 'Profond', ideal: '13–23 %' },
-  rem: { color: '#7c3aed', label: 'Paradoxal', ideal: '20–25 %' },
-  light: { color: '#38bdf8', label: 'Léger', ideal: null },
-  awake: { color: '#fb923c', label: 'Éveillé', ideal: null },
+  deep: {
+    color: 'var(--color-signal-recovery)',
+    label: 'Profond',
+    ideal: '13–23 %',
+  },
+  rem: {
+    color: 'var(--color-signal-vo2)',
+    label: 'Paradoxal',
+    ideal: '20–25 %',
+  },
+  light: {
+    color: 'var(--color-signal-base)',
+    label: 'Léger',
+    ideal: null,
+  },
+  awake: {
+    color: 'var(--color-signal-caution)',
+    label: 'Éveillé',
+    ideal: null,
+  },
 } as const;
 
 type StageKey = keyof typeof STAGE_STYLES;
@@ -62,7 +78,7 @@ export function SleepStageBreakdown({
 
   return (
     <div className="space-y-4">
-      <div className="flex h-10 w-full overflow-hidden rounded-2xl">
+      <div className="bg-muted/50 rounded-analysis flex h-10 w-full overflow-hidden">
         {rows.map((row) => (
           <div
             key={row.key}
@@ -74,7 +90,7 @@ export function SleepStageBreakdown({
           />
         ))}
       </div>
-      <ul className="divide-border divide-y">
+      <ul className="border-analysis-border/60 divide-y">
         {rows.map((row) => {
           const style = STAGE_STYLES[row.key];
           return (
@@ -84,7 +100,7 @@ export function SleepStageBreakdown({
                 style={{ backgroundColor: style.color }}
               />
               <span className="text-foreground flex-1 text-sm font-medium">{style.label}</span>
-              <span className="font-mono text-sm font-semibold tabular-nums">
+              <span className="text-data text-sm font-semibold tabular-nums">
                 {formatSleepDuration(row.minutes)}
               </span>
               <span className="text-muted-foreground w-10 text-right text-sm tabular-nums">

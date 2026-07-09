@@ -9,7 +9,7 @@ describe('composition metric guides', () => {
       chronologicalAgeYears: null,
     });
     expect(result.zoneLabel).toBe('Normal');
-    expect(result.tone).toBe('good');
+    expect(result.tone).toBe('ok');
   });
 
   it('compares vascular age to chronological age', () => {
@@ -19,5 +19,15 @@ describe('composition metric guides', () => {
       chronologicalAgeYears: 35,
     });
     expect(result.personalizedNote).toContain('supérieur');
+    expect(result.tone).toBe('attention');
+  });
+
+  it('keeps metabolic age neutral without chronological age', () => {
+    const result = COMPOSITION_METRIC_GUIDES.metabolicAge.interpret(38, {
+      heightM: null,
+      weightKg: null,
+      chronologicalAgeYears: null,
+    });
+    expect(result.tone).toBe('neutral');
   });
 });

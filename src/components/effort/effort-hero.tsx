@@ -1,4 +1,4 @@
-import { DrillDownHero } from '@/components/today/drill-down/hero';
+import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
 
 const DAILY_STRAIN_GAUGE_MAX = 21;
 
@@ -14,7 +14,6 @@ export function EffortHero({
   strainSubtitle,
   strainStatusLabel,
   strainStatusClassName,
-  strainStrokeColor,
   onDateChange,
   onPreviousDay,
   onNextDay,
@@ -32,53 +31,48 @@ export function EffortHero({
   strainSubtitle: string;
   strainStatusLabel: string;
   strainStatusClassName: string;
-  strainStrokeColor: string;
   onDateChange?: (date: Date) => void;
   onPreviousDay?: () => void;
   onNextDay?: () => void;
   isToday?: boolean;
   maxDate?: Date;
 }) {
+  const footerLines = [
+    fatigueTypeLabel && fatigueType !== 'UNDETERMINED' ? `Type : ${fatigueTypeLabel}` : null,
+    performancePercent != null && performancePercent < 100
+      ? `Capacité : ~${performancePercent} %`
+      : null,
+    consecutiveDays > 0 ? `${consecutiveDays} j d'accumulation consécutifs` : null,
+    estimatedDaysToFresh != null && estimatedDaysToFresh > 0
+      ? `Frais dans ${estimatedDaysToFresh === 1 ? '1 jour' : `${estimatedDaysToFresh} jours`}`
+      : null,
+  ].filter(Boolean);
+
   return (
-    <DrillDownHero
-      colorMode="neutral"
+    <PhysioDrillDownHero
       date={date}
-      format="strain"
+      headline={strainStatusLabel}
+      headlineClassName={strainStatusClassName}
       isToday={isToday}
-      max={DAILY_STRAIN_GAUGE_MAX}
       maxDate={maxDate}
-      primaryCaption={dailyLoad > 0 ? `${dailyLoad} TSS cumulés` : '0 TSS cumulés'}
-      score={strainScore}
-      statusClassName={strainStatusClassName}
-      statusLabel={strainStatusLabel}
-      strokeColor={strainStrokeColor}
-      subtitle={strainSubtitle}
-      meta={
-        <>
-          {fatigueTypeLabel && fatigueType !== 'UNDETERMINED' && (
-            <p>
-              Type : <span className="text-foreground font-medium">{fatigueTypeLabel}</span>
-            </p>
-          )}
-          {performancePercent != null && performancePercent < 100 && (
-            <p>
-              Capacité : <span className="text-foreground font-medium">~{performancePercent}%</span>
-            </p>
-          )}
-          {consecutiveDays > 0 && (
-            <p className="font-medium text-amber-600">
-              {consecutiveDays}j d&apos;accumulation consécutifs
-            </p>
-          )}
-          {estimatedDaysToFresh != null && estimatedDaysToFresh > 0 && (
-            <p>
-              Frais dans{' '}
-              <span className="text-foreground font-medium">
-                {estimatedDaysToFresh === 1 ? '1 jour' : `${estimatedDaysToFresh} jours`}
-              </span>
-            </p>
-          )}
-        </>
+      quickReadLabel="charge du jour"
+      quickReadSuffix={` / ${DAILY_STRAIN_GAUGE_MAX}`}
+      quickReadValue={strainScore != null ? strainScore.toFixed(1) : '—'}
+      railCaption="faible vers élevée"
+      railMax={DAILY_STRAIN_GAUGE_MAX}
+      railValue={strainScore}
+      subline={strainSubtitle}
+      footer={
+        footerLines.length > 0 ? (
+          <div className="space-y-1">
+            {footerLines.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+        ) : undefined
+      }
+      quickReadCaption={
+        dailyLoad > 0 ? `${dailyLoad} TSS cumulés aujourd'hui` : "0 TSS cumulés aujourd'hui"
       }
       onDateChange={onDateChange}
       onNextDay={onNextDay}

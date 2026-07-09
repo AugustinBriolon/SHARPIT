@@ -57,6 +57,7 @@ export const strengthSetSchema = z.object({
   weightKg: optionalNumber,
   rpe: z.coerce.number().int().min(1).max(10).optional().nullable(),
   restSec: optionalInt,
+  durationSec: optionalInt,
   videoUrl: optionalString,
   notes: optionalString,
   order: z.coerce.number().int().optional(),

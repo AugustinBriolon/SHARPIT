@@ -20,10 +20,10 @@ export function buildSleepInsightBundle(input: SleepInsightInput) {
     summary: input.adequacyLabel,
     explanation:
       input.recoveryNote ??
-      'Le sommeil n a de valeur produit que par son effet sur la recuperation et la capacite a encaisser la charge suivante.',
+      "Le sommeil n'a de valeur produit que par son effet sur la récupération et la capacité à encaisser la charge suivante.",
     evidence: [
-      input.targetDeltaMin != null ? `Objectif: ${formatMinutes(input.targetDeltaMin)}` : null,
-      input.sleepDelta7d != null ? `Vs 7 jours: ${formatMinutes(input.sleepDelta7d)}` : null,
+      input.targetDeltaMin != null ? `Objectif : ${formatMinutes(input.targetDeltaMin)}` : null,
+      input.sleepDelta7d != null ? `Vs 7 jours : ${formatMinutes(input.sleepDelta7d)}` : null,
     ].filter((line): line is string => line != null),
     confidence: input.confidence,
     importance: input.sleepScore != null && input.sleepScore < 60 ? 'HIGH' : 'MEDIUM',
@@ -42,12 +42,12 @@ export function buildSleepInsightBundle(input: SleepInsightInput) {
             input.recommendedBedtime ??
             'Prioriser le sommeil ce soir'),
       explanation:
-        'Le meilleur usage produit du sommeil est d aider a choisir quoi faire ce soir pour proteger la prochaine journee.',
+        "Le meilleur usage produit du sommeil est d'aider à choisir quoi faire ce soir pour protéger la prochaine journée.",
       evidence: [
         input.debt7Min != null && input.debt7Min > 0
-          ? `Dette 7 jours: ${input.debt7Min} min`
+          ? `Dette 7 jours : ${input.debt7Min} min`
           : null,
-        input.regularityMin != null ? `Regularite: ±${input.regularityMin} min` : null,
+        input.regularityMin != null ? `Régularité : ±${input.regularityMin} min` : null,
       ].filter((line): line is string => line != null),
       confidence: input.confidence,
       importance: 'HIGH',
@@ -60,11 +60,11 @@ export function buildSleepInsightBundle(input: SleepInsightInput) {
     supporting.push({
       id: 'sleep:debt',
       title: 'Dette de sommeil',
-      summary: `${input.debt7Min} min de retard cumule`,
+      summary: `${input.debt7Min} min de retard cumulé`,
       explanation:
-        'La dette aide a comprendre pourquoi une nuit correcte ne suffit pas toujours a restaurer completement la recuperation.',
+        'La dette aide à comprendre pourquoi une nuit correcte ne suffit pas toujours à restaurer complètement la récupération.',
       evidence: [
-        input.sleepDelta7d != null ? `Vs 7 jours: ${formatMinutes(input.sleepDelta7d)}` : null,
+        input.sleepDelta7d != null ? `Vs 7 jours : ${formatMinutes(input.sleepDelta7d)}` : null,
       ].filter((line): line is string => line != null),
       confidence: input.confidence,
       importance: input.debt7Min >= 180 ? 'HIGH' : 'MEDIUM',
@@ -79,7 +79,7 @@ export function buildSleepInsightBundle(input: SleepInsightInput) {
       title: 'Ce que la nuit raconte',
       summary: input.coachInsightLines[0] ?? 'Lecture qualitative de la nuit',
       explanation:
-        'Les details de phases ou de regularite ne valent que s ils expliquent pourquoi la recuperation suivra ou non.',
+        "Les détails de phases ou de régularité ne valent que s'ils expliquent pourquoi la récupération suivra ou non.",
       evidence: input.coachInsightLines.slice(0, 3),
       confidence: input.confidence,
       importance: 'MEDIUM',

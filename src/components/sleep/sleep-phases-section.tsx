@@ -1,5 +1,5 @@
 import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
-import { SleepSectionLabel } from '@/components/sleep/sleep-section-label';
+import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
 import { SleepStageBreakdown } from '@/components/sleep/sleep-stage-breakdown';
 
 export function SleepPhasesSection({
@@ -17,7 +17,7 @@ export function SleepPhasesSection({
 }) {
   return (
     <DrillDownSectionCard>
-      <SleepSectionLabel>Phases</SleepSectionLabel>
+      <DrillDownSectionLabel>Phases de sommeil</DrillDownSectionLabel>
       <SleepStageBreakdown
         awakeMin={awakeMin}
         deepMin={deepMin}

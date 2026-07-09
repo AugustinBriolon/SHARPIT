@@ -69,7 +69,15 @@ export function SessionsHubSkeleton() {
   );
 }
 
-export function SessionsHub() {
+export function SessionsHub({
+  basePath = '/seances',
+  sectionLabel = 'Séances',
+  title = 'Historique & planning',
+}: {
+  basePath?: string;
+  sectionLabel?: string;
+  title?: string;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: goals = [] } = useGoals();
@@ -83,7 +91,7 @@ export function SessionsHub() {
     const params = new URLSearchParams(searchParams.toString());
     mutate(params);
     const query = params.toString();
-    router.replace(query ? `/seances?${query}` : '/seances', { scroll: false });
+    router.replace(query ? `${basePath}?${query}` : basePath, { scroll: false });
   }
 
   function setTab(next: string) {
@@ -133,9 +141,9 @@ export function SessionsHub() {
         <div className="flex items-end justify-between lg:gap-4">
           <div>
             <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-              Séances
+              {sectionLabel}
             </p>
-            <h1 className="font-heading mt-1 text-2xl font-semibold">Historique & planning</h1>
+            <h1 className="font-heading mt-1 text-2xl font-semibold">{title}</h1>
           </div>
           <SessionsCoachMenu onAction={handleCoachAction} />
         </div>

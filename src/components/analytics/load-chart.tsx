@@ -20,11 +20,11 @@ function ChartTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="border-border/60 bg-card rounded-lg border px-3 py-2 text-xs shadow-lg">
+    <div className="analysis-panel rounded-analysis px-3 py-2 text-xs">
       <p className="text-muted-foreground mb-1 font-medium">{label}</p>
       {payload.map((entry) => (
         <p key={entry.name} style={{ color: entry.color }}>
-          {entry.name}: <span className="font-mono font-semibold">{entry.value}</span>
+          {entry.name}: <span className="text-data font-semibold">{entry.value}</span>
         </p>
       ))}
     </div>
@@ -53,13 +53,13 @@ export function LoadChart({ data }: LoadChartProps) {
               <XAxis
                 axisLine={false}
                 dataKey="label"
-                tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
+                tick={{ fill: 'var(--color-muted-foreground)', fontSize: 11 }}
                 tickLine={false}
                 ticks={ticks.map((d) => d.label)}
               />
               <YAxis
                 axisLine={false}
-                tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
+                tick={{ fill: 'var(--color-muted-foreground)', fontSize: 11 }}
                 tickLine={false}
               />
               <Tooltip content={<ChartTooltip />} />

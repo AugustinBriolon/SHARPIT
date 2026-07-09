@@ -1,7 +1,5 @@
-import { GoalsView } from '@/components/goals/goals-view';
-
-export const dynamic = 'force-dynamic';
+import { redirect } from 'next/navigation';
 
 export default function GoalsPage() {
-  return <GoalsView />;
+  redirect('/settings/goals');
 }

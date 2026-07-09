@@ -1,4 +1,4 @@
-import { DrillDownHero } from '@/components/today/drill-down/hero';
+import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
 import { formatClock } from '@/lib/sleep';
 import { formatSleepDuration } from '@/lib/sleep-scoring';
 import { mapScoreToColorClass } from '@/lib/today-mapping';
@@ -37,23 +37,23 @@ export function SleepHero({
       : null;
 
   return (
-    <DrillDownHero
-      colorMode="neutral"
+    <PhysioDrillDownHero
       date={date}
-      format="percent"
+      headline={adequacyDisplay.label}
+      headlineClassName={adequacyDisplay.colorClass}
       isToday={isToday}
       maxDate={maxDate}
-      primaryCaption="temps de sommeil"
-      primaryValue={totalSleepMin != null ? formatSleepDuration(totalSleepMin) : null}
-      score={sleepScore}
-      statusClassName={adequacyDisplay.colorClass}
-      statusLabel={adequacyDisplay.label}
-      subtitle={subtitle}
+      quickReadCaption="Temps de sommeil effectif sur la nuit analysée."
+      quickReadLabel="durée de sommeil"
+      quickReadValue={totalSleepMin != null ? formatSleepDuration(totalSleepMin) : '—'}
+      railCaption="insuffisant vers récupérant"
+      railValue={sleepScore}
+      subline={subtitle}
       badge={
         garminScore != null ? (
-          <span className="text-muted-foreground inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[10px] dark:bg-slate-800">
+          <span className="bg-muted text-muted-foreground inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px]">
             Garmin
-            <span className={cn('font-semibold tabular-nums', mapScoreToColorClass(garminScore))}>
+            <span className={cn('text-data font-semibold', mapScoreToColorClass(garminScore))}>
               {garminScore}
             </span>
           </span>

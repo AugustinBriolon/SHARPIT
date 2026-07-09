@@ -2,18 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import {
-  bottomNavItems,
-  isMoreNavActive,
-  moreNavItems,
-  moreNavTrigger,
-  type AppNavItem,
-} from '@/lib/app-navigation';
+import { bottomNavItems, type AppNavItem } from '@/lib/app-navigation';
 import { usePrefetchNavQuery } from '@/hooks/use-prefetch-nav';
-import { navLinkClass } from '@/lib/nav-pill';
 import { cn } from '@/lib/utils';
-import { Sheet, SheetContent, SheetHeader, SheetTrigger } from '@/components/ui/sheet';
 import { OfflineBanner } from '@/components/pwa/offline-banner';
 
 function BottomNavLink({
@@ -36,8 +27,8 @@ function BottomNavLink({
       aria-current={isActive ? 'page' : undefined}
       href={item.href}
       className={cn(
-        'flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium transition-colors',
-        isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
+        'flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 text-[10px] font-medium transition-colors',
+        isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground',
       )}
       onClick={onNavigate}
       onMouseEnter={hint}
@@ -46,62 +37,6 @@ function BottomNavLink({
       <Icon className="size-5 shrink-0" aria-hidden />
       <span className="truncate">{item.label}</span>
     </Link>
-  );
-}
-
-function MoreNavSheet({
-  pathname,
-  onPrefetch,
-}: {
-  pathname: string;
-  onPrefetch: (href: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const moreActive = isMoreNavActive(pathname);
-
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
-
-  return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger
-        aria-label="Plus d'options"
-        className={cn(
-          'flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium transition-colors',
-          moreActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
-        )}
-      >
-        <moreNavTrigger.icon className="size-5 shrink-0" aria-hidden />
-        <span>{moreNavTrigger.label}</span>
-      </SheetTrigger>
-      <SheetContent
-        className="rounded-t-3xl pb-[calc(1rem+env(safe-area-inset-bottom))]"
-        side="bottom"
-      >
-        <SheetHeader />
-        <div className="space-y-1 px-2">
-          {moreNavItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = item.match(pathname);
-            const hint = () => onPrefetch(item.href);
-            return (
-              <Link
-                key={item.href}
-                className={navLinkClass(isActive, 'bg-background')}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                onMouseEnter={hint}
-                onTouchStart={hint}
-              >
-                <Icon className="size-4 shrink-0" aria-hidden />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </SheetContent>
-    </Sheet>
   );
 }
 
@@ -119,7 +54,6 @@ export function BottomNav() {
         {bottomNavItems.map((item) => (
           <BottomNavLink key={item.href} item={item} pathname={pathname} onPrefetch={prefetch} />
         ))}
-        <MoreNavSheet pathname={pathname} onPrefetch={prefetch} />
       </div>
     </nav>
   );

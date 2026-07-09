@@ -51,7 +51,7 @@ function MetricsCards({ metricsRow, compact }: { metricsRow: MetricsRowVm; compa
 
 export function TodayMetricsRow({ metricsRow }: { metricsRow: MetricsRowVm }) {
   return (
-    <div className="grid grid-cols-2 gap-1 sm:grid-cols-4 sm:gap-3">
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
       <MetricsCards compact={false} metricsRow={metricsRow} />
     </div>
   );

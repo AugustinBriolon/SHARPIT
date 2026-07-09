@@ -1,3 +1,5 @@
+import { useId } from 'react';
+
 function buildSparkPaths(
   values: (number | null)[],
   W: number,
@@ -50,20 +52,20 @@ export function Sparkline({
   stroke: string;
   h?: number;
 }) {
+  const gradientId = useId().replace(/:/g, '');
   const W = 200;
   const { line, area } = buildSparkPaths(values, W, h);
-  const gid = `sg${stroke.replace('#', '')}`;
   if (!line) return null;
 
   return (
     <svg height={h} preserveAspectRatio="none" viewBox={`0 0 ${W} ${h}`} width="100%" aria-hidden>
       <defs>
-        <linearGradient id={gid} x1="0" x2="0" y1="0" y2="1">
+        <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
           <stop offset="0%" stopColor={stroke} stopOpacity="0.28" />
           <stop offset="100%" stopColor={stroke} stopOpacity="0.02" />
         </linearGradient>
       </defs>
-      {area && <path d={area} fill={`url(#${gid})`} />}
+      {area && <path d={area} fill={`url(#${gradientId})`} />}
       <path
         d={line}
         fill="none"

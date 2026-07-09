@@ -4,7 +4,11 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CalendarDayContent } from './calendar-day-content';
 import type { DayEvent } from './calendar-types';
-import { getDayCellDateClassName } from './calendar-utils';
+import {
+  getCalendarDayBorderAccent,
+  getCalendarDayLoad,
+  getDayCellDateClassName,
+} from './calendar-utils';
 
 function CalendarMonthCell({
   cell,
@@ -30,14 +34,20 @@ function CalendarMonthCell({
   onOpenBrick: (sessions: ClientPlannedSession[]) => void;
 }) {
   const dateKey = format(cell.date, 'yyyy-MM-dd');
+  const dayLoad = getCalendarDayLoad(cell);
+  const borderAccent = getCalendarDayBorderAccent(cell);
+  const cellClassName = cn(
+    'border-analysis-border/70 focus-visible:ring-primary/30 min-h-28 cursor-pointer border-r border-b p-1.5 transition-colors last:border-r-0 focus-visible:ring-2 focus-visible:outline-hidden',
+    !cell.inMonth && 'bg-muted/20',
+    dragOver === dateKey && 'bg-primary/10',
+  );
 
   return (
     <div
-      className={cn(
-        'border-border/40 min-h-28 cursor-pointer border-r border-b p-1.5 transition-colors last:border-r-0',
-        !cell.inMonth && 'bg-muted/20',
-        dragOver === dateKey && 'bg-primary/10',
-      )}
+      className={cellClassName}
+      role="button"
+      style={borderAccent ? { boxShadow: `inset 3px 0 0 ${borderAccent}` } : undefined}
+      tabIndex={0}
       onClick={() => onCreate(cell.date)}
       onDragLeave={onDragLeave}
       onDrop={() => onDrop(dateKey, cell.date)}
@@ -45,10 +55,24 @@ function CalendarMonthCell({
         e.preventDefault();
         onDragOver(dateKey);
       }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onCreate(cell.date);
+        }
+      }}
     >
-      <div className="mb-1 flex h-5 items-center justify-between px-1">
-        <span className={cn('text-xs', getDayCellDateClassName(cell.isToday, cell.inMonth))}>
+      <div className="mb-1 flex items-center justify-between gap-2 px-1">
+        <span
+          className={cn(
+            'text-data min-h-6 text-xs',
+            getDayCellDateClassName(cell.isToday, cell.inMonth),
+          )}
+        >
           {cell.date.getDate()}
+        </span>
+        <span className="text-data text-muted-foreground shrink-0 text-[10px]">
+          {dayLoad != null ? `${dayLoad}` : '—'}
         </span>
       </div>
       <div className="space-y-1">
@@ -89,13 +113,10 @@ export function CalendarMonthGrid({
   onOpenBrick: (sessions: ClientPlannedSession[]) => void;
 }) {
   return (
-    <div className="border-border/60 overflow-hidden rounded-xl border">
-      <div className="border-border/60 bg-card/40 grid grid-cols-7 border-b">
+    <div className="analysis-panel rounded-analysis-lg overflow-hidden">
+      <div className="border-analysis-border bg-analysis-surface-alt/70 grid grid-cols-7 border-b">
         {weekDayLabels.map((d) => (
-          <div
-            key={d}
-            className="text-muted-foreground px-3 py-2 text-center text-xs font-medium tracking-wider uppercase"
-          >
+          <div key={d} className="text-label px-3 py-2 text-center">
             {d}
           </div>
         ))}

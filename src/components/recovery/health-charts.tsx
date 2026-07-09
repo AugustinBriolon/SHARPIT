@@ -70,7 +70,7 @@ export function MetricLineChart<T extends { label: string }>({
   const hasData = data.some((d) => d[dataKey] != null);
 
   return (
-    <CorpsPanel className="overflow-hidden p-0">
+    <CorpsPanel className="overflow-hidden bg-white p-0">
       <div className="border-border/50 border-b px-4 py-3">
         <p className="text-sm font-semibold">{title}</p>
         {subtitle && <p className="text-muted-foreground mt-0.5 text-[10px]">{subtitle}</p>}

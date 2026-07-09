@@ -9,8 +9,10 @@ import {
   garminEnrichmentUpdate,
   garminSessionDurationSec,
   mapGarminType,
+  resolveGarminStrengthSets,
   type ParsedStrengthSet,
 } from '@/lib/integrations/garmin-activities';
+import { ensureGarminExerciseLabelsFr } from '@/lib/integrations/garmin-exercise-labels';
 import { fetchGarminMultisportLegs } from '@/lib/integrations/garmin-multisport';
 import {
   clientFromTokens,
@@ -81,25 +83,61 @@ async function backfillMultisportLegs(
   return true;
 }
 
-/** Crée les séries de muscu si l'activité n'en a pas encore. Renvoie true si ajout. */
+function strengthSetsMatch(
+  existing: Array<{
+    exercise: string;
+    sets: number;
+    reps: number;
+    durationSec: number | null;
+    weightKg: number | null;
+    order: number;
+  }>,
+  incoming: ParsedStrengthSet[],
+): boolean {
+  if (existing.length !== incoming.length) return false;
+  return existing.every((row, index) => {
+    const next = incoming[index];
+    if (!next) return false;
+    return (
+      row.exercise === next.exercise &&
+      row.sets === next.sets &&
+      row.reps === next.reps &&
+      row.durationSec === next.durationSec &&
+      row.weightKg === next.weightKg &&
+      row.order === next.order
+    );
+  });
+}
+
+/** Crée ou remplace les séries de muscu quand Garmin envoie des données différentes. */
 async function backfillStrengthSets(
   activityId: string,
   sets: ParsedStrengthSet[],
 ): Promise<boolean> {
   if (sets.length === 0) return false;
-  const count = await prisma.strengthSet.count({ where: { activityId } });
-  if (count > 0) return false;
-  await prisma.strengthSet.createMany({
-    data: sets.map((s) => ({
-      activityId,
-      exercise: s.exercise,
-      sets: s.sets,
-      reps: s.reps,
-      weightKg: s.weightKg,
-      restSec: s.restSec,
-      order: s.order,
-    })),
+
+  const existing = await prisma.strengthSet.findMany({
+    where: { activityId },
+    orderBy: { order: 'asc' },
   });
+
+  if (strengthSetsMatch(existing, sets)) return false;
+
+  await prisma.$transaction([
+    prisma.strengthSet.deleteMany({ where: { activityId } }),
+    prisma.strengthSet.createMany({
+      data: sets.map((s) => ({
+        activityId,
+        exercise: s.exercise,
+        sets: s.sets,
+        reps: s.reps,
+        durationSec: s.durationSec,
+        weightKg: s.weightKg,
+        restSec: s.restSec,
+        order: s.order,
+      })),
+    }),
+  ]);
   return true;
 }
 
@@ -126,6 +164,7 @@ export async function syncGarminActivities(options?: {
   const client = clientFromTokens(
     garminTokensFromStorage(account.oauth1Token, account.oauth2Token),
   );
+  const exerciseLabelsFr = await ensureGarminExerciseLabelsFr();
 
   const full = options?.full ?? false;
   const lastActivitySync = account.lastActivitySyncAt ?? account.lastSyncAt;
@@ -171,7 +210,11 @@ export async function syncGarminActivities(options?: {
       const evaluation = await fetchGarminActivityEvaluation(client, activity.activityId);
       const strengthSets =
         type === ActivityType.STRENGTH
-          ? await fetchGarminExerciseSets(client, activity.activityId)
+          ? resolveGarminStrengthSets(
+              activity,
+              await fetchGarminExerciseSets(client, activity.activityId, exerciseLabelsFr),
+              exerciseLabelsFr,
+            )
           : [];
 
       const existingByGarmin = await prisma.activity.findUnique({

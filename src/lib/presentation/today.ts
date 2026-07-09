@@ -1,3 +1,4 @@
+import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
 import { snapshotHasDisplayableContent } from '@/core/athlete-state/snapshot';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
@@ -49,6 +50,26 @@ function mapConfidenceTone(
     default:
       return 'neutral';
   }
+}
+
+function resolveSnapshotStatusMessage(
+  snapshot: AthleteSnapshot,
+  phase: string,
+  heroHeadline: string,
+  heroSubline: string,
+): string | null {
+  const hasContent = snapshotHasDisplayableContent(snapshot);
+
+  if (phase === 'END_OF_DAY' && hasContent) return null;
+
+  const candidate = hasContent
+    ? snapshot.freshness.primaryProductMessage
+    : (snapshot.primaryProductMessage ?? snapshot.insufficientDataMessage ?? null);
+
+  if (!candidate) return null;
+  if (hasContent && (candidate === heroHeadline || candidate === heroSubline)) return null;
+
+  return candidate;
 }
 
 export async function buildTodayPresentationViewModel(
@@ -178,10 +199,7 @@ export async function buildTodayPresentationViewModel(
 
   const hasSparks = recoverySpark.some((v) => v != null) || effortSpark.some((v) => v != null);
 
-  const statusMessage =
-    phase === 'END_OF_DAY' && snapshotHasDisplayableContent(snapshot)
-      ? null
-      : (snapshot.primaryProductMessage ?? snapshot.insufficientDataMessage ?? null);
+  const statusMessage = resolveSnapshotStatusMessage(snapshot, phase, heroHeadline, heroSubline);
   const emptyState =
     !snapshotHasDisplayableContent(snapshot) && (statusMessage || snapshot.primaryProductMessage)
       ? {

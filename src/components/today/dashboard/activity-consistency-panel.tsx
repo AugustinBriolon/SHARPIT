@@ -54,7 +54,7 @@ function StreakBadge({ stats }: { stats: ActivityConsistencyStats }) {
 
 function HeatmapGrid({ weekColumns }: { weekColumns: HeatmapCell[][] }) {
   return (
-    <div className="flex w-full gap-[2px]">
+    <div className="flex w-full items-start gap-[2px]">
       {weekColumns.map((column, colIdx) => (
         <div key={colIdx} className="flex min-w-0 flex-1 flex-col gap-[2px]">
           {column.map((cell) => (
@@ -94,7 +94,7 @@ export function ActivityConsistencyPanel({
   return (
     <div
       className={cn(
-        'bg-card flex flex-col rounded-2xl border px-4 py-4 sm:px-5 sm:py-5',
+        'analysis-panel rounded-analysis-lg flex h-fit w-full flex-col px-4 py-4 sm:px-5 sm:py-5',
         className,
       )}
     >
@@ -106,7 +106,7 @@ export function ActivityConsistencyPanel({
             {stats.trailingYearActivityCount > 1 ? 's' : ''} sur {rangeLabel}
             {' · '}
             {stats.activeDays} {stats.activeDays > 1 ? 'jours actifs' : 'jour actif'} sur{' '}
-            {HEATMAP_DAYS_MOBILE}
+            {stats.heatmapDays}
           </p>
         </div>
         <StreakBadge stats={stats} />

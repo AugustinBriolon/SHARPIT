@@ -37,7 +37,13 @@ import { CALENDAR_WEEK_OPTS } from './calendar-types';
 import { CalendarWeekList } from './calendar-week-list';
 import { calendarToolbarTitle, getDragSessionId, groupEventsByDay } from './calendar-utils';
 
-export function CalendarView({ embedded = false }: { embedded?: boolean }) {
+export function CalendarView({
+  embedded = false,
+  showHeader = true,
+}: {
+  embedded?: boolean;
+  showHeader?: boolean;
+}) {
   const mounted = useMounted();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
@@ -114,7 +120,7 @@ export function CalendarView({ embedded = false }: { embedded?: boolean }) {
   const [dialog, setDialog] = useState<DialogState>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
 
-  const header = (
+  const header = showHeader ? (
     <CalendarToolbar
       calendars={calendarsQuery.data ?? []}
       calendarsLoading={calendarsQuery.isPending}
@@ -139,13 +145,13 @@ export function CalendarView({ embedded = false }: { embedded?: boolean }) {
         setWeekAnchor(startOfWeek(today, CALENDAR_WEEK_OPTS));
       }}
     />
-  );
+  ) : null;
 
   if (!mounted || isAnyInitialQueryLoad([activitiesQuery, plannedQuery, goalsQuery])) {
     return (
       <div className="space-y-8">
         {header}
-        <Skeleton className="h-[560px] w-full" />
+        <Skeleton className="rounded-analysis-lg h-[560px] w-full" />
       </div>
     );
   }

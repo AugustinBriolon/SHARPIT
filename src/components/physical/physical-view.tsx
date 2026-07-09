@@ -12,18 +12,12 @@ import { PhysicalNoteCard } from '@/components/physical/physical-note-card';
 import { PhysicalNoteDialog } from '@/components/physical/physical-note-dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { usePhysicalNotes } from '@/hooks/use-physical';
+import { corpsToneFromPhysicalSeverity } from '@/lib/health-status';
 import type { ClientPhysicalNote } from '@/lib/query/types';
 import { categoryLabels, categoryOrder } from '@/lib/physical';
-import { usePhysicalNotes } from '@/hooks/use-physical';
 
 type DialogState = { mode: 'create' } | { mode: 'edit'; note: ClientPhysicalNote } | null;
-
-function severityTone(avgSeverity: number | null): 'low' | 'moderate' | 'neutral' {
-  if (avgSeverity == null) return 'neutral';
-  if (avgSeverity >= 7) return 'low';
-  if (avgSeverity >= 4) return 'moderate';
-  return 'neutral';
-}
 
 export function PhysicalView({ embedded = false }: { embedded?: boolean }) {
   const notesQuery = usePhysicalNotes();
@@ -114,11 +108,11 @@ export function PhysicalView({ embedded = false }: { embedded?: boolean }) {
             <CorpsStatCard
               footer={avgSeverity != null ? '/10 sur les notes actives' : undefined}
               label="Sévérité moy."
-              tone={severityTone(avgSeverity)}
+              tone={corpsToneFromPhysicalSeverity(avgSeverity)}
               value={avgSeverity != null ? `${avgSeverity}` : '—'}
             />
             <CorpsStatCard label="Sous surveillance" value={String(monitoring.length)} />
-            <CorpsStatCard label="Résolues" tone="good" value={String(resolved.length)} />
+            <CorpsStatCard label="Résolues" tone="ok" value={String(resolved.length)} />
           </section>
 
           {active.length === 0 ? (

@@ -8,23 +8,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
 import type { BodyMetricExplainerVm } from '@/core/presentation/body-view-model';
-import type { CorpsTone } from '@/lib/metric-tone';
-
-const TONE_BG: Record<CorpsTone, string> = {
-  good: 'bg-emerald-500/80',
-  moderate: 'bg-amber-500/80',
-  low: 'bg-red-500/80',
-  neutral: 'bg-muted-foreground/30',
-};
-
-const TONE_BADGE: Record<CorpsTone, string> = {
-  good: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
-  moderate: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
-  low: 'bg-red-500/10 text-red-700 dark:text-red-400',
-  neutral: 'bg-muted text-muted-foreground',
-};
+import { CORPS_TONE_BADGE, CORPS_TONE_SCALE } from '@/lib/metric-tone';
+import { cn } from '@/lib/utils';
 
 function MetricScale({
   zones,
@@ -45,7 +31,7 @@ function MetricScale({
               style={{ flex: zone.max - zone.min }}
               className={cn(
                 'h-full flex-1 first:rounded-l-full last:rounded-r-full',
-                TONE_BG[zone.tone],
+                CORPS_TONE_SCALE[zone.tone],
               )}
             />
           ))}
@@ -61,7 +47,9 @@ function MetricScale({
       <div className="flex flex-wrap gap-x-3 gap-y-1">
         {zones.map((zone) => (
           <span key={zone.label} className="text-muted-foreground text-[10px]">
-            <span className={cn('mr-1 inline-block size-1.5 rounded-full', TONE_BG[zone.tone])} />
+            <span
+              className={cn('mr-1 inline-block size-1.5 rounded-full', CORPS_TONE_SCALE[zone.tone])}
+            />
             {zone.label}
             {zone.max < 999 && unit ? ` (< ${zone.max} ${unit})` : null}
           </span>
@@ -116,7 +104,7 @@ export function CompositionMetricExplainer({
             <span
               className={cn(
                 'rounded-full px-2.5 py-1 text-xs font-medium',
-                TONE_BADGE[interpretation.tone],
+                CORPS_TONE_BADGE[interpretation.tone],
               )}
             >
               {interpretation.zoneLabel}

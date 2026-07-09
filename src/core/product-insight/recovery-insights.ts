@@ -8,12 +8,12 @@ export function buildRecoveryInsightBundle(input: RecoveryInsightInput) {
 
   primary.push({
     id: 'recovery:training-readiness',
-    title: "Intensite realiste aujourd'hui",
+    title: "Intensité réaliste aujourd'hui",
     summary: input.recommendedIntensityLabel,
     explanation:
       input.limitingFactorLabel != null
         ? `Le facteur limitant principal est ${input.limitingFactorLabel.toLowerCase()}.`
-        : 'Le niveau de recuperation du jour guide l intensite la plus realiste.',
+        : "Le niveau de récupération du jour guide l'intensité la plus réaliste.",
     evidence: input.rationale,
     confidence: input.confidence,
     importance: input.readinessScore != null && input.readinessScore < 50 ? 'CRITICAL' : 'HIGH',
@@ -23,10 +23,10 @@ export function buildRecoveryInsightBundle(input: RecoveryInsightInput) {
 
   supporting.push({
     id: 'recovery:main-driver',
-    title: 'Ce qui guide la decision',
+    title: 'Ce qui guide la décision',
     summary: `${input.autonomicLabel} · ${input.wellnessLabel} · ${input.loadLabel}`,
     explanation:
-      'SHARPIT confronte les signaux du systeme nerveux, le ressenti et le contexte de charge avant de recommander une intensite.',
+      'SHARPIT confronte les signaux du système nerveux, le ressenti et le contexte de charge avant de recommander une intensité.',
     evidence: input.keyEvidence.slice(0, 3),
     confidence: input.confidence,
     importance: 'MEDIUM',
@@ -37,10 +37,10 @@ export function buildRecoveryInsightBundle(input: RecoveryInsightInput) {
   if (input.estimatedRecoveryDays != null && input.estimatedRecoveryDays > 0) {
     supporting.push({
       id: 'recovery:time-to-full-recovery',
-      title: 'Fenetre de retour complet',
+      title: 'Fenêtre de retour complet',
       summary: `${input.estimatedRecoveryDays} jour(s) pour revenir pleinement`,
       explanation:
-        'Cette estimation aide a placer la prochaine seance exigeante au bon moment plutot que de forcer trop tot.',
+        'Cette estimation aide à placer la prochaine séance exigeante au bon moment plutôt que de forcer trop tôt.',
       evidence: input.rationale.slice(0, 2),
       confidence: input.confidence,
       importance: input.estimatedRecoveryDays >= 3 ? 'HIGH' : 'MEDIUM',
@@ -55,7 +55,7 @@ export function buildRecoveryInsightBundle(input: RecoveryInsightInput) {
       title: 'Signaux contradictoires',
       summary: 'Le ressenti et les marqueurs physiologiques divergent.',
       explanation:
-        'Quand le corps ressenti et les signaux objectifs ne racontent pas la meme histoire, la prudence prime sur les chiffres isoles.',
+        'Quand le corps ressenti et les signaux objectifs ne racontent pas la même histoire, la prudence prime sur les chiffres isolés.',
       evidence: [input.autonomicLabel, input.wellnessLabel, ...input.keyEvidence.slice(0, 1)],
       confidence: input.confidence,
       importance: 'HIGH',
@@ -70,7 +70,7 @@ export function buildRecoveryInsightBundle(input: RecoveryInsightInput) {
       title: 'Risque de surcharge',
       summary: input.overreachingLabel,
       explanation:
-        'Le systeme voit des signes qui ressemblent a une recuperation insuffisante face a la charge recente.',
+        'Le système voit des signes qui ressemblent à une récupération insuffisante face à la charge récente.',
       evidence: input.keyEvidence.slice(0, 2),
       confidence: input.confidence,
       importance: 'HIGH',
@@ -82,10 +82,10 @@ export function buildRecoveryInsightBundle(input: RecoveryInsightInput) {
   if (input.illnessLabel) {
     contextual.push({
       id: 'recovery:illness-risk',
-      title: 'Risque de fragilite',
+      title: 'Risque de fragilité',
       summary: input.illnessLabel,
       explanation:
-        'Quand le profil de recuperation ressemble a une baisse de resilience globale, il vaut mieux proteger la journee.',
+        'Quand le profil de récupération ressemble à une baisse de résilience globale, il vaut mieux protéger la journée.',
       evidence: input.keyEvidence.slice(0, 2),
       confidence: input.confidence,
       importance: 'MEDIUM',

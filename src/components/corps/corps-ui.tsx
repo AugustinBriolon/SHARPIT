@@ -13,7 +13,9 @@ export function CorpsPanel({
   className?: string;
   children: React.ReactNode;
 }) {
-  return <div className={cn('bg-card/60 rounded-2xl border px-5 py-4', className)}>{children}</div>;
+  return (
+    <div className={cn('analysis-panel rounded-analysis-lg px-5 py-4', className)}>{children}</div>
+  );
 }
 
 export function CorpsSectionHeader({
@@ -31,7 +33,7 @@ export function CorpsSectionHeader({
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="space-y-1">
         {label && <EyebrowLabel variant="corps">{label}</EyebrowLabel>}
-        <h2 className="text-sm font-semibold">{title}</h2>
+        <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
         {description && (
           <p className="text-muted-foreground max-w-2xl text-xs leading-relaxed">{description}</p>
         )}
@@ -103,7 +105,7 @@ export function CorpsEmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="bg-card/40 flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed px-6 py-14 text-center">
+    <div className="analysis-panel rounded-analysis-lg flex flex-col items-center justify-center gap-3 border-dashed px-6 py-14 text-center">
       <Icon className="text-muted-foreground/40 size-8" />
       <div className="space-y-1">
         <p className="text-sm font-medium">{title}</p>

@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { CalendarDayContent } from './calendar-day-content';
 import type { DayEvent } from './calendar-types';
+import { getCalendarDayBorderAccent } from './calendar-utils';
 
 export function CalendarWeekList({
   days,
@@ -30,28 +31,39 @@ export function CalendarWeekList({
   onOpenBrick: (sessions: ClientPlannedSession[]) => void;
 }) {
   return (
-    <div className="border-border/60 divide-border/60 divide-y overflow-hidden rounded-xl border">
+    <div className="analysis-panel divide-analysis-border rounded-analysis-lg divide-y overflow-hidden">
       {days.map((cell) => {
         const dateKey = format(cell.date, 'yyyy-MM-dd');
+        const borderAccent = getCalendarDayBorderAccent(cell);
         const hasItems =
           (eventsByDay[dateKey]?.length ?? 0) > 0 ||
           cell.activities.some((a) => !linkedActivityIds.has(a.id)) ||
           cell.planned.length > 0;
+        const cellClassName = cn(
+          'focus-visible:ring-primary/30 cursor-pointer px-3 py-3 transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
+          cell.isToday && 'bg-primary/5',
+          dragOver === dateKey && 'bg-primary/10',
+        );
 
         return (
           <div
             key={dateKey}
-            className={cn(
-              'cursor-pointer px-3 py-3 transition-colors',
-              cell.isToday && 'bg-primary/5',
-              dragOver === dateKey && 'bg-primary/10',
-            )}
+            className={cellClassName}
+            role="button"
+            style={borderAccent ? { boxShadow: `inset 3px 0 0 ${borderAccent}` } : undefined}
+            tabIndex={0}
             onClick={() => onCreate(cell.date)}
             onDragLeave={onDragLeave}
             onDrop={() => onDrop(dateKey, cell.date)}
             onDragOver={(e) => {
               e.preventDefault();
               onDragOver(dateKey);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onCreate(cell.date);
+              }
             }}
           >
             <div className="mb-2 flex items-center justify-between gap-2">

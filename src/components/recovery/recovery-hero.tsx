@@ -1,4 +1,4 @@
-import { DrillDownHero } from '@/components/today/drill-down/hero';
+import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
 
 export function RecoveryHero({
   date,
@@ -27,41 +27,42 @@ export function RecoveryHero({
   isToday?: boolean;
   maxDate?: Date;
 }) {
+  const footerLines = [
+    limiterLabel ? `Facteur limitant : ${limiterLabel}` : null,
+    estimatedRecoveryDays != null && estimatedRecoveryDays > 0
+      ? `Récupération estimée dans ${
+          estimatedRecoveryDays === 1 ? '1 jour' : `${estimatedRecoveryDays} jours`
+        }`
+      : null,
+  ].filter(Boolean);
+
   return (
-    <DrillDownHero
-      colorMode="dynamic"
+    <PhysioDrillDownHero
       date={date}
-      format="percent"
+      headline={signal.label}
+      headlineClassName={signal.qualityClass}
       isToday={isToday}
       maxDate={maxDate}
-      primaryCaption="score récupération"
-      primaryValue={readinessScore != null ? `${readinessScore}` : null}
-      score={readinessScore}
-      statusClassName={signal.qualityClass}
-      statusLabel={signal.label}
+      quickReadCaption="Score de récupération utilisé comme repère central du jour."
+      quickReadLabel="score récupération"
+      quickReadSuffix="%"
+      quickReadValue={readinessScore != null ? String(Math.round(readinessScore)) : '—'}
+      railValue={readinessScore}
       badge={
         isCalibrating ? (
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+          <span className="bg-muted text-muted-foreground rounded-full px-2.5 py-1 text-[10px] font-medium">
             Calibration · {availableDimCount}/4 signaux
           </span>
         ) : undefined
       }
-      meta={
-        <>
-          {limiterLabel && (
-            <p>
-              Facteur limitant : <span className="text-foreground font-medium">{limiterLabel}</span>
-            </p>
-          )}
-          {estimatedRecoveryDays != null && estimatedRecoveryDays > 0 && (
-            <p>
-              Récupération estimée dans{' '}
-              <span className="text-foreground font-medium">
-                {estimatedRecoveryDays === 1 ? '1 jour' : `${estimatedRecoveryDays} jours`}
-              </span>
-            </p>
-          )}
-        </>
+      footer={
+        footerLines.length > 0 ? (
+          <div className="space-y-1">
+            {footerLines.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+        ) : undefined
       }
       onDateChange={onDateChange}
       onNextDay={onNextDay}

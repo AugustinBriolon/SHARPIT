@@ -10,10 +10,11 @@ import { EffortDimensionsSection } from '@/components/effort/effort-dimensions-s
 import { EffortDominantSection } from '@/components/effort/effort-dominant-section';
 import { EffortEvidenceSection } from '@/components/effort/effort-evidence-section';
 import { EffortHero } from '@/components/effort/effort-hero';
-import { InsightList } from '@/components/product-insight/insight-list';
+import { InsightNarrative } from '@/components/product-insight/insight-narrative';
 import { EffortStatsStrip } from '@/components/effort/effort-stats-strip';
 import { EffortVerdictSection } from '@/components/effort/effort-verdict-section';
 import type { ProductInsightBundle } from '@/core/product-insight/types';
+import { defaultInsightNarrativeSections } from '@/lib/product-insight/narrative-sections';
 import {
   DataReliabilityFooter,
   MetricDrillDownPage,
@@ -84,7 +85,6 @@ export function EffortPageView(props: EffortPageViewProps) {
     strainSubtitle,
     strainStatusLabel,
     strainStatusClassName,
-    strainStrokeColor,
     acwr,
     chronicWeeklyAvg,
     tsb,
@@ -134,7 +134,6 @@ export function EffortPageView(props: EffortPageViewProps) {
         strainScore={strainScore}
         strainStatusClassName={strainStatusClassName}
         strainStatusLabel={strainStatusLabel}
-        strainStrokeColor={strainStrokeColor}
         strainSubtitle={strainSubtitle}
         onDateChange={onDateChange}
         onNextDay={onNextDay}
@@ -148,11 +147,9 @@ export function EffortPageView(props: EffortPageViewProps) {
         verdictKey={verdictKey}
       />
 
-      <InsightList insights={insights.primary} label="Ce que SHARPIT comprend" />
+      <InsightNarrative sections={defaultInsightNarrativeSections(insights)} />
 
       <EffortCapacitySection trainingCapacity={trainingCapacity} />
-
-      <InsightList insights={insights.supporting} label="Soutenabilite du cout" />
 
       <EffortDominantSection
         dominantDimension={dominantDimension}
@@ -177,8 +174,6 @@ export function EffortPageView(props: EffortPageViewProps) {
       <EffortWeeklyTssSection avgWeeklyTss={avgWeeklyTss} data={weeklyTss} />
 
       <EffortAlertsSection overreaching={overreaching} />
-
-      <InsightList insights={insights.contextual} label="Contexte utile" />
 
       <EffortEvidenceSection lines={keyEvidence} />
     </MetricDrillDownPage>

@@ -1,9 +1,7 @@
 'use client';
 
-import { Activity, BarChart3, Scale } from 'lucide-react';
+import { Activity, Scale } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { AnalyticsClient } from '@/components/analytics/analytics-client';
-import { RecordsPanel } from '@/components/analytics/records-panel';
 import { CompositionView } from '@/components/corps/composition-view';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { PhysicalView } from '@/components/physical/physical-view';
@@ -22,12 +20,6 @@ const TABS = [
     description: 'Douleurs, blessures et points de vigilance.',
     icon: Activity,
   },
-  {
-    id: 'stats',
-    label: 'Statistiques',
-    description: "Charge, volume et records d'entraînement.",
-    icon: BarChart3,
-  },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -36,7 +28,7 @@ function isTabId(value: string | null): value is TabId {
   return TABS.some((t) => t.id === value);
 }
 
-export function CorpsHub() {
+export function CorpsHub({ basePath = '/corps' }: { basePath?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const raw = searchParams.get('tab');
@@ -44,7 +36,7 @@ export function CorpsHub() {
   const activeTab = TABS.find((t) => t.id === tab) ?? TABS[0];
 
   function setTab(next: string) {
-    router.replace(`/corps?tab=${next}`, { scroll: false });
+    router.replace(`${basePath}?tab=${next}`, { scroll: false });
   }
 
   return (
@@ -82,12 +74,6 @@ export function CorpsHub() {
       <div className="space-y-4">
         {tab === 'composition' && <CompositionView embedded />}
         {tab === 'suivi' && <PhysicalView embedded />}
-        {tab === 'stats' && (
-          <div className="space-y-6">
-            <AnalyticsClient />
-            <RecordsPanel />
-          </div>
-        )}
       </div>
     </div>
   );
