@@ -1,19 +1,19 @@
 'use client';
 
-import { differenceInCalendarDays, format, formatDistanceToNowStrict } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { Bike, Footprints, Waves } from 'lucide-react';
-import Link from 'next/link';
-import { useState } from 'react';
+import { AnalyticsSection, RecordsSectionHeader } from '@/components/analytics/analytics-cards';
 import { PerformancePredictions } from '@/components/analytics/performance-predictions';
 import { PowerCurveChart } from '@/components/analytics/power-curve-chart';
-import { AnalyticsSection, RecordsSectionHeader } from '@/components/analytics/analytics-cards';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRecords } from '@/hooks/use-data';
 import { navPillClass } from '@/lib/nav-pill';
 import type { RecordCategory, RecordEntry } from '@/lib/records';
 import { cn } from '@/lib/utils';
+import { differenceInCalendarDays, format, formatDistanceToNowStrict } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { Bike, Footprints, Waves } from 'lucide-react';
+import Link from 'next/link';
+import { useState } from 'react';
 
 type SportTab = 'run' | 'bike' | 'swim';
 
@@ -186,7 +186,7 @@ export function RecordsPanel() {
       />
 
       <div className="flex flex-wrap gap-2">
-        {TABS.map(({ id, label, icon: Icon, code }) => (
+        {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             className={navPillClass(tab === id, 'gap-2')}

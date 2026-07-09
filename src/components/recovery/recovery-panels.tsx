@@ -8,6 +8,7 @@ import {
   type ReadinessFactor,
   type ReadinessView,
   type RecoveryTone,
+  recoveryToneToCorpsTone,
 } from '@/lib/recovery';
 
 const TONE_TEXT: Record<RecoveryTone, string> = {
@@ -119,6 +120,12 @@ export function RecoveryStat({
   footer?: string;
 }) {
   return (
-    <CorpsStatCard footer={footer} label={label} sublabel={sublabel} tone={tone} value={value} />
+    <CorpsStatCard
+      footer={footer}
+      label={label}
+      sublabel={sublabel}
+      tone={recoveryToneToCorpsTone(tone)}
+      value={value}
+    />
   );
 }

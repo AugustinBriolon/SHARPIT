@@ -1,19 +1,17 @@
 'use client';
 
-import { ActivityType } from '@prisma/client';
-import { useQueryClient } from '@tanstack/react-query';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
+import type { PlannedSessionSummary } from '@/components/training/planned-session-link-card';
 import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { LinkButton } from '@/components/ui/link-button';
 import { PhysioRail } from '@/components/ui/physio-rail';
-import { queryKeys } from '@/lib/query/keys';
 import { activityTypeLabels, formatDate, formatDistance, formatDuration } from '@/lib/format';
-import type { PlannedSessionSummary } from '@/components/training/planned-session-link-card';
+import { queryKeys } from '@/lib/query/keys';
 import { parseSessionAnalysis } from '@/lib/session-analysis-display';
-import { cn } from '@/lib/utils';
+import { ActivityType } from '@prisma/client';
+import { useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 type ActivityItem = {
   id: string;

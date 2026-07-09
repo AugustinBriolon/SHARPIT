@@ -1,4 +1,5 @@
 import type { PmcPoint } from '@/lib/analytics';
+import type { CorpsTone } from '@/lib/metric-tone';
 
 export type RecoveryTone = 'good' | 'moderate' | 'low' | 'neutral';
 
@@ -39,6 +40,17 @@ export function factorLabel(key: string): string {
 
 export function accentForTone(tone: RecoveryTone): string {
   return TONE_ACCENT[tone];
+}
+
+const RECOVERY_TO_CORPS_TONE: Record<RecoveryTone, CorpsTone> = {
+  good: 'ok',
+  moderate: 'watch',
+  low: 'attention',
+  neutral: 'neutral',
+};
+
+export function recoveryToneToCorpsTone(tone: RecoveryTone): CorpsTone {
+  return RECOVERY_TO_CORPS_TONE[tone];
 }
 
 /** Classe un code feedback Garmin (GOOD / VERY_GOOD / MODERATE / LOW...). */
