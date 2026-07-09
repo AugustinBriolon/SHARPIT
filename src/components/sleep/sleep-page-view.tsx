@@ -8,7 +8,7 @@ import { SleepStatsStrip } from '@/components/sleep/sleep-stats-strip';
 import { SleepTrendSection } from '@/components/sleep/sleep-trend-chart';
 import { InsightNarrative } from '@/components/product-insight/insight-narrative';
 import { MetricDrillDownPage } from '@/components/today/drill-down/metric-drill-down-page';
-import { sleepInsightNarrativeSections } from '@/lib/product-insight/narrative-sections';
+import { sleepInsightNarrativeSections } from '@/components/product-insight/narrative-sections';
 import type { SleepPageViewProps } from '@/components/sleep/types';
 
 export type { SleepPageViewProps } from '@/components/sleep/types';

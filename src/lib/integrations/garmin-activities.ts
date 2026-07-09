@@ -126,37 +126,39 @@ export function parseGarminSummarizedExerciseSets(
   const raw = activity.summarizedExerciseSets;
   if (!Array.isArray(raw) || raw.length === 0) return [];
 
-  return raw
-    .map((entry, index) => {
-      const item = entry as GarminSummarizedExerciseSet;
-      const category = item.category?.trim();
-      const subCategory = item.subCategory?.trim();
-      if (!category && !subCategory) return null;
+  const results: ParsedStrengthSet[] = [];
 
-      const setCount = item.sets ?? 0;
-      const totalReps = item.reps ?? 0;
-      const totalDurationMs = item.duration ?? 0;
-      let repsPerSet = 1;
-      if (setCount > 0 && totalReps > 0) {
-        repsPerSet = Math.max(1, Math.round(totalReps / setCount));
-      } else if (totalReps > 0) {
-        repsPerSet = totalReps;
-      }
+  raw.forEach((entry, index) => {
+    const item = entry as GarminSummarizedExerciseSet;
+    const category = item.category?.trim();
+    const subCategory = item.subCategory?.trim();
+    if (!category && !subCategory) return;
 
-      const durationSecPerSet =
-        setCount > 0 && totalDurationMs > 0 ? Math.round(totalDurationMs / setCount / 1000) : null;
+    const setCount = item.sets ?? 0;
+    const totalReps = item.reps ?? 0;
+    const totalDurationMs = item.duration ?? 0;
+    let repsPerSet = 1;
+    if (setCount > 0 && totalReps > 0) {
+      repsPerSet = Math.max(1, Math.round(totalReps / setCount));
+    } else if (totalReps > 0) {
+      repsPerSet = totalReps;
+    }
 
-      return {
-        exercise: resolveGarminExerciseLabel(category, subCategory, labels),
-        sets: setCount > 0 ? setCount : 1,
-        reps: repsPerSet,
-        durationSec: durationSecPerSet,
-        weightKg: garminWeightToKg(item.maxWeight),
-        restSec: null,
-        order: index,
-      } satisfies ParsedStrengthSet;
-    })
-    .filter((item): item is ParsedStrengthSet => item != null);
+    const durationSecPerSet =
+      setCount > 0 && totalDurationMs > 0 ? Math.round(totalDurationMs / setCount / 1000) : null;
+
+    results.push({
+      exercise: resolveGarminExerciseLabel(category, subCategory, labels),
+      sets: setCount > 0 ? setCount : 1,
+      reps: repsPerSet,
+      durationSec: durationSecPerSet,
+      weightKg: garminWeightToKg(item.maxWeight),
+      restSec: null,
+      order: index,
+    });
+  });
+
+  return results;
 }
 
 /**
@@ -232,7 +234,7 @@ export function parseGarminExerciseSets(
     if (!key) key = currentKey;
     if (!key) continue;
 
-    const label = entry
+    const label: string = entry
       ? labelFromExerciseKey(key, labels)
       : (currentLabel ?? labelFromExerciseKey(key, labels));
     const repCount = set.repetitionCount ?? 0;

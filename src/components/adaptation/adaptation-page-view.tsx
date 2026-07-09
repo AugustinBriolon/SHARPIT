@@ -5,7 +5,7 @@ import { DrillDownDimensionRow } from '@/components/today/drill-down/dimension-r
 import { DrillDownHighlightSection } from '@/components/today/drill-down/highlight-section';
 import { InsightNarrative } from '@/components/product-insight/insight-narrative';
 import type { ProductInsightBundle } from '@/core/product-insight/types';
-import { defaultInsightNarrativeSections } from '@/lib/product-insight/narrative-sections';
+import { defaultInsightNarrativeSections } from '@/components/product-insight/narrative-sections';
 import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
 import {

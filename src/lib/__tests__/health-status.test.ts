@@ -4,9 +4,15 @@ import {
   corpsToneFromPhysicalSeverity,
   resolveMetricValueTone,
   resolveWeeklyDeltaStatus,
+  toWeeklyDeltaMetricId,
 } from '@/lib/health-status';
 
 describe('health-status weekly delta', () => {
+  it('maps composition metric ids with weekly delta support', () => {
+    expect(toWeeklyDeltaMetricId('bodyFatPct')).toBe('bodyFatPct');
+    expect(toWeeklyDeltaMetricId('vo2Max')).toBeNull();
+  });
+
   it('flags weight gain above 0.3 kg as watch', () => {
     expect(resolveWeeklyDeltaStatus('weightKg', 0.5).tone).toBe('watch');
     expect(resolveWeeklyDeltaStatus('weightKg', 0.2).tone).toBe('ok');

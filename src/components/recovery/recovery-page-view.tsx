@@ -9,7 +9,7 @@ import { RecoveryEvidenceSection } from '@/components/recovery/recovery-evidence
 import { RecoveryTrendsSection } from '@/components/recovery/recovery-trends-section';
 import { InsightNarrative } from '@/components/product-insight/insight-narrative';
 import type { ProductInsightBundle } from '@/core/product-insight/types';
-import { defaultInsightNarrativeSections } from '@/lib/product-insight/narrative-sections';
+import { defaultInsightNarrativeSections } from '@/components/product-insight/narrative-sections';
 import {
   DataReliabilityFooter,
   MetricDrillDownPage,

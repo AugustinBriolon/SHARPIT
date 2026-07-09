@@ -14,7 +14,7 @@ import { InsightNarrative } from '@/components/product-insight/insight-narrative
 import { EffortStatsStrip } from '@/components/effort/effort-stats-strip';
 import { EffortVerdictSection } from '@/components/effort/effort-verdict-section';
 import type { ProductInsightBundle } from '@/core/product-insight/types';
-import { defaultInsightNarrativeSections } from '@/lib/product-insight/narrative-sections';
+import { defaultInsightNarrativeSections } from '@/components/product-insight/narrative-sections';
 import {
   DataReliabilityFooter,
   MetricDrillDownPage,

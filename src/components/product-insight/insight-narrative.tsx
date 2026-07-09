@@ -1,7 +1,7 @@
 'use client';
 
 import type { ProductInsight } from '@/core/product-insight/types';
-import type { InsightNarrativeSection } from '@/lib/product-insight/narrative-sections';
+import type { InsightNarrativeSection } from '@/components/product-insight/narrative-sections';
 import { cn } from '@/lib/utils';
 
 function InsightBlock({ insight, emphasized }: { insight: ProductInsight; emphasized?: boolean }) {

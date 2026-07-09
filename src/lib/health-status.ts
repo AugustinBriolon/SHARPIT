@@ -88,16 +88,15 @@ export function isDeltaStatusTone(tone: CorpsTone): boolean {
 }
 
 export function toWeeklyDeltaMetricId(metricId: CompositionMetricId): WeeklyDeltaMetricId | null {
-  if (
-    metricId === 'weightKg' ||
-    metricId === 'bmi' ||
-    metricId === 'bodyFatPct' ||
-    metricId === 'musclePct' ||
-    metricId === 'visceralFat'
-  ) {
-    return metricId;
+  switch (metricId) {
+    case 'bmi':
+    case 'bodyFatPct':
+    case 'musclePct':
+    case 'visceralFat':
+      return metricId;
+    default:
+      return null;
   }
-  return null;
 }
 
 /**
