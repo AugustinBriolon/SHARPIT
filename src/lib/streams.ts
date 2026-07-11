@@ -63,6 +63,51 @@ export interface ActivityStreamPayload {
 
 const MAX_SAMPLES = 500;
 const MAX_PATH_POINTS = 800;
+/** Durée max stockée à 1 Hz (~8 h) — limite le transfert réseau Neon. */
+const MAX_STORED_SECONDS = 28_800;
+
+/**
+ * Réduit les streams bruts avant persistance (1 Hz, latlng échantillonnée).
+ * Les records et l'UI ré-échantillonnent déjà ; le stockage pleine résolution
+ * multipliait inutilement le transfert réseau (~5–20×).
+ */
+export function compactRawStreamsForStorage(raw: RawStreams): RawStreams {
+  const { time } = raw;
+  if (!time.length) return raw;
+
+  const maxT = Math.floor(time[time.length - 1] ?? 0);
+  if (maxT <= 0) return raw;
+
+  const cap = Math.min(maxT, MAX_STORED_SECONDS);
+  const n = cap + 1;
+
+  const resampleScalar = (values: number[]): number[] => {
+    if (!values.length) return [];
+    const grid = new Array<number>(n).fill(0);
+    let idx = 0;
+    for (let s = 0; s <= cap; s++) {
+      while (idx < time.length - 1 && (time[idx + 1] ?? 0) <= s) idx++;
+      grid[s] = values[idx] ?? 0;
+    }
+    return grid;
+  };
+
+  let latlng = raw.latlng ?? [];
+  if (latlng.length > MAX_PATH_POINTS) {
+    latlng = downsample(latlng, MAX_PATH_POINTS);
+  }
+
+  return {
+    time: Array.from({ length: n }, (_, i) => i),
+    distance: resampleScalar(raw.distance ?? []),
+    altitude: resampleScalar(raw.altitude ?? []),
+    heartrate: resampleScalar(raw.heartrate ?? []),
+    watts: resampleScalar(raw.watts ?? []),
+    cadence: resampleScalar(raw.cadence ?? []),
+    velocity: resampleScalar(raw.velocity ?? []),
+    latlng,
+  };
+}
 
 function normalizeStravaStreams(set: StravaStreamSet): RawStreams {
   return {
@@ -312,11 +357,12 @@ async function fetchRawStreams(activity: {
 
 async function persistStream(activityId: string, raw: RawStreams | null): Promise<boolean> {
   const available = raw != null && rawStreamsHaveSignal(raw);
+  const stored = available && raw ? compactRawStreamsForStorage(raw) : null;
   await prisma.activityStream.create({
     data: {
       activityId,
       available,
-      data: raw ? (raw as unknown as object) : undefined,
+      data: stored ? (stored as unknown as object) : undefined,
     },
   });
   return available;

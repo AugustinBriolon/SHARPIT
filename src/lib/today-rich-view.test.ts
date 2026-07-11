@@ -2,11 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   buildProgressionSummary,
   buildTopActionLine,
-  buildWhyEvidence,
   canTrainHardAnswer,
   verdictHeadline,
 } from './today-rich-view';
-import type { ReasoningData } from '@/hooks/use-today';
 
 describe('today-rich-view', () => {
   it('buildTopActionLine resolves verb and focus', () => {
@@ -17,34 +15,6 @@ describe('today-rich-view', () => {
       expectedBenefit: 0.5,
     });
     expect(line).toContain('Entraîne-toi');
-  });
-
-  it('buildWhyEvidence prefers keyFindings over briefing', () => {
-    const reasoning = {
-      keyFindings: [
-        {
-          id: '1',
-          category: 'recovery',
-          severity: 'MODERATE',
-          title: { code: 'reasoning.finding.lowHrv.title', params: {} },
-          evidenceItems: [{ code: 'reasoning.finding.lowHrv.evidence', params: {} }],
-          confidence: 0.8,
-        },
-      ],
-      topAction: null,
-    } as unknown as ReasoningData;
-
-    const lines = buildWhyEvidence(
-      reasoning,
-      'Briefing LLM qui ne devrait pas apparaître en premier.',
-    );
-    expect(lines.length).toBeGreaterThan(0);
-    expect(lines[0]).not.toContain('Briefing LLM');
-  });
-
-  it('buildWhyEvidence falls back to briefing', () => {
-    const lines = buildWhyEvidence(null, 'Premier paragraphe.\nDeuxième paragraphe.');
-    expect(lines).toEqual(['Premier paragraphe.', 'Deuxième paragraphe.']);
   });
 
   it('verdictHeadline is honest when not actionable', () => {

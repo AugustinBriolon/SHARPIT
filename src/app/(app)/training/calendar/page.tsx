@@ -1,9 +1,11 @@
+import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { CalendarView } from '@/components/calendar/calendar-view';
 
 export default function TrainingCalendarPage() {
   return (
     <div className="space-y-4">
+      <MobileBackLink href="/training" label="Entraînement" showOnDesktop />
       <StickyHeader>
         <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
           Entraînement

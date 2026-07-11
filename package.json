@@ -27,6 +27,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:clean:activities": "tsx scripts/clean-activities.ts",
     "db:backfill:narratives": "tsx scripts/backfill-activity-narratives.ts",
+    "db:migrate:physical-health": "tsx scripts/migrate-physical-health-phase1.ts",
     "db:studio": "prisma studio",
     "db:up": "docker compose up -d",
     "db:migrate-neon": "bash scripts/migrate-to-neon.sh"

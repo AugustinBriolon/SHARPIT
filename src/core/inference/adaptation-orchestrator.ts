@@ -96,9 +96,10 @@ export class AdaptationInferenceOrchestrator {
     const computedAt = new Date();
 
     // ── Step 1: Get DayFeatures ────────────────────────────────────────────
-    const [features, twin] = await Promise.all([
+    const [features, twin, environmentalImpact] = await Promise.all([
       this.deps.featureEngine.getDayFeatures(athleteId, trainingDayId),
       this.deps.digitalTwinRepo.findOrCreate(athleteId),
+      this.deps.digitalTwinRepo.getEnvironmentalImpact(athleteId),
     ]);
 
     // ── Step 2: Get context from Digital Twin ──────────────────────────────
@@ -114,6 +115,7 @@ export class AdaptationInferenceOrchestrator {
       recoveryState,
       fatigueState,
       recentAdaptationHistory,
+      environmentalImpact,
     };
 
     // ── Step 4: Run the Adaptation Model (pure — no side effects) ─────────

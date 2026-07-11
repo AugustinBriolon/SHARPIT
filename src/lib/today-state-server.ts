@@ -2,7 +2,14 @@ import type { AdaptationInferenceResult } from '@/core/inference/adaptation-orch
 import type { FatigueInferenceResult } from '@/core/inference/fatigue-orchestrator';
 import type { RecoveryInferenceResult } from '@/core/inference/orchestrator';
 import type { ReasoningInferenceResult } from '@/core/inference/reasoning-orchestrator';
+import { serializeDecisionState } from '@/core/decision/adapters';
+import type { PhysicalHealthInferenceResult } from '@/core/inference/physical-health-orchestrator';
+import type { EnvironmentInferenceResult } from '@/core/inference/environment-orchestrator';
+import type { EnvironmentalDecisionSnapshot } from '@/core/inference/environment/types';
+import { buildEnvironmentalDecisionSnapshot } from '@/core/inference/environment/snapshot';
 import { adaptationEngine } from '@/lib/engines/adaptation-engine';
+import { environmentEngine } from '@/lib/engines/environment-engine';
+import { physicalHealthEngine } from '@/lib/engines/physical-health-engine';
 import { fatigueEngine } from '@/lib/engines/fatigue-engine';
 import { featureEngine } from '@/lib/engines/feature-engine';
 import { reasoningEngine } from '@/lib/engines/reasoning-engine';
@@ -17,9 +24,12 @@ import {
 import type {
   AdaptationData,
   DailyStrainData,
+  DecisionData,
   FatigueData,
   ReasoningData,
   RecoveryData,
+  PhysicalHealthData,
+  EnvironmentSnapshotData,
   TodayState,
 } from '@/hooks/use-today';
 import { prisma } from '@/lib/prisma';
@@ -35,7 +45,13 @@ function readStateComputedAt(state: unknown): Date | null {
 async function isReasoningStale(athleteId: string, reasoningComputedAt: Date): Promise<boolean> {
   const twin = await prisma.digitalTwin.findUnique({
     where: { athleteId },
-    select: { recoveryState: true, fatigueState: true, adaptationState: true },
+    select: {
+      recoveryState: true,
+      fatigueState: true,
+      adaptationState: true,
+      physicalHealthState: true,
+      environmentalStateMeta: true,
+    },
   });
   if (!twin) return true;
 
@@ -43,6 +59,8 @@ async function isReasoningStale(athleteId: string, reasoningComputedAt: Date): P
     readStateComputedAt(twin.recoveryState),
     readStateComputedAt(twin.fatigueState),
     readStateComputedAt(twin.adaptationState),
+    readStateComputedAt(twin.physicalHealthState),
+    readStateComputedAt(twin.environmentalStateMeta),
   ].filter((d): d is Date => d !== null);
 
   return subModelTimes.some((computedAt) => computedAt > reasoningComputedAt);
@@ -194,6 +212,10 @@ function formatReasoningResult(result: ReasoningInferenceResult): ReasoningData 
   };
 }
 
+function formatDecisionResult(result: ReasoningInferenceResult): DecisionData {
+  return serializeDecisionState(result.output.decisionState);
+}
+
 async function loadRecoveryState(
   athleteId: string,
   trainingDayId: string,
@@ -306,11 +328,103 @@ async function loadDailyStrainState(
   }
 }
 
+async function loadEnvironmentState(
+  athleteId: string,
+  trainingDayId: string,
+  forceRefresh: boolean,
+): Promise<EnvironmentSnapshotData | null> {
+  try {
+    if (!forceRefresh) {
+      const cached = await environmentEngine.getLatest(athleteId, trainingDayId);
+      if (cached) return formatEnvironmentResult(cached);
+    }
+    const result = await environmentEngine.run(athleteId, trainingDayId, { forceRefresh });
+    return formatEnvironmentResult(result);
+  } catch (error) {
+    console.error('[today-state-server/environment]', error);
+    return null;
+  }
+}
+
+function formatEnvironmentResult(
+  result: EnvironmentInferenceResult,
+): EnvironmentalDecisionSnapshot {
+  return buildEnvironmentalDecisionSnapshot({
+    stress: result.output.stress,
+    impact: result.output.impact,
+    meta: result.output.meta,
+  });
+}
+
+async function loadPhysicalHealthState(
+  athleteId: string,
+  trainingDayId: string,
+  forceRefresh: boolean,
+): Promise<PhysicalHealthData | null> {
+  try {
+    if (!forceRefresh) {
+      const cached = await physicalHealthEngine.getLatest(athleteId, trainingDayId);
+      if (cached) return formatPhysicalHealthResult(cached);
+    }
+    const result = await physicalHealthEngine.run(athleteId, trainingDayId);
+    return formatPhysicalHealthResult(result);
+  } catch (error) {
+    console.error('[today-state-server/physical-health]', error);
+    return null;
+  }
+}
+
+function formatPhysicalHealthResult(result: PhysicalHealthInferenceResult): PhysicalHealthData {
+  const { output, computedAt } = result;
+  const { physicalHealthState, signals, decision, recommendation } = output;
+
+  return {
+    conditions: physicalHealthState.conditions.map((c) => ({
+      conditionId: c.conditionId,
+      label: c.label,
+      bodyRegion: c.bodyRegion,
+      side: c.side,
+      type: c.type,
+      affectsTraining: c.affectsTraining,
+      severity: c.severity,
+      status: c.status,
+      trend: c.trend,
+      confidence: c.confidence,
+      functionalCapacity: c.functionalCapacity,
+      estimatedRecoveryDays: c.estimatedRecoveryDays,
+      evidenceObservationIds: [...c.evidenceObservationIds],
+    })),
+    activeConditionCount: physicalHealthState.activeConditionCount,
+    aggregateTrainingCapacity: physicalHealthState.aggregateTrainingCapacity,
+    primaryLimitingConditionId: physicalHealthState.primaryLimitingConditionId,
+    trainingBlockedByCondition: physicalHealthState.trainingBlockedByCondition,
+    confidence: physicalHealthState.confidence,
+    dataCompleteness: physicalHealthState.dataCompleteness,
+    decision: {
+      verdict: decision.verdict,
+      rationale: [...decision.rationale],
+    },
+    recommendation: {
+      trainingCapacity: recommendation.trainingCapacity,
+      confidence: recommendation.confidence,
+      evidence: [...recommendation.evidence],
+    },
+    signals: {
+      activeConditionCount: signals.activeConditionCount,
+      maxSeverity: signals.maxSeverity,
+      improvingCount: signals.improvingCount,
+      worseningCount: signals.worseningCount,
+      recurrentCount: signals.recurrentCount,
+    },
+    computedAt: computedAt.toISOString(),
+  };
+}
+
 async function loadReasoningState(
   athleteId: string,
   trainingDayId: string,
   forceRefresh: boolean,
-): Promise<ReasoningData | null> {
+): Promise<{ reasoning: ReasoningData | null; decision: DecisionData | null }> {
   try {
     if (!forceRefresh) {
       const cached = await reasoningEngine.getLatest(athleteId, trainingDayId);
@@ -322,15 +436,21 @@ async function loadReasoningState(
         cachedHasI18nTopAction &&
         !stale
       ) {
-        return formatReasoningResult(cached);
+        return {
+          reasoning: formatReasoningResult(cached),
+          decision: formatDecisionResult(cached),
+        };
       }
     }
 
     const result = await reasoningEngine.run(athleteId, trainingDayId);
-    return formatReasoningResult(result);
+    return {
+      reasoning: formatReasoningResult(result),
+      decision: formatDecisionResult(result),
+    };
   } catch (error) {
     console.error('[today-state-server/reasoning]', error);
-    return null;
+    return { reasoning: null, decision: null };
   }
 }
 
@@ -341,13 +461,26 @@ export async function loadTodayState(params: {
 }): Promise<TodayState> {
   const { athleteId, trainingDayId, forceRefresh = false } = params;
 
-  const [recovery, fatigue, adaptation, dailyStrain, reasoning] = await Promise.all([
+  const physicalHealth = await loadPhysicalHealthState(athleteId, trainingDayId, forceRefresh);
+  const environment = await loadEnvironmentState(athleteId, trainingDayId, forceRefresh);
+
+  const [recovery, fatigue, adaptation, dailyStrain] = await Promise.all([
     loadRecoveryState(athleteId, trainingDayId, forceRefresh),
     loadFatigueState(athleteId, trainingDayId, forceRefresh),
     loadAdaptationState(athleteId, trainingDayId, forceRefresh),
     loadDailyStrainState(athleteId, trainingDayId),
-    loadReasoningState(athleteId, trainingDayId, forceRefresh),
   ]);
 
-  return { reasoning, recovery, fatigue, adaptation, dailyStrain };
+  const { reasoning, decision } = await loadReasoningState(athleteId, trainingDayId, forceRefresh);
+
+  return {
+    reasoning,
+    decision,
+    recovery,
+    fatigue,
+    adaptation,
+    physicalHealth,
+    environment,
+    dailyStrain,
+  };
 }

@@ -13,6 +13,14 @@ import { ActivityList } from '@/components/training/activity-list';
 import { TrainingWeekCalendarPreview } from '@/components/training/training-week-calendar-preview';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  SkeletonCard,
+  SkeletonEyebrow,
+  SkeletonHeroSplit,
+  SkeletonPill,
+  SkeletonText,
+  SkeletonTitle,
+} from '@/components/ui/skeleton-patterns';
 import { useActivities, useGoals, usePlannedSessions } from '@/hooks/use-data';
 import { isAnyInitialQueryLoad } from '@/hooks/use-query-status';
 import { useIsMobile } from '@/hooks/use-viewport';
@@ -53,15 +61,47 @@ function TrainingDashboardSkeleton() {
   return (
     <div className="space-y-5">
       <div className="space-y-2">
-        <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-4 w-96 max-w-full" />
+        <SkeletonEyebrow className="w-24" />
+        <SkeletonTitle className="w-64 max-w-full" size="lg" />
+        <SkeletonText widths={['100%', '94%', '62%']} />
       </div>
-      <Skeleton className="h-36 rounded-2xl" />
-      <Skeleton className="h-64 rounded-2xl" />
+      <SkeletonHeroSplit />
+      <SkeletonCard>
+        <div className="mb-3 flex items-end justify-between gap-3">
+          <div className="space-y-2">
+            <SkeletonEyebrow className="w-32" />
+            <SkeletonText widths={['58%']} />
+          </div>
+          <SkeletonText widths={['72px']} />
+        </div>
+        <Skeleton className="rounded-analysis-lg h-24" />
+      </SkeletonCard>
       <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-        <Skeleton className="h-96 rounded-2xl" />
-        <Skeleton className="h-80 rounded-2xl" />
+        <div className="space-y-3">
+          <SkeletonCard>
+            <SkeletonEyebrow className="w-24" />
+            <Skeleton className="rounded-analysis mt-3 h-24" />
+          </SkeletonCard>
+          <SkeletonCard>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <div className="space-y-2">
+                <SkeletonEyebrow className="w-28" />
+                <SkeletonText widths={['72%']} />
+              </div>
+              <SkeletonPill className="w-28" />
+            </div>
+            <div className="grid grid-cols-5 gap-1.5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="rounded-analysis h-24" />
+              ))}
+            </div>
+          </SkeletonCard>
+        </div>
+        <SkeletonCard>
+          <SkeletonEyebrow className="w-24" />
+          <SkeletonText className="mt-2" widths={['78%']} />
+          <Skeleton className="rounded-analysis mt-4 h-72" />
+        </SkeletonCard>
       </div>
     </div>
   );

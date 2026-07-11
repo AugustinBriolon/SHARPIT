@@ -3,6 +3,8 @@
 import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
 import { DrillDownDimensionRow } from '@/components/today/drill-down/dimension-row';
 import { DrillDownHighlightSection } from '@/components/today/drill-down/highlight-section';
+import { GlobalDecisionStrip } from '@/components/today/drill-down/global-decision-strip';
+import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
 import { InsightNarrative } from '@/components/product-insight/insight-narrative';
 import type { ProductInsightBundle } from '@/core/product-insight/types';
 import { defaultInsightNarrativeSections } from '@/components/product-insight/narrative-sections';
@@ -45,6 +47,7 @@ export type AdaptationPageViewProps = {
   confidencePct: number;
   confidenceTone: MetricTone;
   insights: ProductInsightBundle;
+  globalDecision: GlobalDecisionContext;
 };
 
 export function AdaptationPageView({
@@ -71,6 +74,7 @@ export function AdaptationPageView({
   historyLength,
   confidencePct,
   insights,
+  globalDecision,
 }: AdaptationPageViewProps) {
   return (
     <MetricDrillDownPage
@@ -100,10 +104,12 @@ export function AdaptationPageView({
         onPreviousDay={onPreviousDay}
       />
 
+      <GlobalDecisionStrip context={globalDecision} />
+
       <DrillDownHighlightSection
         bullets={rationale}
         description="La meilleure façon d'ajuster le bloc à partir de ce que le modèle voit."
-        label="Décision de progression"
+        label="Verdict adaptation"
         title={verdictLabel}
         titleClassName={verdictClassName}
       />

@@ -15,15 +15,19 @@ export async function POST() {
       recordChanges = filterRecordChangesByActivities(allChanges, result.importedActivityIds);
     }
 
-    await onProviderSyncCompleted([
-      {
-        provider: 'strava',
-        imported: result.imported,
-        updated: result.merged,
-        observationCount: 0,
-        activityIds: result.importedActivityIds,
-      },
-    ]);
+    await onProviderSyncCompleted(
+      [
+        {
+          provider: 'strava',
+          imported: result.imported,
+          updated: result.merged,
+          observationCount: 0,
+          activityIds: result.importedActivityIds,
+        },
+      ],
+      undefined,
+      { skipRecordUpdate: result.importedTypes.length > 0 },
+    );
 
     return NextResponse.json({ ...result, recordChanges });
   } catch (error) {

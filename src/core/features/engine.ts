@@ -51,6 +51,7 @@ import { extractConditionFeatures } from './extractors/condition-extractor';
 import { extractLoadFeatures } from './extractors/load-extractor';
 import { computeRpeVsTargetZone, extractRecoveryFeatures } from './extractors/recovery-extractor';
 import { extractSessionFeatures } from './extractors/session-extractor';
+import type { ConditionRepository } from '@/core/physical-health/repository';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Ports
@@ -89,6 +90,8 @@ export type FeatureEngineDeps = {
   observationRepository: ObservationRepository;
   contextProvider: ExtractionContextProvider;
   sessionStreamProvider?: SessionStreamProvider;
+  /** When set, condition features are built from Condition tables (Phase 2). */
+  conditionRepository?: ConditionRepository;
   /** Optional metrics collector — no-op when absent. */
   metrics?: MetricsCollector;
 };
@@ -159,6 +162,7 @@ export class FeatureEngine {
   private readonly obsRepo: ObservationRepository;
   private readonly ctxProvider: ExtractionContextProvider;
   private readonly sessionStreamProvider: SessionStreamProvider | undefined;
+  private readonly conditionRepo: ConditionRepository | undefined;
   private readonly metrics: MetricsCollector | undefined;
 
   constructor(deps: FeatureEngineDeps) {
@@ -166,6 +170,7 @@ export class FeatureEngine {
     this.obsRepo = deps.observationRepository;
     this.ctxProvider = deps.contextProvider;
     this.sessionStreamProvider = deps.sessionStreamProvider;
+    this.conditionRepo = deps.conditionRepository;
     this.metrics = deps.metrics;
   }
 
@@ -710,6 +715,27 @@ export class FeatureEngine {
     athleteId: string,
     trainingDayId: string,
   ): Promise<ConditionHistory> {
+    if (this.conditionRepo) {
+      const history = await this.conditionRepo.getConditionHistoryForFeatures(trainingDayId);
+      return {
+        activeConditions: history.activeConditions.map(
+          (c) =>
+            ({
+              id: c.id,
+              athleteId,
+              type: 'PHYSICAL_CONDITION',
+              timestamp: new Date(`${trainingDayId}T12:00:00Z`),
+              category: 'PAIN',
+              bodyRegion: '',
+              bodySide: 'NA',
+              severity: c.severity,
+              affectsTraining: c.affectsTraining,
+            }) as PhysicalConditionObservation,
+        ),
+        severityHistory14d: history.severityHistory14d,
+      };
+    }
+
     const from14d = subtractDays(trainingDayId, 14);
     const fromTimestamp = new Date(`${from14d}T00:00:00Z`);
     const toTimestamp = new Date(`${trainingDayId}T23:59:59Z`);

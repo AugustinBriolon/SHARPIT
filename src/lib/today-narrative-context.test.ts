@@ -14,6 +14,7 @@ const plannedSummary: TodayDaySummary = {
     {
       id: 'p1',
       kind: 'planned',
+      activityType: 'RUN',
       primary: 'Tempo 45 min',
       plannedSession: {
         id: 'p1',
@@ -34,6 +35,7 @@ const doneSummary: TodayDaySummary = {
     {
       id: 'a1',
       kind: 'done',
+      activityType: 'RUN',
       primary: 'Course · Sortie tempo',
       secondary: '1h05 · 72 TSS',
     },

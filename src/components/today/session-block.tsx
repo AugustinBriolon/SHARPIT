@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { CheckCircle2, CalendarClock } from 'lucide-react';
+import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
 import { cn } from '@/lib/utils';
 import { resolve } from '@/lib/french';
 import type { EngineRecommendation, KeyFinding } from '@/hooks/use-today';
@@ -52,9 +53,12 @@ function SessionLineContent({ line }: { line: DaySummaryLine }) {
         {line.plannedSession ? (
           <PlannedSessionPrimary className="flex-1" session={line.plannedSession} />
         ) : (
-          <p className="line-clamp-2 min-w-0 text-sm leading-snug font-medium wrap-break-word">
-            {line.primary}
-          </p>
+          <>
+            <ActivityTypeIndicator type={line.activityType} />
+            <p className="line-clamp-2 min-w-0 text-sm leading-snug font-medium wrap-break-word">
+              {line.primary}
+            </p>
+          </>
         )}
       </div>
       {line.secondary && (

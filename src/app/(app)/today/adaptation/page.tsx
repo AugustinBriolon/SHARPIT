@@ -3,6 +3,7 @@
 import { format } from 'date-fns';
 import { MobileDrillDownHeader } from '@/components/layout/mobile-drill-down-header';
 import { AdaptationPageView } from '@/components/adaptation/adaptation-page-view';
+import { MetricDrillDownSkeleton } from '@/components/today/drill-down/drill-down-skeleton';
 import { useTodaySelectedDate } from '@/hooks/use-today-selected-date';
 import { useAdaptationViewModel } from '@/hooks/use-presentation-view-model';
 
@@ -14,15 +15,7 @@ export default function TodayAdaptationPage() {
   const viewModel = query.data ?? null;
 
   if (query.isPending && !viewModel) {
-    return (
-      <div>
-        <MobileDrillDownHeader title="Adaptation" />
-        <div className="animate-pulse space-y-4 p-4">
-          <div className="bg-muted mx-auto h-48 rounded-3xl" />
-          <div className="bg-muted mx-auto h-32 rounded-3xl" />
-        </div>
-      </div>
-    );
+    return <MetricDrillDownSkeleton title="Adaptation" variant="adaptation" />;
   }
 
   if (!viewModel || viewModel.emptyState) {

@@ -336,6 +336,11 @@ export interface PlannedSessionPayload {
   intensity?: SessionIntensity | null;
   goalId?: string | null;
   completed?: boolean;
+  exposureSetting?: 'INDOOR' | 'OUTDOOR' | 'UNKNOWN' | null;
+  locationLabel?: string | null;
+  locationLat?: number | null;
+  locationLng?: number | null;
+  locationType?: 'TRACK' | 'ROAD' | 'TRAIL' | 'POOL' | 'GYM' | 'TRAINER' | 'UNKNOWN' | null;
 }
 
 export interface BrickLegPayload {

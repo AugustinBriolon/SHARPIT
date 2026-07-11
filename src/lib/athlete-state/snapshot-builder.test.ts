@@ -14,6 +14,9 @@ const baseFreshness = {
 
 const baseTodayState: TodayState = {
   reasoning: null,
+  decision: null,
+  physicalHealth: null,
+  environment: null,
   recovery: null,
   fatigue: null,
   adaptation: null,

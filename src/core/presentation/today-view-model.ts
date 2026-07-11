@@ -1,4 +1,5 @@
 import type { ProductInsight } from '@/core/product-insight/types';
+import type { ActivityType } from '@prisma/client';
 import type {
   PresentationAction,
   PresentationConfidence,
@@ -27,6 +28,7 @@ export type TodayViewModel = {
     effort: PresentationNavigationTarget;
     adaptation: PresentationNavigationTarget;
     planning: PresentationNavigationTarget;
+    physical: PresentationNavigationTarget;
   };
 
   /** HERO = What to do now */
@@ -80,6 +82,7 @@ export type TodayViewModel = {
     /** Rendered list already contains resolved links. */
     daySummaryLines: Array<{
       id: string;
+      activityType: ActivityType;
       primary: string;
       secondary?: string | null;
       kind: 'done' | 'planned';
@@ -105,6 +108,14 @@ export type TodayViewModel = {
   };
 
   insights: ProductInsight[];
+
+  /** Environmental context when training impact is significant (Phase 3). */
+  environmentContext: {
+    visible: boolean;
+    summaryLine: string | null;
+    detailLine: string | null;
+    thermalLabel: string | null;
+  } | null;
 
   hierarchy: PresentationHierarchy;
   sections: PresentationSection[];

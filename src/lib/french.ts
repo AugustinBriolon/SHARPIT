@@ -145,6 +145,36 @@ const STRINGS: Record<string, string> = {
     "Pic d'adaptation estimé dans {days} jour(s)",
   'reasoning.finding.positiveAdaptation.evidence.trajectoryPositive': 'Trajectoire favorable',
 
+  'reasoning.finding.environmentalLoad.title': 'Charge environnementale significative',
+  'reasoning.finding.environmentalLoad.evidence.recoveryDemand':
+    'Demande de récupération majorée de {recoveryPct} %',
+  'reasoning.finding.environmentalLoad.evidence.performanceExpectation':
+    'Performance attendue réduite d’environ {performancePct} %',
+
+  'decision.limitingFactor.physicalHealth.blocked':
+    'Condition active : {condition} — entraînement à suspendre',
+  'decision.limitingFactor.physicalHealth.blockedGeneric':
+    'Condition physique — entraînement suspendu',
+  'decision.limitingFactor.physicalHealth.reduced': '{condition} limite la capacité d’entraînement',
+  'decision.limitingFactor.physicalHealth.reducedGeneric':
+    'Capacité réduite par une condition physique',
+  'decision.limitingFactor.environment.significant':
+    'Conditions environnementales exigeantes aujourd’hui',
+
+  'decision.primary.headline.physicalHealth':
+    'Priorité santé — protège ta récupération avant la performance',
+  'decision.primary.headline.environment': 'L’environnement pèse sur ta forme — adapte l’intensité',
+  'decision.primary.headline.recover.fatigue':
+    'La fatigue impose une vraie récupération aujourd’hui',
+  'decision.primary.headline.recover.recovery': 'Ta récupération est insuffisante pour pousser',
+  'decision.primary.headline.recover': 'Journée de récupération prioritaire',
+  'decision.primary.headline.trainHard': 'Fenêtre favorable — tu peux viser une séance exigeante',
+  'decision.primary.headline.raceReady': 'Forme de pic — séance qualité ou compétition possible',
+  'decision.primary.headline.caution': 'Signaux mixtes — prudence et écoute du corps',
+  'decision.primary.headline.trainEasy': 'Charge modérée — conserve de la marge',
+  'decision.primary.headline.trainSmart': 'Entraîne-toi avec discernement aujourd’hui',
+  'decision.primary.headline.insufficient': 'Données insuffisantes pour une recommandation fiable',
+
   // ── Limiting factors ─────────────────────────────────────────────────────
   'reasoning.limitingFactor.fatigue.overreaching':
     'Surmenage — la dimension {dimension} est le facteur limitant',

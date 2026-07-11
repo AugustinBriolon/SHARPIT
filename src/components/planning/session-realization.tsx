@@ -15,17 +15,12 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
 import { Button } from '@/components/ui/button';
 import { LinkButton } from '@/components/ui/link-button';
 import { Textarea } from '@/components/ui/textarea';
 import type { ClientActivity, ClientPhysicalNote, ClientPlannedSession } from '@/lib/query/types';
-import {
-  activityTypeColors,
-  activityTypeLabels,
-  formatDate,
-  formatDistance,
-  formatDuration,
-} from '@/lib/format';
+import { activityTypeLabels, formatDate, formatDistance, formatDuration } from '@/lib/format';
 import { severityColor } from '@/lib/physical';
 import { cn } from '@/lib/utils';
 import type { SessionAnalysis } from '@/lib/validators/coach';
@@ -75,7 +70,8 @@ function PhysicalReassessmentCard({ item }: { item: PhysicalReassessment }) {
   const [dismissed, setDismissed] = useState(false);
   const [done, setDone] = useState(false);
   const [severity, setSeverity] = useState<number>(item.suggestedSeverity ?? note?.severity ?? 5);
-  const [comment, setComment] = useState(item.comment ?? '');
+  const [comment, setComment] = useState('');
+  const contextHint = item.comment?.trim() || null;
 
   // Afficher uniquement les douleurs / blessures, pas posture ou mobilité.
   if (!note || dismissed || (note.category !== 'PAIN' && note.category !== 'INJURY')) return null;
@@ -117,6 +113,11 @@ function PhysicalReassessmentCard({ item }: { item: PhysicalReassessment }) {
         </button>
       </div>
       <p className="text-muted-foreground text-xs">{item.question}</p>
+      {contextHint && (
+        <p className="text-muted-foreground/80 border-border/40 bg-muted/30 rounded-md border px-2 py-1.5 text-[11px] leading-relaxed">
+          Contexte séance : {contextHint}
+        </p>
+      )}
       <div className="space-y-1">
         <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground">Sévérité ressentie</span>
@@ -216,15 +217,18 @@ export function SessionRealization({ session }: { session: ClientPlannedSession 
           className="border-border/50 bg-card/60 hover:border-primary/40 flex items-center justify-between gap-2 rounded-md border p-2"
           href={`/training/${linked.id}`}
         >
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium">
-              {linked.title ?? activityTypeLabels[linked.type]}
-            </p>
-            <p className="text-muted-foreground text-xs">
-              {formatDate(linked.date)} · {formatDuration(linked.duration)}
-            </p>
+          <div className="flex min-w-0 items-start gap-1.5">
+            <ActivityTypeIndicator type={linked.type} />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">
+                {linked.title ?? activityTypeLabels[linked.type]}
+              </p>
+              <p className="text-muted-foreground text-xs">
+                {formatDate(linked.date)} · {formatDuration(linked.duration)}
+              </p>
+            </div>
           </div>
-          <span className={cn('text-xs font-medium', activityTypeColors[linked.type])}>
+          <span className="text-muted-foreground shrink-0 text-xs font-medium">
             {activityMetric(linked)}
           </span>
         </Link>
@@ -345,20 +349,18 @@ export function SessionRealization({ session }: { session: ClientPlannedSession 
                     type="button"
                     onClick={() => handleLink(a.id)}
                   >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">
-                        {a.title ?? activityTypeLabels[a.type]}
-                      </p>
-                      <p className="text-muted-foreground text-xs">
-                        {formatDate(a.date)} · {formatDuration(a.duration)}
-                        {diff === 0 && sameType ? ' · même jour' : ''}
-                      </p>
+                    <div className="flex min-w-0 items-start gap-1.5">
+                      <ActivityTypeIndicator type={a.type} />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">
+                          {a.title ?? activityTypeLabels[a.type]}
+                        </p>
+                        <p className="text-muted-foreground text-xs">
+                          {formatDate(a.date)} · {formatDuration(a.duration)}
+                          {diff === 0 && sameType ? ' · même jour' : ''}
+                        </p>
+                      </div>
                     </div>
-                    <span
-                      className={cn('shrink-0 text-xs font-medium', activityTypeColors[a.type])}
-                    >
-                      {activityTypeLabels[a.type]}
-                    </span>
                   </button>
                 ))}
               </div>

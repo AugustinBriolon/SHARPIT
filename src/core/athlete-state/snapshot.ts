@@ -8,8 +8,11 @@ import type {
   FatigueData,
   LimitingFactor,
   OverallVerdict,
+  PhysicalHealthData,
   ReasoningData,
   RecoveryData,
+  EnvironmentSnapshotData,
+  DecisionData,
 } from '@/hooks/use-today';
 
 /**
@@ -36,11 +39,23 @@ export type AthleteSnapshot = {
   recovery: RecoveryData | null;
   fatigue: FatigueData | null;
   adaptation: AdaptationData | null;
+  physicalHealth: PhysicalHealthData | null;
+  environment?: EnvironmentSnapshotData | null;
   dailyStrain: DailyStrainData | null;
   reasoning: ReasoningData | null;
+  /** Canonical cross-model decision — single source of truth for product surfaces. */
+  decision: DecisionData | null;
 
   /** Product-oriented summary — derived deterministically from inference. */
   readiness: number | null;
+  /** Presentation-only — projected at snapshot build. */
+  sleepScore: number | null;
+  /** Presentation-only — projected at snapshot build. */
+  adaptationIndex: number | null;
+  /** Presentation-only — projected at snapshot build. */
+  adaptationStatus: AdaptationData['adaptationStatus'] | null;
+  /** Presentation-only — projected at snapshot build. */
+  adaptationTrend: AdaptationData['adaptationTrend'] | null;
   todaysDecision: OverallVerdict | null;
   limitingFactor: LimitingFactor | null;
   confidence: number | null;

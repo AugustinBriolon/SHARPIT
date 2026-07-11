@@ -1,10 +1,9 @@
-import type { AdaptationData, KeyFinding, ReasoningData, TopAction } from '@/hooks/use-today';
-import type { DailyPhase, DailyPhaseWhyFocus } from '@/lib/daily-phase/types';
+import type { AdaptationData, TopAction } from '@/hooks/use-today';
+import type { DailyPhase } from '@/lib/daily-phase/types';
 import { isForwardAdvicePhase } from '@/lib/daily-phase/resolve';
-import { resolve, resolveCode } from '@/lib/french';
+import { resolveCode } from '@/lib/french';
+import { mapVerdictToDisplay, type OverallVerdict } from '@/lib/today-mapping';
 import { ADAPTATION_STATUS_SIGNAL } from '@/lib/today-dashboard-labels';
-import { mapVerdictToDisplay } from '@/lib/today-mapping';
-import type { OverallVerdict } from '@/lib/today-mapping';
 
 export function buildTopActionLine(topAction: TopAction | null): string | null {
   if (!topAction) return null;
@@ -12,69 +11,6 @@ export function buildTopActionLine(topAction: TopAction | null): string | null {
   const focus = resolveCode(topAction.focusCode);
   if (!verb || verb === topAction.verbCode) return null;
   return focus && focus !== topAction.focusCode ? `${verb} — ${focus}` : verb;
-}
-
-export function buildWhyEvidence(
-  reasoning: ReasoningData | null,
-  briefing: string | null | undefined,
-  whyFocus: DailyPhaseWhyFocus = 'readiness',
-): string[] {
-  const lines: string[] = [];
-
-  if (reasoning?.keyFindings?.length) {
-    const prioritized = prioritizeFindings(reasoning.keyFindings, whyFocus);
-    for (const finding of prioritized.slice(0, 2)) {
-      lines.push(resolve(finding.title));
-      for (const item of finding.evidenceItems.slice(0, 1)) {
-        const text = resolve(item);
-        if (text && text !== item.code) lines.push(text);
-      }
-    }
-    if (lines.length > 0) return lines.slice(0, 3);
-  }
-
-  if (whyFocus === 'adaptation_recovery' || whyFocus === 'tomorrow_impact') {
-    if (briefing) {
-      const paragraphs = briefing
-        .split('\n')
-        .map((p) => p.replace(/\*\*/g, '').trim())
-        .filter(Boolean);
-      return paragraphs.slice(-2);
-    }
-  }
-
-  if (briefing && (whyFocus === 'readiness' || whyFocus === 'session_prep')) {
-    const paragraphs = briefing
-      .split('\n')
-      .map((p) => p.replace(/\*\*/g, '').trim())
-      .filter(Boolean);
-    return paragraphs.slice(0, 2);
-  }
-
-  if (reasoning?.topAction) {
-    const rationale = resolveCode(reasoning.topAction.rationaleCode);
-    if (rationale && rationale !== reasoning.topAction.rationaleCode) {
-      lines.push(rationale);
-    }
-  }
-
-  return lines;
-}
-
-function prioritizeFindings(findings: ReasoningData['keyFindings'], whyFocus: DailyPhaseWhyFocus) {
-  const order: Record<DailyPhaseWhyFocus, string[]> = {
-    readiness: ['recovery', 'sleep', 'readiness'],
-    session_prep: ['fatigue', 'recovery', 'load'],
-    session_review: ['load', 'fatigue', 'training'],
-    adaptation_recovery: ['recovery', 'fatigue', 'adaptation'],
-    tomorrow_impact: ['adaptation', 'recovery', 'sleep'],
-  };
-  const prefs = order[whyFocus];
-  return [...findings].sort((a, b) => {
-    const ai = prefs.indexOf(a.category);
-    const bi = prefs.indexOf(b.category);
-    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-  });
 }
 
 export function actionRowLabels(phase: DailyPhase): {
@@ -154,7 +90,10 @@ function adaptationTrendClass(trend: AdaptationData['adaptationTrend']): string 
 }
 
 export function buildProgressionSummary(
-  adaptation: AdaptationData | null,
+  adaptation: Pick<
+    AdaptationData,
+    'adaptationIndex' | 'adaptationStatus' | 'adaptationTrend'
+  > | null,
   weeklyLoad: number,
 ): {
   headline: string;
@@ -212,5 +151,3 @@ export function canTrainHardAnswer(verdict: OverallVerdict, adviceActionable: bo
       return 'Réponse indisponible pour l’instant.';
   }
 }
-
-export type { KeyFinding };

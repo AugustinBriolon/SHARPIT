@@ -28,6 +28,8 @@ import type {
   DataCompleteness,
 } from '@/core/digital-twin/types';
 import type { I18nItem } from '@/core/inference/shared/types';
+import type { EnvironmentalImpact } from '@/core/environment';
+import { environmentalImpactIsSignificant } from '@/core/inference/environment/apply-impact';
 import type { PhysiologicalDirection, ModelDirections } from './types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -667,6 +669,49 @@ export function buildKeyFindings(
   });
 
   return findings.slice(0, 5);
+}
+
+export function appendEnvironmentalFindings(
+  findings: ReasoningFinding[],
+  impact: EnvironmentalImpact | null | undefined,
+): ReasoningFinding[] {
+  if (!impact || !environmentalImpactIsSignificant(impact)) {
+    return findings;
+  }
+
+  const recoveryDemand = impact.recovery.demandMultiplier.available
+    ? impact.recovery.demandMultiplier.value
+    : null;
+  const performanceRatio = impact.performance.expectedOutputRatio.available
+    ? impact.performance.expectedOutputRatio.value
+    : null;
+
+  return [
+    ...findings,
+    {
+      id: 'FINDING_ENVIRONMENTAL_LOAD',
+      category: 'CROSS_SYSTEM',
+      severity: recoveryDemand != null && recoveryDemand > 1.15 ? 'WARNING' : 'INFO',
+      title: { code: 'reasoning.finding.environmentalLoad.title' },
+      evidenceItems: [
+        {
+          code: 'reasoning.finding.environmentalLoad.evidence.recoveryDemand',
+          params:
+            recoveryDemand != null
+              ? { recoveryPct: Math.round((recoveryDemand - 1) * 100) }
+              : undefined,
+        },
+        {
+          code: 'reasoning.finding.environmentalLoad.evidence.performanceExpectation',
+          params:
+            performanceRatio != null
+              ? { performancePct: Math.round((1 - performanceRatio) * 100) }
+              : undefined,
+        },
+      ],
+      confidence: impact.confidence,
+    },
+  ];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

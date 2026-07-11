@@ -8,8 +8,27 @@ const optionalString = z
   .nullable()
   .transform((v) => (v === '' ? null : v));
 
+export const plannedSessionExposureSchema = z.enum(['INDOOR', 'OUTDOOR', 'UNKNOWN']);
+export const plannedSessionLocationTypeSchema = z.enum([
+  'TRACK',
+  'ROAD',
+  'TRAIL',
+  'POOL',
+  'GYM',
+  'TRAINER',
+  'UNKNOWN',
+]);
+
 export const activityTypeSchema = z.nativeEnum(ActivityType);
 export const sessionIntensitySchema = z.nativeEnum(SessionIntensity);
+
+const contextualFields = {
+  exposureSetting: plannedSessionExposureSchema.optional().nullable(),
+  locationLabel: optionalString,
+  locationLat: optionalNumber,
+  locationLng: optionalNumber,
+  locationType: plannedSessionLocationTypeSchema.optional().nullable(),
+};
 
 const basePlannedSessionSchema = z.object({
   type: activityTypeSchema,
@@ -22,6 +41,7 @@ const basePlannedSessionSchema = z.object({
   intensity: sessionIntensitySchema.optional().nullable(),
   completed: z.coerce.boolean().optional(),
   goalId: optionalString,
+  ...contextualFields,
 });
 
 export const createPlannedSessionSchema = basePlannedSessionSchema;

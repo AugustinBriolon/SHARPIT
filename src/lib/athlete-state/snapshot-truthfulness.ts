@@ -1,9 +1,10 @@
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
-import type { ReasoningData, TodayState } from '@/hooks/use-today';
+import type { DecisionData, TodayState } from '@/hooks/use-today';
 import { isForwardAdvicePhase } from '@/lib/daily-phase/resolve';
+import { isAdviceActionableFromDecision } from '@/lib/decision/projection';
 import { resolve } from '@/lib/french';
 
-/** Minimum reasoning confidence before any training advice is emitted. */
+/** Minimum decision confidence before any training advice is emitted. */
 export const MIN_ADVICE_CONFIDENCE = 0.6;
 
 export type TruthfulnessOverlay = {
@@ -17,12 +18,14 @@ export type TruthfulnessOverlay = {
   confidenceLabel: string | null;
 };
 
-function missingSignals(reasoning: ReasoningData | null): string[] {
-  if (!reasoning) return ['synthèse du jour'];
+function missingSignals(decision: DecisionData | null): string[] {
+  if (!decision) return ['synthèse du jour'];
   const missing: string[] = [];
-  if (!reasoning.signals.hasRecoveryState) missing.push('récupération');
-  if (!reasoning.signals.hasFatigueState) missing.push('charge / fatigue');
-  if (!reasoning.signals.hasAdaptationState) missing.push('adaptation');
+  const graph = decision.evidenceGraph;
+  if (!graph || graph.recoveryContribution <= 0) missing.push('récupération');
+  if (!graph || graph.fatigueContribution <= 0) missing.push('charge / fatigue');
+  if (!graph || graph.adaptationContribution <= 0) missing.push('adaptation');
+  if (missing.length === 3) return ['synthèse du jour'];
   return missing;
 }
 
@@ -30,7 +33,7 @@ export function buildInsufficientDataMessage(
   todayState: TodayState,
   domainMessages: Partial<Record<string, string>>,
 ): string {
-  const { reasoning, recovery } = todayState;
+  const { decision, recovery } = todayState;
 
   if (recovery?.readinessCategory === 'BASELINE_PENDING') {
     return 'SHARPIT établit encore ta baseline physiologique. Quelques jours de données suffisent pour un premier bilan fiable.';
@@ -46,29 +49,16 @@ export function buildInsufficientDataMessage(
     return `${domainHint} Dès que les données arrivent, ton bilan se met à jour automatiquement.`;
   }
 
-  const missing = missingSignals(reasoning);
-  if (missing.length > 0) {
+  const missing = missingSignals(decision);
+  if (missing.length > 0 && missing[0] !== 'synthèse du jour') {
     return `Données manquantes : ${missing.join(', ')}. Synchronise ton appareil ou complète ton check-in du matin — SHARPIT mettra à jour ton bilan dès réception.`;
   }
 
-  if (reasoning?.dataCompleteness === 'INSUFFICIENT') {
+  if (decision?.dataCompleteness === 'INSUFFICIENT') {
     return 'Les signaux disponibles ne permettent pas encore une recommandation d’entraînement fiable. SHARPIT attend davantage de données physiologiques.';
   }
 
   return 'Les signaux disponibles ne permettent pas encore une recommandation d’entraînement fiable. SHARPIT se mettra à jour dès que tes données de sommeil et de récupération seront complètes.';
-}
-
-export function isAdviceActionable(
-  reasoning: ReasoningData | null,
-  confidence: number | null,
-): boolean {
-  if (!reasoning) return false;
-  if (reasoning.overallVerdict === 'INSUFFICIENT_DATA') return false;
-  if (!reasoning.topAction) return false;
-  if (reasoning.dataCompleteness === 'INSUFFICIENT') return false;
-  const conf = confidence ?? reasoning.confidence;
-  if (conf == null || conf < MIN_ADVICE_CONFIDENCE) return false;
-  return true;
 }
 
 export function confidenceLabelFor(confidence: number | null): string | null {
@@ -103,15 +93,18 @@ export function applyTruthfulnessOverlay(
   >,
 ): TruthfulnessOverlay & Pick<AthleteSnapshot, 'primaryProductMessage'> {
   const { confidence } = snapshot;
-  const actionable = isAdviceActionable(snapshot.reasoning, confidence);
+  const actionable = isAdviceActionableFromDecision(snapshot.decision);
   const insufficientDataMessage = actionable
     ? null
     : buildInsufficientDataMessage(
         {
+          decision: snapshot.decision,
           reasoning: snapshot.reasoning,
           recovery: snapshot.recovery,
           fatigue: snapshot.fatigue,
           adaptation: snapshot.adaptation,
+          physicalHealth: snapshot.physicalHealth,
+          environment: snapshot.environment ?? null,
           dailyStrain: snapshot.dailyStrain,
         },
         snapshot.domainMessages,

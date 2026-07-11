@@ -220,6 +220,8 @@ export async function computeFreshnessSnapshot(params: {
   const fatigueAt = readComputedAt(twin?.fatigueState);
   const adaptationAt = readComputedAt(twin?.adaptationState);
   const reasoningAt = readComputedAt(twin?.reasoningState);
+  const physicalHealthAt = readComputedAt(twin?.physicalHealthState);
+  const environmentAt = readComputedAt(twin?.environmentalStateMeta);
 
   const sleepEvidence = latestSleep?.timestamp ?? null;
   const sessionEvidence = latestSession?.timestamp ?? null;
@@ -357,6 +359,18 @@ export async function computeFreshnessSnapshot(params: {
       `session_obs=${sessionEvidence != null},strain=${dailyStrainAvailable}`,
     ),
     domain('body', bodyEvidence, bodyFreshness, `body_obs=${bodyEvidence != null}`),
+    domain(
+      'physical',
+      physicalHealthAt,
+      physicalHealthAt ? 'fresh' : 'awaiting_data',
+      `physical_computed=${physicalHealthAt != null}`,
+    ),
+    domain(
+      'environment',
+      environmentAt,
+      environmentAt ? 'fresh' : 'awaiting_data',
+      `environment_computed=${environmentAt != null}`,
+    ),
     domain(
       'reasoning',
       reasoningAt,

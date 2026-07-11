@@ -21,6 +21,8 @@ import {
   type ReadinessCategory,
 } from '@/lib/today-mapping';
 import { buildSleepPageInsights } from '@/lib/product-insight/sleep-page-insights';
+import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
+import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';
 import type { SleepViewModel } from '@/core/presentation/sleep-view-model';
 
 const CONFIDENCE_TONE = {
@@ -61,6 +63,7 @@ function emptySleepViewModel(): SleepViewModel {
     barData: [],
     recoveryNote: null,
     insights: { primary: [], supporting: [], contextual: [] },
+    globalDecision: EMPTY_GLOBAL_DECISION,
     confidencePresentation: {
       pct: null,
       label: null,
@@ -196,6 +199,7 @@ export async function buildSleepViewModel(trainingDayId: string): Promise<SleepV
     barData,
     recoveryNote,
     insights,
+    globalDecision: buildGlobalDecisionContext(snapshot, 'SLEEP'),
     confidencePresentation: {
       pct: recovery.confidence,
       label: null,

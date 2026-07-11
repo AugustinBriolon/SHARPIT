@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { deleteSessionFromGoogle, pushSessionToGoogle } from '@/lib/integrations/google-sync';
 import { deletePlannedSession, getPlannedSessionById, updatePlannedSession } from '@/lib/queries';
+import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/resolve-context';
 import { updatePlannedSessionSchema } from '@/lib/validators/planned-session';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -33,6 +34,12 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       await pushSessionToGoogle(session);
     } catch (syncError) {
       console.error('Push Google Calendar échoué', syncError);
+    }
+
+    try {
+      await refreshAndPersistPlannedSessionContext(id);
+    } catch (ctxError) {
+      console.error('[planned-sessions/context]', ctxError);
     }
 
     const fresh = await getPlannedSessionById(id);

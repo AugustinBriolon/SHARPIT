@@ -21,5 +21,5 @@ export function sessionScoreColor(score: number): string {
 }
 
 export function plannedSessionHref(plannedSessionId: string): string {
-  return `/seances?tab=planning&planned=${plannedSessionId}`;
+  return `/training/planning?planned=${encodeURIComponent(plannedSessionId)}`;
 }

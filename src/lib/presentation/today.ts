@@ -12,19 +12,24 @@ import {
 } from '@/lib/queries';
 import { computeSharpitSleepScoreForDay, SLEEP_TARGET_MIN } from '@/lib/sleep-scoring';
 import { buildTodayDaySummary } from '@/lib/today-day-summary';
-import { mapConfidenceToTier, mapVerdictToDisplay, type OverallVerdict } from '@/lib/today-mapping';
+import { mapConfidenceToTier, mapVerdictToDisplay } from '@/lib/today-mapping';
 import {
   actionRowLabels,
   buildProgressionSummary,
   buildTopActionLine,
-  buildWhyEvidence,
   shouldShowForwardTrainingCopy,
   trajectoryEyebrow,
   whyBlockTitle,
 } from '@/lib/today-rich-view';
 import {
-  resolveConfidenceHref,
-  resolveLimitingFactorHref,
+  buildWhyEvidenceFromDecision,
+  decisionTopAction,
+  decisionVerdict,
+  resolveConfidenceHrefFromDecision,
+  resolveLimitingFactorHrefFromDecision,
+} from '@/lib/decision/projection';
+import { resolveCode } from '@/lib/french';
+import {
   TRAJECTORY_DRILL_DOWNS,
   TWIN_DIMENSION_LABEL,
   TWIN_DRILL_DOWN,
@@ -90,22 +95,18 @@ export async function buildTodayPresentationViewModel(
 
   const sleepTargetMin = athleteProfile?.sleepTargetMinutes ?? SLEEP_TARGET_MIN;
 
-  const recoveryScore = snapshot.recovery?.readinessScore ?? null;
+  const recoveryScore = snapshot.readiness;
   const sleepScoreSharpit = computeSharpitSleepScoreForDay(healthEntries, day, sleepTargetMin);
-  const sleepScore =
-    sleepScoreSharpit ??
-    (snapshot.recovery?.dimensions.sleep.available
-      ? (snapshot.recovery?.dimensions.sleep.score ?? null)
-      : null);
+  const sleepScore = sleepScoreSharpit ?? snapshot.sleepScore;
 
   const effortScore =
     snapshot.dailyStrain?.available && snapshot.dailyStrain.strainScore != null
       ? snapshot.dailyStrain.strainScore
       : null;
 
-  const adaptationScore = snapshot.adaptation?.adaptationIndex ?? null;
+  const adaptationScore = snapshot.adaptationIndex;
   const adaptationUnavailableCaption =
-    snapshot.adaptation?.adaptationIndex == null ? 'Historique insuffisant' : null;
+    snapshot.adaptationIndex == null ? 'Historique insuffisant' : null;
 
   const recoverySpark = Array.from({ length: 14 }, (_, i) => {
     const d = subDays(day, 13 - i);
@@ -132,7 +133,7 @@ export async function buildTodayPresentationViewModel(
   const adviceActionable = Boolean(snapshot.adviceActionable);
   const forward = shouldShowForwardTrainingCopy(phase);
 
-  const verdict = (snapshot.reasoning?.overallVerdict ?? 'INSUFFICIENT_DATA') as OverallVerdict;
+  const verdict = decisionVerdict(snapshot.decision);
   const displayVerdict = mapVerdictToDisplay(verdict);
 
   const heroHeadline = snapshot.phaseNarrative?.heroHeadline ?? displayVerdict.label;
@@ -143,9 +144,7 @@ export async function buildTodayPresentationViewModel(
   const postureLabel = snapshot.phaseNarrative?.postureLabel ?? '';
   const focusPriority =
     snapshot.phaseNarrative?.focusPriority ??
-    (adviceActionable && forward
-      ? buildTopActionLine(snapshot.reasoning?.topAction ?? null)
-      : null);
+    (adviceActionable && forward ? buildTopActionLine(decisionTopAction(snapshot.decision)) : null);
   const goalLine = snapshot.phaseNarrative?.goalLine ?? null;
   const actionLine = focusPriority;
   const adaptationReminders: string[] = [];
@@ -153,14 +152,24 @@ export async function buildTodayPresentationViewModel(
   const confidenceLabel = snapshot.confidenceLabel ?? null;
   const confidencePctRounded =
     snapshot.confidence != null ? Math.round(snapshot.confidence * 100) : null;
-  const confidenceHref = resolveConfidenceHref(snapshot.reasoning);
+  const confidenceHref = resolveConfidenceHrefFromDecision(snapshot.decision);
 
   const confidenceTier =
     snapshot.confidence != null ? mapConfidenceToTier(snapshot.confidence) : null;
   const confidenceTone = confidenceTier != null ? mapConfidenceTone(confidenceTier) : 'neutral';
 
   const whyFocus = snapshot.dailyPhase?.whyFocus ?? 'readiness';
-  const whyLines = buildWhyEvidence(snapshot.reasoning, snapshot.briefing?.content, whyFocus);
+  const decisionHeadline = snapshot.decision?.primaryDecision.headlineCode
+    ? resolveCode(snapshot.decision.primaryDecision.headlineCode)
+    : null;
+  let whyLines = buildWhyEvidenceFromDecision(
+    snapshot.decision,
+    snapshot.briefing?.content,
+    whyFocus,
+  );
+  if (decisionHeadline && decisionHeadline !== snapshot.decision?.primaryDecision.headlineCode) {
+    whyLines = [decisionHeadline, ...whyLines].slice(0, 3);
+  }
   const whyVisible = whyLines.length > 0 && !(phase === 'END_OF_DAY' && focusPriority != null);
 
   const daySummary = buildTodayDaySummary(
@@ -184,18 +193,24 @@ export async function buildTodayPresentationViewModel(
     limitingLines = adaptationHints;
   } else if (snapshot.limitingFactor) {
     limitingText = formatLimitingFactorMessage(snapshot.limitingFactor);
-    limitingHref = resolveLimitingFactorHref(snapshot.limitingFactor);
+    limitingHref =
+      resolveLimitingFactorHrefFromDecision(snapshot.decision) ?? TWIN_DRILL_DOWN.recovery;
     limitingMode = limitingHref ? 'link' : 'text';
-  } else if (snapshot.adaptation?.limitingFactor) {
-    limitingMode = 'link';
-    limitingText = snapshot.adaptation.limitingFactor;
-    limitingHref = TWIN_DRILL_DOWN.adaptation;
   } else {
     limitingMode = 'text';
     limitingText = "Aucun frein physiologique majeur identifié aujourd'hui.";
   }
 
-  const weeklyTrajectoryProgression = buildProgressionSummary(snapshot.adaptation, weeklyLoad);
+  const weeklyTrajectoryProgression = buildProgressionSummary(
+    snapshot.adaptationIndex != null && snapshot.adaptationStatus
+      ? {
+          adaptationIndex: snapshot.adaptationIndex,
+          adaptationStatus: snapshot.adaptationStatus,
+          adaptationTrend: snapshot.adaptationTrend ?? 'STABLE',
+        }
+      : null,
+    weeklyLoad,
+  );
 
   const hasSparks = recoverySpark.some((v) => v != null) || effortSpark.some((v) => v != null);
 
@@ -226,6 +241,7 @@ export async function buildTodayPresentationViewModel(
       recovery: { label: 'Récupération', href: TWIN_DRILL_DOWN.recovery },
       effort: { label: 'Effort', href: TWIN_DRILL_DOWN.effort },
       adaptation: { label: 'Adaptation', href: TWIN_DRILL_DOWN.adaptation },
+      physical: { label: 'Santé physique', href: TWIN_DRILL_DOWN.physical },
       planning: { label: 'Planning', href: TWIN_DRILL_DOWN.planning },
     },
     hero: {
@@ -275,6 +291,7 @@ export async function buildTodayPresentationViewModel(
       daySummaryEmptyHref: TWIN_DRILL_DOWN.planning,
       daySummaryLines: daySummary.lines.map((line) => ({
         id: line.id,
+        activityType: line.activityType,
         primary: line.primary,
         secondary: line.secondary ?? null,
         kind: line.kind,
@@ -300,6 +317,7 @@ export async function buildTodayPresentationViewModel(
       },
     },
     insights: [],
+    environmentContext: null,
     hierarchy: { rootId: 'today', order: ['hero', 'why', 'actionRow', 'weeklyTrajectory'] },
     sections: [],
   };

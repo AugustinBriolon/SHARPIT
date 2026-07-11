@@ -1,4 +1,5 @@
 import { CorpsPanel, CorpsSectionHeader } from '@/components/corps/corps-ui';
+import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { ProfileAiSummary } from '@/components/profile/profile-ai-summary';
 import { ProfileContextForm } from '@/components/profile/profile-context-form';
@@ -21,6 +22,7 @@ interface ProfileData {
 export function ProfileView({ initial }: { initial: ProfileData | null }) {
   return (
     <div className="space-y-4">
+      <MobileBackLink href="/settings" label="Réglages" showOnDesktop />
       <StickyHeader>
         <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
           Profil

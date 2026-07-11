@@ -18,7 +18,13 @@
 // Model identity
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type ModelId = 'recovery-synthesis-v1' | 'fatigue-v1' | 'adaptation-v1' | 'reasoning-v1';
+export type ModelId =
+  | 'recovery-synthesis-v1'
+  | 'fatigue-v1'
+  | 'adaptation-v1'
+  | 'reasoning-v1'
+  | 'physical-health-v1'
+  | 'environment-v1.1';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Decision Record — persisted audit trail

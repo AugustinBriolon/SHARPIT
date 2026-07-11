@@ -1,4 +1,5 @@
 import { Monitor, Moon, Sun } from 'lucide-react';
+import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { Badge } from '@/components/ui/badge';
 
@@ -23,6 +24,7 @@ const OPTIONS = [
 export default function SettingsAppearancePage() {
   return (
     <div className="space-y-4">
+      <MobileBackLink href="/settings" label="Réglages" showOnDesktop />
       <StickyHeader>
         <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
           Réglages

@@ -5,15 +5,27 @@ import { PerformancePredictions } from '@/components/analytics/performance-predi
 import { PowerCurveChart } from '@/components/analytics/power-curve-chart';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  SkeletonCard,
+  SkeletonEyebrow,
+  SkeletonPill,
+  SkeletonText,
+  SkeletonTitle,
+} from '@/components/ui/skeleton-patterns';
 import { useRecords } from '@/hooks/use-data';
 import { navPillClass } from '@/lib/nav-pill';
-import type { RecordCategory, RecordEntry } from '@/lib/records';
+import {
+  recordCategoryAnchorId,
+  recordSportTabFromCategory,
+  type RecordCategory,
+  type RecordEntry,
+} from '@/lib/records';
 import { cn } from '@/lib/utils';
 import { differenceInCalendarDays, format, formatDistanceToNowStrict } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Bike, Footprints, Waves } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 type SportTab = 'run' | 'bike' | 'swim';
 
@@ -50,7 +62,10 @@ function RecordCategoryCard({ category }: { category: RecordCategory }) {
   const [best] = category.entries;
 
   return (
-    <div className="analysis-panel rounded-analysis-lg p-4">
+    <div
+      className="analysis-panel rounded-analysis-lg scroll-mt-24 p-4"
+      id={recordCategoryAnchorId(category.key)}
+    >
       <div className="flex items-start justify-between gap-2">
         <p className="text-label">{category.label}</p>
         {best && isRecent(best.date) && (
@@ -172,6 +187,30 @@ export function RecordsPanel() {
   const { data, isPending } = useRecords();
   const [tab, setTab] = useState<SportTab>('run');
 
+  useEffect(() => {
+    function syncTabFromHash() {
+      const categoryId = window.location.hash.replace(/^#/, '');
+      if (!categoryId) return;
+      const sport = recordSportTabFromCategory(categoryId);
+      if (sport) setTab(sport);
+    }
+
+    syncTabFromHash();
+    window.addEventListener('hashchange', syncTabFromHash);
+    return () => window.removeEventListener('hashchange', syncTabFromHash);
+  }, []);
+
+  useEffect(() => {
+    if (isPending || !data) return;
+    const categoryId = window.location.hash.replace(/^#/, '');
+    if (!categoryId) return;
+
+    const frame = requestAnimationFrame(() => {
+      document.getElementById(categoryId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [tab, isPending, data]);
+
   if (isPending) {
     return <RecordsSkeleton />;
   }
@@ -179,7 +218,7 @@ export function RecordsPanel() {
   if (!data) return null;
 
   return (
-    <section className="space-y-4 border-t pt-6">
+    <section className="space-y-4 border-t pt-6" id="records">
       <RecordsSectionHeader
         streamsAnalyzed={data.streamsAnalyzed}
         totalActivities={data.totalActivities}
@@ -239,19 +278,26 @@ function RecordsSkeleton() {
       <div className="flex gap-4">
         <Skeleton className="size-11 rounded-2xl" />
         <div className="space-y-2">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-8 w-56" />
-          <Skeleton className="h-4 w-96 max-w-full" />
+          <SkeletonEyebrow className="w-24" />
+          <SkeletonTitle className="w-56 max-w-full" size="lg" />
+          <SkeletonText widths={['100%', '86%', '52%']} />
         </div>
       </div>
       <div className="flex gap-2">
         {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-10 w-28 rounded-full" />
+          <SkeletonPill key={i} className="h-10 w-28" />
         ))}
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="rounded-analysis-lg h-28" />
+          <SkeletonCard key={i}>
+            <div className="flex items-start justify-between gap-2">
+              <SkeletonEyebrow className="w-20" />
+              <Skeleton className="h-6 w-14 rounded-full border-0" />
+            </div>
+            <Skeleton className="mt-4 h-9 w-24 border-0" />
+            <SkeletonText className="mt-3" widths={['88%', '62%']} />
+          </SkeletonCard>
         ))}
       </div>
     </section>

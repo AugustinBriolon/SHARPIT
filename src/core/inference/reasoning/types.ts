@@ -77,4 +77,6 @@ export type ReasoningSignals = {
 export type ReasoningModelOutput = {
   readonly signals: ReasoningSignals;
   readonly reasoningState: import('@/core/digital-twin/types').ReasoningState;
+  /** Canonical decision — single source of truth for product surfaces. */
+  readonly decisionState: import('@/core/decision').DecisionState;
 };

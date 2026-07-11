@@ -36,11 +36,7 @@ export const biologyNavItem: AppNavItem = {
     p.startsWith('/corps') ||
     p.startsWith('/recovery') ||
     p.startsWith('/body') ||
-    p.startsWith('/analytics') ||
-    p.startsWith('/today/sleep') ||
-    p.startsWith('/today/recovery') ||
-    p.startsWith('/today/effort') ||
-    p.startsWith('/today/adaptation'),
+    p.startsWith('/analytics'),
 };
 
 export const coachNavItem: AppNavItem = {

@@ -119,12 +119,16 @@ export type RecoveryModelOutput = {
  * Additional context the Recovery Model needs that is NOT in DayFeatures.
  * Provided by the Orchestrator from the Digital Twin before calling the model.
  */
+import type { EnvironmentalImpact } from '@/core/environment';
+
 export type RecoveryModelContext = {
   /** Previous readiness score (from Digital Twin) — for trend computation. */
   readonly previousReadinessScore: number | null;
   /** Training day being inferred. */
   readonly trainingDayId: string;
   readonly athleteId: string;
+  /** Optional overlay from Environmental Context Engine — never weather fields. */
+  readonly environmentalImpact?: EnvironmentalImpact | null;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

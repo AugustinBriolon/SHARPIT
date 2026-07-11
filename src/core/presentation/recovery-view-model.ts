@@ -1,4 +1,5 @@
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
 import type { ProductInsightBundle } from '@/core/product-insight/types';
 import type {
   PresentationEmptyState,
@@ -44,6 +45,9 @@ export type RecoveryViewModel = {
   keyEvidence: string[];
 
   insights: ProductInsightBundle;
+
+  /** Product decision from Decision Engine — distinct from domain intensity below. */
+  globalDecision: GlobalDecisionContext;
 
   emptyState: PresentationEmptyState | null;
   hierarchy: PresentationHierarchy;

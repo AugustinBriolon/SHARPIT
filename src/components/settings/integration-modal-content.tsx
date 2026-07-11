@@ -293,6 +293,7 @@ function GarminContent({
   const [connecting, setConnecting] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [importingAll, setImportingAll] = useState(false);
+  const [syncRecordChanges, setSyncRecordChanges] = useState<RecordChange[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   async function handleConnect(e: React.FormEvent<HTMLFormElement>) {
@@ -318,8 +319,9 @@ function GarminContent({
   async function handleSync(full = false) {
     if (full) setImportingAll(true);
     else setSyncing(true);
+    setSyncRecordChanges([]);
     try {
-      await toast.promise(runGarminSync({ full }), {
+      const data = await toast.promise(runGarminSync({ full }), {
         loading: full ? 'Import historique Garmin…' : 'Synchronisation Garmin…',
         success: (d) => ({
           title: 'Garmin synchronisé',
@@ -330,8 +332,12 @@ function GarminContent({
           description: err instanceof Error ? err.message : undefined,
         }),
       });
-      await queryClient.invalidateQueries({ queryKey: ['health'] });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.activities });
+      setSyncRecordChanges(Array.isArray(data.recordChanges) ? data.recordChanges : []);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['health'] }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.activities }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.records }),
+      ]);
       router.refresh();
       onUpdated?.();
     } finally {
@@ -394,6 +400,7 @@ function GarminContent({
           onFullImport={() => handleSync(true)}
           onSync={() => handleSync(false)}
         />
+        <RecordChangesBanner changes={syncRecordChanges} />
       </div>
       {dialog}
     </>

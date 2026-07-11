@@ -150,6 +150,8 @@ export type FatigueModelOutput = {
 // Model context (non-feature inputs — from Digital Twin)
 // ─────────────────────────────────────────────────────────────────────────────
 
+import type { EnvironmentalImpact } from '@/core/environment';
+
 export type FatigueModelContext = {
   readonly trainingDayId: string;
   readonly athleteId: string;
@@ -175,6 +177,9 @@ export type FatigueModelContext = {
    * Empty array on cold start.
    */
   readonly recentFatigueHistory: readonly number[];
+
+  /** Optional overlay from Environmental Context Engine. */
+  readonly environmentalImpact?: EnvironmentalImpact | null;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

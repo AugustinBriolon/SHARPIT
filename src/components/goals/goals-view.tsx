@@ -1,6 +1,7 @@
 'use client';
 
 import { GoalKind } from '@prisma/client';
+import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import {
   GoalsToolbar,
@@ -113,6 +114,7 @@ export function GoalsView() {
 
   return (
     <div className="space-y-8">
+      <MobileBackLink href="/settings" label="Réglages" showOnDesktop />
       <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">

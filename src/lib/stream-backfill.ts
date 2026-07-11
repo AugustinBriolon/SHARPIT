@@ -21,6 +21,9 @@ export interface BackfillResult {
 
 const BACKFILL_TYPES: ActivityType[] = [ActivityType.RUN, ActivityType.BIKE];
 
+/** Lot cron — petit pour limiter le transfert réseau Neon (streams JSON lourds). */
+export const CRON_BACKFILL_BATCH = 8;
+
 function backfillWhere() {
   return {
     type: { in: BACKFILL_TYPES },
@@ -33,7 +36,9 @@ export async function countStreamBackfillCandidates(): Promise<number> {
   return prisma.activity.count({ where: backfillWhere() });
 }
 
-export async function backfillActivityStreams(limit = 25): Promise<BackfillResult> {
+export async function backfillActivityStreams(
+  limit = CRON_BACKFILL_BATCH,
+): Promise<BackfillResult> {
   const candidates = await prisma.activity.findMany({
     where: backfillWhere(),
     orderBy: { date: 'desc' },

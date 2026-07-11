@@ -730,6 +730,40 @@ export function filterRecordChangesByActivities(
   return changes.filter((c) => c.activityId != null && ids.has(c.activityId));
 }
 
+/** Records personnels (#1) détenus par une séance. */
+export async function getPerformanceRecordsForActivity(activityId: string) {
+  return prisma.performanceRecord.findMany({
+    where: { activityId, rank: 1 },
+    orderBy: { label: 'asc' },
+    select: {
+      category: true,
+      label: true,
+    },
+  });
+}
+
+export type RecordSportTab = 'run' | 'bike' | 'swim';
+
+export const RECORDS_PAGE_PATH = '/training/progression';
+
+/** Identifiant d'ancre DOM pour une catégorie de record (ex. `swim-distance`). */
+export function recordCategoryAnchorId(category: string): string {
+  return category;
+}
+
+/** Onglet sport de la page Progression pour une catégorie de record. */
+export function recordSportTabFromCategory(category: string): RecordSportTab | null {
+  if (category.startsWith('swim-')) return 'swim';
+  if (category.startsWith('bike-') || category.startsWith('power-')) return 'bike';
+  if (category.startsWith('run-') || category.startsWith('run-best')) return 'run';
+  return null;
+}
+
+/** Lien vers la catégorie sur la page des records (onglet + ancre). */
+export function recordCategoryHref(category: string): string {
+  return `${RECORDS_PAGE_PATH}#${recordCategoryAnchorId(category)}`;
+}
+
 /** Recalcule uniquement les `groups` ciblés et remplace ces lignes en base. */
 export async function recomputeRecordGroups(groups: Set<RecordGroup>): Promise<RecordChange[]> {
   if (groups.size === 0) return [];
@@ -795,12 +829,51 @@ export async function updateRecordsForTypesSafe(
   }
 }
 
-/** Recalcul complet sans jamais throw (cron / premier remplissage). */
+/** Recalcul complet sans jamais throw (premier remplissage). */
 export async function recomputeRecordsSafe(): Promise<void> {
   try {
     await recomputeAndStoreRecords();
   } catch (error) {
     console.error('[records] recompute', error);
+  }
+}
+
+/**
+ * Recalcule uniquement les groupes impactés après une sync cron/manuelle.
+ * Évite de relire tous les streams JSON à chaque exécution (principal poste réseau).
+ */
+export async function updateRecordsAfterProviderSync(input: {
+  importedTypes: Iterable<ActivityType>;
+  backfilledActivityIds?: Iterable<string>;
+}): Promise<void> {
+  try {
+    const recordCount = await prisma.performanceRecord.count();
+    if (recordCount === 0) {
+      await recomputeAndStoreRecords();
+      return;
+    }
+
+    const groups = new Set<RecordGroup>();
+    for (const t of input.importedTypes) {
+      for (const g of groupsForType(t)) groups.add(g);
+    }
+
+    const backfillIds = [...(input.backfilledActivityIds ?? [])];
+    if (backfillIds.length > 0) {
+      const activities = await prisma.activity.findMany({
+        where: { id: { in: backfillIds } },
+        select: { type: true },
+      });
+      for (const a of activities) {
+        for (const g of groupsForType(a.type)) groups.add(g);
+      }
+    }
+
+    if (groups.size > 0) {
+      await recomputeRecordGroups(groups);
+    }
+  } catch (error) {
+    console.error('[records] updateAfterSync', error);
   }
 }
 

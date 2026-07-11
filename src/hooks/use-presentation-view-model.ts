@@ -7,9 +7,11 @@ import type { EffortViewModel } from '@/core/presentation/effort-view-model';
 import type { AdaptationViewModel } from '@/core/presentation/adaptation-view-model';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import type { BodyViewModel } from '@/core/presentation/body-view-model';
+import type { PhysicalHealthViewModel } from '@/core/presentation/physical-health-view-model';
 import {
   fetchAdaptationPresentation,
   fetchEffortPresentation,
+  fetchPhysicalHealthPresentation,
   fetchRecoveryPresentation,
   fetchTodayPresentation,
   fetchSleepPresentation,
@@ -52,6 +54,14 @@ export function useTodayPresentationViewModel(trainingDayId: string) {
   return useQuery<TodayViewModel>({
     queryKey: ['presentation', 'today', trainingDayId],
     queryFn: () => fetchTodayPresentation(trainingDayId),
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function usePhysicalHealthViewModel(trainingDayId: string) {
+  return useQuery<PhysicalHealthViewModel>({
+    queryKey: ['presentation', 'physical-health', trainingDayId],
+    queryFn: () => fetchPhysicalHealthPresentation(trainingDayId),
     staleTime: 5 * 60_000,
   });
 }

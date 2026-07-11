@@ -1,4 +1,5 @@
 import type { ProductInsightBundle } from '@/core/product-insight/types';
+import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
 import type {
   PresentationEmptyState,
   PresentationHierarchy,
@@ -34,6 +35,8 @@ export type AdaptationViewModel = {
   confidenceTone: 'good' | 'warn' | 'neutral' | 'bad';
 
   insights: ProductInsightBundle;
+
+  globalDecision: GlobalDecisionContext;
 
   emptyState: PresentationEmptyState | null;
   hierarchy: PresentationHierarchy;

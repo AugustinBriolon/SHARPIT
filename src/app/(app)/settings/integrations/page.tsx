@@ -1,3 +1,4 @@
+import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { IntegrationsHub } from '@/components/settings/integrations-hub';
 import { getGarminAccount } from '@/lib/integrations/garmin-sync';
@@ -144,6 +145,7 @@ export default async function SettingsIntegrationsPage({ searchParams }: PagePro
 
   return (
     <div className="space-y-4">
+      <MobileBackLink href="/settings" label="Réglages" showOnDesktop />
       <StickyHeader>
         <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
           Réglages

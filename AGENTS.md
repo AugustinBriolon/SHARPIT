@@ -7,10 +7,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # SHARPIT — Agent context
 
-**Phase:** Product execution (post-Kernel). The intelligence stack exists. Default job: express the Digital Twin as an exceptional athlete experience — not build new engines.
+**Phase:** Stabilization — Core frozen. Express the Digital Twin vertically; do not add core engines.
 
 **Before implementing, read:**
 
+- [`docs/models/CORE_ARCHITECTURE.md`](docs/models/CORE_ARCHITECTURE.md) — **architectural constitution** (frozen Core)
 - [`docs/product/PRODUCT.md`](docs/product/PRODUCT.md) — constitution, execution doctrine, athlete journey
 - [`docs/design/DESIGN_LANGUAGE.md`](docs/design/DESIGN_LANGUAGE.md) — visual and interaction law
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — code structure and conventions

@@ -31,6 +31,31 @@ export const chipDot: Record<ChipTone, string> = {
   red: 'bg-red-500',
 };
 
+export const chipLinkSurface: Record<ChipTone, string> = {
+  neutral: 'border-border/60 bg-muted/20 hover:border-border hover:bg-muted/40',
+  emerald:
+    'border-emerald-500/30 bg-emerald-500/10 hover:border-emerald-500/50 hover:bg-emerald-500/15',
+  amber: 'border-amber-500/30 bg-amber-500/10 hover:border-amber-500/50 hover:bg-amber-500/15',
+  orange: 'border-orange-500/30 bg-orange-500/10 hover:border-orange-500/50 hover:bg-orange-500/15',
+  red: 'border-red-500/30 bg-red-500/10 hover:border-red-500/50 hover:bg-red-500/15',
+};
+
+export const chipStaticSurface: Record<ChipTone, string> = {
+  neutral: 'border-border bg-card',
+  emerald: 'border-emerald-500/30 bg-emerald-500/10',
+  amber: 'border-amber-500/30 bg-amber-500/10',
+  orange: 'border-orange-500/30 bg-orange-500/10',
+  red: 'border-red-500/30 bg-red-500/10',
+};
+
+export const chipIconTone: Record<ChipTone, string> = {
+  neutral: 'text-muted-foreground',
+  emerald: 'text-emerald-600',
+  amber: 'text-amber-600',
+  orange: 'text-orange-600',
+  red: 'text-red-600',
+};
+
 export function activitySourceLabel(activity: {
   source: string;
   garminId?: string | null;

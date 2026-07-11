@@ -5,7 +5,15 @@
  */
 
 export type AthleteStateDomain =
-  'recovery' | 'training' | 'sleep' | 'body' | 'reasoning' | 'recommendations' | 'planning';
+  | 'recovery'
+  | 'training'
+  | 'sleep'
+  | 'body'
+  | 'physical'
+  | 'environment'
+  | 'reasoning'
+  | 'recommendations'
+  | 'planning';
 
 export type FreshnessLevel =
   'fresh' | 'stale' | 'awaiting_data' | 'syncing' | 'computing' | 'unavailable';
@@ -43,6 +51,8 @@ export const ALL_ATHLETE_STATE_DOMAINS: readonly AthleteStateDomain[] = [
   'training',
   'sleep',
   'body',
+  'physical',
+  'environment',
   'reasoning',
   'recommendations',
   'planning',

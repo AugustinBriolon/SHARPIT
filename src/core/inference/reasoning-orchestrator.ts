@@ -86,10 +86,15 @@ export class ReasoningInferenceOrchestrator {
       stateUpdate: {
         ...output.reasoningState,
         computedAt: output.reasoningState.computedAt.toISOString(),
+        decisionState: {
+          ...output.decisionState,
+          computedAt: output.decisionState.computedAt.toISOString(),
+        },
       } as unknown as Record<string, unknown>,
       decision: {
-        overallVerdict: output.reasoningState.overallVerdict,
-        topAction: output.reasoningState.topAction,
+        overallVerdict: output.decisionState.overallVerdict,
+        primaryDecision: output.decisionState.primaryDecision,
+        topAction: output.decisionState.topAction,
       } as unknown as Record<string, unknown>,
       recommendation: {
         opportunities: output.reasoningState.opportunities,
@@ -146,12 +151,58 @@ export class ReasoningInferenceOrchestrator {
     if (!record) return null;
 
     const stateUpdate = record.stateUpdate as Record<string, unknown>;
+    const rawDecision = stateUpdate.decisionState as
+      Omit<import('@/core/decision').DecisionState, 'computedAt'> | undefined;
+
     const output: ReasoningModelOutput = {
       signals: record.signals as import('./reasoning/types').ReasoningSignals,
       reasoningState: {
         ...(stateUpdate as Omit<import('@/core/digital-twin/types').ReasoningState, 'computedAt'>),
         computedAt: new Date((stateUpdate.computedAt as string) ?? record.computedAt),
       } as import('@/core/digital-twin/types').ReasoningState,
+      decisionState: rawDecision
+        ? ({
+            ...rawDecision,
+            computedAt: new Date(
+              (rawDecision as { computedAt?: string }).computedAt ?? record.computedAt,
+            ),
+          } as import('@/core/decision').DecisionState)
+        : ({
+            ...(stateUpdate as Omit<
+              import('@/core/digital-twin/types').ReasoningState,
+              'computedAt'
+            >),
+            primaryDecision: {
+              verdict:
+                (stateUpdate.overallVerdict as import('@/core/digital-twin/types').OverallVerdict) ??
+                'INSUFFICIENT_DATA',
+              headlineCode: 'decision.primary.headline.insufficient',
+              verbCode: 'decision.primary.insufficient.verb',
+              focusCode: 'decision.primary.insufficient.focus',
+              rationaleCode: 'decision.primary.insufficient.rationale',
+              expectedBenefit: 0,
+            },
+            limitingFactor: {
+              domain: null,
+              system: null,
+              description: null,
+              actionable: false,
+              priority: 99,
+            },
+            supportingEvidence: [],
+            suppressedEvidence: [],
+            confidenceTier: 'INSUFFICIENT',
+            conflicts: [],
+            priority: {
+              attentionDomain: 'BALANCED',
+              safetyOverrideApplied: false,
+              confidenceGated: true,
+            },
+            explanationOrder: [],
+            modelId: 'decision-v1',
+            computedAt: new Date((stateUpdate.computedAt as string) ?? record.computedAt),
+            trainingDayId,
+          } as import('@/core/decision').DecisionState),
     };
 
     return {

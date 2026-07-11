@@ -4,7 +4,7 @@ import { Activity, Scale } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CompositionView } from '@/components/corps/composition-view';
 import { StickyHeader } from '@/components/layout/sticky-header';
-import { PhysicalView } from '@/components/physical/physical-view';
+import { PhysicalHealthHubView } from '@/components/physical-health/physical-health-hub-view';
 import { navPillClass } from '@/lib/nav-pill';
 
 const TABS = [
@@ -73,7 +73,7 @@ export function CorpsHub({ basePath = '/corps' }: { basePath?: string }) {
 
       <div className="space-y-4">
         {tab === 'composition' && <CompositionView embedded />}
-        {tab === 'suivi' && <PhysicalView embedded />}
+        {tab === 'suivi' && <PhysicalHealthHubView />}
       </div>
     </div>
   );

@@ -69,6 +69,91 @@ enum PhysicalStatus {
   RESOLVED // résolue
 }
 
+// ─── Physical Health Engine (Phase 1) ───────────────────────────────────────
+
+enum ConditionScope {
+  LOCALIZED
+  SYSTEMIC
+}
+
+enum ConditionType {
+  PAIN
+  INJURY
+  DISCOMFORT
+  MOBILITY_LIMITATION
+  POSTURE_ISSUE
+  MUSCULAR_TIGHTNESS
+  JOINT_STIFFNESS
+  INSTABILITY
+  RECURRING_PHYSICAL
+  OTHER
+}
+
+enum ConditionStatus {
+  NEW
+  ACTIVE
+  IMPROVING
+  STABLE
+  WORSENING
+  RESOLVED
+  RECURRENT
+}
+
+enum EpisodeStatus {
+  ACTIVE
+  IMPROVING
+  STABLE
+  WORSENING
+  RESOLVED
+}
+
+enum ObservationContext {
+  BEFORE_SESSION
+  DURING_SESSION
+  AFTER_SESSION
+  MORNING_CHECKIN
+  EVENING_CHECKIN
+  MANUAL
+  COACH_CONVERSATION
+  INTEGRATION
+  LEGACY_MIGRATION
+}
+
+enum ObservationSource {
+  ATHLETE
+  COACH_AI
+  SYSTEM_MIGRATION
+  INTEGRATION
+}
+
+enum FunctionalImpact {
+  NONE
+  MILD
+  MODERATE
+  LIMITING
+  STOPPED
+}
+
+enum TrainingCapacityLevel {
+  FULL
+  REDUCED
+  LIMITED
+  UNABLE
+}
+
+enum KnowledgeHypothesisType {
+  TRIGGER
+  RECOVERY_DURATION
+  RECURRENCE_PATTERN
+  OTHER
+}
+
+enum KnowledgeConfidenceLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 enum PlanPhase {
   BASE
   BUILD
@@ -108,6 +193,7 @@ model Activity {
   stream         ActivityStream?
   plannedSession PlannedSession?
   goalAchievements GoalAchievement[]
+  conditionObservations ConditionObservation[]
 
   /// Analyse narrative coach (figée une fois générée)
   narrativeAnalysis   Json?
@@ -524,6 +610,129 @@ model PhysicalCheckin {
   @@index([date])
 }
 
+/// Persistent physical condition — core of the Physical Health Engine.
+/// Never deleted. Resolved conditions remain in physiological history.
+model Condition {
+  id                    String          @id @default(cuid())
+  scope                 ConditionScope
+  type                  ConditionType
+  bodyRegion            String
+  side                  BodySide        @default(NA)
+  label                 String
+  diagnosis             String?
+  status                ConditionStatus @default(NEW)
+  severity              Float           @default(0)
+  confidence            Float           @default(0.5)
+  affectsTraining       Boolean         @default(true)
+  startedAt             DateTime        @default(now())
+  resolvedAt            DateTime?
+  lastObservationAt     DateTime?
+  recurrenceCount       Int             @default(0)
+  observationCount      Int             @default(0)
+  estimatedRecoveryDays Int?
+  primaryTriggerManual  String?
+
+  /// Idempotent link to legacy PhysicalNote during migration.
+  legacyPhysicalNoteId String? @unique
+
+  episodes             ConditionEpisode[]
+  observations         ConditionObservation[]
+  functionalCapacities FunctionalCapacity[]
+  knowledge            ConditionKnowledge[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([type])
+  @@index([bodyRegion, side])
+}
+
+model ConditionEpisode {
+  id                    String        @id @default(cuid())
+  conditionId           String
+  condition             Condition     @relation(fields: [conditionId], references: [id], onDelete: Cascade)
+  episodeNumber         Int
+  status                EpisodeStatus @default(ACTIVE)
+  startedAt             DateTime
+  resolvedAt            DateTime?
+  peakSeverity          Float?
+  estimatedRecoveryDays Int?
+  triggerHypothesis     String?
+
+  observations ConditionObservation[]
+
+  @@unique([conditionId, episodeNumber])
+  @@index([conditionId])
+}
+
+/// Point-in-time evidence. Never replaces condition state directly.
+model ConditionObservation {
+  id               String             @id @default(cuid())
+  conditionId      String?
+  condition        Condition?         @relation(fields: [conditionId], references: [id], onDelete: SetNull)
+  episodeId        String?
+  episode          ConditionEpisode?  @relation(fields: [episodeId], references: [id], onDelete: SetNull)
+  observedAt       DateTime           @default(now())
+  context          ObservationContext
+  source           ObservationSource  @default(ATHLETE)
+  symptomPresent   Boolean
+  severityReported Int?
+  functionalImpact FunctionalImpact?
+  bodyRegion       String
+  side             BodySide           @default(NA)
+  type             ConditionType
+  comment          String?
+  activityId       String?
+  activity         Activity?          @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  plannedSessionId String?
+  plannedSession   PlannedSession?    @relation(fields: [plannedSessionId], references: [id], onDelete: SetNull)
+  trainingDayId    String?
+  externalId       String?            @unique
+
+  legacyPhysicalCheckinId String? @unique
+
+  functionalCapacities FunctionalCapacity[]
+
+  createdAt DateTime @default(now())
+
+  @@index([conditionId, observedAt])
+  @@index([activityId])
+  @@index([plannedSessionId])
+  @@index([observedAt])
+}
+
+/// Functional capacity distinct from pain severity.
+model FunctionalCapacity {
+  id               String                @id @default(cuid())
+  conditionId      String
+  condition        Condition             @relation(fields: [conditionId], references: [id], onDelete: Cascade)
+  observationId    String?
+  observation      ConditionObservation? @relation(fields: [observationId], references: [id], onDelete: SetNull)
+  assessedAt       DateTime              @default(now())
+  painSeverity     Int?
+  trainingCapacity TrainingCapacityLevel
+  comment          String?
+
+  @@index([conditionId, assessedAt])
+}
+
+/// Personalized hypotheses — athlete-specific, never statistical population models.
+model ConditionKnowledge {
+  id              String                   @id @default(cuid())
+  conditionId     String
+  condition       Condition                @relation(fields: [conditionId], references: [id], onDelete: Cascade)
+  hypothesisType  KnowledgeHypothesisType
+  description     String
+  confidence      KnowledgeConfidenceLevel @default(LOW)
+  evidenceCount   Int                      @default(0)
+  isInferred      Boolean                  @default(false)
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+
+  @@index([conditionId])
+}
+
 model DailyBriefing {
   id          String   @id @default(cuid())
   date        DateTime @unique @db.Date
@@ -658,10 +867,45 @@ model DigitalTwin {
   fatigueState    Json?     // FatigueState | null  (Fatigue Intelligence v1)
   adaptationState Json?     // AdaptationState | null  (Adaptation Intelligence v1)
   reasoningState  Json?     // ReasoningState | null   (Reasoning Engine v1)
+  physicalHealthState Json? // PhysicalHealthState | null (Physical Health v1)
+  environmentalStressState Json? // EnvironmentalStress | null (Environment v1.1)
+  environmentalImpactState Json? // EnvironmentalImpact | null (Environment v1.1)
+  environmentalStateMeta Json? // EnvironmentalStateMeta | null (rebuild metadata)
   updatedAt       DateTime  @updatedAt
   createdAt      DateTime  @default(now())
 
   @@index([athleteId])
+}
+
+/// Immutable environmental evidence — source of truth for environmental inference.
+/// Twin environmental columns are a rebuildable cache derived from these records.
+model EnvironmentalObservationRecord {
+  id               String   @id
+  recordVersion    String
+  athleteId        String
+  dimension        String
+  payload          Json
+  observedAt       DateTime
+  receivedAt       DateTime
+  ingestedAt       DateTime
+  trainingDayId    String?
+  temporalScope    String
+  intervalStart    DateTime?
+  intervalEnd      DateTime?
+  exposure         String
+  location         Json
+  source           String
+  providerId       String?
+  externalId       String?
+  providerSnapshot Json
+  fieldQuality     Json
+  aggregateQuality String
+  confidence       Float
+  supersededBy     String?
+
+  @@index([athleteId, trainingDayId])
+  @@index([athleteId, observedAt])
+  @@index([supersededBy])
 }
 
 /**
@@ -737,6 +981,16 @@ model PlannedSession {
   intensity   SessionIntensity?
   completed   Boolean           @default(false)
 
+  /// Contextual intention — athlete-declared (not engine output).
+  exposureSetting String? // INDOOR | OUTDOOR | UNKNOWN
+  locationLabel   String?
+  locationLat     Float?
+  locationLng     Float?
+  locationType    String? // ROAD | TRAIL | TRAINER | POOL | GYM | TRACK | UNKNOWN
+  /// Cached PlannedSessionContext projection (engine outputs + advisories).
+  environmentContext   Json?
+  environmentContextAt DateTime?
+
   goalId String?
   goal   Goal?   @relation(fields: [goalId], references: [id], onDelete: SetNull)
 
@@ -751,6 +1005,7 @@ model PlannedSession {
   activity   Activity? @relation(fields: [activityId], references: [id], onDelete: SetNull)
   analysis   Json? // { complianceScore, verdict, summary, remarks[], recommendation }
   analyzedAt DateTime?
+  conditionObservations ConditionObservation[]
 
   // Lien vers l'événement créé dans Google Calendar (calendrier SPORT)
   googleEventId String? @unique

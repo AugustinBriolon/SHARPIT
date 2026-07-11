@@ -4,13 +4,16 @@ import { addWeeks, endOfWeek, format, isSameDay, isToday, startOfWeek, subWeeks 
 import { fr } from 'date-fns/locale';
 import { CheckCircle2, ChevronLeft, ChevronRight, Layers } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useMemo, useState, useEffect } from 'react';
 import { PageHeader } from '@/components/layout/sticky-header';
+import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
 import { PlanAdapter } from '@/components/coach/plan-adapter';
 import { PlanGenerator } from '@/components/coach/plan-generator';
 import { MacroPlanDialog } from '@/components/planning/macro-plan-dialog';
 import { PlannedSessionDialog } from '@/components/planning/planned-session-dialog';
+import { ProjectedAthleteCard } from '@/components/planning/projected-athlete-card';
+import { ScenarioComparisonCard } from '@/components/planning/scenario-comparison-card';
 import {
   SessionsCoachMenu,
   type SessionsCoachAction,
@@ -19,10 +22,10 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ClientActivity, ClientPlannedSession, ClientPlanWeek } from '@/lib/query/types';
 import { groupPlannedSessions } from '@/lib/brick-sessions';
-import { activityTypeColors, activityTypeLabels } from '@/lib/format';
+import { activityTypeLabels } from '@/lib/format';
 import { buildPlanningWeeks, resolvePlanningWeek } from '@/lib/planning';
 import { phaseColors, phaseLabels } from '@/lib/periodization';
-import { formatPlannedDuration, intensityAccent } from '@/lib/sessions';
+import { formatPlannedDuration } from '@/lib/sessions';
 import { cn } from '@/lib/utils';
 import { useActivities, useGoals, usePlannedSessions, useTrainingPlan } from '@/hooks/use-data';
 import { isAnyInitialQueryLoad } from '@/hooks/use-query-status';
@@ -34,6 +37,7 @@ type DialogState =
 
 export function PlanningView({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const plannedIdFromUrl = embedded ? searchParams.get('planned') : null;
   const createFromUrl = !embedded && searchParams.has('create');
@@ -107,6 +111,12 @@ export function PlanningView({ embedded = false }: { embedded?: boolean }) {
     return planned.find((s) => s.id === plannedIdFromUrl) ?? null;
   }, [plannedIdFromUrl, plannedQuery.isPending, planned]);
 
+  useEffect(() => {
+    if (!deepLinkSession) return;
+    const sessionWeek = startOfWeek(new Date(deepLinkSession.date), WEEK_OPTS);
+    setWeekStart((current) => (isSameDay(current, sessionWeek) ? current : sessionWeek));
+  }, [deepLinkSession]);
+
   function closePlannedDialog() {
     setDialog(null);
     const params = new URLSearchParams(searchParams.toString());
@@ -116,7 +126,7 @@ export function PlanningView({ embedded = false }: { embedded?: boolean }) {
     params.delete('planned');
     if (hadCreate) params.delete('create');
     const query = params.toString();
-    router.replace(query ? `/seances?${query}` : '/seances', { scroll: false });
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }
 
   function handleCoachAction(action: SessionsCoachAction) {
@@ -233,6 +243,9 @@ export function PlanningView({ embedded = false }: { embedded?: boolean }) {
         total={total}
         weeksToRace={week.weeksToRace}
       />
+
+      {isCurrentWeek ? <ProjectedAthleteCard /> : null}
+      {isCurrentWeek ? <ScenarioComparisonCard /> : null}
 
       <div className="border-border/60 divide-border/60 divide-y rounded-xl border">
         {days.map((day) => (
@@ -375,15 +388,13 @@ function DayRow({
             {activities.map((a) => (
               <Link
                 key={a.id}
+                className="text-foreground hover:text-foreground flex items-center gap-2 text-sm transition-colors"
                 href={`/training/${a.id}`}
-                className={cn(
-                  'text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm',
-                  activityTypeColors[a.type],
-                )}
               >
                 <CheckCircle2 className="size-3.5 shrink-0 text-emerald-600" />
+                <ActivityTypeIndicator type={a.type} />
                 <span className="truncate">{a.title ?? activityTypeLabels[a.type]}</span>
-                <span className="text-xs opacity-70">réalisé</span>
+                <span className="text-muted-foreground text-xs">réalisé</span>
               </Link>
             ))}
           </>
@@ -410,7 +421,6 @@ function SessionRow({
   session: ClientPlannedSession;
   onEdit: (session: ClientPlannedSession) => void;
 }) {
-  const accent = session.intensity ? intensityAccent[session.intensity] : '#94a3b8';
   const title = session.title ?? activityTypeLabels[session.type];
   const meta = [
     session.startTime,
@@ -428,11 +438,8 @@ function SessionRow({
       )}
       onClick={() => onEdit(session)}
     >
-      {session.completed ? (
-        <CheckCircle2 className="size-3.5 shrink-0 text-emerald-600" />
-      ) : (
-        <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
-      )}
+      {session.completed && <CheckCircle2 className="size-3.5 shrink-0 text-emerald-600" />}
+      <ActivityTypeIndicator type={session.type} />
       <span className="min-w-0 flex-1 truncate font-medium">{title}</span>
       {meta && <span className="text-muted-foreground shrink-0 text-xs">{meta}</span>}
     </button>

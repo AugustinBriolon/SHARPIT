@@ -1,6 +1,7 @@
 import type { SleepCoachView } from '@/lib/sleep';
 import type { SleepScoreBreakdown } from '@/lib/sleep-scoring';
 import type { ProductInsightBundle } from '@/core/product-insight/types';
+import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
 
 export type SleepBarPoint = { date: string; minutes: number | null; fill: string };
 
@@ -31,4 +32,5 @@ export type SleepPageViewProps = {
   barData: SleepBarPoint[];
   recoveryNote?: string | null;
   insights: ProductInsightBundle;
+  globalDecision: GlobalDecisionContext;
 };

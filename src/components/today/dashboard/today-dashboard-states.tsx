@@ -1,36 +1,76 @@
 'use client';
 
 import { Skeleton } from '@/components/ui/skeleton';
-
-function MetricRingSkeleton() {
-  return (
-    <div className="rounded-analysis flex flex-col items-center px-2 py-3">
-      <Skeleton className="m-1 size-[72px] rounded-full" />
-      <Skeleton className="mt-2 h-3.5 w-14" />
-    </div>
-  );
-}
+import {
+  SkeletonCard,
+  SkeletonEyebrow,
+  SkeletonText,
+  SkeletonTitle,
+} from '@/components/ui/skeleton-patterns';
 
 /** Shown only on first visit when no snapshot exists yet. */
 export function DashboardSkeleton() {
   return (
     <div className="mx-auto space-y-3 sm:space-y-4">
-      <div className="rounded-3xl border px-5 py-6">
-        <Skeleton className="mb-2 h-3 w-48" />
-        <Skeleton className="mb-2 h-8 w-56" />
-        <Skeleton className="h-4 w-full max-w-md" />
-        <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-          {[0, 1, 2, 3].map((i) => (
-            <MetricRingSkeleton key={i} />
-          ))}
+      <SkeletonCard className="rounded-3xl px-5 py-6">
+        <SkeletonEyebrow className="mb-2 w-32" />
+        <SkeletonTitle className="mb-2 w-52 max-w-full" size="lg" />
+        <SkeletonText widths={['100%', '90%', '56%']} />
+        <div className="mt-5 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <Skeleton className="h-3.5 w-28 rounded-full border-0" />
+            <Skeleton className="h-3 w-24 rounded-full border-0" />
+          </div>
+          <Skeleton className="h-2.5 w-full rounded-full border-0" />
         </div>
-      </div>
-      <div className="bg-muted h-24 rounded-3xl" />
+      </SkeletonCard>
+      <SkeletonCard className="rounded-3xl p-4">
+        <div className="flex items-start gap-3">
+          <Skeleton className="size-11 rounded-2xl" />
+          <div className="flex-1 space-y-2">
+            <SkeletonEyebrow className="w-24" />
+            <SkeletonText widths={['86%', '64%']} />
+          </div>
+        </div>
+      </SkeletonCard>
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <div className="bg-muted h-28 rounded-3xl" />
-        <div className="bg-muted h-28 rounded-3xl" />
+        <SkeletonCard className="rounded-3xl">
+          <SkeletonEyebrow className="w-28" />
+          <SkeletonText className="mt-3" widths={['100%', '92%', '64%']} />
+        </SkeletonCard>
+        <SkeletonCard className="rounded-3xl">
+          <SkeletonEyebrow className="w-24" />
+          <div className="mt-3 space-y-2">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="rounded-analysis border-analysis-border/60 border px-3 py-2.5"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-3 w-24 rounded-full border-0" />
+                    <Skeleton className="h-4 w-40 max-w-full rounded-full border-0" />
+                  </div>
+                  <Skeleton className="h-3 w-10 rounded-full border-0" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </SkeletonCard>
       </div>
-      <div className="bg-muted h-32 rounded-3xl" />
+      <SkeletonCard className="rounded-3xl">
+        <SkeletonEyebrow className="w-28" />
+        <div className="mt-3 grid grid-cols-2 gap-4">
+          <div className="rounded-analysis border-analysis-border/60 border px-3 py-3">
+            <Skeleton className="mb-2 h-3 w-20 rounded-full border-0" />
+            <Skeleton className="rounded-analysis h-14 w-full border-0" />
+          </div>
+          <div className="rounded-analysis border-analysis-border/60 border px-3 py-3">
+            <Skeleton className="mb-2 h-3 w-20 rounded-full border-0" />
+            <Skeleton className="rounded-analysis h-14 w-full border-0" />
+          </div>
+        </div>
+      </SkeletonCard>
     </div>
   );
 }

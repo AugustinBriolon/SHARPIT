@@ -11,7 +11,11 @@ import { resolveTodayGoalContext } from '@/lib/daily-phase/goal-context';
 import { pickTomorrowSessionHint } from '@/lib/daily-phase/evening-context';
 import { formatLimitingFactorMessage } from '@/lib/athlete-state/snapshot-truthfulness';
 import type { TodayState } from '@/hooks/use-today';
-import type { OverallVerdict } from '@/lib/today-mapping';
+import {
+  decisionTopAction,
+  decisionVerdict,
+  limitingFactorFromDecision,
+} from '@/lib/decision/projection';
 import { activityMatchesTrainingDay } from '@/lib/training-day';
 import type { SleepCoachView } from '@/lib/sleep';
 
@@ -93,9 +97,9 @@ export function buildSnapshotDailyPhase(params: SnapshotPhaseBuildParams): {
   );
 
   const newInferenceSincePriorSnapshot = Boolean(
-    todayState.reasoning?.computedAt &&
+    todayState.decision?.computedAt &&
     priorGeneratedAt &&
-    new Date(todayState.reasoning.computedAt).getTime() > new Date(priorGeneratedAt).getTime(),
+    new Date(todayState.decision.computedAt).getTime() > new Date(priorGeneratedAt).getTime(),
   );
 
   const minutesSinceSnapshotGenerated = priorGeneratedAt
@@ -111,10 +115,8 @@ export function buildSnapshotDailyPhase(params: SnapshotPhaseBuildParams): {
   );
 
   const recommendationAvailable = Boolean(
-    todayState.reasoning?.topAction ??
-    todayState.recovery?.recommendation ??
-    todayState.fatigue?.recommendation ??
-    todayState.adaptation?.recommendation,
+    todayState.decision?.topAction ??
+    todayState.decision?.primaryDecision.verdict !== 'INSUFFICIENT_DATA',
   );
 
   const resolution = resolveDailyPhase(
@@ -138,14 +140,15 @@ export function buildSnapshotDailyPhase(params: SnapshotPhaseBuildParams): {
   );
 
   const effort = buildTodayEffortSnapshot(activities as never, refDate);
-  const verdict = (todayState.reasoning?.overallVerdict ?? 'INSUFFICIENT_DATA') as OverallVerdict;
+  const verdict = decisionVerdict(todayState.decision);
   const actionLine = isForwardAdvicePhase(resolution.phase)
-    ? buildTopActionLine(todayState.reasoning?.topAction ?? null)
+    ? buildTopActionLine(decisionTopAction(todayState.decision))
     : null;
 
   const goalContext = resolveTodayGoalContext(goals ?? [], plannedSessions, trainingDayId);
-  const limitingFactorMessage = todayState.reasoning?.limitingFactor?.description
-    ? formatLimitingFactorMessage(todayState.reasoning.limitingFactor)
+  const decisionLimiting = limitingFactorFromDecision(todayState.decision);
+  const limitingFactorMessage = decisionLimiting
+    ? formatLimitingFactorMessage(decisionLimiting)
     : null;
 
   const phaseNarrative = buildPhaseNarrative({

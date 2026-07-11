@@ -83,6 +83,8 @@ export type AdaptationModelOutput = {
 // Model context (non-feature inputs — from Digital Twin + history)
 // ─────────────────────────────────────────────────────────────────────────────
 
+import type { EnvironmentalImpact } from '@/core/environment';
+
 export type AdaptationModelContext = {
   readonly trainingDayId: string;
   readonly athleteId: string;
@@ -107,6 +109,9 @@ export type AdaptationModelContext = {
    * Empty array on cold start.
    */
   readonly recentAdaptationHistory: readonly number[];
+
+  /** Optional overlay from Environmental Context Engine. */
+  readonly environmentalImpact?: EnvironmentalImpact | null;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

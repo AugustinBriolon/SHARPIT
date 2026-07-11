@@ -3,10 +3,10 @@ import { refreshAthleteState } from '@/lib/athlete-state/orchestrator';
 import { getGarminAccount, syncGarminHealth } from '@/lib/integrations/garmin-sync';
 import { syncGarminActivities } from '@/lib/integrations/garmin-activity-sync';
 import { getGoogleAccount, syncFromGoogle } from '@/lib/integrations/google-sync';
-import { recomputeRecordsSafe } from '@/lib/records';
+import { updateRecordsAfterProviderSync } from '@/lib/records';
 import { getRenphoAccount, syncRenphoHealth } from '@/lib/integrations/renpho-sync';
 import { getWithingsAccount, syncWithingsHealth } from '@/lib/integrations/withings-sync';
-import { backfillActivityStreams } from '@/lib/stream-backfill';
+import { CRON_BACKFILL_BATCH, backfillActivityStreams } from '@/lib/stream-backfill';
 import { getStravaAccount, syncStravaActivities } from '@/lib/integrations/strava-sync';
 import { generateAndStoreWeeklyReview, isSunday } from '@/lib/weekly-review';
 import { isCoachConfigured } from '@/lib/ai';
@@ -127,16 +127,25 @@ export async function GET(request: Request) {
 
   // Backfill progressif des streams (records & courbes) : un lot par exécution
   // pour rester sous le rate-limit Strava.
-  if (stravaAccount) {
+  if (stravaAccount || garminAccount) {
     try {
-      result.backfill = await backfillActivityStreams(25);
+      result.backfill = await backfillActivityStreams(CRON_BACKFILL_BATCH);
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Backfill streams échoué';
       console.error('[cron/sync] Backfill:', msg);
       result.errors.push(`backfill: ${msg}`);
     }
-    // Recalcule les records (nouvelles activités + nouveaux streams).
-    await recomputeRecordsSafe();
+  }
+
+  if (stravaAccount || garminAccount) {
+    const importedTypes = [
+      ...(result.strava?.importedTypes ?? []),
+      ...(result.garminActivities?.importedTypes ?? []),
+    ];
+    await updateRecordsAfterProviderSync({
+      importedTypes,
+      backfilledActivityIds: result.backfill?.activityIdsWithData,
+    });
   }
 
   // Inference + briefing background after sync (athlete state orchestrator).

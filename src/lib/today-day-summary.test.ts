@@ -30,18 +30,20 @@ function planned(partial: Partial<ClientPlannedSession> & { id: string }): Clien
 }
 
 describe('buildTodayDaySummary', () => {
-  it('prioritises completed activities over planned sessions', () => {
+  it('shows both completed activities and remaining planned sessions', () => {
     const summary = buildTodayDaySummary(
       TODAY,
       [activity({ id: 'a1', title: 'Footing' })],
-      [planned({ id: 'p1' })],
+      [planned({ id: 'p1', title: 'Endurance vélo' })],
     );
 
     expect(summary.isEmpty).toBe(false);
-    expect(summary.sectionLabel).toContain('Réalisé');
-    expect(summary.lines).toHaveLength(1);
+    expect(summary.sectionLabel).toBe("Aujourd'hui · réalisé et à venir");
+    expect(summary.lines).toHaveLength(2);
     expect(summary.lines[0].kind).toBe('done');
     expect(summary.lines[0].primary).toContain('Footing');
+    expect(summary.lines[1].kind).toBe('planned');
+    expect(summary.lines[1].primary).toContain('Endurance vélo');
   });
 
   it('shows planned sessions when nothing was done today', () => {

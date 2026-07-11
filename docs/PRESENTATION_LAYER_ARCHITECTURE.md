@@ -83,23 +83,36 @@ Ondes (mêmes principes que dans le plan produit) :
 3. **Body** : déplacer la construction des séries, tendances et insights (en précomputant par fenêtre ou en supportant des paramètres de récupération).
 4. Nettoyage : supprimer progressivement l’assemblage métier client et les hooks “smart”.
 
-## Etat actuel (déjà implémenté)
+## Etat actuel (post-stabilization P2)
 
-- Contrats transverses `src/core/presentation/types.ts` et view models de base.
-- Projections serveur + endpoints pour :
-  - `/api/presentation/recovery`
-  - `/api/presentation/sleep`
-  - `/api/presentation/effort`
-  - `/api/presentation/adaptation`
-- Les pages drill-down correspondantes (Recovery/Sleep/Effort/Adaptation) ont été migrées pour fetcher et rendre uniquement à partir du ViewModel.
+- Contrats transverses `src/core/presentation/types.ts` et view models par surface.
+- Projections serveur + endpoints pour toutes les surfaces drill-down et Today.
+- Client canonique : `GET /api/athlete-state/snapshot` (`useToday`) + fetchers `/api/presentation/*`.
+- Legacy routes supprimées : `/api/reasoning`, `/api/today`, `/api/recovery`, `/api/fatigue`, `/api/adaptation`.
+- Global Decision Strip sur les drill-downs (verdict produit depuis `snapshot.decision`).
 
-## Prochaines étapes
-
-- Ajouter `Today` côté serveur (projection + endpoint + hook + refactor des `Today*` en rendu passif).
-- Ajouter `Body` côté serveur (projection + endpoint + adaptation de `CompositionView` pour consommer uniquement un ViewModel).
-- Finaliser la migration UI passivement sur toutes les surfaces (Today + Body inclus).
+## Prochaines étapes (P3+)
 
 ## Architecture Boundary + Guard CI (permanent)
+
+### Canonical product read path
+
+All product verdicts, recommendations, limiting factors, and confidence gating must flow through:
+
+```
+DecisionState → src/lib/decision/projection.ts → Presentation ViewModels → Passive UI
+```
+
+Forbidden in presentation layers (`src/components/**`, `src/hooks/**`, `src/lib/presentation/**`):
+
+- `pickRecommendation`, `buildWhyEvidence`, `resolveConfidenceHref`, `resolveLimitingFactorHref`
+- Reading `reasoning.overallVerdict`, `reasoning.topAction`, or `reasoning.keyFindings` for product decisions
+- `isAdviceActionable(reasoning)` — use `isAdviceActionableFromDecision(decision)`
+
+Enforced by:
+
+- Import guard: `src/core/architecture/__tests__/presentation-architecture-guard.test.ts`
+- Legacy pattern guard (same file, P2): scans for deprecated identifiers and reasoning verdict reads
 
 ### Contrat de passivité côté React
 

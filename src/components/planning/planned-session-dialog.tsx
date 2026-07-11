@@ -3,7 +3,14 @@
 import { ActivityType, SessionIntensity } from '@prisma/client';
 import { format } from 'date-fns';
 import { Layers, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { PlannedSessionContextPanel } from '@/components/planning/planned-session-context-panel';
+import {
+  defaultExposureForActivityType,
+  sportSupportsOutdoorContext,
+} from '@/core/planned-session/defaults';
+import { fetchPlannedSessionPresentation } from '@/lib/query/presentation-fetchers';
 import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -92,6 +99,11 @@ export function PlannedSessionDialog({
   const [type, setType] = useState<ActivityType>(session?.type ?? 'RUN');
   const [intensity, setIntensity] = useState<SessionIntensity>(session?.intensity ?? 'ENDURANCE');
   const [goalId, setGoalId] = useState<string>(session?.goalId ?? NO_GOAL);
+  const [exposure, setExposure] = useState<'INDOOR' | 'OUTDOOR' | 'UNKNOWN'>(
+    (session?.exposureSetting as 'INDOOR' | 'OUTDOOR' | 'UNKNOWN' | null | undefined) ??
+      defaultExposureForActivityType(session?.type ?? 'RUN'),
+  );
+  const [locationLabel, setLocationLabel] = useState(session?.locationLabel ?? '');
   const [legs, setLegs] = useState<BrickLegForm[]>(defaultBrickLegs);
   const [error, setError] = useState<string | null>(null);
   const { confirm, dialog } = useConfirmDialog();
@@ -100,6 +112,19 @@ export function PlannedSessionDialog({
 
   const raceGoals = goals.filter((g) => g.kind === 'RACE');
   const pending = create.isPending || createBrick.isPending || update.isPending || remove.isPending;
+  const showOutdoorContext = createMode === 'single' && sportSupportsOutdoorContext(type);
+
+  const contextQuery = useQuery({
+    queryKey: ['presentation', 'planned-session', session?.id],
+    queryFn: () => fetchPlannedSessionPresentation(session!.id),
+    enabled: Boolean(isEdit && session?.id),
+  });
+
+  useEffect(() => {
+    if (!showOutdoorContext && type === 'STRENGTH') {
+      setExposure('INDOOR');
+    }
+  }, [type, showOutdoorContext]);
 
   function updateLeg(index: number, patch: Partial<BrickLegForm>) {
     setLegs((prev) => prev.map((leg, i) => (i === index ? { ...leg, ...patch } : leg)));
@@ -147,6 +172,8 @@ export function PlannedSessionDialog({
             load: loadRaw ? Number(loadRaw) : null,
             intensity,
             goalId: goalId === NO_GOAL ? null : goalId,
+            exposureSetting: showOutdoorContext ? exposure : exposure,
+            locationLabel: locationLabel.trim() || null,
           },
         });
       } else if (createMode === 'brick') {
@@ -179,6 +206,8 @@ export function PlannedSessionDialog({
           load: loadRaw ? Number(loadRaw) : null,
           intensity,
           goalId: goalId === NO_GOAL ? null : goalId,
+          exposureSetting: showOutdoorContext ? exposure : defaultExposureForActivityType(type),
+          locationLabel: locationLabel.trim() || null,
         });
       }
       onClose();
@@ -225,6 +254,10 @@ export function PlannedSessionDialog({
           )}
 
           {isEdit && session && <SessionRealization session={session} />}
+
+          {isEdit && contextQuery.data?.context ? (
+            <PlannedSessionContextPanel viewModel={contextQuery.data.context} />
+          ) : null}
 
           {!isEdit && (
             <div className="border-border/60 bg-muted/30 flex gap-1 rounded-lg border p-1">
@@ -359,6 +392,43 @@ export function PlannedSessionDialog({
                     </Select>
                   </div>
                 </div>
+
+                {showOutdoorContext ? (
+                  <div className="border-border/60 bg-muted/20 space-y-3 rounded-lg border p-3">
+                    <p className="text-foreground text-sm font-medium">Conditions de la séance</p>
+                    <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="min-w-0 space-y-2">
+                        <Label>Lieu d&apos;entraînement</Label>
+                        <Select
+                          value={exposure}
+                          onValueChange={(v) => setExposure(v as 'INDOOR' | 'OUTDOOR' | 'UNKNOWN')}
+                        >
+                          <SelectTrigger className="w-full min-w-0">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="UNKNOWN">À confirmer</SelectItem>
+                            <SelectItem value="OUTDOOR">Extérieur</SelectItem>
+                            <SelectItem value="INDOOR">Intérieur / home trainer</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="min-w-0 space-y-2">
+                        <Label htmlFor="locationLabel">Lieu (optionnel)</Label>
+                        <Input
+                          id="locationLabel"
+                          placeholder="Bois de Vincennes, piste…"
+                          value={locationLabel}
+                          onChange={(e) => setLocationLabel(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      SHARPIT utilise le lieu pour anticiper l&apos;impact environnemental avant la
+                      séance — sans afficher la météo brute en premier.
+                    </p>
+                  </div>
+                ) : null}
 
                 <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="min-w-0 space-y-2">

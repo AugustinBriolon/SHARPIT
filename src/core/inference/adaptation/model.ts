@@ -21,6 +21,7 @@
  */
 
 import type { DayFeatures } from '@/core/features/types';
+import { applyEnvironmentalImpactToAdaptationIndex } from '@/core/inference/environment/apply-impact';
 import type {
   AdaptationModelContext,
   AdaptationModelOutput,
@@ -70,6 +71,11 @@ export function runAdaptationModel(
     totalAvailableWeight,
   } = synthesizeAdaptationIndex(dims);
 
+  const adaptationIndex = applyEnvironmentalImpactToAdaptationIndex(
+    rawIndex,
+    context.environmentalImpact ?? null,
+  );
+
   const historyLength = context.recentAdaptationHistory.length;
 
   // History maturity bonus: +15% at 28 records; see ADAPTATION_MODEL.md §7
@@ -80,7 +86,7 @@ export function runAdaptationModel(
 
   // ── Step 3: Classify ──────────────────────────────────────────────────────
   const adaptationStatus =
-    rawIndex === null ? 'INSUFFICIENT_DATA' : classifyAdaptationStatus(rawIndex);
+    adaptationIndex === null ? 'INSUFFICIENT_DATA' : classifyAdaptationStatus(adaptationIndex);
 
   const adaptationTrend = computeAdaptationTrend(context.recentAdaptationHistory);
 
@@ -109,7 +115,7 @@ export function runAdaptationModel(
 
   // ── Step 7: Build signals ─────────────────────────────────────────────────
   const signals: AdaptationSignals = {
-    adaptationIndex: rawIndex,
+    adaptationIndex,
     adaptationStatus,
     adaptationTrend,
     dimensionScores: {
@@ -140,7 +146,7 @@ export function runAdaptationModel(
 
   // ── Step 10: Build AdaptationState ────────────────────────────────────────
   const adaptationState: AdaptationState = {
-    adaptationIndex: rawIndex,
+    adaptationIndex,
     adaptationStatus,
     adaptationTrend,
     dimensions: {

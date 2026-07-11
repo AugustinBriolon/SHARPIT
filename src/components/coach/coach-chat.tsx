@@ -90,6 +90,22 @@ export function CoachChat({
 
   const isBusy = status === 'submitted' || status === 'streaming';
 
+  // Toutes les propositions en attente de validation, affichées en bas du chat.
+  const pendingApprovals: { part: ToolPartLite; known: Record<string, KnownSession> }[] = [];
+  for (const message of messages) {
+    if (message.role !== 'assistant') continue;
+    const toolParts = message.parts.filter((p) => p.type.startsWith('tool-')) as ToolPartLite[];
+    const known = buildKnownSessions(toolParts);
+    for (const part of toolParts) {
+      if (part.state === 'approval-requested' && part.approval && !part.approval.isAutomatic) {
+        pendingApprovals.push({ part, known });
+      }
+    }
+  }
+
+  const hasPendingApprovals = pendingApprovals.length > 0;
+  const inputLocked = isBusy || hasPendingApprovals;
+
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -121,23 +137,19 @@ export function CoachChat({
 
   function submit(text: string) {
     const value = text.trim();
-    if (!value || isBusy) return;
+    if (!value || inputLocked) return;
     sendMessage({ text: value });
     setInput('');
   }
 
-  // Toutes les propositions en attente de validation, affichées en bas du chat.
-  const pendingApprovals: { part: ToolPartLite; known: Record<string, KnownSession> }[] = [];
-  for (const message of messages) {
-    if (message.role !== 'assistant') continue;
-    const toolParts = message.parts.filter((p) => p.type.startsWith('tool-')) as ToolPartLite[];
-    const known = buildKnownSessions(toolParts);
-    for (const part of toolParts) {
-      if (part.state === 'approval-requested' && part.approval && !part.approval.isAutomatic) {
-        pendingApprovals.push({ part, known });
-      }
-    }
-  }
+  const coachErrorMessage =
+    error?.message && !error.message.toLowerCase().includes('api key')
+      ? error.message
+      : 'Une erreur est survenue. Réessaie dans un instant.';
+
+  const inputPlaceholder = hasPendingApprovals
+    ? 'Valide ou refuse la proposition pour continuer…'
+    : 'Demande conseil à ton coach…';
 
   return (
     <div className="border-border/60 bg-card/30 flex h-full min-h-[80vh] min-w-0 flex-1 flex-col rounded-xl border">
@@ -152,7 +164,8 @@ export function CoachChat({
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
-                  className="border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground rounded-full border px-3 py-1.5 text-xs transition-colors"
+                  className="border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground rounded-full border px-3 py-1.5 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={inputLocked}
                   type="button"
                   onClick={() => submit(s)}
                 >
@@ -211,11 +224,16 @@ export function CoachChat({
 
         {pendingApprovals.length > 0 && (
           <div className="border-primary/30 bg-primary/4 space-y-2 rounded-xl border p-3">
-            <p className="text-primary text-xs font-medium tracking-wide uppercase">
-              {pendingApprovals.length === 1
-                ? '1 proposition à valider'
-                : `${pendingApprovals.length} propositions à valider`}
-            </p>
+            <div className="space-y-1">
+              <p className="text-primary text-xs font-medium tracking-wide uppercase">
+                {pendingApprovals.length === 1
+                  ? '1 proposition à valider'
+                  : `${pendingApprovals.length} propositions à valider`}
+              </p>
+              <p className="text-muted-foreground text-xs">
+                Valide ou refuse la proposition pour continuer la conversation.
+              </p>
+            </div>
             {pendingApprovals.map(({ part, known }, i) => (
               <ToolActivity
                 key={i}
@@ -237,8 +255,7 @@ export function CoachChat({
 
         {error && (
           <p className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
-            Une erreur est survenue. Vérifie que la clé AI_GATEWAY_API_KEY est configurée, puis
-            réessaie.
+            {coachErrorMessage}
           </p>
         )}
       </div>
@@ -252,8 +269,8 @@ export function CoachChat({
       >
         <Textarea
           className="max-h-40 min-h-10 resize-y"
-          disabled={isBusy}
-          placeholder="Demande conseil à ton coach…"
+          disabled={inputLocked}
+          placeholder={inputPlaceholder}
           rows={bootstrapPrompt ? 6 : 1}
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -269,7 +286,7 @@ export function CoachChat({
             <Square className="size-4" />
           </Button>
         ) : (
-          <Button disabled={!input.trim()} size="icon" type="submit">
+          <Button disabled={!input.trim() || hasPendingApprovals} size="icon" type="submit">
             <Send className="size-4" />
           </Button>
         )}

@@ -18,6 +18,10 @@
  */
 
 import type { I18nItem } from '@/core/inference/shared/types';
+import type { PhysicalHealthState } from '@/core/inference/physical-health/types';
+import type { EnvironmentalTwinState } from '@/core/inference/environment/types';
+
+export type { EnvironmentalTwinState } from '@/core/inference/environment/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared dimension primitives
@@ -273,7 +277,11 @@ export type ReasoningState = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Athlete State (aggregated view across all models)
+// Physical Health State (produced by Physical Health Model v1)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type { PhysicalHealthState } from '@/core/inference/physical-health/types';
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -287,6 +295,9 @@ export type AthleteState = {
   readonly fatigue: FatigueState | null;
   readonly adaptation: AdaptationState | null;
   readonly reasoning: ReasoningState | null;
+  readonly physicalHealth: PhysicalHealthState | null;
+  /** Rebuildable cache — observations remain source of truth. */
+  readonly environmental?: EnvironmentalTwinState | null;
   // trainingStress: TrainingStressState | null → future
   // performance: PerformanceState | null  → future
 };

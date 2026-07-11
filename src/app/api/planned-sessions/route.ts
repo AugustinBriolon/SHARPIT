@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { defaultExposureForActivityType } from '@/core/planned-session/defaults';
 import { pushSessionToGoogle } from '@/lib/integrations/google-sync';
 import { createPlannedSession, getPlannedSessionById, getPlannedSessions } from '@/lib/queries';
+import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/resolve-context';
 import { createPlannedSessionSchema } from '@/lib/validators/planned-session';
 
 export const dynamic = 'force-dynamic';
@@ -36,9 +38,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const session = await createPlannedSession(
-      parsed.data as Parameters<typeof createPlannedSession>[0],
-    );
+    const session = await createPlannedSession({
+      ...(parsed.data as Parameters<typeof createPlannedSession>[0]),
+      exposureSetting:
+        parsed.data.exposureSetting ?? defaultExposureForActivityType(parsed.data.type),
+    });
+
+    try {
+      await refreshAndPersistPlannedSessionContext(session.id);
+    } catch (ctxError) {
+      console.error('[planned-sessions/context]', ctxError);
+    }
 
     // Synchro App → Google Calendar (best-effort : n'échoue pas la création).
     try {

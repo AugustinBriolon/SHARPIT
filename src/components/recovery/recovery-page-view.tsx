@@ -1,5 +1,7 @@
 import type { DimensionResult } from '@/hooks/use-today';
 import { RecoveryAlertsSection } from '@/components/recovery/recovery-alerts-section';
+import { GlobalDecisionStrip } from '@/components/today/drill-down/global-decision-strip';
+import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
 import { RecoveryDecisionSection } from '@/components/recovery/recovery-decision-section';
 import { RecoveryDimensionsSection } from '@/components/recovery/recovery-dimensions-section';
 import { RecoveryHero } from '@/components/recovery/recovery-hero';
@@ -55,6 +57,7 @@ export type RecoveryPageViewProps = {
   illness?: { label: string; colorClass: string };
   keyEvidence: string[];
   insights: ProductInsightBundle;
+  globalDecision: GlobalDecisionContext;
 };
 
 export function RecoveryPageView(props: RecoveryPageViewProps) {
@@ -97,6 +100,7 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
     illness,
     keyEvidence,
     insights,
+    globalDecision,
   } = props;
 
   return (
@@ -124,6 +128,8 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
         onNextDay={onNextDay}
         onPreviousDay={onPreviousDay}
       />
+
+      <GlobalDecisionStrip context={globalDecision} />
 
       <RecoveryDecisionSection
         intensityClassName={intensityClassName}

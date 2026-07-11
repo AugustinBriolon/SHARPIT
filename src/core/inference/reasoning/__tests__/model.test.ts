@@ -117,7 +117,7 @@ function makeInput(
   return {
     trainingDayId: '2026-07-02',
     athleteId: 'test-athlete',
-    athleteState: { recovery: r, fatigue: f, adaptation: a, reasoning: null },
+    athleteState: { recovery: r, fatigue: f, adaptation: a, reasoning: null, physicalHealth: null },
   };
 }
 

@@ -24,6 +24,55 @@ import { createActivitySchema } from '@/lib/validators/activity';
 
 type ActivityFormValues = z.input<typeof createActivitySchema>;
 
+function strengthSetsForForm(initialData: ActivityWithRelations) {
+  if (initialData.type !== ActivityType.STRENGTH) return [];
+  return initialData.strengthSets.length ? initialData.strengthSets : [defaultStrengthSet];
+}
+
+function emptyToUndefined(value: unknown) {
+  if (value === '' || value === null || value === undefined) return undefined;
+  if (typeof value === 'number' && Number.isNaN(value)) return undefined;
+  return value;
+}
+
+function sanitizeActivityPayload(values: ActivityFormValues): ActivityFormValues {
+  const payload: ActivityFormValues = {
+    ...values,
+    title: values.title || undefined,
+    feeling: values.feeling || undefined,
+    notes: values.notes || undefined,
+    weather: values.weather || undefined,
+    duration: emptyToUndefined(values.duration) as number | undefined,
+    rpe: emptyToUndefined(values.rpe) as number | undefined,
+    load: emptyToUndefined(values.load) as number | undefined,
+  };
+
+  if (payload.type !== ActivityType.STRENGTH) {
+    delete payload.strengthSets;
+  }
+
+  return payload;
+}
+
+function formatValidationErrors(errors: Record<string, unknown>): string {
+  const messages: string[] = [];
+
+  function walk(node: unknown, path: string) {
+    if (!node || typeof node !== 'object') return;
+    const record = node as Record<string, unknown>;
+    if (typeof record.message === 'string') {
+      messages.push(path ? `${path} : ${record.message}` : record.message);
+    }
+    for (const [key, value] of Object.entries(record)) {
+      if (key === 'message' || key === 'type' || key === 'ref') continue;
+      walk(value, path ? `${path}.${key}` : key);
+    }
+  }
+
+  walk(errors, '');
+  return messages[0] ?? 'Vérifie les champs du formulaire.';
+}
+
 type ActivityWithRelations = {
   id: string;
   type: ActivityType;
@@ -76,9 +125,7 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
           runMetrics: initialData.runMetrics ?? undefined,
           bikeMetrics: initialData.bikeMetrics ?? undefined,
           swimMetrics: initialData.swimMetrics ?? undefined,
-          strengthSets: initialData.strengthSets.length
-            ? initialData.strengthSets
-            : [defaultStrengthSet],
+          strengthSets: strengthSetsForForm(initialData),
         }
       : {
           type: ActivityType.RUN,
@@ -96,29 +143,40 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
     name: 'strengthSets',
   });
 
-  const onSubmit = form.handleSubmit(async (values) => {
-    const url = mode === 'create' ? '/api/activities' : `/api/activities/${initialData?.id}`;
-    const method = mode === 'create' ? 'POST' : 'PATCH';
+  const onSubmit = form.handleSubmit(
+    async (values) => {
+      const payload = sanitizeActivityPayload(values);
+      const url = mode === 'create' ? '/api/activities' : `/api/activities/${initialData?.id}`;
+      const method = mode === 'create' ? 'POST' : 'PATCH';
 
-    const response = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(values),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      form.setError('root', {
-        message: error.error ?? 'Une erreur est survenue',
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
-      return;
-    }
 
-    const activity = await response.json();
-    await queryClient.invalidateQueries({ queryKey: queryKeys.activities });
-    router.push(`/training/${activity.id}`);
-    router.refresh();
-  });
+      if (!response.ok) {
+        const error = await response.json();
+        form.setError('root', {
+          message: error.error ?? 'Une erreur est survenue',
+        });
+        return;
+      }
+
+      const activity = await response.json();
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.activities }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.records }),
+      ]);
+      router.push(`/training/${activity.id}`);
+      router.refresh();
+    },
+    (errors) => {
+      form.setError('root', {
+        message: formatValidationErrors(errors as Record<string, unknown>),
+      });
+    },
+  );
 
   return (
     <form className="space-y-6" onSubmit={onSubmit}>
@@ -179,12 +237,23 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
 
           <div className="space-y-2">
             <Label htmlFor="rpe">RPE (1-10)</Label>
-            <Input id="rpe" max={10} min={1} type="number" {...form.register('rpe')} />
+            <Input
+              id="rpe"
+              max={10}
+              min={1}
+              type="number"
+              {...form.register('rpe', { setValueAs: (value) => emptyToUndefined(value) })}
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="load">Charge (TSS)</Label>
-            <Input id="load" step="0.1" type="number" {...form.register('load')} />
+            <Input
+              id="load"
+              step="0.1"
+              type="number"
+              {...form.register('load', { setValueAs: (value) => emptyToUndefined(value) })}
+            />
           </div>
 
           <div className="space-y-2">

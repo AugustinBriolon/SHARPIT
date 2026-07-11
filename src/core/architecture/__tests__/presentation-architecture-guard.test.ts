@@ -417,3 +417,103 @@ describe('Presentation Architecture Guard', () => {
     expect(violations).toHaveLength(0);
   });
 });
+
+const LEGACY_PATTERN_ROOTS = [
+  path.join(REPO_ROOT, 'src', 'components'),
+  path.join(REPO_ROOT, 'src', 'hooks'),
+  path.join(REPO_ROOT, 'src', 'lib', 'presentation'),
+];
+
+const LEGACY_FORBIDDEN_PATTERNS: Array<{ id: string; regex: RegExp; hint: string }> = [
+  {
+    id: 'pickRecommendation',
+    regex: /\bpickRecommendation\b/,
+    hint: 'Use DecisionState routing via snapshot.decision / projection helpers',
+  },
+  {
+    id: 'buildWhyEvidence-legacy',
+    regex: /\bbuildWhyEvidence\b(?!FromDecision)/,
+    hint: 'Use buildWhyEvidenceFromDecision(decision, ...)',
+  },
+  {
+    id: 'resolveConfidenceHref-legacy',
+    regex: /\bresolveConfidenceHref\b(?!FromDecision)/,
+    hint: 'Use resolveConfidenceHrefFromDecision(decision)',
+  },
+  {
+    id: 'resolveLimitingFactorHref-legacy',
+    regex: /\bresolveLimitingFactorHref\b(?!FromDecision)/,
+    hint: 'Use resolveLimitingFactorHrefFromDecision(decision)',
+  },
+  {
+    id: 'reasoning-overallVerdict',
+    regex: /reasoning\.(?:overallVerdict|topAction|keyFindings)/,
+    hint: 'ReasoningState is narrative-only — read snapshot.decision instead',
+  },
+  {
+    id: 'isAdviceActionable-reasoning',
+    regex: /\bisAdviceActionable\s*\(\s*[^)]*reasoning/,
+    hint: 'Use isAdviceActionableFromDecision(decision)',
+  },
+];
+
+type LegacyPatternHit = {
+  file: string;
+  pattern: string;
+  hint: string;
+  line: number;
+  excerpt: string;
+};
+
+function collectLegacyPatternHits(filePath: string): LegacyPatternHit[] {
+  const text = fs.readFileSync(filePath, 'utf8');
+  const rel = path.relative(REPO_ROOT, filePath).replaceAll(path.sep, '/');
+  const lines = text.split('\n');
+  const hits: LegacyPatternHit[] = [];
+
+  for (const { id, regex, hint } of LEGACY_FORBIDDEN_PATTERNS) {
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i] ?? '';
+      if (line.trimStart().startsWith('//') || line.trimStart().startsWith('*')) continue;
+      if (regex.test(line)) {
+        hits.push({
+          file: rel,
+          pattern: id,
+          hint,
+          line: i + 1,
+          excerpt: line.trim().slice(0, 120),
+        });
+      }
+    }
+  }
+
+  return hits;
+}
+
+describe('Presentation Legacy Pattern Guard (P2)', () => {
+  it('fails when presentation layers reintroduce deprecated decision paths', () => {
+    const predicate = (filePath: string) =>
+      (filePath.endsWith('.ts') || filePath.endsWith('.tsx')) && !filePath.endsWith('.d.ts');
+
+    const allFiles: string[] = [];
+    for (const root of LEGACY_PATTERN_ROOTS) {
+      if (!fs.existsSync(root)) continue;
+      allFiles.push(...collectTsFiles(root, predicate));
+    }
+
+    const hits: LegacyPatternHit[] = [];
+    for (const filePath of allFiles) {
+      hits.push(...collectLegacyPatternHits(filePath));
+    }
+
+    if (hits.length > 0) {
+      const message = hits
+        .sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line)
+        .map((h) => `${h.file}:${h.line} [${h.pattern}] ${h.excerpt}\n  → ${h.hint}`)
+        .join('\n\n');
+      expect(hits, message).toHaveLength(0);
+    }
+
+    expect(hits).toHaveLength(0);
+  });
+});

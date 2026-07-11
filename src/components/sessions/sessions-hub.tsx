@@ -3,6 +3,7 @@
 import { CalendarView } from '@/components/calendar/calendar-view';
 import { PlanAdapter } from '@/components/coach/plan-adapter';
 import { PlanGenerator } from '@/components/coach/plan-generator';
+import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { MacroPlanDialog } from '@/components/planning/macro-plan-dialog';
 import { PlannedSessionDialog } from '@/components/planning/planned-session-dialog';
@@ -137,6 +138,7 @@ export function SessionsHub({
 
   return (
     <div className="space-y-4">
+      <MobileBackLink href="/training" label="Entraînement" showOnDesktop />
       <StickyHeader>
         <div className="flex items-end justify-between lg:gap-4">
           <div>

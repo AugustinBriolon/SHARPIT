@@ -139,7 +139,7 @@ function input(
   return {
     trainingDayId: '2026-07-02',
     athleteId: 'bench-athlete',
-    athleteState: { recovery: r, fatigue: f, adaptation: a, reasoning: null },
+    athleteState: { recovery: r, fatigue: f, adaptation: a, reasoning: null, physicalHealth: null },
   };
 }
 

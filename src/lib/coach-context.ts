@@ -10,8 +10,15 @@ import {
   getPlannedSessions,
 } from './queries';
 import { categoryLabels, sideLabels, statusLabels } from './physical';
+import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
+import { buildTopActionLine } from '@/lib/today-rich-view';
+import { decisionVerdict } from '@/lib/decision/projection';
+import { resolve, resolveCode } from '@/lib/french';
 import { computeTrainingLoad } from './training-load';
-import { prisma } from './prisma';
+import {
+  formatScenarioComparisonForCoach,
+  loadScenarioComparisonForCoach,
+} from '@/lib/presentation/scenario-comparison';
 
 const WEEKDAYS_FR = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
@@ -72,6 +79,7 @@ export async function buildCoachContext(refDate: Date = new Date()): Promise<Coa
  */
 async function buildCoachContextUncached(refDate: Date = new Date()) {
   const today = startOfDay(refDate);
+  const trainingDayId = format(today, 'yyyy-MM-dd');
 
   const [
     activities,
@@ -81,7 +89,8 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
     pastPlanned,
     profile,
     physicalNotes,
-    digitalTwin,
+    athleteSnapshot,
+    scenarioComparison,
   ] = await Promise.all([
     getActivities({ limit: 120 }),
     getHealthEntries(30),
@@ -90,12 +99,8 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
     getPlannedSessions({ from: subDays(today, 14), to: today }),
     getAthleteProfile(),
     getActivePhysicalNotes(),
-    prisma.digitalTwin
-      .findUnique({
-        where: { athleteId: 'default' },
-        select: { fatigueState: true, adaptationState: true, reasoningState: true },
-      })
-      .catch(() => null),
+    getOrBuildAthleteSnapshot(trainingDayId),
+    loadScenarioComparisonForCoach({ horizonDays: 7 }),
   ]);
 
   // ---- Fitness (PMC : CTL / ATL / TSB) ----
@@ -248,82 +253,132 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
     durationMin: p.durationMin,
   }));
 
-  // ---- Condition physique active (douleurs, blessures, mobilité...) ----
-  const physical = physicalNotes.map((n) => {
-    const trend =
-      n.checkins.length >= 2
-        ? (() => {
-            const last = n.checkins[0]?.severity;
-            const prev = n.checkins[1]?.severity;
-            if (last == null || prev == null) return null;
-            if (last < prev) return 'en amélioration';
-            if (last > prev) return 'en aggravation';
-            return 'stable';
-          })()
-        : null;
-    return {
-      category: categoryLabels[n.category],
-      status: statusLabels[n.status],
-      title: n.title,
-      bodyPart: n.bodyPart,
-      side: n.side !== 'NA' ? sideLabels[n.side] : null,
-      severity: n.severity,
-      description: n.description,
-      trend,
-    };
-  });
+  // ---- Condition physique (via AthleteSnapshot — pas de lecture Twin directe) ----
+  const rawPhysicalHealth = athleteSnapshot.physicalHealth;
 
-  // ---- Fatigue Intelligence (Digital Twin) ----
-  const rawFatigue = digitalTwin?.fatigueState;
-  const fatigue =
-    rawFatigue && typeof rawFatigue === 'object'
-      ? (rawFatigue as {
-          fatigueIndex?: number | null;
-          fatigueLevel?: string;
-          trainingCapacity?: string;
-          trajectory?: string;
-          primaryLimitingFactor?: string | null;
-          functionalOverreachingRisk?: string;
-          estimatedTimeToFresh?: number | null;
-          performanceImpairmentEstimate?: number;
-          confidence?: number;
-        })
-      : null;
+  const conditionTypeLabels: Record<string, string> = {
+    PAIN: 'Douleur',
+    INJURY: 'Blessure',
+    MOBILITY_LIMITATION: 'Mobilité',
+    POSTURE_ISSUE: 'Posture',
+    DISCOMFORT: 'Gêne',
+    MUSCULAR_TIGHTNESS: 'Raideur musculaire',
+    JOINT_STIFFNESS: 'Raideur articulaire',
+    INSTABILITY: 'Instabilité',
+    RECURRING_PHYSICAL: 'Récidive',
+    OTHER: 'Autre',
+  };
 
-  // ---- Adaptation Intelligence (Digital Twin) ----
-  const rawAdaptation = digitalTwin?.adaptationState;
-  const adaptation =
-    rawAdaptation && typeof rawAdaptation === 'object'
-      ? (rawAdaptation as {
-          adaptationIndex?: number | null;
-          adaptationStatus?: string;
-          adaptationTrend?: string;
-          limitingFactor?: string | null;
-          estimatedAdaptationPeak?: number | null;
-          plateauRisk?: boolean;
-          overreachingWithoutAdaptationDetected?: boolean;
-          confidence?: number;
-          decision?: { verdict?: string; loadMultiplier?: number };
-        })
-      : null;
+  const trendLabels: Record<string, string> = {
+    IMPROVING: 'en amélioration',
+    WORSENING: 'en aggravation',
+    STABLE: 'stable',
+  };
 
-  // ---- Reasoning Engine (Digital Twin) ----
-  const rawReasoning = digitalTwin?.reasoningState;
-  const reasoning =
-    rawReasoning && typeof rawReasoning === 'object'
-      ? (rawReasoning as {
-          overallVerdict?: string;
-          physiologicalConsistency?: string;
-          consistencyScore?: number;
-          systemAttentionPriority?: string;
-          limitingFactor?: { system: string | null; description: string | null };
-          topAction?: { verb: string; focus: string; rationale: string } | null;
-          keyFindings?: Array<{ severity: string; title: string }>;
-          conflicts?: Array<{ type: string; description: string }>;
-          opportunities?: Array<{ title: string; timeWindow: string }>;
-          confidence?: number;
-        })
-      : null;
+  const physicalFromSnapshot =
+    rawPhysicalHealth?.conditions
+      .filter((c) => c.affectsTraining && c.status !== 'RESOLVED')
+      .map((c) => ({
+        category: conditionTypeLabels[c.type] ?? c.type,
+        status: c.status,
+        title: c.label,
+        bodyPart: c.bodyRegion,
+        side: c.side !== 'NA' ? sideLabels[c.side] : null,
+        severity: c.severity,
+        description: null as string | null,
+        trend: trendLabels[c.trend] ?? null,
+        functionalCapacity: c.functionalCapacity,
+        confidence: c.confidence,
+        source: 'inferred' as const,
+      })) ?? [];
+
+  const physical =
+    physicalFromSnapshot.length > 0
+      ? physicalFromSnapshot
+      : physicalNotes.map((n) => {
+          const trend =
+            n.checkins.length >= 2
+              ? (() => {
+                  const last = n.checkins[0]?.severity;
+                  const prev = n.checkins[1]?.severity;
+                  if (last == null || prev == null) return null;
+                  if (last < prev) return 'en amélioration';
+                  if (last > prev) return 'en aggravation';
+                  return 'stable';
+                })()
+              : null;
+          return {
+            category: categoryLabels[n.category],
+            status: statusLabels[n.status],
+            title: n.title,
+            bodyPart: n.bodyPart,
+            side: n.side !== 'NA' ? sideLabels[n.side] : null,
+            severity: n.severity,
+            description: n.description,
+            trend,
+            functionalCapacity: null as string | null,
+            confidence: null as number | null,
+            source: 'legacy' as const,
+          };
+        });
+
+  // ---- Contexte modèles (lecture seule — la décision produit est dans `decision`) ----
+  const fatigueSnapshot = athleteSnapshot.fatigue;
+  const fatigue = fatigueSnapshot
+    ? {
+        fatigueIndex: fatigueSnapshot.fatigueIndex ?? null,
+        fatigueLevel: fatigueSnapshot.fatigueLevel,
+        trainingCapacity: fatigueSnapshot.trainingCapacity,
+        trajectory: fatigueSnapshot.trajectory,
+        primaryLimitingFactor: fatigueSnapshot.primaryLimitingFactor ?? null,
+        functionalOverreachingRisk: fatigueSnapshot.signals.functionalOverreachingRisk,
+        estimatedTimeToFresh: fatigueSnapshot.estimatedTimeToFresh ?? null,
+        performanceImpairmentEstimate: fatigueSnapshot.performanceImpairmentEstimate,
+        confidence: fatigueSnapshot.confidence,
+      }
+    : null;
+
+  const adaptationSnapshot = athleteSnapshot.adaptation;
+  const adaptation = adaptationSnapshot
+    ? {
+        adaptationIndex: adaptationSnapshot.adaptationIndex ?? null,
+        adaptationStatus: adaptationSnapshot.adaptationStatus,
+        adaptationTrend: adaptationSnapshot.adaptationTrend,
+        limitingFactor: adaptationSnapshot.limitingFactor ?? null,
+        estimatedAdaptationPeak: adaptationSnapshot.estimatedAdaptationPeak ?? null,
+        plateauRisk: adaptationSnapshot.plateauRisk,
+        overreachingWithoutAdaptationDetected:
+          adaptationSnapshot.overreachingWithoutAdaptationDetected,
+        confidence: adaptationSnapshot.confidence,
+      }
+    : null;
+
+  const decisionRaw = athleteSnapshot.decision;
+  const decision = decisionRaw
+    ? {
+        verdict: decisionVerdict(decisionRaw),
+        headline: decisionRaw.primaryDecision.headlineCode
+          ? resolveCode(decisionRaw.primaryDecision.headlineCode)
+          : null,
+        topAction: buildTopActionLine(decisionRaw.topAction),
+        rationale: decisionRaw.topAction?.rationaleCode
+          ? resolveCode(decisionRaw.topAction.rationaleCode)
+          : null,
+        limitingFactorDomain: decisionRaw.limitingFactor.domain,
+        limitingFactorDescription: decisionRaw.limitingFactor.description
+          ? resolve(decisionRaw.limitingFactor.description)
+          : null,
+        confidence: decisionRaw.confidence,
+        confidenceTier: decisionRaw.confidenceTier,
+        attentionDomain: decisionRaw.priority.attentionDomain,
+        physiologicalConsistency: decisionRaw.physiologicalConsistency,
+        consistencyScore: decisionRaw.consistencyScore,
+        criticalEvidence: decisionRaw.supportingEvidence.find((e) => e.severity === 'CRITICAL'),
+        primaryConflict: decisionRaw.conflicts[0] ?? null,
+        primaryOpportunity: decisionRaw.opportunities[0] ?? null,
+        adviceActionable: athleteSnapshot.adviceActionable,
+      }
+    : null;
 
   return {
     today: format(today, 'EEEE d MMMM yyyy', { locale: fr }),
@@ -351,7 +406,8 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
     physical,
     fatigue,
     adaptation,
-    reasoning,
+    decision,
+    scenarioComparison: formatScenarioComparisonForCoach(scenarioComparison),
   };
 }
 
@@ -475,12 +531,7 @@ export function formatCoachContext(ctx: CoachContext): string {
       `\n## Adaptation Intelligence (modèle multi-dimensionnel SHARPIT)\n${bits.join(' · ')}.`,
     );
     if (a.limitingFactor) {
-      lines.push(`Facteur limitant : ${a.limitingFactor}.`);
-    }
-    if (a.decision?.verdict) {
-      const multiplier =
-        a.decision.loadMultiplier != null ? ` (×${a.decision.loadMultiplier.toFixed(2)})` : '';
-      lines.push(`Verdict : ${VERDICT_FR[a.decision.verdict] ?? a.decision.verdict}${multiplier}.`);
+      lines.push(`Facteur limitant domaine : ${a.limitingFactor}.`);
     }
     if (a.overreachingWithoutAdaptationDetected) {
       lines.push(
@@ -497,13 +548,9 @@ export function formatCoachContext(ctx: CoachContext): string {
     }
   }
 
-  // Reasoning Engine (cross-model synthesis)
-  if (
-    ctx.reasoning &&
-    ctx.reasoning.overallVerdict &&
-    ctx.reasoning.overallVerdict !== 'INSUFFICIENT_DATA'
-  ) {
-    const re = ctx.reasoning;
+  // Decision Engine — décision produit canonique (le Coach explique, ne décide pas)
+  if (ctx.decision && ctx.decision.verdict !== 'INSUFFICIENT_DATA') {
+    const d = ctx.decision;
     const VERDICT_FR: Record<string, string> = {
       TRAIN_HARD: 'Entraîne-toi fort',
       TRAIN_SMART: 'Entraîne-toi malin',
@@ -517,35 +564,40 @@ export function formatCoachContext(ctx: CoachContext): string {
       PARTIALLY_ALIGNED: 'Partiellement alignés',
       CONFLICTING: 'En conflit',
     };
-    const bits = [
-      re.overallVerdict ? `Verdict : ${VERDICT_FR[re.overallVerdict] ?? re.overallVerdict}` : null,
-      re.physiologicalConsistency
-        ? `Modèles : ${CONSISTENCY_FR[re.physiologicalConsistency] ?? re.physiologicalConsistency} (score ${re.consistencyScore ?? '—'}/100)`
-        : null,
-    ].filter(Boolean);
-    lines.push(`\n## Reasoning Engine (synthèse inter-modèles SHARPIT)\n${bits.join(' · ')}.`);
-    if (re.topAction) {
+    lines.push(`\n## Décision SHARPIT du jour (canonique — à expliquer, ne pas contredire)`);
+    lines.push(
+      `Verdict : ${VERDICT_FR[d.verdict] ?? d.verdict} · confiance ${Math.round((d.confidence ?? 0) * 100)}% (${d.confidenceTier ?? '—'}).`,
+    );
+    if (d.headline) lines.push(`Message : ${d.headline}.`);
+    if (d.topAction) {
+      lines.push(`Action prioritaire : ${d.topAction}${d.rationale ? `. ${d.rationale}` : ''}.`);
+    }
+    if (d.limitingFactorDescription) {
       lines.push(
-        `Action prioritaire : ${re.topAction.verb} — ${re.topAction.focus}. ${re.topAction.rationale}`,
+        `Facteur limitant : ${d.limitingFactorDomain ?? '—'} — ${d.limitingFactorDescription}.`,
       );
     }
-    if (re.limitingFactor?.system && re.limitingFactor.description) {
+    if (d.physiologicalConsistency) {
       lines.push(
-        `Facteur limitant : ${re.limitingFactor.system.toLowerCase()} — ${re.limitingFactor.description}.`,
+        `Cohérence inter-modèles : ${CONSISTENCY_FR[d.physiologicalConsistency] ?? d.physiologicalConsistency} (score ${d.consistencyScore ?? '—'}/100).`,
       );
     }
-    const criticalFinding = re.keyFindings?.find((f) => f.severity === 'CRITICAL');
-    if (criticalFinding) {
-      lines.push(`⚠ CRITIQUE : ${criticalFinding.title}.`);
+    if (d.criticalEvidence) {
+      lines.push(`⚠ CRITIQUE : ${resolve(d.criticalEvidence.title)}.`);
     }
-    if (re.conflicts && re.conflicts.length > 0) {
+    if (d.primaryConflict) {
       lines.push(
-        `Conflit inter-modèles détecté (${re.conflicts[0].type.replace(/_/g, ' ').toLowerCase()}) : ${re.conflicts[0].description}`,
+        `Conflit résolu (${d.primaryConflict.type.replace(/_/g, ' ').toLowerCase()}) : ${resolveCode(d.primaryConflict.descriptionCode)}.`,
       );
     }
-    if (re.opportunities && re.opportunities.length > 0) {
+    if (d.primaryOpportunity) {
       lines.push(
-        `Opportunité : ${re.opportunities[0].title} (${re.opportunities[0].timeWindow.toLowerCase().replace('_', ' ')}).`,
+        `Opportunité : ${resolve(d.primaryOpportunity.title)} (${d.primaryOpportunity.timeWindow.toLowerCase().replace('_', ' ')}).`,
+      );
+    }
+    if (!d.adviceActionable) {
+      lines.push(
+        `⚠ Conseil entraînement non actionnable (confiance ou données insuffisantes) — reste prudent et factuel.`,
       );
     }
   }
@@ -642,15 +694,20 @@ export function formatCoachContext(ctx: CoachContext): string {
       "- Mobilité / Posture : ce N'EST PAS une douleur — n'allège pas l'endurance ni l'intensité pour ça. Propose plutôt du travail ciblé (mobilité, gainage, renforcement correctif) en complément, sans réduire la charge des séances clés.",
     );
     lines.push(
-      'Tiens compte de la sévérité et de la tendance (amélioration/aggravation) pour doser.',
+      "Tiens compte de la sévérité, de la tendance (amélioration/aggravation) et de la capacité fonctionnelle (symptôme ≠ capacité d'entraînement) pour doser.",
+    );
+    lines.push(
+      'Les estimations SHARPIT sont des aides à la décision — jamais un diagnostic médical.',
     );
     for (const p of ctx.physical) {
       const bits = [
         `${p.category} : ${p.title}`,
         p.bodyPart ? `zone ${p.bodyPart}${p.side ? ` (${p.side})` : ''}` : null,
-        p.severity != null ? `sévérité ${p.severity}/10` : null,
+        p.severity != null ? `sévérité inférée ${p.severity}/10` : null,
         `statut ${p.status}`,
         p.trend ? `tendance ${p.trend}` : null,
+        p.functionalCapacity ? `capacité fonctionnelle ${p.functionalCapacity}` : null,
+        p.confidence != null ? `confiance ${Math.round(p.confidence * 100)}%` : null,
         p.description || null,
       ]
         .filter(Boolean)
@@ -667,6 +724,10 @@ export function formatCoachContext(ctx: CoachContext): string {
         `- ${p.date} · ${p.type} ${p.title}${p.intensity ? ` [${p.intensity}]` : ''}${p.durationMin ? ` ${p.durationMin} min` : ''}`,
       );
     }
+  }
+
+  if (ctx.scenarioComparison) {
+    lines.push(`\n${ctx.scenarioComparison}`);
   }
 
   return lines.join('\n');

@@ -1,10 +1,12 @@
 import { AnalyticsClient } from '@/components/analytics/analytics-client';
 import { RecordsPanel } from '@/components/analytics/records-panel';
+import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 
 export default function TrainingProgressionPage() {
   return (
     <div className="space-y-4">
+      <MobileBackLink href="/training" label="Entraînement" showOnDesktop />
       <StickyHeader>
         <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
           Entraînement

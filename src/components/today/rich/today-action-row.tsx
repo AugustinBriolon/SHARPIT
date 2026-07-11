@@ -2,22 +2,26 @@
 
 import Link from 'next/link';
 import { CalendarClock, CheckCircle2 } from 'lucide-react';
+import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { MorningWellnessDialog } from '@/components/today/dashboard/morning-wellness-dialog';
 import { cn } from '@/lib/utils';
 
 function SessionLine({ line }: { line: TodayViewModel['actionRow']['daySummaryLines'][number] }) {
   const content = (
-    <div className="flex min-w-0 items-start gap-1.5">
+    <div className="flex w-full min-w-0 items-center justify-between">
+      <div className="flex items-center gap-1.5">
+        <ActivityTypeIndicator type={line.activityType} />
+        <p className="line-clamp-2 min-w-0 text-sm leading-snug font-medium wrap-break-word">
+          {line.primary}
+        </p>
+        {line.secondary ? (
+          <span className="text-data text-muted-foreground shrink-0 text-xs">{line.secondary}</span>
+        ) : null}
+      </div>
       {line.isDone && (
         <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
       )}
-      <p className="line-clamp-2 min-w-0 text-sm leading-snug font-medium wrap-break-word">
-        {line.primary}
-      </p>
-      {line.secondary ? (
-        <span className="text-data text-muted-foreground shrink-0 text-xs">{line.secondary}</span>
-      ) : null}
     </div>
   );
 

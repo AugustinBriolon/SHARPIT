@@ -142,6 +142,7 @@ export async function fetchPlannedSessions(): Promise<ClientPlannedSession[]> {
     createdAt: toDate(s.createdAt),
     updatedAt: toDate(s.updatedAt),
     analyzedAt: toDateOrNull(s.analyzedAt),
+    environmentContextAt: toDateOrNull(s.environmentContextAt),
     activity: s.activity
       ? {
           ...s.activity,

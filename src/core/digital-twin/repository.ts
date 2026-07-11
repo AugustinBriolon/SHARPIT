@@ -18,6 +18,8 @@ import type {
   FatigueState,
   AdaptationState,
   ReasoningState,
+  PhysicalHealthState,
+  EnvironmentalTwinState,
 } from './types';
 
 export interface DigitalTwinRepository {
@@ -73,4 +75,32 @@ export interface DigitalTwinRepository {
    * Returns null on cold start.
    */
   getPreviousReasoningState(athleteId: string): Promise<ReasoningState | null>;
+
+  /**
+   * Update the PhysicalHealthState sub-dimension of the Digital Twin.
+   */
+  updatePhysicalHealth(
+    athleteId: string,
+    physicalHealthState: PhysicalHealthState,
+  ): Promise<DigitalTwin>;
+
+  /**
+   * Get the current physical health state.
+   */
+  getPreviousPhysicalHealthState(athleteId: string): Promise<PhysicalHealthState | null>;
+
+  /**
+   * Update inferred environmental state on the Digital Twin (stress + impact cache).
+   */
+  updateEnvironmentalState(athleteId: string, state: EnvironmentalTwinState): Promise<DigitalTwin>;
+
+  /**
+   * Read cached environmental state for downstream physiological models.
+   */
+  getEnvironmentalState(athleteId: string): Promise<EnvironmentalTwinState | null>;
+
+  /**
+   * EnvironmentalImpact overlay for Recovery / Fatigue / Adaptation models.
+   */
+  getEnvironmentalImpact(athleteId: string): Promise<EnvironmentalTwinState['impact'] | null>;
 }

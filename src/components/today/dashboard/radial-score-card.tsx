@@ -86,9 +86,6 @@ export function RadialScoreCard({
               &gt;
             </span>
           </p>
-          <p className="text-muted-foreground text-[10px]">
-            {value === null ? (unavailableCaption ?? 'Baseline en cours') : `repère ${max}`}
-          </p>
         </div>
       </div>
     </Link>

@@ -3,6 +3,7 @@
 import { format } from 'date-fns';
 import { MobileDrillDownHeader } from '@/components/layout/mobile-drill-down-header';
 import { SleepPageView } from '@/components/sleep/sleep-page-view';
+import { MetricDrillDownSkeleton } from '@/components/today/drill-down/drill-down-skeleton';
 import { useTodaySelectedDate } from '@/hooks/use-today-selected-date';
 import { useSleepViewModel } from '@/hooks/use-presentation-view-model';
 
@@ -14,16 +15,7 @@ export default function TodaySleepPage() {
   const viewModel = query.data ?? null;
 
   if (query.isPending && !viewModel) {
-    return (
-      <div>
-        <MobileDrillDownHeader title="Sommeil" />
-        <div className="animate-pulse space-y-4 p-4">
-          <div className="bg-muted mx-auto h-48 rounded-3xl" />
-          <div className="bg-muted mx-auto h-16 rounded-3xl" />
-          <div className="bg-muted mx-auto h-40 rounded-3xl" />
-        </div>
-      </div>
-    );
+    return <MetricDrillDownSkeleton title="Sommeil" variant="sleep" />;
   }
 
   if (!viewModel || viewModel.emptyState) {

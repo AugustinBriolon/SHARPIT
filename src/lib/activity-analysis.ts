@@ -80,12 +80,55 @@ interface ZoneDef {
   maxPct: number | null;
 }
 
+const PHYSIO_ZONE_COLORS = [
+  'var(--color-chart-1)',
+  'var(--color-chart-2)',
+  'var(--color-chart-3)',
+  'var(--color-chart-4)',
+  'var(--color-chart-5)',
+] as const;
+
 const HR_ZONE_DEFS: ZoneDef[] = [
-  { id: 'z1', label: 'Récupération', shortLabel: 'Z1', color: '#64748b', minPct: 0, maxPct: 81 },
-  { id: 'z2', label: 'Endurance', shortLabel: 'Z2', color: '#059669', minPct: 81, maxPct: 89 },
-  { id: 'z3', label: 'Tempo', shortLabel: 'Z3', color: '#0891b2', minPct: 89, maxPct: 93 },
-  { id: 'z4', label: 'Seuil', shortLabel: 'Z4', color: '#d97706', minPct: 93, maxPct: 100 },
-  { id: 'z5', label: 'VO2max+', shortLabel: 'Z5', color: '#dc2626', minPct: 100, maxPct: null },
+  {
+    id: 'z1',
+    label: 'Récupération',
+    shortLabel: 'Z1',
+    color: PHYSIO_ZONE_COLORS[0],
+    minPct: 0,
+    maxPct: 81,
+  },
+  {
+    id: 'z2',
+    label: 'Endurance',
+    shortLabel: 'Z2',
+    color: PHYSIO_ZONE_COLORS[1],
+    minPct: 81,
+    maxPct: 89,
+  },
+  {
+    id: 'z3',
+    label: 'Tempo',
+    shortLabel: 'Z3',
+    color: PHYSIO_ZONE_COLORS[2],
+    minPct: 89,
+    maxPct: 93,
+  },
+  {
+    id: 'z4',
+    label: 'Seuil',
+    shortLabel: 'Z4',
+    color: PHYSIO_ZONE_COLORS[3],
+    minPct: 93,
+    maxPct: 100,
+  },
+  {
+    id: 'z5',
+    label: 'VO2max+',
+    shortLabel: 'Z5',
+    color: PHYSIO_ZONE_COLORS[4],
+    minPct: 100,
+    maxPct: null,
+  },
 ];
 
 const POWER_ZONE_DEFS: ZoneDef[] = [

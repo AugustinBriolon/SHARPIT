@@ -21,6 +21,7 @@ import { PrismaFeatureRepository } from '@/infrastructure/features/prisma-featur
 import { AthleteContextProvider } from '@/infrastructure/features/athlete-context-provider';
 import { PrismaSessionStreamProvider } from '@/infrastructure/features/prisma-session-stream-provider';
 import { PrismaObservationRepository } from '@/infrastructure/observation/prisma-observation-repository';
+import { PrismaConditionRepository } from '@/infrastructure/physical-health/prisma-condition-repository';
 import { prisma } from '@/lib/prisma';
 
 const globalForFeatureEngine = globalThis as unknown as {
@@ -38,6 +39,7 @@ function createFeatureEngine(): FeatureEngine {
     observationRepository,
     contextProvider,
     sessionStreamProvider,
+    conditionRepository: new PrismaConditionRepository(prisma),
   });
 }
 

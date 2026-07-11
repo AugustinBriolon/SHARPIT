@@ -24,6 +24,7 @@ export type GarminSyncResult = {
     updated: number;
     skipped: number;
   };
+  recordChanges?: RecordChange[];
 };
 
 export type RenphoSyncResult = {

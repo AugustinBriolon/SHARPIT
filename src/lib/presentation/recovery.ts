@@ -25,6 +25,8 @@ import {
   type SubjectiveWellness,
 } from '@/lib/today-mapping';
 import { buildRecoveryPageInsights } from '@/lib/product-insight/recovery-page-insights';
+import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
+import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';
 
 const PRIMARY_LIMITER_LABEL: Record<string, string> = {
   autonomic: 'Système nerveux autonome',
@@ -93,6 +95,7 @@ function emptyRecoveryViewModel(): RecoveryViewModel {
     completenessLabel: '—',
     keyEvidence: [],
     insights: { primary: [], supporting: [], contextual: [] },
+    globalDecision: EMPTY_GLOBAL_DECISION,
     overreaching: undefined,
     illness: undefined,
     emptyState: {
@@ -227,6 +230,7 @@ export async function buildRecoveryViewModel(trainingDayId: string): Promise<Rec
     illness: ILLNESS_RISK_DISPLAY[recovery.signals.illnessRisk],
     keyEvidence,
     insights,
+    globalDecision: buildGlobalDecisionContext(snapshot, 'RECOVERY'),
     emptyState: null,
     hierarchy: {
       rootId: 'recovery',

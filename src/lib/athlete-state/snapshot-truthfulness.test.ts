@@ -1,52 +1,96 @@
 import { describe, expect, it } from 'vitest';
 import {
-  isAdviceActionable,
   MIN_ADVICE_CONFIDENCE,
   applyTruthfulnessOverlay,
 } from '@/lib/athlete-state/snapshot-truthfulness';
+import { isAdviceActionableFromDecision } from '@/lib/decision/projection';
 import { mockDailyPhase, mockPhaseNarrative } from '@/lib/daily-phase/test-fixtures';
-import type { ReasoningData } from '@/hooks/use-today';
+import type { DecisionData } from '@/hooks/use-today';
 
-function reasoning(partial: Partial<ReasoningData>): ReasoningData {
+function decision(partial: Partial<DecisionData>): DecisionData {
   return {
+    primaryDecision: {
+      verdict: 'TRAIN_SMART',
+      headlineCode: 'decision.headline.trainSmart',
+      verbCode: 'reasoning.topAction.trainSmart.verb',
+      focusCode: 'reasoning.topAction.trainSmart.focus',
+      rationaleCode: 'reasoning.topAction.trainSmart.rationale',
+      expectedBenefit: 0.5,
+    },
+    limitingFactor: {
+      domain: 'RECOVERY',
+      system: 'RECOVERY',
+      description: null,
+      actionable: false,
+      priority: 1,
+    },
+    supportingEvidence: [],
+    suppressedEvidence: [],
+    confidence: 0.7,
+    confidenceTier: 'MEDIUM',
+    dataCompleteness: 'PARTIAL',
+    conflicts: [],
+    priority: {
+      attentionDomain: 'BALANCED',
+      safetyOverrideApplied: false,
+      confidenceGated: false,
+    },
+    explanationOrder: [],
     overallVerdict: 'TRAIN_SMART',
     systemAttentionPriority: 'BALANCED',
     physiologicalConsistency: 'ALIGNED',
-    consistencyScore: 0.8,
-    confidence: 0.7,
-    dataCompleteness: 'PARTIAL',
-    keyFindings: [],
-    limitingFactor: { system: 'RECOVERY', description: null, actionable: false },
+    consistencyScore: 80,
+    opportunities: [],
     topAction: {
       verbCode: 'reasoning.topAction.trainSmart.verb',
       focusCode: 'reasoning.topAction.trainSmart.focus',
       rationaleCode: 'reasoning.topAction.trainSmart.rationale',
       expectedBenefit: 0.5,
     },
-    opportunities: [],
-    conflicts: [],
-    evidenceGraph: null,
-    signals: {
-      availableModelCount: 3,
-      hasRecoveryState: true,
-      hasFatigueState: true,
-      hasAdaptationState: true,
+    evidenceGraph: {
+      recoveryContribution: 1,
+      fatigueContribution: 1,
+      adaptationContribution: 1,
     },
+    modelId: 'decision-v1',
     computedAt: new Date().toISOString(),
+    trainingDayId: '2026-07-07',
     ...partial,
   };
 }
 
 describe('snapshot-truthfulness', () => {
   it('blocks advice below minimum confidence', () => {
-    expect(isAdviceActionable(reasoning({ confidence: MIN_ADVICE_CONFIDENCE - 0.1 }), 0.5)).toBe(
-      false,
-    );
+    expect(
+      isAdviceActionableFromDecision(
+        decision({
+          confidence: MIN_ADVICE_CONFIDENCE - 0.1,
+          priority: {
+            attentionDomain: 'BALANCED',
+            safetyOverrideApplied: false,
+            confidenceGated: true,
+          },
+        }),
+      ),
+    ).toBe(false);
   });
 
   it('blocks INSUFFICIENT_DATA verdict', () => {
     expect(
-      isAdviceActionable(reasoning({ overallVerdict: 'INSUFFICIENT_DATA', topAction: null }), 0.8),
+      isAdviceActionableFromDecision(
+        decision({
+          primaryDecision: {
+            verdict: 'INSUFFICIENT_DATA',
+            headlineCode: 'decision.headline.insufficient',
+            verbCode: 'x',
+            focusCode: 'x',
+            rationaleCode: 'x',
+            expectedBenefit: 0,
+          },
+          overallVerdict: 'INSUFFICIENT_DATA',
+          topAction: null,
+        }),
+      ),
     ).toBe(false);
   });
 
@@ -68,9 +112,33 @@ describe('snapshot-truthfulness', () => {
       recovery: null,
       fatigue: null,
       adaptation: null,
+      physicalHealth: null,
+      environment: null,
+      decision: decision({
+        primaryDecision: {
+          verdict: 'INSUFFICIENT_DATA',
+          headlineCode: 'decision.headline.insufficient',
+          verbCode: 'x',
+          focusCode: 'x',
+          rationaleCode: 'x',
+          expectedBenefit: 0,
+        },
+        overallVerdict: 'INSUFFICIENT_DATA',
+        topAction: null,
+        confidence: 0.2,
+        priority: {
+          attentionDomain: 'BALANCED',
+          safetyOverrideApplied: false,
+          confidenceGated: true,
+        },
+      }),
       dailyStrain: null,
-      reasoning: reasoning({ overallVerdict: 'INSUFFICIENT_DATA', topAction: null }),
+      reasoning: null,
       readiness: null,
+      sleepScore: null,
+      adaptationIndex: null,
+      adaptationStatus: null,
+      adaptationTrend: null,
       todaysDecision: 'INSUFFICIENT_DATA',
       limitingFactor: null,
       confidence: 0.2,

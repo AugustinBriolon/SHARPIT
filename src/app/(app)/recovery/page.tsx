@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function RecoveryPage() {
-  redirect('/biology/recovery');
+  redirect('/today/recovery');
 }

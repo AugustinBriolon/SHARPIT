@@ -6,7 +6,13 @@ import { useCallback } from 'react';
 import type { ModelDirections } from '@/core/inference/reasoning/types';
 import { queryKeys } from '@/lib/query/keys';
 import { fetchAthleteSnapshot, refreshAthleteSnapshot } from '@/lib/query/athlete-snapshot-fetch';
-import { snapshotToTodayState } from '@/lib/query/today-fetch';
+import { snapshotToProductView } from '@/lib/athlete-state/product-view';
+import type { AthleteSnapshotProductView } from '@/lib/athlete-state/product-view';
+import type { SerializedDecisionState } from '@/core/decision/adapters';
+import type { EnvironmentalDecisionSnapshot } from '@/core/inference/environment/types';
+
+export type DecisionData = SerializedDecisionState;
+export type EnvironmentSnapshotData = EnvironmentalDecisionSnapshot;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // API response types (no server imports — mirrors API route response shapes)
@@ -110,6 +116,10 @@ export interface EvidenceGraph {
   adaptationContribution: number;
 }
 
+/**
+ * Legacy narrative projection of DecisionState.
+ * @deprecated Use DecisionData — ReasoningData is explanation-only, not a product decision source.
+ */
 export interface ReasoningData {
   overallVerdict: OverallVerdict;
   systemAttentionPriority: SystemAttentionPriority;
@@ -204,6 +214,59 @@ export type FatigueType =
   | 'CUMULATIVE_MULTI_SYSTEM'
   | 'MIXED'
   | 'UNDETERMINED';
+
+export type TrainingCapacityLevel = 'FULL' | 'REDUCED' | 'LIMITED' | 'UNABLE';
+
+export type ConditionTrend = 'IMPROVING' | 'STABLE' | 'WORSENING' | 'UNKNOWN';
+
+export type ConditionStatus =
+  'NEW' | 'ACTIVE' | 'IMPROVING' | 'STABLE' | 'WORSENING' | 'RESOLVED' | 'RECURRENT';
+
+export type PhysicalHealthDecisionVerdict =
+  'CLEAR' | 'MONITOR' | 'REDUCE_LOAD' | 'LIMIT_TRAINING' | 'REST_RECOMMENDED' | 'INSUFFICIENT_DATA';
+
+export interface InferredConditionData {
+  conditionId: string;
+  label: string;
+  bodyRegion: string;
+  side: 'LEFT' | 'RIGHT' | 'BILATERAL' | 'NA';
+  type: string;
+  affectsTraining: boolean;
+  severity: number;
+  status: ConditionStatus;
+  trend: ConditionTrend;
+  confidence: number;
+  functionalCapacity: TrainingCapacityLevel | null;
+  estimatedRecoveryDays: number | null;
+  evidenceObservationIds: string[];
+}
+
+export interface PhysicalHealthData {
+  conditions: InferredConditionData[];
+  activeConditionCount: number;
+  aggregateTrainingCapacity: TrainingCapacityLevel;
+  primaryLimitingConditionId: string | null;
+  trainingBlockedByCondition: boolean;
+  confidence: number;
+  dataCompleteness: string;
+  decision: {
+    verdict: PhysicalHealthDecisionVerdict;
+    rationale: I18nItem[];
+  };
+  recommendation: {
+    trainingCapacity: TrainingCapacityLevel;
+    confidence: number;
+    evidence: I18nItem[];
+  };
+  signals: {
+    activeConditionCount: number;
+    maxSeverity: number;
+    improvingCount: number;
+    worseningCount: number;
+    recurrentCount: number;
+  };
+  computedAt: string;
+}
 
 export interface FatigueData {
   fatigueIndex: number | null;
@@ -332,29 +395,46 @@ export interface AdaptationData {
 }
 
 export interface TodayState {
+  decision: DecisionData | null;
+  /**
+   * @deprecated Narrative projection — use `decision` for product surfaces.
+   */
   reasoning: ReasoningData | null;
   recovery: RecoveryData | null;
   fatigue: FatigueData | null;
   adaptation: AdaptationData | null;
+  physicalHealth: PhysicalHealthData | null;
+  environment?: EnvironmentSnapshotData | null;
   dailyStrain: DailyStrainData | null;
 }
 
-const EMPTY_TODAY_STATE: TodayState = {
-  reasoning: null,
+const EMPTY_PRODUCT_VIEW: AthleteSnapshotProductView = {
+  decision: null,
+  adviceActionable: false,
+  todaysDecision: null,
+  limitingFactor: null,
+  confidence: null,
+  confidenceLabel: null,
+  readiness: null,
+  sleepScore: null,
+  adaptationIndex: null,
   recovery: null,
   fatigue: null,
   adaptation: null,
+  physicalHealth: null,
+  environment: null,
   dailyStrain: null,
 };
 
 export interface UseTodayResult {
-  data: TodayState;
+  /** Decision-first athlete product view from AthleteSnapshot. */
+  data: AthleteSnapshotProductView;
   /** True only on first load (no cache). Prefer over legacy isLoading patterns. */
   loading: boolean;
   isPending: boolean;
   isFetching: boolean;
   error: string | null;
-  refresh: () => Promise<TodayState>;
+  refresh: () => Promise<AthleteSnapshotProductView>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -370,23 +450,17 @@ export function useToday(date: Date = new Date()): UseTodayResult {
     queryFn: () => fetchAthleteSnapshot(trainingDayId),
     placeholderData: keepPreviousData,
     staleTime: 5 * 60_000,
-    select: (envelope) => ({
-      reasoning: envelope.snapshot.reasoning,
-      recovery: envelope.snapshot.recovery,
-      fatigue: envelope.snapshot.fatigue,
-      adaptation: envelope.snapshot.adaptation,
-      dailyStrain: envelope.snapshot.dailyStrain,
-    }),
+    select: (envelope) => snapshotToProductView(envelope.snapshot),
   });
 
   const refresh = useCallback(async () => {
     const result = await refreshAthleteSnapshot(trainingDayId);
     queryClient.setQueryData(queryKeys.athleteSnapshot(trainingDayId), result);
-    return snapshotToTodayState(result.snapshot);
+    return snapshotToProductView(result.snapshot);
   }, [queryClient, trainingDayId]);
 
   return {
-    data: query.data ?? EMPTY_TODAY_STATE,
+    data: query.data ?? EMPTY_PRODUCT_VIEW,
     loading: query.isPending && query.data == null,
     isPending: query.isPending,
     isFetching: query.isFetching,

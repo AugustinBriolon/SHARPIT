@@ -3,6 +3,8 @@ import { resolve } from '@/lib/french';
 import { mapConfidenceToTier } from '@/lib/today-mapping';
 import { ADAPTATION_STATUS_SIGNAL } from '@/lib/today-dashboard-labels';
 import { buildAdaptationPageInsights } from '@/lib/product-insight/adaptation-page-insights';
+import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
+import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';
 import type {
   AdaptationViewModel,
   AdaptationDimensionVm,
@@ -77,6 +79,7 @@ function emptyAdaptationViewModel(): AdaptationViewModel {
     confidencePct: 0,
     confidenceTone: 'neutral',
     insights: { primary: [], supporting: [], contextual: [] } satisfies ProductInsightBundle,
+    globalDecision: EMPTY_GLOBAL_DECISION,
     emptyState: {
       title: 'Adaptation en cours de consolidation',
       description:
@@ -159,6 +162,7 @@ export async function buildAdaptationViewModel(
     confidencePct,
     confidenceTone,
     insights,
+    globalDecision: buildGlobalDecisionContext(snapshot, 'ADAPTATION'),
     emptyState: null,
     hierarchy: { rootId: 'adaptation', order: ['hero', 'decision', 'signals', 'insights'] },
     sections: [],

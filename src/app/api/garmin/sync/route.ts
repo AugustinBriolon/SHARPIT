@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { onProviderSyncCompleted } from '@/lib/athlete-state/orchestrator';
 import { syncGarminActivities } from '@/lib/integrations/garmin-activity-sync';
 import { syncGarminHealth } from '@/lib/integrations/garmin-sync';
+import { filterRecordChangesByActivities, updateRecordsForTypes } from '@/lib/records';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -19,16 +20,27 @@ export async function POST(request: NextRequest) {
 
     const health = await syncGarminHealth(full ? { full: true } : {});
     const activities = await syncGarminActivities(full ? { full: true } : {});
-    await onProviderSyncCompleted([
-      {
-        provider: 'garmin',
-        imported: activities.imported,
-        updated: activities.updated + activities.merged,
-        observationCount: health.updated,
-        activityIds: activities.importedActivityIds,
-      },
-    ]);
-    return NextResponse.json({ ...health, activities });
+
+    let recordChanges: Awaited<ReturnType<typeof updateRecordsForTypes>> = [];
+    if (activities.changedTypes.length > 0) {
+      const allChanges = await updateRecordsForTypes(activities.changedTypes);
+      recordChanges = filterRecordChangesByActivities(allChanges, activities.changedActivityIds);
+    }
+
+    await onProviderSyncCompleted(
+      [
+        {
+          provider: 'garmin',
+          imported: activities.imported,
+          updated: activities.updated + activities.merged,
+          observationCount: health.updated,
+          activityIds: activities.importedActivityIds,
+        },
+      ],
+      undefined,
+      { skipRecordUpdate: activities.changedTypes.length > 0 },
+    );
+    return NextResponse.json({ ...health, activities, recordChanges });
   } catch (error) {
     console.error(error);
     const message = error instanceof Error ? error.message : 'Synchronisation échouée';

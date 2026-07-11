@@ -7,11 +7,14 @@ import {
   type SnapshotPhaseBuildParams,
   type SnapshotPlannedSessionInput,
 } from '@/lib/athlete-state/snapshot-phase';
+import { applyTruthfulnessOverlay } from '@/lib/athlete-state/snapshot-truthfulness';
+import type { TodayState } from '@/hooks/use-today';
 import {
-  applyTruthfulnessOverlay,
-  isAdviceActionable,
-} from '@/lib/athlete-state/snapshot-truthfulness';
-import type { EngineRecommendation, ReasoningData, TodayState } from '@/hooks/use-today';
+  decisionVerdict,
+  isAdviceActionableFromDecision,
+  limitingFactorFromDecision,
+  resolveRecommendationFromDecision,
+} from '@/lib/decision/projection';
 
 export type SnapshotBuildInput = {
   athleteId: string;
@@ -21,30 +24,6 @@ export type SnapshotBuildInput = {
   briefing?: AthleteSnapshotBriefing | null;
   phaseContext: Omit<SnapshotPhaseBuildParams, 'todayState' | 'trainingDayId' | 'adviceActionable'>;
 };
-
-function pickRecommendation(
-  reasoning: ReasoningData | null,
-  todayState: TodayState,
-): EngineRecommendation | null {
-  const { recovery, fatigue, adaptation } = todayState;
-  if (!reasoning) {
-    return (
-      recovery?.recommendation ?? fatigue?.recommendation ?? adaptation?.recommendation ?? null
-    );
-  }
-  switch (reasoning.systemAttentionPriority) {
-    case 'RECOVERY':
-      return recovery?.recommendation ?? null;
-    case 'FATIGUE':
-      return fatigue?.recommendation ?? null;
-    case 'ADAPTATION':
-      return adaptation?.recommendation ?? null;
-    default:
-      return (
-        recovery?.recommendation ?? fatigue?.recommendation ?? adaptation?.recommendation ?? null
-      );
-  }
-}
 
 function buildDomainMessages(freshness: AthleteFreshnessSnapshot): Partial<Record<string, string>> {
   const messages: Partial<Record<string, string>> = {};
@@ -71,7 +50,10 @@ function fingerprintParts(
     todayState.recovery?.computedAt ?? '—',
     todayState.fatigue?.computedAt ?? '—',
     todayState.adaptation?.computedAt ?? '—',
+    todayState.physicalHealth?.computedAt ?? '—',
+    todayState.environment?.computedAt ?? '—',
     todayState.reasoning?.computedAt ?? '—',
+    todayState.decision?.computedAt ?? '—',
     todayState.dailyStrain?.dailyTss?.toString() ?? '—',
     briefing?.generatedAt ?? '—',
     freshness.computedAt,
@@ -101,11 +83,20 @@ export function computeSnapshotId(
  */
 export function buildAthleteSnapshot(input: SnapshotBuildInput): AthleteSnapshot {
   const { athleteId, trainingDayId, todayState, freshness, briefing, phaseContext } = input;
-  const { reasoning, recovery, fatigue, adaptation, dailyStrain } = todayState;
+  const {
+    reasoning,
+    recovery,
+    fatigue,
+    adaptation,
+    physicalHealth,
+    environment,
+    dailyStrain,
+    decision,
+  } = todayState;
 
   const generatedAt = new Date().toISOString();
-  const confidence = reasoning?.confidence ?? recovery?.confidence ?? null;
-  const adviceActionablePre = isAdviceActionable(reasoning, confidence);
+  const confidence = decision?.confidence ?? reasoning?.confidence ?? recovery?.confidence ?? null;
+  const adviceActionablePre = isAdviceActionableFromDecision(decision);
 
   const { dailyPhase, phaseNarrative } = buildSnapshotDailyPhase({
     ...phaseContext,
@@ -125,7 +116,7 @@ export function buildAthleteSnapshot(input: SnapshotBuildInput): AthleteSnapshot
 
   const basePrimaryProductMessage =
     freshness.primaryProductMessage ??
-    (reasoning?.overallVerdict === 'INSUFFICIENT_DATA'
+    (decisionVerdict(decision) === 'INSUFFICIENT_DATA'
       ? (domainMessages.recovery ?? domainMessages.sleep ?? domainMessages.reasoning ?? null)
       : null);
 
@@ -141,14 +132,23 @@ export function buildAthleteSnapshot(input: SnapshotBuildInput): AthleteSnapshot
     recovery,
     fatigue,
     adaptation,
+    physicalHealth,
+    environment,
     dailyStrain,
     reasoning,
+    decision: decision ?? null,
     readiness: recovery?.readinessScore ?? null,
-    todaysDecision: reasoning?.overallVerdict ?? null,
-    limitingFactor: reasoning?.limitingFactor ?? null,
+    sleepScore: recovery?.dimensions.sleep.available
+      ? (recovery.dimensions.sleep.score ?? null)
+      : null,
+    adaptationIndex: adaptation?.adaptationIndex ?? null,
+    adaptationStatus: adaptation?.adaptationStatus ?? null,
+    adaptationTrend: adaptation?.adaptationTrend ?? null,
+    todaysDecision: decisionVerdict(decision),
+    limitingFactor: limitingFactorFromDecision(decision),
     confidence,
     briefing: briefing ?? null,
-    recommendation: pickRecommendation(reasoning, todayState),
+    recommendation: resolveRecommendationFromDecision(decision, todayState),
     primaryProductMessage: basePrimaryProductMessage,
     domainMessages,
     dailyPhase,

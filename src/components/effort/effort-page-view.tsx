@@ -13,6 +13,8 @@ import { EffortHero } from '@/components/effort/effort-hero';
 import { InsightNarrative } from '@/components/product-insight/insight-narrative';
 import { EffortStatsStrip } from '@/components/effort/effort-stats-strip';
 import { EffortVerdictSection } from '@/components/effort/effort-verdict-section';
+import { GlobalDecisionStrip } from '@/components/today/drill-down/global-decision-strip';
+import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
 import type { ProductInsightBundle } from '@/core/product-insight/types';
 import { defaultInsightNarrativeSections } from '@/components/product-insight/narrative-sections';
 import {
@@ -64,6 +66,7 @@ export type EffortPageViewProps = {
   completenessLabel: string;
   availableDimCount: number;
   insights: ProductInsightBundle;
+  globalDecision: GlobalDecisionContext;
 };
 
 export function EffortPageView(props: EffortPageViewProps) {
@@ -108,6 +111,7 @@ export function EffortPageView(props: EffortPageViewProps) {
     completenessLabel,
     availableDimCount,
     insights,
+    globalDecision,
   } = props;
 
   return (
@@ -139,6 +143,8 @@ export function EffortPageView(props: EffortPageViewProps) {
         onNextDay={onNextDay}
         onPreviousDay={onPreviousDay}
       />
+
+      <GlobalDecisionStrip context={globalDecision} />
 
       <EffortVerdictSection
         rationale={rationale}

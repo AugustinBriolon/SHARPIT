@@ -30,6 +30,7 @@ import type {
   TrainingCapacity,
 } from './types';
 import type { OverreachingRisk } from '@/core/digital-twin/types';
+import { applyEnvironmentalImpactToFatigueIndex } from '@/core/inference/environment/apply-impact';
 import {
   scoreLoadFatigue,
   scoreNeuromuscularFatigue,
@@ -87,10 +88,15 @@ export function runFatigueModel(
 
   // ── Step 3: Synthesize FatigueIndex ──────────────────────────────────────
   const {
-    score: fatigueIndex,
+    score: rawFatigueIndex,
     confidence: rawConfidence,
     dataCompleteness,
   } = synthesizeFatigueIndex(dims);
+
+  const fatigueIndex = applyEnvironmentalImpactToFatigueIndex(
+    rawFatigueIndex,
+    context.environmentalImpact ?? null,
+  );
 
   // Maturity modifier: < 7 days history → 60%, 7-14 → 80%, 14+ → 100%
   const historyDays = context.recentFatigueHistory.length;

@@ -98,9 +98,10 @@ export class FatigueInferenceOrchestrator {
     const computedAt = new Date();
 
     // ── Step 1: Get DayFeatures ────────────────────────────────────────────
-    const [features, previousFatigueState] = await Promise.all([
+    const [features, previousFatigueState, environmentalImpact] = await Promise.all([
       this.deps.featureEngine.getDayFeatures(athleteId, trainingDayId),
       this.deps.digitalTwinRepo.getPreviousFatigueState(athleteId),
+      this.deps.digitalTwinRepo.getEnvironmentalImpact(athleteId),
     ]);
 
     // ── Step 2: Get context from Digital Twin ──────────────────────────────
@@ -118,6 +119,7 @@ export class FatigueInferenceOrchestrator {
       recoveryState,
       consecutiveAccumulationDays,
       recentFatigueHistory,
+      environmentalImpact,
     };
 
     // ── Step 4: Run the Fatigue Model (pure — no side effects) ────────────

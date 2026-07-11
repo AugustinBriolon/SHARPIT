@@ -43,7 +43,13 @@ class InMemoryDigitalTwinRepository implements DigitalTwinRepository {
       const twin: DigitalTwin = {
         id: randomUUID(),
         athleteId,
-        state: { recovery: null, fatigue: null, adaptation: null, reasoning: null },
+        state: {
+          recovery: null,
+          fatigue: null,
+          adaptation: null,
+          reasoning: null,
+          physicalHealth: null,
+        },
         updatedAt: new Date(),
         createdAt: new Date(),
       };
@@ -115,6 +121,52 @@ class InMemoryDigitalTwinRepository implements DigitalTwinRepository {
 
   async getPreviousReasoningState(athleteId: string): Promise<ReasoningState | null> {
     return this.store.get(athleteId)?.state.reasoning ?? null;
+  }
+
+  async updatePhysicalHealth(
+    athleteId: string,
+    physicalHealthState: import('@/core/inference/physical-health/types').PhysicalHealthState,
+  ): Promise<DigitalTwin> {
+    const existing = await this.findOrCreate(athleteId);
+    const updated: DigitalTwin = {
+      ...existing,
+      state: { ...existing.state, physicalHealth: physicalHealthState },
+      updatedAt: new Date(),
+    };
+    this.store.set(athleteId, updated);
+    return updated;
+  }
+
+  async getPreviousPhysicalHealthState(
+    athleteId: string,
+  ): Promise<import('@/core/inference/physical-health/types').PhysicalHealthState | null> {
+    return this.store.get(athleteId)?.state.physicalHealth ?? null;
+  }
+
+  async updateEnvironmentalState(
+    athleteId: string,
+    state: import('@/core/digital-twin/types').EnvironmentalTwinState,
+  ): Promise<DigitalTwin> {
+    const existing = await this.findOrCreate(athleteId);
+    const updated: DigitalTwin = {
+      ...existing,
+      state: { ...existing.state, environmental: state },
+      updatedAt: new Date(),
+    };
+    this.store.set(athleteId, updated);
+    return updated;
+  }
+
+  async getEnvironmentalState(
+    athleteId: string,
+  ): Promise<import('@/core/digital-twin/types').EnvironmentalTwinState | null> {
+    return this.store.get(athleteId)?.state.environmental ?? null;
+  }
+
+  async getEnvironmentalImpact(
+    athleteId: string,
+  ): Promise<import('@/core/digital-twin/types').EnvironmentalTwinState['impact'] | null> {
+    return this.store.get(athleteId)?.state.environmental?.impact ?? null;
   }
 
   getAll(): DigitalTwin[] {

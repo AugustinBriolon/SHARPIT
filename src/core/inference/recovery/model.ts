@@ -45,6 +45,7 @@ import {
 } from './scoring';
 
 import type { I18nItem } from '@/core/inference/shared/types';
+import { applyEnvironmentalImpactToReadiness } from '@/core/inference/environment/apply-impact';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Signals
@@ -381,7 +382,10 @@ export function runRecoveryModel(
   const illnessRisk: IllnessRisk = recovery ? computeIllnessRisk(recovery, load) : 'LOW';
 
   // Override to VERY_LOW when illness risk is HIGH
-  const effectiveScore = capScoreForHighIllnessRisk(illnessRisk, finalScore);
+  const effectiveScore = capScoreForHighIllnessRisk(
+    illnessRisk,
+    applyEnvironmentalImpactToReadiness(finalScore, context.environmentalImpact ?? null),
+  );
 
   const effectiveCategory: ReadinessCategory = illnessRisk === 'HIGH' ? 'VERY_LOW' : category;
 

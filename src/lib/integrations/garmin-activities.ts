@@ -533,6 +533,25 @@ export function garminEnrichmentUpdate(
     };
   }
 
+  if (type === ActivityType.SWIM) {
+    data.swimMetrics = {
+      upsert: {
+        create: {
+          distanceM: activity.distance > 0 ? activity.distance : null,
+          avgPaceSecPer100m:
+            activity.averageSpeed && activity.averageSpeed > 0 ? 100 / activity.averageSpeed : null,
+        },
+        update: {
+          distanceM: activity.distance > 0 ? activity.distance : undefined,
+          avgPaceSecPer100m:
+            activity.averageSpeed && activity.averageSpeed > 0
+              ? 100 / activity.averageSpeed
+              : undefined,
+        },
+      },
+    };
+  }
+
   if (type === ActivityType.TRIATHLON || type === ActivityType.OTHER) {
     return data;
   }

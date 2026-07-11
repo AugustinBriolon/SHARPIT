@@ -1,6 +1,7 @@
 'use client';
 
-import type { PlannedSessionSummary } from '@/components/training/planned-session-link-card';
+import type { PlannedSessionSummary } from '@/components/training/activity-detail/types';
+import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
 import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { LinkButton } from '@/components/ui/link-button';
@@ -82,9 +83,12 @@ function ActivityRow({ activity, compact = false }: { activity: ActivityItem; co
       <div className="flex items-start justify-between gap-4">
         <div className="w-full min-w-0 space-y-1">
           <div className="flex w-full items-center justify-between gap-2">
-            <span className={compact ? 'text-sm font-medium' : 'font-medium'}>
-              {activity.title ?? activityTypeLabels[activity.type]}
-            </span>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <ActivityTypeIndicator type={activity.type} />
+              <span className={compact ? 'text-sm font-medium' : 'font-medium'}>
+                {activity.title ?? activityTypeLabels[activity.type]}
+              </span>
+            </div>
             {activity.plannedSession && (
               <span className="border-analysis-border bg-analysis-surface-alt text-muted-foreground rounded-full border px-2 py-0.5 text-[10px] font-medium">
                 Planifiée{' '}

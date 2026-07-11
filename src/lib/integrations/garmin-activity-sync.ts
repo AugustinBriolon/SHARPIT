@@ -147,7 +147,12 @@ export interface GarminActivitySyncResult {
   updated: number;
   merged: number;
   skipped: number;
+  importedTypes: ActivityType[];
   importedActivityIds: string[];
+  /** Types des séances réellement modifiées (import, merge ou update). */
+  changedTypes: ActivityType[];
+  /** Séances modifiées pendant la sync (pour filtrer les nouveaux records). */
+  changedActivityIds: string[];
 }
 
 export async function syncGarminActivities(options?: {
@@ -179,8 +184,20 @@ export async function syncGarminActivities(options?: {
     updated: 0,
     merged: 0,
     skipped: 0,
+    importedTypes: [],
     importedActivityIds: [],
+    changedTypes: [],
+    changedActivityIds: [],
   };
+
+  const importedTypes = new Set<ActivityType>();
+  const changedTypes = new Set<ActivityType>();
+  const changedActivityIds = new Set<string>();
+
+  function markChanged(activityId: string, type: ActivityType) {
+    changedTypes.add(type);
+    changedActivityIds.add(activityId);
+  }
 
   let start = 0;
 
@@ -244,8 +261,10 @@ export async function syncGarminActivities(options?: {
             data: patch,
           });
           result.updated += 1;
+          markChanged(existingByGarmin.id, type);
         } else if (addedSets || addedLegs) {
           result.updated += 1;
+          markChanged(existingByGarmin.id, type);
         } else {
           result.skipped += 1;
         }
@@ -269,6 +288,7 @@ export async function syncGarminActivities(options?: {
         await prisma.activityStream.deleteMany({ where: { activityId: match.id } });
         result.merged += 1;
         result.importedActivityIds.push(match.id);
+        markChanged(match.id, type);
         await ingestGarminActivity(activity, evaluation, new Date());
         continue;
       }
@@ -289,6 +309,8 @@ export async function syncGarminActivities(options?: {
         });
         result.imported += 1;
         result.importedActivityIds.push(created.id);
+        importedTypes.add(type);
+        markChanged(created.id, type);
         await ingestGarminActivity(activity, evaluation, new Date());
       } catch (error) {
         if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -313,5 +335,8 @@ export async function syncGarminActivities(options?: {
     },
   });
 
+  result.importedTypes = [...importedTypes];
+  result.changedTypes = [...changedTypes];
+  result.changedActivityIds = [...changedActivityIds];
   return result;
 }

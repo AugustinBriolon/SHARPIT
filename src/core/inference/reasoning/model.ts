@@ -1,114 +1,60 @@
 /**
  * REASONING ENGINE v1 — Model Entry Point
  *
- * Pure function. Orchestrates all scoring functions from scoring.ts
- * into a complete ReasoningModelOutput.
- *
- * No side effects, no DB calls, no feature fetching.
- * The Reasoning Engine reads exclusively from AthleteState (Digital Twin).
+ * Delegates cross-model synthesis to the canonical Decision Engine (decision-v1).
+ * ReasoningState is a backward-compatible projection of DecisionState.
  */
 
+import { runDecisionEngine, decisionStateToReasoningState } from '@/core/decision';
+import { buildEnvironmentalDecisionSnapshotFromParts } from '@/core/inference/environment/snapshot';
+import { buildModelDirections } from './scoring';
 import type { ReasoningModelInput, ReasoningModelOutput, ReasoningSignals } from './types';
-import type { ReasoningState } from '@/core/digital-twin/types';
-import {
-  buildModelDirections,
-  computeConsistency,
-  synthesizeVerdict,
-  detectConflicts,
-  detectOpportunities,
-  buildKeyFindings,
-  selectLimitingFactor,
-  selectAttentionPriority,
-  buildTopAction,
-  buildEvidenceGraph,
-  computeReasoningConfidence,
-} from './scoring';
+
 export function runReasoningModel(input: ReasoningModelInput): ReasoningModelOutput {
-  const { trainingDayId, athleteState } = input;
-  const { recovery: r, fatigue: f, adaptation: a } = athleteState;
+  const { trainingDayId, athleteId, athleteState } = input;
+  const { recovery, fatigue, adaptation, physicalHealth, environmental } = athleteState;
 
-  const availableCount = [r, f, a].filter(Boolean).length;
+  const environmentSnapshot =
+    environmental != null
+      ? buildEnvironmentalDecisionSnapshotFromParts({
+          stress: environmental.stress,
+          impact: environmental.impact,
+          confidence: environmental.meta.confidence,
+          computedAt: environmental.meta.computedAt,
+        })
+      : null;
 
-  // Step 1 — direction mapping + consistency
-  const modelDirections = buildModelDirections(r, f, a);
-  const { consistency: physiologicalConsistency, score: consistencyScore } =
-    computeConsistency(modelDirections);
-
-  // Step 2 — verdict (safety-first)
-  const overallVerdict = synthesizeVerdict(r, f, a, availableCount);
-
-  // Step 3 — conflicts + opportunities
-  const conflicts = detectConflicts(r, f, a);
-  const opportunities = detectOpportunities(r, f, a);
-
-  // Step 4 — limiting factor (needed before key findings for arbitration)
-  const limitingFactor = selectLimitingFactor(r, f, a, overallVerdict);
-
-  // Step 5 — key findings
-  const keyFindings = buildKeyFindings(
-    r,
-    f,
-    a,
-    conflicts,
-    modelDirections,
-    physiologicalConsistency,
-    overallVerdict,
-    limitingFactor,
-  );
-
-  // Step 6 — attention priority
-  const systemAttentionPriority = selectAttentionPriority(limitingFactor, overallVerdict);
-
-  // Step 7 — top action
-  const topAction = buildTopAction(overallVerdict, limitingFactor, a);
-
-  // Step 8 — evidence graph
-  const evidenceGraph = buildEvidenceGraph(r, f, a, overallVerdict, limitingFactor);
-
-  // Step 9 — confidence + data completeness
-  const { confidence, dataCompleteness } = computeReasoningConfidence(
-    r,
-    f,
-    a,
-    physiologicalConsistency,
-  );
-
-  // Step 10 — build signals (ephemeral, not persisted)
-  const signals: ReasoningSignals = {
-    overallVerdict,
-    physiologicalConsistency,
-    consistencyScore,
-    availableModelCount: availableCount,
-    modelDirections,
-    conflictCount: conflicts.length,
-    opportunityCount: opportunities.length,
-    keyFindingCount: keyFindings.length,
-    hasRecoveryState: r !== null,
-    hasFatigueState: f !== null,
-    hasAdaptationState: a !== null,
-  };
-
-  // Step 11 — build ReasoningState (persisted to Digital Twin)
-  const reasoningState: ReasoningState = {
-    overallVerdict,
-    systemAttentionPriority,
-    physiologicalConsistency,
-    consistencyScore,
-    keyFindings,
-    limitingFactor,
-    opportunities,
-    conflicts,
-    topAction,
-    evidenceGraph,
-    confidence,
-    dataCompleteness,
-    modelId: 'reasoning-v1',
-    computedAt: new Date(),
+  const { decisionState, signals } = runDecisionEngine({
     trainingDayId,
+    athleteId,
+    recovery,
+    fatigue,
+    adaptation,
+    physicalHealth: physicalHealth ?? null,
+    environment: environmentSnapshot,
+    environmentalImpact: environmental?.impact ?? null,
+  });
+
+  const reasoningState = decisionStateToReasoningState(decisionState);
+  const modelDirections = buildModelDirections(recovery, fatigue, adaptation);
+
+  const reasoningSignals: ReasoningSignals = {
+    overallVerdict: decisionState.overallVerdict,
+    physiologicalConsistency: decisionState.physiologicalConsistency,
+    consistencyScore: decisionState.consistencyScore,
+    availableModelCount: signals.availableModelCount,
+    modelDirections,
+    conflictCount: signals.conflictCount,
+    opportunityCount: decisionState.opportunities.length,
+    keyFindingCount: decisionState.supportingEvidence.length,
+    hasRecoveryState: signals.hasRecoveryState,
+    hasFatigueState: signals.hasFatigueState,
+    hasAdaptationState: signals.hasAdaptationState,
   };
 
   return {
-    signals,
+    signals: reasoningSignals,
     reasoningState,
+    decisionState,
   };
 }

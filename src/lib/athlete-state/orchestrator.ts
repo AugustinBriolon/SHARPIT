@@ -13,6 +13,8 @@ import {
 import { regenerateAthleteSnapshotAfterInference } from '@/lib/athlete-state/snapshot-service';
 import { syncProviders, type ProviderSyncResult } from '@/lib/athlete-state/sync-providers';
 import { loadTodayState } from '@/lib/today-state-server';
+import { prisma } from '@/lib/prisma';
+import { updateRecordsForTypesSafe } from '@/lib/records';
 
 const ATHLETE_ID = 'default';
 
@@ -113,9 +115,20 @@ export async function refreshAthleteState(options?: {
 export async function onProviderSyncCompleted(
   results: ProviderSyncResult[],
   trainingDayId?: string,
+  options?: { skipRecordUpdate?: boolean },
 ): Promise<AthleteSnapshot> {
   const dayId = trainingDayId ?? trainingDayIdNow();
   const activityIds = results.flatMap((r) => r.activityIds);
+
+  if (!options?.skipRecordUpdate && activityIds.length > 0) {
+    const activities = await prisma.activity.findMany({
+      where: { id: { in: activityIds } },
+      select: { type: true },
+    });
+    const types = [...new Set(activities.map((a) => a.type))];
+    await updateRecordsForTypesSafe(types);
+  }
+
   const todayState = await runFastInference(dayId);
   const athleteSnapshot = await regenerateAthleteSnapshotAfterInference(dayId, todayState);
   scheduleBackgroundTasks({ activityIds, regenerateBriefing: true, trainingDayId: dayId });

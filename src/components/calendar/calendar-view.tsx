@@ -4,6 +4,12 @@ import { BrickDialog } from '@/components/planning/brick-dialog';
 import { PlannedSessionDialog } from '@/components/planning/planned-session-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
+  SkeletonCard,
+  SkeletonEyebrow,
+  SkeletonPill,
+  SkeletonText,
+} from '@/components/ui/skeleton-patterns';
+import {
   useActivities,
   useGoals,
   useGoogleCalendars,
@@ -36,6 +42,38 @@ import type { DialogState } from './calendar-types';
 import { CALENDAR_WEEK_OPTS } from './calendar-types';
 import { CalendarWeekList } from './calendar-week-list';
 import { calendarToolbarTitle, getDragSessionId, groupEventsByDay } from './calendar-utils';
+
+function CalendarSkeleton({ showHeader }: { showHeader: boolean }) {
+  return (
+    <div className="space-y-4 lg:space-y-6">
+      {showHeader ? (
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="space-y-2">
+            <SkeletonEyebrow className="w-24" />
+            <SkeletonText widths={['12rem']} />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="size-10 rounded-xl" />
+            <Skeleton className="size-10 rounded-xl" />
+            <SkeletonPill className="w-20" />
+          </div>
+        </div>
+      ) : null}
+      <SkeletonCard className="space-y-3 p-3 sm:p-4">
+        <div className="grid grid-cols-7 gap-2">
+          {Array.from({ length: 7 }).map((_, index) => (
+            <Skeleton key={`label-${index}`} className="h-3 rounded-full border-0" />
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-2">
+          {Array.from({ length: 35 }).map((_, index) => (
+            <Skeleton key={index} className="rounded-analysis h-24" />
+          ))}
+        </div>
+      </SkeletonCard>
+    </div>
+  );
+}
 
 export function CalendarView({
   embedded = false,
@@ -148,12 +186,7 @@ export function CalendarView({
   ) : null;
 
   if (!mounted || isAnyInitialQueryLoad([activitiesQuery, plannedQuery, goalsQuery])) {
-    return (
-      <div className="space-y-8">
-        {header}
-        <Skeleton className="rounded-analysis-lg h-[560px] w-full" />
-      </div>
-    );
+    return <CalendarSkeleton showHeader={showHeader} />;
   }
 
   const weeks = buildCalendarMonth(month, activitiesQuery.data ?? [], plannedQuery.data ?? []);

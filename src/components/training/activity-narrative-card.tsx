@@ -1,23 +1,16 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { activityNarrativeSchema, type ActivityNarrative } from '@/lib/validators/coach';
 import { Sparkles } from 'lucide-react';
+import type { ActivityNarrative } from '@/lib/validators/coach';
 
 interface ActivityNarrativeCardProps {
-  narrativeAnalysis: unknown;
+  analysis: ActivityNarrative;
   narrativeAnalyzedAt: Date | string | null;
 }
 
-function parseNarrative(raw: unknown): ActivityNarrative | null {
-  const parsed = activityNarrativeSchema.safeParse(raw);
-  return parsed.success ? parsed.data : null;
-}
-
 export function ActivityNarrativeCard({
-  narrativeAnalysis,
+  analysis,
   narrativeAnalyzedAt,
 }: ActivityNarrativeCardProps) {
-  const analysis = parseNarrative(narrativeAnalysis);
-  if (!analysis || !narrativeAnalyzedAt) return null;
+  if (!narrativeAnalyzedAt) return null;
 
   const analyzedLabel = new Intl.DateTimeFormat('fr-FR', {
     day: 'numeric',
@@ -28,30 +21,38 @@ export function ActivityNarrativeCard({
   }).format(new Date(narrativeAnalyzedAt));
 
   return (
-    <Card className="border-primary/25 from-primary/5 bg-linear-to-br to-transparent">
-      <CardContent className="space-y-3">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Sparkles className="text-primary size-4 shrink-0" />
-            <h2 className="font-medium">Analyse coach</h2>
-          </div>
-          <p className="text-muted-foreground text-xs">Générée le {analyzedLabel}</p>
+    <section className="analysis-panel-alt rounded-analysis-lg px-5 py-5 sm:px-6 sm:py-6">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div className="flex items-center gap-2">
+          <Sparkles className="text-primary size-4 shrink-0" />
+          <p className="text-label">Analyse coach</p>
         </div>
+        <p className="text-muted-foreground text-xs">Générée le {analyzedLabel}</p>
+      </div>
 
-        <p className="text-base font-medium">{analysis.headline}</p>
-        <p className="text-muted-foreground text-sm leading-relaxed">{analysis.narrative}</p>
+      <h2 className="font-heading text-foreground mt-3 max-w-3xl text-xl leading-snug font-semibold tracking-tight sm:text-[1.55rem]">
+        {analysis.headline}
+      </h2>
+
+      <div className="mt-5 space-y-4 pt-5">
+        <p className="text-muted-foreground max-w-3xl text-sm leading-relaxed">
+          {analysis.narrative}
+        </p>
 
         {analysis.highlights.length > 0 && (
-          <ul className="text-muted-foreground space-y-1 text-sm">
+          <ul className="grid gap-2 sm:grid-cols-2">
             {analysis.highlights.map((item) => (
-              <li key={item} className="flex gap-2">
-                <span className="text-primary">·</span>
-                <span>{item}</span>
+              <li
+                key={item}
+                className="bg-analysis-surface/80 border-analysis-border/60 rounded-analysis flex gap-2.5 border px-3 py-2.5 text-sm leading-snug"
+              >
+                <span className="text-primary mt-0.5 shrink-0 font-medium">·</span>
+                <span className="text-foreground/90">{item}</span>
               </li>
             ))}
           </ul>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

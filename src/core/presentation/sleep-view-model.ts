@@ -1,6 +1,7 @@
 import type { SleepCoachView } from '@/lib/sleep';
 import type { SleepScoreBreakdown } from '@/lib/sleep-scoring';
 import type { ProductInsightBundle } from '@/core/product-insight/types';
+import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
 import type {
   PresentationConfidence,
   PresentationEmptyState,
@@ -34,6 +35,8 @@ export type SleepViewModel = {
   recoveryNote: string | null;
 
   insights: ProductInsightBundle;
+
+  globalDecision: GlobalDecisionContext;
 
   confidencePresentation: PresentationConfidence;
   emptyState: PresentationEmptyState | null;

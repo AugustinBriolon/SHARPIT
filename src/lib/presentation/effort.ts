@@ -5,6 +5,8 @@ import { getActivitiesList } from '@/lib/queries';
 import { resolve } from '@/lib/french';
 import { mapConfidenceToTier, mapFatigueTypeToLabel, type FatigueType } from '@/lib/today-mapping';
 import { buildEffortPageInsights } from '@/lib/product-insight/effort-page-insights';
+import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
+import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';
 import type { EffortViewModel } from '@/core/presentation/effort-view-model';
 
 const OVERREACHING_RISK_DISPLAY: Record<string, { label: string; colorClass: string } | undefined> =
@@ -89,6 +91,7 @@ function emptyEffortViewModel(): EffortViewModel {
     completenessLabel: '—',
     availableDimCount: 0,
     insights: { primary: [], supporting: [], contextual: [] },
+    globalDecision: EMPTY_GLOBAL_DECISION,
     emptyState: {
       title: 'Charge d’effort indisponible.',
       description: 'Synchronise tes donnees et reessaie.',
@@ -265,6 +268,7 @@ export async function buildEffortViewModel(trainingDayId: string): Promise<Effor
     completenessLabel,
     availableDimCount,
     insights,
+    globalDecision: buildGlobalDecisionContext(snapshot, 'FATIGUE'),
     emptyState: null,
     hierarchy: { rootId: 'effort', order: ['hero', 'verdict', 'insights', 'charts', 'evidence'] },
     sections: [],

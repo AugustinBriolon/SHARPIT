@@ -25,6 +25,7 @@ const MESSAGES: Record<FreshnessLevel, Partial<Record<AthleteStateDomain, string
     recovery: 'Analyse de ta récupération…',
     training: 'Analyse de ta charge…',
     sleep: 'Analyse de ton sommeil…',
+    physical: 'Analyse de ta condition physique…',
     reasoning: 'Synthèse de ton état du jour…',
     recommendations: 'Préparation de ton bilan…',
   },
