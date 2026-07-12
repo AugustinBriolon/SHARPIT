@@ -8,20 +8,30 @@ import { buildEffortPageInsights } from '@/lib/product-insight/effort-page-insig
 import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
 import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';
 import type { EffortViewModel } from '@/core/presentation/effort-view-model';
+import {
+  CHART_CAUTION_STROKE,
+  CHART_RISK_STROKE,
+  CHART_TEMPO_STROKE,
+  CHART_TICK_COLOR,
+  CHART_VO2_STROKE,
+} from '@/lib/chart-theme';
 
 const OVERREACHING_RISK_DISPLAY: Record<string, { label: string; colorClass: string } | undefined> =
   {
-    MODERATE: { label: 'Risque modéré', colorClass: 'text-amber-600' },
-    HIGH: { label: 'Risque élevé', colorClass: 'text-orange-600' },
-    CRITICAL: { label: 'Risque critique', colorClass: 'text-red-600' },
+    MODERATE: { label: 'Risque modéré', colorClass: 'text-amber-600 dark:text-amber-400' },
+    HIGH: { label: 'Risque élevé', colorClass: 'text-orange-600 dark:text-orange-400' },
+    CRITICAL: { label: 'Risque critique', colorClass: 'text-red-600 dark:text-red-400' },
   };
 
 const FATIGUE_VERDICT_DISPLAY: Record<string, { label: string; colorClass: string }> = {
-  BUILD: { label: 'Progresser', colorClass: 'text-emerald-600' },
-  MAINTAIN: { label: 'Maintenir', colorClass: 'text-blue-600' },
-  REDUCE: { label: 'Réduire la charge', colorClass: 'text-amber-600' },
-  REST_WEEK: { label: 'Semaine de récupération', colorClass: 'text-orange-600' },
-  TAPER: { label: 'Affûtage', colorClass: 'text-blue-600' },
+  BUILD: { label: 'Progresser', colorClass: 'text-emerald-600 dark:text-emerald-400' },
+  MAINTAIN: { label: 'Maintenir', colorClass: 'text-blue-600 dark:text-blue-400' },
+  REDUCE: { label: 'Réduire la charge', colorClass: 'text-amber-600 dark:text-amber-400' },
+  REST_WEEK: {
+    label: 'Semaine de récupération',
+    colorClass: 'text-orange-600 dark:text-orange-400',
+  },
+  TAPER: { label: 'Affûtage', colorClass: 'text-blue-600 dark:text-blue-400' },
   INSUFFICIENT_DATA: { label: 'Données insuffisantes', colorClass: 'text-muted-foreground' },
 };
 
@@ -40,17 +50,37 @@ const CONFIDENCE_TONE = {
 
 function mapStrainToDisplay(strainScore: number | null) {
   if (strainScore == null) {
-    return { label: 'Indéterminé', colorClass: 'text-muted-foreground', strokeColor: '#94a3b8' };
+    return {
+      label: 'Indéterminé',
+      colorClass: 'text-muted-foreground',
+      strokeColor: CHART_TICK_COLOR,
+    };
   }
   if (strainScore >= 16)
-    return { label: 'Très élevé', colorClass: 'text-red-600', strokeColor: '#dc2626' };
+    return {
+      label: 'Très élevé',
+      colorClass: 'text-red-600 dark:text-red-400',
+      strokeColor: CHART_RISK_STROKE,
+    };
   if (strainScore >= 11)
-    return { label: 'Élevé', colorClass: 'text-orange-600', strokeColor: '#ea580c' };
+    return {
+      label: 'Élevé',
+      colorClass: 'text-orange-600 dark:text-orange-400',
+      strokeColor: CHART_VO2_STROKE,
+    };
   if (strainScore >= 6)
-    return { label: 'Modéré', colorClass: 'text-amber-600', strokeColor: '#d97706' };
+    return {
+      label: 'Modéré',
+      colorClass: 'text-amber-600 dark:text-amber-400',
+      strokeColor: CHART_CAUTION_STROKE,
+    };
   if (strainScore > 0)
-    return { label: 'Léger', colorClass: 'text-blue-600', strokeColor: '#2563eb' };
-  return { label: 'Repos', colorClass: 'text-muted-foreground', strokeColor: '#94a3b8' };
+    return {
+      label: 'Léger',
+      colorClass: 'text-blue-600 dark:text-blue-400',
+      strokeColor: CHART_TEMPO_STROKE,
+    };
+  return { label: 'Repos', colorClass: 'text-muted-foreground', strokeColor: CHART_TICK_COLOR };
 }
 
 function emptyEffortViewModel(): EffortViewModel {

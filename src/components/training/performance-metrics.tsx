@@ -105,7 +105,9 @@ export function ThresholdsHint({ analysis }: { analysis: ActivityAnalysis }) {
   return (
     <Card className="border-amber-500/30 bg-amber-500/5">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-amber-200/90">Seuils estimés</CardTitle>
+        <CardTitle className="text-sm font-medium text-amber-700 dark:text-amber-300">
+          Seuils estimés
+        </CardTitle>
       </CardHeader>
       <CardContent className="text-muted-foreground text-sm">
         Renseigne ton FTP, LTHR et allure seuil dans{' '}

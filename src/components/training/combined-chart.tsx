@@ -5,7 +5,7 @@ import { memo } from 'react';
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
 import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { NormalizedStreamChartPoint } from '@/lib/stream-chart-data';
+import { formatAltitudeMeters, type NormalizedStreamChartPoint } from '@/lib/stream-chart-data';
 
 function CombinedChartComponent({
   samples,
@@ -67,6 +67,7 @@ function CombinedChartComponent({
               axisLine={false}
               orientation="right"
               tick={{ fill: secondaryColor, fontSize: 11 }}
+              tickFormatter={showPower ? undefined : formatAltitudeMeters}
               tickLine={false}
               width={40}
               yAxisId="sec"
@@ -79,12 +80,17 @@ function CombinedChartComponent({
                     <p className="text-muted-foreground mb-1">
                       {label} {xLabel}
                     </p>
-                    {payload.map((p) => (
-                      <p key={String(p.dataKey)} style={{ color: p.color }}>
-                        {p.dataKey === 'hr' ? 'FC' : secondaryLabel.split(' ')[0]}:{' '}
-                        <span className="font-mono font-semibold">{p.value}</span>
-                      </p>
-                    ))}
+                    {payload.map((p) => {
+                      const raw = p.value as number;
+                      const formatted =
+                        p.dataKey === secondaryKey && !showPower ? formatAltitudeMeters(raw) : raw;
+                      return (
+                        <p key={String(p.dataKey)} style={{ color: p.color }}>
+                          {p.dataKey === 'hr' ? 'FC' : secondaryLabel.split(' ')[0]}:{' '}
+                          <span className="font-mono font-semibold">{formatted}</span>
+                        </p>
+                      );
+                    })}
                   </div>
                 );
               }}

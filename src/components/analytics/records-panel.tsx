@@ -97,10 +97,10 @@ function RecordValue({ entry }: { entry: RecordEntry }) {
   const inner = (
     <div
       className="rounded-analysis bg-analysis-surface-alt/80 mt-3 px-3 py-3"
-      style={{ boxShadow: 'inset 3px 0 0 var(--color-chart-5)' }}
+      style={{ boxShadow: 'inset 3px 0 0 var(--record-accent)' }}
     >
       {/* Records are the one deliberate exception: each #1 uses the rare warm accent as an achievement cue. */}
-      <p className="text-data mt-1 text-3xl font-semibold text-(--color-chart-5)">
+      <p className="text-data text-record-accent mt-1 text-3xl font-semibold">
         {entry.displayValue}
       </p>
       <p className="text-data text-muted-foreground mt-1 text-xs">{entryMeta(entry)}</p>

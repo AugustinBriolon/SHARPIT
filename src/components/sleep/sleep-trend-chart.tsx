@@ -4,6 +4,7 @@ import type { SleepBarPoint } from '@/components/sleep/types';
 import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 import { formatSleepDuration } from '@/lib/sleep-scoring';
 import { Bar, BarChart, ReferenceLine, Tooltip, XAxis, YAxis } from 'recharts';
+import { CHART_TICK_COLOR } from '@/lib/chart-theme';
 
 function SleepTrendBars({ data, targetMin }: { data: SleepBarPoint[]; targetMin: number }) {
   const hasData = data.some((d) => d.minutes !== null);
@@ -17,18 +18,18 @@ function SleepTrendBars({ data, targetMin }: { data: SleepBarPoint[]; targetMin:
         <XAxis
           axisLine={false}
           dataKey="date"
-          tick={{ fontSize: 9, fill: '#94a3b8' }}
+          tick={{ fontSize: 9, fill: CHART_TICK_COLOR }}
           tickLine={false}
         />
         <YAxis domain={[0, 600]} hide />
-        <ReferenceLine stroke="#cbd5e1" strokeDasharray="3 3" y={targetMin} />
+        <ReferenceLine stroke="var(--analysis-border)" strokeDasharray="3 3" y={targetMin} />
         <Tooltip
-          cursor={{ fill: 'rgba(0,0,0,0.03)' }}
+          cursor={{ fill: 'color-mix(in oklch, var(--muted) 35%, transparent)' }}
           content={({ active, payload }) => {
             if (!active || !payload?.[0]) return null;
             const pt = payload[0].payload as SleepBarPoint;
             return (
-              <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs shadow-md">
+              <div className="analysis-panel rounded-analysis px-3 py-2 text-xs shadow-md">
                 <p className="font-semibold tabular-nums">{formatSleepDuration(pt.minutes)}</p>
                 <p className="text-muted-foreground">{pt.date}</p>
               </div>

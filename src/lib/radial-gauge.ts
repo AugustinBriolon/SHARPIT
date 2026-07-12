@@ -1,20 +1,20 @@
 export type RadialColorMode = 'dynamic' | 'neutral' | 'strain';
 export type RadialScoreFormat = 'percent' | 'strain' | 'number';
 
-export const RADIAL_TRACK_COLOR = '#E8ECF0';
-export const RADIAL_EMPTY_COLOR = '#CBD5E1';
+export const RADIAL_TRACK_COLOR = 'var(--radial-track)';
+export const RADIAL_EMPTY_COLOR = 'var(--radial-empty)';
 
 const FIXED_STROKE_COLORS: Record<Exclude<RadialColorMode, 'dynamic'>, string> = {
-  neutral: '#809cb6',
-  strain: '#3B82F6',
+  neutral: 'var(--signal-neutral)',
+  strain: 'var(--signal-threshold)',
 };
 
 /** Score-based stroke color — aligned with Today dashboard dynamic rings. */
 export function scoreStrokeColor(score: number | null): string {
   if (score === null) return RADIAL_EMPTY_COLOR;
-  if (score >= 67) return '#059669';
-  if (score >= 34) return '#D97706';
-  return '#DC2626';
+  if (score >= 67) return 'var(--signal-base)';
+  if (score >= 34) return 'var(--signal-caution)';
+  return 'var(--signal-risk)';
 }
 
 export function resolveRadialStrokeColor(value: number | null, colorMode: RadialColorMode): string {

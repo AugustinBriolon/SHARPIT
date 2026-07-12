@@ -5,7 +5,7 @@ import { memo } from 'react';
 import { Area, AreaChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts';
 import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { NormalizedStreamChartPoint } from '@/lib/stream-chart-data';
+import { formatAltitudeMeters, type NormalizedStreamChartPoint } from '@/lib/stream-chart-data';
 
 interface ChartPoint {
   x: number; // distance (km) ou temps (min)
@@ -66,6 +66,7 @@ function ActivityChartsComponent({
       label: 'Altitude',
       color: '#059669',
       unit: 'm',
+      format: formatAltitudeMeters,
     });
   if (has.hr)
     metrics.push({

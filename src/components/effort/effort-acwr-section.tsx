@@ -70,14 +70,14 @@ export function EffortAcwrSection({
       <AcwrZoneBar acwr={acwr} />
       <p className="text-muted-foreground/60 mt-3 text-[10px]">Gabbett 2016 · sweet spot 0.9–1.3</p>
       <div className="mt-4 grid grid-cols-2 gap-3">
-        <div className="dark:bg-muted/40 rounded-2xl bg-slate-50 px-3 py-3">
+        <div className="bg-muted/30 rounded-2xl px-3 py-3">
           <p className="text-muted-foreground text-[10px] font-medium uppercase">Charge 7j</p>
           <p className="mt-1 text-base font-semibold tabular-nums">
             {weeklyLoad > 0 ? `${weeklyLoad} TSS` : '—'}
           </p>
         </div>
         {chronicWeeklyAvg != null && (
-          <div className="dark:bg-muted/40 rounded-2xl bg-slate-50 px-3 py-3">
+          <div className="bg-muted/30 rounded-2xl px-3 py-3">
             <p className="text-muted-foreground text-[10px] font-medium uppercase">Base 42j</p>
             <p className="mt-1 text-base font-semibold tabular-nums">{chronicWeeklyAvg} TSS/sem</p>
           </div>

@@ -4,6 +4,7 @@ import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 import type { PowerCurvePoint } from '@/lib/records';
+import { CHART_RECORD_STROKE, CHART_TICK_COLOR } from '@/lib/chart-theme';
 
 interface PowerCurveChartProps {
   data: PowerCurvePoint[];
@@ -45,16 +46,16 @@ export function PowerCurveChart({ data }: PowerCurveChartProps) {
         ) : (
           <ResponsiveChartFrame height={288}>
             <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-              <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" />
+              <CartesianGrid stroke="var(--analysis-grid)" strokeDasharray="3 3" />
               <XAxis
                 axisLine={false}
                 dataKey="label"
-                tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
+                tick={{ fill: CHART_TICK_COLOR, fontSize: 11 }}
                 tickLine={false}
               />
               <YAxis
                 axisLine={false}
-                tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
+                tick={{ fill: CHART_TICK_COLOR, fontSize: 11 }}
                 tickLine={false}
                 unit=" W"
                 width={44}
@@ -62,9 +63,9 @@ export function PowerCurveChart({ data }: PowerCurveChartProps) {
               <Tooltip content={<ChartTooltip />} />
               <Line
                 dataKey="watts"
-                dot={{ r: 3, fill: '#ea580c' }}
+                dot={{ r: 3, fill: CHART_RECORD_STROKE }}
                 name="Puissance"
-                stroke="#ea580c"
+                stroke={CHART_RECORD_STROKE}
                 strokeWidth={2}
                 type="monotone"
               />

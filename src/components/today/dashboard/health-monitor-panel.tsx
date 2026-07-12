@@ -1,4 +1,11 @@
 import { EyebrowLabel } from '@/components/ui/eyebrow-label';
+import {
+  CHART_CAUTION_STROKE,
+  CHART_RECOVERY_STROKE,
+  CHART_TEMPO_STROKE,
+  CHART_TICK_COLOR,
+  CHART_VO2_STROKE,
+} from '@/lib/chart-theme';
 import { buildDailyWindowSeries, indexHealthEntriesByDay } from '@/lib/health';
 import { cn } from '@/lib/utils';
 import type { ClientHealthEntry } from '@/lib/query/types';
@@ -41,7 +48,7 @@ export function HealthMonitorPanel({
         label: `↑ au-dessus (${low}–${high})`,
         colorClass: 'text-emerald-600 dark:text-emerald-400',
       };
-    return { label: `→ norme (${low}–${high} ms)`, colorClass: 'text-slate-400' };
+    return { label: `→ norme (${low}–${high} ms)`, colorClass: 'text-muted-foreground' };
   })();
 
   const metrics: {
@@ -55,38 +62,38 @@ export function HealthMonitorPanel({
       label: 'FC repos',
       value: entry?.restingHr != null ? `${entry.restingHr} bpm` : '—',
       data: numSeries('restingHr'),
-      stroke: '#64748b',
+      stroke: CHART_TICK_COLOR,
     },
     {
       label: 'VFC',
       value: entry?.hrv != null ? `${entry.hrv} ms` : '—',
       data: numSeries('hrv'),
-      stroke: '#10b981',
+      stroke: CHART_RECOVERY_STROKE,
       context: hrvBaselineContext,
     },
     {
       label: 'Body Battery',
       value: entry?.bodyBattery != null ? `${entry.bodyBattery}` : '—',
       data: numSeries('bodyBattery'),
-      stroke: '#8b5cf6',
+      stroke: CHART_VO2_STROKE,
     },
     {
       label: 'Stress',
       value: entry?.stress != null ? String(entry.stress) : '—',
       data: numSeries('stress'),
-      stroke: '#f59e0b',
+      stroke: CHART_CAUTION_STROKE,
     },
     {
       label: 'Poids',
       value: entry?.weightKg != null ? `${entry.weightKg.toFixed(1)} kg` : '—',
       data: numSeries('weightKg'),
-      stroke: '#3b82f6',
+      stroke: CHART_TEMPO_STROKE,
     },
     {
       label: 'Respiration',
       value: entry?.sleepRespiration != null ? `${entry.sleepRespiration.toFixed(1)} r/m` : '—',
       data: numSeries('sleepRespiration'),
-      stroke: '#06b6d4',
+      stroke: CHART_RECOVERY_STROKE,
     },
   ];
 
@@ -103,18 +110,14 @@ export function HealthMonitorPanel({
             key={m.label}
             className="flex min-h-11 items-center gap-3 rounded-lg px-1 py-1 lg:min-h-0 lg:rounded-none lg:px-0 lg:py-0"
           >
-            <span className="w-24 shrink-0 text-xs text-slate-500 dark:text-slate-400">
-              {m.label}
-            </span>
+            <span className="text-muted-foreground w-24 shrink-0 text-xs">{m.label}</span>
             <div className="min-w-0 flex-1">
               <div className="h-5">
                 <Sparkline h={20} stroke={m.stroke} values={m.data} />
               </div>
             </div>
             <div className="flex w-20 shrink-0 flex-col items-end">
-              <span className="text-xs font-semibold text-slate-700 tabular-nums dark:text-slate-200">
-                {m.value}
-              </span>
+              <span className="text-foreground text-xs font-semibold tabular-nums">{m.value}</span>
               {m.context && (
                 <span className={cn('text-[9px] font-medium', m.context.colorClass)}>
                   {m.context.label}

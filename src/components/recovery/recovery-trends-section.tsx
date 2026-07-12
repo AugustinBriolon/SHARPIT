@@ -1,6 +1,8 @@
 import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
+import { CHART_CAUTION_STROKE, CHART_RECOVERY_STROKE } from '@/lib/chart-theme';
 import { cn } from '@/lib/utils';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceArea } from 'recharts';
 
@@ -50,7 +52,9 @@ function MiniSparkline({
           <span
             className={cn(
               'text-xs font-medium tabular-nums',
-              deltaGood ? 'text-emerald-600' : 'text-red-600',
+              deltaGood
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : 'text-red-600 dark:text-red-400',
             )}
           >
             {delta > 0 ? '+' : ''}
@@ -67,17 +71,22 @@ function MiniSparkline({
               if (!active || !payload?.[0]) return null;
               const pt = payload[0].payload as SparkPoint;
               return (
-                <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs shadow-md">
+                <ChartTooltipCard>
                   <p className="font-semibold tabular-nums">
                     {pt.value !== null ? `${pt.value} ${unit}` : '—'}
                   </p>
                   <p className="text-muted-foreground">{pt.date}</p>
-                </div>
+                </ChartTooltipCard>
               );
             }}
           />
           {baselineLow != null && baselineHigh != null && (
-            <ReferenceArea fill="#10b981" fillOpacity={0.08} y1={baselineLow} y2={baselineHigh} />
+            <ReferenceArea
+              fill={CHART_RECOVERY_STROKE}
+              fillOpacity={0.12}
+              y1={baselineLow}
+              y2={baselineHigh}
+            />
           )}
           <Line dataKey="value" dot={false} stroke={color} strokeWidth={1.5} type="monotone" />
         </LineChart>
@@ -131,7 +140,7 @@ function DualSparkline({
                 b: number | null;
               };
               return (
-                <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs shadow-md">
+                <ChartTooltipCard>
                   {pt.a !== null && (
                     <p>
                       {labelA}: {pt.a}
@@ -145,7 +154,7 @@ function DualSparkline({
                     </p>
                   )}
                   <p className="text-muted-foreground">{pt.date}</p>
-                </div>
+                </ChartTooltipCard>
               );
             }}
           />
@@ -179,7 +188,7 @@ export function RecoveryTrendsSection({
           <MiniSparkline
             baselineHigh={baselineHigh}
             baselineLow={baselineLow}
-            color="#10b981"
+            color={CHART_RECOVERY_STROKE}
             data={sparkHrv}
             unit="ms"
           />
@@ -191,13 +200,13 @@ export function RecoveryTrendsSection({
         </div>
         <div>
           <p className="text-muted-foreground mb-2 text-xs font-medium">FC repos</p>
-          <MiniSparkline color="#f59e0b" data={sparkRhr} unit="bpm" invertDelta />
+          <MiniSparkline color={CHART_CAUTION_STROKE} data={sparkRhr} unit="bpm" invertDelta />
         </div>
         <div>
           <p className="text-muted-foreground mb-2 text-xs font-medium">Énergie & stress</p>
           <DualSparkline
-            colorA="#10b981"
-            colorB="#f59e0b"
+            colorA={CHART_RECOVERY_STROKE}
+            colorB={CHART_CAUTION_STROKE}
             data={dualData}
             labelA="Batterie"
             labelB="Stress"

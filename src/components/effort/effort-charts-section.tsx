@@ -1,6 +1,8 @@
 import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
+import { CHART_REFERENCE_LINE, CHART_TICK_COLOR } from '@/lib/chart-theme';
 import {
   LineChart,
   Line,
@@ -29,18 +31,18 @@ export function EffortPmcSection({ data }: { data: PmcPoint[] }) {
             axisLine={false}
             dataKey="label"
             interval="preserveStartEnd"
-            tick={{ fontSize: 9, fill: '#94a3b8' }}
+            tick={{ fontSize: 9, fill: CHART_TICK_COLOR }}
             tickLine={false}
           />
           <YAxis hide />
           <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.08} vertical={false} />
-          <ReferenceLine stroke="#cbd5e1" y={0} />
+          <ReferenceLine stroke={CHART_REFERENCE_LINE} y={0} />
           <Tooltip
             content={({ active, payload }) => {
               if (!active || !payload?.length) return null;
               const pt = payload[0]?.payload as PmcPoint;
               return (
-                <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs shadow-md">
+                <ChartTooltipCard>
                   <p className="font-medium">{pt.label}</p>
                   <p className="text-blue-500">CTL {pt.ctl}</p>
                   <p className="text-orange-500">ATL {pt.atl}</p>
@@ -48,7 +50,7 @@ export function EffortPmcSection({ data }: { data: PmcPoint[] }) {
                     TSB {pt.tsb > 0 ? '+' : ''}
                     {pt.tsb}
                   </p>
-                </div>
+                </ChartTooltipCard>
               );
             }}
           />
@@ -89,23 +91,23 @@ export function EffortWeeklyTssSection({
           <XAxis
             axisLine={false}
             dataKey="week"
-            tick={{ fontSize: 9, fill: '#94a3b8' }}
+            tick={{ fontSize: 9, fill: CHART_TICK_COLOR }}
             tickLine={false}
           />
           <YAxis hide />
           <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.08} vertical={false} />
           {avgWeeklyTss > 0 && (
-            <ReferenceLine stroke="#cbd5e1" strokeDasharray="3 3" y={avgWeeklyTss} />
+            <ReferenceLine stroke={CHART_REFERENCE_LINE} strokeDasharray="3 3" y={avgWeeklyTss} />
           )}
           <Tooltip
             content={({ active, payload }) => {
               if (!active || !payload?.[0]) return null;
               const pt = payload[0].payload as WeeklyTssPoint;
               return (
-                <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs shadow-md">
+                <ChartTooltipCard>
                   <p className="font-semibold tabular-nums">{pt.tss} TSS</p>
                   <p className="text-muted-foreground">{pt.week}</p>
-                </div>
+                </ChartTooltipCard>
               );
             }}
           />

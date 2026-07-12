@@ -57,6 +57,9 @@
   --color-health-status-watch: var(--health-status-watch);
   --color-health-status-verify: var(--health-status-verify);
   --color-health-status-attention: var(--health-status-attention);
+  --color-record-accent: var(--record-accent);
+  --color-radial-track: var(--radial-track);
+  --color-radial-empty: var(--radial-empty);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -111,6 +114,10 @@
   --health-status-watch: oklch(0.68 0.12 78);
   --health-status-verify: oklch(0.58 0.045 235);
   --health-status-attention: oklch(0.58 0.14 32);
+  /* Terracotta réservé aux records personnels (#1) — alias explicite de chart-5 */
+  --record-accent: var(--chart-5);
+  --radial-track: oklch(0.92 0.008 148);
+  --radial-empty: oklch(0.78 0.012 155);
   --radius: 0.625rem;
   --sidebar: oklch(0.975 0.009 148);
   --sidebar-foreground: oklch(0.27 0.034 158);
@@ -162,6 +169,9 @@
   --health-status-watch: oklch(0.76 0.1 78);
   --health-status-verify: oklch(0.74 0.04 235);
   --health-status-attention: oklch(0.7 0.13 32);
+  --record-accent: oklch(0.72 0.14 45);
+  --radial-track: oklch(0.28 0.02 158);
+  --radial-empty: oklch(0.38 0.022 158);
   --sidebar: oklch(0.19 0.024 158);
   --sidebar-foreground: oklch(0.96 0.008 148);
   --sidebar-primary: oklch(0.68 0.11 156);
@@ -200,9 +210,16 @@
     @apply font-sans;
     color-scheme: light;
   }
+  html.dark {
+    color-scheme: dark;
+  }
   ::selection {
     background: oklch(0.58 0.12 156 / 22%);
     color: oklch(0.27 0.034 158);
+  }
+  .dark ::selection {
+    background: oklch(0.68 0.11 156 / 30%);
+    color: oklch(0.96 0.008 148);
   }
   .maplibregl-popup-content {
     @apply bg-transparent! shadow-none! p-0! rounded-none!;

@@ -26,11 +26,11 @@ function impactLabel(value: ProductInsight['decisionImpact']): string {
 function importanceClass(value: ProductInsight['importance']): string {
   switch (value) {
     case 'CRITICAL':
-      return 'text-red-600';
+      return 'text-red-600 dark:text-red-400';
     case 'HIGH':
-      return 'text-amber-600';
+      return 'text-amber-600 dark:text-amber-400';
     case 'MEDIUM':
-      return 'text-blue-600';
+      return 'text-blue-600 dark:text-blue-400';
     case 'LOW':
       return 'text-muted-foreground';
   }

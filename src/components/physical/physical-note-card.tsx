@@ -6,6 +6,8 @@ import { ChevronDown, ChevronUp, Pencil, Plus, TrendingDown, TrendingUp } from '
 import { useState } from 'react';
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
 import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
+import { CHART_TICK_COLOR } from '@/lib/chart-theme';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -139,26 +141,30 @@ export function PhysicalNoteCard({
         {series.length >= 2 && (
           <ResponsiveChartFrame height={112}>
             <LineChart data={series} margin={{ top: 5, right: 5, bottom: 0, left: -25 }}>
-              <CartesianGrid stroke="#00000014" strokeDasharray="3 3" />
+              <CartesianGrid stroke="var(--analysis-grid)" strokeDasharray="3 3" />
               <XAxis
                 axisLine={false}
                 dataKey="date"
-                tick={{ fontSize: 10, fill: '#94a3b8' }}
+                tick={{ fontSize: 10, fill: CHART_TICK_COLOR }}
                 tickLine={false}
               />
               <YAxis
                 axisLine={false}
                 domain={[0, 10]}
-                tick={{ fontSize: 10, fill: '#94a3b8' }}
+                tick={{ fontSize: 10, fill: CHART_TICK_COLOR }}
                 tickLine={false}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #00000014',
-                  borderRadius: 8,
-                  fontSize: 12,
-                  color: '#0f172a',
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  const pt = payload[0]?.payload as { comment?: string | null };
+                  return (
+                    <ChartTooltipCard>
+                      <p className="text-muted-foreground mb-1">{label}</p>
+                      <p className="font-semibold tabular-nums">{payload[0].value}/10</p>
+                      {pt.comment && <p className="text-muted-foreground mt-1">{pt.comment}</p>}
+                    </ChartTooltipCard>
+                  );
                 }}
               />
               <Line

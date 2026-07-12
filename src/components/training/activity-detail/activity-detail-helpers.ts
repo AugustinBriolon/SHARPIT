@@ -15,12 +15,12 @@ export const sportIcon: Record<ActivityType, LucideIcon> = {
 };
 
 export const sportIconWrap: Record<ActivityType, string> = {
-  RUN: 'bg-orange-500/10 text-orange-600',
-  BIKE: 'bg-emerald-500/10 text-emerald-600',
-  SWIM: 'bg-blue-500/10 text-blue-600',
-  STRENGTH: 'bg-violet-500/10 text-violet-600',
-  TRIATHLON: 'bg-fuchsia-500/10 text-fuchsia-600',
-  OTHER: 'bg-slate-500/10 text-slate-600',
+  RUN: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+  BIKE: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+  SWIM: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+  STRENGTH: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
+  TRIATHLON: 'bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-400',
+  OTHER: 'bg-muted text-muted-foreground',
 };
 
 export const chipDot: Record<ChipTone, string> = {
@@ -50,10 +50,10 @@ export const chipStaticSurface: Record<ChipTone, string> = {
 
 export const chipIconTone: Record<ChipTone, string> = {
   neutral: 'text-muted-foreground',
-  emerald: 'text-emerald-600',
-  amber: 'text-amber-600',
-  orange: 'text-orange-600',
-  red: 'text-red-600',
+  emerald: 'text-emerald-600 dark:text-emerald-400',
+  amber: 'text-amber-600 dark:text-amber-400',
+  orange: 'text-orange-600 dark:text-orange-400',
+  red: 'text-red-600 dark:text-red-400',
 };
 
 export function activitySourceLabel(activity: {

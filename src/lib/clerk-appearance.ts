@@ -1,18 +1,8 @@
 import { shadcn } from '@clerk/themes';
 
-/** Tokens SharpIt — alignés sur globals.css (sauge bien-être #3a9e6a). */
+/** Tokens SharpIt — primary brand only; surfaces follow globals.css via shadcn theme. */
 const SHARPIT = {
   primary: '#3a9e6a',
-  primaryHover: '#2f8558',
-  background: '#f8faf8',
-  foreground: '#1a2e24',
-  muted: '#6b7c72',
-  card: '#ffffff',
-  border: '#dfe8e2',
-  input: '#ffffff',
-  danger: '#dc2626',
-  success: '#059669',
-  warning: '#d97706',
   radius: '0.625rem',
 } as const;
 
@@ -45,25 +35,15 @@ const elements = {
   userButtonPopoverCard: 'rounded-xl border border-border/80 bg-card shadow-lg',
   userButtonPopoverActionButton: 'hover:bg-muted/60',
   userButtonPopoverActionButtonText: 'text-foreground',
-  userButtonPopoverFooter: 'hidden',
   userPreviewMainIdentifier: 'font-medium text-foreground',
   userPreviewSecondaryIdentifier: 'text-muted-foreground',
+  userButtonPopoverFooter: 'hidden',
 } as const;
 
 export const clerkAppearance = {
   theme: shadcn,
   variables: {
     colorPrimary: SHARPIT.primary,
-    colorBackground: SHARPIT.card,
-    colorInputBackground: SHARPIT.input,
-    colorInputText: SHARPIT.foreground,
-    colorText: SHARPIT.foreground,
-    colorTextSecondary: SHARPIT.muted,
-    colorTextOnPrimaryBackground: '#ffffff',
-    colorDanger: SHARPIT.danger,
-    colorSuccess: SHARPIT.success,
-    colorWarning: SHARPIT.warning,
-    colorNeutral: SHARPIT.muted,
     borderRadius: SHARPIT.radius,
     fontFamily: 'var(--font-sans), ui-sans-serif, system-ui, sans-serif',
     fontFamilyButtons: 'var(--font-sans), ui-sans-serif, system-ui, sans-serif',

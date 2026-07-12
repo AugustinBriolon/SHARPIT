@@ -5,6 +5,7 @@ import { fr } from 'date-fns/locale';
 import { LineChart, Line, XAxis, CartesianGrid, Tooltip } from 'recharts';
 import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 import { EyebrowLabel } from '@/components/ui/eyebrow-label';
+import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 import { buildDailyWindowSeries, indexHealthEntriesByDay } from '@/lib/health';
 import type { ClientHealthEntry } from '@/lib/query/types';
 
@@ -13,6 +14,7 @@ import {
   computeSleepDebt7d,
   SLEEP_TARGET_MIN,
 } from '@/lib/sleep-scoring';
+import { CHART_RECOVERY_STROKE, CHART_TEMPO_STROKE } from '@/lib/chart-theme';
 
 export function EvolutionChart({
   entries,
@@ -69,14 +71,22 @@ export function EvolutionChart({
               tickLine={false}
             />
             <Tooltip
-              formatter={(v) => (v != null ? v : '—')}
-              itemStyle={{ color: 'hsl(var(--foreground))' }}
-              labelStyle={{ color: 'hsl(var(--muted-foreground))' }}
-              contentStyle={{
-                background: 'hsl(var(--card))',
-                border: '1px solid hsl(var(--border))',
-                borderRadius: '0.5rem',
-                fontSize: '11px',
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null;
+                return (
+                  <ChartTooltipCard>
+                    <p className="text-muted-foreground mb-1">{label}</p>
+                    {payload.map((entry) => (
+                      <p
+                        key={entry.name}
+                        className="font-medium tabular-nums"
+                        style={{ color: entry.color }}
+                      >
+                        {entry.name}: {entry.value != null ? entry.value : '—'}
+                      </p>
+                    ))}
+                  </ChartTooltipCard>
+                );
               }}
             />
             <Line
@@ -84,7 +94,7 @@ export function EvolutionChart({
               dataKey="recovery"
               dot={false}
               name="Récup"
-              stroke="#10b981"
+              stroke={CHART_RECOVERY_STROKE}
               strokeWidth={2}
               type="monotone"
               connectNulls
@@ -94,7 +104,7 @@ export function EvolutionChart({
               dataKey="sleep"
               dot={false}
               name="Sommeil"
-              stroke="#3b82f6"
+              stroke={CHART_TEMPO_STROKE}
               strokeWidth={2}
               type="monotone"
               connectNulls
@@ -103,7 +113,7 @@ export function EvolutionChart({
         </ResponsiveChartFrame>
       ) : (
         <div className="flex h-[140px] items-center justify-center">
-          <p className="text-xs text-slate-400">Pas encore de données sur 7 jours</p>
+          <p className="text-muted-foreground text-xs">Pas encore de données sur 7 jours</p>
         </div>
       )}
     </div>

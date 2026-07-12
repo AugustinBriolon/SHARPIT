@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
 import { CorpsPanel } from '@/components/corps/corps-ui';
 import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
+import { CHART_ACTIVE_DOT_FILL, CHART_GRID_COLOR, CHART_TICK_COLOR } from '@/lib/chart-theme';
 
 function formatMetricValue(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '');
@@ -70,7 +71,7 @@ export function MetricLineChart<T extends { label: string }>({
   const hasData = data.some((d) => d[dataKey] != null);
 
   return (
-    <CorpsPanel className="overflow-hidden bg-white p-0">
+    <CorpsPanel className="overflow-hidden p-0">
       <div className="border-border/50 border-b px-4 py-3">
         <p className="text-sm font-semibold">{title}</p>
         {subtitle && <p className="text-muted-foreground mt-0.5 text-[10px]">{subtitle}</p>}
@@ -81,30 +82,35 @@ export function MetricLineChart<T extends { label: string }>({
             <div className={cn('transition-opacity', loading && 'opacity-45')}>
               <ResponsiveChartFrame height={192}>
                 <LineChart data={data} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
-                  <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" />
+                  <CartesianGrid stroke={CHART_GRID_COLOR} strokeDasharray="3 3" />
                   <XAxis
                     axisLine={false}
                     dataKey="label"
-                    tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 10 }}
+                    tick={{ fill: CHART_TICK_COLOR, fontSize: 10 }}
                     tickLine={false}
                     ticks={ticks.map((d) => d.label)}
                   />
                   <YAxis
                     axisLine={false}
                     domain={['auto', 'auto']}
-                    tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 10 }}
+                    tick={{ fill: CHART_TICK_COLOR, fontSize: 10 }}
                     tickFormatter={(value: number) => formatMetricValue(value)}
                     tickLine={false}
                   />
                   <Tooltip content={<Tip unit={unit} />} />
                   <Line
-                    activeDot={{ r: 4, stroke: color, strokeWidth: 1.5, fill: 'white' }}
                     dataKey={dataKey}
                     dot={{ r: 2, strokeWidth: 0, fill: color }}
                     isAnimationActive={false}
                     stroke={color}
                     strokeWidth={2}
                     type="monotone"
+                    activeDot={{
+                      r: 4,
+                      stroke: color,
+                      strokeWidth: 1.5,
+                      fill: CHART_ACTIVE_DOT_FILL,
+                    }}
                     connectNulls
                   />
                 </LineChart>

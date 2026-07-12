@@ -1,27 +1,28 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatRadialValue,
+  RADIAL_EMPTY_COLOR,
   radialFillPercent,
   resolveRadialStrokeColor,
   scoreStrokeColor,
 } from '@/lib/radial-gauge';
 
 describe('scoreStrokeColor', () => {
-  it('null → empty gray', () => expect(scoreStrokeColor(null)).toBe('#CBD5E1'));
-  it('85 → emerald', () => expect(scoreStrokeColor(85)).toBe('#059669'));
-  it('50 → amber', () => expect(scoreStrokeColor(50)).toBe('#D97706'));
-  it('20 → red', () => expect(scoreStrokeColor(20)).toBe('#DC2626'));
+  it('null → empty token', () => expect(scoreStrokeColor(null)).toBe(RADIAL_EMPTY_COLOR));
+  it('85 → base signal', () => expect(scoreStrokeColor(85)).toBe('var(--signal-base)'));
+  it('50 → caution signal', () => expect(scoreStrokeColor(50)).toBe('var(--signal-caution)'));
+  it('20 → risk signal', () => expect(scoreStrokeColor(20)).toBe('var(--signal-risk)'));
 });
 
 describe('resolveRadialStrokeColor', () => {
-  it('neutral → fixed gray-blue', () => {
-    expect(resolveRadialStrokeColor(42, 'neutral')).toBe('#809cb6');
+  it('neutral → fixed neutral token', () => {
+    expect(resolveRadialStrokeColor(42, 'neutral')).toBe('var(--signal-neutral)');
   });
-  it('strain → fixed blue', () => {
-    expect(resolveRadialStrokeColor(42, 'strain')).toBe('#3B82F6');
+  it('strain → fixed threshold token', () => {
+    expect(resolveRadialStrokeColor(42, 'strain')).toBe('var(--signal-threshold)');
   });
   it('dynamic → score-based', () => {
-    expect(resolveRadialStrokeColor(85, 'dynamic')).toBe('#059669');
+    expect(resolveRadialStrokeColor(85, 'dynamic')).toBe('var(--signal-base)');
   });
 });
 

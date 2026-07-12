@@ -11,6 +11,10 @@ export interface NormalizedStreamChartPoint {
   pace: number | null;
 }
 
+export function formatAltitudeMeters(value: number): string {
+  return value.toFixed(2);
+}
+
 export function normalizeStreamChartData(samples: StreamSample[]): NormalizedStreamChartPoint[] {
   return samples.map((sample) => {
     const speedKmh = sample.speed != null ? sample.speed * 3.6 : null;
@@ -19,7 +23,7 @@ export function normalizeStreamChartData(samples: StreamSample[]): NormalizedStr
     return {
       xDistanceKm: Number((sample.d / 1000).toFixed(3)),
       xTimeMin: Number((sample.t / 60).toFixed(2)),
-      alt: sample.alt,
+      alt: sample.alt != null ? Number(sample.alt.toFixed(2)) : null,
       hr: sample.hr,
       watts: sample.watts,
       cadence: sample.cadence,
