@@ -77,9 +77,9 @@ async function main() {
     (prefix) => `${prefix}_${randomUUID()}`,
   );
 
-  console.log(`Notes pending migration: ${pending.length}`);
-  console.log(`Bundles to write: ${bundles.length}`);
-  console.log(`Report rows: ${report.length}`);
+  console.info(`Notes pending migration: ${pending.length}`);
+  console.info(`Bundles to write: ${bundles.length}`);
+  console.info(`Report rows: ${report.length}`);
 
   if (dryRun) {
     printReport(report);
@@ -102,12 +102,12 @@ async function main() {
   }
 
   printReport(report);
-  console.log('Migration complete.');
+  console.info('Migration complete.');
 }
 
 function printReport(report: MigrationReportRow[]) {
   for (const row of report) {
-    console.log(
+    console.info(
       `[${row.legacySource}:${row.legacyId}] → ${row.destination}:${row.destinationId} | ${row.transformation}`,
     );
   }

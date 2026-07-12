@@ -17,7 +17,7 @@ import {
   SkeletonCard,
   SkeletonEyebrow,
   SkeletonHeroSplit,
-  SkeletonPill,
+  SkeletonPhysioRail,
   SkeletonText,
   SkeletonTitle,
 } from '@/components/ui/skeleton-patterns';
@@ -59,49 +59,88 @@ function SectionHeader({
 
 function TrainingDashboardSkeleton() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       <div className="space-y-2">
         <SkeletonEyebrow className="w-24" />
-        <SkeletonTitle className="w-64 max-w-full" size="lg" />
-        <SkeletonText widths={['100%', '94%', '62%']} />
+        <SkeletonTitle className="h-8 w-72 max-w-full" size="md" />
+        <SkeletonText widths={['100%', '94%', '72%']} />
       </div>
+
       <SkeletonHeroSplit />
-      <SkeletonCard>
+
+      <SkeletonCard className="px-0 py-0">
+        <div className="mb-3 flex items-end justify-between gap-3 px-4 pt-4 sm:px-5">
+          <div className="space-y-2">
+            <SkeletonEyebrow className="w-32" />
+            <Skeleton className="h-4 w-56 max-w-full rounded-full border-0" />
+          </div>
+          <Skeleton className="h-3.5 w-28 rounded-full border-0" />
+        </div>
+        <div className="grid grid-cols-1 gap-2 px-4 pb-4 sm:px-5 md:grid-cols-[repeat(auto-fit,minmax(16rem,1fr))]">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="analysis-panel rounded-analysis space-y-2 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <Skeleton className="h-5 w-16 rounded-full border-0" />
+                <Skeleton className="h-5 w-14 rounded-full" />
+              </div>
+              <Skeleton className="h-4 w-40 max-w-full rounded-full border-0" />
+              <SkeletonPhysioRail />
+            </div>
+          ))}
+        </div>
+      </SkeletonCard>
+
+      <SkeletonCard className="px-0 py-0">
+        <div className="mb-3 flex items-end justify-between gap-3 px-4 pt-4 sm:px-5">
+          <div className="space-y-2">
+            <SkeletonEyebrow className="w-28" />
+            <Skeleton className="h-4 w-48 max-w-full rounded-full border-0" />
+          </div>
+          <Skeleton className="h-3.5 w-24 rounded-full border-0" />
+        </div>
+        <div className="space-y-2 px-4 pb-4 sm:px-5">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="border-border/60 flex items-center gap-3 rounded-xl border px-3 py-3"
+            >
+              <Skeleton className="size-9 shrink-0 rounded-xl" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <Skeleton className="h-4 w-40 max-w-full rounded-full border-0" />
+                <Skeleton className="h-3 w-24 rounded-full border-0" />
+              </div>
+              <Skeleton className="h-5 w-12 rounded-full" />
+            </div>
+          ))}
+        </div>
+      </SkeletonCard>
+
+      <div className="space-y-3">
         <div className="mb-3 flex items-end justify-between gap-3">
           <div className="space-y-2">
             <SkeletonEyebrow className="w-32" />
-            <SkeletonText widths={['58%']} />
+            <Skeleton className="h-4 w-52 max-w-full rounded-full border-0" />
           </div>
-          <SkeletonText widths={['72px']} />
+          <Skeleton className="h-3.5 w-28 rounded-full border-0" />
         </div>
-        <Skeleton className="rounded-analysis-lg h-24" />
-      </SkeletonCard>
-      <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="space-y-3">
-          <SkeletonCard>
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <SkeletonCard className="min-h-48">
             <SkeletonEyebrow className="w-24" />
-            <Skeleton className="rounded-analysis mt-3 h-24" />
+            <Skeleton className="rounded-analysis mt-4 h-32 w-full border-0" />
           </SkeletonCard>
-          <SkeletonCard>
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <div className="space-y-2">
-                <SkeletonEyebrow className="w-28" />
-                <SkeletonText widths={['72%']} />
-              </div>
-              <SkeletonPill className="w-28" />
-            </div>
-            <div className="grid grid-cols-5 gap-1.5">
+          <SkeletonCard className="min-h-48">
+            <SkeletonEyebrow className="w-28" />
+            <div className="mt-4 grid grid-cols-5 gap-1.5">
               {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="rounded-analysis h-24" />
+                <Skeleton key={i} className="rounded-analysis h-20 border-0" />
               ))}
             </div>
           </SkeletonCard>
+          <SkeletonCard className="min-h-56 md:col-span-2">
+            <SkeletonEyebrow className="w-32" />
+            <Skeleton className="rounded-analysis mt-4 h-40 w-full border-0" />
+          </SkeletonCard>
         </div>
-        <SkeletonCard>
-          <SkeletonEyebrow className="w-24" />
-          <SkeletonText className="mt-2" widths={['78%']} />
-          <Skeleton className="rounded-analysis mt-4 h-72" />
-        </SkeletonCard>
       </div>
     </div>
   );
@@ -269,21 +308,10 @@ export function TrainingDashboard() {
           href="/training/progression"
           title="Progression récente"
         />
-        <div className="flex flex-col items-start gap-3 lg:flex-row lg:items-start">
-          <div className="w-full min-w-0 space-y-3 lg:flex-1">
-            <ActivityConsistencyPanel activities={activities} />
-            <TrainingWeekCalendarPreview
-              activities={activities}
-              plannedSessions={plannedSessions}
-            />
-          </div>
-          <div className="w-full min-w-0 lg:flex-1">
-            <SportDistributionChart
-              data={analytics.distribution}
-              limit={4}
-              showAllHref="/training/progression"
-            />
-          </div>
+        <div className="grdi-cols-1 grid gap-5 md:grid-cols-2">
+          <ActivityConsistencyPanel activities={activities} />
+          <TrainingWeekCalendarPreview activities={activities} plannedSessions={plannedSessions} />
+          <SportDistributionChart className="col-span-2" data={analytics.distribution} />
         </div>
       </section>
     </div>

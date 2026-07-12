@@ -50,6 +50,12 @@ export function intensityLabel(intensity: SessionIntensity | null): string {
   return intensity ? intensityLabels[intensity] : '—';
 }
 
+export const exposureLabels: Record<'INDOOR' | 'OUTDOOR' | 'UNKNOWN', string> = {
+  UNKNOWN: 'À confirmer',
+  OUTDOOR: 'Extérieur',
+  INDOOR: 'Intérieur / home trainer',
+};
+
 export function formatPlannedDuration(min?: number | null): string {
   if (min == null) return '—';
   const h = Math.floor(min / 60);

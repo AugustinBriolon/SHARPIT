@@ -1,6 +1,10 @@
 import { ActivityType } from '@prisma/client';
 import { differenceInCalendarDays, startOfDay, subDays } from 'date-fns';
 import { prisma } from '@/lib/prisma';
+import {
+  formatActivityWeatherNarrative,
+  parseActivityWeather,
+} from '@/lib/activity/activity-weather';
 import { formatDistance, formatDuration } from '@/lib/format';
 import { formatGoalDisplayValue, parseGoalMetricConfig } from '@/lib/goal-metric-config';
 
@@ -58,6 +62,13 @@ function avg(values: number[]): number | null {
   return values.reduce((a, b) => a + b, 0) / values.length;
 }
 
+function weatherFact(raw: string | null): string | null {
+  if (!raw?.trim()) return null;
+  const parsed = parseActivityWeather(raw);
+  if (parsed) return `Météo : ${formatActivityWeatherNarrative(parsed)}`;
+  return `Météo : ${raw.trim()}`;
+}
+
 function describeActivity(activity: ActivityRow): string {
   const bits = [
     `Sport : ${TYPE_FR[activity.type] ?? activity.type}`,
@@ -67,7 +78,7 @@ function describeActivity(activity: ActivityRow): string {
     activity.load != null ? `Charge : ${Math.round(activity.load)} TSS` : null,
     activity.rpe != null ? `RPE : ${activity.rpe}/10` : null,
     activity.feeling ? `Ressenti : ${activity.feeling}` : null,
-    activity.weather ? `Météo : ${activity.weather}` : null,
+    weatherFact(activity.weather),
     activity.notes ? `Notes : ${activity.notes}` : null,
   ].filter(Boolean) as string[];
 

@@ -199,6 +199,11 @@ model Activity {
   narrativeAnalysis   Json?
   narrativeAnalyzedAt DateTime?
 
+  /// Lieu observé (reverse geocode GPS après séance)
+  observedLocationLabel String?
+  observedLocationLat   Float?
+  observedLocationLng   Float?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -222,6 +227,10 @@ model AthleteProfile {
 
   sleepTargetMinutes    Int? // durée de sommeil visée (min)
   sleepBedtimeTargetMin Int? // heure de coucher visée (minutes depuis minuit, locale)
+
+  homeLocationLabel String?
+  homeLocationLat   Float?
+  homeLocationLng   Float?
 
   thresholdSnapshots AthleteThresholdSnapshot[]
 
@@ -1015,6 +1024,21 @@ model PlannedSession {
 
   @@index([date])
   @@index([brickGroupId])
+}
+
+model AthleteTravelContext {
+  id            String   @id @default(cuid())
+  label         String?
+  locationLabel String
+  locationLat   Float
+  locationLng   Float
+  startDate     DateTime @db.Date
+  endDate       DateTime @db.Date
+  note          String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([startDate, endDate])
 }
 
 // Analyse globale d'un brick (enchaînement multisport) : agrège les jambes

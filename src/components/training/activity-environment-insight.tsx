@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { ThermometerSun } from 'lucide-react';
 import type { ActivityEnvironmentalCorrection } from '@/core/environment';
 import { Card, CardContent } from '@/components/ui/card';
@@ -5,6 +6,31 @@ import { resolveEnvironmentalExplanation } from '@/lib/presentation/environment'
 
 interface ActivityEnvironmentInsightProps {
   correction: ActivityEnvironmentalCorrection;
+}
+
+function environmentInsightBody(narrativeLines: string[], penaltyPct: number | null): ReactNode {
+  if (narrativeLines.length > 0) {
+    return (
+      <div className="space-y-1.5">
+        {narrativeLines.map((line) => (
+          <p key={line} className="text-foreground text-sm leading-relaxed">
+            {line}
+          </p>
+        ))}
+      </div>
+    );
+  }
+
+  if (penaltyPct != null && penaltyPct > 0) {
+    return (
+      <p className="text-foreground text-sm leading-relaxed">
+        Environnement : environ {penaltyPct} % du ralentissement peut s&apos;expliquer par les
+        conditions.
+      </p>
+    );
+  }
+
+  return null;
 }
 
 export function ActivityEnvironmentInsight({ correction }: ActivityEnvironmentInsightProps) {
@@ -29,20 +55,7 @@ export function ActivityEnvironmentInsight({ correction }: ActivityEnvironmentIn
           <p className="text-label">Contexte environnemental</p>
         </div>
 
-        {narrativeLines.length > 0 ? (
-          <div className="space-y-1.5">
-            {narrativeLines.map((line) => (
-              <p key={line} className="text-foreground text-sm leading-relaxed">
-                {line}
-              </p>
-            ))}
-          </div>
-        ) : penaltyPct != null && penaltyPct > 0 ? (
-          <p className="text-foreground text-sm leading-relaxed">
-            Environnement : environ {penaltyPct} % du ralentissement peut s&apos;expliquer par les
-            conditions.
-          </p>
-        ) : null}
+        {environmentInsightBody(narrativeLines, penaltyPct)}
 
         {correction.factors.length > 0 ? (
           <ul className="text-muted-foreground space-y-1 text-xs">

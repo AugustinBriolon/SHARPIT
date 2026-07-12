@@ -19,7 +19,13 @@ import {
   useDeleteConversation,
 } from '@/hooks/use-coach';
 import { useActivities, usePlannedSessions } from '@/hooks/use-data';
-import { buildActivityDiscussPrompt, buildSessionDiscussPrompt } from '@/lib/coach-session-thread';
+import { useProjectedAthleteViewModel } from '@/hooks/use-projected-athlete-view-model';
+import type { ProjectionHorizonDays } from '@/core/projection/types';
+import {
+  buildActivityDiscussPrompt,
+  buildPlanningDiscussPrompt,
+  buildSessionDiscussPrompt,
+} from '@/lib/coach-session-thread';
 import { activityTypeLabels } from '@/lib/format';
 import { parseSessionAnalysis } from '@/lib/session-analysis-display';
 import type { SessionAnalysis } from '@/lib/validators/coach';
@@ -30,8 +36,13 @@ export function CoachView() {
   const searchParams = useSearchParams();
   const discussId = searchParams.get('discuss');
   const discussActivityId = searchParams.get('discussActivity');
+  const discussPlanningRaw = searchParams.get('discussPlanning');
+  const discussPlanningHorizon = [1, 3, 7, 14].includes(Number(discussPlanningRaw))
+    ? (Number(discussPlanningRaw) as ProjectionHorizonDays)
+    : null;
   const plannedQuery = usePlannedSessions();
   const activitiesQuery = useActivities();
+  const projectionQuery = useProjectedAthleteViewModel(discussPlanningHorizon ?? 7);
   const [generatorOpen, setGeneratorOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [latchedBootstrapPrompt, setLatchedBootstrapPrompt] = useState<string | undefined>(
@@ -71,6 +82,15 @@ export function CoachView() {
   }
 
   const bootstrapPrompt = useMemo(() => {
+    if (discussPlanningHorizon) {
+      const projection = projectionQuery.data;
+      if (!projection?.visible) return undefined;
+      return buildPlanningDiscussPrompt({
+        synthesisSentence: projection.synthesisSentence,
+        horizonDays: discussPlanningHorizon,
+      });
+    }
+
     if (discussId) {
       const session = (plannedQuery.data ?? []).find((s) => s.id === discussId);
       if (!session?.analysis) return undefined;
@@ -118,7 +138,14 @@ export function CoachView() {
           }
         : undefined,
     });
-  }, [discussId, discussActivityId, plannedQuery.data, activitiesQuery.data]);
+  }, [
+    discussPlanningHorizon,
+    projectionQuery.data,
+    discussId,
+    discussActivityId,
+    plannedQuery.data,
+    activitiesQuery.data,
+  ]);
 
   useEffect(() => {
     if (!bootstrapPrompt || latchedBootstrapPrompt) return;
@@ -127,6 +154,12 @@ export function CoachView() {
 
   useEffect(() => {
     if (discussBootstrapped.current) return;
+    if (discussPlanningHorizon) {
+      if (projectionQuery.isPending) return;
+      if (!projectionQuery.data?.visible) return;
+      bootstrapDiscussConversation(`planning:${discussPlanningHorizon}`);
+      return;
+    }
     if (discussId) {
       if (plannedQuery.isPending) return;
       const session = (plannedQuery.data ?? []).find((s) => s.id === discussId);
@@ -141,6 +174,9 @@ export function CoachView() {
       bootstrapDiscussConversation(`activity:${discussActivityId}`);
     }
   }, [
+    discussPlanningHorizon,
+    projectionQuery.isPending,
+    projectionQuery.data,
     discussId,
     discussActivityId,
     plannedQuery.isPending,
@@ -151,7 +187,7 @@ export function CoachView() {
   ]);
 
   useEffect(() => {
-    if (discussId || discussActivityId) return;
+    if (discussId || discussActivityId || discussPlanningHorizon) return;
     if (conversationsQuery.isPending || conversations.length > 0) return;
     if (initialized.current) return;
     initialized.current = true;
@@ -162,6 +198,7 @@ export function CoachView() {
     createConversation,
     discussId,
     discussActivityId,
+    discussPlanningHorizon,
   ]);
 
   async function handleNewConversation() {
@@ -181,7 +218,7 @@ export function CoachView() {
     if (selectedId === id) setActiveId(null);
   }
 
-  const discussKey = discussId ?? discussActivityId ?? 'free';
+  const discussKey = discussId ?? discussActivityId ?? discussPlanningHorizon ?? 'free';
 
   return (
     <div className="space-y-6">

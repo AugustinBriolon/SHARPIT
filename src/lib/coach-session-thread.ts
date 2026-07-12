@@ -129,3 +129,24 @@ ${input.analysis.summary}${remarks}${reco}`;
 
   return `Je consulte ma séance réalisée « ${name} » (${input.sportLabel}). Réalisé : ${actualBits.join(' · ') || '—'}.${plannedBlock}`;
 }
+
+const PLANNING_HORIZON_FR: Record<number, string> = {
+  1: 'demain',
+  3: 'les 3 prochains jours',
+  7: 'les 7 prochains jours',
+  14: 'les 14 prochains jours',
+};
+
+/** Message pour discuter de la projection du planning hebdomadaire. */
+export function buildPlanningDiscussPrompt(input: {
+  synthesisSentence: string;
+  horizonDays: number;
+}): string {
+  const horizonLabel = PLANNING_HORIZON_FR[input.horizonDays] ?? `${input.horizonDays} jours`;
+
+  return `Je consulte mon planning sur ${horizonLabel}. Voici le conseil du coach :
+
+${input.synthesisSentence}
+
+J'aimerais en discuter avec toi : ce plan me convient-il, et que devrais-je ajuster ?`;
+}

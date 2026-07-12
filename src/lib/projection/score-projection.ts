@@ -15,6 +15,15 @@ function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
 
+function fatigueTrajectoryFromTsb(
+  tsb: number,
+  fallback: FatigueState['trajectory'],
+): FatigueState['trajectory'] {
+  if (tsb < -20) return 'ACCUMULATING';
+  if (tsb > 5) return 'RESOLVING';
+  return fallback;
+}
+
 export function projectReadinessScore(current: number | null, tsbDelta: number): number | null {
   if (current == null) return null;
   return Math.round(clamp(current + tsbDelta * 0.45, 0, 100));
@@ -83,7 +92,7 @@ export function synthesizeProjectedFatigue(
   trainingDayId: string,
   tsb: number,
 ): FatigueState {
-  const trajectory = tsb < -20 ? 'ACCUMULATING' : tsb > 5 ? 'RESOLVING' : base.trajectory;
+  const trajectory = fatigueTrajectoryFromTsb(tsb, base.trajectory);
   return {
     ...base,
     fatigueIndex: projectedIndex,

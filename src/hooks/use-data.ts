@@ -21,6 +21,7 @@ import {
   fetchTrainingPlan,
 } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
+import { fetchPlannedSessionPresentation } from '@/lib/query/presentation-fetchers';
 import { listOptimistic, tempId } from '@/lib/query/optimistic';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import type { BrickAnalysis } from '@/lib/validators/coach';
@@ -205,6 +206,15 @@ export function usePlannedSessions() {
     queryKey: queryKeys.plannedSessions,
     queryFn: fetchPlannedSessions,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function usePlannedSessionPresentation(sessionId: string | null | undefined) {
+  return useQuery({
+    queryKey: queryKeys.plannedSessionPresentation(sessionId ?? ''),
+    queryFn: () => fetchPlannedSessionPresentation(sessionId!),
+    enabled: Boolean(sessionId),
+    staleTime: 0,
   });
 }
 
@@ -456,18 +466,29 @@ export function usePlannedSessionMutations() {
     }),
   });
 
+  const updateListOpts = listOptimistic<
+    ClientPlannedSession,
+    { id: string; data: Partial<PlannedSessionPayload> }
+  >({
+    queryClient,
+    queryKey: key,
+    apply: (prev, { id, data }) =>
+      prev.map((s) =>
+        s.id === id ? ({ ...s, ...data, updatedAt: new Date() } as ClientPlannedSession) : s,
+      ),
+    error: 'Impossible de mettre à jour la séance.',
+  });
+
   const update = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<PlannedSessionPayload> }) =>
       sendJson(`/api/planned-sessions/${id}`, 'PATCH', data),
-    ...listOptimistic<ClientPlannedSession, { id: string; data: Partial<PlannedSessionPayload> }>({
-      queryClient,
-      queryKey: key,
-      apply: (prev, { id, data }) =>
-        prev.map((s) =>
-          s.id === id ? ({ ...s, ...data, updatedAt: new Date() } as ClientPlannedSession) : s,
-        ),
-      error: 'Impossible de mettre à jour la séance.',
-    }),
+    ...updateListOpts,
+    onSettled: (_data, _error, variables) => {
+      updateListOpts.onSettled?.();
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.plannedSessionPresentation(variables.id),
+      });
+    },
   });
 
   const remove = useMutation({

@@ -20,6 +20,8 @@ const ADVISORY_HEADLINES: Record<string, string> = {
   'planned.advisory.indoorAlternative.headline': 'Alternative intérieur possible',
   'planned.advisory.recoveryDemand.headline': 'Récupération plus exigeante',
   'planned.advisory.proceed.headline': 'Conditions favorables',
+  'planned.advisory.rainRisk.headline': 'Pluie probable sur le créneau',
+  'planned.advisory.coldRisk.headline': 'Froid marqué attendu',
 };
 
 const ADVISORY_RATIONALES: Record<string, string> = {
@@ -41,6 +43,10 @@ const ADVISORY_RATIONALES: Record<string, string> = {
     'La séance demandera plus de récupération que prévu — garde de la marge les jours suivants.',
   'planned.advisory.proceed.rationale':
     'Les conditions attendues restent compatibles avec ton intention.',
+  'planned.advisory.rainRisk.rationale':
+    'Des précipitations sont attendues — prévois équipement adapté ou un plan B.',
+  'planned.advisory.coldRisk.rationale':
+    'Des températures basses sont attendues — échauffement et équipement hivernal recommandés.',
 };
 
 const PREP_LABELS: Record<string, (params?: Readonly<Record<string, string | number>>) => string> =
@@ -90,11 +96,16 @@ export function buildPlannedSessionViewModel(input: {
   const env = context.environment;
   const needsLocation = needsExposureConfirmation(session.type, context.intention.exposure);
 
-  const conditionsHeadline = needsLocation
-    ? 'Contexte à confirmer'
-    : env
-      ? (THERMAL_CONDITIONS[env.thermalStressLevel] ?? null)
-      : null;
+  function plannedConditionsHeadline(
+    needsLocation: boolean,
+    env: PlannedSessionContext['environment'] | null,
+  ): string | null {
+    if (needsLocation) return 'Contexte à confirmer';
+    if (!env) return null;
+    return THERMAL_CONDITIONS[env.thermalStressLevel] ?? null;
+  }
+
+  const conditionsHeadline = plannedConditionsHeadline(needsLocation, env);
 
   const impactSummary = env ? (IMPACT_SUMMARY[env.trainingImpact] ?? null) : null;
 

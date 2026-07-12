@@ -6,12 +6,7 @@
  */
 
 import type { DecisionState } from '@/core/decision/decision-state';
-import type {
-  AdaptationState,
-  FatigueState,
-  OverallVerdict,
-  RecoveryState,
-} from '@/core/digital-twin/types';
+import type { AdaptationState, FatigueState, RecoveryState } from '@/core/digital-twin/types';
 import type { EnvironmentalDecisionSnapshot } from '@/core/inference/environment/types';
 import type { TrainingEnvironmentalImpact } from '@/core/inference/environment/types';
 

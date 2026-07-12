@@ -189,6 +189,14 @@ function buildWindStressor(input: {
   };
 }
 
+function pickHeatProxy(
+  features: ReturnType<typeof buildEnvironmentalFeatures>,
+): import('./types').AvailableMetric<number> | null {
+  if (features.heatIndexC.available) return features.heatIndexC;
+  if (features.estimatedWetBulbC.available) return features.estimatedWetBulbC;
+  return null;
+}
+
 function buildHydrationStressor(input: {
   weather: WeatherMeasurements;
   exposure: ReturnType<typeof applicabilityToExposure>;
@@ -196,11 +204,7 @@ function buildHydrationStressor(input: {
   records: readonly EnvironmentalObservationRecord[];
 }): EnvironmentalStressor {
   const features = buildEnvironmentalFeatures(input.weather, input.exposure);
-  const proxy = features.heatIndexC.available
-    ? features.heatIndexC
-    : features.estimatedWetBulbC.available
-      ? features.estimatedWetBulbC
-      : null;
+  const proxy = pickHeatProxy(features);
 
   if (!proxy) {
     return {

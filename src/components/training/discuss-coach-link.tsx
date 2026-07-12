@@ -1,16 +1,24 @@
 import { MessageCircle } from 'lucide-react';
+import type { ProjectionHorizonDays } from '@/core/projection/types';
 import { LinkButton } from '@/components/ui/link-button';
 
 export function DiscussCoachLink({
   activityId,
   plannedSessionId,
+  planningHorizon,
 }: {
-  activityId: string;
+  activityId?: string;
   plannedSessionId?: string | null;
+  planningHorizon?: ProjectionHorizonDays;
 }) {
-  const href = plannedSessionId
-    ? `/coach?discuss=${plannedSessionId}`
-    : `/coach?discussActivity=${activityId}`;
+  let href = '/coach';
+  if (planningHorizon) {
+    href = `/coach?discussPlanning=${planningHorizon}`;
+  } else if (plannedSessionId) {
+    href = `/coach?discuss=${plannedSessionId}`;
+  } else if (activityId) {
+    href = `/coach?discussActivity=${activityId}`;
+  }
 
   return (
     <LinkButton href={href} variant="outline">

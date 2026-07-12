@@ -13,10 +13,17 @@
     {
       "path": "/api/cron/sync",
       "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/cron/planned-forecast",
+      "schedule": "0 19 * * *"
     }
   ],
   "functions": {
     "src/app/api/cron/sync/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/cron/planned-forecast/route.ts": {
       "maxDuration": 300
     },
     "src/app/api/renpho/sync/route.ts": {

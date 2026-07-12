@@ -6,11 +6,7 @@ import type { GeoLocation } from '@/core/environment';
 import type { PrismaClient } from '@prisma/client';
 import { approximateTrainingDayUtcRange } from '@/lib/training-day';
 
-const DEFAULT_LOCATION: GeoLocation = {
-  latitude: 48.8566,
-  longitude: 2.3522,
-  label: 'default',
-};
+import { resolveHomeLocation } from '@/lib/geocoding/home-location';
 
 function midpointFromLatLng(latlng: unknown): GeoLocation | null {
   if (!Array.isArray(latlng) || latlng.length === 0) return null;
@@ -47,8 +43,9 @@ export async function resolveAthleteGeoLocation(
   const fallbackLat = Number(process.env.SHARPIT_DEFAULT_LATITUDE);
   const fallbackLng = Number(process.env.SHARPIT_DEFAULT_LONGITUDE);
   if (Number.isFinite(fallbackLat) && Number.isFinite(fallbackLng)) {
-    return { latitude: fallbackLat, longitude: fallbackLng, label: 'configured-default' };
+    return { latitude: fallbackLat, longitude: fallbackLng, label: 'Colombes, France' };
   }
 
-  return DEFAULT_LOCATION;
+  const home = await resolveHomeLocation(prisma);
+  return home;
 }

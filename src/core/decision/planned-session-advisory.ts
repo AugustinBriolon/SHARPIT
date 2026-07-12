@@ -11,6 +11,7 @@ import type {
   PlannedSessionEnvironmentalProjection,
   PlannedSessionExposureSetting,
   PlannedSessionPreparationItem,
+  PlannedSessionWeatherSignals,
 } from '@/core/planned-session/types';
 import { needsExposureConfirmation } from '@/core/planned-session/defaults';
 import type { ActivityType } from '@prisma/client';
@@ -21,6 +22,7 @@ export type BuildPlannedSessionAdvisoriesInput = {
   readonly intensity: SessionIntensity | null;
   readonly environment: PlannedSessionEnvironmentalProjection | null;
   readonly scheduledHourLocal: number | null;
+  readonly weatherSignals?: PlannedSessionWeatherSignals | null;
 };
 
 export function buildPlannedSessionAdvisories(
@@ -64,6 +66,27 @@ export function buildPlannedSessionAdvisories(
 
   const isHard =
     input.intensity === 'THRESHOLD' || input.intensity === 'VO2MAX' || input.intensity === 'RACE';
+
+  const signals = input.weatherSignals;
+  if (signals?.maxPrecipitationMm != null && signals.maxPrecipitationMm >= 1.5) {
+    advisories.push({
+      kind: 'RAIN_RISK',
+      priority: 2,
+      headlineCode: 'planned.advisory.rainRisk.headline',
+      rationaleCode: 'planned.advisory.rainRisk.rationale',
+      confidence: env.confidence,
+    });
+  }
+
+  if (signals?.minTemperatureC != null && signals.minTemperatureC <= 2) {
+    advisories.push({
+      kind: 'COLD_RISK',
+      priority: 2,
+      headlineCode: 'planned.advisory.coldRisk.headline',
+      rationaleCode: 'planned.advisory.coldRisk.rationale',
+      confidence: env.confidence,
+    });
+  }
 
   if (env.thermalStressLevel === 'EXTREME' || env.thermalStressLevel === 'HIGH') {
     if (isHard) {
@@ -136,7 +159,7 @@ export function buildPlannedSessionPreparation(
   const items: PlannedSessionPreparationItem[] = [];
   const kinds = new Set(advisories.map((a) => a.kind));
 
-  if (kinds.has('HYDRATION')) {
+  if (kinds.has('HYDRATION') || kinds.has('RAIN_RISK')) {
     items.push({ code: 'planned.prep.hydration' });
   }
   if (kinds.has('REDUCE_INTENSITY') || kinds.has('SHIFT_EARLIER')) {

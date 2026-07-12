@@ -52,6 +52,8 @@ export type PlannedSessionAdvisoryKind =
   | 'REDUCE_INTENSITY'
   | 'INDOOR_ALTERNATIVE'
   | 'HYDRATION'
+  | 'RAIN_RISK'
+  | 'COLD_RISK'
   | 'RECOVERY_DEMAND'
   | 'PROCEED'
   | 'NO_FORECAST';
@@ -67,6 +69,12 @@ export type PlannedSessionAdvisory = {
 export type PlannedSessionPreparationItem = {
   readonly code: string;
   readonly params?: Readonly<Record<string, string | number>>;
+};
+
+export type PlannedSessionWeatherSignals = {
+  readonly maxPrecipitationMm: number | null;
+  readonly minTemperatureC: number | null;
+  readonly maxWindMps: number | null;
 };
 
 export type PlannedSessionContext = {

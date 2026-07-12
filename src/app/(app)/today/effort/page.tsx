@@ -15,7 +15,7 @@ export default function TodayEffortPage() {
   const viewModel = query.data ?? null;
 
   if (query.isPending && !viewModel) {
-    return <MetricDrillDownSkeleton title="Charge d'effort" variant="effort" />;
+    return <MetricDrillDownSkeleton variant="effort" />;
   }
 
   if (!viewModel || viewModel.emptyState) {

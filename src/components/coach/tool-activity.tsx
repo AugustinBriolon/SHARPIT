@@ -8,11 +8,19 @@ import {
   Layers,
   ListChecks,
   Loader2,
+  MapPin,
   PencilLine,
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { activityTypeLabels } from '@/lib/format';
+import {
+  failureHintForPart,
+  failureLabelForPart,
+  humanizeToolErrorMessage,
+  sessionTitleFromPart,
+} from '@/lib/coach-tool-display';
+import { isStaleCalendarToolPart } from '@/lib/coach-tool-parts';
 import { intensityLabels } from '@/lib/sessions';
 import { cn } from '@/lib/utils';
 
@@ -28,7 +36,8 @@ type ToolPart = {
   state?: string;
   input?: unknown;
   output?: unknown;
-  approval?: { id: string; isAutomatic?: boolean; approved?: boolean };
+  errorText?: string;
+  approval?: { id: string; isAutomatic?: boolean; approved?: boolean; reason?: string };
 };
 
 type Meta = {
@@ -69,6 +78,12 @@ const META: Record<string, Meta> = {
     running: 'Suppression de la séance…',
     proposal: 'Supprimer une séance',
   },
+  'tool-setTravelContext': {
+    label: 'Contexte voyage enregistré',
+    icon: MapPin,
+    running: 'Enregistrement du contexte voyage…',
+    proposal: 'Enregistrer un contexte voyage',
+  },
 };
 
 type SessionInput = {
@@ -80,6 +95,25 @@ type SessionInput = {
   durationMin?: number;
   load?: number;
   description?: string;
+  locationLabel?: string;
+  locationLat?: number;
+  locationLng?: number;
+  exposureSetting?: 'INDOOR' | 'OUTDOOR' | 'UNKNOWN';
+  startTime?: string | null;
+};
+
+const EXPOSURE_LABELS: Record<NonNullable<SessionInput['exposureSetting']>, string> = {
+  INDOOR: 'Intérieur',
+  OUTDOOR: 'Extérieur',
+  UNKNOWN: 'Non précisé',
+};
+
+type TravelInput = {
+  locationLabel?: string;
+  startDate?: string;
+  endDate?: string;
+  label?: string | null;
+  note?: string | null;
 };
 
 /** Résumé lisible de ce que l'IA propose, à partir de l'input de l'outil. */
@@ -92,6 +126,17 @@ function describeInput(
   const lines: string[] = [];
 
   const fmtType = (t?: ActivityType) => (t ? activityTypeLabels[t] : null);
+
+  if (type === 'tool-setTravelContext') {
+    const travel = input as unknown as TravelInput;
+    const headline = travel.label?.trim() || `Voyage · ${travel.locationLabel ?? 'Lieu'}`;
+    if (travel.startDate && travel.endDate) {
+      lines.push(`${travel.startDate} → ${travel.endDate}`);
+    }
+    if (travel.locationLabel) lines.push(travel.locationLabel);
+    if (travel.note) lines.push(travel.note);
+    return { headline, lines };
+  }
 
   if (type === 'tool-deletePlannedSession') {
     const headline = ref
@@ -145,8 +190,9 @@ function describeInput(
   }
 
   // update : on n'affiche que ce qui change
-  const headline = ref
-    ? `${ref.title ?? 'Séance'}${ref.date ? ` — ${ref.date}` : ''}`
+  const sessionTitle = ref?.title ?? (ref?.type ? fmtType(ref.type) : null);
+  const headline = sessionTitle
+    ? `${sessionTitle}${ref?.date ? ` — ${ref.date}` : ''}`
     : (input.title ?? 'Séance');
   if (input.date) lines.push(`Date → ${input.date}`);
   if (input.type) lines.push(`Type → ${fmtType(input.type)}`);
@@ -154,7 +200,15 @@ function describeInput(
   if (input.title) lines.push(`Titre → ${input.title}`);
   if (input.durationMin) lines.push(`Durée → ${input.durationMin} min`);
   if (input.load) lines.push(`Charge → ${input.load} TSS`);
+  if (input.startTime) lines.push(`Heure → ${input.startTime}`);
+  if (input.exposureSetting) {
+    lines.push(`Exposition → ${EXPOSURE_LABELS[input.exposureSetting]}`);
+  }
+  if (input.locationLabel) lines.push(`Lieu → ${input.locationLabel}`);
   if (input.description) lines.push(input.description);
+  if (lines.length === 0 && ref) {
+    lines.push('Mise à jour sans détail supplémentaire');
+  }
   return { headline, lines };
 }
 
@@ -163,11 +217,13 @@ export function ToolActivity({
   knownSessions = {},
   onApproval,
   disabled,
+  streamIdle = true,
 }: {
   part: ToolPart;
   knownSessions?: Record<string, KnownSession>;
   onApproval?: (id: string, approved: boolean) => void;
   disabled?: boolean;
+  streamIdle?: boolean;
 }) {
   const meta = META[part.type];
   if (!meta) return null;
@@ -224,32 +280,65 @@ export function ToolActivity({
 
   // 2) Refusé
   if (state === 'output-denied') {
+    const reason = part.approval?.reason;
     return (
       <div className="border-border/60 bg-card/40 text-muted-foreground flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs">
         <X className="size-3.5 shrink-0" />
         <span className="line-through">{meta.proposal}</span>
-        <span className="opacity-70">— proposition refusée</span>
+        <span className="opacity-70">— {reason?.trim() ? reason : 'proposition refusée'}</span>
       </div>
     );
   }
 
   const done = state === 'output-available';
   const failed = state === 'output-error';
+  const stale = isStaleCalendarToolPart(part, streamIdle);
+
+  if (stale) {
+    const staleMessage =
+      state === 'approval-responded'
+        ? "L'exécution a été interrompue"
+        : 'Proposition non finalisée — envoie un nouveau message pour continuer';
+    return (
+      <div
+        className="border-destructive/30 bg-destructive/5 text-destructive flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs"
+        title={state === 'approval-responded' ? "La séance n'a pas pu être ajoutée" : undefined}
+      >
+        <X className="size-3.5 shrink-0" />
+        <span className="font-medium">{failureLabelForPart(part)}</span>
+        <span className="opacity-90">— {staleMessage}</span>
+      </div>
+    );
+  }
+
   const output = part.output as
     | {
         ok?: boolean;
         error?: string;
         title?: string | null;
         date?: string;
+        locationLabel?: string;
         legs?: { title?: string | null; type?: string }[];
       }
     | undefined;
   const koExec = done && output?.ok === false;
+  const isFailure = failed || koExec;
 
   let detail: string | null = null;
-  if (done && !isList && output) {
-    if (koExec) {
-      detail = output.error ?? 'échec';
+  let debugDetail: string | null = null;
+
+  if (isFailure) {
+    const { hint, debug } = failed
+      ? humanizeToolErrorMessage(part.errorText)
+      : failureHintForPart(part);
+    debugDetail = debug;
+    const hasTitle = Boolean(sessionTitleFromPart(part));
+    const isGenericHint =
+      hint === "L'ajout n'a pas abouti" || hint === "L'opération n'a pas abouti";
+    detail = hint && !(hasTitle && isGenericHint) ? hint : null;
+  } else if (done && !isList && output) {
+    if (part.type === 'tool-setTravelContext' && output.locationLabel) {
+      detail = output.locationLabel;
     } else if (part.type === 'tool-createBrickSession' && output.legs?.length) {
       const legLabels = output.legs
         .map((l) => l.title ?? (l.type ? activityTypeLabels[l.type as ActivityType] : null))
@@ -261,7 +350,7 @@ export function ToolActivity({
   }
 
   function getStatusClassName(): string {
-    if (failed || koExec) {
+    if (isFailure) {
       return 'border-destructive/30 bg-destructive/5 text-destructive';
     }
     if (done) {
@@ -270,21 +359,30 @@ export function ToolActivity({
     return 'border-border/60 bg-card/40 text-muted-foreground';
   }
 
+  function statusIcon() {
+    if (!done && !failed) return <Loader2 className="size-3.5 shrink-0 animate-spin" />;
+    if (isFailure) return <X className="size-3.5 shrink-0" />;
+    return <Icon className="size-3.5 shrink-0" />;
+  }
+
+  function statusLabel(): string {
+    if (isFailure) return failureLabelForPart(part);
+    if (done) return meta.label;
+    return meta.running;
+  }
+
   return (
     <div
+      title={debugDetail ?? undefined}
       className={cn(
         'flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs',
         getStatusClassName(),
       )}
     >
-      {done ? (
-        <Icon className="size-3.5 shrink-0" />
-      ) : (
-        <Loader2 className="size-3.5 shrink-0 animate-spin" />
-      )}
-      <span className="font-medium">{done ? meta.label : meta.running}</span>
-      {detail && <span className="truncate opacity-80">— {detail}</span>}
-      {done && !failed && !koExec && <Check className="ml-auto size-3 shrink-0" />}
+      {statusIcon()}
+      <span className="font-medium">{statusLabel()}</span>
+      {detail ? <span className="truncate opacity-80">— {detail}</span> : null}
+      {done && !isFailure && <Check className="ml-auto size-3 shrink-0" />}
     </div>
   );
 }

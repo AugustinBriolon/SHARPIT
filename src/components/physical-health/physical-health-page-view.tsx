@@ -13,6 +13,7 @@ import {
 import { PhysicalNoteDialog } from '@/components/physical/physical-note-dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SkeletonCard, SkeletonEyebrow } from '@/components/ui/skeleton-patterns';
 import type { PhysicalHealthViewModel } from '@/core/presentation/physical-health-view-model';
 import { usePhysicalNotes } from '@/hooks/use-physical';
 import type { ClientPhysicalNote } from '@/lib/query/types';
@@ -21,6 +22,12 @@ import { PhysicalHealthConditionCardView } from './condition-card';
 import { GlobalDecisionStrip } from '@/components/today/drill-down/global-decision-strip';
 
 type DialogState = { mode: 'create' } | { mode: 'edit'; note: ClientPhysicalNote } | null;
+
+function confidenceToneClass(tone: string): 'ok' | 'watch' | 'neutral' {
+  if (tone === 'good') return 'ok';
+  if (tone === 'warn') return 'watch';
+  return 'neutral';
+}
 
 export function PhysicalHealthPageView({
   viewModel,
@@ -89,14 +96,8 @@ export function PhysicalHealthPageView({
         />
         <CorpsStatCard
           label="Confiance"
+          tone={confidenceToneClass(aggregate.confidenceTone)}
           value={`${aggregate.confidencePct}%`}
-          tone={
-            aggregate.confidenceTone === 'good'
-              ? 'ok'
-              : aggregate.confidenceTone === 'warn'
-                ? 'watch'
-                : 'neutral'
-          }
         />
       </div>
 
@@ -174,15 +175,43 @@ export function PhysicalHealthPageView({
 export function PhysicalHealthPageSkeleton({ embedded = false }: { embedded?: boolean }) {
   return (
     <div className="space-y-4">
-      {!embedded && <Skeleton className="h-16 w-full rounded-2xl" />}
+      {!embedded ? (
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-20 rounded-full border-0" />
+          <Skeleton className="h-8 w-48 max-w-full rounded-full border-0" />
+          <Skeleton className="h-4 w-full max-w-xl rounded-full border-0" />
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Skeleton className="h-4 w-64 max-w-full rounded-full border-0" />
+          <Skeleton className="h-9 w-40 rounded-lg" />
+        </div>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-24 rounded-2xl" />
+          <div key={i} className="bg-card/60 rounded-2xl border px-4 py-4">
+            <Skeleton className="h-2.5 w-14 rounded-full border-0" />
+            <Skeleton className="mt-2 h-8 w-10 border-0" />
+            <Skeleton className="mt-1 h-3 w-20 rounded-full border-0" />
+          </div>
         ))}
       </div>
+
+      <SkeletonCard className="px-5 py-5">
+        <SkeletonEyebrow className="w-40" />
+        <Skeleton className="mt-3 h-7 w-48 max-w-full rounded-full border-0" />
+        <Skeleton className="mt-2 h-4 w-full max-w-lg rounded-full border-0" />
+      </SkeletonCard>
+
       <div className="grid gap-3 md:grid-cols-2">
         {Array.from({ length: 2 }).map((_, i) => (
-          <Skeleton key={i} className="h-48 rounded-2xl" />
+          <SkeletonCard key={i} className="min-h-48 px-5 py-5">
+            <Skeleton className="h-4 w-32 rounded-full border-0" />
+            <Skeleton className="mt-3 h-4 w-full rounded-full border-0" />
+            <Skeleton className="mt-2 h-4 rounded-full border-0" style={{ width: '83%' }} />
+            <Skeleton className="mt-4 h-8 w-28 rounded-lg" />
+          </SkeletonCard>
         ))}
       </div>
     </div>

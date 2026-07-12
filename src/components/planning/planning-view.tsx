@@ -2,7 +2,7 @@
 
 import { addWeeks, endOfWeek, format, isSameDay, isToday, startOfWeek, subWeeks } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CheckCircle2, ChevronLeft, ChevronRight, Layers } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, GitCompare, Layers } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useMemo, useState, useEffect } from 'react';
@@ -12,14 +12,16 @@ import { PlanAdapter } from '@/components/coach/plan-adapter';
 import { PlanGenerator } from '@/components/coach/plan-generator';
 import { MacroPlanDialog } from '@/components/planning/macro-plan-dialog';
 import { PlannedSessionDialog } from '@/components/planning/planned-session-dialog';
+import { TravelContextBanner } from '@/components/planning/travel-context-banner';
 import { ProjectedAthleteCard } from '@/components/planning/projected-athlete-card';
-import { ScenarioComparisonCard } from '@/components/planning/scenario-comparison-card';
+import { ScenarioComparisonDialog } from '@/components/planning/scenario-comparison-dialog';
 import {
   SessionsCoachMenu,
   type SessionsCoachAction,
 } from '@/components/sessions/sessions-coach-menu';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SkeletonEyebrow, SkeletonTitle } from '@/components/ui/skeleton-patterns';
 import type { ClientActivity, ClientPlannedSession, ClientPlanWeek } from '@/lib/query/types';
 import { groupPlannedSessions } from '@/lib/brick-sessions';
 import { activityTypeLabels } from '@/lib/format';
@@ -28,6 +30,9 @@ import { phaseColors, phaseLabels } from '@/lib/periodization';
 import { formatPlannedDuration } from '@/lib/sessions';
 import { cn } from '@/lib/utils';
 import { useActivities, useGoals, usePlannedSessions, useTrainingPlan } from '@/hooks/use-data';
+import { useProjectedAthleteViewModel } from '@/hooks/use-projected-athlete-view-model';
+import { useScenarioComparisonViewModel } from '@/hooks/use-scenario-comparison-view-model';
+import type { ProjectionHorizonDays } from '@/core/projection/types';
 import { isAnyInitialQueryLoad } from '@/hooks/use-query-status';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
@@ -39,7 +44,7 @@ export function PlanningView({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const plannedIdFromUrl = embedded ? searchParams.get('planned') : null;
+  const plannedIdFromUrl = searchParams.get('planned');
   const createFromUrl = !embedded && searchParams.has('create');
   const activitiesQuery = useActivities();
   const plannedQuery = usePlannedSessions();
@@ -49,7 +54,9 @@ export function PlanningView({ embedded = false }: { embedded?: boolean }) {
   const [generatorOpen, setGeneratorOpen] = useState(false);
   const [adapterOpen, setAdapterOpen] = useState(false);
   const [macroPlanOpen, setMacroPlanOpen] = useState(false);
+  const [scenarioComparisonOpen, setScenarioComparisonOpen] = useState(false);
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), WEEK_OPTS));
+  const [projectionHorizon, setProjectionHorizon] = useState<ProjectionHorizonDays>(7);
 
   const activities = activitiesQuery.data ?? [];
   const planned = plannedQuery.data ?? [];
@@ -102,9 +109,19 @@ export function PlanningView({ embedded = false }: { embedded?: boolean }) {
 
   const isLoading = isAnyInitialQueryLoad([activitiesQuery, plannedQuery, goalsQuery]);
   const isCurrentWeek = week.index === 0;
+  const showPlanningIntelligence = week.index >= 0;
+  const anchorTrainingDayId = week.index > 0 ? format(week.start, 'yyyy-MM-dd') : undefined;
   const weekEnd = endOfWeek(week.start, WEEK_OPTS);
   const completed = week.planned.filter((p) => p.completed).length;
   const total = week.planned.length;
+  const projectionQuery = useProjectedAthleteViewModel(projectionHorizon, anchorTrainingDayId);
+  const scenarioComparisonQuery = useScenarioComparisonViewModel(7, anchorTrainingDayId);
+  const hasActionableAlternative = Boolean(
+    showPlanningIntelligence && scenarioComparisonQuery.data?.visible,
+  );
+  const projectionRiskDayId = showPlanningIntelligence
+    ? (projectionQuery.data?.highestRiskTrainingDayId ?? null)
+    : null;
 
   const deepLinkSession = useMemo(() => {
     if (!plannedIdFromUrl || plannedQuery.isPending) return null;
@@ -159,24 +176,55 @@ export function PlanningView({ embedded = false }: { embedded?: boolean }) {
       <div className="space-y-5">
         {!embedded && (
           <div className="space-y-2">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-9 w-56" />
+            <SkeletonEyebrow className="w-20" />
+            <SkeletonTitle className="h-9 w-64 max-w-full" size="md" />
+            <Skeleton className="h-4 w-48 max-w-full rounded-full border-0" />
           </div>
         )}
+
         <div className="flex items-center justify-between gap-3">
-          <Skeleton className="h-9 w-48" />
-          <div className="flex gap-2">
-            <Skeleton className="h-9 w-24 rounded-lg" />
-            <Skeleton className="h-9 w-20 rounded-lg" />
+          <div className="flex items-center gap-1">
+            <Skeleton className="size-9 rounded-lg" />
+            <div className="min-w-44 space-y-1.5 text-center">
+              <Skeleton className="mx-auto h-4 w-36 rounded-full border-0" />
+              <Skeleton className="mx-auto h-3 w-24 rounded-full border-0" />
+            </div>
+            <Skeleton className="size-9 rounded-lg" />
           </div>
+          {!embedded ? <Skeleton className="h-9 w-32 rounded-lg" /> : null}
         </div>
-        <Skeleton className="h-5 w-64" />
-        <div className="border-border/60 overflow-hidden rounded-xl border">
+
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <Skeleton className="h-4 w-10 rounded-full border-0" />
+          <Skeleton className="h-4 w-24 rounded-full border-0" />
+          <Skeleton className="h-4 w-28 rounded-full border-0" />
+        </div>
+
+        <section className="analysis-panel-alt rounded-analysis-lg px-5 py-5 sm:px-6">
+          <div className="flex items-center gap-2">
+            <Skeleton className="size-4 rounded-sm" />
+            <Skeleton className="h-3 w-28 rounded-full border-0" />
+          </div>
+          <Skeleton className="mt-3 h-6 w-full max-w-3xl rounded-full border-0 sm:h-7" />
+          <div className="mt-4 flex flex-wrap gap-1.5">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-7 w-12 rounded-md" />
+            ))}
+          </div>
+          <Skeleton className="mt-4 h-9 w-44 rounded-lg" />
+        </section>
+
+        <div className="analysis-panel divide-analysis-border rounded-analysis-lg divide-y overflow-hidden">
           {Array.from({ length: 7 }).map((_, i) => (
-            <Skeleton
-              key={i}
-              className="border-border/60 h-14 w-full rounded-none border-b last:border-0"
-            />
+            <div key={i} className="flex gap-3 px-3 py-3 sm:gap-4 sm:px-4">
+              <div className="w-11 shrink-0 space-y-1 text-center sm:w-12">
+                <Skeleton className="mx-auto h-2.5 w-8 rounded-full border-0" />
+                <Skeleton className="mx-auto h-7 w-8 rounded-lg border-0" />
+              </div>
+              <div className="min-w-0 flex-1 space-y-2 py-1">
+                <Skeleton className="h-4 w-28 rounded-full border-0" />
+              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -199,6 +247,8 @@ export function PlanningView({ embedded = false }: { embedded?: boolean }) {
         </PageHeader>
       )}
 
+      <TravelContextBanner />
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1">
           <Button
@@ -218,6 +268,9 @@ export function PlanningView({ embedded = false }: { embedded?: boolean }) {
             {isCurrentWeek && (
               <p className="text-primary text-[11px] font-medium">Semaine en cours</p>
             )}
+            {week.index > 0 && (
+              <p className="text-muted-foreground text-[11px] font-medium">Semaine à venir</p>
+            )}
           </div>
           <Button
             aria-label="Semaine suivante"
@@ -229,11 +282,18 @@ export function PlanningView({ embedded = false }: { embedded?: boolean }) {
           </Button>
         </div>
 
-        {!embedded && (
-          <div className="flex flex-wrap gap-2">
-            <SessionsCoachMenu onAction={handleCoachAction} />
-          </div>
-        )}
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {hasActionableAlternative ? (
+            <Button size="sm" variant="outline" onClick={() => setScenarioComparisonOpen(true)}>
+              <GitCompare className="size-3.5 shrink-0" />
+              <span className="max-w-48 truncate">
+                {scenarioComparisonQuery.data?.recommendedScenarioLabel ??
+                  'Alternative recommandée'}
+              </span>
+            </Button>
+          ) : null}
+          {!embedded ? <SessionsCoachMenu onAction={handleCoachAction} /> : null}
+        </div>
       </div>
 
       <WeekSummary
@@ -244,16 +304,22 @@ export function PlanningView({ embedded = false }: { embedded?: boolean }) {
         weeksToRace={week.weeksToRace}
       />
 
-      {isCurrentWeek ? <ProjectedAthleteCard /> : null}
-      {isCurrentWeek ? <ScenarioComparisonCard /> : null}
+      {showPlanningIntelligence ? (
+        <ProjectedAthleteCard
+          horizon={projectionHorizon}
+          query={projectionQuery}
+          onHorizonChange={setProjectionHorizon}
+        />
+      ) : null}
 
-      <div className="border-border/60 divide-border/60 divide-y rounded-xl border">
+      <div className="analysis-panel divide-analysis-border rounded-analysis-lg divide-y overflow-hidden">
         {days.map((day) => (
           <DayRow
             key={day.date.toISOString()}
             activities={day.activities}
             date={day.date}
             planned={day.planned}
+            projectionRiskDayId={projectionRiskDayId}
             onAdd={() => setDialog({ mode: 'create', date: day.date })}
             onEdit={(session) => setDialog({ mode: 'edit', session })}
           />
@@ -272,6 +338,14 @@ export function PlanningView({ embedded = false }: { embedded?: boolean }) {
       {generatorOpen && <PlanGenerator onClose={() => setGeneratorOpen(false)} />}
       {adapterOpen && <PlanAdapter onClose={() => setAdapterOpen(false)} />}
       {macroPlanOpen && <MacroPlanDialog goals={goals} onClose={() => setMacroPlanOpen(false)} />}
+      {scenarioComparisonOpen ? (
+        <ScenarioComparisonDialog
+          isLoading={scenarioComparisonQuery.isLoading}
+          open={scenarioComparisonOpen}
+          viewModel={scenarioComparisonQuery.data}
+          onClose={() => setScenarioComparisonOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -332,20 +406,29 @@ function DayRow({
   date,
   planned,
   activities,
+  projectionRiskDayId,
   onAdd,
   onEdit,
 }: {
   date: Date;
   planned: ClientPlannedSession[];
   activities: ClientActivity[];
+  projectionRiskDayId: string | null;
   onAdd: () => void;
   onEdit: (session: ClientPlannedSession) => void;
 }) {
   const today = isToday(date);
   const empty = planned.length === 0 && activities.length === 0;
+  const dateKey = format(date, 'yyyy-MM-dd');
+  const isProjectionRiskDay = projectionRiskDayId != null && projectionRiskDayId === dateKey;
 
   return (
-    <div className={cn('flex gap-3 px-3 py-3 sm:gap-4 sm:px-4', today && 'bg-primary/4')}>
+    <div
+      className={cn('flex gap-3 px-3 py-3 sm:gap-4 sm:px-4', today && 'bg-primary/4')}
+      style={
+        isProjectionRiskDay ? { boxShadow: 'inset 3px 0 0 var(--color-signal-caution)' } : undefined
+      }
+    >
       <div className="w-11 shrink-0 text-center sm:w-12">
         <p className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
           {format(date, 'EEE', { locale: fr })}
@@ -358,6 +441,11 @@ function DayRow({
         >
           {format(date, 'd')}
         </p>
+        {isProjectionRiskDay ? (
+          <p className="text-signal-caution mt-1 text-[9px] font-medium tracking-wide uppercase">
+            Vigilance
+          </p>
+        ) : null}
       </div>
 
       <div className="min-w-0 flex-1 space-y-1.5">

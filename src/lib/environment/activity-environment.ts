@@ -10,6 +10,7 @@ import {
 import type { ActivityType } from '@prisma/client';
 import { PrismaEnvironmentalObservationRepository } from '@/infrastructure/environment/prisma-environment-observation-repository';
 import { resolveAthleteGeoLocation } from '@/lib/environment/athlete-location';
+import { activityWeatherWindow } from '@/lib/activity/activity-weather-window';
 import { prisma } from '@/lib/prisma';
 import { computeTrainingDayId } from '@/lib/training-day';
 
@@ -62,9 +63,7 @@ function activityWindow(activity: { date: Date; duration: number | null }): {
   start: Date;
   end: Date;
 } {
-  const start = new Date(activity.date);
-  const durationMs = (activity.duration ?? 60) * 60 * 1000;
-  return { start, end: new Date(start.getTime() + durationMs) };
+  return activityWeatherWindow(activity.date, activity.duration);
 }
 
 export async function resolveActivityEnvironmentPresentation(input: {
@@ -75,6 +74,9 @@ export async function resolveActivityEnvironmentPresentation(input: {
     date: Date;
     duration: number | null;
     weather: string | null;
+    observedLocationLat?: number | null;
+    observedLocationLng?: number | null;
+    observedLocationLabel?: string | null;
   };
 }): Promise<ActivityEnvironmentPresentation> {
   const applicability = resolveApplicability(input.activity);
@@ -87,10 +89,19 @@ export async function resolveActivityEnvironmentPresentation(input: {
     const trainingDayId = computeTrainingDayId(input.activity.date);
     const window = activityWindow(input.activity);
 
-    const [records, location] = await Promise.all([
+    const [records, athleteLocation] = await Promise.all([
       observationRepo.findActiveForTrainingDay(input.athleteId, trainingDayId),
       resolveAthleteGeoLocation(prisma, input.athleteId, trainingDayId),
     ]);
+
+    const location =
+      input.activity.observedLocationLat != null && input.activity.observedLocationLng != null
+        ? {
+            latitude: input.activity.observedLocationLat,
+            longitude: input.activity.observedLocationLng,
+            label: input.activity.observedLocationLabel ?? undefined,
+          }
+        : athleteLocation;
 
     const env = buildActivityEnvironment({
       activityId: input.activity.id,

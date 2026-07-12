@@ -1,28 +1,24 @@
 'use client';
 
-import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CHART_COLORS, type SportDistribution } from '@/lib/analytics';
+import { cn } from '@/lib/utils';
 
 interface SportDistributionChartProps {
   data: SportDistribution[];
-  limit?: number;
-  showAllHref?: string;
+  className?: string;
 }
 
-export function SportDistributionChart({ data, limit, showAllHref }: SportDistributionChartProps) {
-  const visibleData = limit ? data.slice(0, limit) : data;
-  const hasMore = limit != null && data.length > limit;
-
+export function SportDistributionChart({ data, className }: SportDistributionChartProps) {
   return (
-    <Card className="h-full w-full">
+    <Card className={cn('h-full w-full', className)}>
       <CardHeader>
         <CardTitle className="text-base font-medium">Répartition par sport</CardTitle>
         <p className="text-muted-foreground text-xs">90 derniers jours — en heures</p>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {visibleData.map((sport) => (
+          {data.map((sport) => (
             <div key={sport.type} className="analysis-panel rounded-analysis px-3 py-3">
               <div className="mb-2 flex items-center justify-between gap-3 text-sm">
                 <div className="flex min-w-0 items-center gap-2">
@@ -53,14 +49,6 @@ export function SportDistributionChart({ data, limit, showAllHref }: SportDistri
               </div>
             </div>
           ))}
-          {hasMore && showAllHref ? (
-            <Link
-              className="text-primary inline-flex items-center text-xs font-medium hover:underline"
-              href={showAllHref}
-            >
-              Voir tout
-            </Link>
-          ) : null}
           {data.length === 0 ? (
             <p className="text-muted-foreground text-sm">
               Aucune répartition disponible sur la période.

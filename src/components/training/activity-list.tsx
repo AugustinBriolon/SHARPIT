@@ -7,6 +7,7 @@ import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { LinkButton } from '@/components/ui/link-button';
 import { PhysioRail } from '@/components/ui/physio-rail';
 import { activityTypeLabels, formatDate, formatDistance, formatDuration } from '@/lib/format';
+import { formatActivityWeatherChip, parseActivityWeather } from '@/lib/activity/activity-weather';
 import { queryKeys } from '@/lib/query/keys';
 import { parseSessionAnalysis } from '@/lib/session-analysis-display';
 import { ActivityType } from '@prisma/client';
@@ -21,6 +22,7 @@ type ActivityItem = {
   title: string | null;
   duration: number | null;
   load: number | null;
+  weather: string | null;
   runMetrics: { distanceM: number | null } | null;
   bikeMetrics: { tss: number | null } | null;
   swimMetrics: { distanceM: number | null } | null;
@@ -59,8 +61,14 @@ export function ActivityList({
   );
 }
 
+function formatActivityWeatherLine(raw: string | null): string | null {
+  const weather = parseActivityWeather(raw);
+  return weather ? formatActivityWeatherChip(weather) : raw?.trim() || null;
+}
+
 function ActivityRow({ activity, compact = false }: { activity: ActivityItem; compact?: boolean }) {
   const summary = getActivitySummary(activity);
+  const weatherLine = formatActivityWeatherLine(activity.weather);
   const analysis = activity.plannedSession
     ? parseSessionAnalysis(activity.plannedSession.analysis)
     : null;
@@ -103,6 +111,7 @@ function ActivityRow({ activity, compact = false }: { activity: ActivityItem; co
           >
             {formatDate(new Date(activity.date))} · {formatDuration(activity.duration)}
             {summary && !compact ? ` · ${summary}` : ''}
+            {weatherLine ? ` · ${weatherLine}` : ''}
           </p>
         </div>
       </div>

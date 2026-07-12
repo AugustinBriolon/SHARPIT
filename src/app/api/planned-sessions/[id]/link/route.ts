@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { enrichActivityObservedContext } from '@/lib/activity/enrich-observed-context';
+import { prisma } from '@/lib/prisma';
 import { getPlannedSessionById, linkPlannedSessionActivity } from '@/lib/queries';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -18,6 +20,13 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     const session = await linkPlannedSessionActivity(id, activityId);
+    if (activityId) {
+      try {
+        await enrichActivityObservedContext(prisma, activityId);
+      } catch (error) {
+        console.error('[planned-sessions/link/enrich]', error);
+      }
+    }
     return NextResponse.json(session);
   } catch (error) {
     console.error('[planned-sessions/link]', error);

@@ -50,24 +50,32 @@ function CalendarSkeleton({ showHeader }: { showHeader: boolean }) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-2">
             <SkeletonEyebrow className="w-24" />
-            <SkeletonText widths={['12rem']} />
+            <Skeleton className="h-8 w-56 max-w-full rounded-full border-0" />
+            <SkeletonText widths={['100%', '82%']} />
           </div>
           <div className="flex gap-2">
             <Skeleton className="size-10 rounded-xl" />
             <Skeleton className="size-10 rounded-xl" />
-            <SkeletonPill className="w-20" />
+            <SkeletonPill className="w-24" />
           </div>
         </div>
       ) : null}
       <SkeletonCard className="space-y-3 p-3 sm:p-4">
         <div className="grid grid-cols-7 gap-2">
           {Array.from({ length: 7 }).map((_, index) => (
-            <Skeleton key={`label-${index}`} className="h-3 rounded-full border-0" />
+            <Skeleton key={`label-${index}`} className="mx-auto h-3 w-6 rounded-full border-0" />
           ))}
         </div>
         <div className="grid grid-cols-7 gap-2">
           {Array.from({ length: 35 }).map((_, index) => (
-            <Skeleton key={index} className="rounded-analysis h-24" />
+            <div
+              key={index}
+              className="rounded-analysis border-border/40 min-h-24 space-y-2 border p-2"
+            >
+              <Skeleton className="h-3 w-5 rounded-full border-0" />
+              <Skeleton className="h-3 w-full rounded-full border-0" />
+              <Skeleton className="h-3 rounded-full border-0" style={{ width: '80%' }} />
+            </div>
           ))}
         </div>
       </SkeletonCard>

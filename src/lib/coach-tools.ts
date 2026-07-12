@@ -16,9 +16,16 @@ import {
   getPlannedSessions,
   updatePlannedSession,
 } from './queries';
+import {
+  createTravelContext,
+  applyTravelContextToUpcomingSessions,
+} from './travel-context/service';
+import { prisma } from './prisma';
+import { refreshAndPersistPlannedSessionContext } from './planned-session/resolve-context';
 
 const typeEnum = z.enum(['RUN', 'BIKE', 'SWIM', 'STRENGTH']);
 const intensityEnum = z.enum(['RECOVERY', 'ENDURANCE', 'TEMPO', 'THRESHOLD', 'VO2MAX', 'RACE']);
+const exposureEnum = z.enum(['INDOOR', 'OUTDOOR', 'UNKNOWN']);
 
 const toDate = (d: string) => new Date(`${d}T12:00:00`);
 
@@ -78,31 +85,59 @@ export const coachTools = {
         .describe('Structure détaillée (échauffement, corps, récup).'),
       durationMin: z.number().min(5).max(420).optional(),
       load: z.number().min(0).max(400).optional().describe('TSS estimé.'),
+      exposureSetting: exposureEnum
+        .optional()
+        .describe('INDOOR, OUTDOOR ou UNKNOWN. OUTDOOR si séance dehors.'),
+      locationLabel: z
+        .string()
+        .optional()
+        .describe("Ville ou lieu (ex. Les Sables-d'Olonne). Géocodé automatiquement."),
+      locationLat: z.number().optional(),
+      locationLng: z.number().optional(),
     }),
     execute: async (input) => {
-      const s = await createPlannedSession({
-        type: input.type,
-        date: toDate(input.date),
-        startTime: input.startTime ?? null,
-        title: input.title,
-        description: input.description ?? null,
-        durationMin: input.durationMin != null ? Math.round(input.durationMin) : null,
-        load: input.load != null ? Math.round(input.load) : null,
-        intensity: input.intensity ?? null,
-      });
+      try {
+        const s = await createPlannedSession({
+          type: input.type,
+          date: toDate(input.date),
+          startTime: input.startTime ?? null,
+          title: input.title,
+          description: input.description ?? null,
+          durationMin: input.durationMin != null ? Math.round(input.durationMin) : null,
+          load: input.load != null ? Math.round(input.load) : null,
+          intensity: input.intensity ?? null,
+          exposureSetting: input.exposureSetting ?? null,
+          locationLabel: input.locationLabel ?? null,
+          locationLat: input.locationLat ?? null,
+          locationLng: input.locationLng ?? null,
+        });
 
-      pushSessionToGoogleInBackground(s);
+        pushSessionToGoogleInBackground(s);
 
-      return {
-        ok: true,
-        id: s.id,
-        action: 'created' as const,
-        date: input.date,
-        startTime: input.startTime ?? null,
-        type: input.type,
-        title: input.title,
-        addedToGoogle: false,
-      };
+        try {
+          await refreshAndPersistPlannedSessionContext(s.id);
+        } catch (error) {
+          console.error('[coach/createPlannedSession/context]', error);
+        }
+
+        return {
+          ok: true,
+          id: s.id,
+          action: 'created' as const,
+          date: input.date,
+          startTime: input.startTime ?? null,
+          type: input.type,
+          title: input.title,
+          addedToGoogle: false,
+        };
+      } catch (error) {
+        console.error('[coach] createPlannedSession', error);
+        const detail = error instanceof Error ? error.message : String(error);
+        return {
+          ok: false as const,
+          error: `Impossible d'ajouter la séance : ${detail}`,
+        };
+      }
     },
   }),
 
@@ -191,35 +226,58 @@ export const coachTools = {
       description: z.string().optional(),
       durationMin: z.number().int().min(5).max(420).optional(),
       load: z.number().int().min(0).max(400).optional(),
+      exposureSetting: exposureEnum.optional(),
+      locationLabel: z.string().optional(),
+      locationLat: z.number().optional(),
+      locationLng: z.number().optional(),
     }),
     execute: async (input) => {
-      const existing = await getPlannedSessionById(input.id);
-      if (!existing) {
-        return { ok: false as const, error: 'Séance introuvable' };
+      try {
+        const existing = await getPlannedSessionById(input.id);
+        if (!existing) {
+          return { ok: false as const, error: 'Séance introuvable' };
+        }
+        const data: Prisma.PlannedSessionUncheckedUpdateInput = {};
+        if (input.date) data.date = toDate(input.date);
+        if (input.startTime !== undefined) data.startTime = input.startTime;
+        if (input.type) data.type = input.type;
+        if (input.intensity) data.intensity = input.intensity;
+        if (input.title !== undefined) data.title = input.title;
+        if (input.description !== undefined) data.description = input.description;
+        if (input.durationMin !== undefined) data.durationMin = input.durationMin;
+        if (input.load !== undefined) data.load = input.load;
+        if (input.exposureSetting !== undefined) data.exposureSetting = input.exposureSetting;
+        if (input.locationLabel !== undefined) data.locationLabel = input.locationLabel;
+        if (input.locationLat !== undefined) data.locationLat = input.locationLat;
+        if (input.locationLng !== undefined) data.locationLng = input.locationLng;
+
+        const s = await updatePlannedSession(input.id, data);
+
+        try {
+          await refreshAndPersistPlannedSessionContext(s.id);
+        } catch (error) {
+          console.error('[coach/updatePlannedSession/context]', error);
+        }
+
+        pushSessionToGoogleInBackground(s);
+
+        return {
+          ok: true,
+          id: s.id,
+          action: 'updated' as const,
+          date: format(s.date, 'yyyy-MM-dd'),
+          startTime: s.startTime,
+          type: s.type,
+          title: s.title,
+        };
+      } catch (error) {
+        console.error('[coach] updatePlannedSession', error);
+        const detail = error instanceof Error ? error.message : String(error);
+        return {
+          ok: false as const,
+          error: `Impossible de modifier la séance : ${detail}`,
+        };
       }
-      const data: Prisma.PlannedSessionUncheckedUpdateInput = {};
-      if (input.date) data.date = toDate(input.date);
-      if (input.startTime !== undefined) data.startTime = input.startTime;
-      if (input.type) data.type = input.type;
-      if (input.intensity) data.intensity = input.intensity;
-      if (input.title !== undefined) data.title = input.title;
-      if (input.description !== undefined) data.description = input.description;
-      if (input.durationMin !== undefined) data.durationMin = input.durationMin;
-      if (input.load !== undefined) data.load = input.load;
-
-      const s = await updatePlannedSession(input.id, data);
-
-      pushSessionToGoogleInBackground(s);
-
-      return {
-        ok: true,
-        id: s.id,
-        action: 'updated' as const,
-        date: format(s.date, 'yyyy-MM-dd'),
-        startTime: s.startTime,
-        type: s.type,
-        title: s.title,
-      };
     },
   }),
 
@@ -250,6 +308,49 @@ export const coachTools = {
         title: existing.title,
         date: format(existing.date, 'yyyy-MM-dd'),
       };
+    },
+  }),
+
+  setTravelContext: tool({
+    description:
+      "Enregistre un contexte voyage (ville + dates) pour pré-remplir les séances outdoor et améliorer les prévisions météo. À utiliser quand l'athlète mentionne des vacances, un déplacement ou un camp d'entraînement.",
+    inputSchema: z.object({
+      locationLabel: z.string().describe("Ville ou lieu (ex. Les Sables-d'Olonne)."),
+      startDate: z.string().describe('Date de début yyyy-MM-dd.'),
+      endDate: z.string().describe('Date de fin yyyy-MM-dd.'),
+      label: z.string().optional().describe('Titre court (ex. Vacances juillet).'),
+      note: z.string().optional(),
+      applyToPlannedSessions: z
+        .boolean()
+        .optional()
+        .describe('Appliquer aux séances planifiées dans la période (défaut true).'),
+    }),
+    execute: async (input) => {
+      try {
+        const travel = await createTravelContext(prisma, {
+          label: input.label ?? null,
+          locationLabel: input.locationLabel,
+          startDate: toDate(input.startDate),
+          endDate: toDate(input.endDate),
+          note: input.note ?? null,
+        });
+        const updatedSessions =
+          input.applyToPlannedSessions === false
+            ? 0
+            : await applyTravelContextToUpcomingSessions(prisma, travel.id);
+        return {
+          ok: true as const,
+          travelId: travel.id,
+          locationLabel: travel.locationLabel,
+          updatedSessions,
+        };
+      } catch (error) {
+        console.error('[coach/setTravelContext]', error);
+        return {
+          ok: false as const,
+          error: error instanceof Error ? error.message : 'Impossible de créer le contexte voyage',
+        };
+      }
     },
   }),
 

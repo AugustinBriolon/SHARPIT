@@ -1,6 +1,12 @@
 import type { ReactNode } from 'react';
-import { CalendarCheck, CloudSun, Gauge, Smile, Trophy } from 'lucide-react';
+import { CalendarCheck, Gauge, Smile, Trophy } from 'lucide-react';
 import { activityTypeLabels } from '@/lib/format';
+import {
+  activityWeatherIcon,
+  activityWeatherIconClassName,
+  formatActivityWeatherChip,
+  parseActivityWeather,
+} from '@/lib/activity/activity-weather';
 import { recordCategoryHref } from '@/lib/records';
 import { parseSessionAnalysis, plannedSessionHref } from '@/lib/session-analysis-display';
 import { rpeTone } from './activity-detail-helpers';
@@ -32,9 +38,17 @@ export function ActivityContextChips({
       <ActivityMetaChip key="feeling" icon={Smile} label="Ressenti" value={activity.feeling} />,
     );
   }
-  if (activity.weather) {
+  const weather = parseActivityWeather(activity.weather);
+  if (weather) {
+    const WeatherIcon = activityWeatherIcon(weather.condition);
     chips.push(
-      <ActivityMetaChip key="weather" icon={CloudSun} label="Météo" value={activity.weather} />,
+      <ActivityMetaChip
+        key="weather"
+        icon={WeatherIcon}
+        iconClassName={activityWeatherIconClassName(weather.condition)}
+        label="Météo"
+        value={formatActivityWeatherChip(weather)}
+      />,
     );
   }
 

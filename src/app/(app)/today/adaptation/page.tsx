@@ -15,7 +15,7 @@ export default function TodayAdaptationPage() {
   const viewModel = query.data ?? null;
 
   if (query.isPending && !viewModel) {
-    return <MetricDrillDownSkeleton title="Adaptation" variant="adaptation" />;
+    return <MetricDrillDownSkeleton variant="adaptation" />;
   }
 
   if (!viewModel || viewModel.emptyState) {

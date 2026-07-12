@@ -515,13 +515,6 @@ export function formatCoachContext(ctx: CoachContext): string {
       STABLE: 'Stable',
       DECLINING: 'En déclin',
     };
-    const VERDICT_FR: Record<string, string> = {
-      INCREASE_LOAD: 'Augmenter la charge',
-      SUSTAIN: 'Maintenir la progression',
-      CONSOLIDATE: 'Consolider avant de progresser',
-      REDUCE_LOAD: 'Réduire la charge',
-      RECOVERY_PRIORITY: 'Priorité récupération (fenêtre supercompensation)',
-    };
     const bits = [
       a.adaptationIndex != null ? `Index ${a.adaptationIndex}/100` : null,
       a.adaptationStatus ? (STATUS_FR[a.adaptationStatus] ?? a.adaptationStatus) : null,

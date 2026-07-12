@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ActivityType } from '@prisma/client';
+import { enrichTodayActivitiesContext } from '@/lib/activity/enrich-observed-context';
 import { buildActivityCreateData } from '@/lib/activity-service';
 import { runActivityNarrativeAnalysis } from '@/lib/activity-narrative';
 import { syncManualActivityObservations } from '@/lib/manual-observation-sync';
 import { createActivity, getActivitiesList } from '@/lib/queries';
+import { prisma } from '@/lib/prisma';
 import { updateRecordsForTypesSafe } from '@/lib/records';
 import { createActivitySchema } from '@/lib/validators/activity';
 
@@ -13,6 +15,12 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') as ActivityType | null;
     const limit = searchParams.get('limit');
     const sinceDays = searchParams.get('sinceDays');
+
+    try {
+      await enrichTodayActivitiesContext(prisma);
+    } catch (error) {
+      console.error('[activities/GET/enrich-today]', error);
+    }
 
     const activities = await getActivitiesList({
       type: type && Object.values(ActivityType).includes(type) ? type : undefined,

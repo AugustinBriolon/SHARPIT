@@ -27,6 +27,12 @@ function bandFromHeatIndex(hi: number): ThermalStressBand {
   return 'EXTREME';
 }
 
+function thermalBandFromAirTemp(temp: number): ThermalStressBand {
+  if (temp < 18) return 'LOW';
+  if (temp < 28) return 'MODERATE';
+  return 'HIGH';
+}
+
 export function computeThermalStressBand(
   measurements: WeatherMeasurements,
   exposure: ExposureSetting,
@@ -57,7 +63,7 @@ export function computeThermalStressBand(
 
   const temp = measurements.airTemperatureC;
   if (temp != null && exposure !== 'INDOOR') {
-    const band: ThermalStressBand = temp < 18 ? 'LOW' : temp < 28 ? 'MODERATE' : 'HIGH';
+    const band = thermalBandFromAirTemp(temp);
     return {
       available: true,
       value: band,

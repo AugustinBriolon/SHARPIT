@@ -15,14 +15,7 @@ export function RecoveryScreen({ backHref, backLabel }: { backHref?: string; bac
   const viewModel = query.data ?? null;
 
   if (query.isPending && !viewModel) {
-    return (
-      <MetricDrillDownSkeleton
-        backHref={backHref}
-        backLabel={backLabel}
-        title="Récupération"
-        variant="recovery"
-      />
-    );
+    return <MetricDrillDownSkeleton variant="recovery" />;
   }
 
   if (!viewModel || viewModel.emptyState) {

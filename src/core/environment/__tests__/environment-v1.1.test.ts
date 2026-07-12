@@ -11,7 +11,6 @@ import {
   buildForecastEnvironment,
   buildTodayEnvironment,
   collectEnvironmentalObservationDrafts,
-  computeEstimatedWetBulbC,
   computeHeatIndexC,
   computeProviderPayloadHash,
   computeWbgtC,

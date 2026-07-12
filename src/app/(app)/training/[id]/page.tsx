@@ -16,6 +16,7 @@ import { ActivityGoalValidationsCard } from '@/components/goals/activity-goal-va
 import { ActivityEnvironmentInsight } from '@/components/training/activity-environment-insight';
 import { ActivityNarrativeSection } from '@/components/training/activity-narrative-section';
 import { PlannedSessionCompletionPanel } from '@/components/planning/planned-session-context-panel';
+import { enrichActivityObservedContext } from '@/lib/activity/enrich-observed-context';
 import { resolveActivityEnvironmentPresentation } from '@/lib/environment/activity-environment';
 import { getPlannedSessionById } from '@/lib/queries';
 import { buildPlannedSessionCompletionComparison } from '@/lib/planned-session/completion-comparison';
@@ -25,6 +26,7 @@ import { getActivityById, getMultisportLegsForActivity } from '@/lib/queries';
 import { getGoalAchievementsForActivity } from '@/lib/goal-achievements';
 import { isCoachConfigured } from '@/lib/ai';
 import { getPerformanceRecordsForActivity } from '@/lib/records';
+import { prisma } from '@/lib/prisma';
 import { ActivityType } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -33,6 +35,13 @@ type PageProps = { params: Promise<{ id: string }> };
 
 export default async function ActivityDetailPage({ params }: PageProps) {
   const { id } = await params;
+
+  try {
+    await enrichActivityObservedContext(prisma, id);
+  } catch (error) {
+    console.error('[activity-detail/enrich]', error);
+  }
+
   const activity = await getActivityById(id);
 
   if (!activity) notFound();
@@ -53,6 +62,9 @@ export default async function ActivityDetailPage({ params }: PageProps) {
       date: activity.date,
       duration: activity.duration,
       weather: activity.weather,
+      observedLocationLat: activity.observedLocationLat,
+      observedLocationLng: activity.observedLocationLng,
+      observedLocationLabel: activity.observedLocationLabel,
     },
   });
 
@@ -77,7 +89,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
   return (
     <div className="relative z-0 space-y-8">
-      <MobileBackLink href="/seances?tab=activites" label="Activités" showOnDesktop />
+      <MobileBackLink href="/training/history" label="Activités" showOnDesktop />
 
       <ActivityDetailHeader activity={activity} />
 

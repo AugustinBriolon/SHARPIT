@@ -8,6 +8,7 @@ import {
   isEnvironmentApplicable,
   resolveEnvironmentalApplicability,
   type GeoLocation,
+  type EnvironmentalDataCompleteness,
 } from '@/core/environment';
 import {
   buildPlannedSessionAdvisories,
@@ -20,9 +21,26 @@ import type {
   PlannedSessionExposureSetting,
   PlannedSessionIntention,
   PlannedSessionLocationType,
+  PlannedSessionWeatherSignals,
 } from '@/core/planned-session/types';
 import { defaultExposureForActivityType } from '@/core/planned-session/defaults';
+
+function indoorFlagFromExposure(exposure: PlannedSessionIntention['exposure']): boolean | null {
+  if (exposure === 'INDOOR') return true;
+  if (exposure === 'OUTDOOR') return false;
+  return null;
+}
+
+function dataCompletenessFromPredictionCount(count: number): EnvironmentalDataCompleteness {
+  if (count >= 3) return 'COMPLETE';
+  if (count >= 1) return 'PARTIAL';
+  return 'MINIMAL';
+}
+import { geocodePlaceLabel } from '@/lib/geocoding/nominatim';
+import { resolveHomeLocation } from '@/lib/geocoding/home-location';
 import { resolveAthleteGeoLocation } from '@/lib/environment/athlete-location';
+import { getActiveTravelContext } from '@/lib/travel-context/service';
+import { extractSessionWeatherSignals } from '@/lib/planned-session/weather-signals';
 import { prisma } from '@/lib/prisma';
 import { computeTrainingDayId } from '@/lib/training-day';
 import { fetchForecastPredictions } from '@/lib/planned-session/forecast-fetch';
@@ -68,7 +86,10 @@ export function parseScheduledWindow(
   };
 }
 
-function resolveLocation(session: PlannedSessionRecord, fallback: GeoLocation): GeoLocation | null {
+function resolveLocationFromRecord(
+  session: PlannedSessionRecord,
+  fallback: GeoLocation,
+): GeoLocation | null {
   if (session.locationLat != null && session.locationLng != null) {
     return {
       latitude: session.locationLat,
@@ -77,6 +98,50 @@ function resolveLocation(session: PlannedSessionRecord, fallback: GeoLocation): 
     };
   }
   return fallback;
+}
+
+async function resolveSessionGeoLocation(
+  session: PlannedSessionRecord,
+  sessionDate: Date,
+): Promise<GeoLocation> {
+  if (session.locationLat != null && session.locationLng != null) {
+    return {
+      latitude: session.locationLat,
+      longitude: session.locationLng,
+      label: session.locationLabel ?? undefined,
+    };
+  }
+
+  if (session.locationLabel?.trim()) {
+    const geocoded = await geocodePlaceLabel(session.locationLabel.trim());
+    if (geocoded) {
+      await prisma.plannedSession.update({
+        where: { id: session.id },
+        data: {
+          locationLat: geocoded.latitude,
+          locationLng: geocoded.longitude,
+          locationLabel: geocoded.label,
+        },
+      });
+      return {
+        latitude: geocoded.latitude,
+        longitude: geocoded.longitude,
+        label: geocoded.label,
+      };
+    }
+  }
+
+  const travel = await getActiveTravelContext(prisma, sessionDate);
+  if (travel) {
+    return {
+      latitude: travel.locationLat,
+      longitude: travel.locationLng,
+      label: travel.locationLabel,
+    };
+  }
+
+  const home = await resolveHomeLocation(prisma);
+  return home;
 }
 
 function exposureFromRecord(session: PlannedSessionRecord): PlannedSessionExposureSetting {
@@ -101,10 +166,12 @@ function locationTypeFromRecord(session: PlannedSessionRecord): PlannedSessionLo
   return null;
 }
 
-function buildIntention(session: PlannedSessionRecord): PlannedSessionIntention {
+function buildIntention(
+  session: PlannedSessionRecord,
+  location: GeoLocation | null,
+): PlannedSessionIntention {
   const window = parseScheduledWindow(session.date, session.startTime, session.durationMin);
   const exposure = exposureFromRecord(session);
-  const fallback = { latitude: 48.8566, longitude: 2.3522, label: 'default' };
 
   return {
     sessionId: session.id,
@@ -114,7 +181,7 @@ function buildIntention(session: PlannedSessionRecord): PlannedSessionIntention 
     durationMin: session.durationMin,
     intensity: session.intensity,
     exposure,
-    location: resolveLocation(session, fallback),
+    location,
     locationType: locationTypeFromRecord(session),
     title: session.title,
   };
@@ -129,39 +196,51 @@ function projectionFreshness(computedAt: Date): 'FRESH' | 'STALE' | 'UNAVAILABLE
 async function buildEnvironmentalProjection(input: {
   session: PlannedSessionRecord;
   intention: PlannedSessionIntention;
-}): Promise<PlannedSessionEnvironmentalProjection | null> {
+}): Promise<{
+  environment: PlannedSessionEnvironmentalProjection | null;
+  weatherSignals: PlannedSessionWeatherSignals | null;
+}> {
   const { session, intention } = input;
   const { exposure } = intention;
+  const emptySignals = {
+    maxPrecipitationMm: null,
+    minTemperatureC: null,
+    maxWindMps: null,
+  } satisfies PlannedSessionWeatherSignals;
 
   const applicability = resolveEnvironmentalApplicability({
     sportType: session.type as ActivityType,
-    indoorFlag: exposure === 'INDOOR' ? true : exposure === 'OUTDOOR' ? false : null,
+    indoorFlag: indoorFlagFromExposure(exposure),
     locationType: intention.locationType,
     athleteDeclaredExposure: exposure === 'UNKNOWN' ? null : exposure,
   });
 
   if (!isEnvironmentApplicable(applicability)) {
     return {
-      applicability,
-      thermalStressLevel: 'NOT_APPLICABLE',
-      trainingImpact: 'NONE',
-      recoveryDemandAdjustment: null,
-      performanceAdjustment: null,
-      confidence: 1,
-      dataCompleteness: 'NONE',
-      freshness: 'FRESH',
-      providerId: null,
-      computedAt: new Date().toISOString(),
+      environment: {
+        applicability,
+        thermalStressLevel: 'NOT_APPLICABLE',
+        trainingImpact: 'NONE',
+        recoveryDemandAdjustment: null,
+        performanceAdjustment: null,
+        confidence: 1,
+        dataCompleteness: 'NONE',
+        freshness: 'FRESH',
+        providerId: null,
+        computedAt: new Date().toISOString(),
+      },
+      weatherSignals: emptySignals,
     };
   }
 
   if (exposure === 'UNKNOWN') {
-    return null;
+    return { environment: null, weatherSignals: emptySignals };
   }
 
   const trainingDayId = computeTrainingDayId(new Date(intention.scheduledStart));
   const fallbackLocation = await resolveAthleteGeoLocation(prisma, ATHLETE_ID, trainingDayId);
-  const location = intention.location ?? fallbackLocation;
+  const location =
+    intention.location ?? resolveLocationFromRecord(session, fallbackLocation) ?? fallbackLocation;
   const window = parseScheduledWindow(session.date, session.startTime, session.durationMin);
 
   const { predictions, providerId } = await fetchForecastPredictions({
@@ -174,16 +253,19 @@ async function buildEnvironmentalProjection(input: {
 
   if (predictions.length === 0) {
     return {
-      applicability,
-      thermalStressLevel: 'UNKNOWN',
-      trainingImpact: 'NONE',
-      recoveryDemandAdjustment: null,
-      performanceAdjustment: null,
-      confidence: 0,
-      dataCompleteness: 'NONE',
-      freshness: 'UNAVAILABLE',
-      providerId,
-      computedAt: new Date().toISOString(),
+      environment: {
+        applicability,
+        thermalStressLevel: 'UNKNOWN',
+        trainingImpact: 'NONE',
+        recoveryDemandAdjustment: null,
+        performanceAdjustment: null,
+        confidence: 0,
+        dataCompleteness: 'NONE',
+        freshness: 'UNAVAILABLE',
+        providerId,
+        computedAt: new Date().toISOString(),
+      },
+      weatherSignals: emptySignals,
     };
   }
 
@@ -203,19 +285,22 @@ async function buildEnvironmentalProjection(input: {
   });
 
   const { computedAt } = forecast;
+  const weatherSignals = extractSessionWeatherSignals(predictions);
 
   return {
-    applicability,
-    thermalStressLevel: snapshot.thermalStressLevel,
-    trainingImpact: snapshot.trainingImpact,
-    recoveryDemandAdjustment: snapshot.recoveryDemandAdjustment,
-    performanceAdjustment: snapshot.performanceAdjustment,
-    confidence: snapshot.confidence,
-    dataCompleteness:
-      predictions.length >= 3 ? 'COMPLETE' : predictions.length >= 1 ? 'PARTIAL' : 'MINIMAL',
-    freshness: projectionFreshness(computedAt),
-    providerId,
-    computedAt: computedAt.toISOString(),
+    environment: {
+      applicability,
+      thermalStressLevel: snapshot.thermalStressLevel,
+      trainingImpact: snapshot.trainingImpact,
+      recoveryDemandAdjustment: snapshot.recoveryDemandAdjustment,
+      performanceAdjustment: snapshot.performanceAdjustment,
+      confidence: snapshot.confidence,
+      dataCompleteness: dataCompletenessFromPredictionCount(predictions.length),
+      freshness: projectionFreshness(computedAt),
+      providerId,
+      computedAt: computedAt.toISOString(),
+    },
+    weatherSignals,
   };
 }
 
@@ -240,8 +325,14 @@ export async function resolvePlannedSessionContext(
     if (cached) return cached;
   }
 
-  const intention = buildIntention(session);
-  const environment = await buildEnvironmentalProjection({ session, intention });
+  const intention = buildIntention(
+    session,
+    await resolveSessionGeoLocation(session, new Date(session.date)),
+  );
+  const { environment, weatherSignals } = await buildEnvironmentalProjection({
+    session,
+    intention,
+  });
 
   const advisories = buildPlannedSessionAdvisories({
     sessionType: session.type,
@@ -250,6 +341,7 @@ export async function resolvePlannedSessionContext(
     environment,
     scheduledHourLocal: parseScheduledWindow(session.date, session.startTime, session.durationMin)
       .hourLocal,
+    weatherSignals,
   });
 
   const preparation = buildPlannedSessionPreparation(advisories, environment);

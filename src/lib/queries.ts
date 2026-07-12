@@ -50,6 +50,7 @@ const activityListSelect = {
   load: true,
   rpe: true,
   feeling: true,
+  weather: true,
   notes: true,
   source: true,
   stravaId: true,

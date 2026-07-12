@@ -236,6 +236,10 @@ export function SessionRealization({ session }: { session: ClientPlannedSession 
         {analysis ? (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
+              <Sparkles className="text-primary size-3.5 shrink-0" />
+              <p className="text-label">Analyse coach</p>
+            </div>
+            <div className="flex items-center gap-2">
               <span
                 className={cn(
                   'font-mono text-2xl font-semibold',

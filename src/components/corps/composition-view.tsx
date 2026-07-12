@@ -15,6 +15,7 @@ import {
 } from '@/components/corps/corps-ui';
 import { MetricLineChart } from '@/components/recovery/health-charts';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SkeletonCard, SkeletonEyebrow, SkeletonPill } from '@/components/ui/skeleton-patterns';
 import { CORPS_TONE_TEXT } from '@/lib/metric-tone';
 import type { CorpsTone } from '@/lib/metric-tone';
 import { isDeltaStatusTone } from '@/lib/health-status';
@@ -99,16 +100,50 @@ function CompositionSkeleton() {
   return (
     <div className="space-y-6">
       <Skeleton className="h-16 w-full rounded-2xl" />
-      <Skeleton className="h-36 w-full rounded-2xl" />
-      <Skeleton className="h-4 w-40" />
-      <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-20 rounded-xl" />
+
+      <SkeletonCard className="overflow-hidden p-0">
+        <div className="flex flex-col gap-5 px-5 py-5 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-24 rounded-full border-0" />
+            <Skeleton className="h-10 w-32 border-0" />
+            <Skeleton className="h-4 w-40 rounded-full border-0" />
+          </div>
+          <div className="grid min-w-[min(100%,280px)] grid-cols-3 gap-3 sm:gap-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="bg-card/60 rounded-2xl border px-3 py-3">
+                <Skeleton className="h-2.5 w-14 rounded-full border-0" />
+                <Skeleton className="mt-2 h-7 w-12 border-0" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </SkeletonCard>
+
+      <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <SkeletonPill key={i} className="h-8 w-14 shrink-0" />
         ))}
       </div>
+
+      <div className="space-y-3">
+        <SkeletonEyebrow className="w-32" />
+        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bg-card/60 rounded-2xl border px-4 py-4">
+              <Skeleton className="h-2.5 w-16 rounded-full border-0" />
+              <Skeleton className="mt-2 h-8 w-20 border-0" />
+              <Skeleton className="mt-2 h-3 w-24 rounded-full border-0" />
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="grid gap-3 md:grid-cols-2">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-56 rounded-2xl" />
+          <SkeletonCard key={i} className="min-h-56 px-4 py-4">
+            <Skeleton className="h-3 w-24 rounded-full border-0" />
+            <Skeleton className="rounded-analysis mt-4 h-44 w-full border-0" />
+          </SkeletonCard>
         ))}
       </div>
     </div>

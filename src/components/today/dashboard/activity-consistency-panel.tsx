@@ -94,7 +94,7 @@ export function ActivityConsistencyPanel({
   return (
     <div
       className={cn(
-        'analysis-panel rounded-analysis-lg flex h-fit w-full flex-col px-4 py-4 sm:px-5 sm:py-5',
+        'analysis-panel rounded-analysis-lg flex h-full w-full flex-col px-4 py-4 sm:px-5 sm:py-5',
         className,
       )}
     >

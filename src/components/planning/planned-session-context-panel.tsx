@@ -16,7 +16,7 @@ export function PlannedSessionContextPanel({
 
   return (
     <Card className={cn('border-border/60', className)}>
-      <CardContent className="space-y-4 p-5">
+      <CardContent className="space-y-4">
         <div className="flex items-start gap-2">
           {viewModel.needsLocationConfirmation ? (
             <MapPin className="text-primary mt-0.5 size-4 shrink-0" />

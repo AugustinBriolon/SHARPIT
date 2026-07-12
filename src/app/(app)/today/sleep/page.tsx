@@ -15,7 +15,7 @@ export default function TodaySleepPage() {
   const viewModel = query.data ?? null;
 
   if (query.isPending && !viewModel) {
-    return <MetricDrillDownSkeleton title="Sommeil" variant="sleep" />;
+    return <MetricDrillDownSkeleton variant="sleep" />;
   }
 
   if (!viewModel || viewModel.emptyState) {

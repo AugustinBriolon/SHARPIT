@@ -12,8 +12,8 @@ export const TWIN_DRILL_DOWN = {
   effort: '/today/effort',
   adaptation: '/today/adaptation',
   physical: '/biology?tab=suivi',
-  sessions: '/seances',
-  planning: '/seances?tab=planning',
+  sessions: '/training',
+  planning: '/training/planning',
   activity: (id: string) => `/training/${id}` as const,
 } as const;
 

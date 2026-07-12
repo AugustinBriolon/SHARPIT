@@ -104,7 +104,7 @@ export function SessionBlock({
           </p>
           <Link
             className="text-primary inline-flex items-center gap-1.5 text-xs font-medium hover:underline"
-            href="/seances?tab=planning"
+            href="/training/planning"
           >
             <CalendarClock className="size-3.5 shrink-0" />
             Ouvrir le planning

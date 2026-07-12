@@ -39,12 +39,21 @@ export function buildPlannedSessionCompletionComparison(input: {
     };
   }
 
+  function resolveObservedThermalLabel(input: {
+    observedThermalLevel?: string | null;
+    observedCorrection?: { factors: readonly unknown[] } | null;
+  }): string | null {
+    if (input.observedThermalLevel) {
+      return THERMAL_LABELS[input.observedThermalLevel] ?? input.observedThermalLevel;
+    }
+    if (input.observedCorrection?.factors.length) {
+      return 'conditions contraignantes observées';
+    }
+    return null;
+  }
+
   const plannedThermalLabel = planned ? (THERMAL_LABELS[planned.thermalStressLevel] ?? null) : null;
-  const observedThermalLabel = input.observedThermalLevel
-    ? (THERMAL_LABELS[input.observedThermalLevel] ?? input.observedThermalLevel)
-    : input.observedCorrection?.factors.length
-      ? 'conditions contraignantes observées'
-      : null;
+  const observedThermalLabel = resolveObservedThermalLabel(input);
 
   const narrativeLines: string[] = [];
 

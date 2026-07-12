@@ -23,6 +23,12 @@ import {
   type LegacyPhysicalStatus,
 } from '@/core/physical-health/legacy-mapping';
 
+function legacyConfidenceFromCheckins(count: number): number {
+  if (count >= 3) return 0.75;
+  if (count > 0) return 0.6;
+  return 0.45;
+}
+
 export type LegacyPhysicalCheckin = {
   id: string;
   noteId: string;
@@ -127,7 +133,7 @@ export function migrateLegacyPhysicalNote(
     diagnosis: note.description,
     status,
     severity: note.severity ?? peakSeverity(note) ?? 0,
-    confidence: note.checkins.length >= 3 ? 0.75 : note.checkins.length > 0 ? 0.6 : 0.45,
+    confidence: legacyConfidenceFromCheckins(note.checkins.length),
     affectsTraining: note.affectsTraining,
     startedAt: note.startDate,
     resolvedAt: note.resolvedAt,

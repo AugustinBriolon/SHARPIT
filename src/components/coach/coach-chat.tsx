@@ -8,13 +8,23 @@ import {
   type UIMessage,
 } from 'ai';
 import { Loader2, Send, Square } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { format } from 'date-fns';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CoachMessage } from '@/components/coach/coach-message';
+import { ToolActivityList } from '@/components/coach/tool-activity-list';
 import { ToolActivity, type KnownSession } from '@/components/coach/tool-activity';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useSaveConversation } from '@/hooks/use-coach';
+import { usePlannedSessions } from '@/hooks/use-data';
+import {
+  CALENDAR_MUTATION_TOOL_TYPES,
+  dismissUnresolvedCalendarTools,
+  hasUnresolvedCalendarTools,
+  type ToolPartLite,
+} from '@/lib/coach-tool-parts';
 import { queryKeys } from '@/lib/query/keys';
+import { ActivityType } from '@prisma/client';
 
 const SUGGESTIONS = [
   "Comment se présente ma forme aujourd'hui ?",
@@ -23,30 +33,34 @@ const SUGGESTIONS = [
   'Ajoute une sortie vélo endurance samedi',
 ];
 
-type ToolPartLite = {
-  type: string;
-  state?: string;
-  input?: unknown;
-  output?: unknown;
-  approval?: { id: string; isAutomatic?: boolean };
-};
-
-const CALENDAR_TOOL_TYPES = new Set([
-  'tool-createPlannedSession',
-  'tool-createBrickSession',
-  'tool-updatePlannedSession',
-  'tool-deletePlannedSession',
-]);
-
-function buildKnownSessions(toolParts: ToolPartLite[]): Record<string, KnownSession> {
+function buildKnownSessions(
+  messages: UIMessage[],
+  plannedSessions:
+    { id: string; title: string | null; date: Date; type: ActivityType }[] | undefined,
+): Record<string, KnownSession> {
   const known: Record<string, KnownSession> = {};
-  for (const part of toolParts) {
-    if (part.type === 'tool-listPlannedSessions' && Array.isArray(part.output)) {
-      for (const s of part.output as KnownSession[]) {
+
+  for (const message of messages) {
+    if (message.role !== 'assistant') continue;
+    for (const part of message.parts) {
+      if (part.type !== 'tool-listPlannedSessions') continue;
+      const { output } = part as ToolPartLite;
+      if (!Array.isArray(output)) continue;
+      for (const s of output as KnownSession[]) {
         if (s?.id) known[s.id] = s;
       }
     }
   }
+
+  for (const session of plannedSessions ?? []) {
+    known[session.id] = {
+      id: session.id,
+      title: session.title,
+      date: format(new Date(session.date), 'yyyy-MM-dd'),
+      type: session.type,
+    };
+  }
+
   return known;
 }
 
@@ -61,22 +75,22 @@ export function CoachChat({
 }) {
   const queryClient = useQueryClient();
   const { mutateAsync: saveMessages } = useSaveConversation();
+  const { data: plannedSessions } = usePlannedSessions();
 
-  const { messages, sendMessage, status, stop, error, addToolApprovalResponse } = useChat({
-    id: conversationId,
-    messages: initialMessages,
-    transport: new DefaultChatTransport({ api: '/api/coach/chat' }),
-    // Quand l'athlète valide/refuse une proposition, on renvoie automatiquement
-    // sa décision au serveur pour exécuter (ou non) l'action.
-    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
-    onFinish: ({ messages: all, isAbort, isError, isDisconnect }) => {
-      if (isAbort || isError || isDisconnect) return;
-      saveMessages({ id: conversationId, messages: all }).catch((err) =>
-        console.error('[coach-chat] save', err),
-      );
-      queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
-    },
-  });
+  const { messages, sendMessage, status, stop, error, addToolApprovalResponse, setMessages } =
+    useChat({
+      id: conversationId,
+      messages: initialMessages,
+      transport: new DefaultChatTransport({ api: '/api/coach/chat' }),
+      sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
+      onFinish: ({ messages: all, isAbort, isError, isDisconnect }) => {
+        if (isAbort || isError || isDisconnect) return;
+        saveMessages({ id: conversationId, messages: all }).catch((err) =>
+          console.error('[coach-chat] save', err),
+        );
+        queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
+      },
+    });
   const [input, setInput] = useState('');
   const prefilled = useRef(false);
 
@@ -89,22 +103,29 @@ export function CoachChat({
   const initialScrollDone = useRef(false);
 
   const isBusy = status === 'submitted' || status === 'streaming';
+  const streamIdle = !isBusy;
 
-  // Toutes les propositions en attente de validation, affichées en bas du chat.
-  const pendingApprovals: { part: ToolPartLite; known: Record<string, KnownSession> }[] = [];
+  const knownSessions = useMemo(
+    () => buildKnownSessions(messages, plannedSessions),
+    [messages, plannedSessions],
+  );
+
+  const pendingApprovals: ToolPartLite[] = [];
   for (const message of messages) {
     if (message.role !== 'assistant') continue;
-    const toolParts = message.parts.filter((p) => p.type.startsWith('tool-')) as ToolPartLite[];
-    const known = buildKnownSessions(toolParts);
-    for (const part of toolParts) {
-      if (part.state === 'approval-requested' && part.approval && !part.approval.isAutomatic) {
-        pendingApprovals.push({ part, known });
+    for (const part of message.parts) {
+      if (!part.type.startsWith('tool-')) continue;
+      const lite = part as ToolPartLite;
+      if (lite.state === 'approval-requested' && lite.approval && !lite.approval.isAutomatic) {
+        pendingApprovals.push(lite);
       }
     }
   }
 
   const hasPendingApprovals = pendingApprovals.length > 0;
-  const inputLocked = isBusy || hasPendingApprovals;
+
+  // Seul le streaming bloque l'input — les propositions en attente ne doivent jamais verrouiller la conversation.
+  const inputLocked = isBusy;
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -124,7 +145,7 @@ export function CoachChat({
           if (!p.type.startsWith('tool-')) return false;
           const part = p as ToolPartLite;
           return (
-            CALENDAR_TOOL_TYPES.has(part.type) &&
+            CALENDAR_MUTATION_TOOL_TYPES.has(part.type) &&
             part.state === 'output-available' &&
             (part.output as { ok?: boolean } | undefined)?.ok !== false
           );
@@ -132,12 +153,22 @@ export function CoachChat({
     );
     if (changed) {
       queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
+      queryClient.invalidateQueries({ queryKey: ['travel-context'] });
     }
   }, [messages, queryClient]);
 
-  function submit(text: string) {
+  async function submit(text: string) {
     const value = text.trim();
     if (!value || inputLocked) return;
+
+    if (hasUnresolvedCalendarTools(messages)) {
+      const dismissed = dismissUnresolvedCalendarTools(messages);
+      setMessages(dismissed);
+      saveMessages({ id: conversationId, messages: dismissed }).catch((err) =>
+        console.error('[coach-chat] save dismiss', err),
+      );
+    }
+
     sendMessage({ text: value });
     setInput('');
   }
@@ -148,7 +179,7 @@ export function CoachChat({
       : 'Une erreur est survenue. Réessaie dans un instant.';
 
   const inputPlaceholder = hasPendingApprovals
-    ? 'Valide ou refuse la proposition pour continuer…'
+    ? "Réponds à la proposition, ou envoie un nouveau message pour l'ignorer…"
     : 'Demande conseil à ton coach…';
 
   return (
@@ -194,8 +225,6 @@ export function CoachChat({
             );
           }
 
-          // Les propositions en attente de validation sont rendues en bas de la
-          // discussion, pas ici. On n'affiche inline que le texte + les statuts.
           const inlineParts = toolParts.filter(
             (p) => (p as ToolPartLite).state !== 'approval-requested',
           );
@@ -206,9 +235,7 @@ export function CoachChat({
             <div key={message.id} className="flex justify-start">
               <div className="bg-muted/60 text-foreground w-full max-w-[90%] space-y-2 rounded-2xl px-4 py-3">
                 {text && <CoachMessage>{text}</CoachMessage>}
-                {inlineParts.map((part, i) => (
-                  <ToolActivity key={i} part={part} />
-                ))}
+                <ToolActivityList parts={inlineParts as ToolPartLite[]} streamIdle={streamIdle} />
               </div>
             </div>
           );
@@ -231,21 +258,26 @@ export function CoachChat({
                   : `${pendingApprovals.length} propositions à valider`}
               </p>
               <p className="text-muted-foreground text-xs">
-                Valide ou refuse la proposition pour continuer la conversation.
+                Valide ou refuse la proposition — ou envoie un nouveau message pour l'ignorer et
+                poursuivre la conversation.
               </p>
             </div>
-            {pendingApprovals.map(({ part, known }, i) => (
+            {pendingApprovals.map((part, i) => (
               <ToolActivity
                 key={i}
                 disabled={isBusy}
-                knownSessions={known}
+                knownSessions={knownSessions}
                 part={part}
+                streamIdle={streamIdle}
                 onApproval={(id, approved) => {
                   addToolApprovalResponse({ id, approved });
                   if (approved) {
                     queryClient.invalidateQueries({
                       queryKey: queryKeys.plannedSessions,
                     });
+                    if (part.type === 'tool-setTravelContext') {
+                      queryClient.invalidateQueries({ queryKey: ['travel-context'] });
+                    }
                   }
                 }}
               />
@@ -286,7 +318,7 @@ export function CoachChat({
             <Square className="size-4" />
           </Button>
         ) : (
-          <Button disabled={!input.trim() || hasPendingApprovals} size="icon" type="submit">
+          <Button disabled={!input.trim()} size="icon" type="submit">
             <Send className="size-4" />
           </Button>
         )}

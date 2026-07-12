@@ -14,6 +14,12 @@ import {
 } from '@/components/sessions/sessions-coach-menu';
 import { TrainingList } from '@/components/training/training-list';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  SkeletonCard,
+  SkeletonEyebrow,
+  SkeletonPill,
+  SkeletonTitle,
+} from '@/components/ui/skeleton-patterns';
 import { useGoals } from '@/hooks/use-data';
 import { navPillClass } from '@/lib/nav-pill';
 import { CalendarRange, ClipboardList, List } from 'lucide-react';
@@ -55,17 +61,23 @@ export function SessionsHubSkeleton() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
-          <Skeleton className="h-3 w-16" />
-          <Skeleton className="h-8 w-52" />
+          <SkeletonEyebrow className="w-16" />
+          <SkeletonTitle className="h-8 w-56 max-w-full" size="md" />
         </div>
-        <Skeleton className="h-8 w-32 rounded-lg" />
+        <Skeleton className="h-9 w-32 rounded-lg" />
       </div>
-      <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+      <div className="-mx-1 flex gap-1.5 overflow-x-auto pb-0.5">
         {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-9 w-28 shrink-0 rounded-full" />
+          <SkeletonPill key={i} className="h-9 w-28 shrink-0" />
         ))}
       </div>
-      <Skeleton className="h-96 w-full rounded-2xl" />
+      <SkeletonCard className="min-h-96 p-3 sm:p-4">
+        <div className="grid grid-cols-7 gap-2">
+          {Array.from({ length: 35 }).map((_, i) => (
+            <Skeleton key={i} className="rounded-analysis min-h-20 border-0" />
+          ))}
+        </div>
+      </SkeletonCard>
     </div>
   );
 }

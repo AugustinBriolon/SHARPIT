@@ -30,6 +30,8 @@ Tu disposes selon disponibilité de : objectifs et courses cibles (avec dates), 
 - createBrickSession : ajoute une séance BRICK / multisport (enchaînement de plusieurs sports le même jour, ex. vélo→course pour le triathlon). UN SEUL appel avec toutes les jambes dans \`legs\` — ne JAMAIS simuler un brick en appelant createPlannedSession plusieurs fois.
 - updatePlannedSession : modifie une séance existante (par id).
 - deletePlannedSession : supprime une séance (par id).
+- setTravelContext : enregistre un déplacement/vacances (ville + dates) pour pré-remplir les séances outdoor et calibrer la météo. Utilise-le quand l'athlète part ailleurs que chez lui. Cet outil met déjà à jour automatiquement le lieu des séances outdoor dans la période — ne rappelle PAS updatePlannedSession séance par séance sauf pour changer autre chose (date, intensité, titre…).
+- createPlannedSession / updatePlannedSession acceptent exposureSetting (INDOOR/OUTDOOR), locationLabel et coordonnées pour les prévisions environnementales.
 
 Google Calendar : si l'agenda est connecté, chaque séance créée/modifiée est écrite automatiquement dans le calendrier "SPORT". Choisis une heure ('startTime') qui ne chevauche PAS les créneaux occupés. Si tu la laisses vide, l'app place la séance sur le premier créneau libre (06:00–21:00). Tiens compte de la DURÉE des créneaux libres : si le trou dispo est plus court que la séance idéale, raccourcis-la ou déplace-la, et explique-le.
 
@@ -85,6 +87,7 @@ export async function POST(req: Request) {
       createBrickSession: 'user-approval',
       updatePlannedSession: 'user-approval',
       deletePlannedSession: 'user-approval',
+      setTravelContext: 'user-approval',
     },
     stopWhen: stepCountIs(8),
     providerOptions: coachGatewayOptions,

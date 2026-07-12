@@ -28,6 +28,16 @@ import {
 import { addTrainingDays } from '@/lib/training-day';
 import { resolve } from '@/lib/french';
 
+function projectionHeadlineFromTsb(tsbEnd: number): string {
+  if (tsbEnd >= 5) {
+    return 'Si tu exécutes ce plan, ta forme devrait remonter sur l’horizon.';
+  }
+  if (tsbEnd <= -15) {
+    return 'Le plan actuel risque d’accumuler de la fatigue — surveille la récupération.';
+  }
+  return 'Le plan maintient une charge équilibrée sur l’horizon choisi.';
+}
+
 const GLOBAL_ASSUMPTIONS: readonly ProjectionAssumption[] = [
   {
     code: 'planned-only-load',
@@ -115,12 +125,7 @@ function buildSummary(
     100;
 
   const tsbEnd = days[days.length - 1]?.load.tsb ?? anchor.tsb;
-  const headline =
-    tsbEnd >= 5
-      ? 'Si tu exécutes ce plan, ta forme devrait remonter sur l’horizon.'
-      : tsbEnd <= -15
-        ? 'Le plan actuel risque d’accumuler de la fatigue — surveille la récupération.'
-        : 'Le plan maintient une charge équilibrée sur l’horizon choisi.';
+  const headline = projectionHeadlineFromTsb(tsbEnd);
 
   const riskLines: string[] = [];
   if (highestRiskDay) {

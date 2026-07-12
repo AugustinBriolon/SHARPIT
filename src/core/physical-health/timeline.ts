@@ -12,6 +12,14 @@ function byDateAsc(a: { at: Date }, b: { at: Date }): number {
   return a.at.getTime() - b.at.getTime();
 }
 
+function observationSeverityLabel(obs: ConditionObservation): string {
+  if (obs.symptomPresent && obs.severityReported != null) {
+    return `${obs.severityReported}/10`;
+  }
+  if (obs.symptomPresent) return 'symptôme présent';
+  return 'aucun symptôme';
+}
+
 /**
  * Build a chronological timeline from persisted domain records.
  * Pure, deterministic, explainable.
@@ -50,12 +58,7 @@ export function buildConditionTimeline(input: {
   }
 
   for (const obs of input.observations) {
-    const severityLabel =
-      obs.symptomPresent && obs.severityReported != null
-        ? `${obs.severityReported}/10`
-        : obs.symptomPresent
-          ? 'symptôme présent'
-          : 'aucun symptôme';
+    const severityLabel = observationSeverityLabel(obs);
 
     events.push({
       at: obs.observedAt,

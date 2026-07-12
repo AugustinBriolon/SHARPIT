@@ -20,6 +20,19 @@ function sign(n: number): CompareResult {
   return 0;
 }
 
+function worstVerdictImproved(
+  candidate: ScenarioDecisionSnapshot,
+  baseline: ScenarioDecisionSnapshot,
+): boolean | null {
+  if (verdictRiskRank(candidate.worstVerdict) < verdictRiskRank(baseline.worstVerdict)) {
+    return true;
+  }
+  if (verdictRiskRank(candidate.worstVerdict) > verdictRiskRank(baseline.worstVerdict)) {
+    return false;
+  }
+  return null;
+}
+
 /**
  * Compare candidate vs baseline using Decision Engine fields only.
  * Returns 1 if candidate is strictly preferable, -1 if worse, 0 if tie.
@@ -53,12 +66,7 @@ export function computeDecisionDelta(
     { ...baseline, worstVerdict: baseline.endVerdict },
   );
 
-  const worstCompare =
-    verdictRiskRank(candidate.worstVerdict) < verdictRiskRank(baseline.worstVerdict)
-      ? true
-      : verdictRiskRank(candidate.worstVerdict) > verdictRiskRank(baseline.worstVerdict)
-        ? false
-        : null;
+  const worstCompare = worstVerdictImproved(candidate, baseline);
 
   return {
     endVerdictChanged,
