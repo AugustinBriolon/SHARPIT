@@ -34,23 +34,7 @@ export function ActivityNarrativeCard({
         {analysis.headline}
       </h2>
 
-      <div className="space-y-4">
-        <p className="text-muted-foreground text-sm leading-relaxed">{analysis.narrative}</p>
-
-        {analysis.highlights.length > 0 && (
-          <ul className="grid gap-2 sm:grid-cols-2">
-            {analysis.highlights.map((item) => (
-              <li
-                key={item}
-                className="bg-analysis-surface/80 border-analysis-border/60 rounded-analysis flex gap-2.5 border px-3 py-2.5 text-sm leading-snug"
-              >
-                <span className="text-primary mt-0.5 shrink-0 font-medium">·</span>
-                <span className="text-foreground/90">{item}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <p className="text-muted-foreground text-sm leading-relaxed">{analysis.narrative}</p>
     </section>
   );
 }

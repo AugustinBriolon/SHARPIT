@@ -137,10 +137,6 @@ export const activityNarrativeSchema = z.object({
   narrative: z
     .string()
     .describe('2 à 4 phrases style coach : comparaisons factuelles, contexte, ton bienveillant.'),
-  highlights: z
-    .array(z.string())
-    .max(4)
-    .describe('Points marquants courts (comparatifs chiffrés si possible).'),
 });
 
 export type ActivityNarrative = z.infer<typeof activityNarrativeSchema>;

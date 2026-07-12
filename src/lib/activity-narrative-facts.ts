@@ -2,11 +2,26 @@ import { ActivityType } from '@prisma/client';
 import { differenceInCalendarDays, startOfDay, subDays } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import {
+  buildEnvironmentFacts,
+  buildPhysicalConditionFacts,
+  buildPmcFacts,
+  buildRecoveryContextFacts,
+  buildThresholdPerformanceFacts,
+  buildTrainingLoadFacts,
+  type NarrativeActivityMetrics,
+  type NarrativeAthleteProfile,
+  type NarrativeHealthRow,
+  type NarrativePhysicalNote,
+} from '@/lib/activity-narrative-athlete-context';
+import {
   formatActivityWeatherNarrative,
   parseActivityWeather,
 } from '@/lib/activity/activity-weather';
+import { resolveActivityEnvironmentPresentation } from '@/lib/environment/activity-environment';
 import { formatDistance, formatDuration } from '@/lib/format';
 import { formatGoalDisplayValue, parseGoalMetricConfig } from '@/lib/goal-metric-config';
+import { resolveEnvironmentalExplanation } from '@/lib/presentation/environment';
+import { getActivePhysicalNotes, getAthleteProfile } from '@/lib/queries';
 
 const TYPE_FR: Record<string, string> = {
   RUN: 'Course à pied',
@@ -36,6 +51,9 @@ type ActivityRow = PeerRow & {
   weather: string | null;
   notes: string | null;
   load: number | null;
+  observedLocationLat: number | null;
+  observedLocationLng: number | null;
+  observedLocationLabel: string | null;
 };
 
 function fmtPace(secPerKm?: number | null): string | null {
@@ -69,6 +87,7 @@ function weatherFact(raw: string | null): string | null {
   return `Météo : ${raw.trim()}`;
 }
 
+/** Faits séance : métriques brutes pour référence interne du modèle (ne pas tout répéter en prose). */
 function describeActivity(activity: ActivityRow): string {
   const bits = [
     `Sport : ${TYPE_FR[activity.type] ?? activity.type}`,
@@ -77,9 +96,9 @@ function describeActivity(activity: ActivityRow): string {
     activity.duration ? `Durée : ${formatDuration(activity.duration)}` : null,
     activity.load != null ? `Charge : ${Math.round(activity.load)} TSS` : null,
     activity.rpe != null ? `RPE : ${activity.rpe}/10` : null,
-    activity.feeling ? `Ressenti : ${activity.feeling}` : null,
+    activity.feeling ? `Ressenti déclaré : ${activity.feeling}` : null,
     weatherFact(activity.weather),
-    activity.notes ? `Notes : ${activity.notes}` : null,
+    activity.notes ? `Notes athlète : ${activity.notes}` : null,
   ].filter(Boolean) as string[];
 
   const dist = distanceM(activity);
@@ -139,10 +158,6 @@ function buildComparativeFacts(activity: ActivityRow, peers: PeerRow[]): string 
   }
 
   if (actHr) {
-    const higherPeers = peers.filter((p) => {
-      const hr = avgHr(p);
-      return hr != null && hr >= actHr;
-    });
     const lastHigher = peers.find((p) => {
       const hr = avgHr(p);
       return hr != null && hr > actHr;
@@ -152,13 +167,13 @@ function buildComparativeFacts(activity: ActivityRow, peers: PeerRow[]): string 
       lines.push(
         `- FC moyenne la plus élevée depuis ${days} jour(s) (parmi les séances comparables récentes).`,
       );
-    } else if (higherPeers.length === 0 && peers.length >= 2) {
+    } else if (peers.length >= 2) {
       lines.push('- FC moyenne la plus élevée sur la fenêtre 30 jours comparée.');
     }
   }
 
-  const peerDurations = peers.map((p) => p.duration).filter((v): v is number => v != null && v > 0);
-  const avgDur = avg(peerDurations);
+  const peerLoads = peers.map((p) => p.duration).filter((v): v is number => v != null && v > 0);
+  const avgDur = avg(peerLoads);
   if (activity.duration && avgDur) {
     const ratio = activity.duration / avgDur;
     if (ratio >= 1.15) lines.push('- Durée nettement plus longue que la moyenne habituelle.');
@@ -166,6 +181,23 @@ function buildComparativeFacts(activity: ActivityRow, peers: PeerRow[]): string 
   }
 
   return lines.join('\n');
+}
+
+function mapPhysicalNotes(
+  notes: Awaited<ReturnType<typeof getActivePhysicalNotes>>,
+): NarrativePhysicalNote[] {
+  return notes.map((note) => ({
+    id: note.id,
+    category: note.category,
+    title: note.title,
+    bodyPart: note.bodyPart,
+    side: note.side,
+    severity: note.severity,
+    status: note.status,
+    description: note.description,
+    affectsTraining: note.affectsTraining,
+    checkins: note.checkins.map((c) => ({ severity: c.severity, date: c.date })),
+  }));
 }
 
 export async function buildActivityNarrativeFacts(activityId: string): Promise<string | null> {
@@ -182,11 +214,26 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
       weather: true,
       notes: true,
       load: true,
-      narrativeAnalyzedAt: true,
+      observedLocationLat: true,
+      observedLocationLng: true,
+      observedLocationLabel: true,
       runMetrics: {
-        select: { distanceM: true, paceSecPerKm: true, avgHr: true, elevationM: true },
+        select: {
+          distanceM: true,
+          paceSecPerKm: true,
+          avgHr: true,
+          elevationM: true,
+          avgPower: true,
+        },
       },
-      bikeMetrics: { select: { avgPower: true, elevationM: true } },
+      bikeMetrics: {
+        select: {
+          avgPower: true,
+          normalizedPower: true,
+          intensityFactor: true,
+          elevationM: true,
+        },
+      },
       swimMetrics: { select: { distanceM: true, avgPaceSecPer100m: true } },
     },
   });
@@ -200,78 +247,171 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
     return null;
   }
 
-  const since = subDays(startOfDay(activity.date), 30);
-  const peers = await prisma.activity.findMany({
-    where: {
-      type: activity.type,
-      date: { gte: since, lt: activity.date },
-      id: { not: activity.id },
-    },
-    select: {
-      id: true,
-      date: true,
-      duration: true,
-      rpe: true,
-      feeling: true,
-      runMetrics: {
-        select: { distanceM: true, paceSecPerKm: true, avgHr: true, elevationM: true },
-      },
-      bikeMetrics: { select: { avgPower: true, elevationM: true } },
-      swimMetrics: { select: { distanceM: true, avgPaceSecPer100m: true } },
-    },
-    orderBy: { date: 'desc' },
-    take: 40,
-  });
+  const activityDay = startOfDay(activity.date);
+  const since30 = subDays(activityDay, 30);
 
-  const healthDay = startOfDay(subDays(activity.date, 1));
-  const [health, goalHits] = await Promise.all([
-    prisma.dailyHealth.findFirst({
-      where: { date: healthDay },
+  const [
+    peers,
+    healthRows,
+    loadHistory,
+    pmcHistory,
+    profile,
+    physicalNotes,
+    goalHits,
+    environmentPresentation,
+  ] = await Promise.all([
+    prisma.activity.findMany({
+      where: {
+        type: activity.type,
+        date: { gte: since30, lt: activity.date },
+        id: { not: activity.id },
+      },
+      select: {
+        id: true,
+        date: true,
+        duration: true,
+        rpe: true,
+        feeling: true,
+        runMetrics: {
+          select: { distanceM: true, paceSecPerKm: true, avgHr: true, elevationM: true },
+        },
+        bikeMetrics: { select: { avgPower: true, elevationM: true } },
+        swimMetrics: { select: { distanceM: true, avgPaceSecPer100m: true } },
+      },
+      orderBy: { date: 'desc' },
+      take: 40,
     }),
+    prisma.dailyHealth.findMany({
+      where: { date: { gte: subDays(activityDay, 14), lt: activityDay } },
+      orderBy: { date: 'desc' },
+    }),
+    prisma.activity.findMany({
+      where: { date: { lte: activity.date } },
+      select: { date: true, load: true },
+      orderBy: { date: 'desc' },
+      take: 180,
+    }),
+    prisma.activity.findMany({
+      where: { date: { lte: activity.date } },
+      select: {
+        date: true,
+        type: true,
+        duration: true,
+        load: true,
+        bikeMetrics: { select: { tss: true } },
+      },
+      orderBy: { date: 'desc' },
+      take: 180,
+    }),
+    getAthleteProfile(),
+    getActivePhysicalNotes(),
     prisma.goalAchievement.findMany({
       where: { activityId: activity.id },
       include: {
         goal: { select: { title: true, unit: true, metricKey: true, targetValue: true } },
       },
     }),
+    resolveActivityEnvironmentPresentation({
+      athleteId: 'default',
+      activity: {
+        id: activity.id,
+        type: activity.type,
+        date: activity.date,
+        duration: activity.duration,
+        weather: activity.weather,
+        observedLocationLat: activity.observedLocationLat,
+        observedLocationLng: activity.observedLocationLng,
+        observedLocationLabel: activity.observedLocationLabel,
+      },
+    }).catch(() => null),
   ]);
 
-  const contextLines: string[] = [];
-  if (health) {
-    const sleepH =
-      health.sleepMinutes != null ? `${(health.sleepMinutes / 60).toFixed(1)} h` : null;
-    const bits = [
-      sleepH ? `sommeil veille ${sleepH}` : null,
-      health.hrv != null ? `HRV ${health.hrv} ms` : null,
-      health.restingHr != null ? `FC repos ${health.restingHr} bpm` : null,
-      health.recoveryScore != null ? `readiness ${health.recoveryScore}/100` : null,
-    ].filter(Boolean);
-    if (bits.length) contextLines.push(`Récupération (veille) : ${bits.join(', ')}.`);
-  } else {
-    contextLines.push('Récupération (veille) : pas de données santé renseignées.');
+  const healthContext: NarrativeHealthRow[] = healthRows.map((row) => ({
+    date: row.date,
+    sleepMinutes: row.sleepMinutes,
+    hrv: row.hrv,
+    restingHr: row.restingHr,
+    recoveryScore: row.recoveryScore,
+    readinessLevel: row.readinessLevel,
+    hrvStatus: row.hrvStatus,
+    bodyBattery: row.bodyBattery,
+  }));
+
+  const athleteProfile: NarrativeAthleteProfile | null = profile
+    ? {
+        ftpW: profile.ftpW,
+        lthr: profile.lthr,
+        maxHr: profile.maxHr,
+        runThresholdPaceSecPerKm: profile.runThresholdPaceSecPerKm,
+      }
+    : null;
+
+  const metrics: NarrativeActivityMetrics = {
+    type: activity.type,
+    duration: activity.duration,
+    load: activity.load,
+    runMetrics: activity.runMetrics,
+    bikeMetrics: activity.bikeMetrics,
+    weather: activity.weather,
+  };
+
+  const environmentLines: string[] = [];
+  if (environmentPresentation?.visible) {
+    for (const item of environmentPresentation.correction.narrative) {
+      environmentLines.push(
+        resolveEnvironmentalExplanation(item.code, item.params ? { ...item.params } : undefined),
+      );
+    }
+    for (const factor of environmentPresentation.correction.factors) {
+      if (factor.explanation?.trim()) environmentLines.push(factor.explanation.trim());
+    }
+    const effect = environmentPresentation.correction.totalAttributedEffect;
+    if (effect.available && effect.value != null && effect.value > 0) {
+      environmentLines.push(
+        `Effet environnemental total attribué : ~${Math.round(effect.value * 100)} % sur la performance perçue.`,
+      );
+    }
   }
 
-  if (goalHits.length) {
-    contextLines.push(
-      'Objectifs validés par cette séance :\n' +
-        goalHits
-          .map((g) => {
+  const goalLines =
+    goalHits.length > 0
+      ? [
+          'Objectifs validés par cette séance :',
+          ...goalHits.map((g) => {
             const cfg = parseGoalMetricConfig(g.goal.metricKey);
             const val = formatGoalDisplayValue(g.value, g.goal.unit, cfg);
             return `- ${g.goal.title} (${val})`;
-          })
-          .join('\n'),
-    );
-  }
+          }),
+        ]
+      : [];
 
-  return [
-    '# Cette séance',
+  const sections = [
+    '# Cette séance (données brutes — ne pas toutes répéter en prose)',
     describeActivity(activity as ActivityRow),
     '',
-    '# Comparatif historique',
+    '# Comparatif historique même sport (30 jours)',
     buildComparativeFacts(activity as ActivityRow, peers),
     '',
-    '# Contexte athlète',
-    contextLines.join('\n'),
-  ].join('\n');
+    '# Récupération & sommeil (avant la séance)',
+    ...buildRecoveryContextFacts(activity.date, healthContext),
+    '',
+    '# Charge d’entraînement (contexte au jour de la séance)',
+    ...buildTrainingLoadFacts(activity.date, loadHistory),
+    ...buildPmcFacts(activity.date, pmcHistory),
+    '',
+    '# Seuils personnels & interprétation de la performance',
+    ...buildThresholdPerformanceFacts(metrics, athleteProfile),
+    '',
+    '# Conditions physiques actives',
+    ...buildPhysicalConditionFacts(mapPhysicalNotes(physicalNotes)),
+    '',
+    '# Environnement',
+    ...buildEnvironmentFacts(activity.weather, environmentLines),
+  ];
+
+  if (goalLines.length) {
+    sections.push('', '# Objectifs', ...goalLines);
+  }
+
+  return sections.join('\n');
 }
