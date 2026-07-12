@@ -26,7 +26,7 @@ export function GlobalDecisionStrip({ context }: { context: GlobalDecisionContex
         className="text-primary mt-3 inline-block text-xs font-medium underline-offset-2 hover:underline"
         href={context.todayHref}
       >
-        Voir sur Today
+        Voir Accueil
       </Link>
     </DrillDownSectionCard>
   );

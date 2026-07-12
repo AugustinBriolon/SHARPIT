@@ -23,5 +23,5 @@ export const EMPTY_GLOBAL_DECISION: GlobalDecisionContext = {
   topActionLine: null,
   domainRole: 'none',
   relationNote: null,
-  todayHref: '/today',
+  todayHref: '/',
 };

@@ -114,6 +114,6 @@ export function buildGlobalDecisionContext(
     topActionLine: buildTopActionLine(decisionTopAction(decision)),
     domainRole,
     relationNote: relationNote(domainRole, domain, display.label),
-    todayHref: '/today',
+    todayHref: '/',
   };
 }
