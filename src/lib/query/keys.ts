@@ -10,6 +10,8 @@ export const queryKeys = {
   multisportStreams: (id: string) => ['multisport-streams', id] as const,
   physicalNotes: ['physical-notes'] as const,
   coachContext: ['coach-context'] as const,
+  coachMemory: ['coach-memory'] as const,
+  travelContext: ['travel-context'] as const,
   googleEvents: (from: string, to: string) => ['google-events', from, to] as const,
   googleCalendars: ['google-calendars'] as const,
   conversations: ['conversations'] as const,

@@ -16,7 +16,7 @@ export default function TrainingCalendarPage() {
         </p>
       </StickyHeader>
 
-      <CalendarView embedded />
+      <CalendarView embedded showCoachMenu showPlanButton />
     </div>
   );
 }

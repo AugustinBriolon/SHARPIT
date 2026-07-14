@@ -32,41 +32,84 @@ export type EndOfDayNarrativeCopy = {
   focusPriority: string;
 };
 
-function effortLevelWord(level: TodayEffortLevel | null): string {
-  if (level === 'high') return 'chargée';
-  if (level === 'moderate') return 'modérée';
-  return 'légère';
-}
-
-function formatActivityDuration(totalMinutes: number): string {
-  if (totalMinutes < 60) return `${totalMinutes} min`;
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return minutes > 0 ? `${hours} h ${minutes} min` : `${hours} h`;
+function effortAdjective(sport: string, level: TodayEffortLevel | null): string {
+  const isMasculine = sport === 'Vélo' || sport === 'Triathlon';
+  switch (level) {
+    case 'high':
+      return isMasculine ? 'exigeant' : 'exigeante';
+    case 'moderate':
+      return isMasculine ? 'modéré' : 'modérée';
+    default:
+      return isMasculine ? 'léger' : 'légère';
+  }
 }
 
 function todayBilanHeadline(input: {
   sportLabel: string | null;
   effortLevel: TodayEffortLevel | null;
-  totalDurationMin: number | null;
   completedSessionCount: number;
+  tomorrowSession: TomorrowSessionHint | null;
+  recoveryStress: boolean;
+  sleepDebt: boolean;
 }): string {
-  const level = effortLevelWord(input.effortLevel);
-  const sport = input.sportLabel?.toLowerCase() ?? null;
+  const {
+    sportLabel,
+    effortLevel,
+    completedSessionCount,
+    tomorrowSession,
+    recoveryStress,
+    sleepDebt,
+  } = input;
 
-  if (sport && input.totalDurationMin != null && input.totalDurationMin > 0) {
-    return `Journée ${level} — ${formatActivityDuration(input.totalDurationMin)} de ${sport}`;
+  if (completedSessionCount === 0) {
+    if (tomorrowSession) {
+      const tomorrowSport = tomorrowSession.sportLabel;
+      if (tomorrowSession.startHour != null && tomorrowSession.startHour < 9) {
+        return `Repos aujourd'hui — ${tomorrowSport} tôt demain`;
+      }
+      return `Repos aujourd'hui — ${tomorrowSport} au programme demain`;
+    }
+    return 'Journée de repos — recharge pour demain';
   }
 
-  if (sport) {
-    return `Journée ${level} — ${sport}`;
+  if (completedSessionCount >= 2) {
+    if (recoveryStress || effortLevel === 'high') {
+      return 'Double entraînement — sécurise la récup ce soir';
+    }
+    return 'Double entraînement — le sommeil consolidera tout';
   }
 
-  if (input.completedSessionCount > 0) {
-    return 'Entraînement fait aujourd’hui';
+  const sport = sportLabel ?? 'Entraînement';
+  const qual = effortAdjective(sport, effortLevel);
+
+  if (recoveryStress && effortLevel === 'high') {
+    return `${sport} ${qual} — le sommeil comptera ce soir`;
   }
 
-  return 'Journée de repos';
+  if (recoveryStress) {
+    return `${sport} ${qual} — récupère bien, le corps en demande`;
+  }
+
+  if (sleepDebt && effortLevel !== 'light') {
+    return `${sport} ${qual} — repose la dette de sommeil ce soir`;
+  }
+
+  if (effortLevel === 'high') {
+    return `${sport} ${qual} — protège la récup ce soir`;
+  }
+
+  if (effortLevel === 'moderate') {
+    if (tomorrowSession) {
+      return `${sport} ${qual} — prépare le ${tomorrowSession.sportLabel.toLowerCase()} de demain`;
+    }
+    return `${sport} ${qual} — le corps digère encore`;
+  }
+
+  if (tomorrowSession?.startHour != null && tomorrowSession.startHour < 9) {
+    return `${sport} ${qual} — couche-toi tôt pour demain`;
+  }
+
+  return `${sport} ${qual} — consolidation en cours`;
 }
 
 export function pickTomorrowSessionHint(
@@ -186,8 +229,10 @@ export function buildEndOfDayNarrativeCopy(input: {
   const headline = todayBilanHeadline({
     sportLabel: input.sportLabel,
     effortLevel: input.effortLevel,
-    totalDurationMin: input.totalDurationMin,
     completedSessionCount: input.completedSessionCount,
+    tomorrowSession: input.tomorrowSession,
+    recoveryStress: input.recoveryStress,
+    sleepDebt: input.sleep.debt7Min != null && input.sleep.debt7Min > 30,
   });
 
   const focusPriority = buildTonightFocus(

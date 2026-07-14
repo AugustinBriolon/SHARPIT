@@ -137,6 +137,6 @@ describe('buildAthleteSnapshot daily phase', () => {
     });
 
     expect(snapshot.dailyPhase.phase).toBe('SESSION_COMPLETED');
-    expect(snapshot.phaseNarrative.heroHeadline).toMatch(/TSS|Course/);
+    expect(snapshot.phaseNarrative.heroHeadline).toMatch(/exigeante|Course/);
   });
 });

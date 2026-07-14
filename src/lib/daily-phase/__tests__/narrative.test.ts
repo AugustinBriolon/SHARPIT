@@ -148,7 +148,7 @@ describe('buildPhaseNarrative', () => {
   it('session completed debriefs accomplishment not adaptation', () => {
     const n = narrativeForPhase('SESSION_COMPLETED');
     expect(n.heroEyebrow).toBe(DAILY_PHASE_PRIMARY_QUESTION.SESSION_COMPLETED);
-    expect(n.heroHeadline).toContain('TSS');
+    expect(n.heroHeadline).toContain('exigeant');
     expect(n.adaptationReminders).toHaveLength(0);
   });
 
@@ -210,7 +210,7 @@ describe('buildPhaseNarrative', () => {
       },
     });
     expect(n.heroEyebrow).toBe('Ce soir');
-    expect(n.heroHeadline).toMatch(/Journée modérée/);
+    expect(n.heroHeadline).toMatch(/Journée modérée|Course modérée/);
     expect(n.posture).toBe('protect');
     expect(n.postureLabel).toBe('');
     expect(n.focusPriority).toMatch(/Coucher vers/);
@@ -319,7 +319,7 @@ describe('buildPhaseNarrative', () => {
         },
       },
     });
-    expect(n.heroHeadline).toBe('Journée légère — 14 min de course');
+    expect(n.heroHeadline).toBe('Course légère — récupère bien, le corps en demande');
     expect(n.focusPriority).toMatch(/Coucher vers/);
     expect(n.focusPriority).toMatch(/récupérer/);
     expect(n.heroHeadline).not.toMatch(/protéger|Demain :|TSS/i);

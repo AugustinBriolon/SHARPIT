@@ -1,5 +1,23 @@
 import type { IntegrationId } from '@/lib/integrations/client-sync';
 
+export const INTEGRATION_CATALOG: Array<{
+  id: IntegrationId;
+  name: string;
+  tagline: string;
+  badge?: 'recommended' | 'legacy';
+}> = [
+  { id: 'strava', name: 'Strava', tagline: 'Activités & séances' },
+  { id: 'garmin', name: 'Garmin', tagline: 'Santé & wearable' },
+  {
+    id: 'withings',
+    name: 'Withings',
+    tagline: 'Balance & composition corporelle',
+    badge: 'recommended',
+  },
+  { id: 'renpho', name: 'Renpho', tagline: 'Composition corporelle' },
+  { id: 'google', name: 'Google Calendar', tagline: 'Planning & disponibilités' },
+];
+
 export type IntegrationAccount = {
   label: string | null;
   lastSyncAt: string | null;

@@ -17,6 +17,9 @@ const baseActivitySchema = z.object({
   notes: optionalString,
   weather: optionalString,
   load: optionalNumber,
+  observedLocationLabel: optionalString,
+  observedLocationLat: optionalNumber,
+  observedLocationLng: optionalNumber,
 });
 
 export const runMetricsSchema = z.object({

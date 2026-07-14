@@ -186,16 +186,97 @@ function focusPriorityForPhase(
   return null;
 }
 
+function inferEffortFromTss(totalTssToday: number | null): TodayEffortLevel | null {
+  if (totalTssToday == null) return null;
+  if (totalTssToday >= 65) return 'high';
+  if (totalTssToday >= 30) return 'moderate';
+  return 'light';
+}
+
+function resolveEffortLevel(input: PhaseNarrativeInput): TodayEffortLevel | null {
+  return input.evening?.effortLevel ?? inferEffortFromTss(input.totalTssToday);
+}
+
+function sportAfterPhrase(sport: string): string {
+  switch (sport) {
+    case 'Course':
+      return 'ta course';
+    case 'Vélo':
+      return 'le vélo';
+    case 'Natation':
+      return 'ta natation';
+    case 'Musculation':
+      return 'ta musculation';
+    case 'Triathlon':
+      return 'le triathlon';
+    default:
+      return 'la séance';
+  }
+}
+
+function sportEffortWord(sport: string, level: TodayEffortLevel | null): string {
+  const isMasculine = sport === 'Vélo' || sport === 'Triathlon';
+  switch (level) {
+    case 'high':
+      return isMasculine ? 'exigeant' : 'exigeante';
+    case 'moderate':
+      return isMasculine ? 'modéré' : 'modérée';
+    default:
+      return isMasculine ? 'léger' : 'légère';
+  }
+}
+
+function postTrainingHeadline(
+  phase: 'SESSION_COMPLETED' | 'RECOVERY_WINDOW',
+  input: PhaseNarrativeInput,
+  posture: TodayPosture,
+): string {
+  const sport = input.sportLabel ?? 'Séance';
+  const effortLevel = resolveEffortLevel(input);
+  const recoveryStress = isRecoveryStress(input.limitingFactorMessage);
+  const multi = (input.evening?.completedSessionCount ?? 1) >= 2;
+  const goal = input.goalContext;
+
+  if (phase === 'SESSION_COMPLETED') {
+    if (goal?.linkedToTodaySession) {
+      return `${sport} faite — utile pour ton objectif`;
+    }
+    if (multi) {
+      return 'Double séance — récupération prioritaire maintenant';
+    }
+    if (recoveryStress || posture === 'protect') {
+      return `${sport} faite — récupération prioritaire maintenant`;
+    }
+    if (effortLevel === 'high') {
+      return `${sport} ${sportEffortWord(sport, effortLevel)} — laisse le corps digérer`;
+    }
+    if (effortLevel === 'moderate') {
+      return `${sport} faite — place à la récupération`;
+    }
+    return `${sport} faite — séance dans les jambes`;
+  }
+
+  if (multi) {
+    return posture === 'protect'
+      ? 'Après le double bloc — récupération à consolider'
+      : 'Après le double bloc — fenêtre d’adaptation ouverte';
+  }
+
+  const after = sportAfterPhrase(sport);
+
+  if (recoveryStress || posture === 'protect') {
+    return `Après ${after} — récupération à consolider`;
+  }
+
+  if (effortLevel === 'high') {
+    return `Après ${after} — nutrition et sommeil d'abord`;
+  }
+
+  return `Après ${after} — fenêtre d’adaptation ouverte`;
+}
+
 function headlineForPhase(input: PhaseNarrativeInput, posture: TodayPosture): string {
-  const {
-    resolution,
-    verdict,
-    adviceActionable,
-    sportLabel,
-    totalTssToday,
-    dailyStrainScore,
-    dailyStrainAvailable,
-  } = input;
+  const { resolution, verdict, adviceActionable, sportLabel } = input;
   const { phase } = resolution;
 
   if (!adviceActionable && isForwardAdvicePhase(phase)) {
@@ -212,21 +293,11 @@ function headlineForPhase(input: PhaseNarrativeInput, posture: TodayPosture): st
     case 'BEFORE_SESSION':
       return sportLabel ? `Séance ${sportLabel} à venir` : 'Séance à venir';
 
-    case 'SESSION_COMPLETED': {
-      if (sportLabel && totalTssToday != null) {
-        return `${sportLabel} · ${totalTssToday} TSS`;
-      }
-      if (sportLabel) return `${sportLabel} — séance enregistrée`;
-      return 'Séance enregistrée';
-    }
+    case 'SESSION_COMPLETED':
+      return postTrainingHeadline('SESSION_COMPLETED', input, posture);
 
     case 'RECOVERY_WINDOW':
-      if (dailyStrainAvailable && dailyStrainScore != null) {
-        return `Charge du jour : ${dailyStrainScore} — fenêtre d’adaptation ouverte`;
-      }
-      return posture === 'protect'
-        ? 'Récupération à consolider'
-        : 'Maximise l’adaptation maintenant';
+      return postTrainingHeadline('RECOVERY_WINDOW', input, posture);
 
     case 'END_OF_DAY':
       return 'Bilan de la journée';

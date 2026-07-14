@@ -1026,17 +1026,23 @@ model PlannedSession {
   @@index([brickGroupId])
 }
 
+enum CoachMemorySource {
+  USER
+  COACH
+}
+
 model AthleteTravelContext {
-  id            String   @id @default(cuid())
+  id            String             @id @default(cuid())
   label         String?
   locationLabel String
   locationLat   Float
   locationLng   Float
-  startDate     DateTime @db.Date
-  endDate       DateTime @db.Date
+  startDate     DateTime           @db.Date
+  endDate       DateTime           @db.Date
   note          String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  source        CoachMemorySource  @default(USER)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 
   @@index([startDate, endDate])
 }

@@ -47,6 +47,11 @@ export function SkeletonPill({ className }: { className?: string }) {
   return <Skeleton className={cn('h-8 w-24 rounded-full', className)} />;
 }
 
+/** Matches integration StatusBadge pill (~h-5, rounded-full). */
+export function SkeletonStatusBadge({ className }: { className?: string }) {
+  return <Skeleton className={cn('h-5 w-[5.5rem] rounded-full border-0', className)} />;
+}
+
 export function SkeletonCard({
   className,
   children,

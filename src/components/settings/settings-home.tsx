@@ -1,7 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { ChevronRight, Goal, Link2, MoonStar, ShieldCheck, User2, Wrench } from 'lucide-react';
+import {
+  ChevronRight,
+  Goal,
+  Brain,
+  Link2,
+  MoonStar,
+  ShieldCheck,
+  User2,
+  Wrench,
+} from 'lucide-react';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { SettingsMaintenancePanel } from '@/components/settings/settings-maintenance-panel';
 import { cn } from '@/lib/utils';
@@ -17,7 +26,7 @@ const ENTRIES: SettingsEntry[] = [
   {
     href: '/settings/account',
     title: 'Compte',
-    description: 'Identité athlète, contexte et paramètres de base.',
+    description: 'Identité athlète, seuils et paramètres physiologiques.',
     icon: User2,
   },
   {
@@ -39,6 +48,12 @@ const ENTRIES: SettingsEntry[] = [
     icon: Link2,
   },
   {
+    href: '/settings/memory',
+    title: 'Mémoire du coach',
+    description: 'Déplacements, contexte durable et entrées retenues par le coach.',
+    icon: Brain,
+  },
+  {
     href: '/settings/about',
     title: 'À propos',
     description: 'Version produit, positionnement et principes SHARPIT.',
@@ -53,18 +68,16 @@ function SettingsEntryCard({ entry }: { entry: SettingsEntry }) {
     <Link
       href={entry.href}
       className={cn(
-        'group flex items-center gap-3 rounded-2xl border px-4 py-4 transition-colors',
+        'group flex h-full items-center gap-3 rounded-2xl border px-4 py-4 transition-colors',
         'hover:border-primary/20 hover:bg-primary/5',
       )}
     >
-      <div className="flex w-full items-start gap-3">
-        <div className="bg-primary/10 ring-primary/15 mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl ring-1">
-          <Icon className="text-primary size-4" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium">{entry.title}</p>
-          <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{entry.description}</p>
-        </div>
+      <div className="bg-primary/10 ring-primary/15 flex size-9 shrink-0 items-center justify-center rounded-xl ring-1">
+        <Icon className="text-primary size-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium">{entry.title}</p>
+        <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{entry.description}</p>
       </div>
       <ChevronRight className="text-muted-foreground size-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
     </Link>
@@ -85,7 +98,7 @@ export function SettingsHome() {
         </p>
       </StickyHeader>
 
-      <div className="grid grid-cols-1 gap-3 space-y-3 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:items-stretch">
         {ENTRIES.map((entry) => (
           <SettingsEntryCard key={entry.href} entry={entry} />
         ))}

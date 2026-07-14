@@ -2,6 +2,13 @@
 
 import { BrickDialog } from '@/components/planning/brick-dialog';
 import { PlannedSessionDialog } from '@/components/planning/planned-session-dialog';
+import { PlanAdapter } from '@/components/coach/plan-adapter';
+import { PlanGenerator } from '@/components/coach/plan-generator';
+import { MacroPlanDialog } from '@/components/planning/macro-plan-dialog';
+import {
+  SessionsCoachMenu,
+  type SessionsCoachAction,
+} from '@/components/sessions/sessions-coach-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   SkeletonCard,
@@ -36,6 +43,7 @@ import {
   subWeeks,
 } from 'date-fns';
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { CalendarMonthGrid } from './calendar-month-grid';
 import { CalendarToolbar } from './calendar-toolbar';
 import type { DialogState } from './calendar-types';
@@ -86,10 +94,15 @@ function CalendarSkeleton({ showHeader }: { showHeader: boolean }) {
 export function CalendarView({
   embedded = false,
   showHeader = true,
+  showCoachMenu = !embedded,
+  showPlanButton = !embedded,
 }: {
   embedded?: boolean;
   showHeader?: boolean;
+  showCoachMenu?: boolean;
+  showPlanButton?: boolean;
 }) {
+  const router = useRouter();
   const mounted = useMounted();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
@@ -165,16 +178,40 @@ export function CalendarView({
 
   const [dialog, setDialog] = useState<DialogState>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
+  const [generatorOpen, setGeneratorOpen] = useState(false);
+  const [adapterOpen, setAdapterOpen] = useState(false);
+  const [macroPlanOpen, setMacroPlanOpen] = useState(false);
+
+  function handleCoachAction(action: SessionsCoachAction) {
+    switch (action) {
+      case 'plan':
+        setDialog({ mode: 'create', date: new Date() });
+        break;
+      case 'manual':
+        router.push('/training/manual');
+        break;
+      case 'generate':
+        setGeneratorOpen(true);
+        break;
+      case 'adapt':
+        setAdapterOpen(true);
+        break;
+      case 'macro':
+        setMacroPlanOpen(true);
+        break;
+    }
+  }
 
   const header = showHeader ? (
     <CalendarToolbar
       calendars={calendarsQuery.data ?? []}
       calendarsLoading={calendarsQuery.isPending}
+      coachMenu={showCoachMenu ? <SessionsCoachMenu onAction={handleCoachAction} /> : null}
       embedded={embedded}
       googleConnected={googleConnected}
       isMobile={isMobile}
       mounted={mounted}
-      showPlanButton={!embedded}
+      showPlanButton={showPlanButton}
       title={calendarToolbarTitle(isMobile, mounted, gridStart, gridEnd, month)}
       visibilityError={visibilityError}
       onPlan={() => setDialog({ mode: 'create', date: new Date() })}
@@ -266,6 +303,12 @@ export function CalendarView({
           session={dialog.mode === 'edit' ? dialog.session : undefined}
           onClose={() => setDialog(null)}
         />
+      )}
+
+      {generatorOpen && <PlanGenerator onClose={() => setGeneratorOpen(false)} />}
+      {adapterOpen && <PlanAdapter onClose={() => setAdapterOpen(false)} />}
+      {macroPlanOpen && (
+        <MacroPlanDialog goals={goalsQuery.data ?? []} onClose={() => setMacroPlanOpen(false)} />
       )}
     </div>
   );

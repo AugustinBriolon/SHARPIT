@@ -16,7 +16,7 @@ export default function TrainingPlanningPage() {
         </p>
       </StickyHeader>
 
-      <PlanningView embedded />
+      <PlanningView embedded showCoachMenu />
     </div>
   );
 }

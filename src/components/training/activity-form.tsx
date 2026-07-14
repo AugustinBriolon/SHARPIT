@@ -3,9 +3,16 @@
 import { ActivityType } from '@prisma/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
+import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
+import {
+  LocationPlacePicker,
+  type LocationPlaceValue,
+} from '@/components/planning/location-place-picker';
+import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
 import { queryKeys } from '@/lib/query/keys';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +26,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  formatActivityWeatherNarrative,
+  parseActivityWeather,
+} from '@/lib/activity/activity-weather';
 import { activityTypeLabels, formatDateTimeLocal } from '@/lib/format';
 import { createActivitySchema } from '@/lib/validators/activity';
 
@@ -27,6 +38,16 @@ type ActivityFormValues = z.input<typeof createActivitySchema>;
 function strengthSetsForForm(initialData: ActivityWithRelations) {
   if (initialData.type !== ActivityType.STRENGTH) return [];
   return initialData.strengthSets.length ? initialData.strengthSets : [defaultStrengthSet];
+}
+
+function resolveWatchedDate(value: unknown): Date {
+  if (value instanceof Date) return value;
+  if (typeof value === 'string' || typeof value === 'number') return new Date(value);
+  return new Date();
+}
+
+function resolveWatchedDurationSec(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 function emptyToUndefined(value: unknown) {
@@ -42,16 +63,41 @@ function sanitizeActivityPayload(values: ActivityFormValues): ActivityFormValues
     feeling: values.feeling || undefined,
     notes: values.notes || undefined,
     weather: values.weather || undefined,
+    observedLocationLabel: values.observedLocationLabel || undefined,
+    observedLocationLat: emptyToUndefined(values.observedLocationLat) as number | undefined,
+    observedLocationLng: emptyToUndefined(values.observedLocationLng) as number | undefined,
     duration: emptyToUndefined(values.duration) as number | undefined,
     rpe: emptyToUndefined(values.rpe) as number | undefined,
     load: emptyToUndefined(values.load) as number | undefined,
   };
+
+  if (!sportSupportsOutdoorContext(payload.type)) {
+    delete payload.observedLocationLabel;
+    delete payload.observedLocationLat;
+    delete payload.observedLocationLng;
+    delete payload.weather;
+  }
 
   if (payload.type !== ActivityType.STRENGTH) {
     delete payload.strengthSets;
   }
 
   return payload;
+}
+
+function initialLocationFromData(data?: ActivityWithRelations): LocationPlaceValue {
+  if (
+    data?.observedLocationLat != null &&
+    data.observedLocationLng != null &&
+    data.observedLocationLabel
+  ) {
+    return {
+      label: data.observedLocationLabel,
+      latitude: data.observedLocationLat,
+      longitude: data.observedLocationLng,
+    };
+  }
+  return null;
 }
 
 function formatValidationErrors(errors: Record<string, unknown>): string {
@@ -84,6 +130,9 @@ type ActivityWithRelations = {
   notes: string | null;
   weather: string | null;
   load: number | null;
+  observedLocationLabel: string | null;
+  observedLocationLat: number | null;
+  observedLocationLng: number | null;
   runMetrics: Record<string, unknown> | null;
   bikeMetrics: Record<string, unknown> | null;
   swimMetrics: Record<string, unknown> | null;
@@ -106,9 +155,31 @@ const defaultStrengthSet = {
   notes: '',
 };
 
+const ACTIVITY_FEELING_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: 'Très bien', label: 'Très bien' },
+  { value: 'Bien', label: 'Bien' },
+  { value: 'Correct', label: 'Correct' },
+  { value: 'Mal', label: 'Mal' },
+  { value: 'Très mal', label: 'Très mal' },
+];
+
+function resolveWatchedRpe(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
 export function ActivityForm({ mode, initialData }: ActivityFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [location, setLocation] = useState<LocationPlaceValue>(() =>
+    initialLocationFromData(initialData),
+  );
+  const locationTouchedRef = useRef(Boolean(initialData?.observedLocationLabel));
+  const [weatherSummary, setWeatherSummary] = useState<string | null>(() => {
+    const parsed = parseActivityWeather(initialData?.weather);
+    return parsed ? formatActivityWeatherNarrative(parsed) : null;
+  });
+  const [weatherLoading, setWeatherLoading] = useState(false);
+
   const form = useForm<ActivityFormValues>({
     resolver: zodResolver(createActivitySchema),
     defaultValues: initialData
@@ -121,6 +192,9 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
           feeling: initialData.feeling ?? '',
           notes: initialData.notes ?? '',
           weather: initialData.weather ?? '',
+          observedLocationLabel: initialData.observedLocationLabel ?? '',
+          observedLocationLat: initialData.observedLocationLat ?? undefined,
+          observedLocationLng: initialData.observedLocationLng ?? undefined,
           load: initialData.load ?? undefined,
           runMetrics: initialData.runMetrics ?? undefined,
           bikeMetrics: initialData.bikeMetrics ?? undefined,
@@ -138,10 +212,139 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
     control: form.control,
     name: 'type',
   });
+  const activityDate = useWatch({
+    control: form.control,
+    name: 'date',
+  });
+  const durationSec = useWatch({
+    control: form.control,
+    name: 'duration',
+  });
+  const rpe = useWatch({
+    control: form.control,
+    name: 'rpe',
+  });
+  const feeling = useWatch({
+    control: form.control,
+    name: 'feeling',
+  });
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'strengthSets',
   });
+
+  const resolvedActivityDate = resolveWatchedDate(activityDate);
+  const resolvedDurationSec = resolveWatchedDurationSec(durationSec);
+  const resolvedRpe = resolveWatchedRpe(rpe);
+  const feelingValue = typeof feeling === 'string' ? feeling : '';
+  const feelingOptions = useMemo(() => {
+    const options = [...ACTIVITY_FEELING_OPTIONS];
+    if (feelingValue && !options.some((option) => option.value === feelingValue)) {
+      options.unshift({ value: feelingValue, label: feelingValue });
+    }
+    return options;
+  }, [feelingValue]);
+
+  const isOutdoor = sportSupportsOutdoorContext(activityType);
+
+  useEffect(() => {
+    if (mode !== 'create' || locationTouchedRef.current) return;
+    const dateIso = resolvedActivityDate.toISOString();
+    void fetch(`/api/geocoding/home?date=${encodeURIComponent(dateIso)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then(
+        (
+          data: {
+            home?: { label: string; latitude: number; longitude: number };
+          } | null,
+        ) => {
+          if (data?.home) {
+            setLocation({
+              label: data.home.label,
+              latitude: data.home.latitude,
+              longitude: data.home.longitude,
+            });
+          }
+        },
+      )
+      .catch(() => undefined);
+  }, [mode, resolvedActivityDate]);
+
+  useEffect(() => {
+    if (!location) {
+      form.setValue('observedLocationLabel', '');
+      form.setValue('observedLocationLat', undefined);
+      form.setValue('observedLocationLng', undefined);
+      form.setValue('weather', '');
+      setWeatherSummary(null);
+      return;
+    }
+
+    form.setValue('observedLocationLabel', location.label);
+    form.setValue('observedLocationLat', location.latitude);
+    form.setValue('observedLocationLng', location.longitude);
+  }, [form, location]);
+
+  useEffect(() => {
+    if (!isOutdoor || !location) return;
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      void (async () => {
+        setWeatherLoading(true);
+        try {
+          const response = await fetch('/api/activities/weather-preview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              latitude: location.latitude,
+              longitude: location.longitude,
+              label: location.label,
+              date: resolvedActivityDate,
+              durationSec: resolvedDurationSec,
+            }),
+            signal: controller.signal,
+          });
+          if (!response.ok) return;
+          const data = (await response.json()) as {
+            weather?: string | null;
+            summary?: string | null;
+          };
+          if (data.weather) {
+            form.setValue('weather', data.weather);
+          }
+          setWeatherSummary(data.summary ?? null);
+        } catch {
+          // best-effort
+        } finally {
+          if (!controller.signal.aborted) setWeatherLoading(false);
+        }
+      })();
+    }, 400);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [isOutdoor, location, resolvedActivityDate, resolvedDurationSec, form]);
+
+  function renderWeatherHint() {
+    if (weatherLoading) {
+      return (
+        <>
+          <Loader2 className="size-3.5 animate-spin" />
+          Récupération de la météo…
+        </>
+      );
+    }
+    if (weatherSummary) {
+      return <span>Météo estimée : {weatherSummary}</span>;
+    }
+    if (location) {
+      return <span>La météo sera calculée à partir du lieu et de l&apos;horaire.</span>;
+    }
+    return null;
+  }
 
   const onSubmit = form.handleSubmit(
     async (values) => {
@@ -191,10 +394,10 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
               value={activityType}
               onValueChange={(value) => form.setValue('type', value as ActivityType)}
             >
-              <SelectTrigger>
-                <SelectValue />
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Choisir un sport" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="w-max max-w-[var(--available-width)] min-w-[var(--anchor-width)]">
                 {Object.values(ActivityType).map((type) => (
                   <SelectItem key={type} value={type}>
                     {activityTypeLabels[type]}
@@ -209,9 +412,7 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
             <Input
               id="date"
               type="datetime-local"
-              defaultValue={formatDateTimeLocal(
-                initialData?.date ? new Date(initialData.date) : new Date(),
-              )}
+              value={formatDateTimeLocal(resolvedActivityDate)}
               onChange={(e) => form.setValue('date', new Date(e.target.value))}
             />
           </div>
@@ -226,8 +427,10 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
             <Input
               id="duration"
               type="number"
-              defaultValue={
-                initialData?.duration ? Math.round(initialData.duration / 60) : undefined
+              value={
+                resolvedDurationSec != null && resolvedDurationSec > 0
+                  ? Math.round(resolvedDurationSec / 60)
+                  : ''
               }
               onChange={(e) =>
                 form.setValue('duration', e.target.value ? Number(e.target.value) * 60 : undefined)
@@ -235,36 +438,89 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="rpe">RPE (1-10)</Label>
-            <Input
-              id="rpe"
-              max={10}
-              min={1}
-              type="number"
-              {...form.register('rpe', { setValueAs: (value) => emptyToUndefined(value) })}
-            />
+          <div className="grid gap-4 md:col-span-2 md:grid-cols-2">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="rpe">RPE (1-10)</Label>
+                <span className="text-muted-foreground font-mono text-sm tabular-nums">
+                  {resolvedRpe ?? '—'}
+                </span>
+              </div>
+              <input
+                className="accent-primary h-2 w-full cursor-pointer"
+                id="rpe"
+                max={10}
+                min={1}
+                step={1}
+                type="range"
+                value={resolvedRpe ?? 5}
+                onChange={(e) => form.setValue('rpe', Number(e.target.value))}
+              />
+              <div className="text-muted-foreground flex justify-between text-[10px]">
+                <span>1 · Facile</span>
+                <span>10 · Maximal</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Ressenti</Label>
+              <Select
+                value={feelingValue || '__none__'}
+                onValueChange={(value) =>
+                  form.setValue('feeling', value === '__none__' ? '' : value)
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Non renseigné">
+                    {feelingValue
+                      ? (feelingOptions.find((option) => option.value === feelingValue)?.label ??
+                        feelingValue)
+                      : 'Non renseigné'}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="w-max max-w-[var(--available-width)] min-w-[var(--anchor-width)]">
+                  <SelectItem value="__none__">Non renseigné</SelectItem>
+                  {feelingOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="load">Charge (TSS)</Label>
-            <Input
-              id="load"
-              step="0.1"
-              type="number"
-              {...form.register('load', { setValueAs: (value) => emptyToUndefined(value) })}
-            />
+          <div className="grid gap-4 md:col-span-2 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="load">Charge (TSS)</Label>
+              <Input
+                id="load"
+                step="0.1"
+                type="number"
+                {...form.register('load', { setValueAs: (value) => emptyToUndefined(value) })}
+              />
+            </div>
+
+            {isOutdoor ? (
+              <div className="space-y-2">
+                <Label>Lieu de la séance</Label>
+                <LocationPlacePicker
+                  placeholder="Rechercher une ville ou un lieu…"
+                  value={location}
+                  onChange={(next) => {
+                    locationTouchedRef.current = true;
+                    setLocation(next);
+                  }}
+                />
+              </div>
+            ) : null}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="feeling">Ressenti</Label>
-            <Input id="feeling" {...form.register('feeling')} placeholder="Bien, fatigué..." />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="weather">Météo</Label>
-            <Input id="weather" {...form.register('weather')} placeholder="12°C, vent léger" />
-          </div>
+          {isOutdoor ? (
+            <div className="text-muted-foreground flex min-h-5 items-center gap-2 text-xs md:col-span-2">
+              {renderWeatherHint()}
+            </div>
+          ) : null}
 
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="notes">Notes</Label>

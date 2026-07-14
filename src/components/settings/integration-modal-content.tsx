@@ -783,7 +783,7 @@ function GoogleContent({
         <div className="space-y-2">
           <label className="text-sm font-medium">Calendrier des séances</label>
           <Select value={calendarId} onValueChange={handleSelectCalendar}>
-            <SelectTrigger disabled={calendarsQuery.isPending || savingTarget}>
+            <SelectTrigger className="w-full" disabled={calendarsQuery.isPending || savingTarget}>
               <SelectValue>
                 {calendarSelectLabel(
                   calendarId,
@@ -793,7 +793,7 @@ function GoogleContent({
                 )}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="w-max max-w-[var(--available-width)] min-w-[var(--anchor-width)]">
               {calendars.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.summary}

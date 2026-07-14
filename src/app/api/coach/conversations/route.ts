@@ -24,7 +24,10 @@ export async function POST(request: Request) {
     );
     return NextResponse.json(conversation, { status: 201 });
   } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Création de la conversation impossible';
+    const status = message.includes('au moins un message') ? 400 : 500;
     console.error('[coach/conversations] POST', error);
-    return NextResponse.json({ error: 'Création de la conversation impossible' }, { status: 500 });
+    return NextResponse.json({ error: message }, { status });
   }
 }

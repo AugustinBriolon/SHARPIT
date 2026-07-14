@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -86,6 +87,7 @@ export function CalendarToolbar({
   onToday,
   onToggleCalendar,
   showPlanButton = true,
+  coachMenu = null,
 }: {
   embedded: boolean;
   isMobile: boolean;
@@ -101,6 +103,7 @@ export function CalendarToolbar({
   onToday: () => void;
   onToggleCalendar: (calendarId: string, visible: boolean) => Promise<void>;
   showPlanButton?: boolean;
+  coachMenu?: ReactNode;
 }) {
   const showTitle = isMobile || !embedded;
 
@@ -144,6 +147,7 @@ export function CalendarToolbar({
           />
         )}
         <div className="flex shrink-0 items-center gap-1">{navButtons}</div>
+        {coachMenu}
         {showPlanButton && (
           <Button
             aria-label="Planifier une séance"
@@ -182,6 +186,7 @@ export function CalendarToolbar({
             />
           )}
           {navButtons}
+          {coachMenu}
           {showPlanButton && (
             <Button disabled={!mounted} onClick={onPlan}>
               <Plus className="size-4" />

@@ -14,7 +14,8 @@ import {
   X,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
 import { Button } from '@/components/ui/button';
 import { LinkButton } from '@/components/ui/link-button';
@@ -26,6 +27,11 @@ import { cn } from '@/lib/utils';
 import type { SessionAnalysis } from '@/lib/validators/coach';
 import { useActivities, usePlannedSessionMutations } from '@/hooks/use-data';
 import { usePhysicalNoteMutations, usePhysicalNotes } from '@/hooks/use-physical';
+import { queryKeys } from '@/lib/query/keys';
+import { fetchPlannedSessions } from '@/lib/query/fetchers';
+
+const ANALYSIS_POLL_MS = 3_000;
+const ANALYSIS_POLL_MAX_MS = 120_000;
 
 const VERDICT_LABELS: Record<SessionAnalysis['verdict'], string> = {
   AS_PLANNED: 'Conforme',
@@ -151,14 +157,64 @@ function PhysicalReassessmentCard({ item }: { item: PhysicalReassessment }) {
 }
 
 export function SessionRealization({ session }: { session: ClientPlannedSession }) {
+  const queryClient = useQueryClient();
   const activitiesQuery = useActivities();
   const notesQuery = usePhysicalNotes();
   const { link, analyze } = usePlannedSessionMutations();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [analysis, setAnalysis] = useState(session.analysis as unknown as SessionAnalysis | null);
+  const [analyzedAt, setAnalyzedAt] = useState(session.analyzedAt);
+  const [pollTimedOut, setPollTimedOut] = useState(false);
 
   const linked = session.activity;
-  const analysis = session.analysis as unknown as SessionAnalysis | null;
+
+  useEffect(() => {
+    setAnalysis(session.analysis as unknown as SessionAnalysis | null);
+    setAnalyzedAt(session.analyzedAt);
+    setPollTimedOut(false);
+  }, [session.analysis, session.analyzedAt, session.id, session.activityId]);
+
+  const hasAnalysis = Boolean(analysis && analyzedAt);
+  const isPendingScheduled = Boolean(linked && !hasAnalysis && !analyze.isPending && !pollTimedOut);
+
+  useEffect(() => {
+    if (!isPendingScheduled) return;
+
+    const startedAt = Date.now();
+    let cancelled = false;
+
+    async function poll() {
+      while (!cancelled && Date.now() - startedAt < ANALYSIS_POLL_MAX_MS) {
+        await new Promise((resolve) => setTimeout(resolve, ANALYSIS_POLL_MS));
+        if (cancelled) return;
+
+        try {
+          const sessions = await queryClient.fetchQuery({
+            queryKey: queryKeys.plannedSessions,
+            queryFn: fetchPlannedSessions,
+          });
+          const updated = sessions.find((item) => item.id === session.id);
+          if (updated?.analyzedAt && updated.analysis) {
+            setAnalysis(updated.analysis as unknown as SessionAnalysis);
+            setAnalyzedAt(updated.analyzedAt);
+            return;
+          }
+        } catch {
+          // best-effort polling
+        }
+      }
+
+      if (!cancelled) {
+        setPollTimedOut(true);
+      }
+    }
+
+    void poll();
+    return () => {
+      cancelled = true;
+    };
+  }, [isPendingScheduled, queryClient, session.id]);
 
   const painReassessments = useMemo(() => {
     const notes = notesQuery.data ?? [];
@@ -189,11 +245,111 @@ export function SessionRealization({ session }: { session: ClientPlannedSession 
   }, [activitiesQuery.data, session.date, session.type, showAll]);
 
   const isLinking = link.isPending;
-  const isAnalyzing = analyze.isPending;
+  const isAnalyzing = analyze.isPending || isPendingScheduled;
 
   function handleLink(activityId: string) {
     link.mutate({ id: session.id, activityId });
     setPickerOpen(false);
+  }
+
+  function renderLinkedAnalysisSection() {
+    if (hasAnalysis && analysis) {
+      return (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Sparkles className="text-primary size-3.5 shrink-0" />
+            <p className="text-label">Analyse coach</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                'font-mono text-2xl font-semibold',
+                scoreColor(analysis.complianceScore),
+              )}
+            >
+              {analysis.complianceScore}
+            </span>
+            <span className="text-muted-foreground text-xs">/100</span>
+            <span className="bg-muted/60 ml-auto rounded-full px-2 py-0.5 text-xs">
+              {VERDICT_LABELS[analysis.verdict]}
+            </span>
+          </div>
+          <p className="text-muted-foreground text-sm">{analysis.summary}</p>
+          {analysis.remarks.length > 0 && (
+            <ul className="space-y-1">
+              {analysis.remarks.map((r, i) => (
+                <li key={i} className="text-muted-foreground flex gap-1.5 text-xs">
+                  <span className="text-primary">•</span>
+                  <span>{r}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {analysis.recommendation && (
+            <p className="border-primary/20 bg-primary/5 rounded-md border p-2 text-xs">
+              💡 {analysis.recommendation}
+            </p>
+          )}
+          <LinkButton href={`/coach?discuss=${session.id}`} size="sm" variant="outline">
+            <MessageCircle className="size-3.5" />
+            Discuter avec le coach
+          </LinkButton>
+          {painReassessments.length > 0 && (
+            <div className="space-y-2 rounded-md border border-amber-500/20 bg-amber-500/5 p-2.5">
+              <p className="flex items-center gap-1.5 text-xs font-medium text-amber-600">
+                <HeartPulse className="size-3.5" />
+                Réévaluer une douleur ou blessure
+              </p>
+              {painReassessments.map((item) => (
+                <PhysicalReassessmentCard key={item.noteId} item={item} />
+              ))}
+            </div>
+          )}
+          <button
+            className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
+            disabled={isAnalyzing}
+            type="button"
+            onClick={() => analyze.mutate(session.id)}
+          >
+            {isAnalyzing ? (
+              <Loader2 className="size-3 animate-spin" />
+            ) : (
+              <RefreshCw className="size-3" />
+            )}
+            Ré-analyser
+          </button>
+        </div>
+      );
+    }
+
+    if (isPendingScheduled) {
+      return (
+        <div className="border-border/50 bg-muted/20 flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+          <Loader2 className="text-primary size-4 shrink-0 animate-spin" />
+          <span className="text-muted-foreground">Analyse en cours…</span>
+        </div>
+      );
+    }
+
+    return (
+      <Button
+        disabled={isAnalyzing}
+        size="sm"
+        type="button"
+        variant="outline"
+        onClick={() => analyze.mutate(session.id)}
+      >
+        {isAnalyzing ? (
+          <>
+            <Loader2 className="size-4 animate-spin" /> Analyse…
+          </>
+        ) : (
+          <>
+            <Sparkles className="size-4" /> Analyser la séance
+          </>
+        )}
+      </Button>
+    );
   }
 
   if (linked) {
@@ -233,90 +389,7 @@ export function SessionRealization({ session }: { session: ClientPlannedSession 
           </span>
         </Link>
 
-        {analysis ? (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Sparkles className="text-primary size-3.5 shrink-0" />
-              <p className="text-label">Analyse coach</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span
-                className={cn(
-                  'font-mono text-2xl font-semibold',
-                  scoreColor(analysis.complianceScore),
-                )}
-              >
-                {analysis.complianceScore}
-              </span>
-              <span className="text-muted-foreground text-xs">/100</span>
-              <span className="bg-muted/60 ml-auto rounded-full px-2 py-0.5 text-xs">
-                {VERDICT_LABELS[analysis.verdict]}
-              </span>
-            </div>
-            <p className="text-muted-foreground text-sm">{analysis.summary}</p>
-            {analysis.remarks.length > 0 && (
-              <ul className="space-y-1">
-                {analysis.remarks.map((r, i) => (
-                  <li key={i} className="text-muted-foreground flex gap-1.5 text-xs">
-                    <span className="text-primary">•</span>
-                    <span>{r}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {analysis.recommendation && (
-              <p className="border-primary/20 bg-primary/5 rounded-md border p-2 text-xs">
-                💡 {analysis.recommendation}
-              </p>
-            )}
-            <LinkButton href={`/coach?discuss=${session.id}`} size="sm" variant="outline">
-              <MessageCircle className="size-3.5" />
-              Discuter avec le coach
-            </LinkButton>
-            {painReassessments.length > 0 && (
-              <div className="space-y-2 rounded-md border border-amber-500/20 bg-amber-500/5 p-2.5">
-                <p className="flex items-center gap-1.5 text-xs font-medium text-amber-600">
-                  <HeartPulse className="size-3.5" />
-                  Réévaluer une douleur ou blessure
-                </p>
-                {painReassessments.map((item) => (
-                  <PhysicalReassessmentCard key={item.noteId} item={item} />
-                ))}
-              </div>
-            )}
-            <button
-              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
-              disabled={isAnalyzing}
-              type="button"
-              onClick={() => analyze.mutate(session.id)}
-            >
-              {isAnalyzing ? (
-                <Loader2 className="size-3 animate-spin" />
-              ) : (
-                <RefreshCw className="size-3" />
-              )}
-              Ré-analyser
-            </button>
-          </div>
-        ) : (
-          <Button
-            disabled={isAnalyzing}
-            size="sm"
-            type="button"
-            variant="outline"
-            onClick={() => analyze.mutate(session.id)}
-          >
-            {isAnalyzing ? (
-              <>
-                <Loader2 className="size-4 animate-spin" /> Analyse…
-              </>
-            ) : (
-              <>
-                <Sparkles className="size-4" /> Analyser la séance
-              </>
-            )}
-          </Button>
-        )}
+        {renderLinkedAnalysisSection()}
       </div>
     );
   }

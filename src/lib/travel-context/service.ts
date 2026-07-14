@@ -1,5 +1,5 @@
 import { addDays, startOfDay } from 'date-fns';
-import { Prisma, type PrismaClient } from '@prisma/client';
+import { Prisma, type CoachMemorySource, type PrismaClient } from '@prisma/client';
 import { geocodePlaceLabel } from '@/lib/geocoding/nominatim';
 
 export type TravelContextInput = {
@@ -10,6 +10,7 @@ export type TravelContextInput = {
   startDate: Date;
   endDate: Date;
   note?: string | null;
+  source?: CoachMemorySource;
 };
 
 export async function resolveTravelContextCoordinates(
@@ -60,6 +61,27 @@ export async function listTravelContexts(prisma: PrismaClient) {
 export async function createTravelContext(prisma: PrismaClient, input: TravelContextInput) {
   const coords = await resolveTravelContextCoordinates(input);
   return prisma.athleteTravelContext.create({
+    data: {
+      label: input.label ?? null,
+      locationLabel: coords.locationLabel,
+      locationLat: coords.locationLat,
+      locationLng: coords.locationLng,
+      startDate: startOfDay(input.startDate),
+      endDate: startOfDay(input.endDate),
+      note: input.note ?? null,
+      source: input.source ?? 'USER',
+    },
+  });
+}
+
+export async function updateTravelContext(
+  prisma: PrismaClient,
+  id: string,
+  input: TravelContextInput,
+) {
+  const coords = await resolveTravelContextCoordinates(input);
+  return prisma.athleteTravelContext.update({
+    where: { id },
     data: {
       label: input.label ?? null,
       locationLabel: coords.locationLabel,

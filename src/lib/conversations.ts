@@ -39,10 +39,14 @@ function deriveTitle(messages: unknown): string {
 
 /** Liste des conversations (sans les messages, pour la sidebar). */
 export async function listConversations() {
-  return prisma.conversation.findMany({
+  const rows = await prisma.conversation.findMany({
     orderBy: { updatedAt: 'desc' },
-    select: { id: true, title: true, createdAt: true, updatedAt: true },
+    select: { id: true, title: true, createdAt: true, updatedAt: true, messages: true },
   });
+
+  return rows
+    .filter((row) => Array.isArray(row.messages) && row.messages.length > 0)
+    .map(({ messages: _messages, ...summary }) => summary);
 }
 
 export async function getConversation(id: string) {
@@ -52,6 +56,11 @@ export async function getConversation(id: string) {
 /** Crée une conversation, en option avec des messages initiaux (titre auto). */
 export async function createConversation(messages?: unknown, bootstrapKey?: string) {
   const hasMessages = Array.isArray(messages) && messages.length > 0;
+  const hasBootstrapKey = typeof bootstrapKey === 'string' && bootstrapKey.trim().length > 0;
+
+  if (!hasMessages && !hasBootstrapKey) {
+    throw new Error('Une conversation doit contenir au moins un message.');
+  }
   const now = Date.now();
 
   if (bootstrapKey) {

@@ -14,6 +14,7 @@ import {
   type ClientWeeklyReview,
 } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
+import type { CoachMemoryResponse } from '@/hooks/use-coach-memory';
 
 let createConversationPromise: Promise<ClientConversation> | null = null;
 
@@ -129,6 +130,11 @@ export function useSaveCoachContext() {
     },
     onSuccess: (context) => {
       queryClient.setQueryData(queryKeys.coachContext, context);
+      queryClient.setQueryData<CoachMemoryResponse>(queryKeys.coachMemory, (current) =>
+        current
+          ? { ...current, profileContext: context }
+          : { entries: [], activeId: null, profileContext: context },
+      );
     },
   });
 }
@@ -219,19 +225,26 @@ export function useConversation(id: string | null) {
 
 export function useCreateConversation() {
   const queryClient = useQueryClient();
-  return useMutation<ClientConversation, Error, { bootstrapKey?: string } | void>({
+  return useMutation<
+    ClientConversation,
+    Error,
+    { bootstrapKey?: string; messages?: UIMessage[] } | void
+  >({
     mutationFn: async (input) => {
       if (createConversationPromise) return createConversationPromise;
 
       createConversationPromise = (async () => {
+        const body =
+          input && typeof input === 'object'
+            ? {
+                ...(input.bootstrapKey ? { bootstrapKey: input.bootstrapKey } : {}),
+                ...(input.messages ? { messages: input.messages } : {}),
+              }
+            : {};
         const res = await fetch('/api/coach/conversations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(
-            input && typeof input === 'object' && 'bootstrapKey' in input
-              ? { bootstrapKey: input.bootstrapKey }
-              : {},
-          ),
+          body: JSON.stringify(body),
         });
         const data = await res.json().catch(() => null);
         if (!res.ok) {

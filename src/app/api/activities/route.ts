@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ActivityType } from '@prisma/client';
-import { enrichTodayActivitiesContext } from '@/lib/activity/enrich-observed-context';
+import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
+import {
+  enrichActivityObservedContext,
+  enrichTodayActivitiesContext,
+} from '@/lib/activity/enrich-observed-context';
 import { buildActivityCreateData } from '@/lib/activity-service';
 import { runActivityNarrativeAnalysis } from '@/lib/activity-narrative';
 import { syncManualActivityObservations } from '@/lib/manual-observation-sync';
@@ -53,6 +57,22 @@ export async function POST(request: NextRequest) {
     await syncManualActivityObservations(activity);
 
     await updateRecordsForTypesSafe([parsed.data.type]);
+
+    if (
+      sportSupportsOutdoorContext(parsed.data.type) &&
+      parsed.data.observedLocationLat != null &&
+      parsed.data.observedLocationLng != null
+    ) {
+      try {
+        await enrichActivityObservedContext(prisma, activity.id);
+        const refreshed = await prisma.activity.findUnique({ where: { id: activity.id } });
+        if (refreshed) {
+          return NextResponse.json(refreshed, { status: 201 });
+        }
+      } catch (error) {
+        console.error('[activities/POST] enrich-context', error);
+      }
+    }
 
     try {
       await runActivityNarrativeAnalysis(activity.id);

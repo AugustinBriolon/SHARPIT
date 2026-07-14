@@ -45,6 +45,8 @@ export function CoachView() {
   const projectionQuery = useProjectedAthleteViewModel(discussPlanningHorizon ?? 7);
   const [generatorOpen, setGeneratorOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [ephemeralIds, setEphemeralIds] = useState<Set<string>>(() => new Set());
+  const [autoReplyId, setAutoReplyId] = useState<string | null>(null);
   const [latchedBootstrapPrompt, setLatchedBootstrapPrompt] = useState<string | undefined>(
     undefined,
   );
@@ -58,7 +60,8 @@ export function CoachView() {
   const conversations = conversationsQuery.data ?? [];
 
   const selectedId = activeId ?? conversations[0]?.id ?? null;
-  const activeConversation = useConversation(selectedId);
+  const isEphemeral = selectedId != null && ephemeralIds.has(selectedId);
+  const activeConversation = useConversation(isEphemeral ? null : selectedId);
 
   const discussBootstrapped = useRef(false);
 
@@ -191,19 +194,21 @@ export function CoachView() {
     if (conversationsQuery.isPending || conversations.length > 0) return;
     if (initialized.current) return;
     initialized.current = true;
-    createConversation.mutateAsync().then((c) => setActiveId(c.id));
+    const id = crypto.randomUUID();
+    setEphemeralIds((prev) => new Set(prev).add(id));
+    setActiveId(id);
   }, [
     conversationsQuery.isPending,
     conversations.length,
-    createConversation,
     discussId,
     discussActivityId,
     discussPlanningHorizon,
   ]);
 
-  async function handleNewConversation() {
-    const c = await createConversation.mutateAsync();
-    setActiveId(c.id);
+  function handleNewConversation() {
+    const id = crypto.randomUUID();
+    setEphemeralIds((prev) => new Set(prev).add(id));
+    setActiveId(id);
   }
 
   async function handleDeleteConversation(id: string) {
@@ -218,7 +223,54 @@ export function CoachView() {
     if (selectedId === id) setActiveId(null);
   }
 
-  const discussKey = discussId ?? discussActivityId ?? discussPlanningHorizon ?? 'free';
+  function resolveChatInitialMessages(): UIMessage[] {
+    if (isEphemeral) return [];
+    if (!Array.isArray(activeConversation.data?.messages)) return [];
+    return activeConversation.data.messages as UIMessage[];
+  }
+
+  function renderChatPanel() {
+    if (!selectedId) {
+      return (
+        <div className="border-border/60 bg-card/30 text-muted-foreground flex min-h-[50vh] min-w-0 flex-1 items-center justify-center rounded-xl border p-6 text-center text-sm lg:min-h-0">
+          Sélectionne une conversation ou démarre-en une nouvelle.
+        </div>
+      );
+    }
+
+    if (isEphemeral || activeConversation.data) {
+      return (
+        <CoachChat
+          key={selectedId}
+          autoReply={autoReplyId === selectedId}
+          bootstrapPrompt={latchedBootstrapPrompt}
+          conversationId={selectedId}
+          initialMessages={resolveChatInitialMessages()}
+          isEphemeral={isEphemeral}
+          onAutoReplyStarted={() => setAutoReplyId(null)}
+          onConversationCreated={(id) => {
+            setEphemeralIds((prev) => {
+              const next = new Set(prev);
+              next.delete(selectedId);
+              return next;
+            });
+            setActiveId(id);
+            setAutoReplyId(id);
+          }}
+        />
+      );
+    }
+
+    if (activeConversation.isLoading) {
+      return <Skeleton className="min-h-[50vh] min-w-0 flex-1 rounded-xl lg:min-h-0" />;
+    }
+
+    return (
+      <div className="border-border/60 bg-card/30 text-muted-foreground flex min-h-[50vh] min-w-0 flex-1 items-center justify-center rounded-xl border p-6 text-center text-sm lg:min-h-0">
+        Sélectionne une conversation ou démarre-en une nouvelle.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -249,20 +301,7 @@ export function CoachView() {
           onNew={handleNewConversation}
           onSelect={setActiveId}
         />
-        {selectedId && activeConversation.data ? (
-          <CoachChat
-            key={`${selectedId}-${discussKey}`}
-            bootstrapPrompt={latchedBootstrapPrompt}
-            conversationId={selectedId}
-            initialMessages={
-              (Array.isArray(activeConversation.data.messages)
-                ? activeConversation.data.messages
-                : []) as UIMessage[]
-            }
-          />
-        ) : (
-          <Skeleton className="min-h-[50vh] min-w-0 flex-1 rounded-xl lg:min-h-0" />
-        )}
+        {renderChatPanel()}
       </div>
 
       {generatorOpen && <PlanGenerator onClose={() => setGeneratorOpen(false)} />}

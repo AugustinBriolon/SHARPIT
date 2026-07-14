@@ -15,7 +15,7 @@ import { ToolActivityList } from '@/components/coach/tool-activity-list';
 import { ToolActivity, type KnownSession } from '@/components/coach/tool-activity';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { useSaveConversation } from '@/hooks/use-coach';
+import { useSaveConversation, useCreateConversation } from '@/hooks/use-coach';
 import { usePlannedSessions } from '@/hooks/use-data';
 import {
   CALENDAR_MUTATION_TOOL_TYPES,
@@ -68,29 +68,47 @@ export function CoachChat({
   conversationId,
   initialMessages,
   bootstrapPrompt,
+  isEphemeral = false,
+  autoReply = false,
+  onConversationCreated,
+  onAutoReplyStarted,
 }: {
   conversationId: string;
   initialMessages: UIMessage[];
   bootstrapPrompt?: string;
+  isEphemeral?: boolean;
+  autoReply?: boolean;
+  onConversationCreated?: (id: string) => void;
+  onAutoReplyStarted?: () => void;
 }) {
   const queryClient = useQueryClient();
   const { mutateAsync: saveMessages } = useSaveConversation();
+  const createConversation = useCreateConversation();
   const { data: plannedSessions } = usePlannedSessions();
+  const autoReplyStarted = useRef(false);
 
-  const { messages, sendMessage, status, stop, error, addToolApprovalResponse, setMessages } =
-    useChat({
-      id: conversationId,
-      messages: initialMessages,
-      transport: new DefaultChatTransport({ api: '/api/coach/chat' }),
-      sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
-      onFinish: ({ messages: all, isAbort, isError, isDisconnect }) => {
-        if (isAbort || isError || isDisconnect) return;
-        saveMessages({ id: conversationId, messages: all }).catch((err) =>
-          console.error('[coach-chat] save', err),
-        );
-        queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
-      },
-    });
+  const {
+    messages,
+    sendMessage,
+    status,
+    stop,
+    error,
+    addToolApprovalResponse,
+    setMessages,
+    regenerate,
+  } = useChat({
+    id: conversationId,
+    messages: initialMessages,
+    transport: new DefaultChatTransport({ api: '/api/coach/chat' }),
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
+    onFinish: ({ messages: all, isAbort, isError, isDisconnect }) => {
+      if (isAbort || isError || isDisconnect) return;
+      saveMessages({ id: conversationId, messages: all }).catch((err) =>
+        console.error('[coach-chat] save', err),
+      );
+      queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
+    },
+  });
   const [input, setInput] = useState('');
   const prefilled = useRef(false);
 
@@ -104,6 +122,18 @@ export function CoachChat({
 
   const isBusy = status === 'submitted' || status === 'streaming';
   const streamIdle = !isBusy;
+
+  useEffect(() => {
+    autoReplyStarted.current = false;
+  }, [conversationId]);
+
+  useEffect(() => {
+    if (!autoReply || autoReplyStarted.current || isBusy) return;
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== 'user') return;
+    autoReplyStarted.current = true;
+    void regenerate().finally(() => onAutoReplyStarted?.());
+  }, [autoReply, isBusy, messages, onAutoReplyStarted, regenerate]);
 
   const knownSessions = useMemo(
     () => buildKnownSessions(messages, plannedSessions),
@@ -153,7 +183,8 @@ export function CoachChat({
     );
     if (changed) {
       queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
-      queryClient.invalidateQueries({ queryKey: ['travel-context'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.travelContext });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.coachMemory });
     }
   }, [messages, queryClient]);
 
@@ -164,9 +195,28 @@ export function CoachChat({
     if (hasUnresolvedCalendarTools(messages)) {
       const dismissed = dismissUnresolvedCalendarTools(messages);
       setMessages(dismissed);
-      saveMessages({ id: conversationId, messages: dismissed }).catch((err) =>
-        console.error('[coach-chat] save dismiss', err),
-      );
+      if (!isEphemeral) {
+        saveMessages({ id: conversationId, messages: dismissed }).catch((err) =>
+          console.error('[coach-chat] save dismiss', err),
+        );
+      }
+    }
+
+    if (isEphemeral) {
+      const userMessage: UIMessage = {
+        id: crypto.randomUUID(),
+        role: 'user',
+        parts: [{ type: 'text', text: value }],
+      };
+      try {
+        const conversation = await createConversation.mutateAsync({ messages: [userMessage] });
+        onConversationCreated?.(conversation.id);
+      } catch (err) {
+        console.error('[coach-chat] create', err);
+        return;
+      }
+      setInput('');
+      return;
     }
 
     sendMessage({ text: value });
@@ -276,7 +326,8 @@ export function CoachChat({
                       queryKey: queryKeys.plannedSessions,
                     });
                     if (part.type === 'tool-setTravelContext') {
-                      queryClient.invalidateQueries({ queryKey: ['travel-context'] });
+                      void queryClient.invalidateQueries({ queryKey: queryKeys.travelContext });
+                      void queryClient.invalidateQueries({ queryKey: queryKeys.coachMemory });
                     }
                   }
                 }}

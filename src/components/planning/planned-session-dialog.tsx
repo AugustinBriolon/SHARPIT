@@ -177,7 +177,7 @@ export function PlannedSessionDialog({
   });
 
   const travelQuery = useQuery({
-    queryKey: ['travel-context'],
+    queryKey: queryKeys.travelContext,
     queryFn: async () => {
       const res = await fetch('/api/travel-context');
       if (!res.ok) throw new Error('travel fetch failed');

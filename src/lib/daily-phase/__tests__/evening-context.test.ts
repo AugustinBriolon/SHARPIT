@@ -25,7 +25,7 @@ describe('buildEndOfDayNarrativeCopy', () => {
       recoveryStress: true,
     });
 
-    expect(copy.headline).toBe('Journée légère — 14 min de course');
+    expect(copy.headline).toBe('Course légère — récupère bien, le corps en demande');
     expect(copy.focusPriority).toMatch(/Coucher vers 22:00/);
     expect(copy.focusPriority).toMatch(/récupérer de la journée/);
     expect(copy.focusPriority).not.toMatch(/Demain :/);

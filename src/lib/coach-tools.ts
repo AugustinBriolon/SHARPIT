@@ -333,6 +333,7 @@ export const coachTools = {
           startDate: toDate(input.startDate),
           endDate: toDate(input.endDate),
           note: input.note ?? null,
+          source: 'COACH',
         });
         const updatedSessions =
           input.applyToPlannedSessions === false

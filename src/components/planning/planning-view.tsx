@@ -2,7 +2,7 @@
 
 import { addWeeks, endOfWeek, format, isSameDay, isToday, startOfWeek, subWeeks } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CheckCircle2, ChevronLeft, ChevronRight, GitCompare, Layers } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, GitCompare, Layers, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useMemo, useState, useEffect } from 'react';
@@ -40,12 +40,18 @@ const WEEK_OPTS = { weekStartsOn: 1 as const };
 type DialogState =
   { mode: 'create'; date: Date } | { mode: 'edit'; session: ClientPlannedSession } | null;
 
-export function PlanningView({ embedded = false }: { embedded?: boolean }) {
+export function PlanningView({
+  embedded = false,
+  showCoachMenu = !embedded,
+}: {
+  embedded?: boolean;
+  showCoachMenu?: boolean;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const plannedIdFromUrl = searchParams.get('planned');
-  const createFromUrl = !embedded && searchParams.has('create');
+  const createFromUrl = showCoachMenu && searchParams.has('create');
   const activitiesQuery = useActivities();
   const plannedQuery = usePlannedSessions();
   const goalsQuery = useGoals();
@@ -138,7 +144,7 @@ export function PlanningView({ embedded = false }: { embedded?: boolean }) {
     setDialog(null);
     const params = new URLSearchParams(searchParams.toString());
     const hadPlanned = params.has('planned');
-    const hadCreate = !embedded && params.has('create');
+    const hadCreate = showCoachMenu && params.has('create');
     if (!hadPlanned && !hadCreate) return;
     params.delete('planned');
     if (hadCreate) params.delete('create');
@@ -292,7 +298,7 @@ export function PlanningView({ embedded = false }: { embedded?: boolean }) {
               </span>
             </Button>
           ) : null}
-          {!embedded ? <SessionsCoachMenu onAction={handleCoachAction} /> : null}
+          {showCoachMenu ? <SessionsCoachMenu onAction={handleCoachAction} /> : null}
         </div>
       </div>
 
@@ -489,7 +495,7 @@ function DayRow({
         )}
       </div>
 
-      {/* <Button
+      <Button
         aria-label="Ajouter une séance"
         className="shrink-0 self-start"
         size="icon"
@@ -497,7 +503,7 @@ function DayRow({
         onClick={onAdd}
       >
         <Plus className="size-4" />
-      </Button> */}
+      </Button>
     </div>
   );
 }
