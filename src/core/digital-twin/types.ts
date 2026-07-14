@@ -114,16 +114,17 @@ export type FatigueDominantDimension =
   'LOAD' | 'NEUROMUSCULAR' | 'METABOLIC' | 'CUMULATIVE' | 'PSYCHOLOGICAL';
 
 export type FatigueState = {
+  /** 0–100. null when INSUFFICIENT_DATA. */
   readonly fatigueIndex: number | null;
   readonly fatigueLevel: FatigueLevel;
   readonly fatigueType: FatigueType;
 
   readonly dimensions: {
-    readonly load: DimensionResult;
-    readonly neuromuscular: DimensionResult;
-    readonly metabolic: DimensionResult;
-    readonly cumulative: DimensionResult;
-    readonly psychological: DimensionResult;
+    readonly load: DimensionResult; // Dimension 1 — LoadFatigue (0-100)
+    readonly neuromuscular: DimensionResult; // Dimension 2 — NeuromuscularFatigue (0-100)
+    readonly metabolic: DimensionResult; // Dimension 3 — MetabolicFatigue (0-100)
+    readonly cumulative: DimensionResult; // Dimension 4 — CumulativeTrajectory (0-100)
+    readonly psychological: DimensionResult; // Dimension 5 — PsychologicalFatigue (0-100)
   };
 
   readonly trajectory: FatigueTrajectory;
@@ -132,7 +133,9 @@ export type FatigueState = {
   readonly primaryLimitingFactor: string | null;
 
   readonly functionalOverreachingRisk: OverreachingRisk;
+  /** Rough estimate in days to reach FatigueLevel = FRESH. null when already FRESH. */
   readonly estimatedTimeToFresh: number | null;
+  /** Estimated fraction of maximal capacity lost: 0.0–0.25. See FATIGUE_MODEL.md §5. */
   readonly performanceImpairmentEstimate: number;
   readonly trainingCapacity: TrainingCapacity;
 

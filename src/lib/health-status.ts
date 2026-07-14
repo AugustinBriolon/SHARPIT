@@ -34,16 +34,6 @@ export const AGE_DELTA_ATTENTION_YEARS = 6;
 export const PHYSICAL_SEVERITY_WATCH_MIN = 4;
 export const PHYSICAL_SEVERITY_ATTENTION_MIN = 7;
 
-/** Couleurs Recharts pour la courbe de sévérité (hors tokens CSS). */
-export const PHYSICAL_SEVERITY_CHART_STROKE: Record<
-  Exclude<CorpsTone, 'verify' | 'neutral'>,
-  string
-> = {
-  ok: '#64748b',
-  watch: '#d97706',
-  attention: '#dc2626',
-};
-
 const SEVERITY: Record<CorpsTone, number> = {
   neutral: 0,
   ok: 1,

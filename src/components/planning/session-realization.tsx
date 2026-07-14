@@ -23,6 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import type { ClientActivity, ClientPhysicalNote, ClientPlannedSession } from '@/lib/query/types';
 import { activityTypeLabels, formatDate, formatDistance, formatDuration } from '@/lib/format';
 import { severityColor } from '@/lib/physical';
+import { sessionScoreColor } from '@/lib/session-analysis-display';
 import { cn } from '@/lib/utils';
 import type { SessionAnalysis } from '@/lib/validators/coach';
 import { useActivities, usePlannedSessionMutations } from '@/hooks/use-data';
@@ -41,12 +42,6 @@ const VERDICT_LABELS: Record<SessionAnalysis['verdict'], string> = {
   LONGER: 'Plus long',
   DIFFERENT: 'Différent',
 };
-
-function scoreColor(score: number): string {
-  if (score >= 85) return 'text-emerald-600';
-  if (score >= 60) return 'text-amber-600';
-  return 'text-red-600';
-}
 
 function activityMetric(a: ClientActivity): string {
   if (a.runMetrics?.distanceM) return formatDistance(a.runMetrics.distanceM);
@@ -264,7 +259,7 @@ export function SessionRealization({ session }: { session: ClientPlannedSession 
             <span
               className={cn(
                 'font-mono text-2xl font-semibold',
-                scoreColor(analysis.complianceScore),
+                sessionScoreColor(analysis.complianceScore),
               )}
             >
               {analysis.complianceScore}

@@ -86,6 +86,7 @@ export function CoachChat({
   const createConversation = useCreateConversation();
   const { data: plannedSessions } = usePlannedSessions();
   const autoReplyStarted = useRef(false);
+  const invalidatedToolPartKeys = useRef<Set<string>>(new Set());
 
   const {
     messages,
@@ -168,20 +169,23 @@ export function CoachChat({
   }, [messages]);
 
   useEffect(() => {
-    const changed = messages.some(
-      (m) =>
-        m.role === 'assistant' &&
-        m.parts.some((p) => {
-          if (!p.type.startsWith('tool-')) return false;
-          const part = p as ToolPartLite;
-          return (
-            CALENDAR_MUTATION_TOOL_TYPES.has(part.type) &&
-            part.state === 'output-available' &&
-            (part.output as { ok?: boolean } | undefined)?.ok !== false
-          );
-        }),
-    );
-    if (changed) {
+    const newlyCompletedKeys: string[] = [];
+    for (const m of messages) {
+      if (m.role !== 'assistant') continue;
+      for (const p of m.parts) {
+        if (!p.type.startsWith('tool-')) continue;
+        const part = p as ToolPartLite;
+        const completed =
+          CALENDAR_MUTATION_TOOL_TYPES.has(part.type) &&
+          part.state === 'output-available' &&
+          (part.output as { ok?: boolean } | undefined)?.ok !== false;
+        if (!completed) continue;
+        const key = `${m.id}:${part.type}`;
+        if (!invalidatedToolPartKeys.current.has(key)) newlyCompletedKeys.push(key);
+      }
+    }
+    if (newlyCompletedKeys.length > 0) {
+      for (const key of newlyCompletedKeys) invalidatedToolPartKeys.current.add(key);
       queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
       void queryClient.invalidateQueries({ queryKey: queryKeys.travelContext });
       void queryClient.invalidateQueries({ queryKey: queryKeys.coachMemory });

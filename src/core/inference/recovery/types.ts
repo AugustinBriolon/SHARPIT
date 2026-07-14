@@ -14,7 +14,9 @@ import type {
   RecoveryState,
   DimensionResult,
 } from '@/core/digital-twin/types';
-import type { I18nItem } from '@/core/inference/shared/types';
+import type { I18nItem, DimensionScore } from '@/core/inference/shared/types';
+
+export type { DimensionScore };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Re-export digital twin types for convenience
@@ -134,12 +136,6 @@ export type RecoveryModelContext = {
 // ─────────────────────────────────────────────────────────────────────────────
 // Internal scoring types (used within scoring.ts only)
 // ─────────────────────────────────────────────────────────────────────────────
-
-export type DimensionScore = {
-  readonly score: number | null;
-  readonly available: boolean;
-  readonly qualityFactor: number;
-};
 
 export type ScoredDimensions = {
   readonly autonomic: DimensionScore;

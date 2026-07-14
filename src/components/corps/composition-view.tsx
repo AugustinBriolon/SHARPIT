@@ -1,6 +1,7 @@
 'use client';
 
 import { AlertTriangle, Scale } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
 import type { CompositionMetricId } from '@/lib/composition-metric-guides';
 import { useBodyPresentationViewModel } from '@/hooks/use-presentation-view-model';
@@ -13,13 +14,21 @@ import {
   CorpsEmptyState,
   CorpsPanel,
 } from '@/components/corps/corps-ui';
-import { MetricLineChart } from '@/components/recovery/health-charts';
+import type { BodyChartPoint } from '@/core/presentation/body-view-model';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonCard, SkeletonEyebrow, SkeletonPill } from '@/components/ui/skeleton-patterns';
 import { CORPS_TONE_TEXT } from '@/lib/metric-tone';
 import type { CorpsTone } from '@/lib/metric-tone';
 import { isDeltaStatusTone } from '@/lib/health-status';
 import { cn } from '@/lib/utils';
+
+const MetricLineChart = dynamic(
+  () =>
+    import('@/components/recovery/health-charts').then(
+      (mod) => mod.MetricLineChart<BodyChartPoint>,
+    ),
+  { ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },
+);
 
 const TREND_WINDOWS = [
   { id: '14d', label: '14 j', days: 14 },

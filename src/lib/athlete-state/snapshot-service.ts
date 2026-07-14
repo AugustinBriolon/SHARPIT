@@ -180,13 +180,15 @@ export async function generateAthleteSnapshot(
 }
 
 export async function getOrBuildAthleteSnapshot(trainingDayId: string): Promise<AthleteSnapshot> {
-  const persisted = await getLatestAthleteSnapshot({
-    athleteId: ATHLETE_ID,
-    trainingDayId,
-  });
+  const [persisted, latestBriefing] = await Promise.all([
+    getLatestAthleteSnapshot({
+      athleteId: ATHLETE_ID,
+      trainingDayId,
+    }),
+    loadBriefingForDay(trainingDayId),
+  ]);
 
   if (persisted) {
-    const latestBriefing = await loadBriefingForDay(trainingDayId);
     const briefingChanged =
       latestBriefing?.generatedAt !== persisted.briefing?.generatedAt ||
       (latestBriefing && !persisted.briefing);

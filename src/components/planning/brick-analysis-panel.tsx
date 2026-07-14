@@ -4,16 +4,11 @@ import { ArrowLeftRight, Layers, Loader2, RefreshCw, Sparkles } from 'lucide-rea
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { activityTypeLabels } from '@/lib/format';
+import { sessionScoreColor } from '@/lib/session-analysis-display';
 import { cn } from '@/lib/utils';
 import { useAnalyzeBrick, useBrickAnalysis, usePlannedSessions } from '@/hooks/use-data';
 import type { BrickAnalysis } from '@/lib/validators/coach';
 import type { ClientPlannedSession } from '@/lib/query/types';
-
-function scoreColor(score: number): string {
-  if (score >= 85) return 'text-emerald-600';
-  if (score >= 60) return 'text-amber-600';
-  return 'text-red-600';
-}
 
 function renderAnalysisContent(
   allLinked: boolean,
@@ -38,7 +33,10 @@ function renderAnalysisContent(
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <span
-            className={cn('font-mono text-2xl font-semibold', scoreColor(analysis.overallScore))}
+            className={cn(
+              'font-mono text-2xl font-semibold',
+              sessionScoreColor(analysis.overallScore),
+            )}
           >
             {analysis.overallScore}
           </span>

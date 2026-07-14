@@ -14,7 +14,12 @@ import type {
   RecoveryState,
   FatigueState,
 } from '@/core/digital-twin/types';
-import type { I18nItem } from '@/core/inference/shared/types';
+import type {
+  I18nItem,
+  AdaptationDimensionScore as DimensionScore,
+} from '@/core/inference/shared/types';
+
+export type { DimensionScore };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Re-export digital twin types for convenience
@@ -117,12 +122,6 @@ export type AdaptationModelContext = {
 // ─────────────────────────────────────────────────────────────────────────────
 // Internal scoring types (used within scoring.ts only)
 // ─────────────────────────────────────────────────────────────────────────────
-
-export type DimensionScore = {
-  readonly score: number | null;
-  readonly available: boolean;
-  readonly reason?: string;
-};
 
 export type ScoredAdaptationDimensions = {
   readonly loadProgression: DimensionScore;

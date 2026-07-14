@@ -1,5 +1,5 @@
 import { BodySide, PhysicalCategory, PhysicalStatus } from '@prisma/client';
-import { corpsToneFromPhysicalSeverity, PHYSICAL_SEVERITY_CHART_STROKE } from '@/lib/health-status';
+import { corpsToneFromPhysicalSeverity } from '@/lib/health-status';
 import { CORPS_TONE_TEXT } from '@/lib/metric-tone';
 
 export const categoryLabels: Record<PhysicalCategory, string> = {
@@ -56,10 +56,4 @@ export const COMMON_BODY_PARTS = [
 /** Couleur de sévérité 0–10 — via corpsToneFromPhysicalSeverity (health-status). */
 export function severityColor(severity?: number | null): string {
   return CORPS_TONE_TEXT[corpsToneFromPhysicalSeverity(severity)];
-}
-
-export function severityAccent(severity?: number | null): string {
-  const tone = corpsToneFromPhysicalSeverity(severity);
-  if (tone === 'neutral' || tone === 'verify') return PHYSICAL_SEVERITY_CHART_STROKE.ok;
-  return PHYSICAL_SEVERITY_CHART_STROKE[tone];
 }

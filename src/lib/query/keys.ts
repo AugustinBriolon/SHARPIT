@@ -25,6 +25,7 @@ export const queryKeys = {
   athleteProfile: ['athlete-profile'] as const,
   athleteSnapshot: (trainingDayId: string) => ['athlete-snapshot', trainingDayId] as const,
   today: (trainingDayId: string) => ['today', trainingDayId] as const,
+  presentationToday: (trainingDayId: string) => ['presentation', 'today', trainingDayId] as const,
   wellnessCheckin: (trainingDayId: string) => ['wellness-checkin', trainingDayId] as const,
   plannedSessionPresentation: (sessionId: string) =>
     ['presentation', 'planned-session', sessionId] as const,

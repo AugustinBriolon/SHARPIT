@@ -47,6 +47,7 @@ async function nominatimFetch(path: string): Promise<Response> {
       Accept: 'application/json',
     },
     next: { revalidate: 3600 },
+    signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) {
     throw new Error(`Géocodage indisponible (${res.status})`);

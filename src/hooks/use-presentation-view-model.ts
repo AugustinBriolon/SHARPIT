@@ -17,6 +17,7 @@ import {
   fetchSleepPresentation,
   fetchBodyPresentation,
 } from '@/lib/query/presentation-fetchers';
+import { queryKeys } from '@/lib/query/keys';
 
 export function useRecoveryViewModel(trainingDayId: string) {
   return useQuery<RecoveryViewModel>({
@@ -52,7 +53,7 @@ export function useAdaptationViewModel(trainingDayId: string) {
 
 export function useTodayPresentationViewModel(trainingDayId: string) {
   return useQuery<TodayViewModel>({
-    queryKey: ['presentation', 'today', trainingDayId],
+    queryKey: queryKeys.presentationToday(trainingDayId),
     queryFn: () => fetchTodayPresentation(trainingDayId),
     staleTime: 5 * 60_000,
   });

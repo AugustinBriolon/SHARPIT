@@ -12,80 +12,33 @@ import type {
   OverreachingRisk,
   DataCompleteness,
   DimensionResult,
+  FatigueLevel,
+  FatigueType,
+  FatigueTrajectory,
+  TrainingCapacity,
+  FatigueDominantDimension,
+  FatigueState,
 } from '@/core/digital-twin/types';
 import type { RecoveryState } from '@/core/digital-twin/types';
-import type { I18nItem } from '@/core/inference/shared/types';
+import type { I18nItem, DimensionScore } from '@/core/inference/shared/types';
+
+export type { DimensionScore };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Re-export digital twin types for convenience
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type { OverreachingRisk, DataCompleteness, DimensionResult, RecoveryState };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Fatigue taxonomy (FATIGUE_MODEL.md §4.8)
-// ─────────────────────────────────────────────────────────────────────────────
-
-export type FatigueLevel =
-  | 'FRESH' // 0–20: no detectable fatigue
-  | 'FUNCTIONAL_LOW' // 21–40: normal training fatigue, fully adaptable
-  | 'FUNCTIONAL_HIGH' // 41–60: productive load state, monitor closely
-  | 'ACCUMULATED' // 61–75: accumulating beyond normal, recovery critical
-  | 'NON_FUNCTIONAL_RISK' // 76–88: performance likely impaired, reduce load
-  | 'OVERREACHING_RISK' // 89–100: mandatory extended rest
-  | 'INSUFFICIENT_DATA'; // not enough dimensions to classify
-
-export type FatigueType =
-  | 'LOAD_DOMINANT' // ATL-driven — typical of hard training block
-  | 'NEUROMUSCULAR_DOMINANT' // HRV + soreness — typical of high-impact sessions
-  | 'METABOLIC_DOMINANT' // intensity-driven — typical of interval weeks
-  | 'PSYCHOLOGICAL_DOMINANT' // wellness-driven — often non-training origin
-  | 'CUMULATIVE_MULTI_SYSTEM' // all dimensions elevated simultaneously (worst case)
-  | 'MIXED'
-  | 'UNDETERMINED';
-
-export type FatigueTrajectory = 'RESOLVING' | 'STABLE' | 'ACCUMULATING' | 'ACCELERATING';
-
-export type TrainingCapacity = 'FULL' | 'REDUCED' | 'LIGHT_ONLY' | 'REST_ONLY';
-
-export type FatigueDominantDimension =
-  'LOAD' | 'NEUROMUSCULAR' | 'METABOLIC' | 'CUMULATIVE' | 'PSYCHOLOGICAL';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Fatigue State (persisted in Digital Twin)
-// ─────────────────────────────────────────────────────────────────────────────
-
-export type FatigueState = {
-  /** 0–100. null when INSUFFICIENT_DATA. */
-  readonly fatigueIndex: number | null;
-  readonly fatigueLevel: FatigueLevel;
-  readonly fatigueType: FatigueType;
-
-  readonly dimensions: {
-    readonly load: DimensionResult; // Dimension 1 — LoadFatigue (0-100)
-    readonly neuromuscular: DimensionResult; // Dimension 2 — NeuromuscularFatigue (0-100)
-    readonly metabolic: DimensionResult; // Dimension 3 — MetabolicFatigue (0-100)
-    readonly cumulative: DimensionResult; // Dimension 4 — CumulativeTrajectory (0-100)
-    readonly psychological: DimensionResult; // Dimension 5 — PsychologicalFatigue (0-100)
-  };
-
-  readonly trajectory: FatigueTrajectory;
-  readonly consecutiveAccumulationDays: number;
-  readonly dominantDimension: FatigueDominantDimension;
-  readonly primaryLimitingFactor: string | null;
-
-  readonly functionalOverreachingRisk: OverreachingRisk;
-  /** Rough estimate in days to reach FatigueLevel = FRESH. null when already FRESH. */
-  readonly estimatedTimeToFresh: number | null;
-  /** Estimated fraction of maximal capacity lost: 0.0–0.25. See FATIGUE_MODEL.md §5. */
-  readonly performanceImpairmentEstimate: number;
-  readonly trainingCapacity: TrainingCapacity;
-
-  readonly confidence: number;
-  readonly dataCompleteness: DataCompleteness;
-  readonly modelId: 'fatigue-v1';
-  readonly computedAt: Date;
-  readonly trainingDayId: string;
+export type {
+  OverreachingRisk,
+  DataCompleteness,
+  DimensionResult,
+  RecoveryState,
+  FatigueLevel,
+  FatigueType,
+  FatigueTrajectory,
+  TrainingCapacity,
+  FatigueDominantDimension,
+  FatigueState,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -185,12 +138,6 @@ export type FatigueModelContext = {
 // ─────────────────────────────────────────────────────────────────────────────
 // Internal scoring types (used within scoring.ts only)
 // ─────────────────────────────────────────────────────────────────────────────
-
-export type DimensionScore = {
-  readonly score: number | null;
-  readonly available: boolean;
-  readonly qualityFactor: number;
-};
 
 export type ScoredFatigueDimensions = {
   readonly load: DimensionScore;

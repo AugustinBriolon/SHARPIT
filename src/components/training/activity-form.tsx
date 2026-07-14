@@ -233,7 +233,7 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
     name: 'strengthSets',
   });
 
-  const resolvedActivityDate = resolveWatchedDate(activityDate);
+  const resolvedActivityDate = useMemo(() => resolveWatchedDate(activityDate), [activityDate]);
   const resolvedDurationSec = resolveWatchedDurationSec(durationSec);
   const resolvedRpe = resolveWatchedRpe(rpe);
   const feelingValue = typeof feeling === 'string' ? feeling : '';

@@ -109,12 +109,15 @@ export async function enrichTodayActivitiesContext(prisma: PrismaClient): Promis
     select: { id: true, weather: true },
   });
 
-  for (const { id, weather } of activities) {
-    if (!needsWeatherEnrichment(weather)) continue;
-    try {
-      await enrichActivityObservedContext(prisma, id);
-    } catch (error) {
-      console.error('[enrich-today-activities]', id, error);
-    }
-  }
+  await Promise.all(
+    activities
+      .filter(({ weather }) => needsWeatherEnrichment(weather))
+      .map(async ({ id }) => {
+        try {
+          await enrichActivityObservedContext(prisma, id);
+        } catch (error) {
+          console.error('[enrich-today-activities]', id, error);
+        }
+      }),
+  );
 }

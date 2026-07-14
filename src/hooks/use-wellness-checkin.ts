@@ -55,6 +55,10 @@ export function useWellnessCheckin(date: Date = new Date()): WellnessCheckinStat
     onSuccess: () => {
       queryClient.setQueryData(queryKeys.wellnessCheckin(trainingDayId), { completed: true });
       void queryClient.invalidateQueries({ queryKey: queryKeys.today(trainingDayId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.athleteSnapshot(trainingDayId) });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.presentationToday(trainingDayId),
+      });
     },
   });
 

@@ -141,7 +141,7 @@ export function CalendarView({
     [googleQuery.data?.events, hiddenCalendarIds],
   );
 
-  const eventsByDay = groupEventsByDay(visibleGoogleEvents);
+  const eventsByDay = useMemo(() => groupEventsByDay(visibleGoogleEvents), [visibleGoogleEvents]);
 
   async function toggleCalendarVisibility(calendarId: string, visible: boolean) {
     setVisibilityError(null);
@@ -241,8 +241,14 @@ export function CalendarView({
     plannedQuery.data ?? [],
   );
 
-  const linkedActivityIds = new Set(
-    (plannedQuery.data ?? []).map((p) => p.activityId).filter((id): id is string => Boolean(id)),
+  const linkedActivityIds = useMemo(
+    () =>
+      new Set(
+        (plannedQuery.data ?? [])
+          .map((p) => p.activityId)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    [plannedQuery.data],
   );
 
   async function handleDrop(dateKey: string, targetDate: Date) {
@@ -266,12 +272,20 @@ export function CalendarView({
     setDialog({ mode: 'brick', sessions });
   }
 
+  function onCreate(date: Date) {
+    setDialog({ mode: 'create', date });
+  }
+
+  function onDragLeave() {
+    setDragOver(null);
+  }
+
   const dayHandlers = {
     dragOver,
     eventsByDay,
     linkedActivityIds,
-    onCreate: (date: Date) => setDialog({ mode: 'create', date }),
-    onDragLeave: () => setDragOver(null),
+    onCreate,
+    onDragLeave,
     onDragOver: setDragOver,
     onDrop: handleDrop,
     onEdit: openEdit,

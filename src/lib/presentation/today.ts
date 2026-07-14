@@ -80,13 +80,12 @@ function resolveSnapshotStatusMessage(
 export async function buildTodayPresentationViewModel(
   trainingDayId: string,
 ): Promise<TodayViewModel> {
-  const snapshot = await getOrBuildAthleteSnapshot(trainingDayId);
-
   const day = localDateFromTrainingDayId(trainingDayId);
   const dayStart = startOfDay(day);
   const dayEnd = endOfDay(day);
 
-  const [healthEntries, activities, plannedSessions, athleteProfile] = await Promise.all([
+  const [snapshot, healthEntries, activities, plannedSessions, athleteProfile] = await Promise.all([
+    getOrBuildAthleteSnapshot(trainingDayId),
     getHealthEntries(14, day),
     getActivitiesList({ sinceDays: 60 }),
     getPlannedSessions({ from: dayStart, to: dayEnd }),

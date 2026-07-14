@@ -45,7 +45,7 @@ export function AthleteStateInitializer() {
         }
         if (data.todayPresentation) {
           queryClient.setQueryData(
-            ['presentation', 'today', trainingDayId],
+            queryKeys.presentationToday(trainingDayId),
             data.todayPresentation,
           );
         }

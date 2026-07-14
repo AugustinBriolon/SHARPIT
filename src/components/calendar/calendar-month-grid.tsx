@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { weekDayLabels, type CalendarDay } from '@/lib/calendar';
 import type { ClientPlannedSession } from '@/lib/query/types';
 import { cn } from '@/lib/utils';
@@ -10,11 +11,12 @@ import {
   getDayCellDateClassName,
 } from './calendar-utils';
 
-function CalendarMonthCell({
+const CalendarMonthCell = memo(function CalendarMonthCell({
   cell,
+  dateKey,
   eventsByDay,
   linkedActivityIds,
-  dragOver,
+  isDragOver,
   onCreate,
   onDrop,
   onDragOver,
@@ -23,9 +25,10 @@ function CalendarMonthCell({
   onOpenBrick,
 }: {
   cell: CalendarDay;
+  dateKey: string;
   eventsByDay: Record<string, DayEvent[]>;
   linkedActivityIds: Set<string>;
-  dragOver: string | null;
+  isDragOver: boolean;
   onCreate: (date: Date) => void;
   onDrop: (dateKey: string, date: Date) => void;
   onDragOver: (dateKey: string) => void;
@@ -33,13 +36,12 @@ function CalendarMonthCell({
   onEdit: (session: ClientPlannedSession) => void;
   onOpenBrick: (sessions: ClientPlannedSession[]) => void;
 }) {
-  const dateKey = format(cell.date, 'yyyy-MM-dd');
   const dayLoad = getCalendarDayLoad(cell);
   const borderAccent = getCalendarDayBorderAccent(cell);
   const cellClassName = cn(
     'border-analysis-border/70 focus-visible:ring-primary/30 min-h-28 cursor-pointer border-r border-b p-1.5 transition-colors last:border-r-0 focus-visible:ring-2 focus-visible:outline-hidden',
     !cell.inMonth && 'bg-muted/20',
-    dragOver === dateKey && 'bg-primary/10',
+    isDragOver && 'bg-primary/10',
   );
 
   return (
@@ -87,7 +89,7 @@ function CalendarMonthCell({
       </div>
     </div>
   );
-}
+});
 
 export function CalendarMonthGrid({
   weeks,
@@ -123,21 +125,25 @@ export function CalendarMonthGrid({
       </div>
 
       <div className="grid grid-cols-7">
-        {weeks.flat().map((cell) => (
-          <CalendarMonthCell
-            key={format(cell.date, 'yyyy-MM-dd')}
-            cell={cell}
-            dragOver={dragOver}
-            eventsByDay={eventsByDay}
-            linkedActivityIds={linkedActivityIds}
-            onCreate={onCreate}
-            onDragLeave={onDragLeave}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
-            onEdit={onEdit}
-            onOpenBrick={onOpenBrick}
-          />
-        ))}
+        {weeks.flat().map((cell) => {
+          const dateKey = format(cell.date, 'yyyy-MM-dd');
+          return (
+            <CalendarMonthCell
+              key={dateKey}
+              cell={cell}
+              dateKey={dateKey}
+              eventsByDay={eventsByDay}
+              isDragOver={dragOver === dateKey}
+              linkedActivityIds={linkedActivityIds}
+              onCreate={onCreate}
+              onDragLeave={onDragLeave}
+              onDragOver={onDragOver}
+              onDrop={onDrop}
+              onEdit={onEdit}
+              onOpenBrick={onOpenBrick}
+            />
+          );
+        })}
       </div>
     </div>
   );
