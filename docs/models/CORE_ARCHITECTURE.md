@@ -246,14 +246,15 @@ React components (render only)
 
 **Answers:** _What does the athlete experience?_
 
-| Surface                   | Status       | Notes                                             |
-| ------------------------- | ------------ | ------------------------------------------------- |
-| **Today**                 | EVOLVING     | Primary Morning Experience — consume Snapshot     |
-| **Coach (IA)**            | EVOLVING     | Must migrate to Snapshot + DecisionState context  |
-| **Activity Detail**       | EVOLVING     | Environmental correction, narrative, storytelling |
-| **Biology drill-downs**   | STABLE       | Presentation API migration largely complete       |
-| **Notifications**         | EXPERIMENTAL | Not yet built on Snapshot                         |
-| **Widgets / PWA / Watch** | EXPERIMENTAL | Future vertical expression                        |
+| Surface                              | Status       | Notes                                                                                                                     |
+| ------------------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| **Today**                            | EVOLVING     | Primary Morning Experience — consume Snapshot                                                                             |
+| **Coach (IA)**                       | EVOLVING     | Must migrate to Snapshot + DecisionState context                                                                          |
+| **Activity Detail**                  | EVOLVING     | Environmental correction, narrative, storytelling                                                                         |
+| **Biology drill-downs**              | STABLE       | Presentation API migration largely complete                                                                               |
+| **PWA (install / offline / update)** | EVOLVING     | Install experience, safe SW updates, read-only offline Snapshot (ADR-008) — P0/P1 complete; no offline mutations, no push |
+| **Notifications**                    | EXPERIMENTAL | Not yet built on Snapshot                                                                                                 |
+| **Widgets / Watch**                  | EXPERIMENTAL | Future vertical expression                                                                                                |
 
 ---
 
@@ -331,21 +332,22 @@ Future differentiation comes from **expressing intelligence already available**,
 
 ### Primary (vertical — approved)
 
-| Area                      | Direction                                                              |
-| ------------------------- | ---------------------------------------------------------------------- |
-| **Richer Today**          | Phase narrative, decision headline, environmental context, trust strip |
-| **Coach conversations**   | Snapshot-grounded context; cite DecisionState evidence                 |
-| **Activity storytelling** | Environmental correction narrative, coach verdict, records             |
-| **Weekly reviews**        | Snapshot history + DecisionState trends                                |
-| **Goal follow-up**        | Progress against goals using existing adaptation/recovery signals      |
-| **Biology drill-downs**   | Deeper explanation, not deeper inference                               |
+| Area                          | Direction                                                                                           |
+| ----------------------------- | --------------------------------------------------------------------------------------------------- |
+| **Richer Today**              | Phase narrative, decision headline, environmental context, trust strip                              |
+| **Coach conversations**       | Snapshot-grounded context; cite DecisionState evidence                                              |
+| **Activity storytelling**     | Environmental correction narrative, coach verdict, records                                          |
+| **Weekly reviews**            | Snapshot history + DecisionState trends                                                             |
+| **Goal follow-up**            | Progress against goals using existing adaptation/recovery signals                                   |
+| **Biology drill-downs**       | Deeper explanation, not deeper inference                                                            |
+| **Installed-app PWA quality** | Manifest/identity, safe SW updates, install experience, read-only offline Snapshot — done (ADR-008) |
 
 ### Secondary (vertical — when Core migration complete)
 
 | Area              | Direction                                               |
 | ----------------- | ------------------------------------------------------- |
 | **Notifications** | Push DecisionState primary decision + one evidence line |
-| **Widgets / PWA** | Snapshot subset; no engine calls on device              |
+| **Widgets**       | Snapshot subset; no engine calls on device              |
 | **Apple Watch**   | Read-only complication from Snapshot API                |
 
 ### Not approved without constitutional review

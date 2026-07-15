@@ -12,6 +12,11 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
             staleTime: 5 * 60_000,
             gcTime: 30 * 60_000,
             refetchOnWindowFocus: false,
+            // Explicit (matches the library default) — on reconnect, active queries
+            // (the canonical Snapshot, Today's ViewModel) refetch for real rather
+            // than trusting cached data; the offline read-only view naturally
+            // steps aside once a fresh fetch succeeds. See ADR-008.
+            refetchOnReconnect: true,
           },
         },
       }),

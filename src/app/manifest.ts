@@ -1,16 +1,18 @@
 import type { MetadataRoute } from 'next';
+import { THEME_LIGHT_COLOR } from '@/lib/theme';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: '/',
     name: 'SHARPIT',
     short_name: 'SHARPIT',
     description: 'Intelligence sportive — entraînement, récupération, décision.',
     start_url: '/',
     scope: '/',
     display: 'standalone',
-    orientation: 'portrait-primary',
-    theme_color: '#f8faf8',
-    background_color: '#f8faf8',
+    // No orientation lock: iPad is a real, supported surface (portrait and landscape).
+    theme_color: THEME_LIGHT_COLOR,
+    background_color: THEME_LIGHT_COLOR,
     icons: [
       {
         src: '/icons/icon-192.png',

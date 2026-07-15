@@ -3,6 +3,8 @@ import { IBM_Plex_Sans, Syne } from 'next/font/google';
 import { AppClerkProvider } from '@/providers/clerk-provider';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { SwRegister } from '@/components/pwa/sw-register';
+import { UpdateAvailableBanner } from '@/components/pwa/update-available-banner';
+import { SnapshotOfflineSync } from '@/components/pwa/snapshot-offline-sync';
 import { Toaster } from '@/components/ui/toast';
 import { QueryProvider } from '@/providers/query-provider';
 import { THEME_INIT_SCRIPT, THEME_DARK_COLOR, THEME_LIGHT_COLOR } from '@/lib/theme';
@@ -79,8 +81,12 @@ export default async function RootLayout({
           <link href="https://basemaps.cartocdn.com" rel="dns-prefetch" />
         </head>
         <body className="bg-background text-foreground min-h-full font-sans">
+          <UpdateAvailableBanner />
           <ThemeProvider serverPreference={serverPreference}>
-            <QueryProvider>{children}</QueryProvider>
+            <QueryProvider>
+              {children}
+              <SnapshotOfflineSync />
+            </QueryProvider>
           </ThemeProvider>
           <Toaster />
           <SwRegister />

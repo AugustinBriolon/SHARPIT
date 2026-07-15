@@ -2,7 +2,7 @@
 
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Check, Loader2, Wand2 } from 'lucide-react';
+import { Check, Loader2, Wand2, WifiOff } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ProfileContextBanner } from '@/components/profile/profile-context-banner';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,7 @@ import {
 import type { GateSessionResult } from '@/lib/plan-gate/types';
 import { GateStatusBadge, GateFindingsList } from '@/components/coach/gate-status-badge';
 import { AdaptationTrigger } from '@/components/coach/adaptation-trigger';
+import { useOnlineStatus } from '@/hooks/use-online-status';
 
 /** REMOVE changes bypass the Gate (see coach/adapt/route.ts) — only ADD/MODIFY changes have a gate result. */
 function gateKey(change: Pick<AdaptChange, 'action' | 'sessionId' | 'date' | 'type'>): string {
@@ -70,7 +71,14 @@ function formatChangeDate(
   return '';
 }
 
-function renderApplyButtonContent(applied: boolean, isApplying: boolean) {
+function renderApplyButtonContent(applied: boolean, isApplying: boolean, online: boolean) {
+  if (!online) {
+    return (
+      <>
+        <WifiOff className="size-4" /> Hors ligne
+      </>
+    );
+  }
   if (applied) {
     return (
       <>
@@ -178,6 +186,7 @@ export function PlanAdapter({
 
   const isAdapting = adapt.isPending;
   const isApplying = create.isPending || update.isPending || remove.isPending;
+  const online = useOnlineStatus();
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -319,10 +328,10 @@ export function PlanAdapter({
                     Fermer
                   </Button>
                   <Button
-                    disabled={isApplying || selected.size === 0 || applied}
+                    disabled={!online || isApplying || selected.size === 0 || applied}
                     onClick={handleApply}
                   >
-                    {renderApplyButtonContent(applied, isApplying)}
+                    {renderApplyButtonContent(applied, isApplying, online)}
                   </Button>
                 </div>
               </div>

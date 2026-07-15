@@ -2,7 +2,7 @@
 
 import { format, parseISO, startOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Check, Loader2, Sparkles } from 'lucide-react';
+import { Check, Loader2, Sparkles, WifiOff } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ProfileContextBanner } from '@/components/profile/profile-context-banner';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { phaseLabels } from '@/lib/periodization';
 import { useCoachPlan, type GeneratedSession } from '@/hooks/use-coach';
 import { useGoals, usePlannedSessionMutations, useTrainingPlan } from '@/hooks/use-data';
+import { useOnlineStatus } from '@/hooks/use-online-status';
 import type { GateSessionResult } from '@/lib/plan-gate/types';
 import { GateStatusBadge, GateFindingsList } from '@/components/coach/gate-status-badge';
 
@@ -41,7 +42,15 @@ const DAYS_OPTIONS = [
 
 const NO_GOAL = 'none';
 
-function renderInsertButtonContent(inserted: boolean, isInserting: boolean) {
+function renderInsertButtonContent(inserted: boolean, isInserting: boolean, online: boolean) {
+  if (!online) {
+    return (
+      <>
+        <WifiOff className="size-4" />
+        Hors ligne
+      </>
+    );
+  }
   if (inserted) {
     return (
       <>
@@ -152,6 +161,7 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
 
   const isGenerating = coachPlan.isPending;
   const isInserting = create.isPending;
+  const online = useOnlineStatus();
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -277,10 +287,10 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
                   Fermer
                 </Button>
                 <Button
-                  disabled={isInserting || selected.size === 0 || inserted}
+                  disabled={!online || isInserting || selected.size === 0 || inserted}
                   onClick={handleInsert}
                 >
-                  {renderInsertButtonContent(inserted, isInserting)}
+                  {renderInsertButtonContent(inserted, isInserting, online)}
                 </Button>
               </div>
             </div>

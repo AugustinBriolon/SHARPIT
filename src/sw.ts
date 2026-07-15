@@ -14,7 +14,10 @@ declare const self: ServiceWorkerGlobalScope;
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
-  skipWaiting: true,
+  // A new worker waits until the athlete explicitly confirms an update
+  // (see useServiceWorkerUpdate) rather than activating mid-session and
+  // swapping cached assets under an open form or coaching dialog.
+  skipWaiting: false,
   clientsClaim: true,
   navigationPreload: true,
   runtimeCaching: [
@@ -39,3 +42,11 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+// The athlete-facing update banner posts this once they explicitly confirm —
+// only then does the waiting worker activate.
+self.addEventListener('message', (event: ExtendableMessageEvent) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    void self.skipWaiting();
+  }
+});

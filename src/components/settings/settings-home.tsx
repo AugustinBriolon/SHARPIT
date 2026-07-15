@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { SettingsMaintenancePanel } from '@/components/settings/settings-maintenance-panel';
+import { InstallCard } from '@/components/pwa/install-card';
 import { cn } from '@/lib/utils';
 
 type SettingsEntry = {
@@ -103,6 +104,7 @@ export function SettingsHome() {
           <SettingsEntryCard key={entry.href} entry={entry} />
         ))}
       </div>
+      <InstallCard />
       <div
         className={cn(
           'rounded-2xl border border-dashed px-4 py-4',
