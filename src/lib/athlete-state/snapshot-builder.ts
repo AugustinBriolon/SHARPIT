@@ -8,6 +8,7 @@ import {
   type SnapshotPlannedSessionInput,
 } from '@/lib/athlete-state/snapshot-phase';
 import { applyTruthfulnessOverlay } from '@/lib/athlete-state/snapshot-truthfulness';
+import { activityMatchesTrainingDay } from '@/lib/training-day';
 import type { TodayState } from '@/hooks/use-today';
 import {
   decisionVerdict,
@@ -153,6 +154,12 @@ export function buildAthleteSnapshot(input: SnapshotBuildInput): AthleteSnapshot
     domainMessages,
     dailyPhase,
     phaseNarrative,
+    sessionsDoneToday: phaseContext.activities.filter((a) =>
+      activityMatchesTrainingDay(a.date, trainingDayId),
+    ),
+    plannedToday: phaseContext.plannedSessions.filter((p) =>
+      activityMatchesTrainingDay(p.date, trainingDayId),
+    ),
   };
 
   const overlay = applyTruthfulnessOverlay(draft);

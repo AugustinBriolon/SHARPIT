@@ -84,9 +84,11 @@ function utcDateOnly(d: Date): Date {
 }
 
 /** Génère le texte du bilan du jour (sans le persister). */
-export async function generateDailyBriefingContent(
-  refDate: Date = new Date(),
-): Promise<{ content: string; readiness: number | null }> {
+export async function generateDailyBriefingContent(refDate: Date = new Date()): Promise<{
+  content: string;
+  readiness: number | null;
+  phaseAtGeneration: ReturnType<typeof resolveBriefingPhase>;
+}> {
   invalidateCoachContext();
   const { briefingPhase: phase, dailyPhase } = await resolveAthleteCentricBriefingPhase(refDate);
   const [ctx, dayCtx] = await Promise.all([
@@ -115,7 +117,7 @@ Rédige le ${dayCtx.phaseLabel} en suivant la structure imposée et les règles 
     console.warn('[daily-briefing] validation failed:', validation.reason);
   }
 
-  return { content, readiness: ctx.health.readinessToday };
+  return { content, readiness: ctx.health.readinessToday, phaseAtGeneration: phase };
 }
 
 /** Lit le bilan stocké pour une date (null si absent). */
@@ -130,11 +132,11 @@ export async function generateAndStoreDailyBriefing(refDate: Date = new Date()) 
   if (!isCoachConfigured()) {
     throw new Error('Coach IA non configuré (AI_GATEWAY_API_KEY manquante).');
   }
-  const { content, readiness } = await generateDailyBriefingContent(refDate);
+  const { content, readiness, phaseAtGeneration } = await generateDailyBriefingContent(refDate);
   const date = utcDateOnly(refDate);
   return prisma.dailyBriefing.upsert({
     where: { date },
-    create: { date, content, readiness },
-    update: { content, readiness, generatedAt: new Date() },
+    create: { date, content, readiness, phaseAtGeneration },
+    update: { content, readiness, phaseAtGeneration, generatedAt: new Date() },
   });
 }

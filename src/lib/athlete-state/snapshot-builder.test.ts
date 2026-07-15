@@ -54,6 +54,8 @@ describe('buildAthleteSnapshot daily phase', () => {
 
     expect(snapshot.dailyPhase.phase).toBe('MORNING');
     expect(snapshot.phaseNarrative.heroEyebrow).toContain('compte');
+    expect(snapshot.sessionsDoneToday).toEqual([]);
+    expect(snapshot.plannedToday).toEqual([]);
   });
 
   it('switches to session_completed after morning activity', () => {
@@ -138,5 +140,63 @@ describe('buildAthleteSnapshot daily phase', () => {
 
     expect(snapshot.dailyPhase.phase).toBe('SESSION_COMPLETED');
     expect(snapshot.phaseNarrative.heroHeadline).toMatch(/exigeante|Course/);
+    expect(snapshot.sessionsDoneToday).toHaveLength(1);
+    expect(snapshot.sessionsDoneToday[0]?.id).toBe('a1');
+  });
+});
+
+describe('buildAthleteSnapshot day context', () => {
+  it('excludes activities and planned sessions from other days', () => {
+    const refDate = new Date('2026-07-07T08:00:00');
+    const snapshot = buildAthleteSnapshot({
+      athleteId: 'default',
+      trainingDayId: '2026-07-07',
+      todayState: baseTodayState,
+      freshness: baseFreshness,
+      briefing: null,
+      phaseContext: {
+        refDate,
+        activities: [
+          {
+            id: 'yesterday-run',
+            date: new Date('2026-07-06T07:00:00'),
+            type: 'RUN',
+            load: 40,
+            duration: 1800,
+            title: 'Sortie veille',
+          },
+        ],
+        plannedSessions: [
+          {
+            id: 'tomorrow-swim',
+            date: new Date('2026-07-08T07:00:00'),
+            type: 'SWIM',
+            startTime: '07:00',
+            completed: false,
+            activityId: null,
+            title: 'Nage demain',
+          },
+          {
+            id: 'today-bike',
+            date: new Date('2026-07-07T18:00:00'),
+            type: 'BIKE',
+            startTime: '18:00',
+            completed: false,
+            activityId: null,
+            title: 'Vélo ce soir',
+          },
+        ],
+        goals: [],
+        sleepCoach: baseSleepCoach,
+        sleepBedtimeTargetMin: null,
+        priorSnapshot: null,
+        latestSessionObservationAt: null,
+        sleepLoggedTonight: false,
+      },
+    });
+
+    expect(snapshot.sessionsDoneToday).toEqual([]);
+    expect(snapshot.plannedToday).toHaveLength(1);
+    expect(snapshot.plannedToday[0]?.id).toBe('today-bike');
   });
 });

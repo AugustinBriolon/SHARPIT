@@ -7,6 +7,12 @@ import { buildCoachContext, formatCoachContext } from '@/lib/coach-context';
 import { getUpcomingBusy } from '@/lib/integrations/google-sync';
 import { getGoalById } from '@/lib/queries';
 import { coachPlanRequestSchema, coachPlanSchema } from '@/lib/validators/coach';
+import { buildGateContext } from '@/lib/plan-gate/build-context';
+import { evaluatePlan } from '@/lib/plan-gate/evaluate-plan';
+import type { GateProposal } from '@/lib/plan-gate/types';
+import { computeTrainingDayId } from '@/lib/training-day';
+import { buildDecisionSnapshotContext } from '@/lib/decision-memory/build-snapshot-context';
+import { createCoachingDecision } from '@/lib/decision-memory/repository';
 
 /** Résume les créneaux occupés Google par jour, sur la fenêtre du plan. */
 async function buildBusySummary(start: Date, days: number): Promise<string> {
@@ -156,10 +162,47 @@ ${contextText}${goalBlock}${macroBlock}${agendaBlock}`;
         startTime: s.startTime ?? null,
       }));
 
+    const proposals: GateProposal[] = sessions.map((s) => ({
+      sessionId: null,
+      action: 'ADD',
+      date: s.date,
+      startTime: s.startTime,
+      type: s.type,
+      intensity: s.intensity,
+      durationMin: s.durationMin,
+      load: s.load,
+      title: s.title,
+      rationale: s.rationale ?? null,
+    }));
+
+    const { context: gateContext, snapshot } = await buildGateContext({
+      trainingDayId: computeTrainingDayId(start),
+      proposals,
+      goalId,
+    });
+    const gate = evaluatePlan(gateContext, proposals);
+
+    const snapshotContext = buildDecisionSnapshotContext(snapshot);
+    const decisionIds = await Promise.all(
+      gate.sessions.map((sessionResult) =>
+        createCoachingDecision({
+          trainingDayId: computeTrainingDayId(new Date(`${sessionResult.proposal.date}T00:00:00`)),
+          source: 'PLAN_GENERATOR',
+          proposal: sessionResult.proposal,
+          gateResult: sessionResult,
+          snapshotContext,
+          snapshotIdAtRecommendation: snapshot.snapshotId,
+        }),
+      ),
+    ).then((decisions) => decisions.map((d) => d.id));
+
+    const sessionsWithDecisionId = sessions.map((s, i) => ({ ...s, decisionId: decisionIds[i] }));
+
     return NextResponse.json({
       summary: output.summary,
       startDate: format(start, 'yyyy-MM-dd'),
-      sessions,
+      sessions: sessionsWithDecisionId,
+      gate,
     });
   } catch (error) {
     console.error('[coach/plan]', error);

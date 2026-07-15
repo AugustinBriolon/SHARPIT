@@ -1112,6 +1112,20 @@ HRV −8% + TSB −14 · Recovery Model v1.2]"
 Daily Briefings and Weekly Reviews are persistent Recommendation outputs. Proactive Recommendations generated from
 current state are computed on demand.
 
+**Concrete implementation — Decision Memory**
+PRODUCT.md §"Decision Memory" describes the longitudinal record of "what was recommended → what the Athlete decided →
+what happened → whether it was useful." The concrete implementation is `src/lib/decision-memory/`: `CoachingDecision`
+persists a Session Recommendation exactly as generated (proposal + `GateSessionResult`, see plan-gate below, plus a
+frozen Snapshot/DecisionState context) at the moment it is presented; `CoachingDecisionAction` is the append-only log
+of what the Athlete did with it (accepted, modified, rejected, or later overridden); `CoachingDecisionOutcome` is the
+retrospective, deterministic evaluation of what happened — never a bare success/quality verdict, always evidence +
+explicit `limitations` + a confidence scaled by evidence completeness. See ADR-006 for the persistence and placement
+decisions, and ARCHITECTURE.md §4 for the COACHING-domain boundary. Its first athlete-facing consumer is the
+presentation layer built in ADR-007 (`src/lib/presentation/session-rationale.ts`, `weekly-coaching-brief.ts`,
+`learning-feedback.ts`) — the Session Recommendation, action log, and outcome finally reach the Athlete as the
+"what SHARPIT observed / inferred / suggests / you chose" rationale and the weekly brief's evidence-backed learning
+sentences, rather than staying an engineering-only audit trail.
+
 ---
 
 ### 23. Alert

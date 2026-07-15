@@ -18,12 +18,32 @@ import type { ClientPlannedSession } from '@/lib/query/types';
 import { activityTypeLabels } from '@/lib/format';
 import { intensityLabels } from '@/lib/sessions';
 import { cn } from '@/lib/utils';
-import { useAdaptPlan, type AdaptChange } from '@/hooks/use-coach';
+import { useAdaptPlan, type AdaptChange, type AdaptPlanResult } from '@/hooks/use-coach';
 import {
   usePlannedSessions,
   usePlannedSessionMutations,
   type PlannedSessionPayload,
 } from '@/hooks/use-data';
+import type { GateSessionResult } from '@/lib/plan-gate/types';
+import { GateStatusBadge, GateFindingsList } from '@/components/coach/gate-status-badge';
+import { AdaptationTrigger } from '@/components/coach/adaptation-trigger';
+
+/** REMOVE changes bypass the Gate (see coach/adapt/route.ts) — only ADD/MODIFY changes have a gate result. */
+function gateKey(change: Pick<AdaptChange, 'action' | 'sessionId' | 'date' | 'type'>): string {
+  return `${change.action}:${change.sessionId ?? ''}:${change.date ?? ''}:${change.type ?? ''}`;
+}
+
+function buildGateResultLookup(result: AdaptPlanResult): Map<string, GateSessionResult> {
+  const map = new Map<string, GateSessionResult>();
+  for (const sessionResult of result.gate.sessions) {
+    const p = sessionResult.proposal;
+    map.set(
+      gateKey({ action: p.action, sessionId: p.sessionId, date: p.date, type: p.type }),
+      sessionResult,
+    );
+  }
+  return map;
+}
 
 const ACTION_LABEL: Record<AdaptChange['action'], string> = {
   MODIFY: 'Modifier',
@@ -91,6 +111,8 @@ export function PlanAdapter({
     return map;
   }, [plannedQuery.data]);
 
+  const gateResults = useMemo(() => (result ? buildGateResultLookup(result) : new Map()), [result]);
+
   async function handleAdapt() {
     setApplyError(null);
     setApplied(false);
@@ -98,7 +120,12 @@ export function PlanAdapter({
       days: 14,
       focus: focus.trim() || undefined,
     });
-    setSelected(new Set(res.changes.map((_, i) => i)));
+    const resultsByKey = buildGateResultLookup(res);
+    const keepIndices = res.changes
+      .map((change, i) => ({ change, i }))
+      .filter(({ change }) => resultsByKey.get(gateKey(change))?.status !== 'REJECTED')
+      .map(({ i }) => i);
+    setSelected(new Set(keepIndices));
   }
 
   function toggle(i: number) {
@@ -127,6 +154,7 @@ export function PlanAdapter({
           if (c.durationMin != null) data.durationMin = c.durationMin;
           if (c.load != null) data.load = c.load;
           if (c.date) data.date = new Date(`${c.date}T12:00:00`);
+          data.decisionId = c.decisionId;
           await update.mutateAsync({ id: c.sessionId, data });
         } else if (c.action === 'ADD' && c.date && c.type) {
           await create.mutateAsync({
@@ -137,6 +165,7 @@ export function PlanAdapter({
             durationMin: c.durationMin,
             load: c.load,
             intensity: c.intensity,
+            decisionId: c.decisionId,
           });
         }
       }
@@ -216,27 +245,32 @@ export function PlanAdapter({
                 ]
                   .filter(Boolean)
                   .join(' · ');
+                const gateResult = gateResults.get(gateKey(c));
+                const rejected = gateResult?.status === 'REJECTED';
                 return (
                   <button
                     key={i}
+                    disabled={rejected}
                     type="button"
                     className={cn(
                       'flex w-full gap-3 rounded-lg border p-3 text-left transition-colors',
-                      selected.has(i)
+                      rejected &&
+                        'border-signal-risk/30 bg-signal-risk/5 cursor-not-allowed opacity-80',
+                      !rejected && selected.has(i)
                         ? 'border-primary/40 bg-primary/5'
-                        : 'border-border/50 bg-card/30 opacity-60 hover:opacity-100',
+                        : !rejected && 'border-border/50 bg-card/30 opacity-60 hover:opacity-100',
                     )}
-                    onClick={() => toggle(i)}
+                    onClick={rejected ? undefined : () => toggle(i)}
                   >
                     <span
                       className={cn(
                         'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border',
-                        selected.has(i)
+                        selected.has(i) && !rejected
                           ? 'border-primary bg-primary text-primary-foreground'
                           : 'border-border',
                       )}
                     >
-                      {selected.has(i) && <Check className="size-3.5" />}
+                      {selected.has(i) && !rejected && <Check className="size-3.5" />}
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -256,12 +290,17 @@ export function PlanAdapter({
                         {(c.title ?? existing?.title) && (
                           <span className="text-sm font-medium">{c.title ?? existing?.title}</span>
                         )}
+                        {gateResult && <GateStatusBadge status={gateResult.status} />}
                       </div>
                       {fields && <p className="text-muted-foreground mt-1 text-xs">{fields}</p>}
                       {c.description && (
                         <p className="text-muted-foreground mt-0.5 text-xs">{c.description}</p>
                       )}
                       <p className="text-muted-foreground/80 mt-1 text-xs italic">→ {c.reason}</p>
+                      {gateResult && <GateFindingsList result={gateResult} />}
+                      {c.action === 'MODIFY' && c.sessionId && (
+                        <AdaptationTrigger gateResult={gateResult} sessionId={c.sessionId} />
+                      )}
                     </div>
                   </button>
                 );

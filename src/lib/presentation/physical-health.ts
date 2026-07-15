@@ -50,7 +50,9 @@ const TREND_LABELS: Record<string, string> = {
   WORSENING: 'en aggravation',
 };
 
-const CAPACITY_LABELS: Record<string, string> = {
+/** TrainingCapacityLevel labels (FULL/REDUCED/LIMITED/UNABLE) — a different enum from
+ * fatigue's TrainingCapacity (FULL/REDUCED/LIGHT_ONLY/REST_ONLY); do not conflate the two. */
+export const CAPACITY_LABELS: Record<string, string> = {
   FULL: 'Entraînement complet',
   REDUCED: 'Charge réduite',
   LIMITED: 'Entraînement limité',

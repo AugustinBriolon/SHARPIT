@@ -27,6 +27,28 @@ export type AthleteSnapshotBriefing = {
   readiness: number | null;
 };
 
+/** Minimal, snapshot-native activity signal — not a full Activity projection for display. */
+export type SnapshotActivityInput = {
+  id: string;
+  date: Date | string;
+  type: string;
+  load?: number | null;
+  duration?: number | null;
+  title?: string | null;
+};
+
+/** Minimal, snapshot-native planned-session signal — not a full PlannedSession projection for display. */
+export type SnapshotPlannedSessionInput = {
+  id: string;
+  date: Date | string;
+  type: string;
+  startTime?: string | null;
+  completed?: boolean;
+  activityId?: string | null;
+  title?: string | null;
+  goalId?: string | null;
+};
+
 export type AthleteSnapshot = {
   /** Unique id for this generation (deterministic fingerprint). */
   snapshotId: string;
@@ -79,6 +101,11 @@ export type AthleteSnapshot = {
   dailyPhase: DailyPhaseResolution;
   /** Deterministic copy for hero / product surfaces for the current phase. */
   phaseNarrative: PhaseNarrative;
+
+  /** Activities completed today (trainingDayId) — minimal signal, not a display projection. */
+  sessionsDoneToday: SnapshotActivityInput[];
+  /** Sessions planned for today (trainingDayId) — minimal signal, not a display projection. */
+  plannedToday: SnapshotPlannedSessionInput[];
 };
 
 export type AthleteSnapshotEnvelope = {

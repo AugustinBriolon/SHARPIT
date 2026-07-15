@@ -1,4 +1,8 @@
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import type {
+  AthleteSnapshot,
+  SnapshotActivityInput,
+  SnapshotPlannedSessionInput,
+} from '@/core/athlete-state/snapshot';
 import type { PhaseNarrative } from '@/lib/daily-phase/narrative';
 import { buildPhaseNarrative } from '@/lib/daily-phase/narrative';
 import { buildDailyPhaseDayContext, minutesBetween } from '@/lib/daily-phase/day-context';
@@ -19,25 +23,7 @@ import {
 import { activityMatchesTrainingDay } from '@/lib/training-day';
 import type { SleepCoachView } from '@/lib/sleep';
 
-export type SnapshotActivityInput = {
-  id: string;
-  date: Date | string;
-  type: string;
-  load?: number | null;
-  duration?: number | null;
-  title?: string | null;
-};
-
-export type SnapshotPlannedSessionInput = {
-  id: string;
-  date: Date | string;
-  type: string;
-  startTime?: string | null;
-  completed?: boolean;
-  activityId?: string | null;
-  title?: string | null;
-  goalId?: string | null;
-};
+export type { SnapshotActivityInput, SnapshotPlannedSessionInput };
 
 export type SnapshotPhaseBuildParams = {
   refDate: Date;

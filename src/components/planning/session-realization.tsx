@@ -20,6 +20,7 @@ import { ActivityTypeIndicator } from '@/components/activity/activity-type-indic
 import { Button } from '@/components/ui/button';
 import { LinkButton } from '@/components/ui/link-button';
 import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/components/ui/toast';
 import type { ClientActivity, ClientPhysicalNote, ClientPlannedSession } from '@/lib/query/types';
 import { activityTypeLabels, formatDate, formatDistance, formatDuration } from '@/lib/format';
 import { severityColor } from '@/lib/physical';
@@ -247,6 +248,16 @@ export function SessionRealization({ session }: { session: ClientPlannedSession 
     setPickerOpen(false);
   }
 
+  async function handleManualAnalysis() {
+    const loadingToast = toast.loading('Analyse de la séance en cours');
+    try {
+      await analyze.mutateAsync(session.id);
+      toast.success('Analyse de la séance terminée');
+    } finally {
+      toast.close(loadingToast);
+    }
+  }
+
   function renderLinkedAnalysisSection() {
     if (hasAnalysis && analysis) {
       return (
@@ -304,7 +315,7 @@ export function SessionRealization({ session }: { session: ClientPlannedSession 
             className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
             disabled={isAnalyzing}
             type="button"
-            onClick={() => analyze.mutate(session.id)}
+            onClick={handleManualAnalysis}
           >
             {isAnalyzing ? (
               <Loader2 className="size-3 animate-spin" />
@@ -332,7 +343,7 @@ export function SessionRealization({ session }: { session: ClientPlannedSession 
         size="sm"
         type="button"
         variant="outline"
-        onClick={() => analyze.mutate(session.id)}
+        onClick={handleManualAnalysis}
       >
         {isAnalyzing ? (
           <>

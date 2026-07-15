@@ -140,6 +140,20 @@ export function mapConfidenceToTier(confidence: number): ConfidenceTier {
   return 'low';
 }
 
+/**
+ * Only surface the confidence caveat when it's actually informative — high
+ * confidence is the expected default and showing it every time is noise, not
+ * signal (PRODUCT.md §XI — silence is preferable to noise).
+ */
+export function resolveVisibleConfidenceLabel(
+  confidenceLabel: string | null,
+  confidenceTier: ConfidenceTier | null,
+  adviceActionable: boolean,
+): string | null {
+  if (!adviceActionable || confidenceTier !== 'high') return confidenceLabel;
+  return null;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Recovery dimension signal
 // ─────────────────────────────────────────────────────────────────────────────

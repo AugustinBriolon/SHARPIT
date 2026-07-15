@@ -15,6 +15,7 @@ import {
 } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 import type { CoachMemoryResponse } from '@/hooks/use-coach-memory';
+import type { GateResult } from '@/lib/plan-gate/types';
 
 let createConversationPromise: Promise<ClientConversation> | null = null;
 
@@ -29,12 +30,15 @@ export interface GeneratedSession {
   durationMin: number;
   load: number;
   rationale: string;
+  /** Origin CoachingDecision id — null when the Gate rejected the proposal outright. */
+  decisionId: string | null;
 }
 
 export interface GeneratedPlan {
   summary: string;
   startDate: string;
   sessions: GeneratedSession[];
+  gate: GateResult;
 }
 
 export interface GeneratePlanParams {
@@ -77,11 +81,14 @@ export interface AdaptChange {
   durationMin: number | null;
   load: number | null;
   reason: string;
+  /** Origin CoachingDecision id — null for REMOVE changes and non-gated proposals. */
+  decisionId: string | null;
 }
 
 export interface AdaptPlanResult {
   summary: string;
   changes: AdaptChange[];
+  gate: GateResult;
 }
 
 export function useAdaptPlan() {

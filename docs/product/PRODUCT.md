@@ -798,7 +798,7 @@ Execute as planned, modify (intensity, duration, sport), swap with another plann
 
 - Session block shows planned/completed sessions but limited compatibility narrative ("your threshold ride is well-timed" vs. generic display).
 - Goals strip links to `/goals` generically, not to the specific goal today's session serves.
-- No explicit "session brief" tying verdict → planned session → modification suggestion.
+- ~~No explicit "session brief" tying verdict → planned session → modification suggestion.~~ **Addressed** — Session Rationale (ADR-007) surfaces observed/inferred/suggested/chosen for every coach-proposed session from the planned-session detail view.
 
 ---
 
@@ -1349,24 +1349,24 @@ Grouped by severity to the daily journey.
 
 ### High — weakens decision moments
 
-| Friction                                   | Affected moments | Impact                                     |
-| ------------------------------------------ | ---------------- | ------------------------------------------ |
-| Wellness check-in hard to discover         | 3, 13            | Subjective dimension underfed              |
-| No post-session surface on Today           | 8, 9             | Athlete must hunt activity detail          |
-| Planned session compatibility not explicit | 4, 5             | Verdict and plan not fully bridged         |
-| Weekly review generated but not shown      | Weekly           | No closure rhythm                          |
-| Injury notes disconnected from verdict     | Injury           | Twin constraint not felt in daily decision |
+| Friction                                   | Affected moments | Impact                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------------------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Wellness check-in hard to discover         | 3, 13            | Subjective dimension underfed                                                                                                                                                                                                                                                                                                                                                               |
+| No post-session surface on Today           | 8, 9             | Athlete must hunt activity detail                                                                                                                                                                                                                                                                                                                                                           |
+| Planned session compatibility not explicit | 4, 5             | Verdict and plan not fully bridged                                                                                                                                                                                                                                                                                                                                                          |
+| Weekly review generated but not shown      | Weekly           | No closure rhythm — **partially addressed**: the deterministic Weekly Coaching Brief (ADR-007) now gives a weekly reflection entry point (plan phase, load, key sessions, limiting factor, learning feedback), reachable from the same Coach menu as Plan Adapter. The cron-generated LLM `WeeklyReview` narrative itself remains unsurfaced — a separate artifact, not shown by this work. |
+| Injury notes disconnected from verdict     | Injury           | Twin constraint not felt in daily decision                                                                                                                                                                                                                                                                                                                                                  |
 
 ### Medium — erodes delight and coherence
 
-| Friction                                  | Affected moments             | Impact                                    |
-| ----------------------------------------- | ---------------------------- | ----------------------------------------- |
-| Three metric rings compete with verdict   | 2                            | Cognitive load                            |
-| No adaptation drill-down                  | 2                            | Incomplete Twin exposure                  |
-| Plan Adapter hidden in Séances, not Coach | Weekly, 4                    | Adaptation hard to find                   |
-| Goals strip links generic                 | 4                            | Weak goal-session connection              |
-| No race week / taper / off-season modes   | Race week, taper, off-season | Same voice when context radically differs |
-| Cron sync UTC vs. local wake              | 7, 0                         | Data may lag behind morning               |
+| Friction                                  | Affected moments             | Impact                                                                                                             |
+| ----------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Three metric rings compete with verdict   | 2                            | Cognitive load                                                                                                     |
+| No adaptation drill-down                  | 2                            | Incomplete Twin exposure                                                                                           |
+| Plan Adapter hidden in Séances, not Coach | Weekly, 4                    | Adaptation hard to find — unchanged by ADR-007; the new "Ma semaine" entry sits in the same menu, not a relocation |
+| Goals strip links generic                 | 4                            | Weak goal-session connection                                                                                       |
+| No race week / taper / off-season modes   | Race week, taper, off-season | Same voice when context radically differs                                                                          |
+| Cron sync UTC vs. local wake              | 7, 0                         | Data may lag behind morning                                                                                        |
 
 ### Low — polish and completeness
 

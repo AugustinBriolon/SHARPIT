@@ -743,11 +743,12 @@ model ConditionKnowledge {
 }
 
 model DailyBriefing {
-  id          String   @id @default(cuid())
-  date        DateTime @unique @db.Date
-  content     String   @db.Text // bilan du jour en markdown généré par le coach IA
-  readiness   Int? // readiness Garmin du jour au moment de la génération
-  generatedAt DateTime @default(now())
+  id                String   @id @default(cuid())
+  date              DateTime @unique @db.Date
+  content           String   @db.Text // bilan du jour en markdown généré par le coach IA
+  readiness         Int? // readiness Garmin du jour au moment de la génération
+  phaseAtGeneration String? // BriefingPhase bucket (morning|midday|afternoon|evening) at generation time — freshness detects phase drift
+  generatedAt       DateTime @default(now())
 
   @@index([date])
 }
@@ -945,6 +946,123 @@ model DecisionRecord {
   @@index([athleteId, trainingDayId])
   @@index([athleteId, modelId])
   @@index([computedAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Decision Memory — see docs/adr/ADR-006-decision-memory-aggregate.md
+//
+// A separate aggregate from DecisionRecord (per-engine-run inference audit).
+// CoachingDecision tracks one LLM-proposed, Gate-validated session from the
+// moment it's shown to the athlete through to its retrospective outcome.
+// snapshotContext embeds a frozen copy of AthleteSnapshot/DecisionState at
+// recommendation time — AthleteSnapshotRecord is upserted per day and cannot
+// be safely referenced by id after the fact (see ADR-006).
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum CoachingDecisionSource {
+  PLAN_GENERATOR
+  PLAN_ADAPTER
+}
+
+enum CoachingDecisionStatus {
+  PRESENTED
+  ACCEPTED
+  MODIFIED
+  REJECTED
+  EXPIRED
+}
+
+enum CoachingDecisionActionType {
+  ACCEPTED
+  MODIFIED
+  REJECTED
+  OVERRIDDEN
+}
+
+enum CoachingDecisionActionSource {
+  PLAN_REVIEW_UI
+  CALENDAR_EDIT
+  BATCH_EXPIRY
+}
+
+enum CoachingOutcomeStatus {
+  EVALUATED
+  INCONCLUSIVE
+}
+
+/// Immutable recommendation snapshot: the exact LLM proposal + Gate verdict + physiological
+/// context at the moment it was shown to the athlete. Never updated after insert.
+model CoachingDecision {
+  id            String                 @id @default(cuid())
+  athleteId     String                 @default("default")
+  trainingDayId String
+  source        CoachingDecisionSource
+  status        CoachingDecisionStatus @default(PRESENTED)
+
+  /// The exact GateProposal as generated — never mutated after insert.
+  proposal Json
+  /// The exact GateSessionResult (status, findings, requiredAssumptions, saferAlternative) — verbatim.
+  gateResult Json
+  /// Frozen subset of AthleteSnapshot/DecisionState at recommendation time (see ADR-006).
+  snapshotContext Json
+  /// Best-effort cross-reference only — AthleteSnapshotRecord is upserted, not append-only.
+  /// Never treated as a foreign key or relied on for correctness.
+  snapshotIdAtRecommendation String?
+
+  createdAt DateTime @default(now())
+
+  actions CoachingDecisionAction[]
+  outcome CoachingDecisionOutcome?
+
+  @@index([athleteId, trainingDayId])
+  @@index([status])
+}
+
+/// Append-only log of what the athlete did with a recommendation. A single decision can
+/// accumulate more than one action over time (e.g. ACCEPTED, then OVERRIDDEN weeks later).
+model CoachingDecisionAction {
+  id         String           @id @default(cuid())
+  decisionId String
+  decision   CoachingDecision @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+
+  actionType CoachingDecisionActionType
+  occurredAt DateTime                     @default(now())
+  source     CoachingDecisionActionSource
+  rationale  String?
+
+  /// Set when the action created or touched a PlannedSession.
+  resultingPlannedSessionId String?
+
+  @@index([decisionId])
+  @@index([resultingPlannedSessionId])
+}
+
+/// Retrospective evaluation of a decision, computed once evidence has had time to accumulate.
+/// One row per decision — outcomeStatus is EVALUATED only when there's enough evidence to say
+/// something; otherwise INCONCLUSIVE. Never a bare success/quality score.
+model CoachingDecisionOutcome {
+  id         String           @id @default(cuid())
+  decisionId String           @unique
+  decision   CoachingDecision @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+
+  evaluatedAt   DateTime              @default(now())
+  outcomeStatus CoachingOutcomeStatus
+
+  /// Planned vs. actual duration/load/intensity — reuses the existing SessionAnalysis shape.
+  executionMatch Json?
+  /// RPE, feeling, pain — from the linked Activity + any ConditionObservation.
+  subjectiveResponse Json?
+  /// 24-72h readiness/fatigue delta — only populated when the underlying snapshots exist.
+  shortTermRecoveryResponse Json?
+  /// New or worsening physical-health condition linked to this session.
+  safetySignal Json?
+
+  /// Explicit caveats — always populated, even when EVALUATED.
+  limitations String[]
+  /// 0-1, a deterministic function of evidence completeness — not a model output.
+  confidence Float
+
+  @@index([decisionId])
 }
 
 /**

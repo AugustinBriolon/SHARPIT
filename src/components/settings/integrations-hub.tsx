@@ -161,38 +161,45 @@ export function IntegrationsHub({ payload }: { payload: IntegrationsPayload }) {
     }
 
     setSyncingAll(true);
+    const loadingToast = toast.loading('Synchronisation en cours', {
+      description: `${connected.length} source${connected.length > 1 ? 's' : ''} à synchroniser.`,
+    });
     const results: string[] = [];
     const errors: string[] = [];
 
-    for (const integration of connected) {
-      try {
-        const summary = await syncIntegration(integration.id);
-        results.push(`${integration.name} : ${summary}`);
-      } catch (err) {
-        errors.push(
-          `${integration.name} : ${err instanceof Error ? err.message : 'erreur inconnue'}`,
-        );
+    try {
+      for (const integration of connected) {
+        try {
+          const summary = await syncIntegration(integration.id);
+          results.push(`${integration.name} : ${summary}`);
+        } catch (err) {
+          errors.push(
+            `${integration.name} : ${err instanceof Error ? err.message : 'erreur inconnue'}`,
+          );
+        }
       }
-    }
 
-    setSyncingAll(false);
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: queryKeys.activities }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.records }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.bodyComposition() }),
-      queryClient.invalidateQueries({ queryKey: ['health'] }),
-    ]);
-    router.refresh();
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.activities }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.records }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.bodyComposition() }),
+        queryClient.invalidateQueries({ queryKey: ['health'] }),
+      ]);
+      router.refresh();
 
-    if (results.length > 0) {
-      toast.success('Synchronisation terminée', {
-        description: results.join(' · '),
-      });
-    }
-    if (errors.length > 0) {
-      toast.error('Certaines sources ont échoué', {
-        description: errors.join(' · '),
-      });
+      if (results.length > 0) {
+        toast.success('Synchronisation terminée', {
+          description: results.join(' · '),
+        });
+      }
+      if (errors.length > 0) {
+        toast.error('Certaines sources ont échoué', {
+          description: errors.join(' · '),
+        });
+      }
+    } finally {
+      toast.close(loadingToast);
+      setSyncingAll(false);
     }
   }
 

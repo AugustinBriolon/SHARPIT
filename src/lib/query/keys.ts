@@ -29,4 +29,8 @@ export const queryKeys = {
   wellnessCheckin: (trainingDayId: string) => ['wellness-checkin', trainingDayId] as const,
   plannedSessionPresentation: (sessionId: string) =>
     ['presentation', 'planned-session', sessionId] as const,
+  sessionRationale: (sessionId: string) =>
+    ['presentation', 'session-rationale', sessionId] as const,
+  weeklyCoachingBrief: (weekStart: string) =>
+    ['presentation', 'weekly-coaching-brief', weekStart] as const,
 };

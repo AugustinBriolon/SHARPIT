@@ -12,7 +12,11 @@ import {
 } from '@/lib/queries';
 import { computeSharpitSleepScoreForDay, SLEEP_TARGET_MIN } from '@/lib/sleep-scoring';
 import { buildTodayDaySummary } from '@/lib/today-day-summary';
-import { mapConfidenceToTier, mapVerdictToDisplay } from '@/lib/today-mapping';
+import {
+  mapConfidenceToTier,
+  mapVerdictToDisplay,
+  resolveVisibleConfidenceLabel,
+} from '@/lib/today-mapping';
 import {
   actionRowLabels,
   buildProgressionSummary,
@@ -84,6 +88,12 @@ export async function buildTodayPresentationViewModel(
   const dayStart = startOfDay(day);
   const dayEnd = endOfDay(day);
 
+  // `activities`/`plannedSessions` are fetched separately from the snapshot's
+  // `sessionsDoneToday`/`plannedToday` on purpose: `daySummary` below needs richer
+  // display fields (durationMin, brickGroupId, metrics) than the snapshot's minimal
+  // state-signal shape carries. `activities` also covers the 60-day trend window for
+  // effortSpark/trainingLoad, not just today. `snapshot.sessionsDoneToday`/`plannedToday`
+  // exist for consumers that only need "did/will the athlete train today" (Coach, Gate).
   const [snapshot, healthEntries, activities, plannedSessions, athleteProfile] = await Promise.all([
     getOrBuildAthleteSnapshot(trainingDayId),
     getHealthEntries(14, day),
@@ -148,14 +158,20 @@ export async function buildTodayPresentationViewModel(
   const actionLine = focusPriority;
   const adaptationReminders: string[] = [];
 
-  const confidenceLabel = snapshot.confidenceLabel ?? null;
-  const confidencePctRounded =
-    snapshot.confidence != null ? Math.round(snapshot.confidence * 100) : null;
-  const confidenceHref = resolveConfidenceHrefFromDecision(snapshot.decision);
-
   const confidenceTier =
     snapshot.confidence != null ? mapConfidenceToTier(snapshot.confidence) : null;
   const confidenceTone = confidenceTier != null ? mapConfidenceTone(confidenceTier) : 'neutral';
+
+  const confidenceLabel = resolveVisibleConfidenceLabel(
+    snapshot.confidenceLabel ?? null,
+    confidenceTier,
+    adviceActionable,
+  );
+  const confidencePctRounded =
+    confidenceLabel != null && snapshot.confidence != null
+      ? Math.round(snapshot.confidence * 100)
+      : null;
+  const confidenceHref = resolveConfidenceHrefFromDecision(snapshot.decision);
 
   const whyFocus = snapshot.dailyPhase?.whyFocus ?? 'readiness';
   const decisionHeadline = snapshot.decision?.primaryDecision.headlineCode

@@ -3,6 +3,7 @@
 import { ArrowLeftRight, Layers, Loader2, RefreshCw, Sparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/toast';
 import { activityTypeLabels } from '@/lib/format';
 import { sessionScoreColor } from '@/lib/session-analysis-display';
 import { cn } from '@/lib/utils';
@@ -122,10 +123,15 @@ export function BrickAnalysisPanel({ brickGroupId }: { brickGroupId: string }) {
 
   async function handleAnalyze() {
     setError(null);
+    const loadingToast = toast.loading("Analyse de l'enchaînement en cours");
     try {
       await analyzeBrick.mutateAsync(brickGroupId);
+      toast.success("Analyse de l'enchaînement terminée");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Échec de l'analyse.");
+      toast.error("L'analyse de l'enchaînement a échoué.");
+    } finally {
+      toast.close(loadingToast);
     }
   }
 

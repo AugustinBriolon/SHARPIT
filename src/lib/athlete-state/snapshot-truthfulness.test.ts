@@ -148,6 +148,8 @@ describe('snapshot-truthfulness', () => {
       domainMessages: {},
       dailyPhase: mockDailyPhase(),
       phaseNarrative: mockPhaseNarrative(),
+      sessionsDoneToday: [],
+      plannedToday: [],
     });
 
     expect(overlay.adviceActionable).toBe(false);

@@ -4,6 +4,7 @@ import { pushSessionToGoogle } from '@/lib/integrations/google-sync';
 import { createPlannedSession, getPlannedSessionById, getPlannedSessions } from '@/lib/queries';
 import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/resolve-context';
 import { createPlannedSessionSchema } from '@/lib/validators/planned-session';
+import { findCoachingDecisionById, recordDecisionAction } from '@/lib/decision-memory/repository';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +30,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const parsed = createPlannedSessionSchema.safeParse(body);
+    const { decisionId, ...sessionBody } = body as { decisionId?: string };
+    const parsed = createPlannedSessionSchema.safeParse(sessionBody);
 
     if (!parsed.success) {
       return NextResponse.json(
@@ -38,11 +40,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // A Gate-rejected proposal must never become a real PlannedSession — this is a
+    // safety invariant, not merely a UI affordance. The client already disables the
+    // control for REJECTED sessions, but the server is the enforcement boundary: a
+    // direct API call must not be able to bypass the Gate's verdict.
+    if (decisionId) {
+      const decision = await findCoachingDecisionById(decisionId);
+      if (decision?.gateResult.status === 'REJECTED') {
+        return NextResponse.json(
+          { error: 'Cette proposition a été rejetée par le Gate et ne peut pas être appliquée.' },
+          { status: 422 },
+        );
+      }
+    }
+
     const session = await createPlannedSession({
       ...(parsed.data as Parameters<typeof createPlannedSession>[0]),
       exposureSetting:
         parsed.data.exposureSetting ?? defaultExposureForActivityType(parsed.data.type),
     });
+
+    // Records the athlete's acceptance of a coach recommendation (best-effort —
+    // an invalid/unknown decisionId must never fail the session creation itself).
+    if (decisionId) {
+      try {
+        await recordDecisionAction({
+          decisionId,
+          actionType: 'ACCEPTED',
+          source: 'PLAN_REVIEW_UI',
+          resultingPlannedSessionId: session.id,
+        });
+      } catch (decisionError) {
+        console.error('[planned-sessions/decision-action]', decisionError);
+      }
+    }
 
     try {
       await refreshAndPersistPlannedSessionContext(session.id);

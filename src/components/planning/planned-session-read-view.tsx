@@ -2,6 +2,7 @@
 
 import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
 import { PlannedSessionContextPanel } from '@/components/planning/planned-session-context-panel';
+import { SessionRationaleCard } from '@/components/coach/session-rationale-card';
 import { SessionRealization } from '@/components/planning/session-realization';
 import { Button } from '@/components/ui/button';
 import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
@@ -93,6 +94,8 @@ export function PlannedSessionReadView({
       </div>
 
       <SessionRealization session={session} />
+
+      <SessionRationaleCard sessionId={session.id} />
 
       {context?.visible ? <PlannedSessionContextPanel viewModel={context} /> : null}
     </div>

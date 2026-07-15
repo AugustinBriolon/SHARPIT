@@ -23,23 +23,25 @@ Consumers **read** the snapshot. They never recompute inference.
 
 Type: `src/core/athlete-state/snapshot.ts`
 
-| Field                                                 | Source                          | Purpose                                      |
-| ----------------------------------------------------- | ------------------------------- | -------------------------------------------- |
-| `snapshotId`                                          | Deterministic fingerprint       | Idempotency — skip regeneration if unchanged |
-| `generatedAt`                                         | Generation timestamp            | Staleness display                            |
-| `freshness`                                           | `computeFreshnessSnapshot`      | Domain-level freshness                       |
-| `recovery` / `fatigue` / `adaptation` / `dailyStrain` | Inference engines               | Physiological state                          |
-| `reasoning`                                           | Reasoning engine                | Synthesis                                    |
-| `readiness`                                           | `recovery.readinessScore`       | Product headline                             |
-| `todaysDecision`                                      | `reasoning.overallVerdict`      | Train / recover / caution                    |
-| `limitingFactor`                                      | `reasoning.limitingFactor`      | What's holding the athlete back              |
-| `confidence`                                          | `reasoning.confidence`          | Decision certainty                           |
-| `briefing`                                            | `DailyBriefing` (if generated)  | Morning narrative                            |
-| `recommendation`                                      | Derived from attention priority | Actionable guidance                          |
-| `primaryProductMessage`                               | Freshness + degradation         | Athlete-facing status                        |
-| `domainMessages`                                      | Per-domain freshness            | Section-level explanations                   |
-| `dailyPhase`                                          | `resolveDailyPhase` at build    | Athlete-centric moment of day                |
-| `phaseNarrative`                                      | `buildPhaseNarrative`           | Hero copy, why focus, adaptation reminders   |
+| Field                                                 | Source                                                      | Purpose                                                                      |
+| ----------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `snapshotId`                                          | Deterministic fingerprint                                   | Idempotency — skip regeneration if unchanged                                 |
+| `generatedAt`                                         | Generation timestamp                                        | Staleness display                                                            |
+| `freshness`                                           | `computeFreshnessSnapshot`                                  | Domain-level freshness                                                       |
+| `recovery` / `fatigue` / `adaptation` / `dailyStrain` | Inference engines                                           | Physiological state                                                          |
+| `reasoning`                                           | Reasoning engine                                            | Synthesis                                                                    |
+| `readiness`                                           | `recovery.readinessScore`                                   | Product headline                                                             |
+| `todaysDecision`                                      | `reasoning.overallVerdict`                                  | Train / recover / caution                                                    |
+| `limitingFactor`                                      | `reasoning.limitingFactor`                                  | What's holding the athlete back                                              |
+| `confidence`                                          | `reasoning.confidence`                                      | Decision certainty                                                           |
+| `briefing`                                            | `DailyBriefing` (if generated)                              | Morning narrative                                                            |
+| `recommendation`                                      | Derived from attention priority                             | Actionable guidance                                                          |
+| `primaryProductMessage`                               | Freshness + degradation                                     | Athlete-facing status                                                        |
+| `domainMessages`                                      | Per-domain freshness                                        | Section-level explanations                                                   |
+| `dailyPhase`                                          | `resolveDailyPhase` at build                                | Athlete-centric moment of day                                                |
+| `phaseNarrative`                                      | `buildPhaseNarrative`                                       | Hero copy, why focus, adaptation reminders                                   |
+| `sessionsDoneToday`                                   | `phaseContext.activities`, filtered to `trainingDayId`      | Minimal state signal — not a display projection; consumed by Coach/plan-gate |
+| `plannedToday`                                        | `phaseContext.plannedSessions`, filtered to `trainingDayId` | Minimal state signal — not a display projection; consumed by Coach/plan-gate |
 
 ---
 

@@ -10,9 +10,18 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { CalendarRange, ChevronDown, LandPlot, PenLine, Plus, Sparkles, Wand2 } from 'lucide-react';
+import {
+  CalendarRange,
+  ChevronDown,
+  LandPlot,
+  NotebookText,
+  PenLine,
+  Plus,
+  Sparkles,
+  Wand2,
+} from 'lucide-react';
 
-export type SessionsCoachAction = 'plan' | 'manual' | 'generate' | 'adapt' | 'macro';
+export type SessionsCoachAction = 'plan' | 'manual' | 'generate' | 'adapt' | 'macro' | 'week-brief';
 
 export function SessionsCoachMenu({
   onAction,
@@ -53,6 +62,15 @@ export function SessionsCoachMenu({
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuLabel>Aide du coach</DropdownMenuLabel>
+          <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => onAction('week-brief')}>
+            <NotebookText className="size-4" />
+            <div>
+              <p className="font-medium">Ma semaine</p>
+              <p className="text-muted-foreground text-xs">
+                Objectif, charge et séances clés expliqués
+              </p>
+            </div>
+          </DropdownMenuItem>
           <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => onAction('generate')}>
             <CalendarRange className="size-4" />
             <div>

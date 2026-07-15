@@ -41,7 +41,7 @@ const CHRONIC_WEEKS = CHRONIC_DAYS / 7;
  * Seuils ACWR basés sur Gabbett et al. (2016) et consensus littérature.
  * Source : Carey et al. (2017) — Systematic review of ACWR in sports
  */
-const ACWR_THRESHOLDS = {
+export const ACWR_THRESHOLDS = {
   /** En dessous de 0.9 : sous-charge, pas de risque immédiat mais désentraînement progressif */
   UNDERLOAD: 0.9,
   /** Au-dessus de 1.3 : zone de risque accru de blessure selon méta-analyses */

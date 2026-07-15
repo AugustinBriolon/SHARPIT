@@ -10,7 +10,42 @@ import {
   adaptPlanGenerationSchema,
   adaptPlanSchema,
   adaptRequestSchema,
+  type AdaptPlan,
 } from '@/lib/validators/coach';
+import { buildGateContext } from '@/lib/plan-gate/build-context';
+import { evaluatePlan } from '@/lib/plan-gate/evaluate-plan';
+import type { GateProposal, GateResult } from '@/lib/plan-gate/types';
+import { computeTrainingDayId } from '@/lib/training-day';
+import { buildDecisionSnapshotContext } from '@/lib/decision-memory/build-snapshot-context';
+import { createCoachingDecision } from '@/lib/decision-memory/repository';
+
+type AdaptChange = AdaptPlan['changes'][number];
+type UpcomingSession = Awaited<ReturnType<typeof getPlannedSessions>>[number];
+
+/** Merges a MODIFY's partial fields onto the current session so date/type-dependent
+ * rules (weekly load, recovery spacing, ...) evaluate the resulting state, not a
+ * half-empty proposal. ADD proposals use the change's own fields directly. */
+function toGateProposal(
+  change: AdaptChange,
+  existing: UpcomingSession | null,
+): GateProposal | null {
+  const date = change.date ?? (existing ? format(existing.date, 'yyyy-MM-dd') : null);
+  const type = change.type ?? existing?.type ?? null;
+  if (!date || !type) return null;
+
+  return {
+    sessionId: change.sessionId,
+    action: change.action === 'ADD' ? 'ADD' : 'MODIFY',
+    date,
+    startTime: null,
+    type,
+    intensity: change.intensity ?? existing?.intensity ?? null,
+    durationMin: change.durationMin ?? existing?.durationMin ?? null,
+    load: change.load ?? existing?.load ?? null,
+    title: change.title ?? existing?.title ?? null,
+    rationale: change.reason ?? null,
+  };
+}
 
 export const maxDuration = 60;
 
@@ -115,7 +150,58 @@ ${upcomingLines.length ? upcomingLines.join('\n') : 'Aucune séance planifiée �
       );
     }
 
-    return NextResponse.json(validated.data);
+    const existingById = new Map(upcoming.map((s) => [s.id, s] as const));
+
+    // REMOVE changes bypass the Gate entirely — there is no new session content to validate.
+    // Pair each change with its proposal explicitly (toGateProposal can return null even for
+    // a non-REMOVE change) so decisionIds always attach to the right change afterward.
+    const gatedPairs = validated.data.changes
+      .filter((c) => c.action !== 'REMOVE')
+      .map((change) => ({
+        change,
+        proposal: toGateProposal(
+          change,
+          change.sessionId ? (existingById.get(change.sessionId) ?? null) : null,
+        ),
+      }))
+      .filter(
+        (pair): pair is { change: AdaptChange; proposal: GateProposal } => pair.proposal != null,
+      );
+    const proposals = gatedPairs.map((pair) => pair.proposal);
+
+    let gate: GateResult = { sessions: [], planLevelFindings: [] };
+    const decisionIdByChange = new Map<AdaptChange, string>();
+    if (proposals.length > 0) {
+      const { context: gateContext, snapshot } = await buildGateContext({
+        trainingDayId: computeTrainingDayId(today),
+        proposals,
+      });
+      gate = evaluatePlan(gateContext, proposals);
+
+      const snapshotContext = buildDecisionSnapshotContext(snapshot);
+      const decisions = await Promise.all(
+        gate.sessions.map((sessionResult) =>
+          createCoachingDecision({
+            trainingDayId: computeTrainingDayId(
+              new Date(`${sessionResult.proposal.date}T00:00:00`),
+            ),
+            source: 'PLAN_ADAPTER',
+            proposal: sessionResult.proposal,
+            gateResult: sessionResult,
+            snapshotContext,
+            snapshotIdAtRecommendation: snapshot.snapshotId,
+          }),
+        ),
+      );
+      gatedPairs.forEach((pair, i) => decisionIdByChange.set(pair.change, decisions[i].id));
+    }
+
+    const changesWithDecisionId = validated.data.changes.map((change) => ({
+      ...change,
+      decisionId: decisionIdByChange.get(change) ?? null,
+    }));
+
+    return NextResponse.json({ ...validated.data, changes: changesWithDecisionId, gate });
   } catch (error) {
     console.error('[coach/adapt]', error);
     return NextResponse.json({ error: adaptErrorMessage(error) }, { status: 500 });

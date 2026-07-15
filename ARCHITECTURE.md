@@ -201,7 +201,9 @@ SHARPIT has four domain boundaries. Code must not cross boundaries without going
                             ▼
 ┌─────────────────────────────────────────────────────────┐
 │  COACHING                                               │
-│  dashboard · proactive-coach · goals · sessions         │
+│  dashboard · proactive-coach · goals · sessions          │
+│  plan-gate (deterministic AI-plan safety validation)     │
+│  decision-memory (recommendation/action/outcome loop)    │
 │  Core models: Goal, PlannedSession, AthleteProfile      │
 └───────────────────────────┬─────────────────────────────┘
                             │ consumes: all above
@@ -220,6 +222,12 @@ SHARPIT has four domain boundaries. Code must not cross boundaries without going
 - COACHING functions may import from TRAINING and RECOVERY.
 - AI functions may import from all domains (they aggregate context for the LLM).
 - SYNC (Garmin, Strava, Renpho) is infrastructure, not a domain. It writes to the database and must not contain business logic.
+
+**`src/lib/plan-gate/`** — a deterministic validation layer between AI-generated `PlannedSession` proposals (coach/plan, coach/adapt) and persistence. It is COACHING-domain code, not a Core inference engine: every rule is a pure function reading already-computed `AthleteSnapshot`/`DecisionState` (see `docs/models/CORE_ARCHITECTURE.md`), never re-deriving physiological state. `evaluate-plan.ts` and `rules/*.ts` do no I/O; `build-context.ts` is the sole boundary that touches Prisma/the Snapshot service. See `docs/adr/ADR-005-plan-safety-gate-placement.md` for the placement decision.
+
+**`src/lib/decision-memory/`** — the auditable loop linking a coach recommendation (LLM proposal + `GateSessionResult`) to what the athlete decided and what happened afterward. Three Prisma models: `CoachingDecision` (immutable proposal + gate result + a frozen `snapshotContext`, never a bare `snapshotId` reference — `AthleteSnapshotRecord` is upserted per day, so a reference would dangle), `CoachingDecisionAction` (append-only athlete-action log: ACCEPTED/MODIFIED/REJECTED/OVERRIDDEN), `CoachingDecisionOutcome` (retrospective evaluation, EVALUATED or INCONCLUSIVE, never a bare success/quality verdict). Session-execution states (SCHEDULED/COMPLETED/SKIPPED/SUPERSEDED) are derived on read from the existing `PlannedSession` fields, not stored in a fourth table. `evaluate-outcome.ts` is pure; `repository.ts` is the sole Prisma boundary. See `docs/adr/ADR-006-decision-memory-aggregate.md` for the placement and embed-vs-reference decisions.
+
+**Presentation over `plan-gate`/`decision-memory`** — `src/lib/presentation/{session-rationale,weekly-coaching-brief,learning-feedback,snapshot-context-labels}.ts` and `src/lib/decision-memory/{describe-outcome,classify-trigger,learning-feedback}.ts` are read-only consumers: no new domain, no new tables, every builder pure (plain data in, ViewModel out), all I/O confined to the corresponding `src/app/api/presentation/*/route.ts`. See `docs/adr/ADR-007-coaching-explainability-presentation.md`.
 
 ### Domain input types
 

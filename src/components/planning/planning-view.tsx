@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/layout/sticky-header';
 import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
 import { PlanAdapter } from '@/components/coach/plan-adapter';
 import { PlanGenerator } from '@/components/coach/plan-generator';
+import { WeeklyBrief } from '@/components/coach/weekly-brief';
 import { MacroPlanDialog } from '@/components/planning/macro-plan-dialog';
 import { PlannedSessionDialog } from '@/components/planning/planned-session-dialog';
 import { TravelContextBanner } from '@/components/planning/travel-context-banner';
@@ -60,6 +61,7 @@ export function PlanningView({
   const [generatorOpen, setGeneratorOpen] = useState(false);
   const [adapterOpen, setAdapterOpen] = useState(false);
   const [macroPlanOpen, setMacroPlanOpen] = useState(false);
+  const [weeklyBriefOpen, setWeeklyBriefOpen] = useState(false);
   const [scenarioComparisonOpen, setScenarioComparisonOpen] = useState(false);
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), WEEK_OPTS));
   const [projectionHorizon, setProjectionHorizon] = useState<ProjectionHorizonDays>(7);
@@ -168,6 +170,9 @@ export function PlanningView({
         break;
       case 'macro':
         setMacroPlanOpen(true);
+        break;
+      case 'week-brief':
+        setWeeklyBriefOpen(true);
         break;
     }
   }
@@ -344,6 +349,7 @@ export function PlanningView({
       {generatorOpen && <PlanGenerator onClose={() => setGeneratorOpen(false)} />}
       {adapterOpen && <PlanAdapter onClose={() => setAdapterOpen(false)} />}
       {macroPlanOpen && <MacroPlanDialog goals={goals} onClose={() => setMacroPlanOpen(false)} />}
+      {weeklyBriefOpen && <WeeklyBrief onClose={() => setWeeklyBriefOpen(false)} />}
       {scenarioComparisonOpen ? (
         <ScenarioComparisonDialog
           isLoading={scenarioComparisonQuery.isLoading}

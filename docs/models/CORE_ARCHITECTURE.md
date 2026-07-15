@@ -259,29 +259,29 @@ React components (render only)
 
 ## Architectural Status Matrix
 
-| Subsystem                         | Status            | Rationale                                                                  |
-| --------------------------------- | ----------------- | -------------------------------------------------------------------------- |
-| Observation Engine                | **CORE (frozen)** | Immutable evidence contract; Strangler Fig migration ongoing at edges only |
-| Feature Engine                    | **CORE (frozen)** | Single extraction point; Tier 0–3 feature contract stable                  |
-| Digital Twin                      | **CORE (frozen)** | Inter-engine bus; schema changes require ADR                               |
-| Recovery Engine                   | **CORE (frozen)** | v1 production; calibration changes via documented process only             |
-| Fatigue Engine                    | **CORE (frozen)** | v1 production                                                              |
-| Adaptation Engine                 | **CORE (frozen)** | v1 production                                                              |
-| Physical Health Engine            | **CORE (frozen)** | v1 integrated; Twin + Snapshot wired                                       |
-| Environment Engine                | **CORE (frozen)** | v1.1 contract frozen; calibration v2.6.1 frozen                            |
-| Decision Engine                   | **CORE (frozen)** | v1 canonical; no new arbitration outside `src/core/decision/`              |
-| Reasoning Engine                  | **STABLE**        | Projection only; no new synthesis logic                                    |
-| Athlete Snapshot                  | **CORE (frozen)** | Product pivot; schema changes require quality gate                         |
-| Presentation Layer                | **STABLE**        | ViewModel pattern established; finish migration                            |
-| Today Experience                  | **EVOLVING**      | Vertical differentiation primary target                                    |
-| Coach IA                          | **EVOLVING**      | Context builder migration in progress                                      |
-| Activity Environmental Correction | **EVOLVING**      | Phase 3 attribution; algorithm may refine                                  |
-| Environmental Exposure Duration   | **EXPERIMENTAL**  | Design only (`ENVIRONMENTAL_EXPOSURE_MODEL.md`)                            |
-| Environmental Sensitivity Profile | **EXPERIMENTAL**  | Design only; no learning active                                            |
-| Daily Strain                      | **STABLE**        | Feature-derived; not a full engine; document as derived metric             |
-| Nutrition Engine                  | **EXPERIMENTAL**  | Not implemented; requires constitutional review before build               |
-| Notifications / Widgets / Watch   | **EXPERIMENTAL**  | Future surfaces on frozen Core                                             |
-| Legacy engine API routes          | **DEPRECATED**    | `/api/recovery`, `/api/fatigue`, etc. — remove                             |
+| Subsystem                         | Status            | Rationale                                                                                                                                                                |
+| --------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Observation Engine                | **CORE (frozen)** | Immutable evidence contract; Strangler Fig migration ongoing at edges only                                                                                               |
+| Feature Engine                    | **CORE (frozen)** | Single extraction point; Tier 0–3 feature contract stable                                                                                                                |
+| Digital Twin                      | **CORE (frozen)** | Inter-engine bus; schema changes require ADR                                                                                                                             |
+| Recovery Engine                   | **CORE (frozen)** | v1 production; calibration changes via documented process only                                                                                                           |
+| Fatigue Engine                    | **CORE (frozen)** | v1 production                                                                                                                                                            |
+| Adaptation Engine                 | **CORE (frozen)** | v1 production                                                                                                                                                            |
+| Physical Health Engine            | **CORE (frozen)** | v1 integrated; Twin + Snapshot wired                                                                                                                                     |
+| Environment Engine                | **CORE (frozen)** | v1.1 contract frozen; calibration v2.6.1 frozen                                                                                                                          |
+| Decision Engine                   | **CORE (frozen)** | v1 canonical; no new arbitration outside `src/core/decision/`                                                                                                            |
+| Reasoning Engine                  | **STABLE**        | Projection only; no new synthesis logic                                                                                                                                  |
+| Athlete Snapshot                  | **CORE (frozen)** | Product pivot; schema changes require quality gate                                                                                                                       |
+| Presentation Layer                | **STABLE**        | ViewModel pattern established; finish migration                                                                                                                          |
+| Today Experience                  | **EVOLVING**      | Vertical differentiation primary target                                                                                                                                  |
+| Coach IA                          | **EVOLVING**      | Context builder migration in progress; coach/plan + coach/adapt proposals now pass through `src/lib/plan-gate/` (deterministic, non-Core) before returning to the client |
+| Activity Environmental Correction | **EVOLVING**      | Phase 3 attribution; algorithm may refine                                                                                                                                |
+| Environmental Exposure Duration   | **EXPERIMENTAL**  | Design only (`ENVIRONMENTAL_EXPOSURE_MODEL.md`)                                                                                                                          |
+| Environmental Sensitivity Profile | **EXPERIMENTAL**  | Design only; no learning active                                                                                                                                          |
+| Daily Strain                      | **STABLE**        | Feature-derived; not a full engine; document as derived metric                                                                                                           |
+| Nutrition Engine                  | **EXPERIMENTAL**  | Not implemented; requires constitutional review before build                                                                                                             |
+| Notifications / Widgets / Watch   | **EXPERIMENTAL**  | Future surfaces on frozen Core                                                                                                                                           |
+| Legacy engine API routes          | **DEPRECATED**    | `/api/recovery`, `/api/fatigue`, etc. — remove                                                                                                                           |
 
 ---
 

@@ -1,4 +1,6 @@
 import type { PlannedSessionViewModel } from '@/core/presentation/planned-session-view-model';
+import type { SessionRationaleViewModel } from '@/core/presentation/session-rationale-view-model';
+import type { WeeklyCoachingBriefViewModel } from '@/core/presentation/weekly-coaching-brief-view-model';
 import type { AdaptationViewModel } from '@/core/presentation/adaptation-view-model';
 import type { EffortViewModel } from '@/core/presentation/effort-view-model';
 import type { RecoveryViewModel } from '@/core/presentation/recovery-view-model';
@@ -75,6 +77,24 @@ export async function fetchPlannedSessionPresentation(
 ): Promise<PlannedSessionViewModel> {
   const { viewModel } = await fetchJson<{ viewModel: PlannedSessionViewModel }>(
     `/api/presentation/planned-session/${encodeURIComponent(sessionId)}`,
+  );
+  return viewModel;
+}
+
+export async function fetchSessionRationalePresentation(
+  plannedSessionId: string,
+): Promise<SessionRationaleViewModel> {
+  const { viewModel } = await fetchJson<{ viewModel: SessionRationaleViewModel }>(
+    `/api/presentation/session-rationale/${encodeURIComponent(plannedSessionId)}`,
+  );
+  return viewModel;
+}
+
+export async function fetchWeeklyCoachingBriefPresentation(
+  weekStart: string,
+): Promise<WeeklyCoachingBriefViewModel> {
+  const { viewModel } = await fetchJson<{ viewModel: WeeklyCoachingBriefViewModel }>(
+    `/api/presentation/weekly-coaching-brief?weekStart=${encodeURIComponent(weekStart)}`,
   );
   return viewModel;
 }

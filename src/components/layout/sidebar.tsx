@@ -43,11 +43,8 @@ export function Sidebar() {
   return (
     <aside className="border-sidebar-border bg-sidebar sticky top-0 flex h-dvh w-60 shrink-0 flex-col border-r">
       <div className="px-4 pt-6 pb-5">
-        <Link
-          className="hover:bg-sidebar-accent/50 flex items-center gap-3 rounded-3xl px-2 py-2 transition-colors"
-          href="/"
-        >
-          <div className="bg-primary/10 ring-primary/25 flex size-9 items-center justify-center rounded-2xl ring-1">
+        <Link className="flex items-center gap-3 rounded-3xl px-2 py-2" href="/">
+          <div className="bg-primary/10 ring-primary/25 flex size-9 items-center justify-center rounded-lg ring-1">
             <Activity className="text-primary size-4" aria-hidden />
           </div>
           <div>

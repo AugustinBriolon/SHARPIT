@@ -308,10 +308,10 @@ export function TrainingDashboard() {
           href="/training/progression"
           title="Progression récente"
         />
-        <div className="grdi-cols-1 grid gap-5 md:grid-cols-2">
+        <div className="grdi-cols-1 grid gap-5 lg:grid-cols-2">
           <ActivityConsistencyPanel activities={activities} />
           <TrainingWeekCalendarPreview activities={activities} plannedSessions={plannedSessions} />
-          <SportDistributionChart className="col-span-2" data={analytics.distribution} />
+          <SportDistributionChart className="lg:col-span-2" data={analytics.distribution} />
         </div>
       </section>
     </div>

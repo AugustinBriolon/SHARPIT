@@ -28,6 +28,8 @@ import { cn } from '@/lib/utils';
 import { phaseLabels } from '@/lib/periodization';
 import { useCoachPlan, type GeneratedSession } from '@/hooks/use-coach';
 import { useGoals, usePlannedSessionMutations, useTrainingPlan } from '@/hooks/use-data';
+import type { GateSessionResult } from '@/lib/plan-gate/types';
+import { GateStatusBadge, GateFindingsList } from '@/components/coach/gate-status-badge';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 
@@ -103,8 +105,14 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
       planPhase: planWeek ? phaseLabels[planWeek.phase] : null,
       planFocus: planWeek?.focus ?? null,
     });
-    // tout sélectionner par défaut
-    setSelected(new Set(result.sessions.map((_, i) => i)));
+    // Pre-select everything except sessions the Gate rejected outright.
+    setSelected(
+      new Set(
+        result.sessions
+          .map((_, i) => i)
+          .filter((i) => result.gate.sessions[i]?.status !== 'REJECTED'),
+      ),
+    );
   }
 
   function toggle(index: number) {
@@ -132,6 +140,7 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
           load: s.load,
           intensity: s.intensity,
           goalId: goalId === NO_GOAL ? null : goalId,
+          decisionId: s.decisionId,
         });
       }
       setInserted(true);
@@ -249,6 +258,7 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
               {plan.sessions.map((s, i) => (
                 <SessionRow
                   key={i}
+                  gateResult={plan.gate.sessions[i]}
                   selected={selected.has(i)}
                   session={s}
                   onToggle={() => toggle(i)}
@@ -285,32 +295,39 @@ function SessionRow({
   session,
   selected,
   onToggle,
+  gateResult,
 }: {
   session: GeneratedSession;
   selected: boolean;
   onToggle: () => void;
+  gateResult?: GateSessionResult;
 }) {
   const accent = intensityAccent[session.intensity];
   const date = parseISO(session.date);
+  const rejected = gateResult?.status === 'REJECTED';
 
   return (
     <button
+      disabled={rejected}
       type="button"
       className={cn(
         'flex w-full gap-3 rounded-lg border p-3 text-left transition-colors',
-        selected
+        rejected && 'border-signal-risk/30 bg-signal-risk/5 cursor-not-allowed opacity-80',
+        !rejected && selected
           ? 'border-primary/40 bg-primary/5'
-          : 'border-border/50 bg-card/30 opacity-60 hover:opacity-100',
+          : !rejected && 'border-border/50 bg-card/30 opacity-60 hover:opacity-100',
       )}
-      onClick={onToggle}
+      onClick={rejected ? undefined : onToggle}
     >
       <span
         className={cn(
           'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border',
-          selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border',
+          selected && !rejected
+            ? 'border-primary bg-primary text-primary-foreground'
+            : 'border-border',
         )}
       >
-        {selected && <Check className="size-3.5" />}
+        {selected && !rejected && <Check className="size-3.5" />}
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -328,12 +345,14 @@ function SessionRow({
             {activityTypeLabels[session.type]} · {formatPlannedDuration(session.durationMin)} ·{' '}
             {session.load} TSS
           </span>
+          {gateResult && <GateStatusBadge status={gateResult.status} />}
         </div>
         <p className="mt-1 text-sm font-medium">{session.title}</p>
         <p className="text-muted-foreground mt-0.5 text-xs">{session.description}</p>
         {session.rationale && (
           <p className="text-muted-foreground/80 mt-1 text-xs italic">→ {session.rationale}</p>
         )}
+        {gateResult && <GateFindingsList result={gateResult} />}
       </div>
     </button>
   );

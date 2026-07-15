@@ -1,4 +1,5 @@
 import { trainingDayIdForNow } from '@/lib/training-day';
+import { resolveBriefingPhase } from '@/lib/briefing-phase';
 import type {
   AthleteFreshnessSnapshot,
   AthleteStateDomain,
@@ -115,16 +116,19 @@ function resolveReasoningFreshness(
   return 'fresh';
 }
 
-function resolveRecommendationsFreshness(
+export function resolveRecommendationsFreshness(
   computingRecommendations: boolean,
   briefingAt: Date | null,
   reasoningAt: Date | null,
   sessionEvidence: Date | null,
+  phaseAtGeneration: string | null,
+  currentBriefingPhase: string,
 ): FreshnessLevel {
   if (computingRecommendations) return 'computing';
   if (!briefingAt) return 'awaiting_data';
   if (reasoningAt && briefingAt < reasoningAt) return 'stale';
   if (sessionEvidence && briefingAt < sessionEvidence) return 'stale';
+  if (phaseAtGeneration && phaseAtGeneration !== currentBriefingPhase) return 'stale';
   return 'fresh';
 }
 
@@ -206,7 +210,7 @@ export async function computeFreshnessSnapshot(params: {
     prisma.googleAccount.findUnique({ where: { id: 'default' }, select: { lastSyncAt: true } }),
     prisma.dailyBriefing.findFirst({
       where: { date: new Date(`${trainingDayId}T12:00:00.000Z`) },
-      select: { generatedAt: true },
+      select: { generatedAt: true, phaseAtGeneration: true },
     }),
     prisma.athleteSnapshotRecord.findUnique({
       where: {
@@ -334,6 +338,8 @@ export async function computeFreshnessSnapshot(params: {
     briefingAt,
     reasoningAt,
     sessionEvidence,
+    briefing?.phaseAtGeneration ?? null,
+    resolveBriefingPhase(new Date()),
   );
 
   const bodyFreshness = resolveBodyFreshness(

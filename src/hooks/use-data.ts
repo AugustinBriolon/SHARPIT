@@ -21,7 +21,11 @@ import {
   fetchTrainingPlan,
 } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
-import { fetchPlannedSessionPresentation } from '@/lib/query/presentation-fetchers';
+import {
+  fetchPlannedSessionPresentation,
+  fetchSessionRationalePresentation,
+  fetchWeeklyCoachingBriefPresentation,
+} from '@/lib/query/presentation-fetchers';
 import { listOptimistic, tempId } from '@/lib/query/optimistic';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import type { BrickAnalysis } from '@/lib/validators/coach';
@@ -218,6 +222,23 @@ export function usePlannedSessionPresentation(sessionId: string | null | undefin
   });
 }
 
+export function useSessionRationalePresentation(sessionId: string | null | undefined) {
+  return useQuery({
+    queryKey: queryKeys.sessionRationale(sessionId ?? ''),
+    queryFn: () => fetchSessionRationalePresentation(sessionId!),
+    enabled: Boolean(sessionId),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useWeeklyCoachingBriefViewModel(weekStart: string) {
+  return useQuery({
+    queryKey: queryKeys.weeklyCoachingBrief(weekStart),
+    queryFn: () => fetchWeeklyCoachingBriefPresentation(weekStart),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useRecords() {
   return useQuery({
     queryKey: queryKeys.records,
@@ -351,6 +372,8 @@ export interface PlannedSessionPayload {
   locationLat?: number | null;
   locationLng?: number | null;
   locationType?: 'TRACK' | 'ROAD' | 'TRAIL' | 'POOL' | 'GYM' | 'TRAINER' | 'UNKNOWN' | null;
+  /** Origin CoachingDecision id, when this session comes from a coach recommendation — records the athlete's ACCEPTED action server-side. Not persisted on PlannedSession itself. */
+  decisionId?: string | null;
 }
 
 export interface BrickLegPayload {

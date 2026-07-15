@@ -44,6 +44,8 @@ function minimalSnapshot(decision: AthleteSnapshot['decision']): AthleteSnapshot
     confidenceLabel: 'Estimation modérée',
     dailyPhase: mockDailyPhase(),
     phaseNarrative: mockPhaseNarrative(),
+    sessionsDoneToday: [],
+    plannedToday: [],
   };
 }
 

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   mapVerdictToDisplay,
   mapConfidenceToTier,
+  resolveVisibleConfidenceLabel,
   mapRecoveryToSignal,
   mapFatigueTrajectoryToArrow,
   mapFatigueToSignal,
@@ -71,6 +72,40 @@ describe('mapConfidenceToTier', () => {
   it('returns medium for 0.69', () => expect(mapConfidenceToTier(0.69)).toBe('medium'));
   it('returns low for 0.39', () => expect(mapConfidenceToTier(0.39)).toBe('low'));
   it('returns low for 0.0', () => expect(mapConfidenceToTier(0.0)).toBe('low'));
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// resolveVisibleConfidenceLabel
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('resolveVisibleConfidenceLabel', () => {
+  it('hides the label at high confidence when advice is actionable', () => {
+    expect(resolveVisibleConfidenceLabel('Estimation fiable', 'high', true)).toBeNull();
+  });
+
+  it('shows the label at medium confidence', () => {
+    expect(resolveVisibleConfidenceLabel('Estimation modérée', 'medium', true)).toBe(
+      'Estimation modérée',
+    );
+  });
+
+  it('shows the label at low confidence', () => {
+    expect(resolveVisibleConfidenceLabel('Estimation partielle', 'low', true)).toBe(
+      'Estimation partielle',
+    );
+  });
+
+  it('shows the label at high confidence when advice is not actionable (incomplete data)', () => {
+    expect(resolveVisibleConfidenceLabel('Estimation fiable', 'high', false)).toBe(
+      'Estimation fiable',
+    );
+  });
+
+  it('shows the label when there is no tier (unknown confidence is not "high")', () => {
+    expect(resolveVisibleConfidenceLabel('Estimation fiable', null, true)).toBe(
+      'Estimation fiable',
+    );
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
