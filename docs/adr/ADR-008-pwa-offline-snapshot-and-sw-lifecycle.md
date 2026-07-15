@@ -68,6 +68,10 @@ Cache whatever `TodayViewModel` Today's own presentation route returns, so the o
 
 - The install experience lives only in Settings (`InstallCard`), not a global banner — see the accompanying implementation plan for the full rationale (avoiding brittle "is a dialog open" detection by placing the entry point somewhere that's never a coaching action by construction).
 
+### Known platform limitation — re-authentication after install
+
+iOS partitions storage (cookies, localStorage, IndexedDB) between a Safari tab and the same site launched standalone from the home screen — they are, from the platform's perspective, different storage contexts. An athlete signed in via Safari who then installs and opens SHARPIT standalone should expect to sign in again once. This is Apple's platform behavior, not a SHARPIT defect, and there is no supported client-side fix (it is not something `SnapshotOfflineSync`, Clerk's session handling, or any code in this repo controls). Documented here so a future "I had to log in twice" report isn't mistaken for a bug — see `docs/PWA_TESTING.md`'s authentication-expiry checklist item.
+
 ---
 
 ## References

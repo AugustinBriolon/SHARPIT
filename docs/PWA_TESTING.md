@@ -16,6 +16,9 @@ Run this checklist on real hardware before shipping any change to `src/sw.ts`, `
 
 - [ ] Light mode: theme color, background, and app icon read correctly in the app switcher and on the home screen
 - [ ] Dark mode: same, plus confirm the splash screen (shown briefly on cold launch) doesn't flash the wrong color before hydration
+- [ ] Splash screen (`/apple-splash/*`, wired via `apple-touch-startup-image` in `layout.tsx`) renders the themed mark on cold launch for each of the 4 device checklist entries above — no blank white flash, and the `media` query actually matches the right image per device (verify by device, not simulator — these `device-width`/`device-height` queries are notoriously easy to get subtly wrong, e.g. width/height swapping between portrait and landscape)
+- [ ] Tap any button/link and confirm no gray highlight box flashes (`-webkit-tap-highlight-color`); long-press a button and confirm no iOS callout menu appears (`-webkit-touch-callout`); confirm text in coach rationale/briefings is still selectable (the callout/tap-highlight reset is scoped to interactive chrome, not body-wide)
+- [ ] Scroll to the very top/bottom of Today and confirm no rubber-band bounce past the document edge (`overscroll-behavior-y: none`)
 
 ## Install flow
 
@@ -59,6 +62,7 @@ Run this checklist on real hardware before shipping any change to `src/sw.ts`, `
 - [ ] Let a Clerk session expire (or manually sign out from another device/tab)
 - [ ] Confirm the app redirects to sign-in rather than silently showing stale data
 - [ ] Confirm the persisted offline Snapshot is cleared on sign-out (`SnapshotOfflineSync`) — sign in as a different account afterward and confirm no trace of the previous athlete's data appears, even offline
+- [ ] Fresh install: sign in via Safari, then install and open standalone for the first time — confirm being asked to sign in again is expected (ADR-008's documented iOS storage-partitioning limitation) and that the sign-in screen itself renders correctly when reached this way, not looking broken or like an error state
 
 ## Safety
 

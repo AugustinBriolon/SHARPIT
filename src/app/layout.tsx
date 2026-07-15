@@ -38,7 +38,9 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
-    apple: [{ url: '/apple-icon', type: 'image/png' }],
+    // apple-icon.tsx now generates 3 sizes (180/167/152) via generateImageMetadata
+    // — leave `apple` unset so Next.js's own file-convention resolution wires up
+    // all three <link> tags instead of pinning a single manually-declared one.
   },
 };
 
@@ -79,6 +81,28 @@ export default async function RootLayout({
           <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
           <link crossOrigin="anonymous" href="https://basemaps.cartocdn.com" rel="preconnect" />
           <link href="https://basemaps.cartocdn.com" rel="dns-prefetch" />
+          {/* iOS splash screens — one representative device per class (docs/PWA_TESTING.md).
+              Not a Next.js metadata field; Apple requires exact <link>+media pairs. */}
+          <link
+            href="/apple-splash/iphone-notch"
+            media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)"
+            rel="apple-touch-startup-image"
+          />
+          <link
+            href="/apple-splash/iphone-se"
+            media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)"
+            rel="apple-touch-startup-image"
+          />
+          <link
+            href="/apple-splash/ipad-portrait"
+            media="(device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
+            rel="apple-touch-startup-image"
+          />
+          <link
+            href="/apple-splash/ipad-landscape"
+            media="(device-width: 1180px) and (device-height: 820px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
+            rel="apple-touch-startup-image"
+          />
         </head>
         <body className="bg-background text-foreground min-h-full font-sans">
           <UpdateAvailableBanner />

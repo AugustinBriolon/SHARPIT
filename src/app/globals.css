@@ -188,6 +188,9 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Removes iOS's default gray tap-highlight box — Tailwind's own hover:/active:
+       states already provide tap feedback everywhere, so this is a pure improvement. */
+    -webkit-tap-highlight-color: transparent;
   }
   body:has([data-slot='dialog-content'][data-open]) {
     overflow-x: clip;
@@ -205,9 +208,17 @@
   summary,
   select:not(:disabled) {
     cursor: pointer;
+    /* Same selector set as the cursor rule above: interactive chrome only, not
+       body-wide — long-press-to-select stays available on readable prose
+       (coach rationale, briefings) where the athlete may want to copy text. */
+    -webkit-touch-callout: none;
   }
   html {
     @apply font-sans;
+    /* Kills the rubber-band bounce at the true document edges. The main
+       scroll container already has overscroll-y-contain (mobile-shell.tsx);
+       this closes the gap for the html/body level outside it. */
+    overscroll-behavior-y: none;
     color-scheme: light;
   }
   html.dark {
