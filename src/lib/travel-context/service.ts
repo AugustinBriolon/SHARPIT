@@ -1,6 +1,7 @@
-import { addDays, startOfDay } from 'date-fns';
+import { addDays } from 'date-fns';
 import { Prisma, type CoachMemorySource, type PrismaClient } from '@prisma/client';
 import { geocodePlaceLabel } from '@/lib/geocoding/nominatim';
+import { toUtcDateOnly } from '@/lib/travel-context/calendar-date';
 
 export type TravelContextInput = {
   label?: string | null;
@@ -42,7 +43,7 @@ export async function resolveTravelContextCoordinates(
 }
 
 export async function getActiveTravelContext(prisma: PrismaClient, onDate = new Date()) {
-  const day = startOfDay(onDate);
+  const day = toUtcDateOnly(onDate);
   return prisma.athleteTravelContext.findFirst({
     where: {
       startDate: { lte: day },
@@ -66,8 +67,8 @@ export async function createTravelContext(prisma: PrismaClient, input: TravelCon
       locationLabel: coords.locationLabel,
       locationLat: coords.locationLat,
       locationLng: coords.locationLng,
-      startDate: startOfDay(input.startDate),
-      endDate: startOfDay(input.endDate),
+      startDate: toUtcDateOnly(input.startDate),
+      endDate: toUtcDateOnly(input.endDate),
       note: input.note ?? null,
       source: input.source ?? 'USER',
     },
@@ -87,8 +88,8 @@ export async function updateTravelContext(
       locationLabel: coords.locationLabel,
       locationLat: coords.locationLat,
       locationLng: coords.locationLng,
-      startDate: startOfDay(input.startDate),
-      endDate: startOfDay(input.endDate),
+      startDate: toUtcDateOnly(input.startDate),
+      endDate: toUtcDateOnly(input.endDate),
       note: input.note ?? null,
     },
   });
@@ -105,7 +106,7 @@ export async function applyTravelContextToUpcomingSessions(
   const travel = await prisma.athleteTravelContext.findUnique({ where: { id: travelId } });
   if (!travel) return 0;
 
-  const today = startOfDay(new Date());
+  const today = toUtcDateOnly(new Date());
   const horizon = addDays(today, 60);
 
   const sessions = await prisma.plannedSession.findMany({

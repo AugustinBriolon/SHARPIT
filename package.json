@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "yarn && next dev -H 0.0.0.0",
+    "dev": "next dev -H 0.0.0.0",
     "build": "prisma generate && next build --webpack",
     "icons:pwa": "node scripts/generate-pwa-icons.mjs",
     "db:migrate:deploy": "tsx scripts/repair-failed-migrations.ts && prisma migrate deploy",

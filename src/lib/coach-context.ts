@@ -11,6 +11,9 @@ import {
 } from './queries';
 import { categoryLabels, sideLabels, statusLabels } from './physical';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
+import { prisma } from '@/lib/prisma';
+import { listTravelContexts } from '@/lib/travel-context/service';
+import { toUtcDateOnly } from '@/lib/travel-context/calendar-date';
 import { buildTopActionLine } from '@/lib/today-rich-view';
 import { decisionVerdict } from '@/lib/decision/projection';
 import { resolve, resolveCode } from '@/lib/french';
@@ -91,6 +94,7 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
     physicalNotes,
     athleteSnapshot,
     scenarioComparison,
+    travelContexts,
   ] = await Promise.all([
     getActivities({ limit: 120 }),
     getHealthEntries(30),
@@ -101,6 +105,7 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
     getActivePhysicalNotes(),
     getOrBuildAthleteSnapshot(trainingDayId),
     loadScenarioComparisonForCoach({ horizonDays: 7 }),
+    listTravelContexts(prisma),
   ]);
 
   // ---- Fitness (PMC : CTL / ATL / TSB) ----
@@ -322,6 +327,20 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
           };
         });
 
+  // ---- Déplacements / voyages en cours ou à venir sur la fenêtre de plan ----
+  const utcToday = toUtcDateOnly(refDate);
+  const utcPlanHorizon = subDays(utcToday, -21);
+  const travel = travelContexts
+    .filter((t) => t.startDate <= utcPlanHorizon && t.endDate >= utcToday)
+    .map((t) => ({
+      label: t.label,
+      locationLabel: t.locationLabel,
+      startDate: t.startDate.toISOString().slice(0, 10),
+      endDate: t.endDate.toISOString().slice(0, 10),
+      isActiveNow: t.startDate <= utcToday && t.endDate >= utcToday,
+      note: t.note,
+    }));
+
   // ---- Contexte modèles (lecture seule — la décision produit est dans `decision`) ----
   const fatigueSnapshot = athleteSnapshot.fatigue;
   const fatigue = fatigueSnapshot
@@ -403,6 +422,7 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
     recent,
     realizedSessions,
     upcomingPlanned,
+    travel,
     physical,
     fatigue,
     adaptation,
@@ -706,6 +726,20 @@ export function formatCoachContext(ctx: CoachContext): string {
         .filter(Boolean)
         .join(' · ');
       lines.push(`- ${bits}`);
+    }
+  }
+
+  // Déplacements / voyages — contrainte forte sur lieu et logistique
+  if (ctx.travel.length) {
+    lines.push('\n## Déplacements / voyages');
+    lines.push(
+      "IMPÉRATIF : pour toute séance dont la date tombe dans une période de déplacement, adapte le lieu (météo, altitude, chaleur attendue) et la logistique — ne propose pas une séance nécessitant du matériel resté au domicile (ex. home trainer, piscine spécifique) si l'athlète est en déplacement.",
+    );
+    for (const t of ctx.travel) {
+      const label = t.label?.trim() || t.locationLabel;
+      lines.push(
+        `- ${label} (${t.locationLabel}) : ${t.startDate} → ${t.endDate}${t.isActiveNow ? ' [en cours]' : ' [à venir]'}${t.note ? ` — ${t.note}` : ''}`,
+      );
     }
   }
 

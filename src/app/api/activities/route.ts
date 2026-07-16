@@ -20,11 +20,9 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get('limit');
     const sinceDays = searchParams.get('sinceDays');
 
-    try {
-      await enrichTodayActivitiesContext(prisma);
-    } catch (error) {
+    void enrichTodayActivitiesContext(prisma).catch((error) => {
       console.error('[activities/GET/enrich-today]', error);
-    }
+    });
 
     const activities = await getActivitiesList({
       type: type && Object.values(ActivityType).includes(type) ? type : undefined,

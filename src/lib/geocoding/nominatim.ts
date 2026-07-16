@@ -64,7 +64,6 @@ export async function searchPlaces(query: string, limit = 6): Promise<GeocodedPl
     format: 'json',
     addressdetails: '0',
     limit: String(limit),
-    countrycodes: 'fr',
   });
 
   const res = await nominatimFetch(`/search?${params.toString()}`);

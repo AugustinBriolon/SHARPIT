@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { queryKeys } from '@/lib/query/keys';
+import { asLocalCalendarDate } from '@/lib/travel-context/calendar-date';
 
 type TravelContextResponse = {
   active: {
@@ -61,8 +62,9 @@ export function TravelContextBanner() {
             {active.label ?? 'Contexte voyage actif'}
           </p>
           <p className="text-muted-foreground text-xs">
-            {active.locationLabel} · {format(new Date(active.startDate), 'd MMM', { locale: fr })} —{' '}
-            {format(new Date(active.endDate), 'd MMM yyyy', { locale: fr })}
+            {active.locationLabel} ·{' '}
+            {format(asLocalCalendarDate(active.startDate), 'd MMM', { locale: fr })} —{' '}
+            {format(asLocalCalendarDate(active.endDate), 'd MMM yyyy', { locale: fr })}
           </p>
         </div>
         <ChevronRight className="text-muted-foreground mt-0.5 size-4 shrink-0" />

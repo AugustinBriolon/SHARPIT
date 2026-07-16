@@ -1,13 +1,13 @@
-import { formatISO, startOfDay } from 'date-fns';
 import type { AthleteTravelContext } from '@prisma/client';
 import type { CoachMemoryEntry } from '@/lib/coach-memory/types';
 import { isCoachMemorySource } from '@/lib/coach-memory/types';
+import { toUtcDateOnly } from '@/lib/travel-context/calendar-date';
 
 export function travelContextToMemoryEntry(
   travel: AthleteTravelContext,
   onDate = new Date(),
 ): CoachMemoryEntry {
-  const day = startOfDay(onDate);
+  const day = toUtcDateOnly(onDate);
   const isActive = travel.startDate <= day && travel.endDate >= day;
   const source = isCoachMemorySource(travel.source) ? travel.source : 'USER';
 
@@ -19,8 +19,8 @@ export function travelContextToMemoryEntry(
     locationLabel: travel.locationLabel,
     locationLat: travel.locationLat,
     locationLng: travel.locationLng,
-    startDate: formatISO(travel.startDate, { representation: 'date' }),
-    endDate: formatISO(travel.endDate, { representation: 'date' }),
+    startDate: travel.startDate.toISOString().slice(0, 10),
+    endDate: travel.endDate.toISOString().slice(0, 10),
     note: travel.note,
     isActive,
     createdAt: travel.createdAt.toISOString(),
