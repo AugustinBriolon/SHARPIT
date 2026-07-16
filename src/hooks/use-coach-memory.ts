@@ -19,6 +19,9 @@ export type TravelMemoryPayload = {
   startDate: string;
   endDate: string;
   note?: string | null;
+  trainingConstraint?: 'FULL' | 'REDUCED' | 'MOBILITY_ONLY' | 'NONE' | null;
+  allowedDisciplines?: Array<'RUN' | 'BIKE' | 'SWIM' | 'STRENGTH' | 'MOBILITY'> | null;
+  noStructuredTraining?: boolean;
   applyToPlannedSessions?: boolean;
 };
 

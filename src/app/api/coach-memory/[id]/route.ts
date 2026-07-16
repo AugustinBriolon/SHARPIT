@@ -6,6 +6,8 @@ import { travelContextToMemoryEntry } from '@/lib/coach-memory/present';
 
 export const dynamic = 'force-dynamic';
 
+const travelDisciplineSchema = z.enum(['RUN', 'BIKE', 'SWIM', 'STRENGTH', 'MOBILITY']);
+
 const updateSchema = z.object({
   type: z.literal('TRAVEL'),
   label: z.string().optional().nullable(),
@@ -15,6 +17,9 @@ const updateSchema = z.object({
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
   note: z.string().optional().nullable(),
+  trainingConstraint: z.enum(['FULL', 'REDUCED', 'MOBILITY_ONLY', 'NONE']).optional().nullable(),
+  allowedDisciplines: z.array(travelDisciplineSchema).optional().nullable(),
+  noStructuredTraining: z.boolean().optional(),
 });
 
 type RouteContext = { params: Promise<{ id: string }> };

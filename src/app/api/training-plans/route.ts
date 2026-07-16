@@ -2,6 +2,7 @@ import { startOfDay } from 'date-fns';
 import { NextResponse } from 'next/server';
 import { computePmcSeries } from '@/lib/analytics';
 import { generateMacroPlan } from '@/lib/periodization';
+import { prisma } from '@/lib/prisma';
 import {
   archiveActiveTrainingPlans,
   createTrainingPlan,
@@ -9,6 +10,8 @@ import {
   getActivitiesList,
   getGoalById,
 } from '@/lib/queries';
+import { listTravelContexts } from '@/lib/travel-context/service';
+import { applyTravelConstraintsToMacroWeeks } from '@/lib/travel-context/training-constraint';
 import { z } from 'zod';
 
 const createPlanSchema = z.object({
@@ -51,6 +54,23 @@ export async function POST(request: Request) {
     const baselineCtl = pmc[pmc.length - 1]?.ctl ?? 40;
 
     const draft = generateMacroPlan({ raceDate, baselineCtl });
+    const travels = await listTravelContexts(prisma);
+    const weeks = applyTravelConstraintsToMacroWeeks(
+      draft.weeks,
+      travels.map((t) => ({
+        startDate: t.startDate,
+        endDate: t.endDate,
+        label: t.label,
+        trainingConstraint: t.trainingConstraint,
+        allowedDisciplines: t.allowedDisciplines,
+      })),
+    );
+    const travelAdjusted = weeks.some(
+      (w, i) => w.targetLoad !== draft.weeks[i]?.targetLoad || w.focus !== draft.weeks[i]?.focus,
+    );
+    const summary = travelAdjusted
+      ? `${draft.summary} Semaines ajustées selon les déplacements (contrainte d’entraînement).`
+      : draft.summary;
 
     await archiveActiveTrainingPlans();
 
@@ -59,9 +79,9 @@ export async function POST(request: Request) {
       raceDate,
       startDate: draft.startDate,
       baselineCtl: draft.baselineCtl,
-      summary: draft.summary,
+      summary,
       status: 'ACTIVE',
-      weeks: draft.weeks.map((w) => ({
+      weeks: weeks.map((w) => ({
         weekStart: w.weekStart,
         weekIndex: w.weekIndex,
         phase: w.phase,

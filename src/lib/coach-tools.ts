@@ -320,6 +320,22 @@ export const coachTools = {
       endDate: z.string().describe('Date de fin yyyy-MM-dd.'),
       label: z.string().optional().describe('Titre court (ex. Vacances juillet).'),
       note: z.string().optional(),
+      allowedDisciplines: z
+        .array(z.enum(['RUN', 'BIKE', 'SWIM', 'STRENGTH', 'MOBILITY']))
+        .optional()
+        .describe(
+          'Sports possibles pendant le voyage. MOBILITY = mobilité/étirements. Vide = tout autorisé.',
+        ),
+      noStructuredTraining: z
+        .boolean()
+        .optional()
+        .describe('true = aucun sport structuré pendant le voyage.'),
+      trainingConstraint: z
+        .enum(['FULL', 'REDUCED', 'MOBILITY_ONLY', 'NONE'])
+        .optional()
+        .describe(
+          'Optionnel si allowedDisciplines est fourni (déduit automatiquement). MOBILITY_ONLY si uniquement mobilité.',
+        ),
       applyToPlannedSessions: z
         .boolean()
         .optional()
@@ -333,6 +349,9 @@ export const coachTools = {
           startDate: toDate(input.startDate),
           endDate: toDate(input.endDate),
           note: input.note ?? null,
+          allowedDisciplines: input.allowedDisciplines ?? [],
+          noStructuredTraining: input.noStructuredTraining,
+          trainingConstraint: input.trainingConstraint ?? null,
           source: 'COACH',
         });
         const updatedSessions =

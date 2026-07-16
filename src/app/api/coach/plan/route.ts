@@ -13,6 +13,10 @@ import type { GateProposal } from '@/lib/plan-gate/types';
 import { computeTrainingDayId } from '@/lib/training-day';
 import { buildDecisionSnapshotContext } from '@/lib/decision-memory/build-snapshot-context';
 import { createCoachingDecision } from '@/lib/decision-memory/repository';
+import {
+  formatTravelConstraintPromptRule,
+  resolvePlanTargetUnderTravel,
+} from '@/lib/travel-context/training-constraint';
 
 /** Résume les créneaux occupés Google par jour, sur la fenêtre du plan. */
 async function buildBusySummary(start: Date, days: number): Promise<string> {
@@ -96,6 +100,23 @@ export async function POST(req: Request) {
   ]);
   const contextText = formatCoachContext(ctx);
 
+  const travelWindows = (ctx.travel ?? []).map((t) => ({
+    startDate: new Date(`${t.startDate}T00:00:00`),
+    endDate: new Date(`${t.endDate}T00:00:00`),
+    label: t.label,
+    trainingConstraint: t.trainingConstraint,
+    allowedDisciplines: t.allowedDisciplines ?? [],
+  }));
+  const travelResolved = resolvePlanTargetUnderTravel({
+    startDate: start,
+    days,
+    targetLoad,
+    planFocus,
+    travels: travelWindows,
+  });
+  const effectiveTargetLoad = travelResolved.targetLoad;
+  const effectivePlanFocus = travelResolved.planFocus;
+
   let goalBlock = '';
   if (goal) {
     const daysToGo = goal.targetDate
@@ -115,17 +136,23 @@ Périodise IMPÉRATIVEMENT ce bloc en fonction de cette échéance (base → sp�
   }
 
   let macroBlock = '';
-  if (targetLoad != null || planPhase || planFocus) {
+  if (effectiveTargetLoad != null || planPhase || effectivePlanFocus) {
     const bits = [
       planPhase ? `Phase du macro-plan : ${planPhase}` : null,
-      targetLoad != null
-        ? `Charge hebdomadaire cible : ${targetLoad} TSS (répartis sur les séances du bloc)`
+      effectiveTargetLoad != null
+        ? `Charge hebdomadaire cible : ${effectiveTargetLoad} TSS (répartis sur les séances du bloc)`
         : null,
-      planFocus ? `Focus de la semaine : ${planFocus}` : null,
+      effectivePlanFocus ? `Focus de la semaine : ${effectivePlanFocus}` : null,
     ].filter(Boolean);
     macroBlock = `\n\n## Macro-plan de la semaine
 ${bits.join('\n')}
 Calibre le volume et l'intensité des séances pour approcher cette charge cible sans la dépasser de plus de 10 %.`;
+    if (travelResolved.constraint || travelResolved.allowedDisciplines.length > 0) {
+      macroBlock += `\n${formatTravelConstraintPromptRule(
+        travelResolved.constraint,
+        travelResolved.allowedDisciplines,
+      )}`;
+    }
   }
 
   const agendaBlock = busySummary

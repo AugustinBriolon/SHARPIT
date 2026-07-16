@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   LocationPlacePicker,
   type LocationPlaceValue,
@@ -17,7 +17,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import type { CoachMemoryEntry } from '@/lib/coach-memory/types';
+import type { CoachMemoryEntry, TravelDiscipline } from '@/lib/coach-memory/types';
+import {
+  TRAVEL_DISCIPLINE_LABELS,
+  TRAVEL_DISCIPLINES,
+  travelTrainingConstraintLabel,
+} from '@/lib/coach-memory/types';
+import { deriveTravelTrainingConstraint } from '@/lib/travel-context/disciplines';
 import type { TravelMemoryPayload } from '@/hooks/use-coach-memory';
 
 type TravelMemoryFormDialogProps = {
@@ -55,6 +61,8 @@ export function TravelMemoryFormDialog({
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [note, setNote] = useState('');
+  const [allowedDisciplines, setAllowedDisciplines] = useState<TravelDiscipline[]>([]);
+  const [noStructuredTraining, setNoStructuredTraining] = useState(false);
   const [applyToPlannedSessions, setApplyToPlannedSessions] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,11 +73,30 @@ export function TravelMemoryFormDialog({
     setStartDate(entry?.startDate ?? '');
     setEndDate(entry?.endDate ?? '');
     setNote(entry?.note ?? '');
+    setAllowedDisciplines(entry?.allowedDisciplines ?? []);
+    setNoStructuredTraining(entry?.trainingConstraint === 'NONE');
     setApplyToPlannedSessions(!isEdit);
     setError(null);
     const timer = window.setTimeout(() => labelRef.current?.focus(), 50);
     return () => window.clearTimeout(timer);
   }, [entry, isEdit, open]);
+
+  const derivedConstraint = useMemo(
+    () =>
+      deriveTravelTrainingConstraint(allowedDisciplines, {
+        noStructuredTraining,
+      }),
+    [allowedDisciplines, noStructuredTraining],
+  );
+
+  function toggleDiscipline(discipline: TravelDiscipline) {
+    setNoStructuredTraining(false);
+    setAllowedDisciplines((current) =>
+      current.includes(discipline)
+        ? current.filter((d) => d !== discipline)
+        : [...current, discipline],
+    );
+  }
 
   function submitLabel(): string {
     if (saving) return 'Enregistrement…';
@@ -103,6 +130,8 @@ export function TravelMemoryFormDialog({
       startDate,
       endDate,
       note: note.trim() || null,
+      allowedDisciplines: noStructuredTraining ? [] : allowedDisciplines,
+      noStructuredTraining,
       applyToPlannedSessions: isEdit ? false : applyToPlannedSessions,
     });
   }
@@ -116,7 +145,7 @@ export function TravelMemoryFormDialog({
               {isEdit ? 'Modifier le déplacement' : 'Ajouter un déplacement'}
             </DialogTitle>
             <DialogDescription>
-              Le coach utilisera ce contexte pour adapter la météo et les lieux des séances outdoor.
+              Le coach adapte météo, lieux outdoor, charge du macro-plan et types de séances.
             </DialogDescription>
           </DialogHeader>
 
@@ -159,6 +188,43 @@ export function TravelMemoryFormDialog({
                 />
               </div>
             </div>
+
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">Sports possibles</legend>
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                Coche ce que tu peux faire sur place. Rien coché = tout autorisé. Trek type Écrins →
+                mobilité seule.
+              </p>
+              <div className="grid gap-2">
+                {TRAVEL_DISCIPLINES.map((discipline) => (
+                  <label key={discipline} className="flex items-center gap-2 text-sm">
+                    <input
+                      checked={!noStructuredTraining && allowedDisciplines.includes(discipline)}
+                      className="size-4"
+                      disabled={noStructuredTraining}
+                      type="checkbox"
+                      onChange={() => toggleDiscipline(discipline)}
+                    />
+                    <span>{TRAVEL_DISCIPLINE_LABELS[discipline]}</span>
+                  </label>
+                ))}
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    checked={noStructuredTraining}
+                    className="size-4"
+                    type="checkbox"
+                    onChange={(e) => {
+                      setNoStructuredTraining(e.target.checked);
+                      if (e.target.checked) setAllowedDisciplines([]);
+                    }}
+                  />
+                  <span>Aucun sport structuré</span>
+                </label>
+              </div>
+              <p className="text-muted-foreground text-xs">
+                Effet macro : {travelTrainingConstraintLabel(derivedConstraint)}
+              </p>
+            </fieldset>
 
             <div className="space-y-1.5">
               <Label htmlFor={`${titleId}-note`}>Note (optionnel)</Label>

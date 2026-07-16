@@ -1149,18 +1149,37 @@ enum CoachMemorySource {
   COACH
 }
 
+enum TravelTrainingConstraint {
+  FULL
+  REDUCED
+  MOBILITY_ONLY
+  NONE
+}
+
+enum TravelDiscipline {
+  RUN
+  BIKE
+  SWIM
+  STRENGTH
+  MOBILITY
+}
+
 model AthleteTravelContext {
-  id            String             @id @default(cuid())
-  label         String?
-  locationLabel String
-  locationLat   Float
-  locationLng   Float
-  startDate     DateTime           @db.Date
-  endDate       DateTime           @db.Date
-  note          String?
-  source        CoachMemorySource  @default(USER)
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  id                 String                   @id @default(cuid())
+  label              String?
+  locationLabel      String
+  locationLat        Float
+  locationLng        Float
+  startDate          DateTime                 @db.Date
+  endDate            DateTime                 @db.Date
+  note               String?
+  /// How much structured training is realistic during this trip.
+  trainingConstraint TravelTrainingConstraint @default(FULL)
+  /// Empty = all disciplines allowed. Otherwise only these may be planned.
+  allowedDisciplines TravelDiscipline[]       @default([])
+  source             CoachMemorySource        @default(USER)
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
 
   @@index([startDate, endDate])
 }

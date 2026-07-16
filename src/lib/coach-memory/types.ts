@@ -1,5 +1,19 @@
 /** Types extensibles pour la mémoire structurée du coach. */
 
+import type { TravelDiscipline } from '@/lib/travel-context/disciplines';
+import {
+  TRAVEL_DISCIPLINE_LABELS,
+  TRAVEL_DISCIPLINES,
+  isTravelDiscipline,
+  travelDisciplineLabels,
+} from '@/lib/travel-context/disciplines';
+import type { TravelTrainingConstraint } from '@/lib/travel-context/training-constraint';
+import {
+  TRAVEL_TRAINING_CONSTRAINT_LABELS,
+  isTravelTrainingConstraint,
+  travelTrainingConstraintLabel,
+} from '@/lib/travel-context/training-constraint';
+
 /** Implémenté aujourd'hui via AthleteTravelContext. */
 export type CoachMemoryType = 'TRAVEL';
 
@@ -7,6 +21,8 @@ export type CoachMemoryType = 'TRAVEL';
 export type CoachMemoryTypeFuture = 'PREFERENCE' | 'CONSTRAINT' | 'AVAILABILITY';
 
 export type CoachMemorySource = 'USER' | 'COACH';
+
+export type { TravelTrainingConstraint, TravelDiscipline };
 
 export type CoachMemoryEntry = {
   id: string;
@@ -19,6 +35,8 @@ export type CoachMemoryEntry = {
   startDate: string;
   endDate: string;
   note: string | null;
+  trainingConstraint: TravelTrainingConstraint;
+  allowedDisciplines: TravelDiscipline[];
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -32,6 +50,9 @@ export type TravelMemoryInput = {
   startDate: Date;
   endDate: Date;
   note?: string | null;
+  trainingConstraint?: TravelTrainingConstraint | null;
+  allowedDisciplines?: TravelDiscipline[] | null;
+  noStructuredTraining?: boolean;
   source?: CoachMemorySource;
   applyToPlannedSessions?: boolean;
 };
@@ -43,6 +64,16 @@ export const COACH_MEMORY_TYPE_LABELS: Record<CoachMemoryType, string> = {
 export const COACH_MEMORY_SOURCE_LABELS: Record<CoachMemorySource, string> = {
   USER: 'Ajout manuel',
   COACH: 'Déduit du coach',
+};
+
+export {
+  TRAVEL_TRAINING_CONSTRAINT_LABELS,
+  TRAVEL_DISCIPLINE_LABELS,
+  TRAVEL_DISCIPLINES,
+  isTravelTrainingConstraint,
+  isTravelDiscipline,
+  travelTrainingConstraintLabel,
+  travelDisciplineLabels,
 };
 
 export function isCoachMemorySource(value: unknown): value is CoachMemorySource {

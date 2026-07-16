@@ -114,6 +114,9 @@ type TravelInput = {
   endDate?: string;
   label?: string | null;
   note?: string | null;
+  trainingConstraint?: 'FULL' | 'REDUCED' | 'MOBILITY_ONLY' | 'NONE' | null;
+  allowedDisciplines?: Array<'RUN' | 'BIKE' | 'SWIM' | 'STRENGTH' | 'MOBILITY'> | null;
+  noStructuredTraining?: boolean;
 };
 
 /** Résumé lisible de ce que l'IA propose, à partir de l'input de l'outil. */
@@ -134,6 +137,25 @@ function describeInput(
       lines.push(`${travel.startDate} → ${travel.endDate}`);
     }
     if (travel.locationLabel) lines.push(travel.locationLabel);
+    if (travel.noStructuredTraining) {
+      lines.push('Aucun sport structuré');
+    } else if (travel.allowedDisciplines && travel.allowedDisciplines.length > 0) {
+      const labels: Record<(typeof travel.allowedDisciplines)[number], string> = {
+        RUN: 'Course',
+        BIKE: 'Vélo',
+        SWIM: 'Natation',
+        STRENGTH: 'Renfo',
+        MOBILITY: 'Mobilité',
+      };
+      lines.push(travel.allowedDisciplines.map((d) => labels[d]).join(' · '));
+    } else if (travel.trainingConstraint && travel.trainingConstraint !== 'FULL') {
+      const constraintLabels = {
+        REDUCED: 'Entraînement réduit',
+        MOBILITY_ONLY: 'Mobilité uniquement',
+        NONE: 'Pas d’entraînement structuré',
+      } as const;
+      lines.push(constraintLabels[travel.trainingConstraint]);
+    }
     if (travel.note) lines.push(travel.note);
     return { headline, lines };
   }

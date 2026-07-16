@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import {
   coachMemorySourceLabel,
   coachMemoryTypeLabel,
+  travelDisciplineLabels,
+  travelTrainingConstraintLabel,
   type CoachMemoryEntry,
 } from '@/lib/coach-memory/types';
 import { cn } from '@/lib/utils';
@@ -27,6 +29,14 @@ export function CoachMemoryEntryCard({
 }) {
   const typeLabel = coachMemoryTypeLabel(entry.type);
   const sourceLabel = coachMemorySourceLabel(entry.source);
+  const constraintLabel =
+    entry.trainingConstraint !== 'FULL'
+      ? travelTrainingConstraintLabel(entry.trainingConstraint)
+      : null;
+  const disciplineText =
+    entry.allowedDisciplines.length > 0
+      ? travelDisciplineLabels(entry.allowedDisciplines).join(' · ')
+      : null;
   const title = entry.label?.trim() || typeLabel || 'Déplacement';
   const dateRange = `${format(parseISO(entry.startDate), 'd MMM yyyy', { locale: fr })} — ${format(parseISO(entry.endDate), 'd MMM yyyy', { locale: fr })}`;
 
@@ -41,7 +51,7 @@ export function CoachMemoryEntryCard({
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-2">
-          {(typeLabel || sourceLabel || entry.isActive) && (
+          {(typeLabel || sourceLabel || entry.isActive || constraintLabel) && (
             <div className="flex flex-wrap items-center gap-2">
               {typeLabel ? (
                 <Badge className="rounded-full font-normal" variant="outline">
@@ -59,6 +69,14 @@ export function CoachMemoryEntryCard({
                   )}
                 >
                   {sourceLabel}
+                </Badge>
+              ) : null}
+              {constraintLabel ? (
+                <Badge
+                  className="rounded-full border-amber-500/30 bg-amber-500/10 font-normal text-amber-800 dark:text-amber-300"
+                  variant="outline"
+                >
+                  {constraintLabel}
                 </Badge>
               ) : null}
               {entry.isActive ? (
@@ -81,6 +99,9 @@ export function CoachMemoryEntryCard({
               </p>
             ) : null}
             <p className="text-data text-muted-foreground mt-1 text-xs tabular-nums">{dateRange}</p>
+            {disciplineText ? (
+              <p className="text-muted-foreground mt-1 text-xs">{disciplineText}</p>
+            ) : null}
             {entry.note ? (
               <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{entry.note}</p>
             ) : null}

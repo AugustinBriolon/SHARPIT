@@ -7,6 +7,8 @@ import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/re
 
 export const dynamic = 'force-dynamic';
 
+const travelDisciplineSchema = z.enum(['RUN', 'BIKE', 'SWIM', 'STRENGTH', 'MOBILITY']);
+
 const travelPayloadSchema = z.object({
   type: z.literal('TRAVEL'),
   label: z.string().optional().nullable(),
@@ -16,6 +18,9 @@ const travelPayloadSchema = z.object({
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
   note: z.string().optional().nullable(),
+  trainingConstraint: z.enum(['FULL', 'REDUCED', 'MOBILITY_ONLY', 'NONE']).optional().nullable(),
+  allowedDisciplines: z.array(travelDisciplineSchema).optional().nullable(),
+  noStructuredTraining: z.boolean().optional(),
   applyToPlannedSessions: z.boolean().optional(),
 });
 

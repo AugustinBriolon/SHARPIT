@@ -14,6 +14,8 @@ import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service'
 import { prisma } from '@/lib/prisma';
 import { listTravelContexts } from '@/lib/travel-context/service';
 import { toUtcDateOnly } from '@/lib/travel-context/calendar-date';
+import { travelTrainingConstraintLabel } from '@/lib/travel-context/training-constraint';
+import { travelDisciplineLabels } from '@/lib/travel-context/disciplines';
 import { buildTopActionLine } from '@/lib/today-rich-view';
 import { decisionVerdict } from '@/lib/decision/projection';
 import { resolve, resolveCode } from '@/lib/french';
@@ -339,6 +341,8 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
       endDate: t.endDate.toISOString().slice(0, 10),
       isActiveNow: t.startDate <= utcToday && t.endDate >= utcToday,
       note: t.note,
+      trainingConstraint: t.trainingConstraint,
+      allowedDisciplines: t.allowedDisciplines,
     }));
 
   // ---- Contexte modèles (lecture seule — la décision produit est dans `decision`) ----
@@ -396,6 +400,11 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
         primaryConflict: decisionRaw.conflicts[0] ?? null,
         primaryOpportunity: decisionRaw.opportunities[0] ?? null,
         adviceActionable: athleteSnapshot.adviceActionable,
+        // Same gate Today uses to decide whether to show todaysDecision (see
+        // applyTruthfulnessOverlay in snapshot-truthfulness.ts): reusing the snapshot's
+        // own already-gated field, not re-deriving the phase check, so Coach can never
+        // drift from what Today is showing.
+        prescriptiveAdviceAllowed: athleteSnapshot.todaysDecision != null,
       }
     : null;
 
@@ -432,6 +441,82 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
 }
 
 export type CoachContext = Awaited<ReturnType<typeof buildCoachContext>>;
+
+const VERDICT_FR: Record<string, string> = {
+  TRAIN_HARD: 'Entraîne-toi fort',
+  TRAIN_SMART: 'Entraîne-toi malin',
+  TRAIN_EASY: 'Entraîne-toi doucement',
+  RECOVER: 'Récupère',
+  RACE_READY: 'Pic de forme',
+  CAUTION: 'Prudence (conflits détectés)',
+};
+
+const CONSISTENCY_FR: Record<string, string> = {
+  ALIGNED: 'Alignés',
+  PARTIALLY_ALIGNED: 'Partiellement alignés',
+  CONFLICTING: 'En conflit',
+};
+
+/**
+ * Renders the canonical Decision Engine block for the Coach prompt.
+ *
+ * `prescriptiveAdviceAllowed` reuses the exact gate Today uses to decide whether to
+ * show `todaysDecision` (see `applyTruthfulnessOverlay` in `snapshot-truthfulness.ts`).
+ * When it's false, the verdict/headline/top-action are withheld and the LLM is told
+ * explicitly not to prescribe an action — Coach must never contradict Today by
+ * discussing a decision Today itself is currently declining to show. Factual
+ * observations (limiting factor, model consistency, conflicts, opportunities) are
+ * still surfaced either way — only the prescriptive framing is gated.
+ */
+export function formatDecisionSection(decision: CoachContext['decision']): string[] {
+  if (!decision || decision.verdict === 'INSUFFICIENT_DATA') return [];
+
+  const d = decision;
+  const lines: string[] = [];
+  lines.push(`\n## Décision SHARPIT du jour (canonique — à expliquer, ne pas contredire)`);
+  if (d.prescriptiveAdviceAllowed) {
+    lines.push(
+      `Verdict : ${VERDICT_FR[d.verdict] ?? d.verdict} · confiance ${Math.round((d.confidence ?? 0) * 100)}% (${d.confidenceTier ?? '—'}).`,
+    );
+    if (d.headline) lines.push(`Message : ${d.headline}.`);
+    if (d.topAction) {
+      lines.push(`Action prioritaire : ${d.topAction}${d.rationale ? `. ${d.rationale}` : ''}.`);
+    }
+  } else {
+    lines.push(
+      "Hors fenêtre de conseil actionnable pour aujourd'hui (même règle que Today, qui n'affiche plus de décision à ce moment de la journée) : NE PRESCRIS AUCUNE action et NE MENTIONNE PAS le verdict précis. Tu peux discuter des observations factuelles ci-dessous (facteur limitant, cohérence inter-modèles, historique) si l'athlète pose une question, mais formule-les comme des observations, jamais comme une instruction d'entraînement.",
+    );
+  }
+  if (d.limitingFactorDescription) {
+    lines.push(
+      `Facteur limitant : ${d.limitingFactorDomain ?? '—'} — ${d.limitingFactorDescription}.`,
+    );
+  }
+  if (d.physiologicalConsistency) {
+    lines.push(
+      `Cohérence inter-modèles : ${CONSISTENCY_FR[d.physiologicalConsistency] ?? d.physiologicalConsistency} (score ${d.consistencyScore ?? '—'}/100).`,
+    );
+  }
+  if (d.criticalEvidence) {
+    lines.push(`⚠ CRITIQUE : ${resolve(d.criticalEvidence.title)}.`);
+  }
+  if (d.primaryConflict) {
+    lines.push(
+      `Conflit résolu (${d.primaryConflict.type.replace(/_/g, ' ').toLowerCase()}) : ${resolveCode(d.primaryConflict.descriptionCode)}.`,
+    );
+  }
+  if (d.primaryOpportunity) {
+    lines.push(
+      `Opportunité : ${resolve(d.primaryOpportunity.title)} (${d.primaryOpportunity.timeWindow.toLowerCase().replace('_', ' ')}).`,
+    );
+  }
+  if (!d.adviceActionable) {
+    lines.push(
+      `⚠ Conseil entraînement non actionnable (confiance ou données insuffisantes) — reste prudent et factuel.`,
+    );
+  }
+  return lines;
+}
 
 /** Rend le contexte en markdown compact pour le prompt système. */
 export function formatCoachContext(ctx: CoachContext): string {
@@ -561,59 +646,7 @@ export function formatCoachContext(ctx: CoachContext): string {
     }
   }
 
-  // Decision Engine — décision produit canonique (le Coach explique, ne décide pas)
-  if (ctx.decision && ctx.decision.verdict !== 'INSUFFICIENT_DATA') {
-    const d = ctx.decision;
-    const VERDICT_FR: Record<string, string> = {
-      TRAIN_HARD: 'Entraîne-toi fort',
-      TRAIN_SMART: 'Entraîne-toi malin',
-      TRAIN_EASY: 'Entraîne-toi doucement',
-      RECOVER: 'Récupère',
-      RACE_READY: 'Pic de forme',
-      CAUTION: 'Prudence (conflits détectés)',
-    };
-    const CONSISTENCY_FR: Record<string, string> = {
-      ALIGNED: 'Alignés',
-      PARTIALLY_ALIGNED: 'Partiellement alignés',
-      CONFLICTING: 'En conflit',
-    };
-    lines.push(`\n## Décision SHARPIT du jour (canonique — à expliquer, ne pas contredire)`);
-    lines.push(
-      `Verdict : ${VERDICT_FR[d.verdict] ?? d.verdict} · confiance ${Math.round((d.confidence ?? 0) * 100)}% (${d.confidenceTier ?? '—'}).`,
-    );
-    if (d.headline) lines.push(`Message : ${d.headline}.`);
-    if (d.topAction) {
-      lines.push(`Action prioritaire : ${d.topAction}${d.rationale ? `. ${d.rationale}` : ''}.`);
-    }
-    if (d.limitingFactorDescription) {
-      lines.push(
-        `Facteur limitant : ${d.limitingFactorDomain ?? '—'} — ${d.limitingFactorDescription}.`,
-      );
-    }
-    if (d.physiologicalConsistency) {
-      lines.push(
-        `Cohérence inter-modèles : ${CONSISTENCY_FR[d.physiologicalConsistency] ?? d.physiologicalConsistency} (score ${d.consistencyScore ?? '—'}/100).`,
-      );
-    }
-    if (d.criticalEvidence) {
-      lines.push(`⚠ CRITIQUE : ${resolve(d.criticalEvidence.title)}.`);
-    }
-    if (d.primaryConflict) {
-      lines.push(
-        `Conflit résolu (${d.primaryConflict.type.replace(/_/g, ' ').toLowerCase()}) : ${resolveCode(d.primaryConflict.descriptionCode)}.`,
-      );
-    }
-    if (d.primaryOpportunity) {
-      lines.push(
-        `Opportunité : ${resolve(d.primaryOpportunity.title)} (${d.primaryOpportunity.timeWindow.toLowerCase().replace('_', ' ')}).`,
-      );
-    }
-    if (!d.adviceActionable) {
-      lines.push(
-        `⚠ Conseil entraînement non actionnable (confiance ou données insuffisantes) — reste prudent et factuel.`,
-      );
-    }
-  }
+  lines.push(...formatDecisionSection(ctx.decision));
 
   // Santé
   const h = ctx.health;
@@ -729,16 +762,25 @@ export function formatCoachContext(ctx: CoachContext): string {
     }
   }
 
-  // Déplacements / voyages — contrainte forte sur lieu et logistique
+  // Déplacements / voyages — contrainte forte sur lieu, logistique et charge
   if (ctx.travel.length) {
     lines.push('\n## Déplacements / voyages');
     lines.push(
       "IMPÉRATIF : pour toute séance dont la date tombe dans une période de déplacement, adapte le lieu (météo, altitude, chaleur attendue) et la logistique — ne propose pas une séance nécessitant du matériel resté au domicile (ex. home trainer, piscine spécifique) si l'athlète est en déplacement.",
     );
+    lines.push(
+      'Respecte aussi la contrainte d’entraînement du voyage (FULL / REDUCED / MOBILITY_ONLY / NONE) : MOBILITY_ONLY = mobilité/étirements uniquement ; NONE = pas de séance structurée ; REDUCED = volume/intensité réduits.',
+    );
     for (const t of ctx.travel) {
       const label = t.label?.trim() || t.locationLabel;
+      const constraintLabel =
+        travelTrainingConstraintLabel(t.trainingConstraint)?.toLowerCase() ?? 'entraînement normal';
+      const sports =
+        t.allowedDisciplines.length > 0
+          ? ` · sports : ${travelDisciplineLabels(t.allowedDisciplines).join(', ')}`
+          : '';
       lines.push(
-        `- ${label} (${t.locationLabel}) : ${t.startDate} → ${t.endDate}${t.isActiveNow ? ' [en cours]' : ' [à venir]'}${t.note ? ` — ${t.note}` : ''}`,
+        `- ${label} (${t.locationLabel}) : ${t.startDate} → ${t.endDate}${t.isActiveNow ? ' [en cours]' : ' [à venir]'} · contrainte ${t.trainingConstraint} (${constraintLabel})${sports}${t.note ? ` — ${t.note}` : ''}`,
       );
     }
   }

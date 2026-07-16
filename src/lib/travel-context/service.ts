@@ -1,7 +1,18 @@
 import { addDays } from 'date-fns';
-import { Prisma, type CoachMemorySource, type PrismaClient } from '@prisma/client';
+import {
+  Prisma,
+  type CoachMemorySource,
+  type PrismaClient,
+  type TravelDiscipline,
+  type TravelTrainingConstraint,
+} from '@prisma/client';
 import { geocodePlaceLabel } from '@/lib/geocoding/nominatim';
 import { toUtcDateOnly } from '@/lib/travel-context/calendar-date';
+import {
+  deriveTravelTrainingConstraint,
+  normalizeTravelDisciplines,
+} from '@/lib/travel-context/disciplines';
+import { isTravelTrainingConstraint } from '@/lib/travel-context/training-constraint';
 
 export type TravelContextInput = {
   label?: string | null;
@@ -11,8 +22,35 @@ export type TravelContextInput = {
   startDate: Date;
   endDate: Date;
   note?: string | null;
+  trainingConstraint?: TravelTrainingConstraint | null;
+  allowedDisciplines?: TravelDiscipline[] | null;
+  noStructuredTraining?: boolean;
   source?: CoachMemorySource;
 };
+
+function resolveTrainingFields(input: TravelContextInput): {
+  allowedDisciplines: TravelDiscipline[];
+  trainingConstraint: TravelTrainingConstraint;
+} {
+  const allowedDisciplines = normalizeTravelDisciplines(input.allowedDisciplines ?? []);
+
+  if (input.noStructuredTraining) {
+    return { allowedDisciplines: [], trainingConstraint: 'NONE' };
+  }
+
+  if (allowedDisciplines.length > 0) {
+    return {
+      allowedDisciplines,
+      trainingConstraint: deriveTravelTrainingConstraint(allowedDisciplines),
+    };
+  }
+
+  if (isTravelTrainingConstraint(input.trainingConstraint)) {
+    return { allowedDisciplines: [], trainingConstraint: input.trainingConstraint };
+  }
+
+  return { allowedDisciplines: [], trainingConstraint: 'FULL' };
+}
 
 export async function resolveTravelContextCoordinates(
   input: Pick<TravelContextInput, 'locationLabel' | 'locationLat' | 'locationLng'>,
@@ -61,6 +99,7 @@ export async function listTravelContexts(prisma: PrismaClient) {
 
 export async function createTravelContext(prisma: PrismaClient, input: TravelContextInput) {
   const coords = await resolveTravelContextCoordinates(input);
+  const training = resolveTrainingFields(input);
   return prisma.athleteTravelContext.create({
     data: {
       label: input.label ?? null,
@@ -70,6 +109,8 @@ export async function createTravelContext(prisma: PrismaClient, input: TravelCon
       startDate: toUtcDateOnly(input.startDate),
       endDate: toUtcDateOnly(input.endDate),
       note: input.note ?? null,
+      trainingConstraint: training.trainingConstraint,
+      allowedDisciplines: training.allowedDisciplines,
       source: input.source ?? 'USER',
     },
   });
@@ -81,6 +122,7 @@ export async function updateTravelContext(
   input: TravelContextInput,
 ) {
   const coords = await resolveTravelContextCoordinates(input);
+  const training = resolveTrainingFields(input);
   return prisma.athleteTravelContext.update({
     where: { id },
     data: {
@@ -91,6 +133,8 @@ export async function updateTravelContext(
       startDate: toUtcDateOnly(input.startDate),
       endDate: toUtcDateOnly(input.endDate),
       note: input.note ?? null,
+      trainingConstraint: training.trainingConstraint,
+      allowedDisciplines: training.allowedDisciplines,
     },
   });
 }

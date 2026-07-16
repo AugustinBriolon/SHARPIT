@@ -1,6 +1,6 @@
 # Dogfooding Validation — SHARPIT Coaching Loop + Installed PWA
 
-> **Status:** In progress — Day 0 (coaching-loop pre-flight) and Day 1 (coaching-loop live re-check + PWA code-level audit) complete. Days 2–7, and every real-iOS-device checkpoint in any day, remain pending real usage — see §0.1.
+> **Status:** In progress — Day 0 (coaching-loop pre-flight) and Day 1 (coaching-loop live re-check + PWA code-level audit) complete. F11 fixed on explicit product decision Day 1. F8 explicitly deferred, not to be fixed yet. From here, real device checks only — record findings, implement only unambiguous safety/privacy/data-integrity/trust-break defects (see §2). Days 2–7, and every real-iOS-device checkpoint in any day, remain pending real usage — see §0.1.
 > **Date:** 2026-07-15 (Day 0) · 2026-07-16 (Day 1)
 > **Scope:** Athlete state → AI proposal → deterministic Gate → athlete action → completed session → outcome evaluation → learning feedback, **plus** (from Day 1) the installed-PWA dimension: lifecycle, offline behaviour, service-worker updates, privacy/account isolation.
 > **Related:** [`docs/SNAPSHOT_QUALITY_V1_AUDIT.md`](../SNAPSHOT_QUALITY_V1_AUDIT.md) · [`docs/ATHLETE_SNAPSHOT.md`](../ATHLETE_SNAPSHOT.md) · [`docs/PWA_TESTING.md`](../PWA_TESTING.md) (the authoritative human-executable checklist for every finding in §0.1's "cannot verify" list) · [ADR-005](../adr/ADR-005-plan-safety-gate-placement.md) · [ADR-006](../adr/ADR-006-decision-memory-aggregate.md) · [ADR-007](../adr/ADR-007-coaching-explainability-presentation.md) · [ADR-008](../adr/ADR-008-pwa-offline-snapshot-and-sw-lifecycle.md)
@@ -59,7 +59,7 @@ Day 0 found and fixed **one safety-enforcement gap** and **two data-integrity/ex
 | F8  | Weekly Brief `plannedLoad` didn't match a manual sum by 140 TSS in one observed case                                                                                                                                                  | Data gap (unresolved)                          | Logged — new hypothesis Day 1, still needs a controlled repro |
 | F9  | No UI control for explicit "reject" (only "leave unselected")                                                                                                                                                                         | Data gap (pre-existing, documented in ADR-006) | Logged — unchanged                                            |
 | F10 | Outcome evaluation / Learning Feedback not reachable in a same-day pass                                                                                                                                                               | Expected behaviour                             | Logged — Day 3+ checkpoint (still open, 0 outcome rows Day 1) |
-| F11 | Today silently withholds `todaysDecision` outside the "forward advice" phase (by design), but Coach/Gate read the ungated canonical verdict — an athlete can get plan/chat advice referencing a verdict Today isn't currently showing | UX issue (cross-surface consistency)           | **New — logged Day 1 — needs product decision**               |
+| F11 | Today silently withholds `todaysDecision` outside the "forward advice" phase (by design), but Coach/Gate read the ungated canonical verdict — an athlete can get plan/chat advice referencing a verdict Today isn't currently showing | UX issue (cross-surface consistency)           | **Fixed** (product decision received + implemented Day 1)     |
 
 ---
 
@@ -311,7 +311,7 @@ Severity scale: **blocker** (breaks the coaching loop or is unsafe) · **trust b
 
 ---
 
-### F11 — UX issue (cross-surface consistency) — NEW, Day 1
+### F11 — UX issue (cross-surface consistency) — FIXED, Day 1
 
 **Description:** `AthleteSnapshot.todaysDecision` (the field `docs/ATHLETE_SNAPSHOT.md` documents as what Today/notifications/widgets show) is deliberately nulled by `applyTruthfulnessOverlay()` (`src/lib/athlete-state/snapshot-truthfulness.ts`) whenever either advice isn't actionable (confidence < 0.6, insufficient data, etc.) **or** the current daily phase is outside `isForwardAdvicePhase()` (roughly: not a time of day where "should I train today" is still a live question — e.g. evening). This part is intentional, tested design, not a bug — Today correctly goes quiet rather than showing stale "train today" advice at 7pm.
 
@@ -325,9 +325,15 @@ The problem: `coach-context.ts` (the data fed to the AI Coach chat and to `/api/
 
 **Expected vs. actual:** Not obviously "expected" or "wrong" — this is a genuine product question. Two coherent options exist: (a) Coach should respect the same forward-advice-phase gate and hedge/decline to reference "today's decision" outside that window too, treating a chat question the same as a passive display; or (b) an athlete-initiated chat question is legitimately different from a passively-displayed verdict, and referencing the underlying state on request is correct — in which case Today's silence and Coach's answer are both right, just serving different purposes, and nothing needs to change except perhaps a one-line acknowledgment in Coach's response when asked outside the forward-advice window. Not unambiguous either way.
 
-**Recommended action:** Product decision needed on which of the two framings above is correct; no code change made. If option (a) is chosen, the fix is narrow — reuse `isForwardAdvicePhase(snapshot.dailyPhase?.phase)` inside `coach-context.ts` the same way `snapshot-truthfulness.ts` already does, rather than inventing new gating logic.
+**Product decision (received):** Option (a) — Coach must respect the same time/phase gate as Today for prescriptive advice. When `todaysDecision` is null, Coach may discuss factual observations but must not expose or rely on the hidden canonical verdict to prescribe an action.
 
-**Authorization needed:** Product decision (not unambiguous — a design call about what Coach chat should do outside the forward-advice window).
+**Fix:** `src/lib/coach-context.ts` — the Decision Engine block (verdict, headline, top action + rationale) is now gated on a new `decision.prescriptiveAdviceAllowed` flag, computed as `athleteSnapshot.todaysDecision != null` (reusing Today's own already-gated field directly, rather than re-deriving `isForwardAdvicePhase` separately — cannot drift from what Today shows since it reads the same source value). When the gate is closed, the verdict/headline/top-action lines are withheld entirely and replaced with an explicit instruction telling the LLM not to prescribe an action or state the precise verdict, while still permitting it to discuss factual observations (limiting factor, model consistency, conflicts, opportunities) if asked. The block was extracted from `formatCoachContext` into a standalone, directly-testable pure function, `formatDecisionSection()`.
+
+**Tests added:** `src/lib/coach-context.test.ts` — 4 cases: no-op on missing/`INSUFFICIENT_DATA` decision; verdict + action shown when the gate is open; verdict/headline/top-action withheld and the no-prescribe instruction present when the gate is closed; factual observations (limiting factor) still surfaced when the gate is closed.
+
+**Verification:** `yarn typecheck`, `yarn eslint .`, `yarn test` (1219 tests, all green), `yarn build` all clean.
+
+**Authorization:** Explicit product decision received (2026-07-16) — implemented immediately per instruction.
 
 ---
 
