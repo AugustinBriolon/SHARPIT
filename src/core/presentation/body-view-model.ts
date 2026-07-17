@@ -79,6 +79,7 @@ export type BodyViewModel = {
         deltaTone: CorpsTone;
         deltaHint: string | null;
         tone: CorpsTone;
+        guideId?: CompositionMetricId;
       };
       musclePct: {
         value: number | null;
@@ -86,6 +87,7 @@ export type BodyViewModel = {
         deltaTone: CorpsTone;
         deltaHint: string | null;
         tone: CorpsTone;
+        guideId?: CompositionMetricId;
       };
       visceralFat: {
         value: number | null;
@@ -93,6 +95,7 @@ export type BodyViewModel = {
         deltaTone: CorpsTone;
         deltaHint: string | null;
         tone: CorpsTone;
+        guideId?: CompositionMetricId;
       };
     };
   };

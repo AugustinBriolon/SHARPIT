@@ -6,12 +6,11 @@ import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { LinkButton } from '@/components/ui/link-button';
 import { PhysioRail } from '@/components/ui/physio-rail';
+import { useActivityMutations } from '@/hooks/use-data';
 import { activityTypeLabels, formatDate, formatDistance, formatDuration } from '@/lib/format';
 import { formatActivityWeatherChip, parseActivityWeather } from '@/lib/activity/activity-weather';
-import { queryKeys } from '@/lib/query/keys';
 import { parseSessionAnalysis } from '@/lib/session-analysis-display';
 import { ActivityType } from '@prisma/client';
-import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -146,7 +145,7 @@ function getActivitySummary(activity: ActivityItem) {
 
 export function DeleteActivityButton({ id }: { id: string }) {
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const { remove } = useActivityMutations();
   const { confirm, dialog } = useConfirmDialog();
 
   async function handleDelete() {
@@ -157,10 +156,8 @@ export function DeleteActivityButton({ id }: { id: string }) {
       variant: 'destructive',
     });
     if (!confirmed) return;
-    await fetch(`/api/activities/${id}`, { method: 'DELETE' });
-    await queryClient.invalidateQueries({ queryKey: queryKeys.activities });
-    // La liste /training est pilotée par React Query : l'invalidation suffit,
-    // pas besoin de router.refresh() (qui re-render inutilement l'arbre serveur).
+    // Instant: leave detail immediately; list already patched with rollback on failure.
+    remove.mutate(id);
     router.push('/training');
   }
 

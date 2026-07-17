@@ -16,7 +16,7 @@ import { loadTodayState } from '@/lib/today-state-server';
 import type { TodayState } from '@/hooks/use-today';
 import { enrichGoalsWithProgress } from '@/lib/goal-achievements';
 import {
-  getActivities,
+  getActivitiesForSnapshotPhase,
   getAthleteProfile,
   getGoals,
   getHealthEntries,
@@ -82,7 +82,7 @@ async function loadSnapshotPhaseContext(
   const dayEnd = startOfDay(addDays(refDate, 1));
   const [activities, plannedSessions, rawGoals, athleteProfile, healthEntries, observationSignals] =
     await Promise.all([
-      getActivities({ limit: 40 }),
+      getActivitiesForSnapshotPhase(40),
       getPlannedSessions({ from: dayStart, to: dayEnd }),
       getGoals(),
       getAthleteProfile(),

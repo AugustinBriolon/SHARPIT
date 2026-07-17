@@ -303,12 +303,16 @@ export function PlannedSessionDialog({
     const dateValue = String(formData.get('date') || '');
     const startTimeValue = String(formData.get('startTime') || '');
 
-    try {
-      if (isEdit && session) {
-        const durationRaw = formData.get('durationMin');
-        const loadRaw = formData.get('load');
-        const location = resolveLocationPayload();
-        await update.mutateAsync({
+    const onMutationError = (err: unknown) => {
+      setError(err instanceof Error ? err.message : 'Erreur');
+    };
+
+    if (isEdit && session) {
+      const durationRaw = formData.get('durationMin');
+      const loadRaw = formData.get('load');
+      const location = resolveLocationPayload();
+      update.mutate(
+        {
           id: session.id,
           data: {
             type,
@@ -325,18 +329,23 @@ export function PlannedSessionDialog({
             locationLat: location.locationLat,
             locationLng: location.locationLng,
           },
-        });
-        await queryClient.refetchQueries({
-          queryKey: queryKeys.plannedSessionPresentation(session.id),
-        });
-        setMode('read');
+        },
+        { onError: onMutationError },
+      );
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.plannedSessionPresentation(session.id),
+      });
+      setMode('read');
+      return;
+    }
+
+    if (createMode === 'brick') {
+      if (legs.length < 2) {
+        setError('Un brick nécessite au moins 2 sports (ex. vélo + course).');
         return;
-      } else if (createMode === 'brick') {
-        if (legs.length < 2) {
-          setError('Un brick nécessite au moins 2 sports (ex. vélo + course).');
-          return;
-        }
-        await createBrick.mutateAsync({
+      }
+      createBrick.mutate(
+        {
           date: new Date(`${dateValue}T12:00:00`),
           startTime: startTimeValue || null,
           legs: legs.map((leg) => ({
@@ -347,31 +356,35 @@ export function PlannedSessionDialog({
             load: leg.load ? Number(leg.load) : null,
             intensity: leg.intensity,
           })),
-        });
-      } else {
-        const durationRaw = formData.get('durationMin');
-        const loadRaw = formData.get('load');
-        const location = resolveLocationPayload();
-        await create.mutateAsync({
-          type,
-          date: new Date(`${dateValue}T12:00:00`),
-          startTime: startTimeValue || null,
-          title: (formData.get('title') as string) || null,
-          description: (formData.get('description') as string) || null,
-          durationMin: durationRaw ? Number(durationRaw) : null,
-          load: loadRaw ? Number(loadRaw) : null,
-          intensity,
-          goalId: goalId === NO_GOAL ? null : goalId,
-          exposureSetting: showOutdoorContext ? exposure : defaultExposureForActivityType(type),
-          locationLabel: location.locationLabel,
-          locationLat: location.locationLat,
-          locationLng: location.locationLng,
-        });
-      }
+        },
+        { onError: onMutationError },
+      );
       onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur');
+      return;
     }
+
+    const durationRaw = formData.get('durationMin');
+    const loadRaw = formData.get('load');
+    const location = resolveLocationPayload();
+    create.mutate(
+      {
+        type,
+        date: new Date(`${dateValue}T12:00:00`),
+        startTime: startTimeValue || null,
+        title: (formData.get('title') as string) || null,
+        description: (formData.get('description') as string) || null,
+        durationMin: durationRaw ? Number(durationRaw) : null,
+        load: loadRaw ? Number(loadRaw) : null,
+        intensity,
+        goalId: goalId === NO_GOAL ? null : goalId,
+        exposureSetting: showOutdoorContext ? exposure : defaultExposureForActivityType(type),
+        locationLabel: location.locationLabel,
+        locationLat: location.locationLat,
+        locationLng: location.locationLng,
+      },
+      { onError: onMutationError },
+    );
+    onClose();
   }
 
   async function handleDelete() {
@@ -384,12 +397,12 @@ export function PlannedSessionDialog({
     });
     if (!confirmed) return;
     setError(null);
-    try {
-      await remove.mutateAsync(session.id);
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur');
-    }
+    remove.mutate(session.id, {
+      onError: (err) => {
+        setError(err instanceof Error ? err.message : 'Erreur');
+      },
+    });
+    onClose();
   }
 
   return (

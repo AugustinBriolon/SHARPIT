@@ -314,21 +314,35 @@ export function AthleteProfilePanel({ initial }: { initial: ProfileData | null }
         }
       }
 
+      const patch = {
+        heightCm: heightCm.trim() ? Number(heightCm) : null,
+        birthDate: birthDate.trim() || null,
+        ftpW: ftpW ? Number(ftpW) : null,
+        maxHr: maxHr ? Number(maxHr) : null,
+        lthr: lthr ? Number(lthr) : null,
+        runThresholdPaceSecPerKm: parsePaceInput(thresholdPace),
+        sleepTargetMinutes: sleepMinutes,
+        sleepBedtimeTargetMin: bedtimeMin,
+      };
+
+      const previousProfile = queryClient.getQueryData(queryKeys.athleteProfile);
+      queryClient.setQueryData(queryKeys.athleteProfile, (current: unknown) => {
+        if (!current || typeof current !== 'object') return current;
+        return { ...current, ...patch };
+      });
+      setMessage('Profil enregistré — les zones et métriques seront recalculées.');
+      setSaving(false);
+
       const res = await fetch('/api/athlete-profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          heightCm: heightCm.trim() ? Number(heightCm) : null,
-          birthDate: birthDate.trim() || null,
-          ftpW: ftpW ? Number(ftpW) : null,
-          maxHr: maxHr ? Number(maxHr) : null,
-          lthr: lthr ? Number(lthr) : null,
-          runThresholdPaceSecPerKm: parsePaceInput(thresholdPace),
-          sleepTargetMinutes: sleepMinutes,
-          sleepBedtimeTargetMin: bedtimeMin,
-        }),
+        body: JSON.stringify(patch),
       });
       if (!res.ok) {
+        if (previousProfile !== undefined) {
+          queryClient.setQueryData(queryKeys.athleteProfile, previousProfile);
+        }
+        setMessage(null);
         const data = (await res.json().catch(() => null)) as {
           error?: string;
           detail?: string;
@@ -339,14 +353,12 @@ export function AthleteProfilePanel({ initial }: { initial: ProfileData | null }
           : null;
         throw new Error(fieldMsg || data?.detail || data?.error || 'Erreur');
       }
-      setMessage('Profil enregistré — les zones et métriques seront recalculées.');
-      await queryClient.invalidateQueries({ queryKey: ['activity-stream'] });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.thresholdPreview });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.thresholdHistory });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.athleteProfile });
+      void queryClient.invalidateQueries({ queryKey: ['activity-stream'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.thresholdPreview });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.thresholdHistory });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.athleteProfile });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur');
-    } finally {
       setSaving(false);
     }
   }

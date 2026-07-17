@@ -70,6 +70,7 @@ export function CoachChat({
   bootstrapPrompt,
   isEphemeral = false,
   autoReply = false,
+  header,
   onConversationCreated,
   onAutoReplyStarted,
 }: {
@@ -78,6 +79,8 @@ export function CoachChat({
   bootstrapPrompt?: string;
   isEphemeral?: boolean;
   autoReply?: boolean;
+  /** Rendered sticky at the top of the message scroll region (mobile fixed layout). */
+  header?: React.ReactNode;
   onConversationCreated?: (id: string) => void;
   onAutoReplyStarted?: () => void;
 }) {
@@ -237,114 +240,121 @@ export function CoachChat({
     : 'Demande conseil à ton coach…';
 
   return (
-    <div className="border-border/60 bg-card/30 flex h-full max-h-[80vh] min-w-0 flex-1 flex-col rounded-xl border lg:min-h-[80vh]">
-      <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-4">
-        {messages.length === 0 && (
-          <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
-            <p className="text-muted-foreground max-w-sm text-sm">
-              Pose une question à ton coach. Il connaît ta forme, ta récupération, tes seuils et tes
-              objectifs.
-            </p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {SUGGESTIONS.map((s) => (
-                <button
-                  key={s}
-                  className="border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground rounded-full border px-3 py-1.5 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={inputLocked}
-                  type="button"
-                  onClick={() => submit(s)}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
+    <div className="lg:border-border/60 lg:bg-card/30 flex h-full min-w-0 flex-1 flex-col rounded-xl lg:border">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+        {header && (
+          <div className="bg-background/85 supports-backdrop-filter:bg-background/70 sticky top-0 z-10 backdrop-blur-md">
+            {header}
           </div>
         )}
+        <div className="space-y-4 p-4">
+          {messages.length === 0 && (
+            <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
+              <p className="text-muted-foreground max-w-sm text-sm">
+                Pose une question à ton coach. Il connaît ta forme, ta récupération, tes seuils et
+                tes objectifs.
+              </p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {SUGGESTIONS.map((s) => (
+                  <button
+                    key={s}
+                    className="border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground rounded-full border px-3 py-1.5 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={inputLocked}
+                    type="button"
+                    onClick={() => submit(s)}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
-        {messages.map((message) => {
-          const isUser = message.role === 'user';
-          const text = message.parts
-            .filter((p) => p.type === 'text')
-            .map((p) => (p as { text: string }).text)
-            .join('');
-          const toolParts = message.parts.filter((p) => p.type.startsWith('tool-'));
+          {messages.map((message) => {
+            const isUser = message.role === 'user';
+            const text = message.parts
+              .filter((p) => p.type === 'text')
+              .map((p) => (p as { text: string }).text)
+              .join('');
+            const toolParts = message.parts.filter((p) => p.type.startsWith('tool-'));
 
-          if (isUser) {
+            if (isUser) {
+              return (
+                <div key={message.id} className="flex justify-end">
+                  <div className="bg-primary text-primary-foreground max-w-[85%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap">
+                    {text}
+                  </div>
+                </div>
+              );
+            }
+
+            const inlineParts = toolParts.filter(
+              (p) => (p as ToolPartLite).state !== 'approval-requested',
+            );
+
+            if (!text && inlineParts.length === 0) return null;
+
             return (
-              <div key={message.id} className="flex justify-end">
-                <div className="bg-primary text-primary-foreground max-w-[85%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap">
-                  {text}
+              <div key={message.id} className="flex justify-start">
+                <div className="bg-muted/60 text-foreground w-full max-w-[90%] space-y-2 rounded-2xl px-4 py-3">
+                  {text && <CoachMessage>{text}</CoachMessage>}
+                  <ToolActivityList parts={inlineParts as ToolPartLite[]} streamIdle={streamIdle} />
                 </div>
               </div>
             );
-          }
+          })}
 
-          const inlineParts = toolParts.filter(
-            (p) => (p as ToolPartLite).state !== 'approval-requested',
-          );
-
-          if (!text && inlineParts.length === 0) return null;
-
-          return (
-            <div key={message.id} className="flex justify-start">
-              <div className="bg-muted/60 text-foreground w-full max-w-[90%] space-y-2 rounded-2xl px-4 py-3">
-                {text && <CoachMessage>{text}</CoachMessage>}
-                <ToolActivityList parts={inlineParts as ToolPartLite[]} streamIdle={streamIdle} />
+          {status === 'submitted' && (
+            <div className="flex justify-start">
+              <div className="bg-muted/60 rounded-2xl px-4 py-2.5">
+                <Loader2 className="text-muted-foreground size-4 animate-spin" />
               </div>
             </div>
-          );
-        })}
+          )}
 
-        {status === 'submitted' && (
-          <div className="flex justify-start">
-            <div className="bg-muted/60 rounded-2xl px-4 py-2.5">
-              <Loader2 className="text-muted-foreground size-4 animate-spin" />
-            </div>
-          </div>
-        )}
-
-        {pendingApprovals.length > 0 && (
-          <div className="border-primary/30 bg-primary/4 space-y-2 rounded-xl border p-3">
-            <div className="space-y-1">
-              <p className="text-primary text-xs font-medium tracking-wide uppercase">
-                {pendingApprovals.length === 1
-                  ? '1 proposition à valider'
-                  : `${pendingApprovals.length} propositions à valider`}
-              </p>
-              <p className="text-muted-foreground text-xs">
-                Valide ou refuse la proposition — ou envoie un nouveau message pour l'ignorer et
-                poursuivre la conversation.
-              </p>
-            </div>
-            {pendingApprovals.map((part, i) => (
-              <ToolActivity
-                key={i}
-                disabled={isBusy}
-                knownSessions={knownSessions}
-                part={part}
-                streamIdle={streamIdle}
-                onApproval={(id, approved) => {
-                  addToolApprovalResponse({ id, approved });
-                  if (approved) {
-                    queryClient.invalidateQueries({
-                      queryKey: queryKeys.plannedSessions,
-                    });
-                    if (part.type === 'tool-setTravelContext') {
-                      void queryClient.invalidateQueries({ queryKey: queryKeys.travelContext });
-                      void queryClient.invalidateQueries({ queryKey: queryKeys.coachMemory });
+          {pendingApprovals.length > 0 && (
+            <div className="border-primary/30 bg-primary/4 space-y-2 rounded-xl border p-3">
+              <div className="space-y-1">
+                <p className="text-primary text-xs font-medium tracking-wide uppercase">
+                  {pendingApprovals.length === 1
+                    ? '1 proposition à valider'
+                    : `${pendingApprovals.length} propositions à valider`}
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  Valide ou refuse la proposition — ou envoie un nouveau message pour l'ignorer et
+                  poursuivre la conversation.
+                </p>
+              </div>
+              {pendingApprovals.map((part, i) => (
+                <ToolActivity
+                  key={i}
+                  disabled={isBusy}
+                  knownSessions={knownSessions}
+                  part={part}
+                  streamIdle={streamIdle}
+                  onApproval={(id, approved) => {
+                    addToolApprovalResponse({ id, approved });
+                    if (approved) {
+                      queryClient.invalidateQueries({
+                        queryKey: queryKeys.plannedSessions,
+                      });
+                      if (part.type === 'tool-setTravelContext') {
+                        void queryClient.invalidateQueries({ queryKey: queryKeys.travelContext });
+                        void queryClient.invalidateQueries({ queryKey: queryKeys.coachMemory });
+                      }
                     }
-                  }
-                }}
-              />
-            ))}
-          </div>
-        )}
+                  }}
+                />
+              ))}
+            </div>
+          )}
 
-        {error && (
-          <p className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
-            {coachErrorMessage}
-          </p>
-        )}
+          {error && (
+            <p className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
+              {coachErrorMessage}
+            </p>
+          )}
+        </div>
       </div>
 
       <form

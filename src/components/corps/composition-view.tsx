@@ -3,11 +3,12 @@
 import { AlertTriangle, Scale } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
+import type { ProductInsight } from '@/core/product-insight/types';
 import type { CompositionMetricId } from '@/lib/composition-metric-guides';
 import { useBodyPresentationViewModel } from '@/hooks/use-presentation-view-model';
 import { CompositionMetricCard } from '@/components/corps/composition-metric-card';
 import { CompositionMetricExplainer } from '@/components/corps/composition-metric-explainer';
-import { InsightList } from '@/components/product-insight/insight-list';
+import { MetricCell } from '@/components/ui/metric-cell';
 import {
   CorpsDisclaimer,
   CorpsDivider,
@@ -18,7 +19,6 @@ import type { BodyChartPoint } from '@/core/presentation/body-view-model';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonCard, SkeletonEyebrow, SkeletonPill } from '@/components/ui/skeleton-patterns';
 import { CORPS_TONE_TEXT } from '@/lib/metric-tone';
-import type { CorpsTone } from '@/lib/metric-tone';
 import { isDeltaStatusTone } from '@/lib/health-status';
 import { cn } from '@/lib/utils';
 
@@ -60,48 +60,23 @@ function CompositionSection({
   );
 }
 
-function HeroMini({
-  label,
-  value,
-  unit,
-  deltaDisplay,
-  deltaTone = 'ok',
-  deltaHint,
-  tone = 'neutral',
-}: {
-  label: string;
-  value: number | null;
-  unit: string;
-  deltaDisplay: string | null;
-  deltaTone?: CorpsTone;
-  deltaHint?: string | null;
-  tone?: CorpsTone;
-}) {
+/** Compact, scannable read of the insight bundle — one card, no repeated meta-text. */
+function CompositionInsightList({ insights }: { insights: ProductInsight[] }) {
+  if (insights.length === 0) return null;
+
   return (
-    <div className="bg-background/50 px-3 py-2.5 text-center">
-      <p className="text-muted-foreground min-h-6.5 text-[9px] font-semibold tracking-[0.12em] uppercase md:min-h-fit">
-        {label}
-      </p>
-      <p className={cn('mt-1 text-lg font-bold tabular-nums', CORPS_TONE_TEXT[tone])}>
-        {value != null ? value : '—'}
-        {unit && value != null ? (
-          <span className="text-muted-foreground text-xs font-normal"> {unit}</span>
-        ) : null}
-      </p>
-      {deltaDisplay && deltaDisplay !== '—' ? (
-        <p
-          className={cn(
-            'mt-0.5 text-[9px]',
-            isDeltaStatusTone(deltaTone) ? CORPS_TONE_TEXT[deltaTone] : 'text-muted-foreground',
-          )}
-        >
-          {deltaDisplay}
-        </p>
-      ) : null}
-      {deltaHint ? (
-        <p className="text-muted-foreground mt-1 text-[8px] leading-snug">{deltaHint}</p>
-      ) : null}
-    </div>
+    <CorpsPanel className="divide-border/60 divide-y p-0">
+      {insights.map((insight) => (
+        <div key={insight.id} className="px-5 py-3.5 first:pt-4 last:pb-4">
+          <p className="text-sm font-medium">{insight.title}</p>
+          {insight.evidence.length > 0 ? (
+            <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
+              {insight.evidence.join(' · ')}
+            </p>
+          ) : null}
+        </div>
+      ))}
+    </CorpsPanel>
   );
 }
 
@@ -246,44 +221,43 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
           </div>
 
           <div className="grid min-w-[min(100%,280px)] grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-            <HeroMini
-              deltaDisplay={vm.hero.heroMini.bodyFatPct.deltaDisplay}
-              deltaHint={vm.hero.heroMini.bodyFatPct.deltaHint}
-              deltaTone={vm.hero.heroMini.bodyFatPct.deltaTone}
-              label="Masse grasse"
-              tone={vm.hero.heroMini.bodyFatPct.tone}
-              unit="%"
-              value={vm.hero.heroMini.bodyFatPct.value}
-            />
-            <HeroMini
-              deltaDisplay={vm.hero.heroMini.musclePct.deltaDisplay}
-              deltaHint={vm.hero.heroMini.musclePct.deltaHint}
-              deltaTone={vm.hero.heroMini.musclePct.deltaTone}
-              label="Muscle"
-              tone={vm.hero.heroMini.musclePct.tone}
-              unit="%"
-              value={vm.hero.heroMini.musclePct.value}
-            />
-            <HeroMini
-              deltaDisplay={vm.hero.heroMini.visceralFat.deltaDisplay}
-              deltaHint={vm.hero.heroMini.visceralFat.deltaHint}
-              deltaTone={vm.hero.heroMini.visceralFat.deltaTone}
-              label="Viscéral"
-              tone={vm.hero.heroMini.visceralFat.tone}
-              unit=""
-              value={vm.hero.heroMini.visceralFat.value}
-            />
+            {(
+              [
+                { key: 'bodyFatPct', label: 'Masse grasse', unit: '%' },
+                { key: 'musclePct', label: 'Muscle', unit: '%' },
+                { key: 'visceralFat', label: 'Viscéral', unit: '' },
+              ] as const
+            ).map(({ key, label, unit }) => {
+              const metric = vm.hero.heroMini[key];
+              const value = metric.value != null ? `${metric.value}${unit ? ` ${unit}` : ''}` : '—';
+              const footer =
+                metric.deltaDisplay && metric.deltaDisplay !== '—'
+                  ? metric.deltaDisplay
+                  : undefined;
+              return (
+                <MetricCell
+                  key={key}
+                  footer={footer}
+                  footerHint={metric.deltaHint ?? undefined}
+                  footerTone={metric.deltaTone}
+                  label={label}
+                  layout="card"
+                  tone={metric.tone}
+                  value={value}
+                  showToneDot
+                  onExplain={metric.guideId ? () => setExplainMetricId(metric.guideId!) : undefined}
+                />
+              );
+            })}
           </div>
         </div>
       </CorpsPanel>
 
-      <InsightList insights={vm.insights.primary} label="Ce que ta trajectoire raconte" />
-      <InsightList insights={vm.insights.supporting} label="Contexte de lecture" />
+      <CompositionInsightList
+        insights={[...vm.insights.primary, ...vm.insights.supporting, ...vm.insights.contextual]}
+      />
 
-      <CompositionSection
-        description="Les chiffres utiles sont ceux qui t'aident à juger si ton corps évolue dans le sens de ton projet, pas seulement la valeur du jour."
-        label="Trajectoire corporelle"
-      >
+      <CompositionSection label="Composition détaillée">
         {vm.trajectoryCards.map((card) => (
           <CompositionMetricCard
             key={card.cardId}
@@ -299,13 +273,8 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
         ))}
       </CompositionSection>
 
-      <InsightList insights={vm.insights.contextual} label="Contexte sante et mesure" />
-
       {vm.contextCards.length > 0 ? (
-        <CompositionSection
-          description="Ces repères servent surtout à savoir si la lecture du jour est fiable et comment elle s'inscrit dans ta trajectoire."
-          label="Contexte de mesure"
-        >
+        <CompositionSection label="Repères complémentaires">
           {vm.contextCards.map((card) => (
             <CompositionMetricCard
               key={card.cardId}

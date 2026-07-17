@@ -40,7 +40,7 @@ export function CoachConversationList({
   const selected = conversations.find((c) => c.id === selectedId);
 
   return (
-    <aside className="border-border/60 bg-card/30 flex w-full shrink-0 flex-col rounded-xl border lg:w-56">
+    <aside className="border-border/60 bg-card/30 flex w-full shrink-0 flex-col rounded-xl border lg:h-full lg:w-56">
       <div className="border-border/60 border-b p-2">
         <Button
           className="w-full justify-start gap-2"

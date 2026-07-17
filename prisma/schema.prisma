@@ -765,7 +765,7 @@ model WeeklyReview {
 
 model PerformanceRecord {
   id            String   @id @default(cuid())
-  group         String // "run" | "bike" | "swim" | "power" | "run-best"
+  group         String // "run" | "bike" | "swim" | "power" | "run-best" | "run-effort" | "bike-effort"
   category      String // clé unique du record, ex: "run-distance", "power-300", "run-best-5000"
   label         String
   rank          Int // 1 = meilleur (top 5)
@@ -814,6 +814,7 @@ model Observation {
 
   @@index([athleteId, type])
   @@index([athleteId, trainingDayId])
+  @@index([athleteId, trainingDayId, type])
   @@index([type, externalId])
   @@index([timestamp])
 }

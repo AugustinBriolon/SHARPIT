@@ -26,10 +26,12 @@ import {
   fetchSessionRationalePresentation,
   fetchWeeklyCoachingBriefPresentation,
 } from '@/lib/query/presentation-fetchers';
-import { listOptimistic, tempId } from '@/lib/query/optimistic';
-import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
+import { listOptimistic, tempId, isTempId } from '@/lib/query/optimistic';
+import type { ClientActivity, ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import type { BrickAnalysis } from '@/lib/validators/coach';
+import type { createActivitySchema } from '@/lib/validators/activity';
 import type { ActivityType, GoalHorizon, GoalPriority, SessionIntensity } from '@prisma/client';
+import type { z } from 'zod';
 
 // 90 j couvrent largement le dashboard (tendances 7-30 j) et Recovery (courbes 60 j).
 // Tirer 365 j était surdimensionné (réseau + parsing inutiles).
@@ -43,6 +45,118 @@ export function useActivities() {
     // montage / retour de focus. Les mutations invalident explicitement.
     staleTime: 2 * 60 * 1000,
   });
+}
+
+export type ActivityMutationPayload = z.input<typeof createActivitySchema>;
+
+function optimisticActivity(payload: ActivityMutationPayload): ClientActivity {
+  const now = new Date();
+  const date = payload.date instanceof Date ? payload.date : new Date(payload.date as string);
+  return {
+    id: tempId(),
+    type: payload.type,
+    date,
+    title: payload.title ?? null,
+    duration: payload.duration ?? null,
+    load: payload.load ?? null,
+    rpe: payload.rpe ?? null,
+    feeling: payload.feeling ?? null,
+    weather: payload.weather ?? null,
+    notes: payload.notes ?? null,
+    source: 'manual',
+    stravaId: null,
+    garminId: null,
+    createdAt: now,
+    updatedAt: now,
+    runMetrics:
+      payload.runMetrics?.distanceM != null ? { distanceM: payload.runMetrics.distanceM } : null,
+    bikeMetrics:
+      payload.bikeMetrics?.tss != null || payload.bikeMetrics?.avgPower != null
+        ? { tss: payload.bikeMetrics.tss ?? null, avgPower: payload.bikeMetrics.avgPower ?? null }
+        : null,
+    swimMetrics:
+      payload.swimMetrics?.distanceM != null ? { distanceM: payload.swimMetrics.distanceM } : null,
+    strengthSets: (payload.strengthSets ?? []).map((s) => ({ exercise: s.exercise })),
+    plannedSession: null,
+  } as unknown as ClientActivity;
+}
+
+export function useActivityMutations() {
+  const queryClient = useQueryClient();
+  const key = queryKeys.activities;
+
+  const create = useMutation({
+    mutationFn: (payload: ActivityMutationPayload) =>
+      sendJson('/api/activities', 'POST', payload) as Promise<{ id: string }>,
+    ...listOptimistic<ClientActivity, ActivityMutationPayload, { id: string }>({
+      queryClient,
+      queryKey: key,
+      apply: (prev, payload) => [optimisticActivity(payload), ...prev],
+      reconcile: (prev, data) => {
+        const withoutTemp = prev.filter((a) => !isTempId(a.id));
+        if (withoutTemp.some((a) => a.id === data.id)) return withoutTemp;
+        const optimistic = prev.find((a) => isTempId(a.id));
+        if (!optimistic) return withoutTemp;
+        return [
+          { ...optimistic, id: data.id },
+          ...withoutTemp.filter((a) => a.id !== optimistic.id),
+        ];
+      },
+      success: 'Séance enregistrée',
+      error: "Impossible d'enregistrer la séance.",
+    }),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.records });
+    },
+  });
+
+  const update = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<ActivityMutationPayload> }) =>
+      sendJson(`/api/activities/${id}`, 'PATCH', data) as Promise<{ id: string }>,
+    ...listOptimistic<
+      ClientActivity,
+      { id: string; data: Partial<ActivityMutationPayload> },
+      { id: string }
+    >({
+      queryClient,
+      queryKey: key,
+      apply: (prev, { id, data }) =>
+        prev.map((a) =>
+          a.id === id
+            ? ({
+                ...a,
+                ...data,
+                date: data.date
+                  ? data.date instanceof Date
+                    ? data.date
+                    : new Date(data.date as string)
+                  : a.date,
+                updatedAt: new Date(),
+              } as ClientActivity)
+            : a,
+        ),
+      error: 'Impossible de mettre à jour la séance.',
+    }),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.records });
+    },
+  });
+
+  const remove = useMutation({
+    mutationFn: (id: string) => sendJson(`/api/activities/${id}`, 'DELETE'),
+    ...listOptimistic<ClientActivity, string>({
+      queryClient,
+      queryKey: key,
+      apply: (prev, id) => prev.filter((a) => a.id !== id),
+      success: 'Séance supprimée',
+      error: 'Impossible de supprimer la séance.',
+      invalidateOnSettle: true,
+    }),
+  });
+
+  return { create, update, remove };
 }
 
 export function useHealthEntries(days = DEFAULT_HEALTH_DAYS, refDate?: Date) {
@@ -218,7 +332,7 @@ export function usePlannedSessionPresentation(sessionId: string | null | undefin
     queryKey: queryKeys.plannedSessionPresentation(sessionId ?? ''),
     queryFn: () => fetchPlannedSessionPresentation(sessionId!),
     enabled: Boolean(sessionId),
-    staleTime: 0,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -534,22 +648,40 @@ export function usePlannedSessionMutations() {
       }),
   });
 
-  // Lier une activité réalisée : l'objet `activity` complet n'est connu qu'après
-  // réponse serveur, donc pas d'optimistic (on invalide simplement). La liaison
-  // répond vite ; on enchaîne l'analyse IA côté client (non bloquante).
+  // Link realized activity: optimistic activityId patch; full activity object
+  // arrives via settle invalidate. Analyze stays BACKGROUND.
   const link = useMutation({
     mutationFn: ({ id, activityId }: { id: string; activityId: string | null }) =>
       sendJson(`/api/planned-sessions/${id}/link`, 'POST', { activityId }),
+    onMutate: async ({ id, activityId }) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<ClientPlannedSession[]>(key);
+      if (previous) {
+        queryClient.setQueryData<ClientPlannedSession[]>(
+          key,
+          previous.map((s) =>
+            s.id === id ? ({ ...s, activityId, updatedAt: new Date() } as ClientPlannedSession) : s,
+          ),
+        );
+      }
+      return { previous };
+    },
+    onError: (err: unknown, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(key, context.previous);
+      }
+      toast.error('La liaison a échoué.', {
+        description: err instanceof Error ? err.message : undefined,
+      });
+    },
     onSuccess: (_data, variables) => {
-      invalidate();
       if (variables.activityId) {
         analyze.mutate(variables.id);
       }
     },
-    onError: (err: unknown) =>
-      toast.error('La liaison a échoué.', {
-        description: err instanceof Error ? err.message : undefined,
-      }),
+    onSettled: () => {
+      void invalidate();
+    },
   });
 
   return { create, createBrick, update, remove, link, analyze };

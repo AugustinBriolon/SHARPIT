@@ -4,7 +4,7 @@ import Script from 'next/script';
 import { AppClerkProvider } from '@/providers/clerk-provider';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { SwRegister } from '@/components/pwa/sw-register';
-import { UpdateAvailableBanner } from '@/components/pwa/update-available-banner';
+import { UpdateAvailableToast } from '@/components/pwa/update-available-toast';
 import { SnapshotOfflineSync } from '@/components/pwa/snapshot-offline-sync';
 import { Toaster } from '@/components/ui/toast';
 import { QueryProvider } from '@/providers/query-provider';
@@ -110,7 +110,6 @@ export default async function RootLayout({
           />
         </head>
         <body className="bg-background text-foreground min-h-full font-sans">
-          <UpdateAvailableBanner />
           <ThemeProvider serverPreference={serverPreference}>
             <QueryProvider>
               {children}
@@ -118,6 +117,7 @@ export default async function RootLayout({
             </QueryProvider>
           </ThemeProvider>
           <Toaster />
+          <UpdateAvailableToast />
           <SwRegister />
         </body>
       </html>

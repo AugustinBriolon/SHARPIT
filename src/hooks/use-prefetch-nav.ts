@@ -3,10 +3,18 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { useCallback } from 'react';
-import { fetchActivities, fetchGoals, fetchPlannedSessions } from '@/lib/query/fetchers';
+import {
+  fetchActivities,
+  fetchConversations,
+  fetchGoals,
+  fetchPhysicalNotes,
+  fetchPlannedSessions,
+} from '@/lib/query/fetchers';
 import {
   fetchAdaptationPresentation,
+  fetchBodyPresentation,
   fetchEffortPresentation,
+  fetchPhysicalHealthPresentation,
   fetchRecoveryPresentation,
   fetchSleepPresentation,
   fetchTodayPresentation,
@@ -27,7 +35,7 @@ export function usePrefetchNavQuery() {
 
       switch (href) {
         case '/':
-          pre(['presentation', 'today', trainingDayId], () =>
+          pre(queryKeys.presentationToday(trainingDayId), () =>
             fetchTodayPresentation(trainingDayId),
           );
           break;
@@ -39,6 +47,11 @@ export function usePrefetchNavQuery() {
           pre(['presentation', 'recovery', trainingDayId], () =>
             fetchRecoveryPresentation(trainingDayId),
           );
+          pre(['presentation', 'body', 'all'], () => fetchBodyPresentation(null));
+          pre(['presentation', 'physical-health', trainingDayId], () =>
+            fetchPhysicalHealthPresentation(trainingDayId),
+          );
+          pre(queryKeys.physicalNotes, fetchPhysicalNotes);
           break;
         case '/goals':
           pre(queryKeys.goals, fetchGoals);
@@ -46,6 +59,7 @@ export function usePrefetchNavQuery() {
         case '/coach':
           pre(queryKeys.plannedSessions, fetchPlannedSessions);
           pre(queryKeys.activities, fetchActivities);
+          pre(queryKeys.conversations, fetchConversations);
           break;
         case '/calendar':
           pre(queryKeys.plannedSessions, fetchPlannedSessions);
@@ -74,6 +88,9 @@ export function usePrefetchNavQuery() {
           pre(['presentation', 'adaptation', trainingDayId], () =>
             fetchAdaptationPresentation(trainingDayId),
           );
+          break;
+        case '/training':
+          pre(queryKeys.activities, fetchActivities);
           break;
       }
     },

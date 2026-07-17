@@ -2,7 +2,6 @@
 
 import { ActivityType } from '@prisma/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -13,7 +12,7 @@ import {
   type LocationPlaceValue,
 } from '@/components/planning/location-place-picker';
 import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
-import { queryKeys } from '@/lib/query/keys';
+import { useActivityMutations } from '@/hooks/use-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -169,7 +168,7 @@ function resolveWatchedRpe(value: unknown): number | null {
 
 export function ActivityForm({ mode, initialData }: ActivityFormProps) {
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const { create, update } = useActivityMutations();
   const [location, setLocation] = useState<LocationPlaceValue>(() =>
     initialLocationFromData(initialData),
   );
@@ -349,30 +348,32 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
   const onSubmit = form.handleSubmit(
     async (values) => {
       const payload = sanitizeActivityPayload(values);
-      const url = mode === 'create' ? '/api/activities' : `/api/activities/${initialData?.id}`;
-      const method = mode === 'create' ? 'POST' : 'PATCH';
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      try {
+        if (mode === 'create') {
+          const activity = await create.mutateAsync(payload);
+          router.push(`/training/${activity.id}`);
+          return;
+        }
 
-      if (!response.ok) {
-        const error = await response.json();
+        const { id } = initialData!;
+        // Instant: navigate immediately; mutation patches cache and rolls back on failure.
+        update.mutate(
+          { id, data: payload },
+          {
+            onError: (err) => {
+              form.setError('root', {
+                message: err instanceof Error ? err.message : 'Une erreur est survenue',
+              });
+            },
+          },
+        );
+        router.push(`/training/${id}`);
+      } catch (err) {
         form.setError('root', {
-          message: error.error ?? 'Une erreur est survenue',
+          message: err instanceof Error ? err.message : 'Une erreur est survenue',
         });
-        return;
       }
-
-      const activity = await response.json();
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.activities }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.records }),
-      ]);
-      router.push(`/training/${activity.id}`);
-      router.refresh();
     },
     (errors) => {
       form.setError('root', {

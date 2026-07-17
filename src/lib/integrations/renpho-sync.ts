@@ -127,45 +127,67 @@ export async function syncRenphoHealth(options?: {
   let updated = 0;
   const weightByDay = new Map<string, RenphoMeasurement>();
 
-  for (const measurement of measurements) {
-    const data = measurementToPrisma(measurement);
-    const existing = await prisma.bodyCompositionMeasurement.findUnique({
+  if (measurements.length > 0) {
+    const externalIds = measurements.map((m) => m.id);
+    const existingRows = await prisma.bodyCompositionMeasurement.findMany({
       where: {
-        source_externalId: {
-          source: BodyCompositionSource.RENPHO,
-          externalId: measurement.id,
-        },
+        source: BodyCompositionSource.RENPHO,
+        externalId: { in: externalIds },
       },
-      select: { id: true },
+      select: { externalId: true },
     });
+    const existingIds = new Set(
+      existingRows.map((r) => r.externalId).filter((id): id is string => id != null),
+    );
 
-    if (existing) {
-      await prisma.bodyCompositionMeasurement.update({
-        where: {
-          source_externalId: {
-            source: BodyCompositionSource.RENPHO,
-            externalId: measurement.id,
-          },
-        },
-        data,
+    const toCreate: Prisma.BodyCompositionMeasurementCreateManyInput[] = [];
+    const toCreateMeasurements: RenphoMeasurement[] = [];
+    const updateOps: Promise<unknown>[] = [];
+
+    for (const measurement of measurements) {
+      const data = measurementToPrisma(measurement);
+      const dayKey = format(new Date(measurement.time_stamp * 1000), 'yyyy-MM-dd');
+      const prev = weightByDay.get(dayKey);
+      if (!prev || measurement.time_stamp > prev.time_stamp) {
+        weightByDay.set(dayKey, measurement);
+      }
+
+      if (existingIds.has(measurement.id)) {
+        updateOps.push(
+          prisma.bodyCompositionMeasurement.update({
+            where: {
+              source_externalId: {
+                source: BodyCompositionSource.RENPHO,
+                externalId: measurement.id,
+              },
+            },
+            data,
+          }),
+        );
+      } else {
+        toCreate.push(data as Prisma.BodyCompositionMeasurementCreateManyInput);
+        toCreateMeasurements.push(measurement);
+      }
+    }
+
+    if (toCreate.length > 0) {
+      const result = await prisma.bodyCompositionMeasurement.createMany({
+        data: toCreate,
+        skipDuplicates: true,
       });
-      updated += 1;
-    } else {
-      await prisma.bodyCompositionMeasurement.create({ data });
-      await ingestRenphoMeasurement(measurement);
-      imported += 1;
+      imported = result.count;
+      await Promise.all(toCreateMeasurements.map((m) => ingestRenphoMeasurement(m)));
     }
 
-    const dayKey = format(new Date(measurement.time_stamp * 1000), 'yyyy-MM-dd');
-    const prev = weightByDay.get(dayKey);
-    if (!prev || measurement.time_stamp > prev.time_stamp) {
-      weightByDay.set(dayKey, measurement);
+    if (updateOps.length > 0) {
+      await Promise.all(updateOps);
+      updated = updateOps.length;
     }
   }
 
-  for (const measurement of weightByDay.values()) {
-    await upsertDailyWeightFromMeasurement(measurement, withingsDays);
-  }
+  await Promise.all(
+    [...weightByDay.values()].map((m) => upsertDailyWeightFromMeasurement(m, withingsDays)),
+  );
 
   await prisma.renphoAccount.update({
     where: { id: ACCOUNT_ID },

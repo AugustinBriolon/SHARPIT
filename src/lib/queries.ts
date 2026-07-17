@@ -82,6 +82,25 @@ export async function getActivitiesList(params?: {
   });
 }
 
+/**
+ * Minimal activity rows for AthleteSnapshot phase context.
+ * Avoids metrics / strength sets / plannedSession joins used by detail views.
+ */
+export async function getActivitiesForSnapshotPhase(limit = 40) {
+  return prisma.activity.findMany({
+    select: {
+      id: true,
+      date: true,
+      type: true,
+      load: true,
+      duration: true,
+      title: true,
+    },
+    orderBy: { date: 'desc' },
+    take: limit,
+  });
+}
+
 export async function getActivityById(id: string) {
   return prisma.activity.findUnique({
     where: { id },

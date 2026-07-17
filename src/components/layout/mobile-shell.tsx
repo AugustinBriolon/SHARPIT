@@ -6,6 +6,7 @@ import { bottomNavItems, type AppNavItem } from '@/lib/app-navigation';
 import { usePrefetchNavQuery } from '@/hooks/use-prefetch-nav';
 import { cn } from '@/lib/utils';
 import { OfflineBanner } from '@/components/pwa/offline-banner';
+import { SyncingIndicator } from '@/components/ui/syncing-indicator';
 
 function BottomNavLink({
   item,
@@ -63,6 +64,7 @@ export function MobileShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="bg-background flex h-dvh flex-col lg:hidden">
       <OfflineBanner />
+      <SyncingIndicator className="border-border/40 border-b" />
       <main
         className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain"
         style={{

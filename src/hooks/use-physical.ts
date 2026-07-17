@@ -45,6 +45,7 @@ export function usePhysicalNotes() {
   return useQuery({
     queryKey: queryKeys.physicalNotes,
     queryFn: fetchPhysicalNotes,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

@@ -223,6 +223,7 @@ export async function buildBodyPresentationViewModel(days?: number | null): Prom
             bodyFat.latest != null
               ? resolveMetricValueTone(zoneTone, 'bodyFatPct', bodyFat.delta)
               : 'neutral',
+          guideId: 'bodyFatPct' as CompositionMetricId,
         };
       })(),
       musclePct: (() => {
@@ -242,6 +243,7 @@ export async function buildBodyPresentationViewModel(days?: number | null): Prom
             muscle.latest != null
               ? resolveMetricValueTone(zoneTone, 'musclePct', muscle.delta)
               : 'neutral',
+          guideId: 'musclePct' as CompositionMetricId,
         };
       })(),
       visceralFat: (() => {
@@ -261,6 +263,7 @@ export async function buildBodyPresentationViewModel(days?: number | null): Prom
             visceral.latest != null
               ? resolveMetricValueTone(zoneTone, 'visceralFat', visceral.delta)
               : 'neutral',
+          guideId: 'visceralFat' as CompositionMetricId,
         };
       })(),
     },
@@ -315,58 +318,22 @@ export async function buildBodyPresentationViewModel(days?: number | null): Prom
     });
   }
 
+  // bodyFatPct/musclePct/visceralFat are already shown in hero.heroMini above —
+  // ensureExplainer keeps the explainer modal available for them without a
+  // second, duplicate trajectoryCards tile.
   if (bodyFat.latest != null) {
     const metricId: CompositionMetricId = 'bodyFatPct';
-    const valueDisplay = `${bodyFat.latest} %`;
-    const deltaFooter = buildMetricDeltaFooter(metricId, bodyFat.delta);
-    const interpretation = getGuide(metricId).interpret(bodyFat.latest, compositionContext);
-    ensureExplainer(metricId, bodyFat.latest, valueDisplay);
-    trajectoryCards.push({
-      cardId: metricId,
-      guideId: metricId,
-      label: 'Masse grasse',
-      valueDisplay,
-      footer: deltaFooter?.footer,
-      footerTone: deltaFooter?.footerTone,
-      footerHint: deltaFooter?.footerHint ?? undefined,
-      tone: resolveMetricValueTone(interpretation.tone, metricId, bodyFat.delta),
-    });
+    ensureExplainer(metricId, bodyFat.latest, `${bodyFat.latest} %`);
   }
 
   if (muscle.latest != null) {
     const metricId: CompositionMetricId = 'musclePct';
-    const valueDisplay = `${muscle.latest} %`;
-    const deltaFooter = buildMetricDeltaFooter(metricId, muscle.delta);
-    const interpretation = getGuide(metricId).interpret(muscle.latest, compositionContext);
-    ensureExplainer(metricId, muscle.latest, valueDisplay);
-    trajectoryCards.push({
-      cardId: metricId,
-      guideId: metricId,
-      label: 'Muscle',
-      valueDisplay,
-      footer: deltaFooter?.footer,
-      footerTone: deltaFooter?.footerTone,
-      footerHint: deltaFooter?.footerHint ?? undefined,
-      tone: resolveMetricValueTone(interpretation.tone, metricId, muscle.delta),
-    });
+    ensureExplainer(metricId, muscle.latest, `${muscle.latest} %`);
   }
 
   if (visceral.latest != null) {
     const metricId: CompositionMetricId = 'visceralFat';
-    const valueDisplay = `${visceral.latest}`;
-    const deltaFooter = buildMetricDeltaFooter(metricId, visceral.delta);
-    const interpretation = getGuide(metricId).interpret(visceral.latest, compositionContext);
-    ensureExplainer(metricId, visceral.latest, valueDisplay);
-    trajectoryCards.push({
-      cardId: metricId,
-      guideId: metricId,
-      label: 'Graisse viscérale',
-      valueDisplay,
-      footer: deltaFooter?.footer,
-      footerTone: deltaFooter?.footerTone,
-      footerHint: deltaFooter?.footerHint ?? undefined,
-      tone: resolveMetricValueTone(interpretation.tone, metricId, visceral.delta),
-    });
+    ensureExplainer(metricId, visceral.latest, `${visceral.latest}`);
   }
 
   if (latest.fatFreeWeightKg != null) {

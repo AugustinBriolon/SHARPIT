@@ -286,7 +286,6 @@ export function useCreateConversation() {
           return [summary, ...withoutDuplicate];
         },
       );
-      queryClient.invalidateQueries({ queryKey: queryKeys.conversations });
     },
   });
 }
@@ -312,14 +311,33 @@ export function useSaveConversation() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(queryKeys.conversation(data.id), data);
-      queryClient.invalidateQueries({ queryKey: queryKeys.conversations });
+      queryClient.setQueryData<ClientConversationSummary[] | undefined>(
+        queryKeys.conversations,
+        (existing) => {
+          if (!existing) return existing;
+          return existing.map((item) =>
+            item.id === data.id
+              ? {
+                  ...item,
+                  title: data.title,
+                  updatedAt: data.updatedAt,
+                }
+              : item,
+          );
+        },
+      );
     },
   });
 }
 
 export function useRenameConversation() {
   const queryClient = useQueryClient();
-  return useMutation<ClientConversationSummary, Error, { id: string; title: string }>({
+  return useMutation<
+    ClientConversationSummary,
+    Error,
+    { id: string; title: string },
+    { previous: ClientConversationSummary[] | undefined }
+  >({
     mutationFn: async ({ id, title }) => {
       const res = await fetch(`/api/coach/conversations/${id}`, {
         method: 'PATCH',
@@ -336,15 +354,39 @@ export function useRenameConversation() {
         updatedAt: new Date(data.updatedAt),
       } as ClientConversationSummary;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.conversations });
+    onMutate: async ({ id, title }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.conversations });
+      const previous = queryClient.getQueryData<ClientConversationSummary[]>(
+        queryKeys.conversations,
+      );
+      if (previous) {
+        queryClient.setQueryData(
+          queryKeys.conversations,
+          previous.map((item) => (item.id === id ? { ...item, title } : item)),
+        );
+      }
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKeys.conversations, context.previous);
+      }
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData<ClientConversationSummary[] | undefined>(
+        queryKeys.conversations,
+        (existing) => {
+          if (!existing) return [data];
+          return existing.map((item) => (item.id === data.id ? data : item));
+        },
+      );
     },
   });
 }
 
 export function useDeleteConversation() {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, string>({
+  return useMutation<void, Error, string, { previous: ClientConversationSummary[] | undefined }>({
     mutationFn: async (id) => {
       const res = await fetch(`/api/coach/conversations/${id}`, {
         method: 'DELETE',
@@ -354,9 +396,25 @@ export function useDeleteConversation() {
         throw new Error(data?.error ?? 'Suppression impossible.');
       }
     },
-    onSuccess: (_data, id) => {
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.conversations });
+      const previous = queryClient.getQueryData<ClientConversationSummary[]>(
+        queryKeys.conversations,
+      );
+      if (previous) {
+        queryClient.setQueryData(
+          queryKeys.conversations,
+          previous.filter((item) => item.id !== id),
+        );
+      }
       queryClient.removeQueries({ queryKey: queryKeys.conversation(id) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.conversations });
+      return { previous };
+    },
+    onError: (_err, id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKeys.conversations, context.previous);
+      }
+      void queryClient.invalidateQueries({ queryKey: queryKeys.conversation(id) });
     },
   });
 }

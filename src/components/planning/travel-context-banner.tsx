@@ -4,9 +4,10 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ChevronRight, MapPin, X } from 'lucide-react';
 import Link from 'next/link';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useCoachMemoryMutations } from '@/hooks/use-coach-memory';
 import { queryKeys } from '@/lib/query/keys';
 import { asLocalCalendarDate } from '@/lib/travel-context/calendar-date';
 
@@ -22,7 +23,7 @@ type TravelContextResponse = {
 };
 
 export function TravelContextBanner() {
-  const queryClient = useQueryClient();
+  const { remove } = useCoachMemoryMutations();
   const query = useQuery({
     queryKey: queryKeys.travelContext,
     queryFn: async (): Promise<TravelContextResponse> => {
@@ -31,18 +32,6 @@ export function TravelContextBanner() {
       return res.json();
     },
     staleTime: 60_000,
-  });
-
-  const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await fetch(`/api/coach-memory/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('delete failed');
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.travelContext });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.coachMemory });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
-    },
   });
 
   const active = query.data?.active;
@@ -75,7 +64,6 @@ export function TravelContextBanner() {
         </Badge>
         <Button
           aria-label="Supprimer le contexte voyage de la mémoire du coach"
-          disabled={remove.isPending}
           size="icon"
           type="button"
           variant="ghost"

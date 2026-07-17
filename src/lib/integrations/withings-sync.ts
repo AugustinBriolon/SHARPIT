@@ -145,45 +145,65 @@ export async function syncWithingsHealth(options?: {
   let updated = 0;
   const weightByDay = new Map<string, WithingsParsedMeasurement>();
 
-  for (const measurement of measurements) {
-    const data = measurementToPrisma(measurement);
-    const existing = await prisma.bodyCompositionMeasurement.findUnique({
+  if (measurements.length > 0) {
+    const externalIds = measurements.map((m) => m.grpid);
+    const existingRows = await prisma.bodyCompositionMeasurement.findMany({
       where: {
-        source_externalId: {
-          source: BodyCompositionSource.WITHINGS,
-          externalId: measurement.grpid,
-        },
+        source: BodyCompositionSource.WITHINGS,
+        externalId: { in: externalIds },
       },
-      select: { id: true },
+      select: { externalId: true },
     });
+    const existingIds = new Set(
+      existingRows.map((r) => r.externalId).filter((id): id is string => id != null),
+    );
 
-    if (existing) {
-      await prisma.bodyCompositionMeasurement.update({
-        where: {
-          source_externalId: {
-            source: BodyCompositionSource.WITHINGS,
-            externalId: measurement.grpid,
-          },
-        },
-        data,
+    const toCreate: Prisma.BodyCompositionMeasurementCreateManyInput[] = [];
+    const toCreateMeasurements: WithingsParsedMeasurement[] = [];
+    const updateOps: Promise<unknown>[] = [];
+
+    for (const measurement of measurements) {
+      const data = measurementToPrisma(measurement);
+      const dayKey = format(measurement.measuredAt, 'yyyy-MM-dd');
+      const prev = weightByDay.get(dayKey);
+      if (!prev || measurement.measuredAt.getTime() > prev.measuredAt.getTime()) {
+        weightByDay.set(dayKey, measurement);
+      }
+
+      if (existingIds.has(measurement.grpid)) {
+        updateOps.push(
+          prisma.bodyCompositionMeasurement.update({
+            where: {
+              source_externalId: {
+                source: BodyCompositionSource.WITHINGS,
+                externalId: measurement.grpid,
+              },
+            },
+            data,
+          }),
+        );
+      } else {
+        toCreate.push(data as Prisma.BodyCompositionMeasurementCreateManyInput);
+        toCreateMeasurements.push(measurement);
+      }
+    }
+
+    if (toCreate.length > 0) {
+      const result = await prisma.bodyCompositionMeasurement.createMany({
+        data: toCreate,
+        skipDuplicates: true,
       });
-      updated += 1;
-    } else {
-      await prisma.bodyCompositionMeasurement.create({ data });
-      await ingestWithingsMeasurement(measurement);
-      imported += 1;
+      imported = result.count;
+      await Promise.all(toCreateMeasurements.map((m) => ingestWithingsMeasurement(m)));
     }
 
-    const dayKey = format(measurement.measuredAt, 'yyyy-MM-dd');
-    const prev = weightByDay.get(dayKey);
-    if (!prev || measurement.measuredAt.getTime() > prev.measuredAt.getTime()) {
-      weightByDay.set(dayKey, measurement);
+    if (updateOps.length > 0) {
+      await Promise.all(updateOps);
+      updated = updateOps.length;
     }
   }
 
-  for (const measurement of weightByDay.values()) {
-    await upsertDailyWeightFromWithings(measurement);
-  }
+  await Promise.all([...weightByDay.values()].map((m) => upsertDailyWeightFromWithings(m)));
 
   await prisma.withingsAccount.update({
     where: { id: ACCOUNT_ID },

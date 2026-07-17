@@ -21,6 +21,14 @@ type WellnessCheckinStatus = {
   refresh: () => void;
 };
 
+type WellnessPayload = {
+  mood: number;
+  energyLevel: number;
+  perceivedSoreness: number;
+  stressLevel: number;
+  notes?: string | null;
+};
+
 async function fetchWellnessStatus(trainingDayId: string): Promise<{ completed: boolean }> {
   const res = await fetch(`/api/wellness-checkin?trainingDayId=${trainingDayId}`);
   if (!res.ok) throw new Error('status');
@@ -38,13 +46,7 @@ export function useWellnessCheckin(date: Date = new Date()): WellnessCheckinStat
   });
 
   const mutation = useMutation({
-    mutationFn: async (payload: {
-      mood: number;
-      energyLevel: number;
-      perceivedSoreness: number;
-      stressLevel: number;
-      notes?: string | null;
-    }) => {
+    mutationFn: async (payload: WellnessPayload) => {
       const res = await fetch('/api/wellness-checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -52,24 +54,30 @@ export function useWellnessCheckin(date: Date = new Date()): WellnessCheckinStat
       });
       if (!res.ok) throw new Error('submit');
     },
-    onSuccess: () => {
-      queryClient.setQueryData(queryKeys.wellnessCheckin(trainingDayId), { completed: true });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.today(trainingDayId) });
+    onMutate: async () => {
+      const key = queryKeys.wellnessCheckin(trainingDayId);
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<{ completed: boolean }>(key);
+      queryClient.setQueryData(key, { completed: true });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKeys.wellnessCheckin(trainingDayId), context.previous);
+      }
+    },
+    onSettled: () => {
+      // Background reconcile — keep Today ViewModel painted; soft refresh Twin expression.
       void queryClient.invalidateQueries({ queryKey: queryKeys.athleteSnapshot(trainingDayId) });
       void queryClient.invalidateQueries({
         queryKey: queryKeys.presentationToday(trainingDayId),
       });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.today(trainingDayId) });
     },
   });
 
   const submit = useCallback(
-    async (payload: {
-      mood: number;
-      energyLevel: number;
-      perceivedSoreness: number;
-      stressLevel: number;
-      notes?: string | null;
-    }) => {
+    async (payload: WellnessPayload) => {
       await mutation.mutateAsync(payload);
     },
     [mutation],
@@ -85,8 +93,8 @@ export function useWellnessCheckin(date: Date = new Date()): WellnessCheckinStat
 
   return {
     completed: query.data?.completed ?? false,
-    loading: query.isPending,
-    isPending: query.isPending,
+    loading: query.isPending && query.data == null,
+    isPending: query.isPending && query.data == null,
     submitting: mutation.isPending,
     error,
     submit,

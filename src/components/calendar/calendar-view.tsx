@@ -167,7 +167,7 @@ export function CalendarView({
       if (!response.ok) {
         throw new Error(data?.error ?? 'Enregistrement échoué');
       }
-      await queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: queryKeys.googleEvents(gridFrom, gridTo),
       });
     } catch (err) {

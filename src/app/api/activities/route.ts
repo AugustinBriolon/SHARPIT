@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ActivityType } from '@prisma/client';
 import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
-import {
-  enrichActivityObservedContext,
-  enrichTodayActivitiesContext,
-} from '@/lib/activity/enrich-observed-context';
+import { enrichActivityObservedContext } from '@/lib/activity/enrich-observed-context';
 import { buildActivityCreateData } from '@/lib/activity-service';
 import { runActivityNarrativeAnalysis } from '@/lib/activity-narrative';
 import { syncManualActivityObservations } from '@/lib/manual-observation-sync';
@@ -20,9 +17,8 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get('limit');
     const sinceDays = searchParams.get('sinceDays');
 
-    void enrichTodayActivitiesContext(prisma).catch((error) => {
-      console.error('[activities/GET/enrich-today]', error);
-    });
+    // Weather / narrative enrichment runs on athlete-state refresh & provider sync —
+    // never as a side-effect of listing activities (avoids Neon work on every GET).
 
     const activities = await getActivitiesList({
       type: type && Object.values(ActivityType).includes(type) ? type : undefined,

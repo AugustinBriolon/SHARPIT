@@ -31,8 +31,8 @@ export function buildBodyInsightBundle(input: BodyInsightInput) {
 
   primary.push({
     id: 'body:trajectory',
-    title: 'Trajectoire corporelle',
-    summary: trajectorySummary,
+    title: trajectorySummary,
+    summary: 'Trajectoire corporelle',
     explanation:
       'Une mesure isolée dit peu. La valeur produit vient surtout de la direction prise sur plusieurs jours et de sa cohérence avec la composition.',
     evidence: trajectoryEvidence,
@@ -54,8 +54,8 @@ export function buildBodyInsightBundle(input: BodyInsightInput) {
 
     supporting.push({
       id: 'body:hydration-context',
-      title: 'Contexte de mesure',
-      summary: hydrationSummary,
+      title: hydrationSummary,
+      summary: 'Contexte de mesure',
       explanation:
         "Le pourcentage d'eau est surtout utile pour juger si la pesée du jour est représentative ou très influencée par l'hydratation.",
       evidence: [`Eau corporelle : ${input.waterPercent.toFixed(1)} %`],
@@ -69,11 +69,11 @@ export function buildBodyInsightBundle(input: BodyInsightInput) {
   if (input.visceralFat != null) {
     contextual.push({
       id: 'body:visceral-risk',
-      title: 'Signal santé long terme',
-      summary:
+      title:
         input.visceralFat >= 12
           ? 'Graisse viscérale à surveiller'
           : 'Pas de signal fort de risque viscéral',
+      summary: 'Signal santé long terme',
       explanation:
         'La graisse viscérale ne pilote pas la séance du jour, mais elle donne du contexte sur la trajectoire santé globale.',
       evidence: [`Indice viscéral : ${input.visceralFat}`],
@@ -87,8 +87,8 @@ export function buildBodyInsightBundle(input: BodyInsightInput) {
   if (input.sourceLabel || input.measuredAtLabel) {
     contextual.push({
       id: 'body:source-context',
-      title: 'Contexte de pesée',
-      summary: input.sourceLabel ?? 'Source de mesure',
+      title: input.sourceLabel ?? 'Source de mesure',
+      summary: 'Contexte de pesée',
       explanation:
         'Le moment et la source de la mesure aident à comparer les tendances sans surinterpréter une valeur du jour.',
       evidence: [input.measuredAtLabel, input.sourceLabel].filter((line): line is string =>

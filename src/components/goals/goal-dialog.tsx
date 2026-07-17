@@ -109,9 +109,20 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
 
   async function submitPayload(payload: GoalPayload) {
     if (isEdit && goal) {
-      await update.mutateAsync({ id: goal.id, data: payload });
+      update.mutate(
+        { id: goal.id, data: payload },
+        {
+          onError: (err) => {
+            setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+          },
+        },
+      );
     } else {
-      await create.mutateAsync(payload);
+      create.mutate(payload, {
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+        },
+      });
     }
     onClose();
   }
@@ -137,11 +148,7 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
       targetPerformance: str('targetPerformance'),
     };
 
-    try {
-      await submitPayload(payload);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
-    }
+    await submitPayload(payload);
   }
 
   async function handleLegacyMetricSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -168,31 +175,23 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
       targetDate: str('targetDate'),
     };
 
-    try {
-      await submitPayload(payload);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
-    }
+    await submitPayload(payload);
   }
 
   async function handleStructuredMetricSubmit(result: MetricGoalFormResult) {
-    try {
-      await submitPayload({
-        title: result.title,
-        kind: GoalKind.METRIC,
-        horizon: result.horizon,
-        metricKey: result.metricKey,
-        startValue: result.startValue,
-        currentValue: result.currentValue,
-        targetValue: result.targetValue,
-        unit: result.unit,
-        lowerIsBetter: result.lowerIsBetter,
-        notes: result.notes,
-        targetDate: result.targetDate,
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
-    }
+    await submitPayload({
+      title: result.title,
+      kind: GoalKind.METRIC,
+      horizon: result.horizon,
+      metricKey: result.metricKey,
+      startValue: result.startValue,
+      currentValue: result.currentValue,
+      targetValue: result.targetValue,
+      unit: result.unit,
+      lowerIsBetter: result.lowerIsBetter,
+      notes: result.notes,
+      targetDate: result.targetDate,
+    });
   }
 
   const useStructuredMetricForm = variant === 'performance' || variant === 'period';

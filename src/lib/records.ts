@@ -223,15 +223,15 @@ interface MetricActivity {
   duration: number | null;
   runMetrics: {
     distanceM: number | null;
-    elevationM: number | null;
     paceSecPerKm: number | null;
+    elevationM?: number | null;
   } | null;
   bikeMetrics: {
     normalizedPower: number | null;
     avgPower: number | null;
-    elevationM: number | null;
+    elevationM?: number | null;
   } | null;
-  swimMetrics: {
+  swimMetrics?: {
     distanceM: number | null;
     avgPaceSecPer100m: number | null;
   } | null;
@@ -562,17 +562,19 @@ export async function computeRankedRecords(): Promise<RecordsPayload> {
 // ---------------------------------------------------------------------------
 
 /** Groupes de records persistés (= colonne `group` en base). */
-export type RecordGroup = 'run' | 'bike' | 'swim' | 'power' | 'run-best';
+export type RecordGroup =
+  'run' | 'bike' | 'swim' | 'power' | 'run-best' | 'run-effort' | 'bike-effort';
 
 const METRIC_GROUPS: ReadonlyArray<RecordGroup> = ['run', 'bike', 'swim'];
+const EFFORT_GROUPS: ReadonlyArray<RecordGroup> = ['run-effort', 'bike-effort'];
 
 /** Groupes de records impactés par une activité d'un type donné. */
 function groupsForType(type: ActivityType): RecordGroup[] {
   switch (type) {
     case ActivityType.RUN:
-      return ['run', 'run-best'];
+      return ['run', 'run-best', 'run-effort'];
     case ActivityType.BIKE:
-      return ['bike', 'power'];
+      return ['bike', 'power', 'bike-effort'];
     case ActivityType.SWIM:
       return ['swim'];
     default:
@@ -629,6 +631,59 @@ function runBestsToRows(bests: RunBestCategory[]): RecordRow[] {
   );
 }
 
+/** Persist scatter-reference efforts (no activity join on GET). */
+function effortsToRows(runEfforts: RunEffort[], bikeEfforts: BikeEffort[]): RecordRow[] {
+  const now = new Date();
+  return [
+    ...runEfforts.map((e, index) => ({
+      group: 'run-effort' as const,
+      category: `run-effort-${index}`,
+      label: 'Run effort',
+      rank: 1,
+      value: e.meters,
+      displayValue: String(e.seconds),
+      sublabel: null,
+      activityId: null,
+      activityDate: now,
+      activityTitle: null,
+    })),
+    ...bikeEfforts.map((e, index) => ({
+      group: 'bike-effort' as const,
+      category: `bike-effort-${index}`,
+      label: 'Bike effort',
+      rank: 1,
+      value: e.watts,
+      displayValue: String(e.seconds),
+      sublabel: null,
+      activityId: null,
+      activityDate: now,
+      activityTitle: null,
+    })),
+  ];
+}
+
+function effortsFromRows(rows: Array<{ group: string; value: number; displayValue: string }>): {
+  runEfforts: RunEffort[];
+  bikeEfforts: BikeEffort[];
+} {
+  const runEfforts: RunEffort[] = [];
+  const bikeEfforts: BikeEffort[] = [];
+  for (const row of rows) {
+    if (row.group === 'run-effort') {
+      const seconds = Number(row.displayValue);
+      if (Number.isFinite(seconds) && seconds > 0) {
+        runEfforts.push({ meters: row.value, seconds });
+      }
+    } else if (row.group === 'bike-effort') {
+      const seconds = Number(row.displayValue);
+      if (Number.isFinite(seconds) && seconds > 0 && row.value > 0) {
+        bikeEfforts.push({ seconds, watts: row.value });
+      }
+    }
+  }
+  return { runEfforts, bikeEfforts };
+}
+
 async function loadMetricActivities(): Promise<MetricActivity[]> {
   const rows = await prisma.activity.findMany({
     select: {
@@ -668,9 +723,21 @@ async function buildRowsForGroups(groups: Set<RecordGroup>): Promise<RecordRow[]
   const metricGroups = [...groups].filter((g): g is 'run' | 'bike' | 'swim' =>
     METRIC_GROUPS.includes(g),
   );
-  if (metricGroups.length) {
-    const metrics = await loadMetricActivities();
+  const needsEfforts = EFFORT_GROUPS.some((g) => groups.has(g));
+  const metrics = metricGroups.length > 0 || needsEfforts ? await loadMetricActivities() : null;
+
+  if (metrics && metricGroups.length) {
     for (const g of metricGroups) rows.push(...metricRowsForGroup(g, metrics));
+  }
+
+  if (metrics && needsEfforts) {
+    const { runEfforts, bikeEfforts } = computeMetricEfforts(metrics);
+    if (groups.has('run-effort')) {
+      rows.push(...effortsToRows(runEfforts, []).filter((r) => r.group === 'run-effort'));
+    }
+    if (groups.has('bike-effort')) {
+      rows.push(...effortsToRows([], bikeEfforts).filter((r) => r.group === 'bike-effort'));
+    }
   }
 
   if (groups.has('power')) {
@@ -798,6 +865,7 @@ export async function recomputeAndStoreRecords(): Promise<RecordsPayload> {
     ...payload.prs.swim.flatMap((c) => categoryToRows('swim', c)),
     ...powerCurveToRows(payload.powerCurve),
     ...runBestsToRows(payload.runBests),
+    ...effortsToRows(payload.runEfforts, payload.bikeEfforts),
   ];
 
   await prisma.$transaction([
@@ -908,28 +976,13 @@ function emptyPayload(totalActivities = 0, streamsAnalyzed = 0): RecordsPayload 
 
 /** Lit les records stockés et les remet en forme pour le client. */
 export async function getStoredRecords(): Promise<RecordsPayload> {
-  const [rows, totalActivities, streamsAnalyzed, effortMetrics] = await Promise.all([
+  const [rows, totalActivities, streamsAnalyzed] = await Promise.all([
     prisma.performanceRecord.findMany({
       orderBy: [{ category: 'asc' }, { rank: 'asc' }],
     }),
     prisma.activity.count(),
     prisma.activityStream.count({ where: { available: true } }),
-    prisma.activity.findMany({
-      where: { type: { in: [ActivityType.RUN, ActivityType.BIKE] } },
-      select: {
-        id: true,
-        type: true,
-        date: true,
-        title: true,
-        duration: true,
-        runMetrics: { select: { distanceM: true, elevationM: true, paceSecPerKm: true } },
-        bikeMetrics: { select: { normalizedPower: true, avgPower: true, elevationM: true } },
-        swimMetrics: { select: { distanceM: true, avgPaceSecPer100m: true } },
-      },
-    }),
   ]);
-
-  const { runEfforts, bikeEfforts } = computeMetricEfforts(effortMetrics as MetricActivity[]);
 
   // Premier accès (rien de stocké) : on calcule à la volée puis on stocke.
   if (rows.length === 0) {
@@ -937,8 +990,23 @@ export async function getStoredRecords(): Promise<RecordsPayload> {
     return emptyPayload(totalActivities, streamsAnalyzed);
   }
 
+  // Legacy rows without persisted efforts: one-time backfill, then read-only path.
+  const hasEffortRows = rows.some((r) => r.group === 'run-effort' || r.group === 'bike-effort');
+  let runEfforts: RunEffort[] = [];
+  let bikeEfforts: BikeEffort[] = [];
+  if (hasEffortRows) {
+    ({ runEfforts, bikeEfforts } = effortsFromRows(rows));
+  } else if (totalActivities > 0) {
+    await recomputeRecordGroups(new Set(['run-effort', 'bike-effort']));
+    const effortRows = await prisma.performanceRecord.findMany({
+      where: { group: { in: ['run-effort', 'bike-effort'] } },
+    });
+    ({ runEfforts, bikeEfforts } = effortsFromRows(effortRows));
+  }
+
   const byCategory = new Map<string, typeof rows>();
   for (const row of rows) {
+    if (row.group === 'run-effort' || row.group === 'bike-effort') continue;
     const list = byCategory.get(row.category) ?? [];
     list.push(row);
     byCategory.set(row.category, list);

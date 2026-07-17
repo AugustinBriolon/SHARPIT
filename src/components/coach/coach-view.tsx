@@ -272,36 +272,105 @@ export function CoachView() {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-primary text-xs font-medium uppercase">Coach</p>
-          <h1 className="font-heading mt-2 text-3xl font-semibold">Fil & conversations</h1>
-          <p className="text-muted-foreground mt-1">
-            Messages du jour et chat libre avec ton coach.{' '}
-            <Link className="text-primary hover:underline" href="/profil">
-              Mon profil
-            </Link>
-          </p>
-        </div>
-        <Button onClick={() => setGeneratorOpen(true)}>
-          <Sparkles className="size-4" />
-          Générer ma semaine
-        </Button>
-      </StickyHeader>
+  const conversationListEl = (
+    <CoachConversationList
+      activeId={selectedId}
+      conversations={conversations}
+      creating={createConversation.isPending}
+      loading={conversationsQuery.isPending}
+      onDelete={handleDeleteConversation}
+      onNew={handleNewConversation}
+      onSelect={setActiveId}
+    />
+  );
 
-      <div className="flex min-h-[70vh] flex-col gap-3 lg:h-[70vh] lg:flex-row lg:gap-4">
-        <CoachConversationList
-          activeId={selectedId}
-          conversations={conversations}
-          creating={createConversation.isPending}
-          loading={conversationsQuery.isPending}
-          onDelete={handleDeleteConversation}
-          onNew={handleNewConversation}
-          onSelect={setActiveId}
-        />
-        {renderChatPanel()}
+  const mobileHeader = (
+    <div className="flex flex-col gap-2 px-3 pt-2 pb-2">
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="font-heading truncate text-lg font-semibold">Fil & conversations</h1>
+        <Button
+          aria-label="Générer ma semaine"
+          size="icon"
+          variant="outline"
+          onClick={() => setGeneratorOpen(true)}
+        >
+          <Sparkles className="size-4" />
+        </Button>
+      </div>
+      {conversationListEl}
+    </div>
+  );
+
+  const mobileChatBody =
+    selectedId && (isEphemeral || activeConversation.data) ? (
+      <CoachChat
+        key={selectedId}
+        autoReply={autoReplyId === selectedId}
+        bootstrapPrompt={latchedBootstrapPrompt}
+        conversationId={selectedId}
+        header={mobileHeader}
+        initialMessages={resolveChatInitialMessages()}
+        isEphemeral={isEphemeral}
+        onAutoReplyStarted={() => setAutoReplyId(null)}
+        onConversationCreated={(id) => {
+          setEphemeralIds((prev) => {
+            const next = new Set(prev);
+            next.delete(selectedId);
+            return next;
+          });
+          setActiveId(id);
+          setAutoReplyId(id);
+        }}
+      />
+    ) : (
+      <div className="flex h-full min-h-0 flex-col">
+        {mobileHeader}
+        <div className="flex flex-1 items-center justify-center p-6 text-center">
+          {selectedId && activeConversation.isLoading ? (
+            <Skeleton className="h-24 w-full rounded-xl" />
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              Sélectionne une conversation ou démarre-en une nouvelle.
+            </p>
+          )}
+        </div>
+      </div>
+    );
+
+  return (
+    <div>
+      {/* Mobile: fixed, app-like chat layout — header+list sticky/blurred over the
+          scrolling thread, composer pinned to the screen bottom, page itself never
+          scrolls. Ends exactly where BottomNav begins (see mobile-shell.tsx). */}
+      <div
+        className="bg-background safe-area-top fixed inset-x-0 top-0 z-30 flex flex-col lg:hidden"
+        style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))' }}
+      >
+        {mobileChatBody}
+      </div>
+
+      <div className="hidden space-y-6 lg:block">
+        <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-primary text-xs font-medium uppercase">Coach</p>
+            <h1 className="font-heading mt-2 text-3xl font-semibold">Fil & conversations</h1>
+            <p className="text-muted-foreground mt-1">
+              Messages du jour et chat libre avec ton coach.{' '}
+              <Link className="text-primary hover:underline" href="/profil">
+                Mon profil
+              </Link>
+            </p>
+          </div>
+          <Button onClick={() => setGeneratorOpen(true)}>
+            <Sparkles className="size-4" />
+            Générer ma semaine
+          </Button>
+        </StickyHeader>
+
+        <div className="flex h-[calc(100dvh-180px)] flex-col gap-3 lg:flex-row lg:gap-4">
+          {conversationListEl}
+          {renderChatPanel()}
+        </div>
       </div>
 
       {generatorOpen && <PlanGenerator onClose={() => setGeneratorOpen(false)} />}

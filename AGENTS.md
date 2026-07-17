@@ -17,5 +17,6 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — code structure and conventions
 - [`docs/domain/DOMAIN.md`](docs/domain/DOMAIN.md) — domain concepts and Digital Twin
 - [`docs/EVENT_DRIVEN_ARCHITECTURE.md`](docs/EVENT_DRIVEN_ARCHITECTURE.md) — sync and orchestration (athlete-centric)
+- [`docs/INSTANT_UX_ARCHITECTURE.md`](docs/INSTANT_UX_ARCHITECTURE.md) — optimistic UI, cache strategy, Instant / Background / Blocking
 - [`docs/ATHLETE_SNAPSHOT.md`](docs/ATHLETE_SNAPSHOT.md) — canonical athlete state (Morning Experience)
 - [`docs/SNAPSHOT_QUALITY_V1_AUDIT.md`](docs/SNAPSHOT_QUALITY_V1_AUDIT.md) — snapshot field audit & quality gate

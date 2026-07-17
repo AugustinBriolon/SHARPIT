@@ -3,7 +3,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { toast } from '@/components/ui/toast';
 
-/** Identifiant temporaire d'une entité créée de façon optimiste. */
+/** Temporary entity id for optimistic creates. */
 export function tempId(): string {
   return `optimistic-${crypto.randomUUID()}`;
 }
@@ -12,14 +12,24 @@ export function isTempId(id: string): boolean {
   return id.startsWith('optimistic-');
 }
 
-interface ListOptimisticConfig<TItem extends { id: string }, TVars> {
+interface ListOptimisticConfig<TItem extends { id: string }, TVars, TData = unknown> {
   queryClient: QueryClient;
   queryKey: readonly unknown[];
-  /** Transforme la liste en cache à partir des variables de la mutation. */
+  /** Transforms the cached list from mutation variables. */
   apply: (prev: TItem[], vars: TVars) => TItem[];
-  /** Message de succès (toast). Silencieux si absent. */
+  /**
+   * Optional: replace optimistic rows with the server payload on success.
+   * Prefer this over a full invalidate when the response shape is known.
+   */
+  reconcile?: (prev: TItem[], data: TData, vars: TVars) => TItem[];
+  /**
+   * When false, skip settle invalidation (use when `reconcile` is enough).
+   * Defaults to true for backward-compatible server resync.
+   */
+  invalidateOnSettle?: boolean;
+  /** Success toast. Silent when omitted. */
   success?: string | ((vars: TVars) => string | undefined);
-  /** Message d'erreur (toast). Un défaut générique est utilisé sinon. */
+  /** Error toast. Generic fallback otherwise. */
   error?: string;
 }
 
@@ -28,22 +38,22 @@ interface OptimisticContext<TItem> {
 }
 
 /**
- * Construit les callbacks de cycle de vie d'une mutation pour un cache de type
- * liste, avec mise à jour optimiste : patch immédiat du cache, rollback + toast
- * en cas d'erreur, resynchronisation au settle.
+ * List-cache mutation lifecycle: optimistic patch, rollback + toast on error,
+ * optional reconcile on success, optional settle invalidation.
  *
- * Usage : `useMutation({ mutationFn, ...listOptimistic({ ... }) })`.
+ * Usage: `useMutation({ mutationFn, ...listOptimistic({ ... }) })`.
  */
-export function listOptimistic<TItem extends { id: string }, TVars>({
+export function listOptimistic<TItem extends { id: string }, TVars, TData = unknown>({
   queryClient,
   queryKey,
   apply,
+  reconcile,
+  invalidateOnSettle = true,
   success,
   error,
-}: ListOptimisticConfig<TItem, TVars>) {
+}: ListOptimisticConfig<TItem, TVars, TData>) {
   return {
     onMutate: async (vars: TVars): Promise<OptimisticContext<TItem>> => {
-      // Évite qu'un refetch en cours n'écrase notre patch optimiste.
       await queryClient.cancelQueries({ queryKey });
       const previous = queryClient.getQueryData<TItem[]>(queryKey);
       if (previous) {
@@ -59,13 +69,19 @@ export function listOptimistic<TItem extends { id: string }, TVars>({
         description: err instanceof Error ? err.message : undefined,
       });
     },
-    onSuccess: (_data: unknown, vars: TVars) => {
+    onSuccess: (data: TData, vars: TVars) => {
+      if (reconcile) {
+        queryClient.setQueryData<TItem[]>(queryKey, (prev) =>
+          prev ? reconcile(prev, data, vars) : prev,
+        );
+      }
       const message = typeof success === 'function' ? success(vars) : success;
       if (message) toast.success(message);
     },
     onSettled: () => {
-      // Resynchronise avec la vérité serveur (remplace les entités temporaires).
-      queryClient.invalidateQueries({ queryKey });
+      if (invalidateOnSettle) {
+        void queryClient.invalidateQueries({ queryKey });
+      }
     },
   };
 }

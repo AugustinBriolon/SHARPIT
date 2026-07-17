@@ -107,7 +107,7 @@ export function CoachProfileContextSection({
       <div className="space-y-3">
         <Textarea
           aria-label="Contexte personnel pour le coach"
-          className="resize-y text-sm"
+          className="bg-primary/5 border-primary/30 resize-y text-sm"
           placeholder={PLACEHOLDER}
           rows={8}
           value={value}
