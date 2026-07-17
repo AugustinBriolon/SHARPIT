@@ -160,6 +160,52 @@ describe('buildPhaseNarrative', () => {
     expect(n.posture).toBe('steady');
   });
 
+  it('recovery window on a rest day never references a session that never happened', () => {
+    const ref = new Date('2026-07-07T14:00:00');
+    const dayContext = buildDailyPhaseDayContext(ref, [], []);
+    const resolution = resolveDailyPhase(
+      {
+        dayContext,
+        athlete: {
+          recommendationAvailable: true,
+          adviceActionable: true,
+          dailyStrainAvailable: false,
+          newSessionSincePriorSnapshot: false,
+          newInferenceSincePriorSnapshot: true,
+          newObservationsSincePriorSnapshot: false,
+          minutesSinceLastActivity: null,
+          minutesSinceSnapshotGenerated: 180,
+          priorPhase: 'MORNING',
+          sleepLoggedTonight: false,
+        },
+        localHour: 14,
+      },
+      ref,
+    );
+    expect(resolution.phase).toBe('RECOVERY_WINDOW');
+    expect(resolution.signals.sessionStatus).toBe('NONE_TODAY');
+
+    const n = buildPhaseNarrative({
+      resolution,
+      verdict: 'TRAIN_EASY',
+      adviceActionable: true,
+      actionLine: null,
+      sportLabel: null,
+      totalTssToday: null,
+      dailyStrainScore: null,
+      dailyStrainAvailable: false,
+    });
+
+    expect(n.heroEyebrow).toBe('Jour de repos');
+    expect(n.heroHeadline).not.toMatch(/après|séance/i);
+    for (const reminder of n.adaptationReminders) {
+      expect(reminder).not.toMatch(/dans l’heure qui suit|dans les 2 h/i);
+    }
+    expect(pickAdaptationReminders('RECOVERY_WINDOW', 3, true)).toEqual(
+      n.adaptationReminders.slice(0, 3),
+    );
+  });
+
   it('end of day targets tomorrow impact', () => {
     const ref = new Date('2026-07-07T22:30:00');
     const dayContext = buildDailyPhaseDayContext(

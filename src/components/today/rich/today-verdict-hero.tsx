@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { PhysioRail } from '@/components/ui/physio-rail';
 
 /** Labels temporels courts — peuvent précéder l'action sur une même ligne. */
-const TEMPORAL_CONTEXT_LABELS = new Set(['Ce soir', 'Après la séance']);
+const TEMPORAL_CONTEXT_LABELS = new Set(['Ce soir', 'Après la séance', 'Jour de repos']);
 
 function canMergeContextWithAction(eyebrow: string, action: string | null): action is string {
   if (!action) return false;

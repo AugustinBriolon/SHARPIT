@@ -117,7 +117,7 @@ function CompositionSkeleton() {
             <Skeleton className="h-10 w-32 border-0" />
             <Skeleton className="h-4 w-40 rounded-full border-0" />
           </div>
-          <div className="grid min-w-[min(100%,280px)] grid-cols-3 gap-3 sm:gap-4">
+          <div className="grid min-w-[min(100%,280px)] grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="bg-card/60 rounded-2xl border px-3 py-3">
                 <Skeleton className="h-2.5 w-14 rounded-full border-0" />
@@ -245,7 +245,7 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
             ) : null}
           </div>
 
-          <div className="grid min-w-[min(100%,280px)] grid-cols-3 gap-3 sm:gap-4">
+          <div className="grid min-w-[min(100%,280px)] grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
             <HeroMini
               deltaDisplay={vm.hero.heroMini.bodyFatPct.deltaDisplay}
               deltaHint={vm.hero.heroMini.bodyFatPct.deltaHint}

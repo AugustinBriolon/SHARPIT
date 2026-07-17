@@ -49,6 +49,19 @@ const PHASE_HERO_EYEBROW: Partial<Record<DailyPhase, string>> = {
   RECOVERY_WINDOW: 'Après la séance',
 };
 
+/**
+ * RECOVERY_WINDOW covers two distinct real situations (resolve.ts): just after a
+ * completed session, or a rest day that's evolved past morning with no session at
+ * all. All copy in this phase defaulted to the post-session framing ("Après la
+ * séance") regardless — nonsensical on a day with zero training. This flag routes
+ * to rest-day-specific copy instead.
+ */
+function isRestDayRecoveryWindow(input: PhaseNarrativeInput): boolean {
+  return (
+    phaseOf(input) === 'RECOVERY_WINDOW' && input.resolution.signals.sessionStatus === 'NONE_TODAY'
+  );
+}
+
 function postureLabelForPhase(posture: TodayPosture, phase: DailyPhase): string | null {
   if (phase === 'END_OF_DAY' || phase === 'SESSION_COMPLETED') return null;
 
@@ -63,6 +76,14 @@ function postureLabelForPhase(posture: TodayPosture, phase: DailyPhase): string 
       return 'À préciser';
   }
 }
+
+/** Rest-day equivalent of RECOVERY_WINDOW's reminders — no session to reference. */
+const REST_DAY_ADAPTATION_REMINDERS = [
+  'Hydrate-toi régulièrement dans la journée.',
+  'Repas équilibrés, riches en protéines pour la récupération musculaire.',
+  'Mobilité ou marche légère pour rester actif sans charger.',
+  'Sommeil : c’est là que l’adaptation se consolide.',
+];
 
 const ADAPTATION_REMINDERS: Record<
   Extract<DailyPhase, 'RECOVERY_WINDOW' | 'END_OF_DAY'>,
@@ -147,8 +168,14 @@ function goalLineForPhase(input: PhaseNarrativeInput): string | null {
   return null;
 }
 
-function adaptationRemindersForPhase(phase: DailyPhase): string[] {
-  if (phase === 'RECOVERY_WINDOW' || phase === 'END_OF_DAY') {
+function adaptationRemindersForInput(input: PhaseNarrativeInput): string[] {
+  const phase = phaseOf(input);
+  if (phase === 'RECOVERY_WINDOW') {
+    return isRestDayRecoveryWindow(input)
+      ? REST_DAY_ADAPTATION_REMINDERS
+      : ADAPTATION_REMINDERS[phase];
+  }
+  if (phase === 'END_OF_DAY') {
     return ADAPTATION_REMINDERS[phase];
   }
   return [];
@@ -226,6 +253,13 @@ function sportEffortWord(sport: string, level: TodayEffortLevel | null): string 
   }
 }
 
+/** RECOVERY_WINDOW on a day with zero sessions — no "après {sport}" premise to build on. */
+function restDayRecoveryHeadline(posture: TodayPosture): string {
+  return posture === 'protect'
+    ? 'Jour de repos — récupération à préserver'
+    : 'Jour de repos — fenêtre d’adaptation ouverte';
+}
+
 function postTrainingHeadline(
   phase: 'SESSION_COMPLETED' | 'RECOVERY_WINDOW',
   input: PhaseNarrativeInput,
@@ -297,7 +331,9 @@ function headlineForPhase(input: PhaseNarrativeInput, posture: TodayPosture): st
       return postTrainingHeadline('SESSION_COMPLETED', input, posture);
 
     case 'RECOVERY_WINDOW':
-      return postTrainingHeadline('RECOVERY_WINDOW', input, posture);
+      return isRestDayRecoveryWindow(input)
+        ? restDayRecoveryHeadline(posture)
+        : postTrainingHeadline('RECOVERY_WINDOW', input, posture);
 
     case 'END_OF_DAY':
       return 'Bilan de la journée';
@@ -342,7 +378,7 @@ function sublineForPhase(input: PhaseNarrativeInput, focusPriority: string | nul
 
 export function buildPhaseNarrative(input: PhaseNarrativeInput): PhaseNarrative {
   const phase = phaseOf(input);
-  const adaptationReminders = adaptationRemindersForPhase(phase);
+  const adaptationReminders = adaptationRemindersForInput(input);
   const posture = resolvePosture(input);
   let focusPriority = focusPriorityForPhase(input, adaptationReminders);
   let headline = headlineForPhase(input, posture);
@@ -365,7 +401,9 @@ export function buildPhaseNarrative(input: PhaseNarrativeInput): PhaseNarrative 
   }
 
   const narrative: PhaseNarrative = {
-    heroEyebrow: PHASE_HERO_EYEBROW[phase] ?? input.resolution.primaryQuestion,
+    heroEyebrow: isRestDayRecoveryWindow(input)
+      ? 'Jour de repos'
+      : (PHASE_HERO_EYEBROW[phase] ?? input.resolution.primaryQuestion),
     heroHeadline: headline,
     heroSubline: sublineForPhase(input, focusPriority),
     whyFocus: input.resolution.whyFocus,
@@ -389,7 +427,13 @@ export function assertPhaseNarrativeConsistency(phase: DailyPhase, heroEyebrow: 
   }
 }
 
-export function pickAdaptationReminders(phase: DailyPhase, limit = 2): string[] {
-  if (phase !== 'RECOVERY_WINDOW' && phase !== 'END_OF_DAY') return [];
-  return ADAPTATION_REMINDERS[phase].slice(0, limit);
+export function pickAdaptationReminders(phase: DailyPhase, limit = 2, isRestDay = false): string[] {
+  if (phase === 'RECOVERY_WINDOW') {
+    return (isRestDay ? REST_DAY_ADAPTATION_REMINDERS : ADAPTATION_REMINDERS.RECOVERY_WINDOW).slice(
+      0,
+      limit,
+    );
+  }
+  if (phase === 'END_OF_DAY') return ADAPTATION_REMINDERS.END_OF_DAY.slice(0, limit);
+  return [];
 }

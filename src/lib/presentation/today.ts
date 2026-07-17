@@ -139,6 +139,7 @@ export async function buildTodayPresentationViewModel(
   const { weeklyLoad } = trainingLoad;
 
   const phase = snapshot.dailyPhase?.phase ?? 'MORNING';
+  const isRestDay = snapshot.dailyPhase?.signals.sessionStatus === 'NONE_TODAY';
   const adviceActionable = Boolean(snapshot.adviceActionable);
   const forward = shouldShowForwardTrainingCopy(phase);
 
@@ -193,7 +194,7 @@ export async function buildTodayPresentationViewModel(
     plannedSessions as unknown as ClientPlannedSession[],
   );
   const labels = actionRowLabels(phase);
-  const adaptationHints = pickAdaptationReminders(phase, 3);
+  const adaptationHints = pickAdaptationReminders(phase, 3, isRestDay);
 
   // Mirror TodayActionRow rendering decisions.
   let limitingMode: TodayViewModel['actionRow']['limitingMode'] = 'none';
