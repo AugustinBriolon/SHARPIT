@@ -1,14 +1,10 @@
 import type { DimensionResult } from '@/hooks/use-today';
-import { EffortAcwrSection } from '@/components/effort/effort-acwr-section';
 import { EffortAlertsSection } from '@/components/effort/effort-alerts-section';
-import { EffortCapacitySection } from '@/components/effort/effort-capacity-section';
 import {
   EffortPmcSection,
   EffortWeeklyTssSection,
 } from '@/components/effort/effort-charts-section';
 import { EffortDimensionsSection } from '@/components/effort/effort-dimensions-section';
-import { EffortDominantSection } from '@/components/effort/effort-dominant-section';
-import { EffortEvidenceSection } from '@/components/effort/effort-evidence-section';
 import { EffortHero } from '@/components/effort/effort-hero';
 import { EffortStatsStrip } from '@/components/effort/effort-stats-strip';
 import { EffortVerdictSection } from '@/components/effort/effort-verdict-section';
@@ -59,7 +55,6 @@ export type EffortPageViewProps = {
   weeklyTss: { week: string; tss: number }[];
   avgWeeklyTss: number;
   overreaching?: { label: string; colorClass: string };
-  keyEvidence: string[];
   completenessLabel: string;
   availableDimCount: number;
   globalDecision: GlobalDecisionContext;
@@ -92,18 +87,15 @@ export function EffortPageView(props: EffortPageViewProps) {
     verdict,
     verdictClass,
     verdictKey,
-    rationale,
     trainingCapacity,
     dimensions,
     missingDimCount,
     dominantDimension,
-    primaryLimitingFactor,
     isLowFatigue,
     pmcSeries,
     weeklyTss,
     avgWeeklyTss,
     overreaching,
-    keyEvidence,
     completenessLabel,
     availableDimCount,
     globalDecision,
@@ -150,21 +142,17 @@ export function EffortPageView(props: EffortPageViewProps) {
       />
 
       <EffortVerdictSection
-        rationale={rationale}
+        acwr={acwr}
+        chronicWeeklyAvg={chronicWeeklyAvg}
+        dominantDimension={dominantDimension}
+        isLowFatigue={isLowFatigue}
+        trainingCapacity={trainingCapacity}
+        tsb={tsb}
         verdict={verdict}
         verdictClass={verdictClass}
         verdictKey={verdictKey}
+        weeklyLoad={weeklyLoad}
       />
-
-      <EffortCapacitySection trainingCapacity={trainingCapacity} />
-
-      <EffortDominantSection
-        dominantDimension={dominantDimension}
-        isLowFatigue={isLowFatigue}
-        primaryLimitingFactor={primaryLimitingFactor}
-      />
-
-      <EffortAcwrSection acwr={acwr} chronicWeeklyAvg={chronicWeeklyAvg} weeklyLoad={weeklyLoad} />
 
       <EffortDimensionsSection dimensions={dimensions} missingCount={missingDimCount} />
 
@@ -173,8 +161,6 @@ export function EffortPageView(props: EffortPageViewProps) {
       <EffortWeeklyTssSection avgWeeklyTss={avgWeeklyTss} data={weeklyTss} />
 
       <EffortAlertsSection overreaching={overreaching} />
-
-      <EffortEvidenceSection lines={keyEvidence} />
     </MetricDrillDownPage>
   );
 }

@@ -21,6 +21,8 @@ export type AdaptationViewModel = {
   trendLabel: string;
   verdictLabel: string;
   verdictClassName: string;
+  /** Decision engine verdict key — used for explained synthesis, not display. */
+  verdictKey: string;
   loadMultiplier: number;
   rationale: string[];
   keyEvidence: string[];

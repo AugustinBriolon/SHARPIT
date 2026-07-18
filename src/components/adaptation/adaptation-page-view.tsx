@@ -1,17 +1,17 @@
 'use client';
 
-import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
+import { AdaptationReadingSection } from '@/components/adaptation/adaptation-reading-section';
 import { DrillDownDimensionRow } from '@/components/today/drill-down/dimension-row';
-import { DrillDownHighlightSection } from '@/components/today/drill-down/highlight-section';
 import { GlobalDecisionStrip } from '@/components/today/drill-down/global-decision-strip';
-import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
-import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
-import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
 import {
   DataReliabilityFooter,
   MetricDrillDownPage,
   type MetricTone,
 } from '@/components/today/drill-down/metric-drill-down-page';
+import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
+import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
+import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
+import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
 import type { DimensionResult } from '@/hooks/use-today';
 
 export type AdaptationPageViewProps = {
@@ -27,9 +27,8 @@ export type AdaptationPageViewProps = {
   trendLabel: string;
   verdictLabel: string;
   verdictClassName: string;
+  verdictKey: string;
   loadMultiplier: number;
-  rationale: string[];
-  keyEvidence: string[];
   limitingFactor: string | null;
   plateauRisk: boolean;
   overreachingWithoutAdaptation: boolean;
@@ -46,6 +45,16 @@ export type AdaptationPageViewProps = {
   globalDecision: GlobalDecisionContext;
 };
 
+function limitingScoreFromDimensions(
+  limitingFactor: string | null,
+  dimensions: AdaptationPageViewProps['dimensions'],
+): number | null {
+  if (!limitingFactor) return null;
+  const match = dimensions.find((d) => d.label === limitingFactor);
+  if (!match?.dim.available || match.dim.score == null) return null;
+  return match.dim.score;
+}
+
 export function AdaptationPageView({
   date,
   isToday,
@@ -59,9 +68,8 @@ export function AdaptationPageView({
   trendLabel,
   verdictLabel,
   verdictClassName,
+  verdictKey,
   loadMultiplier,
-  rationale,
-  keyEvidence,
   limitingFactor,
   plateauRisk,
   overreachingWithoutAdaptation,
@@ -71,7 +79,14 @@ export function AdaptationPageView({
   confidencePct,
   globalDecision,
 }: AdaptationPageViewProps) {
-  const hasFriction = plateauRisk || overreachingWithoutAdaptation || limitingFactor != null;
+  const limitingScore = limitingScoreFromDimensions(limitingFactor, dimensions);
+
+  const neuromuscular = dimensions.find((d) => d.key === 'neuromuscularEfficiency');
+  const neuromuscularMissing = neuromuscular != null && !neuromuscular.dim.available;
+  const visibleDimensions = dimensions.filter((d) => {
+    if (d.key === 'neuromuscularEfficiency' && !d.dim.available) return false;
+    return true;
+  });
 
   return (
     <MetricDrillDownPage
@@ -103,39 +118,25 @@ export function AdaptationPageView({
 
       <GlobalDecisionStrip context={globalDecision} />
 
-      <DrillDownHighlightSection
-        bullets={rationale}
-        description="La meilleure façon d'ajuster le bloc à partir de ce que le modèle voit."
-        label="Verdict adaptation"
-        title={verdictLabel}
-        titleClassName={verdictClassName}
+      <AdaptationReadingSection
+        adaptationIndex={adaptationIndex}
+        historyLength={historyLength}
+        limitingFactor={limitingFactor}
+        limitingScore={limitingScore}
+        loadMultiplier={loadMultiplier}
+        overreachingWithoutAdaptation={overreachingWithoutAdaptation}
+        plateauRisk={plateauRisk}
+        statusLabel={statusLabel}
+        trendLabel={trendLabel}
+        verdictClassName={verdictClassName}
+        verdictKey={verdictKey}
+        verdictLabel={verdictLabel}
       />
 
-      {hasFriction ? (
-        <DrillDownSectionCard>
-          <DrillDownSectionLabel>Ce qui freine le bloc</DrillDownSectionLabel>
-          <ul className="mt-3 space-y-2">
-            {limitingFactor ? (
-              <li className="annotation-clinical text-sm">{limitingFactor}</li>
-            ) : null}
-            {plateauRisk ? (
-              <li className="annotation-clinical text-signal-caution text-sm">
-                Risque de plateau détecté
-              </li>
-            ) : null}
-            {overreachingWithoutAdaptation ? (
-              <li className="annotation-clinical text-signal-caution text-sm">
-                Surcharge sans adaptation correspondante
-              </li>
-            ) : null}
-          </ul>
-        </DrillDownSectionCard>
-      ) : null}
-
       <DrillDownSectionCard>
-        <DrillDownSectionLabel>Ce qui nourrit ou freine l&apos;adaptation</DrillDownSectionLabel>
+        <DrillDownSectionLabel>Dimensions</DrillDownSectionLabel>
         <div className="mt-4 space-y-4">
-          {dimensions.map((d) => (
+          {visibleDimensions.map((d) => (
             <DrillDownDimensionRow
               key={d.key}
               description={d.description}
@@ -144,23 +145,13 @@ export function AdaptationPageView({
             />
           ))}
         </div>
+        {neuromuscularMissing ? (
+          <p className="annotation-clinical mt-4">
+            Efficacité neuromusculaire indisponible — nécessite des sorties course/vélo ≥ 30 min
+            avec FC (et streams synchronisés).
+          </p>
+        ) : null}
       </DrillDownSectionCard>
-
-      {keyEvidence.length > 0 ? (
-        <DrillDownSectionCard>
-          <DrillDownSectionLabel>Pourquoi cette lecture</DrillDownSectionLabel>
-          <ul className="text-muted-foreground mt-3 space-y-1.5 text-sm leading-relaxed">
-            {keyEvidence.map((line) => (
-              <li key={line}>· {line}</li>
-            ))}
-          </ul>
-          {loadMultiplier !== 1 ? (
-            <p className="text-muted-foreground mt-3 text-xs">
-              Multiplicateur de charge suggéré : ×{loadMultiplier.toFixed(2)}
-            </p>
-          ) : null}
-        </DrillDownSectionCard>
-      ) : null}
     </MetricDrillDownPage>
   );
 }

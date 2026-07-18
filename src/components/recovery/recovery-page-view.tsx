@@ -1,19 +1,19 @@
-import type { DimensionResult } from '@/hooks/use-today';
 import { RecoveryAlertsSection } from '@/components/recovery/recovery-alerts-section';
-import { GlobalDecisionStrip } from '@/components/today/drill-down/global-decision-strip';
-import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
 import { RecoveryDecisionSection } from '@/components/recovery/recovery-decision-section';
 import { RecoveryDimensionsSection } from '@/components/recovery/recovery-dimensions-section';
+import { RecoveryEvidenceSection } from '@/components/recovery/recovery-evidence-section';
 import { RecoveryHero } from '@/components/recovery/recovery-hero';
 import { RecoverySignalsSection } from '@/components/recovery/recovery-signals-section';
 import { RecoveryStatsStrip } from '@/components/recovery/recovery-stats-strip';
-import { RecoveryEvidenceSection } from '@/components/recovery/recovery-evidence-section';
 import { RecoveryTrendsSection } from '@/components/recovery/recovery-trends-section';
+import { GlobalDecisionStrip } from '@/components/today/drill-down/global-decision-strip';
 import {
   DataReliabilityFooter,
   MetricDrillDownPage,
   type MetricTone,
 } from '@/components/today/drill-down/metric-drill-down-page';
+import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
+import type { DimensionResult } from '@/hooks/use-today';
 
 export type RecoveryPageViewProps = {
   date: Date;
@@ -52,7 +52,6 @@ export type RecoveryPageViewProps = {
   completenessLabel: string;
   overreaching?: { label: string; colorClass: string };
   illness?: { label: string; colorClass: string };
-  keyEvidence: string[];
   globalDecision: GlobalDecisionContext;
 };
 
@@ -91,7 +90,6 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
     completenessLabel,
     overreaching,
     illness,
-    keyEvidence,
     globalDecision,
   } = props;
 
@@ -156,7 +154,11 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
 
       <RecoveryAlertsSection illness={illness} overreaching={overreaching} />
 
-      <RecoveryEvidenceSection lines={keyEvidence} />
+      <RecoveryEvidenceSection
+        intensityLabel={intensityLabel}
+        limiterLabel={limiterLabel}
+        readinessScore={readinessScore}
+      />
     </MetricDrillDownPage>
   );
 }

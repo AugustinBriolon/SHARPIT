@@ -1,6 +1,5 @@
 import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
-import { cn } from '@/lib/utils';
 
 const ZONES = [
   { label: 'Sous-charge', min: 0, max: 0.9, tone: 'muted' as const },
@@ -10,6 +9,8 @@ const ZONES = [
 ];
 
 const TOTAL_RANGE = 2.0;
+/** Sweet-spot edges shown as ticks on the rail. */
+const TICKS = [0.9, 1.3] as const;
 
 function zoneFill(tone: (typeof ZONES)[number]['tone']): string {
   switch (tone) {
@@ -24,29 +25,28 @@ function zoneFill(tone: (typeof ZONES)[number]['tone']): string {
   }
 }
 
-function zoneTextClass(tone: (typeof ZONES)[number]['tone']): string {
-  switch (tone) {
-    case 'caution':
-      return 'text-signal-caution';
-    case 'risk':
-      return 'text-signal-risk';
-    default:
-      return 'text-muted-foreground';
-  }
+function pctOnRail(value: number): number {
+  return Math.max(0, Math.min(100, (value / TOTAL_RANGE) * 100));
 }
 
+/**
+ * ACWR position rail — zone colors + marker + scale ticks.
+ * Caller owns the ACWR label / value header above the rail.
+ */
 export function AcwrZoneBar({ acwr }: { acwr: number }) {
-  const markerPct = Math.min((acwr / TOTAL_RANGE) * 100, 100);
+  const markerPct = pctOnRail(acwr);
   const activeZone = ZONES.find((z) => acwr >= z.min && acwr < z.max) ?? ZONES[ZONES.length - 1];
+  const markerColor = zoneFill(activeZone.tone);
 
   return (
-    <div className="space-y-2">
-      <div className="relative h-1.5">
-        <div className="absolute inset-0 flex overflow-hidden rounded-full">
+    <div className="space-y-1.5">
+      {/* Extra vertical room so the marker is never clipped */}
+      <div className="relative h-4">
+        <div className="absolute inset-x-0 top-1/2 flex h-1.5 -translate-y-1/2 overflow-hidden rounded-full">
           {ZONES.map((z) => (
             <div
               key={z.label}
-              className="h-full opacity-45"
+              className="h-full opacity-50"
               style={{
                 width: `${((z.max - z.min) / TOTAL_RANGE) * 100}%`,
                 background: zoneFill(z.tone),
@@ -54,22 +54,34 @@ export function AcwrZoneBar({ acwr }: { acwr: number }) {
             />
           ))}
         </div>
+
+        {TICKS.map((tick) => (
+          <div
+            key={tick}
+            className="bg-foreground/35 absolute top-1/2 h-2.5 w-px -translate-x-1/2 -translate-y-1/2"
+            style={{ left: `${pctOnRail(tick)}%` }}
+            aria-hidden
+          />
+        ))}
+
+        {/* Position marker — disk + stem, above the track */}
         <div
-          className="border-background absolute top-1/2 h-3.5 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full border"
-          style={{
-            left: `${markerPct}%`,
-            backgroundColor: zoneFill(activeZone.tone),
-          }}
+          className="absolute top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"
+          style={{ left: `${markerPct}%` }}
           aria-hidden
-        />
+        >
+          <div
+            className="border-background size-3 rounded-full border-2 shadow-sm"
+            style={{ backgroundColor: markerColor }}
+          />
+        </div>
       </div>
-      <div className="flex items-baseline justify-between gap-3">
-        <p className={cn('text-[11px] leading-none', zoneTextClass(activeZone.tone))}>
-          {activeZone.label}
-        </p>
-        <p className="text-data text-foreground text-sm font-semibold tabular-nums">
-          {acwr.toFixed(2)}
-        </p>
+
+      <div className="text-muted-foreground flex justify-between text-[10px] tabular-nums">
+        <span>0</span>
+        <span>0.9</span>
+        <span>1.3</span>
+        <span>2+</span>
       </div>
     </div>
   );

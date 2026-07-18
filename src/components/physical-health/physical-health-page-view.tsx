@@ -101,8 +101,6 @@ export function PhysicalHealthPageView({
         />
       </div>
 
-      {/* <GlobalDecisionStrip context={globalDecision} /> */}
-
       {!hasAny && viewModel.emptyState && (
         <CorpsEmptyState
           description={viewModel.emptyState.description ?? ''}

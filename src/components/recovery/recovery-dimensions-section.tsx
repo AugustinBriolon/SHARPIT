@@ -5,14 +5,14 @@ import type { DimensionResult } from '@/hooks/use-today';
 
 const DIMENSION_LABEL: Record<string, string> = {
   autonomic: 'Système autonome',
-  sleep: 'Sommeil',
+  sleep: 'Phases de sommeil',
   subjective: 'Bien-être subjectif',
   loadContext: 'Contexte de charge',
 };
 
 const DIMENSION_DESCRIPTION: Record<string, string> = {
   autonomic: 'VFC + FC repos',
-  sleep: 'Architecture & qualité',
+  sleep: 'Profond + REM (± dette 7j) — pas le score nuit',
   subjective: 'RPE, stress, bien-être',
   loadContext: 'Charge aiguë vs chronique',
 };

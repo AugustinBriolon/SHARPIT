@@ -61,27 +61,20 @@ function resolveDomainRole(
   return 'contextual';
 }
 
-function relationNote(
-  role: GlobalDecisionDomainRole,
-  domain: DrillDownDomain,
-  verdictLabel: string,
-): string | null {
+function relationNote(role: GlobalDecisionDomainRole, domain: DrillDownDomain): string | null {
+  // Never echo the verdict label — the strip already shows it once.
   switch (role) {
     case 'driving':
-      if (domain === 'RECOVERY') return 'La récupération guide la décision produit du jour.';
-      if (domain === 'FATIGUE')
-        return 'La charge et la fatigue guident la décision produit du jour.';
-      if (domain === 'ADAPTATION') return "L'adaptation guide la décision produit du jour.";
-      if (domain === 'SLEEP')
-        return 'Le sommeil contribue directement à la décision produit du jour.';
-      if (domain === 'PHYSICAL_HEALTH') {
-        return 'La santé physique guide la décision produit du jour.';
-      }
-      return 'Ce domaine guide la décision produit du jour.';
+      if (domain === 'RECOVERY') return 'Ce domaine pilote la décision du jour.';
+      if (domain === 'FATIGUE') return 'Charge et fatigue pilotent la décision du jour.';
+      if (domain === 'ADAPTATION') return "L'adaptation pilote la décision du jour.";
+      if (domain === 'SLEEP') return 'Le sommeil pèse directement dans la décision du jour.';
+      if (domain === 'PHYSICAL_HEALTH') return 'La santé physique pilote la décision du jour.';
+      return 'Ce domaine pilote la décision du jour.';
     case 'contributing':
-      return 'Ce domaine contribue à la décision produit du jour.';
+      return 'Ce domaine contribue à la décision — il ne la pilote pas seul.';
     case 'contextual':
-      return `Décision produit du jour : ${verdictLabel}.`;
+      return 'Lecture contextuelle : la décision du jour est pilotée par un autre domaine.';
     default:
       return null;
   }
@@ -113,7 +106,7 @@ export function buildGlobalDecisionContext(
     headline: headline && headline !== headlineCode ? headline : null,
     topActionLine: buildTopActionLine(decisionTopAction(decision)),
     domainRole,
-    relationNote: relationNote(domainRole, domain, display.label),
+    relationNote: relationNote(domainRole, domain),
     todayHref: '/',
   };
 }

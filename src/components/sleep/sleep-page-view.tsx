@@ -5,9 +5,8 @@ import { SleepHero } from '@/components/sleep/sleep-hero';
 import { SleepPhasesSection } from '@/components/sleep/sleep-phases-section';
 import { SleepStatsStrip } from '@/components/sleep/sleep-stats-strip';
 import { SleepTrendSection } from '@/components/sleep/sleep-trend-chart';
-import { MetricDrillDownPage } from '@/components/today/drill-down/metric-drill-down-page';
-import { GlobalDecisionStrip } from '@/components/today/drill-down/global-decision-strip';
 import type { SleepPageViewProps } from '@/components/sleep/types';
+import { MetricDrillDownPage } from '@/components/today/drill-down/metric-drill-down-page';
 
 export type { SleepPageViewProps } from '@/components/sleep/types';
 
@@ -42,7 +41,6 @@ export function SleepPageView(props: SleepPageViewProps) {
     coachView,
     barData,
     recoveryNote,
-    globalDecision,
   } = props;
 
   return (
@@ -68,8 +66,6 @@ export function SleepPageView(props: SleepPageViewProps) {
         onNextDay={onNextDay}
         onPreviousDay={onPreviousDay}
       />
-
-      <GlobalDecisionStrip context={globalDecision} />
 
       <SleepStatsStrip
         restorativeRatio={scoreBreakdown.restorativeRatio}
