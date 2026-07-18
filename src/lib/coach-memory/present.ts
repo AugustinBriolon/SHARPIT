@@ -1,5 +1,5 @@
 import type { AthleteTravelContext } from '@prisma/client';
-import type { CoachMemoryEntry } from '@/lib/coach-memory/types';
+import type { CoachMemoryEntry, CoachMemoryType } from '@/lib/coach-memory/types';
 import { isCoachMemorySource } from '@/lib/coach-memory/types';
 import { toUtcDateOnly } from '@/lib/travel-context/calendar-date';
 import { normalizeTravelDisciplines } from '@/lib/travel-context/disciplines';
@@ -18,7 +18,7 @@ export function travelContextToMemoryEntry(
 
   return {
     id: travel.id,
-    type: 'TRAVEL',
+    type: travel.type as CoachMemoryType,
     source,
     label: travel.label,
     locationLabel: travel.locationLabel,

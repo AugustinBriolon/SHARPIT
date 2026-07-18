@@ -1,6 +1,7 @@
 import { addDays } from 'date-fns';
 import {
   Prisma,
+  type AthleteMemoryEntryType,
   type CoachMemorySource,
   type PrismaClient,
   type TravelDiscipline,
@@ -15,8 +16,11 @@ import {
 import { isTravelTrainingConstraint } from '@/lib/travel-context/training-constraint';
 
 export type TravelContextInput = {
+  /** Defaults to TRAVEL. CONSTRAINT entries have no location. */
+  type?: AthleteMemoryEntryType;
   label?: string | null;
-  locationLabel: string;
+  /** Required when type is TRAVEL (or omitted); ignored for CONSTRAINT. */
+  locationLabel?: string | null;
   locationLat?: number | null;
   locationLng?: number | null;
   startDate: Date;
@@ -53,7 +57,9 @@ function resolveTrainingFields(input: TravelContextInput): {
 }
 
 export async function resolveTravelContextCoordinates(
-  input: Pick<TravelContextInput, 'locationLabel' | 'locationLat' | 'locationLng'>,
+  input: Pick<TravelContextInput, 'locationLabel' | 'locationLat' | 'locationLng'> & {
+    locationLabel: string;
+  },
 ): Promise<{ locationLabel: string; locationLat: number; locationLng: number }> {
   if (
     input.locationLat != null &&
@@ -80,15 +86,43 @@ export async function resolveTravelContextCoordinates(
   };
 }
 
+/** CONSTRAINT entries have no place; TRAVEL entries require one (geocoded if needed). */
+async function resolveLocationFields(input: TravelContextInput): Promise<{
+  locationLabel: string | null;
+  locationLat: number | null;
+  locationLng: number | null;
+}> {
+  if ((input.type ?? 'TRAVEL') === 'CONSTRAINT') {
+    return { locationLabel: null, locationLat: null, locationLng: null };
+  }
+  if (!input.locationLabel) {
+    throw new Error('Un lieu est requis pour un déplacement.');
+  }
+  return resolveTravelContextCoordinates({
+    locationLabel: input.locationLabel,
+    locationLat: input.locationLat,
+    locationLng: input.locationLng,
+  });
+}
+
 export async function getActiveTravelContext(prisma: PrismaClient, onDate = new Date()) {
   const day = toUtcDateOnly(onDate);
-  return prisma.athleteTravelContext.findFirst({
+  const travel = await prisma.athleteTravelContext.findFirst({
     where: {
+      type: 'TRAVEL',
       startDate: { lte: day },
       endDate: { gte: day },
     },
     orderBy: { startDate: 'desc' },
   });
+  if (!travel) return null;
+  // type: 'TRAVEL' is filtered above — location is always resolved for these rows.
+  return {
+    ...travel,
+    locationLabel: travel.locationLabel as string,
+    locationLat: travel.locationLat as number,
+    locationLng: travel.locationLng as number,
+  };
 }
 
 export async function listTravelContexts(prisma: PrismaClient) {
@@ -98,10 +132,11 @@ export async function listTravelContexts(prisma: PrismaClient) {
 }
 
 export async function createTravelContext(prisma: PrismaClient, input: TravelContextInput) {
-  const coords = await resolveTravelContextCoordinates(input);
+  const coords = await resolveLocationFields(input);
   const training = resolveTrainingFields(input);
   return prisma.athleteTravelContext.create({
     data: {
+      type: input.type ?? 'TRAVEL',
       label: input.label ?? null,
       locationLabel: coords.locationLabel,
       locationLat: coords.locationLat,
@@ -121,7 +156,7 @@ export async function updateTravelContext(
   id: string,
   input: TravelContextInput,
 ) {
-  const coords = await resolveTravelContextCoordinates(input);
+  const coords = await resolveLocationFields(input);
   const training = resolveTrainingFields(input);
   return prisma.athleteTravelContext.update({
     where: { id },
@@ -148,7 +183,7 @@ export async function applyTravelContextToUpcomingSessions(
   travelId: string,
 ): Promise<number> {
   const travel = await prisma.athleteTravelContext.findUnique({ where: { id: travelId } });
-  if (!travel) return 0;
+  if (!travel || travel.type !== 'TRAVEL') return 0;
 
   const today = toUtcDateOnly(new Date());
   const horizon = addDays(today, 60);

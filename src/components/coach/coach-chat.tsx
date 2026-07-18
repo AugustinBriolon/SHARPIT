@@ -338,7 +338,10 @@ export function CoachChat({
                       queryClient.invalidateQueries({
                         queryKey: queryKeys.plannedSessions,
                       });
-                      if (part.type === 'tool-setTravelContext') {
+                      if (
+                        part.type === 'tool-setTravelContext' ||
+                        part.type === 'tool-setTrainingConstraint'
+                      ) {
                         void queryClient.invalidateQueries({ queryKey: queryKeys.travelContext });
                         void queryClient.invalidateQueries({ queryKey: queryKeys.coachMemory });
                       }

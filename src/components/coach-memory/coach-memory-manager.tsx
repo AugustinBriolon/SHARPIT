@@ -78,7 +78,7 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
     ? 'Impossible de charger la mémoire. Recharge la page ou réessaie dans un instant.'
     : null;
 
-  function renderTravelEntries() {
+  function renderMemoryEntries() {
     if (query.isLoading) {
       return (
         <div className="space-y-3">
@@ -115,13 +115,13 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
 
     return (
       <div className="rounded-analysis border-analysis-border border border-dashed px-5 py-10 text-center">
-        <p className="text-sm font-medium">Aucun déplacement enregistré</p>
+        <p className="text-sm font-medium">Aucune entrée enregistrée</p>
         <p className="text-muted-foreground mx-auto mt-2 max-w-md text-sm leading-relaxed">
-          Ajoute un voyage manuellement ou mentionne-le au coach — il apparaîtra ici avec le badge «
-          Déduit du coach ».
+          Ajoute un déplacement ou une contrainte manuellement, ou mentionne-le au coach — il
+          apparaîtra ici avec le badge « Déduit du coach ».
         </p>
         <Button className="mt-4" type="button" variant="outline" onClick={openCreate}>
-          Ajouter un déplacement
+          Ajouter
         </Button>
       </div>
     );
@@ -139,11 +139,12 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <EyebrowLabel className="mb-2" variant="section">
-              Contexte géolocalisé
+              Mémoire structurée
             </EyebrowLabel>
-            <h2 className="font-heading text-base font-semibold">Déplacements & voyages</h2>
+            <h2 className="font-heading text-base font-semibold">Déplacements & contraintes</h2>
             <p className="text-muted-foreground mt-1 text-sm">
-              Lieu et dates pour adapter la météo et les séances outdoor planifiées.
+              Lieu, dates et capacité d&apos;entraînement pour adapter météo, séances outdoor et
+              charge planifiée.
             </p>
           </div>
           <Button
@@ -157,7 +158,7 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
           </Button>
         </div>
 
-        {renderTravelEntries()}
+        {renderMemoryEntries()}
       </section>
 
       <CoachMemoryRoadmapTeaser />
@@ -176,7 +177,7 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
             <DialogTitle>Supprimer cette entrée ?</DialogTitle>
             <DialogDescription>
               {deleteTarget?.label?.trim() ||
-                'Ce déplacement sera retiré de la mémoire du coach. Les séances déjà mises à jour conservent leur lieu actuel.'}
+                'Cette entrée sera retirée de la mémoire du coach. Les séances déjà mises à jour conservent leur lieu actuel.'}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

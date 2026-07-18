@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import type { CoachMemoryEntry, TravelDiscipline } from '@/lib/coach-memory/types';
+import type { CoachMemoryEntry, CoachMemoryType, TravelDiscipline } from '@/lib/coach-memory/types';
 import {
   TRAVEL_DISCIPLINE_LABELS,
   TRAVEL_DISCIPLINES,
@@ -25,6 +25,12 @@ import {
 } from '@/lib/coach-memory/types';
 import { deriveTravelTrainingConstraint } from '@/lib/travel-context/disciplines';
 import type { TravelMemoryPayload } from '@/hooks/use-coach-memory';
+import { cn } from '@/lib/utils';
+
+const ENTRY_TYPE_OPTIONS: { type: CoachMemoryType; label: string }[] = [
+  { type: 'TRAVEL', label: 'Déplacement' },
+  { type: 'CONSTRAINT', label: 'Contrainte' },
+];
 
 type TravelMemoryFormDialogProps = {
   open: boolean;
@@ -56,6 +62,7 @@ export function TravelMemoryFormDialog({
   const titleId = useId();
   const labelRef = useRef<HTMLInputElement>(null);
 
+  const [entryType, setEntryType] = useState<CoachMemoryType>('TRAVEL');
   const [label, setLabel] = useState('');
   const [place, setPlace] = useState<LocationPlaceValue>(null);
   const [startDate, setStartDate] = useState('');
@@ -68,6 +75,7 @@ export function TravelMemoryFormDialog({
 
   useEffect(() => {
     if (!open) return;
+    setEntryType(entry?.type ?? 'TRAVEL');
     setLabel(entry?.label ?? '');
     setPlace(entryToPlace(entry));
     setStartDate(entry?.startDate ?? '');
@@ -104,11 +112,13 @@ export function TravelMemoryFormDialog({
     return 'Ajouter';
   }
 
+  const isTravel = entryType === 'TRAVEL';
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
 
-    if (!place) {
+    if (isTravel && !place) {
       setError('Sélectionne un lieu dans la liste de suggestions.');
       return;
     }
@@ -122,17 +132,17 @@ export function TravelMemoryFormDialog({
     }
 
     await onSubmit({
-      type: 'TRAVEL',
+      type: entryType,
       label: label.trim() || null,
-      locationLabel: place.label,
-      locationLat: place.latitude,
-      locationLng: place.longitude,
+      locationLabel: isTravel ? (place?.label ?? null) : null,
+      locationLat: isTravel ? (place?.latitude ?? null) : null,
+      locationLng: isTravel ? (place?.longitude ?? null) : null,
       startDate,
       endDate,
       note: note.trim() || null,
       allowedDisciplines: noStructuredTraining ? [] : allowedDisciplines,
       noStructuredTraining,
-      applyToPlannedSessions: isEdit ? false : applyToPlannedSessions,
+      applyToPlannedSessions: isTravel && !isEdit ? applyToPlannedSessions : false,
     });
   }
 
@@ -142,29 +152,61 @@ export function TravelMemoryFormDialog({
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle id={titleId}>
-              {isEdit ? 'Modifier le déplacement' : 'Ajouter un déplacement'}
+              {isEdit
+                ? `Modifier ${isTravel ? 'le déplacement' : 'la contrainte'}`
+                : `Ajouter ${isTravel ? 'un déplacement' : 'une contrainte'}`}
             </DialogTitle>
             <DialogDescription>
-              Le coach adapte météo, lieux outdoor, charge du macro-plan et types de séances.
+              {isTravel
+                ? 'Le coach adapte météo, lieux outdoor, charge du macro-plan et types de séances.'
+                : 'Le coach adapte volume et intensité pendant cette période — sans déplacement, le lieu ne change pas.'}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
+            {!isEdit ? (
+              <div className="flex gap-1.5 rounded-lg border p-1" role="radiogroup">
+                {ENTRY_TYPE_OPTIONS.map((option) => (
+                  <button
+                    key={option.type}
+                    aria-checked={entryType === option.type}
+                    role="radio"
+                    type="button"
+                    className={cn(
+                      'flex-1 rounded-md px-2 py-1.5 text-sm font-medium transition-colors',
+                      entryType === option.type
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:text-foreground',
+                    )}
+                    onClick={() => setEntryType(option.type)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
             <div className="space-y-1.5">
               <Label htmlFor={`${titleId}-label`}>Titre (optionnel)</Label>
               <Input
                 ref={labelRef}
                 id={`${titleId}-label`}
-                placeholder="Vacances juillet, camp altitude…"
                 value={label}
+                placeholder={
+                  isTravel
+                    ? 'Vacances juillet, camp altitude…'
+                    : 'Tendinite genou, semaine chargée…'
+                }
                 onChange={(e) => setLabel(e.target.value)}
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label>Lieu</Label>
-              <LocationPlacePicker value={place} onChange={setPlace} />
-            </div>
+            {isTravel ? (
+              <div className="space-y-1.5">
+                <Label>Lieu</Label>
+                <LocationPlacePicker value={place} onChange={setPlace} />
+              </div>
+            ) : null}
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
@@ -237,7 +279,7 @@ export function TravelMemoryFormDialog({
               />
             </div>
 
-            {!isEdit ? (
+            {isTravel && !isEdit ? (
               <label className="flex items-start gap-2 text-sm">
                 <input
                   checked={applyToPlannedSessions}

@@ -14,11 +14,11 @@ import {
   travelTrainingConstraintLabel,
 } from '@/lib/travel-context/training-constraint';
 
-/** Implémenté aujourd'hui via AthleteTravelContext. */
-export type CoachMemoryType = 'TRAVEL';
+/** Implémentés aujourd'hui via AthleteTravelContext (voir son champ `type`). */
+export type CoachMemoryType = 'TRAVEL' | 'CONSTRAINT';
 
 /** Types prévus — pas encore de stockage dédié. */
-export type CoachMemoryTypeFuture = 'PREFERENCE' | 'CONSTRAINT' | 'AVAILABILITY';
+export type CoachMemoryTypeFuture = 'PREFERENCE' | 'AVAILABILITY';
 
 export type CoachMemorySource = 'USER' | 'COACH';
 
@@ -43,8 +43,11 @@ export type CoachMemoryEntry = {
 };
 
 export type TravelMemoryInput = {
+  /** Defaults to TRAVEL. CONSTRAINT entries have no location. */
+  type?: CoachMemoryType;
   label?: string | null;
-  locationLabel: string;
+  /** Required when type is TRAVEL; ignored for CONSTRAINT. */
+  locationLabel?: string | null;
   locationLat?: number | null;
   locationLng?: number | null;
   startDate: Date;
@@ -59,6 +62,7 @@ export type TravelMemoryInput = {
 
 export const COACH_MEMORY_TYPE_LABELS: Record<CoachMemoryType, string> = {
   TRAVEL: 'Déplacement / voyage',
+  CONSTRAINT: 'Contrainte',
 };
 
 export const COACH_MEMORY_SOURCE_LABELS: Record<CoachMemorySource, string> = {
@@ -86,9 +90,13 @@ export function coachMemorySourceLabel(source: unknown): string | null {
   return COACH_MEMORY_SOURCE_LABELS[source];
 }
 
+export function isCoachMemoryType(value: unknown): value is CoachMemoryType {
+  return value === 'TRAVEL' || value === 'CONSTRAINT';
+}
+
 export function coachMemoryTypeLabel(type: unknown): string | null {
-  if (type !== 'TRAVEL') return null;
-  return COACH_MEMORY_TYPE_LABELS.TRAVEL;
+  if (!isCoachMemoryType(type)) return null;
+  return COACH_MEMORY_TYPE_LABELS[type];
 }
 
 export const COACH_MEMORY_FUTURE_TYPES: {
@@ -100,11 +108,6 @@ export const COACH_MEMORY_FUTURE_TYPES: {
     type: 'PREFERENCE',
     label: 'Préférence',
     description: 'Habitudes d’entraînement, créneaux favoris, contraintes récurrentes.',
-  },
-  {
-    type: 'CONSTRAINT',
-    label: 'Contrainte',
-    description: 'Indisponibilités ou limitations temporaires hors déplacement.',
   },
   {
     type: 'AVAILABILITY',

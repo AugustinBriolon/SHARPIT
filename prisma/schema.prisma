@@ -1165,16 +1165,29 @@ enum TravelDiscipline {
   MOBILITY
 }
 
+/// TRAVEL = away-from-home period (has a location). CONSTRAINT = temporary
+/// training-capacity limitation not tied to travel — illness, injury, high
+/// work-stress week, etc. (no location).
+enum AthleteMemoryEntryType {
+  TRAVEL
+  CONSTRAINT
+}
+
+/// Despite the name, this table now hosts two kinds of entries (see `type`):
+/// TRAVEL (location required) and CONSTRAINT (no location). Kept the original
+/// name rather than a broad rename — internal-only, no user-facing cost, and
+/// renaming would touch every call site for zero functional benefit.
 model AthleteTravelContext {
   id                 String                   @id @default(cuid())
+  type               AthleteMemoryEntryType   @default(TRAVEL)
   label              String?
-  locationLabel      String
-  locationLat        Float
-  locationLng        Float
+  locationLabel      String?
+  locationLat        Float?
+  locationLng        Float?
   startDate          DateTime                 @db.Date
   endDate            DateTime                 @db.Date
   note               String?
-  /// How much structured training is realistic during this trip.
+  /// How much structured training is realistic during this period.
   trainingConstraint TravelTrainingConstraint @default(FULL)
   /// Empty = all disciplines allowed. Otherwise only these may be planned.
   allowedDisciplines TravelDiscipline[]       @default([])
@@ -1183,6 +1196,7 @@ model AthleteTravelContext {
   updatedAt          DateTime                 @updatedAt
 
   @@index([startDate, endDate])
+  @@index([type])
 }
 
 // Analyse globale d'un brick (enchaînement multisport) : agrège les jambes

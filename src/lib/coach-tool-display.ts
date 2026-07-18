@@ -17,6 +17,7 @@ const FAILURE_LABEL: Record<string, string> = {
   'tool-updatePlannedSession': 'Séance non modifiée',
   'tool-deletePlannedSession': 'Séance non supprimée',
   'tool-setTravelContext': 'Contexte voyage non enregistré',
+  'tool-setTrainingConstraint': 'Contrainte non enregistrée',
 };
 
 const SUCCESS_DETAIL_GENERIC: Record<string, string> = {
@@ -25,6 +26,7 @@ const SUCCESS_DETAIL_GENERIC: Record<string, string> = {
   'tool-updatePlannedSession': "Cette séance n'a pas pu être modifiée",
   'tool-deletePlannedSession': "Cette séance n'a pas pu être supprimée",
   'tool-setTravelContext': "Ce contexte voyage n'a pas pu être enregistré",
+  'tool-setTrainingConstraint': "Cette contrainte n'a pas pu être enregistrée",
 };
 
 export function sessionTitleFromPart(part: ToolPartLite): string | null {

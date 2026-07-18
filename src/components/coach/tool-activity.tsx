@@ -5,6 +5,7 @@ import {
   CalendarPlus,
   CalendarX2,
   Check,
+  HeartPulse,
   Layers,
   ListChecks,
   Loader2,
@@ -84,6 +85,12 @@ const META: Record<string, Meta> = {
     running: 'Enregistrement du contexte voyage…',
     proposal: 'Enregistrer un contexte voyage',
   },
+  'tool-setTrainingConstraint': {
+    label: 'Contrainte enregistrée',
+    icon: HeartPulse,
+    running: 'Enregistrement de la contrainte…',
+    proposal: 'Enregistrer une contrainte',
+  },
 };
 
 type SessionInput = {
@@ -130,13 +137,17 @@ function describeInput(
 
   const fmtType = (t?: ActivityType) => (t ? activityTypeLabels[t] : null);
 
-  if (type === 'tool-setTravelContext') {
+  if (type === 'tool-setTravelContext' || type === 'tool-setTrainingConstraint') {
     const travel = input as unknown as TravelInput;
-    const headline = travel.label?.trim() || `Voyage · ${travel.locationLabel ?? 'Lieu'}`;
+    const headline =
+      travel.label?.trim() ||
+      (type === 'tool-setTravelContext'
+        ? `Voyage · ${travel.locationLabel ?? 'Lieu'}`
+        : 'Contrainte temporaire');
     if (travel.startDate && travel.endDate) {
       lines.push(`${travel.startDate} → ${travel.endDate}`);
     }
-    if (travel.locationLabel) lines.push(travel.locationLabel);
+    if (type === 'tool-setTravelContext' && travel.locationLabel) lines.push(travel.locationLabel);
     if (travel.noStructuredTraining) {
       lines.push('Aucun sport structuré');
     } else if (travel.allowedDisciplines && travel.allowedDisciplines.length > 0) {

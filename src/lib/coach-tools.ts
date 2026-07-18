@@ -313,7 +313,7 @@ export const coachTools = {
 
   setTravelContext: tool({
     description:
-      "Enregistre un contexte voyage (ville + dates) pour pré-remplir les séances outdoor et améliorer les prévisions météo. À utiliser quand l'athlète mentionne des vacances, un déplacement ou un camp d'entraînement.",
+      "Enregistre un contexte voyage (ville + dates) pour pré-remplir les séances outdoor et améliorer les prévisions météo. À utiliser quand l'athlète mentionne des vacances, un déplacement ou un camp d'entraînement — c'est-à-dire qu'il n'est pas chez lui. Si la capacité d'entraînement est réduite sans déplacement (maladie, blessure, semaine de travail chargée), utilise setTrainingConstraint à la place.",
     inputSchema: z.object({
       locationLabel: z.string().describe("Ville ou lieu (ex. Les Sables-d'Olonne)."),
       startDate: z.string().describe('Date de début yyyy-MM-dd.'),
@@ -369,6 +369,59 @@ export const coachTools = {
         return {
           ok: false as const,
           error: error instanceof Error ? error.message : 'Impossible de créer le contexte voyage',
+        };
+      }
+    },
+  }),
+
+  setTrainingConstraint: tool({
+    description:
+      "Enregistre une contrainte temporaire (dates + capacité d'entraînement réduite) SANS lieu — à utiliser quand l'athlète n'est PAS en déplacement mais a une capacité réduite : maladie, blessure, semaine de travail chargée, etc. Si l'athlète mentionne être ailleurs que chez lui, utilise setTravelContext à la place.",
+    inputSchema: z.object({
+      startDate: z.string().describe('Date de début yyyy-MM-dd.'),
+      endDate: z.string().describe('Date de fin yyyy-MM-dd.'),
+      label: z.string().optional().describe('Titre court (ex. Tendinite genou).'),
+      note: z.string().optional(),
+      allowedDisciplines: z
+        .array(z.enum(['RUN', 'BIKE', 'SWIM', 'STRENGTH', 'MOBILITY']))
+        .optional()
+        .describe(
+          'Sports encore possibles pendant cette période. MOBILITY = mobilité/étirements. Vide = tout autorisé.',
+        ),
+      noStructuredTraining: z
+        .boolean()
+        .optional()
+        .describe('true = aucun sport structuré pendant cette période.'),
+      trainingConstraint: z
+        .enum(['FULL', 'REDUCED', 'MOBILITY_ONLY', 'NONE'])
+        .optional()
+        .describe(
+          'Optionnel si allowedDisciplines est fourni (déduit automatiquement). MOBILITY_ONLY si uniquement mobilité.',
+        ),
+    }),
+    execute: async (input) => {
+      try {
+        const constraint = await createTravelContext(prisma, {
+          type: 'CONSTRAINT',
+          label: input.label ?? null,
+          startDate: toDate(input.startDate),
+          endDate: toDate(input.endDate),
+          note: input.note ?? null,
+          allowedDisciplines: input.allowedDisciplines ?? [],
+          noStructuredTraining: input.noStructuredTraining,
+          trainingConstraint: input.trainingConstraint ?? null,
+          source: 'COACH',
+        });
+        return {
+          ok: true as const,
+          constraintId: constraint.id,
+          trainingConstraint: constraint.trainingConstraint,
+        };
+      } catch (error) {
+        console.error('[coach/setTrainingConstraint]', error);
+        return {
+          ok: false as const,
+          error: error instanceof Error ? error.message : 'Impossible de créer la contrainte',
         };
       }
     },

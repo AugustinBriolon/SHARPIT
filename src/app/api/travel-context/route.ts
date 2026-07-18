@@ -11,16 +11,27 @@ import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/re
 
 export const dynamic = 'force-dynamic';
 
-const createSchema = z.object({
-  label: z.string().optional().nullable(),
-  locationLabel: z.string().min(2),
-  locationLat: z.number().optional().nullable(),
-  locationLng: z.number().optional().nullable(),
-  startDate: z.coerce.date(),
-  endDate: z.coerce.date(),
-  note: z.string().optional().nullable(),
-  applyToPlannedSessions: z.boolean().optional(),
-});
+const createSchema = z
+  .object({
+    type: z.enum(['TRAVEL', 'CONSTRAINT']).default('TRAVEL'),
+    label: z.string().optional().nullable(),
+    locationLabel: z.string().optional().nullable(),
+    locationLat: z.number().optional().nullable(),
+    locationLng: z.number().optional().nullable(),
+    startDate: z.coerce.date(),
+    endDate: z.coerce.date(),
+    note: z.string().optional().nullable(),
+    applyToPlannedSessions: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.type === 'TRAVEL' && (!data.locationLabel || data.locationLabel.trim().length < 2)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['locationLabel'],
+        message: 'Un lieu est requis pour un déplacement.',
+      });
+    }
+  });
 
 export async function GET() {
   try {
@@ -52,7 +63,7 @@ export async function POST(request: NextRequest) {
     const travel = await createTravelContext(prisma, parsed.data);
     let updatedSessions = 0;
 
-    if (parsed.data.applyToPlannedSessions !== false) {
+    if (parsed.data.type === 'TRAVEL' && parsed.data.applyToPlannedSessions !== false) {
       updatedSessions = await applyTravelContextToUpcomingSessions(prisma, travel.id);
       const sessions = await prisma.plannedSession.findMany({
         where: {

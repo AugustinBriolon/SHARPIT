@@ -8,19 +8,29 @@ export const dynamic = 'force-dynamic';
 
 const travelDisciplineSchema = z.enum(['RUN', 'BIKE', 'SWIM', 'STRENGTH', 'MOBILITY']);
 
-const updateSchema = z.object({
-  type: z.literal('TRAVEL'),
-  label: z.string().optional().nullable(),
-  locationLabel: z.string().min(2),
-  locationLat: z.number().optional().nullable(),
-  locationLng: z.number().optional().nullable(),
-  startDate: z.coerce.date(),
-  endDate: z.coerce.date(),
-  note: z.string().optional().nullable(),
-  trainingConstraint: z.enum(['FULL', 'REDUCED', 'MOBILITY_ONLY', 'NONE']).optional().nullable(),
-  allowedDisciplines: z.array(travelDisciplineSchema).optional().nullable(),
-  noStructuredTraining: z.boolean().optional(),
-});
+const updateSchema = z
+  .object({
+    type: z.enum(['TRAVEL', 'CONSTRAINT']),
+    label: z.string().optional().nullable(),
+    locationLabel: z.string().optional().nullable(),
+    locationLat: z.number().optional().nullable(),
+    locationLng: z.number().optional().nullable(),
+    startDate: z.coerce.date(),
+    endDate: z.coerce.date(),
+    note: z.string().optional().nullable(),
+    trainingConstraint: z.enum(['FULL', 'REDUCED', 'MOBILITY_ONLY', 'NONE']).optional().nullable(),
+    allowedDisciplines: z.array(travelDisciplineSchema).optional().nullable(),
+    noStructuredTraining: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.type === 'TRAVEL' && (!data.locationLabel || data.locationLabel.trim().length < 2)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['locationLabel'],
+        message: 'Un lieu est requis pour un déplacement.',
+      });
+    }
+  });
 
 type RouteContext = { params: Promise<{ id: string }> };
 

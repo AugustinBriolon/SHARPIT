@@ -13,9 +13,10 @@ export type CoachMemoryResponse = {
 };
 
 export type TravelMemoryPayload = {
-  type: 'TRAVEL';
+  type: 'TRAVEL' | 'CONSTRAINT';
   label?: string | null;
-  locationLabel: string;
+  /** Required for TRAVEL; omitted for CONSTRAINT (no place). */
+  locationLabel?: string | null;
   locationLat?: number | null;
   locationLng?: number | null;
   startDate: string;
@@ -48,10 +49,10 @@ function optimisticTravelEntry(payload: TravelMemoryPayload): CoachMemoryEntry {
   const now = new Date().toISOString();
   return {
     id: tempId(),
-    type: 'TRAVEL',
+    type: payload.type,
     source: 'USER',
     label: payload.label ?? null,
-    locationLabel: payload.locationLabel,
+    locationLabel: payload.locationLabel ?? null,
     locationLat: payload.locationLat ?? null,
     locationLng: payload.locationLng ?? null,
     startDate: payload.startDate,
@@ -119,16 +120,19 @@ export function useCoachMemoryMutations() {
           patchMemoryEntries(previous, [entry, ...previous.entries], entry.id),
         );
       }
-      queryClient.setQueryData<TravelContextResponse>(queryKeys.travelContext, {
-        active: {
-          id: entry.id,
-          label: entry.label,
-          locationLabel: entry.locationLabel ?? payload.locationLabel,
-          startDate: entry.startDate,
-          endDate: entry.endDate,
-          note: entry.note,
-        },
-      });
+      // A Contrainte has no place — never becomes "the active travel location".
+      if (payload.type === 'TRAVEL' && entry.locationLabel) {
+        queryClient.setQueryData<TravelContextResponse>(queryKeys.travelContext, {
+          active: {
+            id: entry.id,
+            label: entry.label,
+            locationLabel: entry.locationLabel,
+            startDate: entry.startDate,
+            endDate: entry.endDate,
+            note: entry.note,
+          },
+        });
+      }
       return { previous };
     },
     onError: (_err, _payload, context) => {
@@ -177,7 +181,7 @@ export function useCoachMemoryMutations() {
                 ? {
                     ...e,
                     label: payload.label ?? null,
-                    locationLabel: payload.locationLabel,
+                    locationLabel: payload.locationLabel ?? null,
                     locationLat: payload.locationLat ?? null,
                     locationLng: payload.locationLng ?? null,
                     startDate: payload.startDate,

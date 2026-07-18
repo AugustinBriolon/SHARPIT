@@ -1,5 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { formatDecisionSection, type CoachContext } from './coach-context';
+import {
+  formatConstraintsSection,
+  formatDecisionSection,
+  type CoachContext,
+} from './coach-context';
+
+function baseConstraint(
+  overrides: Partial<CoachContext['constraints'][number]> = {},
+): CoachContext['constraints'][number] {
+  return {
+    label: 'Tendinite genou',
+    startDate: '2026-08-01',
+    endDate: '2026-08-10',
+    isActiveNow: true,
+    note: null,
+    trainingConstraint: 'REDUCED',
+    allowedDisciplines: [],
+    ...overrides,
+  };
+}
 
 function baseDecision(overrides: Partial<CoachContext['decision']> = {}): CoachContext['decision'] {
   return {
@@ -52,5 +71,36 @@ describe('formatDecisionSection', () => {
     const text = lines.join('\n');
     expect(text).toContain('Facteur limitant');
     expect(text).toContain('Récupération autonome incomplète');
+  });
+});
+
+describe('formatConstraintsSection', () => {
+  it('returns nothing when there are no active/upcoming constraints', () => {
+    expect(formatConstraintsSection([])).toEqual([]);
+  });
+
+  it('has no location parenthetical on the entry line — unlike the travel block', () => {
+    const lines = formatConstraintsSection([baseConstraint()]);
+    const text = lines.join('\n');
+    expect(text).toContain('Contraintes temporaires');
+    expect(text).toContain('Tendinite genou');
+    expect(text).toContain('REDUCED');
+    const entryLine = lines[lines.length - 1]!;
+    // Travel entries render "label (locationLabel) : ..." — constraints have no place.
+    expect(entryLine).not.toContain('Tendinite genou (');
+  });
+
+  it('marks the current period as en cours and a future one as à venir', () => {
+    const active = formatConstraintsSection([baseConstraint({ isActiveNow: true })]).join('\n');
+    const upcoming = formatConstraintsSection([baseConstraint({ isActiveNow: false })]).join('\n');
+    expect(active).toContain('[en cours]');
+    expect(upcoming).toContain('[à venir]');
+  });
+
+  it('lists allowed disciplines when present', () => {
+    const text = formatConstraintsSection([
+      baseConstraint({ allowedDisciplines: ['MOBILITY'] }),
+    ]).join('\n');
+    expect(text).toContain('sports :');
   });
 });

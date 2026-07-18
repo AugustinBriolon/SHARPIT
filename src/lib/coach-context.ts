@@ -329,14 +329,28 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
           };
         });
 
-  // ---- Déplacements / voyages en cours ou à venir sur la fenêtre de plan ----
+  // ---- Déplacements / voyages et contraintes temporaires en cours ou à venir ----
   const utcToday = toUtcDateOnly(refDate);
   const utcPlanHorizon = subDays(utcToday, -21);
-  const travel = travelContexts
-    .filter((t) => t.startDate <= utcPlanHorizon && t.endDate >= utcToday)
+  const memoryEntriesInWindow = travelContexts.filter(
+    (t) => t.startDate <= utcPlanHorizon && t.endDate >= utcToday,
+  );
+  const travel = memoryEntriesInWindow
+    .filter((t) => t.type === 'TRAVEL')
     .map((t) => ({
       label: t.label,
       locationLabel: t.locationLabel,
+      startDate: t.startDate.toISOString().slice(0, 10),
+      endDate: t.endDate.toISOString().slice(0, 10),
+      isActiveNow: t.startDate <= utcToday && t.endDate >= utcToday,
+      note: t.note,
+      trainingConstraint: t.trainingConstraint,
+      allowedDisciplines: t.allowedDisciplines,
+    }));
+  const constraints = memoryEntriesInWindow
+    .filter((t) => t.type === 'CONSTRAINT')
+    .map((t) => ({
+      label: t.label,
       startDate: t.startDate.toISOString().slice(0, 10),
       endDate: t.endDate.toISOString().slice(0, 10),
       isActiveNow: t.startDate <= utcToday && t.endDate >= utcToday,
@@ -432,6 +446,7 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
     realizedSessions,
     upcomingPlanned,
     travel,
+    constraints,
     physical,
     fatigue,
     adaptation,
@@ -513,6 +528,36 @@ export function formatDecisionSection(decision: CoachContext['decision']): strin
   if (!d.adviceActionable) {
     lines.push(
       `⚠ Conseil entraînement non actionnable (confiance ou données insuffisantes) — reste prudent et factuel.`,
+    );
+  }
+  return lines;
+}
+
+/**
+ * Renders temporary, non-travel training-capacity constraints (illness, injury,
+ * high work-stress week, etc.) — same trainingConstraint/allowedDisciplines logic
+ * as the travel block, without the location/logistics dimension.
+ */
+export function formatConstraintsSection(constraints: CoachContext['constraints']): string[] {
+  if (constraints.length === 0) return [];
+
+  const lines: string[] = ['\n## Contraintes temporaires'];
+  lines.push(
+    "IMPÉRATIF : pour toute séance dont la date tombe dans une de ces périodes, respecte la capacité d'entraînement réduite — ce n'est PAS un déplacement, ne change ni le lieu ni la logistique, seulement le volume/l'intensité proposés.",
+  );
+  lines.push(
+    'Contrainte d’entraînement (FULL / REDUCED / MOBILITY_ONLY / NONE) : MOBILITY_ONLY = mobilité/étirements uniquement ; NONE = pas de séance structurée ; REDUCED = volume/intensité réduits.',
+  );
+  for (const c of constraints) {
+    const label = c.label?.trim() || 'Contrainte';
+    const constraintLabel =
+      travelTrainingConstraintLabel(c.trainingConstraint)?.toLowerCase() ?? 'entraînement normal';
+    const sports =
+      c.allowedDisciplines.length > 0
+        ? ` · sports : ${travelDisciplineLabels(c.allowedDisciplines).join(', ')}`
+        : '';
+    lines.push(
+      `- ${label} : ${c.startDate} → ${c.endDate}${c.isActiveNow ? ' [en cours]' : ' [à venir]'} · contrainte ${c.trainingConstraint} (${constraintLabel})${sports}${c.note ? ` — ${c.note}` : ''}`,
     );
   }
   return lines;
@@ -784,6 +829,8 @@ export function formatCoachContext(ctx: CoachContext): string {
       );
     }
   }
+
+  lines.push(...formatConstraintsSection(ctx.constraints));
 
   // Déjà planifié
   if (ctx.upcomingPlanned.length) {
