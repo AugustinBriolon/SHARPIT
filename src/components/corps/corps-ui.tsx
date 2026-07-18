@@ -1,3 +1,4 @@
+import { ClinicalAnnotation } from '@/components/ui/clinical-annotation';
 import { EyebrowLabel } from '@/components/ui/eyebrow-label';
 import { MetricCell } from '@/components/ui/metric-cell';
 import type { CorpsTone } from '@/lib/metric-tone';
@@ -71,26 +72,8 @@ export function CorpsStatCard({
 
 export { CORPS_TONE_DOT, CORPS_TONE_TEXT };
 
-export function CorpsDisclaimer({
-  title,
-  children,
-  icon: Icon,
-}: {
-  title: string;
-  children: React.ReactNode;
-  icon?: import('lucide-react').LucideIcon;
-}) {
-  return (
-    <div className="rounded-2xl border border-amber-500/25 bg-amber-500/5 px-4 py-3.5">
-      <div className="flex gap-3">
-        {Icon && <Icon className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />}
-        <div className="space-y-1 text-sm">
-          <p className="font-medium text-amber-900 dark:text-amber-200">{title}</p>
-          <div className="text-muted-foreground text-xs leading-relaxed">{children}</div>
-        </div>
-      </div>
-    </div>
-  );
+export function CorpsDisclaimer({ title, children }: { title: string; children: React.ReactNode }) {
+  return <ClinicalAnnotation title={title}>{children}</ClinicalAnnotation>;
 }
 
 export function CorpsEmptyState({

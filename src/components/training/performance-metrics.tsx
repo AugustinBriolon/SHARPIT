@@ -2,7 +2,7 @@
 
 import type { ActivityAnalysis } from '@/lib/activity-analysis';
 import { MetricCard } from '@/components/ui/metric-card';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ClinicalAnnotation } from '@/components/ui/clinical-annotation';
 
 function decouplingLabel(pct: number): string {
   if (pct < 5) return 'Excellent — peu de dérive cardiaque';
@@ -103,25 +103,18 @@ export function ThresholdsHint({ analysis }: { analysis: ActivityAnalysis }) {
   if (thresholds.source === 'profile') return null;
 
   return (
-    <Card className="border-amber-500/30 bg-amber-500/5">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-amber-700 dark:text-amber-300">
-          Seuils estimés
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="text-muted-foreground text-sm">
-        Renseigne ton FTP, LTHR et allure seuil dans{' '}
-        <a className="text-primary underline-offset-2 hover:underline" href="/profil">
-          Profil
-        </a>{' '}
-        pour des zones et un IF/TSS précis.
-        {thresholds.lthr && (
-          <span className="mt-1 block font-mono text-xs">
-            LTHR estimé : {thresholds.lthr} bpm
-            {thresholds.ftp ? ` · FTP estimé : ${thresholds.ftp} W` : ''}
-          </span>
-        )}
-      </CardContent>
-    </Card>
+    <ClinicalAnnotation title="Seuils estimés">
+      Renseigne ton FTP, LTHR et allure seuil dans{' '}
+      <a className="text-primary underline-offset-2 hover:underline" href="/profil">
+        Profil
+      </a>{' '}
+      pour des zones et un IF/TSS précis.
+      {thresholds.lthr && (
+        <span className="text-data mt-1 block text-xs">
+          LTHR estimé : {thresholds.lthr} bpm
+          {thresholds.ftp ? ` · FTP estimé : ${thresholds.ftp} W` : ''}
+        </span>
+      )}
+    </ClinicalAnnotation>
   );
 }

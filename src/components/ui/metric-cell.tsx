@@ -86,7 +86,7 @@ export function MetricCell({
       </div>
       <p
         className={cn(
-          'mt-2 font-bold tabular-nums',
+          'text-instrument mt-2',
           onExplain ? 'text-xl leading-none' : 'text-2xl leading-none',
           valueClass,
         )}
@@ -112,11 +112,11 @@ export function MetricCell({
       {onExplain && (
         <button
           aria-label={explainLabel}
-          className="border-border/60 text-muted-foreground hover:border-primary/35 hover:bg-primary/5 hover:text-primary mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed py-1.5 text-[10px] font-medium transition-colors"
+          className="explore-link mt-3 self-start"
           type="button"
           onClick={onExplain}
         >
-          {explainLabel}
+          comprendre
         </button>
       )}
     </div>

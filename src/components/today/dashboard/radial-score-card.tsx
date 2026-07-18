@@ -60,7 +60,7 @@ export function RadialScoreCard({
         <div className="shrink-0 text-right">
           <span
             className={cn(
-              'text-data leading-none font-semibold',
+              'text-instrument leading-none',
               compact ? 'text-xl' : 'text-2xl',
               valueClass,
             )}
@@ -77,15 +77,11 @@ export function RadialScoreCard({
           className="w-full"
           emphasis={colorMode === 'neutral' ? 'neutral' : 'auto'}
           max={max}
+          size="slim"
           value={value}
         />
         <div className="flex items-center justify-between gap-2">
-          <p className="text-label">
-            lecture physiologique
-            <span className="ml-1 inline-block translate-x-0 transition-transform duration-200 ease-out group-hover:translate-x-0.5">
-              &gt;
-            </span>
-          </p>
+          <span className="explore-link">lecture physiologique</span>
         </div>
       </div>
     </Link>

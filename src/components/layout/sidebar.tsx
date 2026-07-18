@@ -25,7 +25,7 @@ function NavLink({
   return (
     <Link
       aria-current={isActive ? 'page' : undefined}
-      className={navLinkClass(isActive, 'bg-sidebar')}
+      className={navLinkClass(isActive)}
       href={item.href}
       onMouseEnter={() => onPrefetch(item.href)}
     >
@@ -41,7 +41,7 @@ export function Sidebar() {
   const prefetch = usePrefetchNavQuery();
 
   return (
-    <aside className="border-sidebar-border bg-sidebar sticky top-0 flex h-dvh w-60 shrink-0 flex-col border-r">
+    <aside className="border-sidebar-border bg-background sticky top-0 flex h-dvh w-60 shrink-0 flex-col border-r">
       <div className="px-4 pt-6 pb-5">
         <Link className="flex items-center gap-3 rounded-3xl px-2 py-2" href="/">
           <div className="bg-primary/10 ring-primary/25 flex size-9 items-center justify-center rounded-lg ring-1">

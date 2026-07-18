@@ -6,6 +6,9 @@ import {
 
 export const SLEEP_TARGET_MIN = 450; // 7h 30m
 
+const DURATION_WEIGHT = 0.55;
+const ARCHITECTURE_WEIGHT = 0.45;
+
 export function formatSleepDuration(minutes: number | null): string {
   if (minutes === null) return '—';
   const h = Math.floor(minutes / 60);
@@ -20,6 +23,15 @@ export function computeRestorativeRatio(
 ): number | null {
   if (deepMin == null || remMin == null || totalMin == null || totalMin <= 0) return null;
   return Math.round(((deepMin + remMin) / totalMin) * 100);
+}
+
+/** Duration vs personal target — linear, capped at 100 (no cliff at the target). */
+export function mapSleepDurationToRaw(
+  totalMin: number | null,
+  targetMin: number = SLEEP_TARGET_MIN,
+): number | null {
+  if (totalMin == null || totalMin <= 0 || targetMin <= 0) return null;
+  return Math.round(Math.min(100, (totalMin / targetMin) * 100));
 }
 
 /** Dette cumulée 7 nuits (alignée sur recovery-extractor). */
@@ -39,26 +51,53 @@ export function computeSleepDebt7d(
 
 export type SleepScoreBreakdown = {
   restorativeRatio: number | null;
+  durationScore: number | null;
+  architectureScore: number | null;
   rawScore: number | null;
   debtMin: number | null;
   debtModifier: number;
   sharpitScore: number | null;
 };
 
+/**
+ * Night score for presentation surfaces.
+ * 55 % duration vs athlete target + 45 % restorative architecture (deep+REM).
+ * Debt remains coach context only — it does not alter the night score.
+ */
 export function buildSleepScoreBreakdown(
   deepMin: number | null,
   remMin: number | null,
   totalMin: number | null,
   debtMin: number | null,
+  targetMin: number = SLEEP_TARGET_MIN,
 ): SleepScoreBreakdown {
   const restorativeRatio = computeRestorativeRatio(deepMin, remMin, totalMin);
-  const rawScore =
+  const durationScore = mapSleepDurationToRaw(totalMin, targetMin);
+  const architectureScore =
     restorativeRatio != null ? mapRestorativeSleepRatioToRaw(restorativeRatio) : null;
+
+  let rawScore: number | null = null;
+  if (durationScore != null && architectureScore != null) {
+    rawScore = DURATION_WEIGHT * durationScore + ARCHITECTURE_WEIGHT * architectureScore;
+  } else if (durationScore != null) {
+    rawScore = durationScore;
+  } else if (architectureScore != null) {
+    rawScore = architectureScore;
+  }
+
   // Dette : contexte coach uniquement — n'impacte plus le score de la nuit.
   const debtModifier = debtMin != null && debtMin > 30 ? sleepDebtModifier(debtMin) : 1;
   const sharpitScore = rawScore != null ? Math.round(Math.min(100, Math.max(0, rawScore))) : null;
 
-  return { restorativeRatio, rawScore, debtMin, debtModifier, sharpitScore };
+  return {
+    restorativeRatio,
+    durationScore,
+    architectureScore,
+    rawScore,
+    debtMin,
+    debtModifier,
+    sharpitScore,
+  };
 }
 
 export type SleepHealthEntry = {
@@ -82,6 +121,7 @@ export function computeSharpitSleepScoreForDay(
     entry.sleepRemMin ?? null,
     entry.sleepMinutes ?? null,
     debt,
+    targetMin,
   ).sharpitScore;
 }
 

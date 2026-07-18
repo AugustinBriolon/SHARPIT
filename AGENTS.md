@@ -14,6 +14,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - [`docs/models/CORE_ARCHITECTURE.md`](docs/models/CORE_ARCHITECTURE.md) — **architectural constitution** (frozen Core)
 - [`docs/product/PRODUCT.md`](docs/product/PRODUCT.md) — constitution, execution doctrine, athlete journey
 - [`docs/design/DESIGN_LANGUAGE.md`](docs/design/DESIGN_LANGUAGE.md) — visual and interaction law
+- [`docs/design/DESIGN_SYSTEM_PROMPT.md`](docs/design/DESIGN_SYSTEM_PROMPT.md) — agent-facing design prompt (tokens, patterns, anti-patterns)
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — code structure and conventions
 - [`docs/domain/DOMAIN.md`](docs/domain/DOMAIN.md) — domain concepts and Digital Twin
 - [`docs/EVENT_DRIVEN_ARCHITECTURE.md`](docs/EVENT_DRIVEN_ARCHITECTURE.md) — sync and orchestration (athlete-centric)

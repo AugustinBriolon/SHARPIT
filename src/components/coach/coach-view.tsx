@@ -367,7 +367,7 @@ export function CoachView() {
           </Button>
         </StickyHeader>
 
-        <div className="flex h-[calc(100dvh-180px)] flex-col gap-3 lg:flex-row lg:gap-4">
+        <div className="flex h-[calc(100dvh-190px)] flex-col gap-3 lg:flex-row lg:gap-4">
           {conversationListEl}
           {renderChatPanel()}
         </div>

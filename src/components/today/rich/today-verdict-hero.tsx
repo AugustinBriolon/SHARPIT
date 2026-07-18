@@ -61,13 +61,13 @@ export function TodayVerdictHero({ vm }: { vm: TodayViewModel }) {
       )}
     >
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_18rem] xl:items-start">
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="space-y-2">
               {contextLabel ? <p className="text-label">{contextLabel}</p> : null}
               <h1
                 className={cn(
-                  'font-heading text-xl leading-snug font-semibold tracking-tight sm:text-[1.55rem]',
+                  'text-verdict sm:text-[1.4rem]/[1.35]',
                   useVerdictAccent ? hero.verdictStyle.colorClass : 'text-foreground',
                 )}
               >
@@ -87,10 +87,12 @@ export function TodayVerdictHero({ vm }: { vm: TodayViewModel }) {
 
           {secondaryContent}
 
-          <div className="max-w-xl space-y-2">
+          <div className="max-w-xl space-y-2 pt-2">
             <div className="flex items-center justify-between gap-3">
               <p className="text-label">position du jour</p>
-              <p className="text-muted-foreground text-[10px]">récupération vers intensité haute</p>
+              <p className="text-muted-foreground text-[10px] italic">
+                récupération vers intensité haute
+              </p>
             </div>
             <PhysioRail max={100} value={heroSignal} />
           </div>
@@ -98,7 +100,7 @@ export function TodayVerdictHero({ vm }: { vm: TodayViewModel }) {
 
         <div className="analysis-panel rounded-analysis px-4 py-4">
           <p className="text-label">lecture rapide</p>
-          <p className="text-data text-foreground mt-2 text-3xl font-semibold">
+          <p className="text-instrument text-foreground mt-2 text-3xl">
             {hero.metricsRow.recoveryScore != null
               ? Math.round(hero.metricsRow.recoveryScore)
               : '—'}

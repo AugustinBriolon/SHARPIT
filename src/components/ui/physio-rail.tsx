@@ -19,12 +19,15 @@ export function PhysioRail({
   max,
   markerLabel,
   emphasis = 'auto',
+  size = 'default',
   className,
 }: {
   value: number | null;
   max: number;
   markerLabel?: string | null;
   emphasis?: 'auto' | 'neutral';
+  /** default: 6px (verdict panels) · slim: 4px (metric cards) */
+  size?: 'default' | 'slim';
   className?: string;
 }) {
   const progress =
@@ -42,7 +45,12 @@ export function PhysioRail({
 
   return (
     <div className={cn('space-y-1.5', className)}>
-      <div className="bg-muted/80 relative h-2.5 overflow-hidden rounded-full">
+      <div
+        className={cn(
+          'relative overflow-hidden rounded-full bg-transparent',
+          size === 'slim' ? 'h-1' : 'h-1.5',
+        )}
+      >
         {progress != null ? (
           <div
             className="absolute inset-y-0 left-0 rounded-full opacity-95"
@@ -53,19 +61,19 @@ export function PhysioRail({
             aria-hidden
           />
         ) : null}
-        <div className="absolute inset-px rounded-full border border-black/6 dark:border-white/6" />
+        <div className="absolute inset-0 rounded-full border border-black/6 dark:border-white/6" />
         {progress != null ? (
           <div
-            className="border-background absolute top-1/2 h-4 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full border shadow-sm"
+            className="border-background absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border"
             style={{
               left: `${progress}%`,
+              height: size === 'slim' ? '0.625rem' : '0.875rem',
+              width: '3px',
               backgroundColor: markerColor,
             }}
             aria-hidden
           />
-        ) : (
-          <div className="bg-analysis-surface/70 absolute inset-0" />
-        )}
+        ) : null}
       </div>
       {markerLabel ? (
         <p className="text-muted-foreground text-[10px] leading-none">{markerLabel}</p>

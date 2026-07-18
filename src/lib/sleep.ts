@@ -51,11 +51,11 @@ export interface SleepInsight {
 
 export interface SleepLatest {
   date: Date;
-  /** Score SHARPIT (architecture restauratrice de la nuit). */
+  /** Score SHARPIT (durée vs cible + architecture restauratrice). */
   sharpitScore: number | null;
   sharpitScoreTone: RecoveryTone;
   restorativeRatio: number | null;
-  /** Score Garmin brut, si disponible. */
+  /** Score Garmin brut, si disponible (non affiché comme score concurrent). */
   garminScore: number | null;
   durationMin: number | null;
   bedtimeMin: number | null;
@@ -485,11 +485,13 @@ export function analyzeSleep(entries: SleepEntryInput[], goals?: SleepGoals): Sl
   }
 
   const [latestNight] = nights;
+  const targetMin = goals?.targetDurationMin ?? TARGET_DURATION_MIN;
   const latestBreakdown = buildSleepScoreBreakdown(
     latestNight.sleepDeepMin,
     latestNight.sleepRemMin,
     latestNight.sleepMinutes,
     null,
+    targetMin,
   );
   const latest: SleepLatest = {
     date: latestNight.date,

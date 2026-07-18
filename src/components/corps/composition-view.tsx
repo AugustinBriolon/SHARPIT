@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, Scale } from 'lucide-react';
+import { Scale } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
 import type { ProductInsight } from '@/core/product-insight/types';
@@ -8,7 +8,7 @@ import type { CompositionMetricId } from '@/lib/composition-metric-guides';
 import { useBodyPresentationViewModel } from '@/hooks/use-presentation-view-model';
 import { CompositionMetricCard } from '@/components/corps/composition-metric-card';
 import { CompositionMetricExplainer } from '@/components/corps/composition-metric-explainer';
-import { MetricCell } from '@/components/ui/metric-cell';
+import { ClinicalAnnotation } from '@/components/ui/clinical-annotation';
 import {
   CorpsDisclaimer,
   CorpsDivider,
@@ -18,7 +18,7 @@ import {
 import type { BodyChartPoint } from '@/core/presentation/body-view-model';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonCard, SkeletonEyebrow, SkeletonPill } from '@/components/ui/skeleton-patterns';
-import { CORPS_TONE_TEXT } from '@/lib/metric-tone';
+import { CORPS_TONE_DOT, CORPS_TONE_TEXT } from '@/lib/metric-tone';
 import { isDeltaStatusTone } from '@/lib/health-status';
 import { cn } from '@/lib/utils';
 
@@ -85,21 +85,24 @@ function CompositionSkeleton() {
     <div className="space-y-6">
       <Skeleton className="h-16 w-full rounded-2xl" />
 
-      <SkeletonCard className="overflow-hidden p-0">
-        <div className="flex flex-col gap-5 px-5 py-5 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-2">
-            <Skeleton className="h-3 w-24 rounded-full border-0" />
-            <Skeleton className="h-10 w-32 border-0" />
-            <Skeleton className="h-4 w-40 rounded-full border-0" />
-          </div>
-          <div className="grid min-w-[min(100%,280px)] grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="bg-card/60 rounded-2xl border px-3 py-3">
-                <Skeleton className="h-2.5 w-14 rounded-full border-0" />
-                <Skeleton className="mt-2 h-7 w-12 border-0" />
-              </div>
-            ))}
-          </div>
+      <SkeletonCard className="px-5 py-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <Skeleton className="h-4 w-28 rounded-full" />
+          <Skeleton className="h-4 w-36 rounded-full" />
+        </div>
+        <Skeleton className="mt-2 h-10 w-40" />
+        <Skeleton className="mt-1 h-4 w-28 rounded-full" />
+        <div className="border-analysis-border divide-analysis-border mt-4 grid grid-cols-1 divide-y border-t pt-4 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="min-w-0 py-3 first:pt-0 last:pb-0 sm:px-4 sm:py-0 sm:first:pl-0 sm:last:pr-0"
+            >
+              <Skeleton className="h-4 w-20 max-w-full rounded-full" />
+              <Skeleton className="mt-2 h-[1.125rem] w-16" />
+              <Skeleton className="mt-1.5 h-4 w-24 max-w-full rounded-full" />
+            </div>
+          ))}
         </div>
       </SkeletonCard>
 
@@ -150,12 +153,42 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
 
   const isWindowRefreshing = query.isFetching && !query.isPending;
 
+  const heroMiniMetrics = useMemo(() => {
+    if (!vm?.hasData) return [];
+    return (
+      [
+        { key: 'bodyFatPct', label: 'Masse grasse', unit: '%' },
+        { key: 'musclePct', label: 'Muscle', unit: '%' },
+        { key: 'visceralFat', label: 'Viscéral', unit: '' },
+      ] as const
+    ).map(({ key, label, unit }) => {
+      const metric = vm.hero.heroMini[key];
+      return {
+        key,
+        label,
+        metric,
+        value: metric.value != null ? `${metric.value}${unit ? ` ${unit}` : ''}` : '—',
+        delta: metric.deltaDisplay && metric.deltaDisplay !== '—' ? metric.deltaDisplay : undefined,
+      };
+    });
+  }, [vm]);
+
+  const heroHints = useMemo(() => {
+    if (!vm?.hasData) return [];
+    const hints: { label: string; text: string }[] = [];
+    if (vm.hero.weightDeltaHint) hints.push({ label: 'Poids', text: vm.hero.weightDeltaHint });
+    for (const { label, metric } of heroMiniMetrics) {
+      if (metric.deltaHint) hints.push({ label, text: metric.deltaHint });
+    }
+    return hints;
+  }, [vm, heroMiniMetrics]);
+
   if (query.isPending) return <CompositionSkeleton />;
 
   if (!vm || !vm.hasData) {
     return (
       <div className="space-y-4">
-        <CorpsDisclaimer icon={AlertTriangle} title="Lecture indicative, pas une mesure médicale">
+        <CorpsDisclaimer title="Lecture indicative, pas une mesure médicale">
           Les balances estiment la composition via impédancemétrie : utile pour les{' '}
           <em>tendances</em>, pas comme référence médicale.
         </CorpsDisclaimer>
@@ -173,84 +206,88 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
 
   return (
     <div className="space-y-6">
-      <CorpsDisclaimer icon={AlertTriangle} title="Lecture indicative, pas une mesure médicale">
+      <CorpsDisclaimer title="Lecture indicative, pas une mesure médicale">
         Impédancemétrie = tendances utiles, écart possible vs DEXA. Hydratation, repas et heure de
         pesée influencent le résultat du jour.
       </CorpsDisclaimer>
 
-      <CorpsPanel className="overflow-hidden p-0">
-        <div className="flex flex-col gap-5 px-5 py-5 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-              Dernière pesée
-            </p>
-            <p className="font-heading mt-1 text-4xl font-semibold tabular-nums">
-              {vm.hero.latestWeightDisplay}
-              {vm.hero.latestWeightKg != null ? (
-                <span className="text-muted-foreground ml-1 text-lg font-normal">kg</span>
-              ) : null}
-            </p>
-            <p className="text-muted-foreground mt-1 text-sm">
-              {vm.hero.measuredAtLabel ?? '—'}
-              {vm.hero.sourceLabel ? (
-                <span className="bg-muted text-muted-foreground ml-2 inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium uppercase">
-                  {vm.hero.sourceLabel}
-                </span>
-              ) : null}
-            </p>
+      <CorpsPanel className="px-5 py-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <p className="text-label">dernière pesée</p>
+          <p className="text-muted-foreground text-xs">
+            {vm.hero.measuredAtLabel ?? '—'}
+            {vm.hero.sourceLabel ? ` · ${vm.hero.sourceLabel}` : ''}
+          </p>
+        </div>
 
-            {vm.hero.weightDeltaDisplay ? (
-              <div className="mt-2 space-y-1">
+        <p className="text-instrument mt-2 text-4xl">
+          {vm.hero.latestWeightDisplay}
+          {vm.hero.latestWeightKg != null ? (
+            <span className="text-muted-foreground ml-1.5 text-lg">kg</span>
+          ) : null}
+        </p>
+
+        {vm.hero.weightDeltaDisplay ? (
+          <p
+            className={cn(
+              'mt-1 text-xs font-medium',
+              vm.hero.weightDeltaTone && isDeltaStatusTone(vm.hero.weightDeltaTone)
+                ? CORPS_TONE_TEXT[vm.hero.weightDeltaTone]
+                : 'text-muted-foreground',
+            )}
+          >
+            {vm.hero.weightDeltaDisplay}
+          </p>
+        ) : null}
+
+        <div className="border-analysis-border divide-analysis-border mt-4 grid grid-cols-1 divide-y border-t pt-4 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          {heroMiniMetrics.map(({ key, label, metric, value, delta }) => (
+            <div
+              key={key}
+              className="min-w-0 py-3 first:pt-0 last:pb-0 sm:px-4 sm:py-0 sm:first:pl-0 sm:last:pr-0"
+            >
+              <div className="flex items-center gap-2">
+                <span
+                  className={cn('size-1.5 shrink-0 rounded-full', CORPS_TONE_DOT[metric.tone])}
+                />
+                <p className="text-label truncate">{label}</p>
+              </div>
+              <p className="text-instrument mt-2 text-lg leading-none">{value}</p>
+              {delta ? (
                 <p
                   className={cn(
-                    'text-xs font-medium',
-                    vm.hero.weightDeltaTone && isDeltaStatusTone(vm.hero.weightDeltaTone)
-                      ? CORPS_TONE_TEXT[vm.hero.weightDeltaTone]
+                    'mt-1.5 text-[11px] leading-snug',
+                    metric.deltaTone && isDeltaStatusTone(metric.deltaTone)
+                      ? CORPS_TONE_TEXT[metric.deltaTone]
                       : 'text-muted-foreground',
                   )}
                 >
-                  {vm.hero.weightDeltaDisplay}
+                  {delta}
                 </p>
-                {vm.hero.weightDeltaHint ? (
-                  <p className="text-muted-foreground text-[10px] leading-snug">
-                    {vm.hero.weightDeltaHint}
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="grid min-w-[min(100%,280px)] grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-            {(
-              [
-                { key: 'bodyFatPct', label: 'Masse grasse', unit: '%' },
-                { key: 'musclePct', label: 'Muscle', unit: '%' },
-                { key: 'visceralFat', label: 'Viscéral', unit: '' },
-              ] as const
-            ).map(({ key, label, unit }) => {
-              const metric = vm.hero.heroMini[key];
-              const value = metric.value != null ? `${metric.value}${unit ? ` ${unit}` : ''}` : '—';
-              const footer =
-                metric.deltaDisplay && metric.deltaDisplay !== '—'
-                  ? metric.deltaDisplay
-                  : undefined;
-              return (
-                <MetricCell
-                  key={key}
-                  footer={footer}
-                  footerHint={metric.deltaHint ?? undefined}
-                  footerTone={metric.deltaTone}
-                  label={label}
-                  layout="card"
-                  tone={metric.tone}
-                  value={value}
-                  showToneDot
-                  onExplain={metric.guideId ? () => setExplainMetricId(metric.guideId!) : undefined}
-                />
-              );
-            })}
-          </div>
+              ) : null}
+              {metric.guideId ? (
+                <button
+                  aria-label={`Comprendre la mesure ${label}`}
+                  className="explore-link mt-2 block"
+                  type="button"
+                  onClick={() => setExplainMetricId(metric.guideId!)}
+                >
+                  comprendre
+                </button>
+              ) : null}
+            </div>
+          ))}
         </div>
+
+        {heroHints.length > 0 ? (
+          <ClinicalAnnotation className="mt-4">
+            {heroHints.map(({ label, text }) => (
+              <p key={label}>
+                <span className="text-foreground/85 font-medium">{label}</span> — {text}
+              </p>
+            ))}
+          </ClinicalAnnotation>
+        ) : null}
       </CorpsPanel>
 
       <CompositionInsightList

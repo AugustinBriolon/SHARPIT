@@ -16,10 +16,13 @@ export function navPillClass(active: boolean, className?: string) {
   );
 }
 
+/** Lien sidebar — position sur un cadran : liseré gauche accent, pas de pastille de fond. */
 export function navLinkClass(active: boolean, className?: string) {
   return cn(
-    'group flex items-center gap-3 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors',
-    active ? navPillActiveClass : navPillInactiveClass,
+    'group flex items-center gap-3 border-l-2 px-3 py-2.5 text-sm font-medium transition-colors',
+    active
+      ? 'border-primary text-primary'
+      : 'text-muted-foreground hover:text-foreground border-transparent',
     className,
   );
 }

@@ -20,20 +20,20 @@ function DrillDownHeroSkeleton({ withQuickRead = true }: { withQuickRead?: boole
         <div className="flex flex-col items-center gap-2">
           <div className="flex items-center gap-2">
             <Skeleton className="size-8 rounded-lg" />
-            <Skeleton className="h-4 w-36 rounded-full border-0" />
+            <Skeleton className="h-4 w-36 rounded-full" />
             <Skeleton className="size-8 rounded-lg" />
           </div>
-          <Skeleton className="h-3.5 w-28 rounded-full border-0" />
+          <Skeleton className="h-3.5 w-28 rounded-full" />
         </div>
 
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_14rem] lg:items-start">
           <div className="space-y-3">
             <SkeletonEyebrow className="w-24" />
-            <SkeletonTitle size="hero" />
+            <SkeletonTitle size="drill-hero" />
             <div className="max-w-xl space-y-2">
               <div className="flex items-center justify-between gap-3">
-                <Skeleton className="h-3 w-24 rounded-full border-0" />
-                <Skeleton className="h-2.5 w-40 rounded-full border-0" />
+                <Skeleton className="h-3 w-24 rounded-full" />
+                <Skeleton className="h-2.5 w-40 rounded-full" />
               </div>
               <SkeletonPhysioRail />
             </div>
@@ -41,7 +41,7 @@ function DrillDownHeroSkeleton({ withQuickRead = true }: { withQuickRead?: boole
           {withQuickRead ? (
             <div className="analysis-panel rounded-analysis px-4 py-4">
               <SkeletonEyebrow className="w-24" />
-              <Skeleton className="mt-2 h-9 w-16 border-0" />
+              <Skeleton className="mt-2 h-9 w-16" />
               <SkeletonText className="mt-2" widths={['100%', '72%']} />
             </div>
           ) : null}
@@ -55,9 +55,9 @@ function DrillDownGlobalDecisionSkeleton() {
   return (
     <SkeletonCard className="px-5 py-5">
       <SkeletonEyebrow className="w-40" />
-      <Skeleton className="mt-3 h-7 w-48 max-w-full rounded-full border-0" />
+      <Skeleton className="mt-3 h-7 w-48 max-w-full rounded-full" />
       <SkeletonText className="mt-2" widths={['100%', '86%']} />
-      <Skeleton className="mt-3 h-3.5 w-24 rounded-full border-0" />
+      <Skeleton className="mt-3 h-3.5 w-24 rounded-full" />
     </SkeletonCard>
   );
 }
@@ -81,8 +81,8 @@ function DrillDownStatsGridSkeleton({ items = 3 }: { items?: number }) {
       {Array.from({ length: items }).map((_, index) => (
         <SkeletonCard key={index} className="space-y-3 px-5 py-5">
           <SkeletonEyebrow className="w-24" />
-          <Skeleton className="h-8 w-20 border-0" />
-          <Skeleton className="rounded-analysis h-16 w-full border-0" />
+          <Skeleton className="h-8 w-20" />
+          <Skeleton className="rounded-analysis h-16 w-full" />
         </SkeletonCard>
       ))}
     </div>
@@ -147,9 +147,9 @@ export function MetricDrillDownSkeleton({
       <header className="mb-3 space-y-2 lg:mb-4">
         <div className="inline-flex min-h-11 items-center gap-1">
           <Skeleton className="size-4 shrink-0 rounded-sm" />
-          <Skeleton className="h-4 w-20 rounded-full border-0" />
+          <Skeleton className="h-4 w-20 rounded-full" />
         </div>
-        <Skeleton className="h-7 w-36 max-w-full rounded-full border-0 lg:h-8" />
+        <Skeleton className="h-7 w-36 max-w-full rounded-full lg:h-8" />
       </header>
 
       <div className="mx-auto space-y-3 pb-8">
@@ -162,7 +162,7 @@ export function MetricDrillDownSkeleton({
         </div>
         {variant === 'recovery' ? <DrillDownDimensionsSkeleton rows={4} /> : null}
         <DrillDownVariantTail variant={variant} />
-        <Skeleton className="mx-auto h-3 w-56 rounded-full border-0" />
+        <Skeleton className="mx-auto h-3 w-56 rounded-full" />
       </div>
     </div>
   );

@@ -23,11 +23,16 @@ function RadialScoreCardLoading({ label }: { label: string }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-label">{label}</p>
-          <Skeleton className="mt-1 h-4 w-28 max-w-full rounded-full border-0" />
+          <Skeleton className="mt-1 h-[1.2rem] w-28 max-w-full rounded-full" />
         </div>
-        <Skeleton className="h-8 w-12 shrink-0 rounded-lg border-0" />
+        <Skeleton className="h-8 w-12 shrink-0 rounded-lg" />
       </div>
-      <SkeletonPhysioRail />
+      <div className="space-y-2">
+        <SkeletonPhysioRail size="slim" />
+        <div className="flex items-center justify-between gap-2">
+          <span className="explore-link opacity-60">lecture physiologique</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -43,19 +48,19 @@ export function DashboardSkeleton() {
     <div className="mx-auto space-y-3 sm:space-y-4">
       <section className="analysis-panel-alt rounded-analysis-lg px-5 py-5 sm:px-6 sm:py-6">
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_18rem] xl:items-start">
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="space-y-2">
-                <Skeleton className="h-3 w-32 rounded-full border-0" />
-                <Skeleton className="h-7 w-56 max-w-full border-0 sm:h-[1.55rem]" />
+                <Skeleton className="h-3 w-32 rounded-full" />
+                <Skeleton className="h-[1.69rem] w-56 max-w-full sm:h-[1.89rem]" />
               </div>
               <Skeleton className="h-6 w-28 rounded-full" />
             </div>
-            <Skeleton className="h-4 w-[88%] max-w-2xl rounded-full border-0" />
-            <div className="max-w-xl space-y-2">
+            <Skeleton className="h-[1.4rem] w-[88%] max-w-2xl rounded-full" />
+            <div className="max-w-xl space-y-2 pt-2">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-label">position du jour</p>
-                <p className="text-muted-foreground text-[10px]">
+                <p className="text-muted-foreground text-[10px] italic">
                   récupération vers intensité haute
                 </p>
               </div>
@@ -66,7 +71,7 @@ export function DashboardSkeleton() {
           <div className="analysis-panel rounded-analysis px-4 py-4">
             <p className="text-label">lecture rapide</p>
             <div className="mt-2 flex items-baseline gap-1">
-              <Skeleton className="h-9 w-14 border-0" />
+              <Skeleton className="h-9 w-14" />
               <span className="text-muted-foreground text-sm">%</span>
             </div>
             <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
@@ -84,8 +89,8 @@ export function DashboardSkeleton() {
             <RadialScoreCardLoading label="Adaptation" />
           </div>
           <div className="analysis-panel rounded-analysis mt-3 flex flex-wrap items-start justify-between gap-3 px-3 py-2.5">
-            <Skeleton className="h-3.5 w-40 max-w-[55%] rounded-full border-0" />
-            <Skeleton className="h-3.5 w-36 max-w-[40%] rounded-full border-0" />
+            <Skeleton className="h-3.5 w-40 max-w-[55%] rounded-full" />
+            <Skeleton className="h-3.5 w-36 max-w-[40%] rounded-full" />
           </div>
         </div>
       </section>
@@ -115,7 +120,7 @@ export function DashboardSkeleton() {
           <ul className="space-y-2">
             {[0, 1, 2].map((i) => (
               <li key={i} className="border-border/60 rounded-xl border px-3 py-2.5">
-                <Skeleton className="h-4 w-full max-w-[240px] rounded-full border-0" />
+                <Skeleton className="h-4 w-full max-w-[240px] rounded-full" />
               </li>
             ))}
           </ul>
@@ -127,8 +132,8 @@ export function DashboardSkeleton() {
           <div className="min-w-0">
             <p className="text-label">{trajectoryLabel}</p>
             <div className="mt-1 flex items-center gap-1.5">
-              <Skeleton className="h-4 w-4 shrink-0 rounded-full border-0" />
-              <Skeleton className="h-4 w-48 max-w-full rounded-full border-0" />
+              <Skeleton className="h-4 w-4 shrink-0 rounded-full" />
+              <Skeleton className="h-4 w-48 max-w-full rounded-full" />
             </div>
           </div>
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px]">
@@ -151,11 +156,11 @@ export function DashboardSkeleton() {
         <div className="grid grid-cols-2 gap-4">
           <div className="analysis-panel rounded-analysis px-3 py-3">
             <p className="text-label mb-1">Récup. 14j</p>
-            <Skeleton className="h-14 w-full rounded-lg border-0" />
+            <Skeleton className="h-14 w-full rounded-lg" />
           </div>
           <div className="analysis-panel rounded-analysis px-3 py-3">
             <p className="text-label mb-1">Charge 14j</p>
-            <Skeleton className="h-14 w-full rounded-lg border-0" />
+            <Skeleton className="h-14 w-full rounded-lg" />
           </div>
         </div>
       </section>

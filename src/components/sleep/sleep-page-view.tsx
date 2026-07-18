@@ -32,7 +32,6 @@ export function SleepPageView(props: SleepPageViewProps) {
     awakeMin,
     bedtimeMin,
     wakeMin,
-    garminScore,
     sleepDelta7d,
     targetDeltaMin,
     sleepTargetMin,
@@ -57,7 +56,6 @@ export function SleepPageView(props: SleepPageViewProps) {
         adequacyDisplay={adequacyDisplay}
         bedtimeMin={bedtimeMin}
         date={date}
-        garminScore={garminScore}
         isToday={isToday}
         maxDate={maxDate}
         sleepScore={sleepScore}
@@ -94,7 +92,7 @@ export function SleepPageView(props: SleepPageViewProps) {
         />
       ) : null}
 
-      <SleepScoreExplainer garminScore={garminScore} scoreBreakdown={scoreBreakdown} />
+      <SleepScoreExplainer scoreBreakdown={scoreBreakdown} sleepTargetMin={sleepTargetMin} />
     </MetricDrillDownPage>
   );
 }

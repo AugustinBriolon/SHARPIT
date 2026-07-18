@@ -115,7 +115,13 @@ export async function buildSleepViewModel(trainingDayId: string): Promise<SleepV
     ...sleepGoals,
   });
 
-  const scoreBreakdown = buildSleepScoreBreakdown(deepMin, remMin, totalSleepMin, null);
+  const scoreBreakdown = buildSleepScoreBreakdown(
+    deepMin,
+    remMin,
+    totalSleepMin,
+    null,
+    sleepTargetMin,
+  );
 
   const sleepDim = recovery.dimensions.sleep;
   const sleepScore =

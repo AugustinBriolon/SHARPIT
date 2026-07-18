@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Plus, ShieldAlert, HeartPulse } from 'lucide-react';
+import { Plus, HeartPulse } from 'lucide-react';
 import { useState } from 'react';
 import {
   CorpsDisclaimer,
@@ -158,7 +158,7 @@ export function PhysicalHealthPageView({
         </>
       )}
 
-      <CorpsDisclaimer icon={ShieldAlert} title="Aide à la décision, pas un avis médical">
+      <CorpsDisclaimer title="Aide à la décision, pas un avis médical">
         {viewModel.medicalDisclaimer}
       </CorpsDisclaimer>
 

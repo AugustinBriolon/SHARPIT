@@ -2,22 +2,30 @@ import { restorativeRatioLabel, type SleepScoreBreakdown } from '@/lib/sleep-sco
 
 export function SleepScoreExplainer({
   scoreBreakdown,
-  garminScore,
+  sleepTargetMin,
 }: {
   scoreBreakdown: SleepScoreBreakdown;
-  garminScore: number | null;
+  sleepTargetMin: number;
 }) {
-  if (scoreBreakdown.restorativeRatio == null) return null;
+  if (scoreBreakdown.sharpitScore == null) return null;
+
+  const targetHours = Math.round((sleepTargetMin / 60) * 10) / 10;
+  const parts: string[] = [];
+
+  if (scoreBreakdown.durationScore != null) {
+    parts.push(`durée ${scoreBreakdown.durationScore}% vs objectif ${targetHours} h`);
+  }
+  if (scoreBreakdown.restorativeRatio != null && scoreBreakdown.architectureScore != null) {
+    parts.push(
+      `architecture ${scoreBreakdown.architectureScore}% (${scoreBreakdown.restorativeRatio}% restaurateur, ${restorativeRatioLabel(scoreBreakdown.restorativeRatio)})`,
+    );
+  }
+
+  if (parts.length === 0) return null;
 
   return (
     <p className="text-muted-foreground text-center text-xs leading-relaxed">
-      Score SHARPIT basé sur{' '}
-      <span className="text-foreground font-medium">
-        {scoreBreakdown.restorativeRatio} % restaurateur
-      </span>{' '}
-      ({restorativeRatioLabel(scoreBreakdown.restorativeRatio)}).
-      {garminScore != null &&
-        ` Garmin (${garminScore}) intègre aussi la durée et les interruptions.`}
+      Score SHARPIT = 55 % durée + 45 % architecture — {parts.join(' · ')}.
     </p>
   );
 }

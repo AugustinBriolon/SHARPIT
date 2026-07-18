@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { IBM_Plex_Sans, Syne } from 'next/font/google';
+import { IBM_Plex_Sans, JetBrains_Mono, Syne } from 'next/font/google';
 import Script from 'next/script';
 import { AppClerkProvider } from '@/providers/clerk-provider';
 import { ThemeProvider } from '@/providers/theme-provider';
@@ -23,6 +23,12 @@ const ibmPlexSans = IBM_Plex_Sans({
   variable: '--font-sans',
   subsets: ['latin'],
   weight: ['400', '500', '600'],
+});
+
+const jetBrainsMono = JetBrains_Mono({
+  variable: '--font-jetbrains-mono',
+  subsets: ['latin'],
+  weight: ['400', '500'],
 });
 
 export const metadata: Metadata = {
@@ -73,6 +79,7 @@ export default async function RootLayout({
         className={cn(
           syne.variable,
           ibmPlexSans.variable,
+          jetBrainsMono.variable,
           'h-full antialiased',
           serverResolved === 'dark' && 'dark',
         )}
