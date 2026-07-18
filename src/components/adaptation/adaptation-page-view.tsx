@@ -5,9 +5,6 @@ import { DrillDownDimensionRow } from '@/components/today/drill-down/dimension-r
 import { DrillDownHighlightSection } from '@/components/today/drill-down/highlight-section';
 import { GlobalDecisionStrip } from '@/components/today/drill-down/global-decision-strip';
 import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
-import { InsightNarrative } from '@/components/product-insight/insight-narrative';
-import type { ProductInsightBundle } from '@/core/product-insight/types';
-import { defaultInsightNarrativeSections } from '@/components/product-insight/narrative-sections';
 import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
 import {
@@ -46,7 +43,6 @@ export type AdaptationPageViewProps = {
   historyLength: number;
   confidencePct: number;
   confidenceTone: MetricTone;
-  insights: ProductInsightBundle;
   globalDecision: GlobalDecisionContext;
 };
 
@@ -73,9 +69,10 @@ export function AdaptationPageView({
   availableDimCount,
   historyLength,
   confidencePct,
-  insights,
   globalDecision,
 }: AdaptationPageViewProps) {
+  const hasFriction = plateauRisk || overreachingWithoutAdaptation || limitingFactor != null;
+
   return (
     <MetricDrillDownPage
       footer={
@@ -114,20 +111,26 @@ export function AdaptationPageView({
         titleClassName={verdictClassName}
       />
 
-      <InsightNarrative sections={defaultInsightNarrativeSections(insights)} />
-
-      {(plateauRisk || overreachingWithoutAdaptation || limitingFactor) && (
+      {hasFriction ? (
         <DrillDownSectionCard>
           <DrillDownSectionLabel>Ce qui freine le bloc</DrillDownSectionLabel>
-          <ul className="text-foreground mt-3 space-y-2 text-sm leading-relaxed">
-            {limitingFactor ? <li>· {limitingFactor}</li> : null}
-            {plateauRisk ? <li>· Risque de plateau détecté</li> : null}
+          <ul className="mt-3 space-y-2">
+            {limitingFactor ? (
+              <li className="annotation-clinical text-sm">{limitingFactor}</li>
+            ) : null}
+            {plateauRisk ? (
+              <li className="annotation-clinical text-signal-caution text-sm">
+                Risque de plateau détecté
+              </li>
+            ) : null}
             {overreachingWithoutAdaptation ? (
-              <li>· Surcharge sans adaptation correspondante</li>
+              <li className="annotation-clinical text-signal-caution text-sm">
+                Surcharge sans adaptation correspondante
+              </li>
             ) : null}
           </ul>
         </DrillDownSectionCard>
-      )}
+      ) : null}
 
       <DrillDownSectionCard>
         <DrillDownSectionLabel>Ce qui nourrit ou freine l&apos;adaptation</DrillDownSectionLabel>

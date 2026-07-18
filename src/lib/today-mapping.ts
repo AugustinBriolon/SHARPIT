@@ -618,21 +618,23 @@ export function mapFatigueCapacityLabel(capacity: TrainingCapacity): string {
 // Score color — maps a 0–100 score to a Tailwind color class
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Score color for drill-down instruments.
+ * In-range stays foreground; color only flags a deviation (caution / risk).
+ */
 export function mapScoreToColorClass(score: number | null): string {
   if (score === null) return 'text-muted-foreground';
-  if (score >= 80) return 'text-emerald-600 dark:text-emerald-400';
-  if (score >= 60) return 'text-blue-600 dark:text-blue-400';
-  if (score >= 40) return 'text-amber-600 dark:text-amber-400';
-  return 'text-red-600 dark:text-red-400';
+  if (score >= 60) return 'text-foreground';
+  if (score >= 40) return 'text-signal-caution';
+  return 'text-signal-risk';
 }
 
-/** Bar fill for score gauges — literals required for Tailwind class detection. */
+/** Bar fill for score gauges — single accent when OK; signal tokens on deviation. */
 export function mapScoreToBarColorClass(score: number | null): string {
   if (score === null) return 'bg-muted-foreground/10';
-  if (score >= 80) return 'bg-emerald-600 dark:bg-emerald-400';
-  if (score >= 60) return 'bg-blue-600 dark:bg-blue-400';
-  if (score >= 40) return 'bg-amber-600 dark:bg-amber-400';
-  return 'bg-red-600 dark:bg-red-400';
+  if (score >= 60) return 'bg-primary/70';
+  if (score >= 40) return 'bg-signal-caution/80';
+  return 'bg-signal-risk/80';
 }
 
 /** Fatigue dimension intensity — higher score = more fatigue. */

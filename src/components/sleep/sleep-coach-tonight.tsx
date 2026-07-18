@@ -1,74 +1,91 @@
-import { MetricCell } from '@/components/ui/metric-cell';
 import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
 import { formatClock, formatDuration, type SleepCoachView } from '@/lib/sleep';
+import { cn } from '@/lib/utils';
 
-export function SleepCoachTonight({ view }: { view: SleepCoachView }) {
+const RELAXATION_LEAD_MIN = 30;
+
+/**
+ * Plan du soir — trois heures clés + durée cible.
+ * Pas de barre : les heures portent déjà toute l'information.
+ */
+export function SleepCoachTonight({
+  view,
+  coachingLine,
+}: {
+  view: SleepCoachView;
+  coachingLine?: string | null;
+}) {
   if (!view.hasData) return null;
 
-  const durationLabel =
-    view.recommendedDurationMin > view.targetDurationMin
-      ? formatDuration(view.recommendedDurationMin)
-      : formatDuration(view.targetDurationMin);
+  const bedtime = view.recommendedBedtimeMin;
+  const durationMin = Math.max(view.recommendedDurationMin, view.targetDurationMin);
+  const hasPlan = bedtime != null && durationMin > 0;
 
-  const debtProgress =
-    view.debt7Min != null && view.debt7Min > 0
-      ? Math.min(100, Math.round((view.debt7Min / 180) * 100))
-      : null;
+  const relaxation = bedtime != null ? bedtime - RELAXATION_LEAD_MIN : null;
+  const wake = bedtime != null && durationMin > 0 ? bedtime + durationMin : null;
+
+  const debtMin = view.debt7Min != null && view.debt7Min > 30 ? view.debt7Min : null;
 
   return (
     <DrillDownSectionCard>
-      <DrillDownSectionLabel>Que faire ce soir</DrillDownSectionLabel>
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <DrillDownSectionLabel>Ce soir</DrillDownSectionLabel>
+
+      {hasPlan ? (
         <div className="space-y-3">
-          <div>
-            <p className="text-muted-foreground text-xs">Coucher conseillé</p>
-            <p className="text-data text-foreground mt-1 text-4xl font-semibold tracking-tight tabular-nums">
-              {view.recommendedBedtimeMin != null ? formatClock(view.recommendedBedtimeMin) : '—'}
-            </p>
-          </div>
-          <p className="text-muted-foreground max-w-md text-sm leading-relaxed">
-            Vise {durationLabel} avant ton réveil habituel
-            {view.regularityMin != null && ` · régularité ±${view.regularityMin} min`}.
-          </p>
-          {debtProgress != null ? (
-            <div className="max-w-sm space-y-1.5">
-              <div className="flex items-center justify-between gap-2 text-xs">
-                <span className="text-muted-foreground">Dette de sommeil</span>
-                <span className="text-data text-foreground font-medium">
-                  {formatDuration(view.debt7Min!)}
-                </span>
-              </div>
-              <div className="bg-muted/80 h-2 overflow-hidden rounded-full">
-                <div
-                  className="bg-signal-caution h-full rounded-full"
-                  style={{ width: `${debtProgress}%` }}
-                />
-              </div>
+          <div className="grid grid-cols-3">
+            <div>
+              <p className="text-label">Relaxation</p>
+              <p className="text-data text-muted-foreground mt-1.5 text-xl font-medium tabular-nums sm:text-2xl">
+                {relaxation != null ? formatClock(relaxation) : '—'}
+              </p>
             </div>
+            <div className="border-analysis-border/50 border-l pl-4">
+              <p className="text-label">Coucher conseillé</p>
+              <p className="text-data text-foreground mt-1.5 text-xl font-semibold tabular-nums sm:text-2xl">
+                {formatClock(bedtime)}
+              </p>
+            </div>
+            <div className="border-analysis-border/50 border-l pl-4">
+              <p className="text-label">Réveil</p>
+              <p className="text-data text-muted-foreground mt-1.5 text-xl font-medium tabular-nums sm:text-2xl">
+                {wake != null ? formatClock(wake % 1440) : '—'}
+              </p>
+            </div>
+          </div>
+
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            Vise {formatDuration(durationMin)} avant ton réveil habituel
+            {view.regularityMin != null ? ` · régularité ±${view.regularityMin} min` : ''}.
+          </p>
+        </div>
+      ) : (
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          Pas encore assez d’historique pour proposer une fenêtre de coucher.
+        </p>
+      )}
+
+      {debtMin != null || coachingLine ? (
+        <div className="space-y-2 pt-4">
+          {debtMin != null ? (
+            <p className="annotation-clinical">
+              Dette 7 jours{' '}
+              <span
+                className={cn(
+                  'text-data font-medium tabular-nums',
+                  debtMin > 90 ? 'text-signal-caution' : 'text-foreground',
+                )}
+              >
+                {formatDuration(debtMin)}
+              </span>{' '}
+              — à résorber sur les prochaines nuits.
+            </p>
+          ) : null}
+          {coachingLine ? (
+            <p className="text-muted-foreground text-sm leading-relaxed">{coachingLine}</p>
           ) : null}
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <MetricCell
-            label="Moy. 7j"
-            layout="compact"
-            value={formatDuration(view.avg.durationMin)}
-          />
-          <MetricCell
-            label="Profond moy."
-            layout="compact"
-            value={view.avg.deepPct != null ? `${view.avg.deepPct} %` : '—'}
-          />
-          <MetricCell
-            label="Dette 7j"
-            layout="compact"
-            tone={view.debt7Min != null && view.debt7Min > 60 ? 'warn' : 'neutral'}
-            value={
-              view.debt7Min != null && view.debt7Min > 30 ? formatDuration(view.debt7Min) : '—'
-            }
-          />
-        </div>
-      </div>
+      ) : null}
     </DrillDownSectionCard>
   );
 }

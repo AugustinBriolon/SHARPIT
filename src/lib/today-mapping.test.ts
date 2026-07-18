@@ -498,21 +498,20 @@ describe('mapFatigueCapacityLabel', () => {
 
 describe('mapScoreToColorClass', () => {
   it('null → muted', () => expect(mapScoreToColorClass(null)).toBe('text-muted-foreground'));
-  it('85 → emerald', () => expect(mapScoreToColorClass(85)).toContain('emerald'));
-  it('65 → blue', () => expect(mapScoreToColorClass(65)).toContain('blue'));
-  it('45 → amber', () => expect(mapScoreToColorClass(45)).toContain('amber'));
-  it('20 → red', () => expect(mapScoreToColorClass(20)).toContain('red'));
-  it('80 boundary → emerald', () => expect(mapScoreToColorClass(80)).toContain('emerald'));
-  it('60 boundary → blue', () => expect(mapScoreToColorClass(60)).toContain('blue'));
-  it('40 boundary → amber', () => expect(mapScoreToColorClass(40)).toContain('amber'));
+  it('85 → foreground (in range)', () => expect(mapScoreToColorClass(85)).toBe('text-foreground'));
+  it('65 → foreground (in range)', () => expect(mapScoreToColorClass(65)).toBe('text-foreground'));
+  it('45 → caution', () => expect(mapScoreToColorClass(45)).toBe('text-signal-caution'));
+  it('20 → risk', () => expect(mapScoreToColorClass(20)).toBe('text-signal-risk'));
+  it('60 boundary → foreground', () => expect(mapScoreToColorClass(60)).toBe('text-foreground'));
+  it('40 boundary → caution', () => expect(mapScoreToColorClass(40)).toBe('text-signal-caution'));
 });
 
 describe('mapScoreToBarColorClass', () => {
   it('null → muted bar', () =>
     expect(mapScoreToBarColorClass(null)).toBe('bg-muted-foreground/10'));
-  it('85 → emerald bar', () => expect(mapScoreToBarColorClass(85)).toContain('bg-emerald'));
-  it('45 → amber bar', () => expect(mapScoreToBarColorClass(45)).toContain('bg-amber'));
-  it('20 → red bar', () => expect(mapScoreToBarColorClass(20)).toContain('bg-red'));
+  it('85 → primary bar', () => expect(mapScoreToBarColorClass(85)).toContain('bg-primary'));
+  it('45 → caution bar', () => expect(mapScoreToBarColorClass(45)).toContain('bg-signal-caution'));
+  it('20 → risk bar', () => expect(mapScoreToBarColorClass(20)).toContain('bg-signal-risk'));
 });
 
 describe('mapFatigueDimensionIntensity', () => {

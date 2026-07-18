@@ -1,25 +1,34 @@
 import { formatSleepDuration } from '@/lib/sleep-scoring';
+import { cn } from '@/lib/utils';
 
 const STAGE_STYLES = {
   deep: {
     color: 'var(--color-signal-recovery)',
     label: 'Profond',
     ideal: '13–23 %',
+    low: 13,
+    high: 23,
   },
   rem: {
     color: 'var(--color-signal-vo2)',
     label: 'Paradoxal',
     ideal: '20–25 %',
+    low: 20,
+    high: 25,
   },
   light: {
     color: 'var(--color-signal-base)',
     label: 'Léger',
     ideal: null,
+    low: null,
+    high: null,
   },
   awake: {
     color: 'var(--color-signal-caution)',
     label: 'Éveillé',
     ideal: null,
+    low: null,
+    high: null,
   },
 } as const;
 
@@ -54,6 +63,19 @@ function buildStageRows(
     }));
 }
 
+/** La couleur ne signale que l'écart — une phase dans la norme reste neutre. */
+function stageStatus(key: StageKey, percent: number): { label: string; className: string } | null {
+  const style = STAGE_STYLES[key];
+  if (style.low == null || style.high == null) return null;
+  if (percent < style.low) {
+    return { label: 'sous la norme', className: 'text-signal-caution' };
+  }
+  if (percent > style.high) {
+    return { label: 'au-dessus de la norme', className: 'text-muted-foreground/70' };
+  }
+  return { label: 'dans la norme', className: 'text-muted-foreground/70' };
+}
+
 export function SleepStageBreakdown({
   deepMin,
   remMin,
@@ -78,11 +100,11 @@ export function SleepStageBreakdown({
 
   return (
     <div className="space-y-4">
-      <div className="bg-muted/50 rounded-analysis flex h-10 w-full overflow-hidden">
+      <div className="flex h-2 w-full gap-px overflow-hidden rounded-full">
         {rows.map((row) => (
           <div
             key={row.key}
-            className="h-full transition-all"
+            className="h-full opacity-80 transition-all first:rounded-l-full last:rounded-r-full"
             style={{
               width: `${row.percent}%`,
               backgroundColor: STAGE_STYLES[row.key].color,
@@ -93,13 +115,19 @@ export function SleepStageBreakdown({
       <ul className="border-analysis-border/60 divide-y">
         {rows.map((row) => {
           const style = STAGE_STYLES[row.key];
+          const status = stageStatus(row.key, row.percent);
           return (
             <li key={row.key} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
               <span
                 className="size-2.5 shrink-0 rounded-full"
                 style={{ backgroundColor: style.color }}
               />
-              <span className="text-foreground flex-1 text-sm font-medium">{style.label}</span>
+              <div className="min-w-0 flex-1">
+                <span className="text-foreground text-sm font-medium">{style.label}</span>
+                {status ? (
+                  <p className={cn('text-[10px] leading-snug', status.className)}>{status.label}</p>
+                ) : null}
+              </div>
               <span className="text-data text-sm font-semibold tabular-nums">
                 {formatSleepDuration(row.minutes)}
               </span>

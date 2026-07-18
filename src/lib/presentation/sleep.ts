@@ -167,8 +167,10 @@ export async function buildSleepViewModel(trainingDayId: string): Promise<SleepV
     14,
     (d, e) => {
       const mins = e?.sleepMinutes ?? null;
-      let fill = '#e2e8f0';
-      if (mins !== null) fill = mins >= sleepTargetMin ? '#34d399' : '#fbbf24';
+      let fill = 'var(--muted-foreground)';
+      if (mins !== null) {
+        fill = mins >= sleepTargetMin ? 'var(--color-signal-base)' : 'var(--color-signal-caution)';
+      }
       return { date: format(d, 'dd/MM', { locale: fr }), minutes: mins, fill };
     },
     refDate,

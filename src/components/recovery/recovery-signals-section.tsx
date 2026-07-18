@@ -1,51 +1,47 @@
 import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
-import { cn } from '@/lib/utils';
 
-function SignalChip({ label, colorClass }: { label: string; colorClass: string }) {
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-current/20 ring-inset',
-        colorClass,
-      )}
-    >
-      {label}
-    </span>
-  );
-}
-
+/**
+ * Instrument readout: hairline rows. Labels carry the state; no chip colors.
+ */
 export function RecoverySignalsSection({
   autonomicLabel,
-  autonomicClass,
   wellnessLabel,
-  wellnessClass,
   loadLabel,
-  loadClass,
   dissonanceDetected,
 }: {
   autonomicLabel: string;
-  autonomicClass: string;
+  autonomicClass?: string;
   wellnessLabel: string;
-  wellnessClass: string;
+  wellnessClass?: string;
   loadLabel: string;
-  loadClass: string;
+  loadClass?: string;
   dissonanceDetected: boolean;
 }) {
+  const rows = [
+    { label: 'Autonome', value: autonomicLabel },
+    { label: 'Sensation', value: wellnessLabel },
+    { label: 'Charge', value: loadLabel },
+  ];
+
   return (
     <DrillDownSectionCard>
-      <DrillDownSectionLabel>Ce qui guide la décision</DrillDownSectionLabel>
-      <div className="flex flex-wrap gap-2">
-        <SignalChip colorClass={autonomicClass} label={autonomicLabel} />
-        <SignalChip colorClass={wellnessClass} label={wellnessLabel} />
-        <SignalChip colorClass={loadClass} label={loadLabel} />
-      </div>
-      {dissonanceDetected && (
-        <p className="mt-3 text-sm font-medium text-amber-600">
-          Tes sensations et les marqueurs physiologiques ne racontent pas la meme histoire
-          aujourd'hui.
+      <DrillDownSectionLabel>Lecture des signaux</DrillDownSectionLabel>
+      <ul className="divide-analysis-border/50 mt-2 divide-y">
+        {rows.map((row) => (
+          <li key={row.label} className="flex items-baseline justify-between gap-4 py-3">
+            <p className="text-foreground text-sm font-medium">{row.label}</p>
+            <p className="text-data text-foreground shrink-0 text-sm font-semibold tabular-nums">
+              {row.value}
+            </p>
+          </li>
+        ))}
+      </ul>
+      {dissonanceDetected ? (
+        <p className="annotation-clinical text-signal-caution mt-4">
+          Sensations et marqueurs physiologiques divergent aujourd&apos;hui.
         </p>
-      )}
+      ) : null}
     </DrillDownSectionCard>
   );
 }

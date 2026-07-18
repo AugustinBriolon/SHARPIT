@@ -3,16 +3,20 @@
 import { SleepCoachTonight } from '@/components/sleep/sleep-coach-tonight';
 import { SleepHero } from '@/components/sleep/sleep-hero';
 import { SleepPhasesSection } from '@/components/sleep/sleep-phases-section';
-import { SleepScoreExplainer } from '@/components/sleep/sleep-score-explainer';
 import { SleepStatsStrip } from '@/components/sleep/sleep-stats-strip';
 import { SleepTrendSection } from '@/components/sleep/sleep-trend-chart';
-import { InsightNarrative } from '@/components/product-insight/insight-narrative';
 import { MetricDrillDownPage } from '@/components/today/drill-down/metric-drill-down-page';
 import { GlobalDecisionStrip } from '@/components/today/drill-down/global-decision-strip';
-import { sleepInsightNarrativeSections } from '@/components/product-insight/narrative-sections';
 import type { SleepPageViewProps } from '@/components/sleep/types';
 
 export type { SleepPageViewProps } from '@/components/sleep/types';
+
+function pickCoachingLine(props: SleepPageViewProps): string | null {
+  const [insight] = props.coachView.insights;
+  if (insight?.detail) return insight.detail;
+  if (insight?.title) return insight.title;
+  return null;
+}
 
 export function SleepPageView(props: SleepPageViewProps) {
   const {
@@ -38,7 +42,6 @@ export function SleepPageView(props: SleepPageViewProps) {
     coachView,
     barData,
     recoveryNote,
-    insights,
     globalDecision,
   } = props;
 
@@ -76,11 +79,7 @@ export function SleepPageView(props: SleepPageViewProps) {
         totalSleepMin={totalSleepMin}
       />
 
-      <InsightNarrative sections={sleepInsightNarrativeSections(insights)} />
-
-      <SleepCoachTonight view={coachView} />
-
-      <SleepTrendSection data={barData} targetMin={sleepTargetMin} />
+      <SleepCoachTonight coachingLine={pickCoachingLine(props)} view={coachView} />
 
       {totalSleepMin != null && totalSleepMin > 0 ? (
         <SleepPhasesSection
@@ -92,7 +91,7 @@ export function SleepPageView(props: SleepPageViewProps) {
         />
       ) : null}
 
-      <SleepScoreExplainer scoreBreakdown={scoreBreakdown} sleepTargetMin={sleepTargetMin} />
+      <SleepTrendSection data={barData} targetMin={sleepTargetMin} />
     </MetricDrillDownPage>
   );
 }

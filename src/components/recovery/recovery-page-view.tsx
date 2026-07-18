@@ -9,9 +9,6 @@ import { RecoverySignalsSection } from '@/components/recovery/recovery-signals-s
 import { RecoveryStatsStrip } from '@/components/recovery/recovery-stats-strip';
 import { RecoveryEvidenceSection } from '@/components/recovery/recovery-evidence-section';
 import { RecoveryTrendsSection } from '@/components/recovery/recovery-trends-section';
-import { InsightNarrative } from '@/components/product-insight/insight-narrative';
-import type { ProductInsightBundle } from '@/core/product-insight/types';
-import { defaultInsightNarrativeSections } from '@/components/product-insight/narrative-sections';
 import {
   DataReliabilityFooter,
   MetricDrillDownPage,
@@ -56,7 +53,6 @@ export type RecoveryPageViewProps = {
   overreaching?: { label: string; colorClass: string };
   illness?: { label: string; colorClass: string };
   keyEvidence: string[];
-  insights: ProductInsightBundle;
   globalDecision: GlobalDecisionContext;
 };
 
@@ -79,11 +75,8 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
     intensityClassName,
     rationale,
     autonomicLabel,
-    autonomicClass,
     wellnessLabel,
-    wellnessClass,
     loadLabel,
-    loadClass,
     dissonanceDetected,
     sparkHrv,
     sparkRhr,
@@ -99,7 +92,6 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
     overreaching,
     illness,
     keyEvidence,
-    insights,
     globalDecision,
   } = props;
 
@@ -131,30 +123,25 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
 
       <GlobalDecisionStrip context={globalDecision} />
 
-      <RecoveryDecisionSection
-        intensityClassName={intensityClassName}
-        intensityLabel={intensityLabel}
-        rationale={rationale}
-      />
-
-      <InsightNarrative sections={defaultInsightNarrativeSections(insights)} />
-
-      <RecoverySignalsSection
-        autonomicClass={autonomicClass}
-        autonomicLabel={autonomicLabel}
-        dissonanceDetected={dissonanceDetected}
-        loadClass={loadClass}
-        loadLabel={loadLabel}
-        wellnessClass={wellnessClass}
-        wellnessLabel={wellnessLabel}
-      />
-
       <RecoveryStatsStrip
         bodyBattery={bodyBattery}
         confidencePct={confidencePct}
         confidenceTone={confidenceTone}
         hrv={hrv}
         restingHr={restingHr}
+      />
+
+      <RecoveryDecisionSection
+        intensityClassName={intensityClassName}
+        intensityLabel={intensityLabel}
+        rationale={rationale}
+      />
+
+      <RecoverySignalsSection
+        autonomicLabel={autonomicLabel}
+        dissonanceDetected={dissonanceDetected}
+        loadLabel={loadLabel}
+        wellnessLabel={wellnessLabel}
       />
 
       <RecoveryDimensionsSection dimensions={dimensions} />

@@ -10,13 +10,10 @@ import { EffortDimensionsSection } from '@/components/effort/effort-dimensions-s
 import { EffortDominantSection } from '@/components/effort/effort-dominant-section';
 import { EffortEvidenceSection } from '@/components/effort/effort-evidence-section';
 import { EffortHero } from '@/components/effort/effort-hero';
-import { InsightNarrative } from '@/components/product-insight/insight-narrative';
 import { EffortStatsStrip } from '@/components/effort/effort-stats-strip';
 import { EffortVerdictSection } from '@/components/effort/effort-verdict-section';
 import { GlobalDecisionStrip } from '@/components/today/drill-down/global-decision-strip';
 import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
-import type { ProductInsightBundle } from '@/core/product-insight/types';
-import { defaultInsightNarrativeSections } from '@/components/product-insight/narrative-sections';
 import {
   DataReliabilityFooter,
   MetricDrillDownPage,
@@ -65,7 +62,6 @@ export type EffortPageViewProps = {
   keyEvidence: string[];
   completenessLabel: string;
   availableDimCount: number;
-  insights: ProductInsightBundle;
   globalDecision: GlobalDecisionContext;
 };
 
@@ -110,7 +106,6 @@ export function EffortPageView(props: EffortPageViewProps) {
     keyEvidence,
     completenessLabel,
     availableDimCount,
-    insights,
     globalDecision,
   } = props;
 
@@ -146,6 +141,14 @@ export function EffortPageView(props: EffortPageViewProps) {
 
       <GlobalDecisionStrip context={globalDecision} />
 
+      <EffortStatsStrip
+        acwr={acwr}
+        confidencePct={confidencePct}
+        confidenceTone={confidenceTone}
+        tsb={tsb}
+        weeklyTss={weeklyLoad}
+      />
+
       <EffortVerdictSection
         rationale={rationale}
         verdict={verdict}
@@ -153,22 +156,12 @@ export function EffortPageView(props: EffortPageViewProps) {
         verdictKey={verdictKey}
       />
 
-      <InsightNarrative sections={defaultInsightNarrativeSections(insights)} />
-
       <EffortCapacitySection trainingCapacity={trainingCapacity} />
 
       <EffortDominantSection
         dominantDimension={dominantDimension}
         isLowFatigue={isLowFatigue}
         primaryLimitingFactor={primaryLimitingFactor}
-      />
-
-      <EffortStatsStrip
-        acwr={acwr}
-        confidencePct={confidencePct}
-        confidenceTone={confidenceTone}
-        tsb={tsb}
-        weeklyTss={weeklyLoad}
       />
 
       <EffortAcwrSection acwr={acwr} chronicWeeklyAvg={chronicWeeklyAvg} weeklyLoad={weeklyLoad} />

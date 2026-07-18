@@ -51,10 +51,8 @@ function MiniSparkline({
         {delta !== null && (
           <span
             className={cn(
-              'text-xs font-medium tabular-nums',
-              deltaGood
-                ? 'text-emerald-600 dark:text-emerald-400'
-                : 'text-red-600 dark:text-red-400',
+              'text-data text-xs font-medium tabular-nums',
+              deltaGood ? 'text-muted-foreground' : 'text-signal-caution',
             )}
           >
             {delta > 0 ? '+' : ''}
@@ -194,7 +192,7 @@ export function RecoveryTrendsSection({
           />
           {baselineLow != null && baselineHigh != null && (
             <p className="text-muted-foreground/60 mt-1 text-[10px]">
-              Zone verte = norme personnelle ({baselineLow}–{baselineHigh} ms)
+              Zone = norme personnelle ({baselineLow}–{baselineHigh} ms)
             </p>
           )}
         </div>

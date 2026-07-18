@@ -2,7 +2,13 @@ import { DrillDownSectionCard } from '@/components/today/drill-down/section-card
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
-import { CHART_REFERENCE_LINE, CHART_TICK_COLOR } from '@/lib/chart-theme';
+import {
+  CHART_BASE_STROKE,
+  CHART_CAUTION_STROKE,
+  CHART_RECOVERY_STROKE,
+  CHART_REFERENCE_LINE,
+  CHART_TICK_COLOR,
+} from '@/lib/chart-theme';
 import {
   LineChart,
   Line,
@@ -44,9 +50,9 @@ export function EffortPmcSection({ data }: { data: PmcPoint[] }) {
               return (
                 <ChartTooltipCard>
                   <p className="font-medium">{pt.label}</p>
-                  <p className="text-blue-500">CTL {pt.ctl}</p>
-                  <p className="text-orange-500">ATL {pt.atl}</p>
-                  <p className={pt.tsb >= 0 ? 'text-emerald-500' : 'text-red-500'}>
+                  <p className="text-muted-foreground">CTL {pt.ctl}</p>
+                  <p className="text-muted-foreground">ATL {pt.atl}</p>
+                  <p className={pt.tsb >= 0 ? 'text-muted-foreground' : 'text-signal-caution'}>
                     TSB {pt.tsb > 0 ? '+' : ''}
                     {pt.tsb}
                   </p>
@@ -54,13 +60,27 @@ export function EffortPmcSection({ data }: { data: PmcPoint[] }) {
               );
             }}
           />
-          <Line dataKey="ctl" dot={false} stroke="#3b82f6" strokeWidth={1.5} type="monotone" />
-          <Line dataKey="atl" dot={false} stroke="#f97316" strokeWidth={1.5} type="monotone" />
+          <Line
+            dataKey="ctl"
+            dot={false}
+            stroke={CHART_BASE_STROKE}
+            strokeWidth={1.5}
+            type="monotone"
+          />
+          <Line
+            dataKey="atl"
+            dot={false}
+            stroke={CHART_CAUTION_STROKE}
+            strokeOpacity={0.85}
+            strokeWidth={1.5}
+            type="monotone"
+          />
           <Line
             dataKey="tsb"
             dot={false}
-            stroke="#10b981"
+            stroke={CHART_RECOVERY_STROKE}
             strokeDasharray="3 2"
+            strokeOpacity={0.8}
             strokeWidth={1}
             type="monotone"
           />
@@ -105,13 +125,13 @@ export function EffortWeeklyTssSection({
               const pt = payload[0].payload as WeeklyTssPoint;
               return (
                 <ChartTooltipCard>
-                  <p className="font-semibold tabular-nums">{pt.tss} TSS</p>
+                  <p className="text-data font-semibold tabular-nums">{pt.tss} TSS</p>
                   <p className="text-muted-foreground">{pt.week}</p>
                 </ChartTooltipCard>
               );
             }}
           />
-          <Bar dataKey="tss" fill="#3b82f6" fillOpacity={0.75} radius={[4, 4, 0, 0]} />
+          <Bar dataKey="tss" fill={CHART_BASE_STROKE} fillOpacity={0.7} radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveChartFrame>
       {avgWeeklyTss > 0 && (

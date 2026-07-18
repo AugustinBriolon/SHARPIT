@@ -1,7 +1,6 @@
 import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
 import { resolveCode } from '@/lib/french';
-import { cn } from '@/lib/utils';
 
 const DOMINANT_LABEL: Record<string, string> = {
   LOAD: 'Charge excessive',
@@ -43,18 +42,16 @@ export function EffortDominantSection({
   const labelMap = isLowFatigue ? DOMINANT_LABEL_LOW : DOMINANT_LABEL;
 
   return (
-    <DrillDownSectionCard
-      className={!isLowFatigue ? 'border border-amber-500/20 bg-amber-500/5 ring-0' : undefined}
-    >
+    <DrillDownSectionCard>
       <DrillDownSectionLabel>
-        {isLowFatigue ? 'Systeme a surveiller' : 'Systeme qui paie le plus'}
+        {isLowFatigue ? 'Système à surveiller' : 'Système qui paie le plus'}
       </DrillDownSectionLabel>
-      <p className={cn('text-lg font-semibold', !isLowFatigue && 'text-amber-700')}>
+      <p className="text-foreground text-lg font-semibold">
         {labelMap[dominantDimension] ?? dominantDimension}
       </p>
-      {primaryLimitingFactor && (
+      {primaryLimitingFactor ? (
         <p className="text-muted-foreground mt-1 text-sm">{resolveCode(primaryLimitingFactor)}</p>
-      )}
+      ) : null}
     </DrillDownSectionCard>
   );
 }
