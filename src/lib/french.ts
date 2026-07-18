@@ -103,8 +103,9 @@ const STRINGS: Record<string, string> = {
   'reasoning.finding.lowReadiness.evidence.recoveryUnclear': 'Délai de récupération indéterminé',
 
   // ── Findings — dissonance ────────────────────────────────────────────────
-  'reasoning.finding.dissonance.title': 'Signaux contradictoires',
-  'reasoning.finding.dissonance.evidence.disagreement': 'Les modèles ne sont pas alignés',
+  'reasoning.finding.dissonance.title': 'Signaux divergents',
+  'reasoning.finding.dissonance.evidence.disagreement':
+    'Ressenti et mesures ne disent pas la même chose',
   'reasoning.finding.dissonance.evidence.causes':
     'Peut refléter une adaptation ou un stress atypique',
   'reasoning.finding.dissonance.evidence.prioritiseObjective':
@@ -171,7 +172,7 @@ const STRINGS: Record<string, string> = {
   'decision.primary.headline.trainHard': 'Fenêtre favorable — tu peux viser une séance exigeante',
   'decision.primary.headline.raceReady': 'Forme de pic — séance qualité ou compétition possible',
   'decision.primary.headline.caution': 'Signaux mixtes — prudence et écoute du corps',
-  'decision.primary.headline.trainEasy': 'Charge modérée — conserve de la marge',
+  'decision.primary.headline.trainEasy': 'Charge légère — garde de la marge',
   'decision.primary.headline.trainSmart': 'Entraîne-toi avec discernement aujourd’hui',
   'decision.primary.headline.insufficient': 'Données insuffisantes pour une recommandation fiable',
 
@@ -180,12 +181,10 @@ const STRINGS: Record<string, string> = {
     'Surmenage — la dimension {dimension} est le facteur limitant',
   'reasoning.limitingFactor.fatigue.accumulated':
     'Fatigue accumulée ({dimension}) depuis {days} jour(s)',
-  'reasoning.limitingFactor.recovery.deficit':
-    'Déficit de récupération — facteur limitant : {limiter}',
-  'reasoning.limitingFactor.recovery.criticallyLow':
-    'Forme critique — facteur limitant : {limiter}',
-  'reasoning.limitingFactor.recovery.reduced': 'Forme réduite — facteur limitant : {limiter}',
-  'reasoning.limitingFactor.adaptation.factor': "Facteur limitant l'adaptation : {factor}",
+  'reasoning.limitingFactor.recovery.deficit': 'Récupération en déficit · frein : {limiter}',
+  'reasoning.limitingFactor.recovery.criticallyLow': 'Récupération critique · frein : {limiter}',
+  'reasoning.limitingFactor.recovery.reduced': 'Récupération réduite · frein : {limiter}',
+  'reasoning.limitingFactor.adaptation.factor': 'Adaptation freinée par : {factor}',
   'reasoning.limitingFactor.adaptation.insufficientStimulus':
     'Stimulus insuffisant — la progression stagne',
   'reasoning.limitingFactor.adaptation.plateau': "Plateau d'adaptation atteint",

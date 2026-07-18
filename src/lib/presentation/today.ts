@@ -2,7 +2,6 @@ import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
 import { snapshotHasDisplayableContent } from '@/core/athlete-state/snapshot';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
-import { formatLimitingFactorMessage } from '@/lib/athlete-state/snapshot-truthfulness';
 import { pickAdaptationReminders } from '@/lib/daily-phase/narrative';
 import {
   getActivitiesList,
@@ -26,13 +25,12 @@ import {
   whyBlockTitle,
 } from '@/lib/today-rich-view';
 import {
-  buildWhyEvidenceFromDecision,
   decisionTopAction,
   decisionVerdict,
   resolveConfidenceHrefFromDecision,
   resolveLimitingFactorHrefFromDecision,
 } from '@/lib/decision/projection';
-import { resolveCode } from '@/lib/french';
+import { buildTodayLimitingFacts, buildTodayWhyFacts } from '@/lib/today/today-instrument-facts';
 import {
   TRAJECTORY_DRILL_DOWNS,
   TWIN_DIMENSION_LABEL,
@@ -175,18 +173,13 @@ export async function buildTodayPresentationViewModel(
   const confidenceHref = resolveConfidenceHrefFromDecision(snapshot.decision);
 
   const whyFocus = snapshot.dailyPhase?.whyFocus ?? 'readiness';
-  const decisionHeadline = snapshot.decision?.primaryDecision.headlineCode
-    ? resolveCode(snapshot.decision.primaryDecision.headlineCode)
-    : null;
-  let whyLines = buildWhyEvidenceFromDecision(
-    snapshot.decision,
-    snapshot.briefing?.content,
+  const whyFacts = buildTodayWhyFacts({
+    verdict,
+    consistency: snapshot.decision?.physiologicalConsistency ?? null,
+    decision: snapshot.decision,
     whyFocus,
-  );
-  if (decisionHeadline && decisionHeadline !== snapshot.decision?.primaryDecision.headlineCode) {
-    whyLines = [decisionHeadline, ...whyLines].slice(0, 3);
-  }
-  const whyVisible = whyLines.length > 0 && !(phase === 'END_OF_DAY' && focusPriority != null);
+  });
+  const whyVisible = whyFacts.length > 0 && !(phase === 'END_OF_DAY' && focusPriority != null);
 
   const daySummary = buildTodayDaySummary(
     day,
@@ -196,25 +189,31 @@ export async function buildTodayPresentationViewModel(
   const labels = actionRowLabels(phase);
   const adaptationHints = pickAdaptationReminders(phase, 3, isRestDay);
 
-  // Mirror TodayActionRow rendering decisions.
   let limitingMode: TodayViewModel['actionRow']['limitingMode'] = 'none';
   let limitingLines: string[] = [];
   let limitingText: string | null = null;
   let limitingHref: string | null = null;
+  let limitingFacts: TodayViewModel['actionRow']['limitingFacts'] = [];
 
   if (phase === 'END_OF_DAY') {
     limitingMode = 'none';
-  } else if (phase === 'RECOVERY_WINDOW' && adaptationHints.length > 0 && !focusPriority) {
-    limitingMode = 'list';
-    limitingLines = adaptationHints;
-  } else if (snapshot.limitingFactor) {
-    limitingText = formatLimitingFactorMessage(snapshot.limitingFactor);
-    limitingHref =
-      resolveLimitingFactorHrefFromDecision(snapshot.decision) ?? TWIN_DRILL_DOWN.recovery;
-    limitingMode = limitingHref ? 'link' : 'text';
   } else {
-    limitingMode = 'text';
-    limitingText = "Aucun frein physiologique majeur identifié aujourd'hui.";
+    const preferReminders =
+      phase === 'RECOVERY_WINDOW' &&
+      adaptationHints.length > 0 &&
+      !focusPriority &&
+      !snapshot.limitingFactor;
+    const limitingBuilt = buildTodayLimitingFacts({
+      limitingFactor: preferReminders ? null : snapshot.limitingFactor,
+      reminders: preferReminders ? adaptationHints : [],
+    });
+    limitingFacts = limitingBuilt.facts;
+    limitingText = limitingBuilt.emptyText;
+    limitingHref =
+      snapshot.limitingFactor != null
+        ? (resolveLimitingFactorHrefFromDecision(snapshot.decision) ?? TWIN_DRILL_DOWN.recovery)
+        : null;
+    limitingMode = limitingFacts.length > 0 || limitingText ? 'facts' : 'none';
   }
 
   const weeklyTrajectoryProgression = buildProgressionSummary(
@@ -292,7 +291,10 @@ export async function buildTodayPresentationViewModel(
     },
     whyBlock: {
       title: whyBlockTitle(phase),
-      lines: whyLines,
+      lines: whyFacts.map((f) =>
+        f.hint ? `${f.label} · ${f.value} (${f.hint})` : `${f.label} · ${f.value}`,
+      ),
+      facts: whyFacts,
       visible: whyVisible,
     },
     actionRow: {
@@ -302,6 +304,7 @@ export async function buildTodayPresentationViewModel(
       limitingLines,
       limitingText,
       limitingHref,
+      limitingFacts,
       actionLabel: labels.action,
       daySummaryEmptyText: 'Aucune séance prévue ni réalisée.',
       daySummaryEmptyHref: TWIN_DRILL_DOWN.planning,

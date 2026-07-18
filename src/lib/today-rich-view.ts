@@ -30,7 +30,7 @@ export function actionRowLabels(phase: DailyPhase): {
       };
     case 'RECOVERY_WINDOW':
       return {
-        limiting: 'Leviers d’adaptation',
+        limiting: 'Frein du jour',
         action: 'Prochaines actions',
       };
     case 'END_OF_DAY':
@@ -40,7 +40,7 @@ export function actionRowLabels(phase: DailyPhase): {
       };
     default:
       return {
-        limiting: 'Ce qui limite ta progression',
+        limiting: 'Frein du jour',
         action: 'Que faire aujourd’hui ?',
       };
   }
@@ -63,13 +63,13 @@ export function whyBlockTitle(phase: DailyPhase): string {
     case 'SESSION_COMPLETED':
       return 'Ce que la séance a produit';
     case 'RECOVERY_WINDOW':
-      return 'Pourquoi récupérer maintenant ?';
+      return 'Lecture du moment';
     case 'END_OF_DAY':
-      return 'Pourquoi ?';
+      return 'Lecture du moment';
     case 'BEFORE_SESSION':
       return 'Contexte avant séance';
     default:
-      return 'Pourquoi ?';
+      return 'Lecture du moment';
   }
 }
 

@@ -65,17 +65,20 @@ export type TodayViewModel = {
 
   whyBlock: {
     title: string;
+    /** @deprecated Prefer facts — kept for transitional renderers. */
     lines: string[];
+    facts: Array<{ label: string; value: string; hint?: string | null }>;
     visible: boolean;
   };
 
   actionRow: {
     showLimitingColumn: boolean;
     limitingLabel: string;
-    limitingMode: 'list' | 'link' | 'text' | 'none';
+    limitingMode: 'facts' | 'list' | 'link' | 'text' | 'none';
     limitingLines: string[];
     limitingText: string | null;
     limitingHref: string | null;
+    limitingFacts: Array<{ label: string; value: string; hint?: string | null }>;
     actionLabel: string;
     daySummaryEmptyText: string;
     daySummaryEmptyHref: string;

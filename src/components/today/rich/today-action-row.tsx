@@ -38,8 +38,55 @@ function SessionLine({ line }: { line: TodayViewModel['actionRow']['daySummaryLi
   );
 }
 
+function LimitingFactRows({
+  facts,
+}: {
+  facts: Array<{ label: string; value: string; hint?: string | null }>;
+}) {
+  return (
+    <ul className="divide-analysis-border/50 divide-y">
+      {facts.map((fact) => (
+        <li
+          key={`${fact.label}-${fact.value}`}
+          className="flex items-baseline justify-between gap-4 py-2.5"
+        >
+          <p className="text-muted-foreground text-sm">{fact.label}</p>
+          <div className="min-w-0 text-right">
+            <p className="text-data text-foreground text-sm font-semibold tabular-nums">
+              {fact.value}
+            </p>
+            {fact.hint ? (
+              <p className="text-muted-foreground text-[11px] leading-snug">{fact.hint}</p>
+            ) : null}
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function LimitingContent({ vm }: { vm: TodayViewModel }) {
   const limiting = vm.actionRow;
+
+  if (limiting.limitingMode === 'facts') {
+    const body =
+      limiting.limitingFacts.length > 0 ? (
+        <LimitingFactRows facts={limiting.limitingFacts} />
+      ) : (
+        <p className="text-muted-foreground text-sm leading-relaxed">{limiting.limitingText}</p>
+      );
+
+    if (limiting.limitingHref && limiting.limitingFacts.length > 0) {
+      return (
+        <Link className="block transition-opacity hover:opacity-80" href={limiting.limitingHref}>
+          {body}
+          <p className="text-primary mt-2 text-xs font-medium">Voir le détail →</p>
+        </Link>
+      );
+    }
+
+    return body;
+  }
 
   if (limiting.limitingMode === 'list' && limiting.limitingLines.length > 0) {
     return (
