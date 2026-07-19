@@ -8,7 +8,7 @@ export default function OfflinePage() {
         <Activity className="text-primary size-7" aria-hidden />
       </div>
       <div className="max-w-sm space-y-2">
-        <h1 className="font-heading text-xl font-semibold">Hors connexion</h1>
+        <h1 className="text-page-title">Hors connexion</h1>
         <p className="text-muted-foreground text-sm">
           SHARPIT a besoin d&apos;une connexion internet pour charger tes données
           d&apos;entraînement et de récupération.

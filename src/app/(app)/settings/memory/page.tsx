@@ -13,10 +13,8 @@ export default async function SettingsCoachMemoryPage({
     <div className="space-y-4">
       <MobileBackLink href="/settings" label="Réglages" showOnDesktop />
       <StickyHeader>
-        <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-          Réglages
-        </p>
-        <h1 className="font-heading mt-1 text-2xl font-semibold">Mémoire du coach</h1>
+        <p className="text-label">Réglages</p>
+        <h1 className="text-page-title mt-1">Mémoire du coach</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Consulte, modifie ou supprime ce que SHARPIT retient pour contextualiser le coaching —
           préférences personnelles, déplacements et entrées structurées.

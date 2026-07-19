@@ -16,14 +16,10 @@ const accentTextMap = {
   default: 'text-foreground',
 };
 
-const accentBarMap = {
-  primary: 'bg-primary',
-  cyan: 'bg-cyan-600',
-  orange: 'bg-orange-600',
-  violet: 'bg-violet-600',
-  default: 'bg-signal-neutral/40',
-};
-
+/**
+ * Same shell as activity hero stats (Distance / Allure / …):
+ * `border-border bg-card rounded-2xl border px-5 py-4`.
+ */
 export function MetricCard({
   label,
   value,
@@ -32,11 +28,19 @@ export function MetricCard({
   className,
 }: MetricCardProps) {
   return (
-    <div className={cn('surface-dense relative h-28 overflow-hidden', className)}>
-      <div className={cn('absolute inset-x-0 top-0 h-[2px]', accentBarMap[accent])} aria-hidden />
+    <div className={cn('border-border bg-card rounded-2xl border px-5 py-4', className)}>
       <p className="text-label">{label}</p>
-      <p className={cn('text-instrument mt-2 text-2xl', accentTextMap[accent])}>{value}</p>
-      {sublabel && <p className="text-muted-foreground mt-1 text-xs">{sublabel}</p>}
+      <p
+        className={cn(
+          'mt-1.5 font-mono text-3xl font-semibold tabular-nums',
+          accentTextMap[accent],
+        )}
+      >
+        {value}
+      </p>
+      {sublabel ? (
+        <p className="text-muted-foreground mt-1 text-xs leading-snug">{sublabel}</p>
+      ) : null}
     </div>
   );
 }

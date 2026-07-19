@@ -34,7 +34,7 @@ export function CorpsSectionHeader({
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="space-y-1">
         {label && <EyebrowLabel variant="corps">{label}</EyebrowLabel>}
-        <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
+        <h2 className="text-section-title">{title}</h2>
         {description && (
           <p className="text-muted-foreground max-w-2xl text-xs leading-relaxed">{description}</p>
         )}

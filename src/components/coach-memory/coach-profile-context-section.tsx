@@ -137,7 +137,7 @@ export function CoachProfileContextSection({
         Mémoire persistante
       </EyebrowLabel>
       <div className="mb-4">
-        <h2 className="font-heading text-base font-semibold">Disponibilités & préférences</h2>
+        <h2 className="text-section-title">Disponibilités & préférences</h2>
         <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
           Contraintes pro, habitudes d&apos;entraînement et préférences de créneaux.
         </p>

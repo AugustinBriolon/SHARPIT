@@ -265,9 +265,7 @@ export function TriathlonActivityInsights({ activityId }: { activityId: string }
   return (
     <section className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-muted-foreground text-sm font-medium tracking-wider uppercase">
-          Analyse par sport
-        </p>
+        <p className="text-label">Analyse par sport</p>
         <SportLegSelector
           legs={legs}
           selectedKey={legKey(selectedEntry)}

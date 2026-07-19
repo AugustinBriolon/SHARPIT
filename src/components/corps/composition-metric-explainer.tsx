@@ -94,12 +94,8 @@ export function CompositionMetricExplainer({
         <div className="space-y-5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="text-muted-foreground text-[10px] font-semibold tracking-[0.15em] uppercase">
-                Ta mesure
-              </p>
-              <p className="font-heading mt-1 text-3xl font-semibold tabular-nums">
-                {displayValue}
-              </p>
+              <p className="text-label">Ta mesure</p>
+              <p className="text-instrument mt-1 text-3xl font-semibold">{displayValue}</p>
             </div>
             <span
               className={cn(

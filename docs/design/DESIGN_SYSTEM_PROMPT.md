@@ -46,10 +46,14 @@ The design must evoke: high-precision chronometry, clinical EEG monitoring, prof
 
 ### Typography
 
-- Heading: `font-family: var(--font-heading)` (Syne), weight 500-600, never 700 except logo
+- Heading / page title: utility `text-page-title` — Syne, weight 600, 1.5rem
+- Verdict / display: utility `text-verdict` — Syne, weight 600, 1.25–1.55rem
+- Section title: utility `text-section-title` — Syne, weight 600, 1.125rem
+- Card title: utility `text-card-title` — Syne, weight 500, 1rem
 - Body: `font-family: var(--font-sans)` (IBM Plex Sans), weight 400-500
-- Data: `font-family: var(--font-data)` (JetBrains Mono), `font-variant-numeric: tabular-nums`, letter-spacing -0.02em
-- Labels: `text-label` utility — 0.6875rem, weight 600, letter-spacing 0.14em, uppercase, muted-foreground color
+- Data: utilities `text-data` / `text-instrument` — `font-family: var(--font-data)` (JetBrains Mono), `font-variant-numeric: tabular-nums`, letter-spacing -0.02em
+- Labels: utility `text-label` — 0.6875rem, weight 600, letter-spacing 0.14em, uppercase, muted-foreground. Never reinvent with `text-[11px] … uppercase`.
+- Markup: one `<h1>` per page; sections `<h2>`; nested panels `<h3>`. Uppercase list headers use `text-label`, not `text-section-title`.
 
 ### Spacing
 

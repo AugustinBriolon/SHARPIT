@@ -68,9 +68,7 @@ export function PlannedSessionContextPanel({
 
         {viewModel.preparation.length > 0 ? (
           <div>
-            <p className="text-muted-foreground mb-1.5 text-[11px] font-medium tracking-wider uppercase">
-              Préparation
-            </p>
+            <p className="text-label mb-1.5">Préparation</p>
             <ul className="text-muted-foreground space-y-1 text-xs">
               {viewModel.preparation.map((item) => (
                 <li key={item.label}>• {item.label}</li>

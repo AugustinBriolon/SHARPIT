@@ -82,9 +82,7 @@ export function PerformanceMetrics({ analysis }: { analysis: ActivityAnalysis })
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-end justify-between gap-2">
-        <h2 className="text-muted-foreground text-sm font-medium tracking-wider uppercase">
-          Performance
-        </h2>
+        <h2 className="text-label">Performance</h2>
         <p className="text-muted-foreground text-xs">
           Seuils {thresholds.source === 'profile' ? 'profil athlète' : 'estimés'}
         </p>

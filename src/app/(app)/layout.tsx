@@ -24,7 +24,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <ShieldX className="text-destructive size-6" />
           </div>
           <div>
-            <h1 className="font-heading text-xl font-semibold">Accès refusé</h1>
+            <h1 className="text-page-title">Accès refusé</h1>
             <p className="text-muted-foreground mt-1 max-w-sm text-sm">
               Ce compte n&apos;est pas autorisé à accéder à SharpIt.
             </p>

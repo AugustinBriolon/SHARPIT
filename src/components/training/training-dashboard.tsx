@@ -168,9 +168,7 @@ function TrainingGoalHero({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="space-y-2">
               <p className="text-label">objectif prioritaire</p>
-              <h2 className="font-heading text-xl leading-snug font-semibold tracking-tight sm:text-[1.55rem]">
-                {title}
-              </h2>
+              <h2 className="text-verdict">{title}</h2>
             </div>
             <Badge
               className="border-analysis-border bg-background/70 rounded-full text-xs font-normal"
@@ -260,7 +258,7 @@ export function TrainingDashboard() {
     <div className="space-y-8">
       <PageHeader>
         <p className="text-label">Entraînement</p>
-        <h1 className="font-heading mt-1 text-2xl font-semibold">Prévu, réalisé & progression</h1>
+        <h1 className="text-page-title mt-1">Prévu, réalisé & progression</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Lis ce qui t’attend, ce que tu as déjà fait et comment ton entraînement se construit dans
           le temps.

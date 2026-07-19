@@ -56,7 +56,7 @@ function PhaseBlock({
 }) {
   return (
     <section className="analysis-panel rounded-analysis space-y-3 px-3.5 py-3.5">
-      <h3 className="font-heading text-sm font-semibold tracking-tight">{title}</h3>
+      <h3 className="text-section-title">{title}</h3>
       {metrics.length > 0 ? <MetricGrid metrics={metrics} /> : null}
       {prose ? <Markdown variant="compact">{prose}</Markdown> : null}
     </section>
@@ -74,7 +74,7 @@ function SynthesisBlock({
 }) {
   return (
     <section className="analysis-panel-alt rounded-analysis-lg space-y-3 px-3.5 py-3.5">
-      <h3 className="font-heading text-sm font-semibold tracking-tight">{title}</h3>
+      <h3 className="text-section-title">{title}</h3>
       {metrics.length > 0 ? <MetricGrid metrics={metrics} /> : null}
       {prose ? <Markdown variant="compact">{prose}</Markdown> : null}
     </section>

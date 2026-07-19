@@ -287,7 +287,7 @@ export function CoachView() {
   const mobileHeader = (
     <div className="flex flex-col gap-2 px-3 pt-2 pb-2">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="font-heading truncate text-lg font-semibold">Fil & conversations</h1>
+        <h1 className="text-page-title truncate">Fil & conversations</h1>
         <Button
           aria-label="Générer ma semaine"
           size="icon"
@@ -353,7 +353,7 @@ export function CoachView() {
         <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-primary text-xs font-medium uppercase">Coach</p>
-            <h1 className="font-heading mt-2 text-3xl font-semibold">Fil & conversations</h1>
+            <h1 className="text-page-title mt-1">Fil & conversations</h1>
             <p className="text-muted-foreground mt-1">
               Messages du jour et chat libre avec ton coach.{' '}
               <Link className="text-primary hover:underline" href="/profil">

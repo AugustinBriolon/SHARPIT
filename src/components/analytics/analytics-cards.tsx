@@ -29,9 +29,7 @@ export function FormStatusBanner({ pmc }: { pmc: PmcPoint[] }) {
           <Gauge className="text-primary size-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-            État de forme actuel
-          </p>
+          <p className="text-label">État de forme actuel</p>
           <p className={cn('mt-1 text-lg font-semibold', TONE_TEXT[form.tone])}>
             {form.label}
             {form.tsb != null && (

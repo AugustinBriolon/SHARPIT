@@ -42,7 +42,7 @@ export function TrainingOverview() {
     <div className="space-y-5">
       <StickyHeader>
         <p className="text-label">Entraînement</p>
-        <h1 className="font-heading mt-1 text-2xl font-semibold">Centre opérationnel</h1>
+        <h1 className="text-page-title mt-1">Centre opérationnel</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Comprends ce qui était prévu, ce qui a été fait et comment ton entraînement progresse.
         </p>

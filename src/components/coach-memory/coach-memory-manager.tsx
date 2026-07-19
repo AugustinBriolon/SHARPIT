@@ -141,7 +141,7 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
             <EyebrowLabel className="mb-2" variant="section">
               Mémoire structurée
             </EyebrowLabel>
-            <h2 className="font-heading text-base font-semibold">Déplacements & contraintes</h2>
+            <h2 className="text-section-title">Déplacements & contraintes</h2>
             <p className="text-muted-foreground mt-1 text-sm">
               Lieu, dates et capacité d&apos;entraînement pour adapter météo, séances outdoor et
               charge planifiée.

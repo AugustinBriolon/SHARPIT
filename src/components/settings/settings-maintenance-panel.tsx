@@ -94,9 +94,7 @@ export function SettingsMaintenancePanel({
   return (
     <section className="space-y-3 rounded-2xl border px-4 py-4">
       <div>
-        <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-          Maintenance
-        </p>
+        <p className="text-label">Maintenance</p>
         <h2 className="mt-1 text-base font-semibold">Cache & synchronisation</h2>
         <p className="text-muted-foreground mt-1 text-sm">
           Vider les caches locaux ou forcer un rechargement propre des données de

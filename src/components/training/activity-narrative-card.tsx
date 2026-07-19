@@ -30,9 +30,7 @@ export function ActivityNarrativeCard({
         <p className="text-muted-foreground text-xs">Générée le {analyzedLabel}</p>
       </div>
 
-      <h2 className="font-heading text-foreground mt-5 text-xl leading-snug font-semibold tracking-tight sm:text-[1.55rem]">
-        {analysis.headline}
-      </h2>
+      <h2 className="text-verdict text-foreground mt-5">{analysis.headline}</h2>
 
       <p className="text-muted-foreground text-sm leading-relaxed">{analysis.narrative}</p>
     </section>

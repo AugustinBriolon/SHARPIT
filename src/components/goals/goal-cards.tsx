@@ -177,9 +177,7 @@ export function RaceCard({ goal }: { goal: GoalItem }) {
             <div className="border-primary/20 bg-background/60 flex items-center gap-2 rounded-lg border p-2.5">
               <Trophy className="text-primary size-4 shrink-0" />
               <div>
-                <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-                  Objectif visé
-                </p>
+                <p className="text-label">Objectif visé</p>
                 <p className="text-sm font-medium">{goal.targetPerformance}</p>
               </div>
             </div>

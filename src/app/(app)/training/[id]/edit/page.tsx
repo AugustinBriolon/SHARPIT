@@ -19,7 +19,7 @@ export default async function EditTrainingPage({ params }: PageProps) {
       <MobileBackLink href={`/training/${id}`} label="Séance" showOnDesktop />
       <StickyHeader>
         <p className="text-primary text-xs font-medium uppercase">Training</p>
-        <h1 className="font-heading mt-2 text-3xl font-semibold">Modifier la séance</h1>
+        <h1 className="text-page-title mt-1">Modifier la séance</h1>
       </StickyHeader>
       <ActivityForm initialData={activity} mode="edit" />
     </div>

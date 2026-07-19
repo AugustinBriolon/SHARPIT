@@ -23,9 +23,7 @@ function ReadField({
 }) {
   return (
     <div className={className}>
-      <p className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
-        {label}
-      </p>
+      <p className="text-label">{label}</p>
       <p className="text-foreground mt-0.5 text-sm leading-relaxed">{value}</p>
     </div>
   );
@@ -58,10 +56,8 @@ export function PlannedSessionReadView({
         <div className="flex min-w-0 items-start gap-3">
           <ActivityTypeIndicator type={session.type} />
           <div className="min-w-0">
-            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-              {isRealized ? 'Séance réalisée' : 'Séance planifiée'}
-            </p>
-            <h2 className="font-heading mt-1 text-lg font-semibold">
+            <p className="text-label">{isRealized ? 'Séance réalisée' : 'Séance planifiée'}</p>
+            <h2 className="text-card-title mt-1">
               {session.title?.trim() || activityTypeLabels[session.type]}
             </h2>
             <p className="text-muted-foreground mt-1 text-sm">

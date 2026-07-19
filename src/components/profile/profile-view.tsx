@@ -23,10 +23,8 @@ export function ProfileView({ initial }: { initial: ProfileData | null }) {
     <div className="space-y-4">
       <MobileBackLink href="/settings" label="Réglages" showOnDesktop />
       <StickyHeader>
-        <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-          Profil
-        </p>
-        <h1 className="font-heading mt-1 text-2xl font-semibold">Mon identité sportive</h1>
+        <p className="text-label">Profil</p>
+        <h1 className="text-page-title mt-1">Mon identité sportive</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Seuils, zones et préférences physiologiques — tout ce que SHARPIT utilise pour
           personnaliser le coaching et le planning.

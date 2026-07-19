@@ -16,9 +16,7 @@ export function ActivitySpecsNotes({
       {specs.length > 0 && (
         <Card className={cn(activity.notes ? 'lg:col-span-2' : 'lg:col-span-3')}>
           <CardHeader>
-            <CardTitle className="text-muted-foreground text-sm font-medium tracking-wider uppercase">
-              Caractéristiques
-            </CardTitle>
+            <CardTitle className="text-label">Caractéristiques</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-x-8 gap-y-1 text-sm sm:grid-cols-2">
             {specs.map((row) => (
@@ -36,9 +34,7 @@ export function ActivitySpecsNotes({
       {activity.notes && (
         <Card className={cn(specs.length === 0 && 'lg:col-span-3')}>
           <CardHeader>
-            <CardTitle className="text-muted-foreground text-sm font-medium tracking-wider uppercase">
-              Notes
-            </CardTitle>
+            <CardTitle className="text-label">Notes</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-foreground/80 text-sm leading-relaxed whitespace-pre-wrap">

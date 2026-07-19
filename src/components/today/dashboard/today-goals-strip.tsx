@@ -13,7 +13,7 @@ export function TodayGoalsStrip() {
   return (
     <div className="border-t pt-3">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <p className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium uppercase">
+        <p className="text-label flex items-center gap-1.5">
           <Target className="size-3.5" />
           Objectifs
         </p>

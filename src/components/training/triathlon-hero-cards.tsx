@@ -61,9 +61,7 @@ function SportCard({ leg }: { leg: SportLeg }) {
         >
           <Icon className="size-4" />
         </span>
-        <p className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
-          {leg.label}
-        </p>
+        <p className="text-label">{leg.label}</p>
       </div>
       <p className="font-mono text-2xl font-semibold tabular-nums">
         {leg.distanceM != null ? formatDistance(leg.distanceM) : formatDuration(leg.durationSec)}

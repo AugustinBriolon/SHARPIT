@@ -120,7 +120,7 @@ function IntegrationModalHeader({ integration }: { integration: IntegrationDefin
     <div className="flex items-start gap-3">
       <IntegrationLogo className="size-11 shrink-0" id={integration.id} />
       <div>
-        <p className="font-heading text-base font-semibold">{integration.name}</p>
+        <p className="text-card-title font-semibold">{integration.name}</p>
         <p className="text-muted-foreground text-sm">{integration.tagline}</p>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {integration.dataTypes.map((tag) => (

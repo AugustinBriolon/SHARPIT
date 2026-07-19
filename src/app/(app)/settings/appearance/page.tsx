@@ -7,10 +7,8 @@ export default function SettingsAppearancePage() {
     <div className="space-y-4">
       <MobileBackLink href="/settings" label="Réglages" showOnDesktop />
       <StickyHeader>
-        <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-          Réglages
-        </p>
-        <h1 className="font-heading mt-1 text-2xl font-semibold">Apparence</h1>
+        <p className="text-label">Réglages</p>
+        <h1 className="text-page-title mt-1">Apparence</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Choisis comment SHARPIT s&apos;affiche. Le mode Système suit la préférence de ton appareil
           en temps réel.

@@ -16,7 +16,7 @@ function Section({
 }) {
   return (
     <div className="space-y-1.5">
-      <p className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium tracking-wider uppercase">
+      <p className="text-label flex items-center gap-1.5">
         <Icon className="size-3.5" />
         {label}
       </p>

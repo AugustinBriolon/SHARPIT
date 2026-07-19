@@ -106,9 +106,7 @@ export function TriathlonLegsPanel({ legs }: { legs: MultisportLeg[] }) {
     <Card>
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <CardTitle className="text-muted-foreground text-sm font-medium tracking-wider uppercase">
-            Détail multisport
-          </CardTitle>
+          <CardTitle className="text-label">Détail multisport</CardTitle>
           {transitionTotal > 0 && (
             <span className="text-muted-foreground font-mono text-xs tabular-nums">
               Transitions actives : {formatDuration(transitionTotal)}

@@ -33,7 +33,7 @@ export function ActivityDetailHeader({ activity }: { activity: ActivityDetail })
                 · {activitySourceLabel(activity)}
               </span>
             </div>
-            <h1 className="font-heading mt-2 text-3xl font-semibold">
+            <h1 className="text-page-title mt-1">
               {activity.title ?? activityTypeLabels[activity.type]}
             </h1>
             <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-sm">

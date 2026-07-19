@@ -34,6 +34,8 @@ export async function enrichActivityObservedContext(
       weather: true,
       narrativeAnalyzedAt: true,
       observedLocationLabel: true,
+      observedLocationLat: true,
+      observedLocationLng: true,
     },
   });
 
@@ -41,11 +43,24 @@ export async function enrichActivityObservedContext(
     return { weatherUpdated, narrativeRefreshed };
   }
 
+  const priorCoords =
+    activity.observedLocationLat != null && activity.observedLocationLng != null
+      ? {
+          latitude: activity.observedLocationLat,
+          longitude: activity.observedLocationLng,
+        }
+      : null;
+
   const hadObservedLocation = Boolean(activity.observedLocationLabel?.trim());
   const observed = await backfillActivityObservedLocation(prisma, activityId);
   const locationNew = !hadObservedLocation && observed != null;
+  const locationCorrected =
+    observed != null &&
+    priorCoords != null &&
+    (Math.abs(priorCoords.latitude - observed.latitude) > 0.0005 ||
+      Math.abs(priorCoords.longitude - observed.longitude) > 0.0005);
 
-  if (needsWeatherEnrichment(activity.weather) && observed) {
+  if ((needsWeatherEnrichment(activity.weather) || locationCorrected || locationNew) && observed) {
     const window = activityWeatherWindow(activity.date, activity.duration);
     const trainingDayId = computeTrainingDayId(activity.date);
     const { predictions } = await fetchForecastPredictions({

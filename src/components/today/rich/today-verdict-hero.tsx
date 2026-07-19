@@ -67,7 +67,7 @@ export function TodayVerdictHero({ vm }: { vm: TodayViewModel }) {
               {contextLabel ? <p className="text-label">{contextLabel}</p> : null}
               <h1
                 className={cn(
-                  'text-verdict sm:text-[1.4rem]/[1.35]',
+                  'text-verdict',
                   useVerdictAccent ? hero.verdictStyle.colorClass : 'text-foreground',
                 )}
               >

@@ -247,8 +247,8 @@ export function PlanningView({
       {!embedded && (
         <PageHeader>
           <div>
-            <p className="text-primary text-xs font-medium uppercase">Planning</p>
-            <h1 className="font-heading mt-2 text-3xl font-semibold">Plan d&apos;entraînement</h1>
+            <p className="text-label">Planning</p>
+            <h1 className="text-page-title mt-1">Plan d&apos;entraînement</h1>
             {nextRace && (
               <p className="text-muted-foreground mt-1 text-sm">
                 {nextRace.goal.title} · {format(nextRace.target, 'd MMMM yyyy', { locale: fr })}

@@ -89,9 +89,7 @@ export function SessionBlock({
       className={cn('bg-card/60 space-y-4 rounded-2xl border px-4 py-4 sm:px-5 sm:py-5', className)}
     >
       <div className="flex min-h-6.5 items-start justify-between gap-2 sm:items-center sm:gap-3">
-        <p className="text-muted-foreground min-w-0 flex-1 text-[11px] leading-snug font-medium uppercase">
-          {daySummary.sectionLabel}
-        </p>
+        <p className="text-label min-w-0 flex-1 leading-snug">{daySummary.sectionLabel}</p>
         <div className="shrink-0">
           <MorningWellnessDialog onCompleted={onWellnessCompleted} />
         </div>
@@ -149,7 +147,7 @@ export function SessionBlock({
 
       {whyLines.length > 0 && (
         <div className="border-t pt-3">
-          <p className="text-muted-foreground mb-2 text-[11px] font-medium uppercase">Pourquoi</p>
+          <p className="text-label mb-2">Pourquoi</p>
           <ul className="space-y-1.5">
             {whyLines.map((line, i) => (
               <li

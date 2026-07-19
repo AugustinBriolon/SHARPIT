@@ -14,13 +14,13 @@ import { cn } from '@/lib/utils';
 import './globals.css';
 
 const syne = Syne({
-  variable: '--font-heading',
+  variable: '--font-syne',
   subsets: ['latin'],
   weight: ['500', '600', '700'],
 });
 
 const ibmPlexSans = IBM_Plex_Sans({
-  variable: '--font-sans',
+  variable: '--font-ibm-plex-sans',
   subsets: ['latin'],
   weight: ['400', '500', '600'],
 });

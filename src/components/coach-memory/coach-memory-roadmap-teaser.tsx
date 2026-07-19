@@ -9,9 +9,7 @@ export function CoachMemoryRoadmapTeaser() {
           <Sparkles className="size-4" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-muted-foreground text-[11px] font-medium tracking-[0.12em] uppercase">
-            À venir
-          </p>
+          <p className="text-label">À venir</p>
           <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
             D&apos;autres types de mémoire structurée arriveront prochainement pour enrichir le
             contexte du coach.

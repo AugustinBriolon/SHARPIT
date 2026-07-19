@@ -17,7 +17,7 @@ export function SkeletonTitle({
     sm: 'h-5 w-32',
     md: 'h-7 w-48',
     lg: 'h-8 w-64',
-    /* text-verdict: 1.25rem × 1.35 = 27px · sm 1.4rem × 1.35 = 30.2px */
+    /* text-verdict: 1.25rem × 1.3 ≈ 26px · sm 1.55rem × 1.3 ≈ 32px */
     hero: 'h-[1.69rem] w-56 max-w-full sm:h-[1.89rem]',
     /* drill-down hero: text-xl × leading-snug = 27.5px · sm 1.55rem × 1.375 = 34.1px */
     'drill-hero': 'h-[1.72rem] w-56 max-w-full sm:h-[2.13rem]',

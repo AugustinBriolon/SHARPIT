@@ -91,9 +91,7 @@ export function ActivityInsights({ activityId, type }: { activityId: string; typ
       )}
 
       <section className="space-y-4">
-        <h2 className="text-muted-foreground text-sm font-medium tracking-wider uppercase">
-          Profils
-        </h2>
+        <h2 className="text-label">Profils</h2>
         <CombinedChart has={has} samples={normalizedSamples} type={type} />
         <ActivityCharts has={has} samples={normalizedSamples} type={type} />
       </section>

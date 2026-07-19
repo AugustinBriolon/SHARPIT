@@ -1,20 +1,21 @@
+import { MobileBackLink } from '@/components/layout/mobile-back-link';
+import { StickyHeader } from '@/components/layout/sticky-header';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
+  SkeletonAnalysisPanelAlt,
   SkeletonCard,
   SkeletonEyebrow,
   SkeletonInsightSection,
   SkeletonText,
+  SkeletonTitle,
 } from '@/components/ui/skeleton-patterns';
 
 export default function Loading() {
   return (
-    <div className="space-y-8">
-      <header className="space-y-4">
-        <div className="inline-flex min-h-11 items-center gap-1 lg:hidden">
-          <Skeleton className="size-4 shrink-0 rounded-sm" />
-          <Skeleton className="h-4 w-20 rounded-full border-0" />
-        </div>
+    <div className="relative z-0 space-y-8">
+      <MobileBackLink href="/training/history" label="Activités" showOnDesktop />
 
+      <StickyHeader>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-start gap-4">
             <Skeleton className="size-12 shrink-0 rounded-2xl" />
@@ -37,23 +38,28 @@ export default function Loading() {
             <Skeleton className="h-9 w-24 rounded-lg" />
           </div>
         </div>
+      </StickyHeader>
 
+      <div className="relative z-0 space-y-5">
         <div className="flex flex-wrap gap-2">
           <Skeleton className="h-8 w-28 rounded-full" />
           <Skeleton className="h-8 w-36 rounded-full" />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="border-border bg-card rounded-2xl border px-5 py-4">
-              <Skeleton className="h-3 w-16 rounded-full border-0" />
-              <Skeleton className="mt-2 h-9 w-24 border-0" />
+        <SkeletonAnalysisPanelAlt>
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <div className="flex items-center gap-2">
+              <Skeleton className="size-4 shrink-0 rounded-sm" />
+              <p className="text-label">Analyse coach</p>
             </div>
-          ))}
-        </div>
-      </header>
+            <Skeleton className="h-3 w-36 rounded-full border-0" />
+          </div>
+          <SkeletonTitle className="mt-5" size="md" />
+          <SkeletonText className="mt-3" widths={['100%', '92%', '78%']} />
+        </SkeletonAnalysisPanelAlt>
 
-      <Skeleton className="rounded-analysis-lg h-80 w-full sm:h-96" />
+        <Skeleton className="rounded-analysis-lg h-80 w-full sm:h-96" />
+      </div>
 
       <section className="space-y-3">
         <SkeletonEyebrow className="w-28" />

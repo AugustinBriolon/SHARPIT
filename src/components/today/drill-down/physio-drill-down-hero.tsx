@@ -86,12 +86,7 @@ export function PhysioDrillDownHero({
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_14rem] lg:items-start">
           <div className="space-y-3">
             {eyebrow ? <p className="text-label">{eyebrow}</p> : null}
-            <h1
-              className={cn(
-                'font-heading text-xl leading-snug font-semibold tracking-tight sm:text-[1.55rem]',
-                headlineClassName ?? 'text-foreground',
-              )}
-            >
+            <h1 className={cn('text-verdict', headlineClassName ?? 'text-foreground')}>
               {headline}
             </h1>
 

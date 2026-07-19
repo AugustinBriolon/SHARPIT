@@ -51,10 +51,8 @@ export function ReadinessHero({
             </div>
           </div>
           <div>
-            <p className="text-muted-foreground text-[11px] font-medium tracking-[0.15em] uppercase">
-              Forme du jour
-            </p>
-            <p className="font-heading mt-1 text-2xl font-semibold" style={{ color: view.accent }}>
+            <p className="text-label">Forme du jour</p>
+            <p className="text-verdict mt-1" style={{ color: view.accent }}>
               {view.levelLabel}
             </p>
           </div>

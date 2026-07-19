@@ -67,9 +67,7 @@ export function ProjectedAthleteCard({
         <p className="text-label">Conseil du coach</p>
       </div>
 
-      <p className="font-heading text-foreground mt-3 max-w-3xl text-base leading-snug font-semibold tracking-tight sm:text-lg">
-        {viewModel.synthesisSentence}
-      </p>
+      <p className="text-verdict text-foreground mt-3 max-w-3xl">{viewModel.synthesisSentence}</p>
 
       <div aria-label="Horizon de projection" className="mt-4 flex flex-wrap gap-1.5" role="group">
         {HORIZON_OPTIONS.map((option) => (

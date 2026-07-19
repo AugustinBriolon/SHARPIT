@@ -22,7 +22,7 @@ export function MobileDrillDownHeader({
         <ChevronLeft className="size-4 shrink-0" aria-hidden />
         {backLabel}
       </Link>
-      <h1 className="font-heading text-xl font-semibold lg:text-2xl">{title}</h1>
+      <h1 className="text-page-title">{title}</h1>
     </header>
   );
 }

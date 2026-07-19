@@ -1,5 +1,5 @@
 import { GoalsViewSkeleton } from '@/components/goals/goals-view-skeleton';
 
-export default function Loading() {
+export default function SettingsGoalsLoading() {
   return <GoalsViewSkeleton />;
 }

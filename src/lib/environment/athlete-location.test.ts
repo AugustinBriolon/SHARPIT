@@ -17,12 +17,15 @@ describe('resolveAthleteGeoLocation', () => {
     vi.clearAllMocks();
   });
 
-  it('prefers the own-day GPS stream when present, without consulting travel context', async () => {
+  it('prefers GPS stream (map track) over a stale travel-stamped observed location', async () => {
     const { resolveDefaultActivityLocation } =
       await import('@/lib/geocoding/default-activity-location');
     const { resolveAthleteGeoLocation } = await import('@/lib/environment/athlete-location');
 
     const prisma = mockPrisma({
+      observedLocationLat: 46.5,
+      observedLocationLng: -1.78,
+      observedLocationLabel: 'Olonne-sur-Mer, France',
       stream: {
         data: {
           latlng: [
@@ -34,13 +37,35 @@ describe('resolveAthleteGeoLocation', () => {
       },
     });
 
-    const result = await resolveAthleteGeoLocation(prisma, 'default', '2026-07-16');
+    const result = await resolveAthleteGeoLocation(prisma, 'default', '2026-07-19');
 
     expect(result).toEqual({ latitude: 48.2, longitude: 2.2 });
     expect(resolveDefaultActivityLocation).not.toHaveBeenCalled();
   });
 
-  it('falls back to resolveDefaultActivityLocation (travel-aware) when no GPS stream is available', async () => {
+  it('prefers observed map/card coords when no GPS stream is available', async () => {
+    const { resolveDefaultActivityLocation } =
+      await import('@/lib/geocoding/default-activity-location');
+    const { resolveAthleteGeoLocation } = await import('@/lib/environment/athlete-location');
+
+    const prisma = mockPrisma({
+      observedLocationLat: 48.92,
+      observedLocationLng: 2.25,
+      observedLocationLabel: 'Colombes, France',
+      stream: null,
+    });
+
+    const result = await resolveAthleteGeoLocation(prisma, 'default', '2026-07-19');
+
+    expect(result).toEqual({
+      latitude: 48.92,
+      longitude: 2.25,
+      label: 'Colombes, France',
+    });
+    expect(resolveDefaultActivityLocation).not.toHaveBeenCalled();
+  });
+
+  it('falls back to resolveDefaultActivityLocation (travel-aware) when no map or GPS is available', async () => {
     const { resolveDefaultActivityLocation } =
       await import('@/lib/geocoding/default-activity-location');
     vi.mocked(resolveDefaultActivityLocation).mockResolvedValue({
@@ -77,7 +102,11 @@ describe('resolveAthleteGeoLocation', () => {
     });
     const { resolveAthleteGeoLocation } = await import('@/lib/environment/athlete-location');
 
-    const prisma = mockPrisma({ stream: null });
+    const prisma = mockPrisma({
+      observedLocationLat: null,
+      observedLocationLng: null,
+      stream: null,
+    });
 
     const result = await resolveAthleteGeoLocation(prisma, 'default', '2026-07-16');
 

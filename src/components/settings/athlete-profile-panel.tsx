@@ -102,7 +102,7 @@ function ProfileFormSection({
   return (
     <section className="border-analysis-border/60 rounded-analysis space-y-4 border px-4 py-4">
       <div>
-        <h3 className="text-sm font-semibold tracking-tight">{title}</h3>
+        <h3 className="text-section-title">{title}</h3>
         {description ? (
           <p className="text-muted-foreground mt-1 text-xs leading-relaxed">{description}</p>
         ) : null}
@@ -128,9 +128,7 @@ function ThresholdHistoryPanel({ history }: { history: ClientThresholdSnapshot[]
 
   return (
     <div className="bg-muted/30 rounded-analysis border-analysis-border/60 space-y-2 border px-3 py-3">
-      <p className="text-muted-foreground text-[11px] font-medium tracking-[0.12em] uppercase">
-        Historique des seuils
-      </p>
+      <p className="text-label">Historique des seuils</p>
 
       <div className="space-y-1">
         <p className="text-muted-foreground text-xs">
@@ -202,7 +200,7 @@ function Vo2maxIndicators({
       <div className="flex flex-wrap gap-2">
         {vo2maxRunning != null ? (
           <div className="bg-muted/40 rounded-analysis border-analysis-border/60 border px-3 py-2">
-            <p className="text-muted-foreground flex items-center gap-1.5 text-[11px] tracking-wider uppercase">
+            <p className="text-label flex items-center gap-1.5">
               <ActivityTypeIndicator type={ActivityType.RUN} />
               VO2max
             </p>
@@ -213,7 +211,7 @@ function Vo2maxIndicators({
         ) : null}
         {vo2maxCycling != null ? (
           <div className="bg-muted/40 rounded-analysis border-analysis-border/60 border px-3 py-2">
-            <p className="text-muted-foreground flex items-center gap-1.5 text-[11px] tracking-wider uppercase">
+            <p className="text-label flex items-center gap-1.5">
               <ActivityTypeIndicator type={ActivityType.BIKE} />
               VO2max
             </p>

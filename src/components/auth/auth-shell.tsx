@@ -19,7 +19,7 @@ export function AuthShell({
             <Activity className="text-primary size-6" strokeWidth={2.25} />
           </div>
           <div>
-            <h1 className="font-heading text-foreground text-2xl font-semibold">SharpIt</h1>
+            <h1 className="text-page-title">SharpIt</h1>
             <p className="text-muted-foreground mt-1 text-sm">{subtitle}</p>
           </div>
         </div>

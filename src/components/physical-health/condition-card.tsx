@@ -44,7 +44,7 @@ export function PhysicalHealthConditionCardView({
                 {condition.statusLabel}
               </Badge>
             </div>
-            <h3 className="text-sm font-semibold tracking-tight">{condition.label}</h3>
+            <h3 className="text-section-title">{condition.label}</h3>
             <p className="text-muted-foreground text-xs">
               {condition.bodyRegion}
               {condition.sideLabel ? ` · ${condition.sideLabel}` : ''}

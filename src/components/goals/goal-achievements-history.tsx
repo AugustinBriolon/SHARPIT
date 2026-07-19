@@ -17,9 +17,7 @@ export function GoalAchievementsHistory() {
   if (query.isPending) {
     return (
       <section className="space-y-3">
-        <h2 className="text-muted-foreground text-sm font-medium tracking-wider uppercase">
-          Réalisations récentes
-        </h2>
+        <h2 className="text-label">Réalisations récentes</h2>
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="h-16 rounded-xl" />
@@ -35,9 +33,7 @@ export function GoalAchievementsHistory() {
 
   return (
     <section className="space-y-3">
-      <h2 className="text-muted-foreground text-sm font-medium tracking-wider uppercase">
-        Réalisations récentes
-      </h2>
+      <h2 className="text-label">Réalisations récentes</h2>
       <div className="space-y-2">
         {query.data.map((item) => {
           const config = parseGoalMetricConfig(item.goal.metricKey);

@@ -149,10 +149,7 @@ export function TodayDateSelector({
 
             <div className="grid grid-cols-7 gap-1 text-center">
               {weekdayLabels.map((label, index) => (
-                <span
-                  key={`${index}-${label}`}
-                  className="text-muted-foreground py-1 text-[11px] font-medium uppercase"
-                >
+                <span key={`${index}-${label}`} className="text-label py-1">
                   {label}
                 </span>
               ))}
