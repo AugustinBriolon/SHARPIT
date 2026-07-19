@@ -573,6 +573,24 @@ export function usePlannedSessionMutations() {
     }),
   });
 
+  /** Batch create — one optimistic patch + one toast (coach « Remplir ma semaine »). */
+  const createMany = useMutation({
+    mutationFn: async (payloads: PlannedSessionPayload[]) => {
+      if (payloads.length === 0) return [] as ClientPlannedSession[];
+      return Promise.all(
+        payloads.map((payload) => sendJson('/api/planned-sessions', 'POST', payload)),
+      ) as Promise<ClientPlannedSession[]>;
+    },
+    ...listOptimistic<ClientPlannedSession, PlannedSessionPayload[], ClientPlannedSession[]>({
+      queryClient,
+      queryKey: key,
+      apply: (prev, payloads) => [...prev, ...payloads.map((p) => optimisticSession(p))],
+      success: (payloads) =>
+        payloads.length <= 1 ? 'Séance ajoutée' : `${payloads.length} séances ajoutées au planning`,
+      error: "Impossible d'ajouter les séances.",
+    }),
+  });
+
   const createBrick = useMutation({
     mutationFn: (payload: CreateBrickPayload) =>
       sendJson('/api/planned-sessions/brick', 'POST', payload),
@@ -684,7 +702,7 @@ export function usePlannedSessionMutations() {
     },
   });
 
-  return { create, createBrick, update, remove, link, analyze };
+  return { create, createMany, createBrick, update, remove, link, analyze };
 }
 
 export interface ClientBrickAnalysis {

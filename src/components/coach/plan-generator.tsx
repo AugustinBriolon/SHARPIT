@@ -42,28 +42,12 @@ const DAYS_OPTIONS = [
 
 const NO_GOAL = 'none';
 
-function renderInsertButtonContent(inserted: boolean, isInserting: boolean, online: boolean) {
+function renderInsertButtonContent(online: boolean) {
   if (!online) {
     return (
       <>
         <WifiOff className="size-4" />
         Hors ligne
-      </>
-    );
-  }
-  if (inserted) {
-    return (
-      <>
-        <Check className="size-4" />
-        Ajouté
-      </>
-    );
-  }
-  if (isInserting) {
-    return (
-      <>
-        <Loader2 className="size-4 animate-spin" />
-        Ajout…
       </>
     );
   }
@@ -80,11 +64,9 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
   const [focus, setFocus] = useState('');
   const [goalId, setGoalId] = useState<string>(NO_GOAL);
   const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [insertError, setInsertError] = useState<string | null>(null);
-  const [inserted, setInserted] = useState(false);
 
   const coachPlan = useCoachPlan();
-  const { create } = usePlannedSessionMutations();
+  const { createMany } = usePlannedSessionMutations();
   const goalsQuery = useGoals();
   const planQuery = useTrainingPlan();
   const plan = coachPlan.data;
@@ -103,8 +85,6 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
     .filter((g) => new Date(g.targetDate as unknown as string) >= new Date());
 
   async function handleGenerate() {
-    setInsertError(null);
-    setInserted(false);
     const result = await coachPlan.mutateAsync({
       days: Number(days),
       focus: focus.trim() || undefined,
@@ -133,34 +113,28 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
     });
   }
 
-  async function handleInsert() {
-    if (!plan) return;
-    setInsertError(null);
-    const toAdd = plan.sessions.filter((_, i) => selected.has(i));
-    try {
-      for (const s of toAdd) {
-        await create.mutateAsync({
-          type: s.type,
-          date: new Date(`${s.date}T12:00:00`),
-          startTime: s.startTime,
-          title: s.title,
-          description: s.description,
-          durationMin: s.durationMin,
-          load: s.load,
-          intensity: s.intensity,
-          goalId: goalId === NO_GOAL ? null : goalId,
-          decisionId: s.decisionId,
-        });
-      }
-      setInserted(true);
-      setTimeout(onClose, 800);
-    } catch (err) {
-      setInsertError(err instanceof Error ? err.message : "Erreur d'insertion");
-    }
+  /** Instant UX: optimistic batch + close immediately; toast comes from the mutation. */
+  function handleInsert() {
+    if (!plan || selected.size === 0) return;
+    const payloads = plan.sessions
+      .filter((_, i) => selected.has(i))
+      .map((s) => ({
+        type: s.type,
+        date: new Date(`${s.date}T12:00:00`),
+        startTime: s.startTime,
+        title: s.title,
+        description: s.description,
+        durationMin: s.durationMin,
+        load: s.load,
+        intensity: s.intensity,
+        goalId: goalId === NO_GOAL ? null : goalId,
+        decisionId: s.decisionId,
+      }));
+    createMany.mutate(payloads);
+    onClose();
   }
 
   const isGenerating = coachPlan.isPending;
-  const isInserting = create.isPending;
   const online = useOnlineStatus();
 
   return (
@@ -276,8 +250,6 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
               ))}
             </div>
 
-            {insertError && <p className="text-destructive text-sm">{insertError}</p>}
-
             <div className="border-border/60 flex items-center justify-between gap-2 border-t pt-3">
               <span className="text-muted-foreground text-xs">
                 {selected.size} séance(s) sélectionnée(s)
@@ -286,11 +258,8 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
                 <Button variant="outline" onClick={onClose}>
                   Fermer
                 </Button>
-                <Button
-                  disabled={!online || isInserting || selected.size === 0 || inserted}
-                  onClick={handleInsert}
-                >
-                  {renderInsertButtonContent(inserted, isInserting, online)}
+                <Button disabled={!online || selected.size === 0} onClick={handleInsert}>
+                  {renderInsertButtonContent(online)}
                 </Button>
               </div>
             </div>

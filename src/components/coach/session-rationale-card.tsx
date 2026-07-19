@@ -1,7 +1,8 @@
 'use client';
 
-import { Eye, Brain, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Eye, Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useSessionRationalePresentation } from '@/hooks/use-data';
 import { GateStatusBadge } from '@/components/coach/gate-status-badge';
 
@@ -25,32 +26,35 @@ function Section({
   );
 }
 
-/** Athlete-facing session rationale — reads the four-bucket ViewModel, renders only. */
-export function SessionRationaleCard({ sessionId }: { sessionId: string }) {
-  const { data: vm, isLoading } = useSessionRationalePresentation(sessionId);
+function SessionRationaleSkeleton() {
+  return (
+    <Card aria-busy="true" aria-label="Chargement du contexte coach" className="border-border/60">
+      <CardContent className="space-y-3">
+        <p className="text-label">Pourquoi cette séance</p>
+        <Skeleton className="h-4 w-full max-w-md rounded-full border-0" />
+        <Skeleton className="h-4 w-3/4 max-w-sm rounded-full border-0" />
+      </CardContent>
+    </Card>
+  );
+}
 
-  if (isLoading || !vm) return null;
+/** Athlete-facing session rationale — reads the ViewModel, renders only actionable buckets. */
+export function SessionRationaleCard({ sessionId }: { sessionId: string }) {
+  const { data: vm, isPending } = useSessionRationalePresentation(sessionId);
+
+  if (isPending) return <SessionRationaleSkeleton />;
+  if (!vm) return null;
   if (vm.origin === 'MANUAL') return null;
 
-  const { inferred, suggested, chosen, outcome } = vm;
+  const { suggested, outcome } = vm;
+  const hasSuggested = Boolean(suggested);
+  const hasOutcome = Boolean(outcome);
+
+  if (!hasSuggested && !hasOutcome) return null;
 
   return (
     <Card className="border-border/60">
       <CardContent className="space-y-4">
-        {inferred && (inferred.overallVerdictLabel || inferred.limitingFactorLabel) ? (
-          <Section icon={Brain} label="Ce que SHARPIT a analysé">
-            {inferred.overallVerdictLabel && (
-              <p>Décision du jour : {inferred.overallVerdictLabel}</p>
-            )}
-            {inferred.limitingFactorLabel && (
-              <p className="text-muted-foreground text-xs">
-                Facteur limitant : {inferred.limitingFactorLabel}
-                {inferred.confidenceTierLabel ? ` · ${inferred.confidenceTierLabel}` : ''}
-              </p>
-            )}
-          </Section>
-        ) : null}
-
         {suggested ? (
           <Section icon={Sparkles} label="Pourquoi cette séance">
             {suggested.purpose && <p>{suggested.purpose}</p>}
@@ -71,19 +75,6 @@ export function SessionRationaleCard({ sessionId }: { sessionId: string }) {
                 ))}
               </ul>
             )}
-          </Section>
-        ) : null}
-
-        {chosen && chosen.actionHistory.length > 0 ? (
-          <Section icon={CheckCircle2} label="Ce que tu as choisi">
-            <ul className="space-y-1">
-              {chosen.actionHistory.map((action) => (
-                <li key={`${action.actionType}-${action.occurredAt}`} className="text-sm">
-                  {action.label}
-                </li>
-              ))}
-            </ul>
-            <p className="text-muted-foreground mt-1 text-xs">{chosen.executionStateLabel}</p>
           </Section>
         ) : null}
 

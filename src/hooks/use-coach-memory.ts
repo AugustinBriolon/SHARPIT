@@ -108,7 +108,8 @@ export function useCoachMemoryMutations() {
         const data = (await res.json()) as { error?: string };
         throw new Error(data.error ?? 'Création impossible');
       }
-      return res.json() as Promise<CoachMemoryEntry>;
+      const data = (await res.json()) as { entry: CoachMemoryEntry };
+      return data.entry;
     },
     onMutate: async (payload) => {
       await queryClient.cancelQueries({ queryKey: key });
@@ -145,7 +146,7 @@ export function useCoachMemoryMutations() {
     onSuccess: (entry, payload) => {
       queryClient.setQueryData<CoachMemoryResponse>(key, (current) => {
         if (!current) return current;
-        const withoutTemp = current.entries.filter((e) => !isTempId(e.id));
+        const withoutTemp = current.entries.filter((e) => !isTempId(e.id) && e.id !== entry.id);
         return patchMemoryEntries(current, [entry, ...withoutTemp], entry.id);
       });
       softRefreshTravelAndSessions(payload.applyToPlannedSessions);
@@ -166,7 +167,8 @@ export function useCoachMemoryMutations() {
         const data = (await res.json()) as { error?: string };
         throw new Error(data.error ?? 'Modification impossible');
       }
-      return res.json() as Promise<CoachMemoryEntry>;
+      const data = (await res.json()) as { entry: CoachMemoryEntry };
+      return data.entry;
     },
     onMutate: async ({ id, payload }) => {
       await queryClient.cancelQueries({ queryKey: key });

@@ -26,3 +26,13 @@ export function resolvePlannedSessionDisplay(
 
   return { typeLabel, typeColor, intensityLabel, dateStr, title };
 }
+
+/** Safe location line for read views — never renders the string "null". */
+export function formatPlannedSessionLocationDisplay(
+  locationLabel: string | null | undefined,
+  exposureLabel: string,
+): string {
+  const label = typeof locationLabel === 'string' ? locationLabel.trim() : '';
+  if (!label || label === 'null') return exposureLabel;
+  return `${label} · ${exposureLabel}`;
+}

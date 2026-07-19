@@ -28,6 +28,7 @@ import { useMounted } from '@/hooks/use-mounted';
 import { useIsMobile } from '@/hooks/use-viewport';
 import { buildCalendarMonth, buildCalendarWeek } from '@/lib/calendar';
 import { queryKeys } from '@/lib/query/keys';
+import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import type { ClientPlannedSession } from '@/lib/query/types';
 import { isAnyInitialQueryLoad } from '@/hooks/use-query-status';
 import { useQueryClient } from '@tanstack/react-query';
@@ -265,10 +266,14 @@ export function CalendarView({
   }
 
   function openEdit(session: ClientPlannedSession) {
+    prefetchPlannedSessionDetail(queryClient, session.id);
     setDialog({ mode: 'edit', session });
   }
 
   function openBrick(sessions: ClientPlannedSession[]) {
+    for (const session of sessions) {
+      prefetchPlannedSessionDetail(queryClient, session.id);
+    }
     setDialog({ mode: 'brick', sessions });
   }
 
@@ -290,6 +295,9 @@ export function CalendarView({
     onDrop: handleDrop,
     onEdit: openEdit,
     onOpenBrick: openBrick,
+    onPrefetch: (session: ClientPlannedSession) => {
+      prefetchPlannedSessionDetail(queryClient, session.id);
+    },
   };
 
   return (
@@ -306,7 +314,10 @@ export function CalendarView({
         <BrickDialog
           sessions={dialog.sessions}
           onClose={() => setDialog(null)}
-          onEditLeg={(session) => setDialog({ mode: 'edit', session })}
+          onEditLeg={(session) => {
+            prefetchPlannedSessionDetail(queryClient, session.id);
+            setDialog({ mode: 'edit', session });
+          }}
         />
       )}
 

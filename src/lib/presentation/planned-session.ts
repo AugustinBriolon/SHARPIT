@@ -140,6 +140,8 @@ export function buildPlannedSessionViewModel(input: {
       })),
       exposure: context.intention.exposure,
       locationLabel: session.locationLabel ?? context.intention.location?.label ?? null,
+      locationLatitude: session.locationLat ?? context.intention.location?.latitude ?? null,
+      locationLongitude: session.locationLng ?? context.intention.location?.longitude ?? null,
       emptyState: visible
         ? null
         : {

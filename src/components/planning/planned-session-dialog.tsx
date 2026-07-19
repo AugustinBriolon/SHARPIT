@@ -1,20 +1,11 @@
 'use client';
 
-import { ActivityType, SessionIntensity } from '@prisma/client';
-import { format } from 'date-fns';
-import { Layers, Plus, Trash2 } from 'lucide-react';
-import { useQueryClient, useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
-import { PlannedSessionReadView } from '@/components/planning/planned-session-read-view';
+import { BrickAnalysisPanel } from '@/components/planning/brick-analysis-panel';
 import {
   LocationPlacePicker,
   type LocationPlaceValue,
 } from '@/components/planning/location-place-picker';
-import {
-  defaultExposureForActivityType,
-  sportSupportsOutdoorContext,
-} from '@/core/planned-session/defaults';
-import { queryKeys } from '@/lib/query/keys';
+import { PlannedSessionReadView } from '@/components/planning/planned-session-read-view';
 import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -28,21 +19,31 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { BrickAnalysisPanel } from '@/components/planning/brick-analysis-panel';
-import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
-import { activityTypeLabels } from '@/lib/format';
 import {
-  intensityLabels,
-  intensityOrder,
-  brickLegActivityTypes,
-  exposureLabels,
-} from '@/lib/sessions';
-import { cn } from '@/lib/utils';
+  defaultExposureForActivityType,
+  sportSupportsOutdoorContext,
+} from '@/core/planned-session/defaults';
 import {
   usePlannedSessionMutations,
   usePlannedSessionPresentation,
   usePlannedSessions,
+  useSessionRationalePresentation,
 } from '@/hooks/use-data';
+import { activityTypeLabels } from '@/lib/format';
+import { queryKeys } from '@/lib/query/keys';
+import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
+import {
+  brickLegActivityTypes,
+  exposureLabels,
+  intensityLabels,
+  intensityOrder,
+} from '@/lib/sessions';
+import { cn } from '@/lib/utils';
+import { ActivityType, SessionIntensity } from '@prisma/client';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { Layers, Plus, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
 type LocationSource = 'home' | 'travel' | 'custom';
 
@@ -163,6 +164,8 @@ export function PlannedSessionDialog({
   const showOutdoorContext = createMode === 'single' && sportSupportsOutdoorContext(type);
 
   const contextQuery = usePlannedSessionPresentation(isEdit ? session?.id : null);
+  // Warm rationale in parallel with context (card also subscribes to the same key).
+  useSessionRationalePresentation(isEdit ? session?.id : null);
 
   const homeQuery = useQuery({
     queryKey: ['geocoding', 'home'],
@@ -427,6 +430,7 @@ export function PlannedSessionDialog({
               ) : null}
               <PlannedSessionReadView
                 context={contextQuery.data?.context}
+                contextPending={contextQuery.isPending}
                 goals={raceGoals}
                 session={liveSession}
                 onEdit={handleStartEdit}

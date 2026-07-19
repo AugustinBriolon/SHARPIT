@@ -2,7 +2,7 @@
 
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { MessageSquarePlus, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -23,17 +23,13 @@ export function CoachConversationList({
   conversations,
   activeId,
   loading,
-  creating,
   onSelect,
-  onNew,
   onDelete,
 }: {
   conversations: ClientConversationSummary[];
   activeId: string | null;
   loading: boolean;
-  creating: boolean;
   onSelect: (id: string) => void;
-  onNew: () => void;
   onDelete: (id: string) => void;
 }) {
   const selectedId = activeId ?? conversations[0]?.id ?? '';
@@ -41,19 +37,6 @@ export function CoachConversationList({
 
   return (
     <aside className="border-border/60 bg-card/30 flex w-full shrink-0 flex-col rounded-xl border lg:h-full lg:w-56">
-      <div className="border-border/60 border-b p-2">
-        <Button
-          className="w-full justify-start gap-2"
-          disabled={creating}
-          size="sm"
-          variant="outline"
-          onClick={onNew}
-        >
-          <MessageSquarePlus className="size-4" />
-          Nouvelle conversation
-        </Button>
-      </div>
-
       {loading && <p className="text-muted-foreground px-3 py-2 text-xs">Chargement…</p>}
 
       {!loading && conversations.length === 0 && (

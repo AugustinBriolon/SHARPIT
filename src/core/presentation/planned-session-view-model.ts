@@ -25,6 +25,8 @@ export type PlannedSessionContextCard = {
   readonly preparation: readonly { label: string }[];
   readonly exposure: PlannedSessionExposureSetting;
   readonly locationLabel: string | null;
+  readonly locationLatitude: number | null;
+  readonly locationLongitude: number | null;
   readonly emptyState: PresentationEmptyState | null;
 };
 

@@ -28,7 +28,8 @@ export function forecastBadgeFromContext(
   const advisories = parsed.advisories ?? [];
 
   if (advisories.some((a) => a.kind === 'CONFIRM_LOCATION')) {
-    return { tone: 'caution', label: 'Lieu à confirmer' };
+    // Soft advisory — not a thermal risk; keep neutral so cards stay calm.
+    return { tone: 'neutral', label: 'Lieu à préciser' };
   }
 
   if (!env) {

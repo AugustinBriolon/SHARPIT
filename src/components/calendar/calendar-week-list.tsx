@@ -18,6 +18,7 @@ export function CalendarWeekList({
   onDragLeave,
   onEdit,
   onOpenBrick,
+  onPrefetch,
 }: {
   days: CalendarDay[];
   eventsByDay: Record<string, DayEvent[]>;
@@ -29,6 +30,7 @@ export function CalendarWeekList({
   onDragLeave: () => void;
   onEdit: (session: ClientPlannedSession) => void;
   onOpenBrick: (sessions: ClientPlannedSession[]) => void;
+  onPrefetch?: (session: ClientPlannedSession) => void;
 }) {
   return (
     <div className="analysis-panel divide-analysis-border rounded-analysis-lg divide-y overflow-hidden">
@@ -87,6 +89,7 @@ export function CalendarWeekList({
                 linkedActivityIds={linkedActivityIds}
                 onEdit={onEdit}
                 onOpenBrick={onOpenBrick}
+                onPrefetch={onPrefetch}
               />
             </div>
           </div>

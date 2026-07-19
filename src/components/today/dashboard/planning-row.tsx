@@ -1,23 +1,14 @@
-import Link from 'next/link';
-import { forecastBadgeFromContext } from '@/lib/planned-session/forecast-badge';
-import { Badge } from '@/components/ui/badge';
 import { PhysioRail } from '@/components/ui/physio-rail';
-import { intensityOrder } from '@/lib/sessions';
-import { filterUpcomingPlannedSessions } from '@/lib/planned-session-dates';
+import { selectUpcomingPlannedPreview } from '@/lib/planned-session-dates';
 import { resolvePlannedSessionDisplay } from '@/lib/planned-session-display';
+import { forecastBadgeFromContext } from '@/lib/planned-session/forecast-badge';
+import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import type { ClientPlannedSession } from '@/lib/query/types';
 import { plannedSessionHref } from '@/lib/session-analysis-display';
+import { intensityOrder } from '@/lib/sessions';
+import { useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
 import { PlannedSessionTypeBadge } from './planned-session-type-badge';
-
-function planningBadgeClass(tone: string): string {
-  if (tone === 'caution') {
-    return 'border-amber-500/40 bg-amber-500/10 text-amber-700';
-  }
-  if (tone === 'ok') {
-    return 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700';
-  }
-  return 'font-normal';
-}
 
 export function PlanningRow({
   sessions,
@@ -28,8 +19,9 @@ export function PlanningRow({
   limit?: number;
   compact?: boolean;
 }) {
+  const queryClient = useQueryClient();
   const today = new Date();
-  const upcoming = filterUpcomingPlannedSessions(sessions, today).slice(0, limit);
+  const upcoming = selectUpcomingPlannedPreview(sessions, today, limit);
 
   if (upcoming.length === 0) return null;
 
@@ -50,21 +42,16 @@ export function PlanningRow({
                 'analysis-panel hover:bg-analysis-surface-alt/60 rounded-analysis flex min-h-11 flex-col transition-colors active:opacity-80 lg:min-h-0',
                 compact ? 'gap-1.5 p-3' : 'gap-2 p-4',
               ].join(' ')}
+              onFocus={() => prefetchPlannedSessionDetail(queryClient, s.id)}
+              onPointerEnter={() => prefetchPlannedSessionDetail(queryClient, s.id)}
             >
               <div className="flex items-center justify-between gap-2">
                 <PlannedSessionTypeBadge session={s} />
-                <div className="flex items-center gap-2">
-                  {badge ? (
-                    <Badge className={planningBadgeClass(badge.tone)} variant="outline">
-                      {badge.label}
-                    </Badge>
-                  ) : null}
-                  {s.durationMin ? (
-                    <span className="text-data text-muted-foreground text-[11px]">
-                      {s.durationMin} min
-                    </span>
-                  ) : null}
-                </div>
+                {s.durationMin ? (
+                  <span className="text-data text-muted-foreground shrink-0 text-[11px]">
+                    {s.durationMin} min
+                  </span>
+                ) : null}
               </div>
               <p
                 className={[
@@ -74,7 +61,23 @@ export function PlanningRow({
               >
                 {title}
               </p>
-              <p className="text-data text-muted-foreground text-[11px]">{dateStr}</p>
+              <div className="text-muted-foreground flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px]">
+                <span className="text-data">{dateStr}</span>
+                {badge ? (
+                  <>
+                    <span className="opacity-30" aria-hidden>
+                      ·
+                    </span>
+                    <span
+                      className={
+                        badge.tone === 'caution' ? 'text-signal-caution' : 'text-muted-foreground'
+                      }
+                    >
+                      {badge.label}
+                    </span>
+                  </>
+                ) : null}
+              </div>
               <PhysioRail
                 max={6}
                 value={intensityValue}

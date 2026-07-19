@@ -10,6 +10,7 @@ import {
   applyTravelContextToUpcomingSessions,
   createTravelContext,
   getActiveTravelContext,
+  listActiveTravelContexts,
 } from './service';
 
 function fakePrisma(overrides: Record<string, unknown> = {}) {
@@ -91,6 +92,41 @@ describe('getActiveTravelContext', () => {
 
     expect(result?.locationLabel).toBe('Stockholm, Suède');
     expect(findFirst).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('listActiveTravelContexts', () => {
+  it('returns every TRAVEL overlapping the day', async () => {
+    const findMany = vi.fn(async () => [
+      {
+        id: 't1',
+        type: 'TRAVEL',
+        locationLabel: 'Colombes',
+        locationLat: 48.92,
+        locationLng: 2.25,
+        startDate: new Date('2026-07-12T00:00:00.000Z'),
+        endDate: new Date('2026-07-19T00:00:00.000Z'),
+      },
+      {
+        id: 't2',
+        type: 'TRAVEL',
+        locationLabel: 'Les Sables',
+        locationLat: 46.49,
+        locationLng: -1.78,
+        startDate: new Date('2026-07-15T00:00:00.000Z'),
+        endDate: new Date('2026-07-22T00:00:00.000Z'),
+      },
+    ]);
+    const prisma = fakePrisma({ findMany });
+
+    const result = await listActiveTravelContexts(prisma, new Date('2026-07-16'));
+
+    expect(result).toHaveLength(2);
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ type: 'TRAVEL' }),
+      }),
+    );
   });
 });
 

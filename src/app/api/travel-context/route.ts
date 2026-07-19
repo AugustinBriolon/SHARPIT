@@ -5,6 +5,7 @@ import {
   applyTravelContextToUpcomingSessions,
   createTravelContext,
   getActiveTravelContext,
+  listActiveTravelContexts,
   listTravelContexts,
 } from '@/lib/travel-context/service';
 import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/resolve-context';
@@ -35,11 +36,12 @@ const createSchema = z
 
 export async function GET() {
   try {
-    const [active, all] = await Promise.all([
+    const [active, activeList, all] = await Promise.all([
       getActiveTravelContext(prisma),
+      listActiveTravelContexts(prisma),
       listTravelContexts(prisma),
     ]);
-    return NextResponse.json({ active, contexts: all });
+    return NextResponse.json({ active, activeList, contexts: all });
   } catch (error) {
     console.error(error);
     return NextResponse.json(

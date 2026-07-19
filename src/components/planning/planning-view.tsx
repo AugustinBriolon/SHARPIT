@@ -1,21 +1,15 @@
 'use client';
 
-import { addWeeks, endOfWeek, format, isSameDay, isToday, startOfWeek, subWeeks } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { CheckCircle2, ChevronLeft, ChevronRight, GitCompare, Layers, Plus } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useMemo, useState, useEffect } from 'react';
-import { PageHeader } from '@/components/layout/sticky-header';
 import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
 import { PlanAdapter } from '@/components/coach/plan-adapter';
 import { PlanGenerator } from '@/components/coach/plan-generator';
 import { WeeklyBrief } from '@/components/coach/weekly-brief';
+import { PageHeader } from '@/components/layout/sticky-header';
 import { MacroPlanDialog } from '@/components/planning/macro-plan-dialog';
 import { PlannedSessionDialog } from '@/components/planning/planned-session-dialog';
-import { TravelContextBanner } from '@/components/planning/travel-context-banner';
 import { ProjectedAthleteCard } from '@/components/planning/projected-athlete-card';
 import { ScenarioComparisonDialog } from '@/components/planning/scenario-comparison-dialog';
+import { TravelContextBanner } from '@/components/planning/travel-context-banner';
 import {
   SessionsCoachMenu,
   type SessionsCoachAction,
@@ -23,18 +17,26 @@ import {
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonEyebrow, SkeletonTitle } from '@/components/ui/skeleton-patterns';
-import type { ClientActivity, ClientPlannedSession, ClientPlanWeek } from '@/lib/query/types';
-import { groupPlannedSessions } from '@/lib/brick-sessions';
-import { activityTypeLabels } from '@/lib/format';
-import { buildPlanningWeeks, resolvePlanningWeek } from '@/lib/planning';
-import { phaseColors, phaseLabels } from '@/lib/periodization';
-import { formatPlannedDuration } from '@/lib/sessions';
-import { cn } from '@/lib/utils';
+import type { ProjectionHorizonDays } from '@/core/projection/types';
 import { useActivities, useGoals, usePlannedSessions, useTrainingPlan } from '@/hooks/use-data';
 import { useProjectedAthleteViewModel } from '@/hooks/use-projected-athlete-view-model';
-import { useScenarioComparisonViewModel } from '@/hooks/use-scenario-comparison-view-model';
-import type { ProjectionHorizonDays } from '@/core/projection/types';
 import { isAnyInitialQueryLoad } from '@/hooks/use-query-status';
+import { useScenarioComparisonViewModel } from '@/hooks/use-scenario-comparison-view-model';
+import { groupPlannedSessions } from '@/lib/brick-sessions';
+import { activityTypeLabels } from '@/lib/format';
+import { phaseColors, phaseLabels } from '@/lib/periodization';
+import { buildPlanningWeeks, resolvePlanningWeek } from '@/lib/planning';
+import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
+import type { ClientActivity, ClientPlannedSession, ClientPlanWeek } from '@/lib/query/types';
+import { formatPlannedDuration } from '@/lib/sessions';
+import { cn } from '@/lib/utils';
+import { addWeeks, endOfWeek, format, isSameDay, isToday, startOfWeek, subWeeks } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { CheckCircle2, ChevronLeft, ChevronRight, GitCompare, Layers, Plus } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 
@@ -51,6 +53,7 @@ export function PlanningView({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const plannedIdFromUrl = searchParams.get('planned');
   const createFromUrl = showCoachMenu && searchParams.has('create');
   const activitiesQuery = useActivities();
@@ -137,10 +140,24 @@ export function PlanningView({
   }, [plannedIdFromUrl, plannedQuery.isPending, planned]);
 
   useEffect(() => {
+    if (!plannedIdFromUrl) return;
+    prefetchPlannedSessionDetail(queryClient, plannedIdFromUrl);
+  }, [plannedIdFromUrl, queryClient]);
+
+  useEffect(() => {
     if (!deepLinkSession) return;
     const sessionWeek = startOfWeek(new Date(deepLinkSession.date), WEEK_OPTS);
     setWeekStart((current) => (isSameDay(current, sessionWeek) ? current : sessionWeek));
   }, [deepLinkSession]);
+
+  function openPlannedSession(session: ClientPlannedSession) {
+    prefetchPlannedSessionDetail(queryClient, session.id);
+    setDialog({ mode: 'edit', session });
+  }
+
+  function prefetchPlannedSession(session: ClientPlannedSession) {
+    prefetchPlannedSessionDetail(queryClient, session.id);
+  }
 
   function closePlannedDialog() {
     setDialog(null);
@@ -258,7 +275,7 @@ export function PlanningView({
         </PageHeader>
       )}
 
-      <TravelContextBanner />
+      <TravelContextBanner rangeEnd={weekEnd} rangeStart={week.start} />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1">
@@ -330,9 +347,9 @@ export function PlanningView({
             activities={day.activities}
             date={day.date}
             planned={day.planned}
-            projectionRiskDayId={projectionRiskDayId}
             onAdd={() => setDialog({ mode: 'create', date: day.date })}
-            onEdit={(session) => setDialog({ mode: 'edit', session })}
+            onEdit={openPlannedSession}
+            onPrefetch={prefetchPlannedSession}
           />
         ))}
       </div>
@@ -418,29 +435,22 @@ function DayRow({
   date,
   planned,
   activities,
-  projectionRiskDayId,
   onAdd,
   onEdit,
+  onPrefetch,
 }: {
   date: Date;
   planned: ClientPlannedSession[];
   activities: ClientActivity[];
-  projectionRiskDayId: string | null;
   onAdd: () => void;
   onEdit: (session: ClientPlannedSession) => void;
+  onPrefetch: (session: ClientPlannedSession) => void;
 }) {
   const today = isToday(date);
   const empty = planned.length === 0 && activities.length === 0;
-  const dateKey = format(date, 'yyyy-MM-dd');
-  const isProjectionRiskDay = projectionRiskDayId != null && projectionRiskDayId === dateKey;
 
   return (
-    <div
-      className={cn('flex gap-3 px-3 py-3 sm:gap-4 sm:px-4', today && 'bg-primary/4')}
-      style={
-        isProjectionRiskDay ? { boxShadow: 'inset 3px 0 0 var(--color-signal-caution)' } : undefined
-      }
-    >
+    <div className={cn('flex gap-3 px-3 py-3 sm:gap-4 sm:px-4', today && 'bg-primary/4')}>
       <div className="w-11 shrink-0 text-center sm:w-12">
         <p className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
           {format(date, 'EEE', { locale: fr })}
@@ -453,17 +463,12 @@ function DayRow({
         >
           {format(date, 'd')}
         </p>
-        {isProjectionRiskDay ? (
-          <p className="text-signal-caution mt-1 text-[9px] font-medium tracking-wide uppercase">
-            Vigilance
-          </p>
-        ) : null}
       </div>
 
       <div className="min-w-0 flex-1 space-y-1.5">
         {empty ? (
           <button
-            className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+            className="text-muted-foreground hover:text-foreground pl-6 text-sm transition-colors"
             type="button"
             onClick={onAdd}
           >
@@ -473,14 +478,19 @@ function DayRow({
           <>
             {groupPlannedSessions(planned).map((item) =>
               item.kind === 'single' ? (
-                <SessionRow key={item.session.id} session={item.session} onEdit={onEdit} />
+                <SessionRow
+                  key={item.session.id}
+                  session={item.session}
+                  onEdit={onEdit}
+                  onPrefetch={onPrefetch}
+                />
               ) : (
                 <div key={item.id} className="space-y-1">
                   <p className="text-primary flex items-center gap-1 text-[10px] font-medium tracking-wider uppercase">
                     <Layers className="size-3" /> Brick
                   </p>
                   {item.sessions.map((s) => (
-                    <SessionRow key={s.id} session={s} onEdit={onEdit} />
+                    <SessionRow key={s.id} session={s} onEdit={onEdit} onPrefetch={onPrefetch} />
                   ))}
                 </div>
               ),
@@ -517,9 +527,11 @@ function DayRow({
 function SessionRow({
   session,
   onEdit,
+  onPrefetch,
 }: {
   session: ClientPlannedSession;
   onEdit: (session: ClientPlannedSession) => void;
+  onPrefetch: (session: ClientPlannedSession) => void;
 }) {
   const title = session.title ?? activityTypeLabels[session.type];
   const meta = [
@@ -533,10 +545,12 @@ function SessionRow({
     <button
       type="button"
       className={cn(
-        'hover:bg-muted/50 flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm transition-colors',
-        session.completed && 'opacity-60',
+        'hover:bg-muted/50 flex w-full items-center gap-2.5 rounded-lg py-1.5 pl-6 text-left text-sm transition-colors',
+        session.completed && 'pl-0 opacity-60',
       )}
       onClick={() => onEdit(session)}
+      onFocus={() => onPrefetch(session)}
+      onPointerEnter={() => onPrefetch(session)}
     >
       {session.completed && <CheckCircle2 className="size-3.5 shrink-0 text-emerald-600" />}
       <ActivityTypeIndicator type={session.type} />

@@ -23,6 +23,7 @@ const CalendarMonthCell = memo(function CalendarMonthCell({
   onDragLeave,
   onEdit,
   onOpenBrick,
+  onPrefetch,
 }: {
   cell: CalendarDay;
   dateKey: string;
@@ -35,6 +36,7 @@ const CalendarMonthCell = memo(function CalendarMonthCell({
   onDragLeave: () => void;
   onEdit: (session: ClientPlannedSession) => void;
   onOpenBrick: (sessions: ClientPlannedSession[]) => void;
+  onPrefetch?: (session: ClientPlannedSession) => void;
 }) {
   const dayLoad = getCalendarDayLoad(cell);
   const borderAccent = getCalendarDayBorderAccent(cell);
@@ -85,6 +87,7 @@ const CalendarMonthCell = memo(function CalendarMonthCell({
           linkedActivityIds={linkedActivityIds}
           onEdit={onEdit}
           onOpenBrick={onOpenBrick}
+          onPrefetch={onPrefetch}
         />
       </div>
     </div>
@@ -102,6 +105,7 @@ export function CalendarMonthGrid({
   onDragLeave,
   onEdit,
   onOpenBrick,
+  onPrefetch,
 }: {
   weeks: CalendarDay[][];
   eventsByDay: Record<string, DayEvent[]>;
@@ -113,6 +117,7 @@ export function CalendarMonthGrid({
   onDragLeave: () => void;
   onEdit: (session: ClientPlannedSession) => void;
   onOpenBrick: (sessions: ClientPlannedSession[]) => void;
+  onPrefetch?: (session: ClientPlannedSession) => void;
 }) {
   return (
     <div className="analysis-panel rounded-analysis-lg overflow-hidden">
@@ -141,6 +146,7 @@ export function CalendarMonthGrid({
               onDrop={onDrop}
               onEdit={onEdit}
               onOpenBrick={onOpenBrick}
+              onPrefetch={onPrefetch}
             />
           );
         })}

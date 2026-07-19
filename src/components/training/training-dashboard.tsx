@@ -25,7 +25,7 @@ import { useActivities, useGoals, usePlannedSessions } from '@/hooks/use-data';
 import { isAnyInitialQueryLoad } from '@/hooks/use-query-status';
 import { useIsMobile } from '@/hooks/use-viewport';
 import { buildAnalyticsViewModel } from '@/lib/analytics';
-import { filterUpcomingPlannedSessions } from '@/lib/planned-session-dates';
+import { selectUpcomingPlannedPreview } from '@/lib/planned-session-dates';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import { GoalKind } from '@prisma/client';
 
@@ -200,10 +200,13 @@ function TrainingGoalHero({
 
 function isHeroRaceSession(session: ClientPlannedSession, goal: ClientGoal): boolean {
   if (!goal.targetDate) return false;
+  // Only the race-day occurrence belongs in the hero — not every session tagged
+  // with the race goalId (plan generator attaches goalId to the whole block).
+  const sameDay = differenceInCalendarDays(new Date(session.date), new Date(goal.targetDate)) === 0;
+  if (!sameDay) return false;
   const sameGoal = session.goalId === goal.id;
   const sameTitle = session.title?.trim().toLowerCase() === goal.title.trim().toLowerCase();
-  const sameDay = differenceInCalendarDays(new Date(session.date), new Date(goal.targetDate)) === 0;
-  return sameGoal || session.intensity === 'RACE' || (sameTitle && sameDay);
+  return sameGoal || session.intensity === 'RACE' || sameTitle;
 }
 
 export function TrainingDashboard() {
@@ -227,16 +230,15 @@ export function TrainingDashboard() {
     if (!nextRaceGoal) return plannedSessions;
     return plannedSessions.filter((session) => !isHeroRaceSession(session, nextRaceGoal));
   }, [nextRaceGoal, plannedSessions]);
-  const planningLimit = isMobile ? 2 : 4;
+  const planningLimit = isMobile ? 4 : 7;
   const displayedUpcomingCount = useMemo(() => {
-    return filterUpcomingPlannedSessions(upcomingRoutineSessions, today).slice(0, planningLimit)
-      .length;
+    return selectUpcomingPlannedPreview(upcomingRoutineSessions, today, planningLimit).length;
   }, [planningLimit, today, upcomingRoutineSessions]);
-  let planningDescription = 'Les prochaines séances qui structurent la suite.';
+  let planningDescription = 'Les prochaines séances de cette semaine et de la suivante.';
   if (displayedUpcomingCount === 1) {
     planningDescription = 'La prochaine séance qui structure la suite.';
   } else if (displayedUpcomingCount > 1) {
-    planningDescription = `Les ${displayedUpcomingCount} prochaines séances qui structurent la suite.`;
+    planningDescription = `Les ${displayedUpcomingCount} prochaines séances (semaine en cours et suivante).`;
   }
   const latestActivities = activities.slice(0, isMobile ? 2 : 4);
 

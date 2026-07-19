@@ -116,9 +116,11 @@ function BrickLeg({ session, onEdit }: { session: ClientPlannedSession; onEdit: 
 export function PlannedChip({
   session,
   onEdit,
+  onPrefetch,
 }: {
   session: ClientPlannedSession;
   onEdit: () => void;
+  onPrefetch?: () => void;
 }) {
   const accent = session.intensity ? intensityAccent[session.intensity] : NEUTRAL_ACCENT;
   const done = session.completed && Boolean(session.activityId);
@@ -135,6 +137,8 @@ export function PlannedChip({
         done ? 'border-solid' : 'border-dashed',
       )}
       onDragEnd={() => setDragSessionId(null)}
+      onFocus={() => onPrefetch?.()}
+      onPointerEnter={() => onPrefetch?.()}
       onClick={(e) => {
         e.stopPropagation();
         onEdit();

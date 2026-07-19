@@ -125,6 +125,25 @@ export async function getActiveTravelContext(prisma: PrismaClient, onDate = new 
   };
 }
 
+/** All TRAVEL entries overlapping a calendar day (inclusive). */
+export async function listActiveTravelContexts(prisma: PrismaClient, onDate = new Date()) {
+  const day = toUtcDateOnly(onDate);
+  const travels = await prisma.athleteTravelContext.findMany({
+    where: {
+      type: 'TRAVEL',
+      startDate: { lte: day },
+      endDate: { gte: day },
+    },
+    orderBy: [{ startDate: 'asc' }, { createdAt: 'asc' }],
+  });
+  return travels.map((travel) => ({
+    ...travel,
+    locationLabel: travel.locationLabel as string,
+    locationLat: travel.locationLat as number,
+    locationLng: travel.locationLng as number,
+  }));
+}
+
 export async function listTravelContexts(prisma: PrismaClient) {
   return prisma.athleteTravelContext.findMany({
     orderBy: [{ startDate: 'desc' }],

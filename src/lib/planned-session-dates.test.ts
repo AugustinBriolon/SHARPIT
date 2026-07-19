@@ -3,6 +3,7 @@ import {
   filterUpcomingPlannedSessions,
   formatPlannedSessionRelativeDay,
   isUpcomingPlannedSession,
+  selectUpcomingPlannedPreview,
 } from './planned-session-dates';
 import type { ClientPlannedSession } from '@/lib/query/types';
 
@@ -58,5 +59,30 @@ describe('filterUpcomingPlannedSessions', () => {
       FRIDAY,
     );
     expect(result.map((s) => s.id)).toEqual(['a', 'b']);
+  });
+
+  it('respects horizonDays', () => {
+    const nextMonday = new Date('2026-07-06T12:00:00');
+    const farAway = new Date('2026-08-01T12:00:00');
+    const result = filterUpcomingPlannedSessions(
+      [session({ id: 'near', date: nextMonday }), session({ id: 'far', date: farAway })],
+      FRIDAY,
+      { horizonDays: 14 },
+    );
+    expect(result.map((s) => s.id)).toEqual(['near']);
+  });
+});
+
+describe('selectUpcomingPlannedPreview', () => {
+  it('reserves slots for next week when current week would fill the limit', () => {
+    const sessions = [
+      session({ id: 'sat', date: new Date('2026-07-04T12:00:00') }),
+      session({ id: 'sun', date: new Date('2026-07-05T12:00:00') }),
+      session({ id: 'mon', date: new Date('2026-07-06T12:00:00') }),
+      session({ id: 'tue', date: new Date('2026-07-07T12:00:00') }),
+      session({ id: 'wed', date: new Date('2026-07-08T12:00:00') }),
+    ];
+    const result = selectUpcomingPlannedPreview(sessions, FRIDAY, 4);
+    expect(result.map((s) => s.id)).toEqual(['sat', 'sun', 'mon', 'tue']);
   });
 });

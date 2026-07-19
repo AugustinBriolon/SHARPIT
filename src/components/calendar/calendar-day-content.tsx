@@ -11,6 +11,7 @@ export function CalendarDayContent({
   linkedActivityIds,
   onEdit,
   onOpenBrick,
+  onPrefetch,
 }: {
   cell: CalendarDay;
   dateKey: string;
@@ -18,6 +19,7 @@ export function CalendarDayContent({
   linkedActivityIds: Set<string>;
   onEdit: (session: ClientPlannedSession) => void;
   onOpenBrick: (sessions: ClientPlannedSession[]) => void;
+  onPrefetch?: (session: ClientPlannedSession) => void;
 }) {
   return (
     <>
@@ -35,6 +37,7 @@ export function CalendarDayContent({
             key={item.session.id}
             session={item.session}
             onEdit={() => onEdit(item.session)}
+            onPrefetch={() => onPrefetch?.(item.session)}
           />
         ) : (
           <BrickChip

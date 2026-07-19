@@ -1,14 +1,13 @@
 'use client';
 
 import type { UIMessage } from 'ai';
-import { Sparkles } from 'lucide-react';
+import { MessageSquarePlus } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { CoachChat } from '@/components/coach/coach-chat';
 import { CoachConversationList } from '@/components/coach/coach-conversation-list';
-import { PlanGenerator } from '@/components/coach/plan-generator';
 import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -43,7 +42,6 @@ export function CoachView() {
   const plannedQuery = usePlannedSessions();
   const activitiesQuery = useActivities();
   const projectionQuery = useProjectedAthleteViewModel(discussPlanningHorizon ?? 7);
-  const [generatorOpen, setGeneratorOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [ephemeralIds, setEphemeralIds] = useState<Set<string>>(() => new Set());
   const [autoReplyId, setAutoReplyId] = useState<string | null>(null);
@@ -276,10 +274,8 @@ export function CoachView() {
     <CoachConversationList
       activeId={selectedId}
       conversations={conversations}
-      creating={createConversation.isPending}
       loading={conversationsQuery.isPending}
       onDelete={handleDeleteConversation}
-      onNew={handleNewConversation}
       onSelect={setActiveId}
     />
   );
@@ -289,12 +285,13 @@ export function CoachView() {
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-page-title truncate">Fil & conversations</h1>
         <Button
-          aria-label="Générer ma semaine"
+          aria-label="Nouvelle conversation"
+          disabled={createConversation.isPending}
           size="icon"
           variant="outline"
-          onClick={() => setGeneratorOpen(true)}
+          onClick={handleNewConversation}
         >
-          <Sparkles className="size-4" />
+          <MessageSquarePlus className="size-4" />
         </Button>
       </div>
       {conversationListEl}
@@ -361,9 +358,9 @@ export function CoachView() {
               </Link>
             </p>
           </div>
-          <Button onClick={() => setGeneratorOpen(true)}>
-            <Sparkles className="size-4" />
-            Générer ma semaine
+          <Button disabled={createConversation.isPending} onClick={handleNewConversation}>
+            <MessageSquarePlus className="size-4" />
+            Nouvelle conversation
           </Button>
         </StickyHeader>
 
@@ -373,7 +370,6 @@ export function CoachView() {
         </div>
       </div>
 
-      {generatorOpen && <PlanGenerator onClose={() => setGeneratorOpen(false)} />}
       {dialog}
     </div>
   );

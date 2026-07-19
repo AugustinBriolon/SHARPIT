@@ -1,13 +1,17 @@
 'use client';
 
 import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
-import { PlannedSessionContextPanel } from '@/components/planning/planned-session-context-panel';
 import { SessionRationaleCard } from '@/components/coach/session-rationale-card';
+import {
+  PlannedSessionContextPanel,
+  PlannedSessionContextPanelSkeleton,
+} from '@/components/planning/planned-session-context-panel';
 import { SessionRealization } from '@/components/planning/session-realization';
 import { Button } from '@/components/ui/button';
 import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
 import type { PlannedSessionViewModel } from '@/core/presentation/planned-session-view-model';
 import { activityTypeLabels, formatDate } from '@/lib/format';
+import { formatPlannedSessionLocationDisplay } from '@/lib/planned-session-display';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import { exposureLabels, intensityLabels } from '@/lib/sessions';
 import { Pencil } from 'lucide-react';
@@ -33,11 +37,13 @@ export function PlannedSessionReadView({
   session,
   goals,
   context,
+  contextPending = false,
   onEdit,
 }: {
   session: ClientPlannedSession;
   goals: ClientGoal[];
   context: PlannedSessionViewModel['context'] | null | undefined;
+  contextPending?: boolean;
   onEdit: () => void;
 }) {
   const isRealized = Boolean(session.activity);
@@ -49,6 +55,17 @@ export function PlannedSessionReadView({
   const loadLabel = session.load ? `${Math.round(session.load)} TSS` : null;
   const dateLabel =
     formatDate(new Date(session.date)) + (session.startTime ? ` · ${session.startTime}` : '');
+
+  const locationValue =
+    showExposure && exposure
+      ? formatPlannedSessionLocationDisplay(
+          session.locationLabel ?? context?.locationLabel,
+          exposureLabels[exposure],
+        )
+      : null;
+
+  const showContextPanel = Boolean(context?.visible);
+  const showContextSkeleton = contextPending && showExposure && !showContextPanel;
 
   return (
     <div className="space-y-4">
@@ -78,12 +95,7 @@ export function PlannedSessionReadView({
           <ReadField label="Intensité" value={intensityLabels[session.intensity]} />
         )}
         {goal && <ReadField label="Objectif lié" value={goal.title} />}
-        {showExposure && exposure && (
-          <ReadField
-            label="Lieu d'entraînement"
-            value={session.locationLabel + ' · ' + exposureLabels[exposure]}
-          />
-        )}
+        {locationValue ? <ReadField label="Lieu d'entraînement" value={locationValue} /> : null}
         {session.description && (
           <ReadField className="md:col-span-2" label="Description" value={session.description} />
         )}
@@ -93,7 +105,14 @@ export function PlannedSessionReadView({
 
       <SessionRationaleCard sessionId={session.id} />
 
-      {context?.visible ? <PlannedSessionContextPanel viewModel={context} /> : null}
+      {showContextPanel && context ? (
+        <PlannedSessionContextPanel
+          sessionId={session.id}
+          viewModel={context}
+          onChangeLocation={onEdit}
+        />
+      ) : null}
+      {showContextSkeleton ? <PlannedSessionContextPanelSkeleton /> : null}
     </div>
   );
 }
