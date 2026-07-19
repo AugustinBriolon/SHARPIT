@@ -1,4 +1,5 @@
 import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
+import { softTintFromQualityClass } from '@/lib/presentation/physio-plate-tint';
 
 export function RecoveryHero({
   date,
@@ -13,6 +14,7 @@ export function RecoveryHero({
   onNextDay,
   isToday,
   maxDate,
+  confidencePct,
 }: {
   date: Date;
   readinessScore: number | null;
@@ -26,42 +28,36 @@ export function RecoveryHero({
   onNextDay?: () => void;
   isToday?: boolean;
   maxDate?: Date;
+  confidencePct?: number | null;
 }) {
-  const footerLines = [
-    limiterLabel ? `Facteur limitant : ${limiterLabel}` : null,
+  const actionLine = limiterLabel ? `Limité par · ${limiterLabel}` : null;
+  const recoveryEta =
     estimatedRecoveryDays != null && estimatedRecoveryDays > 0
       ? `Récupération estimée dans ${
           estimatedRecoveryDays === 1 ? '1 jour' : `${estimatedRecoveryDays} jours`
         }`
-      : null,
-  ].filter(Boolean);
+      : null;
 
   return (
     <PhysioDrillDownHero
+      confidencePct={confidencePct}
       date={date}
+      footer={recoveryEta ?? undefined}
       headline={signal.label}
       headlineClassName={signal.qualityClass}
       isToday={isToday}
       maxDate={maxDate}
-      quickReadCaption="Score de récupération utilisé comme repère central du jour."
+      panelClassName={softTintFromQualityClass(signal.qualityClass)}
+      quickReadCaption={actionLine}
       quickReadLabel="score récupération"
       quickReadSuffix="%"
       quickReadValue={readinessScore != null ? String(Math.round(readinessScore)) : '—'}
       railValue={readinessScore}
       badge={
         isCalibrating ? (
-          <span className="bg-muted text-muted-foreground rounded-full px-2.5 py-1 text-[10px] font-medium">
-            Calibration · {availableDimCount}/4 signaux
+          <span className="text-label text-muted-foreground">
+            Calibration · {availableDimCount}/4
           </span>
-        ) : undefined
-      }
-      footer={
-        footerLines.length > 0 ? (
-          <div className="space-y-1">
-            {footerLines.map((line) => (
-              <p key={line}>{line}</p>
-            ))}
-          </div>
         ) : undefined
       }
       onDateChange={onDateChange}

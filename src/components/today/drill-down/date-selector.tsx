@@ -26,6 +26,9 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
+/** Fixed pill width — long FR weekdays (“mercredi 18 septembre”) still fit. */
+const DATE_PILL_CLASS = 'h-9 w-[15.5rem] shrink-0 justify-center gap-2 rounded-full px-3';
+
 export function TodayDateSelector({
   date,
   maxDate,
@@ -76,7 +79,7 @@ export function TodayDateSelector({
 
   return (
     <>
-      <div className="flex items-center justify-center gap-1.5">
+      <div className="flex w-full items-center justify-center gap-1">
         <Button
           aria-label="Jour précédent"
           size="icon-sm"
@@ -88,14 +91,14 @@ export function TodayDateSelector({
         </Button>
 
         <Button
-          className="max-w-[min(72vw,18rem)] min-w-0 gap-2 rounded-full px-3"
+          className={DATE_PILL_CLASS}
           size="sm"
           type="button"
           variant="outline"
           onClick={() => handleOpenChange(true)}
         >
           <CalendarDays className="text-muted-foreground size-3.5 shrink-0" />
-          <span className="truncate text-xs capitalize">
+          <span className="min-w-0 truncate text-xs capitalize">
             {formatDate(date, 'EEEE d MMMM', { locale: fr })}
           </span>
         </Button>

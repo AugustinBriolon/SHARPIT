@@ -1,5 +1,10 @@
 import type { DimensionResult } from '@/hooks/use-today';
-import { mapScoreToBarColorClass, mapScoreToColorClass } from '@/lib/today-mapping';
+import {
+  mapScoreToBarColorClass,
+  mapScoreToBarColorClassProtective,
+  mapScoreToColorClass,
+  mapScoreToColorClassProtective,
+} from '@/lib/today-mapping';
 import { cn } from '@/lib/utils';
 
 function resolveColorScore(
@@ -19,6 +24,9 @@ export function DrillDownDimensionRow({
   /** @deprecated use higherIsWorse */
   invertScore,
   intensityLabel,
+  /** Soft caution for low scores — no punitive risk red. */
+  protectiveTone = false,
+  emphasized = false,
 }: {
   label: string;
   description: string;
@@ -26,14 +34,24 @@ export function DrillDownDimensionRow({
   higherIsWorse?: boolean;
   invertScore?: boolean;
   intensityLabel?: string | null;
+  protectiveTone?: boolean;
+  emphasized?: boolean;
 }) {
   const invert = higherIsWorse ?? invertScore;
   const { score, available } = dim;
   const colorScore = resolveColorScore(available, score, invert);
   const colorClass =
-    colorScore !== null ? mapScoreToColorClass(colorScore) : 'text-muted-foreground/40';
+    colorScore !== null
+      ? protectiveTone
+        ? mapScoreToColorClassProtective(colorScore)
+        : mapScoreToColorClass(colorScore)
+      : 'text-muted-foreground/40';
   const barColorClass =
-    colorScore !== null ? mapScoreToBarColorClass(colorScore) : 'bg-muted-foreground/10';
+    colorScore !== null
+      ? protectiveTone
+        ? mapScoreToBarColorClassProtective(colorScore)
+        : mapScoreToBarColorClass(colorScore)
+      : 'bg-muted-foreground/10';
 
   return (
     <div className="space-y-1.5">
@@ -41,15 +59,16 @@ export function DrillDownDimensionRow({
         <div className="min-w-0">
           <p className={cn('text-sm font-medium', !available && 'text-muted-foreground/50')}>
             {label}
+            {emphasized ? (
+              <span className="text-label text-muted-foreground ml-2 font-normal">frein</span>
+            ) : null}
           </p>
-          <p className="text-muted-foreground text-[10px]">{description}</p>
+          <p className="text-muted-foreground text-xs">{description}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {!available && (
-            <span className="text-muted-foreground/40 text-[10px]">Signal manquant</span>
-          )}
+          {!available && <span className="text-muted-foreground/40 text-xs">Signal manquant</span>}
           {available && intensityLabel && (
-            <span className={cn('text-[10px] font-medium tracking-wide uppercase', colorClass)}>
+            <span className={cn('text-xs font-medium tracking-wide uppercase', colorClass)}>
               {intensityLabel}
             </span>
           )}

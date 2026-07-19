@@ -1,13 +1,11 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { TodayMetricsRow } from '@/components/today/dashboard/today-metrics-row';
-
+import Link from 'next/link';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { cn } from '@/lib/utils';
-import { TwinTrustStrip } from '../dashboard/twin-trust-strip';
 import { Badge } from '@/components/ui/badge';
-import { PhysioRail } from '@/components/ui/physio-rail';
+import { ConfidenceBars, confidenceBarsFromPct } from '@/components/ui/confidence-bars';
 
 /** Labels temporels courts — peuvent précéder l'action sur une même ligne. */
 const TEMPORAL_CONTEXT_LABELS = new Set(['Ce soir', 'Après la séance', 'Jour de repos']);
@@ -18,30 +16,40 @@ function canMergeContextWithAction(eyebrow: string, action: string | null): acti
   return TEMPORAL_CONTEXT_LABELS.has(eyebrow);
 }
 
+function formatLimiter(text: string | null): string | null {
+  if (!text) return null;
+  const cleaned = text.replace(/^limité par\s*/i, '').trim();
+  if (!cleaned) return null;
+  return `Limité par · ${cleaned}`;
+}
+
+/**
+ * Morning Instrument plate — first viewport answers one question:
+ * what should I do with my state today?
+ * Semantic tint + accent communicate emotional state without guilt.
+ */
 export function TodayVerdictHero({ vm }: { vm: TodayViewModel }) {
   const { hero } = vm;
-  const priority = hero.focusPriority ?? hero.actionLine;
-  const useVerdictAccent = hero.verdictStyle.showVerdictColors;
-  const heroSignal =
-    hero.metricsRow.recoveryScore ?? hero.metricsRow.sleepScore ?? hero.metricsRow.adaptationScore;
+  const trust = hero.twinTrustStrip;
+  const style = hero.verdictStyle;
+  const useVerdictAccent = style.showVerdictColors;
 
-  const contextLabel = [hero.postureLabel, hero.eyebrow].filter(Boolean).join(' · ');
+  const priority = hero.focusPriority ?? hero.actionLine;
+  const contextLabel = [hero.postureLabel, hero.eyebrow].filter(Boolean).join(' · ') || 'Ce matin';
   const secondaryLine = priority ?? hero.subline ?? null;
   const secondaryMuted = !priority && Boolean(hero.subline);
   const mergeContextWithAction = canMergeContextWithAction(hero.eyebrow, secondaryLine);
-  let secondaryContent: ReactNode = null;
+  const bars = confidenceBarsFromPct(trust.confidencePctRounded);
+
+  let actionContent: ReactNode = null;
   if (mergeContextWithAction) {
-    secondaryContent = (
-      <p className="text-sm leading-relaxed">
-        <span className="text-muted-foreground">{contextLabel || hero.eyebrow}</span>
-        <span className="text-muted-foreground"> — </span>
-        <span className={cn('text-foreground', !secondaryMuted && 'font-medium')}>
-          {secondaryLine}
-        </span>
+    actionContent = (
+      <p className="text-foreground max-w-2xl text-sm leading-relaxed font-medium">
+        {secondaryLine}
       </p>
     );
   } else if (secondaryLine) {
-    secondaryContent = (
+    actionContent = (
       <p
         className={cn(
           'max-w-2xl text-sm leading-relaxed',
@@ -53,76 +61,86 @@ export function TodayVerdictHero({ vm }: { vm: TodayViewModel }) {
     );
   }
 
+  const confidenceInner = (
+    <>
+      <ConfidenceBars filled={bars} />
+      <span className="text-[11px] font-medium tracking-wide uppercase">
+        {trust.confidenceLabel}
+      </span>
+    </>
+  );
+
+  const confidenceTitle =
+    trust.confidencePctRounded != null
+      ? `${trust.confidenceLabel} (${trust.confidencePctRounded} %)`
+      : (trust.confidenceLabel ?? undefined);
+
+  let confidenceNode: ReactNode = null;
+  if (trust.confidenceLabel != null) {
+    if (trust.confidenceHref) {
+      confidenceNode = (
+        <Link
+          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 transition-colors"
+          href={trust.confidenceHref}
+          title={confidenceTitle}
+        >
+          {confidenceInner}
+        </Link>
+      );
+    } else {
+      confidenceNode = (
+        <div className="text-muted-foreground inline-flex items-center gap-2">
+          {confidenceInner}
+        </div>
+      );
+    }
+  }
+
   return (
     <section
       className={cn(
-        'analysis-panel-alt rounded-analysis-lg px-5 py-5 sm:px-6 sm:py-6',
-        useVerdictAccent && hero.verdictStyle.bgClass,
+        'analysis-panel rounded-analysis-lg relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10',
+        'motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200',
+        useVerdictAccent && `bg-linear-to-br to-transparent ${style.bgClass}`,
       )}
     >
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_18rem] xl:items-start">
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="space-y-2">
-              {contextLabel ? <p className="text-label">{contextLabel}</p> : null}
-              <h1
-                className={cn(
-                  'text-verdict',
-                  useVerdictAccent ? hero.verdictStyle.colorClass : 'text-foreground',
-                )}
-              >
-                {hero.headline}
-              </h1>
-            </div>
-
-            {hero.goalLine ? (
-              <Badge
-                className="border-analysis-border bg-background/70 rounded-full text-xs font-normal"
-                variant="outline"
-              >
-                {hero.goalLine}
-              </Badge>
-            ) : null}
-          </div>
-
-          {secondaryContent}
-
-          <div className="max-w-xl space-y-2 pt-2">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-label">position du jour</p>
-              <p className="text-muted-foreground text-[10px] italic">
-                récupération vers intensité haute
-              </p>
-            </div>
-            <PhysioRail max={100} value={heroSignal} />
-          </div>
-        </div>
-
-        <div className="analysis-panel rounded-analysis px-4 py-4">
-          <p className="text-label">lecture rapide</p>
-          <p className="text-instrument text-foreground mt-2 text-3xl">
-            {hero.metricsRow.recoveryScore != null
-              ? Math.round(hero.metricsRow.recoveryScore)
-              : '—'}
-            <span className="text-muted-foreground ml-1 text-sm">%</span>
-          </p>
-          <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-            Signal de récupération utilisé comme repère central pour lire la disponibilité du jour.
-          </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-label inline-flex items-center gap-2">
+          {useVerdictAccent && (
+            <span
+              className={cn(
+                'h-2.5 w-2.5 shrink-0 rounded-full',
+                'motion-safe:animate-in motion-safe:zoom-in-50 motion-safe:duration-200',
+                style.dotClass,
+              )}
+              aria-hidden
+            />
+          )}
+          {contextLabel}
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          {confidenceNode}
+          {hero.goalLine && (
+            <Badge
+              className="border-analysis-border bg-background/70 rounded-full text-xs font-normal"
+              variant="outline"
+            >
+              {hero.goalLine}
+            </Badge>
+          )}
         </div>
       </div>
 
-      <div className="pt-4">
-        <TodayMetricsRow metricsRow={hero.metricsRow} />
-        <TwinTrustStrip
-          className="mt-3"
-          confidenceHref={hero.twinTrustStrip.confidenceHref}
-          confidenceLabel={hero.twinTrustStrip.confidenceLabel}
-          confidencePctRounded={hero.twinTrustStrip.confidencePctRounded}
-          limitingFactorText={hero.twinTrustStrip.limitingFactorText}
-          variant="subtle"
-        />
-      </div>
+      <h1
+        className={cn(
+          'text-verdict mt-6 max-w-3xl text-[1.75rem] leading-[1.15] sm:text-[2.125rem]',
+          useVerdictAccent ? style.colorClass : 'text-foreground',
+        )}
+      >
+        {hero.headline}
+      </h1>
+
+      {actionContent && <div className="mt-5">{actionContent}</div>}
     </section>
   );
 }

@@ -10,6 +10,7 @@ import { useActivityMutations } from '@/hooks/use-data';
 import { activityTypeLabels, formatDate, formatDistance, formatDuration } from '@/lib/format';
 import { formatActivityWeatherChip, parseActivityWeather } from '@/lib/activity/activity-weather';
 import { parseSessionAnalysis } from '@/lib/session-analysis-display';
+import { cn } from '@/lib/utils';
 import { ActivityType } from '@prisma/client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -33,10 +34,13 @@ export function ActivityList({
   activities,
   emptyLabel,
   compact = false,
+  variant = 'panel',
 }: {
   activities: ActivityItem[];
   emptyLabel?: string;
   compact?: boolean;
+  /** `chip` = training dashboard density; `panel` = history (may keep PhysioRail). */
+  variant?: 'panel' | 'chip';
 }) {
   if (!activities.length) {
     return (
@@ -48,6 +52,18 @@ export function ActivityList({
           </LinkButton>
         )}
       </div>
+    );
+  }
+
+  if (variant === 'chip') {
+    return (
+      <ul className="space-y-2">
+        {activities.map((activity) => (
+          <li key={activity.id}>
+            <ActivityChip activity={activity} />
+          </li>
+        ))}
+      </ul>
     );
   }
 
@@ -63,6 +79,43 @@ export function ActivityList({
 function formatActivityWeatherLine(raw: string | null): string | null {
   const weather = parseActivityWeather(raw);
   return weather ? formatActivityWeatherChip(weather) : raw?.trim() || null;
+}
+
+function ActivityChip({ activity }: { activity: ActivityItem }) {
+  const summary = getActivitySummary(activity);
+  const loadValue = activity.load != null ? Math.round(activity.load) : null;
+  const title = activity.title ?? activityTypeLabels[activity.type];
+
+  return (
+    <Link
+      href={`/training/${activity.id}`}
+      title={`Voir le détail — ${title}`}
+      className={cn(
+        'border-analysis-border/80 bg-background/50 hover:border-primary/35 hover:bg-muted/40',
+        'focus-visible:ring-primary/35 flex w-full min-w-0 items-center justify-between gap-2',
+        'rounded-lg border px-3 py-2.5 transition-[border-color,background-color] duration-150',
+        'focus-visible:ring-2 focus-visible:outline-hidden',
+      )}
+    >
+      <span className="flex min-w-0 items-center gap-1.5">
+        <ActivityTypeIndicator type={activity.type} />
+        <span className="line-clamp-1 min-w-0 text-sm font-medium">{title}</span>
+        <span className="text-data text-muted-foreground shrink-0 text-xs">
+          {formatDate(new Date(activity.date))}
+          {' · '}
+          {formatDuration(activity.duration)}
+          {summary ? ` · ${summary}` : ''}
+          {loadValue != null ? ` · ${loadValue}` : ''}
+        </span>
+      </span>
+      <span
+        className="text-muted-foreground/70 text-data shrink-0 text-[10px] tracking-wider"
+        aria-hidden
+      >
+        →
+      </span>
+    </Link>
+  );
 }
 
 function ActivityRow({ activity, compact = false }: { activity: ActivityItem; compact?: boolean }) {
@@ -156,7 +209,6 @@ export function DeleteActivityButton({ id }: { id: string }) {
       variant: 'destructive',
     });
     if (!confirmed) return;
-    // Instant: leave detail immediately; list already patched with rollback on failure.
     remove.mutate(id);
     router.push('/training');
   }

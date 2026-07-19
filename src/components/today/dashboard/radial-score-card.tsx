@@ -79,6 +79,7 @@ export function RadialScoreCard({
           max={max}
           size="slim"
           value={value}
+          variant={colorMode === 'strain' ? 'intensity' : 'availability'}
         />
         <div className="flex items-center justify-between gap-2">
           <span className="explore-link">lecture physiologique</span>

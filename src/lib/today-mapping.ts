@@ -112,10 +112,11 @@ const VERDICT_DISPLAY: Record<OverallVerdict, VerdictDisplay> = {
   },
   RECOVER: {
     label: 'Récupère',
-    colorClass: 'text-red-600 dark:text-red-400',
-    bgClass: 'from-red-500/12 border-red-500/30',
-    dotClass: 'bg-red-500',
-    accentBarClass: 'bg-red-500/80',
+    // Protective brand sage — recovery is the right decision, not a failure.
+    colorClass: 'text-primary',
+    bgClass: 'from-primary/12 border-primary/25',
+    dotClass: 'bg-primary',
+    accentBarClass: 'bg-primary/80',
   },
   INSUFFICIENT_DATA: {
     label: 'Données insuffisantes',
@@ -629,12 +630,48 @@ export function mapScoreToColorClass(score: number | null): string {
   return 'text-signal-risk';
 }
 
+/**
+ * Encouraging strip colors for Today signal values (0–100).
+ * Capacity greens first; caution without shame; risk only when critically low.
+ */
+export function mapStripScoreToColorClass(score: number | null): string {
+  if (score === null) return 'text-muted-foreground';
+  if (score >= 70) return 'text-emerald-600 dark:text-emerald-400';
+  if (score >= 50) return 'text-foreground';
+  if (score >= 35) return 'text-signal-caution';
+  if (score >= 20) return 'text-orange-600 dark:text-orange-400';
+  return 'text-signal-risk';
+}
+
+/** Strain / effort index — informational intensity, never a “bad score” red. */
+export function mapStripStrainToColorClass(score: number | null): string {
+  if (score === null) return 'text-muted-foreground';
+  return 'text-signal-threshold dark:text-signal-tempo';
+}
+
 /** Bar fill for score gauges — single accent when OK; signal tokens on deviation. */
 export function mapScoreToBarColorClass(score: number | null): string {
   if (score === null) return 'bg-muted-foreground/10';
   if (score >= 60) return 'bg-primary/70';
   if (score >= 40) return 'bg-signal-caution/80';
   return 'bg-signal-risk/80';
+}
+
+/**
+ * Protective bar colors — low scores use caution, never punitive risk red.
+ * Prefer for adaptation / recovery dimension inventories.
+ */
+export function mapScoreToBarColorClassProtective(score: number | null): string {
+  if (score === null) return 'bg-muted-foreground/10';
+  if (score >= 60) return 'bg-primary/70';
+  if (score >= 40) return 'bg-signal-caution/80';
+  return 'bg-signal-caution/55';
+}
+
+export function mapScoreToColorClassProtective(score: number | null): string {
+  if (score === null) return 'text-muted-foreground';
+  if (score >= 60) return 'text-foreground';
+  return 'text-signal-caution';
 }
 
 /** Fatigue dimension intensity — higher score = more fatigue. */

@@ -209,7 +209,7 @@ export async function buildSleepViewModel(trainingDayId: string): Promise<SleepV
     insights,
     globalDecision: buildGlobalDecisionContext(snapshot, 'SLEEP'),
     confidencePresentation: {
-      pct: recovery.confidence,
+      pct: Math.round(recovery.confidence * 100),
       label: null,
       tone: CONFIDENCE_TONE[confidenceTier] ?? 'neutral',
     },

@@ -1,6 +1,6 @@
 'use client';
 
-import { Eye, Sparkles } from 'lucide-react';
+import { Brain, Eye } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSessionRationalePresentation } from '@/hooks/use-data';
@@ -56,7 +56,7 @@ export function SessionRationaleCard({ sessionId }: { sessionId: string }) {
     <Card className="border-border/60">
       <CardContent className="space-y-4">
         {suggested ? (
-          <Section icon={Sparkles} label="Pourquoi cette séance">
+          <Section icon={Brain} label="Pourquoi cette séance">
             {suggested.purpose && <p>{suggested.purpose}</p>}
             {suggested.weeklyObjectiveRelation && (
               <p className="text-muted-foreground text-xs">{suggested.weeklyObjectiveRelation}</p>

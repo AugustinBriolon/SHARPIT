@@ -92,7 +92,7 @@
   --border: oklch(0.27 0.034 158 / 11%);
   --input: oklch(0.27 0.034 158 / 14%);
   --ring: oklch(0.58 0.12 156);
-  --chart-1: oklch(0.62 0.09 195); /* récup — teal froid, faible effort */
+  --chart-1: oklch(0.58 0.08 210); /* récup — blue-sage, not health-app teal */
   --chart-2: oklch(0.58 0.12 156); /* base — ton sage primary actuel */
   --chart-3: oklch(0.68 0.13 110); /* tempo — vert-jaune */
   --chart-4: oklch(0.72 0.13 85); /* seuil — or (ton ancien chart-3) */
@@ -148,7 +148,7 @@
   --border: oklch(0.96 0.008 148 / 10%);
   --input: oklch(0.96 0.008 148 / 14%);
   --ring: oklch(0.68 0.11 156);
-  --chart-1: oklch(0.66 0.08 195);
+  --chart-1: oklch(0.66 0.07 210);
   --chart-2: oklch(0.68 0.11 156);
   --chart-3: oklch(0.74 0.11 110);
   --chart-4: oklch(0.75 0.1 85);
@@ -354,22 +354,7 @@
 @utility analysis-panel-alt {
   border: 1px solid var(--color-analysis-border);
   border-radius: var(--radius-analysis-lg);
-  background-image:
-    linear-gradient(
-      to bottom right,
-      color-mix(in oklch, var(--color-analysis-surface-alt) 88%, transparent),
-      transparent 58%
-    ),
-    linear-gradient(to right, var(--color-analysis-grid) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--color-analysis-grid) 1px, transparent 1px);
-  background-position:
-    0 0,
-    0 0,
-    0 0;
-  background-size:
-    auto,
-    18px 18px,
-    18px 18px;
+  background-color: var(--color-analysis-surface-alt);
 }
 
 @utility surface-shell {

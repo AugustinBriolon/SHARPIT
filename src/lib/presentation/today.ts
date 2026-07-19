@@ -270,9 +270,12 @@ export async function buildTodayPresentationViewModel(
       actionLine,
       adaptationReminders,
       verdictStyle: {
-        showVerdictColors: forward && adviceActionable,
+        // Color whenever the verdict is actionable state — not only forward phases.
+        showVerdictColors: verdict !== 'INSUFFICIENT_DATA',
         bgClass: displayVerdict.bgClass,
         colorClass: displayVerdict.colorClass,
+        dotClass: displayVerdict.dotClass,
+        accentBarClass: displayVerdict.accentBarClass,
       },
       metricsRow: {
         sleepScore: sleepScore,
@@ -286,7 +289,15 @@ export async function buildTodayPresentationViewModel(
         confidenceLabel,
         confidencePctRounded,
         confidenceHref,
-        limitingFactorText: null,
+        limitingFactorText: snapshot.limitingFactor
+          ? (buildTodayLimitingFacts({ limitingFactor: snapshot.limitingFactor }).facts.find(
+              (f) => f.label === 'Frein',
+            )?.value ?? null)
+          : null,
+        limitingFactorHref:
+          snapshot.limitingFactor != null
+            ? (resolveLimitingFactorHrefFromDecision(snapshot.decision) ?? TWIN_DRILL_DOWN.recovery)
+            : null,
       },
     },
     whyBlock: {
@@ -298,7 +309,8 @@ export async function buildTodayPresentationViewModel(
       visible: whyVisible,
     },
     actionRow: {
-      showLimitingColumn: limitingMode !== 'none',
+      // Frein lives on the plate limiter — no duplicate column.
+      showLimitingColumn: false,
       limitingLabel: labels.limiting,
       limitingMode,
       limitingLines,

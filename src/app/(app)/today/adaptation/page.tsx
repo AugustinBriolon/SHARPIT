@@ -24,7 +24,7 @@ export default function TodayAdaptationPage() {
         <MobileDrillDownHeader title="Adaptation" />
         <p className="text-muted-foreground text-sm leading-relaxed">
           {viewModel?.emptyState?.description ??
-            'SHARPIT construit encore ton historique d’adaptation. Quelques semaines de donnees d’entraînement et de récupération suffisent pour une première lecture fiable.'}
+            'Les dimensions d’adaptation ne sont pas encore assez complètes pour un indice fiable.'}
         </p>
       </div>
     );

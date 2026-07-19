@@ -365,7 +365,35 @@ async function persistStream(activityId: string, raw: RawStreams | null): Promis
       data: stored ? (stored as unknown as object) : undefined,
     },
   });
+
+  if (available) {
+    void refreshSessionFeaturesAfterStream(activityId);
+  }
+
   return available;
+}
+
+/** Features are often extracted before streams arrive — refresh SESSION once cached. */
+async function refreshSessionFeaturesAfterStream(activityId: string): Promise<void> {
+  try {
+    const activity = await prisma.activity.findUnique({
+      where: { id: activityId },
+      select: { garminId: true, stravaId: true },
+    });
+    if (!activity) return;
+
+    const { featureEngine, isFeatureEngineEnabled } = await import('@/lib/engines/feature-engine');
+    if (!isFeatureEngineEnabled) return;
+
+    const externalIds = [activity.garminId, activity.stravaId].filter((id): id is string =>
+      Boolean(id),
+    );
+    for (const externalId of externalIds) {
+      await featureEngine.refreshSessionFeaturesForExternalId('default', externalId);
+    }
+  } catch (error) {
+    console.error('[streams] refreshSessionFeaturesAfterStream', activityId, error);
+  }
 }
 
 /**

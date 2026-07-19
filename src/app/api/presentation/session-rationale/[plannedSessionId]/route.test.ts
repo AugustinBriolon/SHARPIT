@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, beforeAll } from 'vitest';
 import { baseProposal } from '@/lib/plan-gate/test-fixtures';
 
 vi.mock('@/lib/queries', () => ({
@@ -69,6 +69,10 @@ function makeDecision(overrides: Record<string, unknown> = {}) {
 describe('GET /api/presentation/session-rationale/[plannedSessionId]', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  beforeAll(async () => {
+    await importRoute();
   });
 
   it('returns 404 when the planned session does not exist', async () => {

@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils';
 
-const RAIL_STOPS = [
+const INTENSITY_STOPS = [
   'var(--color-signal-recovery)',
   'var(--color-signal-base)',
   'var(--color-signal-tempo)',
@@ -10,8 +10,11 @@ const RAIL_STOPS = [
   'var(--color-signal-vo2)',
 ];
 
-function railGradient() {
-  return `linear-gradient(90deg, ${RAIL_STOPS.join(', ')})`;
+/** Two-stop availability scale for Today / readiness (not intensity spectrum). */
+const AVAILABILITY_STOPS = ['var(--color-signal-risk)', 'var(--color-signal-base)'];
+
+function railGradient(stops: string[]) {
+  return `linear-gradient(90deg, ${stops.join(', ')})`;
 }
 
 export function PhysioRail({
@@ -20,6 +23,7 @@ export function PhysioRail({
   markerLabel,
   emphasis = 'auto',
   size = 'default',
+  variant = 'intensity',
   className,
 }: {
   value: number | null;
@@ -28,6 +32,8 @@ export function PhysioRail({
   emphasis?: 'auto' | 'neutral';
   /** default: 6px (verdict panels) · slim: 4px (metric cards) */
   size?: 'default' | 'slim';
+  /** intensity: multi-zone spectrum · availability: low→high readiness (2 stops) */
+  variant?: 'intensity' | 'availability';
   className?: string;
 }) {
   const progress =
@@ -43,6 +49,8 @@ export function PhysioRail({
     else markerColor = 'var(--color-primary)';
   }
 
+  const stops = variant === 'availability' ? AVAILABILITY_STOPS : INTENSITY_STOPS;
+
   return (
     <div className={cn('space-y-1.5', className)}>
       <div
@@ -56,7 +64,7 @@ export function PhysioRail({
             className="absolute inset-y-0 left-0 rounded-full opacity-95"
             style={{
               width: `${visibleProgress}%`,
-              backgroundImage: railGradient(),
+              backgroundImage: railGradient(stops),
             }}
             aria-hidden
           />

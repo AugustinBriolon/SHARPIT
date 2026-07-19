@@ -1,9 +1,14 @@
-import { ArcGauge } from '@/components/ui/arc-gauge';
 import { TodayDateSelector } from '@/components/today/drill-down/date-selector';
-import type { RadialColorMode, RadialScoreFormat } from '@/lib/radial-gauge';
+import {
+  formatRadialValue,
+  resolveRadialStrokeColor,
+  type RadialColorMode,
+  type RadialScoreFormat,
+} from '@/lib/radial-gauge';
 import { cn } from '@/lib/utils';
 import { format as formatDate } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { PhysioRail } from '@/components/ui/physio-rail';
 
 export function DrillDownHero({
   date,
@@ -44,9 +49,14 @@ export function DrillDownHero({
   isToday?: boolean;
   maxDate?: Date;
 }) {
+  const displayScore = formatRadialValue(score, format);
+  const scoreSuffix = format === 'percent' && score !== null ? '%' : '';
+  const accent =
+    strokeColor ?? resolveRadialStrokeColor(score, colorMode === 'dynamic' ? 'dynamic' : colorMode);
+
   return (
-    <section className="px-6 py-8">
-      <div className="text-center">
+    <section className="analysis-panel-alt rounded-analysis-lg px-5 py-5 sm:px-6">
+      <div className="space-y-1">
         {onDateChange && onPreviousDay && onNextDay && maxDate ? (
           <TodayDateSelector
             date={date}
@@ -61,41 +71,45 @@ export function DrillDownHero({
             {formatDate(date, 'EEEE d MMMM', { locale: fr })}
           </p>
         )}
-        {subtitle && (
-          <p className="text-muted-foreground/80 mt-0.5 text-sm tabular-nums">{subtitle}</p>
-        )}
+        {subtitle ? (
+          <p className="text-muted-foreground/80 text-sm tabular-nums">{subtitle}</p>
+        ) : null}
       </div>
 
-      <div className="mt-6 flex justify-center">
-        <ArcGauge
-          colorMode={colorMode}
-          format={format}
-          max={max}
-          score={score}
-          size={128}
-          strokeColor={strokeColor}
-          strokeWidth={8}
-        />
-      </div>
-
-      <div className="mt-4 text-center">
-        <p
-          className={cn(
-            'flex items-center justify-center gap-1 text-sm font-semibold',
-            statusClassName,
+      <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0 space-y-1">
+          <p className={cn('text-sm font-semibold', statusClassName)}>{statusLabel}</p>
+          {primaryValue ? (
+            <p className="text-instrument text-foreground text-3xl tabular-nums">{primaryValue}</p>
+          ) : (
+            <p
+              className="text-instrument text-foreground text-3xl tabular-nums"
+              style={{ color: accent }}
+            >
+              {displayScore}
+              {scoreSuffix ? (
+                <span className="text-muted-foreground ml-1 text-base font-normal">
+                  {scoreSuffix}
+                </span>
+              ) : null}
+            </p>
           )}
-        >
-          {statusLabel}
-        </p>
-        {primaryValue && (
-          <p className="mt-1 font-mono text-3xl font-semibold tracking-tight tabular-nums">
-            {primaryValue}
-          </p>
-        )}
-        {primaryCaption && <p className="text-muted-foreground mt-1 text-xs">{primaryCaption}</p>}
-        {badge && <div className="mt-3 flex justify-center">{badge}</div>}
-        {meta && <div className="text-muted-foreground mt-2 space-y-0.5 text-xs">{meta}</div>}
+          {primaryCaption ? (
+            <p className="text-muted-foreground text-xs">{primaryCaption}</p>
+          ) : null}
+        </div>
+        <div className="w-full max-w-xs shrink-0 sm:w-56">
+          <PhysioRail
+            max={max}
+            size="slim"
+            value={score}
+            variant={colorMode === 'strain' ? 'intensity' : 'availability'}
+          />
+        </div>
       </div>
+
+      {badge ? <div className="mt-3">{badge}</div> : null}
+      {meta ? <div className="text-muted-foreground mt-2 space-y-0.5 text-xs">{meta}</div> : null}
     </section>
   );
 }

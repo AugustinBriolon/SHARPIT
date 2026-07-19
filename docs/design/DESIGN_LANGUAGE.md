@@ -465,15 +465,61 @@ A skeleton is shown when data is loading (known-unknown — the data exists but 
 
 ## 14. How These Principles Influence Every Screen
 
-### Today View
+### Today View — Morning Instrument
 
-The Today View is the highest-priority screen. Every principle is expressed most completely here.
+The Today View is the highest-priority screen. Every principle is expressed most completely here. The first viewport is a single **instrument plate**, not a metric inventory.
 
-- **NarrativeHeader** demonstrates revelation over decoration: verdict badge (color, dot, label) → confidence bar → hero action. Three layers of signal, nothing decorative.
+**Composition (causal column, non-negotiable):**
+
+1. **Plate** (`TodayVerdictHero`) — one composition answering _what should I do with my state today?_
+   - Soft semantic tint (`bg-gradient-to-br` + 12% verdict color) + thin top accent bar + status dot (§11.3)
+   - Context label (`Ce matin` / posture) + **three confidence bars** (§11.4 — primary-tinted; only non-text visual metaphor in the plate header)
+   - Verdict headline — Syne / `text-verdict`, colored by state, left-aligned, air around it
+   - One action line (focus / session / rest) — body weight, not a second title
+   - One limiter — mono, discreet (`Limité par · … →`) linking to the limiting-factor drill-down
+   - Color whenever the verdict is not `INSUFFICIENT_DATA` (including recover / easy mornings)
+   - `RECOVER` uses protective primary/sage — never alarm red (recovery is the right decision)
+   - No metric card grid, no multi-color physio rail, no lateral % inset competing with the verdict
+2. **Signal strip** (`TodaySignalStrip`) — four compact chips with no parent panel: **2×2 on mobile**, **one row from `sm`**. Hairline + value + `→` invite drill-down without four hero buttons.
+3. **Why** (`TodayWhyBlock`) — primary finding as a short narrative sentence; remainder behind expand.
+4. **Session** (`TodayActionRow`) — chip-style session rows only; Frein column removed (lives on the plate).
+5. **Trajectory** — headline + naked sparklines; sparkline titles are drill-downs (no nested panels / link row).
+
 - **ReasoningBlock** demonstrates earned density: the primary finding is always visible; additional findings are behind an expand.
 - **SessionBlock** demonstrates component-as-answer: exists only to answer "what session?" — if there is no session recommendation, the block does not render.
 - **ExpectedOutcomeBlock** demonstrates restraint: the deviation risk only appears if it is `caution` or `warning`. A safe state produces no noise.
-- **ConfidenceBlock** demonstrates typographic authority: consistency label uses the semantic color system; confidence bars communicate tier without requiring a number.
+- **Confidence** lives in the plate header (bars + label), not as a second hero.
+
+### Training View
+
+One question: _what’s next that matters?_
+
+1. **Plate** — race countdown as Syne verdict (`J-n · title`) or next structuring session; soft tint; no inset countdown card.
+2. **Session / activity chips** — hairline rows with `→`; no PhysioRail in list heroes.
+3. **Progression** — earned density: regularity detail and full progression live behind expand / `/training/progression`.
+
+### Composition View (`/biology?tab=composition`)
+
+One question: _where is my body today?_
+
+1. **Plate** — weight as dominant reading + trajectory line; soft corps-tone tint (never shame red for normal deltas).
+2. **Chips** — fat / muscle / visceral under the plate (not peer strip equal to weight).
+3. **Why** — primary insight narrative; supporting behind expand.
+4. **Metrics** — up to four priority chips; remainder in “Voir toutes les mesures”.
+5. **Trends** — weight chart primary; other series behind expand; chart colors from `--signal-*` tokens.
+
+### Physio drill-downs (`/today/sleep|recovery|adaptation|effort`)
+
+Same Instrument column as Today. All four routes share one shell (`PhysioDrillDownHero` + chips + why/evidence) — do not fork four hero designs.
+
+1. **Plate** — **centered** date selector with a **fixed-width** pill (`w-[15.5rem]`, mobile + desktop) · soft tint · Syne verdict · one action/read line · score or duration as a mono instrument line (never PhysioRail, never a lateral inset %). Confidence bars sit **under** the date/subline (centered) — never absolute over the date controls.
+2. **Chips** — compact signal chips (`DrillDownStatsStrip`): **horizontal snap-scroll on mobile** · even grid row from `sm`. No parent panel. Confidence does **not** belong in the strip. Avoid 2×1 wrap leftovers.
+3. **Why** — domain narrative bandeau (phrase + link Accueil / expand), not a second hero card.
+4. **Evidence** — one primary chart or reading block visible; surfaces use iOS-like inset radius on mobile (`rounded-[1.25rem]`), analysis panel on desktop. Secondary detail densified or expandable — not hidden forever.
+
+**Mobile shell:** tighter stack (`space-y-3`), plate-first composition; tab bar + safe-area already owned by `MobileShell`. Feels like a native instrument screen, not a browser card stack.
+
+**Order (non-negotiable):** Plate → Chips → Why → Evidence.
 
 ### Future Profile Screen
 

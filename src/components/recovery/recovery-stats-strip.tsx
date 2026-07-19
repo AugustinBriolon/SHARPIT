@@ -1,18 +1,13 @@
 import { DrillDownStatsStrip } from '@/components/today/drill-down/stats-strip';
-import type { MetricTone } from '@/components/today/drill-down/metric-cell';
 
 export function RecoveryStatsStrip({
   hrv,
   restingHr,
   bodyBattery,
-  confidencePct,
-  confidenceTone,
 }: {
   hrv: number | null;
   restingHr: number | null;
   bodyBattery: number | null;
-  confidencePct: number;
-  confidenceTone: MetricTone;
 }) {
   return (
     <DrillDownStatsStrip
@@ -23,11 +18,6 @@ export function RecoveryStatsStrip({
           label: 'Batterie',
           value: bodyBattery != null ? `${bodyBattery}` : '—',
           sub: 'énergie',
-        },
-        {
-          label: 'Confiance',
-          value: `${confidencePct} %`,
-          tone: confidenceTone,
         },
       ]}
     />

@@ -2,7 +2,7 @@ import { DrillDownStatsStrip } from '@/components/today/drill-down/stats-strip';
 import type { MetricTone } from '@/components/today/drill-down/metric-cell';
 
 function acwrTone(acwr: number): MetricTone {
-  if (acwr >= 1.5) return 'bad';
+  if (acwr >= 1.5) return 'warn';
   if (acwr >= 1.3) return 'warn';
   if (acwr >= 0.9) return 'good';
   return 'neutral';
@@ -23,14 +23,10 @@ export function EffortStatsStrip({
   acwr,
   weeklyTss,
   tsb,
-  confidencePct,
-  confidenceTone,
 }: {
   acwr: number;
   weeklyTss: number;
   tsb: number | null;
-  confidencePct: number;
-  confidenceTone: MetricTone;
 }) {
   return (
     <DrillDownStatsStrip
@@ -51,11 +47,6 @@ export function EffortStatsStrip({
           value: tsbDisplay(tsb),
           sub: 'forme',
           tone: tsbTone(tsb),
-        },
-        {
-          label: 'Confiance',
-          value: `${confidencePct} %`,
-          tone: confidenceTone,
         },
       ]}
     />

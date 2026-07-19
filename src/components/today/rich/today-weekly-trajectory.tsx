@@ -1,61 +1,57 @@
 'use client';
 
-import Link from 'next/link';
+import { cn } from '@/lib/utils';
 import { Sparkline } from '@/components/today/dashboard/sparkline';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
-import { cn } from '@/lib/utils';
-import { PhysioRail } from '@/components/ui/physio-rail';
+import Link from 'next/link';
+import { TWIN_DRILL_DOWN } from '@/lib/today-twin-navigation';
 
+/**
+ * Trajectory — headline + naked sparklines; titles are drill-downs (no nested panels / link row).
+ */
 export function TodayWeeklyTrajectory({ vm }: { vm: TodayViewModel }) {
   const t = vm.weeklyTrajectory;
   const recoveryStroke = 'var(--color-chart-1)';
   const loadStroke = 'var(--color-chart-4)';
 
   return (
-    <section className="analysis-panel rounded-analysis-lg px-5 py-4 sm:px-6">
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <p className="text-label">{t.eyebrow}</p>
-          <p className="text-foreground mt-1 text-sm font-semibold">
-            <span className={cn('mr-1.5', t.trendClass)}>{t.trendArrow}</span>
-            {t.headline}
-          </p>
-          {t.detail ? <p className="text-muted-foreground mt-0.5 text-xs">{t.detail}</p> : null}
-        </div>
-        <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px]">
-          {t.drillDownLinks.map(({ label, href }) => (
-            <Link
-              key={href}
-              className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
-              href={href}
-            >
-              {label}
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      <div className="mb-3">
-        <PhysioRail
-          markerLabel="repère visuel de la fenêtre de charge récente"
-          max={100}
-          value={t.hasSparks ? 50 : null}
-        />
-      </div>
+    <section className="px-0.5">
+      <p className="text-label">{t.eyebrow}</p>
+      <p className="text-foreground mt-1 text-sm font-semibold">
+        <span className={cn('mr-1.5', t.trendClass)}>{t.trendArrow}</span>
+        {t.headline}
+      </p>
+      {t.detail ? <p className="text-muted-foreground mt-0.5 text-xs">{t.detail}</p> : null}
 
       {t.hasSparks ? (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="analysis-panel rounded-analysis px-3 py-3">
-            <p className="text-label mb-1">Récup. 14j</p>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <div>
+            <Link
+              className="text-label hover:text-foreground mb-1 inline-flex items-center gap-1 transition-colors"
+              href={TWIN_DRILL_DOWN.recovery}
+            >
+              Récup. 14j
+              <span className="text-[10px] tracking-wider opacity-70" aria-hidden>
+                →
+              </span>
+            </Link>
             <Sparkline stroke={recoveryStroke} values={t.sparks.recoveryValues} />
           </div>
-          <div className="analysis-panel rounded-analysis px-3 py-3">
-            <p className="text-label mb-1">Charge 14j</p>
+          <div>
+            <Link
+              className="text-label hover:text-foreground mb-1 inline-flex items-center gap-1 transition-colors"
+              href={TWIN_DRILL_DOWN.effort}
+            >
+              Charge 14j
+              <span className="text-[10px] tracking-wider opacity-70" aria-hidden>
+                →
+              </span>
+            </Link>
             <Sparkline stroke={loadStroke} values={t.sparks.effortValues} />
           </div>
         </div>
       ) : (
-        <p className="text-muted-foreground text-xs">{t.emptyTrajectoryText}</p>
+        <p className="text-muted-foreground mt-2 text-xs">{t.emptyTrajectoryText}</p>
       )}
     </section>
   );

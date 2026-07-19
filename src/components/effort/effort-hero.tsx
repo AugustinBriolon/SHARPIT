@@ -1,4 +1,5 @@
 import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
+import { softTintFromQualityClass } from '@/lib/presentation/physio-plate-tint';
 
 const DAILY_STRAIN_GAUGE_MAX = 21;
 
@@ -19,6 +20,7 @@ export function EffortHero({
   onNextDay,
   isToday,
   maxDate,
+  confidencePct,
 }: {
   date: Date;
   strainScore: number | null;
@@ -36,25 +38,33 @@ export function EffortHero({
   onNextDay?: () => void;
   isToday?: boolean;
   maxDate?: Date;
+  confidencePct?: number | null;
 }) {
-  const footerLines = [
-    fatigueTypeLabel && fatigueType !== 'UNDETERMINED' ? `Type : ${fatigueTypeLabel}` : null,
-    performancePercent != null && performancePercent < 100
-      ? `Capacité : ~${performancePercent} %`
-      : null,
-    consecutiveDays > 0 ? `${consecutiveDays} j d'accumulation consécutifs` : null,
-    estimatedDaysToFresh != null && estimatedDaysToFresh > 0
-      ? `Frais dans ${estimatedDaysToFresh === 1 ? '1 jour' : `${estimatedDaysToFresh} jours`}`
-      : null,
-  ].filter(Boolean);
+  let actionLine: string | null = null;
+  if (estimatedDaysToFresh != null && estimatedDaysToFresh > 0) {
+    actionLine = `Frais dans ${estimatedDaysToFresh === 1 ? '1 jour' : `${estimatedDaysToFresh} jours`}`;
+  } else if (fatigueTypeLabel && fatigueType !== 'UNDETERMINED') {
+    actionLine = `Type · ${fatigueTypeLabel}`;
+  } else if (consecutiveDays > 0) {
+    actionLine = `${consecutiveDays} j d'accumulation`;
+  } else if (performancePercent != null && performancePercent < 100) {
+    actionLine = `Capacité ~${performancePercent} %`;
+  }
+
+  const tssLine =
+    dailyLoad > 0 ? `${dailyLoad} TSS cumulés aujourd'hui` : "0 TSS cumulés aujourd'hui";
 
   return (
     <PhysioDrillDownHero
+      confidencePct={confidencePct}
       date={date}
+      footer={actionLine ? tssLine : undefined}
       headline={strainStatusLabel}
       headlineClassName={strainStatusClassName}
       isToday={isToday}
       maxDate={maxDate}
+      panelClassName={softTintFromQualityClass(strainStatusClassName)}
+      quickReadCaption={actionLine ?? tssLine}
       quickReadLabel="charge du jour"
       quickReadSuffix={` / ${DAILY_STRAIN_GAUGE_MAX}`}
       quickReadValue={strainScore != null ? strainScore.toFixed(1) : '—'}
@@ -62,18 +72,6 @@ export function EffortHero({
       railMax={DAILY_STRAIN_GAUGE_MAX}
       railValue={strainScore}
       subline={strainSubtitle}
-      footer={
-        footerLines.length > 0 ? (
-          <div className="space-y-1">
-            {footerLines.map((line) => (
-              <p key={line}>{line}</p>
-            ))}
-          </div>
-        ) : undefined
-      }
-      quickReadCaption={
-        dailyLoad > 0 ? `${dailyLoad} TSS cumulés aujourd'hui` : "0 TSS cumulés aujourd'hui"
-      }
       onDateChange={onDateChange}
       onNextDay={onNextDay}
       onPreviousDay={onPreviousDay}

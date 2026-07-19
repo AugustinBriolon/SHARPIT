@@ -2,6 +2,10 @@ import type { MetricTone } from '@/lib/metric-tone';
 import { metricToneClass } from '@/lib/metric-tone';
 import { cn } from '@/lib/utils';
 
+/**
+ * Shared physio drill-down column.
+ * Mobile: tighter iOS-like stack rhythm; desktop keeps airy analysis spacing.
+ */
 export function MetricDrillDownPage({
   children,
   footer,
@@ -10,7 +14,7 @@ export function MetricDrillDownPage({
   footer?: React.ReactNode;
 }) {
   return (
-    <div className="mx-auto space-y-4 pb-8">
+    <div className="mx-auto space-y-3 pb-2 sm:space-y-4 sm:pb-8">
       {children}
       {footer}
     </div>

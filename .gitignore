@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+/.vscode/
 
 # debug
 npm-debug.log*
@@ -49,3 +50,10 @@ next-env.d.ts
 
 # Claude Code agent memory and settings
 /.claude/
+/.agents
+/.codex/ 
+/.hallmark/
+
+# Local one-off TypeScript scripts (not part of the app)
+/scripts/tmp-*.ts
+/scripts/tmp-*.mts

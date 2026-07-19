@@ -18,6 +18,8 @@ import {
   mapFatigueCapacityLabel,
   mapScoreToColorClass,
   mapScoreToBarColorClass,
+  mapStripScoreToColorClass,
+  mapStripStrainToColorClass,
   mapFatigueDimensionIntensity,
 } from './today-mapping';
 
@@ -32,6 +34,14 @@ describe('mapVerdictToDisplay', () => {
 
   it('returns correct label for RECOVER', () => {
     expect(mapVerdictToDisplay('RECOVER').label).toBe('Récupère');
+  });
+
+  it('RECOVER uses protective primary, not punitive red', () => {
+    const d = mapVerdictToDisplay('RECOVER');
+    expect(d.colorClass).toBe('text-primary');
+    expect(d.bgClass).toContain('primary');
+    expect(d.dotClass).toBe('bg-primary');
+    expect(d.colorClass).not.toContain('red');
   });
 
   it('TRAIN_HARD and RACE_READY share emerald colour', () => {
@@ -504,6 +514,23 @@ describe('mapScoreToColorClass', () => {
   it('20 → risk', () => expect(mapScoreToColorClass(20)).toBe('text-signal-risk'));
   it('60 boundary → foreground', () => expect(mapScoreToColorClass(60)).toBe('text-foreground'));
   it('40 boundary → caution', () => expect(mapScoreToColorClass(40)).toBe('text-signal-caution'));
+});
+
+describe('mapStripScoreToColorClass', () => {
+  it('null → muted', () => expect(mapStripScoreToColorClass(null)).toBe('text-muted-foreground'));
+  it('75 → capacity emerald', () => expect(mapStripScoreToColorClass(75)).toContain('emerald'));
+  it('55 → stable foreground', () => expect(mapStripScoreToColorClass(55)).toBe('text-foreground'));
+  it('40 → caution', () => expect(mapStripScoreToColorClass(40)).toBe('text-signal-caution'));
+  it('25 → soft orange', () => expect(mapStripScoreToColorClass(25)).toContain('orange'));
+  it('10 → risk', () => expect(mapStripScoreToColorClass(10)).toBe('text-signal-risk'));
+});
+
+describe('mapStripStrainToColorClass', () => {
+  it('null → muted', () => expect(mapStripStrainToColorClass(null)).toBe('text-muted-foreground'));
+  it('any strain → threshold/tempo, never risk red', () => {
+    expect(mapStripStrainToColorClass(1.2)).toContain('signal-threshold');
+    expect(mapStripStrainToColorClass(3)).not.toContain('risk');
+  });
 });
 
 describe('mapScoreToBarColorClass', () => {

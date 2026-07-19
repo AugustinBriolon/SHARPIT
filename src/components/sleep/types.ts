@@ -1,4 +1,5 @@
 import type { ProductInsightBundle } from '@/core/product-insight/types';
+import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
 import type { SleepCoachView } from '@/lib/sleep';
 import type { SleepScoreBreakdown } from '@/lib/sleep-scoring';
 
@@ -31,4 +32,6 @@ export type SleepPageViewProps = {
   barData: SleepBarPoint[];
   recoveryNote?: string | null;
   insights: ProductInsightBundle;
+  globalDecision: GlobalDecisionContext;
+  confidencePresentation: { pct: number | null };
 };

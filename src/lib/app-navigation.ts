@@ -1,4 +1,4 @@
-import { Dumbbell, HeartPulse, Settings, Sparkles, Sun } from 'lucide-react';
+import { Dumbbell, HeartPulse, MessagesSquare, Settings, Sun } from 'lucide-react';
 
 export type NavIcon = typeof Sun;
 
@@ -42,7 +42,7 @@ export const biologyNavItem: AppNavItem = {
 export const coachNavItem: AppNavItem = {
   href: '/coach',
   label: 'Coach',
-  icon: Sparkles,
+  icon: MessagesSquare,
   match: (p) => p.startsWith('/coach'),
 };
 

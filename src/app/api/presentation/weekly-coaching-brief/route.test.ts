@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, beforeAll } from 'vitest';
 import { NextRequest } from 'next/server';
 
 vi.mock('@/lib/queries', () => ({
@@ -31,6 +31,10 @@ function request(weekStart?: string) {
 describe('GET /api/presentation/weekly-coaching-brief', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  beforeAll(async () => {
+    await importRoute();
   });
 
   it('degraded path: nothing configured produces the empty-state shape', async () => {

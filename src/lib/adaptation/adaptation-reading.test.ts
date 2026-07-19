@@ -23,7 +23,7 @@ describe('explainLoadMultiplier', () => {
 });
 
 describe('synthesizeAdaptationReading', () => {
-  it('ties plateau + weak load progression to increase-load', () => {
+  it('ties plateau + weak load progression to increase-load without restating the index', () => {
     const line = synthesizeAdaptationReading({
       verdictKey: 'INCREASE_LOAD',
       adaptationIndex: 44,
@@ -36,9 +36,26 @@ describe('synthesizeAdaptationReading', () => {
       loadMultiplier: 1.08,
       historyLength: 28,
     });
-    expect(line).toContain('44');
+    expect(line).not.toMatch(/Indice\s+44/);
     expect(line).toContain('29');
     expect(line.toLowerCase()).toMatch(/charge|plateau/);
     expect(line).toContain('1.08');
+  });
+
+  it('keeps sustain coaching without duplicating status label', () => {
+    const line = synthesizeAdaptationReading({
+      verdictKey: 'SUSTAIN',
+      adaptationIndex: 58,
+      trendLabel: 'Stable',
+      statusLabel: 'Maintien',
+      limitingFactor: null,
+      limitingScore: null,
+      plateauRisk: false,
+      overreachingWithoutAdaptation: false,
+      loadMultiplier: 1,
+      historyLength: 28,
+    });
+    expect(line.toLowerCase()).toMatch(/trajectoire|maintenir/);
+    expect(line).not.toMatch(/Indice\s+58/);
   });
 });

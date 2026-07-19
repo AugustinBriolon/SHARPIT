@@ -8,13 +8,10 @@ function restorativeRatioTone(ratio: number | null): MetricTone {
   return 'warn';
 }
 
-function deltaTone(
-  delta: number | null,
-  positiveTone: MetricTone,
-  negativeTone: MetricTone,
-): MetricTone {
+/** Negative deltas use caution — not punitive risk red. */
+function deltaTone(delta: number | null, positiveTone: MetricTone): MetricTone {
   if (delta == null) return 'neutral';
-  return delta >= 0 ? positiveTone : negativeTone;
+  return delta >= 0 ? positiveTone : 'warn';
 }
 
 function signedSleepDuration(deltaMin: number): string {
@@ -22,12 +19,15 @@ function signedSleepDuration(deltaMin: number): string {
   return `${sign}${formatSleepDuration(Math.abs(deltaMin))}`;
 }
 
+/**
+ * Sleep chips — no Durée (already on the plate).
+ */
 export function SleepStatsStrip({
-  totalSleepMin,
   restorativeRatio,
   sleepDelta7d,
   targetDeltaMin,
   sleepTargetMin: _sleepTargetMin,
+  totalSleepMin: _totalSleepMin,
 }: {
   totalSleepMin: number | null;
   restorativeRatio: number | null;
@@ -39,24 +39,18 @@ export function SleepStatsStrip({
     <DrillDownStatsStrip
       items={[
         {
-          label: 'Durée',
-          value: totalSleepMin != null ? formatSleepDuration(totalSleepMin) : '—',
-        },
-        {
           label: 'Restaurateur',
-          // sub: restorativeRatio != null ? restorativeRatioLabel(restorativeRatio) : undefined,
           tone: restorativeRatioTone(restorativeRatio),
           value: restorativeRatio != null ? `${restorativeRatio} %` : '—',
         },
         {
           label: 'vs 7j',
-          tone: deltaTone(sleepDelta7d, 'good', 'bad'),
+          tone: deltaTone(sleepDelta7d, 'good'),
           value: sleepDelta7d != null ? signedSleepDuration(sleepDelta7d) : '—',
         },
         {
           label: 'Objectif',
-          // sub: formatSleepDuration(sleepTargetMin),
-          tone: deltaTone(targetDeltaMin, 'good', 'warn'),
+          tone: deltaTone(targetDeltaMin, 'good'),
           value: targetDeltaMin != null ? signedSleepDuration(targetDeltaMin) : '—',
         },
       ]}

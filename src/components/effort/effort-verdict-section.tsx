@@ -1,8 +1,6 @@
 'use client';
 
 import { AcwrZoneBar } from '@/components/effort/effort-acwr-section';
-import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
-import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
 import {
   acwrZoneLabel,
   classifyAcwrZone,
@@ -11,7 +9,6 @@ import {
   tssGapToSweetSpotFloor,
 } from '@/lib/effort/load-reading';
 import { mapFatigueCapacityLabel, type TrainingCapacity } from '@/lib/today-mapping';
-import { cn } from '@/lib/utils';
 
 const DOMINANT_LABEL: Record<string, string> = {
   LOAD: 'Charge',
@@ -29,12 +26,11 @@ const DOMINANT_LABEL: Record<string, string> = {
 type FactRow = { label: string; value: string; hint: string };
 
 /**
- * Load reading — directive + explained numbers (ACWR, gap TSS, TSB, capacity).
- * Replaces the old empty verdict / capacity / dominant / ACWR pile.
+ * Effort evidence — ACWR bar + synthesis. No second directive hero (lives in EffortWhyBlock).
  */
 export function EffortVerdictSection({
-  verdict,
-  verdictClass,
+  verdict: _verdict,
+  verdictClass: _verdictClass,
   verdictKey,
   trainingCapacity,
   dominantDimension,
@@ -75,7 +71,6 @@ export function EffortVerdictSection({
     ? (DOMINANT_LABEL[dominantDimension] ?? dominantDimension)
     : null;
 
-  // ACWR lives in the rail header above — do not repeat it in the fact list.
   const facts: FactRow[] = [];
   if (weeklyLoad > 0) {
     facts.push({
@@ -91,16 +86,6 @@ export function EffortVerdictSection({
       hint: 'pour atteindre le plancher du sweet spot',
     });
   }
-  if (tsb != null) {
-    let tsbHint = 'forme positive';
-    if (tsb < 0) tsbHint = 'forme négative';
-    else if (tsb === 0) tsbHint = 'équilibre';
-    facts.push({
-      label: 'TSB',
-      value: tsb > 0 ? `+${tsb}` : `${tsb}`,
-      hint: tsbHint,
-    });
-  }
   facts.push({
     label: 'Capacité',
     value: mapFatigueCapacityLabel(trainingCapacity),
@@ -114,21 +99,18 @@ export function EffortVerdictSection({
     });
   }
 
-  return (
-    <DrillDownSectionCard>
-      <DrillDownSectionLabel>Lecture de charge</DrillDownSectionLabel>
+  const [primaryFact, ...restFacts] = facts;
 
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="text-muted-foreground text-sm">Directive fatigue</p>
-        <p className={cn('text-base font-semibold', verdictClass)}>{verdict}</p>
-      </div>
+  return (
+    <section className="px-0.5">
+      <p className="text-label mb-2">Lecture de charge</p>
 
       {hasAcwr && zone ? (
-        <div className="mt-4 space-y-2">
+        <div className="space-y-2">
           <div className="flex items-baseline justify-between gap-3">
             <div className="min-w-0">
               <p className="text-label">ACWR</p>
-              <p className="text-muted-foreground mt-1 text-[11px] leading-none">
+              <p className="text-muted-foreground mt-1 text-xs leading-none">
                 {acwrZoneLabel(zone)} · sweet spot 0.9–1.3
               </p>
             </div>
@@ -144,23 +126,38 @@ export function EffortVerdictSection({
         <p className="text-muted-foreground mt-3 text-sm leading-relaxed">{synthesis}</p>
       ) : null}
 
-      {facts.length > 0 ? (
-        <ul className="divide-analysis-border/50 mt-4 divide-y">
-          {facts.map((row) => (
-            <li key={row.label} className="flex items-baseline justify-between gap-4 py-3">
-              <div className="min-w-0">
-                <p className="text-foreground text-sm font-medium">{row.label}</p>
-                <p className="text-muted-foreground mt-0.5 text-[11px] leading-snug">{row.hint}</p>
-              </div>
-              <p className="text-data text-foreground shrink-0 text-sm font-semibold tabular-nums">
-                {row.value}
-              </p>
-            </li>
-          ))}
-        </ul>
+      {primaryFact ? (
+        <p className="text-foreground mt-3 text-sm leading-relaxed">
+          <span className="text-label mr-2">{primaryFact.label}</span>
+          <span className="text-data tabular-nums">{primaryFact.value}</span>
+          <span className="text-muted-foreground"> — {primaryFact.hint}</span>
+        </p>
       ) : null}
 
-      {tsbLine && zone === 'under' ? <p className="annotation-clinical mt-4">{tsbLine}</p> : null}
-    </DrillDownSectionCard>
+      {restFacts.length > 0 ? (
+        <details className="group mt-2">
+          <summary className="text-muted-foreground hover:text-foreground cursor-pointer list-none py-1.5 text-xs font-medium tracking-wide transition-colors [&::-webkit-details-marker]:hidden">
+            <span className="underline-offset-2 group-open:no-underline">
+              {restFacts.length === 1
+                ? 'Voir le détail'
+                : `Voir ${restFacts.length} autres signaux`}
+            </span>
+          </summary>
+          <ul className="text-muted-foreground mt-1 space-y-1.5 text-sm leading-relaxed">
+            {restFacts.map((row) => (
+              <li key={row.label}>
+                <span className="text-foreground font-medium">{row.label}</span>
+                {' · '}
+                <span className="text-data tabular-nums">{row.value}</span>
+                {' — '}
+                {row.hint}
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
+
+      {tsbLine && zone === 'under' ? <p className="annotation-clinical mt-3">{tsbLine}</p> : null}
+    </section>
   );
 }

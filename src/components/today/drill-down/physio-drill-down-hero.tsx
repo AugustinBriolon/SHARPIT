@@ -2,11 +2,17 @@
 
 import type { ReactNode } from 'react';
 import { TodayDateSelector } from '@/components/today/drill-down/date-selector';
-import { PhysioRail } from '@/components/ui/physio-rail';
+import { ConfidenceBars, confidenceBarsFromPct } from '@/components/ui/confidence-bars';
 import { cn } from '@/lib/utils';
 import { format as formatDate } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
+/**
+ * Physio drill-down plate — one dominant verdict.
+ * Score/duration as a mono instrument line — no PhysioRail, no inset %, no chrome.
+ * Mobile: iOS-native header rhythm — centered date, accessory confiance.
+ */
+/* Hallmark · designed-as-app · design-system: design.md · genre: instrument-editorial */
 export function PhysioDrillDownHero({
   date,
   isToday = true,
@@ -18,16 +24,19 @@ export function PhysioDrillDownHero({
   headline,
   headlineClassName,
   subline,
-  railValue,
-  railMax = 100,
-  railCaption = 'récupération vers intensité haute',
-  railMarkerLabel,
-  quickReadLabel = 'lecture rapide',
+  /** Kept for call-site compatibility; no longer drives a rail. */
+  railValue: _railValue,
+  railMax: _railMax = 100,
+  railCaption: _railCaption,
+  railMarkerLabel: _railMarkerLabel,
+  quickReadLabel,
   quickReadValue,
   quickReadSuffix,
   quickReadCaption,
+  confidencePct,
   badge,
   footer,
+  /** Soft plate tint — only when caller opts in (never auto from text colour). */
   panelClassName,
 }: {
   date: Date;
@@ -44,86 +53,100 @@ export function PhysioDrillDownHero({
   railMax?: number;
   railCaption?: string;
   railMarkerLabel?: string | null;
-  quickReadLabel?: string;
+  quickReadLabel: string;
   quickReadValue: string;
   quickReadSuffix?: string | null;
   quickReadCaption?: string | null;
+  confidencePct?: number | null;
   badge?: ReactNode;
   footer?: ReactNode;
   panelClassName?: string;
 }) {
   const showDateNav =
     onDateChange != null && onPreviousDay != null && onNextDay != null && maxDate != null;
+  const bars =
+    confidencePct != null && Number.isFinite(confidencePct)
+      ? confidenceBarsFromPct(confidencePct)
+      : null;
 
   return (
     <section
       className={cn(
-        'analysis-panel-alt rounded-analysis-lg px-5 py-5 sm:px-6 sm:py-6',
+        'analysis-panel relative overflow-hidden',
+        'sm:rounded-analysis-lg rounded-[1.25rem] px-4 py-6 sm:px-8 sm:py-10',
+        'motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200',
         panelClassName,
       )}
     >
-      <div className="space-y-4">
-        <div className="text-center">
-          {showDateNav ? (
-            <TodayDateSelector
-              date={date}
-              isToday={isToday}
-              maxDate={maxDate}
-              onChange={onDateChange}
-              onNextDay={onNextDay}
-              onPreviousDay={onPreviousDay}
-            />
-          ) : (
-            <p className="text-muted-foreground text-xs capitalize">
-              {formatDate(date, 'EEEE d MMMM', { locale: fr })}
-            </p>
-          )}
-          {subline ? (
-            <p className="text-muted-foreground/80 mt-1 text-sm tabular-nums">{subline}</p>
-          ) : null}
-        </div>
-
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_14rem] lg:items-start">
-          <div className="space-y-3">
-            {eyebrow ? <p className="text-label">{eyebrow}</p> : null}
-            <h1 className={cn('text-verdict', headlineClassName ?? 'text-foreground')}>
-              {headline}
-            </h1>
-
-            <div className="max-w-xl space-y-2">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-label">position du jour</p>
-                <p className="text-muted-foreground text-[10px]">{railCaption}</p>
+      <div className="flex flex-col items-center">
+        {showDateNav ? (
+          <TodayDateSelector
+            date={date}
+            isToday={isToday}
+            maxDate={maxDate}
+            onChange={onDateChange}
+            onNextDay={onNextDay}
+            onPreviousDay={onPreviousDay}
+          />
+        ) : (
+          <p className="text-muted-foreground text-xs capitalize">
+            {formatDate(date, 'EEEE d MMMM', { locale: fr })}
+          </p>
+        )}
+        {subline ? (
+          <p className="text-muted-foreground mt-1.5 text-center text-xs tabular-nums">{subline}</p>
+        ) : null}
+        {bars != null || badge ? (
+          <div className="mt-2 flex items-center justify-center gap-2">
+            {bars != null ? (
+              <div
+                className="text-muted-foreground inline-flex items-center gap-1.5"
+                title={
+                  confidencePct != null ? `Confiance ${Math.round(confidencePct)} %` : 'Confiance'
+                }
+              >
+                <ConfidenceBars filled={bars} />
+                <span className="text-label">Confiance</span>
               </div>
-              <PhysioRail
-                markerLabel={railMarkerLabel ?? undefined}
-                max={railMax}
-                value={railValue}
-              />
-            </div>
-          </div>
-
-          <div className="analysis-panel rounded-analysis px-4 py-4">
-            <p className="text-label">{quickReadLabel}</p>
-            <p className="text-data text-foreground mt-2 text-3xl font-semibold">
-              {quickReadValue}
-              {quickReadSuffix ? (
-                <span className="text-muted-foreground ml-1 text-sm">{quickReadSuffix}</span>
-              ) : null}
-            </p>
-            {quickReadCaption ? (
-              <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-                {quickReadCaption}
-              </p>
             ) : null}
-            {badge ? <div className="mt-3">{badge}</div> : null}
+            {badge}
           </div>
-        </div>
-
-        {footer ? (
-          <div className="text-muted-foreground text-sm leading-relaxed">{footer}</div>
         ) : null}
       </div>
+
+      {eyebrow ? <p className="text-label mt-5">{eyebrow}</p> : null}
+
+      <h1
+        className={cn(
+          'text-verdict mt-4 max-w-3xl text-[1.75rem] leading-[1.15] sm:text-[2.125rem]',
+          !eyebrow && 'mt-6',
+          headlineClassName ?? 'text-foreground',
+        )}
+      >
+        {headline}
+      </h1>
+
+      {quickReadCaption ? (
+        <p className="text-foreground mt-4 max-w-2xl text-sm leading-relaxed font-medium sm:mt-5">
+          {quickReadCaption}
+        </p>
+      ) : null}
+
+      <p className="text-muted-foreground mt-6 text-xs tracking-wide sm:mt-8">
+        <span className="text-label mr-2">{quickReadLabel}</span>
+        <span className="text-data text-foreground text-sm tabular-nums">
+          {quickReadValue}
+          {quickReadSuffix ? (
+            <span className="text-muted-foreground ml-0.5 text-xs font-normal">
+              {quickReadSuffix}
+            </span>
+          ) : null}
+        </span>
+      </p>
+
+      {footer ? (
+        <div className="text-muted-foreground mt-3 text-xs leading-relaxed">{footer}</div>
+      ) : null}
     </section>
   );
 }

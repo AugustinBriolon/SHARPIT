@@ -10,5 +10,9 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    // Route tests pay a cold dynamic-import cost; under pre-commit load (lint +
+    // typecheck racing the suite) the default 5s flakes on the first `it` of a file.
+    testTimeout: 15_000,
+    hookTimeout: 20_000,
   },
 });

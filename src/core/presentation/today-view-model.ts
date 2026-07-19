@@ -46,6 +46,8 @@ export type TodayViewModel = {
       showVerdictColors: boolean;
       bgClass: string;
       colorClass: string;
+      dotClass: string;
+      accentBarClass: string;
     };
     metricsRow: {
       sleepScore: number | null;
@@ -60,6 +62,8 @@ export type TodayViewModel = {
       confidencePctRounded: number | null;
       confidenceHref: string | null;
       limitingFactorText: string | null;
+      /** Drill-down when plate limiter is shown. */
+      limitingFactorHref: string | null;
     };
   };
 

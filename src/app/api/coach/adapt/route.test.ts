@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, beforeAll } from 'vitest';
 import { decisionState, physicalHealthData } from '@/lib/plan-gate/test-fixtures';
 
 vi.mock('@/lib/ai', () => ({
@@ -45,6 +45,10 @@ async function importRoute() {
 describe('POST /api/coach/adapt', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  beforeAll(async () => {
+    await importRoute();
   });
 
   it('does not gate REMOVE changes — they pass through with no gate entry', async () => {

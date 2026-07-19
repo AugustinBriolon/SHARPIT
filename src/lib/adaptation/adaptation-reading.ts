@@ -30,8 +30,6 @@ export function synthesizeAdaptationReading(input: {
 }): string {
   const {
     verdictKey,
-    adaptationIndex,
-    trendLabel,
     limitingFactor,
     limitingScore,
     plateauRisk,
@@ -40,36 +38,34 @@ export function synthesizeAdaptationReading(input: {
     historyLength,
   } = input;
 
-  const indexPart =
-    adaptationIndex != null ? `Indice ${Math.round(adaptationIndex)}/100` : 'Indice indisponible';
-  const trendPart = trendLabel !== '—' ? ` · tendance ${trendLabel.toLowerCase()}` : '';
-  const histPart = historyLength > 0 ? ` sur ${historyLength} j` : '';
+  // Index / status / tendance live on plate + chips — synthesis adds the coaching sentence.
+  const histPart = historyLength > 0 ? ` Sur ${historyLength} j` : '';
 
   if (verdictKey === 'INCREASE_LOAD') {
     if (limitingFactor && limitingScore != null) {
-      return `${indexPart}${trendPart}. Frein principal : ${limitingFactor.toLowerCase()} (${limitingScore}/100)${
-        plateauRisk ? ' — plateau détecté' : ''
-      }. Remonter la charge pour relancer l’adaptation${
+      return `Le frein (${limitingFactor.toLowerCase()} à ${limitingScore}/100)${
+        plateauRisk ? ' et le plateau' : ''
+      } bloquent la progression. Remonter la charge pour relancer l’adaptation${
         loadMultiplier !== 1 ? ` (cible ×${loadMultiplier.toFixed(2)})` : ''
       }.`;
     }
-    return `${indexPart}${trendPart}${histPart}. La progression de charge est insuffisante — augmenter pour sortir du palier.`;
+    return `${histPart.trim() ? `${histPart.trim()}. ` : ''}La progression de charge est insuffisante — augmenter pour sortir du palier.`;
   }
 
   if (verdictKey === 'REDUCE_LOAD' || verdictKey === 'RECOVERY_PRIORITY') {
     if (overreachingWithoutAdaptation) {
-      return `${indexPart}${trendPart}. Surcharge sans gain d’adaptation — baisser la charge pour laisser le corps absorber.`;
+      return 'Surcharge sans gain d’adaptation — baisser la charge pour laisser le corps absorber.';
     }
-    return `${indexPart}${trendPart}. La récupération ne suit pas — prioriser la consolidation avant de remonter.`;
+    return 'La récupération ne suit pas — prioriser la consolidation avant de remonter.';
   }
 
   if (verdictKey === 'CONSOLIDATE') {
-    return `${indexPart}${trendPart}. Consolider le niveau actuel avant la prochaine montée de charge.`;
+    return 'Consolider le niveau actuel avant la prochaine montée de charge.';
   }
 
   if (verdictKey === 'SUSTAIN') {
-    return `${indexPart}${trendPart}${histPart}. Trajectoire productive — maintenir le rythme sans accélérer.`;
+    return `${histPart.trim() ? `${histPart.trim()} · ` : ''}Trajectoire productive — maintenir le rythme sans accélérer.`;
   }
 
-  return `${indexPart}${trendPart}${histPart}.`;
+  return histPart.trim() || 'Lecture d’adaptation indisponible.';
 }

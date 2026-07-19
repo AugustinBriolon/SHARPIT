@@ -1,12 +1,11 @@
 import { RecoveryAlertsSection } from '@/components/recovery/recovery-alerts-section';
-import { RecoveryDecisionSection } from '@/components/recovery/recovery-decision-section';
 import { RecoveryDimensionsSection } from '@/components/recovery/recovery-dimensions-section';
 import { RecoveryEvidenceSection } from '@/components/recovery/recovery-evidence-section';
 import { RecoveryHero } from '@/components/recovery/recovery-hero';
 import { RecoverySignalsSection } from '@/components/recovery/recovery-signals-section';
 import { RecoveryStatsStrip } from '@/components/recovery/recovery-stats-strip';
 import { RecoveryTrendsSection } from '@/components/recovery/recovery-trends-section';
-import { GlobalDecisionStrip } from '@/components/today/drill-down/global-decision-strip';
+import { RecoveryWhyBlock } from '@/components/recovery/recovery-why-block';
 import {
   DataReliabilityFooter,
   MetricDrillDownPage,
@@ -86,7 +85,6 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
     restingHr,
     bodyBattery,
     confidencePct,
-    confidenceTone,
     completenessLabel,
     overreaching,
     illness,
@@ -106,6 +104,7 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
     >
       <RecoveryHero
         availableDimCount={availableDimCount}
+        confidencePct={confidencePct}
         date={date}
         estimatedRecoveryDays={estimatedRecoveryDays}
         isCalibrating={isCalibrating}
@@ -119,19 +118,13 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
         onPreviousDay={onPreviousDay}
       />
 
-      <GlobalDecisionStrip context={globalDecision} />
+      <RecoveryStatsStrip bodyBattery={bodyBattery} hrv={hrv} restingHr={restingHr} />
 
-      <RecoveryStatsStrip
-        bodyBattery={bodyBattery}
-        confidencePct={confidencePct}
-        confidenceTone={confidenceTone}
-        hrv={hrv}
-        restingHr={restingHr}
-      />
-
-      <RecoveryDecisionSection
+      <RecoveryWhyBlock
+        globalDecision={globalDecision}
         intensityClassName={intensityClassName}
         intensityLabel={intensityLabel}
+        limiterLabel={limiterLabel}
         rationale={rationale}
       />
 

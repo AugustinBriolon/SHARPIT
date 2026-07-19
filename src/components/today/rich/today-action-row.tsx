@@ -7,111 +7,44 @@ import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { MorningWellnessDialog } from '@/components/today/dashboard/morning-wellness-dialog';
 import { cn } from '@/lib/utils';
 
-function SessionLine({ line }: { line: TodayViewModel['actionRow']['daySummaryLines'][number] }) {
-  const content = (
-    <div className="flex w-full min-w-0 items-center justify-between">
-      <div className="flex items-center gap-1.5">
-        <ActivityTypeIndicator type={line.activityType} />
-        <p className="line-clamp-2 min-w-0 text-sm leading-snug font-medium wrap-break-word">
-          {line.primary}
-        </p>
-        {line.secondary ? (
-          <span className="text-data text-muted-foreground shrink-0 text-xs">{line.secondary}</span>
-        ) : null}
-      </div>
-      {line.isDone && (
-        <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-      )}
-    </div>
-  );
-
+function SessionChip({ line }: { line: TodayViewModel['actionRow']['daySummaryLines'][number] }) {
   return (
     <Link
       href={line.href}
+      title={`Voir le détail — ${line.primary}`}
       className={cn(
-        'border-border/60 bg-background/40 hover:bg-muted/40 block rounded-xl border px-3 py-2.5 transition-colors',
-        line.isDone && 'border-emerald-500/25 bg-emerald-500/5 hover:bg-emerald-500/10',
+        'border-analysis-border/80 bg-background/50 hover:border-primary/35 hover:bg-muted/40',
+        'focus-visible:ring-primary/35 flex w-full min-w-0 items-center justify-between gap-2',
+        'rounded-lg border px-3 py-2.5 transition-[border-color,background-color] duration-150',
+        'focus-visible:ring-2 focus-visible:outline-hidden',
+        line.isDone && 'border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-500/45',
       )}
     >
-      {content}
+      <span className="flex min-w-0 items-center gap-1.5">
+        <ActivityTypeIndicator type={line.activityType} />
+        <span className="line-clamp-2 min-w-0 text-sm leading-snug font-medium wrap-break-word">
+          {line.primary}
+        </span>
+        {line.secondary ? (
+          <span className="text-data text-muted-foreground shrink-0 text-xs">{line.secondary}</span>
+        ) : null}
+      </span>
+      <span className="flex shrink-0 items-center gap-1.5">
+        {line.isDone ? (
+          <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+        ) : null}
+        <span className="text-muted-foreground/70 text-data text-[10px] tracking-wider" aria-hidden>
+          →
+        </span>
+      </span>
     </Link>
   );
 }
 
-function LimitingFactRows({
-  facts,
-}: {
-  facts: Array<{ label: string; value: string; hint?: string | null }>;
-}) {
-  return (
-    <ul className="divide-analysis-border/50 divide-y">
-      {facts.map((fact) => (
-        <li
-          key={`${fact.label}-${fact.value}`}
-          className="flex items-baseline justify-between gap-4 py-2.5"
-        >
-          <p className="text-muted-foreground text-sm">{fact.label}</p>
-          <div className="min-w-0 text-right">
-            <p className="text-data text-foreground text-sm font-semibold tabular-nums">
-              {fact.value}
-            </p>
-            {fact.hint ? (
-              <p className="text-muted-foreground text-[11px] leading-snug">{fact.hint}</p>
-            ) : null}
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function LimitingContent({ vm }: { vm: TodayViewModel }) {
-  const limiting = vm.actionRow;
-
-  if (limiting.limitingMode === 'facts') {
-    const body =
-      limiting.limitingFacts.length > 0 ? (
-        <LimitingFactRows facts={limiting.limitingFacts} />
-      ) : (
-        <p className="text-muted-foreground text-sm leading-relaxed">{limiting.limitingText}</p>
-      );
-
-    if (limiting.limitingHref && limiting.limitingFacts.length > 0) {
-      return (
-        <Link className="block transition-opacity hover:opacity-80" href={limiting.limitingHref}>
-          {body}
-          <p className="text-primary mt-2 text-xs font-medium">Voir le détail →</p>
-        </Link>
-      );
-    }
-
-    return body;
-  }
-
-  if (limiting.limitingMode === 'list' && limiting.limitingLines.length > 0) {
-    return (
-      <ul className="text-foreground space-y-1.5 text-sm leading-relaxed">
-        {limiting.limitingLines.map((hint) => (
-          <li key={hint}>· {hint}</li>
-        ))}
-      </ul>
-    );
-  }
-
-  if (limiting.limitingHref && limiting.limitingText) {
-    return (
-      <Link
-        className="text-foreground block text-sm leading-relaxed underline-offset-2 transition-colors hover:underline"
-        href={limiting.limitingHref}
-      >
-        {limiting.limitingText}
-      </Link>
-    );
-  }
-
-  return <p className="text-muted-foreground text-sm leading-relaxed">{limiting.limitingText}</p>;
-}
-
+/**
+ * Session response — single block answering “quoi aujourd’hui ?”
+ * Limiting factor lives on the plate; no Frein column duplicate.
+ */
 export function TodayActionRow({
   vm,
   onWellnessCompleted,
@@ -120,45 +53,53 @@ export function TodayActionRow({
   onWellnessCompleted?: () => void;
 }) {
   const daySummaryEmpty = vm.actionRow.daySummaryLines.length === 0;
+  const reminders =
+    !vm.hero.twinTrustStrip.limitingFactorText &&
+    vm.actionRow.limitingMode === 'facts' &&
+    vm.actionRow.limitingFacts.length > 0
+      ? vm.actionRow.limitingFacts
+      : [];
 
   return (
-    <div
-      className={cn('grid grid-cols-1 gap-3', vm.actionRow.showLimitingColumn && 'lg:grid-cols-2')}
-    >
-      {vm.actionRow.showLimitingColumn ? (
-        <section className="analysis-panel rounded-analysis-lg flex flex-col px-5 py-4 sm:px-6">
-          <p className="text-label mb-2">{vm.actionRow.limitingLabel}</p>
-          <LimitingContent vm={vm} />
-        </section>
+    <section className="space-y-2">
+      <div className="flex items-center justify-between gap-2 px-0.5">
+        <p className="text-label">{vm.actionRow.actionLabel}</p>
+        <MorningWellnessDialog onCompleted={onWellnessCompleted} />
+      </div>
+
+      {reminders.length > 0 ? (
+        <ul className="text-muted-foreground space-y-1 px-0.5 text-xs leading-relaxed">
+          {reminders.map((fact) => (
+            <li key={`${fact.label}-${fact.value}`}>
+              <span className="text-foreground/80 font-medium">{fact.label}</span>
+              {' · '}
+              {fact.value}
+            </li>
+          ))}
+        </ul>
       ) : null}
 
-      <section className="analysis-panel rounded-analysis-lg flex flex-col px-5 py-4 sm:px-6">
-        <div className="mb-3 flex items-start justify-between gap-2">
-          <p className="text-label">{vm.actionRow.actionLabel}</p>
-          <MorningWellnessDialog onCompleted={onWellnessCompleted} />
+      {daySummaryEmpty ? (
+        <div className="border-analysis-border/80 bg-background/50 space-y-2 rounded-lg border px-3 py-3">
+          <p className="text-muted-foreground text-sm">{vm.actionRow.daySummaryEmptyText}</p>
+          <Link
+            className="text-primary inline-flex items-center gap-1.5 text-xs font-medium hover:underline"
+            href={vm.actionRow.daySummaryEmptyHref}
+          >
+            <CalendarClock className="size-3.5" />
+            Voir le planning
+            <span aria-hidden>→</span>
+          </Link>
         </div>
-
-        {daySummaryEmpty ? (
-          <div className="space-y-2">
-            <p className="text-muted-foreground text-sm">{vm.actionRow.daySummaryEmptyText}</p>
-            <Link
-              className="text-primary inline-flex items-center gap-1.5 text-xs font-medium hover:underline"
-              href={vm.actionRow.daySummaryEmptyHref}
-            >
-              <CalendarClock className="size-3.5" />
-              Voir le planning
-            </Link>
-          </div>
-        ) : (
-          <ul className="space-y-2">
-            {vm.actionRow.daySummaryLines.map((line) => (
-              <li key={line.id}>
-                <SessionLine line={line} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </div>
+      ) : (
+        <ul className="space-y-2">
+          {vm.actionRow.daySummaryLines.map((line) => (
+            <li key={line.id}>
+              <SessionChip line={line} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

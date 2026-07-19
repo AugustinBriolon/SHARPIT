@@ -80,4 +80,66 @@ describe('FeatureEngine integrity repair', () => {
     expect(repaired?.data.tssScore).toBeGreaterThan(70);
     expect(repaired?.data.tssMethod).toBe('POWER_BASED');
   });
+
+  it('recomputes session features when stream can now supply hrDriftPercent', async () => {
+    const featureRepository = new InMemoryFeatureRepository();
+    const observationRepository = new InMemoryObservationRepository();
+    const session = makeSession({
+      sportType: 'RUN',
+      durationSec: 1900,
+      powerData: undefined,
+    });
+
+    const engine = new FeatureEngine({
+      featureRepository,
+      observationRepository,
+      contextProvider: {
+        getContext: async (): Promise<ExtractionContext> => ({
+          athleteId: 'athlete-1',
+          trainingDayId: '2026-07-05',
+          timezone: 'UTC',
+          ftpW: 300,
+          maxHr: 190,
+          lthr: 167,
+        }),
+      },
+      sessionStreamProvider: {
+        getSessionStream: async () => ({
+          aerobicLoadFactor: 0.8,
+          anaerobicLoadFactor: 0.1,
+          timeInZones: [10, 20, 0, 0, 0] as [number, number, number, number, number],
+          hrDriftPercent: -0.8,
+          paceVariabilityIndex: null,
+        }),
+      },
+    });
+
+    await observationRepository.save(session);
+    await featureRepository.save({
+      id: 'stale-session-feature',
+      athleteId: 'athlete-1',
+      category: 'SESSION',
+      trainingDayId: '2026-07-05',
+      sessionObsId: session.id,
+      version: 1,
+      status: 'COMPUTED',
+      computedAt: new Date('2026-07-05T08:02:00Z'),
+      createdAt: new Date('2026-07-05T08:02:00Z'),
+      data: {
+        trainingDayId: '2026-07-05',
+        sessionObsId: session.id,
+        sportType: 'RUN',
+        durationSec: 1900,
+        tssScore: 45,
+        tssMethod: 'HR',
+        hrDriftPercent: null,
+        intensityFactor: 0.7,
+        confidence: 0.8,
+        algorithmId: 'session-features-v1',
+      } as never,
+    });
+
+    const result = await engine.getDayFeatures('athlete-1', '2026-07-05');
+    expect(result.sessions[0]?.hrDriftPercent).toBe(-0.8);
+  });
 });

@@ -9,15 +9,15 @@ import { useBodyPresentationViewModel } from '@/hooks/use-presentation-view-mode
 import { CompositionMetricCard } from '@/components/corps/composition-metric-card';
 import { CompositionMetricExplainer } from '@/components/corps/composition-metric-explainer';
 import { ClinicalAnnotation } from '@/components/ui/clinical-annotation';
-import {
-  CorpsDisclaimer,
-  CorpsDivider,
-  CorpsEmptyState,
-  CorpsPanel,
-} from '@/components/corps/corps-ui';
-import type { BodyChartPoint } from '@/core/presentation/body-view-model';
+import { CorpsDisclaimer, CorpsEmptyState } from '@/components/corps/corps-ui';
+import type { BodyChartPoint, BodyMetricCardVm } from '@/core/presentation/body-view-model';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SkeletonCard, SkeletonEyebrow, SkeletonPill } from '@/components/ui/skeleton-patterns';
+import {
+  CHART_BASE_STROKE,
+  CHART_RECOVERY_STROKE,
+  CHART_TEMPO_STROKE,
+  CHART_THRESHOLD_STROKE,
+} from '@/lib/chart-theme';
 import { CORPS_TONE_DOT, CORPS_TONE_TEXT } from '@/lib/metric-tone';
 import { isDeltaStatusTone } from '@/lib/health-status';
 import { cn } from '@/lib/utils';
@@ -40,101 +40,178 @@ const TREND_WINDOWS = [
 
 type TrendWindowId = (typeof TREND_WINDOWS)[number]['id'];
 
-function CompositionSection({
-  label,
-  description,
-  children,
-}: {
-  label: string;
-  description?: string;
-  children: React.ReactNode;
-}) {
+function CompositionInsightWhy({ insights }: { insights: ProductInsight[] }) {
+  if (insights.length === 0) return null;
+  const [primary, ...rest] = insights;
+  const primarySentence =
+    primary.evidence.length > 0
+      ? `${primary.title} — ${primary.evidence.join(' · ')}`
+      : primary.title;
+
   return (
-    <section className="space-y-3">
-      <CorpsDivider label={label} />
-      {description ? (
-        <p className="text-muted-foreground -mt-1 text-xs leading-relaxed">{description}</p>
+    <section className="px-0.5">
+      <p className="text-label mb-2">Lecture</p>
+      <p className="text-foreground text-sm leading-relaxed">{primarySentence}</p>
+      {rest.length > 0 ? (
+        <details className="group mt-2">
+          <summary className="text-muted-foreground hover:text-foreground cursor-pointer list-none py-1.5 text-xs font-medium tracking-wide transition-colors [&::-webkit-details-marker]:hidden">
+            <span className="underline-offset-2 group-open:no-underline">
+              {rest.length === 1 ? 'Voir le détail' : `Voir ${rest.length} autres lectures`}
+            </span>
+          </summary>
+          <ul className="text-muted-foreground mt-1 space-y-2 text-sm leading-relaxed">
+            {rest.map((insight) => (
+              <li key={insight.id}>
+                <span className="text-foreground/90 font-medium">{insight.title}</span>
+                {insight.evidence.length > 0 ? ` — ${insight.evidence.join(' · ')}` : ''}
+              </li>
+            ))}
+          </ul>
+        </details>
       ) : null}
-      <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
     </section>
   );
 }
 
-/** Compact, scannable read of the insight bundle — one card, no repeated meta-text. */
-function CompositionInsightList({ insights }: { insights: ProductInsight[] }) {
-  if (insights.length === 0) return null;
+function MetricChip({
+  label,
+  value,
+  tone,
+  delta,
+  onExplain,
+}: {
+  label: string;
+  value: string;
+  tone: keyof typeof CORPS_TONE_DOT;
+  delta?: string;
+  onExplain?: () => void;
+}) {
+  return (
+    <button
+      disabled={!onExplain}
+      type="button"
+      className={cn(
+        'border-analysis-border/80 bg-background/50 flex min-w-0 flex-col gap-1 rounded-lg border px-3 py-2.5 text-left',
+        onExplain
+          ? 'hover:border-primary/35 hover:bg-muted/40 transition-[border-color,background-color]'
+          : 'cursor-default',
+      )}
+      onClick={onExplain}
+    >
+      <span className="flex items-center gap-1.5">
+        <span className={cn('h-2 w-2 shrink-0 rounded-full', CORPS_TONE_DOT[tone])} aria-hidden />
+        <span className="text-muted-foreground text-[11px] font-medium tracking-wide">{label}</span>
+      </span>
+      <span className="text-data text-foreground text-sm tabular-nums">{value}</span>
+      {delta ? (
+        <span className="text-muted-foreground text-[10px] leading-snug">{delta}</span>
+      ) : null}
+      {onExplain ? (
+        <span className="text-muted-foreground/70 text-data text-[10px] tracking-wider" aria-hidden>
+          →
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+function MetricCardsExpand({
+  label,
+  cards,
+  onExplain,
+}: {
+  label: string;
+  cards: BodyMetricCardVm[];
+  onExplain: (id: CompositionMetricId) => void;
+}) {
+  if (cards.length === 0) return null;
+  const priority = cards.slice(0, 4);
+  const rest = cards.slice(4);
 
   return (
-    <CorpsPanel className="divide-border/60 divide-y p-0">
-      {insights.map((insight) => (
-        <div key={insight.id} className="px-5 py-3.5 first:pt-4 last:pb-4">
-          <p className="text-sm font-medium">{insight.title}</p>
-          {insight.evidence.length > 0 ? (
-            <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
-              {insight.evidence.join(' · ')}
-            </p>
-          ) : null}
-        </div>
-      ))}
-    </CorpsPanel>
+    <section className="space-y-2">
+      <p className="text-label px-0.5">{label}</p>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {priority.map((card) => (
+          <MetricChip
+            key={card.cardId}
+            delta={card.footer && card.footer !== '—' ? card.footer : undefined}
+            label={card.label}
+            tone={card.tone}
+            value={card.valueDisplay}
+            onExplain={card.guideId ? () => onExplain(card.guideId!) : undefined}
+          />
+        ))}
+      </div>
+      {rest.length > 0 ? (
+        <details className="group">
+          <summary className="text-muted-foreground hover:text-foreground cursor-pointer list-none px-0.5 py-1.5 text-xs font-medium tracking-wide transition-colors [&::-webkit-details-marker]:hidden">
+            <span className="underline-offset-2 group-open:no-underline">
+              Voir toutes les mesures ({cards.length})
+            </span>
+          </summary>
+          <div className="mt-2 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+            {rest.map((card) => (
+              <CompositionMetricCard
+                key={card.cardId}
+                footer={card.footer}
+                footerHint={card.footerHint}
+                footerTone={card.footerTone}
+                guideId={card.guideId}
+                label={card.label}
+                tone={card.tone}
+                value={card.valueDisplay}
+                onExplain={card.guideId ? (id) => onExplain(id) : undefined}
+              />
+            ))}
+          </div>
+        </details>
+      ) : null}
+    </section>
   );
 }
 
 function CompositionSkeleton() {
   return (
-    <div className="space-y-6">
-      <Skeleton className="h-16 w-full rounded-2xl" />
-
-      <SkeletonCard className="px-5 py-5">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <Skeleton className="h-4 w-28 rounded-full" />
-          <Skeleton className="h-4 w-36 rounded-full" />
-        </div>
-        <Skeleton className="mt-2 h-10 w-40" />
-        <Skeleton className="mt-1 h-4 w-28 rounded-full" />
-        <div className="border-analysis-border divide-analysis-border mt-4 grid grid-cols-1 divide-y border-t pt-4 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="min-w-0 py-3 first:pt-0 last:pb-0 sm:px-4 sm:py-0 sm:first:pl-0 sm:last:pr-0"
-            >
-              <Skeleton className="h-4 w-20 max-w-full rounded-full" />
-              <Skeleton className="mt-2 h-[1.125rem] w-16" />
-              <Skeleton className="mt-1.5 h-4 w-24 max-w-full rounded-full" />
-            </div>
-          ))}
-        </div>
-      </SkeletonCard>
-
-      <div className="flex gap-1.5 overflow-x-auto pb-0.5">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <SkeletonPill key={i} className="h-8 w-14 shrink-0" />
+    <div className="space-y-4 sm:space-y-5">
+      <section className="analysis-panel rounded-analysis-lg from-primary/8 relative overflow-hidden bg-linear-to-br to-transparent px-5 py-8 sm:px-8 sm:py-10">
+        <Skeleton className="h-3 w-28 rounded-full" />
+        <Skeleton className="mt-6 h-10 w-40 rounded-lg" />
+        <Skeleton className="mt-3 h-4 w-32 rounded-full" />
+      </section>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="border-analysis-border/80 bg-background/50 rounded-lg border px-3 py-2.5"
+          >
+            <Skeleton className="h-3 w-16 rounded-full" />
+            <Skeleton className="mt-2 h-4 w-12 rounded-sm" />
+          </div>
         ))}
       </div>
-
-      <div className="space-y-3">
-        <SkeletonEyebrow className="w-32" />
-        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-card/60 rounded-2xl border px-4 py-4">
-              <Skeleton className="h-2.5 w-16 rounded-full border-0" />
-              <Skeleton className="mt-2 h-8 w-20 border-0" />
-              <Skeleton className="mt-2 h-3 w-24 rounded-full border-0" />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid gap-3 md:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <SkeletonCard key={i} className="min-h-56 px-4 py-4">
-            <Skeleton className="h-3 w-24 rounded-full border-0" />
-            <Skeleton className="rounded-analysis mt-4 h-44 w-full border-0" />
-          </SkeletonCard>
-        ))}
-      </div>
+      <Skeleton className="h-4 w-full max-w-md rounded-full" />
+      <Skeleton className="h-48 w-full rounded-lg" />
     </div>
   );
+}
+
+function plateTintFromTone(tone: string | null | undefined): string {
+  if (tone === 'ok')
+    return 'bg-linear-to-br from-emerald-500/10 to-transparent border-emerald-500/20';
+  if (tone === 'watch' || tone === 'verify') {
+    return 'bg-linear-to-br from-amber-500/10 to-transparent border-amber-500/25';
+  }
+  if (tone === 'attention')
+    return 'bg-linear-to-br from-orange-500/10 to-transparent border-orange-500/25';
+  return 'bg-linear-to-br from-primary/8 to-transparent';
+}
+
+function plateDotFromTone(tone: string | null | undefined): string {
+  if (tone === 'ok') return 'bg-emerald-500';
+  if (tone === 'watch' || tone === 'verify') return 'bg-amber-500';
+  if (tone === 'attention') return 'bg-orange-500';
+  return 'bg-primary';
 }
 
 export function CompositionView({ embedded: _embedded = false }: { embedded?: boolean }) {
@@ -183,15 +260,16 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
     return hints;
   }, [vm, heroMiniMetrics]);
 
+  const allInsights = useMemo(() => {
+    if (!vm) return [];
+    return [...vm.insights.primary, ...vm.insights.supporting, ...vm.insights.contextual];
+  }, [vm]);
+
   if (query.isPending) return <CompositionSkeleton />;
 
   if (!vm || !vm.hasData) {
     return (
       <div className="space-y-4">
-        <CorpsDisclaimer title="Lecture indicative, pas une mesure médicale">
-          Les balances estiment la composition via impédancemétrie : utile pour les{' '}
-          <em>tendances</em>, pas comme référence médicale.
-        </CorpsDisclaimer>
         <CorpsEmptyState
           icon={Scale}
           title={vm?.emptyState?.title ?? 'Aucune mesure importée'}
@@ -200,39 +278,52 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
             'Connecte Withings ou Renpho dans les réglages pour synchroniser ta balance.'
           }
         />
+        <CorpsDisclaimer title="Lecture indicative, pas une mesure médicale">
+          Les balances estiment la composition via impédancemétrie : utile pour les{' '}
+          <em>tendances</em>, pas comme référence médicale.
+        </CorpsDisclaimer>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <CorpsDisclaimer title="Lecture indicative, pas une mesure médicale">
-        Impédancemétrie = tendances utiles, écart possible vs DEXA. Hydratation, repas et heure de
-        pesée influencent le résultat du jour.
-      </CorpsDisclaimer>
+  const weightTone = vm.hero.weightDeltaTone;
 
-      <CorpsPanel className="px-5 py-5">
+  return (
+    <div className="space-y-4 sm:space-y-5">
+      <section
+        className={cn(
+          'analysis-panel rounded-analysis-lg relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10',
+          'motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200',
+          plateTintFromTone(weightTone),
+        )}
+      >
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <p className="text-label">dernière pesée</p>
+          <p className="text-label inline-flex items-center gap-2">
+            <span
+              className={cn('h-2.5 w-2.5 shrink-0 rounded-full', plateDotFromTone(weightTone))}
+              aria-hidden
+            />
+            Dernière pesée
+          </p>
           <p className="text-muted-foreground text-xs">
             {vm.hero.measuredAtLabel ?? '—'}
             {vm.hero.sourceLabel ? ` · ${vm.hero.sourceLabel}` : ''}
           </p>
         </div>
 
-        <p className="text-instrument mt-2 text-4xl">
+        <p className="text-verdict mt-6 text-[2rem] leading-none sm:text-[2.25rem]">
           {vm.hero.latestWeightDisplay}
           {vm.hero.latestWeightKg != null ? (
-            <span className="text-muted-foreground ml-1.5 text-lg">kg</span>
+            <span className="text-muted-foreground ml-1.5 text-lg font-normal">kg</span>
           ) : null}
         </p>
 
         {vm.hero.weightDeltaDisplay ? (
           <p
             className={cn(
-              'mt-1 text-xs font-medium',
-              vm.hero.weightDeltaTone && isDeltaStatusTone(vm.hero.weightDeltaTone)
-                ? CORPS_TONE_TEXT[vm.hero.weightDeltaTone]
+              'mt-3 text-sm font-medium',
+              weightTone && isDeltaStatusTone(weightTone)
+                ? CORPS_TONE_TEXT[weightTone]
                 : 'text-muted-foreground',
             )}
           >
@@ -240,47 +331,8 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
           </p>
         ) : null}
 
-        <div className="border-analysis-border divide-analysis-border mt-4 grid grid-cols-1 divide-y border-t pt-4 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          {heroMiniMetrics.map(({ key, label, metric, value, delta }) => (
-            <div
-              key={key}
-              className="min-w-0 py-3 first:pt-0 last:pb-0 sm:px-4 sm:py-0 sm:first:pl-0 sm:last:pr-0"
-            >
-              <div className="flex items-center gap-2">
-                <span
-                  className={cn('size-1.5 shrink-0 rounded-full', CORPS_TONE_DOT[metric.tone])}
-                />
-                <p className="text-label truncate">{label}</p>
-              </div>
-              <p className="text-instrument mt-2 text-lg leading-none">{value}</p>
-              {delta ? (
-                <p
-                  className={cn(
-                    'mt-1.5 text-[11px] leading-snug',
-                    metric.deltaTone && isDeltaStatusTone(metric.deltaTone)
-                      ? CORPS_TONE_TEXT[metric.deltaTone]
-                      : 'text-muted-foreground',
-                  )}
-                >
-                  {delta}
-                </p>
-              ) : null}
-              {metric.guideId ? (
-                <button
-                  aria-label={`Comprendre la mesure ${label}`}
-                  className="explore-link mt-2 block"
-                  type="button"
-                  onClick={() => setExplainMetricId(metric.guideId!)}
-                >
-                  comprendre
-                </button>
-              ) : null}
-            </div>
-          ))}
-        </div>
-
         {heroHints.length > 0 ? (
-          <ClinicalAnnotation className="mt-4">
+          <ClinicalAnnotation className="mt-6">
             {heroHints.map(({ label, text }) => (
               <p key={label}>
                 <span className="text-foreground/85 font-medium">{label}</span> — {text}
@@ -288,76 +340,44 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
             ))}
           </ClinicalAnnotation>
         ) : null}
-      </CorpsPanel>
+      </section>
 
-      <CompositionInsightList
-        insights={[...vm.insights.primary, ...vm.insights.supporting, ...vm.insights.contextual]}
-      />
-
-      <CompositionSection label="Composition détaillée">
-        {vm.trajectoryCards.map((card) => (
-          <CompositionMetricCard
-            key={card.cardId}
-            footer={card.footer}
-            footerHint={card.footerHint}
-            footerTone={card.footerTone}
-            guideId={card.guideId}
-            label={card.label}
-            tone={card.tone}
-            value={card.valueDisplay}
-            onExplain={card.guideId ? (id) => setExplainMetricId(id) : undefined}
+      <nav aria-label="Signaux de composition" className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {heroMiniMetrics.map(({ key, label, metric, value, delta }) => (
+          <MetricChip
+            key={key}
+            delta={delta}
+            label={label}
+            tone={metric.tone}
+            value={value}
+            onExplain={metric.guideId ? () => setExplainMetricId(metric.guideId!) : undefined}
           />
         ))}
-      </CompositionSection>
+      </nav>
+
+      <CompositionInsightWhy insights={allInsights} />
+
+      <MetricCardsExpand
+        cards={vm.trajectoryCards}
+        label="Composition"
+        onExplain={setExplainMetricId}
+      />
 
       {vm.contextCards.length > 0 ? (
-        <CompositionSection label="Repères complémentaires">
-          {vm.contextCards.map((card) => (
-            <CompositionMetricCard
-              key={card.cardId}
-              footer={card.footer}
-              footerHint={card.footerHint}
-              footerTone={card.footerTone}
-              guideId={card.guideId}
-              label={card.label}
-              tone={card.tone}
-              value={card.valueDisplay}
-              onExplain={card.guideId ? (id) => setExplainMetricId(id) : undefined}
-            />
-          ))}
-        </CompositionSection>
+        <MetricCardsExpand cards={vm.contextCards} label="Repères" onExplain={setExplainMetricId} />
       ) : null}
 
       {vm.hasBodyScan ? (
-        <section className="space-y-3">
-          <div className="space-y-3">
-            <CorpsDivider label="Santé de fond" />
-            <p className="text-muted-foreground -mt-1 text-xs leading-relaxed">
-              Ces métriques ne pilotent pas la séance du jour, mais elles donnent du contexte sur la
-              trajectoire santé et résilience.
-            </p>
-          </div>
-          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-            {vm.healthScanCards.map((card) => (
-              <CompositionMetricCard
-                key={card.cardId}
-                footer={card.footer}
-                footerHint={card.footerHint}
-                footerTone={card.footerTone}
-                guideId={card.guideId}
-                label={card.label}
-                tone={card.tone}
-                value={card.valueDisplay}
-                onExplain={card.guideId ? (id) => setExplainMetricId(id) : undefined}
-              />
-            ))}
-          </div>
-        </section>
+        <MetricCardsExpand
+          cards={vm.healthScanCards}
+          label="Santé de fond"
+          onExplain={setExplainMetricId}
+        />
       ) : null}
 
       <section className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <CorpsDivider label="Tendances" />
+        <div className="flex flex-wrap items-center justify-between gap-3 px-0.5">
+          <p className="text-label">Tendances</p>
           <div className="bg-muted/40 inline-flex flex-wrap gap-1 rounded-full border p-1">
             {TREND_WINDOWS.map((w) => {
               const active = w.id === trendWindow;
@@ -381,51 +401,57 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
           </div>
         </div>
 
-        <p className="text-muted-foreground text-xs leading-relaxed">
-          Une mesure par jour (la plus récente).{' '}
-          {selectedWindow.id === 'all'
-            ? "La vue 'Tout' remonte jusqu'aux plus anciennes mesures enregistrées."
-            : 'Les variations peuvent refléter le bruit autant qu&apos;un vrai changement.'}
-        </p>
+        <MetricLineChart
+          color={CHART_BASE_STROKE}
+          data={vm.chartData}
+          dataKey="weightKg"
+          loading={isWindowRefreshing}
+          subtitle="Pesées balance"
+          title="Poids"
+          unit="kg"
+        />
 
-        <div className="grid gap-3 md:grid-cols-2">
-          <MetricLineChart
-            color="#2563eb"
-            data={vm.chartData}
-            dataKey="weightKg"
-            loading={isWindowRefreshing}
-            subtitle="Pesées balance"
-            title="Poids"
-            unit="kg"
-          />
-          <MetricLineChart
-            color="#dc2626"
-            data={vm.chartData}
-            dataKey="bodyFatPct"
-            loading={isWindowRefreshing}
-            subtitle="Estimation impédancemétrie"
-            title="Masse grasse"
-            unit="%"
-          />
-          <MetricLineChart
-            color="#16a34a"
-            data={vm.chartData}
-            dataKey="musclePct"
-            loading={isWindowRefreshing}
-            subtitle="Part du poids total"
-            title="Muscle"
-            unit="%"
-          />
-          <MetricLineChart
-            color="#ea580c"
-            data={vm.chartData}
-            dataKey="visceralFat"
-            loading={isWindowRefreshing}
-            subtitle="Indice viscéral"
-            title="Graisse viscérale"
-          />
-        </div>
+        <details className="group">
+          <summary className="text-muted-foreground hover:text-foreground cursor-pointer list-none px-0.5 py-1.5 text-xs font-medium tracking-wide transition-colors [&::-webkit-details-marker]:hidden">
+            <span className="underline-offset-2 group-open:no-underline">
+              Autres tendances (masse grasse, muscle, viscéral)
+            </span>
+          </summary>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <MetricLineChart
+              color={CHART_THRESHOLD_STROKE}
+              data={vm.chartData}
+              dataKey="bodyFatPct"
+              loading={isWindowRefreshing}
+              subtitle="Estimation impédancemétrie"
+              title="Masse grasse"
+              unit="%"
+            />
+            <MetricLineChart
+              color={CHART_RECOVERY_STROKE}
+              data={vm.chartData}
+              dataKey="musclePct"
+              loading={isWindowRefreshing}
+              subtitle="Part du poids total"
+              title="Muscle"
+              unit="%"
+            />
+            <MetricLineChart
+              color={CHART_TEMPO_STROKE}
+              data={vm.chartData}
+              dataKey="visceralFat"
+              loading={isWindowRefreshing}
+              subtitle="Indice viscéral"
+              title="Graisse viscérale"
+            />
+          </div>
+        </details>
       </section>
+
+      <CorpsDisclaimer title="Lecture indicative, pas une mesure médicale">
+        Impédancemétrie = tendances utiles, écart possible vs DEXA. Hydratation, repas et heure de
+        pesée influencent le résultat du jour.
+      </CorpsDisclaimer>
 
       {activeExplainer ? (
         <CompositionMetricExplainer

@@ -139,7 +139,7 @@ export function SkeletonDimensionRow({ className }: { className?: string }) {
   );
 }
 
-/** Matches DrillDownStatsStrip / MetricCell strip layout. */
+/** Matches DrillDownStatsStrip instrument chips — no parent panel. */
 export function SkeletonStatsStrip({
   items = 4,
   className,
@@ -147,24 +147,22 @@ export function SkeletonStatsStrip({
   items?: number;
   className?: string;
 }) {
+  let desktopCols = 'sm:grid-cols-2';
+  if (items >= 4) desktopCols = 'sm:grid-cols-4';
+  else if (items === 3) desktopCols = 'sm:grid-cols-3';
+
   return (
-    <section
-      className={cn(
-        'analysis-panel rounded-analysis-lg grid grid-cols-2 gap-3 px-4 py-4 sm:grid-cols-4',
-        className,
-      )}
-    >
+    <nav className={cn('grid grid-cols-2 gap-2', desktopCols, className)} aria-hidden>
       {Array.from({ length: items }).map((_, index) => (
         <div
           key={index}
-          className="flex min-w-0 flex-1 flex-col items-center justify-center px-3 py-4 text-center"
+          className="border-analysis-border/80 bg-background/50 inline-flex min-w-0 items-center gap-1.5 rounded-lg border px-2.5 py-2 sm:py-1.5"
         >
-          <Skeleton className="h-2.5 w-14 rounded-full" />
-          <Skeleton className="mt-2 h-5 w-12 rounded-lg" />
-          <Skeleton className="mt-1 h-2.5 w-10 rounded-full" />
+          <Skeleton className="h-2.5 w-12 rounded-full" />
+          <Skeleton className="h-4 w-8 rounded-md" />
         </div>
       ))}
-    </section>
+    </nav>
   );
 }
 

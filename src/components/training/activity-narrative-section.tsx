@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityType } from '@prisma/client';
 import { ActivityNarrativeCard } from '@/components/training/activity-narrative-card';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Brain, Loader2 } from 'lucide-react';
 import { isEligibleForActivityNarrative } from '@/lib/activity-narrative-config';
 import { activityNarrativeSchema, type ActivityNarrative } from '@/lib/validators/coach';
 
@@ -98,7 +98,7 @@ export function ActivityNarrativeSection({
   return (
     <section className="analysis-panel-alt rounded-analysis-lg px-5 py-5 sm:px-6 sm:py-6">
       <div className="flex items-center gap-2">
-        <Sparkles className="text-primary size-4 shrink-0" />
+        <Brain className="text-primary size-4 shrink-0" />
         <p className="text-label">Analyse coach</p>
       </div>
       <div className="mt-4 flex items-start gap-3">

@@ -1,5 +1,6 @@
 import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
 import { formatClock } from '@/lib/sleep';
+import { softTintFromQualityClass } from '@/lib/presentation/physio-plate-tint';
 import { formatSleepDuration } from '@/lib/sleep-scoring';
 
 export function SleepHero({
@@ -9,11 +10,13 @@ export function SleepHero({
   totalSleepMin,
   bedtimeMin,
   wakeMin,
+  actionLine,
   onDateChange,
   onPreviousDay,
   onNextDay,
   isToday,
   maxDate,
+  confidencePct,
 }: {
   date: Date;
   sleepScore: number | null;
@@ -21,11 +24,14 @@ export function SleepHero({
   totalSleepMin: number | null;
   bedtimeMin: number | null;
   wakeMin: number | null;
+  /** Sleep-specific action under the verdict (coucher / dette). */
+  actionLine?: string | null;
   onDateChange?: (date: Date) => void;
   onPreviousDay?: () => void;
   onNextDay?: () => void;
   isToday?: boolean;
   maxDate?: Date;
+  confidencePct?: number | null;
 }) {
   const subtitle =
     bedtimeMin != null && wakeMin != null
@@ -34,12 +40,14 @@ export function SleepHero({
 
   return (
     <PhysioDrillDownHero
+      confidencePct={confidencePct}
       date={date}
       headline={adequacyDisplay.label}
       headlineClassName={adequacyDisplay.colorClass}
       isToday={isToday}
       maxDate={maxDate}
-      quickReadCaption="Temps de sommeil effectif sur la nuit analysée."
+      panelClassName={softTintFromQualityClass(adequacyDisplay.colorClass)}
+      quickReadCaption={actionLine ?? undefined}
       quickReadLabel="durée de sommeil"
       quickReadValue={totalSleepMin != null ? formatSleepDuration(totalSleepMin) : '—'}
       railCaption="insuffisant vers récupérant"

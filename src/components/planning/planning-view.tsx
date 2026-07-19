@@ -382,7 +382,6 @@ export function PlanningView({
 function WeekSummary({
   planWeek,
   plannedLoad,
-  completed,
   total,
   weeksToRace,
 }: {
@@ -409,15 +408,7 @@ function WeekSummary({
           </span>
         </>
       )}
-      {total > 0 && (
-        <>
-          <span className="opacity-30">·</span>
-          <span>
-            {completed}/{total} séance{total > 1 ? 's' : ''}
-          </span>
-        </>
-      )}
-      {planWeek && (
+      {planWeek ? (
         <>
           <span className="opacity-30">·</span>
           <span className="font-mono text-xs">
@@ -426,7 +417,15 @@ function WeekSummary({
               : `${planWeek.targetLoad} TSS cible`}
           </span>
         </>
-      )}
+      ) : null}
+      {!planWeek && total > 0 ? (
+        <>
+          <span className="opacity-30">·</span>
+          <span>
+            {total} séance{total > 1 ? 's' : ''} planifiée{total > 1 ? 's' : ''}
+          </span>
+        </>
+      ) : null}
     </div>
   );
 }

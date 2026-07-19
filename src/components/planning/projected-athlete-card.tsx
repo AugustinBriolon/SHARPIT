@@ -1,7 +1,7 @@
 'use client';
 
 import type { UseQueryResult } from '@tanstack/react-query';
-import { Sparkles } from 'lucide-react';
+import { GitBranch } from 'lucide-react';
 import type { ProjectionHorizonDays } from '@/core/projection/types';
 import type { ProjectedAthleteCardViewModel } from '@/core/presentation/projected-athlete-view-model';
 import { DiscussCoachLink } from '@/components/training/discuss-coach-link';
@@ -63,7 +63,7 @@ export function ProjectedAthleteCard({
   return (
     <section className={cn('analysis-panel-alt rounded-analysis-lg px-5 py-5 sm:px-6', className)}>
       <div className="flex items-center gap-2">
-        <Sparkles className="text-primary size-4 shrink-0" />
+        <GitBranch className="text-primary size-4 shrink-0" />
         <p className="text-label">Conseil du coach</p>
       </div>
 

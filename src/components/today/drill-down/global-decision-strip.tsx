@@ -1,7 +1,5 @@
 import Link from 'next/link';
 import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
-import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
-import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
 import { cn } from '@/lib/utils';
 
 function normalizePhrase(value: string): string {
@@ -19,7 +17,6 @@ function isRedundantAction(verdict: string, action: string): boolean {
   const a = normalizePhrase(action);
   if (!v || !a) return true;
   if (a === v) return true;
-  // "entraine toi legerement" vs "entraine toi legerement" / "entraine toi — legerement"
   if (a.includes(v) || v.includes(a.replace(/\s+/g, ' '))) return true;
   const vTokens = new Set(v.split(' ').filter((t) => t.length > 2));
   const aTokens = a.split(' ').filter((t) => t.length > 2);
@@ -28,8 +25,7 @@ function isRedundantAction(verdict: string, action: string): boolean {
 }
 
 /**
- * Product-level decision — one verdict, optional distinct action, role note.
- * Never repeats the same phrase three times.
+ * Why band — same DNA as TodayWhyBlock: primary line, rest in expand, ghost Accueil.
  */
 export function GlobalDecisionStrip({ context }: { context: GlobalDecisionContext }) {
   if (!context.visible) return null;
@@ -46,32 +42,50 @@ export function GlobalDecisionStrip({ context }: { context: GlobalDecisionContex
       ? context.headline
       : null;
 
+  const primary = action ?? headline;
+  const expandLines = [action && headline ? headline : null, context.relationNote].filter(
+    (line): line is string => Boolean(line),
+  );
+
   return (
-    <DrillDownSectionCard>
-      <div className="flex items-baseline justify-between gap-3">
-        <DrillDownSectionLabel className="mb-0">Décision du jour</DrillDownSectionLabel>
-        <Link className="explore-link" href={context.todayHref}>
-          Accueil
+    <section className="px-0.5">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <p className="text-label">Décision du jour</p>
+        <Link
+          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs transition-colors"
+          href={context.todayHref}
+        >
+          Aujourd&apos;hui
+          <span className="text-data tracking-wider" aria-hidden>
+            →
+          </span>
         </Link>
       </div>
 
-      <div className="mt-3 flex items-baseline justify-between gap-4">
-        <p className={cn('text-base leading-snug font-semibold', context.verdictClassName)}>
-          {context.verdictLabel}
-        </p>
-      </div>
+      <p className={cn('text-sm leading-relaxed', context.verdictClassName)}>
+        <span className="font-medium">{context.verdictLabel}</span>
+        {primary ? (
+          <span className="text-foreground font-normal">
+            {' — '}
+            {primary}
+          </span>
+        ) : null}
+      </p>
 
-      {action ? (
-        <p className="text-foreground mt-2 text-sm leading-snug font-medium">{action}</p>
+      {expandLines.length > 0 ? (
+        <details className="group mt-2">
+          <summary className="text-muted-foreground hover:text-foreground cursor-pointer list-none py-1.5 text-xs font-medium tracking-wide transition-colors [&::-webkit-details-marker]:hidden">
+            <span className="underline-offset-2 group-open:no-underline">
+              {expandLines.length === 1 ? 'Voir le détail' : `Voir ${expandLines.length} détails`}
+            </span>
+          </summary>
+          <ul className="text-muted-foreground mt-1 space-y-1.5 text-sm leading-relaxed">
+            {expandLines.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </details>
       ) : null}
-
-      {headline ? (
-        <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{headline}</p>
-      ) : null}
-
-      {context.relationNote ? (
-        <p className="annotation-clinical mt-3">{context.relationNote}</p>
-      ) : null}
-    </DrillDownSectionCard>
+    </section>
   );
 }

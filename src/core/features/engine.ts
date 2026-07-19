@@ -141,6 +141,8 @@ function hasValidSessionFeatureShape(data: Record<string, unknown> | null | unde
   sportType: string;
   durationSec: number;
   tssScore: number;
+  /** Present on SessionFeatures; may be null when stream was missing at compute time. */
+  hrDriftPercent?: number | null;
 } {
   return (
     data != null &&
@@ -151,6 +153,22 @@ function hasValidSessionFeatureShape(data: Record<string, unknown> | null | unde
     typeof data.tssScore === 'number' &&
     Number.isFinite(data.tssScore)
   );
+}
+
+const STREAM_HR_DRIFT_SPORTS = new Set(['RUN', 'TRAIL_RUN', 'BIKE', 'MTB']);
+
+/**
+ * Cached SESSION features can be shape-valid but missing stream-derived signals
+ * when features were computed before ActivityStream was cached. Retry extraction
+ * for long outdoor sessions that still lack hrDriftPercent.
+ */
+function sessionFeaturesNeedStreamRefresh(
+  data: Record<string, unknown> | null | undefined,
+): boolean {
+  if (!hasValidSessionFeatureShape(data)) return true;
+  if (!STREAM_HR_DRIFT_SPORTS.has(data.sportType)) return false;
+  if (data.durationSec < 30 * 60) return false;
+  return data.hrDriftPercent == null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -283,6 +301,20 @@ export class FeatureEngine {
     await this.featureRepo.save(record);
   }
 
+  /**
+   * Re-extract SESSION features after ActivityStream is cached.
+   * No-op when no matching SESSION observation exists.
+   */
+  async refreshSessionFeaturesForExternalId(
+    athleteId: string,
+    externalId: string,
+  ): Promise<boolean> {
+    const observation = await this.obsRepo.findByExternalId(athleteId, 'SESSION', externalId);
+    if (!observation || observation.type !== 'SESSION') return false;
+    await this.computeSessionFeatures(athleteId, observation as SessionObservation);
+    return true;
+  }
+
   private async ensureSessionFeaturesInRange(
     athleteId: string,
     fromTrainingDayId: string,
@@ -302,8 +334,24 @@ export class FeatureEngine {
     for (const observation of sessionObs) {
       if (observation.type !== 'SESSION') continue;
       const existing = latestBySessionObsId.get(observation.id);
-      if (existing && hasValidSessionFeatureShape(existing.data as Record<string, unknown>))
+      const data = existing?.data as Record<string, unknown> | undefined;
+
+      if (
+        existing &&
+        hasValidSessionFeatureShape(data) &&
+        !sessionFeaturesNeedStreamRefresh(data)
+      ) {
         continue;
+      }
+
+      // Shape-valid but missing hrDrift: only retry when the stream can now supply it.
+      if (existing && hasValidSessionFeatureShape(data) && sessionFeaturesNeedStreamRefresh(data)) {
+        if (!this.sessionStreamProvider) continue;
+        const ctx = await this.ctxProvider.getContext(athleteId, observation.trainingDayId);
+        const stream = await this.sessionStreamProvider.getSessionStream(observation, ctx);
+        if (stream?.hrDriftPercent == null) continue;
+      }
+
       await this.computeSessionFeatures(athleteId, observation);
       repaired = true;
     }
@@ -481,6 +529,16 @@ export class FeatureEngine {
         (record) => !hasValidSessionFeatureShape(record.data as Record<string, unknown>),
       );
 
+    const hasStaleStreamFeatures = sessionRecords.some((record) =>
+      sessionFeaturesNeedStreamRefresh(record.data as Record<string, unknown>),
+    );
+
+    // Stream arrived after first extraction: refresh SESSION only when the stream can help.
+    let sessions = sessionRecords;
+    if (hasStaleStreamFeatures) {
+      sessions = await this.ensureSessionFeaturesInRange(athleteId, trainingDayId, trainingDayId);
+    }
+
     // If any window feature is missing or cached session features are malformed, trigger lazy computation
     if (!loadRecord || !recoveryRecord || !conditionRecord || hasSessionMismatch) {
       return this.computeDayFeatures(athleteId, trainingDayId);
@@ -490,7 +548,7 @@ export class FeatureEngine {
       athleteId,
       trainingDayId,
       retrievedAt: new Date(),
-      sessions: sessionRecords.map((r) => r.data),
+      sessions: sessions.map((r) => r.data),
       load: loadRecord.data,
       recovery: recoveryRecord.data,
       body: bodyRecord?.data ?? 'PENDING',

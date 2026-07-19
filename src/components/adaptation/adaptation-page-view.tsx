@@ -1,18 +1,18 @@
 'use client';
 
-import { AdaptationReadingSection } from '@/components/adaptation/adaptation-reading-section';
+import { AdaptationStatsStrip } from '@/components/adaptation/adaptation-stats-strip';
+import { AdaptationWhyBlock } from '@/components/adaptation/adaptation-why-block';
 import { DrillDownDimensionRow } from '@/components/today/drill-down/dimension-row';
-import { GlobalDecisionStrip } from '@/components/today/drill-down/global-decision-strip';
 import {
   DataReliabilityFooter,
   MetricDrillDownPage,
   type MetricTone,
 } from '@/components/today/drill-down/metric-drill-down-page';
 import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
-import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
 import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
 import type { DimensionResult } from '@/hooks/use-today';
+import { softTintFromQualityClass } from '@/lib/presentation/physio-plate-tint';
 
 export type AdaptationPageViewProps = {
   date: Date;
@@ -66,8 +66,6 @@ export function AdaptationPageView({
   statusLabel,
   statusClassName,
   trendLabel,
-  verdictLabel,
-  verdictClassName,
   verdictKey,
   loadMultiplier,
   limitingFactor,
@@ -88,6 +86,22 @@ export function AdaptationPageView({
     return true;
   });
 
+  const freinDimension =
+    limitingFactor != null
+      ? (visibleDimensions.find((d) => d.label === limitingFactor) ?? null)
+      : null;
+  const otherDimensions = visibleDimensions.filter((d) => d !== freinDimension);
+
+  let actionLine: string | null = null;
+  if (limitingFactor) {
+    actionLine =
+      limitingScore != null
+        ? `Limité par · ${limitingFactor} (${Math.round(limitingScore)})`
+        : `Limité par · ${limitingFactor}`;
+  } else if (trendLabel && trendLabel !== '—') {
+    actionLine = trendLabel;
+  }
+
   return (
     <MetricDrillDownPage
       footer={
@@ -100,26 +114,33 @@ export function AdaptationPageView({
       }
     >
       <PhysioDrillDownHero
+        confidencePct={confidencePct}
         date={date}
         headline={statusLabel}
         headlineClassName={statusClassName}
         isToday={isToday}
         maxDate={maxDate}
-        quickReadCaption={trendLabel}
+        panelClassName={softTintFromQualityClass(statusClassName)}
+        quickReadCaption={actionLine ?? undefined}
         quickReadLabel="indice d'adaptation"
         quickReadSuffix="%"
         quickReadValue={adaptationIndex != null ? String(Math.round(adaptationIndex)) : '—'}
         railValue={adaptationIndex}
-        subline="Modèle d'adaptation"
         onDateChange={onDateChange}
         onNextDay={onNextDay}
         onPreviousDay={onPreviousDay}
       />
 
-      <GlobalDecisionStrip context={globalDecision} />
+      <AdaptationStatsStrip
+        limitingFactor={limitingFactor}
+        limitingScore={limitingScore}
+        loadMultiplier={loadMultiplier}
+        trendLabel={trendLabel}
+      />
 
-      <AdaptationReadingSection
+      <AdaptationWhyBlock
         adaptationIndex={adaptationIndex}
+        globalDecision={globalDecision}
         historyLength={historyLength}
         limitingFactor={limitingFactor}
         limitingScore={limitingScore}
@@ -128,30 +149,31 @@ export function AdaptationPageView({
         plateauRisk={plateauRisk}
         statusLabel={statusLabel}
         trendLabel={trendLabel}
-        verdictClassName={verdictClassName}
         verdictKey={verdictKey}
-        verdictLabel={verdictLabel}
       />
 
-      <DrillDownSectionCard>
+      <section className="px-0.5">
         <DrillDownSectionLabel>Dimensions</DrillDownSectionLabel>
-        <div className="mt-4 space-y-4">
-          {visibleDimensions.map((d) => (
+        <div className="mt-3 space-y-4">
+          {[...(freinDimension ? [freinDimension] : []), ...otherDimensions].map((d) => (
             <DrillDownDimensionRow
               key={d.key}
               description={d.description}
               dim={d.dim}
+              emphasized={freinDimension != null && d.key === freinDimension.key}
               label={d.label}
+              protectiveTone
             />
           ))}
         </div>
         {neuromuscularMissing ? (
           <p className="annotation-clinical mt-4">
-            Efficacité neuromusculaire indisponible — nécessite des sorties course/vélo ≥ 30 min
-            avec FC (et streams synchronisés).
+            Efficacité neuromusculaire indisponible — moyenne de dérive FC sur 14 jours. Il faut au
+            moins une sortie course/vélo ≥ 30 min avec stream FC + vitesse GPS (ou puissance) dans
+            cette fenêtre.
           </p>
         ) : null}
-      </DrillDownSectionCard>
+      </section>
     </MetricDrillDownPage>
   );
 }

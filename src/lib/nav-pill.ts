@@ -1,8 +1,7 @@
 import { cn } from '@/lib/utils';
 
 /** Pill / onglet actif — vert sauge rassurant (pas d'inversion noir). */
-export const navPillActiveClass =
-  'border-primary/20 !bg-primary/10 text-primary shadow-sm shadow-primary/8';
+export const navPillActiveClass = 'border-primary/20 !bg-primary/10 text-primary';
 
 /** Pill / onglet inactif. */
 export const navPillInactiveClass =

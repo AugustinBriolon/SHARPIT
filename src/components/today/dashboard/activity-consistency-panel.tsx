@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Flame } from 'lucide-react';
 import { EyebrowLabel } from '@/components/ui/eyebrow-label';
 import { useIsMobile } from '@/hooks/use-viewport';
 import {
@@ -23,32 +22,25 @@ function formatCellTitle(cell: HeatmapCell): string {
   return `${d}/${m}/${y} · ${sessions}${load}`;
 }
 
-function StreakBadge({ stats }: { stats: ActivityConsistencyStats }) {
+/** Instrument reading — consecutive weeks with load, not a streak game. */
+function ConsistencyReading({ stats }: { stats: ActivityConsistencyStats }) {
   const { currentStreak, activeThisWeek } = stats;
 
   if (currentStreak === 0) {
     return (
-      <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
-        <Flame className="size-3.5 opacity-40" aria-hidden />
-        <span>Aucune série en cours</span>
-      </div>
+      <p className="text-muted-foreground text-data text-xs">Aucune semaine avec charge récente</p>
     );
   }
 
   return (
-    <div className="flex items-center gap-1.5">
-      <Flame
-        className={cn('size-4', activeThisWeek ? 'text-orange-500' : 'text-orange-400/70')}
-        aria-hidden
-      />
-      <span className="text-sm font-semibold text-orange-600 tabular-nums dark:text-orange-400">
-        {currentStreak}
+    <p className="text-data text-xs">
+      <span className="text-foreground font-semibold tabular-nums">{currentStreak}</span>
+      <span className="text-muted-foreground">
+        {' '}
+        sem. avec charge
+        {!activeThisWeek ? ' · semaine en cours encore ouverte' : ''}
       </span>
-      <span className="text-muted-foreground text-xs">
-        sem.{currentStreak > 1 ? 's' : ''}
-        {!activeThisWeek && ' · séance à prévoir cette semaine'}
-      </span>
-    </div>
+    </p>
   );
 }
 
@@ -109,7 +101,7 @@ export function ActivityConsistencyPanel({
             {stats.heatmapDays}
           </p>
         </div>
-        <StreakBadge stats={stats} />
+        <ConsistencyReading stats={stats} />
       </div>
 
       <HeatmapGrid weekColumns={stats.weekColumns} />

@@ -12,8 +12,7 @@ export function RecoveryDecisionSection({
   return (
     <DrillDownHighlightSection
       bullets={rationale}
-      description="Le niveau d'effort le plus réaliste compte tenu de ton état du jour."
-      label="Verdict récupération"
+      label="Intensité conseillée"
       title={intensityLabel}
       titleClassName={intensityClassName}
     />

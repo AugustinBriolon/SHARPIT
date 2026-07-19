@@ -1,4 +1,3 @@
-import type { DimensionResult } from '@/hooks/use-today';
 import { EffortAlertsSection } from '@/components/effort/effort-alerts-section';
 import {
   EffortPmcSection,
@@ -8,7 +7,7 @@ import { EffortDimensionsSection } from '@/components/effort/effort-dimensions-s
 import { EffortHero } from '@/components/effort/effort-hero';
 import { EffortStatsStrip } from '@/components/effort/effort-stats-strip';
 import { EffortVerdictSection } from '@/components/effort/effort-verdict-section';
-import { GlobalDecisionStrip } from '@/components/today/drill-down/global-decision-strip';
+import { EffortWhyBlock } from '@/components/effort/effort-why-block';
 import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
 import {
   DataReliabilityFooter,
@@ -16,6 +15,7 @@ import {
   type MetricTone,
 } from '@/components/today/drill-down/metric-drill-down-page';
 import type { FatigueType, TrainingCapacity } from '@/lib/today-mapping';
+import type { DimensionResult } from '@/hooks/use-today';
 
 export type EffortPageViewProps = {
   date: Date;
@@ -83,7 +83,7 @@ export function EffortPageView(props: EffortPageViewProps) {
     chronicWeeklyAvg,
     tsb,
     confidencePct,
-    confidenceTone,
+    completenessLabel,
     verdict,
     verdictClass,
     verdictKey,
@@ -96,7 +96,6 @@ export function EffortPageView(props: EffortPageViewProps) {
     weeklyTss,
     avgWeeklyTss,
     overreaching,
-    completenessLabel,
     availableDimCount,
     globalDecision,
   } = props;
@@ -113,6 +112,7 @@ export function EffortPageView(props: EffortPageViewProps) {
       }
     >
       <EffortHero
+        confidencePct={confidencePct}
         consecutiveDays={consecutiveDays}
         dailyLoad={dailyLoad}
         date={date}
@@ -131,14 +131,14 @@ export function EffortPageView(props: EffortPageViewProps) {
         onPreviousDay={onPreviousDay}
       />
 
-      <GlobalDecisionStrip context={globalDecision} />
+      <EffortStatsStrip acwr={acwr} tsb={tsb} weeklyTss={weeklyLoad} />
 
-      <EffortStatsStrip
+      <EffortWhyBlock
         acwr={acwr}
-        confidencePct={confidencePct}
-        confidenceTone={confidenceTone}
+        globalDecision={globalDecision}
         tsb={tsb}
-        weeklyTss={weeklyLoad}
+        verdict={verdict}
+        verdictClass={verdictClass}
       />
 
       <EffortVerdictSection
