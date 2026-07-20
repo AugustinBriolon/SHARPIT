@@ -54,6 +54,10 @@ function decision(partial: Partial<DecisionData>): DecisionData {
 }
 
 describe('today-twin-navigation', () => {
+  it('builds planned-session deep links that open the planning dialog', () => {
+    expect(TWIN_DRILL_DOWN.plannedSession('abc-123')).toBe('/training/planning?planned=abc-123');
+  });
+
   it('maps limiting factor systems to twin pages from DecisionState', () => {
     expect(
       resolveLimitingFactorHrefFromDecision(

@@ -2,7 +2,7 @@ import { ActivityType } from '@prisma/client';
 
 /**
  * Sport identity — one chromatic family per ActivityType.
- * Single source for list chips, calendar codes, and (later) activity detail accents.
+ * Single source for list chips, calendar codes, and activity detail accents.
  *
  * | Sport     | Hue family | Why                                      |
  * |-----------|------------|------------------------------------------|
@@ -57,16 +57,6 @@ export const SPORT_IDENTITY_HEX: Record<ActivityType, string> = {
   OTHER: '#2f6b28',
 };
 
-/** Solid accent bar / markers on activity detail. */
-export const SPORT_IDENTITY_BAR: Record<ActivityType, string> = {
-  RUN: 'bg-orange-500',
-  BIKE: 'bg-emerald-500',
-  SWIM: 'bg-sky-500',
-  STRENGTH: 'bg-rose-500',
-  TRIATHLON: 'bg-teal-500',
-  OTHER: 'bg-muted-foreground',
-};
-
 /** Analysis-panel tint for hero metric cards on activity detail. */
 export const SPORT_IDENTITY_PANEL: Record<ActivityType, string> = {
   RUN: 'border-orange-500/30 bg-orange-500/5',
@@ -87,10 +77,6 @@ export function sportIdentityText(type: ActivityType): string {
 
 export function sportIdentityPanel(type: ActivityType): string {
   return SPORT_IDENTITY_PANEL[type];
-}
-
-export function sportIdentityBar(type: ActivityType): string {
-  return SPORT_IDENTITY_BAR[type];
 }
 
 export function sportIdentityHex(type: ActivityType): string {

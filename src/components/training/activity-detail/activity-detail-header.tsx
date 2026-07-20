@@ -3,11 +3,7 @@ import { StickyHeader } from '@/components/layout/sticky-header';
 import { DeleteActivityButton } from '@/components/training/activity-list';
 import { DiscussCoachLink } from '@/components/training/discuss-coach-link';
 import { LinkButton } from '@/components/ui/link-button';
-import {
-  SPORT_IDENTITY_BAR,
-  SPORT_IDENTITY_SURFACE,
-  SPORT_IDENTITY_TEXT,
-} from '@/lib/activity/sport-identity';
+import { SPORT_IDENTITY_SURFACE, SPORT_IDENTITY_TEXT } from '@/lib/activity/sport-identity';
 import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { activitySourceLabel, sportIcon } from './activity-detail-helpers';
@@ -30,7 +26,6 @@ export function ActivityDetailHeader({ activity }: { activity: ActivityDetail })
             <Icon className="size-6" />
           </span>
           <div className="min-w-0">
-            <div className={cn('mb-2 h-1 w-10 rounded-full', SPORT_IDENTITY_BAR[activity.type])} />
             <div className="flex flex-wrap items-center gap-2">
               <ActivityTypeIndicator type={activity.type} />
               <span className="text-muted-foreground text-sm">

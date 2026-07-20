@@ -36,6 +36,18 @@ export type DecisionSnapshotContext = {
   readonly limitingFactorSystem: string | null;
   readonly physicalHealthCapacity: string | null;
   readonly fatigueTrainingCapacity: string | null;
+  /** Present when the decision is a morning session recalibration (V1). */
+  readonly morningRecalibration?: {
+    readonly direction: 'DOWN' | 'UP';
+    readonly changeSummary: string;
+    readonly why: string;
+    readonly fromIntensity: string | null;
+    readonly toIntensity: string | null;
+    readonly fromDurationMin: number | null;
+    readonly toDurationMin: number | null;
+    readonly fromLoad: number | null;
+    readonly toLoad: number | null;
+  };
 };
 
 export type CoachingDecisionRecord = {

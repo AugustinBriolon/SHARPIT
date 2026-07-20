@@ -90,6 +90,7 @@ export function CoachView() {
       return buildPlanningDiscussPrompt({
         synthesisSentence: projection.synthesisSentence,
         horizonDays: discussPlanningHorizon,
+        caution: projection.caution,
       });
     }
 

@@ -52,6 +52,34 @@ describe('buildTodayDaySummary', () => {
     expect(summary.sectionLabel).toBe("Prévu aujourd'hui");
     expect(summary.lines[0].kind).toBe('planned');
     expect(summary.lines[0].secondary).toContain('Endurance');
+    expect(summary.lines[0].plannedSession?.id).toBe('p1');
+  });
+
+  it('attaches the first brick leg for planning deep-links', () => {
+    const summary = buildTodayDaySummary(
+      TODAY,
+      [],
+      [
+        planned({
+          id: 'leg-1',
+          type: 'BIKE',
+          title: 'Vélo',
+          brickGroupId: 'brick-1',
+          brickOrder: 0,
+        }),
+        planned({
+          id: 'leg-2',
+          type: 'RUN',
+          title: 'Course',
+          brickGroupId: 'brick-1',
+          brickOrder: 1,
+        }),
+      ],
+    );
+
+    expect(summary.lines).toHaveLength(1);
+    expect(summary.lines[0].primary).toContain('Brick');
+    expect(summary.lines[0].plannedSession?.id).toBe('leg-1');
   });
 
   it('returns empty state when there is no activity or plan', () => {

@@ -10,6 +10,7 @@ import {
   needsWeatherEnrichment,
   serializeActivityWeather,
 } from '@/lib/activity/activity-weather';
+import { isIndoorActivitySession } from '@/lib/activity/indoor-activity';
 import { runActivityNarrativeAnalysis } from '@/lib/activity-narrative';
 import { fetchForecastPredictions } from '@/lib/planned-session/forecast-fetch';
 import { computeTrainingDayId } from '@/lib/training-day';
@@ -29,6 +30,8 @@ export async function enrichActivityObservedContext(
     select: {
       id: true,
       type: true,
+      title: true,
+      notes: true,
       date: true,
       duration: true,
       weather: true,
@@ -40,6 +43,35 @@ export async function enrichActivityObservedContext(
   });
 
   if (!activity || !OUTDOOR_TYPES.has(activity.type)) {
+    return { weatherUpdated, narrativeRefreshed };
+  }
+
+  // Indoor / virtual / trainer — never fetch outdoor weather (Zwift GPS ≠ outdoor).
+  // Clear any previously persisted outdoor snapshot so coach narratives stay honest.
+  if (isIndoorActivitySession(activity)) {
+    if (activity.weather) {
+      await prisma.activity.update({
+        where: { id: activityId },
+        data: { weather: null },
+      });
+      weatherUpdated = true;
+    }
+
+    const today = isActivityToday(activity.date);
+    const shouldRefreshNarrative =
+      options?.forceNarrative || weatherUpdated || (today && !activity.narrativeAnalyzedAt);
+
+    if (shouldRefreshNarrative) {
+      await prisma.activity.update({
+        where: { id: activityId },
+        data: {
+          narrativeAnalysis: Prisma.DbNull,
+          narrativeAnalyzedAt: null,
+        },
+      });
+      narrativeRefreshed = await runActivityNarrativeAnalysis(activityId);
+    }
+
     return { weatherUpdated, narrativeRefreshed };
   }
 
@@ -121,12 +153,12 @@ export async function enrichTodayActivitiesContext(prisma: PrismaClient): Promis
       date: { gte: today, lt: addDays(today, 1) },
       type: { in: [...OUTDOOR_TYPES] },
     },
-    select: { id: true, weather: true },
+    select: { id: true, type: true, title: true, notes: true, weather: true },
   });
 
   await Promise.all(
     activities
-      .filter(({ weather }) => needsWeatherEnrichment(weather))
+      .filter((row) => !isIndoorActivitySession(row) && needsWeatherEnrichment(row.weather))
       .map(async ({ id }) => {
         try {
           await enrichActivityObservedContext(prisma, id);

@@ -141,12 +141,15 @@ const PLANNING_HORIZON_FR: Record<number, string> = {
 export function buildPlanningDiscussPrompt(input: {
   synthesisSentence: string;
   horizonDays: number;
+  caution?: { label: string; body: string } | null;
 }): string {
   const horizonLabel = PLANNING_HORIZON_FR[input.horizonDays] ?? `${input.horizonDays} jours`;
+  const cautionBlock =
+    input.caution != null ? `\n\n${input.caution.label}\n${input.caution.body}` : '';
 
   return `Je consulte mon planning sur ${horizonLabel}. Voici le conseil du coach :
 
-${input.synthesisSentence}
+${input.synthesisSentence}${cautionBlock}
 
 J'aimerais en discuter avec toi : ce plan me convient-il, et que devrais-je ajuster ?`;
 }

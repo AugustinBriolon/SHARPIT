@@ -70,6 +70,15 @@ export function ProjectedAthleteCard({
 
       <p className="text-verdict text-foreground mt-3 max-w-3xl">{viewModel.synthesisSentence}</p>
 
+      {viewModel.caution ? (
+        <div className="border-signal-caution/25 mt-4 border-l-2 pl-3">
+          <p className="text-label text-signal-caution">{viewModel.caution.label}</p>
+          <p className="text-muted-foreground mt-1.5 max-w-3xl text-sm leading-relaxed">
+            {viewModel.caution.body}
+          </p>
+        </div>
+      ) : null}
+
       <div aria-label="Horizon de projection" className="mt-4 flex flex-wrap gap-1.5" role="group">
         {HORIZON_OPTIONS.map((option) => (
           <button

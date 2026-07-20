@@ -40,6 +40,7 @@ import {
   stravaBackfillSummary,
   type IntegrationId,
 } from '@/lib/integrations/client-sync';
+import { invalidateAfterProviderSync } from '@/lib/query/invalidate-after-provider-sync';
 import { queryKeys } from '@/lib/query/keys';
 import type { RecordChange } from '@/lib/records';
 import { cn } from '@/lib/utils';
@@ -168,10 +169,7 @@ function StravaContent({
         }),
       });
       setSyncRecordChanges(Array.isArray(data.recordChanges) ? data.recordChanges : []);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.activities }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.records }),
-      ]);
+      await invalidateAfterProviderSync(queryClient, { includeBodyComposition: false });
       router.refresh();
       onUpdated?.();
     } finally {
@@ -333,11 +331,7 @@ function GarminContent({
         }),
       });
       setSyncRecordChanges(Array.isArray(data.recordChanges) ? data.recordChanges : []);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['health'] }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.activities }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.records }),
-      ]);
+      await invalidateAfterProviderSync(queryClient);
       router.refresh();
       onUpdated?.();
     } finally {
@@ -435,8 +429,7 @@ function WithingsContent({
           description: err instanceof Error ? err.message : undefined,
         }),
       });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.bodyComposition() });
-      await queryClient.invalidateQueries({ queryKey: ['health'] });
+      await invalidateAfterProviderSync(queryClient);
       router.refresh();
       onUpdated?.();
     } finally {
@@ -583,8 +576,7 @@ function RenphoContent({
           description: err instanceof Error ? err.message : undefined,
         }),
       });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.bodyComposition() });
-      await queryClient.invalidateQueries({ queryKey: ['health'] });
+      await invalidateAfterProviderSync(queryClient);
       router.refresh();
       onUpdated?.();
     } finally {
@@ -667,6 +659,7 @@ function GoogleContent({
   onUpdated?: () => void;
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const calendarsQuery = useGoogleCalendars(integration.connected);
   const { confirm, dialog } = useConfirmDialog();
   const calendars = calendarsQuery.data ?? [];
@@ -712,6 +705,7 @@ function GoogleContent({
           description: googleSyncErrorDescription(err),
         }),
       });
+      await invalidateAfterProviderSync(queryClient, { includeBodyComposition: false });
     } finally {
       router.refresh();
       onUpdated?.();

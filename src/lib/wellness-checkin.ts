@@ -55,6 +55,14 @@ export async function submitMorningWellnessCheckin(
 
   await onWellnessSubmitted(trainingDayId);
 
+  // Best-effort: evaluate morning session recalibration after Twin refresh.
+  try {
+    const { ensureMorningRecalibration } = await import('@/lib/morning-recalibration/service');
+    await ensureMorningRecalibration(trainingDayId);
+  } catch (error) {
+    console.error('[wellness-checkin/morning-recalibration]', error);
+  }
+
   return { alreadyCompleted: false };
 }
 

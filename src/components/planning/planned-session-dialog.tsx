@@ -111,9 +111,15 @@ function submitButtonLabel(pending: boolean, isEdit: boolean, createMode: Create
   return 'Planifier';
 }
 
-function dialogTitle(isEdit: boolean, mode: DialogMode, hasActivity: boolean): string {
+function dialogTitle(
+  isEdit: boolean,
+  mode: DialogMode,
+  hasActivity: boolean,
+  omitLinkedActivityNavigation: boolean,
+): string {
   if (!isEdit) return 'Planifier une séance';
   if (mode === 'edit') return 'Modifier la séance';
+  if (omitLinkedActivityNavigation) return 'Séance planifiée';
   return hasActivity ? 'Séance réalisée' : 'Séance planifiée';
 }
 
@@ -122,6 +128,8 @@ interface PlannedSessionDialogProps {
   defaultDate?: Date;
   goals?: ClientGoal[];
   onClose: () => void;
+  /** When opened from activity detail — hide navigation back to the linked activity. */
+  omitLinkedActivityNavigation?: boolean;
 }
 
 export function PlannedSessionDialog({
@@ -129,6 +137,7 @@ export function PlannedSessionDialog({
   defaultDate,
   goals = [],
   onClose,
+  omitLinkedActivityNavigation = false,
 }: PlannedSessionDialogProps) {
   const queryClient = useQueryClient();
   const isEdit = Boolean(session);
@@ -413,7 +422,9 @@ export function PlannedSessionDialog({
       <Dialog open onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="no-scrollbar max-h-[90vh] min-w-0 overflow-x-hidden overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{dialogTitle(isEdit, mode, Boolean(session?.activity))}</DialogTitle>
+            <DialogTitle>
+              {dialogTitle(isEdit, mode, Boolean(session?.activity), omitLinkedActivityNavigation)}
+            </DialogTitle>
           </DialogHeader>
 
           {isEdit && mode === 'read' && liveSession && (
@@ -432,6 +443,7 @@ export function PlannedSessionDialog({
                 context={contextQuery.data?.context}
                 contextPending={contextQuery.isPending}
                 goals={raceGoals}
+                omitLinkedActivityNavigation={omitLinkedActivityNavigation}
                 session={liveSession}
                 onEdit={handleStartEdit}
               />

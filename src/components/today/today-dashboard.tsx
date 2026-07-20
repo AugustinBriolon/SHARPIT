@@ -60,7 +60,11 @@ export function TodayDashboard() {
       <TodayVerdictHero vm={vm} />
       <TodaySignalStrip metricsRow={vm.hero.metricsRow} />
       <TodayWhyBlock vm={vm} />
-      <TodayActionRow vm={vm} onWellnessCompleted={() => void query.refetch()} />
+      <TodayActionRow
+        trainingDayId={trainingDayId}
+        vm={vm}
+        onWellnessCompleted={() => void query.refetch()}
+      />
       <TodayWeeklyTrajectory vm={vm} />
     </div>
   );

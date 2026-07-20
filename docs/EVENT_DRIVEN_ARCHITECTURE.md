@@ -52,7 +52,7 @@ SYNC ──► OBSERVATION ──?──► FEATURES ──?──► INFERENCE 
 **Critical gaps addressed:**
 
 - Inference not triggered post-sync
-- Today query not invalidated after settings sync
+- Today / presentation / planned-sessions invalidated after settings sync (`invalidateAfterProviderSync`)
 - Feature engine opt-in (`true` required) instead of opt-out
 - Narratives blocking sync path
 - Briefing generated without fresh inference state
@@ -73,15 +73,17 @@ Events are **facts** — immutable, idempotent handlers, traceable via `traceId`
 
 ### 3.2 Data events
 
-| Event                     | Emitted when                | Fast path            | Background            |
-| ------------------------- | --------------------------- | -------------------- | --------------------- |
-| `ObservationIngested`     | Observation Engine persists | Feature invalidation | Debounced inference⁴  |
-| `ActivityImported`        | New activities from sync    | Inference            | Narratives, plan link |
-| `SleepImported`           | Sleep observations batch    | Inference (recovery) | —                     |
-| `BodyCompositionUpdated`  | Renpho/Withings             | —                    | —                     |
-| `ManualWellnessSubmitted` | Morning wellness dialog     | Full inference       | —                     |
-| `SessionCompleted`        | Activity finalized          | Inference            | Narrative             |
-| `PlanChanged`             | Planning CRUD / Google sync | Planning freshness   | —                     |
+| Event                     | Emitted when                | Fast path            | Background                    |
+| ------------------------- | --------------------------- | -------------------- | ----------------------------- |
+| `ObservationIngested`     | Observation Engine persists | Feature invalidation | Debounced inference⁴          |
+| `ActivityImported`        | New activities from sync    | Inference            | Narratives, plan link         |
+| `SleepImported`           | Sleep observations batch    | Inference (recovery) | —                             |
+| `BodyCompositionUpdated`  | Renpho/Withings             | —                    | —                             |
+| `ManualWellnessSubmitted` | Morning wellness dialog     | Full inference       | Morning recalibration ensure⁵ |
+
+⁵ After Twin refresh: `ensureMorningRecalibration` may create a PRESENTED Decision Memory proposal (never auto-applies). Athlete confirms via Today ActionRow.
+| `SessionCompleted` | Activity finalized | Inference | Narrative |
+| `PlanChanged` | Planning CRUD / Google sync | Planning freshness | — |
 
 ### 3.3 Control events
 

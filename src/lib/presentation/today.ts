@@ -92,12 +92,25 @@ export async function buildTodayPresentationViewModel(
   // state-signal shape carries. `activities` also covers the 60-day trend window for
   // effortSpark/trainingLoad, not just today. `snapshot.sessionsDoneToday`/`plannedToday`
   // exist for consumers that only need "did/will the athlete train today" (Coach, Gate).
-  const [snapshot, healthEntries, activities, plannedSessions, athleteProfile] = await Promise.all([
+  const [
+    snapshot,
+    healthEntries,
+    activities,
+    plannedSessions,
+    athleteProfile,
+    morningRecalibration,
+  ] = await Promise.all([
     getOrBuildAthleteSnapshot(trainingDayId),
     getHealthEntries(14, day),
     getActivitiesList({ sinceDays: 60 }),
     getPlannedSessions({ from: dayStart, to: dayEnd }),
     getAthleteProfile(),
+    import('@/lib/morning-recalibration/service').then(({ ensureMorningRecalibration }) =>
+      ensureMorningRecalibration(trainingDayId).catch((error) => {
+        console.error('[today/morning-recalibration]', error);
+        return null;
+      }),
+    ),
   ]);
 
   const sleepTargetMin = athleteProfile?.sleepTargetMinutes ?? SLEEP_TARGET_MIN;
@@ -326,9 +339,21 @@ export async function buildTodayPresentationViewModel(
         primary: line.primary,
         secondary: line.secondary ?? null,
         kind: line.kind,
-        href: line.kind === 'done' ? TWIN_DRILL_DOWN.activity(line.id) : TWIN_DRILL_DOWN.planning,
+        href:
+          line.kind === 'done'
+            ? TWIN_DRILL_DOWN.activity(line.id)
+            : TWIN_DRILL_DOWN.plannedSession(line.plannedSession?.id ?? line.id),
         isDone: line.kind === 'done',
       })),
+      morningRecalibration: morningRecalibration
+        ? {
+            decisionId: morningRecalibration.decisionId,
+            sessionId: morningRecalibration.sessionId,
+            direction: morningRecalibration.direction,
+            changeSummary: morningRecalibration.changeSummary,
+            why: morningRecalibration.why,
+          }
+        : null,
     },
     weeklyTrajectory: {
       eyebrow: trajectoryEyebrow(phase),

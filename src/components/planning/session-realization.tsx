@@ -152,7 +152,14 @@ function PhysicalReassessmentCard({ item }: { item: PhysicalReassessment }) {
   );
 }
 
-export function SessionRealization({ session }: { session: ClientPlannedSession }) {
+export function SessionRealization({
+  session,
+  omitLinkedActivityNavigation = false,
+}: {
+  session: ClientPlannedSession;
+  /** Hide link/card back to the realized activity (e.g. opened from activity detail). */
+  omitLinkedActivityNavigation?: boolean;
+}) {
   const queryClient = useQueryClient();
   const activitiesQuery = useActivities();
   const notesQuery = usePhysicalNotes();
@@ -359,6 +366,10 @@ export function SessionRealization({ session }: { session: ClientPlannedSession 
   }
 
   if (linked) {
+    if (omitLinkedActivityNavigation) {
+      return <div className="space-y-3">{renderLinkedAnalysisSection()}</div>;
+    }
+
     return (
       <div className="border-analysis-border/60 bg-analysis-surface-alt/50 space-y-3 rounded-lg border p-3">
         <div className="flex items-center justify-between gap-2">

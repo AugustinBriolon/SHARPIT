@@ -86,6 +86,30 @@ export async function findCoachingDecisionById(id: string): Promise<CoachingDeci
 }
 
 /**
+ * Latest morning-recalibration decision for a training day (any status).
+ * Identified via snapshotContext.morningRecalibration (PLAN_ADAPTER source).
+ */
+export async function findMorningRecalibrationDecision(
+  trainingDayId: string,
+  sessionId?: string,
+): Promise<CoachingDecisionRecord | null> {
+  const rows = await prisma.coachingDecision.findMany({
+    where: { trainingDayId, source: 'PLAN_ADAPTER' },
+    orderBy: { createdAt: 'desc' },
+    take: 20,
+  });
+
+  for (const row of rows) {
+    const ctx = row.snapshotContext as DecisionSnapshotContext | null;
+    if (!ctx?.morningRecalibration) continue;
+    const decision = toDomain(row);
+    if (sessionId && decision.proposal.sessionId !== sessionId) continue;
+    return decision;
+  }
+  return null;
+}
+
+/**
  * Finds the decision behind a persisted PlannedSession, via the action that created it.
  * Used by the override-detection hook on the manual planned-session edit route.
  */

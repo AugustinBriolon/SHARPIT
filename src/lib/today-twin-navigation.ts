@@ -2,6 +2,7 @@ import {
   resolveConfidenceHrefFromDecision,
   resolveLimitingFactorHrefFromDecision,
 } from '@/lib/decision/projection';
+import { plannedSessionHref } from '@/lib/session-analysis-display';
 
 /**
  * Canonical drill-down routes for Digital Twin dimensions on Today.
@@ -15,6 +16,8 @@ export const TWIN_DRILL_DOWN = {
   sessions: '/training',
   planning: '/training/planning',
   activity: (id: string) => `/training/${id}` as const,
+  /** Opens Planning with the planned-session dialog for this id. */
+  plannedSession: plannedSessionHref,
 } as const;
 
 export type TwinDimension = 'sleep' | 'recovery' | 'effort' | 'adaptation';

@@ -766,6 +766,8 @@ Revised verdict if warranted. Athlete sees that their voice changed the model �
 - No prompt when subjective data is missing and would materially change the verdict.
 - Athlete may not discover the dialog without exploration.
 
+**Addressed (V1):** After wellness + Twin refresh, morning session recalibration may **propose** a bidirectional adjust of today's planned session (DOWN / UP). Athlete must accept or reject — never auto-applied. Stored in Decision Memory (`PLAN_ADAPTER` + `snapshotContext.morningRecalibration`).
+
 ---
 
 ## Moment 4 — Preparing today's session

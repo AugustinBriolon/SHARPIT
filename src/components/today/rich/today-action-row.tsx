@@ -6,6 +6,7 @@ import { CalendarClock } from 'lucide-react';
 import { InstrumentListChip, splitInstrumentMeta } from '@/components/ui/instrument-list-chip';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { MorningWellnessDialog } from '@/components/today/dashboard/morning-wellness-dialog';
+import { MorningRecalibrationDialog } from '@/components/today/rich/morning-recalibration-dialog';
 
 /**
  * Session response — single block answering “quoi aujourd’hui ?”
@@ -13,9 +14,11 @@ import { MorningWellnessDialog } from '@/components/today/dashboard/morning-well
  */
 export function TodayActionRow({
   vm,
+  trainingDayId,
   onWellnessCompleted,
 }: {
   vm: TodayViewModel;
+  trainingDayId: string;
   onWellnessCompleted?: () => void;
 }) {
   const daySummaryEmpty = vm.actionRow.daySummaryLines.length === 0;
@@ -26,11 +29,22 @@ export function TodayActionRow({
       ? vm.actionRow.limitingFacts
       : [];
 
+  const proposal = vm.actionRow.morningRecalibration;
+
   return (
     <section className="space-y-2">
       <div className="flex items-center justify-between gap-2 px-0.5">
         <p className="text-label">{vm.actionRow.actionLabel}</p>
-        <MorningWellnessDialog onCompleted={onWellnessCompleted} />
+        <div className="flex items-center gap-1">
+          {proposal ? (
+            <MorningRecalibrationDialog
+              proposal={proposal}
+              trainingDayId={trainingDayId}
+              onSettled={onWellnessCompleted}
+            />
+          ) : null}
+          <MorningWellnessDialog onCompleted={onWellnessCompleted} />
+        </div>
       </div>
 
       {reminders.length > 0 ? (

@@ -1,14 +1,14 @@
 import type { ReactNode } from 'react';
-import { CalendarCheck, Gauge, Smile, Trophy } from 'lucide-react';
-import { activityTypeLabels } from '@/lib/format';
+import { Gauge, Smile, Trophy } from 'lucide-react';
 import {
   activityWeatherIcon,
   activityWeatherIconClassName,
   formatActivityWeatherChip,
   parseActivityWeather,
 } from '@/lib/activity/activity-weather';
+import { isIndoorActivitySession } from '@/lib/activity/indoor-activity';
 import { recordCategoryHref } from '@/lib/records';
-import { parseSessionAnalysis, plannedSessionHref } from '@/lib/session-analysis-display';
+import { ActivityPlannedSessionChip } from './activity-planned-session-chip';
 import { rpeTone } from './activity-detail-helpers';
 import { ActivityMetaChip } from './activity-meta-chip';
 import type { ActivityDetail, ActivityPerformanceRecordChip } from './types';
@@ -38,7 +38,9 @@ export function ActivityContextChips({
       <ActivityMetaChip key="feeling" icon={Smile} label="Ressenti" value={activity.feeling} />,
     );
   }
-  const weather = parseActivityWeather(activity.weather);
+  const weather = !isIndoorActivitySession(activity)
+    ? parseActivityWeather(activity.weather)
+    : null;
   if (weather) {
     const WeatherIcon = activityWeatherIcon(weather.condition);
     chips.push(
@@ -53,21 +55,7 @@ export function ActivityContextChips({
   }
 
   if (activity.plannedSession) {
-    const planned = activity.plannedSession;
-    const analysis = parseSessionAnalysis(planned.analysis);
-    chips.push(
-      <ActivityMetaChip
-        key="planned"
-        href={plannedSessionHref(planned.id)}
-        icon={CalendarCheck}
-        label="Planifiée"
-        value={
-          analysis
-            ? `${analysis.complianceScore}/100`
-            : (planned.title ?? activityTypeLabels[planned.type])
-        }
-      />,
-    );
+    chips.push(<ActivityPlannedSessionChip key="planned" planned={activity.plannedSession} />);
   }
 
   for (const record of records) {

@@ -39,14 +39,16 @@ export function PlannedSessionReadView({
   context,
   contextPending = false,
   onEdit,
+  omitLinkedActivityNavigation = false,
 }: {
   session: ClientPlannedSession;
   goals: ClientGoal[];
   context: PlannedSessionViewModel['context'] | null | undefined;
   contextPending?: boolean;
   onEdit: () => void;
+  omitLinkedActivityNavigation?: boolean;
 }) {
-  const isRealized = Boolean(session.activity);
+  const isRealized = Boolean(session.activity) && !omitLinkedActivityNavigation;
   const goal = goals.find((g) => g.id === session.goalId);
   const showExposure = sportSupportsOutdoorContext(session.type);
   const exposure = session.exposureSetting as 'INDOOR' | 'OUTDOOR' | 'UNKNOWN' | null | undefined;
@@ -101,7 +103,10 @@ export function PlannedSessionReadView({
         )}
       </div>
 
-      <SessionRealization session={session} />
+      <SessionRealization
+        omitLinkedActivityNavigation={omitLinkedActivityNavigation}
+        session={session}
+      />
 
       <SessionRationaleCard sessionId={session.id} />
 

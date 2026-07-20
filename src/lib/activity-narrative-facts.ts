@@ -17,6 +17,7 @@ import {
   formatActivityWeatherNarrative,
   parseActivityWeather,
 } from '@/lib/activity/activity-weather';
+import { isIndoorActivitySession } from '@/lib/activity/indoor-activity';
 import { resolveActivityEnvironmentPresentation } from '@/lib/environment/activity-environment';
 import { formatDistance, formatDuration } from '@/lib/format';
 import { formatGoalDisplayValue, parseGoalMetricConfig } from '@/lib/goal-metric-config';
@@ -97,7 +98,9 @@ function describeActivity(activity: ActivityRow): string {
     activity.load != null ? `Charge : ${Math.round(activity.load)} TSS` : null,
     activity.rpe != null ? `RPE : ${activity.rpe}/10` : null,
     activity.feeling ? `Ressenti déclaré : ${activity.feeling}` : null,
-    weatherFact(activity.weather),
+    isIndoorActivitySession(activity)
+      ? 'Environnement : intérieur / virtual (pas de météo outdoor)'
+      : weatherFact(activity.weather),
     activity.notes ? `Notes athlète : ${activity.notes}` : null,
   ].filter(Boolean) as string[];
 
@@ -319,6 +322,8 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
         date: activity.date,
         duration: activity.duration,
         weather: activity.weather,
+        title: activity.title,
+        notes: activity.notes,
         observedLocationLat: activity.observedLocationLat,
         observedLocationLng: activity.observedLocationLng,
         observedLocationLabel: activity.observedLocationLabel,

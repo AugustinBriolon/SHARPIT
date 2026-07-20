@@ -97,6 +97,14 @@ export type TodayViewModel = {
       isDone: boolean;
     }>;
     primaryAction?: PresentationAction | null;
+    /** Bidirectional morning session adjustment — athlete must confirm. */
+    morningRecalibration: {
+      decisionId: string;
+      sessionId: string;
+      direction: 'DOWN' | 'UP';
+      changeSummary: string;
+      why: string;
+    } | null;
   };
 
   weeklyTrajectory: {

@@ -75,6 +75,8 @@ function buildPlannedLines(todayPlanned: ClientPlannedSession[]): DaySummaryLine
         activityType: 'TRIATHLON',
         primary: `Brick · ${group.sessions.map((s) => activityTypeLabels[s.type]).join(' → ')}`,
         secondary: formatPlannedDuration(totalMin),
+        // Deep-link opens the first leg dialog (brick analysis lives on that session).
+        plannedSession: group.sessions[0],
       });
     } else {
       const { session } = group;

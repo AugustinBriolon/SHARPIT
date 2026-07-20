@@ -11,6 +11,7 @@ import type { ActivityType } from '@prisma/client';
 import { PrismaEnvironmentalObservationRepository } from '@/infrastructure/environment/prisma-environment-observation-repository';
 import { resolveAthleteGeoLocation } from '@/lib/environment/athlete-location';
 import { activityWeatherWindow } from '@/lib/activity/activity-weather-window';
+import { isIndoorActivitySession } from '@/lib/activity/indoor-activity';
 import { prisma } from '@/lib/prisma';
 import { computeTrainingDayId } from '@/lib/training-day';
 
@@ -20,7 +21,6 @@ export type ActivityEnvironmentPresentation = {
   readonly visible: boolean;
 };
 
-const INDOOR_HINTS = /home\s*trainer|indoor|intérieur|tapis|rulle?r|zwift/i;
 const observationRepo = new PrismaEnvironmentalObservationRepository(prisma);
 
 function emptyActivityEnvironmentPresentation(
@@ -52,10 +52,10 @@ function isEnvironmentalObservationRepoReady(client: typeof prisma): boolean {
 
 function resolveApplicability(activity: {
   type: ActivityType;
-  weather: string | null;
+  title?: string | null;
+  notes?: string | null;
 }): EnvironmentalApplicability {
-  if (activity.type === 'STRENGTH') return 'INDOOR';
-  if (activity.weather && INDOOR_HINTS.test(activity.weather)) return 'INDOOR';
+  if (isIndoorActivitySession(activity)) return 'INDOOR';
   return 'OUTDOOR';
 }
 
@@ -74,6 +74,8 @@ export async function resolveActivityEnvironmentPresentation(input: {
     date: Date;
     duration: number | null;
     weather: string | null;
+    title?: string | null;
+    notes?: string | null;
     observedLocationLat?: number | null;
     observedLocationLng?: number | null;
     observedLocationLabel?: string | null;

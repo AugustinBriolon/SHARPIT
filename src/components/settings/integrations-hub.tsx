@@ -30,7 +30,7 @@ import {
   runWithingsSync,
   type IntegrationId,
 } from '@/lib/integrations/client-sync';
-import { queryKeys } from '@/lib/query/keys';
+import { invalidateAfterProviderSync } from '@/lib/query/invalidate-after-provider-sync';
 import { cn } from '@/lib/utils';
 
 function syncLabel(lastSyncAt: string | null): string {
@@ -179,12 +179,7 @@ export function IntegrationsHub({ payload }: { payload: IntegrationsPayload }) {
         }
       }
 
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.activities }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.records }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.bodyComposition() }),
-        queryClient.invalidateQueries({ queryKey: ['health'] }),
-      ]);
+      await invalidateAfterProviderSync(queryClient);
       router.refresh();
 
       if (results.length > 0) {

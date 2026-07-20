@@ -14,6 +14,7 @@ import {
   shouldShowActivityListLoad,
 } from '@/lib/activity/activity-list-summary';
 import { formatActivityWeatherChip, parseActivityWeather } from '@/lib/activity/activity-weather';
+import { isIndoorActivitySession } from '@/lib/activity/indoor-activity';
 import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
 import { parseSessionAnalysis } from '@/lib/session-analysis-display';
 import { cn } from '@/lib/utils';
@@ -94,9 +95,12 @@ export function ActivityList({
   );
 }
 
-function formatActivityWeatherLine(raw: string | null): string | null {
-  const weather = parseActivityWeather(raw);
-  return weather ? formatActivityWeatherChip(weather) : raw?.trim() || null;
+function formatActivityWeatherLine(
+  activity: Pick<ActivityItem, 'type' | 'title' | 'weather'>,
+): string | null {
+  if (isIndoorActivitySession(activity)) return null;
+  const weather = parseActivityWeather(activity.weather);
+  return weather ? formatActivityWeatherChip(weather) : activity.weather?.trim() || null;
 }
 
 function ActivityChip({ activity }: { activity: ActivityItem }) {
@@ -124,7 +128,7 @@ function ActivityChip({ activity }: { activity: ActivityItem }) {
 
 function ActivityRow({ activity, compact = false }: { activity: ActivityItem; compact?: boolean }) {
   const metric = getActivityListMetric(activity);
-  const weatherLine = formatActivityWeatherLine(activity.weather);
+  const weatherLine = formatActivityWeatherLine(activity);
   const analysis = activity.plannedSession
     ? parseSessionAnalysis(activity.plannedSession.analysis)
     : null;
@@ -133,8 +137,6 @@ function ActivityRow({ activity, compact = false }: { activity: ActivityItem; co
   if (loadValue != null) {
     railLabel = `charge estimée ${loadValue} tss`;
   }
-  const summaryLine =
-    analysis?.summary ?? 'Lecture rapide de la charge et de la conformité de séance.';
   const metaParts = [
     formatDate(new Date(activity.date)),
     formatDuration(activity.duration),
