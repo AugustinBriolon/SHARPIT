@@ -144,6 +144,16 @@ export function CalendarView({
 
   const eventsByDay = useMemo(() => groupEventsByDay(visibleGoogleEvents), [visibleGoogleEvents]);
 
+  const linkedActivityIds = useMemo(
+    () =>
+      new Set(
+        (plannedQuery.data ?? [])
+          .map((p) => p.activityId)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    [plannedQuery.data],
+  );
+
   async function toggleCalendarVisibility(calendarId: string, visible: boolean) {
     setVisibilityError(null);
     const current = calendarsQuery.data ?? [];
@@ -207,7 +217,7 @@ export function CalendarView({
     <CalendarToolbar
       calendars={calendarsQuery.data ?? []}
       calendarsLoading={calendarsQuery.isPending}
-      coachMenu={showCoachMenu ? <SessionsCoachMenu onAction={handleCoachAction} /> : null}
+      coachMenu={showCoachMenu && <SessionsCoachMenu onAction={handleCoachAction} />}
       embedded={embedded}
       googleConnected={googleConnected}
       isMobile={isMobile}
@@ -240,16 +250,6 @@ export function CalendarView({
     weekAnchor,
     activitiesQuery.data ?? [],
     plannedQuery.data ?? [],
-  );
-
-  const linkedActivityIds = useMemo(
-    () =>
-      new Set(
-        (plannedQuery.data ?? [])
-          .map((p) => p.activityId)
-          .filter((id): id is string => Boolean(id)),
-      ),
-    [plannedQuery.data],
   );
 
   async function handleDrop(dateKey: string, targetDate: Date) {

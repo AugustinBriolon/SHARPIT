@@ -108,7 +108,7 @@ export function CalendarToolbar({
   const showTitle = isMobile || !embedded;
 
   const navButtons = (
-    <>
+    <div className="flex items-center gap-1">
       <Button
         aria-label="Période précédente"
         disabled={!mounted}
@@ -130,7 +130,7 @@ export function CalendarToolbar({
       >
         <ChevronRight className="size-4" />
       </Button>
-    </>
+    </div>
   );
 
   if (isMobile) {
@@ -163,37 +163,29 @@ export function CalendarToolbar({
   }
 
   return (
-    <div className="space-y-3">
-      <div className="surface-shell flex flex-wrap items-end justify-between gap-4 rounded-3xl px-4 py-4">
-        <div>
-          {!embedded && <p className="text-label text-primary">Calendar</p>}
-          <h1
-            className={cn(
-              'font-heading font-semibold capitalize',
-              embedded ? 'text-xl' : 'mt-2 text-3xl',
-            )}
-          >
-            {title}
-          </h1>
-        </div>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          {googleConnected && (
-            <CalendarVisibilityMenu
-              calendars={calendars}
-              error={visibilityError}
-              loading={calendarsLoading}
-              onToggle={onToggleCalendar}
-            />
+    <div className="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        {!embedded && <p className="text-label text-primary">Calendar</p>}
+        <h1
+          className={cn(
+            'font-heading font-semibold capitalize',
+            embedded ? 'text-xl' : 'mt-2 text-3xl',
           )}
-          {navButtons}
-          {coachMenu}
-          {showPlanButton && (
-            <Button disabled={!mounted} onClick={onPlan}>
-              <Plus className="size-4" />
-              Planifier
-            </Button>
-          )}
-        </div>
+        >
+          {title}
+        </h1>
+      </div>
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {googleConnected && (
+          <CalendarVisibilityMenu
+            calendars={calendars}
+            error={visibilityError}
+            loading={calendarsLoading}
+            onToggle={onToggleCalendar}
+          />
+        )}
+        {navButtons}
+        {coachMenu}
       </div>
     </div>
   );

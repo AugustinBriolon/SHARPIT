@@ -32,10 +32,10 @@ export function SessionsCoachMenu({
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button className="shrink-0" variant="outline">
+          <Button className="shrink-0 gap-1.5 font-semibold" size="default" variant="default">
             <Sparkles className="size-4" />
-            <span className="hidden lg:block">Coach</span>
-            <ChevronDown className="size-3.5 opacity-60" />
+            <span className="hidden lg:inline">Coach</span>
+            <ChevronDown className="size-3.5 opacity-70 transition-transform duration-150 ease-out group-aria-expanded/button:rotate-180" />
           </Button>
         }
       />
