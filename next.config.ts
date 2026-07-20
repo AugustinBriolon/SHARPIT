@@ -11,7 +11,7 @@ const withSerwist = withSerwistInit({
   swDest: 'public/sw.js',
   disable: process.env.NODE_ENV === 'development',
   additionalPrecacheEntries: [{ url: '/~offline', revision }],
-  globPublicPatterns: ['icons/*.{png,svg}', 'favicon.svg'],
+  globPublicPatterns: ['icons/*.{png,svg}', 'favicon.svg', 'favicon-dark.svg', 'favicon.ico'],
 });
 
 function loadAllowedDevOrigins(): string[] {

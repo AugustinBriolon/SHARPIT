@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { NextResponse } from 'next/server';
+import { BrandIconCanvas } from '@/lib/brand-icon-canvas';
 
 /**
  * iOS splash screens (`apple-touch-startup-image`) — not a Next.js special-file
@@ -32,45 +33,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ variant
   }
 
   const { width, height } = SPLASH_VARIANTS[variant];
-  const markSize = Math.round(Math.min(width, height) * 0.22);
-  const strokeSize = Math.round(markSize * (68 / 120));
-  const radius = Math.round(markSize * (28 / 120));
-  const borderWidth = Math.max(3, Math.round(markSize / 40));
+  const shortSide = Math.min(width, height);
+  const markRatio = (shortSide * 0.22) / width;
 
   return new ImageResponse(
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(145deg, #ecfdf5 0%, #f8faf8 55%, #eff6ff 100%)',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: markSize,
-          height: markSize,
-          borderRadius: radius,
-          background: 'rgba(16, 185, 129, 0.12)',
-          border: `${borderWidth}px solid rgba(16, 185, 129, 0.35)`,
-        }}
-      >
-        <svg fill="none" height={strokeSize} viewBox="0 0 24 24" width={strokeSize}>
-          <path
-            d="M22 12h-4l-3 9L9 3l-3 9H2"
-            stroke="#059669"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={Math.max(2, Math.round(markSize / 60))}
-          />
-        </svg>
-      </div>
-    </div>,
+    <BrandIconCanvas markRatio={markRatio} outerRadius={0} width={width} />,
     { width, height },
   );
 }

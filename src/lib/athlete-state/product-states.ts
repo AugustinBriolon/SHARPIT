@@ -12,7 +12,7 @@ const MESSAGES: Record<FreshnessLevel, Partial<Record<AthleteStateDomain, string
     sleep: 'Les données de sommeil de la nuit ne sont pas encore arrivées.',
     recovery: 'En attente des signaux de récupération (sommeil, VFC).',
     training: "La charge d'entraînement du jour n'a pas encore été mesurée.",
-    body: 'Pas de nouvelle mesure corporelle récente.',
+    // body awaiting_data: intentionally silent — weigh-in lag is not a Today decision signal
   },
   syncing: {
     recovery: 'Récupération de tes dernières données…',

@@ -26,8 +26,9 @@ Largeur max `max-w-3xl` : un seul flux vertical, lecture en &lt; 20 secondes san
 
 ### `SnapshotStatusBanner`
 
-- **Réduit l’incertitude** : explique pourquoi le verdict est absent ou en cours de mise à jour.
-- **Retiré quand** : aucun message (état nominal).
+- **Réduit l’incertitude** : explique pourquoi le verdict est absent ou en cours de mise à jour (sommeil, récup, sync, calcul).
+- **Retiré quand** : aucun message (état nominal), ou en fin de journée si le contenu est déjà affiché.
+- **Pas de nag composition corporelle** : une pesée ancienne n’est pas un signal de décision du matin — le domaine `body` en `awaiting_data` reste silencieux.
 
 ### `TodayVerdictHero`
 

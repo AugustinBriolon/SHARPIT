@@ -217,6 +217,7 @@ const eslintConfig = [
       globals: {
         console: 'readonly',
         process: 'readonly',
+        Buffer: 'readonly',
       },
     },
   },

@@ -16,6 +16,8 @@ Run this checklist on real hardware before shipping any change to `src/sw.ts`, `
 
 - [ ] Light mode: theme color, background, and app icon read correctly in the app switcher and on the home screen
 - [ ] Dark mode: same, plus confirm the splash screen (shown briefly on cold launch) doesn't flash the wrong color before hydration
+- [ ] Browser tab: light chrome uses `favicon.svg`; dark chrome uses `favicon-dark.svg` (Lime Pulse stroke on forest canvas)
+- [ ] Android adaptive icon: maskable asset (`icon-512-maskable.png`) keeps the pulse inside the safe zone when the launcher applies a circle/squircle crop — not cropped like the old identical-to-any file
 - [ ] Splash screen (`/apple-splash/*`, wired via `apple-touch-startup-image` in `layout.tsx`) renders the themed mark on cold launch for each of the 4 device checklist entries above — no blank white flash, and the `media` query actually matches the right image per device (verify by device, not simulator — these `device-width`/`device-height` queries are notoriously easy to get subtly wrong, e.g. width/height swapping between portrait and landscape)
 - [ ] Tap any button/link and confirm no gray highlight box flashes (`-webkit-tap-highlight-color`); long-press a button and confirm no iOS callout menu appears (`-webkit-touch-callout`); confirm text in coach rationale/briefings is still selectable (the callout/tap-highlight reset is scoped to interactive chrome, not body-wide)
 - [ ] Scroll to the very top/bottom of Today and confirm no rubber-band bounce past the document edge (`overscroll-behavior-y: none`)

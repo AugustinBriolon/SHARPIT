@@ -32,8 +32,8 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'SharpIt',
-  description: 'Training intelligence — entraînement, analytics, récupération.',
+  title: 'SHARPIT',
+  description: 'Intelligence sportive — entraînement, récupération, décision.',
   applicationName: 'SHARPIT',
   appleWebApp: {
     capable: true,
@@ -44,10 +44,21 @@ export const metadata: Metadata = {
     telephone: false,
   },
   icons: {
-    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
-    // apple-icon.tsx now generates 3 sizes (180/167/152) via generateImageMetadata
-    // — leave `apple` unset so Next.js's own file-convention resolution wires up
-    // all three <link> tags instead of pinning a single manually-declared one.
+    icon: [
+      { url: '/favicon.ico', sizes: '16x16 32x32', type: 'image/x-icon' },
+      {
+        url: '/favicon.svg',
+        type: 'image/svg+xml',
+        media: '(prefers-color-scheme: light)',
+      },
+      {
+        url: '/favicon-dark.svg',
+        type: 'image/svg+xml',
+        media: '(prefers-color-scheme: dark)',
+      },
+    ],
+    // apple-icon.tsx generates 180/167/152 via generateImageMetadata —
+    // leave `apple` unset so Next.js wires all three <link> tags.
   },
 };
 

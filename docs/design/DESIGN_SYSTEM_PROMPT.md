@@ -43,6 +43,7 @@ Brand primitives live in `src/lib/brand-tokens.ts` (hex) and `src/app/globals.cs
 - Empty / known-nothing: `InkEmptyState` / `surface-ink` / `page-bleed-ink` — not plain muted paragraphs
 - Sport identity colors (`src/lib/activity/sport-identity.ts`): RUN orange · BIKE emerald · SWIM sky · STRENGTH rose · TRIATHLON teal — one hue each; success/done must not reuse them; never Lime Pulse for sport identity
 - Activity detail session content (coach narrative, hero metrics, map route, section accents) uses sport identity tokens (`SPORT_IDENTITY_PANEL` / `TEXT` / `HEX`) — not brand primary / `analysis-panel-alt` green wash; global nav stays Lime Pulse
+- App icons / favicons: single mark (`src/lib/brand-icon.ts` + `BrandIconCanvas`); light SVG + dark SVG + `favicon.ico`; PWA `any` vs `maskable` (80% safe zone) via `yarn icons:pwa` — never legacy emerald `#059669`
 - Secondary text: Pewter `#666666`
 - Surface elevation: luminosity steps + borders, **NOT shadows**; plates = `analysis-panel` / `analysis-panel-alt`
 - Semantic signals (DATA ONLY — unchanged roles):
