@@ -26,20 +26,18 @@ const PREVIEW_LIMIT_DESKTOP = 4;
 
 function SectionLink({ title, href, cta }: { title: string; href: string; cta: string }) {
   return (
-    <div className="mb-2 flex items-center justify-between gap-3 px-0.5">
+    <div className="mb-2 flex items-baseline justify-between gap-3 px-0.5">
       <p className="text-label">{title}</p>
       <Link
         href={href}
         className={cn(
-          'border-primary/25 bg-primary/8 text-primary hover:border-primary/40 hover:bg-primary/12',
-          'inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium',
-          'transition-[border-color,background-color] duration-150',
+          'text-muted-foreground hover:text-primary inline-flex items-center gap-1',
+          'text-data text-[11px] tracking-wide transition-colors',
+          'focus-visible:ring-primary/35 rounded-sm focus-visible:ring-2 focus-visible:outline-hidden',
         )}
       >
         {cta}
-        <span className="text-[10px] tracking-wider" aria-hidden>
-          →
-        </span>
+        <span aria-hidden>→</span>
       </Link>
     </div>
   );

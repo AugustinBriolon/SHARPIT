@@ -6,10 +6,15 @@ import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { LinkButton } from '@/components/ui/link-button';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
+import { InstrumentListChip } from '@/components/ui/instrument-list-chip';
 import { PhysioRail } from '@/components/ui/physio-rail';
 import { useActivityMutations } from '@/hooks/use-data';
-import { activityTypeLabels, formatDate, formatDistance, formatDuration } from '@/lib/format';
+import {
+  getActivityListMetric,
+  shouldShowActivityListLoad,
+} from '@/lib/activity/activity-list-summary';
 import { formatActivityWeatherChip, parseActivityWeather } from '@/lib/activity/activity-weather';
+import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
 import { parseSessionAnalysis } from '@/lib/session-analysis-display';
 import { cn } from '@/lib/utils';
 import { ActivityType } from '@prisma/client';
@@ -95,44 +100,30 @@ function formatActivityWeatherLine(raw: string | null): string | null {
 }
 
 function ActivityChip({ activity }: { activity: ActivityItem }) {
-  const summary = getActivitySummary(activity);
-  const loadValue = activity.load != null ? Math.round(activity.load) : null;
+  const metric = getActivityListMetric(activity);
+  const loadValue = shouldShowActivityListLoad(activity)
+    ? Math.round(activity.load as number)
+    : null;
   const title = activity.title ?? activityTypeLabels[activity.type];
+  const meta = [
+    formatDate(new Date(activity.date)),
+    formatDuration(activity.duration),
+    metric,
+    loadValue != null ? String(loadValue) : undefined,
+  ].filter((part): part is string => Boolean(part));
 
   return (
-    <Link
+    <InstrumentListChip
+      activityType={activity.type}
       href={`/training/${activity.id}`}
-      title={`Voir le détail — ${title}`}
-      className={cn(
-        'border-analysis-border/80 bg-background/50 hover:border-primary/35 hover:bg-muted/40',
-        'focus-visible:ring-primary/35 flex w-full min-w-0 items-center justify-between gap-2',
-        'rounded-lg border px-3 py-2.5 transition-[border-color,background-color] duration-150',
-        'focus-visible:ring-2 focus-visible:outline-hidden',
-      )}
-    >
-      <span className="flex min-w-0 items-center gap-1.5">
-        <ActivityTypeIndicator type={activity.type} />
-        <span className="line-clamp-1 min-w-0 text-sm font-medium">{title}</span>
-        <span className="text-data text-muted-foreground shrink-0 text-xs">
-          {formatDate(new Date(activity.date))}
-          {' · '}
-          {formatDuration(activity.duration)}
-          {summary ? ` · ${summary}` : ''}
-          {loadValue != null ? ` · ${loadValue}` : ''}
-        </span>
-      </span>
-      <span
-        className="text-muted-foreground/70 text-data shrink-0 text-[10px] tracking-wider"
-        aria-hidden
-      >
-        →
-      </span>
-    </Link>
+      meta={meta}
+      title={title}
+    />
   );
 }
 
 function ActivityRow({ activity, compact = false }: { activity: ActivityItem; compact?: boolean }) {
-  const summary = getActivitySummary(activity);
+  const metric = getActivityListMetric(activity);
   const weatherLine = formatActivityWeatherLine(activity.weather);
   const analysis = activity.plannedSession
     ? parseSessionAnalysis(activity.plannedSession.analysis)
@@ -144,6 +135,12 @@ function ActivityRow({ activity, compact = false }: { activity: ActivityItem; co
   }
   const summaryLine =
     analysis?.summary ?? 'Lecture rapide de la charge et de la conformité de séance.';
+  const metaParts = [
+    formatDate(new Date(activity.date)),
+    formatDuration(activity.duration),
+    !compact ? metric : undefined,
+    !compact ? weatherLine : undefined,
+  ].filter((part): part is string => Boolean(part));
 
   return (
     <Link
@@ -154,14 +151,16 @@ function ActivityRow({ activity, compact = false }: { activity: ActivityItem; co
       ].join(' ')}
     >
       <div className="flex items-start justify-between gap-4">
-        <div className="w-full min-w-0 space-y-1">
+        <div className="w-full min-w-0 space-y-1.5">
           <div className="flex w-full items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-1.5">
-              <ActivityTypeIndicator type={activity.type} />
-              <span className={compact ? 'text-sm font-medium' : 'font-medium'}>
-                {activity.title ?? activityTypeLabels[activity.type]}
-              </span>
-            </div>
+            <span
+              className={cn(
+                'line-clamp-1 min-w-0',
+                compact ? 'text-sm font-medium' : 'font-medium',
+              )}
+            >
+              {activity.title ?? activityTypeLabels[activity.type]}
+            </span>
             {activity.plannedSession && (
               <span className="border-analysis-border bg-analysis-surface-alt text-muted-foreground rounded-full border px-2 py-0.5 text-[10px] font-medium">
                 Planifiée{' '}
@@ -171,42 +170,22 @@ function ActivityRow({ activity, compact = false }: { activity: ActivityItem; co
               </span>
             )}
           </div>
-          <p
-            className={compact ? 'text-muted-foreground text-xs' : 'text-muted-foreground text-sm'}
-          >
-            {formatDate(new Date(activity.date))} · {formatDuration(activity.duration)}
-            {summary && !compact ? ` · ${summary}` : ''}
-            {weatherLine ? ` · ${weatherLine}` : ''}
-          </p>
+          <span className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-1.5 text-[11px]">
+            <ActivityTypeIndicator type={activity.type} />
+            {metaParts.map((part, index) => (
+              <span key={`row-meta-${index}`} className="contents">
+                <span className="opacity-30" aria-hidden>
+                  ·
+                </span>
+                <span className="text-data">{part}</span>
+              </span>
+            ))}
+          </span>
         </div>
       </div>
-      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_12rem] sm:items-end">
-        <PhysioRail markerLabel={railLabel} max={180} value={loadValue} />
-        {!compact && (
-          <div className="text-muted-foreground truncate text-xs sm:text-right">{summaryLine}</div>
-        )}
-      </div>
+      <PhysioRail markerLabel={railLabel} max={180} value={loadValue} />
     </Link>
   );
-}
-
-function getActivitySummary(activity: ActivityItem) {
-  switch (activity.type) {
-    case ActivityType.RUN:
-      return formatDistance(activity.runMetrics?.distanceM);
-    case ActivityType.BIKE:
-      return activity.bikeMetrics?.tss ? `${Math.round(activity.bikeMetrics.tss)} TSS` : undefined;
-    case ActivityType.SWIM:
-      return formatDistance(activity.swimMetrics?.distanceM);
-    case ActivityType.STRENGTH:
-      return activity.strengthSets.map((s) => s.exercise).join(', ');
-    case ActivityType.TRIATHLON:
-      return activity.load != null ? `${Math.round(activity.load)} TSS` : 'Multisport';
-    case ActivityType.OTHER:
-      return activity.load != null ? `${Math.round(activity.load)} TSS` : undefined;
-    default:
-      return undefined;
-  }
 }
 
 export function DeleteActivityButton({ id }: { id: string }) {

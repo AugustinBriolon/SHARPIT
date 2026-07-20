@@ -119,7 +119,7 @@ SHARPIT must be able to update its models without requiring a full system rewrit
 2. **Run both models in parallel** during a validation period if the new model produces different outputs.
 3. **Audit downstream effects**: changing a model may change alerts, recommendations, and AI coach behavior. These must be reviewed before deployment.
 4. **Update the domain document**, the ADR, and the `architecture-links.md` file.
-5. **Add a migration note** to the SCIENCE.md entry for the affected model.
+5. **Add a migration note** to the relevant entry under `docs/models/` (and `knowledge/` when the corpus changes).
 
 **Principle:** backward compatibility in the UI is preferred. Athletes who have become familiar with a metric's meaning should not find its behavior changed without explanation.
 

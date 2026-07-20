@@ -16,13 +16,6 @@ function canMergeContextWithAction(eyebrow: string, action: string | null): acti
   return TEMPORAL_CONTEXT_LABELS.has(eyebrow);
 }
 
-function formatLimiter(text: string | null): string | null {
-  if (!text) return null;
-  const cleaned = text.replace(/^limité par\s*/i, '').trim();
-  if (!cleaned) return null;
-  return `Limité par · ${cleaned}`;
-}
-
 /**
  * Morning Instrument plate — first viewport answers one question:
  * what should I do with my state today?

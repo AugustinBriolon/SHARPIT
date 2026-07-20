@@ -1,4 +1,5 @@
 import type { HeroActivity } from '@/components/training/activity-hero-stats';
+import { SPORT_IDENTITY_SURFACE } from '@/lib/activity/sport-identity';
 import { formatDuration } from '@/lib/format';
 import { ActivityType } from '@prisma/client';
 import type { LucideIcon } from 'lucide-react';
@@ -14,15 +15,8 @@ export const sportIcon: Record<ActivityType, LucideIcon> = {
   OTHER: Shapes,
 };
 
-/** Sport identity wraps — bike emerald / swim blue only; no violet/fuchsia. */
-export const sportIconWrap: Record<ActivityType, string> = {
-  RUN: 'bg-signal-vo2/10 text-signal-vo2',
-  BIKE: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-  SWIM: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-  STRENGTH: 'bg-primary/10 text-primary',
-  TRIATHLON: 'bg-highlight text-highlight-foreground',
-  OTHER: 'bg-muted text-muted-foreground',
-};
+/** @deprecated Prefer `SPORT_IDENTITY_SURFACE` from `@/lib/activity/sport-identity`. */
+export const sportIconWrap = SPORT_IDENTITY_SURFACE;
 
 export const chipDot: Record<ChipTone, string> = {
   neutral: 'bg-muted-foreground',

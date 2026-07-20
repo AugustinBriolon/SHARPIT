@@ -1,6 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dumbbell } from 'lucide-react';
+import { SPORT_IDENTITY_SURFACE, SPORT_IDENTITY_TEXT } from '@/lib/activity/sport-identity';
 import { formatClockDuration } from '@/lib/format';
+import { cn } from '@/lib/utils';
+import { Dumbbell } from 'lucide-react';
 import type { ActivityDetail } from './types';
 
 function formatStrengthSetDetail(set: ActivityDetail['strengthSets'][number]): string {
@@ -15,12 +17,14 @@ function formatStrengthSetDetail(set: ActivityDetail['strengthSets'][number]): s
 
 export function ActivityStrengthExercises({ activity }: { activity: ActivityDetail }) {
   const sets = activity.strengthSets;
+  const sportText = SPORT_IDENTITY_TEXT.STRENGTH;
+  const sportSurface = SPORT_IDENTITY_SURFACE.STRENGTH;
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-muted-foreground flex items-center gap-2 text-base font-medium">
-          <Dumbbell className="text-primary size-4" />
+          <Dumbbell className={cn('size-4', sportText)} />
           Exercices
         </CardTitle>
       </CardHeader>
@@ -33,7 +37,12 @@ export function ActivityStrengthExercises({ activity }: { activity: ActivityDeta
                 key={set.id}
                 className="border-analysis-border rounded-analysis flex flex-wrap items-center gap-3 border px-4 py-3"
               >
-                <span className="bg-primary/10 text-primary grid size-7 shrink-0 place-items-center rounded-full font-mono text-xs font-semibold">
+                <span
+                  className={cn(
+                    'grid size-7 shrink-0 place-items-center rounded-full font-mono text-xs font-semibold',
+                    sportSurface,
+                  )}
+                >
                   {i + 1}
                 </span>
                 <span className="min-w-0 flex-1 font-medium">

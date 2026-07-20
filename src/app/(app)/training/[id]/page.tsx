@@ -13,15 +13,8 @@ import { ActivityMetaRow } from '@/components/training/activity-detail/activity-
 import { ActivitySpecsNotes } from '@/components/training/activity-detail/activity-specs-notes';
 import { ActivityStrengthExercises } from '@/components/training/activity-detail/activity-strength-exercises';
 import { ActivityGoalValidationsCard } from '@/components/goals/activity-goal-validations-card';
-import { ActivityEnvironmentInsight } from '@/components/training/activity-environment-insight';
 import { ActivityNarrativeSection } from '@/components/training/activity-narrative-section';
-import { PlannedSessionCompletionPanel } from '@/components/planning/planned-session-context-panel';
 import { enrichActivityObservedContext } from '@/lib/activity/enrich-observed-context';
-import { resolveActivityEnvironmentPresentation } from '@/lib/environment/activity-environment';
-import { getPlannedSessionById } from '@/lib/queries';
-import { buildPlannedSessionCompletionComparison } from '@/lib/planned-session/completion-comparison';
-import { resolvePlannedSessionContext } from '@/lib/planned-session/resolve-context';
-import { buildPlannedSessionViewModel } from '@/lib/presentation/planned-session';
 import { getActivityById, getMultisportLegsForActivity } from '@/lib/queries';
 import { getGoalAchievementsForActivity } from '@/lib/goal-achievements';
 import { isCoachConfigured } from '@/lib/ai';
@@ -54,38 +47,6 @@ export default async function ActivityDetailPage({ params }: PageProps) {
   const coachEnabled = isCoachConfigured();
   const specs = buildActivitySpecs(activity);
   const strengthStats = buildStrengthStats(activity);
-  const environmentPresentation = await resolveActivityEnvironmentPresentation({
-    athleteId: 'default',
-    activity: {
-      id: activity.id,
-      type: activity.type,
-      date: activity.date,
-      duration: activity.duration,
-      weather: activity.weather,
-      observedLocationLat: activity.observedLocationLat,
-      observedLocationLng: activity.observedLocationLng,
-      observedLocationLabel: activity.observedLocationLabel,
-    },
-  });
-
-  let plannedCompletionVm = null;
-  if (activity.plannedSession?.id) {
-    const planned = await getPlannedSessionById(activity.plannedSession.id);
-    if (planned) {
-      const plannedContext = await resolvePlannedSessionContext(planned);
-      const completion = buildPlannedSessionCompletionComparison({
-        plannedContext,
-        observedCorrection: environmentPresentation.visible
-          ? environmentPresentation.correction
-          : null,
-      });
-      plannedCompletionVm = buildPlannedSessionViewModel({
-        session: planned,
-        context: plannedContext,
-        completion,
-      }).completion;
-    }
-  }
 
   return (
     <div className="relative z-0 space-y-8">
@@ -104,14 +65,6 @@ export default async function ActivityDetailPage({ params }: PageProps) {
           narrativeAnalysis={activity.narrativeAnalysis}
           narrativeAnalyzedAt={activity.narrativeAnalyzedAt}
         />
-
-        {environmentPresentation.visible ? (
-          <ActivityEnvironmentInsight correction={environmentPresentation.correction} />
-        ) : null}
-
-        {plannedCompletionVm ? (
-          <PlannedSessionCompletionPanel completion={plannedCompletionVm} />
-        ) : null}
 
         <ActivityGoalValidationsCard validations={goalValidations} />
 

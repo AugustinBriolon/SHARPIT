@@ -41,7 +41,7 @@ Brand primitives live in `src/lib/brand-tokens.ts` (hex) and `src/app/globals.cs
 - Done / success washes: use `STATUS_SURFACE` (`src/lib/presentation/status-surface.ts`) — primary tokens, never raw `emerald-*`
 - Status tiers (same file): `ADEQUATE_TONE` (eucalyptus), `CAUTION_TONE`, `ELEVATED_TONE` (vo2), `RISK_TONE` — never raw Tailwind amber/blue/red for status
 - Empty / known-nothing: `InkEmptyState` / `surface-ink` / `page-bleed-ink` — not plain muted paragraphs
-- Sport identity colors (bike emerald / run orange / swim blue) may keep distinct hues; success/done must not
+- Sport identity colors (`src/lib/activity/sport-identity.ts`): RUN orange · BIKE emerald · SWIM sky · STRENGTH rose · TRIATHLON teal — one hue each; success/done must not reuse them; never Lime Pulse for sport identity
 - Secondary text: Pewter `#666666`
 - Surface elevation: luminosity steps + borders, **NOT shadows**; plates = `analysis-panel` / `analysis-panel-alt`
 - Semantic signals (DATA ONLY — unchanged roles):

@@ -122,7 +122,7 @@ function distributePhases(totalWeeks: number): PhaseBlock[] {
  * - Pas d'ajustement selon sport (marathon vs triathlon vs ultra)
  * - Ne tient pas compte signaux individuels (HRV, TSB, compliance)
  *
- * Voir SCIENCE.md section "Périodisation et planification" pour détails complets.
+ * Voir `docs/models/` (periodization) et `knowledge/training-load.md`.
  */
 const PHASE_LOAD_FACTOR: Record<PlanPhase, number> = {
   BASE: 0.85, // 85% de la charge de référence
@@ -203,7 +203,7 @@ export function generateMacroPlan(params: {
        * - Pas de distinction volume vs intensité (réduit charge globale)
        * - Amélioration future : timing deload adaptatif selon biomarqueurs
        *
-       * Voir SCIENCE.md section "Deload (semaines de récupération)" pour détails.
+       * Voir `docs/models/` et `knowledge/recovery.md` (deload).
        */
       const isDeload =
         (block.phase === 'BASE' || block.phase === 'BUILD') &&

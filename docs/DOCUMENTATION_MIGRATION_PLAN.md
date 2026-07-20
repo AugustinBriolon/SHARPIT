@@ -100,13 +100,13 @@ Read in this order. Total: ~4–6 hours for a complete picture.
 
 ### Root
 
-| File              | Classification          | Disposition                                                                                                     |
-| ----------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `README.md`       | Canonical               | Update doc map to six-document path; fix `docs/adr/` link                                                       |
-| `ARCHITECTURE.md` | Canonical               | Trim duplicated pipeline prose; link to `DOMAIN.md` and `INFERENCE_PLATFORM.md`                                 |
-| `AGENTS.md`       | Canonical               | Update paths after migration                                                                                    |
-| `CLAUDE.md`       | Canonical               | Pointer only — no change                                                                                        |
-| `SCIENCE.md`      | Supporting → Historical | French legacy index; superseded by `docs/models/` + `knowledge/`. Archive; stub points to `knowledge/README.md` |
+| File              | Classification    | Disposition                                                                                                                   |
+| ----------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `README.md`       | Canonical         | Update doc map to six-document path; fix `docs/adr/` link                                                                     |
+| `ARCHITECTURE.md` | Canonical         | Trim duplicated pipeline prose; link to `DOMAIN.md` and `INFERENCE_PLATFORM.md`                                               |
+| `AGENTS.md`       | Canonical         | Update paths after migration                                                                                                  |
+| `CLAUDE.md`       | Canonical         | Pointer only — no change                                                                                                      |
+| `SCIENCE.md`      | Historical (done) | French legacy index archived; root stub removed Jul 2026 → `knowledge/README.md` + `docs/models/` + `docs/archive/SCIENCE.md` |
 
 ---
 
@@ -347,7 +347,7 @@ After 90 days with stubs in place:
 | Broken external links to old paths         | Stubs at every old path indefinitely                                                                                                 |
 | Merge conflicts in PRODUCT.md              | Keep parts as separate include files if git conflicts are painful (`product/manifesto.md` + build script) — prefer single file first |
 | DOMAIN.md becomes too large (~2000 lines)  | Acceptable for canonical domain bible; split only if navigation fails                                                                |
-| SCIENCE.md removal confuses French readers | Stub in French pointing to knowledge README                                                                                          |
+| SCIENCE.md removal confuses French readers | Root stub removed; canonical paths are `knowledge/README.md` + `docs/models/` (+ archive copy)                                       |
 | Agents cached old paths                    | Update AGENTS.md in same PR as stubs                                                                                                 |
 
 ---

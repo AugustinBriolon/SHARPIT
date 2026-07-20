@@ -5,6 +5,7 @@ import { Calendar, Flag, Repeat, Timer } from 'lucide-react';
 import { useId, useState } from 'react';
 import { MetricGoalForm, type MetricGoalFormResult } from '@/components/goals/metric-goal-form';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -390,12 +391,10 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
           </div>
         </div>
 
-        <label className="text-muted-foreground flex items-center gap-2 text-sm">
-          <input
+        <label className="text-foreground flex items-center gap-2.5 text-sm">
+          <Checkbox
             checked={legacyLowerIsBetter}
-            className="border-border size-4 rounded"
-            type="checkbox"
-            onChange={(e) => setLegacyLowerIsBetter(e.target.checked)}
+            onCheckedChange={(checked) => setLegacyLowerIsBetter(checked === true)}
           />
           Plus bas = meilleur
         </label>

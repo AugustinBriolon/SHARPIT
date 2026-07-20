@@ -240,7 +240,7 @@ export function CoachChat({
     : 'Demande conseil à ton coach…';
 
   return (
-    <div className="analysis-panel rounded-analysis-lg flex h-full min-w-0 flex-1 flex-col lg:border">
+    <div className="rounded-analysis-lg flex h-full min-w-0 flex-1 flex-col lg:border">
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
         {header && (
           <div className="bg-background/85 supports-backdrop-filter:bg-background/70 sticky top-0 z-10 backdrop-blur-md">

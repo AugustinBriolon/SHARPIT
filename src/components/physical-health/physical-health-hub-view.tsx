@@ -34,13 +34,13 @@ export function PhysicalHealthHubView() {
       : null;
 
   return (
-    <div className="space-y-3">
+    <>
       {focused && (
         <p className="text-muted-foreground text-sm">
           Focus : <span className="text-foreground font-medium">{focused.label}</span>
         </p>
       )}
       <PhysicalHealthPageView viewModel={query.data} embedded />
-    </div>
+    </>
   );
 }

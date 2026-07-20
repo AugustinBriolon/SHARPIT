@@ -41,7 +41,7 @@ SHARPIT is a **personal sports coaching system** powered by physiological models
 
 ### The non-negotiable constraint
 
-**The domain logic must remain pure.** Functions in `src/lib/domain/` must have zero side effects, zero I/O, and zero framework dependencies. They take data, return data. They are the core of the product and must be tested to the same standard as production code.
+**The domain logic must remain pure.** Functions in `src/core/` (and pure helpers under `src/lib/` that do not touch I/O) must have zero side effects, zero I/O, and zero framework dependencies. They take data, return data. They are the core of the product and must be tested to the same standard as production code.
 
 ---
 
@@ -113,41 +113,43 @@ Every mutation that modifies a list should use `listOptimistic()`. Every mutatio
 ```
 src/
   app/
-    (app)/          ← authenticated routes and page shells
-      api/          ← route handlers
-    (auth)/         ← Clerk sign-in / sign-up
-  components/       ← UI components, organized by feature domain
-  hooks/            ← TanStack Query hooks
-  lib/              ← all domain logic (currently flat — see §3.2)
-  providers/        ← React context providers
+    (app)/              ← authenticated routes and page shells
+    api/                ← route handlers (sibling of (app), not nested under it)
+    sign-in/, sign-up/  ← Clerk auth pages
+    ~offline/           ← PWA offline fallback
+  components/           ← UI by feature domain (+ ui/, layout/, pwa/)
+  hooks/                ← TanStack Query hooks
+  providers/            ← React context providers (Clerk, theme, query)
+  lib/                  ← app orchestration, I/O, presentation, validators (see §3.2)
+  core/                 ← pure domain / Digital Twin / inference (no Prisma, no React)
+  infrastructure/       ← Prisma adapters, Open-Meteo, event bus bindings
 prisma/
   migrations/
   schema.prisma
 scripts/
 ```
 
-### 3.2 Current `src/lib/` structure
+**Purity rule:** domain algorithms live in `src/core/` (preferred) or as pure helpers under `src/lib/` when they are app-facing projections. They must have zero side effects, zero I/O, and zero framework dependencies in the hot path. Functions take data, return data.
 
-`src/lib/` is organized into four committed subdirectories plus the remaining flat files:
+### 3.2 Current `src/lib/` and `src/core/` structure
 
 ```
+src/core/                 ← frozen Core (models, inference, decision, observation, …)
+  inference/              ← recovery, fatigue, adaptation, reasoning, environment, …
+  decision/, features/, observation/, digital-twin/, presentation/, …
 src/lib/
-  integrations/     ← Garmin, Strava, Renpho, Google adapters and sync logic
-                       garmin.ts, garmin-sync.ts, garmin-activities.ts,
-                       garmin-activity-sync.ts, garmin-streams.ts, garmin-feel.ts,
-                       strava.ts, strava-sync.ts, renpho.ts, renpho-sync.ts,
-                       google.ts, google-sync.ts
-  engines/          ← Intelligence engine singletons (lazy-init wrappers)
-                       recovery-engine.ts, fatigue-engine.ts, adaptation-engine.ts,
-                       reasoning-engine.ts, feature-engine.ts, observation-engine.ts
-  query/            ← TanStack Query infrastructure (client-side only)
-                       types.ts, fetchers.ts, optimistic.ts, keys.ts
-  validators/       ← Zod schemas, one file per domain entity
-  [flat]            ← domain utilities, AI coaching, data access, and shared utils
-                       (further subdivision deferred — no functional need yet)
+  integrations/           ← Garmin, Strava, Renpho, Withings, Google sync
+  engines/                ← lazy singletons wrapping core inference for the app
+  query/                  ← TanStack Query keys, fetchers, optimistic helpers
+  validators/             ← Zod schemas
+  presentation/           ← ViewModel builders (pure; I/O stays in api/presentation)
+  product-insight/        ← page insight projections over core/product-insight
+  decision-memory/        ← coaching decision aggregate helpers
+  [domain folders]        ← today, effort, plan-gate, planned-session, travel-context, …
+  [flat utils]            ← format, analytics, periodization, recovery helpers, …
 ```
 
-**Rule:** integration adapters go in `integrations/`, engine singletons go in `engines/`, React Query infrastructure goes in `query/`. Do not add new files to these subdirectories without that clear classification.
+**Rule:** integration adapters → `integrations/`; engine singletons → `engines/`; React Query → `query/`; pure Twin/inference → `core/`. Do not add files to a subdirectory without that clear classification.
 
 ### 3.3 Route handler organization
 
@@ -169,11 +171,13 @@ Components live in `src/components/[domain]/`. A component belongs to the domain
 
 ```
 src/components/
-  dashboard/    ← components used only in the dashboard view
-  analytics/    ← components used only in analytics
-  ui/           ← reusable primitives (Button, Card, Skeleton, etc.)
-  layout/       ← StickyHeader, Nav, Shell — structural components
-  [domain]/     ← one folder per feature domain
+  today/          ← Morning Experience + drill-downs (dashboard/, drill-down/, rich/)
+  sleep/, recovery/, effort/, adaptation/
+  training/, planning/, calendar/, coach/, coach-memory/
+  corps/, goals/, settings/, analytics/, physical-health/
+  ui/             ← reusable primitives (Button, Card, Skeleton, …)
+  layout/         ← StickyHeader, Shell, Sidebar — structural chrome
+  pwa/            ← install / offline / SW toasts
 ```
 
 ---
@@ -194,16 +198,15 @@ SHARPIT has four domain boundaries. Code must not cross boundaries without going
                             ▼
 ┌─────────────────────────────────────────────────────────┐
 │  RECOVERY                                               │
-│  recovery · sleep · alerts                              │
-│  Core models: DailyHealth                               │
+│  recovery · sleep · physical-health                     │
+│  Core models: DailyHealth, Condition                    │
 └───────────────────────────┬─────────────────────────────┘
-                            │ produces: readiness score, ACWR zone, alerts
+                            │ produces: readiness score, ACWR zone, sleep adequacy
                             ▼
 ┌─────────────────────────────────────────────────────────┐
 │  COACHING                                               │
-│  dashboard · proactive-coach · goals · sessions          │
-│  plan-gate (deterministic AI-plan safety validation)     │
-│  decision-memory (recommendation/action/outcome loop)    │
+│  today · goals · sessions · plan-gate                   │
+│  decision-memory (recommendation/action/outcome loop)   │
 │  Core models: Goal, PlannedSession, AthleteProfile      │
 └───────────────────────────┬─────────────────────────────┘
                             │ consumes: all above
@@ -491,7 +494,7 @@ model AthleteProfile {
 
 ### 8.2 Load units
 
-`Activity.load` and `PlannedSession.load` represent **Training Stress Score (TSS) equivalents**. For all sports and all entry paths, load must be normalized to the same unit before being written to the database. Use `estimateActivityLoad()` from `src/lib/domain/training/analytics.ts` as the normalizer.
+`Activity.load` and `PlannedSession.load` represent **Training Stress Score (TSS) equivalents**. For all sports and all entry paths, load must be normalized to the same unit before being written to the database. Use `estimateActivityLoad()` from `src/lib/analytics.ts` as the normalizer.
 
 If a load value cannot be expressed in TSS equivalents, it must not be stored in `load`. Use a sport-specific metrics field instead.
 
@@ -541,7 +544,7 @@ Before writing code, answer:
 
 If the feature involves computation:
 
-1. Create the function in the appropriate domain file under `src/lib/domain/`.
+1. Create the function in the appropriate domain file under `src/core/` (or a pure helper under `src/lib/` when it is an app-facing projection).
 2. Define a minimal input interface. Do not accept Prisma types.
 3. Write the function as a pure, deterministic computation.
 4. Add source comments for any scientific constants.
@@ -587,7 +590,7 @@ Add the new key to `src/lib/query/keys.ts`. Never use inline key arrays.
 
 ### Step 9 — Document
 
-- If you introduced a new scientific constant or algorithm: document it in `SCIENCE.md`.
+- If you introduced a new scientific constant or algorithm: document it in `docs/models/` and/or `knowledge/` (not a root SCIENCE.md).
 - If you made a non-trivial architectural decision: create an ADR via `/ftn-adr`.
 - If the README is now inaccurate: update it.
 
@@ -637,7 +640,7 @@ Use this list on every pull request. A PR is not mergeable until all items are s
 
 The most common and most damaging pattern. `computePmcSeries()`, `buildReadinessView()`, `computeAlerts()` belong in hooks, not in component render functions.
 
-**Symptom:** a component file imports from `src/lib/domain/` directly and calls domain functions inside `useMemo`.
+**Symptom:** a component file imports from `src/core/` (or pure `src/lib/` domain helpers) directly and calls domain functions inside `useMemo`.
 
 **Fix:** extract a `useXState(params)` hook that owns all computation.
 
@@ -741,7 +744,7 @@ export function computeCtl(activities: Activity[]): number {
 **Good:** minimal input type, named constants with sources, pure computation.
 
 ```ts
-// Source: Coggan (2003), TrainingPeaks PMC model. See SCIENCE.md §PMC.
+// Source: Coggan (2003), TrainingPeaks PMC model. See knowledge/training-load.md and docs/models/TRAINING_STRESS_MODEL.md.
 const CTL_TAU = 42;
 
 export interface ActivityForPmc {
@@ -932,19 +935,15 @@ const deleteGoal = useMutation({
 
 These are documented violations of this handbook that exist in the current code. They are tracked for remediation and must not be used as justification for adding new violations.
 
-| File                                             | Violation                                                    | Section  |
-| ------------------------------------------------ | ------------------------------------------------------------ | -------- |
-| `src/components/dashboard/dashboard-view.tsx`    | Business logic (PMC, ACWR, alerts) computed inside component | §6.4, M1 |
-| `src/lib/queries.ts`                             | God object — all models in one file                          | §3.2     |
-| `src/hooks/use-data.ts`                          | All hooks in one file — not split by domain                  | §3.2     |
-| `src/lib/coach-context.ts`                       | Module-level TTL cache — broken in serverless                | M9       |
-| `src/hooks/use-data.ts` `useGoals()`             | Missing `staleTime`                                          | §7.3, M2 |
-| `src/hooks/use-data.ts` `usePlannedSessions()`   | Missing `staleTime`                                          | §7.3, M2 |
-| `src/lib/queries.ts` `createBrickSessions()`     | Multi-step write not wrapped in `$transaction`               | M6       |
-| `src/lib/ai.ts` `COACH_MODEL`                    | Model identifier may not match an existing model             | —        |
-| `prisma/schema.prisma` `AthleteProfile.context`  | Free-text field injected into AI prompt without validation   | M7       |
-| `prisma/schema.prisma` `Activity.id = "default"` | Singleton pattern prevents multi-user migration              | §8.1     |
+| File                                             | Violation                                                    | Section |
+| ------------------------------------------------ | ------------------------------------------------------------ | ------- |
+| `src/lib/queries/`                               | Still multi-domain; planned sessions extracted, rest pending | §3.2    |
+| `src/hooks/use-data.ts`                          | Partially split (`use-planned-sessions.ts`); rest pending    | §3.2    |
+| `src/lib/coach-context.ts`                       | Module-level TTL cache — broken in serverless                | M9      |
+| `src/lib/ai.ts` `COACH_MODEL`                    | Model identifier may not match an existing model             | —       |
+| `prisma/schema.prisma` `AthleteProfile.context`  | Free-text field injected into AI prompt without validation   | M7      |
+| `prisma/schema.prisma` `Activity.id = "default"` | Singleton pattern prevents multi-user migration              | §8.1    |
 
 ---
 
-_Last updated: 2026-07-01. This document must be updated when architectural decisions change._
+_Last updated: 2026-07-20. This document must be updated when architectural decisions change._

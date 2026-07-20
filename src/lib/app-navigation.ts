@@ -1,5 +1,12 @@
 import { Dumbbell, HeartPulse, MessagesSquare, Settings, Sun } from 'lucide-react';
 
+/**
+ * Primary nav uses canonical hrefs only (`/`, `/training`, `/biology`, `/coach`, `/settings`).
+ * `match` may also accept legacy aliases (`/corps`, `/body`, `/seances`, `/calendar`, …)
+ * so deep links and bookmarks keep highlighting — do not add new primary destinations
+ * under those aliases; redirect or map them to the canonical path instead.
+ */
+
 export type NavIcon = typeof Sun;
 
 export type AppNavItem = {

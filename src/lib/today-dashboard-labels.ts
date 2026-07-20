@@ -14,15 +14,8 @@ export const INTENSITY_LABEL: Record<string, string> = {
   RACE: 'Compétition',
 };
 
-/** Sport identity chips — bike emerald / swim blue only; no violet/fuchsia. */
-export const ACTIVITY_COLOR: Record<string, string> = {
-  RUN: 'bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-400',
-  BIKE: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400',
-  SWIM: 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400',
-  STRENGTH: 'bg-primary/10 text-primary',
-  TRIATHLON: 'bg-highlight/80 text-highlight-foreground',
-  OTHER: 'bg-muted text-muted-foreground',
-};
+/** Sport identity chips — re-export canonical map (one hue per ActivityType). */
+export { SPORT_IDENTITY_SURFACE as ACTIVITY_COLOR } from '@/lib/activity/sport-identity';
 
 export const AUTONOMIC_SIGNAL: Record<string, { label: string; colorClass: string }> = {
   ENHANCED: { label: 'SNV: Optimal', colorClass: 'text-primary' },

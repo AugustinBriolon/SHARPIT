@@ -1,8 +1,5 @@
 'use client';
 
-import Link from 'next/link';
-import { Plus, HeartPulse } from 'lucide-react';
-import { useState } from 'react';
 import {
   CorpsDisclaimer,
   CorpsDivider,
@@ -10,16 +7,19 @@ import {
   CorpsSectionHeader,
   CorpsStatCard,
 } from '@/components/corps/corps-ui';
-import { PhysicalNoteDialog } from '@/components/physical/physical-note-dialog';
+import { HeartPulse, Plus } from 'lucide-react';
+import Link from 'next/link';
+import { useState } from 'react';
+
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonCard, SkeletonEyebrow } from '@/components/ui/skeleton-patterns';
 import type { PhysicalHealthViewModel } from '@/core/presentation/physical-health-view-model';
 import { usePhysicalNotes } from '@/hooks/use-physical';
-import type { ClientPhysicalNote } from '@/lib/query/types';
 import { corpsToneFromPhysicalSeverity } from '@/lib/health-status';
+import type { ClientPhysicalNote } from '@/lib/query/types';
 import { PhysicalHealthConditionCardView } from './condition-card';
-import { GlobalDecisionStrip } from '@/components/today/drill-down/global-decision-strip';
+import { PhysicalNoteDialog } from './physical-note-dialog';
 
 type DialogState = { mode: 'create' } | { mode: 'edit'; note: ClientPhysicalNote } | null;
 
@@ -51,11 +51,11 @@ export function PhysicalHealthPageView({
     if (note) setDialog({ mode: 'edit', note });
   }
 
-  const { aggregate, activeConditions, resolvedConditions, globalDecision } = viewModel;
+  const { aggregate, activeConditions, resolvedConditions } = viewModel;
   const hasAny = activeConditions.length > 0 || resolvedConditions.length > 0;
 
   return (
-    <div className="space-y-4">
+    <>
       {!embedded && (
         <CorpsSectionHeader
           action={headerAction}
@@ -166,7 +166,7 @@ export function PhysicalHealthPageView({
           onClose={() => setDialog(null)}
         />
       )}
-    </div>
+    </>
   );
 }
 

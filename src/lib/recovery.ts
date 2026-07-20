@@ -101,7 +101,7 @@ export function feedbackLabel(feedback: string | null): string {
  * TODO : Implémenter modèle HRV transparent basé sur recherche publique
  * (Plews et al. 2013, Buchheit 2014) pour remplacer dépendance Garmin.
  *
- * Voir SCIENCE.md section "Récupération et readiness" pour détails complets.
+ * Voir `docs/models/RECOVERY_MODEL.md` et `knowledge/recovery.md`.
  */
 const READINESS_THRESHOLDS = {
   /** Score >= 75 : Bien récupéré (seuil empirique, pas de source scientifique) */
@@ -215,7 +215,7 @@ export interface FormView {
  * - Contexte important : TSB -30 après bloc intensif planifié ≠ TSB -30 accumulé progressivement
  * - À combiner avec HRV, sommeil, RPE, ressenti
  *
- * Voir SCIENCE.md section "Performance Management Chart (PMC)" pour détails complets.
+ * Voir `docs/models/TRAINING_STRESS_MODEL.md` et `knowledge/training-load.md` (PMC).
  */
 const TSB_THRESHOLDS = {
   /** TSB > +15 : Frais, affûté (peu de fatigue résiduelle) */

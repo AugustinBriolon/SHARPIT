@@ -130,9 +130,6 @@ export function PlanningView({
   const hasActionableAlternative = Boolean(
     showPlanningIntelligence && scenarioComparisonQuery.data?.visible,
   );
-  const projectionRiskDayId = showPlanningIntelligence
-    ? (projectionQuery.data?.highestRiskTrainingDayId ?? null)
-    : null;
 
   const deepLinkSession = useMemo(() => {
     if (!plannedIdFromUrl || plannedQuery.isPending) return null;

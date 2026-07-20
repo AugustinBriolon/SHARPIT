@@ -19,12 +19,12 @@ export function RecoveryWhyBlock({
 }) {
   const [firstReason, ...rest] = rationale;
   let primary: string | null = null;
-  if (intensityLabel) {
-    primary = firstReason
-      ? `${intensityLabel} — ${firstReason}`
-      : limiterLabel
-        ? `${intensityLabel} — limité par ${limiterLabel}`
-        : intensityLabel;
+  if (intensityLabel && firstReason) {
+    primary = `${intensityLabel} — ${firstReason}`;
+  } else if (intensityLabel && limiterLabel) {
+    primary = `${intensityLabel} — limité par ${limiterLabel}`;
+  } else if (intensityLabel) {
+    primary = intensityLabel;
   } else if (limiterLabel) {
     primary = `Facteur limitant · ${limiterLabel}`;
   }

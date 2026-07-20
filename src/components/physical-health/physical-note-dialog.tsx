@@ -2,8 +2,9 @@
 
 import { BodySide, PhysicalCategory, PhysicalStatus } from '@prisma/client';
 import { format } from 'date-fns';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -33,6 +34,8 @@ interface Props {
   onClose: () => void;
 }
 
+const BODY_PART_NONE = '__none__';
+
 export function PhysicalNoteDialog({ note, onClose }: Props) {
   const isEdit = Boolean(note);
   const { create, update, remove } = usePhysicalNoteMutations();
@@ -40,10 +43,17 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
   const [category, setCategory] = useState<PhysicalCategory>(note?.category ?? 'PAIN');
   const [status, setStatus] = useState<PhysicalStatus>(note?.status ?? 'ACTIVE');
   const [side, setSide] = useState<BodySide>(note?.side ?? 'NA');
+  const [bodyPart, setBodyPart] = useState(note?.bodyPart ?? '');
   const [severity, setSeverity] = useState<number>(note?.severity ?? 3);
   const [affectsTraining, setAffectsTraining] = useState(note?.affectsTraining ?? true);
   const [error, setError] = useState<string | null>(null);
   const { confirm, dialog } = useConfirmDialog();
+
+  const bodyPartOptions = useMemo(() => {
+    const parts = [...COMMON_BODY_PARTS];
+    if (bodyPart && !parts.includes(bodyPart)) parts.unshift(bodyPart);
+    return parts;
+  }, [bodyPart]);
 
   const pending = create.isPending || update.isPending || remove.isPending;
 
@@ -58,7 +68,7 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
       severity,
       affectsTraining,
       title: String(fd.get('title') || '').trim(),
-      bodyPart: (fd.get('bodyPart') as string) || null,
+      bodyPart: bodyPart.trim() || null,
       description: (fd.get('description') as string) || null,
       startDate: new Date(`${String(fd.get('startDate'))}T12:00:00`),
     };
@@ -158,19 +168,23 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="bodyPart">Zone du corps</Label>
-                <Input
-                  defaultValue={note?.bodyPart ?? ''}
-                  id="bodyPart"
-                  list="body-parts"
-                  name="bodyPart"
-                  placeholder="Genou, bassin, pied…"
-                />
-                <datalist id="body-parts">
-                  {COMMON_BODY_PARTS.map((p) => (
-                    <option key={p} value={p} />
-                  ))}
-                </datalist>
+                <Label>Zone du corps</Label>
+                <Select
+                  value={bodyPart || BODY_PART_NONE}
+                  onValueChange={(v) => setBodyPart(!v || v === BODY_PART_NONE ? '' : v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue>{bodyPart || 'Non précisée'}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={BODY_PART_NONE}>Non précisée</SelectItem>
+                    {bodyPartOptions.map((part) => (
+                      <SelectItem key={part} value={part}>
+                        {part}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Côté</Label>
@@ -215,14 +229,15 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
                   type="date"
                 />
               </div>
-              <label className="text-muted-foreground flex items-end gap-2 pb-2 text-sm">
-                <input
+              <label className="flex items-end gap-2.5 pb-2">
+                <Checkbox
                   checked={affectsTraining}
-                  className="border-border size-4 rounded"
-                  type="checkbox"
-                  onChange={(e) => setAffectsTraining(e.target.checked)}
+                  className="mb-0.5"
+                  onCheckedChange={(checked) => setAffectsTraining(checked === true)}
                 />
-                Pris en compte par le coach
+                <span className="text-foreground text-sm leading-snug">
+                  Pris en compte par le coach
+                </span>
               </label>
             </div>
 

@@ -12,12 +12,14 @@ import { ZoneDistribution } from '@/components/training/zone-distribution';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useActivityStream } from '@/hooks/use-data';
+import { sportIdentityHex } from '@/lib/activity/sport-identity';
 import type { ZoneBucket } from '@/lib/activity-analysis';
 import { normalizeStreamChartData } from '@/lib/stream-chart-data';
 import { cn } from '@/lib/utils';
 
 export function ActivityInsights({ activityId, type }: { activityId: string; type: ActivityType }) {
   const { data, isPending, isError } = useActivityStream(activityId);
+  const routeColor = sportIdentityHex(type);
   const normalizedSamples = useMemo(
     () => (data?.available && data.samples ? normalizeStreamChartData(data.samples) : []),
     [data],
@@ -72,7 +74,7 @@ export function ActivityInsights({ activityId, type }: { activityId: string; typ
     <div className="space-y-8">
       {path && path.length > 1 && (
         <div className="h-80 w-full sm:h-96">
-          <RouteMap path={path} />
+          <RouteMap key={`${activityId}-${type}`} lineColor={routeColor} path={path} />
         </div>
       )}
 

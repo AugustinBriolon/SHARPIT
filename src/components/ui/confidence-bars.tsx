@@ -17,16 +17,21 @@ export function ConfidenceBars({
       title={`Confiance ${count}/3`}
       aria-hidden
     >
-      {[1, 2, 3].map((level) => (
-        <span
-          key={level}
-          className={cn(
-            'w-1.5 rounded-full',
-            level === 1 ? 'h-1.5' : level === 2 ? 'h-2' : 'h-2.5',
-            level <= count ? 'bg-primary opacity-90' : 'bg-primary opacity-20',
-          )}
-        />
-      ))}
+      {[1, 2, 3].map((level) => {
+        let heightClass = 'h-2.5';
+        if (level === 1) heightClass = 'h-1.5';
+        else if (level === 2) heightClass = 'h-2';
+        return (
+          <span
+            key={level}
+            className={cn(
+              'w-1.5 rounded-full',
+              heightClass,
+              level <= count ? 'bg-primary opacity-90' : 'bg-primary opacity-20',
+            )}
+          />
+        );
+      })}
     </div>
   );
 }

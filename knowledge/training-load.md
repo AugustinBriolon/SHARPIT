@@ -85,7 +85,7 @@ The PMC is 50 years old. It is also the most extensively validated training load
 ACWR = Σ(load last 7 days) / (Σ(load last 42 days) / 6)
 ```
 
-The denominator is the average weekly load over the preceding 6 weeks, not the total. This was a critical bug in the original implementation (dividing by 6 without a clear physiological rationale) that was identified and corrected. See SCIENCE.md for the correction history.
+The denominator is the average weekly load over the preceding 6 weeks, not the total. This was a critical bug in the original implementation (dividing by 6 without a clear physiological rationale) that was identified and corrected. See `docs/archive/SCIENCE.md` and `docs/models/TRAINING_STRESS_MODEL.md` for the correction history.
 
 ### Thresholds
 

@@ -41,7 +41,7 @@ export function ActivityChip({ activity }: { activity: ClientActivity }) {
       title={activity.title ?? activityTypeLabels[activity.type]}
       onClick={(e) => e.stopPropagation()}
     >
-      <ActivityTypeIndicator type={activity.type} />
+      <ActivityTypeIndicator type={activity.type} variant="code" />
       <span className="truncate">{activity.title ?? activityTypeLabels[activity.type]}</span>
     </Link>
   );
@@ -98,7 +98,7 @@ function BrickLeg({ session, onEdit }: { session: ClientPlannedSession; onEdit: 
         onEdit();
       }}
     >
-      <ActivityTypeIndicator type={session.type} />
+      <ActivityTypeIndicator type={session.type} variant="code" />
       {done ? (
         <Check className="size-3 shrink-0" style={{ color: accent }} />
       ) : (
@@ -147,7 +147,7 @@ export function PlannedChip({
         if (!done) setDragSessionId(session.id);
       }}
     >
-      <ActivityTypeIndicator type={session.type} />
+      <ActivityTypeIndicator type={session.type} variant="code" />
       {done ? (
         <Check className="size-3 shrink-0" style={{ color: accent }} />
       ) : (

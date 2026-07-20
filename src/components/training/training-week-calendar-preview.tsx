@@ -54,7 +54,7 @@ function PreviewActivityChip({ activity }: { activity: ClientActivity }) {
       href={`/training/${activity.id}`}
       title={activity.title ?? activityTypeLabels[activity.type]}
     >
-      <ActivityTypeIndicator type={activity.type} />
+      <ActivityTypeIndicator type={activity.type} variant="code" />
       <span className="truncate">{activity.title ?? activityTypeLabels[activity.type]}</span>
     </Link>
   );
@@ -71,7 +71,7 @@ function PreviewPlannedChip({ session }: { session: ClientPlannedSession }) {
         'border-analysis-border bg-analysis-surface-alt/50 flex items-center gap-1 truncate rounded-[6px] border border-dashed px-1.5 py-0.5 text-[10px]',
       )}
     >
-      <ActivityTypeIndicator type={session.type} />
+      <ActivityTypeIndicator type={session.type} variant="code" />
       <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
       <span className="text-muted-foreground truncate">{label}</span>
     </div>

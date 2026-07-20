@@ -13,6 +13,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMultisportStreams } from '@/hooks/use-data';
 import type { ZoneBucket } from '@/lib/activity-analysis';
+import { sportIdentityHex } from '@/lib/activity/sport-identity';
 import { formatDistance, formatDuration } from '@/lib/format';
 import type { MultisportLegKind } from '@/lib/multisport';
 import { normalizeStreamChartData } from '@/lib/stream-chart-data';
@@ -140,7 +141,7 @@ function SportLegInsights({ entry }: { entry: MultisportLegStream }) {
 
       {showMap && (
         <div className="h-72 w-full sm:h-80">
-          <RouteMap lineColor={leg.kind === 'swim' ? '#2563eb' : undefined} path={path} />
+          <RouteMap key={`${type}-${leg.label}`} lineColor={sportIdentityHex(type)} path={path} />
         </div>
       )}
 

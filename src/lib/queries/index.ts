@@ -3,29 +3,24 @@ import { clientFromTokens, garminTokensFromStorage } from '@/lib/integrations/ga
 import { fetchGarminMultisportLegs } from '@/lib/integrations/garmin-multisport';
 import { getGarminAccount } from '@/lib/integrations/garmin-sync';
 import { isMultisportLegArray, type MultisportLeg } from '@/lib/multisport';
+import { activityInclude, activityListSelect } from '@/lib/queries/activity-include';
 import { ActivityType, Prisma } from '@prisma/client';
 import { addDays, endOfDay, startOfDay } from 'date-fns';
-import { prisma } from './prisma';
+import { prisma } from '@/lib/prisma';
 
-const plannedSessionSummarySelect = {
-  id: true,
-  title: true,
-  date: true,
-  type: true,
-  durationMin: true,
-  description: true,
-  intensity: true,
-  analysis: true,
-  analyzedAt: true,
-} satisfies Prisma.PlannedSessionSelect;
-
-const activityInclude = {
-  runMetrics: true,
-  bikeMetrics: true,
-  swimMetrics: true,
-  strengthSets: { orderBy: { order: 'asc' as const } },
-  plannedSession: { select: plannedSessionSummarySelect },
-};
+export {
+  createBrickSessions,
+  createPlannedSession,
+  deletePlannedSession,
+  getBrickAnalysis,
+  getBrickSessions,
+  getPlannedSessionById,
+  getPlannedSessions,
+  linkPlannedSessionActivity,
+  setBrickAnalysis,
+  setPlannedSessionAnalysis,
+  updatePlannedSession,
+} from '@/lib/queries/planned-sessions';
 
 export async function getActivities(params?: { type?: ActivityType; limit?: number }) {
   return prisma.activity.findMany({
@@ -35,34 +30,6 @@ export async function getActivities(params?: { type?: ActivityType; limit?: numb
     take: params?.limit,
   });
 }
-
-/**
- * Sélection LÉGÈRE pour les listes/analytics côté client : uniquement les
- * champs réellement affichés ou agrégés (PMC, charge, résumé de ligne). Évite de
- * transférer toutes les sous-métriques de chaque activité (payload ÷ ~3).
- */
-const activityListSelect = {
-  id: true,
-  type: true,
-  date: true,
-  title: true,
-  duration: true,
-  load: true,
-  rpe: true,
-  feeling: true,
-  weather: true,
-  notes: true,
-  source: true,
-  stravaId: true,
-  garminId: true,
-  createdAt: true,
-  updatedAt: true,
-  runMetrics: { select: { distanceM: true } },
-  bikeMetrics: { select: { tss: true, avgPower: true } },
-  swimMetrics: { select: { distanceM: true } },
-  strengthSets: { select: { exercise: true }, orderBy: { order: 'asc' as const } },
-  plannedSession: { select: plannedSessionSummarySelect },
-} satisfies Prisma.ActivitySelect;
 
 export async function getActivitiesList(params?: {
   type?: ActivityType;
@@ -256,101 +223,6 @@ export async function getBodyCompositionMeasurements(days?: number) {
     orderBy: { measuredAt: 'desc' },
   });
   return dedupeBodyCompositionByDay(rows);
-}
-
-const plannedSessionInclude = {
-  activity: { include: activityInclude },
-};
-
-export async function getPlannedSessions(params?: { from?: Date; to?: Date }) {
-  return prisma.plannedSession.findMany({
-    where:
-      params?.from || params?.to ? { date: { gte: params?.from, lte: params?.to } } : undefined,
-    include: plannedSessionInclude,
-    orderBy: { date: 'asc' },
-  });
-}
-
-export async function getPlannedSessionById(id: string) {
-  return prisma.plannedSession.findUnique({
-    where: { id },
-    include: plannedSessionInclude,
-  });
-}
-
-export async function linkPlannedSessionActivity(id: string, activityId: string | null) {
-  return prisma.plannedSession.update({
-    where: { id },
-    data: {
-      activityId,
-      completed: activityId != null,
-      ...(activityId == null ? { analysis: Prisma.DbNull, analyzedAt: null } : {}),
-    },
-    include: plannedSessionInclude,
-  });
-}
-
-export async function setPlannedSessionAnalysis(id: string, analysis: Prisma.InputJsonValue) {
-  return prisma.plannedSession.update({
-    where: { id },
-    data: { analysis, analyzedAt: new Date() },
-    include: plannedSessionInclude,
-  });
-}
-
-export async function createPlannedSession(data: Prisma.PlannedSessionUncheckedCreateInput) {
-  return prisma.plannedSession.create({ data });
-}
-
-/**
- * Crée plusieurs séances liées en un seul "brick" (enchaînement multisport,
- * ex. vélo → course). Chaque jambe reste une séance autonome mais partage un
- * `brickGroupId` commun ; `brickOrder` suit l'ordre du tableau fourni.
- */
-export async function createBrickSessions(
-  legs: Omit<Prisma.PlannedSessionUncheckedCreateInput, 'brickGroupId' | 'brickOrder'>[],
-) {
-  const brickGroupId = crypto.randomUUID();
-  const created = [];
-  for (let i = 0; i < legs.length; i++) {
-    created.push(
-      await prisma.plannedSession.create({
-        data: { ...legs[i], brickGroupId, brickOrder: i },
-      }),
-    );
-  }
-  return created;
-}
-
-export async function getBrickSessions(brickGroupId: string) {
-  return prisma.plannedSession.findMany({
-    where: { brickGroupId },
-    include: plannedSessionInclude,
-    orderBy: { brickOrder: 'asc' },
-  });
-}
-
-export async function getBrickAnalysis(brickGroupId: string) {
-  return prisma.brickAnalysis.findUnique({ where: { brickGroupId } });
-}
-
-export async function setBrickAnalysis(brickGroupId: string, content: Prisma.InputJsonValue) {
-  return prisma.brickAnalysis.upsert({
-    where: { brickGroupId },
-    create: { brickGroupId, content },
-    update: { content, generatedAt: new Date() },
-  });
-}
-
-export async function updatePlannedSession(
-  id: string,
-  data: Prisma.PlannedSessionUncheckedUpdateInput,
-) {
-  return prisma.plannedSession.update({ where: { id }, data });
-}
-
-export async function deletePlannedSession(id: string) {
-  return prisma.plannedSession.delete({ where: { id } });
 }
 
 const physicalNoteInclude = {

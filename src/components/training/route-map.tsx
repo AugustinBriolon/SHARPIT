@@ -3,15 +3,17 @@
 import dynamic from 'next/dynamic';
 import { memo, useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SPORT_IDENTITY_HEX } from '@/lib/activity/sport-identity';
 
 const RouteMapInner = dynamic(() => import('./route-map-inner'), {
   ssr: false,
   loading: () => <Skeleton className="h-full w-full" />,
 });
 
+/** MapLibre rejects CSS vars — always pass a concrete hex (sport identity). */
 export function RouteMap({
   path,
-  lineColor = 'var(--primary)',
+  lineColor = SPORT_IDENTITY_HEX.OTHER,
 }: {
   path: [number, number][];
   lineColor?: string;

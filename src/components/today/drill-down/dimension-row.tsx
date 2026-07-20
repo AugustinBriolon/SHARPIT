@@ -40,18 +40,17 @@ export function DrillDownDimensionRow({
   const invert = higherIsWorse ?? invertScore;
   const { score, available } = dim;
   const colorScore = resolveColorScore(available, score, invert);
-  const colorClass =
-    colorScore !== null
-      ? protectiveTone
-        ? mapScoreToColorClassProtective(colorScore)
-        : mapScoreToColorClass(colorScore)
-      : 'text-muted-foreground/40';
-  const barColorClass =
-    colorScore !== null
-      ? protectiveTone
-        ? mapScoreToBarColorClassProtective(colorScore)
-        : mapScoreToBarColorClass(colorScore)
-      : 'bg-muted-foreground/10';
+
+  let colorClass = 'text-muted-foreground/40';
+  let barColorClass = 'bg-muted-foreground/10';
+  if (colorScore !== null) {
+    colorClass = protectiveTone
+      ? mapScoreToColorClassProtective(colorScore)
+      : mapScoreToColorClass(colorScore);
+    barColorClass = protectiveTone
+      ? mapScoreToBarColorClassProtective(colorScore)
+      : mapScoreToBarColorClass(colorScore);
+  }
 
   return (
     <div className="space-y-1.5">

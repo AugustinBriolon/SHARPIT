@@ -1,4 +1,3 @@
-import { PhysioRail } from '@/components/ui/physio-rail';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
@@ -84,45 +83,6 @@ export function SkeletonAnalysisPanelAlt({
   );
 }
 
-/** Renders the real PhysioRail in its null state — geometry identical by construction. */
-export function SkeletonPhysioRail({
-  showCaption = false,
-  size = 'default',
-  className,
-}: {
-  showCaption?: boolean;
-  size?: 'default' | 'slim';
-  className?: string;
-}) {
-  return (
-    <div className={cn('animate-pulse', className)}>
-      <PhysioRail max={100} size={size} value={null} />
-      {showCaption ? <Skeleton className="mt-1.5 h-2.5 w-28 rounded-full" /> : null}
-    </div>
-  );
-}
-
-/** Matches RadialScoreCard: label + reading + value + slim PhysioRail + explore link. */
-export function SkeletonRadialScoreCard({ className }: { className?: string }) {
-  return (
-    <div className={cn('analysis-panel rounded-analysis flex flex-col gap-3 px-4 py-4', className)}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <Skeleton className="h-4 w-16 rounded-full" />
-          <Skeleton className="mt-1 h-[1.2rem] w-28 max-w-full rounded-full" />
-        </div>
-        <Skeleton className="h-8 w-12 shrink-0 rounded-lg" />
-      </div>
-      <div className="space-y-2">
-        <SkeletonPhysioRail size="slim" />
-        <div className="flex items-center justify-between gap-2">
-          <span className="explore-link opacity-60">lecture physiologique</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /** Matches DrillDownDimensionRow: label + description + score + h-1.5 bar. */
 export function SkeletonDimensionRow({ className }: { className?: string }) {
   return (
@@ -166,7 +126,7 @@ export function SkeletonStatsStrip({
   );
 }
 
-/** Matches InsightNarrative section cards. */
+/** Matches insight narrative section cards. */
 export function SkeletonInsightSection({
   blocks = 1,
   className,
@@ -186,61 +146,5 @@ export function SkeletonInsightSection({
         ))}
       </div>
     </section>
-  );
-}
-
-/** @deprecated Prefer SkeletonRadialScoreCard — kept for gradual migration. */
-export function SkeletonMetricRail({
-  items = 4,
-  className,
-}: {
-  items?: number;
-  className?: string;
-}) {
-  return (
-    <div className={cn('grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4', className)}>
-      {Array.from({ length: items }).map((_, index) => (
-        <SkeletonRadialScoreCard key={index} />
-      ))}
-    </div>
-  );
-}
-
-export function SkeletonHeroSplit({
-  rightCard = true,
-  className,
-}: {
-  rightCard?: boolean;
-  className?: string;
-}) {
-  return (
-    <SkeletonAnalysisPanelAlt className={className}>
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_18rem] xl:items-start">
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="space-y-2">
-              <SkeletonEyebrow />
-              <SkeletonTitle size="drill-hero" />
-            </div>
-            <SkeletonPill className="h-6 w-24 rounded-full" />
-          </div>
-          <SkeletonText lineClassName="h-[1.4rem]" widths={['88%', '72%']} />
-          <div className="max-w-xl space-y-2">
-            <div className="flex items-center justify-between gap-3">
-              <Skeleton className="h-3 w-24 rounded-full" />
-              <Skeleton className="h-2.5 w-36 rounded-full" />
-            </div>
-            <SkeletonPhysioRail />
-          </div>
-        </div>
-        {rightCard ? (
-          <div className="analysis-panel rounded-analysis px-4 py-4">
-            <SkeletonEyebrow className="w-28" />
-            <Skeleton className="mt-2 h-9 w-16" />
-            <SkeletonText className="mt-2" widths={['100%', '78%']} />
-          </div>
-        ) : null}
-      </div>
-    </SkeletonAnalysisPanelAlt>
   );
 }

@@ -108,4 +108,4 @@ Today couvre ~80 % des questions. Investigation :
 - `/today/sleep` — détail sommeil
 - `/today/recovery` — récupération, VFC, dimensions
 - `/today/effort` — charge, strain, adaptation
-- `/seances?tab=planning` — planning complet
+- `/training` (planning tab / legacy `/seances?tab=planning`) — planning complet

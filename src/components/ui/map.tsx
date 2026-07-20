@@ -1073,7 +1073,7 @@ function MapRoute({
   const sourceId = `route-source-${id}`;
   const layerId = `route-layer-${id}`;
 
-  // Add source and layer on mount
+  // Add source and layer when the map is ready (recreate if paint identity changes).
   useEffect(() => {
     if (!isLoaded || !map) return;
 
@@ -1095,7 +1095,7 @@ function MapRoute({
         'line-color': color,
         'line-width': width,
         'line-opacity': opacity,
-        ...(dashArray && { 'line-dasharray': dashArray }),
+        ...(dashArray ? { 'line-dasharray': dashArray } : {}),
       },
     });
 
@@ -1107,9 +1107,9 @@ function MapRoute({
         // ignore
       }
     };
-  }, [isLoaded, map]);
+  }, [isLoaded, map, sourceId, layerId, color, width, opacity, dashArray]);
 
-  // When coordinates change, update the source data
+  // When coordinates change (or the layer was recreated for a new color), update data.
   useEffect(() => {
     if (!isLoaded || !map || coordinates.length < 2) return;
 
@@ -1121,7 +1121,7 @@ function MapRoute({
         geometry: { type: 'LineString', coordinates },
       });
     }
-  }, [isLoaded, map, coordinates, sourceId]);
+  }, [isLoaded, map, coordinates, sourceId, layerId, color]);
 
   useEffect(() => {
     if (!isLoaded || !map || !map.getLayer(layerId)) return;
@@ -1129,7 +1129,9 @@ function MapRoute({
     map.setPaintProperty(layerId, 'line-color', color);
     map.setPaintProperty(layerId, 'line-width', width);
     map.setPaintProperty(layerId, 'line-opacity', opacity);
-    map.setPaintProperty(layerId, 'line-dasharray', dashArray);
+    if (dashArray) {
+      map.setPaintProperty(layerId, 'line-dasharray', dashArray);
+    }
   }, [isLoaded, map, layerId, color, width, opacity, dashArray]);
 
   // Handle click and hover events

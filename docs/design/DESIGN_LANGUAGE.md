@@ -278,7 +278,7 @@ RISK_TONE (signal-risk)         →  risk, critical, overreaching
 muted                           →  unavailable, insufficient data, metadata
 ```
 
-Never use raw Tailwind `emerald-*` / `blue-*` / `amber-*` / `red-*` for status. Sport identity chips may keep distinct hues (RUN orange, BIKE emerald, SWIM blue) — success/done must not.
+Never use raw Tailwind `emerald-*` / `blue-*` / `amber-*` / `red-*` for status. Sport identity chips use distinct hues per discipline (see `src/lib/activity/sport-identity.ts`: RUN orange, BIKE emerald, SWIM sky, STRENGTH rose, TRIATHLON teal) — success/done must not.
 
 A component must never introduce a color outside this system. If a new semantic state requires a new color, the color system is extended — not bypassed.
 

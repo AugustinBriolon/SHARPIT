@@ -3,6 +3,7 @@
 import MapLibreGL from 'maplibre-gl';
 import { useEffect, useMemo, useState } from 'react';
 import { Map, MapMarker, MapRoute, MarkerContent, useMap } from '@/components/ui/map';
+import { SPORT_IDENTITY_HEX } from '@/lib/activity/sport-identity';
 
 type Path = [number, number][];
 
@@ -31,7 +32,7 @@ function FitBounds({ coordinates }: { coordinates: LngLat[] }) {
 
 export default function RouteMapInner({
   path,
-  lineColor = 'var(--primary)',
+  lineColor = SPORT_IDENTITY_HEX.OTHER,
 }: {
   path: Path;
   lineColor?: string;
@@ -63,12 +64,15 @@ export default function RouteMapInner({
       />
       <MapMarker latitude={startLat} longitude={startLng}>
         <MarkerContent>
-          <div className="border-background h-3.5 w-3.5 rounded-full border-2 bg-emerald-500 shadow-none" />
+          <div
+            className="border-background h-3.5 w-3.5 rounded-full border-2 shadow-none"
+            style={{ backgroundColor: lineColor }}
+          />
         </MarkerContent>
       </MapMarker>
       <MapMarker latitude={endLat} longitude={endLng}>
         <MarkerContent>
-          <div className="border-background h-3.5 w-3.5 rounded-full border-2 bg-rose-500 shadow-none" />
+          <div className="border-background bg-foreground h-3.5 w-3.5 rounded-full border-2 shadow-none" />
         </MarkerContent>
       </MapMarker>
     </Map>

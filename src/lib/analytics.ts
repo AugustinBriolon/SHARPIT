@@ -30,7 +30,7 @@ export interface ActivityForAnalytics {
  * - Erreur peut atteindre ±30% selon profil réel séance
  * - À utiliser uniquement quand pas de données FC/puissance
  *
- * Voir SCIENCE.md section "Training Stress Score (TSS)" pour détails complets.
+ * Voir `docs/models/TRAINING_STRESS_MODEL.md` et `knowledge/training-load.md` (TSS).
  */
 const LOAD_FACTOR: Record<ActivityType, number> = {
   /** Course : 1.0 TSS/min (intensité moyenne type tempo/seuil pour séance typique) */
@@ -73,7 +73,7 @@ export interface PmcPoint {
  * pour suivre l'adaptation à l'entraînement.
  *
  * Sources : Coggan (2003), TrainingPeaks, WKO5
- * Voir SCIENCE.md section "Performance Management Chart (PMC)" pour détails complets.
+ * Voir `docs/models/TRAINING_STRESS_MODEL.md` et `knowledge/training-load.md` (PMC).
  */
 const PMC_MODEL = {
   /**

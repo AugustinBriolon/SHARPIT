@@ -1,6 +1,12 @@
 'use client';
 
 import { Bike, Footprints, Waves } from 'lucide-react';
+import { ActivityType } from '@prisma/client';
+import {
+  SPORT_IDENTITY_PANEL,
+  SPORT_IDENTITY_SURFACE,
+  SPORT_IDENTITY_TEXT,
+} from '@/lib/activity/sport-identity';
 import { formatDistance, formatDuration, formatPace, formatSwimPace } from '@/lib/format';
 import {
   legDisplayDurationSec,
@@ -16,10 +22,10 @@ const kindIcon: Record<'swim' | 'bike' | 'run', typeof Waves> = {
   run: Footprints,
 };
 
-const kindAccent: Record<'swim' | 'bike' | 'run', string> = {
-  swim: 'border-blue-500/20 bg-blue-500/5',
-  bike: 'border-emerald-500/20 bg-emerald-500/5',
-  run: 'border-orange-500/20 bg-orange-500/5',
+const kindToActivityType: Record<'swim' | 'bike' | 'run', ActivityType> = {
+  swim: ActivityType.SWIM,
+  bike: ActivityType.BIKE,
+  run: ActivityType.RUN,
 };
 
 type SportLeg = MultisportLeg & { kind: 'swim' | 'bike' | 'run' };
@@ -40,6 +46,7 @@ function formatLegPace(leg: SportLeg): string | null {
 
 function SportCard({ leg }: { leg: SportLeg }) {
   const Icon = kindIcon[leg.kind];
+  const sportType = kindToActivityType[leg.kind];
   const pace = formatLegPace(leg);
   const subParts: string[] = [];
   if (pace) subParts.push(pace);
@@ -50,21 +57,19 @@ function SportCard({ leg }: { leg: SportLeg }) {
     <div
       className={cn(
         'rounded-analysis-lg relative overflow-hidden border px-4 py-4',
-        kindAccent[leg.kind],
+        SPORT_IDENTITY_PANEL[sportType],
       )}
     >
       <div className="mb-3 flex items-center gap-2">
         <span
           className={cn(
             'grid size-8 place-items-center rounded-lg',
-            leg.kind === 'swim' && 'bg-blue-500/15 text-blue-600',
-            leg.kind === 'bike' && 'bg-emerald-500/15 text-emerald-600',
-            leg.kind === 'run' && 'bg-orange-500/15 text-orange-600',
+            SPORT_IDENTITY_SURFACE[sportType],
           )}
         >
           <Icon className="size-4" />
         </span>
-        <p className="text-label">{leg.label}</p>
+        <p className={cn('text-label', SPORT_IDENTITY_TEXT[sportType])}>{leg.label}</p>
       </div>
       <p className="font-mono text-2xl font-semibold tabular-nums">
         {leg.distanceM != null ? formatDistance(leg.distanceM) : formatDuration(leg.durationSec)}

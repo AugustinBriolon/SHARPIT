@@ -6,6 +6,7 @@ import {
   type LocationPlaceValue,
 } from '@/components/planning/location-place-picker';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -239,25 +240,22 @@ export function TravelMemoryFormDialog({
               </p>
               <div className="grid gap-2">
                 {TRAVEL_DISCIPLINES.map((discipline) => (
-                  <label key={discipline} className="flex items-center gap-2 text-sm">
-                    <input
+                  <label key={discipline} className="flex items-center gap-2.5 text-sm">
+                    <Checkbox
                       checked={!noStructuredTraining && allowedDisciplines.includes(discipline)}
-                      className="size-4"
                       disabled={noStructuredTraining}
-                      type="checkbox"
-                      onChange={() => toggleDiscipline(discipline)}
+                      onCheckedChange={() => toggleDiscipline(discipline)}
                     />
                     <span>{TRAVEL_DISCIPLINE_LABELS[discipline]}</span>
                   </label>
                 ))}
-                <label className="flex items-center gap-2 text-sm">
-                  <input
+                <label className="flex items-center gap-2.5 text-sm">
+                  <Checkbox
                     checked={noStructuredTraining}
-                    className="size-4"
-                    type="checkbox"
-                    onChange={(e) => {
-                      setNoStructuredTraining(e.target.checked);
-                      if (e.target.checked) setAllowedDisciplines([]);
+                    onCheckedChange={(checked) => {
+                      const next = checked === true;
+                      setNoStructuredTraining(next);
+                      if (next) setAllowedDisciplines([]);
                     }}
                   />
                   <span>Aucun sport structuré</span>
@@ -280,12 +278,11 @@ export function TravelMemoryFormDialog({
             </div>
 
             {isTravel && !isEdit ? (
-              <label className="flex items-start gap-2 text-sm">
-                <input
+              <label className="flex items-start gap-2.5 text-sm">
+                <Checkbox
                   checked={applyToPlannedSessions}
-                  className="mt-1"
-                  type="checkbox"
-                  onChange={(e) => setApplyToPlannedSessions(e.target.checked)}
+                  className="mt-0.5"
+                  onCheckedChange={(checked) => setApplyToPlannedSessions(checked === true)}
                 />
                 <span>
                   Appliquer aux séances outdoor planifiées sur cette période (météo + lieu).

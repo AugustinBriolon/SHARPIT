@@ -642,7 +642,7 @@ The current codebase computes the equivalent of some features inline inside `src
 - `src/lib/training-load.ts` → computes `acuteLoad`, `chronicLoad`, `acwr` on request
 - `src/lib/recovery.ts` → computes `buildReadinessView`, `buildFormView` on request
 - `src/lib/sleep.ts` → computes `analyzeSleep` on request
-- `src/lib/dashboard.ts` → computes `acwrZone`, `buildTrainingVerdict` inline
+- ~~`src/lib/dashboard.ts`~~ (removed) → ACWR zones live in `src/lib/effort/load-reading.ts`; daily verdict in `src/core/decision/`
 
 These are functionally equivalent to a subset of Load Features and Recovery Features.
 However, they:
@@ -682,13 +682,13 @@ Once features are trusted (validated by tests and production data):
 
 ### Files affected
 
-| File                       | Status               | Action                                             |
-| -------------------------- | -------------------- | -------------------------------------------------- |
-| `src/lib/training-load.ts` | Partially replaced   | Extract ACWR/load logic → `load-extractor.ts`      |
-| `src/lib/recovery.ts`      | Partially replaced   | Extract HRV/RHR logic → `recovery-extractor.ts`    |
-| `src/lib/sleep.ts`         | Partially replaced   | Extract sleep efficiency → `recovery-extractor.ts` |
-| `src/lib/dashboard.ts`     | Interpretation logic | `acwrZone`, `buildTrainingVerdict` → Signal Engine |
-| `src/lib/alerts.ts`        | Decision logic       | Belongs to Decision Engine (post-Signal)           |
+| File                       | Status             | Action                                                      |
+| -------------------------- | ------------------ | ----------------------------------------------------------- |
+| `src/lib/training-load.ts` | Partially replaced | Extract ACWR/load logic → `load-extractor.ts`               |
+| `src/lib/recovery.ts`      | Partially replaced | Extract HRV/RHR logic → `recovery-extractor.ts`             |
+| `src/lib/sleep.ts`         | Partially replaced | Extract sleep efficiency → `recovery-extractor.ts`          |
+| ~~`src/lib/dashboard.ts`~~ | Removed            | Zones → `effort/load-reading.ts`; verdict → Decision Engine |
+| ~~`src/lib/alerts.ts`~~    | Removed            | Decision Engine + Athlete Snapshot / Today                  |
 
 ### What does NOT change
 

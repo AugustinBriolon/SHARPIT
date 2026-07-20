@@ -22,6 +22,7 @@ import { useAdaptPlan, type AdaptChange, type AdaptPlanResult } from '@/hooks/us
 import {
   usePlannedSessions,
   usePlannedSessionMutations,
+  type PlannedSessionBatchOp,
   type PlannedSessionPayload,
 } from '@/hooks/use-data';
 import type { GateSessionResult } from '@/lib/plan-gate/types';
@@ -110,7 +111,7 @@ export function PlanAdapter({
 
   const adapt = useAdaptPlan();
   const plannedQuery = usePlannedSessions();
-  const { create, update, remove } = usePlannedSessionMutations();
+  const { applyBatch } = usePlannedSessionMutations();
   const result = adapt.data;
 
   const sessionsById = useMemo(() => {
@@ -145,27 +146,34 @@ export function PlanAdapter({
     });
   }
 
-  async function handleApply() {
+  function handleApply() {
     if (!result) return;
     setApplyError(null);
     const changes = result.changes.filter((_, i) => selected.has(i));
-    try {
-      for (const c of changes) {
-        if (c.action === 'REMOVE' && c.sessionId) {
-          await remove.mutateAsync(c.sessionId);
-        } else if (c.action === 'MODIFY' && c.sessionId) {
-          const data: Partial<PlannedSessionPayload> = {};
-          if (c.type) data.type = c.type;
-          if (c.intensity) data.intensity = c.intensity;
-          if (c.title != null) data.title = c.title;
-          if (c.description != null) data.description = c.description;
-          if (c.durationMin != null) data.durationMin = c.durationMin;
-          if (c.load != null) data.load = c.load;
-          if (c.date) data.date = new Date(`${c.date}T12:00:00`);
-          data.decisionId = c.decisionId;
-          await update.mutateAsync({ id: c.sessionId, data });
-        } else if (c.action === 'ADD' && c.date && c.type) {
-          await create.mutateAsync({
+    const ops: PlannedSessionBatchOp[] = [];
+
+    for (const c of changes) {
+      if (c.action === 'REMOVE' && c.sessionId) {
+        ops.push({ op: 'remove', id: c.sessionId });
+        continue;
+      }
+      if (c.action === 'MODIFY' && c.sessionId) {
+        const data: Partial<PlannedSessionPayload> = {};
+        if (c.type) data.type = c.type;
+        if (c.intensity) data.intensity = c.intensity;
+        if (c.title != null) data.title = c.title;
+        if (c.description != null) data.description = c.description;
+        if (c.durationMin != null) data.durationMin = c.durationMin;
+        if (c.load != null) data.load = c.load;
+        if (c.date) data.date = new Date(`${c.date}T12:00:00`);
+        data.decisionId = c.decisionId;
+        ops.push({ op: 'update', id: c.sessionId, data });
+        continue;
+      }
+      if (c.action === 'ADD' && c.date && c.type) {
+        ops.push({
+          op: 'create',
+          payload: {
             type: c.type,
             date: new Date(`${c.date}T12:00:00`),
             title: c.title,
@@ -174,18 +182,26 @@ export function PlanAdapter({
             load: c.load,
             intensity: c.intensity,
             decisionId: c.decisionId,
-          });
-        }
+          },
+        });
       }
-      setApplied(true);
-      setTimeout(onClose, 800);
-    } catch (err) {
-      setApplyError(err instanceof Error ? err.message : 'Erreur');
     }
+
+    if (ops.length === 0) return;
+
+    // Instant: one cache patch + one toast in applyBatch; close without awaiting network.
+    setApplied(true);
+    applyBatch.mutate(ops, {
+      onError: (err) => {
+        setApplied(false);
+        setApplyError(err instanceof Error ? err.message : 'Erreur');
+      },
+    });
+    setTimeout(onClose, 400);
   }
 
   const isAdapting = adapt.isPending;
-  const isApplying = create.isPending || update.isPending || remove.isPending;
+  const isApplying = applyBatch.isPending;
   const online = useOnlineStatus();
 
   return (

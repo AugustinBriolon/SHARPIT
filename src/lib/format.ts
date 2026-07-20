@@ -58,11 +58,5 @@ export const activityTypeLabels: Record<ActivityType, string> = {
   OTHER: 'Autre',
 };
 
-export const activityTypeColors: Record<ActivityType, string> = {
-  RUN: 'text-orange-600',
-  BIKE: 'text-emerald-600',
-  SWIM: 'text-blue-600',
-  STRENGTH: 'text-primary',
-  TRIATHLON: 'text-foreground',
-  OTHER: 'text-muted-foreground',
-};
+/** @deprecated Prefer `SPORT_IDENTITY_TEXT` from `@/lib/activity/sport-identity`. */
+export { SPORT_IDENTITY_TEXT as activityTypeColors } from '@/lib/activity/sport-identity';
