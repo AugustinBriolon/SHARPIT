@@ -53,7 +53,7 @@ export function ArcGauge({
           {formatRadialValue(score, 'number')}
         </span>
         {score !== null && (
-          <span className="text-[11px] font-medium text-neutral-400 sm:text-xs">%</span>
+          <span className="text-muted-foreground text-[11px] font-medium sm:text-xs">%</span>
         )}
       </span>
     ) : (
@@ -74,9 +74,7 @@ export function ArcGauge({
         <div className="absolute inset-0 flex items-center justify-center">{center}</div>
       </div>
       {label && (
-        <span className="text-center text-[10px] font-medium text-slate-500 dark:text-slate-400">
-          {label}
-        </span>
+        <span className="text-muted-foreground text-center text-[10px] font-medium">{label}</span>
       )}
     </div>
   );

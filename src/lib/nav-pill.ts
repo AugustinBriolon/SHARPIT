@@ -1,11 +1,11 @@
 import { cn } from '@/lib/utils';
 
-/** Pill / onglet actif — vert sauge rassurant (pas d'inversion noir). */
-export const navPillActiveClass = 'border-primary/20 !bg-primary/10 text-primary';
+/** Pill / onglet actif — Lime Pulse (Seed punctuation), pas d'inversion noir. */
+export const navPillActiveClass = 'border-transparent !bg-highlight text-highlight-foreground';
 
 /** Pill / onglet inactif. */
 export const navPillInactiveClass =
-  'bg-card/60 text-muted-foreground hover:bg-primary/8 hover:text-primary border-transparent';
+  'bg-analysis-surface-alt text-muted-foreground hover:bg-highlight/40 hover:text-foreground border-transparent';
 
 export function navPillClass(active: boolean, className?: string) {
   return cn(
@@ -15,13 +15,13 @@ export function navPillClass(active: boolean, className?: string) {
   );
 }
 
-/** Lien sidebar — position sur un cadran : liseré gauche accent, pas de pastille de fond. */
+/** Lien sidebar desktop — actif Lime (aligné bottom nav mobile), pas de liseré primary. */
 export function navLinkClass(active: boolean, className?: string) {
   return cn(
-    'group flex items-center gap-3 border-l-2 px-3 py-2.5 text-sm font-medium transition-colors',
+    'group focus-visible:ring-sidebar-ring flex items-center gap-3 rounded-analysis px-3 py-2.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
     active
-      ? 'border-primary text-primary'
-      : 'text-muted-foreground hover:text-foreground border-transparent',
+      ? 'bg-highlight text-highlight-foreground'
+      : 'text-muted-foreground hover:bg-highlight/40 hover:text-foreground',
     className,
   );
 }

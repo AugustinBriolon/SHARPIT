@@ -62,7 +62,7 @@ export const activityTypeColors: Record<ActivityType, string> = {
   RUN: 'text-orange-600',
   BIKE: 'text-emerald-600',
   SWIM: 'text-blue-600',
-  STRENGTH: 'text-violet-600',
-  TRIATHLON: 'text-fuchsia-600',
-  OTHER: 'text-slate-600',
+  STRENGTH: 'text-primary',
+  TRIATHLON: 'text-foreground',
+  OTHER: 'text-muted-foreground',
 };

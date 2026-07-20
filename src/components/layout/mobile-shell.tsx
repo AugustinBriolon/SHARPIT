@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { bottomNavItems, type AppNavItem } from '@/lib/app-navigation';
 import { usePrefetchNavQuery } from '@/hooks/use-prefetch-nav';
+import { PAGE_GUTTER } from '@/lib/page-gutter';
 import { cn } from '@/lib/utils';
 import { OfflineBanner } from '@/components/pwa/offline-banner';
 import { SyncingIndicator } from '@/components/ui/syncing-indicator';
@@ -29,7 +30,9 @@ function BottomNavLink({
       href={item.href}
       className={cn(
         'flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 text-[10px] font-medium transition-colors',
-        isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground',
+        isActive
+          ? 'bg-highlight text-highlight-foreground'
+          : 'text-muted-foreground hover:text-foreground',
       )}
       onClick={onNavigate}
       onMouseEnter={hint}
@@ -71,7 +74,12 @@ export function MobileShell({ children }: { children: React.ReactNode }) {
           paddingBottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))',
         }}
       >
-        <div className="mx-auto max-w-lg px-4 py-4">{children}</div>
+        <div
+          className="mx-auto max-w-lg px-4 py-4"
+          style={{ ['--page-gutter' as string]: PAGE_GUTTER.mobile }}
+        >
+          {children}
+        </div>
       </main>
       <BottomNav />
     </div>

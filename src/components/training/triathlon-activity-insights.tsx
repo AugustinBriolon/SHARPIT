@@ -188,7 +188,7 @@ function SportLegSelector({
   onSelect: (key: string) => void;
 }) {
   return (
-    <div className="bg-muted/40 inline-flex flex-wrap gap-1 rounded-full border p-1">
+    <div className="surface-shell inline-flex flex-wrap gap-1 rounded-full p-1">
       {legs.map((entry) => {
         const key = legKey(entry);
         const active = key === selectedKey;
@@ -201,7 +201,7 @@ function SportLegSelector({
             className={cn(
               'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
               active
-                ? 'bg-background text-foreground shadow-sm'
+                ? 'bg-highlight text-highlight-foreground'
                 : 'text-muted-foreground hover:text-foreground',
             )}
             onClick={() => onSelect(key)}

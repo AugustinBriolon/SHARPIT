@@ -32,7 +32,7 @@ export function DashboardSkeleton() {
   return (
     <div className="mx-auto space-y-3 sm:space-y-4">
       {/* Morning Instrument plate */}
-      <section className="analysis-panel rounded-analysis-lg from-primary/8 relative overflow-hidden bg-linear-to-br to-transparent px-5 py-8 sm:px-8 sm:py-10">
+      <section className="analysis-panel rounded-analysis-lg bg-primary/8 relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-label inline-flex items-center gap-2">
             <span className="bg-primary/50 h-2.5 w-2.5 shrink-0 rounded-full" aria-hidden />

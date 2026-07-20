@@ -41,12 +41,12 @@ export function HealthMonitorPanel({
     if (hrv < low)
       return {
         label: `↓ sous base (${low}–${high})`,
-        colorClass: 'text-amber-600 dark:text-amber-400',
+        colorClass: 'text-signal-caution',
       };
     if (hrv > high)
       return {
         label: `↑ au-dessus (${low}–${high})`,
-        colorClass: 'text-emerald-600 dark:text-emerald-400',
+        colorClass: 'text-primary',
       };
     return { label: `→ norme (${low}–${high} ms)`, colorClass: 'text-muted-foreground' };
   })();
@@ -100,7 +100,7 @@ export function HealthMonitorPanel({
   const visible = metrics.filter((m) => m.value !== '—' || m.data.some((v) => v !== null));
 
   return (
-    <div className="bg-card flex flex-col rounded-2xl border px-5 py-5">
+    <div className="analysis-panel rounded-analysis-lg flex flex-col px-5 py-5">
       <EyebrowLabel className="mb-4" variant="dashboard">
         Moniteur de santé
       </EyebrowLabel>

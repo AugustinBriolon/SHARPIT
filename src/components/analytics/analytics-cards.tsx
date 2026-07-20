@@ -5,9 +5,9 @@ import { Gauge } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TONE_TEXT = {
-  good: 'text-emerald-600',
-  moderate: 'text-amber-600',
-  low: 'text-red-600',
+  good: 'text-primary',
+  moderate: 'text-signal-caution',
+  low: 'text-signal-risk',
   neutral: 'text-muted-foreground',
 } as const;
 
@@ -18,15 +18,14 @@ export function FormStatusBanner({ pmc }: { pmc: PmcPoint[] }) {
   return (
     <CorpsPanel
       className={cn(
-        'bg-linear-to-br to-transparent',
-        form.tone === 'good' && 'border-emerald-500/25 from-emerald-500/8',
-        form.tone === 'moderate' && 'border-amber-500/25 from-amber-500/8',
-        form.tone === 'low' && 'border-red-500/25 from-red-500/8',
+        form.tone === 'good' && 'border-primary/25 bg-primary/8',
+        form.tone === 'moderate' && 'border-signal-caution/25 bg-signal-caution/8',
+        form.tone === 'low' && 'border-signal-risk/25 bg-signal-risk/8',
       )}
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
-        <span className="bg-primary/10 grid size-10 shrink-0 place-items-center rounded-full">
-          <Gauge className="text-primary size-4" />
+        <span className="icon-well size-10 rounded-full">
+          <Gauge className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-label">État de forme actuel</p>

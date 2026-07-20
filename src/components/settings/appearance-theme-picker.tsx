@@ -46,10 +46,8 @@ export function AppearanceThemePicker() {
             role="radio"
             type="button"
             className={cn(
-              'w-full rounded-2xl border px-4 py-4 text-left transition-colors',
-              active
-                ? 'border-primary/40 bg-primary/5 ring-primary/20 ring-1'
-                : 'border-border/70 hover:bg-muted/30',
+              'analysis-panel rounded-analysis-lg w-full px-4 py-4 text-left transition-colors',
+              active ? 'border-highlight bg-highlight/30' : 'hover:bg-analysis-surface-alt/80',
             )}
             onClick={() => setPreference(option.id)}
           >
@@ -57,7 +55,7 @@ export function AppearanceThemePicker() {
               <div
                 className={cn(
                   'flex size-9 shrink-0 items-center justify-center rounded-xl',
-                  active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
+                  active ? 'icon-well' : 'bg-muted text-muted-foreground',
                 )}
               >
                 <Icon className="size-4" />

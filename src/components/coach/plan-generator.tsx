@@ -208,7 +208,7 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
         </div>
 
         {planWeek && (
-          <p className="text-muted-foreground rounded-md border border-cyan-500/20 bg-cyan-500/5 p-2 text-xs">
+          <p className="text-muted-foreground analysis-panel-alt rounded-analysis p-2 text-xs">
             Macro-plan : {phaseLabels[planWeek.phase]} — cible{' '}
             <span className="text-foreground font-mono font-medium">{planWeek.targetLoad} TSS</span>
             {planWeek.isDeload ? ' (semaine de récup)' : ''}
@@ -294,7 +294,8 @@ function SessionRow({
         rejected && 'border-signal-risk/30 bg-signal-risk/5 cursor-not-allowed opacity-80',
         !rejected && selected
           ? 'border-primary/40 bg-primary/5'
-          : !rejected && 'border-border/50 bg-card/30 opacity-60 hover:opacity-100',
+          : !rejected &&
+              'border-analysis-border/60 bg-analysis-surface-alt/50 opacity-60 hover:opacity-100',
       )}
       onClick={rejected ? undefined : onToggle}
     >

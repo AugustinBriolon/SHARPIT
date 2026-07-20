@@ -10,13 +10,13 @@ export function AuthShell({
   return (
     <div className="bg-background relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-12">
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_oklch(0.58_0.12_156_/_0.1),_transparent_55%)]"
+        className="bg-ink-surface pointer-events-none absolute inset-x-0 top-0 h-44"
         aria-hidden
       />
       <div className="relative z-10 flex w-full max-w-[420px] flex-col items-center gap-8">
         <div className="flex flex-col items-center gap-3 text-center">
-          <div className="bg-primary/10 ring-primary/20 flex size-12 items-center justify-center rounded-xl ring-1">
-            <Activity className="text-primary size-6" strokeWidth={2.25} />
+          <div className="icon-well size-12 rounded-xl">
+            <Activity className="size-6" strokeWidth={2.25} />
           </div>
           <div>
             <h1 className="text-page-title">SharpIt</h1>

@@ -36,7 +36,7 @@ export function CoachConversationList({
   const selected = conversations.find((c) => c.id === selectedId);
 
   return (
-    <aside className="border-border/60 bg-card/30 flex w-full shrink-0 flex-col rounded-xl border lg:h-full lg:w-56">
+    <aside className="analysis-panel rounded-analysis-lg flex w-full shrink-0 flex-col lg:h-full lg:w-56">
       {loading && <p className="text-muted-foreground px-3 py-2 text-xs">Chargement…</p>}
 
       {!loading && conversations.length === 0 && (
@@ -97,7 +97,7 @@ export function CoachConversationList({
                       className={cn(
                         'min-w-0 flex-1 rounded-lg px-2 py-2 text-left text-sm transition-colors',
                         isActive
-                          ? 'bg-primary/10 text-foreground'
+                          ? 'bg-highlight text-highlight-foreground'
                           : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
                       )}
                       onClick={() => onSelect(c.id)}

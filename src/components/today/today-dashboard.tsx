@@ -40,7 +40,7 @@ export function TodayDashboard() {
         ) : null}
         <div className="flex justify-center">
           <button
-            className="text-xs text-slate-400 underline-offset-4 transition-colors hover:text-slate-600 hover:underline"
+            className="text-muted-foreground hover:text-foreground text-xs underline-offset-4 transition-colors hover:underline"
             type="button"
             onClick={() => void query.refetch()}
           >

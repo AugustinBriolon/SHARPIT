@@ -1,5 +1,6 @@
 import { ClinicalAnnotation } from '@/components/ui/clinical-annotation';
 import { EyebrowLabel } from '@/components/ui/eyebrow-label';
+import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { MetricCell } from '@/components/ui/metric-cell';
 import type { CorpsTone } from '@/lib/metric-tone';
 import { CORPS_TONE_DOT, CORPS_TONE_TEXT } from '@/lib/metric-tone';
@@ -88,14 +89,7 @@ export function CorpsEmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="analysis-panel rounded-analysis-lg flex flex-col items-center justify-center gap-3 border-dashed px-6 py-14 text-center">
-      <Icon className="text-muted-foreground/40 size-8" />
-      <div className="space-y-1">
-        <p className="text-sm font-medium">{title}</p>
-        <p className="text-muted-foreground max-w-sm text-xs leading-relaxed">{description}</p>
-      </div>
-      {action}
-    </div>
+    <InkEmptyState action={action} description={description} icon={Icon} title={title} bleed />
   );
 }
 

@@ -455,7 +455,7 @@ export function PlannedSessionDialog({
                     className={cn(
                       'flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                       createMode === 'single'
-                        ? 'bg-background text-foreground shadow-sm'
+                        ? 'bg-highlight text-highlight-foreground'
                         : 'text-muted-foreground hover:text-foreground',
                     )}
                     onClick={() => setCreateMode('single')}
@@ -467,7 +467,7 @@ export function PlannedSessionDialog({
                     className={cn(
                       'flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                       createMode === 'brick'
-                        ? 'bg-background text-foreground shadow-sm'
+                        ? 'bg-highlight text-highlight-foreground'
                         : 'text-muted-foreground hover:text-foreground',
                     )}
                     onClick={() => setCreateMode('brick')}
@@ -699,7 +699,7 @@ export function PlannedSessionDialog({
                     {legs.map((leg, index) => (
                       <div
                         key={index}
-                        className="border-border/60 bg-card/30 space-y-3 rounded-lg border p-3"
+                        className="border-analysis-border/60 bg-analysis-surface-alt/50 space-y-3 rounded-lg border p-3"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">

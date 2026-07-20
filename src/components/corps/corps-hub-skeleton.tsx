@@ -23,7 +23,7 @@ export function CorpsHubSkeleton() {
       <SkeletonCard className="px-5 py-5">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="bg-card/60 rounded-2xl border px-4 py-4">
+            <div key={index} className="analysis-panel rounded-analysis-lg px-4 py-4">
               <Skeleton className="h-2.5 w-16 rounded-full border-0" />
               <Skeleton className="mt-2 h-8 w-20 border-0" />
               <Skeleton className="mt-2 h-3 w-24 rounded-full border-0" />

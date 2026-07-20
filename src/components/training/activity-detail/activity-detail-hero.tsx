@@ -6,7 +6,7 @@ import type { ActivityDetail, ActivityStat } from './types';
 
 function HeroStat({ label, value }: ActivityStat) {
   return (
-    <div className="border-border bg-card rounded-2xl border px-5 py-4">
+    <div className="analysis-panel rounded-analysis-lg px-5 py-4">
       <p className="text-label">{label}</p>
       <p className="text-foreground mt-1.5 font-mono text-3xl font-semibold tabular-nums">
         {value}

@@ -9,6 +9,7 @@ import { ActivityConsistencyPanel } from '@/components/today/dashboard/activity-
 import { ActivityList } from '@/components/training/activity-list';
 import { TrainingWeekCalendarPreview } from '@/components/training/training-week-calendar-preview';
 import { Badge } from '@/components/ui/badge';
+import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useActivities, useGoals, usePlannedSessions } from '@/hooks/use-data';
 import { isAnyInitialQueryLoad } from '@/hooks/use-query-status';
@@ -18,6 +19,7 @@ import { resolvePlannedSessionDisplay } from '@/lib/planned-session-display';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import { cn } from '@/lib/utils';
 import { GoalKind } from '@prisma/client';
+import { CalendarClock } from 'lucide-react';
 
 const PREVIEW_LIMIT_MOBILE = 2;
 const PREVIEW_LIMIT_DESKTOP = 4;
@@ -46,7 +48,7 @@ function SectionLink({ title, href, cta }: { title: string; href: string; cta: s
 function TrainingDashboardSkeleton() {
   return (
     <div className="space-y-4 sm:space-y-5">
-      <section className="analysis-panel rounded-analysis-lg from-primary/8 relative overflow-hidden bg-linear-to-br to-transparent px-5 py-8 sm:px-8 sm:py-10">
+      <section className="analysis-panel rounded-analysis-lg bg-primary/8 relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-label inline-flex items-center gap-2">
             <span className="bg-primary/50 h-2.5 w-2.5 shrink-0 rounded-full" aria-hidden />
@@ -136,25 +138,35 @@ function TrainingInstrumentPlate({
     actionLine = 'Planifie la prochaine séance qui compte.';
   }
 
+  const isInkEmpty = !hasRace && !nextDisplay;
+
   return (
     <section
       className={cn(
-        'analysis-panel rounded-analysis-lg relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10',
+        'relative overflow-hidden',
         'motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200',
-        hasRace && 'border-blue-500/25 bg-linear-to-br from-blue-500/12 to-transparent',
-        !hasRace &&
-          nextDisplay &&
-          'from-primary/10 border-primary/20 bg-linear-to-br to-transparent',
+        isInkEmpty
+          ? 'page-bleed-ink py-8 sm:py-10'
+          : cn(
+              'analysis-panel rounded-analysis-lg px-5 py-8 sm:px-8 sm:py-10',
+              hasRace && 'border-[var(--color-signal-tempo)]/30 bg-[var(--color-signal-tempo)]/12',
+              nextDisplay && 'border-primary/20 bg-primary/10',
+            ),
       )}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-label inline-flex items-center gap-2">
+        <p
+          className={cn(
+            'text-label inline-flex items-center gap-2',
+            isInkEmpty && 'text-ink-surface-foreground/70',
+          )}
+        >
           <span
             className={cn(
               'h-2.5 w-2.5 shrink-0 rounded-full',
-              hasRace && 'bg-blue-500',
+              hasRace && 'bg-[var(--color-signal-tempo)]',
               !hasRace && nextDisplay && 'bg-primary',
-              !hasRace && !nextDisplay && 'bg-muted-foreground/40',
+              isInkEmpty && 'bg-highlight',
             )}
             aria-hidden
           />
@@ -173,14 +185,21 @@ function TrainingInstrumentPlate({
       <h1
         className={cn(
           'text-verdict mt-6 max-w-3xl text-[1.75rem] leading-[1.15] sm:text-[2.125rem]',
-          hasRace ? 'text-blue-600 dark:text-blue-400' : 'text-foreground',
+          hasRace && 'text-[var(--color-signal-tempo)]',
+          !hasRace && nextDisplay && 'text-foreground',
+          isInkEmpty && 'text-ink-surface-foreground',
         )}
       >
         {headline}
       </h1>
 
       {actionLine ? (
-        <p className="text-foreground mt-5 max-w-2xl text-sm leading-relaxed font-medium">
+        <p
+          className={cn(
+            'mt-5 max-w-2xl text-sm leading-relaxed font-medium',
+            isInkEmpty ? 'text-ink-surface-foreground/85' : 'text-foreground',
+          )}
+        >
           {actionLine}
         </p>
       ) : null}
@@ -191,8 +210,13 @@ function TrainingInstrumentPlate({
         </p>
       ) : (
         <Link
-          className="text-data text-muted-foreground hover:text-foreground mt-8 inline-flex items-center gap-1.5 text-xs tracking-wide transition-colors"
           href="/training/planning"
+          className={cn(
+            'text-data mt-8 inline-flex items-center gap-1.5 text-xs tracking-wide transition-colors',
+            isInkEmpty
+              ? 'text-ink-surface-foreground/70 hover:text-ink-surface-foreground'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
         >
           Ouvrir le planning
           <span className="text-[10px] tracking-wider opacity-70" aria-hidden>
@@ -266,7 +290,13 @@ export function TrainingDashboard() {
         <SectionLink cta="Planning" href="/training/planning" title="Prochaines séances" />
         <PlanningRow limit={previewLimit} sessions={upcomingRoutineSessions} />
         {selectUpcomingPlannedPreview(upcomingRoutineSessions, today, previewLimit).length === 0 ? (
-          <p className="text-muted-foreground px-0.5 text-sm">Aucune séance à venir.</p>
+          <InkEmptyState
+            className="mt-1"
+            description="Ouvre le planning pour programmer la suite."
+            icon={CalendarClock}
+            title="Aucune séance à venir"
+            compact
+          />
         ) : null}
       </section>
 

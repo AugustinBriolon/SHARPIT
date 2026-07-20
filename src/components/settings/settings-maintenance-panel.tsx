@@ -92,7 +92,7 @@ export function SettingsMaintenancePanel({
   }
 
   return (
-    <section className="space-y-3 rounded-2xl border px-4 py-4">
+    <section className="analysis-panel rounded-analysis-lg space-y-3 px-4 py-4">
       <div>
         <p className="text-label">Maintenance</p>
         <h2 className="mt-1 text-base font-semibold">Cache & synchronisation</h2>

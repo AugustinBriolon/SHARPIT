@@ -90,7 +90,7 @@ export function PlannedSessionReadView({
         </Button>
       </div>
 
-      <div className="border-border/60 bg-muted/20 grid grid-cols-1 gap-4 rounded-lg border p-4 md:grid-cols-2">
+      <div className="analysis-panel rounded-analysis-lg grid grid-cols-1 gap-4 p-4 md:grid-cols-2">
         {session.intensity && (
           <ReadField label="Intensité" value={intensityLabels[session.intensity]} />
         )}

@@ -48,7 +48,10 @@ function SportCard({ leg }: { leg: SportLeg }) {
 
   return (
     <div
-      className={cn('relative overflow-hidden rounded-2xl border px-4 py-4', kindAccent[leg.kind])}
+      className={cn(
+        'rounded-analysis-lg relative overflow-hidden border px-4 py-4',
+        kindAccent[leg.kind],
+      )}
     >
       <div className="mb-3 flex items-center gap-2">
         <span

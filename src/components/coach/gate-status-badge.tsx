@@ -12,7 +12,7 @@ const STATUS_LABEL: Record<GateStatus, string> = {
 const STATUS_CLASS: Record<GateStatus, string> = {
   ACCEPTED: 'bg-muted text-muted-foreground',
   WARNING: 'bg-signal-caution/15 text-signal-caution',
-  REQUIRES_CONFIRMATION: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+  REQUIRES_CONFIRMATION: 'bg-[var(--color-signal-recovery)]/15 text-[var(--color-signal-recovery)]',
   REJECTED: 'bg-signal-risk/15 text-signal-risk',
 };
 

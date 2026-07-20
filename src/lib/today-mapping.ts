@@ -77,51 +77,52 @@ export type DimensionSignal = {
 const VERDICT_DISPLAY: Record<OverallVerdict, VerdictDisplay> = {
   TRAIN_HARD: {
     label: 'Entraîne-toi fort',
-    colorClass: 'text-emerald-600 dark:text-emerald-400',
-    bgClass: 'from-emerald-500/12 border-emerald-500/30',
-    dotClass: 'bg-emerald-500',
-    accentBarClass: 'bg-emerald-500/80',
+    colorClass: 'text-primary',
+    bgClass: 'bg-primary/12 border-primary/30',
+    dotClass: 'bg-primary',
+    accentBarClass: 'bg-primary/80',
   },
   RACE_READY: {
     label: 'Prêt à courir',
-    colorClass: 'text-emerald-600 dark:text-emerald-400',
-    bgClass: 'from-emerald-500/12 border-emerald-500/30',
-    dotClass: 'bg-emerald-400',
-    accentBarClass: 'bg-emerald-400/80',
+    colorClass: 'text-primary',
+    bgClass: 'bg-primary/12 border-primary/30',
+    dotClass: 'bg-primary',
+    accentBarClass: 'bg-primary/80',
   },
   TRAIN_SMART: {
     label: 'Entraîne-toi finement',
-    colorClass: 'text-blue-600 dark:text-blue-400',
-    bgClass: 'from-blue-500/12 border-blue-500/30',
-    dotClass: 'bg-blue-500',
-    accentBarClass: 'bg-blue-500/80',
+    colorClass: 'text-[var(--color-signal-recovery)]',
+    bgClass: 'bg-[var(--color-signal-recovery)]/12 border-[var(--color-signal-recovery)]/30',
+    dotClass: 'bg-[var(--color-signal-recovery)]',
+    accentBarClass: 'bg-[var(--color-signal-recovery)]/80',
   },
   TRAIN_EASY: {
     label: 'Entraîne-toi légèrement',
-    colorClass: 'text-amber-600 dark:text-amber-400',
-    bgClass: 'from-amber-500/12 border-amber-500/30',
-    dotClass: 'bg-amber-500',
-    accentBarClass: 'bg-amber-500/80',
+    /* Olive-lime tempo — moderate day in Lime Pulse orbit (not brown caution) */
+    colorClass: 'text-[var(--color-signal-tempo)]',
+    bgClass: 'bg-[var(--color-signal-tempo)]/14 border-[var(--color-signal-tempo)]/30',
+    dotClass: 'bg-[var(--color-signal-tempo)]',
+    accentBarClass: 'bg-[var(--color-signal-tempo)]/80',
   },
   CAUTION: {
     label: 'Prudence',
-    colorClass: 'text-orange-600 dark:text-orange-400',
-    bgClass: 'from-orange-500/12 border-orange-500/30',
-    dotClass: 'bg-orange-500',
-    accentBarClass: 'bg-orange-500/80',
+    colorClass: 'text-signal-vo2',
+    bgClass: 'bg-signal-vo2/12 border-signal-vo2/30',
+    dotClass: 'bg-signal-vo2',
+    accentBarClass: 'bg-signal-vo2/80',
   },
   RECOVER: {
     label: 'Récupère',
     // Protective brand sage — recovery is the right decision, not a failure.
     colorClass: 'text-primary',
-    bgClass: 'from-primary/12 border-primary/25',
+    bgClass: 'bg-primary/12 border-primary/25',
     dotClass: 'bg-primary',
     accentBarClass: 'bg-primary/80',
   },
   INSUFFICIENT_DATA: {
     label: 'Données insuffisantes',
     colorClass: 'text-muted-foreground',
-    bgClass: 'from-muted/30 border-border',
+    bgClass: 'bg-muted/40 border-border',
     dotClass: 'bg-muted-foreground',
     accentBarClass: 'bg-muted-foreground/30',
   },
@@ -166,7 +167,7 @@ export function mapRecoveryToSignal(category: ReadinessCategory): DimensionSigna
         label: 'Excellent',
         arrow: '↗',
         arrowDirection: 'up',
-        qualityClass: 'text-emerald-600 dark:text-emerald-400',
+        qualityClass: 'text-primary',
         isAvailable: true,
       };
     case 'ADEQUATE':
@@ -174,7 +175,7 @@ export function mapRecoveryToSignal(category: ReadinessCategory): DimensionSigna
         label: 'Correct',
         arrow: '→',
         arrowDirection: 'neutral',
-        qualityClass: 'text-blue-600 dark:text-blue-400',
+        qualityClass: 'text-[var(--color-signal-recovery)]',
         isAvailable: true,
       };
     case 'REDUCED':
@@ -182,7 +183,7 @@ export function mapRecoveryToSignal(category: ReadinessCategory): DimensionSigna
         label: 'En récupération',
         arrow: '↗',
         arrowDirection: 'up',
-        qualityClass: 'text-amber-600 dark:text-amber-400',
+        qualityClass: 'text-signal-caution',
         isAvailable: true,
       };
     case 'LOW':
@@ -190,7 +191,7 @@ export function mapRecoveryToSignal(category: ReadinessCategory): DimensionSigna
         label: 'Réduit',
         arrow: '↘',
         arrowDirection: 'down',
-        qualityClass: 'text-orange-600 dark:text-orange-400',
+        qualityClass: 'text-signal-vo2',
         isAvailable: true,
       };
     case 'VERY_LOW':
@@ -198,7 +199,7 @@ export function mapRecoveryToSignal(category: ReadinessCategory): DimensionSigna
         label: 'Épuisé',
         arrow: '↘',
         arrowDirection: 'down',
-        qualityClass: 'text-red-600 dark:text-red-400',
+        qualityClass: 'text-signal-risk',
         isAvailable: true,
       };
     case 'BASELINE_PENDING':
@@ -252,7 +253,7 @@ export function mapFatigueToSignal(
         label: 'Frais',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
-        qualityClass: 'text-emerald-600 dark:text-emerald-400',
+        qualityClass: 'text-primary',
         isAvailable: true,
       };
     case 'FUNCTIONAL_LOW':
@@ -260,7 +261,7 @@ export function mapFatigueToSignal(
         label: 'Fonctionnelle',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
-        qualityClass: 'text-blue-600 dark:text-blue-400',
+        qualityClass: 'text-[var(--color-signal-recovery)]',
         isAvailable: true,
       };
     case 'FUNCTIONAL_HIGH':
@@ -268,7 +269,7 @@ export function mapFatigueToSignal(
         label: 'Fonctionnelle',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
-        qualityClass: 'text-amber-600 dark:text-amber-400',
+        qualityClass: 'text-signal-caution',
         isAvailable: true,
       };
     case 'ACCUMULATED':
@@ -276,7 +277,7 @@ export function mapFatigueToSignal(
         label: 'Accumulée',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
-        qualityClass: 'text-orange-600 dark:text-orange-400',
+        qualityClass: 'text-signal-vo2',
         isAvailable: true,
       };
     case 'NON_FUNCTIONAL_RISK':
@@ -284,7 +285,7 @@ export function mapFatigueToSignal(
         label: 'Importante',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
-        qualityClass: 'text-red-600 dark:text-red-400',
+        qualityClass: 'text-signal-risk',
         isAvailable: true,
       };
     case 'OVERREACHING_RISK':
@@ -292,7 +293,7 @@ export function mapFatigueToSignal(
         label: 'Critique',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
-        qualityClass: 'text-red-700 dark:text-red-300',
+        qualityClass: 'text-signal-risk',
         isAvailable: true,
       };
     case 'INSUFFICIENT_DATA':
@@ -329,7 +330,7 @@ export function mapAdaptationToSignal(
         label: 'Progression',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
-        qualityClass: 'text-emerald-600 dark:text-emerald-400',
+        qualityClass: 'text-primary',
         isAvailable: true,
       };
     case 'MAINTAINING':
@@ -337,7 +338,7 @@ export function mapAdaptationToSignal(
         label: 'Maintien',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
-        qualityClass: 'text-blue-600 dark:text-blue-400',
+        qualityClass: 'text-[var(--color-signal-recovery)]',
         isAvailable: true,
       };
     case 'PLATEAUING':
@@ -345,7 +346,7 @@ export function mapAdaptationToSignal(
         label: 'Plateau',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
-        qualityClass: 'text-amber-600 dark:text-amber-400',
+        qualityClass: 'text-signal-caution',
         isAvailable: true,
       };
     case 'MALADAPTING':
@@ -353,7 +354,7 @@ export function mapAdaptationToSignal(
         label: 'Inadaptation',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
-        qualityClass: 'text-orange-600 dark:text-orange-400',
+        qualityClass: 'text-signal-vo2',
         isAvailable: true,
       };
     case 'DETRAINING':
@@ -361,7 +362,7 @@ export function mapAdaptationToSignal(
         label: 'Désentraînement',
         arrow: traj.arrow,
         arrowDirection: traj.direction,
-        qualityClass: 'text-red-600 dark:text-red-400',
+        qualityClass: 'text-signal-risk',
         isAvailable: true,
       };
     case 'INSUFFICIENT_DATA':
@@ -474,17 +475,17 @@ export function mapConsistencyToDisplay(
     case 'ALIGNED':
       return {
         label: `Systèmes alignés (${score}/100)`,
-        colorClass: 'text-emerald-600 dark:text-emerald-400',
+        colorClass: 'text-primary',
       };
     case 'PARTIALLY_ALIGNED':
       return {
         label: `Partiellement alignés (${score}/100)`,
-        colorClass: 'text-amber-600 dark:text-amber-400',
+        colorClass: 'text-signal-caution',
       };
     case 'CONFLICTING':
       return {
         label: `Systèmes en conflit (${score}/100)`,
-        colorClass: 'text-orange-600 dark:text-orange-400',
+        colorClass: 'text-signal-vo2',
       };
     case 'INSUFFICIENT_DATA':
       return {
@@ -636,10 +637,10 @@ export function mapScoreToColorClass(score: number | null): string {
  */
 export function mapStripScoreToColorClass(score: number | null): string {
   if (score === null) return 'text-muted-foreground';
-  if (score >= 70) return 'text-emerald-600 dark:text-emerald-400';
+  if (score >= 70) return 'text-primary';
   if (score >= 50) return 'text-foreground';
   if (score >= 35) return 'text-signal-caution';
-  if (score >= 20) return 'text-orange-600 dark:text-orange-400';
+  if (score >= 20) return 'text-signal-vo2';
   return 'text-signal-risk';
 }
 
@@ -691,17 +692,17 @@ export type AutonomicBalance =
 const AUTONOMIC_BALANCE_DISPLAY: Record<AutonomicBalance, { label: string; colorClass: string }> = {
   ENHANCED: {
     label: 'Système nerveux optimisé',
-    colorClass: 'text-emerald-600 dark:text-emerald-400',
+    colorClass: 'text-primary',
   },
-  NORMAL: { label: 'Équilibre normal', colorClass: 'text-blue-600 dark:text-blue-400' },
+  NORMAL: { label: 'Équilibre normal', colorClass: 'text-[var(--color-signal-recovery)]' },
   MILDLY_SUPPRESSED: {
     label: 'Légèrement supprimé',
-    colorClass: 'text-amber-600 dark:text-amber-400',
+    colorClass: 'text-signal-caution',
   },
-  SUPPRESSED: { label: 'Supprimé', colorClass: 'text-orange-600 dark:text-orange-400' },
+  SUPPRESSED: { label: 'Supprimé', colorClass: 'text-signal-vo2' },
   CRITICALLY_SUPPRESSED: {
     label: 'Critique',
-    colorClass: 'text-red-600 dark:text-red-400',
+    colorClass: 'text-signal-risk',
   },
 };
 
@@ -722,10 +723,10 @@ const SUBJECTIVE_WELLNESS_DISPLAY: Record<
   SubjectiveWellness,
   { label: string; colorClass: string }
 > = {
-  HIGH: { label: 'Bien-être élevé', colorClass: 'text-emerald-600 dark:text-emerald-400' },
-  NORMAL: { label: 'Bien-être normal', colorClass: 'text-blue-600 dark:text-blue-400' },
-  LOW: { label: 'Bien-être faible', colorClass: 'text-amber-600 dark:text-amber-400' },
-  VERY_LOW: { label: 'Bien-être très faible', colorClass: 'text-red-600 dark:text-red-400' },
+  HIGH: { label: 'Bien-être élevé', colorClass: 'text-primary' },
+  NORMAL: { label: 'Bien-être normal', colorClass: 'text-[var(--color-signal-recovery)]' },
+  LOW: { label: 'Bien-être faible', colorClass: 'text-signal-caution' },
+  VERY_LOW: { label: 'Bien-être très faible', colorClass: 'text-signal-risk' },
 };
 
 export function mapSubjectiveWellnessToDisplay(wellness: SubjectiveWellness): {
@@ -747,12 +748,12 @@ const LOAD_STRESS_CONTEXT_DISPLAY: Record<
 > = {
   UNDERTRAINED: {
     label: 'Charge insuffisante',
-    colorClass: 'text-blue-600 dark:text-blue-400',
+    colorClass: 'text-[var(--color-signal-recovery)]',
   },
-  OPTIMAL: { label: 'Charge optimale', colorClass: 'text-emerald-600 dark:text-emerald-400' },
-  ELEVATED: { label: 'Charge élevée', colorClass: 'text-amber-600 dark:text-amber-400' },
-  HIGH: { label: 'Charge très élevée', colorClass: 'text-orange-600 dark:text-orange-400' },
-  CRITICAL: { label: 'Charge critique', colorClass: 'text-red-600 dark:text-red-400' },
+  OPTIMAL: { label: 'Charge optimale', colorClass: 'text-primary' },
+  ELEVATED: { label: 'Charge élevée', colorClass: 'text-signal-caution' },
+  HIGH: { label: 'Charge très élevée', colorClass: 'text-signal-vo2' },
+  CRITICAL: { label: 'Charge critique', colorClass: 'text-signal-risk' },
 };
 
 export function mapLoadStressContextToDisplay(context: LoadStressContext): {
@@ -775,16 +776,16 @@ const SLEEP_ADEQUACY_SIGNAL_DISPLAY: Record<
 > = {
   EXCELLENT: {
     label: 'Sommeil excellent',
-    colorClass: 'text-emerald-600 dark:text-emerald-400',
+    colorClass: 'text-primary',
   },
-  ADEQUATE: { label: 'Sommeil suffisant', colorClass: 'text-blue-600 dark:text-blue-400' },
+  ADEQUATE: { label: 'Sommeil suffisant', colorClass: 'text-[var(--color-signal-recovery)]' },
   INSUFFICIENT: {
     label: 'Sommeil insuffisant',
-    colorClass: 'text-amber-600 dark:text-amber-400',
+    colorClass: 'text-signal-caution',
   },
   SEVERELY_INSUFFICIENT: {
     label: 'Sommeil très insuffisant',
-    colorClass: 'text-red-600 dark:text-red-400',
+    colorClass: 'text-signal-risk',
   },
 };
 

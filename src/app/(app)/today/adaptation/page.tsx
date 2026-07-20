@@ -1,9 +1,11 @@
 'use client';
 
 import { format } from 'date-fns';
+import { TrendingUp } from 'lucide-react';
 import { MobileDrillDownHeader } from '@/components/layout/mobile-drill-down-header';
 import { AdaptationPageView } from '@/components/adaptation/adaptation-page-view';
 import { MetricDrillDownSkeleton } from '@/components/today/drill-down/drill-down-skeleton';
+import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { useTodaySelectedDate } from '@/hooks/use-today-selected-date';
 import { useAdaptationViewModel } from '@/hooks/use-presentation-view-model';
 
@@ -22,10 +24,14 @@ export default function TodayAdaptationPage() {
     return (
       <div className="space-y-4">
         <MobileDrillDownHeader title="Adaptation" />
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          {viewModel?.emptyState?.description ??
-            'Les dimensions d’adaptation ne sont pas encore assez complètes pour un indice fiable.'}
-        </p>
+        <InkEmptyState
+          icon={TrendingUp}
+          title={viewModel?.emptyState?.title ?? 'Adaptation en cours de consolidation'}
+          description={
+            viewModel?.emptyState?.description ??
+            'Les dimensions d’adaptation ne sont pas encore assez complètes pour un indice fiable.'
+          }
+        />
       </div>
     );
   }

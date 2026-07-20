@@ -77,7 +77,7 @@ export function LocationPlacePicker({
         </p>
       ) : null}
       {open && (loading || results.length > 0) ? (
-        <ul className="border-border bg-background absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-lg border shadow-md">
+        <ul className="border-border bg-background ring-foreground/10 absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-lg border shadow-none ring-1">
           {loading ? (
             <li className="text-muted-foreground px-3 py-2 text-xs">Recherche…</li>
           ) : (

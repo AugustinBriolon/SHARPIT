@@ -178,9 +178,9 @@ export function formatHeatmapRangeLabel(days: number): string {
 }
 
 export const HEATMAP_LEVEL_CLASS: Record<HeatmapLevel, string> = {
-  0: 'bg-neutral-100 dark:bg-neutral-800/80',
-  1: 'bg-emerald-200/90 dark:bg-emerald-900/70',
-  2: 'bg-emerald-400/85 dark:bg-emerald-700/80',
-  3: 'bg-emerald-600/90 dark:bg-emerald-500/75',
-  4: 'bg-emerald-700 dark:bg-emerald-400/90',
+  0: 'bg-analysis-surface-alt dark:bg-analysis-surface',
+  1: 'bg-primary/25 dark:bg-primary/20',
+  2: 'bg-primary/45 dark:bg-primary/35',
+  3: 'bg-primary/70 dark:bg-primary/55',
+  4: 'bg-primary dark:bg-primary/80',
 };

@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus } from 'lucide-react';
+import { NotebookPen, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { CoachMemoryEntryCard } from '@/components/coach-memory/coach-memory-entry-card';
 import { CoachMemoryRoadmapTeaser } from '@/components/coach-memory/coach-memory-roadmap-teaser';
@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
 import { useCoachMemory, useCoachMemoryMutations } from '@/hooks/use-coach-memory';
@@ -114,16 +115,21 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
     }
 
     return (
-      <div className="rounded-analysis border-analysis-border border border-dashed px-5 py-10 text-center">
-        <p className="text-sm font-medium">Aucune entrée enregistrée</p>
-        <p className="text-muted-foreground mx-auto mt-2 max-w-md text-sm leading-relaxed">
-          Ajoute un déplacement ou une contrainte manuellement, ou mentionne-le au coach — il
-          apparaîtra ici avec le badge « Déduit du coach ».
-        </p>
-        <Button className="mt-4" type="button" variant="outline" onClick={openCreate}>
-          Ajouter
-        </Button>
-      </div>
+      <InkEmptyState
+        description="Ajoute un déplacement ou une contrainte manuellement, ou mentionne-le au coach — il apparaîtra ici avec le badge « Déduit du coach »."
+        icon={NotebookPen}
+        title="Aucune entrée enregistrée"
+        action={
+          <Button
+            className="bg-ink-surface-foreground text-ink-surface hover:bg-ink-surface-foreground/90 mt-1"
+            type="button"
+            onClick={openCreate}
+          >
+            Ajouter
+          </Button>
+        }
+        bleed
+      />
     );
   }
 

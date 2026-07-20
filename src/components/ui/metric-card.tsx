@@ -4,22 +4,17 @@ interface MetricCardProps {
   label: string;
   value: string;
   sublabel?: string;
-  accent?: 'primary' | 'cyan' | 'orange' | 'violet' | 'default';
+  accent?: 'primary' | 'orange' | 'default';
   className?: string;
 }
 
 const accentTextMap = {
   primary: 'text-primary',
-  cyan: 'text-cyan-600',
-  orange: 'text-orange-600',
-  violet: 'text-violet-600',
+  orange: 'text-signal-vo2',
   default: 'text-foreground',
 };
 
-/**
- * Same shell as activity hero stats (Distance / Allure / …):
- * `border-border bg-card rounded-2xl border px-5 py-4`.
- */
+/** Seed analysis plate — same shell as Corps / Today instrument panels. */
 export function MetricCard({
   label,
   value,
@@ -28,7 +23,7 @@ export function MetricCard({
   className,
 }: MetricCardProps) {
   return (
-    <div className={cn('border-border bg-card rounded-2xl border px-5 py-4', className)}>
+    <div className={cn('analysis-panel rounded-analysis-lg px-5 py-4', className)}>
       <p className="text-label">{label}</p>
       <p
         className={cn(

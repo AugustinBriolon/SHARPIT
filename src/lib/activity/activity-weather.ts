@@ -250,15 +250,15 @@ export function activityWeatherIcon(condition: ActivityWeatherCondition): Lucide
 export function activityWeatherIconClassName(condition: ActivityWeatherCondition): string {
   switch (condition) {
     case 'clear':
-      return 'text-amber-500';
+      return 'text-signal-threshold';
     case 'partly-cloudy':
-      return 'text-sky-500';
+      return 'text-signal-tempo';
     case 'cloudy':
     case 'overcast':
       return 'text-muted-foreground';
     case 'drizzle':
     case 'rain':
-      return 'text-blue-500';
+      return 'text-signal-recovery';
     default:
       return 'text-muted-foreground';
   }

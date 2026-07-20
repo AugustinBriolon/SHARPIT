@@ -569,7 +569,7 @@ export function AthleteProfilePanel({ initial }: { initial: ProfileData | null }
         </div>
       </ProfileFormSection>
 
-      {message ? <p className="text-sm text-emerald-600">{message}</p> : null}
+      {message ? <p className="text-primary text-sm">{message}</p> : null}
       {error ? <p className="text-destructive text-sm">{error}</p> : null}
       <Button disabled={saving} type="submit">
         {saving ? 'Enregistrement…' : 'Enregistrer le profil'}

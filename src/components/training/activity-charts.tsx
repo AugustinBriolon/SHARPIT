@@ -5,6 +5,16 @@ import { memo } from 'react';
 import { Area, AreaChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts';
 import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  CHART_BASE_STROKE,
+  CHART_GRID_COLOR,
+  CHART_RECOVERY_STROKE,
+  CHART_RISK_STROKE,
+  CHART_TEMPO_STROKE,
+  CHART_THRESHOLD_STROKE,
+  CHART_TICK_COLOR,
+  CHART_VO2_STROKE,
+} from '@/lib/chart-theme';
 import { formatAltitudeMeters, type NormalizedStreamChartPoint } from '@/lib/stream-chart-data';
 
 interface ChartPoint {
@@ -64,7 +74,7 @@ function ActivityChartsComponent({
     metrics.push({
       key: 'alt',
       label: 'Altitude',
-      color: '#059669',
+      color: CHART_RECOVERY_STROKE,
       unit: 'm',
       format: formatAltitudeMeters,
     });
@@ -72,14 +82,14 @@ function ActivityChartsComponent({
     metrics.push({
       key: 'hr',
       label: 'Fréquence cardiaque',
-      color: '#e11d48',
+      color: CHART_RISK_STROKE,
       unit: 'bpm',
     });
   if (has.watts)
     metrics.push({
       key: 'watts',
       label: 'Puissance',
-      color: '#d97706',
+      color: CHART_THRESHOLD_STROKE,
       unit: 'W',
     });
   // Course : allure ; autres : vitesse
@@ -87,7 +97,7 @@ function ActivityChartsComponent({
     metrics.push({
       key: 'pace',
       label: 'Allure',
-      color: '#ea580c',
+      color: CHART_VO2_STROKE,
       unit: '/km',
       format: paceFmt,
     });
@@ -95,14 +105,14 @@ function ActivityChartsComponent({
     metrics.push({
       key: 'speed',
       label: 'Vitesse',
-      color: '#0891b2',
+      color: CHART_BASE_STROKE,
       unit: 'km/h',
     });
   if (has.cadence)
     metrics.push({
       key: 'cadence',
       label: 'Cadence',
-      color: '#7c3aed',
+      color: CHART_TEMPO_STROKE,
       unit: type === ActivityType.RUN ? 'spm' : 'rpm',
     });
 
@@ -125,18 +135,12 @@ function ActivityChartsComponent({
           <CardContent>
             <ResponsiveChartFrame height={176}>
               <AreaChart data={data} margin={{ top: 5, right: 10, left: -12, bottom: 0 }}>
-                <defs>
-                  <linearGradient id={`grad-${m.key}`} x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor={m.color} stopOpacity={0.35} />
-                    <stop offset="100%" stopColor={m.color} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" />
+                <CartesianGrid stroke={CHART_GRID_COLOR} strokeDasharray="3 3" />
                 <XAxis
                   axisLine={false}
                   dataKey="x"
                   domain={['dataMin', 'dataMax']}
-                  tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
+                  tick={{ fill: CHART_TICK_COLOR, fontSize: 11 }}
                   tickFormatter={xFmt}
                   tickLine={false}
                   type="number"
@@ -145,7 +149,7 @@ function ActivityChartsComponent({
                 <YAxis
                   axisLine={false}
                   domain={m.key === 'pace' ? ['dataMax', 'dataMin'] : ['auto', 'auto']}
-                  tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
+                  tick={{ fill: CHART_TICK_COLOR, fontSize: 11 }}
                   tickFormatter={m.format ? (v: number) => m.format!(v) : undefined}
                   tickLine={false}
                   width={44}
@@ -155,7 +159,7 @@ function ActivityChartsComponent({
                     if (!active || !payload?.length) return null;
                     const v = payload[0].value as number;
                     return (
-                      <div className="border-border/60 bg-card rounded-lg border px-3 py-2 text-xs shadow-lg">
+                      <div className="analysis-panel rounded-analysis px-3 py-2 text-xs shadow-none">
                         <p className="text-muted-foreground mb-1">
                           {xFmt(Number(label))} {xLabel}
                         </p>
@@ -172,7 +176,8 @@ function ActivityChartsComponent({
                 <Area
                   dataKey={m.key}
                   dot={false}
-                  fill={`url(#grad-${m.key})`}
+                  fill={m.color}
+                  fillOpacity={0.12}
                   isAnimationActive={false}
                   stroke={m.color}
                   strokeWidth={2}

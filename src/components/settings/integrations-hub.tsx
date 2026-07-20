@@ -57,14 +57,14 @@ function StatusBadge({ integration }: { integration: IntegrationDefinition }) {
   }
   if (integration.connected) {
     return (
-      <span className="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
+      <span className="bg-highlight text-highlight-foreground inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
         <CheckCircle2 className="size-3" aria-hidden />
         Connecté
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium tracking-wide text-amber-700 uppercase dark:text-amber-400">
+    <span className="bg-signal-caution/10 text-signal-caution inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
       <CircleDashed className="size-3" aria-hidden />À connecter
     </span>
   );
@@ -79,7 +79,7 @@ function IntegrationCard({
 }) {
   return (
     <button
-      className="bg-card/60 group hover:border-primary/25 hover:bg-primary/5 flex w-full flex-col rounded-2xl border p-4 text-left transition-colors"
+      className="analysis-panel group hover:border-primary/25 hover:bg-primary/5 rounded-analysis-lg flex w-full flex-col p-4 text-left transition-colors"
       type="button"
       onClick={onOpen}
     >
@@ -205,7 +205,7 @@ export function IntegrationsHub({ payload }: { payload: IntegrationsPayload }) {
 
   return (
     <section className="space-y-4">
-      <div className="bg-card/60 flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-5 py-4">
+      <div className="analysis-panel rounded-analysis-lg flex flex-wrap items-center justify-between gap-3 px-5 py-4">
         <div>
           <p className="text-sm font-medium">Sources de données</p>
           <p className="text-muted-foreground text-xs">

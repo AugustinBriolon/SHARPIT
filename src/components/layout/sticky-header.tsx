@@ -50,9 +50,9 @@ export function StickyHeader({
     <header
       ref={ref}
       className={cn(
-        'relative z-40 py-3 lg:sticky lg:top-0 lg:-mx-6 lg:px-6 lg:py-4 lg:transition-[background-color,border-color,box-shadow,backdrop-filter] lg:duration-300 lg:ease-out',
+        'relative z-40 py-3 lg:sticky lg:top-0 lg:-mx-6 lg:px-6 lg:py-4 lg:transition-[background-color,border-color,backdrop-filter] lg:duration-300 lg:ease-out',
         stuck
-          ? 'lg:border-border/60 lg:bg-background/70 lg:supports-backdrop-filter:bg-background/55 lg:border-b lg:shadow-sm lg:backdrop-blur-xl'
+          ? 'lg:border-border/60 lg:bg-background/85 lg:supports-backdrop-filter:bg-background/70 lg:border-b lg:backdrop-blur-xl'
           : 'border-b border-transparent bg-transparent',
         className,
       )}
@@ -60,7 +60,7 @@ export function StickyHeader({
       {children}
       <div
         className={cn(
-          'from-background/80 pointer-events-none absolute inset-x-0 top-full hidden h-6 bg-linear-to-b to-transparent transition-opacity duration-300 lg:block',
+          'bg-background/80 pointer-events-none absolute inset-x-0 top-full hidden h-4 transition-opacity duration-300 lg:block',
           stuck ? 'opacity-100' : 'opacity-0',
         )}
         aria-hidden

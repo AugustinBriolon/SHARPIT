@@ -40,7 +40,7 @@ function Tip({
       })
     : payload[0]?.payload?.label;
   return (
-    <div className="border-border/60 bg-card rounded-lg border px-3 py-2 text-xs shadow-lg">
+    <div className="analysis-panel rounded-analysis px-3 py-2 text-xs shadow-none">
       <p className="text-muted-foreground">{displayLabel}</p>
       <p className="font-mono font-semibold" style={{ color: payload[0].color }}>
         {formatMetricValue(payload[0].value)}

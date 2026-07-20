@@ -1,9 +1,12 @@
 import { shadcn } from '@clerk/themes';
 
+import { BRAND } from '@/lib/brand-tokens';
+
 /** Tokens SharpIt — primary brand only; surfaces follow globals.css via shadcn theme. */
 const SHARPIT = {
-  primary: '#3a9e6a',
-  radius: '0.625rem',
+  /** Clerk filled CTA aligns with Seed ink (Forest), not leaf interactive */
+  primary: BRAND.forestDepths,
+  radius: BRAND.radius,
 } as const;
 
 const elements = {
@@ -16,8 +19,7 @@ const elements = {
   socialButtonsBlockButton:
     'rounded-lg border border-border bg-background text-foreground shadow-none hover:bg-muted/60',
   socialButtonsBlockButtonText: 'font-medium text-foreground',
-  formButtonPrimary:
-    'rounded-lg bg-primary text-primary-foreground shadow-none hover:bg-primary/90',
+  formButtonPrimary: 'rounded-lg bg-foreground text-background shadow-none hover:bg-foreground/90',
   formFieldInput:
     'rounded-lg border border-input bg-background text-foreground shadow-none focus:ring-2 focus:ring-ring/30',
   formFieldLabel: 'font-medium text-foreground',
@@ -32,7 +34,7 @@ const elements = {
   otpCodeFieldInput: 'rounded-lg border border-input bg-background',
   alertText: 'text-foreground',
   formResendCodeLink: 'text-primary',
-  userButtonPopoverCard: 'rounded-xl border border-border/80 bg-card shadow-lg',
+  userButtonPopoverCard: 'rounded-xl border border-border/80 bg-card shadow-none',
   userButtonPopoverActionButton: 'hover:bg-muted/60',
   userButtonPopoverActionButtonText: 'text-foreground',
   userPreviewMainIdentifier: 'font-medium text-foreground',

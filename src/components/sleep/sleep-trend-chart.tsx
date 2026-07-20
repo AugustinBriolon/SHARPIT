@@ -35,7 +35,7 @@ function SleepTrendBars({ data, targetMin }: { data: SleepBarPoint[]; targetMin:
             const pt = payload[0].payload as SleepBarPoint;
             const above = pt.minutes != null && pt.minutes >= targetMin;
             return (
-              <div className="analysis-panel rounded-analysis px-3 py-2 text-xs shadow-md">
+              <div className="analysis-panel rounded-analysis px-3 py-2 text-xs shadow-none">
                 <p className="text-data font-semibold tabular-nums">
                   {formatSleepDuration(pt.minutes)}
                 </p>

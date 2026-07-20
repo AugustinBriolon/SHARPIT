@@ -18,14 +18,14 @@ export const intensityLabels: Record<SessionIntensity, string> = {
   RACE: 'Compétition',
 };
 
-/** Classes Tailwind (texte) par intensité. */
+/** Classes Tailwind (texte) par intensité — alignées sur les signaux Seed. */
 export const intensityTextColors: Record<SessionIntensity, string> = {
-  RECOVERY: 'text-slate-600',
-  ENDURANCE: 'text-cyan-600',
-  TEMPO: 'text-emerald-600',
-  THRESHOLD: 'text-amber-600',
-  VO2MAX: 'text-red-600',
-  RACE: 'text-violet-600',
+  RECOVERY: 'text-[var(--color-signal-recovery)]',
+  ENDURANCE: 'text-[var(--color-signal-base)]',
+  TEMPO: 'text-[var(--color-signal-tempo)]',
+  THRESHOLD: 'text-[var(--color-signal-threshold)]',
+  VO2MAX: 'text-[var(--color-signal-vo2)]',
+  RACE: 'text-primary',
 };
 
 /** Couleur de référence (CSS) par intensité, pour les accents/points. */

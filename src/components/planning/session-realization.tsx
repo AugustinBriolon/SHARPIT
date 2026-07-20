@@ -92,7 +92,7 @@ function PhysicalReassessmentCard({ item }: { item: PhysicalReassessment }) {
 
   if (done) {
     return (
-      <div className="flex items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2 text-xs text-emerald-600">
+      <div className="border-primary/30 bg-primary/8 text-primary flex items-center gap-1.5 rounded-md border p-2 text-xs">
         <Check className="size-3.5 shrink-0" />
         <span>
           Suivi mis à jour : {item.noteTitle} ({severity}/10)
@@ -102,7 +102,7 @@ function PhysicalReassessmentCard({ item }: { item: PhysicalReassessment }) {
   }
 
   return (
-    <div className="border-border/50 bg-card/50 space-y-2 rounded-md border p-2.5">
+    <div className="border-analysis-border/60 bg-analysis-surface-alt/80 space-y-2 rounded-md border p-2.5">
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs font-medium">{item.noteTitle}</p>
         <button
@@ -293,7 +293,7 @@ export function SessionRealization({ session }: { session: ClientPlannedSession 
           )}
           {analysis.recommendation && (
             <p className="border-primary/20 bg-primary/5 rounded-md border p-2 text-xs">
-              💡 {analysis.recommendation}
+              {analysis.recommendation}
             </p>
           )}
           <LinkButton href={`/coach?discuss=${session.id}`} size="sm" variant="outline">
@@ -301,8 +301,8 @@ export function SessionRealization({ session }: { session: ClientPlannedSession 
             Discuter avec le coach
           </LinkButton>
           {painReassessments.length > 0 && (
-            <div className="space-y-2 rounded-md border border-amber-500/20 bg-amber-500/5 p-2.5">
-              <p className="flex items-center gap-1.5 text-xs font-medium text-amber-600">
+            <div className="border-signal-caution/20 bg-signal-caution/5 space-y-2 rounded-md border p-2.5">
+              <p className="text-signal-caution flex items-center gap-1.5 text-xs font-medium">
                 <HeartPulse className="size-3.5" />
                 Réévaluer une douleur ou blessure
               </p>
@@ -360,9 +360,9 @@ export function SessionRealization({ session }: { session: ClientPlannedSession 
 
   if (linked) {
     return (
-      <div className="border-border/60 bg-card/30 space-y-3 rounded-lg border p-3">
+      <div className="border-analysis-border/60 bg-analysis-surface-alt/50 space-y-3 rounded-lg border p-3">
         <div className="flex items-center justify-between gap-2">
-          <span className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-emerald-600 uppercase">
+          <span className="text-primary flex items-center gap-1.5 text-xs font-medium tracking-wide uppercase">
             <CheckCircle2 className="size-3.5" /> Séance réalisée
           </span>
           <button
@@ -376,7 +376,7 @@ export function SessionRealization({ session }: { session: ClientPlannedSession 
         </div>
 
         <Link
-          className="border-border/50 bg-card/60 hover:border-primary/40 flex items-center justify-between gap-2 rounded-md border p-2"
+          className="border-analysis-border/60 bg-analysis-surface hover:border-primary/40 flex items-center justify-between gap-2 rounded-md border p-2"
           href={`/training/${linked.id}`}
         >
           <div className="flex min-w-0 items-start gap-1.5">
@@ -428,7 +428,7 @@ export function SessionRealization({ session }: { session: ClientPlannedSession 
                 {candidates.map(({ a, diff, sameType }) => (
                   <button
                     key={a.id}
-                    className="border-border/50 bg-card/40 hover:border-primary/40 flex w-full items-center justify-between gap-2 rounded-md border p-2 text-left"
+                    className="border-analysis-border/60 bg-analysis-surface-alt/70 hover:border-primary/40 flex w-full items-center justify-between gap-2 rounded-md border p-2 text-left"
                     type="button"
                     onClick={() => handleLink(a.id)}
                   >

@@ -537,12 +537,12 @@ export function buildAnalyticsViewModel(
 
 export const CHART_COLORS: Record<ActivityType | 'ctl' | 'atl' | 'tsb', string> = {
   RUN: '#ea580c',
-  BIKE: '#0891b2',
+  BIKE: '#059669',
   SWIM: '#2563eb',
-  STRENGTH: '#7c3aed',
-  TRIATHLON: '#c026d3',
-  OTHER: '#64748b',
-  ctl: '#0891b2',
-  atl: '#ea580c',
-  tsb: '#7c3aed',
+  STRENGTH: '#2f6b28',
+  TRIATHLON: '#9f995b',
+  OTHER: '#666666',
+  ctl: 'var(--signal-base)',
+  atl: 'var(--signal-vo2)',
+  tsb: 'var(--signal-tempo)',
 };

@@ -5,6 +5,7 @@ import { ActivityTypeIndicator } from '@/components/activity/activity-type-indic
 import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { LinkButton } from '@/components/ui/link-button';
+import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { PhysioRail } from '@/components/ui/physio-rail';
 import { useActivityMutations } from '@/hooks/use-data';
 import { activityTypeLabels, formatDate, formatDistance, formatDuration } from '@/lib/format';
@@ -12,6 +13,7 @@ import { formatActivityWeatherChip, parseActivityWeather } from '@/lib/activity/
 import { parseSessionAnalysis } from '@/lib/session-analysis-display';
 import { cn } from '@/lib/utils';
 import { ActivityType } from '@prisma/client';
+import { Dumbbell } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -43,15 +45,26 @@ export function ActivityList({
   variant?: 'panel' | 'chip';
 }) {
   if (!activities.length) {
+    const description = emptyLabel
+      ? undefined
+      : 'Commence par une saisie manuelle ou synchronise une source connectée.';
+    const action = emptyLabel ? undefined : (
+      <LinkButton
+        className="bg-ink-surface-foreground text-ink-surface hover:bg-ink-surface-foreground/90 mt-1"
+        href="/training/manual"
+      >
+        Saisir une séance manuellement
+      </LinkButton>
+    );
+
     return (
-      <div className="border-border/80 rounded-xl border border-dashed p-12 text-center">
-        <p className="text-muted-foreground">{emptyLabel ?? 'Aucune séance enregistrée.'}</p>
-        {!emptyLabel && (
-          <LinkButton className="mt-4" href="/training/manual">
-            Saisir une séance manuellement
-          </LinkButton>
-        )}
-      </div>
+      <InkEmptyState
+        action={action}
+        description={description}
+        icon={Dumbbell}
+        title={emptyLabel ?? 'Aucune séance enregistrée'}
+        bleed
+      />
     );
   }
 

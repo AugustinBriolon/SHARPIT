@@ -129,8 +129,8 @@ export function RaceCard({ goal }: { goal: GoalItem }) {
       <Card
         className={cn(
           urgent
-            ? 'border-orange-400/40 bg-linear-to-br from-orange-400/10 to-transparent'
-            : 'border-primary/20 from-primary/5 bg-linear-to-br to-transparent',
+            ? 'border-signal-caution/40 bg-signal-caution/10'
+            : 'border-primary/20 bg-primary/5',
           goal.achieved && 'opacity-60',
         )}
       >
@@ -165,7 +165,7 @@ export function RaceCard({ goal }: { goal: GoalItem }) {
               <p
                 className={cn(
                   'font-mono text-3xl font-semibold',
-                  urgent ? 'text-orange-600' : 'text-primary',
+                  urgent ? 'text-signal-caution' : 'text-primary',
                 )}
               >
                 {days >= 0 ? `J-${days}` : `J+${Math.abs(days)}`}

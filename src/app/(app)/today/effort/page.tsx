@@ -1,9 +1,11 @@
 'use client';
 
 import { format } from 'date-fns';
+import { Activity } from 'lucide-react';
 import { MobileDrillDownHeader } from '@/components/layout/mobile-drill-down-header';
 import { EffortPageView } from '@/components/effort/effort-page-view';
 import { MetricDrillDownSkeleton } from '@/components/today/drill-down/drill-down-skeleton';
+import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { useTodaySelectedDate } from '@/hooks/use-today-selected-date';
 import { useEffortViewModel } from '@/hooks/use-presentation-view-model';
 
@@ -22,9 +24,11 @@ export default function TodayEffortPage() {
     return (
       <div className="space-y-4">
         <MobileDrillDownHeader title="Charge d'effort" />
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          {viewModel?.emptyState?.description ?? 'Données d’effort indisponibles.'}
-        </p>
+        <InkEmptyState
+          description={viewModel?.emptyState?.description ?? 'Données d’effort indisponibles.'}
+          icon={Activity}
+          title={viewModel?.emptyState?.title ?? 'Charge d’effort indisponible'}
+        />
       </div>
     );
   }

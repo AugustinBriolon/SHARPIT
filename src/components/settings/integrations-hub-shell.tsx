@@ -7,7 +7,7 @@ import { SkeletonStatusBadge } from '@/components/ui/skeleton-patterns';
 export function IntegrationsHubShell({ pending = false }: { pending?: boolean }) {
   return (
     <section className="space-y-4">
-      <div className="bg-card/60 flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-5 py-4">
+      <div className="analysis-panel rounded-analysis-lg flex flex-wrap items-center justify-between gap-3 px-5 py-4">
         <div>
           <p className="text-sm font-medium">Sources de données</p>
           {pending ? (
@@ -25,7 +25,7 @@ export function IntegrationsHubShell({ pending = false }: { pending?: boolean })
         {INTEGRATION_CATALOG.map((integration) => (
           <div
             key={integration.id}
-            className="bg-card/60 flex w-full flex-col rounded-2xl border p-4"
+            className="analysis-panel rounded-analysis-lg flex w-full flex-col p-4"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3">

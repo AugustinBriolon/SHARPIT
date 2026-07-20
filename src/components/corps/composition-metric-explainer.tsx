@@ -38,7 +38,7 @@ function MetricScale({
         </div>
         {markerPct != null ? (
           <div
-            className="border-background bg-foreground absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 shadow-sm"
+            className="border-background bg-foreground absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 shadow-none"
             style={{ left: `${markerPct}%` }}
           />
         ) : null}

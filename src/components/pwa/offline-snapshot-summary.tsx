@@ -36,7 +36,7 @@ export function OfflineSnapshotSummary({ entry }: { entry: PersistedSnapshotEntr
         </span>
       </div>
 
-      <div className="border-border/60 rounded-2xl border p-5">
+      <div className="analysis-panel rounded-analysis-lg p-5">
         {verdict && <p className={`text-verdict ${verdict.colorClass}`}>{verdict.label}</p>}
         {snapshot.confidenceLabel && (
           <p className="text-muted-foreground mt-1 text-sm">{snapshot.confidenceLabel}</p>

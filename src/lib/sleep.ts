@@ -86,10 +86,10 @@ export interface SleepCoachView {
 }
 
 const PHASE_COLORS = {
-  deep: '#1e3a8a',
-  rem: '#7c3aed',
-  light: '#38bdf8',
-  awake: '#f59e0b',
+  deep: 'var(--signal-base)',
+  rem: 'var(--signal-recovery)',
+  light: 'var(--signal-tempo)',
+  awake: 'var(--signal-caution)',
 } as const;
 
 export function formatClock(min: number | null): string {

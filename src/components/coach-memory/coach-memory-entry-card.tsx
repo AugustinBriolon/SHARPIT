@@ -45,7 +45,7 @@ export function CoachMemoryEntryCard({
       data-memory-id={entry.id}
       id={`memory-${entry.id}`}
       className={cn(
-        'analysis-panel rounded-analysis px-4 py-4 transition-shadow',
+        'analysis-panel rounded-analysis px-4 py-4 transition-colors',
         highlighted && 'ring-primary/40 ring-2',
       )}
     >
@@ -73,7 +73,7 @@ export function CoachMemoryEntryCard({
               ) : null}
               {constraintLabel ? (
                 <Badge
-                  className="rounded-full border-amber-500/30 bg-amber-500/10 font-normal text-amber-800 dark:text-amber-300"
+                  className="border-signal-caution/30 bg-signal-caution/10 text-signal-caution rounded-full font-normal"
                   variant="outline"
                 >
                   {constraintLabel}
@@ -81,7 +81,7 @@ export function CoachMemoryEntryCard({
               ) : null}
               {entry.isActive ? (
                 <Badge
-                  className="rounded-full border-emerald-500/30 bg-emerald-500/10 font-normal text-emerald-700 dark:text-emerald-400"
+                  className="border-primary/30 bg-primary/10 text-primary rounded-full font-normal"
                   variant="outline"
                 >
                   Actif

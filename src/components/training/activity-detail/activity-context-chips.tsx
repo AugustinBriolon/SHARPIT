@@ -76,7 +76,7 @@ export function ActivityContextChips({
         key={`record-${record.category}`}
         href={recordCategoryHref(record.category)}
         icon={Trophy}
-        iconClassName="text-amber-600"
+        iconClassName="text-signal-caution"
         label="Record"
         tone="amber"
         value={record.label}

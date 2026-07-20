@@ -69,8 +69,8 @@ export function MetricCell({
       className={cn(
         'relative flex flex-col',
         onExplain
-          ? 'group bg-background/40 hover:bg-background/60 rounded-xl border px-3.5 py-3 transition-colors'
-          : 'bg-card/60 rounded-2xl border px-4 py-4',
+          ? 'group bg-analysis-surface-alt/70 hover:bg-analysis-surface border-analysis-border rounded-xl border px-3.5 py-3 transition-colors'
+          : 'analysis-panel rounded-analysis px-4 py-4',
       )}
     >
       <div className="flex items-center gap-2">

@@ -240,7 +240,7 @@ export function CoachChat({
     : 'Demande conseil à ton coach…';
 
   return (
-    <div className="lg:border-border/60 lg:bg-card/30 flex h-full min-w-0 flex-1 flex-col rounded-xl lg:border">
+    <div className="analysis-panel rounded-analysis-lg flex h-full min-w-0 flex-1 flex-col lg:border">
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
         {header && (
           <div className="bg-background/85 supports-backdrop-filter:bg-background/70 sticky top-0 z-10 backdrop-blur-md">
@@ -281,7 +281,7 @@ export function CoachChat({
             if (isUser) {
               return (
                 <div key={message.id} className="flex justify-end">
-                  <div className="bg-primary text-primary-foreground max-w-[85%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap">
+                  <div className="bg-foreground text-background rounded-analysis-lg max-w-[85%] px-4 py-2.5 text-sm whitespace-pre-wrap">
                     {text}
                   </div>
                 </div>
@@ -296,7 +296,7 @@ export function CoachChat({
 
             return (
               <div key={message.id} className="flex justify-start">
-                <div className="bg-muted/60 text-foreground w-full max-w-[90%] space-y-2 rounded-2xl px-4 py-3">
+                <div className="analysis-panel-alt text-foreground rounded-analysis-lg w-full max-w-[90%] space-y-2 px-4 py-3">
                   {text && <CoachMessage>{text}</CoachMessage>}
                   <ToolActivityList parts={inlineParts as ToolPartLite[]} streamIdle={streamIdle} />
                 </div>
@@ -306,7 +306,7 @@ export function CoachChat({
 
           {status === 'submitted' && (
             <div className="flex justify-start">
-              <div className="bg-muted/60 rounded-2xl px-4 py-2.5">
+              <div className="analysis-panel-alt rounded-analysis-lg px-4 py-2.5">
                 <Loader2 className="text-muted-foreground size-4 animate-spin" />
               </div>
             </div>

@@ -13,11 +13,11 @@ import type { ProductInsightBundle } from '@/core/product-insight/types';
 import type { DimensionResult } from '@/hooks/use-today';
 
 const ADAPTATION_VERDICT_DISPLAY: Record<string, { label: string; colorClass: string }> = {
-  INCREASE_LOAD: { label: 'Augmenter la charge', colorClass: 'text-emerald-600' },
-  SUSTAIN: { label: 'Maintenir la trajectoire', colorClass: 'text-blue-600' },
-  CONSOLIDATE: { label: 'Consolider', colorClass: 'text-blue-600' },
-  REDUCE_LOAD: { label: 'Réduire la charge', colorClass: 'text-amber-600' },
-  RECOVERY_PRIORITY: { label: 'Priorité récupération', colorClass: 'text-orange-600' },
+  INCREASE_LOAD: { label: 'Augmenter la charge', colorClass: 'text-primary' },
+  SUSTAIN: { label: 'Maintenir la trajectoire', colorClass: 'text-[var(--color-signal-recovery)]' },
+  CONSOLIDATE: { label: 'Consolider', colorClass: 'text-[var(--color-signal-recovery)]' },
+  REDUCE_LOAD: { label: 'Réduire la charge', colorClass: 'text-signal-caution' },
+  RECOVERY_PRIORITY: { label: 'Priorité récupération', colorClass: 'text-signal-vo2' },
   INSUFFICIENT_DATA: { label: 'Historique insuffisant', colorClass: 'text-muted-foreground' },
 };
 

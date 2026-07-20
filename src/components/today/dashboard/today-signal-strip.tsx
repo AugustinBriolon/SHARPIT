@@ -94,7 +94,7 @@ export function TodaySignalStrip({
           href={signal.href}
           title={`Voir le détail — ${signal.label}`}
           className={cn(
-            'border-analysis-border/80 bg-background/50 hover:border-primary/35 hover:bg-muted/40',
+            'border-analysis-border/80 bg-analysis-surface-alt/70 hover:border-primary/35 hover:bg-analysis-surface',
             'focus-visible:ring-primary/35 inline-flex min-w-0 items-center justify-between gap-1.5',
             'rounded-lg border px-2.5 py-2 transition-[border-color,background-color] duration-150',
             'focus-visible:ring-2 focus-visible:outline-hidden sm:justify-start sm:py-1.5',

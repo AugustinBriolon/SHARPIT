@@ -47,7 +47,7 @@ export function ProfileAiSummary() {
         <div
           className={cn(
             'flex size-8 shrink-0 items-center justify-center rounded-lg',
-            isComplete ? 'bg-emerald-500/10 text-emerald-700' : 'bg-amber-500/10 text-amber-700',
+            isComplete ? 'icon-well' : 'bg-signal-caution/10 text-signal-caution',
           )}
         >
           <ProfileStatusIcon isComplete={isComplete} loading={loading} />
@@ -64,7 +64,7 @@ export function ProfileAiSummary() {
 
       {!loading && (
         <div className="grid gap-2 sm:grid-cols-2">
-          <div className="bg-muted/40 rounded-lg border px-3 py-2.5">
+          <div className="analysis-panel-alt rounded-analysis px-3 py-2.5">
             <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
               Seuils
             </p>
@@ -72,7 +72,7 @@ export function ProfileAiSummary() {
               {hasThresholds ? thresholds.join(' · ') : 'Non renseignés'}
             </p>
           </div>
-          <div className="bg-muted/40 rounded-lg border px-3 py-2.5">
+          <div className="analysis-panel-alt rounded-analysis px-3 py-2.5">
             <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
               Contexte personnel
             </p>

@@ -6,6 +6,13 @@ import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
 import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatAltitudeMeters, type NormalizedStreamChartPoint } from '@/lib/stream-chart-data';
+import {
+  CHART_GRID_COLOR,
+  CHART_RECOVERY_STROKE,
+  CHART_RISK_STROKE,
+  CHART_THRESHOLD_STROKE,
+  CHART_TICK_COLOR,
+} from '@/lib/chart-theme';
 
 function CombinedChartComponent({
   samples,
@@ -24,7 +31,7 @@ function CombinedChartComponent({
 
   const secondaryKey = showPower ? 'watts' : 'alt';
   const secondaryLabel = showPower ? 'Puissance (W)' : 'Altitude (m)';
-  const secondaryColor = showPower ? '#d97706' : '#059669';
+  const secondaryColor = showPower ? CHART_THRESHOLD_STROKE : CHART_RECOVERY_STROKE;
 
   const data = samples.map((point) => ({
     x: useDistance ? Number(point.xDistanceKm.toFixed(2)) : Number(point.xTimeMin.toFixed(1)),
@@ -47,18 +54,18 @@ function CombinedChartComponent({
       <CardContent>
         <ResponsiveChartFrame height={208}>
           <LineChart data={data} margin={{ top: 5, right: 10, left: -8, bottom: 0 }}>
-            <CartesianGrid stroke="oklch(0 0 0 / 8%)" strokeDasharray="3 3" />
+            <CartesianGrid stroke={CHART_GRID_COLOR} strokeDasharray="3 3" />
             <XAxis
               axisLine={false}
               dataKey="x"
               domain={['dataMin', 'dataMax']}
-              tick={{ fill: 'oklch(0.65 0.02 250)', fontSize: 11 }}
+              tick={{ fill: CHART_TICK_COLOR, fontSize: 11 }}
               tickLine={false}
               type="number"
             />
             <YAxis
               axisLine={false}
-              tick={{ fill: '#e11d48', fontSize: 11 }}
+              tick={{ fill: CHART_RISK_STROKE, fontSize: 11 }}
               tickLine={false}
               width={36}
               yAxisId="hr"
@@ -76,7 +83,7 @@ function CombinedChartComponent({
               content={({ active, payload, label }) => {
                 if (!active || !payload?.length) return null;
                 return (
-                  <div className="border-border/60 bg-card rounded-lg border px-3 py-2 text-xs shadow-lg">
+                  <div className="analysis-panel rounded-analysis px-3 py-2 text-xs shadow-none">
                     <p className="text-muted-foreground mb-1">
                       {label} {xLabel}
                     </p>
@@ -99,7 +106,7 @@ function CombinedChartComponent({
               dataKey="hr"
               dot={false}
               isAnimationActive={false}
-              stroke="#e11d48"
+              stroke={CHART_RISK_STROKE}
               strokeWidth={2}
               type="monotone"
               yAxisId="hr"

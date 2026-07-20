@@ -315,7 +315,7 @@ export function ToolActivity({
   if (state === 'output-denied') {
     const reason = part.approval?.reason;
     return (
-      <div className="border-border/60 bg-card/40 text-muted-foreground flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs">
+      <div className="border-analysis-border/60 bg-analysis-surface-alt/60 text-muted-foreground flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs">
         <X className="size-3.5 shrink-0" />
         <span className="line-through">{meta.proposal}</span>
         <span className="opacity-70">— {reason?.trim() ? reason : 'proposition refusée'}</span>
@@ -387,9 +387,9 @@ export function ToolActivity({
       return 'border-destructive/30 bg-destructive/5 text-destructive';
     }
     if (done) {
-      return 'border-emerald-500/30 bg-emerald-500/5 text-emerald-700';
+      return 'border-primary/30 bg-primary/8 text-primary';
     }
-    return 'border-border/60 bg-card/40 text-muted-foreground';
+    return 'border-analysis-border/60 bg-analysis-surface-alt/60 text-muted-foreground';
   }
 
   function statusIcon() {

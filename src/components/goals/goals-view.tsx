@@ -11,8 +11,10 @@ import {
 } from '@/components/goals/goal-cards';
 import { GoalAchievementsHistory } from '@/components/goals/goal-achievements-history';
 import { GoalsViewSkeleton } from '@/components/goals/goals-view-skeleton';
+import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { horizonLabels, horizonOrder } from '@/lib/goals';
 import { useGoals } from '@/hooks/use-data';
+import { Flag, Target } from 'lucide-react';
 
 function toGoalItem(goal: {
   id: string;
@@ -108,9 +110,13 @@ export function GoalsView() {
             ))}
           </div>
         ) : (
-          <p className="border-border/80 text-muted-foreground rounded-xl border border-dashed p-8 text-center text-sm">
-            Aucune course planifiée.
-          </p>
+          <InkEmptyState
+            description="Ajoute une course cible pour ancrer ton plan."
+            icon={Flag}
+            title="Aucune course planifiée"
+            bleed
+            compact
+          />
         )}
       </section>
 
@@ -150,9 +156,13 @@ export function GoalsView() {
             )}
           </>
         ) : (
-          <p className="border-border/80 text-muted-foreground rounded-xl border border-dashed p-8 text-center text-sm">
-            Aucun objectif chiffré. Crée-en un pour suivre ta progression.
-          </p>
+          <InkEmptyState
+            description="Crée-en un pour suivre ta progression chiffrée."
+            icon={Target}
+            title="Aucun objectif chiffré"
+            bleed
+            compact
+          />
         )}
       </section>
 

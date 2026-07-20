@@ -214,18 +214,18 @@ export function mapContextualNarrativeDisplay(
       if (input.effort.level === 'high') {
         return {
           label: 'Journée intense',
-          colorClass: 'text-orange-600 dark:text-orange-400',
-          bgClass: 'from-orange-500/12 border-orange-500/30',
-          dotClass: 'bg-orange-500',
-          accentBarClass: 'bg-orange-500/80',
+          colorClass: 'text-signal-vo2',
+          bgClass: 'bg-signal-vo2/12 border-signal-vo2/30',
+          dotClass: 'bg-signal-vo2',
+          accentBarClass: 'bg-signal-vo2/80',
         };
       }
       return {
         label: 'Séance faite',
-        colorClass: 'text-emerald-600 dark:text-emerald-400',
-        bgClass: 'from-emerald-500/12 border-emerald-500/30',
-        dotClass: 'bg-emerald-500',
-        accentBarClass: 'bg-emerald-500/80',
+        colorClass: 'text-primary',
+        bgClass: 'bg-primary/12 border-primary/30',
+        dotClass: 'bg-primary',
+        accentBarClass: 'bg-primary/80',
       };
     }
   }
@@ -237,10 +237,10 @@ export function mapContextualNarrativeDisplay(
   ) {
     return {
       label: 'Fin de journée',
-      colorClass: 'text-slate-600 dark:text-slate-400',
-      bgClass: 'from-slate-500/10 border-slate-500/25',
-      dotClass: 'bg-slate-500',
-      accentBarClass: 'bg-slate-500/60',
+      colorClass: 'text-muted-foreground',
+      bgClass: 'bg-muted/60 border-border',
+      dotClass: 'bg-muted-foreground',
+      accentBarClass: 'bg-muted-foreground/60',
     };
   }
 

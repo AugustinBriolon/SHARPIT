@@ -68,7 +68,7 @@ function SplitsTableComponent({
                   <td
                     className={cn(
                       'py-2 pr-4 font-mono',
-                      isBest && mode === 'run' && 'text-cyan-600',
+                      isBest && mode === 'run' && 'text-primary',
                     )}
                   >
                     {formatSplitPace(row, mode)}
@@ -76,7 +76,7 @@ function SplitsTableComponent({
                       <span
                         className={cn(
                           'ml-1 text-[10px]',
-                          delta.faster ? 'text-emerald-600' : 'text-orange-600',
+                          delta.faster ? 'text-primary' : 'text-signal-vo2',
                         )}
                       >
                         {delta.faster ? '−' : '+'}

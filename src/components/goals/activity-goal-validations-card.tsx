@@ -29,7 +29,7 @@ export function ActivityGoalValidationsCard({ validations }: ActivityGoalValidat
   if (!validations.length) return null;
 
   return (
-    <Card className="border-primary/25 from-primary/5 bg-linear-to-br to-transparent">
+    <Card className="border-primary/25 bg-primary/5">
       <CardContent className="space-y-3 py-5">
         <div className="flex items-center gap-2">
           <Trophy className="text-primary size-4" />

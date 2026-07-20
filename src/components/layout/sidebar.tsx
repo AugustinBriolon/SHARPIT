@@ -4,11 +4,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton, useUser } from '@clerk/nextjs';
 import { Activity } from 'lucide-react';
-import { sidebarNavItems } from '@/lib/app-navigation';
+import { settingsNavItem, sidebarPrimaryNavItems, type AppNavItem } from '@/lib/app-navigation';
 import { usePrefetchNavQuery } from '@/hooks/use-prefetch-nav';
 import { navLinkClass } from '@/lib/nav-pill';
 import { clerkAppearance } from '@/lib/clerk-appearance';
-import type { AppNavItem } from '@/lib/app-navigation';
 
 function NavLink({
   item,
@@ -41,28 +40,31 @@ export function Sidebar() {
   const prefetch = usePrefetchNavQuery();
 
   return (
-    <aside className="border-sidebar-border bg-background sticky top-0 flex h-dvh w-60 shrink-0 flex-col border-r">
-      <div className="px-4 pt-6 pb-5">
-        <Link className="flex items-center gap-3 rounded-3xl px-2 py-2" href="/">
-          <div className="bg-primary/10 ring-primary/25 flex size-9 items-center justify-center rounded-lg ring-1">
-            <Activity className="text-primary size-4" aria-hidden />
+    <aside className="border-sidebar-border bg-sidebar text-sidebar-foreground sticky top-0 flex h-dvh w-60 shrink-0 flex-col border-r">
+      <div className="px-3 pt-5 pb-4">
+        <Link
+          className="hover:bg-highlight/30 focus-visible:ring-sidebar-ring rounded-analysis flex items-center gap-3 px-2 py-2 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+          href="/"
+        >
+          <div className="icon-well rounded-analysis-lg size-9">
+            <Activity className="size-4" aria-hidden />
           </div>
-          <div>
-            <p className="font-heading text-sm font-semibold tracking-tight">SHARPIT</p>
-          </div>
+          <p className="font-heading text-sm font-semibold tracking-tight">SHARPIT</p>
         </Link>
       </div>
 
       <nav aria-label="Navigation principale" className="flex flex-1 flex-col overflow-y-auto px-3">
         <div className="space-y-1">
-          {sidebarNavItems.map((item) => (
+          {sidebarPrimaryNavItems.map((item) => (
             <NavLink key={item.href} item={item} pathname={pathname} onPrefetch={prefetch} />
           ))}
         </div>
       </nav>
 
-      <div className="border-sidebar-border border-t p-3">
-        <div className="surface-shell flex items-center gap-3 rounded-3xl p-3">
+      <div className="border-sidebar-border space-y-2 border-t px-3 pt-3 pb-3">
+        <NavLink item={settingsNavItem} pathname={pathname} onPrefetch={prefetch} />
+
+        <div className="analysis-panel rounded-analysis-lg flex items-center gap-3 p-2.5">
           <UserButton
             appearance={{
               ...clerkAppearance,

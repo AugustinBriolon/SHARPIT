@@ -11,6 +11,6 @@ export type ActivityStat = { label: string; value: string };
 
 export type ActivitySpec = { label: string; value: string | number };
 
-export type ChipTone = 'neutral' | 'emerald' | 'amber' | 'orange' | 'red';
+export type ChipTone = 'neutral' | 'done' | 'amber' | 'orange' | 'red';
 
 export type PlannedSessionSummary = NonNullable<ActivityDetail['plannedSession']>;

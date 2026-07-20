@@ -2,7 +2,7 @@ import { formatPlannedSessionRelativeDay } from '@/lib/planned-session-dates';
 import { ACTIVITY_COLOR, ACTIVITY_LABEL, INTENSITY_LABEL } from '@/lib/today-dashboard-labels';
 import type { ClientPlannedSession } from '@/lib/query/types';
 
-const DEFAULT_TYPE_COLOR = 'bg-slate-100 text-slate-600 dark:bg-slate-800';
+const DEFAULT_TYPE_COLOR = 'bg-muted text-muted-foreground';
 
 export type PlannedSessionDisplay = {
   typeLabel: string;

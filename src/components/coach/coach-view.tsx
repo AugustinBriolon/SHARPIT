@@ -10,6 +10,7 @@ import { CoachChat } from '@/components/coach/coach-chat';
 import { CoachConversationList } from '@/components/coach/coach-conversation-list';
 import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
+import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   useConversation,
@@ -230,9 +231,13 @@ export function CoachView() {
   function renderChatPanel() {
     if (!selectedId) {
       return (
-        <div className="border-border/60 bg-card/30 text-muted-foreground flex min-h-[50vh] min-w-0 flex-1 items-center justify-center rounded-xl border p-6 text-center text-sm lg:min-h-0">
-          Sélectionne une conversation ou démarre-en une nouvelle.
-        </div>
+        <InkEmptyState
+          className="min-h-[50vh] flex-1 lg:min-h-0"
+          description="Sélectionne une conversation dans la liste ou démarre-en une nouvelle."
+          icon={MessageSquarePlus}
+          title="Aucune conversation ouverte"
+          compact
+        />
       );
     }
 
@@ -264,9 +269,13 @@ export function CoachView() {
     }
 
     return (
-      <div className="border-border/60 bg-card/30 text-muted-foreground flex min-h-[50vh] min-w-0 flex-1 items-center justify-center rounded-xl border p-6 text-center text-sm lg:min-h-0">
-        Sélectionne une conversation ou démarre-en une nouvelle.
-      </div>
+      <InkEmptyState
+        className="min-h-[50vh] flex-1 lg:min-h-0"
+        description="Sélectionne une conversation dans la liste ou démarre-en une nouvelle."
+        icon={MessageSquarePlus}
+        title="Conversation introuvable"
+        compact
+      />
     );
   }
 

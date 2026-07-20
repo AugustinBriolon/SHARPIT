@@ -14,46 +14,48 @@ export const sportIcon: Record<ActivityType, LucideIcon> = {
   OTHER: Shapes,
 };
 
+/** Sport identity wraps — bike emerald / swim blue only; no violet/fuchsia. */
 export const sportIconWrap: Record<ActivityType, string> = {
-  RUN: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+  RUN: 'bg-signal-vo2/10 text-signal-vo2',
   BIKE: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
   SWIM: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-  STRENGTH: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
-  TRIATHLON: 'bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-400',
+  STRENGTH: 'bg-primary/10 text-primary',
+  TRIATHLON: 'bg-highlight text-highlight-foreground',
   OTHER: 'bg-muted text-muted-foreground',
 };
 
 export const chipDot: Record<ChipTone, string> = {
   neutral: 'bg-muted-foreground',
-  emerald: 'bg-emerald-500',
-  amber: 'bg-amber-500',
-  orange: 'bg-orange-500',
-  red: 'bg-red-500',
+  done: 'bg-primary',
+  amber: 'bg-signal-caution',
+  orange: 'bg-signal-vo2',
+  red: 'bg-signal-risk',
 };
 
 export const chipLinkSurface: Record<ChipTone, string> = {
-  neutral: 'border-border/60 bg-muted/20 hover:border-border hover:bg-muted/40',
-  emerald:
-    'border-emerald-500/30 bg-emerald-500/10 hover:border-emerald-500/50 hover:bg-emerald-500/15',
-  amber: 'border-amber-500/30 bg-amber-500/10 hover:border-amber-500/50 hover:bg-amber-500/15',
-  orange: 'border-orange-500/30 bg-orange-500/10 hover:border-orange-500/50 hover:bg-orange-500/15',
-  red: 'border-red-500/30 bg-red-500/10 hover:border-red-500/50 hover:bg-red-500/15',
+  neutral:
+    'border-analysis-border/60 bg-analysis-surface-alt/50 hover:border-analysis-border hover:bg-analysis-surface-alt',
+  done: 'border-primary/30 bg-primary/10 hover:border-primary/50 hover:bg-primary/15',
+  amber:
+    'border-signal-caution/30 bg-signal-caution/10 hover:border-signal-caution/50 hover:bg-signal-caution/15',
+  orange: 'border-signal-vo2/30 bg-signal-vo2/10 hover:border-signal-vo2/50 hover:bg-signal-vo2/15',
+  red: 'border-signal-risk/30 bg-signal-risk/10 hover:border-signal-risk/50 hover:bg-signal-risk/15',
 };
 
 export const chipStaticSurface: Record<ChipTone, string> = {
-  neutral: 'border-border bg-card',
-  emerald: 'border-emerald-500/30 bg-emerald-500/10',
-  amber: 'border-amber-500/30 bg-amber-500/10',
-  orange: 'border-orange-500/30 bg-orange-500/10',
-  red: 'border-red-500/30 bg-red-500/10',
+  neutral: 'border-analysis-border bg-analysis-surface',
+  done: 'border-primary/30 bg-primary/10',
+  amber: 'border-signal-caution/30 bg-signal-caution/10',
+  orange: 'border-signal-vo2/30 bg-signal-vo2/10',
+  red: 'border-signal-risk/30 bg-signal-risk/10',
 };
 
 export const chipIconTone: Record<ChipTone, string> = {
   neutral: 'text-muted-foreground',
-  emerald: 'text-emerald-600 dark:text-emerald-400',
-  amber: 'text-amber-600 dark:text-amber-400',
-  orange: 'text-orange-600 dark:text-orange-400',
-  red: 'text-red-600 dark:text-red-400',
+  done: 'text-primary',
+  amber: 'text-signal-caution',
+  orange: 'text-signal-vo2',
+  red: 'text-signal-risk',
 };
 
 export function activitySourceLabel(activity: {
@@ -70,7 +72,7 @@ export function activitySourceLabel(activity: {
 }
 
 export function rpeTone(rpe: number): ChipTone {
-  if (rpe <= 3) return 'emerald';
+  if (rpe <= 3) return 'done';
   if (rpe <= 6) return 'amber';
   if (rpe <= 8) return 'orange';
   return 'red';

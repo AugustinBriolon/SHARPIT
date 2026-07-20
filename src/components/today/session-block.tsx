@@ -10,6 +10,7 @@ import type { DaySummaryLine, TodayDaySummary } from '@/lib/today-day-summary';
 import { MorningWellnessDialog } from './dashboard/morning-wellness-dialog';
 import { PlannedSessionPrimary } from './dashboard/planned-session-primary';
 import { TodayGoalsStrip } from './dashboard/today-goals-strip';
+import { STATUS_SURFACE } from '@/lib/presentation/status-surface';
 
 interface SessionBlockProps {
   recommendation: EngineRecommendation | null;
@@ -47,9 +48,7 @@ function SessionLineContent({ line }: { line: DaySummaryLine }) {
   return (
     <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
       <div className="flex min-w-0 items-start gap-1.5">
-        {line.kind === 'done' && (
-          <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-        )}
+        {line.kind === 'done' && <CheckCircle2 className="text-primary mt-0.5 size-3.5 shrink-0" />}
         {line.plannedSession ? (
           <PlannedSessionPrimary className="flex-1" session={line.plannedSession} />
         ) : (
@@ -86,7 +85,10 @@ export function SessionBlock({
 
   return (
     <div
-      className={cn('bg-card/60 space-y-4 rounded-2xl border px-4 py-4 sm:px-5 sm:py-5', className)}
+      className={cn(
+        'analysis-panel rounded-analysis-lg space-y-4 px-4 py-4 sm:px-5 sm:py-5',
+        className,
+      )}
     >
       <div className="flex min-h-6.5 items-start justify-between gap-2 sm:items-center sm:gap-3">
         <p className="text-label min-w-0 flex-1 leading-snug">{daySummary.sectionLabel}</p>
@@ -113,20 +115,15 @@ export function SessionBlock({
           {daySummary.lines.map((line) => {
             const rowClass = cn(
               'rounded-xl border px-3 py-2.5',
-              line.kind === 'done'
-                ? 'border-emerald-500/25 bg-emerald-500/5'
-                : 'border-border/60 bg-background/40',
+              line.kind === 'done' ? STATUS_SURFACE.doneSoft : 'border-border/60 bg-background/40',
             );
 
             if (line.kind === 'done') {
               return (
                 <li key={line.id}>
                   <Link
+                    className={cn(rowClass, 'block transition-colors', STATUS_SURFACE.doneHover)}
                     href={`/training/${line.id}`}
-                    className={cn(
-                      rowClass,
-                      'block transition-colors hover:bg-emerald-500/10 active:opacity-80',
-                    )}
                   >
                     <SessionLineContent line={line} />
                   </Link>

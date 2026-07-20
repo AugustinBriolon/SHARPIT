@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { CalendarRange, ClipboardList, History, ListChecks, TrendingUp } from 'lucide-react';
+import { PageBleed } from '@/components/layout/page-bleed';
 import { StickyHeader } from '@/components/layout/sticky-header';
 
 const TRAINING_SECTIONS = [
@@ -58,8 +59,8 @@ export function TrainingOverview() {
               href={section.href}
             >
               <div className="flex items-start gap-3">
-                <div className="bg-primary/10 ring-primary/15 flex size-9 shrink-0 items-center justify-center rounded-2xl ring-1">
-                  <Icon className="text-primary size-4" />
+                <div className="icon-well rounded-analysis-lg size-9">
+                  <Icon className="size-4" />
                 </div>
                 <div>
                   <p className="text-sm font-medium">{section.title}</p>
@@ -73,21 +74,23 @@ export function TrainingOverview() {
         })}
       </nav>
 
-      <section className="analysis-panel rounded-analysis-lg px-4 py-4">
+      <PageBleed className="py-5" ink>
         <div className="flex items-start gap-3">
-          <div className="bg-primary/10 ring-primary/15 flex size-10 items-center justify-center rounded-2xl ring-1">
-            <TrendingUp className="text-primary size-4" />
+          <div className="icon-well rounded-analysis-lg size-10">
+            <TrendingUp className="size-4" />
           </div>
           <div>
-            <p className="text-sm font-medium">Overview canonique posée</p>
-            <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+            <p className="text-ink-surface-foreground text-sm font-medium">
+              Overview canonique posée
+            </p>
+            <p className="text-ink-surface-foreground/75 mt-1 text-sm leading-relaxed">
               Cette landing fixe la structure durable du hub Entraînement. Le redesign détaillé
               viendra ensuite autour du prévu, du réalisé, de la progression et de la conformité au
               plan.
             </p>
           </div>
         </div>
-      </section>
+      </PageBleed>
     </div>
   );
 }

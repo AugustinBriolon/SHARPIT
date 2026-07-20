@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useWeeklyCoachingBriefViewModel } from '@/hooks/use-data';
 
@@ -52,12 +53,12 @@ export function WeeklyBrief({ onClose }: { onClose: () => void }) {
         )}
 
         {showEmptyState && vm?.emptyState && (
-          <div className="border-border/60 bg-muted/20 rounded-lg border p-6 text-center">
-            <p className="text-foreground font-medium">{vm.emptyState.title}</p>
-            {vm.emptyState.description && (
-              <p className="text-muted-foreground mt-1 text-sm">{vm.emptyState.description}</p>
-            )}
-          </div>
+          <InkEmptyState
+            description={vm.emptyState.description ?? undefined}
+            icon={NotebookText}
+            title={vm.emptyState.title}
+            compact
+          />
         )}
 
         {showContent && vm && (

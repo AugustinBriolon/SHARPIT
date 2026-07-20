@@ -12,11 +12,11 @@ export const phaseLabels: Record<PlanPhase, string> = {
 };
 
 export const phaseColors: Record<PlanPhase, string> = {
-  BASE: '#64748b',
-  BUILD: '#0891b2',
-  PEAK: '#ea580c',
-  TAPER: '#7c3aed',
-  RACE: '#dc2626',
+  BASE: 'var(--signal-neutral)',
+  BUILD: 'var(--signal-base)',
+  PEAK: 'var(--signal-vo2)',
+  TAPER: 'var(--signal-tempo)',
+  RACE: 'var(--signal-risk)',
 };
 
 export interface MacroWeekDraft {

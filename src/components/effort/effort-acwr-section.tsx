@@ -71,7 +71,7 @@ export function AcwrZoneBar({ acwr }: { acwr: number }) {
           aria-hidden
         >
           <div
-            className="border-background size-3 rounded-full border-2 shadow-sm"
+            className="border-background size-3 rounded-full border-2 shadow-none"
             style={{ backgroundColor: markerColor }}
           />
         </div>

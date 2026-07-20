@@ -13,9 +13,9 @@ export type MetricTone = 'good' | 'warn' | 'bad' | 'neutral';
 export type CorpsTone = 'ok' | 'watch' | 'verify' | 'attention' | 'neutral';
 
 export const METRIC_TONE_CLASS: Record<MetricTone, string> = {
-  good: 'text-emerald-600',
-  warn: 'text-amber-600',
-  bad: 'text-red-600',
+  good: 'text-primary',
+  warn: 'text-signal-caution',
+  bad: 'text-signal-risk',
   neutral: 'text-foreground',
 };
 

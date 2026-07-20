@@ -500,7 +500,7 @@ function DayRow({
                 className="text-foreground hover:text-foreground flex items-center gap-2 text-sm transition-colors"
                 href={`/training/${a.id}`}
               >
-                <CheckCircle2 className="size-3.5 shrink-0 text-emerald-600" />
+                <CheckCircle2 className="text-primary size-3.5 shrink-0" />
                 <ActivityTypeIndicator type={a.type} />
                 <span className="truncate">{a.title ?? activityTypeLabels[a.type]}</span>
                 <span className="text-muted-foreground text-xs">réalisé</span>
@@ -551,7 +551,7 @@ function SessionRow({
       onFocus={() => onPrefetch(session)}
       onPointerEnter={() => onPrefetch(session)}
     >
-      {session.completed && <CheckCircle2 className="size-3.5 shrink-0 text-emerald-600" />}
+      {session.completed && <CheckCircle2 className="text-primary size-3.5 shrink-0" />}
       <ActivityTypeIndicator type={session.type} />
       <span className="min-w-0 flex-1 truncate font-medium">{title}</span>
       {meta && <span className="text-muted-foreground shrink-0 text-xs">{meta}</span>}

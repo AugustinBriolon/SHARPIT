@@ -14,13 +14,7 @@ export function EyebrowLabel({
   className?: string;
 }) {
   return (
-    <p
-      className={cn(
-        'text-label',
-        variant === 'alert' && 'text-orange-600 dark:text-orange-400',
-        className,
-      )}
-    >
+    <p className={cn('text-label', variant === 'alert' && 'text-signal-vo2', className)}>
       {children}
     </p>
   );

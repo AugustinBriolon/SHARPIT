@@ -60,126 +60,163 @@
   --color-record-accent: var(--record-accent);
   --color-radial-track: var(--radial-track);
   --color-radial-empty: var(--radial-empty);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
+  --color-ink-surface: var(--ink-surface);
+  --color-ink-surface-foreground: var(--ink-surface-foreground);
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: calc(var(--radius) * 1.25);
+  --radius-2xl: calc(var(--radius) * 1.5);
+  --radius-3xl: calc(var(--radius) * 2);
+  --radius-4xl: calc(var(--radius) * 2.5);
   --radius-analysis-sm: calc(var(--radius) * 0.5);
-  --radius-analysis: calc(var(--radius) * 0.9);
-  --radius-analysis-lg: calc(var(--radius) * 1.15);
+  --radius-analysis: calc(var(--radius) * 0.875);
+  --radius-analysis-lg: calc(var(--radius) * 1.125);
 }
 
-/* Palette sauge — santé, sport, confiance (alignée clerk SHARPIT #3a9e6a) */
+/*
+  Botanical-clinical palette (Seed-inspired).
+  - Ink / canvas: Forest Depths + Snow White (authority, contrast)
+  - Interactive primary: vivid leaf green (links, icons, selected) — not Forest
+    (Forest as primary made every text-primary/bg-primary/10 read as mud)
+  - Lime Pulse: highlight punctuation (badges, nav active, icon wells) — keep vivid
+  - Surfaces / signals lean into Lime hue family for continuity (do not mute highlight)
+  Hex sources: src/lib/brand-tokens.ts
+*/
 :root {
-  --background: oklch(0.988 0.006 148);
-  --foreground: oklch(0.27 0.034 158);
-  --card: oklch(0.996 0.004 148);
-  --card-foreground: oklch(0.27 0.034 158);
-  --popover: oklch(0.996 0.004 148);
-  --popover-foreground: oklch(0.27 0.034 158);
-  --primary: oklch(0.58 0.12 156);
-  --primary-foreground: oklch(0.99 0.005 148);
-  --secondary: oklch(0.95 0.014 148);
-  --secondary-foreground: oklch(0.32 0.045 158);
-  --muted: oklch(0.955 0.01 148);
-  --muted-foreground: oklch(0.52 0.025 155);
-  --accent: oklch(0.93 0.03 156);
-  --accent-foreground: oklch(0.34 0.065 158);
+  /* Snow White #fcfcf7 */
+  --background: oklch(0.99 0.007 106.5);
+  /* Forest Depths #1c3a13 — body ink */
+  --foreground: oklch(0.315 0.073 139);
+  --card: oklch(0.99 0.007 106.5);
+  --card-foreground: oklch(0.315 0.073 139);
+  --popover: oklch(0.99 0.007 106.5);
+  --popover-foreground: oklch(0.315 0.073 139);
+  /*
+    Interactive brand green — Seed hue family, enough chroma to read at /10–/15.
+    Filled CTAs use this; body text stays Forest via --foreground.
+  */
+  --primary: oklch(0.48 0.13 142);
+  --primary-foreground: oklch(0.99 0.007 106.5);
+  /* Warm Stone #f0f1e8 — slight lime cast toward highlight */
+  --secondary: oklch(0.955 0.012 115);
+  --secondary-foreground: oklch(0.315 0.073 139);
+  --muted: oklch(0.955 0.012 115);
+  /* Pewter #666666 */
+  --muted-foreground: oklch(0.51 0 0);
+  /* Soft Lime wash — Seed softAccent, continues highlight */
+  --accent: oklch(0.955 0.055 127);
+  --accent-foreground: oklch(0.315 0.073 139);
+  /* Lime Pulse #d3fa99 — nav active, badges, icon wells (keep vivid) */
+  --highlight: oklch(0.936 0.13 126.6);
+  --highlight-foreground: oklch(0.315 0.073 139);
+  /* Forest Depths band — empty states, hub callouts (Seed dark section, inset) */
+  --ink-surface: oklch(0.315 0.073 139);
+  --ink-surface-foreground: oklch(0.99 0.007 106.5);
   --destructive: oklch(0.58 0.2 27);
-  --border: oklch(0.27 0.034 158 / 11%);
-  --input: oklch(0.27 0.034 158 / 14%);
-  --ring: oklch(0.58 0.12 156);
-  --chart-1: oklch(0.58 0.08 210); /* récup — blue-sage, not health-app teal */
-  --chart-2: oklch(0.58 0.12 156); /* base — ton sage primary actuel */
-  --chart-3: oklch(0.68 0.13 110); /* tempo — vert-jaune */
-  --chart-4: oklch(0.72 0.13 85); /* seuil — or (ton ancien chart-3) */
-  --chart-5: oklch(0.65 0.16 45); /* VO2max — orange chaud (ton ancien chart-5) */
-  --analysis-surface: oklch(0.992 0.004 148);
-  --analysis-surface-alt: oklch(0.975 0.008 158);
-  --analysis-border: oklch(0.34 0.03 158 / 18%);
-  --analysis-grid: oklch(0.41 0.025 158 / 10%);
+  --border: oklch(0.315 0.073 139 / 12%);
+  --input: oklch(0.315 0.073 139 / 14%);
+  --ring: oklch(0.48 0.13 142);
+  /*
+    Semantic charts — same botanical orbit as Lime Pulse (hue ~120–142),
+    then warm effort spectrum. Avoid cool sage / brown tan that fights highlight.
+  */
+  --chart-1: oklch(0.56 0.09 148); /* recovery — leaf-eucalyptus toward lime */
+  --chart-2: oklch(0.48 0.13 142); /* base — matches interactive primary */
+  --chart-3: oklch(0.72 0.11 122); /* tempo — olive-lime (moderate days) */
+  --chart-4: oklch(0.74 0.12 95); /* threshold — warm gold, still lime-adjacent */
+  --chart-5: oklch(0.66 0.15 55); /* VO2max / charge — warm orange (data) */
+  --analysis-surface: oklch(0.99 0.007 106.5);
+  --analysis-surface-alt: oklch(0.955 0.012 115);
+  --analysis-border: oklch(0.315 0.073 139 / 16%);
+  --analysis-grid: oklch(0.315 0.073 139 / 8%);
   --signal-recovery: var(--chart-1);
   --signal-base: var(--chart-2);
   --signal-tempo: var(--chart-3);
   --signal-threshold: var(--chart-4);
   --signal-vo2: var(--chart-5);
-  --signal-neutral: oklch(0.58 0.018 210);
-  --signal-caution: oklch(0.67 0.12 78);
+  --signal-neutral: oklch(0.51 0 0);
+  /* Caution — green-gold (not brown tan) so washes sit with Lime Pulse */
+  --signal-caution: oklch(0.72 0.11 98);
   --signal-risk: oklch(0.61 0.19 32);
-  /* Statut santé / composition (Biology) — distinct de chart-* (effort) et terracotta (records) */
-  --health-status-ok: oklch(0.52 0.025 155);
-  --health-status-watch: oklch(0.68 0.12 78);
-  --health-status-verify: oklch(0.58 0.045 235);
+  --health-status-ok: oklch(0.52 0.09 140);
+  --health-status-watch: oklch(0.72 0.11 98);
+  --health-status-verify: oklch(0.56 0.09 148);
   --health-status-attention: oklch(0.58 0.14 32);
-  /* Terracotta réservé aux records personnels (#1) — alias explicite de chart-5 */
   --record-accent: var(--chart-5);
-  --radial-track: oklch(0.92 0.008 148);
-  --radial-empty: oklch(0.78 0.012 155);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.975 0.009 148);
-  --sidebar-foreground: oklch(0.27 0.034 158);
-  --sidebar-primary: oklch(0.58 0.12 156);
-  --sidebar-primary-foreground: oklch(0.99 0.005 148);
-  --sidebar-accent: oklch(0.93 0.028 156);
-  --sidebar-accent-foreground: oklch(0.36 0.07 158);
-  --sidebar-border: oklch(0.27 0.034 158 / 9%);
-  --sidebar-ring: oklch(0.58 0.12 156);
+  --radial-track: oklch(0.955 0.012 115);
+  --radial-empty: oklch(0.826 0.005 145.5); /* Frosted Glass */
+  --radius: 1rem;
+  --sidebar: oklch(0.955 0.012 115);
+  --sidebar-foreground: oklch(0.315 0.073 139);
+  --sidebar-primary: oklch(0.48 0.13 142);
+  --sidebar-primary-foreground: oklch(0.99 0.007 106.5);
+  --sidebar-accent: oklch(0.955 0.055 127);
+  --sidebar-accent-foreground: oklch(0.315 0.073 139);
+  --sidebar-border: oklch(0.315 0.073 139 / 10%);
+  --sidebar-ring: oklch(0.48 0.13 142);
 }
 
 .dark {
-  --background: oklch(0.17 0.022 158);
-  --foreground: oklch(0.96 0.008 148);
-  --card: oklch(0.21 0.026 158);
-  --card-foreground: oklch(0.96 0.008 148);
-  --popover: oklch(0.21 0.026 158);
-  --popover-foreground: oklch(0.96 0.008 148);
-  --primary: oklch(0.68 0.11 156);
-  --primary-foreground: oklch(0.16 0.02 158);
-  --secondary: oklch(0.25 0.024 158);
-  --secondary-foreground: oklch(0.96 0.008 148);
-  --muted: oklch(0.25 0.024 158);
-  --muted-foreground: oklch(0.68 0.02 155);
-  --accent: oklch(0.28 0.03 158);
-  --accent-foreground: oklch(0.96 0.008 148);
+  /* Near-ink forest — deeper than Seed product-band green for app density */
+  --background: oklch(0.22 0.045 139);
+  --foreground: oklch(0.99 0.007 106.5);
+  --card: oklch(0.28 0.05 139);
+  --card-foreground: oklch(0.99 0.007 106.5);
+  --popover: oklch(0.28 0.05 139);
+  --popover-foreground: oklch(0.99 0.007 106.5);
+  /* Lime Pulse — full chromatic punch on dark */
+  --primary: oklch(0.936 0.13 126.6);
+  --primary-foreground: oklch(0.28 0.05 139);
+  --secondary: oklch(0.32 0.045 139);
+  --secondary-foreground: oklch(0.99 0.007 106.5);
+  --muted: oklch(0.32 0.045 139);
+  --muted-foreground: oklch(0.78 0.02 145);
+  --accent: oklch(0.36 0.055 130);
+  --accent-foreground: oklch(0.99 0.007 106.5);
+  --highlight: oklch(0.936 0.13 126.6);
+  --highlight-foreground: oklch(0.28 0.05 139);
+  /* Lime band on dark — Seed punctuation as inverted section */
+  --ink-surface: oklch(0.936 0.13 126.6);
+  --ink-surface-foreground: oklch(0.22 0.045 139);
   --destructive: oklch(0.62 0.2 27);
-  --border: oklch(0.96 0.008 148 / 10%);
-  --input: oklch(0.96 0.008 148 / 14%);
-  --ring: oklch(0.68 0.11 156);
-  --chart-1: oklch(0.66 0.07 210);
-  --chart-2: oklch(0.68 0.11 156);
-  --chart-3: oklch(0.74 0.11 110);
-  --chart-4: oklch(0.75 0.1 85);
-  --chart-5: oklch(0.68 0.15 45);
-  --analysis-surface: oklch(0.2 0.02 158);
-  --analysis-surface-alt: oklch(0.24 0.024 158);
-  --analysis-border: oklch(0.92 0.012 148 / 14%);
-  --analysis-grid: oklch(0.92 0.012 148 / 9%);
+  --border: oklch(0.99 0.007 106.5 / 12%);
+  --input: oklch(0.99 0.007 106.5 / 14%);
+  --ring: oklch(0.936 0.13 126.6);
+  --chart-1: oklch(0.74 0.08 148);
+  --chart-2: oklch(0.936 0.13 126.6);
+  --chart-3: oklch(0.82 0.1 122);
+  --chart-4: oklch(0.82 0.11 95);
+  --chart-5: oklch(0.74 0.14 55);
+  --analysis-surface: oklch(0.26 0.048 139);
+  --analysis-surface-alt: oklch(0.3 0.05 139);
+  --analysis-border: oklch(0.99 0.007 106.5 / 14%);
+  --analysis-grid: oklch(0.99 0.007 106.5 / 8%);
   --signal-recovery: var(--chart-1);
   --signal-base: var(--chart-2);
   --signal-tempo: var(--chart-3);
   --signal-threshold: var(--chart-4);
   --signal-vo2: var(--chart-5);
-  --signal-neutral: oklch(0.73 0.018 210);
-  --signal-caution: oklch(0.76 0.1 78);
+  --signal-neutral: oklch(0.78 0.02 145);
+  --signal-caution: oklch(0.8 0.1 98);
   --signal-risk: oklch(0.7 0.16 32);
-  --health-status-ok: oklch(0.73 0.02 155);
-  --health-status-watch: oklch(0.76 0.1 78);
-  --health-status-verify: oklch(0.74 0.04 235);
+  --health-status-ok: oklch(0.74 0.09 140);
+  --health-status-watch: oklch(0.8 0.1 98);
+  --health-status-verify: oklch(0.74 0.08 148);
   --health-status-attention: oklch(0.7 0.13 32);
-  --record-accent: oklch(0.72 0.14 45);
-  --radial-track: oklch(0.28 0.02 158);
-  --radial-empty: oklch(0.38 0.022 158);
-  --sidebar: oklch(0.19 0.024 158);
-  --sidebar-foreground: oklch(0.96 0.008 148);
-  --sidebar-primary: oklch(0.68 0.11 156);
-  --sidebar-primary-foreground: oklch(0.16 0.02 158);
-  --sidebar-accent: oklch(0.27 0.028 158);
-  --sidebar-accent-foreground: oklch(0.96 0.008 148);
-  --sidebar-border: oklch(0.96 0.008 148 / 10%);
-  --sidebar-ring: oklch(0.68 0.11 156);
+  --record-accent: oklch(0.74 0.14 55);
+  --radial-track: oklch(0.32 0.045 139);
+  --radial-empty: oklch(0.42 0.05 139);
+  --sidebar: oklch(0.2 0.042 139);
+  --sidebar-foreground: oklch(0.99 0.007 106.5);
+  --sidebar-primary: oklch(0.936 0.13 126.6);
+  --sidebar-primary-foreground: oklch(0.28 0.05 139);
+  --sidebar-accent: oklch(0.32 0.045 139);
+  --sidebar-accent-foreground: oklch(0.99 0.007 106.5);
+  --sidebar-border: oklch(0.99 0.007 106.5 / 10%);
+  --sidebar-ring: oklch(0.936 0.13 126.6);
 }
 
 @layer base {
@@ -225,12 +262,12 @@
     color-scheme: dark;
   }
   ::selection {
-    background: oklch(0.58 0.12 156 / 22%);
-    color: oklch(0.27 0.034 158);
+    background: oklch(0.936 0.13 126.6 / 40%);
+    color: oklch(0.315 0.073 139);
   }
   .dark ::selection {
-    background: oklch(0.68 0.11 156 / 30%);
-    color: oklch(0.96 0.008 148);
+    background: oklch(0.936 0.13 126.6 / 45%);
+    color: oklch(0.22 0.045 139);
   }
   .maplibregl-popup-content {
     @apply bg-transparent! shadow-none! p-0! rounded-none!;
@@ -259,17 +296,17 @@
 @utility text-page-title {
   font-weight: 600;
   font-size: 1.5rem;
-  line-height: 1.25;
+  line-height: 1.2;
   font-family: var(--font-heading);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 @utility text-section-title {
   font-weight: 600;
   font-size: 1.125rem;
-  line-height: 1.3;
+  line-height: 1.25;
   font-family: var(--font-heading);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
 
 @utility text-card-title {
@@ -299,11 +336,12 @@
 @utility text-verdict {
   font-weight: 600;
   font-size: 1.25rem;
-  line-height: 1.3;
+  line-height: 1.2;
   font-family: var(--font-heading);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   @media (width >= 40rem) {
     font-size: 1.55rem;
+    letter-spacing: -0.025em;
   }
 }
 
@@ -361,6 +399,39 @@
   border: 1px solid color-mix(in oklch, var(--color-border) 90%, transparent);
   border-radius: var(--radius-2xl);
   background-color: color-mix(in oklch, var(--color-card) 92%, transparent);
+}
+
+/* Seed dark-section band (inset) — Forest on light, Lime on dark */
+@utility surface-ink {
+  border: 1px solid transparent;
+  border-radius: var(--radius-analysis-lg);
+  background-color: var(--color-ink-surface);
+  color: var(--color-ink-surface-foreground);
+}
+
+/* Lime Pulse icon well — brand punctuation, not primary/10 mud */
+@utility icon-well {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-highlight);
+  color: var(--color-highlight-foreground);
+}
+
+/* Break out of shell page gutter (--page-gutter set on MobileShell / DesktopShell) */
+@utility page-bleed {
+  margin-inline: calc(var(--page-gutter, 1rem) * -1);
+}
+
+/* Full-bleed Seed ink band — edge-to-edge within the content column */
+@utility page-bleed-ink {
+  margin-inline: calc(var(--page-gutter, 1rem) * -1);
+  padding-inline: var(--page-gutter, 1rem);
+  border-style: none;
+  border-radius: 0;
+  background-color: var(--color-ink-surface);
+  color: var(--color-ink-surface-foreground);
 }
 
 @media (prefers-reduced-motion: no-preference) {

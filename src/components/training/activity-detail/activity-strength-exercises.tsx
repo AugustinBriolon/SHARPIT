@@ -20,7 +20,7 @@ export function ActivityStrengthExercises({ activity }: { activity: ActivityDeta
     <Card>
       <CardHeader>
         <CardTitle className="text-muted-foreground flex items-center gap-2 text-base font-medium">
-          <Dumbbell className="size-4 text-violet-600" />
+          <Dumbbell className="text-primary size-4" />
           Exercices
         </CardTitle>
       </CardHeader>
@@ -31,9 +31,9 @@ export function ActivityStrengthExercises({ activity }: { activity: ActivityDeta
             return (
               <div
                 key={set.id}
-                className="border-border/60 flex flex-wrap items-center gap-3 rounded-xl border px-4 py-3"
+                className="border-analysis-border rounded-analysis flex flex-wrap items-center gap-3 border px-4 py-3"
               >
-                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-violet-500/10 font-mono text-xs font-semibold text-violet-600">
+                <span className="bg-primary/10 text-primary grid size-7 shrink-0 place-items-center rounded-full font-mono text-xs font-semibold">
                   {i + 1}
                 </span>
                 <span className="min-w-0 flex-1 font-medium">

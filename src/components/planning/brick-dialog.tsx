@@ -101,7 +101,7 @@ function BrickLegSection({
               </span>
             )}
             {done && (
-              <span className="flex items-center gap-0.5 text-xs text-emerald-600">
+              <span className="text-primary flex items-center gap-0.5 text-xs">
                 <Check className="size-3" />
                 Liée
               </span>

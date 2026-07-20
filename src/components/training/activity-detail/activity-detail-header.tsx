@@ -17,7 +17,7 @@ export function ActivityDetailHeader({ activity }: { activity: ActivityDetail })
         <div className="flex items-start gap-4">
           <span
             className={cn(
-              'grid size-12 shrink-0 place-items-center rounded-2xl',
+              'rounded-analysis-lg grid size-12 shrink-0 place-items-center',
               sportIconWrap[activity.type],
             )}
           >

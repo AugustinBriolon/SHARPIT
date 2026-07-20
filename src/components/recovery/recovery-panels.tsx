@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { ArcGauge } from '@/components/ui/arc-gauge';
 import { CorpsPanel, CorpsStatCard } from '@/components/corps/corps-ui';
 import {
   accentForTone,
@@ -12,9 +13,9 @@ import {
 } from '@/lib/recovery';
 
 const TONE_TEXT: Record<RecoveryTone, string> = {
-  good: 'text-emerald-600',
-  moderate: 'text-amber-600',
-  low: 'text-red-600',
+  good: 'text-primary',
+  moderate: 'text-signal-caution',
+  low: 'text-signal-risk',
   neutral: 'text-muted-foreground',
 };
 
@@ -26,30 +27,30 @@ export function ReadinessHero({
   factors: ReadinessFactor[];
 }) {
   const { score } = view;
-  const ringDeg = score != null ? (score / 100) * 360 : 0;
 
   return (
     <CorpsPanel className="p-5">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
         <div className="flex items-center gap-5">
-          <div
-            className="relative grid size-28 shrink-0 place-items-center rounded-full"
-            style={{
-              background: `conic-gradient(${view.accent} ${ringDeg}deg, color-mix(in srgb, ${view.accent} 12%, transparent) ${ringDeg}deg)`,
-            }}
+          <ArcGauge
+            format="number"
+            score={score}
+            size={112}
+            strokeColor={view.accent}
+            strokeWidth={6}
           >
-            <div className="grid size-[88px] place-items-center content-center rounded-full bg-white">
+            <span className="flex flex-col items-center leading-none">
               <span
                 className="font-mono text-3xl font-semibold tabular-nums"
                 style={{ color: view.accent }}
               >
                 {score ?? '—'}
               </span>
-              <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
+              <span className="text-muted-foreground mt-1 text-[10px] tracking-wider uppercase">
                 / 100
               </span>
-            </div>
-          </div>
+            </span>
+          </ArcGauge>
           <div>
             <p className="text-label">Forme du jour</p>
             <p className="text-verdict mt-1" style={{ color: view.accent }}>

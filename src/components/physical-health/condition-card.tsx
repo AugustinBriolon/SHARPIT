@@ -10,8 +10,8 @@ import { corpsToneFromPhysicalSeverity } from '@/lib/health-status';
 import { cn } from '@/lib/utils';
 
 function TrendIcon({ trend }: { trend: string }) {
-  if (trend === 'IMPROVING') return <TrendingDown className="size-3.5 text-emerald-600" />;
-  if (trend === 'WORSENING') return <TrendingUp className="size-3.5 text-red-600" />;
+  if (trend === 'IMPROVING') return <TrendingDown className="text-primary size-3.5" />;
+  if (trend === 'WORSENING') return <TrendingUp className="text-signal-risk size-3.5" />;
   return <Minus className="text-muted-foreground size-3.5" />;
 }
 
@@ -29,7 +29,7 @@ export function PhysicalHealthConditionCardView({
   return (
     <Card
       className={cn(
-        'bg-card/60 rounded-2xl border shadow-none',
+        'analysis-panel rounded-analysis-lg shadow-none',
         !condition.isActive && 'opacity-75',
       )}
     >

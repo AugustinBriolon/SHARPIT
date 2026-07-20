@@ -53,9 +53,9 @@ const ACTION_LABEL: Record<AdaptChange['action'], string> = {
 };
 
 const ACTION_STYLE: Record<AdaptChange['action'], string> = {
-  MODIFY: 'bg-amber-400/15 text-amber-700 dark:text-amber-300',
-  REMOVE: 'bg-red-400/15 text-red-700 dark:text-red-300',
-  ADD: 'bg-emerald-400/15 text-emerald-700 dark:text-emerald-300',
+  MODIFY: 'bg-signal-caution/15 text-signal-caution',
+  REMOVE: 'bg-signal-risk/15 text-signal-risk',
+  ADD: 'bg-primary/15 text-primary',
 };
 
 function formatChangeDate(
@@ -267,7 +267,8 @@ export function PlanAdapter({
                         'border-signal-risk/30 bg-signal-risk/5 cursor-not-allowed opacity-80',
                       !rejected && selected.has(i)
                         ? 'border-primary/40 bg-primary/5'
-                        : !rejected && 'border-border/50 bg-card/30 opacity-60 hover:opacity-100',
+                        : !rejected &&
+                            'border-analysis-border/60 bg-analysis-surface-alt/50 opacity-60 hover:opacity-100',
                     )}
                     onClick={rejected ? undefined : () => toggle(i)}
                   >

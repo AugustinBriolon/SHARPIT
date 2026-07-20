@@ -18,20 +18,20 @@ import {
 
 const OVERREACHING_RISK_DISPLAY: Record<string, { label: string; colorClass: string } | undefined> =
   {
-    MODERATE: { label: 'Risque modéré', colorClass: 'text-amber-600 dark:text-amber-400' },
-    HIGH: { label: 'Risque élevé', colorClass: 'text-orange-600 dark:text-orange-400' },
-    CRITICAL: { label: 'Risque critique', colorClass: 'text-red-600 dark:text-red-400' },
+    MODERATE: { label: 'Risque modéré', colorClass: 'text-signal-caution' },
+    HIGH: { label: 'Risque élevé', colorClass: 'text-signal-vo2' },
+    CRITICAL: { label: 'Risque critique', colorClass: 'text-signal-risk' },
   };
 
 const FATIGUE_VERDICT_DISPLAY: Record<string, { label: string; colorClass: string }> = {
-  BUILD: { label: 'Progresser', colorClass: 'text-emerald-600 dark:text-emerald-400' },
-  MAINTAIN: { label: 'Maintenir', colorClass: 'text-blue-600 dark:text-blue-400' },
-  REDUCE: { label: 'Réduire la charge', colorClass: 'text-amber-600 dark:text-amber-400' },
+  BUILD: { label: 'Progresser', colorClass: 'text-primary' },
+  MAINTAIN: { label: 'Maintenir', colorClass: 'text-[var(--color-signal-recovery)]' },
+  REDUCE: { label: 'Réduire la charge', colorClass: 'text-signal-caution' },
   REST_WEEK: {
     label: 'Semaine de récupération',
-    colorClass: 'text-orange-600 dark:text-orange-400',
+    colorClass: 'text-signal-vo2',
   },
-  TAPER: { label: 'Affûtage', colorClass: 'text-blue-600 dark:text-blue-400' },
+  TAPER: { label: 'Affûtage', colorClass: 'text-[var(--color-signal-recovery)]' },
   INSUFFICIENT_DATA: { label: 'Données insuffisantes', colorClass: 'text-muted-foreground' },
 };
 
@@ -59,25 +59,25 @@ function mapStrainToDisplay(strainScore: number | null) {
   if (strainScore >= 16)
     return {
       label: 'Très élevé',
-      colorClass: 'text-red-600 dark:text-red-400',
+      colorClass: 'text-signal-risk',
       strokeColor: CHART_RISK_STROKE,
     };
   if (strainScore >= 11)
     return {
       label: 'Élevé',
-      colorClass: 'text-orange-600 dark:text-orange-400',
+      colorClass: 'text-signal-vo2',
       strokeColor: CHART_VO2_STROKE,
     };
   if (strainScore >= 6)
     return {
       label: 'Modéré',
-      colorClass: 'text-amber-600 dark:text-amber-400',
+      colorClass: 'text-signal-caution',
       strokeColor: CHART_CAUTION_STROKE,
     };
   if (strainScore > 0)
     return {
       label: 'Léger',
-      colorClass: 'text-blue-600 dark:text-blue-400',
+      colorClass: 'text-[var(--color-signal-recovery)]',
       strokeColor: CHART_TEMPO_STROKE,
     };
   return { label: 'Repos', colorClass: 'text-muted-foreground', strokeColor: CHART_TICK_COLOR };

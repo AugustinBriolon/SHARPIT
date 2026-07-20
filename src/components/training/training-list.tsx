@@ -58,7 +58,7 @@ function ActivityTypeFilterPills({
         className={cn(
           'rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
           selected == null
-            ? 'bg-background text-foreground shadow-sm'
+            ? 'bg-highlight text-highlight-foreground'
             : 'text-muted-foreground hover:text-foreground',
         )}
         onClick={() => onSelect(null)}
@@ -78,7 +78,7 @@ function ActivityTypeFilterPills({
             className={cn(
               'rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
               active
-                ? 'bg-background text-foreground shadow-sm'
+                ? 'bg-highlight text-highlight-foreground'
                 : 'text-muted-foreground hover:text-foreground',
             )}
             onClick={() => onSelect(type)}
@@ -111,7 +111,7 @@ function ActivityTypeFilterSelect({
         else if (isActivityType(next)) onSelect(next);
       }}
     >
-      <SelectTrigger className="bg-card min-h-11 w-full rounded-xl px-3.5 text-sm">
+      <SelectTrigger className="bg-analysis-surface min-h-11 w-full rounded-xl px-3.5 text-sm">
         <SelectValue placeholder="Type d'activité">{filterLabel(selected, counts)}</SelectValue>
       </SelectTrigger>
       <SelectContent align="start">

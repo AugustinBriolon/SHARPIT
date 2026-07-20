@@ -14,12 +14,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!isAllowedUser(user)) {
     return (
-      <div className="bg-background relative flex min-h-screen flex-col items-center justify-center gap-4 overflow-hidden p-6 text-center">
-        <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,oklch(0.68_0.16_150/0.08),transparent_55%)]"
-          aria-hidden
-        />
-        <div className="relative z-10 flex flex-col items-center gap-4">
+      <div className="bg-background relative flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center">
+        <div className="flex flex-col items-center gap-4">
           <div className="bg-destructive/10 ring-destructive/20 flex size-12 items-center justify-center rounded-full ring-1">
             <ShieldX className="text-destructive size-6" />
           </div>

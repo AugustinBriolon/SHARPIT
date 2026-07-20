@@ -9,7 +9,7 @@ export function ChartTooltipCard({
   className?: string;
 }) {
   return (
-    <div className={cn('analysis-panel rounded-analysis px-3 py-2 text-xs shadow-md', className)}>
+    <div className={cn('analysis-panel rounded-analysis px-3 py-2 text-xs shadow-none', className)}>
       {children}
     </div>
   );

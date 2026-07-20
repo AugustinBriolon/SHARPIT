@@ -53,14 +53,16 @@ export const settingsNavItem: AppNavItem = {
   match: (p) => p.startsWith('/settings') || p.startsWith('/profil') || p.startsWith('/goals'),
 };
 
-/** Navigation sidebar desktop (ordre complet). */
-export const sidebarNavItems: AppNavItem[] = [
+/** Destinations principales sidebar desktop (sans Réglages). */
+export const sidebarPrimaryNavItems: AppNavItem[] = [
   todayNavItem,
   trainingNavItem,
   biologyNavItem,
   coachNavItem,
-  settingsNavItem,
 ];
+
+/** Navigation sidebar desktop (ordre complet, y compris Réglages). */
+export const sidebarNavItems: AppNavItem[] = [...sidebarPrimaryNavItems, settingsNavItem];
 
 /** Onglets bottom bar mobile. */
 export const bottomNavItems: AppNavItem[] = [

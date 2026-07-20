@@ -31,7 +31,7 @@ function FitBounds({ coordinates }: { coordinates: LngLat[] }) {
 
 export default function RouteMapInner({
   path,
-  lineColor = '#0891b2',
+  lineColor = 'var(--primary)',
 }: {
   path: Path;
   lineColor?: string;
@@ -63,12 +63,12 @@ export default function RouteMapInner({
       />
       <MapMarker latitude={startLat} longitude={startLng}>
         <MarkerContent>
-          <div className="h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500 shadow" />
+          <div className="border-background h-3.5 w-3.5 rounded-full border-2 bg-emerald-500 shadow-none" />
         </MarkerContent>
       </MapMarker>
       <MapMarker latitude={endLat} longitude={endLng}>
         <MarkerContent>
-          <div className="h-3.5 w-3.5 rounded-full border-2 border-white bg-rose-500 shadow" />
+          <div className="border-background h-3.5 w-3.5 rounded-full border-2 bg-rose-500 shadow-none" />
         </MarkerContent>
       </MapMarker>
     </Map>

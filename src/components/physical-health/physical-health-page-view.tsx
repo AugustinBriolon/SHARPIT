@@ -188,7 +188,7 @@ export function PhysicalHealthPageSkeleton({ embedded = false }: { embedded?: bo
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-card/60 rounded-2xl border px-4 py-4">
+          <div key={i} className="analysis-panel rounded-analysis-lg px-4 py-4">
             <Skeleton className="h-2.5 w-14 rounded-full border-0" />
             <Skeleton className="mt-2 h-8 w-10 border-0" />
             <Skeleton className="mt-1 h-3 w-20 rounded-full border-0" />

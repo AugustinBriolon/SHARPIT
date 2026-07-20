@@ -101,7 +101,7 @@ export function TodayVerdictHero({ vm }: { vm: TodayViewModel }) {
       className={cn(
         'analysis-panel rounded-analysis-lg relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10',
         'motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200',
-        useVerdictAccent && `bg-linear-to-br to-transparent ${style.bgClass}`,
+        useVerdictAccent && style.bgClass,
       )}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">

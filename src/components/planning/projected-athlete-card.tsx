@@ -5,6 +5,7 @@ import { GitBranch } from 'lucide-react';
 import type { ProjectionHorizonDays } from '@/core/projection/types';
 import type { ProjectedAthleteCardViewModel } from '@/core/presentation/projected-athlete-view-model';
 import { DiscussCoachLink } from '@/components/training/discuss-coach-link';
+import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
@@ -50,13 +51,13 @@ export function ProjectedAthleteCard({
   if (!viewModel?.visible) {
     if (!viewModel?.emptyStateMessage) return null;
     return (
-      <section
-        className={cn('analysis-panel-alt rounded-analysis-lg px-5 py-5 sm:px-6', className)}
-      >
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          {viewModel.emptyStateMessage}
-        </p>
-      </section>
+      <InkEmptyState
+        className={className}
+        description={viewModel.emptyStateMessage}
+        icon={GitBranch}
+        title="Projection indisponible"
+        compact
+      />
     );
   }
 
@@ -78,7 +79,7 @@ export function ProjectedAthleteCard({
             className={cn(
               'focus-visible:ring-primary/30 rounded-md px-2.5 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
               horizon === option.days
-                ? 'bg-primary text-primary-foreground'
+                ? 'bg-highlight text-highlight-foreground'
                 : 'bg-muted/50 text-muted-foreground hover:bg-muted',
             )}
             onClick={() => onHorizonChange(option.days)}

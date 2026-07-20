@@ -43,14 +43,14 @@ const COMPLETENESS_LABEL: Record<string, string> = {
 };
 
 const RISK_DISPLAY: Record<string, { label: string; colorClass: string } | undefined> = {
-  MODERATE: { label: 'Risque modéré', colorClass: 'text-amber-600' },
-  HIGH: { label: 'Risque élevé', colorClass: 'text-orange-600' },
-  CRITICAL: { label: 'Risque critique', colorClass: 'text-red-600' },
+  MODERATE: { label: 'Risque modéré', colorClass: 'text-signal-caution' },
+  HIGH: { label: 'Risque élevé', colorClass: 'text-signal-vo2' },
+  CRITICAL: { label: 'Risque critique', colorClass: 'text-signal-risk' },
 };
 
 const ILLNESS_RISK_DISPLAY: Record<string, { label: string; colorClass: string } | undefined> = {
-  ELEVATED: { label: 'Risque modéré', colorClass: 'text-amber-600' },
-  HIGH: { label: 'Risque élevé', colorClass: 'text-red-600' },
+  ELEVATED: { label: 'Risque modéré', colorClass: 'text-signal-caution' },
+  HIGH: { label: 'Risque élevé', colorClass: 'text-signal-risk' },
 };
 
 const CONFIDENCE_TONE = {

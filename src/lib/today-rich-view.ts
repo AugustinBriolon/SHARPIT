@@ -84,9 +84,9 @@ function adaptationTrendArrow(trend: AdaptationData['adaptationTrend']): string 
 }
 
 function adaptationTrendClass(trend: AdaptationData['adaptationTrend']): string {
-  if (trend === 'IMPROVING') return 'text-emerald-600 dark:text-emerald-400';
-  if (trend === 'DECLINING') return 'text-amber-600 dark:text-amber-400';
-  return 'text-slate-400';
+  if (trend === 'IMPROVING') return 'text-primary';
+  if (trend === 'DECLINING') return 'text-signal-caution';
+  return 'text-muted-foreground';
 }
 
 export function buildProgressionSummary(
@@ -106,7 +106,7 @@ export function buildProgressionSummary(
       headline: 'Historique en cours de construction',
       detail: weeklyLoad > 0 ? `${weeklyLoad} TSS cette semaine` : null,
       trendArrow: '→',
-      trendClass: 'text-slate-400',
+      trendClass: 'text-muted-foreground',
     };
   }
 

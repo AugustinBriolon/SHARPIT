@@ -5,6 +5,7 @@ import { CalendarClock, CheckCircle2 } from 'lucide-react';
 import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { MorningWellnessDialog } from '@/components/today/dashboard/morning-wellness-dialog';
+import { STATUS_SURFACE } from '@/lib/presentation/status-surface';
 import { cn } from '@/lib/utils';
 
 function SessionChip({ line }: { line: TodayViewModel['actionRow']['daySummaryLines'][number] }) {
@@ -13,11 +14,11 @@ function SessionChip({ line }: { line: TodayViewModel['actionRow']['daySummaryLi
       href={line.href}
       title={`Voir le détail — ${line.primary}`}
       className={cn(
-        'border-analysis-border/80 bg-background/50 hover:border-primary/35 hover:bg-muted/40',
+        'border-analysis-border/80 bg-analysis-surface-alt/70 hover:border-primary/35 hover:bg-analysis-surface',
         'focus-visible:ring-primary/35 flex w-full min-w-0 items-center justify-between gap-2',
         'rounded-lg border px-3 py-2.5 transition-[border-color,background-color] duration-150',
         'focus-visible:ring-2 focus-visible:outline-hidden',
-        line.isDone && 'border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-500/45',
+        line.isDone && cn(STATUS_SURFACE.doneSoft, STATUS_SURFACE.doneHover),
       )}
     >
       <span className="flex min-w-0 items-center gap-1.5">
@@ -30,9 +31,7 @@ function SessionChip({ line }: { line: TodayViewModel['actionRow']['daySummaryLi
         ) : null}
       </span>
       <span className="flex shrink-0 items-center gap-1.5">
-        {line.isDone ? (
-          <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-        ) : null}
+        {line.isDone ? <CheckCircle2 className="text-primary size-3.5" /> : null}
         <span className="text-muted-foreground/70 text-data text-[10px] tracking-wider" aria-hidden>
           →
         </span>

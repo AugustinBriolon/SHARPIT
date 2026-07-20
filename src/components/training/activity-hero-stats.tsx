@@ -6,8 +6,6 @@ import { useActivityStream } from '@/hooks/use-data';
 import { formatDistance, formatDuration, formatPace, formatSwimPace } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
-type Accent = 'cyan' | 'orange' | 'violet' | 'emerald' | 'default';
-
 // Largeur de grille calée sur le nombre de stats réellement affichées : évite
 // les cases vides quand une métrique est absente (ex. pas de cadence).
 const SM_COLS: Record<number, string> = {
@@ -45,7 +43,6 @@ type StreamStats = {
 type Slot = {
   label: string;
   value: string | null;
-  accent: Accent;
   needsStream?: boolean;
 };
 
@@ -65,23 +62,19 @@ function buildSlots(activity: HeroActivity, stream: StreamStats | null): Slot[] 
         {
           label: 'Distance',
           value: m?.distanceM != null ? formatDistance(m.distanceM) : null,
-          accent: 'cyan',
         },
         {
           label: 'Allure',
           value: m?.paceSecPerKm != null ? formatPace(m.paceSecPerKm) : null,
-          accent: 'emerald',
         },
         {
           label: 'FC moy.',
           value: avgHr != null ? `${avgHr} bpm` : null,
-          accent: 'orange',
           needsStream: m?.avgHr == null,
         },
         {
           label: 'Cadence',
           value: m?.cadence != null ? `${m.cadence} spm` : null,
-          accent: 'violet',
         },
       ];
     }
@@ -92,20 +85,17 @@ function buildSlots(activity: HeroActivity, stream: StreamStats | null): Slot[] 
         {
           label: 'Distance',
           value: stream?.totalDistance != null ? formatDistance(stream.totalDistance) : null,
-          accent: 'cyan',
           needsStream: true,
         },
-        { label: 'Temps', value: duration, accent: 'default' },
+        { label: 'Temps', value: duration },
         {
           label: 'Vitesse moy.',
           value: formatSpeed(stream?.avgSpeed ?? null),
-          accent: 'emerald',
           needsStream: true,
         },
         {
           label: 'Dénivelé',
           value: elevation != null ? `${Math.round(elevation)} m` : null,
-          accent: 'violet',
           needsStream: activity.bikeMetrics?.elevationM == null,
         },
       ];
@@ -117,18 +107,15 @@ function buildSlots(activity: HeroActivity, stream: StreamStats | null): Slot[] 
         {
           label: 'Distance',
           value: m?.distanceM != null ? formatDistance(m.distanceM) : null,
-          accent: 'cyan',
         },
-        { label: 'Temps', value: duration, accent: 'default' },
+        { label: 'Temps', value: duration },
         {
           label: 'Allure moy.',
           value: m?.avgPaceSecPer100m != null ? formatSwimPace(m.avgPaceSecPer100m) : null,
-          accent: 'emerald',
         },
         {
           label: 'FC moy.',
           value: stream?.avgHr != null ? `${stream.avgHr} bpm` : null,
-          accent: 'orange',
           needsStream: true,
         },
       ];
@@ -156,7 +143,7 @@ export function ActivityHeroStats({
   return (
     <div className={cn('grid grid-cols-2 gap-3', SM_COLS[visible.length] ?? 'sm:grid-cols-4')}>
       {visible.map((slot) => (
-        <div key={slot.label} className="border-border bg-card rounded-2xl border px-5 py-4">
+        <div key={slot.label} className="analysis-panel rounded-analysis-lg px-5 py-4">
           <p className="text-label">{slot.label}</p>
           {slot.value != null ? (
             <p className="text-foreground mt-1.5 font-mono text-3xl font-semibold tabular-nums">

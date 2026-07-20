@@ -41,7 +41,7 @@ export function ActivityMetaChip({
       <span className="text-foreground font-medium">{value}</span>
     </Link>
   ) : (
-    <span className="border-border bg-card inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs">
+    <span className="border-analysis-border bg-analysis-surface inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs">
       {tone && !iconClassName ? (
         <span className={cn('size-2 rounded-full', chipDot[tone])} />
       ) : (

@@ -13,7 +13,7 @@ export function OfflineBanner() {
     <div
       role="status"
       className={cn(
-        'flex items-center justify-center gap-2 bg-amber-500/95 px-4 py-2 text-xs font-medium text-amber-950',
+        'bg-signal-caution text-highlight-foreground flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium',
         'safe-area-top',
       )}
     >

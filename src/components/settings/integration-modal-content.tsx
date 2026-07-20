@@ -758,7 +758,7 @@ function GoogleContent({
           Le coach planifie tes séances dans ton agenda en évitant tes créneaux occupés.
         </p>
         {blockedOnLan && (
-          <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm leading-relaxed text-amber-700 dark:text-amber-300">
+          <p className="border-signal-caution/30 bg-signal-caution/10 text-signal-caution rounded-lg border px-3 py-2 text-sm leading-relaxed">
             {GOOGLE_OAUTH_LAN_HINT}
           </p>
         )}

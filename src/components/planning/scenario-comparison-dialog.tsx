@@ -130,7 +130,7 @@ function ScenarioComparisonList({
             'rounded-lg border px-3 py-2.5',
             scenario.isRecommended
               ? 'border-primary/50 bg-primary/8 ring-primary/20 ring-1'
-              : 'border-border/50 bg-card/20',
+              : 'border-analysis-border/50 bg-analysis-surface-alt/40',
           )}
         >
           <div className="flex items-start gap-2">

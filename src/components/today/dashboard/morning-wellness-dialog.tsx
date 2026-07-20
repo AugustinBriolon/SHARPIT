@@ -65,7 +65,7 @@ function ScalePicker({
   return (
     <div className="space-y-2.5">
       <div>
-        <p className="text-sm font-medium text-neutral-800">{label}</p>
+        <p className="text-foreground text-sm font-medium">{label}</p>
         <p className="text-muted-foreground text-xs">{hint}</p>
       </div>
       <div className="grid grid-cols-5 gap-1.5">
@@ -74,17 +74,22 @@ function ScalePicker({
             key={opt.value}
             type="button"
             className={cn(
-              'flex min-h-16 flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2 transition-all',
+              'flex min-h-16 flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2 transition-colors',
               value === opt.value
-                ? 'border-neutral-900 bg-neutral-900/4 shadow-[inset_0_0_0_1px_rgba(23,23,23,1)]'
-                : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50',
+                ? 'border-highlight bg-highlight text-highlight-foreground'
+                : 'border-border/70 bg-background hover:border-primary/30 hover:bg-muted/40',
             )}
             onClick={() => onChange(opt.value)}
           >
             <span className="text-xl leading-none" aria-hidden>
               {opt.icon}
             </span>
-            <span className="text-[9px] leading-tight font-medium text-neutral-500">
+            <span
+              className={cn(
+                'text-[9px] leading-tight font-medium',
+                value === opt.value ? 'text-highlight-foreground/80' : 'text-muted-foreground',
+              )}
+            >
               {opt.label}
             </span>
           </button>
@@ -125,11 +130,7 @@ export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => voi
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <Button
-        // className="text-muted-foreground hover:text-foreground inline-flex shrink-0 items-center gap-1 rounded-full border border-dashed border-neutral-300/90 bg-white px-2.5 py-1 text-[10px] font-medium transition-colors hover:border-neutral-400 hover:bg-neutral-50"
-        type="button"
-        onClick={() => setOpen(true)}
-      >
+      <Button type="button" onClick={() => setOpen(true)}>
         <Smile className="size-3" aria-hidden />
         Ressenti
       </Button>
@@ -173,7 +174,7 @@ export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => voi
           />
           <div className="space-y-2.5">
             <div>
-              <p className="text-sm font-medium text-neutral-800">Note libre</p>
+              <p className="text-foreground text-sm font-medium">Note libre</p>
               <p className="text-muted-foreground text-xs">
                 Un contexte utile pour interpréter ta journée.
               </p>
@@ -185,10 +186,10 @@ export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => voi
             />
           </div>
 
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          {error && <p className="text-destructive text-xs">{error}</p>}
         </div>
 
-        <div className="border-t bg-neutral-50/80 px-5 py-4">
+        <div className="border-border/60 bg-muted/40 border-t px-5 py-4">
           <Button className="w-full" disabled={submitting} type="button" onClick={handleSubmit}>
             {submitting ? 'Enregistrement…' : 'Valider mon ressenti'}
           </Button>

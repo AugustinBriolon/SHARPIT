@@ -174,7 +174,7 @@ function MetricCardsExpand({
 function CompositionSkeleton() {
   return (
     <div className="space-y-4 sm:space-y-5">
-      <section className="analysis-panel rounded-analysis-lg from-primary/8 relative overflow-hidden bg-linear-to-br to-transparent px-5 py-8 sm:px-8 sm:py-10">
+      <section className="analysis-panel rounded-analysis-lg bg-primary/8 relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10">
         <Skeleton className="h-3 w-28 rounded-full" />
         <Skeleton className="mt-6 h-10 w-40 rounded-lg" />
         <Skeleton className="mt-3 h-4 w-32 rounded-full" />
@@ -197,20 +197,18 @@ function CompositionSkeleton() {
 }
 
 function plateTintFromTone(tone: string | null | undefined): string {
-  if (tone === 'ok')
-    return 'bg-linear-to-br from-emerald-500/10 to-transparent border-emerald-500/20';
+  if (tone === 'ok') return 'bg-primary/10 border-primary/20';
   if (tone === 'watch' || tone === 'verify') {
-    return 'bg-linear-to-br from-amber-500/10 to-transparent border-amber-500/25';
+    return 'bg-signal-caution/10 border-signal-caution/25';
   }
-  if (tone === 'attention')
-    return 'bg-linear-to-br from-orange-500/10 to-transparent border-orange-500/25';
-  return 'bg-linear-to-br from-primary/8 to-transparent';
+  if (tone === 'attention') return 'bg-signal-vo2/10 border-signal-vo2/25';
+  return 'bg-primary/8';
 }
 
 function plateDotFromTone(tone: string | null | undefined): string {
-  if (tone === 'ok') return 'bg-emerald-500';
-  if (tone === 'watch' || tone === 'verify') return 'bg-amber-500';
-  if (tone === 'attention') return 'bg-orange-500';
+  if (tone === 'ok') return 'bg-primary';
+  if (tone === 'watch' || tone === 'verify') return 'bg-signal-caution';
+  if (tone === 'attention') return 'bg-signal-vo2';
   return 'bg-primary';
 }
 
@@ -378,7 +376,7 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3 px-0.5">
           <p className="text-label">Tendances</p>
-          <div className="bg-muted/40 inline-flex flex-wrap gap-1 rounded-full border p-1">
+          <div className="surface-shell inline-flex flex-wrap gap-1 rounded-full p-1">
             {TREND_WINDOWS.map((w) => {
               const active = w.id === trendWindow;
               return (
@@ -389,7 +387,7 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
                   className={cn(
                     'rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
                     active
-                      ? 'bg-background text-foreground shadow-sm'
+                      ? 'bg-highlight text-highlight-foreground'
                       : 'text-muted-foreground hover:text-foreground',
                   )}
                   onClick={() => setTrendWindow(w.id)}

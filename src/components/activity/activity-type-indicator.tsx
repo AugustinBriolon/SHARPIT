@@ -13,7 +13,7 @@ const ACTIVITY_TYPE_INDICATORS: Record<ActivityType, string> = {
   OTHER: 'AUT',
 };
 
-const DEFAULT_TYPE_COLOR = 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+const DEFAULT_TYPE_COLOR = 'bg-muted text-muted-foreground';
 
 export function ActivityTypeIndicator({ type }: { type: ActivityType }) {
   return (

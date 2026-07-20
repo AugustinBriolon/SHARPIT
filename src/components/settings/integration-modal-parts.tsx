@@ -19,7 +19,7 @@ export function IntegrationAccountCard({
   avatarAlt?: string;
 }) {
   return (
-    <div className="bg-muted/40 flex items-center gap-3 rounded-xl border p-3">
+    <div className="analysis-panel rounded-analysis-lg flex items-center gap-3 p-3">
       {avatarUrl && (
         <Image
           alt={avatarAlt}
@@ -45,7 +45,7 @@ export function IntegrationAccountSummary({
   lastSyncAt: string | null | undefined;
 }) {
   return (
-    <div className="bg-muted/40 rounded-xl border p-3">
+    <div className="analysis-panel rounded-analysis-lg p-3">
       <p className="font-medium">{label}</p>
       <p className="text-muted-foreground text-xs">{formatIntegrationLastSync(lastSyncAt)}</p>
     </div>

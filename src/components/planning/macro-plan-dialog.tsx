@@ -160,7 +160,7 @@ function ActivePlanView({
           return (
             <div
               key={w.id}
-              className="border-border/50 bg-card/40 flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
+              className="border-analysis-border/60 bg-analysis-surface-alt/70 flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
             >
               <div className="min-w-0">
                 <p className="text-sm font-medium">

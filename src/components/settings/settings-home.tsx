@@ -69,16 +69,16 @@ function SettingsEntryCard({ entry }: { entry: SettingsEntry }) {
     <Link
       href={entry.href}
       className={cn(
-        'group flex h-full items-center gap-3 rounded-2xl border px-4 py-4 transition-colors',
-        'hover:border-primary/20 hover:bg-primary/5',
+        'analysis-panel group rounded-analysis-lg flex h-full items-center gap-3 px-3 py-2.5 transition-colors',
+        'hover:border-primary/25 hover:bg-analysis-surface-alt/80',
       )}
     >
-      <div className="bg-primary/10 ring-primary/15 flex size-9 shrink-0 items-center justify-center rounded-xl ring-1">
-        <Icon className="text-primary size-4" />
+      <div className="icon-well size-9 rounded-lg">
+        <Icon className="size-4" />
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium">{entry.title}</p>
-        <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{entry.description}</p>
+        <p className="text-muted-foreground text-sm leading-relaxed">{entry.description}</p>
       </div>
       <ChevronRight className="text-muted-foreground size-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
     </Link>
@@ -103,15 +103,10 @@ export function SettingsHome() {
         ))}
       </div>
       <InstallCard />
-      <div
-        className={cn(
-          'rounded-2xl border border-dashed px-4 py-4',
-          'border-muted-foreground/20 bg-muted/30',
-        )}
-      >
+      <div className="analysis-panel-alt rounded-analysis-lg p-4">
         <div className="flex items-start gap-3">
-          <div className="bg-muted ring-border/60 flex size-9 shrink-0 items-center justify-center rounded-xl ring-1">
-            <Wrench className="text-muted-foreground size-4" />
+          <div className="icon-well size-9 rounded-xl">
+            <Wrench className="size-4" />
           </div>
           <div>
             <p className="text-sm font-medium">Maintenance</p>

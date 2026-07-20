@@ -26,7 +26,7 @@ export function PerformanceMetrics({ analysis }: { analysis: ActivityAnalysis })
     label: string;
     value: string;
     sublabel?: string;
-    accent: 'cyan' | 'orange' | 'violet' | 'default';
+    accent?: 'primary' | 'orange' | 'default';
   }[] = [];
 
   if (power?.normalized)

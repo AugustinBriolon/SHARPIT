@@ -44,7 +44,7 @@ describe('mapVerdictToDisplay', () => {
     expect(d.colorClass).not.toContain('red');
   });
 
-  it('TRAIN_HARD and RACE_READY share emerald colour', () => {
+  it('TRAIN_HARD and RACE_READY share primary colour', () => {
     const h = mapVerdictToDisplay('TRAIN_HARD');
     const r = mapVerdictToDisplay('RACE_READY');
     expect(h.colorClass).toBe(r.colorClass);
@@ -53,6 +53,13 @@ describe('mapVerdictToDisplay', () => {
   it('INSUFFICIENT_DATA uses muted colours', () => {
     const d = mapVerdictToDisplay('INSUFFICIENT_DATA');
     expect(d.colorClass).toContain('muted');
+  });
+
+  it('TRAIN_EASY uses olive-lime tempo, not brown caution', () => {
+    const d = mapVerdictToDisplay('TRAIN_EASY');
+    expect(d.colorClass).toContain('signal-tempo');
+    expect(d.bgClass).toContain('signal-tempo');
+    expect(d.colorClass).not.toContain('caution');
   });
 
   it('returns a display for every verdict variant', () => {
@@ -190,10 +197,10 @@ describe('mapFatigueTrajectoryToArrow', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('mapFatigueToSignal', () => {
-  it('FRESH → isAvailable=true, emerald colour', () => {
+  it('FRESH → isAvailable=true, primary colour', () => {
     const s = mapFatigueToSignal('FRESH', 'STABLE');
     expect(s.isAvailable).toBe(true);
-    expect(s.qualityClass).toContain('emerald');
+    expect(s.qualityClass).toContain('primary');
   });
 
   it('OVERREACHING_RISK → label=Critique', () => {
@@ -215,16 +222,16 @@ describe('mapFatigueToSignal', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('mapAdaptationToSignal', () => {
-  it('POSITIVELY_ADAPTING → label=Progression, emerald', () => {
+  it('POSITIVELY_ADAPTING → label=Progression, primary', () => {
     const s = mapAdaptationToSignal('POSITIVELY_ADAPTING', 'IMPROVING');
     expect(s.label).toBe('Progression');
-    expect(s.qualityClass).toContain('emerald');
+    expect(s.qualityClass).toContain('primary');
   });
 
-  it('DETRAINING → label=Désentraînement, red', () => {
+  it('DETRAINING → label=Désentraînement, risk', () => {
     const s = mapAdaptationToSignal('DETRAINING', 'DECLINING');
     expect(s.label).toBe('Désentraînement');
-    expect(s.qualityClass).toContain('red');
+    expect(s.qualityClass).toContain('signal-risk');
   });
 
   it('INSUFFICIENT_DATA → isAvailable=false', () => {
@@ -319,18 +326,18 @@ describe('mapConsistencyToDisplay', () => {
   it('ALIGNED includes score in label', () => {
     const result = mapConsistencyToDisplay('ALIGNED', 91);
     expect(result.label).toContain('91');
-    expect(result.colorClass).toContain('emerald');
+    expect(result.colorClass).toContain('primary');
   });
 
-  it('PARTIALLY_ALIGNED includes score in label with amber colour', () => {
+  it('PARTIALLY_ALIGNED includes score in label with caution colour', () => {
     const result = mapConsistencyToDisplay('PARTIALLY_ALIGNED', 65);
     expect(result.label).toContain('65');
-    expect(result.colorClass).toContain('amber');
+    expect(result.colorClass).toContain('signal-caution');
   });
 
-  it('CONFLICTING uses orange colour', () => {
+  it('CONFLICTING uses elevated colour', () => {
     const result = mapConsistencyToDisplay('CONFLICTING', 40);
-    expect(result.colorClass).toContain('orange');
+    expect(result.colorClass).toContain('signal-vo2');
   });
 
   it('mapConsistencyToAthleteDisplay hides raw conflict and shows verdict', () => {
@@ -518,10 +525,10 @@ describe('mapScoreToColorClass', () => {
 
 describe('mapStripScoreToColorClass', () => {
   it('null → muted', () => expect(mapStripScoreToColorClass(null)).toBe('text-muted-foreground'));
-  it('75 → capacity emerald', () => expect(mapStripScoreToColorClass(75)).toContain('emerald'));
+  it('75 → capacity primary', () => expect(mapStripScoreToColorClass(75)).toContain('primary'));
   it('55 → stable foreground', () => expect(mapStripScoreToColorClass(55)).toBe('text-foreground'));
   it('40 → caution', () => expect(mapStripScoreToColorClass(40)).toBe('text-signal-caution'));
-  it('25 → soft orange', () => expect(mapStripScoreToColorClass(25)).toContain('orange'));
+  it('25 → soft elevated', () => expect(mapStripScoreToColorClass(25)).toContain('signal-vo2'));
   it('10 → risk', () => expect(mapStripScoreToColorClass(10)).toBe('text-signal-risk'));
 });
 

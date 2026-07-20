@@ -14,7 +14,7 @@ export default function SettingsAboutPage() {
         </p>
       </StickyHeader>
 
-      <section className="rounded-2xl border px-4 py-4">
+      <section className="analysis-panel rounded-analysis-lg px-4 py-4">
         <p className="text-muted-foreground text-sm leading-relaxed">
           Cet espace regroupera la version de l’application, les principes produit et les
           informations système utiles au support et à la maintenance.

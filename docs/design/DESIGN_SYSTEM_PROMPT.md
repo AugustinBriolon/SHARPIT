@@ -10,7 +10,7 @@ The design must evoke: high-precision chronometry, clinical EEG monitoring, prof
 
 ## Immutable principles
 
-1. **Revelation > Decoration** — Every pixel must justify its presence through an informational function. No decorative gradients, no shadows for effect, no colored badges without semantic meaning.
+1. **Revelation > Decoration** — Every pixel must justify its presence through an informational function. No decorative gradients, no shadows, no colored badges without semantic meaning.
 
 2. **Earned density** — Information density is high where the athlete makes decisions (snapshot, verdict), airy where they read explanations (rationale, context).
 
@@ -26,52 +26,71 @@ The design must evoke: high-precision chronometry, clinical EEG monitoring, prof
 
 ### Colors
 
-- Background: `oklch(0.17 0.022 158)` (dark), `oklch(0.988 0.006 148)` (light)
-- Surface elevation: use luminosity steps, NOT shadows
-  - Surface 0 (background): `--background`
-  - Surface 1 (cards): `oklch(0.21 0.026 158)` (dark)
-  - Surface 2 (interactive elements): `oklch(0.25 0.024 158)` (dark)
-  - Surface 3 (hover/focus): `oklch(0.28 0.03 158)` (dark)
-- Text: `oklch(0.96 0.008 148)` (dark), never pure white
-- Single accent: `oklch(0.68 0.11 156)` — the SHARPIT sage green
-- Semantic signals (for DATA ONLY):
-  - `--signal-recovery`: cold teal (recovery)
-  - `--signal-base`: sage green (base)
-  - `--signal-tempo`: yellow-green (tempo)
-  - `--signal-threshold`: gold (threshold)
-  - `--signal-vo2`: orange (VO2max)
-  - `--signal-neutral`: blue-gray (no signal)
-  - `--signal-caution`: amber (caution)
-  - `--signal-risk`: earth red (risk)
+Brand primitives live in `src/lib/brand-tokens.ts` (hex) and `src/app/globals.css` (oklch).
+
+- Canvas light: Snow White `oklch(0.99 0.007 106.5)` / `#fcfcf7`
+- Canvas dark: Forest Depths `oklch(0.315 0.073 139)` / `#1c3a13`
+- Primary light: vivid leaf green `oklch(0.48 0.13 142)` — interactive (not Forest ink)
+- Primary dark: Lime Pulse `oklch(0.936 0.13 126.6)` — chromatic punch on dark
+- Ink / foreground light: Forest Depths `#1c3a13`
+- Highlight: Lime Pulse `#d3fa99` — nav active, badges, icon wells (`bg-highlight`, utility `icon-well`); keep vivid
+- Surfaces / signals: lean into Lime hue family (~120–142) for continuity — Warm Stone slight lime cast, recovery/tempo/caution green-gold, not cool sage or brown tan
+- Ink band: Forest on light / Lime on dark — empty states & hub callouts (`surface-ink`, `page-bleed-ink`, component `InkEmptyState` / `PageBleed`)
+- Page bleed: shells set `--page-gutter`; use `page-bleed` / `PageBleed` / `InkEmptyState bleed` for edge-to-edge bands
+- Muted surface: Warm Stone `#f0f1e8` (`analysis-panel-alt`)
+- Done / success washes: use `STATUS_SURFACE` (`src/lib/presentation/status-surface.ts`) — primary tokens, never raw `emerald-*`
+- Status tiers (same file): `ADEQUATE_TONE` (eucalyptus), `CAUTION_TONE`, `ELEVATED_TONE` (vo2), `RISK_TONE` — never raw Tailwind amber/blue/red for status
+- Empty / known-nothing: `InkEmptyState` / `surface-ink` / `page-bleed-ink` — not plain muted paragraphs
+- Sport identity colors (bike emerald / run orange / swim blue) may keep distinct hues; success/done must not
+- Secondary text: Pewter `#666666`
+- Surface elevation: luminosity steps + borders, **NOT shadows**; plates = `analysis-panel` / `analysis-panel-alt`
+- Semantic signals (DATA ONLY — unchanged roles):
+  - `--signal-recovery`: Eucalyptus family (also ADEQUATE status tier)
+  - `--signal-base`: Forest / lime (theme-dependent)
+  - `--signal-tempo`: Olive Gold
+  - `--signal-threshold`: gold
+  - `--signal-vo2`: orange (also ELEVATED status tier)
+  - `--signal-neutral`: pewter / frosted
+  - `--signal-caution`: amber
+  - `--signal-risk`: earth red
 
 ### Typography
 
-- Heading / page title: utility `text-page-title` — Syne, weight 600, 1.5rem
-- Verdict / display: utility `text-verdict` — Syne, weight 600, 1.25–1.55rem
+- Heading / page title: utility `text-page-title` — Syne, weight 600, 1.5rem, tracking ≈ -0.02em
+- Verdict / display: utility `text-verdict` — Syne, weight 600, 1.25–1.55rem, tight tracking
 - Section title: utility `text-section-title` — Syne, weight 600, 1.125rem
 - Card title: utility `text-card-title` — Syne, weight 500, 1rem
 - Body: `font-family: var(--font-sans)` (IBM Plex Sans), weight 400-500
-- Data: utilities `text-data` / `text-instrument` — `font-family: var(--font-data)` (JetBrains Mono), `font-variant-numeric: tabular-nums`, letter-spacing -0.02em
-- Labels: utility `text-label` — 0.6875rem, weight 600, letter-spacing 0.14em, uppercase, muted-foreground. Never reinvent with `text-[11px] … uppercase`.
-- Markup: one `<h1>` per page; sections `<h2>`; nested panels `<h3>`. Uppercase list headers use `text-label`, not `text-section-title`.
+- Data: utilities `text-data` / `text-instrument` — JetBrains Mono, tabular-nums
+- Labels: utility `text-label` — 0.6875rem, weight 600, letter-spacing 0.14em, uppercase
+- Do **not** use Inter or whisper-light 300-weight display faces — SHARPIT titles stay authoritative (Syne 500–600)
 
 ### Spacing
 
 - Dense (data, metrics): 12px-16px
-- Standard (cards, sections): 20px-24px
+- Standard (cards, sections): 16px-24px
 - Airy (explanations, rationale): 32px-48px
-- Never uniform "p-6" padding everywhere
+- Base unit: 8px (comfortable density; never uniform `p-6` everywhere)
 
-### Borders
+### Borders & radius
 
-- Rare. Prefer surface-luminosity difference for hierarchy.
-- When necessary: `1px solid` at 10-14% opacity, never high-opacity "visible" borders.
-- Radius: `0.625rem` (10px) standard, `calc(var(--radius) * 0.5)` for dense elements, `calc(var(--radius) * 1.15)` for analysis panels.
+- Prefer surface luminosity for hierarchy; borders at low opacity when needed
+- `--radius: 1rem` (16px cards) — instrument, not CPG pill
+- Buttons: default = ink (`bg-foreground`) Seed CTA; `accent` = leaf/Lime interactive; `highlight` = Lime Pulse badge CTA
+- Buttons stay instrument `rounded-lg`, **not** `rounded-full` / 1000px pills
+- Nav pills / bottom nav active = Lime (`bg-highlight`)
+- Badges/tags may use full pill (`rounded-4xl`) including `variant="highlight"`
 
 ### Shadows
 
-- FORBIDDEN in dark mode. Use surface luminosity for elevation.
-- In light mode: very subtle shadows, never a "floating" drop-shadow.
+- **FORBIDDEN** in both themes. Hierarchy via contrast, type weight, and space only.
+- Overlays (select, menu, toast, sheet, chart tooltips): `shadow-none` + `ring-1` / border — never drop-shadow elevation.
+- No decorative gradients; flat color fields only.
+
+### Forms
+
+- Inputs / textareas: `rounded-md` (Seed 8px), transparent fill, `shadow-none`
+- Default button = ink CTA (`bg-foreground`); links stay `text-primary`
 
 ## Component patterns
 
@@ -127,8 +146,11 @@ The design must evoke: high-precision chronometry, clinical EEG monitoring, prof
 
 ## Anti-patterns (FORBIDDEN)
 
-- ❌ Cards with floating shadows in dark mode
-- ❌ Decorative gradients (except semantic signal bars)
+- ❌ Cards with floating shadows (any theme)
+- ❌ Decorative gradients (except thin semantic signal bars)
+- ❌ Lime Pulse on large solid backgrounds or body text (washes `bg-highlight/35` ok)
+- ❌ Muting Lime Pulse to match earthy tones — adapt the rest toward lime instead
+- ❌ Pure white `#ffffff` instead of Snow White
 - ❌ Colored badges without functional meaning
 - ❌ Generic "See more" / "Understand" buttons
 - ❌ Uniform padding on all elements
@@ -137,6 +159,10 @@ The design must evoke: high-precision chronometry, clinical EEG monitoring, prof
 - ❌ Icons without labels in dense zones
 - ❌ "AI" mentioned anywhere in the interface
 - ❌ Scores rounded or simplified to look "pretty"
+- ❌ CPG pill buttons (1000px radius) on primary actions — keep instrument `rounded-lg`
+- ❌ Raw Tailwind status colors (`emerald-*`, `blue-*`, `amber-*`, `red-*`) for done / caution / risk — use `STATUS_SURFACE` / `ADEQUATE_TONE` / `CAUTION_TONE` / `ELEVATED_TONE` / `RISK_TONE`
+- ❌ Legacy `bg-card` / `rounded-2xl border` SaaS plates — use `analysis-panel`
+- ❌ Plain muted empty paragraphs on main routes — use `InkEmptyState`
 
 ## Target feeling
 
@@ -145,8 +171,10 @@ Never: tracked, overwhelmed, anxious, infantilized
 
 ## Visual references
 
+- Botanical-clinical restraint (Seed / Aesop apothecary calm) — adapted to an athlete instrument
 - Precision chronometers (Tag Heuer, Omega)
 - EEG/clinical monitoring interfaces (Natus, Nihon Kohden)
 - Aviation flight decks (EFIS, PFD)
 - Scientific measurement instruments (oscilloscopes, spectrometers)
 - NEVER: Strava, Whoop, Garmin Connect, Fitbit, Apple Fitness
+- NEVER: CPG supplement marketing layouts (promo banners, product grids, sale stickers)

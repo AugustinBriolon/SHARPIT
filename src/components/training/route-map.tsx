@@ -11,7 +11,7 @@ const RouteMapInner = dynamic(() => import('./route-map-inner'), {
 
 export function RouteMap({
   path,
-  lineColor = '#0891b2',
+  lineColor = 'var(--primary)',
 }: {
   path: [number, number][];
   lineColor?: string;

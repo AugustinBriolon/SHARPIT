@@ -58,7 +58,7 @@ The difference between structure and clutter is a single constraint: **every ele
 
 ### 3.3 Restraint as Trust
 
-Color, animation, and emphasis are reserved. A red warning means something is wrong. An emerald signal means capacity is available. Amber means caution. These carry meaning because they are not used casually. Casual use of semantic color destroys its meaning.
+Color, animation, and emphasis are reserved. A risk signal means something is wrong. A primary (leaf) signal means capacity is available. Caution means threshold. These carry meaning because they are not used casually. Casual use of semantic color destroys its meaning.
 
 The interface never celebrates itself. It does not pulse, bounce, or sparkle. When something needs attention, it gets it precisely — not dramatically.
 
@@ -190,7 +190,7 @@ On larger viewports, the column widens to a maximum width, centered. The content
 
 Blocks are separated by `space-y-3` (12px). This is intentionally tight — the blocks are related, part of a continuous argument. They are not independent cards in a dashboard grid.
 
-Each block is a `rounded-2xl border` card with `bg-card/40` backing. No shadows. Border separation is the only elevation signal.
+Each block uses the `analysis-panel` / `analysis-panel-alt` shell (`rounded-analysis` / `rounded-analysis-lg`). No shadows. Surface luminosity + border separation are the only elevation signals — never `bg-card` SaaS plates.
 
 ### 6.3 The Expand Pattern
 
@@ -267,16 +267,18 @@ Components hold only UI state (is a section expanded, is a tooltip visible). Bus
 
 ### 8.4 Semantic Color, Not Arbitrary Color
 
-All color in components derives from the semantic system:
+All color in components derives from the Seed semantic system (see `src/lib/presentation/status-surface.ts`):
 
 ```typescript
-emerald  →  positive, available, optimal, growth
-blue     →  adequate, neutral-positive, maintaining
-amber    →  caution, reduced, partial, plateau
-orange   →  warning, elevated concern, maladapting
-red      →  risk, critical, recover, overreaching
-muted    →  unavailable, insufficient data, metadata
+primary / STATUS_SURFACE.done  →  positive, available, optimal, growth, done
+ADEQUATE_TONE (signal-recovery) →  adequate, neutral-positive, maintaining, TRAIN_SMART
+CAUTION_TONE (signal-caution)   →  caution, reduced, partial, plateau
+ELEVATED_TONE (signal-vo2)      →  elevated concern, maladapting mid-tier
+RISK_TONE (signal-risk)         →  risk, critical, overreaching
+muted                           →  unavailable, insufficient data, metadata
 ```
+
+Never use raw Tailwind `emerald-*` / `blue-*` / `amber-*` / `red-*` for status. Sport identity chips may keep distinct hues (RUN orange, BIKE emerald, SWIM blue) — success/done must not.
 
 A component must never introduce a color outside this system. If a new semantic state requires a new color, the color system is extended — not bypassed.
 
@@ -337,39 +339,67 @@ All animations respect `prefers-reduced-motion`. When reduced motion is set:
 
 ### 10.1 The Foundation
 
-SHARPIT operates in dark-first. The athlete's primary context is early morning or evening — low light, cognitive activation, pre/post training. The color system is designed for this context.
+SHARPIT is **dual-theme**: light canvas for daytime reading, Forest Depths canvas for low-light training contexts. Both modes share one botanical-clinical brand language and the same semantic signal system.
 
-**Base palette:**
+**Brand primitives** (see `src/lib/brand-tokens.ts`):
 
 ```
-Background:        hsl(222 47% 6%)   — deep blue-black, not pure black
-Card surface:      hsl(222 35% 9%)   — slightly lighter, distinguishable
-Border:            hsl(222 20% 15%)  — subtle separation, not stark
-Foreground:        hsl(0 0% 95%)     — near-white, not pure white
-Muted foreground:  hsl(222 10% 55%)  — secondary text, metadata
+Forest Depths  #1c3a13  — primary brand ink, filled CTAs, dark sections, light-mode text
+Lime Pulse     #d3fa99  — functional punctuation (badges, nav active; keep vivid)
+Sage Moss      #6f7a52  — muted supporting green (leaf-adjacent)
+Olive Gold     #a8b05c  — soft yellow-green / tempo toward lime
+Eucalyptus     #5f8a6e  — cooler recovery green (lime orbit)
+Snow White     #fcfcf7  — page canvas (never pure #ffffff)
+Warm Stone     #f0f1e8  — secondary surface (slight lime cast)
+Frosted Glass  #c4c7c4  — muted neutral / frosted overlays
+Ash            #b3b3b3  — disabled / low-emphasis borders
+Pewter         #666666  — secondary body text
 ```
 
-Light mode uses the inverse logic: near-white background, deep-slate text. Both modes share the semantic color system unchanged.
+**Light mode surfaces:**
+
+```
+Background / card: Snow White
+Muted / secondary: Warm Stone
+Foreground (ink): Forest Depths
+Primary (interactive): vivid leaf green — links, icons, CTAs, selected states
+Muted foreground: Pewter
+Highlight: Lime Pulse (badges, nav active, icon wells — keep vivid)
+```
+
+**Dark mode surfaces:**
+
+```
+Background: deep forest (darker than product-band Forest for density)
+Card: lifted forest surface
+Foreground: Snow White
+Primary (interactive): Lime Pulse — full chromatic punch
+Highlight: Lime Pulse (badges / icon wells)
+```
+
+Note: Forest Depths is **ink and dark canvas**, not the interactive accent. Using it as `--primary` collapses every `text-primary` / `bg-primary/10` into mud. Surfaces and `--signal-*` hues lean into the Lime Pulse family (hue ~120–142) so the rest of the UI continues the highlight — do not mute Lime to “match” muted earth tones.
+
+Hierarchy comes from **color contrast and spatial separation** — never from drop shadows or decorative gradients.
 
 ### 10.2 Semantic Color Application
 
-Semantic colors appear on text, borders, dot indicators, and gradient overlays. They never appear as large solid fills. The block background uses `from-[color]/10` — a 10% tint of the semantic color into the card gradient. This communicates the state without dominating.
+Semantic colors (`--signal-*`) appear on text, borders, dots, and thin signal bars. They never appear as large solid fills. Prefer a flat low-opacity tint (`bg-signal-caution/10`) over multi-stop gradients.
 
-```
-bg-gradient-to-br to-transparent from-emerald-500/10  — positive state
-bg-gradient-to-br to-transparent from-red-500/10      — risk state
-```
+Brand greens and semantic signal colors are separate systems: brand expresses identity; signals express physiological meaning (recovery, caution, risk, effort zones).
 
 ### 10.3 Color Restraint
 
-The palette must be exhausted before any new color is introduced. If a design decision requires a color outside the semantic system, it is a signal that the component needs redesign, not that the palette needs expansion.
+The palette must be exhausted before any new color is introduced. If a design decision requires a color outside the brand + semantic systems, it is a signal that the component needs redesign, not that the palette needs expansion.
 
 **Prohibited:**
 
 - Purple or violet (no semantic meaning in the domain)
-- Teal or cyan (too reminiscent of health apps)
-- Yellow (insufficient contrast in dark mode)
-- Any gradient that transitions between two semantic colors
+- Saturated blues outside Eucalyptus / recovery signal (too reminiscent of consumer health apps)
+- Lime Pulse as a large decorative surface or body text color (punctuation only; washes may use `bg-highlight/35`)
+- Muting Lime Pulse to chase earthy dashboard tones — adapt signals/surfaces toward lime instead
+- Pure white `#ffffff` (always Snow White)
+- Drop shadows / elevation shadows (flat system)
+- Decorative gradients (flat color fields only)
 
 ### 10.4 Contrast
 
@@ -472,7 +502,7 @@ The Today View is the highest-priority screen. Every principle is expressed most
 **Composition (causal column, non-negotiable):**
 
 1. **Plate** (`TodayVerdictHero`) — one composition answering _what should I do with my state today?_
-   - Soft semantic tint (`bg-gradient-to-br` + 12% verdict color) + thin top accent bar + status dot (§11.3)
+   - Soft semantic tint (flat `bg-*/12`, no decorative gradient) + status dot (§11.3)
    - Context label (`Ce matin` / posture) + **three confidence bars** (§11.4 — primary-tinted; only non-text visual metaphor in the plate header)
    - Verdict headline — Syne / `text-verdict`, colored by state, left-aligned, air around it
    - One action line (focus / session / rest) — body weight, not a second title
