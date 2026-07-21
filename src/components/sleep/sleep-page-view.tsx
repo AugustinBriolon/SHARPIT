@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { SleepCoachTonight } from '@/components/sleep/sleep-coach-tonight';
 import { SleepHero } from '@/components/sleep/sleep-hero';
 import { SleepPhasesSection } from '@/components/sleep/sleep-phases-section';
@@ -8,6 +9,7 @@ import { SleepTrendSection } from '@/components/sleep/sleep-trend-chart';
 import { SleepWhyBlock } from '@/components/sleep/sleep-why-block';
 import type { SleepPageViewProps } from '@/components/sleep/types';
 import { MetricDrillDownPage } from '@/components/today/drill-down/metric-drill-down-page';
+import { Skeleton } from '@/components/ui/skeleton';
 import { formatClock, formatDuration } from '@/lib/sleep';
 
 export type { SleepPageViewProps } from '@/components/sleep/types';
@@ -42,6 +44,7 @@ export function SleepPageView(props: SleepPageViewProps) {
     onDateChange,
     onPreviousDay,
     onNextDay,
+    loading = false,
     sleepScore,
     adequacyDisplay,
     scoreBreakdown,
@@ -62,23 +65,27 @@ export function SleepPageView(props: SleepPageViewProps) {
     confidencePresentation,
   } = props;
 
+  let footer: React.ReactNode;
+  if (loading) {
+    footer = <Skeleton className="mx-auto h-3 w-48 rounded-full" />;
+  } else if (recoveryNote) {
+    footer = (
+      <p className="text-muted-foreground text-center text-xs leading-relaxed">{recoveryNote}</p>
+    );
+  } else {
+    footer = undefined;
+  }
+
   return (
-    <MetricDrillDownPage
-      footer={
-        recoveryNote ? (
-          <p className="text-muted-foreground text-center text-xs leading-relaxed">
-            {recoveryNote}
-          </p>
-        ) : undefined
-      }
-    >
+    <MetricDrillDownPage footer={footer}>
       <SleepHero
-        actionLine={sleepActionLine(props)}
+        actionLine={loading ? null : sleepActionLine(props)}
         adequacyDisplay={adequacyDisplay}
         bedtimeMin={bedtimeMin}
         confidencePct={confidencePresentation.pct}
         date={date}
         isToday={isToday}
+        loading={loading}
         maxDate={maxDate}
         sleepScore={sleepScore}
         totalSleepMin={totalSleepMin}
@@ -89,6 +96,7 @@ export function SleepPageView(props: SleepPageViewProps) {
       />
 
       <SleepStatsStrip
+        loading={loading}
         restorativeRatio={scoreBreakdown.restorativeRatio}
         sleepDelta7d={sleepDelta7d}
         sleepTargetMin={sleepTargetMin}
@@ -99,23 +107,28 @@ export function SleepPageView(props: SleepPageViewProps) {
       <SleepWhyBlock
         debt7Min={coachView.debt7Min}
         globalDecision={globalDecision}
+        loading={loading}
         restorativeRatio={scoreBreakdown.restorativeRatio}
         targetDeltaMin={targetDeltaMin}
       />
 
-      <SleepCoachTonight coachingLine={pickCoachingLine(props)} view={coachView} />
+      {!loading ? (
+        <>
+          <SleepCoachTonight coachingLine={pickCoachingLine(props)} view={coachView} />
 
-      {totalSleepMin != null && totalSleepMin > 0 ? (
-        <SleepPhasesSection
-          awakeMin={awakeMin}
-          deepMin={deepMin}
-          lightMin={lightMin}
-          remMin={remMin}
-          totalMin={totalSleepMin}
-        />
+          {totalSleepMin != null && totalSleepMin > 0 ? (
+            <SleepPhasesSection
+              awakeMin={awakeMin}
+              deepMin={deepMin}
+              lightMin={lightMin}
+              remMin={remMin}
+              totalMin={totalSleepMin}
+            />
+          ) : null}
+
+          <SleepTrendSection data={barData} targetMin={sleepTargetMin} />
+        </>
       ) : null}
-
-      <SleepTrendSection data={barData} targetMin={sleepTargetMin} />
     </MetricDrillDownPage>
   );
 }

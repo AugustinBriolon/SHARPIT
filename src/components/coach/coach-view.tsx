@@ -2,16 +2,17 @@
 
 import type { UIMessage } from 'ai';
 import { MessageSquarePlus } from 'lucide-react';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { StickyHeader } from '@/components/layout/sticky-header';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { CoachChat } from '@/components/coach/coach-chat';
 import { CoachConversationList } from '@/components/coach/coach-conversation-list';
+import {
+  CoachChatPanelSkeleton,
+  CoachHubSkeleton,
+  CoachPageHeader,
+} from '@/components/coach/coach-hub-skeleton';
 import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
-import { InkEmptyState } from '@/components/ui/ink-empty-state';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   useConversation,
   useConversations,
@@ -19,6 +20,8 @@ import {
   useDeleteConversation,
 } from '@/hooks/use-coach';
 import { useActivities, usePlannedSessions } from '@/hooks/use-data';
+import { useMounted } from '@/hooks/use-mounted';
+import { useIsMobile } from '@/hooks/use-viewport';
 import { useProjectedAthleteViewModel } from '@/hooks/use-projected-athlete-view-model';
 import type { ProjectionHorizonDays } from '@/core/projection/types';
 import {
@@ -32,14 +35,23 @@ import type { SessionAnalysis } from '@/lib/validators/coach';
 
 const inFlightDiscussBootstraps = new Set<string>();
 
+function createEphemeralId(): string {
+  return crypto.randomUUID();
+}
+
 export function CoachView() {
   const searchParams = useSearchParams();
+  const mounted = useMounted();
+  const isMobile = useIsMobile();
+  const showMobileShell = mounted && isMobile;
+  const showDesktopShell = mounted && !isMobile;
   const discussId = searchParams.get('discuss');
   const discussActivityId = searchParams.get('discussActivity');
   const discussPlanningRaw = searchParams.get('discussPlanning');
   const discussPlanningHorizon = [1, 3, 7, 14].includes(Number(discussPlanningRaw))
     ? (Number(discussPlanningRaw) as ProjectionHorizonDays)
     : null;
+  const hasDiscussIntent = Boolean(discussId || discussActivityId || discussPlanningHorizon);
   const plannedQuery = usePlannedSessions();
   const activitiesQuery = useActivities();
   const projectionQuery = useProjectedAthleteViewModel(discussPlanningHorizon ?? 7);
@@ -58,11 +70,19 @@ export function CoachView() {
 
   const conversations = conversationsQuery.data ?? [];
 
-  const selectedId = activeId ?? conversations[0]?.id ?? null;
+  const selectedId = activeId;
   const isEphemeral = selectedId != null && ephemeralIds.has(selectedId);
   const activeConversation = useConversation(isEphemeral ? null : selectedId);
 
   const discussBootstrapped = useRef(false);
+
+  function openNewConversation() {
+    const id = createEphemeralId();
+    setEphemeralIds((prev) => new Set(prev).add(id));
+    setActiveId(id);
+    setLatchedBootstrapPrompt(undefined);
+    return id;
+  }
 
   function bootstrapDiscussConversation(bootstrapKey: string) {
     if (inFlightDiscussBootstraps.has(bootstrapKey)) return;
@@ -189,27 +209,31 @@ export function CoachView() {
     createConversation,
   ]);
 
-  useEffect(() => {
-    if (discussId || discussActivityId || discussPlanningHorizon) return;
-    if (conversationsQuery.isPending || conversations.length > 0) return;
+  /** Always land on a blank “Nouvelle conversation” — never an empty selection state. */
+  useLayoutEffect(() => {
+    if (hasDiscussIntent) return;
     if (initialized.current) return;
     initialized.current = true;
-    const id = crypto.randomUUID();
+    const id = createEphemeralId();
+    setEphemeralIds(new Set([id]));
+    setActiveId(id);
+  }, [hasDiscussIntent]);
+
+  /** Deleted / missing thread → open a fresh draft instead of an empty pane. */
+  useEffect(() => {
+    if (!selectedId || isEphemeral) return;
+    if (activeConversation.isPending || activeConversation.isLoading) return;
+    if (activeConversation.data) return;
+    const id = createEphemeralId();
     setEphemeralIds((prev) => new Set(prev).add(id));
     setActiveId(id);
   }, [
-    conversationsQuery.isPending,
-    conversations.length,
-    discussId,
-    discussActivityId,
-    discussPlanningHorizon,
+    selectedId,
+    isEphemeral,
+    activeConversation.isPending,
+    activeConversation.isLoading,
+    activeConversation.data,
   ]);
-
-  function handleNewConversation() {
-    const id = crypto.randomUUID();
-    setEphemeralIds((prev) => new Set(prev).add(id));
-    setActiveId(id);
-  }
 
   async function handleDeleteConversation(id: string) {
     const confirmed = await confirm({
@@ -220,7 +244,12 @@ export function CoachView() {
     });
     if (!confirmed) return;
     await deleteConversation.mutateAsync(id);
-    if (selectedId === id) setActiveId(null);
+    if (selectedId === id) {
+      const nextId = createEphemeralId();
+      setEphemeralIds((prev) => new Set(prev).add(nextId));
+      setActiveId(nextId);
+      setLatchedBootstrapPrompt(undefined);
+    }
   }
 
   function resolveChatInitialMessages(): UIMessage[] {
@@ -229,17 +258,9 @@ export function CoachView() {
     return activeConversation.data.messages as UIMessage[];
   }
 
-  function renderChatPanel() {
+  function renderChat(header?: React.ReactNode) {
     if (!selectedId) {
-      return (
-        <InkEmptyState
-          className="min-h-[50vh] flex-1 lg:min-h-0"
-          description="Sélectionne une conversation dans la liste ou démarre-en une nouvelle."
-          icon={MessageSquarePlus}
-          title="Aucune conversation ouverte"
-          compact
-        />
-      );
+      return <CoachChatPanelSkeleton header={header} variant="empty" />;
     }
 
     if (isEphemeral || activeConversation.data) {
@@ -249,6 +270,7 @@ export function CoachView() {
           autoReply={autoReplyId === selectedId}
           bootstrapPrompt={latchedBootstrapPrompt}
           conversationId={selectedId}
+          header={header}
           initialMessages={resolveChatInitialMessages()}
           isEphemeral={isEphemeral}
           onAutoReplyStarted={() => setAutoReplyId(null)}
@@ -265,19 +287,7 @@ export function CoachView() {
       );
     }
 
-    if (activeConversation.isLoading) {
-      return <Skeleton className="min-h-[50vh] min-w-0 flex-1 rounded-xl lg:min-h-0" />;
-    }
-
-    return (
-      <InkEmptyState
-        className="min-h-[50vh] flex-1 lg:min-h-0"
-        description="Sélectionne une conversation dans la liste ou démarre-en une nouvelle."
-        icon={MessageSquarePlus}
-        title="Conversation introuvable"
-        compact
-      />
-    );
+    return <CoachChatPanelSkeleton header={header} variant="thread" />;
   }
 
   const conversationListEl = (
@@ -299,7 +309,7 @@ export function CoachView() {
           disabled={createConversation.isPending}
           size="icon"
           variant="outline"
-          onClick={handleNewConversation}
+          onClick={openNewConversation}
         >
           <MessageSquarePlus className="size-4" />
         </Button>
@@ -308,77 +318,32 @@ export function CoachView() {
     </div>
   );
 
-  const mobileChatBody =
-    selectedId && (isEphemeral || activeConversation.data) ? (
-      <CoachChat
-        key={selectedId}
-        autoReply={autoReplyId === selectedId}
-        bootstrapPrompt={latchedBootstrapPrompt}
-        conversationId={selectedId}
-        header={mobileHeader}
-        initialMessages={resolveChatInitialMessages()}
-        isEphemeral={isEphemeral}
-        onAutoReplyStarted={() => setAutoReplyId(null)}
-        onConversationCreated={(id) => {
-          setEphemeralIds((prev) => {
-            const next = new Set(prev);
-            next.delete(selectedId);
-            return next;
-          });
-          setActiveId(id);
-          setAutoReplyId(id);
-        }}
-      />
-    ) : (
-      <div className="flex h-full min-h-0 flex-col">
-        {mobileHeader}
-        <div className="flex flex-1 items-center justify-center p-6 text-center">
-          {selectedId && activeConversation.isLoading ? (
-            <Skeleton className="h-24 w-full rounded-xl" />
-          ) : (
-            <p className="text-muted-foreground text-sm">
-              Sélectionne une conversation ou démarre-en une nouvelle.
-            </p>
-          )}
-        </div>
-      </div>
-    );
-
   return (
     <div>
-      {/* Mobile: fixed, app-like chat layout — header+list sticky/blurred over the
-          scrolling thread, composer pinned to the screen bottom, page itself never
-          scrolls. Ends exactly where BottomNav begins (see mobile-shell.tsx). */}
-      <div
-        className="bg-background safe-area-top fixed inset-x-0 top-0 z-30 flex flex-col lg:hidden"
-        style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))' }}
-      >
-        {mobileChatBody}
-      </div>
-
-      <div className="hidden space-y-6 lg:block">
-        <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-primary text-xs font-medium uppercase">Coach</p>
-            <h1 className="text-page-title mt-1">Fil & conversations</h1>
-            <p className="text-muted-foreground mt-1">
-              Messages du jour et chat libre avec ton coach.{' '}
-              <Link className="text-primary hover:underline" href="/profil">
-                Mon profil
-              </Link>
-            </p>
-          </div>
-          <Button disabled={createConversation.isPending} onClick={handleNewConversation}>
-            <MessageSquarePlus className="size-4" />
-            Nouvelle conversation
-          </Button>
-        </StickyHeader>
-
-        <div className="flex h-[calc(100dvh-190px)] flex-col gap-3 lg:flex-row lg:gap-4">
-          {conversationListEl}
-          {renderChatPanel()}
+      {/* Exactly one CoachChat in the tree (mobile XOR desktop). */}
+      {showMobileShell ? (
+        <div
+          className="bg-background safe-area-top fixed inset-x-0 top-0 z-30 flex flex-col"
+          style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))' }}
+        >
+          {renderChat(mobileHeader)}
         </div>
-      </div>
+      ) : null}
+
+      {showDesktopShell ? (
+        <div className="space-y-6">
+          <CoachPageHeader
+            newDisabled={createConversation.isPending}
+            onNewConversation={openNewConversation}
+          />
+          <div className="flex h-[calc(100dvh-190px)] flex-col gap-3 lg:flex-row lg:gap-4">
+            {conversationListEl}
+            {renderChat()}
+          </div>
+        </div>
+      ) : null}
+
+      {!mounted ? <CoachHubSkeleton /> : null}
 
       {dialog}
     </div>

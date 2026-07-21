@@ -21,6 +21,7 @@ export function EffortHero({
   isToday,
   maxDate,
   confidencePct,
+  loading = false,
 }: {
   date: Date;
   strainScore: number | null;
@@ -39,16 +40,19 @@ export function EffortHero({
   isToday?: boolean;
   maxDate?: Date;
   confidencePct?: number | null;
+  loading?: boolean;
 }) {
   let actionLine: string | null = null;
-  if (estimatedDaysToFresh != null && estimatedDaysToFresh > 0) {
-    actionLine = `Frais dans ${estimatedDaysToFresh === 1 ? '1 jour' : `${estimatedDaysToFresh} jours`}`;
-  } else if (fatigueTypeLabel && fatigueType !== 'UNDETERMINED') {
-    actionLine = `Type · ${fatigueTypeLabel}`;
-  } else if (consecutiveDays > 0) {
-    actionLine = `${consecutiveDays} j d'accumulation`;
-  } else if (performancePercent != null && performancePercent < 100) {
-    actionLine = `Capacité ~${performancePercent} %`;
+  if (!loading) {
+    if (estimatedDaysToFresh != null && estimatedDaysToFresh > 0) {
+      actionLine = `Frais dans ${estimatedDaysToFresh === 1 ? '1 jour' : `${estimatedDaysToFresh} jours`}`;
+    } else if (fatigueTypeLabel && fatigueType !== 'UNDETERMINED') {
+      actionLine = `Type · ${fatigueTypeLabel}`;
+    } else if (consecutiveDays > 0) {
+      actionLine = `${consecutiveDays} j d'accumulation`;
+    } else if (performancePercent != null && performancePercent < 100) {
+      actionLine = `Capacité ~${performancePercent} %`;
+    }
   }
 
   const tssLine =
@@ -58,20 +62,21 @@ export function EffortHero({
     <PhysioDrillDownHero
       confidencePct={confidencePct}
       date={date}
-      footer={actionLine ? tssLine : undefined}
+      footer={!loading && actionLine ? tssLine : undefined}
       headline={strainStatusLabel}
       headlineClassName={strainStatusClassName}
       isToday={isToday}
+      loading={loading}
       maxDate={maxDate}
-      panelClassName={softTintFromQualityClass(strainStatusClassName)}
-      quickReadCaption={actionLine ?? tssLine}
+      panelClassName={loading ? undefined : softTintFromQualityClass(strainStatusClassName)}
+      quickReadCaption={loading ? undefined : (actionLine ?? tssLine)}
       quickReadLabel="charge du jour"
       quickReadSuffix={` / ${DAILY_STRAIN_GAUGE_MAX}`}
       quickReadValue={strainScore != null ? strainScore.toFixed(1) : '—'}
       railCaption="faible vers élevée"
       railMax={DAILY_STRAIN_GAUGE_MAX}
       railValue={strainScore}
-      subline={strainSubtitle}
+      subline={loading ? null : strainSubtitle}
       onDateChange={onDateChange}
       onNextDay={onNextDay}
       onPreviousDay={onPreviousDay}

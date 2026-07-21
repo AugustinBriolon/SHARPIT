@@ -4,20 +4,20 @@ Product Sprint 2 recentre l’expérience **Today** sur cinq questions athlète.
 
 ## Les cinq questions
 
-| #   | Question                               | Composant                                                        | Source Snapshot                                              |
-| --- | -------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------ |
-| 1   | Puis-je m’entraîner fort aujourd’hui ? | `TodayVerdictHero` — titre + réponse courte                      | `reasoning.overallVerdict`, `adviceActionable`               |
-| 2   | Pourquoi ?                             | `TodayWhyBlock`                                                  | `reasoning.keyFindings` (prioritaire), sinon briefing validé |
-| 3   | Qu’est-ce qui limite ma progression ?  | `TodayActionRow` (colonne gauche)                                | `limitingFactor`, `adaptation.limitingFactor`                |
-| 4   | Que dois-je faire aujourd’hui ?        | `TodayVerdictHero` (ligne d’action) + `TodayActionRow` (séances) | `reasoning.topAction`, `daySummary`                          |
-| 5   | Est-ce que je progresse ?              | `TodayWeeklyTrajectory`                                          | `adaptation`, sparklines récup./charge, `weeklyLoad`         |
+| #   | Question                               | Composant                                                        | Source Snapshot                                      |
+| --- | -------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------- |
+| 1   | Puis-je m’entraîner fort aujourd’hui ? | `TodayVerdictHero` — titre + réponse courte                      | `reasoning.overallVerdict`, `adviceActionable`       |
+| 2   | Pourquoi ?                             | Frein sur la plaque + strip (drill) — **pas** de bloc Why dédié  | `limitingFactor` + scores strip                      |
+| 3   | Qu’est-ce qui limite ma progression ?  | Frein sur la plaque (`twinTrustStrip`)                           | `limitingFactor`, `adaptation.limitingFactor`        |
+| 4   | Que dois-je faire aujourd’hui ?        | `TodayVerdictHero` (ligne d’action) + `TodayActionRow` (séances) | `reasoning.topAction`, `daySummary`                  |
+| 5   | Est-ce que je progresse ?              | `TodayWeeklyTrajectory`                                          | `adaptation`, sparklines récup./charge, `weeklyLoad` |
 
 ## Hiérarchie d’information (haut → bas)
 
 1. **Bannière statut** (si message produit ou données insuffisantes)
-2. **Verdict hero** — question 1, décision du jour, 4 scores physiologiques, confiance
-3. **Pourquoi** — explication scientifique courte (2–3 lignes max)
-4. **Action row** — facteur limitant | séance du jour
+2. **Verdict hero** — question 1, décision du jour, frein, confiance
+3. **Signal strip** — 4 scores + drill-down
+4. **Action row** — séance du jour (Tenir / Confirmer si matin)
 5. **Trajectoire hebdo** — progression + liens drill-down
 
 Largeur max `max-w-3xl` : un seul flux vertical, lecture en &lt; 20 secondes sans scroll excessif.
@@ -38,15 +38,14 @@ Largeur max `max-w-3xl` : un seul flux vertical, lecture en &lt; 20 secondes san
 - **4 anneaux** : Sommeil, Récupération, Effort, Adaptation — les scores les plus actionnables ; liens vers `/today/sleep`, `/today/recovery`, `/today/effort`.
 - **TwinTrustStrip** : transparence confiance (Sprint 1) ; pas de facteur limitant ici (évite duplication avec action row).
 
-### `TodayWhyBlock`
+### `TodayWhyBlock` — retiré du hub
 
-- **Priorité** : `keyFindings` déterministes du moteur de raisonnement.
-- **Fallback** : premiers paragraphes du briefing LLM validé.
-- **Absent** si aucune source fiable — pas de texte générique.
+- Dupliquait le verdict (« Entrée prioritaire… ») et des signaux déjà dans le strip / frein plaque.
+- Composant et `whyBlock` VM conservés (`visible: false`) pour réutilisation éventuelle hors hub ; non monté sur Today.
 
-### `TodayActionRow` — facteur limitant
+### Frein (plaque) — facteur limitant
 
-- **Q3** : `limitingFactor` du snapshot ou `adaptation.limitingFactor`.
+- **Q2 / Q3** : `limitingFactor` du snapshot ou `adaptation.limitingFactor` sur la plaque.
 - Message neutre si aucun frein identifié.
 
 ### `TodayActionRow` — séance du jour
@@ -62,16 +61,17 @@ Largeur max `max-w-3xl` : un seul flux vertical, lecture en &lt; 20 secondes san
 
 ## Retiré du dashboard principal
 
-| Ancien composant                      | Raison                                            |
-| ------------------------------------- | ------------------------------------------------- |
-| `NarrativeHeader`                     | Dupliquait verdict + pourquoi + briefing          |
-| `SessionBlock`                        | Fusionné dans `TodayActionRow`                    |
-| `ActivityConsistencyPanel`            | Ne répond à aucune des 5 questions                |
-| `EvolutionChart`                      | Remplacé par sparklines compactes (trajectoire)   |
-| `HealthMonitorPanel`                  | Drill-down via pages Sommeil / Récupération       |
-| `PlanningRow`                         | Séances futures hors jour courant → lien planning |
-| `TodayGoalsStrip`                     | Hors scope des 5 questions                        |
-| Grille 2 colonnes narrative / session | Remplacée par flux unique                         |
+| Ancien composant                      | Raison                                             |
+| ------------------------------------- | -------------------------------------------------- |
+| `TodayWhyBlock`                       | Dupliquait verdict + strip ; frein déjà sur plaque |
+| `NarrativeHeader`                     | Dupliquait verdict + pourquoi + briefing           |
+| `SessionBlock`                        | Fusionné dans `TodayActionRow`                     |
+| `ActivityConsistencyPanel`            | Ne répond à aucune des 5 questions                 |
+| `EvolutionChart`                      | Remplacé par sparklines compactes (trajectoire)    |
+| `HealthMonitorPanel`                  | Drill-down via pages Sommeil / Récupération        |
+| `PlanningRow`                         | Séances futures hors jour courant → lien planning  |
+| `TodayGoalsStrip`                     | Hors scope des 5 questions                         |
+| Grille 2 colonnes narrative / session | Remplacée par flux unique                          |
 
 Les composants restent dans le codebase pour réutilisation ou pages détail ; ils ne sont plus montés sur Today.
 

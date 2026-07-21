@@ -8,6 +8,7 @@ import {
 } from '@/lib/metric-tone';
 import { cn } from '@/lib/utils';
 import { EyebrowLabel } from '@/components/ui/eyebrow-label';
+import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 
 export type { MetricTone, CorpsTone };
 
@@ -20,6 +21,7 @@ export function MetricCell({
   footerHint,
   tone = 'neutral',
   layout = 'strip',
+  loading = false,
   showToneDot = false,
   onExplain,
   explainLabel = 'Comprendre cette mesure',
@@ -32,6 +34,7 @@ export function MetricCell({
   footerHint?: string;
   tone?: MetricTone | CorpsTone;
   layout?: 'strip' | 'card' | 'compact';
+  loading?: boolean;
   showToneDot?: boolean;
   onExplain?: () => void;
   explainLabel?: string;
@@ -44,28 +47,49 @@ export function MetricCell({
 
   if (layout === 'strip') {
     return (
-      <div className="flex min-w-0 flex-1 flex-col items-center justify-center px-3 py-4 text-center">
+      <div
+        aria-busy={loading || undefined}
+        className="flex min-w-0 flex-1 flex-col items-center justify-center px-3 py-4 text-center"
+      >
         <EyebrowLabel variant="metric">{label}</EyebrowLabel>
-        <p className={cn('mt-1 text-base font-semibold tabular-nums lg:text-lg', valueClass)}>
-          {value}
-        </p>
-        {sub && <p className="text-muted-foreground mt-0.5 text-[10px]">{sub}</p>}
+        {loading ? (
+          <div className="mt-1">
+            <SkeletonDataValue heightClassName="h-5" widthClassName="w-10" />
+          </div>
+        ) : (
+          <p className={cn('mt-1 text-base font-semibold tabular-nums lg:text-lg', valueClass)}>
+            {value}
+          </p>
+        )}
+        {loading ? (
+          <div className="mt-1">
+            <SkeletonDataValue heightClassName="h-2.5" widthClassName="w-14" />
+          </div>
+        ) : null}
+        {!loading && sub ? <p className="text-muted-foreground mt-0.5 text-[10px]">{sub}</p> : null}
       </div>
     );
   }
 
   if (layout === 'compact') {
     return (
-      <div className="px-3 py-3">
+      <div aria-busy={loading || undefined} className="px-3 py-3">
         <EyebrowLabel variant="metric">{label}</EyebrowLabel>
-        <p className={cn('mt-1 text-base font-semibold tabular-nums', valueClass)}>{value}</p>
-        {sub && <p className="text-muted-foreground mt-0.5 text-[10px]">{sub}</p>}
+        {loading ? (
+          <div className="mt-1">
+            <SkeletonDataValue heightClassName="h-5" widthClassName="w-10" />
+          </div>
+        ) : (
+          <p className={cn('mt-1 text-base font-semibold tabular-nums', valueClass)}>{value}</p>
+        )}
+        {!loading && sub ? <p className="text-muted-foreground mt-0.5 text-[10px]">{sub}</p> : null}
       </div>
     );
   }
 
   return (
     <div
+      aria-busy={loading || undefined}
       className={cn(
         'relative flex flex-col',
         onExplain
@@ -84,17 +108,30 @@ export function MetricCell({
           {label}
         </EyebrowLabel>
       </div>
-      <p
-        className={cn(
-          'text-instrument mt-2',
-          onExplain ? 'text-xl leading-none' : 'text-2xl leading-none',
-          valueClass,
-        )}
-      >
-        {value}
-      </p>
-      {sub && <p className={cn('text-foreground/80 mt-1 text-xs', footer && 'mt-1.5')}>{sub}</p>}
-      {footer && (
+      {loading ? (
+        <div className="mt-2">
+          <SkeletonDataValue heightClassName="h-7" widthClassName="w-12" />
+        </div>
+      ) : (
+        <p
+          className={cn(
+            'text-instrument mt-2',
+            onExplain ? 'text-xl leading-none' : 'text-2xl leading-none',
+            valueClass,
+          )}
+        >
+          {value}
+        </p>
+      )}
+      {loading ? (
+        <div className="mt-1.5">
+          <SkeletonDataValue heightClassName="h-3" widthClassName="w-20" />
+        </div>
+      ) : null}
+      {!loading && sub ? (
+        <p className={cn('text-foreground/80 mt-1 text-xs', footer && 'mt-1.5')}>{sub}</p>
+      ) : null}
+      {!loading && footer ? (
         <p
           className={cn(
             'mt-1 text-[10px] leading-snug',
@@ -105,11 +142,11 @@ export function MetricCell({
         >
           {footer}
         </p>
-      )}
-      {footerHint && (
+      ) : null}
+      {!loading && footerHint ? (
         <p className="text-muted-foreground mt-1 text-[9px] leading-snug">{footerHint}</p>
-      )}
-      {onExplain && (
+      ) : null}
+      {!loading && onExplain ? (
         <button
           aria-label={explainLabel}
           className="explore-link mt-3 self-start"
@@ -118,7 +155,7 @@ export function MetricCell({
         >
           comprendre
         </button>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -28,15 +28,18 @@ export function SleepStatsStrip({
   targetDeltaMin,
   sleepTargetMin: _sleepTargetMin,
   totalSleepMin: _totalSleepMin,
+  loading = false,
 }: {
   totalSleepMin: number | null;
   restorativeRatio: number | null;
   sleepDelta7d: number | null;
   targetDeltaMin: number | null;
   sleepTargetMin: number;
+  loading?: boolean;
 }) {
   return (
     <DrillDownStatsStrip
+      loading={loading}
       items={[
         {
           label: 'Restaurateur',

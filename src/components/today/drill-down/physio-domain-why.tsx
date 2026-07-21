@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 /**
@@ -12,20 +13,22 @@ export function PhysioDomainWhy({
   primaryClassName,
   supportingLines = [],
   globalDecision,
+  loading = false,
 }: {
   label: string;
   primary: string | null;
   primaryClassName?: string;
   supportingLines?: string[];
   globalDecision: GlobalDecisionContext;
+  loading?: boolean;
 }) {
-  const hasSupport = supportingLines.length > 0;
-  const hasGlobal = globalDecision.visible;
+  const hasSupport = !loading && supportingLines.length > 0;
+  const hasGlobal = !loading && globalDecision.visible;
 
-  if (!primary && !hasSupport && !hasGlobal) return null;
+  if (!loading && !primary && !hasSupport && !hasGlobal) return null;
 
   return (
-    <section className="px-0.5">
+    <section aria-busy={loading || undefined} className="px-0.5">
       <div className="mb-2 flex items-center justify-between gap-3">
         <p className="text-label">{label}</p>
         {hasGlobal ? (
@@ -38,10 +41,22 @@ export function PhysioDomainWhy({
               →
             </span>
           </Link>
+        ) : loading ? (
+          <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
+            Aujourd&apos;hui
+            <span className="text-data tracking-wider" aria-hidden>
+              →
+            </span>
+          </span>
         ) : null}
       </div>
 
-      {primary ? (
+      {loading ? (
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-full max-w-xl rounded-full" />
+          <Skeleton className="h-4 w-[85%] max-w-md rounded-full" />
+        </div>
+      ) : primary ? (
         <p className={cn('text-sm leading-relaxed', primaryClassName ?? 'text-foreground')}>
           {primary}
         </p>
@@ -62,6 +77,10 @@ export function PhysioDomainWhy({
             ))}
           </ul>
         </details>
+      ) : loading ? (
+        <p className="text-muted-foreground mt-2 text-xs font-medium tracking-wide opacity-60">
+          Voir le détail
+        </p>
       ) : null}
 
       {hasGlobal ? (
@@ -92,6 +111,10 @@ export function PhysioDomainWhy({
             </p>
           ) : null}
         </details>
+      ) : loading ? (
+        <p className="text-muted-foreground mt-2 text-xs font-medium tracking-wide opacity-60">
+          Décision du jour
+        </p>
       ) : null}
     </section>
   );

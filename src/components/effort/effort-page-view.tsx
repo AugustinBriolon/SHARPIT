@@ -24,6 +24,7 @@ export type EffortPageViewProps = {
   onDateChange?: (date: Date) => void;
   onPreviousDay?: () => void;
   onNextDay?: () => void;
+  loading?: boolean;
   strainScore: number | null;
   dailyLoad: number;
   weeklyLoad: number;
@@ -68,6 +69,7 @@ export function EffortPageView(props: EffortPageViewProps) {
     onDateChange,
     onPreviousDay,
     onNextDay,
+    loading = false,
     strainScore,
     dailyLoad,
     weeklyLoad,
@@ -108,6 +110,7 @@ export function EffortPageView(props: EffortPageViewProps) {
           confidencePct={confidencePct}
           dimensionCount={availableDimCount}
           dimensionTotal={5}
+          loading={loading}
         />
       }
     >
@@ -120,6 +123,7 @@ export function EffortPageView(props: EffortPageViewProps) {
         fatigueType={fatigueType}
         fatigueTypeLabel={fatigueTypeLabel}
         isToday={isToday}
+        loading={loading}
         maxDate={maxDate}
         performancePercent={performancePercent}
         strainScore={strainScore}
@@ -131,36 +135,45 @@ export function EffortPageView(props: EffortPageViewProps) {
         onPreviousDay={onPreviousDay}
       />
 
-      <EffortStatsStrip acwr={acwr} tsb={tsb} weeklyTss={weeklyLoad} />
+      <EffortStatsStrip acwr={acwr} loading={loading} tsb={tsb} weeklyTss={weeklyLoad} />
 
       <EffortWhyBlock
         acwr={acwr}
         globalDecision={globalDecision}
+        loading={loading}
         tsb={tsb}
         verdict={verdict}
         verdictClass={verdictClass}
       />
 
-      <EffortVerdictSection
-        acwr={acwr}
-        chronicWeeklyAvg={chronicWeeklyAvg}
-        dominantDimension={dominantDimension}
-        isLowFatigue={isLowFatigue}
-        trainingCapacity={trainingCapacity}
-        tsb={tsb}
-        verdict={verdict}
-        verdictClass={verdictClass}
-        verdictKey={verdictKey}
-        weeklyLoad={weeklyLoad}
+      {!loading ? (
+        <EffortVerdictSection
+          acwr={acwr}
+          chronicWeeklyAvg={chronicWeeklyAvg}
+          dominantDimension={dominantDimension}
+          isLowFatigue={isLowFatigue}
+          trainingCapacity={trainingCapacity}
+          tsb={tsb}
+          verdict={verdict}
+          verdictClass={verdictClass}
+          verdictKey={verdictKey}
+          weeklyLoad={weeklyLoad}
+        />
+      ) : null}
+
+      <EffortDimensionsSection
+        dimensions={dimensions}
+        loading={loading}
+        missingCount={missingDimCount}
       />
 
-      <EffortDimensionsSection dimensions={dimensions} missingCount={missingDimCount} />
-
-      <EffortPmcSection data={pmcSeries} />
-
-      <EffortWeeklyTssSection avgWeeklyTss={avgWeeklyTss} data={weeklyTss} />
-
-      <EffortAlertsSection overreaching={overreaching} />
+      {!loading ? (
+        <>
+          <EffortPmcSection data={pmcSeries} />
+          <EffortWeeklyTssSection avgWeeklyTss={avgWeeklyTss} data={weeklyTss} />
+          <EffortAlertsSection overreaching={overreaching} />
+        </>
+      ) : null}
     </MetricDrillDownPage>
   );
 }

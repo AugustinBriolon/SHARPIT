@@ -1,10 +1,10 @@
 import { Suspense } from 'react';
 import { CoachView } from '@/components/coach/coach-view';
-import { Skeleton } from '@/components/ui/skeleton';
+import { CoachHubSkeleton } from '@/components/coach/coach-hub-skeleton';
 
 export default function CoachPage() {
   return (
-    <Suspense fallback={<Skeleton className="h-[70vh] w-full rounded-xl" />}>
+    <Suspense fallback={<CoachHubSkeleton />}>
       <CoachView />
     </Suspense>
   );

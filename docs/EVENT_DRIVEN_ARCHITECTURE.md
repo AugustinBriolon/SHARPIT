@@ -222,7 +222,7 @@ The athlete performs **zero sync actions**.
 On app open, sync only providers that are:
 
 - Connected, AND
-- Stale (threshold: Garmin/Strava 6h, body scales 24h, Google 12h), OR
+- Stale (threshold: Garmin/Strava/Google 2h, body scales 24h), OR
 - Force refresh requested
 
 Before 5:00 local: skip sync (sleep data unlikely complete).

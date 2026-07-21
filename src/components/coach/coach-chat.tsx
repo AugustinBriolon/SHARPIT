@@ -17,6 +17,14 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useSaveConversation, useCreateConversation } from '@/hooks/use-coach';
 import { usePlannedSessions } from '@/hooks/use-data';
+import { lastStepApprovalResponseFingerprint } from '@/lib/coach-chat-auto-send';
+import { coachMessagesFingerprint, hasPersistableAssistant } from '@/lib/coach-chat-persist';
+import {
+  abortChatFetch,
+  endAutoReply,
+  replaceChatFetchSignal,
+  tryBeginAutoReply,
+} from '@/lib/coach-chat-request-lock';
 import {
   CALENDAR_MUTATION_TOOL_TYPES,
   dismissUnresolvedCalendarTools,
@@ -90,6 +98,34 @@ export function CoachChat({
   const { data: plannedSessions } = usePlannedSessions();
   const autoReplyStarted = useRef(false);
   const invalidatedToolPartKeys = useRef<Set<string>>(new Set());
+  /** Prevents infinite auto-continue when approval-responded parts stay stuck. */
+  const sentApprovalFingerprints = useRef<Set<string>>(new Set());
+  const blockAutoSend = useRef(false);
+  const lastPersistedFingerprint = useRef<string>('');
+  const messagesRef = useRef<UIMessage[]>(initialMessages);
+
+  const coachTransport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: '/api/coach/chat',
+        // Keep abort controller registered for the whole SSE lifetime (not just TTFB).
+        fetch: (input, init) => {
+          const signal = replaceChatFetchSignal(conversationId, init?.signal);
+          return fetch(input, { ...init, signal });
+        },
+      }),
+    [conversationId],
+  );
+
+  const persistMessages = (all: UIMessage[]) => {
+    if (isEphemeral || !hasPersistableAssistant(all)) return;
+    const fingerprint = coachMessagesFingerprint(all);
+    if (fingerprint === lastPersistedFingerprint.current) return;
+    lastPersistedFingerprint.current = fingerprint;
+    void saveMessages({ id: conversationId, messages: all }).catch((err) =>
+      console.error('[coach-chat] save', err),
+    );
+  };
 
   const {
     messages,
@@ -100,19 +136,39 @@ export function CoachChat({
     addToolApprovalResponse,
     setMessages,
     regenerate,
+    clearError,
   } = useChat({
     id: conversationId,
     messages: initialMessages,
-    transport: new DefaultChatTransport({ api: '/api/coach/chat' }),
-    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
-    onFinish: ({ messages: all, isAbort, isError, isDisconnect }) => {
-      if (isAbort || isError || isDisconnect) return;
-      saveMessages({ id: conversationId, messages: all }).catch((err) =>
-        console.error('[coach-chat] save', err),
-      );
-      queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
+    transport: coachTransport,
+    sendAutomaticallyWhen: ({ messages: current }) => {
+      if (blockAutoSend.current) return false;
+      if (!lastAssistantMessageIsCompleteWithApprovalResponses({ messages: current })) {
+        return false;
+      }
+      const fingerprint = lastStepApprovalResponseFingerprint(current);
+      if (!fingerprint) return false;
+      if (sentApprovalFingerprints.current.has(fingerprint)) return false;
+      sentApprovalFingerprints.current.add(fingerprint);
+      return true;
+    },
+    onError: () => {
+      // Stop any further auto-continues for this conversation until the athlete acts again.
+      blockAutoSend.current = true;
+    },
+    onFinish: ({ messages: all, isError, isAbort }) => {
+      if (isError) return;
+      // An aborted twin request must not auto-continue into another makeRequest.
+      if (isAbort) blockAutoSend.current = true;
+      // Persist even on abort: Strict Mode / twin-request cancel can mark isAbort while
+      // the UI already holds a usable assistant turn.
+      persistMessages(all);
+      if (!isAbort) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
+      }
     },
   });
+  messagesRef.current = messages;
   const [input, setInput] = useState('');
   const prefilled = useRef(false);
 
@@ -129,15 +185,44 @@ export function CoachChat({
 
   useEffect(() => {
     autoReplyStarted.current = false;
+    sentApprovalFingerprints.current.clear();
+    blockAutoSend.current = false;
+    lastPersistedFingerprint.current = '';
   }, [conversationId]);
+
+  // Flush assistant turns when the stream settles (covers SDK onFinish races on abort).
+  useEffect(() => {
+    if (status !== 'ready') return;
+    persistMessages(messages);
+  }, [status, messages, conversationId, isEphemeral]);
+
+  // Leave conversation / Strict Mode remount: save first, then abort in-flight SSE.
+  useEffect(() => {
+    return () => {
+      persistMessages(messagesRef.current);
+      abortChatFetch(conversationId);
+    };
+  }, [conversationId, isEphemeral]);
 
   useEffect(() => {
     if (!autoReply || autoReplyStarted.current || isBusy) return;
     const last = messages[messages.length - 1];
     if (!last || last.role !== 'user') return;
+    if (!tryBeginAutoReply(conversationId)) return;
     autoReplyStarted.current = true;
-    void regenerate().finally(() => onAutoReplyStarted?.());
-  }, [autoReply, isBusy, messages, onAutoReplyStarted, regenerate]);
+    let cancelled = false;
+    void regenerate()
+      .catch(() => undefined)
+      .finally(() => {
+        endAutoReply(conversationId);
+        if (!cancelled) onAutoReplyStarted?.();
+      });
+    return () => {
+      // Strict Mode remount: release lock so the surviving instance can start once.
+      cancelled = true;
+      endAutoReply(conversationId);
+    };
+  }, [autoReply, conversationId, isBusy, messages, onAutoReplyStarted, regenerate]);
 
   const knownSessions = useMemo(
     () => buildKnownSessions(messages, plannedSessions),
@@ -270,7 +355,8 @@ export function CoachChat({
             </div>
           )}
 
-          {messages.map((message) => {
+          {messages.map((message, messageIndex) => {
+            const rowKey = `${message.id}:${messageIndex}`;
             const isUser = message.role === 'user';
             const text = message.parts
               .filter((p) => p.type === 'text')
@@ -280,7 +366,7 @@ export function CoachChat({
 
             if (isUser) {
               return (
-                <div key={message.id} className="flex justify-end">
+                <div key={rowKey} className="flex justify-end">
                   <div className="bg-foreground text-background rounded-analysis-lg max-w-[85%] px-4 py-2.5 text-sm whitespace-pre-wrap">
                     {text}
                   </div>
@@ -295,7 +381,7 @@ export function CoachChat({
             if (!text && inlineParts.length === 0) return null;
 
             return (
-              <div key={message.id} className="flex justify-start">
+              <div key={rowKey} className="flex justify-start">
                 <div className="analysis-panel-alt text-foreground rounded-analysis-lg w-full max-w-[90%] space-y-2 px-4 py-3">
                   {text && <CoachMessage>{text}</CoachMessage>}
                   <ToolActivityList parts={inlineParts as ToolPartLite[]} streamIdle={streamIdle} />
@@ -327,12 +413,15 @@ export function CoachChat({
               </div>
               {pendingApprovals.map((part, i) => (
                 <ToolActivity
-                  key={i}
+                  key={part.approval?.id ?? `${part.type}:${i}`}
                   disabled={isBusy}
                   knownSessions={knownSessions}
                   part={part}
                   streamIdle={streamIdle}
                   onApproval={(id, approved) => {
+                    // Athlete action unlocks auto-continue for the next approval batch.
+                    blockAutoSend.current = false;
+                    clearError();
                     addToolApprovalResponse({ id, approved });
                     if (approved) {
                       queryClient.invalidateQueries({
@@ -353,9 +442,20 @@ export function CoachChat({
           )}
 
           {error && (
-            <p className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
-              {coachErrorMessage}
-            </p>
+            <div className="bg-destructive/10 text-destructive space-y-2 rounded-md p-3 text-sm">
+              <p>{coachErrorMessage}</p>
+              <Button
+                size="sm"
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  blockAutoSend.current = false;
+                  clearError();
+                }}
+              >
+                Réessayer plus tard
+              </Button>
+            </div>
           )}
         </div>
       </div>

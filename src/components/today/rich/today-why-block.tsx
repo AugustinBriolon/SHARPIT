@@ -1,6 +1,7 @@
 'use client';
 
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function factSentence(fact: { label: string; value: string; hint?: string | null }): string {
   if (fact.hint) return `${fact.value} — ${fact.hint}`;
@@ -9,8 +10,24 @@ function factSentence(fact: { label: string; value: string; hint?: string | null
 
 /**
  * Evidence block — primary finding as a short narrative; remainder behind expand.
+ * Not mounted on the Today hub (duplicates verdict + strip); kept for drill-down DNA / reuse.
  */
-export function TodayWhyBlock({ vm }: { vm: TodayViewModel }) {
+export function TodayWhyBlock({ vm, loading = false }: { vm: TodayViewModel; loading?: boolean }) {
+  if (loading) {
+    return (
+      <section className="px-0.5" aria-busy>
+        <p className="text-label mb-2">{vm.whyBlock.title}</p>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-[92%] max-w-xl rounded-full" />
+          <Skeleton className="h-4 w-[64%] max-w-md rounded-full" />
+        </div>
+        <p className="text-muted-foreground mt-2 text-xs font-medium tracking-wide opacity-60">
+          Voir le détail
+        </p>
+      </section>
+    );
+  }
+
   const { facts } = vm.whyBlock;
   if (!vm.whyBlock.visible || facts.length === 0) return null;
 

@@ -41,7 +41,7 @@ export function actionRowLabels(phase: DailyPhase): {
     default:
       return {
         limiting: 'Frein du jour',
-        action: 'Que faire aujourd’hui ?',
+        action: 'Aujourd’hui',
       };
   }
 }
@@ -54,7 +54,7 @@ export function trajectoryEyebrow(phase: DailyPhase): string {
     case 'END_OF_DAY':
       return 'Tendance avant demain';
     default:
-      return 'Est-ce que je progresse ?';
+      return 'Progrès';
   }
 }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { RecoveryViewModel } from '@/core/presentation/recovery-view-model';
 import type { SleepViewModel } from '@/core/presentation/sleep-view-model';
 import type { EffortViewModel } from '@/core/presentation/effort-view-model';
@@ -19,11 +19,19 @@ import {
 } from '@/lib/query/presentation-fetchers';
 import { queryKeys } from '@/lib/query/keys';
 
+/** Cold start or date-change placeholder — skeleton values, never prior-day figures. */
+export function isPresentationValuesLoading(
+  query: Pick<UseQueryResult, 'isPending' | 'isPlaceholderData'>,
+): boolean {
+  return query.isPending || query.isPlaceholderData;
+}
+
 export function useRecoveryViewModel(trainingDayId: string) {
   return useQuery<RecoveryViewModel>({
     queryKey: ['presentation', 'recovery', trainingDayId],
     queryFn: () => fetchRecoveryPresentation(trainingDayId),
     staleTime: 5 * 60_000,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -32,6 +40,7 @@ export function useSleepViewModel(trainingDayId: string) {
     queryKey: ['presentation', 'sleep', trainingDayId],
     queryFn: () => fetchSleepPresentation(trainingDayId),
     staleTime: 5 * 60_000,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -40,6 +49,7 @@ export function useEffortViewModel(trainingDayId: string) {
     queryKey: ['presentation', 'effort', trainingDayId],
     queryFn: () => fetchEffortPresentation(trainingDayId),
     staleTime: 5 * 60_000,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -48,6 +58,7 @@ export function useAdaptationViewModel(trainingDayId: string) {
     queryKey: ['presentation', 'adaptation', trainingDayId],
     queryFn: () => fetchAdaptationPresentation(trainingDayId),
     staleTime: 5 * 60_000,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -56,6 +67,7 @@ export function useTodayPresentationViewModel(trainingDayId: string) {
     queryKey: queryKeys.presentationToday(trainingDayId),
     queryFn: () => fetchTodayPresentation(trainingDayId),
     staleTime: 5 * 60_000,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -64,6 +76,7 @@ export function usePhysicalHealthViewModel(trainingDayId: string) {
     queryKey: ['presentation', 'physical-health', trainingDayId],
     queryFn: () => fetchPhysicalHealthPresentation(trainingDayId),
     staleTime: 5 * 60_000,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -72,5 +85,6 @@ export function useBodyPresentationViewModel(days: number | null | undefined) {
     queryKey: ['presentation', 'body', days ?? 'all'],
     queryFn: () => fetchBodyPresentation(days),
     staleTime: 5 * 60_000,
+    placeholderData: keepPreviousData,
   });
 }

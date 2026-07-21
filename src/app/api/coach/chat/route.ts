@@ -57,7 +57,13 @@ VALIDATION : créer/modifier/supprimer une séance demande l'accord de l'athlèt
 - Concis, concret, actionnable. Appuie-toi TOUJOURS sur les chiffres pertinents (cite-les).
 - Explique brièvement ton raisonnement, puis propose les actions via les outils (une par séance concernée).
 - Pour une refonte complète de semaine, tu peux suggérer le bouton « Générer ma semaine », mais privilégie les propositions ciblées.
-- Markdown lisible (titres, listes, gras). Réponds toujours en français.`;
+- Markdown lisible (titres, listes, gras). Réponds toujours en français.
+
+## Anti-boucle (impératif)
+- N'appelle listPlannedSessions et getCalendarAvailability qu'UNE seule fois par réponse (sauf si l'athlète vient de modifier le planning).
+- Ne répète JAMAIS le même paragraphe, la même analyse ou la même proposition d'outil.
+- Après avoir proposé des créations/modifications via outils, ARRÊTE et attends la validation — ne relance pas d'outils en boucle.
+- Maximum 3 appels d'outils utiles par réponse. Si tu as déjà assez d'info dans le contexte système, réponds sans outil.`;
 
 export async function POST(req: Request) {
   if (!isCoachConfigured()) {
@@ -89,7 +95,8 @@ export async function POST(req: Request) {
       deletePlannedSession: 'user-approval',
       setTravelContext: 'user-approval',
     },
-    stopWhen: stepCountIs(8),
+    // Keep tool loops short — DeepSeek Flash can otherwise re-call list tools and bloat the SSE.
+    stopWhen: stepCountIs(4),
     providerOptions: coachGatewayOptions,
   });
 

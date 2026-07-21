@@ -10,11 +10,13 @@ export function AdaptationStatsStrip({
   loadMultiplier,
   limitingFactor,
   limitingScore,
+  loading = false,
 }: {
   trendLabel: string;
   loadMultiplier: number;
   limitingFactor: string | null;
   limitingScore: number | null;
+  loading?: boolean;
 }) {
   let loadTone: MetricTone = 'neutral';
   if (loadMultiplier > 1.05) loadTone = 'good';
@@ -29,6 +31,7 @@ export function AdaptationStatsStrip({
 
   return (
     <DrillDownStatsStrip
+      loading={loading}
       items={[
         {
           label: 'Tendance',

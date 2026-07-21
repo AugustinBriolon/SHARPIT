@@ -313,7 +313,12 @@ function headlineForPhase(input: PhaseNarrativeInput, posture: TodayPosture): st
   const { resolution, verdict, adviceActionable, sportLabel } = input;
   const { phase } = resolution;
 
-  if (!adviceActionable && isForwardAdvicePhase(phase)) {
+  // No directional verdict at all — withhold.
+  if (
+    !adviceActionable &&
+    isForwardAdvicePhase(phase) &&
+    (verdict === 'INSUFFICIENT_DATA' || !verdict)
+  ) {
     return 'Pas encore de verdict fiable';
   }
 
@@ -322,6 +327,8 @@ function headlineForPhase(input: PhaseNarrativeInput, posture: TodayPosture): st
       if (verdict === 'RECOVER') return 'Récupération prioritaire';
       if (verdict === 'TRAIN_HARD' || verdict === 'RACE_READY') return 'Journée propice à l’effort';
       if (verdict === 'TRAIN_EASY') return 'Journée modérée';
+      if (verdict === 'CAUTION') return 'Journée à ménager';
+      if (verdict === 'TRAIN_SMART') return 'Journée ciblée';
       return 'Lis ton état avant d’agir';
 
     case 'BEFORE_SESSION':
@@ -344,7 +351,7 @@ function headlineForPhase(input: PhaseNarrativeInput, posture: TodayPosture): st
 }
 
 function sublineForPhase(input: PhaseNarrativeInput, focusPriority: string | null): string {
-  const { dailyStrainAvailable, sportLabel } = input;
+  const { dailyStrainAvailable, sportLabel, adviceActionable, verdict } = input;
   const phase = phaseOf(input);
 
   if (focusPriority && phase !== 'SESSION_COMPLETED') {
@@ -353,7 +360,14 @@ function sublineForPhase(input: PhaseNarrativeInput, focusPriority: string | nul
 
   switch (phase) {
     case 'MORNING':
-      return 'Synchronise ton état avant de décider.';
+      // Evidence may already be in — do not blame sync when the gate is confidence.
+      if (!adviceActionable) {
+        if (verdict === 'INSUFFICIENT_DATA' || !verdict) {
+          return 'Synchronise ton état avant de décider.';
+        }
+        return 'Lecture prudente — confiance partielle sur les signaux du jour.';
+      }
+      return 'Lis ton orientation, puis décide pour la séance.';
 
     case 'BEFORE_SESSION':
       return 'Adapte l’intensité à ta forme du moment.';

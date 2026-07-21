@@ -10,7 +10,7 @@ import { ActivityList } from '@/components/training/activity-list';
 import { TrainingWeekCalendarPreview } from '@/components/training/training-week-calendar-preview';
 import { Badge } from '@/components/ui/badge';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
-import { Skeleton } from '@/components/ui/skeleton';
+import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import { useActivities, useGoals, usePlannedSessions } from '@/hooks/use-data';
 import { isAnyInitialQueryLoad } from '@/hooks/use-query-status';
 import { useIsMobile } from '@/hooks/use-viewport';
@@ -43,57 +43,35 @@ function SectionLink({ title, href, cta }: { title: string; href: string; cta: s
   );
 }
 
-function TrainingDashboardSkeleton() {
+function PreviewChipSkeleton({ count }: { count: number }) {
   return (
-    <div className="space-y-4 sm:space-y-5">
-      <section className="analysis-panel rounded-analysis-lg bg-primary/8 relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-label inline-flex items-center gap-2">
-            <span className="bg-primary/50 h-2.5 w-2.5 shrink-0 rounded-full" aria-hidden />
-            Entraînement
-          </p>
-          <Skeleton className="h-5 w-24 rounded-full" />
-        </div>
-        <Skeleton className="mt-6 h-9 w-[min(100%,22rem)] max-w-3xl rounded-lg sm:h-10" />
-        <Skeleton className="mt-5 h-4 w-[min(100%,16rem)] rounded-full" />
-        <Skeleton className="mt-8 h-3 w-36 rounded-full" />
-      </section>
+    <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      {Array.from({ length: count }, (_, i) => (
+        <li
+          key={i}
+          className="border-analysis-border/80 bg-background/50 rounded-analysis flex flex-col gap-2 border px-3 py-2.5"
+        >
+          <SkeletonDataValue heightClassName="h-4" widthClassName="w-[min(100%,12rem)]" />
+          <SkeletonDataValue heightClassName="h-3" widthClassName="w-28" />
+        </li>
+      ))}
+    </ul>
+  );
+}
 
-      <div className="space-y-2">
-        <Skeleton className="h-3 w-28 rounded-full" />
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {[0, 1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="border-analysis-border/80 bg-background/50 rounded-lg border px-3 py-2.5"
-            >
-              <Skeleton className="h-4 w-full max-w-[200px] rounded-full" />
-              <Skeleton className="mt-2 h-3 w-28 rounded-full" />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Skeleton className="h-3 w-32 rounded-full" />
-        {[0, 1].map((i) => (
-          <div
-            key={i}
-            className="border-analysis-border/80 bg-background/50 rounded-lg border px-3 py-2.5"
-          >
-            <Skeleton className="h-4 w-full max-w-[240px] rounded-full" />
-          </div>
-        ))}
-      </div>
-
-      <div className="space-y-2">
-        <Skeleton className="h-3 w-36 rounded-full" />
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <Skeleton className="analysis-panel rounded-analysis-lg h-48 w-full" />
-          <Skeleton className="analysis-panel rounded-analysis-lg h-48 w-full" />
-        </div>
-      </div>
-    </div>
+function ActivityChipSkeleton({ count }: { count: number }) {
+  return (
+    <ul className="space-y-2">
+      {Array.from({ length: count }, (_, i) => (
+        <li
+          key={i}
+          className="border-analysis-border/80 bg-background/50 rounded-analysis flex flex-col gap-2 border px-3 py-2.5"
+        >
+          <SkeletonDataValue heightClassName="h-4" widthClassName="w-[min(100%,14rem)]" />
+          <SkeletonDataValue heightClassName="h-3" widthClassName="w-24" />
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -102,12 +80,48 @@ function TrainingInstrumentPlate({
   countdownLabel,
   eventDateLabel,
   nextSession,
+  loading = false,
 }: {
   nextRaceGoal: ClientGoal | null;
   countdownLabel: string | null;
   eventDateLabel: string | null;
   nextSession: ClientPlannedSession | null;
+  loading?: boolean;
 }) {
+  if (loading) {
+    return (
+      <section
+        className={cn(
+          'analysis-panel rounded-analysis-lg relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10',
+          'border-primary/20 bg-primary/10',
+          'motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200',
+        )}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-label inline-flex items-center gap-2">
+            <span className="bg-primary/50 h-2.5 w-2.5 shrink-0 rounded-full" aria-hidden />
+            Entraînement
+          </p>
+        </div>
+        <div className="mt-6">
+          <SkeletonDataValue heightClassName="h-9 sm:h-10" widthClassName="w-[min(100%,22rem)]" />
+        </div>
+        <div className="mt-5">
+          <SkeletonDataValue heightClassName="h-4" widthClassName="w-[min(100%,16rem)]" />
+        </div>
+        <Link
+          className="text-data text-muted-foreground hover:text-foreground mt-8 inline-flex items-center gap-1.5 text-xs tracking-wide transition-colors"
+          href="/training/planning"
+        >
+          Ouvrir le planning
+          <span className="text-[10px] tracking-wider opacity-70" aria-hidden>
+            →
+          </span>
+        </Link>
+      </section>
+    );
+  }
+
   const hasRace = Boolean(nextRaceGoal && countdownLabel);
   const nextDisplay = nextSession ? resolvePlannedSessionDisplay(nextSession, new Date()) : null;
 
@@ -147,7 +161,7 @@ function TrainingInstrumentPlate({
           ? 'page-bleed-ink py-8 sm:py-10'
           : cn(
               'analysis-panel rounded-analysis-lg px-5 py-8 sm:px-8 sm:py-10',
-              hasRace && 'border-[var(--color-signal-tempo)]/30 bg-[var(--color-signal-tempo)]/12',
+              hasRace && 'border-signal-tempo/30 bg-signal-tempo/12',
               nextDisplay && 'border-primary/20 bg-primary/10',
             ),
       )}
@@ -162,7 +176,7 @@ function TrainingInstrumentPlate({
           <span
             className={cn(
               'h-2.5 w-2.5 shrink-0 rounded-full',
-              hasRace && 'bg-[var(--color-signal-tempo)]',
+              hasRace && 'bg-(--color-signal-tempo)',
               !hasRace && nextDisplay && 'bg-primary',
               isInkEmpty && 'bg-highlight',
             )}
@@ -183,7 +197,7 @@ function TrainingInstrumentPlate({
       <h1
         className={cn(
           'text-verdict mt-6 max-w-3xl text-[1.75rem] leading-[1.15] sm:text-[2.125rem]',
-          hasRace && 'text-[var(--color-signal-tempo)]',
+          hasRace && 'text-(--color-signal-tempo)',
           !hasRace && nextDisplay && 'text-foreground',
           isInkEmpty && 'text-ink-surface-foreground',
         )}
@@ -240,6 +254,7 @@ export function TrainingDashboard() {
   const activitiesQuery = useActivities();
   const plannedQuery = usePlannedSessions();
   const goalsQuery = useGoals();
+  const valuesLoading = isAnyInitialQueryLoad([activitiesQuery, plannedQuery, goalsQuery]);
   const activities = activitiesQuery.data ?? [];
   const plannedSessions = plannedQuery.data ?? [];
   const today = new Date();
@@ -260,14 +275,15 @@ export function TrainingDashboard() {
     return selectUpcomingPlannedPreview(upcomingRoutineSessions, today, 1)[0] ?? null;
   }, [today, upcomingRoutineSessions]);
   const latestActivities = activities.slice(0, previewLimit);
-
-  if (isAnyInitialQueryLoad([activitiesQuery, plannedQuery, goalsQuery])) {
-    return <TrainingDashboardSkeleton />;
-  }
+  const upcomingPreview = selectUpcomingPlannedPreview(
+    upcomingRoutineSessions,
+    today,
+    previewLimit,
+  );
 
   let countdownLabel: string | null = null;
   let eventDateLabel: string | null = null;
-  if (nextRaceGoal?.targetDate) {
+  if (!valuesLoading && nextRaceGoal?.targetDate) {
     const days = differenceInCalendarDays(new Date(nextRaceGoal.targetDate), today);
     if (days === 0) countdownLabel = 'Aujourd’hui';
     else if (days > 0) countdownLabel = `J-${days}`;
@@ -276,18 +292,22 @@ export function TrainingDashboard() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-5">
+    <div className="space-y-6 lg:space-y-8">
       <TrainingInstrumentPlate
         countdownLabel={countdownLabel}
         eventDateLabel={eventDateLabel}
-        nextRaceGoal={nextRaceGoal}
-        nextSession={nextSession}
+        loading={valuesLoading}
+        nextRaceGoal={valuesLoading ? null : nextRaceGoal}
+        nextSession={valuesLoading ? null : nextSession}
       />
 
       <section>
         <SectionLink cta="Planning" href="/training/planning" title="Prochaines séances" />
-        <PlanningRow limit={previewLimit} sessions={upcomingRoutineSessions} />
-        {selectUpcomingPlannedPreview(upcomingRoutineSessions, today, previewLimit).length === 0 ? (
+        {valuesLoading ? <PreviewChipSkeleton count={previewLimit} /> : null}
+        {!valuesLoading ? (
+          <PlanningRow limit={previewLimit} sessions={upcomingRoutineSessions} />
+        ) : null}
+        {!valuesLoading && upcomingPreview.length === 0 ? (
           <InkEmptyState
             className="mt-1"
             description="Ouvre le planning pour programmer la suite."
@@ -300,18 +320,25 @@ export function TrainingDashboard() {
 
       <section>
         <SectionLink cta="Historique" href="/training/history" title="Dernières activités" />
-        <ActivityList
-          activities={latestActivities}
-          emptyLabel="Aucune activité récente."
-          variant="chip"
-        />
+        {valuesLoading ? <ActivityChipSkeleton count={previewLimit} /> : null}
+        {!valuesLoading ? (
+          <ActivityList
+            activities={latestActivities}
+            emptyLabel="Aucune activité récente."
+            variant="chip"
+          />
+        ) : null}
       </section>
 
       <section>
         <SectionLink cta="Progression" href="/training/progression" title="Dynamique récente" />
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <ActivityConsistencyPanel activities={activities} />
-          <TrainingWeekCalendarPreview activities={activities} plannedSessions={plannedSessions} />
+          <ActivityConsistencyPanel activities={activities} loading={valuesLoading} />
+          <TrainingWeekCalendarPreview
+            activities={activities}
+            loading={valuesLoading}
+            plannedSessions={plannedSessions}
+          />
         </div>
       </section>
     </div>

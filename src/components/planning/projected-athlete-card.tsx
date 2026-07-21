@@ -7,6 +7,7 @@ import type { ProjectedAthleteCardViewModel } from '@/core/presentation/projecte
 import { DiscussCoachLink } from '@/components/training/discuss-coach-link';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { isPresentationValuesLoading } from '@/hooks/use-presentation-view-model';
 import { cn } from '@/lib/utils';
 
 const HORIZON_OPTIONS: { days: ProjectionHorizonDays; label: string }[] = [
@@ -27,28 +28,10 @@ export function ProjectedAthleteCard({
   onHorizonChange: (days: ProjectionHorizonDays) => void;
   query: UseQueryResult<ProjectedAthleteCardViewModel>;
 }) {
-  if (query.isLoading) {
-    return (
-      <section
-        className={cn('analysis-panel-alt rounded-analysis-lg px-5 py-5 sm:px-6', className)}
-      >
-        <div className="flex items-center gap-2">
-          <Skeleton className="size-4 shrink-0 rounded-sm" />
-          <Skeleton className="h-3 w-28 rounded-full border-0" />
-        </div>
-        <Skeleton className="mt-3 h-6 w-full max-w-3xl rounded-full border-0 sm:h-7" />
-        <div className="mt-4 flex flex-wrap gap-1.5">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-7 w-12 rounded-md" />
-          ))}
-        </div>
-        <Skeleton className="mt-4 h-9 w-44 rounded-lg" />
-      </section>
-    );
-  }
-
+  const valuesLoading = isPresentationValuesLoading(query);
   const viewModel = query.data;
-  if (!viewModel?.visible) {
+
+  if (!valuesLoading && !viewModel?.visible) {
     if (!viewModel?.emptyStateMessage) return null;
     return (
       <InkEmptyState
@@ -62,15 +45,24 @@ export function ProjectedAthleteCard({
   }
 
   return (
-    <section className={cn('analysis-panel-alt rounded-analysis-lg px-5 py-5 sm:px-6', className)}>
+    <section
+      aria-busy={valuesLoading || undefined}
+      className={cn('analysis-panel-alt rounded-analysis-lg px-5 py-5 sm:px-6', className)}
+    >
       <div className="flex items-center gap-2">
         <GitBranch className="text-primary size-4 shrink-0" />
         <p className="text-label">Conseil du coach</p>
       </div>
 
-      <p className="text-verdict text-foreground mt-3 max-w-3xl">{viewModel.synthesisSentence}</p>
+      {valuesLoading ? (
+        <Skeleton className="mt-3 h-6 w-full max-w-3xl rounded-full border-0 sm:h-7" />
+      ) : (
+        <p className="text-verdict text-foreground mt-3 max-w-3xl">
+          {viewModel!.synthesisSentence}
+        </p>
+      )}
 
-      {viewModel.caution ? (
+      {!valuesLoading && viewModel?.caution ? (
         <div className="border-signal-caution/25 mt-4 border-l-2 pl-3">
           <p className="text-label text-signal-caution">{viewModel.caution.label}</p>
           <p className="text-muted-foreground mt-1.5 max-w-3xl text-sm leading-relaxed">
@@ -84,12 +76,14 @@ export function ProjectedAthleteCard({
           <button
             key={option.days}
             aria-pressed={horizon === option.days}
+            disabled={valuesLoading}
             type="button"
             className={cn(
               'focus-visible:ring-primary/30 rounded-md px-2.5 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
               horizon === option.days
                 ? 'bg-highlight text-highlight-foreground'
                 : 'bg-muted/50 text-muted-foreground hover:bg-muted',
+              valuesLoading && 'opacity-70',
             )}
             onClick={() => onHorizonChange(option.days)}
           >
@@ -99,7 +93,11 @@ export function ProjectedAthleteCard({
       </div>
 
       <div className="mt-4">
-        <DiscussCoachLink planningHorizon={horizon} />
+        {valuesLoading ? (
+          <Skeleton className="h-9 w-44 rounded-lg" />
+        ) : (
+          <DiscussCoachLink planningHorizon={horizon} />
+        )}
       </div>
     </section>
   );

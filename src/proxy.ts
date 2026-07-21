@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { isDevClerkBypass } from '@/lib/dev-auth';
 
 // Routes accessibles sans session Clerk :
 // - pages de connexion/inscription
@@ -11,6 +12,7 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
+  if (isDevClerkBypass()) return;
   if (!isPublicRoute(req)) {
     await auth.protect();
   }

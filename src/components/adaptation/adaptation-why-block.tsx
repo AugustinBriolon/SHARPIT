@@ -18,6 +18,7 @@ export function AdaptationWhyBlock({
   loadMultiplier,
   historyLength,
   globalDecision,
+  loading = false,
 }: {
   verdictKey: string;
   adaptationIndex: number | null;
@@ -30,7 +31,19 @@ export function AdaptationWhyBlock({
   loadMultiplier: number;
   historyLength: number;
   globalDecision: GlobalDecisionContext;
+  loading?: boolean;
 }) {
+  if (loading) {
+    return (
+      <PhysioDomainWhy
+        globalDecision={globalDecision}
+        label="Cette trajectoire"
+        primary={null}
+        loading
+      />
+    );
+  }
+
   const primary = synthesizeAdaptationReading({
     verdictKey,
     adaptationIndex,

@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import type { MetricTone } from '@/lib/metric-tone';
 import { METRIC_TONE_CLASS } from '@/lib/metric-tone';
+import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 
 export type StatsStripItem = {
   label: string;
@@ -21,11 +22,18 @@ function desktopChipCols(count: number): string {
  * Mobile: horizontal snap scroll (native-app rhythm).
  * Desktop: even grid row.
  */
-export function DrillDownStatsStrip({ items }: { items: StatsStripItem[] }) {
+export function DrillDownStatsStrip({
+  items,
+  loading = false,
+}: {
+  items: StatsStripItem[];
+  loading?: boolean;
+}) {
   if (items.length === 0) return null;
 
   return (
     <nav
+      aria-busy={loading || undefined}
       aria-label="Signaux de la dimension"
       className={cn(
         'flex gap-2 overflow-x-auto overscroll-x-contain',
@@ -46,17 +54,21 @@ export function DrillDownStatsStrip({ items }: { items: StatsStripItem[] }) {
           )}
         >
           <span className="text-label shrink-0">{item.label}</span>
-          <span
-            className={cn(
-              'text-data min-w-0 truncate text-sm tabular-nums',
-              item.tone ? METRIC_TONE_CLASS[item.tone] : 'text-foreground',
-            )}
-          >
-            {item.value}
-            {item.sub ? (
-              <span className="text-muted-foreground ml-1 font-normal">{item.sub}</span>
-            ) : null}
-          </span>
+          {loading ? (
+            <SkeletonDataValue heightClassName="h-4" widthClassName="w-10" />
+          ) : (
+            <span
+              className={cn(
+                'text-data min-w-0 truncate text-sm tabular-nums',
+                item.tone ? METRIC_TONE_CLASS[item.tone] : 'text-foreground',
+              )}
+            >
+              {item.value}
+              {item.sub ? (
+                <span className="text-muted-foreground ml-1 font-normal">{item.sub}</span>
+              ) : null}
+            </span>
+          )}
         </div>
       ))}
     </nav>

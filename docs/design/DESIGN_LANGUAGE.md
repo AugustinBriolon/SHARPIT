@@ -511,11 +511,11 @@ The Today View is the highest-priority screen. Every principle is expressed most
    - `RECOVER` uses protective primary/sage — never alarm red (recovery is the right decision)
    - No metric card grid, no multi-color physio rail, no lateral % inset competing with the verdict
 2. **Signal strip** (`TodaySignalStrip`) — four compact chips with no parent panel: **2×2 on mobile**, **one row from `sm`**. Hairline + value + `→` invite drill-down without four hero buttons.
-3. **Why** (`TodayWhyBlock`) — primary finding as a short narrative sentence; remainder behind expand.
-4. **Session** (`TodayActionRow`) — chip-style session rows only; Frein column removed (lives on the plate).
-5. **Trajectory** — headline + naked sparklines; sparkline titles are drill-downs (no nested panels / link row).
+3. **Session** (`TodayActionRow`) — chip-style session rows only; Frein column removed (lives on the plate).
+4. **Trajectory** — headline + naked sparklines; sparkline titles are drill-downs (no nested panels / link row).
 
-- **ReasoningBlock** demonstrates earned density: the primary finding is always visible; additional findings are behind an expand.
+- **Why** is not a standing Today section: the plate limiter + strip already carry the “why”; a separate `TodayWhyBlock` only restated the verdict.
+- **ReasoningBlock** (drill-downs) demonstrates earned density: the primary finding is always visible; additional findings are behind an expand.
 - **SessionBlock** demonstrates component-as-answer: exists only to answer "what session?" — if there is no session recommendation, the block does not render.
 - **ExpectedOutcomeBlock** demonstrates restraint: the deviation risk only appears if it is `caution` or `warning`. A safe state produces no noise.
 - **Confidence** lives in the plate header (bars + label), not as a second hero.

@@ -24,6 +24,7 @@ import {
   trajectoryEyebrow,
   whyBlockTitle,
 } from '@/lib/today-rich-view';
+import { resolveMorningOrientation } from '@/lib/today/morning-orientation';
 import {
   decisionTopAction,
   decisionVerdict,
@@ -192,7 +193,6 @@ export async function buildTodayPresentationViewModel(
     decision: snapshot.decision,
     whyFocus,
   });
-  const whyVisible = whyFacts.length > 0 && !(phase === 'END_OF_DAY' && focusPriority != null);
 
   const daySummary = buildTodayDaySummary(
     day,
@@ -254,16 +254,49 @@ export async function buildTodayPresentationViewModel(
         }
       : null;
 
+  const morningOrientation = resolveMorningOrientation({
+    phase,
+    snapshot,
+    recalibration: morningRecalibration,
+  });
+
+  const presentedRecalibration =
+    morningRecalibration?.status === 'PRESENTED' ? morningRecalibration : null;
+
+  const effectiveHeadline = morningOrientation?.heroHeadline ?? heroHeadline;
+  const effectiveSubline = morningOrientation?.heroSubline ?? heroSubline;
+  const hideHeroConfidence = Boolean(morningOrientation?.hideHeroConfidence);
+  const evidencePending = morningOrientation?.phase === 'EVIDENCE_PENDING';
+  const suppressVerdictColors = evidencePending;
+
+  let morningEyebrow = heroEyebrow;
+  if (evidencePending) morningEyebrow = 'Ce matin';
+
+  let plateLimiterText: string | null = null;
+  let plateLimiterHref: string | null = null;
+  if (!evidencePending && snapshot.limitingFactor != null) {
+    plateLimiterText =
+      buildTodayLimitingFacts({ limitingFactor: snapshot.limitingFactor }).facts.find(
+        (f) => f.label === 'Frein',
+      )?.value ?? null;
+    plateLimiterHref =
+      resolveLimitingFactorHrefFromDecision(snapshot.decision) ?? TWIN_DRILL_DOWN.recovery;
+  }
+
+  const effectiveStatusMessage = evidencePending ? null : statusMessage;
+  const sessionChoice = morningOrientation?.sessionChoice ?? null;
+
   return {
     hasContent: snapshotHasDisplayableContent(snapshot),
     emptyState,
-    statusMessage,
+    statusMessage: effectiveStatusMessage,
     confidencePresentation: {
       pct: snapshot.confidence,
       label: snapshot.confidenceLabel,
       tone: confidenceTone,
     },
     effortUnavailableMessage: snapshot.effortUnavailableMessage,
+    morningOrientation,
     navigationTargets: {
       sleep: { label: 'Sommeil', href: TWIN_DRILL_DOWN.sleep },
       recovery: { label: 'Récupération', href: TWIN_DRILL_DOWN.recovery },
@@ -273,18 +306,17 @@ export async function buildTodayPresentationViewModel(
       planning: { label: 'Planning', href: TWIN_DRILL_DOWN.planning },
     },
     hero: {
-      eyebrow: heroEyebrow,
-      headline: heroHeadline,
-      subline: heroSubline,
-      posture,
-      postureLabel,
-      focusPriority,
-      goalLine,
-      actionLine,
+      eyebrow: morningEyebrow,
+      headline: effectiveHeadline,
+      subline: effectiveSubline,
+      posture: suppressVerdictColors ? 'uncertain' : posture,
+      postureLabel: suppressVerdictColors ? '' : postureLabel,
+      focusPriority: evidencePending ? null : focusPriority,
+      goalLine: evidencePending ? null : goalLine,
+      actionLine: evidencePending ? null : actionLine,
       adaptationReminders,
       verdictStyle: {
-        // Color whenever the verdict is actionable state — not only forward phases.
-        showVerdictColors: verdict !== 'INSUFFICIENT_DATA',
+        showVerdictColors: !suppressVerdictColors && verdict !== 'INSUFFICIENT_DATA',
         bgClass: displayVerdict.bgClass,
         colorClass: displayVerdict.colorClass,
         dotClass: displayVerdict.dotClass,
@@ -299,27 +331,21 @@ export async function buildTodayPresentationViewModel(
         adaptationUnavailableCaption,
       },
       twinTrustStrip: {
-        confidenceLabel,
-        confidencePctRounded,
-        confidenceHref,
-        limitingFactorText: snapshot.limitingFactor
-          ? (buildTodayLimitingFacts({ limitingFactor: snapshot.limitingFactor }).facts.find(
-              (f) => f.label === 'Frein',
-            )?.value ?? null)
-          : null,
-        limitingFactorHref:
-          snapshot.limitingFactor != null
-            ? (resolveLimitingFactorHrefFromDecision(snapshot.decision) ?? TWIN_DRILL_DOWN.recovery)
-            : null,
+        confidenceLabel: hideHeroConfidence ? null : confidenceLabel,
+        confidencePctRounded: hideHeroConfidence ? null : confidencePctRounded,
+        confidenceHref: hideHeroConfidence ? null : confidenceHref,
+        limitingFactorText: plateLimiterText,
+        limitingFactorHref: plateLimiterHref,
       },
     },
     whyBlock: {
+      // Retired from Today hub — duplicated verdict + strip; limiter lives on the plate.
       title: whyBlockTitle(phase),
       lines: whyFacts.map((f) =>
         f.hint ? `${f.label} · ${f.value} (${f.hint})` : `${f.label} · ${f.value}`,
       ),
       facts: whyFacts,
-      visible: whyVisible,
+      visible: false,
     },
     actionRow: {
       // Frein lives on the plate limiter — no duplicate column.
@@ -333,25 +359,34 @@ export async function buildTodayPresentationViewModel(
       actionLabel: labels.action,
       daySummaryEmptyText: 'Aucune séance prévue ni réalisée.',
       daySummaryEmptyHref: TWIN_DRILL_DOWN.planning,
-      daySummaryLines: daySummary.lines.map((line) => ({
-        id: line.id,
-        activityType: line.activityType,
-        primary: line.primary,
-        secondary: line.secondary ?? null,
-        kind: line.kind,
-        href:
-          line.kind === 'done'
-            ? TWIN_DRILL_DOWN.activity(line.id)
-            : TWIN_DRILL_DOWN.plannedSession(line.plannedSession?.id ?? line.id),
-        isDone: line.kind === 'done',
-      })),
-      morningRecalibration: morningRecalibration
+      daySummaryLines: daySummary.lines.map((line) => {
+        const plannedId = line.plannedSession?.id ?? (line.kind === 'planned' ? line.id : null);
+        const choiceLabel =
+          sessionChoice && plannedId && sessionChoice.sessionId === plannedId
+            ? sessionChoice.label
+            : null;
+        return {
+          id: line.id,
+          activityType: line.activityType,
+          primary: line.primary,
+          secondary: line.secondary ?? null,
+          kind: line.kind,
+          href:
+            line.kind === 'done'
+              ? TWIN_DRILL_DOWN.activity(line.id)
+              : TWIN_DRILL_DOWN.plannedSession(line.plannedSession?.id ?? line.id),
+          isDone: line.kind === 'done',
+          morningChoiceLabel: choiceLabel,
+        };
+      }),
+      morningRecalibration: presentedRecalibration
         ? {
-            decisionId: morningRecalibration.decisionId,
-            sessionId: morningRecalibration.sessionId,
-            direction: morningRecalibration.direction,
-            changeSummary: morningRecalibration.changeSummary,
-            why: morningRecalibration.why,
+            decisionId: presentedRecalibration.decisionId,
+            sessionId: presentedRecalibration.sessionId,
+            direction: presentedRecalibration.direction,
+            changeSummary: presentedRecalibration.changeSummary,
+            why: presentedRecalibration.why,
+            status: presentedRecalibration.status,
           }
         : null,
     },

@@ -13,10 +13,10 @@ import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SkeletonCard, SkeletonEyebrow } from '@/components/ui/skeleton-patterns';
 import type { PhysicalHealthViewModel } from '@/core/presentation/physical-health-view-model';
 import { usePhysicalNotes } from '@/hooks/use-physical';
 import { corpsToneFromPhysicalSeverity } from '@/lib/health-status';
+import type { CorpsTone } from '@/lib/metric-tone';
 import type { ClientPhysicalNote } from '@/lib/query/types';
 import { PhysicalHealthConditionCardView } from './condition-card';
 import { PhysicalNoteDialog } from './physical-note-dialog';
@@ -29,18 +29,31 @@ function confidenceToneClass(tone: string): 'ok' | 'watch' | 'neutral' {
   return 'neutral';
 }
 
+function ConditionCardSkeleton() {
+  return (
+    <div className="analysis-panel rounded-analysis-lg min-h-48 space-y-3 px-5 py-5">
+      <Skeleton className="h-4 w-32 rounded-full border-0" />
+      <Skeleton className="h-4 w-full rounded-full border-0" />
+      <Skeleton className="h-4 w-[83%] rounded-full border-0" />
+      <Skeleton className="mt-2 h-8 w-28 rounded-lg" />
+    </div>
+  );
+}
+
 export function PhysicalHealthPageView({
-  viewModel,
   embedded = false,
+  loading = false,
+  viewModel,
 }: {
   viewModel: PhysicalHealthViewModel;
   embedded?: boolean;
+  loading?: boolean;
 }) {
   const notesQuery = usePhysicalNotes();
   const [dialog, setDialog] = useState<DialogState>(null);
 
   const headerAction = (
-    <Button size="sm" onClick={() => setDialog({ mode: 'create' })}>
+    <Button disabled={loading} size="sm" onClick={() => setDialog({ mode: 'create' })}>
       <Plus className="size-4" />
       Nouvelle condition
     </Button>
@@ -52,7 +65,20 @@ export function PhysicalHealthPageView({
   }
 
   const { aggregate, activeConditions, resolvedConditions } = viewModel;
-  const hasAny = activeConditions.length > 0 || resolvedConditions.length > 0;
+  const hasAny = !loading && (activeConditions.length > 0 || resolvedConditions.length > 0);
+
+  let capacityValue = '';
+  if (!loading) capacityValue = aggregate.trainingBlocked ? 'Limitée' : 'OK';
+
+  let verdictValue = '';
+  if (!loading) {
+    verdictValue = aggregate.maxSeverity > 0 ? `${aggregate.maxSeverity.toFixed(1)}/10` : '—';
+  }
+
+  let activesTone: CorpsTone = 'ok';
+  if (!loading && aggregate.activeCount > 0) {
+    activesTone = corpsToneFromPhysicalSeverity(aggregate.maxSeverity);
+  }
 
   return (
     <>
@@ -77,31 +103,33 @@ export function PhysicalHealthPageView({
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <CorpsStatCard
           label="Actives"
+          loading={loading}
+          tone={activesTone}
           value={String(aggregate.activeCount)}
-          tone={
-            aggregate.activeCount > 0 ? corpsToneFromPhysicalSeverity(aggregate.maxSeverity) : 'ok'
-          }
         />
         <CorpsStatCard
           label="Capacité"
-          sublabel={aggregate.aggregateTrainingCapacityLabel}
-          tone={aggregate.trainingBlocked ? 'attention' : 'ok'}
-          value={aggregate.trainingBlocked ? 'Limitée' : 'OK'}
+          loading={loading}
+          sublabel={loading ? undefined : aggregate.aggregateTrainingCapacityLabel}
+          tone={!loading && aggregate.trainingBlocked ? 'attention' : 'ok'}
+          value={capacityValue}
         />
         <CorpsStatCard
           label="Verdict modèle"
-          sublabel={aggregate.decisionLabel}
-          tone={aggregate.trainingBlocked ? 'watch' : 'neutral'}
-          value={aggregate.maxSeverity > 0 ? `${aggregate.maxSeverity.toFixed(1)}/10` : '—'}
+          loading={loading}
+          sublabel={loading ? undefined : aggregate.decisionLabel}
+          tone={!loading && aggregate.trainingBlocked ? 'watch' : 'neutral'}
+          value={verdictValue}
         />
         <CorpsStatCard
           label="Confiance"
-          tone={confidenceToneClass(aggregate.confidenceTone)}
-          value={`${aggregate.confidencePct}%`}
+          loading={loading}
+          tone={loading ? 'neutral' : confidenceToneClass(aggregate.confidenceTone)}
+          value={loading ? '' : `${aggregate.confidencePct}%`}
         />
       </div>
 
-      {!hasAny && viewModel.emptyState && (
+      {!loading && !hasAny && viewModel.emptyState ? (
         <CorpsEmptyState
           description={viewModel.emptyState.description ?? ''}
           icon={HeartPulse}
@@ -117,9 +145,19 @@ export function PhysicalHealthPageView({
             ) : undefined
           }
         />
-      )}
+      ) : null}
 
-      {activeConditions.length > 0 && (
+      {loading ? (
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold">Conditions actives</h3>
+          <div className="grid gap-3 md:grid-cols-2">
+            <ConditionCardSkeleton />
+            <ConditionCardSkeleton />
+          </div>
+        </section>
+      ) : null}
+
+      {!loading && activeConditions.length > 0 ? (
         <section className="space-y-3">
           <h3 className="text-sm font-semibold">Conditions actives</h3>
           <div className="grid gap-3 md:grid-cols-2">
@@ -133,9 +171,9 @@ export function PhysicalHealthPageView({
             ))}
           </div>
         </section>
-      )}
+      ) : null}
 
-      {resolvedConditions.length > 0 && (
+      {!loading && resolvedConditions.length > 0 ? (
         <>
           <CorpsDivider count={resolvedConditions.length} label="Historique" />
           <section className="space-y-3">
@@ -154,64 +192,18 @@ export function PhysicalHealthPageView({
             </div>
           </section>
         </>
-      )}
+      ) : null}
 
       <CorpsDisclaimer title="Aide à la décision, pas un avis médical">
         {viewModel.medicalDisclaimer}
       </CorpsDisclaimer>
 
-      {dialog && (
+      {dialog && !loading ? (
         <PhysicalNoteDialog
           note={dialog.mode === 'edit' ? dialog.note : undefined}
           onClose={() => setDialog(null)}
         />
-      )}
+      ) : null}
     </>
-  );
-}
-
-export function PhysicalHealthPageSkeleton({ embedded = false }: { embedded?: boolean }) {
-  return (
-    <div className="space-y-4">
-      {!embedded ? (
-        <div className="space-y-2">
-          <Skeleton className="h-3 w-20 rounded-full border-0" />
-          <Skeleton className="h-8 w-48 max-w-full rounded-full border-0" />
-          <Skeleton className="h-4 w-full max-w-xl rounded-full border-0" />
-        </div>
-      ) : (
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <Skeleton className="h-4 w-64 max-w-full rounded-full border-0" />
-          <Skeleton className="h-9 w-40 rounded-lg" />
-        </div>
-      )}
-
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="analysis-panel rounded-analysis-lg px-4 py-4">
-            <Skeleton className="h-2.5 w-14 rounded-full border-0" />
-            <Skeleton className="mt-2 h-8 w-10 border-0" />
-            <Skeleton className="mt-1 h-3 w-20 rounded-full border-0" />
-          </div>
-        ))}
-      </div>
-
-      <SkeletonCard className="px-5 py-5">
-        <SkeletonEyebrow className="w-40" />
-        <Skeleton className="mt-3 h-7 w-48 max-w-full rounded-full border-0" />
-        <Skeleton className="mt-2 h-4 w-full max-w-lg rounded-full border-0" />
-      </SkeletonCard>
-
-      <div className="grid gap-3 md:grid-cols-2">
-        {Array.from({ length: 2 }).map((_, i) => (
-          <SkeletonCard key={i} className="min-h-48 px-5 py-5">
-            <Skeleton className="h-4 w-32 rounded-full border-0" />
-            <Skeleton className="mt-3 h-4 w-full rounded-full border-0" />
-            <Skeleton className="mt-2 h-4 rounded-full border-0" style={{ width: '83%' }} />
-            <Skeleton className="mt-4 h-8 w-28 rounded-lg" />
-          </SkeletonCard>
-        ))}
-      </div>
-    </div>
   );
 }

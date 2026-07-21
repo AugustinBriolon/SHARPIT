@@ -3,6 +3,7 @@
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Trash2 } from 'lucide-react';
+import { CoachConversationListSkeleton } from '@/components/coach/coach-hub-skeleton';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -20,11 +21,11 @@ function conversationLabel(c: ClientConversationSummary): string {
 }
 
 export function CoachConversationList({
-  conversations,
   activeId,
+  conversations,
   loading,
-  onSelect,
   onDelete,
+  onSelect,
 }: {
   conversations: ClientConversationSummary[];
   activeId: string | null;
@@ -36,16 +37,19 @@ export function CoachConversationList({
   const selected = conversations.find((c) => c.id === selectedId);
 
   return (
-    <aside className="analysis-panel rounded-analysis-lg flex w-full shrink-0 flex-col lg:h-full lg:w-56">
-      {loading && <p className="text-muted-foreground px-3 py-2 text-xs">Chargement…</p>}
+    <aside
+      aria-busy={loading || undefined}
+      className="analysis-panel rounded-analysis-lg flex w-full shrink-0 flex-col lg:h-full lg:w-56"
+    >
+      {loading ? <CoachConversationListSkeleton /> : null}
 
-      {!loading && conversations.length === 0 && (
+      {!loading && conversations.length === 0 ? (
         <p className="text-muted-foreground px-3 py-2 text-xs">
           Aucune conversation pour l&apos;instant.
         </p>
-      )}
+      ) : null}
 
-      {!loading && conversations.length > 0 && (
+      {!loading && conversations.length > 0 ? (
         <>
           <div className="flex items-center gap-1.5 p-2 lg:hidden">
             <div className="min-w-0 flex-1">
@@ -72,7 +76,7 @@ export function CoachConversationList({
                 </SelectContent>
               </Select>
             </div>
-            {activeId && (
+            {activeId ? (
               <Button
                 aria-label="Supprimer la conversation"
                 className="text-muted-foreground hover:text-destructive shrink-0"
@@ -83,7 +87,7 @@ export function CoachConversationList({
               >
                 <Trash2 className="size-4" />
               </Button>
-            )}
+            ) : null}
           </div>
 
           <div className="hidden max-h-[60vh] flex-1 overflow-y-auto overscroll-x-contain p-2 lg:block lg:max-h-none">
@@ -123,7 +127,7 @@ export function CoachConversationList({
             </ul>
           </div>
         </>
-      )}
+      ) : null}
     </aside>
   );
 }

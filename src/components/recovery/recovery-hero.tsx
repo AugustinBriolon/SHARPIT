@@ -15,6 +15,7 @@ export function RecoveryHero({
   isToday,
   maxDate,
   confidencePct,
+  loading = false,
 }: {
   date: Date;
   readinessScore: number | null;
@@ -29,10 +30,11 @@ export function RecoveryHero({
   isToday?: boolean;
   maxDate?: Date;
   confidencePct?: number | null;
+  loading?: boolean;
 }) {
-  const actionLine = limiterLabel ? `Limité par · ${limiterLabel}` : null;
+  const actionLine = !loading && limiterLabel ? `Limité par · ${limiterLabel}` : null;
   const recoveryEta =
-    estimatedRecoveryDays != null && estimatedRecoveryDays > 0
+    !loading && estimatedRecoveryDays != null && estimatedRecoveryDays > 0
       ? `Récupération estimée dans ${
           estimatedRecoveryDays === 1 ? '1 jour' : `${estimatedRecoveryDays} jours`
         }`
@@ -46,15 +48,16 @@ export function RecoveryHero({
       headline={signal.label}
       headlineClassName={signal.qualityClass}
       isToday={isToday}
+      loading={loading}
       maxDate={maxDate}
-      panelClassName={softTintFromQualityClass(signal.qualityClass)}
+      panelClassName={loading ? undefined : softTintFromQualityClass(signal.qualityClass)}
       quickReadCaption={actionLine}
       quickReadLabel="score récupération"
       quickReadSuffix="%"
       quickReadValue={readinessScore != null ? String(Math.round(readinessScore)) : '—'}
       railValue={readinessScore}
       badge={
-        isCalibrating ? (
+        !loading && isCalibrating ? (
           <span className="text-label text-muted-foreground">
             Calibration · {availableDimCount}/4
           </span>

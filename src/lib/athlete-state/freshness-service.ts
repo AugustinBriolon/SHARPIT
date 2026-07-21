@@ -246,14 +246,14 @@ export async function computeFreshnessSnapshot(params: {
       provider: 'garmin',
       connected: garmin != null,
       lastSyncAt: garmin?.lastSyncAt?.toISOString() ?? null,
-      stale: garmin != null && providerStale(garmin.lastSyncAt, 6),
+      stale: garmin != null && providerStale(garmin.lastSyncAt, 2),
       syncing: syncing.garmin === true,
     },
     {
       provider: 'strava',
       connected: strava != null,
       lastSyncAt: strava?.lastSyncAt?.toISOString() ?? null,
-      stale: strava != null && providerStale(strava.lastSyncAt, 6),
+      stale: strava != null && providerStale(strava.lastSyncAt, 2),
       syncing: syncing.strava === true,
     },
     {
@@ -274,7 +274,7 @@ export async function computeFreshnessSnapshot(params: {
       provider: 'google',
       connected: google != null,
       lastSyncAt: google?.lastSyncAt?.toISOString() ?? null,
-      stale: google != null && providerStale(google.lastSyncAt, 12),
+      stale: google != null && providerStale(google.lastSyncAt, 2),
       syncing: syncing.google === true,
     },
   ];

@@ -80,27 +80,27 @@ Classification columns:
 
 ### 4.1 Domain list & entity queries
 
-| Query / Hook                      | Endpoint                                      | Current             | Classification                                   | Recommended action                                                 |
-| --------------------------------- | --------------------------------------------- | ------------------- | ------------------------------------------------ | ------------------------------------------------------------------ |
-| `useActivities`                   | GET `/api/activities`                         | stale 2m            | Prefetch `/seances`,`/coach` · SWR · BG on focus | **Keep.** Prefer patch on CRUD over full invalidate when possible. |
-| `useActivityStream`               | GET `/api/activities/:id/streams`             | stale ∞             | Hydrate on demand                                | **Keep.** Immutable; no spinner if cached.                         |
-| `useMultisportStreams`            | GET `/api/activities/:id/multisport-streams`  | stale ∞             | On demand                                        | **Keep.**                                                          |
-| `useHealthEntries`                | GET `/api/health`                             | stale 2m + previous | SWR · BG after provider sync                     | **Keep.** Prefetch on `/corps` / recovery entry.                   |
-| `useBodyComposition`              | GET `/api/body-composition`                   | stale 2m + previous | SWR                                              | **Keep.** Prefetch `/corps`.                                       |
-| `useGoals`                        | GET `/api/goals`                              | stale 5m            | Prefetch `/goals`,`/calendar`,`/planning`        | **Keep.** Already optimistic mutations.                            |
-| `useGoalAchievements`             | GET `/api/goals/achievements`                 | stale 5m            | Lazy                                             | **Keep.** Prefetch when Goals tab opens.                           |
-| `usePlannedSessions`              | GET `/api/planned-sessions`                   | stale 5m            | Prefetch many routes                             | **Keep.** Core planning cache.                                     |
-| `usePlannedSessionPresentation`   | GET `/api/presentation/planned-session/:id`   | **stale 0**         | SWR                                              | **Fix → stale 5m.** Always-fresh causes remount jank.              |
-| `useSessionRationalePresentation` | GET `/api/presentation/session-rationale/:id` | stale 5m            | Lazy                                             | **Keep.** Prefer null over spinner when empty.                     |
-| `useBrickAnalysis`                | GET brick analyze                             | default             | Lazy                                             | **Keep.** Seed via `useAnalyzeBrick` `setQueryData`.               |
-| `usePhysicalNotes`                | GET `/api/physical-notes`                     | default             | Prefetch physical hub                            | **Keep.** Already optimistic. Set explicit stale 5m.               |
-| `useTrainingPlan`                 | GET `/api/training-plans`                     | stale 1m            | Settings / coach                                 | **Keep.**                                                          |
-| `useRecords`                      | GET `/api/records`                            | stale 30m           | Long cache                                       | **Keep.** Patch/invalidate only after activity ingest.             |
-| `useAthleteProfile`               | GET `/api/athlete-profile`                    | stale 5m            | Prefetch settings                                | **Keep.**                                                          |
-| `useThresholdHistory`             | GET threshold-history                         | stale 1m            | Settings                                         | **Keep.**                                                          |
-| `useThresholdPreview`             | GET apply-estimates preview                   | stale 5m            | Settings                                         | **Keep.**                                                          |
-| `useGoogleEvents`                 | GET `/api/google/events`                      | stale 5m            | Calendar range                                   | **Keep.** Range-keyed; avoid refetch spam.                         |
-| `useGoogleCalendars`              | GET `/api/google/calendars`                   | stale 5m            | Conditional                                      | **Keep.**                                                          |
+| Query / Hook                      | Endpoint                                      | Current             | Classification                                   | Recommended action                                                                                                                                                 |
+| --------------------------------- | --------------------------------------------- | ------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `useActivities`                   | GET `/api/activities`                         | stale 2m            | Prefetch `/seances`,`/coach` · SWR · BG on focus | **Keep.** Prefer patch on CRUD over full invalidate when possible. Training hub (`/training`) keeps chrome; value micro-skeletons on cold load only (`isPending`). |
+| `useActivityStream`               | GET `/api/activities/:id/streams`             | stale ∞             | Hydrate on demand                                | **Keep.** Immutable; no spinner if cached.                                                                                                                         |
+| `useMultisportStreams`            | GET `/api/activities/:id/multisport-streams`  | stale ∞             | On demand                                        | **Keep.**                                                                                                                                                          |
+| `useHealthEntries`                | GET `/api/health`                             | stale 2m + previous | SWR · BG after provider sync                     | **Keep.** Prefetch on `/corps` / recovery entry.                                                                                                                   |
+| `useBodyComposition`              | GET `/api/body-composition`                   | stale 2m + previous | SWR                                              | **Keep.** Prefetch `/corps`.                                                                                                                                       |
+| `useGoals`                        | GET `/api/goals`                              | stale 5m            | Prefetch `/goals`,`/calendar`,`/planning`        | **Keep.** Already optimistic mutations.                                                                                                                            |
+| `useGoalAchievements`             | GET `/api/goals/achievements`                 | stale 5m            | Lazy                                             | **Keep.** Prefetch when Goals tab opens.                                                                                                                           |
+| `usePlannedSessions`              | GET `/api/planned-sessions`                   | stale 5m            | Prefetch many routes                             | **Keep.** Core planning cache.                                                                                                                                     |
+| `usePlannedSessionPresentation`   | GET `/api/presentation/planned-session/:id`   | **stale 0**         | SWR                                              | **Fix → stale 5m.** Always-fresh causes remount jank.                                                                                                              |
+| `useSessionRationalePresentation` | GET `/api/presentation/session-rationale/:id` | stale 5m            | Lazy                                             | **Keep.** Prefer null over spinner when empty.                                                                                                                     |
+| `useBrickAnalysis`                | GET brick analyze                             | default             | Lazy                                             | **Keep.** Seed via `useAnalyzeBrick` `setQueryData`.                                                                                                               |
+| `usePhysicalNotes`                | GET `/api/physical-notes`                     | default             | Prefetch physical hub                            | **Keep.** Already optimistic. Set explicit stale 5m.                                                                                                               |
+| `useTrainingPlan`                 | GET `/api/training-plans`                     | stale 1m            | Settings / coach                                 | **Keep.**                                                                                                                                                          |
+| `useRecords`                      | GET `/api/records`                            | stale 30m           | Long cache                                       | **Keep.** Patch/invalidate only after activity ingest.                                                                                                             |
+| `useAthleteProfile`               | GET `/api/athlete-profile`                    | stale 5m            | Prefetch settings                                | **Keep.**                                                                                                                                                          |
+| `useThresholdHistory`             | GET threshold-history                         | stale 1m            | Settings                                         | **Keep.**                                                                                                                                                          |
+| `useThresholdPreview`             | GET apply-estimates preview                   | stale 5m            | Settings                                         | **Keep.**                                                                                                                                                          |
+| `useGoogleEvents`                 | GET `/api/google/events`                      | stale 5m            | Calendar range                                   | **Keep.** Range-keyed; avoid refetch spam.                                                                                                                         |
+| `useGoogleCalendars`              | GET `/api/google/calendars`                   | stale 5m            | Conditional                                      | **Keep.**                                                                                                                                                          |
 
 ### 4.2 Athlete state & Today
 
@@ -116,29 +116,29 @@ Dynamic polling (retain): 12s when recommendations `stale|awaiting_data|computin
 
 All use GET `/api/presentation/*`, typically stale 5m.
 
-| Hook                             | Endpoint                              | Prefetch                                  | Action                                 |
-| -------------------------------- | ------------------------------------- | ----------------------------------------- | -------------------------------------- |
-| `useTodayPresentationViewModel`  | `/presentation/today`                 | `/` · seeded by `AthleteStateInitializer` | **Keep.** Primary Today surface.       |
-| `useRecoveryViewModel`           | `/presentation/recovery`              | `/corps`,`/recovery`                      | **Keep.** Skeleton only on cold start. |
-| `useSleepViewModel`              | `/presentation/sleep`                 | `/today/sleep`                            | **Keep.**                              |
-| `useEffortViewModel`             | `/presentation/effort`                | `/today/effort`                           | **Keep.**                              |
-| `useAdaptationViewModel`         | `/presentation/adaptation`            | `/today/adaptation`                       | **Keep.**                              |
-| `usePhysicalHealthViewModel`     | `/presentation/physical-health`       | physical hub                              | **Keep.**                              |
-| `useBodyPresentationViewModel`   | `/presentation/body`                  | `/corps`                                  | **Extend prefetch.**                   |
-| `useScenarioComparisonViewModel` | `/presentation/scenario-comparison`   | dialog open                               | **Keep.** Prefetch on dialog intent.   |
-| `useProjectedAthleteViewModel`   | `/presentation/projected-athlete`     | coach / planning                          | **Keep.** Prefetch on coach route.     |
-| Weekly coaching brief            | `/presentation/weekly-coaching-brief` | coach week                                | **Keep.** Skeleton only if no cache.   |
+| Hook                             | Endpoint                              | Prefetch                                  | Action                                                                                                                 |
+| -------------------------------- | ------------------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `useTodayPresentationViewModel`  | `/presentation/today`                 | `/` · seeded by `AthleteStateInitializer` | **Keep.** Chrome stable; value micro-skeletons on `isPending` / `isPlaceholderData` (`keepPreviousData`).              |
+| `useRecoveryViewModel`           | `/presentation/recovery`              | `/corps`,`/recovery`                      | **Keep.** Chrome stable; value micro-skeletons on `isPending` / `isPlaceholderData` (date change).                     |
+| `useSleepViewModel`              | `/presentation/sleep`                 | `/today/sleep`                            | **Keep.** Same micro-skeleton contract.                                                                                |
+| `useEffortViewModel`             | `/presentation/effort`                | `/today/effort`                           | **Keep.** Same micro-skeleton contract.                                                                                |
+| `useAdaptationViewModel`         | `/presentation/adaptation`            | `/today/adaptation`                       | **Keep.** Same micro-skeleton contract.                                                                                |
+| `usePhysicalHealthViewModel`     | `/presentation/physical-health`       | physical hub                              | **Keep.** Chrome stable; value micro-skeletons on `isPending` / `isPlaceholderData`.                                   |
+| `useBodyPresentationViewModel`   | `/presentation/body`                  | `/biology` · composition                  | **Keep.** Same micro-skeleton contract on window change (`keepPreviousData`).                                          |
+| `useProjectedAthleteViewModel`   | `/presentation/projected-athlete`     | coach / planning                          | **Keep.** Prefetch on coach route. Chrome stable; value micro-skeletons on horizon / week change (`keepPreviousData`). |
+| `useScenarioComparisonViewModel` | `/presentation/scenario-comparison`   | dialog open                               | **Keep.** Prefetch on dialog intent. Same SWR contract.                                                                |
+| Weekly coaching brief            | `/presentation/weekly-coaching-brief` | coach week                                | **Keep.** Skeleton only if no cache.                                                                                   |
 
 ### 4.4 Coach & memory
 
-| Query / Hook       | Endpoint                 | Current       | Action                                                 |
-| ------------------ | ------------------------ | ------------- | ------------------------------------------------------ |
-| `useCoachMemory`   | GET `/api/coach-memory`  | stale 30s     | **Raise to 2–5m** + optimistic mutations (see §5).     |
-| `useCoachContext`  | GET `/api/coach/context` | default       | Explicit stale 5m; already patched on save.            |
-| `useConversations` | GET conversations        | default       | Prefetch `/coach`; patch list on create/rename/delete. |
-| `useConversation`  | GET conversation `:id`   | enabled by id | Hydrate from create; no blank reload.                  |
-| `useDailyBriefing` | GET briefing             | default       | Background generation; show prior if any.              |
-| `useWeeklyReview`  | GET weekly-review        | default       | Same as briefing.                                      |
+| Query / Hook       | Endpoint                 | Current                  | Action                                                                                                       |
+| ------------------ | ------------------------ | ------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `useCoachMemory`   | GET `/api/coach-memory`  | stale 30s                | **Raise to 2–5m** + optimistic mutations (see §5).                                                           |
+| `useCoachContext`  | GET `/api/coach/context` | default                  | Explicit stale 5m; already patched on save.                                                                  |
+| `useConversations` | GET conversations        | stale 2m                 | Prefetch `/coach`; patch list on create/rename/delete. Chrome stable; list row micro-skeletons on cold load. |
+| `useConversation`  | GET conversation `:id`   | stale 1m · enabled by id | Hydrate from create; chat panel micro-skeleton (bubbles + composer) while fetching.                          |
+| `useDailyBriefing` | GET briefing             | default                  | Background generation; show prior if any.                                                                    |
+| `useWeeklyReview`  | GET weekly-review        | default                  | Same as briefing.                                                                                            |
 
 ### 4.5 Background / non-navigation GETs
 

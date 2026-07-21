@@ -4,50 +4,55 @@ import Link from 'next/link';
 import { CalendarClock } from 'lucide-react';
 
 import { InstrumentListChip, splitInstrumentMeta } from '@/components/ui/instrument-list-chip';
+import type { InstrumentListChipMeta } from '@/components/ui/instrument-list-chip';
+import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { MorningWellnessDialog } from '@/components/today/dashboard/morning-wellness-dialog';
-import { MorningRecalibrationDialog } from '@/components/today/rich/morning-recalibration-dialog';
+import { MorningOrientationActions } from '@/components/today/rich/morning-orientation-actions';
 
 /**
  * Session response — single block answering “quoi aujourd’hui ?”
- * Limiting factor lives on the plate; no Frein column duplicate.
+ * Morning firm actions live here; post-choice is annotated on the session chip.
  */
 export function TodayActionRow({
-  vm,
-  trainingDayId,
+  loading = false,
   onWellnessCompleted,
+  trainingDayId,
+  vm,
 }: {
   vm: TodayViewModel;
   trainingDayId: string;
   onWellnessCompleted?: () => void;
+  loading?: boolean;
 }) {
-  const daySummaryEmpty = vm.actionRow.daySummaryLines.length === 0;
+  const daySummaryEmpty = !loading && vm.actionRow.daySummaryLines.length === 0;
   const reminders =
+    !loading &&
     !vm.hero.twinTrustStrip.limitingFactorText &&
     vm.actionRow.limitingMode === 'facts' &&
     vm.actionRow.limitingFacts.length > 0
       ? vm.actionRow.limitingFacts
       : [];
 
-  const proposal = vm.actionRow.morningRecalibration;
+  const orientation = loading ? null : vm.morningOrientation;
+  const hideSessionList = orientation?.phase === 'EVIDENCE_PENDING';
 
   return (
-    <section className="space-y-2">
+    <section aria-busy={loading || undefined} className="space-y-3">
       <div className="flex items-center justify-between gap-2 px-0.5">
         <p className="text-label">{vm.actionRow.actionLabel}</p>
-        <div className="flex items-center gap-1">
-          {proposal ? (
-            <MorningRecalibrationDialog
-              proposal={proposal}
-              trainingDayId={trainingDayId}
-              onSettled={onWellnessCompleted}
-            />
-          ) : null}
-          <MorningWellnessDialog onCompleted={onWellnessCompleted} />
-        </div>
+        <MorningWellnessDialog onCompleted={onWellnessCompleted} />
       </div>
 
-      {reminders.length > 0 ? (
+      {orientation ? (
+        <MorningOrientationActions
+          orientation={orientation}
+          trainingDayId={trainingDayId}
+          onRefreshed={onWellnessCompleted}
+        />
+      ) : null}
+
+      {reminders.length > 0 && orientation?.phase !== 'EVIDENCE_PENDING' ? (
         <ul className="text-muted-foreground space-y-1 px-0.5 text-xs leading-relaxed">
           {reminders.map((fact) => (
             <li key={`${fact.label}-${fact.value}`}>
@@ -59,7 +64,20 @@ export function TodayActionRow({
         </ul>
       ) : null}
 
-      {daySummaryEmpty ? (
+      {loading ? (
+        <ul className="space-y-2">
+          {[0, 1].map((i) => (
+            <li
+              key={i}
+              className="border-analysis-border/80 bg-background/50 rounded-lg border px-3 py-2.5"
+            >
+              <SkeletonDataValue heightClassName="h-4" widthClassName="w-full max-w-[240px]" />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {!loading && !hideSessionList && daySummaryEmpty ? (
         <div className="border-analysis-border/80 bg-background/50 rounded-analysis space-y-2 border px-3 py-3">
           <p className="text-muted-foreground text-sm">{vm.actionRow.daySummaryEmptyText}</p>
           <Link
@@ -71,21 +89,29 @@ export function TodayActionRow({
             <span aria-hidden>→</span>
           </Link>
         </div>
-      ) : (
+      ) : null}
+
+      {!loading && !hideSessionList && !daySummaryEmpty ? (
         <ul className="space-y-2">
-          {vm.actionRow.daySummaryLines.map((line) => (
-            <li key={line.id}>
-              <InstrumentListChip
-                activityType={line.activityType}
-                done={line.isDone}
-                href={line.href}
-                meta={splitInstrumentMeta(line.secondary)}
-                title={line.primary}
-              />
-            </li>
-          ))}
+          {vm.actionRow.daySummaryLines.map((line) => {
+            const meta: InstrumentListChipMeta[] = splitInstrumentMeta(line.secondary);
+            if (line.morningChoiceLabel) {
+              meta.push({ text: line.morningChoiceLabel, tone: 'caution' });
+            }
+            return (
+              <li key={line.id}>
+                <InstrumentListChip
+                  activityType={line.activityType}
+                  done={line.isDone}
+                  href={line.href}
+                  meta={meta}
+                  title={line.primary}
+                />
+              </li>
+            );
+          })}
         </ul>
-      )}
+      ) : null}
     </section>
   );
 }

@@ -11,12 +11,20 @@ export function SleepWhyBlock({
   targetDeltaMin,
   restorativeRatio,
   globalDecision,
+  loading = false,
 }: {
   debt7Min: number | null;
   targetDeltaMin: number | null;
   restorativeRatio: number | null;
   globalDecision: GlobalDecisionContext;
+  loading?: boolean;
 }) {
+  if (loading) {
+    return (
+      <PhysioDomainWhy globalDecision={globalDecision} label="Cette nuit" primary={null} loading />
+    );
+  }
+
   let primary: string | null = null;
   if (debt7Min != null && debt7Min > 30) {
     primary = `Dette 7 jours ${formatDuration(debt7Min)} — à résorber sur les prochaines nuits.`;

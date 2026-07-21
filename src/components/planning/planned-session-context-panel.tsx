@@ -139,20 +139,20 @@ export function PlannedSessionContextPanel({
           <ThermometerSun className="text-primary mt-0.5 size-4 shrink-0" />
           <div className="min-w-0 space-y-1">
             <p className="text-label">Contexte avant séance</p>
-            {viewModel.conditionsHeadline ? (
+            {viewModel.conditionsHeadline && (
               <p className="text-foreground text-sm leading-relaxed font-medium">
                 {viewModel.conditionsHeadline}
               </p>
-            ) : null}
-            {viewModel.impactSummary ? (
+            )}
+            {viewModel.impactSummary && (
               <p className="text-muted-foreground text-sm leading-relaxed">
                 {viewModel.impactSummary}
               </p>
-            ) : null}
+            )}
           </div>
         </div>
 
-        {advisories.length > 0 ? (
+        {advisories.length > 0 && (
           <ul className="space-y-2">
             {advisories.map((advisory) => (
               <li
@@ -169,7 +169,7 @@ export function PlannedSessionContextPanel({
               </li>
             ))}
           </ul>
-        ) : null}
+        )}
 
         {prepItems.length > 0 ? (
           <div>

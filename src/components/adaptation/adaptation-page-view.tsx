@@ -21,6 +21,7 @@ export type AdaptationPageViewProps = {
   onDateChange?: (date: Date) => void;
   onPreviousDay?: () => void;
   onNextDay?: () => void;
+  loading?: boolean;
   adaptationIndex: number | null;
   statusLabel: string;
   statusClassName: string;
@@ -62,6 +63,7 @@ export function AdaptationPageView({
   onDateChange,
   onPreviousDay,
   onNextDay,
+  loading = false,
   adaptationIndex,
   statusLabel,
   statusClassName,
@@ -77,29 +79,33 @@ export function AdaptationPageView({
   confidencePct,
   globalDecision,
 }: AdaptationPageViewProps) {
-  const limitingScore = limitingScoreFromDimensions(limitingFactor, dimensions);
+  const limitingScore = loading ? null : limitingScoreFromDimensions(limitingFactor, dimensions);
 
   const neuromuscular = dimensions.find((d) => d.key === 'neuromuscularEfficiency');
-  const neuromuscularMissing = neuromuscular != null && !neuromuscular.dim.available;
-  const visibleDimensions = dimensions.filter((d) => {
-    if (d.key === 'neuromuscularEfficiency' && !d.dim.available) return false;
-    return true;
-  });
+  const neuromuscularMissing = !loading && neuromuscular != null && !neuromuscular.dim.available;
+  const displayDimensions = loading
+    ? dimensions.filter((d) => d.key !== 'neuromuscularEfficiency')
+    : dimensions.filter((d) => {
+        if (d.key === 'neuromuscularEfficiency' && !d.dim.available) return false;
+        return true;
+      });
 
   const freinDimension =
-    limitingFactor != null
-      ? (visibleDimensions.find((d) => d.label === limitingFactor) ?? null)
+    !loading && limitingFactor != null
+      ? (displayDimensions.find((d) => d.label === limitingFactor) ?? null)
       : null;
-  const otherDimensions = visibleDimensions.filter((d) => d !== freinDimension);
+  const otherDimensions = displayDimensions.filter((d) => d !== freinDimension);
 
   let actionLine: string | null = null;
-  if (limitingFactor) {
-    actionLine =
-      limitingScore != null
-        ? `Limité par · ${limitingFactor} (${Math.round(limitingScore)})`
-        : `Limité par · ${limitingFactor}`;
-  } else if (trendLabel && trendLabel !== '—') {
-    actionLine = trendLabel;
+  if (!loading) {
+    if (limitingFactor) {
+      actionLine =
+        limitingScore != null
+          ? `Limité par · ${limitingFactor} (${Math.round(limitingScore)})`
+          : `Limité par · ${limitingFactor}`;
+    } else if (trendLabel && trendLabel !== '—') {
+      actionLine = trendLabel;
+    }
   }
 
   return (
@@ -110,6 +116,7 @@ export function AdaptationPageView({
           confidencePct={confidencePct}
           dimensionCount={availableDimCount}
           dimensionTotal={4}
+          loading={loading}
         />
       }
     >
@@ -119,8 +126,9 @@ export function AdaptationPageView({
         headline={statusLabel}
         headlineClassName={statusClassName}
         isToday={isToday}
+        loading={loading}
         maxDate={maxDate}
-        panelClassName={softTintFromQualityClass(statusClassName)}
+        panelClassName={loading ? undefined : softTintFromQualityClass(statusClassName)}
         quickReadCaption={actionLine ?? undefined}
         quickReadLabel="indice d'adaptation"
         quickReadSuffix="%"
@@ -134,6 +142,7 @@ export function AdaptationPageView({
       <AdaptationStatsStrip
         limitingFactor={limitingFactor}
         limitingScore={limitingScore}
+        loading={loading}
         loadMultiplier={loadMultiplier}
         trendLabel={trendLabel}
       />
@@ -144,6 +153,7 @@ export function AdaptationPageView({
         historyLength={historyLength}
         limitingFactor={limitingFactor}
         limitingScore={limitingScore}
+        loading={loading}
         loadMultiplier={loadMultiplier}
         overreachingWithoutAdaptation={overreachingWithoutAdaptation}
         plateauRisk={plateauRisk}
@@ -160,8 +170,9 @@ export function AdaptationPageView({
               key={d.key}
               description={d.description}
               dim={d.dim}
-              emphasized={freinDimension != null && d.key === freinDimension.key}
+              emphasized={!loading && freinDimension != null && d.key === freinDimension.key}
               label={d.label}
+              loading={loading}
               protectiveTone
             />
           ))}

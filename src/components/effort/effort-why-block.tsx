@@ -10,13 +10,21 @@ export function EffortWhyBlock({
   acwr,
   tsb,
   globalDecision,
+  loading = false,
 }: {
   verdict: string;
   verdictClass: string;
   acwr: number;
   tsb: number | null;
   globalDecision: GlobalDecisionContext;
+  loading?: boolean;
 }) {
+  if (loading) {
+    return (
+      <PhysioDomainWhy globalDecision={globalDecision} label="Charge" primary={null} loading />
+    );
+  }
+
   const parts: string[] = [];
   if (verdict) parts.push(verdict);
   if (acwr > 0) parts.push(`ACWR ${acwr.toFixed(2)}`);

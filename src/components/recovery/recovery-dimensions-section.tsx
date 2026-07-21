@@ -19,19 +19,27 @@ const DIMENSION_DESCRIPTION: Record<string, string> = {
 
 export function RecoveryDimensionsSection({
   dimensions,
+  loading = false,
 }: {
   dimensions: Record<string, DimensionResult>;
+  loading?: boolean;
 }) {
+  const entries = Object.keys(DIMENSION_LABEL).map((key) => [
+    key,
+    dimensions[key] ?? { score: null, status: 'PENDING', available: false },
+  ]) as [string, DimensionResult][];
+
   return (
     <DrillDownSectionCard>
       <DrillDownSectionLabel>Contribution au score</DrillDownSectionLabel>
       <div className="space-y-4">
-        {Object.entries(dimensions).map(([key, dim]) => (
+        {entries.map(([key, dim]) => (
           <DrillDownDimensionRow
             key={key}
             description={DIMENSION_DESCRIPTION[key] ?? ''}
             dim={dim}
             label={DIMENSION_LABEL[key] ?? key}
+            loading={loading}
           />
         ))}
       </div>

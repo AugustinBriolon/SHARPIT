@@ -51,18 +51,21 @@ export function CorpsStatCard({
   sublabel,
   footer,
   tone = 'neutral',
+  loading = false,
 }: {
   label: string;
   value: string;
   sublabel?: string;
   footer?: string;
   tone?: CorpsTone;
+  loading?: boolean;
 }) {
   return (
     <MetricCell
       footer={footer}
       label={label}
       layout="card"
+      loading={loading}
       sub={sublabel}
       tone={tone}
       value={value}

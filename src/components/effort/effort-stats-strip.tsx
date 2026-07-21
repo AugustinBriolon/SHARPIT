@@ -23,13 +23,16 @@ export function EffortStatsStrip({
   acwr,
   weeklyTss,
   tsb,
+  loading = false,
 }: {
   acwr: number;
   weeklyTss: number;
   tsb: number | null;
+  loading?: boolean;
 }) {
   return (
     <DrillDownStatsStrip
+      loading={loading}
       items={[
         {
           label: 'ACWR',

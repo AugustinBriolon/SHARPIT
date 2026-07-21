@@ -8,6 +8,7 @@ import { CalendarRange } from 'lucide-react';
 import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
 import { LinkButton } from '@/components/ui/link-button';
 import { EyebrowLabel } from '@/components/ui/eyebrow-label';
+import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import type { CalendarDay } from '@/lib/calendar';
 import { groupPlannedSessions } from '@/lib/brick-sessions';
 import { activityTypeLabels } from '@/lib/format';
@@ -141,12 +142,14 @@ function PreviewDayCell({
 
 export function TrainingWeekCalendarPreview({
   activities,
-  plannedSessions,
   className,
+  loading = false,
+  plannedSessions,
 }: {
   activities: ClientActivity[];
-  plannedSessions: ClientPlannedSession[];
   className?: string;
+  loading?: boolean;
+  plannedSessions: ClientPlannedSession[];
 }) {
   const today = new Date();
   const rangeStart = subDays(today, DAYS_BEFORE);
@@ -178,25 +181,59 @@ export function TrainingWeekCalendarPreview({
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
         <div>
           <EyebrowLabel variant="dashboard">Autour d&apos;aujourd&apos;hui</EyebrowLabel>
-          <p className="text-muted-foreground mt-0.5 text-[11px] capitalize">
-            {windowRangeLabel(rangeStart, rangeEnd)}
-            {' · '}
-            {plannedInWindow} planifiée{plannedInWindow > 1 ? 's' : ''}
-            {' · '}
-            {doneInWindow} réalisée{doneInWindow > 1 ? 's' : ''}
-          </p>
+          {loading ? (
+            <div className="mt-1.5">
+              <SkeletonDataValue heightClassName="h-3" widthClassName="w-44" />
+            </div>
+          ) : (
+            <p className="text-muted-foreground mt-0.5 text-[11px] capitalize">
+              {windowRangeLabel(rangeStart, rangeEnd)}
+              {' · '}
+              {plannedInWindow} planifiée{plannedInWindow > 1 ? 's' : ''}
+              {' · '}
+              {doneInWindow} réalisée{doneInWindow > 1 ? 's' : ''}
+            </p>
+          )}
         </div>
       </div>
 
       <div className="grid grid-cols-5 gap-1.5">
-        {windowDays.map((cell) => (
-          <PreviewDayCell
-            key={format(cell.date, 'yyyy-MM-dd')}
-            cell={cell}
-            dayLabel={format(cell.date, 'EEE', { locale: fr })}
-            linkedActivityIds={linkedActivityIds}
-          />
-        ))}
+        {windowDays.map((cell) =>
+          loading ? (
+            <div
+              key={format(cell.date, 'yyyy-MM-dd')}
+              className={cn(
+                'border-analysis-border/60 rounded-analysis flex min-h-24 min-w-0 flex-col border p-1.5',
+                cell.isToday && 'bg-primary/5 ring-primary/15 ring-1',
+              )}
+            >
+              <div className="mb-1.5 flex items-center justify-between gap-1">
+                <span className="text-muted-foreground text-[10px] font-medium uppercase">
+                  {format(cell.date, 'EEE', { locale: fr })}
+                </span>
+                <span
+                  className={cn(
+                    'text-data text-xs font-medium tabular-nums',
+                    cell.isToday ? 'text-primary' : 'text-foreground',
+                  )}
+                >
+                  {cell.date.getDate()}
+                </span>
+              </div>
+              <div className="space-y-1.5 pt-0.5">
+                <SkeletonDataValue heightClassName="h-4" widthClassName="w-full" />
+                <SkeletonDataValue heightClassName="h-4" widthClassName="w-16" />
+              </div>
+            </div>
+          ) : (
+            <PreviewDayCell
+              key={format(cell.date, 'yyyy-MM-dd')}
+              cell={cell}
+              dayLabel={format(cell.date, 'EEE', { locale: fr })}
+              linkedActivityIds={linkedActivityIds}
+            />
+          ),
+        )}
       </div>
 
       <div className="mt-4 flex justify-end border-t pt-3">

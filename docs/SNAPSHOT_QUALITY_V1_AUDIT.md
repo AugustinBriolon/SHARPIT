@@ -50,7 +50,7 @@ Legend:
 
 | Field                             | Source                           | Models                                                                                        | Assumptions                                                                | Missing when        | Stale when                           | Confidence                                                  | Wording                                                | Class                                                           |
 | --------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------- | ------------------------------------ | ----------------------------------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------- |
-| `freshness` (whole)               | `computeFreshnessSnapshot()`     | Twin `computedAt`, Observation timestamps, provider `lastSyncAt`, `DailyBriefing.generatedAt` | Observations land in Observation table; twin states reflect last inference | DB unreachable      | Any domain evidence newer than model | Medium — heuristic thresholds (6h Garmin, 14h sleep window) | `product-states.ts` messages are good athlete language | **Needs refinement**                                            |
+| `freshness` (whole)               | `computeFreshnessSnapshot()`     | Twin `computedAt`, Observation timestamps, provider `lastSyncAt`, `DailyBriefing.generatedAt` | Observations land in Observation table; twin states reflect last inference | DB unreachable      | Any domain evidence newer than model | Medium — heuristic thresholds (2h Garmin, 14h sleep window) | `product-states.ts` messages are good athlete language | **Needs refinement**                                            |
 | `freshness.domains[].state`       | Internal diagnostic string       | —                                                                                             | —                                                                          | —                   | —                                    | N/A                                                         | Technical — must never leak to UI                      | **Should not expose yet** (currently not shown — keep internal) |
 | `freshness.primaryProductMessage` | First non-null domain message    | —                                                                                             | Priority = array order, not severity                                       | All domains fresh   | Any non-fresh domain                 | Medium                                                      | Understandable                                         | **READY** (in-app only)                                         |
 | `freshness.providers[]`           | Integration accounts             | —                                                                                             | Connected = row exists                                                     | Provider not linked | `lastSyncAt` > threshold             | High for connectivity                                       | N/A (internal)                                         | **Needs refinement** — useful for settings, not athlete copy    |
@@ -242,7 +242,7 @@ Today is **not snapshot-pure**. The dashboard still fetches in parallel:
 
 | Location                           | What athlete sees                                       | Why                                                   | Root cause                                               | Layer                            |
 | ---------------------------------- | ------------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------- | -------------------------------- |
-| `DashboardSkeleton`                | Grey rings + blocks                                     | First visit, no persisted snapshot                    | Cold start — no `AthleteSnapshotRecord`                  | Orchestration                    |
+| Today cold chrome (`loading`)      | Labels + value micro-skeletons                          | First visit / day switch                              | Cold start — no presentation VM yet                      | Presentation                     |
 | `PartialSnapshotFallback`          | Message + « Actualiser »                                | `hasContent === false`                                | Inference `INSUFFICIENT_DATA`, no briefing, no readiness | Inference + missing observations |
 | `SnapshotStatusBanner`             | Domain message / « Mise à jour en cours… »              | Stale or syncing domain                               | Freshness heuristic; background briefing                 | Orchestration + wording          |
 | `RadialScoreCard` value `—`        | Empty ring (grey)                                       | `sleepScore`, `readinessScore`, or `strainScore` null | Missing health entry; recovery pending; no strain        | Missing observations / inference |
@@ -290,16 +290,16 @@ Wording / semantics      ███           ~8%    (effort=fatigue, acronyms)
 
 ### Tier 2 — Placeholder elimination (in-app polish)
 
-| #   | Item                                               | Fixes                                                                                    | Effort |
-| --- | -------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------ |
-| 2.1 | **Sleep ring without raw health fetch**            | Put `sleepScore`, `sleepSubMetrics` in snapshot (computed server-side from observations) | M      |
-| 2.2 | **Unified sub-metrics in snapshot**                | `recoverySubMetrics`, `effortSubMetrics` as snapshot fields — single source              | M      |
-| 2.3 | **Remove `DashboardSkeleton` for returning users** | Persist last snapshot to client storage (IndexedDB) for instant paint                    | M      |
-| 2.4 | **Briefing phase staleness**                       | Mark recommendations stale when `resolveBriefingPhase(now) !== phaseAtGeneration`        | S      |
-| 2.5 | **Surface `confidence` when < 0.6**                | Subtle narrative line: « Estimation partielle — données incomplètes »                    | S      |
-| 2.6 | **Surface `limitingFactor`**                       | One line under narrative when actionable                                                 | S      |
-| 2.7 | **Replace acronyms**                               | SNV → « Variabilité cardiaque », expose ACWR only in drill-down                          | S      |
-| 2.8 | **Partial layout upgrade**                         | When no `topAction` but briefing exists → show full layout with briefing-only narrative  | S      |
+| #   | Item                                                 | Fixes                                                                                    | Effort |
+| --- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------ |
+| 2.1 | **Sleep ring without raw health fetch**              | Put `sleepScore`, `sleepSubMetrics` in snapshot (computed server-side from observations) | M      |
+| 2.2 | **Unified sub-metrics in snapshot**                  | `recoverySubMetrics`, `effortSubMetrics` as snapshot fields — single source              | M      |
+| 2.3 | **Remove full-page Today blank for returning users** | Persist last snapshot + chrome-stable micro-skeletons (`isPresentationValuesLoading`)    | M      |
+| 2.4 | **Briefing phase staleness**                         | Mark recommendations stale when `resolveBriefingPhase(now) !== phaseAtGeneration`        | S      |
+| 2.5 | **Surface `confidence` when < 0.6**                  | Subtle narrative line: « Estimation partielle — données incomplètes »                    | S      |
+| 2.6 | **Surface `limitingFactor`**                         | One line under narrative when actionable                                                 | S      |
+| 2.7 | **Replace acronyms**                                 | SNV → « Variabilité cardiaque », expose ACWR only in drill-down                          | S      |
+| 2.8 | **Partial layout upgrade**                           | When no `topAction` but briefing exists → show full layout with briefing-only narrative  | S      |
 
 ### Tier 3 — Snapshot completeness
 

@@ -6,8 +6,18 @@ import { AthleteStateInitializer } from '@/components/athlete-state/athlete-stat
 import { AppShell } from '@/components/layout/app-shell';
 import { Button } from '@/components/ui/button';
 import { isAllowedUser } from '@/lib/auth';
+import { isDevClerkBypass } from '@/lib/dev-auth';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  if (isDevClerkBypass()) {
+    return (
+      <>
+        <AthleteStateInitializer />
+        <AppShell>{children}</AppShell>
+      </>
+    );
+  }
+
   // Le proxy Clerk redirige déjà les visiteurs non connectés vers /sign-in.
   const user = await currentUser();
   if (!user) redirect('/sign-in');

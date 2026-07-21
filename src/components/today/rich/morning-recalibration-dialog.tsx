@@ -22,6 +22,7 @@ export type MorningRecalibrationProposalView = {
   direction: 'DOWN' | 'UP';
   changeSummary: string;
   why: string;
+  status?: 'PRESENTED' | 'ACCEPTED' | 'REJECTED' | 'MODIFIED' | 'EXPIRED';
 };
 
 /**
@@ -45,8 +46,8 @@ export function MorningRecalibrationDialog({
   if (dismissed) return null;
 
   const isDown = proposal.direction === 'DOWN';
-  const triggerLabel = isDown ? 'Ajuster · prudence' : 'Ajuster · opportunité';
-  const title = isDown ? 'Baisser la séance ?' : 'Monter la séance ?';
+  const triggerLabel = isDown ? 'Confirmer l’allègement' : 'Ajuster · opportunité';
+  const title = isDown ? 'Confirmer l’allègement ?' : 'Monter la séance ?';
 
   async function act(action: 'accept' | 'reject') {
     setPending(action);

@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { EyebrowLabel } from '@/components/ui/eyebrow-label';
+import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import { useIsMobile } from '@/hooks/use-viewport';
 import {
   buildActivityConsistencyStats,
@@ -68,9 +69,11 @@ function HeatmapGrid({ weekColumns }: { weekColumns: HeatmapCell[][] }) {
 export function ActivityConsistencyPanel({
   activities,
   className,
+  loading = false,
 }: {
   activities: ClientActivity[];
   className?: string;
+  loading?: boolean;
 }) {
   const isMobile = useIsMobile();
   const stats = useMemo(
@@ -93,18 +96,43 @@ export function ActivityConsistencyPanel({
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
         <div>
           <EyebrowLabel variant="dashboard">Régularité</EyebrowLabel>
-          <p className="text-muted-foreground mt-0.5 text-[11px]">
-            {stats.trailingYearActivityCount} séance
-            {stats.trailingYearActivityCount > 1 ? 's' : ''} sur {rangeLabel}
-            {' · '}
-            {stats.activeDays} {stats.activeDays > 1 ? 'jours actifs' : 'jour actif'} sur{' '}
-            {stats.heatmapDays}
-          </p>
+          {loading ? (
+            <div className="mt-1.5">
+              <SkeletonDataValue heightClassName="h-3" widthClassName="w-40" />
+            </div>
+          ) : (
+            <p className="text-muted-foreground mt-0.5 text-[11px]">
+              {stats.trailingYearActivityCount} séance
+              {stats.trailingYearActivityCount > 1 ? 's' : ''} sur {rangeLabel}
+              {' · '}
+              {stats.activeDays} {stats.activeDays > 1 ? 'jours actifs' : 'jour actif'} sur{' '}
+              {stats.heatmapDays}
+            </p>
+          )}
         </div>
-        <ConsistencyReading stats={stats} />
+        {loading ? (
+          <SkeletonDataValue heightClassName="h-3" widthClassName="w-28" />
+        ) : (
+          <ConsistencyReading stats={stats} />
+        )}
       </div>
 
-      <HeatmapGrid weekColumns={stats.weekColumns} />
+      {loading ? (
+        <div className="flex w-full items-start gap-[2px]" aria-hidden>
+          {Array.from({ length: 12 }, (_, colIdx) => (
+            <div key={colIdx} className="flex min-w-0 flex-1 flex-col gap-[2px]">
+              {Array.from({ length: 7 }, (_, rowIdx) => (
+                <div
+                  key={rowIdx}
+                  className="bg-muted/60 aspect-square min-h-[6px] w-full animate-pulse rounded-[2px]"
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <HeatmapGrid weekColumns={stats.weekColumns} />
+      )}
 
       <div className="mt-3 flex items-center justify-end gap-3 border-t pt-3">
         <div className="flex items-center gap-1.5">

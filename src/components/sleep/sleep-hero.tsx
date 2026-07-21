@@ -17,6 +17,7 @@ export function SleepHero({
   isToday,
   maxDate,
   confidencePct,
+  loading = false,
 }: {
   date: Date;
   sleepScore: number | null;
@@ -32,9 +33,10 @@ export function SleepHero({
   isToday?: boolean;
   maxDate?: Date;
   confidencePct?: number | null;
+  loading?: boolean;
 }) {
   const subtitle =
-    bedtimeMin != null && wakeMin != null
+    !loading && bedtimeMin != null && wakeMin != null
       ? `${formatClock(bedtimeMin)} → ${formatClock(wakeMin)}`
       : null;
 
@@ -45,9 +47,10 @@ export function SleepHero({
       headline={adequacyDisplay.label}
       headlineClassName={adequacyDisplay.colorClass}
       isToday={isToday}
+      loading={loading}
       maxDate={maxDate}
-      panelClassName={softTintFromQualityClass(adequacyDisplay.colorClass)}
-      quickReadCaption={actionLine ?? undefined}
+      panelClassName={loading ? undefined : softTintFromQualityClass(adequacyDisplay.colorClass)}
+      quickReadCaption={loading ? undefined : (actionLine ?? undefined)}
       quickReadLabel="durée de sommeil"
       quickReadValue={totalSleepMin != null ? formatSleepDuration(totalSleepMin) : '—'}
       railCaption="insuffisant vers récupérant"

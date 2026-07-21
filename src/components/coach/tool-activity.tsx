@@ -258,6 +258,7 @@ export function ToolActivity({
   disabled?: boolean;
   streamIdle?: boolean;
 }) {
+  if (!part?.type) return null;
   const meta = META[part.type];
   if (!meta) return null;
 

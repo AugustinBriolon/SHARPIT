@@ -6,6 +6,60 @@
       "sourceType": "github",
       "skillPath": "skills/hallmark/SKILL.md",
       "computedHash": "8a8ecafd613f09e701330b5aa4a591ac539abb2605596df4a2394f03628d1d76"
+    },
+    "layers-conceptual-model": {
+      "source": "jamiemill/layers-skills",
+      "sourceType": "github",
+      "skillPath": "skills/layers-conceptual-model/SKILL.md",
+      "computedHash": "25d5a8abd3d4d6c5ff101de4faac54c77bb0376cd3f7b00a26885d720da4cd91"
+    },
+    "layers-domain": {
+      "source": "jamiemill/layers-skills",
+      "sourceType": "github",
+      "skillPath": "skills/layers-domain/SKILL.md",
+      "computedHash": "3807bc1403019134adb29084710bc29d5e997d1ecbd81d2cce3204fd29d9595e"
+    },
+    "layers-interaction-flow": {
+      "source": "jamiemill/layers-skills",
+      "sourceType": "github",
+      "skillPath": "skills/layers-interaction-flow/SKILL.md",
+      "computedHash": "33ec33d33c6ae1da090e1f48d91c157d8da7c286c87df230278a12f3b506133d"
+    },
+    "layers-intro": {
+      "source": "jamiemill/layers-skills",
+      "sourceType": "github",
+      "skillPath": "skills/layers-intro/SKILL.md",
+      "computedHash": "7e78e5b687444da74374295945a168494d3f7d99fefb0383f765cce7fb675515"
+    },
+    "layers-observed-behaviour": {
+      "source": "jamiemill/layers-skills",
+      "sourceType": "github",
+      "skillPath": "skills/layers-observed-behaviour/SKILL.md",
+      "computedHash": "197f93800b42cd8db86ff26f10e99289e04ea83d788591259a8e3c9f0e574e24"
+    },
+    "layers-orient": {
+      "source": "jamiemill/layers-skills",
+      "sourceType": "github",
+      "skillPath": "skills/layers-orient/SKILL.md",
+      "computedHash": "9b694c6a280973e9b1a8b9c7c8b5c5ff7b9895451f3aa0326e3d36fcb1e155bb"
+    },
+    "layers-product-strategy": {
+      "source": "jamiemill/layers-skills",
+      "sourceType": "github",
+      "skillPath": "skills/layers-product-strategy/SKILL.md",
+      "computedHash": "f93121c630f6070747c04fb067c2016c4ea26d8211f1f55ee9decd51af942813"
+    },
+    "layers-surface": {
+      "source": "jamiemill/layers-skills",
+      "sourceType": "github",
+      "skillPath": "skills/layers-surface/SKILL.md",
+      "computedHash": "a5bb1d766321608ba0fd673ccf72125748f7a2c6d89d6d1c15b18c210b380cb7"
+    },
+    "layers-user-needs": {
+      "source": "jamiemill/layers-skills",
+      "sourceType": "github",
+      "skillPath": "skills/layers-user-needs/SKILL.md",
+      "computedHash": "7e24f45ec9bddb89c0c4ba9b629407173f34dcbad6f3185362a2a0d6b41bc114"
     }
   }
 }

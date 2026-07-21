@@ -219,6 +219,7 @@ export function useConversations() {
   return useQuery({
     queryKey: queryKeys.conversations,
     queryFn: fetchConversations,
+    staleTime: 2 * 60_000,
   });
 }
 
@@ -227,6 +228,7 @@ export function useConversation(id: string | null) {
     queryKey: queryKeys.conversation(id ?? ''),
     queryFn: () => fetchConversation(id!),
     enabled: Boolean(id),
+    staleTime: 60_000,
   });
 }
 

@@ -102,8 +102,14 @@ export async function ensureMorningRecalibration(
   if (existing) {
     const mr = existing.snapshotContext.morningRecalibration;
     if (!mr || !existing.proposal.sessionId) return null;
-    if (existing.status !== 'PRESENTED') return null;
-    return toPresentation(existing.id, existing.proposal.sessionId, mr, existing.status);
+    if (
+      existing.status === 'PRESENTED' ||
+      existing.status === 'ACCEPTED' ||
+      existing.status === 'REJECTED'
+    ) {
+      return toPresentation(existing.id, existing.proposal.sessionId, mr, existing.status);
+    }
+    return null;
   }
 
   const [y, m, d] = trainingDayId.split('-').map(Number);

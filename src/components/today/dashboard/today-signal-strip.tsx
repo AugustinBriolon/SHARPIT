@@ -5,6 +5,7 @@ import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { mapStripScoreToColorClass, mapStripStrainToColorClass } from '@/lib/today-mapping';
 import { TWIN_DRILL_DOWN } from '@/lib/today-twin-navigation';
 import { cn } from '@/lib/utils';
+import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 
 type MetricsRow = TodayViewModel['hero']['metricsRow'];
 
@@ -44,9 +45,11 @@ function formatStrain(value: number | null): string {
 export function TodaySignalStrip({
   metricsRow,
   className,
+  loading = false,
 }: {
   metricsRow: MetricsRow;
   className?: string;
+  loading?: boolean;
 }) {
   const signals: Signal[] = [
     {
@@ -85,6 +88,7 @@ export function TodaySignalStrip({
 
   return (
     <nav
+      aria-busy={loading || undefined}
       aria-label="Signaux physiologiques — ouvrir le détail"
       className={cn('grid grid-cols-2 gap-2 sm:grid-cols-4', className)}
     >
@@ -97,7 +101,7 @@ export function TodaySignalStrip({
             'border-analysis-border/80 bg-analysis-surface-alt/70 hover:border-primary/35 hover:bg-analysis-surface',
             'focus-visible:ring-primary/35 inline-flex min-w-0 items-center justify-between gap-1.5',
             'rounded-lg border px-2.5 py-2 transition-[border-color,background-color] duration-150',
-            'focus-visible:ring-2 focus-visible:outline-hidden sm:justify-start sm:py-1.5',
+            'focus-visible:ring-2 focus-visible:outline-hidden sm:py-1.5',
           )}
         >
           <span className="inline-flex min-w-0 items-center gap-1.5">
@@ -105,9 +109,13 @@ export function TodaySignalStrip({
             <span className="text-muted-foreground text-[11px] font-medium tracking-wide">
               {signal.label}
             </span>
-            <span className={cn('text-data text-sm tabular-nums', signal.valueClass)}>
-              {signal.display}
-            </span>
+            {loading ? (
+              <SkeletonDataValue heightClassName="h-5" widthClassName="w-7" />
+            ) : (
+              <span className={cn('text-data text-sm tabular-nums', signal.valueClass)}>
+                {signal.display}
+              </span>
+            )}
           </span>
           <span
             className="text-muted-foreground/70 text-data shrink-0 text-[10px] tracking-wider"

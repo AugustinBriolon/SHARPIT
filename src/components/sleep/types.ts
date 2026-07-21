@@ -14,6 +14,7 @@ export type SleepPageViewProps = {
   onDateChange?: (date: Date) => void;
   onPreviousDay?: () => void;
   onNextDay?: () => void;
+  loading?: boolean;
   sleepScore: number | null;
   adequacyDisplay: { label: string; colorClass: string };
   scoreBreakdown: SleepScoreBreakdown;

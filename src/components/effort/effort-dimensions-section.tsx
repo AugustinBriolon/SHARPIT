@@ -23,10 +23,17 @@ const DIMENSION_DESCRIPTION: Record<string, string> = {
 export function EffortDimensionsSection({
   dimensions,
   missingCount,
+  loading = false,
 }: {
   dimensions: Record<string, DimensionResult>;
   missingCount: number;
+  loading?: boolean;
 }) {
+  const entries = Object.keys(DIMENSION_LABEL).map((key) => [
+    key,
+    dimensions[key] ?? { score: null, status: 'PENDING', available: false },
+  ]) as [string, DimensionResult][];
+
   return (
     <DrillDownSectionCard>
       <DrillDownSectionLabel>Détail par dimension</DrillDownSectionLabel>
@@ -35,14 +42,15 @@ export function EffortDimensionsSection({
         frais.
       </p>
       <div className="space-y-4">
-        {Object.entries(dimensions).map(([key, dim]) => (
+        {entries.map(([key, dim]) => (
           <DrillDownDimensionRow
             key={key}
             description={DIMENSION_DESCRIPTION[key] ?? ''}
             dim={dim}
             label={DIMENSION_LABEL[key] ?? key}
+            loading={loading}
             intensityLabel={
-              dim.available && dim.score !== null
+              !loading && dim.available && dim.score !== null
                 ? mapFatigueDimensionIntensity(dim.score)
                 : undefined
             }
@@ -50,7 +58,7 @@ export function EffortDimensionsSection({
           />
         ))}
       </div>
-      {missingCount > 0 && (
+      {!loading && missingCount > 0 && (
         <p className="text-muted-foreground/60 mt-3 text-[10px]">
           {missingCount} dimension{missingCount > 1 ? 's' : ''} sans signal fiable (données
           d&apos;entraînement ou subjectives absentes).

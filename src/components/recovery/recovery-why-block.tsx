@@ -10,13 +10,26 @@ export function RecoveryWhyBlock({
   limiterLabel,
   rationale,
   globalDecision,
+  loading = false,
 }: {
   intensityLabel: string;
   intensityClassName: string;
   limiterLabel: string | null;
   rationale: string[];
   globalDecision: GlobalDecisionContext;
+  loading?: boolean;
 }) {
+  if (loading) {
+    return (
+      <PhysioDomainWhy
+        globalDecision={globalDecision}
+        label="État de récupération"
+        primary={null}
+        loading
+      />
+    );
+  }
+
   const [firstReason, ...rest] = rationale;
   let primary: string | null = null;
   if (intensityLabel && firstReason) {

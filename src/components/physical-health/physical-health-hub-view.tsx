@@ -2,9 +2,13 @@
 
 import { format } from 'date-fns';
 import { useSearchParams } from 'next/navigation';
-import { usePhysicalHealthViewModel } from '@/hooks/use-presentation-view-model';
+import {
+  isPresentationValuesLoading,
+  usePhysicalHealthViewModel,
+} from '@/hooks/use-presentation-view-model';
+import { physicalHealthLoadingShell } from '@/lib/presentation/physical-health-loading-shell';
 import { useTodaySelectedDate } from '@/hooks/use-today-selected-date';
-import { PhysicalHealthPageSkeleton, PhysicalHealthPageView } from './physical-health-page-view';
+import { PhysicalHealthPageView } from './physical-health-page-view';
 
 /** Embedded suivi physique tab — Condition Engine UI */
 export function PhysicalHealthHubView() {
@@ -13,12 +17,9 @@ export function PhysicalHealthHubView() {
   const searchParams = useSearchParams();
   const focusConditionId = searchParams.get('condition');
   const query = usePhysicalHealthViewModel(trainingDayId);
+  const valuesLoading = isPresentationValuesLoading(query);
 
-  if (query.isPending) {
-    return <PhysicalHealthPageSkeleton embedded />;
-  }
-
-  if (!query.data) {
+  if (!valuesLoading && !query.data) {
     return (
       <p className="text-muted-foreground text-sm">
         Impossible de charger l&apos;état physique inféré.
@@ -26,21 +27,22 @@ export function PhysicalHealthHubView() {
     );
   }
 
+  const viewModel = query.data ?? physicalHealthLoadingShell();
   const focused =
-    focusConditionId != null
-      ? [...query.data.activeConditions, ...query.data.resolvedConditions].find(
+    !valuesLoading && focusConditionId != null
+      ? [...viewModel.activeConditions, ...viewModel.resolvedConditions].find(
           (c) => c.conditionId === focusConditionId,
         )
       : null;
 
   return (
     <>
-      {focused && (
+      {focused ? (
         <p className="text-muted-foreground text-sm">
           Focus : <span className="text-foreground font-medium">{focused.label}</span>
         </p>
-      )}
-      <PhysicalHealthPageView viewModel={query.data} embedded />
+      ) : null}
+      <PhysicalHealthPageView loading={valuesLoading} viewModel={viewModel} embedded />
     </>
   );
 }

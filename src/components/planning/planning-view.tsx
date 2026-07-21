@@ -16,7 +16,6 @@ import {
 } from '@/components/sessions/sessions-coach-menu';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SkeletonEyebrow, SkeletonTitle } from '@/components/ui/skeleton-patterns';
 import type { ProjectionHorizonDays } from '@/core/projection/types';
 import { useActivities, useGoals, usePlannedSessions, useTrainingPlan } from '@/hooks/use-data';
 import { useProjectedAthleteViewModel } from '@/hooks/use-projected-athlete-view-model';
@@ -128,7 +127,7 @@ export function PlanningView({
   const projectionQuery = useProjectedAthleteViewModel(projectionHorizon, anchorTrainingDayId);
   const scenarioComparisonQuery = useScenarioComparisonViewModel(7, anchorTrainingDayId);
   const hasActionableAlternative = Boolean(
-    showPlanningIntelligence && scenarioComparisonQuery.data?.visible,
+    showPlanningIntelligence && !isLoading && scenarioComparisonQuery.data?.visible,
   );
 
   const deepLinkSession = useMemo(() => {
@@ -196,66 +195,6 @@ export function PlanningView({
   const editSession = dialog?.mode === 'edit' ? dialog.session : deepLinkSession;
   const createDefaultDate = dialog?.mode === 'create' ? dialog.date : new Date();
 
-  if (isLoading) {
-    return (
-      <div className="space-y-5">
-        {!embedded && (
-          <div className="space-y-2">
-            <SkeletonEyebrow className="w-20" />
-            <SkeletonTitle className="h-9 w-64 max-w-full" size="md" />
-            <Skeleton className="h-4 w-48 max-w-full rounded-full border-0" />
-          </div>
-        )}
-
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-1">
-            <Skeleton className="size-9 rounded-lg" />
-            <div className="min-w-44 space-y-1.5 text-center">
-              <Skeleton className="mx-auto h-4 w-36 rounded-full border-0" />
-              <Skeleton className="mx-auto h-3 w-24 rounded-full border-0" />
-            </div>
-            <Skeleton className="size-9 rounded-lg" />
-          </div>
-          {!embedded ? <Skeleton className="h-9 w-32 rounded-lg" /> : null}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <Skeleton className="h-4 w-10 rounded-full border-0" />
-          <Skeleton className="h-4 w-24 rounded-full border-0" />
-          <Skeleton className="h-4 w-28 rounded-full border-0" />
-        </div>
-
-        <section className="analysis-panel-alt rounded-analysis-lg px-5 py-5 sm:px-6">
-          <div className="flex items-center gap-2">
-            <Skeleton className="size-4 rounded-sm" />
-            <Skeleton className="h-3 w-28 rounded-full border-0" />
-          </div>
-          <Skeleton className="mt-3 h-6 w-full max-w-3xl rounded-full border-0 sm:h-7" />
-          <div className="mt-4 flex flex-wrap gap-1.5">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-7 w-12 rounded-md" />
-            ))}
-          </div>
-          <Skeleton className="mt-4 h-9 w-44 rounded-lg" />
-        </section>
-
-        <div className="analysis-panel divide-analysis-border rounded-analysis-lg divide-y overflow-hidden">
-          {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className="flex gap-3 px-3 py-3 sm:gap-4 sm:px-4">
-              <div className="w-11 shrink-0 space-y-1 text-center sm:w-12">
-                <Skeleton className="mx-auto h-2.5 w-8 rounded-full border-0" />
-                <Skeleton className="mx-auto h-7 w-8 rounded-lg border-0" />
-              </div>
-              <div className="min-w-0 flex-1 space-y-2 py-1">
-                <Skeleton className="h-4 w-28 rounded-full border-0" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-5">
       {!embedded && (
@@ -263,16 +202,17 @@ export function PlanningView({
           <div>
             <p className="text-label">Planning</p>
             <h1 className="text-page-title mt-1">Plan d&apos;entraînement</h1>
-            {nextRace && (
+            {isLoading && <Skeleton className="mt-1 h-4 w-48 max-w-full rounded-full border-0" />}
+            {!isLoading && nextRace ? (
               <p className="text-muted-foreground mt-1 text-sm">
                 {nextRace.goal.title} · {format(nextRace.target, 'd MMMM yyyy', { locale: fr })}
               </p>
-            )}
+            ) : null}
           </div>
         </PageHeader>
       )}
 
-      <TravelContextBanner rangeEnd={weekEnd} rangeStart={week.start} />
+      {!isLoading ? <TravelContextBanner rangeEnd={weekEnd} rangeStart={week.start} /> : null}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1">
@@ -323,6 +263,7 @@ export function PlanningView({
 
       <WeekSummary
         completed={completed}
+        loading={isLoading}
         plannedLoad={week.plannedLoad}
         planWeek={planWeek}
         total={total}
@@ -343,6 +284,7 @@ export function PlanningView({
             key={day.date.toISOString()}
             activities={day.activities}
             date={day.date}
+            loading={isLoading}
             planned={day.planned}
             onAdd={() => setDialog({ mode: 'create', date: day.date })}
             onEdit={openPlannedSession}
@@ -351,7 +293,7 @@ export function PlanningView({
         ))}
       </div>
 
-      {showPlannedDialog && (
+      {showPlannedDialog && !isLoading && (
         <PlannedSessionDialog
           defaultDate={isCreateDialog ? createDefaultDate : undefined}
           goals={goals}
@@ -366,7 +308,7 @@ export function PlanningView({
       {weeklyBriefOpen && <WeeklyBrief onClose={() => setWeeklyBriefOpen(false)} />}
       {scenarioComparisonOpen ? (
         <ScenarioComparisonDialog
-          isLoading={scenarioComparisonQuery.isLoading}
+          isLoading={scenarioComparisonQuery.isPending || scenarioComparisonQuery.isPlaceholderData}
           open={scenarioComparisonOpen}
           viewModel={scenarioComparisonQuery.data}
           onClose={() => setScenarioComparisonOpen(false)}
@@ -381,13 +323,25 @@ function WeekSummary({
   plannedLoad,
   total,
   weeksToRace,
+  loading = false,
 }: {
   planWeek?: ClientPlanWeek;
   plannedLoad: number;
   completed: number;
   total: number;
   weeksToRace: number | null;
+  loading?: boolean;
 }) {
+  if (loading) {
+    return (
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <Skeleton className="h-4 w-10 rounded-full border-0" />
+        <Skeleton className="h-4 w-24 rounded-full border-0" />
+        <Skeleton className="h-4 w-28 rounded-full border-0" />
+      </div>
+    );
+  }
+
   const hasMeta = (weeksToRace != null && weeksToRace >= 0) || planWeek != null || total > 0;
   if (!hasMeta) return null;
 
@@ -434,6 +388,7 @@ function DayRow({
   onAdd,
   onEdit,
   onPrefetch,
+  loading = false,
 }: {
   date: Date;
   planned: ClientPlannedSession[];
@@ -441,9 +396,10 @@ function DayRow({
   onAdd: () => void;
   onEdit: (session: ClientPlannedSession) => void;
   onPrefetch: (session: ClientPlannedSession) => void;
+  loading?: boolean;
 }) {
   const today = isToday(date);
-  const empty = planned.length === 0 && activities.length === 0;
+  const empty = !loading && planned.length === 0 && activities.length === 0;
 
   return (
     <div className={cn('flex gap-3 px-3 py-3 sm:gap-4 sm:px-4', today && 'bg-primary/4')}>
@@ -462,7 +418,13 @@ function DayRow({
       </div>
 
       <div className="min-w-0 flex-1 space-y-1.5">
-        {empty ? (
+        {loading && (
+          <div className="space-y-2 py-1">
+            <Skeleton className="h-4 w-28 rounded-full border-0" />
+            <Skeleton className="h-4 w-20 rounded-full border-0" />
+          </div>
+        )}
+        {!loading && empty ? (
           <button
             className="text-muted-foreground hover:text-foreground pl-6 text-sm transition-colors"
             type="button"
@@ -470,17 +432,21 @@ function DayRow({
           >
             Repos — planifier
           </button>
-        ) : (
+        ) : null}
+        {!loading && !empty ? (
           <>
-            {groupPlannedSessions(planned).map((item) =>
-              item.kind === 'single' ? (
-                <SessionRow
-                  key={item.session.id}
-                  session={item.session}
-                  onEdit={onEdit}
-                  onPrefetch={onPrefetch}
-                />
-              ) : (
+            {groupPlannedSessions(planned).map((item) => {
+              if (item.kind === 'single') {
+                return (
+                  <SessionRow
+                    key={item.session.id}
+                    session={item.session}
+                    onEdit={onEdit}
+                    onPrefetch={onPrefetch}
+                  />
+                );
+              }
+              return (
                 <div key={item.id} className="space-y-1">
                   <p className="text-primary flex items-center gap-1 text-[10px] font-medium tracking-wider uppercase">
                     <Layers className="size-3" /> Brick
@@ -489,8 +455,8 @@ function DayRow({
                     <SessionRow key={s.id} session={s} onEdit={onEdit} onPrefetch={onPrefetch} />
                   ))}
                 </div>
-              ),
-            )}
+              );
+            })}
             {activities.map((a) => (
               <Link
                 key={a.id}
@@ -504,12 +470,13 @@ function DayRow({
               </Link>
             ))}
           </>
-        )}
+        ) : null}
       </div>
 
       <Button
         aria-label="Ajouter une séance"
         className="shrink-0 self-start"
+        disabled={loading}
         size="icon"
         variant="ghost"
         onClick={onAdd}

@@ -4,23 +4,23 @@ import { format } from 'date-fns';
 import { Moon } from 'lucide-react';
 import { MobileDrillDownHeader } from '@/components/layout/mobile-drill-down-header';
 import { SleepPageView } from '@/components/sleep/sleep-page-view';
-import { MetricDrillDownSkeleton } from '@/components/today/drill-down/drill-down-skeleton';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { useTodaySelectedDate } from '@/hooks/use-today-selected-date';
-import { useSleepViewModel } from '@/hooks/use-presentation-view-model';
+import {
+  isPresentationValuesLoading,
+  useSleepViewModel,
+} from '@/hooks/use-presentation-view-model';
+import { sleepLoadingShell } from '@/lib/presentation/drill-down-loading-shells';
 
 export default function TodaySleepPage() {
   const { date, isToday, maxDate, setDate, goToNextDay, goToPreviousDay } = useTodaySelectedDate();
   const trainingDayId = format(date, 'yyyy-MM-dd');
 
   const query = useSleepViewModel(trainingDayId);
+  const valuesLoading = isPresentationValuesLoading(query);
   const viewModel = query.data ?? null;
 
-  if (query.isPending && !viewModel) {
-    return <MetricDrillDownSkeleton variant="sleep" />;
-  }
-
-  if (!viewModel || viewModel.emptyState) {
+  if (!valuesLoading && (!viewModel || viewModel.emptyState)) {
     return (
       <div className="space-y-4">
         <MobileDrillDownHeader title="Sommeil" />
@@ -33,17 +33,20 @@ export default function TodaySleepPage() {
     );
   }
 
+  const content = viewModel ?? sleepLoadingShell();
+
   return (
     <div className="space-y-4">
       <MobileDrillDownHeader title="Sommeil" />
       <SleepPageView
         date={date}
         isToday={isToday}
+        loading={valuesLoading}
         maxDate={maxDate}
         onDateChange={setDate}
         onNextDay={goToNextDay}
         onPreviousDay={goToPreviousDay}
-        {...viewModel}
+        {...content}
       />
     </div>
   );

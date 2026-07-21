@@ -108,17 +108,35 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ### Environment variables
 
-| Variable                            | Description                                 |
-| ----------------------------------- | ------------------------------------------- |
-| `DATABASE_URL`                      | PostgreSQL or Neon connection string        |
-| `STRAVA_CLIENT_ID`                  | Strava API client ID                        |
-| `STRAVA_CLIENT_SECRET`              | Strava API client secret                    |
-| `STRAVA_REDIRECT_URI`               | `http://localhost:3000/api/strava/callback` |
-| `GARMIN_CONSUMER_KEY`               | Garmin Connect API OAuth key                |
-| `GARMIN_CONSUMER_SECRET`            | Garmin Connect API OAuth secret             |
-| `ANTHROPIC_API_KEY`                 | Claude API key for AI coaching              |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk authentication public key             |
-| `CLERK_SECRET_KEY`                  | Clerk authentication secret key             |
+| Variable                            | Description                                                                                           |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                      | PostgreSQL or Neon connection string                                                                  |
+| `STRAVA_CLIENT_ID`                  | Strava API client ID                                                                                  |
+| `STRAVA_CLIENT_SECRET`              | Strava API client secret                                                                              |
+| `STRAVA_REDIRECT_URI`               | `http://localhost:3000/api/strava/callback`                                                           |
+| `GARMIN_CONSUMER_KEY`               | Garmin Connect API OAuth key                                                                          |
+| `GARMIN_CONSUMER_SECRET`            | Garmin Connect API OAuth secret                                                                       |
+| `ANTHROPIC_API_KEY`                 | Claude API key for AI coaching                                                                        |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk authentication public key                                                                       |
+| `CLERK_SECRET_KEY`                  | Clerk authentication secret key                                                                       |
+| `DEV_BYPASS_CLERK`                  | Dev only: set `true` to skip Clerk when the corporate proxy blocks `*.clerk.accounts.dev` (see below) |
+
+#### Corporate proxy / Wi‑Fi entreprise
+
+Clerk needs outbound HTTPS from **your browser** and from **Node** (`yarn dev`) to `*.clerk.accounts.dev` and `clerk.com`. A corporate proxy often blocks or MITM’s these calls: you stay on `/sign-in?redirect_url=…` in a loop.
+
+1. **Confirm** — DevTools → Network: failed requests to `clerk` / `accounts.dev` after login.
+2. **Proxy for Node** (replace with your corporate proxy URL):
+
+   ```bash
+   export HTTPS_PROXY=http://proxy.corp:8080
+   export HTTP_PROXY=http://proxy.corp:8080
+   export NO_PROXY=localhost,127.0.0.1
+   yarn dev
+   ```
+
+3. **SSL inspection** — if IT provides a root CA: `export NODE_EXTRA_CA_CERTS=/path/to/corp-ca.pem`
+4. **Local dev only** — add `DEV_BYPASS_CLERK=true` to `.env`, restart `yarn dev`, open `http://localhost:3000/` (not production-safe).
 
 ## Tests
 

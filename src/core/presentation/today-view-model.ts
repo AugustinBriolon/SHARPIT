@@ -21,6 +21,41 @@ export type TodayViewModel = {
 
   effortUnavailableMessage: string | null;
 
+  /**
+   * Morning Today flow (forward-advice phases only):
+   * EVIDENCE_PENDING → ORIENTATION_READY → POST_CHOICE.
+   */
+  morningOrientation: {
+    phase: 'EVIDENCE_PENDING' | 'ORIENTATION_READY' | 'POST_CHOICE';
+    evidenceLine: string | null;
+    showRefreshEvidence: boolean;
+    showFirmActions: boolean;
+    hideHeroConfidence: boolean;
+    /** Overrides hero headline when set (evidence pending only). */
+    heroHeadline: string | null;
+    heroSubline: string | null;
+    confirmEase: {
+      decisionId: string;
+      sessionId: string;
+      changeSummary: string;
+      why: string;
+    } | null;
+    confirmIncrease: {
+      decisionId: string;
+      sessionId: string;
+      changeSummary: string;
+      why: string;
+    } | null;
+    /** Reject recalibration (= Tenir) when a proposal is open. */
+    holdDecisionId: string | null;
+    /** Annotate the planned session chip — no separate post-choice card. */
+    sessionChoice: {
+      sessionId: string;
+      kind: 'HOLD' | 'EASING_CONFIRMED' | 'INCREASE_CONFIRMED';
+      label: string;
+    } | null;
+  } | null;
+
   /** Navigation targets are pre-resolved hrefs (client is renderer only). */
   navigationTargets: {
     sleep: PresentationNavigationTarget;
@@ -95,6 +130,8 @@ export type TodayViewModel = {
       kind: 'done' | 'planned';
       href: string;
       isDone: boolean;
+      /** Morning choice annotation on this session (post-choice). */
+      morningChoiceLabel?: string | null;
     }>;
     primaryAction?: PresentationAction | null;
     /** Bidirectional morning session adjustment — athlete must confirm. */
@@ -104,6 +141,7 @@ export type TodayViewModel = {
       direction: 'DOWN' | 'UP';
       changeSummary: string;
       why: string;
+      status: 'PRESENTED' | 'ACCEPTED' | 'REJECTED' | 'MODIFIED' | 'EXPIRED';
     } | null;
   };
 

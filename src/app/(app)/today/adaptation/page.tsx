@@ -4,23 +4,23 @@ import { format } from 'date-fns';
 import { TrendingUp } from 'lucide-react';
 import { MobileDrillDownHeader } from '@/components/layout/mobile-drill-down-header';
 import { AdaptationPageView } from '@/components/adaptation/adaptation-page-view';
-import { MetricDrillDownSkeleton } from '@/components/today/drill-down/drill-down-skeleton';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { useTodaySelectedDate } from '@/hooks/use-today-selected-date';
-import { useAdaptationViewModel } from '@/hooks/use-presentation-view-model';
+import {
+  isPresentationValuesLoading,
+  useAdaptationViewModel,
+} from '@/hooks/use-presentation-view-model';
+import { adaptationLoadingShell } from '@/lib/presentation/drill-down-loading-shells';
 
 export default function TodayAdaptationPage() {
   const { date, isToday, maxDate, setDate, goToNextDay, goToPreviousDay } = useTodaySelectedDate();
   const trainingDayId = format(date, 'yyyy-MM-dd');
 
   const query = useAdaptationViewModel(trainingDayId);
+  const valuesLoading = isPresentationValuesLoading(query);
   const viewModel = query.data ?? null;
 
-  if (query.isPending && !viewModel) {
-    return <MetricDrillDownSkeleton variant="adaptation" />;
-  }
-
-  if (!viewModel || viewModel.emptyState) {
+  if (!valuesLoading && (!viewModel || viewModel.emptyState)) {
     return (
       <div className="space-y-4">
         <MobileDrillDownHeader title="Adaptation" />
@@ -36,17 +36,20 @@ export default function TodayAdaptationPage() {
     );
   }
 
+  const content = viewModel ?? adaptationLoadingShell();
+
   return (
     <div className="space-y-4">
       <MobileDrillDownHeader title="Adaptation" />
       <AdaptationPageView
         date={date}
         isToday={isToday}
+        loading={valuesLoading}
         maxDate={maxDate}
         onDateChange={setDate}
         onNextDay={goToNextDay}
         onPreviousDay={goToPreviousDay}
-        {...viewModel}
+        {...content}
       />
     </div>
   );

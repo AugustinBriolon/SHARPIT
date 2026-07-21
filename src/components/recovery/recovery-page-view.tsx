@@ -21,6 +21,7 @@ export type RecoveryPageViewProps = {
   onDateChange?: (date: Date) => void;
   onPreviousDay?: () => void;
   onNextDay?: () => void;
+  loading?: boolean;
   readinessScore: number | null;
   signal: { label: string; qualityClass: string; arrow: string };
   limiterLabel: string | null;
@@ -62,6 +63,7 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
     onDateChange,
     onPreviousDay,
     onNextDay,
+    loading = false,
     readinessScore,
     signal,
     limiterLabel,
@@ -99,6 +101,7 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
           confidencePct={confidencePct}
           dimensionCount={availableDimCount}
           dimensionTotal={4}
+          loading={loading}
         />
       }
     >
@@ -110,6 +113,7 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
         isCalibrating={isCalibrating}
         isToday={isToday}
         limiterLabel={limiterLabel}
+        loading={loading}
         maxDate={maxDate}
         readinessScore={readinessScore}
         signal={signal}
@@ -118,40 +122,52 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
         onPreviousDay={onPreviousDay}
       />
 
-      <RecoveryStatsStrip bodyBattery={bodyBattery} hrv={hrv} restingHr={restingHr} />
+      <RecoveryStatsStrip
+        bodyBattery={bodyBattery}
+        hrv={hrv}
+        loading={loading}
+        restingHr={restingHr}
+      />
 
       <RecoveryWhyBlock
         globalDecision={globalDecision}
         intensityClassName={intensityClassName}
         intensityLabel={intensityLabel}
         limiterLabel={limiterLabel}
+        loading={loading}
         rationale={rationale}
       />
 
-      <RecoverySignalsSection
-        autonomicLabel={autonomicLabel}
-        dissonanceDetected={dissonanceDetected}
-        loadLabel={loadLabel}
-        wellnessLabel={wellnessLabel}
-      />
+      {!loading ? (
+        <RecoverySignalsSection
+          autonomicLabel={autonomicLabel}
+          dissonanceDetected={dissonanceDetected}
+          loadLabel={loadLabel}
+          wellnessLabel={wellnessLabel}
+        />
+      ) : null}
 
-      <RecoveryDimensionsSection dimensions={dimensions} />
+      <RecoveryDimensionsSection dimensions={dimensions} loading={loading} />
 
-      <RecoveryTrendsSection
-        baselineHigh={baselineHigh}
-        baselineLow={baselineLow}
-        dualData={dualData}
-        sparkHrv={sparkHrv}
-        sparkRhr={sparkRhr}
-      />
+      {!loading ? (
+        <>
+          <RecoveryTrendsSection
+            baselineHigh={baselineHigh}
+            baselineLow={baselineLow}
+            dualData={dualData}
+            sparkHrv={sparkHrv}
+            sparkRhr={sparkRhr}
+          />
 
-      <RecoveryAlertsSection illness={illness} overreaching={overreaching} />
+          <RecoveryAlertsSection illness={illness} overreaching={overreaching} />
 
-      <RecoveryEvidenceSection
-        intensityLabel={intensityLabel}
-        limiterLabel={limiterLabel}
-        readinessScore={readinessScore}
-      />
+          <RecoveryEvidenceSection
+            intensityLabel={intensityLabel}
+            limiterLabel={limiterLabel}
+            readinessScore={readinessScore}
+          />
+        </>
+      ) : null}
     </MetricDrillDownPage>
   );
 }

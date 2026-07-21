@@ -271,9 +271,12 @@ Align `resolveBriefingPhase` with Daily Phase:
 
 Pass `DailyPhase` into `buildBriefingDayContext` so validation rules (`briefing-validation.ts`) continue to forbid temporal lies.
 
-### 5.5 Why block (`TodayWhyBlock`)
+### 5.5 Why block (`TodayWhyBlock`) — retiré du hub Today
 
-| Phase               | `whyFocus`       | Content priority                         |
+Le hub n’affiche plus ce bloc (doublon verdict + strip + frein plaque).  
+`whyFocus` / `buildTodayWhyFacts` restent disponibles pour d’autres surfaces ; `whyBlock.visible` est toujours `false` sur Today.
+
+| Phase               | `whyFocus`       | Content priority (données, non montées)  |
 | ------------------- | ---------------- | ---------------------------------------- |
 | `MORNING`           | `readiness`      | `keyFindings` (recovery/sleep)           |
 | `BEFORE_SESSION`    | `session_prep`   | Findings + planned session context       |
