@@ -37,8 +37,23 @@ type OrchestratorRunContext = {
 };
 
 /**
+ * Decide whether open-path inference must recompute Twin engines.
+ * Soft app opens reuse cached Twin outputs; sync / manual / cron force recompute.
+ */
+export function shouldForceInferenceOnRefresh(input: {
+  source?: 'app_shell' | 'today_refresh' | 'cron';
+  forceSync?: boolean;
+  syncedProviderCount: number;
+}): boolean {
+  if (input.forceSync) return true;
+  if (input.source === 'today_refresh' || input.source === 'cron') return true;
+  if (input.syncedProviderCount > 0) return true;
+  return false;
+}
+
+/**
  * ApplicationOpened — athlete-centric refresh.
- * Sync only what is needed, infer on the fast path, defer heavy work.
+ * Sync only what is needed; force Twin recompute only when evidence changed or asked.
  */
 export async function refreshAthleteState(options?: {
   trainingDayId?: string;
@@ -79,6 +94,12 @@ export async function refreshAthleteState(options?: {
     }
   }
 
+  const forceRefresh = shouldForceInferenceOnRefresh({
+    source: options?.source,
+    forceSync: options?.forceSync,
+    syncedProviderCount: syncedProviders.length,
+  });
+
   ctx.computing = {
     recovery: true,
     training: true,
@@ -91,7 +112,7 @@ export async function refreshAthleteState(options?: {
     computing: ctx.computing,
   });
 
-  const todayState = await runFastInference(trainingDayId);
+  const todayState = await runFastInference(trainingDayId, { forceRefresh });
   const athleteSnapshot = await regenerateAthleteSnapshotAfterInference(trainingDayId, todayState);
 
   freshness = await computeFreshnessSnapshot({ trainingDayId, athleteId: ATHLETE_ID });
@@ -140,11 +161,15 @@ export async function onWellnessSubmitted(trainingDayId: string): Promise<Athlet
   return regenerateAthleteSnapshotAfterInference(trainingDayId, todayState);
 }
 
-async function runFastInference(trainingDayId: string): Promise<TodayState> {
+async function runFastInference(
+  trainingDayId: string,
+  options?: { forceRefresh?: boolean },
+): Promise<TodayState> {
   return loadTodayState({
     athleteId: ATHLETE_ID,
     trainingDayId,
-    forceRefresh: true,
+    // Event-driven paths (activity/wellness/explicit inference) default to recompute.
+    forceRefresh: options?.forceRefresh ?? true,
   });
 }
 
