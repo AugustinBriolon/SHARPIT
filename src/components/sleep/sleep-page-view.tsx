@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import { SleepCoachTonight } from '@/components/sleep/sleep-coach-tonight';
 import { SleepHero } from '@/components/sleep/sleep-hero';
 import { SleepPhasesSection } from '@/components/sleep/sleep-phases-section';

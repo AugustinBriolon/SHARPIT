@@ -87,7 +87,10 @@ export function MorningOrientationActions({
     decisionId: string,
     direction: 'DOWN' | 'UP' | null,
   ) {
-    setPending(action === 'reject' ? 'hold' : direction === 'UP' ? 'increase' : 'ease');
+    let nextPending: 'hold' | 'ease' | 'increase' = 'ease';
+    if (action === 'reject') nextPending = 'hold';
+    else if (direction === 'UP') nextPending = 'increase';
+    setPending(nextPending);
     try {
       const res = await fetch('/api/morning-recalibration/action', {
         method: 'POST',

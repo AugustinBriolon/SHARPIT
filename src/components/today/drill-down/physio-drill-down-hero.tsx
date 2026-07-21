@@ -98,7 +98,7 @@ export function PhysioDrillDownHero({
             {formatDate(date, 'EEEE d MMMM', { locale: fr })}
           </p>
         )}
-        {loading ? null : subline ? (
+        {!loading && subline ? (
           <p className="text-muted-foreground mt-1.5 text-center text-xs tabular-nums">{subline}</p>
         ) : null}
         {loading || bars != null || badge ? (
@@ -108,7 +108,8 @@ export function PhysioDrillDownHero({
                 <Skeleton className="h-2.5 w-6 rounded-sm" />
                 <span className="text-label">Confiance</span>
               </div>
-            ) : bars != null ? (
+            ) : null}
+            {!loading && bars != null ? (
               <div
                 className="text-muted-foreground inline-flex items-center gap-1.5"
                 title={
