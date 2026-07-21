@@ -131,7 +131,6 @@ export function resolveMorningOrientation(input: {
 
   const { snapshot, recalibration, clientHold, clientHoldSessionId } = input;
   const evidenceReady = nightEvidenceReady(snapshot);
-  const actionable = Boolean(snapshot.adviceActionable);
 
   if (recalibration?.status === 'ACCEPTED') {
     const kind = acceptedChoiceKind(recalibration.direction);
@@ -177,7 +176,12 @@ export function resolveMorningOrientation(input: {
     };
   }
 
-  if (!evidenceReady || !actionable) {
+  // Only block on missing night sync/compute — never on adviceActionable.
+  // Low confidence / truthfulness is a different concern: Today already shows
+  // phaseNarrative + insufficientDataMessage. Treating !adviceActionable as
+  // EVIDENCE_PENDING traps the athlete on "Actualiser les preuves" forever
+  // (refresh cannot raise confidence above the gate).
+  if (!evidenceReady) {
     return {
       phase: 'EVIDENCE_PENDING',
       evidenceLine: nightEvidenceLine(snapshot),

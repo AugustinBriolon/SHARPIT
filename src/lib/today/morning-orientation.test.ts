@@ -117,6 +117,18 @@ describe('resolveMorningOrientation', () => {
     expect(r?.showFirmActions).toBe(false);
   });
 
+  it('does not trap on EVIDENCE_PENDING when night proofs are fresh but advice is gated', () => {
+    const r = resolveMorningOrientation({
+      phase: 'MORNING',
+      snapshot: makeSnapshot({ adviceActionable: false }),
+      recalibration: null,
+    });
+    expect(r?.phase).toBe('ORIENTATION_READY');
+    expect(r?.showRefreshEvidence).toBe(false);
+    expect(r?.showFirmActions).toBe(true);
+    expect(r?.heroHeadline).toBeNull();
+  });
+
   it('keeps day verdict on ACCEPTED — annotates session only', () => {
     const r = resolveMorningOrientation({
       phase: 'MORNING',
