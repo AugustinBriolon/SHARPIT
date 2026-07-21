@@ -169,18 +169,26 @@ export function TodayVerdictHero({
         </div>
       </div>
 
-      <h1
-        className={cn(
-          'text-verdict mt-6 max-w-3xl text-[1.75rem] leading-[1.15] sm:text-[2.125rem]',
-          headlineToneClass,
-        )}
-      >
-        {loading ? (
+      {loading ? (
+        <div
+          className={cn(
+            'text-verdict mt-6 max-w-3xl text-[1.75rem] leading-[1.15] sm:text-[2.125rem]',
+            headlineToneClass,
+          )}
+          aria-hidden
+        >
           <SkeletonDataValue heightClassName="h-8 sm:h-10" widthClassName="w-[min(100%,20rem)]" />
-        ) : (
-          hero.headline
-        )}
-      </h1>
+        </div>
+      ) : (
+        <h1
+          className={cn(
+            'text-verdict mt-6 max-w-3xl text-[1.75rem] leading-[1.15] sm:text-[2.125rem]',
+            headlineToneClass,
+          )}
+        >
+          {hero.headline}
+        </h1>
+      )}
 
       {actionContent ? <div className="mt-5">{actionContent}</div> : null}
     </section>

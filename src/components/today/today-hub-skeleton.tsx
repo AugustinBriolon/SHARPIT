@@ -10,10 +10,10 @@ export function TodayHubSkeleton() {
         aria-busy
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-label inline-flex items-center gap-2">
+          <div className="text-label inline-flex items-center gap-2">
             <span className="bg-primary h-2.5 w-2.5 shrink-0 rounded-full" aria-hidden />
             <SkeletonDataValue heightClassName="h-3" widthClassName="w-48 sm:w-64" />
-          </p>
+          </div>
           <div className="flex flex-wrap items-center gap-3">
             <SkeletonDataValue heightClassName="h-3" widthClassName="w-44 sm:w-56" />
             <Skeleton className="h-5 w-36 rounded-full" />

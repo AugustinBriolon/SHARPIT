@@ -7,6 +7,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { CoachChat } from '@/components/coach/coach-chat';
 import { CoachConversationList } from '@/components/coach/coach-conversation-list';
 import {
+  CoachChatEmptyChrome,
   CoachChatPanelSkeleton,
   CoachHubSkeleton,
   CoachPageHeader,
@@ -260,7 +261,7 @@ export function CoachView() {
 
   function renderChat(header?: React.ReactNode) {
     if (!selectedId) {
-      return <CoachChatPanelSkeleton header={header} variant="empty" />;
+      return <CoachChatEmptyChrome header={header} />;
     }
 
     if (isEphemeral || activeConversation.data) {
@@ -287,7 +288,7 @@ export function CoachView() {
       );
     }
 
-    return <CoachChatPanelSkeleton header={header} variant="thread" />;
+    return <CoachChatPanelSkeleton header={header} />;
   }
 
   const conversationListEl = (

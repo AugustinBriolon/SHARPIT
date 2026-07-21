@@ -157,6 +157,7 @@ All use GET `/api/presentation/*`, typically stale 5m.
 3. Prefetch every primary nav target via `usePrefetchNavQuery` (extend `/corps` body, coach conversations, physical notes).
 4. Reuse ViewModels from `AthleteStateInitializer` / refresh payload whenever present.
 5. Prefer **stale-while-revalidate** for all presentation GETs (minimum stale 5m except immutable streams).
+6. **Route `loading.tsx` must be segment-scoped.** Never put a hub-specific skeleton at `(app)/loading.tsx` — that Suspense boundary wraps every nested route and can flash Today chrome on hard refresh of `/coach`, `/training`, etc. Today lives under `(app)/(home)/loading.tsx` (route group); other hubs keep their own `loading.tsx`.
 
 ---
 

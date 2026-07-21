@@ -217,9 +217,9 @@ function CompositionSkeleton() {
           </p>
           <SkeletonDataValue heightClassName="h-3" widthClassName="w-28" />
         </div>
-        <p className="text-verdict text-primary mt-6 text-[2rem] leading-none sm:text-[2.25rem]">
+        <div className="text-verdict text-primary mt-6 text-[2rem] leading-none sm:text-[2.25rem]">
           <SkeletonDataValue heightClassName="h-10" widthClassName="w-28" />
-        </p>
+        </div>
         <div className="mt-3">
           <SkeletonDataValue heightClassName="h-4" widthClassName="w-24" />
         </div>

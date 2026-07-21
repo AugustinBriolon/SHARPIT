@@ -2,8 +2,7 @@
 
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Trash2 } from 'lucide-react';
-import { CoachConversationListSkeleton } from '@/components/coach/coach-hub-skeleton';
+import { ChevronDownIcon, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -12,12 +11,63 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import { cn } from '@/lib/utils';
 import type { ClientConversationSummary } from '@/lib/query/fetchers';
 
 function conversationLabel(c: ClientConversationSummary): string {
   const title = c.title.trim();
   return title || 'Nouvelle conversation';
+}
+
+/** Mobile Select chrome — only the label text skeletons while conversations load. */
+function MobileSelectLoadingRow() {
+  return (
+    <div className="flex items-center gap-1.5 p-2 lg:hidden" aria-busy>
+      <div className="min-w-0 flex-1">
+        <div
+          className={cn(
+            'border-input flex h-8 w-full min-w-0 items-center justify-between gap-1.5 rounded-lg border',
+            'bg-transparent py-2 pr-2 pl-2.5 text-sm',
+          )}
+        >
+          <SkeletonDataValue heightClassName="h-3.5" widthClassName="w-36 max-w-[70%]" />
+          <ChevronDownIcon
+            className="text-muted-foreground size-4 shrink-0 opacity-50"
+            aria-hidden
+          />
+        </div>
+      </div>
+      <Button
+        aria-label="Supprimer la conversation"
+        className="text-muted-foreground shrink-0"
+        size="icon-sm"
+        type="button"
+        variant="ghost"
+        disabled
+      >
+        <Trash2 className="size-4" />
+      </Button>
+    </div>
+  );
+}
+
+/** Desktop sidebar — only title/date values skeleton. */
+function DesktopListLoadingRows({ rows = 4 }: { rows?: number }) {
+  return (
+    <ul className="hidden space-y-1 p-2 lg:block" aria-busy>
+      {Array.from({ length: rows }, (_, i) => (
+        <li key={i} className="flex items-center">
+          <div className="min-w-0 flex-1 rounded-lg px-2 py-2">
+            <SkeletonDataValue heightClassName="h-4" widthClassName="w-[min(100%,9rem)]" />
+            <div className="mt-1">
+              <SkeletonDataValue heightClassName="h-3" widthClassName="w-16" />
+            </div>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 export function CoachConversationList({
@@ -41,7 +91,12 @@ export function CoachConversationList({
       aria-busy={loading || undefined}
       className="analysis-panel rounded-analysis-lg flex w-full shrink-0 flex-col lg:h-full lg:w-56"
     >
-      {loading ? <CoachConversationListSkeleton /> : null}
+      {loading ? (
+        <>
+          <MobileSelectLoadingRow />
+          <DesktopListLoadingRows />
+        </>
+      ) : null}
 
       {!loading && conversations.length === 0 ? (
         <p className="text-muted-foreground px-3 py-2 text-xs">
@@ -60,8 +115,8 @@ export function CoachConversationList({
                 }}
               >
                 <SelectTrigger className="w-full min-w-0">
-                  <SelectValue placeholder="Choisir une conversation">
-                    {selected ? conversationLabel(selected) : 'Choisir une conversation'}
+                  <SelectValue placeholder="Nouvelle conversation">
+                    {selected ? conversationLabel(selected) : 'Nouvelle conversation'}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="max-h-64">
