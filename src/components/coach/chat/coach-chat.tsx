@@ -32,6 +32,11 @@ import {
   type ToolPartLite,
 } from '@/lib/coach/coach-tool-parts';
 import { queryKeys } from '@/lib/query/keys';
+import {
+  clearCoachInputDraft,
+  readCoachInputDraft,
+  writeCoachInputDraft,
+} from '@/lib/coach/coach-input-draft';
 import { ActivityType } from '@prisma/client';
 
 const SUGGESTIONS = [
@@ -81,6 +86,7 @@ export function CoachChat({
   header,
   onConversationCreated,
   onAutoReplyStarted,
+  onBootstrapApplied,
 }: {
   conversationId: string;
   initialMessages: UIMessage[];
@@ -91,6 +97,8 @@ export function CoachChat({
   header?: React.ReactNode;
   onConversationCreated?: (id: string) => void;
   onAutoReplyStarted?: () => void;
+  /** Fired once after a discuss bootstrap has been written into the composer. */
+  onBootstrapApplied?: () => void;
 }) {
   const queryClient = useQueryClient();
   const { mutateAsync: saveMessages } = useSaveConversation();
@@ -170,13 +178,29 @@ export function CoachChat({
   });
   messagesRef.current = messages;
   const [input, setInput] = useState('');
-  const prefilled = useRef(false);
+  const draftReady = useRef(false);
+  const onBootstrapAppliedRef = useRef(onBootstrapApplied);
+  onBootstrapAppliedRef.current = onBootstrapApplied;
+
+  // Restore unfinished input, or overwrite once with "Discuter avec le coach".
+  useEffect(() => {
+    draftReady.current = false;
+  }, [conversationId]);
 
   useEffect(() => {
-    if (!bootstrapPrompt || prefilled.current || initialMessages.length > 0) return;
-    setInput(bootstrapPrompt);
-    prefilled.current = true;
-  }, [bootstrapPrompt, initialMessages.length]);
+    if (bootstrapPrompt && initialMessages.length === 0) {
+      setInput(bootstrapPrompt);
+      writeCoachInputDraft(conversationId, bootstrapPrompt);
+      draftReady.current = true;
+      onBootstrapAppliedRef.current?.();
+      return;
+    }
+    if (draftReady.current) return;
+    draftReady.current = true;
+    const draft = readCoachInputDraft(conversationId);
+    if (draft) setInput(draft);
+  }, [bootstrapPrompt, conversationId, initialMessages.length]);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const initialScrollDone = useRef(false);
 
@@ -302,16 +326,17 @@ export function CoachChat({
       };
       try {
         const conversation = await createConversation.mutateAsync({ messages: [userMessage] });
+        clearCoachInputDraft(conversationId);
+        setInput('');
         onConversationCreated?.(conversation.id);
       } catch (err) {
         console.error('[coach-chat] create', err);
-        return;
       }
-      setInput('');
       return;
     }
 
     sendMessage({ text: value });
+    clearCoachInputDraft(conversationId);
     setInput('');
   }
 
@@ -473,7 +498,11 @@ export function CoachChat({
           placeholder={inputPlaceholder}
           rows={bootstrapPrompt ? 6 : 1}
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => {
+            const next = e.target.value;
+            setInput(next);
+            writeCoachInputDraft(conversationId, next);
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();

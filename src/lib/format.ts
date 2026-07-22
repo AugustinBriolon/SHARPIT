@@ -36,12 +36,15 @@ export function formatDistance(meters?: number | null): string {
   return `${Math.round(meters)} m`;
 }
 
-export function formatDate(date: Date): string {
+export function formatDate(date: Date | string | null | undefined): string {
+  if (date == null) return '—';
+  const value = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(value.getTime())) return '—';
   return new Intl.DateTimeFormat('fr-FR', {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
-  }).format(date);
+  }).format(value);
 }
 
 export function formatDateTimeLocal(date: Date): string {

@@ -1,9 +1,13 @@
-import { addDays, differenceInCalendarDays, startOfDay, subDays } from 'date-fns';
+import { addDays, differenceInCalendarDays, startOfDay } from 'date-fns';
 import { isCoachConfigured } from '@/lib/ai';
 import { analyzePlannedSession } from '@/lib/coach/coach-analysis';
 import { linkPlannedSessionActivity, setPlannedSessionAnalysis } from '@/lib/queries';
 import { prisma } from '@/lib/prisma';
 
+/**
+ * Auto-link only on the same calendar day.
+ * Adjacent-day matching created false "planned" realizations for spontaneous sessions.
+ */
 export function scorePlannedActivityMatch(
   session: { date: Date; durationMin: number | null },
   activity: { date: Date; duration: number | null },
@@ -11,9 +15,9 @@ export function scorePlannedActivityMatch(
   const dayDiff = Math.abs(
     differenceInCalendarDays(startOfDay(session.date), startOfDay(activity.date)),
   );
-  if (dayDiff > 1) return 0;
+  if (dayDiff !== 0) return 0;
 
-  let score = 100 - dayDiff * 45;
+  let score = 100;
   if (session.durationMin != null && activity.duration != null && activity.duration > 0) {
     const plannedSec = session.durationMin * 60;
     const ratio =
@@ -45,7 +49,7 @@ async function autoLinkOneActivity(
     where: {
       activityId: null,
       type: activity.type,
-      date: { gte: subDays(day, 1), lte: addDays(day, 1) },
+      date: { gte: day, lt: addDays(day, 1) },
       ...(reservedSessionIds.size > 0 ? { id: { notIn: [...reservedSessionIds] } } : {}),
     },
     select: { id: true, date: true, durationMin: true },
@@ -78,7 +82,7 @@ async function autoLinkOneActivity(
   return { sessionId: best.s.id, analyzed };
 }
 
-/** Lie automatiquement les activités nouvelles aux séances planifiées compatibles. */
+/** Lie automatiquement les activités nouvelles aux séances planifiées du même jour. */
 export async function autoLinkActivities(
   activityIds: string[],
 ): Promise<{ linked: number; analyzed: number }> {

@@ -4,6 +4,7 @@ import { fetchGarminMultisportLegs } from '@/lib/integrations/garmin-multisport'
 import { getGarminAccount } from '@/lib/integrations/garmin-sync';
 import { isMultisportLegArray, type MultisportLeg } from '@/lib/multisport';
 import { activityInclude, activityListSelect } from '@/lib/queries/activity-include';
+import { linkPlannedSessionActivity } from '@/lib/queries/planned-sessions';
 import { ActivityType, Prisma } from '@prisma/client';
 import { addDays, endOfDay, startOfDay } from 'date-fns';
 import { prisma } from '@/lib/prisma';
@@ -124,6 +125,15 @@ export async function updateActivity(id: string, data: Prisma.ActivityUpdateInpu
 }
 
 export async function deleteActivity(id: string) {
+  // Prisma onDelete:SetNull only clears activityId — completed/analysis stay.
+  // Reuse the full unlink path so the planned session returns to "planned".
+  const linked = await prisma.plannedSession.findFirst({
+    where: { activityId: id },
+    select: { id: true },
+  });
+  if (linked) {
+    await linkPlannedSessionActivity(linked.id, null);
+  }
   return prisma.activity.delete({ where: { id } });
 }
 

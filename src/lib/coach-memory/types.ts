@@ -70,6 +70,11 @@ export const COACH_MEMORY_SOURCE_LABELS: Record<CoachMemorySource, string> = {
   COACH: 'Déduit du coach',
 };
 
+/** Sources worth showing as a badge — USER ("Ajout manuel") is noise, omit it. */
+const COACH_MEMORY_SOURCE_BADGE: Partial<Record<CoachMemorySource, string>> = {
+  COACH: COACH_MEMORY_SOURCE_LABELS.COACH,
+};
+
 export {
   TRAVEL_TRAINING_CONSTRAINT_LABELS,
   TRAVEL_DISCIPLINE_LABELS,
@@ -84,10 +89,10 @@ export function isCoachMemorySource(value: unknown): value is CoachMemorySource 
   return value === 'USER' || value === 'COACH';
 }
 
-/** Returns null when source is missing or unknown — never render an empty badge. */
+/** Returns null when source is missing, unknown, or not badge-worthy (USER). */
 export function coachMemorySourceLabel(source: unknown): string | null {
   if (!isCoachMemorySource(source)) return null;
-  return COACH_MEMORY_SOURCE_LABELS[source];
+  return COACH_MEMORY_SOURCE_BADGE[source] ?? null;
 }
 
 export function isCoachMemoryType(value: unknown): value is CoachMemoryType {

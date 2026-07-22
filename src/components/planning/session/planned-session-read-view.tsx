@@ -1,6 +1,7 @@
 'use client';
 
 import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
+import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
 import { SessionRationaleCard } from '@/components/coach/plan/session-rationale-card';
 import {
   PlannedSessionContextPanel,
@@ -130,6 +131,10 @@ export function PlannedSessionReadView({
             </div>
           ) : null}
         </dl>
+      ) : null}
+
+      {!isRealized ? (
+        <DiscussWithCoachButton target={{ kind: 'planned-session', sessionId: session.id }} />
       ) : null}
 
       <SessionRealization

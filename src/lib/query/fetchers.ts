@@ -34,12 +34,50 @@ type Serialized<T> = T extends Date
       ? { [K in keyof T]: Serialized<T[K]> }
       : T;
 
-function toDate(value: string): Date {
-  return new Date(value);
+function toDate(value: string | Date): Date {
+  return value instanceof Date ? value : new Date(value);
 }
 
-function toDateOrNull(value: string | null): Date | null {
-  return value == null ? null : new Date(value);
+function toDateOrNull(value: string | Date | null | undefined): Date | null {
+  if (value == null) return null;
+  return value instanceof Date ? value : new Date(value);
+}
+
+/** Rehydrate planned-session JSON (API / mutation responses) into client Date shapes. */
+export function hydratePlannedSession(
+  s: Serialized<ClientPlannedSession> | ClientPlannedSession,
+): ClientPlannedSession {
+  return {
+    ...s,
+    date: toDate(s.date as string | Date),
+    createdAt: toDate(s.createdAt as string | Date),
+    updatedAt: toDate(s.updatedAt as string | Date),
+    analyzedAt: toDateOrNull(s.analyzedAt as string | Date | null),
+    environmentContextAt: toDateOrNull(s.environmentContextAt as string | Date | null),
+    activity: s.activity
+      ? {
+          ...s.activity,
+          date: toDate(s.activity.date as string | Date),
+          createdAt: toDate(s.activity.createdAt as string | Date),
+          updatedAt: toDate(s.activity.updatedAt as string | Date),
+          narrativeAnalyzedAt: toDateOrNull(s.activity.narrativeAnalyzedAt as string | Date | null),
+          plannedSession: s.activity.plannedSession
+            ? {
+                ...s.activity.plannedSession,
+                date: toDate(s.activity.plannedSession.date as string | Date),
+                analyzedAt: toDateOrNull(
+                  s.activity.plannedSession.analyzedAt as string | Date | null,
+                ),
+              }
+            : null,
+        }
+      : null,
+  } as ClientPlannedSession;
+}
+
+export async function fetchPlannedSessions(): Promise<ClientPlannedSession[]> {
+  const data = await fetchJson<Serialized<ClientPlannedSession>[]>('/api/planned-sessions');
+  return data.map((s) => hydratePlannedSession(s));
 }
 
 export async function fetchActivities(): Promise<ClientActivity[]> {
@@ -131,34 +169,6 @@ export async function fetchGoalAchievements(limit = 20): Promise<ClientGoalAchie
     ...a,
     achievedAt: toDate(a.achievedAt),
     activity: a.activity ? { ...a.activity, date: toDate(a.activity.date) } : null,
-  }));
-}
-
-export async function fetchPlannedSessions(): Promise<ClientPlannedSession[]> {
-  const data = await fetchJson<Serialized<ClientPlannedSession>[]>('/api/planned-sessions');
-  return data.map((s) => ({
-    ...s,
-    date: toDate(s.date),
-    createdAt: toDate(s.createdAt),
-    updatedAt: toDate(s.updatedAt),
-    analyzedAt: toDateOrNull(s.analyzedAt),
-    environmentContextAt: toDateOrNull(s.environmentContextAt),
-    activity: s.activity
-      ? {
-          ...s.activity,
-          date: toDate(s.activity.date),
-          createdAt: toDate(s.activity.createdAt),
-          updatedAt: toDate(s.activity.updatedAt),
-          narrativeAnalyzedAt: toDateOrNull(s.activity.narrativeAnalyzedAt),
-          plannedSession: s.activity.plannedSession
-            ? {
-                ...s.activity.plannedSession,
-                date: toDate(s.activity.plannedSession.date),
-                analyzedAt: toDateOrNull(s.activity.plannedSession.analyzedAt),
-              }
-            : null,
-        }
-      : null,
   }));
 }
 

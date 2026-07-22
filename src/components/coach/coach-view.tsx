@@ -26,9 +26,12 @@ import type { ProjectionHorizonDays } from '@/core/projection/types';
 import {
   buildActivityDiscussPrompt,
   buildPlanningDiscussPrompt,
+  buildPlannedSessionDiscussPrompt,
   buildSessionDiscussPrompt,
 } from '@/lib/coach/coach-session-thread';
+import { clearCoachInputDraft } from '@/lib/coach/coach-input-draft';
 import { activityTypeLabels } from '@/lib/format';
+import { exposureLabels } from '@/lib/planned-session/sessions';
 import { parseSessionAnalysis } from '@/lib/planned-session/session-analysis-display';
 import type { SessionAnalysis } from '@/lib/validators/coach';
 
@@ -115,23 +118,42 @@ export function CoachView() {
 
     if (discussId) {
       const session = (plannedQuery.data ?? []).find((s) => s.id === discussId);
-      if (!session?.analysis) return undefined;
-      return buildSessionDiscussPrompt({
+      if (!session) return undefined;
+
+      if (session.analysis) {
+        return buildSessionDiscussPrompt({
+          title: session.title,
+          sportLabel: activityTypeLabels[session.type],
+          analysis: session.analysis as unknown as SessionAnalysis,
+          planned: {
+            durationMin: session.durationMin,
+            description: session.description,
+            intensity: session.intensity,
+          },
+          actual: session.activity
+            ? {
+                title: session.activity.title,
+                durationSec: session.activity.duration,
+                notes: session.activity.notes,
+              }
+            : undefined,
+        });
+      }
+
+      const exposure = session.exposureSetting as
+        'INDOOR' | 'OUTDOOR' | 'UNKNOWN' | null | undefined;
+
+      return buildPlannedSessionDiscussPrompt({
         title: session.title,
         sportLabel: activityTypeLabels[session.type],
-        analysis: session.analysis as unknown as SessionAnalysis,
-        planned: {
-          durationMin: session.durationMin,
-          description: session.description,
-          intensity: session.intensity,
-        },
-        actual: session.activity
-          ? {
-              title: session.activity.title,
-              durationSec: session.activity.duration,
-              notes: session.activity.notes,
-            }
-          : undefined,
+        date: new Date(session.date),
+        startTime: session.startTime,
+        durationMin: session.durationMin,
+        load: session.load,
+        intensity: session.intensity,
+        description: session.description,
+        exposureLabel: exposure ? exposureLabels[exposure] : null,
+        locationLabel: session.locationLabel,
       });
     }
 
@@ -185,7 +207,7 @@ export function CoachView() {
     if (discussId) {
       if (plannedQuery.isPending) return;
       const session = (plannedQuery.data ?? []).find((s) => s.id === discussId);
-      if (!session?.analysis) return;
+      if (!session) return;
       bootstrapDiscussConversation(`session:${discussId}`);
       return;
     }
@@ -243,6 +265,7 @@ export function CoachView() {
     });
     if (!confirmed) return;
     await deleteConversation.mutateAsync(id);
+    clearCoachInputDraft(id);
     if (selectedId === id) {
       const nextId = createEphemeralId();
       setEphemeralIds((prev) => new Set(prev).add(nextId));
@@ -273,6 +296,7 @@ export function CoachView() {
           initialMessages={resolveChatInitialMessages()}
           isEphemeral={isEphemeral}
           onAutoReplyStarted={() => setAutoReplyId(null)}
+          onBootstrapApplied={() => setLatchedBootstrapPrompt(undefined)}
           onConversationCreated={(id) => {
             setEphemeralIds((prev) => {
               const next = new Set(prev);

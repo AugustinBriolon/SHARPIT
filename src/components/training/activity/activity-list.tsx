@@ -162,7 +162,7 @@ function ActivityRow({ activity, compact = false }: { activity: ActivityItem; co
             </span>
             {activity.plannedSession && (
               <span className="border-analysis-border bg-analysis-surface-alt text-muted-foreground rounded-full border px-2 py-0.5 text-[10px] font-medium">
-                Planifiée{' '}
+                {analysis ? 'Conformité' : 'Liée au plan'}{' '}
                 {analysis ? (
                   <span className="text-data text-foreground">{analysis.complianceScore}/100</span>
                 ) : null}

@@ -116,7 +116,7 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
 
     return (
       <InkEmptyState
-        description="Ajoute un déplacement ou une contrainte manuellement, ou mentionne-le au coach — il apparaîtra ici avec le badge « Déduit du coach »."
+        description="Ajoute un déplacement ou une contrainte, ou mentionne-le au coach — seuls les en cours et à venir restent ici."
         icon={NotebookPen}
         title="Aucune entrée enregistrée"
         action={

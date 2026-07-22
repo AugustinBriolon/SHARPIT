@@ -2,33 +2,18 @@
  * Apply scenario modifications to planning slices.
  */
 
-import type { SessionIntensity } from '@prisma/client';
 import {
   INTENSITY_REDUCTION_TSS_FACTOR,
   type ScenarioDefinition,
   type ScenarioKind,
   type ScenarioSessionSlice,
 } from '@/core/scenario/types';
+import { stepDownIntensity } from '@/lib/scenario/apply-scenario-op';
 import { addTrainingDays } from '@/lib/training/training-day';
 import { localDateLabel } from '@/lib/projection/build-projection-input';
 
 function sessionLabel(session: ScenarioSessionSlice): string {
   return session.title?.trim() || session.type;
-}
-
-function stepDownIntensity(intensity: SessionIntensity | null): SessionIntensity | null {
-  if (!intensity) return intensity;
-  const order: SessionIntensity[] = [
-    'RECOVERY',
-    'ENDURANCE',
-    'TEMPO',
-    'THRESHOLD',
-    'VO2MAX',
-    'RACE',
-  ];
-  const index = order.indexOf(intensity);
-  if (index <= 0) return intensity;
-  return order[index - 1];
 }
 
 export function applyScenarioModification(

@@ -1,24 +1,8 @@
 'use client';
 
-import { differenceInCalendarDays, startOfDay } from 'date-fns';
-import {
-  Check,
-  CheckCircle2,
-  HeartPulse,
-  Link2,
-  Loader2,
-  MessageCircle,
-  RefreshCw,
-  Sparkles,
-  Unlink,
-  X,
-} from 'lucide-react';
-import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
+import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
 import { Button } from '@/components/ui/button';
-import { LinkButton } from '@/components/ui/link-button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/toast';
 import type { ClientActivity, ClientPhysicalNote, ClientPlannedSession } from '@/lib/query/types';
@@ -31,6 +15,21 @@ import { useActivities, usePlannedSessionMutations } from '@/hooks/use-data';
 import { usePhysicalNoteMutations, usePhysicalNotes } from '@/hooks/use-physical';
 import { queryKeys } from '@/lib/query/keys';
 import { fetchPlannedSessions } from '@/lib/query/fetchers';
+import {
+  Check,
+  CheckCircle2,
+  HeartPulse,
+  Link2,
+  Loader2,
+  RefreshCw,
+  Sparkles,
+  Unlink,
+  X,
+} from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { differenceInCalendarDays, startOfDay } from 'date-fns';
 
 const ANALYSIS_POLL_MS = 3_000;
 const ANALYSIS_POLL_MAX_MS = 120_000;
@@ -303,10 +302,7 @@ export function SessionRealization({
               {analysis.recommendation}
             </p>
           )}
-          <LinkButton href={`/coach?discuss=${session.id}`} size="sm" variant="outline">
-            <MessageCircle className="size-3.5" />
-            Discuter avec le coach
-          </LinkButton>
+          <DiscussWithCoachButton target={{ kind: 'planned-session', sessionId: session.id }} />
           {painReassessments.length > 0 && (
             <div className="border-signal-caution/20 bg-signal-caution/5 space-y-2 rounded-md border p-2.5">
               <p className="text-signal-caution flex items-center gap-1.5 text-xs font-medium">
@@ -367,7 +363,24 @@ export function SessionRealization({
 
   if (linked) {
     if (omitLinkedActivityNavigation) {
-      return <div className="space-y-3">{renderLinkedAnalysisSection()}</div>;
+      return (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-muted-foreground text-[11px] leading-relaxed">
+              Activité rattachée à une séance du plan (auto ou manuel).
+            </p>
+            <button
+              className="text-muted-foreground hover:text-destructive flex shrink-0 items-center gap-1 text-xs"
+              disabled={isLinking}
+              type="button"
+              onClick={() => link.mutate({ id: session.id, activityId: null })}
+            >
+              <Unlink className="size-3" /> Délier
+            </button>
+          </div>
+          {renderLinkedAnalysisSection()}
+        </div>
+      );
     }
 
     return (
@@ -385,6 +398,10 @@ export function SessionRealization({
             <Unlink className="size-3" /> Délier
           </button>
         </div>
+        <p className="text-muted-foreground text-[11px] leading-relaxed">
+          SHARPIT a rattaché cette activité à une séance du plan (même sport, même jour). Tu peux
+          délier si ce n&apos;était pas la bonne.
+        </p>
 
         <Link
           className="border-analysis-border/60 bg-analysis-surface hover:border-primary/40 flex items-center justify-between gap-2 rounded-md border p-2"

@@ -21,7 +21,7 @@ export function ActivityPlannedSessionChip({ planned }: { planned: PlannedSessio
   return (
     <ActivityMetaChip
       icon={CalendarCheck}
-      label="Planifiée"
+      label={analysis ? 'Conformité' : 'Liée au plan'}
       value={value}
       onClick={() =>
         openPlannedSession({ sessionId: planned.id, omitLinkedActivityNavigation: true })

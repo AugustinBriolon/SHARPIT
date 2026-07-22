@@ -11,6 +11,8 @@ import {
   createTravelContext,
   getActiveTravelContext,
   listActiveTravelContexts,
+  listTravelContexts,
+  purgeExpiredTravelContexts,
 } from './service';
 
 function fakePrisma(overrides: Record<string, unknown> = {}) {
@@ -21,7 +23,12 @@ function fakePrisma(overrides: Record<string, unknown> = {}) {
     ...data,
   }));
   return {
-    athleteTravelContext: { create, ...overrides },
+    athleteTravelContext: {
+      create,
+      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+      findMany: vi.fn().mockResolvedValue([]),
+      ...overrides,
+    },
     plannedSession: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn() },
   } as never;
 }
@@ -127,6 +134,46 @@ describe('listActiveTravelContexts', () => {
         where: expect.objectContaining({ type: 'TRAVEL' }),
       }),
     );
+  });
+});
+
+describe('purgeExpiredTravelContexts', () => {
+  it('deletes rows whose endDate is strictly before today', async () => {
+    const deleteMany = vi.fn().mockResolvedValue({ count: 2 });
+    const prisma = fakePrisma({ deleteMany });
+
+    const count = await purgeExpiredTravelContexts(prisma, new Date('2026-07-22T15:00:00.000Z'));
+
+    expect(count).toBe(2);
+    expect(deleteMany).toHaveBeenCalledWith({
+      where: { endDate: { lt: new Date('2026-07-22T00:00:00.000Z') } },
+    });
+  });
+});
+
+describe('listTravelContexts', () => {
+  it('purges expired rows then returns only endDate >= today, ascending by start', async () => {
+    const deleteMany = vi.fn().mockResolvedValue({ count: 1 });
+    const findMany = vi.fn().mockResolvedValue([
+      {
+        id: 'future',
+        endDate: new Date('2026-08-01T00:00:00.000Z'),
+        startDate: new Date('2026-07-25T00:00:00.000Z'),
+      },
+    ]);
+    const prisma = fakePrisma({ deleteMany, findMany });
+
+    const result = await listTravelContexts(prisma, new Date('2026-07-22T12:00:00.000Z'));
+
+    expect(deleteMany).toHaveBeenCalledWith({
+      where: { endDate: { lt: new Date('2026-07-22T00:00:00.000Z') } },
+    });
+    expect(findMany).toHaveBeenCalledWith({
+      where: { endDate: { gte: new Date('2026-07-22T00:00:00.000Z') } },
+      orderBy: [{ startDate: 'asc' }],
+    });
+    expect(result).toHaveLength(1);
+    expect(result[0]?.id).toBe('future');
   });
 });
 

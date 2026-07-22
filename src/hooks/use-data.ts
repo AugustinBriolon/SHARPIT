@@ -164,6 +164,12 @@ export function useActivityMutations() {
       error: 'Impossible de supprimer la séance.',
       invalidateOnSettle: true,
     }),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+      // Deleting a linked activity resets the planned session (completed → false).
+      void queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.records });
+    },
   });
 
   return { create, update, remove };

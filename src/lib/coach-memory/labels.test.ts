@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { coachMemorySourceLabel, isCoachMemorySource } from '@/lib/coach-memory/types';
 
 describe('coachMemorySourceLabel', () => {
-  it('covers Prisma enum values USER and COACH', () => {
+  it('covers Prisma enum values USER and COACH; only COACH gets a badge', () => {
     expect(isCoachMemorySource('USER')).toBe(true);
     expect(isCoachMemorySource('COACH')).toBe(true);
-    expect(coachMemorySourceLabel('USER')).toBe('Ajout manuel');
+    expect(coachMemorySourceLabel('USER')).toBeNull();
     expect(coachMemorySourceLabel('COACH')).toBe('Déduit du coach');
   });
 

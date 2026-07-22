@@ -144,9 +144,25 @@ export async function listActiveTravelContexts(prisma: PrismaClient, onDate = ne
   }));
 }
 
-export async function listTravelContexts(prisma: PrismaClient) {
+/**
+ * Hard-delete travel/constraint rows whose last day is already past.
+ * Lazy cleanup — called from list paths so planning + memory never surface history.
+ */
+export async function purgeExpiredTravelContexts(prisma: PrismaClient, onDate = new Date()) {
+  const day = toUtcDateOnly(onDate);
+  const result = await prisma.athleteTravelContext.deleteMany({
+    where: { endDate: { lt: day } },
+  });
+  return result.count;
+}
+
+/** Active + upcoming only (expired rows are purged first). */
+export async function listTravelContexts(prisma: PrismaClient, onDate = new Date()) {
+  const day = toUtcDateOnly(onDate);
+  await purgeExpiredTravelContexts(prisma, day);
   return prisma.athleteTravelContext.findMany({
-    orderBy: [{ startDate: 'desc' }],
+    where: { endDate: { gte: day } },
+    orderBy: [{ startDate: 'asc' }],
   });
 }
 

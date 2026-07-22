@@ -150,6 +150,8 @@ function buildScenarioRow(
     }),
     isRecommended,
     isBaseline,
+    targetSessionId: entry.targetSessionId,
+    canApply: entry.kind !== 'KEEP_PLAN' && entry.targetSessionId != null,
     technicalDetail: {
       endVerdict: mapVerdictToDisplay(entry.decision.endVerdict).label,
       endReadiness: formatScore(entry.outcome.endReadiness),
@@ -169,6 +171,8 @@ export function buildScenarioComparisonViewModel(
   if (!comparison || comparison.scenarios.length === 0) {
     return {
       visible: false,
+      horizonDays: 7,
+      recommendedScenarioId: null,
       recommendedScenarioLabel: null,
       focusSessionLabel: null,
       anchorDecisionDomain: null,
@@ -196,6 +200,8 @@ export function buildScenarioComparisonViewModel(
 
   return {
     visible: hasActionableRecommendation,
+    horizonDays: comparison.horizonDays,
+    recommendedScenarioId: hasActionableRecommendation ? comparison.recommendedScenarioId : null,
     recommendedScenarioLabel: recommendedScenario?.label ?? null,
     focusSessionLabel: comparison.focusSessionLabel,
     anchorDecisionDomain: comparison.anchorDecisionDomain

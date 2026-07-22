@@ -17,6 +17,8 @@ import { loadTodayState } from '@/lib/today/today-state-server';
 import { addTrainingDays, trainingDayIdForNow } from '@/lib/training/training-day';
 import { addDays, startOfDay } from 'date-fns';
 
+export { localDateLabel, trainingDayIdToDate } from '@/lib/training/training-day';
+
 const ATHLETE_ID = 'default';
 
 async function loadTwinState<TOutput, TState>(
@@ -139,17 +141,6 @@ export async function buildProjectedAthleteInput(params?: {
 
   const sessions = params?.sessionOverrides ?? context.sessionSlices;
   return buildProjectedInputFromBase(context.base, sessions, context.futureDayIds);
-}
-
-export function localDateLabel(trainingDayId: string): string {
-  const [year, month, day] = trainingDayId.split('-').map(Number);
-  const date = new Date(year, month - 1, day);
-  return date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
-}
-
-export function trainingDayIdToDate(trainingDayId: string): Date {
-  const [year, month, day] = trainingDayId.split('-').map(Number);
-  return new Date(year, month - 1, day, 12, 0, 0);
 }
 
 export function addCalendarDays(date: Date, days: number): Date {

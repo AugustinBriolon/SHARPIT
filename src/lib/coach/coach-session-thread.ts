@@ -130,6 +130,45 @@ ${input.analysis.summary}${remarks}${reco}`;
   return `Je consulte ma séance réalisée « ${name} » (${input.sportLabel}). Réalisé : ${actualBits.join(' · ') || '—'}.${plannedBlock}`;
 }
 
+/** Message pour discuter d'une séance planifiée (pas encore réalisée). */
+export function buildPlannedSessionDiscussPrompt(input: {
+  title: string | null;
+  sportLabel: string;
+  date: Date;
+  startTime?: string | null;
+  durationMin?: number | null;
+  load?: number | null;
+  intensity?: string | null;
+  description?: string | null;
+  exposureLabel?: string | null;
+  locationLabel?: string | null;
+}): string {
+  const name = input.title?.trim() || input.sportLabel;
+  const dateLabel = input.date.toLocaleDateString('fr-FR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
+  const when = input.startTime ? `${dateLabel} à ${input.startTime}` : dateLabel;
+
+  const bits = [
+    input.durationMin != null ? `${input.durationMin} min` : null,
+    input.load != null ? `${Math.round(input.load)} TSS` : null,
+    input.intensity
+      ? `intensité ${intensityLabels[input.intensity as keyof typeof intensityLabels] ?? input.intensity}`
+      : null,
+    input.exposureLabel ? `lieu ${input.exposureLabel}` : null,
+    input.locationLabel ? `endroit : ${input.locationLabel}` : null,
+    input.description ? `consigne : ${input.description}` : null,
+  ].filter(Boolean);
+
+  const detail = bits.length > 0 ? `\n\nDétail :\n- ${bits.join('\n- ')}` : '';
+
+  return `Je consulte ma séance prévue « ${name} » (${input.sportLabel}), prévue ${when}.${detail}
+
+J'aimerais en discuter avec toi : cette séance est-elle adaptée à mon état actuel, et que devrais-je ajuster ?`;
+}
+
 const PLANNING_HORIZON_FR: Record<number, string> = {
   1: 'demain',
   3: 'les 3 prochains jours',

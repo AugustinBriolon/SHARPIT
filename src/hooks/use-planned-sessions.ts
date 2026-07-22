@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/components/ui/toast';
-import { fetchPlannedSessions } from '@/lib/query/fetchers';
+import { fetchPlannedSessions, hydratePlannedSession } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 import {
   fetchPlannedSessionPresentation,
@@ -17,7 +17,12 @@ import {
   type PlannedSessionBatchOp,
 } from '@/lib/query/planned-session-batch';
 import { sendJson } from '@/lib/query/send-json';
-import type { ClientPlannedSession } from '@/lib/query/types';
+import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
+import {
+  applyActivityPlannedSessionLinkOptimistic,
+  applyPlannedSessionLinkOptimistic,
+  resolvePreviousLinkedActivityId,
+} from '@/lib/query/planned-session-link-optimistic';
 import type { BrickAnalysis } from '@/lib/validators/coach';
 import type { ActivityType, SessionIntensity } from '@prisma/client';
 
@@ -241,35 +246,82 @@ export function usePlannedSessionMutations() {
 
   const link = useMutation({
     mutationFn: ({ id, activityId }: { id: string; activityId: string | null }) =>
-      sendJson(`/api/planned-sessions/${id}/link`, 'POST', { activityId }),
+      sendJson(`/api/planned-sessions/${id}/link`, 'POST', {
+        activityId,
+      }) as Promise<ClientPlannedSession>,
     onMutate: async ({ id, activityId }) => {
-      await queryClient.cancelQueries({ queryKey: key });
-      const previous = queryClient.getQueryData<ClientPlannedSession[]>(key);
-      if (previous) {
+      const activitiesKey = queryKeys.activities;
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: key }),
+        queryClient.cancelQueries({ queryKey: activitiesKey }),
+      ]);
+
+      const previousSessions = queryClient.getQueryData<ClientPlannedSession[]>(key);
+      const previousActivities = queryClient.getQueryData<ClientActivity[]>(activitiesKey);
+      const previousActivityId = resolvePreviousLinkedActivityId(
+        previousSessions?.find((session) => session.id === id),
+      );
+
+      if (previousSessions) {
         queryClient.setQueryData<ClientPlannedSession[]>(
           key,
-          previous.map((s) =>
-            s.id === id ? ({ ...s, activityId, updatedAt: new Date() } as ClientPlannedSession) : s,
+          applyPlannedSessionLinkOptimistic(
+            previousSessions,
+            { id, activityId },
+            previousActivities,
           ),
         );
       }
-      return { previous };
+
+      if (previousActivities) {
+        const nextSessions = queryClient.getQueryData<ClientPlannedSession[]>(key);
+        queryClient.setQueryData<ClientActivity[]>(
+          activitiesKey,
+          applyActivityPlannedSessionLinkOptimistic(
+            previousActivities,
+            nextSessions,
+            { id, activityId },
+            previousActivityId,
+          ),
+        );
+      }
+
+      return { previousSessions, previousActivities };
     },
     onError: (err: unknown, _vars, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(key, context.previous);
+      if (context?.previousSessions) {
+        queryClient.setQueryData(key, context.previousSessions);
+      }
+      if (context?.previousActivities) {
+        queryClient.setQueryData(queryKeys.activities, context.previousActivities);
       }
       toast.error('La liaison a échoué.', {
         description: err instanceof Error ? err.message : undefined,
       });
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (data, variables) => {
+      const hydrated = hydratePlannedSession(data);
+      queryClient.setQueryData<ClientPlannedSession[]>(key, (prev) =>
+        prev ? prev.map((session) => (session.id === variables.id ? hydrated : session)) : prev,
+      );
       if (variables.activityId) {
         analyze.mutate(variables.id);
+        toast.success('Séance liée');
+      } else {
+        toast.success('Séance déliée');
       }
+      void queryClient.invalidateQueries({ queryKey: queryKeys.activities });
     },
-    onSettled: () => {
+    onSettled: (_data, _error, variables) => {
       void invalidate();
+      if (variables?.id) {
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.plannedSessionPresentation(variables.id),
+        });
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.sessionRationale(variables.id),
+        });
+      }
     },
   });
 

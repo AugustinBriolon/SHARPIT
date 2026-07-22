@@ -2,6 +2,7 @@
  * Scenario Comparison — presentation ViewModel.
  */
 
+import type { ProjectionHorizonDays } from '@/core/projection/types';
 import type { ScenarioKind } from '@/core/scenario/types';
 
 export type ScenarioTechnicalDetail = {
@@ -23,12 +24,17 @@ export type ScenarioComparisonRow = {
   readonly summaryLine: string;
   readonly isRecommended: boolean;
   readonly isBaseline: boolean;
+  readonly targetSessionId: string | null;
+  /** True when applying this row mutates planning (not KEEP_PLAN). */
+  readonly canApply: boolean;
   readonly technicalDetail: ScenarioTechnicalDetail;
 };
 
 export type ScenarioComparisonViewModel = {
   /** True when a non-baseline scenario is strictly recommended. */
   readonly visible: boolean;
+  readonly horizonDays: ProjectionHorizonDays;
+  readonly recommendedScenarioId: string | null;
   readonly recommendedScenarioLabel: string | null;
   readonly focusSessionLabel: string | null;
   readonly anchorDecisionDomain: string | null;

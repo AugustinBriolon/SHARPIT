@@ -127,11 +127,17 @@ describe('scenario-comparison presentation', () => {
   it('builds summary lines without repeating raw metrics', () => {
     const vm = buildScenarioComparisonViewModel(mockComparison());
     expect(vm.visible).toBe(true);
+    expect(vm.horizonDays).toBe(7);
+    expect(vm.recommendedScenarioId).toBe('remove');
     expect(vm.recommendedScenarioLabel).toBe('Retirer « Renfo »');
     const recommended = vm.scenarios.find((s) => s.isRecommended);
+    expect(recommended?.canApply).toBe(true);
+    expect(recommended?.targetSessionId).toBe('s1');
     expect(recommended?.summaryLine).toContain('Retire la séance');
     expect(recommended?.summaryLine).not.toContain('Readiness');
     expect(vm.sharedEquivalentNote).toBeNull();
+    const baseline = vm.scenarios.find((s) => s.isBaseline);
+    expect(baseline?.canApply).toBe(false);
   });
 
   it('hoists shared equivalent note when all alternatives tie', () => {

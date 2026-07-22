@@ -1,31 +1,47 @@
 'use client';
 
-import { GitCompare, Sparkles } from 'lucide-react';
-import type {
-  ScenarioComparisonViewModel,
-  ScenarioTechnicalDetail,
-} from '@/core/presentation/scenario-comparison-view-model';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from '@/components/ui/toast';
+import type { ScenarioComparisonViewModel } from '@/core/presentation/scenario-comparison-view-model';
+import { useApplyScenarioComparison } from '@/hooks/use-apply-scenario-comparison';
 import { cn } from '@/lib/utils';
+import { GitCompare, Sparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+function defaultSelectedScenarioId(viewModel: ScenarioComparisonViewModel): string | null {
+  return (
+    viewModel.recommendedScenarioId ??
+    viewModel.scenarios.find((s) => s.isRecommended)?.scenarioId ??
+    viewModel.scenarios.find((s) => s.canApply)?.scenarioId ??
+    viewModel.scenarios[0]?.scenarioId ??
+    null
+  );
+}
 
 export function ScenarioComparisonDialog({
   open,
   onClose,
   viewModel,
   isLoading,
+  anchorTrainingDayId,
 }: {
   open: boolean;
   onClose: () => void;
   viewModel: ScenarioComparisonViewModel | undefined;
   isLoading: boolean;
+  anchorTrainingDayId?: string;
 }) {
+  const applyMutation = useApplyScenarioComparison();
+
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
@@ -39,7 +55,14 @@ export function ScenarioComparisonDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <ScenarioComparisonBody isLoading={isLoading} viewModel={viewModel} />
+        <ScenarioComparisonBody
+          anchorTrainingDayId={anchorTrainingDayId}
+          applyMutation={applyMutation}
+          isLoading={isLoading}
+          open={open}
+          viewModel={viewModel}
+          onClose={onClose}
+        />
       </DialogContent>
     </Dialog>
   );
@@ -48,10 +71,25 @@ export function ScenarioComparisonDialog({
 function ScenarioComparisonBody({
   isLoading,
   viewModel,
+  onClose,
+  anchorTrainingDayId,
+  applyMutation,
+  open,
 }: {
   isLoading: boolean;
   viewModel: ScenarioComparisonViewModel | undefined;
+  onClose: () => void;
+  anchorTrainingDayId?: string;
+  applyMutation: ReturnType<typeof useApplyScenarioComparison>;
+  open: boolean;
 }) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open || !viewModel?.visible) return;
+    setSelectedId(defaultSelectedScenarioId(viewModel));
+  }, [open, viewModel]);
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -62,20 +100,60 @@ function ScenarioComparisonBody({
     );
   }
 
-  if (viewModel?.visible) {
+  if (!viewModel?.visible) {
     return (
-      <div className="space-y-4">
-        <ScenarioComparisonHeader viewModel={viewModel} />
-        <ScenarioComparisonList scenarios={viewModel.scenarios} />
-        <ScenarioTechnicalDetails scenarios={viewModel.scenarios} />
-      </div>
+      <p className="text-muted-foreground text-sm">
+        Aucune alternative strictement meilleure que le plan actuel sur cet horizon.
+      </p>
     );
   }
 
+  // Nested callbacks don't inherit control-flow narrowing — capture after the guard.
+  const comparison = viewModel;
+
+  const selected =
+    comparison.scenarios.find((s) => s.scenarioId === selectedId) ??
+    comparison.scenarios.find((s) => s.isRecommended) ??
+    null;
+
+  function applySelected() {
+    if (!selected) return;
+
+    if (!selected.canApply) {
+      onClose();
+      toast.success('Plan conservé');
+      return;
+    }
+
+    applyMutation.mutate({
+      scenarioId: selected.scenarioId,
+      kind: selected.kind,
+      targetSessionId: selected.targetSessionId,
+      horizonDays: comparison.horizonDays,
+      anchorTrainingDayId,
+      label: selected.label,
+    });
+    onClose();
+  }
+
   return (
-    <p className="text-muted-foreground text-sm">
-      Aucune alternative strictement meilleure que le plan actuel sur cet horizon.
-    </p>
+    <div className="space-y-4">
+      <ScenarioComparisonHeader viewModel={comparison} />
+      <ScenarioComparisonList
+        scenarios={comparison.scenarios}
+        selectedId={selected?.scenarioId ?? null}
+        onSelect={setSelectedId}
+      />
+      <DialogFooter>
+        <Button
+          disabled={!selected || applyMutation.isPending}
+          type="button"
+          onClick={applySelected}
+        >
+          Appliquer
+        </Button>
+      </DialogFooter>
+    </div>
   );
 }
 
@@ -112,8 +190,12 @@ function ScenarioComparisonHeader({ viewModel }: { viewModel: ScenarioComparison
 
 function ScenarioComparisonList({
   scenarios,
+  selectedId,
+  onSelect,
 }: {
   scenarios: ScenarioComparisonViewModel['scenarios'];
+  selectedId: string | null;
+  onSelect: (scenarioId: string) => void;
 }) {
   const ordered = [...scenarios].sort((a, b) => {
     if (a.isRecommended !== b.isRecommended) return a.isRecommended ? -1 : 1;
@@ -122,90 +204,52 @@ function ScenarioComparisonList({
   });
 
   return (
-    <ul className="space-y-2">
-      {ordered.map((scenario) => (
-        <li
-          key={scenario.scenarioId}
-          className={cn(
-            'rounded-lg border px-3 py-2.5',
-            scenario.isRecommended
-              ? 'border-primary/50 bg-primary/8 ring-primary/20 ring-1'
-              : 'border-analysis-border/50 bg-analysis-surface-alt/40',
-          )}
-        >
-          <div className="flex items-start gap-2">
-            {scenario.isRecommended ? (
-              <Sparkles className="text-primary mt-0.5 size-3.5 shrink-0" />
-            ) : (
-              <span className="mt-1.5 size-3.5 shrink-0" />
-            )}
-            <div className="min-w-0">
-              <p
-                className={cn(
-                  'text-sm font-medium',
-                  scenario.isRecommended ? 'text-primary' : 'text-foreground',
-                )}
-              >
-                {scenario.label}
+    <ul aria-label="Scénarios" className="space-y-2" role="radiogroup">
+      {ordered.map((scenario) => {
+        const selected = scenario.scenarioId === selectedId;
+        return (
+          <li key={scenario.scenarioId}>
+            <button
+              aria-checked={selected}
+              role="radio"
+              type="button"
+              className={cn(
+                'w-full rounded-lg border px-3 py-2.5 text-left transition-colors',
+                selected
+                  ? 'border-primary/50 bg-primary/8 ring-primary/20 ring-1'
+                  : 'border-analysis-border/50 bg-analysis-surface-alt/40 hover:border-analysis-border',
+              )}
+              onClick={() => onSelect(scenario.scenarioId)}
+            >
+              <div className="flex items-start gap-2">
                 {scenario.isRecommended ? (
-                  <span className="text-primary/80 ml-1.5 text-[11px] font-medium tracking-wide uppercase">
-                    Recommandé
-                  </span>
-                ) : null}
-              </p>
-              <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-                {scenario.summaryLine}
-              </p>
-            </div>
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function formatTechnicalLine(detail: ScenarioTechnicalDetail): string {
-  const parts = [
-    detail.endReadiness != null ? `Readiness ${detail.endReadiness}` : null,
-    detail.endAdaptation != null ? `Adaptation ${detail.endAdaptation}` : null,
-    `Env. ${detail.environmentalImpact}`,
-    detail.endConfidenceLabel ? `Conf. ${detail.endConfidenceLabel}` : null,
-    detail.limitingFactor,
-    detail.endVerdict,
-  ].filter(Boolean);
-  return parts.join(' · ');
-}
-
-function ScenarioTechnicalDetails({
-  scenarios,
-}: {
-  scenarios: ScenarioComparisonViewModel['scenarios'];
-}) {
-  if (scenarios.length === 0) return null;
-
-  return (
-    <details className="border-border/50 group rounded-lg border">
-      <summary className="text-muted-foreground hover:text-foreground focus-visible:ring-primary/30 cursor-pointer list-none px-3 py-2 text-xs font-medium focus-visible:ring-2 focus-visible:outline-hidden">
-        <span className="group-open:hidden">Voir le détail technique</span>
-        <span className="hidden group-open:inline">Masquer le détail technique</span>
-      </summary>
-      <ul className="border-border/50 space-y-2 border-t px-3 py-2.5">
-        {scenarios.map((scenario) => (
-          <li
-            key={scenario.scenarioId}
-            className="text-muted-foreground text-[11px] leading-relaxed"
-          >
-            <span className="text-foreground font-medium">{scenario.label}</span>
-            <span className="mx-1.5">—</span>
-            <span>{formatTechnicalLine(scenario.technicalDetail)}</span>
-            {scenario.technicalDetail.tradeOffs.length > 0 ? (
-              <span className="mt-0.5 block opacity-80">
-                {scenario.technicalDetail.tradeOffs.join(' · ')}
-              </span>
-            ) : null}
+                  <Sparkles className="text-primary mt-0.5 size-3.5 shrink-0" />
+                ) : (
+                  <span className="mt-1.5 size-3.5 shrink-0" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p
+                    className={cn(
+                      'text-sm font-medium',
+                      selected ? 'text-primary' : 'text-foreground',
+                    )}
+                  >
+                    {scenario.label}
+                    {scenario.isRecommended ? (
+                      <span className="text-primary/80 ml-1.5 text-[11px] font-medium tracking-wide uppercase">
+                        Recommandé
+                      </span>
+                    ) : null}
+                  </p>
+                  <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+                    {scenario.summaryLine}
+                  </p>
+                </div>
+              </div>
+            </button>
           </li>
-        ))}
-      </ul>
-    </details>
+        );
+      })}
+    </ul>
   );
 }

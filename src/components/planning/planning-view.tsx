@@ -212,8 +212,6 @@ export function PlanningView({
         </PageHeader>
       )}
 
-      {!isLoading ? <TravelContextBanner rangeEnd={weekEnd} rangeStart={week.start} /> : null}
-
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1">
           <Button
@@ -247,14 +245,12 @@ export function PlanningView({
           </Button>
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="flex w-full flex-wrap items-center justify-end gap-2 lg:w-auto">
+          {!isLoading ? <TravelContextBanner rangeEnd={weekEnd} rangeStart={week.start} /> : null}
           {hasActionableAlternative ? (
             <Button size="sm" variant="outline" onClick={() => setScenarioComparisonOpen(true)}>
               <GitCompare className="size-3.5 shrink-0" />
-              <span className="max-w-48 truncate">
-                {scenarioComparisonQuery.data?.recommendedScenarioLabel ??
-                  'Alternative recommandée'}
-              </span>
+              Comparer
             </Button>
           ) : null}
           {showCoachMenu ? <SessionsCoachMenu onAction={handleCoachAction} /> : null}
@@ -306,14 +302,13 @@ export function PlanningView({
       {adapterOpen && <PlanAdapter onClose={() => setAdapterOpen(false)} />}
       {macroPlanOpen && <MacroPlanDialog goals={goals} onClose={() => setMacroPlanOpen(false)} />}
       {weeklyBriefOpen && <WeeklyBrief onClose={() => setWeeklyBriefOpen(false)} />}
-      {scenarioComparisonOpen ? (
-        <ScenarioComparisonDialog
-          isLoading={scenarioComparisonQuery.isPending || scenarioComparisonQuery.isPlaceholderData}
-          open={scenarioComparisonOpen}
-          viewModel={scenarioComparisonQuery.data}
-          onClose={() => setScenarioComparisonOpen(false)}
-        />
-      ) : null}
+      <ScenarioComparisonDialog
+        anchorTrainingDayId={anchorTrainingDayId}
+        isLoading={scenarioComparisonQuery.isPending || scenarioComparisonQuery.isPlaceholderData}
+        open={scenarioComparisonOpen}
+        viewModel={scenarioComparisonQuery.data}
+        onClose={() => setScenarioComparisonOpen(false)}
+      />
     </div>
   );
 }

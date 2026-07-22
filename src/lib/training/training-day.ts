@@ -69,3 +69,15 @@ export function approximateTrainingDayUtcRange(trainingDayId: string): {
     lte: new Date(`${nextDay}T23:59:59.999Z`),
   };
 }
+
+/** Local noon Date for a YYYY-MM-DD training day id (safe for PlannedSession.date). */
+export function trainingDayIdToDate(trainingDayId: string): Date {
+  const [year, month, day] = trainingDayId.split('-').map(Number);
+  return new Date(year, month - 1, day, 12, 0, 0);
+}
+
+export function localDateLabel(trainingDayId: string): string {
+  const [year, month, day] = trainingDayId.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  return date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+}
