@@ -2,10 +2,10 @@
 
 import { Activity, Scale } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CompositionView } from '@/components/corps/composition-view';
+import { CompositionView } from '@/components/corps/composition/composition-view';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { PhysicalHealthHubView } from '@/components/physical-health/physical-health-hub-view';
-import { navPillClass } from '@/lib/nav-pill';
+import { navPillClass } from '@/lib/ui/nav-pill';
 
 const TABS = [
   {
@@ -28,7 +28,7 @@ function isTabId(value: string | null): value is TabId {
   return TABS.some((t) => t.id === value);
 }
 
-export function CorpsHub({ basePath = '/corps' }: { basePath?: string }) {
+export function CorpsHub({ basePath = '/biology' }: { basePath?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const raw = searchParams.get('tab');

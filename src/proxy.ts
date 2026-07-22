@@ -1,5 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-import { isDevClerkBypass } from '@/lib/dev-auth';
+import { isDevClerkBypass } from '@/lib/dev/dev-auth';
 
 // Routes accessibles sans session Clerk :
 // - pages de connexion/inscription

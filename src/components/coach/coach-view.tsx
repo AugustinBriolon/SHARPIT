@@ -4,8 +4,8 @@ import type { UIMessage } from 'ai';
 import { MessageSquarePlus } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { CoachChat } from '@/components/coach/coach-chat';
-import { CoachConversationList } from '@/components/coach/coach-conversation-list';
+import { CoachChat } from '@/components/coach/chat/coach-chat';
+import { CoachConversationList } from '@/components/coach/chat/coach-conversation-list';
 import {
   CoachChatEmptyChrome,
   CoachChatPanelSkeleton,
@@ -27,9 +27,9 @@ import {
   buildActivityDiscussPrompt,
   buildPlanningDiscussPrompt,
   buildSessionDiscussPrompt,
-} from '@/lib/coach-session-thread';
+} from '@/lib/coach/coach-session-thread';
 import { activityTypeLabels } from '@/lib/format';
-import { parseSessionAnalysis } from '@/lib/session-analysis-display';
+import { parseSessionAnalysis } from '@/lib/planned-session/session-analysis-display';
 import type { SessionAnalysis } from '@/lib/validators/coach';
 
 const inFlightDiscussBootstraps = new Set<string>();

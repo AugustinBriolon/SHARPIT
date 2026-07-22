@@ -1,11 +1,11 @@
 import type { ProductInsightBundle } from '@/core/product-insight/types';
-import type { CorpsTone } from '@/lib/metric-tone';
+import type { CorpsTone } from '@/lib/ui/metric-tone';
 import type { PresentationEmptyState, PresentationHierarchy } from '@/core/presentation/types';
 import type {
   CompositionMetricId,
   MetricInterpretation,
   MetricZone,
-} from '@/lib/composition-metric-guides';
+} from '@/lib/health/composition-metric-guides';
 
 export type BodyTrendWindowId = '14d' | '30d' | '90d' | '1y' | 'all';
 

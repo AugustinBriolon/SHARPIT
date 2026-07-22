@@ -8,7 +8,7 @@ import {
   synthesizeLoadReading,
   tssGapToSweetSpotFloor,
 } from '@/lib/effort/load-reading';
-import { mapFatigueCapacityLabel, type TrainingCapacity } from '@/lib/today-mapping';
+import { mapFatigueCapacityLabel, type TrainingCapacity } from '@/lib/today/today-mapping';
 
 const DOMINANT_LABEL: Record<string, string> = {
   LOAD: 'Charge',

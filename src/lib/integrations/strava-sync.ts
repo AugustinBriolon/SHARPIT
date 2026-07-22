@@ -1,6 +1,6 @@
 import { ActivityType, Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { findMatchingActivity, mergedSource } from '@/lib/activity-dedup';
+import { findMatchingActivity, mergedSource } from '@/lib/activity/activity-dedup';
 import { prisma } from '@/lib/prisma';
 import { syncSinceFromLastSync } from '@/lib/integrations/sync-since';
 import {

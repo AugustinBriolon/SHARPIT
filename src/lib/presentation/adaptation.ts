@@ -1,7 +1,7 @@
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
 import { resolve } from '@/lib/french';
-import { mapConfidenceToTier } from '@/lib/today-mapping';
-import { ADAPTATION_STATUS_SIGNAL } from '@/lib/today-dashboard-labels';
+import { mapConfidenceToTier } from '@/lib/today/today-mapping';
+import { ADAPTATION_STATUS_SIGNAL } from '@/lib/today/today-dashboard-labels';
 import { buildAdaptationPageInsights } from '@/lib/product-insight/adaptation-page-insights';
 import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
 import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';

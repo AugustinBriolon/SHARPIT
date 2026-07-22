@@ -6,20 +6,20 @@ import {
   buildDailyWindowSeries,
   getIndexedHealthEntry,
   indexHealthEntriesByDay,
-} from '@/lib/health';
-import { effectiveSleepMinutes } from '@/lib/health';
-import { analyzeSleep, toSleepEntryInputs } from '@/lib/sleep';
+} from '@/lib/health/health';
+import { effectiveSleepMinutes } from '@/lib/health/health';
+import { analyzeSleep, toSleepEntryInputs } from '@/lib/sleep/sleep';
 import {
   buildSleepScoreBreakdown,
   mapSleepScoreToAdequacy,
   SLEEP_TARGET_MIN,
-} from '@/lib/sleep-scoring';
+} from '@/lib/sleep/sleep-scoring';
 import {
   mapRecoveryToSignal,
   mapSleepAdequacySignalToDisplay,
   mapConfidenceToTier,
   type ReadinessCategory,
-} from '@/lib/today-mapping';
+} from '@/lib/today/today-mapping';
 import { buildSleepPageInsights } from '@/lib/product-insight/sleep-page-insights';
 import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
 import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';

@@ -6,7 +6,7 @@ import {
   buildProjectionCaution,
   buildProjectionTrajectory,
 } from '@/lib/presentation/projected-athlete';
-import { buildPlanningDiscussPrompt } from '@/lib/coach-session-thread';
+import { buildPlanningDiscussPrompt } from '@/lib/coach/coach-session-thread';
 
 function makeState(overrides?: {
   tsbEnd?: number;

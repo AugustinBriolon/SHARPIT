@@ -1,5 +1,5 @@
 import { startOfWeek } from 'date-fns';
-import { computeTrainingLoad, ACWR_THRESHOLDS } from '@/lib/training-load';
+import { computeTrainingLoad, ACWR_THRESHOLDS } from '@/lib/training/training-load';
 import type { GateContext, GateProposal, PlanLevelGateRule, RuleFinding } from '../types';
 
 export const WEEKLY_TARGET_TOLERANCE = 1.1;

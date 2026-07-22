@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { THEME_LIGHT_COLOR } from '@/lib/theme';
+import { THEME_LIGHT_COLOR } from '@/lib/theme/theme';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {

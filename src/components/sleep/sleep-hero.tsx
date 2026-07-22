@@ -1,7 +1,7 @@
 import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
-import { formatClock } from '@/lib/sleep';
+import { formatClock } from '@/lib/sleep/sleep';
 import { softTintFromQualityClass } from '@/lib/presentation/physio-plate-tint';
-import { formatSleepDuration } from '@/lib/sleep-scoring';
+import { formatSleepDuration } from '@/lib/sleep/sleep-scoring';
 
 export function SleepHero({
   date,

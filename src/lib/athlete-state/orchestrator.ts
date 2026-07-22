@@ -12,9 +12,9 @@ import {
 } from '@/lib/athlete-state/freshness-service';
 import { regenerateAthleteSnapshotAfterInference } from '@/lib/athlete-state/snapshot-service';
 import { syncProviders, type ProviderSyncResult } from '@/lib/athlete-state/sync-providers';
-import { loadTodayState } from '@/lib/today-state-server';
+import { loadTodayState } from '@/lib/today/today-state-server';
 import { prisma } from '@/lib/prisma';
-import { updateRecordsForTypesSafe } from '@/lib/records';
+import { updateRecordsForTypesSafe } from '@/lib/training/records';
 
 const ATHLETE_ID = 'default';
 

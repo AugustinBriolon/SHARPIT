@@ -42,7 +42,7 @@ import { resolveAthleteGeoLocation } from '@/lib/environment/athlete-location';
 import { getActiveTravelContext } from '@/lib/travel-context/service';
 import { extractSessionWeatherSignals } from '@/lib/planned-session/weather-signals';
 import { prisma } from '@/lib/prisma';
-import { computeTrainingDayId } from '@/lib/training-day';
+import { computeTrainingDayId } from '@/lib/training/training-day';
 import { fetchForecastPredictions } from '@/lib/planned-session/forecast-fetch';
 
 const ATHLETE_ID = 'default';

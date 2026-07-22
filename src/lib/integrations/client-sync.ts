@@ -1,4 +1,4 @@
-import type { RecordChange } from '@/lib/records';
+import type { RecordChange } from '@/lib/training/records';
 
 export type StravaSyncResult = {
   imported: number;

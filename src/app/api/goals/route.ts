@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { enrichGoalsWithProgress } from '@/lib/goal-achievements';
+import { enrichGoalsWithProgress } from '@/lib/goals/goal-achievements';
 import { createGoal, getGoals } from '@/lib/queries';
 import { createGoalSchema } from '@/lib/validators/goal';
 

@@ -5,10 +5,10 @@
  * what `evaluateOutcome` (pure) needs — never re-derives physiological state itself.
  */
 
-import { addTrainingDays, computeTrainingDayId } from '@/lib/training-day';
+import { addTrainingDays, computeTrainingDayId } from '@/lib/training/training-day';
 import { prisma } from '@/lib/prisma';
 import { getPlannedSessionById } from '@/lib/queries';
-import { parseSessionAnalysis } from '@/lib/session-analysis-display';
+import { parseSessionAnalysis } from '@/lib/planned-session/session-analysis-display';
 import type { OutcomeEvaluationInput } from './types';
 
 const RECOVERY_WINDOW_DAYS = [1, 2, 3];

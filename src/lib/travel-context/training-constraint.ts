@@ -1,5 +1,5 @@
 import { addDays, differenceInCalendarDays, startOfDay } from 'date-fns';
-import type { MacroWeekDraft } from '@/lib/periodization';
+import type { MacroWeekDraft } from '@/lib/training/periodization';
 import type { TravelDiscipline } from '@/lib/travel-context/disciplines';
 import {
   formatAllowedDisciplinesPromptRule,

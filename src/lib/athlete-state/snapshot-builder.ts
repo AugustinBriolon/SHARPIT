@@ -8,7 +8,7 @@ import {
   type SnapshotPlannedSessionInput,
 } from '@/lib/athlete-state/snapshot-phase';
 import { applyTruthfulnessOverlay } from '@/lib/athlete-state/snapshot-truthfulness';
-import { activityMatchesTrainingDay } from '@/lib/training-day';
+import { activityMatchesTrainingDay } from '@/lib/training/training-day';
 import type { TodayState } from '@/hooks/use-today';
 import {
   decisionVerdict,

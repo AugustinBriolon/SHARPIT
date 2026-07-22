@@ -10,7 +10,7 @@ import {
 export default function SettingsAccountLoading() {
   return (
     <div className="space-y-4">
-      <MobileBackLink href="/settings" label="Réglages" showOnDesktop />
+      <MobileBackLink showOnDesktop />
       <StickyHeader>
         <p className="text-label">Profil</p>
         <h1 className="text-page-title mt-1">Mon identité sportive</h1>

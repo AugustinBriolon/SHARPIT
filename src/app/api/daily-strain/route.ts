@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { featureEngine } from '@/lib/engines/feature-engine';
 import { prisma } from '@/lib/prisma';
-import { computeDailyStrain } from '@/lib/daily-strain';
+import { computeDailyStrain } from '@/lib/training/daily-strain';
 import {
   activityMatchesTrainingDay,
   approximateTrainingDayUtcRange,
   DEFAULT_TRAINING_DAY_START_HOUR,
   DEFAULT_TRAINING_DAY_TIMEZONE,
-} from '@/lib/training-day';
+} from '@/lib/training/training-day';
 
 export const dynamic = 'force-dynamic';
 

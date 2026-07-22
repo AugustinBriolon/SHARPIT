@@ -1,13 +1,14 @@
 'use client';
 
+import { useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton, useUser } from '@clerk/nextjs';
 import { Activity } from 'lucide-react';
 import { settingsNavItem, sidebarPrimaryNavItems, type AppNavItem } from '@/lib/app-navigation';
 import { usePrefetchNavQuery } from '@/hooks/use-prefetch-nav';
-import { navLinkClass } from '@/lib/nav-pill';
-import { clerkAppearance } from '@/lib/clerk-appearance';
+import { navLinkClass } from '@/lib/ui/nav-pill';
+import { cn } from '@/lib/utils';
 
 function NavLink({
   item,
@@ -34,9 +35,50 @@ function NavLink({
   );
 }
 
+function AccountMenu() {
+  const { user } = useUser();
+  const triggerWrapRef = useRef<HTMLDivElement>(null);
+  const displayName = user?.fullName ?? user?.firstName ?? 'Mon compte';
+  const email = user?.primaryEmailAddress?.emailAddress ?? '';
+
+  function openClerkMenu() {
+    triggerWrapRef.current?.querySelector('button')?.click();
+  }
+
+  return (
+    <div
+      className={cn(
+        'analysis-panel rounded-analysis-lg flex items-center gap-3 p-2.5',
+        'hover:border-primary/20 hover:bg-analysis-surface-alt/80 transition-colors',
+      )}
+    >
+      <div ref={triggerWrapRef} className="shrink-0">
+        <UserButton
+          appearance={{
+            elements: {
+              rootBox: 'flex',
+              userButtonTrigger:
+                'rounded-full focus:shadow-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
+              avatarBox: 'size-8 ring-1 ring-border',
+            },
+          }}
+        />
+      </div>
+      <button
+        aria-label={`Ouvrir le menu compte · ${displayName}`}
+        className="focus-visible:ring-sidebar-ring min-w-0 flex-1 rounded-md text-left focus-visible:ring-2 focus-visible:outline-hidden"
+        type="button"
+        onClick={openClerkMenu}
+      >
+        <p className="truncate text-sm font-medium">{displayName}</p>
+        {email ? <p className="text-muted-foreground truncate text-xs">{email}</p> : null}
+      </button>
+    </div>
+  );
+}
+
 export function Sidebar() {
   const pathname = usePathname();
-  const { user } = useUser();
   const prefetch = usePrefetchNavQuery();
 
   return (
@@ -63,26 +105,7 @@ export function Sidebar() {
 
       <div className="border-sidebar-border space-y-2 border-t px-3 pt-3 pb-3">
         <NavLink item={settingsNavItem} pathname={pathname} onPrefetch={prefetch} />
-
-        <div className="analysis-panel rounded-analysis-lg flex items-center gap-3 p-2.5">
-          <UserButton
-            appearance={{
-              ...clerkAppearance,
-              elements: {
-                ...clerkAppearance.elements,
-                avatarBox: 'size-8 ring-1 ring-border',
-              },
-            }}
-          />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">
-              {user?.fullName ?? user?.firstName ?? 'Mon compte'}
-            </p>
-            <p className="text-muted-foreground truncate text-xs">
-              {user?.primaryEmailAddress?.emailAddress ?? ''}
-            </p>
-          </div>
-        </div>
+        <AccountMenu />
       </div>
     </aside>
   );

@@ -43,8 +43,7 @@ function prefetchBiologyHub(
 
 /**
  * Warm TanStack Query cache for primary nav destinations.
- * Hrefs must match canonical nav items in `app-navigation.ts` (`/training`, `/biology`, …).
- * Legacy aliases remain for deep links / bookmarks.
+ * Hrefs must match canonical routes (`/training`, `/biology`, `/today/…`, …).
  */
 export function usePrefetchNavQuery() {
   const queryClient = useQueryClient();
@@ -63,15 +62,15 @@ export function usePrefetchNavQuery() {
           );
           break;
         case '/training':
-        case '/seances':
+        case '/training/sessions':
           prefetchTrainingHub(pre);
           break;
         case '/biology':
-        case '/corps':
           prefetchBiologyHub(pre, trainingDayId);
           break;
         case '/settings':
-        case '/goals':
+        case '/settings/goals':
+        case '/settings/account':
           pre(queryKeys.goals, fetchGoals);
           break;
         case '/coach':
@@ -79,16 +78,15 @@ export function usePrefetchNavQuery() {
           pre(queryKeys.activities, fetchActivities);
           pre(queryKeys.conversations, fetchConversations);
           break;
-        case '/calendar':
+        case '/training/calendar':
           pre(queryKeys.plannedSessions, fetchPlannedSessions);
           pre(queryKeys.goals, fetchGoals);
           break;
-        case '/planning':
         case '/training/planning':
           pre(queryKeys.plannedSessions, fetchPlannedSessions);
           pre(queryKeys.goals, fetchGoals);
           break;
-        case '/recovery':
+        case '/today/recovery':
           pre(['presentation', 'recovery', trainingDayId], () =>
             fetchRecoveryPresentation(trainingDayId),
           );

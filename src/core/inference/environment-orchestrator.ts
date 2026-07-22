@@ -23,7 +23,7 @@ import type {
 } from '@/core/inference/environment/types';
 import type { EnvironmentalProviderRegistry } from '@/core/environment/provider';
 import type { GeoLocation } from '@/core/environment';
-import { approximateTrainingDayUtcRange } from '@/lib/training-day';
+import { approximateTrainingDayUtcRange } from '@/lib/training/training-day';
 
 export type EnvironmentInferenceResult = {
   readonly athleteId: string;

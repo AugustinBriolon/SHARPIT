@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
-import type { MetricTone } from '@/lib/metric-tone';
-import { METRIC_TONE_CLASS } from '@/lib/metric-tone';
+import type { MetricTone } from '@/lib/ui/metric-tone';
+import { METRIC_TONE_CLASS } from '@/lib/ui/metric-tone';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 
 export type StatsStripItem = {

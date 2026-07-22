@@ -1,4 +1,4 @@
-import { dedupeBodyCompositionByDay } from '@/lib/body-composition';
+import { dedupeBodyCompositionByDay } from '@/lib/health/body-composition';
 import { clientFromTokens, garminTokensFromStorage } from '@/lib/integrations/garmin';
 import { fetchGarminMultisportLegs } from '@/lib/integrations/garmin-multisport';
 import { getGarminAccount } from '@/lib/integrations/garmin-sync';
@@ -313,11 +313,20 @@ export async function upsertAthleteProfile(data: {
   thresholdsSyncedAt?: Date | null;
   sleepTargetMinutes?: number | null;
   sleepBedtimeTargetMin?: number | null;
+  equipment?: Prisma.InputJsonValue | typeof Prisma.JsonNull | null;
 }) {
+  const { equipment, ...rest } = data;
+  const payload = {
+    ...rest,
+    ...(equipment !== undefined
+      ? { equipment: equipment === null ? Prisma.JsonNull : equipment }
+      : {}),
+  };
+
   return prisma.athleteProfile.upsert({
     where: { id: PROFILE_ID },
-    create: { id: PROFILE_ID, ...data },
-    update: data,
+    create: { id: PROFILE_ID, ...payload },
+    update: payload,
   });
 }
 

@@ -1,7 +1,7 @@
 import type { DailyPhaseDayContext, DailyPhaseSessionStatus } from '@/lib/daily-phase/types';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import { format, isSameDay, startOfDay } from 'date-fns';
-import { activityMatchesTrainingDay } from '@/lib/training-day';
+import { activityMatchesTrainingDay } from '@/lib/training/training-day';
 
 function deriveSessionStatus(
   completedCount: number,

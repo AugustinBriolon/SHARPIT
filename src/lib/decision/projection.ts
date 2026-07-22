@@ -14,8 +14,8 @@ import type {
 } from '@/hooks/use-today';
 import type { DailyPhaseWhyFocus } from '@/lib/daily-phase/types';
 import { resolve, resolveCode } from '@/lib/french';
-import { TWIN_DRILL_DOWN } from '@/lib/today-twin-navigation';
-import type { OverallVerdict } from '@/lib/today-mapping';
+import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
+import type { OverallVerdict } from '@/lib/today/today-mapping';
 
 /** Minimum decision confidence before any training advice is emitted. */
 export const MIN_DECISION_ADVICE_CONFIDENCE = 0.6;

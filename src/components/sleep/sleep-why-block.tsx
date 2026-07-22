@@ -1,7 +1,7 @@
 import { PhysioDomainWhy } from '@/components/today/drill-down/physio-domain-why';
 import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
-import { formatDuration } from '@/lib/sleep';
-import { formatSleepDuration } from '@/lib/sleep-scoring';
+import { formatDuration } from '@/lib/sleep/sleep';
+import { formatSleepDuration } from '@/lib/sleep/sleep-scoring';
 
 /**
  * Sleep why — night-first narrative; training decision demoted to expand.

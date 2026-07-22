@@ -12,7 +12,7 @@ vi.mock('ai', () => ({
   Output: { object: (config: unknown) => config },
 }));
 
-vi.mock('@/lib/coach-context', () => ({
+vi.mock('@/lib/coach/coach-context', () => ({
   buildCoachContext: vi.fn().mockResolvedValue({}),
   formatCoachContext: () => 'mock coach context',
 }));

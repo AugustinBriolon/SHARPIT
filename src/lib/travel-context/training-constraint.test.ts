@@ -3,7 +3,7 @@ import {
   deriveTravelTrainingConstraint,
   normalizeTravelDisciplines,
 } from '@/lib/travel-context/disciplines';
-import { generateMacroPlan } from '@/lib/periodization';
+import { generateMacroPlan } from '@/lib/training/periodization';
 import {
   applyTravelConstraintsToMacroWeeks,
   overlappingCalendarDays,

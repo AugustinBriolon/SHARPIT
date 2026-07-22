@@ -225,6 +225,10 @@ model AthleteProfile {
 
   context String? @db.Text // contexte libre éditable (dispos, contraintes pro, préférences) injecté dans le coach IA
 
+  /// Capability inventory for session generation (home trainer, fins, gym membership…).
+  /// Shape: { version: 1, strengthVenue: 'gym'|'home'|'both'|'bodyweight'|null, owned: string[] }
+  equipment Json?
+
   sleepTargetMinutes    Int? // durée de sommeil visée (min)
   sleepBedtimeTargetMin Int? // heure de coucher visée (minutes depuis minuit, locale)
 

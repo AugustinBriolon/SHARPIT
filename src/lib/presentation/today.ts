@@ -9,13 +9,13 @@ import {
   getHealthEntries,
   getPlannedSessions,
 } from '@/lib/queries';
-import { computeSharpitSleepScoreForDay, SLEEP_TARGET_MIN } from '@/lib/sleep-scoring';
-import { buildTodayDaySummary } from '@/lib/today-day-summary';
+import { computeSharpitSleepScoreForDay, SLEEP_TARGET_MIN } from '@/lib/sleep/sleep-scoring';
+import { buildTodayDaySummary } from '@/lib/today/today-day-summary';
 import {
   mapConfidenceToTier,
   mapVerdictToDisplay,
   resolveVisibleConfidenceLabel,
-} from '@/lib/today-mapping';
+} from '@/lib/today/today-mapping';
 import {
   actionRowLabels,
   buildProgressionSummary,
@@ -23,7 +23,7 @@ import {
   shouldShowForwardTrainingCopy,
   trajectoryEyebrow,
   whyBlockTitle,
-} from '@/lib/today-rich-view';
+} from '@/lib/today/today-rich-view';
 import { resolveMorningOrientation } from '@/lib/today/morning-orientation';
 import {
   decisionTopAction,
@@ -36,8 +36,8 @@ import {
   TRAJECTORY_DRILL_DOWNS,
   TWIN_DIMENSION_LABEL,
   TWIN_DRILL_DOWN,
-} from '@/lib/today-twin-navigation';
-import { computeTrainingLoad } from '@/lib/training-load';
+} from '@/lib/today/today-twin-navigation';
+import { computeTrainingLoad } from '@/lib/training/training-load';
 import { endOfDay, isSameDay, startOfDay, subDays } from 'date-fns';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 
@@ -134,14 +134,12 @@ export async function buildTodayPresentationViewModel(
     return healthEntries.find((e) => isSameDay(e.date, d))?.recoveryScore ?? null;
   });
 
-  // Today UI uses recovery + effort sparklines for trajectory.
-
+  // Rest days are 0 TSS (continuous series) — never null, or the sparkline breaks into holes.
   const effortSpark = Array.from({ length: 14 }, (_, i) => {
     const d = subDays(day, 13 - i);
-    const totalLoad = activities
+    return activities
       .filter((a) => isSameDay(a.date, d))
       .reduce((sum, a) => sum + (a.load ?? 0), 0);
-    return totalLoad > 0 ? totalLoad : null;
   });
 
   const trainingLoad = computeTrainingLoad(

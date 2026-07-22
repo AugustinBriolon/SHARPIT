@@ -3,7 +3,7 @@
 import { ClerkProvider } from '@clerk/nextjs';
 import { frFR } from '@clerk/localizations';
 import { useEffect, useState } from 'react';
-import { clerkAppearance } from '@/lib/clerk-appearance';
+import { clerkAppearance } from '@/lib/theme/clerk-appearance';
 
 /**
  * Wrapper client : en dev, autorise l'origine courante (IP LAN, localhost…)

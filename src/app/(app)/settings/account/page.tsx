@@ -1,6 +1,6 @@
 import { ProfileView } from '@/components/profile/profile-view';
 import { getAthleteProfile } from '@/lib/queries';
-import { birthDateToInput } from '@/lib/athlete-profile-utils';
+import { birthDateToInput } from '@/lib/profile/athlete-profile-utils';
 
 export const dynamic = 'force-dynamic';
 

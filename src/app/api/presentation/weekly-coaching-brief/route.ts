@@ -6,7 +6,7 @@ import {
   getPlannedSessions,
   getActivitiesList,
 } from '@/lib/queries';
-import { findPlanWeekForDate } from '@/lib/periodization';
+import { findPlanWeekForDate } from '@/lib/training/periodization';
 import {
   findDecisionForPlannedSession,
   findRecentEvaluatedOutcomes,
@@ -15,7 +15,7 @@ import { buildLearningFeedback } from '@/lib/decision-memory/learning-feedback';
 import { buildLearningFeedbackViewModel } from '@/lib/presentation/learning-feedback';
 import { buildDecisionSnapshotContext } from '@/lib/decision-memory/build-snapshot-context';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
-import { computeTrainingDayId } from '@/lib/training-day';
+import { computeTrainingDayId } from '@/lib/training/training-day';
 import { buildWeeklyCoachingBriefViewModel } from '@/lib/presentation/weekly-coaching-brief';
 import type { CoachingDecisionRecord } from '@/lib/decision-memory/types';
 

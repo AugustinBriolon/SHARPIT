@@ -3,7 +3,7 @@
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { WifiOff } from 'lucide-react';
-import { mapVerdictToDisplay, type OverallVerdict } from '@/lib/today-mapping';
+import { mapVerdictToDisplay, type OverallVerdict } from '@/lib/today/today-mapping';
 import { resolve } from '@/lib/french';
 import type { PersistedSnapshotEntry } from '@/lib/pwa/snapshot-store-validation';
 

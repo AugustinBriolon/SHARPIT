@@ -9,10 +9,10 @@ import {
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from './ai';
-import { buildCoachContext, formatCoachContext } from './coach-context';
+import { buildCoachContext, formatCoachContext } from '@/lib/coach/coach-context';
 import { prisma } from './prisma';
 import { getActivities, getHealthEntries, getPlannedSessions } from './queries';
-import { analyzeSleep, formatClock, formatDuration, type SleepEntryInput } from './sleep';
+import { analyzeSleep, formatClock, formatDuration, type SleepEntryInput } from '@/lib/sleep/sleep';
 
 const TYPE_FR: Record<string, string> = {
   RUN: 'Course',

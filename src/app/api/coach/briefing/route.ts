@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
-import { generateAndStoreDailyBriefing, getDailyBriefing } from '@/lib/daily-briefing';
+import { generateAndStoreDailyBriefing, getDailyBriefing } from '@/lib/briefing/daily-briefing';
 
 export const maxDuration = 60;
 

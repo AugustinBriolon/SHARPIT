@@ -1,7 +1,7 @@
 import { startOfDay } from 'date-fns';
 import { NextResponse } from 'next/server';
 import { computePmcSeries } from '@/lib/analytics';
-import { generateMacroPlan } from '@/lib/periodization';
+import { generateMacroPlan } from '@/lib/training/periodization';
 import { prisma } from '@/lib/prisma';
 import {
   archiveActiveTrainingPlans,

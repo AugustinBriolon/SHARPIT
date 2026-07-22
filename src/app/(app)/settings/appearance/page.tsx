@@ -1,6 +1,6 @@
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
-import { AppearanceThemePicker } from '@/components/settings/appearance-theme-picker';
+import { AppearanceThemePicker } from '@/components/settings/appearance';
 
 export default function SettingsAppearancePage() {
   return (

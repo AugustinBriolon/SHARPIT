@@ -939,7 +939,7 @@ These are documented violations of this handbook that exist in the current code.
 | ------------------------------------------------ | ------------------------------------------------------------ | ------- |
 | `src/lib/queries/`                               | Still multi-domain; planned sessions extracted, rest pending | §3.2    |
 | `src/hooks/use-data.ts`                          | Partially split (`use-planned-sessions.ts`); rest pending    | §3.2    |
-| `src/lib/coach-context.ts`                       | Module-level TTL cache — broken in serverless                | M9      |
+| `src/lib/coach/coach-context.ts`                 | Module-level TTL cache — broken in serverless                | M9      |
 | `src/lib/ai.ts` `COACH_MODEL`                    | Model identifier may not match an existing model             | —       |
 | `prisma/schema.prisma` `AthleteProfile.context`  | Free-text field injected into AI prompt without validation   | M7      |
 | `prisma/schema.prisma` `Activity.id = "default"` | Singleton pattern prevents multi-user migration              | §8.1    |

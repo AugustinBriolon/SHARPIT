@@ -6,15 +6,15 @@ import {
 import { computeFreshnessSnapshot } from '@/lib/athlete-state/freshness-service';
 import { shouldRefreshSnapshotForPhaseDrift } from '@/lib/athlete-state/snapshot-phase';
 import { isForwardAdvicePhase } from '@/lib/daily-phase/resolve';
-import { getDailyBriefing } from '@/lib/daily-briefing';
+import { getDailyBriefing } from '@/lib/briefing/daily-briefing';
 import {
   getLatestAthleteSnapshot,
   getSnapshotByFingerprint,
   saveAthleteSnapshot,
 } from '@/infrastructure/athlete-state/snapshot-repository';
-import { loadTodayState } from '@/lib/today-state-server';
+import { loadTodayState } from '@/lib/today/today-state-server';
 import type { TodayState } from '@/hooks/use-today';
-import { enrichGoalsWithProgress } from '@/lib/goal-achievements';
+import { enrichGoalsWithProgress } from '@/lib/goals/goal-achievements';
 import {
   getActivitiesForSnapshotPhase,
   getAthleteProfile,
@@ -22,7 +22,7 @@ import {
   getHealthEntries,
   getPlannedSessions,
 } from '@/lib/queries';
-import { analyzeSleep, toSleepEntryInputs } from '@/lib/sleep';
+import { analyzeSleep, toSleepEntryInputs } from '@/lib/sleep/sleep';
 import { addDays, startOfDay } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 

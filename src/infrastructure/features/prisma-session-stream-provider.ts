@@ -6,8 +6,8 @@ import {
   analyzeActivityStreams,
   resolveThresholds,
   type AthleteThresholds,
-} from '@/lib/activity-analysis';
-import type { RawStreams } from '@/lib/streams';
+} from '@/lib/activity/activity-analysis';
+import type { RawStreams } from '@/lib/streams/streams';
 
 function toActivityType(sportType: SessionObservation['sportType']): ActivityType {
   switch (sportType) {

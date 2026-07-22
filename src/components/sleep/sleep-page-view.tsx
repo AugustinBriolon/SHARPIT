@@ -9,7 +9,7 @@ import { SleepWhyBlock } from '@/components/sleep/sleep-why-block';
 import type { SleepPageViewProps } from '@/components/sleep/types';
 import { MetricDrillDownPage } from '@/components/today/drill-down/metric-drill-down-page';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatClock, formatDuration } from '@/lib/sleep';
+import { formatClock, formatDuration } from '@/lib/sleep/sleep';
 
 export type { SleepPageViewProps } from '@/components/sleep/types';
 

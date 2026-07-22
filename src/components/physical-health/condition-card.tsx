@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { PhysicalHealthConditionCard } from '@/core/presentation/physical-health-view-model';
-import { CORPS_TONE_TEXT, type CorpsTone } from '@/lib/metric-tone';
-import { corpsToneFromPhysicalSeverity } from '@/lib/health-status';
+import { CORPS_TONE_TEXT, type CorpsTone } from '@/lib/ui/metric-tone';
+import { corpsToneFromPhysicalSeverity } from '@/lib/health/health-status';
 import { cn } from '@/lib/utils';
 
 function TrendIcon({ trend }: { trend: string }) {

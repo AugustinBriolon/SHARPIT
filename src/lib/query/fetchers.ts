@@ -1,5 +1,5 @@
-import type { RecordsPayload } from '@/lib/records';
-import type { ActivityStreamPayload, MultisportStreamsPayload } from '@/lib/streams';
+import type { RecordsPayload } from '@/lib/training/records';
+import type { ActivityStreamPayload, MultisportStreamsPayload } from '@/lib/streams/streams';
 import type {
   ClientActivity,
   ClientGoal,

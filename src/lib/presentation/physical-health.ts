@@ -15,8 +15,8 @@ import type {
   FunctionalCapacity,
 } from '@/core/physical-health/types';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
-import { corpsToneFromPhysicalSeverity } from '@/lib/health-status';
-import { mapConfidenceToTier } from '@/lib/today-mapping';
+import { corpsToneFromPhysicalSeverity } from '@/lib/health/health-status';
+import { mapConfidenceToTier } from '@/lib/today/today-mapping';
 import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
 import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';
 import { prisma } from '@/lib/prisma';

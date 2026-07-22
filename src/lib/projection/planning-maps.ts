@@ -5,8 +5,8 @@
 import type { PlannedSessionContext } from '@/core/planned-session/types';
 import type { TrainingEnvironmentalImpact } from '@/core/inference/environment/types';
 import type { ScenarioSessionSlice } from '@/core/scenario/types';
-import { estimatePlannedLoad } from '@/lib/planning';
-import { computeTrainingDayId } from '@/lib/training-day';
+import { estimatePlannedLoad } from '@/lib/planned-session/planning';
+import { computeTrainingDayId } from '@/lib/training/training-day';
 import type { PlannedSessionExposureSetting } from '@/core/planned-session/types';
 import type { ActivityType, SessionIntensity } from '@prisma/client';
 

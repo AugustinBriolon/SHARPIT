@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { deleteGoal, getGoalById, updateGoal } from '@/lib/queries';
-import { recordManualGoalAchievement } from '@/lib/goal-achievements';
+import { recordManualGoalAchievement } from '@/lib/goals/goal-achievements';
 import { updateGoalSchema } from '@/lib/validators/goal';
 
 type RouteContext = { params: Promise<{ id: string }> };

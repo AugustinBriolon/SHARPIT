@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
-import { TrainingList, TrainingListFallback } from '@/components/training/training-list';
+import { TrainingList, TrainingListFallback } from '@/components/training/hub/training-list';
 
 export default function TrainingHistoryPage() {
   return (
@@ -9,7 +9,7 @@ export default function TrainingHistoryPage() {
       <MobileBackLink href="/training" label="Entraînement" showOnDesktop />
       <StickyHeader>
         <p className="text-label">Entraînement</p>
-        <h1 className="text-page-title mt-1">History</h1>
+        <h1 className="text-page-title mt-1">Historique</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Historique complet des activités enregistrées, du plus récent au plus ancien.
         </p>

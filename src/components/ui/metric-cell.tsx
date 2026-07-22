@@ -1,11 +1,11 @@
-import type { CorpsTone } from '@/lib/metric-tone';
-import { isDeltaStatusTone } from '@/lib/health-status';
+import type { CorpsTone } from '@/lib/ui/metric-tone';
+import { isDeltaStatusTone } from '@/lib/health/health-status';
 import {
   CORPS_TONE_DOT,
   CORPS_TONE_TEXT,
   metricToneClass,
   type MetricTone,
-} from '@/lib/metric-tone';
+} from '@/lib/ui/metric-tone';
 import { cn } from '@/lib/utils';
 import { EyebrowLabel } from '@/components/ui/eyebrow-label';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';

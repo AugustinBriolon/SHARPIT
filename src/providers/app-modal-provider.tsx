@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { PlannedSessionDialog } from '@/components/planning/planned-session-dialog';
+import { PlannedSessionDialog } from '@/components/planning/session/planned-session-dialog';
 import { useGoals, usePlannedSessions } from '@/hooks/use-data';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import { queryKeys } from '@/lib/query/keys';

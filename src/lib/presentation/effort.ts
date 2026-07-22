@@ -1,9 +1,13 @@
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
 import { computePmcSeries, type ActivityForAnalytics } from '@/lib/analytics';
-import { computeTrainingLoad, enrichFatigueLoadDimension } from '@/lib/training-load';
+import { computeTrainingLoad, enrichFatigueLoadDimension } from '@/lib/training/training-load';
 import { getActivitiesList } from '@/lib/queries';
 import { resolve } from '@/lib/french';
-import { mapConfidenceToTier, mapFatigueTypeToLabel, type FatigueType } from '@/lib/today-mapping';
+import {
+  mapConfidenceToTier,
+  mapFatigueTypeToLabel,
+  type FatigueType,
+} from '@/lib/today/today-mapping';
 import { buildEffortPageInsights } from '@/lib/product-insight/effort-page-insights';
 import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
 import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';
@@ -14,7 +18,7 @@ import {
   CHART_TEMPO_STROKE,
   CHART_TICK_COLOR,
   CHART_VO2_STROKE,
-} from '@/lib/chart-theme';
+} from '@/lib/theme/chart-theme';
 
 const OVERREACHING_RISK_DISPLAY: Record<string, { label: string; colorClass: string } | undefined> =
   {

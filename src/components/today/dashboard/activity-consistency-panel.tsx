@@ -11,7 +11,7 @@ import {
   HEATMAP_LEVEL_CLASS,
   type ActivityConsistencyStats,
   type HeatmapCell,
-} from '@/lib/activity-consistency';
+} from '@/lib/activity/activity-consistency';
 import type { ClientActivity } from '@/lib/query/types';
 import { cn } from '@/lib/utils';
 

@@ -1,14 +1,14 @@
 'use client';
 
 import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
-import { PlanAdapter } from '@/components/coach/plan-adapter';
-import { PlanGenerator } from '@/components/coach/plan-generator';
+import { PlanAdapter } from '@/components/coach/plan/plan-adapter';
+import { PlanGenerator } from '@/components/coach/plan/plan-generator';
 import { WeeklyBrief } from '@/components/coach/weekly-brief';
 import { PageHeader } from '@/components/layout/sticky-header';
 import { MacroPlanDialog } from '@/components/planning/macro-plan-dialog';
-import { PlannedSessionDialog } from '@/components/planning/planned-session-dialog';
-import { ProjectedAthleteCard } from '@/components/planning/projected-athlete-card';
-import { ScenarioComparisonDialog } from '@/components/planning/scenario-comparison-dialog';
+import { PlannedSessionDialog } from '@/components/planning/session/planned-session-dialog';
+import { ProjectedAthleteCard } from '@/components/planning/scenario/projected-athlete-card';
+import { ScenarioComparisonDialog } from '@/components/planning/scenario/scenario-comparison-dialog';
 import { TravelContextBanner } from '@/components/planning/travel-context-banner';
 import {
   SessionsCoachMenu,
@@ -21,13 +21,13 @@ import { useActivities, useGoals, usePlannedSessions, useTrainingPlan } from '@/
 import { useProjectedAthleteViewModel } from '@/hooks/use-projected-athlete-view-model';
 import { isAnyInitialQueryLoad } from '@/hooks/use-query-status';
 import { useScenarioComparisonViewModel } from '@/hooks/use-scenario-comparison-view-model';
-import { groupPlannedSessions } from '@/lib/brick-sessions';
+import { groupPlannedSessions } from '@/lib/planned-session/brick-sessions';
 import { activityTypeLabels } from '@/lib/format';
-import { phaseColors, phaseLabels } from '@/lib/periodization';
-import { buildPlanningWeeks, resolvePlanningWeek } from '@/lib/planning';
+import { phaseColors, phaseLabels } from '@/lib/training/periodization';
+import { buildPlanningWeeks, resolvePlanningWeek } from '@/lib/planned-session/planning';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import type { ClientActivity, ClientPlannedSession, ClientPlanWeek } from '@/lib/query/types';
-import { formatPlannedDuration } from '@/lib/sessions';
+import { formatPlannedDuration } from '@/lib/planned-session/sessions';
 import { cn } from '@/lib/utils';
 import { addWeeks, endOfWeek, format, isSameDay, isToday, startOfWeek, subWeeks } from 'date-fns';
 import { fr } from 'date-fns/locale';

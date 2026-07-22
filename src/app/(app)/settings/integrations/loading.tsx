@@ -1,11 +1,11 @@
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
-import { IntegrationsHubShell } from '@/components/settings/integrations-hub-shell';
+import { IntegrationsHubShell } from '@/components/settings/integrations';
 
 export default function SettingsIntegrationsLoading() {
   return (
     <div className="space-y-4">
-      <MobileBackLink href="/settings" label="Réglages" showOnDesktop />
+      <MobileBackLink showOnDesktop />
       <StickyHeader>
         <p className="text-label">Réglages</p>
         <h1 className="text-page-title mt-1">Applications connectées</h1>

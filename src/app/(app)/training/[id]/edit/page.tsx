@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
-import { ActivityForm } from '@/components/training/activity-form';
+import { ActivityForm } from '@/components/training/activity/activity-form';
 import { getActivityById } from '@/lib/queries';
 
 export const dynamic = 'force-dynamic';

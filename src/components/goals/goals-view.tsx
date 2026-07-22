@@ -8,11 +8,11 @@ import {
   MetricGoalCard,
   RaceCard,
   type GoalItem,
-} from '@/components/goals/goal-cards';
-import { GoalAchievementsHistory } from '@/components/goals/goal-achievements-history';
+} from '@/components/goals/cards/goal-cards';
+import { GoalAchievementsHistory } from '@/components/goals/cards/goal-achievements-history';
 import { GoalsViewSkeleton } from '@/components/goals/goals-view-skeleton';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
-import { horizonLabels, horizonOrder } from '@/lib/goals';
+import { horizonLabels, horizonOrder } from '@/lib/goals/goals';
 import { useGoals } from '@/hooks/use-data';
 import { Flag, Target } from 'lucide-react';
 

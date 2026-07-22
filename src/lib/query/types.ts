@@ -7,7 +7,7 @@ import type {
   getPlannedSessions,
   getThresholdSnapshots,
 } from '@/lib/queries';
-import type { enrichGoalsWithProgress } from '@/lib/goal-achievements';
+import type { enrichGoalsWithProgress } from '@/lib/goals/goal-achievements';
 import type { Goal } from '@prisma/client';
 
 /**

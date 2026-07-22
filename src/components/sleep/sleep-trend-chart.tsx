@@ -2,9 +2,9 @@ import { DrillDownSectionCard } from '@/components/today/drill-down/section-card
 import { SleepSectionLabel } from '@/components/sleep/sleep-section-label';
 import type { SleepBarPoint } from '@/components/sleep/types';
 import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
-import { formatSleepDuration } from '@/lib/sleep-scoring';
+import { formatSleepDuration } from '@/lib/sleep/sleep-scoring';
 import { Bar, BarChart, Cell, ReferenceLine, Tooltip, XAxis, YAxis } from 'recharts';
-import { CHART_TICK_COLOR } from '@/lib/chart-theme';
+import { CHART_TICK_COLOR } from '@/lib/theme/chart-theme';
 
 function SleepTrendBars({ data, targetMin }: { data: SleepBarPoint[]; targetMin: number }) {
   const hasData = data.some((d) => d.minutes !== null);

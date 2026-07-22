@@ -1,18 +1,18 @@
 'use client';
 
 import { CalendarView } from '@/components/calendar/calendar-view';
-import { PlanAdapter } from '@/components/coach/plan-adapter';
-import { PlanGenerator } from '@/components/coach/plan-generator';
+import { PlanAdapter } from '@/components/coach/plan/plan-adapter';
+import { PlanGenerator } from '@/components/coach/plan/plan-generator';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { MacroPlanDialog } from '@/components/planning/macro-plan-dialog';
-import { PlannedSessionDialog } from '@/components/planning/planned-session-dialog';
+import { PlannedSessionDialog } from '@/components/planning/session/planned-session-dialog';
 import { PlanningView } from '@/components/planning/planning-view';
 import {
   SessionsCoachMenu,
   type SessionsCoachAction,
 } from '@/components/sessions/sessions-coach-menu';
-import { TrainingList } from '@/components/training/training-list';
+import { TrainingList } from '@/components/training/hub/training-list';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   SkeletonCard,
@@ -21,7 +21,7 @@ import {
   SkeletonTitle,
 } from '@/components/ui/skeleton-patterns';
 import { useGoals } from '@/hooks/use-data';
-import { navPillClass } from '@/lib/nav-pill';
+import { navPillClass } from '@/lib/ui/nav-pill';
 import { CalendarRange, ClipboardList, List } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -83,7 +83,7 @@ export function SessionsHubSkeleton() {
 }
 
 export function SessionsHub({
-  basePath = '/seances',
+  basePath = '/training/sessions',
   sectionLabel = 'Séances',
   title = 'Historique & planning',
 }: {

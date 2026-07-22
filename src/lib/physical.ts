@@ -1,6 +1,6 @@
 import { BodySide, PhysicalCategory, PhysicalStatus } from '@prisma/client';
-import { corpsToneFromPhysicalSeverity } from '@/lib/health-status';
-import { CORPS_TONE_TEXT } from '@/lib/metric-tone';
+import { corpsToneFromPhysicalSeverity } from '@/lib/health/health-status';
+import { CORPS_TONE_TEXT } from '@/lib/ui/metric-tone';
 
 export const categoryLabels: Record<PhysicalCategory, string> = {
   PAIN: 'Douleur',

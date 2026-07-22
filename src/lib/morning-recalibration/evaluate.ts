@@ -7,7 +7,7 @@
  */
 
 import type { ActivityType, SessionIntensity } from '@prisma/client';
-import { intensityLabels, intensityOrder } from '@/lib/sessions';
+import { intensityLabels, intensityOrder } from '@/lib/planned-session/sessions';
 
 export type MorningRecalibrationDirection = 'DOWN' | 'UP';
 

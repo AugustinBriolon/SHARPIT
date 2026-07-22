@@ -8,8 +8,8 @@ import {
 } from 'ai';
 import { NextResponse } from 'next/server';
 import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from '@/lib/ai';
-import { buildCoachContext, formatCoachContext } from '@/lib/coach-context';
-import { coachTools } from '@/lib/coach-tools';
+import { buildCoachContext, formatCoachContext } from '@/lib/coach/coach-context';
+import { coachTools } from '@/lib/coach/coach-tools';
 
 export const maxDuration = 60;
 

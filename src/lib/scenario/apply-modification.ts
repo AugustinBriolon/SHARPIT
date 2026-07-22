@@ -9,7 +9,7 @@ import {
   type ScenarioKind,
   type ScenarioSessionSlice,
 } from '@/core/scenario/types';
-import { addTrainingDays } from '@/lib/training-day';
+import { addTrainingDays } from '@/lib/training/training-day';
 import { localDateLabel } from '@/lib/projection/build-projection-input';
 
 function sessionLabel(session: ScenarioSessionSlice): string {

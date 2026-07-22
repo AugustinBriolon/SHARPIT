@@ -10,7 +10,7 @@ import type { ScenarioComparison } from '@/core/scenario/types';
 import type { ProjectionHorizonDays } from '@/core/projection/types';
 import { limitingFactorLabel } from '@/lib/projection/project-athlete-state';
 import { runScenarioComparison } from '@/lib/scenario/scenario-engine';
-import { mapVerdictToDisplay } from '@/lib/today-mapping';
+import { mapVerdictToDisplay } from '@/lib/today/today-mapping';
 
 const ENV_LABELS: Record<string, string> = {
   NONE: 'Faible',

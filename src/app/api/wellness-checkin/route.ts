@@ -3,7 +3,7 @@ import {
   hasMorningWellnessCheckin,
   submitMorningWellnessCheckin,
   todayTrainingDayId,
-} from '@/lib/wellness-checkin';
+} from '@/lib/health/wellness-checkin';
 import { wellnessCheckinSchema } from '@/lib/validators/wellness-checkin';
 
 export const dynamic = 'force-dynamic';

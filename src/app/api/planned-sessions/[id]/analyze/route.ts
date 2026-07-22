@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
-import { analyzePlannedSession } from '@/lib/coach-analysis';
+import { analyzePlannedSession } from '@/lib/coach/coach-analysis';
 import { getPlannedSessionById, setPlannedSessionAnalysis } from '@/lib/queries';
 
 type RouteContext = { params: Promise<{ id: string }> };

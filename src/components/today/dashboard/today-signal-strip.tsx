@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
-import { mapStripScoreToColorClass, mapStripStrainToColorClass } from '@/lib/today-mapping';
-import { TWIN_DRILL_DOWN } from '@/lib/today-twin-navigation';
+import { mapStripScoreToColorClass, mapStripStrainToColorClass } from '@/lib/today/today-mapping';
+import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
 import { cn } from '@/lib/utils';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 

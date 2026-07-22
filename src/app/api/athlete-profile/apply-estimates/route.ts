@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import { applyEstimatedThresholds, getThresholdApplyPreview } from '@/lib/threshold-service';
+import {
+  applyEstimatedThresholds,
+  getThresholdApplyPreview,
+} from '@/lib/threshold/threshold-service';
 
 export const dynamic = 'force-dynamic';
 

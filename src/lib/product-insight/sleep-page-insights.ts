@@ -1,4 +1,4 @@
-import { formatClock, formatDuration, type SleepCoachView } from '@/lib/sleep';
+import { formatClock, formatDuration, type SleepCoachView } from '@/lib/sleep/sleep';
 import { buildSleepInsightBundle } from '@/core/product-insight/sleep-insights';
 
 export function buildSleepPageInsights(params: {

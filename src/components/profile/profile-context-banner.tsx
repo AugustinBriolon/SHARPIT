@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ClinicalAnnotation } from '@/components/ui/clinical-annotation';
 import { useCoachContext } from '@/hooks/use-coach';
 import { useAthleteProfile } from '@/hooks/use-data';
-import { getProfileCompleteness } from '@/lib/profile-completeness';
+import { getProfileCompleteness } from '@/lib/profile/profile-completeness';
 
 export function ProfileContextBanner() {
   const { data: profile, isPending: profilePending } = useAthleteProfile();
@@ -21,7 +21,7 @@ export function ProfileContextBanner() {
     return (
       <ClinicalAnnotation title="Profil actif">
         Contexte personnel ({contextLength} car.) et seuils pris en compte.{' '}
-        <Link className="text-primary font-medium hover:underline" href="/profil">
+        <Link className="text-primary font-medium hover:underline" href="/settings/account">
           Modifier
         </Link>
       </ClinicalAnnotation>
@@ -33,7 +33,7 @@ export function ProfileContextBanner() {
       {hasContext
         ? `Contexte actif (${contextLength} car.) — complète aussi : ${missing.join(', ')}.`
         : `Complète ton profil pour des propositions plus précises : ${missing.join(', ')} manquant(s).`}{' '}
-      <Link className="text-primary font-medium hover:underline" href="/profil">
+      <Link className="text-primary font-medium hover:underline" href="/settings/account">
         Mon profil
       </Link>
     </ClinicalAnnotation>

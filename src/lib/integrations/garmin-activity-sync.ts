@@ -1,7 +1,7 @@
 import { ActivityType, Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { syncSinceFromLastSync } from '@/lib/integrations/sync-since';
-import { findMatchingActivity } from '@/lib/activity-dedup';
+import { findMatchingActivity } from '@/lib/activity/activity-dedup';
 import {
   buildGarminActivityData,
   fetchGarminActivityEvaluation,

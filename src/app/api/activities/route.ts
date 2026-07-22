@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ActivityType } from '@prisma/client';
 import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
 import { enrichActivityObservedContext } from '@/lib/activity/enrich-observed-context';
-import { buildActivityCreateData } from '@/lib/activity-service';
-import { runActivityNarrativeAnalysis } from '@/lib/activity-narrative';
+import { buildActivityCreateData } from '@/lib/activity/activity-service';
+import { runActivityNarrativeAnalysis } from '@/lib/activity/activity-narrative';
 import { syncManualActivityObservations } from '@/lib/manual-observation-sync';
 import { createActivity, getActivitiesList } from '@/lib/queries';
 import { prisma } from '@/lib/prisma';
-import { updateRecordsForTypesSafe } from '@/lib/records';
+import { updateRecordsForTypesSafe } from '@/lib/training/records';
 import { createActivitySchema } from '@/lib/validators/activity';
 
 export async function GET(request: NextRequest) {

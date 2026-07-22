@@ -2,9 +2,6 @@ import { Dumbbell, HeartPulse, MessagesSquare, Settings, Sun } from 'lucide-reac
 
 /**
  * Primary nav uses canonical hrefs only (`/`, `/training`, `/biology`, `/coach`, `/settings`).
- * `match` may also accept legacy aliases (`/corps`, `/body`, `/seances`, `/calendar`, …)
- * so deep links and bookmarks keep highlighting — do not add new primary destinations
- * under those aliases; redirect or map them to the canonical path instead.
  */
 
 export type NavIcon = typeof Sun;
@@ -27,23 +24,14 @@ export const trainingNavItem: AppNavItem = {
   href: '/training',
   label: 'Entraînement',
   icon: Dumbbell,
-  match: (p) =>
-    p.startsWith('/training') ||
-    p.startsWith('/seances') ||
-    p.startsWith('/calendar') ||
-    p.startsWith('/planning'),
+  match: (p) => p.startsWith('/training'),
 };
 
 export const biologyNavItem: AppNavItem = {
   href: '/biology',
   label: 'Physiologie',
   icon: HeartPulse,
-  match: (p) =>
-    p.startsWith('/biology') ||
-    p.startsWith('/corps') ||
-    p.startsWith('/recovery') ||
-    p.startsWith('/body') ||
-    p.startsWith('/analytics'),
+  match: (p) => p.startsWith('/biology'),
 };
 
 export const coachNavItem: AppNavItem = {
@@ -57,7 +45,7 @@ export const settingsNavItem: AppNavItem = {
   href: '/settings',
   label: 'Réglages',
   icon: Settings,
-  match: (p) => p.startsWith('/settings') || p.startsWith('/profil') || p.startsWith('/goals'),
+  match: (p) => p.startsWith('/settings'),
 };
 
 /** Destinations principales sidebar desktop (sans Réglages). */

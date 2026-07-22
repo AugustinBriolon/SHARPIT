@@ -11,10 +11,10 @@ import { addDays, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { ActivityType, GoalHorizon, PlanPhase, SessionIntensity } from '@prisma/client';
 import { activityTypeLabels } from '@/lib/format';
-import { intensityLabels } from '@/lib/sessions';
-import { phaseLabels } from '@/lib/periodization';
-import { horizonLabels } from '@/lib/goals';
-import { computeTrainingLoad, ACWR_THRESHOLDS } from '@/lib/training-load';
+import { intensityLabels } from '@/lib/planned-session/sessions';
+import { phaseLabels } from '@/lib/training/periodization';
+import { horizonLabels } from '@/lib/goals/goals';
+import { computeTrainingLoad, ACWR_THRESHOLDS } from '@/lib/training/training-load';
 import { WEEKLY_TARGET_TOLERANCE } from '@/lib/plan-gate/rules/weekly-load';
 import { describeSnapshotContext } from '@/lib/presentation/snapshot-context-labels';
 import type {

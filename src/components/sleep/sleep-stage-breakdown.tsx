@@ -1,4 +1,4 @@
-import { formatSleepDuration } from '@/lib/sleep-scoring';
+import { formatSleepDuration } from '@/lib/sleep/sleep-scoring';
 import { cn } from '@/lib/utils';
 
 const STAGE_STYLES = {

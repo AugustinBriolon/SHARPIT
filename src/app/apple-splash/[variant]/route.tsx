@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { NextResponse } from 'next/server';
-import { BrandIconCanvas } from '@/lib/brand-icon-canvas';
+import { BrandIconCanvas } from '@/lib/ui/brand-icon-canvas';
 
 /**
  * iOS splash screens (`apple-touch-startup-image`) — not a Next.js special-file

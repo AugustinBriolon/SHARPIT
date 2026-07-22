@@ -1,4 +1,4 @@
-function buildSparkPaths(
+export function buildSparkPaths(
   values: (number | null)[],
   W: number,
   H: number,

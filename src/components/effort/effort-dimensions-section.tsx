@@ -2,7 +2,7 @@ import { DrillDownDimensionRow } from '@/components/today/drill-down/dimension-r
 import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
 import type { DimensionResult } from '@/hooks/use-today';
-import { mapFatigueDimensionIntensity } from '@/lib/today-mapping';
+import { mapFatigueDimensionIntensity } from '@/lib/today/today-mapping';
 
 const DIMENSION_LABEL: Record<string, string> = {
   load: "Charge d'entraînement",

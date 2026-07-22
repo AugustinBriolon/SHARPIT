@@ -8,7 +8,7 @@ import {
   mapVerdictToDisplay,
   mapFatigueCapacityLabel,
   type OverallVerdict,
-} from '@/lib/today-mapping';
+} from '@/lib/today/today-mapping';
 import { CAPACITY_LABELS } from '@/lib/presentation/physical-health';
 import type { TrainingCapacity } from '@/hooks/use-today';
 import type { DecisionSnapshotContext } from '@/lib/decision-memory/types';

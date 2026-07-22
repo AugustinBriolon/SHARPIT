@@ -8,7 +8,7 @@ import {
   buildDailyWindowSeries,
   getIndexedHealthEntry,
   indexHealthEntriesByDay,
-} from '@/lib/health';
+} from '@/lib/health/health';
 import { resolve } from '@/lib/french';
 import {
   mapAutonomicBalanceToDisplay,
@@ -23,7 +23,7 @@ import {
   type ReadinessCategory,
   type RecommendedIntensity,
   type SubjectiveWellness,
-} from '@/lib/today-mapping';
+} from '@/lib/today/today-mapping';
 import { buildRecoveryPageInsights } from '@/lib/product-insight/recovery-page-insights';
 import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
 import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';

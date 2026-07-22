@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getRecentGoalAchievements } from '@/lib/goal-achievements';
+import { getRecentGoalAchievements } from '@/lib/goals/goal-achievements';
 
 export const dynamic = 'force-dynamic';
 

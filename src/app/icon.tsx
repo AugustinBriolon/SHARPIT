@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { BrandIconCanvas } from '@/lib/brand-icon-canvas';
+import { BrandIconCanvas } from '@/lib/ui/brand-icon-canvas';
 
 export const size = { width: 512, height: 512 };
 export const contentType = 'image/png';

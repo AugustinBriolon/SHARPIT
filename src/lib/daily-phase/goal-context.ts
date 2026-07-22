@@ -1,8 +1,8 @@
 import { GoalKind } from '@prisma/client';
 import { format } from 'date-fns';
-import { daysUntil } from '@/lib/goals';
-import { isGoalExpired } from '@/lib/goal-metric-config';
-import { selectTodayGoals } from '@/lib/today-goals-summary';
+import { daysUntil } from '@/lib/goals/goals';
+import { isGoalExpired } from '@/lib/goals/goal-metric-config';
+import { selectTodayGoals } from '@/lib/today/today-goals-summary';
 import type { ClientGoal } from '@/lib/query/types';
 
 export type TodayGoalContext = {

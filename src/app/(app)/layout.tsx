@@ -4,15 +4,17 @@ import { ShieldX } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import { AthleteStateInitializer } from '@/components/athlete-state/athlete-state-initializer';
 import { AppShell } from '@/components/layout/app-shell';
+import { NavStackTracker } from '@/components/layout/nav-stack-tracker';
 import { Button } from '@/components/ui/button';
 import { isAllowedUser } from '@/lib/auth';
-import { isDevClerkBypass } from '@/lib/dev-auth';
+import { isDevClerkBypass } from '@/lib/dev/dev-auth';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   if (isDevClerkBypass()) {
     return (
       <>
         <AthleteStateInitializer />
+        <NavStackTracker />
         <AppShell>{children}</AppShell>
       </>
     );
@@ -46,6 +48,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <>
       <AthleteStateInitializer />
+      <NavStackTracker />
       <AppShell>{children}</AppShell>
     </>
   );

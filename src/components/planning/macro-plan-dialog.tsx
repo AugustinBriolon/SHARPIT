@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { ClientGoal, ClientTrainingPlan } from '@/lib/query/types';
-import { phaseColors, phaseLabels } from '@/lib/periodization';
+import { phaseColors, phaseLabels } from '@/lib/training/periodization';
 import { useTrainingPlan, useTrainingPlanMutations } from '@/hooks/use-data';
 
 const NO_GOAL = 'none';

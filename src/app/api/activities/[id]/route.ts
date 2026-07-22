@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { buildActivityUpdateData } from '@/lib/activity-service';
+import { buildActivityUpdateData } from '@/lib/activity/activity-service';
 import {
   removeManualActivityObservations,
   syncManualActivityObservations,
 } from '@/lib/manual-observation-sync';
 import { deleteActivity, getActivityById, updateActivity } from '@/lib/queries';
-import { updateRecordsForTypesSafe } from '@/lib/records';
+import { updateRecordsForTypesSafe } from '@/lib/training/records';
 import { updateActivitySchema } from '@/lib/validators/activity';
 
 type RouteContext = { params: Promise<{ id: string }> };

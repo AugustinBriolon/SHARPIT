@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDevTools, isDevToolsEnabled } from '@/lib/dev-tools';
+import { getDevTools, isDevToolsEnabled } from '@/lib/dev/dev-tools';
 
 export const dynamic = 'force-dynamic';
 

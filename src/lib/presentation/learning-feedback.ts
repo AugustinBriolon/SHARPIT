@@ -5,7 +5,7 @@
  */
 
 import { activityTypeLabels } from '@/lib/format';
-import { intensityLabels } from '@/lib/sessions';
+import { intensityLabels } from '@/lib/planned-session/sessions';
 import type { LearningFeedbackItem } from '@/lib/decision-memory/learning-feedback';
 import type { WeeklyBriefLearningFeedbackItem } from '@/core/presentation/weekly-coaching-brief-view-model';
 

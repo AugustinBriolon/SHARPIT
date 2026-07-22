@@ -13,7 +13,7 @@ import {
 export default function Loading() {
   return (
     <div className="relative z-0 space-y-8">
-      <MobileBackLink href="/training/history" label="Activités" showOnDesktop />
+      <MobileBackLink showOnDesktop />
 
       <StickyHeader>
         <div className="flex flex-wrap items-start justify-between gap-4">

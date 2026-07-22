@@ -8,8 +8,8 @@ import { buildPhaseNarrative } from '@/lib/daily-phase/narrative';
 import { buildDailyPhaseDayContext, minutesBetween } from '@/lib/daily-phase/day-context';
 import { resolveDailyPhase, isForwardAdvicePhase } from '@/lib/daily-phase/resolve';
 import type { DailyPhaseResolution } from '@/lib/daily-phase/types';
-import { buildTopActionLine } from '@/lib/today-rich-view';
-import { buildTodayEffortSnapshot } from '@/lib/today-narrative-context';
+import { buildTopActionLine } from '@/lib/today/today-rich-view';
+import { buildTodayEffortSnapshot } from '@/lib/today/today-narrative-context';
 import type { ClientGoal } from '@/lib/query/types';
 import { resolveTodayGoalContext } from '@/lib/daily-phase/goal-context';
 import { pickTomorrowSessionHint } from '@/lib/daily-phase/evening-context';
@@ -20,8 +20,8 @@ import {
   decisionVerdict,
   limitingFactorFromDecision,
 } from '@/lib/decision/projection';
-import { activityMatchesTrainingDay } from '@/lib/training-day';
-import type { SleepCoachView } from '@/lib/sleep';
+import { activityMatchesTrainingDay } from '@/lib/training/training-day';
+import type { SleepCoachView } from '@/lib/sleep/sleep';
 
 export type { SnapshotActivityInput, SnapshotPlannedSessionInput };
 

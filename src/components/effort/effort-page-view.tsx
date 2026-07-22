@@ -14,7 +14,7 @@ import {
   MetricDrillDownPage,
   type MetricTone,
 } from '@/components/today/drill-down/metric-drill-down-page';
-import type { FatigueType, TrainingCapacity } from '@/lib/today-mapping';
+import type { FatigueType, TrainingCapacity } from '@/lib/today/today-mapping';
 import type { DimensionResult } from '@/hooks/use-today';
 
 export type EffortPageViewProps = {

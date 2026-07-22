@@ -1,11 +1,11 @@
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
-import { ActivityForm } from '@/components/training/activity-form';
+import { ActivityForm } from '@/components/training/activity/activity-form';
 
 export default function ManualTrainingPage() {
   return (
     <div className="space-y-8">
-      <MobileBackLink href="/training/history" label="Activités" showOnDesktop />
+      <MobileBackLink href="/training/history" label="Historique" showOnDesktop />
       <StickyHeader>
         <p className="text-primary text-xs font-medium uppercase">Training</p>
         <h1 className="text-page-title mt-1">Saisir une séance</h1>

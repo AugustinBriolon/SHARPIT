@@ -1,7 +1,7 @@
 'use client';
 
-import { selectUpcomingPlannedPreview } from '@/lib/planned-session-dates';
-import { resolvePlannedSessionDisplay } from '@/lib/planned-session-display';
+import { selectUpcomingPlannedPreview } from '@/lib/planned-session/planned-session-dates';
+import { resolvePlannedSessionDisplay } from '@/lib/planned-session/planned-session-display';
 import { forecastBadgeFromContext } from '@/lib/planned-session/forecast-badge';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import type { ClientPlannedSession } from '@/lib/query/types';

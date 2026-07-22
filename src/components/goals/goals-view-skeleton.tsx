@@ -6,7 +6,7 @@ import { SkeletonCard, SkeletonEyebrow } from '@/components/ui/skeleton-patterns
 export function GoalsViewSkeleton() {
   return (
     <div className="space-y-8">
-      <MobileBackLink href="/settings" label="Réglages" showOnDesktop />
+      <MobileBackLink showOnDesktop />
       <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-label">Réglages</p>

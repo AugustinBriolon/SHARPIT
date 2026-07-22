@@ -1,9 +1,9 @@
 'use client';
 
-import { BrickDialog } from '@/components/planning/brick-dialog';
-import { PlannedSessionDialog } from '@/components/planning/planned-session-dialog';
-import { PlanAdapter } from '@/components/coach/plan-adapter';
-import { PlanGenerator } from '@/components/coach/plan-generator';
+import { BrickDialog } from '@/components/planning/brick/brick-dialog';
+import { PlannedSessionDialog } from '@/components/planning/session/planned-session-dialog';
+import { PlanAdapter } from '@/components/coach/plan/plan-adapter';
+import { PlanGenerator } from '@/components/coach/plan/plan-generator';
 import { MacroPlanDialog } from '@/components/planning/macro-plan-dialog';
 import {
   SessionsCoachMenu,

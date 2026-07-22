@@ -1,7 +1,7 @@
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
-import { IntegrationsHubSection } from '@/components/settings/integrations-hub-section';
-import { IntegrationsHubShell } from '@/components/settings/integrations-hub-shell';
+import { IntegrationsHubSection } from '@/components/settings/integrations';
+import { IntegrationsHubShell } from '@/components/settings/integrations';
 import { Suspense } from 'react';
 
 export const dynamic = 'force-dynamic';

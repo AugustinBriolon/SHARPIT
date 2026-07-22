@@ -1,24 +1,24 @@
 import { notFound } from 'next/navigation';
-import { ActivityInsights } from '@/components/training/activity-insights';
-import { TriathlonActivityInsights } from '@/components/training/triathlon-activity-insights';
-import { TriathlonLegsPanel } from '@/components/training/triathlon-legs-panel';
+import { ActivityInsights } from '@/components/training/activity/activity-insights';
+import { TriathlonActivityInsights } from '@/components/training/activity/triathlon-activity-insights';
+import { TriathlonLegsPanel } from '@/components/training/activity/triathlon-legs-panel';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
-import { ActivityDetailHeader } from '@/components/training/activity-detail/activity-detail-header';
-import { ActivityDetailHero } from '@/components/training/activity-detail/activity-detail-hero';
+import { ActivityDetailHeader } from '@/components/training/activity/detail/activity-detail-header';
+import { ActivityDetailHero } from '@/components/training/activity/detail/activity-detail-hero';
 import {
   buildActivitySpecs,
   buildStrengthStats,
-} from '@/components/training/activity-detail/activity-detail-helpers';
-import { ActivityMetaRow } from '@/components/training/activity-detail/activity-meta-row';
-import { ActivitySpecsNotes } from '@/components/training/activity-detail/activity-specs-notes';
-import { ActivityStrengthExercises } from '@/components/training/activity-detail/activity-strength-exercises';
-import { ActivityGoalValidationsCard } from '@/components/goals/activity-goal-validations-card';
-import { ActivityNarrativeSection } from '@/components/training/activity-narrative-section';
+} from '@/components/training/activity/detail/activity-detail-helpers';
+import { ActivityMetaRow } from '@/components/training/activity/detail/activity-meta-row';
+import { ActivitySpecsNotes } from '@/components/training/activity/detail/activity-specs-notes';
+import { ActivityStrengthExercises } from '@/components/training/activity/detail/activity-strength-exercises';
+import { ActivityGoalValidationsCard } from '@/components/goals/cards/activity-goal-validations-card';
+import { ActivityNarrativeSection } from '@/components/training/activity/activity-narrative-section';
 import { enrichActivityObservedContext } from '@/lib/activity/enrich-observed-context';
 import { getActivityById, getMultisportLegsForActivity } from '@/lib/queries';
-import { getGoalAchievementsForActivity } from '@/lib/goal-achievements';
+import { getGoalAchievementsForActivity } from '@/lib/goals/goal-achievements';
 import { isCoachConfigured } from '@/lib/ai';
-import { getPerformanceRecordsForActivity } from '@/lib/records';
+import { getPerformanceRecordsForActivity } from '@/lib/training/records';
 import { prisma } from '@/lib/prisma';
 import { ActivityType } from '@prisma/client';
 
@@ -50,7 +50,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
   return (
     <div className="relative z-0 space-y-8">
-      <MobileBackLink href="/training/history" label="Activités" showOnDesktop />
+      <MobileBackLink showOnDesktop />
 
       <ActivityDetailHeader activity={activity} />
 

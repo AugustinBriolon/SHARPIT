@@ -423,7 +423,17 @@
   margin-inline: calc(var(--page-gutter, 1rem) * -1);
 }
 
-/* Full-bleed Seed ink band — edge-to-edge within the content column */
+/* Soft full-bleed callout — analysis surface, not a brand ink slap */
+@utility page-bleed-muted {
+  margin-inline: calc(var(--page-gutter, 1rem) * -1);
+  padding-inline: var(--page-gutter, 1rem);
+  border-style: none;
+  border-radius: 0;
+  background-color: var(--color-analysis-surface-alt);
+  color: var(--color-foreground);
+}
+
+/* Full-bleed Seed ink band — edge-to-edge within the content column (rare) */
 @utility page-bleed-ink {
   margin-inline: calc(var(--page-gutter, 1rem) * -1);
   padding-inline: var(--page-gutter, 1rem);

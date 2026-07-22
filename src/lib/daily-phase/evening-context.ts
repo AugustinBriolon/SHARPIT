@@ -2,8 +2,8 @@ import { ActivityType } from '@prisma/client';
 import { addDays, format, startOfDay } from 'date-fns';
 import { parsePlannedStart } from '@/lib/daily-phase/day-context';
 import { activityTypeLabels } from '@/lib/format';
-import { formatClock, formatDuration } from '@/lib/sleep';
-import type { TodayEffortLevel } from '@/lib/today-narrative-context';
+import { formatClock, formatDuration } from '@/lib/sleep/sleep';
+import type { TodayEffortLevel } from '@/lib/today/today-narrative-context';
 
 export type PlannedSessionEveningRef = {
   date: Date | string;

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { getAthleteProfile, upsertAthleteProfile } from '@/lib/queries';
 import { athleteProfileSchema } from '@/lib/validators/athlete-profile';
+import { invalidateCoachContext } from '@/lib/coach/coach-context';
+import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -51,8 +53,10 @@ export async function PATCH(request: NextRequest) {
 
   const parsed = athleteProfileSchema.safeParse(body);
   if (!parsed.success) {
-    const { fieldErrors } = parsed.error.flatten();
-    const detail = Object.values(fieldErrors).flat().join(' · ');
+    const { fieldErrors, formErrors } = parsed.error.flatten();
+    const detail = [...Object.values(fieldErrors).flat(), ...formErrors]
+      .filter(Boolean)
+      .join(' · ');
     return NextResponse.json(
       { error: detail || 'Données invalides', details: parsed.error.flatten() },
       { status: 400 },
@@ -60,7 +64,21 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const profile = await upsertAthleteProfile(parsed.data);
+    const { equipment, ...rest } = parsed.data;
+    const profile = await upsertAthleteProfile({
+      ...rest,
+      ...(equipment !== undefined
+        ? {
+            equipment:
+              equipment === null
+                ? null
+                : (normalizeAthleteEquipment(equipment) as Prisma.InputJsonValue),
+          }
+        : {}),
+    });
+    if (equipment !== undefined) {
+      invalidateCoachContext();
+    }
     return NextResponse.json(profile);
   } catch (error) {
     return profileUpdateError(error);

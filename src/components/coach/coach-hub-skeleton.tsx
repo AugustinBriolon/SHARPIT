@@ -155,7 +155,7 @@ export function CoachPageHeader({
         <h1 className="text-page-title mt-1">Fil & conversations</h1>
         <p className="text-muted-foreground mt-1">
           Messages du jour et chat libre avec ton coach.{' '}
-          <Link className="text-primary hover:underline" href="/profil">
+          <Link className="text-primary hover:underline" href="/settings/account">
             Mon profil
           </Link>
         </p>

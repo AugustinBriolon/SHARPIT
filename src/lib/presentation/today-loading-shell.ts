@@ -1,7 +1,7 @@
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import type { DailyPhase } from '@/lib/daily-phase/types';
-import { TWIN_DRILL_DOWN } from '@/lib/today-twin-navigation';
-import { actionRowLabels, trajectoryEyebrow, whyBlockTitle } from '@/lib/today-rich-view';
+import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
+import { actionRowLabels, trajectoryEyebrow, whyBlockTitle } from '@/lib/today/today-rich-view';
 
 function shellPhaseFromLocalHour(hour: number): DailyPhase {
   if (hour >= 22) return 'END_OF_DAY';

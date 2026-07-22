@@ -1,4 +1,4 @@
-import { intensityOrder } from '@/lib/sessions';
+import { intensityOrder } from '@/lib/planned-session/sessions';
 import type { CalendarDay } from '@/lib/calendar';
 import type { GoogleCalendarEvent } from '@/lib/query/fetchers';
 import { format } from 'date-fns';

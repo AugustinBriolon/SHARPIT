@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ensureMorningRecalibration } from '@/lib/morning-recalibration/service';
-import { todayTrainingDayId } from '@/lib/wellness-checkin';
+import { todayTrainingDayId } from '@/lib/health/wellness-checkin';
 
 export const dynamic = 'force-dynamic';
 

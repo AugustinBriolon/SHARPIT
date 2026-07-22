@@ -7,7 +7,7 @@
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
 import type { DecisionData, LimitingFactor, PhysiologicalConsistency } from '@/hooks/use-today';
 import { resolve, resolveCode } from '@/lib/french';
-import type { OverallVerdict } from '@/lib/today-mapping';
+import type { OverallVerdict } from '@/lib/today/today-mapping';
 import { decisionTopAction } from '@/lib/decision/projection';
 import type { DailyPhaseWhyFocus } from '@/lib/daily-phase/types';
 

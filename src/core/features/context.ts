@@ -54,7 +54,7 @@ export type ExtractionContext = {
   readonly sleepTargetMinutes?: number;
 };
 
-import { SLEEP_TARGET_MIN } from '@/lib/sleep-scoring';
+import { SLEEP_TARGET_MIN } from '@/lib/sleep/sleep-scoring';
 
 /** Effective sleep target — defaults to 7h30 if athlete has not set one. */
 export function effectiveSleepTarget(ctx: ExtractionContext): number {

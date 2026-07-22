@@ -5,7 +5,7 @@ import { SessionsHub } from '@/components/sessions/sessions-hub';
 export default function TrainingSessionsPage() {
   return (
     <Suspense>
-      <SessionsHub />
+      <SessionsHub basePath="/training/sessions" />
     </Suspense>
   );
 }

@@ -1,5 +1,5 @@
-import { trainingDayIdForNow } from '@/lib/training-day';
-import { resolveBriefingPhase } from '@/lib/briefing-phase';
+import { trainingDayIdForNow } from '@/lib/training/training-day';
+import { resolveBriefingPhase } from '@/lib/briefing/briefing-phase';
 import type {
   AthleteFreshnessSnapshot,
   AthleteStateDomain,

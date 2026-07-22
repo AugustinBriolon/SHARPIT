@@ -1,6 +1,6 @@
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
-import { SettingsMaintenancePanel } from '@/components/settings/settings-maintenance-panel';
+import { SettingsMaintenancePanel } from '@/components/settings/maintenance';
 
 export default function SettingsMaintenancePage() {
   return (

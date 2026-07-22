@@ -6,7 +6,7 @@ import type {
   PresentationSection,
 } from '@/core/presentation/types';
 import type { DimensionResult } from '@/hooks/use-today';
-import type { FatigueType, TrainingCapacity } from '@/lib/today-mapping';
+import type { FatigueType, TrainingCapacity } from '@/lib/today/today-mapping';
 
 export type EffortViewModel = {
   strainScore: number | null;

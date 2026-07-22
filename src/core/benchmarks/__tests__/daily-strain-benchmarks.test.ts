@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dailyTssToStrainScore } from '@/lib/daily-strain';
+import { dailyTssToStrainScore } from '@/lib/training/daily-strain';
 
 const SCENARIOS = [
   { id: 'SEDENTARY_DAY', tss: 0 },

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { onProviderSyncCompleted } from '@/lib/athlete-state/orchestrator';
-import { filterRecordChangesByActivities, updateRecordsForTypes } from '@/lib/records';
+import { filterRecordChangesByActivities, updateRecordsForTypes } from '@/lib/training/records';
 import { syncStravaActivities } from '@/lib/integrations/strava-sync';
 
 export const dynamic = 'force-dynamic';

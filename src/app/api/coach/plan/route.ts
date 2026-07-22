@@ -3,14 +3,14 @@ import { addDays, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { NextResponse } from 'next/server';
 import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from '@/lib/ai';
-import { buildCoachContext, formatCoachContext } from '@/lib/coach-context';
+import { buildCoachContext, formatCoachContext } from '@/lib/coach/coach-context';
 import { getUpcomingBusy } from '@/lib/integrations/google-sync';
 import { getGoalById } from '@/lib/queries';
 import { coachPlanRequestSchema, coachPlanSchema } from '@/lib/validators/coach';
 import { buildGateContext } from '@/lib/plan-gate/build-context';
 import { evaluatePlan } from '@/lib/plan-gate/evaluate-plan';
 import type { GateProposal } from '@/lib/plan-gate/types';
-import { computeTrainingDayId } from '@/lib/training-day';
+import { computeTrainingDayId } from '@/lib/training/training-day';
 import { buildDecisionSnapshotContext } from '@/lib/decision-memory/build-snapshot-context';
 import { createCoachingDecision } from '@/lib/decision-memory/repository';
 import {

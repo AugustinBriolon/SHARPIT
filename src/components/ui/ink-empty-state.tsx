@@ -9,13 +9,13 @@ type InkEmptyStateProps = {
   className?: string;
   /** Compact padding for inline lists / dialogs */
   compact?: boolean;
-  /** Edge-to-edge within the shell column (Seed full-bleed band) */
+  /** Edge-to-edge within the shell column, without a loud ink band */
   bleed?: boolean;
 };
 
 /**
- * Seed-inspired empty / onboarding surface — Forest (light) or Lime (dark) band.
- * Use for known-nothing states, not loading skeletons.
+ * Quiet empty / known-nothing surface.
+ * Continuity with analysis panels: muted icon, reading hierarchy, no ink band.
  */
 export function InkEmptyState({
   title,
@@ -29,32 +29,35 @@ export function InkEmptyState({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center gap-3 text-center',
-        bleed ? 'page-bleed-ink' : 'surface-ink',
-        compact ? 'py-8' : 'py-14',
-        !bleed && (compact ? 'px-4' : 'px-6'),
+        'flex flex-col gap-2.5',
+        bleed
+          ? 'border-analysis-border/60 bg-analysis-surface-alt/35 rounded-lg border border-dashed px-(--page-gutter,1rem)'
+          : 'analysis-panel rounded-analysis-lg border-dashed',
+        compact ? 'px-4 py-4' : 'px-5 py-5',
         className,
       )}
     >
       {Icon ? (
-        <div className={cn('icon-well rounded-analysis-lg', compact ? 'size-10' : 'size-12')}>
-          <Icon className={compact ? 'size-4' : 'size-5'} />
-        </div>
+        <Icon
+          aria-hidden={true}
+          className="text-muted-foreground size-4 shrink-0"
+          strokeWidth={1.5}
+        />
       ) : null}
       <div className="space-y-1">
-        <p className="text-ink-surface-foreground text-sm font-medium">{title}</p>
+        <p className="text-foreground text-sm font-medium">{title}</p>
         {description ? (
           <p
             className={cn(
-              'text-ink-surface-foreground/75 max-w-sm leading-relaxed',
-              compact ? 'text-xs' : 'text-xs sm:text-sm',
+              'text-muted-foreground max-w-md leading-relaxed',
+              compact ? 'text-xs' : 'text-xs sm:text-[13px]',
             )}
           >
             {description}
           </p>
         ) : null}
       </div>
-      {action}
+      {action ? <div className="pt-0.5">{action}</div> : null}
     </div>
   );
 }

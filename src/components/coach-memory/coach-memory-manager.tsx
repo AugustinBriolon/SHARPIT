@@ -120,11 +120,7 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
         icon={NotebookPen}
         title="Aucune entrée enregistrée"
         action={
-          <Button
-            className="bg-ink-surface-foreground text-ink-surface hover:bg-ink-surface-foreground/90 mt-1"
-            type="button"
-            onClick={openCreate}
-          >
+          <Button className="mt-1" size="sm" type="button" onClick={openCreate}>
             Ajouter
           </Button>
         }

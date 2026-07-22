@@ -2,7 +2,7 @@ import type { GarminConnect } from '@flow-js/garmin-connect';
 import type { IActivity } from '@flow-js/garmin-connect/dist/garmin/types/activity';
 import { ActivityType, Prisma } from '@prisma/client';
 import { garminFeelLabel, garminRpeToScale } from '@/lib/integrations/garmin-feel';
-import { mergedSource } from '@/lib/activity-dedup';
+import { mergedSource } from '@/lib/activity/activity-dedup';
 import { resolveGarminExerciseLabel } from '@/lib/integrations/garmin-exercise-labels';
 
 type GCClient = InstanceType<typeof GarminConnect>;

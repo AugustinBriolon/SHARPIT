@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getActivityStreams } from '@/lib/streams';
+import { getActivityStreams } from '@/lib/streams/streams';
 
 export const dynamic = 'force-dynamic';
 

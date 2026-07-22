@@ -1,6 +1,6 @@
 import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
-import { formatClock, formatDuration, type SleepCoachView } from '@/lib/sleep';
+import { formatClock, formatDuration, type SleepCoachView } from '@/lib/sleep/sleep';
 import { cn } from '@/lib/utils';
 
 const RELAXATION_LEAD_MIN = 30;

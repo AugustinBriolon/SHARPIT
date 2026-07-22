@@ -10,7 +10,7 @@
 import type { ActivityType, SessionIntensity } from '@prisma/client';
 import { activityTypeLabels } from '@/lib/format';
 import { formatDate } from '@/lib/format';
-import { intensityLabels } from '@/lib/sessions';
+import { intensityLabels } from '@/lib/planned-session/sessions';
 import { deriveSessionExecutionState } from '@/lib/decision-memory/session-execution';
 import { describeOutcome } from '@/lib/decision-memory/describe-outcome';
 import { describeSnapshotContext } from '@/lib/presentation/snapshot-context-labels';

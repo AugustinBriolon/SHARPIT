@@ -1,5 +1,5 @@
 import { isCoachConfigured } from '@/lib/ai';
-import { generateAndStoreDailyBriefing } from '@/lib/daily-briefing';
+import { generateAndStoreDailyBriefing } from '@/lib/briefing/daily-briefing';
 import { regenerateAthleteSnapshotAfterBriefing } from '@/lib/athlete-state/snapshot-service';
 import { prisma } from '@/lib/prisma';
 
@@ -33,11 +33,11 @@ async function runBackgroundTasks(
   }
 
   if (activityIds.length > 0) {
-    const { autoLinkActivities } = await import('@/lib/session-linking');
+    const { autoLinkActivities } = await import('@/lib/planned-session/session-linking');
     await autoLinkActivities(activityIds);
 
     if (isCoachConfigured()) {
-      const { runActivityNarrativeForIds } = await import('@/lib/activity-narrative');
+      const { runActivityNarrativeForIds } = await import('@/lib/activity/activity-narrative');
       await runActivityNarrativeForIds(activityIds);
     }
   }

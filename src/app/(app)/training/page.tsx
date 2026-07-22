@@ -1,4 +1,4 @@
-import { TrainingDashboard } from '@/components/training/training-dashboard';
+import { TrainingDashboard } from '@/components/training/hub/training-dashboard';
 
 export default function TrainingPage() {
   return <TrainingDashboard />;

@@ -9,8 +9,8 @@ import { SnapshotOfflineSync } from '@/components/pwa/snapshot-offline-sync';
 import { Toaster } from '@/components/ui/toast';
 import { QueryProvider } from '@/providers/query-provider';
 import { AppModalProvider } from '@/providers/app-modal-provider';
-import { THEME_INIT_SCRIPT, THEME_DARK_COLOR, THEME_LIGHT_COLOR } from '@/lib/theme';
-import { getServerResolvedTheme, getServerThemePreference } from '@/lib/theme.server';
+import { THEME_INIT_SCRIPT, THEME_DARK_COLOR, THEME_LIGHT_COLOR } from '@/lib/theme/theme';
+import { getServerResolvedTheme, getServerThemePreference } from '@/lib/theme/theme.server';
 import { cn } from '@/lib/utils';
 import './globals.css';
 

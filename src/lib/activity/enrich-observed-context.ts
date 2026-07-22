@@ -11,9 +11,9 @@ import {
   serializeActivityWeather,
 } from '@/lib/activity/activity-weather';
 import { isIndoorActivitySession } from '@/lib/activity/indoor-activity';
-import { runActivityNarrativeAnalysis } from '@/lib/activity-narrative';
+import { runActivityNarrativeAnalysis } from '@/lib/activity/activity-narrative';
 import { fetchForecastPredictions } from '@/lib/planned-session/forecast-fetch';
-import { computeTrainingDayId } from '@/lib/training-day';
+import { computeTrainingDayId } from '@/lib/training/training-day';
 
 const OUTDOOR_TYPES = new Set<ActivityType>(['RUN', 'BIKE', 'SWIM', 'TRIATHLON']);
 

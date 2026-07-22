@@ -9,7 +9,7 @@
 
 import type { GeoLocation } from '@/core/environment';
 import type { PrismaClient } from '@prisma/client';
-import { approximateTrainingDayUtcRange } from '@/lib/training-day';
+import { approximateTrainingDayUtcRange } from '@/lib/training/training-day';
 import { midpointFromLatLng } from '@/lib/geo/midpoint';
 
 import { resolveDefaultActivityLocation } from '@/lib/geocoding/default-activity-location';

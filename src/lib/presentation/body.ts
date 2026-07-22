@@ -4,23 +4,23 @@ import type {
   BodyTrendWindowId,
   BodyViewModel,
 } from '@/core/presentation/body-view-model';
-import { athleteCompositionContext } from '@/lib/athlete-profile-utils';
+import { athleteCompositionContext } from '@/lib/profile/athlete-profile-utils';
 import {
   buildCompositionSeries,
   computeCompositionTrend,
   dedupeBodyCompositionByDay,
   formatCompositionDelta,
-} from '@/lib/body-composition';
+} from '@/lib/health/body-composition';
 import {
   getGuide,
   metricScalePosition,
   type CompositionContext,
   type CompositionMetricId,
-} from '@/lib/composition-metric-guides';
-import { buildWeeklyDeltaPresentation, resolveMetricValueTone } from '@/lib/health-status';
+} from '@/lib/health/composition-metric-guides';
+import { buildWeeklyDeltaPresentation, resolveMetricValueTone } from '@/lib/health/health-status';
 import { buildBodyPageInsights } from '@/lib/product-insight/body-page-insights';
 import { getAthleteProfile, getBodyCompositionMeasurements } from '@/lib/queries';
-import { parseWithingsEcgStats } from '@/lib/withings-ecg-display';
+import { parseWithingsEcgStats } from '@/lib/integrations/withings-ecg-display';
 
 const TREND_WINDOWS = [
   { id: '14d', label: '14 j', days: 14 },

@@ -5,8 +5,8 @@ import {
   type GlobalDecisionDomainRole,
 } from '@/core/presentation/global-decision-context';
 import { resolveCode } from '@/lib/french';
-import { mapVerdictToDisplay } from '@/lib/today-mapping';
-import { buildTopActionLine } from '@/lib/today-rich-view';
+import { mapVerdictToDisplay } from '@/lib/today/today-mapping';
+import { buildTopActionLine } from '@/lib/today/today-rich-view';
 import {
   decisionTopAction,
   decisionVerdict,

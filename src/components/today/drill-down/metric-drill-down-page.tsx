@@ -1,5 +1,5 @@
-import type { MetricTone } from '@/lib/metric-tone';
-import { metricToneClass } from '@/lib/metric-tone';
+import type { MetricTone } from '@/lib/ui/metric-tone';
+import { metricToneClass } from '@/lib/ui/metric-tone';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import { cn } from '@/lib/utils';
 

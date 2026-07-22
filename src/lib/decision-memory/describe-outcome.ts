@@ -7,7 +7,7 @@
  * simplistic score. INCONCLUSIVE is always stated explicitly, never silently hidden.
  */
 
-import { SESSION_VERDICT_LABELS } from '@/lib/session-analysis-display';
+import { SESSION_VERDICT_LABELS } from '@/lib/planned-session/session-analysis-display';
 import type { OutcomeEvaluation, ExecutionMatch, ShortTermRecoveryResponse } from './types';
 
 const INCONCLUSIVE_WORDING = 'Preuves encore insuffisantes pour conclure.';

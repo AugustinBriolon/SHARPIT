@@ -5,9 +5,10 @@ import {
   AnalyticsStat,
   FormStatusBanner,
 } from '@/components/analytics/analytics-cards';
-import { LoadChart } from '@/components/analytics/load-chart';
-import { SportDistributionChart } from '@/components/analytics/sport-distribution-chart';
-import { VolumeChart } from '@/components/analytics/volume-chart';
+import { LoadChart } from '@/components/analytics/charts/load-chart';
+import { PerformancePredictions } from '@/components/analytics/predictions/performance-predictions';
+import { SportDistributionChart } from '@/components/analytics/charts/sport-distribution-chart';
+import { VolumeChart } from '@/components/analytics/charts/volume-chart';
 import { buildAnalyticsViewModel, type ActivityForAnalytics } from '@/lib/analytics';
 import { useMemo } from 'react';
 
@@ -23,9 +24,10 @@ export function AnalyticsView({ activities }: AnalyticsViewProps) {
 
   return (
     <div className="space-y-4">
+      {/* Niveau 1 — lecture du moment */}
       <FormStatusBanner pmc={pmc} />
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         <AnalyticsStat
           hint="Charge chronique (42 j)"
           label="CTL · Forme"
@@ -42,24 +44,30 @@ export function AnalyticsView({ activities }: AnalyticsViewProps) {
           value={`${summary.tsb > 0 ? '+' : ''}${summary.tsb}`}
         />
         <AnalyticsStat
-          hint={`${summary.weeklyLoad} TSS estimés · ${summary.totalActivities} séances`}
+          hint={`${summary.weeklyLoad} TSS · ${summary.totalActivities} séances`}
           label="Volume 7 j"
           value={`${summary.weeklyHours} h`}
         />
       </section>
 
       <AnalyticsSection
-        description="Évolution de ta forme (CTL), fatigue (ATL) et fraîcheur (TSB) — modèle Banister sur 6 mois."
-        title="Modèle de charge (PMC)"
+        description="Forme (CTL), fatigue (ATL) et fraîcheur (TSB) — 6 mois."
+        title="Modèle de charge"
+        compact
       >
         <LoadChart data={pmc} />
       </AnalyticsSection>
 
+      {/* Niveau 2 — projection à partir de l’état actuel */}
+      <PerformancePredictions />
+
+      {/* Niveau 3 — analyse secondaire */}
       <AnalyticsSection
-        description="Heures par semaine et part de chaque sport sur les 90 derniers jours."
+        description="Contexte complémentaire : heures par semaine et mix sportif — 90 j."
         title="Volume & répartition"
+        compact
       >
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid gap-2 lg:grid-cols-2">
           <VolumeChart data={weeklyVolume} />
           <SportDistributionChart data={distribution} />
         </div>

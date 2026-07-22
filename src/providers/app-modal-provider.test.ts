@@ -13,7 +13,7 @@ vi.mock('@/hooks/use-data', () => ({
   useGoals: () => ({ data: [] }),
 }));
 
-vi.mock('@/components/planning/planned-session-dialog', () => ({
+vi.mock('@/components/planning/session/planned-session-dialog', () => ({
   PlannedSessionDialog: (props: { session: { id: string }; onClose: () => void }) =>
     createElement('div', {
       'data-testid': 'planned-dialog',

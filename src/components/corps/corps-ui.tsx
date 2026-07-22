@@ -2,8 +2,8 @@ import { ClinicalAnnotation } from '@/components/ui/clinical-annotation';
 import { EyebrowLabel } from '@/components/ui/eyebrow-label';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { MetricCell } from '@/components/ui/metric-cell';
-import type { CorpsTone } from '@/lib/metric-tone';
-import { CORPS_TONE_DOT, CORPS_TONE_TEXT } from '@/lib/metric-tone';
+import type { CorpsTone } from '@/lib/ui/metric-tone';
+import { CORPS_TONE_DOT, CORPS_TONE_TEXT } from '@/lib/ui/metric-tone';
 import { cn } from '@/lib/utils';
 
 export type { CorpsTone };

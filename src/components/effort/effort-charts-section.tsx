@@ -8,7 +8,7 @@ import {
   CHART_RECOVERY_STROKE,
   CHART_REFERENCE_LINE,
   CHART_TICK_COLOR,
-} from '@/lib/chart-theme';
+} from '@/lib/theme/chart-theme';
 import {
   LineChart,
   Line,

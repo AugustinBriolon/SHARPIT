@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Goal,
   Brain,
+  Dumbbell,
   Link2,
   MoonStar,
   ShieldCheck,
@@ -12,7 +13,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { StickyHeader } from '@/components/layout/sticky-header';
-import { SettingsMaintenancePanel } from '@/components/settings/settings-maintenance-panel';
+import { SettingsMaintenancePanel } from '@/components/settings/maintenance';
 import { InstallCard } from '@/components/pwa/install-card';
 import { cn } from '@/lib/utils';
 
@@ -29,6 +30,12 @@ const ENTRIES: SettingsEntry[] = [
     title: 'Compte',
     description: 'Identité athlète, seuils et paramètres physiologiques.',
     icon: User2,
+  },
+  {
+    href: '/settings/equipment',
+    title: 'Équipement',
+    description: 'Matériel disponible par sport pour adapter les séances.',
+    icon: Dumbbell,
   },
   {
     href: '/settings/appearance',
@@ -102,7 +109,6 @@ export function SettingsHome() {
           <SettingsEntryCard key={entry.href} entry={entry} />
         ))}
       </div>
-      <InstallCard />
       <div className="analysis-panel-alt rounded-analysis-lg p-4">
         <div className="flex items-start gap-3">
           <div className="icon-well size-9 rounded-xl">
@@ -120,6 +126,7 @@ export function SettingsHome() {
           <SettingsMaintenancePanel variant="embedded" />
         </div>
       </div>
+      <InstallCard />
     </div>
   );
 }
