@@ -9,6 +9,7 @@ import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { MorningWellnessDialog } from '@/components/today/dashboard/morning-wellness-dialog';
 import { MorningOrientationActions } from '@/components/today/rich/morning-orientation-actions';
+import { useAppModal } from '@/providers/app-modal-provider';
 
 /**
  * Session response — single block answering “quoi aujourd’hui ?”
@@ -25,6 +26,7 @@ export function TodayActionRow({
   onWellnessCompleted?: () => void;
   loading?: boolean;
 }) {
+  const { openPlannedSession } = useAppModal();
   const daySummaryEmpty = !loading && vm.actionRow.daySummaryLines.length === 0;
   const reminders =
     !loading &&
@@ -64,18 +66,22 @@ export function TodayActionRow({
         </ul>
       ) : null}
 
-      {loading ? (
-        <ul className="space-y-2">
-          {[0, 1].map((i) => (
-            <li
-              key={i}
-              className="border-analysis-border/80 bg-background/50 rounded-lg border px-3 py-2.5"
-            >
-              <SkeletonDataValue heightClassName="h-4" widthClassName="w-full max-w-[240px]" />
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      {loading && (
+        <div className="border-analysis-border/80 bg-background/50 space-y-1 rounded-lg border px-3 py-2.5">
+          <SkeletonDataValue heightClassName="h-5" widthClassName="w-full max-w-[240px]" />
+          <div className="flex h-[15px] items-center gap-1.5">
+            <SkeletonDataValue heightClassName="h-[15px]" widthClassName="w-15" />
+            <span className="opacity-30" aria-hidden>
+              ·
+            </span>
+            <SkeletonDataValue heightClassName="h-full" widthClassName="w-10" />
+            <span className="opacity-30" aria-hidden>
+              ·
+            </span>
+            <SkeletonDataValue heightClassName="h-full" widthClassName="w-10" />
+          </div>
+        </div>
+      )}
 
       {!loading && !hideSessionList && daySummaryEmpty ? (
         <div className="border-analysis-border/80 bg-background/50 rounded-analysis space-y-2 border px-3 py-3">
@@ -98,14 +104,19 @@ export function TodayActionRow({
             if (line.morningChoiceLabel) {
               meta.push({ text: line.morningChoiceLabel, tone: 'caution' });
             }
+            const openPlanned =
+              line.kind === 'planned'
+                ? () => openPlannedSession({ sessionId: line.id })
+                : undefined;
             return (
               <li key={line.id}>
                 <InstrumentListChip
                   activityType={line.activityType}
                   done={line.isDone}
-                  href={line.href}
+                  href={openPlanned ? undefined : line.href}
                   meta={meta}
                   title={line.primary}
+                  onClick={openPlanned}
                 />
               </li>
             );

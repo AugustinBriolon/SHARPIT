@@ -1,17 +1,20 @@
+'use client';
+
 import { selectUpcomingPlannedPreview } from '@/lib/planned-session-dates';
 import { resolvePlannedSessionDisplay } from '@/lib/planned-session-display';
 import { forecastBadgeFromContext } from '@/lib/planned-session/forecast-badge';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import type { ClientPlannedSession } from '@/lib/query/types';
-import { plannedSessionHref } from '@/lib/session-analysis-display';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   InstrumentListChip,
   type InstrumentListChipMeta,
 } from '@/components/ui/instrument-list-chip';
+import { useAppModal } from '@/providers/app-modal-provider';
 
 /**
  * Upcoming sessions as compact drill-down chips — no PhysioRail in the list hero.
+ * Opens the global planned-session modal (no /planning redirect).
  */
 export function PlanningRow({
   sessions,
@@ -23,6 +26,7 @@ export function PlanningRow({
   compact?: boolean;
 }) {
   const queryClient = useQueryClient();
+  const { openPlannedSession } = useAppModal();
   const today = new Date();
   const upcoming = selectUpcomingPlannedPreview(sessions, today, limit);
 
@@ -48,9 +52,9 @@ export function PlanningRow({
           <li key={s.id}>
             <InstrumentListChip
               activityType={s.type}
-              href={plannedSessionHref(s.id)}
               meta={meta}
               title={title}
+              onClick={() => openPlannedSession({ sessionId: s.id })}
               onFocus={() => prefetchPlannedSessionDetail(queryClient, s.id)}
               onPointerEnter={() => prefetchPlannedSessionDetail(queryClient, s.id)}
             />

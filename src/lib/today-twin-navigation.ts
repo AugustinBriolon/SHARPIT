@@ -16,7 +16,7 @@ export const TWIN_DRILL_DOWN = {
   sessions: '/training',
   planning: '/training/planning',
   activity: (id: string) => `/training/${id}` as const,
-  /** Opens Planning with the planned-session dialog for this id. */
+  /** Deep-link to Planning with dialog (bookmarks / share). Prefer `useAppModal().openPlannedSession` in-app. */
   plannedSession: plannedSessionHref,
 } as const;
 

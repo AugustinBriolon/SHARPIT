@@ -1,10 +1,10 @@
 import { Suspense } from 'react';
-import { CorpsHubSkeleton } from '@/components/corps/corps-hub-skeleton';
 import { CorpsHub } from '@/components/corps/corps-hub';
 
+/** Suspense for `useSearchParams` only — no route/hub safety skeleton. */
 export default function BiologyPage() {
   return (
-    <Suspense fallback={<CorpsHubSkeleton />}>
+    <Suspense>
       <CorpsHub basePath="/biology" />
     </Suspense>
   );

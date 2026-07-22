@@ -1,10 +1,10 @@
 import { Suspense } from 'react';
 import { CoachView } from '@/components/coach/coach-view';
-import { CoachHubSkeleton } from '@/components/coach/coach-hub-skeleton';
 
+/** Suspense for `useSearchParams` only — no route/hub safety skeleton. */
 export default function CoachPage() {
   return (
-    <Suspense fallback={<CoachHubSkeleton />}>
+    <Suspense>
       <CoachView />
     </Suspense>
   );

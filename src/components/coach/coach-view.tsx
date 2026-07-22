@@ -9,7 +9,6 @@ import { CoachConversationList } from '@/components/coach/coach-conversation-lis
 import {
   CoachChatEmptyChrome,
   CoachChatPanelSkeleton,
-  CoachHubSkeleton,
   CoachPageHeader,
 } from '@/components/coach/coach-hub-skeleton';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,6 @@ import {
   useDeleteConversation,
 } from '@/hooks/use-coach';
 import { useActivities, usePlannedSessions } from '@/hooks/use-data';
-import { useMounted } from '@/hooks/use-mounted';
 import { useIsMobile } from '@/hooks/use-viewport';
 import { useProjectedAthleteViewModel } from '@/hooks/use-projected-athlete-view-model';
 import type { ProjectionHorizonDays } from '@/core/projection/types';
@@ -42,10 +40,10 @@ function createEphemeralId(): string {
 
 export function CoachView() {
   const searchParams = useSearchParams();
-  const mounted = useMounted();
   const isMobile = useIsMobile();
-  const showMobileShell = mounted && isMobile;
-  const showDesktopShell = mounted && !isMobile;
+  // Viewport defaults to desktop (SSR + first paint) — no hub safety skeleton while mounting.
+  const showMobileShell = isMobile;
+  const showDesktopShell = !isMobile;
   const discussId = searchParams.get('discuss');
   const discussActivityId = searchParams.get('discussActivity');
   const discussPlanningRaw = searchParams.get('discussPlanning');
@@ -343,8 +341,6 @@ export function CoachView() {
           </div>
         </div>
       ) : null}
-
-      {!mounted ? <CoachHubSkeleton /> : null}
 
       {dialog}
     </div>

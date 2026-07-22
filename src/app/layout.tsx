@@ -8,6 +8,7 @@ import { UpdateAvailableToast } from '@/components/pwa/update-available-toast';
 import { SnapshotOfflineSync } from '@/components/pwa/snapshot-offline-sync';
 import { Toaster } from '@/components/ui/toast';
 import { QueryProvider } from '@/providers/query-provider';
+import { AppModalProvider } from '@/providers/app-modal-provider';
 import { THEME_INIT_SCRIPT, THEME_DARK_COLOR, THEME_LIGHT_COLOR } from '@/lib/theme';
 import { getServerResolvedTheme, getServerThemePreference } from '@/lib/theme.server';
 import { cn } from '@/lib/utils';
@@ -130,8 +131,10 @@ export default async function RootLayout({
         <body className="bg-background text-foreground min-h-full font-sans">
           <ThemeProvider serverPreference={serverPreference}>
             <QueryProvider>
-              {children}
-              <SnapshotOfflineSync />
+              <AppModalProvider>
+                {children}
+                <SnapshotOfflineSync />
+              </AppModalProvider>
             </QueryProvider>
           </ThemeProvider>
           <Toaster />

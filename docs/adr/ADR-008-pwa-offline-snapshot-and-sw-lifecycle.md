@@ -57,6 +57,7 @@ Cache whatever `TodayViewModel` Today's own presentation route returns, so the o
 - An athlete who opens the installed app with no connectivity sees the last verified state, clearly labeled read-only, instead of a dead end — directly serving "feels like a native app" without touching Core inference or introducing any new mutation surface.
 - A version deploy can never interrupt an open form, dialog, or coaching action — the athlete controls exactly when the new version takes effect.
 - Both decisions are testable with plain fixtures: `snapshot-store-validation.ts` and `sw-update-state.ts` are pure, unit-tested without a browser; `snapshot-store.ts`'s IndexedDB round-trip is tested with `fake-indexeddb` (a tiny, dev-only, single-purpose test dependency — not a second caching abstraction, a test polyfill).
+- Serwist `reloadOnOnline` is **`false`** — a hard `location.reload()` on reconnect would wipe the in-memory React Query cache and force cold skeletons on every flaky mobile reconnect, contradicting Instant UX. Reconnect refresh stays with TanStack Query's `refetchOnReconnect` instead.
 
 ### Negative
 

@@ -45,4 +45,17 @@ describe('InstrumentListChip', () => {
     expect(html).toContain('Séance faite');
     expect(html).toContain('Vélo');
   });
+
+  it('renders a button when onClick is used without href', () => {
+    const html = renderToStaticMarkup(
+      createElement(InstrumentListChip, {
+        title: 'Tempo planifié',
+        activityType: ActivityType.RUN,
+        onClick: () => undefined,
+      }),
+    );
+    expect(html).toContain('<button');
+    expect(html).toContain('Tempo planifié');
+    expect(html).not.toContain('<a ');
+  });
 });

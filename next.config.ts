@@ -10,6 +10,11 @@ const withSerwist = withSerwistInit({
   swSrc: 'src/sw.ts',
   swDest: 'public/sw.js',
   disable: process.env.NODE_ENV === 'development',
+  // Manual registration via SwRegister — avoid double-register with sw-entry.
+  register: false,
+  // Never hard-reload on `online` — that wipes the React Query cache and forces
+  // cold micro-skeletons on every flaky mobile/PWA reconnect (Instant UX + ADR-008).
+  reloadOnOnline: false,
   additionalPrecacheEntries: [{ url: '/~offline', revision }],
   globPublicPatterns: ['icons/*.{png,svg}', 'favicon.svg', 'favicon-dark.svg', 'favicon.ico'],
 });

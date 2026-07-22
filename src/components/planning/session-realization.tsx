@@ -412,7 +412,7 @@ export function SessionRealization({
   }
 
   return (
-    <div className="border-border/60 space-y-3 rounded-lg border border-dashed p-3">
+    <div className="border-border/60 space-y-2 rounded-lg border border-dashed p-2.5 sm:space-y-3 sm:p-3">
       {!pickerOpen ? (
         <Button size="sm" type="button" variant="outline" onClick={() => setPickerOpen(true)}>
           <Link2 className="size-4" /> J&apos;ai fait cette séance

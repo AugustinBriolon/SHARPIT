@@ -420,7 +420,7 @@ export function PlannedSessionDialog({
   return (
     <>
       <Dialog open onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="no-scrollbar max-h-[90vh] min-w-0 overflow-x-hidden overflow-y-auto sm:max-w-2xl">
+        <DialogContent className="no-scrollbar max-h-[80dvh] min-w-0 overflow-x-hidden overflow-y-auto sm:max-h-[90vh] sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>
               {dialogTitle(isEdit, mode, Boolean(session?.activity), omitLinkedActivityNavigation)}

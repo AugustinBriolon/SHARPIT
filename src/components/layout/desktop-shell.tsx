@@ -4,6 +4,7 @@ import { SyncingIndicator } from '@/components/ui/syncing-indicator';
 import { PAGE_GUTTER } from '@/lib/page-gutter';
 
 export function DesktopShell({ children }: { children: React.ReactNode }) {
+  /** @deprecated Prefer `AppShell` — kept for isolated stories/tests. */
   return (
     <div className="bg-background hidden h-dvh overflow-hidden lg:flex">
       <Sidebar />

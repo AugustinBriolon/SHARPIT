@@ -12,7 +12,10 @@ import { cn } from '@/lib/utils';
 export type InstrumentListChipMeta = string | { text: string; tone?: 'default' | 'caution' };
 
 export type InstrumentListChipProps = {
-  href: string;
+  /** Route navigation. Omit when using `onClick` (in-place modal). */
+  href?: string;
+  /** In-place action (e.g. open planned-session modal). Prefer over href when set alone. */
+  onClick?: () => void;
   title: string;
   activityType?: ActivityType;
   /** Facts under the title — type label is prepended when `activityType` is set. */
@@ -44,12 +47,23 @@ export function splitInstrumentMeta(secondary: string | null | undefined): strin
     .filter(Boolean);
 }
 
+const chipClassName = (done: boolean, className?: string) =>
+  cn(
+    'border-analysis-border/80 bg-background/50 hover:border-primary/35 hover:bg-muted/40',
+    'focus-visible:ring-primary/35 flex w-full min-w-0 items-center justify-between gap-3',
+    'rounded-analysis border px-3 py-2.5 text-left transition-[border-color,background-color] duration-150',
+    'group focus-visible:ring-2 focus-visible:outline-hidden',
+    done && cn(STATUS_SURFACE.doneSoft, STATUS_SURFACE.doneHover),
+    className,
+  );
+
 /**
  * Shared drill-down list chip — training previews + Today “Séance du jour”.
  * Two-line instrument layout: title, then type · meta facts.
  */
 export const InstrumentListChip = memo(function InstrumentListChip({
   href,
+  onClick,
   title,
   activityType,
   meta = [],
@@ -61,22 +75,10 @@ export const InstrumentListChip = memo(function InstrumentListChip({
   onPointerEnter,
 }: InstrumentListChipProps) {
   const hasMetaRow = activityType != null || meta.length > 0;
+  const label = linkTitle ?? `Voir le détail — ${title}`;
 
-  return (
-    <Link
-      href={href}
-      title={linkTitle ?? `Voir le détail — ${title}`}
-      className={cn(
-        'border-analysis-border/80 bg-background/50 hover:border-primary/35 hover:bg-muted/40',
-        'focus-visible:ring-primary/35 flex w-full min-w-0 items-center justify-between gap-3',
-        'rounded-analysis border px-3 py-2.5 transition-[border-color,background-color] duration-150',
-        'group focus-visible:ring-2 focus-visible:outline-hidden',
-        done && cn(STATUS_SURFACE.doneSoft, STATUS_SURFACE.doneHover),
-        className,
-      )}
-      onFocus={onFocus}
-      onPointerEnter={onPointerEnter}
-    >
+  const body = (
+    <>
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="text-foreground line-clamp-1 min-w-0 text-sm leading-snug font-medium">
           {title}
@@ -111,6 +113,38 @@ export const InstrumentListChip = memo(function InstrumentListChip({
           →
         </span>
       </span>
+    </>
+  );
+
+  if (onClick && !href) {
+    return (
+      <button
+        className={chipClassName(done, className)}
+        title={label}
+        type="button"
+        onClick={onClick}
+        onFocus={onFocus}
+        onPointerEnter={onPointerEnter}
+      >
+        {body}
+      </button>
+    );
+  }
+
+  if (!href) {
+    throw new Error('InstrumentListChip requires `href` or `onClick`');
+  }
+
+  return (
+    <Link
+      className={chipClassName(done, className)}
+      href={href}
+      title={label}
+      onClick={onClick}
+      onFocus={onFocus}
+      onPointerEnter={onPointerEnter}
+    >
+      {body}
     </Link>
   );
 });

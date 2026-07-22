@@ -54,7 +54,7 @@ export function SessionRationaleCard({ sessionId }: { sessionId: string }) {
 
   return (
     <Card className="border-border/60">
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 px-3 py-3 sm:space-y-4 sm:px-4 sm:py-4">
         {suggested ? (
           <Section icon={Brain} label="Pourquoi cette séance">
             {suggested.purpose && <p>{suggested.purpose}</p>}

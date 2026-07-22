@@ -418,7 +418,7 @@
   color: var(--color-highlight-foreground);
 }
 
-/* Break out of shell page gutter (--page-gutter set on MobileShell / DesktopShell) */
+/* Break out of shell page gutter (--page-gutter set on AppShell page wrapper) */
 @utility page-bleed {
   margin-inline: calc(var(--page-gutter, 1rem) * -1);
 }

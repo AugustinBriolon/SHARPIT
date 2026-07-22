@@ -64,6 +64,7 @@ export function BottomNav() {
 }
 
 export function MobileShell({ children }: { children: React.ReactNode }) {
+  /** @deprecated Prefer `AppShell` — kept for isolated stories/tests. */
   return (
     <div className="bg-background flex h-dvh flex-col lg:hidden">
       <OfflineBanner />

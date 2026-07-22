@@ -23,6 +23,29 @@ import { queryKeys } from '@/lib/query/keys';
 
 const PREFETCH_STALE = 5 * 60_000;
 
+function prefetchTrainingHub(pre: <T>(key: readonly unknown[], fn: () => Promise<T>) => void) {
+  pre(queryKeys.plannedSessions, fetchPlannedSessions);
+  pre(queryKeys.activities, fetchActivities);
+  pre(queryKeys.goals, fetchGoals);
+}
+
+function prefetchBiologyHub(
+  pre: <T>(key: readonly unknown[], fn: () => Promise<T>) => void,
+  trainingDayId: string,
+) {
+  pre(['presentation', 'recovery', trainingDayId], () => fetchRecoveryPresentation(trainingDayId));
+  pre(['presentation', 'body', 'all'], () => fetchBodyPresentation(null));
+  pre(['presentation', 'physical-health', trainingDayId], () =>
+    fetchPhysicalHealthPresentation(trainingDayId),
+  );
+  pre(queryKeys.physicalNotes, fetchPhysicalNotes);
+}
+
+/**
+ * Warm TanStack Query cache for primary nav destinations.
+ * Hrefs must match canonical nav items in `app-navigation.ts` (`/training`, `/biology`, …).
+ * Legacy aliases remain for deep links / bookmarks.
+ */
 export function usePrefetchNavQuery() {
   const queryClient = useQueryClient();
   const trainingDayId = format(new Date(), 'yyyy-MM-dd');
@@ -39,20 +62,15 @@ export function usePrefetchNavQuery() {
             fetchTodayPresentation(trainingDayId),
           );
           break;
+        case '/training':
         case '/seances':
-          pre(queryKeys.plannedSessions, fetchPlannedSessions);
-          pre(queryKeys.activities, fetchActivities);
+          prefetchTrainingHub(pre);
           break;
+        case '/biology':
         case '/corps':
-          pre(['presentation', 'recovery', trainingDayId], () =>
-            fetchRecoveryPresentation(trainingDayId),
-          );
-          pre(['presentation', 'body', 'all'], () => fetchBodyPresentation(null));
-          pre(['presentation', 'physical-health', trainingDayId], () =>
-            fetchPhysicalHealthPresentation(trainingDayId),
-          );
-          pre(queryKeys.physicalNotes, fetchPhysicalNotes);
+          prefetchBiologyHub(pre, trainingDayId);
           break;
+        case '/settings':
         case '/goals':
           pre(queryKeys.goals, fetchGoals);
           break;
@@ -66,6 +84,7 @@ export function usePrefetchNavQuery() {
           pre(queryKeys.goals, fetchGoals);
           break;
         case '/planning':
+        case '/training/planning':
           pre(queryKeys.plannedSessions, fetchPlannedSessions);
           pre(queryKeys.goals, fetchGoals);
           break;
@@ -88,9 +107,6 @@ export function usePrefetchNavQuery() {
           pre(['presentation', 'adaptation', trainingDayId], () =>
             fetchAdaptationPresentation(trainingDayId),
           );
-          break;
-        case '/training':
-          pre(queryKeys.activities, fetchActivities);
           break;
       }
     },
