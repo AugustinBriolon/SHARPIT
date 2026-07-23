@@ -25,7 +25,7 @@ export function FormStatusBanner({ pmc }: { pmc: PmcPoint[] }) {
       )}
     >
       <div className="flex items-center gap-3">
-        <span className="icon-well size-8 rounded-full">
+        <span className="icon-well size-8">
           <Gauge className="size-3.5" />
         </span>
         <div className="min-w-0 flex-1">

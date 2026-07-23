@@ -84,7 +84,7 @@ export function TrainingWeekStrip({
               title={`Ouvrir le planning — semaine du ${weekLabel}`}
               className={cn(
                 cellVisibilityClass(index, weekCells.length),
-                'flex-col items-center gap-1 rounded-lg px-1 py-2',
+                'flex-col items-center gap-1 rounded-2xl px-1 py-2',
                 'focus-visible:ring-primary/35 transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
                 cell.isCurrent
                   ? 'bg-highlight text-highlight-foreground hover:bg-highlight/90'

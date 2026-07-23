@@ -245,10 +245,10 @@ export function TriathlonActivityInsights({ activityId }: { activityId: string }
           <Skeleton className="h-4 w-36" />
           <Skeleton className="h-8 w-56 rounded-full" />
         </div>
-        <Skeleton className="h-72 w-full" />
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Skeleton className="h-72 w-full rounded-xl sm:h-80" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-20" />
+            <Skeleton key={i} className="rounded-analysis-lg h-20" />
           ))}
         </div>
       </div>

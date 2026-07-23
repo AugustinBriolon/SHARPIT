@@ -18,7 +18,7 @@ export default function Loading() {
       <StickyHeader>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-start gap-4">
-            <Skeleton className="size-12 shrink-0 rounded-2xl" />
+            <Skeleton className="rounded-analysis-lg size-12 shrink-0" />
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <Skeleton className="h-6 w-16 rounded-full" />
@@ -33,7 +33,7 @@ export default function Loading() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Skeleton className="h-9 w-36 rounded-lg" />
+            <Skeleton className="h-9 w-36 rounded-full" />
             <Skeleton className="h-9 w-24 rounded-lg" />
             <Skeleton className="h-9 w-24 rounded-lg" />
           </div>
@@ -63,12 +63,12 @@ export default function Loading() {
 
       <section className="space-y-3">
         <SkeletonEyebrow className="w-28" />
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <SkeletonCard key={i} className="min-h-28 px-4 py-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="chip-surface rounded-2xl px-5 py-4">
               <Skeleton className="h-3 w-20 rounded-full border-0" />
-              <Skeleton className="mt-3 h-7 w-16 border-0" />
-            </SkeletonCard>
+              <Skeleton className="mt-3 h-7 w-16 rounded-lg border-0" />
+            </div>
           ))}
         </div>
       </section>

@@ -119,9 +119,9 @@ export function ActivityConsistencyPanel({
 
       {loading ? (
         <div className="flex w-full items-start gap-[2px]" aria-hidden>
-          {Array.from({ length: 12 }, (_, colIdx) => (
+          {stats.weekColumns.map((column, colIdx) => (
             <div key={colIdx} className="flex min-w-0 flex-1 flex-col gap-[2px]">
-              {Array.from({ length: 7 }, (_, rowIdx) => (
+              {column.map((_, rowIdx) => (
                 <div
                   key={rowIdx}
                   className="bg-muted/60 aspect-square min-h-[6px] w-full animate-pulse rounded-[2px]"

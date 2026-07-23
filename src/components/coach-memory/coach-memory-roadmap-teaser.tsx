@@ -6,7 +6,7 @@ export function CoachMemoryRoadmapTeaser() {
   return (
     <PageBleed className="py-5" tone="muted">
       <div className="flex items-start gap-3">
-        <div className="icon-well mt-0.5 size-8 shrink-0 rounded-lg">
+        <div className="icon-well mt-0.5 size-8 shrink-0">
           <Sparkles className="size-4" aria-hidden />
         </div>
         <div className="min-w-0 flex-1">

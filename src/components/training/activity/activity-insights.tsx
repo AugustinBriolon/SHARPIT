@@ -31,15 +31,15 @@ export function ActivityInsights({ activityId, type }: { activityId: string; typ
   if (isPending) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-80 w-full" />
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Skeleton className="h-80 w-full rounded-xl sm:h-96" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-20" />
+            <Skeleton key={i} className="rounded-analysis-lg h-20" />
           ))}
         </div>
         <div className="grid gap-4 lg:grid-cols-2">
-          <Skeleton className="h-56" />
-          <Skeleton className="h-56" />
+          <Skeleton className="h-56 rounded-xl" />
+          <Skeleton className="h-56 rounded-xl" />
         </div>
       </div>
     );

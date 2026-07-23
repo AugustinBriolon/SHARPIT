@@ -15,6 +15,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
+import { InstrumentListChipSkeleton } from '@/components/ui/instrument-list-chip';
 import { useActivities, useRecords } from '@/hooks/use-data';
 import { activityTypeLabels } from '@/lib/format';
 import { buildActivityRecordLabels } from '@/lib/training/activity-record-labels';
@@ -182,11 +184,18 @@ function groupByWeek(activities: ClientActivity[]): WeekGroup[] {
 
 export function TrainingListFallback() {
   return (
-    <div className="space-y-3">
+    <div className="space-y-6">
       <Skeleton className="h-11 w-full rounded-xl sm:h-9 sm:max-w-xl sm:rounded-full" />
-      {Array.from({ length: 6 }).map((_, i) => (
-        <Skeleton key={i} className="h-[68px] w-full" />
-      ))}
+      <section>
+        <div className="mb-2 px-0.5">
+          <SkeletonDataValue heightClassName="h-3" widthClassName="w-24" />
+        </div>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {Array.from({ length: 6 }, (_, i) => (
+            <InstrumentListChipSkeleton key={i} titleWidth="w-[min(100%,14rem)]" />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

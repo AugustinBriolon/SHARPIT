@@ -23,11 +23,7 @@ export function DrillDownSectionCard({
 
   return (
     <section
-      className={cn(
-        'analysis-panel sm:rounded-analysis-lg rounded-[1.25rem]',
-        paddingClass,
-        className,
-      )}
+      className={cn('analysis-panel sm:rounded-analysis-lg rounded-xl', paddingClass, className)}
     >
       {children}
     </section>

@@ -10,6 +10,7 @@ import { ActivityList } from '@/components/training/activity/activity-list';
 import { TrainingWeekStrip } from '@/components/training/hub/training-week-strip';
 import { Badge } from '@/components/ui/badge';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
+import { InstrumentListChipSkeleton } from '@/components/ui/instrument-list-chip';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import { useActivities, useGoals, usePlannedSessions } from '@/hooks/use-data';
 import { isAnyInitialQueryLoad } from '@/hooks/use-query-status';
@@ -47,12 +48,8 @@ function PreviewChipSkeleton({ count }: { count: number }) {
   return (
     <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
       {Array.from({ length: count }, (_, i) => (
-        <li
-          key={i}
-          className="border-analysis-border/80 bg-background/50 rounded-analysis flex flex-col gap-2 border px-3 py-2.5"
-        >
-          <SkeletonDataValue heightClassName="h-4" widthClassName="w-[min(100%,12rem)]" />
-          <SkeletonDataValue heightClassName="h-3" widthClassName="w-28" />
+        <li key={i} className="min-w-0">
+          <InstrumentListChipSkeleton titleWidth="w-[min(100%,12rem)]" />
         </li>
       ))}
     </ul>
@@ -63,12 +60,8 @@ function ActivityChipSkeleton({ count }: { count: number }) {
   return (
     <ul className="space-y-2">
       {Array.from({ length: count }, (_, i) => (
-        <li
-          key={i}
-          className="border-analysis-border/80 bg-background/50 rounded-analysis flex flex-col gap-2 border px-3 py-2.5"
-        >
-          <SkeletonDataValue heightClassName="h-4" widthClassName="w-[min(100%,14rem)]" />
-          <SkeletonDataValue heightClassName="h-3" widthClassName="w-24" />
+        <li key={i} className="min-w-0">
+          <InstrumentListChipSkeleton titleWidth="w-[min(100%,14rem)]" />
         </li>
       ))}
     </ul>

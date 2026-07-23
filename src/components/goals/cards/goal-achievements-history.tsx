@@ -20,7 +20,7 @@ export function GoalAchievementsHistory() {
         <h2 className="text-label">Réalisations récentes</h2>
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-16 rounded-xl" />
+            <Skeleton key={i} className="rounded-analysis h-16" />
           ))}
         </div>
       </section>

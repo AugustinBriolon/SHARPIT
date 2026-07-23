@@ -20,7 +20,7 @@ export function InstallCard() {
       className={cn('analysis-panel rounded-analysis-lg relative px-3.5 py-3.5', 'border-dashed')}
     >
       <div className="flex items-start gap-3">
-        <div className="icon-well size-9 shrink-0 rounded-lg">
+        <div className="icon-well size-9 shrink-0">
           <Smartphone className="size-4" aria-hidden />
         </div>
         <div className="min-w-0 flex-1 pr-8">

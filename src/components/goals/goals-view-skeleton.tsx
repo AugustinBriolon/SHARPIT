@@ -22,7 +22,7 @@ export function GoalsViewSkeleton() {
         <SkeletonEyebrow className="w-32" />
         <div className="space-y-3">
           {Array.from({ length: 2 }).map((_, i) => (
-            <SkeletonCard key={i} className="min-h-36 space-y-2">
+            <SkeletonCard key={i} className="rounded-analysis min-h-36 space-y-2">
               <Skeleton className="h-4 w-1/3 rounded-full border-0" />
               <Skeleton className="h-3 w-2/3 rounded-full border-0" />
             </SkeletonCard>
@@ -34,7 +34,7 @@ export function GoalsViewSkeleton() {
         <SkeletonEyebrow className="w-40" />
         <div className="grid gap-3 md:grid-cols-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <SkeletonCard key={i} className="min-h-28 space-y-2">
+            <SkeletonCard key={i} className="rounded-analysis min-h-28 space-y-2">
               <Skeleton className="h-4 w-1/2 rounded-full border-0" />
               <Skeleton className="h-3 w-1/3 rounded-full border-0" />
             </SkeletonCard>

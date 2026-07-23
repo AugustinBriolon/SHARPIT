@@ -83,8 +83,8 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
     if (query.isLoading) {
       return (
         <div className="space-y-3">
-          <Skeleton className="h-28 w-full rounded-2xl" />
-          <Skeleton className="h-28 w-full rounded-2xl" />
+          <Skeleton className="rounded-analysis h-28 w-full" />
+          <Skeleton className="rounded-analysis h-28 w-full" />
         </div>
       );
     }

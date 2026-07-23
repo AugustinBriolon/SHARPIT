@@ -88,7 +88,7 @@ export function Sidebar() {
           className="hover:bg-highlight/30 focus-visible:ring-sidebar-ring rounded-analysis flex items-center gap-3 px-2 py-2 transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
           href="/"
         >
-          <div className="icon-well rounded-analysis-lg size-9">
+          <div className="icon-well size-9">
             <Activity className="size-4" aria-hidden />
           </div>
           <p className="font-heading text-sm font-semibold tracking-tight">SHARPIT</p>

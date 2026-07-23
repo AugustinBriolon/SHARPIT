@@ -49,10 +49,10 @@ export function CoachConversationListSkeleton({ rows = 4 }: { rows?: number }) {
   return (
     <ul className="space-y-1 p-2" aria-busy>
       {Array.from({ length: rows }, (_, i) => (
-        <li key={i} className="rounded-lg px-2 py-2">
+        <li key={i} className="rounded-analysis border border-transparent px-3 py-2.5">
           <SkeletonDataValue heightClassName="h-4" widthClassName="w-[min(100%,9rem)]" />
           <div className="mt-1">
-            <SkeletonDataValue heightClassName="h-3" widthClassName="w-16" />
+            <SkeletonDataValue heightClassName="h-2.5" widthClassName="w-16" />
           </div>
         </li>
       ))}

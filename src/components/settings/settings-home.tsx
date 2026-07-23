@@ -70,7 +70,7 @@ function SettingsEntryCard({ entry }: { entry: SettingsEntry }) {
         'hover:border-primary/25',
       )}
     >
-      <div className="icon-well size-9 rounded-xl">
+      <div className="icon-well size-9">
         <Icon className="size-4" />
       </div>
       <div className="min-w-0 flex-1">
@@ -106,7 +106,7 @@ export function SettingsHome() {
       </div>
       <div className="analysis-panel-alt rounded-analysis-lg p-4">
         <div className="flex items-start gap-3">
-          <div className="icon-well size-9 rounded-xl">
+          <div className="icon-well size-9">
             <Wrench className="size-4" />
           </div>
           <div>

@@ -38,7 +38,7 @@ function SplitsTableComponent({
   return (
     <section className="space-y-3">
       <p className="text-label px-0.5">{title}</p>
-      <div className="chip-surface rounded-analysis overflow-x-auto">
+      <div className="chip-surface rounded-analysis-lg overflow-x-auto">
         <table className="w-full min-w-[480px] px-3 text-sm">
           <thead>
             <tr className="border-analysis-border/60 text-muted-foreground border-b px-4 text-left text-[10px] tracking-[0.08em] uppercase">

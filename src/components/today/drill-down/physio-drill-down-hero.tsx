@@ -108,7 +108,7 @@ export function PhysioDrillDownHero({
         aria-busy={loading || undefined}
         className={cn(
           'bg-accent text-foreground border-analysis-border/13 relative overflow-hidden border',
-          'sm:rounded-analysis-lg rounded-[1.25rem] px-4 py-6 sm:px-8 sm:py-8',
+          'sm:rounded-analysis-lg rounded-xl px-4 py-6 sm:px-8 sm:py-8',
           'motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200',
         )}
       >

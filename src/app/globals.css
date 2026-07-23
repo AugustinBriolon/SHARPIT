@@ -448,12 +448,16 @@
   color: var(--color-card-foreground);
 }
 
-/* Lime Pulse icon well — brand punctuation, not primary/10 mud */
+/* Lime Pulse icon well — brand punctuation, not primary/10 mud.
+   Radius owned here (always a circle) so every consumer stays in sync —
+   previously each call site picked its own rounded-* and they drifted
+   (rounded-lg/xl/analysis-lg mixed across the app for the same role). */
 @utility icon-well {
   display: flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
+  border-radius: calc(infinity* 1px);
   background-color: var(--color-highlight);
   color: var(--color-highlight-foreground);
 }

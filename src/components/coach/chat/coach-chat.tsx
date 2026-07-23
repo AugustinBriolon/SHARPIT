@@ -438,7 +438,7 @@ export function CoachChat({
           )}
 
           {pendingApprovals.length > 0 && (
-            <div className="border-primary/30 bg-primary/4 space-y-2 rounded-xl border p-3">
+            <div className="border-primary/30 bg-primary/4 rounded-analysis space-y-2 border p-3">
               <div className="space-y-1">
                 <p className="text-primary text-xs font-medium tracking-wide uppercase">
                   {pendingApprovals.length === 1

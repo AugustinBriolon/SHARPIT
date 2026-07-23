@@ -83,49 +83,6 @@ export function SkeletonAnalysisPanelAlt({
   );
 }
 
-/** Matches DrillDownDimensionRow: label + description + score + h-1.5 bar. */
-export function SkeletonDimensionRow({ className }: { className?: string }) {
-  return (
-    <div className={cn('space-y-1.5', className)}>
-      <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0 flex-1 space-y-1">
-          <Skeleton className="h-4 w-32 max-w-full rounded-full" />
-          <Skeleton className="h-2.5 w-24 rounded-full" />
-        </div>
-        <Skeleton className="h-4 w-7 shrink-0 rounded-full" />
-      </div>
-      <Skeleton className="h-1.5 w-full rounded-full" />
-    </div>
-  );
-}
-
-/** Matches DrillDownStatsStrip instrument chips — no parent panel. */
-export function SkeletonStatsStrip({
-  items = 4,
-  className,
-}: {
-  items?: number;
-  className?: string;
-}) {
-  let desktopCols = 'sm:grid-cols-2';
-  if (items >= 4) desktopCols = 'sm:grid-cols-4';
-  else if (items === 3) desktopCols = 'sm:grid-cols-3';
-
-  return (
-    <nav className={cn('grid grid-cols-2 gap-2', desktopCols, className)} aria-hidden>
-      {Array.from({ length: items }).map((_, index) => (
-        <div
-          key={index}
-          className="border-analysis-border/80 bg-background/50 inline-flex min-w-0 items-center gap-1.5 rounded-lg border px-2.5 py-2 sm:py-1.5"
-        >
-          <Skeleton className="h-2.5 w-12 rounded-full" />
-          <Skeleton className="h-4 w-8 rounded-md" />
-        </div>
-      ))}
-    </nav>
-  );
-}
-
 /** Matches insight narrative section cards. */
 export function SkeletonInsightSection({
   blocks = 1,

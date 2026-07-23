@@ -4,7 +4,7 @@ import { LinkButton } from '@/components/ui/link-button';
 export default function OfflinePage() {
   return (
     <div className="bg-background flex min-h-screen flex-col items-center justify-center gap-6 p-6 text-center">
-      <div className="icon-well rounded-analysis-lg size-14">
+      <div className="icon-well size-14">
         <Activity className="size-7" aria-hidden />
       </div>
       <div className="max-w-sm space-y-2">
