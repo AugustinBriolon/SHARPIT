@@ -372,7 +372,8 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
           <p className="text-card-title">Poids · tendance</p>
           {trendDelta ? (
             <p className="text-data text-muted-foreground mt-0.5 text-xs">{trendDelta}</p>
-          ) : chartEmptyInWindow ? (
+          ) : null}
+          {!trendDelta && chartEmptyInWindow ? (
             <p className="text-muted-foreground mt-0.5 text-xs">
               Aucune pesée sur {selectedWindow.label} — élargis la fenêtre.
             </p>

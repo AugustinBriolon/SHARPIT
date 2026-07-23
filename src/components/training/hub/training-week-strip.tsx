@@ -33,6 +33,63 @@ function readingWords(kind: 'done' | 'planned' | 'empty', count: number): string
   return null;
 }
 
+function WeekStripSummary({
+  loading,
+  summaryLabel,
+}: {
+  loading: boolean;
+  summaryLabel: string | null;
+}) {
+  if (loading) {
+    return <SkeletonDataValue heightClassName="h-3" widthClassName="w-24" />;
+  }
+  if (!summaryLabel) return null;
+  return (
+    <span className="text-data text-muted-foreground text-[11px] tracking-wide">
+      Cette semaine · {summaryLabel}
+    </span>
+  );
+}
+
+function WeekCellValue({
+  loading,
+  reading,
+  words,
+  isCurrent,
+  accent,
+}: {
+  loading: boolean;
+  reading: { kind: 'done' | 'planned' | 'empty'; count: number };
+  words: string | null;
+  isCurrent: boolean;
+  accent: string | null;
+}) {
+  if (loading) {
+    return <SkeletonDataValue heightClassName="h-4" widthClassName="w-8" />;
+  }
+  if (reading.kind === 'empty') {
+    return <span className="text-data text-muted-foreground/50 text-xs">—</span>;
+  }
+  return (
+    <span className="inline-flex items-baseline gap-1">
+      <span
+        className={cn('text-data text-xs tabular-nums', isCurrent && 'font-semibold')}
+        style={isCurrent ? undefined : { color: accent ?? 'var(--color-foreground)' }}
+      >
+        {reading.count}
+      </span>
+      <span
+        className={cn(
+          'text-[8.5px]',
+          isCurrent ? 'text-highlight-foreground/70' : 'text-muted-foreground',
+        )}
+      >
+        {words}
+      </span>
+    </span>
+  );
+}
+
 /**
  * Bande ink week strip — one cell per week (previous weeks + current, Lime).
  * Each cell shows the realized (green) or planned (neutral) session count and
@@ -62,13 +119,7 @@ export function TrainingWeekStrip({
     <section className={cn('min-w-0', className)}>
       <div className="mb-2 flex items-baseline justify-between gap-3 px-0.5">
         <p className="text-label">Rythme hebdo</p>
-        {loading ? (
-          <SkeletonDataValue heightClassName="h-3" widthClassName="w-24" />
-        ) : summaryLabel ? (
-          <span className="text-data text-muted-foreground text-[11px] tracking-wide">
-            Cette semaine · {summaryLabel}
-          </span>
-        ) : null}
+        <WeekStripSummary loading={loading} summaryLabel={summaryLabel} />
       </div>
 
       <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-5 sm:gap-2 lg:grid-cols-7">
@@ -99,33 +150,13 @@ export function TrainingWeekStrip({
               >
                 {cell.isCurrent ? 'Cette sem.' : format(cell.weekStart, 'd MMM', { locale: fr })}
               </span>
-              {loading ? (
-                <SkeletonDataValue heightClassName="h-4" widthClassName="w-8" />
-              ) : reading.kind === 'empty' ? (
-                <span className="text-data text-muted-foreground/50 text-xs">—</span>
-              ) : (
-                <span className="inline-flex items-baseline gap-1">
-                  <span
-                    className={cn(
-                      'text-data text-xs tabular-nums',
-                      cell.isCurrent && 'font-semibold',
-                    )}
-                    style={
-                      cell.isCurrent ? undefined : { color: accent ?? 'var(--color-foreground)' }
-                    }
-                  >
-                    {reading.count}
-                  </span>
-                  <span
-                    className={cn(
-                      'text-[8.5px]',
-                      cell.isCurrent ? 'text-highlight-foreground/70' : 'text-muted-foreground',
-                    )}
-                  >
-                    {words}
-                  </span>
-                </span>
-              )}
+              <WeekCellValue
+                accent={accent}
+                isCurrent={cell.isCurrent}
+                loading={loading}
+                reading={reading}
+                words={words}
+              />
             </Link>
           );
         })}
