@@ -1,6 +1,5 @@
 import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
 import { formatClock } from '@/lib/sleep/sleep';
-import { softTintFromQualityClass } from '@/lib/presentation/physio-plate-tint';
 import { formatSleepDuration } from '@/lib/sleep/sleep-scoring';
 
 export function SleepHero({
@@ -44,12 +43,12 @@ export function SleepHero({
     <PhysioDrillDownHero
       confidencePct={confidencePct}
       date={date}
+      eyebrow="Sommeil"
       headline={adequacyDisplay.label}
       headlineClassName={adequacyDisplay.colorClass}
       isToday={isToday}
       loading={loading}
       maxDate={maxDate}
-      panelClassName={loading ? undefined : softTintFromQualityClass(adequacyDisplay.colorClass)}
       quickReadCaption={loading ? undefined : (actionLine ?? undefined)}
       quickReadLabel="durée de sommeil"
       quickReadValue={totalSleepMin != null ? formatSleepDuration(totalSleepMin) : '—'}

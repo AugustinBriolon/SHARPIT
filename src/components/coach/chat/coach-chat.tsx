@@ -11,6 +11,7 @@ import { Loader2, Send, Square } from 'lucide-react';
 import { format } from 'date-fns';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CoachMessage } from '@/components/coach/chat/coach-message';
+import { CoachProvenanceChips } from '@/components/coach/chat/coach-provenance-chips';
 import { ToolActivityList } from '@/components/coach/chat/tool-activity-list';
 import { ToolActivity, type KnownSession } from '@/components/coach/chat/tool-activity';
 import { Button } from '@/components/ui/button';
@@ -179,16 +180,19 @@ export function CoachChat({
   messagesRef.current = messages;
   const [input, setInput] = useState('');
   const draftReady = useRef(false);
+  const bootstrapApplied = useRef(false);
   const onBootstrapAppliedRef = useRef(onBootstrapApplied);
   onBootstrapAppliedRef.current = onBootstrapApplied;
 
-  // Restore unfinished input, or overwrite once with "Discuter avec le coach".
+  // Restore unfinished input, or apply "Discuter avec le coach" once (never overwrite edits).
   useEffect(() => {
     draftReady.current = false;
+    bootstrapApplied.current = false;
   }, [conversationId]);
 
   useEffect(() => {
-    if (bootstrapPrompt && initialMessages.length === 0) {
+    if (bootstrapPrompt && initialMessages.length === 0 && !bootstrapApplied.current) {
+      bootstrapApplied.current = true;
       setInput(bootstrapPrompt);
       writeCoachInputDraft(conversationId, bootstrapPrompt);
       draftReady.current = true;
@@ -252,6 +256,13 @@ export function CoachChat({
     () => buildKnownSessions(messages, plannedSessions),
     [messages, plannedSessions],
   );
+
+  const lastAssistantIndex = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'assistant') return i;
+    }
+    return -1;
+  }, [messages]);
 
   const pendingApprovals: ToolPartLite[] = [];
   for (const message of messages) {
@@ -368,7 +379,7 @@ export function CoachChat({
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s}
-                    className="border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground rounded-full border px-3 py-1.5 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                    className="chip-surface text-foreground/80 hover:border-primary/40 hover:text-foreground rounded-full px-3 py-1.5 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={inputLocked}
                     type="button"
                     onClick={() => submit(s)}
@@ -392,7 +403,7 @@ export function CoachChat({
             if (isUser) {
               return (
                 <div key={rowKey} className="flex justify-end">
-                  <div className="bg-foreground text-background rounded-analysis-lg max-w-[85%] px-4 py-2.5 text-sm whitespace-pre-wrap">
+                  <div className="bg-accent text-foreground max-w-[85%] rounded-[18px_18px_4px_18px] px-4 py-2.5 text-sm whitespace-pre-wrap">
                     {text}
                   </div>
                 </div>
@@ -407,9 +418,12 @@ export function CoachChat({
 
             return (
               <div key={rowKey} className="flex justify-start">
-                <div className="analysis-panel-alt text-foreground rounded-analysis-lg w-full max-w-[90%] space-y-2 px-4 py-3">
+                <div className="bg-analysis-surface-alt text-foreground w-full max-w-[90%] space-y-2 rounded-[18px_18px_18px_4px] px-4 py-3">
                   {text && <CoachMessage>{text}</CoachMessage>}
                   <ToolActivityList parts={inlineParts as ToolPartLite[]} streamIdle={streamIdle} />
+                  {streamIdle && text && messageIndex === lastAssistantIndex ? (
+                    <CoachProvenanceChips />
+                  ) : null}
                 </div>
               </div>
             );
@@ -417,7 +431,7 @@ export function CoachChat({
 
           {status === 'submitted' && (
             <div className="flex justify-start">
-              <div className="analysis-panel-alt rounded-analysis-lg px-4 py-2.5">
+              <div className="bg-analysis-surface-alt rounded-[18px_18px_18px_4px] px-4 py-2.5">
                 <Loader2 className="text-muted-foreground size-4 animate-spin" />
               </div>
             </div>
@@ -496,7 +510,7 @@ export function CoachChat({
           className="max-h-40 min-h-10 resize-y"
           disabled={inputLocked}
           placeholder={inputPlaceholder}
-          rows={bootstrapPrompt ? 6 : 1}
+          rows={input.includes('\n') || input.length > 120 ? 6 : 1}
           value={input}
           onChange={(e) => {
             const next = e.target.value;
@@ -515,7 +529,7 @@ export function CoachChat({
             <Square className="size-4" />
           </Button>
         ) : (
-          <Button disabled={!input.trim()} size="icon" type="submit">
+          <Button disabled={!input.trim()} size="icon" type="submit" variant="highlight">
             <Send className="size-4" />
           </Button>
         )}

@@ -2,7 +2,7 @@
 
 import type { UIMessage } from 'ai';
 import { MessageSquarePlus } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { CoachChat } from '@/components/coach/chat/coach-chat';
 import { CoachConversationList } from '@/components/coach/chat/coach-conversation-list';
@@ -42,6 +42,7 @@ function createEphemeralId(): string {
 }
 
 export function CoachView() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const isMobile = useIsMobile();
   // Viewport defaults to desktop (SSR + first paint) — no hub safety skeleton while mounting.
@@ -63,6 +64,8 @@ export function CoachView() {
   const [latchedBootstrapPrompt, setLatchedBootstrapPrompt] = useState<string | undefined>(
     undefined,
   );
+  /** Once the discuss prompt is latched, ignore URL params (avoids re-prefill loops). */
+  const discussPromptConsumed = useRef(false);
   const initialized = useRef(false);
   const { confirm, dialog } = useConfirmDialog();
 
@@ -83,6 +86,7 @@ export function CoachView() {
     setEphemeralIds((prev) => new Set(prev).add(id));
     setActiveId(id);
     setLatchedBootstrapPrompt(undefined);
+    discussPromptConsumed.current = false;
     return id;
   }
 
@@ -96,9 +100,8 @@ export function CoachView() {
       .mutateAsync({ bootstrapKey })
       .then((c) => {
         setActiveId(c.id);
-        if (typeof window !== 'undefined') {
-          window.history.replaceState(window.history.state, '', '/coach');
-        }
+        // Must use the Next router so useSearchParams drops discuss* (replaceState alone does not).
+        router.replace('/coach', { scroll: false });
       })
       .finally(() => {
         inFlightDiscussBootstraps.delete(bootstrapKey);
@@ -106,6 +109,8 @@ export function CoachView() {
   }
 
   const bootstrapPrompt = useMemo(() => {
+    if (discussPromptConsumed.current) return undefined;
+
     if (discussPlanningHorizon) {
       const projection = projectionQuery.data;
       if (!projection?.visible) return undefined;
@@ -192,7 +197,8 @@ export function CoachView() {
   ]);
 
   useEffect(() => {
-    if (!bootstrapPrompt || latchedBootstrapPrompt) return;
+    if (!bootstrapPrompt || latchedBootstrapPrompt || discussPromptConsumed.current) return;
+    discussPromptConsumed.current = true;
     setLatchedBootstrapPrompt(bootstrapPrompt);
   }, [bootstrapPrompt, latchedBootstrapPrompt]);
 
@@ -271,6 +277,7 @@ export function CoachView() {
       setEphemeralIds((prev) => new Set(prev).add(nextId));
       setActiveId(nextId);
       setLatchedBootstrapPrompt(undefined);
+      discussPromptConsumed.current = false;
     }
   }
 
@@ -318,7 +325,9 @@ export function CoachView() {
       activeId={selectedId}
       conversations={conversations}
       loading={conversationsQuery.isPending}
+      newDisabled={createConversation.isPending}
       onDelete={handleDeleteConversation}
+      onNewConversation={openNewConversation}
       onSelect={setActiveId}
     />
   );
@@ -329,12 +338,13 @@ export function CoachView() {
         <h1 className="text-page-title truncate">Fil & conversations</h1>
         <Button
           aria-label="Nouvelle conversation"
+          className="size-[38px]"
           disabled={createConversation.isPending}
           size="icon"
-          variant="outline"
+          variant="highlight"
           onClick={openNewConversation}
         >
-          <MessageSquarePlus className="size-4" />
+          <MessageSquarePlus className="size-4.5" />
         </Button>
       </div>
       {conversationListEl}
@@ -355,10 +365,7 @@ export function CoachView() {
 
       {showDesktopShell ? (
         <div className="space-y-6">
-          <CoachPageHeader
-            newDisabled={createConversation.isPending}
-            onNewConversation={openNewConversation}
-          />
+          <CoachPageHeader />
           <div className="flex h-[calc(100dvh-190px)] flex-col gap-3 lg:flex-row lg:gap-4">
             {conversationListEl}
             {renderChat()}

@@ -3,11 +3,9 @@
 import { useEffect, useState } from 'react';
 import { ActivityType } from '@prisma/client';
 import { ActivityNarrativeCard } from '@/components/training/activity/activity-narrative-card';
-import { Brain, Loader2 } from 'lucide-react';
-import { SPORT_IDENTITY_PANEL, SPORT_IDENTITY_TEXT } from '@/lib/activity/sport-identity';
+import { Loader2 } from 'lucide-react';
 import { isEligibleForActivityNarrative } from '@/lib/activity/activity-narrative-config';
 import { activityNarrativeSchema, type ActivityNarrative } from '@/lib/validators/coach';
-import { cn } from '@/lib/utils';
 
 const NARRATIVE_POLL_MS = 3_000;
 const NARRATIVE_POLL_MAX_MS = 120_000;
@@ -103,17 +101,14 @@ export function ActivityNarrativeSection({
 
   if (!isPending) return null;
 
-  const sportText = SPORT_IDENTITY_TEXT[activityType];
-  const sportPanel = SPORT_IDENTITY_PANEL[activityType];
-
   return (
-    <section className={cn('rounded-analysis-lg border px-5 py-5 sm:px-6 sm:py-6', sportPanel)}>
-      <div className="flex items-center gap-2">
-        <Brain className={cn('size-4 shrink-0', sportText)} />
-        <p className={cn('text-label', sportText)}>Analyse coach</p>
-      </div>
+    <section className="bg-analysis-surface-alt rounded-analysis-lg px-5 py-5 sm:px-6 sm:py-6">
+      <p className="text-label inline-flex items-center gap-2">
+        <span className="bg-primary size-2 shrink-0 rounded-full" aria-hidden />
+        Lecture du coach
+      </p>
       <div className="mt-4 flex items-start gap-3">
-        <Loader2 className={cn('mt-0.5 size-4 shrink-0 animate-spin', sportText)} />
+        <Loader2 className="text-primary mt-0.5 size-4 shrink-0 animate-spin" />
         <div className="space-y-1">
           <p className="font-medium">Synthèse en cours</p>
           <p className="text-muted-foreground text-sm leading-relaxed">

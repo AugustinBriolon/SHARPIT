@@ -20,7 +20,9 @@ const buttonVariants = cva(
           'bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40',
         /** Chromatic accent — leaf / Lime interactive, not the filled CTA */
         accent: 'bg-primary text-primary-foreground hover:bg-primary/85',
-        highlight: 'bg-highlight text-highlight-foreground hover:bg-highlight/90',
+        /** Lime Pulse action pill — bande ink affordance (pressed = one ramp darker) */
+        highlight:
+          'bg-highlight text-highlight-foreground rounded-full font-semibold hover:bg-highlight/90 active:bg-[oklch(0.88_0.13_126.6)]',
         link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {

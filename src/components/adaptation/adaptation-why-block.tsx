@@ -1,9 +1,8 @@
 import { PhysioDomainWhy } from '@/components/today/drill-down/physio-domain-why';
-import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
 import { synthesizeAdaptationReading } from '@/lib/adaptation/adaptation-reading';
 
 /**
- * Single adaptation narrative — synthesis first; global decision in expand.
+ * Single adaptation narrative — synthesis first.
  * Does not restate frein/tendance/indice already on plate + chips.
  */
 export function AdaptationWhyBlock({
@@ -17,7 +16,6 @@ export function AdaptationWhyBlock({
   overreachingWithoutAdaptation,
   loadMultiplier,
   historyLength,
-  globalDecision,
   loading = false,
 }: {
   verdictKey: string;
@@ -30,18 +28,10 @@ export function AdaptationWhyBlock({
   overreachingWithoutAdaptation: boolean;
   loadMultiplier: number;
   historyLength: number;
-  globalDecision: GlobalDecisionContext;
   loading?: boolean;
 }) {
   if (loading) {
-    return (
-      <PhysioDomainWhy
-        globalDecision={globalDecision}
-        label="Cette trajectoire"
-        primary={null}
-        loading
-      />
-    );
+    return <PhysioDomainWhy label="Cette trajectoire" primary={null} loading />;
   }
 
   const primary = synthesizeAdaptationReading({
@@ -77,11 +67,6 @@ export function AdaptationWhyBlock({
   }
 
   return (
-    <PhysioDomainWhy
-      globalDecision={globalDecision}
-      label="Cette trajectoire"
-      primary={primary}
-      supportingLines={supporting}
-    />
+    <PhysioDomainWhy label="Cette trajectoire" primary={primary} supportingLines={supporting} />
   );
 }

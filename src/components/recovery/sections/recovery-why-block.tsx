@@ -1,33 +1,23 @@
 import { PhysioDomainWhy } from '@/components/today/drill-down/physio-domain-why';
-import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
 
 /**
- * Recovery why — intensity / limiter first; global decision in expand.
+ * Recovery why — intensity / limiter first.
  */
 export function RecoveryWhyBlock({
   intensityLabel,
   intensityClassName,
   limiterLabel,
   rationale,
-  globalDecision,
   loading = false,
 }: {
   intensityLabel: string;
   intensityClassName: string;
   limiterLabel: string | null;
   rationale: string[];
-  globalDecision: GlobalDecisionContext;
   loading?: boolean;
 }) {
   if (loading) {
-    return (
-      <PhysioDomainWhy
-        globalDecision={globalDecision}
-        label="État de récupération"
-        primary={null}
-        loading
-      />
-    );
+    return <PhysioDomainWhy label="État de récupération" primary={null} loading />;
   }
 
   const [firstReason, ...rest] = rationale;
@@ -44,7 +34,6 @@ export function RecoveryWhyBlock({
 
   return (
     <PhysioDomainWhy
-      globalDecision={globalDecision}
       label="État de récupération"
       primary={primary}
       primaryClassName={intensityClassName}

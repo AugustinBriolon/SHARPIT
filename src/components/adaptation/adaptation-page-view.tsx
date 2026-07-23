@@ -10,9 +10,7 @@ import {
 } from '@/components/today/drill-down/metric-drill-down-page';
 import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
-import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
 import type { DimensionResult } from '@/hooks/use-today';
-import { softTintFromQualityClass } from '@/lib/presentation/physio-plate-tint';
 
 export type AdaptationPageViewProps = {
   date: Date;
@@ -43,7 +41,6 @@ export type AdaptationPageViewProps = {
   historyLength: number;
   confidencePct: number;
   confidenceTone: MetricTone;
-  globalDecision: GlobalDecisionContext;
 };
 
 function limitingScoreFromDimensions(
@@ -77,7 +74,6 @@ export function AdaptationPageView({
   availableDimCount,
   historyLength,
   confidencePct,
-  globalDecision,
 }: AdaptationPageViewProps) {
   const limitingScore = loading ? null : limitingScoreFromDimensions(limitingFactor, dimensions);
 
@@ -123,12 +119,12 @@ export function AdaptationPageView({
       <PhysioDrillDownHero
         confidencePct={confidencePct}
         date={date}
+        eyebrow="Adaptation"
         headline={statusLabel}
         headlineClassName={statusClassName}
         isToday={isToday}
         loading={loading}
         maxDate={maxDate}
-        panelClassName={loading ? undefined : softTintFromQualityClass(statusClassName)}
         quickReadCaption={actionLine ?? undefined}
         quickReadLabel="indice d'adaptation"
         quickReadSuffix="%"
@@ -149,7 +145,6 @@ export function AdaptationPageView({
 
       <AdaptationWhyBlock
         adaptationIndex={adaptationIndex}
-        globalDecision={globalDecision}
         historyLength={historyLength}
         limitingFactor={limitingFactor}
         limitingScore={limitingScore}

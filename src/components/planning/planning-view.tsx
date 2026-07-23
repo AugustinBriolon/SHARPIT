@@ -10,6 +10,7 @@ import { PlannedSessionDialog } from '@/components/planning/session/planned-sess
 import { ProjectedAthleteCard } from '@/components/planning/scenario/projected-athlete-card';
 import { ScenarioComparisonDialog } from '@/components/planning/scenario/scenario-comparison-dialog';
 import { TravelContextBanner } from '@/components/planning/travel-context-banner';
+import { parseCalendarDateParam } from '@/components/calendar/calendar-utils';
 import {
   SessionsCoachMenu,
   type SessionsCoachAction,
@@ -65,7 +66,11 @@ export function PlanningView({
   const [macroPlanOpen, setMacroPlanOpen] = useState(false);
   const [weeklyBriefOpen, setWeeklyBriefOpen] = useState(false);
   const [scenarioComparisonOpen, setScenarioComparisonOpen] = useState(false);
-  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), WEEK_OPTS));
+  // Deep-link from the /training week strip: frame the view on the requested week.
+  const weekFromUrl = parseCalendarDateParam(searchParams.get('week'));
+  const [weekStart, setWeekStart] = useState(() =>
+    startOfWeek(weekFromUrl ?? new Date(), WEEK_OPTS),
+  );
   const [projectionHorizon, setProjectionHorizon] = useState<ProjectionHorizonDays>(7);
 
   const activities = activitiesQuery.data ?? [];

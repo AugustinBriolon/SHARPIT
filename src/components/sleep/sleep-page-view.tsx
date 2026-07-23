@@ -60,7 +60,6 @@ export function SleepPageView(props: SleepPageViewProps) {
     coachView,
     barData,
     recoveryNote,
-    globalDecision,
     confidencePresentation,
   } = props;
 
@@ -105,7 +104,6 @@ export function SleepPageView(props: SleepPageViewProps) {
 
       <SleepWhyBlock
         debt7Min={coachView.debt7Min}
-        globalDecision={globalDecision}
         loading={loading}
         restorativeRatio={scoreBreakdown.restorativeRatio}
         targetDeltaMin={targetDeltaMin}

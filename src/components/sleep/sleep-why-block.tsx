@@ -1,5 +1,4 @@
 import { PhysioDomainWhy } from '@/components/today/drill-down/physio-domain-why';
-import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
 import { formatDuration } from '@/lib/sleep/sleep';
 import { formatSleepDuration } from '@/lib/sleep/sleep-scoring';
 
@@ -10,19 +9,15 @@ export function SleepWhyBlock({
   debt7Min,
   targetDeltaMin,
   restorativeRatio,
-  globalDecision,
   loading = false,
 }: {
   debt7Min: number | null;
   targetDeltaMin: number | null;
   restorativeRatio: number | null;
-  globalDecision: GlobalDecisionContext;
   loading?: boolean;
 }) {
   if (loading) {
-    return (
-      <PhysioDomainWhy globalDecision={globalDecision} label="Cette nuit" primary={null} loading />
-    );
+    return <PhysioDomainWhy label="Cette nuit" primary={null} loading />;
   }
 
   let primary: string | null = null;
@@ -36,5 +31,5 @@ export function SleepWhyBlock({
     primary = 'Durée dans la cible — maintenir la régularité du coucher.';
   }
 
-  return <PhysioDomainWhy globalDecision={globalDecision} label="Cette nuit" primary={primary} />;
+  return <PhysioDomainWhy label="Cette nuit" primary={primary} />;
 }

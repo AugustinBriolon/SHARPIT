@@ -3,7 +3,6 @@
 import { ActivityType } from '@prisma/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useActivityStream } from '@/hooks/use-data';
-import { SPORT_IDENTITY_PANEL, SPORT_IDENTITY_TEXT } from '@/lib/activity/sport-identity';
 import { formatDistance, formatDuration, formatPace, formatSwimPace } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
@@ -144,16 +143,10 @@ export function ActivityHeroStats({
   return (
     <div className={cn('grid grid-cols-2 gap-3', SM_COLS[visible.length] ?? 'sm:grid-cols-4')}>
       {visible.map((slot) => (
-        <div
-          key={slot.label}
-          className={cn(
-            'analysis-panel rounded-analysis-lg border px-5 py-4',
-            SPORT_IDENTITY_PANEL[activity.type],
-          )}
-        >
-          <p className={cn('text-label', SPORT_IDENTITY_TEXT[activity.type])}>{slot.label}</p>
+        <div key={slot.label} className="chip-surface rounded-2xl px-5 py-4">
+          <p className="text-label">{slot.label}</p>
           {slot.value != null ? (
-            <p className="text-foreground mt-1.5 font-mono text-3xl font-semibold tabular-nums">
+            <p className="text-data text-foreground mt-1.5 text-3xl font-semibold tabular-nums">
               {slot.value}
             </p>
           ) : (

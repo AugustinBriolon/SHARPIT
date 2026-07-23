@@ -22,6 +22,10 @@ export type InstrumentListChipProps = {
   meta?: InstrumentListChipMeta[];
   /** Completed session surface + check mark. */
   done?: boolean;
+  /** Primary element of the day — → affordance becomes a Lime Pulse pastille. */
+  primary?: boolean;
+  /** Hide the trailing → (history chips end on their check icon). */
+  showArrow?: boolean;
   /** Extra trailing control before the → affordance. */
   trailing?: ReactNode;
   className?: string;
@@ -49,9 +53,9 @@ export function splitInstrumentMeta(secondary: string | null | undefined): strin
 
 const chipClassName = (done: boolean, className?: string) =>
   cn(
-    'border-analysis-border/80 bg-background/50 hover:border-primary/35 hover:bg-muted/40',
+    'chip-surface hover:border-primary/35',
     'focus-visible:ring-primary/35 flex w-full min-w-0 items-center justify-between gap-3',
-    'rounded-analysis border px-3 py-2.5 text-left transition-[border-color,background-color] duration-150',
+    'rounded-analysis px-3 py-3 text-left transition-[border-color,background-color] duration-150',
     'group focus-visible:ring-2 focus-visible:outline-hidden',
     done && cn(STATUS_SURFACE.doneSoft, STATUS_SURFACE.doneHover),
     className,
@@ -68,6 +72,8 @@ export const InstrumentListChip = memo(function InstrumentListChip({
   activityType,
   meta = [],
   done = false,
+  primary = false,
+  showArrow = true,
   trailing,
   className,
   linkTitle,
@@ -84,17 +90,20 @@ export const InstrumentListChip = memo(function InstrumentListChip({
           {title}
         </span>
         {hasMetaRow ? (
-          <span className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-1.5 text-[11px]">
+          <span className="text-muted-foreground flex min-w-0 items-center gap-x-1.5 overflow-hidden text-[11px] whitespace-nowrap">
             {activityType != null ? <ActivityTypeIndicator type={activityType} /> : null}
             {meta.map((item, index) => (
               <span key={`meta-${index}-${metaText(item)}`} className="contents">
                 {activityType != null || index > 0 ? (
-                  <span className="opacity-30" aria-hidden>
+                  <span className="shrink-0 opacity-30" aria-hidden>
                     ·
                   </span>
                 ) : null}
                 <span
-                  className={cn('text-data', metaTone(item) === 'caution' && 'text-signal-caution')}
+                  className={cn(
+                    'text-data shrink-0',
+                    metaTone(item) === 'caution' && 'text-signal-caution',
+                  )}
                 >
                   {metaText(item)}
                 </span>
@@ -106,12 +115,22 @@ export const InstrumentListChip = memo(function InstrumentListChip({
       <span className="flex shrink-0 items-center gap-1.5">
         {done ? <CheckCircle2 className="text-primary size-3.5" aria-hidden /> : null}
         {trailing}
-        <span
-          className="text-muted-foreground/70 text-data text-[10px] tracking-wider transition-transform group-hover:translate-x-0.5"
-          aria-hidden
-        >
-          →
-        </span>
+        {primary && !done ? (
+          <span
+            className="bg-highlight text-highlight-foreground text-data inline-flex size-[26px] items-center justify-center rounded-full text-[11px] transition-transform group-hover:translate-x-0.5"
+            aria-hidden
+          >
+            →
+          </span>
+        ) : null}
+        {showArrow && !(primary && !done) ? (
+          <span
+            className="text-muted-foreground/70 text-data text-[10px] tracking-wider transition-transform group-hover:translate-x-0.5"
+            aria-hidden
+          >
+            →
+          </span>
+        ) : null}
       </span>
     </>
   );

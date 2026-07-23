@@ -19,7 +19,7 @@ import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
 import { parseSessionAnalysis } from '@/lib/planned-session/session-analysis-display';
 import { cn } from '@/lib/utils';
 import { ActivityType } from '@prisma/client';
-import { Dumbbell } from 'lucide-react';
+import { CheckCircle2, Dumbbell } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -43,12 +43,18 @@ export function ActivityList({
   emptyLabel,
   compact = false,
   variant = 'panel',
+  chipListClassName,
+  recordLabelsById,
 }: {
   activities: ActivityItem[];
   emptyLabel?: string;
   compact?: boolean;
   /** `chip` = training dashboard density; `panel` = history (may keep PhysioRail). */
   variant?: 'panel' | 'chip';
+  /** Extra classes for the chip-variant `<ul>` (e.g. multi-column history grid). */
+  chipListClassName?: string;
+  /** activityId → record badge label (chip variant, Bande ink §12). */
+  recordLabelsById?: Map<string, string>;
 }) {
   if (!activities.length) {
     const description = emptyLabel
@@ -73,10 +79,13 @@ export function ActivityList({
 
   if (variant === 'chip') {
     return (
-      <ul className="space-y-2">
+      <ul className={cn('space-y-2', chipListClassName)}>
         {activities.map((activity) => (
-          <li key={activity.id}>
-            <ActivityChip activity={activity} />
+          <li key={activity.id} className="min-w-0">
+            <ActivityChip
+              activity={activity}
+              recordLabel={recordLabelsById?.get(activity.id) ?? null}
+            />
           </li>
         ))}
       </ul>
@@ -100,7 +109,13 @@ function formatActivityWeatherLine(
   return weather ? formatActivityWeatherChip(weather) : activity.weather?.trim() || null;
 }
 
-function ActivityChip({ activity }: { activity: ActivityItem }) {
+function ActivityChip({
+  activity,
+  recordLabel = null,
+}: {
+  activity: ActivityItem;
+  recordLabel?: string | null;
+}) {
   const metric = getActivityListMetric(activity);
   const loadValue = shouldShowActivityListLoad(activity)
     ? Math.round(activity.load as number)
@@ -118,7 +133,18 @@ function ActivityChip({ activity }: { activity: ActivityItem }) {
       activityType={activity.type}
       href={`/training/${activity.id}`}
       meta={meta}
+      showArrow={false}
       title={title}
+      trailing={
+        <>
+          {recordLabel ? (
+            <span className="border-analysis-border text-muted-foreground rounded-full border px-2 py-0.5 text-[9.5px] whitespace-nowrap">
+              {recordLabel}
+            </span>
+          ) : null}
+          <CheckCircle2 className="text-primary size-3.5" aria-hidden />
+        </>
+      }
     />
   );
 }

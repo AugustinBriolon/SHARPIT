@@ -97,6 +97,14 @@ export type BodyViewModel = {
         tone: CorpsTone;
         guideId?: CompositionMetricId;
       };
+      waterPct: {
+        value: number | null;
+        deltaDisplay: string | null;
+        deltaTone: CorpsTone;
+        deltaHint: string | null;
+        tone: CorpsTone;
+        guideId?: CompositionMetricId;
+      };
     };
   };
 

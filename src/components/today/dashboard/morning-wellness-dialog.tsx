@@ -130,7 +130,7 @@ export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => voi
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <Button type="button" onClick={() => setOpen(true)}>
+      <Button type="button" variant="highlight" onClick={() => setOpen(true)}>
         <Smile className="size-3" aria-hidden />
         Ressenti
       </Button>

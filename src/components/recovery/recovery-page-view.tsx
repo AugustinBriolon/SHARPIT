@@ -11,7 +11,6 @@ import {
   MetricDrillDownPage,
   type MetricTone,
 } from '@/components/today/drill-down/metric-drill-down-page';
-import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
 import type { DimensionResult } from '@/hooks/use-today';
 
 export type RecoveryPageViewProps = {
@@ -52,7 +51,6 @@ export type RecoveryPageViewProps = {
   completenessLabel: string;
   overreaching?: { label: string; colorClass: string };
   illness?: { label: string; colorClass: string };
-  globalDecision: GlobalDecisionContext;
 };
 
 export function RecoveryPageView(props: RecoveryPageViewProps) {
@@ -90,7 +88,6 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
     completenessLabel,
     overreaching,
     illness,
-    globalDecision,
   } = props;
 
   return (
@@ -130,7 +127,6 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
       />
 
       <RecoveryWhyBlock
-        globalDecision={globalDecision}
         intensityClassName={intensityClassName}
         intensityLabel={intensityLabel}
         limiterLabel={limiterLabel}

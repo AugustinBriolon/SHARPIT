@@ -80,10 +80,11 @@ export function usePhysicalHealthViewModel(trainingDayId: string) {
   });
 }
 
-export function useBodyPresentationViewModel(days: number | null | undefined) {
+export function useBodyPresentationViewModel() {
   return useQuery<BodyViewModel>({
-    queryKey: ['presentation', 'body', days ?? 'all'],
-    queryFn: () => fetchBodyPresentation(days),
+    // Always full history — chart windows are filtered client-side in CompositionView.
+    queryKey: ['presentation', 'body', 'all'],
+    queryFn: () => fetchBodyPresentation(null),
     staleTime: 5 * 60_000,
     placeholderData: keepPreviousData,
   });

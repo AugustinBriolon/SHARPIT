@@ -3,9 +3,9 @@ import { cn } from '@/lib/utils';
 /** Pill / onglet actif — Lime Pulse (Seed punctuation), pas d'inversion noir. */
 export const navPillActiveClass = 'border-transparent !bg-highlight text-highlight-foreground';
 
-/** Pill / onglet inactif. */
+/** Pill / onglet inactif — sans fond (bande ink direction), hover lavis lime. */
 export const navPillInactiveClass =
-  'bg-analysis-surface-alt text-muted-foreground hover:bg-highlight/40 hover:text-foreground border-transparent';
+  'bg-transparent text-muted-foreground hover:bg-highlight/40 hover:text-foreground border-transparent';
 
 export function navPillClass(active: boolean, className?: string) {
   return cn(

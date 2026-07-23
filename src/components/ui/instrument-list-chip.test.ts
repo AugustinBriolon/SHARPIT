@@ -46,6 +46,37 @@ describe('InstrumentListChip', () => {
     expect(html).toContain('Vélo');
   });
 
+  it('renders the Lime Pulse pastille only for the primary element', () => {
+    const primaryHtml = renderToStaticMarkup(
+      createElement(InstrumentListChip, {
+        href: '/training/1',
+        title: 'Tempo du jour',
+        primary: true,
+      }),
+    );
+    expect(primaryHtml).toContain('bg-highlight');
+
+    const secondaryHtml = renderToStaticMarkup(
+      createElement(InstrumentListChip, {
+        href: '/training/2',
+        title: 'Sortie longue',
+      }),
+    );
+    expect(secondaryHtml).not.toContain('bg-highlight');
+  });
+
+  it('keeps the muted → affordance for done sessions even when primary', () => {
+    const html = renderToStaticMarkup(
+      createElement(InstrumentListChip, {
+        href: '/training/1',
+        title: 'Séance faite',
+        done: true,
+        primary: true,
+      }),
+    );
+    expect(html).not.toContain('bg-highlight');
+  });
+
   it('renders a button when onClick is used without href', () => {
     const html = renderToStaticMarkup(
       createElement(InstrumentListChip, {

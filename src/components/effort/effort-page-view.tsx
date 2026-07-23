@@ -8,7 +8,6 @@ import { EffortHero } from '@/components/effort/effort-hero';
 import { EffortStatsStrip } from '@/components/effort/effort-stats-strip';
 import { EffortVerdictSection } from '@/components/effort/effort-verdict-section';
 import { EffortWhyBlock } from '@/components/effort/effort-why-block';
-import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
 import {
   DataReliabilityFooter,
   MetricDrillDownPage,
@@ -58,7 +57,6 @@ export type EffortPageViewProps = {
   overreaching?: { label: string; colorClass: string };
   completenessLabel: string;
   availableDimCount: number;
-  globalDecision: GlobalDecisionContext;
 };
 
 export function EffortPageView(props: EffortPageViewProps) {
@@ -99,7 +97,6 @@ export function EffortPageView(props: EffortPageViewProps) {
     avgWeeklyTss,
     overreaching,
     availableDimCount,
-    globalDecision,
   } = props;
 
   return (
@@ -139,7 +136,6 @@ export function EffortPageView(props: EffortPageViewProps) {
 
       <EffortWhyBlock
         acwr={acwr}
-        globalDecision={globalDecision}
         loading={loading}
         tsb={tsb}
         verdict={verdict}

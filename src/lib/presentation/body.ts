@@ -140,6 +140,13 @@ export async function buildBodyPresentationViewModel(days?: number | null): Prom
             deltaHint: null,
             tone: 'neutral',
           },
+          waterPct: {
+            value: null,
+            deltaDisplay: null,
+            deltaTone: 'ok',
+            deltaHint: null,
+            tone: 'neutral',
+          },
         },
       },
       context: { chronologicalAgeYears: null },
@@ -172,6 +179,7 @@ export async function buildBodyPresentationViewModel(days?: number | null): Prom
   const bodyFat = computeCompositionTrend(entriesDedup, 'bodyFatPct');
   const muscle = computeCompositionTrend(entriesDedup, 'musclePct');
   const visceral = computeCompositionTrend(entriesDedup, 'visceralFat');
+  const water = computeCompositionTrend(entriesDedup, 'waterPct');
   const bmi = computeCompositionTrend(entriesDedup, 'bmi');
 
   const latestBmiDisplay = latest.bmi ?? bmi.latest ?? null;
@@ -266,6 +274,24 @@ export async function buildBodyPresentationViewModel(days?: number | null): Prom
           guideId: 'visceralFat' as CompositionMetricId,
         };
       })(),
+      waterPct: (() => {
+        // No weekly-delta severity threshold exists for water % (unlike the other
+        // three metrics) — show the raw 7-day delta as display text only, tone
+        // stays the guide's static zone interpretation (same as the old context card).
+        const zoneTone =
+          water.latest != null
+            ? getGuide('waterPct').interpret(water.latest, compositionContext).tone
+            : 'neutral';
+        return {
+          value: water.latest,
+          deltaDisplay:
+            water.delta != null ? (formatCompositionDelta(water.delta, ' pts') ?? null) : null,
+          deltaTone: 'ok' as const,
+          deltaHint: null,
+          tone: zoneTone,
+          guideId: 'waterPct' as CompositionMetricId,
+        };
+      })(),
     },
   };
 
@@ -354,20 +380,14 @@ export async function buildBodyPresentationViewModel(days?: number | null): Prom
     });
   }
 
-  const contextCards: BodyMetricCardVm[] = [];
+  // waterPct is now shown in hero.heroMini above — ensureExplainer keeps the
+  // explainer modal available without a second, duplicate contextCards tile.
   if (latest.waterPct != null) {
     const metricId: CompositionMetricId = 'waterPct';
-    const valueDisplay = `${latest.waterPct.toFixed(1)} %`;
-    const interpretation = getGuide(metricId).interpret(latest.waterPct, compositionContext);
-    ensureExplainer(metricId, latest.waterPct, valueDisplay);
-    contextCards.push({
-      cardId: metricId,
-      guideId: metricId,
-      label: 'Eau corporelle',
-      valueDisplay,
-      tone: interpretation.tone,
-    });
+    ensureExplainer(metricId, latest.waterPct, `${latest.waterPct.toFixed(1)} %`);
   }
+
+  const contextCards: BodyMetricCardVm[] = [];
   if (latest.bmr != null) {
     const metricId: CompositionMetricId = 'bmr';
     const valueDisplay = `${Math.round(latest.bmr)} kcal`;

@@ -2,7 +2,7 @@
 
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { ChevronDownIcon, Trash2 } from 'lucide-react';
+import { ChevronDownIcon, MessageSquarePlus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -74,12 +74,17 @@ export function CoachConversationList({
   activeId,
   conversations,
   loading,
+  newDisabled = false,
   onDelete,
+  onNewConversation,
   onSelect,
 }: {
   conversations: ClientConversationSummary[];
   activeId: string | null;
   loading: boolean;
+  /** Desktop-only Lime Pulse pill above the list. */
+  onNewConversation?: () => void;
+  newDisabled?: boolean;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
@@ -89,8 +94,21 @@ export function CoachConversationList({
   return (
     <aside
       aria-busy={loading || undefined}
-      className="analysis-panel rounded-analysis-lg flex w-full shrink-0 flex-col lg:h-full lg:w-56"
+      className="analysis-panel rounded-analysis-lg flex w-full shrink-0 flex-col gap-2 lg:h-full lg:w-[260px] lg:border-transparent lg:bg-transparent"
     >
+      {onNewConversation ? (
+        <Button
+          className="hidden lg:inline-flex"
+          disabled={newDisabled}
+          type="button"
+          variant="highlight"
+          onClick={onNewConversation}
+        >
+          <MessageSquarePlus className="size-4" />
+          Nouvelle conversation
+        </Button>
+      ) : null}
+
       {loading ? (
         <>
           <MobileSelectLoadingRow />
@@ -154,15 +172,15 @@ export function CoachConversationList({
                     <button
                       type="button"
                       className={cn(
-                        'min-w-0 flex-1 rounded-lg px-2 py-2 text-left text-sm transition-colors',
+                        'rounded-analysis min-w-0 flex-1 border px-3 py-2.5 text-left text-sm transition-colors',
                         isActive
-                          ? 'bg-highlight text-highlight-foreground'
-                          : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+                          ? 'chip-surface'
+                          : 'text-foreground/80 hover:bg-highlight/40 hover:text-foreground border-transparent',
                       )}
                       onClick={() => onSelect(c.id)}
                     >
                       <span className="block truncate font-medium">{conversationLabel(c)}</span>
-                      <span className="text-muted-foreground block text-xs">
+                      <span className="text-data text-muted-foreground block truncate text-[10px]">
                         {formatDistanceToNow(c.updatedAt, { addSuffix: true, locale: fr })}
                       </span>
                     </button>

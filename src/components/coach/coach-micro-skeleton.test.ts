@@ -40,10 +40,11 @@ describe('coach hub micro-skeleton', () => {
     expect(html).not.toContain('aria-busy');
   });
 
-  it('thread skeleton keeps real composer chrome', () => {
+  it('thread skeleton keeps real composer chrome and coach bubble surface', () => {
     const html = renderToStaticMarkup(createElement(CoachChatPanelSkeleton));
     expect(html).toContain('aria-busy');
     expect(html).toContain('Demande conseil à ton coach');
-    expect(html).toContain('analysis-panel-alt');
+    expect(html).toContain('bg-analysis-surface-alt');
+    expect(html).toContain('rounded-[18px_18px_18px_4px]');
   });
 });

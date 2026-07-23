@@ -5,6 +5,13 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { DayEvent } from './calendar-types';
 
+/** Parse the `?date=YYYY-MM-DD` deep-link param (week strip → calendar). */
+export function parseCalendarDateParam(value: string | null): Date | null {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const parsed = new Date(`${value}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 export function getDayCellDateClassName(isToday: boolean, inMonth: boolean): string {
   if (isToday) {
     return 'bg-primary/12 text-primary ring-primary/20 flex size-6 items-center justify-center rounded-full font-semibold ring-1';

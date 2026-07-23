@@ -38,6 +38,9 @@ export function TodayActionRow({
 
   const orientation = loading ? null : vm.morningOrientation;
   const hideSessionList = orientation?.phase === 'EVIDENCE_PENDING';
+  const primaryIndex = vm.actionRow.daySummaryLines.findIndex(
+    (line) => line.kind === 'planned' && !line.isDone,
+  );
 
   return (
     <section aria-busy={loading || undefined} className="space-y-3">
@@ -99,7 +102,7 @@ export function TodayActionRow({
 
       {!loading && !hideSessionList && !daySummaryEmpty ? (
         <ul className="space-y-2">
-          {vm.actionRow.daySummaryLines.map((line) => {
+          {vm.actionRow.daySummaryLines.map((line, index) => {
             const meta: InstrumentListChipMeta[] = splitInstrumentMeta(line.secondary);
             if (line.morningChoiceLabel) {
               meta.push({ text: line.morningChoiceLabel, tone: 'caution' });
@@ -115,6 +118,7 @@ export function TodayActionRow({
                   done={line.isDone}
                   href={openPlanned ? undefined : line.href}
                   meta={meta}
+                  primary={index === primaryIndex}
                   title={line.primary}
                   onClick={openPlanned}
                 />

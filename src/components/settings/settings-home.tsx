@@ -1,17 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import {
-  ChevronRight,
-  Goal,
-  Brain,
-  Dumbbell,
-  Link2,
-  MoonStar,
-  ShieldCheck,
-  User2,
-  Wrench,
-} from 'lucide-react';
+import { Goal, Brain, Dumbbell, Link2, MoonStar, ShieldCheck, User2, Wrench } from 'lucide-react';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { SettingsMaintenancePanel } from '@/components/settings/maintenance';
 import { InstallCard } from '@/components/pwa/install-card';
@@ -76,18 +66,23 @@ function SettingsEntryCard({ entry }: { entry: SettingsEntry }) {
     <Link
       href={entry.href}
       className={cn(
-        'analysis-panel group rounded-analysis-lg flex h-full items-center gap-3 px-3 py-2.5 transition-colors',
-        'hover:border-primary/25 hover:bg-analysis-surface-alt/80',
+        'chip-surface group rounded-analysis-lg flex h-full items-center gap-3 px-3 py-2.5 transition-colors',
+        'hover:border-primary/25',
       )}
     >
-      <div className="icon-well size-9 rounded-lg">
+      <div className="icon-well size-9 rounded-xl">
         <Icon className="size-4" />
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium">{entry.title}</p>
         <p className="text-muted-foreground text-sm leading-relaxed">{entry.description}</p>
       </div>
-      <ChevronRight className="text-muted-foreground size-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
+      <span
+        className="text-muted-foreground/70 text-data shrink-0 text-[11px] tracking-wider transition-transform group-hover:translate-x-0.5"
+        aria-hidden
+      >
+        →
+      </span>
     </Link>
   );
 }

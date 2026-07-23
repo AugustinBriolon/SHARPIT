@@ -1,9 +1,12 @@
 'use client';
 
 import { ActivityType } from '@prisma/client';
+import { format, isSameWeek, startOfWeek } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';
 import { ActivityList } from '@/components/training/activity/activity-list';
+import type { ClientActivity } from '@/lib/query/types';
 import {
   Select,
   SelectContent,
@@ -12,8 +15,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useActivities } from '@/hooks/use-data';
+import { useActivities, useRecords } from '@/hooks/use-data';
 import { activityTypeLabels } from '@/lib/format';
+import { buildActivityRecordLabels } from '@/lib/training/activity-record-labels';
 import { cn } from '@/lib/utils';
 
 const TYPE_ORDER: ActivityType[] = [
@@ -51,7 +55,7 @@ function ActivityTypeFilterPills({
   const total = TYPE_ORDER.reduce((sum, type) => sum + counts[type], 0);
 
   return (
-    <div className="surface-shell flex w-fit flex-wrap gap-1 rounded-full p-1">
+    <div className="border-analysis-border/70 flex w-fit flex-wrap gap-1 rounded-full border bg-transparent p-1">
       <button
         aria-pressed={selected == null}
         type="button"
@@ -64,7 +68,7 @@ function ActivityTypeFilterPills({
         onClick={() => onSelect(null)}
       >
         Tous
-        <span className="text-muted-foreground ml-1 tabular-nums">({total})</span>
+        <span className="text-data ml-1 text-[11px] opacity-70">({total})</span>
       </button>
       {TYPE_ORDER.map((type) => {
         const count = counts[type];
@@ -84,7 +88,7 @@ function ActivityTypeFilterPills({
             onClick={() => onSelect(type)}
           >
             {activityTypeLabels[type]}
-            <span className="text-muted-foreground ml-1 tabular-nums">({count})</span>
+            <span className="text-data ml-1 text-[11px] opacity-70">({count})</span>
           </button>
         );
       })}
@@ -151,6 +155,31 @@ function ActivityTypeFilter({
   );
 }
 
+type WeekGroup = { key: string; label: string; activities: ClientActivity[] };
+
+/** Group activities into ISO weeks (most recent first), each with a human label. */
+function groupByWeek(activities: ClientActivity[]): WeekGroup[] {
+  const today = new Date();
+  const groups = new Map<string, WeekGroup>();
+
+  for (const activity of activities) {
+    const date = new Date(activity.date);
+    const weekStart = startOfWeek(date, { locale: fr });
+    const key = format(weekStart, 'yyyy-MM-dd');
+    let group = groups.get(key);
+    if (!group) {
+      const label = isSameWeek(date, today, { locale: fr })
+        ? 'Cette semaine'
+        : `Semaine du ${format(weekStart, 'd MMMM', { locale: fr })}`;
+      group = { key, label, activities: [] };
+      groups.set(key, group);
+    }
+    group.activities.push(activity);
+  }
+
+  return [...groups.values()].sort((a, b) => b.key.localeCompare(a.key));
+}
+
 export function TrainingListFallback() {
   return (
     <div className="space-y-3">
@@ -164,6 +193,7 @@ export function TrainingListFallback() {
 
 export function TrainingList() {
   const { data, isPending } = useActivities();
+  const { data: records } = useRecords();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -185,6 +215,10 @@ export function TrainingList() {
     [activities, selectedType],
   );
 
+  const weekGroups = useMemo(() => groupByWeek(filtered), [filtered]);
+
+  const recordLabelsById = useMemo(() => buildActivityRecordLabels(records), [records]);
+
   function setTypeFilter(type: ActivityType | null) {
     const params = new URLSearchParams(searchParams.toString());
     if (type == null) params.delete('type');
@@ -198,12 +232,25 @@ export function TrainingList() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <ActivityTypeFilter counts={counts} selected={selectedType} onSelect={setTypeFilter} />
-      <ActivityList
-        activities={filtered}
-        emptyLabel={selectedType ? 'Aucune activité de ce type.' : undefined}
-      />
+      {weekGroups.length === 0 ? (
+        <p className="text-muted-foreground text-sm">
+          {selectedType ? 'Aucune activité de ce type.' : 'Aucune activité enregistrée.'}
+        </p>
+      ) : (
+        weekGroups.map((group) => (
+          <section key={group.key}>
+            <p className="text-label mb-2 px-0.5">{group.label}</p>
+            <ActivityList
+              activities={group.activities}
+              chipListClassName="sm:grid sm:grid-cols-2 sm:gap-2 sm:space-y-0"
+              recordLabelsById={recordLabelsById}
+              variant="chip"
+            />
+          </section>
+        ))
+      )}
     </div>
   );
 }

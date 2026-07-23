@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { PersonalProfilePanel, type ProfileData } from '@/components/settings/profile';

@@ -1,28 +1,23 @@
 import { PhysioDomainWhy } from '@/components/today/drill-down/physio-domain-why';
-import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
 
 /**
- * Effort why — load reading first; global decision in expand.
+ * Effort why — load reading first.
  */
 export function EffortWhyBlock({
   verdict,
   verdictClass,
   acwr,
   tsb,
-  globalDecision,
   loading = false,
 }: {
   verdict: string;
   verdictClass: string;
   acwr: number;
   tsb: number | null;
-  globalDecision: GlobalDecisionContext;
   loading?: boolean;
 }) {
   if (loading) {
-    return (
-      <PhysioDomainWhy globalDecision={globalDecision} label="Charge" primary={null} loading />
-    );
+    return <PhysioDomainWhy label="Charge" primary={null} loading />;
   }
 
   const parts: string[] = [];
@@ -34,12 +29,5 @@ export function EffortWhyBlock({
   }
   const primary = parts.length > 0 ? parts.join(' · ') : null;
 
-  return (
-    <PhysioDomainWhy
-      globalDecision={globalDecision}
-      label="Charge"
-      primary={primary}
-      primaryClassName={verdictClass}
-    />
-  );
+  return <PhysioDomainWhy label="Charge" primary={primary} primaryClassName={verdictClass} />;
 }

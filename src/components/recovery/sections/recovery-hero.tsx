@@ -1,5 +1,4 @@
 import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
-import { softTintFromQualityClass } from '@/lib/presentation/physio-plate-tint';
 
 export function RecoveryHero({
   date,
@@ -44,13 +43,13 @@ export function RecoveryHero({
     <PhysioDrillDownHero
       confidencePct={confidencePct}
       date={date}
+      eyebrow="Récupération"
       footer={recoveryEta ?? undefined}
       headline={signal.label}
       headlineClassName={signal.qualityClass}
       isToday={isToday}
       loading={loading}
       maxDate={maxDate}
-      panelClassName={loading ? undefined : softTintFromQualityClass(signal.qualityClass)}
       quickReadCaption={actionLine}
       quickReadLabel="score récupération"
       quickReadSuffix="%"

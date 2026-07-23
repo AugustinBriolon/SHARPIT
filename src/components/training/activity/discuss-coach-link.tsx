@@ -21,7 +21,7 @@ export function DiscussCoachLink({
   }
 
   return (
-    <LinkButton href={href} variant="outline">
+    <LinkButton href={href} variant="highlight">
       <MessageCircle className="size-4" />
       Discuter avec le coach
     </LinkButton>

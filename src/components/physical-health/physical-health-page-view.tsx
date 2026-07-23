@@ -53,7 +53,12 @@ export function PhysicalHealthPageView({
   const [dialog, setDialog] = useState<DialogState>(null);
 
   const headerAction = (
-    <Button disabled={loading} size="sm" onClick={() => setDialog({ mode: 'create' })}>
+    <Button
+      disabled={loading}
+      size="sm"
+      variant="highlight"
+      onClick={() => setDialog({ mode: 'create' })}
+    >
       <Plus className="size-4" />
       Nouvelle condition
     </Button>

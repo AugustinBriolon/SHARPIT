@@ -36,10 +36,8 @@ export function PhysioDrillDownHero({
   quickReadSuffix,
   quickReadCaption,
   confidencePct,
-  badge,
+  badge: _badge,
   footer,
-  /** Soft plate tint — only when caller opts in (never auto from text colour). */
-  panelClassName,
   loading = false,
 }: {
   date: Date;
@@ -63,7 +61,6 @@ export function PhysioDrillDownHero({
   confidencePct?: number | null;
   badge?: ReactNode;
   footer?: ReactNode;
-  panelClassName?: string;
   loading?: boolean;
 }) {
   const showDateNav =
@@ -74,15 +71,7 @@ export function PhysioDrillDownHero({
       : null;
 
   return (
-    <section
-      aria-busy={loading || undefined}
-      className={cn(
-        'analysis-panel relative overflow-hidden',
-        'sm:rounded-analysis-lg rounded-[1.25rem] px-4 py-6 sm:px-8 sm:py-10',
-        'motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200',
-        panelClassName,
-      )}
-    >
+    <div className="space-y-4">
       <div className="flex flex-col items-center">
         {showDateNav ? (
           <TodayDateSelector
@@ -100,82 +89,82 @@ export function PhysioDrillDownHero({
         )}
         {!loading && subline ? (
           <p className="text-muted-foreground mt-1.5 text-center text-xs tabular-nums">{subline}</p>
-        ) : null}
-        {loading || bars != null || badge ? (
-          <div className="mt-2 flex items-center justify-center gap-2">
-            {loading ? (
-              <div className="text-muted-foreground inline-flex items-center gap-1.5">
-                <Skeleton className="h-2.5 w-6 rounded-sm" />
-                <span className="text-label">Confiance</span>
-              </div>
-            ) : null}
-            {!loading && bars != null ? (
-              <div
-                className="text-muted-foreground inline-flex items-center gap-1.5"
-                title={
-                  confidencePct != null ? `Confiance ${Math.round(confidencePct)} %` : 'Confiance'
-                }
-              >
-                <ConfidenceBars filled={bars} />
-                <span className="text-label">Confiance</span>
-              </div>
-            ) : null}
-            {!loading ? badge : null}
+        ) : (
+          <Skeleton className="mt-1.5 h-4 w-21 rounded-full" />
+        )}
+
+        <div className="mt-2 flex items-center justify-center gap-2">
+          <div
+            className="text-muted-foreground inline-flex items-center gap-1.5"
+            title={confidencePct != null ? `Confiance ${Math.round(confidencePct)} %` : 'Confiance'}
+          >
+            <ConfidenceBars filled={bars ?? 0} />
+            <span className="text-label">Confiance</span>
           </div>
-        ) : null}
+        </div>
       </div>
 
-      {eyebrow ? <p className="text-label mt-5">{eyebrow}</p> : null}
-
-      {loading ? (
-        <Skeleton
-          className={cn('mt-4 h-9 w-[min(100%,18rem)] rounded-lg sm:h-10', !eyebrow && 'mt-6')}
-        />
-      ) : (
-        <h1
-          className={cn(
-            'text-verdict mt-4 max-w-3xl text-[1.75rem] leading-[1.15] sm:text-[2.125rem]',
-            !eyebrow && 'mt-6',
-            headlineClassName ?? 'text-foreground',
-          )}
-        >
-          {headline}
-        </h1>
-      )}
-
-      {loading ? (
-        <Skeleton className="mt-4 h-4 w-[min(100%,16rem)] rounded-full sm:mt-5" />
-      ) : (
-        quickReadCaption && (
-          <p className="text-foreground mt-4 max-w-2xl text-sm leading-relaxed font-medium sm:mt-5">
-            {quickReadCaption}
+      <section
+        aria-busy={loading || undefined}
+        className={cn(
+          'bg-accent text-foreground border-analysis-border/13 relative overflow-hidden border',
+          'sm:rounded-analysis-lg rounded-[1.25rem] px-4 py-6 sm:px-8 sm:py-8',
+          'motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200',
+        )}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-label inline-flex items-center gap-2">
+            <span className="bg-primary h-2.5 w-2.5 shrink-0 rounded-full" aria-hidden />
+            {eyebrow}
           </p>
-        )
-      )}
 
-      <div className="text-muted-foreground mt-6 text-xs tracking-wide sm:mt-8">
-        <span className="text-label mr-2">{quickReadLabel}</span>
+          {loading ? (
+            <SkeletonDataValue heightClassName="h-7" widthClassName="w-12" />
+          ) : (
+            <span
+              className="bg-highlight text-highlight-foreground text-data inline-flex items-baseline gap-1 rounded-full px-3 py-1 text-sm font-semibold"
+              title={quickReadLabel}
+            >
+              {quickReadValue}
+              {quickReadSuffix ? (
+                <span className="text-[10px] font-normal">{quickReadSuffix}</span>
+              ) : null}
+            </span>
+          )}
+        </div>
+
         {loading ? (
-          <SkeletonDataValue
-            className="align-baseline"
-            heightClassName="h-5"
-            widthClassName="w-14"
+          <Skeleton
+            className={cn('mt-4 h-9 w-[min(100%,18rem)] rounded-lg sm:h-10', !eyebrow && 'mt-6')}
           />
         ) : (
-          <span className="text-data text-foreground text-sm tabular-nums">
-            {quickReadValue}
-            {quickReadSuffix ? (
-              <span className="text-muted-foreground ml-0.5 text-xs font-normal">
-                {quickReadSuffix}
-              </span>
-            ) : null}
-          </span>
+          <h1
+            className={cn(
+              'text-verdict mt-4 max-w-3xl text-[1.75rem] leading-[1.15] sm:text-[2.125rem]',
+              !eyebrow && 'mt-6',
+              headlineClassName ?? 'text-foreground',
+            )}
+          >
+            {headline}
+          </h1>
         )}
-      </div>
 
-      {footer && !loading ? (
-        <div className="text-muted-foreground mt-3 text-xs leading-relaxed">{footer}</div>
-      ) : null}
-    </section>
+        {loading ? (
+          <div className="border-primary mt-4 border-l-2 pl-3 sm:mt-5">
+            <Skeleton className="h-4 w-[min(100%,16rem)] rounded-full" />
+          </div>
+        ) : (
+          quickReadCaption && (
+            <p className="border-primary text-foreground/85 mt-4 max-w-2xl border-l-2 pl-3 text-sm leading-relaxed sm:mt-5">
+              {quickReadCaption}
+            </p>
+          )
+        )}
+
+        {footer && !loading ? (
+          <div className="text-muted-foreground mt-3 text-xs leading-relaxed">{footer}</div>
+        ) : null}
+      </section>
+    </div>
   );
 }

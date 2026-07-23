@@ -1,6 +1,6 @@
 import { BodyCompositionSource, type BodyCompositionMeasurement } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
-import { dedupeBodyCompositionByDay } from './body-composition';
+import { dedupeBodyCompositionByDay, filterCompositionSeriesByDays } from './body-composition';
 
 function row(source: BodyCompositionSource, day: string, hour: number): BodyCompositionMeasurement {
   return {
@@ -74,5 +74,35 @@ describe('dedupeBodyCompositionByDay', () => {
     expect(result[0]?.weightKg).toBe(75);
     expect(result[0]?.vascularAgeYears).toBe(42);
     expect(result[0]?.nerveHealthScore).toBe(88);
+  });
+});
+
+describe('filterCompositionSeriesByDays', () => {
+  const points = [
+    { date: '2026-06-01', weightKg: 76 },
+    { date: '2026-07-01', weightKg: 75 },
+    { date: '2026-07-20', weightKg: 74.5 },
+  ];
+
+  it('returns all points when days is null', () => {
+    expect(filterCompositionSeriesByDays(points, null)).toEqual(points);
+  });
+
+  it('keeps only points within the window', () => {
+    const now = new Date('2026-07-23T12:00:00');
+    expect(filterCompositionSeriesByDays(points, 14, now)).toEqual([
+      { date: '2026-07-20', weightKg: 74.5 },
+    ]);
+    expect(filterCompositionSeriesByDays(points, 30, now)).toEqual([
+      { date: '2026-07-01', weightKg: 75 },
+      { date: '2026-07-20', weightKg: 74.5 },
+    ]);
+  });
+
+  it('can yield an empty series without implying no imported data', () => {
+    const now = new Date('2026-07-23T12:00:00');
+    expect(filterCompositionSeriesByDays([{ date: '2026-01-01', weightKg: 80 }], 14, now)).toEqual(
+      [],
+    );
   });
 });

@@ -1,5 +1,5 @@
 import { BodyCompositionSource, type BodyCompositionMeasurement } from '@prisma/client';
-import { format } from 'date-fns';
+import { addDays, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 export interface BodyCompositionEntry {
@@ -206,6 +206,20 @@ export function buildCompositionSeries(entries: BodyCompositionEntry[]): Composi
       visceralFat: entry.visceralFat ?? null,
       waterPct: entry.waterPct ?? null,
     }));
+}
+
+/**
+ * Chart-only window filter. `date` must be `yyyy-MM-dd`.
+ * Does not affect hero / cards — those stay on the full history ViewModel.
+ */
+export function filterCompositionSeriesByDays<T extends { date: string }>(
+  points: T[],
+  days: number | null,
+  now: Date = new Date(),
+): T[] {
+  if (days == null) return points;
+  const sinceKey = format(startOfDay(addDays(now, -days)), 'yyyy-MM-dd');
+  return points.filter((point) => point.date >= sinceKey);
 }
 
 export function formatCompositionDelta(delta: number | null, unit = ''): string | undefined {

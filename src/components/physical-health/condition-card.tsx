@@ -29,7 +29,7 @@ export function PhysicalHealthConditionCardView({
   return (
     <Card
       className={cn(
-        'analysis-panel rounded-analysis-lg shadow-none',
+        'chip-surface rounded-analysis-lg shadow-none',
         !condition.isActive && 'opacity-75',
       )}
     >
@@ -104,26 +104,28 @@ export function PhysicalHealthConditionCardView({
               </ul>
             </div>
           )}
-
-          <div className="flex flex-wrap gap-2 pt-1">
-            {condition.legacyPhysicalNoteId && onEditLegacy && (
-              <button
-                className="text-primary text-xs font-medium hover:underline"
-                type="button"
-                onClick={() => onEditLegacy(condition.legacyPhysicalNoteId!)}
-              >
-                Ajouter une observation
-              </button>
-            )}
-            <Link
-              className="text-primary text-xs font-medium hover:underline"
-              href={`/biology?tab=suivi&condition=${condition.conditionId}`}
-            >
-              Voir le détail
-            </Link>
-          </div>
         </CardContent>
       )}
+
+      <CardContent className={cn('pt-0', !compact && '-mt-3')}>
+        <div className="flex flex-wrap gap-2 pt-1">
+          {condition.legacyPhysicalNoteId && onEditLegacy && (
+            <button
+              className="bg-highlight text-highlight-foreground hover:bg-highlight/90 rounded-full px-3.5 py-1.5 text-[11px] font-semibold transition-colors"
+              type="button"
+              onClick={() => onEditLegacy(condition.legacyPhysicalNoteId!)}
+            >
+              Ajouter une observation
+            </button>
+          )}
+          <Link
+            className="chip-surface text-foreground/80 hover:text-foreground rounded-full px-3.5 py-1.5 text-[11px] font-medium transition-colors"
+            href={`/biology?tab=suivi&condition=${condition.conditionId}`}
+          >
+            Voir le détail
+          </Link>
+        </div>
+      </CardContent>
     </Card>
   );
 }

@@ -1,5 +1,4 @@
 import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
-import { softTintFromQualityClass } from '@/lib/presentation/physio-plate-tint';
 
 const DAILY_STRAIN_GAUGE_MAX = 21;
 
@@ -62,13 +61,13 @@ export function EffortHero({
     <PhysioDrillDownHero
       confidencePct={confidencePct}
       date={date}
+      eyebrow="Effort"
       footer={!loading && actionLine ? tssLine : undefined}
       headline={strainStatusLabel}
       headlineClassName={strainStatusClassName}
       isToday={isToday}
       loading={loading}
       maxDate={maxDate}
-      panelClassName={loading ? undefined : softTintFromQualityClass(strainStatusClassName)}
       quickReadCaption={loading ? undefined : (actionLine ?? tssLine)}
       quickReadLabel="charge du jour"
       quickReadSuffix={` / ${DAILY_STRAIN_GAUGE_MAX}`}

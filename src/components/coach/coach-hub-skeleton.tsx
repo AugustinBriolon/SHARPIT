@@ -77,7 +77,7 @@ export function CoachChatEmptyChrome({ header }: { header?: ReactNode }) {
               {SUGGESTION_LABELS.map((label) => (
                 <span
                   key={label}
-                  className="border-border/60 text-muted-foreground rounded-full border px-3 py-1.5 text-xs opacity-50"
+                  className="chip-surface text-foreground/80 rounded-full px-3 py-1.5 text-xs"
                 >
                   {label}
                 </span>
@@ -94,7 +94,7 @@ export function CoachChatEmptyChrome({ header }: { header?: ReactNode }) {
           value=""
           disabled
         />
-        <Button size="icon" type="button" disabled>
+        <Button size="icon" type="button" variant="highlight" disabled>
           <Send className="size-4" />
         </Button>
       </div>
@@ -114,10 +114,10 @@ export function CoachChatPanelSkeleton({ header }: { header?: ReactNode }) {
         ) : null}
         <div className="space-y-4 p-4">
           <div className="flex justify-end">
-            <Skeleton className="rounded-analysis-lg h-10 w-[min(100%,14rem)]" />
+            <Skeleton className="bg-accent h-10 w-[min(100%,14rem)] rounded-[18px_18px_4px_18px]" />
           </div>
           <div className="flex justify-start">
-            <div className="analysis-panel-alt rounded-analysis-lg w-full max-w-[90%] space-y-2 px-4 py-3">
+            <div className="bg-analysis-surface-alt w-full max-w-[90%] space-y-2 rounded-[18px_18px_18px_4px] px-4 py-3">
               <Skeleton className="h-4 w-[92%] rounded-full" />
               <Skeleton className="h-4 w-[78%] rounded-full" />
               <Skeleton className="h-4 w-[64%] rounded-full" />
@@ -133,7 +133,7 @@ export function CoachChatPanelSkeleton({ header }: { header?: ReactNode }) {
           value=""
           disabled
         />
-        <Button size="icon" type="button" disabled>
+        <Button size="icon" type="button" variant="highlight" disabled>
           <Send className="size-4" />
         </Button>
       </div>
@@ -160,10 +160,12 @@ export function CoachPageHeader({
           </Link>
         </p>
       </div>
-      <Button disabled={newDisabled || !onNewConversation} onClick={onNewConversation}>
-        <MessageSquarePlus className="size-4" />
-        Nouvelle conversation
-      </Button>
+      {onNewConversation ? (
+        <Button disabled={newDisabled} variant="highlight" onClick={onNewConversation}>
+          <MessageSquarePlus className="size-4" />
+          Nouvelle conversation
+        </Button>
+      ) : null}
     </StickyHeader>
   );
 }
@@ -196,9 +198,13 @@ export function CoachHubSkeleton() {
       </div>
 
       <div className="hidden space-y-6 lg:block">
-        <CoachPageHeader newDisabled />
+        <CoachPageHeader />
         <div className="flex h-[calc(100dvh-190px)] flex-col gap-3 lg:flex-row lg:gap-4">
-          <aside className="analysis-panel rounded-analysis-lg flex w-full shrink-0 flex-col lg:h-full lg:w-56">
+          <aside className="flex w-full shrink-0 flex-col gap-2 lg:h-full lg:w-[260px]">
+            <Button className="hidden lg:inline-flex" type="button" variant="highlight" disabled>
+              <MessageSquarePlus className="size-4" />
+              Nouvelle conversation
+            </Button>
             <CoachConversationListSkeleton />
           </aside>
           <CoachChatEmptyChrome />

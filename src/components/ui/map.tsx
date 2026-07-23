@@ -63,53 +63,32 @@ function mergeHoverPaint<T extends Record<string, unknown>>(
 
 type Theme = 'light' | 'dark';
 
-// Check document class for theme (works with next-themes, etc.)
-function getDocumentTheme(): Theme | null {
-  if (typeof document === 'undefined') return null;
-  if (document.documentElement.classList.contains('dark')) return 'dark';
-  if (document.documentElement.classList.contains('light')) return 'light';
-  return null;
-}
-
-// Get system preference
-function getSystemTheme(): Theme {
-  if (typeof window === 'undefined') return 'light';
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+// The app resolves its theme (including "system") into the `dark` class on
+// <html> before paint (see THEME_INIT_SCRIPT / ThemeProvider). Light mode has
+// no class at all, so "no `dark` class" means light — never fall back to the
+// OS preference here or the map diverges from the app theme.
+function getDocumentTheme(): Theme {
+  if (typeof document === 'undefined') return 'light';
+  return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 }
 
 function useResolvedTheme(themeProp?: 'light' | 'dark'): Theme {
-  const [detectedTheme, setDetectedTheme] = useState<Theme>(
-    () => getDocumentTheme() ?? getSystemTheme(),
-  );
+  const [detectedTheme, setDetectedTheme] = useState<Theme>(() => getDocumentTheme());
 
   useEffect(() => {
     if (themeProp) return; // Skip detection if theme is provided via prop
 
-    // Watch for document class changes (e.g., next-themes toggling dark class)
+    // Watch for document class changes (ThemeProvider toggling the dark class)
     const observer = new MutationObserver(() => {
-      const docTheme = getDocumentTheme();
-      if (docTheme) {
-        setDetectedTheme(docTheme);
-      }
+      setDetectedTheme(getDocumentTheme());
     });
     observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ['class'],
     });
 
-    // Also watch for system preference changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleSystemChange = (e: MediaQueryListEvent) => {
-      // Only use system preference if no document class is set
-      if (!getDocumentTheme()) {
-        setDetectedTheme(e.matches ? 'dark' : 'light');
-      }
-    };
-    mediaQuery.addEventListener('change', handleSystemChange);
-
     return () => {
       observer.disconnect();
-      mediaQuery.removeEventListener('change', handleSystemChange);
     };
   }, [themeProp]);
 
@@ -1073,9 +1052,17 @@ function MapRoute({
   const sourceId = `route-source-${id}`;
   const layerId = `route-layer-${id}`;
 
-  // Add source and layer when the map is ready (recreate if paint identity changes).
+  // Paint values are read via a ref at creation so hover-driven changes
+  // (width/opacity) never tear down the source — they are synced with
+  // setPaintProperty below.
+  const initialPaintRef = useRef({ color, width, opacity, dashArray });
+  initialPaintRef.current = { color, width, opacity, dashArray };
+
+  // Add source and layer when the map is ready.
   useEffect(() => {
     if (!isLoaded || !map) return;
+
+    const paint = initialPaintRef.current;
 
     map.addSource(sourceId, {
       type: 'geojson',
@@ -1092,10 +1079,10 @@ function MapRoute({
       source: sourceId,
       layout: { 'line-join': 'round', 'line-cap': 'round' },
       paint: {
-        'line-color': color,
-        'line-width': width,
-        'line-opacity': opacity,
-        ...(dashArray ? { 'line-dasharray': dashArray } : {}),
+        'line-color': paint.color,
+        'line-width': paint.width,
+        'line-opacity': paint.opacity,
+        ...(paint.dashArray ? { 'line-dasharray': paint.dashArray } : {}),
       },
     });
 
@@ -1107,9 +1094,9 @@ function MapRoute({
         // ignore
       }
     };
-  }, [isLoaded, map, sourceId, layerId, color, width, opacity, dashArray]);
+  }, [isLoaded, map, sourceId, layerId]);
 
-  // When coordinates change (or the layer was recreated for a new color), update data.
+  // When coordinates change, update data.
   useEffect(() => {
     if (!isLoaded || !map || coordinates.length < 2) return;
 
@@ -1121,7 +1108,7 @@ function MapRoute({
         geometry: { type: 'LineString', coordinates },
       });
     }
-  }, [isLoaded, map, coordinates, sourceId, layerId, color]);
+  }, [isLoaded, map, coordinates, sourceId]);
 
   useEffect(() => {
     if (!isLoaded || !map || !map.getLayer(layerId)) return;

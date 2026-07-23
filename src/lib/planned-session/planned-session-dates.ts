@@ -45,6 +45,10 @@ export function filterUpcomingPlannedSessions<T extends PlannedSessionLike>(
  * Preview selection for "Prochaines séances": keeps chronological order but
  * always reserves slots for next week when sessions exist there — otherwise a
  * full remaining current week fills the limit and hides the week ahead.
+ *
+ * Small previews (limit < 4) stay strictly chronological so responsive
+ * truncation keeps the nearest sessions (top of the desktop grid), not the
+ * next-week reserve that sits on the second row.
  */
 export function selectUpcomingPlannedPreview<T extends PlannedSessionLike>(
   sessions: T[],
@@ -53,6 +57,7 @@ export function selectUpcomingPlannedPreview<T extends PlannedSessionLike>(
 ): T[] {
   const upcoming = filterUpcomingPlannedSessions(sessions, ref);
   if (upcoming.length <= limit) return upcoming;
+  if (limit < 4) return upcoming.slice(0, limit);
 
   const thisWeekEnd = startOfDay(endOfWeek(ref, WEEK_OPTS));
   const nextWeekEnd = startOfDay(endOfWeek(addWeeks(ref, 1), WEEK_OPTS));

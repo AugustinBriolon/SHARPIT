@@ -2,7 +2,6 @@
 
 import { memo } from 'react';
 import type { SplitRow } from '@/lib/activity/activity-analysis';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDuration, formatPace } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
@@ -37,20 +36,18 @@ function SplitsTableComponent({
   const bestPace = paces.length ? Math.min(...paces) : null;
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="overflow-x-auto">
-        <table className="w-full min-w-[480px] text-sm">
+    <section className="space-y-3">
+      <p className="text-label px-0.5">{title}</p>
+      <div className="chip-surface rounded-analysis overflow-x-auto">
+        <table className="w-full min-w-[480px] px-3 text-sm">
           <thead>
-            <tr className="border-border/60 text-muted-foreground border-b text-left text-xs tracking-wider uppercase">
-              <th className="pr-4 pb-2 font-medium">Split</th>
-              <th className="pr-4 pb-2 font-medium">Temps</th>
-              <th className="pr-4 pb-2 font-medium">{mode === 'bike' ? 'Vitesse' : 'Allure'}</th>
-              <th className="pr-4 pb-2 font-medium">FC</th>
-              {mode === 'bike' && <th className="pr-4 pb-2 font-medium">W moy.</th>}
-              <th className="pb-2 font-medium">D+</th>
+            <tr className="border-analysis-border/60 text-muted-foreground border-b px-4 text-left text-[10px] tracking-[0.08em] uppercase">
+              <th className="py-2.5 pr-4 pl-4 font-medium">Split</th>
+              <th className="py-2.5 pr-4 font-medium">Temps</th>
+              <th className="py-2.5 pr-4 font-medium">{mode === 'bike' ? 'Vitesse' : 'Allure'}</th>
+              <th className="py-2.5 pr-4 font-medium">FC</th>
+              {mode === 'bike' && <th className="py-2.5 pr-4 font-medium">W moy.</th>}
+              <th className="py-2.5 pr-4 font-medium">D+</th>
             </tr>
           </thead>
           <tbody>
@@ -62,8 +59,8 @@ function SplitsTableComponent({
                 row.paceSecPerKm != null && bestPace != null && row.paceSecPerKm === bestPace;
 
               return (
-                <tr key={row.index} className="border-border/30 border-b last:border-0">
-                  <td className="text-muted-foreground py-2 pr-4 font-mono">{row.label}</td>
+                <tr key={row.index} className="border-analysis-border/30 border-b last:border-0">
+                  <td className="text-muted-foreground py-2 pr-4 pl-4 font-mono">{row.label}</td>
                   <td className="py-2 pr-4 font-mono">{formatDuration(row.durationSec)}</td>
                   <td
                     className={cn(
@@ -100,8 +97,8 @@ function SplitsTableComponent({
             })}
           </tbody>
         </table>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
 

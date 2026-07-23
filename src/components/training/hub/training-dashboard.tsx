@@ -2,12 +2,12 @@
 
 import { differenceInCalendarDays, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import Link from 'next/link';
 import { PlanningRow } from '@/components/today/dashboard/planning-row';
 import { ActivityConsistencyPanel } from '@/components/today/dashboard/activity-consistency-panel';
 import { ActivityList } from '@/components/training/activity/activity-list';
-import { TrainingWeekCalendarPreview } from '@/components/training/hub/training-week-calendar-preview';
+import { TrainingWeekStrip } from '@/components/training/hub/training-week-strip';
 import { Badge } from '@/components/ui/badge';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
@@ -92,25 +92,35 @@ function TrainingInstrumentPlate({
     return (
       <section
         className={cn(
-          'analysis-panel rounded-analysis-lg relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10',
-          'border-primary/20 bg-primary/10',
+          'surface-ink relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10',
           'motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200',
         )}
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-label inline-flex items-center gap-2">
-            <span className="bg-primary/50 h-2.5 w-2.5 shrink-0 rounded-full" aria-hidden />
+          <p className="text-ink-surface-foreground/65 inline-flex items-center gap-2 text-[11px] font-semibold tracking-wide uppercase">
+            <span
+              className="bg-highlight dark:bg-ink-surface-foreground h-2.5 w-2.5 shrink-0 rounded-full"
+              aria-hidden
+            />
             Entraînement
           </p>
         </div>
         <div className="mt-6">
-          <SkeletonDataValue heightClassName="h-9 sm:h-10" widthClassName="w-[min(100%,22rem)]" />
+          <SkeletonDataValue
+            className="bg-ink-surface-foreground/20"
+            heightClassName="h-9 sm:h-10"
+            widthClassName="w-[min(100%,22rem)]"
+          />
         </div>
-        <div className="mt-5">
-          <SkeletonDataValue heightClassName="h-4" widthClassName="w-[min(100%,16rem)]" />
+        <div className="border-highlight dark:border-ink-surface-foreground/80 mt-5 border-l-2 pl-3">
+          <SkeletonDataValue
+            className="bg-ink-surface-foreground/20"
+            heightClassName="h-4"
+            widthClassName="w-[min(100%,16rem)]"
+          />
         </div>
         <Link
-          className="text-data text-muted-foreground hover:text-foreground mt-8 inline-flex items-center gap-1.5 text-xs tracking-wide transition-colors"
+          className="text-data text-ink-surface-foreground/70 hover:text-ink-surface-foreground mt-8 inline-flex items-center gap-1.5 text-xs tracking-wide transition-colors"
           href="/training/planning"
         >
           Ouvrir le planning
@@ -125,13 +135,20 @@ function TrainingInstrumentPlate({
   const hasRace = Boolean(nextRaceGoal && countdownLabel);
   const nextDisplay = nextSession ? resolvePlannedSessionDisplay(nextSession, new Date()) : null;
 
-  let headline: string;
+  let headline: ReactNode;
   let actionLine: string | null;
   let contextLabel: string;
 
   if (hasRace && nextRaceGoal && countdownLabel) {
     contextLabel = 'Objectif';
-    headline = `${countdownLabel} · ${nextRaceGoal.title}`;
+    headline = (
+      <>
+        <span className="text-data text-highlight dark:text-ink-surface-foreground">
+          {countdownLabel}
+        </span>
+        {` · ${nextRaceGoal.title}`}
+      </>
+    );
     const contextBits = [nextRaceGoal.raceFormat, nextRaceGoal.location].filter(Boolean);
     if (nextDisplay != null) {
       actionLine = `Prochaine séance · ${nextDisplay.title}`;
@@ -150,43 +167,24 @@ function TrainingInstrumentPlate({
     actionLine = 'Planifie la prochaine séance qui compte.';
   }
 
-  const isInkEmpty = !hasRace && !nextDisplay;
-
   return (
     <section
       className={cn(
-        'relative overflow-hidden',
+        'surface-ink relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10',
         'motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200',
-        isInkEmpty
-          ? 'page-bleed-ink py-8 sm:py-10'
-          : cn(
-              'analysis-panel rounded-analysis-lg px-5 py-8 sm:px-8 sm:py-10',
-              hasRace && 'border-signal-tempo/30 bg-signal-tempo/12',
-              nextDisplay && 'border-primary/20 bg-primary/10',
-            ),
       )}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p
-          className={cn(
-            'text-label inline-flex items-center gap-2',
-            isInkEmpty && 'text-ink-surface-foreground/70',
-          )}
-        >
+        <p className="text-ink-surface-foreground/65 inline-flex items-center gap-2 text-[11px] font-semibold tracking-wide uppercase">
           <span
-            className={cn(
-              'h-2.5 w-2.5 shrink-0 rounded-full',
-              hasRace && 'bg-(--color-signal-tempo)',
-              !hasRace && nextDisplay && 'bg-primary',
-              isInkEmpty && 'bg-highlight',
-            )}
+            className="bg-highlight dark:bg-ink-surface-foreground h-2.5 w-2.5 shrink-0 rounded-full"
             aria-hidden
           />
           {contextLabel}
         </p>
         {hasRace ? (
           <Badge
-            className="border-analysis-border bg-background/70 rounded-full text-xs font-normal"
+            className="border-ink-surface-foreground/25 text-ink-surface-foreground/80 rounded-full bg-transparent text-xs font-normal"
             variant="outline"
           >
             Course cible
@@ -194,48 +192,35 @@ function TrainingInstrumentPlate({
         ) : null}
       </div>
 
-      <h1
-        className={cn(
-          'text-verdict mt-6 max-w-3xl text-[1.75rem] leading-[1.15] sm:text-[2.125rem]',
-          hasRace && 'text-(--color-signal-tempo)',
-          !hasRace && nextDisplay && 'text-foreground',
-          isInkEmpty && 'text-ink-surface-foreground',
+      <div className="mt-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-5">
+        <div className="min-w-0">
+          <h1 className="text-verdict text-ink-surface-foreground max-w-3xl text-[1.75rem] leading-[1.15] sm:text-[2.125rem]">
+            {headline}
+          </h1>
+
+          {actionLine ? (
+            <p className="border-highlight dark:border-ink-surface-foreground/80 text-ink-surface-foreground/80 mt-5 max-w-2xl border-l-2 pl-3 text-sm leading-relaxed font-medium">
+              {actionLine}
+            </p>
+          ) : null}
+        </div>
+
+        {hasRace && eventDateLabel ? (
+          <p className="text-data text-ink-surface-foreground/60 text-xs tracking-wide">
+            {eventDateLabel}
+          </p>
+        ) : (
+          <Link
+            className="text-data text-ink-surface-foreground/70 hover:text-ink-surface-foreground inline-flex items-center gap-1.5 text-xs tracking-wide transition-colors"
+            href="/training/planning"
+          >
+            Ouvrir le planning
+            <span className="text-[10px] tracking-wider opacity-70" aria-hidden>
+              →
+            </span>
+          </Link>
         )}
-      >
-        {headline}
-      </h1>
-
-      {actionLine ? (
-        <p
-          className={cn(
-            'mt-5 max-w-2xl text-sm leading-relaxed font-medium',
-            isInkEmpty ? 'text-ink-surface-foreground/85' : 'text-foreground',
-          )}
-        >
-          {actionLine}
-        </p>
-      ) : null}
-
-      {hasRace && eventDateLabel ? (
-        <p className="text-data text-muted-foreground mt-8 text-xs tracking-wide">
-          {eventDateLabel}
-        </p>
-      ) : (
-        <Link
-          href="/training/planning"
-          className={cn(
-            'text-data mt-8 inline-flex items-center gap-1.5 text-xs tracking-wide transition-colors',
-            isInkEmpty
-              ? 'text-ink-surface-foreground/70 hover:text-ink-surface-foreground'
-              : 'text-muted-foreground hover:text-foreground',
-          )}
-        >
-          Ouvrir le planning
-          <span className="text-[10px] tracking-wider opacity-70" aria-hidden>
-            →
-          </span>
-        </Link>
-      )}
+      </div>
     </section>
   );
 }
@@ -301,45 +286,50 @@ export function TrainingDashboard() {
         nextSession={valuesLoading ? null : nextSession}
       />
 
-      <section>
-        <SectionLink cta="Planning" href="/training/planning" title="Prochaines séances" />
-        {valuesLoading ? <PreviewChipSkeleton count={previewLimit} /> : null}
-        {!valuesLoading ? (
-          <PlanningRow limit={previewLimit} sessions={upcomingRoutineSessions} />
-        ) : null}
-        {!valuesLoading && upcomingPreview.length === 0 ? (
-          <InkEmptyState
-            className="mt-1"
-            description="Ouvre le planning pour programmer la suite."
-            icon={CalendarClock}
-            title="Aucune séance à venir"
-            compact
-          />
-        ) : null}
-      </section>
+      <TrainingWeekStrip
+        activities={activities}
+        loading={valuesLoading}
+        plannedSessions={plannedSessions}
+      />
 
-      <section>
-        <SectionLink cta="Historique" href="/training/history" title="Dernières activités" />
-        {valuesLoading ? <ActivityChipSkeleton count={previewLimit} /> : null}
-        {!valuesLoading ? (
-          <ActivityList
-            activities={latestActivities}
-            emptyLabel="Aucune activité récente."
-            variant="chip"
-          />
-        ) : null}
-      </section>
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start lg:gap-8">
+        <section className="min-w-0">
+          <SectionLink cta="Planning" href="/training/planning" title="Séances à venir" />
+          {valuesLoading ? <PreviewChipSkeleton count={previewLimit} /> : null}
+          {!valuesLoading ? (
+            <PlanningRow
+              className="sm:grid-cols-1"
+              limit={previewLimit}
+              sessions={upcomingRoutineSessions}
+            />
+          ) : null}
+          {!valuesLoading && upcomingPreview.length === 0 ? (
+            <InkEmptyState
+              className="mt-1"
+              description="Ouvre le planning pour programmer la suite."
+              icon={CalendarClock}
+              title="Aucune séance à venir"
+              compact
+            />
+          ) : null}
+        </section>
+
+        <section className="min-w-0">
+          <SectionLink cta="Historique" href="/training/history" title="Activités récentes" />
+          {valuesLoading ? <ActivityChipSkeleton count={previewLimit} /> : null}
+          {!valuesLoading ? (
+            <ActivityList
+              activities={latestActivities}
+              emptyLabel="Aucune activité récente."
+              variant="chip"
+            />
+          ) : null}
+        </section>
+      </div>
 
       <section>
         <SectionLink cta="Progression" href="/training/progression" title="Dynamique récente" />
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <ActivityConsistencyPanel activities={activities} loading={valuesLoading} />
-          <TrainingWeekCalendarPreview
-            activities={activities}
-            loading={valuesLoading}
-            plannedSessions={plannedSessions}
-          />
-        </div>
+        <ActivityConsistencyPanel activities={activities} loading={valuesLoading} />
       </section>
     </div>
   );

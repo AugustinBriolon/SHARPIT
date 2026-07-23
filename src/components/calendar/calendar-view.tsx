@@ -44,13 +44,18 @@ import {
   subWeeks,
 } from 'date-fns';
 import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { CalendarMonthGrid } from './calendar-month-grid';
 import { CalendarToolbar } from './calendar-toolbar';
 import type { DialogState } from './calendar-types';
 import { CALENDAR_WEEK_OPTS } from './calendar-types';
 import { CalendarWeekList } from './calendar-week-list';
-import { calendarToolbarTitle, getDragSessionId, groupEventsByDay } from './calendar-utils';
+import {
+  calendarToolbarTitle,
+  getDragSessionId,
+  groupEventsByDay,
+  parseCalendarDateParam,
+} from './calendar-utils';
 
 function CalendarSkeleton({ showHeader }: { showHeader: boolean }) {
   return (
@@ -107,9 +112,12 @@ export function CalendarView({
   const mounted = useMounted();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
-  const [month, setMonth] = useState<Date>(() => startOfMonth(new Date()));
+  const searchParams = useSearchParams();
+  // Deep-link from the week strip: frame the view on the requested day.
+  const focusDate = parseCalendarDateParam(searchParams.get('date'));
+  const [month, setMonth] = useState<Date>(() => startOfMonth(focusDate ?? new Date()));
   const [weekAnchor, setWeekAnchor] = useState<Date>(() =>
-    startOfWeek(new Date(), CALENDAR_WEEK_OPTS),
+    startOfWeek(focusDate ?? new Date(), CALENDAR_WEEK_OPTS),
   );
   const [visibilityError, setVisibilityError] = useState<string | null>(null);
 

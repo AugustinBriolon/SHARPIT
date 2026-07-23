@@ -93,8 +93,8 @@ export function MetricCell({
       className={cn(
         'relative flex flex-col',
         onExplain
-          ? 'group bg-analysis-surface-alt/70 hover:bg-analysis-surface border-analysis-border rounded-xl border px-3.5 py-3 transition-colors'
-          : 'analysis-panel rounded-analysis px-4 py-4',
+          ? 'group chip-surface hover:border-primary/35 rounded-2xl px-3.5 py-3 transition-colors'
+          : 'chip-surface rounded-2xl px-4 py-4',
       )}
     >
       <div className="flex items-center gap-2">

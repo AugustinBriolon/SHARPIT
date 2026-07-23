@@ -1,8 +1,6 @@
-import Link from 'next/link';
-import type { ReactNode } from 'react';
-import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import type { ReactNode } from 'react';
 
 /**
  * Domain-first why — global training decision demoted to expand.
@@ -13,51 +11,23 @@ export function PhysioDomainWhy({
   primary,
   primaryClassName,
   supportingLines = [],
-  globalDecision,
   loading = false,
 }: {
   label: string;
   primary: string | null;
   primaryClassName?: string;
   supportingLines?: string[];
-  globalDecision: GlobalDecisionContext;
   loading?: boolean;
 }) {
   const hasSupport = !loading && supportingLines.length > 0;
-  const hasGlobal = !loading && globalDecision.visible;
 
-  if (!loading && !primary && !hasSupport && !hasGlobal) return null;
-
-  let todayAccessory: ReactNode = null;
-  if (hasGlobal) {
-    todayAccessory = (
-      <Link
-        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs transition-colors"
-        href={globalDecision.todayHref}
-      >
-        Aujourd&apos;hui
-        <span className="text-data tracking-wider" aria-hidden>
-          →
-        </span>
-      </Link>
-    );
-  } else if (loading) {
-    todayAccessory = (
-      <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
-        Aujourd&apos;hui
-        <span className="text-data tracking-wider" aria-hidden>
-          →
-        </span>
-      </span>
-    );
-  }
+  if (!loading && !primary && !hasSupport) return null;
 
   let primaryBlock: ReactNode = null;
   if (loading) {
     primaryBlock = (
       <div className="space-y-2">
         <Skeleton className="h-4 w-full max-w-xl rounded-full" />
-        <Skeleton className="h-4 w-[85%] max-w-md rounded-full" />
       </div>
     );
   } else if (primary) {
@@ -94,55 +64,14 @@ export function PhysioDomainWhy({
     );
   }
 
-  let globalBlock: ReactNode = null;
-  if (hasGlobal) {
-    globalBlock = (
-      <details className={cn('group', primary || hasSupport ? 'mt-2' : undefined)}>
-        <summary className="text-muted-foreground hover:text-foreground cursor-pointer list-none py-1.5 text-xs font-medium tracking-wide transition-colors [&::-webkit-details-marker]:hidden">
-          <span className="underline-offset-2 group-open:no-underline">
-            Décision du jour
-            {globalDecision.verdictLabel ? ` · ${globalDecision.verdictLabel}` : ''}
-          </span>
-        </summary>
-        <p
-          className={cn(
-            'mt-1 text-sm leading-relaxed font-medium',
-            globalDecision.verdictClassName,
-          )}
-        >
-          {globalDecision.verdictLabel}
-          {globalDecision.topActionLine ? (
-            <span className="text-foreground font-normal">
-              {' — '}
-              {globalDecision.topActionLine}
-            </span>
-          ) : null}
-        </p>
-        {globalDecision.relationNote ? (
-          <p className="text-muted-foreground mt-1.5 text-xs leading-relaxed">
-            {globalDecision.relationNote}
-          </p>
-        ) : null}
-      </details>
-    );
-  } else if (loading) {
-    globalBlock = (
-      <p className="text-muted-foreground mt-2 text-xs font-medium tracking-wide opacity-60">
-        Décision du jour
-      </p>
-    );
-  }
-
   return (
     <section aria-busy={loading || undefined} className="px-0.5">
       <div className="mb-2 flex items-center justify-between gap-3">
         <p className="text-label">{label}</p>
-        {todayAccessory}
       </div>
 
       {primaryBlock}
       {supportBlock}
-      {globalBlock}
     </section>
   );
 }

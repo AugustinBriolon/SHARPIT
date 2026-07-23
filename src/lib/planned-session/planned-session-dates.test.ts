@@ -85,4 +85,15 @@ describe('selectUpcomingPlannedPreview', () => {
     const result = selectUpcomingPlannedPreview(sessions, FRIDAY, 4);
     expect(result.map((s) => s.id)).toEqual(['sat', 'sun', 'mon', 'tue']);
   });
+
+  it('keeps nearest sessions on small responsive previews (not next-week reserve)', () => {
+    const sessions = [
+      session({ id: 'sat', date: new Date('2026-07-04T12:00:00') }),
+      session({ id: 'sun', date: new Date('2026-07-05T12:00:00') }),
+      session({ id: 'mon', date: new Date('2026-07-06T12:00:00') }),
+      session({ id: 'tue', date: new Date('2026-07-07T12:00:00') }),
+    ];
+    const result = selectUpcomingPlannedPreview(sessions, FRIDAY, 2);
+    expect(result.map((s) => s.id)).toEqual(['sat', 'sun']);
+  });
 });

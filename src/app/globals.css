@@ -64,6 +64,7 @@
   --color-highlight-foreground: var(--highlight-foreground);
   --color-ink-surface: var(--ink-surface);
   --color-ink-surface-foreground: var(--ink-surface-foreground);
+  --color-chip-surface: var(--chip-surface);
   --radius-sm: calc(var(--radius) * 0.5);
   --radius-md: calc(var(--radius) * 0.75);
   --radius-lg: var(--radius);
@@ -115,6 +116,8 @@
   /* Forest Depths band — empty states, hub callouts (Seed dark section, inset) */
   --ink-surface: oklch(0.315 0.073 139);
   --ink-surface-foreground: oklch(0.99 0.007 106.5);
+  /* Chip surface — pure white, crisper than Snow White canvas */
+  --chip-surface: #fff;
   --destructive: oklch(0.58 0.2 27);
   --border: oklch(0.315 0.073 139 / 12%);
   --input: oklch(0.315 0.073 139 / 14%);
@@ -181,6 +184,7 @@
   /* Lime band on dark — Seed punctuation as inverted section */
   --ink-surface: oklch(0.936 0.13 126.6);
   --ink-surface-foreground: oklch(0.22 0.045 139);
+  --chip-surface: oklch(0.28 0.05 139);
   --destructive: oklch(0.62 0.2 27);
   --border: oklch(0.99 0.007 106.5 / 12%);
   --input: oklch(0.99 0.007 106.5 / 14%);
@@ -435,6 +439,13 @@
   border-radius: var(--radius-analysis-lg);
   background-color: var(--color-ink-surface);
   color: var(--color-ink-surface-foreground);
+}
+
+/* Bande ink chip — white card on hairline border (light), forest card (dark) */
+@utility chip-surface {
+  border: 1px solid color-mix(in oklch, var(--color-analysis-border) 81%, transparent);
+  background-color: var(--color-chip-surface);
+  color: var(--color-card-foreground);
 }
 
 /* Lime Pulse icon well — brand punctuation, not primary/10 mud */

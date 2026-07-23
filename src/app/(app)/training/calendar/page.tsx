@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { CalendarView } from '@/components/calendar/calendar-view';
@@ -14,7 +15,10 @@ export default function TrainingCalendarPage() {
         </p>
       </StickyHeader>
 
-      <CalendarView embedded showCoachMenu showPlanButton />
+      {/* Suspense for `useSearchParams` (?date= deep-link) — CalendarView owns its skeleton. */}
+      <Suspense>
+        <CalendarView embedded showCoachMenu showPlanButton />
+      </Suspense>
     </div>
   );
 }

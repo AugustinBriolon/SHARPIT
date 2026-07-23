@@ -3,28 +3,20 @@ import { StickyHeader } from '@/components/layout/sticky-header';
 import { DeleteActivityButton } from '@/components/training/activity/activity-list';
 import { DiscussCoachLink } from '@/components/training/activity/discuss-coach-link';
 import { LinkButton } from '@/components/ui/link-button';
-import { SPORT_IDENTITY_SURFACE, SPORT_IDENTITY_TEXT } from '@/lib/activity/sport-identity';
 import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
 import { formatFosterLoadHint } from '@/lib/training/foster-session-load';
-import { cn } from '@/lib/utils';
 import { activitySourceLabel, sportIcon } from './activity-detail-helpers';
 import type { ActivityDetail } from './types';
 
 export function ActivityDetailHeader({ activity }: { activity: ActivityDetail }) {
   const Icon = sportIcon[activity.type];
-  const sportText = SPORT_IDENTITY_TEXT[activity.type];
   const fosterHint = formatFosterLoadHint(activity.duration, activity.rpe, activity.load);
 
   return (
     <StickyHeader>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 items-start gap-4">
-          <span
-            className={cn(
-              'rounded-analysis-lg grid size-12 shrink-0 place-items-center',
-              SPORT_IDENTITY_SURFACE[activity.type],
-            )}
-          >
+          <span className="bg-accent text-primary rounded-analysis-lg grid size-12 shrink-0 place-items-center">
             <Icon className="size-6" />
           </span>
           <div className="min-w-0">
@@ -40,10 +32,10 @@ export function ActivityDetailHeader({ activity }: { activity: ActivityDetail })
             <h1 className="text-page-title mt-1">
               {activity.title ?? activityTypeLabels[activity.type]}
             </h1>
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-sm">
+            <div className="text-data mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
               <span className="text-foreground/80">{formatDuration(activity.duration)}</span>
               {activity.load != null && (
-                <span className={cn('font-semibold', sportText)}>
+                <span className="text-primary font-semibold">
                   · {Math.round(activity.load)} TSS
                 </span>
               )}
