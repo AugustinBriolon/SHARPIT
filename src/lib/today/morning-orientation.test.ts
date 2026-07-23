@@ -125,8 +125,37 @@ describe('resolveMorningOrientation', () => {
     });
     expect(r?.phase).toBe('ORIENTATION_READY');
     expect(r?.showRefreshEvidence).toBe(false);
-    expect(r?.showFirmActions).toBe(true);
+    expect(r?.showFirmActions).toBe(false);
     expect(r?.heroHeadline).toBeNull();
+  });
+
+  it('hides firm actions when there is no recalibration proposal', () => {
+    const r = resolveMorningOrientation({
+      phase: 'MORNING',
+      snapshot: makeSnapshot({ adviceActionable: true }),
+      recalibration: null,
+    });
+    expect(r?.phase).toBe('ORIENTATION_READY');
+    expect(r?.showFirmActions).toBe(false);
+    expect(r?.holdDecisionId).toBeNull();
+  });
+
+  it('shows Tenir + confirm when a DOWN proposal is presented', () => {
+    const r = resolveMorningOrientation({
+      phase: 'MORNING',
+      snapshot: makeSnapshot({ adviceActionable: true }),
+      recalibration: {
+        decisionId: 'd1',
+        sessionId: 's1',
+        direction: 'DOWN',
+        changeSummary: 'Tempo → Endurance',
+        why: 'récupération',
+        status: 'PRESENTED',
+      },
+    });
+    expect(r?.showFirmActions).toBe(true);
+    expect(r?.confirmEase?.decisionId).toBe('d1');
+    expect(r?.holdDecisionId).toBe('d1');
   });
 
   it('keeps day verdict on ACCEPTED — annotates session only', () => {

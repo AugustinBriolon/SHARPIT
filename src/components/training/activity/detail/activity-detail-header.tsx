@@ -5,6 +5,7 @@ import { DiscussCoachLink } from '@/components/training/activity/discuss-coach-l
 import { LinkButton } from '@/components/ui/link-button';
 import { SPORT_IDENTITY_SURFACE, SPORT_IDENTITY_TEXT } from '@/lib/activity/sport-identity';
 import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
+import { formatFosterLoadHint } from '@/lib/training/foster-session-load';
 import { cn } from '@/lib/utils';
 import { activitySourceLabel, sportIcon } from './activity-detail-helpers';
 import type { ActivityDetail } from './types';
@@ -12,6 +13,7 @@ import type { ActivityDetail } from './types';
 export function ActivityDetailHeader({ activity }: { activity: ActivityDetail }) {
   const Icon = sportIcon[activity.type];
   const sportText = SPORT_IDENTITY_TEXT[activity.type];
+  const fosterHint = formatFosterLoadHint(activity.duration, activity.rpe, activity.load);
 
   return (
     <StickyHeader>
@@ -45,6 +47,7 @@ export function ActivityDetailHeader({ activity }: { activity: ActivityDetail })
                   · {Math.round(activity.load)} TSS
                 </span>
               )}
+              {fosterHint != null && <span className="text-muted-foreground">· {fosterHint}</span>}
             </div>
           </div>
         </div>

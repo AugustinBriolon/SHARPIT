@@ -116,14 +116,6 @@ export function MorningOrientationActions({
     }
   }
 
-  function holdWithoutProposal() {
-    writeClientMorningHold(trainingDayId);
-    toast.success('Séance tenue');
-    startTransition(() => {
-      void refreshCaches();
-    });
-  }
-
   if (orientation.phase === 'POST_CHOICE') {
     return null;
   }
@@ -149,6 +141,13 @@ export function MorningOrientationActions({
     return null;
   }
 
+  // Firm actions only appear with a proposal — Tenir rejects it, Confirm accepts.
+  const decisionId =
+    orientation.holdDecisionId ??
+    orientation.confirmEase?.decisionId ??
+    orientation.confirmIncrease?.decisionId;
+  if (!decisionId) return null;
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Button
@@ -156,13 +155,7 @@ export function MorningOrientationActions({
         size="sm"
         type="button"
         variant="default"
-        onClick={() => {
-          if (orientation.holdDecisionId) {
-            void actRecalibration('reject', orientation.holdDecisionId, null);
-          } else {
-            holdWithoutProposal();
-          }
-        }}
+        onClick={() => void actRecalibration('reject', decisionId, null)}
       >
         Tenir
       </Button>

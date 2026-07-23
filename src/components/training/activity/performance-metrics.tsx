@@ -3,6 +3,7 @@
 import type { ActivityAnalysis } from '@/lib/activity/activity-analysis';
 import { MetricCard } from '@/components/ui/metric-card';
 import { ClinicalAnnotation } from '@/components/ui/clinical-annotation';
+import Link from 'next/link';
 
 function decouplingLabel(pct: number): string {
   if (pct < 5) return 'Excellent — peu de dérive cardiaque';
@@ -102,11 +103,19 @@ export function ThresholdsHint({ analysis }: { analysis: ActivityAnalysis }) {
 
   return (
     <ClinicalAnnotation title="Seuils estimés">
-      Renseigne ton FTP, LTHR et allure seuil dans{' '}
+      Zones et IF/TSS s&apos;appuient ici sur des estimations. Pour les verrouiller, applique-les
+      depuis{' '}
+      <Link
+        className="text-primary underline-offset-2 hover:underline"
+        href="/training/progression?tab=calibration"
+      >
+        Calibration
+      </Link>{' '}
+      ou ajuste-les dans{' '}
       <a className="text-primary underline-offset-2 hover:underline" href="/settings/account">
-        Profil
-      </a>{' '}
-      pour des zones et un IF/TSS précis.
+        Compte
+      </a>
+      .
       {thresholds.lthr && (
         <span className="text-data mt-1 block text-xs">
           LTHR estimé : {thresholds.lthr} bpm

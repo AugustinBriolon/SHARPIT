@@ -324,6 +324,11 @@ normFactor = 10 × 60              // reference: 1h at maximum effort = 600
 TSS_rpe    = (sessionRPE / normFactor) × 100
 ```
 
+**Implementation:** `computeRpeTss` / `fosterSessionLoad` in
+`src/core/features/extractors/session-extractor.ts` (aligned with this formula).
+`fosterSessionLoad` is always populated when RPE is present, even if a higher-tier
+method wins the TSS cascade (external vs internal load).
+
 **Reference:** Foster et al. (2001) — Level 3
 **Confidence contribution:** 0.45
 **Systematic bias:** subjective RPE is consistent within individuals but not

@@ -74,7 +74,7 @@ function ScalePicker({
             key={opt.value}
             type="button"
             className={cn(
-              'flex min-h-16 flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2 transition-colors',
+              'flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2 transition-colors',
               value === opt.value
                 ? 'border-highlight bg-highlight text-highlight-foreground'
                 : 'border-border/70 bg-background hover:border-primary/30 hover:bg-muted/40',
@@ -135,15 +135,15 @@ export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => voi
         Ressenti
       </Button>
 
-      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-md">
-        <DialogHeader className="space-y-1 border-b px-5 py-4 text-left">
+      <DialogContent className="flex max-h-[min(92dvh,40rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md">
+        <DialogHeader className="shrink-0 space-y-1 border-b px-5 py-4 pr-12 text-left">
           <DialogTitle className="font-heading text-lg">Ton ressenti du matin</DialogTitle>
           <DialogDescription>
             Quelques secondes pour affiner ta récupération et la fiabilité du bilan.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5 px-5 py-4">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-4">
           <ScalePicker
             hint="Comment te sens-tu psychologiquement ?"
             label="Humeur"
@@ -189,7 +189,7 @@ export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => voi
           {error && <p className="text-destructive text-xs">{error}</p>}
         </div>
 
-        <div className="border-border/60 bg-muted/40 border-t px-5 py-4">
+        <div className="border-border/60 bg-muted/40 shrink-0 border-t px-5 py-4">
           <Button className="w-full" disabled={submitting} type="button" onClick={handleSubmit}>
             {submitting ? 'Enregistrement…' : 'Valider mon ressenti'}
           </Button>

@@ -258,6 +258,18 @@
     overscroll-behavior-y: none;
     color-scheme: light;
   }
+  /* Mobile PWA: hide scrollbars everywhere — scroll still works, chrome stays clean. */
+  @media (max-width: 1023px) {
+    * {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    *::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+  }
   html.dark {
     color-scheme: dark;
   }
@@ -283,6 +295,23 @@
 
 @utility safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/** Hide scrollbar while keeping scroll (dialogs, tab strips, etc.). */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @utility text-label {

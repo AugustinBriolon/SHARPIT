@@ -70,7 +70,7 @@ export function MobileShell({ children }: { children: React.ReactNode }) {
       <OfflineBanner />
       <SyncingIndicator className="border-border/40 border-b" />
       <main
-        className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain"
+        className="no-scrollbar min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain"
         style={{
           paddingBottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))',
         }}

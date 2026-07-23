@@ -218,12 +218,14 @@ export function resolveMorningOrientation(input: {
       : null;
 
   const holdDecisionId = recalibration?.status === 'PRESENTED' ? recalibration.decisionId : null;
+  // Firm actions only when there is something to decide — lonely "Tenir" is noise.
+  const showFirmActions = confirmEase != null || confirmIncrease != null;
 
   return {
     phase: 'ORIENTATION_READY',
     evidenceLine: null,
     showRefreshEvidence: false,
-    showFirmActions: true,
+    showFirmActions,
     hideHeroConfidence: true,
     heroHeadline: null,
     heroSubline: null,

@@ -16,6 +16,7 @@
  *   - TSS: Coggan (2003); Allen & Coggan "Training and Racing with a Power Meter"
  *   - TRIMP: Banister et al. (1975), modified by Morton et al. (1990)
  *   - TRIMP normalization: Manzi et al. (2009)
+ *   - Session RPE / Foster load: Foster et al. (2001); TSS_rpe = (RPE×min)/600×100
  */
 
 import type { SessionFeatureSet, TssMethod, SessionExtractorInput } from '../types';
@@ -23,6 +24,10 @@ import type { ExtractionContext } from '../context';
 import { canUsePowerTss, canUseTrimpTss, canUsePaceTss } from '../context';
 import type { SportType } from '@/core/observation/types';
 import { TSS_METHOD_CONFIDENCE, QUALITY_CONFIDENCE } from '../types';
+import {
+  computeFosterSessionLoad,
+  fosterSessionLoadToTss,
+} from '@/lib/training/foster-session-load';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sport-specific constants
@@ -166,15 +171,12 @@ function computePaceTss(
 }
 
 /**
- * Tier 4 — RPE-based TSS.
- * Formula: TSS ≈ (rpe / 5)² × durationHr × 100
- * Very rough approximation (±50% error at boundaries).
- * RPE=5 corresponds approximately to threshold effort (100 TSS/hr).
+ * Tier 4 — Foster session-RPE, normalized to a TSS-like scale for the cascade.
+ * See `lib/training/foster-session-load.ts` and TRAINING_STRESS_MODEL.md.
  */
 function computeRpeTss(durationSec: number, rpe: number): TssResult {
-  const durationHr = durationSec / 3600;
-  const rpeFactor = rpe / 5;
-  const tssScore = rpeFactor * rpeFactor * durationHr * 100;
+  const sessionLoad = computeFosterSessionLoad(durationSec, rpe);
+  const tssScore = fosterSessionLoadToTss(sessionLoad);
 
   return {
     tssScore,
@@ -374,6 +376,10 @@ export function extractSessionFeatures(
     efficiencyFactor,
 
     subjectiveRpe: linkedSubjective?.rpe ?? null,
+    fosterSessionLoad:
+      linkedSubjective?.rpe != null
+        ? computeFosterSessionLoad(session.durationSec, linkedSubjective.rpe)
+        : null,
     sourceProvidedTss: session.sourceProvidedStress?.value ?? null,
 
     confidence: tssResult.confidence,

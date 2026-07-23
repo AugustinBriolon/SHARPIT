@@ -7,6 +7,11 @@ import { resolveRouteFallback } from '@/lib/navigation/route-registry';
 
 export type BackTarget = { href: string; label: string };
 
+export type BackTargetResolution = BackTarget & {
+  /** True when the target came from the app nav stack (prefer history.back). */
+  fromStack: boolean;
+};
+
 /**
  * Subscribe to storage changes emitted by the tracker so back-buttons rerender
  * as soon as a new entry is pushed.
@@ -22,27 +27,6 @@ function subscribe(callback: () => void): () => void {
   return () => window.removeEventListener(NAV_STACK_EVENT, callback);
 }
 
-function getSnapshot(): number {
-  // Snapshot only needs to change when the stack changes; length is a cheap proxy.
-  // We also fold in the peek href to catch replaceTop (same length, new content).
-  const entries = navStack.all();
-  const top = entries[entries.length - 1];
-  return entries.length * 31 + (top ? hashString(top.href) : 0);
-}
-
-function getServerSnapshot(): number {
-  return 0;
-}
-
-function hashString(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) {
-    h = (h << 5) - h + s.charCodeAt(i);
-    h |= 0;
-  }
-  return h;
-}
-
 /**
  * Notify subscribers that the stack changed. Called by the tracker after each push.
  */
@@ -51,23 +35,55 @@ export function emitNavStackChanged(): void {
   window.dispatchEvent(new Event(NAV_STACK_EVENT));
 }
 
+/** Registry / override only — safe for SSR + hydration. */
+export function resolveBackTargetWithoutStack(
+  currentHref: string,
+  overrideFallback?: BackTarget,
+): BackTargetResolution {
+  if (overrideFallback) return { ...overrideFallback, fromStack: false };
+  return { ...resolveRouteFallback(currentHref), fromStack: false };
+}
+
+/** Stack-aware resolution — client only, after hydration. */
+export function resolveBackTarget(
+  currentHref: string,
+  overrideFallback?: BackTarget,
+): BackTargetResolution {
+  const previous = navStack.peekBackFrom(currentHref);
+  if (previous) return { href: previous.href, label: previous.label, fromStack: true };
+  return resolveBackTargetWithoutStack(currentHref, overrideFallback);
+}
+
+function serializeTarget(target: BackTargetResolution): string {
+  return `${target.href}\0${target.label}\0${target.fromStack ? '1' : '0'}`;
+}
+
+function deserializeTarget(serialized: string): BackTargetResolution {
+  const [href = '', label = '', flag = '0'] = serialized.split('\0');
+  return { href, label, fromStack: flag === '1' };
+}
+
 /**
  * Resolve where Back should send the athlete right now.
  *
  * 1. Previous entry on the app-managed stack (skipping current href), or
  * 2. Explicit `overrideFallback` (page-provided), or
  * 3. Registry-based default parent for the current route.
+ *
+ * Hydration-safe: the stack is only read in the client snapshot. SSR and the
+ * hydrate pass use the registry fallback so server HTML matches the first client paint.
  */
-export function useBackTarget(overrideFallback?: BackTarget): BackTarget {
+export function useBackTarget(overrideFallback?: BackTarget): BackTargetResolution {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const search = searchParams?.toString() ?? '';
   const currentHref = search ? `${pathname}?${search}` : (pathname ?? '/');
 
-  useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const serialized = useSyncExternalStore(
+    subscribe,
+    () => serializeTarget(resolveBackTarget(currentHref, overrideFallback)),
+    () => serializeTarget(resolveBackTargetWithoutStack(currentHref, overrideFallback)),
+  );
 
-  const previous = navStack.peekBackFrom(currentHref);
-  if (previous) return { href: previous.href, label: previous.label };
-  if (overrideFallback) return overrideFallback;
-  return resolveRouteFallback(currentHref);
+  return deserializeTarget(serialized);
 }

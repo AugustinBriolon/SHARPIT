@@ -292,6 +292,37 @@ const DURATION_PR_TYPE: Partial<Record<string, ActivityType>> = {
   'swim-duration': ActivityType.SWIM,
 };
 
+const DURATION_PR_CATEGORIES = Object.keys(DURATION_PR_TYPE);
+
+/**
+ * Detects the pre-fix duration PR bug: same longest session ranked #1 across
+ * sports, or a leader whose activity type does not match its category.
+ * Pure helper — used by getStoredRecords to trigger a one-shot repair in prod.
+ */
+export function durationPrLeadersNeedRepair(
+  leaders: ReadonlyArray<{
+    category: string;
+    activityId: string | null;
+    label: string;
+    activityType?: ActivityType | null;
+  }>,
+): boolean {
+  if (leaders.length === 0) return false;
+
+  // Pre-fix generic label (shared across run/bike/swim).
+  if (leaders.some((r) => r.label === 'Plus longue durée')) return true;
+
+  const ids = leaders.map((r) => r.activityId).filter((id): id is string => Boolean(id));
+  if (ids.length > 1 && new Set(ids).size < ids.length) return true;
+
+  for (const row of leaders) {
+    if (!row.activityId || row.activityType == null) continue;
+    const expected = DURATION_PR_TYPE[row.category];
+    if (expected && row.activityType !== expected) return true;
+  }
+  return false;
+}
+
 function activitiesForDurationPr(defKey: string, activities: MetricActivity[]): MetricActivity[] {
   const type = DURATION_PR_TYPE[defKey];
   if (!type) return activities;
@@ -1006,10 +1037,10 @@ function emptyPayload(totalActivities = 0, streamsAnalyzed = 0): RecordsPayload 
 
 /** Lit les records stockés et les remet en forme pour le client. */
 export async function getStoredRecords(): Promise<RecordsPayload> {
-  const [rows, totalActivities, streamsAnalyzed] = await Promise.all([
-    prisma.performanceRecord.findMany({
-      orderBy: [{ category: 'asc' }, { rank: 'asc' }],
-    }),
+  let rows = await prisma.performanceRecord.findMany({
+    orderBy: [{ category: 'asc' }, { rank: 'asc' }],
+  });
+  const [totalActivities, streamsAnalyzed] = await Promise.all([
     prisma.activity.count(),
     prisma.activityStream.count({ where: { available: true } }),
   ]);
@@ -1018,6 +1049,42 @@ export async function getStoredRecords(): Promise<RecordsPayload> {
   if (rows.length === 0) {
     if (totalActivities > 0) return recomputeAndStoreRecords();
     return emptyPayload(totalActivities, streamsAnalyzed);
+  }
+
+  // One-shot repair: duration PRs computed before sport-scoping (same longest
+  // session as #1 for run/bike/swim). Recompute metric groups then re-read.
+  const durationLeaders = rows.filter(
+    (r) => DURATION_PR_CATEGORIES.includes(r.category) && r.rank === 1,
+  );
+  if (durationLeaders.length > 0) {
+    const activityIds = [
+      ...new Set(
+        durationLeaders.map((r) => r.activityId).filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    const activities =
+      activityIds.length > 0
+        ? await prisma.activity.findMany({
+            where: { id: { in: activityIds } },
+            select: { id: true, type: true },
+          })
+        : [];
+    const typeById = new Map(activities.map((a) => [a.id, a.type]));
+    if (
+      durationPrLeadersNeedRepair(
+        durationLeaders.map((r) => ({
+          category: r.category,
+          activityId: r.activityId,
+          label: r.label,
+          activityType: r.activityId ? (typeById.get(r.activityId) ?? null) : null,
+        })),
+      )
+    ) {
+      await recomputeRecordGroups(new Set(METRIC_GROUPS));
+      rows = await prisma.performanceRecord.findMany({
+        orderBy: [{ category: 'asc' }, { rank: 'asc' }],
+      });
+    }
   }
 
   // Legacy rows without persisted efforts: one-time backfill, then read-only path.

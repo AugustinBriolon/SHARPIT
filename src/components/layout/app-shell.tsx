@@ -28,7 +28,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <main
           className={cn(
             'min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain',
-            'max-lg:pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))]',
+            'max-lg:no-scrollbar max-lg:pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))]',
           )}
         >
           <div className="mx-auto max-w-lg px-4 py-4 [--page-gutter:1rem] lg:max-w-none lg:p-6 lg:[--page-gutter:1.5rem]">

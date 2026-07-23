@@ -23,6 +23,8 @@ import { formatDistance, formatDuration } from '@/lib/format';
 import { formatGoalDisplayValue, parseGoalMetricConfig } from '@/lib/goals/goal-metric-config';
 import { resolveEnvironmentalExplanation } from '@/lib/presentation/environment';
 import { getActivePhysicalNotes, getAthleteProfile } from '@/lib/queries';
+import { buildTechnicalSessionFacts } from '@/lib/activity/activity-narrative-technical-facts';
+import { getActivityStreams } from '@/lib/streams/streams';
 
 const TYPE_FR: Record<string, string> = {
   RUN: 'Course à pied',
@@ -41,9 +43,18 @@ type PeerRow = {
     paceSecPerKm: number | null;
     avgHr: number | null;
     elevationM: number | null;
+    cadence: number | null;
   } | null;
-  bikeMetrics: { avgPower: number | null; elevationM: number | null } | null;
-  swimMetrics: { distanceM: number | null; avgPaceSecPer100m: number | null } | null;
+  bikeMetrics: {
+    avgPower: number | null;
+    elevationM: number | null;
+    avgCadence: number | null;
+  } | null;
+  swimMetrics: {
+    distanceM: number | null;
+    avgPaceSecPer100m: number | null;
+    swolf: number | null;
+  } | null;
 };
 
 type ActivityRow = PeerRow & {
@@ -62,6 +73,13 @@ function fmtPace(secPerKm?: number | null): string | null {
   const m = Math.floor(secPerKm / 60);
   const s = Math.round(secPerKm % 60);
   return `${m}:${s.toString().padStart(2, '0')}/km`;
+}
+
+function fmtPace100(secPer100m?: number | null): string | null {
+  if (secPer100m == null || secPer100m <= 0) return null;
+  const m = Math.floor(secPer100m / 60);
+  const s = Math.round(secPer100m % 60);
+  return `${m}:${s.toString().padStart(2, '0')}/100m`;
 }
 
 function avgHr(activity: PeerRow): number | null {
@@ -89,7 +107,7 @@ function weatherFact(raw: string | null): string | null {
 }
 
 /** Faits séance : métriques brutes pour référence interne du modèle (ne pas tout répéter en prose). */
-function describeActivity(activity: ActivityRow): string {
+function describeActivity(activity: ActivityRow, extras?: { streamAvgHr?: number | null }): string {
   const bits = [
     `Sport : ${TYPE_FR[activity.type] ?? activity.type}`,
     activity.title ? `Titre : ${activity.title}` : null,
@@ -108,8 +126,19 @@ function describeActivity(activity: ActivityRow): string {
   if (dist) bits.push(`Distance : ${formatDistance(dist)}`);
   const pace = paceSecPerKm(activity);
   if (pace) bits.push(`Allure moyenne : ${fmtPace(pace)}`);
-  const hr = avgHr(activity);
+  const swimPace = fmtPace100(activity.swimMetrics?.avgPaceSecPer100m);
+  if (swimPace) bits.push(`Allure moyenne : ${swimPace}`);
+  if (activity.swimMetrics?.swolf != null) {
+    bits.push(`SWOLF : ${Math.round(activity.swimMetrics.swolf)}`);
+  }
+  const hr = avgHr(activity) ?? extras?.streamAvgHr ?? null;
   if (hr) bits.push(`FC moyenne : ${Math.round(hr)} bpm`);
+  if (activity.runMetrics?.cadence != null) {
+    bits.push(`Cadence : ${Math.round(activity.runMetrics.cadence)} spm`);
+  }
+  if (activity.bikeMetrics?.avgCadence != null) {
+    bits.push(`Cadence : ${Math.round(activity.bikeMetrics.avgCadence)} rpm`);
+  }
   if (activity.bikeMetrics?.avgPower) {
     bits.push(`Puissance moyenne : ${Math.round(activity.bikeMetrics.avgPower)} W`);
   }
@@ -227,6 +256,7 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
           avgHr: true,
           elevationM: true,
           avgPower: true,
+          cadence: true,
         },
       },
       bikeMetrics: {
@@ -235,9 +265,12 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
           normalizedPower: true,
           intensityFactor: true,
           elevationM: true,
+          avgCadence: true,
         },
       },
-      swimMetrics: { select: { distanceM: true, avgPaceSecPer100m: true } },
+      swimMetrics: {
+        select: { distanceM: true, avgPaceSecPer100m: true, swolf: true },
+      },
     },
   });
 
@@ -262,6 +295,7 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
     physicalNotes,
     goalHits,
     environmentPresentation,
+    streamResult,
   ] = await Promise.all([
     prisma.activity.findMany({
       where: {
@@ -276,10 +310,16 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
         rpe: true,
         feeling: true,
         runMetrics: {
-          select: { distanceM: true, paceSecPerKm: true, avgHr: true, elevationM: true },
+          select: {
+            distanceM: true,
+            paceSecPerKm: true,
+            avgHr: true,
+            elevationM: true,
+            cadence: true,
+          },
         },
-        bikeMetrics: { select: { avgPower: true, elevationM: true } },
-        swimMetrics: { select: { distanceM: true, avgPaceSecPer100m: true } },
+        bikeMetrics: { select: { avgPower: true, elevationM: true, avgCadence: true } },
+        swimMetrics: { select: { distanceM: true, avgPaceSecPer100m: true, swolf: true } },
       },
       orderBy: { date: 'desc' },
       take: 40,
@@ -329,7 +369,14 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
         observedLocationLabel: activity.observedLocationLabel,
       },
     }).catch(() => null),
+    getActivityStreams(activityId).catch((err) => {
+      console.error('[activity-narrative-facts] streams', activityId, err);
+      return null;
+    }),
   ]);
+
+  const streamPayload = streamResult;
+  const streamAvgHr = streamPayload?.stats?.avgHr ?? null;
 
   const healthContext: NarrativeHealthRow[] = healthRows.map((row) => ({
     date: row.date,
@@ -390,9 +437,14 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
         ]
       : [];
 
+  const technicalLines = buildTechnicalSessionFacts({
+    sport: activity.type as 'RUN' | 'BIKE' | 'SWIM',
+    analysis: streamPayload?.analysis ?? null,
+  });
+
   const sections = [
     '# Cette séance (données brutes — ne pas toutes répéter en prose)',
-    describeActivity(activity as ActivityRow),
+    describeActivity(activity as ActivityRow, { streamAvgHr }),
     '',
     '# Comparatif historique même sport (30 jours)',
     buildComparativeFacts(activity as ActivityRow, peers),
@@ -413,6 +465,15 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
     '# Environnement',
     ...buildEnvironmentFacts(activity.weather, environmentLines),
   ];
+
+  if (technicalLines.length) {
+    sections.push(
+      '',
+      '# Technique (faits notables uniquement — silence préférable au conseil de forme permanent)',
+      'Ne commente un fait technique QUE s’il change l’interprétation de la séance (charge réelle, dérive, intensité mal calibrée, irrégularité marquante). N’invente pas de cible (cadence idéale, pose du pied, « tu devrais »).',
+      ...technicalLines,
+    );
+  }
 
   if (goalLines.length) {
     sections.push('', '# Objectifs', ...goalLines);

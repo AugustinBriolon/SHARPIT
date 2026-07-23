@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import { IBM_Plex_Sans, JetBrains_Mono, Syne } from 'next/font/google';
-import Script from 'next/script';
 import { AppClerkProvider } from '@/providers/clerk-provider';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { SwRegister } from '@/components/pwa/sw-register';
@@ -98,11 +97,8 @@ export default async function RootLayout({
         suppressHydrationWarning
       >
         <head>
-          <Script
-            dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
-            id="theme-init"
-            strategy="beforeInteractive"
-          />
+          {/* Inline blocking theme boot — plain <script>, not next/script (avoids client Script warning). */}
+          <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} id="theme-init" />
           <link crossOrigin="anonymous" href="https://basemaps.cartocdn.com" rel="preconnect" />
           <link href="https://basemaps.cartocdn.com" rel="dns-prefetch" />
           {/* iOS splash screens — one representative device per class (docs/PWA_TESTING.md).

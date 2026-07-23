@@ -100,6 +100,7 @@ function makeSession(overrides: Partial<SessionFeatureSet> = {}): SessionFeature
     efficiencyFactor: null,
     paceVariabilityIndex: null,
     subjectiveRpe: null,
+    fosterSessionLoad: null,
     sourceProvidedTss: null,
     confidence: 0.85,
     algorithmId: 'session-features-v1',

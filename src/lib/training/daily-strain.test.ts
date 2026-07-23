@@ -20,6 +20,7 @@ function makeSessionFeature(overrides: Partial<SessionFeatureSet> = {}): Session
     anaerobicLoadFactor: null,
     paceVariabilityIndex: null,
     subjectiveRpe: null,
+    fosterSessionLoad: null,
     sourceProvidedTss: null,
     timeInZones: null,
     confidence: 1,

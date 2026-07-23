@@ -256,29 +256,59 @@ describe('extractSessionFeatures — TSS: Tier 3 (pace-based)', () => {
 // TSS Tier 4 — RPE-based
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('extractSessionFeatures — TSS: Tier 4 (RPE-based)', () => {
-  it('uses RPE-based TSS when no other data is available', () => {
+describe('extractSessionFeatures — TSS: Tier 4 (Foster RPE)', () => {
+  it('uses Foster-normalized TSS when no other data is available', () => {
     const ctx = makeContext(); // no FTP, maxHr, or threshold pace
     const result = extractSessionFeatures(
       input({ sportType: 'STRENGTH', durationSec: 3600 }, { rpe: 7 }),
       ctx,
     );
-    // TSS = (7/5)² × 1.0 × 100 = 1.96 × 100 = 196
-    expect(result.tssScore).toBeCloseTo(196, 1);
+    // sessionLoad = 7 × 60 = 420; TSS = 420/600 × 100 = 70
+    expect(result.tssScore).toBeCloseTo(70, 1);
     expect(result.tssMethod).toBe('RPE_BASED');
+    expect(result.fosterSessionLoad).toBeCloseTo(420, 1);
   });
 
-  it('RPE at 5 (threshold equivalent) produces ~100 TSS for 1 hour', () => {
+  it('1h at RPE 10 maps to 100 TSS (Foster max reference)', () => {
+    const ctx = makeContext();
+    const result = extractSessionFeatures(input({ durationSec: 3600 }, { rpe: 10 }), ctx);
+    expect(result.tssScore).toBeCloseTo(100, 1);
+    expect(result.fosterSessionLoad).toBeCloseTo(600, 1);
+  });
+
+  it('1h at RPE 5 maps to 50 TSS (half of maximal)', () => {
     const ctx = makeContext();
     const result = extractSessionFeatures(input({ durationSec: 3600 }, { rpe: 5 }), ctx);
-    expect(result.tssScore).toBeCloseTo(100, 1);
+    expect(result.tssScore).toBeCloseTo(50, 1);
     expect(result.tssMethod).toBe('RPE_BASED');
+    expect(result.fosterSessionLoad).toBeCloseTo(300, 1);
   });
 
   it('RPE confidence is 0.45', () => {
     const ctx = makeContext();
     const result = extractSessionFeatures(input({ durationSec: 3600 }, { rpe: 5 }), ctx);
     expect(result.confidence).toBeCloseTo(0.45, 5);
+  });
+
+  it('still records Foster load when power wins the TSS cascade', () => {
+    const ctx = makeContext({ ftpW: 250 });
+    const result = extractSessionFeatures(
+      input(
+        {
+          durationSec: 3600,
+          powerData: {
+            normalizedPower: 200,
+            avgWatts: 190,
+            quality: 'MEASURED_DIRECT',
+          },
+        },
+        { rpe: 6 },
+      ),
+      ctx,
+    );
+    expect(result.tssMethod).toBe('POWER_BASED');
+    expect(result.fosterSessionLoad).toBeCloseTo(360, 1); // 6 × 60
+    expect(result.subjectiveRpe).toBe(6);
   });
 });
 
@@ -404,11 +434,13 @@ describe('extractSessionFeatures — subjective features', () => {
   it('records subjectiveRpe from linked observation', () => {
     const result = extractSessionFeatures(input({ sportType: 'RUN' }, { rpe: 6.5 }), makeContext());
     expect(result.subjectiveRpe).toBe(6.5);
+    expect(result.fosterSessionLoad).toBeCloseTo(6.5 * 60, 1);
   });
 
   it('records null subjectiveRpe when no linked observation', () => {
     const result = extractSessionFeatures(input({ sportType: 'RUN' }), makeContext());
     expect(result.subjectiveRpe).toBeNull();
+    expect(result.fosterSessionLoad).toBeNull();
   });
 });
 

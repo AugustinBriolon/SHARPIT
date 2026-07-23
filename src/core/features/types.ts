@@ -49,7 +49,7 @@ export type TssMethod =
   | 'POWER_BASED' // NP²/FTP² × duration × 100 — most accurate
   | 'TRIMP_HR' // Banister TRIMP normalized to TSS scale
   | 'PACE_BASED' // threshold pace ratio × duration
-  | 'RPE_BASED' // subjective RPE × duration (very rough)
+  | 'RPE_BASED' // Foster session-RPE normalized to TSS scale (Tier 4)
   | 'DURATION_FACTOR'; // duration × sport constant (last resort)
 
 /** Quality-to-confidence mapping for Observation inputs. */
@@ -66,7 +66,7 @@ export const TSS_METHOD_CONFIDENCE: Record<TssMethod, number> = {
   POWER_BASED: 1.0, // further capped by power data quality
   TRIMP_HR: 0.75, // TRIMP has inherent ±15% error
   PACE_BASED: 0.75, // pace is a good proxy but still approximate
-  RPE_BASED: 0.45, // very rough ±50% error
+  RPE_BASED: 0.45, // Foster sRPE → TSS; ±30% typical (Level 3)
   DURATION_FACTOR: 0.25, // last resort — high uncertainty
 };
 
@@ -163,6 +163,14 @@ export type SessionFeatureSet = {
    * Null when no subjective observation links to this session.
    */
   readonly subjectiveRpe: number | null;
+
+  /**
+   * Foster session load (internal load): RPE × durationMin.
+   * Always computed when subjectiveRpe is present — even if tssMethod is power/HR/pace.
+   * Units are Foster "training load" (not TSS). Null when no RPE.
+   * Reference: Foster et al. (2001).
+   */
+  readonly fosterSessionLoad: number | null;
 
   // ── Source cross-validation ───────────────────────────────────────────────
 

@@ -1,6 +1,6 @@
 import { ActivityType } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
-import { buildMetricPrCategories } from './records';
+import { buildMetricPrCategories, durationPrLeadersNeedRepair } from './records';
 
 function metricActivity(input: {
   id: string;
@@ -59,5 +59,83 @@ describe('buildMetricPrCategories duration PRs', () => {
     expect(prs.swim.find((c) => c.key === 'swim-duration')?.label).toBe(
       'Plus longue durée de nage',
     );
+  });
+});
+
+describe('durationPrLeadersNeedRepair', () => {
+  it('flags when the same activity is #1 duration across sports', () => {
+    expect(
+      durationPrLeadersNeedRepair([
+        {
+          category: 'run-duration',
+          activityId: 'same',
+          label: 'Plus longue durée de course',
+          activityType: ActivityType.RUN,
+        },
+        {
+          category: 'bike-duration',
+          activityId: 'same',
+          label: 'Plus longue durée à vélo',
+          activityType: ActivityType.RUN,
+        },
+        {
+          category: 'swim-duration',
+          activityId: 'same',
+          label: 'Plus longue durée de nage',
+          activityType: ActivityType.RUN,
+        },
+      ]),
+    ).toBe(true);
+  });
+
+  it('flags legacy generic labels', () => {
+    expect(
+      durationPrLeadersNeedRepair([
+        {
+          category: 'run-duration',
+          activityId: 'a',
+          label: 'Plus longue durée',
+          activityType: ActivityType.RUN,
+        },
+      ]),
+    ).toBe(true);
+  });
+
+  it('flags sport/type mismatches', () => {
+    expect(
+      durationPrLeadersNeedRepair([
+        {
+          category: 'bike-duration',
+          activityId: 'run-1',
+          label: 'Plus longue durée à vélo',
+          activityType: ActivityType.RUN,
+        },
+      ]),
+    ).toBe(true);
+  });
+
+  it('passes when each sport has its own correctly typed leader', () => {
+    expect(
+      durationPrLeadersNeedRepair([
+        {
+          category: 'run-duration',
+          activityId: 'r',
+          label: 'Plus longue durée de course',
+          activityType: ActivityType.RUN,
+        },
+        {
+          category: 'bike-duration',
+          activityId: 'b',
+          label: 'Plus longue durée à vélo',
+          activityType: ActivityType.BIKE,
+        },
+        {
+          category: 'swim-duration',
+          activityId: 's',
+          label: 'Plus longue durée de nage',
+          activityType: ActivityType.SWIM,
+        },
+      ]),
+    ).toBe(false);
   });
 });
