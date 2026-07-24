@@ -13,6 +13,7 @@ import { currentTokens, type GarminTokens } from '@/lib/integrations/garmin';
 import { getGarminClient } from '@/lib/integrations/garmin-sync';
 import {
   formatStrengthPrescriptionSummary,
+  attachGarminRefsToPrescription,
   parseStrengthPrescription,
 } from '@/lib/planned-session/strength-prescription';
 import { prisma } from '@/lib/prisma';
@@ -171,7 +172,10 @@ export async function pushStrengthWorkoutFromPlannedSession(options: {
     throw new Error('Seules les séances de musculation peuvent être envoyées à la montre');
   }
 
-  const prescription = parseStrengthPrescription(session.strengthPrescription);
+  const prescriptionParsed = parseStrengthPrescription(session.strengthPrescription);
+  const prescription = prescriptionParsed
+    ? attachGarminRefsToPrescription(prescriptionParsed)
+    : null;
   if (!prescription) {
     throw new Error('Aucun exercice prescrit — ajoute des exercices à la séance planifiée');
   }
@@ -186,7 +190,19 @@ export async function pushStrengthWorkoutFromPlannedSession(options: {
   return uploadStrengthSets({
     workoutName,
     description,
-    sets: prescription.sets,
+    sets: prescription.sets.map((set) => ({
+      exercise: set.exercise,
+      exerciseCatalogId: set.exerciseCatalogId,
+      sets: set.sets,
+      reps: set.reps,
+      durationSec: set.durationSec,
+      weightKg: set.weightKg,
+      restSec: set.restSec,
+      notes: set.notes,
+      garmin: set.garmin
+        ? { category: set.garmin.category, exerciseName: set.garmin.exerciseName }
+        : null,
+    })),
     schedule: options.schedule,
     scheduleDate: options.scheduleDate ?? format(session.date, 'yyyy-MM-dd'),
   });

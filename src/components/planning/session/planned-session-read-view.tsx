@@ -15,7 +15,11 @@ import { useSessionRationalePresentation } from '@/hooks/use-data';
 import type { PlannedSessionViewModel } from '@/core/presentation/planned-session-view-model';
 import { activityTypeLabels, formatDate } from '@/lib/format';
 import { formatPlannedSessionLocationDisplay } from '@/lib/planned-session/planned-session-display';
-import { parseStrengthPrescription } from '@/lib/planned-session/strength-prescription';
+import {
+  attachGarminRefsToPrescription,
+  parseStrengthPrescription,
+  strengthSetWatchCompat,
+} from '@/lib/planned-session/strength-prescription';
 import { sportIdentityHex } from '@/lib/activity/sport-identity';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import { exposureLabels, intensityLabels } from '@/lib/planned-session/sessions';
@@ -137,7 +141,8 @@ export function PlannedSessionReadView({
     { label: 'Intensité', value: session.intensity ? intensityLabels[session.intensity] : '—' },
   ];
 
-  const prescription = parseStrengthPrescription(session.strengthPrescription);
+  const prescriptionRaw = parseStrengthPrescription(session.strengthPrescription);
+  const prescription = prescriptionRaw ? attachGarminRefsToPrescription(prescriptionRaw) : null;
 
   async function sendToWatch() {
     if (pushing || !prescription) return;
@@ -248,18 +253,31 @@ export function PlannedSessionReadView({
                     : `${set.sets}×${set.reps}`;
                 const weight =
                   set.weightKg != null && set.weightKg > 0 ? ` @ ${set.weightKg} kg` : '';
+                const watch = strengthSetWatchCompat(set);
                 return (
                   <li
                     key={`${set.order}-${set.exercise}`}
-                    className="text-muted-foreground flex items-baseline justify-between gap-2 text-sm"
+                    className="flex flex-col gap-0.5 text-sm"
                   >
-                    <span className="text-foreground min-w-0 truncate font-medium">
-                      {set.exercise}
-                    </span>
-                    <span className="text-data shrink-0 font-mono text-xs tabular-nums">
-                      {volume}
-                      {weight}
-                    </span>
+                    <div className="text-muted-foreground flex items-baseline justify-between gap-2">
+                      <span className="text-foreground min-w-0 truncate font-medium">
+                        {set.exercise}
+                      </span>
+                      <span className="text-data shrink-0 font-mono text-xs tabular-nums">
+                        {volume}
+                        {weight}
+                      </span>
+                    </div>
+                    <p
+                      className={cn(
+                        'text-[10px] leading-snug',
+                        watch.status === 'unknown' && 'text-muted-foreground/80',
+                        watch.status === 'approx' && 'text-amber-700/90 dark:text-amber-400/90',
+                        watch.status === 'ready' && 'text-muted-foreground',
+                      )}
+                    >
+                      {watch.label}
+                    </p>
                   </li>
                 );
               })}

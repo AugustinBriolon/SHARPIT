@@ -33,15 +33,15 @@ describe('resolveGarminExerciseRef', () => {
 
   it('maps mobility / stretch FR labels used in rehab sessions', () => {
     expect(resolveGarminExerciseRef({ exercise: 'Étirement 90/90' })).toEqual({
-      category: 'STRETCH',
+      category: 'WARM_UP',
       exerciseName: 'STRETCH_90_90',
     });
     expect(resolveGarminExerciseRef({ exercise: 'Étirement chat et vache' })).toEqual({
-      category: 'STRETCH',
+      category: 'WARM_UP',
       exerciseName: 'STRETCH_CAT_COW',
     });
     expect(resolveGarminExerciseRef({ exercise: "Étirement posture de l'enfant" })).toEqual({
-      category: 'STRETCH',
+      category: 'WARM_UP',
       exerciseName: 'STRETCH_CHILDS_POSE',
     });
     expect(resolveGarminExerciseRef({ exercise: 'Clamshell avec élastique' })).toEqual({
@@ -53,7 +53,7 @@ describe('resolveGarminExerciseRef', () => {
       exerciseName: 'BACK_MASSAGE',
     });
     expect(resolveGarminExerciseRef({ exercise: 'Glissement du nerf sciatique' })).toEqual({
-      category: 'STRETCH',
+      category: 'WARM_UP',
       exerciseName: 'STRETCH_PIRIFORMIS',
     });
   });
