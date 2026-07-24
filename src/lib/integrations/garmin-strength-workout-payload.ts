@@ -1,4 +1,5 @@
 import type { GarminExerciseRef } from '@/lib/integrations/garmin-exercise-map';
+import { GARMIN_UNKNOWN_EXERCISE } from '@/lib/integrations/garmin-exercise-map';
 
 const SPORT_STRENGTH = {
   sportTypeId: 5,
@@ -164,8 +165,7 @@ function buildRestStep(order: StepOrder, childStepId: number | null, restSec: nu
 
 /**
  * Build a Garmin Connect strength workout payload from structured sets.
- * Pure — does not talk to Garmin. Caller must resolve `garmin` on each set first
- * (or leave unresolved so they appear in `skipped`).
+ * Unmapped exercises fall back to UNKNOWN ("Inconnu") — original label stays in step description.
  */
 export function buildStrengthWorkoutPayload(
   input: BuildStrengthWorkoutInput,
@@ -176,10 +176,13 @@ export function buildStrengthWorkoutPayload(
   let mappedCount = 0;
 
   for (const set of input.sets) {
-    const { garmin } = set;
+    let { garmin } = set;
     if (!garmin) {
-      skipped.push({ exercise: set.exercise, reason: 'exercice non mappé vers Garmin' });
-      continue;
+      skipped.push({
+        exercise: set.exercise,
+        reason: 'envoyé comme Inconnu (pas de match Garmin)',
+      });
+      garmin = GARMIN_UNKNOWN_EXERCISE;
     }
 
     const iterations = Math.max(1, set.sets || 1);

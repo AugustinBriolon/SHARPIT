@@ -65,9 +65,7 @@ async function uploadStrengthSets(options: {
   });
 
   if (built.mappedCount === 0) {
-    throw new Error(
-      `Aucun exercice mappable vers Garmin (${built.skipped.map((s) => s.exercise).join(', ')})`,
-    );
+    throw new Error('Aucun exercice à envoyer');
   }
 
   const client = await getGarminClient();

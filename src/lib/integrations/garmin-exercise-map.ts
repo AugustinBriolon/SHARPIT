@@ -1,9 +1,9 @@
 import { normalizeExerciseKey } from '@/lib/exercises/normalize';
 
-/** Garmin Connect workout exercise identity (category + leaf name). */
-export type GarminExerciseRef = {
-  category: string;
-  exerciseName: string;
+/** Fallback when no Garmin enum matches — watch shows "Inconnu"; real name stays in step notes. */
+export const GARMIN_UNKNOWN_EXERCISE: GarminExerciseRef = {
+  category: 'UNKNOWN',
+  exerciseName: 'UNKNOWN',
 };
 
 /**
@@ -11,9 +11,11 @@ export type GarminExerciseRef = {
  * Used to infer category when we only reverse-resolve a leaf name.
  */
 const GARMIN_CATEGORIES = [
+  'BANDED_EXERCISES',
   'BENCH_PRESS',
   'SHOULDER_PRESS',
   'OLYMPIC_LIFT',
+  'HIP_STABILITY',
   'HIP_RAISE',
   'LEG_RAISE',
   'PULL_UP',
@@ -32,6 +34,9 @@ const GARMIN_CATEGORIES = [
   'LATERAL_RAISE',
   'SHRUG',
   'DIP',
+  'WARM_UP',
+  'STRETCH',
+  'MOVE',
 ] as const;
 
 /**
@@ -158,6 +163,40 @@ const BY_LABEL: Readonly<Record<string, GarminExerciseRef>> = {
   'jump rope': { category: 'CARDIO', exerciseName: 'JUMP_ROPE' },
   'jumping jack': { category: 'CARDIO', exerciseName: 'JUMPING_JACK' },
   'mountain climber': { category: 'CARDIO', exerciseName: 'MOUNTAIN_CLIMBER' },
+
+  // Mobility / stretch / rehab (Garmin STRETCH_* live under STRETCH in activity payloads)
+  'etirement 90 90': { category: 'STRETCH', exerciseName: 'STRETCH_90_90' },
+  'etirement 9090': { category: 'STRETCH', exerciseName: 'STRETCH_90_90' },
+  '90 90': { category: 'STRETCH', exerciseName: 'STRETCH_90_90' },
+  'stretch 90 90': { category: 'STRETCH', exerciseName: 'STRETCH_90_90' },
+  'etirement chat et vache': { category: 'STRETCH', exerciseName: 'STRETCH_CAT_COW' },
+  'chat et vache': { category: 'STRETCH', exerciseName: 'STRETCH_CAT_COW' },
+  'cat cow': { category: 'STRETCH', exerciseName: 'STRETCH_CAT_COW' },
+  'cat-cow': { category: 'STRETCH', exerciseName: 'STRETCH_CAT_COW' },
+  'etirement posture de l enfant': { category: 'STRETCH', exerciseName: 'STRETCH_CHILDS_POSE' },
+  'posture de l enfant': { category: 'STRETCH', exerciseName: 'STRETCH_CHILDS_POSE' },
+  'child pose': { category: 'STRETCH', exerciseName: 'STRETCH_CHILDS_POSE' },
+  "child's pose": { category: 'STRETCH', exerciseName: 'STRETCH_CHILDS_POSE' },
+  'childs pose': { category: 'STRETCH', exerciseName: 'STRETCH_CHILDS_POSE' },
+  'etirement piriforme': { category: 'STRETCH', exerciseName: 'STRETCH_PIRIFORMIS' },
+  'piriformis stretch': { category: 'STRETCH', exerciseName: 'STRETCH_PIRIFORMIS' },
+  'seated piriformis stretch': { category: 'STRETCH', exerciseName: 'STRETCH_PIRIFORMIS' },
+  'glissement du nerf sciatique': { category: 'STRETCH', exerciseName: 'STRETCH_PIRIFORMIS' },
+  'nerf sciatique': { category: 'STRETCH', exerciseName: 'STRETCH_PIRIFORMIS' },
+  'sciatic nerve glide': { category: 'STRETCH', exerciseName: 'STRETCH_PIRIFORMIS' },
+  'nerve glide': { category: 'STRETCH', exerciseName: 'STRETCH_PIRIFORMIS' },
+  clamshell: { category: 'BANDED_EXERCISES', exerciseName: 'CLAM_SHELLS' },
+  'clam shell': { category: 'BANDED_EXERCISES', exerciseName: 'CLAM_SHELLS' },
+  'clam shells': { category: 'BANDED_EXERCISES', exerciseName: 'CLAM_SHELLS' },
+  clamshells: { category: 'BANDED_EXERCISES', exerciseName: 'CLAM_SHELLS' },
+  'clamshell avec elastique': { category: 'BANDED_EXERCISES', exerciseName: 'CLAM_SHELLS' },
+  'clam shell avec elastique': { category: 'BANDED_EXERCISES', exerciseName: 'CLAM_SHELLS' },
+  'auto massage foam roller': { category: 'MOVE', exerciseName: 'BACK_MASSAGE' },
+  'auto-massage foam roller': { category: 'MOVE', exerciseName: 'BACK_MASSAGE' },
+  'auto massage': { category: 'MOVE', exerciseName: 'BACK_MASSAGE' },
+  'foam roller': { category: 'MOVE', exerciseName: 'BACK_MASSAGE' },
+  foamroller: { category: 'MOVE', exerciseName: 'BACK_MASSAGE' },
+  'back massage': { category: 'MOVE', exerciseName: 'BACK_MASSAGE' },
 };
 
 /** Catalog id → Garmin when label matching is weak but we already resolved media. */
@@ -183,9 +222,15 @@ const BY_CATALOG_ID: Readonly<Record<string, GarminExerciseRef>> = {
   '0001': { category: 'CRUNCH', exerciseName: 'SIT_UP' },
   '3562': { category: 'HIP_RAISE', exerciseName: 'HIP_THRUST' },
   '1409': { category: 'HIP_RAISE', exerciseName: 'GLUTE_BRIDGE' },
+  // Mobility catalog ids (Gym visual closest matches)
+  '2567': { category: 'STRETCH', exerciseName: 'STRETCH_90_90' },
+  '1512': { category: 'STRETCH', exerciseName: 'STRETCH_CAT_COW' },
+  '1710': { category: 'STRETCH', exerciseName: 'STRETCH_CHILDS_POSE' },
+  '3006': { category: 'BANDED_EXERCISES', exerciseName: 'CLAM_SHELLS' },
 };
 
 function inferCategoryFromLeaf(exerciseName: string): string | null {
+  if (exerciseName.startsWith('STRETCH_')) return 'STRETCH';
   let best: string | null = null;
   for (const cat of GARMIN_CATEGORIES) {
     if (exerciseName === cat || exerciseName.includes(cat)) {

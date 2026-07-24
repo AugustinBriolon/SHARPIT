@@ -75,7 +75,7 @@ export function ActivityStrengthExercises({ activity }: { activity: ActivityDeta
         description: [
           data.workoutName,
           data.scheduledDate ? `calendrier ${data.scheduledDate}` : null,
-          skipped > 0 ? `${skipped} exercice(s) non mappé(s)` : null,
+          skipped > 0 ? `${skipped} comme Inconnu` : null,
         ]
           .filter(Boolean)
           .join(' · '),

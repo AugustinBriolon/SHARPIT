@@ -31,8 +31,31 @@ describe('resolveGarminExerciseRef', () => {
     });
   });
 
-  it('returns null for unknown labels', () => {
-    expect(resolveGarminExerciseRef({ exercise: 'mouvement inventé xyz' })).toBeNull();
+  it('maps mobility / stretch FR labels used in rehab sessions', () => {
+    expect(resolveGarminExerciseRef({ exercise: 'Étirement 90/90' })).toEqual({
+      category: 'STRETCH',
+      exerciseName: 'STRETCH_90_90',
+    });
+    expect(resolveGarminExerciseRef({ exercise: 'Étirement chat et vache' })).toEqual({
+      category: 'STRETCH',
+      exerciseName: 'STRETCH_CAT_COW',
+    });
+    expect(resolveGarminExerciseRef({ exercise: "Étirement posture de l'enfant" })).toEqual({
+      category: 'STRETCH',
+      exerciseName: 'STRETCH_CHILDS_POSE',
+    });
+    expect(resolveGarminExerciseRef({ exercise: 'Clamshell avec élastique' })).toEqual({
+      category: 'BANDED_EXERCISES',
+      exerciseName: 'CLAM_SHELLS',
+    });
+    expect(resolveGarminExerciseRef({ exercise: 'Auto-massage (Foam roller)' })).toEqual({
+      category: 'MOVE',
+      exerciseName: 'BACK_MASSAGE',
+    });
+    expect(resolveGarminExerciseRef({ exercise: 'Glissement du nerf sciatique' })).toEqual({
+      category: 'STRETCH',
+      exerciseName: 'STRETCH_PIRIFORMIS',
+    });
   });
 });
 
@@ -104,11 +127,11 @@ describe('buildStrengthWorkoutPayload', () => {
     expect(step.endConditionValue).toBe(60);
   });
 
-  it('skips unmapped exercises', () => {
-    const { mappedCount, skipped } = buildStrengthWorkoutPayload({
+  it('falls back to UNKNOWN for unmapped exercises instead of dropping them', () => {
+    const { mappedCount, skipped, payload } = buildStrengthWorkoutPayload({
       workoutName: 'Mixed',
       sets: [
-        { exercise: 'Inconnu', sets: 2, reps: 8, garmin: null },
+        { exercise: 'Mouvement inventé', sets: 2, reps: 8, garmin: null },
         {
           exercise: 'Squat',
           sets: 2,
@@ -117,7 +140,23 @@ describe('buildStrengthWorkoutPayload', () => {
         },
       ],
     });
-    expect(mappedCount).toBe(1);
-    expect(skipped).toEqual([{ exercise: 'Inconnu', reason: 'exercice non mappé vers Garmin' }]);
+    expect(mappedCount).toBe(2);
+    expect(skipped).toEqual([
+      { exercise: 'Mouvement inventé', reason: 'envoyé comme Inconnu (pas de match Garmin)' },
+    ]);
+    const [segment] = payload.workoutSegments as Array<{ workoutSteps: unknown[] }>;
+    const [unknownStep] = segment.workoutSteps as Array<{
+      category?: string;
+      exerciseName?: string;
+      description?: string;
+      workoutSteps?: Array<{ category?: string; exerciseName?: string; description?: string }>;
+    }>;
+    // Repeat group when sets>1
+    const active = unknownStep.workoutSteps?.[0] ?? unknownStep;
+    expect(active).toMatchObject({
+      category: 'UNKNOWN',
+      exerciseName: 'UNKNOWN',
+      description: 'Mouvement inventé',
+    });
   });
 });

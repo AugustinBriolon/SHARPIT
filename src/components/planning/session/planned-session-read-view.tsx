@@ -161,7 +161,7 @@ export function PlannedSessionReadView({
         description: [
           data.workoutName,
           data.scheduledDate ? `calendrier ${data.scheduledDate}` : null,
-          skipped > 0 ? `${skipped} exercice(s) non mappé(s)` : null,
+          skipped > 0 ? `${skipped} comme Inconnu` : null,
         ]
           .filter(Boolean)
           .join(' · '),
