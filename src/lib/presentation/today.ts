@@ -385,6 +385,12 @@ export async function buildTodayPresentationViewModel(
             changeSummary: presentedRecalibration.changeSummary,
             why: presentedRecalibration.why,
             status: presentedRecalibration.status,
+            fromIntensity: presentedRecalibration.fromIntensity,
+            toIntensity: presentedRecalibration.toIntensity,
+            fromDurationMin: presentedRecalibration.fromDurationMin,
+            toDurationMin: presentedRecalibration.toDurationMin,
+            fromLoad: presentedRecalibration.fromLoad,
+            toLoad: presentedRecalibration.toLoad,
           }
         : null,
     },

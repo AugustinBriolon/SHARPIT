@@ -8,7 +8,11 @@ import type { InstrumentListChipMeta } from '@/components/ui/instrument-list-chi
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { MorningWellnessDialog } from '@/components/today/dashboard/morning-wellness-dialog';
-import { MorningOrientationActions } from '@/components/today/rich/morning-orientation-actions';
+import {
+  MorningOrientationActions,
+  PREVIEW_MORNING_PROPOSAL,
+  previewMorningOrientation,
+} from '@/components/today/rich/morning-orientation-actions';
 import { useAppModal } from '@/providers/app-modal-provider';
 
 /**
@@ -36,15 +40,33 @@ export function TodayActionRow({
       ? vm.actionRow.limitingFacts
       : [];
 
-  const orientation = loading ? null : vm.morningOrientation;
+  const liveOrientation = loading ? null : vm.morningOrientation;
+  const primarySessionId =
+    vm.actionRow.daySummaryLines.find((line) => line.kind === 'planned' && !line.isDone)?.id ??
+    vm.actionRow.daySummaryLines.find((line) => line.kind === 'planned')?.id ??
+    null;
+
+  /** Preview only when morning flow is live but no real proposal — never outside it. */
+  const usePreview =
+    PREVIEW_MORNING_PROPOSAL &&
+    !loading &&
+    liveOrientation?.phase === 'ORIENTATION_READY' &&
+    !liveOrientation.showFirmActions;
+
+  const orientation = usePreview ? previewMorningOrientation(primarySessionId) : liveOrientation;
+
   const hideSessionList = orientation?.phase === 'EVIDENCE_PENDING';
-  const primaryIndex = vm.actionRow.daySummaryLines.findIndex(
-    (line) => line.kind === 'planned' && !line.isDone,
-  );
+  const proposalSessionId =
+    orientation?.confirmEase?.sessionId ?? orientation?.confirmIncrease?.sessionId ?? null;
+  /** Proposal card replaces the targeted session chip — keep any other day lines. */
+  const sessionLines = proposalSessionId
+    ? vm.actionRow.daySummaryLines.filter((line) => line.id !== proposalSessionId)
+    : vm.actionRow.daySummaryLines;
+  const primaryIndex = sessionLines.findIndex((line) => line.kind === 'planned' && !line.isDone);
 
   return (
     <section aria-busy={loading || undefined} className="space-y-3">
-      <div className="flex items-center justify-between gap-2 px-0.5">
+      <div className="flex h-8 items-center justify-between gap-2 px-0.5">
         <p className="text-label">{vm.actionRow.actionLabel}</p>
         <MorningWellnessDialog onCompleted={onWellnessCompleted} />
       </div>
@@ -52,6 +74,7 @@ export function TodayActionRow({
       {orientation ? (
         <MorningOrientationActions
           orientation={orientation}
+          preview={usePreview}
           trainingDayId={trainingDayId}
           onRefreshed={onWellnessCompleted}
         />
@@ -102,7 +125,7 @@ export function TodayActionRow({
 
       {!loading && !hideSessionList && !daySummaryEmpty ? (
         <ul className="space-y-2">
-          {vm.actionRow.daySummaryLines.map((line, index) => {
+          {sessionLines.map((line, index) => {
             const meta: InstrumentListChipMeta[] = splitInstrumentMeta(line.secondary);
             if (line.morningChoiceLabel) {
               meta.push({ text: line.morningChoiceLabel, tone: 'caution' });
@@ -118,7 +141,7 @@ export function TodayActionRow({
                   done={line.isDone}
                   href={openPlanned ? undefined : line.href}
                   meta={meta}
-                  primary={index === primaryIndex}
+                  primary={index === primaryIndex && !orientation?.showFirmActions}
                   title={line.primary}
                   onClick={openPlanned}
                 />

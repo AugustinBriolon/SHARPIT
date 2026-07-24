@@ -39,12 +39,32 @@ export type TodayViewModel = {
       sessionId: string;
       changeSummary: string;
       why: string;
+      current: {
+        intensityLabel: string | null;
+        durationMin: number | null;
+        load: number | null;
+      };
+      proposed: {
+        intensityLabel: string | null;
+        durationMin: number | null;
+        load: number | null;
+      };
     } | null;
     confirmIncrease: {
       decisionId: string;
       sessionId: string;
       changeSummary: string;
       why: string;
+      current: {
+        intensityLabel: string | null;
+        durationMin: number | null;
+        load: number | null;
+      };
+      proposed: {
+        intensityLabel: string | null;
+        durationMin: number | null;
+        load: number | null;
+      };
     } | null;
     /** Reject recalibration (= Tenir) when a proposal is open. */
     holdDecisionId: string | null;
@@ -142,6 +162,12 @@ export type TodayViewModel = {
       changeSummary: string;
       why: string;
       status: 'PRESENTED' | 'ACCEPTED' | 'REJECTED' | 'MODIFIED' | 'EXPIRED';
+      fromIntensity: string | null;
+      toIntensity: string | null;
+      fromDurationMin: number | null;
+      toDurationMin: number | null;
+      fromLoad: number | null;
+      toLoad: number | null;
     } | null;
   };
 

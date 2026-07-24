@@ -1,4 +1,5 @@
 import { ActivityType } from '@prisma/client';
+import { resolveExerciseCatalogId } from '@/lib/exercises';
 import type { CreateActivityInput, UpdateActivityInput } from '@/lib/validators/activity';
 
 function cleanMetrics<T extends Record<string, unknown>>(metrics?: T | null) {
@@ -31,6 +32,7 @@ export function buildActivityCreateData(input: CreateActivityInput) {
         ? {
             create: strengthSets.map((set, index) => ({
               ...set,
+              exerciseCatalogId: resolveExerciseCatalogId(set.exercise),
               order: set.order ?? index,
             })),
           }
@@ -78,6 +80,7 @@ export function buildActivityUpdateData(input: UpdateActivityInput) {
       deleteMany: {},
       create: strengthSets.map((set, index) => ({
         ...set,
+        exerciseCatalogId: resolveExerciseCatalogId(set.exercise),
         order: set.order ?? index,
       })),
     };

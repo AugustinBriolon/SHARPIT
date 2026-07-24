@@ -37,7 +37,7 @@ export function TodayVerdictHero({
   if (loading) {
     actionContent = (
       <div
-        className="border-highlight dark:border-ink-surface-foreground/80 max-w-2xl border-l-2 pl-3 text-sm leading-relaxed"
+        className="border-highlight dark:border-ink-surface-foreground/80 h-5.75 max-w-2xl border-l-2 pl-3 text-sm leading-relaxed"
         aria-hidden
       >
         <Skeleton className="bg-ink-surface-foreground/20 h-5 w-[min(100%,18rem)] rounded-full" />
@@ -101,7 +101,10 @@ export function TodayVerdictHero({
       );
     } else {
       confidenceNode = (
-        <div className="text-ink-surface-foreground/65 inline-flex items-center gap-2">
+        <div
+          className="text-ink-surface-foreground/65 inline-flex items-center gap-2"
+          title={confidenceTitle}
+        >
           {confidenceInner}
         </div>
       );
@@ -137,7 +140,7 @@ export function TodayVerdictHero({
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {confidenceNode}
-          {loading ? (
+          {loading && !hero.goalLine ? (
             <Badge
               className="border-ink-surface-foreground/25 text-ink-surface-foreground/80 rounded-full bg-transparent text-xs font-normal"
               variant="outline"
@@ -149,15 +152,14 @@ export function TodayVerdictHero({
                 widthClassName="w-36"
               />
             </Badge>
-          ) : null}
-          {!loading && hero.goalLine ? (
+          ) : (
             <Badge
               className="border-ink-surface-foreground/25 text-ink-surface-foreground/80 text-data rounded-full bg-transparent text-xs font-normal"
               variant="outline"
             >
               {hero.goalLine}
             </Badge>
-          ) : null}
+          )}
         </div>
       </div>
 

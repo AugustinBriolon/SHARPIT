@@ -33,6 +33,7 @@ import {
 import { activityTypeLabels } from '@/lib/format';
 import { queryKeys } from '@/lib/query/keys';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
+import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-compare';
 import {
   brickLegActivityTypes,
   exposureLabels,
@@ -131,6 +132,8 @@ interface PlannedSessionDialogProps {
   onClose: () => void;
   /** When opened from activity detail — hide navigation back to the linked activity. */
   omitLinkedActivityNavigation?: boolean;
+  /** Morning recalibration — Plan vs proposée in read mode. */
+  morningProposal?: MorningProposalCompareInput;
 }
 
 export function PlannedSessionDialog({
@@ -139,6 +142,7 @@ export function PlannedSessionDialog({
   goals = [],
   onClose,
   omitLinkedActivityNavigation = false,
+  morningProposal,
 }: PlannedSessionDialogProps) {
   const queryClient = useQueryClient();
   const isEdit = Boolean(session);
@@ -450,6 +454,7 @@ export function PlannedSessionDialog({
                   context={contextQuery.data?.context}
                   contextPending={contextQuery.isPending}
                   goals={raceGoals}
+                  morningProposal={morningProposal}
                   omitLinkedActivityNavigation={omitLinkedActivityNavigation}
                   session={liveSession}
                   onEdit={handleStartEdit}

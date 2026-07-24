@@ -31,6 +31,12 @@ export type MorningRecalibrationPresentation = {
   changeSummary: string;
   why: string;
   status: 'PRESENTED' | 'ACCEPTED' | 'REJECTED' | 'MODIFIED' | 'EXPIRED';
+  fromIntensity: string | null;
+  toIntensity: string | null;
+  fromDurationMin: number | null;
+  toDurationMin: number | null;
+  fromLoad: number | null;
+  toLoad: number | null;
 };
 
 function toGateProposal(
@@ -85,6 +91,12 @@ function toPresentation(
     changeSummary: mr.changeSummary,
     why: mr.why,
     status,
+    fromIntensity: mr.fromIntensity,
+    toIntensity: mr.toIntensity,
+    fromDurationMin: mr.fromDurationMin,
+    toDurationMin: mr.toDurationMin,
+    fromLoad: mr.fromLoad,
+    toLoad: mr.toLoad,
   };
 }
 

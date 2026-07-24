@@ -20,6 +20,7 @@ import {
   garminTokensFromStorage,
 } from '@/lib/integrations/garmin';
 import { getGarminAccount } from '@/lib/integrations/garmin-sync';
+import { resolveExerciseCatalogId, enrichStrengthExerciseVisuals } from '@/lib/exercises';
 import { prisma } from '@/lib/prisma';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import {
@@ -121,7 +122,11 @@ async function backfillStrengthSets(
     orderBy: { order: 'asc' },
   });
 
-  if (strengthSetsMatch(existing, sets)) return false;
+  if (strengthSetsMatch(existing, sets)) {
+    // Sets unchanged — still fill any missing visual links (new aliases).
+    await enrichStrengthExerciseVisuals(prisma, activityId);
+    return false;
+  }
 
   await prisma.$transaction([
     prisma.strengthSet.deleteMany({ where: { activityId } }),
@@ -129,6 +134,7 @@ async function backfillStrengthSets(
       data: sets.map((s) => ({
         activityId,
         exercise: s.exercise,
+        exerciseCatalogId: resolveExerciseCatalogId(s.exercise),
         sets: s.sets,
         reps: s.reps,
         durationSec: s.durationSec,

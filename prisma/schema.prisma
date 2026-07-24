@@ -395,6 +395,8 @@ model StrengthSet {
   activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
   exercise String
+  /// Matched exercises-dataset id (e.g. "0662") — set at sync/enrich when a visual is found.
+  exerciseCatalogId String?
   sets     Int
   reps     Int
   durationSec Int?
@@ -406,6 +408,7 @@ model StrengthSet {
   order    Int      @default(0)
 
   @@index([activityId])
+  @@index([exerciseCatalogId])
 }
 
 model DailyHealth {

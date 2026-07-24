@@ -7,11 +7,20 @@ import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
 import type { FreshnessLevel } from '@/core/athlete-state/freshness';
 import { isForwardAdvicePhase } from '@/lib/daily-phase/resolve';
 import type { DailyPhase } from '@/lib/daily-phase/types';
+import { intensityLabels } from '@/lib/planned-session/sessions';
+import type { SessionIntensity } from '@prisma/client';
 
 export type MorningOrientationPhase = 'EVIDENCE_PENDING' | 'ORIENTATION_READY' | 'POST_CHOICE';
 
 export type MorningRecalibrationStatus =
   'PRESENTED' | 'ACCEPTED' | 'REJECTED' | 'MODIFIED' | 'EXPIRED';
+
+/** One side of the morning session comparison (plan vs proposed). */
+export type MorningSessionSide = {
+  intensityLabel: string | null;
+  durationMin: number | null;
+  load: number | null;
+};
 
 export type MorningRecalibrationInput = {
   decisionId: string;
@@ -20,6 +29,21 @@ export type MorningRecalibrationInput = {
   changeSummary: string;
   why: string;
   status: MorningRecalibrationStatus;
+  fromIntensity: string | null;
+  toIntensity: string | null;
+  fromDurationMin: number | null;
+  toDurationMin: number | null;
+  fromLoad: number | null;
+  toLoad: number | null;
+};
+
+export type MorningConfirmProposal = {
+  decisionId: string;
+  sessionId: string;
+  changeSummary: string;
+  why: string;
+  current: MorningSessionSide;
+  proposed: MorningSessionSide;
 };
 
 export type MorningSessionChoice = 'HOLD' | 'EASING_CONFIRMED' | 'INCREASE_CONFIRMED';
@@ -38,19 +62,9 @@ export type MorningOrientationResolved = {
   heroHeadline: string | null;
   heroSubline: string | null;
   /** Confirm DOWN (ease) when presented. */
-  confirmEase: {
-    decisionId: string;
-    sessionId: string;
-    changeSummary: string;
-    why: string;
-  } | null;
+  confirmEase: MorningConfirmProposal | null;
   /** Confirm UP (increase) when presented. */
-  confirmIncrease: {
-    decisionId: string;
-    sessionId: string;
-    changeSummary: string;
-    why: string;
-  } | null;
+  confirmIncrease: MorningConfirmProposal | null;
   holdDecisionId: string | null;
   /** Mark the planned session chip — never a separate card / hero rewrite. */
   sessionChoice: {
@@ -113,6 +127,43 @@ export function sessionChoiceLabel(kind: MorningSessionChoice): string {
 
 export function acceptedChoiceKind(direction: 'DOWN' | 'UP'): MorningSessionChoice {
   return direction === 'DOWN' ? 'EASING_CONFIRMED' : 'INCREASE_CONFIRMED';
+}
+
+function intensityLabel(value: string | null): string | null {
+  if (!value) return null;
+  if (value in intensityLabels) return intensityLabels[value as SessionIntensity];
+  return value;
+}
+
+function sessionSide(
+  intensity: string | null,
+  durationMin: number | null,
+  load: number | null,
+): MorningSessionSide {
+  return {
+    intensityLabel: intensityLabel(intensity),
+    durationMin,
+    load: load != null ? Math.round(load) : null,
+  };
+}
+
+function confirmProposalFrom(recalibration: MorningRecalibrationInput): MorningConfirmProposal {
+  return {
+    decisionId: recalibration.decisionId,
+    sessionId: recalibration.sessionId,
+    changeSummary: recalibration.changeSummary,
+    why: recalibration.why,
+    current: sessionSide(
+      recalibration.fromIntensity,
+      recalibration.fromDurationMin,
+      recalibration.fromLoad,
+    ),
+    proposed: sessionSide(
+      recalibration.toIntensity,
+      recalibration.toDurationMin,
+      recalibration.toLoad,
+    ),
+  };
 }
 
 /**
@@ -199,22 +250,12 @@ export function resolveMorningOrientation(input: {
 
   const confirmEase =
     recalibration?.status === 'PRESENTED' && recalibration.direction === 'DOWN'
-      ? {
-          decisionId: recalibration.decisionId,
-          sessionId: recalibration.sessionId,
-          changeSummary: recalibration.changeSummary,
-          why: recalibration.why,
-        }
+      ? confirmProposalFrom(recalibration)
       : null;
 
   const confirmIncrease =
     recalibration?.status === 'PRESENTED' && recalibration.direction === 'UP'
-      ? {
-          decisionId: recalibration.decisionId,
-          sessionId: recalibration.sessionId,
-          changeSummary: recalibration.changeSummary,
-          why: recalibration.why,
-        }
+      ? confirmProposalFrom(recalibration)
       : null;
 
   const holdDecisionId = recalibration?.status === 'PRESENTED' ? recalibration.decisionId : null;
@@ -226,7 +267,9 @@ export function resolveMorningOrientation(input: {
     evidenceLine: null,
     showRefreshEvidence: false,
     showFirmActions,
-    hideHeroConfidence: true,
+    // Twin trust strip is useful once orientation is ready — hide only while
+    // evidence is pending or after the athlete has already locked a choice.
+    hideHeroConfidence: false,
     heroHeadline: null,
     heroSubline: null,
     confirmEase,

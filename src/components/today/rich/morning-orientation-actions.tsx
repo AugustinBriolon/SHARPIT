@@ -1,16 +1,25 @@
 'use client';
 
-import { useCallback, useState, useTransition } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { RefreshCw } from 'lucide-react';
+import { useCallback, useState, useTransition } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/toast';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import { formatPlannedDuration } from '@/lib/planned-session/sessions';
 import { queryKeys } from '@/lib/query/keys';
+import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import { cn } from '@/lib/utils';
+import { useAppModal } from '@/providers/app-modal-provider';
 
 const HOLD_STORAGE_PREFIX = 'sharpit.morning-hold.';
+
+/**
+ * Temporary UX preview for the morning proposal card (variant A).
+ * Set to `false` (or delete) once the responsive pass is validated on device.
+ */
+export const PREVIEW_MORNING_PROPOSAL = true;
 
 export function morningHoldStorageKey(trainingDayId: string): string {
   return `${HOLD_STORAGE_PREFIX}${trainingDayId}`;
@@ -33,21 +42,68 @@ export function writeClientMorningHold(trainingDayId: string): void {
   }
 }
 
+type MorningOrientation = NonNullable<TodayViewModel['morningOrientation']>;
+type Proposal = NonNullable<MorningOrientation['confirmEase']>;
+type SessionSide = Proposal['current'];
+
+function compareMeta(current: SessionSide, proposed: SessionSide): string | null {
+  const parts: string[] = [];
+  const duration = proposed.durationMin ?? current.durationMin;
+  if (duration != null) parts.push(formatPlannedDuration(duration));
+  if (current.load != null && proposed.load != null && current.load !== proposed.load) {
+    parts.push(`${current.load} → ${proposed.load} TSS`);
+  } else if (proposed.load != null) {
+    parts.push(`${proposed.load} TSS`);
+  } else if (current.load != null) {
+    parts.push(`${current.load} TSS`);
+  }
+  return parts.length > 0 ? parts.join(' · ') : null;
+}
+
+/** Preview-only ease proposal — mirrors a real PRESENTED DOWN recalibration. */
+export function previewMorningOrientation(sessionId: string | null): MorningOrientation {
+  return {
+    phase: 'ORIENTATION_READY',
+    evidenceLine: null,
+    showRefreshEvidence: false,
+    showFirmActions: true,
+    hideHeroConfidence: false,
+    heroHeadline: null,
+    heroSubline: null,
+    confirmEase: {
+      decisionId: 'preview-morning-ease',
+      sessionId: sessionId ?? 'preview-session',
+      changeSummary: 'Tempo → Endurance',
+      why: 'Récup 62 · sommeil court — charge trop haute pour aujourd’hui.',
+      current: { intensityLabel: 'Tempo', durationMin: 45, load: 55 },
+      proposed: { intensityLabel: 'Endurance', durationMin: 45, load: 41 },
+    },
+    confirmIncrease: null,
+    holdDecisionId: 'preview-morning-ease',
+    sessionChoice: null,
+  };
+}
+
 /**
- * Morning firm actions: Actualiser (A) · Tenir / Confirmer allègement|hausse (B).
+ * Morning firm actions — Actualiser (evidence) · comparaison plan vs proposé.
  * Post-choice has no card — annotation lives on the session chip.
  */
 export function MorningOrientationActions({
   trainingDayId,
   orientation,
   onRefreshed,
+  preview = false,
 }: {
   trainingDayId: string;
-  orientation: NonNullable<TodayViewModel['morningOrientation']>;
+  orientation: MorningOrientation;
   onRefreshed?: () => void;
+  /** When true, CTAs are local-only (no API) — UX preview mode. */
+  preview?: boolean;
 }) {
   const queryClient = useQueryClient();
-  const [pending, setPending] = useState<'refresh' | 'hold' | 'ease' | 'increase' | null>(null);
+  const { openPlannedSession } = useAppModal();
+  const [pending, setPending] = useState<'refresh' | 'hold' | 'apply' | null>(null);
+  const [previewDismissed, setPreviewDismissed] = useState(false);
   const [, startTransition] = useTransition();
 
   const refreshCaches = useCallback(async () => {
@@ -87,10 +143,21 @@ export function MorningOrientationActions({
     decisionId: string,
     direction: 'DOWN' | 'UP' | null,
   ) {
-    let nextPending: 'hold' | 'ease' | 'increase' = 'ease';
-    if (action === 'reject') nextPending = 'hold';
-    else if (direction === 'UP') nextPending = 'increase';
-    setPending(nextPending);
+    setPending(action === 'reject' ? 'hold' : 'apply');
+
+    if (preview) {
+      setPreviewDismissed(true);
+      if (action === 'reject') {
+        writeClientMorningHold(trainingDayId);
+        toast.success('Plan tenu');
+      } else {
+        toast.success(direction === 'UP' ? 'Hausse appliquée' : 'Ajustement appliqué');
+      }
+      setPending(null);
+      onRefreshed?.();
+      return;
+    }
+
     try {
       const res = await fetch('/api/morning-recalibration/action', {
         method: 'POST',
@@ -106,9 +173,9 @@ export function MorningOrientationActions({
       startTransition(() => {
         void refreshCaches();
       });
-      if (action === 'reject') toast.success('Séance tenue');
-      else if (direction === 'UP') toast.success('Hausse confirmée');
-      else toast.success('Allègement confirmé');
+      if (action === 'reject') toast.success('Plan tenu');
+      else if (direction === 'UP') toast.success('Hausse appliquée');
+      else toast.success('Ajustement appliqué');
     } catch {
       toast.error('Action impossible');
     } finally {
@@ -116,9 +183,8 @@ export function MorningOrientationActions({
     }
   }
 
-  if (orientation.phase === 'POST_CHOICE') {
-    return null;
-  }
+  if (preview && previewDismissed) return null;
+  if (orientation.phase === 'POST_CHOICE') return null;
 
   if (orientation.phase === 'EVIDENCE_PENDING' && orientation.showRefreshEvidence) {
     return (
@@ -141,50 +207,106 @@ export function MorningOrientationActions({
     return null;
   }
 
-  // Firm actions only appear with a proposal — Tenir rejects it, Confirm accepts.
-  const decisionId =
-    orientation.holdDecisionId ??
-    orientation.confirmEase?.decisionId ??
-    orientation.confirmIncrease?.decisionId;
-  if (!decisionId) return null;
+  const proposal: Proposal | null = orientation.confirmEase ?? orientation.confirmIncrease;
+  const decisionId = orientation.holdDecisionId ?? proposal?.decisionId ?? null;
+  if (!proposal || !decisionId) return null;
+
+  const direction: 'DOWN' | 'UP' = orientation.confirmIncrease ? 'UP' : 'DOWN';
+  const busy = pending != null;
+  const detailSessionId =
+    proposal.sessionId && proposal.sessionId !== 'preview-session' ? proposal.sessionId : null;
+  const fromLabel = proposal.current.intensityLabel ?? '—';
+  const toLabel = proposal.proposed.intensityLabel ?? '—';
+  const meta = compareMeta(proposal.current, proposal.proposed);
+  const morningProposal = {
+    why: proposal.why,
+    changeSummary: proposal.changeSummary,
+    current: proposal.current,
+    proposed: proposal.proposed,
+  };
+
+  function openDetails() {
+    if (!detailSessionId) return;
+    openPlannedSession({
+      morningProposal,
+      sessionId: detailSessionId,
+    });
+  }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <Button
-        disabled={pending != null}
-        size="sm"
+    <section
+      aria-busy={busy || undefined}
+      aria-label="Proposition du matin"
+      className="space-y-2.5"
+    >
+      {/* Minimal chip: plan → proposée + pastille → (InstrumentListChip) */}
+      <button
+        disabled={!detailSessionId}
         type="button"
-        variant="default"
-        onClick={() => void actRecalibration('reject', decisionId, null)}
+        aria-label={
+          detailSessionId
+            ? `Voir le détail · ${fromLabel} vers ${toLabel}`
+            : `Proposition · ${fromLabel} vers ${toLabel}`
+        }
+        className={cn(
+          'chip-surface group rounded-analysis flex w-full items-center gap-3 border px-3.5 py-3 text-left',
+          'border-highlight/50 transition-[border-color,background-color,transform]',
+          detailSessionId && 'hover:border-highlight/80 hover:bg-highlight/10 active:scale-[0.995]',
+          !detailSessionId && 'cursor-default',
+        )}
+        onClick={openDetails}
+        onFocus={() => {
+          if (detailSessionId) prefetchPlannedSessionDetail(queryClient, detailSessionId);
+        }}
+        onPointerEnter={() => {
+          if (detailSessionId) prefetchPlannedSessionDetail(queryClient, detailSessionId);
+        }}
       >
-        Tenir
-      </Button>
-      {orientation.confirmEase ? (
-        <Button
-          disabled={pending != null}
-          size="sm"
-          type="button"
-          variant="accent"
-          onClick={() =>
-            void actRecalibration('accept', orientation.confirmEase!.decisionId, 'DOWN')
-          }
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="text-sm leading-snug font-medium">
+            <span className="text-muted-foreground">{fromLabel}</span>
+            <span className="text-muted-foreground/40 mx-1.5" aria-hidden>
+              →
+            </span>
+            <span className="text-highlight-foreground">{toLabel}</span>
+          </span>
+          {meta ? (
+            <span className="text-data text-muted-foreground text-[11px] tabular-nums">{meta}</span>
+          ) : null}
+          {proposal.why ? (
+            <span className="text-muted-foreground mt-0.5 text-xs leading-snug">
+              {proposal.why}
+            </span>
+          ) : null}
+        </span>
+        <span
+          className="bg-highlight text-highlight-foreground text-data inline-flex size-[26px] shrink-0 items-center justify-center rounded-full text-[11px] transition-transform group-hover:translate-x-0.5"
+          aria-hidden
         >
-          Confirmer l’allègement
-        </Button>
-      ) : null}
-      {orientation.confirmIncrease ? (
+          →
+        </span>
+      </button>
+
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         <Button
-          disabled={pending != null}
-          size="sm"
+          className="h-11 w-full rounded-full sm:h-8 sm:w-auto"
+          disabled={busy}
           type="button"
-          variant="accent"
-          onClick={() =>
-            void actRecalibration('accept', orientation.confirmIncrease!.decisionId, 'UP')
-          }
+          variant="highlight"
+          onClick={() => void actRecalibration('accept', decisionId, direction)}
         >
-          Confirmer la hausse
+          {pending === 'apply' ? 'Application…' : 'Appliquer la proposée'}
         </Button>
-      ) : null}
-    </div>
+        <Button
+          className="h-11 w-full sm:h-8 sm:w-auto"
+          disabled={busy}
+          type="button"
+          variant="ghost"
+          onClick={() => void actRecalibration('reject', decisionId, null)}
+        >
+          {pending === 'hold' ? '…' : 'Garder le plan'}
+        </Button>
+      </div>
+    </section>
   );
 }

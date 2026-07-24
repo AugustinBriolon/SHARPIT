@@ -14,11 +14,14 @@ import { PlannedSessionDialog } from '@/components/planning/session/planned-sess
 import { useGoals, usePlannedSessions } from '@/hooks/use-data';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import { queryKeys } from '@/lib/query/keys';
+import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-compare';
 
 export type OpenPlannedSessionOptions = {
   sessionId: string;
   /** When opened from the linked activity detail — hide “see activity” nav. */
   omitLinkedActivityNavigation?: boolean;
+  /** Morning recalibration — show Plan vs proposée in the read view. */
+  morningProposal?: MorningProposalCompareInput;
 };
 
 type AppModalContextValue = {
@@ -84,6 +87,7 @@ export function AppModalProvider({ children }: { children: ReactNode }) {
       {plannedModal && session ? (
         <PlannedSessionDialog
           goals={goalsQuery.data ?? []}
+          morningProposal={plannedModal.morningProposal}
           omitLinkedActivityNavigation={plannedModal.omitLinkedActivityNavigation}
           session={session}
           onClose={closePlannedSession}

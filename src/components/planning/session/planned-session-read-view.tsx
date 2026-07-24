@@ -6,6 +6,7 @@ import {
   PlannedSessionContextPanel,
   PlannedSessionContextPanelSkeleton,
 } from '@/components/planning/session/planned-session-context-panel';
+import { MorningProposalCompare } from '@/components/planning/session/morning-proposal-compare';
 import { SessionRealization } from '@/components/planning/session/session-realization';
 import { Button } from '@/components/ui/button';
 import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
@@ -16,6 +17,7 @@ import { formatPlannedSessionLocationDisplay } from '@/lib/planned-session/plann
 import { sportIdentityHex } from '@/lib/activity/sport-identity';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import { exposureLabels, intensityLabels } from '@/lib/planned-session/sessions';
+import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-compare';
 import { Brain, ChevronRight, MapPin, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -79,6 +81,7 @@ export function PlannedSessionReadView({
   contextPending = false,
   onEdit,
   omitLinkedActivityNavigation = false,
+  morningProposal,
 }: {
   session: ClientPlannedSession;
   goals: ClientGoal[];
@@ -86,6 +89,7 @@ export function PlannedSessionReadView({
   contextPending?: boolean;
   onEdit: () => void;
   omitLinkedActivityNavigation?: boolean;
+  morningProposal?: MorningProposalCompareInput;
 }) {
   const isRealized = Boolean(session.activity) && !omitLinkedActivityNavigation;
   const goal = goals.find((g) => g.id === session.goalId);
@@ -158,14 +162,18 @@ export function PlannedSessionReadView({
           {session.title?.trim() || activityTypeLabels[session.type]}
         </h2>
         <p className="text-data text-muted-foreground text-xs">{dateLabel}</p>
-        {session.description ? (
+        {!morningProposal && session.description ? (
           <p className="text-muted-foreground line-clamp-2 text-sm leading-relaxed">
             {session.description}
           </p>
         ) : null}
       </header>
 
-      <KeyChipsRow chips={chips} />
+      {morningProposal ? (
+        <MorningProposalCompare description={session.description} proposal={morningProposal} />
+      ) : (
+        <KeyChipsRow chips={chips} />
+      )}
 
       <div>
         {hasRationale ? (

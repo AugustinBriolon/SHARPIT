@@ -15,6 +15,7 @@ import { ActivityStrengthExercises } from '@/components/training/activity/detail
 import { ActivityGoalValidationsCard } from '@/components/goals/cards/activity-goal-validations-card';
 import { ActivityNarrativeSection } from '@/components/training/activity/activity-narrative-section';
 import { enrichActivityObservedContext } from '@/lib/activity/enrich-observed-context';
+import { enrichStrengthExerciseVisuals } from '@/lib/exercises';
 import { getActivityById, getMultisportLegsForActivity } from '@/lib/queries';
 import { getGoalAchievementsForActivity } from '@/lib/goals/goal-achievements';
 import { isCoachConfigured } from '@/lib/ai';
@@ -33,6 +34,12 @@ export default async function ActivityDetailPage({ params }: PageProps) {
     await enrichActivityObservedContext(prisma, id);
   } catch (error) {
     console.error('[activity-detail/enrich]', error);
+  }
+
+  try {
+    await enrichStrengthExerciseVisuals(prisma, id);
+  } catch (error) {
+    console.error('[activity-detail/strength-visuals]', error);
   }
 
   const activity = await getActivityById(id);
