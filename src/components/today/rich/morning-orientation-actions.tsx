@@ -15,12 +15,6 @@ import { useAppModal } from '@/providers/app-modal-provider';
 
 const HOLD_STORAGE_PREFIX = 'sharpit.morning-hold.';
 
-/**
- * Temporary UX preview for the morning proposal card (variant A).
- * Set to `false` (or delete) once the responsive pass is validated on device.
- */
-export const PREVIEW_MORNING_PROPOSAL = true;
-
 export function morningHoldStorageKey(trainingDayId: string): string {
   return `${HOLD_STORAGE_PREFIX}${trainingDayId}`;
 }
@@ -60,30 +54,6 @@ function compareMeta(current: SessionSide, proposed: SessionSide): string | null
   return parts.length > 0 ? parts.join(' · ') : null;
 }
 
-/** Preview-only ease proposal — mirrors a real PRESENTED DOWN recalibration. */
-export function previewMorningOrientation(sessionId: string | null): MorningOrientation {
-  return {
-    phase: 'ORIENTATION_READY',
-    evidenceLine: null,
-    showRefreshEvidence: false,
-    showFirmActions: true,
-    hideHeroConfidence: false,
-    heroHeadline: null,
-    heroSubline: null,
-    confirmEase: {
-      decisionId: 'preview-morning-ease',
-      sessionId: sessionId ?? 'preview-session',
-      changeSummary: 'Tempo → Endurance',
-      why: 'Récup 62 · sommeil court — charge trop haute pour aujourd’hui.',
-      current: { intensityLabel: 'Tempo', durationMin: 45, load: 55 },
-      proposed: { intensityLabel: 'Endurance', durationMin: 45, load: 41 },
-    },
-    confirmIncrease: null,
-    holdDecisionId: 'preview-morning-ease',
-    sessionChoice: null,
-  };
-}
-
 /**
  * Morning firm actions — Actualiser (evidence) · comparaison plan vs proposé.
  * Post-choice has no card — annotation lives on the session chip.
@@ -92,18 +62,14 @@ export function MorningOrientationActions({
   trainingDayId,
   orientation,
   onRefreshed,
-  preview = false,
 }: {
   trainingDayId: string;
   orientation: MorningOrientation;
   onRefreshed?: () => void;
-  /** When true, CTAs are local-only (no API) — UX preview mode. */
-  preview?: boolean;
 }) {
   const queryClient = useQueryClient();
   const { openPlannedSession } = useAppModal();
   const [pending, setPending] = useState<'refresh' | 'hold' | 'apply' | null>(null);
-  const [previewDismissed, setPreviewDismissed] = useState(false);
   const [, startTransition] = useTransition();
 
   const refreshCaches = useCallback(async () => {
@@ -145,19 +111,6 @@ export function MorningOrientationActions({
   ) {
     setPending(action === 'reject' ? 'hold' : 'apply');
 
-    if (preview) {
-      setPreviewDismissed(true);
-      if (action === 'reject') {
-        writeClientMorningHold(trainingDayId);
-        toast.success('Plan tenu');
-      } else {
-        toast.success(direction === 'UP' ? 'Hausse appliquée' : 'Ajustement appliqué');
-      }
-      setPending(null);
-      onRefreshed?.();
-      return;
-    }
-
     try {
       const res = await fetch('/api/morning-recalibration/action', {
         method: 'POST',
@@ -183,7 +136,6 @@ export function MorningOrientationActions({
     }
   }
 
-  if (preview && previewDismissed) return null;
   if (orientation.phase === 'POST_CHOICE') return null;
 
   if (orientation.phase === 'EVIDENCE_PENDING' && orientation.showRefreshEvidence) {
@@ -213,8 +165,7 @@ export function MorningOrientationActions({
 
   const direction: 'DOWN' | 'UP' = orientation.confirmIncrease ? 'UP' : 'DOWN';
   const busy = pending != null;
-  const detailSessionId =
-    proposal.sessionId && proposal.sessionId !== 'preview-session' ? proposal.sessionId : null;
+  const detailSessionId = proposal.sessionId || null;
   const fromLabel = proposal.current.intensityLabel ?? '—';
   const toLabel = proposal.proposed.intensityLabel ?? '—';
   const meta = compareMeta(proposal.current, proposal.proposed);

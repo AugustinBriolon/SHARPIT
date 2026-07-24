@@ -8,11 +8,7 @@ import type { InstrumentListChipMeta } from '@/components/ui/instrument-list-chi
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { MorningWellnessDialog } from '@/components/today/dashboard/morning-wellness-dialog';
-import {
-  MorningOrientationActions,
-  PREVIEW_MORNING_PROPOSAL,
-  previewMorningOrientation,
-} from '@/components/today/rich/morning-orientation-actions';
+import { MorningOrientationActions } from '@/components/today/rich/morning-orientation-actions';
 import { useAppModal } from '@/providers/app-modal-provider';
 
 /**
@@ -40,20 +36,7 @@ export function TodayActionRow({
       ? vm.actionRow.limitingFacts
       : [];
 
-  const liveOrientation = loading ? null : vm.morningOrientation;
-  const primarySessionId =
-    vm.actionRow.daySummaryLines.find((line) => line.kind === 'planned' && !line.isDone)?.id ??
-    vm.actionRow.daySummaryLines.find((line) => line.kind === 'planned')?.id ??
-    null;
-
-  /** Preview only when morning flow is live but no real proposal — never outside it. */
-  const usePreview =
-    PREVIEW_MORNING_PROPOSAL &&
-    !loading &&
-    liveOrientation?.phase === 'ORIENTATION_READY' &&
-    !liveOrientation.showFirmActions;
-
-  const orientation = usePreview ? previewMorningOrientation(primarySessionId) : liveOrientation;
+  const orientation = loading ? null : vm.morningOrientation;
 
   const hideSessionList = orientation?.phase === 'EVIDENCE_PENDING';
   const proposalSessionId =
@@ -74,7 +57,6 @@ export function TodayActionRow({
       {orientation ? (
         <MorningOrientationActions
           orientation={orientation}
-          preview={usePreview}
           trainingDayId={trainingDayId}
           onRefreshed={onWellnessCompleted}
         />
