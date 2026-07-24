@@ -100,6 +100,12 @@ function draftWatchHint(exercise: string): string | null {
   }).label;
 }
 
+function watchHintClassName(hint: string): string {
+  if (hint.startsWith('Hors')) return 'text-muted-foreground/80 text-[10px]';
+  if (hint.startsWith('Approx')) return 'text-[10px] text-amber-700/90 dark:text-amber-400/90';
+  return 'text-muted-foreground text-[10px]';
+}
+
 export function StrengthPrescriptionEditor({
   rows,
   onChange,
@@ -153,19 +159,7 @@ export function StrengthPrescriptionEditor({
                 value={row.exercise}
                 onChange={(e) => updateRow(row.key, { exercise: e.target.value })}
               />
-              {watchHint ? (
-                <p
-                  className={
-                    watchHint.startsWith('Hors')
-                      ? 'text-muted-foreground/80 text-[10px]'
-                      : watchHint.startsWith('Approx')
-                        ? 'text-[10px] text-amber-700/90 dark:text-amber-400/90'
-                        : 'text-muted-foreground text-[10px]'
-                  }
-                >
-                  {watchHint}
-                </p>
-              ) : null}
+              {watchHint ? <p className={watchHintClassName(watchHint)}>{watchHint}</p> : null}
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
               <div className="space-y-1">

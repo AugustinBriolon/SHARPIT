@@ -8,6 +8,7 @@ import {
   findDecisionForPlannedSession,
   recordDecisionAction,
 } from '@/lib/decision-memory/repository';
+import { garminPushClearOnSessionChange } from '@/lib/integrations/garmin-workout-push-state';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -69,10 +70,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       }
     }
 
-    const session = await updatePlannedSession(
-      id,
-      parsed.data as Parameters<typeof updatePlannedSession>[1],
-    );
+    const clearGarminPush = garminPushClearOnSessionChange(parsed.data);
+    const session = await updatePlannedSession(id, {
+      ...(parsed.data as Parameters<typeof updatePlannedSession>[1]),
+      ...(clearGarminPush ?? {}),
+    });
 
     // Athlete applying a coach-proposed adapt change → ACCEPTED. Otherwise, if this
     // session already originated from a coach recommendation and the edit touches a

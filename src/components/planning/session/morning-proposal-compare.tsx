@@ -6,6 +6,45 @@ import {
 } from '@/lib/today/morning-proposal-compare';
 import { cn } from '@/lib/utils';
 
+function DerouleCompare({
+  structureChanged,
+  fromDeroule,
+  toDeroule,
+}: {
+  structureChanged: boolean;
+  fromDeroule: string | null | undefined;
+  toDeroule: string | null | undefined;
+}) {
+  if (structureChanged) {
+    return (
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className="border-analysis-border/60 rounded-md border px-2.5 py-2">
+          <p className="text-label mb-1">Plan</p>
+          <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
+            {fromDeroule ?? '—'}
+          </p>
+        </div>
+        <div className="border-highlight/50 bg-highlight/15 rounded-md border px-2.5 py-2">
+          <p className="text-label text-highlight-foreground/80 mb-1">Proposée</p>
+          <p className="text-foreground/90 text-sm leading-relaxed whitespace-pre-wrap">
+            {toDeroule}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (fromDeroule || toDeroule) {
+    return (
+      <p className="text-foreground/90 text-sm leading-relaxed whitespace-pre-wrap">
+        {toDeroule ?? fromDeroule}
+      </p>
+    );
+  }
+
+  return <p className="text-muted-foreground text-sm">Aucun déroulé renseigné sur cette séance.</p>;
+}
+
 /**
  * Plan vs proposée when the session is opened from a morning recalibration chip.
  * Scalars + déroulé side-by-side when structure was adapted.
@@ -79,28 +118,11 @@ export function MorningProposalCompare({ proposal }: { proposal: MorningProposal
 
       <div className="space-y-2">
         <p className="text-label">Déroulé</p>
-        {structureChanged ? (
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <div className="border-analysis-border/60 rounded-md border px-2.5 py-2">
-              <p className="text-label mb-1">Plan</p>
-              <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
-                {fromDeroule ?? '—'}
-              </p>
-            </div>
-            <div className="border-highlight/50 bg-highlight/15 rounded-md border px-2.5 py-2">
-              <p className="text-label text-highlight-foreground/80 mb-1">Proposée</p>
-              <p className="text-foreground/90 text-sm leading-relaxed whitespace-pre-wrap">
-                {toDeroule}
-              </p>
-            </div>
-          </div>
-        ) : fromDeroule || toDeroule ? (
-          <p className="text-foreground/90 text-sm leading-relaxed whitespace-pre-wrap">
-            {toDeroule ?? fromDeroule}
-          </p>
-        ) : (
-          <p className="text-muted-foreground text-sm">Aucun déroulé renseigné sur cette séance.</p>
-        )}
+        <DerouleCompare
+          fromDeroule={fromDeroule}
+          structureChanged={structureChanged}
+          toDeroule={toDeroule}
+        />
       </div>
     </section>
   );

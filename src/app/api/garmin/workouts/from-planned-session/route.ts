@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { pushStrengthWorkoutFromPlannedSession } from '@/lib/integrations/garmin-strength-workout';
+import {
+  GarminWorkoutAlreadyPushedError,
+  pushStrengthWorkoutFromPlannedSession,
+} from '@/lib/integrations/garmin-strength-workout';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -8,6 +11,7 @@ export const dynamic = 'force-dynamic';
 const bodySchema = z.object({
   plannedSessionId: z.string().min(1),
   schedule: z.boolean().optional(),
+  force: z.boolean().optional(),
   scheduleDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -29,6 +33,16 @@ export async function POST(request: NextRequest) {
     const result = await pushStrengthWorkoutFromPlannedSession(parsed.data);
     return NextResponse.json(result);
   } catch (error) {
+    if (error instanceof GarminWorkoutAlreadyPushedError) {
+      return NextResponse.json(
+        {
+          error: error.body.message,
+          alreadyPushed: true,
+          ...error.body,
+        },
+        { status: 409 },
+      );
+    }
     console.error('[garmin/workouts/from-planned-session]', error);
     const message = error instanceof Error ? error.message : 'Envoi vers Garmin impossible';
     let status = 500;

@@ -1147,6 +1147,11 @@ model PlannedSession {
   // Lien vers l'événement créé dans Google Calendar (calendrier SPORT)
   googleEventId String? @unique
 
+  /// Dernier workout Garmin Connect poussé depuis cette séance (anti-spam + statut montre).
+  garminWorkoutId String?
+  garminWorkoutScheduledDate String? // YYYY-MM-DD
+  garminWorkoutPushedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

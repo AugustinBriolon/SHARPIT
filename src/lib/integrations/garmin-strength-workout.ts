@@ -12,6 +12,11 @@ import {
 import { currentTokens, type GarminTokens } from '@/lib/integrations/garmin';
 import { getGarminClient } from '@/lib/integrations/garmin-sync';
 import {
+  buildAlreadyPushedError,
+  type GarminPushBlockReason,
+  type GarminPushReceipt,
+} from '@/lib/integrations/garmin-workout-push-state';
+import {
   formatStrengthPrescriptionSummary,
   attachGarminRefsToPrescription,
   parseStrengthPrescription,
@@ -26,7 +31,22 @@ export type PushStrengthWorkoutResult = {
   mappedCount: number;
   skipped: Array<{ exercise: string; reason: string }>;
   scheduledDate: string | null;
+  alreadyPushed?: boolean;
+  workoutExists?: boolean | null;
+  calendarActive?: boolean | null;
+  pushedAt?: string | null;
 };
+
+export class GarminWorkoutAlreadyPushedError extends Error {
+  readonly status = 409;
+  readonly body: GarminPushBlockReason;
+
+  constructor(body: GarminPushBlockReason) {
+    super(body.message);
+    this.name = 'GarminWorkoutAlreadyPushedError';
+    this.body = body;
+  }
+}
 
 async function persistGarminTokens(tokens: GarminTokens): Promise<void> {
   await prisma.garminAccount.update({
@@ -38,12 +58,47 @@ async function persistGarminTokens(tokens: GarminTokens): Promise<void> {
   });
 }
 
+async function workoutExistsOnConnect(
+  client: Awaited<ReturnType<typeof getGarminClient>>,
+  workoutId: string,
+): Promise<boolean | null> {
+  try {
+    await client.getWorkoutDetail({ workoutId });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function workoutActiveOnCalendar(
+  client: Awaited<ReturnType<typeof getGarminClient>>,
+  workoutId: string,
+  scheduledDate: string | null,
+): Promise<boolean | null> {
+  if (!scheduledDate || !/^\d{4}-\d{2}-\d{2}$/.test(scheduledDate)) return null;
+  const [y, m] = scheduledDate.split('-').map(Number);
+  try {
+    const calendar = await client.getMonthCalendarEvents(y, m - 1);
+    const idNum = Number(workoutId);
+    return calendar.calendarItems.some(
+      (item) =>
+        item.date === scheduledDate &&
+        item.workoutId != null &&
+        (String(item.workoutId) === workoutId || item.workoutId === idNum),
+    );
+  } catch {
+    return null;
+  }
+}
+
 async function uploadStrengthSets(options: {
   workoutName: string;
   description?: string | null;
   sets: StrengthWorkoutSetInput[];
   schedule?: boolean;
   scheduleDate?: string | null;
+  /** Previous Connect workout to delete when force-replacing. */
+  replaceWorkoutId?: string | null;
 }): Promise<PushStrengthWorkoutResult> {
   const labelsFr = await ensureGarminExerciseLabelsFr();
   const frLeafByLabel = invertGarminExerciseLabelsFr(labelsFr);
@@ -70,6 +125,15 @@ async function uploadStrengthSets(options: {
   }
 
   const client = await getGarminClient();
+
+  if (options.replaceWorkoutId) {
+    try {
+      await client.deleteWorkout({ workoutId: options.replaceWorkoutId });
+    } catch (error) {
+      console.warn('[Garmin] delete previous workout failed:', error);
+    }
+  }
+
   const created = (await client.createWorkout(
     built.payload as unknown as Parameters<typeof client.createWorkout>[0],
   )) as { workoutId?: number };
@@ -91,6 +155,10 @@ async function uploadStrengthSets(options: {
     mappedCount: built.mappedCount,
     skipped: built.skipped,
     scheduledDate,
+    alreadyPushed: false,
+    calendarActive: scheduledDate != null,
+    workoutExists: workoutId != null,
+    pushedAt: new Date().toISOString(),
   };
 }
 
@@ -149,11 +217,14 @@ export async function pushStrengthWorkoutFromActivity(options: {
 /**
  * Push a planned STRENGTH session prescription to Garmin Connect,
  * scheduled on the planned session date by default.
+ * Blocks duplicate pushes unless `force` is true (replaces previous workout).
  */
 export async function pushStrengthWorkoutFromPlannedSession(options: {
   plannedSessionId: string;
   scheduleDate?: string | null;
   schedule?: boolean;
+  /** Replace previous Garmin workout if already pushed. */
+  force?: boolean;
 }): Promise<PushStrengthWorkoutResult> {
   const session = await prisma.plannedSession.findUnique({
     where: { id: options.plannedSessionId },
@@ -164,12 +235,40 @@ export async function pushStrengthWorkoutFromPlannedSession(options: {
       date: true,
       description: true,
       strengthPrescription: true,
+      garminWorkoutId: true,
+      garminWorkoutScheduledDate: true,
+      garminWorkoutPushedAt: true,
     },
   });
 
   if (!session) throw new Error('Séance planifiée introuvable');
   if (session.type !== ActivityType.STRENGTH) {
     throw new Error('Seules les séances de musculation peuvent être envoyées à la montre');
+  }
+
+  if (session.garminWorkoutId && !options.force) {
+    const receipt: GarminPushReceipt = {
+      workoutId: session.garminWorkoutId,
+      scheduledDate: session.garminWorkoutScheduledDate,
+      pushedAt: (session.garminWorkoutPushedAt ?? new Date()).toISOString(),
+    };
+    let workoutExists: boolean | null = null;
+    let calendarActive: boolean | null = null;
+    try {
+      const client = await getGarminClient();
+      workoutExists = await workoutExistsOnConnect(client, session.garminWorkoutId);
+      calendarActive = await workoutActiveOnCalendar(
+        client,
+        session.garminWorkoutId,
+        session.garminWorkoutScheduledDate,
+      );
+      await persistGarminTokens(currentTokens(client));
+    } catch {
+      // Status probe is best-effort — still block duplicate create.
+    }
+    throw new GarminWorkoutAlreadyPushedError(
+      buildAlreadyPushedError({ receipt, workoutExists, calendarActive }),
+    );
   }
 
   const prescriptionParsed = parseStrengthPrescription(session.strengthPrescription);
@@ -187,7 +286,7 @@ export async function pushStrengthWorkoutFromPlannedSession(options: {
     formatStrengthPrescriptionSummary(prescription) ||
     'Envoyé depuis SHARPIT (séance planifiée)';
 
-  return uploadStrengthSets({
+  const result = await uploadStrengthSets({
     workoutName,
     description,
     sets: prescription.sets.map((set) => ({
@@ -205,5 +304,21 @@ export async function pushStrengthWorkoutFromPlannedSession(options: {
     })),
     schedule: options.schedule,
     scheduleDate: options.scheduleDate ?? format(session.date, 'yyyy-MM-dd'),
+    replaceWorkoutId: options.force ? session.garminWorkoutId : null,
   });
+
+  if (result.workoutId != null) {
+    const pushedAt = new Date();
+    await prisma.plannedSession.update({
+      where: { id: session.id },
+      data: {
+        garminWorkoutId: String(result.workoutId),
+        garminWorkoutScheduledDate: result.scheduledDate,
+        garminWorkoutPushedAt: pushedAt,
+      },
+    });
+    result.pushedAt = pushedAt.toISOString();
+  }
+
+  return result;
 }

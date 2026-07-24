@@ -200,6 +200,17 @@ export function evaluateMorningSessionRecalibration(input: {
   ) {
     const toIntensity: SessionIntensity = 'ENDURANCE';
     const toLoad = load != null ? Math.round(load * 0.6) : null;
+    const protectVerdict = verdict === 'RECOVER' || verdict === 'CAUTION';
+    let why: string;
+    if (strengthLike && protectVerdict) {
+      why = `Verdict du matin « ${verdict} » — alléger les charges et prioriser le contrôle du mouvement.`;
+    } else if (strengthLike) {
+      why = 'Capacité légère uniquement — pas de travail exigeant aujourd’hui.';
+    } else if (protectVerdict) {
+      why = `Verdict du matin « ${verdict} » — baisser l’intensité protège le risque blessure sans abandonner le plan.`;
+    } else {
+      why = 'Capacité légère uniquement — la haute intensité n’est pas cohérente aujourd’hui.';
+    }
     return withDescriptions(
       type,
       'DOWN',
@@ -213,13 +224,7 @@ export function evaluateMorningSessionRecalibration(input: {
         toDurationMin: durationMin,
         fromLoad: load,
         toLoad,
-        why: strengthLike
-          ? verdict === 'RECOVER' || verdict === 'CAUTION'
-            ? `Verdict du matin « ${verdict} » — alléger les charges et prioriser le contrôle du mouvement.`
-            : 'Capacité légère uniquement — pas de travail exigeant aujourd’hui.'
-          : verdict === 'RECOVER' || verdict === 'CAUTION'
-            ? `Verdict du matin « ${verdict} » — baisser l’intensité protège le risque blessure sans abandonner le plan.`
-            : 'Capacité légère uniquement — la haute intensité n’est pas cohérente aujourd’hui.',
+        why,
       },
       {
         from: intensity,

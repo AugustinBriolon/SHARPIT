@@ -25,8 +25,10 @@ import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import { exposureLabels, intensityLabels } from '@/lib/planned-session/sessions';
 import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-compare';
 import { Brain, ChevronRight, Dumbbell, MapPin, Pencil, Watch } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { queryKeys } from '@/lib/query/keys';
 import { ActivityType } from '@prisma/client';
 
 type KeyChip = { label: string; value: string; valueClassName?: string };
@@ -99,7 +101,15 @@ export function PlannedSessionReadView({
   omitLinkedActivityNavigation?: boolean;
   morningProposal?: MorningProposalCompareInput;
 }) {
+  const queryClient = useQueryClient();
   const [pushing, setPushing] = useState(false);
+  const [watchPush, setWatchPush] = useState({
+    workoutId: session.garminWorkoutId ?? null,
+    scheduledDate: session.garminWorkoutScheduledDate ?? null,
+    pushedAt: session.garminWorkoutPushedAt
+      ? new Date(session.garminWorkoutPushedAt).toISOString()
+      : null,
+  });
   const isRealized = Boolean(session.activity) && !omitLinkedActivityNavigation;
   const goal = goals.find((g) => g.id === session.goalId);
   const showExposure = sportSupportsOutdoorContext(session.type);
@@ -141,28 +151,84 @@ export function PlannedSessionReadView({
     { label: 'Intensité', value: session.intensity ? intensityLabels[session.intensity] : '—' },
   ];
 
+  useEffect(() => {
+    setWatchPush({
+      workoutId: session.garminWorkoutId ?? null,
+      scheduledDate: session.garminWorkoutScheduledDate ?? null,
+      pushedAt: session.garminWorkoutPushedAt
+        ? new Date(session.garminWorkoutPushedAt).toISOString()
+        : null,
+    });
+  }, [session.garminWorkoutId, session.garminWorkoutScheduledDate, session.garminWorkoutPushedAt]);
+
   const prescriptionRaw = parseStrengthPrescription(session.strengthPrescription);
   const prescription = prescriptionRaw ? attachGarminRefsToPrescription(prescriptionRaw) : null;
+  const alreadyOnWatch = Boolean(watchPush.workoutId);
 
-  async function sendToWatch() {
+  function watchPushButtonLabel(): string {
+    if (pushing) return alreadyOnWatch ? 'Renvoi…' : 'Envoi…';
+    return alreadyOnWatch ? 'Renvoyer' : 'Envoyer à la montre';
+  }
+
+  function garminStatusHint(data: {
+    workoutExists?: boolean | null;
+    calendarActive?: boolean | null;
+  }): string | null {
+    const parts: string[] = [];
+    if (data.workoutExists === true) parts.push('workout encore dans Connect');
+    else if (data.workoutExists === false) parts.push('workout introuvable dans Connect');
+    if (data.calendarActive === true) parts.push('présent au calendrier');
+    else if (data.calendarActive === false) parts.push('absent du calendrier');
+    return parts.length > 0 ? parts.join(' · ') : null;
+  }
+
+  async function sendToWatch(force = false) {
     if (pushing || !prescription) return;
+    if (alreadyOnWatch && !force) {
+      const ok = window.confirm(
+        'Cette séance est déjà sur Garmin. Renvoyer remplace le workout précédent. Continuer ?',
+      );
+      if (!ok) return;
+      force = true;
+    }
     setPushing(true);
-    const loadingToast = toast.loading('Envoi vers Garmin…');
+    const loadingToast = toast.loading(force ? 'Renvoi vers Garmin…' : 'Envoi vers Garmin…');
     try {
       const response = await fetch('/api/garmin/workouts/from-planned-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plannedSessionId: session.id, schedule: true }),
+        body: JSON.stringify({ plannedSessionId: session.id, schedule: true, force }),
       });
       const data = (await response.json()) as {
         error?: string;
         workoutName?: string;
+        workoutId?: number | null;
         skipped?: Array<{ exercise: string }>;
         scheduledDate?: string | null;
+        pushedAt?: string | null;
+        alreadyPushed?: boolean;
+        calendarActive?: boolean | null;
+        workoutExists?: boolean | null;
+        receipt?: { workoutId?: string; scheduledDate?: string | null };
       };
+      if (response.status === 409 && data.alreadyPushed) {
+        const scheduled = data.receipt?.scheduledDate ?? watchPush.scheduledDate;
+        toast.info('Déjà sur Garmin', {
+          description: [scheduled ? `calendrier ${scheduled}` : null, garminStatusHint(data)]
+            .filter(Boolean)
+            .join(' · '),
+        });
+        return;
+      }
       if (!response.ok) throw new Error(data.error || 'Envoi impossible');
       const skipped = data.skipped?.length ?? 0;
-      toast.success('Workout envoyé à Garmin', {
+      setWatchPush({
+        workoutId: data.workoutId != null ? String(data.workoutId) : watchPush.workoutId,
+        scheduledDate: data.scheduledDate ?? watchPush.scheduledDate,
+        pushedAt: data.pushedAt ?? new Date().toISOString(),
+      });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
+      toast.success(force ? 'Workout renvoyé à Garmin' : 'Workout envoyé à Garmin', {
         description: [
           data.workoutName,
           data.scheduledDate ? `calendrier ${data.scheduledDate}` : null,
@@ -238,10 +304,25 @@ export function PlannedSessionReadView({
                 onClick={() => void sendToWatch()}
               >
                 <Watch className="size-3.5" />
-                {pushing ? 'Envoi…' : 'Envoyer à la montre'}
+                {watchPushButtonLabel()}
               </Button>
             ) : null}
           </div>
+          {alreadyOnWatch ? (
+            <p className="text-muted-foreground text-[10px] leading-snug">
+              Sur Garmin
+              {watchPush.scheduledDate ? ` · calendrier ${watchPush.scheduledDate}` : ''}
+              {watchPush.pushedAt
+                ? ` · envoyé ${new Date(watchPush.pushedAt).toLocaleString('fr-FR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}`
+                : ''}
+              . La montre récupère le workout au prochain sync Connect.
+            </p>
+          ) : null}
           <ul className="space-y-1.5">
             {prescription.sets
               .slice()
