@@ -1,5 +1,11 @@
 import { normalizeExerciseKey } from '@/lib/exercises/normalize';
 
+/** Garmin Connect workout exercise identity (category + leaf name). */
+export type GarminExerciseRef = {
+  category: string;
+  exerciseName: string;
+};
+
 /** Fallback when no Garmin enum matches — watch shows "Inconnu"; real name stays in step notes. */
 export const GARMIN_UNKNOWN_EXERCISE: GarminExerciseRef = {
   category: 'UNKNOWN',
