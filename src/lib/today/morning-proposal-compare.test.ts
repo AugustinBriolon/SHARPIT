@@ -4,8 +4,8 @@ import { buildMorningProposalCompareRows } from '@/lib/today/morning-proposal-co
 describe('buildMorningProposalCompareRows', () => {
   it('marks changed scalar fields and formats duration / load', () => {
     const rows = buildMorningProposalCompareRows(
-      { intensityLabel: 'Tempo', durationMin: 45, load: 55 },
-      { intensityLabel: 'Endurance', durationMin: 45, load: 41 },
+      { intensityLabel: 'Tempo', durationMin: 45, load: 55, description: null },
+      { intensityLabel: 'Endurance', durationMin: 45, load: 41, description: null },
     );
 
     expect(rows).toEqual([
@@ -32,8 +32,8 @@ describe('buildMorningProposalCompareRows', () => {
 
   it('handles missing sides with em dash', () => {
     const rows = buildMorningProposalCompareRows(
-      { intensityLabel: null, durationMin: null, load: null },
-      { intensityLabel: 'Récup', durationMin: 30, load: 20 },
+      { intensityLabel: null, durationMin: null, load: null, description: null },
+      { intensityLabel: 'Récup', durationMin: 30, load: 20, description: null },
     );
 
     expect(rows[0]).toMatchObject({ current: '—', proposed: 'Récup', changed: true });

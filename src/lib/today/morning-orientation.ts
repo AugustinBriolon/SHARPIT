@@ -7,8 +7,8 @@ import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
 import type { FreshnessLevel } from '@/core/athlete-state/freshness';
 import { isForwardAdvicePhase } from '@/lib/daily-phase/resolve';
 import type { DailyPhase } from '@/lib/daily-phase/types';
-import { intensityLabels } from '@/lib/planned-session/sessions';
-import type { SessionIntensity } from '@prisma/client';
+import { morningIntensityLabel } from '@/lib/morning-recalibration/sport-intensity-labels';
+import type { ActivityType } from '@prisma/client';
 
 export type MorningOrientationPhase = 'EVIDENCE_PENDING' | 'ORIENTATION_READY' | 'POST_CHOICE';
 
@@ -20,11 +20,13 @@ export type MorningSessionSide = {
   intensityLabel: string | null;
   durationMin: number | null;
   load: number | null;
+  description: string | null;
 };
 
 export type MorningRecalibrationInput = {
   decisionId: string;
   sessionId: string;
+  sessionType: string;
   direction: 'DOWN' | 'UP';
   changeSummary: string;
   why: string;
@@ -35,6 +37,8 @@ export type MorningRecalibrationInput = {
   toDurationMin: number | null;
   fromLoad: number | null;
   toLoad: number | null;
+  fromDescription: string | null;
+  toDescription: string | null;
 };
 
 export type MorningConfirmProposal = {
@@ -129,21 +133,18 @@ export function acceptedChoiceKind(direction: 'DOWN' | 'UP'): MorningSessionChoi
   return direction === 'DOWN' ? 'EASING_CONFIRMED' : 'INCREASE_CONFIRMED';
 }
 
-function intensityLabel(value: string | null): string | null {
-  if (!value) return null;
-  if (value in intensityLabels) return intensityLabels[value as SessionIntensity];
-  return value;
-}
-
 function sessionSide(
+  sessionType: string,
   intensity: string | null,
   durationMin: number | null,
   load: number | null,
+  description: string | null,
 ): MorningSessionSide {
   return {
-    intensityLabel: intensityLabel(intensity),
+    intensityLabel: morningIntensityLabel(sessionType as ActivityType, intensity),
     durationMin,
     load: load != null ? Math.round(load) : null,
+    description: description?.trim() || null,
   };
 }
 
@@ -154,14 +155,18 @@ function confirmProposalFrom(recalibration: MorningRecalibrationInput): MorningC
     changeSummary: recalibration.changeSummary,
     why: recalibration.why,
     current: sessionSide(
+      recalibration.sessionType,
       recalibration.fromIntensity,
       recalibration.fromDurationMin,
       recalibration.fromLoad,
+      recalibration.fromDescription,
     ),
     proposed: sessionSide(
+      recalibration.sessionType,
       recalibration.toIntensity,
       recalibration.toDurationMin,
       recalibration.toLoad,
+      recalibration.toDescription,
     ),
   };
 }

@@ -15,6 +15,7 @@ function recalibration(
   return {
     decisionId: 'd1',
     sessionId: 's1',
+    sessionType: 'RUN',
     why: 'récupération',
     fromIntensity: 'TEMPO',
     toIntensity: 'ENDURANCE',
@@ -22,6 +23,8 @@ function recalibration(
     toDurationMin: 45,
     fromLoad: 55,
     toLoad: 41,
+    fromDescription: null,
+    toDescription: null,
     ...overrides,
   };
 }
@@ -186,11 +189,13 @@ describe('resolveMorningOrientation', () => {
       intensityLabel: 'Tempo',
       durationMin: 45,
       load: 55,
+      description: null,
     });
     expect(r?.confirmEase?.proposed).toEqual({
       intensityLabel: 'Endurance',
       durationMin: 45,
       load: 41,
+      description: null,
     });
     expect(r?.holdDecisionId).toBe('d1');
   });

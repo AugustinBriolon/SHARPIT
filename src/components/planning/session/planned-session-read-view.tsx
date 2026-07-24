@@ -170,7 +170,7 @@ export function PlannedSessionReadView({
       </header>
 
       {morningProposal ? (
-        <MorningProposalCompare description={session.description} proposal={morningProposal} />
+        <MorningProposalCompare proposal={morningProposal} />
       ) : (
         <KeyChipsRow chips={chips} />
       )}

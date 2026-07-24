@@ -43,11 +43,13 @@ export type TodayViewModel = {
         intensityLabel: string | null;
         durationMin: number | null;
         load: number | null;
+        description: string | null;
       };
       proposed: {
         intensityLabel: string | null;
         durationMin: number | null;
         load: number | null;
+        description: string | null;
       };
     } | null;
     confirmIncrease: {
@@ -59,11 +61,13 @@ export type TodayViewModel = {
         intensityLabel: string | null;
         durationMin: number | null;
         load: number | null;
+        description: string | null;
       };
       proposed: {
         intensityLabel: string | null;
         durationMin: number | null;
         load: number | null;
+        description: string | null;
       };
     } | null;
     /** Reject recalibration (= Tenir) when a proposal is open. */
@@ -158,6 +162,7 @@ export type TodayViewModel = {
     morningRecalibration: {
       decisionId: string;
       sessionId: string;
+      sessionType: string;
       direction: 'DOWN' | 'UP';
       changeSummary: string;
       why: string;
@@ -168,6 +173,8 @@ export type TodayViewModel = {
       toDurationMin: number | null;
       fromLoad: number | null;
       toLoad: number | null;
+      fromDescription: string | null;
+      toDescription: string | null;
     } | null;
   };
 

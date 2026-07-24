@@ -381,6 +381,7 @@ export async function buildTodayPresentationViewModel(
         ? {
             decisionId: presentedRecalibration.decisionId,
             sessionId: presentedRecalibration.sessionId,
+            sessionType: presentedRecalibration.sessionType,
             direction: presentedRecalibration.direction,
             changeSummary: presentedRecalibration.changeSummary,
             why: presentedRecalibration.why,
@@ -391,6 +392,8 @@ export async function buildTodayPresentationViewModel(
             toDurationMin: presentedRecalibration.toDurationMin,
             fromLoad: presentedRecalibration.fromLoad,
             toLoad: presentedRecalibration.toLoad,
+            fromDescription: presentedRecalibration.fromDescription,
+            toDescription: presentedRecalibration.toDescription,
           }
         : null,
     },

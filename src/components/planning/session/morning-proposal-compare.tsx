@@ -8,18 +8,13 @@ import { cn } from '@/lib/utils';
 
 /**
  * Plan vs proposée when the session is opened from a morning recalibration chip.
- * Scalars compare in a compact table; déroulé is the current plan description
- * (morning V1 does not regenerate structure text).
+ * Scalars + déroulé side-by-side when structure was adapted.
  */
-export function MorningProposalCompare({
-  proposal,
-  description,
-}: {
-  proposal: MorningProposalCompareInput;
-  description: string | null | undefined;
-}) {
+export function MorningProposalCompare({ proposal }: { proposal: MorningProposalCompareInput }) {
   const rows = buildMorningProposalCompareRows(proposal.current, proposal.proposed);
-  const deroule = description?.trim() || null;
+  const fromDeroule = proposal.current.description;
+  const toDeroule = proposal.proposed.description;
+  const structureChanged = (fromDeroule ?? '') !== (toDeroule ?? '') && Boolean(toDeroule);
 
   return (
     <section
@@ -82,18 +77,30 @@ export function MorningProposalCompare({
         </table>
       </div>
 
-      <div className="space-y-1.5">
-        <p className="text-label">Déroulé du plan</p>
-        {deroule ? (
+      <div className="space-y-2">
+        <p className="text-label">Déroulé</p>
+        {structureChanged ? (
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="border-analysis-border/60 rounded-md border px-2.5 py-2">
+              <p className="text-label mb-1">Plan</p>
+              <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
+                {fromDeroule ?? '—'}
+              </p>
+            </div>
+            <div className="border-highlight/50 bg-highlight/15 rounded-md border px-2.5 py-2">
+              <p className="text-label text-highlight-foreground/80 mb-1">Proposée</p>
+              <p className="text-foreground/90 text-sm leading-relaxed whitespace-pre-wrap">
+                {toDeroule}
+              </p>
+            </div>
+          </div>
+        ) : fromDeroule || toDeroule ? (
           <p className="text-foreground/90 text-sm leading-relaxed whitespace-pre-wrap">
-            {deroule}
+            {toDeroule ?? fromDeroule}
           </p>
         ) : (
           <p className="text-muted-foreground text-sm">Aucun déroulé renseigné sur cette séance.</p>
         )}
-        <p className="text-muted-foreground text-[11px] leading-snug">
-          La proposée ajuste intensité, durée et charge — le texte de structure reste celui du plan.
-        </p>
       </div>
     </section>
   );

@@ -47,6 +47,9 @@ export type DecisionSnapshotContext = {
     readonly toDurationMin: number | null;
     readonly fromLoad: number | null;
     readonly toLoad: number | null;
+    readonly fromDescription?: string | null;
+    readonly toDescription?: string | null;
+    readonly sessionType?: string;
   };
 };
 

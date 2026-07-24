@@ -8,6 +8,7 @@ import type { GateProposal, GateSessionResult } from '@/lib/plan-gate/types';
 import { buildDecisionSnapshotContext } from '@/lib/decision-memory/build-snapshot-context';
 import {
   createCoachingDecision,
+  expireDecision,
   findCoachingDecisionById,
   findMorningRecalibrationDecision,
   recordDecisionAction,
@@ -15,6 +16,7 @@ import {
 import type { DecisionSnapshotContext } from '@/lib/decision-memory/types';
 import {
   evaluateMorningSessionRecalibration,
+  isStrengthLikeMorningSport,
   type MorningRecalibrationProposal,
 } from '@/lib/morning-recalibration/evaluate';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
@@ -27,6 +29,7 @@ const ATHLETE_ID = 'default';
 export type MorningRecalibrationPresentation = {
   decisionId: string;
   sessionId: string;
+  sessionType: string;
   direction: 'DOWN' | 'UP';
   changeSummary: string;
   why: string;
@@ -37,6 +40,8 @@ export type MorningRecalibrationPresentation = {
   toDurationMin: number | null;
   fromLoad: number | null;
   toLoad: number | null;
+  fromDescription: string | null;
+  toDescription: string | null;
 };
 
 function toGateProposal(
@@ -81,12 +86,14 @@ function toGateResult(proposal: GateProposal, direction: 'DOWN' | 'UP'): GateSes
 function toPresentation(
   decisionId: string,
   sessionId: string,
+  sessionType: string,
   mr: NonNullable<DecisionSnapshotContext['morningRecalibration']>,
   status: MorningRecalibrationPresentation['status'],
 ): MorningRecalibrationPresentation {
   return {
     decisionId,
     sessionId,
+    sessionType,
     direction: mr.direction,
     changeSummary: mr.changeSummary,
     why: mr.why,
@@ -97,7 +104,22 @@ function toPresentation(
     toDurationMin: mr.toDurationMin,
     fromLoad: mr.fromLoad,
     toLoad: mr.toLoad,
+    fromDescription: mr.fromDescription ?? null,
+    toDescription: mr.toDescription ?? null,
   };
+}
+
+/** Old STRENGTH proposals used endurance copy (“tempo”) and had no structure rewrite. */
+function isStaleSportProposal(
+  mr: NonNullable<DecisionSnapshotContext['morningRecalibration']>,
+  sessionType: string | undefined,
+): boolean {
+  if (!sessionType || !isStrengthLikeMorningSport(sessionType)) {
+    return false;
+  }
+  if (mr.fromDescription === undefined && mr.toDescription === undefined) return true;
+  if (/tempo/i.test(mr.why) || /tempo/i.test(mr.changeSummary)) return true;
+  return false;
 }
 
 /**
@@ -114,14 +136,32 @@ export async function ensureMorningRecalibration(
   if (existing) {
     const mr = existing.snapshotContext.morningRecalibration;
     if (!mr || !existing.proposal.sessionId) return null;
-    if (
+
+    const existingSession = await prisma.plannedSession.findUnique({
+      where: { id: existing.proposal.sessionId },
+      select: { type: true },
+    });
+    const stale =
+      existing.status === 'PRESENTED' && isStaleSportProposal(mr, existingSession?.type);
+
+    if (stale) {
+      await expireDecision(existing.id);
+      // Fall through — recreate with sport-aware wording + structure.
+    } else if (
       existing.status === 'PRESENTED' ||
       existing.status === 'ACCEPTED' ||
       existing.status === 'REJECTED'
     ) {
-      return toPresentation(existing.id, existing.proposal.sessionId, mr, existing.status);
+      return toPresentation(
+        existing.id,
+        existing.proposal.sessionId,
+        existingSession?.type ?? existing.proposal.type,
+        mr,
+        existing.status,
+      );
+    } else {
+      return null;
     }
-    return null;
   }
 
   const [y, m, d] = trainingDayId.split('-').map(Number);
@@ -148,6 +188,7 @@ export async function ensureMorningRecalibration(
       durationMin: session.durationMin,
       load: session.load,
       title: session.title,
+      description: session.description,
       completed: session.completed,
       activityId: session.activityId,
     },
@@ -175,6 +216,9 @@ export async function ensureMorningRecalibration(
       toDurationMin: proposal.toDurationMin,
       fromLoad: proposal.fromLoad,
       toLoad: proposal.toLoad,
+      fromDescription: proposal.fromDescription,
+      toDescription: proposal.toDescription,
+      sessionType: session.type,
     },
   };
 
@@ -190,6 +234,7 @@ export async function ensureMorningRecalibration(
   return toPresentation(
     decision.id,
     proposal.sessionId,
+    session.type,
     snapshotContext.morningRecalibration!,
     'PRESENTED',
   );
@@ -214,6 +259,7 @@ export async function acceptMorningRecalibration(
     intensity: decision.proposal.intensity ?? undefined,
     durationMin: decision.proposal.durationMin ?? undefined,
     load: decision.proposal.load ?? undefined,
+    description: mr.toDescription ?? undefined,
   });
 
   await recordDecisionAction({
