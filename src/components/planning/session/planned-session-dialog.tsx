@@ -7,6 +7,12 @@ import {
 } from '@/components/planning/location-place-picker';
 import { PlannedSessionReadView } from '@/components/planning/session/planned-session-read-view';
 import { PlannedSessionNavDismissProvider } from '@/components/planning/session/planned-session-nav-dismiss';
+import {
+  StrengthPrescriptionEditor,
+  draftFromStrengthPrescription,
+  strengthPrescriptionFromDraft,
+  type StrengthPrescriptionDraftRow,
+} from '@/components/planning/session/strength-prescription-editor';
 import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -31,6 +37,10 @@ import {
   useSessionRationalePresentation,
 } from '@/hooks/use-data';
 import { activityTypeLabels } from '@/lib/format';
+import {
+  formatStrengthPrescriptionSummary,
+  parseStrengthPrescription,
+} from '@/lib/planned-session/strength-prescription';
 import { queryKeys } from '@/lib/query/keys';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-compare';
@@ -168,6 +178,9 @@ export function PlannedSessionDialog({
   );
   const [customPlace, setCustomPlace] = useState<LocationPlaceValue>(initialCustomPlace(session));
   const [legs, setLegs] = useState<BrickLegForm[]>(defaultBrickLegs);
+  const [strengthRows, setStrengthRows] = useState<StrengthPrescriptionDraftRow[]>(() =>
+    draftFromStrengthPrescription(parseStrengthPrescription(session?.strengthPrescription)),
+  );
   const [error, setError] = useState<string | null>(null);
   const { confirm, dialog } = useConfirmDialog();
 
@@ -239,6 +252,20 @@ export function PlannedSessionDialog({
     );
     setLocationSource(initialLocationSource(session));
     setCustomPlace(initialCustomPlace(session));
+    setStrengthRows(
+      draftFromStrengthPrescription(parseStrengthPrescription(session.strengthPrescription)),
+    );
+  }
+
+  function resolveStrengthPrescriptionPayload(description: string | null) {
+    if (type !== ActivityType.STRENGTH) {
+      return { strengthPrescription: null as null, description };
+    }
+    const prescription = strengthPrescriptionFromDraft(strengthRows);
+    const nextDescription =
+      description?.trim() ||
+      (prescription ? formatStrengthPrescriptionSummary(prescription) : null);
+    return { strengthPrescription: prescription, description: nextDescription };
   }
 
   function resolveLocationPayload(): {
@@ -328,6 +355,8 @@ export function PlannedSessionDialog({
       const durationRaw = formData.get('durationMin');
       const loadRaw = formData.get('load');
       const location = resolveLocationPayload();
+      const descriptionRaw = (formData.get('description') as string) || null;
+      const strength = resolveStrengthPrescriptionPayload(descriptionRaw);
       update.mutate(
         {
           id: session.id,
@@ -336,7 +365,8 @@ export function PlannedSessionDialog({
             date: new Date(`${dateValue}T12:00:00`),
             startTime: startTimeValue || null,
             title: (formData.get('title') as string) || null,
-            description: (formData.get('description') as string) || null,
+            description: strength.description,
+            strengthPrescription: strength.strengthPrescription,
             durationMin: durationRaw ? Number(durationRaw) : null,
             load: loadRaw ? Number(loadRaw) : null,
             intensity,
@@ -383,13 +413,16 @@ export function PlannedSessionDialog({
     const durationRaw = formData.get('durationMin');
     const loadRaw = formData.get('load');
     const location = resolveLocationPayload();
+    const descriptionRaw = (formData.get('description') as string) || null;
+    const strength = resolveStrengthPrescriptionPayload(descriptionRaw);
     create.mutate(
       {
         type,
         date: new Date(`${dateValue}T12:00:00`),
         startTime: startTimeValue || null,
         title: (formData.get('title') as string) || null,
-        description: (formData.get('description') as string) || null,
+        description: strength.description,
+        strengthPrescription: strength.strengthPrescription,
         durationMin: durationRaw ? Number(durationRaw) : null,
         load: loadRaw ? Number(loadRaw) : null,
         intensity,
@@ -712,10 +745,21 @@ export function PlannedSessionDialog({
                           defaultValue={session?.description ?? ''}
                           id="description"
                           name="description"
-                          placeholder="3×10' au seuil, récup 3'…"
                           rows={2}
+                          placeholder={
+                            type === ActivityType.STRENGTH
+                              ? 'Notes libres (sinon résumé auto des exercices)'
+                              : "3×10' au seuil, récup 3'…"
+                          }
                         />
                       </div>
+
+                      {type === ActivityType.STRENGTH ? (
+                        <StrengthPrescriptionEditor
+                          rows={strengthRows}
+                          onChange={setStrengthRows}
+                        />
+                      ) : null}
                     </>
                   ) : (
                     <div className="space-y-3">

@@ -1,5 +1,6 @@
 import { ActivityType, SessionIntensity } from '@prisma/client';
 import { z } from 'zod';
+import { strengthPrescriptionSchema } from '@/lib/planned-session/strength-prescription';
 
 const optionalNumber = z.coerce.number().optional().nullable();
 const optionalString = z
@@ -30,12 +31,22 @@ const contextualFields = {
   locationType: plannedSessionLocationTypeSchema.optional().nullable(),
 };
 
+const optionalStrengthPrescription = strengthPrescriptionSchema
+  .nullable()
+  .optional()
+  .transform((v) => {
+    if (v == null) return null;
+    if (v.sets.length === 0) return null;
+    return v;
+  });
+
 const basePlannedSessionSchema = z.object({
   type: activityTypeSchema,
   date: z.coerce.date(),
   startTime: optionalString,
   title: optionalString,
   description: optionalString,
+  strengthPrescription: optionalStrengthPrescription,
   durationMin: optionalNumber,
   load: optionalNumber,
   intensity: sessionIntensitySchema.optional().nullable(),
@@ -44,8 +55,16 @@ const basePlannedSessionSchema = z.object({
   ...contextualFields,
 });
 
-export const createPlannedSessionSchema = basePlannedSessionSchema;
-export const updatePlannedSessionSchema = basePlannedSessionSchema.partial();
+export const createPlannedSessionSchema = basePlannedSessionSchema.transform((data) => ({
+  ...data,
+  strengthPrescription: data.type === ActivityType.STRENGTH ? data.strengthPrescription : null,
+}));
+export const updatePlannedSessionSchema = basePlannedSessionSchema.partial().transform((data) => {
+  if (data.type != null && data.type !== ActivityType.STRENGTH) {
+    return { ...data, strengthPrescription: null };
+  }
+  return data;
+});
 
 export type CreatePlannedSessionInput = z.infer<typeof createPlannedSessionSchema>;
 export type UpdatePlannedSessionInput = z.infer<typeof updatePlannedSessionSchema>;

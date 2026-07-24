@@ -1111,6 +1111,8 @@ model PlannedSession {
   startTime   String? // heure de début planifiée "HH:mm" (locale) — choisie pour caser la séance dans l'agenda Google
   title       String?
   description String?
+  /// Structured strength prescription (sets/reps) — STRENGTH only. Not an engine output.
+  strengthPrescription Json?
   durationMin Int? // durée prévue en minutes
   load        Float? // charge / TSS prévue
   intensity   SessionIntensity?

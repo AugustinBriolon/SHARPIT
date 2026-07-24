@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { Dumbbell, Watch } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from '@/components/ui/toast';
 import { SPORT_IDENTITY_SURFACE, SPORT_IDENTITY_TEXT } from '@/lib/activity/sport-identity';
 import { resolveStrengthSetMedia, type ResolvedExerciseMedia } from '@/lib/exercises';
 import { formatClockDuration } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { Dumbbell } from 'lucide-react';
 import type { ActivityDetail } from './types';
 
 function formatStrengthSetDetail(set: ActivityDetail['strengthSets'][number]): string {
@@ -46,14 +48,65 @@ export function ActivityStrengthExercises({ activity }: { activity: ActivityDeta
   const sets = activity.strengthSets;
   const sportText = SPORT_IDENTITY_TEXT.STRENGTH;
   const sportSurface = SPORT_IDENTITY_SURFACE.STRENGTH;
+  const [pushing, setPushing] = useState(false);
+
+  async function sendToWatch() {
+    if (pushing || sets.length === 0) return;
+    setPushing(true);
+    const loadingToast = toast.loading('Envoi vers Garmin…');
+    try {
+      const response = await fetch('/api/garmin/workouts/from-activity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activityId: activity.id, schedule: true }),
+      });
+      const data = (await response.json()) as {
+        error?: string;
+        workoutName?: string;
+        mappedCount?: number;
+        skipped?: Array<{ exercise: string }>;
+        scheduledDate?: string | null;
+      };
+      if (!response.ok) {
+        throw new Error(data.error || 'Envoi impossible');
+      }
+      const skipped = data.skipped?.length ?? 0;
+      toast.success('Workout envoyé à Garmin', {
+        description: [
+          data.workoutName,
+          data.scheduledDate ? `calendrier ${data.scheduledDate}` : null,
+          skipped > 0 ? `${skipped} exercice(s) non mappé(s)` : null,
+        ]
+          .filter(Boolean)
+          .join(' · '),
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Envoi vers Garmin impossible');
+    } finally {
+      toast.close(loadingToast);
+      setPushing(false);
+    }
+  }
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
         <CardTitle className="text-muted-foreground flex items-center gap-2 text-base font-medium">
           <Dumbbell className={cn('size-4', sportText)} />
           Exercices
         </CardTitle>
+        {sets.length > 0 ? (
+          <Button
+            disabled={pushing}
+            size="sm"
+            type="button"
+            variant="outline"
+            onClick={() => void sendToWatch()}
+          >
+            <Watch className="size-3.5" />
+            {pushing ? 'Envoi…' : 'Envoyer à la montre'}
+          </Button>
+        ) : null}
       </CardHeader>
       <CardContent className="space-y-2">
         {sets.length > 0 ? (
@@ -116,7 +169,8 @@ export function ActivityStrengthExercises({ activity }: { activity: ActivityDeta
               >
                 gymvisual.com
               </a>
-              . Toucher une vignette pour l’animation.
+              . Toucher une vignette pour l’animation. « Envoyer à la montre » crée un workout
+              Garmin (bibliothèque + calendrier) — synchroniser la montre ensuite.
             </p>
           </>
         ) : (

@@ -70,6 +70,7 @@ Principes :
 - Ne propose QUE des changements utiles : laisse les séances déjà bonnes telles quelles (ne les liste pas).
 - Renseigne uniquement les champs à modifier pour MODIFY ; mets null ailleurs.
 - durationMin et load doivent être des entiers (pas de décimales).
+- Pour ADD/MODIFY d'une séance STRENGTH : fournis strengthPrescription (exercices FR + séries/reps/repos). null sinon.
 Réponds en français.`;
 
 function adaptErrorMessage(error: unknown): string {

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { coachStrengthPrescriptionSchema } from '@/lib/planned-session/strength-prescription';
 
 /** Schéma de sortie structurée du générateur de séances. */
 export const coachPlanSchema = z.object({
@@ -29,7 +30,13 @@ export const coachPlanSchema = z.object({
         description: z
           .string()
           .describe(
-            'Structure détaillée : échauffement, corps de séance (intervalles, allures/zones cibles), récupération.',
+            'Structure détaillée : échauffement, corps de séance (intervalles, allures/zones cibles), récupération. Pour STRENGTH : résumé court si strengthPrescription est rempli.',
+          ),
+        strengthPrescription: coachStrengthPrescriptionSchema
+          .nullable()
+          .optional()
+          .describe(
+            'OBLIGATOIRE si type=STRENGTH (exercices + séries/reps). null pour RUN/BIKE/SWIM.',
           ),
         durationMin: z.number().int().min(10).max(420),
         load: z.number().int().min(0).max(400).describe('Charge / TSS estimé de la séance.'),
@@ -164,6 +171,12 @@ const adaptChangeBase = {
   intensity: z.enum(['RECOVERY', 'ENDURANCE', 'TEMPO', 'THRESHOLD', 'VO2MAX', 'RACE']).nullable(),
   title: z.string().nullable(),
   description: z.string().nullable(),
+  strengthPrescription: coachStrengthPrescriptionSchema
+    .nullable()
+    .optional()
+    .describe(
+      'Pour ADD/MODIFY STRENGTH : prescription structurée. null/omit = ne pas changer (MODIFY) ou non-STRENGTH.',
+    ),
   durationMin: z.number().nullable().describe('Durée en minutes (entier).'),
   load: z.number().nullable().describe('Charge TSS (entier).'),
   reason: z.string().describe('Pourquoi cet ajustement.'),
@@ -190,6 +203,7 @@ export const adaptPlanSchema = z.object({
         intensity: adaptChangeBase.intensity,
         title: nullableAdaptString,
         description: nullableAdaptString,
+        strengthPrescription: adaptChangeBase.strengthPrescription,
         durationMin: nullableAdaptInt,
         load: nullableAdaptInt,
         reason: adaptChangeBase.reason,

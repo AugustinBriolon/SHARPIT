@@ -12,7 +12,14 @@ import {
 type RouteContext = { params: Promise<{ id: string }> };
 
 /** Fields that change what the session actually asks the athlete to do. */
-const SESSION_DEFINING_FIELDS = ['intensity', 'durationMin', 'load', 'type', 'date'] as const;
+const SESSION_DEFINING_FIELDS = [
+  'intensity',
+  'durationMin',
+  'load',
+  'type',
+  'date',
+  'strengthPrescription',
+] as const;
 
 function changesSessionDefiningField(
   existing: Record<string, unknown>,

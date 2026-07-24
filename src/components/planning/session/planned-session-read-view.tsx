@@ -9,17 +9,21 @@ import {
 import { MorningProposalCompare } from '@/components/planning/session/morning-proposal-compare';
 import { SessionRealization } from '@/components/planning/session/session-realization';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/toast';
 import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
 import { useSessionRationalePresentation } from '@/hooks/use-data';
 import type { PlannedSessionViewModel } from '@/core/presentation/planned-session-view-model';
 import { activityTypeLabels, formatDate } from '@/lib/format';
 import { formatPlannedSessionLocationDisplay } from '@/lib/planned-session/planned-session-display';
+import { parseStrengthPrescription } from '@/lib/planned-session/strength-prescription';
 import { sportIdentityHex } from '@/lib/activity/sport-identity';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import { exposureLabels, intensityLabels } from '@/lib/planned-session/sessions';
 import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-compare';
-import { Brain, ChevronRight, MapPin, Pencil } from 'lucide-react';
+import { Brain, ChevronRight, Dumbbell, MapPin, Pencil, Watch } from 'lucide-react';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { ActivityType } from '@prisma/client';
 
 type KeyChip = { label: string; value: string; valueClassName?: string };
 
@@ -91,6 +95,7 @@ export function PlannedSessionReadView({
   omitLinkedActivityNavigation?: boolean;
   morningProposal?: MorningProposalCompareInput;
 }) {
+  const [pushing, setPushing] = useState(false);
   const isRealized = Boolean(session.activity) && !omitLinkedActivityNavigation;
   const goal = goals.find((g) => g.id === session.goalId);
   const showExposure = sportSupportsOutdoorContext(session.type);
@@ -131,6 +136,43 @@ export function PlannedSessionReadView({
     },
     { label: 'Intensité', value: session.intensity ? intensityLabels[session.intensity] : '—' },
   ];
+
+  const prescription = parseStrengthPrescription(session.strengthPrescription);
+
+  async function sendToWatch() {
+    if (pushing || !prescription) return;
+    setPushing(true);
+    const loadingToast = toast.loading('Envoi vers Garmin…');
+    try {
+      const response = await fetch('/api/garmin/workouts/from-planned-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plannedSessionId: session.id, schedule: true }),
+      });
+      const data = (await response.json()) as {
+        error?: string;
+        workoutName?: string;
+        skipped?: Array<{ exercise: string }>;
+        scheduledDate?: string | null;
+      };
+      if (!response.ok) throw new Error(data.error || 'Envoi impossible');
+      const skipped = data.skipped?.length ?? 0;
+      toast.success('Workout envoyé à Garmin', {
+        description: [
+          data.workoutName,
+          data.scheduledDate ? `calendrier ${data.scheduledDate}` : null,
+          skipped > 0 ? `${skipped} exercice(s) non mappé(s)` : null,
+        ]
+          .filter(Boolean)
+          .join(' · '),
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Envoi vers Garmin impossible');
+    } finally {
+      toast.close(loadingToast);
+      setPushing(false);
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -174,6 +216,56 @@ export function PlannedSessionReadView({
       ) : (
         <KeyChipsRow chips={chips} />
       )}
+
+      {session.type === ActivityType.STRENGTH && prescription ? (
+        <div className="border-analysis-border/60 space-y-2 rounded-lg border p-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-foreground/85 inline-flex items-center gap-1.5 text-sm font-medium">
+              <Dumbbell className="text-muted-foreground size-3.5" />
+              Exercices prescrits
+            </p>
+            {!isRealized ? (
+              <Button
+                disabled={pushing}
+                size="sm"
+                type="button"
+                variant="outline"
+                onClick={() => void sendToWatch()}
+              >
+                <Watch className="size-3.5" />
+                {pushing ? 'Envoi…' : 'Envoyer à la montre'}
+              </Button>
+            ) : null}
+          </div>
+          <ul className="space-y-1.5">
+            {prescription.sets
+              .slice()
+              .sort((a, b) => a.order - b.order)
+              .map((set) => {
+                const volume =
+                  set.durationSec && set.durationSec > 0 && set.reps <= 0
+                    ? `${set.sets}×${set.durationSec}s`
+                    : `${set.sets}×${set.reps}`;
+                const weight =
+                  set.weightKg != null && set.weightKg > 0 ? ` @ ${set.weightKg} kg` : '';
+                return (
+                  <li
+                    key={`${set.order}-${set.exercise}`}
+                    className="text-muted-foreground flex items-baseline justify-between gap-2 text-sm"
+                  >
+                    <span className="text-foreground min-w-0 truncate font-medium">
+                      {set.exercise}
+                    </span>
+                    <span className="text-data shrink-0 font-mono text-xs tabular-nums">
+                      {volume}
+                      {weight}
+                    </span>
+                  </li>
+                );
+              })}
+          </ul>
+        </div>
+      ) : null}
 
       <div>
         {hasRationale ? (

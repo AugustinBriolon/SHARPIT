@@ -35,6 +35,7 @@ import { useGoals, usePlannedSessionMutations, useTrainingPlan } from '@/hooks/u
 import { useOnlineStatus } from '@/hooks/use-online-status';
 import type { GateSessionResult } from '@/lib/plan-gate/types';
 import { GateStatusBadge, GateFindingsList } from '@/components/coach/plan/gate-status-badge';
+import { resolveStrengthFieldsForPersist } from '@/lib/planned-session/strength-prescription';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 
@@ -122,18 +123,26 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
     if (!plan || selected.size === 0) return;
     const payloads = plan.sessions
       .filter((_, i) => selected.has(i))
-      .map((s) => ({
-        type: s.type,
-        date: new Date(`${s.date}T12:00:00`),
-        startTime: s.startTime,
-        title: s.title,
-        description: s.description,
-        durationMin: s.durationMin,
-        load: s.load,
-        intensity: s.intensity,
-        goalId: goalId === NO_GOAL ? null : goalId,
-        decisionId: s.decisionId,
-      }));
+      .map((s) => {
+        const strength = resolveStrengthFieldsForPersist({
+          type: s.type,
+          description: s.description,
+          strengthPrescription: s.strengthPrescription,
+        });
+        return {
+          type: s.type,
+          date: new Date(`${s.date}T12:00:00`),
+          startTime: s.startTime,
+          title: s.title,
+          description: strength.description,
+          strengthPrescription: strength.strengthPrescription,
+          durationMin: s.durationMin,
+          load: s.load,
+          intensity: s.intensity,
+          goalId: goalId === NO_GOAL ? null : goalId,
+          decisionId: s.decisionId,
+        };
+      });
     createMany.mutate(payloads);
     onClose();
   }
@@ -333,6 +342,12 @@ function SessionRow({
         </div>
         <p className="mt-1 text-sm font-medium">{session.title}</p>
         <p className="text-muted-foreground mt-0.5 text-xs">{session.description}</p>
+        {session.strengthPrescription?.sets?.length ? (
+          <p className="text-muted-foreground mt-0.5 text-xs">
+            {session.strengthPrescription.sets.length} exercice
+            {session.strengthPrescription.sets.length > 1 ? 's' : ''} pour la montre
+          </p>
+        ) : null}
         {session.rationale && (
           <p className="text-muted-foreground/80 mt-1 text-xs italic">→ {session.rationale}</p>
         )}

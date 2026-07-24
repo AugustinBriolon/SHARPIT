@@ -102,6 +102,9 @@ type SessionInput = {
   durationMin?: number;
   load?: number;
   description?: string;
+  strengthPrescription?: {
+    sets?: Array<{ exercise?: string; sets?: number; reps?: number }>;
+  };
   locationLabel?: string;
   locationLat?: number;
   locationLng?: number;
@@ -219,6 +222,8 @@ function describeInput(
       .join(' · ');
     if (meta) lines.push(meta);
     if (input.description) lines.push(input.description);
+    const exoCount = input.strengthPrescription?.sets?.length ?? 0;
+    if (exoCount > 0) lines.push(`${exoCount} exercice${exoCount > 1 ? 's' : ''} prescrits`);
     return { headline, lines };
   }
 
@@ -236,6 +241,10 @@ function describeInput(
   if (input.startTime) lines.push(`Heure → ${input.startTime}`);
   if (input.exposureSetting) {
     lines.push(`Exposition → ${EXPOSURE_LABELS[input.exposureSetting]}`);
+  }
+  const updateExoCount = input.strengthPrescription?.sets?.length ?? 0;
+  if (updateExoCount > 0) {
+    lines.push(`Exercices → ${updateExoCount} prescrits`);
   }
   if (input.locationLabel) lines.push(`Lieu → ${input.locationLabel}`);
   if (input.description) lines.push(input.description);

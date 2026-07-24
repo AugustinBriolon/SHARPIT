@@ -27,6 +27,17 @@ export interface GeneratedSession {
   intensity: SessionIntensity;
   title: string;
   description: string;
+  strengthPrescription?: {
+    sets: Array<{
+      exercise: string;
+      sets: number;
+      reps: number;
+      durationSec?: number | null;
+      weightKg?: number | null;
+      restSec?: number | null;
+      notes?: string | null;
+    }>;
+  } | null;
   durationMin: number;
   load: number;
   rationale: string;
@@ -78,6 +89,17 @@ export interface AdaptChange {
   intensity: SessionIntensity | null;
   title: string | null;
   description: string | null;
+  strengthPrescription?: {
+    sets: Array<{
+      exercise: string;
+      sets: number;
+      reps: number;
+      durationSec?: number | null;
+      weightKg?: number | null;
+      restSec?: number | null;
+      notes?: string | null;
+    }>;
+  } | null;
   durationMin: number | null;
   load: number | null;
   reason: string;

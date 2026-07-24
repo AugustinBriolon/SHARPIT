@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { tool } from 'ai';
 import { addDays, format, startOfDay } from 'date-fns';
 import { z } from 'zod';
@@ -22,6 +22,11 @@ import {
 } from '@/lib/travel-context/service';
 import { prisma } from '@/lib/prisma';
 import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/resolve-context';
+import {
+  coachStrengthPrescriptionSchema,
+  parseStrengthPrescription,
+  resolveStrengthFieldsForPersist,
+} from '@/lib/planned-session/strength-prescription';
 
 const typeEnum = z.enum(['RUN', 'BIKE', 'SWIM', 'STRENGTH']);
 const intensityEnum = z.enum(['RECOVERY', 'ENDURANCE', 'TEMPO', 'THRESHOLD', 'VO2MAX', 'RACE']);
@@ -36,6 +41,12 @@ const startTimeSchema = z
   .optional()
   .describe(
     "Heure de début 'HH:mm' (locale). Laisse vide pour que l'app place automatiquement la séance sur un créneau libre de l'agenda Google.",
+  );
+
+const strengthPrescriptionToolSchema = coachStrengthPrescriptionSchema
+  .optional()
+  .describe(
+    'OBLIGATOIRE si type=STRENGTH : exercices structurés (séries/reps). Omettre pour RUN/BIKE/SWIM.',
   );
 
 /**
@@ -66,6 +77,7 @@ export const coachTools = {
         completed: s.completed,
         brickGroupId: s.brickGroupId,
         brickOrder: s.brickOrder,
+        hasStrengthPrescription: Boolean(parseStrengthPrescription(s.strengthPrescription)),
       }));
     },
   }),
@@ -83,6 +95,7 @@ export const coachTools = {
         .string()
         .optional()
         .describe('Structure détaillée (échauffement, corps, récup).'),
+      strengthPrescription: strengthPrescriptionToolSchema,
       durationMin: z.number().min(5).max(420).optional(),
       load: z.number().min(0).max(400).optional().describe('TSS estimé.'),
       exposureSetting: exposureEnum
@@ -97,12 +110,18 @@ export const coachTools = {
     }),
     execute: async (input) => {
       try {
+        const strength = resolveStrengthFieldsForPersist({
+          type: input.type,
+          description: input.description,
+          strengthPrescription: input.strengthPrescription,
+        });
         const s = await createPlannedSession({
           type: input.type,
           date: toDate(input.date),
           startTime: input.startTime ?? null,
           title: input.title,
-          description: input.description ?? null,
+          description: strength.description,
+          strengthPrescription: strength.strengthPrescription ?? undefined,
           durationMin: input.durationMin != null ? Math.round(input.durationMin) : null,
           load: input.load != null ? Math.round(input.load) : null,
           intensity: input.intensity ?? null,
@@ -224,6 +243,7 @@ export const coachTools = {
       intensity: intensityEnum.optional(),
       title: z.string().optional(),
       description: z.string().optional(),
+      strengthPrescription: strengthPrescriptionToolSchema,
       durationMin: z.number().int().min(5).max(420).optional(),
       load: z.number().int().min(0).max(400).optional(),
       exposureSetting: exposureEnum.optional(),
@@ -250,6 +270,20 @@ export const coachTools = {
         if (input.locationLabel !== undefined) data.locationLabel = input.locationLabel;
         if (input.locationLat !== undefined) data.locationLat = input.locationLat;
         if (input.locationLng !== undefined) data.locationLng = input.locationLng;
+
+        const nextType = input.type ?? existing.type;
+        if (input.strengthPrescription !== undefined) {
+          const strength = resolveStrengthFieldsForPersist({
+            type: nextType,
+            description: input.description !== undefined ? input.description : existing.description,
+            strengthPrescription: input.strengthPrescription,
+          });
+          data.description = strength.description;
+          data.strengthPrescription =
+            strength.strengthPrescription === null ? Prisma.DbNull : strength.strengthPrescription;
+        } else if (input.type && input.type !== 'STRENGTH') {
+          data.strengthPrescription = Prisma.DbNull;
+        }
 
         const s = await updatePlannedSession(input.id, data);
 

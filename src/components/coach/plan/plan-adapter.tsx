@@ -29,6 +29,7 @@ import type { GateSessionResult } from '@/lib/plan-gate/types';
 import { GateStatusBadge, GateFindingsList } from '@/components/coach/plan/gate-status-badge';
 import { AdaptationTrigger } from '@/components/coach/plan/adaptation-trigger';
 import { useOnlineStatus } from '@/hooks/use-online-status';
+import { resolveStrengthFieldsForPersist } from '@/lib/planned-session/strength-prescription';
 
 /** REMOVE changes bypass the Gate (see coach/adapt/route.ts) — only ADD/MODIFY changes have a gate result. */
 function gateKey(change: Pick<AdaptChange, 'action' | 'sessionId' | 'date' | 'type'>): string {
@@ -166,18 +167,34 @@ export function PlanAdapter({
         if (c.durationMin != null) data.durationMin = c.durationMin;
         if (c.load != null) data.load = c.load;
         if (c.date) data.date = new Date(`${c.date}T12:00:00`);
+        if (c.strengthPrescription != null || (c.type != null && c.type !== 'STRENGTH')) {
+          const existing = sessionsById.get(c.sessionId);
+          const strength = resolveStrengthFieldsForPersist({
+            type: c.type ?? existing?.type ?? 'STRENGTH',
+            description: c.description ?? existing?.description,
+            strengthPrescription: c.strengthPrescription,
+          });
+          data.description = strength.description;
+          data.strengthPrescription = strength.strengthPrescription;
+        }
         data.decisionId = c.decisionId;
         ops.push({ op: 'update', id: c.sessionId, data });
         continue;
       }
       if (c.action === 'ADD' && c.date && c.type) {
+        const strength = resolveStrengthFieldsForPersist({
+          type: c.type,
+          description: c.description,
+          strengthPrescription: c.strengthPrescription,
+        });
         ops.push({
           op: 'create',
           payload: {
             type: c.type,
             date: new Date(`${c.date}T12:00:00`),
             title: c.title,
-            description: c.description,
+            description: strength.description,
+            strengthPrescription: strength.strengthPrescription,
             durationMin: c.durationMin,
             load: c.load,
             intensity: c.intensity,
@@ -322,6 +339,12 @@ export function PlanAdapter({
                       {c.description && (
                         <p className="text-muted-foreground mt-0.5 text-xs">{c.description}</p>
                       )}
+                      {c.strengthPrescription?.sets?.length ? (
+                        <p className="text-muted-foreground mt-0.5 text-xs">
+                          {c.strengthPrescription.sets.length} exercice
+                          {c.strengthPrescription.sets.length > 1 ? 's' : ''} prescrits
+                        </p>
+                      ) : null}
                       <p className="text-muted-foreground/80 mt-1 text-xs italic">→ {c.reason}</p>
                       {gateResult && <GateFindingsList result={gateResult} />}
                       {c.action === 'MODIFY' && c.sessionId && (

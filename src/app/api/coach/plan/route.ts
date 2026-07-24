@@ -69,6 +69,7 @@ Principes à respecter impérativement :
 - Tiens compte de l'exécution récente (conformité prévu/réalisé) et du ressenti (RPE, feeling) : si les dernières séances clés ont été manquées ou trop dures, ajuste en conséquence.
 - Respecte IMPÉRATIVEMENT la condition physique déclarée (douleurs, blessures, mobilité) : n'aggrave jamais une zone sensible, propose du renfo/mobilité ciblé et baisse l'intensité si besoin. Réduis la charge dès que la récupération signale une fatigue excessive.
 - Sois concret dans la description : échauffement, corps de séance (répétitions, durées, allures/zones), récupération.
+- Pour toute séance type STRENGTH : renseigne OBLIGATOIREMENT strengthPrescription avec 3–8 exercices concrets (noms FR, séries, reps, repos). description = résumé court. Pour RUN/BIKE/SWIM : strengthPrescription = null.
 - Si une information manque, fais des hypothèses CONSERVATRICES plutôt qu'agressives. N'invente jamais de données.
 
 Réponds toujours en français.`;

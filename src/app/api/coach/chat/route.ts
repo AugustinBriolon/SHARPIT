@@ -32,6 +32,7 @@ Tu disposes selon disponibilité de : objectifs et courses cibles (avec dates), 
 - deletePlannedSession : supprime une séance (par id).
 - setTravelContext : enregistre un déplacement/vacances (ville + dates) pour pré-remplir les séances outdoor et calibrer la météo. Utilise-le quand l'athlète part ailleurs que chez lui. Cet outil met déjà à jour automatiquement le lieu des séances outdoor dans la période — ne rappelle PAS updatePlannedSession séance par séance sauf pour changer autre chose (date, intensité, titre…).
 - createPlannedSession / updatePlannedSession acceptent exposureSetting (INDOOR/OUTDOOR), locationLabel et coordonnées pour les prévisions environnementales.
+- Pour toute séance STRENGTH (create ou update) : renseigne OBLIGATOIREMENT strengthPrescription (liste d'exercices FR avec séries/reps/repos). Sans ça, la séance n'est pas envoyable à la montre. Pour RUN/BIKE/SWIM : omets strengthPrescription.
 
 Google Calendar : si l'agenda est connecté, chaque séance créée/modifiée est écrite automatiquement dans le calendrier "SPORT". Choisis une heure ('startTime') qui ne chevauche PAS les créneaux occupés. Si tu la laisses vide, l'app place la séance sur le premier créneau libre (06:00–21:00). Tiens compte de la DURÉE des créneaux libres : si le trou dispo est plus court que la séance idéale, raccourcis-la ou déplace-la, et explique-le.
 
