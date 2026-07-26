@@ -147,8 +147,8 @@ export class RecoveryInferenceOrchestrator {
     const computedAt = new Date();
 
     // ── Step 1: Get DayFeatures + Twin context ─────────────────────────────
-    const [features, previousScore, environmentalImpact, wearableEnergySignals] =
-      await Promise.all([
+    const [features, previousScore, environmentalImpact, wearableEnergySignals] = await Promise.all(
+      [
         this.deps.featureEngine.getDayFeatures(athleteId, trainingDayId),
         this.deps.digitalTwinRepo.getPreviousRecoveryScore(athleteId),
         this.deps.digitalTwinRepo.getEnvironmentalImpact(athleteId),
@@ -157,7 +157,8 @@ export class RecoveryInferenceOrchestrator {
           athleteId,
           trainingDayId,
         ),
-      ]);
+      ],
+    );
 
     // ── Step 2: Get previous recovery score for trend computation ──────────
     const context: RecoveryModelContext = {

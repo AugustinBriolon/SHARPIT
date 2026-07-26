@@ -250,7 +250,12 @@ function makeFullRecovery(): RecoveryFeatureSet {
     rhrAbsolute: 46,
     rhrDeltaFromBaseline: -1,
     subjectiveWellnessIndex: 7.8,
-    subjectiveWellnessComponents: { mood: 4, energyLevel: 4, perceivedSoreness: 2, stressLevel: null },
+    subjectiveWellnessComponents: {
+      mood: 4,
+      energyLevel: 4,
+      perceivedSoreness: 2,
+      stressLevel: null,
+    },
     rpeVsTargetZone: 0.5,
     avgStressDuringSleep: null,
     confidence: 0.87,

@@ -426,13 +426,11 @@ function mergeMovementContribution(
   return computeStepsMovementLoad(health);
 }
 
-function buildTrace(
-  params: {
-    sessionFeatures: readonly SessionFeatureSet[];
-    legacyActivities?: readonly LegacyDailyStrainActivity[];
-    healthSignals?: DailyStrainHealthSignals | null;
-  },
-): DailyStrainResult['trace'] {
+function buildTrace(params: {
+  sessionFeatures: readonly SessionFeatureSet[];
+  legacyActivities?: readonly LegacyDailyStrainActivity[];
+  healthSignals?: DailyStrainHealthSignals | null;
+}): DailyStrainResult['trace'] {
   return {
     sessionCount: params.sessionFeatures.length,
     activityCount: params.legacyActivities?.length ?? 0,

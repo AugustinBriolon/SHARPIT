@@ -406,7 +406,12 @@ describe('extractRecoveryFeatures — subjectiveWellnessIndex', () => {
   });
 
   it('high stress reduces wellness index', () => {
-    const lowStress = makeSubjective({ mood: 4, energyLevel: 4, perceivedSoreness: 2, stressLevel: 1 });
+    const lowStress = makeSubjective({
+      mood: 4,
+      energyLevel: 4,
+      perceivedSoreness: 2,
+      stressLevel: 1,
+    });
     const highStress = makeSubjective({
       mood: 4,
       energyLevel: 4,

@@ -60,7 +60,7 @@ describe('resolveGarminExerciseRef', () => {
 });
 
 describe('buildStrengthWorkoutPayload', () => {
-  it('builds a repeat group with reps and rest', () => {
+  it('builds a repeat group with reps and Lap rest after every set including last', () => {
     const { payload, mappedCount, skipped } = buildStrengthWorkoutPayload({
       workoutName: 'Upper',
       sets: [
@@ -68,7 +68,7 @@ describe('buildStrengthWorkoutPayload', () => {
           exercise: 'Pompe',
           sets: 3,
           reps: 10,
-          restSec: 90,
+          restMode: 'lap',
           garmin: { category: 'PUSH_UP', exerciseName: 'PUSH_UP' },
         },
       ],
@@ -82,22 +82,51 @@ describe('buildStrengthWorkoutPayload', () => {
     const [group] = segment.workoutSteps as Array<{
       type: string;
       numberOfIterations: number;
+      skipLastRestStep: boolean;
       workoutSteps: Array<{
         category?: string;
         exerciseName?: string;
-        endCondition: { conditionTypeKey: string };
-        endConditionValue: number;
+        endCondition: { conditionTypeKey: string; conditionTypeId?: number };
+        endConditionValue: number | null;
       }>;
     }>;
 
     expect(group.type).toBe('RepeatGroupDTO');
     expect(group.numberOfIterations).toBe(3);
+    expect(group.skipLastRestStep).toBe(false);
     expect(group.workoutSteps[0]).toMatchObject({
       category: 'PUSH_UP',
       exerciseName: 'PUSH_UP',
       endCondition: { conditionTypeKey: 'reps' },
       endConditionValue: 10,
     });
+    expect(group.workoutSteps[1]).toMatchObject({
+      endCondition: { conditionTypeKey: 'lap.button', conditionTypeId: 1 },
+      endConditionValue: null,
+    });
+  });
+
+  it('uses timed rest when restMode is time', () => {
+    const { payload } = buildStrengthWorkoutPayload({
+      workoutName: 'Upper',
+      sets: [
+        {
+          exercise: 'Pompe',
+          sets: 2,
+          reps: 10,
+          restMode: 'time',
+          restSec: 90,
+          garmin: { category: 'PUSH_UP', exerciseName: 'PUSH_UP' },
+        },
+      ],
+    });
+    const [segment] = payload.workoutSegments as Array<{ workoutSteps: unknown[] }>;
+    const [group] = segment.workoutSteps as Array<{
+      workoutSteps: Array<{
+        endCondition: { conditionTypeKey: string };
+        endConditionValue: number;
+      }>;
+    }>;
     expect(group.workoutSteps[1]).toMatchObject({
       endCondition: { conditionTypeKey: 'time' },
       endConditionValue: 90,
@@ -119,12 +148,15 @@ describe('buildStrengthWorkoutPayload', () => {
     });
 
     const [segment] = payload.workoutSegments as Array<{ workoutSteps: unknown[] }>;
-    const [step] = segment.workoutSteps as Array<{
-      endCondition: { conditionTypeKey: string };
-      endConditionValue: number;
+    const [group] = segment.workoutSteps as Array<{
+      workoutSteps: Array<{
+        endCondition: { conditionTypeKey: string };
+        endConditionValue: number | null;
+      }>;
     }>;
-    expect(step.endCondition.conditionTypeKey).toBe('time');
-    expect(step.endConditionValue).toBe(60);
+    expect(group.workoutSteps[0].endCondition.conditionTypeKey).toBe('time');
+    expect(group.workoutSteps[0].endConditionValue).toBe(60);
+    expect(group.workoutSteps[1].endCondition.conditionTypeKey).toBe('lap.button');
   });
 
   it('falls back to UNKNOWN for unmapped exercises instead of dropping them', () => {

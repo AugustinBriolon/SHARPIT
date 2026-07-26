@@ -1,5 +1,6 @@
 import { GarminConnect, type IGarminTokens } from '@flow-js/garmin-connect';
 import { format } from 'date-fns';
+import { pickCurrentBodyBattery } from '@/lib/integrations/garmin-body-battery';
 
 export type GarminTokens = IGarminTokens;
 
@@ -420,20 +421,15 @@ async function fetchStressAndBattery(
       `https://connectapi.garmin.com/wellness-service/wellness/dailyStress/${ds}`,
     )) as {
       avgStressLevel?: number | null;
+      bodyBatteryMostRecentValue?: number | null;
       bodyBatteryValuesArray?: Array<Array<number | string>>;
     } | null;
 
     const stress =
       typeof r?.avgStressLevel === 'number' && r.avgStressLevel >= 0 ? r.avgStressLevel : null;
 
-    // Format: [timestamp, statut, niveau, version] -> niveau à l'index 2
-    let bodyBattery: number | null = null;
-    for (const entry of r?.bodyBatteryValuesArray ?? []) {
-      const level = Number(entry?.[2]);
-      if (!Number.isNaN(level) && (bodyBattery == null || level > bodyBattery)) {
-        bodyBattery = level;
-      }
-    }
+    // Current / most-recent Body Battery (Garmin Connect parity) — not the day peak.
+    const bodyBattery = pickCurrentBodyBattery(r);
 
     return { stress, bodyBattery };
   } catch {
@@ -457,7 +453,9 @@ async function fetchTotalSteps(client: GCClient, date: Date): Promise<number | n
       `https://connectapi.garmin.com/usersummary-service/stats/steps/daily/${ds}/${ds}`,
     )) as GarminDailyStepsRow[] | GarminDailyStepsRow | null;
 
-    const rows = Array.isArray(payload) ? payload : payload ? [payload] : [];
+    let rows: GarminDailyStepsRow[] = [];
+    if (Array.isArray(payload)) rows = payload;
+    else if (payload) rows = [payload];
     const match = rows.find((row) => row.calendarDate === ds) ?? rows[0];
     const steps = match?.totalSteps;
     return typeof steps === 'number' && Number.isFinite(steps) && steps >= 0

@@ -87,4 +87,26 @@ describe('buildTodayDaySummary', () => {
     expect(summary.isEmpty).toBe(true);
     expect(summary.lines).toHaveLength(0);
   });
+
+  it('hides planned sessions once linked even if completed flag lags', () => {
+    const summary = buildTodayDaySummary(
+      TODAY,
+      [
+        activity({
+          id: 'a1',
+          title: 'Ride',
+          plannedSession: {
+            id: 'p1',
+            title: 'Endurance vélo',
+          } as ClientActivity['plannedSession'],
+        }),
+      ],
+      [planned({ id: 'p1', title: 'Endurance vélo', completed: false, activityId: null })],
+    );
+
+    expect(summary.lines).toHaveLength(1);
+    expect(summary.lines[0]?.kind).toBe('done');
+    expect(summary.lines[0]?.primary).toContain('Endurance vélo');
+    expect(summary.sectionLabel).not.toContain('à venir');
+  });
 });

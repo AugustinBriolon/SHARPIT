@@ -81,4 +81,43 @@ describe('buildEffortStrainComposition', () => {
     expect(view.available).toBe(false);
     expect(view.contributors.every((c) => !c.available)).toBe(true);
   });
+
+  it('does not label an available training contribution as empty', () => {
+    const view = buildEffortStrainComposition(
+      makeStrain({
+        dominantContributor: 'TRAINING',
+        contributions: {
+          training: {
+            available: true,
+            contributor: 'TRAINING',
+            load: 47,
+            score: 12,
+            confidence: 0.6,
+            source: 'LEGACY_SOURCE_TSS',
+          },
+          cardiovascular: {
+            available: false,
+            contributor: 'CARDIOVASCULAR',
+            load: null,
+            score: null,
+            confidence: 0,
+            source: 'UNKNOWN',
+          },
+          movement: {
+            available: false,
+            contributor: 'MOVEMENT',
+            load: null,
+            score: null,
+            confidence: 0,
+            source: 'UNKNOWN',
+          },
+        },
+      }),
+    );
+
+    const training = view.contributors.find((c) => c.key === 'training');
+    expect(training?.available).toBe(true);
+    expect(training?.description).toBe('Activités du jour');
+    expect(training?.description).not.toMatch(/Aucune/);
+  });
 });

@@ -7,12 +7,15 @@ import {
 } from '@/components/planning/location-place-picker';
 import { PlannedSessionReadView } from '@/components/planning/session/planned-session-read-view';
 import { PlannedSessionNavDismissProvider } from '@/components/planning/session/planned-session-nav-dismiss';
+import { SessionAccessoriesPicker } from '@/components/planning/session/session-accessories-picker';
 import {
   StrengthPrescriptionEditor,
   draftFromStrengthPrescription,
   strengthPrescriptionFromDraft,
   type StrengthPrescriptionDraftRow,
 } from '@/components/planning/session/strength-prescription-editor';
+import type { EquipmentItemId } from '@/lib/equipment/catalog';
+import { parseSessionAccessories } from '@/lib/planned-session/session-accessories';
 import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -123,16 +126,10 @@ function submitButtonLabel(pending: boolean, isEdit: boolean, createMode: Create
   return 'Planifier';
 }
 
-function dialogTitle(
-  isEdit: boolean,
-  mode: DialogMode,
-  hasActivity: boolean,
-  omitLinkedActivityNavigation: boolean,
-): string {
+function dialogTitle(isEdit: boolean, mode: DialogMode, isLinked: boolean): string {
   if (!isEdit) return 'Planifier une séance';
   if (mode === 'edit') return 'Modifier la séance';
-  if (omitLinkedActivityNavigation) return 'Séance planifiée';
-  return hasActivity ? 'Séance réalisée' : 'Séance planifiée';
+  return isLinked ? 'Séance réalisée' : 'Séance planifiée';
 }
 
 interface PlannedSessionDialogProps {
@@ -180,6 +177,9 @@ export function PlannedSessionDialog({
   const [legs, setLegs] = useState<BrickLegForm[]>(defaultBrickLegs);
   const [strengthRows, setStrengthRows] = useState<StrengthPrescriptionDraftRow[]>(() =>
     draftFromStrengthPrescription(parseStrengthPrescription(session?.strengthPrescription)),
+  );
+  const [accessories, setAccessories] = useState<EquipmentItemId[]>(() =>
+    parseSessionAccessories(session?.accessories),
   );
   const [error, setError] = useState<string | null>(null);
   const { confirm, dialog } = useConfirmDialog();
@@ -255,6 +255,7 @@ export function PlannedSessionDialog({
     setStrengthRows(
       draftFromStrengthPrescription(parseStrengthPrescription(session.strengthPrescription)),
     );
+    setAccessories(parseSessionAccessories(session.accessories));
   }
 
   function resolveStrengthPrescriptionPayload(description: string | null) {
@@ -351,12 +352,23 @@ export function PlannedSessionDialog({
       setError(err instanceof Error ? err.message : 'Erreur');
     };
 
+    if (createMode === 'single' && type === ActivityType.STRENGTH) {
+      if (!strengthPrescriptionFromDraft(strengthRows)) {
+        setError('Ajoute au moins un exercice pour la séance de musculation.');
+        return;
+      }
+    }
+
     if (isEdit && session) {
       const durationRaw = formData.get('durationMin');
       const loadRaw = formData.get('load');
       const location = resolveLocationPayload();
       const descriptionRaw = (formData.get('description') as string) || null;
       const strength = resolveStrengthPrescriptionPayload(descriptionRaw);
+      if (type !== ActivityType.STRENGTH && !(strength.description ?? '').trim()) {
+        setError('Le déroulé de la séance est requis (description).');
+        return;
+      }
       update.mutate(
         {
           id: session.id,
@@ -367,6 +379,7 @@ export function PlannedSessionDialog({
             title: (formData.get('title') as string) || null,
             description: strength.description,
             strengthPrescription: strength.strengthPrescription,
+            accessories: accessories.length > 0 ? accessories : null,
             durationMin: durationRaw ? Number(durationRaw) : null,
             load: loadRaw ? Number(loadRaw) : null,
             intensity,
@@ -415,6 +428,10 @@ export function PlannedSessionDialog({
     const location = resolveLocationPayload();
     const descriptionRaw = (formData.get('description') as string) || null;
     const strength = resolveStrengthPrescriptionPayload(descriptionRaw);
+    if (type !== ActivityType.STRENGTH && !(strength.description ?? '').trim()) {
+      setError('Le déroulé de la séance est requis (description).');
+      return;
+    }
     create.mutate(
       {
         type,
@@ -423,6 +440,7 @@ export function PlannedSessionDialog({
         title: (formData.get('title') as string) || null,
         description: strength.description,
         strengthPrescription: strength.strengthPrescription,
+        accessories: accessories.length > 0 ? accessories : null,
         durationMin: durationRaw ? Number(durationRaw) : null,
         load: loadRaw ? Number(loadRaw) : null,
         intensity,
@@ -465,8 +483,7 @@ export function PlannedSessionDialog({
                 {dialogTitle(
                   isEdit,
                   mode,
-                  Boolean(session?.activity),
-                  omitLinkedActivityNavigation,
+                  Boolean(liveSession?.activityId ?? liveSession?.activity ?? session?.activityId),
                 )}
               </DialogTitle>
             </DialogHeader>
@@ -740,16 +757,22 @@ export function PlannedSessionDialog({
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="description">Description</Label>
+                        <Label htmlFor="description">
+                          Déroulé
+                          {type !== ActivityType.STRENGTH ? (
+                            <span className="text-destructive"> *</span>
+                          ) : null}
+                        </Label>
                         <Textarea
                           defaultValue={session?.description ?? ''}
                           id="description"
                           name="description"
-                          rows={2}
+                          required={type !== ActivityType.STRENGTH}
+                          rows={3}
                           placeholder={
                             type === ActivityType.STRENGTH
                               ? 'Notes libres (sinon résumé auto des exercices)'
-                              : "3×10' au seuil, récup 3'…"
+                              : "3×10' au seuil, récup 3'… — détaille le déroulé"
                           }
                         />
                       </div>
@@ -757,9 +780,16 @@ export function PlannedSessionDialog({
                       {type === ActivityType.STRENGTH ? (
                         <StrengthPrescriptionEditor
                           rows={strengthRows}
+                          required
                           onChange={setStrengthRows}
                         />
                       ) : null}
+
+                      <SessionAccessoriesPicker
+                        selected={accessories}
+                        type={type}
+                        onChange={setAccessories}
+                      />
                     </>
                   ) : (
                     <div className="space-y-3">

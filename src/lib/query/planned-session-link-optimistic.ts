@@ -26,14 +26,21 @@ export function applyPlannedSessionLinkOptimistic(
       } as ClientPlannedSession;
     }
 
-    const activity =
+    const activityFromCache =
       activities?.find((item) => item.id === activityId) ??
       (session.activity?.id === activityId ? session.activity : null);
+
+    // Stub keeps `session.activity` truthy when activities cache is cold —
+    // UI treats nested activity as the linked gate in several places.
+    const activity = (activityFromCache ??
+      ({ id: activityId } as NonNullable<
+        ClientPlannedSession['activity']
+      >)) as ClientPlannedSession['activity'];
 
     return {
       ...session,
       activityId,
-      activity: activity as ClientPlannedSession['activity'],
+      activity,
       completed: true,
       updatedAt: new Date(),
     } as ClientPlannedSession;

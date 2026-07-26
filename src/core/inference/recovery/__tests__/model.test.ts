@@ -41,7 +41,12 @@ function makeRecovery(overrides: Partial<RecoveryFeatureSet> = {}): RecoveryFeat
     rhrAbsolute: 48,
     rhrDeltaFromBaseline: 0,
     subjectiveWellnessIndex: 7.5,
-    subjectiveWellnessComponents: { mood: 4, energyLevel: 4, perceivedSoreness: 3, stressLevel: null },
+    subjectiveWellnessComponents: {
+      mood: 4,
+      energyLevel: 4,
+      perceivedSoreness: 3,
+      stressLevel: null,
+    },
     rpeVsTargetZone: 0,
     avgStressDuringSleep: null,
     confidence: 0.85,

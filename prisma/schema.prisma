@@ -444,7 +444,7 @@ model DailyHealth {
   hrvStatus         String? // BALANCED / UNBALANCED_LOW / ...
   hrvBaselineLow    Int? // borne basse de la zone équilibrée
   hrvBaselineHigh   Int? // borne haute de la zone équilibrée
-  bodyBattery       Int? // niveau d'énergie le plus haut du jour
+  bodyBattery       Int? // Body Battery actuel / plus récent (aligné Garmin Connect)
   totalSteps        Int? // pas quotidiens Garmin (mouvement de fond)
 
   createdAt DateTime @default(now())
@@ -1114,6 +1114,8 @@ model PlannedSession {
   description String?
   /// Structured strength prescription (sets/reps) — STRENGTH only. Not an engine output.
   strengthPrescription Json?
+  /// Session-specific accessories (EquipmentItemId[]) — athlete prep checklist.
+  accessories Json?
   durationMin Int? // durée prévue en minutes
   load        Float? // charge / TSS prévue
   intensity   SessionIntensity?

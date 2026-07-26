@@ -110,6 +110,8 @@ Body Battery is Garmin's proprietary energy tracking metric. It integrates stres
 - Maximum charge: ~100 (after excellent sleep, full recovery)
 - Morning value correlates with prior night sleep quality
 
+**Ingestion:** SHARPIT stores the **current / most-recent** Body Battery for the day (`bodyBatteryMostRecentValue`, else last sample in `bodyBatteryValuesArray`) — the same figure Garmin Connect shows — not the day peak.
+
 **SHARPIT's use:** soft corroboration of readiness (never a primary Recovery Model dimension — Level 6 proprietary) and cardiovascular contributor to daily strain. Thresholds: ≥70 good, ≥40 moderate, <40 low. These are empirical SHARPIT product choices.
 
 ### Sleep Staging

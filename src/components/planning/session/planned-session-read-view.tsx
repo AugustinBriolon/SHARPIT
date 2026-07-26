@@ -7,6 +7,7 @@ import {
   PlannedSessionContextPanelSkeleton,
 } from '@/components/planning/session/planned-session-context-panel';
 import { MorningProposalCompare } from '@/components/planning/session/morning-proposal-compare';
+import { SessionAccessoriesSection } from '@/components/planning/session/session-accessories-section';
 import { SessionRealization } from '@/components/planning/session/session-realization';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/toast';
@@ -110,7 +111,8 @@ export function PlannedSessionReadView({
       ? new Date(session.garminWorkoutPushedAt).toISOString()
       : null,
   });
-  const isRealized = Boolean(session.activity) && !omitLinkedActivityNavigation;
+  // Linked = activityId (or nested activity). omitLinkedActivityNavigation only hides nav.
+  const isRealized = Boolean(session.activityId ?? session.activity);
   const goal = goals.find((g) => g.id === session.goalId);
   const showExposure = sportSupportsOutdoorContext(session.type);
   const exposure = session.exposureSetting as 'INDOOR' | 'OUTDOOR' | 'UNKNOWN' | null | undefined;
@@ -275,11 +277,6 @@ export function PlannedSessionReadView({
           {session.title?.trim() || activityTypeLabels[session.type]}
         </h2>
         <p className="text-data text-muted-foreground text-xs">{dateLabel}</p>
-        {!morningProposal && session.description ? (
-          <p className="text-muted-foreground line-clamp-2 text-sm leading-relaxed">
-            {session.description}
-          </p>
-        ) : null}
       </header>
 
       {morningProposal ? (
@@ -287,6 +284,36 @@ export function PlannedSessionReadView({
       ) : (
         <KeyChipsRow chips={chips} />
       )}
+
+      {!morningProposal ? (
+        <div className="border-analysis-border/60 space-y-1.5 rounded-lg border p-3">
+          <p className="text-foreground/85 text-sm font-medium">Déroulé</p>
+          {session.description?.trim() ? (
+            <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
+              {session.description}
+            </p>
+          ) : null}
+          {!session.description?.trim() &&
+          session.type === ActivityType.STRENGTH &&
+          prescription ? (
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              Voir les exercices prescrits ci-dessous.
+            </p>
+          ) : null}
+          {!session.description?.trim() &&
+          !(session.type === ActivityType.STRENGTH && prescription) ? (
+            <p className="text-muted-foreground/70 text-sm italic">Aucun déroulé renseigné.</p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <SessionAccessoriesSection
+        accessories={session.accessories}
+        description={session.description}
+        strengthPrescription={session.strengthPrescription}
+        title={session.title}
+        type={session.type}
+      />
 
       {session.type === ActivityType.STRENGTH && prescription ? (
         <div className="border-analysis-border/60 space-y-2 rounded-lg border p-3">
@@ -334,6 +361,10 @@ export function PlannedSessionReadView({
                     : `${set.sets}×${set.reps}`;
                 const weight =
                   set.weightKg != null && set.weightKg > 0 ? ` @ ${set.weightKg} kg` : '';
+                const restLabel =
+                  set.restMode === 'time' && set.restSec != null && set.restSec > 0
+                    ? `Repos ${set.restSec}s`
+                    : 'Repos Lap';
                 const watch = strengthSetWatchCompat(set);
                 return (
                   <li
@@ -349,6 +380,7 @@ export function PlannedSessionReadView({
                         {weight}
                       </span>
                     </div>
+                    <p className="text-muted-foreground/80 text-[10px] leading-snug">{restLabel}</p>
                     <p
                       className={cn(
                         'text-[10px] leading-snug',

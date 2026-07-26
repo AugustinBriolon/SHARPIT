@@ -9,6 +9,9 @@ export const strengthPrescriptionGarminSchema = z.object({
   confidence: z.enum(['exact', 'alias', 'fuzzy']),
 });
 
+export const strengthRestModeSchema = z.enum(['lap', 'time']);
+export type StrengthRestMode = z.infer<typeof strengthRestModeSchema>;
+
 /** One planned strength movement (aggregated sets, same shape as realized StrengthSet). */
 export const strengthPrescriptionSetSchema = z.object({
   exercise: z.string().trim().min(1).max(120),
@@ -17,7 +20,14 @@ export const strengthPrescriptionSetSchema = z.object({
   reps: z.coerce.number().int().min(0).max(500),
   durationSec: z.coerce.number().int().min(0).max(3600).optional().nullable(),
   weightKg: z.coerce.number().min(0).max(1000).optional().nullable(),
+  /** Timed rest seconds — only used when restMode === 'time'. */
   restSec: z.coerce.number().int().min(0).max(3600).optional().nullable(),
+  /**
+   * How rest ends on the watch.
+   * - lap (default): athlete presses Lap — open-ended rest
+   * - time: countdown in seconds (restSec)
+   */
+  restMode: strengthRestModeSchema.optional().nullable(),
   notes: z.string().trim().max(240).optional().nullable(),
   order: z.coerce.number().int().min(0).max(200),
   garmin: strengthPrescriptionGarminSchema.optional().nullable(),
@@ -67,6 +77,12 @@ export const coachStrengthSetSchema = z.object({
     .nullable()
     .optional()
     .describe('Charge cible en kg si pertinente, sinon null.'),
+  restMode: strengthRestModeSchema
+    .nullable()
+    .optional()
+    .describe(
+      'Fin de repos montre : "lap" (bouton Lap, défaut recommandé) ou "time" (chronométré).',
+    ),
   restSec: z
     .number()
     .int()
@@ -74,7 +90,7 @@ export const coachStrengthSetSchema = z.object({
     .max(600)
     .nullable()
     .optional()
-    .describe('Repos entre séries en secondes (souvent 60–120).'),
+    .describe('Repos chronométré en secondes si restMode=time. Ignoré si lap.'),
   notes: z.string().trim().max(240).nullable().optional().describe('Consigne courte optionnelle.'),
 });
 
@@ -160,6 +176,13 @@ export function normalizeCoachStrengthPrescription(
     .map((set, order) => {
       const exercise = set.exercise?.trim();
       if (!exercise) return null;
+      // Legacy coach payloads only sent restSec — treat that as timed rest.
+      let restMode: StrengthRestMode = 'lap';
+      if (set.restMode === 'lap') {
+        restMode = 'lap';
+      } else if (set.restMode === 'time' || (set.restSec != null && set.restSec > 0)) {
+        restMode = 'time';
+      }
       return {
         exercise,
         exerciseCatalogId: null,
@@ -167,7 +190,8 @@ export function normalizeCoachStrengthPrescription(
         reps: set.reps,
         durationSec: set.durationSec ?? null,
         weightKg: set.weightKg ?? null,
-        restSec: set.restSec ?? 90,
+        restMode,
+        restSec: restMode === 'time' ? (set.restSec ?? 90) : null,
         notes: set.notes ?? null,
         order,
         garmin: null,
