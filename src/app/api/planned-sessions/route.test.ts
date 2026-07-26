@@ -30,6 +30,7 @@ const BASE_BODY = {
   intensity: 'ENDURANCE',
   durationMin: 45,
   load: 40,
+  description: 'Footing Z2 45 min',
 };
 
 describe('POST /api/planned-sessions', () => {
