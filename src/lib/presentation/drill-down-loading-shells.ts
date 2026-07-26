@@ -1,5 +1,6 @@
 import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';
 import type { DimensionResult } from '@/hooks/use-today';
+import { buildEffortStrainComposition } from '@/lib/presentation/effort-strain-composition';
 
 const EMPTY_DIM: DimensionResult = { score: null, status: 'PENDING', available: false };
 
@@ -107,6 +108,7 @@ export function effortLoadingShell() {
     strainScore: null as number | null,
     dailyLoad: 0,
     weeklyLoad: 0,
+    strainComposition: buildEffortStrainComposition(null),
     fatigueType: 'UNDETERMINED',
     fatigueTypeLabel: null as string | null,
     performancePercent: null as number | null,

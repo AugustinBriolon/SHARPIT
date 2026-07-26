@@ -6,12 +6,15 @@ import type {
   PresentationSection,
 } from '@/core/presentation/types';
 import type { DimensionResult } from '@/hooks/use-today';
+import type { EffortStrainCompositionView } from '@/lib/presentation/effort-strain-composition';
 import type { FatigueType, TrainingCapacity } from '@/lib/today/today-mapping';
 
 export type EffortViewModel = {
   strainScore: number | null;
   dailyLoad: number;
   weeklyLoad: number;
+  /** Daily strain composition (training / Garmin cardio / steps) — display only. */
+  strainComposition: EffortStrainCompositionView;
   fatigueType: FatigueType | string;
   /** Label déjà résolu (côté serveur) pour éviter toute interprétation côté client. */
   fatigueTypeLabel: string | null;
