@@ -185,7 +185,7 @@ export function PlannedSessionDialog({
     draftFromStrengthPrescription(parseStrengthPrescription(session?.strengthPrescription)),
   );
   const [accessories, setAccessories] = useState<EquipmentItemId[]>(() =>
-    parseSessionAccessories(session?.accessories),
+    parseSessionAccessories((session as { accessories?: unknown } | null | undefined)?.accessories),
   );
   const [error, setError] = useState<string | null>(null);
   const { confirm, dialog } = useConfirmDialog();
@@ -261,7 +261,7 @@ export function PlannedSessionDialog({
     setStrengthRows(
       draftFromStrengthPrescription(parseStrengthPrescription(session.strengthPrescription)),
     );
-    setAccessories(parseSessionAccessories(session.accessories));
+    setAccessories(parseSessionAccessories((session as { accessories?: unknown }).accessories));
   }
 
   function resolveStrengthPrescriptionPayload(description: string | null) {

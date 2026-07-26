@@ -302,7 +302,7 @@ export function PlannedSessionReadView({
       ) : null}
 
       <SessionAccessoriesSection
-        accessories={session.accessories}
+        accessories={(session as { accessories?: unknown }).accessories}
         description={session.description}
         strengthPrescription={session.strengthPrescription}
         title={session.title}
