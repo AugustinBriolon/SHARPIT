@@ -24,7 +24,10 @@ function toDate(value: Date | string | null | undefined): Date | null {
   return value instanceof Date ? value : new Date(value);
 }
 
-function coalesceField<T>(seedValue: T | null | undefined, baseValue: T | null | undefined): T | null {
+function coalesceField<T>(
+  seedValue: T | null | undefined,
+  baseValue: T | null | undefined,
+): T | null {
   if (seedValue !== undefined && seedValue !== null) return seedValue;
   if (baseValue !== undefined && baseValue !== null) return baseValue;
   return seedValue ?? baseValue ?? null;

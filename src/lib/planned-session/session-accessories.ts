@@ -101,9 +101,9 @@ export function resolveSessionAccessories(input: {
   const exerciseNames =
     prescription?.sets.map((set) => set.exercise) ??
     (Array.isArray((input.strengthPrescription as { sets?: unknown } | null)?.sets)
-      ? (
-          (input.strengthPrescription as { sets: Array<{ exercise?: string }> }).sets ?? []
-        ).map((set) => set.exercise ?? '')
+      ? ((input.strengthPrescription as { sets: Array<{ exercise?: string }> }).sets ?? []).map(
+          (set) => set.exercise ?? '',
+        )
       : []);
 
   const haystack = [input.title ?? '', input.description ?? '', ...exerciseNames]

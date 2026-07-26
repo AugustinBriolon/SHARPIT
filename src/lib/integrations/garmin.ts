@@ -453,7 +453,9 @@ async function fetchTotalSteps(client: GCClient, date: Date): Promise<number | n
       `https://connectapi.garmin.com/usersummary-service/stats/steps/daily/${ds}/${ds}`,
     )) as GarminDailyStepsRow[] | GarminDailyStepsRow | null;
 
-    const rows = Array.isArray(payload) ? payload : payload ? [payload] : [];
+    let rows: GarminDailyStepsRow[] = [];
+    if (Array.isArray(payload)) rows = payload;
+    else if (payload) rows = [payload];
     const match = rows.find((row) => row.calendarDate === ds) ?? rows[0];
     const steps = match?.totalSteps;
     return typeof steps === 'number' && Number.isFinite(steps) && steps >= 0

@@ -33,7 +33,9 @@ export function applyPlannedSessionLinkOptimistic(
     // Stub keeps `session.activity` truthy when activities cache is cold —
     // UI treats nested activity as the linked gate in several places.
     const activity = (activityFromCache ??
-      ({ id: activityId } as NonNullable<ClientPlannedSession['activity']>)) as ClientPlannedSession['activity'];
+      ({ id: activityId } as NonNullable<
+        ClientPlannedSession['activity']
+      >)) as ClientPlannedSession['activity'];
 
     return {
       ...session,

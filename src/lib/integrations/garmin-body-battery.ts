@@ -27,7 +27,9 @@ function levelFromEntry(entry: Array<number | string> | null | undefined): numbe
 /**
  * Prefer Garmin’s most-recent scalar; otherwise the last valid sample in the day series.
  */
-export function pickCurrentBodyBattery(payload: GarminBodyBatteryPayload | null | undefined): number | null {
+export function pickCurrentBodyBattery(
+  payload: GarminBodyBatteryPayload | null | undefined,
+): number | null {
   if (!payload) return null;
 
   const recent = finiteLevel(payload.bodyBatteryMostRecentValue);

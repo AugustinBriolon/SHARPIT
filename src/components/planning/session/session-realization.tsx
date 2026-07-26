@@ -218,7 +218,9 @@ export function SessionRealization({
   }, [session.analysis, session.analyzedAt, session.id, session.activityId]);
 
   const hasAnalysis = Boolean(analysis && analyzedAt);
-  const isPendingScheduled = Boolean(isLinked && !hasAnalysis && !analyze.isPending && !pollTimedOut);
+  const isPendingScheduled = Boolean(
+    isLinked && !hasAnalysis && !analyze.isPending && !pollTimedOut,
+  );
 
   // Kick a client analyze once if still missing after remount (server `after` may have been killed).
   useEffect(() => {

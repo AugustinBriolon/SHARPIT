@@ -292,18 +292,23 @@ export function PlannedSessionReadView({
             <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
               {session.description}
             </p>
-          ) : session.type === ActivityType.STRENGTH && prescription ? (
+          ) : null}
+          {!session.description?.trim() &&
+          session.type === ActivityType.STRENGTH &&
+          prescription ? (
             <p className="text-muted-foreground text-sm leading-relaxed">
               Voir les exercices prescrits ci-dessous.
             </p>
-          ) : (
+          ) : null}
+          {!session.description?.trim() &&
+          !(session.type === ActivityType.STRENGTH && prescription) ? (
             <p className="text-muted-foreground/70 text-sm italic">Aucun déroulé renseigné.</p>
-          )}
+          ) : null}
         </div>
       ) : null}
 
       <SessionAccessoriesSection
-        accessories={(session as { accessories?: unknown }).accessories}
+        accessories={session.accessories}
         description={session.description}
         strengthPrescription={session.strengthPrescription}
         title={session.title}

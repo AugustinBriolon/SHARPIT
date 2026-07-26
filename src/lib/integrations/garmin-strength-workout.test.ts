@@ -122,7 +122,10 @@ describe('buildStrengthWorkoutPayload', () => {
     });
     const [segment] = payload.workoutSegments as Array<{ workoutSteps: unknown[] }>;
     const [group] = segment.workoutSteps as Array<{
-      workoutSteps: Array<{ endCondition: { conditionTypeKey: string }; endConditionValue: number }>;
+      workoutSteps: Array<{
+        endCondition: { conditionTypeKey: string };
+        endConditionValue: number;
+      }>;
     }>;
     expect(group.workoutSteps[1]).toMatchObject({
       endCondition: { conditionTypeKey: 'time' },

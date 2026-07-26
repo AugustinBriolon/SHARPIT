@@ -177,7 +177,7 @@ function buildRestStep(
   order: StepOrder,
   childStepId: number | null,
   set: StrengthWorkoutSetInput,
-): StepJson {
+): StepBag {
   const step = baseExecutable(order.nextOrder(), STEP_REST, childStepId);
   const mode = resolveRestMode(set);
   if (mode === 'time' && set.restSec != null && set.restSec > 0) {
@@ -203,7 +203,7 @@ export function buildStrengthWorkoutPayload(
   input: BuildStrengthWorkoutInput,
 ): BuildStrengthWorkoutResult {
   const order = new StepOrder();
-  const workoutSteps: StepJson[] = [];
+  const workoutSteps: StepBag[] = [];
   const skipped: BuildStrengthWorkoutResult['skipped'] = [];
   let mappedCount = 0;
 
@@ -220,7 +220,7 @@ export function buildStrengthWorkoutPayload(
     const iterations = Math.max(1, set.sets || 1);
     const childId = order.nextChildId();
     const groupOrder = order.nextOrder();
-    const children: StepJson[] = [
+    const children: StepBag[] = [
       buildExerciseStep(order, childId, set, garmin),
       buildRestStep(order, childId, set),
     ];

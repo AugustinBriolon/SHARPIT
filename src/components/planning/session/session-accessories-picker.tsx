@@ -38,13 +38,13 @@ export function SessionAccessoriesPicker({
           return (
             <button
               key={option.id}
+              type="button"
               className={cn(
                 'rounded-full border px-2.5 py-1 text-xs transition-colors',
                 active
                   ? 'border-primary/40 bg-primary/10 text-foreground'
                   : 'border-analysis-border/60 text-muted-foreground hover:text-foreground',
               )}
-              type="button"
               onClick={() => toggle(option.id)}
             >
               {option.label}

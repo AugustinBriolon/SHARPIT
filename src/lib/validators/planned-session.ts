@@ -106,10 +106,14 @@ export const updatePlannedSessionSchema = basePlannedSessionSchema
   .partial()
   .superRefine((data, ctx) => {
     // Only enforce when type/description/prescription are part of the patch.
-    if (data.type == null && data.description === undefined && data.strengthPrescription === undefined) {
+    if (
+      data.type == null &&
+      data.description === undefined &&
+      data.strengthPrescription === undefined
+    ) {
       return;
     }
-    const type = data.type;
+    const { type } = data;
     if (type == null) return;
     const issue = requireSessionDetails({
       type,

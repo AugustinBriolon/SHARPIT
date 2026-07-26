@@ -177,12 +177,12 @@ export function normalizeCoachStrengthPrescription(
       const exercise = set.exercise?.trim();
       if (!exercise) return null;
       // Legacy coach payloads only sent restSec — treat that as timed rest.
-      const restMode: StrengthRestMode =
-        set.restMode === 'lap'
-          ? 'lap'
-          : set.restMode === 'time' || (set.restSec != null && set.restSec > 0)
-            ? 'time'
-            : 'lap';
+      let restMode: StrengthRestMode = 'lap';
+      if (set.restMode === 'lap') {
+        restMode = 'lap';
+      } else if (set.restMode === 'time' || (set.restSec != null && set.restSec > 0)) {
+        restMode = 'time';
+      }
       return {
         exercise,
         exerciseCatalogId: null,
