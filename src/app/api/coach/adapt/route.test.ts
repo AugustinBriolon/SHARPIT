@@ -24,6 +24,7 @@ vi.mock('@/lib/integrations/google-sync', () => ({
 
 vi.mock('@/lib/queries', () => ({
   getGoalById: vi.fn().mockResolvedValue(null),
+  getGoals: vi.fn().mockResolvedValue([]),
   getActivitiesList: vi.fn().mockResolvedValue([]),
   getPlannedSessions: vi.fn().mockResolvedValue([]),
   getActiveTrainingPlan: vi.fn().mockResolvedValue(null),
