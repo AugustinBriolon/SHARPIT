@@ -165,6 +165,17 @@ describe('computeDailyStrain', () => {
     expect(result.tier).toBe('MOVEMENT');
   });
 
+  it('does not claim a steps source when steps are missing', () => {
+    const result = computeDailyStrain({
+      sessionFeatures: [],
+      legacyActivities: [],
+      healthSignals: { totalSteps: null },
+    });
+
+    expect(result.contributions.movement.available).toBe(false);
+    expect(result.contributions.movement.source).toBe('UNKNOWN');
+  });
+
   it('blends stress, body battery and steps into daily effort without inventing training', () => {
     const result = computeDailyStrain({
       sessionFeatures: [],

@@ -376,9 +376,6 @@ export function runRecoveryModel(
     finalScore = Math.round(finalScore * 0.9);
   }
 
-  // ── ReadinessCategory ─────────────────────────────────────────────────────
-  const category = mapScoreToCategory(finalScore, synthesis.availableCount);
-
   // ── Illness risk detection ─────────────────────────────────────────────────
   const illnessRisk: IllnessRisk = recovery ? computeIllnessRisk(recovery, load) : 'LOW';
 
@@ -388,13 +385,16 @@ export function runRecoveryModel(
     context.wearableEnergySignals,
   );
 
-  // Override to VERY_LOW when illness risk is HIGH
+  // Environmental demand, then illness cap — category must follow the final score
   const effectiveScore = capScoreForHighIllnessRisk(
     illnessRisk,
     applyEnvironmentalImpactToReadiness(wearableAdjusted, context.environmentalImpact ?? null),
   );
 
-  const effectiveCategory: ReadinessCategory = illnessRisk === 'HIGH' ? 'VERY_LOW' : category;
+  const effectiveCategory: ReadinessCategory =
+    illnessRisk === 'HIGH'
+      ? 'VERY_LOW'
+      : mapScoreToCategory(effectiveScore, synthesis.availableCount);
 
   // ── Signals ───────────────────────────────────────────────────────────────
   const overreachingRisk = computeOverreachingRisk(

@@ -445,16 +445,20 @@ async function fetchStressAndBattery(
  * Daily step count from Garmin stats (high-confidence movement signal).
  * Endpoint: /usersummary-service/stats/steps/daily/{start}/{end}
  */
+type GarminDailyStepsRow = {
+  calendarDate?: string;
+  totalSteps?: number | null;
+};
+
 async function fetchTotalSteps(client: GCClient, date: Date): Promise<number | null> {
   try {
     const ds = format(date, 'yyyy-MM-dd');
-    const rows = (await client.get(
+    const payload = (await client.get(
       `https://connectapi.garmin.com/usersummary-service/stats/steps/daily/${ds}/${ds}`,
-    )) as Array<{ calendarDate?: string; totalSteps?: number | null }> | null;
+    )) as GarminDailyStepsRow[] | GarminDailyStepsRow | null;
 
-    const match = Array.isArray(rows)
-      ? (rows.find((row) => row.calendarDate === ds) ?? rows[0])
-      : null;
+    const rows = Array.isArray(payload) ? payload : payload ? [payload] : [];
+    const match = rows.find((row) => row.calendarDate === ds) ?? rows[0];
     const steps = match?.totalSteps;
     return typeof steps === 'number' && Number.isFinite(steps) && steps >= 0
       ? Math.round(steps)

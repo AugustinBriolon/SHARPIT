@@ -397,17 +397,17 @@ function computeStepsMovementLoad(
   health: DailyStrainHealthSignals | null | undefined,
 ): DailyStrainContribution {
   const steps = health?.totalSteps;
-  if (steps == null || steps <= 0) return emptyContribution('MOVEMENT', 'DAILY_HEALTH_STEPS');
+  if (steps == null || steps <= 0) return emptyContribution('MOVEMENT');
 
   const load = clampRounded(Math.min(45, (clamp(steps, 0, 30_000) / 10_000) * 20));
-  const confidence = steps >= 1000 ? 0.7 : 0.45;
+  if (load <= 0) return emptyContribution('MOVEMENT');
 
   return {
-    available: load > 0,
+    available: true,
     contributor: 'MOVEMENT',
     load,
     score: dailyTssToStrainScore(load),
-    confidence,
+    confidence: steps >= 1000 ? 0.7 : 0.45,
     source: 'DAILY_HEALTH_STEPS',
   };
 }

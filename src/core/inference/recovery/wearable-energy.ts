@@ -12,6 +12,8 @@ import type { WearableEnergySignals } from './types';
 
 const MAX_DOWNWARD_DELTA = 12;
 const MAX_UPWARD_DELTA = 5;
+/** Stress at/above this blocks any Body Battery uplift (conservative bias). */
+const ELEVATED_STRESS_THRESHOLD = 45;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
@@ -25,7 +27,7 @@ function stressDownwardDelta(stress: number | null): number {
   if (stress == null) return 0;
   if (stress >= 75) return 10;
   if (stress >= 60) return 6;
-  if (stress >= 45) return 3;
+  if (stress >= ELEVATED_STRESS_THRESHOLD) return 3;
   return 0;
 }
 
@@ -57,12 +59,10 @@ export function applyWearableEnergyCorroboration(
   let batteryDelta = bodyBatteryDelta(signals.bodyBattery);
 
   // Never uplift when stress is meaningfully elevated.
-  if (signals.stress != null && signals.stress >= 45 && batteryDelta > 0) {
+  if (signals.stress != null && signals.stress >= ELEVATED_STRESS_THRESHOLD && batteryDelta > 0) {
     batteryDelta = 0;
   }
 
-  const rawDelta = stressDelta + batteryDelta;
-  const delta = clamp(rawDelta, -MAX_DOWNWARD_DELTA, MAX_UPWARD_DELTA);
-
+  const delta = clamp(stressDelta + batteryDelta, -MAX_DOWNWARD_DELTA, MAX_UPWARD_DELTA);
   return Math.round(clamp(readinessScore + delta, 0, 100));
 }

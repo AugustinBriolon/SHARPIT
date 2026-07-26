@@ -58,6 +58,22 @@ export type RecoveryInferenceResult = {
 // Input summary builder
 // ─────────────────────────────────────────────────────────────────────────────
 
+export type WearableEnergySignalsLoader = (
+  athleteId: string,
+  trainingDayId: string,
+) => Promise<WearableEnergySignals | null>;
+
+export type RecoveryOrchestratorDeps = {
+  featureEngine: FeatureEngine;
+  digitalTwinRepo: DigitalTwinRepository;
+  decisionRecordRepo: DecisionRecordRepository;
+  /**
+   * Optional loader for Garmin stress / Body Battery corroboration signals.
+   * Provided by the application layer (legacy DailyHealth bridge).
+   */
+  getWearableEnergySignals?: WearableEnergySignalsLoader;
+};
+
 /**
  * Extract the key feature values used for inference.
  * Stored in the Decision Record for future audit and explanation.
@@ -65,6 +81,7 @@ export type RecoveryInferenceResult = {
  */
 function buildInputSummary(
   features: import('@/core/features/types').DayFeatures,
+  context: RecoveryModelContext,
 ): Record<string, unknown> {
   const recovery = features.recovery !== 'PENDING' ? features.recovery : null;
   const load = features.load !== 'PENDING' ? features.load : null;
@@ -79,7 +96,9 @@ function buildInputSummary(
           rhrDeltaFromBaseline: recovery.rhrDeltaFromBaseline,
           sleepEfficiencyPercent: recovery.sleepEfficiencyPercent,
           sleepDebtMin: recovery.sleepDebtMin,
+          avgStressDuringSleep: recovery.avgStressDuringSleep,
           subjectiveWellnessIndex: recovery.subjectiveWellnessIndex,
+          subjectiveStressLevel: recovery.subjectiveWellnessComponents?.stressLevel ?? null,
           rpeVsTargetZone: recovery.rpeVsTargetZone,
           confidence: recovery.confidence,
         }
@@ -93,27 +112,29 @@ function buildInputSummary(
           confidence: load.confidence,
         }
       : null,
+    wearableEnergySignals: context.wearableEnergySignals ?? null,
     sessionCount: features.sessions.length,
   };
+}
+
+async function loadWearableEnergySignalsSafely(
+  loader: WearableEnergySignalsLoader | undefined,
+  athleteId: string,
+  trainingDayId: string,
+): Promise<WearableEnergySignals | null> {
+  if (!loader) return null;
+  try {
+    return await loader(athleteId, trainingDayId);
+  } catch (err) {
+    // Soft corroboration must never block Recovery inference.
+    console.error('[RecoveryOrchestrator] Failed to load wearable energy signals:', err);
+    return null;
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Orchestrator
 // ─────────────────────────────────────────────────────────────────────────────
-
-export type RecoveryOrchestratorDeps = {
-  featureEngine: FeatureEngine;
-  digitalTwinRepo: DigitalTwinRepository;
-  decisionRecordRepo: DecisionRecordRepository;
-  /**
-   * Optional loader for Garmin stress / Body Battery corroboration signals.
-   * Provided by the application layer (legacy DailyHealth bridge).
-   */
-  getWearableEnergySignals?: (
-    athleteId: string,
-    trainingDayId: string,
-  ) => Promise<WearableEnergySignals | null>;
-};
 
 export class RecoveryInferenceOrchestrator {
   constructor(private readonly deps: RecoveryOrchestratorDeps) {}
@@ -125,14 +146,17 @@ export class RecoveryInferenceOrchestrator {
   async run(athleteId: string, trainingDayId: string): Promise<RecoveryInferenceResult> {
     const computedAt = new Date();
 
-    // ── Step 1: Get DayFeatures ────────────────────────────────────────────
+    // ── Step 1: Get DayFeatures + Twin context ─────────────────────────────
     const [features, previousScore, environmentalImpact, wearableEnergySignals] =
       await Promise.all([
         this.deps.featureEngine.getDayFeatures(athleteId, trainingDayId),
         this.deps.digitalTwinRepo.getPreviousRecoveryScore(athleteId),
         this.deps.digitalTwinRepo.getEnvironmentalImpact(athleteId),
-        this.deps.getWearableEnergySignals?.(athleteId, trainingDayId) ??
-          Promise.resolve(null),
+        loadWearableEnergySignalsSafely(
+          this.deps.getWearableEnergySignals,
+          athleteId,
+          trainingDayId,
+        ),
       ]);
 
     // ── Step 2: Get previous recovery score for trend computation ──────────
@@ -163,7 +187,7 @@ export class RecoveryInferenceOrchestrator {
       stateUpdate: output.recoveryState as unknown as Record<string, unknown>,
       decision: output.decision as unknown as Record<string, unknown>,
       recommendation: output.recommendation as unknown as Record<string, unknown>,
-      inputSummary: buildInputSummary(features),
+      inputSummary: buildInputSummary(features, context),
       computedAt,
       createdAt: computedAt,
     };

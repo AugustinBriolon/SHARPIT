@@ -64,7 +64,7 @@ function makeDay(recovery: RecoveryFeatureSet = makeRecovery()): DayFeatures {
     recovery,
     body: 'PENDING',
     condition: 'PENDING',
-    computedAt: new Date('2026-07-02T08:00:00Z'),
+    retrievedAt: new Date('2026-07-02T08:00:00Z'),
   };
 }
 
@@ -137,5 +137,37 @@ describe('runRecoveryModel — wearable energy integration', () => {
     expect(withWearables.recoveryState.readinessScore!).toBeLessThan(
       baseline.recoveryState.readinessScore!,
     );
+  });
+
+  it('keeps readinessCategory aligned with the wearable-adjusted score', () => {
+    // Baseline lands near the ADEQUATE (≥70) band; strong wearable drag should reclassify.
+    const day = makeDay(
+      makeRecovery({
+        hrvDeltaFromBaseline: 0,
+        sleepEfficiencyPercent: 48,
+        sleepDebtMin: 40,
+        subjectiveWellnessIndex: 6.8,
+        avgStressDuringSleep: null,
+      }),
+    );
+    const baseline = runRecoveryModel(day, BASE_CTX);
+    const withWearables = runRecoveryModel(day, {
+      ...BASE_CTX,
+      wearableEnergySignals: { stress: 85, bodyBattery: 18 },
+    });
+
+    expect(baseline.recoveryState.readinessScore).not.toBeNull();
+    expect(withWearables.recoveryState.readinessScore).not.toBeNull();
+    expect(withWearables.recoveryState.readinessScore!).toBeLessThan(
+      baseline.recoveryState.readinessScore!,
+    );
+
+    if (
+      baseline.recoveryState.readinessScore! >= 70 &&
+      withWearables.recoveryState.readinessScore! < 70
+    ) {
+      expect(baseline.recoveryState.readinessCategory).toBe('ADEQUATE');
+      expect(withWearables.recoveryState.readinessCategory).toBe('REDUCED');
+    }
   });
 });

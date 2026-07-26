@@ -367,7 +367,7 @@ describe('extractRecoveryFeatures — subjectiveWellnessIndex', () => {
   });
 
   it('re-normalizes weights when only some dimensions are available', () => {
-    // Only mood available (weight 0.35 → normalized to 1.0)
+    // Only mood available (weight 0.30 → normalized to 1.0)
     const subj = makeSubjective({ mood: 5 });
     const result = extractRecoveryFeatures(null, null, null, subj, EMPTY_HISTORY, makeContext());
     // index = (mood=5 → 10/10) × 1.0 = 10.0
