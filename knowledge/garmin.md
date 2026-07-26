@@ -42,10 +42,10 @@ SHARPIT is deeply coupled to Garmin Connect as its primary data ingestion source
 | `restingHr`           | Resting HR from morning measurement | RHR trend alert                  | High       |
 | `hrv`                 | HRV value (RMSSD-like, ms)          | HRV trend analysis               | Medium     |
 | `hrvStatus`           | Garmin HRV classification           | Direct alert trigger             | Medium     |
-| `bodyBattery`         | Energy reserves 0-100               | Supplementary recovery indicator | Low        |
-| `stress`              | Average daily stress (0-100)        | Nocturnal stress alert           | Low        |
-| `stressQualification` | Stress category                     | Alert context                    | Low        |
-| `steps`               | Daily step count                    | Not currently used               | High       |
+| `bodyBattery`         | Energy reserves 0-100               | Soft readiness corroboration + daily cardiovascular strain | Low        |
+| `stress`              | Average daily stress (0-100)        | Soft readiness corroboration + daily cardiovascular strain | Low        |
+| `stressQualification` | Stress category                     | Alert context                                              | Low        |
+| `steps`               | Daily step count                    | Daily movement strain (NEAT / effort complement)           | High       |
 
 ### Sleep Metrics
 
@@ -110,7 +110,7 @@ Body Battery is Garmin's proprietary energy tracking metric. It integrates stres
 - Maximum charge: ~100 (after excellent sleep, full recovery)
 - Morning value correlates with prior night sleep quality
 
-**SHARPIT's use:** supplementary recovery indicator. Thresholds: ≥70 good, ≥40 moderate, <40 low. These are empirical SHARPIT product choices.
+**SHARPIT's use:** soft corroboration of readiness (never a primary Recovery Model dimension — Level 6 proprietary) and cardiovascular contributor to daily strain. Thresholds: ≥70 good, ≥40 moderate, <40 low. These are empirical SHARPIT product choices.
 
 ### Sleep Staging
 

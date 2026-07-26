@@ -27,7 +27,11 @@ import type { DigitalTwinRepository } from '@/core/digital-twin/repository';
 import type { DecisionRecordRepository } from './types';
 
 import { runRecoveryModel } from './recovery/model';
-import type { RecoveryModelOutput, RecoveryModelContext } from './recovery/types';
+import type {
+  RecoveryModelOutput,
+  RecoveryModelContext,
+  WearableEnergySignals,
+} from './recovery/types';
 import type { DecisionRecord } from './types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -101,6 +105,14 @@ export type RecoveryOrchestratorDeps = {
   featureEngine: FeatureEngine;
   digitalTwinRepo: DigitalTwinRepository;
   decisionRecordRepo: DecisionRecordRepository;
+  /**
+   * Optional loader for Garmin stress / Body Battery corroboration signals.
+   * Provided by the application layer (legacy DailyHealth bridge).
+   */
+  getWearableEnergySignals?: (
+    athleteId: string,
+    trainingDayId: string,
+  ) => Promise<WearableEnergySignals | null>;
 };
 
 export class RecoveryInferenceOrchestrator {
@@ -114,11 +126,14 @@ export class RecoveryInferenceOrchestrator {
     const computedAt = new Date();
 
     // ── Step 1: Get DayFeatures ────────────────────────────────────────────
-    const [features, previousScore, environmentalImpact] = await Promise.all([
-      this.deps.featureEngine.getDayFeatures(athleteId, trainingDayId),
-      this.deps.digitalTwinRepo.getPreviousRecoveryScore(athleteId),
-      this.deps.digitalTwinRepo.getEnvironmentalImpact(athleteId),
-    ]);
+    const [features, previousScore, environmentalImpact, wearableEnergySignals] =
+      await Promise.all([
+        this.deps.featureEngine.getDayFeatures(athleteId, trainingDayId),
+        this.deps.digitalTwinRepo.getPreviousRecoveryScore(athleteId),
+        this.deps.digitalTwinRepo.getEnvironmentalImpact(athleteId),
+        this.deps.getWearableEnergySignals?.(athleteId, trainingDayId) ??
+          Promise.resolve(null),
+      ]);
 
     // ── Step 2: Get previous recovery score for trend computation ──────────
     const context: RecoveryModelContext = {
@@ -126,6 +141,7 @@ export class RecoveryInferenceOrchestrator {
       trainingDayId,
       previousReadinessScore: previousScore,
       environmentalImpact,
+      wearableEnergySignals,
     };
 
     // ── Step 3: Run the Recovery Model (pure — no side effects) ───────────

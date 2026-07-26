@@ -275,6 +275,7 @@ export type SubjectiveWellnessComponents = {
   readonly mood: number | null; // 1–5 scale, raw
   readonly energyLevel: number | null; // 1–5 scale, raw
   readonly perceivedSoreness: number | null; // 0–10 scale, raw (higher = worse)
+  readonly stressLevel: number | null; // 1–5 scale, raw (higher = worse)
 };
 
 export type RecoveryFeatureSet = {
@@ -340,7 +341,7 @@ export type RecoveryFeatureSet = {
 
   /**
    * Composite wellness index (0–10) from subjective self-report.
-   * Weights: mood (0.35) + energy (0.35) + soreness_inverted (0.30).
+   * Weights: mood (0.30) + energy (0.35) + soreness_inverted (0.25) + stress_inverted (0.10).
    * Null when no subjective observation is available for the day.
    */
   readonly subjectiveWellnessIndex: number | null;
@@ -357,6 +358,12 @@ export type RecoveryFeatureSet = {
    * See INFERENCE_ARCHITECTURE_REVIEW.md §4.4.
    */
   readonly rpeVsTargetZone: number | null;
+
+  /**
+   * Average stress during overnight sleep (0–100), from Sleep observation.
+   * Used as a sleep-dimension modifier — not a proprietary readiness score.
+   */
+  readonly avgStressDuringSleep: number | null;
 
   // ── Feature metadata ──────────────────────────────────────────────────────
 

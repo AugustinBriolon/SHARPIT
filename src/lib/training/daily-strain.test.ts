@@ -146,6 +146,43 @@ describe('computeDailyStrain', () => {
     expect(result.contributions.cardiovascular.available).toBe(true);
     expect(result.dailyTss ?? 0).toBeGreaterThan(110);
   });
+
+  it('derives movement strain from Garmin daily steps on non-training days', () => {
+    const result = computeDailyStrain({
+      sessionFeatures: [],
+      legacyActivities: [],
+      healthSignals: {
+        totalSteps: 12_000,
+      },
+    });
+
+    expect(result.available).toBe(true);
+    expect(result.dominantContributor).toBe('MOVEMENT');
+    expect(result.contributions.movement.available).toBe(true);
+    expect(result.contributions.movement.source).toBe('DAILY_HEALTH_STEPS');
+    expect(result.contributions.movement.load).toBeGreaterThan(0);
+    expect(result.trace.movementSignals.totalSteps).toBe(12_000);
+    expect(result.tier).toBe('MOVEMENT');
+  });
+
+  it('blends stress, body battery and steps into daily effort without inventing training', () => {
+    const result = computeDailyStrain({
+      sessionFeatures: [],
+      legacyActivities: [],
+      healthSignals: {
+        stress: 50,
+        bodyBattery: 55,
+        totalSteps: 8_500,
+      },
+    });
+
+    expect(result.available).toBe(true);
+    expect(result.contributions.cardiovascular.available).toBe(true);
+    expect(result.contributions.movement.available).toBe(true);
+    expect(result.dailyTss ?? 0).toBeGreaterThan(
+      (result.contributions.cardiovascular.load ?? 0) * 0.5,
+    );
+  });
 });
 
 describe('dailyTssToStrainScore invariants', () => {

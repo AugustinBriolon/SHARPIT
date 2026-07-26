@@ -209,6 +209,13 @@ recovery dimension score. It is retained for cross-validation and historical com
 only. Its opacity disqualifies it as a first-class inference input.
 (Reference: ADR-003 — Garmin Primary Source Decision)
 
+**Soft corroboration (v1.1):** after dimension synthesis, Garmin daily stress and Body
+Battery may apply a **bounded** readiness adjustment (±12 pts max down, +5 max up) via
+`wearableEnergySignals` on `RecoveryModelContext`. This never feeds dimension scoring.
+Overnight sleep stress (`avgStressDuringSleep`) may modify the Sleep dimension only —
+it is an optical overnight measurement embedded in the Sleep observation, not Garmin's
+proprietary readiness algorithm.
+
 ---
 
 ## 5. Algorithm Specification — v1

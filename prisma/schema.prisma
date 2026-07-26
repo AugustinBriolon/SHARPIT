@@ -445,6 +445,7 @@ model DailyHealth {
   hrvBaselineLow    Int? // borne basse de la zone équilibrée
   hrvBaselineHigh   Int? // borne haute de la zone équilibrée
   bodyBattery       Int? // niveau d'énergie le plus haut du jour
+  totalSteps        Int? // pas quotidiens Garmin (mouvement de fond)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

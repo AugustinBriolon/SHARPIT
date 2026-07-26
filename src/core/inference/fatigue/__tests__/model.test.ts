@@ -70,8 +70,9 @@ function makeRecovery(overrides: Partial<RecoveryFeatureSet> = {}): RecoveryFeat
     rhrAbsolute: 48,
     rhrDeltaFromBaseline: 0,
     subjectiveWellnessIndex: 7.5,
-    subjectiveWellnessComponents: { mood: 4, energyLevel: 4, perceivedSoreness: 3 },
+    subjectiveWellnessComponents: { mood: 4, energyLevel: 4, perceivedSoreness: 3, stressLevel: null },
     rpeVsTargetZone: 0,
+    avgStressDuringSleep: null,
     confidence: 0.85,
     algorithmId: 'recovery-features-v1',
     sourceObsIds: [],
@@ -284,7 +285,7 @@ describe('scorePsychologicalFatigue', () => {
   it('mood=5, energy=5 → PsychFatigue = 50', () => {
     const result = scorePsychologicalFatigue(
       makeRecovery({
-        subjectiveWellnessComponents: { mood: 5, energyLevel: 5, perceivedSoreness: null },
+        subjectiveWellnessComponents: { mood: 5, energyLevel: 5, perceivedSoreness: null, stressLevel: null },
       }),
     );
     expect(result.score).toBe(50);
@@ -293,7 +294,7 @@ describe('scorePsychologicalFatigue', () => {
   it('mood=1, energy=1 → PsychFatigue = 90', () => {
     const result = scorePsychologicalFatigue(
       makeRecovery({
-        subjectiveWellnessComponents: { mood: 1, energyLevel: 1, perceivedSoreness: null },
+        subjectiveWellnessComponents: { mood: 1, energyLevel: 1, perceivedSoreness: null, stressLevel: null },
       }),
     );
     expect(result.score).toBe(90);
@@ -302,7 +303,7 @@ describe('scorePsychologicalFatigue', () => {
   it('mood only: mood=3 → PsychFatigue = 40', () => {
     const result = scorePsychologicalFatigue(
       makeRecovery({
-        subjectiveWellnessComponents: { mood: 3, energyLevel: null, perceivedSoreness: null },
+        subjectiveWellnessComponents: { mood: 3, energyLevel: null, perceivedSoreness: null, stressLevel: null },
       }),
     );
     expect(result.score).toBe(40);
@@ -372,7 +373,7 @@ describe('runFatigueModel — full model', () => {
     const features = makeDayFeatures({
       load: makeLoad({ acwr: 1.0, loadMonotony: 1.4 }),
       recovery: makeRecovery({
-        subjectiveWellnessComponents: { mood: 4, energyLevel: 4, perceivedSoreness: 2 },
+        subjectiveWellnessComponents: { mood: 4, energyLevel: 4, perceivedSoreness: 2, stressLevel: null },
         sleepDebtMin: 0,
       }),
     });
@@ -387,7 +388,7 @@ describe('runFatigueModel — full model', () => {
       load: makeLoad({ acwr: 1.5, loadMonotony: 2.2 }),
       recovery: makeRecovery({
         sleepDebtMin: 300,
-        subjectiveWellnessComponents: { mood: 2, energyLevel: 2, perceivedSoreness: 7 },
+        subjectiveWellnessComponents: { mood: 2, energyLevel: 2, perceivedSoreness: 7, stressLevel: null },
       }),
     });
     const context = makeContext({
@@ -405,7 +406,7 @@ describe('runFatigueModel — full model', () => {
       {
         load: makeLoad({ acwr: 0.5, loadMonotony: 1.0 }),
         recovery: makeRecovery({
-          subjectiveWellnessComponents: { mood: 1, energyLevel: 1, perceivedSoreness: 1 },
+          subjectiveWellnessComponents: { mood: 1, energyLevel: 1, perceivedSoreness: 1, stressLevel: null },
         }),
       },
       [],

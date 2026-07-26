@@ -315,6 +315,7 @@ export type DailyStrainSource =
   | 'DAILY_HEALTH_STRESS'
   | 'DAILY_HEALTH_RECOVERY'
   | 'DAILY_HEALTH_BODY_BATTERY'
+  | 'DAILY_HEALTH_STEPS'
   | 'UNKNOWN';
 
 export type DailyStrainContributor = 'TRAINING' | 'CARDIOVASCULAR' | 'MOVEMENT' | 'UNKNOWN';
@@ -352,6 +353,9 @@ export interface DailyStrainData {
       recoveryScore: number | null;
       bodyBattery: number | null;
       calories: number | null;
+    };
+    movementSignals: {
+      totalSteps: number | null;
     };
   };
 }

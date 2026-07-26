@@ -42,6 +42,7 @@ function buildHealth(overrides: Partial<GarminDailyHealth> = {}): GarminDailyHea
     hrvBaselineHigh: null,
     stress: null,
     bodyBattery: null,
+    totalSteps: null,
     sleep: EMPTY_SLEEP,
     ...overrides,
   };

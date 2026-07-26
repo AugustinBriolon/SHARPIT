@@ -46,6 +46,7 @@ import {
 
 import type { I18nItem } from '@/core/inference/shared/types';
 import { applyEnvironmentalImpactToReadiness } from '@/core/inference/environment/apply-impact';
+import { applyWearableEnergyCorroboration } from './wearable-energy';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Signals
@@ -381,10 +382,16 @@ export function runRecoveryModel(
   // ── Illness risk detection ─────────────────────────────────────────────────
   const illnessRisk: IllnessRisk = recovery ? computeIllnessRisk(recovery, load) : 'LOW';
 
+  // Soft Garmin stress / Body Battery corroboration (bounded, never primary)
+  const wearableAdjusted = applyWearableEnergyCorroboration(
+    finalScore,
+    context.wearableEnergySignals,
+  );
+
   // Override to VERY_LOW when illness risk is HIGH
   const effectiveScore = capScoreForHighIllnessRisk(
     illnessRisk,
-    applyEnvironmentalImpactToReadiness(finalScore, context.environmentalImpact ?? null),
+    applyEnvironmentalImpactToReadiness(wearableAdjusted, context.environmentalImpact ?? null),
   );
 
   const effectiveCategory: ReadinessCategory = illnessRisk === 'HIGH' ? 'VERY_LOW' : category;

@@ -17,6 +17,7 @@ import {
   scoreSleep,
   scoreSubjective,
   scoreLoadContext,
+  sleepStressModifier,
   synthesizeScore,
 } from '../scoring';
 import { runRecoveryModel } from '../model';
@@ -40,8 +41,9 @@ function makeRecovery(overrides: Partial<RecoveryFeatureSet> = {}): RecoveryFeat
     rhrAbsolute: 48,
     rhrDeltaFromBaseline: 0,
     subjectiveWellnessIndex: 7.5,
-    subjectiveWellnessComponents: { mood: 4, energyLevel: 4, perceivedSoreness: 3 },
+    subjectiveWellnessComponents: { mood: 4, energyLevel: 4, perceivedSoreness: 3, stressLevel: null },
     rpeVsTargetZone: 0,
+    avgStressDuringSleep: null,
     confidence: 0.85,
     algorithmId: 'recovery-features-v1',
     sourceObsIds: ['obs-1', 'obs-2'],
@@ -193,6 +195,18 @@ describe('scoreSleep', () => {
     const dim = scoreSleep(makeRecovery({ sleepEfficiencyPercent: null }));
     expect(dim.available).toBe(false);
     expect(dim.score).toBeNull();
+  });
+
+  it('applies overnight sleep-stress modifier when elevated', () => {
+    const calm = scoreSleep(
+      makeRecovery({ sleepEfficiencyPercent: 50, sleepDebtMin: 0, avgStressDuringSleep: 15 }),
+    );
+    const stressed = scoreSleep(
+      makeRecovery({ sleepEfficiencyPercent: 50, sleepDebtMin: 0, avgStressDuringSleep: 55 }),
+    );
+    expect(sleepStressModifier(55)).toBe(0.85);
+    expect(stressed.score!).toBeLessThan(calm.score!);
+    expect(stressed.score!).toBeCloseTo(calm.score! * 0.85, 5);
   });
 });
 

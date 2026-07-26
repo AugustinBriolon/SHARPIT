@@ -40,6 +40,8 @@ export interface GarminDailyHealth {
   hrvBaselineHigh: number | null;
   stress: number | null;
   bodyBattery: number | null;
+  /** Daily step count from Garmin wellness stats. */
+  totalSteps: number | null;
   sleep: GarminSleepDetail;
 }
 
@@ -439,6 +441,29 @@ async function fetchStressAndBattery(
   }
 }
 
+/**
+ * Daily step count from Garmin stats (high-confidence movement signal).
+ * Endpoint: /usersummary-service/stats/steps/daily/{start}/{end}
+ */
+async function fetchTotalSteps(client: GCClient, date: Date): Promise<number | null> {
+  try {
+    const ds = format(date, 'yyyy-MM-dd');
+    const rows = (await client.get(
+      `https://connectapi.garmin.com/usersummary-service/stats/steps/daily/${ds}/${ds}`,
+    )) as Array<{ calendarDate?: string; totalSteps?: number | null }> | null;
+
+    const match = Array.isArray(rows)
+      ? (rows.find((row) => row.calendarDate === ds) ?? rows[0])
+      : null;
+    const steps = match?.totalSteps;
+    return typeof steps === 'number' && Number.isFinite(steps) && steps >= 0
+      ? Math.round(steps)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchDailyHealth(
   client: GCClient,
   date: Date,
@@ -448,14 +473,16 @@ export async function fetchDailyHealth(
   // (date-1 → date), qui est précisément celle qui impacte la journée `date`.
   // Idem pour readiness/HRV/FC repos (valeurs du matin de `date`). Tout est donc
   // cohérent sur le même jour `date`.
-  const [sleep, restingHr, hrv, readiness, hrvStatus, stressBattery] = await Promise.all([
-    fetchSleepDetail(client, date),
-    fetchRestingHr(client, date),
-    fetchHrv(client, date),
-    fetchTrainingReadiness(client, date),
-    fetchHrvStatus(client, date),
-    fetchStressAndBattery(client, date),
-  ]);
+  const [sleep, restingHr, hrv, readiness, hrvStatus, stressBattery, totalSteps] =
+    await Promise.all([
+      fetchSleepDetail(client, date),
+      fetchRestingHr(client, date),
+      fetchHrv(client, date),
+      fetchTrainingReadiness(client, date),
+      fetchHrvStatus(client, date),
+      fetchStressAndBattery(client, date),
+      fetchTotalSteps(client, date),
+    ]);
 
   return {
     date: format(date, 'yyyy-MM-dd'),
@@ -473,6 +500,7 @@ export async function fetchDailyHealth(
     hrvBaselineHigh: hrvStatus.hrvBaselineHigh,
     stress: stressBattery.stress,
     bodyBattery: stressBattery.bodyBattery,
+    totalSteps,
     sleep,
   };
 }

@@ -10,10 +10,27 @@
  */
 
 import { RecoveryInferenceOrchestrator } from '@/core/inference/orchestrator';
+import type { WearableEnergySignals } from '@/core/inference/recovery/types';
 import { PrismaDigitalTwinRepository } from '@/infrastructure/digital-twin/prisma-digital-twin-repository';
 import { PrismaDecisionRecordRepository } from '@/infrastructure/inference/prisma-decision-record-repository';
 import { featureEngine } from '@/lib/engines/feature-engine';
 import { prisma } from '@/lib/prisma';
+
+async function loadWearableEnergySignals(
+  _athleteId: string,
+  trainingDayId: string,
+): Promise<WearableEnergySignals | null> {
+  const health = await prisma.dailyHealth.findUnique({
+    where: { date: new Date(`${trainingDayId}T00:00:00.000Z`) },
+    select: { stress: true, bodyBattery: true },
+  });
+  if (!health) return null;
+  if (health.stress == null && health.bodyBattery == null) return null;
+  return {
+    stress: health.stress,
+    bodyBattery: health.bodyBattery,
+  };
+}
 
 function createRecoveryEngine(): RecoveryInferenceOrchestrator {
   const digitalTwinRepo = new PrismaDigitalTwinRepository(prisma);
@@ -23,6 +40,7 @@ function createRecoveryEngine(): RecoveryInferenceOrchestrator {
     featureEngine,
     digitalTwinRepo,
     decisionRecordRepo,
+    getWearableEnergySignals: loadWearableEnergySignals,
   });
 }
 
