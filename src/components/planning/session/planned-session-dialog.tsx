@@ -186,7 +186,17 @@ export function PlannedSessionDialog({
 
   const initialDate = session?.date ? new Date(session.date) : (defaultDate ?? new Date());
 
-  const raceGoals = goals.filter((g) => g.kind === 'RACE');
+  // Align with plan generator: dated active goals (+ keep currently linked goal visible).
+  const nowForGoals = new Date();
+  const linkableGoals = (() => {
+    const dated = goals.filter(
+      (g) =>
+        !g.achieved && g.targetDate && new Date(g.targetDate as unknown as string) >= nowForGoals,
+    );
+    const linked = session?.goalId ? goals.find((g) => g.id === session.goalId) : null;
+    if (linked && !dated.some((g) => g.id === linked.id)) return [linked, ...dated];
+    return dated;
+  })();
   const pending = create.isPending || createBrick.isPending || update.isPending || remove.isPending;
   const showOutdoorContext = createMode === 'single' && sportSupportsOutdoorContext(type);
 
@@ -503,7 +513,7 @@ export function PlannedSessionDialog({
                 <PlannedSessionReadView
                   context={contextQuery.data?.context}
                   contextPending={contextQuery.isPending}
-                  goals={raceGoals}
+                  goals={linkableGoals}
                   morningProposal={morningProposal}
                   omitLinkedActivityNavigation={omitLinkedActivityNavigation}
                   session={liveSession}
@@ -642,12 +652,12 @@ export function PlannedSessionDialog({
                               <SelectValue>
                                 {goalId === NO_GOAL
                                   ? 'Aucun'
-                                  : (raceGoals.find((g) => g.id === goalId)?.title ?? 'Aucun')}
+                                  : (linkableGoals.find((g) => g.id === goalId)?.title ?? 'Aucun')}
                               </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value={NO_GOAL}>Aucun</SelectItem>
-                              {raceGoals.map((g) => (
+                              {linkableGoals.map((g) => (
                                 <SelectItem key={g.id} value={g.id}>
                                   {g.title}
                                 </SelectItem>
