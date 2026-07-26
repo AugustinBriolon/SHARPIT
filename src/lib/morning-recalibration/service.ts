@@ -50,6 +50,7 @@ function toGateProposal(
     type: GateProposal['type'];
     title: string | null;
     date: Date;
+    goalId?: string | null;
   },
 ): GateProposal {
   return {
@@ -63,6 +64,7 @@ function toGateProposal(
     load: proposal.toLoad,
     title: session.title,
     rationale: proposal.why,
+    goalId: session.goalId ?? null,
   };
 }
 

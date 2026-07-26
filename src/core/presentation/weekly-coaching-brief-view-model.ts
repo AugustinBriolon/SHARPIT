@@ -35,6 +35,8 @@ export type WeeklyBriefKeySession = {
   readonly typeLabel: string;
   readonly intensityLabel: string | null;
   readonly purpose: string | null;
+  /** Option B — race/goal this key session serves, when stamped. */
+  readonly goalTitle: string | null;
 };
 
 export type WeeklyBriefRecovery = {

@@ -4,7 +4,8 @@ import { fr } from 'date-fns/locale';
 import { NextResponse } from 'next/server';
 import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from '@/lib/ai';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach/coach-context';
-import { getPlannedSessions } from '@/lib/queries';
+import { getActiveTrainingPlan, getGoals, getPlannedSessions } from '@/lib/queries';
+import { resolveDefaultPlanGoalId, selectableDatedGoalIds } from '@/lib/planned-session/plan-goal';
 import { intensityLabels } from '@/lib/planned-session/sessions';
 import {
   adaptPlanGenerationSchema,
@@ -28,6 +29,7 @@ type UpcomingSession = Awaited<ReturnType<typeof getPlannedSessions>>[number];
 function toGateProposal(
   change: AdaptChange,
   existing: UpcomingSession | null,
+  defaultGoalId: string | null,
 ): GateProposal | null {
   const date = change.date ?? (existing ? format(existing.date, 'yyyy-MM-dd') : null);
   const type = change.type ?? existing?.type ?? null;
@@ -44,6 +46,8 @@ function toGateProposal(
     load: change.load ?? existing?.load ?? null,
     title: change.title ?? existing?.title ?? null,
     rationale: change.reason ?? null,
+    // Option B: keep existing link on MODIFY; stamp plan goal on ADD.
+    goalId: existing?.goalId ?? (change.action === 'ADD' ? defaultGoalId : null),
   };
 }
 
@@ -106,10 +110,16 @@ export async function POST(req: Request) {
     const today = startOfDay(new Date());
     const horizon = addDays(today, days);
 
-    const [ctx, upcoming] = await Promise.all([
+    const [ctx, upcoming, activePlan, goals] = await Promise.all([
       buildCoachContext(today),
       getPlannedSessions({ from: today, to: horizon }),
+      getActiveTrainingPlan(),
+      getGoals(),
     ]);
+    const defaultGoalId = resolveDefaultPlanGoalId(
+      activePlan?.goalId,
+      selectableDatedGoalIds(goals),
+    );
 
     const upcomingLines = upcoming.map((p) => {
       const bits = [
@@ -164,6 +174,7 @@ ${upcomingLines.length ? upcomingLines.join('\n') : 'Aucune séance planifiée �
         proposal: toGateProposal(
           change,
           change.sessionId ? (existingById.get(change.sessionId) ?? null) : null,
+          defaultGoalId,
         ),
       }))
       .filter(
@@ -177,6 +188,7 @@ ${upcomingLines.length ? upcomingLines.join('\n') : 'Aucune séance planifiée �
       const { context: gateContext, snapshot } = await buildGateContext({
         trainingDayId: computeTrainingDayId(today),
         proposals,
+        goalId: defaultGoalId,
       });
       gate = evaluatePlan(gateContext, proposals);
 

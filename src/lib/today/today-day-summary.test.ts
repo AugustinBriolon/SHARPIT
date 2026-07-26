@@ -88,6 +88,17 @@ describe('buildTodayDaySummary', () => {
     expect(summary.lines).toHaveLength(0);
   });
 
+  it('surfaces the stamped goal in planned meta (option B)', () => {
+    const summary = buildTodayDaySummary(
+      TODAY,
+      [],
+      [planned({ id: 'p1', title: 'Tempo', goalId: 'g1' })],
+      new Map([['g1', 'Nice 70.3']]),
+    );
+
+    expect(summary.lines[0]?.secondary).toContain('Sert Nice 70.3');
+  });
+
   it('hides planned sessions once linked even if completed flag lags', () => {
     const summary = buildTodayDaySummary(
       TODAY,

@@ -205,6 +205,7 @@ ${contextText}${goalBlock}${macroBlock}${agendaBlock}`;
       load: s.load,
       title: s.title,
       rationale: s.rationale ?? null,
+      goalId: goalId ?? null,
     }));
 
     const { context: gateContext, snapshot } = await buildGateContext({

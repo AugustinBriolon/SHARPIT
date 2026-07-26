@@ -145,6 +145,8 @@ const brickLegSchema = z.object({
 export const createBrickSchema = z.object({
   date: z.coerce.date(),
   startTime: optionalString,
+  /** Option B — stamps the same goal on every brick leg. */
+  goalId: optionalString,
   legs: z.array(brickLegSchema).min(2, 'Un brick nécessite au moins 2 jambes'),
 });
 

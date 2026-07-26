@@ -76,6 +76,7 @@ export function PlanningView({
   const activities = activitiesQuery.data ?? [];
   const planned = plannedQuery.data ?? [];
   const goals = goalsQuery.data ?? [];
+  const goalTitleById = useMemo(() => new Map(goals.map((g) => [g.id, g.title] as const)), [goals]);
 
   const nextRace = useMemo(
     () =>
@@ -285,6 +286,7 @@ export function PlanningView({
             key={day.date.toISOString()}
             activities={day.activities}
             date={day.date}
+            goalTitleById={goalTitleById}
             loading={isLoading}
             planned={day.planned}
             onAdd={() => setDialog({ mode: 'create', date: day.date })}
@@ -385,6 +387,7 @@ function DayRow({
   date,
   planned,
   activities,
+  goalTitleById,
   onAdd,
   onEdit,
   onPrefetch,
@@ -393,6 +396,7 @@ function DayRow({
   date: Date;
   planned: ClientPlannedSession[];
   activities: ClientActivity[];
+  goalTitleById: ReadonlyMap<string, string>;
   onAdd: () => void;
   onEdit: (session: ClientPlannedSession) => void;
   onPrefetch: (session: ClientPlannedSession) => void;
@@ -441,6 +445,9 @@ function DayRow({
                   <SessionRow
                     key={item.session.id}
                     session={item.session}
+                    goalTitle={
+                      item.session.goalId ? (goalTitleById.get(item.session.goalId) ?? null) : null
+                    }
                     onEdit={onEdit}
                     onPrefetch={onPrefetch}
                   />
@@ -452,7 +459,13 @@ function DayRow({
                     <Layers className="size-3" /> Brick
                   </p>
                   {item.sessions.map((s) => (
-                    <SessionRow key={s.id} session={s} onEdit={onEdit} onPrefetch={onPrefetch} />
+                    <SessionRow
+                      key={s.id}
+                      goalTitle={s.goalId ? (goalTitleById.get(s.goalId) ?? null) : null}
+                      session={s}
+                      onEdit={onEdit}
+                      onPrefetch={onPrefetch}
+                    />
                   ))}
                 </div>
               );
@@ -489,10 +502,12 @@ function DayRow({
 
 function SessionRow({
   session,
+  goalTitle,
   onEdit,
   onPrefetch,
 }: {
   session: ClientPlannedSession;
+  goalTitle?: string | null;
   onEdit: (session: ClientPlannedSession) => void;
   onPrefetch: (session: ClientPlannedSession) => void;
 }) {
@@ -500,6 +515,7 @@ function SessionRow({
   const meta = [
     session.startTime,
     session.durationMin != null ? formatPlannedDuration(session.durationMin) : null,
+    goalTitle ? `Sert ${goalTitle}` : null,
   ]
     .filter(Boolean)
     .join(' · ');

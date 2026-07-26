@@ -111,6 +111,9 @@ export function WeeklyBrief({ onClose }: { onClose: () => void }) {
                         {s.dateLabel} · {s.typeLabel}
                         {s.intensityLabel ? ` · ${s.intensityLabel}` : ''}
                       </p>
+                      {s.goalTitle && (
+                        <p className="text-muted-foreground mt-0.5 text-xs">Sert {s.goalTitle}</p>
+                      )}
                       {s.purpose && (
                         <p className="text-muted-foreground mt-0.5 text-xs">{s.purpose}</p>
                       )}

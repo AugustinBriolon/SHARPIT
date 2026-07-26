@@ -31,6 +31,7 @@ export function baseProposal(overrides: Partial<GateProposal> = {}): GateProposa
     load: 50,
     title: 'Sortie endurance',
     rationale: null,
+    goalId: null,
     ...overrides,
   };
 }

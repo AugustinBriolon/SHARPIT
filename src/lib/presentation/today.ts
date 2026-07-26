@@ -6,6 +6,7 @@ import { pickAdaptationReminders } from '@/lib/daily-phase/narrative';
 import {
   getActivitiesList,
   getAthleteProfile,
+  getGoals,
   getHealthEntries,
   getPlannedSessions,
 } from '@/lib/queries';
@@ -98,6 +99,7 @@ export async function buildTodayPresentationViewModel(
     healthEntries,
     activities,
     plannedSessions,
+    goals,
     athleteProfile,
     morningRecalibration,
   ] = await Promise.all([
@@ -105,6 +107,7 @@ export async function buildTodayPresentationViewModel(
     getHealthEntries(14, day),
     getActivitiesList({ sinceDays: 60 }),
     getPlannedSessions({ from: dayStart, to: dayEnd }),
+    getGoals(),
     getAthleteProfile(),
     import('@/lib/morning-recalibration/service').then(({ ensureMorningRecalibration }) =>
       ensureMorningRecalibration(trainingDayId).catch((error) => {
@@ -192,10 +195,12 @@ export async function buildTodayPresentationViewModel(
     whyFocus,
   });
 
+  const goalTitleById = new Map(goals.map((g) => [g.id, g.title] as const));
   const daySummary = buildTodayDaySummary(
     day,
     activities as unknown as ClientActivity[],
     plannedSessions as unknown as ClientPlannedSession[],
+    goalTitleById,
   );
   const labels = actionRowLabels(phase);
   const adaptationHints = pickAdaptationReminders(phase, 3, isRestDay);

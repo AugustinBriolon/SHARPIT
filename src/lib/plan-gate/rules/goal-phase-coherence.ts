@@ -3,6 +3,11 @@ import type { GateContext, GateProposal, PlanGateRule, RuleFinding } from '../ty
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 
+/**
+ * Goal / phase coherence for proposed sessions.
+ * Option B: when `proposal.goalId` is set, findings still use `context.goal`
+ * (loaded from that same race/goal at the API boundary) as the horizon reference.
+ */
 export const goalPhaseCoherenceRule: PlanGateRule = (
   context: GateContext,
   proposal: GateProposal,
@@ -11,11 +16,12 @@ export const goalPhaseCoherenceRule: PlanGateRule = (
   const proposedDate = new Date(`${proposal.date}T00:00:00`);
 
   if (context.goal?.targetDate && proposedDate > context.goal.targetDate) {
+    const goalRef = proposal.goalId ? `goalId=${proposal.goalId}` : 'goal.targetDate';
     findings.push({
       ruleCode: 'BEYOND_GOAL_HORIZON',
       severity: 'WARNING',
       rationale: `Cette séance (${proposal.date}) est planifiée après la date de l'objectif — vérifie si elle a encore du sens.`,
-      evidenceRefs: ['goal.targetDate'],
+      evidenceRefs: [goalRef, 'goal.targetDate'],
     });
   }
 
