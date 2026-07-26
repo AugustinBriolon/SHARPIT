@@ -13,23 +13,26 @@ export function buildSleepInsightBundle(input: SleepInsightInput) {
   const primary: ProductInsight[] = [];
   const supporting: ProductInsight[] = [];
   const contextual: ProductInsight[] = [];
+  const nightPresent = (input.nightStatus ?? 'present') === 'present';
 
-  primary.push({
-    id: 'sleep:night-impact',
-    title: 'Impact probable sur demain',
-    summary: input.adequacyLabel,
-    explanation:
-      input.recoveryNote ??
-      "Le sommeil n'a de valeur produit que par son effet sur la récupération et la capacité à encaisser la charge suivante.",
-    evidence: [
-      input.targetDeltaMin != null ? `Objectif : ${formatMinutes(input.targetDeltaMin)}` : null,
-      input.sleepDelta7d != null ? `Vs 7 jours : ${formatMinutes(input.sleepDelta7d)}` : null,
-    ].filter((line): line is string => line != null),
-    confidence: input.confidence,
-    importance: input.sleepScore != null && input.sleepScore < 60 ? 'HIGH' : 'MEDIUM',
-    decisionImpact: 'TRAINING_TODAY',
-    relatedDimensions: ['SLEEP', 'RECOVERY'],
-  });
+  if (nightPresent) {
+    primary.push({
+      id: 'sleep:night-impact',
+      title: 'Impact probable sur demain',
+      summary: input.adequacyLabel,
+      explanation:
+        input.recoveryNote ??
+        "Le sommeil n'a de valeur produit que par son effet sur la récupération et la capacité à encaisser la charge suivante.",
+      evidence: [
+        input.targetDeltaMin != null ? `Objectif : ${formatMinutes(input.targetDeltaMin)}` : null,
+        input.sleepDelta7d != null ? `Vs 7 jours : ${formatMinutes(input.sleepDelta7d)}` : null,
+      ].filter((line): line is string => line != null),
+      confidence: input.confidence,
+      importance: input.sleepScore != null && input.sleepScore < 60 ? 'HIGH' : 'MEDIUM',
+      decisionImpact: 'TRAINING_TODAY',
+      relatedDimensions: ['SLEEP', 'RECOVERY'],
+    });
+  }
 
   if (input.recommendedBedtime || input.recommendedDurationLabel) {
     primary.push({
@@ -41,8 +44,9 @@ export function buildSleepInsightBundle(input: SleepInsightInput) {
           : (input.recommendedDurationLabel ??
             input.recommendedBedtime ??
             'Prioriser le sommeil ce soir'),
-      explanation:
-        "Le meilleur usage produit du sommeil est d'aider à choisir quoi faire ce soir pour protéger la prochaine journée.",
+      explanation: nightPresent
+        ? "Le meilleur usage produit du sommeil est d'aider à choisir quoi faire ce soir pour protéger la prochaine journée."
+        : 'La nuit du jour n’est pas encore synchronisée — le plan du soir s’appuie sur l’historique récent.',
       evidence: [
         input.debt7Min != null && input.debt7Min > 0
           ? `Dette 7 jours : ${input.debt7Min} min`
@@ -61,8 +65,9 @@ export function buildSleepInsightBundle(input: SleepInsightInput) {
       id: 'sleep:debt',
       title: 'Dette de sommeil',
       summary: `${input.debt7Min} min de retard cumulé`,
-      explanation:
-        'La dette aide à comprendre pourquoi une nuit correcte ne suffit pas toujours à restaurer complètement la récupération.',
+      explanation: nightPresent
+        ? 'La dette aide à comprendre pourquoi une nuit correcte ne suffit pas toujours à restaurer complètement la récupération.'
+        : 'Dette cumulée sur les nuits passées — utile pour le plan du soir, pas un verdict sur la nuit en cours.',
       evidence: [
         input.sleepDelta7d != null ? `Vs 7 jours : ${formatMinutes(input.sleepDelta7d)}` : null,
       ].filter((line): line is string => line != null),
@@ -73,7 +78,7 @@ export function buildSleepInsightBundle(input: SleepInsightInput) {
     });
   }
 
-  if (input.coachInsightLines.length > 0) {
+  if (nightPresent && input.coachInsightLines.length > 0) {
     contextual.push({
       id: 'sleep:architecture',
       title: 'Ce que la nuit raconte',

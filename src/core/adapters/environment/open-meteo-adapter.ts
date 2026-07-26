@@ -37,13 +37,37 @@ function toTrainingDayId(isoTime: string): string {
   return isoTime.slice(0, 10);
 }
 
+/**
+ * Open-Meteo hourly labels are wall-clock strings in the requested timezone,
+ * usually without an offset (`2026-07-26T14:00`). Parsing with `new Date(label)`
+ * is host-TZ dependent (Paris laptop ≠ UTC Vercel) and shifts which hours fall
+ * inside an activity window.
+ *
+ * Providers must request `timezone=UTC` so labels are absolute; we then parse
+ * as UTC regardless of the Node process timezone.
+ */
+export function parseOpenMeteoHourlyTime(time: string, _timezone: string): Date {
+  const trimmed = time.trim();
+  if (!trimmed) return new Date(Number.NaN);
+
+  if (/Z$/i.test(trimmed) || /[+-]\d{2}:?\d{2}$/.test(trimmed)) {
+    return new Date(trimmed);
+  }
+
+  const withSeconds = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(trimmed) ? `${trimmed}:00` : trimmed;
+
+  // Providers request timezone=UTC. Always treat offset-less labels as UTC so
+  // parsing is identical on Europe/Paris hosts and UTC (Vercel) hosts.
+  return new Date(`${withSeconds}Z`);
+}
+
 export const openMeteoEnvironmentalAdapter: EnvironmentalProviderAdapter = {
   providerId: 'open-meteo',
 
   adapt(payload: unknown, meta: AdapterMeta): ObservationRecordDraft[] {
     if (!isOpenMeteoPayload(payload)) return [];
 
-    const { hourly, latitude, longitude } = payload;
+    const { hourly, latitude, longitude, timezone } = payload;
     const drafts: ObservationRecordDraft[] = [];
 
     for (let i = 0; i < hourly.time.length; i++) {
@@ -65,7 +89,9 @@ export const openMeteoEnvironmentalAdapter: EnvironmentalProviderAdapter = {
       const hasAny = Object.values(data).some((v) => v != null);
       if (!hasAny) continue;
 
-      const observedAt = new Date(hourly.time[i]);
+      const observedAt = parseOpenMeteoHourlyTime(hourly.time[i], timezone);
+      if (Number.isNaN(observedAt.getTime())) continue;
+
       const externalId = `${meta.externalIdPrefix ?? 'open-meteo'}:${hourly.time[i]}`;
 
       drafts.push({

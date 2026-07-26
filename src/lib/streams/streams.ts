@@ -367,14 +367,14 @@ async function persistStream(activityId: string, raw: RawStreams | null): Promis
   });
 
   if (available) {
-    void refreshSessionFeaturesAfterStream(activityId);
+    await refreshSessionFeaturesAfterStream(activityId);
   }
 
   return available;
 }
 
 /** Features are often extracted before streams arrive — refresh SESSION once cached. */
-async function refreshSessionFeaturesAfterStream(activityId: string): Promise<void> {
+export async function refreshSessionFeaturesAfterStream(activityId: string): Promise<void> {
   try {
     const activity = await prisma.activity.findUnique({
       where: { id: activityId },

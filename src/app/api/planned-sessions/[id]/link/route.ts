@@ -1,13 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
+import { isCoachConfigured } from '@/lib/ai';
 import { enrichActivityObservedContext } from '@/lib/activity/enrich-observed-context';
+import { analyzePlannedSession } from '@/lib/coach/coach-analysis';
 import { prisma } from '@/lib/prisma';
-import { getPlannedSessionById, linkPlannedSessionActivity } from '@/lib/queries';
+import {
+  getPlannedSessionById,
+  linkPlannedSessionActivity,
+  setPlannedSessionAnalysis,
+} from '@/lib/queries';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-// La liaison est désormais découplée de l'analyse IA : elle répond
-// immédiatement, et le client déclenche l'analyse (route /analyze) juste après.
-// Cela évite un spinner long et tout risque de timeout LLM au moment du link.
+/**
+ * Link responds immediately. Compliance analysis runs in `after()` so it survives
+ * the client leaving the page — no dependency on a live browser tab.
+ */
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
@@ -21,11 +28,20 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     const session = await linkPlannedSessionActivity(id, activityId);
     if (activityId) {
-      try {
-        await enrichActivityObservedContext(prisma, activityId);
-      } catch (error) {
-        console.error('[planned-sessions/link/enrich]', error);
-      }
+      after(async () => {
+        try {
+          await enrichActivityObservedContext(prisma, activityId);
+        } catch (error) {
+          console.error('[planned-sessions/link/enrich]', error);
+        }
+        if (!isCoachConfigured()) return;
+        try {
+          const analysis = await analyzePlannedSession(id);
+          if (analysis) await setPlannedSessionAnalysis(id, analysis);
+        } catch (error) {
+          console.error('[planned-sessions/link/analyze]', error);
+        }
+      });
     }
     return NextResponse.json(session);
   } catch (error) {

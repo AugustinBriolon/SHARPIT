@@ -38,7 +38,6 @@ export function TodayActionRow({
 
   const orientation = loading ? null : vm.morningOrientation;
 
-  const hideSessionList = orientation?.phase === 'EVIDENCE_PENDING';
   const proposalSessionId =
     orientation?.confirmEase?.sessionId ?? orientation?.confirmIncrease?.sessionId ?? null;
   /** Proposal card replaces the targeted session chip — keep any other day lines. */
@@ -62,7 +61,7 @@ export function TodayActionRow({
         />
       ) : null}
 
-      {reminders.length > 0 && orientation?.phase !== 'EVIDENCE_PENDING' ? (
+      {reminders.length > 0 ? (
         <ul className="text-muted-foreground space-y-1 px-0.5 text-xs leading-relaxed">
           {reminders.map((fact) => (
             <li key={`${fact.label}-${fact.value}`}>
@@ -91,7 +90,7 @@ export function TodayActionRow({
         </div>
       )}
 
-      {!loading && !hideSessionList && daySummaryEmpty ? (
+      {!loading && daySummaryEmpty ? (
         <div className="border-analysis-border/80 bg-background/50 rounded-analysis space-y-2 border px-3 py-3">
           <p className="text-muted-foreground text-sm">{vm.actionRow.daySummaryEmptyText}</p>
           <Link
@@ -105,7 +104,7 @@ export function TodayActionRow({
         </div>
       ) : null}
 
-      {!loading && !hideSessionList && !daySummaryEmpty ? (
+      {!loading && !daySummaryEmpty ? (
         <ul className="space-y-2">
           {sessionLines.map((line, index) => {
             const meta: InstrumentListChipMeta[] = splitInstrumentMeta(line.secondary);

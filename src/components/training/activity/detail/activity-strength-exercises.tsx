@@ -5,7 +5,6 @@ import { Dumbbell, Watch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/toast';
-import { SPORT_IDENTITY_SURFACE, SPORT_IDENTITY_TEXT } from '@/lib/activity/sport-identity';
 import { resolveStrengthSetMedia, type ResolvedExerciseMedia } from '@/lib/exercises';
 import { formatClockDuration } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -21,6 +20,9 @@ function formatStrengthSetDetail(set: ActivityDetail['strengthSets'][number]): s
   return set.weightKg ? `${base} @ ${set.weightKg} kg` : base;
 }
 
+const THUMB_CLASS =
+  'border-analysis-border bg-muted/30 relative size-12 shrink-0 overflow-hidden rounded-lg border';
+
 function ExerciseVisual({ media, label }: { media: ResolvedExerciseMedia; label: string }) {
   const [showGif, setShowGif] = useState(false);
 
@@ -28,11 +30,10 @@ function ExerciseVisual({ media, label }: { media: ResolvedExerciseMedia; label:
     <button
       aria-label={`Voir le mouvement : ${label}`}
       aria-pressed={showGif}
-      className="border-analysis-border bg-muted/30 relative size-12 shrink-0 overflow-hidden rounded-lg border"
+      className={THUMB_CLASS}
       type="button"
       onClick={() => setShowGif((v) => !v)}
     >
-      {}
       <img
         alt=""
         className="size-full object-cover"
@@ -44,10 +45,16 @@ function ExerciseVisual({ media, label }: { media: ResolvedExerciseMedia; label:
   );
 }
 
+function ExerciseIndex({ index, className }: { index: number; className?: string }) {
+  return (
+    <span className={cn(THUMB_CLASS, 'grid place-items-center', className)} aria-hidden>
+      <span className="font-mono text-xs font-semibold tabular-nums">{index}</span>
+    </span>
+  );
+}
+
 export function ActivityStrengthExercises({ activity }: { activity: ActivityDetail }) {
   const sets = activity.strengthSets;
-  const sportText = SPORT_IDENTITY_TEXT.STRENGTH;
-  const sportSurface = SPORT_IDENTITY_SURFACE.STRENGTH;
   const [pushing, setPushing] = useState(false);
 
   async function sendToWatch() {
@@ -92,19 +99,21 @@ export function ActivityStrengthExercises({ activity }: { activity: ActivityDeta
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
         <CardTitle className="text-muted-foreground flex items-center gap-2 text-base font-medium">
-          <Dumbbell className={cn('size-4', sportText)} />
+          <Dumbbell className="text-muted-foreground size-4" />
           Exercices
         </CardTitle>
         {sets.length > 0 ? (
           <Button
+            className="shrink-0"
             disabled={pushing}
             size="sm"
             type="button"
-            variant="outline"
+            variant="highlight"
             onClick={() => void sendToWatch()}
           >
             <Watch className="size-3.5" />
-            {pushing ? 'Envoi…' : 'Envoyer à la montre'}
+            <span className="hidden sm:inline">{pushing ? 'Envoi…' : 'Envoyer à la montre'}</span>
+            <span className="sm:hidden">{pushing ? '…' : 'Montre'}</span>
           </Button>
         ) : null}
       </CardHeader>
@@ -117,45 +126,42 @@ export function ActivityStrengthExercises({ activity }: { activity: ActivityDeta
               return (
                 <div
                   key={set.id}
-                  className="border-analysis-border rounded-analysis flex flex-wrap items-center gap-3 border px-4 py-3"
+                  className="border-analysis-border rounded-analysis flex items-start gap-3 border px-3 py-3 sm:items-center sm:px-4"
                 >
                   {media ? (
                     <ExerciseVisual label={set.exercise} media={media} />
                   ) : (
-                    <span
-                      className={cn(
-                        'grid size-7 shrink-0 place-items-center rounded-full font-mono text-xs font-semibold',
-                        sportSurface,
-                      )}
-                    >
-                      {i + 1}
-                    </span>
+                    <ExerciseIndex className="text-muted-foreground" index={i + 1} />
                   )}
-                  <span className="min-w-0 flex-1 font-medium">
-                    {set.exercise}
-                    {media ? (
-                      <span className="text-muted-foreground block truncate text-xs font-normal capitalize">
-                        {media.target}
-                        {media.equipment ? ` · ${media.equipment}` : ''}
+                  <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+                    <span className="min-w-0 flex-1 font-medium">
+                      {set.exercise}
+                      {media ? (
+                        <span className="text-muted-foreground block truncate text-xs font-normal capitalize">
+                          {media.target}
+                          {media.equipment ? ` · ${media.equipment}` : ''}
+                        </span>
+                      ) : null}
+                      {set.notes ? (
+                        <span className="text-muted-foreground block truncate text-xs font-normal">
+                          {set.notes}
+                        </span>
+                      ) : null}
+                    </span>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 sm:justify-end">
+                      <span className="font-mono text-sm tabular-nums">
+                        {formatStrengthSetDetail(set)}
                       </span>
-                    ) : null}
-                    {set.notes && (
-                      <span className="text-muted-foreground block truncate text-xs font-normal">
-                        {set.notes}
+                      <span className="text-muted-foreground flex items-center gap-2 text-xs">
+                        {volume > 0 && <span className="font-mono">{Math.round(volume)} kg</span>}
+                        {set.rpe != null && (
+                          <span className="border-border rounded-full border px-2 py-0.5 font-mono">
+                            RPE {set.rpe}
+                          </span>
+                        )}
                       </span>
-                    )}
-                  </span>
-                  <span className="font-mono text-sm tabular-nums">
-                    {formatStrengthSetDetail(set)}
-                  </span>
-                  <span className="text-muted-foreground flex items-center gap-2 text-xs">
-                    {volume > 0 && <span className="font-mono">{Math.round(volume)} kg</span>}
-                    {set.rpe != null && (
-                      <span className="border-border rounded-full border px-2 py-0.5 font-mono">
-                        RPE {set.rpe}
-                      </span>
-                    )}
-                  </span>
+                    </div>
+                  </div>
                 </div>
               );
             })}

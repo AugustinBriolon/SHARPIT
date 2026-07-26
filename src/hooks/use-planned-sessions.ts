@@ -306,7 +306,7 @@ export function usePlannedSessionMutations() {
         prev ? prev.map((session) => (session.id === variables.id ? hydrated : session)) : prev,
       );
       if (variables.activityId) {
-        analyze.mutate(variables.id);
+        // Compliance analysis is scheduled server-side in link `after()` — client only polls.
         toast.success('Séance liée');
       } else {
         toast.success('Séance déliée');

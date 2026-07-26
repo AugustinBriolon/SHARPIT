@@ -120,6 +120,14 @@ export async function refreshAthleteState(options?: {
   const needsBriefing = freshness.domains.some(
     (d) => d.domain === 'recommendations' && d.freshness !== 'fresh',
   );
+  if (activityIds.length > 0) {
+    try {
+      const { autoLinkActivities } = await import('@/lib/planned-session/session-linking');
+      await autoLinkActivities(activityIds);
+    } catch (error) {
+      console.error('[athlete-state/auto-link]', error);
+    }
+  }
   scheduleBackgroundTasks({ activityIds, regenerateBriefing: needsBriefing, trainingDayId });
 
   return {
@@ -148,6 +156,16 @@ export async function onProviderSyncCompleted(
     });
     const types = [...new Set(activities.map((a) => a.type))];
     await updateRecordsForTypesSafe(types);
+  }
+
+  // Await link before returning sync — cheap DB match; must not sit behind weather/LLM.
+  if (activityIds.length > 0) {
+    try {
+      const { autoLinkActivities } = await import('@/lib/planned-session/session-linking');
+      await autoLinkActivities(activityIds);
+    } catch (error) {
+      console.error('[athlete-state/auto-link]', error);
+    }
   }
 
   const todayState = await runFastInference(dayId);
@@ -188,6 +206,14 @@ export async function handleAthleteStateEvent(event: AthleteStateEvent): Promise
       break;
     case 'ActivityImported':
       {
+        if (event.activityIds.length > 0) {
+          try {
+            const { autoLinkActivities } = await import('@/lib/planned-session/session-linking');
+            await autoLinkActivities([...event.activityIds]);
+          } catch (error) {
+            console.error('[athlete-state/auto-link]', error);
+          }
+        }
         const todayState = await runFastInference(event.trainingDayId);
         await regenerateAthleteSnapshotAfterInference(event.trainingDayId, todayState);
       }

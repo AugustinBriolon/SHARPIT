@@ -12,7 +12,8 @@ export type ActivityWeatherSnapshot = {
   condition: ActivityWeatherCondition;
 };
 
-const WEATHER_STORAGE_VERSION = 3 as const;
+/** Bumped when weather hour parsing became UTC-deterministic (prod/dev parity). */
+const WEATHER_STORAGE_VERSION = 4 as const;
 
 type StoredActivityWeather = ActivityWeatherSnapshot & { v: typeof WEATHER_STORAGE_VERSION };
 

@@ -15,6 +15,8 @@ import { ActivityStrengthExercises } from '@/components/training/activity/detail
 import { ActivityGoalValidationsCard } from '@/components/goals/cards/activity-goal-validations-card';
 import { ActivityNarrativeSection } from '@/components/training/activity/activity-narrative-section';
 import { enrichActivityObservedContext } from '@/lib/activity/enrich-observed-context';
+import { isEligibleForActivityNarrative } from '@/lib/activity/activity-narrative-config';
+import { activityDetailExpectsMap } from '@/lib/activity/activity-detail-skeleton-layout';
 import { enrichStrengthExerciseVisuals } from '@/lib/exercises';
 import { getActivityById, getMultisportLegsForActivity } from '@/lib/queries';
 import { getGoalAchievementsForActivity } from '@/lib/goals/goal-achievements';
@@ -26,6 +28,12 @@ import { ActivityType } from '@prisma/client';
 export const dynamic = 'force-dynamic';
 
 type PageProps = { params: Promise<{ id: string }> };
+
+const NARRATIVE_TYPES = new Set<ActivityType>([
+  ActivityType.RUN,
+  ActivityType.BIKE,
+  ActivityType.SWIM,
+]);
 
 export default async function ActivityDetailPage({ params }: PageProps) {
   const { id } = await params;
@@ -54,26 +62,30 @@ export default async function ActivityDetailPage({ params }: PageProps) {
   const coachEnabled = isCoachConfigured();
   const specs = buildActivitySpecs(activity);
   const strengthStats = buildStrengthStats(activity);
+  const showCoachPanel =
+    coachEnabled &&
+    NARRATIVE_TYPES.has(activity.type) &&
+    isEligibleForActivityNarrative(new Date(activity.date));
+
+  const coachPanel = showCoachPanel ? (
+    <ActivityNarrativeSection
+      activityDate={activity.date}
+      activityId={activity.id}
+      activityType={activity.type}
+      coachEnabled={coachEnabled}
+      narrativeAnalysis={activity.narrativeAnalysis}
+      narrativeAnalyzedAt={activity.narrativeAnalyzedAt}
+    />
+  ) : undefined;
 
   return (
-    <div className="relative z-0 space-y-8">
+    <div className="relative z-0 space-y-6 sm:space-y-8">
       <MobileBackLink showOnDesktop />
 
       <ActivityDetailHeader activity={activity} />
 
-      <div className="relative z-0 space-y-5">
+      <div className="relative z-0 space-y-4 sm:space-y-5">
         <ActivityMetaRow activity={activity} records={performanceRecords} />
-
-        <ActivityNarrativeSection
-          activityDate={activity.date}
-          activityId={activity.id}
-          activityType={activity.type}
-          coachEnabled={coachEnabled}
-          narrativeAnalysis={activity.narrativeAnalysis}
-          narrativeAnalyzedAt={activity.narrativeAnalyzedAt}
-        />
-
-        <ActivityGoalValidationsCard validations={goalValidations} />
 
         <ActivityDetailHero
           activity={activity}
@@ -82,17 +94,30 @@ export default async function ActivityDetailPage({ params }: PageProps) {
           multisportLegs={multisportLegs}
           strengthStats={strengthStats}
         />
+
+        {/* Strength: exercises are the main visual plane (map equivalent). */}
+        {isStrength ? <ActivityStrengthExercises activity={activity} /> : null}
+
+        <ActivityGoalValidationsCard validations={goalValidations} />
       </div>
 
       {isTriathlon && multisportLegs && <TriathlonLegsPanel legs={multisportLegs} />}
 
       {isTriathlon ? (
-        <TriathlonActivityInsights activityId={activity.id} />
+        <>
+          {coachPanel}
+          <TriathlonActivityInsights activityId={activity.id} />
+        </>
       ) : (
-        !isStrength && <ActivityInsights activityId={activity.id} type={activity.type} />
+        !isStrength && (
+          <ActivityInsights
+            activityId={activity.id}
+            coachPanel={coachPanel}
+            expectMap={activityDetailExpectsMap(activity)}
+            type={activity.type}
+          />
+        )
       )}
-
-      {isStrength && <ActivityStrengthExercises activity={activity} />}
 
       <ActivitySpecsNotes activity={activity} specs={specs} />
     </div>

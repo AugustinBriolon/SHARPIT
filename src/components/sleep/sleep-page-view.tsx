@@ -14,6 +14,8 @@ import { formatClock, formatDuration } from '@/lib/sleep/sleep';
 export type { SleepPageViewProps } from '@/components/sleep/types';
 
 function pickCoachingLine(props: SleepPageViewProps): string | null {
+  // Debt / architecture lines assume tonight's night is known.
+  if ((props.nightStatus ?? 'present') !== 'present') return null;
   const [insight] = props.coachView.insights;
   if (insight?.detail) return insight.detail;
   if (insight?.title) return insight.title;
@@ -21,10 +23,16 @@ function pickCoachingLine(props: SleepPageViewProps): string | null {
 }
 
 function sleepActionLine(props: SleepPageViewProps): string | null {
+  const nightStatus = props.nightStatus ?? 'present';
   const bedtime = props.coachView.recommendedBedtimeMin;
+
+  // Forward plan is OK even before tonight syncs; debt-as-tonight verdict is not.
   if (bedtime != null) {
     return `Ce soir · coucher conseillé ${formatClock(bedtime)}`;
   }
+
+  if (nightStatus !== 'present') return null;
+
   const debt = props.coachView.debt7Min;
   if (debt != null && debt > 30) {
     return `Dette 7 jours ${formatDuration(debt)} — rattraper progressivement`;
@@ -33,6 +41,10 @@ function sleepActionLine(props: SleepPageViewProps): string | null {
     return `Objectif · récupérer ${formatDuration(Math.abs(props.targetDeltaMin))}`;
   }
   return null;
+}
+
+function pickHeroInsight(props: SleepPageViewProps): string | null {
+  return pickCoachingLine(props) ?? sleepActionLine(props);
 }
 
 export function SleepPageView(props: SleepPageViewProps) {
@@ -44,6 +56,7 @@ export function SleepPageView(props: SleepPageViewProps) {
     onPreviousDay,
     onNextDay,
     loading = false,
+    nightStatus = 'present',
     sleepScore,
     adequacyDisplay,
     scoreBreakdown,
@@ -54,9 +67,6 @@ export function SleepPageView(props: SleepPageViewProps) {
     awakeMin,
     bedtimeMin,
     wakeMin,
-    sleepDelta7d,
-    targetDeltaMin,
-    sleepTargetMin,
     coachView,
     barData,
     recoveryNote,
@@ -74,19 +84,29 @@ export function SleepPageView(props: SleepPageViewProps) {
     footer = undefined;
   }
 
+  const whyPanel = (
+    <SleepWhyBlock
+      debt7Min={coachView.debt7Min}
+      loading={loading}
+      nightStatus={nightStatus}
+      restorativeRatio={scoreBreakdown.restorativeRatio}
+      targetDeltaMin={props.targetDeltaMin}
+      asPanel
+    />
+  );
+
   return (
     <MetricDrillDownPage footer={footer}>
       <SleepHero
-        actionLine={loading ? null : sleepActionLine(props)}
         adequacyDisplay={adequacyDisplay}
         bedtimeMin={bedtimeMin}
         confidencePct={confidencePresentation.pct}
         date={date}
+        insightLine={loading ? null : pickHeroInsight(props)}
         isToday={isToday}
         loading={loading}
         maxDate={maxDate}
         sleepScore={sleepScore}
-        totalSleepMin={totalSleepMin}
         wakeMin={wakeMin}
         onDateChange={onDateChange}
         onNextDay={onNextDay}
@@ -94,25 +114,17 @@ export function SleepPageView(props: SleepPageViewProps) {
       />
 
       <SleepStatsStrip
+        awakeMin={awakeMin}
+        bedtimeMin={bedtimeMin}
+        deepMin={deepMin}
         loading={loading}
         restorativeRatio={scoreBreakdown.restorativeRatio}
-        sleepDelta7d={sleepDelta7d}
-        sleepTargetMin={sleepTargetMin}
-        targetDeltaMin={targetDeltaMin}
         totalSleepMin={totalSleepMin}
-      />
-
-      <SleepWhyBlock
-        debt7Min={coachView.debt7Min}
-        loading={loading}
-        restorativeRatio={scoreBreakdown.restorativeRatio}
-        targetDeltaMin={targetDeltaMin}
+        wakeMin={wakeMin}
       />
 
       {!loading ? (
         <>
-          <SleepCoachTonight coachingLine={pickCoachingLine(props)} view={coachView} />
-
           {totalSleepMin != null && totalSleepMin > 0 ? (
             <SleepPhasesSection
               awakeMin={awakeMin}
@@ -120,10 +132,15 @@ export function SleepPageView(props: SleepPageViewProps) {
               lightMin={lightMin}
               remMin={remMin}
               totalMin={totalSleepMin}
+              whyPanel={whyPanel}
             />
-          ) : null}
+          ) : (
+            whyPanel
+          )}
 
-          <SleepTrendSection data={barData} targetMin={sleepTargetMin} />
+          <SleepCoachTonight coachingLine={null} view={coachView} />
+
+          <SleepTrendSection data={barData} targetMin={props.sleepTargetMin} />
         </>
       ) : null}
     </MetricDrillDownPage>

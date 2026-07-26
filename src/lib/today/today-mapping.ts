@@ -768,7 +768,7 @@ export function mapLoadStressContextToDisplay(context: LoadStressContext): {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type SleepAdequacySignal =
-  'EXCELLENT' | 'ADEQUATE' | 'INSUFFICIENT' | 'SEVERELY_INSUFFICIENT';
+  'EXCELLENT' | 'ADEQUATE' | 'INSUFFICIENT' | 'SEVERELY_INSUFFICIENT' | 'PENDING' | 'MISSING';
 
 const SLEEP_ADEQUACY_SIGNAL_DISPLAY: Record<
   SleepAdequacySignal,
@@ -786,6 +786,14 @@ const SLEEP_ADEQUACY_SIGNAL_DISPLAY: Record<
   SEVERELY_INSUFFICIENT: {
     label: 'Sommeil très insuffisant',
     colorClass: 'text-signal-risk',
+  },
+  PENDING: {
+    label: 'Nuit pas encore synchronisée',
+    colorClass: 'text-muted-foreground',
+  },
+  MISSING: {
+    label: 'Pas de données cette nuit',
+    colorClass: 'text-muted-foreground',
   },
 };
 

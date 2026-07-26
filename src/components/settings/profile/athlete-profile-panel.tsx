@@ -5,7 +5,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Check, ChevronDown, Download, Loader2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +17,7 @@ import {
   useThresholdPreview,
 } from '@/hooks/use-data';
 import { athleteAgeYears, birthDateToInput } from '@/lib/profile/athlete-profile-utils';
+import { invalidateAfterAthleteProfileSave } from '@/lib/query/invalidate-after-athlete-profile-save';
 import { queryKeys } from '@/lib/query/keys';
 import type { ClientThresholdSnapshot } from '@/lib/query/types';
 import {
@@ -238,6 +240,31 @@ function saveProfilePatch(
   return previousProfile;
 }
 
+async function commitProfileSave(
+  queryClient: ReturnType<typeof useQueryClient>,
+  router: ReturnType<typeof useRouter>,
+  res: Response,
+  previousProfile: unknown,
+): Promise<Record<string, unknown> | null> {
+  if (!res.ok) {
+    if (previousProfile !== undefined) {
+      queryClient.setQueryData(queryKeys.athleteProfile, previousProfile);
+    }
+    throw new Error(await parseProfileError(res));
+  }
+  const saved = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+  if (saved && typeof saved === 'object') {
+    queryClient.setQueryData(queryKeys.athleteProfile, (current: unknown) => {
+      if (!current || typeof current !== 'object') return saved;
+      return { ...current, ...saved };
+    });
+  }
+  // Bust Next.js client Router Cache so Server Component `initial` is fresh on re-enter.
+  router.refresh();
+  await invalidateAfterAthleteProfileSave(queryClient);
+  return saved;
+}
+
 async function parseProfileError(res: Response): Promise<string> {
   const data = (await res.json().catch(() => null)) as {
     error?: string;
@@ -251,10 +278,12 @@ async function parseProfileError(res: Response): Promise<string> {
 }
 
 export function PersonalProfilePanel({ initial }: { initial: ProfileData | null }) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const [heightCm, setHeightCm] = useState(initial?.heightCm?.toString() ?? '');
   const [birthDate, setBirthDate] = useState(birthDateToInput(initial?.birthDate ?? null));
   const [sleepHours, setSleepHours] = useState(
-    initial?.sleepTargetMinutes != null ? String(initial.sleepTargetMinutes / 60) : '8',
+    initial?.sleepTargetMinutes != null ? String(initial.sleepTargetMinutes / 60) : '',
   );
   const [sleepBedtime, setSleepBedtime] = useState(
     clockToInput(initial?.sleepBedtimeTargetMin ?? null),
@@ -262,7 +291,21 @@ export function PersonalProfilePanel({ initial }: { initial: ProfileData | null 
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const queryClient = useQueryClient();
+
+  // Re-hydrate when RSC `initial` updates after router.refresh() / soft navigation.
+  useEffect(() => {
+    setHeightCm(initial?.heightCm?.toString() ?? '');
+    setBirthDate(birthDateToInput(initial?.birthDate ?? null));
+    setSleepHours(
+      initial?.sleepTargetMinutes != null ? String(initial.sleepTargetMinutes / 60) : '',
+    );
+    setSleepBedtime(clockToInput(initial?.sleepBedtimeTargetMin ?? null));
+  }, [
+    initial?.heightCm,
+    initial?.birthDate,
+    initial?.sleepTargetMinutes,
+    initial?.sleepBedtimeTargetMin,
+  ]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -297,22 +340,15 @@ export function PersonalProfilePanel({ initial }: { initial: ProfileData | null 
       };
 
       const previousProfile = saveProfilePatch(queryClient, patch);
-      setMessage('Profil enregistré.');
-      setSaving(false);
 
       const res = await fetch('/api/athlete-profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
       });
-      if (!res.ok) {
-        if (previousProfile !== undefined) {
-          queryClient.setQueryData(queryKeys.athleteProfile, previousProfile);
-        }
-        setMessage(null);
-        throw new Error(await parseProfileError(res));
-      }
-      void queryClient.invalidateQueries({ queryKey: queryKeys.athleteProfile });
+      await commitProfileSave(queryClient, router, res, previousProfile);
+      setMessage('Profil enregistré.');
+      setSaving(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur');
       setSaving(false);
@@ -388,6 +424,8 @@ export function PersonalProfilePanel({ initial }: { initial: ProfileData | null 
 }
 
 export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData | null }) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const [ftpW, setFtpW] = useState(initial?.ftpW?.toString() ?? '');
   const [maxHr, setMaxHr] = useState(initial?.maxHr?.toString() ?? '');
   const [lthr, setLthr] = useState(initial?.lthr?.toString() ?? '');
@@ -400,10 +438,25 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
   const [importing, setImporting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const queryClient = useQueryClient();
   const previewQuery = useThresholdPreview();
   const historyQuery = useThresholdHistory();
   const applyEstimates = useApplyThresholdEstimates();
+
+  useEffect(() => {
+    setFtpW(initial?.ftpW?.toString() ?? '');
+    setMaxHr(initial?.maxHr?.toString() ?? '');
+    setLthr(initial?.lthr?.toString() ?? '');
+    setThresholdPace(paceToInput(initial?.runThresholdPaceSecPerKm ?? null));
+    setVo2maxRunning(initial?.vo2maxRunning ?? null);
+    setVo2maxCycling(initial?.vo2maxCycling ?? null);
+  }, [
+    initial?.ftpW,
+    initial?.maxHr,
+    initial?.lthr,
+    initial?.runThresholdPaceSecPerKm,
+    initial?.vo2maxRunning,
+    initial?.vo2maxCycling,
+  ]);
 
   async function handleGarminImport() {
     setImporting(true);
@@ -431,9 +484,8 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
       setVo2maxRunning(data.vo2maxRunning);
       setVo2maxCycling(data.vo2maxCycling);
       setMessage('Seuils importés depuis Garmin et enregistrés.');
-      await queryClient.invalidateQueries({ queryKey: ['activity-stream'] });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.thresholdHistory });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.athleteProfile });
+      router.refresh();
+      await invalidateAfterAthleteProfileSave(queryClient);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur');
     } finally {
@@ -454,25 +506,15 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
         runThresholdPaceSecPerKm: parsePaceInput(thresholdPace),
       };
       const previousProfile = saveProfilePatch(queryClient, patch);
-      setMessage('Calibration enregistrée.');
-      setSaving(false);
 
       const res = await fetch('/api/athlete-profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
       });
-      if (!res.ok) {
-        if (previousProfile !== undefined) {
-          queryClient.setQueryData(queryKeys.athleteProfile, previousProfile);
-        }
-        setMessage(null);
-        throw new Error(await parseProfileError(res));
-      }
-      void queryClient.invalidateQueries({ queryKey: ['activity-stream'] });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.thresholdPreview });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.thresholdHistory });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.athleteProfile });
+      await commitProfileSave(queryClient, router, res, previousProfile);
+      setMessage('Calibration enregistrée.');
+      setSaving(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur');
       setSaving(false);
@@ -492,8 +534,8 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
         setThresholdPace(paceToInput(applied.profile.runThresholdPaceSecPerKm));
       }
       setMessage('Seuils estimés appliqués depuis tes records.');
-      await queryClient.invalidateQueries({ queryKey: ['activity-stream'] });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.athleteProfile });
+      router.refresh();
+      await invalidateAfterAthleteProfileSave(queryClient);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur');
     }

@@ -81,7 +81,8 @@ export function createOpenMeteoForecastProvider(
       const url =
         `${OPEN_METEO_FORECAST}?latitude=${latitude}&longitude=${longitude}` +
         `&start_date=${start}&end_date=${end}` +
-        `&hourly=${HOURLY_FIELDS}&timezone=auto`;
+        // UTC keeps hourly labels absolute — same parsing on local (Paris) and prod (UTC).
+        `&hourly=${HOURLY_FIELDS}&timezone=UTC`;
 
       try {
         const response = await fetchFn(url, {

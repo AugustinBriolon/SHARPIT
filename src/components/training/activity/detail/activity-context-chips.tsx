@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Gauge, Smile, Trophy } from 'lucide-react';
+import { Smile, Trophy } from 'lucide-react';
 import {
   activityWeatherIcon,
   activityWeatherIconClassName,
@@ -9,7 +9,6 @@ import {
 import { isIndoorActivitySession } from '@/lib/activity/indoor-activity';
 import { recordCategoryHref } from '@/lib/training/records';
 import { ActivityPlannedSessionChip } from './activity-planned-session-chip';
-import { rpeTone } from './activity-detail-helpers';
 import { ActivityMetaChip } from './activity-meta-chip';
 import type { ActivityDetail, ActivityPerformanceRecordChip } from './types';
 
@@ -22,17 +21,7 @@ export function ActivityContextChips({
 }) {
   const chips: ReactNode[] = [];
 
-  if (activity.rpe != null) {
-    chips.push(
-      <ActivityMetaChip
-        key="rpe"
-        icon={Gauge}
-        label="RPE"
-        tone={rpeTone(activity.rpe)}
-        value={`${activity.rpe}/10`}
-      />,
-    );
-  }
+  // RPE lives in the header meta line — keep chips for context only.
   if (activity.feeling) {
     chips.push(
       <ActivityMetaChip key="feeling" icon={Smile} label="Ressenti" value={activity.feeling} />,

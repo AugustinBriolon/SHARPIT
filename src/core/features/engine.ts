@@ -44,6 +44,7 @@ import type {
   LoadFeatureSet,
   LoadHistory,
   RecoveryHistory,
+  SessionFeatureSet,
 } from './types';
 
 import { extractBodyFeatures } from './extractors/body-extractor';
@@ -313,6 +314,23 @@ export class FeatureEngine {
     if (!observation || observation.type !== 'SESSION') return false;
     await this.computeSessionFeatures(athleteId, observation as SessionObservation);
     return true;
+  }
+
+  /**
+   * Session features over a training-day range (inclusive), repairing stale
+   * hrDrift when streams are now available. Used by Adaptation NME (14-day window).
+   */
+  async getSessionFeaturesInRange(
+    athleteId: string,
+    fromTrainingDayId: string,
+    toTrainingDayId: string,
+  ): Promise<SessionFeatureSet[]> {
+    const records = await this.ensureSessionFeaturesInRange(
+      athleteId,
+      fromTrainingDayId,
+      toTrainingDayId,
+    );
+    return records.map((record) => record.data);
   }
 
   private async ensureSessionFeaturesInRange(

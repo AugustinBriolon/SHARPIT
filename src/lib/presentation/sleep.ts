@@ -19,11 +19,12 @@ import {
   mapSleepAdequacySignalToDisplay,
   mapConfidenceToTier,
   type ReadinessCategory,
+  type SleepAdequacySignal,
 } from '@/lib/today/today-mapping';
 import { buildSleepPageInsights } from '@/lib/product-insight/sleep-page-insights';
 import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
 import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';
-import type { SleepViewModel } from '@/core/presentation/sleep-view-model';
+import type { SleepNightStatus, SleepViewModel } from '@/core/presentation/sleep-view-model';
 
 const CONFIDENCE_TONE = {
   high: 'good',
@@ -33,6 +34,7 @@ const CONFIDENCE_TONE = {
 
 function emptySleepViewModel(): SleepViewModel {
   return {
+    nightStatus: 'missing',
     sleepScore: null,
     adequacyDisplay: { label: '—', colorClass: 'text-muted-foreground' },
     scoreBreakdown: buildSleepScoreBreakdown(null, null, null, null),
@@ -78,6 +80,24 @@ function emptySleepViewModel(): SleepViewModel {
   };
 }
 
+export function resolveSleepNightStatus(
+  trainingDayId: string,
+  totalSleepMin: number | null,
+  liveDayId: string = format(new Date(), 'yyyy-MM-dd'),
+): SleepNightStatus {
+  if (totalSleepMin != null && totalSleepMin > 0) return 'present';
+  return trainingDayId === liveDayId ? 'pending' : 'missing';
+}
+
+export function sleepAdequacySignalForNight(
+  nightStatus: SleepNightStatus,
+  sleepScore: number | null,
+): SleepAdequacySignal {
+  if (nightStatus === 'pending') return 'PENDING';
+  if (nightStatus === 'missing') return 'MISSING';
+  return mapSleepScoreToAdequacy(sleepScore) ?? 'MISSING';
+}
+
 export async function buildSleepViewModel(trainingDayId: string): Promise<SleepViewModel> {
   const snapshot = await getOrBuildAthleteSnapshot(trainingDayId);
   const { recovery } = snapshot;
@@ -110,6 +130,8 @@ export async function buildSleepViewModel(trainingDayId: string): Promise<SleepV
       : (todayEntry?.sleepAwakeMin ?? null);
 
   const sleepTargetMin = athleteProfile?.sleepTargetMinutes ?? SLEEP_TARGET_MIN;
+  const nightStatus = resolveSleepNightStatus(trainingDayId, totalSleepMin);
+  const nightPresent = nightStatus === 'present';
 
   const coachView = analyzeSleep(toSleepEntryInputs(healthEntries), {
     ...sleepGoals,
@@ -123,11 +145,12 @@ export async function buildSleepViewModel(trainingDayId: string): Promise<SleepV
     sleepTargetMin,
   );
 
-  const sleepDim = recovery.dimensions.sleep;
-  const sleepScore =
-    scoreBreakdown.sharpitScore ?? (sleepDim.available ? (sleepDim.score ?? null) : null);
-
-  const adequacyDisplay = mapSleepAdequacySignalToDisplay(mapSleepScoreToAdequacy(sleepScore));
+  // Never fall back to twin sleep dimension when tonight's health row is absent —
+  // that reused yesterday's score as "Sommeil insuffisant" for an unslept night.
+  const sleepScore = nightPresent ? (scoreBreakdown.sharpitScore ?? null) : null;
+  const adequacyDisplay = mapSleepAdequacySignalToDisplay(
+    sleepAdequacySignalForNight(nightStatus, sleepScore),
+  );
 
   const last7Sleep = buildDailyWindowSeries(
     healthByDay,
@@ -145,8 +168,11 @@ export async function buildSleepViewModel(trainingDayId: string): Promise<SleepV
       : null;
 
   const sleepDelta7d =
-    totalSleepMin != null && avgSleepMinutes7d != null ? totalSleepMin - avgSleepMinutes7d : null;
-  const targetDeltaMin = totalSleepMin != null ? totalSleepMin - sleepTargetMin : null;
+    nightPresent && totalSleepMin != null && avgSleepMinutes7d != null
+      ? totalSleepMin - avgSleepMinutes7d
+      : null;
+  const targetDeltaMin =
+    nightPresent && totalSleepMin != null ? totalSleepMin - sleepTargetMin : null;
 
   const autonomicScore = recovery.dimensions.autonomic.available
     ? recovery.dimensions.autonomic.score
@@ -154,7 +180,7 @@ export async function buildSleepViewModel(trainingDayId: string): Promise<SleepV
   const recoverySignal = mapRecoveryToSignal(recovery.readinessCategory as ReadinessCategory);
 
   let recoveryNote: string | null = null;
-  if (recovery.readinessScore != null) {
+  if (nightPresent && recovery.readinessScore != null) {
     if (autonomicScore != null && sleepScore != null && autonomicScore > sleepScore) {
       recoveryNote = `Récupération ${recovery.readinessScore}/100 (${recoverySignal.label.toLowerCase()}) — la VFC compense partiellement le sommeil.`;
     } else if (recovery.primaryLimitingFactor === 'sleep') {
@@ -182,6 +208,7 @@ export async function buildSleepViewModel(trainingDayId: string): Promise<SleepV
     adequacyLabel: adequacyDisplay.label,
     coachView,
     confidence: recovery.confidence,
+    nightStatus,
     recoveryNote,
     sleepDelta7d,
     sleepScore,
@@ -189,6 +216,7 @@ export async function buildSleepViewModel(trainingDayId: string): Promise<SleepV
   });
 
   return {
+    nightStatus,
     sleepScore,
     adequacyDisplay,
     scoreBreakdown,

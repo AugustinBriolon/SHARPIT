@@ -11,7 +11,12 @@ import type {
 
 export type SleepBarPoint = { date: string; minutes: number | null; fill: string };
 
+/** Whether the training-day night has landed in health data. */
+export type SleepNightStatus = 'present' | 'pending' | 'missing';
+
 export type SleepViewModel = {
+  /** present = night metrics for trainingDayId; pending = live day awaiting sync; missing = past day without data. */
+  nightStatus: SleepNightStatus;
   sleepScore: number | null;
   adequacyDisplay: { label: string; colorClass: string };
 

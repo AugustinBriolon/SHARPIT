@@ -1,60 +1,53 @@
-import { DrillDownStatsStrip } from '@/components/today/drill-down/stats-strip';
-import type { MetricTone } from '@/components/today/drill-down/metric-cell';
-import { formatSleepDuration } from '@/lib/sleep/sleep-scoring';
-
-function restorativeRatioTone(ratio: number | null): MetricTone {
-  if (ratio == null || ratio >= 40) return 'good';
-  if (ratio < 32) return 'bad';
-  return 'warn';
-}
-
-/** Negative deltas use caution — not punitive risk red. */
-function deltaTone(delta: number | null, positiveTone: MetricTone): MetricTone {
-  if (delta == null) return 'neutral';
-  return delta >= 0 ? positiveTone : 'warn';
-}
-
-function signedSleepDuration(deltaMin: number): string {
-  const sign = deltaMin >= 0 ? '+' : '−';
-  return `${sign}${formatSleepDuration(Math.abs(deltaMin))}`;
-}
+import { InstrumentMetricGrid } from '@/components/ui/instrument-metric-chip';
+import { computeSleepEfficiencyPct, formatSleepDuration } from '@/lib/sleep/sleep-scoring';
 
 /**
- * Sleep chips — no Durée (already on the plate).
+ * Sleep KPI chips — durée · efficacité · profond · restaurateur.
+ * Matches the activity-detail instrument strip (overflow-visible, responsive).
  */
 export function SleepStatsStrip({
+  totalSleepMin,
+  deepMin,
+  awakeMin,
+  bedtimeMin,
+  wakeMin,
   restorativeRatio,
-  sleepDelta7d,
-  targetDeltaMin,
-  sleepTargetMin: _sleepTargetMin,
-  totalSleepMin: _totalSleepMin,
   loading = false,
 }: {
   totalSleepMin: number | null;
+  deepMin: number | null;
+  awakeMin: number | null;
+  bedtimeMin: number | null;
+  wakeMin: number | null;
   restorativeRatio: number | null;
-  sleepDelta7d: number | null;
-  targetDeltaMin: number | null;
-  sleepTargetMin: number;
   loading?: boolean;
 }) {
+  const efficiency = computeSleepEfficiencyPct({
+    totalSleepMin,
+    awakeMin,
+    bedtimeMin,
+    wakeMin,
+  });
+
   return (
-    <DrillDownStatsStrip
+    <InstrumentMetricGrid
       loading={loading}
       items={[
         {
+          label: 'Durée',
+          value: totalSleepMin != null ? formatSleepDuration(totalSleepMin) : null,
+        },
+        {
+          label: 'Efficacité',
+          value: efficiency != null ? `${efficiency} %` : null,
+        },
+        {
+          label: 'Sommeil profond',
+          value: deepMin != null ? formatSleepDuration(deepMin) : null,
+        },
+        {
           label: 'Restaurateur',
-          tone: restorativeRatioTone(restorativeRatio),
-          value: restorativeRatio != null ? `${restorativeRatio} %` : '—',
-        },
-        {
-          label: 'vs 7j',
-          tone: deltaTone(sleepDelta7d, 'good'),
-          value: sleepDelta7d != null ? signedSleepDuration(sleepDelta7d) : '—',
-        },
-        {
-          label: 'Objectif',
-          tone: deltaTone(targetDeltaMin, 'good'),
-          value: targetDeltaMin != null ? signedSleepDuration(targetDeltaMin) : '—',
+          value: restorativeRatio != null ? `${restorativeRatio} %` : null,
         },
       ]}
     />

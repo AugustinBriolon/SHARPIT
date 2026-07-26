@@ -2,9 +2,37 @@ import { describe, expect, it } from 'vitest';
 import {
   buildSleepScoreBreakdown,
   computeSharpitSleepScoreForDay,
+  computeSleepEfficiencyPct,
   mapSleepDurationToRaw,
 } from './sleep-scoring';
 import { mapRestorativeSleepRatioToRaw } from '@/core/inference/recovery/scoring';
+
+describe('computeSleepEfficiencyPct', () => {
+  it('uses bedtime → wake window when available', () => {
+    // 23:18 → 07:00 = 462 min in bed; 450 asleep → 97 %
+    expect(
+      computeSleepEfficiencyPct({
+        totalSleepMin: 450,
+        bedtimeMin: 23 * 60 + 18,
+        wakeMin: 7 * 60,
+      }),
+    ).toBe(97);
+  });
+
+  it('falls back to sleep + awake minutes', () => {
+    expect(
+      computeSleepEfficiencyPct({
+        totalSleepMin: 462,
+        awakeMin: 14,
+      }),
+    ).toBe(97);
+  });
+
+  it('returns null without enough inputs', () => {
+    expect(computeSleepEfficiencyPct({ totalSleepMin: null })).toBeNull();
+    expect(computeSleepEfficiencyPct({ totalSleepMin: 400 })).toBeNull();
+  });
+});
 
 describe('mapRestorativeSleepRatioToRaw', () => {
   it('scores 36% restorative as 50 (légèrement sous norme)', () => {

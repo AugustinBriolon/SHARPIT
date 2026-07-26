@@ -1,19 +1,12 @@
 'use client';
 
 import { ActivityType } from '@prisma/client';
-import { Skeleton } from '@/components/ui/skeleton';
+import {
+  InstrumentMetricGrid,
+  type InstrumentMetricItem,
+} from '@/components/ui/instrument-metric-chip';
 import { useActivityStream } from '@/hooks/use-data';
 import { formatDistance, formatDuration, formatPace, formatSwimPace } from '@/lib/format';
-import { cn } from '@/lib/utils';
-
-// Largeur de grille calée sur le nombre de stats réellement affichées : évite
-// les cases vides quand une métrique est absente (ex. pas de cadence).
-const SM_COLS: Record<number, string> = {
-  1: 'sm:grid-cols-1',
-  2: 'sm:grid-cols-2',
-  3: 'sm:grid-cols-3',
-  4: 'sm:grid-cols-4',
-};
 
 export interface HeroActivity {
   type: ActivityType;
@@ -40,9 +33,7 @@ type StreamStats = {
   totalAscent: number | null;
 };
 
-type Slot = {
-  label: string;
-  value: string | null;
+type Slot = InstrumentMetricItem & {
   needsStream?: boolean;
 };
 
@@ -136,24 +127,14 @@ export function ActivityHeroStats({
   const { data, isPending } = useActivityStream(activityId);
   const slots = buildSlots(activity, data?.stats ?? null);
 
-  const visible = slots.filter((slot) => slot.value != null || (slot.needsStream && isPending));
+  const items = slots.filter((slot) => slot.value != null || (slot.needsStream && isPending));
 
-  if (visible.length === 0) return null;
+  if (items.length === 0) return null;
 
   return (
-    <div className={cn('grid grid-cols-2 gap-3', SM_COLS[visible.length] ?? 'sm:grid-cols-4')}>
-      {visible.map((slot) => (
-        <div key={slot.label} className="chip-surface rounded-2xl px-5 py-4">
-          <p className="text-label">{slot.label}</p>
-          {slot.value != null ? (
-            <p className="text-data text-foreground mt-1.5 text-3xl font-semibold tabular-nums">
-              {slot.value}
-            </p>
-          ) : (
-            <Skeleton className="mt-2 h-8 w-24 rounded-lg" />
-          )}
-        </div>
-      ))}
-    </div>
+    <InstrumentMetricGrid
+      items={items.map(({ label, value }) => ({ label, value }))}
+      loading={isPending && items.some((slot) => slot.value == null)}
+    />
   );
 }

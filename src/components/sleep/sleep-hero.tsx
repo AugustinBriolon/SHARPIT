@@ -1,15 +1,13 @@
 import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
 import { formatClock } from '@/lib/sleep/sleep';
-import { formatSleepDuration } from '@/lib/sleep/sleep-scoring';
 
 export function SleepHero({
   date,
   sleepScore,
   adequacyDisplay,
-  totalSleepMin,
   bedtimeMin,
   wakeMin,
-  actionLine,
+  insightLine,
   onDateChange,
   onPreviousDay,
   onNextDay,
@@ -21,11 +19,10 @@ export function SleepHero({
   date: Date;
   sleepScore: number | null;
   adequacyDisplay: { label: string; colorClass: string };
-  totalSleepMin: number | null;
   bedtimeMin: number | null;
   wakeMin: number | null;
-  /** Sleep-specific action under the verdict (coucher / dette). */
-  actionLine?: string | null;
+  /** Coach reading under the verdict (night insight). */
+  insightLine?: string | null;
   onDateChange?: (date: Date) => void;
   onPreviousDay?: () => void;
   onNextDay?: () => void;
@@ -49,9 +46,10 @@ export function SleepHero({
       isToday={isToday}
       loading={loading}
       maxDate={maxDate}
-      quickReadCaption={loading ? undefined : (actionLine ?? undefined)}
-      quickReadLabel="durée de sommeil"
-      quickReadValue={totalSleepMin != null ? formatSleepDuration(totalSleepMin) : '—'}
+      quickReadCaption={loading ? undefined : (insightLine ?? undefined)}
+      quickReadLabel="score sommeil"
+      quickReadSuffix="/ 100"
+      quickReadValue={sleepScore != null ? String(sleepScore) : '—'}
       railCaption="insuffisant vers récupérant"
       railValue={sleepScore}
       subline={subtitle}

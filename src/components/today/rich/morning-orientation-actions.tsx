@@ -140,17 +140,24 @@ export function MorningOrientationActions({
 
   if (orientation.phase === 'EVIDENCE_PENDING' && orientation.showRefreshEvidence) {
     return (
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          disabled={pending === 'refresh'}
-          size="sm"
-          type="button"
-          variant="accent"
-          onClick={() => void refreshEvidence()}
-        >
-          <RefreshCw className={cn('size-3.5', pending === 'refresh' && 'animate-spin')} />
-          Actualiser les preuves
-        </Button>
+      <div className="space-y-2">
+        {orientation.evidenceLine ? (
+          <p className="text-muted-foreground px-0.5 text-xs leading-relaxed">
+            {orientation.evidenceLine}
+          </p>
+        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            disabled={pending === 'refresh'}
+            size="sm"
+            type="button"
+            variant="accent"
+            onClick={() => void refreshEvidence()}
+          >
+            <RefreshCw className={cn('size-3.5', pending === 'refresh' && 'animate-spin')} />
+            Actualiser les preuves
+          </Button>
+        </div>
       </div>
     );
   }

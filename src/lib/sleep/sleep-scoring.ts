@@ -16,6 +16,41 @@ export function formatSleepDuration(minutes: number | null): string {
   return `${h}h ${m.toString().padStart(2, '0')}m`;
 }
 
+/**
+ * Sleep efficiency — time asleep / time in bed.
+ * Prefers bedtime→wake window; falls back to sleep + awake minutes.
+ */
+export function computeSleepEfficiencyPct({
+  totalSleepMin,
+  awakeMin,
+  bedtimeMin,
+  wakeMin,
+}: {
+  totalSleepMin: number | null;
+  awakeMin?: number | null;
+  bedtimeMin?: number | null;
+  wakeMin?: number | null;
+}): number | null {
+  if (totalSleepMin == null || totalSleepMin <= 0) return null;
+
+  if (bedtimeMin != null && wakeMin != null) {
+    let timeInBed = wakeMin - bedtimeMin;
+    if (timeInBed <= 0) timeInBed += 24 * 60;
+    if (timeInBed > 0) {
+      return Math.round(Math.min(100, (totalSleepMin / timeInBed) * 100));
+    }
+  }
+
+  if (awakeMin != null && awakeMin >= 0) {
+    const timeInBed = totalSleepMin + awakeMin;
+    if (timeInBed > 0) {
+      return Math.round(Math.min(100, (totalSleepMin / timeInBed) * 100));
+    }
+  }
+
+  return null;
+}
+
 export function computeRestorativeRatio(
   deepMin: number | null,
   remMin: number | null,
@@ -135,9 +170,9 @@ export function restorativeRatioLabel(ratio: number): string {
 export type SleepAdequacyLevel =
   'EXCELLENT' | 'ADEQUATE' | 'INSUFFICIENT' | 'SEVERELY_INSUFFICIENT';
 
-/** Aligné sur classifySleepAdequacy du moteur recovery. */
-export function mapSleepScoreToAdequacy(score: number | null): SleepAdequacyLevel {
-  if (score === null) return 'INSUFFICIENT';
+/** Aligné sur classifySleepAdequacy du moteur recovery. Null = pas de score nuit. */
+export function mapSleepScoreToAdequacy(score: number | null): SleepAdequacyLevel | null {
+  if (score === null) return null;
   if (score >= 90) return 'EXCELLENT';
   if (score >= 70) return 'ADEQUATE';
   if (score >= 40) return 'INSUFFICIENT';

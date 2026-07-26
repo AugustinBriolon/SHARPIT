@@ -1,5 +1,8 @@
 /**
- * Fetch forecast predictions for a planned session window.
+ * Fetch weather for an activity / planned-session window.
+ *
+ * Selection is driven by the session window (date + duration), not by when
+ * sync happened: a run from yesterday enriched today always hits the archive.
  */
 
 import { openMeteoEnvironmentalAdapter } from '@/core/adapters/environment/open-meteo-adapter';
@@ -12,6 +15,11 @@ import { createOpenMeteoEnvironmentalProvider } from '@/infrastructure/environme
 const FORECAST_PROVIDER = createOpenMeteoForecastProvider();
 const ARCHIVE_PROVIDER = createOpenMeteoEnvironmentalProvider();
 
+/** Prefer historical archive once the session ended more than 1h ago. */
+export function shouldUseWeatherArchive(windowEnd: Date, now: Date = new Date()): boolean {
+  return windowEnd.getTime() < now.getTime() - 60 * 60 * 1000;
+}
+
 export async function fetchForecastPredictions(input: {
   location: GeoLocation;
   windowStart: Date;
@@ -20,7 +28,7 @@ export async function fetchForecastPredictions(input: {
   trainingDayId: string;
 }): Promise<{ predictions: EnvironmentalPrediction[]; providerId: string | null }> {
   const now = new Date();
-  const useArchive = input.windowEnd.getTime() < now.getTime() - 60 * 60 * 1000;
+  const useArchive = shouldUseWeatherArchive(input.windowEnd, now);
   const provider = useArchive ? ARCHIVE_PROVIDER : FORECAST_PROVIDER;
 
   const context = {

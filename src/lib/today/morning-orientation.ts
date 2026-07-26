@@ -232,20 +232,19 @@ export function resolveMorningOrientation(input: {
     };
   }
 
-  // Only block on missing night sync/compute — never on adviceActionable.
-  // Low confidence / truthfulness is a different concern: Today already shows
-  // phaseNarrative + insufficientDataMessage. Treating !adviceActionable as
-  // EVIDENCE_PENDING traps the athlete on "Actualiser les preuves" forever
-  // (refresh cannot raise confidence above the gate).
+  // Missing night proofs: keep the day instrument (verdict, metrics, sessions,
+  // trajectory). Only withhold firm morning recalibration — refresh stays available.
+  // Overwriting the hero with "Orientation pas encore prête" felt like a bug
+  // past midnight before sleep lands.
   if (!evidenceReady) {
     return {
       phase: 'EVIDENCE_PENDING',
       evidenceLine: nightEvidenceLine(snapshot),
       showRefreshEvidence: true,
       showFirmActions: false,
-      hideHeroConfidence: true,
-      heroHeadline: 'Orientation pas encore prête',
-      heroSubline: nightEvidenceLine(snapshot),
+      hideHeroConfidence: false,
+      heroHeadline: null,
+      heroSubline: null,
       confirmEase: null,
       confirmIncrease: null,
       holdDecisionId: null,

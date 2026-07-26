@@ -74,6 +74,23 @@ export async function POST(request: NextRequest) {
       console.error('[activities/POST] narrative', error);
     }
 
+    try {
+      const { autoLinkActivities } = await import('@/lib/planned-session/session-linking');
+      await autoLinkActivities([activity.id]);
+    } catch (error) {
+      console.error('[activities/POST] auto-link', error);
+    }
+
+    try {
+      const { scheduleBackgroundTasks } = await import('@/lib/athlete-state/background');
+      scheduleBackgroundTasks({
+        activityIds: [activity.id],
+        regenerateBriefing: false,
+      });
+    } catch (error) {
+      console.error('[activities/POST] background', error);
+    }
+
     return NextResponse.json(activity, { status: 201 });
   } catch (error) {
     console.error(error);

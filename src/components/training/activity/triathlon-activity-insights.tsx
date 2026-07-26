@@ -14,6 +14,10 @@ import { SplitsTable } from '@/components/training/activity/splits-table';
 import { ZoneDistribution } from '@/components/training/activity/zone-distribution';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  ActivityCompositionSkeleton,
+  ActivityMetricStripSkeleton,
+} from '@/components/training/activity/detail/activity-detail-skeleton';
 import { useMultisportStreams } from '@/hooks/use-data';
 import type { ZoneBucket } from '@/lib/activity/activity-analysis';
 import { sportIdentityHex } from '@/lib/activity/sport-identity';
@@ -242,15 +246,11 @@ export function TriathlonActivityInsights({ activityId }: { activityId: string }
     return (
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <Skeleton className="h-4 w-36" />
-          <Skeleton className="h-8 w-56 rounded-full" />
+          <Skeleton className="h-4 w-36 rounded-full border-0" />
+          <Skeleton className="h-8 w-56 rounded-full border-0" />
         </div>
-        <Skeleton className="h-72 w-full rounded-xl sm:h-80" />
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="rounded-analysis-lg h-20" />
-          ))}
-        </div>
+        <ActivityCompositionSkeleton withCoach={false} />
+        <ActivityMetricStripSkeleton />
       </div>
     );
   }

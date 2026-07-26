@@ -76,9 +76,8 @@ export async function PATCH(request: NextRequest) {
           }
         : {}),
     });
-    if (equipment !== undefined) {
-      invalidateCoachContext();
-    }
+    // Any profile field can affect coach prompts / twin — clear the 30s cache.
+    invalidateCoachContext();
     return NextResponse.json(profile);
   } catch (error) {
     return profileUpdateError(error);

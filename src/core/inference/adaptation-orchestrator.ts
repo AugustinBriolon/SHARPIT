@@ -29,6 +29,14 @@ import type { DecisionRecordRepository } from './types';
 import { runAdaptationModel } from './adaptation/model';
 import type { AdaptationModelOutput, AdaptationModelContext } from './adaptation/types';
 import type { DecisionRecord } from './types';
+import { NEUROMUSCULAR_EFFICIENCY_LOOKBACK_DAYS } from './adaptation/constants';
+
+function subtractTrainingDays(trainingDayId: string, days: number): string {
+  const [year, month, day] = trainingDayId.split('-').map(Number);
+  const d = new Date(Date.UTC(year, month - 1, day));
+  d.setUTCDate(d.getUTCDate() - days);
+  return d.toISOString().split('T')[0];
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Result type
@@ -102,6 +110,18 @@ export class AdaptationInferenceOrchestrator {
       this.deps.digitalTwinRepo.getEnvironmentalImpact(athleteId),
     ]);
 
+    // Neuromuscular efficiency is a multi-day mean (not "today's sessions only").
+    const fromDayId = subtractTrainingDays(
+      trainingDayId,
+      NEUROMUSCULAR_EFFICIENCY_LOOKBACK_DAYS - 1,
+    );
+    const recentSessions = await this.deps.featureEngine.getSessionFeaturesInRange(
+      athleteId,
+      fromDayId,
+      trainingDayId,
+    );
+    const featuresForModel = { ...features, sessions: recentSessions };
+
     // ── Step 2: Get context from Digital Twin ──────────────────────────────
     const recoveryState = twin.state.recovery;
     const fatigueState = twin.state.fatigue;
@@ -119,7 +139,7 @@ export class AdaptationInferenceOrchestrator {
     };
 
     // ── Step 4: Run the Adaptation Model (pure — no side effects) ─────────
-    const output = runAdaptationModel(features, context);
+    const output = runAdaptationModel(featuresForModel, context);
 
     // ── Step 5: Persist Decision Record ───────────────────────────────────
     const recordId = randomUUID();
@@ -140,7 +160,7 @@ export class AdaptationInferenceOrchestrator {
       } as unknown as Record<string, unknown>,
       decision: output.decision as unknown as Record<string, unknown>,
       recommendation: output.recommendation as unknown as Record<string, unknown>,
-      inputSummary: buildInputSummary(features, context),
+      inputSummary: buildInputSummary(featuresForModel, context),
       computedAt,
       createdAt: computedAt,
     };

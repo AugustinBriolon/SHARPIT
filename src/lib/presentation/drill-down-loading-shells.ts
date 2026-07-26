@@ -142,6 +142,7 @@ export function effortLoadingShell() {
 
 export function sleepLoadingShell() {
   return {
+    nightStatus: 'pending' as const,
     sleepScore: null as number | null,
     adequacyDisplay: { label: '', colorClass: 'text-muted-foreground' },
     scoreBreakdown: {

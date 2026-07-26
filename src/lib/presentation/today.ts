@@ -265,14 +265,13 @@ export async function buildTodayPresentationViewModel(
   const effectiveSubline = morningOrientation?.heroSubline ?? heroSubline;
   const hideHeroConfidence = Boolean(morningOrientation?.hideHeroConfidence);
   const evidencePending = morningOrientation?.phase === 'EVIDENCE_PENDING';
-  const suppressVerdictColors = evidencePending;
 
   let morningEyebrow = heroEyebrow;
-  if (evidencePending) morningEyebrow = 'Ce matin';
+  if (evidencePending && !morningEyebrow) morningEyebrow = 'Ce matin';
 
   let plateLimiterText: string | null = null;
   let plateLimiterHref: string | null = null;
-  if (!evidencePending && snapshot.limitingFactor != null) {
+  if (snapshot.limitingFactor != null) {
     plateLimiterText =
       buildTodayLimitingFacts({ limitingFactor: snapshot.limitingFactor }).facts.find(
         (f) => f.label === 'Frein',
@@ -281,7 +280,7 @@ export async function buildTodayPresentationViewModel(
       resolveLimitingFactorHrefFromDecision(snapshot.decision) ?? TWIN_DRILL_DOWN.recovery;
   }
 
-  const effectiveStatusMessage = evidencePending ? null : statusMessage;
+  const effectiveStatusMessage = statusMessage;
   const sessionChoice = morningOrientation?.sessionChoice ?? null;
 
   return {
@@ -307,14 +306,14 @@ export async function buildTodayPresentationViewModel(
       eyebrow: morningEyebrow,
       headline: effectiveHeadline,
       subline: effectiveSubline,
-      posture: suppressVerdictColors ? 'uncertain' : posture,
-      postureLabel: suppressVerdictColors ? '' : postureLabel,
-      focusPriority: evidencePending ? null : focusPriority,
-      goalLine: evidencePending ? null : goalLine,
-      actionLine: evidencePending ? null : actionLine,
+      posture,
+      postureLabel,
+      focusPriority,
+      goalLine,
+      actionLine,
       adaptationReminders,
       verdictStyle: {
-        showVerdictColors: !suppressVerdictColors && verdict !== 'INSUFFICIENT_DATA',
+        showVerdictColors: verdict !== 'INSUFFICIENT_DATA',
         bgClass: displayVerdict.bgClass,
         colorClass: displayVerdict.colorClass,
         dotClass: displayVerdict.dotClass,

@@ -1,5 +1,6 @@
 import { formatClock, formatDuration, type SleepCoachView } from '@/lib/sleep/sleep';
 import { buildSleepInsightBundle } from '@/core/product-insight/sleep-insights';
+import type { SleepNightStatus } from '@/core/presentation/sleep-view-model';
 
 export function buildSleepPageInsights(params: {
   sleepScore: number | null;
@@ -9,6 +10,7 @@ export function buildSleepPageInsights(params: {
   recoveryNote: string | null;
   coachView: SleepCoachView;
   confidence?: number;
+  nightStatus?: SleepNightStatus;
 }) {
   const { coachView } = params;
 
@@ -24,5 +26,6 @@ export function buildSleepPageInsights(params: {
     regularityMin: coachView.regularityMin,
     coachInsightLines: coachView.insights.map((insight) => `${insight.title} — ${insight.detail}`),
     confidence: params.confidence ?? 0.75,
+    nightStatus: params.nightStatus,
   });
 }

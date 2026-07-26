@@ -73,6 +73,19 @@ describe('activity-weather', () => {
         JSON.stringify({ v: 1, city: 'Courbevoie', avgTempC: 20, condition: 'clear' }),
       ),
     ).toBe(true);
+    expect(
+      needsWeatherEnrichment(
+        JSON.stringify({ v: 3, city: 'Sens', avgTempC: 31, condition: 'clear' }),
+      ),
+    ).toBe(true);
+  });
+
+  it('does not need enrichment for current weather version', () => {
+    expect(
+      needsWeatherEnrichment(
+        JSON.stringify({ v: 4, city: 'Sens', avgTempC: 27.4, condition: 'clear' }),
+      ),
+    ).toBe(false);
   });
 
   it('shortens geocoded addresses to city', () => {

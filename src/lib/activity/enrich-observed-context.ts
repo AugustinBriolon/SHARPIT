@@ -1,6 +1,6 @@
 import { startOfDay, addDays } from 'date-fns';
 import type { PrismaClient } from '@prisma/client';
-import { Prisma, type ActivityType } from '@prisma/client';
+import { type ActivityType } from '@prisma/client';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { backfillActivityObservedLocation } from '@/lib/activity/observed-location';
@@ -62,14 +62,10 @@ export async function enrichActivityObservedContext(
       options?.forceNarrative || weatherUpdated || (today && !activity.narrativeAnalyzedAt);
 
     if (shouldRefreshNarrative) {
-      await prisma.activity.update({
-        where: { id: activityId },
-        data: {
-          narrativeAnalysis: Prisma.DbNull,
-          narrativeAnalyzedAt: null,
-        },
+      // Never clear narrative before success — a failed LLM would leave a forever-pending UI.
+      narrativeRefreshed = await runActivityNarrativeAnalysis(activityId, {
+        force: Boolean(options?.forceNarrative) || weatherUpdated,
       });
-      narrativeRefreshed = await runActivityNarrativeAnalysis(activityId);
     }
 
     return { weatherUpdated, narrativeRefreshed };
@@ -127,14 +123,10 @@ export async function enrichActivityObservedContext(
     (today && !activity.narrativeAnalyzedAt);
 
   if (shouldRefreshNarrative) {
-    await prisma.activity.update({
-      where: { id: activityId },
-      data: {
-        narrativeAnalysis: Prisma.DbNull,
-        narrativeAnalyzedAt: null,
-      },
+    // Never clear narrative before success — a failed LLM would leave a forever-pending UI.
+    narrativeRefreshed = await runActivityNarrativeAnalysis(activityId, {
+      force: Boolean(options?.forceNarrative) || weatherUpdated || locationNew,
     });
-    narrativeRefreshed = await runActivityNarrativeAnalysis(activityId);
   }
 
   return { weatherUpdated, narrativeRefreshed };

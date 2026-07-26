@@ -67,6 +67,8 @@ export type SleepInsightInput = {
   recoveryNote: string | null;
   coachInsightLines: string[];
   confidence: number;
+  /** When not present, skip "this night was insufficient" framing. */
+  nightStatus?: 'present' | 'pending' | 'missing';
 };
 
 export type EffortInsightInput = {

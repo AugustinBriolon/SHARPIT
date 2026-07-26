@@ -23,7 +23,8 @@ export function DiscussCoachLink({
   return (
     <LinkButton href={href} variant="highlight">
       <MessageCircle className="size-4" />
-      Discuter avec le coach
+      <span className="sm:hidden">Coach</span>
+      <span className="hidden sm:inline">Discuter avec le coach</span>
     </LinkButton>
   );
 }

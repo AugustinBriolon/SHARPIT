@@ -46,7 +46,7 @@ function SectionLink({ title, href, cta }: { title: string; href: string; cta: s
 
 function PreviewChipSkeleton({ count }: { count: number }) {
   return (
-    <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+    <ul className="flex flex-col gap-2">
       {Array.from({ length: count }, (_, i) => (
         <li key={i} className="min-w-0">
           <InstrumentListChipSkeleton titleWidth="w-[min(100%,12rem)]" />
@@ -288,15 +288,15 @@ export function TrainingDashboard() {
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start lg:gap-8">
         <section className="min-w-0">
           <SectionLink cta="Planning" href="/training/planning" title="Séances à venir" />
-          {valuesLoading ? <PreviewChipSkeleton count={previewLimit} /> : null}
-          {!valuesLoading ? (
+          {valuesLoading && <PreviewChipSkeleton count={previewLimit} />}
+          {!valuesLoading && (
             <PlanningRow
               className="sm:grid-cols-1"
               limit={previewLimit}
               sessions={upcomingRoutineSessions}
             />
-          ) : null}
-          {!valuesLoading && upcomingPreview.length === 0 ? (
+          )}
+          {!valuesLoading && upcomingPreview.length === 0 && (
             <InkEmptyState
               className="mt-1"
               description="Ouvre le planning pour programmer la suite."
@@ -304,19 +304,19 @@ export function TrainingDashboard() {
               title="Aucune séance à venir"
               compact
             />
-          ) : null}
+          )}
         </section>
 
         <section className="min-w-0">
           <SectionLink cta="Historique" href="/training/history" title="Activités récentes" />
-          {valuesLoading ? <ActivityChipSkeleton count={previewLimit} /> : null}
-          {!valuesLoading ? (
+          {valuesLoading && <ActivityChipSkeleton count={previewLimit} />}
+          {!valuesLoading && (
             <ActivityList
               activities={latestActivities}
               emptyLabel="Aucune activité récente."
               variant="chip"
             />
-          ) : null}
+          )}
         </section>
       </div>
 

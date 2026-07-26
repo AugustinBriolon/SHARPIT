@@ -128,15 +128,19 @@ describe('nightEvidenceReady', () => {
 });
 
 describe('resolveMorningOrientation', () => {
-  it('returns EVIDENCE_PENDING without firm actions', () => {
+  it('returns EVIDENCE_PENDING without firm actions and without hijacking the hero', () => {
     const r = resolveMorningOrientation({
       phase: 'MORNING',
       snapshot: makeSnapshot({ sleepFreshness: 'awaiting_data' }),
       recalibration: null,
     });
     expect(r?.phase).toBe('EVIDENCE_PENDING');
-    expect(r?.heroHeadline).toMatch(/pas encore prête/i);
+    expect(r?.heroHeadline).toBeNull();
+    expect(r?.heroSubline).toBeNull();
+    expect(r?.evidenceLine).toMatch(/sommeil/i);
+    expect(r?.showRefreshEvidence).toBe(true);
     expect(r?.showFirmActions).toBe(false);
+    expect(r?.hideHeroConfidence).toBe(false);
   });
 
   it('does not trap on EVIDENCE_PENDING when night proofs are fresh but advice is gated', () => {
@@ -163,14 +167,14 @@ describe('resolveMorningOrientation', () => {
     expect(r?.hideHeroConfidence).toBe(false);
   });
 
-  it('hides hero confidence while night evidence is still pending', () => {
+  it('keeps hero confidence visible while night evidence is still pending', () => {
     const r = resolveMorningOrientation({
       phase: 'MORNING',
       snapshot: makeSnapshot({ sleepFreshness: 'awaiting_data' }),
       recalibration: null,
     });
     expect(r?.phase).toBe('EVIDENCE_PENDING');
-    expect(r?.hideHeroConfidence).toBe(true);
+    expect(r?.hideHeroConfidence).toBe(false);
   });
 
   it('shows firm actions + comparison sides when a DOWN proposal is presented', () => {

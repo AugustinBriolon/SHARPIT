@@ -7,6 +7,7 @@ const RELAXATION_LEAD_MIN = 30;
 
 /**
  * Plan du soir — coucher dominant; relaxation + réveil en mono secondaire.
+ * Debt / night verdict live in SleepWhyBlock when the night is present.
  */
 export function SleepCoachTonight({
   view,
@@ -24,7 +25,6 @@ export function SleepCoachTonight({
   const relaxation = bedtime != null ? bedtime - RELAXATION_LEAD_MIN : null;
   const wake = bedtime != null && durationMin > 0 ? bedtime + durationMin : null;
 
-  // Debt lives in SleepWhyBlock — avoid repeating here unless no why primary.
   const secondaryNote =
     coachingLine ??
     (view.regularityMin != null

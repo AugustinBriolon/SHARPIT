@@ -33,6 +33,36 @@ import { differenceInCalendarDays, startOfDay } from 'date-fns';
 
 const ANALYSIS_POLL_MS = 3_000;
 const ANALYSIS_POLL_MAX_MS = 120_000;
+const ANALYSIS_TIMEOUT_STORAGE_PREFIX = 'sharpit.analysis-poll-timeout.';
+
+function analysisTimeoutStorageKey(sessionId: string): string {
+  return `${ANALYSIS_TIMEOUT_STORAGE_PREFIX}${sessionId}`;
+}
+
+function readAnalysisPollTimedOut(sessionId: string): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return sessionStorage.getItem(analysisTimeoutStorageKey(sessionId)) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeAnalysisPollTimedOut(sessionId: string): void {
+  try {
+    sessionStorage.setItem(analysisTimeoutStorageKey(sessionId), '1');
+  } catch {
+    // ignore quota / private mode
+  }
+}
+
+function clearAnalysisPollTimedOut(sessionId: string): void {
+  try {
+    sessionStorage.removeItem(analysisTimeoutStorageKey(sessionId));
+  } catch {
+    // ignore
+  }
+}
 
 const VERDICT_LABELS: Record<SessionAnalysis['verdict'], string> = {
   AS_PLANNED: 'Conforme',
@@ -167,18 +197,36 @@ export function SessionRealization({
   const [showAll, setShowAll] = useState(false);
   const [analysis, setAnalysis] = useState(session.analysis as unknown as SessionAnalysis | null);
   const [analyzedAt, setAnalyzedAt] = useState(session.analyzedAt);
-  const [pollTimedOut, setPollTimedOut] = useState(false);
+  const [pollTimedOut, setPollTimedOut] = useState(() => readAnalysisPollTimedOut(session.id));
 
   const linked = session.activity;
 
   useEffect(() => {
     setAnalysis(session.analysis as unknown as SessionAnalysis | null);
     setAnalyzedAt(session.analyzedAt);
-    setPollTimedOut(false);
+    if (session.analyzedAt) {
+      clearAnalysisPollTimedOut(session.id);
+      setPollTimedOut(false);
+    } else {
+      setPollTimedOut(readAnalysisPollTimedOut(session.id));
+    }
   }, [session.analysis, session.analyzedAt, session.id, session.activityId]);
 
   const hasAnalysis = Boolean(analysis && analyzedAt);
   const isPendingScheduled = Boolean(linked && !hasAnalysis && !analyze.isPending && !pollTimedOut);
+
+  // Kick a client analyze once if still missing after remount (server `after` may have been killed).
+  useEffect(() => {
+    if (!linked || hasAnalysis || pollTimedOut || analyze.isPending) return;
+    const kickKey = `sharpit.analysis-kick.${session.id}`;
+    try {
+      if (sessionStorage.getItem(kickKey) === '1') return;
+      sessionStorage.setItem(kickKey, '1');
+    } catch {
+      // still attempt once per mount via analyze below
+    }
+    analyze.mutate(session.id);
+  }, [analyze, hasAnalysis, linked, pollTimedOut, session.id]);
 
   useEffect(() => {
     if (!isPendingScheduled) return;
@@ -195,11 +243,14 @@ export function SessionRealization({
           const sessions = await queryClient.fetchQuery({
             queryKey: queryKeys.plannedSessions,
             queryFn: fetchPlannedSessions,
+            staleTime: 0,
           });
           const updated = sessions.find((item) => item.id === session.id);
           if (updated?.analyzedAt && updated.analysis) {
             setAnalysis(updated.analysis as unknown as SessionAnalysis);
             setAnalyzedAt(updated.analyzedAt);
+            clearAnalysisPollTimedOut(session.id);
+            setPollTimedOut(false);
             return;
           }
         } catch {
@@ -208,7 +259,13 @@ export function SessionRealization({
       }
 
       if (!cancelled) {
+        writeAnalysisPollTimedOut(session.id);
         setPollTimedOut(true);
+        try {
+          sessionStorage.removeItem(`sharpit.analysis-kick.${session.id}`);
+        } catch {
+          // ignore
+        }
       }
     }
 
@@ -255,6 +312,13 @@ export function SessionRealization({
   }
 
   async function handleManualAnalysis() {
+    clearAnalysisPollTimedOut(session.id);
+    setPollTimedOut(false);
+    try {
+      sessionStorage.removeItem(`sharpit.analysis-kick.${session.id}`);
+    } catch {
+      // ignore
+    }
     const loadingToast = toast.loading('Analyse de la séance en cours');
     try {
       await analyze.mutateAsync(session.id);

@@ -71,6 +71,7 @@ Principes :
 - Renseigne uniquement les champs à modifier pour MODIFY ; mets null ailleurs.
 - durationMin et load doivent être des entiers (pas de décimales).
 - Pour ADD/MODIFY d'une séance STRENGTH : fournis strengthPrescription (exercices FR + séries/reps/repos). null sinon.
+- Si le plan manque de renfo/mobilité préventive alors qu'un objectif sportif est actif, ADD des séances STRENGTH (préventif + mobilité) adaptées au sport — sauf MOBILITY_ONLY/NONE / REST_ONLY.
 Réponds en français.`;
 
 function adaptErrorMessage(error: unknown): string {

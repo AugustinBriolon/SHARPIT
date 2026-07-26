@@ -1,5 +1,6 @@
 import type { ProductInsightBundle } from '@/core/product-insight/types';
 import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
+import type { SleepNightStatus } from '@/core/presentation/sleep-view-model';
 import type { SleepCoachView } from '@/lib/sleep/sleep';
 import type { SleepScoreBreakdown } from '@/lib/sleep/sleep-scoring';
 
@@ -15,6 +16,7 @@ export type SleepPageViewProps = {
   onPreviousDay?: () => void;
   onNextDay?: () => void;
   loading?: boolean;
+  nightStatus?: SleepNightStatus;
   sleepScore: number | null;
   adequacyDisplay: { label: string; colorClass: string };
   scoreBreakdown: SleepScoreBreakdown;

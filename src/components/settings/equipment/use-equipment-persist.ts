@@ -2,8 +2,10 @@
 
 import type { AthleteEquipment } from '@/lib/equipment/types';
 import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
+import { invalidateAfterAthleteProfileSave } from '@/lib/query/invalidate-after-athlete-profile-save';
 import { queryKeys } from '@/lib/query/keys';
 import { useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 const SAVE_DEBOUNCE_MS = 450;
@@ -25,6 +27,7 @@ function equipmentEqual(a: AthleteEquipment, b: AthleteEquipment): boolean {
 }
 
 export function useEquipmentPersist(initial: AthleteEquipment) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [equipment, setEquipment] = useState<AthleteEquipment>(() =>
     normalizeAthleteEquipment(initial),
@@ -105,7 +108,15 @@ export function useEquipmentPersist(initial: AthleteEquipment) {
         savedRef.current = payload;
         succeeded = true;
         setMessage('Équipement enregistré.');
-        void queryClient.invalidateQueries({ queryKey: queryKeys.athleteProfile });
+        const saved = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+        if (saved && typeof saved === 'object') {
+          queryClient.setQueryData(queryKeys.athleteProfile, (current: unknown) => {
+            if (!current || typeof current !== 'object') return saved;
+            return { ...current, ...saved };
+          });
+        }
+        router.refresh();
+        await invalidateAfterAthleteProfileSave(queryClient);
       }
     } catch (err) {
       if (seq === saveSeq.current) {

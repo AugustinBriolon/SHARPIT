@@ -2,8 +2,8 @@ import type { QueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { queryKeys } from '@/lib/query/keys';
 
-/** Delay for autoLinkActivities / background planned→activity linking after sync API returns. */
-export const PROVIDER_SYNC_LINK_SETTLE_MS = 1800;
+/** Delay for a second cache refresh after sync (narratives / weather may still land). */
+export const PROVIDER_SYNC_LINK_SETTLE_MS = 800;
 
 export type InvalidateAfterProviderSyncOptions = {
   /** Include body-composition caches (Withings / Renpho / sync-all). Default true. */

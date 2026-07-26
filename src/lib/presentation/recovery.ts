@@ -163,9 +163,20 @@ export async function buildRecoveryViewModel(trainingDayId: string): Promise<Rec
     recovery.signals.loadStressContext as LoadStressContext,
   );
 
-  const limiterLabel = recovery.primaryLimitingFactor
+  const sleepFreshness =
+    snapshot.freshness.domains.find((d) => d.domain === 'sleep')?.freshness ?? null;
+  const sleepNightPending =
+    sleepFreshness === 'awaiting_data' ||
+    sleepFreshness === 'syncing' ||
+    sleepFreshness === 'computing';
+
+  let limiterLabel = recovery.primaryLimitingFactor
     ? (PRIMARY_LIMITER_LABEL[recovery.primaryLimitingFactor] ?? recovery.primaryLimitingFactor)
     : null;
+  // Twin may still flag sleep from yesterday's dimension before tonight syncs.
+  if (sleepNightPending && recovery.primaryLimitingFactor === 'sleep') {
+    limiterLabel = null;
+  }
 
   const confidencePct = Math.round(recovery.confidence * 100);
   const confidenceTier = mapConfidenceToTier(recovery.confidence);

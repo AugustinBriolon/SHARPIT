@@ -1,6 +1,6 @@
 import type { HeroActivity } from '@/components/training/activity/activity-hero-stats';
 import { SPORT_IDENTITY_SURFACE } from '@/lib/activity/sport-identity';
-import { formatDuration } from '@/lib/format';
+import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
 import { ActivityType } from '@prisma/client';
 import type { LucideIcon } from 'lucide-react';
 import { Bike, Dumbbell, Footprints, Medal, Shapes, Waves } from 'lucide-react';
@@ -63,6 +63,33 @@ export function activitySourceLabel(activity: {
   if (activity.garminId || activity.source === 'garmin') return 'Garmin';
   if (activity.stravaId || activity.source === 'strava') return 'Strava';
   return 'Manuel';
+}
+
+/** Fine meta line under the sticky header — type · date · source. */
+export function formatActivityDetailMeta(activity: {
+  type: ActivityType;
+  date: Date | string;
+  source: string;
+  garminId?: string | null;
+  stravaId?: string | null;
+}): string {
+  return [
+    activityTypeLabels[activity.type],
+    formatDate(new Date(activity.date)),
+    activitySourceLabel(activity).toUpperCase(),
+  ].join(' · ');
+}
+
+/** Secondary stats under the title — durée · TSS · RPE. */
+export function formatActivityDetailStats(activity: {
+  duration: number | null;
+  load: number | null;
+  rpe: number | null;
+}): string {
+  const parts: string[] = [formatDuration(activity.duration)];
+  if (activity.load != null) parts.push(`${Math.round(activity.load)} TSS`);
+  if (activity.rpe != null) parts.push(`RPE ${activity.rpe}`);
+  return parts.join(' · ');
 }
 
 export function rpeTone(rpe: number): ChipTone {

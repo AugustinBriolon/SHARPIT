@@ -152,14 +152,15 @@ export function TodayVerdictHero({
                 widthClassName="w-36"
               />
             </Badge>
-          ) : (
+          ) : null}
+          {!loading && hero.goalLine ? (
             <Badge
               className="border-ink-surface-foreground/25 text-ink-surface-foreground/80 text-data rounded-full bg-transparent text-xs font-normal"
               variant="outline"
             >
               {hero.goalLine}
             </Badge>
-          )}
+          ) : null}
         </div>
       </div>
 

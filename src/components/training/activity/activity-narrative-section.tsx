@@ -3,12 +3,15 @@
 import { useEffect, useState } from 'react';
 import { ActivityType } from '@prisma/client';
 import { ActivityNarrativeCard } from '@/components/training/activity/activity-narrative-card';
-import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/toast';
+import { Loader2, Sparkles } from 'lucide-react';
 import { isEligibleForActivityNarrative } from '@/lib/activity/activity-narrative-config';
 import { activityNarrativeSchema, type ActivityNarrative } from '@/lib/validators/coach';
 
 const NARRATIVE_POLL_MS = 3_000;
 const NARRATIVE_POLL_MAX_MS = 120_000;
+const NARRATIVE_TIMEOUT_PREFIX = 'sharpit.narrative-poll-timeout.';
 
 const NARRATIVE_TYPES = new Set<ActivityType>([
   ActivityType.RUN,
@@ -30,6 +33,31 @@ function parseNarrative(raw: unknown): ActivityNarrative | null {
   return parsed.success ? parsed.data : null;
 }
 
+function readTimedOut(activityId: string): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return sessionStorage.getItem(`${NARRATIVE_TIMEOUT_PREFIX}${activityId}`) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeTimedOut(activityId: string): void {
+  try {
+    sessionStorage.setItem(`${NARRATIVE_TIMEOUT_PREFIX}${activityId}`, '1');
+  } catch {
+    // ignore
+  }
+}
+
+function clearTimedOut(activityId: string): void {
+  try {
+    sessionStorage.removeItem(`${NARRATIVE_TIMEOUT_PREFIX}${activityId}`);
+  } catch {
+    // ignore
+  }
+}
+
 export function ActivityNarrativeSection({
   activityId,
   activityType,
@@ -40,18 +68,26 @@ export function ActivityNarrativeSection({
 }: ActivityNarrativeSectionProps) {
   const [narrativeAnalysis, setNarrativeAnalysis] = useState(initialAnalysis);
   const [narrativeAnalyzedAt, setNarrativeAnalyzedAt] = useState(initialAnalyzedAt);
+  const [pollTimedOut, setPollTimedOut] = useState(() => readTimedOut(activityId));
+  const [generating, setGenerating] = useState(false);
 
   const hasAnalysis = Boolean(parseNarrative(narrativeAnalysis) && narrativeAnalyzedAt);
-  const isPending =
+  const eligible =
     coachEnabled &&
     NARRATIVE_TYPES.has(activityType) &&
-    isEligibleForActivityNarrative(new Date(activityDate)) &&
-    !hasAnalysis;
+    isEligibleForActivityNarrative(new Date(activityDate));
+  const isPending = eligible && !hasAnalysis && !pollTimedOut && !generating;
 
   useEffect(() => {
     setNarrativeAnalysis(initialAnalysis);
     setNarrativeAnalyzedAt(initialAnalyzedAt);
-  }, [initialAnalysis, initialAnalyzedAt]);
+    if (initialAnalyzedAt) {
+      clearTimedOut(activityId);
+      setPollTimedOut(false);
+    } else {
+      setPollTimedOut(readTimedOut(activityId));
+    }
+  }, [activityId, initialAnalysis, initialAnalyzedAt]);
 
   useEffect(() => {
     if (!isPending) return;
@@ -74,11 +110,18 @@ export function ActivityNarrativeSection({
           if (activity.narrativeAnalyzedAt) {
             setNarrativeAnalysis(activity.narrativeAnalysis ?? null);
             setNarrativeAnalyzedAt(activity.narrativeAnalyzedAt);
+            clearTimedOut(activityId);
+            setPollTimedOut(false);
             return;
           }
         } catch {
           // best-effort polling
         }
+      }
+
+      if (!cancelled) {
+        writeTimedOut(activityId);
+        setPollTimedOut(true);
       }
     }
 
@@ -87,6 +130,45 @@ export function ActivityNarrativeSection({
       cancelled = true;
     };
   }, [activityId, isPending]);
+
+  async function handleGenerate() {
+    clearTimedOut(activityId);
+    setPollTimedOut(false);
+    setGenerating(true);
+    const loadingToast = toast.loading('Synthèse en cours');
+    try {
+      const res = await fetch(`/api/activities/${activityId}/narrative`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force: true, wait: true }),
+      });
+      const data = (await res.json().catch(() => null)) as {
+        narrativeAnalysis?: unknown;
+        narrativeAnalyzedAt?: string | null;
+        error?: string;
+      } | null;
+      if (!res.ok) {
+        toast.error(data?.error ?? 'Synthèse impossible');
+        writeTimedOut(activityId);
+        setPollTimedOut(true);
+        return;
+      }
+      if (data?.narrativeAnalyzedAt) {
+        setNarrativeAnalysis(data.narrativeAnalysis ?? null);
+        setNarrativeAnalyzedAt(data.narrativeAnalyzedAt);
+        clearTimedOut(activityId);
+        setPollTimedOut(false);
+        toast.success('Synthèse prête');
+      }
+    } catch {
+      toast.error('Synthèse impossible');
+      writeTimedOut(activityId);
+      setPollTimedOut(true);
+    } finally {
+      toast.close(loadingToast);
+      setGenerating(false);
+    }
+  }
 
   if (hasAnalysis) {
     const analysis = parseNarrative(narrativeAnalysis)!;
@@ -99,23 +181,47 @@ export function ActivityNarrativeSection({
     );
   }
 
-  if (!isPending) return null;
+  if (!eligible) return null;
+
+  if (isPending || generating) {
+    return (
+      <section className="bg-analysis-surface-alt rounded-analysis-lg flex h-full flex-col px-5 py-5 sm:px-6 sm:py-6">
+        <p className="text-label inline-flex items-center gap-2">
+          <span className="bg-primary size-2 shrink-0 rounded-full" aria-hidden />
+          Lecture du coach
+        </p>
+        <div className="mt-4 flex items-start gap-3">
+          <Loader2 className="text-primary mt-0.5 size-4 shrink-0 animate-spin" />
+          <div className="space-y-1">
+            <p className="font-medium">Synthèse en cours</p>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              SHARPIT prépare une lecture de ta séance. Tu peux quitter — elle sera prête au retour.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
-    <section className="bg-analysis-surface-alt rounded-analysis-lg px-5 py-5 sm:px-6 sm:py-6">
+    <section className="bg-analysis-surface-alt rounded-analysis-lg flex h-full flex-col space-y-3 px-5 py-5 sm:px-6 sm:py-6">
       <p className="text-label inline-flex items-center gap-2">
         <span className="bg-primary size-2 shrink-0 rounded-full" aria-hidden />
         Lecture du coach
       </p>
-      <div className="mt-4 flex items-start gap-3">
-        <Loader2 className="text-primary mt-0.5 size-4 shrink-0 animate-spin" />
-        <div className="space-y-1">
-          <p className="font-medium">Synthèse en cours</p>
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            SHARPIT prépare une lecture de ta séance. Elle apparaîtra ici dans quelques instants.
-          </p>
-        </div>
-      </div>
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        La synthèse n’est pas encore disponible. Tu peux la relancer.
+      </p>
+      <Button
+        disabled={generating}
+        size="sm"
+        type="button"
+        variant="outline"
+        onClick={handleGenerate}
+      >
+        <Sparkles className="size-4" />
+        Générer la synthèse
+      </Button>
     </section>
   );
 }

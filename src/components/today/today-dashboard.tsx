@@ -95,7 +95,6 @@ export function TodayDashboard() {
   }
 
   const content = vm ?? todayLoadingShell();
-  const hideTrajectory = content.morningOrientation?.phase === 'EVIDENCE_PENDING';
 
   return (
     <div className="mx-auto space-y-6 lg:space-y-8">
@@ -112,7 +111,7 @@ export function TodayDashboard() {
         vm={content}
         onWellnessCompleted={() => void query.refetch()}
       />
-      {hideTrajectory ? null : <TodayWeeklyTrajectory loading={valuesLoading} vm={content} />}
+      <TodayWeeklyTrajectory loading={valuesLoading} vm={content} />
     </div>
   );
 }

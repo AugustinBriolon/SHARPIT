@@ -1,6 +1,8 @@
 import { ProgressionHub } from '@/components/training/hub/progression-hub';
 import { getAthleteProfile } from '@/lib/queries';
 
+export const dynamic = 'force-dynamic';
+
 export default async function TrainingProgressionPage() {
   const athleteProfile = await getAthleteProfile().catch(() => null);
 
