@@ -44,7 +44,13 @@ export function ActivityContextChips({
   }
 
   if (activity.plannedSession) {
-    chips.push(<ActivityPlannedSessionChip key="planned" planned={activity.plannedSession} />);
+    chips.push(
+      <ActivityPlannedSessionChip
+        key="planned"
+        activityId={activity.id}
+        planned={activity.plannedSession}
+      />,
+    );
   }
 
   for (const record of records) {

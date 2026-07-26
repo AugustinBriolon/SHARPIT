@@ -123,16 +123,10 @@ function submitButtonLabel(pending: boolean, isEdit: boolean, createMode: Create
   return 'Planifier';
 }
 
-function dialogTitle(
-  isEdit: boolean,
-  mode: DialogMode,
-  hasActivity: boolean,
-  omitLinkedActivityNavigation: boolean,
-): string {
+function dialogTitle(isEdit: boolean, mode: DialogMode, isLinked: boolean): string {
   if (!isEdit) return 'Planifier une séance';
   if (mode === 'edit') return 'Modifier la séance';
-  if (omitLinkedActivityNavigation) return 'Séance planifiée';
-  return hasActivity ? 'Séance réalisée' : 'Séance planifiée';
+  return isLinked ? 'Séance réalisée' : 'Séance planifiée';
 }
 
 interface PlannedSessionDialogProps {
@@ -465,8 +459,7 @@ export function PlannedSessionDialog({
                 {dialogTitle(
                   isEdit,
                   mode,
-                  Boolean(session?.activity),
-                  omitLinkedActivityNavigation,
+                  Boolean(liveSession?.activityId ?? liveSession?.activity ?? session?.activityId),
                 )}
               </DialogTitle>
             </DialogHeader>

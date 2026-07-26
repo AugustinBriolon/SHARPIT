@@ -199,7 +199,7 @@ function toBodyBatteryObservation(
 ): RawBodyBatteryObservation | null {
   if (health.bodyBattery == null) return null;
 
-  // Body Battery peak is typically in the morning
+  // Stored value is the current/most-recent reading (not the morning peak).
   const timestamp = addMinutes(calendarDate, 360);
 
   return {

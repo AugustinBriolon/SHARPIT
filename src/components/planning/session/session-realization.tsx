@@ -199,7 +199,12 @@ export function SessionRealization({
   const [analyzedAt, setAnalyzedAt] = useState(session.analyzedAt);
   const [pollTimedOut, setPollTimedOut] = useState(() => readAnalysisPollTimedOut(session.id));
 
-  const linked = session.activity;
+  const isLinked = Boolean(session.activityId);
+  const linked =
+    (session.activity?.type != null ? session.activity : null) ??
+    (session.activityId
+      ? (activitiesQuery.data?.find((item) => item.id === session.activityId) ?? null)
+      : null);
 
   useEffect(() => {
     setAnalysis(session.analysis as unknown as SessionAnalysis | null);
@@ -213,11 +218,11 @@ export function SessionRealization({
   }, [session.analysis, session.analyzedAt, session.id, session.activityId]);
 
   const hasAnalysis = Boolean(analysis && analyzedAt);
-  const isPendingScheduled = Boolean(linked && !hasAnalysis && !analyze.isPending && !pollTimedOut);
+  const isPendingScheduled = Boolean(isLinked && !hasAnalysis && !analyze.isPending && !pollTimedOut);
 
   // Kick a client analyze once if still missing after remount (server `after` may have been killed).
   useEffect(() => {
-    if (!linked || hasAnalysis || pollTimedOut || analyze.isPending) return;
+    if (!isLinked || hasAnalysis || pollTimedOut || analyze.isPending) return;
     const kickKey = `sharpit.analysis-kick.${session.id}`;
     try {
       if (sessionStorage.getItem(kickKey) === '1') return;
@@ -226,7 +231,7 @@ export function SessionRealization({
       // still attempt once per mount via analyze below
     }
     analyze.mutate(session.id);
-  }, [analyze, hasAnalysis, linked, pollTimedOut, session.id]);
+  }, [analyze, hasAnalysis, isLinked, pollTimedOut, session.id]);
 
   useEffect(() => {
     if (!isPendingScheduled) return;
@@ -425,7 +430,7 @@ export function SessionRealization({
     );
   }
 
-  if (linked) {
+  if (isLinked) {
     if (omitLinkedActivityNavigation) {
       return (
         <div className="space-y-3">
@@ -467,25 +472,27 @@ export function SessionRealization({
           délier si ce n&apos;était pas la bonne.
         </p>
 
-        <Link
-          className="border-analysis-border/60 bg-analysis-surface hover:border-primary/40 flex items-center justify-between gap-2 rounded-md border p-2"
-          href={`/training/${linked.id}`}
-        >
-          <div className="flex min-w-0 items-start gap-1.5">
-            <ActivityTypeIndicator type={linked.type} />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium">
-                {linked.title ?? activityTypeLabels[linked.type]}
-              </p>
-              <p className="text-muted-foreground text-xs">
-                {formatDate(linked.date)} · {formatDuration(linked.duration)}
-              </p>
+        {linked ? (
+          <Link
+            className="border-analysis-border/60 bg-analysis-surface hover:border-primary/40 flex items-center justify-between gap-2 rounded-md border p-2"
+            href={`/training/${linked.id}`}
+          >
+            <div className="flex min-w-0 items-start gap-1.5">
+              <ActivityTypeIndicator type={linked.type} />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">
+                  {linked.title ?? activityTypeLabels[linked.type]}
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  {formatDate(linked.date)} · {formatDuration(linked.duration)}
+                </p>
+              </div>
             </div>
-          </div>
-          <span className="text-muted-foreground shrink-0 text-xs font-medium">
-            {activityMetric(linked)}
-          </span>
-        </Link>
+            <span className="text-muted-foreground shrink-0 text-xs font-medium">
+              {activityMetric(linked)}
+            </span>
+          </Link>
+        ) : null}
 
         {renderLinkedAnalysisSection()}
       </div>

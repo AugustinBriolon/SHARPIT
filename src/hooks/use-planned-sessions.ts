@@ -300,21 +300,39 @@ export function usePlannedSessionMutations() {
         description: err instanceof Error ? err.message : undefined,
       });
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (data, variables, context) => {
       const hydrated = hydratePlannedSession(data);
       queryClient.setQueryData<ClientPlannedSession[]>(key, (prev) =>
         prev ? prev.map((session) => (session.id === variables.id ? hydrated : session)) : prev,
       );
+
+      const previousActivityId = resolvePreviousLinkedActivityId(
+        context?.previousSessions?.find((session) => session.id === variables.id),
+      );
+      queryClient.setQueryData<ClientActivity[]>(queryKeys.activities, (prev) => {
+        if (!prev) return prev;
+        return applyActivityPlannedSessionLinkOptimistic(
+          prev,
+          [hydrated],
+          { id: variables.id, activityId: variables.activityId },
+          previousActivityId,
+        );
+      });
+
+      // Today / twin day summary is server-built — patch is not local; invalidate derived VMs.
+      void queryClient.invalidateQueries({ queryKey: ['presentation', 'today'] });
+      void queryClient.invalidateQueries({ queryKey: ['athlete-snapshot'] });
+      void queryClient.invalidateQueries({ queryKey: ['today'] });
+
       if (variables.activityId) {
         // Compliance analysis is scheduled server-side in link `after()` — client only polls.
         toast.success('Séance liée');
       } else {
         toast.success('Séance déliée');
       }
-      void queryClient.invalidateQueries({ queryKey: queryKeys.activities });
     },
     onSettled: (_data, _error, variables) => {
-      void invalidate();
+      // Hydrated link response is authoritative — avoid refetch flicker on plannedSessions.
       if (variables?.id) {
         void queryClient.invalidateQueries({
           queryKey: queryKeys.plannedSessionPresentation(variables.id),

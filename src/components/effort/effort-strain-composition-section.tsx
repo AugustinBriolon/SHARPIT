@@ -17,7 +17,8 @@ export function EffortStrainCompositionSection({
     <DrillDownSectionCard>
       <DrillDownSectionLabel>Composition du jour</DrillDownSectionLabel>
       <p className="text-muted-foreground mb-4 text-xs">
-        Ce qui alimente la charge d’effort : séances, stress / Body Battery Garmin, et pas.
+        Contribution à la charge du jour (unités TSS-équivalentes) : entraînement, stress / Body
+        Battery Garmin, et pas.
       </p>
       <div className="space-y-4">
         {composition.contributors.map((row) => {
@@ -48,7 +49,7 @@ export function EffortStrainCompositionSection({
                 ) : (
                   <p className="text-muted-foreground/40 text-sm">—</p>
                 )}
-                <p className="text-muted-foreground text-[10px] uppercase tracking-wide">load</p>
+                <p className="text-muted-foreground text-[10px] tracking-wide">charge</p>
               </div>
             </div>
           );
