@@ -69,6 +69,7 @@ export interface PlannedSessionPayload {
   title?: string | null;
   description?: string | null;
   strengthPrescription?: unknown | null;
+  accessories?: string[] | null;
   durationMin?: number | null;
   load?: number | null;
   intensity?: SessionIntensity | null;

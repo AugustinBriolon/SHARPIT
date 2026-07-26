@@ -10,6 +10,7 @@ export interface PlannedSessionBatchPayload {
   title?: string | null;
   description?: string | null;
   strengthPrescription?: unknown | null;
+  accessories?: string[] | null;
   durationMin?: number | null;
   load?: number | null;
   intensity?: SessionIntensity | null;
@@ -41,6 +42,7 @@ export function optimisticPlannedSession(
     title: payload.title ?? null,
     description: payload.description ?? null,
     strengthPrescription: payload.strengthPrescription ?? null,
+    accessories: payload.accessories ?? null,
     durationMin: payload.durationMin ?? null,
     load: payload.load ?? null,
     intensity: payload.intensity ?? null,
