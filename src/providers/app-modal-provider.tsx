@@ -14,6 +14,10 @@ import { PlannedSessionDialog } from '@/components/planning/session/planned-sess
 import { useGoals, usePlannedSessions } from '@/hooks/use-data';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import { queryKeys } from '@/lib/query/keys';
+import {
+  seedPlannedSessionIntoCache,
+  type PlannedSessionCacheSeed,
+} from '@/lib/query/seed-planned-session-cache';
 import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-compare';
 
 export type OpenPlannedSessionOptions = {
@@ -22,6 +26,8 @@ export type OpenPlannedSessionOptions = {
   omitLinkedActivityNavigation?: boolean;
   /** Morning recalibration — show Plan vs proposée in the read view. */
   morningProposal?: MorningProposalCompareInput;
+  /** Optional fields already known (activity chip) so the modal is Instant-complete. */
+  seed?: Omit<PlannedSessionCacheSeed, 'id'>;
 };
 
 type AppModalContextValue = {
@@ -56,6 +62,12 @@ export function AppModalProvider({ children }: { children: ReactNode }) {
 
   const openPlannedSession = useCallback(
     (options: OpenPlannedSessionOptions) => {
+      if (options.seed) {
+        seedPlannedSessionIntoCache(queryClient, {
+          id: options.sessionId,
+          ...options.seed,
+        });
+      }
       prefetchPlannedSessionDetail(queryClient, options.sessionId);
       setPlannedModal(options);
       if (!queryClient.getQueryData(queryKeys.plannedSessions)) {

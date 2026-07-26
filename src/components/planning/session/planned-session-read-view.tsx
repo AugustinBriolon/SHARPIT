@@ -110,7 +110,8 @@ export function PlannedSessionReadView({
       ? new Date(session.garminWorkoutPushedAt).toISOString()
       : null,
   });
-  const isRealized = Boolean(session.activity) && !omitLinkedActivityNavigation;
+  // Linked = activityId (or nested activity). omitLinkedActivityNavigation only hides nav.
+  const isRealized = Boolean(session.activityId ?? session.activity);
   const goal = goals.find((g) => g.id === session.goalId);
   const showExposure = sportSupportsOutdoorContext(session.type);
   const exposure = session.exposureSetting as 'INDOOR' | 'OUTDOOR' | 'UNKNOWN' | null | undefined;

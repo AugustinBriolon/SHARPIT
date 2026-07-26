@@ -48,6 +48,17 @@ describe('applyPlannedSessionLinkOptimistic', () => {
     expect(patched[0]?.activity?.id).toBe('act-2');
     expect(patched[0]?.completed).toBe(true);
   });
+
+  it('stubs nested activity when activities cache is missing', () => {
+    const patched = applyPlannedSessionLinkOptimistic(
+      [session({ id: 'ps-1', activityId: null, activity: null, completed: false, analysis: null })],
+      { id: 'ps-1', activityId: 'act-9' },
+      undefined,
+    );
+    expect(patched[0]?.activityId).toBe('act-9');
+    expect(patched[0]?.activity?.id).toBe('act-9');
+    expect(patched[0]?.completed).toBe(true);
+  });
 });
 
 describe('applyActivityPlannedSessionLinkOptimistic', () => {

@@ -32,8 +32,20 @@ export function buildTodayDaySummary(
     .filter((a) => isSameDay(new Date(a.date), refDay))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
+  // Prefer activity→planned reverse link when plannedSessions cache lags after Instant link.
+  const linkedPlannedIds = new Set(
+    [
+      ...plannedSessions.map((s) => (s.activityId ? s.id : null)),
+      ...activities.map((a) => a.plannedSession?.id ?? null),
+    ].filter((id): id is string => id != null),
+  );
+
   const todayPlanned = plannedSessions.filter(
-    (s) => isSameDay(new Date(s.date), refDay) && !s.completed && !s.activityId,
+    (s) =>
+      isSameDay(new Date(s.date), refDay) &&
+      !s.completed &&
+      !s.activityId &&
+      !linkedPlannedIds.has(s.id),
   );
 
   const doneLines: DaySummaryLine[] = todayActivities.map((a) => ({
@@ -107,6 +119,8 @@ function resolveSectionLabel(doneCount: number, plannedCount: number): string {
 }
 
 function activityLabel(activity: ClientActivity): string {
+  const plannedTitle = activity.plannedSession?.title?.trim();
+  if (plannedTitle) return plannedTitle;
   const title = activity.title?.trim();
   return title ?? activityTypeLabels[activity.type];
 }

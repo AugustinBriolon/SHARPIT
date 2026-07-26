@@ -20,19 +20,22 @@ export type EffortStrainCompositionView = {
 
 const CONTRIBUTOR_META: Record<
   EffortStrainContributorKey,
-  { label: string; emptyDescription: string }
+  { label: string; emptyDescription: string; availableDescription: string }
 > = {
   training: {
     label: 'Entraînement',
-    emptyDescription: 'Aucune séance structurée aujourd’hui',
+    emptyDescription: 'Aucune activité d’entraînement aujourd’hui',
+    availableDescription: 'Activités du jour',
   },
   cardiovascular: {
     label: 'Cardiovasculaire',
     emptyDescription: 'Stress et Body Battery non disponibles',
+    availableDescription: 'Stress et Body Battery Garmin',
   },
   movement: {
     label: 'Mouvement',
     emptyDescription: 'Pas quotidiens non disponibles',
+    availableDescription: 'Pas quotidiens',
   },
 };
 
@@ -78,7 +81,7 @@ function toContributor(
   return {
     key,
     label: meta.label,
-    description: signalSummary ?? meta.emptyDescription,
+    description: signalSummary ?? meta.availableDescription,
     available: true,
     load: contribution.load,
     score: contribution.score,

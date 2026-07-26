@@ -1,5 +1,6 @@
 import { GarminConnect, type IGarminTokens } from '@flow-js/garmin-connect';
 import { format } from 'date-fns';
+import { pickCurrentBodyBattery } from '@/lib/integrations/garmin-body-battery';
 
 export type GarminTokens = IGarminTokens;
 
@@ -420,20 +421,15 @@ async function fetchStressAndBattery(
       `https://connectapi.garmin.com/wellness-service/wellness/dailyStress/${ds}`,
     )) as {
       avgStressLevel?: number | null;
+      bodyBatteryMostRecentValue?: number | null;
       bodyBatteryValuesArray?: Array<Array<number | string>>;
     } | null;
 
     const stress =
       typeof r?.avgStressLevel === 'number' && r.avgStressLevel >= 0 ? r.avgStressLevel : null;
 
-    // Format: [timestamp, statut, niveau, version] -> niveau à l'index 2
-    let bodyBattery: number | null = null;
-    for (const entry of r?.bodyBatteryValuesArray ?? []) {
-      const level = Number(entry?.[2]);
-      if (!Number.isNaN(level) && (bodyBattery == null || level > bodyBattery)) {
-        bodyBattery = level;
-      }
-    }
+    // Current / most-recent Body Battery (Garmin Connect parity) — not the day peak.
+    const bodyBattery = pickCurrentBodyBattery(r);
 
     return { stress, bodyBattery };
   } catch {
