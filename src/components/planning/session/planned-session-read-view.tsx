@@ -152,6 +152,9 @@ export function PlannedSessionReadView({
     },
     { label: 'Intensité', value: session.intensity ? intensityLabels[session.intensity] : '—' },
   ];
+  if (goal?.title) {
+    chips.push({ label: 'Objectif', value: goal.title });
+  }
 
   useEffect(() => {
     setWatchPush({

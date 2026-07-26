@@ -25,6 +25,7 @@ export function buildTodayDaySummary(
   date: Date,
   activities: ClientActivity[],
   plannedSessions: ClientPlannedSession[],
+  goalTitleById?: ReadonlyMap<string, string>,
 ): TodayDaySummary {
   const refDay = startOfDay(date);
 
@@ -56,7 +57,7 @@ export function buildTodayDaySummary(
     secondary: activityMeta(a),
   }));
 
-  const plannedLines = buildPlannedLines(todayPlanned);
+  const plannedLines = buildPlannedLines(todayPlanned, goalTitleById);
   const lines = [...doneLines, ...plannedLines];
 
   if (lines.length === 0) {
@@ -74,19 +75,27 @@ export function buildTodayDaySummary(
   };
 }
 
-function buildPlannedLines(todayPlanned: ClientPlannedSession[]): DaySummaryLine[] {
+function buildPlannedLines(
+  todayPlanned: ClientPlannedSession[],
+  goalTitleById?: ReadonlyMap<string, string>,
+): DaySummaryLine[] {
   const groups = groupPlannedSessions(todayPlanned);
   const lines: DaySummaryLine[] = [];
 
   for (const group of groups) {
     if (group.kind === 'brick') {
       const totalMin = group.sessions.reduce((sum, s) => sum + (s.durationMin ?? 0), 0);
+      const brickGoalId = group.sessions.find((s) => s.goalId)?.goalId;
+      const brickGoalTitle = brickGoalId ? goalTitleById?.get(brickGoalId) : undefined;
+      const duration = formatPlannedDuration(totalMin);
       lines.push({
         id: group.id,
         kind: 'planned',
         activityType: 'TRIATHLON',
         primary: `Brick · ${group.sessions.map((s) => activityTypeLabels[s.type]).join(' → ')}`,
-        secondary: formatPlannedDuration(totalMin),
+        secondary: [duration, brickGoalTitle ? `Sert ${brickGoalTitle}` : null]
+          .filter(Boolean)
+          .join(' · '),
         // Deep-link opens the first leg dialog (brick analysis lives on that session).
         plannedSession: group.sessions[0],
       });
@@ -97,7 +106,7 @@ function buildPlannedLines(todayPlanned: ClientPlannedSession[]): DaySummaryLine
         kind: 'planned',
         activityType: session.type,
         primary: plannedLabel(session),
-        secondary: plannedMeta(session),
+        secondary: plannedMeta(session, goalTitleById),
         plannedSession: session,
       });
     }
@@ -137,10 +146,17 @@ function activityMeta(activity: ClientActivity): string | undefined {
   return parts.length > 0 ? parts.join(' · ') : undefined;
 }
 
-function plannedMeta(session: ClientPlannedSession): string | undefined {
+function plannedMeta(
+  session: ClientPlannedSession,
+  goalTitleById?: ReadonlyMap<string, string>,
+): string | undefined {
   const parts: string[] = [];
   if (session.intensity) parts.push(intensityLabels[session.intensity]);
   if (session.durationMin) parts.push(formatPlannedDuration(session.durationMin));
   if (session.load != null) parts.push(`${Math.round(session.load)} TSS`);
+  if (session.goalId) {
+    const title = goalTitleById?.get(session.goalId);
+    if (title) parts.push(`Sert ${title}`);
+  }
   return parts.length > 0 ? parts.join(' · ') : undefined;
 }

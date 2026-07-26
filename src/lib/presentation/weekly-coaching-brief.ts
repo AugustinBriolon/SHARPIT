@@ -44,7 +44,10 @@ type WeeklyCoachingBriefInput = {
     intensity: SessionIntensity | null;
     durationMin: number | null;
     load: number | null;
+    goalId?: string | null;
   }[];
+  /** Goal titles keyed by id — used to label key sessions (option B). */
+  goalTitleById?: ReadonlyMap<string, string>;
   recentActivities: readonly { load: number | null; date: Date }[];
   /** Origin CoachingDecision per planned session, only present for coach-proposed sessions. */
   sessionDecisions: ReadonlyMap<string, CoachingDecisionRecord>;
@@ -62,6 +65,7 @@ function median(values: number[]): number {
 function buildKeySessions(
   plannedSessions: WeeklyCoachingBriefInput['plannedSessions'],
   sessionDecisions: WeeklyCoachingBriefInput['sessionDecisions'],
+  goalTitleById: ReadonlyMap<string, string> | undefined,
 ): WeeklyBriefKeySession[] {
   const durationMedian = median(
     plannedSessions.map((s) => s.durationMin).filter((d): d is number => d != null),
@@ -74,12 +78,17 @@ function buildKeySessions(
     )
     .map((s) => {
       const decision = sessionDecisions.get(s.id);
+      const goalTitle =
+        (s.goalId && goalTitleById?.get(s.goalId)) ||
+        (decision?.proposal.goalId && goalTitleById?.get(decision.proposal.goalId)) ||
+        null;
       return {
         sessionId: s.id,
         dateLabel: format(s.date, 'EEE d MMM', { locale: fr }),
         typeLabel: activityTypeLabels[s.type],
         intensityLabel: s.intensity ? intensityLabels[s.intensity] : null,
         purpose: decision?.proposal.rationale ?? null,
+        goalTitle,
       };
     });
 }
@@ -236,7 +245,7 @@ export function buildWeeklyCoachingBriefViewModel(
         }
       : null,
     load: buildLoad(weekStart, plannedSessions, planWeek, input.recentActivities),
-    keySessions: buildKeySessions(plannedSessions, sessionDecisions),
+    keySessions: buildKeySessions(plannedSessions, sessionDecisions, input.goalTitleById),
     recovery: buildRecoveryDays(weekStart, plannedSessions),
     limitingFactor,
     assumptions: [...assumptions],

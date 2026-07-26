@@ -150,11 +150,11 @@ function goalLineForPhase(input: PhaseNarrativeInput): string | null {
   const badge = goalContext.badge ? ` (${goalContext.badge})` : '';
 
   if (goalContext.linkedToTodaySession && isForwardAdvicePhase(phase)) {
-    return `Objectif : ${goalContext.title}${badge}`;
+    return `Cette séance sert ${goalContext.title}${badge}`;
   }
 
   if (phase === 'SESSION_COMPLETED' && goalContext.linkedToTodaySession) {
-    return `Séance utile pour ${goalContext.title}${badge}`;
+    return `Séance au service de ${goalContext.title}${badge}`;
   }
 
   if ((phase === 'END_OF_DAY' || phase === 'RECOVERY_WINDOW') && goalContext.isPrimaryRace) {
@@ -190,17 +190,17 @@ function focusPriorityForPhase(
 
   if (isForwardAdvicePhase(phase) && actionLine) {
     if (goalContext?.linkedToTodaySession && verdict === 'RECOVER') {
-      return 'Allège la séance pour rester frais pour ton objectif';
+      return `Allège la séance — elle sert ${goalContext.title}`;
     }
     if (goalContext?.linkedToTodaySession && verdict === 'CAUTION') {
-      return 'Reste sous contrôle — la qualité compte plus que le volume';
+      return `Reste sous contrôle — qualité pour ${goalContext.title}`;
     }
     return actionLine;
   }
 
   if (phase === 'SESSION_COMPLETED') {
     if (goalContext?.linkedToTodaySession) {
-      return 'Récupère dans les 2 h — c’est ce qui consolide la séance';
+      return `Récupère dans les 2 h — consolide ce que tu as fait pour ${goalContext.title}`;
     }
     return 'Récupère dans les 2 h avant le prochain signal';
   }
@@ -273,7 +273,7 @@ function postTrainingHeadline(
 
   if (phase === 'SESSION_COMPLETED') {
     if (goal?.linkedToTodaySession) {
-      return `${sport} faite — utile pour ton objectif`;
+      return `${sport} faite — au service de ${goal.title}`;
     }
     if (multi) {
       return 'Double séance — récupération prioritaire maintenant';

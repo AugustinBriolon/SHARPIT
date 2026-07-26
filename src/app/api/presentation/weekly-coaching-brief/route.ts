@@ -43,7 +43,14 @@ export async function GET(request: NextRequest) {
 
   const planWeek = activePlan ? (findPlanWeekForDate(activePlan.weeks, weekStart) ?? null) : null;
 
-  const goal = goals.find((g) => !g.achieved && g.targetDate && g.targetDate >= weekStart) ?? null;
+  // Prefer the active plan's linked race/goal (option B fil directeur), then nearest dated goal.
+  const planGoal =
+    activePlan?.goalId != null
+      ? (goals.find((g) => g.id === activePlan.goalId && !g.achieved) ?? null)
+      : null;
+  const goal =
+    planGoal ?? goals.find((g) => !g.achieved && g.targetDate && g.targetDate >= weekStart) ?? null;
+  const goalTitleById = new Map(goals.map((g) => [g.id, g.title] as const));
 
   const sessionDecisions = new Map<string, CoachingDecisionRecord>();
   await Promise.all(
@@ -74,7 +81,9 @@ export async function GET(request: NextRequest) {
       intensity: s.intensity,
       durationMin: s.durationMin,
       load: s.load,
+      goalId: s.goalId,
     })),
+    goalTitleById,
     recentActivities: recentActivities.map((a) => ({ load: a.load, date: a.date })),
     sessionDecisions,
     todaysSnapshotContext: snapshot.decision ? buildDecisionSnapshotContext(snapshot) : null,

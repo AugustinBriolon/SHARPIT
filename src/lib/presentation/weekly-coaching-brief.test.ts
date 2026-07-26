@@ -133,6 +133,17 @@ describe('buildWeeklyCoachingBriefViewModel', () => {
     expect(vm.keySessions[0]?.purpose).toBe('Développer la base aérobie.');
   });
 
+  it('labels key sessions with the stamped goal title (option B)', () => {
+    const vm = buildWeeklyCoachingBriefViewModel(
+      baseInput({
+        plannedSessions: [session({ id: 's1', intensity: 'THRESHOLD', goalId: 'g1' })],
+        goalTitleById: new Map([['g1', 'Ironman Nice']]),
+      }),
+    );
+
+    expect(vm.keySessions[0]?.goalTitle).toBe('Ironman Nice');
+  });
+
   it('omits the load section entirely when there is no plan and no activity history', () => {
     const vm = buildWeeklyCoachingBriefViewModel(baseInput({ plannedSessions: [session()] }));
     expect(vm.load?.toleratedCeiling).toBeNull();

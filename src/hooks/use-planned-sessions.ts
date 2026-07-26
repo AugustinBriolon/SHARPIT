@@ -96,6 +96,8 @@ export interface BrickLegPayload {
 export interface CreateBrickPayload {
   date: Date;
   startTime?: string | null;
+  /** Option B — stamped on every brick leg. */
+  goalId?: string | null;
   legs: BrickLegPayload[];
 }
 
@@ -190,6 +192,7 @@ export function usePlannedSessionMutations() {
               durationMin: leg.durationMin,
               load: leg.load,
               intensity: leg.intensity,
+              goalId: payload.goalId ?? null,
             },
             { groupId, order },
           ),

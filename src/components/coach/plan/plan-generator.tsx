@@ -3,8 +3,9 @@
 import { format, parseISO, startOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Check, Loader2, Sparkles, WifiOff } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ProfileContextBanner } from '@/components/profile/profile-context-banner';
+import { resolveDefaultPlanGoalId } from '@/lib/planned-session/plan-goal';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -85,9 +86,21 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
   }, [planQuery.data, startDate]);
 
   // Objectifs datés (courses à venir) sélectionnables comme cible du bloc.
-  const datedGoals = (goalsQuery.data ?? [])
-    .filter((g) => !g.achieved && g.targetDate)
-    .filter((g) => new Date(g.targetDate as unknown as string) >= new Date());
+  const datedGoals = useMemo(() => {
+    const now = new Date();
+    return (goalsQuery.data ?? [])
+      .filter((g) => !g.achieved && g.targetDate)
+      .filter((g) => new Date(g.targetDate as unknown as string) >= now);
+  }, [goalsQuery.data]);
+
+  const selectableGoalIds = useMemo(() => datedGoals.map((g) => g.id), [datedGoals]);
+
+  // Inherit active macro-plan goal so « Remplir ma semaine » stamps goalId on insert.
+  useEffect(() => {
+    const fromPlan = resolveDefaultPlanGoalId(planQuery.data?.goalId, selectableGoalIds);
+    if (!fromPlan) return;
+    setGoalId((current) => (current === NO_GOAL ? fromPlan : current));
+  }, [planQuery.data?.goalId, selectableGoalIds]);
 
   async function handleGenerate() {
     const result = await coachPlan.mutateAsync({
@@ -225,6 +238,9 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
             Macro-plan : {phaseLabels[planWeek.phase]} — cible{' '}
             <span className="text-foreground font-mono font-medium">{planWeek.targetLoad} TSS</span>
             {planWeek.isDeload ? ' (semaine de récup)' : ''}
+            {goalId !== NO_GOAL
+              ? ` — objectif ${datedGoals.find((g) => g.id === goalId)?.title ?? 'lié'}`
+              : ''}
           </p>
         )}
 

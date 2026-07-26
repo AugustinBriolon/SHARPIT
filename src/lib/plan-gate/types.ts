@@ -57,6 +57,11 @@ export type GateProposal = {
   readonly title: string | null;
   /** LLM's own explanation for this proposal — carried through unused by Gate rules, consumed by presentation. */
   readonly rationale: string | null;
+  /**
+   * Option B — which race/goal this proposed session serves (presentation / Decision Memory).
+   * Gate rules may read it; Core engines do not.
+   */
+  readonly goalId?: string | null;
 };
 
 export type GateStatus = 'ACCEPTED' | 'WARNING' | 'REQUIRES_CONFIRMATION' | 'REJECTED';

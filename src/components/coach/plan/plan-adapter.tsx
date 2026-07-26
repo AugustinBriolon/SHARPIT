@@ -22,6 +22,7 @@ import { useAdaptPlan, type AdaptChange, type AdaptPlanResult } from '@/hooks/us
 import {
   usePlannedSessions,
   usePlannedSessionMutations,
+  useTrainingPlan,
   type PlannedSessionBatchOp,
   type PlannedSessionPayload,
 } from '@/hooks/use-data';
@@ -112,8 +113,10 @@ export function PlanAdapter({
 
   const adapt = useAdaptPlan();
   const plannedQuery = usePlannedSessions();
+  const planQuery = useTrainingPlan();
   const { applyBatch } = usePlannedSessionMutations();
   const result = adapt.data;
+  const defaultGoalId = planQuery.data?.goalId ?? null;
 
   const sessionsById = useMemo(() => {
     const map = new Map<string, ClientPlannedSession>();
@@ -198,6 +201,7 @@ export function PlanAdapter({
             durationMin: c.durationMin,
             load: c.load,
             intensity: c.intensity,
+            goalId: defaultGoalId,
             decisionId: c.decisionId,
           },
         });

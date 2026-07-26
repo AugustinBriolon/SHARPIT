@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { date, startTime, legs } = parsed.data;
+    const { date, startTime, goalId, legs } = parsed.data;
     const created = await createBrickSessions(
       legs.map((leg) => ({
         type: leg.type,
@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
         durationMin: leg.durationMin ?? null,
         load: leg.load ?? null,
         intensity: leg.intensity ?? null,
+        goalId: goalId ?? null,
       })),
     );
 

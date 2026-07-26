@@ -12,6 +12,9 @@ import {
   createBrickSessions,
   createPlannedSession,
   deletePlannedSession,
+  getActiveTrainingPlan,
+  getGoalById,
+  getGoals,
   getPlannedSessionById,
   getPlannedSessions,
   updatePlannedSession,
@@ -22,11 +25,24 @@ import {
 } from '@/lib/travel-context/service';
 import { prisma } from '@/lib/prisma';
 import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/resolve-context';
+import { resolveDefaultPlanGoalId, selectableDatedGoalIds } from '@/lib/planned-session/plan-goal';
 import {
   coachStrengthPrescriptionSchema,
   parseStrengthPrescription,
   resolveStrengthFieldsForPersist,
 } from '@/lib/planned-session/strength-prescription';
+
+/** Option B — stamp active plan goal when the coach creates sessions without an explicit goal. */
+async function resolveCoachDefaultGoalId(): Promise<string | null> {
+  const [plan, goals] = await Promise.all([getActiveTrainingPlan(), getGoals()]);
+  const fromPlan = resolveDefaultPlanGoalId(plan?.goalId, selectableDatedGoalIds(goals));
+  if (fromPlan) return fromPlan;
+  // Fallback: plan goal still exists even if undated / past filter edge cases.
+  if (!plan?.goalId) return null;
+  const goal = await getGoalById(plan.goalId);
+  if (!goal || goal.achieved) return null;
+  return plan.goalId;
+}
 
 const typeEnum = z.enum(['RUN', 'BIKE', 'SWIM', 'STRENGTH']);
 const intensityEnum = z.enum(['RECOVERY', 'ENDURANCE', 'TEMPO', 'THRESHOLD', 'VO2MAX', 'RACE']);
@@ -115,6 +131,7 @@ export const coachTools = {
           description: input.description,
           strengthPrescription: input.strengthPrescription,
         });
+        const goalId = await resolveCoachDefaultGoalId();
         const s = await createPlannedSession({
           type: input.type,
           date: toDate(input.date),
@@ -125,6 +142,7 @@ export const coachTools = {
           durationMin: input.durationMin != null ? Math.round(input.durationMin) : null,
           load: input.load != null ? Math.round(input.load) : null,
           intensity: input.intensity ?? null,
+          goalId,
           exposureSetting: input.exposureSetting ?? null,
           locationLabel: input.locationLabel ?? null,
           locationLat: input.locationLat ?? null,
@@ -189,6 +207,7 @@ export const coachTools = {
     }),
     execute: async (input) => {
       try {
+        const goalId = await resolveCoachDefaultGoalId();
         const created = await createBrickSessions(
           input.legs.map((leg) => ({
             type: leg.type,
@@ -199,6 +218,7 @@ export const coachTools = {
             durationMin: leg.durationMin != null ? Math.round(leg.durationMin) : null,
             load: leg.load != null ? Math.round(leg.load) : null,
             intensity: leg.intensity ?? null,
+            goalId,
           })),
         );
 

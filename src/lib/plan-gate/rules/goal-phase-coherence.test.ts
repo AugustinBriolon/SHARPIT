@@ -11,6 +11,18 @@ describe('goalPhaseCoherenceRule', () => {
     expect(findings.some((f) => f.ruleCode === 'BEYOND_GOAL_HORIZON')).toBe(true);
   });
 
+  it('includes proposal.goalId in BEYOND_GOAL_HORIZON evidence when stamped', () => {
+    const context = baseContext({
+      goal: { horizon: 'SHORT_TERM', targetDate: new Date('2026-07-16T00:00:00Z') },
+    });
+    const findings = goalPhaseCoherenceRule(
+      context,
+      baseProposal({ date: '2026-07-20', goalId: 'race-a' }),
+    );
+    const beyond = findings.find((f) => f.ruleCode === 'BEYOND_GOAL_HORIZON');
+    expect(beyond?.evidenceRefs).toContain('goalId=race-a');
+  });
+
   it('is silent when the proposal is before the goal target date', () => {
     const context = baseContext({
       goal: { horizon: 'SHORT_TERM', targetDate: new Date('2026-08-01T00:00:00Z') },
