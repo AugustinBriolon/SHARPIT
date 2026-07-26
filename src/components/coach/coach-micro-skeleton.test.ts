@@ -16,7 +16,7 @@ describe('coach hub micro-skeleton', () => {
     expect(html).toContain('lg:hidden');
     expect(html).toContain('hidden space-y-6 lg:block');
     expect(html).toContain('Fil &amp; conversations');
-    expect(html).toContain('Mon profil');
+    expect(html).toContain('Mémoire &amp; contexte');
     expect(html).toContain('Pose une question à ton coach');
   });
 

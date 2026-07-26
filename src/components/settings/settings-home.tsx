@@ -18,7 +18,7 @@ const ENTRIES: SettingsEntry[] = [
   {
     href: '/settings/account',
     title: 'Compte',
-    description: 'Identité athlète, seuils et paramètres physiologiques.',
+    description: 'Identité athlète, sommeil et paramètres personnels.',
     icon: User2,
   },
   {

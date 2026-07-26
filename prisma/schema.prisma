@@ -1114,6 +1114,8 @@ model PlannedSession {
   description String?
   /// Structured strength prescription (sets/reps) — STRENGTH only. Not an engine output.
   strengthPrescription Json?
+  /// Session-specific accessories (EquipmentItemId[]) — athlete prep checklist.
+  accessories Json?
   durationMin Int? // durée prévue en minutes
   load        Float? // charge / TSS prévue
   intensity   SessionIntensity?

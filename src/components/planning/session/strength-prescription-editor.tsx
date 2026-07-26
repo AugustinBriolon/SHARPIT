@@ -5,9 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   attachGarminRefsToPrescription,
   strengthSetWatchCompat,
   type StrengthPrescription,
+  type StrengthRestMode,
 } from '@/lib/planned-session/strength-prescription';
 import { resolveGarminExerciseMatch } from '@/lib/integrations/garmin-exercise-map';
 
@@ -17,6 +25,7 @@ export type StrengthPrescriptionDraftRow = {
   sets: string;
   reps: string;
   weightKg: string;
+  restMode: StrengthRestMode;
   restSec: string;
   durationSec: string;
 };
@@ -28,6 +37,7 @@ function newRow(partial?: Partial<StrengthPrescriptionDraftRow>): StrengthPrescr
     sets: '3',
     reps: '10',
     weightKg: '',
+    restMode: 'lap',
     restSec: '90',
     durationSec: '',
     ...partial,
@@ -47,7 +57,8 @@ export function draftFromStrengthPrescription(
         sets: String(set.sets),
         reps: String(set.reps),
         weightKg: set.weightKg != null ? String(set.weightKg) : '',
-        restSec: set.restSec != null ? String(set.restSec) : '',
+        restMode: set.restMode === 'time' ? 'time' : 'lap',
+        restSec: set.restSec != null ? String(set.restSec) : '90',
         durationSec: set.durationSec != null ? String(set.durationSec) : '',
       }),
     );
@@ -65,7 +76,12 @@ export function strengthPrescriptionFromDraft(
       if (!Number.isFinite(setsCount) || setsCount < 1) return null;
       const durationSec = row.durationSec.trim() ? Number(row.durationSec) : null;
       const weightKg = row.weightKg.trim() ? Number(row.weightKg) : null;
-      const restSec = row.restSec.trim() ? Number(row.restSec) : null;
+      const restMode: StrengthRestMode = row.restMode === 'time' ? 'time' : 'lap';
+      const restSecRaw = row.restSec.trim() ? Number(row.restSec) : null;
+      const restSec =
+        restMode === 'time' && restSecRaw != null && Number.isFinite(restSecRaw)
+          ? Math.max(0, restSecRaw)
+          : null;
       return {
         exercise,
         exerciseCatalogId: null,
@@ -73,7 +89,8 @@ export function strengthPrescriptionFromDraft(
         reps: Number.isFinite(reps) ? Math.max(0, reps) : 0,
         durationSec: durationSec != null && Number.isFinite(durationSec) ? durationSec : null,
         weightKg: weightKg != null && Number.isFinite(weightKg) ? weightKg : null,
-        restSec: restSec != null && Number.isFinite(restSec) ? restSec : null,
+        restMode,
+        restSec,
         notes: null,
         order,
       };
@@ -109,9 +126,11 @@ function watchHintClassName(hint: string): string {
 export function StrengthPrescriptionEditor({
   rows,
   onChange,
+  required = false,
 }: {
   rows: StrengthPrescriptionDraftRow[];
   onChange: (rows: StrengthPrescriptionDraftRow[]) => void;
+  required?: boolean;
 }) {
   function updateRow(key: string, patch: Partial<StrengthPrescriptionDraftRow>) {
     onChange(rows.map((row) => (row.key === key ? { ...row, ...patch } : row)));
@@ -120,7 +139,9 @@ export function StrengthPrescriptionEditor({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <Label>Exercices (montre)</Label>
+        <Label>
+          Exercices (montre){required ? <span className="text-destructive"> *</span> : null}
+        </Label>
         <Button
           size="sm"
           type="button"
@@ -131,6 +152,12 @@ export function StrengthPrescriptionEditor({
           Ajouter
         </Button>
       </div>
+      {required ? (
+        <p className="text-muted-foreground text-[10px] leading-relaxed">
+          Obligatoire pour une séance musculation — chaque exercice est suivi d’un repos (Lap par
+          défaut : tu appuies sur Lap à la montre pour enchaîner).
+        </p>
+      ) : null}
       {rows.map((row, index) => {
         const watchHint = draftWatchHint(row.exercise);
         return (
@@ -156,12 +183,13 @@ export function StrengthPrescriptionEditor({
             <div className="space-y-1.5">
               <Input
                 placeholder="Pompe, squat, développé…"
+                required={required && index === 0}
                 value={row.exercise}
                 onChange={(e) => updateRow(row.key, { exercise: e.target.value })}
               />
               {watchHint ? <p className={watchHintClassName(watchHint)}>{watchHint}</p> : null}
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               <div className="space-y-1">
                 <Label className="text-muted-foreground text-[10px]">Séries</Label>
                 <Input
@@ -194,16 +222,6 @@ export function StrengthPrescriptionEditor({
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-[10px]">Repos s</Label>
-                <Input
-                  inputMode="numeric"
-                  min={0}
-                  type="number"
-                  value={row.restSec}
-                  onChange={(e) => updateRow(row.key, { restSec: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1">
                 <Label className="text-muted-foreground text-[10px]">Durée s</Label>
                 <Input
                   inputMode="numeric"
@@ -214,13 +232,42 @@ export function StrengthPrescriptionEditor({
                   onChange={(e) => updateRow(row.key, { durationSec: e.target.value })}
                 />
               </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground text-[10px]">Repos</Label>
+                <Select
+                  value={row.restMode}
+                  onValueChange={(value) =>
+                    updateRow(row.key, { restMode: value as StrengthRestMode })
+                  }
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="lap">Lap (bouton)</SelectItem>
+                    <SelectItem value="time">Chrono (s)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {row.restMode === 'time' ? (
+                <div className="space-y-1">
+                  <Label className="text-muted-foreground text-[10px]">Repos s</Label>
+                  <Input
+                    inputMode="numeric"
+                    min={0}
+                    type="number"
+                    value={row.restSec}
+                    onChange={(e) => updateRow(row.key, { restSec: e.target.value })}
+                  />
+                </div>
+              ) : null}
             </div>
           </div>
         );
       })}
       <p className="text-muted-foreground text-[10px] leading-relaxed">
-        Match catalogue Garmin Connect (~1500 exercices). « Hors catalogue » partira comme Inconnu
-        sur la montre ; « Approx. » est le plus proche trouvé.
+        Match catalogue Garmin Connect (~1500 exercices). Repos Lap = tu termines le repos en
+        appuyant sur Lap. « Hors catalogue » partira comme Inconnu sur la montre.
       </p>
     </div>
   );

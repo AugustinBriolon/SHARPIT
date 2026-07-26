@@ -1,5 +1,6 @@
 import type { GarminExerciseRef } from '@/lib/integrations/garmin-exercise-map';
 import { GARMIN_UNKNOWN_EXERCISE } from '@/lib/integrations/garmin-exercise-map';
+import type { StrengthRestMode } from '@/lib/planned-session/strength-prescription';
 
 const SPORT_STRENGTH = {
   sportTypeId: 5,
@@ -22,6 +23,14 @@ const TIME_CONDITION = {
   conditionTypeId: 2,
   conditionTypeKey: 'time',
   displayOrder: 2,
+  displayable: true,
+};
+
+/** Open-ended rest — ends when athlete presses Lap on the watch. */
+const LAP_BUTTON_CONDITION = {
+  conditionTypeId: 1,
+  conditionTypeKey: 'lap.button',
+  displayOrder: 1,
   displayable: true,
 };
 
@@ -55,6 +64,8 @@ export type StrengthWorkoutSetInput = {
   durationSec?: number | null;
   weightKg?: number | null;
   restSec?: number | null;
+  /** Default lap — press Lap on watch to end rest. */
+  restMode?: StrengthRestMode | null;
   notes?: string | null;
   /** Pre-resolved Garmin enums (skips mapping). */
   garmin?: GarminExerciseRef | null;
@@ -156,22 +167,43 @@ function buildExerciseStep(
   return step;
 }
 
-function buildRestStep(order: StepOrder, childStepId: number | null, restSec: number): StepBag {
+function resolveRestMode(set: StrengthWorkoutSetInput): StrengthRestMode {
+  if (set.restMode === 'time' && set.restSec != null && set.restSec > 0) return 'time';
+  return 'lap';
+}
+
+/** Rest after every set — Lap by default (not timed). */
+function buildRestStep(
+  order: StepOrder,
+  childStepId: number | null,
+  set: StrengthWorkoutSetInput,
+): StepJson {
   const step = baseExecutable(order.nextOrder(), STEP_REST, childStepId);
-  step.endCondition = TIME_CONDITION;
-  step.endConditionValue = restSec;
+  const mode = resolveRestMode(set);
+  if (mode === 'time' && set.restSec != null && set.restSec > 0) {
+    step.endCondition = TIME_CONDITION;
+    step.endConditionValue = set.restSec;
+    step.description = `Repos ${set.restSec}s`;
+  } else {
+    step.endCondition = LAP_BUTTON_CONDITION;
+    step.endConditionValue = null;
+    step.description = 'Repos · Lap';
+  }
   return step;
 }
 
 /**
  * Build a Garmin Connect strength workout payload from structured sets.
  * Unmapped exercises fall back to UNKNOWN ("Inconnu") — original label stays in step description.
+ *
+ * Rest is mandatory after every set (including the last) so transitions between
+ * exercises also get a Lap/timed rest. Default rest ends on Lap button press.
  */
 export function buildStrengthWorkoutPayload(
   input: BuildStrengthWorkoutInput,
 ): BuildStrengthWorkoutResult {
   const order = new StepOrder();
-  const workoutSteps: StepBag[] = [];
+  const workoutSteps: StepJson[] = [];
   const skipped: BuildStrengthWorkoutResult['skipped'] = [];
   let mappedCount = 0;
 
@@ -186,29 +218,25 @@ export function buildStrengthWorkoutPayload(
     }
 
     const iterations = Math.max(1, set.sets || 1);
-    const restSec = set.restSec != null && set.restSec > 0 ? set.restSec : null;
-
-    if (iterations === 1 && !restSec) {
-      workoutSteps.push(buildExerciseStep(order, null, set, garmin));
-    } else {
-      // Garmin expects RepeatGroup stepOrder before nested children
-      const childId = order.nextChildId();
-      const groupOrder = order.nextOrder();
-      const children: StepBag[] = [buildExerciseStep(order, childId, set, garmin)];
-      if (restSec) children.push(buildRestStep(order, childId, restSec));
-      workoutSteps.push({
-        type: 'RepeatGroupDTO',
-        stepOrder: groupOrder,
-        stepType: STEP_REPEAT,
-        childStepId: childId,
-        numberOfIterations: iterations,
-        workoutSteps: children,
-        endCondition: ITERATIONS_CONDITION,
-        endConditionValue: iterations,
-        smartRepeat: false,
-        skipLastRestStep: true,
-      });
-    }
+    const childId = order.nextChildId();
+    const groupOrder = order.nextOrder();
+    const children: StepJson[] = [
+      buildExerciseStep(order, childId, set, garmin),
+      buildRestStep(order, childId, set),
+    ];
+    workoutSteps.push({
+      type: 'RepeatGroupDTO',
+      stepOrder: groupOrder,
+      stepType: STEP_REPEAT,
+      childStepId: childId,
+      numberOfIterations: iterations,
+      workoutSteps: children,
+      endCondition: ITERATIONS_CONDITION,
+      endConditionValue: iterations,
+      smartRepeat: false,
+      // Keep rest after the last set too (inter-exercise transition + end buffer).
+      skipLastRestStep: false,
+    });
     mappedCount += 1;
   }
 

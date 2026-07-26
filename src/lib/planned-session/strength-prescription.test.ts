@@ -47,8 +47,16 @@ describe('normalizeCoachStrengthPrescription', () => {
     expect(normalized).toMatchObject({
       version: 1,
       sets: [
-        { exercise: 'Pompe', sets: 3, reps: 12, restSec: 60, order: 0 },
-        { exercise: 'Planche', sets: 3, reps: 0, durationSec: 45, restSec: 90, order: 1 },
+        { exercise: 'Pompe', sets: 3, reps: 12, restMode: 'time', restSec: 60, order: 0 },
+        {
+          exercise: 'Planche',
+          sets: 3,
+          reps: 0,
+          durationSec: 45,
+          restMode: 'lap',
+          restSec: null,
+          order: 1,
+        },
       ],
     });
   });
@@ -79,10 +87,10 @@ describe('resolveStrengthFieldsForPersist', () => {
 });
 
 describe('strengthPrescriptionFromDraft', () => {
-  it('round-trips draft rows', () => {
+  it('round-trips draft rows with Lap rest by default', () => {
     const draft = draftFromStrengthPrescription({
       version: 1,
-      sets: [{ exercise: 'Curl', sets: 3, reps: 10, restSec: 90, order: 0 }],
+      sets: [{ exercise: 'Curl', sets: 3, reps: 10, restMode: 'lap', order: 0 }],
     });
     const back = strengthPrescriptionFromDraft(draft);
     expect(back?.sets).toHaveLength(1);
@@ -90,7 +98,8 @@ describe('strengthPrescriptionFromDraft', () => {
       exercise: 'Curl',
       sets: 3,
       reps: 10,
-      restSec: 90,
+      restMode: 'lap',
+      restSec: null,
     });
   });
 
