@@ -311,6 +311,7 @@ async function loadDailyStrainState(
             recoveryScore: healthEntry.recoveryScore,
             stress: healthEntry.stress,
             bodyBattery: healthEntry.bodyBattery,
+            totalSteps: healthEntry.totalSteps,
             restingHr: healthEntry.restingHr,
             hrv: healthEntry.hrv,
           }

@@ -12,6 +12,7 @@ import { buildEffortPageInsights } from '@/lib/product-insight/effort-page-insig
 import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
 import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';
 import type { EffortViewModel } from '@/core/presentation/effort-view-model';
+import { buildEffortStrainComposition } from '@/lib/presentation/effort-strain-composition';
 import {
   CHART_CAUTION_STROKE,
   CHART_RISK_STROKE,
@@ -93,6 +94,7 @@ function emptyEffortViewModel(): EffortViewModel {
     strainScore: null,
     dailyLoad: 0,
     weeklyLoad: 0,
+    strainComposition: buildEffortStrainComposition(null),
     fatigueType: 'INSUFFICIENT_DATA',
     fatigueTypeLabel: null,
     performancePercent: null,
@@ -270,6 +272,7 @@ export async function buildEffortViewModel(trainingDayId: string): Promise<Effor
     strainScore,
     dailyLoad,
     weeklyLoad: trainingLoad.weeklyLoad,
+    strainComposition: buildEffortStrainComposition(dailyStrain),
     fatigueType: fatigue.fatigueType,
     fatigueTypeLabel,
     performancePercent,

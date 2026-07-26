@@ -165,6 +165,7 @@ export async function syncGarminHealth(options?: {
       health.hrvStatus != null ||
       health.stress != null ||
       health.bodyBattery != null ||
+      health.totalSteps != null ||
       health.sleep.sleepScore != null;
 
     if (!hasData) {
@@ -199,6 +200,7 @@ export async function syncGarminHealth(options?: {
     if (health.hrvBaselineHigh != null) data.hrvBaselineHigh = health.hrvBaselineHigh;
     if (health.stress != null) data.stress = health.stress;
     if (health.bodyBattery != null) data.bodyBattery = health.bodyBattery;
+    if (health.totalSteps != null) data.totalSteps = health.totalSteps;
     const { sleep } = health;
     if (sleep.sleepScore != null) data.sleepScore = sleep.sleepScore;
     if (sleep.sleepDeepMin != null) data.sleepDeepMin = sleep.sleepDeepMin;
@@ -229,6 +231,7 @@ export async function syncGarminHealth(options?: {
         hrvBaselineHigh: health.hrvBaselineHigh,
         stress: health.stress,
         bodyBattery: health.bodyBattery,
+        totalSteps: health.totalSteps,
         sleepScore: sleep.sleepScore,
         sleepDeepMin: sleep.sleepDeepMin,
         sleepLightMin: sleep.sleepLightMin,

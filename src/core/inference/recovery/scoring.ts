@@ -147,6 +147,18 @@ export function sleepDebtModifier(debtMinutes: number | null): number {
   return 0.55;
 }
 
+/**
+ * Overnight sleep-stress modifier (Garmin avg stress during sleep, 0–100).
+ * Elevated nocturnal stress indicates incomplete parasympathetic recovery.
+ */
+export function sleepStressModifier(avgStressDuringSleep: number | null): number {
+  if (avgStressDuringSleep === null) return 1.0;
+  if (avgStressDuringSleep > 50) return 0.85;
+  if (avgStressDuringSleep > 35) return 0.92;
+  if (avgStressDuringSleep > 25) return 0.97;
+  return 1.0;
+}
+
 export function scoreSleep(features: RecoveryFeatureSet): DimensionScore {
   const { sleepEfficiencyPercent } = features;
 
@@ -155,8 +167,9 @@ export function scoreSleep(features: RecoveryFeatureSet): DimensionScore {
   }
 
   const baseScore = clamp(mapRestorativeSleepRatioToRaw(sleepEfficiencyPercent), 0, 100);
-  const modifier = sleepDebtModifier(features.sleepDebtMin);
-  const score = clamp(baseScore * modifier, 0, 100);
+  const debtModifier = sleepDebtModifier(features.sleepDebtMin);
+  const stressModifier = sleepStressModifier(features.avgStressDuringSleep);
+  const score = clamp(baseScore * debtModifier * stressModifier, 0, 100);
 
   return {
     score,

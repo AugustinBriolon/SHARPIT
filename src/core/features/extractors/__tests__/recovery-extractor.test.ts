@@ -81,6 +81,7 @@ function makeSubjective(opts: {
   mood?: number;
   energyLevel?: number;
   perceivedSoreness?: number;
+  stressLevel?: number;
   rpe?: number;
 }): SubjectiveObservation {
   return {
@@ -357,16 +358,16 @@ describe('extractRecoveryFeatures — rhrDeltaFromBaseline', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('extractRecoveryFeatures — subjectiveWellnessIndex', () => {
-  it('computes composite index from all three dimensions', () => {
-    // mood=4 → 8/10, energy=5 → 10/10, soreness=2 → 8/10
-    const subj = makeSubjective({ mood: 4, energyLevel: 5, perceivedSoreness: 2 });
+  it('computes composite index from mood, energy, soreness and stress', () => {
+    // mood=4 → 8/10, energy=5 → 10/10, soreness=2 → 8/10, stress=2 → 6/10
+    const subj = makeSubjective({ mood: 4, energyLevel: 5, perceivedSoreness: 2, stressLevel: 2 });
     const result = extractRecoveryFeatures(null, null, null, subj, EMPTY_HISTORY, makeContext());
-    // index = 0.35×8 + 0.35×10 + 0.30×(10-2) = 2.8 + 3.5 + 2.4 = 8.7
-    expect(result.subjectiveWellnessIndex).toBeCloseTo(8.7, 1);
+    // index = 0.30×8 + 0.35×10 + 0.25×8 + 0.10×6 = 2.4 + 3.5 + 2.0 + 0.6 = 8.5
+    expect(result.subjectiveWellnessIndex).toBeCloseTo(8.5, 1);
   });
 
   it('re-normalizes weights when only some dimensions are available', () => {
-    // Only mood available (weight 0.35 → normalized to 1.0)
+    // Only mood available (weight 0.30 → normalized to 1.0)
     const subj = makeSubjective({ mood: 5 });
     const result = extractRecoveryFeatures(null, null, null, subj, EMPTY_HISTORY, makeContext());
     // index = (mood=5 → 10/10) × 1.0 = 10.0
@@ -396,11 +397,26 @@ describe('extractRecoveryFeatures — subjectiveWellnessIndex', () => {
   });
 
   it('preserves raw component values alongside composite index', () => {
-    const subj = makeSubjective({ mood: 3, energyLevel: 4, perceivedSoreness: 5 });
+    const subj = makeSubjective({ mood: 3, energyLevel: 4, perceivedSoreness: 5, stressLevel: 4 });
     const result = extractRecoveryFeatures(null, null, null, subj, EMPTY_HISTORY, makeContext());
     expect(result.subjectiveWellnessComponents?.mood).toBe(3);
     expect(result.subjectiveWellnessComponents?.energyLevel).toBe(4);
     expect(result.subjectiveWellnessComponents?.perceivedSoreness).toBe(5);
+    expect(result.subjectiveWellnessComponents?.stressLevel).toBe(4);
+  });
+
+  it('high stress reduces wellness index', () => {
+    const lowStress = makeSubjective({ mood: 4, energyLevel: 4, perceivedSoreness: 2, stressLevel: 1 });
+    const highStress = makeSubjective({
+      mood: 4,
+      energyLevel: 4,
+      perceivedSoreness: 2,
+      stressLevel: 5,
+    });
+    const ctx = makeContext();
+    const r1 = extractRecoveryFeatures(null, null, null, lowStress, EMPTY_HISTORY, ctx);
+    const r2 = extractRecoveryFeatures(null, null, null, highStress, EMPTY_HISTORY, ctx);
+    expect(r1.subjectiveWellnessIndex!).toBeGreaterThan(r2.subjectiveWellnessIndex!);
   });
 });
 

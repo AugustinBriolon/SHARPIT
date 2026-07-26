@@ -31,6 +31,7 @@ function dailyHealthToGarminHealth(row: DailyHealth): GarminDailyHealth {
     hrvBaselineHigh: row.hrvBaselineHigh,
     stress: row.stress,
     bodyBattery: row.bodyBattery,
+    totalSteps: row.totalSteps,
     sleep: {
       sleepMinutes: row.sleepMinutes,
       napMinutes: row.napMinutes,

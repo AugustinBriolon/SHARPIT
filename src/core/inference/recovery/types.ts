@@ -123,6 +123,15 @@ export type RecoveryModelOutput = {
  */
 import type { EnvironmentalImpact } from '@/core/environment';
 
+/**
+ * Garmin wearable energy signals used only for soft corroboration of readiness.
+ * Never primary dimension inputs (RECOVERY_MODEL.md §4.3 / proprietary Level 6).
+ */
+export type WearableEnergySignals = {
+  readonly stress: number | null;
+  readonly bodyBattery: number | null;
+};
+
 export type RecoveryModelContext = {
   /** Previous readiness score (from Digital Twin) — for trend computation. */
   readonly previousReadinessScore: number | null;
@@ -131,6 +140,11 @@ export type RecoveryModelContext = {
   readonly athleteId: string;
   /** Optional overlay from Environmental Context Engine — never weather fields. */
   readonly environmentalImpact?: EnvironmentalImpact | null;
+  /**
+   * Optional Garmin stress + Body Battery for bounded readiness corroboration.
+   * Must not dominate autonomic/sleep/subjective synthesis.
+   */
+  readonly wearableEnergySignals?: WearableEnergySignals | null;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

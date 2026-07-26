@@ -35,6 +35,7 @@ export type DailyStrainSource =
   | 'DAILY_HEALTH_STRESS'
   | 'DAILY_HEALTH_RECOVERY'
   | 'DAILY_HEALTH_BODY_BATTERY'
+  | 'DAILY_HEALTH_STEPS'
   | 'UNKNOWN';
 
 export type DailyStrainThresholds = {
@@ -65,6 +66,7 @@ export type DailyStrainHealthSignals = {
   recoveryScore?: number | null;
   stress?: number | null;
   bodyBattery?: number | null;
+  totalSteps?: number | null;
   restingHr?: number | null;
   hrv?: number | null;
 };
@@ -104,6 +106,9 @@ export type DailyStrainResult = {
       recoveryScore: number | null;
       bodyBattery: number | null;
       calories: number | null;
+    };
+    movementSignals: {
+      totalSteps: number | null;
     };
   };
 };
@@ -383,15 +388,65 @@ function computeCardiovascularLoad(
   };
 }
 
+/**
+ * Convert daily steps into an equivalent movement load (TSS-like).
+ * ~10 000 steps ≈ 20 load units (active recovery / NEAT baseline).
+ * Capped so steps never invent a hard training day alone.
+ */
+function computeStepsMovementLoad(
+  health: DailyStrainHealthSignals | null | undefined,
+): DailyStrainContribution {
+  const steps = health?.totalSteps;
+  if (steps == null || steps <= 0) return emptyContribution('MOVEMENT');
+
+  const load = clampRounded(Math.min(45, (clamp(steps, 0, 30_000) / 10_000) * 20));
+  if (load <= 0) return emptyContribution('MOVEMENT');
+
+  return {
+    available: true,
+    contributor: 'MOVEMENT',
+    load,
+    score: dailyTssToStrainScore(load),
+    confidence: steps >= 1000 ? 0.7 : 0.45,
+    source: 'DAILY_HEALTH_STEPS',
+  };
+}
+
 function mergeMovementContribution(
   sessionLoads: readonly ComputedLoad[],
   legacyLoads: readonly ComputedLoad[],
+  health: DailyStrainHealthSignals | null | undefined,
 ): DailyStrainContribution {
   const movementLoads = [
     ...sessionLoads.filter((load) => load.contributor === 'MOVEMENT'),
     ...legacyLoads.filter((load) => load.contributor === 'MOVEMENT'),
   ];
-  return summarizeContribution('MOVEMENT', movementLoads);
+  const fromSessions = summarizeContribution('MOVEMENT', movementLoads);
+  if (fromSessions.available) return fromSessions;
+  return computeStepsMovementLoad(health);
+}
+
+function buildTrace(
+  params: {
+    sessionFeatures: readonly SessionFeatureSet[];
+    legacyActivities?: readonly LegacyDailyStrainActivity[];
+    healthSignals?: DailyStrainHealthSignals | null;
+  },
+): DailyStrainResult['trace'] {
+  return {
+    sessionCount: params.sessionFeatures.length,
+    activityCount: params.legacyActivities?.length ?? 0,
+    sessionMethods: params.sessionFeatures.map((session) => session.tssMethod),
+    cardiovascularSignals: {
+      stress: params.healthSignals?.stress ?? null,
+      recoveryScore: params.healthSignals?.recoveryScore ?? null,
+      bodyBattery: params.healthSignals?.bodyBattery ?? null,
+      calories: params.healthSignals?.calories ?? null,
+    },
+    movementSignals: {
+      totalSteps: params.healthSignals?.totalSteps ?? null,
+    },
+  };
 }
 
 function pickTrainingLoads(
@@ -498,9 +553,10 @@ export function computeDailyStrain(params: {
   const contributions: DailyStrainResult['contributions'] = {
     training: summarizeContribution('TRAINING', trainingLoads),
     cardiovascular: computeCardiovascularLoad(params.healthSignals),
-    movement: mergeMovementContribution(sessionLoads, legacyLoads),
+    movement: mergeMovementContribution(sessionLoads, legacyLoads, params.healthSignals),
   };
   const blended = blendDailyLoad(contributions);
+  const trace = buildTrace(params);
 
   if (
     !contributions.training.available &&
@@ -518,17 +574,7 @@ export function computeDailyStrain(params: {
       structuredSessionDetected,
       fallbackUsed: false,
       contributions,
-      trace: {
-        sessionCount: params.sessionFeatures.length,
-        activityCount: params.legacyActivities?.length ?? 0,
-        sessionMethods: params.sessionFeatures.map((session) => session.tssMethod),
-        cardiovascularSignals: {
-          stress: params.healthSignals?.stress ?? null,
-          recoveryScore: params.healthSignals?.recoveryScore ?? null,
-          bodyBattery: params.healthSignals?.bodyBattery ?? null,
-          calories: params.healthSignals?.calories ?? null,
-        },
-      },
+      trace,
     };
   }
 
@@ -543,16 +589,6 @@ export function computeDailyStrain(params: {
     structuredSessionDetected,
     fallbackUsed: !useSessionLoads,
     contributions,
-    trace: {
-      sessionCount: params.sessionFeatures.length,
-      activityCount: params.legacyActivities?.length ?? 0,
-      sessionMethods: params.sessionFeatures.map((session) => session.tssMethod),
-      cardiovascularSignals: {
-        stress: params.healthSignals?.stress ?? null,
-        recoveryScore: params.healthSignals?.recoveryScore ?? null,
-        bodyBattery: params.healthSignals?.bodyBattery ?? null,
-        calories: params.healthSignals?.calories ?? null,
-      },
-    },
+    trace,
   };
 }

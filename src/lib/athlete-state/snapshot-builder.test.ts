@@ -111,6 +111,9 @@ describe('buildAthleteSnapshot daily phase', () => {
               bodyBattery: null,
               calories: null,
             },
+            movementSignals: {
+              totalSteps: null,
+            },
           },
         },
       },

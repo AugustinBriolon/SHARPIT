@@ -173,8 +173,10 @@ function computeRhrDelta(
  *   mood (1–5): multiply by 2 to normalize to 0–10 scale
  *   energyLevel (1–5): multiply by 2 to normalize
  *   perceivedSoreness (0–10): inverted (10 - soreness) because higher soreness = worse
+ *   stressLevel (1–5): inverted ((5 - stress) * 2) because higher stress = worse
  *
- * Weights: mood 0.35, energy 0.35, soreness_inv 0.30
+ * Weights (RECOVERY_MODEL.md §5.3):
+ *   mood 0.30, energy 0.35, soreness_inv 0.25, stress_inv 0.10
  *
  * When only some components are available, the index is computed from available
  * components with re-normalized weights. Returns null when NO component is available.
@@ -188,12 +190,13 @@ function computeWellnessIndex(subjective: SubjectiveObservation | null): {
 } {
   if (!subjective) return { index: null, components: null };
 
-  const { mood, energyLevel, perceivedSoreness } = subjective;
+  const { mood, energyLevel, perceivedSoreness, stressLevel } = subjective;
 
   const components: SubjectiveWellnessComponents = {
     mood: mood ?? null,
     energyLevel: energyLevel ?? null,
     perceivedSoreness: perceivedSoreness ?? null,
+    stressLevel: stressLevel ?? null,
   };
 
   // Build weighted contributions from available components
@@ -201,13 +204,16 @@ function computeWellnessIndex(subjective: SubjectiveObservation | null): {
   const dims: WeightedDimension[] = [];
 
   if (mood != null) {
-    dims.push({ value: Math.min(10, mood * 2), weight: 0.35 });
+    dims.push({ value: Math.min(10, mood * 2), weight: 0.3 });
   }
   if (energyLevel != null) {
     dims.push({ value: Math.min(10, energyLevel * 2), weight: 0.35 });
   }
   if (perceivedSoreness != null) {
-    dims.push({ value: Math.max(0, 10 - perceivedSoreness), weight: 0.3 });
+    dims.push({ value: Math.max(0, 10 - perceivedSoreness), weight: 0.25 });
+  }
+  if (stressLevel != null) {
+    dims.push({ value: Math.max(0, Math.min(10, (5 - stressLevel) * 2)), weight: 0.1 });
   }
 
   if (dims.length === 0) return { index: null, components };
@@ -332,6 +338,7 @@ export function extractRecoveryFeatures(
     subjectiveWellnessIndex,
     subjectiveWellnessComponents,
     rpeVsTargetZone: null, // populated by FeatureEngine in second pass (requires session features)
+    avgStressDuringSleep: sleep?.avgStressDuringSleep ?? null,
 
     confidence,
     algorithmId: 'recovery-features-v1',

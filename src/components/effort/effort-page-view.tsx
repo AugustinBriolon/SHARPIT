@@ -6,6 +6,7 @@ import {
 import { EffortDimensionsSection } from '@/components/effort/effort-dimensions-section';
 import { EffortHero } from '@/components/effort/effort-hero';
 import { EffortStatsStrip } from '@/components/effort/effort-stats-strip';
+import { EffortStrainCompositionSection } from '@/components/effort/effort-strain-composition-section';
 import { EffortVerdictSection } from '@/components/effort/effort-verdict-section';
 import { EffortWhyBlock } from '@/components/effort/effort-why-block';
 import {
@@ -13,6 +14,7 @@ import {
   MetricDrillDownPage,
   type MetricTone,
 } from '@/components/today/drill-down/metric-drill-down-page';
+import type { EffortStrainCompositionView } from '@/lib/presentation/effort-strain-composition';
 import type { FatigueType, TrainingCapacity } from '@/lib/today/today-mapping';
 import type { DimensionResult } from '@/hooks/use-today';
 
@@ -27,6 +29,7 @@ export type EffortPageViewProps = {
   strainScore: number | null;
   dailyLoad: number;
   weeklyLoad: number;
+  strainComposition: EffortStrainCompositionView;
   fatigueType: FatigueType | string;
   fatigueTypeLabel: string | null;
   performancePercent: number | null;
@@ -71,6 +74,7 @@ export function EffortPageView(props: EffortPageViewProps) {
     strainScore,
     dailyLoad,
     weeklyLoad,
+    strainComposition,
     fatigueType,
     fatigueTypeLabel,
     performancePercent,
@@ -141,6 +145,8 @@ export function EffortPageView(props: EffortPageViewProps) {
         verdict={verdict}
         verdictClass={verdictClass}
       />
+
+      <EffortStrainCompositionSection composition={strainComposition} loading={loading} />
 
       {!loading ? (
         <EffortVerdictSection

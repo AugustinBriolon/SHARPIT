@@ -73,6 +73,7 @@ function rec(overrides: Partial<RecoveryFeatureSet> = {}): RecoveryFeatureSet {
     subjectiveWellnessIndex: null,
     subjectiveWellnessComponents: null,
     rpeVsTargetZone: null,
+    avgStressDuringSleep: null,
     confidence: 0.85,
     algorithmId: 'recovery-features-v1',
     sourceObsIds: [],
