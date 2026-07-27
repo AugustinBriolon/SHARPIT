@@ -1,31 +1,20 @@
 'use client';
 
 import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
-import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
+import { CompletedSessionStory } from '@/components/planning/session/completed-session-story';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/toast';
 import type { ClientActivity, ClientPhysicalNote, ClientPlannedSession } from '@/lib/query/types';
 import { activityTypeLabels, formatDate, formatDistance, formatDuration } from '@/lib/format';
 import { severityColor } from '@/lib/physical';
-import { sessionScoreColor } from '@/lib/planned-session/session-analysis-display';
 import { cn } from '@/lib/utils';
 import type { SessionAnalysis } from '@/lib/validators/coach';
 import { useActivities, usePlannedSessionMutations } from '@/hooks/use-data';
 import { usePhysicalNoteMutations, usePhysicalNotes } from '@/hooks/use-physical';
 import { queryKeys } from '@/lib/query/keys';
 import { fetchPlannedSessions } from '@/lib/query/fetchers';
-import {
-  Check,
-  CheckCircle2,
-  HeartPulse,
-  Link2,
-  Loader2,
-  RefreshCw,
-  Sparkles,
-  Unlink,
-  X,
-} from 'lucide-react';
+import { Check, CheckCircle2, HeartPulse, Link2, Loader2, Unlink, X } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -63,15 +52,6 @@ function clearAnalysisPollTimedOut(sessionId: string): void {
     // ignore
   }
 }
-
-const VERDICT_LABELS: Record<SessionAnalysis['verdict'], string> = {
-  AS_PLANNED: 'Conforme',
-  HARDER: 'Plus dur que prévu',
-  EASIER: 'Plus facile que prévu',
-  SHORTER: 'Plus court',
-  LONGER: 'Plus long',
-  DIFFERENT: 'Différent',
-};
 
 function activityMetric(a: ClientActivity): string {
   if (a.runMetrics?.distanceM) return formatDistance(a.runMetrics.distanceM);
@@ -336,147 +316,66 @@ export function SessionRealization({
   }
 
   function renderLinkedAnalysisSection() {
-    if (hasAnalysis && analysis) {
-      return (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Sparkles className="text-primary size-3.5 shrink-0" />
-            <p className="text-label">Analyse coach</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span
-              className={cn(
-                'font-mono text-2xl font-semibold',
-                sessionScoreColor(analysis.complianceScore),
-              )}
-            >
-              {analysis.complianceScore}
-            </span>
-            <span className="text-muted-foreground text-xs">/100</span>
-            <span className="bg-muted/60 ml-auto rounded-full px-2 py-0.5 text-xs">
-              {VERDICT_LABELS[analysis.verdict]}
-            </span>
-          </div>
-          <p className="text-muted-foreground text-sm">{analysis.summary}</p>
-          {analysis.remarks.length > 0 && (
-            <ul className="space-y-1">
-              {analysis.remarks.map((r, i) => (
-                <li key={i} className="text-muted-foreground flex gap-1.5 text-xs">
-                  <span className="text-primary">•</span>
-                  <span>{r}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-          {analysis.recommendation && (
-            <p className="border-primary/20 bg-primary/5 rounded-md border p-2 text-xs">
-              {analysis.recommendation}
-            </p>
-          )}
-          <DiscussWithCoachButton target={{ kind: 'planned-session', sessionId: session.id }} />
-          {painReassessments.length > 0 && (
-            <div className="border-signal-caution/20 bg-signal-caution/5 space-y-2 rounded-md border p-2.5">
-              <p className="text-signal-caution flex items-center gap-1.5 text-xs font-medium">
-                <HeartPulse className="size-3.5" />
-                Réévaluer une douleur ou blessure
-              </p>
-              {painReassessments.map((item) => (
-                <PhysicalReassessmentCard key={item.noteId} item={item} />
-              ))}
-            </div>
-          )}
-          <button
-            className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
-            disabled={isAnalyzing}
-            type="button"
-            onClick={handleManualAnalysis}
-          >
-            {isAnalyzing ? (
-              <Loader2 className="size-3 animate-spin" />
-            ) : (
-              <RefreshCw className="size-3" />
-            )}
-            Ré-analyser
-          </button>
-        </div>
-      );
-    }
-
-    if (isPendingScheduled) {
-      return (
-        <div className="border-border/50 bg-muted/20 flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
-          <Loader2 className="text-primary size-4 shrink-0 animate-spin" />
-          <span className="text-muted-foreground">Analyse en cours…</span>
-        </div>
-      );
-    }
-
     return (
-      <Button
-        disabled={isAnalyzing}
-        size="sm"
-        type="button"
-        variant="outline"
-        onClick={handleManualAnalysis}
-      >
-        {isAnalyzing ? (
-          <>
-            <Loader2 className="size-4 animate-spin" /> Analyse…
-          </>
-        ) : (
-          <>
-            <Sparkles className="size-4" /> Analyser la séance
-          </>
-        )}
-      </Button>
+      <div className="space-y-3">
+        <CompletedSessionStory
+          isAnalyzing={isAnalyzing || isPendingScheduled}
+          session={{
+            ...session,
+            analysis: analysis ?? session.analysis,
+            analyzedAt: analyzedAt ?? session.analyzedAt,
+          }}
+          onReanalyze={() => void handleManualAnalysis()}
+        />
+        {painReassessments.length > 0 ? (
+          <div className="border-signal-caution/20 bg-signal-caution/5 space-y-2 rounded-md border p-2.5">
+            <p className="text-signal-caution flex items-center gap-1.5 text-xs font-medium">
+              <HeartPulse className="size-3.5" />
+              Réévaluer une douleur ou blessure
+            </p>
+            {painReassessments.map((item) => (
+              <PhysicalReassessmentCard key={item.noteId} item={item} />
+            ))}
+          </div>
+        ) : null}
+      </div>
     );
   }
 
   if (isLinked) {
+    const delink = (
+      <button
+        className="text-muted-foreground hover:text-destructive flex shrink-0 items-center gap-1 text-xs"
+        disabled={isLinking}
+        type="button"
+        onClick={() => link.mutate({ id: session.id, activityId: null })}
+      >
+        <Unlink className="size-3" /> Délier
+      </button>
+    );
+
     if (omitLinkedActivityNavigation) {
       return (
         <div className="space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-muted-foreground text-[11px] leading-relaxed">
-              Activité rattachée à une séance du plan (auto ou manuel).
-            </p>
-            <button
-              className="text-muted-foreground hover:text-destructive flex shrink-0 items-center gap-1 text-xs"
-              disabled={isLinking}
-              type="button"
-              onClick={() => link.mutate({ id: session.id, activityId: null })}
-            >
-              <Unlink className="size-3" /> Délier
-            </button>
-          </div>
+          <div className="flex items-center justify-end">{delink}</div>
           {renderLinkedAnalysisSection()}
         </div>
       );
     }
 
     return (
-      <div className="border-analysis-border/60 bg-analysis-surface-alt/50 space-y-3 rounded-lg border p-3">
+      <div className="space-y-3">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-primary flex items-center gap-1.5 text-xs font-medium tracking-wide uppercase">
-            <CheckCircle2 className="size-3.5" /> Séance réalisée
+          <span className="text-muted-foreground inline-flex items-center gap-1.5 text-xs">
+            <CheckCircle2 className="text-primary size-3.5" />
+            Liée à une activité
           </span>
-          <button
-            className="text-muted-foreground hover:text-destructive flex items-center gap-1 text-xs"
-            disabled={isLinking}
-            type="button"
-            onClick={() => link.mutate({ id: session.id, activityId: null })}
-          >
-            <Unlink className="size-3" /> Délier
-          </button>
+          {delink}
         </div>
-        <p className="text-muted-foreground text-[11px] leading-relaxed">
-          SHARPIT a rattaché cette activité à une séance du plan (même sport, même jour). Tu peux
-          délier si ce n&apos;était pas la bonne.
-        </p>
 
         {linked ? (
           <Link
-            className="border-analysis-border/60 bg-analysis-surface hover:border-primary/40 flex items-center justify-between gap-2 rounded-md border p-2"
+            className="border-analysis-border/60 hover:border-primary/40 chip-surface flex items-center justify-between gap-2 rounded-lg px-3 py-2.5"
             href={`/training/${linked.id}`}
           >
             <div className="flex min-w-0 items-start gap-1.5">
@@ -491,7 +390,7 @@ export function SessionRealization({
               </div>
             </div>
             <span className="text-muted-foreground shrink-0 text-xs font-medium">
-              {activityMetric(linked)}
+              {activityMetric(linked)} →
             </span>
           </Link>
         ) : null}

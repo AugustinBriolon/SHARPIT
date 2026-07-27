@@ -1,6 +1,7 @@
 import { ActivityType } from '@prisma/client';
 import { generateText, Output } from 'ai';
 import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from '@/lib/ai';
+import { isActivityToday } from '@/lib/activity/activity-day';
 import {
   isEligibleForActivityNarrative,
   NARRATIVE_ANALYSIS_SINCE,
@@ -46,11 +47,12 @@ export async function setActivityNarrativeAnalysis(
 
 /**
  * Génère et persiste l'analyse narrative si absente (ou si force=true).
+ * Auto path is today-only; older sessions need force or allowHistorical (backfill).
  * Retourne true si une nouvelle analyse a été créée.
  */
 export async function runActivityNarrativeAnalysis(
   activityId: string,
-  options?: { force?: boolean },
+  options?: { force?: boolean; allowHistorical?: boolean },
 ): Promise<boolean> {
   if (!isCoachConfigured()) return false;
 
@@ -60,6 +62,9 @@ export async function runActivityNarrativeAnalysis(
   });
   if (!existing || !isEligibleForActivityNarrative(existing.date)) return false;
   if (existing.narrativeAnalyzedAt && !options?.force) return false;
+  if (!options?.force && !options?.allowHistorical && !isActivityToday(existing.date)) {
+    return false;
+  }
 
   try {
     const goals = await getGoals();
@@ -116,7 +121,7 @@ export async function backfillActivityNarratives(): Promise<{
   let created = 0;
   for (const { id } of activities) {
     try {
-      if (await runActivityNarrativeAnalysis(id)) created += 1;
+      if (await runActivityNarrativeAnalysis(id, { allowHistorical: true })) created += 1;
     } catch (error) {
       console.error('[activity-narrative/backfill]', id, error);
     }

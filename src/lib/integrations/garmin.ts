@@ -100,19 +100,44 @@ async function safeProfile(client: GCClient): Promise<ProfileInfo> {
 
 export interface GarminAthleteThresholds {
   ftpW: number | null;
+  maxHr: number | null;
   lthr: number | null;
   runThresholdPaceSecPerKm: number | null;
   vo2maxRunning: number | null;
   vo2maxCycling: number | null;
 }
 
+export interface GarminHeartRateZoneRow {
+  sport?: string;
+  maxHeartRateUsed?: number;
+}
+
+/**
+ * Picks profile max HR from Garmin heart-rate zones.
+ * Prefers DEFAULT, then RUNNING, then the first row with a usable value.
+ */
+export function pickMaxHeartRateFromZones(
+  zones: GarminHeartRateZoneRow[] | null | undefined,
+): number | null {
+  if (!Array.isArray(zones) || zones.length === 0) return null;
+  const preferred =
+    zones.find((z) => z.sport === 'DEFAULT') ??
+    zones.find((z) => z.sport === 'RUNNING') ??
+    zones[0];
+  const value = preferred?.maxHeartRateUsed;
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? Math.round(value)
+    : null;
+}
+
 /**
  * Récupère les seuils de l'athlète depuis Garmin (réglages utilisateur + zones
- * de puissance vélo). Tout est optionnel : un champ absent renvoie `null`.
+ * FC / puissance vélo). Tout est optionnel : un champ absent renvoie `null`.
  */
 export async function fetchAthleteThresholds(client: GCClient): Promise<GarminAthleteThresholds> {
   const result: GarminAthleteThresholds = {
     ftpW: null,
+    maxHr: null,
     lthr: null,
     runThresholdPaceSecPerKm: null,
     vo2maxRunning: null,
@@ -142,6 +167,15 @@ export async function fetchAthleteThresholds(client: GCClient): Promise<GarminAt
     }
   } catch {
     // réglages indisponibles
+  }
+
+  try {
+    const zones = (await client.get(
+      'https://connectapi.garmin.com/biometric-service/heartRateZones',
+    )) as GarminHeartRateZoneRow[] | null;
+    result.maxHr = pickMaxHeartRateFromZones(zones);
+  } catch {
+    // zones FC indisponibles
   }
 
   try {

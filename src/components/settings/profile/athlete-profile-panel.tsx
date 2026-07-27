@@ -43,6 +43,7 @@ export interface ProfileData {
 interface GarminImportResult {
   imported: boolean;
   ftpW: number | null;
+  maxHr: number | null;
   lthr: number | null;
   runThresholdPaceSecPerKm: number | null;
   vo2maxRunning: number | null;
@@ -477,6 +478,7 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
         return;
       }
       if (data.ftpW != null) setFtpW(String(data.ftpW));
+      if (data.maxHr != null) setMaxHr(String(data.maxHr));
       if (data.lthr != null) setLthr(String(data.lthr));
       if (data.runThresholdPaceSecPerKm != null) {
         setThresholdPace(paceToInput(data.runThresholdPaceSecPerKm));

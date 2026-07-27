@@ -92,6 +92,7 @@ export async function importGarminThresholds(): Promise<GarminThresholdsImport> 
     thresholdsSyncedAt: new Date(),
   };
   if (thresholds.ftpW != null) data.ftpW = thresholds.ftpW;
+  if (thresholds.maxHr != null) data.maxHr = thresholds.maxHr;
   if (thresholds.lthr != null) data.lthr = thresholds.lthr;
   if (thresholds.runThresholdPaceSecPerKm != null)
     data.runThresholdPaceSecPerKm = thresholds.runThresholdPaceSecPerKm;
@@ -115,6 +116,7 @@ export async function importGarminThresholds(): Promise<GarminThresholdsImport> 
 
   const imported =
     thresholds.ftpW != null ||
+    thresholds.maxHr != null ||
     thresholds.lthr != null ||
     thresholds.runThresholdPaceSecPerKm != null ||
     thresholds.vo2maxRunning != null ||

@@ -16,7 +16,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   ActivityCompositionSkeleton,
-  ActivityMetricStripSkeleton,
+  ActivityPerformanceSkeleton,
 } from '@/components/training/activity/detail/activity-detail-skeleton';
 import { useMultisportStreams } from '@/hooks/use-data';
 import type { ZoneBucket } from '@/lib/activity/activity-analysis';
@@ -250,7 +250,7 @@ export function TriathlonActivityInsights({ activityId }: { activityId: string }
           <Skeleton className="h-8 w-56 rounded-full border-0" />
         </div>
         <ActivityCompositionSkeleton withCoach={false} />
-        <ActivityMetricStripSkeleton />
+        <ActivityPerformanceSkeleton />
       </div>
     );
   }

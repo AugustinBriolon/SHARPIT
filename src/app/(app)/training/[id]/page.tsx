@@ -14,15 +14,12 @@ import { ActivitySpecsNotes } from '@/components/training/activity/detail/activi
 import { ActivityStrengthExercises } from '@/components/training/activity/detail/activity-strength-exercises';
 import { ActivityGoalValidationsCard } from '@/components/goals/cards/activity-goal-validations-card';
 import { ActivityNarrativeSection } from '@/components/training/activity/activity-narrative-section';
-import { enrichActivityObservedContext } from '@/lib/activity/enrich-observed-context';
 import { isEligibleForActivityNarrative } from '@/lib/activity/activity-narrative-config';
 import { activityDetailExpectsMap } from '@/lib/activity/activity-detail-skeleton-layout';
-import { enrichStrengthExerciseVisuals } from '@/lib/exercises';
 import { getActivityById, getMultisportLegsForActivity } from '@/lib/queries';
 import { getGoalAchievementsForActivity } from '@/lib/goals/goal-achievements';
 import { isCoachConfigured } from '@/lib/ai';
 import { getPerformanceRecordsForActivity } from '@/lib/training/records';
-import { prisma } from '@/lib/prisma';
 import { ActivityType } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -38,17 +35,8 @@ const NARRATIVE_TYPES = new Set<ActivityType>([
 export default async function ActivityDetailPage({ params }: PageProps) {
   const { id } = await params;
 
-  try {
-    await enrichActivityObservedContext(prisma, id);
-  } catch (error) {
-    console.error('[activity-detail/enrich]', error);
-  }
-
-  try {
-    await enrichStrengthExerciseVisuals(prisma, id);
-  } catch (error) {
-    console.error('[activity-detail/strength-visuals]', error);
-  }
+  // No weather / narrative enrich on browse — that belongs to ingest (sync / create / link).
+  // Opening an old activity must stay Instant; coach synthesis is on-demand via the UI.
 
   const activity = await getActivityById(id);
 

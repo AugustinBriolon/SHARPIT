@@ -14,7 +14,7 @@ import { toast } from '@/components/ui/toast';
 import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
 import { useSessionRationalePresentation } from '@/hooks/use-data';
 import type { PlannedSessionViewModel } from '@/core/presentation/planned-session-view-model';
-import { activityTypeLabels, formatDate } from '@/lib/format';
+import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
 import { formatPlannedSessionLocationDisplay } from '@/lib/planned-session/planned-session-display';
 import {
   attachGarminRefsToPrescription,
@@ -25,7 +25,7 @@ import { sportIdentityHex } from '@/lib/activity/sport-identity';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import { exposureLabels, intensityLabels } from '@/lib/planned-session/sessions';
 import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-compare';
-import { Brain, ChevronRight, Dumbbell, MapPin, Pencil, Watch } from 'lucide-react';
+import { Brain, ChevronRight, ClipboardList, Dumbbell, MapPin, Pencil, Watch } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
@@ -36,7 +36,9 @@ type KeyChip = { label: string; value: string; valueClassName?: string };
 
 function KeyChipsRow({ chips }: { chips: KeyChip[] }) {
   return (
-    <div className="grid grid-cols-3 gap-2">
+    <div
+      className={cn('grid gap-2', chips.length >= 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3')}
+    >
       {chips.map((chip) => (
         <div key={chip.label} className="chip-surface rounded-analysis px-3 py-2.5">
           <p className="text-label truncate">{chip.label}</p>
@@ -79,11 +81,54 @@ function CollapsibleSection({
   );
 }
 
+/** Compact planned → done facts for realized sessions. */
+function PlannedVsDoneStrip({ session }: { session: ClientPlannedSession }) {
+  const { activity } = session;
+  if (!activity) return null;
+
+  const plannedDuration = session.durationMin != null ? `${session.durationMin} min` : '—';
+  const doneDuration = activity.duration != null ? formatDuration(activity.duration) : '—';
+  const plannedLoad = session.load != null ? `${Math.round(session.load)} TSS` : '—';
+  const doneLoad = activity.load != null ? `${Math.round(activity.load)} TSS` : '—';
+  const plannedIntensity = session.intensity ? intensityLabels[session.intensity] : '—';
+  let doneFeeling = '—';
+  if (activity.rpe != null) doneFeeling = `RPE ${activity.rpe}`;
+  else if (activity.feeling?.trim()) doneFeeling = activity.feeling;
+
+  const rows = [
+    { label: 'Durée', planned: plannedDuration, done: doneDuration },
+    { label: 'Charge', planned: plannedLoad, done: doneLoad },
+    { label: 'Effort', planned: plannedIntensity, done: doneFeeling },
+  ];
+
+  return (
+    <div className="border-analysis-border/60 overflow-hidden rounded-lg border">
+      <div className="bg-muted/30 text-label grid grid-cols-[4.5rem_1fr_1fr] gap-2 border-b px-3 py-1.5">
+        <span className="sr-only">Élément</span>
+        <span className="col-start-2">Plan</span>
+        <span>Fait</span>
+      </div>
+      {rows.map((row) => (
+        <div
+          key={row.label}
+          className="border-analysis-border/40 grid grid-cols-[4.5rem_1fr_1fr] gap-2 border-b px-3 py-2 last:border-b-0"
+        >
+          <span className="text-muted-foreground text-xs font-medium">{row.label}</span>
+          <span className="text-data text-muted-foreground text-sm tabular-nums">
+            {row.planned}
+          </span>
+          <span className="text-data text-foreground text-sm font-medium tabular-nums">
+            {row.done}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /**
  * Glanceable read layout for the planned-session modal.
- * Header + 3 key chips answer "what/when/how much" at a glance; rationale and
- * location/weather context fold into <details> so the modal doesn't dump
- * everything at once. Edit stays icon-only (Close is DialogContent's own X).
+ * Realized sessions lead with the unified coach story; plan details fold below.
  */
 export function PlannedSessionReadView({
   session,
@@ -139,9 +184,9 @@ export function PlannedSessionReadView({
     (rationaleVm != null &&
       rationaleVm.origin !== 'MANUAL' &&
       (Boolean(rationaleVm.suggested) || Boolean(rationaleVm.outcome)));
-  const rationaleOpenByDefault = rationaleVm?.suggested
-    ? rationaleVm.suggested.gate.status !== 'ACCEPTED'
-    : true;
+  const rationaleOpenByDefault =
+    !isRealized &&
+    (rationaleVm?.suggested ? rationaleVm.suggested.gate.status !== 'ACCEPTED' : true);
 
   const chips: KeyChip[] = [
     { label: 'Durée', value: session.durationMin ? `${session.durationMin} min` : '—' },
@@ -250,37 +295,221 @@ export function PlannedSessionReadView({
     }
   }
 
+  const derouleBlock = !morningProposal ? (
+    <div className="space-y-1.5">
+      {session.description?.trim() ? (
+        <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
+          {session.description}
+        </p>
+      ) : null}
+      {!session.description?.trim() && session.type === ActivityType.STRENGTH && prescription ? (
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          Voir les exercices prescrits.
+        </p>
+      ) : null}
+      {!session.description?.trim() && !(session.type === ActivityType.STRENGTH && prescription) ? (
+        <p className="text-muted-foreground/70 text-sm italic">Aucun déroulé renseigné.</p>
+      ) : null}
+    </div>
+  ) : null;
+
+  const strengthBlock =
+    session.type === ActivityType.STRENGTH && prescription ? (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-foreground/85 inline-flex items-center gap-1.5 text-sm font-medium">
+            <Dumbbell className="text-muted-foreground size-3.5" />
+            Exercices prescrits
+          </p>
+          {!isRealized ? (
+            <Button
+              disabled={pushing}
+              size="sm"
+              type="button"
+              variant="outline"
+              onClick={() => void sendToWatch()}
+            >
+              <Watch className="size-3.5" />
+              {watchPushButtonLabel()}
+            </Button>
+          ) : null}
+        </div>
+        {alreadyOnWatch ? (
+          <p className="text-muted-foreground text-[10px] leading-snug">
+            Sur Garmin
+            {watchPush.scheduledDate ? ` · calendrier ${watchPush.scheduledDate}` : ''}
+            {watchPush.pushedAt
+              ? ` · envoyé ${new Date(watchPush.pushedAt).toLocaleString('fr-FR', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}`
+              : ''}
+            . La montre récupère le workout au prochain sync Connect.
+          </p>
+        ) : null}
+        <ul className="space-y-1.5">
+          {prescription.sets
+            .slice()
+            .sort((a, b) => a.order - b.order)
+            .map((set) => {
+              const volume =
+                set.durationSec && set.durationSec > 0 && set.reps <= 0
+                  ? `${set.sets}×${set.durationSec}s`
+                  : `${set.sets}×${set.reps}`;
+              const weight =
+                set.weightKg != null && set.weightKg > 0 ? ` @ ${set.weightKg} kg` : '';
+              const restLabel =
+                set.restMode === 'time' && set.restSec != null && set.restSec > 0
+                  ? `Repos ${set.restSec}s`
+                  : 'Repos Lap';
+              const watch = strengthSetWatchCompat(set);
+              return (
+                <li key={`${set.order}-${set.exercise}`} className="flex flex-col gap-0.5 text-sm">
+                  <div className="text-muted-foreground flex items-baseline justify-between gap-2">
+                    <span className="text-foreground min-w-0 truncate font-medium">
+                      {set.exercise}
+                    </span>
+                    <span className="text-data shrink-0 font-mono text-xs tabular-nums">
+                      {volume}
+                      {weight}
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground/80 text-[10px] leading-snug">{restLabel}</p>
+                  <p
+                    className={cn(
+                      'text-[10px] leading-snug',
+                      watch.status === 'unknown' && 'text-muted-foreground/80',
+                      watch.status === 'approx' && 'text-amber-700/90 dark:text-amber-400/90',
+                      watch.status === 'ready' && 'text-muted-foreground',
+                    )}
+                  >
+                    {watch.label}
+                  </p>
+                </li>
+              );
+            })}
+        </ul>
+      </div>
+    ) : null;
+
+  const header = (
+    <header className="space-y-1">
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-label inline-flex min-w-0 items-center gap-2">
+          <span
+            className="size-2 shrink-0 rounded-full"
+            style={{ backgroundColor: sportIdentityHex(session.type) }}
+            aria-hidden
+          />
+          <span className="truncate">
+            {activityTypeLabels[session.type]} ·{' '}
+            {isRealized ? 'Séance réalisée' : 'Séance programmée'}
+          </span>
+        </span>
+        <Button
+          aria-label="Modifier la séance"
+          className="shrink-0 rounded-full"
+          size="icon-sm"
+          type="button"
+          variant="outline"
+          onClick={onEdit}
+        >
+          <Pencil className="size-3.5" />
+        </Button>
+      </div>
+      <h2 className="text-card-title leading-snug">
+        {session.title?.trim() || activityTypeLabels[session.type]}
+      </h2>
+      <p className="text-data text-muted-foreground text-xs">{dateLabel}</p>
+    </header>
+  );
+
+  const secondaryDetails = (
+    <div>
+      {hasRationale ? (
+        <CollapsibleSection
+          defaultOpen={rationaleOpenByDefault}
+          icon={Brain}
+          label="Pourquoi cette séance"
+        >
+          <SessionRationaleCard sessionId={session.id} />
+        </CollapsibleSection>
+      ) : null}
+
+      {showContextPanel || showContextSkeleton ? (
+        <CollapsibleSection
+          defaultOpen={false}
+          icon={MapPin}
+          label="Lieu & météo"
+          summary={contextSummary}
+        >
+          {showContextPanel && context ? (
+            <PlannedSessionContextPanel
+              className="border-0 shadow-none"
+              sessionId={session.id}
+              viewModel={context}
+              onChangeLocation={onEdit}
+            />
+          ) : (
+            <PlannedSessionContextPanelSkeleton className="border-0 shadow-none" />
+          )}
+        </CollapsibleSection>
+      ) : null}
+    </div>
+  );
+
+  // ── Realized: story first, plan details after ────────────────────────────
+  if (isRealized) {
+    return (
+      <div className="space-y-4">
+        {header}
+
+        <SessionRealization
+          omitLinkedActivityNavigation={omitLinkedActivityNavigation}
+          session={session}
+        />
+
+        {morningProposal ? (
+          <MorningProposalCompare proposal={morningProposal} />
+        ) : (
+          <PlannedVsDoneStrip session={session} />
+        )}
+
+        <div>
+          <CollapsibleSection
+            defaultOpen={false}
+            icon={ClipboardList}
+            label="Plan prescrit"
+            summary={
+              session.durationMin != null
+                ? `${session.durationMin} min${session.intensity ? ` · ${intensityLabels[session.intensity]}` : ''}`
+                : null
+            }
+          >
+            <div className="space-y-3">
+              {derouleBlock}
+              <SessionAccessoriesSection
+                accessories={session.accessories}
+                description={session.description}
+                strengthPrescription={session.strengthPrescription}
+                title={session.title}
+                type={session.type}
+              />
+              {strengthBlock}
+            </div>
+          </CollapsibleSection>
+          {secondaryDetails}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Planned (not yet done) ───────────────────────────────────────────────
   return (
     <div className="space-y-4">
-      <header className="space-y-1">
-        <div className="flex items-start justify-between gap-2">
-          <span className="text-label inline-flex min-w-0 items-center gap-2">
-            <span
-              className="size-2 shrink-0 rounded-full"
-              style={{ backgroundColor: sportIdentityHex(session.type) }}
-              aria-hidden
-            />
-            <span className="truncate">
-              {activityTypeLabels[session.type]} ·{' '}
-              {isRealized ? 'Séance réalisée' : 'Séance programmée'}
-            </span>
-          </span>
-          <Button
-            aria-label="Modifier la séance"
-            className="shrink-0 rounded-full"
-            size="icon-sm"
-            type="button"
-            variant="outline"
-            onClick={onEdit}
-          >
-            <Pencil className="size-3.5" />
-          </Button>
-        </div>
-        <h2 className="text-card-title leading-snug">
-          {session.title?.trim() || activityTypeLabels[session.type]}
-        </h2>
-        <p className="text-data text-muted-foreground text-xs">{dateLabel}</p>
-      </header>
+      {header}
 
       {morningProposal ? (
         <MorningProposalCompare proposal={morningProposal} />
@@ -291,22 +520,7 @@ export function PlannedSessionReadView({
       {!morningProposal ? (
         <div className="border-analysis-border/60 space-y-1.5 rounded-lg border p-3">
           <p className="text-foreground/85 text-sm font-medium">Déroulé</p>
-          {session.description?.trim() ? (
-            <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
-              {session.description}
-            </p>
-          ) : null}
-          {!session.description?.trim() &&
-          session.type === ActivityType.STRENGTH &&
-          prescription ? (
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              Voir les exercices prescrits ci-dessous.
-            </p>
-          ) : null}
-          {!session.description?.trim() &&
-          !(session.type === ActivityType.STRENGTH && prescription) ? (
-            <p className="text-muted-foreground/70 text-sm italic">Aucun déroulé renseigné.</p>
-          ) : null}
+          {derouleBlock}
         </div>
       ) : null}
 
@@ -318,130 +532,19 @@ export function PlannedSessionReadView({
         type={session.type}
       />
 
-      {session.type === ActivityType.STRENGTH && prescription ? (
-        <div className="border-analysis-border/60 space-y-2 rounded-lg border p-3">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-foreground/85 inline-flex items-center gap-1.5 text-sm font-medium">
-              <Dumbbell className="text-muted-foreground size-3.5" />
-              Exercices prescrits
-            </p>
-            {!isRealized ? (
-              <Button
-                disabled={pushing}
-                size="sm"
-                type="button"
-                variant="outline"
-                onClick={() => void sendToWatch()}
-              >
-                <Watch className="size-3.5" />
-                {watchPushButtonLabel()}
-              </Button>
-            ) : null}
-          </div>
-          {alreadyOnWatch ? (
-            <p className="text-muted-foreground text-[10px] leading-snug">
-              Sur Garmin
-              {watchPush.scheduledDate ? ` · calendrier ${watchPush.scheduledDate}` : ''}
-              {watchPush.pushedAt
-                ? ` · envoyé ${new Date(watchPush.pushedAt).toLocaleString('fr-FR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}`
-                : ''}
-              . La montre récupère le workout au prochain sync Connect.
-            </p>
-          ) : null}
-          <ul className="space-y-1.5">
-            {prescription.sets
-              .slice()
-              .sort((a, b) => a.order - b.order)
-              .map((set) => {
-                const volume =
-                  set.durationSec && set.durationSec > 0 && set.reps <= 0
-                    ? `${set.sets}×${set.durationSec}s`
-                    : `${set.sets}×${set.reps}`;
-                const weight =
-                  set.weightKg != null && set.weightKg > 0 ? ` @ ${set.weightKg} kg` : '';
-                const restLabel =
-                  set.restMode === 'time' && set.restSec != null && set.restSec > 0
-                    ? `Repos ${set.restSec}s`
-                    : 'Repos Lap';
-                const watch = strengthSetWatchCompat(set);
-                return (
-                  <li
-                    key={`${set.order}-${set.exercise}`}
-                    className="flex flex-col gap-0.5 text-sm"
-                  >
-                    <div className="text-muted-foreground flex items-baseline justify-between gap-2">
-                      <span className="text-foreground min-w-0 truncate font-medium">
-                        {set.exercise}
-                      </span>
-                      <span className="text-data shrink-0 font-mono text-xs tabular-nums">
-                        {volume}
-                        {weight}
-                      </span>
-                    </div>
-                    <p className="text-muted-foreground/80 text-[10px] leading-snug">{restLabel}</p>
-                    <p
-                      className={cn(
-                        'text-[10px] leading-snug',
-                        watch.status === 'unknown' && 'text-muted-foreground/80',
-                        watch.status === 'approx' && 'text-amber-700/90 dark:text-amber-400/90',
-                        watch.status === 'ready' && 'text-muted-foreground',
-                      )}
-                    >
-                      {watch.label}
-                    </p>
-                  </li>
-                );
-              })}
-          </ul>
-        </div>
+      {strengthBlock ? (
+        <div className="border-analysis-border/60 rounded-lg border p-3">{strengthBlock}</div>
       ) : null}
 
-      <div>
-        {hasRationale ? (
-          <CollapsibleSection
-            defaultOpen={rationaleOpenByDefault}
-            icon={Brain}
-            label="Pourquoi cette séance"
-          >
-            <SessionRationaleCard sessionId={session.id} />
-          </CollapsibleSection>
-        ) : null}
-
-        {showContextPanel || showContextSkeleton ? (
-          <CollapsibleSection
-            defaultOpen={false}
-            icon={MapPin}
-            label="Lieu & météo"
-            summary={contextSummary}
-          >
-            {showContextPanel && context ? (
-              <PlannedSessionContextPanel
-                className="border-0 shadow-none"
-                sessionId={session.id}
-                viewModel={context}
-                onChangeLocation={onEdit}
-              />
-            ) : (
-              <PlannedSessionContextPanelSkeleton className="border-0 shadow-none" />
-            )}
-          </CollapsibleSection>
-        ) : null}
-      </div>
+      {secondaryDetails}
 
       <div className="border-analysis-border/60 space-y-2 border-t pt-3">
-        {!isRealized ? (
-          <DiscussWithCoachButton
-            className="w-full sm:w-auto"
-            size="lg"
-            target={{ kind: 'planned-session', sessionId: session.id }}
-            variant="default"
-          />
-        ) : null}
+        <DiscussWithCoachButton
+          className="w-full sm:w-auto"
+          size="lg"
+          target={{ kind: 'planned-session', sessionId: session.id }}
+          variant="default"
+        />
         <SessionRealization
           omitLinkedActivityNavigation={omitLinkedActivityNavigation}
           session={session}

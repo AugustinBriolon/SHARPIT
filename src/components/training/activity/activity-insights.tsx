@@ -20,10 +20,10 @@ import { normalizeStreamChartData } from '@/lib/streams/stream-chart-data';
 import { cn } from '@/lib/utils';
 import {
   ActivityCompositionSkeleton,
-  ActivityMetricStripSkeleton,
+  ActivityPerformanceSkeleton,
 } from '@/components/training/activity/detail/activity-detail-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SkeletonCard, SkeletonEyebrow } from '@/components/ui/skeleton-patterns';
+import { SkeletonCard } from '@/components/ui/skeleton-patterns';
 
 /**
  * Endurance detail body: parcours | lecture coach (+ zones), then splits / profiles.
@@ -56,9 +56,9 @@ export function ActivityInsights({
     return (
       <div className="space-y-8">
         <ActivityCompositionSkeleton withCoach={Boolean(coachPanel)} withMap={expectMap} />
-        <ActivityMetricStripSkeleton />
+        <ActivityPerformanceSkeleton />
         <section className="space-y-4">
-          <SkeletonEyebrow className="w-16" />
+          <p className="text-label">Profils</p>
           <SkeletonCard className="min-h-56 px-5 py-5">
             <Skeleton className="rounded-analysis h-48 w-full border-0" />
           </SkeletonCard>

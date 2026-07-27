@@ -1,5 +1,11 @@
 import { generateText, Output } from 'ai';
 import { COACH_MODEL, coachGatewayOptions } from '@/lib/ai';
+import {
+  describeBikeWorkBlocks,
+  parsePrescriptionTargets,
+  summarizeBikeWorkBlocks,
+  type BikeWorkSummary,
+} from '@/lib/coach/bike-work-blocks';
 import { categoryLabels, sideLabels, statusLabels } from '@/lib/physical';
 import {
   getActivePhysicalNotes,
@@ -10,6 +16,7 @@ import {
 import { intensityLabels } from '@/lib/planned-session/sessions';
 import { fetchActivityDetail } from '@/lib/integrations/strava';
 import { getValidAccessToken } from '@/lib/integrations/strava-sync';
+import { prisma } from '@/lib/prisma';
 import {
   brickAnalysisSchema,
   sessionAnalysisSchema,
@@ -34,7 +41,7 @@ function fmtPace(secPerKm?: number | null): string | null {
 type PlannedWithActivity = NonNullable<Awaited<ReturnType<typeof getPlannedSessionById>>>;
 type LinkedActivity = NonNullable<PlannedWithActivity['activity']>;
 
-function describePlanned(p: PlannedWithActivity): string {
+function describePlanned(p: PlannedWithActivity, opts?: { ftpW?: number | null }): string {
   const bits = [
     `Sport : ${TYPE_FR[p.type] ?? p.type}`,
     p.brickGroupId
@@ -45,11 +52,32 @@ function describePlanned(p: PlannedWithActivity): string {
     p.load != null ? `Charge prévue : ${Math.round(p.load)} TSS` : null,
     p.title ? `Titre : ${p.title}` : null,
     p.description ? `Consigne : ${p.description}` : null,
-  ].filter(Boolean);
+  ].filter(Boolean) as string[];
+
+  const ftpW = opts?.ftpW;
+  if (ftpW != null && ftpW > 0 && p.type === 'BIKE') {
+    const parsed = parsePrescriptionTargets(p.description);
+    if (parsed.ftpPct != null) {
+      const targetW = Math.round((parsed.ftpPct / 100) * ftpW);
+      bits.push(
+        `Cible puissance (dérivée de la consigne) : ${parsed.ftpPct}% FTP = ${targetW} W (FTP ${ftpW} W)`,
+      );
+    }
+    if (parsed.plannedWorkMin != null) {
+      bits.push(
+        `Volume de travail suggéré par la consigne (lecture texte) : ~${parsed.plannedWorkMin} min`,
+      );
+    }
+  }
+
   return bits.join('\n');
 }
 
-function describeActual(a: LinkedActivity, description?: string | null): string {
+function describeActual(
+  a: LinkedActivity,
+  description?: string | null,
+  opts?: { ftpW?: number | null; workSummary?: BikeWorkSummary | null },
+): string {
   const bits: string[] = [
     `Sport : ${TYPE_FR[a.type] ?? a.type}`,
     a.duration != null ? `Durée : ${Math.round(a.duration / 60)} min` : null,
@@ -74,11 +102,19 @@ function describeActual(a: LinkedActivity, description?: string | null): string 
   }
   if (a.bikeMetrics) {
     const b = a.bikeMetrics;
-    if (b.avgPower) bits.push(`Puissance moyenne : ${Math.round(b.avgPower)} W`);
-    if (b.normalizedPower) bits.push(`NP : ${Math.round(b.normalizedPower)} W`);
-    if (b.intensityFactor) bits.push(`IF : ${b.intensityFactor.toFixed(2)}`);
+    if (b.avgPower) bits.push(`Puissance moyenne (séance entière) : ${Math.round(b.avgPower)} W`);
+    if (b.normalizedPower) bits.push(`NP (séance entière) : ${Math.round(b.normalizedPower)} W`);
+    const intensityFactor =
+      b.intensityFactor ??
+      (b.normalizedPower != null && opts?.ftpW != null && opts.ftpW > 0
+        ? b.normalizedPower / opts.ftpW
+        : null);
+    if (intensityFactor != null) bits.push(`IF (séance entière) : ${intensityFactor.toFixed(2)}`);
     if (b.tss) bits.push(`TSS : ${Math.round(b.tss)}`);
     if (b.elevationM) bits.push(`D+ : ${Math.round(b.elevationM)} m`);
+    bits.push(
+      'Note : avg/NP/IF ci-dessus couvrent toute la séance (échauffement + travail + récup) — ne pas les confondre avec l’intensité des blocs de travail.',
+    );
   }
   if (a.swimMetrics) {
     const s = a.swimMetrics;
@@ -89,6 +125,13 @@ function describeActual(a: LinkedActivity, description?: string | null): string 
       bits.push(`Allure : ${m}:${sec.toString().padStart(2, '0')}/100m`);
     }
   }
+
+  if (opts?.workSummary) {
+    bits.push('');
+    bits.push('## Blocs de travail (stream puissance)');
+    bits.push(describeBikeWorkBlocks(opts.workSummary));
+  }
+
   return bits.join('\n');
 }
 
@@ -132,7 +175,12 @@ Compare-les et produis une analyse exploitable :
 RÈGLES D'ÉVALUATION IMPORTANTES :
 - Le contenu RÉELLEMENT effectué prime sur les seules métriques. Lis attentivement la "Description (athlète)" et les "Notes" : si l'athlète y indique avoir fait tout le travail prévu, considère la séance comme conforme même si la durée enregistrée diffère.
 - Pour la MUSCULATION / le renforcement : la durée chronométrée n'est PAS un bon indicateur de conformité (temps de repos, montre lancée/arrêtée à des moments variables, exercices non détaillés sur la montre). Ne pénalise PAS le score pour un simple écart de durée si le contenu prévu (exercices, séries, répétitions) a été réalisé. Base-toi sur le travail décrit, pas sur les minutes.
-- Pour les séances d'endurance/intervalles, la durée et l'intensité restent des indicateurs valides.
+- Pour TEMPO / SEUIL / VO2 / RACE / fractionné VÉLO : la puissance moyenne, le NP et l'IF de la séance ENTIÈRE sont dilués par échauffement et récupérations. NE LES utilise PAS comme preuve que l'intensité cible n'a pas été atteinte.
+- Si une section "Blocs de travail (stream puissance)" est fournie, juge l'INTENSITÉ sur ces blocs (watts / %FTP des blocs, temps au-dessus du seuil), pas sur avg/NP globaux. La durée totale de séance peut toujours être jugée séparément (séance plus courte/longue).
+- N'affirme PAS que les intervalles « n'ont pas été effectués » si les blocs de travail montrent une puissance proche de la cible — parle plutôt d'écart de volume, de structure, ou de durée si c'est le cas.
+- Les blocs stream sont une heuristique : ne prétends pas avoir vérifié une structure NxM exacte si les données ne le démontrent pas clairement.
+- Si le FTP n'est pas fourni, ne compare PAS à un %FTP inventé et ne cite pas de watts cibles fictifs.
+- Pour les séances d'endurance continues (sans section blocs de travail), durée et intensité globale restent des indicateurs valides.
 - Dans le doute, accorde le bénéfice à l'athlète plutôt que de surpénaliser.
 
 RÉÉVALUATION DU SUIVI PHYSIQUE (champ "physicalReassessments") :
@@ -158,15 +206,40 @@ async function fetchStravaDescription(activity: LinkedActivity): Promise<string 
   }
 }
 
+/** Cached watts stream only — never triggers a remote fetch during analysis. */
+async function loadCachedWatts(activityId: string): Promise<number[] | null> {
+  const row = await prisma.activityStream.findUnique({
+    where: { activityId },
+    select: { available: true, data: true },
+  });
+  if (!row?.available || row.data == null) return null;
+  const data = row.data as { watts?: unknown };
+  if (!Array.isArray(data.watts) || data.watts.length < 60) return null;
+  return data.watts.map((w) => (typeof w === 'number' && Number.isFinite(w) ? w : 0));
+}
+
 export async function analyzePlannedSession(id: string): Promise<SessionAnalysis | null> {
   const planned = await getPlannedSessionById(id);
   if (!planned || !planned.activity) return null;
 
-  const [stravaDescription, profile, physicalNotes] = await Promise.all([
+  const [stravaDescription, profile, physicalNotes, watts] = await Promise.all([
     fetchStravaDescription(planned.activity),
     getAthleteProfile(),
     getActivePhysicalNotes(),
+    planned.activity.type === 'BIKE' ? loadCachedWatts(planned.activity.id) : Promise.resolve(null),
   ]);
+
+  const ftpW = profile?.ftpW ?? null;
+  const workSummary =
+    watts && ftpW != null
+      ? summarizeBikeWorkBlocks({
+          watts,
+          ftpW,
+          intensity: planned.intensity,
+          description: planned.description,
+        })
+      : null;
+
   const seuils = profile
     ? [
         profile.ftpW != null ? `FTP ${profile.ftpW} W` : null,
@@ -181,10 +254,10 @@ export async function analyzePlannedSession(id: string): Promise<SessionAnalysis
     : '';
 
   const prompt = `${seuils ? `Seuils de l'athlète : ${seuils}.\n\n` : ''}# Séance PRÉVUE
-${describePlanned(planned)}
+${describePlanned(planned, { ftpW })}
 
 # Séance RÉALISÉE
-${describeActual(planned.activity, stravaDescription)}
+${describeActual(planned.activity, stravaDescription, { ftpW, workSummary })}
 
 # Suivi physique actif de l'athlète
 ${describePhysicalNotes(physicalNotes)}`;
@@ -235,10 +308,17 @@ export async function analyzeBrick(brickGroupId: string): Promise<BrickAnalysis 
   if (legs.length < 2) return null;
   if (legs.some((l) => !l.activity)) return null;
 
-  const [profile, descriptions] = await Promise.all([
+  const [profile, descriptions, wattsList] = await Promise.all([
     getAthleteProfile(),
     Promise.all(legs.map((l) => fetchStravaDescription(l.activity!))),
+    Promise.all(
+      legs.map((l) =>
+        l.type === 'BIKE' && l.activity ? loadCachedWatts(l.activity.id) : Promise.resolve(null),
+      ),
+    ),
   ]);
+
+  const ftpW = profile?.ftpW ?? null;
 
   const seuils = profile
     ? [
@@ -255,12 +335,22 @@ export async function analyzeBrick(brickGroupId: string): Promise<BrickAnalysis 
 
   const legBlocks = legs.map((leg, i) => {
     const a = leg.activity!;
+    const watts = wattsList[i];
+    const workSummary =
+      watts && ftpW != null
+        ? summarizeBikeWorkBlocks({
+            watts,
+            ftpW,
+            intensity: leg.intensity,
+            description: leg.description,
+          })
+        : null;
     const header = `## Sport ${i + 1} : ${TYPE_FR[leg.type] ?? leg.type}`;
     return `${header}
 ### Prévu
-${describePlanned(leg)}
+${describePlanned(leg, { ftpW })}
 ### Réalisé
-${describeActual(a, descriptions[i])}`;
+${describeActual(a, descriptions[i], { ftpW, workSummary })}`;
   });
 
   // Temps de transition entre la fin d'un sport et le début du suivant

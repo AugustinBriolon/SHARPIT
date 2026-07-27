@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/toast';
 import { Loader2, Sparkles } from 'lucide-react';
 import { isEligibleForActivityNarrative } from '@/lib/activity/activity-narrative-config';
+import { isActivityToday } from '@/lib/activity/activity-day';
 import { activityNarrativeSchema, type ActivityNarrative } from '@/lib/validators/coach';
 
 const NARRATIVE_POLL_MS = 3_000;
@@ -76,7 +77,10 @@ export function ActivityNarrativeSection({
     coachEnabled &&
     NARRATIVE_TYPES.has(activityType) &&
     isEligibleForActivityNarrative(new Date(activityDate));
-  const isPending = eligible && !hasAnalysis && !pollTimedOut && !generating;
+  // Only today's sessions are auto-enriched on ingest — poll those. Older = manual button.
+  const expectBackgroundIngest = isActivityToday(new Date(activityDate));
+  const isPending =
+    eligible && !hasAnalysis && !pollTimedOut && !generating && expectBackgroundIngest;
 
   useEffect(() => {
     setNarrativeAnalysis(initialAnalysis);

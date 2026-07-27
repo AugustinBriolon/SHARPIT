@@ -1,8 +1,7 @@
 import { startOfDay, addDays } from 'date-fns';
 import type { PrismaClient } from '@prisma/client';
 import { type ActivityType } from '@prisma/client';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { isActivityToday } from '@/lib/activity/activity-day';
 import { backfillActivityObservedLocation } from '@/lib/activity/observed-location';
 import { activityWeatherWindow } from '@/lib/activity/activity-weather-window';
 import {
@@ -15,7 +14,26 @@ import { runActivityNarrativeAnalysis } from '@/lib/activity/activity-narrative'
 import { fetchForecastPredictions } from '@/lib/planned-session/forecast-fetch';
 import { computeTrainingDayId } from '@/lib/training/training-day';
 
+export { isActivityToday } from '@/lib/activity/activity-day';
+
 const OUTDOOR_TYPES = new Set<ActivityType>(['RUN', 'BIKE', 'SWIM', 'TRIATHLON']);
+
+/**
+ * Auto narrative from enrich is today-only (ingest / same-day context refresh).
+ * Older activities: no auto work — athlete can request synthesis from the UI.
+ */
+export function shouldRefreshActivityNarrative(input: {
+  force?: boolean;
+  isToday: boolean;
+  hasNarrative: boolean;
+  weatherUpdated: boolean;
+  locationNew: boolean;
+}): boolean {
+  if (input.force) return true;
+  if (!input.isToday) return false;
+  if (!input.hasNarrative) return true;
+  return input.weatherUpdated || input.locationNew;
+}
 
 export async function enrichActivityObservedContext(
   prisma: PrismaClient,
@@ -46,6 +64,15 @@ export async function enrichActivityObservedContext(
     return { weatherUpdated, narrativeRefreshed };
   }
 
+  const isToday = isActivityToday(activity.date);
+  const hasNarrative = Boolean(activity.narrativeAnalyzedAt);
+
+  // Historical browse / late sync of old sessions: never auto-fetch weather or narrative.
+  // Ingest of today's sessions + enrichTodayActivitiesContext remain the only paths.
+  if (!isToday && !options?.forceNarrative) {
+    return { weatherUpdated, narrativeRefreshed };
+  }
+
   // Indoor / virtual / trainer — never fetch outdoor weather (Zwift GPS ≠ outdoor).
   // Clear any previously persisted outdoor snapshot so coach narratives stay honest.
   if (isIndoorActivitySession(activity)) {
@@ -57,17 +84,27 @@ export async function enrichActivityObservedContext(
       weatherUpdated = true;
     }
 
-    const today = isActivityToday(activity.date);
-    const shouldRefreshNarrative =
-      options?.forceNarrative || weatherUpdated || (today && !activity.narrativeAnalyzedAt);
+    const shouldRefresh = shouldRefreshActivityNarrative({
+      force: options?.forceNarrative,
+      isToday,
+      hasNarrative,
+      weatherUpdated,
+      locationNew: false,
+    });
 
-    if (shouldRefreshNarrative) {
+    if (shouldRefresh) {
       // Never clear narrative before success — a failed LLM would leave a forever-pending UI.
       narrativeRefreshed = await runActivityNarrativeAnalysis(activityId, {
-        force: Boolean(options?.forceNarrative) || weatherUpdated,
+        force: Boolean(options?.forceNarrative) || (hasNarrative && isToday && weatherUpdated),
       });
     }
 
+    return { weatherUpdated, narrativeRefreshed };
+  }
+
+  // Manual / forced narrative on a historical outdoor session: no weather backfill.
+  if (!isToday) {
+    narrativeRefreshed = await runActivityNarrativeAnalysis(activityId, { force: true });
     return { weatherUpdated, narrativeRefreshed };
   }
 
@@ -115,26 +152,24 @@ export async function enrichActivityObservedContext(
     }
   }
 
-  const today = isActivityToday(activity.date);
-  const shouldRefreshNarrative =
-    options?.forceNarrative ||
-    weatherUpdated ||
-    (locationNew && today) ||
-    (today && !activity.narrativeAnalyzedAt);
+  const shouldRefresh = shouldRefreshActivityNarrative({
+    force: options?.forceNarrative,
+    isToday,
+    hasNarrative,
+    weatherUpdated,
+    locationNew,
+  });
 
-  if (shouldRefreshNarrative) {
+  if (shouldRefresh) {
     // Never clear narrative before success — a failed LLM would leave a forever-pending UI.
     narrativeRefreshed = await runActivityNarrativeAnalysis(activityId, {
-      force: Boolean(options?.forceNarrative) || weatherUpdated || locationNew,
+      force:
+        Boolean(options?.forceNarrative) ||
+        (hasNarrative && isToday && (weatherUpdated || locationNew)),
     });
   }
 
   return { weatherUpdated, narrativeRefreshed };
-}
-
-export function isActivityToday(date: Date): boolean {
-  const today = format(new Date(), 'yyyy-MM-dd', { locale: fr });
-  return format(date, 'yyyy-MM-dd', { locale: fr }) === today;
 }
 
 /** Enrichit les activités outdoor du jour dont la météo est absente ou non affichable. */

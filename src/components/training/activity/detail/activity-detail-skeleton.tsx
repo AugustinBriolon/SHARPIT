@@ -10,13 +10,13 @@ import {
 import type { ActivityDetailSkeletonLayout } from '@/lib/activity/activity-detail-skeleton-layout';
 import { cn } from '@/lib/utils';
 
-/** KPI strip — mirrors InstrumentMetricGrid chrome. */
+/** KPI strip — mirrors InstrumentMetricGrid chrome (hero Distance / Temps / …). */
 export function ActivityMetricStripSkeleton({ count = 4 }: { count?: number }) {
   return (
     <div
       className={cn(
-        'flex gap-2.5 overflow-x-auto overflow-y-visible',
-        'snap-x snap-mandatory',
+        'flex gap-2.5 overflow-x-auto overflow-y-visible overscroll-x-contain',
+        'snap-x snap-mandatory scroll-px-0.5',
         '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
         'sm:grid sm:snap-none sm:gap-3 sm:overflow-visible',
         count >= 4 && 'sm:grid-cols-4',
@@ -28,13 +28,37 @@ export function ActivityMetricStripSkeleton({ count = 4 }: { count?: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="chip-surface relative min-w-[9.75rem] snap-start rounded-2xl px-3.5 py-3.5 sm:min-w-0 sm:px-4 sm:py-4"
+          className="chip-surface relative min-w-[9.75rem] shrink-0 snap-start overflow-visible rounded-2xl px-3.5 py-3.5 sm:min-w-0 sm:shrink sm:px-4 sm:py-4"
         >
           <Skeleton className="h-3 w-16 rounded-full border-0" />
           <Skeleton className="mt-2.5 h-8 w-20 rounded-lg border-0" />
         </div>
       ))}
     </div>
+  );
+}
+
+/**
+ * Performance block — mirrors MetricCard analysis plates (NP / IF / VI / TSS),
+ * not the hero InstrumentMetric chips.
+ */
+export function ActivityPerformanceSkeleton({ count = 4 }: { count?: number }) {
+  return (
+    <section className="space-y-3">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <p className="text-label">Performance</p>
+        <Skeleton className="h-3 w-28 rounded-full border-0" />
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        {Array.from({ length: count }).map((_, i) => (
+          <div key={i} className="analysis-panel rounded-analysis-lg px-5 py-4">
+            <Skeleton className="h-3 w-10 rounded-full border-0" />
+            <Skeleton className="mt-1.5 h-9 w-16 rounded-lg border-0" />
+            <Skeleton className="mt-1 h-3 w-20 rounded-full border-0" />
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -103,31 +127,27 @@ export function ActivityCompositionSkeleton({
   );
 }
 
-/** Stream body after hero — metrics, profiles, splits (map optional). */
+/** Stream body after hero — composition → Performance → Profils → Splits. */
 export function ActivityInsightsBodySkeleton({
   withMap = true,
   withCoach = true,
   withSplits = true,
+  withPerformance = true,
 }: {
   withMap?: boolean;
   withCoach?: boolean;
   withSplits?: boolean;
+  /** Outdoor bike/run usually have NP/IF/VI/TSS; pool swim often does not. */
+  withPerformance?: boolean;
 }) {
   return (
     <div className="space-y-8">
       <ActivityCompositionSkeleton withCoach={withCoach} withMap={withMap} />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="chip-surface rounded-2xl px-4 py-3.5">
-            <Skeleton className="h-3 w-14 rounded-full border-0" />
-            <Skeleton className="mt-2 h-6 w-16 rounded-lg border-0" />
-          </div>
-        ))}
-      </div>
+      {withPerformance ? <ActivityPerformanceSkeleton /> : null}
 
       <section className="space-y-4">
-        <SkeletonEyebrow className="w-16" />
+        <p className="text-label">Profils</p>
         <SkeletonCard className="min-h-56 px-5 py-5">
           <Skeleton className="rounded-analysis h-48 w-full border-0" />
         </SkeletonCard>
@@ -135,8 +155,8 @@ export function ActivityInsightsBodySkeleton({
 
       {withSplits ? (
         <section className="space-y-3">
-          <SkeletonEyebrow className="w-36" />
-          <div className="chip-surface rounded-analysis-lg space-y-0 overflow-hidden px-0 py-0">
+          <p className="text-label px-0.5">Splits</p>
+          <div className="chip-surface rounded-analysis-lg overflow-hidden">
             {Array.from({ length: 5 }).map((_, i) => (
               <div
                 key={i}
@@ -145,6 +165,7 @@ export function ActivityInsightsBodySkeleton({
                 <Skeleton className="h-4 w-10 rounded-full border-0" />
                 <Skeleton className="h-4 w-14 rounded-full border-0" />
                 <Skeleton className="h-4 w-16 rounded-full border-0" />
+                <Skeleton className="h-4 w-10 rounded-full border-0" />
                 <Skeleton className="ml-auto h-4 w-12 rounded-full border-0" />
               </div>
             ))}
@@ -185,15 +206,16 @@ function ActivityDetailHeaderSkeleton() {
     <StickyHeader>
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-start gap-3">
-          <Skeleton className="size-11 shrink-0 rounded-full sm:size-12" />
-          <div className="min-w-0 flex-1 space-y-2">
-            <Skeleton className="h-4 w-[min(100%,16rem)] rounded-full border-0" />
-            <Skeleton className="h-8 w-[min(100%,18rem)] rounded-lg border-0 sm:h-9" />
-            <Skeleton className="h-4 w-40 rounded-full border-0" />
+          {/* icon-well is always a circle */}
+          <Skeleton className="size-11 shrink-0 rounded-full border-0 sm:size-12" />
+          <div className="min-w-0 flex-1">
+            <Skeleton className="h-4 w-[min(100%,14rem)] rounded-full border-0" />
+            <Skeleton className="mt-1.5 h-8 w-[min(100%,18rem)] rounded-lg border-0 sm:h-9" />
+            <Skeleton className="mt-1.5 h-4 w-36 rounded-full border-0" />
           </div>
         </div>
         <div className="flex shrink-0 items-start gap-1.5 sm:gap-2">
-          <Skeleton className="h-9 w-[4.5rem] rounded-lg border-0 sm:w-44" />
+          <Skeleton className="h-9 w-[4.75rem] rounded-lg border-0 sm:w-48" />
           <Skeleton className="size-8 rounded-lg border-0" />
         </div>
       </div>
@@ -201,13 +223,10 @@ function ActivityDetailHeaderSkeleton() {
   );
 }
 
+/** Meta chips (optional) + hero InstrumentMetric strip. */
 function ActivityDetailMetaSkeleton() {
   return (
     <div className="relative z-0 space-y-4 sm:space-y-5">
-      <div className="flex flex-wrap gap-2">
-        <Skeleton className="h-7 w-24 rounded-full border-0" />
-        <Skeleton className="h-7 w-28 rounded-full border-0" />
-      </div>
       <ActivityMetricStripSkeleton />
     </div>
   );
@@ -255,17 +274,23 @@ export function ActivityDetailSkeleton({
       <>
         <ActivityDetailHeaderSkeleton />
         <ActivityDetailMetaSkeleton />
-        <ActivityInsightsBodySkeleton withMap={false} withSplits={false} withCoach />
+        <ActivityInsightsBodySkeleton
+          withMap={false}
+          withSplits={false}
+          withCoach
+          withPerformance
+        />
         <ActivityDetailFooterSkeleton />
       </>
     );
   }
 
+  // map — outdoor RUN / BIKE (and open-water SWIM): coach | route → Performance → Profils → Splits
   return (
     <>
       <ActivityDetailHeaderSkeleton />
       <ActivityDetailMetaSkeleton />
-      <ActivityInsightsBodySkeleton withCoach withMap withSplits />
+      <ActivityInsightsBodySkeleton withCoach withMap withPerformance withSplits />
       <ActivityDetailFooterSkeleton />
     </>
   );
