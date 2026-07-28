@@ -6,21 +6,18 @@ import { fr } from 'date-fns/locale';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';
 import { ActivityList } from '@/components/training/activity/activity-list';
+import { HistoryFilters } from '@/components/training/hub/history-filters';
 import type { ClientActivity } from '@/lib/query/types';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import { InstrumentListChipSkeleton } from '@/components/ui/instrument-list-chip';
 import { useActivities, useRecords } from '@/hooks/use-data';
-import { activityTypeLabels } from '@/lib/format';
+import {
+  applyTrainingHistoryFilters,
+  parseTrainingHistoryFilters,
+  serializeTrainingHistoryFilters,
+} from '@/lib/training/history-filters';
 import { buildActivityRecordLabels } from '@/lib/training/activity-record-labels';
-import { cn } from '@/lib/utils';
 
 const TYPE_ORDER: ActivityType[] = [
   ActivityType.RUN,
@@ -30,132 +27,6 @@ const TYPE_ORDER: ActivityType[] = [
   ActivityType.TRIATHLON,
   ActivityType.OTHER,
 ];
-
-function isActivityType(value: string | null): value is ActivityType {
-  return value != null && TYPE_ORDER.includes(value as ActivityType);
-}
-
-const ALL_TYPES_VALUE = 'all';
-
-function filterLabel(type: ActivityType | null, counts: Record<ActivityType, number>): string {
-  if (type == null) {
-    const total = TYPE_ORDER.reduce((sum, t) => sum + counts[t], 0);
-    return `Tous (${total})`;
-  }
-  return `${activityTypeLabels[type]} (${counts[type]})`;
-}
-
-function ActivityTypeFilterPills({
-  selected,
-  counts,
-  onSelect,
-}: {
-  selected: ActivityType | null;
-  counts: Record<ActivityType, number>;
-  onSelect: (type: ActivityType | null) => void;
-}) {
-  const total = TYPE_ORDER.reduce((sum, type) => sum + counts[type], 0);
-
-  return (
-    <div className="border-analysis-border/70 flex w-fit flex-wrap gap-1 rounded-full border bg-transparent p-1">
-      <button
-        aria-pressed={selected == null}
-        type="button"
-        className={cn(
-          'rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
-          selected == null
-            ? 'bg-highlight text-highlight-foreground'
-            : 'text-muted-foreground hover:text-foreground',
-        )}
-        onClick={() => onSelect(null)}
-      >
-        Tous
-        <span className="text-data ml-1 text-[11px] opacity-70">({total})</span>
-      </button>
-      {TYPE_ORDER.map((type) => {
-        const count = counts[type];
-        if (count === 0) return null;
-        const active = selected === type;
-        return (
-          <button
-            key={type}
-            aria-pressed={active}
-            type="button"
-            className={cn(
-              'rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
-              active
-                ? 'bg-highlight text-highlight-foreground'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-            onClick={() => onSelect(type)}
-          >
-            {activityTypeLabels[type]}
-            <span className="text-data ml-1 text-[11px] opacity-70">({count})</span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function ActivityTypeFilterSelect({
-  selected,
-  counts,
-  onSelect,
-}: {
-  selected: ActivityType | null;
-  counts: Record<ActivityType, number>;
-  onSelect: (type: ActivityType | null) => void;
-}) {
-  const value = selected ?? ALL_TYPES_VALUE;
-
-  return (
-    <Select
-      value={value}
-      onValueChange={(next) => {
-        if (!next || next === ALL_TYPES_VALUE) onSelect(null);
-        else if (isActivityType(next)) onSelect(next);
-      }}
-    >
-      <SelectTrigger className="bg-analysis-surface min-h-11 w-full rounded-xl px-3.5 text-sm">
-        <SelectValue placeholder="Type d'activité">{filterLabel(selected, counts)}</SelectValue>
-      </SelectTrigger>
-      <SelectContent align="start">
-        <SelectItem value={ALL_TYPES_VALUE}>{filterLabel(null, counts)}</SelectItem>
-        {TYPE_ORDER.map((type) => {
-          const count = counts[type];
-          if (count === 0) return null;
-          return (
-            <SelectItem key={type} value={type}>
-              {filterLabel(type, counts)}
-            </SelectItem>
-          );
-        })}
-      </SelectContent>
-    </Select>
-  );
-}
-
-function ActivityTypeFilter({
-  selected,
-  counts,
-  onSelect,
-}: {
-  selected: ActivityType | null;
-  counts: Record<ActivityType, number>;
-  onSelect: (type: ActivityType | null) => void;
-}) {
-  return (
-    <>
-      <div className="sm:hidden">
-        <ActivityTypeFilterSelect counts={counts} selected={selected} onSelect={onSelect} />
-      </div>
-      <div className="hidden sm:block">
-        <ActivityTypeFilterPills counts={counts} selected={selected} onSelect={onSelect} />
-      </div>
-    </>
-  );
-}
 
 type WeekGroup = { key: string; label: string; activities: ClientActivity[] };
 
@@ -206,33 +77,38 @@ export function TrainingList() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const rawType = searchParams.get('type');
-  const selectedType = isActivityType(rawType) ? rawType : null;
 
   const activities = data ?? [];
+  const filters = useMemo(
+    () => parseTrainingHistoryFilters(new URLSearchParams(searchParams.toString())),
+    [searchParams],
+  );
+  const baseFilters = useMemo(() => ({ ...filters, types: [], triathlonFormats: [] }), [filters]);
+
+  const activitiesMatchingNonTypeFilters = useMemo(
+    () => applyTrainingHistoryFilters(activities, baseFilters),
+    [activities, baseFilters],
+  );
 
   const counts = useMemo(() => {
     const next = Object.fromEntries(TYPE_ORDER.map((t) => [t, 0])) as Record<ActivityType, number>;
-    for (const activity of activities) {
+    for (const activity of activitiesMatchingNonTypeFilters) {
       next[activity.type] += 1;
     }
     return next;
-  }, [activities]);
+  }, [activitiesMatchingNonTypeFilters]);
 
   const filtered = useMemo(
-    () => (selectedType == null ? activities : activities.filter((a) => a.type === selectedType)),
-    [activities, selectedType],
+    () => applyTrainingHistoryFilters(activities, filters),
+    [activities, filters],
   );
 
   const weekGroups = useMemo(() => groupByWeek(filtered), [filtered]);
 
   const recordLabelsById = useMemo(() => buildActivityRecordLabels(records), [records]);
 
-  function setTypeFilter(type: ActivityType | null) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (type == null) params.delete('type');
-    else params.set('type', type);
-    const query = params.toString();
+  function setFilters(nextFilters: ReturnType<typeof parseTrainingHistoryFilters>) {
+    const query = serializeTrainingHistoryFilters(nextFilters).toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }
 
@@ -242,10 +118,12 @@ export function TrainingList() {
 
   return (
     <div className="space-y-6">
-      <ActivityTypeFilter counts={counts} selected={selectedType} onSelect={setTypeFilter} />
+      <HistoryFilters counts={counts} filters={filters} onApply={setFilters} />
       {weekGroups.length === 0 ? (
         <p className="text-muted-foreground text-sm">
-          {selectedType ? 'Aucune activité de ce type.' : 'Aucune activité enregistrée.'}
+          {filtered.length === 0
+            ? 'Aucune activité ne correspond aux filtres.'
+            : 'Aucune activité enregistrée.'}
         </p>
       ) : (
         weekGroups.map((group) => (

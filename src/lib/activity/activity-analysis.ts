@@ -338,10 +338,19 @@ function computeSplits(points: RawPoint[], splitM: number): SplitRow[] {
       }
 
       const pace = dist > 0 ? (dur / dist) * 1000 : null;
+      const isPartialTailSplit = isLast && dist < splitM;
+      let label: string;
+      if (isPartialTailSplit) {
+        label = formatSplitDistanceLabel(points[i].d);
+      } else if (splitM >= 1000) {
+        label = `${(target / 1000).toFixed(0)} km`;
+      } else {
+        label = `${target} m`;
+      }
 
       splits.push({
         index: splits.length + 1,
-        label: splitM >= 1000 ? `${(target / 1000).toFixed(0)} km` : `${target} m`,
+        label,
         distanceM: Math.round(dist),
         durationSec: Math.round(dur),
         paceSecPerKm: pace != null ? Math.round(pace) : null,
@@ -364,6 +373,15 @@ function computeSplits(points: RawPoint[], splitM: number): SplitRow[] {
     }
   }
   return splits;
+}
+
+function formatSplitDistanceLabel(distanceM: number): string {
+  const roundedMeters = Math.round(distanceM);
+  if (roundedMeters < 1000) return `${roundedMeters} m`;
+  const km = roundedMeters / 1000;
+  const decimals = km >= 10 ? 1 : 2;
+  const formatted = Number.isInteger(km) ? km.toFixed(0) : km.toFixed(decimals).replace('.', ',');
+  return `${formatted} km`;
 }
 
 function paceVariability(points: RawPoint[]): number | null {

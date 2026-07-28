@@ -58,13 +58,6 @@ export function StickyHeader({
       )}
     >
       {children}
-      <div
-        className={cn(
-          'bg-background/80 pointer-events-none absolute inset-x-0 top-full hidden h-4 transition-opacity duration-300 lg:block',
-          stuck ? 'opacity-100' : 'opacity-0',
-        )}
-        aria-hidden
-      />
     </header>
   );
 }

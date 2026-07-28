@@ -6,9 +6,9 @@ import {
 
 /**
  * Page-detail skeleton layouts:
- * - map — outdoor RUN/BIKE, open-water SWIM, TRIATHLON (coach + route)
+ * - map — BIKE, outdoor RUN, open-water SWIM, TRIATHLON (coach + route)
  * - strength — STRENGTH (KPI + exercise list, no map)
- * - no-map — pool SWIM, indoor RUN/BIKE (coach / metrics, no route plane)
+ * - no-map — pool SWIM, indoor RUN (coach / metrics, no route plane)
  */
 export type ActivityDetailSkeletonLayout = 'map' | 'strength' | 'no-map';
 
@@ -38,10 +38,13 @@ export function resolveActivityDetailSkeletonLayout(
       return 'strength';
     case ActivityType.TRIATHLON:
       return 'map';
+    case ActivityType.BIKE:
+      // Bike detail now treats the route plane as the canonical loading layout.
+      // This avoids false "indoor" matches hiding the map skeleton on real rides.
+      return 'map';
     case ActivityType.SWIM:
       return isOpenWaterSwimSession(activity) ? 'map' : 'no-map';
     case ActivityType.RUN:
-    case ActivityType.BIKE:
       return isIndoorActivitySession(activity) ? 'no-map' : 'map';
     default:
       return 'no-map';

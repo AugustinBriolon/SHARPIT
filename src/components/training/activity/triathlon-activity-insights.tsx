@@ -3,8 +3,7 @@
 import { ActivityType } from '@prisma/client';
 import { Bike, Footprints, MapPin, Waves } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityCharts } from '@/components/training/activity/activity-charts';
-import { CombinedChart } from '@/components/training/activity/combined-chart';
+import { ActivityStreamChart } from '@/components/training/activity/activity-stream-chart';
 import {
   PerformanceMetrics,
   ThresholdsHint,
@@ -24,7 +23,7 @@ import { sportIdentityHex } from '@/lib/activity/sport-identity';
 import { formatDistance, formatDuration } from '@/lib/format';
 import type { MultisportLegKind } from '@/lib/multisport';
 import { normalizeStreamChartData } from '@/lib/streams/stream-chart-data';
-import type { MultisportLegStream, ActivityStreamPayload } from '@/lib/streams/streams';
+import type { MultisportLegStream } from '@/lib/streams/streams';
 import { cn } from '@/lib/utils';
 
 const sportHeader: Record<
@@ -91,15 +90,6 @@ function ZoneSection({
   return <div className={cn('grid gap-4', blocks.length > 1 && 'lg:grid-cols-2')}>{blocks}</div>;
 }
 
-function shouldShowCombinedLegChart(
-  kind: MultisportLegKind,
-  has: ActivityStreamPayload['has'],
-): boolean {
-  if (kind === 'bike') return has.watts && has.hr;
-  if (kind === 'run') return has.altitude && has.hr;
-  return false;
-}
-
 function SportLegInsights({ entry }: { entry: MultisportLegStream }) {
   const { leg, type, stream } = entry;
   const header = sportHeader[leg.kind as Exclude<MultisportLegKind, 'transition'>];
@@ -128,7 +118,6 @@ function SportLegInsights({ entry }: { entry: MultisportLegStream }) {
   const bikeSplits = analysis?.bike?.splits ?? [];
 
   const showMap = path != null && path.length > 1;
-  const showCombined = shouldShowCombinedLegChart(leg.kind, has);
 
   return (
     <div className="space-y-5">
@@ -167,8 +156,7 @@ function SportLegInsights({ entry }: { entry: MultisportLegStream }) {
       )}
 
       <div className="space-y-4">
-        {showCombined && <CombinedChart has={has} samples={normalizedSamples} type={type} />}
-        <ActivityCharts has={has} samples={normalizedSamples} type={type} />
+        <ActivityStreamChart has={has} samples={normalizedSamples} type={type} />
       </div>
 
       {leg.kind === 'run' && runSplits.length > 0 && (

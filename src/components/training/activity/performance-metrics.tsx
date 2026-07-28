@@ -1,9 +1,15 @@
 'use client';
 
 import type { ActivityAnalysis } from '@/lib/activity/activity-analysis';
-import { MetricCard } from '@/components/ui/metric-card';
 import { ClinicalAnnotation } from '@/components/ui/clinical-annotation';
+import { cn } from '@/lib/utils';
 import Link from 'next/link';
+
+type PerformanceRow = {
+  label: string;
+  value: string;
+  note?: string;
+};
 
 function decouplingLabel(pct: number): string {
   if (pct < 5) return 'Excellent — peu de dérive cardiaque';
@@ -23,74 +29,97 @@ function intensityFactorSublabel(
 
 export function PerformanceMetrics({ analysis }: { analysis: ActivityAnalysis }) {
   const { power, hr, load, thresholds } = analysis;
-  const cards: {
-    label: string;
-    value: string;
-    sublabel?: string;
-    accent?: 'primary' | 'orange' | 'default';
-  }[] = [];
+  const rows: PerformanceRow[] = [];
 
   if (power?.normalized)
-    cards.push({
+    rows.push({
       label: 'NP',
       value: `${power.normalized} W`,
-      sublabel: power.avg ? `moy ${power.avg} W` : undefined,
-      accent: 'default',
+      note: power.avg ? `moy ${power.avg} W` : undefined,
     });
   if (load.intensityFactor != null)
-    cards.push({
+    rows.push({
       label: 'IF',
       value: load.intensityFactor.toFixed(2),
-      sublabel: intensityFactorSublabel(load.method, thresholds),
-      accent: 'default',
+      note: intensityFactorSublabel(load.method, thresholds),
     });
   if (power?.variabilityIndex != null)
-    cards.push({
+    rows.push({
       label: 'VI',
       value: power.variabilityIndex.toFixed(2),
-      sublabel: power.variabilityIndex > 1.1 ? 'effort variable' : 'effort régulier',
-      accent: 'default',
+      note: power.variabilityIndex > 1.1 ? 'effort variable' : 'effort régulier',
     });
   if (load.tss != null)
-    cards.push({
+    rows.push({
       label: load.method === 'hr' ? 'TSS (FC)' : 'TSS',
       value: String(load.tss),
-      accent: 'default',
     });
   if (hr.efficiencyFactor != null)
-    cards.push({
+    rows.push({
       label: hr.efficiencyLabel,
       value: String(hr.efficiencyFactor),
-      accent: 'default',
     });
   if (hr.decouplingPct != null)
-    cards.push({
+    rows.push({
       label: 'Découplage',
       value: `${hr.decouplingPct > 0 ? '+' : ''}${hr.decouplingPct}%`,
-      sublabel: decouplingLabel(Math.abs(hr.decouplingPct)),
-      accent: 'default',
+      note: decouplingLabel(Math.abs(hr.decouplingPct)),
     });
   if (analysis.run?.paceVariabilityPct != null)
-    cards.push({
+    rows.push({
       label: 'Variabilité allure',
       value: `${analysis.run.paceVariabilityPct}%`,
-      sublabel: 'écart-type / moyenne',
-      accent: 'default',
+      note: 'écart-type / moyenne',
     });
 
-  if (!cards.length) return null;
+  if (!rows.length) return null;
+
+  const compact = rows.length >= 6;
 
   return (
-    <section className="space-y-3">
+    <section className="analysis-panel rounded-analysis-lg px-5 pt-5 pb-2 sm:px-6">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <h2 className="text-label">Performance</h2>
         <p className="text-muted-foreground text-xs">
           Seuils {thresholds.source === 'profile' ? 'profil athlète' : 'estimés'}
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        {cards.map((c) => (
-          <MetricCard key={c.label} {...c} />
+
+      <div className="border-analysis-border/70 divide-analysis-border/60 mt-4 border-t">
+        {rows.map((row) => (
+          <div
+            key={row.label}
+            className={cn(
+              'grid items-start gap-x-4 border-b last:border-b-0',
+              compact
+                ? 'grid-cols-[minmax(0,1fr)_auto] gap-y-1 py-3 last:pb-2'
+                : 'grid-cols-[minmax(0,1fr)_auto] gap-y-1.5 py-3.5 last:pb-2 sm:grid-cols-[minmax(0,11rem)_1fr_auto]',
+            )}
+          >
+            <div className="min-w-0">
+              <p className="text-label">{row.label}</p>
+              {row.note ? (
+                <p className="text-muted-foreground mt-1 text-xs leading-snug sm:hidden">
+                  {row.note}
+                </p>
+              ) : null}
+            </div>
+
+            {!compact ? (
+              <div className="text-muted-foreground hidden min-w-0 text-xs leading-snug sm:block">
+                {row.note ?? '—'}
+              </div>
+            ) : null}
+
+            <p
+              className={cn(
+                'text-data text-foreground text-right font-semibold tabular-nums',
+                compact ? 'text-base' : 'text-lg',
+              )}
+            >
+              {row.value}
+            </p>
+          </div>
         ))}
       </div>
     </section>

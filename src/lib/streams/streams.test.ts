@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { compactRawStreamsForStorage } from '@/lib/streams/streams';
+import {
+  compactRawStreamsForStorage,
+  normalizeMultisportLegRawStreams,
+} from '@/lib/streams/streams';
 
 describe('compactRawStreamsForStorage', () => {
   it('réduit une série haute fréquence à 1 Hz', () => {
@@ -44,5 +47,41 @@ describe('compactRawStreamsForStorage', () => {
 
     expect(compact.time.length).toBe(28_801);
     expect(compact.latlng.length).toBeLessThanOrEqual(801);
+  });
+});
+
+describe('normalizeMultisportLegRawStreams', () => {
+  it('rebases cumulative leg distance to zero for multisport splits', () => {
+    const raw = {
+      time: [0, 60, 120],
+      distance: [10_100, 10_600, 11_100],
+      altitude: [5, 5, 5],
+      heartrate: [150, 152, 154],
+      watts: [],
+      cadence: [86, 87, 88],
+      velocity: [2.8, 2.8, 2.8],
+      latlng: [] as [number, number][],
+    };
+
+    const normalized = normalizeMultisportLegRawStreams(raw);
+
+    expect(normalized.distance).toEqual([0, 500, 1000]);
+  });
+
+  it('keeps already rebased leg distance unchanged', () => {
+    const raw = {
+      time: [0, 60, 120],
+      distance: [0, 500, 1000],
+      altitude: [5, 5, 5],
+      heartrate: [150, 152, 154],
+      watts: [],
+      cadence: [86, 87, 88],
+      velocity: [2.8, 2.8, 2.8],
+      latlng: [] as [number, number][],
+    };
+
+    const normalized = normalizeMultisportLegRawStreams(raw);
+
+    expect(normalized.distance).toEqual([0, 500, 1000]);
   });
 });

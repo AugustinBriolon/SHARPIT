@@ -38,23 +38,36 @@ export function ActivityMetricStripSkeleton({ count = 4 }: { count?: number }) {
   );
 }
 
-/**
- * Performance block — mirrors MetricCard analysis plates (NP / IF / VI / TSS),
- * not the hero InstrumentMetric chips.
- */
+/** Performance block — single analysis panel with adaptive metric rows. */
 export function ActivityPerformanceSkeleton({ count = 4 }: { count?: number }) {
+  const compact = count >= 6;
+
   return (
-    <section className="space-y-3">
+    <section className="analysis-panel rounded-analysis-lg px-5 pt-5 pb-2 sm:px-6">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <p className="text-label">Performance</p>
         <Skeleton className="h-3 w-28 rounded-full border-0" />
       </div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+
+      <div className="border-analysis-border/70 divide-analysis-border/60 mt-4 border-t">
         {Array.from({ length: count }).map((_, i) => (
-          <div key={i} className="analysis-panel rounded-analysis-lg px-5 py-4">
-            <Skeleton className="h-3 w-10 rounded-full border-0" />
-            <Skeleton className="mt-1.5 h-9 w-16 rounded-lg border-0" />
-            <Skeleton className="mt-1 h-3 w-20 rounded-full border-0" />
+          <div
+            key={i}
+            className={cn(
+              'grid items-start gap-x-4 border-b last:border-b-0',
+              compact
+                ? 'grid-cols-[minmax(0,1fr)_auto] gap-y-1 py-3 last:pb-2'
+                : 'grid-cols-[minmax(0,1fr)_auto] gap-y-1.5 py-3.5 last:pb-2 sm:grid-cols-[minmax(0,11rem)_1fr_auto]',
+            )}
+          >
+            <div className="min-w-0">
+              <Skeleton className="h-3 w-10 rounded-full border-0" />
+              <Skeleton className="mt-1 h-3 w-24 rounded-full border-0 sm:hidden" />
+            </div>
+            {!compact ? (
+              <Skeleton className="hidden h-3 w-24 rounded-full border-0 sm:block" />
+            ) : null}
+            <Skeleton className="ml-auto h-6 w-16 rounded-lg border-0" />
           </div>
         ))}
       </div>

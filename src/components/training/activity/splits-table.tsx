@@ -2,7 +2,7 @@
 
 import { memo } from 'react';
 import type { SplitRow } from '@/lib/activity/activity-analysis';
-import { formatDuration, formatPace } from '@/lib/format';
+import { formatPace } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 function paceDelta(pace: number, ref: number | null): { pct: number; faster: boolean } | null {
@@ -36,14 +36,16 @@ function SplitsTableComponent({
   const bestPace = paces.length ? Math.min(...paces) : null;
 
   return (
-    <section className="space-y-3">
-      <p className="text-label px-0.5">{title}</p>
-      <div className="chip-surface rounded-analysis-lg overflow-x-auto">
+    <section className="analysis-panel rounded-analysis-lg overflow-hidden">
+      <div className="border-analysis-border/60 border-b px-4 py-3 sm:px-5">
+        <p className="text-label">{title}</p>
+        <p className="text-muted-foreground mt-1 text-xs">Lecture séquentielle split par split</p>
+      </div>
+      <div className="overflow-x-auto">
         <table className="w-full min-w-[480px] px-3 text-sm">
           <thead>
             <tr className="border-analysis-border/60 text-muted-foreground border-b px-4 text-left text-[10px] tracking-[0.08em] uppercase">
               <th className="py-2.5 pr-4 pl-4 font-medium">Split</th>
-              <th className="py-2.5 pr-4 font-medium">Temps</th>
               <th className="py-2.5 pr-4 font-medium">{mode === 'bike' ? 'Vitesse' : 'Allure'}</th>
               <th className="py-2.5 pr-4 font-medium">FC</th>
               {mode === 'bike' && <th className="py-2.5 pr-4 font-medium">W moy.</th>}
@@ -61,7 +63,6 @@ function SplitsTableComponent({
               return (
                 <tr key={row.index} className="border-analysis-border/30 border-b last:border-0">
                   <td className="text-muted-foreground py-2 pr-4 pl-4 font-mono">{row.label}</td>
-                  <td className="py-2 pr-4 font-mono">{formatDuration(row.durationSec)}</td>
                   <td
                     className={cn(
                       'py-2 pr-4 font-mono',

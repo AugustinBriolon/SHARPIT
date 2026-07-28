@@ -1,10 +1,13 @@
 'use client';
 
+import { format, parseISO } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { useMemo } from 'react';
 import { EyebrowLabel } from '@/components/ui/eyebrow-label';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import { useIsMobile } from '@/hooks/use-viewport';
 import {
+  type ActivityForConsistency,
   buildActivityConsistencyStats,
   formatHeatmapRangeLabel,
   HEATMAP_DAYS_MOBILE,
@@ -12,7 +15,6 @@ import {
   type ActivityConsistencyStats,
   type HeatmapCell,
 } from '@/lib/activity/activity-consistency';
-import type { ClientActivity } from '@/lib/query/types';
 import { cn } from '@/lib/utils';
 
 function formatCellTitle(cell: HeatmapCell): string {
@@ -23,45 +25,134 @@ function formatCellTitle(cell: HeatmapCell): string {
   return `${d}/${m}/${y} · ${sessions}${load}`;
 }
 
+function formatCellDateLabel(cell: HeatmapCell): string {
+  return format(parseISO(cell.date), 'EEEE d MMMM yyyy', { locale: fr });
+}
+
+function formatCellSessionsLabel(cell: HeatmapCell): string {
+  if (cell.count === 0) return 'Repos';
+  return cell.count === 1 ? '1 séance' : `${cell.count} séances`;
+}
+
+function formatCellLoadLabel(cell: HeatmapCell): string | null {
+  if (cell.count === 0 || cell.load <= 0) return null;
+  return `${cell.load} TSS`;
+}
+
 /** Instrument reading — consecutive weeks with load, not a streak game. */
-function ConsistencyReading({ stats }: { stats: ActivityConsistencyStats }) {
+function CurrentStreakSignal({ stats }: { stats: ActivityConsistencyStats }) {
   const { currentStreak, activeThisWeek } = stats;
 
   if (currentStreak === 0) {
     return (
-      <p className="text-muted-foreground text-data text-xs">Aucune semaine avec charge récente</p>
+      <div className="analysis-panel-alt rounded-analysis px-3 py-2.5 sm:min-w-[11rem]">
+        <p className="text-label">Série en cours</p>
+        <p className="text-muted-foreground mt-1 text-xs">Aucune semaine avec charge récente</p>
+      </div>
     );
   }
 
   return (
-    <p className="text-data text-xs">
-      <span className="text-foreground font-semibold tabular-nums">{currentStreak}</span>
-      <span className="text-muted-foreground">
-        {' '}
-        sem. avec charge
-        {!activeThisWeek ? ' · semaine en cours encore ouverte' : ''}
-      </span>
-    </p>
+    <div className="analysis-panel-alt rounded-analysis px-3 py-2.5 sm:min-w-[11rem]">
+      <p className="text-label">Série en cours</p>
+      <div className="mt-1 flex items-end gap-2">
+        <p className="text-foreground text-instrument text-lg font-semibold tabular-nums">
+          {currentStreak}
+        </p>
+        <p className="text-muted-foreground pb-0.5 text-xs">sem. avec charge</p>
+      </div>
+      <p className="text-muted-foreground mt-1 text-xs">
+        {activeThisWeek ? 'Semaine active' : 'Semaine en cours encore ouverte'}
+      </p>
+    </div>
   );
 }
 
-function HeatmapGrid({ weekColumns }: { weekColumns: HeatmapCell[][] }) {
+function HeatmapCellBlock({
+  cell,
+  tooltipAlign = 'center',
+}: {
+  cell: HeatmapCell;
+  tooltipAlign?: 'center' | 'left' | 'right';
+}) {
+  const tooltipTitle = formatCellTitle(cell);
+  const dateLabel = formatCellDateLabel(cell);
+  const sessionsLabel = formatCellSessionsLabel(cell);
+  const loadLabel = formatCellLoadLabel(cell);
+
+  return (
+    <div
+      aria-label={tooltipTitle}
+      role="img"
+      title={cell.inRange ? tooltipTitle : undefined}
+      className={cn(
+        'group/cell relative aspect-square min-h-[6px] w-full',
+        !cell.inRange && 'pointer-events-none',
+      )}
+    >
+      <div
+        className={cn(
+          'h-full w-full rounded-[2px] transition-transform duration-150 group-hover/cell:scale-[1.08]',
+          cell.inRange ? HEATMAP_LEVEL_CLASS[cell.level] : 'bg-transparent',
+        )}
+      />
+      {cell.inRange ? (
+        <div
+          className={cn(
+            'pointer-events-none absolute top-[calc(100%+0.45rem)] z-20 hidden w-max min-w-[9rem] opacity-0 transition-opacity duration-150 group-hover/cell:opacity-100 lg:block',
+            tooltipAlign === 'center' && 'left-1/2 -translate-x-1/2',
+            tooltipAlign === 'left' && 'left-0',
+            tooltipAlign === 'right' && 'right-0',
+          )}
+        >
+          <div className="analysis-panel rounded-analysis px-3 py-2 text-xs shadow-none">
+            <p className="text-label">{dateLabel}</p>
+            <div className="mt-1 flex items-baseline gap-2">
+              <p className="text-foreground text-data font-semibold tabular-nums">
+                {sessionsLabel}
+              </p>
+              {loadLabel ? <p className="text-muted-foreground text-[11px]">{loadLabel}</p> : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function HeatmapGrid({
+  weekColumns,
+  activeThisWeek,
+}: {
+  weekColumns: HeatmapCell[][];
+  activeThisWeek: boolean;
+}) {
+  const currentWeekIndex = weekColumns.length - 1;
+
   return (
     <div className="flex w-full items-start gap-[2px]">
-      {weekColumns.map((column, colIdx) => (
-        <div key={colIdx} className="flex min-w-0 flex-1 flex-col gap-[2px]">
-          {column.map((cell) => (
-            <div
-              key={cell.date}
-              title={cell.inRange ? formatCellTitle(cell) : undefined}
-              className={cn(
-                'aspect-square min-h-[6px] w-full rounded-[2px]',
-                cell.inRange ? HEATMAP_LEVEL_CLASS[cell.level] : 'bg-transparent',
-              )}
-            />
-          ))}
-        </div>
-      ))}
+      {weekColumns.map((column, colIdx) => {
+        let tooltipAlign: 'center' | 'left' | 'right' = 'center';
+        if (colIdx <= 1) tooltipAlign = 'left';
+        else if (colIdx >= weekColumns.length - 2) tooltipAlign = 'right';
+
+        return (
+          <div
+            key={colIdx}
+            className={cn(
+              'flex min-w-0 flex-1 flex-col gap-[2px] rounded-[4px] p-[1px]',
+              colIdx === currentWeekIndex &&
+                (activeThisWeek
+                  ? 'bg-primary/8 ring-primary/25 ring-1'
+                  : 'bg-analysis-surface-alt/60 ring-analysis-border ring-1'),
+            )}
+          >
+            {column.map((cell) => (
+              <HeatmapCellBlock key={cell.date} cell={cell} tooltipAlign={tooltipAlign} />
+            ))}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -71,7 +162,7 @@ export function ActivityConsistencyPanel({
   className,
   loading = false,
 }: {
-  activities: ClientActivity[];
+  activities: ActivityForConsistency[];
   className?: string;
   loading?: boolean;
 }) {
@@ -113,7 +204,7 @@ export function ActivityConsistencyPanel({
         {loading ? (
           <SkeletonDataValue heightClassName="h-3" widthClassName="w-28" />
         ) : (
-          <ConsistencyReading stats={stats} />
+          <CurrentStreakSignal stats={stats} />
         )}
       </div>
 
@@ -131,7 +222,7 @@ export function ActivityConsistencyPanel({
           ))}
         </div>
       ) : (
-        <HeatmapGrid weekColumns={stats.weekColumns} />
+        <HeatmapGrid activeThisWeek={stats.activeThisWeek} weekColumns={stats.weekColumns} />
       )}
 
       <div className="mt-3 flex items-center justify-end gap-3 border-t pt-3">

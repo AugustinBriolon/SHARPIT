@@ -3,8 +3,7 @@
 import { ActivityType } from '@prisma/client';
 import { MapPin } from 'lucide-react';
 import { type ReactNode, useMemo } from 'react';
-import { ActivityCharts } from '@/components/training/activity/activity-charts';
-import { CombinedChart } from '@/components/training/activity/combined-chart';
+import { ActivityStreamChart } from '@/components/training/activity/activity-stream-chart';
 import {
   PerformanceMetrics,
   ThresholdsHint,
@@ -148,11 +147,7 @@ export function ActivityInsights({
         </>
       )}
 
-      <section className="space-y-4">
-        <h2 className="text-label">Profils</h2>
-        <CombinedChart has={has} samples={normalizedSamples} type={type} />
-        <ActivityCharts has={has} samples={normalizedSamples} type={type} />
-      </section>
+      <ActivityStreamChart has={has} samples={normalizedSamples} type={type} />
 
       {runSplits.length > 0 && (
         <SplitsTable

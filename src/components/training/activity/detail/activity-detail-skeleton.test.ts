@@ -75,11 +75,12 @@ describe('ActivityMetricStripSkeleton', () => {
 });
 
 describe('ActivityPerformanceSkeleton', () => {
-  it('renders analysis-panel MetricCard plates, not hero chips', () => {
+  it('renders a single analysis panel with row separators, not hero chips', () => {
     const html = renderToStaticMarkup(createElement(ActivityPerformanceSkeleton, { count: 4 }));
     expect(html).toContain('Performance');
     expect(html).toContain('analysis-panel');
-    expect(html).toContain('lg:grid-cols-4');
+    expect(html).toContain('divide-analysis-border/60');
+    expect(html).toContain('border-t');
     expect(html).not.toContain('chip-surface');
   });
 });

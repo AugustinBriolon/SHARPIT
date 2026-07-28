@@ -22,10 +22,13 @@ describe('resolveActivityDetailSkeletonLayout', () => {
     ).toBe('map');
   });
 
-  it('drops the map for indoor run / bike', () => {
+  it('drops the map for indoor run but keeps it for bike loading', () => {
+    expect(
+      resolveActivityDetailSkeletonLayout({ type: ActivityType.RUN, title: 'Tapis endurance' }),
+    ).toBe('no-map');
     expect(
       resolveActivityDetailSkeletonLayout({ type: ActivityType.BIKE, title: 'Zwift Endurance' }),
-    ).toBe('no-map');
+    ).toBe('map');
   });
 
   it('defaults swim to no-map (pool) unless open-water hints', () => {
@@ -54,6 +57,9 @@ describe('isOpenWaterSwimSession', () => {
 describe('activityDetailExpectsMap', () => {
   it('is true only for map layouts', () => {
     expect(activityDetailExpectsMap({ type: ActivityType.RUN, title: 'Tempo' })).toBe(true);
+    expect(activityDetailExpectsMap({ type: ActivityType.BIKE, title: 'Zwift Endurance' })).toBe(
+      true,
+    );
     expect(activityDetailExpectsMap({ type: ActivityType.SWIM, title: null })).toBe(false);
     expect(activityDetailExpectsMap({ type: ActivityType.STRENGTH, title: null })).toBe(false);
   });

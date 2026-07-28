@@ -244,6 +244,22 @@ function buildPayload(
   return { available: true, path, samples, has, stats, analysis };
 }
 
+/**
+ * Garmin can return cumulative distance for a multisport child leg
+ * (e.g. run starts at bike total instead of 0). Rebase the leg so split
+ * analysis reflects the leg itself, not the whole triathlon.
+ */
+export function normalizeMultisportLegRawStreams(raw: RawStreams): RawStreams {
+  if (raw.distance.length === 0) return raw;
+  const baseDistance = raw.distance.find((value) => Number.isFinite(value)) ?? 0;
+  if (!Number.isFinite(baseDistance) || Math.abs(baseDistance) < 1) return raw;
+
+  return {
+    ...raw,
+    distance: raw.distance.map((value) => Math.max(0, value - baseDistance)),
+  };
+}
+
 const UNAVAILABLE: ActivityStreamPayload = {
   available: false,
   path: null,
@@ -287,7 +303,11 @@ function buildLegStreamPayload(
   durationSec: number | null,
   profile: Awaited<ReturnType<typeof getAthleteProfile>>,
 ): ActivityStreamPayload {
-  return buildPayload(raw, { type, duration: durationSec, bikeMetrics: null }, profile);
+  return buildPayload(
+    normalizeMultisportLegRawStreams(raw),
+    { type, duration: durationSec, bikeMetrics: null },
+    profile,
+  );
 }
 
 /** Streams Garmin par jambe sportive d'un triathlon (natation, vélo, course). */
