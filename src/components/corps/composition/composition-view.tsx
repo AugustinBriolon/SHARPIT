@@ -454,10 +454,7 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
     <div className="space-y-4 lg:space-y-5">
       <section
         aria-busy={valuesLoading || undefined}
-        className={cn(
-          'surface-ink relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10',
-          'motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200',
-        )}
+        className={cn('surface-ink relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10')}
       >
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <p className="text-ink-surface-foreground/65 inline-flex items-center gap-2 text-[11px] font-semibold tracking-wide uppercase">

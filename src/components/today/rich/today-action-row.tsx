@@ -49,7 +49,7 @@ export function TodayActionRow({
   return (
     <section aria-busy={loading || undefined} className="space-y-3">
       <div className="flex h-8 items-center justify-between gap-2 px-0.5">
-        <p className="text-label">{vm.actionRow.actionLabel}</p>
+        <h2 className="text-label text-balance">{vm.actionRow.actionLabel}</h2>
         <MorningWellnessDialog onCompleted={onWellnessCompleted} />
       </div>
 
@@ -62,12 +62,12 @@ export function TodayActionRow({
       ) : null}
 
       {reminders.length > 0 ? (
-        <ul className="text-muted-foreground space-y-1 px-0.5 text-xs leading-relaxed">
+        <ul className="text-muted-foreground space-y-1 px-0.5 text-xs leading-relaxed text-pretty">
           {reminders.map((fact) => (
             <li key={`${fact.label}-${fact.value}`}>
               <span className="text-foreground/80 font-medium">{fact.label}</span>
               {' · '}
-              {fact.value}
+              <span className="tabular-nums">{fact.value}</span>
             </li>
           ))}
         </ul>
@@ -92,7 +92,9 @@ export function TodayActionRow({
 
       {!loading && daySummaryEmpty ? (
         <div className="border-analysis-border/80 bg-background/50 rounded-analysis space-y-2 border px-3 py-3">
-          <p className="text-muted-foreground text-sm">{vm.actionRow.daySummaryEmptyText}</p>
+          <p className="text-muted-foreground text-sm text-pretty">
+            {vm.actionRow.daySummaryEmptyText}
+          </p>
           <Link
             className="text-primary inline-flex items-center gap-1.5 text-xs font-medium hover:underline"
             href={vm.actionRow.daySummaryEmptyHref}

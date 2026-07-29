@@ -79,7 +79,7 @@ function IntegrationCard({
 }) {
   return (
     <button
-      className="analysis-panel group hover:border-primary/25 hover:bg-primary/5 rounded-analysis-lg flex w-full flex-col p-4 text-left transition-colors"
+      className="analysis-panel group hover:border-primary/25 hover:bg-primary/5 rounded-analysis-lg pressable flex w-full flex-col p-4 text-left"
       type="button"
       onClick={onOpen}
     >
@@ -108,7 +108,7 @@ function IntegrationCard({
           )}
           <p className="text-muted-foreground text-xs">{integrationStatusLabel(integration)}</p>
         </div>
-        <span className="text-primary inline-flex items-center gap-0.5 text-xs font-medium opacity-0 transition-opacity group-hover:opacity-100">
+        <span className="text-primary inline-flex items-center gap-0.5 text-xs font-medium opacity-70 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
           Gérer
           <ChevronRight className="size-3.5" aria-hidden />
         </span>

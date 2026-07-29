@@ -44,9 +44,10 @@ export function AppearanceThemePicker() {
             key={option.id}
             aria-checked={active}
             role="radio"
+            tabIndex={active ? 0 : -1}
             type="button"
             className={cn(
-              'analysis-panel rounded-analysis-lg w-full px-4 py-4 text-left transition-colors',
+              'analysis-panel rounded-analysis-lg pressable w-full px-4 py-4 text-left',
               active ? 'border-highlight bg-highlight/30' : 'hover:bg-analysis-surface-alt/80',
             )}
             onClick={() => setPreference(option.id)}
@@ -57,6 +58,7 @@ export function AppearanceThemePicker() {
                   'flex size-9 shrink-0 items-center justify-center rounded-xl',
                   active ? 'icon-well' : 'bg-muted text-muted-foreground',
                 )}
+                aria-hidden
               >
                 <Icon className="size-4" />
               </div>

@@ -78,12 +78,12 @@ export function TodayDashboard() {
 
     return (
       <div className="mx-auto space-y-4">
-        {vm?.statusMessage ? (
+        {vm?.statusMessage && (
           <SnapshotStatusBanner isRefreshing={query.isFetching} message={vm.statusMessage} />
-        ) : null}
+        )}
         <div className="flex justify-center">
           <button
-            className="text-muted-foreground hover:text-foreground text-xs underline-offset-4 transition-colors hover:underline"
+            className="text-muted-foreground hover:text-foreground inline-flex min-h-11 items-center px-3 text-sm underline-offset-4 transition-colors hover:underline"
             type="button"
             onClick={() => void query.refetch()}
           >

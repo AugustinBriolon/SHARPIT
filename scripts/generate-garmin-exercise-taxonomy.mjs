@@ -128,9 +128,7 @@ async function main() {
   }
 
   for (const [leaf, cat] of Object.entries({
-    DIP: 'DIP',
-    CHEST_DIP: 'DIP',
-    TRICEPS_DIP: 'DIP',
+    // Bodyweight DIP is already under SuspensionExerciseName in FIT — do not invent a DIP parent.
     CLAM_SHELLS: 'BANDED_EXERCISES',
     CLAM_BRIDGE: 'HIP_STABILITY',
   })) {
@@ -156,9 +154,7 @@ async function main() {
     labelByLeaf.set(leaf, value);
   }
 
-  const cats = [...new Set([...leafToCategory.values(), 'DIP'])].sort(
-    (a, b) => b.length - a.length,
-  );
+  const cats = [...new Set(leafToCategory.values())].sort((a, b) => b.length - a.length);
 
   function infer(leaf) {
     if (leafToCategory.has(leaf)) return leafToCategory.get(leaf);

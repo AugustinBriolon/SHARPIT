@@ -40,16 +40,24 @@ export function AdaptationTrigger({
     <div className="mt-1.5">
       {/* The parent session row is itself a <button> — this control must not be one too. */}
       <div
-        className="text-muted-foreground/80 flex w-fit items-center gap-1 text-xs italic"
+        aria-expanded={expanded}
+        className="text-muted-foreground/80 flex min-h-11 w-fit items-center gap-1 text-xs italic sm:min-h-0"
         role="button"
         tabIndex={0}
         onClick={toggle}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') toggle(e);
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggle(e);
+          }
         }}
       >
         Changement lié à : {TRIGGER_LABEL[category]}
-        {expanded ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
+        {expanded ? (
+          <ChevronUp className="size-3" aria-hidden />
+        ) : (
+          <ChevronDown className="size-3" aria-hidden />
+        )}
       </div>
 
       {expanded && (

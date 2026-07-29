@@ -26,55 +26,59 @@ export function HistoryFilters({
   const [open, setOpen] = useState(false);
   const activeCount = countActiveTrainingHistoryFilters(filters);
   const isActive = activeCount > 0;
+  let ariaControls: string | undefined;
+  if (open) ariaControls = isMobile ? 'history-filter-drawer' : 'history-filter-menu';
 
   return (
     <div className="flex items-center gap-2">
       {/* Trigger — anchors the desktop floating menu */}
       <div className="relative">
         <button
+          aria-controls={ariaControls}
           aria-expanded={open}
+          aria-haspopup={isMobile ? 'dialog' : 'menu'}
           type="button"
           className={cn(
-            'inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm transition-colors',
+            'pressable inline-flex min-h-11 items-center gap-1.5 rounded-md px-2.5 py-2 text-sm sm:min-h-9 sm:py-1.5',
             isActive
               ? 'text-foreground font-medium'
               : 'text-muted-foreground hover:text-foreground',
           )}
           onClick={() => (isMobile ? setOpen(true) : setOpen((v) => !v))}
         >
-          <SlidersHorizontal className="size-3.5" />
+          <SlidersHorizontal className="size-3.5" aria-hidden />
           Filtres
-          {isActive && (
+          {isActive ? (
             <span className="text-highlight text-xs font-bold tabular-nums">{activeCount}</span>
-          )}
+          ) : null}
         </button>
 
         {/* Desktop floating menu — anchored to the trigger */}
-        {!isMobile && open && (
+        {!isMobile && open ? (
           <DesktopFilterMenu
             counts={counts}
             filters={filters}
             onApply={onApply}
             onClose={() => setOpen(false)}
           />
-        )}
+        ) : null}
       </div>
 
       {/* Effacer button — appears next to trigger when filters active */}
-      {isActive && (
+      {isActive ? (
         <button
           aria-label="Effacer tous les filtres"
-          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs transition-colors"
+          className="text-muted-foreground hover:text-foreground pressable inline-flex min-h-11 items-center gap-1 px-2 text-xs sm:min-h-9"
           type="button"
           onClick={() => onApply(DEFAULT_TRAINING_HISTORY_FILTERS)}
         >
-          <X className="size-3" />
+          <X className="size-3" aria-hidden />
           Effacer
         </button>
-      )}
+      ) : null}
 
       {/* Mobile drawer */}
-      {isMobile && (
+      {isMobile ? (
         <MobileFilterDrawer
           counts={counts}
           filters={filters}
@@ -82,7 +86,7 @@ export function HistoryFilters({
           onApply={onApply}
           onOpenChange={setOpen}
         />
-      )}
+      ) : null}
     </div>
   );
 }

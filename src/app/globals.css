@@ -262,6 +262,16 @@
     overscroll-behavior-y: none;
     color-scheme: light;
   }
+  /* make-interfaces-feel-better — typography wrapping for all surfaces */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  main p,
+  main li {
+    text-wrap: pretty;
+  }
   /* Mobile PWA: hide scrollbars everywhere — scroll still works, chrome stays clean. */
   @media (max-width: 1023px) {
     * {
@@ -323,6 +333,7 @@
   font-weight: 600;
   font-size: 0.6875rem;
   text-transform: uppercase;
+  text-wrap: balance;
 }
 
 @utility text-page-title {
@@ -331,6 +342,7 @@
   line-height: 1.2;
   font-family: var(--font-heading);
   letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
 @utility text-section-title {
@@ -339,6 +351,7 @@
   line-height: 1.25;
   font-family: var(--font-heading);
   letter-spacing: -0.015em;
+  text-wrap: balance;
 }
 
 @utility text-card-title {
@@ -347,6 +360,7 @@
   line-height: 1.35;
   font-family: var(--font-heading);
   letter-spacing: -0.01em;
+  text-wrap: balance;
 }
 
 @utility text-data {
@@ -371,9 +385,25 @@
   line-height: 1.2;
   font-family: var(--font-heading);
   letter-spacing: -0.02em;
+  text-wrap: balance;
   @media (width >= 40rem) {
     font-size: 1.55rem;
     letter-spacing: -0.025em;
+  }
+}
+
+/**
+ * Press + property-scoped transition — make-interfaces-feel-better / DESIGN_LANGUAGE §9.
+ * Prefer on a/button/chip surfaces; avoid on static panels.
+ */
+@utility pressable {
+  transition-duration: 150ms;
+  transition-property: color, background-color, border-color, opacity, transform;
+  transition-timing-function: ease-out;
+  @media (prefers-reduced-motion: no-preference) {
+    &:active:not(:disabled):not([aria-disabled='true']) {
+      transform: scale(0.96);
+    }
   }
 }
 
@@ -446,6 +476,14 @@
   border: 1px solid color-mix(in oklch, var(--color-analysis-border) 81%, transparent);
   background-color: var(--color-chip-surface);
   color: var(--color-card-foreground);
+  transition-duration: 150ms;
+  transition-property: color, background-color, border-color, opacity, transform;
+  transition-timing-function: ease-out;
+  @media (prefers-reduced-motion: no-preference) {
+    &:is(a, button, [role='button']):active:not(:disabled):not([aria-disabled='true']) {
+      transform: scale(0.96);
+    }
+  }
 }
 
 /* Lime Pulse icon well — brand punctuation, not primary/10 mud.
@@ -501,6 +539,16 @@
   ::view-transition-old(*),
   ::view-transition-new(*) {
     animation: none !important;
+  }
+
+  /* DESIGN_LANGUAGE §9.5 — state still changes; motion drops to immediate */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

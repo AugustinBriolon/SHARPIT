@@ -17,6 +17,12 @@ import { cn } from '@/lib/utils';
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="bg-background flex h-dvh flex-col overflow-hidden lg:flex-row">
+      <a
+        className="bg-background text-foreground focus-visible:ring-ring sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-100 focus:rounded-lg focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus-visible:ring-3 focus-visible:outline-none"
+        href="#main-content"
+      >
+        Aller au contenu
+      </a>
       <div className="hidden h-full shrink-0 lg:flex">
         <Sidebar />
       </div>
@@ -26,6 +32,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SyncingIndicator className="border-border/40 border-b lg:fixed lg:top-0 lg:right-0 lg:w-[calc(100%-239px)]" />
 
         <main
+          id="main-content"
+          tabIndex={-1}
           className={cn(
             'min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain',
             'max-lg:no-scrollbar max-lg:pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))]',

@@ -14,7 +14,10 @@ export type GarminExerciseRef = {
 
 export type { GarminExerciseMatch, GarminMatchConfidence };
 
-/** Fallback when no Garmin enum matches — watch shows "Inconnu"; real name stays in step notes. */
+/**
+ * Fallback display-only ref — Connect createWorkout rejects category UNKNOWN.
+ * Never send this in a workout payload; use canonicalize + skip instead.
+ */
 export const GARMIN_UNKNOWN_EXERCISE: GarminExerciseRef = {
   category: 'UNKNOWN',
   exerciseName: 'UNKNOWN',
@@ -23,6 +26,7 @@ export const GARMIN_UNKNOWN_EXERCISE: GarminExerciseRef = {
 /**
  * Known Garmin strength categories (parent enums).
  * Used to infer category when we only reverse-resolve a leaf name.
+ * Note: bodyweight dips live under SUSPENSION (there is no DIP parent in Connect workouts).
  */
 const GARMIN_CATEGORIES = [
   'BANDED_EXERCISES',
@@ -47,11 +51,23 @@ const GARMIN_CATEGORIES = [
   'TRICEPS_EXTENSION',
   'LATERAL_RAISE',
   'SHRUG',
-  'DIP',
+  'SUSPENSION',
   'WARM_UP',
-  'STRETCH',
   'MOVE',
 ] as const;
+
+/**
+ * Force category ownership from the FIT/Connect taxonomy.
+ * Fixes stale aliases / persisted refs (e.g. DIP → must be SUSPENSION).
+ */
+export function canonicalizeGarminExerciseRef(
+  ref: GarminExerciseRef | null | undefined,
+): GarminExerciseRef | null {
+  if (!ref?.exerciseName?.trim()) return null;
+  const entry = getGarminTaxonomyEntry(ref.exerciseName.trim());
+  if (!entry) return null;
+  return { category: entry.category, exerciseName: entry.leaf };
+}
 
 /**
  * Normalized label / catalog id → Garmin enums.
@@ -73,14 +89,15 @@ const BY_LABEL: Readonly<Record<string, GarminExerciseRef>> = {
   pompe: { category: 'PUSH_UP', exerciseName: 'PUSH_UP' },
   pompes: { category: 'PUSH_UP', exerciseName: 'PUSH_UP' },
 
-  // Dip
-  dip: { category: 'DIP', exerciseName: 'DIP' },
-  dips: { category: 'DIP', exerciseName: 'DIP' },
-  'chest dip': { category: 'DIP', exerciseName: 'CHEST_DIP' },
-  'bodyweight dip': { category: 'DIP', exerciseName: 'DIP' },
-  'body weight dip': { category: 'DIP', exerciseName: 'DIP' },
-  'dip avec poids du corps': { category: 'DIP', exerciseName: 'DIP' },
-  'dips avec poids du corps': { category: 'DIP', exerciseName: 'DIP' },
+  // Dip — Connect workout parent is SUSPENSION (not a DIP category)
+  dip: { category: 'SUSPENSION', exerciseName: 'DIP' },
+  dips: { category: 'SUSPENSION', exerciseName: 'DIP' },
+  'chest dip': { category: 'SUSPENSION', exerciseName: 'DIP' },
+  'bodyweight dip': { category: 'SUSPENSION', exerciseName: 'DIP' },
+  'body weight dip': { category: 'SUSPENSION', exerciseName: 'DIP' },
+  'dip avec poids du corps': { category: 'SUSPENSION', exerciseName: 'DIP' },
+  'dips avec poids du corps': { category: 'SUSPENSION', exerciseName: 'DIP' },
+  'dip en suspension': { category: 'SUSPENSION', exerciseName: 'DIP' },
 
   // Squat
   squat: { category: 'SQUAT', exerciseName: 'SQUAT' },
@@ -206,12 +223,7 @@ const BY_LABEL: Readonly<Record<string, GarminExerciseRef>> = {
   clamshells: { category: 'BANDED_EXERCISES', exerciseName: 'CLAM_SHELLS' },
   'clamshell avec elastique': { category: 'BANDED_EXERCISES', exerciseName: 'CLAM_SHELLS' },
   'clam shell avec elastique': { category: 'BANDED_EXERCISES', exerciseName: 'CLAM_SHELLS' },
-  'auto massage foam roller': { category: 'MOVE', exerciseName: 'BACK_MASSAGE' },
-  'auto-massage foam roller': { category: 'MOVE', exerciseName: 'BACK_MASSAGE' },
-  'auto massage': { category: 'MOVE', exerciseName: 'BACK_MASSAGE' },
-  'foam roller': { category: 'MOVE', exerciseName: 'BACK_MASSAGE' },
-  foamroller: { category: 'MOVE', exerciseName: 'BACK_MASSAGE' },
-  'back massage': { category: 'MOVE', exerciseName: 'BACK_MASSAGE' },
+  // Foam-roller / massage: no Connect workout leaf — leave unmapped (skip on push).
 };
 
 /** Catalog id → Garmin when label matching is weak but we already resolved media. */
@@ -219,7 +231,7 @@ const BY_CATALOG_ID: Readonly<Record<string, GarminExerciseRef>> = {
   '0025': { category: 'BENCH_PRESS', exerciseName: 'BARBELL_BENCH_PRESS' },
   '0289': { category: 'BENCH_PRESS', exerciseName: 'DUMBBELL_BENCH_PRESS' },
   '0662': { category: 'PUSH_UP', exerciseName: 'PUSH_UP' },
-  '0251': { category: 'DIP', exerciseName: 'DIP' },
+  '0251': { category: 'SUSPENSION', exerciseName: 'DIP' },
   '0043': { category: 'SQUAT', exerciseName: 'BACK_SQUAT' },
   '1685': { category: 'SQUAT', exerciseName: 'BODY_WEIGHT_SQUAT' },
   '0534': { category: 'SQUAT', exerciseName: 'GOBLET_SQUAT' },
@@ -260,11 +272,13 @@ function matchFromRef(
   ref: GarminExerciseRef,
   confidence: GarminMatchConfidence,
   score: number,
-): GarminExerciseMatch {
-  const entry = getGarminTaxonomyEntry(ref.exerciseName);
+): GarminExerciseMatch | null {
+  const canon = canonicalizeGarminExerciseRef(ref);
+  if (!canon) return null;
+  const entry = getGarminTaxonomyEntry(canon.exerciseName);
   return {
-    ref,
-    labelFr: entry?.labelFr ?? ref.exerciseName,
+    ref: canon,
+    labelFr: entry?.labelFr ?? canon.exerciseName,
     confidence,
     score,
   };
@@ -307,7 +321,11 @@ export function resolveGarminExerciseMatch(input: {
     if (category) return matchFromRef({ category, exerciseName: leaf }, 'exact', 1);
   }
 
-  return matchGarminTaxonomy(input.exercise);
+  const taxonomy = matchGarminTaxonomy(input.exercise);
+  if (!taxonomy) return null;
+  const canon = canonicalizeGarminExerciseRef(taxonomy.ref);
+  if (!canon) return null;
+  return { ...taxonomy, ref: canon };
 }
 
 /**

@@ -256,7 +256,7 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
         </div>
 
         {coachPlan.error && (
-          <p className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
+          <p className="bg-destructive/10 text-destructive rounded-md p-3 text-sm" role="alert">
             {coachPlan.error.message}
           </p>
         )}
@@ -316,10 +316,11 @@ function SessionRow({
 
   return (
     <button
+      aria-pressed={selected && !rejected}
       disabled={rejected}
       type="button"
       className={cn(
-        'flex w-full gap-3 rounded-lg border p-3 text-left transition-colors',
+        'pressable flex w-full gap-3 rounded-lg border p-3 text-left',
         rejected && 'border-signal-risk/30 bg-signal-risk/5 cursor-not-allowed opacity-80',
         !rejected && selected
           ? 'border-primary/40 bg-primary/5'
@@ -336,7 +337,7 @@ function SessionRow({
             : 'border-border',
         )}
       >
-        {selected && !rejected && <Check className="size-3.5" />}
+        {selected && !rejected && <Check className="size-3.5" aria-hidden />}
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">

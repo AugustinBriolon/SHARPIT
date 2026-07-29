@@ -47,7 +47,7 @@ export function TodayVerdictHero({
     actionContent = (
       <p
         className={cn(
-          'border-highlight dark:border-ink-surface-foreground/80 max-w-2xl border-l-2 pl-3 text-sm leading-relaxed',
+          'border-highlight dark:border-ink-surface-foreground/80 max-w-2xl border-l-2 pl-3 text-sm leading-relaxed text-pretty',
           secondaryMuted
             ? 'text-ink-surface-foreground/70'
             : 'text-ink-surface-foreground/80 font-medium',
@@ -114,18 +114,12 @@ export function TodayVerdictHero({
   return (
     <section
       aria-busy={loading || undefined}
-      className={cn(
-        'surface-ink relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10',
-        'motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200',
-      )}
+      className={cn('surface-ink relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10')}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-ink-surface-foreground/65 inline-flex min-w-0 items-center gap-2 text-[11px] font-semibold tracking-wide uppercase">
           <span
-            className={cn(
-              'bg-highlight dark:bg-ink-surface-foreground h-2.5 w-2.5 shrink-0 rounded-full',
-              'motion-safe:animate-in motion-safe:zoom-in-50 motion-safe:duration-200',
-            )}
+            className="bg-highlight dark:bg-ink-surface-foreground h-2.5 w-2.5 shrink-0 rounded-full"
             aria-hidden
           />
           {loading ? (
@@ -176,7 +170,7 @@ export function TodayVerdictHero({
           />
         </div>
       ) : (
-        <h1 className="text-verdict text-ink-surface-foreground mt-6 max-w-3xl text-[1.75rem] leading-[1.15] sm:text-[2.125rem]">
+        <h1 className="text-verdict text-ink-surface-foreground mt-6 max-w-3xl text-[1.75rem] leading-[1.15] text-balance sm:text-[2.125rem]">
           {hero.headline}
         </h1>
       )}

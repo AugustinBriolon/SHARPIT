@@ -104,7 +104,7 @@ export function SleepStageBreakdown({
         {rows.map((row) => (
           <div
             key={row.key}
-            className="h-full opacity-80 transition-all first:rounded-l-full last:rounded-r-full"
+            className="h-full opacity-80 transition-[width,opacity] duration-[250ms] ease-in-out first:rounded-l-full last:rounded-r-full"
             style={{
               width: `${row.percent}%`,
               backgroundColor: STAGE_STYLES[row.key].color,

@@ -63,7 +63,7 @@ function recordNarrative(entry: RecordEntry): string {
 
 function sportSwitcherClass(active: boolean) {
   return cn(
-    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-medium transition-colors',
+    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-medium pressable',
     active
       ? 'border-foreground/12 bg-foreground/6 text-foreground shadow-[inset_0_0_0_1px_rgba(0,0,0,0.02)]'
       : 'border-transparent bg-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground',
@@ -96,7 +96,7 @@ function RecordHero({ entry }: { entry: RecordEntry }) {
   if (!entry.activityId) return content;
   return (
     <Link
-      className="rounded-analysis hover:bg-analysis-surface-alt/40 block transition-colors"
+      className="rounded-analysis hover:bg-analysis-surface-alt/40 pressable block"
       href={`/training/${entry.activityId}`}
     >
       {content}
@@ -106,7 +106,7 @@ function RecordHero({ entry }: { entry: RecordEntry }) {
 
 function LeaderboardRow({ entry }: { entry: RecordEntry }) {
   const content = (
-    <div className="rounded-analysis hover:bg-analysis-surface-alt/40 flex flex-col gap-1.5 px-2 py-2 transition-colors md:flex-row md:items-center md:justify-between md:gap-3">
+    <div className="rounded-analysis hover:bg-analysis-surface-alt/40 flex flex-col gap-1.5 px-2 py-2 md:flex-row md:items-center md:justify-between md:gap-3">
       <div className="flex min-w-0 items-center gap-3">
         <span className="text-data text-muted-foreground w-6 shrink-0 text-xs">#{entry.rank}</span>
         <div className="min-w-0">
@@ -122,7 +122,7 @@ function LeaderboardRow({ entry }: { entry: RecordEntry }) {
 
   if (!entry.activityId) return content;
   return (
-    <Link className="rounded-analysis block" href={`/training/${entry.activityId}`}>
+    <Link className="pressable rounded-analysis block" href={`/training/${entry.activityId}`}>
       {content}
     </Link>
   );

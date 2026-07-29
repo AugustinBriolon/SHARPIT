@@ -209,7 +209,8 @@ export function MorningOrientationActions({
         className={cn(
           'chip-surface group rounded-analysis flex w-full items-center gap-3 border px-3.5 py-3 text-left',
           'border-highlight/50 transition-[border-color,background-color,transform]',
-          detailSessionId && 'hover:border-highlight/80 hover:bg-highlight/10 active:scale-[0.995]',
+          detailSessionId &&
+            'hover:border-highlight/80 hover:bg-highlight/10 motion-safe:active:scale-[0.96]',
           !detailSessionId && 'cursor-default',
         )}
         onClick={openDetails}
@@ -262,7 +263,7 @@ export function MorningOrientationActions({
           variant="ghost"
           onClick={() => void actRecalibration('reject', decisionId, null)}
         >
-          {pending === 'hold' ? '…' : 'Garder le plan'}
+          {pending === 'hold' ? 'Conservation…' : 'Garder le plan'}
         </Button>
       </div>
     </section>

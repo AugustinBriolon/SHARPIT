@@ -375,11 +375,15 @@ export function CoachChat({
                 Pose une question à ton coach. Il connaît ta forme, ta récupération, tes seuils et
                 tes objectifs.
               </p>
-              <div className="flex flex-wrap justify-center gap-2">
+              <div
+                aria-label="Suggestions"
+                className="flex flex-wrap justify-center gap-2"
+                role="group"
+              >
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s}
-                    className="chip-surface text-foreground/80 hover:border-primary/40 hover:text-foreground rounded-full px-3 py-1.5 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                    className="chip-surface text-foreground/80 hover:border-primary/40 hover:text-foreground min-h-11 rounded-full px-3 py-1.5 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0"
                     disabled={inputLocked}
                     type="button"
                     onClick={() => submit(s)}
@@ -430,15 +434,20 @@ export function CoachChat({
           })}
 
           {status === 'submitted' && (
-            <div className="flex justify-start">
+            <div aria-live="polite" className="flex justify-start" role="status">
               <div className="bg-analysis-surface-alt rounded-[18px_18px_18px_4px] px-4 py-2.5">
-                <Loader2 className="text-muted-foreground size-4 animate-spin" />
+                <Loader2 className="text-muted-foreground size-4 animate-spin" aria-hidden />
+                <span className="sr-only">Le coach rédige une réponse…</span>
               </div>
             </div>
           )}
 
           {pendingApprovals.length > 0 && (
-            <div className="border-primary/30 bg-primary/4 rounded-analysis space-y-2 border p-3">
+            <div
+              aria-label="Propositions à valider"
+              className="border-primary/30 bg-primary/4 rounded-analysis space-y-2 border p-3"
+              role="region"
+            >
               <div className="space-y-1">
                 <p className="text-primary text-xs font-medium tracking-wide uppercase">
                   {pendingApprovals.length === 1
@@ -481,7 +490,10 @@ export function CoachChat({
           )}
 
           {error && (
-            <div className="bg-destructive/10 text-destructive space-y-2 rounded-md p-3 text-sm">
+            <div
+              className="bg-destructive/10 text-destructive space-y-2 rounded-md p-3 text-sm"
+              role="alert"
+            >
               <p>{coachErrorMessage}</p>
               <Button
                 size="sm"
@@ -500,14 +512,15 @@ export function CoachChat({
       </div>
 
       <form
-        className="border-border/60 flex items-center gap-2 border-t p-3"
+        className="border-border/60 flex items-end gap-2 border-t p-3"
         onSubmit={(e) => {
           e.preventDefault();
           submit(input);
         }}
       >
         <Textarea
-          className="max-h-40 min-h-10 resize-y"
+          aria-label="Message au coach"
+          className="max-h-40 min-h-11 resize-y"
           disabled={inputLocked}
           placeholder={inputPlaceholder}
           rows={input.includes('\n') || input.length > 120 ? 6 : 1}
@@ -525,12 +538,24 @@ export function CoachChat({
           }}
         />
         {isBusy ? (
-          <Button size="icon" type="button" variant="outline" onClick={() => stop()}>
-            <Square className="size-4" />
+          <Button
+            aria-label="Arrêter la génération"
+            size="icon"
+            type="button"
+            variant="outline"
+            onClick={() => stop()}
+          >
+            <Square className="size-4" aria-hidden />
           </Button>
         ) : (
-          <Button disabled={!input.trim()} size="icon" type="submit" variant="highlight">
-            <Send className="size-4" />
+          <Button
+            aria-label="Envoyer le message"
+            disabled={!input.trim()}
+            size="icon"
+            type="submit"
+            variant="highlight"
+          >
+            <Send className="size-4" aria-hidden />
           </Button>
         )}
       </form>

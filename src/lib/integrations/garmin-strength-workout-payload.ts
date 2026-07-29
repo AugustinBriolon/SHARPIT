@@ -1,5 +1,5 @@
 import type { GarminExerciseRef } from '@/lib/integrations/garmin-exercise-map';
-import { GARMIN_UNKNOWN_EXERCISE } from '@/lib/integrations/garmin-exercise-map';
+import { canonicalizeGarminExerciseRef } from '@/lib/integrations/garmin-exercise-map';
 import type { StrengthRestMode } from '@/lib/planned-session/strength-prescription';
 
 const SPORT_STRENGTH = {
@@ -194,7 +194,8 @@ function buildRestStep(
 
 /**
  * Build a Garmin Connect strength workout payload from structured sets.
- * Unmapped exercises fall back to UNKNOWN ("Inconnu") — original label stays in step description.
+ * Unmapped / invalid-category exercises are skipped (Connect rejects UNKNOWN / stale parents
+ * like DIP — bodyweight dips must use SUSPENSION). Original label stays available via skip reason.
  *
  * Rest is mandatory after every set (including the last) so transitions between
  * exercises also get a Lap/timed rest. Default rest ends on Lap button press.
@@ -208,13 +209,13 @@ export function buildStrengthWorkoutPayload(
   let mappedCount = 0;
 
   for (const set of input.sets) {
-    let { garmin } = set;
+    const garmin = canonicalizeGarminExerciseRef(set.garmin);
     if (!garmin) {
       skipped.push({
         exercise: set.exercise,
-        reason: 'envoyé comme Inconnu (pas de match Garmin)',
+        reason: 'hors catalogue montre (catégorie Garmin invalide ou inconnue)',
       });
-      garmin = GARMIN_UNKNOWN_EXERCISE;
+      continue;
     }
 
     const iterations = Math.max(1, set.sets || 1);

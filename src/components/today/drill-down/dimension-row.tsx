@@ -97,7 +97,7 @@ export function DrillDownDimensionRow({
       ) : (
         <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
           <div
-            className={cn('h-full rounded-full transition-all duration-500', barColorClass)}
+            className={cn('h-full rounded-full transition-[width] duration-300', barColorClass)}
             style={{ width: available && score !== null ? `${score}%` : '0%' }}
           />
         </div>

@@ -143,25 +143,14 @@ function goalSuffix(goalContext: TodayGoalContext): string {
 }
 
 function goalLineForPhase(input: PhaseNarrativeInput): string | null {
-  const phase = phaseOf(input);
   const { goalContext } = input;
   if (!goalContext) return null;
 
-  const badge = goalContext.badge ? ` (${goalContext.badge})` : '';
-
-  if (goalContext.linkedToTodaySession && isForwardAdvicePhase(phase)) {
-    return `Cette séance sert ${goalContext.title}${badge}`;
-  }
-
-  if (phase === 'SESSION_COMPLETED' && goalContext.linkedToTodaySession) {
-    return `Séance au service de ${goalContext.title}${badge}`;
-  }
-
-  if ((phase === 'END_OF_DAY' || phase === 'RECOVERY_WINDOW') && goalContext.isPrimaryRace) {
+  if (goalContext.isPrimaryRace) {
     return `${goalContext.title}${goalSuffix(goalContext)}`;
   }
 
-  if (goalContext.isPrimaryRace && goalContext.daysUntil != null && goalContext.daysUntil <= 21) {
+  if (goalContext.daysUntil != null && goalContext.daysUntil <= 21) {
     return `${goalContext.title}${goalSuffix(goalContext)}`;
   }
 

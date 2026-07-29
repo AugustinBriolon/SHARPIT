@@ -226,7 +226,7 @@ export function PlanningView({
             variant="ghost"
             onClick={() => setWeekStart((prev) => subWeeks(prev, 1))}
           >
-            <ChevronLeft className="size-4" />
+            <ChevronLeft className="size-4" aria-hidden />
           </Button>
           <div className="min-w-44 text-center">
             <p className="text-sm font-medium">
@@ -247,7 +247,7 @@ export function PlanningView({
             variant="ghost"
             onClick={() => setWeekStart((prev) => addWeeks(prev, 1))}
           >
-            <ChevronRight className="size-4" />
+            <ChevronRight className="size-4" aria-hidden />
           </Button>
         </div>
 
@@ -255,7 +255,7 @@ export function PlanningView({
           {!isLoading ? <TravelContextBanner rangeEnd={weekEnd} rangeStart={week.start} /> : null}
           {hasActionableAlternative ? (
             <Button size="sm" variant="outline" onClick={() => setScenarioComparisonOpen(true)}>
-              <GitCompare className="size-3.5 shrink-0" />
+              <GitCompare className="size-3.5 shrink-0" aria-hidden />
               Comparer
             </Button>
           ) : null}
@@ -494,7 +494,7 @@ function DayRow({
         variant="ghost"
         onClick={onAdd}
       >
-        <Plus className="size-4" />
+        <Plus className="size-4" aria-hidden />
       </Button>
     </div>
   );
@@ -524,14 +524,16 @@ function SessionRow({
     <button
       type="button"
       className={cn(
-        'hover:bg-muted/50 flex w-full items-center gap-2.5 rounded-lg py-1.5 pl-6 text-left text-sm transition-colors',
+        'hover:bg-muted/50 flex min-h-11 w-full items-center gap-2.5 rounded-lg py-1.5 pl-6 text-left text-sm transition-colors',
         session.completed && 'pl-0 opacity-60',
       )}
       onClick={() => onEdit(session)}
       onFocus={() => onPrefetch(session)}
       onPointerEnter={() => onPrefetch(session)}
     >
-      {session.completed && <CheckCircle2 className="text-primary size-3.5 shrink-0" />}
+      {session.completed ? (
+        <CheckCircle2 className="text-primary size-3.5 shrink-0" aria-hidden />
+      ) : null}
       <ActivityTypeIndicator type={session.type} />
       <span className="min-w-0 flex-1 truncate font-medium">{title}</span>
       {meta && <span className="text-muted-foreground shrink-0 text-xs">{meta}</span>}

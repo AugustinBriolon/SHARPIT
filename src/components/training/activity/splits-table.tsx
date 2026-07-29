@@ -38,7 +38,7 @@ function SplitsTableComponent({
   return (
     <section className="analysis-panel rounded-analysis-lg overflow-hidden">
       <div className="border-analysis-border/60 border-b px-4 py-3 sm:px-5">
-        <p className="text-label">{title}</p>
+        <h2 className="text-label">{title}</h2>
         <p className="text-muted-foreground mt-1 text-xs">Lecture séquentielle split par split</p>
       </div>
       <div className="overflow-x-auto">

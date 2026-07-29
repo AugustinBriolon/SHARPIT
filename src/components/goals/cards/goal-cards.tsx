@@ -203,7 +203,7 @@ export function RaceCard({ goal }: { goal: GoalItem }) {
               variant="ghost"
               onClick={handleDelete}
             >
-              <Trash2 className="size-3.5" /> Supprimer
+              <Trash2 className="size-3.5" aria-hidden /> Supprimer
             </Button>
           </div>
         </CardContent>
@@ -253,11 +253,12 @@ export function MetricGoalCard({ goal }: { goal: GoalItem }) {
               {metricGoalSubtitle(goal, subtitle)}
             </div>
             <button
-              className="bg-muted/60 text-muted-foreground hover:text-primary shrink-0 rounded-full px-2 py-0.5 text-xs"
+              className="bg-muted/60 text-muted-foreground hover:text-primary min-h-11 shrink-0 rounded-full px-2.5 py-1 text-xs sm:min-h-0"
               disabled={update.isPending}
+              type="button"
               onClick={toggleAchieved}
             >
-              {goal.achieved ? 'Rouvrir' : 'Atteint'}
+              {goal.achieved ? 'Rouvrir' : 'Marquer atteint'}
             </button>
           </div>
 
@@ -292,7 +293,7 @@ export function MetricGoalCard({ goal }: { goal: GoalItem }) {
             <div className="space-y-1.5">
               <div className="bg-muted h-2 overflow-hidden rounded-full">
                 <div
-                  className="bg-primary h-full rounded-full transition-all"
+                  className="bg-primary h-full rounded-full transition-[width]"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -361,7 +362,7 @@ export function MetricGoalCard({ goal }: { goal: GoalItem }) {
               variant="ghost"
               onClick={handleDelete}
             >
-              <Trash2 className="size-3.5" /> Suppr.
+              <Trash2 className="size-3.5" aria-hidden /> Suppr.
             </Button>
           </div>
         </CardContent>

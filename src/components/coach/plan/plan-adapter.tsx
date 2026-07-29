@@ -299,7 +299,7 @@ export function PlanAdapter({
                     disabled={rejected}
                     type="button"
                     className={cn(
-                      'flex w-full gap-3 rounded-lg border p-3 text-left transition-colors',
+                      'pressable flex w-full gap-3 rounded-lg border p-3 text-left',
                       rejected &&
                         'border-signal-risk/30 bg-signal-risk/5 cursor-not-allowed opacity-80',
                       !rejected && selected.has(i)

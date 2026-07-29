@@ -214,17 +214,21 @@ function ActivityStreamChartComponent({
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3 px-1 sm:px-2">
         <div>
-          <p className="text-label">Comparer les courbes</p>
-          <p className="text-muted-foreground mt-1 text-sm">
+          <h2 className="text-label">Comparer les courbes</h2>
+          <p className="text-muted-foreground mt-1 text-sm text-pretty">
             Active 1 ou 2 séries pour garder des axes lisibles.
           </p>
         </div>
-        <p className="text-muted-foreground text-data text-xs tabular-nums">
+        <p className="text-muted-foreground text-data text-xs tabular-nums" role="status">
           {selectedMetrics.length}/{metrics.length} actives
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2 px-1 sm:px-2">
+      <div
+        aria-label="Séries du graphique"
+        className="flex flex-wrap gap-2 px-1 sm:px-2"
+        role="group"
+      >
         {metrics.map((metric) => {
           const selected = selectedKeys.includes(metric.key);
           const disabled = !selected && selectedKeys.length >= 2;
@@ -232,10 +236,12 @@ function ActivityStreamChartComponent({
           return (
             <button
               key={metric.key}
+              aria-label={metric.label}
+              aria-pressed={selected}
               disabled={disabled}
               type="button"
               className={cn(
-                'rounded-lg border px-3 py-2 text-left transition-colors',
+                'pressable min-h-11 rounded-lg border px-3 py-2 text-left sm:min-h-0',
                 'focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
                 selected
                   ? 'border-primary/35 bg-analysis-surface-alt text-foreground'
@@ -257,7 +263,10 @@ function ActivityStreamChartComponent({
         })}
       </div>
 
-      <div>
+      <div
+        aria-label={`Graphique de flux : ${selectedMetrics.map((m) => m.label).join(', ')}`}
+        role="img"
+      >
         <ResponsiveChartFrame height={248}>
           <LineChart data={data} margin={{ top: 5, right: 12, left: -8, bottom: 0 }}>
             <CartesianGrid stroke={CHART_GRID_COLOR} strokeDasharray="3 3" />

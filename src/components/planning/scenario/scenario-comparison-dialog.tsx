@@ -214,7 +214,7 @@ function ScenarioComparisonList({
               role="radio"
               type="button"
               className={cn(
-                'w-full rounded-lg border px-3 py-2.5 text-left transition-colors',
+                'pressable w-full rounded-lg border px-3 py-2.5 text-left',
                 selected
                   ? 'border-primary/50 bg-primary/8 ring-primary/20 ring-1'
                   : 'border-analysis-border/50 bg-analysis-surface-alt/40 hover:border-analysis-border',

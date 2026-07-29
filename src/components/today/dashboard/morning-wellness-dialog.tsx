@@ -1,7 +1,7 @@
 'use client';
 
 import { Smile } from 'lucide-react';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useWellnessCheckin } from '@/hooks/use-wellness-checkin';
 import { cn } from '@/lib/utils';
@@ -62,38 +63,80 @@ function ScalePicker({
   value: number;
   onChange: (value: number) => void;
 }) {
+  const labelId = useId();
+  const hintId = useId();
+
+  function moveSelection(delta: number) {
+    const index = options.findIndex((opt) => opt.value === value);
+    const fallback = index < 0 ? 0 : index;
+    const next = (fallback + delta + options.length) % options.length;
+    onChange(options[next]!.value);
+  }
+
   return (
-    <div className="space-y-2.5">
+    <div
+      aria-describedby={hintId}
+      aria-labelledby={labelId}
+      className="space-y-2.5"
+      role="radiogroup"
+      onKeyDown={(event) => {
+        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+          event.preventDefault();
+          moveSelection(1);
+        } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+          event.preventDefault();
+          moveSelection(-1);
+        } else if (event.key === 'Home') {
+          event.preventDefault();
+          onChange(options[0]!.value);
+        } else if (event.key === 'End') {
+          event.preventDefault();
+          onChange(options.at(-1)!.value);
+        }
+      }}
+    >
       <div>
-        <p className="text-foreground text-sm font-medium">{label}</p>
-        <p className="text-muted-foreground text-xs">{hint}</p>
+        <p className="text-foreground text-sm font-medium" id={labelId}>
+          {label}
+        </p>
+        <p className="text-muted-foreground text-xs" id={hintId}>
+          {hint}
+        </p>
       </div>
       <div className="grid grid-cols-5 gap-1.5">
-        {options.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            className={cn(
-              'flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2 transition-colors',
-              value === opt.value
-                ? 'border-highlight bg-highlight text-highlight-foreground'
-                : 'border-border/70 bg-background hover:border-primary/30 hover:bg-muted/40',
-            )}
-            onClick={() => onChange(opt.value)}
-          >
-            <span className="text-xl leading-none" aria-hidden>
-              {opt.icon}
-            </span>
-            <span
+        {options.map((opt) => {
+          const selected = value === opt.value;
+          return (
+            <button
+              key={opt.value}
+              aria-checked={selected}
+              aria-label={opt.label}
+              role="radio"
+              tabIndex={selected ? 0 : -1}
+              type="button"
               className={cn(
-                'text-[9px] leading-tight font-medium',
-                value === opt.value ? 'text-highlight-foreground/80' : 'text-muted-foreground',
+                'flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2 transition-colors',
+                selected
+                  ? 'border-highlight bg-highlight text-highlight-foreground'
+                  : 'border-border/70 bg-background hover:border-primary/30 hover:bg-muted/40',
               )}
+              onClick={() => onChange(opt.value)}
             >
-              {opt.label}
-            </span>
-          </button>
-        ))}
+              <span className="text-xl leading-none" aria-hidden>
+                {opt.icon}
+              </span>
+              <span
+                className={cn(
+                  'text-[11px] leading-tight font-medium',
+                  selected ? 'text-highlight-foreground/80' : 'text-muted-foreground',
+                )}
+                aria-hidden
+              >
+                {opt.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -174,19 +217,30 @@ export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => voi
           />
           <div className="space-y-2.5">
             <div>
-              <p className="text-foreground text-sm font-medium">Note libre</p>
-              <p className="text-muted-foreground text-xs">
+              <Label
+                className="text-foreground text-sm font-medium"
+                htmlFor="morning-wellness-notes"
+              >
+                Note libre
+              </Label>
+              <p className="text-muted-foreground text-xs" id="morning-wellness-notes-hint">
                 Un contexte utile pour interpréter ta journée.
               </p>
             </div>
             <Textarea
+              aria-describedby="morning-wellness-notes-hint"
+              id="morning-wellness-notes"
               placeholder="Ex: nuit hachée, pression pro, jambes lourdes..."
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
             />
           </div>
 
-          {error && <p className="text-destructive text-xs">{error}</p>}
+          {error ? (
+            <p className="text-destructive text-xs" role="alert">
+              {error}
+            </p>
+          ) : null}
         </div>
 
         <div className="border-border/60 bg-muted/40 shrink-0 border-t px-5 py-4">

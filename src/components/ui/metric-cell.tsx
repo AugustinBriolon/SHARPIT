@@ -93,7 +93,7 @@ export function MetricCell({
       className={cn(
         'relative flex flex-col',
         onExplain
-          ? 'group chip-surface hover:border-primary/35 rounded-2xl px-3.5 py-3 transition-colors'
+          ? 'group chip-surface hover:border-primary/35 rounded-2xl px-3.5 py-3'
           : 'chip-surface rounded-2xl px-4 py-4',
       )}
     >

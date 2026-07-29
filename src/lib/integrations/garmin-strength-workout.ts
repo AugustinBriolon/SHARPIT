@@ -297,6 +297,7 @@ export async function pushStrengthWorkoutFromPlannedSession(options: {
       durationSec: set.durationSec,
       weightKg: set.weightKg,
       restSec: set.restSec,
+      restMode: set.restMode,
       notes: set.notes,
       garmin: set.garmin
         ? { category: set.garmin.category, exerciseName: set.garmin.exerciseName }

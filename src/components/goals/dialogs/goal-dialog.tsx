@@ -295,7 +295,11 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
           <Textarea defaultValue={goal?.notes ?? ''} id="notes" name="notes" rows={3} />
         </div>
 
-        {error && <p className="text-destructive text-sm">{error}</p>}
+        {error && (
+          <p className="text-destructive text-sm" role="alert">
+            {error}
+          </p>
+        )}
         {renderFormActions('submit')}
       </form>
     );
@@ -312,7 +316,11 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
           onError={setError}
           onSubmit={handleStructuredMetricSubmit}
         />
-        {error && <p className="text-destructive text-sm">{error}</p>}
+        {error && (
+          <p className="text-destructive text-sm" role="alert">
+            {error}
+          </p>
+        )}
         {renderFormActions({ form: metricFormId })}
       </>
     );
@@ -407,7 +415,11 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
           <Textarea defaultValue={goal?.notes ?? ''} id="notes" name="notes" rows={2} />
         </div>
 
-        {error && <p className="text-destructive text-sm">{error}</p>}
+        {error && (
+          <p className="text-destructive text-sm" role="alert">
+            {error}
+          </p>
+        )}
         {renderFormActions('submit')}
       </form>
     );
@@ -424,52 +436,66 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Modifier l'objectif" : 'Nouvel objectif'}</DialogTitle>
-          <DialogDescription />
+          <DialogDescription>
+            {isEdit
+              ? 'Ajuste les détails de cet objectif.'
+              : 'Choisis le type d’objectif, puis renseigne les détails.'}
+          </DialogDescription>
         </DialogHeader>
 
         {!isEdit && (
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div
+            aria-label="Type d'objectif"
+            className="grid grid-cols-1 gap-2 sm:grid-cols-3"
+            role="radiogroup"
+          >
             <button
+              aria-checked={variant === 'race'}
+              role="radio"
               type="button"
               className={cn(
-                'flex items-start gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors',
+                'pressable flex min-h-11 items-start gap-2 rounded-lg border px-3 py-2 text-left text-sm',
                 variant === 'race'
                   ? 'border-primary/50 bg-primary/5'
                   : 'border-border/60 hover:border-border',
               )}
               onClick={() => setVariant('race')}
             >
-              <Flag className="text-primary mt-0.5 size-4 shrink-0" />
+              <Flag className="text-primary mt-0.5 size-4 shrink-0" aria-hidden />
               <span>
                 <span className="block font-medium">Course</span>
               </span>
             </button>
             <button
+              aria-checked={variant === 'performance'}
+              role="radio"
               type="button"
               className={cn(
-                'flex items-start gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors',
+                'pressable flex min-h-11 items-start gap-2 rounded-lg border px-3 py-2 text-left text-sm',
                 variant === 'performance'
                   ? 'border-primary/50 bg-primary/5'
                   : 'border-border/60 hover:border-border',
               )}
               onClick={() => setVariant('performance')}
             >
-              <Timer className="text-primary mt-0.5 size-4 shrink-0" />
+              <Timer className="text-primary mt-0.5 size-4 shrink-0" aria-hidden />
               <span>
                 <span className="block font-medium">Temps sur distance</span>
               </span>
             </button>
             <button
+              aria-checked={variant === 'period'}
+              role="radio"
               type="button"
               className={cn(
-                'flex items-start gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors',
+                'pressable flex min-h-11 items-start gap-2 rounded-lg border px-3 py-2 text-left text-sm',
                 variant === 'period'
                   ? 'border-primary/50 bg-primary/5'
                   : 'border-border/60 hover:border-border',
               )}
               onClick={() => setVariant('period')}
             >
-              <Repeat className="text-primary mt-0.5 size-4 shrink-0" />
+              <Repeat className="text-primary mt-0.5 size-4 shrink-0" aria-hidden />
               <span>
                 <span className="block font-medium">Objectif récurrent</span>
               </span>

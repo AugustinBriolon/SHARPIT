@@ -20,7 +20,7 @@ export function StrengthVenuePicker({
             role="radio"
             type="button"
             className={cn(
-              'analysis-panel rounded-analysis-lg w-full px-3.5 py-3 text-left transition-colors',
+              'analysis-panel rounded-analysis-lg pressable w-full px-3.5 py-3 text-left',
               active ? 'border-highlight bg-highlight/30' : 'hover:bg-analysis-surface-alt/80',
             )}
             onClick={() => onSelect(option.id)}

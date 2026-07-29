@@ -1,6 +1,5 @@
 'use client';
 
-import { Label } from '@/components/ui/label';
 import type { EquipmentItemId } from '@/lib/equipment/catalog';
 import { accessoryOptionsForActivityType } from '@/lib/planned-session/session-accessories';
 import type { ActivityType } from '@prisma/client';
@@ -28,19 +27,27 @@ export function SessionAccessoriesPicker({
 
   return (
     <div className="space-y-2">
-      <Label>Accessoires nécessaires</Label>
-      <p className="text-muted-foreground text-[10px] leading-relaxed">
+      <p className="text-sm leading-none font-medium" id="session-accessories-label">
+        Accessoires nécessaires
+      </p>
+      <p className="text-muted-foreground text-xs leading-relaxed" id="session-accessories-hint">
         Matériel à préparer pour cette séance (pull buoy, élastique…).
       </p>
-      <div className="flex flex-wrap gap-1.5">
+      <div
+        aria-describedby="session-accessories-hint"
+        aria-labelledby="session-accessories-label"
+        className="flex flex-wrap gap-1.5"
+        role="group"
+      >
         {options.map((option) => {
           const active = selected.includes(option.id);
           return (
             <button
               key={option.id}
+              aria-pressed={active}
               type="button"
               className={cn(
-                'rounded-full border px-2.5 py-1 text-xs transition-colors',
+                'pressable min-h-11 rounded-full border px-2.5 py-1 text-xs sm:min-h-0',
                 active
                   ? 'border-primary/40 bg-primary/10 text-foreground'
                   : 'border-analysis-border/60 text-muted-foreground hover:text-foreground',

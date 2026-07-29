@@ -58,11 +58,11 @@ export function ActivityDetailHeader({ activity }: { activity: ActivityDetail })
           />
         }
       >
-        <MoreHorizontal className="size-4" />
+        <MoreHorizontal className="size-4" aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-48">
         <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => router.push(editHref)}>
-          <Pencil className="size-3.5" />
+          <Pencil className="size-3.5" aria-hidden />
           Modifier
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -71,7 +71,7 @@ export function ActivityDetailHeader({ activity }: { activity: ActivityDetail })
           variant="destructive"
           onClick={() => void handleDelete()}
         >
-          <Trash2 className="size-3.5" />
+          <Trash2 className="size-3.5" aria-hidden />
           Supprimer
         </DropdownMenuItem>
       </DropdownMenuContent>

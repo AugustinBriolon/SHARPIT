@@ -118,9 +118,13 @@ function draftWatchHint(exercise: string): string | null {
 }
 
 function watchHintClassName(hint: string): string {
-  if (hint.startsWith('Hors')) return 'text-muted-foreground/80 text-[10px]';
-  if (hint.startsWith('Approx')) return 'text-[10px] text-amber-700/90 dark:text-amber-400/90';
-  return 'text-muted-foreground text-[10px]';
+  if (hint.startsWith('Hors')) return 'text-muted-foreground/80 text-[11px]';
+  if (hint.startsWith('Approx')) return 'text-[11px] text-amber-700/90 dark:text-amber-400/90';
+  return 'text-muted-foreground text-[11px]';
+}
+
+function fieldId(rowKey: string, field: string): string {
+  return `strength-${rowKey}-${field}`;
 }
 
 export function StrengthPrescriptionEditor({
@@ -139,27 +143,35 @@ export function StrengthPrescriptionEditor({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <Label>
+        <p className="text-sm leading-none font-medium">
           Exercices (montre){required ? <span className="text-destructive"> *</span> : null}
-        </Label>
+        </p>
         <Button
           size="sm"
           type="button"
           variant="outline"
           onClick={() => onChange([...rows, newRow()])}
         >
-          <Plus className="size-3.5" />
+          <Plus className="size-3.5" aria-hidden />
           Ajouter
         </Button>
       </div>
       {required ? (
-        <p className="text-muted-foreground text-[10px] leading-relaxed">
+        <p className="text-muted-foreground text-xs leading-relaxed">
           Obligatoire pour une séance musculation — chaque exercice est suivi d’un repos (Lap par
           défaut : tu appuies sur Lap à la montre pour enchaîner).
         </p>
       ) : null}
       {rows.map((row, index) => {
         const watchHint = draftWatchHint(row.exercise);
+        const exerciseId = fieldId(row.key, 'exercise');
+        const setsId = fieldId(row.key, 'sets');
+        const repsId = fieldId(row.key, 'reps');
+        const weightId = fieldId(row.key, 'weight');
+        const durationId = fieldId(row.key, 'duration');
+        const restModeId = fieldId(row.key, 'rest-mode');
+        const restSecId = fieldId(row.key, 'rest-sec');
+
         return (
           <div
             key={row.key}
@@ -171,17 +183,19 @@ export function StrengthPrescriptionEditor({
               </span>
               {rows.length > 1 ? (
                 <button
-                  aria-label="Supprimer cet exercice"
-                  className="text-muted-foreground hover:text-destructive"
+                  aria-label={`Supprimer l'exercice ${index + 1}`}
+                  className="text-muted-foreground hover:text-destructive inline-flex size-11 items-center justify-center rounded-lg transition-colors"
                   type="button"
                   onClick={() => onChange(rows.filter((r) => r.key !== row.key))}
                 >
-                  <Trash2 className="size-3.5" />
+                  <Trash2 className="size-3.5" aria-hidden />
                 </button>
               ) : null}
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor={exerciseId}>Nom de l&apos;exercice</Label>
               <Input
+                id={exerciseId}
                 placeholder="Pompe, squat, développé…"
                 required={required && index === 0}
                 value={row.exercise}
@@ -191,8 +205,11 @@ export function StrengthPrescriptionEditor({
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-[10px]">Séries</Label>
+                <Label className="text-muted-foreground text-[11px]" htmlFor={setsId}>
+                  Séries
+                </Label>
                 <Input
+                  id={setsId}
                   inputMode="numeric"
                   min={1}
                   type="number"
@@ -201,8 +218,11 @@ export function StrengthPrescriptionEditor({
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-[10px]">Reps</Label>
+                <Label className="text-muted-foreground text-[11px]" htmlFor={repsId}>
+                  Reps
+                </Label>
                 <Input
+                  id={repsId}
                   inputMode="numeric"
                   min={0}
                   type="number"
@@ -211,8 +231,11 @@ export function StrengthPrescriptionEditor({
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-[10px]">Poids kg</Label>
+                <Label className="text-muted-foreground text-[11px]" htmlFor={weightId}>
+                  Poids kg
+                </Label>
                 <Input
+                  id={weightId}
                   inputMode="decimal"
                   min={0}
                   step="0.5"
@@ -222,8 +245,11 @@ export function StrengthPrescriptionEditor({
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-[10px]">Durée s</Label>
+                <Label className="text-muted-foreground text-[11px]" htmlFor={durationId}>
+                  Durée s
+                </Label>
                 <Input
+                  id={durationId}
                   inputMode="numeric"
                   min={0}
                   placeholder="planche"
@@ -233,14 +259,16 @@ export function StrengthPrescriptionEditor({
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-[10px]">Repos</Label>
+                <Label className="text-muted-foreground text-[11px]" htmlFor={restModeId}>
+                  Repos
+                </Label>
                 <Select
                   value={row.restMode}
                   onValueChange={(value) =>
                     updateRow(row.key, { restMode: value as StrengthRestMode })
                   }
                 >
-                  <SelectTrigger className="h-9">
+                  <SelectTrigger className="h-9" id={restModeId}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -251,8 +279,11 @@ export function StrengthPrescriptionEditor({
               </div>
               {row.restMode === 'time' ? (
                 <div className="space-y-1">
-                  <Label className="text-muted-foreground text-[10px]">Repos s</Label>
+                  <Label className="text-muted-foreground text-[11px]" htmlFor={restSecId}>
+                    Repos s
+                  </Label>
                   <Input
+                    id={restSecId}
                     inputMode="numeric"
                     min={0}
                     type="number"
@@ -265,7 +296,7 @@ export function StrengthPrescriptionEditor({
           </div>
         );
       })}
-      <p className="text-muted-foreground text-[10px] leading-relaxed">
+      <p className="text-muted-foreground text-xs leading-relaxed">
         Match catalogue Garmin Connect (~1500 exercices). Repos Lap = tu termines le repos en
         appuyant sur Lap. « Hors catalogue » partira comme Inconnu sur la montre.
       </p>

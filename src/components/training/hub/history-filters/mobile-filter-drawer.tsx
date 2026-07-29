@@ -47,7 +47,7 @@ const TYPE_ACTIVE_CLASS: Record<ActivityType, string> = {
 function DrawerSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <section className="space-y-3">
-      <p className="text-label">{label}</p>
+      <h3 className="text-label">{label}</h3>
       {children}
     </section>
   );
@@ -73,27 +73,30 @@ function CircleDurationPresets({
   }
 
   return (
-    <div className="flex justify-start gap-4">
+    <div aria-label="Durée minimale" className="flex justify-start gap-4" role="group">
       {DURATION_PRESETS.map((value) => {
         const active = selected.includes(value);
         const scope = inScope.includes(value);
         return (
           <button
             key={value}
+            aria-label={`${value} minutes`}
             aria-pressed={active}
-            className="flex flex-col items-center gap-1.5"
+            className="pressable flex min-h-11 flex-col items-center gap-1.5"
             type="button"
             onClick={() => toggle(value)}
           >
             <div
               className={cn(
-                'flex size-14 flex-col items-center justify-center rounded-full border-2 transition-colors',
+                'flex size-14 flex-col items-center justify-center rounded-full border-2',
                 active && 'border-highlight bg-highlight text-highlight-foreground',
                 scope && !active && 'border-highlight/50 bg-highlight/20 text-foreground',
+                !active && !scope && 'border-foreground/15 text-foreground',
               )}
+              aria-hidden
             >
-              <span className="text-base font-semibold">{value}</span>
-              <span className="text-muted-foreground text-[8px]">min</span>
+              <span className="text-base font-semibold tabular-nums">{value}</span>
+              <span className="text-muted-foreground text-[10px]">min</span>
             </div>
           </button>
         );
@@ -138,35 +141,36 @@ export function MobileFilterDrawer({
         <Drawer.Backdrop
           className={cn(
             'fixed inset-0 z-60 bg-black/40',
-            'transition-opacity duration-300',
-            'data-closed:opacity-0 data-closed:duration-200',
+            'transition-opacity duration-[250ms] ease-out',
+            'data-closed:opacity-0 data-closed:duration-150',
           )}
         />
         <Drawer.Viewport className="fixed inset-0 z-61 flex flex-col justify-end">
           <Drawer.Popup
+            id="history-filter-drawer"
             className={cn(
               'bg-background flex max-h-[92dvh] flex-col rounded-t-2xl',
-              'transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]',
+              'transition-transform duration-[250ms] ease-[cubic-bezier(0.32,0.72,0,1)]',
               'starting:translate-y-full',
-              'data-closed:translate-y-full data-closed:duration-200 data-closed:ease-in',
+              'data-closed:translate-y-full data-closed:duration-150 data-closed:ease-out',
             )}
           >
             {/* Drag handle */}
-            <div className="flex justify-center pt-3 pb-1">
+            <div className="flex justify-center pt-3 pb-1" aria-hidden>
               <div className="bg-foreground/20 h-1 w-10 rounded-full" />
             </div>
 
             {/* Header */}
             <div className="border-foreground/8 flex items-center justify-between border-b px-4 py-3">
-              <p className="text-sm font-semibold">Filtres</p>
+              <h2 className="text-sm font-semibold">Filtres</h2>
               <Drawer.Close
                 render={
                   <button
                     aria-label="Fermer"
-                    className="text-muted-foreground hover:text-foreground rounded-lg p-1 transition-colors"
+                    className="text-muted-foreground hover:text-foreground pressable inline-flex size-11 items-center justify-center rounded-lg"
                     type="button"
                   >
-                    <X className="size-4" />
+                    <X className="size-4" aria-hidden />
                   </button>
                 }
               />
@@ -176,7 +180,7 @@ export function MobileFilterDrawer({
             <div className="flex-1 space-y-6 overflow-y-auto px-4 py-5">
               {/* 1. Type */}
               <DrawerSection label="Type">
-                <div className="flex flex-wrap gap-2">
+                <div aria-label="Types d'activité" className="flex flex-wrap gap-2" role="group">
                   {TYPE_ORDER.map((type) => {
                     const count = counts[type];
                     const active = filters.types.includes(type);
@@ -191,16 +195,17 @@ export function MobileFilterDrawer({
                       <button
                         key={type}
                         aria-pressed={active}
+                        disabled={empty}
                         type="button"
                         className={cn(
-                          'inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition-colors',
+                          'pressable inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium',
                           chipClass,
                         )}
-                        onClick={() => !empty && toggleType(type)}
+                        onClick={() => toggleType(type)}
                       >
-                        <Icon className="size-3.5" />
+                        <Icon className="size-3.5" aria-hidden />
                         {activityTypeLabels[type]}
-                        <span className="text-xs opacity-60">{count}</span>
+                        <span className="text-xs tabular-nums opacity-60">{count}</span>
                       </button>
                     );
                   })}
@@ -219,7 +224,7 @@ export function MobileFilterDrawer({
                           aria-pressed={active}
                           type="button"
                           className={cn(
-                            'rounded-full px-4 py-2 text-sm font-medium transition-colors',
+                            'pressable min-h-11 rounded-full px-4 py-2 text-sm font-medium',
                             active
                               ? 'bg-highlight text-highlight-foreground'
                               : 'border-foreground/15 text-muted-foreground border',
@@ -280,7 +285,7 @@ export function MobileFilterDrawer({
             {/* Footer */}
             <div className="border-foreground/8 border-t px-4 py-4">
               <button
-                className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                className="text-muted-foreground hover:text-foreground pressable inline-flex min-h-11 items-center text-sm"
                 type="button"
                 onClick={() => {
                   onApply(DEFAULT_TRAINING_HISTORY_FILTERS);

@@ -29,7 +29,7 @@ function BottomNavLink({
       aria-current={isActive ? 'page' : undefined}
       href={item.href}
       className={cn(
-        'flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 text-[10px] font-medium transition-colors',
+        'pressable flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 text-[10px] font-medium',
         isActive
           ? 'bg-highlight text-highlight-foreground'
           : 'text-muted-foreground hover:text-foreground',

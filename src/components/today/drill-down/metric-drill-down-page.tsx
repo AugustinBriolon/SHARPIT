@@ -53,7 +53,10 @@ export function DataReliabilityFooter({
   }
 
   return (
-    <p className={cn('text-muted-foreground text-center text-xs leading-relaxed', className)}>
+    <p
+      className={cn('text-muted-foreground text-center text-xs leading-relaxed', className)}
+      role="status"
+    >
       Fiabilité {confidencePct} % · {dimensionCount}/{dimensionTotal} dimensions · données{' '}
       {completenessLabel.toLowerCase()}
     </p>

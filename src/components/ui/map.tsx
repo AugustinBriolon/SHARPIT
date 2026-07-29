@@ -761,7 +761,8 @@ function ControlButton({
       disabled={disabled}
       type="button"
       className={cn(
-        'flex size-8 items-center justify-center transition-all',
+        'flex size-8 items-center justify-center transition-[background-color,opacity,transform] duration-150 ease-out',
+        'motion-safe:active:scale-[0.96]',
         'first:rounded-t-md last:rounded-b-md',
         'hover:bg-accent dark:hover:bg-accent/40',
         'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset',

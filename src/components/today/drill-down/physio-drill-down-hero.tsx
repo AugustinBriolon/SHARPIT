@@ -89,9 +89,8 @@ export function PhysioDrillDownHero({
         )}
         {!loading && subline ? (
           <p className="text-muted-foreground mt-1.5 text-center text-xs tabular-nums">{subline}</p>
-        ) : (
-          <Skeleton className="mt-1.5 h-4 w-21 rounded-full" />
-        )}
+        ) : null}
+        {loading ? <Skeleton className="mt-1.5 h-4 w-21 rounded-full" /> : null}
 
         <div className="mt-2 flex items-center justify-center gap-2">
           <div
@@ -109,7 +108,6 @@ export function PhysioDrillDownHero({
         className={cn(
           'bg-accent text-foreground border-analysis-border/13 relative overflow-hidden border',
           'sm:rounded-analysis-lg rounded-xl px-4 py-6 sm:px-8 sm:py-8',
-          'motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200',
         )}
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -138,7 +136,7 @@ export function PhysioDrillDownHero({
             className={cn('mt-4 h-9 w-[min(100%,18rem)] rounded-lg sm:h-10', !eyebrow && 'mt-6')}
           />
         ) : (
-          <h1
+          <p
             className={cn(
               'text-verdict mt-4 max-w-3xl text-[1.75rem] leading-[1.15] sm:text-[2.125rem]',
               !eyebrow && 'mt-6',
@@ -146,7 +144,7 @@ export function PhysioDrillDownHero({
             )}
           >
             {headline}
-          </h1>
+          </p>
         )}
 
         {loading ? (

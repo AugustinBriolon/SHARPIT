@@ -53,7 +53,7 @@ export function FilterPresetRange({
             aria-pressed={state === 'selected'}
             type="button"
             className={cn(
-              'rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+              'min-h-11 rounded-full px-3 py-1.5 text-xs font-medium transition-colors sm:min-h-0',
               state === 'selected' && 'bg-highlight text-highlight-foreground',
               state === 'in-scope' && 'bg-highlight/30 text-foreground',
               state === 'idle' &&

@@ -9,7 +9,7 @@ export const navPillInactiveClass =
 
 export function navPillClass(active: boolean, className?: string) {
   return cn(
-    'inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-medium transition-colors',
+    'pressable inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-medium',
     active ? navPillActiveClass : navPillInactiveClass,
     className,
   );
@@ -18,7 +18,7 @@ export function navPillClass(active: boolean, className?: string) {
 /** Lien sidebar desktop — actif Lime (aligné bottom nav mobile), pas de liseré primary. */
 export function navLinkClass(active: boolean, className?: string) {
   return cn(
-    'group focus-visible:ring-sidebar-ring flex items-center gap-3 rounded-analysis px-3 py-2.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
+    'group pressable focus-visible:ring-sidebar-ring flex items-center gap-3 rounded-analysis px-3 py-2.5 text-sm font-medium focus-visible:ring-2 focus-visible:outline-hidden',
     active
       ? 'bg-highlight text-highlight-foreground'
       : 'text-muted-foreground hover:bg-highlight/40 hover:text-foreground',

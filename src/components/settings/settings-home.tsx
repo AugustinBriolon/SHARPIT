@@ -66,11 +66,11 @@ function SettingsEntryCard({ entry }: { entry: SettingsEntry }) {
     <Link
       href={entry.href}
       className={cn(
-        'chip-surface group rounded-analysis-lg flex h-full items-center gap-3 px-3 py-2.5 transition-colors',
+        'chip-surface group pressable rounded-analysis-lg flex h-full items-center gap-3 px-3 py-2.5',
         'hover:border-primary/25',
       )}
     >
-      <div className="icon-well size-9">
+      <div className="icon-well size-9" aria-hidden>
         <Icon className="size-4" />
       </div>
       <div className="min-w-0 flex-1">
@@ -106,7 +106,7 @@ export function SettingsHome() {
       </div>
       <div className="analysis-panel-alt rounded-analysis-lg p-4">
         <div className="flex items-start gap-3">
-          <div className="icon-well size-9">
+          <div className="icon-well size-9" aria-hidden>
             <Wrench className="size-4" />
           </div>
           <div>

@@ -83,12 +83,7 @@ function TrainingInstrumentPlate({
 }) {
   if (loading) {
     return (
-      <section
-        className={cn(
-          'surface-ink relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10',
-          'motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200',
-        )}
-      >
+      <section className={cn('surface-ink relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10')}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-ink-surface-foreground/65 inline-flex items-center gap-2 text-[11px] font-semibold tracking-wide uppercase">
             <span
@@ -161,12 +156,7 @@ function TrainingInstrumentPlate({
   }
 
   return (
-    <section
-      className={cn(
-        'surface-ink relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10',
-        'motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200',
-      )}
-    >
+    <section className={cn('surface-ink relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10')}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-ink-surface-foreground/65 inline-flex items-center gap-2 text-[11px] font-semibold tracking-wide uppercase">
           <span

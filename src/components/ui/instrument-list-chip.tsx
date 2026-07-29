@@ -56,8 +56,8 @@ const chipClassName = (done: boolean, className?: string) =>
   cn(
     'chip-surface hover:border-primary/35',
     'focus-visible:ring-primary/35 flex w-full min-w-0 items-center justify-between gap-3',
-    'rounded-analysis px-3 py-3 text-left transition-[border-color,background-color] duration-150',
-    'group focus-visible:ring-2 focus-visible:outline-hidden',
+    'rounded-analysis px-3 py-3 text-left transition-[border-color,background-color,transform] duration-150',
+    'group focus-visible:ring-2 focus-visible:outline-hidden motion-safe:active:scale-[0.96]',
     done && cn(STATUS_SURFACE.doneSoft, STATUS_SURFACE.doneHover),
     className,
   );
@@ -134,7 +134,7 @@ export const InstrumentListChip = memo(function InstrumentListChip({
         {trailing}
         {primary && !done ? (
           <span
-            className="bg-highlight text-highlight-foreground text-data inline-flex size-[26px] items-center justify-center rounded-full text-[11px] transition-transform group-hover:translate-x-0.5"
+            className="bg-highlight text-highlight-foreground text-data inline-flex size-[26px] items-center justify-center rounded-full text-[11px] transition-[transform,opacity,filter] duration-150 ease-[cubic-bezier(0.2,0,0,1)] group-hover:translate-x-0.5"
             aria-hidden
           >
             →
@@ -142,7 +142,7 @@ export const InstrumentListChip = memo(function InstrumentListChip({
         ) : null}
         {showArrow && !(primary && !done) ? (
           <span
-            className="text-muted-foreground/70 text-data text-[10px] tracking-wider transition-transform group-hover:translate-x-0.5"
+            className="text-muted-foreground/70 text-data text-[10px] tracking-wider transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.2,0,0,1)] group-hover:translate-x-0.5"
             aria-hidden
           >
             →

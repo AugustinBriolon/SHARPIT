@@ -171,7 +171,7 @@ function ActivityRow({ activity, compact = false }: { activity: ActivityItem; co
     <Link
       href={`/training/${activity.id}`}
       className={[
-        'analysis-panel group hover:border-primary/30 hover:bg-analysis-surface-alt/60 rounded-analysis flex flex-col gap-3 transition-colors',
+        'analysis-panel group hover:border-primary/30 hover:bg-analysis-surface-alt/60 rounded-analysis pressable flex flex-col gap-3',
         compact ? 'px-4 py-3' : 'px-5 py-4',
       ].join(' ')}
     >

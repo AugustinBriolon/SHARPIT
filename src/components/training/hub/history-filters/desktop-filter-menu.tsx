@@ -39,13 +39,18 @@ type RowOption = {
 };
 
 function OptionSelectionMark({ active, inScope }: { active: boolean; inScope: boolean }) {
-  if (active) return <Check className="text-foreground size-3.5 shrink-0" />;
+  if (active) return <Check className="text-foreground size-3.5 shrink-0" aria-hidden />;
   if (inScope) {
     return (
-      <span className="border-foreground/40 bg-foreground/10 size-3.5 shrink-0 rounded-full border" />
+      <span
+        className="border-foreground/40 bg-foreground/10 size-3.5 shrink-0 rounded-full border"
+        aria-hidden
+      />
     );
   }
-  return <span className="border-foreground/20 size-3.5 shrink-0 rounded-full border" />;
+  return (
+    <span className="border-foreground/20 size-3.5 shrink-0 rounded-full border" aria-hidden />
+  );
 }
 
 function OptionRows({
@@ -135,8 +140,15 @@ export function DesktopFilterMenu({
     function onPointerDown(e: PointerEvent) {
       if (!containerRef.current?.contains(e.target as Node)) onClose();
     }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
     document.addEventListener('pointerdown', onPointerDown);
-    return () => document.removeEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
   }, [onClose]);
 
   const dims: Array<{
@@ -176,7 +188,10 @@ export function DesktopFilterMenu({
   return (
     <div
       ref={containerRef}
+      aria-label="Filtres d'historique"
       className="absolute top-full left-0 z-50 mt-2 flex items-start gap-1.5"
+      id="history-filter-menu"
+      role="menu"
       onMouseLeave={() => setActiveSection(null)}
     >
       {/* Left panel */}
@@ -186,6 +201,9 @@ export function DesktopFilterMenu({
           return (
             <button
               key={dim.id}
+              aria-expanded={active}
+              aria-haspopup="true"
+              role="menuitem"
               type="button"
               className={cn(
                 'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 transition-colors',
@@ -193,12 +211,14 @@ export function DesktopFilterMenu({
                   ? 'bg-foreground/8 text-foreground'
                   : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
               )}
+              onClick={() => setActiveSection(dim.id)}
+              onFocus={() => setActiveSection(dim.id)}
               onMouseEnter={() => setActiveSection(dim.id)}
             >
-              <dim.Icon className="size-3.5 shrink-0" />
+              <dim.Icon className="size-3.5 shrink-0" aria-hidden />
               <span className="flex-1 text-left text-xs font-medium">{dim.label}</span>
               <DimBadge count={dim.badgeCount} />
-              <ChevronRight className="size-3 opacity-30" />
+              <ChevronRight className="size-3 opacity-30" aria-hidden />
             </button>
           );
         })}

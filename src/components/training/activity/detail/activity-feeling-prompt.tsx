@@ -61,7 +61,7 @@ export function ActivityFeelingPrompt({ activityId }: { activityId: string }) {
   return (
     <>
       <button
-        className="text-muted-foreground hover:text-foreground text-data inline-flex items-center gap-1 text-[11px] tracking-wide transition-colors"
+        className="text-muted-foreground hover:text-foreground text-data inline-flex min-h-11 items-center gap-1 px-1 text-xs tracking-wide transition-colors sm:min-h-0 sm:text-[11px]"
         type="button"
         onClick={() => setOpen(true)}
       >
@@ -95,12 +95,12 @@ export function ActivityFeelingPrompt({ activityId }: { activityId: string }) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Ressenti</Label>
+              <Label htmlFor={`feeling-select-${activityId}`}>Ressenti</Label>
               <Select
                 value={feeling || '__none__'}
                 onValueChange={(v) => setFeeling(v == null || v === '__none__' ? '' : v)}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" id={`feeling-select-${activityId}`}>
                   <SelectValue placeholder="Choisir…">
                     {feeling
                       ? (FEELING_OPTIONS.find((option) => option.value === feeling)?.label ??

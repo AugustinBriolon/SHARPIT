@@ -160,6 +160,7 @@ function ThresholdHistoryPanel({ history }: { history: ClientThresholdSnapshot[]
       {olderCount > 0 ? (
         <div className="space-y-2">
           <Button
+            aria-expanded={expanded}
             className="h-8 px-2 text-xs"
             size="sm"
             type="button"
@@ -168,6 +169,7 @@ function ThresholdHistoryPanel({ history }: { history: ClientThresholdSnapshot[]
           >
             <ChevronDown
               className={cn('size-3.5 transition-transform', expanded && 'rotate-180')}
+              aria-hidden
             />
             {expanded
               ? 'Masquer l’historique'

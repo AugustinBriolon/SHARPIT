@@ -69,7 +69,10 @@ export function GoalsView() {
 
   if (goalsQuery.isError) {
     return (
-      <p className="border-destructive/30 bg-destructive/5 text-destructive rounded-xl border p-6 text-sm">
+      <p
+        className="border-destructive/30 bg-destructive/5 text-destructive rounded-xl border p-6 text-sm"
+        role="alert"
+      >
         Impossible de charger les objectifs. Réessaie dans un instant.
       </p>
     );

@@ -24,17 +24,17 @@ export function TodayWeeklyTrajectory({
 
   return (
     <section aria-busy={loading || undefined} className="px-0.5">
-      <p className="text-label">{t.eyebrow}</p>
+      <h2 className="text-label text-balance">{t.eyebrow}</h2>
       {loading ? (
         <Skeleton className="mt-1 h-4 w-56 max-w-full rounded-full" />
       ) : (
-        <p className="text-foreground mt-1 text-sm font-semibold">
+        <p className="text-foreground mt-1 text-sm font-semibold text-pretty">
           <span className={cn('mr-1.5', t.trendClass)}>{t.trendArrow}</span>
           {t.headline}
         </p>
       )}
       {!loading && t.detail ? (
-        <p className="text-muted-foreground mt-0.5 text-xs">{t.detail}</p>
+        <p className="text-muted-foreground mt-0.5 text-xs text-pretty">{t.detail}</p>
       ) : null}
 
       {loading || t.hasSparks ? (

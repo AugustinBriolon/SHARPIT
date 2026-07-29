@@ -104,7 +104,7 @@ export function CoachConversationList({
           variant="highlight"
           onClick={onNewConversation}
         >
-          <MessageSquarePlus className="size-4" />
+          <MessageSquarePlus className="size-4" aria-hidden />
           Nouvelle conversation
         </Button>
       ) : null}
@@ -118,7 +118,8 @@ export function CoachConversationList({
 
       {!loading && conversations.length === 0 ? (
         <p className="text-muted-foreground px-3 py-2 text-xs">
-          Aucune conversation pour l&apos;instant.
+          Aucune conversation pour l&apos;instant. Démarre une discussion pour obtenir un conseil
+          contextualisé.
         </p>
       ) : null}
 
@@ -132,7 +133,7 @@ export function CoachConversationList({
                   if (value) onSelect(value);
                 }}
               >
-                <SelectTrigger className="w-full min-w-0">
+                <SelectTrigger aria-label="Conversation active" className="w-full min-w-0">
                   <SelectValue placeholder="Nouvelle conversation">
                     {selected ? conversationLabel(selected) : 'Nouvelle conversation'}
                   </SelectValue>
@@ -158,21 +159,22 @@ export function CoachConversationList({
                 variant="ghost"
                 onClick={() => onDelete(activeId)}
               >
-                <Trash2 className="size-4" />
+                <Trash2 className="size-4" aria-hidden />
               </Button>
             ) : null}
           </div>
 
           <div className="hidden max-h-[60vh] flex-1 overflow-y-auto overscroll-x-contain p-2 lg:block lg:max-h-none">
-            <ul className="space-y-1">
+            <ul aria-label="Conversations" className="space-y-1">
               {conversations.map((c) => {
                 const isActive = c.id === activeId;
                 return (
                   <li key={c.id} className="group flex items-center">
                     <button
+                      aria-current={isActive ? 'page' : undefined}
                       type="button"
                       className={cn(
-                        'rounded-analysis min-w-0 flex-1 border px-3 py-2.5 text-left text-sm transition-colors',
+                        'rounded-analysis pressable min-w-0 flex-1 border px-3 py-2.5 text-left text-sm',
                         isActive
                           ? 'chip-surface'
                           : 'text-foreground/80 hover:bg-highlight/40 hover:text-foreground border-transparent',
@@ -180,19 +182,19 @@ export function CoachConversationList({
                       onClick={() => onSelect(c.id)}
                     >
                       <span className="block truncate font-medium">{conversationLabel(c)}</span>
-                      <span className="text-data text-muted-foreground block truncate text-[10px]">
+                      <span className="text-data text-muted-foreground block truncate text-[11px]">
                         {formatDistanceToNow(c.updatedAt, { addSuffix: true, locale: fr })}
                       </span>
                     </button>
                     <Button
-                      aria-label="Supprimer la conversation"
-                      className="text-muted-foreground hover:text-destructive shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+                      aria-label={`Supprimer ${conversationLabel(c)}`}
+                      className="text-muted-foreground hover:text-destructive shrink-0 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100"
                       size="icon-sm"
                       type="button"
                       variant="ghost"
                       onClick={() => onDelete(c.id)}
                     >
-                      <Trash2 className="size-3.5" />
+                      <Trash2 className="size-3.5" aria-hidden />
                     </Button>
                   </li>
                 );
