@@ -9,6 +9,7 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+.vscode
 
 # testing
 /coverage
@@ -51,8 +52,10 @@ next-env.d.ts
 # Claude Code agent memory and settings
 /.claude/
 /.agents
-/.codex/ 
+.codex
+.codex/
 /.hallmark/
+.impeccable
 
 # Local one-off TypeScript scripts (not part of the app)
 /scripts/tmp-*.ts
