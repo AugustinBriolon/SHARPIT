@@ -115,7 +115,7 @@ function ScalePicker({
               tabIndex={selected ? 0 : -1}
               type="button"
               className={cn(
-                'flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2 transition-colors',
+                'pressable flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2',
                 selected
                   ? 'border-highlight bg-highlight text-highlight-foreground'
                   : 'border-border/70 bg-background hover:border-primary/30 hover:bg-muted/40',

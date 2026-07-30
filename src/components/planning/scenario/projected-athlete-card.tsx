@@ -79,7 +79,7 @@ export function ProjectedAthleteCard({
             disabled={valuesLoading}
             type="button"
             className={cn(
-              'focus-visible:ring-primary/30 min-h-11 rounded-md px-3 py-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden lg:min-h-9 lg:px-2.5 lg:py-1.5',
+              'pressable focus-visible:ring-primary/30 min-h-11 rounded-md px-3 py-2 text-xs font-medium focus-visible:ring-2 focus-visible:outline-hidden lg:min-h-9 lg:px-2.5 lg:py-1.5',
               horizon === option.days
                 ? 'bg-highlight text-highlight-foreground'
                 : 'bg-muted/50 text-muted-foreground hover:bg-muted',

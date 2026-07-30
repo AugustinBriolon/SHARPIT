@@ -551,7 +551,7 @@ export function PlannedSessionDialog({
                     <button
                       type="button"
                       className={cn(
-                        'flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                        'pressable flex-1 rounded-md px-3 py-1.5 text-sm font-medium',
                         createMode === 'single'
                           ? 'bg-highlight text-highlight-foreground'
                           : 'text-muted-foreground hover:text-foreground',
@@ -563,7 +563,7 @@ export function PlannedSessionDialog({
                     <button
                       type="button"
                       className={cn(
-                        'flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                        'pressable flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium',
                         createMode === 'brick'
                           ? 'bg-highlight text-highlight-foreground'
                           : 'text-muted-foreground hover:text-foreground',
@@ -720,7 +720,7 @@ export function PlannedSessionDialog({
                                     disabled={id === 'travel' && !travelQuery.data?.active}
                                     type="button"
                                     className={cn(
-                                      'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                                      'pressable rounded-full border px-3 py-1 text-xs font-medium',
                                       locationSource === id
                                         ? 'border-primary bg-primary/10 text-primary'
                                         : 'border-border text-muted-foreground hover:text-foreground',

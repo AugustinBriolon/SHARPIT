@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton, useUser } from '@clerk/nextjs';
 import { Activity } from 'lucide-react';
+import { LayoutGroup, motion, useReducedMotion } from 'motion/react';
 import { settingsNavItem, sidebarPrimaryNavItems, type AppNavItem } from '@/lib/app-navigation';
 import { usePrefetchNavQuery } from '@/hooks/use-prefetch-nav';
-import { navLinkClass } from '@/lib/ui/nav-pill';
+import { springs } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
 
 function NavLink({
@@ -21,16 +22,33 @@ function NavLink({
 }) {
   const isActive = item.match(pathname);
   const Icon = item.icon;
+  const reduce = useReducedMotion();
 
   return (
     <Link
       aria-current={isActive ? 'page' : undefined}
-      className={navLinkClass(isActive)}
       href={item.href}
+      className={cn(
+        'group pressable focus-visible:ring-sidebar-ring rounded-analysis relative flex items-center gap-3 px-3 py-2.5 text-sm font-medium focus-visible:ring-2 focus-visible:outline-hidden',
+        isActive
+          ? 'text-highlight-foreground'
+          : 'text-muted-foreground hover:bg-highlight/40 hover:text-foreground',
+      )}
       onMouseEnter={() => onPrefetch(item.href)}
     >
-      <Icon className="size-4 shrink-0" aria-hidden />
-      <span>{item.label}</span>
+      {isActive && !reduce ? (
+        <motion.span
+          className="bg-highlight rounded-analysis absolute inset-0"
+          layoutId="sidebar-nav-active"
+          transition={springs.snappy}
+          aria-hidden
+        />
+      ) : null}
+      {isActive && reduce ? (
+        <span className="bg-highlight rounded-analysis absolute inset-0" aria-hidden />
+      ) : null}
+      <Icon className="relative size-4 shrink-0" aria-hidden />
+      <span className="relative">{item.label}</span>
     </Link>
   );
 }
@@ -95,18 +113,23 @@ export function Sidebar() {
         </Link>
       </div>
 
-      <nav aria-label="Navigation principale" className="flex flex-1 flex-col overflow-y-auto px-3">
-        <div className="space-y-1">
-          {sidebarPrimaryNavItems.map((item) => (
-            <NavLink key={item.href} item={item} pathname={pathname} onPrefetch={prefetch} />
-          ))}
-        </div>
-      </nav>
+      <LayoutGroup id="sidebar-nav">
+        <nav
+          aria-label="Navigation principale"
+          className="flex flex-1 flex-col overflow-y-auto px-3"
+        >
+          <div className="space-y-1">
+            {sidebarPrimaryNavItems.map((item) => (
+              <NavLink key={item.href} item={item} pathname={pathname} onPrefetch={prefetch} />
+            ))}
+          </div>
+        </nav>
 
-      <div className="border-sidebar-border space-y-2 border-t px-3 pt-3 pb-3">
-        <NavLink item={settingsNavItem} pathname={pathname} onPrefetch={prefetch} />
-        <AccountMenu />
-      </div>
+        <div className="border-sidebar-border space-y-2 border-t px-3 pt-3 pb-3">
+          <NavLink item={settingsNavItem} pathname={pathname} onPrefetch={prefetch} />
+          <AccountMenu />
+        </div>
+      </LayoutGroup>
     </aside>
   );
 }

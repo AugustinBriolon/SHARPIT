@@ -28,7 +28,8 @@ function DialogOverlay({ className, ...props }: DialogPrimitive.Backdrop.Props) 
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        'data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 fixed inset-0 isolate z-50 bg-black/10 duration-150 supports-backdrop-filter:backdrop-blur-xs',
+        // Token-aligned: motionTokens.duration.fast (150ms) — CSS data-open/closed for Base UI exit
+        'data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 fixed inset-0 isolate z-50 bg-black/10 duration-150 supports-backdrop-filter:backdrop-blur-xs motion-reduce:animate-none',
         className,
       )}
       {...props}
@@ -50,7 +51,8 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          'bg-popover text-popover-foreground ring-foreground/10 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 fixed top-1/2 left-1/2 z-50 grid max-h-[80dvh] w-full max-w-[calc(100%-2rem)] min-w-0 -translate-x-1/2 -translate-y-1/2 gap-4 overflow-x-hidden overflow-y-auto rounded-xl p-4 text-sm ring-1 duration-150 outline-none sm:max-h-[min(90vh,40rem)] sm:max-w-sm',
+          // Token-aligned: motionTokens.duration.normal (250ms), gentle scale — no bounce
+          'bg-popover text-popover-foreground ring-foreground/10 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-[0.98] data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-[0.98] fixed top-1/2 left-1/2 z-50 grid max-h-[80dvh] w-full max-w-[calc(100%-2rem)] min-w-0 -translate-x-1/2 -translate-y-1/2 gap-4 overflow-x-hidden overflow-y-auto rounded-xl p-4 text-sm ring-1 duration-[250ms] outline-none motion-reduce:animate-none sm:max-h-[min(90vh,40rem)] sm:max-w-sm',
           className,
         )}
         {...props}

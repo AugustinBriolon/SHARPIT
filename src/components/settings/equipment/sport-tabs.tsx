@@ -19,7 +19,7 @@ const SPORT_TABS: {
 
 function sportSwitcherClass(active: boolean) {
   return cn(
-    'inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:outline-hidden lg:min-h-9 lg:px-2.5 lg:py-1.5',
+    'pressable inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:outline-hidden lg:min-h-9 lg:px-2.5 lg:py-1.5',
     active
       ? 'border-foreground/12 bg-foreground/6 text-foreground'
       : 'border-transparent bg-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground',

@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { LayoutGroup, motion, useReducedMotion } from 'motion/react';
 import { bottomNavItems, type AppNavItem } from '@/lib/app-navigation';
 import { usePrefetchNavQuery } from '@/hooks/use-prefetch-nav';
 import { PAGE_GUTTER } from '@/lib/ui/page-gutter';
+import { springs } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
 import { OfflineBanner } from '@/components/pwa/offline-banner';
 import { SyncingIndicator } from '@/components/ui/syncing-indicator';
@@ -22,6 +24,7 @@ function BottomNavLink({
 }) {
   const isActive = item.match(pathname);
   const Icon = item.icon;
+  const reduce = useReducedMotion();
   const hint = () => onPrefetch(item.href);
 
   return (
@@ -29,17 +32,26 @@ function BottomNavLink({
       aria-current={isActive ? 'page' : undefined}
       href={item.href}
       className={cn(
-        'pressable flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 text-[10px] font-medium',
-        isActive
-          ? 'bg-highlight text-highlight-foreground'
-          : 'text-muted-foreground hover:text-foreground',
+        'pressable relative flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 text-[10px] font-medium',
+        isActive ? 'text-highlight-foreground' : 'text-muted-foreground hover:text-foreground',
       )}
       onClick={onNavigate}
       onMouseEnter={hint}
       onTouchStart={hint}
     >
-      <Icon className="size-5 shrink-0" aria-hidden />
-      <span className="truncate">{item.label}</span>
+      {isActive && !reduce ? (
+        <motion.span
+          className="bg-highlight absolute inset-0 rounded-2xl"
+          layoutId="bottom-nav-active"
+          transition={springs.snappy}
+          aria-hidden
+        />
+      ) : null}
+      {isActive && reduce ? (
+        <span className="bg-highlight absolute inset-0 rounded-2xl" aria-hidden />
+      ) : null}
+      <Icon className="relative size-5 shrink-0" aria-hidden />
+      <span className="relative truncate">{item.label}</span>
     </Link>
   );
 }
@@ -54,11 +66,13 @@ export function BottomNav() {
       className="border-border/60 bg-background/95 supports-backdrop-filter:bg-background/80 fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur-md"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      <div className="mx-auto flex max-w-lg items-stretch justify-around p-2">
-        {bottomNavItems.map((item) => (
-          <BottomNavLink key={item.href} item={item} pathname={pathname} onPrefetch={prefetch} />
-        ))}
-      </div>
+      <LayoutGroup id="bottom-nav">
+        <div className="mx-auto flex max-w-lg items-stretch justify-around p-2">
+          {bottomNavItems.map((item) => (
+            <BottomNavLink key={item.href} item={item} pathname={pathname} onPrefetch={prefetch} />
+          ))}
+        </div>
+      </LayoutGroup>
     </nav>
   );
 }

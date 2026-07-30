@@ -1,6 +1,8 @@
 /**
  * Motion tokens — motion-foundations + DESIGN_LANGUAGE §9.
  * Hard cap: nothing exceeds 300ms (0.3s).
+ * Springs: snappy/gentle/instant for UI; release reserved for future drag.
+ * Never use bouncy springs on production chrome.
  */
 export const motionTokens = {
   duration: {
@@ -40,4 +42,12 @@ export const springs = {
   snappy: { type: 'spring' as const, stiffness: 300, damping: 30, bounce: 0 },
   gentle: { type: 'spring' as const, stiffness: 160, damping: 22, bounce: 0 },
   instant: { type: 'spring' as const, stiffness: 600, damping: 35, bounce: 0 },
+  /** Drag release — physics feel; not for discrete UI toggles */
+  release: {
+    type: 'spring' as const,
+    stiffness: 200,
+    damping: 20,
+    restDelta: 0.001,
+    bounce: 0,
+  },
 };

@@ -99,7 +99,7 @@ export function TodaySignalStrip({
           title={`Voir le détail — ${signal.label}`}
           className={cn(
             'chip-surface-lg hover:border-primary/35 group',
-            'focus-visible:ring-primary/35 inline-flex min-h-11 min-w-0 items-center justify-between gap-1.5',
+            'focus-visible:ring-primary/35 inline-flex min-h-11 w-full min-w-0 items-center justify-between gap-1.5',
             'rounded-2xl px-3 py-2 transition-[border-color,background-color,transform] duration-150 ease-out',
             'focus-visible:ring-2 focus-visible:outline-hidden lg:min-h-9 lg:px-2.5 lg:py-1.5',
           )}

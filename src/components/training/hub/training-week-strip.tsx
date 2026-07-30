@@ -134,9 +134,9 @@ export function TrainingWeekStrip({
               href={weekCellHref(cell)}
               title={`Ouvrir le planning — semaine du ${weekLabel}`}
               className={cn(
+                'pressable flex min-h-11 w-full flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2.5 lg:min-h-9 lg:px-1.5 lg:py-2',
+                'focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
                 cellVisibilityClass(index, weekCells.length),
-                'min-h-11 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2.5 lg:min-h-9 lg:px-1.5 lg:py-2',
-                'focus-visible:ring-primary/35 transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
                 cell.isCurrent
                   ? 'bg-highlight text-highlight-foreground hover:bg-highlight/90'
                   : 'chip-surface hover:border-primary/35',
