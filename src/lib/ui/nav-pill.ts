@@ -9,7 +9,7 @@ export const navPillInactiveClass =
 
 export function navPillClass(active: boolean, className?: string) {
   return cn(
-    'pressable inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-medium',
+    'pressable inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border px-4 py-2 text-xs font-medium lg:min-h-9 lg:px-3.5',
     active ? navPillActiveClass : navPillInactiveClass,
     className,
   );

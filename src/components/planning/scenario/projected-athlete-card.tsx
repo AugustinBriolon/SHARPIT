@@ -63,7 +63,7 @@ export function ProjectedAthleteCard({
       )}
 
       {!valuesLoading && viewModel?.caution ? (
-        <div className="border-signal-caution/25 mt-4 border-l-2 pl-3">
+        <div className="rounded-analysis border-signal-caution/25 bg-signal-caution/8 mt-4 border px-3 py-3">
           <p className="text-label text-signal-caution">{viewModel.caution.label}</p>
           <p className="text-muted-foreground mt-1.5 max-w-3xl text-sm leading-relaxed">
             {viewModel.caution.body}
@@ -79,7 +79,7 @@ export function ProjectedAthleteCard({
             disabled={valuesLoading}
             type="button"
             className={cn(
-              'focus-visible:ring-primary/30 rounded-md px-2.5 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
+              'focus-visible:ring-primary/30 min-h-11 rounded-md px-3 py-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden lg:min-h-9 lg:px-2.5 lg:py-1.5',
               horizon === option.days
                 ? 'bg-highlight text-highlight-foreground'
                 : 'bg-muted/50 text-muted-foreground hover:bg-muted',

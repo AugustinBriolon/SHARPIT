@@ -1,23 +1,20 @@
 'use client';
 
-import { ActivityType } from '@prisma/client';
-import { Drawer } from '@base-ui/react/drawer';
-import { Bike, Dumbbell, Footprints, Trophy, Waves, X, Zap } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { SPORT_IDENTITY_SURFACE } from '@/lib/activity/sport-identity';
+import { activityTypeLabels } from '@/lib/format';
 import {
-  DEFAULT_TRAINING_HISTORY_FILTERS,
   DISTANCE_PRESETS_KM,
   DURATION_PRESETS,
   PERIOD_PRESETS,
   presetsInScope,
-  TRIATHLON_FORMAT_LABELS,
-  TRIATHLON_FORMATS,
+  rangeToPresetSelections,
   togglePresetSelection,
   type TrainingHistoryFilters,
-  rangeToPresetSelections,
 } from '@/lib/training/history-filters';
-import { activityTypeLabels } from '@/lib/format';
-import { SPORT_IDENTITY_SURFACE } from '@/lib/activity/sport-identity';
+import { cn } from '@/lib/utils';
+import { Drawer } from '@base-ui/react/drawer';
+import { ActivityType } from '@prisma/client';
+import { Bike, Dumbbell, Footprints, Trophy, Waves, X, Zap } from 'lucide-react';
 import { FilterPresetRange } from './filter-preset-range';
 
 const TYPE_ORDER: ActivityType[] = [
@@ -36,12 +33,6 @@ const SPORT_ICONS: Record<ActivityType, React.ElementType> = {
   STRENGTH: Dumbbell,
   TRIATHLON: Trophy,
   OTHER: Zap,
-};
-
-// Override OTHER to avoid invisible selected state on light bg
-const TYPE_ACTIVE_CLASS: Record<ActivityType, string> = {
-  ...SPORT_IDENTITY_SURFACE,
-  OTHER: 'bg-foreground/10 text-foreground',
 };
 
 function DrawerSection({ label, children }: { label: string; children: React.ReactNode }) {
@@ -73,7 +64,7 @@ function CircleDurationPresets({
   }
 
   return (
-    <div aria-label="Durée minimale" className="flex justify-start gap-4" role="group">
+    <div aria-label="Plage de durée" className="flex justify-start gap-4" role="group">
       {DURATION_PRESETS.map((value) => {
         const active = selected.includes(value);
         const scope = inScope.includes(value);
@@ -88,16 +79,17 @@ function CircleDurationPresets({
           >
             <div
               className={cn(
-                'flex size-14 flex-col items-center justify-center rounded-full border-2',
+                'flex size-14 flex-col items-center justify-center rounded-full border-1',
                 active && 'border-highlight bg-highlight text-highlight-foreground',
                 scope && !active && 'border-highlight/50 bg-highlight/20 text-foreground',
                 !active && !scope && 'border-foreground/15 text-foreground',
               )}
               aria-hidden
             >
-              <span className="text-base font-semibold tabular-nums">{value}</span>
-              <span className="text-muted-foreground text-[10px]">min</span>
+              <span className="text-data text-base font-semibold">{value}</span>
+              <span className="text-muted-foreground text-data text-xs">min</span>
             </div>
+            {scope && !active ? <span className="sr-only">, inclus dans la plage</span> : null}
           </button>
         );
       })}
@@ -120,8 +112,6 @@ export function MobileFilterDrawer({
   onApply: (next: TrainingHistoryFilters) => void;
   onOpenChange: (open: boolean) => void;
 }) {
-  const isTriathlonOnly = filters.types.length === 1 && filters.types[0] === ActivityType.TRIATHLON;
-
   function toggleType(type: ActivityType) {
     const next = filters.types.includes(type)
       ? filters.types.filter((t) => t !== type)
@@ -131,7 +121,6 @@ export function MobileFilterDrawer({
       types: next,
       distanceMinKm: null,
       distanceMaxKm: null,
-      triathlonFormats: [],
     });
   }
 
@@ -140,8 +129,8 @@ export function MobileFilterDrawer({
       <Drawer.Portal>
         <Drawer.Backdrop
           className={cn(
-            'fixed inset-0 z-60 bg-black/40',
-            'transition-opacity duration-[250ms] ease-out',
+            'bg-foreground/40 fixed inset-0 z-60',
+            'transition-opacity duration-250 ease-out',
             'data-closed:opacity-0 data-closed:duration-150',
           )}
         />
@@ -150,7 +139,7 @@ export function MobileFilterDrawer({
             id="history-filter-drawer"
             className={cn(
               'bg-background flex max-h-[92dvh] flex-col rounded-t-2xl',
-              'transition-transform duration-[250ms] ease-[cubic-bezier(0.32,0.72,0,1)]',
+              'transition-transform duration-250 ease-[cubic-bezier(0.32,0.72,0,1)]',
               'starting:translate-y-full',
               'data-closed:translate-y-full data-closed:duration-150 data-closed:ease-out',
             )}
@@ -162,7 +151,7 @@ export function MobileFilterDrawer({
 
             {/* Header */}
             <div className="border-foreground/8 flex items-center justify-between border-b px-4 py-3">
-              <h2 className="text-sm font-semibold">Filtres</h2>
+              <Drawer.Title className="text-sm font-semibold">Filtres</Drawer.Title>
               <Drawer.Close
                 render={
                   <button
@@ -190,7 +179,7 @@ export function MobileFilterDrawer({
                     if (empty)
                       chipClass =
                         'border-foreground/8 text-foreground/25 cursor-not-allowed border';
-                    else if (active) chipClass = TYPE_ACTIVE_CLASS[type];
+                    else if (active) chipClass = SPORT_IDENTITY_SURFACE[type];
                     return (
                       <button
                         key={type}
@@ -205,58 +194,27 @@ export function MobileFilterDrawer({
                       >
                         <Icon className="size-3.5" aria-hidden />
                         {activityTypeLabels[type]}
-                        <span className="text-xs tabular-nums opacity-60">{count}</span>
+                        <span className="text-data text-xs opacity-60">{count}</span>
                       </button>
                     );
                   })}
                 </div>
               </DrawerSection>
 
-              {/* 2. Durée (ou Format triathlon) */}
-              {isTriathlonOnly ? (
-                <DrawerSection label="Format">
-                  <div className="flex flex-wrap gap-2">
-                    {TRIATHLON_FORMATS.map((fmt) => {
-                      const active = filters.triathlonFormats.includes(fmt);
-                      return (
-                        <button
-                          key={fmt}
-                          aria-pressed={active}
-                          type="button"
-                          className={cn(
-                            'pressable min-h-11 rounded-full px-4 py-2 text-sm font-medium',
-                            active
-                              ? 'bg-highlight text-highlight-foreground'
-                              : 'border-foreground/15 text-muted-foreground border',
-                          )}
-                          onClick={() => {
-                            const next = filters.triathlonFormats.includes(fmt)
-                              ? filters.triathlonFormats.filter((f) => f !== fmt)
-                              : [...filters.triathlonFormats, fmt];
-                            onApply({ ...filters, triathlonFormats: next });
-                          }}
-                        >
-                          {TRIATHLON_FORMAT_LABELS[fmt]}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </DrawerSection>
-              ) : (
-                <DrawerSection label="Durée">
-                  <CircleDurationPresets
-                    max={filters.durationMaxMin}
-                    min={filters.durationMinMin}
-                    onChange={(min, max) =>
-                      onApply({ ...filters, durationMinMin: min, durationMaxMin: max })
-                    }
-                  />
-                </DrawerSection>
-              )}
+              <DrawerSection label="Durée">
+                <CircleDurationPresets
+                  max={filters.durationMaxMin}
+                  min={filters.durationMinMin}
+                  onChange={(min, max) =>
+                    onApply({ ...filters, durationMinMin: min, durationMaxMin: max })
+                  }
+                />
+              </DrawerSection>
 
               {/* 3. Période */}
               <DrawerSection label="Période">
                 <FilterPresetRange
+                  ariaLabel="Plage de période"
                   formatLabel={(v) => (v === 365 ? '12 m' : `${v} j`)}
                   max={filters.periodMaxDays}
                   min={filters.periodMinDays}
@@ -271,6 +229,7 @@ export function MobileFilterDrawer({
               {/* 4. Distance — toujours visible */}
               <DrawerSection label="Distance">
                 <FilterPresetRange
+                  ariaLabel="Plage de distance"
                   max={filters.distanceMaxKm}
                   min={filters.distanceMinKm}
                   presets={DISTANCE_PRESETS_KM}
@@ -280,20 +239,6 @@ export function MobileFilterDrawer({
                   }
                 />
               </DrawerSection>
-            </div>
-
-            {/* Footer */}
-            <div className="border-foreground/8 border-t px-4 py-4">
-              <button
-                className="text-muted-foreground hover:text-foreground pressable inline-flex min-h-11 items-center text-sm"
-                type="button"
-                onClick={() => {
-                  onApply(DEFAULT_TRAINING_HISTORY_FILTERS);
-                  onOpenChange(false);
-                }}
-              >
-                Tout effacer
-              </button>
             </div>
           </Drawer.Popup>
         </Drawer.Viewport>

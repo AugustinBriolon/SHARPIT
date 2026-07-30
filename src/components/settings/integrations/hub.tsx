@@ -49,7 +49,7 @@ function integrationStatusLabel(integration: IntegrationDefinition): string {
 function StatusBadge({ integration }: { integration: IntegrationDefinition }) {
   if (!integration.configured) {
     return (
-      <span className="bg-muted text-muted-foreground inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
+      <span className="bg-muted text-muted-foreground text-label inline-flex items-center gap-1 rounded-full px-2 py-0.5">
         <Unplug className="size-3" aria-hidden />
         Non configuré
       </span>
@@ -57,14 +57,14 @@ function StatusBadge({ integration }: { integration: IntegrationDefinition }) {
   }
   if (integration.connected) {
     return (
-      <span className="bg-highlight text-highlight-foreground inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
+      <span className="bg-highlight text-highlight-foreground text-label inline-flex items-center gap-1 rounded-full px-2 py-0.5">
         <CheckCircle2 className="size-3" aria-hidden />
         Connecté
       </span>
     );
   }
   return (
-    <span className="bg-signal-caution/10 text-signal-caution inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
+    <span className="bg-signal-caution/10 text-signal-caution text-label inline-flex items-center gap-1 rounded-full px-2 py-0.5">
       <CircleDashed className="size-3" aria-hidden />À connecter
     </span>
   );
@@ -79,7 +79,7 @@ function IntegrationCard({
 }) {
   return (
     <button
-      className="analysis-panel group hover:border-primary/25 hover:bg-primary/5 rounded-analysis-lg pressable flex w-full flex-col p-4 text-left"
+      className="analysis-panel group hover:border-primary/25 hover:bg-primary/5 focus-visible:ring-primary/35 rounded-analysis-lg pressable-lg flex w-full flex-col p-4 text-left focus-visible:ring-2 focus-visible:outline-hidden"
       type="button"
       onClick={onOpen}
     >
@@ -90,7 +90,7 @@ function IntegrationCard({
             <div className="flex flex-wrap items-center gap-2">
               <p className="font-medium">{integration.name}</p>
               {integration.badge === 'legacy' && (
-                <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px] font-medium uppercase">
+                <span className="bg-muted text-muted-foreground text-label rounded-full px-2 py-0.5">
                   Historique
                 </span>
               )}

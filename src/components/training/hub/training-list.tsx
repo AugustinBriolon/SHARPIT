@@ -4,7 +4,7 @@ import { ActivityType } from '@prisma/client';
 import { format, isSameWeek, startOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { ActivityList } from '@/components/training/activity/activity-list';
 import { HistoryFilters } from '@/components/training/hub/history-filters';
 import type { ClientActivity } from '@/lib/query/types';
@@ -14,8 +14,10 @@ import { InstrumentListChipSkeleton } from '@/components/ui/instrument-list-chip
 import { useActivities, useRecords } from '@/hooks/use-data';
 import {
   applyTrainingHistoryFilters,
+  formatTrainingHistoryFilterStatus,
   parseTrainingHistoryFilters,
   serializeTrainingHistoryFilters,
+  type TrainingHistoryFilters,
 } from '@/lib/training/history-filters';
 import { buildActivityRecordLabels } from '@/lib/training/activity-record-labels';
 
@@ -27,6 +29,8 @@ const TYPE_ORDER: ActivityType[] = [
   ActivityType.TRIATHLON,
   ActivityType.OTHER,
 ];
+
+const FILTER_URL_DEBOUNCE_MS = 200;
 
 type WeekGroup = { key: string; label: string; activities: ClientActivity[] };
 
@@ -56,7 +60,7 @@ function groupByWeek(activities: ClientActivity[]): WeekGroup[] {
 export function TrainingListFallback() {
   return (
     <div className="space-y-6">
-      <Skeleton className="h-11 w-full rounded-xl sm:h-9 sm:max-w-xl sm:rounded-full" />
+      <Skeleton className="h-11 w-full rounded-xl lg:h-9 lg:max-w-xl lg:rounded-full" />
       <section>
         <div className="mb-2 px-0.5">
           <SkeletonDataValue heightClassName="h-3" widthClassName="w-24" />
@@ -77,13 +81,28 @@ export function TrainingList() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [, startTransition] = useTransition();
+  const urlSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const activities = data ?? [];
-  const filters = useMemo(
+  const urlFilters = useMemo(
     () => parseTrainingHistoryFilters(new URLSearchParams(searchParams.toString())),
     [searchParams],
   );
-  const baseFilters = useMemo(() => ({ ...filters, types: [], triathlonFormats: [] }), [filters]);
+  const [filters, setLocalFilters] = useState<TrainingHistoryFilters>(urlFilters);
+
+  // Keep local filters aligned with browser history (back/forward, shared links).
+  useEffect(() => {
+    setLocalFilters(urlFilters);
+  }, [urlFilters]);
+
+  useEffect(() => {
+    return () => {
+      if (urlSyncTimerRef.current) clearTimeout(urlSyncTimerRef.current);
+    };
+  }, []);
+
+  const baseFilters = useMemo(() => ({ ...filters, types: [] }), [filters]);
 
   const activitiesMatchingNonTypeFilters = useMemo(
     () => applyTrainingHistoryFilters(activities, baseFilters),
@@ -107,9 +126,15 @@ export function TrainingList() {
 
   const recordLabelsById = useMemo(() => buildActivityRecordLabels(records), [records]);
 
-  function setFilters(nextFilters: ReturnType<typeof parseTrainingHistoryFilters>) {
-    const query = serializeTrainingHistoryFilters(nextFilters).toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  function setFilters(nextFilters: TrainingHistoryFilters) {
+    setLocalFilters(nextFilters);
+    if (urlSyncTimerRef.current) clearTimeout(urlSyncTimerRef.current);
+    urlSyncTimerRef.current = setTimeout(() => {
+      startTransition(() => {
+        const query = serializeTrainingHistoryFilters(nextFilters).toString();
+        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+      });
+    }, FILTER_URL_DEBOUNCE_MS);
   }
 
   if (isPending) {
@@ -119,11 +144,16 @@ export function TrainingList() {
   return (
     <div className="space-y-6">
       <HistoryFilters counts={counts} filters={filters} onApply={setFilters} />
+      <p aria-live="polite" className="sr-only" role="status">
+        {activities.length === 0
+          ? 'Aucune activité enregistrée.'
+          : formatTrainingHistoryFilterStatus(filtered.length)}
+      </p>
       {weekGroups.length === 0 ? (
         <p className="text-muted-foreground text-sm">
-          {filtered.length === 0
-            ? 'Aucune activité ne correspond aux filtres.'
-            : 'Aucune activité enregistrée.'}
+          {activities.length === 0
+            ? 'Aucune activité enregistrée.'
+            : 'Aucune activité ne correspond aux filtres.'}
         </p>
       ) : (
         weekGroups.map((group) => (

@@ -3,6 +3,7 @@ import { ActivityType } from '@prisma/client';
 import {
   applyTrainingHistoryFilters,
   countActiveTrainingHistoryFilters,
+  formatTrainingHistoryFilterStatus,
   countDimensionSelections,
   DEFAULT_TRAINING_HISTORY_FILTERS,
   getActivityDistanceKm,
@@ -12,7 +13,6 @@ import {
   rangeToPresetSelections,
   serializeTrainingHistoryFilters,
   togglePresetSelection,
-  TRIATHLON_FORMAT_RANGES,
 } from './history-filters';
 
 // ─── presetSelectionsToRange ──────────────────────────────────────────────────
@@ -131,11 +131,6 @@ describe('parseTrainingHistoryFilters', () => {
     expect(f.durationMaxMin).toBe(120);
   });
 
-  it('parses triathlon formats', () => {
-    const f = parseTrainingHistoryFilters(new URLSearchParams('triathlonFormats=half,full'));
-    expect(f.triathlonFormats).toEqual(['half', 'full']);
-  });
-
   it('returns defaults for empty params', () => {
     const f = parseTrainingHistoryFilters(new URLSearchParams(''));
     expect(f).toEqual(DEFAULT_TRAINING_HISTORY_FILTERS);
@@ -163,7 +158,6 @@ describe('serializeTrainingHistoryFilters', () => {
       types: [ActivityType.RUN],
       periodMaxDays: 30,
       durationMinMin: 60,
-      triathlonFormats: [],
     };
     const parsed = parseTrainingHistoryFilters(
       new URLSearchParams(serializeTrainingHistoryFilters(original).toString()),
@@ -290,26 +284,6 @@ describe('applyTrainingHistoryFilters', () => {
     expect(result[0].duration).toBe(75 * 60); // stored in seconds
   });
 
-  it('filters triathlon by format', () => {
-    const result = applyTrainingHistoryFilters(
-      activities,
-      {
-        ...DEFAULT_TRAINING_HISTORY_FILTERS,
-        types: [ActivityType.TRIATHLON],
-        triathlonFormats: ['half'],
-      },
-      now,
-    );
-    expect(result).toHaveLength(1);
-    expect(result[0].type).toBe(ActivityType.TRIATHLON);
-    // 250 min is within half range 220-360
-    // duration stored in seconds; filter compares in minutes
-    const { min, max } = TRIATHLON_FORMAT_RANGES.half;
-    const durationMin = (result[0].duration ?? 0) / 60;
-    expect(durationMin).toBeGreaterThanOrEqual(min);
-    expect(durationMin).toBeLessThanOrEqual(max);
-  });
-
   it('distance filter only applies to supported types', () => {
     const result = applyTrainingHistoryFilters(
       activities,
@@ -341,7 +315,6 @@ describe('countActiveTrainingHistoryFilters', () => {
         distanceMaxKm: null,
         durationMinMin: null,
         durationMaxMin: null,
-        triathlonFormats: [],
       }),
     ).toBe(4); // RUN + BIKE + period + distance
   });
@@ -358,5 +331,19 @@ describe('countDimensionSelections', () => {
   it('returns 1 when period is set', () => {
     const f = { ...DEFAULT_TRAINING_HISTORY_FILTERS, periodMaxDays: 30 };
     expect(countDimensionSelections(f, 'period')).toBe(1);
+  });
+});
+
+describe('formatTrainingHistoryFilterStatus', () => {
+  it('announces empty filter results', () => {
+    expect(formatTrainingHistoryFilterStatus(0)).toBe('Aucune activité ne correspond aux filtres.');
+  });
+
+  it('uses singular for one activity', () => {
+    expect(formatTrainingHistoryFilterStatus(1)).toBe('1 activité');
+  });
+
+  it('uses plural for multiple activities', () => {
+    expect(formatTrainingHistoryFilterStatus(12)).toBe('12 activités');
   });
 });

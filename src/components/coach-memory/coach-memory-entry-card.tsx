@@ -94,7 +94,7 @@ export function CoachMemoryEntryCard({
             <h3 className="text-sm font-medium">{title}</h3>
             {entry.locationLabel ? (
               <p className="text-muted-foreground mt-1 flex items-center gap-1.5 text-sm">
-                <MapPin className="size-3.5 shrink-0" />
+                <MapPin className="size-3.5 shrink-0" aria-hidden />
                 {entry.locationLabel}
               </p>
             ) : null}
@@ -116,7 +116,7 @@ export function CoachMemoryEntryCard({
             variant="ghost"
             onClick={onEdit}
           >
-            <Pencil className="size-4" />
+            <Pencil className="size-4" aria-hidden />
           </Button>
           <Button
             aria-label={`Supprimer ${title}`}
@@ -126,7 +126,7 @@ export function CoachMemoryEntryCard({
             variant="ghost"
             onClick={onDelete}
           >
-            <Trash2 className="size-4" />
+            <Trash2 className="size-4" aria-hidden />
           </Button>
         </div>
       </div>

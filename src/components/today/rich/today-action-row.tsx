@@ -76,8 +76,8 @@ export function TodayActionRow({
       {loading && (
         <div className="chip-surface rounded-analysis space-y-1 px-3 py-3">
           <SkeletonDataValue heightClassName="h-5" widthClassName="w-full max-w-[240px]" />
-          <div className="flex h-[15px] items-center gap-1.5">
-            <SkeletonDataValue heightClassName="h-[15px]" widthClassName="w-15" />
+          <div className="flex h-3.75 items-center gap-1.5">
+            <SkeletonDataValue heightClassName="h-3.75" widthClassName="w-15" />
             <span className="opacity-30" aria-hidden>
               ·
             </span>

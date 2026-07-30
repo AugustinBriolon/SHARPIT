@@ -44,7 +44,7 @@ export function GoalAchievementsHistory() {
               <CardContent className="flex flex-wrap items-start justify-between gap-3 py-4">
                 <div className="min-w-0 space-y-1">
                   <p className="flex items-center gap-1.5 font-medium">
-                    <Trophy className="text-primary size-3.5 shrink-0" />
+                    <Trophy className="text-primary size-3.5 shrink-0" aria-hidden />
                     {item.goal.title}
                   </p>
                   <p className="text-muted-foreground text-xs">
@@ -61,7 +61,7 @@ export function GoalAchievementsHistory() {
                 </div>
                 {item.activity && (
                   <Link
-                    className="text-primary shrink-0 text-xs font-medium hover:underline"
+                    className="text-primary focus-visible:ring-primary/35 inline-flex min-h-11 shrink-0 items-center text-xs font-medium hover:underline focus-visible:ring-2 focus-visible:outline-hidden lg:min-h-9"
                     href={`/training/${item.activity.id}`}
                   >
                     Voir la séance

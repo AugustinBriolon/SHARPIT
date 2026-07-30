@@ -22,7 +22,7 @@ export function CoachMobileSelectLoadingRow() {
   return (
     <div className="flex items-center gap-1.5 p-2" aria-busy>
       <div className="min-w-0 flex-1">
-        <div className="border-input flex h-8 w-full min-w-0 items-center justify-between gap-1.5 rounded-lg border bg-transparent py-2 pr-2 pl-2.5 text-sm">
+        <div className="border-input flex min-h-11 w-full min-w-0 items-center justify-between gap-1.5 rounded-lg border bg-transparent py-2 pr-2 pl-2.5 text-sm lg:min-h-9">
           <SkeletonDataValue heightClassName="h-3.5" widthClassName="w-36 max-w-[70%]" />
           <ChevronDownIcon
             className="text-muted-foreground size-4 shrink-0 opacity-50"
@@ -32,13 +32,13 @@ export function CoachMobileSelectLoadingRow() {
       </div>
       <Button
         aria-label="Supprimer la conversation"
-        className="text-muted-foreground shrink-0"
-        size="icon-sm"
+        className="text-muted-foreground size-11 shrink-0 lg:size-9"
+        size="icon"
         type="button"
         variant="ghost"
         disabled
       >
-        <Trash2 className="size-4" />
+        <Trash2 className="size-4" aria-hidden />
       </Button>
     </div>
   );
@@ -65,37 +65,47 @@ export function CoachChatEmptyChrome({ header }: { header?: ReactNode }) {
   return (
     <div className="rounded-analysis-lg flex h-full min-w-0 flex-1 flex-col lg:border">
       <div className="flex-1 overflow-y-auto">
-        {header ? (
-          <div className="bg-background/85 supports-backdrop-filter:bg-background/70 sticky top-0 z-10 backdrop-blur-md">
-            {header}
-          </div>
-        ) : null}
+        {header ? <div className="bg-background sticky top-0 z-10">{header}</div> : null}
         <div className="space-y-4 p-4">
           <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
             <p className="text-muted-foreground max-w-sm text-sm">{EMPTY_HINT}</p>
-            <div className="flex flex-wrap justify-center gap-2">
+            <div
+              aria-label="Suggestions"
+              className="flex flex-wrap justify-center gap-2"
+              role="group"
+            >
               {SUGGESTION_LABELS.map((label) => (
-                <span
+                <button
                   key={label}
-                  className="chip-surface text-foreground/80 rounded-full px-3 py-1.5 text-xs"
+                  className="chip-surface text-foreground/80 min-h-11 rounded-full px-3 py-1.5 text-xs opacity-70 lg:min-h-9"
+                  type="button"
+                  disabled
                 >
                   {label}
-                </span>
+                </button>
               ))}
             </div>
           </div>
         </div>
       </div>
-      <div className="border-border/60 flex items-center gap-2 border-t p-3">
+      <div className="border-border/60 flex items-end gap-2 border-t p-3">
         <Textarea
-          className="max-h-40 min-h-10 resize-y"
+          aria-label="Message au coach"
+          className="max-h-40 min-h-11 resize-y"
           placeholder="Demande conseil à ton coach…"
           rows={1}
           value=""
           disabled
         />
-        <Button size="icon" type="button" variant="highlight" disabled>
-          <Send className="size-4" />
+        <Button
+          aria-label="Envoyer le message"
+          className="size-11 shrink-0"
+          size="icon"
+          type="button"
+          variant="highlight"
+          disabled
+        >
+          <Send className="size-4" aria-hidden />
         </Button>
       </div>
     </div>
@@ -107,11 +117,7 @@ export function CoachChatPanelSkeleton({ header }: { header?: ReactNode }) {
   return (
     <div className="rounded-analysis-lg flex h-full min-w-0 flex-1 flex-col lg:border" aria-busy>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-        {header ? (
-          <div className="bg-background/85 supports-backdrop-filter:bg-background/70 sticky top-0 z-10 backdrop-blur-md">
-            {header}
-          </div>
-        ) : null}
+        {header ? <div className="bg-background sticky top-0 z-10">{header}</div> : null}
         <div className="space-y-4 p-4">
           <div className="flex justify-end">
             <Skeleton className="bg-accent h-10 w-[min(100%,14rem)] rounded-[18px_18px_4px_18px]" />
@@ -125,16 +131,24 @@ export function CoachChatPanelSkeleton({ header }: { header?: ReactNode }) {
           </div>
         </div>
       </div>
-      <div className="border-border/60 flex items-center gap-2 border-t p-3">
+      <div className="border-border/60 flex items-end gap-2 border-t p-3">
         <Textarea
-          className="max-h-40 min-h-10 resize-y"
+          aria-label="Message au coach"
+          className="max-h-40 min-h-11 resize-y"
           placeholder="Demande conseil à ton coach…"
           rows={1}
           value=""
           disabled
         />
-        <Button size="icon" type="button" variant="highlight" disabled>
-          <Send className="size-4" />
+        <Button
+          aria-label="Envoyer le message"
+          className="size-11 shrink-0"
+          size="icon"
+          type="button"
+          variant="highlight"
+          disabled
+        >
+          <Send className="size-4" aria-hidden />
         </Button>
       </div>
     </div>
@@ -151,7 +165,7 @@ export function CoachPageHeader({
   return (
     <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
       <div>
-        <p className="text-primary text-xs font-medium uppercase">Coach</p>
+        <p className="text-label">Coach</p>
         <h1 className="text-page-title mt-1">Fil & conversations</h1>
         <p className="text-muted-foreground mt-1">
           Messages du jour et chat libre avec ton coach.{' '}
@@ -175,8 +189,14 @@ function CoachMobileLoadingHeader() {
     <div className="flex flex-col gap-2 px-3 pt-2 pb-2">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-page-title truncate">Fil & conversations</h1>
-        <Button aria-label="Nouvelle conversation" size="icon" variant="outline" disabled>
-          <MessageSquarePlus className="size-4" />
+        <Button
+          aria-label="Nouvelle conversation"
+          className="size-11"
+          size="icon"
+          variant="outline"
+          disabled
+        >
+          <MessageSquarePlus className="size-4" aria-hidden />
         </Button>
       </div>
       <div className="analysis-panel rounded-analysis-lg">

@@ -335,7 +335,7 @@ export function PlannedSessionReadView({
           ) : null}
         </div>
         {alreadyOnWatch ? (
-          <p className="text-muted-foreground text-[10px] leading-snug">
+          <p className="text-muted-foreground text-xs leading-snug">
             Sur Garmin
             {watchPush.scheduledDate ? ` · calendrier ${watchPush.scheduledDate}` : ''}
             {watchPush.pushedAt
@@ -376,10 +376,10 @@ export function PlannedSessionReadView({
                       {weight}
                     </span>
                   </div>
-                  <p className="text-muted-foreground/80 text-[10px] leading-snug">{restLabel}</p>
+                  <p className="text-muted-foreground/80 text-xs leading-snug">{restLabel}</p>
                   <p
                     className={cn(
-                      'text-[10px] leading-snug',
+                      'text-xs leading-snug',
                       watch.status === 'unknown' && 'text-muted-foreground/80',
                       watch.status === 'approx' && 'text-amber-700/90 dark:text-amber-400/90',
                       watch.status === 'ready' && 'text-muted-foreground',
@@ -410,7 +410,7 @@ export function PlannedSessionReadView({
         </span>
         <Button
           aria-label="Modifier la séance"
-          className="shrink-0 rounded-full"
+          className="size-11 shrink-0 rounded-full lg:size-9"
           size="icon-sm"
           type="button"
           variant="outline"

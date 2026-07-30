@@ -23,11 +23,11 @@ export default function TodayEffortPage() {
   if (!valuesLoading && (!viewModel || viewModel.emptyState)) {
     return (
       <div className="space-y-4">
-        <MobileDrillDownHeader title="Charge d'effort" />
+        <MobileDrillDownHeader title="Charge" />
         <InkEmptyState
-          description={viewModel?.emptyState?.description ?? 'Données d’effort indisponibles.'}
+          description={viewModel?.emptyState?.description ?? 'Données de charge indisponibles.'}
           icon={Activity}
-          title={viewModel?.emptyState?.title ?? 'Charge d’effort indisponible'}
+          title={viewModel?.emptyState?.title ?? 'Charge indisponible'}
         />
       </div>
     );
@@ -37,7 +37,7 @@ export default function TodayEffortPage() {
 
   return (
     <div className="space-y-4">
-      <MobileDrillDownHeader title="Charge d'effort" />
+      <MobileDrillDownHeader title="Charge" />
       <EffortPageView
         date={date}
         isToday={isToday}

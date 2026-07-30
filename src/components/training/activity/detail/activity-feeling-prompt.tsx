@@ -61,7 +61,7 @@ export function ActivityFeelingPrompt({ activityId }: { activityId: string }) {
   return (
     <>
       <button
-        className="text-muted-foreground hover:text-foreground text-data inline-flex min-h-11 items-center gap-1 px-1 text-xs tracking-wide transition-colors sm:min-h-0 sm:text-[11px]"
+        className="text-muted-foreground hover:text-foreground text-data inline-flex min-h-11 items-center gap-1 px-1 text-xs tracking-wide transition-colors lg:min-h-9"
         type="button"
         onClick={() => setOpen(true)}
       >
@@ -69,7 +69,7 @@ export function ActivityFeelingPrompt({ activityId }: { activityId: string }) {
         <span className="opacity-50" aria-hidden>
           ·
         </span>
-        <span className="text-[10px] tracking-wider opacity-70">RPE</span>
+        <span className="text-xs tracking-wider opacity-70">RPE</span>
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>

@@ -36,10 +36,10 @@ export function HistoryFilters({
         <button
           aria-controls={ariaControls}
           aria-expanded={open}
-          aria-haspopup={isMobile ? 'dialog' : 'menu'}
+          aria-haspopup={isMobile ? 'dialog' : 'true'}
           type="button"
           className={cn(
-            'pressable inline-flex min-h-11 items-center gap-1.5 rounded-md px-2.5 py-2 text-sm sm:min-h-9 sm:py-1.5',
+            'pressable inline-flex min-h-11 items-center gap-1.5 rounded-md px-2.5 py-2 text-sm lg:min-h-9 lg:py-1.5',
             isActive
               ? 'text-foreground font-medium'
               : 'text-muted-foreground hover:text-foreground',
@@ -49,7 +49,7 @@ export function HistoryFilters({
           <SlidersHorizontal className="size-3.5" aria-hidden />
           Filtres
           {isActive ? (
-            <span className="text-highlight text-xs font-bold tabular-nums">{activeCount}</span>
+            <span className="text-highlight text-data text-xs font-bold">{activeCount}</span>
           ) : null}
         </button>
 
@@ -68,7 +68,7 @@ export function HistoryFilters({
       {isActive ? (
         <button
           aria-label="Effacer tous les filtres"
-          className="text-muted-foreground hover:text-foreground pressable inline-flex min-h-11 items-center gap-1 px-2 text-xs sm:min-h-9"
+          className="text-muted-foreground hover:text-foreground pressable inline-flex min-h-11 items-center gap-1 px-2 text-xs lg:min-h-9"
           type="button"
           onClick={() => onApply(DEFAULT_TRAINING_HISTORY_FILTERS)}
         >

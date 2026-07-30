@@ -16,11 +16,13 @@ export function LocationPlacePicker({
   onChange,
   placeholder = 'Rechercher une ville…',
   disabled = false,
+  id,
 }: {
   value: LocationPlaceValue;
   onChange: (next: LocationPlaceValue) => void;
   placeholder?: string;
   disabled?: boolean;
+  id?: string;
 }) {
   const [query, setQuery] = useState(value?.label ?? '');
   const [results, setResults] = useState<GeocodedPlace[]>([]);
@@ -60,6 +62,7 @@ export function LocationPlacePicker({
     <div className="relative min-w-0 space-y-1">
       <Input
         disabled={disabled}
+        id={id}
         placeholder={placeholder}
         value={query}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
@@ -72,7 +75,7 @@ export function LocationPlacePicker({
         }}
       />
       {value ? (
-        <p className="text-muted-foreground text-[11px]">
+        <p className="text-muted-foreground text-xs">
           Coordonnées : {value.latitude.toFixed(4)}, {value.longitude.toFixed(4)}
         </p>
       ) : null}
@@ -86,7 +89,7 @@ export function LocationPlacePicker({
                 <button
                   type="button"
                   className={cn(
-                    'hover:bg-muted/60 w-full px-3 py-2 text-left text-xs',
+                    'hover:bg-muted/60 focus-visible:ring-primary/35 min-h-11 w-full px-3 py-2.5 text-left text-xs focus-visible:ring-2 focus-visible:outline-hidden lg:min-h-9 lg:py-2',
                     value?.label === place.label && 'bg-muted/40',
                   )}
                   onMouseDown={(e) => e.preventDefault()}

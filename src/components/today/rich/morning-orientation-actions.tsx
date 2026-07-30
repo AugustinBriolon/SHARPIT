@@ -191,12 +191,22 @@ export function MorningOrientationActions({
     });
   }
 
+  let statusMessage: string | null = null;
+  if (pending === 'refresh') statusMessage = 'Actualisation des preuves en cours.';
+  else if (pending === 'apply') statusMessage = 'Application de la proposition en cours.';
+  else if (pending === 'hold') statusMessage = 'Conservation du plan en cours.';
+
   return (
     <section
       aria-busy={busy || undefined}
       aria-label="Proposition du matin"
       className="space-y-2.5"
     >
+      {statusMessage ? (
+        <p aria-live="polite" className="sr-only" role="status">
+          {statusMessage}
+        </p>
+      ) : null}
       {/* Minimal chip: plan → proposée + pastille → (InstrumentListChip) */}
       <button
         disabled={!detailSessionId}
@@ -207,10 +217,9 @@ export function MorningOrientationActions({
             : `Proposition · ${fromLabel} vers ${toLabel}`
         }
         className={cn(
-          'chip-surface group rounded-analysis flex w-full items-center gap-3 border px-3.5 py-3 text-left',
+          'chip-surface-lg group rounded-analysis flex min-h-11 w-full items-center gap-3 border px-3.5 py-3 text-left',
           'border-highlight/50 transition-[border-color,background-color,transform]',
-          detailSessionId &&
-            'hover:border-highlight/80 hover:bg-highlight/10 motion-safe:active:scale-[0.96]',
+          detailSessionId && 'hover:border-highlight/80 hover:bg-highlight/10',
           !detailSessionId && 'cursor-default',
         )}
         onClick={openDetails}
@@ -230,7 +239,7 @@ export function MorningOrientationActions({
             <span className="text-highlight-foreground">{toLabel}</span>
           </span>
           {meta ? (
-            <span className="text-data text-muted-foreground text-[11px] tabular-nums">{meta}</span>
+            <span className="text-data text-muted-foreground text-xs tabular-nums">{meta}</span>
           ) : null}
           {proposal.why ? (
             <span className="text-muted-foreground mt-0.5 text-xs leading-snug">
@@ -239,16 +248,16 @@ export function MorningOrientationActions({
           ) : null}
         </span>
         <span
-          className="bg-highlight text-highlight-foreground text-data inline-flex size-[26px] shrink-0 items-center justify-center rounded-full text-[11px] transition-transform group-hover:translate-x-0.5"
+          className="bg-highlight text-highlight-foreground text-data inline-flex size-7 shrink-0 items-center justify-center rounded-full text-xs transition-transform group-hover:translate-x-0.5"
           aria-hidden
         >
           →
         </span>
       </button>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+      <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center">
         <Button
-          className="h-11 w-full rounded-full sm:h-8 sm:w-auto"
+          className="h-11 w-full rounded-full lg:h-9 lg:w-auto"
           disabled={busy}
           type="button"
           variant="highlight"
@@ -257,7 +266,7 @@ export function MorningOrientationActions({
           {pending === 'apply' ? 'Application…' : 'Appliquer la proposée'}
         </Button>
         <Button
-          className="h-11 w-full sm:h-8 sm:w-auto"
+          className="h-11 w-full lg:h-9 lg:w-auto"
           disabled={busy}
           type="button"
           variant="ghost"

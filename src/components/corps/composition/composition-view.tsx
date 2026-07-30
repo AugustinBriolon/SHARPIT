@@ -62,7 +62,7 @@ function MetricChip({
       disabled={!onExplain || loading}
       type="button"
       className={cn(
-        'chip-surface flex min-w-0 flex-col gap-1 rounded-2xl px-3 py-2.5 text-left',
+        'chip-surface flex min-h-11 min-w-0 flex-col gap-1 rounded-2xl px-3 py-2.5 text-left lg:min-h-9',
         onExplain && !loading
           ? 'hover:border-primary/35 transition-[border-color,background-color]'
           : 'cursor-default',
@@ -71,7 +71,7 @@ function MetricChip({
     >
       <span className="flex items-center gap-1.5">
         <span className={cn('h-2 w-2 shrink-0 rounded-full', CORPS_TONE_DOT[tone])} aria-hidden />
-        <span className="text-muted-foreground text-[11px] font-medium tracking-wide">{label}</span>
+        <span className="text-muted-foreground text-xs font-medium tracking-wide">{label}</span>
       </span>
       {loading ? (
         <SkeletonDataValue heightClassName="h-4" widthClassName="w-12" />
@@ -79,9 +79,7 @@ function MetricChip({
         <span className="text-data text-foreground text-[15px] tabular-nums">
           {value}
           {delta ? (
-            <span className="text-muted-foreground ml-1.5 text-[10px] tracking-normal">
-              {delta}
-            </span>
+            <span className="text-muted-foreground ml-1.5 text-xs tracking-normal">{delta}</span>
           ) : null}
         </span>
       )}
@@ -167,7 +165,7 @@ function CompositionDetailList({
       {cards.map((card) => (
         <button
           key={card.cardId}
-          className="hover:bg-muted/30 flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors disabled:cursor-default"
+          className="hover:bg-muted/30 flex min-h-11 w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors disabled:cursor-default lg:min-h-9"
           disabled={!card.guideId}
           type="button"
           onClick={card.guideId ? () => onExplain(card.guideId!) : undefined}
@@ -203,7 +201,7 @@ function CompositionSkeleton() {
         aria-busy
       >
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <p className="text-ink-surface-foreground/65 inline-flex items-center gap-2 text-[11px] font-semibold tracking-wide uppercase">
+          <p className="text-label text-ink-surface-foreground/65 inline-flex items-center gap-2">
             <span
               className="bg-highlight dark:bg-ink-surface-foreground h-2.5 w-2.5 shrink-0 rounded-full"
               aria-hidden
@@ -223,7 +221,7 @@ function CompositionSkeleton() {
             widthClassName="w-28"
           />
         </div>
-        <div className="border-highlight dark:border-ink-surface-foreground/80 mt-3 border-l-2 pl-3">
+        <div className="border-ink-surface-foreground/20 bg-ink-surface-foreground/6 rounded-analysis mt-3 border px-3 py-2.5">
           <SkeletonDataValue
             className="bg-ink-surface-foreground/20"
             heightClassName="h-4"
@@ -261,7 +259,7 @@ function CompositionSkeleton() {
             {TREND_WINDOWS.map((w) => (
               <span
                 key={w.id}
-                className="text-muted-foreground rounded-full px-2.5 py-1 text-xs font-medium"
+                className="text-muted-foreground min-h-11 rounded-full px-3 py-2 text-xs font-medium lg:min-h-9 lg:px-2.5 lg:py-1.5"
               >
                 {w.label}
               </span>
@@ -388,7 +386,7 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
                 aria-pressed={active}
                 type="button"
                 className={cn(
-                  'text-data rounded-full px-2.5 py-1 text-[10px] transition-colors',
+                  'text-data min-h-11 rounded-full px-3 py-2 text-xs transition-colors lg:min-h-9 lg:px-2.5 lg:py-1.5',
                   active
                     ? 'bg-highlight text-highlight-foreground font-semibold'
                     : 'text-muted-foreground hover:text-foreground',
@@ -457,7 +455,7 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
         className={cn('surface-ink relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10')}
       >
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <p className="text-ink-surface-foreground/65 inline-flex items-center gap-2 text-[11px] font-semibold tracking-wide uppercase">
+          <p className="text-label text-ink-surface-foreground/65 inline-flex items-center gap-2">
             <span
               className="bg-highlight dark:bg-ink-surface-foreground h-2.5 w-2.5 shrink-0 rounded-full"
               aria-hidden
@@ -498,7 +496,7 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
         </div>
 
         {valuesLoading ? (
-          <div className="border-highlight dark:border-ink-surface-foreground/80 mt-3 border-l-2 pl-3">
+          <div className="border-ink-surface-foreground/20 bg-ink-surface-foreground/6 rounded-analysis mt-3 border px-3 py-2.5">
             <SkeletonDataValue
               className="bg-ink-surface-foreground/20"
               heightClassName="h-4"
@@ -507,13 +505,13 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
           </div>
         ) : null}
         {!valuesLoading && vm.hero.weightDeltaDisplay ? (
-          <p className="border-highlight dark:border-ink-surface-foreground/80 text-ink-surface-foreground/80 mt-3 border-l-2 pl-3 text-sm leading-relaxed font-medium">
+          <p className="border-ink-surface-foreground/20 bg-ink-surface-foreground/6 text-ink-surface-foreground/80 rounded-analysis mt-3 w-fit border px-3 py-2.5 text-sm leading-relaxed font-medium">
             {vm.hero.weightDeltaDisplay}
           </p>
         ) : null}
 
         {heroHints.length > 0 ? (
-          <div className="border-ink-surface-foreground/25 text-ink-surface-foreground/70 mt-6 space-y-1 border-l-2 pl-4 text-xs leading-relaxed">
+          <div className="border-ink-surface-foreground/20 bg-ink-surface-foreground/6 text-ink-surface-foreground/70 rounded-analysis mt-6 w-fit space-y-1 border px-3 py-3 text-xs leading-relaxed">
             {heroHints.map(({ label, text }) => (
               <p key={label}>
                 <span className="text-ink-surface-foreground/90 font-medium">{label}</span> — {text}

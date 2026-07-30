@@ -7,7 +7,6 @@ import { LinkButton } from '@/components/ui/link-button';
 import { usePlannedSessionNavDismiss } from '@/components/planning/session/planned-session-nav-dismiss';
 import { coachDiscussHref, type CoachDiscussTarget } from '@/lib/coach/coach-discuss-href';
 import { useAppModalOptional } from '@/providers/app-modal-provider';
-import { cn } from '@/lib/utils';
 
 type ButtonVariant = VariantProps<typeof buttonVariants>;
 
@@ -29,7 +28,7 @@ export function DiscussWithCoachButton({
   target,
   label = 'Discuter avec le coach',
   className,
-  size = 'sm',
+  size = 'default',
   variant = 'outline',
   onBeforeNavigate,
 }: DiscussWithCoachButtonProps) {
@@ -38,7 +37,7 @@ export function DiscussWithCoachButton({
 
   return (
     <LinkButton
-      className={cn(className)}
+      className={className}
       href={coachDiscussHref(target)}
       size={size}
       variant={variant}

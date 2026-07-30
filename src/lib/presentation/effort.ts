@@ -63,25 +63,25 @@ function mapStrainToDisplay(strainScore: number | null) {
   }
   if (strainScore >= 16)
     return {
-      label: 'Très élevé',
+      label: 'Charge très élevée',
       colorClass: 'text-signal-risk',
       strokeColor: CHART_RISK_STROKE,
     };
   if (strainScore >= 11)
     return {
-      label: 'Élevé',
+      label: 'Charge élevée',
       colorClass: 'text-signal-vo2',
       strokeColor: CHART_VO2_STROKE,
     };
   if (strainScore >= 6)
     return {
-      label: 'Modéré',
+      label: 'Charge modérée',
       colorClass: 'text-signal-caution',
       strokeColor: CHART_CAUTION_STROKE,
     };
   if (strainScore > 0)
     return {
-      label: 'Léger',
+      label: 'Charge légère',
       colorClass: 'text-[var(--color-signal-recovery)]',
       strokeColor: CHART_TEMPO_STROKE,
     };
@@ -110,7 +110,7 @@ function emptyEffortViewModel(): EffortViewModel {
     verdictKey: 'INSUFFICIENT_DATA',
     rationale: [],
     trainingCapacity: 'REST_ONLY',
-    strainSubtitle: 'strain indisponible',
+    strainSubtitle: '',
     strainStatusLabel: strainDisplay.label,
     strainStatusClassName: strainDisplay.colorClass,
     strainStrokeColor: strainDisplay.strokeColor,
@@ -129,8 +129,8 @@ function emptyEffortViewModel(): EffortViewModel {
     insights: { primary: [], supporting: [], contextual: [] },
     globalDecision: EMPTY_GLOBAL_DECISION,
     emptyState: {
-      title: 'Charge d’effort indisponible.',
-      description: 'Synchronise tes donnees et reessaie.',
+      title: 'Charge indisponible.',
+      description: 'Synchronise tes données et réessaie.',
     },
     hierarchy: { rootId: 'effort', order: ['hero', 'verdict', 'insights', 'charts', 'evidence'] },
     sections: [],
@@ -288,7 +288,7 @@ export async function buildEffortViewModel(trainingDayId: string): Promise<Effor
     verdictKey: fatigue.decision.verdict,
     rationale,
     trainingCapacity: fatigue.trainingCapacity,
-    strainSubtitle: strainScore != null ? 'strain physiologique du jour' : 'strain indisponible',
+    strainSubtitle: '',
     strainStatusLabel: strainDisplay.label,
     strainStatusClassName: strainDisplay.colorClass,
     strainStrokeColor: strainDisplay.strokeColor,

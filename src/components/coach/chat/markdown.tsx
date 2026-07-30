@@ -29,8 +29,8 @@ export function Markdown({
         '[&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2',
         '[&_code]:bg-muted/60 [&_code]:rounded [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs',
         '[&_pre]:bg-muted/60 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:p-3',
-        '[&_blockquote]:border-primary/40 [&_blockquote]:text-muted-foreground [&_blockquote]:border-l-2 [&_blockquote]:pl-3',
-        '[&_th]:border-border/60 [&_td]:border-border/60 [&_table]:w-full [&_table]:text-xs [&_td]:border [&_td]:px-2 [&_td]:py-1 [&_th]:border [&_th]:px-2 [&_th]:py-1 [&_th]:text-left',
+        '[&_blockquote]:border-analysis-border [&_blockquote]:bg-analysis-surface-alt/50 [&_blockquote]:text-muted-foreground [&_blockquote]:rounded-analysis [&_blockquote]:border [&_blockquote]:px-3 [&_blockquote]:py-2',
+        '[&_th]:border-border/60 [&_td]:border-border/60 [&_table]:w-full [&_table]:text-xs [&_td]:border [&_td]:px-2 [&_td]:py-2 [&_th]:border [&_th]:px-2 [&_th]:py-2 [&_th]:text-left',
         '[&_hr]:border-border/60 [&_hr]:my-3',
       )}
     >

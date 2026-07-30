@@ -61,7 +61,7 @@ export function CoachProfileContextSection({
     if (loading) {
       return (
         <div className="text-muted-foreground flex items-center gap-2 text-sm">
-          <Loader2 className="size-4 animate-spin" />
+          <Loader2 className="size-4 animate-spin" aria-hidden />
           Chargement…
         </div>
       );
@@ -88,13 +88,16 @@ export function CoachProfileContextSection({
             </p>
             <div className="flex items-center gap-2">
               {justSaved ? (
-                <span className="text-primary inline-flex items-center gap-1 text-xs">
-                  <Check className="size-3.5" />
+                <span
+                  aria-live="polite"
+                  className="text-primary inline-flex items-center gap-1 text-xs"
+                >
+                  <Check className="size-3.5" aria-hidden />
                   Enregistré
                 </span>
               ) : null}
-              <Button size="sm" type="button" variant="outline" onClick={() => setMode('edit')}>
-                <Pencil className="size-3.5" />
+              <Button type="button" variant="outline" onClick={() => setMode('edit')}>
+                <Pencil className="size-3.5" aria-hidden />
                 Modifier
               </Button>
             </div>
@@ -115,15 +118,19 @@ export function CoachProfileContextSection({
           onChange={(e) => setValue(e.target.value)}
         />
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <Button size="sm" type="button" variant="outline" onClick={handleCancel}>
+          <Button type="button" variant="outline" onClick={handleCancel}>
             Annuler
           </Button>
-          <Button disabled={!dirty || save.isPending} size="sm" type="button" onClick={handleSave}>
-            {save.isPending ? <Loader2 className="size-3.5 animate-spin" /> : null}
+          <Button disabled={!dirty || save.isPending} type="button" onClick={handleSave}>
+            {save.isPending ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : null}
             Enregistrer
           </Button>
         </div>
-        {save.isError ? <p className="text-destructive text-xs">{save.error.message}</p> : null}
+        {save.isError ? (
+          <p aria-live="assertive" className="text-destructive text-xs" role="alert">
+            {save.error.message}
+          </p>
+        ) : null}
       </div>
     );
   }

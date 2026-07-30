@@ -2,7 +2,7 @@
 
 import { GoalHorizon, GoalKind, GoalPriority } from '@prisma/client';
 import { Calendar, Flag, Repeat, Timer } from 'lucide-react';
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import {
   MetricGoalForm,
   type MetricGoalFormResult,
@@ -40,6 +40,19 @@ import { useGoalMutations, type GoalPayload } from '@/hooks/use-data';
 const NO_PRIORITY = 'none';
 
 type GoalFormVariant = 'race' | 'performance' | 'period' | 'legacy';
+
+const CREATE_VARIANTS: {
+  id: Exclude<GoalFormVariant, 'legacy'>;
+  label: string;
+  icon: typeof Flag;
+}[] = [
+  { id: 'race', label: 'Course', icon: Flag },
+  { id: 'performance', label: 'Temps sur distance', icon: Timer },
+  { id: 'period', label: 'Objectif récurrent', icon: Repeat },
+];
+
+const RADIO_FOCUS =
+  'focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden';
 
 function initialVariant(goal: GoalForEdit | null | undefined): GoalFormVariant {
   if (!goal) return 'race';
@@ -99,6 +112,7 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
   const isEdit = Boolean(goal);
   const metricFormId = useId();
   const { create, update } = useGoalMutations();
+  const variantRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const [variant, setVariant] = useState<GoalFormVariant>(initialVariant(goal));
   const [priority, setPriority] = useState<string>(goal?.priority ?? 'A');
@@ -110,6 +124,48 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
   const [legacyLowerIsBetter, setLegacyLowerIsBetter] = useState(goal?.lowerIsBetter ?? false);
 
   const pending = create.isPending || update.isPending;
+
+  function focusVariant(index: number) {
+    const clamped = Math.max(0, Math.min(CREATE_VARIANTS.length - 1, index));
+    variantRefs.current[clamped]?.focus();
+  }
+
+  function selectVariantAt(index: number) {
+    const option = CREATE_VARIANTS[index];
+    if (!option) return;
+    setVariant(option.id);
+    focusVariant(index);
+  }
+
+  function onVariantKeyDown(event: React.KeyboardEvent<HTMLButtonElement>, index: number) {
+    switch (event.key) {
+      case 'ArrowDown':
+      case 'ArrowRight':
+        event.preventDefault();
+        selectVariantAt((index + 1) % CREATE_VARIANTS.length);
+        break;
+      case 'ArrowUp':
+      case 'ArrowLeft':
+        event.preventDefault();
+        selectVariantAt((index - 1 + CREATE_VARIANTS.length) % CREATE_VARIANTS.length);
+        break;
+      case 'Home':
+        event.preventDefault();
+        selectVariantAt(0);
+        break;
+      case 'End':
+        event.preventDefault();
+        selectVariantAt(CREATE_VARIANTS.length - 1);
+        break;
+      case ' ':
+      case 'Enter':
+        event.preventDefault();
+        selectVariantAt(index);
+        break;
+      default:
+        break;
+    }
+  }
 
   async function submitPayload(payload: GoalPayload) {
     if (isEdit && goal) {
@@ -449,66 +505,44 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
             className="grid grid-cols-1 gap-2 sm:grid-cols-3"
             role="radiogroup"
           >
-            <button
-              aria-checked={variant === 'race'}
-              role="radio"
-              type="button"
-              className={cn(
-                'pressable flex min-h-11 items-start gap-2 rounded-lg border px-3 py-2 text-left text-sm',
-                variant === 'race'
-                  ? 'border-primary/50 bg-primary/5'
-                  : 'border-border/60 hover:border-border',
-              )}
-              onClick={() => setVariant('race')}
-            >
-              <Flag className="text-primary mt-0.5 size-4 shrink-0" aria-hidden />
-              <span>
-                <span className="block font-medium">Course</span>
-              </span>
-            </button>
-            <button
-              aria-checked={variant === 'performance'}
-              role="radio"
-              type="button"
-              className={cn(
-                'pressable flex min-h-11 items-start gap-2 rounded-lg border px-3 py-2 text-left text-sm',
-                variant === 'performance'
-                  ? 'border-primary/50 bg-primary/5'
-                  : 'border-border/60 hover:border-border',
-              )}
-              onClick={() => setVariant('performance')}
-            >
-              <Timer className="text-primary mt-0.5 size-4 shrink-0" aria-hidden />
-              <span>
-                <span className="block font-medium">Temps sur distance</span>
-              </span>
-            </button>
-            <button
-              aria-checked={variant === 'period'}
-              role="radio"
-              type="button"
-              className={cn(
-                'pressable flex min-h-11 items-start gap-2 rounded-lg border px-3 py-2 text-left text-sm',
-                variant === 'period'
-                  ? 'border-primary/50 bg-primary/5'
-                  : 'border-border/60 hover:border-border',
-              )}
-              onClick={() => setVariant('period')}
-            >
-              <Repeat className="text-primary mt-0.5 size-4 shrink-0" aria-hidden />
-              <span>
-                <span className="block font-medium">Objectif récurrent</span>
-              </span>
-            </button>
+            {CREATE_VARIANTS.map(({ id, label, icon: Icon }, index) => {
+              const active = variant === id;
+              return (
+                <button
+                  key={id}
+                  ref={(node) => {
+                    variantRefs.current[index] = node;
+                  }}
+                  aria-checked={active}
+                  role="radio"
+                  tabIndex={active ? 0 : -1}
+                  type="button"
+                  className={cn(
+                    'pressable flex min-h-11 items-start gap-2 rounded-lg border px-3 py-2 text-left text-sm',
+                    RADIO_FOCUS,
+                    active
+                      ? 'border-primary/50 bg-primary/5'
+                      : 'border-border/60 hover:border-border',
+                  )}
+                  onClick={() => setVariant(id)}
+                  onKeyDown={(event) => onVariantKeyDown(event, index)}
+                >
+                  <Icon className="text-primary mt-0.5 size-4 shrink-0" aria-hidden />
+                  <span>
+                    <span className="block font-medium">{label}</span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
         )}
 
         {isEdit && variant !== 'race' && variant !== 'legacy' && (
           <p className="text-muted-foreground flex items-center gap-2 text-sm">
             {variant === 'performance' ? (
-              <Timer className="size-4 shrink-0" />
+              <Timer className="size-4 shrink-0" aria-hidden />
             ) : (
-              <Calendar className="size-4 shrink-0" />
+              <Calendar className="size-4 shrink-0" aria-hidden />
             )}
             {variant === 'performance' ? 'Temps sur distance' : 'Objectif récurrent'}
           </p>

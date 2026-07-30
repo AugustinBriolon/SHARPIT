@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   classifyAcwrZone,
   explainTsb,
+  formChipLabel,
+  rampChipLabel,
   synthesizeLoadReading,
+  synthesizeLoadReadingPlain,
   tssGapToSweetSpotFloor,
 } from '@/lib/effort/load-reading';
 
@@ -23,6 +26,37 @@ describe('tssGapToSweetSpotFloor', () => {
 
   it('returns 0 when already above the floor', () => {
     expect(tssGapToSweetSpotFloor(320, 341)).toBe(0);
+  });
+});
+
+describe('rampChipLabel / formChipLabel', () => {
+  it('exposes French ramp labels without acronyms', () => {
+    expect(rampChipLabel(0.54)).toBe('Lente');
+    expect(rampChipLabel(1.1)).toBe('Saine');
+    expect(rampChipLabel(1.4)).toBe('Rapide');
+    expect(rampChipLabel(1.8)).toBe('Critique');
+  });
+
+  it('exposes French form labels from TSB', () => {
+    expect(formChipLabel(-25)).toBe('Fatigué');
+    expect(formChipLabel(-5)).toBe('En récup.');
+    expect(formChipLabel(3)).toBe('Équilibré');
+    expect(formChipLabel(15)).toBe('Frais');
+  });
+});
+
+describe('synthesizeLoadReadingPlain', () => {
+  it('keeps primary copy free of ACWR/TSB acronyms', () => {
+    const line = synthesizeLoadReadingPlain({
+      verdictKey: 'MAINTAIN',
+      acwr: 0.54,
+      weeklyLoad: 184,
+      chronicWeeklyAvg: 341,
+      tsb: -13,
+      trainingCapacity: 'FULL',
+    });
+    expect(line).not.toMatch(/ACWR|TSB/);
+    expect(line.toLowerCase()).toMatch(/sous-charge|mainten/);
   });
 });
 

@@ -17,6 +17,12 @@ const eslintConfig = [
       './next-env.d.ts',
       // Service worker bundle généré par Serwist (src/sw.ts → public/sw.js)
       'public/sw.js',
+      // Agent / IDE tooling (not app code; often not installed as a package)
+      '.agents/**',
+      '.claude/**',
+      '.codex/**',
+      '.hallmark/**',
+      '.impeccable/**',
       // Config and tooling files (not app code; avoids React plugin + ESLint 10 API issues)
       '.prettierrc.js',
       'eslint.config.mjs',

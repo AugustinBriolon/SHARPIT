@@ -32,8 +32,8 @@ function SectionLink({ title, href, cta }: { title: string; href: string; cta: s
       <Link
         href={href}
         className={cn(
-          'text-muted-foreground hover:text-primary inline-flex items-center gap-1',
-          'text-data text-[11px] tracking-wide transition-colors',
+          'text-muted-foreground hover:text-primary inline-flex min-h-11 items-center gap-1 lg:min-h-9',
+          'text-data text-xs tracking-wide transition-colors',
           'focus-visible:ring-primary/35 rounded-sm focus-visible:ring-2 focus-visible:outline-hidden',
         )}
       >
@@ -85,7 +85,7 @@ function TrainingInstrumentPlate({
     return (
       <section className={cn('surface-ink relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10')}>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-ink-surface-foreground/65 inline-flex items-center gap-2 text-[11px] font-semibold tracking-wide uppercase">
+          <p className="text-ink-surface-foreground/65 text-data inline-flex items-center gap-2 text-xs font-semibold tracking-wide uppercase">
             <span
               className="bg-highlight dark:bg-ink-surface-foreground h-2.5 w-2.5 shrink-0 rounded-full"
               aria-hidden
@@ -100,7 +100,7 @@ function TrainingInstrumentPlate({
             widthClassName="w-[min(100%,22rem)]"
           />
         </div>
-        <div className="border-highlight dark:border-ink-surface-foreground/80 mt-5 border-l-2 pl-3">
+        <div className="mt-5 max-w-2xl">
           <SkeletonDataValue
             className="bg-ink-surface-foreground/20"
             heightClassName="h-4"
@@ -112,7 +112,7 @@ function TrainingInstrumentPlate({
           href="/training/planning"
         >
           Ouvrir le planning
-          <span className="text-[10px] tracking-wider opacity-70" aria-hidden>
+          <span className="text-data text-xs tracking-wider opacity-70" aria-hidden>
             →
           </span>
         </Link>
@@ -158,7 +158,7 @@ function TrainingInstrumentPlate({
   return (
     <section className={cn('surface-ink relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10')}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-ink-surface-foreground/65 inline-flex items-center gap-2 text-[11px] font-semibold tracking-wide uppercase">
+        <p className="text-ink-surface-foreground/65 text-data inline-flex items-center gap-2 text-xs font-semibold tracking-wide uppercase">
           <span
             className="bg-highlight dark:bg-ink-surface-foreground h-2.5 w-2.5 shrink-0 rounded-full"
             aria-hidden
@@ -182,7 +182,7 @@ function TrainingInstrumentPlate({
           </h1>
 
           {actionLine ? (
-            <p className="border-highlight dark:border-ink-surface-foreground/80 text-ink-surface-foreground/80 mt-5 max-w-2xl border-l-2 pl-3 text-sm leading-relaxed font-medium">
+            <p className="text-ink-surface-foreground/80 mt-5 max-w-2xl text-sm leading-relaxed font-medium text-pretty">
               {actionLine}
             </p>
           ) : null}
@@ -198,7 +198,7 @@ function TrainingInstrumentPlate({
             href="/training/planning"
           >
             Ouvrir le planning
-            <span className="text-[10px] tracking-wider opacity-70" aria-hidden>
+            <span className="text-data text-xs tracking-wider opacity-70" aria-hidden>
               →
             </span>
           </Link>

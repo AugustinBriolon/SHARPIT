@@ -33,6 +33,9 @@ const ENTRY_TYPE_OPTIONS: { type: CoachMemoryType; label: string }[] = [
   { type: 'CONSTRAINT', label: 'Contrainte' },
 ];
 
+const RADIO_FOCUS =
+  'focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden';
+
 type TravelMemoryFormDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -61,7 +64,9 @@ export function TravelMemoryFormDialog({
 }: TravelMemoryFormDialogProps) {
   const isEdit = Boolean(entry);
   const titleId = useId();
+  const placeFieldId = `${titleId}-place`;
   const labelRef = useRef<HTMLInputElement>(null);
+  const typeRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const [entryType, setEntryType] = useState<CoachMemoryType>('TRAVEL');
   const [label, setLabel] = useState('');
@@ -97,6 +102,48 @@ export function TravelMemoryFormDialog({
       }),
     [allowedDisciplines, noStructuredTraining],
   );
+
+  function focusType(index: number) {
+    const clamped = Math.max(0, Math.min(ENTRY_TYPE_OPTIONS.length - 1, index));
+    typeRefs.current[clamped]?.focus();
+  }
+
+  function selectTypeAt(index: number) {
+    const option = ENTRY_TYPE_OPTIONS[index];
+    if (!option) return;
+    setEntryType(option.type);
+    focusType(index);
+  }
+
+  function onTypeKeyDown(event: React.KeyboardEvent<HTMLButtonElement>, index: number) {
+    switch (event.key) {
+      case 'ArrowDown':
+      case 'ArrowRight':
+        event.preventDefault();
+        selectTypeAt((index + 1) % ENTRY_TYPE_OPTIONS.length);
+        break;
+      case 'ArrowUp':
+      case 'ArrowLeft':
+        event.preventDefault();
+        selectTypeAt((index - 1 + ENTRY_TYPE_OPTIONS.length) % ENTRY_TYPE_OPTIONS.length);
+        break;
+      case 'Home':
+        event.preventDefault();
+        selectTypeAt(0);
+        break;
+      case 'End':
+        event.preventDefault();
+        selectTypeAt(ENTRY_TYPE_OPTIONS.length - 1);
+        break;
+      case ' ':
+      case 'Enter':
+        event.preventDefault();
+        selectTypeAt(index);
+        break;
+      default:
+        break;
+    }
+  }
 
   function toggleDiscipline(discipline: TravelDiscipline) {
     setNoStructuredTraining(false);
@@ -166,24 +213,37 @@ export function TravelMemoryFormDialog({
 
           <div className="space-y-4 py-2">
             {!isEdit ? (
-              <div className="flex gap-1.5 rounded-lg border p-1" role="radiogroup">
-                {ENTRY_TYPE_OPTIONS.map((option) => (
-                  <button
-                    key={option.type}
-                    aria-checked={entryType === option.type}
-                    role="radio"
-                    type="button"
-                    className={cn(
-                      'flex-1 rounded-md px-2 py-1.5 text-sm font-medium transition-colors',
-                      entryType === option.type
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:text-foreground',
-                    )}
-                    onClick={() => setEntryType(option.type)}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+              <div
+                aria-label="Type d'entrée"
+                className="flex gap-1.5 rounded-lg border p-1"
+                role="radiogroup"
+              >
+                {ENTRY_TYPE_OPTIONS.map((option, index) => {
+                  const active = entryType === option.type;
+                  return (
+                    <button
+                      key={option.type}
+                      ref={(node) => {
+                        typeRefs.current[index] = node;
+                      }}
+                      aria-checked={active}
+                      role="radio"
+                      tabIndex={active ? 0 : -1}
+                      type="button"
+                      className={cn(
+                        'min-h-11 flex-1 rounded-md px-2 py-2 text-sm font-medium transition-colors lg:min-h-9 lg:py-1.5',
+                        RADIO_FOCUS,
+                        active
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground',
+                      )}
+                      onClick={() => setEntryType(option.type)}
+                      onKeyDown={(event) => onTypeKeyDown(event, index)}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
               </div>
             ) : null}
 
@@ -204,8 +264,8 @@ export function TravelMemoryFormDialog({
 
             {isTravel ? (
               <div className="space-y-1.5">
-                <Label>Lieu</Label>
-                <LocationPlacePicker value={place} onChange={setPlace} />
+                <Label htmlFor={placeFieldId}>Lieu</Label>
+                <LocationPlacePicker id={placeFieldId} value={place} onChange={setPlace} />
               </div>
             ) : null}
 
@@ -240,7 +300,10 @@ export function TravelMemoryFormDialog({
               </p>
               <div className="grid gap-2">
                 {TRAVEL_DISCIPLINES.map((discipline) => (
-                  <label key={discipline} className="flex items-center gap-2.5 text-sm">
+                  <label
+                    key={discipline}
+                    className="flex min-h-11 items-center gap-2.5 text-sm lg:min-h-9"
+                  >
                     <Checkbox
                       checked={!noStructuredTraining && allowedDisciplines.includes(discipline)}
                       disabled={noStructuredTraining}
@@ -249,7 +312,7 @@ export function TravelMemoryFormDialog({
                     <span>{TRAVEL_DISCIPLINE_LABELS[discipline]}</span>
                   </label>
                 ))}
-                <label className="flex items-center gap-2.5 text-sm">
+                <label className="flex min-h-11 items-center gap-2.5 text-sm lg:min-h-9">
                   <Checkbox
                     checked={noStructuredTraining}
                     onCheckedChange={(checked) => {
@@ -290,7 +353,11 @@ export function TravelMemoryFormDialog({
               </label>
             ) : null}
 
-            {error ? <p className="text-destructive text-sm">{error}</p> : null}
+            {error ? (
+              <p aria-live="assertive" className="text-destructive text-sm" role="alert">
+                {error}
+              </p>
+            ) : null}
           </div>
 
           <DialogFooter>

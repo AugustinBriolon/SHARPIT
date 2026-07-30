@@ -1,34 +1,6 @@
 import { ActivityType } from '@prisma/client';
 import { startOfDay, subDays } from 'date-fns';
 
-// ─── Triathlon formats ────────────────────────────────────────────────────────
-
-export type TriathlonFormat = 'sprint' | 'olympic' | 'half' | 'full';
-
-export const TRIATHLON_FORMATS: TriathlonFormat[] = ['sprint', 'olympic', 'half', 'full'];
-
-export const TRIATHLON_FORMAT_LABELS: Record<TriathlonFormat, string> = {
-  sprint: 'Sprint',
-  olympic: 'Olympique',
-  half: 'Half',
-  full: 'Full',
-};
-
-export const TRIATHLON_FORMAT_RANGES: Record<TriathlonFormat, { min: number; max: number }> = {
-  sprint: { min: 45, max: 90 },
-  olympic: { min: 100, max: 160 },
-  half: { min: 220, max: 360 },
-  full: { min: 540, max: 1020 },
-};
-
-// Canonical duration value per format (used as preset snap point)
-export const TRIATHLON_FORMAT_DURATION: Record<TriathlonFormat, number> = {
-  sprint: 60,
-  olympic: 120,
-  half: 270,
-  full: 720,
-};
-
 // ─── Preset values ────────────────────────────────────────────────────────────
 
 export const DURATION_PRESETS = [30, 60, 90, 120] as const;
@@ -46,7 +18,6 @@ export type TrainingHistoryFilters = {
   distanceMaxKm: number | null;
   durationMinMin: number | null;
   durationMaxMin: number | null;
-  triathlonFormats: TriathlonFormat[];
 };
 
 export type ActivityForHistoryFilters = {
@@ -66,7 +37,6 @@ export const DEFAULT_TRAINING_HISTORY_FILTERS: TrainingHistoryFilters = {
   distanceMaxKm: null,
   durationMinMin: null,
   durationMaxMin: null,
-  triathlonFormats: [],
 };
 
 // ─── Preset ↔ range helpers ───────────────────────────────────────────────────
@@ -143,15 +113,6 @@ export function parseTrainingHistoryFilters(searchParams: URLSearchParams): Trai
         .filter((t): t is ActivityType => Object.values(ActivityType).includes(t as ActivityType))
     : [];
 
-  const formatsParam = searchParams.get('triathlonFormats');
-  const triathlonFormats = formatsParam
-    ? formatsParam
-        .split(',')
-        .filter((f): f is TriathlonFormat =>
-          (['sprint', 'olympic', 'half', 'full'] as const).includes(f as TriathlonFormat),
-        )
-    : [];
-
   const [distanceMinKm, distanceMaxKm] = cleanMinMax(
     parseNumberParam(searchParams.get('distanceMinKm')),
     parseNumberParam(searchParams.get('distanceMaxKm')),
@@ -173,7 +134,6 @@ export function parseTrainingHistoryFilters(searchParams: URLSearchParams): Trai
     distanceMaxKm,
     durationMinMin,
     durationMaxMin,
-    triathlonFormats,
   };
 }
 
@@ -186,8 +146,6 @@ export function serializeTrainingHistoryFilters(filters: TrainingHistoryFilters)
   if (filters.distanceMaxKm != null) params.set('distanceMaxKm', String(filters.distanceMaxKm));
   if (filters.durationMinMin != null) params.set('durationMinMin', String(filters.durationMinMin));
   if (filters.durationMaxMin != null) params.set('durationMaxMin', String(filters.durationMaxMin));
-  if (filters.triathlonFormats.length > 0)
-    params.set('triathlonFormats', filters.triathlonFormats.join(','));
   return params;
 }
 
@@ -214,17 +172,6 @@ export function applyTrainingHistoryFilters<T extends ActivityForHistoryFilters>
 
     // activity.duration is stored in SECONDS — convert to minutes for filter comparison
     const durationMin = activity.duration != null ? activity.duration / 60 : null;
-
-    // Triathlon format (replaces duration filter for triathlon activities)
-    if (activity.type === ActivityType.TRIATHLON && filters.triathlonFormats.length > 0) {
-      if (durationMin == null) return false;
-      const ok = filters.triathlonFormats.some((fmt) => {
-        const { min, max } = TRIATHLON_FORMAT_RANGES[fmt];
-        return durationMin >= min && durationMin <= max;
-      });
-      if (!ok) return false;
-      return true;
-    }
 
     // Distance — only filters activities that track distance; others pass through
     const distanceKm = getActivityDistanceKm(activity);
@@ -278,14 +225,20 @@ export function countActiveTrainingHistoryFilters(filters: TrainingHistoryFilter
   if (filters.periodMaxDays != null) n += 1;
   if (filters.distanceMinKm != null || filters.distanceMaxKm != null) n += 1;
   if (filters.durationMinMin != null || filters.durationMaxMin != null) n += 1;
-  n += filters.triathlonFormats.length;
   return n;
+}
+
+/** Screen-reader status line after filters change the visible activity set. */
+export function formatTrainingHistoryFilterStatus(count: number): string {
+  if (count === 0) return 'Aucune activité ne correspond aux filtres.';
+  if (count === 1) return '1 activité';
+  return `${count} activités`;
 }
 
 /** Count active filters within a single dimension (for sub-menu badges). */
 export function countDimensionSelections(
   filters: TrainingHistoryFilters,
-  dimension: 'types' | 'period' | 'distance' | 'duration' | 'format',
+  dimension: 'types' | 'period' | 'distance' | 'duration',
 ): number {
   switch (dimension) {
     case 'types':
@@ -296,7 +249,5 @@ export function countDimensionSelections(
       return filters.distanceMinKm != null || filters.distanceMaxKm != null ? 1 : 0;
     case 'duration':
       return filters.durationMinMin != null || filters.durationMaxMin != null ? 1 : 0;
-    case 'format':
-      return filters.triathlonFormats.length;
   }
 }

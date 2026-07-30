@@ -2,6 +2,7 @@
 
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { PlanPhase } from '@prisma/client';
 import { CalendarRange, Check, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -21,10 +22,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { ClientGoal, ClientTrainingPlan } from '@/lib/query/types';
-import { phaseColors, phaseLabels } from '@/lib/training/periodization';
+import { phaseLabels } from '@/lib/training/periodization';
 import { useTrainingPlan, useTrainingPlanMutations } from '@/hooks/use-data';
 
 const NO_GOAL = 'none';
+
+const PHASE_BADGE_CLASS: Record<PlanPhase, string> = {
+  BASE: 'border-border bg-muted/70 text-foreground',
+  BUILD: 'border-signal-base/25 bg-signal-base/10 text-signal-base',
+  PEAK: 'border-signal-vo2/25 bg-signal-vo2/10 text-signal-vo2',
+  TAPER: 'border-signal-tempo/25 bg-signal-tempo/10 text-signal-tempo',
+  RACE: 'border-signal-risk/25 bg-signal-risk/10 text-signal-risk',
+};
 
 interface MacroPlanDialogProps {
   goals: ClientGoal[];
@@ -156,7 +165,6 @@ function ActivePlanView({
 
       <div className="max-h-80 space-y-2 overflow-y-auto">
         {plan.weeks.map((w) => {
-          const accent = phaseColors[w.phase];
           return (
             <div
               key={w.id}
@@ -170,8 +178,7 @@ function ActivePlanView({
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <span
-                  className="rounded-full px-2 py-0.5 text-[10px] font-medium"
-                  style={{ backgroundColor: `${accent}22`, color: accent }}
+                  className={`rounded-full border px-2 py-0.5 text-xs font-medium ${PHASE_BADGE_CLASS[w.phase]}`}
                 >
                   {phaseLabels[w.phase]}
                   {w.isDeload ? ' · deload' : ''}

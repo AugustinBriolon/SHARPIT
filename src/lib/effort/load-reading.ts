@@ -25,6 +25,44 @@ export function acwrZoneLabel(zone: AcwrZone): string {
   }
 }
 
+/** Chip label for ramp risk — French first, no acronym. */
+export function rampChipLabel(acwr: number): string {
+  if (acwr <= 0) return '—';
+  switch (classifyAcwrZone(acwr)) {
+    case 'under':
+      return 'Lente';
+    case 'optimal':
+      return 'Saine';
+    case 'alert':
+      return 'Rapide';
+    case 'danger':
+      return 'Critique';
+  }
+}
+
+/** Chip label for form / freshness from TSB — French first. */
+export function formChipLabel(tsb: number | null): string {
+  if (tsb == null) return '—';
+  if (tsb <= -20) return 'Fatigué';
+  if (tsb < 0) return 'En récup.';
+  if (tsb < 10) return 'Équilibré';
+  return 'Frais';
+}
+
+export function formChipTone(tsb: number | null): 'good' | 'warn' | 'neutral' {
+  if (tsb == null) return 'neutral';
+  if (tsb < 0) return 'warn';
+  return 'good';
+}
+
+export function rampChipTone(acwr: number): 'good' | 'warn' | 'neutral' {
+  if (acwr <= 0) return 'neutral';
+  const zone = classifyAcwrZone(acwr);
+  if (zone === 'optimal') return 'good';
+  if (zone === 'under') return 'neutral';
+  return 'warn';
+}
+
 /** TSS still needed this week to reach the bottom of the sweet spot (ACWR 0.9). */
 export function tssGapToSweetSpotFloor(
   weeklyLoad: number,
@@ -79,18 +117,72 @@ export function explainTsb(tsb: number | null): string | null {
   return `TSB +${tsb} — forme positive : marge pour absorber de la charge.`;
 }
 
-/**
- * One synthesis line that connects product posture, fatigue directive, and numbers.
- * Avoids repeating the same slogan three times.
- */
-export function synthesizeLoadReading(input: {
+type LoadReadingInput = {
   verdictKey: string;
   acwr: number;
   weeklyLoad: number;
   chronicWeeklyAvg: number | null;
   tsb: number | null;
   trainingCapacity: string;
-}): string {
+};
+
+/**
+ * Primary why line — French plain language, no acronyms.
+ */
+export function synthesizeLoadReadingPlain(input: LoadReadingInput): string {
+  const { verdictKey, acwr, weeklyLoad, chronicWeeklyAvg, tsb } = input;
+  const zone = classifyAcwrZone(acwr);
+  const gap = tssGapToSweetSpotFloor(weeklyLoad, chronicWeeklyAvg);
+
+  if (verdictKey === 'MAINTAIN' && zone === 'under') {
+    if (tsb != null && tsb < 0) {
+      return 'Sous-charge, mais la forme n’est pas encore revenue — on maintient pour laisser remonter.';
+    }
+    if (gap != null && gap > 0) {
+      return `Sous-charge mesurée : encore ≈${gap} TSS pour rejoindre la zone utile, sans accélérer d’un coup.`;
+    }
+    return 'Charge sous la base : maintenir le niveau actuel plutôt que tout remonter d’un coup.';
+  }
+
+  if (verdictKey === 'BUILD' && zone === 'under') {
+    if (gap != null && gap > 0) {
+      return `Marge claire : ≈${gap} TSS possibles avant le plancher de la zone utile.`;
+    }
+    return 'Charge sous la zone utile — la progression reste possible.';
+  }
+
+  if (verdictKey === 'BUILD' && zone === 'optimal') {
+    return 'Montée dans la zone utile — la progression reste compatible avec la récupération.';
+  }
+
+  if (verdictKey === 'REDUCE') {
+    return 'Montée trop rapide : réduire la charge pour protéger la récupération.';
+  }
+
+  if (verdictKey === 'REST_WEEK') {
+    return 'Semaine de récupération : laisser digérer la charge accumulée.';
+  }
+
+  if (verdictKey === 'TAPER') {
+    return 'Affûtage : la baisse de volume est volontaire, pas une sous-charge accidentelle.';
+  }
+
+  if (zone === 'under') {
+    return 'Charge aiguë sous la base chronique — marge pour progresser si la forme le permet.';
+  }
+  if (zone === 'optimal') {
+    return 'Montée saine : progression possible sans surcharge.';
+  }
+  if (zone === 'alert') {
+    return 'Montée au-dessus de la zone utile : risque de fatigue si la charge monte encore.';
+  }
+  return 'Montée critique : la charge aiguë dépasse largement la base.';
+}
+
+/**
+ * Numbered detail line (ACWR / TSB) for expand — not for the primary badge/why.
+ */
+export function synthesizeLoadReading(input: LoadReadingInput): string {
   const { verdictKey, acwr, weeklyLoad, chronicWeeklyAvg, tsb } = input;
   const zone = classifyAcwrZone(acwr);
   const gap = tssGapToSweetSpotFloor(weeklyLoad, chronicWeeklyAvg);

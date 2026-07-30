@@ -32,7 +32,7 @@ function MetricGrid({ metrics }: { metrics: CoachMetricItem[] }) {
                 key={`${item.label}-${index}`}
                 className="bg-background/40 rounded-analysis border-analysis-border/60 border px-2.5 py-2"
               >
-                <dt className="text-muted-foreground text-[11px] leading-snug">{item.label}</dt>
+                <dt className="text-muted-foreground text-xs leading-snug">{item.label}</dt>
                 <dd className="mt-0.5 text-sm">
                   <MetricValue value={item.value} />
                 </dd>

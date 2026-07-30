@@ -101,7 +101,7 @@ export function TriathlonHeroCards({ legs }: { legs: MultisportLeg[] }) {
 
       {transitions.length > 0 && (
         <div className="border-border/60 bg-muted/20 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border px-4 py-3">
-          <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+          <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
             Transitions
           </span>
           {transitions.map((leg) => (
@@ -114,7 +114,7 @@ export function TriathlonHeroCards({ legs }: { legs: MultisportLeg[] }) {
               {leg.movingDurationSec != null &&
                 leg.movingDurationSec > 0 &&
                 leg.movingDurationSec < leg.durationSec && (
-                  <span className="text-muted-foreground text-[10px]">
+                  <span className="text-muted-foreground text-xs">
                     (zone {formatDuration(leg.durationSec)})
                   </span>
                 )}

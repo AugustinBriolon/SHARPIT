@@ -1,13 +1,7 @@
 'use client';
 
 import { AcwrZoneBar } from '@/components/effort/effort-acwr-section';
-import {
-  acwrZoneLabel,
-  classifyAcwrZone,
-  explainTsb,
-  synthesizeLoadReading,
-  tssGapToSweetSpotFloor,
-} from '@/lib/effort/load-reading';
+import { acwrZoneLabel, classifyAcwrZone, tssGapToSweetSpotFloor } from '@/lib/effort/load-reading';
 import { mapFatigueCapacityLabel, type TrainingCapacity } from '@/lib/today/today-mapping';
 
 const DOMINANT_LABEL: Record<string, string> = {
@@ -26,24 +20,19 @@ const DOMINANT_LABEL: Record<string, string> = {
 type FactRow = { label: string; value: string; hint: string };
 
 /**
- * Effort evidence — ACWR bar + synthesis. No second directive hero (lives in EffortWhyBlock).
+ * Primary evidence — montée (ACWR) in French; acronym only as secondary measure.
  */
 export function EffortVerdictSection({
-  verdict: _verdict,
-  verdictClass: _verdictClass,
-  verdictKey,
   trainingCapacity,
   dominantDimension,
   isLowFatigue,
   acwr,
   weeklyLoad,
   chronicWeeklyAvg,
-  tsb,
 }: {
-  verdict: string;
-  verdictClass: string;
-  verdictKey: string;
-  /** @deprecated unused — generic model slogans are not shown */
+  verdict?: string;
+  verdictClass?: string;
+  verdictKey?: string;
   rationale?: string[];
   trainingCapacity: TrainingCapacity;
   dominantDimension: string | null;
@@ -51,22 +40,11 @@ export function EffortVerdictSection({
   acwr: number;
   weeklyLoad: number;
   chronicWeeklyAvg: number | null;
-  tsb: number | null;
+  tsb?: number | null;
 }) {
   const hasAcwr = acwr > 0;
   const zone = hasAcwr ? classifyAcwrZone(acwr) : null;
   const gap = tssGapToSweetSpotFloor(weeklyLoad, chronicWeeklyAvg);
-  const synthesis = hasAcwr
-    ? synthesizeLoadReading({
-        verdictKey,
-        acwr,
-        weeklyLoad,
-        chronicWeeklyAvg,
-        tsb,
-        trainingCapacity,
-      })
-    : null;
-  const tsbLine = explainTsb(tsb);
   const systemLabel = dominantDimension
     ? (DOMINANT_LABEL[dominantDimension] ?? dominantDimension)
     : null;
@@ -74,16 +52,16 @@ export function EffortVerdictSection({
   const facts: FactRow[] = [];
   if (weeklyLoad > 0) {
     facts.push({
-      label: 'Charge 7j',
+      label: 'Charge 7 j',
       value: `${weeklyLoad} TSS`,
-      hint: chronicWeeklyAvg != null ? `base 42j ${chronicWeeklyAvg} TSS/sem` : 'charge aiguë',
+      hint: chronicWeeklyAvg != null ? `base 42 j ${chronicWeeklyAvg} TSS/sem` : 'charge aiguë',
     });
   }
   if (gap != null && zone === 'under' && gap > 0) {
     facts.push({
-      label: 'Manque pour 0.9',
+      label: 'Marge restante',
       value: `≈${gap} TSS`,
-      hint: 'pour atteindre le plancher du sweet spot',
+      hint: 'pour rejoindre le plancher de la zone utile',
     });
   }
   facts.push({
@@ -103,27 +81,24 @@ export function EffortVerdictSection({
 
   return (
     <section className="px-0.5">
-      <p className="text-label mb-2">Lecture de charge</p>
+      <p className="text-label mb-2">Montée de charge</p>
 
       {hasAcwr && zone ? (
         <div className="space-y-2">
           <div className="flex items-baseline justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-label">ACWR</p>
-              <p className="text-muted-foreground mt-1 text-xs leading-none">
-                {acwrZoneLabel(zone)} · sweet spot 0.9–1.3
-              </p>
+              <p className="text-foreground text-sm font-medium">{acwrZoneLabel(zone)}</p>
+              <p className="text-muted-foreground mt-1 text-xs leading-none">Zone utile 0,9–1,3</p>
             </div>
             <p className="text-data text-foreground text-2xl font-semibold tabular-nums">
               {acwr.toFixed(2)}
             </p>
           </div>
           <AcwrZoneBar acwr={acwr} />
+          <p className="text-muted-foreground text-[10px] tracking-wide">
+            Ratio charge aiguë / chronique (ACWR)
+          </p>
         </div>
-      ) : null}
-
-      {synthesis ? (
-        <p className="text-muted-foreground mt-3 text-sm leading-relaxed">{synthesis}</p>
       ) : null}
 
       {primaryFact ? (
@@ -156,8 +131,6 @@ export function EffortVerdictSection({
           </ul>
         </details>
       ) : null}
-
-      {tsbLine && zone === 'under' ? <p className="annotation-clinical mt-3">{tsbLine}</p> : null}
     </section>
   );
 }

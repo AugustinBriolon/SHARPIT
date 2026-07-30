@@ -34,7 +34,8 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
     if (!focusId || !query.data?.entries.length) return;
     const element = document.getElementById(`memory-${focusId}`);
     if (!element) return;
-    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    element.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
   }, [focusId, query.data?.entries]);
 
   function openCreate() {
@@ -120,7 +121,7 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
         icon={NotebookPen}
         title="Aucune entrée enregistrée"
         action={
-          <Button className="mt-1" size="sm" type="button" onClick={openCreate}>
+          <Button className="mt-1" type="button" onClick={openCreate}>
             Ajouter
           </Button>
         }
@@ -155,7 +156,7 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
             variant="outline"
             onClick={openCreate}
           >
-            <Plus className="size-4" />
+            <Plus className="size-4" aria-hidden />
             Ajouter
           </Button>
         </div>

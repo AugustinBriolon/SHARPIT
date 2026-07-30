@@ -363,11 +363,7 @@ export function CoachChat({
   return (
     <div className="rounded-analysis-lg flex h-full min-w-0 flex-1 flex-col lg:border">
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
-        {header && (
-          <div className="bg-background/85 supports-backdrop-filter:bg-background/70 sticky top-0 z-10 backdrop-blur-md">
-            {header}
-          </div>
-        )}
+        {header && <div className="bg-background sticky top-0 z-10">{header}</div>}
         <div className="space-y-4 p-4">
           {messages.length === 0 && (
             <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
@@ -383,7 +379,7 @@ export function CoachChat({
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s}
-                    className="chip-surface text-foreground/80 hover:border-primary/40 hover:text-foreground min-h-11 rounded-full px-3 py-1.5 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0"
+                    className="chip-surface text-foreground/80 hover:border-primary/40 hover:text-foreground min-h-11 rounded-full px-3 py-1.5 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-50 lg:min-h-9"
                     disabled={inputLocked}
                     type="button"
                     onClick={() => submit(s)}
@@ -496,7 +492,6 @@ export function CoachChat({
             >
               <p>{coachErrorMessage}</p>
               <Button
-                size="sm"
                 type="button"
                 variant="outline"
                 onClick={() => {
@@ -540,6 +535,7 @@ export function CoachChat({
         {isBusy ? (
           <Button
             aria-label="Arrêter la génération"
+            className="size-11 shrink-0"
             size="icon"
             type="button"
             variant="outline"
@@ -550,6 +546,7 @@ export function CoachChat({
         ) : (
           <Button
             aria-label="Envoyer le message"
+            className="size-11 shrink-0"
             disabled={!input.trim()}
             size="icon"
             type="submit"

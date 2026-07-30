@@ -30,7 +30,7 @@ export function ActivityMetaChip({
 
   const linkSurface = tone ? chipLinkSurface[tone] : DEFAULT_LINK_SURFACE;
   const interactiveClass = cn(
-    'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition-colors',
+    'inline-flex min-h-11 items-center gap-2 rounded-full border px-3 py-2 text-xs transition-colors lg:min-h-9 lg:py-1.5',
     linkSurface,
   );
 

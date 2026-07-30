@@ -27,8 +27,8 @@ function MobileSelectLoadingRow() {
       <div className="min-w-0 flex-1">
         <div
           className={cn(
-            'border-input flex h-8 w-full min-w-0 items-center justify-between gap-1.5 rounded-lg border',
-            'bg-transparent py-2 pr-2 pl-2.5 text-sm',
+            'border-input flex min-h-11 w-full min-w-0 items-center justify-between gap-1.5 rounded-lg border',
+            'bg-transparent py-2 pr-2 pl-2.5 text-sm lg:min-h-9',
           )}
         >
           <SkeletonDataValue heightClassName="h-3.5" widthClassName="w-36 max-w-[70%]" />
@@ -40,8 +40,8 @@ function MobileSelectLoadingRow() {
       </div>
       <Button
         aria-label="Supprimer la conversation"
-        className="text-muted-foreground shrink-0"
-        size="icon-sm"
+        className="text-muted-foreground size-11 shrink-0 lg:size-9"
+        size="icon"
         type="button"
         variant="ghost"
         disabled
@@ -133,7 +133,10 @@ export function CoachConversationList({
                   if (value) onSelect(value);
                 }}
               >
-                <SelectTrigger aria-label="Conversation active" className="w-full min-w-0">
+                <SelectTrigger
+                  aria-label="Conversation active"
+                  className="min-h-11 w-full min-w-0 lg:h-9"
+                >
                   <SelectValue placeholder="Nouvelle conversation">
                     {selected ? conversationLabel(selected) : 'Nouvelle conversation'}
                   </SelectValue>
@@ -153,8 +156,8 @@ export function CoachConversationList({
             {activeId ? (
               <Button
                 aria-label="Supprimer la conversation"
-                className="text-muted-foreground hover:text-destructive shrink-0"
-                size="icon-sm"
+                className="text-muted-foreground hover:text-destructive size-11 shrink-0 lg:size-9"
+                size="icon"
                 type="button"
                 variant="ghost"
                 onClick={() => onDelete(activeId)}
@@ -182,14 +185,14 @@ export function CoachConversationList({
                       onClick={() => onSelect(c.id)}
                     >
                       <span className="block truncate font-medium">{conversationLabel(c)}</span>
-                      <span className="text-data text-muted-foreground block truncate text-[11px]">
+                      <span className="text-data text-muted-foreground block truncate text-xs">
                         {formatDistanceToNow(c.updatedAt, { addSuffix: true, locale: fr })}
                       </span>
                     </button>
                     <Button
                       aria-label={`Supprimer ${conversationLabel(c)}`}
-                      className="text-muted-foreground hover:text-destructive shrink-0 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100"
-                      size="icon-sm"
+                      className="text-muted-foreground hover:text-destructive size-11 shrink-0 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 lg:size-9"
+                      size="icon"
                       type="button"
                       variant="ghost"
                       onClick={() => onDelete(c.id)}

@@ -45,11 +45,13 @@ export function TodayWeeklyTrajectory({
               href={TWIN_DRILL_DOWN.recovery}
             >
               Récupération
-              <span className="text-[10px] tracking-wider opacity-70" aria-hidden>
+              <span className="text-data text-xs tracking-wider opacity-70" aria-hidden>
                 →
               </span>
             </Link>
-            <p className="text-muted-foreground mb-1 text-[10px] leading-none">Score · 14 j</p>
+            <p className="text-muted-foreground text-data mb-1 text-xs leading-none">
+              Score · 14 j
+            </p>
             {loading ? (
               <Skeleton className="h-14 w-full rounded-lg" />
             ) : (
@@ -62,11 +64,13 @@ export function TodayWeeklyTrajectory({
               href={TWIN_DRILL_DOWN.effort}
             >
               Charge
-              <span className="text-[10px] tracking-wider opacity-70" aria-hidden>
+              <span className="text-data text-xs tracking-wider opacity-70" aria-hidden>
                 →
               </span>
             </Link>
-            <p className="text-muted-foreground mb-1 text-[10px] leading-none">TSS / jour · 14 j</p>
+            <p className="text-muted-foreground text-data mb-1 text-xs leading-none">
+              TSS / jour · 14 j
+            </p>
             {loading ? (
               <Skeleton className="h-14 w-full rounded-lg" />
             ) : (

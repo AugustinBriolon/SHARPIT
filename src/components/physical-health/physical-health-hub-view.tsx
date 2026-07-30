@@ -36,13 +36,18 @@ export function PhysicalHealthHubView() {
       : null;
 
   return (
-    <>
+    <div className="space-y-4">
       {focused ? (
-        <p className="text-muted-foreground text-sm">
+        <p aria-live="polite" className="text-muted-foreground text-sm">
           Focus : <span className="text-foreground font-medium">{focused.label}</span>
         </p>
       ) : null}
+      {valuesLoading ? (
+        <p aria-live="polite" className="sr-only">
+          Chargement de l&apos;état physique…
+        </p>
+      ) : null}
       <PhysicalHealthPageView loading={valuesLoading} viewModel={viewModel} embedded />
-    </>
+    </div>
   );
 }

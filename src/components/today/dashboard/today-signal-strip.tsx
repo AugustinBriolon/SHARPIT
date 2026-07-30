@@ -78,7 +78,7 @@ export function TodaySignalStrip({
     },
     {
       key: 'effort',
-      label: 'Effort',
+      label: 'Charge',
       href: TWIN_DRILL_DOWN.effort,
       display: formatStrain(metricsRow.effortScore),
       valueClass: mapStripStrainToColorClass(metricsRow.effortScore),
@@ -98,15 +98,15 @@ export function TodaySignalStrip({
           href={signal.href}
           title={`Voir le détail — ${signal.label}`}
           className={cn(
-            'chip-surface hover:border-primary/35 group',
-            'focus-visible:ring-primary/35 inline-flex min-w-0 items-center justify-between gap-1.5',
-            'rounded-2xl px-2.5 py-2 transition-[border-color,background-color,transform] duration-150 ease-out',
-            'focus-visible:ring-2 focus-visible:outline-hidden motion-safe:active:scale-[0.96] sm:py-1.5',
+            'chip-surface-lg hover:border-primary/35 group',
+            'focus-visible:ring-primary/35 inline-flex min-h-11 min-w-0 items-center justify-between gap-1.5',
+            'rounded-2xl px-3 py-2 transition-[border-color,background-color,transform] duration-150 ease-out',
+            'focus-visible:ring-2 focus-visible:outline-hidden lg:min-h-9 lg:px-2.5 lg:py-1.5',
           )}
         >
           <span className="inline-flex min-w-0 items-center gap-1.5">
             <span className={cn('h-2 w-2 shrink-0 rounded-full', signal.dotClass)} aria-hidden />
-            <span className="text-muted-foreground text-[11px] font-medium tracking-wide">
+            <span className="text-muted-foreground text-xs font-medium tracking-wide">
               {signal.label}
             </span>
             {loading ? (
@@ -118,7 +118,7 @@ export function TodaySignalStrip({
             )}
           </span>
           <span
-            className="text-muted-foreground/70 text-data shrink-0 text-[10px] tracking-wider transition-transform duration-150 ease-[cubic-bezier(0.2,0,0,1)] group-hover:translate-x-0.5"
+            className="text-muted-foreground/70 text-data shrink-0 text-xs tracking-wider transition-transform duration-150 ease-[cubic-bezier(0.2,0,0,1)] group-hover:translate-x-0.5"
             aria-hidden
           >
             →

@@ -34,7 +34,7 @@ export function IntegrationsHubShell({ pending = false }: { pending?: boolean })
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-medium">{integration.name}</p>
                     {integration.badge === 'legacy' ? (
-                      <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px] font-medium uppercase">
+                      <span className="bg-muted text-muted-foreground text-label rounded-full px-2 py-0.5">
                         Historique
                       </span>
                     ) : null}

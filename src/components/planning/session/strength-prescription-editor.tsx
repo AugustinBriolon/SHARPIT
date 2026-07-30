@@ -118,9 +118,9 @@ function draftWatchHint(exercise: string): string | null {
 }
 
 function watchHintClassName(hint: string): string {
-  if (hint.startsWith('Hors')) return 'text-muted-foreground/80 text-[11px]';
-  if (hint.startsWith('Approx')) return 'text-[11px] text-amber-700/90 dark:text-amber-400/90';
-  return 'text-muted-foreground text-[11px]';
+  if (hint.startsWith('Hors')) return 'text-muted-foreground/80 text-xs';
+  if (hint.startsWith('Approx')) return 'text-xs text-amber-700/90 dark:text-amber-400/90';
+  return 'text-muted-foreground text-xs';
 }
 
 function fieldId(rowKey: string, field: string): string {
@@ -205,7 +205,7 @@ export function StrengthPrescriptionEditor({
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-[11px]" htmlFor={setsId}>
+                <Label className="text-muted-foreground text-xs" htmlFor={setsId}>
                   Séries
                 </Label>
                 <Input
@@ -218,7 +218,7 @@ export function StrengthPrescriptionEditor({
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-[11px]" htmlFor={repsId}>
+                <Label className="text-muted-foreground text-xs" htmlFor={repsId}>
                   Reps
                 </Label>
                 <Input
@@ -231,7 +231,7 @@ export function StrengthPrescriptionEditor({
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-[11px]" htmlFor={weightId}>
+                <Label className="text-muted-foreground text-xs" htmlFor={weightId}>
                   Poids kg
                 </Label>
                 <Input
@@ -245,7 +245,7 @@ export function StrengthPrescriptionEditor({
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-[11px]" htmlFor={durationId}>
+                <Label className="text-muted-foreground text-xs" htmlFor={durationId}>
                   Durée s
                 </Label>
                 <Input
@@ -259,7 +259,7 @@ export function StrengthPrescriptionEditor({
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-[11px]" htmlFor={restModeId}>
+                <Label className="text-muted-foreground text-xs" htmlFor={restModeId}>
                   Repos
                 </Label>
                 <Select
@@ -268,7 +268,7 @@ export function StrengthPrescriptionEditor({
                     updateRow(row.key, { restMode: value as StrengthRestMode })
                   }
                 >
-                  <SelectTrigger className="h-9" id={restModeId}>
+                  <SelectTrigger className="min-h-11 lg:h-9" id={restModeId}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -279,7 +279,7 @@ export function StrengthPrescriptionEditor({
               </div>
               {row.restMode === 'time' ? (
                 <div className="space-y-1">
-                  <Label className="text-muted-foreground text-[11px]" htmlFor={restSecId}>
+                  <Label className="text-muted-foreground text-xs" htmlFor={restSecId}>
                     Repos s
                   </Label>
                   <Input

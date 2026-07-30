@@ -37,7 +37,7 @@ export function CorpsSectionHeader({
         {label && <EyebrowLabel variant="corps">{label}</EyebrowLabel>}
         <h2 className="text-section-title">{title}</h2>
         {description && (
-          <p className="text-muted-foreground max-w-2xl text-xs leading-relaxed">{description}</p>
+          <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed">{description}</p>
         )}
       </div>
       {action}
@@ -102,9 +102,7 @@ export function CorpsDivider({ label, count }: { label: string; count?: number }
       <EyebrowLabel variant="corps">
         {label}
         {count != null && (
-          <span className="text-foreground/60 ml-1.5 font-mono text-[10px] tabular-nums">
-            {count}
-          </span>
+          <span className="text-data text-foreground/60 ml-1.5 text-xs tabular-nums">{count}</span>
         )}
       </EyebrowLabel>
       <div className="bg-border/60 h-px flex-1" />

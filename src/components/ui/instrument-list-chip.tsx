@@ -54,10 +54,10 @@ export function splitInstrumentMeta(secondary: string | null | undefined): strin
 
 const chipClassName = (done: boolean, className?: string) =>
   cn(
-    'chip-surface hover:border-primary/35',
+    'chip-surface-lg',
     'focus-visible:ring-primary/35 flex w-full min-w-0 items-center justify-between gap-3',
     'rounded-analysis px-3 py-3 text-left transition-[border-color,background-color,transform] duration-150',
-    'group focus-visible:ring-2 focus-visible:outline-hidden motion-safe:active:scale-[0.96]',
+    'group focus-visible:ring-2 focus-visible:outline-hidden',
     done && cn(STATUS_SURFACE.doneSoft, STATUS_SURFACE.doneHover),
     className,
   );
@@ -107,7 +107,7 @@ export const InstrumentListChip = memo(function InstrumentListChip({
           {title}
         </span>
         {hasMetaRow ? (
-          <span className="text-muted-foreground flex min-w-0 items-center gap-x-1.5 overflow-hidden text-[11px] whitespace-nowrap">
+          <span className="text-muted-foreground flex min-w-0 items-center gap-x-1.5 overflow-hidden text-xs whitespace-nowrap">
             {activityType != null ? <ActivityTypeIndicator type={activityType} /> : null}
             {meta.map((item, index) => (
               <span key={`meta-${index}-${metaText(item)}`} className="contents">
@@ -130,11 +130,11 @@ export const InstrumentListChip = memo(function InstrumentListChip({
         ) : null}
       </span>
       <span className="flex shrink-0 items-center gap-1.5">
-        {done ? <CheckCircle2 className="text-primary size-3.5" aria-hidden /> : null}
+        {done && <CheckCircle2 className="text-primary size-3.5" aria-hidden />}
         {trailing}
         {primary && !done ? (
           <span
-            className="bg-highlight text-highlight-foreground text-data inline-flex size-[26px] items-center justify-center rounded-full text-[11px] transition-[transform,opacity,filter] duration-150 ease-[cubic-bezier(0.2,0,0,1)] group-hover:translate-x-0.5"
+            className="bg-highlight text-highlight-foreground text-data inline-flex size-7 items-center justify-center rounded-full text-xs transition-transform duration-150 group-hover:translate-x-0.5"
             aria-hidden
           >
             →
@@ -142,7 +142,7 @@ export const InstrumentListChip = memo(function InstrumentListChip({
         ) : null}
         {showArrow && !(primary && !done) ? (
           <span
-            className="text-muted-foreground/70 text-data text-[10px] tracking-wider transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.2,0,0,1)] group-hover:translate-x-0.5"
+            className="text-muted-foreground/70 text-data text-xs tracking-wider transition-transform duration-150 group-hover:translate-x-0.5"
             aria-hidden
           >
             →

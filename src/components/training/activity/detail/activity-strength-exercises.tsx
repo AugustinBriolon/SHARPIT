@@ -165,7 +165,7 @@ export function ActivityStrengthExercises({ activity }: { activity: ActivityDeta
                 </div>
               );
             })}
-            <p className="text-muted-foreground px-0.5 pt-1 text-[10px] leading-relaxed">
+            <p className="text-muted-foreground px-0.5 pt-1 text-xs leading-relaxed">
               Visuels © Gym visual —{' '}
               <a
                 className="underline-offset-2 hover:underline"

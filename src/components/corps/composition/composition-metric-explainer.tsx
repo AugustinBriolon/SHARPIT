@@ -46,7 +46,7 @@ function MetricScale({
 
       <div className="flex flex-wrap gap-x-3 gap-y-1">
         {zones.map((zone) => (
-          <span key={zone.label} className="text-muted-foreground text-[10px]">
+          <span key={zone.label} className="text-muted-foreground text-xs">
             <span
               className={cn('mr-1 inline-block size-1.5 rounded-full', CORPS_TONE_SCALE[zone.tone])}
             />
@@ -133,12 +133,12 @@ export function CompositionMetricExplainer({
           ) : null}
 
           {showAgeComparisonNote && chronologicalAgeYears != null ? (
-            <p className="text-muted-foreground text-[11px]">
+            <p className="text-muted-foreground text-xs">
               Comparaison basée sur ton profil athlète ({chronologicalAgeYears} ans).
             </p>
           ) : null}
 
-          <p className="text-muted-foreground text-[11px] leading-relaxed">
+          <p className="text-muted-foreground text-xs leading-relaxed">
             Indication sportive et éducative — ne remplace pas un avis médical. Les seuils sont des
             repères populationnels ; ton contexte d’entraînement peut les modifier.
           </p>

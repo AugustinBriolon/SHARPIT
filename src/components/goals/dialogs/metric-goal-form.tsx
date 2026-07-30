@@ -1,7 +1,7 @@
 'use client';
 
 import { ActivityType, GoalHorizon } from '@prisma/client';
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -105,6 +105,7 @@ interface MetricGoalFormProps {
 }
 
 export function MetricGoalForm({ template, goal, onError, formId, onSubmit }: MetricGoalFormProps) {
+  const uid = useId();
   const existing = useMemo(() => parseGoalMetricConfig(goal?.metricKey), [goal?.metricKey]);
 
   const [sport, setSport] = useState<ActivityType>(() => {
@@ -269,7 +270,7 @@ export function MetricGoalForm({ template, goal, onError, formId, onSubmit }: Me
     return (
       <form className="space-y-4" id={formId} onSubmit={handleSubmit}>
         <div className="space-y-2">
-          <Label>Sport</Label>
+          <Label htmlFor={`${uid}-sport`}>Sport</Label>
           <Select
             value={sport}
             onValueChange={(v) => {
@@ -280,7 +281,7 @@ export function MetricGoalForm({ template, goal, onError, formId, onSubmit }: Me
               setDistancePreset(nextPresets[0]?.id ?? 'custom');
             }}
           >
-            <SelectTrigger className="w-full min-w-0">
+            <SelectTrigger className="w-full min-w-0" id={`${uid}-sport`}>
               <SelectValue>{activityTypeLabels[sport]}</SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -294,9 +295,9 @@ export function MetricGoalForm({ template, goal, onError, formId, onSubmit }: Me
         </div>
 
         <div className="space-y-2">
-          <Label>Distance</Label>
+          <Label htmlFor={`${uid}-distance`}>Distance</Label>
           <Select value={distancePreset} onValueChange={(v) => v && setDistancePreset(v)}>
-            <SelectTrigger className="w-full min-w-0">
+            <SelectTrigger className="w-full min-w-0" id={`${uid}-distance`}>
               <SelectValue>{distancePresetLabel}</SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -333,12 +334,12 @@ export function MetricGoalForm({ template, goal, onError, formId, onSubmit }: Me
         </div>
 
         <div className="space-y-2">
-          <Label>Fin de l&apos;objectif</Label>
+          <Label htmlFor={`${uid}-end-mode`}>Fin de l&apos;objectif</Label>
           <Select
             value={performanceEndMode}
             onValueChange={(v) => v && setPerformanceEndMode(v as GoalEndMode)}
           >
-            <SelectTrigger className="w-full min-w-0">
+            <SelectTrigger className="w-full min-w-0" id={`${uid}-end-mode`}>
               <SelectValue>{performanceEndModeLabels[performanceEndMode]}</SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -377,9 +378,9 @@ export function MetricGoalForm({ template, goal, onError, formId, onSubmit }: Me
   return (
     <form className="space-y-4" id={formId} onSubmit={handleSubmit}>
       <div className="space-y-2">
-        <Label>Récurrence</Label>
+        <Label htmlFor={`${uid}-period`}>Récurrence</Label>
         <Select value={period} onValueChange={(v) => v && setPeriod(v as GoalPeriod)}>
-          <SelectTrigger className="w-full min-w-0">
+          <SelectTrigger className="w-full min-w-0" id={`${uid}-period`}>
             <SelectValue>{periodLabels[period]}</SelectValue>
           </SelectTrigger>
           <SelectContent>
@@ -394,9 +395,9 @@ export function MetricGoalForm({ template, goal, onError, formId, onSubmit }: Me
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label>Mesure</Label>
+          <Label htmlFor={`${uid}-measure`}>Mesure</Label>
           <Select value={measure} onValueChange={(v) => v && setMeasure(v as PeriodMeasure)}>
-            <SelectTrigger className="w-full min-w-0">
+            <SelectTrigger className="w-full min-w-0" id={`${uid}-measure`}>
               <SelectValue>{measureLabels[measure]}</SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -409,9 +410,9 @@ export function MetricGoalForm({ template, goal, onError, formId, onSubmit }: Me
           </Select>
         </div>
         <div className="space-y-2">
-          <Label>Sport</Label>
+          <Label htmlFor={`${uid}-period-sport`}>Sport</Label>
           <Select value={periodSport} onValueChange={(v) => v && setPeriodSport(v)}>
-            <SelectTrigger className="w-full min-w-0">
+            <SelectTrigger className="w-full min-w-0" id={`${uid}-period-sport`}>
               <SelectValue>{periodSportLabel}</SelectValue>
             </SelectTrigger>
             <SelectContent>

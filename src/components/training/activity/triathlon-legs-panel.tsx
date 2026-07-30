@@ -1,4 +1,5 @@
 import { Bike, Footprints, Timer, Waves } from 'lucide-react';
+import { ActivityType } from '@prisma/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDistance, formatDuration, formatPace, formatSwimPace } from '@/lib/format';
 import {
@@ -7,6 +8,11 @@ import {
   type MultisportLeg,
   type MultisportLegKind,
 } from '@/lib/multisport';
+import {
+  SPORT_IDENTITY_PANEL,
+  SPORT_IDENTITY_SURFACE,
+  SPORT_IDENTITY_TEXT,
+} from '@/lib/activity/sport-identity';
 import { cn } from '@/lib/utils';
 
 const kindIcon: Record<MultisportLegKind, typeof Waves> = {
@@ -16,11 +22,10 @@ const kindIcon: Record<MultisportLegKind, typeof Waves> = {
   transition: Timer,
 };
 
-const kindAccent: Record<MultisportLegKind, string> = {
-  swim: 'bg-blue-500/10 text-blue-600',
-  bike: 'bg-emerald-500/10 text-emerald-600',
-  run: 'bg-orange-500/10 text-orange-600',
-  transition: 'bg-muted text-muted-foreground',
+const kindToActivityType: Record<'swim' | 'bike' | 'run', ActivityType> = {
+  swim: ActivityType.SWIM,
+  bike: ActivityType.BIKE,
+  run: ActivityType.RUN,
 };
 
 function formatLegPace(leg: MultisportLeg): string | null {
@@ -39,6 +44,7 @@ function formatLegPace(leg: MultisportLeg): string | null {
 
 function SportLegRow({ leg }: { leg: MultisportLeg }) {
   const Icon = kindIcon[leg.kind];
+  const sportType = kindToActivityType[leg.kind as 'swim' | 'bike' | 'run'];
   const pace = formatLegPace(leg);
   const metrics: string[] = [];
 
@@ -49,17 +55,22 @@ function SportLegRow({ leg }: { leg: MultisportLeg }) {
   if (leg.elevationM != null && leg.elevationM > 0) metrics.push(`D+${leg.elevationM} m`);
 
   return (
-    <div className="relative flex gap-4">
+    <div
+      className={cn(
+        'rounded-analysis relative flex gap-4 px-3 py-3',
+        SPORT_IDENTITY_PANEL[sportType],
+      )}
+    >
       <span
         className={cn(
           'relative z-10 grid size-10 shrink-0 place-items-center rounded-xl',
-          kindAccent[leg.kind],
+          SPORT_IDENTITY_SURFACE[sportType],
         )}
       >
         <Icon className="size-4" />
       </span>
-      <div className="min-w-0 flex-1 pb-5">
-        <p className="font-medium">{leg.label}</p>
+      <div className="min-w-0 flex-1">
+        <p className={cn('font-medium', SPORT_IDENTITY_TEXT[sportType])}>{leg.label}</p>
         <p className="text-muted-foreground mt-1 font-mono text-sm tabular-nums">
           {metrics.join(' · ')}
         </p>
@@ -77,7 +88,7 @@ function TransitionRow({ leg }: { leg: MultisportLeg }) {
       <span
         className={cn(
           'relative z-10 grid size-7 shrink-0 place-items-center rounded-lg',
-          kindAccent.transition,
+          'bg-muted text-muted-foreground',
         )}
       >
         <Timer className="size-3.5" />
@@ -88,7 +99,7 @@ function TransitionRow({ leg }: { leg: MultisportLeg }) {
           {formatDuration(displaySec)}
         </span>
         {inZone && (
-          <span className="text-muted-foreground text-[10px] tabular-nums">
+          <span className="text-muted-foreground text-xs tabular-nums">
             zone {formatDuration(leg.durationSec)}
           </span>
         )}
@@ -123,7 +134,7 @@ export function TriathlonLegsPanel({ legs }: { legs: MultisportLeg[] }) {
             <div key={`${leg.garminActivityId ?? leg.label}-${index}`} className="relative">
               {!isLast && !isTransition && (
                 <span
-                  className="bg-border absolute top-10 left-5 h-[calc(100%-0.5rem)] w-px"
+                  className="bg-border absolute top-12 left-8 h-[calc(100%-1rem)] w-px"
                   aria-hidden
                 />
               )}

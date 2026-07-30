@@ -13,10 +13,9 @@ export default function SettingsAccountLoading() {
       <MobileBackLink showOnDesktop />
       <StickyHeader>
         <p className="text-label">Profil</p>
-        <h1 className="text-page-title mt-1">Mon identité sportive</h1>
+        <h1 className="text-page-title mt-1">Mon profil</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Seuils, zones et préférences physiologiques — tout ce que SHARPIT utilise pour
-          personnaliser le coaching et le planning.
+          Identité et rythme de vie — les repères de performance sont dans Progression.
         </p>
       </StickyHeader>
 

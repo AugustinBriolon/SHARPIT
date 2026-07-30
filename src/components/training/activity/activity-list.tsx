@@ -138,7 +138,7 @@ function ActivityChip({
       trailing={
         <>
           {recordLabel ? (
-            <span className="border-analysis-border text-muted-foreground rounded-full border px-2 py-0.5 text-[9.5px] whitespace-nowrap">
+            <span className="border-analysis-border text-muted-foreground rounded-full border px-2 py-0.5 text-xs whitespace-nowrap">
               {recordLabel}
             </span>
           ) : null}
@@ -171,7 +171,7 @@ function ActivityRow({ activity, compact = false }: { activity: ActivityItem; co
     <Link
       href={`/training/${activity.id}`}
       className={[
-        'analysis-panel group hover:border-primary/30 hover:bg-analysis-surface-alt/60 rounded-analysis pressable flex flex-col gap-3',
+        'analysis-panel group hover:border-primary/30 hover:bg-analysis-surface-alt/60 rounded-analysis pressable-lg flex flex-col gap-3',
         compact ? 'px-4 py-3' : 'px-5 py-4',
       ].join(' ')}
     >
@@ -187,7 +187,7 @@ function ActivityRow({ activity, compact = false }: { activity: ActivityItem; co
               {activity.title ?? activityTypeLabels[activity.type]}
             </span>
             {activity.plannedSession && (
-              <span className="border-analysis-border bg-analysis-surface-alt text-muted-foreground rounded-full border px-2 py-0.5 text-[10px] font-medium">
+              <span className="border-analysis-border bg-analysis-surface-alt text-muted-foreground rounded-full border px-2 py-0.5 text-xs font-medium">
                 {analysis ? 'Conformité' : 'Liée au plan'}{' '}
                 {analysis ? (
                   <span className="text-data text-foreground">{analysis.complianceScore}/100</span>
@@ -195,7 +195,7 @@ function ActivityRow({ activity, compact = false }: { activity: ActivityItem; co
               </span>
             )}
           </div>
-          <span className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-1.5 text-[11px]">
+          <span className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-1.5 text-xs">
             <ActivityTypeIndicator type={activity.type} />
             {metaParts.map((part, index) => (
               <span key={`row-meta-${index}`} className="contents">

@@ -55,7 +55,7 @@ export function EquipmentPanel({ initial }: { initial: AthleteEquipment }) {
     <div className="space-y-4">
       <EquipmentSportTabs sport={sport} onSportChange={setSport} />
 
-      <div className="space-y-1" role="tabpanel">
+      <div className="space-y-1">
         <p className="text-label">{EQUIPMENT_SPORT_LABELS[sport]}</p>
         <p className="text-muted-foreground text-xs leading-relaxed">
           Coche uniquement ce qui a un impact réel sur la génération de séances.

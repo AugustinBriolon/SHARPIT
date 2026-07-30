@@ -98,6 +98,11 @@ export function TodayDashboard() {
 
   return (
     <div className="mx-auto space-y-6 lg:space-y-8">
+      {query.isFetching ? (
+        <p aria-live="polite" className="sr-only" role="status">
+          Mise a jour de la page Today en cours.
+        </p>
+      ) : null}
       {!valuesLoading && content.statusMessage ? (
         <SnapshotStatusBanner isRefreshing={query.isFetching} message={content.statusMessage} />
       ) : null}

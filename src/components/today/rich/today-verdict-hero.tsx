@@ -36,10 +36,7 @@ export function TodayVerdictHero({
   let actionContent: ReactNode = null;
   if (loading) {
     actionContent = (
-      <div
-        className="border-highlight dark:border-ink-surface-foreground/80 h-5.75 max-w-2xl border-l-2 pl-3 text-sm leading-relaxed"
-        aria-hidden
-      >
+      <div className="h-5.75 max-w-2xl text-sm leading-relaxed" aria-hidden>
         <Skeleton className="bg-ink-surface-foreground/20 h-5 w-[min(100%,18rem)] rounded-full" />
       </div>
     );
@@ -47,7 +44,7 @@ export function TodayVerdictHero({
     actionContent = (
       <p
         className={cn(
-          'border-highlight dark:border-ink-surface-foreground/80 max-w-2xl border-l-2 pl-3 text-sm leading-relaxed text-pretty',
+          'max-w-2xl text-sm leading-relaxed text-pretty',
           secondaryMuted
             ? 'text-ink-surface-foreground/70'
             : 'text-ink-surface-foreground/80 font-medium',
@@ -70,7 +67,7 @@ export function TodayVerdictHero({
   ) : (
     <>
       <ConfidenceBars filled={bars} tone="highlight" />
-      <span className="text-[11px] font-medium tracking-wide uppercase">
+      <span className="text-data text-xs font-medium tracking-wide uppercase">
         {trust.confidenceLabel}
       </span>
     </>
@@ -117,7 +114,7 @@ export function TodayVerdictHero({
       className={cn('surface-ink relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10')}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-ink-surface-foreground/65 inline-flex min-w-0 items-center gap-2 text-[11px] font-semibold tracking-wide uppercase">
+        <div className="text-ink-surface-foreground/65 text-data inline-flex min-w-0 items-center gap-2 text-xs font-semibold tracking-wide uppercase">
           <span
             className="bg-highlight dark:bg-ink-surface-foreground h-2.5 w-2.5 shrink-0 rounded-full"
             aria-hidden

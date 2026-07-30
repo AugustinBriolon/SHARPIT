@@ -54,6 +54,7 @@ export function PhysicalHealthPageView({
 
   const headerAction = (
     <Button
+      className="min-h-11 px-4 lg:min-h-9 lg:px-3.5"
       disabled={loading}
       size="sm"
       variant="highlight"
@@ -86,7 +87,7 @@ export function PhysicalHealthPageView({
   }
 
   return (
-    <>
+    <div aria-busy={loading || undefined} className="space-y-4">
       {!embedded && (
         <CorpsSectionHeader
           action={headerAction}
@@ -98,7 +99,7 @@ export function PhysicalHealthPageView({
 
       {embedded && (
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-muted-foreground text-xs leading-relaxed">
+          <p className="text-muted-foreground text-sm leading-relaxed">
             Conditions actives, capacité d&apos;entraînement et évolution inférées.
           </p>
           {headerAction}
@@ -142,7 +143,7 @@ export function PhysicalHealthPageView({
           action={
             viewModel.emptyState.action ? (
               <Link
-                className="text-primary text-sm font-medium hover:underline"
+                className="text-primary inline-flex min-h-11 items-center text-sm font-medium hover:underline lg:min-h-9"
                 href={viewModel.emptyState.action.href}
               >
                 {viewModel.emptyState.action.label}
@@ -154,7 +155,7 @@ export function PhysicalHealthPageView({
 
       {loading ? (
         <section className="space-y-3">
-          <h3 className="text-sm font-semibold">Conditions actives</h3>
+          <h3 className="text-section-title text-base">Conditions actives</h3>
           <div className="grid gap-3 md:grid-cols-2">
             <ConditionCardSkeleton />
             <ConditionCardSkeleton />
@@ -164,7 +165,7 @@ export function PhysicalHealthPageView({
 
       {!loading && activeConditions.length > 0 ? (
         <section className="space-y-3">
-          <h3 className="text-sm font-semibold">Conditions actives</h3>
+          <h3 className="text-section-title text-base">Conditions actives</h3>
           <div className="grid gap-3 md:grid-cols-2">
             {activeConditions.map((c) => (
               <PhysicalHealthConditionCardView
@@ -182,8 +183,10 @@ export function PhysicalHealthPageView({
         <>
           <CorpsDivider count={resolvedConditions.length} label="Historique" />
           <section className="space-y-3">
-            <h3 className="text-muted-foreground text-sm font-semibold">Historique résolu</h3>
-            <p className="text-muted-foreground text-xs">
+            <h3 className="text-section-title text-muted-foreground text-base">
+              Historique résolu
+            </h3>
+            <p className="text-muted-foreground text-sm">
               Le Digital Twin ne supprime jamais une condition — l&apos;historique reste disponible.
             </p>
             <div className="grid gap-3 md:grid-cols-2">
@@ -209,6 +212,6 @@ export function PhysicalHealthPageView({
           onClose={() => setDialog(null)}
         />
       ) : null}
-    </>
+    </div>
   );
 }

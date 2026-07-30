@@ -45,7 +45,7 @@ function WeekStripSummary({
   }
   if (!summaryLabel) return null;
   return (
-    <span className="text-data text-muted-foreground text-[11px] tracking-wide">
+    <span className="text-data text-muted-foreground text-xs tracking-wide">
       Cette semaine · {summaryLabel}
     </span>
   );
@@ -80,7 +80,7 @@ function WeekCellValue({
       </span>
       <span
         className={cn(
-          'text-[8.5px]',
+          'text-xs',
           isCurrent ? 'text-highlight-foreground/70' : 'text-muted-foreground',
         )}
       >
@@ -135,7 +135,7 @@ export function TrainingWeekStrip({
               title={`Ouvrir le planning — semaine du ${weekLabel}`}
               className={cn(
                 cellVisibilityClass(index, weekCells.length),
-                'flex-col items-center gap-1 rounded-2xl px-1 py-2',
+                'min-h-11 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2.5 lg:min-h-9 lg:px-1.5 lg:py-2',
                 'focus-visible:ring-primary/35 transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
                 cell.isCurrent
                   ? 'bg-highlight text-highlight-foreground hover:bg-highlight/90'
@@ -144,7 +144,7 @@ export function TrainingWeekStrip({
             >
               <span
                 className={cn(
-                  'text-[9px] tracking-wide whitespace-nowrap uppercase',
+                  'text-data text-xs tracking-wide whitespace-nowrap uppercase',
                   cell.isCurrent ? 'text-highlight-foreground/70' : 'text-muted-foreground',
                 )}
               >

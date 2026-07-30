@@ -30,7 +30,7 @@ export function CoachProvenanceChips() {
       {chips.map((chip) => (
         <span
           key={chip.key}
-          className="border-analysis-border text-muted-foreground inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.75 text-[10.5px]"
+          className="border-analysis-border text-muted-foreground inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs"
         >
           <span className={`size-1.5 shrink-0 rounded-full ${chip.dotClass}`} aria-hidden />
           {chip.label}

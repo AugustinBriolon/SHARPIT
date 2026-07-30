@@ -16,10 +16,14 @@ export function EquipmentStatusLine({
   if (error) content = <span className="text-destructive">{error}</span>;
   else if (message) content = <span>{message}</span>;
   else if (saving) content = <span>Enregistrement…</span>;
-  else if (dirty) content = <span>…</span>;
+  else if (dirty) content = <span>Modifications en cours…</span>;
 
   return (
-    <div aria-live="polite" className="text-muted-foreground flex min-h-5 items-center text-xs">
+    <div
+      aria-live={error ? 'assertive' : 'polite'}
+      className="text-muted-foreground flex min-h-5 items-center text-xs"
+      role={error ? 'alert' : undefined}
+    >
       {content}
     </div>
   );

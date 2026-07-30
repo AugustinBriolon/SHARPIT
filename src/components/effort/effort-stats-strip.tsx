@@ -1,23 +1,10 @@
 import { DrillDownStatsStrip } from '@/components/today/drill-down/stats-strip';
-import type { MetricTone } from '@/components/today/drill-down/metric-cell';
-
-function acwrTone(acwr: number): MetricTone {
-  if (acwr >= 1.5) return 'warn';
-  if (acwr >= 1.3) return 'warn';
-  if (acwr >= 0.9) return 'good';
-  return 'neutral';
-}
-
-function tsbDisplay(tsb: number | null): string {
-  if (tsb == null) return '—';
-  const sign = tsb > 0 ? '+' : '';
-  return `${sign}${tsb}`;
-}
-
-function tsbTone(tsb: number | null): MetricTone {
-  if (tsb == null) return 'neutral';
-  return tsb >= 0 ? 'good' : 'warn';
-}
+import {
+  formChipLabel,
+  formChipTone,
+  rampChipLabel,
+  rampChipTone,
+} from '@/lib/effort/load-reading';
 
 export function EffortStatsStrip({
   acwr,
@@ -35,21 +22,21 @@ export function EffortStatsStrip({
       loading={loading}
       items={[
         {
-          label: 'ACWR',
-          value: acwr > 0 ? acwr.toFixed(2) : '—',
-          sub: 'ratio charge',
-          tone: acwrTone(acwr),
+          label: 'Montée',
+          value: rampChipLabel(acwr),
+          sub: acwr > 0 ? acwr.toFixed(2) : undefined,
+          tone: rampChipTone(acwr),
         },
         {
-          label: 'TSS 7j',
+          label: 'Charge 7 j',
           value: weeklyTss > 0 ? `${weeklyTss}` : '—',
-          sub: 'charge aiguë',
+          sub: weeklyTss > 0 ? 'TSS' : undefined,
         },
         {
-          label: 'TSB',
-          value: tsbDisplay(tsb),
-          sub: 'forme',
-          tone: tsbTone(tsb),
+          label: 'Forme',
+          value: formChipLabel(tsb),
+          sub: tsb != null ? `${tsb > 0 ? '+' : ''}${tsb}` : undefined,
+          tone: formChipTone(tsb),
         },
       ]}
     />

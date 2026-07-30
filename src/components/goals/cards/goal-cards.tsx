@@ -13,7 +13,7 @@ import {
   daysUntil,
   formatRemaining,
   horizonLabels,
-  priorityAccent,
+  priorityBadgeClass,
   priorityLabels,
 } from '@/lib/goals/goals';
 import {
@@ -85,11 +85,12 @@ function formatValue(value: number | null, unit: string | null, metricKey?: stri
 }
 
 function PriorityBadge({ priority }: { priority: GoalPriority }) {
-  const accent = priorityAccent[priority];
   return (
     <span
-      className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold"
-      style={{ backgroundColor: `${accent}22`, color: accent }}
+      className={cn(
+        'text-label inline-flex items-center rounded-full px-2 py-0.5 font-semibold',
+        priorityBadgeClass[priority],
+      )}
     >
       {priorityLabels[priority]}
     </span>
@@ -140,7 +141,7 @@ export function RaceCard({ goal }: { goal: GoalItem }) {
               <div className="flex flex-wrap items-center gap-2">
                 {goal.priority && <PriorityBadge priority={goal.priority} />}
                 {goal.raceFormat && (
-                  <span className="bg-muted/70 text-muted-foreground rounded-full px-2 py-0.5 text-[11px] font-medium">
+                  <span className="bg-muted/70 text-muted-foreground text-label rounded-full px-2 py-0.5">
                     {goal.raceFormat}
                   </span>
                 )}
@@ -149,13 +150,13 @@ export function RaceCard({ goal }: { goal: GoalItem }) {
               <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                 {dateLabel && (
                   <span className="flex items-center gap-1 capitalize">
-                    <Calendar className="size-3.5" />
+                    <Calendar className="size-3.5" aria-hidden />
                     {dateLabel}
                   </span>
                 )}
                 {goal.location && (
                   <span className="flex items-center gap-1">
-                    <MapPin className="size-3.5" />
+                    <MapPin className="size-3.5" aria-hidden />
                     {goal.location}
                   </span>
                 )}
@@ -175,7 +176,7 @@ export function RaceCard({ goal }: { goal: GoalItem }) {
 
           {goal.targetPerformance && (
             <div className="border-primary/20 bg-background/60 flex items-center gap-2 rounded-lg border p-2.5">
-              <Trophy className="text-primary size-4 shrink-0" />
+              <Trophy className="text-primary size-4 shrink-0" aria-hidden />
               <div>
                 <p className="text-label">Objectif visé</p>
                 <p className="text-sm font-medium">{goal.targetPerformance}</p>
@@ -190,16 +191,14 @@ export function RaceCard({ goal }: { goal: GoalItem }) {
           <div className="border-border/50 flex items-center justify-end gap-1 border-t pt-3">
             <Button
               className="text-muted-foreground"
-              size="sm"
               variant="ghost"
               onClick={() => setEditing(true)}
             >
-              <Pencil className="size-3.5" /> Modifier
+              <Pencil className="size-3.5" aria-hidden /> Modifier
             </Button>
             <Button
               className="text-muted-foreground hover:text-destructive"
               disabled={remove.isPending}
-              size="sm"
               variant="ghost"
               onClick={handleDelete}
             >
@@ -247,13 +246,13 @@ export function MetricGoalCard({ goal }: { goal: GoalItem }) {
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h3 className="flex items-center gap-1.5 font-medium">
-                <Target className="text-primary size-3.5 shrink-0" />
+                <Target className="text-primary size-3.5 shrink-0" aria-hidden />
                 {goal.title}
               </h3>
               {metricGoalSubtitle(goal, subtitle)}
             </div>
             <button
-              className="bg-muted/60 text-muted-foreground hover:text-primary min-h-11 shrink-0 rounded-full px-2.5 py-1 text-xs sm:min-h-0"
+              className="bg-muted/60 text-muted-foreground hover:text-primary focus-visible:ring-primary/35 min-h-11 shrink-0 rounded-full px-2.5 py-1 text-xs focus-visible:ring-2 focus-visible:outline-hidden lg:min-h-9"
               disabled={update.isPending}
               type="button"
               onClick={toggleAchieved}
@@ -265,7 +264,7 @@ export function MetricGoalCard({ goal }: { goal: GoalItem }) {
           {goal.achieved && isAutoTracked && (
             <div className="border-primary/20 bg-primary/5 flex flex-col gap-1 rounded-lg border p-2.5 text-xs">
               <p className="text-primary flex items-center gap-1.5 font-medium">
-                <Trophy className="size-3.5" />
+                <Trophy className="size-3.5" aria-hidden />
                 Objectif atteint
                 {goal.lastAchievedAt && (
                   <span className="text-muted-foreground font-normal">
@@ -349,20 +348,18 @@ export function MetricGoalCard({ goal }: { goal: GoalItem }) {
           <div className="border-border/50 flex items-center justify-end gap-1 border-t pt-3">
             <Button
               className="text-muted-foreground"
-              size="sm"
               variant="ghost"
               onClick={() => setEditing(true)}
             >
-              <Pencil className="size-3.5" /> Modifier
+              <Pencil className="size-3.5" aria-hidden /> Modifier
             </Button>
             <Button
               className="text-muted-foreground hover:text-destructive"
               disabled={remove.isPending}
-              size="sm"
               variant="ghost"
               onClick={handleDelete}
             >
-              <Trash2 className="size-3.5" aria-hidden /> Suppr.
+              <Trash2 className="size-3.5" aria-hidden /> Supprimer
             </Button>
           </div>
         </CardContent>

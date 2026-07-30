@@ -125,6 +125,7 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
             <div className="space-y-2">
               <Label htmlFor="title">Titre</Label>
               <Input
+                className="min-h-11 lg:h-9"
                 defaultValue={note?.title ?? ''}
                 id="title"
                 name="title"
@@ -133,11 +134,11 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Catégorie</Label>
                 <Select value={category} onValueChange={(v) => setCategory(v as PhysicalCategory)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="min-h-11 lg:h-9">
                     <SelectValue>{categoryLabels[category]}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -152,7 +153,7 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
               <div className="space-y-2">
                 <Label>Statut</Label>
                 <Select value={status} onValueChange={(v) => setStatus(v as PhysicalStatus)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="min-h-11 lg:h-9">
                     <SelectValue>{statusLabels[status]}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -166,14 +167,14 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Zone du corps</Label>
                 <Select
                   value={bodyPart || BODY_PART_NONE}
                   onValueChange={(v) => setBodyPart(!v || v === BODY_PART_NONE ? '' : v)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="min-h-11 lg:h-9">
                     <SelectValue>{bodyPart || 'Non précisée'}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -189,7 +190,7 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
               <div className="space-y-2">
                 <Label>Côté</Label>
                 <Select value={side} onValueChange={(v) => setSide(v as BodySide)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="min-h-11 lg:h-9">
                     <SelectValue>{sideLabels[side]}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -206,10 +207,10 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="severity">Sévérité actuelle</Label>
-                <span className="font-mono text-sm">{severity}/10</span>
+                <span className="text-data text-sm">{severity}/10</span>
               </div>
               <input
-                className="accent-primary w-full"
+                className="accent-primary h-11 w-full lg:h-auto"
                 id="severity"
                 max={10}
                 min={0}
@@ -219,20 +220,20 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="startDate">Depuis le</Label>
                 <Input
+                  className="min-h-11 lg:h-9"
                   defaultValue={format(initialDate, 'yyyy-MM-dd')}
                   id="startDate"
                   name="startDate"
                   type="date"
                 />
               </div>
-              <label className="flex items-end gap-2.5 pb-2">
+              <label className="flex min-h-11 items-center gap-2.5 sm:items-end sm:pb-2">
                 <Checkbox
                   checked={affectsTraining}
-                  className="mb-0.5"
                   onCheckedChange={(checked) => setAffectsTraining(checked === true)}
                 />
                 <span className="text-foreground text-sm leading-snug">
@@ -254,12 +255,11 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
 
             {error && <p className="text-destructive text-sm">{error}</p>}
 
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 {isEdit && (
                   <Button
                     disabled={pending}
-                    size="sm"
                     type="button"
                     variant="destructive"
                     onClick={handleDelete}
@@ -268,7 +268,7 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
                   </Button>
                 )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button disabled={pending} type="button" variant="outline" onClick={onClose}>
                   Annuler
                 </Button>

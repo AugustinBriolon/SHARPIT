@@ -1,22 +1,20 @@
 'use client';
 
-import { ActivityType } from '@prisma/client';
-import { Calendar, Check, ChevronRight, Ruler, Timer, Trophy, Zap } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import { cn } from '@/lib/utils';
+import { activityTypeLabels } from '@/lib/format';
 import {
   countDimensionSelections,
   DISTANCE_PRESETS_KM,
   DURATION_PRESETS,
   PERIOD_PRESETS,
-  presetsInScope,
   presetSelectionsToRange,
+  presetsInScope,
   rangeToPresetSelections,
-  TRIATHLON_FORMAT_LABELS,
-  TRIATHLON_FORMATS,
   type TrainingHistoryFilters,
 } from '@/lib/training/history-filters';
-import { activityTypeLabels } from '@/lib/format';
+import { cn } from '@/lib/utils';
+import { ActivityType } from '@prisma/client';
+import { Calendar, Check, ChevronRight, Ruler, Timer, Zap } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 const TYPE_ORDER: ActivityType[] = [
   ActivityType.RUN,
@@ -75,8 +73,12 @@ function OptionRows({
               key={String(opt.value)}
               className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 opacity-30"
             >
-              <span className="border-foreground/20 size-3.5 shrink-0 rounded-full border" />
+              <span
+                className="border-foreground/20 size-3.5 shrink-0 rounded-full border"
+                aria-hidden
+              />
               <span className="text-muted-foreground flex-1 text-left text-xs">{opt.label}</span>
+              <span className="sr-only">, indisponible</span>
               {opt.extra}
             </div>
           );
@@ -98,6 +100,7 @@ function OptionRows({
             <span className={cn('flex-1 text-left text-xs', active && 'font-medium')}>
               {opt.label}
             </span>
+            {scope && !active ? <span className="sr-only">, inclus dans la plage</span> : null}
             {opt.extra}
           </button>
         );
@@ -111,9 +114,17 @@ function OptionRows({
 function DimBadge({ count }: { count: number }) {
   if (count === 0) return null;
   return (
-    <span className="bg-highlight text-highlight-foreground flex size-4 items-center justify-center rounded-full text-[10px] leading-none font-semibold">
-      {count}
-    </span>
+    <>
+      <span className="sr-only">
+        , {count} sélectionné{count > 1 ? 's' : ''}
+      </span>
+      <span
+        className="bg-highlight text-highlight-foreground text-data flex size-5 items-center justify-center rounded-full text-xs leading-none font-semibold"
+        aria-hidden
+      >
+        {count}
+      </span>
+    </>
   );
 }
 
@@ -133,8 +144,6 @@ export function DesktopFilterMenu({
   // null = no sub-menu open (default, opens on hover)
   const [activeSection, setActiveSection] = useState<Section | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const isTriathlonOnly = filters.types.length === 1 && filters.types[0] === ActivityType.TRIATHLON;
 
   useEffect(() => {
     function onPointerDown(e: PointerEvent) {
@@ -156,32 +165,35 @@ export function DesktopFilterMenu({
     label: string;
     Icon: React.ElementType;
     badgeCount: number;
+    panelId: string;
   }> = [
     {
       id: 'types',
       label: 'Type',
       Icon: Zap,
       badgeCount: countDimensionSelections(filters, 'types'),
+      panelId: 'history-filter-panel-types',
     },
     {
       id: 'duration',
-      label: isTriathlonOnly ? 'Format' : 'Durée',
-      Icon: isTriathlonOnly ? Trophy : Timer,
-      badgeCount: isTriathlonOnly
-        ? countDimensionSelections(filters, 'format')
-        : countDimensionSelections(filters, 'duration'),
+      label: 'Durée',
+      Icon: Timer,
+      badgeCount: countDimensionSelections(filters, 'duration'),
+      panelId: 'history-filter-panel-duration',
     },
     {
       id: 'period',
       label: 'Période',
       Icon: Calendar,
       badgeCount: countDimensionSelections(filters, 'period'),
+      panelId: 'history-filter-panel-period',
     },
     {
       id: 'distance',
       label: 'Distance',
       Icon: Ruler,
       badgeCount: countDimensionSelections(filters, 'distance'),
+      panelId: 'history-filter-panel-distance',
     },
   ];
 
@@ -191,7 +203,7 @@ export function DesktopFilterMenu({
       aria-label="Filtres d'historique"
       className="absolute top-full left-0 z-50 mt-2 flex items-start gap-1.5"
       id="history-filter-menu"
-      role="menu"
+      role="group"
       onMouseLeave={() => setActiveSection(null)}
     >
       {/* Left panel */}
@@ -201,12 +213,12 @@ export function DesktopFilterMenu({
           return (
             <button
               key={dim.id}
+              aria-controls={active ? dim.panelId : undefined}
               aria-expanded={active}
               aria-haspopup="true"
-              role="menuitem"
               type="button"
               className={cn(
-                'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 transition-colors',
+                'flex h-9 w-full items-center gap-2.5 rounded-lg px-3 py-2 transition-colors',
                 active
                   ? 'bg-foreground/8 text-foreground'
                   : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
@@ -226,16 +238,14 @@ export function DesktopFilterMenu({
 
       {/* Right panel — separate box, appears on hover (Desktop 1 pattern) */}
       {activeSection && (
-        <div className="analysis-panel-alt border-foreground/12 w-52 rounded-xl border p-1">
+        <div
+          className="analysis-panel-alt border-foreground/12 w-52 rounded-xl border p-1"
+          id={`history-filter-panel-${activeSection}`}
+        >
           {activeSection === 'types' && (
             <TypeRows counts={counts} filters={filters} onApply={onApply} />
           )}
-          {activeSection === 'duration' && !isTriathlonOnly && (
-            <DurationRows filters={filters} onApply={onApply} />
-          )}
-          {activeSection === 'duration' && isTriathlonOnly && (
-            <FormatRows filters={filters} onApply={onApply} />
-          )}
+          {activeSection === 'duration' && <DurationRows filters={filters} onApply={onApply} />}
           {activeSection === 'period' && <PeriodRows filters={filters} onApply={onApply} />}
           {activeSection === 'distance' && <DistanceRows filters={filters} onApply={onApply} />}
         </div>
@@ -259,9 +269,7 @@ function TypeRows({
     value: type,
     label: activityTypeLabels[type],
     disabled: counts[type] === 0,
-    extra: (
-      <span className="text-muted-foreground/50 text-[11px] tabular-nums">{counts[type]}</span>
-    ),
+    extra: <span className="text-muted-foreground/50 text-data text-xs">{counts[type]}</span>,
   }));
 
   return (
@@ -278,7 +286,6 @@ function TypeRows({
           types: next,
           distanceMinKm: null,
           distanceMaxKm: null,
-          triathlonFormats: [],
         });
       }}
     />
@@ -373,33 +380,6 @@ function DistanceRows({
         const next = selected.includes(v) ? selected.filter((s) => s !== v) : [...selected, v];
         const { min, max } = presetSelectionsToRange(next);
         onApply({ ...filters, distanceMinKm: min, distanceMaxKm: max });
-      }}
-    />
-  );
-}
-
-function FormatRows({
-  filters,
-  onApply,
-}: {
-  filters: TrainingHistoryFilters;
-  onApply: (f: TrainingHistoryFilters) => void;
-}) {
-  const options: RowOption[] = TRIATHLON_FORMATS.map((fmt) => ({
-    value: fmt,
-    label: TRIATHLON_FORMAT_LABELS[fmt],
-  }));
-
-  return (
-    <OptionRows
-      options={options}
-      selected={filters.triathlonFormats}
-      onToggle={(value) => {
-        const fmt = value as (typeof TRIATHLON_FORMATS)[number];
-        const next = filters.triathlonFormats.includes(fmt)
-          ? filters.triathlonFormats.filter((f) => f !== fmt)
-          : [...filters.triathlonFormats, fmt];
-        onApply({ ...filters, triathlonFormats: next });
       }}
     />
   );

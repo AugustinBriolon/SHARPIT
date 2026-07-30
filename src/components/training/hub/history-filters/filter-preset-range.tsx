@@ -26,6 +26,7 @@ export function FilterPresetRange({
   max,
   onChange,
   formatLabel,
+  ariaLabel,
 }: {
   presets: readonly number[];
   suffix: string;
@@ -33,6 +34,7 @@ export function FilterPresetRange({
   max: number | null;
   onChange: (min: number | null, max: number | null) => void;
   formatLabel?: (value: number) => string;
+  ariaLabel: string;
 }) {
   const selected = rangeToPresetSelections(min, max, presets);
 
@@ -44,7 +46,7 @@ export function FilterPresetRange({
   const label = formatLabel ?? ((v: number) => `${v} ${suffix}`);
 
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div aria-label={ariaLabel} className="flex flex-wrap gap-1.5" role="group">
       {presets.map((value) => {
         const state = getVisualState(value, selected, presets);
         return (
@@ -53,15 +55,16 @@ export function FilterPresetRange({
             aria-pressed={state === 'selected'}
             type="button"
             className={cn(
-              'min-h-11 rounded-full px-3 py-1.5 text-xs font-medium transition-colors sm:min-h-0',
+              'min-h-11 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
               state === 'selected' && 'bg-highlight text-highlight-foreground',
               state === 'in-scope' && 'bg-highlight/30 text-foreground',
               state === 'idle' &&
-                'border-foreground/15 text-muted-foreground hover:border-foreground/30 hover:text-foreground border',
+                'border-foreground/15 text-muted-foreground hover:border-foreground/30 hover:text-foreground border whitespace-nowrap',
             )}
             onClick={() => toggle(value)}
           >
             {label(value)}
+            {state === 'in-scope' ? <span className="sr-only">, inclus dans la plage</span> : null}
           </button>
         );
       })}

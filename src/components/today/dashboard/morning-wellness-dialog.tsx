@@ -127,7 +127,7 @@ function ScalePicker({
               </span>
               <span
                 className={cn(
-                  'text-[11px] leading-tight font-medium',
+                  'text-xs leading-tight font-medium',
                   selected ? 'text-highlight-foreground/80' : 'text-muted-foreground',
                 )}
                 aria-hidden

@@ -13,10 +13,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   useApplyThresholdEstimates,
+  useAthleteProfile,
   useThresholdHistory,
   useThresholdPreview,
 } from '@/hooks/use-data';
 import { athleteAgeYears, birthDateToInput } from '@/lib/profile/athlete-profile-utils';
+import {
+  mapAthleteProfileToFormData,
+  shouldHydrateProfileForm,
+  type AthleteProfileFormData,
+} from '@/lib/profile/map-athlete-profile';
 import { invalidateAfterAthleteProfileSave } from '@/lib/query/invalidate-after-athlete-profile-save';
 import { queryKeys } from '@/lib/query/keys';
 import type { ClientThresholdSnapshot } from '@/lib/query/types';
@@ -26,19 +32,7 @@ import {
 } from '@/lib/threshold/threshold-history';
 import { cn } from '@/lib/utils';
 
-export interface ProfileData {
-  heightCm: number | null;
-  birthDate: string | null;
-  ftpW: number | null;
-  maxHr: number | null;
-  lthr: number | null;
-  runThresholdPaceSecPerKm: number | null;
-  vo2maxRunning: number | null;
-  vo2maxCycling: number | null;
-  thresholdsSyncedAt: string | null;
-  sleepTargetMinutes: number | null;
-  sleepBedtimeTargetMin: number | null;
-}
+export type ProfileData = AthleteProfileFormData;
 
 interface GarminImportResult {
   imported: boolean;
@@ -161,8 +155,7 @@ function ThresholdHistoryPanel({ history }: { history: ClientThresholdSnapshot[]
         <div className="space-y-2">
           <Button
             aria-expanded={expanded}
-            className="h-8 px-2 text-xs"
-            size="sm"
+            className="min-h-11 px-2 text-xs lg:min-h-9"
             type="button"
             variant="ghost"
             onClick={() => setExpanded((open) => !open)}
@@ -226,7 +219,7 @@ function Vo2maxIndicators({
           <span className="text-data text-sm font-semibold tabular-nums">{vo2maxCycling}</span>
         </div>
       ) : null}
-      <span className="text-muted-foreground text-[11px]">Garmin · lecture seule</span>
+      <span className="text-muted-foreground text-xs">Garmin · lecture seule</span>
     </div>
   );
 }
@@ -280,34 +273,49 @@ async function parseProfileError(res: Response): Promise<string> {
   return fieldMsg || data?.detail || data?.error || 'Erreur';
 }
 
-export function PersonalProfilePanel({ initial }: { initial: ProfileData | null }) {
+export function PersonalProfilePanel({
+  initial,
+  loadError = null,
+}: {
+  initial: ProfileData | null;
+  loadError?: string | null;
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [heightCm, setHeightCm] = useState(initial?.heightCm?.toString() ?? '');
-  const [birthDate, setBirthDate] = useState(birthDateToInput(initial?.birthDate ?? null));
+  const remoteProfile = useAthleteProfile();
+  const resolvedInitial = initial ?? mapAthleteProfileToFormData(remoteProfile.data);
+
+  const [heightCm, setHeightCm] = useState(resolvedInitial?.heightCm?.toString() ?? '');
+  const [birthDate, setBirthDate] = useState(birthDateToInput(resolvedInitial?.birthDate ?? null));
   const [sleepHours, setSleepHours] = useState(
-    initial?.sleepTargetMinutes != null ? String(initial.sleepTargetMinutes / 60) : '',
+    resolvedInitial?.sleepTargetMinutes != null
+      ? String(resolvedInitial.sleepTargetMinutes / 60)
+      : '',
   );
   const [sleepBedtime, setSleepBedtime] = useState(
-    clockToInput(initial?.sleepBedtimeTargetMin ?? null),
+    clockToInput(resolvedInitial?.sleepBedtimeTargetMin ?? null),
   );
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Re-hydrate when RSC `initial` updates after router.refresh() / soft navigation.
+  // Re-hydrate when a real snapshot arrives — never wipe on null (failed RSC load).
   useEffect(() => {
-    setHeightCm(initial?.heightCm?.toString() ?? '');
-    setBirthDate(birthDateToInput(initial?.birthDate ?? null));
+    if (!shouldHydrateProfileForm(resolvedInitial)) return;
+    setHeightCm(resolvedInitial.heightCm?.toString() ?? '');
+    setBirthDate(birthDateToInput(resolvedInitial.birthDate ?? null));
     setSleepHours(
-      initial?.sleepTargetMinutes != null ? String(initial.sleepTargetMinutes / 60) : '',
+      resolvedInitial.sleepTargetMinutes != null
+        ? String(resolvedInitial.sleepTargetMinutes / 60)
+        : '',
     );
-    setSleepBedtime(clockToInput(initial?.sleepBedtimeTargetMin ?? null));
+    setSleepBedtime(clockToInput(resolvedInitial.sleepBedtimeTargetMin ?? null));
   }, [
-    initial?.heightCm,
-    initial?.birthDate,
-    initial?.sleepTargetMinutes,
-    initial?.sleepBedtimeTargetMin,
+    resolvedInitial,
+    resolvedInitial?.heightCm,
+    resolvedInitial?.birthDate,
+    resolvedInitial?.sleepTargetMinutes,
+    resolvedInitial?.sleepBedtimeTargetMin,
   ]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -359,9 +367,16 @@ export function PersonalProfilePanel({ initial }: { initial: ProfileData | null 
   }
 
   const age = athleteAgeYears(birthDate || null);
+  const showLoadWarning = Boolean(loadError) || (initial == null && remoteProfile.isError);
 
   return (
     <form className="space-y-3" onSubmit={handleSubmit}>
+      {showLoadWarning ? (
+        <p className="text-destructive text-sm" role="alert">
+          {loadError ??
+            'Chargement du profil impossible. Les champs vides ne reflètent pas forcément la base — réessaie avant d’enregistrer.'}
+        </p>
+      ) : null}
       <ProfileFormSection title="Identité & rythme de vie" compact>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
@@ -387,7 +402,7 @@ export function PersonalProfilePanel({ initial }: { initial: ProfileData | null 
               onChange={(e) => setBirthDate(e.target.value)}
             />
             {age != null ? (
-              <p className="text-muted-foreground text-[11px] tabular-nums">{age} ans</p>
+              <p className="text-muted-foreground text-xs tabular-nums">{age} ans</p>
             ) : null}
           </div>
           <div className="space-y-1.5">
@@ -396,13 +411,14 @@ export function PersonalProfilePanel({ initial }: { initial: ProfileData | null 
               className={NUMERIC_INPUT_CLASS}
               id="sleepHours"
               max={12}
-              min={5}
+              min={4}
               placeholder="8"
               step={0.25}
               type="number"
               value={sleepHours}
               onChange={(e) => setSleepHours(e.target.value)}
             />
+            <p className="text-muted-foreground text-xs">Entre 4 et 12 heures.</p>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="sleepBedtime">Coucher visé (HH:mm)</Label>
@@ -417,9 +433,17 @@ export function PersonalProfilePanel({ initial }: { initial: ProfileData | null 
         </div>
       </ProfileFormSection>
 
-      {message ? <p className="text-primary text-sm">{message}</p> : null}
-      {error ? <p className="text-destructive text-sm">{error}</p> : null}
-      <Button disabled={saving} size="sm" type="submit">
+      {message ? (
+        <p aria-live="polite" className="text-primary text-sm">
+          {message}
+        </p>
+      ) : null}
+      {error ? (
+        <p aria-live="assertive" className="text-destructive text-sm">
+          {error}
+        </p>
+      ) : null}
+      <Button disabled={saving} type="submit">
         {saving ? 'Enregistrement…' : 'Enregistrer'}
       </Button>
     </form>
@@ -446,13 +470,15 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
   const applyEstimates = useApplyThresholdEstimates();
 
   useEffect(() => {
-    setFtpW(initial?.ftpW?.toString() ?? '');
-    setMaxHr(initial?.maxHr?.toString() ?? '');
-    setLthr(initial?.lthr?.toString() ?? '');
-    setThresholdPace(paceToInput(initial?.runThresholdPaceSecPerKm ?? null));
-    setVo2maxRunning(initial?.vo2maxRunning ?? null);
-    setVo2maxCycling(initial?.vo2maxCycling ?? null);
+    if (!shouldHydrateProfileForm(initial)) return;
+    setFtpW(initial.ftpW?.toString() ?? '');
+    setMaxHr(initial.maxHr?.toString() ?? '');
+    setLthr(initial.lthr?.toString() ?? '');
+    setThresholdPace(paceToInput(initial.runThresholdPaceSecPerKm ?? null));
+    setVo2maxRunning(initial.vo2maxRunning ?? null);
+    setVo2maxCycling(initial.vo2maxCycling ?? null);
   }, [
+    initial,
     initial?.ftpW,
     initial?.maxHr,
     initial?.lthr,
@@ -564,18 +590,12 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
           comparer tes progrès dans le temps.
         </p>
         <div className="flex flex-col items-end gap-0.5">
-          <Button
-            disabled={importing}
-            size="sm"
-            type="button"
-            variant="outline"
-            onClick={handleGarminImport}
-          >
-            <Download className="size-3.5" />
+          <Button disabled={importing} type="button" variant="outline" onClick={handleGarminImport}>
+            <Download className="size-3.5" aria-hidden />
             {importing ? 'Import…' : 'Garmin'}
           </Button>
           {syncedLabel ? (
-            <span className="text-muted-foreground text-[10px]">
+            <span className="text-muted-foreground text-label">
               Sync · <span className="text-data">{syncedLabel}</span>
             </span>
           ) : null}
@@ -626,7 +646,7 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
         {preview?.hasChanges ? (
           <div className="analysis-panel rounded-analysis space-y-2 px-3 py-2.5">
             <p className="text-xs font-medium">Proposition depuis tes records</p>
-            <ul className="text-muted-foreground space-y-0.5 text-[11px]">
+            <ul className="text-muted-foreground space-y-0.5 text-xs">
               {preview.changes.map((c) => (
                 <li key={c.field}>
                   {c.label} : <span className="text-data">{c.from}</span> →{' '}
@@ -635,17 +655,15 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
               ))}
             </ul>
             <Button
-              className="h-7"
               disabled={applyEstimates.isPending}
-              size="sm"
               type="button"
               variant="outline"
               onClick={handleApplyEstimates}
             >
               {applyEstimates.isPending ? (
-                <Loader2 className="size-3.5 animate-spin" />
+                <Loader2 className="size-3.5 animate-spin" aria-hidden />
               ) : (
-                <Check className="size-3.5" />
+                <Check className="size-3.5" aria-hidden />
               )}
               Appliquer
             </Button>
@@ -711,9 +729,17 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
           estimations issues de tes records.
         </p>
       ) : null}
-      {message ? <p className="text-primary text-sm">{message}</p> : null}
-      {error ? <p className="text-destructive text-sm">{error}</p> : null}
-      <Button disabled={saving} size="sm" type="submit">
+      {message ? (
+        <p aria-live="polite" className="text-primary text-sm">
+          {message}
+        </p>
+      ) : null}
+      {error ? (
+        <p aria-live="assertive" className="text-destructive text-sm">
+          {error}
+        </p>
+      ) : null}
+      <Button disabled={saving} type="submit">
         {saving ? 'Enregistrement…' : 'Enregistrer'}
       </Button>
     </form>

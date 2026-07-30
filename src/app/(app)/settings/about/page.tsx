@@ -14,11 +14,29 @@ export default function SettingsAboutPage() {
         </p>
       </StickyHeader>
 
-      <section className="analysis-panel rounded-analysis-lg px-4 py-4">
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          Cet espace regroupera la version de l’application, les principes produit et les
-          informations système utiles au support et à la maintenance.
-        </p>
+      <section className="analysis-panel rounded-analysis-lg space-y-3 px-4 py-4">
+        <div>
+          <p className="text-label">Version</p>
+          <p className="text-data mt-1 text-sm">0.1.0</p>
+        </div>
+        <div>
+          <p className="text-label">Positionnement</p>
+          <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+            Athlete State Intelligence — exprimer l&apos;état de l&apos;athlète, pas un tableau de
+            bord fitness. La journée commence par un verdict actionnable, pas par un inventaire de
+            métriques.
+          </p>
+        </div>
+        <div>
+          <p className="text-label">Principes</p>
+          <ul className="text-muted-foreground mt-1 list-disc space-y-1 pl-4 text-sm leading-relaxed">
+            <li>La physiologie guide la recommandation du jour.</li>
+            <li>Le Digital Twin reste la source de vérité — pas de moteurs parallèles.</li>
+            <li>
+              Les signaux sont sémantiques : récupération, caution, risque — jamais décoratifs.
+            </li>
+          </ul>
+        </div>
       </section>
     </div>
   );

@@ -16,12 +16,14 @@ import { ActivityType } from '@prisma/client';
  * Never reuse Lime Pulse here — highlight stays brand punctuation (nav, badges).
  */
 export const SPORT_IDENTITY_SURFACE: Record<ActivityType, string> = {
-  RUN: 'bg-orange-500/20 text-orange-800 dark:bg-orange-400/25 dark:text-orange-200',
-  BIKE: 'bg-emerald-500/20 text-emerald-800 dark:bg-emerald-400/25 dark:text-emerald-200',
-  SWIM: 'bg-sky-500/20 text-sky-900 dark:bg-sky-400/25 dark:text-sky-200',
-  STRENGTH: 'bg-rose-500/20 text-rose-800 dark:bg-rose-400/25 dark:text-rose-200',
-  TRIATHLON: 'bg-teal-500/20 text-teal-800 dark:bg-teal-400/25 dark:text-teal-200',
-  OTHER: 'bg-muted text-foreground',
+  RUN: 'bg-orange-500/20 text-orange-800 dark:bg-orange-400/25 dark:text-orange-200 border-orange-500/35 border',
+  BIKE: 'bg-emerald-500/20 text-emerald-800 dark:bg-emerald-400/25 dark:text-emerald-200 border-emerald-500/35 border',
+  SWIM: 'bg-sky-500/20 text-sky-900 dark:bg-sky-400/25 dark:text-sky-200 border-sky-500/35 border',
+  STRENGTH:
+    'bg-rose-500/20 text-rose-800 dark:bg-rose-400/25 dark:text-rose-200 border-rose-500/35 border',
+  TRIATHLON:
+    'bg-teal-500/20 text-teal-800 dark:bg-teal-400/25 dark:text-teal-200 border-teal-500/35 border',
+  OTHER: 'bg-muted text-foreground border',
 };
 
 /** Text-only accents (detail pages, links, icons). */

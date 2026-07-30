@@ -286,7 +286,7 @@ export function ToolActivity({
     return (
       <div className="border-primary/30 bg-primary/5 rounded-lg border p-3">
         <div className="text-foreground flex items-center gap-2 text-xs font-medium">
-          <Icon className="text-primary size-3.5 shrink-0" />
+          <Icon className="text-primary size-3.5 shrink-0" aria-hidden />
           {meta.proposal}
         </div>
         <p className="text-foreground mt-1.5 text-sm font-medium">{headline}</p>
@@ -297,23 +297,21 @@ export function ToolActivity({
             ))}
           </ul>
         )}
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 flex flex-wrap gap-2">
           <Button
             disabled={disabled}
-            size="sm"
             variant={isDelete ? 'destructive' : 'default'}
             onClick={() => onApproval?.(part.approval!.id, true)}
           >
-            <Check className="size-3.5" />
+            <Check className="size-3.5" aria-hidden />
             {isDelete ? 'Supprimer' : 'Valider'}
           </Button>
           <Button
             disabled={disabled}
-            size="sm"
             variant="outline"
             onClick={() => onApproval?.(part.approval!.id, false)}
           >
-            <X className="size-3.5" />
+            <X className="size-3.5" aria-hidden />
             Refuser
           </Button>
         </div>
@@ -326,7 +324,7 @@ export function ToolActivity({
     const reason = part.approval?.reason;
     return (
       <div className="border-analysis-border/60 bg-analysis-surface-alt/60 text-muted-foreground flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs">
-        <X className="size-3.5 shrink-0" />
+        <X className="size-3.5 shrink-0" aria-hidden />
         <span className="line-through">{meta.proposal}</span>
         <span className="opacity-70">— {reason?.trim() ? reason : 'proposition refusée'}</span>
       </div>
@@ -347,7 +345,7 @@ export function ToolActivity({
         className="border-destructive/30 bg-destructive/5 text-destructive flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs"
         title={state === 'approval-responded' ? "La séance n'a pas pu être ajoutée" : undefined}
       >
-        <X className="size-3.5 shrink-0" />
+        <X className="size-3.5 shrink-0" aria-hidden />
         <span className="font-medium">{failureLabelForPart(part)}</span>
         <span className="opacity-90">— {staleMessage}</span>
       </div>
@@ -403,9 +401,9 @@ export function ToolActivity({
   }
 
   function statusIcon() {
-    if (!done && !failed) return <Loader2 className="size-3.5 shrink-0 animate-spin" />;
-    if (isFailure) return <X className="size-3.5 shrink-0" />;
-    return <Icon className="size-3.5 shrink-0" />;
+    if (!done && !failed) return <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden />;
+    if (isFailure) return <X className="size-3.5 shrink-0" aria-hidden />;
+    return <Icon className="size-3.5 shrink-0" aria-hidden />;
   }
 
   function statusLabel(): string {
@@ -425,7 +423,7 @@ export function ToolActivity({
       {statusIcon()}
       <span className="font-medium">{statusLabel()}</span>
       {detail ? <span className="truncate opacity-80">— {detail}</span> : null}
-      {done && !isFailure && <Check className="ml-auto size-3 shrink-0" />}
+      {done && !isFailure && <Check className="ml-auto size-3 shrink-0" aria-hidden />}
     </div>
   );
 }

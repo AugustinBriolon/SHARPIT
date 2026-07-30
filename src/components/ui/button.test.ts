@@ -19,4 +19,16 @@ describe('buttonVariants (Seed ink CTA)', () => {
     const classes = buttonVariants({ variant: 'highlight' });
     expect(classes).toContain('bg-highlight');
   });
+
+  it('uses touch-first default height with denser desktop', () => {
+    const classes = buttonVariants({ size: 'default' });
+    expect(classes).toContain('h-11');
+    expect(classes).toContain('lg:h-9');
+  });
+
+  it('keeps icon buttons touch-first', () => {
+    const classes = buttonVariants({ size: 'icon' });
+    expect(classes).toContain('size-11');
+    expect(classes).toContain('lg:size-9');
+  });
 });

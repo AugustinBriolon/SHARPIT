@@ -5,7 +5,6 @@ import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
 import {
   CHART_BASE_STROKE,
   CHART_CAUTION_STROKE,
-  CHART_RECOVERY_STROKE,
   CHART_REFERENCE_LINE,
   CHART_TICK_COLOR,
 } from '@/lib/theme/chart-theme';
@@ -30,7 +29,7 @@ export function EffortPmcSection({ data }: { data: PmcPoint[] }) {
 
   return (
     <DrillDownSectionCard>
-      <DrillDownSectionLabel>PMC — 28 jours</DrillDownSectionLabel>
+      <DrillDownSectionLabel>Charge vs forme — 28 jours</DrillDownSectionLabel>
       <ResponsiveChartFrame height={120}>
         <LineChart data={data} margin={{ top: 4, right: 4, bottom: 2, left: 2 }}>
           <XAxis
@@ -50,10 +49,10 @@ export function EffortPmcSection({ data }: { data: PmcPoint[] }) {
               return (
                 <ChartTooltipCard>
                   <p className="font-medium">{pt.label}</p>
-                  <p className="text-muted-foreground">CTL {pt.ctl}</p>
-                  <p className="text-muted-foreground">ATL {pt.atl}</p>
+                  <p className="text-muted-foreground">Forme chronique {pt.ctl}</p>
+                  <p className="text-muted-foreground">Fatigue aiguë {pt.atl}</p>
                   <p className={pt.tsb >= 0 ? 'text-muted-foreground' : 'text-signal-caution'}>
-                    TSB {pt.tsb > 0 ? '+' : ''}
+                    Forme nette {pt.tsb > 0 ? '+' : ''}
                     {pt.tsb}
                   </p>
                 </ChartTooltipCard>
@@ -63,6 +62,7 @@ export function EffortPmcSection({ data }: { data: PmcPoint[] }) {
           <Line
             dataKey="ctl"
             dot={false}
+            name="Forme chronique"
             stroke={CHART_BASE_STROKE}
             strokeWidth={1.5}
             type="monotone"
@@ -70,26 +70,25 @@ export function EffortPmcSection({ data }: { data: PmcPoint[] }) {
           <Line
             dataKey="atl"
             dot={false}
+            name="Fatigue aiguë"
             stroke={CHART_CAUTION_STROKE}
             strokeOpacity={0.85}
             strokeWidth={1.5}
             type="monotone"
           />
-          <Line
-            dataKey="tsb"
-            dot={false}
-            stroke={CHART_RECOVERY_STROKE}
-            strokeDasharray="3 2"
-            strokeOpacity={0.8}
-            strokeWidth={1}
-            type="monotone"
-          />
           <Legend iconSize={8} wrapperStyle={{ fontSize: 9 }} />
         </LineChart>
       </ResponsiveChartFrame>
-      <p className="text-muted-foreground/60 mt-2 text-[10px]">
-        CTL = forme · ATL = fatigue · TSB = forme − fatigue
-      </p>
+      <details className="group mt-2">
+        <summary className="text-muted-foreground hover:text-foreground cursor-pointer list-none text-[10px] tracking-wide transition-colors [&::-webkit-details-marker]:hidden">
+          <span className="underline-offset-2 group-open:no-underline">
+            Glossaire CTL / ATL / TSB
+          </span>
+        </summary>
+        <p className="text-muted-foreground/80 mt-1.5 text-[10px] leading-relaxed">
+          CTL = forme chronique · ATL = fatigue aiguë · TSB = forme nette (CTL − ATL)
+        </p>
+      </details>
     </DrillDownSectionCard>
   );
 }
@@ -105,7 +104,7 @@ export function EffortWeeklyTssSection({
 
   return (
     <DrillDownSectionCard>
-      <DrillDownSectionLabel>TSS hebdomadaire — 8 semaines</DrillDownSectionLabel>
+      <DrillDownSectionLabel>Charge hebdomadaire — 8 semaines</DrillDownSectionLabel>
       <ResponsiveChartFrame height={100}>
         <BarChart data={data} margin={{ top: 4, right: 2, bottom: 2, left: 2 }}>
           <XAxis

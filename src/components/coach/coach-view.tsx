@@ -338,7 +338,7 @@ export function CoachView() {
         <h1 className="text-page-title truncate">Fil & conversations</h1>
         <Button
           aria-label="Nouvelle conversation"
-          className="size-[38px]"
+          className="size-11"
           disabled={createConversation.isPending}
           size="icon"
           variant="highlight"

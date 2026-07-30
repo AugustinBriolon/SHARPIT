@@ -19,7 +19,7 @@ export function EquipmentItemChecklist({
           <label
             key={item.id}
             className={cn(
-              'analysis-panel rounded-analysis-lg pressable flex cursor-pointer items-start gap-3 px-3.5 py-3',
+              'analysis-panel rounded-analysis-lg pressable-lg flex cursor-pointer items-start gap-3 px-3.5 py-3',
               checked ? 'border-highlight bg-highlight/20' : 'hover:bg-analysis-surface-alt/80',
             )}
           >

@@ -66,8 +66,8 @@ function SettingsEntryCard({ entry }: { entry: SettingsEntry }) {
     <Link
       href={entry.href}
       className={cn(
-        'chip-surface group pressable rounded-analysis-lg flex h-full items-center gap-3 px-3 py-2.5',
-        'hover:border-primary/25',
+        'chip-surface-lg group rounded-analysis-lg flex h-full items-center gap-3 px-3 py-2.5',
+        'hover:border-primary/25 focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
       )}
     >
       <div className="icon-well size-9" aria-hidden>
@@ -78,7 +78,7 @@ function SettingsEntryCard({ entry }: { entry: SettingsEntry }) {
         <p className="text-muted-foreground text-sm leading-relaxed">{entry.description}</p>
       </div>
       <span
-        className="text-muted-foreground/70 text-data shrink-0 text-[11px] tracking-wider transition-transform group-hover:translate-x-0.5"
+        className="text-muted-foreground/70 text-data shrink-0 text-xs tracking-wider transition-transform group-hover:translate-x-0.5"
         aria-hidden
       >
         →
@@ -99,11 +99,11 @@ export function SettingsHome() {
         </p>
       </StickyHeader>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:items-stretch">
+      <nav aria-label="Réglages" className="grid grid-cols-1 gap-3 md:grid-cols-2 md:items-stretch">
         {ENTRIES.map((entry) => (
           <SettingsEntryCard key={entry.href} entry={entry} />
         ))}
-      </div>
+      </nav>
       <div className="analysis-panel-alt rounded-analysis-lg p-4">
         <div className="flex items-start gap-3">
           <div className="icon-well size-9" aria-hidden>
@@ -112,8 +112,14 @@ export function SettingsHome() {
           <div>
             <p className="text-sm font-medium">Maintenance</p>
             <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-              Outils locaux disponibles ici — pas de sous-page, les actions s&apos;affichent
-              directement ci-dessous.
+              Outils locaux (cache et rechargement) — aussi disponibles via{' '}
+              <Link
+                className="text-foreground underline-offset-2 hover:underline"
+                href="/settings/maintenance"
+              >
+                la page Maintenance
+              </Link>
+              .
             </p>
           </div>
         </div>

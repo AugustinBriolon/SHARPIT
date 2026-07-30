@@ -83,8 +83,9 @@ export const priorityDescriptions: Record<GoalPriority, string> = {
 
 export const priorityOrder: GoalPriority[] = [GoalPriority.A, GoalPriority.B, GoalPriority.C];
 
-export const priorityAccent: Record<GoalPriority, string> = {
-  A: '#ef4444',
-  B: '#f59e0b',
-  C: '#64748b',
+/** Tokenized badge classes — never inline hex. */
+export const priorityBadgeClass: Record<GoalPriority, string> = {
+  A: 'bg-signal-risk/15 text-signal-risk',
+  B: 'bg-signal-caution/15 text-signal-caution',
+  C: 'bg-signal-neutral/15 text-signal-neutral',
 };

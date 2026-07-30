@@ -1,33 +1,66 @@
 import { PhysioDomainWhy } from '@/components/today/drill-down/physio-domain-why';
+import {
+  explainTsb,
+  synthesizeLoadReading,
+  synthesizeLoadReadingPlain,
+} from '@/lib/effort/load-reading';
+import type { TrainingCapacity } from '@/lib/today/today-mapping';
 
 /**
- * Effort why — load reading first.
+ * Charge why — plain French primary; acronyms only in expand.
  */
 export function EffortWhyBlock({
-  verdict,
-  verdictClass,
+  verdictKey,
+  trainingCapacity,
   acwr,
+  weeklyLoad,
+  chronicWeeklyAvg,
   tsb,
   loading = false,
 }: {
-  verdict: string;
-  verdictClass: string;
+  verdictKey: string;
+  trainingCapacity: TrainingCapacity;
   acwr: number;
+  weeklyLoad: number;
+  chronicWeeklyAvg: number | null;
   tsb: number | null;
   loading?: boolean;
 }) {
   if (loading) {
-    return <PhysioDomainWhy label="Charge" primary={null} loading />;
+    return <PhysioDomainWhy label="Lecture" primary={null} loading />;
   }
 
-  const parts: string[] = [];
-  if (verdict) parts.push(verdict);
-  if (acwr > 0) parts.push(`ACWR ${acwr.toFixed(2)}`);
-  if (tsb != null) {
-    const sign = tsb > 0 ? '+' : '';
-    parts.push(`TSB ${sign}${tsb}`);
+  if (acwr <= 0 && weeklyLoad <= 0) {
+    return null;
   }
-  const primary = parts.length > 0 ? parts.join(' · ') : null;
 
-  return <PhysioDomainWhy label="Charge" primary={primary} primaryClassName={verdictClass} />;
+  if (acwr <= 0) {
+    return (
+      <PhysioDomainWhy
+        label="Lecture"
+        primary={`Charge aiguë ${weeklyLoad} TSS sur 7 j — ratio de montée indisponible.`}
+      />
+    );
+  }
+
+  const input = {
+    verdictKey,
+    acwr,
+    weeklyLoad,
+    chronicWeeklyAvg,
+    tsb,
+    trainingCapacity,
+  };
+
+  const supporting: string[] = [synthesizeLoadReading(input)];
+  const tsbLine = explainTsb(tsb);
+  if (tsbLine) supporting.push(tsbLine);
+
+  return (
+    <PhysioDomainWhy
+      label="Lecture"
+      primary={synthesizeLoadReadingPlain(input)}
+      supportingLines={supporting}
+    />
+  );
 }

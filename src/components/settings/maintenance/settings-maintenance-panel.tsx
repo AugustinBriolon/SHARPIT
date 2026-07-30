@@ -60,27 +60,15 @@ export function SettingsMaintenancePanel({
 
   const actions = (
     <div className="flex flex-wrap gap-2">
-      <Button
-        disabled={refreshing}
-        size="sm"
-        type="button"
-        variant="outline"
-        onClick={handleClearCache}
-      >
-        <Trash2 className="size-4" />
+      <Button disabled={refreshing} type="button" variant="outline" onClick={handleClearCache}>
+        <Trash2 className="size-4" aria-hidden />
         {clearing ? 'Vidage…' : 'Vider le cache'}
       </Button>
-      <Button
-        disabled={clearing}
-        size="sm"
-        type="button"
-        variant="outline"
-        onClick={handleReloadData}
-      >
+      <Button disabled={clearing} type="button" variant="outline" onClick={handleReloadData}>
         {refreshing ? (
-          <RotateCcw className="size-4 animate-spin" />
+          <RotateCcw className="size-4 animate-spin" aria-hidden />
         ) : (
-          <RefreshCw className="size-4" />
+          <RefreshCw className="size-4" aria-hidden />
         )}
         {refreshing ? 'Rechargement…' : 'Recharger les données'}
       </Button>

@@ -71,7 +71,6 @@ export function EffortPageView(props: EffortPageViewProps) {
     onPreviousDay,
     onNextDay,
     loading = false,
-    strainScore,
     dailyLoad,
     weeklyLoad,
     strainComposition,
@@ -88,8 +87,6 @@ export function EffortPageView(props: EffortPageViewProps) {
     tsb,
     confidencePct,
     completenessLabel,
-    verdict,
-    verdictClass,
     verdictKey,
     trainingCapacity,
     dimensions,
@@ -127,7 +124,6 @@ export function EffortPageView(props: EffortPageViewProps) {
         loading={loading}
         maxDate={maxDate}
         performancePercent={performancePercent}
-        strainScore={strainScore}
         strainStatusClassName={strainStatusClassName}
         strainStatusLabel={strainStatusLabel}
         strainSubtitle={strainSubtitle}
@@ -140,13 +136,13 @@ export function EffortPageView(props: EffortPageViewProps) {
 
       <EffortWhyBlock
         acwr={acwr}
+        chronicWeeklyAvg={chronicWeeklyAvg}
         loading={loading}
+        trainingCapacity={trainingCapacity}
         tsb={tsb}
-        verdict={verdict}
-        verdictClass={verdictClass}
+        verdictKey={verdictKey}
+        weeklyLoad={weeklyLoad}
       />
-
-      <EffortStrainCompositionSection composition={strainComposition} loading={loading} />
 
       {!loading ? (
         <EffortVerdictSection
@@ -156,25 +152,48 @@ export function EffortPageView(props: EffortPageViewProps) {
           isLowFatigue={isLowFatigue}
           trainingCapacity={trainingCapacity}
           tsb={tsb}
-          verdict={verdict}
-          verdictClass={verdictClass}
           verdictKey={verdictKey}
           weeklyLoad={weeklyLoad}
         />
       ) : null}
 
-      <EffortDimensionsSection
-        dimensions={dimensions}
-        loading={loading}
-        missingCount={missingDimCount}
-      />
+      {!loading ? <EffortPmcSection data={pmcSeries} /> : null}
 
       {!loading ? (
-        <>
-          <EffortPmcSection data={pmcSeries} />
-          <EffortWeeklyTssSection avgWeeklyTss={avgWeeklyTss} data={weeklyTss} />
-          <EffortAlertsSection overreaching={overreaching} />
-        </>
+        <details className="group">
+          <summary className="text-muted-foreground hover:text-foreground cursor-pointer list-none py-2 text-xs font-medium tracking-wide transition-colors [&::-webkit-details-marker]:hidden">
+            <span className="underline-offset-2 group-open:no-underline">
+              Détail · composition, dimensions, historique
+            </span>
+          </summary>
+          <div className="mt-3 space-y-4">
+            <EffortStrainCompositionSection composition={strainComposition} />
+            <EffortDimensionsSection dimensions={dimensions} missingCount={missingDimCount} />
+            <EffortWeeklyTssSection avgWeeklyTss={avgWeeklyTss} data={weeklyTss} />
+            <EffortAlertsSection overreaching={overreaching} />
+            <section className="px-0.5">
+              <p className="text-label mb-2">Glossaire</p>
+              <ul className="text-muted-foreground space-y-1.5 text-xs leading-relaxed">
+                <li>
+                  <span className="text-foreground font-medium">TSS</span> — charge d’une séance
+                  (Training Stress Score)
+                </li>
+                <li>
+                  <span className="text-foreground font-medium">ACWR</span> — ratio charge 7 j /
+                  base chronique (montée)
+                </li>
+                <li>
+                  <span className="text-foreground font-medium">TSB</span> — forme nette (forme
+                  chronique − fatigue aiguë)
+                </li>
+                <li>
+                  <span className="text-foreground font-medium">CTL / ATL</span> — forme chronique /
+                  fatigue aiguë
+                </li>
+              </ul>
+            </section>
+          </div>
+        </details>
       ) : null}
     </MetricDrillDownPage>
   );

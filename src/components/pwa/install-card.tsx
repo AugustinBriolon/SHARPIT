@@ -23,7 +23,7 @@ export function InstallCard() {
         <div className="icon-well size-9 shrink-0">
           <Smartphone className="size-4" aria-hidden />
         </div>
-        <div className="min-w-0 flex-1 pr-8">
+        <div className="min-w-0 flex-1 pr-10">
           <p className="text-sm font-medium">Installer SHARPIT</p>
           {kind === 'NATIVE_PROMPT' ? (
             <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
@@ -36,14 +36,14 @@ export function InstallCard() {
             </p>
           )}
           {kind === 'NATIVE_PROMPT' ? (
-            <Button className="mt-3" size="sm" type="button" onClick={() => void install()}>
+            <Button className="mt-3" type="button" onClick={() => void install()}>
               Installer
             </Button>
           ) : null}
         </div>
         <button
           aria-label="Ignorer"
-          className="text-muted-foreground hover:text-foreground hover:bg-muted/60 focus-visible:ring-ring absolute top-2.5 right-2.5 flex size-9 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
+          className="text-muted-foreground hover:text-foreground hover:bg-muted/60 focus-visible:ring-ring absolute top-2.5 right-2.5 flex size-11 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-hidden lg:size-9"
           type="button"
           onClick={dismiss}
         >

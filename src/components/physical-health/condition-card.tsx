@@ -37,10 +37,10 @@ export function PhysicalHealthConditionCardView({
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge className="text-[10px]" variant="outline">
+              <Badge className="text-xs" variant="outline">
                 {condition.typeLabel}
               </Badge>
-              <Badge className="text-[10px]" variant="secondary">
+              <Badge className="text-xs" variant="secondary">
                 {condition.statusLabel}
               </Badge>
             </div>
@@ -51,28 +51,26 @@ export function PhysicalHealthConditionCardView({
             </p>
           </div>
           <div className="text-right">
-            <p className={cn('text-2xl font-semibold tabular-nums', CORPS_TONE_TEXT[tone])}>
+            <p className={cn('text-data text-2xl font-semibold', CORPS_TONE_TEXT[tone])}>
               {condition.severity.toFixed(1)}
             </p>
-            <p className="text-muted-foreground text-[10px] tracking-wide uppercase">
-              sévérité inférée
-            </p>
+            <p className="text-label text-muted-foreground">sévérité inférée</p>
           </div>
         </div>
 
         <div className="flex flex-wrap gap-2 text-xs">
           {condition.trendLabel && (
-            <span className="bg-muted/60 inline-flex items-center gap-1 rounded-full px-2 py-0.5">
+            <span className="bg-muted/60 inline-flex items-center gap-1 rounded-full px-2.5 py-1">
               <TrendIcon trend={condition.trend} />
               {condition.trendLabel}
             </span>
           )}
           {condition.functionalCapacityLabel && (
-            <span className="bg-muted/60 rounded-full px-2 py-0.5">
+            <span className="bg-muted/60 inline-flex items-center rounded-full px-2.5 py-1">
               {condition.functionalCapacityLabel}
             </span>
           )}
-          <span className="bg-muted/60 rounded-full px-2 py-0.5">
+          <span className="bg-muted/60 inline-flex items-center rounded-full px-2.5 py-1">
             Confiance {condition.confidencePct}%
           </span>
         </div>
@@ -83,7 +81,7 @@ export function PhysicalHealthConditionCardView({
           {condition.estimatedRecoveryDays != null && condition.isActive && (
             <p className="text-muted-foreground text-xs">
               Estimation de retour au baseline : ~{condition.estimatedRecoveryDays} jours
-              <span className="block text-[10px] opacity-80">
+              <span className="block text-xs opacity-80">
                 Estimation basée sur l&apos;évolution récente — pas une promesse médicale.
               </span>
             </p>
@@ -91,9 +89,7 @@ export function PhysicalHealthConditionCardView({
 
           {condition.timelinePreview.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
-                Timeline récente
-              </p>
+              <p className="text-label text-muted-foreground">Timeline récente</p>
               <ul className="space-y-1">
                 {condition.timelinePreview.map((event, i) => (
                   <li key={i} className="text-muted-foreground text-xs">
@@ -111,7 +107,7 @@ export function PhysicalHealthConditionCardView({
         <div className="flex flex-wrap gap-2 pt-1">
           {condition.legacyPhysicalNoteId && onEditLegacy && (
             <button
-              className="bg-highlight text-highlight-foreground hover:bg-highlight/90 rounded-full px-3.5 py-1.5 text-[11px] font-semibold transition-colors"
+              className="bg-highlight text-highlight-foreground hover:bg-highlight/90 inline-flex min-h-11 items-center rounded-full px-4 py-2 text-xs font-semibold transition-colors lg:min-h-9 lg:px-3.5 lg:py-1.5"
               type="button"
               onClick={() => onEditLegacy(condition.legacyPhysicalNoteId!)}
             >
@@ -119,7 +115,7 @@ export function PhysicalHealthConditionCardView({
             </button>
           )}
           <Link
-            className="chip-surface text-foreground/80 hover:text-foreground rounded-full px-3.5 py-1.5 text-[11px] font-medium transition-colors"
+            className="chip-surface text-foreground/80 hover:text-foreground inline-flex min-h-11 items-center rounded-full px-4 py-2 text-xs font-medium transition-colors lg:min-h-9 lg:px-3.5 lg:py-1.5"
             href={`/biology?tab=suivi&condition=${condition.conditionId}`}
           >
             Voir le détail

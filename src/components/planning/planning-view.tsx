@@ -222,6 +222,7 @@ export function PlanningView({
         <div className="flex items-center gap-1">
           <Button
             aria-label="Semaine précédente"
+            className="size-11 lg:size-9"
             size="icon"
             variant="ghost"
             onClick={() => setWeekStart((prev) => subWeeks(prev, 1))}
@@ -234,15 +235,14 @@ export function PlanningView({
               {' — '}
               {format(weekEnd, 'd MMM', { locale: fr })}
             </p>
-            {isCurrentWeek && (
-              <p className="text-primary text-[11px] font-medium">Semaine en cours</p>
-            )}
+            {isCurrentWeek && <p className="text-primary text-xs font-medium">Semaine en cours</p>}
             {week.index > 0 && (
-              <p className="text-muted-foreground text-[11px] font-medium">Semaine à venir</p>
+              <p className="text-muted-foreground text-xs font-medium">Semaine à venir</p>
             )}
           </div>
           <Button
             aria-label="Semaine suivante"
+            className="size-11 lg:size-9"
             size="icon"
             variant="ghost"
             onClick={() => setWeekStart((prev) => addWeeks(prev, 1))}
@@ -408,7 +408,7 @@ function DayRow({
   return (
     <div className={cn('flex gap-3 px-3 py-3 sm:gap-4 sm:px-4', today && 'bg-primary/4')}>
       <div className="w-11 shrink-0 text-center sm:w-12">
-        <p className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+        <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
           {format(date, 'EEE', { locale: fr })}
         </p>
         <p
@@ -430,7 +430,7 @@ function DayRow({
         )}
         {!loading && empty ? (
           <button
-            className="text-muted-foreground hover:text-foreground pl-6 text-sm transition-colors"
+            className="text-muted-foreground hover:text-foreground min-h-11 pl-6 text-sm transition-colors lg:min-h-9"
             type="button"
             onClick={onAdd}
           >
@@ -455,7 +455,7 @@ function DayRow({
               }
               return (
                 <div key={item.id} className="space-y-1">
-                  <p className="text-primary flex items-center gap-1 text-[10px] font-medium tracking-wider uppercase">
+                  <p className="text-primary flex items-center gap-1 text-xs font-medium tracking-wider uppercase">
                     <Layers className="size-3" /> Brick
                   </p>
                   {item.sessions.map((s) => (
