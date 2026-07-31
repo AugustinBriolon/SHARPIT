@@ -67,10 +67,15 @@ export function ActivityNarrativeSection({
   narrativeAnalyzedAt: initialAnalyzedAt,
   coachEnabled,
 }: ActivityNarrativeSectionProps) {
-  const [narrativeAnalysis, setNarrativeAnalysis] = useState(initialAnalysis);
-  const [narrativeAnalyzedAt, setNarrativeAnalyzedAt] = useState(initialAnalyzedAt);
+  const [polled, setPolled] = useState<{
+    analysis: typeof initialAnalysis;
+    analyzedAt: typeof initialAnalyzedAt;
+  } | null>(null);
   const [pollTimedOut, setPollTimedOut] = useState(() => readTimedOut(activityId));
   const [generating, setGenerating] = useState(false);
+
+  const narrativeAnalysis = polled?.analysis ?? initialAnalysis;
+  const narrativeAnalyzedAt = polled?.analyzedAt ?? initialAnalyzedAt;
 
   const hasAnalysis = Boolean(parseNarrative(narrativeAnalysis) && narrativeAnalyzedAt);
   const eligible =
@@ -83,15 +88,16 @@ export function ActivityNarrativeSection({
     eligible && !hasAnalysis && !pollTimedOut && !generating && expectBackgroundIngest;
 
   useEffect(() => {
-    setNarrativeAnalysis(initialAnalysis);
-    setNarrativeAnalyzedAt(initialAnalyzedAt);
-    if (initialAnalyzedAt) {
-      clearTimedOut(activityId);
-      setPollTimedOut(false);
-    } else {
-      setPollTimedOut(readTimedOut(activityId));
-    }
-  }, [activityId, initialAnalysis, initialAnalyzedAt]);
+    setPolled(null);
+    setPollTimedOut(readTimedOut(activityId));
+  }, [activityId]);
+
+  useEffect(() => {
+    if (!initialAnalyzedAt) return;
+    setPolled(null);
+    clearTimedOut(activityId);
+    setPollTimedOut(false);
+  }, [activityId, initialAnalyzedAt]);
 
   useEffect(() => {
     if (!isPending) return;
@@ -112,8 +118,10 @@ export function ActivityNarrativeSection({
             narrativeAnalyzedAt?: string | null;
           };
           if (activity.narrativeAnalyzedAt) {
-            setNarrativeAnalysis(activity.narrativeAnalysis ?? null);
-            setNarrativeAnalyzedAt(activity.narrativeAnalyzedAt);
+            setPolled({
+              analysis: activity.narrativeAnalysis ?? null,
+              analyzedAt: activity.narrativeAnalyzedAt,
+            });
             clearTimedOut(activityId);
             setPollTimedOut(false);
             return;
@@ -158,8 +166,10 @@ export function ActivityNarrativeSection({
         return;
       }
       if (data?.narrativeAnalyzedAt) {
-        setNarrativeAnalysis(data.narrativeAnalysis ?? null);
-        setNarrativeAnalyzedAt(data.narrativeAnalyzedAt);
+        setPolled({
+          analysis: data.narrativeAnalysis ?? null,
+          analyzedAt: data.narrativeAnalyzedAt,
+        });
         clearTimedOut(activityId);
         setPollTimedOut(false);
         toast.success('Synthèse prête');

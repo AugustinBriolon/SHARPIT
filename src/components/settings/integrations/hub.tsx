@@ -4,9 +4,9 @@ import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, ChevronRight, CircleDashed, RefreshCw, Unplug } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { IntegrationModalContent } from '@/components/settings/integrations/modal-content';
 import { IntegrationLogo } from '@/components/settings/integrations/logos';
 import {
   buildIntegrations,
@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
 import {
   runGarminSync,
@@ -32,6 +33,14 @@ import {
 } from '@/lib/integrations/client-sync';
 import { invalidateAfterProviderSync } from '@/lib/query/invalidate-after-provider-sync';
 import { cn } from '@/lib/utils';
+
+const IntegrationModalContent = dynamic(
+  () =>
+    import('@/components/settings/integrations/modal-content').then(
+      (mod) => mod.IntegrationModalContent,
+    ),
+  { ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },
+);
 
 function syncLabel(lastSyncAt: string | null): string {
   if (!lastSyncAt) return 'Jamais synchronisé';

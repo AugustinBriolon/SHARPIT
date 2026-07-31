@@ -5,12 +5,27 @@ import {
   AnalyticsStat,
   FormStatusBanner,
 } from '@/components/analytics/analytics-cards';
-import { LoadChart } from '@/components/analytics/charts/load-chart';
 import { PerformancePredictions } from '@/components/analytics/predictions/performance-predictions';
-import { SportDistributionChart } from '@/components/analytics/charts/sport-distribution-chart';
-import { VolumeChart } from '@/components/analytics/charts/volume-chart';
+import { Skeleton } from '@/components/ui/skeleton';
 import { buildAnalyticsViewModel, type ActivityForAnalytics } from '@/lib/analytics';
+import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
+
+const LoadChart = dynamic(
+  () => import('@/components/analytics/charts/load-chart').then((mod) => mod.LoadChart),
+  { ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },
+);
+const VolumeChart = dynamic(
+  () => import('@/components/analytics/charts/volume-chart').then((mod) => mod.VolumeChart),
+  { ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },
+);
+const SportDistributionChart = dynamic(
+  () =>
+    import('@/components/analytics/charts/sport-distribution-chart').then(
+      (mod) => mod.SportDistributionChart,
+    ),
+  { ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },
+);
 
 interface AnalyticsViewProps {
   activities: ActivityForAnalytics[];

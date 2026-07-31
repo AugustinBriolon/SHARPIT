@@ -29,22 +29,25 @@ export function ActivityMetaChip({
   const iconEl = <Icon className={cn('size-3.5 shrink-0', resolvedIconClass)} />;
 
   const linkSurface = tone ? chipLinkSurface[tone] : DEFAULT_LINK_SURFACE;
-  const interactiveClass = cn(
-    'pressable inline-flex min-h-11 items-center gap-2 rounded-full border px-3 py-2 text-xs lg:min-h-9 lg:py-1.5',
-    linkSurface,
+  /** Same shell for static + interactive — Conformité must match Ressenti / Météo height. */
+  const chipClass = cn(
+    'inline-flex min-h-11 items-center gap-2 rounded-full border px-3 py-2 text-xs lg:min-h-9 lg:py-1.5',
+    href || onClick ? cn('pressable', linkSurface) : 'border-analysis-border bg-analysis-surface',
   );
 
   const content = (
     <>
-      {showDot ? <span className={cn('size-2 rounded-full', chipDot[tone!])} /> : iconEl}
-      <span className="text-muted-foreground font-medium tracking-wider uppercase">{label}</span>
-      <span className="text-foreground font-medium">{value}</span>
+      {showDot ? <span className={cn('size-2 shrink-0 rounded-full', chipDot[tone!])} /> : iconEl}
+      <span className="text-muted-foreground shrink-0 font-medium tracking-wider uppercase">
+        {label}
+      </span>
+      <span className="text-foreground min-w-0 truncate font-medium">{value}</span>
     </>
   );
 
   if (onClick) {
     return (
-      <button className={interactiveClass} type="button" onClick={onClick}>
+      <button className={chipClass} type="button" onClick={onClick}>
         {content}
       </button>
     );
@@ -52,21 +55,11 @@ export function ActivityMetaChip({
 
   if (href) {
     return (
-      <Link className={interactiveClass} href={href}>
+      <Link className={chipClass} href={href}>
         {content}
       </Link>
     );
   }
 
-  return (
-    <span className="border-analysis-border bg-analysis-surface inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs">
-      {tone && !iconClassName ? (
-        <span className={cn('size-2 rounded-full', chipDot[tone])} />
-      ) : (
-        iconEl
-      )}
-      <span className="text-muted-foreground font-medium tracking-wider uppercase">{label}</span>
-      <span className="text-foreground font-medium">{value}</span>
-    </span>
-  );
+  return <span className={chipClass}>{content}</span>;
 }

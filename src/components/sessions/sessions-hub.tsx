@@ -1,12 +1,8 @@
 'use client';
 
 import { CalendarView } from '@/components/calendar/calendar-view';
-import { PlanAdapter } from '@/components/coach/plan/plan-adapter';
-import { PlanGenerator } from '@/components/coach/plan/plan-generator';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
-import { MacroPlanDialog } from '@/components/planning/macro-plan-dialog';
-import { PlannedSessionDialog } from '@/components/planning/session/planned-session-dialog';
 import { PlanningView } from '@/components/planning/planning-view';
 import {
   SessionsCoachMenu,
@@ -23,7 +19,28 @@ import {
 import { useGoals } from '@/hooks/use-data';
 import { navPillClass } from '@/lib/ui/nav-pill';
 import { CalendarRange, ClipboardList, List } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
+
+const PlannedSessionDialog = dynamic(
+  () =>
+    import('@/components/planning/session/planned-session-dialog').then(
+      (mod) => mod.PlannedSessionDialog,
+    ),
+  { ssr: false },
+);
+const PlanGenerator = dynamic(
+  () => import('@/components/coach/plan/plan-generator').then((mod) => mod.PlanGenerator),
+  { ssr: false },
+);
+const PlanAdapter = dynamic(
+  () => import('@/components/coach/plan/plan-adapter').then((mod) => mod.PlanAdapter),
+  { ssr: false },
+);
+const MacroPlanDialog = dynamic(
+  () => import('@/components/planning/macro-plan-dialog').then((mod) => mod.MacroPlanDialog),
+  { ssr: false },
+);
 
 const TABS = [
   {
@@ -189,13 +206,13 @@ export function SessionsHub({
         {tab === 'planning' && <PlanningView embedded />}
       </div>
 
-      {createFromUrl && (
+      {createFromUrl ? (
         <PlannedSessionDialog defaultDate={new Date()} goals={goals} onClose={closeOverlays} />
-      )}
+      ) : null}
 
-      {coachAction === 'generate' && <PlanGenerator onClose={closeOverlays} />}
-      {coachAction === 'adapt' && <PlanAdapter onClose={closeOverlays} />}
-      {coachAction === 'macro' && <MacroPlanDialog goals={goals} onClose={closeOverlays} />}
+      {coachAction === 'generate' ? <PlanGenerator onClose={closeOverlays} /> : null}
+      {coachAction === 'adapt' ? <PlanAdapter onClose={closeOverlays} /> : null}
+      {coachAction === 'macro' ? <MacroPlanDialog goals={goals} onClose={closeOverlays} /> : null}
     </div>
   );
 }

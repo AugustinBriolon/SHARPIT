@@ -1,14 +1,7 @@
 'use client';
 
-import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
-import { PlanAdapter } from '@/components/coach/plan/plan-adapter';
-import { PlanGenerator } from '@/components/coach/plan/plan-generator';
-import { WeeklyBrief } from '@/components/coach/weekly-brief';
 import { PageHeader } from '@/components/layout/sticky-header';
-import { MacroPlanDialog } from '@/components/planning/macro-plan-dialog';
-import { PlannedSessionDialog } from '@/components/planning/session/planned-session-dialog';
 import { ProjectedAthleteCard } from '@/components/planning/scenario/projected-athlete-card';
-import { ScenarioComparisonDialog } from '@/components/planning/scenario/scenario-comparison-dialog';
 import { TravelContextBanner } from '@/components/planning/travel-context-banner';
 import { parseCalendarDateParam } from '@/components/calendar/calendar-utils';
 import {
@@ -16,6 +9,10 @@ import {
   type SessionsCoachAction,
 } from '@/components/sessions/sessions-coach-menu';
 import { Button } from '@/components/ui/button';
+import {
+  InstrumentListChip,
+  type InstrumentListChipMeta,
+} from '@/components/ui/instrument-list-chip';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ProjectionHorizonDays } from '@/core/projection/types';
 import { useActivities, useGoals, usePlannedSessions, useTrainingPlan } from '@/hooks/use-data';
@@ -32,11 +29,42 @@ import { formatPlannedDuration } from '@/lib/planned-session/sessions';
 import { cn } from '@/lib/utils';
 import { addWeeks, endOfWeek, format, isSameDay, isToday, startOfWeek, subWeeks } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CheckCircle2, ChevronLeft, ChevronRight, GitCompare, Layers, Plus } from 'lucide-react';
-import Link from 'next/link';
+import { ChevronLeft, ChevronRight, GitCompare, Layers, Plus } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+
+const PlannedSessionDialog = dynamic(
+  () =>
+    import('@/components/planning/session/planned-session-dialog').then(
+      (mod) => mod.PlannedSessionDialog,
+    ),
+  { ssr: false },
+);
+const PlanGenerator = dynamic(
+  () => import('@/components/coach/plan/plan-generator').then((mod) => mod.PlanGenerator),
+  { ssr: false },
+);
+const PlanAdapter = dynamic(
+  () => import('@/components/coach/plan/plan-adapter').then((mod) => mod.PlanAdapter),
+  { ssr: false },
+);
+const MacroPlanDialog = dynamic(
+  () => import('@/components/planning/macro-plan-dialog').then((mod) => mod.MacroPlanDialog),
+  { ssr: false },
+);
+const WeeklyBrief = dynamic(
+  () => import('@/components/coach/weekly-brief').then((mod) => mod.WeeklyBrief),
+  { ssr: false },
+);
+const ScenarioComparisonDialog = dynamic(
+  () =>
+    import('@/components/planning/scenario/scenario-comparison-dialog').then(
+      (mod) => mod.ScenarioComparisonDialog,
+    ),
+  { ssr: false },
+);
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 
@@ -218,19 +246,20 @@ export function PlanningView({
         </PageHeader>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-1">
+      {/* Week chrome: nav first (full width mobile), actions second row — thumbs / scan. */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-1 sm:justify-start sm:gap-1">
           <Button
             aria-label="Semaine précédente"
-            className="size-11 lg:size-9"
+            className="size-11 shrink-0 lg:size-9"
             size="icon"
             variant="ghost"
             onClick={() => setWeekStart((prev) => subWeeks(prev, 1))}
           >
             <ChevronLeft className="size-4" aria-hidden />
           </Button>
-          <div className="min-w-44 text-center">
-            <p className="text-sm font-medium">
+          <div className="min-w-0 flex-1 text-center sm:min-w-44 sm:flex-none">
+            <p className="text-sm font-medium text-balance">
               {format(week.start, 'd MMM', { locale: fr })}
               {' — '}
               {format(weekEnd, 'd MMM', { locale: fr })}
@@ -242,7 +271,7 @@ export function PlanningView({
           </div>
           <Button
             aria-label="Semaine suivante"
-            className="size-11 lg:size-9"
+            className="size-11 shrink-0 lg:size-9"
             size="icon"
             variant="ghost"
             onClick={() => setWeekStart((prev) => addWeeks(prev, 1))}
@@ -251,15 +280,31 @@ export function PlanningView({
           </Button>
         </div>
 
-        <div className="flex w-full flex-wrap items-center justify-end gap-2 lg:w-auto">
-          {!isLoading ? <TravelContextBanner rangeEnd={weekEnd} rangeStart={week.start} /> : null}
+        <div className="flex [scrollbar-width:none] items-center gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {!isLoading ? (
+            <TravelContextBanner
+              className="max-w-[9.5rem] sm:max-w-56"
+              rangeEnd={weekEnd}
+              rangeStart={week.start}
+            />
+          ) : null}
           {hasActionableAlternative ? (
-            <Button size="sm" variant="outline" onClick={() => setScenarioComparisonOpen(true)}>
+            <Button
+              aria-label="Comparer les scénarios"
+              className="shrink-0"
+              size="sm"
+              variant="outline"
+              onClick={() => setScenarioComparisonOpen(true)}
+            >
               <GitCompare className="size-3.5 shrink-0" aria-hidden />
-              Comparer
+              <span className="hidden sm:inline">Comparer</span>
             </Button>
           ) : null}
-          {showCoachMenu ? <SessionsCoachMenu onAction={handleCoachAction} /> : null}
+          {showCoachMenu ? (
+            <div className="ml-auto shrink-0">
+              <SessionsCoachMenu onAction={handleCoachAction} />
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -272,6 +317,28 @@ export function PlanningView({
         weeksToRace={week.weeksToRace}
       />
 
+      <div className="analysis-panel divide-analysis-border rounded-analysis-lg divide-y overflow-hidden">
+        {days.map((day) => {
+          const dayId = format(day.date, 'yyyy-MM-dd');
+          return (
+            <DayRow
+              key={day.date.toISOString()}
+              activities={day.activities}
+              date={day.date}
+              goalTitleById={goalTitleById}
+              loading={isLoading}
+              planned={day.planned}
+              riskDay={
+                showPlanningIntelligence && projectionQuery.data?.highestRiskTrainingDayId === dayId
+              }
+              onAdd={() => setDialog({ mode: 'create', date: day.date })}
+              onEdit={openPlannedSession}
+              onPrefetch={prefetchPlannedSession}
+            />
+          );
+        })}
+      </div>
+
       {showPlanningIntelligence ? (
         <ProjectedAthleteCard
           horizon={projectionHorizon}
@@ -279,22 +346,6 @@ export function PlanningView({
           onHorizonChange={setProjectionHorizon}
         />
       ) : null}
-
-      <div className="analysis-panel divide-analysis-border rounded-analysis-lg divide-y overflow-hidden">
-        {days.map((day) => (
-          <DayRow
-            key={day.date.toISOString()}
-            activities={day.activities}
-            date={day.date}
-            goalTitleById={goalTitleById}
-            loading={isLoading}
-            planned={day.planned}
-            onAdd={() => setDialog({ mode: 'create', date: day.date })}
-            onEdit={openPlannedSession}
-            onPrefetch={prefetchPlannedSession}
-          />
-        ))}
-      </div>
 
       {showPlannedDialog && !isLoading && (
         <PlannedSessionDialog
@@ -305,17 +356,21 @@ export function PlanningView({
         />
       )}
 
-      {generatorOpen && <PlanGenerator onClose={() => setGeneratorOpen(false)} />}
-      {adapterOpen && <PlanAdapter onClose={() => setAdapterOpen(false)} />}
-      {macroPlanOpen && <MacroPlanDialog goals={goals} onClose={() => setMacroPlanOpen(false)} />}
-      {weeklyBriefOpen && <WeeklyBrief onClose={() => setWeeklyBriefOpen(false)} />}
-      <ScenarioComparisonDialog
-        anchorTrainingDayId={anchorTrainingDayId}
-        isLoading={scenarioComparisonQuery.isPending || scenarioComparisonQuery.isPlaceholderData}
-        open={scenarioComparisonOpen}
-        viewModel={scenarioComparisonQuery.data}
-        onClose={() => setScenarioComparisonOpen(false)}
-      />
+      {generatorOpen ? <PlanGenerator onClose={() => setGeneratorOpen(false)} /> : null}
+      {adapterOpen ? <PlanAdapter onClose={() => setAdapterOpen(false)} /> : null}
+      {macroPlanOpen ? (
+        <MacroPlanDialog goals={goals} onClose={() => setMacroPlanOpen(false)} />
+      ) : null}
+      {weeklyBriefOpen ? <WeeklyBrief onClose={() => setWeeklyBriefOpen(false)} /> : null}
+      {scenarioComparisonOpen ? (
+        <ScenarioComparisonDialog
+          anchorTrainingDayId={anchorTrainingDayId}
+          isLoading={scenarioComparisonQuery.isPending || scenarioComparisonQuery.isPlaceholderData}
+          open={scenarioComparisonOpen}
+          viewModel={scenarioComparisonQuery.data}
+          onClose={() => setScenarioComparisonOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -392,6 +447,7 @@ function DayRow({
   onEdit,
   onPrefetch,
   loading = false,
+  riskDay = false,
 }: {
   date: Date;
   planned: ClientPlannedSession[];
@@ -401,12 +457,25 @@ function DayRow({
   onEdit: (session: ClientPlannedSession) => void;
   onPrefetch: (session: ClientPlannedSession) => void;
   loading?: boolean;
+  /** Projection highest-risk day — tint only, no competing card chrome. */
+  riskDay?: boolean;
 }) {
   const today = isToday(date);
   const empty = !loading && planned.length === 0 && activities.length === 0;
+  const mixed = planned.length > 0 && activities.length > 0;
+  const plannedGroups = groupPlannedSessions(planned);
+  const primarySessionId = firstOpenPlannedSessionId(plannedGroups);
 
   return (
-    <div className={cn('flex gap-3 px-3 py-3 sm:gap-4 sm:px-4', today && 'bg-primary/4')}>
+    <div
+      title={riskDay ? 'Point de vigilance — projection' : undefined}
+      className={cn(
+        'flex gap-3 px-3 py-3 sm:gap-4 sm:px-4',
+        today && 'bg-primary/4',
+        riskDay && !today && 'bg-signal-caution/8',
+        riskDay && today && 'bg-signal-caution/10',
+      )}
+    >
       <div className="w-11 shrink-0 text-center sm:w-12">
         <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
           {format(date, 'EEE', { locale: fr })}
@@ -415,22 +484,24 @@ function DayRow({
           className={cn(
             'mt-0.5 font-mono text-lg font-semibold tabular-nums',
             today && 'text-primary',
+            riskDay && !today && 'text-signal-caution',
           )}
         >
           {format(date, 'd')}
         </p>
+        {riskDay ? <p className="text-label text-signal-caution mt-0.5">Vigilance</p> : null}
       </div>
 
-      <div className="min-w-0 flex-1 space-y-1.5">
+      <div className="min-w-0 flex-1 space-y-2">
         {loading && (
           <div className="space-y-2 py-1">
-            <Skeleton className="h-4 w-28 rounded-full border-0" />
-            <Skeleton className="h-4 w-20 rounded-full border-0" />
+            <Skeleton className="rounded-analysis h-12 w-full border-0" />
+            <Skeleton className="rounded-analysis h-12 w-4/5 border-0" />
           </div>
         )}
         {!loading && empty ? (
           <button
-            className="text-muted-foreground hover:text-foreground min-h-11 pl-6 text-sm transition-colors lg:min-h-9"
+            className="border-analysis-border/70 text-muted-foreground hover:border-primary/30 hover:text-foreground pressable rounded-analysis min-h-11 w-full border border-dashed px-3 py-2.5 text-left text-sm lg:min-h-9"
             type="button"
             onClick={onAdd}
           >
@@ -439,49 +510,72 @@ function DayRow({
         ) : null}
         {!loading && !empty ? (
           <>
-            {groupPlannedSessions(planned).map((item) => {
-              if (item.kind === 'single') {
-                return (
-                  <SessionRow
-                    key={item.session.id}
-                    session={item.session}
-                    goalTitle={
-                      item.session.goalId ? (goalTitleById.get(item.session.goalId) ?? null) : null
+            {plannedGroups.length > 0 ? (
+              <div className="space-y-2">
+                {mixed ? <p className="text-label px-0.5">Planifié</p> : null}
+                <ul className="space-y-2">
+                  {plannedGroups.map((item) => {
+                    if (item.kind === 'single') {
+                      return (
+                        <li key={item.session.id}>
+                          <SessionRow
+                            primary={item.session.id === primarySessionId}
+                            session={item.session}
+                            goalTitle={
+                              item.session.goalId
+                                ? (goalTitleById.get(item.session.goalId) ?? null)
+                                : null
+                            }
+                            onEdit={onEdit}
+                            onPrefetch={onPrefetch}
+                          />
+                        </li>
+                      );
                     }
-                    onEdit={onEdit}
-                    onPrefetch={onPrefetch}
-                  />
-                );
-              }
-              return (
-                <div key={item.id} className="space-y-1">
-                  <p className="text-primary flex items-center gap-1 text-xs font-medium tracking-wider uppercase">
-                    <Layers className="size-3" /> Brick
-                  </p>
-                  {item.sessions.map((s) => (
-                    <SessionRow
-                      key={s.id}
-                      goalTitle={s.goalId ? (goalTitleById.get(s.goalId) ?? null) : null}
-                      session={s}
-                      onEdit={onEdit}
-                      onPrefetch={onPrefetch}
-                    />
+                    return (
+                      <li key={item.id} className="space-y-1.5">
+                        <p className="text-label text-primary flex items-center gap-1 px-0.5">
+                          <Layers className="size-3" aria-hidden />
+                          Brick
+                        </p>
+                        <ul className="border-analysis-border/70 space-y-1.5 border-l pl-2.5">
+                          {item.sessions.map((s) => (
+                            <li key={s.id}>
+                              <SessionRow
+                                goalTitle={s.goalId ? (goalTitleById.get(s.goalId) ?? null) : null}
+                                primary={s.id === primarySessionId}
+                                session={s}
+                                onEdit={onEdit}
+                                onPrefetch={onPrefetch}
+                              />
+                            </li>
+                          ))}
+                        </ul>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ) : null}
+
+            {activities.length > 0 ? (
+              <div className="space-y-2">
+                {mixed ? <p className="text-label px-0.5">Réalisé</p> : null}
+                <ul className="space-y-2">
+                  {activities.map((a) => (
+                    <li key={a.id}>
+                      <InstrumentListChip
+                        activityType={a.type}
+                        href={`/training/${a.id}`}
+                        meta={['Réalisé']}
+                        title={a.title?.trim() || activityTypeLabels[a.type]}
+                        done
+                      />
+                    </li>
                   ))}
-                </div>
-              );
-            })}
-            {activities.map((a) => (
-              <Link
-                key={a.id}
-                className="text-foreground hover:text-foreground flex items-center gap-2 text-sm transition-colors"
-                href={`/training/${a.id}`}
-              >
-                <CheckCircle2 className="text-primary size-3.5 shrink-0" />
-                <ActivityTypeIndicator type={a.type} />
-                <span className="truncate">{a.title ?? activityTypeLabels[a.type]}</span>
-                <span className="text-muted-foreground text-xs">réalisé</span>
-              </Link>
-            ))}
+                </ul>
+              </div>
+            ) : null}
           </>
         ) : null}
       </div>
@@ -500,43 +594,53 @@ function DayRow({
   );
 }
 
+function firstOpenPlannedSessionId(groups: ReturnType<typeof groupPlannedSessions>): string | null {
+  for (const item of groups) {
+    if (item.kind === 'single' && !item.session.completed) return item.session.id;
+    if (item.kind === 'brick') {
+      const open = item.sessions.find((s) => !s.completed);
+      if (open) return open.id;
+    }
+  }
+  return null;
+}
+
+function plannedSessionMeta(
+  session: ClientPlannedSession,
+  goalTitle?: string | null,
+): InstrumentListChipMeta[] {
+  const meta: InstrumentListChipMeta[] = [];
+  if (session.startTime) meta.push(session.startTime);
+  if (session.durationMin != null) meta.push(formatPlannedDuration(session.durationMin));
+  if (goalTitle) meta.push(`Sert ${goalTitle}`);
+  return meta;
+}
+
 function SessionRow({
   session,
   goalTitle,
+  primary = false,
   onEdit,
   onPrefetch,
 }: {
   session: ClientPlannedSession;
   goalTitle?: string | null;
+  primary?: boolean;
   onEdit: (session: ClientPlannedSession) => void;
   onPrefetch: (session: ClientPlannedSession) => void;
 }) {
-  const title = session.title ?? activityTypeLabels[session.type];
-  const meta = [
-    session.startTime,
-    session.durationMin != null ? formatPlannedDuration(session.durationMin) : null,
-    goalTitle ? `Sert ${goalTitle}` : null,
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  const title = session.title?.trim() || activityTypeLabels[session.type];
 
   return (
-    <button
-      type="button"
-      className={cn(
-        'hover:bg-muted/50 flex min-h-11 w-full items-center gap-2.5 rounded-lg py-1.5 pl-6 text-left text-sm transition-colors',
-        session.completed && 'pl-0 opacity-60',
-      )}
+    <InstrumentListChip
+      activityType={session.type}
+      done={session.completed}
+      meta={plannedSessionMeta(session, goalTitle)}
+      primary={primary && !session.completed}
+      title={title}
       onClick={() => onEdit(session)}
       onFocus={() => onPrefetch(session)}
       onPointerEnter={() => onPrefetch(session)}
-    >
-      {session.completed ? (
-        <CheckCircle2 className="text-primary size-3.5 shrink-0" aria-hidden />
-      ) : null}
-      <ActivityTypeIndicator type={session.type} />
-      <span className="min-w-0 flex-1 truncate font-medium">{title}</span>
-      {meta && <span className="text-muted-foreground shrink-0 text-xs">{meta}</span>}
-    </button>
+    />
   );
 }

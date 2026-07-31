@@ -78,6 +78,9 @@ export function InstrumentListChipSkeleton({ titleWidth = 'w-40' }: { titleWidth
   );
 }
 
+/** Stable default so `memo` is not busted by a fresh `[]` each parent render. */
+const EMPTY_META: InstrumentListChipMeta[] = [];
+
 /**
  * Shared drill-down list chip — training previews + Today “Séance du jour”.
  * Two-line instrument layout: title, then type · meta facts.
@@ -87,7 +90,7 @@ export const InstrumentListChip = memo(function InstrumentListChip({
   onClick,
   title,
   activityType,
-  meta = [],
+  meta = EMPTY_META,
   done = false,
   primary = false,
   showArrow = true,
@@ -108,7 +111,11 @@ export const InstrumentListChip = memo(function InstrumentListChip({
         </span>
         {hasMetaRow ? (
           <span className="text-muted-foreground flex min-w-0 items-center gap-x-1.5 overflow-hidden text-xs whitespace-nowrap">
-            {activityType != null ? <ActivityTypeIndicator type={activityType} /> : null}
+            {activityType != null ? (
+              <span className="shrink-0">
+                <ActivityTypeIndicator type={activityType} />
+              </span>
+            ) : null}
             {meta.map((item, index) => (
               <span key={`meta-${index}-${metaText(item)}`} className="contents">
                 {activityType != null || index > 0 ? (
@@ -118,7 +125,7 @@ export const InstrumentListChip = memo(function InstrumentListChip({
                 ) : null}
                 <span
                   className={cn(
-                    'text-data shrink-0',
+                    'text-data min-w-0 truncate',
                     metaTone(item) === 'caution' && 'text-signal-caution',
                   )}
                 >

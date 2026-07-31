@@ -89,11 +89,12 @@ export function TrainingList() {
     () => parseTrainingHistoryFilters(new URLSearchParams(searchParams.toString())),
     [searchParams],
   );
-  const [filters, setLocalFilters] = useState<TrainingHistoryFilters>(urlFilters);
+  const [optimisticFilters, setOptimisticFilters] = useState<TrainingHistoryFilters | null>(null);
+  const filters = optimisticFilters ?? urlFilters;
 
-  // Keep local filters aligned with browser history (back/forward, shared links).
+  // Drop optimistic overlay when URL catches up (debounce) or browser history navigates.
   useEffect(() => {
-    setLocalFilters(urlFilters);
+    setOptimisticFilters(null);
   }, [urlFilters]);
 
   useEffect(() => {
@@ -127,7 +128,7 @@ export function TrainingList() {
   const recordLabelsById = useMemo(() => buildActivityRecordLabels(records), [records]);
 
   function setFilters(nextFilters: TrainingHistoryFilters) {
-    setLocalFilters(nextFilters);
+    setOptimisticFilters(nextFilters);
     if (urlSyncTimerRef.current) clearTimeout(urlSyncTimerRef.current);
     urlSyncTimerRef.current = setTimeout(() => {
       startTransition(() => {

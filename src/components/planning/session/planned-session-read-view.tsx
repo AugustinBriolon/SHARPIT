@@ -149,13 +149,19 @@ export function PlannedSessionReadView({
 }) {
   const queryClient = useQueryClient();
   const [pushing, setPushing] = useState(false);
-  const [watchPush, setWatchPush] = useState({
+  const [optimisticWatchPush, setOptimisticWatchPush] = useState<{
+    workoutId: string | null;
+    scheduledDate: string | null;
+    pushedAt: string | null;
+  } | null>(null);
+
+  const watchPush = optimisticWatchPush ?? {
     workoutId: session.garminWorkoutId ?? null,
     scheduledDate: session.garminWorkoutScheduledDate ?? null,
     pushedAt: session.garminWorkoutPushedAt
       ? new Date(session.garminWorkoutPushedAt).toISOString()
       : null,
-  });
+  };
   // Linked = activityId (or nested activity). omitLinkedActivityNavigation only hides nav.
   const isRealized = Boolean(session.activityId ?? session.activity);
   const goal = goals.find((g) => g.id === session.goalId);
@@ -202,13 +208,7 @@ export function PlannedSessionReadView({
   }
 
   useEffect(() => {
-    setWatchPush({
-      workoutId: session.garminWorkoutId ?? null,
-      scheduledDate: session.garminWorkoutScheduledDate ?? null,
-      pushedAt: session.garminWorkoutPushedAt
-        ? new Date(session.garminWorkoutPushedAt).toISOString()
-        : null,
-    });
+    setOptimisticWatchPush(null);
   }, [session.garminWorkoutId, session.garminWorkoutScheduledDate, session.garminWorkoutPushedAt]);
 
   const prescriptionRaw = parseStrengthPrescription(session.strengthPrescription);
@@ -272,7 +272,7 @@ export function PlannedSessionReadView({
       }
       if (!response.ok) throw new Error(data.error || 'Envoi impossible');
       const skipped = data.skipped?.length ?? 0;
-      setWatchPush({
+      setOptimisticWatchPush({
         workoutId: data.workoutId != null ? String(data.workoutId) : watchPush.workoutId,
         scheduledDate: data.scheduledDate ?? watchPush.scheduledDate,
         pushedAt: data.pushedAt ?? new Date().toISOString(),

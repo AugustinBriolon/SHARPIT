@@ -9,8 +9,8 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import dynamic from 'next/dynamic';
 import { useQueryClient } from '@tanstack/react-query';
-import { PlannedSessionDialog } from '@/components/planning/session/planned-session-dialog';
 import { useGoals, usePlannedSessions } from '@/hooks/use-data';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import { queryKeys } from '@/lib/query/keys';
@@ -19,6 +19,14 @@ import {
   type PlannedSessionCacheSeed,
 } from '@/lib/query/seed-planned-session-cache';
 import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-compare';
+
+const PlannedSessionDialog = dynamic(
+  () =>
+    import('@/components/planning/session/planned-session-dialog').then(
+      (mod) => mod.PlannedSessionDialog,
+    ),
+  { ssr: false },
+);
 
 export type OpenPlannedSessionOptions = {
   sessionId: string;

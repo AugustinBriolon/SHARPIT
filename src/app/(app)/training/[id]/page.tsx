@@ -1,6 +1,4 @@
 import { notFound } from 'next/navigation';
-import { ActivityInsights } from '@/components/training/activity/activity-insights';
-import { TriathlonActivityInsights } from '@/components/training/activity/triathlon-activity-insights';
 import { TriathlonLegsPanel } from '@/components/training/activity/triathlon-legs-panel';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { ActivityDetailHeader } from '@/components/training/activity/detail/activity-detail-header';
@@ -13,6 +11,7 @@ import { ActivityMetaRow } from '@/components/training/activity/detail/activity-
 import { ActivitySpecsNotes } from '@/components/training/activity/detail/activity-specs-notes';
 import { ActivityStrengthExercises } from '@/components/training/activity/detail/activity-strength-exercises';
 import { ActivityGoalValidationsCard } from '@/components/goals/cards/activity-goal-validations-card';
+import { ActivityDetailInsights } from '@/components/training/activity/activity-detail-insights';
 import { ActivityNarrativeSection } from '@/components/training/activity/activity-narrative-section';
 import { isEligibleForActivityNarrative } from '@/lib/activity/activity-narrative-config';
 import { activityDetailExpectsMap } from '@/lib/activity/activity-detail-skeleton-layout';
@@ -44,9 +43,11 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
   const isStrength = activity.type === ActivityType.STRENGTH;
   const isTriathlon = activity.type === ActivityType.TRIATHLON;
-  const multisportLegs = isTriathlon ? await getMultisportLegsForActivity(activity) : null;
-  const goalValidations = await getGoalAchievementsForActivity(activity.id);
-  const performanceRecords = await getPerformanceRecordsForActivity(activity.id);
+  const [multisportLegs, goalValidations, performanceRecords] = await Promise.all([
+    isTriathlon ? getMultisportLegsForActivity(activity) : Promise.resolve(null),
+    getGoalAchievementsForActivity(activity.id),
+    getPerformanceRecordsForActivity(activity.id),
+  ]);
   const coachEnabled = isCoachConfigured();
   const specs = buildActivitySpecs(activity);
   const strengthStats = buildStrengthStats(activity);
@@ -94,14 +95,15 @@ export default async function ActivityDetailPage({ params }: PageProps) {
       {isTriathlon ? (
         <>
           {coachPanel}
-          <TriathlonActivityInsights activityId={activity.id} />
+          <ActivityDetailInsights activityId={activity.id} type={activity.type} isTriathlon />
         </>
       ) : (
         !isStrength && (
-          <ActivityInsights
+          <ActivityDetailInsights
             activityId={activity.id}
             coachPanel={coachPanel}
             expectMap={activityDetailExpectsMap(activity)}
+            isTriathlon={false}
             type={activity.type}
           />
         )

@@ -10,7 +10,7 @@ import { useTodayPresentationViewModel } from '@/hooks/use-presentation-view-mod
  * advice is grounded on (Bande ink §6). Silent when signals are unavailable.
  */
 export function CoachProvenanceChips() {
-  const trainingDayId = useMemo(() => trainingDayIdForNow(), []);
+  const trainingDayId = trainingDayIdForNow();
   const { data } = useTodayPresentationViewModel(trainingDayId);
   const metricsRow = data?.hero.metricsRow;
 

@@ -61,78 +61,19 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Layers, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-
-type LocationSource = 'home' | 'travel' | 'custom';
-
-function initialCustomPlace(session?: ClientPlannedSession | null): LocationPlaceValue {
-  if (session?.locationLat != null && session.locationLng != null && session.locationLabel) {
-    return {
-      label: session.locationLabel,
-      latitude: session.locationLat,
-      longitude: session.locationLng,
-    };
-  }
-  return null;
-}
-
-function initialLocationSource(session?: ClientPlannedSession | null): LocationSource {
-  if (session?.locationLat != null && session.locationLng != null) return 'custom';
-  return 'home';
-}
-
-const NO_GOAL = 'none';
-
-type DialogMode = 'read' | 'edit';
-type CreateMode = 'single' | 'brick';
-
-type BrickLegForm = {
-  type: ActivityType;
-  title: string;
-  description: string;
-  durationMin: string;
-  load: string;
-  intensity: SessionIntensity;
-};
-
-function defaultBrickLegs(): BrickLegForm[] {
-  return [
-    {
-      type: 'BIKE',
-      title: 'Vélo',
-      description: '',
-      durationMin: '',
-      load: '',
-      intensity: 'ENDURANCE',
-    },
-    {
-      type: 'RUN',
-      title: 'Course',
-      description: '',
-      durationMin: '',
-      load: '',
-      intensity: 'ENDURANCE',
-    },
-  ];
-}
-
-function brickLegTitlePlaceholder(type: ActivityType): string {
-  if (type === 'BIKE') return 'Vélo';
-  if (type === 'RUN') return 'Course';
-  return activityTypeLabels[type];
-}
-
-function submitButtonLabel(pending: boolean, isEdit: boolean, createMode: CreateMode): string {
-  if (pending) return 'Enregistrement…';
-  if (isEdit) return 'Mettre à jour';
-  if (createMode === 'brick') return 'Créer le brick';
-  return 'Planifier';
-}
-
-function dialogTitle(isEdit: boolean, mode: DialogMode, isLinked: boolean): string {
-  if (!isEdit) return 'Planifier une séance';
-  if (mode === 'edit') return 'Modifier la séance';
-  return isLinked ? 'Séance réalisée' : 'Séance planifiée';
-}
+import {
+  brickLegTitlePlaceholder,
+  defaultBrickLegs,
+  dialogTitle,
+  initialCustomPlace,
+  initialLocationSource,
+  NO_GOAL,
+  submitButtonLabel,
+  type BrickLegForm,
+  type CreateMode,
+  type DialogMode,
+  type LocationSource,
+} from '@/components/planning/session/planned-session-dialog-helpers';
 
 interface PlannedSessionDialogProps {
   session?: ClientPlannedSession | null;
@@ -258,11 +199,12 @@ export function PlannedSessionDialog({
     });
   }, [isEdit, session, travelQuery.data?.active]);
 
-  useEffect(() => {
-    if (!showOutdoorContext && type === 'STRENGTH') {
+  function selectActivityType(next: ActivityType) {
+    setType(next);
+    if (next === ActivityType.STRENGTH) {
       setExposure('INDOOR');
     }
-  }, [type, showOutdoorContext]);
+  }
 
   function resetFormFromSession() {
     if (!session) return;
@@ -584,7 +526,7 @@ export function PlannedSessionDialog({
                         <Select
                           disabled={isEdit}
                           value={type}
-                          onValueChange={(v) => setType(v as ActivityType)}
+                          onValueChange={(v) => selectActivityType(v as ActivityType)}
                         >
                           <SelectTrigger className="w-full min-w-0">
                             <SelectValue>{activityTypeLabels[type]}</SelectValue>

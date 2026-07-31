@@ -10,6 +10,9 @@
 !.yarn/releases
 !.yarn/versions
 .vscode
+# Yarn is the package manager (see package.json#packageManager) — ignore other lockfiles
+/package-lock.json
+/pnpm-lock.yaml
 
 # testing
 /coverage

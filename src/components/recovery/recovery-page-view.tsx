@@ -1,17 +1,28 @@
+'use client';
+
 import { RecoveryAlertsSection } from '@/components/recovery/sections/recovery-alerts-section';
 import { RecoveryDimensionsSection } from '@/components/recovery/sections/recovery-dimensions-section';
 import { RecoveryEvidenceSection } from '@/components/recovery/sections/recovery-evidence-section';
 import { RecoveryHero } from '@/components/recovery/sections/recovery-hero';
 import { RecoverySignalsSection } from '@/components/recovery/sections/recovery-signals-section';
 import { RecoveryStatsStrip } from '@/components/recovery/sections/recovery-stats-strip';
-import { RecoveryTrendsSection } from '@/components/recovery/sections/recovery-trends-section';
 import { RecoveryWhyBlock } from '@/components/recovery/sections/recovery-why-block';
 import {
   DataReliabilityFooter,
   MetricDrillDownPage,
   type MetricTone,
 } from '@/components/today/drill-down/metric-drill-down-page';
+import { Skeleton } from '@/components/ui/skeleton';
 import type { DimensionResult } from '@/hooks/use-today';
+import dynamic from 'next/dynamic';
+
+const RecoveryTrendsSection = dynamic(
+  () =>
+    import('@/components/recovery/sections/recovery-trends-section').then(
+      (mod) => mod.RecoveryTrendsSection,
+    ),
+  { ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },
+);
 
 export type RecoveryPageViewProps = {
   date: Date;

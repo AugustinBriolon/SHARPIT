@@ -8,17 +8,17 @@ import {
   type UIMessage,
 } from 'ai';
 import { Loader2, Send, Square } from 'lucide-react';
-import { format } from 'date-fns';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CoachMessage } from '@/components/coach/chat/coach-message';
 import { CoachProvenanceChips } from '@/components/coach/chat/coach-provenance-chips';
 import { ToolActivityList } from '@/components/coach/chat/tool-activity-list';
-import { ToolActivity, type KnownSession } from '@/components/coach/chat/tool-activity';
+import { ToolActivity } from '@/components/coach/chat/tool-activity';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useSaveConversation, useCreateConversation } from '@/hooks/use-coach';
 import { usePlannedSessions } from '@/hooks/use-data';
 import { lastStepApprovalResponseFingerprint } from '@/lib/coach/coach-chat-auto-send';
+import { buildKnownSessions, COACH_CHAT_SUGGESTIONS } from '@/lib/coach/coach-chat-known-sessions';
 import { coachMessagesFingerprint, hasPersistableAssistant } from '@/lib/coach/coach-chat-persist';
 import {
   abortChatFetch,
@@ -38,45 +38,9 @@ import {
   readCoachInputDraft,
   writeCoachInputDraft,
 } from '@/lib/coach/coach-input-draft';
-import { ActivityType } from '@prisma/client';
+import { createClientId } from '@/lib/client-id';
 
-const SUGGESTIONS = [
-  "Comment se présente ma forme aujourd'hui ?",
-  'Quelle séance me conseilles-tu pour demain ?',
-  'Décale ma séance de seuil à après-demain',
-  'Ajoute une sortie vélo endurance samedi',
-];
-
-function buildKnownSessions(
-  messages: UIMessage[],
-  plannedSessions:
-    { id: string; title: string | null; date: Date; type: ActivityType }[] | undefined,
-): Record<string, KnownSession> {
-  const known: Record<string, KnownSession> = {};
-
-  for (const message of messages) {
-    if (message.role !== 'assistant') continue;
-    for (const part of message.parts) {
-      if (part.type !== 'tool-listPlannedSessions') continue;
-      const { output } = part as ToolPartLite;
-      if (!Array.isArray(output)) continue;
-      for (const s of output as KnownSession[]) {
-        if (s?.id) known[s.id] = s;
-      }
-    }
-  }
-
-  for (const session of plannedSessions ?? []) {
-    known[session.id] = {
-      id: session.id,
-      title: session.title,
-      date: format(new Date(session.date), 'yyyy-MM-dd'),
-      type: session.type,
-    };
-  }
-
-  return known;
-}
+const SUGGESTIONS = COACH_CHAT_SUGGESTIONS;
 
 export function CoachChat({
   conversationId,
@@ -331,7 +295,7 @@ export function CoachChat({
 
     if (isEphemeral) {
       const userMessage: UIMessage = {
-        id: crypto.randomUUID(),
+        id: createClientId(),
         role: 'user',
         parts: [{ type: 'text', text: value }],
       };

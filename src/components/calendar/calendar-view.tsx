@@ -1,10 +1,5 @@
 'use client';
 
-import { BrickDialog } from '@/components/planning/brick/brick-dialog';
-import { PlannedSessionDialog } from '@/components/planning/session/planned-session-dialog';
-import { PlanAdapter } from '@/components/coach/plan/plan-adapter';
-import { PlanGenerator } from '@/components/coach/plan/plan-generator';
-import { MacroPlanDialog } from '@/components/planning/macro-plan-dialog';
 import {
   SessionsCoachMenu,
   type SessionsCoachAction,
@@ -43,6 +38,7 @@ import {
   subMonths,
   subWeeks,
 } from 'date-fns';
+import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CalendarMonthGrid } from './calendar-month-grid';
@@ -56,6 +52,30 @@ import {
   groupEventsByDay,
   parseCalendarDateParam,
 } from './calendar-utils';
+
+const BrickDialog = dynamic(
+  () => import('@/components/planning/brick/brick-dialog').then((mod) => mod.BrickDialog),
+  { ssr: false },
+);
+const PlannedSessionDialog = dynamic(
+  () =>
+    import('@/components/planning/session/planned-session-dialog').then(
+      (mod) => mod.PlannedSessionDialog,
+    ),
+  { ssr: false },
+);
+const PlanGenerator = dynamic(
+  () => import('@/components/coach/plan/plan-generator').then((mod) => mod.PlanGenerator),
+  { ssr: false },
+);
+const PlanAdapter = dynamic(
+  () => import('@/components/coach/plan/plan-adapter').then((mod) => mod.PlanAdapter),
+  { ssr: false },
+);
+const MacroPlanDialog = dynamic(
+  () => import('@/components/planning/macro-plan-dialog').then((mod) => mod.MacroPlanDialog),
+  { ssr: false },
+);
 
 function CalendarSkeleton({ showHeader }: { showHeader: boolean }) {
   return (
@@ -338,11 +358,11 @@ export function CalendarView({
         />
       )}
 
-      {generatorOpen && <PlanGenerator onClose={() => setGeneratorOpen(false)} />}
-      {adapterOpen && <PlanAdapter onClose={() => setAdapterOpen(false)} />}
-      {macroPlanOpen && (
+      {generatorOpen ? <PlanGenerator onClose={() => setGeneratorOpen(false)} /> : null}
+      {adapterOpen ? <PlanAdapter onClose={() => setAdapterOpen(false)} /> : null}
+      {macroPlanOpen ? (
         <MacroPlanDialog goals={goalsQuery.data ?? []} onClose={() => setMacroPlanOpen(false)} />
-      )}
+      ) : null}
     </div>
   );
 }

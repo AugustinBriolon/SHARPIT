@@ -1578,11 +1578,9 @@ function MapArc<T extends MapArcDatum = MapArcDatum>({
   );
   const mergedLayout = useMemo(() => ({ ...DEFAULT_ARC_LAYOUT, ...layout }), [layout]);
 
-  const hitWidth = useMemo(() => {
-    const w = paint?.['line-width'] ?? DEFAULT_ARC_PAINT['line-width'];
-    const base = typeof w === 'number' ? w : ARC_HIT_MIN_WIDTH;
-    return Math.max(base + ARC_HIT_PADDING, ARC_HIT_MIN_WIDTH);
-  }, [paint]);
+  const paintLineWidth = paint?.['line-width'] ?? DEFAULT_ARC_PAINT['line-width'];
+  const hitWidthBase = typeof paintLineWidth === 'number' ? paintLineWidth : ARC_HIT_MIN_WIDTH;
+  const hitWidth = Math.max(hitWidthBase + ARC_HIT_PADDING, ARC_HIT_MIN_WIDTH);
 
   const geoJSON = useMemo<GeoJSON.FeatureCollection<GeoJSON.LineString>>(
     () => ({

@@ -30,6 +30,7 @@ import {
   buildSessionDiscussPrompt,
 } from '@/lib/coach/coach-session-thread';
 import { clearCoachInputDraft } from '@/lib/coach/coach-input-draft';
+import { createClientId } from '@/lib/client-id';
 import { activityTypeLabels } from '@/lib/format';
 import { exposureLabels } from '@/lib/planned-session/sessions';
 import { parseSessionAnalysis } from '@/lib/planned-session/session-analysis-display';
@@ -38,7 +39,7 @@ import type { SessionAnalysis } from '@/lib/validators/coach';
 const inFlightDiscussBootstraps = new Set<string>();
 
 function createEphemeralId(): string {
-  return crypto.randomUUID();
+  return createClientId();
 }
 
 export function CoachView() {

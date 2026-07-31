@@ -68,32 +68,26 @@ export function TravelMemoryFormDialog({
   const labelRef = useRef<HTMLInputElement>(null);
   const typeRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-  const [entryType, setEntryType] = useState<CoachMemoryType>('TRAVEL');
-  const [label, setLabel] = useState('');
-  const [place, setPlace] = useState<LocationPlaceValue>(null);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [note, setNote] = useState('');
-  const [allowedDisciplines, setAllowedDisciplines] = useState<TravelDiscipline[]>([]);
-  const [noStructuredTraining, setNoStructuredTraining] = useState(false);
-  const [applyToPlannedSessions, setApplyToPlannedSessions] = useState(true);
+  const [entryType, setEntryType] = useState<CoachMemoryType>(() => entry?.type ?? 'TRAVEL');
+  const [label, setLabel] = useState(() => entry?.label ?? '');
+  const [place, setPlace] = useState<LocationPlaceValue>(() => entryToPlace(entry));
+  const [startDate, setStartDate] = useState(() => entry?.startDate ?? '');
+  const [endDate, setEndDate] = useState(() => entry?.endDate ?? '');
+  const [note, setNote] = useState(() => entry?.note ?? '');
+  const [allowedDisciplines, setAllowedDisciplines] = useState<TravelDiscipline[]>(
+    () => entry?.allowedDisciplines ?? [],
+  );
+  const [noStructuredTraining, setNoStructuredTraining] = useState(
+    () => entry?.trainingConstraint === 'NONE',
+  );
+  const [applyToPlannedSessions, setApplyToPlannedSessions] = useState(() => !isEdit);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
-    setEntryType(entry?.type ?? 'TRAVEL');
-    setLabel(entry?.label ?? '');
-    setPlace(entryToPlace(entry));
-    setStartDate(entry?.startDate ?? '');
-    setEndDate(entry?.endDate ?? '');
-    setNote(entry?.note ?? '');
-    setAllowedDisciplines(entry?.allowedDisciplines ?? []);
-    setNoStructuredTraining(entry?.trainingConstraint === 'NONE');
-    setApplyToPlannedSessions(!isEdit);
-    setError(null);
     const timer = window.setTimeout(() => labelRef.current?.focus(), 50);
     return () => window.clearTimeout(timer);
-  }, [entry, isEdit, open]);
+  }, [open]);
 
   const derivedConstraint = useMemo(
     () =>

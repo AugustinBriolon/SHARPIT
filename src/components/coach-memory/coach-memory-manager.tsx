@@ -167,6 +167,7 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
       <CoachMemoryRoadmapTeaser />
 
       <TravelMemoryFormDialog
+        key={editingEntry?.id ?? (formOpen ? 'new' : 'closed')}
         entry={editingEntry}
         open={formOpen}
         saving={saving}

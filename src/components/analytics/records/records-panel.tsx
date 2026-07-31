@@ -1,7 +1,6 @@
 'use client';
 
 import { RecordsSectionHeader } from '@/components/analytics/analytics-cards';
-import { PowerCurveChart } from '@/components/analytics/charts/power-curve-chart';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -23,9 +22,16 @@ import { cn } from '@/lib/utils';
 import { differenceInCalendarDays, format, formatDistanceToNowStrict } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Bike, Footprints, Waves } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
+
+const PowerCurveChart = dynamic(
+  () =>
+    import('@/components/analytics/charts/power-curve-chart').then((mod) => mod.PowerCurveChart),
+  { ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },
+);
 
 type SportTab = RecordSportTab;
 

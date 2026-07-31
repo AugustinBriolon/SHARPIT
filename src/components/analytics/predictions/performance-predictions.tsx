@@ -1,10 +1,10 @@
 'use client';
 
 import { Check, Flag, Gauge, Loader2, Timer, Zap } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useState } from 'react';
 import { AnalyticsSection } from '@/components/analytics/analytics-cards';
-import { PredictionGoalDialog } from '@/components/goals/dialogs/prediction-goal-dialog';
 import { Button } from '@/components/ui/button';
 import { useApplyThresholdEstimates, useRecords, useThresholdPreview } from '@/hooks/use-data';
 import {
@@ -16,6 +16,14 @@ import {
   type RunPrediction,
 } from '@/lib/training/performance-predictor';
 import { cn } from '@/lib/utils';
+
+const PredictionGoalDialog = dynamic(
+  () =>
+    import('@/components/goals/dialogs/prediction-goal-dialog').then(
+      (mod) => mod.PredictionGoalDialog,
+    ),
+  { ssr: false },
+);
 
 const CONFIDENCE_LABEL: Record<PredictionConfidence, string> = {
   high: 'fiable',

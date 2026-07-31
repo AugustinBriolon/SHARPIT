@@ -2,9 +2,10 @@
 
 import { GoalHorizon, GoalKind, GoalPriority } from '@prisma/client';
 import { Calendar, MapPin, Pencil, Target, Trash2, Trophy } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useState } from 'react';
-import { GoalDialog, type GoalForEdit } from '@/components/goals/dialogs/goal-dialog';
+import type { GoalForEdit } from '@/components/goals/dialogs/goal-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -23,6 +24,11 @@ import {
 } from '@/lib/goals/goal-metric-config';
 import { cn } from '@/lib/utils';
 import { useGoalMutations } from '@/hooks/use-data';
+
+const GoalDialog = dynamic(
+  () => import('@/components/goals/dialogs/goal-dialog').then((mod) => mod.GoalDialog),
+  { ssr: false },
+);
 
 function metricGoalSubtitle(goal: GoalItem, subtitle: string | null): React.ReactNode {
   if (subtitle) {

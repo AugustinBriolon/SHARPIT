@@ -1,8 +1,6 @@
+'use client';
+
 import { EffortAlertsSection } from '@/components/effort/effort-alerts-section';
-import {
-  EffortPmcSection,
-  EffortWeeklyTssSection,
-} from '@/components/effort/effort-charts-section';
 import { EffortDimensionsSection } from '@/components/effort/effort-dimensions-section';
 import { EffortHero } from '@/components/effort/effort-hero';
 import { EffortStatsStrip } from '@/components/effort/effort-stats-strip';
@@ -14,9 +12,21 @@ import {
   MetricDrillDownPage,
   type MetricTone,
 } from '@/components/today/drill-down/metric-drill-down-page';
+import { Skeleton } from '@/components/ui/skeleton';
 import type { EffortStrainCompositionView } from '@/lib/presentation/effort-strain-composition';
 import type { FatigueType, TrainingCapacity } from '@/lib/today/today-mapping';
 import type { DimensionResult } from '@/hooks/use-today';
+import dynamic from 'next/dynamic';
+
+const EffortPmcSection = dynamic(
+  () => import('@/components/effort/effort-charts-section').then((mod) => mod.EffortPmcSection),
+  { ssr: false, loading: () => <Skeleton className="h-[140px] w-full" /> },
+);
+const EffortWeeklyTssSection = dynamic(
+  () =>
+    import('@/components/effort/effort-charts-section').then((mod) => mod.EffortWeeklyTssSection),
+  { ssr: false, loading: () => <Skeleton className="h-[140px] w-full" /> },
+);
 
 export type EffortPageViewProps = {
   date: Date;

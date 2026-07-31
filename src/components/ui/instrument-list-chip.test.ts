@@ -89,4 +89,16 @@ describe('InstrumentListChip', () => {
     expect(html).toContain('Tempo planifié');
     expect(html).not.toContain('<a ');
   });
+
+  it('renders without meta when the default empty list is used', () => {
+    const html = renderToStaticMarkup(
+      createElement(InstrumentListChip, {
+        href: '/training/1',
+        title: 'Sans meta',
+        activityType: ActivityType.RUN,
+      }),
+    );
+    expect(html).toContain('Sans meta');
+    expect(html).toContain('Course');
+  });
 });

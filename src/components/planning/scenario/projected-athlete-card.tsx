@@ -1,14 +1,13 @@
 'use client';
 
 import type { UseQueryResult } from '@tanstack/react-query';
-import { GitBranch } from 'lucide-react';
 import type { ProjectionHorizonDays } from '@/core/projection/types';
 import type { ProjectedAthleteCardViewModel } from '@/core/presentation/projected-athlete-view-model';
-import { DiscussCoachLink } from '@/components/training/activity/discuss-coach-link';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { isPresentationValuesLoading } from '@/hooks/use-presentation-view-model';
 import { cn } from '@/lib/utils';
+import { GitBranch } from 'lucide-react';
 
 const HORIZON_OPTIONS: { days: ProjectionHorizonDays; label: string }[] = [
   { days: 1, label: 'Demain' },
@@ -17,6 +16,10 @@ const HORIZON_OPTIONS: { days: ProjectionHorizonDays; label: string }[] = [
   { days: 14, label: '14 j' },
 ];
 
+/**
+ * Projected athlete trajectory for Planning — instrument Projection only.
+ * Coach discussion lives on /coach (menu « Ma semaine » / discuss deep-links elsewhere).
+ */
 export function ProjectedAthleteCard({
   className,
   horizon,
@@ -47,31 +50,28 @@ export function ProjectedAthleteCard({
   return (
     <section
       aria-busy={valuesLoading || undefined}
-      className={cn('analysis-panel-alt rounded-analysis-lg px-5 py-5 sm:px-6', className)}
+      className={cn('analysis-panel rounded-analysis-lg px-4 py-4 sm:px-5', className)}
     >
-      <div className="flex items-center gap-2">
-        <GitBranch className="text-primary size-4 shrink-0" />
-        <p className="text-label">Conseil du coach</p>
-      </div>
+      <p className="text-label">Projection</p>
 
       {valuesLoading ? (
-        <Skeleton className="mt-3 h-6 w-full max-w-3xl rounded-full border-0 sm:h-7" />
+        <Skeleton className="mt-2 h-5 w-full max-w-2xl rounded-full border-0" />
       ) : (
-        <p className="text-verdict text-foreground mt-3 max-w-3xl">
+        <p className="text-foreground mt-2 max-w-2xl text-sm leading-relaxed text-pretty">
           {viewModel!.synthesisSentence}
         </p>
       )}
 
       {!valuesLoading && viewModel?.caution ? (
-        <div className="rounded-analysis border-signal-caution/25 bg-signal-caution/8 mt-4 border px-3 py-3">
+        <div className="rounded-analysis border-signal-caution/25 bg-signal-caution/8 mt-3 border px-3 py-2.5">
           <p className="text-label text-signal-caution">{viewModel.caution.label}</p>
-          <p className="text-muted-foreground mt-1.5 max-w-3xl text-sm leading-relaxed">
+          <p className="text-muted-foreground mt-1 max-w-2xl text-xs leading-relaxed text-pretty">
             {viewModel.caution.body}
           </p>
         </div>
       ) : null}
 
-      <div aria-label="Horizon de projection" className="mt-4 flex flex-wrap gap-1.5" role="group">
+      <div aria-label="Horizon de projection" className="mt-3 flex flex-wrap gap-1.5" role="group">
         {HORIZON_OPTIONS.map((option) => (
           <button
             key={option.days}
@@ -79,7 +79,7 @@ export function ProjectedAthleteCard({
             disabled={valuesLoading}
             type="button"
             className={cn(
-              'pressable focus-visible:ring-primary/30 min-h-11 rounded-md px-3 py-2 text-xs font-medium focus-visible:ring-2 focus-visible:outline-hidden lg:min-h-9 lg:px-2.5 lg:py-1.5',
+              'pressable focus-visible:ring-primary/30 min-h-11 rounded-md px-2.5 py-1.5 text-xs font-medium focus-visible:ring-2 focus-visible:outline-hidden lg:min-h-8',
               horizon === option.days
                 ? 'bg-highlight text-highlight-foreground'
                 : 'bg-muted/50 text-muted-foreground hover:bg-muted',
@@ -90,14 +90,6 @@ export function ProjectedAthleteCard({
             {option.label}
           </button>
         ))}
-      </div>
-
-      <div className="mt-4">
-        {valuesLoading ? (
-          <Skeleton className="h-9 w-44 rounded-lg" />
-        ) : (
-          <DiscussCoachLink planningHorizon={horizon} />
-        )}
       </div>
     </section>
   );

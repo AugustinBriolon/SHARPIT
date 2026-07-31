@@ -6,11 +6,25 @@ import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
-import { z } from 'zod';
 import {
   LocationPlacePicker,
   type LocationPlaceValue,
 } from '@/components/planning/location-place-picker';
+import { ActivityFormField } from '@/components/training/activity/activity-form-field';
+import {
+  ACTIVITY_FEELING_OPTIONS,
+  type ActivityFormProps,
+  type ActivityFormValues,
+  defaultStrengthSet,
+  emptyToUndefined,
+  formatValidationErrors,
+  initialLocationFromData,
+  resolveWatchedDate,
+  resolveWatchedDurationSec,
+  resolveWatchedRpe,
+  sanitizeActivityPayload,
+  strengthSetsForForm,
+} from '@/components/training/activity/activity-form-helpers';
 import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
 import { useActivityMutations } from '@/hooks/use-data';
 import { Button } from '@/components/ui/button';
@@ -31,140 +45,6 @@ import {
 } from '@/lib/activity/activity-weather';
 import { activityTypeLabels, formatDateTimeLocal } from '@/lib/format';
 import { createActivitySchema } from '@/lib/validators/activity';
-
-type ActivityFormValues = z.input<typeof createActivitySchema>;
-
-function strengthSetsForForm(initialData: ActivityWithRelations) {
-  if (initialData.type !== ActivityType.STRENGTH) return [];
-  return initialData.strengthSets.length ? initialData.strengthSets : [defaultStrengthSet];
-}
-
-function resolveWatchedDate(value: unknown): Date {
-  if (value instanceof Date) return value;
-  if (typeof value === 'string' || typeof value === 'number') return new Date(value);
-  return new Date();
-}
-
-function resolveWatchedDurationSec(value: unknown): number | null {
-  return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
-
-function emptyToUndefined(value: unknown) {
-  if (value === '' || value === null || value === undefined) return undefined;
-  if (typeof value === 'number' && Number.isNaN(value)) return undefined;
-  return value;
-}
-
-function sanitizeActivityPayload(values: ActivityFormValues): ActivityFormValues {
-  const payload: ActivityFormValues = {
-    ...values,
-    title: values.title || undefined,
-    feeling: values.feeling || undefined,
-    notes: values.notes || undefined,
-    weather: values.weather || undefined,
-    observedLocationLabel: values.observedLocationLabel || undefined,
-    observedLocationLat: emptyToUndefined(values.observedLocationLat) as number | undefined,
-    observedLocationLng: emptyToUndefined(values.observedLocationLng) as number | undefined,
-    duration: emptyToUndefined(values.duration) as number | undefined,
-    rpe: emptyToUndefined(values.rpe) as number | undefined,
-    load: emptyToUndefined(values.load) as number | undefined,
-  };
-
-  if (!sportSupportsOutdoorContext(payload.type)) {
-    delete payload.observedLocationLabel;
-    delete payload.observedLocationLat;
-    delete payload.observedLocationLng;
-    delete payload.weather;
-  }
-
-  if (payload.type !== ActivityType.STRENGTH) {
-    delete payload.strengthSets;
-  }
-
-  return payload;
-}
-
-function initialLocationFromData(data?: ActivityWithRelations): LocationPlaceValue {
-  if (
-    data?.observedLocationLat != null &&
-    data.observedLocationLng != null &&
-    data.observedLocationLabel
-  ) {
-    return {
-      label: data.observedLocationLabel,
-      latitude: data.observedLocationLat,
-      longitude: data.observedLocationLng,
-    };
-  }
-  return null;
-}
-
-function formatValidationErrors(errors: Record<string, unknown>): string {
-  const messages: string[] = [];
-
-  function walk(node: unknown, path: string) {
-    if (!node || typeof node !== 'object') return;
-    const record = node as Record<string, unknown>;
-    if (typeof record.message === 'string') {
-      messages.push(path ? `${path} : ${record.message}` : record.message);
-    }
-    for (const [key, value] of Object.entries(record)) {
-      if (key === 'message' || key === 'type' || key === 'ref') continue;
-      walk(value, path ? `${path}.${key}` : key);
-    }
-  }
-
-  walk(errors, '');
-  return messages[0] ?? 'Vérifie les champs du formulaire.';
-}
-
-type ActivityWithRelations = {
-  id: string;
-  type: ActivityType;
-  date: Date;
-  title: string | null;
-  duration: number | null;
-  rpe: number | null;
-  feeling: string | null;
-  notes: string | null;
-  weather: string | null;
-  load: number | null;
-  observedLocationLabel: string | null;
-  observedLocationLat: number | null;
-  observedLocationLng: number | null;
-  runMetrics: Record<string, unknown> | null;
-  bikeMetrics: Record<string, unknown> | null;
-  swimMetrics: Record<string, unknown> | null;
-  strengthSets: Array<Record<string, unknown>>;
-};
-
-interface ActivityFormProps {
-  mode: 'create' | 'edit';
-  initialData?: ActivityWithRelations;
-}
-
-const defaultStrengthSet = {
-  exercise: '',
-  sets: 3,
-  reps: 8,
-  weightKg: undefined,
-  rpe: undefined,
-  restSec: 90,
-  videoUrl: '',
-  notes: '',
-};
-
-const ACTIVITY_FEELING_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: 'Très bien', label: 'Très bien' },
-  { value: 'Bien', label: 'Bien' },
-  { value: 'Correct', label: 'Correct' },
-  { value: 'Mal', label: 'Mal' },
-  { value: 'Très mal', label: 'Très mal' },
-];
-
-function resolveWatchedRpe(value: unknown): number | null {
-  return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
 
 export function ActivityForm({ mode, initialData }: ActivityFormProps) {
   const router = useRouter();
@@ -232,7 +112,7 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
     name: 'strengthSets',
   });
 
-  const resolvedActivityDate = useMemo(() => resolveWatchedDate(activityDate), [activityDate]);
+  const resolvedActivityDate = resolveWatchedDate(activityDate);
   const resolvedDurationSec = resolveWatchedDurationSec(durationSec);
   const resolvedRpe = resolveWatchedRpe(rpe);
   const feelingValue = typeof feeling === 'string' ? feeling : '';
@@ -536,12 +416,17 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
             <CardTitle>Course</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
-            <Field factor={1000} form={form} label="Distance (km)" name="runMetrics.distanceM" />
-            <Field form={form} label="Dénivelé (m)" name="runMetrics.elevationM" />
-            <Field form={form} label="Allure (sec/km)" name="runMetrics.paceSecPerKm" />
-            <Field form={form} label="FC moy." name="runMetrics.avgHr" />
-            <Field form={form} label="Puissance" name="runMetrics.avgPower" />
-            <Field form={form} label="Cadence" name="runMetrics.cadence" />
+            <ActivityFormField
+              factor={1000}
+              form={form}
+              label="Distance (km)"
+              name="runMetrics.distanceM"
+            />
+            <ActivityFormField form={form} label="Dénivelé (m)" name="runMetrics.elevationM" />
+            <ActivityFormField form={form} label="Allure (sec/km)" name="runMetrics.paceSecPerKm" />
+            <ActivityFormField form={form} label="FC moy." name="runMetrics.avgHr" />
+            <ActivityFormField form={form} label="Puissance" name="runMetrics.avgPower" />
+            <ActivityFormField form={form} label="Cadence" name="runMetrics.cadence" />
             <div className="space-y-2 md:col-span-2">
               <Label>Chaussures</Label>
               <Input {...form.register('runMetrics.shoes')} />
@@ -556,14 +441,14 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
             <CardTitle>Vélo</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
-            <Field form={form} label="FTP %" name="bikeMetrics.ftpPercent" />
-            <Field form={form} label="NP (W)" name="bikeMetrics.normalizedPower" />
-            <Field form={form} label="IF" name="bikeMetrics.intensityFactor" />
-            <Field form={form} label="TSS" name="bikeMetrics.tss" />
-            <Field form={form} label="Cadence" name="bikeMetrics.avgCadence" />
-            <Field form={form} label="Puissance moy." name="bikeMetrics.avgPower" />
-            <Field form={form} label="Dénivelé (m)" name="bikeMetrics.elevationM" />
-            <Field form={form} label="Calories" name="bikeMetrics.calories" />
+            <ActivityFormField form={form} label="FTP %" name="bikeMetrics.ftpPercent" />
+            <ActivityFormField form={form} label="NP (W)" name="bikeMetrics.normalizedPower" />
+            <ActivityFormField form={form} label="IF" name="bikeMetrics.intensityFactor" />
+            <ActivityFormField form={form} label="TSS" name="bikeMetrics.tss" />
+            <ActivityFormField form={form} label="Cadence" name="bikeMetrics.avgCadence" />
+            <ActivityFormField form={form} label="Puissance moy." name="bikeMetrics.avgPower" />
+            <ActivityFormField form={form} label="Dénivelé (m)" name="bikeMetrics.elevationM" />
+            <ActivityFormField form={form} label="Calories" name="bikeMetrics.calories" />
             <div className="space-y-2 md:col-span-2">
               <Label>Vélo</Label>
               <Input {...form.register('bikeMetrics.bikeName')} />
@@ -578,15 +463,19 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
             <CardTitle>Natation</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
-            <Field form={form} label="Distance (m)" name="swimMetrics.distanceM" />
-            <Field form={form} label="Séries" name="swimMetrics.sets" />
-            <Field form={form} label="CSS (sec/100m)" name="swimMetrics.cssSecPer100m" />
-            <Field
+            <ActivityFormField form={form} label="Distance (m)" name="swimMetrics.distanceM" />
+            <ActivityFormField form={form} label="Séries" name="swimMetrics.sets" />
+            <ActivityFormField
+              form={form}
+              label="CSS (sec/100m)"
+              name="swimMetrics.cssSecPer100m"
+            />
+            <ActivityFormField
               form={form}
               label="Allure moy. (sec/100m)"
               name="swimMetrics.avgPaceSecPer100m"
             />
-            <Field form={form} label="SWOLF" name="swimMetrics.swolf" />
+            <ActivityFormField form={form} label="SWOLF" name="swimMetrics.swolf" />
             <div className="space-y-2 md:col-span-2">
               <Label>Drills</Label>
               <Input {...form.register('swimMetrics.drills')} />
@@ -677,65 +566,5 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
         </Button>
       </div>
     </form>
-  );
-}
-
-function Field({
-  label,
-  name,
-  form,
-  factor,
-}: {
-  label: string;
-  name: string;
-  form: ReturnType<typeof useForm<ActivityFormValues>>;
-  factor?: number;
-}) {
-  const parts = name.split('.');
-  const fieldName = parts[parts.length - 1];
-
-  return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <Input
-        name={fieldName}
-        step="any"
-        type="number"
-        defaultValue={
-          parts.length === 2
-            ? (() => {
-                const [group, key] = parts;
-                const groupValue = form.getValues(group as keyof ActivityFormValues) as
-                  Record<string, number> | undefined;
-                const val = groupValue?.[key];
-                if (val === undefined || val === null) return undefined;
-                return factor ? val / factor : val;
-              })()
-            : undefined
-        }
-        onChange={(e) => {
-          const raw = e.target.value;
-          const value = raw ? Number(raw) : undefined;
-          const finalValue = value !== undefined && factor ? value * factor : value;
-
-          if (parts.length === 2) {
-            const [group, key] = parts as [string, string];
-            const current = (form.getValues(group as keyof ActivityFormValues) ?? {}) as Record<
-              string,
-              unknown
-            >;
-            form.setValue(
-              group as keyof ActivityFormValues,
-              {
-                ...current,
-                [key]: finalValue,
-              } as ActivityFormValues[keyof ActivityFormValues],
-            );
-          } else {
-            form.setValue(name as keyof ActivityFormValues, finalValue as never);
-          }
-        }}
-      />
-    </div>
   );
 }

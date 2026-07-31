@@ -10,6 +10,7 @@ import { springs } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
 import { OfflineBanner } from '@/components/pwa/offline-banner';
 import { SyncingIndicator } from '@/components/ui/syncing-indicator';
+import { haptic } from '@/lib/haptic';
 
 function BottomNavLink({
   item,
@@ -35,9 +36,12 @@ function BottomNavLink({
         'pressable relative flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 text-[10px] font-medium',
         isActive ? 'text-highlight-foreground' : 'text-muted-foreground hover:text-foreground',
       )}
-      onClick={onNavigate}
       onMouseEnter={hint}
       onTouchStart={hint}
+      onClick={() => {
+        if (!isActive) haptic('tap');
+        onNavigate?.();
+      }}
     >
       {isActive && !reduce ? (
         <motion.span

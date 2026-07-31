@@ -15,7 +15,7 @@ import type { ScenarioComparisonViewModel } from '@/core/presentation/scenario-c
 import { useApplyScenarioComparison } from '@/hooks/use-apply-scenario-comparison';
 import { cn } from '@/lib/utils';
 import { GitCompare, Sparkles } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 function defaultSelectedScenarioId(viewModel: ScenarioComparisonViewModel): string | null {
   return (
@@ -55,14 +55,16 @@ export function ScenarioComparisonDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <ScenarioComparisonBody
-          anchorTrainingDayId={anchorTrainingDayId}
-          applyMutation={applyMutation}
-          isLoading={isLoading}
-          open={open}
-          viewModel={viewModel}
-          onClose={onClose}
-        />
+        {open ? (
+          <ScenarioComparisonBody
+            key={anchorTrainingDayId ?? 'scenario'}
+            anchorTrainingDayId={anchorTrainingDayId}
+            applyMutation={applyMutation}
+            isLoading={isLoading}
+            viewModel={viewModel}
+            onClose={onClose}
+          />
+        ) : null}
       </DialogContent>
     </Dialog>
   );
@@ -74,21 +76,16 @@ function ScenarioComparisonBody({
   onClose,
   anchorTrainingDayId,
   applyMutation,
-  open,
 }: {
   isLoading: boolean;
   viewModel: ScenarioComparisonViewModel | undefined;
   onClose: () => void;
   anchorTrainingDayId?: string;
   applyMutation: ReturnType<typeof useApplyScenarioComparison>;
-  open: boolean;
 }) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!open || !viewModel?.visible) return;
-    setSelectedId(defaultSelectedScenarioId(viewModel));
-  }, [open, viewModel]);
+  const defaultSelectedId = viewModel?.visible ? defaultSelectedScenarioId(viewModel) : null;
+  const [userSelectedId, setUserSelectedId] = useState<string | null>(null);
+  const selectedId = userSelectedId ?? defaultSelectedId;
 
   if (isLoading) {
     return (
@@ -142,7 +139,7 @@ function ScenarioComparisonBody({
       <ScenarioComparisonList
         scenarios={comparison.scenarios}
         selectedId={selected?.scenarioId ?? null}
-        onSelect={setSelectedId}
+        onSelect={setUserSelectedId}
       />
       <DialogFooter>
         <Button

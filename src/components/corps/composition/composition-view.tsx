@@ -279,10 +279,7 @@ function CompositionSkeleton() {
 
 export function CompositionView({ embedded: _embedded = false }: { embedded?: boolean }) {
   const [trendWindow, setTrendWindow] = useState<TrendWindowId>('90d');
-  const selectedWindow = useMemo(
-    () => TREND_WINDOWS.find((w) => w.id === trendWindow) ?? TREND_WINDOWS[2],
-    [trendWindow],
-  );
+  const selectedWindow = TREND_WINDOWS.find((w) => w.id === trendWindow) ?? TREND_WINDOWS[2];
 
   // Full history once — window buttons only filter the chart series locally.
   const query = useBodyPresentationViewModel();
@@ -510,7 +507,7 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
           </p>
         ) : null}
 
-        {heroHints.length > 0 ? (
+        {heroHints.length > 0 && (
           <div className="border-ink-surface-foreground/20 bg-ink-surface-foreground/6 text-ink-surface-foreground/70 rounded-analysis mt-6 w-fit space-y-1 border px-3 py-3 text-xs leading-relaxed">
             {heroHints.map(({ label, text }) => (
               <p key={label}>
@@ -518,7 +515,7 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
               </p>
             ))}
           </div>
-        ) : null}
+        )}
       </section>
 
       <nav aria-label="Signaux de composition" className="grid grid-cols-2 gap-2 lg:grid-cols-4">

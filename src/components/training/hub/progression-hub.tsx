@@ -1,14 +1,30 @@
 'use client';
 
 import { Activity, Medal, SlidersHorizontal } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { AnalyticsClient } from '@/components/analytics/analytics-client';
-import { RecordsPanel } from '@/components/analytics/records/records-panel';
 import { CorpsPanel, CorpsSectionHeader } from '@/components/corps/corps-ui';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
-import { PerformanceCalibrationPanel, type ProfileData } from '@/components/settings/profile';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { ProfileData } from '@/components/settings/profile';
 import { navPillClass } from '@/lib/ui/nav-pill';
+
+const AnalyticsClient = dynamic(
+  () => import('@/components/analytics/analytics-client').then((mod) => mod.AnalyticsClient),
+  { ssr: false, loading: () => <Skeleton className="h-64 w-full" /> },
+);
+const RecordsPanel = dynamic(
+  () => import('@/components/analytics/records/records-panel').then((mod) => mod.RecordsPanel),
+  { ssr: false, loading: () => <Skeleton className="h-64 w-full" /> },
+);
+const PerformanceCalibrationPanel = dynamic(
+  () =>
+    import('@/components/settings/profile/performance-calibration-panel').then(
+      (mod) => mod.PerformanceCalibrationPanel,
+    ),
+  { ssr: false, loading: () => <Skeleton className="h-64 w-full" /> },
+);
 
 const TABS = [
   {

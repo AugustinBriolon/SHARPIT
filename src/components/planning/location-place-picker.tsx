@@ -24,13 +24,14 @@ export function LocationPlacePicker({
   disabled?: boolean;
   id?: string;
 }) {
-  const [query, setQuery] = useState(value?.label ?? '');
+  const [draft, setDraft] = useState<string | null>(null);
+  const query = draft ?? value?.label ?? '';
   const [results, setResults] = useState<GeocodedPlace[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    setQuery(value?.label ?? '');
+    setDraft(null);
   }, [value?.label]);
 
   useEffect(() => {
@@ -68,7 +69,7 @@ export function LocationPlacePicker({
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         onFocus={() => setOpen(true)}
         onChange={(e) => {
-          setQuery(e.target.value);
+          setDraft(e.target.value);
           if (value && e.target.value !== value.label) {
             onChange(null);
           }
@@ -99,7 +100,7 @@ export function LocationPlacePicker({
                       latitude: place.latitude,
                       longitude: place.longitude,
                     });
-                    setQuery(place.label);
+                    setDraft(null);
                     setOpen(false);
                   }}
                 >

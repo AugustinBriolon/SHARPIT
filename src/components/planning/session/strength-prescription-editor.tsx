@@ -18,6 +18,7 @@ import {
   type StrengthRestMode,
 } from '@/lib/planned-session/strength-prescription';
 import { resolveGarminExerciseMatch } from '@/lib/integrations/garmin-exercise-map';
+import { createClientId } from '@/lib/client-id';
 
 export type StrengthPrescriptionDraftRow = {
   key: string;
@@ -32,7 +33,7 @@ export type StrengthPrescriptionDraftRow = {
 
 function newRow(partial?: Partial<StrengthPrescriptionDraftRow>): StrengthPrescriptionDraftRow {
   return {
-    key: crypto.randomUUID(),
+    key: createClientId(),
     exercise: '',
     sets: '3',
     reps: '10',

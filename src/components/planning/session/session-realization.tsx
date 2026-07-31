@@ -175,9 +175,14 @@ export function SessionRealization({
   const { link, analyze } = usePlannedSessionMutations();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
-  const [analysis, setAnalysis] = useState(session.analysis as unknown as SessionAnalysis | null);
-  const [analyzedAt, setAnalyzedAt] = useState(session.analyzedAt);
+  const [polled, setPolled] = useState<{
+    analysis: SessionAnalysis | null;
+    analyzedAt: typeof session.analyzedAt;
+  } | null>(null);
   const [pollTimedOut, setPollTimedOut] = useState(() => readAnalysisPollTimedOut(session.id));
+
+  const analysis = polled?.analysis ?? (session.analysis as unknown as SessionAnalysis | null);
+  const analyzedAt = polled?.analyzedAt ?? session.analyzedAt;
 
   const isLinked = Boolean(session.activityId);
   const linked =
@@ -187,15 +192,16 @@ export function SessionRealization({
       : null);
 
   useEffect(() => {
-    setAnalysis(session.analysis as unknown as SessionAnalysis | null);
-    setAnalyzedAt(session.analyzedAt);
-    if (session.analyzedAt) {
-      clearAnalysisPollTimedOut(session.id);
-      setPollTimedOut(false);
-    } else {
-      setPollTimedOut(readAnalysisPollTimedOut(session.id));
-    }
-  }, [session.analysis, session.analyzedAt, session.id, session.activityId]);
+    setPolled(null);
+    setPollTimedOut(readAnalysisPollTimedOut(session.id));
+  }, [session.id]);
+
+  useEffect(() => {
+    if (!session.analyzedAt) return;
+    setPolled(null);
+    clearAnalysisPollTimedOut(session.id);
+    setPollTimedOut(false);
+  }, [session.analyzedAt, session.id]);
 
   const hasAnalysis = Boolean(analysis && analyzedAt);
   const isPendingScheduled = Boolean(
@@ -234,8 +240,10 @@ export function SessionRealization({
           });
           const updated = sessions.find((item) => item.id === session.id);
           if (updated?.analyzedAt && updated.analysis) {
-            setAnalysis(updated.analysis as unknown as SessionAnalysis);
-            setAnalyzedAt(updated.analyzedAt);
+            setPolled({
+              analysis: updated.analysis as unknown as SessionAnalysis,
+              analyzedAt: updated.analyzedAt,
+            });
             clearAnalysisPollTimedOut(session.id);
             setPollTimedOut(false);
             return;

@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, Loader2, Pencil } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { EyebrowLabel } from '@/components/ui/eyebrow-label';
 import { Textarea } from '@/components/ui/textarea';
@@ -28,24 +28,24 @@ export function CoachProfileContextSection({
 }) {
   const save = useSaveCoachContext();
   const [mode, setMode] = useState<'read' | 'edit'>('read');
-  const [value, setValue] = useState(savedContext);
+  const [editValue, setEditValue] = useState(savedContext);
   const [justSaved, setJustSaved] = useState(false);
 
-  useEffect(() => {
-    setValue(savedContext);
-    setMode('read');
-  }, [savedContext]);
-
-  const dirty = savedContext !== value;
+  const dirty = mode === 'edit' && savedContext !== editValue;
   const hasContent = savedContext.trim().length > 0;
 
+  function handleEdit() {
+    setEditValue(savedContext);
+    setMode('edit');
+  }
+
   function handleCancel() {
-    setValue(savedContext);
+    setEditValue(savedContext);
     setMode('read');
   }
 
   function handleSave() {
-    save.mutate(value, {
+    save.mutate(editValue, {
       onSuccess: () => {
         setJustSaved(true);
         setMode('read');
@@ -96,7 +96,7 @@ export function CoachProfileContextSection({
                   Enregistré
                 </span>
               ) : null}
-              <Button type="button" variant="outline" onClick={() => setMode('edit')}>
+              <Button type="button" variant="outline" onClick={handleEdit}>
                 <Pencil className="size-3.5" aria-hidden />
                 Modifier
               </Button>
@@ -113,9 +113,9 @@ export function CoachProfileContextSection({
           className="bg-primary/5 border-primary/30 resize-y text-sm"
           placeholder={PLACEHOLDER}
           rows={8}
-          value={value}
+          value={editValue}
           autoFocus
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => setEditValue(e.target.value)}
         />
         <div className="flex flex-wrap items-center justify-end gap-2">
           <Button type="button" variant="outline" onClick={handleCancel}>

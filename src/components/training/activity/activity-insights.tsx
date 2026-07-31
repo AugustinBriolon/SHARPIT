@@ -2,8 +2,8 @@
 
 import { ActivityType } from '@prisma/client';
 import { MapPin } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { type ReactNode, useMemo } from 'react';
-import { ActivityStreamChart } from '@/components/training/activity/activity-stream-chart';
 import {
   PerformanceMetrics,
   ThresholdsHint,
@@ -23,6 +23,14 @@ import {
 } from '@/components/training/activity/detail/activity-detail-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonCard } from '@/components/ui/skeleton-patterns';
+
+const ActivityStreamChart = dynamic(
+  () =>
+    import('@/components/training/activity/activity-stream-chart').then(
+      (mod) => mod.ActivityStreamChart,
+    ),
+  { ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },
+);
 
 /**
  * Endurance detail body: parcours | lecture coach (+ zones), then splits / profiles.

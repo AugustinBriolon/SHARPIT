@@ -253,6 +253,14 @@
        body-wide — long-press-to-select stays available on readable prose
        (coach rationale, briefings) where the athlete may want to copy text. */
     -webkit-touch-callout: none;
+    /* Eliminate iOS gray tap-flash and 300ms click delay. */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  /* Links share the tap primitives but keep callout (long-press → open in new tab). */
+  a {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
   html {
     @apply font-sans;

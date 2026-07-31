@@ -2,8 +2,8 @@
 
 import { ActivityType } from '@prisma/client';
 import { Bike, Footprints, MapPin, Waves } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityStreamChart } from '@/components/training/activity/activity-stream-chart';
+import dynamic from 'next/dynamic';
+import { useMemo, useState } from 'react';
 import {
   PerformanceMetrics,
   ThresholdsHint,
@@ -25,6 +25,14 @@ import type { MultisportLegKind } from '@/lib/multisport';
 import { normalizeStreamChartData } from '@/lib/streams/stream-chart-data';
 import type { MultisportLegStream } from '@/lib/streams/streams';
 import { cn } from '@/lib/utils';
+
+const ActivityStreamChart = dynamic(
+  () =>
+    import('@/components/training/activity/activity-stream-chart').then(
+      (mod) => mod.ActivityStreamChart,
+    ),
+  { ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },
+);
 
 const sportHeader: Record<
   Exclude<MultisportLegKind, 'transition'>,
@@ -216,19 +224,13 @@ export function TriathlonActivityInsights({ activityId }: { activityId: string }
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   const legs = data?.legs ?? [];
-
-  useEffect(() => {
-    if (legs.length === 0) return;
-    setSelectedKey((current) => {
-      if (current && legs.some((entry) => legKey(entry) === current)) return current;
-      return legKey(legs[0]);
-    });
-  }, [legs]);
-
-  const selectedEntry = useMemo(
-    () => legs.find((entry) => legKey(entry) === selectedKey) ?? legs[0] ?? null,
-    [legs, selectedKey],
-  );
+  let effectiveKey: string | null = null;
+  if (selectedKey != null && legs.some((entry) => legKey(entry) === selectedKey)) {
+    effectiveKey = selectedKey;
+  } else if (legs[0]) {
+    effectiveKey = legKey(legs[0]);
+  }
+  const selectedEntry = legs.find((entry) => legKey(entry) === effectiveKey) ?? legs[0] ?? null;
 
   if (isPending) {
     return (

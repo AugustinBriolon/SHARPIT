@@ -2,10 +2,11 @@
 
 import type { QueryClient } from '@tanstack/react-query';
 import { toast } from '@/components/ui/toast';
+import { createClientId } from '@/lib/client-id';
 
 /** Temporary entity id for optimistic creates. */
 export function tempId(): string {
-  return `optimistic-${crypto.randomUUID()}`;
+  return `optimistic-${createClientId()}`;
 }
 
 export function isTempId(id: string): boolean {

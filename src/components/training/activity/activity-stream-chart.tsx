@@ -1,7 +1,7 @@
 'use client';
 
 import { ActivityType } from '@prisma/client';
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
@@ -166,16 +166,11 @@ function ActivityStreamChartComponent({
     () => pickDefaultStreamMetricKeys(metrics, type),
     [metrics, type],
   );
-  const [selectedKeys, setSelectedKeys] = useState<MetricKey[]>(defaultSelected);
-
-  useEffect(() => {
-    setSelectedKeys((current) => {
-      const available = new Set(metrics.map((metric) => metric.key));
-      const filtered = current.filter((key) => available.has(key));
-      if (filtered.length > 0) return filtered.slice(0, 2);
-      return defaultSelected;
-    });
-  }, [defaultSelected, metrics]);
+  const [userSelectedKeys, setUserSelectedKeys] = useState<MetricKey[] | null>(null);
+  const availableKeys = useMemo(() => new Set(metrics.map((metric) => metric.key)), [metrics]);
+  const candidateKeys = userSelectedKeys ?? defaultSelected;
+  const filteredKeys = candidateKeys.filter((key) => availableKeys.has(key));
+  const selectedKeys = filteredKeys.length > 0 ? filteredKeys.slice(0, 2) : defaultSelected;
 
   const data: StreamChartPoint[] = useMemo(
     () =>
@@ -199,14 +194,15 @@ function ActivityStreamChartComponent({
   const xFmt = (v: number) => (useDistance ? `${v.toFixed(0)}` : `${Math.round(v)}`);
 
   function toggleMetric(key: MetricKey) {
-    setSelectedKeys((current) => {
-      const isSelected = current.includes(key);
+    setUserSelectedKeys((current) => {
+      const base = current ?? defaultSelected;
+      const isSelected = base.includes(key);
       if (isSelected) {
-        if (current.length === 1) return current;
-        return current.filter((entry) => entry !== key);
+        if (base.length === 1) return base;
+        return base.filter((entry) => entry !== key);
       }
-      if (current.length >= 2) return current;
-      return [...current, key];
+      if (base.length >= 2) return base;
+      return [...base, key];
     });
   }
 
