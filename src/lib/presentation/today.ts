@@ -25,7 +25,10 @@ import {
   trajectoryEyebrow,
   whyBlockTitle,
 } from '@/lib/today/today-rich-view';
-import { resolveMorningOrientation } from '@/lib/today/morning-orientation';
+import {
+  resolveMorningOrientation,
+  type MorningRecalibrationInput,
+} from '@/lib/today/morning-orientation';
 import {
   decisionTopAction,
   decisionVerdict,
@@ -81,20 +84,26 @@ function resolveSnapshotStatusMessage(
   return candidate;
 }
 
-export async function buildTodayPresentationViewModel(
-  trainingDayId: string,
-): Promise<TodayViewModel> {
-  const day = localDateFromTrainingDayId(trainingDayId);
-  const dayStart = startOfDay(day);
-  const dayEnd = endOfDay(day);
+export type TodayPresentationInputs = {
+  trainingDayId: string;
+  day: Date;
+  snapshot: AthleteSnapshot;
+  healthEntries: Awaited<ReturnType<typeof getHealthEntries>>;
+  activities: Awaited<ReturnType<typeof getActivitiesList>>;
+  plannedSessions: Awaited<ReturnType<typeof getPlannedSessions>>;
+  goals: Awaited<ReturnType<typeof getGoals>>;
+  athleteProfile: Awaited<ReturnType<typeof getAthleteProfile>>;
+  /** Ensured by the API route (write side-effect stays off this projection). */
+  morningRecalibration: MorningRecalibrationInput | null;
+};
 
-  // `activities`/`plannedSessions` are fetched separately from the snapshot's
-  // `sessionsDoneToday`/`plannedToday` on purpose: `daySummary` below needs richer
-  // display fields (durationMin, brickGroupId, metrics) than the snapshot's minimal
-  // state-signal shape carries. `activities` also covers the 60-day trend window for
-  // effortSpark/trainingLoad, not just today. `snapshot.sessionsDoneToday`/`plannedToday`
-  // exist for consumers that only need "did/will the athlete train today" (Coach, Gate).
-  const [
+/**
+ * Pure Today view-model projection from already-loaded inputs.
+ * No I/O — callers (routes) ensure morning recalibration before loading.
+ */
+export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): TodayViewModel {
+  const {
+    day,
     snapshot,
     healthEntries,
     activities,
@@ -102,20 +111,7 @@ export async function buildTodayPresentationViewModel(
     goals,
     athleteProfile,
     morningRecalibration,
-  ] = await Promise.all([
-    getOrBuildAthleteSnapshot(trainingDayId),
-    getHealthEntries(14, day),
-    getActivitiesList({ sinceDays: 60 }),
-    getPlannedSessions({ from: dayStart, to: dayEnd }),
-    getGoals(),
-    getAthleteProfile(),
-    import('@/lib/morning-recalibration/service').then(({ ensureMorningRecalibration }) =>
-      ensureMorningRecalibration(trainingDayId).catch((error) => {
-        console.error('[today/morning-recalibration]', error);
-        return null;
-      }),
-    ),
-  ]);
+  } = inputs;
 
   const sleepTargetMin = athleteProfile?.sleepTargetMinutes ?? SLEEP_TARGET_MIN;
 
@@ -423,4 +419,50 @@ export async function buildTodayPresentationViewModel(
     hierarchy: { rootId: 'today', order: ['hero', 'why', 'actionRow', 'weeklyTrajectory'] },
     sections: [],
   };
+}
+
+export type BuildTodayPresentationOptions = {
+  /** Pre-ensured by the route. Defaults to null (no proposal). */
+  morningRecalibration?: MorningRecalibrationInput | null;
+};
+
+/**
+ * Loads Today presentation inputs then projects a view-model.
+ * Does not write morning recalibration — callers must ensure first when needed.
+ */
+export async function buildTodayPresentationViewModel(
+  trainingDayId: string,
+  options: BuildTodayPresentationOptions = {},
+): Promise<TodayViewModel> {
+  const day = localDateFromTrainingDayId(trainingDayId);
+  const dayStart = startOfDay(day);
+  const dayEnd = endOfDay(day);
+
+  // `activities`/`plannedSessions` are fetched separately from the snapshot's
+  // `sessionsDoneToday`/`plannedToday` on purpose: `daySummary` below needs richer
+  // display fields (durationMin, brickGroupId, metrics) than the snapshot's minimal
+  // state-signal shape carries. `activities` also covers the 60-day trend window for
+  // effortSpark/trainingLoad, not just today. `snapshot.sessionsDoneToday`/`plannedToday`
+  // exist for consumers that only need "did/will the athlete train today" (Coach, Gate).
+  const [snapshot, healthEntries, activities, plannedSessions, goals, athleteProfile] =
+    await Promise.all([
+      getOrBuildAthleteSnapshot(trainingDayId),
+      getHealthEntries(14, day),
+      getActivitiesList({ sinceDays: 60 }),
+      getPlannedSessions({ from: dayStart, to: dayEnd }),
+      getGoals(),
+      getAthleteProfile(),
+    ]);
+
+  return buildTodayViewModelFromInputs({
+    trainingDayId,
+    day,
+    snapshot,
+    healthEntries,
+    activities,
+    plannedSessions,
+    goals,
+    athleteProfile,
+    morningRecalibration: options.morningRecalibration ?? null,
+  });
 }

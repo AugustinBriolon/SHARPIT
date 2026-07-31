@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildTodayPresentationViewModel } from '@/lib/presentation/today';
+import { ensureMorningRecalibration } from '@/lib/morning-recalibration/service';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +20,16 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const viewModel = await buildTodayPresentationViewModel(trainingDayId);
+    // Write side-effect stays on the route (ADR-007 incremental): ensure proposal
+    // exists before read-only presentation projection.
+    const morningRecalibration = await ensureMorningRecalibration(trainingDayId).catch((error) => {
+      console.error('[api/presentation/today/morning-recalibration]', error);
+      return null;
+    });
+
+    const viewModel = await buildTodayPresentationViewModel(trainingDayId, {
+      morningRecalibration,
+    });
     return NextResponse.json({ viewModel });
   } catch (error) {
     console.error('[api/presentation/today]', error);

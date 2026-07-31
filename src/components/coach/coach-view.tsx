@@ -28,7 +28,7 @@ import {
   buildPlanningDiscussPrompt,
   buildPlannedSessionDiscussPrompt,
   buildSessionDiscussPrompt,
-} from '@/lib/coach/coach-session-thread';
+} from '@/lib/coach/coach-discuss-prompts';
 import { clearCoachInputDraft } from '@/lib/coach/coach-input-draft';
 import { createClientId } from '@/lib/client-id';
 import { activityTypeLabels } from '@/lib/format';

@@ -13,7 +13,7 @@ import type {
   RecoveryData,
   EnvironmentSnapshotData,
   DecisionData,
-} from '@/hooks/use-today';
+} from '@/core/athlete-state/today-state';
 
 /**
  * Canonical Athlete Snapshot — official athlete state at a point in time.

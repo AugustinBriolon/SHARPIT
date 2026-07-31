@@ -1,0 +1,404 @@
+import type { ModelDirections } from '@/core/inference/reasoning/types';
+import type { SerializedDecisionState } from '@/core/decision/adapters';
+import type { EnvironmentalDecisionSnapshot } from '@/core/inference/environment/types';
+
+export type DecisionData = SerializedDecisionState;
+export type EnvironmentSnapshotData = EnvironmentalDecisionSnapshot;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// API response types (no server imports — mirrors API route response shapes)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type I18nItem = {
+  code: string;
+  params?: Record<string, string | number>;
+};
+
+export type OverallVerdict =
+  | 'TRAIN_HARD'
+  | 'TRAIN_SMART'
+  | 'TRAIN_EASY'
+  | 'RECOVER'
+  | 'RACE_READY'
+  | 'CAUTION'
+  | 'INSUFFICIENT_DATA';
+
+export type SystemAttentionPriority = 'RECOVERY' | 'FATIGUE' | 'ADAPTATION' | 'BALANCED';
+
+export type PhysiologicalConsistency =
+  'ALIGNED' | 'PARTIALLY_ALIGNED' | 'CONFLICTING' | 'INSUFFICIENT_DATA';
+
+export type FindingSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
+
+export type OverreachingRisk = 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
+
+export type TrainingCapacity = 'FULL' | 'REDUCED' | 'LIGHT_ONLY' | 'REST_ONLY';
+
+export type RecommendedIntensity = 'REST' | 'VERY_EASY' | 'EASY' | 'MODERATE' | 'HARD';
+
+export type AdaptationDecisionVerdict =
+  | 'INCREASE_LOAD'
+  | 'SUSTAIN'
+  | 'CONSOLIDATE'
+  | 'REDUCE_LOAD'
+  | 'RECOVERY_PRIORITY'
+  | 'INSUFFICIENT_DATA';
+
+export type RecoveryDecisionVerdict =
+  'RECOVERED' | 'PARTIALLY_RECOVERED' | 'FATIGUED' | 'OVERREACHED' | 'INSUFFICIENT_DATA';
+
+export type FatigueDecisionVerdict =
+  'BUILD' | 'MAINTAIN' | 'REDUCE' | 'REST_WEEK' | 'TAPER' | 'INSUFFICIENT_DATA';
+
+export interface KeyFinding {
+  id: string;
+  category: string;
+  severity: FindingSeverity;
+  title: I18nItem;
+  evidenceItems: I18nItem[];
+  confidence: number;
+}
+
+export interface TopAction {
+  verbCode: string;
+  focusCode: string;
+  rationaleCode: string;
+  expectedBenefit: number;
+}
+
+export interface LimitingFactor {
+  system: 'RECOVERY' | 'FATIGUE' | 'ADAPTATION' | null;
+  description: I18nItem | null;
+  actionable: boolean;
+}
+
+export interface Opportunity {
+  id: string;
+  type: string;
+  title: I18nItem;
+  rationale: I18nItem;
+  expectedBenefit: number;
+  timeWindow: string;
+}
+
+export interface Conflict {
+  id: string;
+  type: string;
+  descriptionCode: string;
+  models: string[];
+  resolutionCode: string;
+}
+
+export interface DimensionResult {
+  score: number | null;
+  status: string;
+  available: boolean;
+}
+
+export interface EngineRecommendation {
+  type: string;
+  keyEvidence: I18nItem[];
+  confidence?: number;
+}
+
+export interface EvidenceGraph {
+  recoveryContribution: number;
+  fatigueContribution: number;
+  adaptationContribution: number;
+}
+
+/**
+ * Legacy narrative projection of DecisionState.
+ * @deprecated Use DecisionData — ReasoningData is explanation-only, not a product decision source.
+ */
+export interface ReasoningData {
+  overallVerdict: OverallVerdict;
+  systemAttentionPriority: SystemAttentionPriority;
+  physiologicalConsistency: PhysiologicalConsistency;
+  consistencyScore: number;
+  confidence: number;
+  dataCompleteness: string;
+  keyFindings: KeyFinding[];
+  limitingFactor: LimitingFactor;
+  topAction: TopAction | null;
+  opportunities: Opportunity[];
+  conflicts: Conflict[];
+  evidenceGraph: EvidenceGraph | null;
+  computedAt: string;
+  signals: {
+    availableModelCount: number;
+    hasRecoveryState: boolean;
+    hasFatigueState: boolean;
+    hasAdaptationState: boolean;
+    modelDirections?: ModelDirections;
+  };
+}
+
+export type ReadinessCategory =
+  | 'OPTIMAL'
+  | 'ADEQUATE'
+  | 'REDUCED'
+  | 'LOW'
+  | 'VERY_LOW'
+  | 'BASELINE_PENDING'
+  | 'INSUFFICIENT_DATA';
+
+export type AutonomicBalance =
+  'ENHANCED' | 'NORMAL' | 'MILDLY_SUPPRESSED' | 'SUPPRESSED' | 'CRITICALLY_SUPPRESSED';
+
+export type SubjectiveWellness = 'HIGH' | 'NORMAL' | 'LOW' | 'VERY_LOW';
+
+export type LoadStressContext = 'UNDERTRAINED' | 'OPTIMAL' | 'ELEVATED' | 'HIGH' | 'CRITICAL';
+
+export type SleepAdequacySignal =
+  'EXCELLENT' | 'ADEQUATE' | 'INSUFFICIENT' | 'SEVERELY_INSUFFICIENT';
+
+export type IllnessRisk = 'LOW' | 'ELEVATED' | 'HIGH';
+
+export interface RecoveryData {
+  readinessScore: number | null;
+  readinessCategory: ReadinessCategory;
+  primaryLimitingFactor: 'autonomic' | 'sleep' | 'subjective' | 'loadContext' | null;
+  estimatedTimeToFullRecovery: number | null;
+  confidence: number;
+  dataCompleteness: string;
+  recommendation: EngineRecommendation;
+  decision: {
+    verdict: RecoveryDecisionVerdict;
+    recommendedIntensity: RecommendedIntensity;
+    rationale: I18nItem[];
+  };
+  dimensions: {
+    autonomic: DimensionResult;
+    sleep: DimensionResult;
+    subjective: DimensionResult;
+    loadContext: DimensionResult;
+  };
+  signals: {
+    autonomicBalance: AutonomicBalance;
+    sleepAdequacy: SleepAdequacySignal;
+    subjectiveWellness: SubjectiveWellness;
+    loadStressContext: LoadStressContext;
+    overreachingRisk: OverreachingRisk;
+    illnessRisk: IllnessRisk;
+    dissonanceDetected: boolean;
+  };
+  computedAt: string;
+}
+
+export type FatigueLevel =
+  | 'FRESH'
+  | 'FUNCTIONAL_LOW'
+  | 'FUNCTIONAL_HIGH'
+  | 'ACCUMULATED'
+  | 'NON_FUNCTIONAL_RISK'
+  | 'OVERREACHING_RISK'
+  | 'INSUFFICIENT_DATA';
+
+export type FatigueTrajectory = 'RESOLVING' | 'STABLE' | 'ACCUMULATING' | 'ACCELERATING';
+
+export type FatigueType =
+  | 'LOAD_DOMINANT'
+  | 'NEUROMUSCULAR_DOMINANT'
+  | 'METABOLIC_DOMINANT'
+  | 'PSYCHOLOGICAL_DOMINANT'
+  | 'CUMULATIVE_MULTI_SYSTEM'
+  | 'MIXED'
+  | 'UNDETERMINED';
+
+export type TrainingCapacityLevel = 'FULL' | 'REDUCED' | 'LIMITED' | 'UNABLE';
+
+export type ConditionTrend = 'IMPROVING' | 'STABLE' | 'WORSENING' | 'UNKNOWN';
+
+export type ConditionStatus =
+  'NEW' | 'ACTIVE' | 'IMPROVING' | 'STABLE' | 'WORSENING' | 'RESOLVED' | 'RECURRENT';
+
+export type PhysicalHealthDecisionVerdict =
+  'CLEAR' | 'MONITOR' | 'REDUCE_LOAD' | 'LIMIT_TRAINING' | 'REST_RECOMMENDED' | 'INSUFFICIENT_DATA';
+
+export interface InferredConditionData {
+  conditionId: string;
+  label: string;
+  bodyRegion: string;
+  side: 'LEFT' | 'RIGHT' | 'BILATERAL' | 'NA';
+  type: string;
+  affectsTraining: boolean;
+  severity: number;
+  status: ConditionStatus;
+  trend: ConditionTrend;
+  confidence: number;
+  functionalCapacity: TrainingCapacityLevel | null;
+  estimatedRecoveryDays: number | null;
+  evidenceObservationIds: string[];
+}
+
+export interface PhysicalHealthData {
+  conditions: InferredConditionData[];
+  activeConditionCount: number;
+  aggregateTrainingCapacity: TrainingCapacityLevel;
+  primaryLimitingConditionId: string | null;
+  trainingBlockedByCondition: boolean;
+  confidence: number;
+  dataCompleteness: string;
+  decision: {
+    verdict: PhysicalHealthDecisionVerdict;
+    rationale: I18nItem[];
+  };
+  recommendation: {
+    trainingCapacity: TrainingCapacityLevel;
+    confidence: number;
+    evidence: I18nItem[];
+  };
+  signals: {
+    activeConditionCount: number;
+    maxSeverity: number;
+    improvingCount: number;
+    worseningCount: number;
+    recurrentCount: number;
+  };
+  computedAt: string;
+}
+
+export interface FatigueData {
+  fatigueIndex: number | null;
+  fatigueLevel: FatigueLevel;
+  fatigueType: FatigueType;
+  trajectory: FatigueTrajectory;
+  trainingCapacity: TrainingCapacity;
+  consecutiveAccumulationDays: number;
+  dominantDimension: string | null;
+  primaryLimitingFactor: string | null;
+  estimatedTimeToFresh: number | null;
+  performanceImpairmentEstimate: number;
+  confidence: number;
+  dataCompleteness: string;
+  recommendation: EngineRecommendation;
+  decision: {
+    verdict: FatigueDecisionVerdict;
+    trainingCapacity: TrainingCapacity;
+    rationale: I18nItem[];
+  };
+  dimensions: {
+    load: DimensionResult;
+    neuromuscular: DimensionResult;
+    metabolic: DimensionResult;
+    cumulative: DimensionResult;
+    psychological: DimensionResult;
+  };
+  signals: {
+    functionalOverreachingRisk: OverreachingRisk;
+    isAccumulating: boolean;
+  };
+  computedAt: string;
+}
+
+export type DailyStrainTier = 'STRUCTURED_SESSION' | 'HEART_RATE' | 'MOVEMENT' | 'UNKNOWN';
+export type DailyStrainSource =
+  | 'SESSION_FEATURE_POWER'
+  | 'SESSION_FEATURE_TRIMP'
+  | 'SESSION_FEATURE_PACE'
+  | 'SESSION_FEATURE_RPE'
+  | 'SESSION_FEATURE_DURATION'
+  | 'LEGACY_POWER_TSS'
+  | 'LEGACY_SOURCE_TSS'
+  | 'LEGACY_TRIMP'
+  | 'LEGACY_DURATION'
+  | 'DAILY_HEALTH_STRESS'
+  | 'DAILY_HEALTH_RECOVERY'
+  | 'DAILY_HEALTH_BODY_BATTERY'
+  | 'DAILY_HEALTH_STEPS'
+  | 'UNKNOWN';
+
+export type DailyStrainContributor = 'TRAINING' | 'CARDIOVASCULAR' | 'MOVEMENT' | 'UNKNOWN';
+
+export interface DailyStrainContribution {
+  available: boolean;
+  contributor: DailyStrainContributor;
+  load: number | null;
+  score: number | null;
+  confidence: number;
+  source: DailyStrainSource;
+}
+
+export interface DailyStrainData {
+  available: boolean;
+  dailyTss: number | null;
+  strainScore: number | null;
+  tier: DailyStrainTier;
+  source: DailyStrainSource;
+  dominantContributor: DailyStrainContributor;
+  confidence: number;
+  structuredSessionDetected: boolean;
+  fallbackUsed: boolean;
+  contributions: {
+    training: DailyStrainContribution;
+    cardiovascular: DailyStrainContribution;
+    movement: DailyStrainContribution;
+  };
+  trace: {
+    sessionCount: number;
+    activityCount: number;
+    sessionMethods: string[];
+    cardiovascularSignals: {
+      stress: number | null;
+      recoveryScore: number | null;
+      bodyBattery: number | null;
+      calories: number | null;
+    };
+    movementSignals: {
+      totalSteps: number | null;
+    };
+  };
+}
+
+export type AdaptationStatus =
+  | 'POSITIVELY_ADAPTING'
+  | 'MAINTAINING'
+  | 'PLATEAUING'
+  | 'MALADAPTING'
+  | 'DETRAINING'
+  | 'INSUFFICIENT_DATA';
+
+export type AdaptationTrend = 'IMPROVING' | 'STABLE' | 'DECLINING';
+
+export interface AdaptationData {
+  adaptationIndex: number | null;
+  adaptationStatus: AdaptationStatus;
+  adaptationTrend: AdaptationTrend;
+  dimensions: {
+    loadProgression: DimensionResult;
+    neuromuscularEfficiency: DimensionResult;
+    autonomicAdaptation: DimensionResult;
+    recoveryQuality: DimensionResult;
+  };
+  limitingFactor: string | null;
+  estimatedAdaptationPeak: number | null;
+  plateauRisk: boolean;
+  overreachingWithoutAdaptationDetected: boolean;
+  confidence: number;
+  signals: {
+    availableDimensionCount: number;
+    historyLength: number;
+  };
+  decision: {
+    verdict: AdaptationDecisionVerdict;
+    loadMultiplier: number;
+    rationale: I18nItem[];
+  };
+  recommendation: EngineRecommendation;
+  computedAt: string;
+}
+
+export interface TodayState {
+  decision: DecisionData | null;
+  /**
+   * @deprecated Narrative projection — use `decision` for product surfaces.
+   */
+  reasoning: ReasoningData | null;
+  recovery: RecoveryData | null;
+  fatigue: FatigueData | null;
+  adaptation: AdaptationData | null;
+  physicalHealth: PhysicalHealthData | null;
+  environment?: EnvironmentSnapshotData | null;
+  dailyStrain: DailyStrainData | null;
+}

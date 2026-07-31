@@ -32,7 +32,11 @@ import {
   hasUnresolvedCalendarTools,
   type ToolPartLite,
 } from '@/lib/coach/coach-tool-parts';
-import { queryKeys } from '@/lib/query/keys';
+import {
+  invalidateAfterCoachToolApproval,
+  invalidateAfterCoachTools,
+  invalidatePlannedSessionsAfterCoachTurn,
+} from '@/lib/coach/coach-chat-cache';
 import {
   clearCoachInputDraft,
   readCoachInputDraft,
@@ -137,7 +141,7 @@ export function CoachChat({
       // the UI already holds a usable assistant turn.
       persistMessages(all);
       if (!isAbort) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
+        invalidatePlannedSessionsAfterCoachTurn(queryClient);
       }
     },
   });
@@ -273,9 +277,7 @@ export function CoachChat({
     }
     if (newlyCompletedKeys.length > 0) {
       for (const key of newlyCompletedKeys) invalidatedToolPartKeys.current.add(key);
-      queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.travelContext });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.coachMemory });
+      invalidateAfterCoachTools(queryClient);
     }
   }, [messages, queryClient]);
 
@@ -432,16 +434,7 @@ export function CoachChat({
                     clearError();
                     addToolApprovalResponse({ id, approved });
                     if (approved) {
-                      queryClient.invalidateQueries({
-                        queryKey: queryKeys.plannedSessions,
-                      });
-                      if (
-                        part.type === 'tool-setTravelContext' ||
-                        part.type === 'tool-setTrainingConstraint'
-                      ) {
-                        void queryClient.invalidateQueries({ queryKey: queryKeys.travelContext });
-                        void queryClient.invalidateQueries({ queryKey: queryKeys.coachMemory });
-                      }
+                      invalidateAfterCoachToolApproval(queryClient, part.type);
                     }
                   }}
                 />

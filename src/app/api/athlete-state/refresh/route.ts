@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { refreshAthleteState } from '@/lib/athlete-state/orchestrator';
 import { computeFreshnessSnapshot, trainingDayIdNow } from '@/lib/athlete-state/freshness-service';
 import { buildTodayPresentationViewModel } from '@/lib/presentation/today';
+import { ensureMorningRecalibration } from '@/lib/morning-recalibration/service';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
@@ -34,7 +35,12 @@ export async function POST(request: NextRequest) {
     // Failure is non-blocking — the client falls back to /api/presentation/today.
     let todayPresentation = null;
     try {
-      todayPresentation = await buildTodayPresentationViewModel(trainingDayId);
+      const morningRecalibration = await ensureMorningRecalibration(trainingDayId).catch(
+        () => null,
+      );
+      todayPresentation = await buildTodayPresentationViewModel(trainingDayId, {
+        morningRecalibration,
+      });
     } catch {
       // non-blocking
     }

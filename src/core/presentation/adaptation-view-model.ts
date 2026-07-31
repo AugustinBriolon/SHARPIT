@@ -5,7 +5,7 @@ import type {
   PresentationHierarchy,
   PresentationSection,
 } from '@/core/presentation/types';
-import type { DimensionResult } from '@/hooks/use-today';
+import type { DimensionResult } from '@/core/athlete-state/today-state';
 
 export type AdaptationDimensionVm = {
   key: string;

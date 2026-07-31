@@ -10,9 +10,9 @@ import { MorningProposalCompare } from '@/components/planning/session/morning-pr
 import { SessionAccessoriesSection } from '@/components/planning/session/session-accessories-section';
 import { SessionRealization } from '@/components/planning/session/session-realization';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/toast';
 import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
 import { useSessionRationalePresentation } from '@/hooks/use-data';
+import { useGarminWorkoutPush } from '@/hooks/use-garmin-workout-push';
 import type { PlannedSessionViewModel } from '@/core/presentation/planned-session-view-model';
 import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
 import { formatPlannedSessionLocationDisplay } from '@/lib/planned-session/planned-session-display';
@@ -26,10 +26,7 @@ import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import { exposureLabels, intensityLabels } from '@/lib/planned-session/sessions';
 import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-compare';
 import { Brain, ChevronRight, ClipboardList, Dumbbell, MapPin, Pencil, Watch } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
-import { queryKeys } from '@/lib/query/keys';
 import { ActivityType } from '@prisma/client';
 
 type KeyChip = { label: string; value: string; valueClassName?: string };
@@ -147,21 +144,7 @@ export function PlannedSessionReadView({
   omitLinkedActivityNavigation?: boolean;
   morningProposal?: MorningProposalCompareInput;
 }) {
-  const queryClient = useQueryClient();
-  const [pushing, setPushing] = useState(false);
-  const [optimisticWatchPush, setOptimisticWatchPush] = useState<{
-    workoutId: string | null;
-    scheduledDate: string | null;
-    pushedAt: string | null;
-  } | null>(null);
-
-  const watchPush = optimisticWatchPush ?? {
-    workoutId: session.garminWorkoutId ?? null,
-    scheduledDate: session.garminWorkoutScheduledDate ?? null,
-    pushedAt: session.garminWorkoutPushedAt
-      ? new Date(session.garminWorkoutPushedAt).toISOString()
-      : null,
-  };
+  const { pushing, watchPush, alreadyOnWatch, sendToWatch } = useGarminWorkoutPush(session);
   // Linked = activityId (or nested activity). omitLinkedActivityNavigation only hides nav.
   const isRealized = Boolean(session.activityId ?? session.activity);
   const goal = goals.find((g) => g.id === session.goalId);
@@ -207,92 +190,12 @@ export function PlannedSessionReadView({
     chips.push({ label: 'Objectif', value: goal.title });
   }
 
-  useEffect(() => {
-    setOptimisticWatchPush(null);
-  }, [session.garminWorkoutId, session.garminWorkoutScheduledDate, session.garminWorkoutPushedAt]);
-
   const prescriptionRaw = parseStrengthPrescription(session.strengthPrescription);
   const prescription = prescriptionRaw ? attachGarminRefsToPrescription(prescriptionRaw) : null;
-  const alreadyOnWatch = Boolean(watchPush.workoutId);
 
   function watchPushButtonLabel(): string {
     if (pushing) return alreadyOnWatch ? 'Renvoi…' : 'Envoi…';
     return alreadyOnWatch ? 'Renvoyer' : 'Envoyer à la montre';
-  }
-
-  function garminStatusHint(data: {
-    workoutExists?: boolean | null;
-    calendarActive?: boolean | null;
-  }): string | null {
-    const parts: string[] = [];
-    if (data.workoutExists === true) parts.push('workout encore dans Connect');
-    else if (data.workoutExists === false) parts.push('workout introuvable dans Connect');
-    if (data.calendarActive === true) parts.push('présent au calendrier');
-    else if (data.calendarActive === false) parts.push('absent du calendrier');
-    return parts.length > 0 ? parts.join(' · ') : null;
-  }
-
-  async function sendToWatch(force = false) {
-    if (pushing || !prescription) return;
-    if (alreadyOnWatch && !force) {
-      const ok = window.confirm(
-        'Cette séance est déjà sur Garmin. Renvoyer remplace le workout précédent. Continuer ?',
-      );
-      if (!ok) return;
-      force = true;
-    }
-    setPushing(true);
-    const loadingToast = toast.loading(force ? 'Renvoi vers Garmin…' : 'Envoi vers Garmin…');
-    try {
-      const response = await fetch('/api/garmin/workouts/from-planned-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plannedSessionId: session.id, schedule: true, force }),
-      });
-      const data = (await response.json()) as {
-        error?: string;
-        workoutName?: string;
-        workoutId?: number | null;
-        skipped?: Array<{ exercise: string }>;
-        scheduledDate?: string | null;
-        pushedAt?: string | null;
-        alreadyPushed?: boolean;
-        calendarActive?: boolean | null;
-        workoutExists?: boolean | null;
-        receipt?: { workoutId?: string; scheduledDate?: string | null };
-      };
-      if (response.status === 409 && data.alreadyPushed) {
-        const scheduled = data.receipt?.scheduledDate ?? watchPush.scheduledDate;
-        toast.info('Déjà sur Garmin', {
-          description: [scheduled ? `calendrier ${scheduled}` : null, garminStatusHint(data)]
-            .filter(Boolean)
-            .join(' · '),
-        });
-        return;
-      }
-      if (!response.ok) throw new Error(data.error || 'Envoi impossible');
-      const skipped = data.skipped?.length ?? 0;
-      setOptimisticWatchPush({
-        workoutId: data.workoutId != null ? String(data.workoutId) : watchPush.workoutId,
-        scheduledDate: data.scheduledDate ?? watchPush.scheduledDate,
-        pushedAt: data.pushedAt ?? new Date().toISOString(),
-      });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
-      toast.success(force ? 'Workout renvoyé à Garmin' : 'Workout envoyé à Garmin', {
-        description: [
-          data.workoutName,
-          data.scheduledDate ? `calendrier ${data.scheduledDate}` : null,
-          skipped > 0 ? `${skipped} comme Inconnu` : null,
-        ]
-          .filter(Boolean)
-          .join(' · '),
-      });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Envoi vers Garmin impossible');
-    } finally {
-      toast.close(loadingToast);
-      setPushing(false);
-    }
   }
 
   const derouleBlock = !morningProposal ? (
@@ -327,7 +230,7 @@ export function PlannedSessionReadView({
               size="sm"
               type="button"
               variant="outline"
-              onClick={() => void sendToWatch()}
+              onClick={() => void sendToWatch({ canPush: Boolean(prescription) })}
             >
               <Watch className="size-3.5" />
               {watchPushButtonLabel()}
