@@ -146,14 +146,16 @@ function buildExerciseStep(
   const step = baseExecutable(order.nextOrder(), STEP_INTERVAL, childStepId);
   step.category = garmin.category;
   step.exerciseName = garmin.exerciseName;
-  step.description = set.notes?.trim() || set.exercise;
+  const exerciseLabel = set.exercise?.trim() || '';
+  const notes = set.notes?.trim();
+  step.description = notes ? `${exerciseLabel} — ${notes}` : exerciseLabel;
 
-  const useDuration =
-    (set.reps == null || set.reps <= 0) && set.durationSec != null && set.durationSec > 0;
+  const useDuration = set.reps == null || set.reps <= 0;
 
   if (useDuration) {
     step.endCondition = TIME_CONDITION;
-    step.endConditionValue = set.durationSec;
+    step.endConditionValue =
+      set.durationSec != null && set.durationSec > 0 ? set.durationSec : 30;
   } else {
     step.endCondition = REPS_CONDITION;
     step.endConditionValue = Math.max(1, set.reps || 1);

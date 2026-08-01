@@ -444,7 +444,7 @@ export function PlannedSessionDialog({
       <Dialog open onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="no-scrollbar max-h-[80dvh] min-w-0 overflow-x-hidden overflow-y-auto sm:max-h-[90vh] sm:max-w-2xl">
           <PlannedSessionNavDismissProvider onDismiss={onClose}>
-            <DialogHeader>
+            <DialogHeader className="pr-10">
               <DialogTitle>
                 {dialogTitle(
                   isEdit,

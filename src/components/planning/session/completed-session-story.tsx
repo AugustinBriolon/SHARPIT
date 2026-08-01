@@ -64,7 +64,7 @@ export function CompletedSessionStory({
   return (
     <section
       aria-label="Lecture de la séance"
-      className="bg-analysis-surface-alt rounded-analysis-lg space-y-3 px-4 py-4 sm:px-5"
+      className="bg-analysis-surface-alt rounded-analysis-lg min-w-0 space-y-3 px-4 py-4 sm:px-5"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-label inline-flex items-center gap-2">
@@ -107,9 +107,11 @@ export function CompletedSessionStory({
       ) : null}
 
       {notes ? (
-        <div className="border-analysis-border/50 space-y-1 border-t pt-3">
+        <div className="border-analysis-border/50 min-w-0 space-y-1 border-t pt-3">
           <p className="text-label">Note</p>
-          <p className="text-foreground/85 text-sm leading-relaxed whitespace-pre-wrap">{notes}</p>
+          <p className="text-foreground/85 text-sm leading-relaxed whitespace-pre-wrap wrap-break-word">
+            {notes}
+          </p>
         </div>
       ) : null}
 

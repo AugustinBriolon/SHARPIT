@@ -31,7 +31,7 @@ export function ActivityMetaChip({
   const linkSurface = tone ? chipLinkSurface[tone] : DEFAULT_LINK_SURFACE;
   /** Same shell for static + interactive — Conformité must match Ressenti / Météo height. */
   const chipClass = cn(
-    'inline-flex min-h-11 items-center gap-2 rounded-full border px-3 py-2 text-xs lg:min-h-9 lg:py-1.5',
+    'inline-flex max-w-full shrink-0 min-h-11 items-center gap-2 rounded-full border px-3 py-2 text-xs lg:min-h-9 lg:py-1.5',
     href || onClick ? cn('pressable', linkSurface) : 'border-analysis-border bg-analysis-surface',
   );
 
@@ -41,7 +41,7 @@ export function ActivityMetaChip({
       <span className="text-muted-foreground shrink-0 font-medium tracking-wider uppercase">
         {label}
       </span>
-      <span className="text-foreground min-w-0 truncate font-medium">{value}</span>
+      <span className="text-foreground min-w-0 font-medium wrap-break-word">{value}</span>
     </>
   );
 

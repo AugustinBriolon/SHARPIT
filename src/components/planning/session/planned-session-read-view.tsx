@@ -226,14 +226,18 @@ export function PlannedSessionReadView({
           </p>
           {!isRealized ? (
             <Button
+              className="h-8 shrink-0 gap-1 px-2.5 text-xs lg:h-7"
               disabled={pushing}
-              size="sm"
+              size="xs"
               type="button"
               variant="outline"
               onClick={() => void sendToWatch({ canPush: Boolean(prescription) })}
             >
               <Watch className="size-3.5" />
-              {watchPushButtonLabel()}
+              <span className="hidden sm:inline">{watchPushButtonLabel()}</span>
+              <span className="sm:hidden">
+                {pushing ? 'Envoi…' : alreadyOnWatch ? 'Renvoyer' : 'Montre'}
+              </span>
             </Button>
           ) : null}
         </div>
@@ -271,7 +275,7 @@ export function PlannedSessionReadView({
               return (
                 <li key={`${set.order}-${set.exercise}`} className="flex flex-col gap-0.5 text-sm">
                   <div className="text-muted-foreground flex items-baseline justify-between gap-2">
-                    <span className="text-foreground min-w-0 truncate font-medium">
+                    <span className="text-foreground min-w-0 font-medium wrap-break-word">
                       {set.exercise}
                     </span>
                     <span className="text-data shrink-0 font-mono text-xs tabular-nums">
@@ -313,8 +317,8 @@ export function PlannedSessionReadView({
         </span>
         <Button
           aria-label="Modifier la séance"
-          className="size-11 shrink-0 rounded-full lg:size-9"
-          size="icon-sm"
+          className="shrink-0"
+          size="icon-xs"
           type="button"
           variant="outline"
           onClick={onEdit}

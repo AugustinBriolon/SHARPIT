@@ -185,8 +185,14 @@ const BY_LABEL: Readonly<Record<string, GarminExerciseRef>> = {
   // Hip
   'hip thrust': { category: 'HIP_RAISE', exerciseName: 'HIP_THRUST' },
   'barbell hip thrust': { category: 'HIP_RAISE', exerciseName: 'HIP_THRUST' },
-  'glute bridge': { category: 'HIP_RAISE', exerciseName: 'GLUTE_BRIDGE' },
-  'barbell glute bridge': { category: 'HIP_RAISE', exerciseName: 'GLUTE_BRIDGE' },
+  'glute bridge': {
+    category: 'BANDED_EXERCISES',
+    exerciseName: 'BANDED_EXERCISES_GLUTE_BRIDGE',
+  },
+  'barbell glute bridge': {
+    category: 'BANDED_EXERCISES',
+    exerciseName: 'BANDED_EXERCISES_GLUTE_BRIDGE',
+  },
   'kettlebell swing': { category: 'HIP_RAISE', exerciseName: 'KETTLEBELL_SWING' },
 
   // Cardio helpers
@@ -223,7 +229,18 @@ const BY_LABEL: Readonly<Record<string, GarminExerciseRef>> = {
   clamshells: { category: 'BANDED_EXERCISES', exerciseName: 'CLAM_SHELLS' },
   'clamshell avec elastique': { category: 'BANDED_EXERCISES', exerciseName: 'CLAM_SHELLS' },
   'clam shell avec elastique': { category: 'BANDED_EXERCISES', exerciseName: 'CLAM_SHELLS' },
-  // Foam-roller / massage: no Connect workout leaf — leave unmapped (skip on push).
+  'massage voute plantaire': { category: 'WARM_UP', exerciseName: 'STRETCH_CALF' },
+  'massage voute plantaire boule': { category: 'WARM_UP', exerciseName: 'STRETCH_CALF' },
+  'relachement fessier': { category: 'WARM_UP', exerciseName: 'GLUTES_STRETCH' },
+  'relachement fessier boule': { category: 'WARM_UP', exerciseName: 'GLUTES_STRETCH' },
+  'massage lateral cuisse': { category: 'WARM_UP', exerciseName: 'STRETCH_LYING_IT_BAND' },
+  'massage lateral cuisse boule': { category: 'WARM_UP', exerciseName: 'STRETCH_LYING_IT_BAND' },
+  'etirement ischios': { category: 'WARM_UP', exerciseName: 'STRETCH_HAMSTRING' },
+  'etirement ischios assiste au bandeau': { category: 'WARM_UP', exerciseName: 'STRETCH_HAMSTRING' },
+  'ischios': { category: 'WARM_UP', exerciseName: 'STRETCH_HAMSTRING' },
+  'auto massage': { category: 'WARM_UP', exerciseName: 'STRETCH_CAT_COW' },
+  'auto massage foam roller': { category: 'WARM_UP', exerciseName: 'STRETCH_CAT_COW' },
+  'foam roller': { category: 'WARM_UP', exerciseName: 'STRETCH_CAT_COW' },
 };
 
 /** Catalog id → Garmin when label matching is weak but we already resolved media. */
@@ -248,7 +265,10 @@ const BY_CATALOG_ID: Readonly<Record<string, GarminExerciseRef>> = {
   '0274': { category: 'CRUNCH', exerciseName: 'CRUNCH' },
   '0001': { category: 'CRUNCH', exerciseName: 'SIT_UP' },
   '3562': { category: 'HIP_RAISE', exerciseName: 'HIP_THRUST' },
-  '1409': { category: 'HIP_RAISE', exerciseName: 'GLUTE_BRIDGE' },
+  '1409': {
+    category: 'BANDED_EXERCISES',
+    exerciseName: 'BANDED_EXERCISES_GLUTE_BRIDGE',
+  },
   // Mobility catalog ids (Gym visual closest matches)
   '2567': { category: 'WARM_UP', exerciseName: 'STRETCH_90_90' },
   '1512': { category: 'WARM_UP', exerciseName: 'STRETCH_CAT_COW' },
@@ -266,6 +286,30 @@ function inferCategoryFromLeaf(exerciseName: string): string | null {
     }
   }
   return best;
+}
+
+function resolveMobilityHeuristic(normalizedKey: string): GarminExerciseRef | null {
+  if (!/massage|boule|foam|relachement|etirement|stretch/.test(normalizedKey)) return null;
+
+  if (/sciatique|piriform/.test(normalizedKey)) {
+    return { category: 'WARM_UP', exerciseName: 'STRETCH_PIRIFORMIS' };
+  }
+  if (/fessier|glute/.test(normalizedKey)) {
+    return { category: 'WARM_UP', exerciseName: 'GLUTES_STRETCH' };
+  }
+  if (/voute|plantaire|pied|mollet|calf/.test(normalizedKey)) {
+    return { category: 'WARM_UP', exerciseName: 'STRETCH_CALF' };
+  }
+  if (/cuisse|it band|bandelette|genou/.test(normalizedKey)) {
+    return { category: 'WARM_UP', exerciseName: 'STRETCH_LYING_IT_BAND' };
+  }
+  if (/ischio|hamstring/.test(normalizedKey)) {
+    return { category: 'WARM_UP', exerciseName: 'STRETCH_HAMSTRING' };
+  }
+  if (/foam|massage|relachement/.test(normalizedKey)) {
+    return { category: 'WARM_UP', exerciseName: 'STRETCH_CAT_COW' };
+  }
+  return null;
 }
 
 function matchFromRef(
@@ -304,6 +348,11 @@ export function resolveGarminExerciseMatch(input: {
 
   if (BY_LABEL[key]) {
     return matchFromRef(BY_LABEL[key], 'alias', 1);
+  }
+
+  const mobilityRef = resolveMobilityHeuristic(key);
+  if (mobilityRef) {
+    return matchFromRef(mobilityRef, 'fuzzy', 0.6);
   }
 
   const leaf = input.frLeafByLabel?.get(key);

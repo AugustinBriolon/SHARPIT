@@ -82,7 +82,7 @@ export function ActivityStrengthExercises({ activity }: { activity: ActivityDeta
         description: [
           data.workoutName,
           data.scheduledDate ? `calendrier ${data.scheduledDate}` : null,
-          skipped > 0 ? `${skipped} comme Inconnu` : null,
+          skipped > 0 ? `${skipped} omis (hors catalogue)` : null,
         ]
           .filter(Boolean)
           .join(' · '),
@@ -104,16 +104,16 @@ export function ActivityStrengthExercises({ activity }: { activity: ActivityDeta
         </CardTitle>
         {sets.length > 0 ? (
           <Button
-            className="shrink-0"
+            className="h-8 shrink-0 gap-1 px-2.5 text-xs lg:h-7"
             disabled={pushing}
-            size="sm"
+            size="xs"
             type="button"
-            variant="highlight"
+            variant="outline"
             onClick={() => void sendToWatch()}
           >
             <Watch className="size-3.5" />
             <span className="hidden sm:inline">{pushing ? 'Envoi…' : 'Envoyer à la montre'}</span>
-            <span className="sm:hidden">{pushing ? '…' : 'Montre'}</span>
+            <span className="sm:hidden">{pushing ? 'Envoi…' : 'Montre'}</span>
           </Button>
         ) : null}
       </CardHeader>
@@ -137,13 +137,13 @@ export function ActivityStrengthExercises({ activity }: { activity: ActivityDeta
                     <span className="min-w-0 flex-1 font-medium">
                       {set.exercise}
                       {media ? (
-                        <span className="text-muted-foreground block truncate text-xs font-normal capitalize">
+                        <span className="text-muted-foreground block text-xs font-normal capitalize wrap-break-word">
                           {media.target}
                           {media.equipment ? ` · ${media.equipment}` : ''}
                         </span>
                       ) : null}
                       {set.notes ? (
-                        <span className="text-muted-foreground block truncate text-xs font-normal">
+                        <span className="text-muted-foreground block text-xs font-normal wrap-break-word">
                           {set.notes}
                         </span>
                       ) : null}
