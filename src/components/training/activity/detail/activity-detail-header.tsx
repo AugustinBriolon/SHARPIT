@@ -89,7 +89,7 @@ export function ActivityDetailHeader({ activity }: { activity: ActivityDetail })
             <p className="text-muted-foreground text-sm tracking-wide">
               {formatActivityDetailMeta(activity)}
             </p>
-            <h1 className="text-page-title mt-1.5 leading-snug">
+            <h1 className="text-page-title mt-1.5 leading-snug wrap-break-word">
               {activity.title ?? activityTypeLabels[activity.type]}
             </h1>
             <p className="text-data text-muted-foreground mt-1.5 text-sm tabular-nums">
@@ -98,7 +98,7 @@ export function ActivityDetailHeader({ activity }: { activity: ActivityDetail })
           </div>
         </div>
 
-        <div className="flex shrink-0 items-start gap-1.5 sm:gap-2">
+        <div className="flex shrink-0 items-start gap-1 sm:gap-1.5">
           <DiscussCoachLink
             activityId={activity.id}
             plannedSessionId={activity.plannedSession?.id}

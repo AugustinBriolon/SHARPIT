@@ -142,7 +142,7 @@ export function useGarminWorkoutPush(session: {
           description: [
             data.workoutName,
             data.scheduledDate ? `calendrier ${data.scheduledDate}` : null,
-            skipped > 0 ? `${skipped} comme Inconnu` : null,
+            skipped > 0 ? `${skipped} omis (hors catalogue)` : null,
           ]
             .filter(Boolean)
             .join(' · '),

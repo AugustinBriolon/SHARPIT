@@ -299,7 +299,8 @@ export function StrengthPrescriptionEditor({
       })}
       <p className="text-muted-foreground text-xs leading-relaxed">
         Match catalogue Garmin Connect (~1500 exercices). Repos Lap = tu termines le repos en
-        appuyant sur Lap. « Hors catalogue » partira comme Inconnu sur la montre.
+        appuyant sur Lap. Hors catalogue = non envoyé ; massage / étirements personnalisés mappés en
+        Approx.
       </p>
     </div>
   );

@@ -53,7 +53,34 @@ describe('resolveGarminExerciseRef', () => {
       category: 'SUSPENSION',
       exerciseName: 'DIP',
     });
-    expect(resolveGarminExerciseRef({ exercise: 'Auto-massage (Foam roller)' })).toBeNull();
+    expect(resolveGarminExerciseRef({ exercise: 'Massage voûte plantaire (Boule)' })).toEqual({
+      category: 'WARM_UP',
+      exerciseName: 'STRETCH_CALF',
+    });
+    expect(
+      resolveGarminExerciseRef({ exercise: 'Relâchement fessier (Boule) - focus sciatique' }),
+    ).toEqual({
+      category: 'WARM_UP',
+      exerciseName: 'STRETCH_PIRIFORMIS',
+    });
+    expect(
+      resolveGarminExerciseRef({ exercise: 'Massage latéral cuisse (Boule) - focus genou' }),
+    ).toEqual({
+      category: 'WARM_UP',
+      exerciseName: 'STRETCH_LYING_IT_BAND',
+    });
+    expect(resolveGarminExerciseRef({ exercise: 'Étirement ischios assisté au bandeau' })).toEqual({
+      category: 'WARM_UP',
+      exerciseName: 'STRETCH_HAMSTRING',
+    });
+    expect(resolveGarminExerciseRef({ exercise: 'Auto-massage (Foam roller)' })).toEqual({
+      category: 'WARM_UP',
+      exerciseName: 'STRETCH_CAT_COW',
+    });
+    expect(resolveGarminExerciseRef({ exercise: 'Glute Bridge' })).toEqual({
+      category: 'BANDED_EXERCISES',
+      exerciseName: 'BANDED_EXERCISES_GLUTE_BRIDGE',
+    });
     expect(resolveGarminExerciseRef({ exercise: 'Glissement du nerf sciatique' })).toEqual({
       category: 'WARM_UP',
       exerciseName: 'STRETCH_PIRIFORMIS',
