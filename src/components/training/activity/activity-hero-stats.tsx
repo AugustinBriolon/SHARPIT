@@ -24,6 +24,11 @@ export interface HeroActivity {
     distanceM: number | null;
     avgPaceSecPer100m: number | null;
   } | null;
+  hikeMetrics: {
+    distanceM: number | null;
+    elevationM: number | null;
+    avgHr: number | null;
+  } | null;
 }
 
 type StreamStats = {
@@ -108,6 +113,31 @@ function buildSlots(activity: HeroActivity, stream: StreamStats | null): Slot[] 
           label: 'FC moy.',
           value: stream?.avgHr != null ? `${stream.avgHr} bpm` : null,
           needsStream: true,
+        },
+      ];
+    }
+
+    case ActivityType.HIKE: {
+      const m = activity.hikeMetrics;
+      const elevation = m?.elevationM ?? stream?.totalAscent ?? null;
+      const distance = m?.distanceM ?? stream?.totalDistance ?? null;
+      const avgHr = m?.avgHr ?? stream?.avgHr ?? null;
+      return [
+        {
+          label: 'Distance',
+          value: distance != null ? formatDistance(distance) : null,
+          needsStream: m?.distanceM == null,
+        },
+        {
+          label: 'Dénivelé',
+          value: elevation != null ? `${Math.round(elevation)} m` : null,
+          needsStream: m?.elevationM == null,
+        },
+        { label: 'Temps', value: duration },
+        {
+          label: 'FC moy.',
+          value: avgHr != null ? `${avgHr} bpm` : null,
+          needsStream: m?.avgHr == null,
         },
       ];
     }
