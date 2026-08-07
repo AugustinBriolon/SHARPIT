@@ -14,7 +14,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Drawer } from '@base-ui/react/drawer';
 import { ActivityType } from '@prisma/client';
-import { Bike, Dumbbell, Footprints, Trophy, Waves, X, Zap } from 'lucide-react';
+import { Bike, Dumbbell, Footprints, Mountain, Trophy, Waves, X, Zap } from 'lucide-react';
 import { FilterPresetRange } from './filter-preset-range';
 
 const TYPE_ORDER: ActivityType[] = [
@@ -23,6 +23,7 @@ const TYPE_ORDER: ActivityType[] = [
   ActivityType.SWIM,
   ActivityType.STRENGTH,
   ActivityType.TRIATHLON,
+  ActivityType.HIKE,
   ActivityType.OTHER,
 ];
 
@@ -32,6 +33,7 @@ const SPORT_ICONS: Record<ActivityType, React.ElementType> = {
   SWIM: Waves,
   STRENGTH: Dumbbell,
   TRIATHLON: Trophy,
+  HIKE: Mountain,
   OTHER: Zap,
 };
 

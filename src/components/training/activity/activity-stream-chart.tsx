@@ -132,6 +132,7 @@ export function pickDefaultStreamMetricKeys(
     [ActivityType.SWIM]: ['hr', 'speed', 'cadence', 'alt', 'watts', 'pace'],
     [ActivityType.STRENGTH]: ['hr', 'watts', 'cadence', 'speed', 'alt', 'pace'],
     [ActivityType.TRIATHLON]: ['hr', 'watts', 'pace', 'speed', 'alt', 'cadence'],
+    [ActivityType.HIKE]: ['hr', 'alt', 'speed', 'pace', 'cadence', 'watts'],
     [ActivityType.OTHER]: ['hr', 'speed', 'alt', 'watts', 'cadence', 'pace'],
   };
 

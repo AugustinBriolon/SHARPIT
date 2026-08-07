@@ -7,6 +7,7 @@ import {
   buildActivitySpecs,
   buildStrengthStats,
 } from '@/components/training/activity/detail/activity-detail-helpers';
+import { ActivityHikeOvernightPanel } from '@/components/training/activity/detail/activity-hike-overnight-panel';
 import { ActivityMetaRow } from '@/components/training/activity/detail/activity-meta-row';
 import { ActivitySpecsNotes } from '@/components/training/activity/detail/activity-specs-notes';
 import { ActivityStrengthExercises } from '@/components/training/activity/detail/activity-strength-exercises';
@@ -15,6 +16,7 @@ import { ActivityDetailInsights } from '@/components/training/activity/activity-
 import { ActivityNarrativeSection } from '@/components/training/activity/activity-narrative-section';
 import { isEligibleForActivityNarrative } from '@/lib/activity/activity-narrative-config';
 import { activityDetailExpectsMap } from '@/lib/activity/activity-detail-skeleton-layout';
+import { buildHikeOvernightSummary } from '@/lib/activity/hike-overnight-summary';
 import { getActivityById, getMultisportLegsForActivity } from '@/lib/queries';
 import { getGoalAchievementsForActivity } from '@/lib/goals/goal-achievements';
 import { isCoachConfigured } from '@/lib/ai';
@@ -43,6 +45,23 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
   const isStrength = activity.type === ActivityType.STRENGTH;
   const isTriathlon = activity.type === ActivityType.TRIATHLON;
+  const isHike = activity.type === ActivityType.HIKE;
+  const hikeSummary = isHike
+    ? buildHikeOvernightSummary({
+        date: activity.date,
+        duration: activity.duration,
+        weather: activity.weather,
+        load: activity.load,
+        observedLocationLabel: activity.observedLocationLabel,
+        hikeMetrics: activity.hikeMetrics
+          ? {
+              distanceM: activity.hikeMetrics.distanceM,
+              elevationM: activity.hikeMetrics.elevationM,
+              elevationLossM: activity.hikeMetrics.elevationLossM,
+            }
+          : null,
+      })
+    : null;
   const [multisportLegs, goalValidations, performanceRecords] = await Promise.all([
     isTriathlon ? getMultisportLegsForActivity(activity) : Promise.resolve(null),
     getGoalAchievementsForActivity(activity.id),
@@ -86,6 +105,8 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
         {/* Strength: exercises are the main visual plane (map equivalent). */}
         {isStrength ? <ActivityStrengthExercises activity={activity} /> : null}
+
+        {hikeSummary ? <ActivityHikeOvernightPanel summary={hikeSummary} /> : null}
 
         <ActivityGoalValidationsCard validations={goalValidations} />
       </div>

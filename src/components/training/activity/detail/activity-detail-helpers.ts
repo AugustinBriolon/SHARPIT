@@ -3,7 +3,7 @@ import { SPORT_IDENTITY_SURFACE } from '@/lib/activity/sport-identity';
 import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
 import { ActivityType } from '@prisma/client';
 import type { LucideIcon } from 'lucide-react';
-import { Bike, Dumbbell, Footprints, Medal, Shapes, Waves } from 'lucide-react';
+import { Bike, Dumbbell, Footprints, Medal, Mountain, Shapes, Waves } from 'lucide-react';
 import type { ActivityDetail, ActivitySpec, ActivityStat, ChipTone } from './types';
 
 export const sportIcon: Record<ActivityType, LucideIcon> = {
@@ -12,6 +12,7 @@ export const sportIcon: Record<ActivityType, LucideIcon> = {
   SWIM: Waves,
   STRENGTH: Dumbbell,
   TRIATHLON: Medal,
+  HIKE: Mountain,
   OTHER: Shapes,
 };
 
@@ -118,6 +119,13 @@ export function toHeroActivity(activity: ActivityDetail): HeroActivity {
           avgPaceSecPer100m: activity.swimMetrics.avgPaceSecPer100m,
         }
       : null,
+    hikeMetrics: activity.hikeMetrics
+      ? {
+          distanceM: activity.hikeMetrics.distanceM,
+          elevationM: activity.hikeMetrics.elevationM,
+          avgHr: activity.hikeMetrics.avgHr,
+        }
+      : null,
   };
 }
 
@@ -164,6 +172,13 @@ export function buildActivitySpecs(activity: ActivityDetail): ActivitySpec[] {
     push('Cadence', m.avgCadence != null ? `${m.avgCadence} rpm` : null);
     push('Calories', m.calories);
     push('Vélo', m.bikeName);
+  }
+
+  if (activity.type === ActivityType.HIKE && activity.hikeMetrics) {
+    const m = activity.hikeMetrics;
+    push('D−', m.elevationLossM != null ? `${Math.round(m.elevationLossM)} m` : null);
+    push('Vitesse moy.', m.avgSpeedMps != null ? `${(m.avgSpeedMps * 3.6).toFixed(1)} km/h` : null);
+    push('Calories', m.calories);
   }
 
   if (activity.type === ActivityType.SWIM && activity.swimMetrics) {

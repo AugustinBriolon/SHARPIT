@@ -6,7 +6,7 @@ import {
 
 /**
  * Page-detail skeleton layouts:
- * - map — BIKE, outdoor RUN, open-water SWIM, TRIATHLON (coach + route)
+ * - map — BIKE, outdoor RUN, open-water SWIM, TRIATHLON, HIKE (coach + route)
  * - strength — STRENGTH (KPI + exercise list, no map)
  * - no-map — pool SWIM, indoor RUN (coach / metrics, no route plane)
  */
@@ -46,6 +46,8 @@ export function resolveActivityDetailSkeletonLayout(
       return isOpenWaterSwimSession(activity) ? 'map' : 'no-map';
     case ActivityType.RUN:
       return isIndoorActivitySession(activity) ? 'no-map' : 'map';
+    case ActivityType.HIKE:
+      return 'map';
     default:
       return 'no-map';
   }

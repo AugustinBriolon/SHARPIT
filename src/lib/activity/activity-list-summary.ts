@@ -8,6 +8,7 @@ type ActivityMetricSource = {
   runMetrics: { distanceM: number | null } | null;
   bikeMetrics: { tss: number | null } | null;
   swimMetrics: { distanceM: number | null } | null;
+  hikeMetrics: { distanceM: number | null } | null;
   strengthSets: { exercise: string }[];
 };
 
@@ -37,6 +38,10 @@ export function getActivityListMetric(activity: ActivityMetricSource): string | 
     }
     case ActivityType.STRENGTH:
       return formatStrengthListMetric(activity.strengthSets);
+    case ActivityType.HIKE: {
+      const distanceM = activity.hikeMetrics?.distanceM;
+      return distanceM != null && distanceM > 0 ? formatDistance(distanceM) : undefined;
+    }
     case ActivityType.TRIATHLON:
       return activity.load != null ? `${Math.round(activity.load)} TSS` : 'Multisport';
     case ActivityType.OTHER:

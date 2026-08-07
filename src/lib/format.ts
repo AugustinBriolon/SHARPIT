@@ -58,6 +58,7 @@ export const activityTypeLabels: Record<ActivityType, string> = {
   SWIM: 'Natation',
   STRENGTH: 'Musculation',
   TRIATHLON: 'Triathlon',
+  HIKE: 'Randonnée',
   OTHER: 'Autre',
 };
 

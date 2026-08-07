@@ -13,6 +13,7 @@ const ACTIVITY_TYPE_CODES: Record<ActivityType, string> = {
   SWIM: 'NA',
   STRENGTH: 'MU',
   TRIATHLON: 'TRI',
+  HIKE: 'RA',
   OTHER: 'AUT',
 };
 

@@ -331,6 +331,17 @@ export function mapGarminType(typeKey: string): ActivityType | null {
   }
 
   if (
+    k === 'hiking' ||
+    k === 'walking' ||
+    k === 'mountaineering' ||
+    k === 'hike' ||
+    (k.includes('hike') && !k.includes('run')) ||
+    k.includes('mountaineering')
+  ) {
+    return ActivityType.HIKE;
+  }
+
+  if (
     k.includes('cycl') ||
     k.includes('bike') ||
     k.includes('ride') ||
@@ -429,6 +440,25 @@ export function buildGarminActivityData(
         },
       };
       break;
+    case ActivityType.HIKE: {
+      const elevationLoss =
+        typeof (activity as { elevationLoss?: number }).elevationLoss === 'number' &&
+        (activity as { elevationLoss?: number }).elevationLoss! > 0
+          ? (activity as { elevationLoss: number }).elevationLoss
+          : null;
+      base.hikeMetrics = {
+        create: {
+          distanceM: activity.distance > 0 ? activity.distance : null,
+          elevationM: activity.elevationGain > 0 ? activity.elevationGain : null,
+          elevationLossM: elevationLoss,
+          avgHr: activity.averageHR ? Math.round(activity.averageHR) : null,
+          calories: activity.calories > 0 ? Math.round(activity.calories) : null,
+          avgSpeedMps:
+            activity.averageSpeed && activity.averageSpeed > 0 ? activity.averageSpeed : null,
+        },
+      };
+      break;
+    }
     case ActivityType.BIKE:
       base.bikeMetrics = {
         create: {
@@ -511,6 +541,32 @@ export function garminEnrichmentUpdate(
           avgHr: activity.averageHR ? Math.round(activity.averageHR) : null,
         },
         update: {
+          avgHr: activity.averageHR ? Math.round(activity.averageHR) : undefined,
+        },
+      },
+    };
+  }
+
+  if (type === ActivityType.HIKE) {
+    const elevationLoss =
+      typeof (activity as { elevationLoss?: number }).elevationLoss === 'number' &&
+      (activity as { elevationLoss?: number }).elevationLoss! > 0
+        ? (activity as { elevationLoss: number }).elevationLoss
+        : null;
+    data.hikeMetrics = {
+      upsert: {
+        create: {
+          distanceM: activity.distance > 0 ? activity.distance : null,
+          elevationM: activity.elevationGain > 0 ? activity.elevationGain : null,
+          elevationLossM: elevationLoss,
+          avgHr: activity.averageHR ? Math.round(activity.averageHR) : null,
+          calories: activity.calories > 0 ? Math.round(activity.calories) : null,
+          avgSpeedMps:
+            activity.averageSpeed && activity.averageSpeed > 0 ? activity.averageSpeed : null,
+        },
+        update: {
+          distanceM: activity.distance > 0 ? activity.distance : undefined,
+          elevationM: activity.elevationGain > 0 ? activity.elevationGain : undefined,
           avgHr: activity.averageHR ? Math.round(activity.averageHR) : undefined,
         },
       },

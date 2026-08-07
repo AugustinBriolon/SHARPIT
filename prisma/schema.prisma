@@ -14,6 +14,7 @@ enum ActivityType {
   SWIM
   STRENGTH
   TRIATHLON
+  HIKE
   OTHER
 }
 
@@ -189,6 +190,7 @@ model Activity {
   runMetrics     RunMetrics?
   bikeMetrics    BikeMetrics?
   swimMetrics    SwimMetrics?
+  hikeMetrics    HikeMetrics?
   strengthSets   StrengthSet[]
   stream         ActivityStream?
   plannedSession PlannedSession?
@@ -387,6 +389,19 @@ model SwimMetrics {
   avgPaceSecPer100m Float?
   swolf             Float?
   drills            String?
+}
+
+model HikeMetrics {
+  id         String   @id @default(cuid())
+  activityId String   @unique
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  distanceM      Float?
+  elevationM     Float? // D+
+  elevationLossM Float? // D−
+  avgHr          Int?
+  calories       Int?
+  avgSpeedMps    Float?
 }
 
 model StrengthSet {

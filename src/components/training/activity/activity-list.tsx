@@ -34,6 +34,7 @@ type ActivityItem = {
   runMetrics: { distanceM: number | null } | null;
   bikeMetrics: { tss: number | null } | null;
   swimMetrics: { distanceM: number | null } | null;
+  hikeMetrics: { distanceM: number | null } | null;
   strengthSets: { exercise: string }[];
   plannedSession: PlannedSessionSummary | null;
 };
