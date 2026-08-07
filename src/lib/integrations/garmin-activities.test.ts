@@ -20,4 +20,17 @@ describe('mapGarminType', () => {
     expect(mapGarminType('kayaking')).toBe(ActivityType.OTHER);
     expect(mapGarminType('padel')).toBe(ActivityType.OTHER);
   });
+
+  it.each([
+    ['hiking', ActivityType.HIKE],
+    ['walking', ActivityType.HIKE],
+    ['mountaineering', ActivityType.HIKE],
+    ['hike', ActivityType.HIKE],
+  ])('%s -> HIKE', (typeKey, expected) => {
+    expect(mapGarminType(typeKey)).toBe(expected);
+  });
+
+  it('keeps trail_running as RUN', () => {
+    expect(mapGarminType('trail_running')).toBe(ActivityType.RUN);
+  });
 });
