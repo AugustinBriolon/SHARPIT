@@ -8,18 +8,23 @@ import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { ActivityList } from '@/components/training/activity/activity-list';
 import { HistoryFilters } from '@/components/training/hub/history-filters';
 import type { ClientActivity } from '@/lib/query/types';
+import { Button } from '@/components/ui/button';
+import { InkEmptyState } from '@/components/ui/ink-empty-state';
+import { LinkButton } from '@/components/ui/link-button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import { InstrumentListChipSkeleton } from '@/components/ui/instrument-list-chip';
 import { useActivities, useRecords } from '@/hooks/use-data';
 import {
   applyTrainingHistoryFilters,
+  DEFAULT_TRAINING_HISTORY_FILTERS,
   formatTrainingHistoryFilterStatus,
   parseTrainingHistoryFilters,
   serializeTrainingHistoryFilters,
   type TrainingHistoryFilters,
 } from '@/lib/training/history-filters';
 import { buildActivityRecordLabels } from '@/lib/training/activity-record-labels';
+import { CalendarPlus, FilterX } from 'lucide-react';
 
 const TYPE_ORDER: ActivityType[] = [
   ActivityType.RUN,
@@ -151,25 +156,48 @@ export function TrainingList() {
           ? 'Aucune activité enregistrée.'
           : formatTrainingHistoryFilterStatus(filtered.length)}
       </p>
-      {weekGroups.length === 0 ? (
-        <p className="text-muted-foreground text-sm">
-          {activities.length === 0
-            ? 'Aucune activité enregistrée.'
-            : 'Aucune activité ne correspond aux filtres.'}
-        </p>
-      ) : (
-        weekGroups.map((group) => (
-          <section key={group.key}>
-            <p className="text-label mb-2 px-0.5">{group.label}</p>
-            <ActivityList
-              activities={group.activities}
-              chipListClassName="sm:grid sm:grid-cols-2 sm:gap-2 sm:space-y-0"
-              recordLabelsById={recordLabelsById}
-              variant="chip"
-            />
-          </section>
-        ))
-      )}
+      {weekGroups.length === 0 && activities.length === 0 ? (
+        <InkEmptyState
+          description="Connecte une source ou ajoute une séance manuelle pour construire l’historique."
+          title="Aucune activité enregistrée"
+          action={
+            <LinkButton href="/training/manual" size="sm" variant="outline">
+              <CalendarPlus className="size-3.5" aria-hidden />
+              Saisir une activité
+            </LinkButton>
+          }
+        />
+      ) : null}
+      {weekGroups.length === 0 && activities.length > 0 ? (
+        <InkEmptyState
+          description="Élargis ou réinitialise les filtres pour revoir l’historique."
+          title="Aucun résultat pour ces filtres"
+          action={
+            <Button
+              size="sm"
+              type="button"
+              variant="outline"
+              onClick={() => setFilters(DEFAULT_TRAINING_HISTORY_FILTERS)}
+            >
+              <FilterX className="size-3.5" aria-hidden />
+              Effacer les filtres
+            </Button>
+          }
+        />
+      ) : null}
+      {weekGroups.length > 0
+        ? weekGroups.map((group) => (
+            <section key={group.key}>
+              <p className="text-label mb-2 px-0.5">{group.label}</p>
+              <ActivityList
+                activities={group.activities}
+                chipListClassName="sm:grid sm:grid-cols-2 sm:gap-2 sm:space-y-0"
+                recordLabelsById={recordLabelsById}
+                variant="chip"
+              />
+            </section>
+          ))
+        : null}
     </div>
   );
 }

@@ -21,8 +21,8 @@ export function DiscussCoachLink({
   }
 
   return (
-    <LinkButton className="shrink-0" href={href} size="xs" variant="highlight">
-      <MessageCircle className="size-3.5" />
+    <LinkButton className="shrink-0 gap-1.5 px-3" href={href} size="sm" variant="highlight">
+      <MessageCircle className="size-3.5" aria-hidden />
       <span className="sr-only">Coach</span>
       <span className="hidden sm:inline">Discuter avec le coach</span>
     </LinkButton>

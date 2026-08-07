@@ -17,9 +17,6 @@ import {
 /** Implémentés aujourd'hui via AthleteTravelContext (voir son champ `type`). */
 export type CoachMemoryType = 'TRAVEL' | 'CONSTRAINT';
 
-/** Types prévus — pas encore de stockage dédié. */
-export type CoachMemoryTypeFuture = 'PREFERENCE' | 'AVAILABILITY';
-
 export type CoachMemorySource = 'USER' | 'COACH';
 
 export type { TravelTrainingConstraint, TravelDiscipline };
@@ -103,20 +100,3 @@ export function coachMemoryTypeLabel(type: unknown): string | null {
   if (!isCoachMemoryType(type)) return null;
   return COACH_MEMORY_TYPE_LABELS[type];
 }
-
-export const COACH_MEMORY_FUTURE_TYPES: {
-  type: CoachMemoryTypeFuture;
-  label: string;
-  description: string;
-}[] = [
-  {
-    type: 'PREFERENCE',
-    label: 'Préférence',
-    description: 'Habitudes d’entraînement, créneaux favoris, contraintes récurrentes.',
-  },
-  {
-    type: 'AVAILABILITY',
-    label: 'Disponibilité',
-    description: 'Plages horaires ou jours préférés pour planifier.',
-  },
-];

@@ -3,11 +3,9 @@
 import { NotebookPen, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { CoachMemoryEntryCard } from '@/components/coach-memory/coach-memory-entry-card';
-import { CoachMemoryRoadmapTeaser } from '@/components/coach-memory/coach-memory-roadmap-teaser';
 import { CoachProfileContextSection } from '@/components/coach-memory/coach-profile-context-section';
 import { TravelMemoryFormDialog } from '@/components/coach-memory/travel-memory-form-dialog';
 import { Button } from '@/components/ui/button';
-import { EyebrowLabel } from '@/components/ui/eyebrow-label';
 import {
   Dialog,
   DialogContent,
@@ -79,13 +77,14 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
   const loadError = query.isError
     ? 'Impossible de charger la mémoire. Recharge la page ou réessaie dans un instant.'
     : null;
+  const entryCount = query.data?.entries.length ?? 0;
 
   function renderMemoryEntries() {
     if (query.isLoading) {
       return (
-        <div className="space-y-3">
-          <Skeleton className="rounded-analysis h-28 w-full" />
-          <Skeleton className="rounded-analysis h-28 w-full" />
+        <div className="space-y-3 px-1 py-2">
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
         </div>
       );
     }
@@ -100,7 +99,7 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
 
     if (query.data?.entries.length) {
       return (
-        <div className="space-y-3">
+        <div className="analysis-panel rounded-analysis-lg px-4 py-1">
           {query.data.entries.map((entry) => (
             <CoachMemoryEntryCard
               key={entry.id}
@@ -119,7 +118,7 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
       <InkEmptyState
         description="Ajoute un déplacement ou une contrainte, ou mentionne-le au coach — seuls les en cours et à venir restent ici."
         icon={NotebookPen}
-        title="Aucune entrée enregistrée"
+        title="Aucune contrainte datée"
         action={
           <Button className="mt-1" type="button" onClick={openCreate}>
             Ajouter
@@ -131,7 +130,7 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <CoachProfileContextSection
         loadError={loadError}
         loading={query.isLoading}
@@ -141,13 +140,15 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
       <section className="space-y-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <EyebrowLabel className="mb-2" variant="section">
-              Mémoire structurée
-            </EyebrowLabel>
+            <p className="text-label mb-2">Daté</p>
             <h2 className="text-section-title">Déplacements & contraintes</h2>
             <p className="text-muted-foreground mt-1 text-sm">
-              Lieu, dates et capacité d&apos;entraînement pour adapter météo, séances outdoor et
-              charge planifiée.
+              Lieu, dates et capacité d&apos;entraînement — météo, outdoor et charge planifiée.
+              {entryCount > 0 ? (
+                <span className="text-data text-muted-foreground ml-1 tabular-nums">
+                  ({entryCount})
+                </span>
+              ) : null}
             </p>
           </div>
           <Button
@@ -163,8 +164,6 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
 
         {renderMemoryEntries()}
       </section>
-
-      <CoachMemoryRoadmapTeaser />
 
       <TravelMemoryFormDialog
         key={editingEntry?.id ?? (formOpen ? 'new' : 'closed')}

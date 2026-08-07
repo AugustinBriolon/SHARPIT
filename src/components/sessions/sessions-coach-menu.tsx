@@ -39,19 +39,28 @@ export function SessionsCoachMenu({
           </Button>
         }
       />
-      <DropdownMenuContent align="end" className="w-72">
+      <DropdownMenuContent
+        align="end"
+        className="analysis-panel-alt border-foreground/18 w-72 rounded-xl border p-1.5 ring-0"
+      >
         <DropdownMenuGroup>
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => onAction('plan')}>
-            <Plus className="size-4" />
-            <div>
+          <DropdownMenuItem
+            className="cursor-pointer gap-2.5 py-2"
+            onClick={() => onAction('plan')}
+          >
+            <Plus className="text-foreground/70 size-4" />
+            <div className="min-w-0">
               <p className="font-medium">Planifier une séance</p>
               <p className="text-muted-foreground text-xs">Ajouter au planning ou au calendrier</p>
             </div>
           </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => onAction('manual')}>
-            <PenLine className="size-4" />
-            <div>
+          <DropdownMenuItem
+            className="cursor-pointer gap-2.5 py-2"
+            onClick={() => onAction('manual')}
+          >
+            <PenLine className="text-foreground/70 size-4" />
+            <div className="min-w-0">
               <p className="font-medium">Saisir une séance</p>
               <p className="text-muted-foreground text-xs">
                 Enregistrement manuel d&apos;une activité
@@ -59,35 +68,47 @@ export function SessionsCoachMenu({
             </div>
           </DropdownMenuItem>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="bg-foreground/12" />
         <DropdownMenuGroup>
           <DropdownMenuLabel>Aide du coach</DropdownMenuLabel>
-          <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => onAction('week-brief')}>
-            <NotebookText className="size-4" />
-            <div>
+          <DropdownMenuItem
+            className="cursor-pointer gap-2.5 py-2"
+            onClick={() => onAction('week-brief')}
+          >
+            <NotebookText className="text-foreground/70 size-4" />
+            <div className="min-w-0">
               <p className="font-medium">Ma semaine</p>
               <p className="text-muted-foreground text-xs">
                 Objectif, charge et séances clés expliqués
               </p>
             </div>
           </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => onAction('generate')}>
-            <CalendarRange className="size-4" />
-            <div>
+          <DropdownMenuItem
+            className="cursor-pointer gap-2.5 py-2"
+            onClick={() => onAction('generate')}
+          >
+            <CalendarRange className="text-foreground/70 size-4" />
+            <div className="min-w-0">
               <p className="font-medium">Remplir ma semaine</p>
               <p className="text-muted-foreground text-xs">Nouvelles séances à ajouter</p>
             </div>
           </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => onAction('adapt')}>
-            <Wand2 className="size-4" />
-            <div>
+          <DropdownMenuItem
+            className="cursor-pointer gap-2.5 py-2"
+            onClick={() => onAction('adapt')}
+          >
+            <Wand2 className="text-foreground/70 size-4" />
+            <div className="min-w-0">
               <p className="font-medium">Ajuster l&apos;existant</p>
               <p className="text-muted-foreground text-xs">Modifier ce qui est déjà planifié</p>
             </div>
           </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => onAction('macro')}>
-            <LandPlot className="size-4" />
-            <div>
+          <DropdownMenuItem
+            className="cursor-pointer gap-2.5 py-2"
+            onClick={() => onAction('macro')}
+          >
+            <LandPlot className="text-foreground/70 size-4" />
+            <div className="min-w-0">
               <p className="font-medium">Plan jusqu&apos;à la course</p>
               <p className="text-muted-foreground text-xs">Phases et charge cible</p>
             </div>

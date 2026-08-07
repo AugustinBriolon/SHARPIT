@@ -45,70 +45,46 @@ export function CoachMemoryEntryCard({
       data-memory-id={entry.id}
       id={`memory-${entry.id}`}
       className={cn(
-        'analysis-panel rounded-analysis px-4 py-4 transition-colors',
-        highlighted && 'ring-primary/40 ring-2',
+        'border-analysis-border border-b px-1 py-4 last:border-b-0',
+        highlighted && 'bg-primary/5 -mx-2 rounded-lg px-3',
       )}
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 flex-1 space-y-2">
-          {(typeLabel || sourceLabel || entry.isActive || constraintLabel) && (
-            <div className="flex flex-wrap items-center gap-2">
-              {typeLabel ? (
-                <Badge className="rounded-full font-normal" variant="outline">
-                  {typeLabel}
-                </Badge>
-              ) : null}
-              {sourceLabel ? (
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    'rounded-full font-normal',
-                    entry.source === 'COACH'
-                      ? 'border-primary/30 bg-primary/5 text-primary'
-                      : 'text-muted-foreground',
-                  )}
-                >
-                  {sourceLabel}
-                </Badge>
-              ) : null}
-              {constraintLabel ? (
-                <Badge
-                  className="border-signal-caution/30 bg-signal-caution/10 text-signal-caution rounded-full font-normal"
-                  variant="outline"
-                >
-                  {constraintLabel}
-                </Badge>
-              ) : null}
-              {entry.isActive ? (
-                <Badge
-                  className="border-primary/30 bg-primary/10 text-primary rounded-full font-normal"
-                  variant="outline"
-                >
-                  Actif
-                </Badge>
-              ) : null}
-            </div>
-          )}
-
-          <div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
             <h3 className="text-sm font-medium">{title}</h3>
-            {entry.locationLabel ? (
-              <p className="text-muted-foreground mt-1 flex items-center gap-1.5 text-sm">
-                <MapPin className="size-3.5 shrink-0" aria-hidden />
-                {entry.locationLabel}
-              </p>
-            ) : null}
-            <p className="text-data text-muted-foreground mt-1 text-xs tabular-nums">{dateRange}</p>
-            {disciplineText ? (
-              <p className="text-muted-foreground mt-1 text-xs">{disciplineText}</p>
-            ) : null}
-            {entry.note ? (
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{entry.note}</p>
+            {entry.isActive ? <span className="text-primary text-data text-xs">Actif</span> : null}
+            {constraintLabel ? (
+              <Badge
+                className="border-signal-caution/30 bg-signal-caution/10 text-signal-caution rounded-full font-normal"
+                variant="outline"
+              >
+                {constraintLabel}
+              </Badge>
             ) : null}
           </div>
+
+          {entry.locationLabel ? (
+            <p className="text-muted-foreground flex items-center gap-1.5 text-sm">
+              <MapPin className="size-3.5 shrink-0" aria-hidden />
+              {entry.locationLabel}
+            </p>
+          ) : null}
+
+          <p className="text-data text-muted-foreground text-xs tabular-nums">{dateRange}</p>
+
+          {(typeLabel || sourceLabel || disciplineText) && (
+            <p className="text-muted-foreground text-xs">
+              {[typeLabel, sourceLabel, disciplineText].filter(Boolean).join(' · ')}
+            </p>
+          )}
+
+          {entry.note ? (
+            <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{entry.note}</p>
+          ) : null}
         </div>
 
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-0.5">
           <Button
             aria-label={`Modifier ${title}`}
             size="icon"

@@ -117,9 +117,8 @@ export function CoachConversationList({
       ) : null}
 
       {!loading && conversations.length === 0 ? (
-        <p className="text-muted-foreground px-3 py-2 text-xs">
-          Aucune conversation pour l&apos;instant. Démarre une discussion pour obtenir un conseil
-          contextualisé.
+        <p className="text-muted-foreground px-3 py-2 text-xs leading-relaxed">
+          Aucune conversation. Démarre une discussion pour obtenir un conseil contextualisé.
         </p>
       ) : null}
 
@@ -141,11 +140,11 @@ export function CoachConversationList({
                     {selected ? conversationLabel(selected) : 'Nouvelle conversation'}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent className="max-h-64">
+                <SelectContent className="max-h-64 w-(--anchor-width) max-w-(--anchor-width)">
                   {conversations.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      <span className="block truncate">{conversationLabel(c)}</span>
-                      <span className="text-muted-foreground block truncate text-xs">
+                    <SelectItem key={c.id} className="min-w-0" value={c.id}>
+                      <span className="block min-w-0 truncate">{conversationLabel(c)}</span>
+                      <span className="text-muted-foreground block min-w-0 truncate text-xs">
                         {formatDistanceToNow(c.updatedAt, { addSuffix: true, locale: fr })}
                       </span>
                     </SelectItem>

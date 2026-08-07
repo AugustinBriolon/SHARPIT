@@ -28,6 +28,11 @@ function goal(partial: Partial<ClientGoal> & { id: string; title: string }): Cli
 
 describe('selectTodayGoals', () => {
   it('prioritises race A with nearest date', () => {
+    const nearest = new Date();
+    nearest.setUTCDate(nearest.getUTCDate() + 30);
+    const farther = new Date();
+    farther.setUTCDate(farther.getUTCDate() + 120);
+
     const lines = selectTodayGoals([
       goal({
         id: 'm1',
@@ -42,7 +47,7 @@ describe('selectTodayGoals', () => {
         title: 'Marathon',
         kind: GoalKind.RACE,
         priority: GoalPriority.B,
-        targetDate: new Date('2026-12-01'),
+        targetDate: farther,
         targetPerformance: 'Sub 4h',
       }),
       goal({
@@ -50,7 +55,7 @@ describe('selectTodayGoals', () => {
         title: 'Semi',
         kind: GoalKind.RACE,
         priority: GoalPriority.A,
-        targetDate: new Date('2026-08-01'),
+        targetDate: nearest,
         targetPerformance: 'Sub 1h45',
       }),
     ]);

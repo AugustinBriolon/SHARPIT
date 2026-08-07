@@ -1,9 +1,9 @@
 'use client';
 
-import { Check, Loader2, Pencil } from 'lucide-react';
-import { useState } from 'react';
+import { Check, ChevronDown, Loader2, Pencil } from 'lucide-react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { CoachContextGuide } from '@/components/coach-memory/coach-context-guide';
 import { Button } from '@/components/ui/button';
-import { EyebrowLabel } from '@/components/ui/eyebrow-label';
 import { Textarea } from '@/components/ui/textarea';
 import { useSaveCoachContext } from '@/hooks/use-coach';
 import { cn } from '@/lib/utils';
@@ -15,7 +15,85 @@ const PLACEHOLDER = `Ex. :
 - Charge de travail intense en ce moment, garder de la marge.`;
 
 const EMPTY_HINT =
-  'Aucune préférence enregistrée. Ajoute tes contraintes horaires, habitudes et contexte pro pour guider le coach.';
+  'Aucune préférence enregistrée. Ajoute contraintes horaires, habitudes et contexte pro.';
+
+/** Collapsed read clamp — content shorter than this stays fully visible. */
+const READ_MAX_COLLAPSED_CLASS = 'max-h-40';
+const READ_MAX_COLLAPSED_PX = 160; // matches max-h-40 (10rem)
+
+/** Edit: grows with text until this cap, then scrolls. */
+const EDIT_MAX_CLASS = 'max-h-64 min-h-32';
+
+function ContextReadClamp({ text, empty }: { text: string; empty: boolean }) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [overflows, setOverflows] = useState(false);
+
+  useLayoutEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      setOverflows(el.scrollHeight > READ_MAX_COLLAPSED_PX + 1);
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [text, empty]);
+
+  useEffect(() => {
+    setExpanded(false);
+  }, [text]);
+
+  const clamped = overflows && !expanded;
+
+  return (
+    <div>
+      <div className="relative">
+        <div
+          className={cn(
+            'border-analysis-border bg-background/60 rounded-analysis border px-3 py-3 text-sm leading-relaxed',
+            empty ? 'text-muted-foreground italic' : 'text-foreground',
+            clamped &&
+              cn(
+                READ_MAX_COLLAPSED_CLASS,
+                'overflow-hidden',
+                '[mask-image:linear-gradient(to_bottom,black_0%,black_45%,transparent_100%)]',
+              ),
+          )}
+        >
+          <div ref={contentRef}>
+            {empty ? <p>{EMPTY_HINT}</p> : <p className="whitespace-pre-wrap">{text}</p>}
+          </div>
+        </div>
+
+        {clamped ? (
+          <div
+            className="from-analysis-surface-alt pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-linear-to-t to-transparent"
+            aria-hidden
+          />
+        ) : null}
+      </div>
+
+      {overflows ? (
+        <button
+          aria-expanded={expanded}
+          className="text-muted-foreground hover:text-foreground mt-2 inline-flex items-center gap-1 text-xs font-medium"
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+        >
+          {expanded ? 'Réduire' : 'Voir plus'}
+          <ChevronDown
+            className={cn('size-3.5 transition-transform', expanded && 'rotate-180')}
+            aria-hidden
+          />
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 export function CoachProfileContextSection({
   savedContext,
@@ -30,6 +108,10 @@ export function CoachProfileContextSection({
   const [mode, setMode] = useState<'read' | 'edit'>('read');
   const [editValue, setEditValue] = useState(savedContext);
   const [justSaved, setJustSaved] = useState(false);
+
+  useEffect(() => {
+    if (mode === 'read') setEditValue(savedContext);
+  }, [savedContext, mode]);
 
   const dirty = mode === 'edit' && savedContext !== editValue;
   const hasContent = savedContext.trim().length > 0;
@@ -60,32 +142,53 @@ export function CoachProfileContextSection({
     }
     if (loading) {
       return (
-        <div className="text-muted-foreground flex items-center gap-2 text-sm">
+        <div className="text-muted-foreground flex min-h-16 items-center gap-2 text-sm">
           <Loader2 className="size-4 animate-spin" aria-hidden />
           Chargement…
         </div>
       );
     }
 
-    if (mode === 'read') {
+    if (mode === 'edit') {
       return (
-        <div className="space-y-3">
-          <div
-            className={cn(
-              'rounded-analysis text-sm leading-relaxed',
-              hasContent ? 'text-foreground' : 'text-muted-foreground italic',
-            )}
-          >
-            {hasContent ? (
-              <p className="whitespace-pre-wrap">{savedContext}</p>
-            ) : (
-              <p>{EMPTY_HINT}</p>
-            )}
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-muted-foreground text-xs">
-              Utilisé par le chat, la génération de semaine et l&apos;adaptation du plan.
-            </p>
+        <Textarea
+          aria-label="Préférences durables pour le coach"
+          placeholder={PLACEHOLDER}
+          value={editValue}
+          className={cn(
+            EDIT_MAX_CLASS,
+            'bg-primary/5 border-primary/30 w-full resize-none overflow-y-auto p-3 text-sm leading-relaxed',
+          )}
+          autoFocus
+          onChange={(e) => setEditValue(e.target.value)}
+        />
+      );
+    }
+
+    return <ContextReadClamp empty={!hasContent} text={savedContext} />;
+  }
+
+  return (
+    <section
+      className="analysis-panel-alt rounded-analysis-lg space-y-4 px-5 py-5"
+      id="memory-profile-context"
+    >
+      <div>
+        <p className="text-label mb-2">Durable</p>
+        <h2 className="text-section-title">Préférences & disponibilités</h2>
+        <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+          Contraintes pro, habitudes et créneaux — ce qui ne change pas chaque semaine.
+        </p>
+      </div>
+
+      {renderBody()}
+
+      {!loadError && !loading ? (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-muted-foreground text-xs">
+            Chat, génération de semaine, adaptation du plan.
+          </p>
+          {mode === 'read' ? (
             <div className="flex items-center gap-2">
               {justSaved ? (
                 <span
@@ -101,55 +204,27 @@ export function CoachProfileContextSection({
                 Modifier
               </Button>
             </div>
-          </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="button" variant="outline" onClick={handleCancel}>
+                Annuler
+              </Button>
+              <Button disabled={!dirty || save.isPending} type="button" onClick={handleSave}>
+                {save.isPending ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : null}
+                Enregistrer
+              </Button>
+            </div>
+          )}
         </div>
-      );
-    }
+      ) : null}
 
-    return (
-      <div className="space-y-3">
-        <Textarea
-          aria-label="Contexte personnel pour le coach"
-          className="bg-primary/5 border-primary/30 resize-y text-sm"
-          placeholder={PLACEHOLDER}
-          rows={8}
-          value={editValue}
-          autoFocus
-          onChange={(e) => setEditValue(e.target.value)}
-        />
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <Button type="button" variant="outline" onClick={handleCancel}>
-            Annuler
-          </Button>
-          <Button disabled={!dirty || save.isPending} type="button" onClick={handleSave}>
-            {save.isPending ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : null}
-            Enregistrer
-          </Button>
-        </div>
-        {save.isError ? (
-          <p aria-live="assertive" className="text-destructive text-xs" role="alert">
-            {save.error.message}
-          </p>
-        ) : null}
-      </div>
-    );
-  }
-
-  return (
-    <section
-      className="analysis-panel-alt rounded-analysis-lg px-5 py-5"
-      id="memory-profile-context"
-    >
-      <EyebrowLabel className="mb-2" variant="section">
-        Mémoire persistante
-      </EyebrowLabel>
-      <div className="mb-4">
-        <h2 className="text-section-title">Disponibilités & préférences</h2>
-        <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-          Contraintes pro, habitudes d&apos;entraînement et préférences de créneaux.
+      {save.isError ? (
+        <p aria-live="assertive" className="text-destructive text-xs" role="alert">
+          {save.error.message}
         </p>
-      </div>
-      {renderBody()}
+      ) : null}
+
+      <CoachContextGuide />
     </section>
   );
 }

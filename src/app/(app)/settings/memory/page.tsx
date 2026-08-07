@@ -13,11 +13,11 @@ export default async function SettingsCoachMemoryPage({
     <div className="space-y-4">
       <MobileBackLink href="/settings" label="Réglages" showOnDesktop />
       <StickyHeader>
-        <p className="text-label">Réglages</p>
+        <p className="text-label">Contexte coach</p>
         <h1 className="text-page-title mt-1">Mémoire du coach</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Consulte, modifie ou supprime ce que SHARPIT retient pour contextualiser le coaching —
-          préférences personnelles, déplacements et entrées structurées.
+          Deux couches : préférences durables, puis contraintes datées. Le coach s&apos;en sert pour
+          contextualiser chat, semaine et adaptation.
         </p>
       </StickyHeader>
 

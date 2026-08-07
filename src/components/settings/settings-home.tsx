@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { Goal, Brain, Dumbbell, Link2, MoonStar, ShieldCheck, User2, Wrench } from 'lucide-react';
+import { Brain, Dumbbell, Goal, Link2, MoonStar, ShieldCheck, User2, Wrench } from 'lucide-react';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { SettingsMaintenancePanel } from '@/components/settings/maintenance';
 import { InstallCard } from '@/components/pwa/install-card';
+import { useThemePreference } from '@/providers/theme-provider';
+import { themeStatusLabel, type SettingsHubStatus } from '@/lib/settings/hub-status';
 import { cn } from '@/lib/utils';
 
 type SettingsEntry = {
@@ -12,107 +14,180 @@ type SettingsEntry = {
   title: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
+  statusKey: keyof SettingsHubStatus | 'appearance';
 };
 
-const ENTRIES: SettingsEntry[] = [
+type SettingsGroup = {
+  id: string;
+  title: string;
+  blurb: string;
+  entries: SettingsEntry[];
+};
+
+const GROUPS: SettingsGroup[] = [
   {
-    href: '/settings/account',
-    title: 'Compte',
-    description: 'Identité athlète, sommeil et paramètres personnels.',
-    icon: User2,
+    id: 'athlete',
+    title: 'Athlète',
+    blurb: 'Identité, matériel et cap de course — ce que le Twin sait de toi.',
+    entries: [
+      {
+        href: '/settings/account',
+        title: 'Compte',
+        description: 'Identité, sommeil et paramètres personnels.',
+        icon: User2,
+        statusKey: 'account',
+      },
+      {
+        href: '/settings/equipment',
+        title: 'Équipement',
+        description: 'Matériel disponible par sport.',
+        icon: Dumbbell,
+        statusKey: 'equipment',
+      },
+      {
+        href: '/settings/goals',
+        title: 'Objectifs',
+        description: 'Courses cibles et objectifs chiffrés.',
+        icon: Goal,
+        statusKey: 'goals',
+      },
+    ],
   },
   {
-    href: '/settings/equipment',
-    title: 'Équipement',
-    description: 'Matériel disponible par sport pour adapter les séances.',
-    icon: Dumbbell,
+    id: 'coach-context',
+    title: 'Contexte coach',
+    blurb: "Ce qui oriente le chat, la semaine et l'adaptation du plan.",
+    entries: [
+      {
+        href: '/settings/memory',
+        title: 'Mémoire du coach',
+        description: 'Préférences durables et contraintes datées.',
+        icon: Brain,
+        statusKey: 'memory',
+      },
+      {
+        href: '/settings/integrations',
+        title: 'Applications connectées',
+        description: 'Sources de données et synchronisations.',
+        icon: Link2,
+        statusKey: 'integrations',
+      },
+    ],
   },
   {
-    href: '/settings/appearance',
-    title: 'Apparence',
-    description: 'Choix du thème clair, sombre ou système.',
-    icon: MoonStar,
-  },
-  {
-    href: '/settings/goals',
-    title: 'Objectifs',
-    description: 'Courses cibles et objectifs chiffrés.',
-    icon: Goal,
-  },
-  {
-    href: '/settings/integrations',
-    title: 'Applications connectées',
-    description: 'Sources de données et connexions actives.',
-    icon: Link2,
-  },
-  {
-    href: '/settings/memory',
-    title: 'Mémoire du coach',
-    description: 'Déplacements, contexte durable et entrées retenues par le coach.',
-    icon: Brain,
-  },
-  {
-    href: '/settings/about',
-    title: 'À propos',
-    description: 'Version produit, positionnement et principes SHARPIT.',
-    icon: ShieldCheck,
+    id: 'application',
+    title: 'Application',
+    blurb: 'Préférences produit et informations système.',
+    entries: [
+      {
+        href: '/settings/appearance',
+        title: 'Apparence',
+        description: 'Thème clair, sombre ou système.',
+        icon: MoonStar,
+        statusKey: 'appearance',
+      },
+      {
+        href: '/settings/about',
+        title: 'À propos',
+        description: 'Version et principes SHARPIT.',
+        icon: ShieldCheck,
+        statusKey: 'about',
+      },
+    ],
   },
 ];
 
-function SettingsEntryCard({ entry }: { entry: SettingsEntry }) {
+function SettingsEntryRow({ entry, status }: { entry: SettingsEntry; status: string }) {
   const Icon = entry.icon;
 
   return (
-    <Link
-      href={entry.href}
-      className={cn(
-        'chip-surface-lg group rounded-analysis-lg flex h-full items-center gap-3 px-3 py-2.5',
-        'hover:border-primary/25 focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
-      )}
-    >
-      <div className="icon-well size-9" aria-hidden>
-        <Icon className="size-4" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium">{entry.title}</p>
-        <p className="text-muted-foreground text-sm leading-relaxed">{entry.description}</p>
-      </div>
-      <span
-        className="text-muted-foreground/70 text-data shrink-0 text-xs tracking-wider transition-transform group-hover:translate-x-0.5"
-        aria-hidden
+    <li>
+      <Link
+        href={entry.href}
+        className={cn(
+          'chip-surface-lg group flex items-center gap-3 px-3 py-2.5',
+          'rounded-analysis-lg hover:border-primary/25 focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
+        )}
       >
-        →
-      </span>
-    </Link>
+        <div className="icon-well size-9 shrink-0" aria-hidden>
+          <Icon className="size-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <p className="text-sm font-medium">{entry.title}</p>
+            <p className="text-data text-muted-foreground text-xs tabular-nums">{status}</p>
+          </div>
+          <p className="text-muted-foreground mt-0.5 text-sm leading-relaxed">
+            {entry.description}
+          </p>
+        </div>
+        <span
+          className="text-muted-foreground/70 text-data shrink-0 text-xs tracking-wider transition-transform group-hover:translate-x-0.5"
+          aria-hidden
+        >
+          →
+        </span>
+      </Link>
+    </li>
   );
 }
 
-export function SettingsHome() {
+export function SettingsHome({ status }: { status: SettingsHubStatus }) {
+  const { preference } = useThemePreference();
+  const appearanceStatus = themeStatusLabel(preference);
+
+  function resolveStatus(key: SettingsEntry['statusKey']): string {
+    if (key === 'appearance') return appearanceStatus;
+    return status[key];
+  }
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <StickyHeader>
         <p className="text-label">Réglages</p>
         <h1 className="text-page-title mt-1">Compte, données & application</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Configure ton compte, tes objectifs, tes sources connectées et les préférences
-          d&apos;application.
+          Rangées par rôle : ce qui te définit, ce qui contextualise le coach, puis
+          l&apos;application.
         </p>
       </StickyHeader>
 
-      <nav aria-label="Réglages" className="grid grid-cols-1 gap-3 md:grid-cols-2 md:items-stretch">
-        {ENTRIES.map((entry) => (
-          <SettingsEntryCard key={entry.href} entry={entry} />
+      <div className="space-y-7">
+        {GROUPS.map((group) => (
+          <section key={group.id} aria-labelledby={`settings-group-${group.id}`}>
+            <div className="mb-3">
+              <h2 className="text-section-title" id={`settings-group-${group.id}`}>
+                {group.title}
+              </h2>
+              <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{group.blurb}</p>
+            </div>
+            <ul className="space-y-2">
+              {group.entries.map((entry) => (
+                <SettingsEntryRow
+                  key={entry.href}
+                  entry={entry}
+                  status={resolveStatus(entry.statusKey)}
+                />
+              ))}
+            </ul>
+          </section>
         ))}
-      </nav>
-      <div className="analysis-panel-alt rounded-analysis-lg p-4">
+      </div>
+
+      <section
+        aria-labelledby="settings-maintenance"
+        className="analysis-panel-alt rounded-analysis-lg p-4"
+      >
         <div className="flex items-start gap-3">
           <div className="icon-well size-9" aria-hidden>
             <Wrench className="size-4" />
           </div>
-          <div>
-            <p className="text-sm font-medium">Maintenance</p>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-medium" id="settings-maintenance">
+              Maintenance
+            </h2>
             <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-              Outils locaux (cache et rechargement) — aussi disponibles via{' '}
+              Outils locaux (cache et rechargement) — aussi via{' '}
               <Link
                 className="text-foreground underline-offset-2 hover:underline"
                 href="/settings/maintenance"
@@ -126,7 +201,8 @@ export function SettingsHome() {
         <div className="mt-4">
           <SettingsMaintenancePanel variant="embedded" />
         </div>
-      </div>
+      </section>
+
       <InstallCard />
     </div>
   );

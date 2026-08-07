@@ -2,7 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { ProfileFormSection } from '@/components/settings/profile/profile-form-section';
 import {
   clockToInput,
@@ -14,12 +14,15 @@ import type { ProfileData } from '@/components/settings/profile/profile-types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { toast } from '@/components/ui/toast';
 import { useAthleteProfile } from '@/hooks/use-data';
 import { athleteAgeYears, birthDateToInput } from '@/lib/profile/athlete-profile-utils';
 import {
   mapAthleteProfileToFormData,
   shouldHydrateProfileForm,
 } from '@/lib/profile/map-athlete-profile';
+
+type FieldKey = 'heightCm' | 'sleepHours' | 'sleepBedtime';
 
 export function PersonalProfilePanel({
   initial,
@@ -32,6 +35,9 @@ export function PersonalProfilePanel({
   const queryClient = useQueryClient();
   const remoteProfile = useAthleteProfile();
   const resolvedInitial = initial ?? mapAthleteProfileToFormData(remoteProfile.data);
+  const heightErrorId = useId();
+  const sleepErrorId = useId();
+  const bedtimeErrorId = useId();
 
   const [heightCm, setHeightCm] = useState(resolvedInitial?.heightCm?.toString() ?? '');
   const [birthDate, setBirthDate] = useState(() =>
@@ -48,6 +54,7 @@ export function PersonalProfilePanel({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldKey, string>>>({});
 
   // Re-hydrate when a real snapshot arrives — never wipe on null (failed RSC load).
   useEffect(() => {
@@ -60,6 +67,7 @@ export function PersonalProfilePanel({
         : '',
     );
     setSleepBedtime(clockToInput(resolvedInitial.sleepBedtimeTargetMin ?? null));
+    setFieldErrors({});
   }, [
     resolvedInitial,
     resolvedInitial?.heightCm,
@@ -68,30 +76,65 @@ export function PersonalProfilePanel({
     resolvedInitial?.sleepBedtimeTargetMin,
   ]);
 
+  const baseline = useMemo(
+    () => ({
+      heightCm: resolvedInitial?.heightCm?.toString() ?? '',
+      birthDate: birthDateToInput(resolvedInitial?.birthDate ?? null),
+      sleepHours:
+        resolvedInitial?.sleepTargetMinutes != null
+          ? String(resolvedInitial.sleepTargetMinutes / 60)
+          : '',
+      sleepBedtime: clockToInput(resolvedInitial?.sleepBedtimeTargetMin ?? null),
+    }),
+    [resolvedInitial],
+  );
+
+  const dirty =
+    heightCm !== baseline.heightCm ||
+    birthDate !== baseline.birthDate ||
+    sleepHours !== baseline.sleepHours ||
+    sleepBedtime !== baseline.sleepBedtime;
+
+  function validateFields(): Partial<Record<FieldKey, string>> {
+    const next: Partial<Record<FieldKey, string>> = {};
+    if (heightCm.trim()) {
+      const h = Number(heightCm);
+      if (!Number.isFinite(h) || h < 100 || h > 250) {
+        next.heightCm = 'Taille invalide (entre 100 et 250 cm).';
+      }
+    }
+    if (sleepHours.trim()) {
+      const sleepMinutes = Math.round(Number(sleepHours) * 60);
+      if (!Number.isFinite(sleepMinutes) || sleepMinutes < 240 || sleepMinutes > 720) {
+        next.sleepHours = 'Objectif sommeil invalide (entre 4 h et 12 h).';
+      }
+    }
+    if (sleepBedtime.trim() && parseClockInput(sleepBedtime) == null) {
+      next.sleepBedtime = 'Heure de coucher invalide (format HH:mm).';
+    }
+    return next;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setError(null);
     setMessage(null);
+
+    const nextErrors = validateFields();
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      const first = (['heightCm', 'sleepHours', 'sleepBedtime'] as const).find(
+        (k) => nextErrors[k],
+      );
+      if (first) document.getElementById(first)?.focus();
+      setSaving(false);
+      return;
+    }
+
     try {
       const sleepMinutes = sleepHours.trim() ? Math.round(Number(sleepHours) * 60) : null;
-      if (
-        sleepMinutes != null &&
-        (!Number.isFinite(sleepMinutes) || sleepMinutes < 240 || sleepMinutes > 720)
-      ) {
-        throw new Error('Objectif sommeil invalide (entre 4 h et 12 h).');
-      }
       const bedtimeMin = parseClockInput(sleepBedtime);
-      if (sleepBedtime.trim() && bedtimeMin == null) {
-        throw new Error('Heure de coucher invalide (format HH:mm).');
-      }
-
-      if (heightCm.trim()) {
-        const h = Number(heightCm);
-        if (!Number.isFinite(h) || h < 100 || h > 250) {
-          throw new Error('Taille invalide (entre 100 et 250 cm).');
-        }
-      }
 
       const patch = {
         heightCm: heightCm.trim() ? Number(heightCm) : null,
@@ -109,6 +152,7 @@ export function PersonalProfilePanel({
       });
       await commitProfileSave(queryClient, router, res, previousProfile);
       setMessage('Profil enregistré.');
+      toast.success('Profil enregistré');
       setSaving(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur');
@@ -120,7 +164,7 @@ export function PersonalProfilePanel({
   const showLoadWarning = Boolean(loadError) || (initial == null && remoteProfile.isError);
 
   return (
-    <form className="space-y-3" onSubmit={handleSubmit}>
+    <form className="space-y-3" noValidate onSubmit={handleSubmit}>
       {showLoadWarning ? (
         <p className="text-destructive text-sm" role="alert">
           {loadError ??
@@ -132,6 +176,8 @@ export function PersonalProfilePanel({
           <div className="space-y-1.5">
             <Label htmlFor="heightCm">Taille (cm)</Label>
             <Input
+              aria-describedby={fieldErrors.heightCm ? heightErrorId : undefined}
+              aria-invalid={fieldErrors.heightCm ? true : undefined}
               className={NUMERIC_INPUT_CLASS}
               id="heightCm"
               max={250}
@@ -139,8 +185,16 @@ export function PersonalProfilePanel({
               placeholder="178"
               type="number"
               value={heightCm}
-              onChange={(e) => setHeightCm(e.target.value)}
+              onChange={(e) => {
+                setHeightCm(e.target.value);
+                setFieldErrors((prev) => ({ ...prev, heightCm: undefined }));
+              }}
             />
+            {fieldErrors.heightCm ? (
+              <p className="text-destructive text-xs" id={heightErrorId}>
+                {fieldErrors.heightCm}
+              </p>
+            ) : null}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="birthDate">Date de naissance</Label>
@@ -158,6 +212,8 @@ export function PersonalProfilePanel({
           <div className="space-y-1.5">
             <Label htmlFor="sleepHours">Objectif sommeil (h)</Label>
             <Input
+              aria-describedby={fieldErrors.sleepHours ? sleepErrorId : 'sleepHours-hint'}
+              aria-invalid={fieldErrors.sleepHours ? true : undefined}
               className={NUMERIC_INPUT_CLASS}
               id="sleepHours"
               max={12}
@@ -166,19 +222,40 @@ export function PersonalProfilePanel({
               step={0.25}
               type="number"
               value={sleepHours}
-              onChange={(e) => setSleepHours(e.target.value)}
+              onChange={(e) => {
+                setSleepHours(e.target.value);
+                setFieldErrors((prev) => ({ ...prev, sleepHours: undefined }));
+              }}
             />
-            <p className="text-muted-foreground text-xs">Entre 4 et 12 heures.</p>
+            {fieldErrors.sleepHours ? (
+              <p className="text-destructive text-xs" id={sleepErrorId}>
+                {fieldErrors.sleepHours}
+              </p>
+            ) : (
+              <p className="text-muted-foreground text-xs" id="sleepHours-hint">
+                Entre 4 et 12 heures.
+              </p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="sleepBedtime">Coucher visé (HH:mm)</Label>
             <Input
+              aria-describedby={fieldErrors.sleepBedtime ? bedtimeErrorId : undefined}
+              aria-invalid={fieldErrors.sleepBedtime ? true : undefined}
               className={NUMERIC_INPUT_CLASS}
               id="sleepBedtime"
               placeholder="22:30"
               value={sleepBedtime}
-              onChange={(e) => setSleepBedtime(e.target.value)}
+              onChange={(e) => {
+                setSleepBedtime(e.target.value);
+                setFieldErrors((prev) => ({ ...prev, sleepBedtime: undefined }));
+              }}
             />
+            {fieldErrors.sleepBedtime ? (
+              <p className="text-destructive text-xs" id={bedtimeErrorId}>
+                {fieldErrors.sleepBedtime}
+              </p>
+            ) : null}
           </div>
         </div>
       </ProfileFormSection>
@@ -193,7 +270,7 @@ export function PersonalProfilePanel({
           {error}
         </p>
       ) : null}
-      <Button disabled={saving} type="submit">
+      <Button disabled={saving || !dirty} type="submit">
         {saving ? 'Enregistrement…' : 'Enregistrer'}
       </Button>
     </form>

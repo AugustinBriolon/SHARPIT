@@ -893,7 +893,11 @@ export function PlannedSessionDialog({
                     </div>
                   )}
 
-                  {error && <p className="text-destructive text-sm">{error}</p>}
+                  {error ? (
+                    <p aria-live="assertive" className="text-destructive text-sm" role="alert">
+                      {error}
+                    </p>
+                  ) : null}
 
                   <div className="flex items-center justify-between gap-2">
                     <div>

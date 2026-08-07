@@ -215,6 +215,7 @@ export function usePlannedSessionMutations() {
         s.id === id ? ({ ...s, ...data, updatedAt: new Date() } as ClientPlannedSession) : s,
       ),
     error: 'Impossible de mettre à jour la séance.',
+    success: 'Séance mise à jour',
   });
 
   const update = useMutation({

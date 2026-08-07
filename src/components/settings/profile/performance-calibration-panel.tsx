@@ -3,7 +3,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Check, Download, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ProfileFormSection } from '@/components/settings/profile/profile-form-section';
 import {
   NUMERIC_INPUT_CLASS,
@@ -17,6 +17,7 @@ import { Vo2maxIndicators } from '@/components/settings/profile/vo2max-indicator
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { toast } from '@/components/ui/toast';
 import {
   useApplyThresholdEstimates,
   useThresholdHistory,
@@ -129,6 +130,7 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
       });
       await commitProfileSave(queryClient, router, res, previousProfile);
       setMessage('Calibration enregistrée.');
+      toast.success('Calibration enregistrée');
       setSaving(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur');
@@ -166,6 +168,21 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
       })
     : null;
   const hasThresholds = [ftpW, maxHr, lthr, thresholdPace].some((value) => value.trim().length > 0);
+
+  const baseline = useMemo(
+    () => ({
+      ftpW: initial?.ftpW?.toString() ?? '',
+      maxHr: initial?.maxHr?.toString() ?? '',
+      lthr: initial?.lthr?.toString() ?? '',
+      thresholdPace: paceToInput(initial?.runThresholdPaceSecPerKm ?? null),
+    }),
+    [initial],
+  );
+  const dirty =
+    ftpW !== baseline.ftpW ||
+    maxHr !== baseline.maxHr ||
+    lthr !== baseline.lthr ||
+    thresholdPace !== baseline.thresholdPace;
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
@@ -324,7 +341,7 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
           {error}
         </p>
       ) : null}
-      <Button disabled={saving} type="submit">
+      <Button disabled={saving || !dirty} type="submit">
         {saving ? 'Enregistrement…' : 'Enregistrer'}
       </Button>
     </form>
