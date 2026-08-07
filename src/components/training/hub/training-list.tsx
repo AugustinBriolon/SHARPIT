@@ -27,6 +27,7 @@ const TYPE_ORDER: ActivityType[] = [
   ActivityType.SWIM,
   ActivityType.STRENGTH,
   ActivityType.TRIATHLON,
+  ActivityType.HIKE,
   ActivityType.OTHER,
 ];
 
