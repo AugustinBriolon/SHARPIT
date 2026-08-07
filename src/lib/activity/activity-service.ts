@@ -11,7 +11,7 @@ function cleanMetrics<T extends Record<string, unknown>>(metrics?: T | null) {
 }
 
 export function buildActivityCreateData(input: CreateActivityInput) {
-  const { runMetrics, bikeMetrics, swimMetrics, strengthSets, ...base } = input;
+  const { runMetrics, bikeMetrics, swimMetrics, hikeMetrics, strengthSets, ...base } = input;
 
   return {
     ...base,
@@ -27,6 +27,10 @@ export function buildActivityCreateData(input: CreateActivityInput) {
       input.type === ActivityType.SWIM && swimMetrics
         ? { create: cleanMetrics(swimMetrics) }
         : undefined,
+    hikeMetrics:
+      input.type === ActivityType.HIKE && hikeMetrics
+        ? { create: cleanMetrics(hikeMetrics) }
+        : undefined,
     strengthSets:
       input.type === ActivityType.STRENGTH && strengthSets?.length
         ? {
@@ -41,7 +45,8 @@ export function buildActivityCreateData(input: CreateActivityInput) {
 }
 
 export function buildActivityUpdateData(input: UpdateActivityInput) {
-  const { runMetrics, bikeMetrics, swimMetrics, strengthSets, type, ...base } = input;
+  const { runMetrics, bikeMetrics, swimMetrics, hikeMetrics, strengthSets, type, ...base } =
+    input;
 
   const data: Record<string, unknown> = { ...base };
   if (type) data.type = type;
@@ -71,6 +76,15 @@ export function buildActivityUpdateData(input: UpdateActivityInput) {
       upsert: {
         create: cleanMetrics(swimMetrics) ?? {},
         update: cleanMetrics(swimMetrics) ?? {},
+      },
+    };
+  }
+
+  if (activityType === ActivityType.HIKE && hikeMetrics) {
+    data.hikeMetrics = {
+      upsert: {
+        create: cleanMetrics(hikeMetrics) ?? {},
+        update: cleanMetrics(hikeMetrics) ?? {},
       },
     };
   }

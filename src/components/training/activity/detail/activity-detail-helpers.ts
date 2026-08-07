@@ -3,7 +3,7 @@ import { SPORT_IDENTITY_SURFACE } from '@/lib/activity/sport-identity';
 import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
 import { ActivityType } from '@prisma/client';
 import type { LucideIcon } from 'lucide-react';
-import { Bike, Dumbbell, Footprints, Medal, Shapes, Waves } from 'lucide-react';
+import { Bike, Dumbbell, Footprints, Medal, Mountain, Shapes, Waves } from 'lucide-react';
 import type { ActivityDetail, ActivitySpec, ActivityStat, ChipTone } from './types';
 
 export const sportIcon: Record<ActivityType, LucideIcon> = {
@@ -12,6 +12,7 @@ export const sportIcon: Record<ActivityType, LucideIcon> = {
   SWIM: Waves,
   STRENGTH: Dumbbell,
   TRIATHLON: Medal,
+  HIKE: Mountain,
   OTHER: Shapes,
 };
 

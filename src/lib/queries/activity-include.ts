@@ -16,6 +16,7 @@ export const activityInclude = {
   runMetrics: true,
   bikeMetrics: true,
   swimMetrics: true,
+  hikeMetrics: true,
   strengthSets: { orderBy: { order: 'asc' as const } },
   plannedSession: { select: plannedSessionSummarySelect },
 };
@@ -43,6 +44,7 @@ export const activityListSelect = {
   runMetrics: { select: { distanceM: true } },
   bikeMetrics: { select: { tss: true, avgPower: true } },
   swimMetrics: { select: { distanceM: true } },
+  hikeMetrics: { select: { distanceM: true, elevationM: true } },
   strengthSets: { select: { exercise: true }, orderBy: { order: 'asc' as const } },
   plannedSession: { select: plannedSessionSummarySelect },
 } satisfies Prisma.ActivitySelect;

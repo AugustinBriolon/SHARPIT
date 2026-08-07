@@ -9,6 +9,7 @@ const SPORTS = [
   ActivityType.SWIM,
   ActivityType.STRENGTH,
   ActivityType.TRIATHLON,
+  ActivityType.HIKE,
 ] as const;
 
 describe('sport identity', () => {
@@ -32,5 +33,19 @@ describe('sport identity', () => {
   it('sportIdentityHex returns orange for RUN (map paint)', () => {
     expect(sportIdentityHex(ActivityType.RUN)).toBe('#ea580c');
     expect(sportIdentityHex(ActivityType.BIKE)).toBe('#059669');
+  });
+
+  it('gives HIKE an amber/earth surface distinct from RUN and not Lime Pulse', () => {
+    expect(SPORT_IDENTITY_SURFACE[ActivityType.HIKE]).not.toContain('highlight');
+    expect(SPORT_IDENTITY_SURFACE[ActivityType.HIKE]).toContain('amber');
+    expect(SPORT_IDENTITY_SURFACE[ActivityType.HIKE]).not.toBe(
+      SPORT_IDENTITY_SURFACE[ActivityType.RUN],
+    );
+    expect(SPORT_IDENTITY_TEXT[ActivityType.HIKE]).toContain('amber');
+  });
+
+  it('sportIdentityHex returns amber for HIKE, not RUN orange', () => {
+    expect(sportIdentityHex(ActivityType.HIKE)).toBe('#b45309');
+    expect(sportIdentityHex(ActivityType.HIKE)).not.toBe(sportIdentityHex(ActivityType.RUN));
   });
 });

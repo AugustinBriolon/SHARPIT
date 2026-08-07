@@ -37,6 +37,9 @@ function mapActivityTypeToSport(type: string): SportType {
       return 'STRENGTH';
     case 'TRIATHLON':
       return 'TRIATHLON';
+    case 'HIKE':
+      // Core SportType is frozen for this phase — HIKE observations fold into OTHER.
+      return 'OTHER';
     default:
       return 'OTHER';
   }

@@ -19,6 +19,7 @@ const PLANNED_LOAD_FACTOR: Record<ActivityType, number> = {
   SWIM: 1.1,
   STRENGTH: 0.7,
   TRIATHLON: 0.95,
+  HIKE: 0.8,
   OTHER: 0.75,
 };
 

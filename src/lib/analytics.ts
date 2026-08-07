@@ -43,6 +43,8 @@ const LOAD_FACTOR: Record<ActivityType, number> = {
   STRENGTH: 0.7,
   /** Multisport course : fallback conservateur quand Garmin ne fournit que la séance globale. */
   TRIATHLON: 0.95,
+  /** Randonnée : 0.8 TSS/min (effort soutenu mais sous-maximal, port de charge variable). */
+  HIKE: 0.8,
   /** Autre : proxy prudent quand aucun modèle spécifique n'existe encore. */
   OTHER: 0.75,
 };
@@ -179,6 +181,7 @@ export interface WeeklyVolumePoint {
   SWIM: number;
   STRENGTH: number;
   TRIATHLON: number;
+  HIKE: number;
   OTHER: number;
 }
 
@@ -205,6 +208,7 @@ export function computeWeeklyVolume(
         SWIM: 0,
         STRENGTH: 0,
         TRIATHLON: 0,
+        HIKE: 0,
         OTHER: 0,
       });
     }
@@ -224,6 +228,7 @@ export function computeWeeklyVolume(
       SWIM: Number(b.SWIM.toFixed(1)),
       STRENGTH: Number(b.STRENGTH.toFixed(1)),
       TRIATHLON: Number(b.TRIATHLON.toFixed(1)),
+      HIKE: Number(b.HIKE.toFixed(1)),
       OTHER: Number(b.OTHER.toFixed(1)),
     }));
 }
@@ -249,6 +254,7 @@ export function computeSportDistribution(
     SWIM: { hours: 0, count: 0 },
     STRENGTH: { hours: 0, count: 0 },
     TRIATHLON: { hours: 0, count: 0 },
+    HIKE: { hours: 0, count: 0 },
     OTHER: { hours: 0, count: 0 },
   };
 
@@ -266,6 +272,7 @@ export function computeSportDistribution(
     SWIM: 'Natation',
     STRENGTH: 'Musculation',
     TRIATHLON: 'Triathlon',
+    HIKE: 'Randonnée',
     OTHER: 'Autre',
   };
 
@@ -314,6 +321,7 @@ function emptySportTotals(): Record<ActivityType, { hours: number; count: number
     SWIM: { hours: 0, count: 0 },
     STRENGTH: { hours: 0, count: 0 },
     TRIATHLON: { hours: 0, count: 0 },
+    HIKE: { hours: 0, count: 0 },
     OTHER: { hours: 0, count: 0 },
   };
 }
@@ -369,6 +377,7 @@ function aggregateAnalytics(
           SWIM: 0,
           STRENGTH: 0,
           TRIATHLON: 0,
+          HIKE: 0,
           OTHER: 0,
         };
         weeklyVolumeByWeek.set(key, bucket);
@@ -441,6 +450,7 @@ function computeWeeklyVolumeFromBuckets(
       SWIM: Number(bucket.SWIM.toFixed(1)),
       STRENGTH: Number(bucket.STRENGTH.toFixed(1)),
       TRIATHLON: Number(bucket.TRIATHLON.toFixed(1)),
+      HIKE: Number(bucket.HIKE.toFixed(1)),
       OTHER: Number(bucket.OTHER.toFixed(1)),
     }));
 }
@@ -455,6 +465,7 @@ function computeSportDistributionFromTotals(
     SWIM: 'Natation',
     STRENGTH: 'Musculation',
     TRIATHLON: 'Triathlon',
+    HIKE: 'Randonnée',
     OTHER: 'Autre',
   };
 
@@ -541,6 +552,7 @@ export const CHART_COLORS: Record<ActivityType | 'ctl' | 'atl' | 'tsb', string> 
   SWIM: '#2563eb',
   STRENGTH: '#2f6b28',
   TRIATHLON: '#9f995b',
+  HIKE: '#b45309',
   OTHER: '#666666',
   ctl: 'var(--signal-base)',
   atl: 'var(--signal-vo2)',

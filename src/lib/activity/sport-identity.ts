@@ -11,6 +11,7 @@ import { ActivityType } from '@prisma/client';
  * | SWIM      | sky        | water                                    |
  * | STRENGTH  | rose       | body / load — distinct from status red   |
  * | TRIATHLON | teal       | bridge swim↔bike — not a single-sport hue|
+ * | HIKE      | amber      | earth / trail — distinct from RUN orange |
  * | OTHER     | muted      | neutral                                  |
  *
  * Never reuse Lime Pulse here — highlight stays brand punctuation (nav, badges).
@@ -23,6 +24,7 @@ export const SPORT_IDENTITY_SURFACE: Record<ActivityType, string> = {
     'bg-rose-500/20 text-rose-800 dark:bg-rose-400/25 dark:text-rose-200 border-rose-500/35 border',
   TRIATHLON:
     'bg-teal-500/20 text-teal-800 dark:bg-teal-400/25 dark:text-teal-200 border-teal-500/35 border',
+  HIKE: 'bg-amber-800/20 text-amber-950 dark:bg-amber-500/25 dark:text-amber-100 border-amber-800/35 border',
   OTHER: 'bg-muted text-foreground border',
 };
 
@@ -33,6 +35,7 @@ export const SPORT_IDENTITY_TEXT: Record<ActivityType, string> = {
   SWIM: 'text-sky-700 dark:text-sky-300',
   STRENGTH: 'text-rose-700 dark:text-rose-300',
   TRIATHLON: 'text-teal-700 dark:text-teal-300',
+  HIKE: 'text-amber-800 dark:text-amber-200',
   OTHER: 'text-muted-foreground',
 };
 
@@ -43,6 +46,7 @@ export const SPORT_IDENTITY_BORDER: Record<ActivityType, string> = {
   SWIM: 'border-sky-500/35',
   STRENGTH: 'border-rose-500/35',
   TRIATHLON: 'border-teal-500/35',
+  HIKE: 'border-amber-800/35',
   OTHER: 'border-border',
 };
 
@@ -56,6 +60,7 @@ export const SPORT_IDENTITY_HEX: Record<ActivityType, string> = {
   SWIM: '#0284c7',
   STRENGTH: '#e11d48',
   TRIATHLON: '#0d9488',
+  HIKE: '#b45309',
   OTHER: '#2f6b28',
 };
 
@@ -66,6 +71,7 @@ export const SPORT_IDENTITY_PANEL: Record<ActivityType, string> = {
   SWIM: 'border-sky-500/30 bg-sky-500/5',
   STRENGTH: 'border-rose-500/30 bg-rose-500/5',
   TRIATHLON: 'border-teal-500/30 bg-teal-500/5',
+  HIKE: 'border-amber-800/30 bg-amber-800/5',
   OTHER: 'border-analysis-border',
 };
 

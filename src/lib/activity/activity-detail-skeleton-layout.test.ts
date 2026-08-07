@@ -31,6 +31,12 @@ describe('resolveActivityDetailSkeletonLayout', () => {
     ).toBe('map');
   });
 
+  it('uses map layout for hike', () => {
+    expect(
+      resolveActivityDetailSkeletonLayout({ type: ActivityType.HIKE, title: 'Randonnée' }),
+    ).toBe('map');
+  });
+
   it('defaults swim to no-map (pool) unless open-water hints', () => {
     expect(
       resolveActivityDetailSkeletonLayout({ type: ActivityType.SWIM, title: 'Séance technique' }),

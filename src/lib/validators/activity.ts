@@ -53,6 +53,15 @@ export const swimMetricsSchema = z.object({
   drills: optionalString,
 });
 
+export const hikeMetricsSchema = z.object({
+  distanceM: optionalNumber,
+  elevationM: optionalNumber,
+  elevationLossM: optionalNumber,
+  avgHr: optionalInt,
+  calories: optionalInt,
+  avgSpeedMps: optionalNumber,
+});
+
 export const strengthSetSchema = z.object({
   exercise: z.string().min(1),
   sets: z.coerce.number().int().min(1),
@@ -70,6 +79,7 @@ export const createActivitySchema = baseActivitySchema.extend({
   runMetrics: runMetricsSchema.optional(),
   bikeMetrics: bikeMetricsSchema.optional(),
   swimMetrics: swimMetricsSchema.optional(),
+  hikeMetrics: hikeMetricsSchema.optional(),
   strengthSets: z.array(strengthSetSchema).optional(),
 });
 
@@ -85,5 +95,6 @@ export const activityInclude = {
   runMetrics: true,
   bikeMetrics: true,
   swimMetrics: true,
+  hikeMetrics: true,
   strengthSets: { orderBy: { order: 'asc' as const } },
 } as const;

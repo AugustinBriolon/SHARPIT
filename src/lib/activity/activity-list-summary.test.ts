@@ -12,6 +12,7 @@ const base = {
   runMetrics: null,
   bikeMetrics: null,
   swimMetrics: null,
+  hikeMetrics: null,
   strengthSets: [] as { exercise: string }[],
 };
 
@@ -59,6 +60,26 @@ describe('getActivityListMetric', () => {
         runMetrics: { distanceM: 5010 },
       }),
     ).toBe('5.01 km');
+  });
+
+  it('formats hike distance when present', () => {
+    expect(
+      getActivityListMetric({
+        ...base,
+        type: ActivityType.HIKE,
+        hikeMetrics: { distanceM: 12300 },
+      }),
+    ).toBe('12.30 km');
+  });
+
+  it('returns undefined for hike without distance', () => {
+    expect(
+      getActivityListMetric({
+        ...base,
+        type: ActivityType.HIKE,
+        hikeMetrics: { distanceM: null },
+      }),
+    ).toBeUndefined();
   });
 });
 
