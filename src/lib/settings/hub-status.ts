@@ -82,6 +82,11 @@ export function integrationsStatusLabel(facts: SettingsHubIntegrationsFacts): st
   return facts.connectedCount === 1 ? '1 connectée' : `${facts.connectedCount} connectées`;
 }
 
+export function tripsStatusLabel(count: number): string {
+  if (count === 0) return 'Aucun déplacement';
+  return count === 1 ? '1 dossier' : `${count} dossiers`;
+}
+
 export function themeStatusLabel(preference: 'light' | 'dark' | 'system'): string {
   switch (preference) {
     case 'light':
@@ -97,6 +102,7 @@ export type SettingsHubStatus = {
   account: string;
   equipment: string;
   goals: string;
+  trips: string;
   memory: string;
   integrations: string;
   about: string;

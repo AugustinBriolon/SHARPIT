@@ -21,6 +21,7 @@ import { getActivityById, getMultisportLegsForActivity } from '@/lib/queries';
 import { getGoalAchievementsForActivity } from '@/lib/goals/goal-achievements';
 import { isCoachConfigured } from '@/lib/ai';
 import { getPerformanceRecordsForActivity } from '@/lib/training/records';
+import { HikeTripMemberLink } from '@/components/training/trip/hike-trip-member-link';
 import { ActivityType } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -94,6 +95,8 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
       <div className="relative z-0 space-y-4 sm:space-y-5">
         <ActivityMetaRow activity={activity} records={performanceRecords} />
+
+        {isHike && activity.hikeTrip ? <HikeTripMemberLink hikeTrip={activity.hikeTrip} /> : null}
 
         <ActivityDetailHero
           activity={activity}

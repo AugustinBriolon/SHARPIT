@@ -5,7 +5,7 @@ import { getRenphoAccount } from '@/lib/integrations/renpho-sync';
 import { getStravaAccount } from '@/lib/integrations/strava-sync';
 import { getWithingsAccount } from '@/lib/integrations/withings-sync';
 import { prisma } from '@/lib/prisma';
-import { getAthleteProfile, getGoals } from '@/lib/queries';
+import { getAthleteProfile, getGoals, listHikeTrips } from '@/lib/queries';
 import {
   accountStatusLabel,
   equipmentFactsFromRaw,
@@ -13,6 +13,7 @@ import {
   goalsStatusLabel,
   integrationsStatusLabel,
   memoryStatusLabel,
+  tripsStatusLabel,
   type SettingsHubStatus,
 } from '@/lib/settings/hub-status';
 
@@ -38,11 +39,12 @@ async function countConnectedIntegrations(): Promise<number> {
 
 /** Server snapshot for settings hub status chips. Failures degrade to neutral copy. */
 export async function loadSettingsHubStatus(): Promise<SettingsHubStatus> {
-  const [profile, goals, memory, connectedCount] = await Promise.all([
+  const [profile, goals, memory, connectedCount, hikeTrips] = await Promise.all([
     getAthleteProfile().catch(() => null),
     getGoals().catch(() => []),
     listCoachMemoryEntries(prisma).catch(() => null),
     countConnectedIntegrations().catch(() => 0),
+    listHikeTrips().catch(() => []),
   ]);
 
   const activeEntries = goals.filter((goal) => !goal.achieved);
@@ -65,6 +67,7 @@ export async function loadSettingsHubStatus(): Promise<SettingsHubStatus> {
       total: activeEntries.length,
       activeRaces,
     }),
+    trips: tripsStatusLabel(hikeTrips.length),
     memory: memoryStatusLabel({
       entryCount: memory?.entries.length ?? 0,
       hasProfileContext: Boolean(memory?.profileContext?.trim()),
