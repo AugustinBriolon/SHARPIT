@@ -1,4 +1,4 @@
-// V2: compose via `buildHikeTripSummary(activities[])` — keep this single-session.
+// Single-session overnight/day window. Multi-session: `buildHikeTripSummary`.
 
 const OVERNIGHT_DURATION_SEC = 8 * 3600;
 
