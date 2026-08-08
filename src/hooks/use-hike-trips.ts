@@ -5,6 +5,7 @@ import { toast } from '@/components/ui/toast';
 import { buildHikeTripSummary } from '@/lib/activity/hike-trip-summary';
 import { fetchHikeTrip, fetchHikeTrips, hydrateHikeTrip } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
+import { formatApiErrorMessage, parseApiErrorBody } from '@/lib/query/api-error';
 import { sendJson } from '@/lib/query/send-json';
 import type { ClientActivity, ClientHikeTrip, ClientHikeTripListItem } from '@/lib/query/types';
 import type { CreateHikeTripInput, PatchHikeTripInput } from '@/lib/validators/hike-trip';
@@ -100,6 +101,10 @@ function hasMembershipChange(patch: PatchHikeTripInput): boolean {
   return (patch.addActivityIds?.length ?? 0) > 0 || (patch.removeActivityIds?.length ?? 0) > 0;
 }
 
+function hikeTripErrorDescription(err: unknown): string | undefined {
+  return err instanceof Error ? err.message : undefined;
+}
+
 export function useHikeTripMutations() {
   const queryClient = useQueryClient();
   const listKey = queryKeys.hikeTrips;
@@ -120,7 +125,7 @@ export function useHikeTripMutations() {
     },
     onError: (err: unknown) =>
       toast.error('Impossible de créer le déplacement.', {
-        description: err instanceof Error ? err.message : undefined,
+        description: hikeTripErrorDescription(err),
       }),
   });
 
@@ -171,7 +176,7 @@ export function useHikeTripMutations() {
         queryClient.setQueryData(queryKeys.hikeTrip(id), context.previousDetail);
       }
       toast.error('Impossible de mettre à jour le déplacement.', {
-        description: err instanceof Error ? err.message : undefined,
+        description: hikeTripErrorDescription(err),
       });
     },
     onSuccess: (trip, { id }) => {
@@ -193,8 +198,8 @@ export function useHikeTripMutations() {
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/hike-trips/${id}`, { method: 'DELETE' });
       if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(data?.error ?? 'Une erreur est survenue');
+        const parsed = parseApiErrorBody(await res.json().catch(() => null));
+        throw new Error(formatApiErrorMessage(parsed ?? {}));
       }
     },
     onMutate: async (id) => {
@@ -224,7 +229,7 @@ export function useHikeTripMutations() {
         queryClient.setQueryData(queryKeys.hikeTrip(id), context.previousDetail);
       }
       toast.error('Impossible de supprimer le déplacement.', {
-        description: err instanceof Error ? err.message : undefined,
+        description: hikeTripErrorDescription(err),
       });
     },
     onSuccess: (_data, id) => {
