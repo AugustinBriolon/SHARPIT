@@ -1,9 +1,14 @@
 import { z } from 'zod';
 
-export const createHikeTripSchema = z.object({
-  name: z.string().trim().min(1, 'Nom requis'),
-  activityIds: z.array(z.string().min(1)).min(2, 'Au moins deux randonnées'),
-});
+export const createHikeTripSchema = z
+  .object({
+    name: z.string().trim().min(1, 'Nom requis'),
+    activityIds: z.array(z.string().min(1)).min(2, 'Au moins deux randonnées'),
+  })
+  .refine((v) => new Set(v.activityIds).size >= 2, {
+    message: 'Au moins deux randonnées distinctes',
+    path: ['activityIds'],
+  });
 
 export const patchHikeTripSchema = z
   .object({

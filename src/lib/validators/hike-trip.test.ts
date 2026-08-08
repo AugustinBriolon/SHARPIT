@@ -32,6 +32,19 @@ describe('createHikeTripSchema', () => {
       expect(result.error.issues.some((i) => i.message === 'Au moins deux randonnées')).toBe(true);
     }
   });
+
+  it('rejects duplicate activity ids', () => {
+    const result = createHikeTripSchema.safeParse({
+      name: 'Week-end',
+      activityIds: ['a1', 'a1'],
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(
+        result.error.issues.some((i) => i.message === 'Au moins deux randonnées distinctes'),
+      ).toBe(true);
+    }
+  });
 });
 
 describe('patchHikeTripSchema', () => {

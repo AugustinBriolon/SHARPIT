@@ -87,6 +87,16 @@ describe('createHikeTrip', () => {
     expect(result.activities).toHaveLength(2);
   });
 
+  it('throws when duplicate activity ids collapse below two members', async () => {
+    const { createHikeTrip, HikeTripValidationError } = await import('@/lib/queries/hike-trips');
+
+    await expect(
+      createHikeTrip({ name: 'Week-end', activityIds: ['a1', 'a1'] }),
+    ).rejects.toBeInstanceOf(HikeTripValidationError);
+
+    expect(mockFindMany).not.toHaveBeenCalled();
+  });
+
   it('throws when an activity is missing', async () => {
     const { createHikeTrip, HikeTripValidationError } = await import('@/lib/queries/hike-trips');
 
@@ -140,6 +150,38 @@ describe('updateHikeTrip', () => {
         activity: { updateMany: mockUpdateMany },
       }),
     );
+  });
+
+  it('allows removing a member when add ids are already in the trip', async () => {
+    const { updateHikeTrip } = await import('@/lib/queries/hike-trips');
+
+    mockFindUnique
+      .mockResolvedValueOnce({
+        id: 'trip-1',
+        name: 'Duo',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        activities: [hikeActivity('a1'), hikeActivity('a2')],
+      })
+      .mockResolvedValueOnce({
+        id: 'trip-1',
+        name: 'Duo',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        activities: [hikeActivity('a2')],
+      });
+    mockFindMany.mockResolvedValueOnce([hikeActivity('a2', { hikeTripId: 'trip-1' })]);
+
+    const result = await updateHikeTrip('trip-1', {
+      removeActivityIds: ['a1'],
+      addActivityIds: ['a2'],
+    });
+
+    expect(result.activities).toHaveLength(1);
+    expect(mockUpdateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['a1'] }, hikeTripId: 'trip-1' },
+      data: { hikeTripId: null },
+    });
   });
 
   it('blocks removing the last member', async () => {

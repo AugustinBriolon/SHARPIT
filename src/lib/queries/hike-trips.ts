@@ -141,6 +141,9 @@ export async function createHikeTrip(input: {
   activityIds: string[];
 }): Promise<HikeTripWithActivities> {
   const uniqueIds = [...new Set(input.activityIds)];
+  if (uniqueIds.length < 2) {
+    throw new HikeTripValidationError('Au moins deux randonnées distinctes');
+  }
   const activities = await loadActivitiesForMembership(uniqueIds);
   assertActivitiesExist(uniqueIds, activities);
   assertAllHikes(activities);
@@ -186,7 +189,9 @@ export async function updateHikeTrip(
       throw new HikeTripValidationError('Une ou plusieurs activités ne font pas partie du dossier');
     }
 
-    const remainingCount = existing.activities.length - removeIds.length + addIds.length;
+    const existingIds = new Set(existing.activities.map((a) => a.id));
+    const newAddIds = addIds.filter((activityId) => !existingIds.has(activityId));
+    const remainingCount = existing.activities.length - removeIds.length + newAddIds.length;
     if (remainingCount < 1) {
       throw new HikeTripValidationError(
         'Impossible de retirer la dernière randonnée — supprimez le dossier',
