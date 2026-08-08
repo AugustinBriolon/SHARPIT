@@ -191,6 +191,8 @@ model Activity {
   bikeMetrics    BikeMetrics?
   swimMetrics    SwimMetrics?
   hikeMetrics    HikeMetrics?
+  hikeTripId     String?
+  hikeTrip       HikeTrip? @relation(fields: [hikeTripId], references: [id], onDelete: SetNull)
   strengthSets   StrengthSet[]
   stream         ActivityStream?
   plannedSession PlannedSession?
@@ -211,6 +213,7 @@ model Activity {
 
   @@index([date])
   @@index([type])
+  @@index([hikeTripId])
 }
 
 model AthleteProfile {
@@ -389,6 +392,14 @@ model SwimMetrics {
   avgPaceSecPer100m Float?
   swolf             Float?
   drills            String?
+}
+
+model HikeTrip {
+  id         String     @id @default(cuid())
+  name       String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  activities Activity[]
 }
 
 model HikeMetrics {
