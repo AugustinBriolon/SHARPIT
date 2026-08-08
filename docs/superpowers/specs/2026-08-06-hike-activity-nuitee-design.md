@@ -80,8 +80,8 @@ En V1 : **ne pas** ajouter `hikeTripId` tant que le produit V2 n’est pas spéc
 
 Dans `mapGarminType` :
 
-| Garmin type keys (exemples) | → |
-|-----------------------------|---|
+| Garmin type keys (exemples)                                                         | →      |
+| ----------------------------------------------------------------------------------- | ------ |
 | `hiking`, `walking`, `mountaineering`, clés contenant `hike` (hors `trail_running`) | `HIKE` |
 
 `trail_running` reste `RUN`.
@@ -101,19 +101,19 @@ page détail → helpers / view models purs → hooks streams → fetchers → A
 
 Fichiers touchés (indicatif) :
 
-| Zone | Changement |
-|------|------------|
-| `prisma/schema.prisma` | enum + `HikeMetrics` |
-| `garmin-activities.ts` | mapping + create metrics |
-| `activity-include.ts` / queries | include `hikeMetrics` |
-| `validators/activity.ts` | schéma create/update HIKE |
-| `format.ts`, `sport-identity.ts` | label + chroma HIKE |
-| `activity-hero-stats.tsx` | slots HIKE |
-| `activity-detail-*` | branche HIKE, specs, skeleton map |
-| `activity-detail-skeleton-layout.ts` | HIKE → `map` |
-| nouveau helper pur | `buildHikeOvernightSummary` |
-| nouveau composant | bloc Nuitée / Synthèse |
-| travel / planned-session / records | switch exhaustifs : traiter `HIKE` (souvent comme mobilité / ignore records) |
+| Zone                                 | Changement                                                                   |
+| ------------------------------------ | ---------------------------------------------------------------------------- |
+| `prisma/schema.prisma`               | enum + `HikeMetrics`                                                         |
+| `garmin-activities.ts`               | mapping + create metrics                                                     |
+| `activity-include.ts` / queries      | include `hikeMetrics`                                                        |
+| `validators/activity.ts`             | schéma create/update HIKE                                                    |
+| `format.ts`, `sport-identity.ts`     | label + chroma HIKE                                                          |
+| `activity-hero-stats.tsx`            | slots HIKE                                                                   |
+| `activity-detail-*`                  | branche HIKE, specs, skeleton map                                            |
+| `activity-detail-skeleton-layout.ts` | HIKE → `map`                                                                 |
+| nouveau helper pur                   | `buildHikeOvernightSummary`                                                  |
+| nouveau composant                    | bloc Nuitée / Synthèse                                                       |
+| travel / planned-session / records   | switch exhaustifs : traiter `HIKE` (souvent comme mobilité / ignore records) |
 
 Tout `Record<ActivityType, …>` et `switch (type)` doit rester exhaustif.
 
@@ -132,7 +132,7 @@ type HikeOvernightSummary = {
   elevationM: number | null;
   elevationLossM: number | null;
   endPoint: { lat: number; lng: number } | null; // dernier point path stream
-  endLocationFallback: string | null;            // observedLocationLabel
+  endLocationFallback: string | null; // observedLocationLabel
 };
 ```
 
@@ -170,6 +170,8 @@ Records : HIKE hors groupes PR V1 (comme OTHER).
 ---
 
 ## 4. V2 — Dossier de déplacement (extension points only)
+
+> **Phase 1 implémentée :** voir [`2026-08-08-hike-trip-dossier-design.md`](./2026-08-08-hike-trip-dossier-design.md) pour le spec et l’implémentation `HikeTrip`.
 
 **Intent :** lier N activités `HIKE` (ex. une semaine) → un dossier qui :
 
@@ -221,10 +223,10 @@ Pas d’E2E obligatoire V1.
 
 ## 8. Open questions (résolues)
 
-| Question | Décision |
-|----------|----------|
-| Approche | Nouveau type `HIKE` (pas OTHER conditionnel, pas coerce RUN) |
-| Contenu « nuit » | Synthèse parcours / nuitée (option B) |
-| Dossier multi-séances | V2 ; extension points en V1 |
-| Narrative coach | Pas en V1 |
-| Backfill OTHER→HIKE | Pas en V1 |
+| Question              | Décision                                                     |
+| --------------------- | ------------------------------------------------------------ |
+| Approche              | Nouveau type `HIKE` (pas OTHER conditionnel, pas coerce RUN) |
+| Contenu « nuit »      | Synthèse parcours / nuitée (option B)                        |
+| Dossier multi-séances | V2 ; extension points en V1                                  |
+| Narrative coach       | Pas en V1                                                    |
+| Backfill OTHER→HIKE   | Pas en V1                                                    |
