@@ -16,7 +16,9 @@ function formatRange(start: Date, end: Date): string {
 }
 
 export function ActivityHikeOvernightPanel({ summary }: { summary: HikeOvernightSummary }) {
-  const title = summary.variant === 'overnight' ? 'Nuitée' : 'Synthèse';
+  // Day hikes already surface metrics in hero + specs — panel is overnight-only.
+  if (summary.variant !== 'overnight') return null;
+
   const rows: { label: string; value: string }[] = [];
   rows.push({ label: 'Fenêtre', value: formatRange(summary.startAt, summary.endAt) });
   if (summary.durationSec != null) {
@@ -33,7 +35,8 @@ export function ActivityHikeOvernightPanel({ summary }: { summary: HikeOvernight
   }
   if (summary.locationLabel) rows.push({ label: 'Lieu', value: summary.locationLabel });
   if (summary.weather) rows.push({ label: 'Météo', value: summary.weather });
-  if (summary.load != null) rows.push({ label: 'Charge', value: `${Math.round(summary.load)} TSS` });
+  if (summary.load != null)
+    rows.push({ label: 'Charge', value: `${Math.round(summary.load)} TSS` });
   const endLabel =
     summary.endPoint != null
       ? `${summary.endPoint.lat.toFixed(4)}, ${summary.endPoint.lng.toFixed(4)}`
@@ -44,13 +47,10 @@ export function ActivityHikeOvernightPanel({ summary }: { summary: HikeOvernight
 
   return (
     <section
-      className={cn(
-        'analysis-panel space-y-3 border p-4',
-        SPORT_IDENTITY_PANEL[ActivityType.HIKE],
-      )}
-      aria-label={title}
+      aria-label="Nuitée"
+      className={cn('analysis-panel space-y-3 border p-4', SPORT_IDENTITY_PANEL[ActivityType.HIKE])}
     >
-      <h2 className="text-section-title">{title}</h2>
+      <h2 className="text-section-title">Nuitée</h2>
       <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
         {rows.map((row) => (
           <div key={row.label} className="min-w-0">

@@ -106,7 +106,9 @@ export default async function ActivityDetailPage({ params }: PageProps) {
         {/* Strength: exercises are the main visual plane (map equivalent). */}
         {isStrength ? <ActivityStrengthExercises activity={activity} /> : null}
 
-        {hikeSummary ? <ActivityHikeOvernightPanel summary={hikeSummary} /> : null}
+        {hikeSummary?.variant === 'overnight' ? (
+          <ActivityHikeOvernightPanel summary={hikeSummary} />
+        ) : null}
 
         <ActivityGoalValidationsCard validations={goalValidations} />
       </div>
