@@ -3,9 +3,11 @@ import type {
   getActivitiesList,
   getHealthEntries,
   getBodyCompositionMeasurements,
+  getHikeTripById,
   getPhysicalNotes,
   getPlannedSessions,
   getThresholdSnapshots,
+  listHikeTrips,
 } from '@/lib/queries';
 import type { enrichGoalsWithProgress } from '@/lib/goals/goal-achievements';
 import type { Goal } from '@prisma/client';
@@ -28,3 +30,5 @@ export type ClientPhysicalCheckin = ClientPhysicalNote['checkins'][number];
 export type ClientTrainingPlan = NonNullable<Awaited<ReturnType<typeof getActiveTrainingPlan>>>;
 export type ClientPlanWeek = ClientTrainingPlan['weeks'][number];
 export type ClientThresholdSnapshot = Awaited<ReturnType<typeof getThresholdSnapshots>>[number];
+export type ClientHikeTrip = NonNullable<Awaited<ReturnType<typeof getHikeTripById>>>;
+export type ClientHikeTripListItem = Awaited<ReturnType<typeof listHikeTrips>>[number];

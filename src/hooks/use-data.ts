@@ -44,6 +44,9 @@ export type { GoalPayload } from '@/hooks/use-goals';
 
 export { useBodyComposition, useHealthEntries } from '@/hooks/use-health';
 
+export { useHikeTrip, useHikeTripMutations, useHikeTrips } from '@/hooks/use-hike-trips';
+export type { CreateHikeTripInput, PatchHikeTripInput } from '@/hooks/use-hike-trips';
+
 export function useRecords() {
   return useQuery({
     queryKey: queryKeys.records,
