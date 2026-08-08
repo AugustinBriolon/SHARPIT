@@ -22,6 +22,7 @@ import { ActivityType } from '@prisma/client';
 import { CheckCircle2, Dumbbell } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Checkbox } from '@/components/ui/checkbox';
 
 type ActivityItem = {
   id: string;
@@ -37,7 +38,12 @@ type ActivityItem = {
   hikeMetrics: { distanceM: number | null } | null;
   strengthSets: { exercise: string }[];
   plannedSession: PlannedSessionSummary | null;
+  hikeTripId?: string | null;
 };
+
+function isSelectableHike(activity: Pick<ActivityItem, 'type' | 'hikeTripId'>): boolean {
+  return activity.type === ActivityType.HIKE && activity.hikeTripId == null;
+}
 
 export function ActivityList({
   activities,
@@ -46,6 +52,9 @@ export function ActivityList({
   variant = 'panel',
   chipListClassName,
   recordLabelsById,
+  selectionMode = false,
+  selectedIds,
+  onToggle,
 }: {
   activities: ActivityItem[];
   emptyLabel?: string;
@@ -56,6 +65,9 @@ export function ActivityList({
   chipListClassName?: string;
   /** activityId → record badge label (chip variant, Bande ink §12). */
   recordLabelsById?: Map<string, string>;
+  selectionMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggle?: (activityId: string) => void;
 }) {
   if (!activities.length) {
     const description = emptyLabel
@@ -86,6 +98,9 @@ export function ActivityList({
             <ActivityChip
               activity={activity}
               recordLabel={recordLabelsById?.get(activity.id) ?? null}
+              selected={selectedIds?.has(activity.id) ?? false}
+              selectionMode={selectionMode}
+              onToggle={onToggle}
             />
           </li>
         ))}
@@ -96,7 +111,14 @@ export function ActivityList({
   return (
     <div className="space-y-3">
       {activities.map((activity) => (
-        <ActivityRow key={activity.id} activity={activity} compact={compact} />
+        <ActivityRow
+          key={activity.id}
+          activity={activity}
+          compact={compact}
+          selected={selectedIds?.has(activity.id) ?? false}
+          selectionMode={selectionMode}
+          onToggle={onToggle}
+        />
       ))}
     </div>
   );
@@ -113,9 +135,15 @@ function formatActivityWeatherLine(
 function ActivityChip({
   activity,
   recordLabel = null,
+  selectionMode = false,
+  selected = false,
+  onToggle,
 }: {
   activity: ActivityItem;
   recordLabel?: string | null;
+  selectionMode?: boolean;
+  selected?: boolean;
+  onToggle?: (activityId: string) => void;
 }) {
   const metric = getActivityListMetric(activity);
   const loadValue = shouldShowActivityListLoad(activity)
@@ -128,29 +156,61 @@ function ActivityChip({
     metric,
     loadValue != null ? String(loadValue) : undefined,
   ].filter((part): part is string => Boolean(part));
+  const selectable = isSelectableHike(activity);
+
+  function handleClick() {
+    if (!selectionMode) return;
+    if (!selectable) return;
+    onToggle?.(activity.id);
+  }
 
   return (
     <InstrumentListChip
       activityType={activity.type}
-      href={`/training/${activity.id}`}
+      href={selectionMode ? undefined : `/training/${activity.id}`}
       meta={meta}
       showArrow={false}
       title={title}
+      className={cn(
+        selectionMode && !selectable && 'cursor-default opacity-50',
+        selectionMode && selectable && selected && 'ring-primary/40 ring-2',
+      )}
       trailing={
         <>
-          {recordLabel ? (
+          {selectionMode && selectable ? (
+            <Checkbox
+              aria-label={selected ? 'Désélectionner' : 'Sélectionner'}
+              checked={selected}
+              onCheckedChange={() => onToggle?.(activity.id)}
+              onClick={(event) => event.stopPropagation()}
+            />
+          ) : null}
+          {!selectionMode && recordLabel ? (
             <span className="border-analysis-border text-muted-foreground rounded-full border px-2 py-0.5 text-xs whitespace-nowrap">
               {recordLabel}
             </span>
           ) : null}
-          <CheckCircle2 className="text-primary size-3.5" aria-hidden />
+          {!selectionMode ? <CheckCircle2 className="text-primary size-3.5" aria-hidden /> : null}
         </>
       }
+      onClick={selectionMode ? handleClick : undefined}
     />
   );
 }
 
-function ActivityRow({ activity, compact = false }: { activity: ActivityItem; compact?: boolean }) {
+function ActivityRow({
+  activity,
+  compact = false,
+  selectionMode = false,
+  selected = false,
+  onToggle,
+}: {
+  activity: ActivityItem;
+  compact?: boolean;
+  selectionMode?: boolean;
+  selected?: boolean;
+  onToggle?: (activityId: string) => void;
+}) {
   const metric = getActivityListMetric(activity);
   const weatherLine = formatActivityWeatherLine(activity);
   const analysis = activity.plannedSession
@@ -167,15 +227,26 @@ function ActivityRow({ activity, compact = false }: { activity: ActivityItem; co
     !compact ? metric : undefined,
     !compact ? weatherLine : undefined,
   ].filter((part): part is string => Boolean(part));
+  const selectable = isSelectableHike(activity);
 
-  return (
-    <Link
-      href={`/training/${activity.id}`}
-      className={[
-        'analysis-panel group hover:border-primary/30 hover:bg-analysis-surface-alt/60 rounded-analysis pressable-lg flex flex-col gap-3',
-        compact ? 'px-4 py-3' : 'px-5 py-4',
-      ].join(' ')}
-    >
+  function handleClick() {
+    if (!selectionMode) return;
+    if (!selectable) return;
+    onToggle?.(activity.id);
+  }
+
+  const panelClassName = cn(
+    'analysis-panel group rounded-analysis flex flex-col gap-3',
+    compact ? 'px-4 py-3' : 'px-5 py-4',
+    selectionMode && !selectable && 'cursor-default opacity-50',
+    selectionMode && selectable && selected && 'ring-primary/40 ring-2',
+    selectionMode
+      ? selectable && 'pressable-lg hover:border-primary/30 hover:bg-analysis-surface-alt/60'
+      : 'pressable-lg hover:border-primary/30 hover:bg-analysis-surface-alt/60',
+  );
+
+  const content = (
+    <>
       <div className="flex items-start justify-between gap-4">
         <div className="w-full min-w-0 space-y-1.5">
           <div className="flex w-full items-center justify-between gap-2">
@@ -187,14 +258,26 @@ function ActivityRow({ activity, compact = false }: { activity: ActivityItem; co
             >
               {activity.title ?? activityTypeLabels[activity.type]}
             </span>
-            {activity.plannedSession && (
-              <span className="border-analysis-border bg-analysis-surface-alt text-muted-foreground rounded-full border px-2 py-0.5 text-xs font-medium">
-                {analysis ? 'Conformité' : 'Liée au plan'}{' '}
-                {analysis ? (
-                  <span className="text-data text-foreground">{analysis.complianceScore}/100</span>
-                ) : null}
-              </span>
-            )}
+            <span className="flex shrink-0 items-center gap-2">
+              {selectionMode && selectable ? (
+                <Checkbox
+                  aria-label={selected ? 'Désélectionner' : 'Sélectionner'}
+                  checked={selected}
+                  onCheckedChange={() => onToggle?.(activity.id)}
+                  onClick={(event) => event.stopPropagation()}
+                />
+              ) : null}
+              {!selectionMode && activity.plannedSession ? (
+                <span className="border-analysis-border bg-analysis-surface-alt text-muted-foreground rounded-full border px-2 py-0.5 text-xs font-medium">
+                  {analysis ? 'Conformité' : 'Liée au plan'}{' '}
+                  {analysis ? (
+                    <span className="text-data text-foreground">
+                      {analysis.complianceScore}/100
+                    </span>
+                  ) : null}
+                </span>
+              ) : null}
+            </span>
           </div>
           <span className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-1.5 text-xs">
             <ActivityTypeIndicator type={activity.type} />
@@ -210,6 +293,20 @@ function ActivityRow({ activity, compact = false }: { activity: ActivityItem; co
         </div>
       </div>
       <PhysioRail markerLabel={railLabel} max={180} value={loadValue} />
+    </>
+  );
+
+  if (selectionMode) {
+    return (
+      <button className={panelClassName} type="button" onClick={handleClick}>
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <Link className={panelClassName} href={`/training/${activity.id}`}>
+      {content}
     </Link>
   );
 }

@@ -6,6 +6,7 @@ import { fr } from 'date-fns/locale';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { ActivityList } from '@/components/training/activity/activity-list';
+import { CreateHikeTripDialog } from '@/components/training/trip/create-hike-trip-dialog';
 import { HistoryFilters } from '@/components/training/hub/history-filters';
 import type { ClientActivity } from '@/lib/query/types';
 import { Button } from '@/components/ui/button';
@@ -24,7 +25,8 @@ import {
   type TrainingHistoryFilters,
 } from '@/lib/training/history-filters';
 import { buildActivityRecordLabels } from '@/lib/training/activity-record-labels';
-import { CalendarPlus, FilterX } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { CalendarPlus, FilterX, Link2, X } from 'lucide-react';
 
 const TYPE_ORDER: ActivityType[] = [
   ActivityType.RUN,
@@ -96,6 +98,9 @@ export function TrainingList() {
     [searchParams],
   );
   const [optimisticFilters, setOptimisticFilters] = useState<TrainingHistoryFilters | null>(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const filters = optimisticFilters ?? urlFilters;
 
   // Drop optimistic overlay when URL catches up (debounce) or browser history navigates.
@@ -131,6 +136,38 @@ export function TrainingList() {
 
   const weekGroups = useMemo(() => groupByWeek(filtered), [filtered]);
 
+  const hasLinkableHikes = useMemo(
+    () =>
+      filtered.some(
+        (activity) => activity.type === ActivityType.HIKE && activity.hikeTripId == null,
+      ),
+    [filtered],
+  );
+
+  const selectedIdsArray = useMemo(() => [...selectedIds], [selectedIds]);
+
+  function toggleSelectionMode() {
+    setSelectionMode((active) => {
+      if (active) setSelectedIds(new Set());
+      return !active;
+    });
+  }
+
+  function toggleActivitySelection(activityId: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(activityId)) next.delete(activityId);
+      else next.add(activityId);
+      return next;
+    });
+  }
+
+  function exitSelectionMode() {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+    setCreateDialogOpen(false);
+  }
+
   const recordLabelsById = useMemo(() => buildActivityRecordLabels(records), [records]);
 
   function setFilters(nextFilters: TrainingHistoryFilters) {
@@ -150,7 +187,31 @@ export function TrainingList() {
 
   return (
     <div className="space-y-6">
-      <HistoryFilters counts={counts} filters={filters} onApply={setFilters} />
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <HistoryFilters counts={counts} filters={filters} onApply={setFilters} />
+        </div>
+        {hasLinkableHikes ? (
+          <Button
+            size="sm"
+            type="button"
+            variant={selectionMode ? 'secondary' : 'outline'}
+            onClick={toggleSelectionMode}
+          >
+            {selectionMode ? (
+              <>
+                <X className="size-3.5" aria-hidden />
+                Annuler
+              </>
+            ) : (
+              <>
+                <Link2 className="size-3.5" aria-hidden />
+                Lier des randonnées
+              </>
+            )}
+          </Button>
+        ) : null}
+      </div>
       <p aria-live="polite" className="sr-only" role="status">
         {activities.length === 0
           ? 'Aucune activité enregistrée.'
@@ -193,11 +254,39 @@ export function TrainingList() {
                 activities={group.activities}
                 chipListClassName="sm:grid sm:grid-cols-2 sm:gap-2 sm:space-y-0"
                 recordLabelsById={recordLabelsById}
+                selectedIds={selectedIds}
+                selectionMode={selectionMode}
                 variant="chip"
+                onToggle={toggleActivitySelection}
               />
             </section>
           ))
         : null}
+
+      {selectionMode && selectedIds.size >= 2 ? (
+        <div
+          className={cn(
+            'border-border/60 bg-background/95 supports-backdrop-filter:bg-background/80',
+            'fixed inset-x-0 bottom-0 z-40 border-t p-4 backdrop-blur-md',
+            'lg:static lg:rounded-xl lg:border lg:p-3',
+          )}
+        >
+          <Button
+            className="w-full sm:w-auto"
+            type="button"
+            onClick={() => setCreateDialogOpen(true)}
+          >
+            Créer un déplacement ({selectedIds.size})
+          </Button>
+        </div>
+      ) : null}
+
+      <CreateHikeTripDialog
+        activityIds={selectedIdsArray}
+        open={createDialogOpen}
+        onCreated={exitSelectionMode}
+        onOpenChange={setCreateDialogOpen}
+      />
     </div>
   );
 }
