@@ -23,6 +23,18 @@ export {
   updatePlannedSession,
 } from '@/lib/queries/planned-sessions';
 
+export {
+  createHikeTrip,
+  deleteHikeTrip,
+  getHikeTripById,
+  HikeTripConflictError,
+  HikeTripValidationError,
+  listHikeTrips,
+  updateHikeTrip,
+  type HikeTripListItem,
+  type HikeTripWithActivities,
+} from '@/lib/queries/hike-trips';
+
 export async function getActivities(params?: { type?: ActivityType; limit?: number }) {
   return prisma.activity.findMany({
     where: params?.type ? { type: params.type } : undefined,
