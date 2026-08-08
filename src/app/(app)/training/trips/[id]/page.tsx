@@ -23,7 +23,7 @@ export default async function HikeTripDetailPage({ params }: PageProps) {
 
   return (
     <div className="relative z-0 space-y-6 sm:space-y-8">
-      <MobileBackLink fallbackHref="/training" fallbackLabel="Training" showOnDesktop />
+      <MobileBackLink fallbackHref="/training" fallbackLabel="Entraînement" showOnDesktop />
 
       <HikeTripPageHeader name={trip.name} summary={summary} tripId={trip.id} />
 

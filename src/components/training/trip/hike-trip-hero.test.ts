@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { ActivityType } from '@prisma/client';
 import type { HikeTripSummary } from '@/lib/activity/hike-trip-summary';
 import { HikeTripHero } from './hike-trip-hero';
-import { HikeTripTimelineList } from './hike-trip-timeline';
+import { HikeTripTimelineList, RemoveMemberButton } from './hike-trip-timeline';
 
 const summary: HikeTripSummary = {
   memberCount: 2,
@@ -53,5 +53,15 @@ describe('HikeTripTimelineList', () => {
     );
     expect(html).toContain('Refuge du Plan');
     expect(html).toContain('/training/a1');
+  });
+});
+
+describe('RemoveMemberButton', () => {
+  it('wraps disabled button so tooltip title is on a hoverable element', () => {
+    const html = renderToStaticMarkup(
+      createElement(RemoveMemberButton, { disabled: true, onRemove: () => {} }),
+    );
+    expect(html).toContain('title="Ajoute une étape ou supprime le déplacement"');
+    expect(html).toContain('disabled=""');
   });
 });

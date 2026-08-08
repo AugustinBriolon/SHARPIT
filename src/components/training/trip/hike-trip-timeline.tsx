@@ -61,14 +61,23 @@ export function HikeTripTimelineList({
   );
 }
 
-function RemoveMemberButton({ disabled, onRemove }: { disabled: boolean; onRemove: () => void }) {
-  return (
+export function RemoveMemberButton({
+  disabled,
+  onRemove,
+}: {
+  disabled: boolean;
+  onRemove: () => void;
+}) {
+  const disabledTooltip = 'Ajoute une étape ou supprime le déplacement';
+  const enabledTooltip = 'Retirer du déplacement';
+
+  const button = (
     <Button
       aria-label="Retirer du déplacement"
       className={cn('text-muted-foreground size-8 shrink-0', disabled && 'opacity-40')}
       disabled={disabled}
       size="icon-sm"
-      title={disabled ? 'Ajoute une étape ou supprime le déplacement' : 'Retirer du déplacement'}
+      title={disabled ? undefined : enabledTooltip}
       type="button"
       variant="ghost"
       onClick={(event) => {
@@ -80,6 +89,16 @@ function RemoveMemberButton({ disabled, onRemove }: { disabled: boolean; onRemov
       <Link2Off className="size-3.5" aria-hidden />
     </Button>
   );
+
+  if (disabled) {
+    return (
+      <span className="inline-flex shrink-0" title={disabledTooltip}>
+        {button}
+      </span>
+    );
+  }
+
+  return button;
 }
 
 export function HikeTripTimeline({
