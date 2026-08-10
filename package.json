@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
-    "build": "prisma generate && next build --webpack",
+    "build": "prisma generate && next build && serwist build serwist.config.mjs",
     "icons:pwa": "node scripts/generate-pwa-icons.mjs",
     "db:migrate:deploy": "tsx scripts/repair-failed-migrations.ts && prisma migrate deploy",
     "start": "next start",
