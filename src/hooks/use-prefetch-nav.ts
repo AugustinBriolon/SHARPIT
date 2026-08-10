@@ -47,10 +47,14 @@ function prefetchBiologyHub(
  */
 export function usePrefetchNavQuery() {
   const queryClient = useQueryClient();
-  const trainingDayId = format(new Date(), 'yyyy-MM-dd');
 
   return useCallback(
     (href: string) => {
+      // Resolved per prefetch, not per render: reading the clock while
+      // rendering would freeze "today" into the prerendered shell, and a
+      // session left open across midnight would keep warming yesterday.
+      const trainingDayId = format(new Date(), 'yyyy-MM-dd');
+
       const pre = <T>(key: readonly unknown[], fn: () => Promise<T>) => {
         void queryClient.prefetchQuery({ queryKey: key, queryFn: fn, staleTime: PREFETCH_STALE });
       };
@@ -108,6 +112,6 @@ export function usePrefetchNavQuery() {
           break;
       }
     },
-    [queryClient, trainingDayId],
+    [queryClient],
   );
 }
