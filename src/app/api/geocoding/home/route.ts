@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { resolveDefaultActivityLocation } from '@/lib/geocoding/default-activity-location';
 import { prisma } from '@/lib/prisma';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET(request: NextRequest) {
   try {
     const dateParam = request.nextUrl.searchParams.get('date');

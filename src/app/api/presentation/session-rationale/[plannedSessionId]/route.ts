@@ -6,8 +6,6 @@ import {
 } from '@/lib/decision-memory/repository';
 import { buildSessionRationaleViewModel } from '@/lib/presentation/session-rationale';
 
-export const dynamic = 'force-dynamic';
-
 type RouteProps = { params: Promise<{ plannedSessionId: string }> };
 
 export async function GET(_req: Request, { params }: RouteProps) {

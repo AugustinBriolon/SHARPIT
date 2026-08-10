@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { importGarminThresholds } from '@/lib/integrations/garmin-sync';
 
-export const dynamic = 'force-dynamic';
-
 export async function POST() {
   try {
     const result = await importGarminThresholds();

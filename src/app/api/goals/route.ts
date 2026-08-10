@@ -3,8 +3,6 @@ import { enrichGoalsWithProgress } from '@/lib/goals/goal-achievements';
 import { createGoal, getGoals } from '@/lib/queries';
 import { createGoalSchema } from '@/lib/validators/goal';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET() {
   try {
     const goals = await getGoals();

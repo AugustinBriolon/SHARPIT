@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
 import { trainingDayIdNow } from '@/lib/athlete-state/freshness-service';
 
-export const dynamic = 'force-dynamic';
-
 /**
  * GET /api/athlete-state/snapshot?trainingDayId=YYYY-MM-DD
  *

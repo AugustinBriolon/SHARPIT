@@ -1,8 +1,6 @@
 import { getDevTools, isDevToolsEnabled } from '@/lib/dev/dev-tools';
 import { NextRequest, NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
-
 /**
  * Replay Engine API
  *

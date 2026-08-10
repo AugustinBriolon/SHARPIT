@@ -4,8 +4,6 @@ import {
   getThresholdApplyPreview,
 } from '@/lib/threshold/threshold-service';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET() {
   try {
     const preview = await getThresholdApplyPreview();

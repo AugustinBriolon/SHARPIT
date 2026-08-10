@@ -3,8 +3,6 @@ import { pushSessionToGoogleInBackground } from '@/lib/integrations/google-sync'
 import { createBrickSessions, getPlannedSessionById } from '@/lib/queries';
 import { createBrickSchema } from '@/lib/validators/planned-session';
 
-export const dynamic = 'force-dynamic';
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();

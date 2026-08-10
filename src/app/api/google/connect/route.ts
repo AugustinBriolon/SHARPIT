@@ -7,8 +7,6 @@ import {
   isGoogleConfigured,
 } from '@/lib/integrations/google';
 
-export const dynamic = 'force-dynamic';
-
 const OAUTH_COOKIE_OPTS = {
   httpOnly: true,
   sameSite: 'lax' as const,

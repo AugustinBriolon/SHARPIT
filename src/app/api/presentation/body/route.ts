@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildBodyPresentationViewModel } from '@/lib/presentation/body';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const rawDays = searchParams.get('days');

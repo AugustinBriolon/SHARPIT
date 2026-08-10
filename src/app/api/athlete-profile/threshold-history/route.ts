@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getThresholdSnapshots } from '@/lib/queries';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET() {
   try {
     const snapshots = await getThresholdSnapshots();

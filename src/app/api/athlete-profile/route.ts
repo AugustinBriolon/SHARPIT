@@ -5,9 +5,6 @@ import { athleteProfileSchema } from '@/lib/validators/athlete-profile';
 import { invalidateCoachContext } from '@/lib/coach/coach-context';
 import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
 
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-
 function profileUpdateError(error: unknown) {
   console.error('[athlete-profile PATCH]', error);
 

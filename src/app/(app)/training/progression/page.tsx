@@ -2,8 +2,6 @@ import { ProgressionHub } from '@/components/training/hub/progression-hub';
 import { mapAthleteProfileToFormData } from '@/lib/profile/map-athlete-profile';
 import { getAthleteProfile } from '@/lib/queries';
 
-export const dynamic = 'force-dynamic';
-
 export default async function TrainingProgressionPage() {
   let athleteProfile = null;
   try {

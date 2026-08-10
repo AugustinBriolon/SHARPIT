@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { connectGarmin } from '@/lib/integrations/garmin-sync';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
 const schema = z.object({
   username: z.string().min(1),
   password: z.string().min(1),

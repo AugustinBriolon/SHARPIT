@@ -4,8 +4,6 @@ import { syncGarminActivities } from '@/lib/integrations/garmin-activity-sync';
 import { syncGarminHealth } from '@/lib/integrations/garmin-sync';
 import { filterRecordChangesByActivities, updateRecordsForTypes } from '@/lib/training/records';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {

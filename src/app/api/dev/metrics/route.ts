@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getDevTools, isDevToolsEnabled } from '@/lib/dev/dev-tools';
 
-export const dynamic = 'force-dynamic';
-
 /**
  * GET /api/dev/metrics
  *

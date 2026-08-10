@@ -4,8 +4,6 @@ import { IntegrationsHubSection } from '@/components/settings/integrations';
 import { IntegrationsHubShell } from '@/components/settings/integrations';
 import { Suspense } from 'react';
 
-export const dynamic = 'force-dynamic';
-
 type PageProps = {
   searchParams: Promise<{
     strava?: string;

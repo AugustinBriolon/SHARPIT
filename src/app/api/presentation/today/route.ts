@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { buildTodayPresentationViewModel } from '@/lib/presentation/today';
 import { ensureMorningRecalibration } from '@/lib/morning-recalibration/service';
 
-export const dynamic = 'force-dynamic';
-
 function isValidTrainingDayId(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }

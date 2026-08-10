@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { setTargetCalendar } from '@/lib/integrations/google-sync';
 
-export const dynamic = 'force-dynamic';
-
 const schema = z.object({
   calendarId: z.string().min(1),
   calendarName: z.string().optional().nullable(),

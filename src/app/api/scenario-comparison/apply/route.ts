@@ -3,8 +3,6 @@ import { z } from 'zod';
 import type { ProjectionHorizonDays } from '@/core/projection/types';
 import { applyScenarioComparisonChoice } from '@/lib/scenario/apply-scenario';
 
-export const dynamic = 'force-dynamic';
-
 const VALID_HORIZONS = new Set([1, 3, 7, 14]);
 
 const schema = z.object({

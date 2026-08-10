@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildAdaptationViewModel } from '@/lib/presentation/adaptation';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const trainingDayId = searchParams.get('trainingDayId');

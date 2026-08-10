@@ -3,7 +3,6 @@ import { isCoachConfigured } from '@/lib/ai';
 import { analyzeBrick } from '@/lib/coach/coach-analysis';
 import { getBrickAnalysis, getBrickSessions, setBrickAnalysis } from '@/lib/queries';
 
-export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 export async function GET(request: NextRequest) {

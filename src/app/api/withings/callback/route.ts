@@ -4,8 +4,6 @@ import { prisma } from '@/lib/prisma';
 import { exchangeWithingsCode, getWithingsRedirectUri } from '@/lib/integrations/withings';
 import { syncWithingsHealth } from '@/lib/integrations/withings-sync';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');

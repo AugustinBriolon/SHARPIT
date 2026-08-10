@@ -5,8 +5,6 @@ import { createTravelMemoryEntry, listCoachMemoryEntries } from '@/lib/coach-mem
 import { applyTravelContextToUpcomingSessions } from '@/lib/travel-context/service';
 import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/resolve-context';
 
-export const dynamic = 'force-dynamic';
-
 const travelDisciplineSchema = z.enum(['RUN', 'BIKE', 'SWIM', 'STRENGTH', 'MOBILITY']);
 
 const travelPayloadSchema = z

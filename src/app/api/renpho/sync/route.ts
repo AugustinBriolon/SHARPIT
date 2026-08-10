@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { syncRenphoHealth } from '@/lib/integrations/renpho-sync';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {

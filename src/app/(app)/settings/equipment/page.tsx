@@ -4,8 +4,6 @@ import { EquipmentPanel } from '@/components/settings/equipment';
 import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
 import { getAthleteProfile } from '@/lib/queries';
 
-export const dynamic = 'force-dynamic';
-
 export default async function SettingsEquipmentPage() {
   const athleteProfile = await getAthleteProfile().catch(() => null);
 

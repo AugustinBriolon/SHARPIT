@@ -17,8 +17,6 @@ const schema = z.object({
   durationSec: z.coerce.number().int().positive().optional().nullable(),
 });
 
-export const dynamic = 'force-dynamic';
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();

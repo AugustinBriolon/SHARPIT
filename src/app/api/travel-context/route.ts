@@ -10,8 +10,6 @@ import {
 } from '@/lib/travel-context/service';
 import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/resolve-context';
 
-export const dynamic = 'force-dynamic';
-
 const createSchema = z
   .object({
     type: z.enum(['TRAVEL', 'CONSTRAINT']).default('TRAVEL'),

@@ -3,8 +3,6 @@ import { syncPhysicalConditionObservation } from '@/lib/manual-observation-sync'
 import { createPhysicalNote, getPhysicalNotes } from '@/lib/queries';
 import { createPhysicalNoteSchema } from '@/lib/validators/physical-note';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET() {
   try {
     const notes = await getPhysicalNotes();

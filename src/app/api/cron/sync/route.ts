@@ -11,8 +11,6 @@ import { getStravaAccount, syncStravaActivities } from '@/lib/integrations/strav
 import { generateAndStoreWeeklyReview, isSunday } from '@/lib/weekly-review';
 import { isCoachConfigured } from '@/lib/ai';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
 function unauthorized() {

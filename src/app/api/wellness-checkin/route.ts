@@ -6,8 +6,6 @@ import {
 } from '@/lib/health/wellness-checkin';
 import { wellnessCheckinSchema } from '@/lib/validators/wellness-checkin';
 
-export const dynamic = 'force-dynamic';
-
 const ATHLETE_ID = 'default';
 
 export async function GET(request: NextRequest) {

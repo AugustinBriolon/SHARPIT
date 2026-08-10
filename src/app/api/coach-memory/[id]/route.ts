@@ -4,8 +4,6 @@ import { prisma } from '@/lib/prisma';
 import { deleteCoachMemoryEntry, updateTravelMemoryEntry } from '@/lib/coach-memory/service';
 import { travelContextToMemoryEntry } from '@/lib/coach-memory/present';
 
-export const dynamic = 'force-dynamic';
-
 const travelDisciplineSchema = z.enum(['RUN', 'BIKE', 'SWIM', 'STRENGTH', 'MOBILITY']);
 
 const updateSchema = z

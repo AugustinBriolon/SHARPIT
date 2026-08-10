@@ -3,8 +3,6 @@ import { filterRecordChangesByActivities, recomputeRecordGroups } from '@/lib/tr
 import { backfillActivityStreams } from '@/lib/streams/stream-backfill';
 import { getStravaAccount } from '@/lib/integrations/strava-sync';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
 
 export async function POST() {

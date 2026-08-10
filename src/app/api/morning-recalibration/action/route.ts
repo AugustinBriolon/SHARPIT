@@ -5,8 +5,6 @@ import {
   rejectMorningRecalibration,
 } from '@/lib/morning-recalibration/service';
 
-export const dynamic = 'force-dynamic';
-
 const schema = z.object({
   decisionId: z.string().min(1),
   action: z.enum(['accept', 'reject']),

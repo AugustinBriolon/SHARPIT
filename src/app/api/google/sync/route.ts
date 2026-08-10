@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 import { GoogleOAuthError } from '@/lib/integrations/google';
 import { syncFromGoogle } from '@/lib/integrations/google-sync';
 
-export const dynamic = 'force-dynamic';
-
 export async function POST() {
   try {
     const result = await syncFromGoogle();

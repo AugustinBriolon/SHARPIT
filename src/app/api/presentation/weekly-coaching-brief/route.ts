@@ -19,8 +19,6 @@ import { computeTrainingDayId } from '@/lib/training/training-day';
 import { buildWeeklyCoachingBriefViewModel } from '@/lib/presentation/weekly-coaching-brief';
 import type { CoachingDecisionRecord } from '@/lib/decision-memory/types';
 
-export const dynamic = 'force-dynamic';
-
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 const LEARNING_FEEDBACK_WINDOW_DAYS = 90;
 

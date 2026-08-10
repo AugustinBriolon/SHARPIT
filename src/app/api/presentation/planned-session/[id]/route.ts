@@ -5,8 +5,6 @@ import { resolvePlannedSessionContext } from '@/lib/planned-session/resolve-cont
 import { buildPlannedSessionCompletionComparison } from '@/lib/planned-session/completion-comparison';
 import { resolveActivityEnvironmentPresentation } from '@/lib/environment/activity-environment';
 
-export const dynamic = 'force-dynamic';
-
 type RouteProps = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, { params }: RouteProps) {

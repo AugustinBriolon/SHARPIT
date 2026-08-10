@@ -6,8 +6,6 @@ import {
   listGoogleCalendars,
 } from '@/lib/integrations/google-sync';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET() {
   try {
     const account = await getGoogleAccount();

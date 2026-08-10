@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { ProjectionHorizonDays } from '@/core/projection/types';
 import { buildProjectedAthletePresentationViewModel } from '@/lib/presentation/projected-athlete';
 
-export const dynamic = 'force-dynamic';
-
 const VALID_HORIZONS = new Set<number>([1, 3, 7, 14]);
 
 function isValidTrainingDayId(value: string): boolean {

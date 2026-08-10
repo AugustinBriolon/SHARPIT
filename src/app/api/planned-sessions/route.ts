@@ -6,8 +6,6 @@ import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/re
 import { createPlannedSessionSchema } from '@/lib/validators/planned-session';
 import { findCoachingDecisionById, recordDecisionAction } from '@/lib/decision-memory/repository';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);

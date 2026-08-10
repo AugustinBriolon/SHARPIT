@@ -4,8 +4,6 @@ import { StickyHeader } from '@/components/layout/sticky-header';
 import { ActivityForm } from '@/components/training/activity/activity-form';
 import { getActivityById } from '@/lib/queries';
 
-export const dynamic = 'force-dynamic';
-
 type PageProps = { params: Promise<{ id: string }> };
 
 export default async function EditTrainingPage({ params }: PageProps) {

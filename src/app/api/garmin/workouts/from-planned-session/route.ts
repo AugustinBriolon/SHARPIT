@@ -5,9 +5,6 @@ import {
   pushStrengthWorkoutFromPlannedSession,
 } from '@/lib/integrations/garmin-strength-workout';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
 const bodySchema = z.object({
   plannedSessionId: z.string().min(1),
   schedule: z.boolean().optional(),

@@ -12,8 +12,6 @@ import { buildHikeTripElevationProfile } from '@/lib/activity/hike-trip-elevatio
 import { buildHikeTripSummary } from '@/lib/activity/hike-trip-summary';
 import { getHikeTripById } from '@/lib/queries';
 
-export const dynamic = 'force-dynamic';
-
 type PageProps = { params: Promise<{ id: string }> };
 
 export default async function HikeTripDetailPage({ params }: PageProps) {

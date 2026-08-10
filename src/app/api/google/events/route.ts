@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCalendarEvents, getGoogleAccount } from '@/lib/integrations/google-sync';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET(request: NextRequest) {
   try {
     const account = await getGoogleAccount();

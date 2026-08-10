@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDevTools, isDevToolsEnabled } from '@/lib/dev/dev-tools';
 
-export const dynamic = 'force-dynamic';
-
 /**
  * GET /api/dev/inspect?observationId=<id>
  * GET /api/dev/inspect?athleteId=<id>&trainingDayId=<YYYY-MM-DD>

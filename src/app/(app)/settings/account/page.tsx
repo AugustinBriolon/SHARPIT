@@ -2,8 +2,6 @@ import { ProfileView } from '@/components/profile/profile-view';
 import { mapAthleteProfileToFormData } from '@/lib/profile/map-athlete-profile';
 import { getAthleteProfile } from '@/lib/queries';
 
-export const dynamic = 'force-dynamic';
-
 export default async function SettingsAccountPage() {
   let loadError: string | null = null;
   let athleteProfile = null;

@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { refreshUpcomingPlannedSessionForecasts } from '@/lib/planned-session/refresh-forecasts';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
 function unauthorized() {

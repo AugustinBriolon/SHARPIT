@@ -4,7 +4,6 @@ import { computeFreshnessSnapshot, trainingDayIdNow } from '@/lib/athlete-state/
 import { buildTodayPresentationViewModel } from '@/lib/presentation/today';
 import { ensureMorningRecalibration } from '@/lib/morning-recalibration/service';
 
-export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
 
 /**

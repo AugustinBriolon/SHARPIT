@@ -24,8 +24,6 @@ import { getPerformanceRecordsForActivity } from '@/lib/training/records';
 import { HikeTripMemberLink } from '@/components/training/trip/hike-trip-member-link';
 import { ActivityType } from '@prisma/client';
 
-export const dynamic = 'force-dynamic';
-
 type PageProps = { params: Promise<{ id: string }> };
 
 const NARRATIVE_TYPES = new Set<ActivityType>([

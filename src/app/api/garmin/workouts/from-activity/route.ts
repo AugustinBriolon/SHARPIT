@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { pushStrengthWorkoutFromActivity } from '@/lib/integrations/garmin-strength-workout';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
 const bodySchema = z.object({
   activityId: z.string().min(1),
   schedule: z.boolean().optional(),

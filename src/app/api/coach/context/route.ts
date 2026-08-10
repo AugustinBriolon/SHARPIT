@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAthleteProfile, upsertAthleteProfile } from '@/lib/queries';
 
-export const dynamic = 'force-dynamic';
-
 const schema = z.object({
   context: z.string().max(4000).nullable(),
 });

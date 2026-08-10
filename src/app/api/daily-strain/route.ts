@@ -9,8 +9,6 @@ import {
   DEFAULT_TRAINING_DAY_TIMEZONE,
 } from '@/lib/training/training-day';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const trainingDayId = searchParams.get('trainingDayId');

@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 import { ensureMorningRecalibration } from '@/lib/morning-recalibration/service';
 import { todayTrainingDayId } from '@/lib/health/wellness-checkin';
 
-export const dynamic = 'force-dynamic';
-
 /** Evaluate / return today's morning session recalibration proposal (idempotent). */
 export async function POST(request: Request) {
   try {
