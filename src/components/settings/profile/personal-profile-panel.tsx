@@ -3,6 +3,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useId, useMemo, useState } from 'react';
+import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import { ProfileFormSection } from '@/components/settings/profile/profile-form-section';
 import {
   clockToInput,
@@ -55,6 +56,14 @@ export function PersonalProfilePanel({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldKey, string>>>({});
+
+  // The saved / failed banner is feedback on an action just taken, so it must
+  // not still be here next time the athlete opens this panel.
+  useResetWhenHidden(() => {
+    setMessage(null);
+    setError(null);
+    setFieldErrors({});
+  });
 
   // Re-hydrate when a real snapshot arrives — never wipe on null (failed RSC load).
   useEffect(() => {

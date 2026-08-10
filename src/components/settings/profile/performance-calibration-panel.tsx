@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Check, Download, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import { ProfileFormSection } from '@/components/settings/profile/profile-form-section';
 import {
   NUMERIC_INPUT_CLASS,
@@ -51,6 +52,13 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
   const [importing, setImporting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // The saved / failed banner is feedback on an action just taken, so it must
+  // not still be here next time the athlete opens this panel.
+  useResetWhenHidden(() => {
+    setMessage(null);
+    setError(null);
+  });
   const previewQuery = useThresholdPreview();
   const historyQuery = useThresholdHistory();
   const applyEstimates = useApplyThresholdEstimates();

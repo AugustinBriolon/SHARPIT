@@ -26,6 +26,7 @@ import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { InstrumentListChip } from '@/components/ui/instrument-list-chip';
 import { Input } from '@/components/ui/input';
 import { useActivities, useHikeTripMutations } from '@/hooks/use-data';
+import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import { buildHikeTripMemberMeta } from '@/components/training/trip/hike-trip-timeline';
 import { cn } from '@/lib/utils';
 
@@ -35,6 +36,8 @@ export function HikeTripActionsMenu({ tripId, tripName }: { tripId: string; trip
   const { patch, remove } = useHikeTripMutations();
   const { confirm, dialog } = useConfirmDialog();
   const [renameOpen, setRenameOpen] = useState(false);
+
+  useResetWhenHidden(() => setRenameOpen(false));
   const [renameValue, setRenameValue] = useState(tripName);
 
   async function handleDelete() {

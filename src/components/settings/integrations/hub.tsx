@@ -7,6 +7,7 @@ import { CheckCircle2, ChevronRight, CircleDashed, RefreshCw, Unplug } from 'luc
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import { IntegrationLogo } from '@/components/settings/integrations/logos';
 import {
   buildIntegrations,
@@ -157,6 +158,9 @@ export function IntegrationsHub({ payload }: { payload: IntegrationsPayload }) {
   const integrations = useMemo(() => buildIntegrations(payload), [payload]);
   const [openId, setOpenId] = useState<IntegrationId | null>(null);
   const [syncingAll, setSyncingAll] = useState(false);
+
+  // An integration modal left open would reopen itself on the way back.
+  useResetWhenHidden(() => setOpenId(null));
 
   const connected = integrations.filter((i) => i.connected);
   const active = openId ? integrations.find((i) => i.id === openId) : null;

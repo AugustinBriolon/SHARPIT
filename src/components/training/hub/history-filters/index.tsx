@@ -11,6 +11,7 @@ import {
   type TrainingHistoryFilters,
 } from '@/lib/training/history-filters';
 import { useIsMobile } from '@/hooks/use-viewport';
+import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 
 const DesktopFilterMenu = dynamic(
   () => import('./desktop-filter-menu').then((mod) => mod.DesktopFilterMenu),
@@ -32,6 +33,8 @@ export function HistoryFilters({
 }) {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
+  // The filter *values* are deliberate and stay; the panel being open is not.
+  useResetWhenHidden(() => setOpen(false));
   const activeCount = countActiveTrainingHistoryFilters(filters);
   const isActive = activeCount > 0;
   let ariaControls: string | undefined;

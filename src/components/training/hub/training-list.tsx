@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import { InstrumentListChipSkeleton } from '@/components/ui/instrument-list-chip';
 import { useActivities, useRecords } from '@/hooks/use-data';
+import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import {
   applyTrainingHistoryFilters,
   DEFAULT_TRAINING_HISTORY_FILTERS,
@@ -175,6 +176,13 @@ export function TrainingList() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+
+  // Selection and the create dialog are transient; the filter overlay is not.
+  useResetWhenHidden(() => {
+    setCreateDialogOpen(false);
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  });
   const filters = optimisticFilters ?? urlFilters;
 
   // Drop optimistic overlay when URL catches up (debounce) or browser history navigates.

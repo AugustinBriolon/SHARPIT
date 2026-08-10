@@ -19,6 +19,7 @@ import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
 import { useCoachMemory, useCoachMemoryMutations } from '@/hooks/use-coach-memory';
+import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import type { CoachMemoryEntry } from '@/lib/coach-memory/types';
 
 export function CoachMemoryManager({ focusId = null }: { focusId?: string | null }) {
@@ -28,6 +29,14 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
   const [formOpen, setFormOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<CoachMemoryEntry | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CoachMemoryEntry | null>(null);
+
+  // Coming back to the memory list should not reopen the entry form or a
+  // half-confirmed delete.
+  useResetWhenHidden(() => {
+    setFormOpen(false);
+    setEditingEntry(null);
+    setDeleteTarget(null);
+  });
 
   useEffect(() => {
     if (!focusId || !query.data?.entries.length) return;

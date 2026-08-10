@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useActivityMutations } from '@/hooks/use-data';
+import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import { activityTypeLabels } from '@/lib/format';
 import {
   formatActivityDetailMeta,
@@ -51,6 +52,8 @@ export function ActivityDetailHeader({ activity }: { activity: ActivityDetailHea
   const { remove } = useActivityMutations();
   const { confirm, dialog } = useConfirmDialog();
   const [linkHikesOpen, setLinkHikesOpen] = useState(false);
+
+  useResetWhenHidden(() => setLinkHikesOpen(false));
   const editHref = `/training/${activity.id}/edit`;
   const Icon = sportIcon[activity.type];
   const isHike = activity.type === ActivityType.HIKE;

@@ -18,6 +18,7 @@ import type { ProjectionHorizonDays } from '@/core/projection/types';
 import { useActivities, useGoals, usePlannedSessions, useTrainingPlan } from '@/hooks/use-data';
 import { useProjectedAthleteViewModel } from '@/hooks/use-projected-athlete-view-model';
 import { isAnyInitialQueryLoad } from '@/hooks/use-query-status';
+import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import { useScenarioComparisonViewModel } from '@/hooks/use-scenario-comparison-view-model';
 import { groupPlannedSessions } from '@/lib/planned-session/brick-sessions';
 import { activityTypeLabels } from '@/lib/format';
@@ -95,6 +96,9 @@ export function PlanningView({
   const [macroPlanOpen, setMacroPlanOpen] = useState(false);
   const [weeklyBriefOpen, setWeeklyBriefOpen] = useState(false);
   const [scenarioComparisonOpen, setScenarioComparisonOpen] = useState(false);
+
+  // Returning to the plan should not reopen the scenario comparison.
+  useResetWhenHidden(() => setScenarioComparisonOpen(false));
   // Deep-link from the /training week strip: frame the view on the requested week.
   const weekFromUrl = parseCalendarDateParam(searchParams.get('week'));
   const [weekStart, setWeekStart] = useState(() =>
