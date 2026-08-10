@@ -75,18 +75,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    try {
-      await refreshAndPersistPlannedSessionContext(session.id);
-    } catch (ctxError) {
-      console.error('[planned-sessions/context]', ctxError);
-    }
-
-    // Synchro App → Google Calendar (best-effort : n'échoue pas la création).
-    try {
-      await pushSessionToGoogle(session);
-    } catch (syncError) {
-      console.error('Push Google Calendar échoué', syncError);
-    }
+    // Context refresh + Google push are independent best-effort side effects.
+    await Promise.all([
+      refreshAndPersistPlannedSessionContext(session.id).catch((ctxError) => {
+        console.error('[planned-sessions/context]', ctxError);
+      }),
+      pushSessionToGoogle(session).catch((syncError) => {
+        console.error('Push Google Calendar échoué', syncError);
+      }),
+    ]);
 
     const fresh = await getPlannedSessionById(session.id);
     return NextResponse.json(fresh ?? session, { status: 201 });

@@ -82,6 +82,13 @@ export async function fetchPlannedSessions(): Promise<ClientPlannedSession[]> {
   return data.map((s) => hydratePlannedSession(s));
 }
 
+export async function fetchPlannedSessionById(id: string): Promise<ClientPlannedSession> {
+  const data = await fetchJson<Serialized<ClientPlannedSession>>(
+    `/api/planned-sessions/${encodeURIComponent(id)}`,
+  );
+  return hydratePlannedSession(data);
+}
+
 export async function fetchActivities(): Promise<ClientActivity[]> {
   const data = await fetchJson<Serialized<ClientActivity>[]>('/api/activities');
   return data.map((a) => ({

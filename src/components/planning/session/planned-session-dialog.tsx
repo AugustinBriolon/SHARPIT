@@ -65,6 +65,7 @@ import {
   brickLegTitlePlaceholder,
   defaultBrickLegs,
   dialogTitle,
+  EMPTY_GOALS,
   initialCustomPlace,
   initialLocationSource,
   NO_GOAL,
@@ -74,6 +75,8 @@ import {
   type DialogMode,
   type LocationSource,
 } from '@/components/planning/session/planned-session-dialog-helpers';
+
+export { EMPTY_GOALS };
 
 interface PlannedSessionDialogProps {
   session?: ClientPlannedSession | null;
@@ -89,7 +92,7 @@ interface PlannedSessionDialogProps {
 export function PlannedSessionDialog({
   session,
   defaultDate,
-  goals = [],
+  goals = EMPTY_GOALS,
   onClose,
   omitLinkedActivityNavigation = false,
   morningProposal,

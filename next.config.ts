@@ -20,6 +20,7 @@ const nextConfig: NextConfig = {
     // behind useOnlineStatus — it detects real request failures, where
     // navigator.onLine only knows whether an interface is up (ADR-008).
     useOffline: true,
+    optimizePackageImports: ['lucide-react', 'date-fns', 'recharts', 'motion'],
   },
   turbopack: {},
   allowedDevOrigins: loadAllowedDevOrigins(),

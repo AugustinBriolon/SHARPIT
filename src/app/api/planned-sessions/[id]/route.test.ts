@@ -42,6 +42,35 @@ function patchRequest(body: unknown) {
   });
 }
 
+describe('GET /api/planned-sessions/[id]', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns 404 when the session does not exist', async () => {
+    const { GET } = await importRoute();
+    const { getPlannedSessionById } = await import('@/lib/queries');
+    vi.mocked(getPlannedSessionById).mockResolvedValue(null);
+
+    const res = await GET(new NextRequest('http://localhost/api/planned-sessions/missing'), {
+      params: Promise.resolve({ id: 'missing' }),
+    });
+    expect(res.status).toBe(404);
+  });
+
+  it('returns the session payload', async () => {
+    const { GET } = await importRoute();
+    const { getPlannedSessionById } = await import('@/lib/queries');
+    vi.mocked(getPlannedSessionById).mockResolvedValue(EXISTING as never);
+
+    const res = await GET(new NextRequest('http://localhost/api/planned-sessions/session-1'), {
+      params: Promise.resolve({ id: 'session-1' }),
+    });
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toMatchObject({ id: 'session-1' });
+  });
+});
+
 describe('PATCH /api/planned-sessions/[id]', () => {
   beforeEach(() => {
     vi.clearAllMocks();

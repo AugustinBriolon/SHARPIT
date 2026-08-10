@@ -317,6 +317,12 @@
   }
 }
 
+/** Hide off-screen long-list rows from layout/paint until near viewport. */
+@utility cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 72px;
+}
+
 @utility safe-area-top {
   padding-top: env(safe-area-inset-top, 0px);
 }

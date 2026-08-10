@@ -32,6 +32,10 @@ export async function POST(request: NextRequest) {
 
     // Compute presentation alongside so the client seeds both caches from one request.
     // Failure is non-blocking — the client falls back to /api/presentation/today.
+    //
+    // Order is intentional: ensureMorning must run after refresh (snapshot freshness)
+    // and complete before buildToday (morning proposal appearance). No other
+    // independent presentation work to start in parallel here.
     let todayPresentation = null;
     try {
       const morningRecalibration = await ensureMorningRecalibration(trainingDayId).catch(

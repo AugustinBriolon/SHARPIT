@@ -16,8 +16,10 @@ export async function POST(request: NextRequest) {
       // pas de body → sync incrémentale depuis dernière sync
     }
 
-    const health = await syncGarminHealth(full ? { full: true } : {});
-    const activities = await syncGarminActivities(full ? { full: true } : {});
+    const [health, activities] = await Promise.all([
+      syncGarminHealth(full ? { full: true } : {}),
+      syncGarminActivities(full ? { full: true } : {}),
+    ]);
 
     let recordChanges: Awaited<ReturnType<typeof updateRecordsForTypes>> = [];
     if (activities.changedTypes.length > 0) {

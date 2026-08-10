@@ -1,7 +1,7 @@
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
-import { IntegrationsHubSection } from '@/components/settings/integrations';
-import { IntegrationsHubShell } from '@/components/settings/integrations';
+import { IntegrationsHubSection } from '@/components/settings/integrations/hub-section';
+import { IntegrationsHubShell } from '@/components/settings/integrations/hub-shell';
 import { Suspense } from 'react';
 
 type PageProps = {

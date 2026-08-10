@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { TriathlonLegsPanel } from '@/components/training/activity/triathlon-legs-panel';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
@@ -9,6 +10,7 @@ import {
 } from '@/components/training/activity/detail/activity-detail-helpers';
 import { ActivityHikeOvernightPanel } from '@/components/training/activity/detail/activity-hike-overnight-panel';
 import { ActivityMetaRow } from '@/components/training/activity/detail/activity-meta-row';
+import { ActivityDetailRouteSkeleton } from '@/components/training/activity/detail/activity-detail-route-skeleton';
 import { ActivitySpecsNotes } from '@/components/training/activity/detail/activity-specs-notes';
 import { ActivityStrengthExercises } from '@/components/training/activity/detail/activity-strength-exercises';
 import { ActivityGoalValidationsCard } from '@/components/goals/cards/activity-goal-validations-card';
@@ -32,14 +34,13 @@ const NARRATIVE_TYPES = new Set<ActivityType>([
   ActivityType.SWIM,
 ]);
 
-export default async function ActivityDetailPage({ params }: PageProps) {
-  const { id } = await params;
+async function ActivityDetailBody({ id }: { id: string }) {
+  // Start independent fetches immediately — do not wait for activity first.
+  const activityPromise = getActivityById(id);
+  const goalValidationsPromise = getGoalAchievementsForActivity(id);
+  const performanceRecordsPromise = getPerformanceRecordsForActivity(id);
 
-  // No weather / narrative enrich on browse — that belongs to ingest (sync / create / link).
-  // Opening an old activity must stay Instant; coach synthesis is on-demand via the UI.
-
-  const activity = await getActivityById(id);
-
+  const activity = await activityPromise;
   if (!activity) notFound();
 
   const isStrength = activity.type === ActivityType.STRENGTH;
@@ -61,10 +62,12 @@ export default async function ActivityDetailPage({ params }: PageProps) {
           : null,
       })
     : null;
+
+  // Legs depend on activity; goals/records already started above.
   const [multisportLegs, goalValidations, performanceRecords] = await Promise.all([
     isTriathlon ? getMultisportLegsForActivity(activity) : Promise.resolve(null),
-    getGoalAchievementsForActivity(activity.id),
-    getPerformanceRecordsForActivity(activity.id),
+    goalValidationsPromise,
+    performanceRecordsPromise,
   ]);
   const coachEnabled = isCoachConfigured();
   const specs = buildActivitySpecs(activity);
@@ -86,10 +89,23 @@ export default async function ActivityDetailPage({ params }: PageProps) {
   ) : undefined;
 
   return (
-    <div className="relative z-0 space-y-6 sm:space-y-8">
-      <MobileBackLink showOnDesktop />
-
-      <ActivityDetailHeader activity={activity} />
+    <>
+      <ActivityDetailHeader
+        activity={{
+          id: activity.id,
+          type: activity.type,
+          title: activity.title,
+          date: activity.date,
+          source: activity.source,
+          garminId: activity.garminId,
+          stravaId: activity.stravaId,
+          duration: activity.duration,
+          load: activity.load,
+          rpe: activity.rpe,
+          hikeTrip: activity.hikeTrip,
+          plannedSession: activity.plannedSession,
+        }}
+      />
 
       <div className="relative z-0 space-y-4 sm:space-y-5">
         <ActivityMetaRow activity={activity} records={performanceRecords} />
@@ -105,7 +121,11 @@ export default async function ActivityDetailPage({ params }: PageProps) {
         />
 
         {/* Strength: exercises are the main visual plane (map equivalent). */}
-        {isStrength ? <ActivityStrengthExercises activity={activity} /> : null}
+        {isStrength ? (
+          <ActivityStrengthExercises
+            activity={{ id: activity.id, strengthSets: activity.strengthSets }}
+          />
+        ) : null}
 
         {hikeSummary?.variant === 'overnight' ? (
           <ActivityHikeOvernightPanel summary={hikeSummary} />
@@ -134,6 +154,22 @@ export default async function ActivityDetailPage({ params }: PageProps) {
       )}
 
       <ActivitySpecsNotes activity={activity} specs={specs} />
+    </>
+  );
+}
+
+export default async function ActivityDetailPage({ params }: PageProps) {
+  const { id } = await params;
+
+  // No weather / narrative enrich on browse — that belongs to ingest (sync / create / link).
+  // Opening an old activity must stay Instant; coach synthesis is on-demand via the UI.
+
+  return (
+    <div className="relative z-0 space-y-6 sm:space-y-8">
+      <MobileBackLink showOnDesktop />
+      <Suspense fallback={<ActivityDetailRouteSkeleton />}>
+        <ActivityDetailBody id={id} />
+      </Suspense>
     </div>
   );
 }

@@ -12,9 +12,12 @@ import { ActivityPlannedSessionChip } from './activity-planned-session-chip';
 import { ActivityMetaChip } from './activity-meta-chip';
 import type { ActivityDetail, ActivityPerformanceRecordChip } from './types';
 
+/** Stable empty default — avoids a new [] identity every render when records is omitted. */
+const EMPTY_RECORDS: ActivityPerformanceRecordChip[] = [];
+
 export function ActivityContextChips({
   activity,
-  records = [],
+  records = EMPTY_RECORDS,
 }: {
   activity: ActivityDetail;
   records?: ActivityPerformanceRecordChip[];

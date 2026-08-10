@@ -13,7 +13,7 @@ import type { SessionAnalysis } from '@/lib/validators/coach';
 import { useActivities, usePlannedSessionMutations } from '@/hooks/use-data';
 import { usePhysicalNoteMutations, usePhysicalNotes } from '@/hooks/use-physical';
 import { queryKeys } from '@/lib/query/keys';
-import { fetchPlannedSessions } from '@/lib/query/fetchers';
+import { fetchPlannedSessionById } from '@/lib/query/fetchers';
 import { Check, CheckCircle2, HeartPulse, Link2, Loader2, Unlink, X } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -233,19 +233,30 @@ export function SessionRealization({
         if (cancelled) return;
 
         try {
-          const sessions = await queryClient.fetchQuery({
-            queryKey: queryKeys.plannedSessions,
-            queryFn: fetchPlannedSessions,
-            staleTime: 0,
-          });
-          const updated = sessions.find((item) => item.id === session.id);
-          if (updated?.analyzedAt && updated.analysis) {
+          // Poll the single session — avoid refetching the full plannedSessions list.
+          const updated = await fetchPlannedSessionById(session.id);
+          if (updated.analyzedAt && updated.analysis) {
             setPolled({
               analysis: updated.analysis as unknown as SessionAnalysis,
               analyzedAt: updated.analyzedAt,
             });
             clearAnalysisPollTimedOut(session.id);
             setPollTimedOut(false);
+            queryClient.setQueryData(
+              queryKeys.plannedSessions,
+              (prev: ClientPlannedSession[] | undefined) => {
+                if (!prev) return prev;
+                return prev.map((item) =>
+                  item.id === updated.id
+                    ? {
+                        ...item,
+                        analysis: updated.analysis,
+                        analyzedAt: updated.analyzedAt,
+                      }
+                    : item,
+                );
+              },
+            );
             return;
           }
         } catch {

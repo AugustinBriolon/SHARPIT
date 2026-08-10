@@ -52,6 +52,7 @@ import {
   groupEventsByDay,
   parseCalendarDateParam,
 } from './calendar-utils';
+import { EMPTY_GOALS } from '@/components/planning/session/planned-session-dialog-helpers';
 
 const BrickDialog = dynamic(
   () => import('@/components/planning/brick/brick-dialog').then((mod) => mod.BrickDialog),
@@ -352,7 +353,7 @@ export function CalendarView({
       {dialog && dialog.mode !== 'brick' && (
         <PlannedSessionDialog
           defaultDate={dialog.mode === 'create' ? dialog.date : undefined}
-          goals={goalsQuery.data ?? []}
+          goals={goalsQuery.data ?? EMPTY_GOALS}
           session={dialog.mode === 'edit' ? dialog.session : undefined}
           onClose={() => setDialog(null)}
         />
@@ -361,7 +362,10 @@ export function CalendarView({
       {generatorOpen ? <PlanGenerator onClose={() => setGeneratorOpen(false)} /> : null}
       {adapterOpen ? <PlanAdapter onClose={() => setAdapterOpen(false)} /> : null}
       {macroPlanOpen ? (
-        <MacroPlanDialog goals={goalsQuery.data ?? []} onClose={() => setMacroPlanOpen(false)} />
+        <MacroPlanDialog
+          goals={goalsQuery.data ?? EMPTY_GOALS}
+          onClose={() => setMacroPlanOpen(false)}
+        />
       ) : null}
     </div>
   );

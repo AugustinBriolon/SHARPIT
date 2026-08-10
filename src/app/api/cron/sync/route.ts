@@ -57,37 +57,42 @@ export async function GET(request: Request) {
       getGoogleAccount(),
     ]);
 
-  if (stravaAccount) {
-    try {
-      result.strava = await syncStravaActivities();
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Sync Strava échouée';
-      console.error('[cron/sync] Strava:', msg);
-      result.errors.push(`strava: ${msg}`);
-    }
-  }
-
-  if (garminAccount) {
-    try {
-      // 7 jours suffisent pour le cron quotidien (données déjà en base).
-      result.garmin = await syncGarminHealth();
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Sync Garmin échouée';
-      console.error('[cron/sync] Garmin:', msg);
-      result.errors.push(`garmin: ${msg}`);
-    }
-
-    try {
-      result.garminActivities = await syncGarminActivities();
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Sync activités Garmin échouée';
-      console.error('[cron/sync] Garmin activities:', msg);
-      result.errors.push(`garminActivities: ${msg}`);
-    }
-  }
-
-  // Composition corporelle + Google Calendar : fetch incrémental si compte connecté.
+  // All connected providers in parallel — each failure is isolated into result.errors.
   await Promise.all([
+    stravaAccount
+      ? syncStravaActivities()
+          .then((strava) => {
+            result.strava = strava;
+          })
+          .catch((error) => {
+            const msg = error instanceof Error ? error.message : 'Sync Strava échouée';
+            console.error('[cron/sync] Strava:', msg);
+            result.errors.push(`strava: ${msg}`);
+          })
+      : Promise.resolve(),
+    // 7 days is enough for the daily cron (data already in DB).
+    garminAccount
+      ? syncGarminHealth()
+          .then((garmin) => {
+            result.garmin = garmin;
+          })
+          .catch((error) => {
+            const msg = error instanceof Error ? error.message : 'Sync Garmin échouée';
+            console.error('[cron/sync] Garmin:', msg);
+            result.errors.push(`garmin: ${msg}`);
+          })
+      : Promise.resolve(),
+    garminAccount
+      ? syncGarminActivities()
+          .then((garminActivities) => {
+            result.garminActivities = garminActivities;
+          })
+          .catch((error) => {
+            const msg = error instanceof Error ? error.message : 'Sync activités Garmin échouée';
+            console.error('[cron/sync] Garmin activities:', msg);
+            result.errors.push(`garminActivities: ${msg}`);
+          })
+      : Promise.resolve(),
     withingsAccount
       ? syncWithingsHealth()
           .then((withings) => {

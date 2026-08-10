@@ -1,4 +1,4 @@
-import { BrickChipHeader } from '@/components/planning/brick/brick-dialog';
+import { BrickChipHeader } from '@/components/planning/brick/brick-chip-header';
 import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
 import { activityTypeLabels } from '@/lib/format';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';

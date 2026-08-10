@@ -2,9 +2,9 @@
 
 import type { UIMessage } from 'ai';
 import { MessageSquarePlus } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { CoachChat } from '@/components/coach/chat/coach-chat';
 import { CoachConversationList } from '@/components/coach/chat/coach-conversation-list';
 import {
   CoachChatEmptyChrome,
@@ -38,6 +38,14 @@ import type { SessionAnalysis } from '@/lib/validators/coach';
 
 const inFlightDiscussBootstraps = new Set<string>();
 
+const CoachChat = dynamic(
+  () => import('@/components/coach/chat/coach-chat').then((mod) => mod.CoachChat),
+  {
+    ssr: false,
+    loading: () => <CoachChatPanelSkeleton />,
+  },
+);
+
 function createEphemeralId(): string {
   return createClientId();
 }
@@ -62,9 +70,9 @@ export function CoachView() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [ephemeralIds, setEphemeralIds] = useState<Set<string>>(() => new Set());
   const [autoReplyId, setAutoReplyId] = useState<string | null>(null);
-  const [latchedBootstrapPrompt, setLatchedBootstrapPrompt] = useState<string | undefined>(
-    undefined,
-  );
+  /** One-shot discuss bootstrap text — latched during render, not via effect→setState. */
+  const latchedBootstrapPromptRef = useRef<string | undefined>(undefined);
+  const [, setBootstrapLatchEpoch] = useState(0);
   /** Once the discuss prompt is latched, ignore URL params (avoids re-prefill loops). */
   const discussPromptConsumed = useRef(false);
   const initialized = useRef(false);
@@ -82,11 +90,17 @@ export function CoachView() {
 
   const discussBootstrapped = useRef(false);
 
+  function clearLatchedBootstrapPrompt() {
+    if (latchedBootstrapPromptRef.current === undefined) return;
+    latchedBootstrapPromptRef.current = undefined;
+    setBootstrapLatchEpoch((n) => n + 1);
+  }
+
   function openNewConversation() {
     const id = createEphemeralId();
     setEphemeralIds((prev) => new Set(prev).add(id));
     setActiveId(id);
-    setLatchedBootstrapPrompt(undefined);
+    clearLatchedBootstrapPrompt();
     discussPromptConsumed.current = false;
     return id;
   }
@@ -197,11 +211,12 @@ export function CoachView() {
     activitiesQuery.data,
   ]);
 
-  useEffect(() => {
-    if (!bootstrapPrompt || latchedBootstrapPrompt || discussPromptConsumed.current) return;
+  // Latch the first non-empty discuss prompt during render (one-shot).
+  if (bootstrapPrompt && !discussPromptConsumed.current) {
     discussPromptConsumed.current = true;
-    setLatchedBootstrapPrompt(bootstrapPrompt);
-  }, [bootstrapPrompt, latchedBootstrapPrompt]);
+    latchedBootstrapPromptRef.current = bootstrapPrompt;
+  }
+  const latchedBootstrapPrompt = latchedBootstrapPromptRef.current;
 
   useEffect(() => {
     if (discussBootstrapped.current) return;
@@ -277,7 +292,7 @@ export function CoachView() {
       const nextId = createEphemeralId();
       setEphemeralIds((prev) => new Set(prev).add(nextId));
       setActiveId(nextId);
-      setLatchedBootstrapPrompt(undefined);
+      clearLatchedBootstrapPrompt();
       discussPromptConsumed.current = false;
     }
   }
@@ -304,7 +319,7 @@ export function CoachView() {
           initialMessages={resolveChatInitialMessages()}
           isEphemeral={isEphemeral}
           onAutoReplyStarted={() => setAutoReplyId(null)}
-          onBootstrapApplied={() => setLatchedBootstrapPrompt(undefined)}
+          onBootstrapApplied={() => clearLatchedBootstrapPrompt()}
           onConversationCreated={(id) => {
             setEphemeralIds((prev) => {
               const next = new Set(prev);

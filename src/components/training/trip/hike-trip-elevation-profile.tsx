@@ -1,115 +1,13 @@
 'use client';
 
-import { Area, AreaChart, ReferenceDot, ReferenceLine, XAxis, YAxis } from 'recharts';
-import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
-import {
-  CHART_GRID_COLOR,
-  CHART_INK_GRID_COLOR,
-  CHART_INK_STROKE,
-  CHART_PRIMARY_STROKE,
-  CHART_TICK_COLOR,
-} from '@/lib/theme/chart-theme';
-import {
-  formatRelativeGain,
-  type HikeTripElevationProfile as Profile,
-} from '@/lib/activity/hike-trip-elevation';
-import { cn } from '@/lib/utils';
+import dynamic from 'next/dynamic';
 
 /**
- * Trip elevation signature — cumulative *relative* gain, one tooth per step.
- * The trip query has no altitude stream, so this is never an absolute altitude;
- * every reading stays signed (`+1240 m`) to keep that explicit.
+ * Dynamic recharts elevation chart — keeps the heavy chart out of the initial bundle.
+ * Implementation lives in hike-trip-elevation-profile-chart.tsx.
+ * Import HikeStepSparkline from the chart module directly (avoids a static recharts edge).
  */
-export function HikeTripElevationProfile({
-  profile,
-  surface = 'card',
-  height = 132,
-  className,
-}: {
-  profile: Profile;
-  /** `ink` restyles ticks and stroke for the Forest/Lime band. */
-  surface?: 'card' | 'ink';
-  height?: number;
-  className?: string;
-}) {
-  const onInk = surface === 'ink';
-  // Recharts splits tick labels on whitespace to fit the axis width — a
-  // non-breaking space keeps “+2273 m” on one line.
-  const formatTick = (value: number) => formatRelativeGain(value).replace(' ', ' ');
-  const stroke = onInk ? CHART_INK_STROKE : CHART_PRIMARY_STROKE;
-  const gridColor = onInk ? CHART_INK_GRID_COLOR : CHART_GRID_COLOR;
-  const tickColor = onInk ? 'currentColor' : CHART_TICK_COLOR;
-
-  return (
-    <div className={cn('min-w-0', onInk ? 'text-ink-surface-foreground/60' : null, className)}>
-      {/* The peak value lives on the axis only — the dot marks where it happens. */}
-      <p className={cn('text-label', onInk && 'text-ink-surface-foreground/60')}>
-        profil du dénivelé cumulé
-      </p>
-
-      <ResponsiveChartFrame className="mt-2" height={height}>
-        <AreaChart data={profile.points} margin={{ top: 10, right: 8, bottom: 6, left: 0 }}>
-          {/* Needed so the peak dot and step junctions can be placed by `x`. */}
-          <XAxis dataKey="x" domain={['dataMin', 'dataMax']} type="number" hide />
-          <YAxis
-            axisLine={false}
-            dataKey="gain"
-            domain={[profile.minGain, profile.maxGain]}
-            interval={0}
-            tick={{ fill: tickColor, fontFamily: 'var(--font-data)', fontSize: 10 }}
-            tickFormatter={formatTick}
-            tickLine={false}
-            ticks={[profile.minGain, profile.maxGain]}
-            width={60}
-          />
-          {profile.stepBoundaries.map((x) => (
-            <ReferenceLine key={x} stroke={gridColor} strokeDasharray="3 3" x={x} />
-          ))}
-          <Area
-            dataKey="gain"
-            fill={stroke}
-            fillOpacity={onInk ? 0.18 : 0.12}
-            isAnimationActive={false}
-            stroke={stroke}
-            strokeWidth={2}
-            type="linear"
-          />
-          <ReferenceDot
-            fill={stroke}
-            r={3.5}
-            stroke="none"
-            x={profile.peakX}
-            y={profile.peakGain}
-          />
-        </AreaChart>
-      </ResponsiveChartFrame>
-    </div>
-  );
-}
-
-/** Per-step mini profile — start → peak → end, no axis, no label. */
-export function HikeStepSparkline({
-  points,
-  className,
-}: {
-  points: { x: number; gain: number }[];
-  className?: string;
-}) {
-  return (
-    <div className={cn('h-7 w-12 shrink-0', className)} aria-hidden>
-      <ResponsiveChartFrame height={28}>
-        <AreaChart data={points} margin={{ top: 3, right: 1, bottom: 2, left: 1 }}>
-          <Area
-            dataKey="gain"
-            fill={CHART_PRIMARY_STROKE}
-            fillOpacity={0.14}
-            isAnimationActive={false}
-            stroke={CHART_PRIMARY_STROKE}
-            strokeWidth={1.5}
-            type="linear"
-          />
-        </AreaChart>
-      </ResponsiveChartFrame>
-    </div>
-  );
-}
+export const HikeTripElevationProfile = dynamic(
+  () => import('./hike-trip-elevation-profile-chart').then((mod) => mod.HikeTripElevationProfile),
+  { ssr: false },
+);

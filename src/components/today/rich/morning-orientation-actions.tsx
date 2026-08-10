@@ -2,7 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { RefreshCw } from 'lucide-react';
-import { useCallback, useState, useTransition } from 'react';
+import { useCallback, useState, useSyncExternalStore, useTransition } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/toast';
@@ -14,6 +14,9 @@ import { cn } from '@/lib/utils';
 import { useAppModal } from '@/providers/app-modal-provider';
 
 const HOLD_STORAGE_PREFIX = 'sharpit.morning-hold.';
+
+/** Same-tab notify — native `storage` only fires cross-tab. */
+const MORNING_HOLD_EVENT = 'sharpit:morning-hold-changed';
 
 export function morningHoldStorageKey(trainingDayId: string): string {
   return `${HOLD_STORAGE_PREFIX}${trainingDayId}`;
@@ -28,12 +31,36 @@ export function readClientMorningHold(trainingDayId: string): boolean {
   }
 }
 
+function emitMorningHoldChanged(): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new Event(MORNING_HOLD_EVENT));
+}
+
 export function writeClientMorningHold(trainingDayId: string): void {
   try {
     sessionStorage.setItem(morningHoldStorageKey(trainingDayId), '1');
+    emitMorningHoldChanged();
   } catch {
     // ignore quota / private mode
   }
+}
+
+function subscribeMorningHold(callback: () => void): () => void {
+  if (typeof window === 'undefined') return () => undefined;
+  window.addEventListener(MORNING_HOLD_EVENT, callback);
+  return () => window.removeEventListener(MORNING_HOLD_EVENT, callback);
+}
+
+/**
+ * Hydration-safe morning "keep plan" hold.
+ * Server + first client paint: always false (passthrough). After hydrate, reads sessionStorage.
+ */
+export function useClientMorningHold(trainingDayId: string): boolean {
+  return useSyncExternalStore(
+    subscribeMorningHold,
+    () => readClientMorningHold(trainingDayId),
+    () => false,
+  );
 }
 
 type MorningOrientation = NonNullable<TodayViewModel['morningOrientation']>;

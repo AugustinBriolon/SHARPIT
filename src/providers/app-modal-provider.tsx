@@ -19,6 +19,7 @@ import {
   type PlannedSessionCacheSeed,
 } from '@/lib/query/seed-planned-session-cache';
 import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-compare';
+import { EMPTY_GOALS } from '@/components/planning/session/planned-session-dialog-helpers';
 
 const PlannedSessionDialog = dynamic(
   () =>
@@ -106,7 +107,7 @@ export function AppModalProvider({ children }: { children: ReactNode }) {
       {children}
       {plannedModal && session ? (
         <PlannedSessionDialog
-          goals={goalsQuery.data ?? []}
+          goals={goalsQuery.data ?? EMPTY_GOALS}
           morningProposal={plannedModal.morningProposal}
           omitLinkedActivityNavigation={plannedModal.omitLinkedActivityNavigation}
           session={session}

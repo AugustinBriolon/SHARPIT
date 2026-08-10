@@ -94,7 +94,7 @@ export function ActivityList({
     return (
       <ul className={cn('space-y-2', chipListClassName)}>
         {activities.map((activity) => (
-          <li key={activity.id} className="min-w-0">
+          <li key={activity.id} className="cv-auto min-w-0">
             <ActivityChip
               activity={activity}
               recordLabel={recordLabelsById?.get(activity.id) ?? null}
@@ -111,14 +111,15 @@ export function ActivityList({
   return (
     <div className="space-y-3">
       {activities.map((activity) => (
-        <ActivityRow
-          key={activity.id}
-          activity={activity}
-          compact={compact}
-          selected={selectedIds?.has(activity.id) ?? false}
-          selectionMode={selectionMode}
-          onToggle={onToggle}
-        />
+        <div key={activity.id} className="cv-auto">
+          <ActivityRow
+            activity={activity}
+            compact={compact}
+            selected={selectedIds?.has(activity.id) ?? false}
+            selectionMode={selectionMode}
+            onToggle={onToggle}
+          />
+        </div>
       ))}
     </div>
   );

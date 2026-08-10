@@ -2,6 +2,7 @@
 
 import { ActivityType } from '@prisma/client';
 import { SlidersHorizontal, X } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import {
@@ -10,8 +11,15 @@ import {
   type TrainingHistoryFilters,
 } from '@/lib/training/history-filters';
 import { useIsMobile } from '@/hooks/use-viewport';
-import { DesktopFilterMenu } from './desktop-filter-menu';
-import { MobileFilterDrawer } from './mobile-filter-drawer';
+
+const DesktopFilterMenu = dynamic(
+  () => import('./desktop-filter-menu').then((mod) => mod.DesktopFilterMenu),
+  { ssr: false },
+);
+const MobileFilterDrawer = dynamic(
+  () => import('./mobile-filter-drawer').then((mod) => mod.MobileFilterDrawer),
+  { ssr: false },
+);
 
 export function HistoryFilters({
   filters,
@@ -77,7 +85,7 @@ export function HistoryFilters({
         </button>
       ) : null}
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer — only mount the mobile chunk on small viewports */}
       {isMobile ? (
         <MobileFilterDrawer
           counts={counts}

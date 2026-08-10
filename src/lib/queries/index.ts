@@ -1,3 +1,5 @@
+import { cache } from 'react';
+import { after } from 'next/server';
 import { dedupeBodyCompositionByDay } from '@/lib/health/body-composition';
 import { clientFromTokens, garminTokensFromStorage } from '@/lib/integrations/garmin';
 import { fetchGarminMultisportLegs } from '@/lib/integrations/garmin-multisport';
@@ -81,14 +83,20 @@ export async function getActivitiesForSnapshotPhase(limit = 40) {
   });
 }
 
-export async function getActivityById(id: string) {
+/** Per-request dedupe — detail page + nested helpers share one DB round-trip. */
+export const getActivityById = cache(async (id: string) => {
   return prisma.activity.findUnique({
     where: { id },
     include: activityInclude,
   });
-}
+});
 
-/** Jambes multisport persistées ou récupérées depuis Garmin si absentes. */
+/** Multisport legs — persisted or fetched from Garmin when missing.
+ *
+ * Persist is intentionally non-blocking: this helper is called from RSC pages
+ * where `after()` is not always available. Prefer `after()` when in a request
+ * context; otherwise fire-and-forget so the legs return immediately.
+ */
 export async function getMultisportLegsForActivity(activity: {
   id: string;
   type: ActivityType;
@@ -113,10 +121,25 @@ export async function getMultisportLegsForActivity(activity: {
   const legs = await fetchGarminMultisportLegs(client, Number(activity.garminId));
   if (!legs) return null;
 
-  await prisma.activity.update({
-    where: { id: activity.id },
-    data: { multisportLegs: legs as unknown as Prisma.InputJsonValue },
-  });
+  const persist = () =>
+    prisma.activity
+      .update({
+        where: { id: activity.id },
+        data: { multisportLegs: legs as unknown as Prisma.InputJsonValue },
+      })
+      .catch((err) => {
+        console.error('[getMultisportLegsForActivity] persist failed', err);
+      });
+
+  try {
+    // Prefer after() when in a request context (Route Handlers / supported RSC).
+    after(() => {
+      void persist();
+    });
+  } catch {
+    // after() only works in request context — do not block returning legs.
+    void persist();
+  }
 
   return legs;
 }
@@ -320,9 +343,10 @@ export async function deletePhysicalCheckin(id: string) {
 
 const PROFILE_ID = 'default';
 
-export async function getAthleteProfile() {
+/** Per-request dedupe across settings / coach / presentation readers. */
+export const getAthleteProfile = cache(async () => {
   return prisma.athleteProfile.findUnique({ where: { id: PROFILE_ID } });
-}
+});
 
 export async function upsertAthleteProfile(data: {
   heightCm?: number | null;

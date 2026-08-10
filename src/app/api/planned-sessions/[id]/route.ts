@@ -12,6 +12,23 @@ import { garminPushClearOnSessionChange } from '@/lib/integrations/garmin-workou
 
 type RouteContext = { params: Promise<{ id: string }> };
 
+export async function GET(_request: NextRequest, context: RouteContext) {
+  try {
+    const { id } = await context.params;
+    const session = await getPlannedSessionById(id);
+    if (!session) {
+      return NextResponse.json({ error: 'Séance planifiée introuvable' }, { status: 404 });
+    }
+    return NextResponse.json(session);
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: 'Impossible de charger la séance planifiée' },
+      { status: 500 },
+    );
+  }
+}
+
 /** Fields that change what the session actually asks the athlete to do. */
 const SESSION_DEFINING_FIELDS = [
   'intensity',
@@ -108,18 +125,15 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       console.error('[planned-sessions/decision-action]', decisionError);
     }
 
-    // Reflète la modification dans Google Calendar (best-effort).
-    try {
-      await pushSessionToGoogle(session);
-    } catch (syncError) {
-      console.error('Push Google Calendar échoué', syncError);
-    }
-
-    try {
-      await refreshAndPersistPlannedSessionContext(id);
-    } catch (ctxError) {
-      console.error('[planned-sessions/context]', ctxError);
-    }
+    // Context refresh + Google push are independent best-effort side effects.
+    await Promise.all([
+      refreshAndPersistPlannedSessionContext(id).catch((ctxError) => {
+        console.error('[planned-sessions/context]', ctxError);
+      }),
+      pushSessionToGoogle(session).catch((syncError) => {
+        console.error('Push Google Calendar échoué', syncError);
+      }),
+    ]);
 
     const fresh = await getPlannedSessionById(id);
     return NextResponse.json(fresh ?? session);

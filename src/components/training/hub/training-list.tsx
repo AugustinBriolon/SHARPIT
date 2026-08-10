@@ -3,11 +3,11 @@
 import { ActivityType } from '@prisma/client';
 import { format, isSameWeek, startOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import dynamic from 'next/dynamic';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { createPortal } from 'react-dom';
 import { ActivityList } from '@/components/training/activity/activity-list';
-import { CreateHikeTripDialog } from '@/components/training/trip/create-hike-trip-dialog';
 import { HistoryFilters } from '@/components/training/hub/history-filters';
 import type { ClientActivity } from '@/lib/query/types';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { CalendarPlus, FilterX, Link2, MoreHorizontal, X } from 'lucide-react';
+
+const CreateHikeTripDialog = dynamic(
+  () =>
+    import('@/components/training/trip/create-hike-trip-dialog').then(
+      (mod) => mod.CreateHikeTripDialog,
+    ),
+  { ssr: false },
+);
 
 const TYPE_ORDER: ActivityType[] = [
   ActivityType.RUN,

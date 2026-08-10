@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { ActivityType } from '@prisma/client';
 import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
 import { enrichActivityObservedContext } from '@/lib/activity/enrich-observed-context';
@@ -49,48 +49,58 @@ export async function POST(request: NextRequest) {
     const activity = await createActivity(
       buildActivityCreateData(parsed.data) as Parameters<typeof createActivity>[0],
     );
+    // Observations do not mutate the returned activity JSON; kept awaited so ingest
+    // finishes before Instant UX continues (downstream twin consistency).
     await syncManualActivityObservations(activity);
 
-    await updateRecordsForTypesSafe([parsed.data.type]);
-
-    if (
-      sportSupportsOutdoorContext(parsed.data.type) &&
+    const activityId = activity.id;
+    const activityType = parsed.data.type;
+    const shouldEnrich =
+      sportSupportsOutdoorContext(activityType) &&
       parsed.data.observedLocationLat != null &&
-      parsed.data.observedLocationLng != null
-    ) {
+      parsed.data.observedLocationLng != null;
+
+    // Return the createActivity row immediately (Instant UX). Weather / observed
+    // context / narrative / auto-link land via later invalidate+refetch once
+    // after() work completes — do not block 201 on enrich.
+    after(async () => {
       try {
-        await enrichActivityObservedContext(prisma, activity.id);
-        const refreshed = await prisma.activity.findUnique({ where: { id: activity.id } });
-        if (refreshed) {
-          return NextResponse.json(refreshed, { status: 201 });
-        }
+        await updateRecordsForTypesSafe([activityType]);
       } catch (error) {
-        console.error('[activities/POST] enrich-context', error);
+        console.error('[activities/POST] records', error);
       }
-    }
 
-    try {
-      await runActivityNarrativeAnalysis(activity.id);
-    } catch (error) {
-      console.error('[activities/POST] narrative', error);
-    }
+      if (shouldEnrich) {
+        try {
+          await enrichActivityObservedContext(prisma, activityId);
+        } catch (error) {
+          console.error('[activities/POST] enrich-context', error);
+        }
+      }
 
-    try {
-      const { autoLinkActivities } = await import('@/lib/planned-session/session-linking');
-      await autoLinkActivities([activity.id]);
-    } catch (error) {
-      console.error('[activities/POST] auto-link', error);
-    }
+      try {
+        await runActivityNarrativeAnalysis(activityId);
+      } catch (error) {
+        console.error('[activities/POST] narrative', error);
+      }
 
-    try {
-      const { scheduleBackgroundTasks } = await import('@/lib/athlete-state/background');
-      scheduleBackgroundTasks({
-        activityIds: [activity.id],
-        regenerateBriefing: false,
-      });
-    } catch (error) {
-      console.error('[activities/POST] background', error);
-    }
+      try {
+        const { autoLinkActivities } = await import('@/lib/planned-session/session-linking');
+        await autoLinkActivities([activityId]);
+      } catch (error) {
+        console.error('[activities/POST] auto-link', error);
+      }
+
+      try {
+        const { scheduleBackgroundTasks } = await import('@/lib/athlete-state/background');
+        scheduleBackgroundTasks({
+          activityIds: [activityId],
+          regenerateBriefing: false,
+        });
+      } catch (error) {
+        console.error('[activities/POST] background', error);
+      }
+    });
 
     return NextResponse.json(activity, { status: 201 });
   } catch (error) {

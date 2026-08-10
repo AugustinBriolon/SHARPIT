@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { buildHikeTripSummary, type HikeTripSummary } from '@/lib/activity/hike-trip-summary';
 import { prisma } from '@/lib/prisma';
 import { ActivityType, Prisma } from '@prisma/client';
@@ -113,13 +114,14 @@ function assertNotLinkedElsewhere(
   }
 }
 
-export async function getHikeTripById(id: string): Promise<HikeTripWithActivities | null> {
+/** Per-request dedupe for trip detail + member links. */
+export const getHikeTripById = cache(async (id: string): Promise<HikeTripWithActivities | null> => {
   const trip = await prisma.hikeTrip.findUnique({
     where: { id },
     include: hikeTripInclude,
   });
   return trip ? mapTrip(trip) : null;
-}
+});
 
 export async function listHikeTrips(): Promise<HikeTripListItem[]> {
   const trips = await prisma.hikeTrip.findMany({

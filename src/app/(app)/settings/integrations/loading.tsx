@@ -1,6 +1,6 @@
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
-import { IntegrationsHubShell } from '@/components/settings/integrations';
+import { IntegrationsHubShell } from '@/components/settings/integrations/hub-shell';
 
 export default function SettingsIntegrationsLoading() {
   return (

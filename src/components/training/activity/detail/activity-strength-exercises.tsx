@@ -10,6 +10,9 @@ import { formatClockDuration } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { ActivityDetail } from './types';
 
+/** Narrow client payload — id + strength sets only. */
+export type ActivityStrengthExercisesActivity = Pick<ActivityDetail, 'id' | 'strengthSets'>;
+
 function formatStrengthSetDetail(set: ActivityDetail['strengthSets'][number]): string {
   if (set.durationSec && set.durationSec > 0 && !set.weightKg) {
     const perSet = formatClockDuration(set.durationSec);
@@ -53,7 +56,11 @@ function ExerciseIndex({ index, className }: { index: number; className?: string
   );
 }
 
-export function ActivityStrengthExercises({ activity }: { activity: ActivityDetail }) {
+export function ActivityStrengthExercises({
+  activity,
+}: {
+  activity: ActivityStrengthExercisesActivity;
+}) {
   const sets = activity.strengthSets;
   const [pushing, setPushing] = useState(false);
 

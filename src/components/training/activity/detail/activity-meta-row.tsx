@@ -2,9 +2,12 @@ import { ActivityContextChips } from './activity-context-chips';
 import { ActivityFeelingPrompt } from './activity-feeling-prompt';
 import type { ActivityDetail, ActivityPerformanceRecordChip } from './types';
 
+/** Stable empty default — avoids a new [] identity every render when records is omitted. */
+const EMPTY_RECORDS: ActivityPerformanceRecordChip[] = [];
+
 export function ActivityMetaRow({
   activity,
-  records = [],
+  records = EMPTY_RECORDS,
 }: {
   activity: ActivityDetail;
   records?: ActivityPerformanceRecordChip[];

@@ -43,6 +43,7 @@ import {
   writeCoachInputDraft,
 } from '@/lib/coach/coach-input-draft';
 import { createClientId } from '@/lib/client-id';
+import { cn } from '@/lib/utils';
 
 const SUGGESTIONS = COACH_CHAT_SUGGESTIONS;
 
@@ -365,10 +366,16 @@ export function CoachChat({
               .map((p) => (p as { text: string }).text)
               .join('');
             const toolParts = message.parts.filter((p) => p.type.startsWith('tool-'));
+            // Skip content-visibility on the live streaming tail — height changes continuously.
+            const isLiveStreamTail =
+              status === 'streaming' && messageIndex === messages.length - 1 && !isUser;
 
             if (isUser) {
               return (
-                <div key={rowKey} className="flex justify-end">
+                <div
+                  key={rowKey}
+                  className={cn('flex justify-end', !isLiveStreamTail && 'cv-auto')}
+                >
                   <div className="bg-accent text-foreground max-w-[85%] rounded-[18px_18px_4px_18px] px-4 py-2.5 text-sm whitespace-pre-wrap">
                     {text}
                   </div>
@@ -383,7 +390,10 @@ export function CoachChat({
             if (!text && inlineParts.length === 0) return null;
 
             return (
-              <div key={rowKey} className="flex justify-start">
+              <div
+                key={rowKey}
+                className={cn('flex justify-start', !isLiveStreamTail && 'cv-auto')}
+              >
                 <div className="bg-analysis-surface-alt text-foreground w-full max-w-[90%] space-y-2 rounded-[18px_18px_18px_4px] px-4 py-3">
                   {text && <CoachMessage>{text}</CoachMessage>}
                   <ToolActivityList parts={inlineParts as ToolPartLite[]} streamIdle={streamIdle} />

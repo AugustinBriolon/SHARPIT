@@ -18,6 +18,7 @@ import {
   fetchBodyPresentation,
 } from '@/lib/query/presentation-fetchers';
 import { queryKeys } from '@/lib/query/keys';
+import { peekShellAthleteRefreshInFlight } from '@/lib/athlete-state/shell-refresh-seed';
 
 /** Cold start or date-change placeholder — skeleton values, never prior-day figures. */
 export function isPresentationValuesLoading(
@@ -65,7 +66,20 @@ export function useAdaptationViewModel(trainingDayId: string) {
 export function useTodayPresentationViewModel(trainingDayId: string) {
   return useQuery<TodayViewModel>({
     queryKey: queryKeys.presentationToday(trainingDayId),
-    queryFn: () => fetchTodayPresentation(trainingDayId),
+    queryFn: async () => {
+      // Join an in-flight shell refresh (started by AthleteStateInitializer) so we
+      // reuse todayPresentation instead of racing a second GET. Later refetches
+      // see no in-flight work and hit GET /api/presentation/today as usual.
+      // Offline: both paths fail → dashboard falls back to ADR-008 snapshot.
+      const inFlight = peekShellAthleteRefreshInFlight();
+      if (inFlight) {
+        const seed = await inFlight;
+        if (seed?.trainingDayId === trainingDayId && seed.todayPresentation != null) {
+          return seed.todayPresentation;
+        }
+      }
+      return fetchTodayPresentation(trainingDayId);
+    },
     staleTime: 5 * 60_000,
     placeholderData: keepPreviousData,
   });

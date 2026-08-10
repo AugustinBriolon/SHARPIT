@@ -14,13 +14,13 @@ import { OfflineSnapshotSummary } from '@/components/pwa/offline-snapshot-summar
 import { TodayActionRow } from './rich/today-action-row';
 import { TodaySignalStrip } from './dashboard/today-signal-strip';
 import { TodayWeeklyTrajectory } from './rich/today-weekly-trajectory';
-import { readClientMorningHold } from '@/components/today/rich/morning-orientation-actions';
+import { useClientMorningHold } from '@/components/today/rich/morning-orientation-actions';
 import { TodayDashboardShell } from './today-dashboard-shell';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { sessionChoiceLabel } from '@/lib/today/morning-orientation';
 
-function withClientMorningHold(vm: TodayViewModel, trainingDayId: string): TodayViewModel {
-  if (!readClientMorningHold(trainingDayId)) return vm;
+function withClientMorningHold(vm: TodayViewModel, holdActive: boolean): TodayViewModel {
+  if (!holdActive) return vm;
   if (!vm.morningOrientation || vm.morningOrientation.phase === 'POST_CHOICE') return vm;
 
   const primarySessionId =
@@ -62,11 +62,12 @@ function withClientMorningHold(vm: TodayViewModel, trainingDayId: string): Today
 export function TodayDashboard() {
   const trainingDayId = format(new Date(), 'yyyy-MM-dd');
   const query = useTodayPresentationViewModel(trainingDayId);
+  const morningHold = useClientMorningHold(trainingDayId);
   const online = useOnlineStatus();
   const valuesLoading = isPresentationValuesLoading(query);
 
   const rawVm = query.data ?? null;
-  const vm = rawVm ? withClientMorningHold(rawVm, trainingDayId) : null;
+  const vm = rawVm ? withClientMorningHold(rawVm, morningHold) : null;
   const hasNoLiveContent = !vm || Boolean(vm.emptyState);
   const { entry: offlineEntry } = useOfflineSnapshot(!online && hasNoLiveContent);
 

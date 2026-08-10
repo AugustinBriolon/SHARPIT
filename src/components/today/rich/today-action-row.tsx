@@ -2,14 +2,22 @@
 
 import Link from 'next/link';
 import { CalendarClock } from 'lucide-react';
+import dynamic from 'next/dynamic';
 
 import { InstrumentListChip, splitInstrumentMeta } from '@/components/ui/instrument-list-chip';
 import type { InstrumentListChipMeta } from '@/components/ui/instrument-list-chip';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
-import { MorningWellnessDialog } from '@/components/today/dashboard/morning-wellness-dialog';
 import { MorningOrientationActions } from '@/components/today/rich/morning-orientation-actions';
 import { useAppModal } from '@/providers/app-modal-provider';
+
+const MorningWellnessDialog = dynamic(
+  () =>
+    import('@/components/today/dashboard/morning-wellness-dialog').then(
+      (mod) => mod.MorningWellnessDialog,
+    ),
+  { ssr: false },
+);
 
 /**
  * Session response — single block answering “quoi aujourd’hui ?”

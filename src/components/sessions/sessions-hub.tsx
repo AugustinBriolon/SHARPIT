@@ -12,6 +12,7 @@ import { TrainingList } from '@/components/training/hub/training-list';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonCard } from '@/components/ui/skeleton-patterns';
 import { useGoals } from '@/hooks/use-data';
+import { EMPTY_GOALS } from '@/components/planning/session/planned-session-dialog-helpers';
 import { navPillClass } from '@/lib/ui/nav-pill';
 import { CalendarRange, ClipboardList, List } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -131,7 +132,7 @@ export function SessionsHub({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: goals = [] } = useGoals();
+  const { data: goals = EMPTY_GOALS } = useGoals();
   const raw = searchParams.get('tab');
   const tab: TabId = isTabId(raw) ? raw : 'calendrier';
   const createFromUrl = searchParams.has('create');

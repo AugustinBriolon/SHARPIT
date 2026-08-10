@@ -34,6 +34,7 @@ import dynamic from 'next/dynamic';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { EMPTY_GOALS } from '@/components/planning/session/planned-session-dialog-helpers';
 
 const PlannedSessionDialog = dynamic(
   () =>
@@ -103,7 +104,7 @@ export function PlanningView({
 
   const activities = activitiesQuery.data ?? [];
   const planned = plannedQuery.data ?? [];
-  const goals = goalsQuery.data ?? [];
+  const goals = goalsQuery.data ?? EMPTY_GOALS;
   const goalTitleById = useMemo(() => new Map(goals.map((g) => [g.id, g.title] as const)), [goals]);
 
   const nextRace = useMemo(

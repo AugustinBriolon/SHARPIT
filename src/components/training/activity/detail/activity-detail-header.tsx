@@ -25,11 +25,28 @@ import {
 } from './activity-detail-helpers';
 import type { ActivityDetail } from './types';
 
+/** Narrow client payload — avoid serializing full activityInclude to this island. */
+export type ActivityDetailHeaderActivity = Pick<
+  ActivityDetail,
+  | 'id'
+  | 'type'
+  | 'title'
+  | 'date'
+  | 'source'
+  | 'garminId'
+  | 'stravaId'
+  | 'duration'
+  | 'load'
+  | 'rpe'
+  | 'hikeTrip'
+  | 'plannedSession'
+>;
+
 /**
  * Activity detail header — icon + meta → title → durée · TSS · RPE.
  * One primary CTA (coach) + overflow for edit/delete.
  */
-export function ActivityDetailHeader({ activity }: { activity: ActivityDetail }) {
+export function ActivityDetailHeader({ activity }: { activity: ActivityDetailHeaderActivity }) {
   const router = useRouter();
   const { remove } = useActivityMutations();
   const { confirm, dialog } = useConfirmDialog();

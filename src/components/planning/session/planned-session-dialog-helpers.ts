@@ -1,6 +1,6 @@
 import type { LocationPlaceValue } from '@/components/planning/location-place-picker';
 import { activityTypeLabels } from '@/lib/format';
-import type { ClientPlannedSession } from '@/lib/query/types';
+import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import { ActivityType, SessionIntensity } from '@prisma/client';
 
 export type LocationSource = 'home' | 'travel' | 'custom';
@@ -18,6 +18,9 @@ export type BrickLegForm = {
 };
 
 export const NO_GOAL = 'none';
+
+/** Stable empty default for goals props / `??` fallbacks. */
+export const EMPTY_GOALS: ClientGoal[] = [];
 
 export function initialCustomPlace(session?: ClientPlannedSession | null): LocationPlaceValue {
   if (session?.locationLat != null && session.locationLng != null && session.locationLabel) {

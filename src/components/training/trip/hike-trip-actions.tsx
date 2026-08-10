@@ -107,7 +107,13 @@ export function HikeTripActionsMenu({ tripId, tripName }: { tripId: string; trip
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+      <Dialog
+        open={renameOpen}
+        onOpenChange={(open) => {
+          setRenameOpen(open);
+          if (open) setRenameValue(tripName);
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <form onSubmit={handleRenameSubmit}>
             <DialogHeader>

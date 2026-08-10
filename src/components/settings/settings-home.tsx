@@ -2,13 +2,18 @@
 
 import { Suspense } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { Brain, Dumbbell, Goal, Link2, MoonStar, ShieldCheck, User2, Wrench } from 'lucide-react';
 import { StickyHeader } from '@/components/layout/sticky-header';
-import { SettingsMaintenancePanel } from '@/components/settings/maintenance';
 import { InstallCard } from '@/components/pwa/install-card';
 import { useThemePreference } from '@/providers/theme-provider';
 import { themeStatusLabel, type SettingsHubStatus } from '@/lib/settings/hub-status';
 import { cn } from '@/lib/utils';
+
+const SettingsMaintenancePanel = dynamic(
+  () => import('@/components/settings/maintenance').then((mod) => mod.SettingsMaintenancePanel),
+  { ssr: false },
+);
 
 /** One streamed status node per server-backed entry, keyed by status key. */
 export type SettingsStatusSlots = Record<keyof SettingsHubStatus, React.ReactNode>;
