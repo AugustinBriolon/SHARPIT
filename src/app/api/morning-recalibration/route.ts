@@ -16,9 +16,11 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
+  // Read search params before try so Cache Components prerender interrupts propagate.
+  const { searchParams } = new URL(request.url);
+  const trainingDayId = searchParams.get('trainingDayId') ?? todayTrainingDayId();
+
   try {
-    const { searchParams } = new URL(request.url);
-    const trainingDayId = searchParams.get('trainingDayId') ?? todayTrainingDayId();
     const proposal = await ensureMorningRecalibration(trainingDayId);
     return NextResponse.json({ proposal });
   } catch (error) {

@@ -3,9 +3,11 @@ import { resolveDefaultActivityLocation } from '@/lib/geocoding/default-activity
 import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
+  // Read search params before try so Cache Components prerender interrupts propagate.
+  const dateParam = request.nextUrl.searchParams.get('date');
+  const onDate = dateParam ? new Date(dateParam) : new Date();
+
   try {
-    const dateParam = request.nextUrl.searchParams.get('date');
-    const onDate = dateParam ? new Date(dateParam) : new Date();
     const location = await resolveDefaultActivityLocation(
       prisma,
       Number.isNaN(onDate.getTime()) ? new Date() : onDate,

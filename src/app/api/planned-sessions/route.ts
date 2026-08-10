@@ -7,10 +7,12 @@ import { createPlannedSessionSchema } from '@/lib/validators/planned-session';
 import { findCoachingDecisionById, recordDecisionAction } from '@/lib/decision-memory/repository';
 
 export async function GET(request: NextRequest) {
+  // Read search params before try so Cache Components prerender interrupts propagate.
+  const { searchParams } = new URL(request.url);
+  const fromParam = searchParams.get('from');
+  const toParam = searchParams.get('to');
+
   try {
-    const { searchParams } = new URL(request.url);
-    const fromParam = searchParams.get('from');
-    const toParam = searchParams.get('to');
     const sessions = await getPlannedSessions({
       from: fromParam ? new Date(fromParam) : undefined,
       to: toParam ? new Date(toParam) : undefined,

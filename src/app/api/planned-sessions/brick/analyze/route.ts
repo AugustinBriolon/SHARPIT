@@ -6,11 +6,13 @@ import { getBrickAnalysis, getBrickSessions, setBrickAnalysis } from '@/lib/quer
 export const maxDuration = 60;
 
 export async function GET(request: NextRequest) {
+  // Read search params before try so Cache Components prerender interrupts propagate.
+  const groupId = request.nextUrl.searchParams.get('groupId');
+  if (!groupId) {
+    return NextResponse.json({ error: 'groupId requis' }, { status: 400 });
+  }
+
   try {
-    const groupId = request.nextUrl.searchParams.get('groupId');
-    if (!groupId) {
-      return NextResponse.json({ error: 'groupId requis' }, { status: 400 });
-    }
     const analysis = await getBrickAnalysis(groupId);
     return NextResponse.json({ analysis });
   } catch (error) {

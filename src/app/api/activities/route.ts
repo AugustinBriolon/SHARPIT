@@ -11,12 +11,13 @@ import { updateRecordsForTypesSafe } from '@/lib/training/records';
 import { createActivitySchema } from '@/lib/validators/activity';
 
 export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const type = searchParams.get('type') as ActivityType | null;
-    const limit = searchParams.get('limit');
-    const sinceDays = searchParams.get('sinceDays');
+  // Read search params before try so Cache Components prerender interrupts propagate.
+  const { searchParams } = new URL(request.url);
+  const type = searchParams.get('type') as ActivityType | null;
+  const limit = searchParams.get('limit');
+  const sinceDays = searchParams.get('sinceDays');
 
+  try {
     // Weather / narrative enrichment runs on athlete-state refresh & provider sync —
     // never as a side-effect of listing activities (avoids Neon work on every GET).
 

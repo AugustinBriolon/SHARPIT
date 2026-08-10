@@ -13,8 +13,10 @@ function parseDate(value: string | null): Date {
 }
 
 export async function GET(request: NextRequest) {
+  // Read search params before try so Cache Components prerender interrupts propagate.
+  const date = parseDate(request.nextUrl.searchParams.get('date'));
+
   try {
-    const date = parseDate(request.nextUrl.searchParams.get('date'));
     const briefing = await getDailyBriefing(date);
     return NextResponse.json({ briefing: briefing ?? null });
   } catch (error) {
