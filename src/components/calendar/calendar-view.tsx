@@ -77,7 +77,7 @@ const MacroPlanDialog = dynamic(
   { ssr: false },
 );
 
-function CalendarSkeleton({ showHeader }: { showHeader: boolean }) {
+export function CalendarSkeleton({ showHeader }: { showHeader: boolean }) {
   return (
     <div className="space-y-4 lg:space-y-6">
       {showHeader ? (

@@ -19,6 +19,9 @@ import { cn } from '@/lib/utils';
 
 const WEEK_CELL_COUNT = 7;
 
+/** Fixed anchor for prerender-safe loading strip layout. */
+const LOADING_ANCHOR = new Date('2026-01-01T12:00:00');
+
 /** Mobile shows the 4 most recent weeks, sm 5, lg all 7 — grid cols must match. */
 function cellVisibilityClass(index: number, count: number): string {
   const weeksAgo = count - 1 - index;
@@ -107,13 +110,20 @@ export function TrainingWeekStrip({
   plannedSessions: ClientPlannedSession[];
 }) {
   const weekCells = useMemo(
-    () => buildWeekCells(activities, plannedSessions, new Date(), WEEK_CELL_COUNT),
-    [activities, plannedSessions],
+    () =>
+      buildWeekCells(
+        activities,
+        plannedSessions,
+        loading ? LOADING_ANCHOR : new Date(),
+        WEEK_CELL_COUNT,
+      ),
+    [activities, plannedSessions, loading],
   );
   const summaryLabel = useMemo(() => {
+    if (loading) return null;
     const currentWeekDays = buildCalendarWeek(new Date(), activities, plannedSessions);
     return weekSummaryLabel(buildWeekSummary(currentWeekDays));
-  }, [activities, plannedSessions]);
+  }, [activities, plannedSessions, loading]);
 
   return (
     <section className={cn('min-w-0', className)}>

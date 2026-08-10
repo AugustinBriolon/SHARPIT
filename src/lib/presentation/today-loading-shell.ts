@@ -11,8 +11,11 @@ function shellPhaseFromLocalHour(hour: number): DailyPhase {
   return 'MORNING';
 }
 
+/** Fixed reference for prerender-safe loading labels (morning phase). */
+const LOADING_SHELL_REFERENCE = new Date('2026-01-01T08:00:00');
+
 /** Stable Today chrome for cold-start / placeholder micro-skeletons. */
-export function todayLoadingShell(now = new Date()): TodayViewModel {
+export function todayLoadingShell(now: Date = LOADING_SHELL_REFERENCE): TodayViewModel {
   const phase = shellPhaseFromLocalHour(now.getHours());
   const labels = actionRowLabels(phase);
 

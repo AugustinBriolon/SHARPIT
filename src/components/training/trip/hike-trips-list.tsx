@@ -23,25 +23,30 @@ function TripsPageHeader() {
   );
 }
 
+/** Stable trips list chrome for Suspense fallback and query pending state. */
+export function HikeTripsListSkeleton() {
+  return (
+    <div className="space-y-6">
+      <TripsPageHeader />
+      <div className="space-y-2">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div
+            key={index}
+            className="chip-surface-lg rounded-analysis h-[4.25rem] animate-pulse"
+            aria-hidden
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Realised multi-day hikes. Planned travel lives in the coach memory, not here. */
 export function HikeTripsList() {
   const tripsQuery = useHikeTrips();
 
   if (tripsQuery.isPending) {
-    return (
-      <div className="space-y-6">
-        <TripsPageHeader />
-        <div className="space-y-2">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div
-              key={index}
-              className="chip-surface-lg rounded-analysis h-[4.25rem] animate-pulse"
-              aria-hidden
-            />
-          ))}
-        </div>
-      </div>
-    );
+    return <HikeTripsListSkeleton />;
   }
 
   if (tripsQuery.isError) {

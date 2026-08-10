@@ -50,7 +50,11 @@ export function TodayActionRow({
     <section aria-busy={loading || undefined} className="space-y-3">
       <div className="flex h-8 items-center justify-between gap-2 px-0.5">
         <h2 className="text-label text-balance">{vm.actionRow.actionLabel}</h2>
-        <MorningWellnessDialog onCompleted={onWellnessCompleted} />
+        {loading ? (
+          <SkeletonDataValue heightClassName="h-8" widthClassName="w-24" />
+        ) : (
+          <MorningWellnessDialog onCompleted={onWellnessCompleted} />
+        )}
       </div>
 
       {orientation ? (

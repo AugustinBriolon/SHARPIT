@@ -2,6 +2,22 @@ import { Suspense } from 'react';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { ActivityForm } from '@/components/training/activity/activity-form';
+import { Skeleton } from '@/components/ui/skeleton';
+
+function ActivityFormSkeleton() {
+  return (
+    <div className="space-y-6" aria-busy>
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div key={index} className="analysis-panel rounded-analysis-lg space-y-4 p-4">
+          <Skeleton className="h-5 w-32 rounded-full border-0" />
+          <Skeleton className="rounded-analysis h-10 w-full border-0" />
+          <Skeleton className="rounded-analysis h-10 w-full border-0" />
+        </div>
+      ))}
+      <Skeleton className="rounded-analysis h-11 w-full border-0" />
+    </div>
+  );
+}
 
 export default function ManualTrainingPage() {
   return (
@@ -15,7 +31,7 @@ export default function ManualTrainingPage() {
         </p>
       </StickyHeader>
       {/* The form defaults its date field to today — not prerenderable. */}
-      <Suspense>
+      <Suspense fallback={<ActivityFormSkeleton />}>
         <ActivityForm mode="create" />
       </Suspense>
     </div>

@@ -2,7 +2,6 @@
 
 import { format } from 'date-fns';
 import { SnapshotStatusBanner } from './dashboard/today-dashboard-states';
-
 import { TodayVerdictHero } from './rich/today-verdict-hero';
 
 import {
@@ -16,7 +15,7 @@ import { TodayActionRow } from './rich/today-action-row';
 import { TodaySignalStrip } from './dashboard/today-signal-strip';
 import { TodayWeeklyTrajectory } from './rich/today-weekly-trajectory';
 import { readClientMorningHold } from '@/components/today/rich/morning-orientation-actions';
-import { todayLoadingShell } from '@/lib/presentation/today-loading-shell';
+import { TodayDashboardShell } from './today-dashboard-shell';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { sessionChoiceLabel } from '@/lib/today/morning-orientation';
 
@@ -94,7 +93,20 @@ export function TodayDashboard() {
     );
   }
 
-  const content = vm ?? todayLoadingShell();
+  if (valuesLoading && !vm) {
+    return (
+      <>
+        {query.isFetching ? (
+          <p aria-live="polite" className="sr-only" role="status">
+            Mise a jour de la page Today en cours.
+          </p>
+        ) : null}
+        <TodayDashboardShell trainingDayId={trainingDayId} />
+      </>
+    );
+  }
+
+  const content = vm!;
 
   return (
     <div className="mx-auto space-y-6 lg:space-y-8">

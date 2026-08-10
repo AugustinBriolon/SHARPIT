@@ -17,6 +17,9 @@ import {
 } from '@/lib/activity/activity-consistency';
 import { cn } from '@/lib/utils';
 
+/** Fixed anchor for prerender-safe loading heatmap layout. */
+const LOADING_ANCHOR = new Date('2026-01-01T12:00:00');
+
 function formatCellTitle(cell: HeatmapCell): string {
   const [y, m, d] = cell.date.split('-');
   if (cell.count === 0) return `${d}/${m}/${y} · repos`;
@@ -169,10 +172,10 @@ export function ActivityConsistencyPanel({
   const isMobile = useIsMobile();
   const stats = useMemo(
     () =>
-      buildActivityConsistencyStats(activities, undefined, {
+      buildActivityConsistencyStats(activities, loading ? LOADING_ANCHOR : new Date(), {
         heatmapDays: isMobile ? HEATMAP_DAYS_MOBILE : undefined,
       }),
-    [activities, isMobile],
+    [activities, isMobile, loading],
   );
 
   const rangeLabel = formatHeatmapRangeLabel(stats.heatmapDays);

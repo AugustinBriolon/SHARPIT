@@ -10,12 +10,7 @@ import {
 } from '@/components/sessions/sessions-coach-menu';
 import { TrainingList } from '@/components/training/hub/training-list';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  SkeletonCard,
-  SkeletonEyebrow,
-  SkeletonPill,
-  SkeletonTitle,
-} from '@/components/ui/skeleton-patterns';
+import { SkeletonCard } from '@/components/ui/skeleton-patterns';
 import { useGoals } from '@/hooks/use-data';
 import { navPillClass } from '@/lib/ui/nav-pill';
 import { CalendarRange, ClipboardList, List } from 'lucide-react';
@@ -73,22 +68,48 @@ function isCoachOverlay(value: string | null): value is 'generate' | 'adapt' | '
   return value === 'generate' || value === 'adapt' || value === 'macro';
 }
 
-export function SessionsHubSkeleton() {
+/** Suspense / cold chrome — real header + tabs; calendar grid values pulse. */
+export function SessionsHubSkeleton({
+  sectionLabel = 'Séances',
+  title = 'Historique & planning',
+}: {
+  sectionLabel?: string;
+  title?: string;
+} = {}) {
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-2">
-          <SkeletonEyebrow className="w-16" />
-          <SkeletonTitle className="h-8 w-56 max-w-full" size="md" />
+      <MobileBackLink href="/training" label="Entraînement" showOnDesktop />
+      <StickyHeader>
+        <div className="flex items-end justify-between lg:gap-4">
+          <div>
+            <p className="text-label">{sectionLabel}</p>
+            <h1 className="text-page-title mt-1">{title}</h1>
+          </div>
+          <Skeleton className="h-9 w-32 shrink-0 rounded-lg" aria-hidden />
         </div>
-        <Skeleton className="h-9 w-32 rounded-lg" />
-      </div>
-      <div className="-mx-1 flex gap-1.5 overflow-x-auto pb-0.5">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <SkeletonPill key={i} className="h-9 w-28 shrink-0" />
-        ))}
-      </div>
-      <SkeletonCard className="min-h-96 p-3 sm:p-4">
+
+        <nav
+          aria-label="Sections Séances"
+          className="mt-4 flex scrollbar-none gap-1.5 overflow-x-auto pb-0.5"
+        >
+          {TABS.map((t) => {
+            const Icon = t.icon;
+            const active = t.id === 'calendrier';
+            return (
+              <span
+                key={t.id}
+                aria-current={active ? 'page' : undefined}
+                className={navPillClass(active)}
+              >
+                <Icon className="size-3.5" aria-hidden />
+                {t.label}
+              </span>
+            );
+          })}
+        </nav>
+      </StickyHeader>
+
+      <SkeletonCard className="min-h-96 p-3 sm:p-4" aria-busy>
         <div className="grid grid-cols-7 gap-2">
           {Array.from({ length: 35 }).map((_, i) => (
             <Skeleton key={i} className="rounded-analysis min-h-20 border-0" />
