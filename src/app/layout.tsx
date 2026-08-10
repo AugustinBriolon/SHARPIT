@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import type { Metadata, Viewport } from 'next';
 import { IBM_Plex_Sans, JetBrains_Mono, Syne } from 'next/font/google';
 import { AppClerkProvider } from '@/providers/clerk-provider';
@@ -9,7 +10,6 @@ import { Toaster } from '@/components/ui/toast';
 import { QueryProvider } from '@/providers/query-provider';
 import { AppModalProvider } from '@/providers/app-modal-provider';
 import { THEME_INIT_SCRIPT, THEME_DARK_COLOR, THEME_LIGHT_COLOR } from '@/lib/theme/theme';
-import { getServerResolvedTheme, getServerThemePreference } from '@/lib/theme/theme.server';
 import { cn } from '@/lib/utils';
 import './globals.css';
 
@@ -72,27 +72,25 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [serverResolved, serverPreference] = await Promise.all([
-    getServerResolvedTheme(),
-    getServerThemePreference(),
-  ]);
-
   return (
     <AppClerkProvider>
+      {/* The theme is resolved entirely on the client: THEME_INIT_SCRIPT below
+          sets `dark` / colorScheme / theme-color before paint, and ThemeProvider
+          re-reads the stored preference on mount. Reading the theme cookie here
+          instead would make the root layout runtime-dependent, which costs every
+          route its prerendered shell. */}
       <html
         lang="fr"
-        style={serverResolved ? { colorScheme: serverResolved } : undefined}
         className={cn(
           syne.variable,
           ibmPlexSans.variable,
           jetBrainsMono.variable,
           'h-full antialiased',
-          serverResolved === 'dark' && 'dark',
         )}
         suppressHydrationWarning
       >
@@ -125,11 +123,16 @@ export default async function RootLayout({
           />
         </head>
         <body className="bg-background text-foreground min-h-full font-sans">
-          <ThemeProvider serverPreference={serverPreference}>
+          <ThemeProvider>
             <QueryProvider>
               <AppModalProvider>
                 {children}
-                <SnapshotOfflineSync />
+                {/* Keyed on the current training day, so it must stay out of the
+                    prerendered shell. It renders nothing, so the boundary costs
+                    no UI — there is deliberately no fallback. */}
+                <Suspense>
+                  <SnapshotOfflineSync />
+                </Suspense>
               </AppModalProvider>
             </QueryProvider>
           </ThemeProvider>

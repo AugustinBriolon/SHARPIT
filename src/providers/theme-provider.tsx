@@ -29,16 +29,16 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-export function ThemeProvider({
-  children,
-  serverPreference = 'system',
-}: {
-  children: ReactNode;
-  serverPreference?: ThemePreference;
-}) {
-  const [preference, setPreferenceState] = useState<ThemePreference>(serverPreference);
+/**
+ * The server never resolves the theme — that would make the root layout
+ * runtime-dependent and cost every route its prerendered shell. The pre-paint
+ * THEME_INIT_SCRIPT owns the DOM; this provider owns React state and syncs to
+ * the stored preference on mount.
+ */
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [preference, setPreferenceState] = useState<ThemePreference>('system');
   const [resolved, setResolved] = useState<ResolvedTheme>(() =>
-    resolveThemeForPreference(serverPreference),
+    resolveThemeForPreference('system'),
   );
 
   useEffect(() => {
