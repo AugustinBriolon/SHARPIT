@@ -14,6 +14,13 @@ const nextConfig: NextConfig = {
   // Supersedes experimental.staleTimes, which is gone.
   cacheComponents: true,
   partialPrefetching: true,
+  experimental: {
+    // Keeps a navigation, prefetch or Server Action pending instead of throwing
+    // when the network drops, and retries it on reconnect. Also the signal
+    // behind useOnlineStatus — it detects real request failures, where
+    // navigator.onLine only knows whether an interface is up (ADR-008).
+    useOffline: true,
+  },
   turbopack: {},
   allowedDevOrigins: loadAllowedDevOrigins(),
   images: {
