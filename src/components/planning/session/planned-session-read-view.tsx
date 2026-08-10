@@ -198,6 +198,11 @@ export function PlannedSessionReadView({
     return alreadyOnWatch ? 'Renvoyer' : 'Envoyer à la montre';
   }
 
+  function watchPushButtonLabelShort(): string {
+    if (pushing) return 'Envoi…';
+    return alreadyOnWatch ? 'Renvoyer' : 'Montre';
+  }
+
   const derouleBlock = !morningProposal ? (
     <div className="space-y-1.5">
       {session.description?.trim() ? (
@@ -235,9 +240,7 @@ export function PlannedSessionReadView({
             >
               <Watch className="size-3.5" />
               <span className="hidden sm:inline">{watchPushButtonLabel()}</span>
-              <span className="sm:hidden">
-                {pushing ? 'Envoi…' : alreadyOnWatch ? 'Renvoyer' : 'Montre'}
-              </span>
+              <span className="sm:hidden">{watchPushButtonLabelShort()}</span>
             </Button>
           ) : null}
         </div>

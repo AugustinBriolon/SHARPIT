@@ -121,7 +121,7 @@ describe('PATCH /api/hike-trips/[id]', () => {
     const { updateHikeTrip, HikeTripConflictError } = await import('@/lib/queries');
     vi.mocked(updateHikeTrip).mockRejectedValue(
       new HikeTripConflictError(
-        'Une activité appartient déjà à un autre déplacement',
+        'Une activité appartient déjà à un autre séjour',
         'trip-other',
         'Alpes',
       ),
@@ -138,7 +138,7 @@ describe('PATCH /api/hike-trips/[id]', () => {
 
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({
-      error: 'Une activité appartient déjà à un autre déplacement',
+      error: 'Une activité appartient déjà à un autre séjour',
       tripId: 'trip-other',
       tripName: 'Alpes',
     });

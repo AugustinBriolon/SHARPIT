@@ -19,3 +19,9 @@ export const CHART_RISK_STROKE = 'var(--signal-risk)';
 
 export const CHART_REFERENCE_LINE = 'var(--analysis-border)';
 export const CHART_ACTIVE_DOT_FILL = 'var(--card)';
+
+export const CHART_PRIMARY_STROKE = 'var(--primary)';
+/** Stroke legible on an ink band in both themes (see `--ink-accent`). */
+export const CHART_INK_STROKE = 'var(--ink-accent)';
+export const CHART_INK_GRID_COLOR =
+  'color-mix(in oklch, var(--ink-surface-foreground) 15%, transparent)';

@@ -121,7 +121,7 @@ describe('createHikeTrip', () => {
   });
 
   it('throws conflict when an activity is already linked', async () => {
-    const { createHikeTrip, HikeTripConflictError } = await import('@/lib/queries/hike-trips');
+    const { createHikeTrip } = await import('@/lib/queries/hike-trips');
 
     mockFindMany.mockResolvedValueOnce([
       hikeActivity('a1'),

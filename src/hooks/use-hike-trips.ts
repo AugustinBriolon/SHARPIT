@@ -121,10 +121,10 @@ export function useHikeTripMutations() {
       void queryClient.invalidateQueries({ queryKey: listKey });
       void queryClient.invalidateQueries({ queryKey: activitiesKey });
       queryClient.setQueryData(queryKeys.hikeTrip(trip.id), trip);
-      toast.success('Déplacement créé');
+      toast.success('Séjour créé');
     },
     onError: (err: unknown) =>
-      toast.error('Impossible de créer le déplacement.', {
+      toast.error('Impossible de créer le séjour.', {
         description: hikeTripErrorDescription(err),
       }),
   });
@@ -175,7 +175,7 @@ export function useHikeTripMutations() {
       if (context?.previousDetail) {
         queryClient.setQueryData(queryKeys.hikeTrip(id), context.previousDetail);
       }
-      toast.error('Impossible de mettre à jour le déplacement.', {
+      toast.error('Impossible de mettre à jour le séjour.', {
         description: hikeTripErrorDescription(err),
       });
     },
@@ -185,7 +185,7 @@ export function useHikeTripMutations() {
       queryClient.setQueryData<ClientHikeTripListItem[]>(listKey, (prev) =>
         prev ? prev.map((item) => (item.id === id ? listItem : item)) : prev,
       );
-      toast.success('Déplacement mis à jour');
+      toast.success('Séjour mis à jour');
     },
     onSettled: (_data, _error, { data }) => {
       if (hasMembershipChange(data)) {
@@ -228,13 +228,13 @@ export function useHikeTripMutations() {
       if (context?.previousDetail) {
         queryClient.setQueryData(queryKeys.hikeTrip(id), context.previousDetail);
       }
-      toast.error('Impossible de supprimer le déplacement.', {
+      toast.error('Impossible de supprimer le séjour.', {
         description: hikeTripErrorDescription(err),
       });
     },
     onSuccess: (_data, id) => {
       queryClient.removeQueries({ queryKey: queryKeys.hikeTrip(id) });
-      toast.success('Déplacement supprimé');
+      toast.success('Séjour supprimé');
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: activitiesKey });

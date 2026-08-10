@@ -6,7 +6,7 @@ export function HikeTripMemberLink({ hikeTrip }: { hikeTrip: { id: string; name:
       className="text-label text-primary hover:text-primary/80 inline-flex transition-colors"
       href={`/training/trips/${hikeTrip.id}`}
     >
-      Voir le déplacement · {hikeTrip.name}
+      Voir le séjour · {hikeTrip.name}
     </Link>
   );
 }

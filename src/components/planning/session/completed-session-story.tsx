@@ -109,7 +109,7 @@ export function CompletedSessionStory({
       {notes ? (
         <div className="border-analysis-border/50 min-w-0 space-y-1 border-t pt-3">
           <p className="text-label">Note</p>
-          <p className="text-foreground/85 text-sm leading-relaxed whitespace-pre-wrap wrap-break-word">
+          <p className="text-foreground/85 text-sm leading-relaxed wrap-break-word whitespace-pre-wrap">
             {notes}
           </p>
         </div>

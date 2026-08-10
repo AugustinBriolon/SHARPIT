@@ -106,7 +106,7 @@ function assertNotLinkedElsewhere(
     if (activity.hikeTripId == null) continue;
     if (currentTripId != null && activity.hikeTripId === currentTripId) continue;
     throw new HikeTripConflictError(
-      'Une activité appartient déjà à un autre déplacement',
+      'Une activité appartient déjà à un autre séjour',
       activity.hikeTrip?.id ?? activity.hikeTripId,
       activity.hikeTrip?.name,
     );

@@ -1,9 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { ActivityType } from '@prisma/client';
+import { Link2, MoreHorizontal, Mountain, Pencil, Trash2 } from 'lucide-react';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { DiscussCoachLink } from '@/components/training/activity/discuss-coach-link';
+import { LinkHikeActivitiesSheet } from '@/components/training/trip/link-hike-activities-sheet';
 import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
@@ -30,8 +33,11 @@ export function ActivityDetailHeader({ activity }: { activity: ActivityDetail })
   const router = useRouter();
   const { remove } = useActivityMutations();
   const { confirm, dialog } = useConfirmDialog();
+  const [linkHikesOpen, setLinkHikesOpen] = useState(false);
   const editHref = `/training/${activity.id}/edit`;
   const Icon = sportIcon[activity.type];
+  const isHike = activity.type === ActivityType.HIKE;
+  const hikeTrip = isHike ? activity.hikeTrip : null;
 
   async function handleDelete() {
     const confirmed = await confirm({
@@ -60,11 +66,26 @@ export function ActivityDetailHeader({ activity }: { activity: ActivityDetail })
       >
         <MoreHorizontal className="size-4" aria-hidden />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-48">
+      <DropdownMenuContent align="end" className="min-w-52">
         <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => router.push(editHref)}>
           <Pencil className="size-3.5" aria-hidden />
           Modifier
         </DropdownMenuItem>
+        {isHike && !hikeTrip ? (
+          <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => setLinkHikesOpen(true)}>
+            <Link2 className="size-3.5" aria-hidden />
+            Lier à d&apos;autres randonnées
+          </DropdownMenuItem>
+        ) : null}
+        {hikeTrip ? (
+          <DropdownMenuItem
+            className="cursor-pointer gap-2"
+            onClick={() => router.push(`/training/trips/${hikeTrip.id}`)}
+          >
+            <Mountain className="size-3.5" aria-hidden />
+            Voir le séjour
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="cursor-pointer gap-2"
@@ -107,6 +128,13 @@ export function ActivityDetailHeader({ activity }: { activity: ActivityDetail })
         </div>
       </div>
       {dialog}
+      {isHike && !hikeTrip ? (
+        <LinkHikeActivitiesSheet
+          open={linkHikesOpen}
+          seedActivityId={activity.id}
+          onOpenChange={setLinkHikesOpen}
+        />
+      ) : null}
     </StickyHeader>
   );
 }

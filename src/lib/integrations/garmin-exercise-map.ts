@@ -236,8 +236,11 @@ const BY_LABEL: Readonly<Record<string, GarminExerciseRef>> = {
   'massage lateral cuisse': { category: 'WARM_UP', exerciseName: 'STRETCH_LYING_IT_BAND' },
   'massage lateral cuisse boule': { category: 'WARM_UP', exerciseName: 'STRETCH_LYING_IT_BAND' },
   'etirement ischios': { category: 'WARM_UP', exerciseName: 'STRETCH_HAMSTRING' },
-  'etirement ischios assiste au bandeau': { category: 'WARM_UP', exerciseName: 'STRETCH_HAMSTRING' },
-  'ischios': { category: 'WARM_UP', exerciseName: 'STRETCH_HAMSTRING' },
+  'etirement ischios assiste au bandeau': {
+    category: 'WARM_UP',
+    exerciseName: 'STRETCH_HAMSTRING',
+  },
+  ischios: { category: 'WARM_UP', exerciseName: 'STRETCH_HAMSTRING' },
   'auto massage': { category: 'WARM_UP', exerciseName: 'STRETCH_CAT_COW' },
   'auto massage foam roller': { category: 'WARM_UP', exerciseName: 'STRETCH_CAT_COW' },
   'foam roller': { category: 'WARM_UP', exerciseName: 'STRETCH_CAT_COW' },

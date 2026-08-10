@@ -3,6 +3,7 @@
 import { NotebookPen, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { CoachMemoryEntryCard } from '@/components/coach-memory/coach-memory-entry-card';
+import { CoachMemoryInkBand } from '@/components/coach-memory/coach-memory-ink-band';
 import { CoachProfileContextSection } from '@/components/coach-memory/coach-profile-context-section';
 import { TravelMemoryFormDialog } from '@/components/coach-memory/travel-memory-form-dialog';
 import { Button } from '@/components/ui/button';
@@ -77,7 +78,6 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
   const loadError = query.isError
     ? 'Impossible de charger la mémoire. Recharge la page ou réessaie dans un instant.'
     : null;
-  const entryCount = query.data?.entries.length ?? 0;
 
   function renderMemoryEntries() {
     if (query.isLoading) {
@@ -99,7 +99,7 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
 
     if (query.data?.entries.length) {
       return (
-        <div className="analysis-panel rounded-analysis-lg px-4 py-1">
+        <div className="space-y-2.5">
           {query.data.entries.map((entry) => (
             <CoachMemoryEntryCard
               key={entry.id}
@@ -129,8 +129,38 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
     );
   }
 
+  /**
+   * `onInk` recolors the outline button for the band. The default outline paints
+   * `bg-background` + `foreground`, both of which read against the page, not the
+   * ink plate — the fill has to go for the ink text colour to be legible.
+   */
+  function renderAddButton({ onInk = false }: { onInk?: boolean } = {}) {
+    return (
+      <Button
+        disabled={Boolean(loadError)}
+        type="button"
+        variant="outline"
+        className={
+          onInk
+            ? 'border-ink-surface-foreground/30 text-ink-surface-foreground hover:bg-ink-surface-foreground/10 hover:text-ink-surface-foreground bg-transparent'
+            : undefined
+        }
+        onClick={openCreate}
+      >
+        <Plus className="size-4" aria-hidden />
+        {onInk ? 'Ajouter une contrainte' : 'Ajouter'}
+      </Button>
+    );
+  }
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
+      <CoachMemoryInkBand
+        actions={renderAddButton({ onInk: true })}
+        entries={query.data?.entries ?? []}
+        profileContext={query.data?.profileContext ?? ''}
+      />
+
       <CoachProfileContextSection
         loadError={loadError}
         loading={query.isLoading}
@@ -138,28 +168,13 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
       />
 
       <section className="space-y-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-label mb-2">Daté</p>
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-label text-signal-caution mb-1">Daté</p>
             <h2 className="text-section-title">Déplacements & contraintes</h2>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Lieu, dates et capacité d&apos;entraînement — météo, outdoor et charge planifiée.
-              {entryCount > 0 ? (
-                <span className="text-data text-muted-foreground ml-1 tabular-nums">
-                  ({entryCount})
-                </span>
-              ) : null}
-            </p>
           </div>
-          <Button
-            disabled={Boolean(loadError)}
-            type="button"
-            variant="outline"
-            onClick={openCreate}
-          >
-            <Plus className="size-4" aria-hidden />
-            Ajouter
-          </Button>
+          {/* The band carries this action from lg up — never render it twice. */}
+          <div className="shrink-0 lg:hidden">{renderAddButton()}</div>
         </div>
 
         {renderMemoryEntries()}

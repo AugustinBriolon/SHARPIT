@@ -1,3 +1,5 @@
+import { formatDate, formatDayRange, formatDistance } from '@/lib/format';
+
 export type HikeTripMemberInput = {
   date: Date | string;
   duration: number | null;
@@ -24,6 +26,37 @@ export type HikeTripSummary = {
 
 function asDate(value: Date | string): Date {
   return value instanceof Date ? value : new Date(value);
+}
+
+/** Single date for a same-day trip, range otherwise. */
+export function formatTripDateRange(start: Date, end: Date): string {
+  const sameDay =
+    start.getFullYear() === end.getFullYear() &&
+    start.getMonth() === end.getMonth() &&
+    start.getDate() === end.getDate();
+  if (sameDay) return formatDate(start);
+  return `${formatDate(start)} – ${formatDate(end)}`;
+}
+
+/** “3 étapes” / “1 étape” — empty when the trip has no member. */
+export function formatTripStepCount(memberCount: number): string | null {
+  if (memberCount <= 0) return null;
+  return `${memberCount} étape${memberCount > 1 ? 's' : ''}`;
+}
+
+/**
+ * Chip meta shared by the trips list and the training hub preview.
+ * Deliberately short — a 390px row only fits the span, the step count and the
+ * distance; duration and D+ are one tap away on the trip itself.
+ */
+export function buildHikeTripListMeta(summary: HikeTripSummary): string[] {
+  const meta = [formatDayRange(summary.startAt, summary.endAt)];
+
+  const stepCount = formatTripStepCount(summary.memberCount);
+  if (stepCount) meta.push(stepCount);
+  if (summary.distanceM != null) meta.push(formatDistance(summary.distanceM));
+
+  return meta;
 }
 
 function sumNullable(values: Array<number | null | undefined>): number | null {

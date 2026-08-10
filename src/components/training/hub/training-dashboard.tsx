@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { PlanningRow } from '@/components/today/dashboard/planning-row';
 import { ActivityConsistencyPanel } from '@/components/today/dashboard/activity-consistency-panel';
 import { ActivityList } from '@/components/training/activity/activity-list';
+import { TrainingTripsSection } from '@/components/training/hub/training-trips-section';
 import { TrainingWeekStrip } from '@/components/training/hub/training-week-strip';
 import { Badge } from '@/components/ui/badge';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
@@ -309,6 +310,12 @@ export function TrainingDashboard() {
           )}
         </section>
       </div>
+
+      <TrainingTripsSection
+        renderHeader={(props) => (
+          <SectionLink cta={props.cta} href={props.href} title={props.title} />
+        )}
+      />
 
       <section>
         <SectionLink cta="Progression" href="/training/progression" title="Dynamique récente" />

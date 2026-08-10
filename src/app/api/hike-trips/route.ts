@@ -37,7 +37,7 @@ export async function GET() {
     const trips = await listHikeTrips();
     return NextResponse.json(trips);
   } catch (error) {
-    return hikeTripErrorResponse(error, 'Impossible de charger les déplacements');
+    return hikeTripErrorResponse(error, 'Impossible de charger les séjours');
   }
 }
 
@@ -56,6 +56,6 @@ export async function POST(request: NextRequest) {
     const trip = await createHikeTrip(parsed.data);
     return NextResponse.json(trip, { status: 201 });
   } catch (error) {
-    return hikeTripErrorResponse(error, 'Impossible de créer le déplacement');
+    return hikeTripErrorResponse(error, 'Impossible de créer le séjour');
   }
 }

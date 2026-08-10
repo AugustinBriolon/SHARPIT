@@ -46,7 +46,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
     return NextResponse.json(trip);
   } catch (error) {
-    return hikeTripErrorResponse(error, 'Impossible de charger le déplacement');
+    return hikeTripErrorResponse(error, 'Impossible de charger le séjour');
   }
 }
 
@@ -66,7 +66,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const trip = await updateHikeTrip(id, parsed.data);
     return NextResponse.json(trip);
   } catch (error) {
-    return hikeTripErrorResponse(error, 'Impossible de mettre à jour le déplacement');
+    return hikeTripErrorResponse(error, 'Impossible de mettre à jour le séjour');
   }
 }
 
@@ -76,6 +76,6 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     await deleteHikeTrip(id);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return hikeTripErrorResponse(error, 'Impossible de supprimer le déplacement');
+    return hikeTripErrorResponse(error, 'Impossible de supprimer le séjour');
   }
 }

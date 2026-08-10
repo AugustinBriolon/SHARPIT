@@ -19,7 +19,7 @@ export const activityInclude = {
   hikeMetrics: true,
   strengthSets: { orderBy: { order: 'asc' as const } },
   plannedSession: { select: plannedSessionSummarySelect },
-  hikeTripId: true,
+  // Relation only — scalar hikeTripId is returned automatically with include.
   hikeTrip: { select: { id: true, name: true } },
 };
 

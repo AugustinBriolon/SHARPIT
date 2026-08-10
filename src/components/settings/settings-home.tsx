@@ -1,17 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import {
-  Brain,
-  Dumbbell,
-  Goal,
-  Link2,
-  MapPinned,
-  MoonStar,
-  ShieldCheck,
-  User2,
-  Wrench,
-} from 'lucide-react';
+import { Brain, Dumbbell, Goal, Link2, MoonStar, ShieldCheck, User2, Wrench } from 'lucide-react';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { SettingsMaintenancePanel } from '@/components/settings/maintenance';
 import { InstallCard } from '@/components/pwa/install-card';
@@ -60,13 +50,6 @@ const GROUPS: SettingsGroup[] = [
         description: 'Courses cibles et objectifs chiffrés.',
         icon: Goal,
         statusKey: 'goals',
-      },
-      {
-        href: '/settings/trips',
-        title: 'Déplacements',
-        description: 'Dossiers de randonnées liées (historique).',
-        icon: MapPinned,
-        statusKey: 'trips',
       },
     ],
   },

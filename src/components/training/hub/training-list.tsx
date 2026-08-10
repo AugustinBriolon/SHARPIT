@@ -5,6 +5,7 @@ import { format, isSameWeek, startOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { createPortal } from 'react-dom';
 import { ActivityList } from '@/components/training/activity/activity-list';
 import { CreateHikeTripDialog } from '@/components/training/trip/create-hike-trip-dialog';
 import { HistoryFilters } from '@/components/training/hub/history-filters';
@@ -26,7 +27,13 @@ import {
 } from '@/lib/training/history-filters';
 import { buildActivityRecordLabels } from '@/lib/training/activity-record-labels';
 import { cn } from '@/lib/utils';
-import { CalendarPlus, FilterX, Link2, X } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { CalendarPlus, FilterX, Link2, MoreHorizontal, X } from 'lucide-react';
 
 const TYPE_ORDER: ActivityType[] = [
   ActivityType.RUN,
@@ -39,6 +46,9 @@ const TYPE_ORDER: ActivityType[] = [
 ];
 
 const FILTER_URL_DEBOUNCE_MS = 200;
+
+/** Height reserved under the list so the last chips clear the fixed confirm bar. */
+const SELECTION_BAR_SPACE = 'pb-28';
 
 type WeekGroup = { key: string; label: string; activities: ClientActivity[] };
 
@@ -80,6 +90,62 @@ export function TrainingListFallback() {
         </div>
       </section>
     </div>
+  );
+}
+
+function HikeSelectionConfirmBar({
+  selectedCount,
+  onConfirm,
+}: {
+  selectedCount: number;
+  onConfirm: () => void;
+}) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
+  // Portal to body so fixed escapes the scroll shell. Width tracks the main column
+  // (sidebar w-60 on lg) with the same horizontal gutters as AppShell content.
+  return createPortal(
+    <div
+      aria-label="Confirmation de liaison"
+      role="region"
+      className={cn(
+        'pointer-events-none fixed z-50',
+        // Mobile: above tab bar · Desktop: bottom of viewport, inset past sidebar
+        'inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))]',
+        'lg:inset-x-auto lg:right-0 lg:bottom-0 lg:left-60',
+      )}
+    >
+      <div
+        className={cn(
+          'pointer-events-auto mx-4 mb-3 lg:mx-6 lg:mb-6',
+          'border-border/60 bg-background/95 supports-backdrop-filter:bg-background/80',
+          'flex flex-col gap-2 rounded-xl border p-3 backdrop-blur-md',
+          'sm:flex-row sm:items-center sm:justify-between',
+        )}
+      >
+        <p className="text-muted-foreground min-w-0 text-sm">
+          {selectedCount === 0
+            ? 'Aucune randonnée sélectionnée'
+            : `${selectedCount} randonnée${selectedCount > 1 ? 's' : ''} sélectionnée${selectedCount > 1 ? 's' : ''}`}
+          {selectedCount > 0 && selectedCount < 2 ? ' — il en faut au moins 2' : null}
+        </p>
+        <Button
+          className="w-full shrink-0 sm:w-auto"
+          disabled={selectedCount < 2}
+          type="button"
+          onClick={onConfirm}
+        >
+          Créer un séjour
+          {selectedCount >= 2 ? ` (${selectedCount})` : ''}
+        </Button>
+      </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -186,31 +252,40 @@ export function TrainingList() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className={cn('space-y-6', selectionMode && SELECTION_BAR_SPACE)}>
       <div className="flex flex-wrap items-center gap-2">
         <div className="min-w-0 flex-1">
           <HistoryFilters counts={counts} filters={filters} onApply={setFilters} />
         </div>
-        {hasLinkableHikes ? (
-          <Button
-            size="sm"
-            type="button"
-            variant={selectionMode ? 'secondary' : 'outline'}
-            onClick={toggleSelectionMode}
-          >
-            {selectionMode ? (
-              <>
-                <X className="size-3.5" aria-hidden />
-                Annuler
-              </>
-            ) : (
-              <>
-                <Link2 className="size-3.5" aria-hidden />
-                Lier des randonnées
-              </>
-            )}
+        {selectionMode ? (
+          <Button size="sm" type="button" variant="secondary" onClick={exitSelectionMode}>
+            <X className="size-3.5" aria-hidden />
+            Annuler
           </Button>
-        ) : null}
+        ) : (
+          hasLinkableHikes && (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    aria-label="Actions de l'historique"
+                    size="icon-sm"
+                    type="button"
+                    variant="outline"
+                  />
+                }
+              >
+                <MoreHorizontal className="size-4" aria-hidden />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-52">
+                <DropdownMenuItem className="cursor-pointer gap-2" onClick={toggleSelectionMode}>
+                  <Link2 className="size-3.5" aria-hidden />
+                  Lier des randonnées
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )
+        )}
       </div>
       <p aria-live="polite" className="sr-only" role="status">
         {activities.length === 0
@@ -263,22 +338,11 @@ export function TrainingList() {
           ))
         : null}
 
-      {selectionMode && selectedIds.size >= 2 ? (
-        <div
-          className={cn(
-            'border-border/60 bg-background/95 supports-backdrop-filter:bg-background/80',
-            'fixed inset-x-0 bottom-0 z-40 border-t p-4 backdrop-blur-md',
-            'lg:static lg:rounded-xl lg:border lg:p-3',
-          )}
-        >
-          <Button
-            className="w-full sm:w-auto"
-            type="button"
-            onClick={() => setCreateDialogOpen(true)}
-          >
-            Créer un déplacement ({selectedIds.size})
-          </Button>
-        </div>
+      {selectionMode ? (
+        <HikeSelectionConfirmBar
+          selectedCount={selectedIds.size}
+          onConfirm={() => setCreateDialogOpen(true)}
+        />
       ) : null}
 
       <CreateHikeTripDialog

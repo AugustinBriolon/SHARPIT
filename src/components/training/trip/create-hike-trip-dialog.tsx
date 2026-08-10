@@ -60,7 +60,7 @@ export function CreateHikeTripDialog({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Mountain className="text-primary size-5 shrink-0" aria-hidden />
-              Créer un déplacement
+              Créer un séjour
             </DialogTitle>
             <DialogDescription>
               {activityIds.length} randonnée{activityIds.length > 1 ? 's' : ''} seront liées à ce

@@ -45,8 +45,7 @@ export function buildActivityCreateData(input: CreateActivityInput) {
 }
 
 export function buildActivityUpdateData(input: UpdateActivityInput) {
-  const { runMetrics, bikeMetrics, swimMetrics, hikeMetrics, strengthSets, type, ...base } =
-    input;
+  const { runMetrics, bikeMetrics, swimMetrics, hikeMetrics, strengthSets, type, ...base } = input;
 
   const data: Record<string, unknown> = { ...base };
   if (type) data.type = type;

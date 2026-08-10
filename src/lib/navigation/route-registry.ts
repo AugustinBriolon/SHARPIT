@@ -20,6 +20,7 @@ type Matcher = {
 const HOME_PARENT = { href: '/', label: 'Accueil' } as const;
 const TRAINING_PARENT = { href: '/training', label: 'Entraînement' } as const;
 const HISTORY_PARENT = { href: '/training/history', label: 'Historique' } as const;
+const TRIPS_PARENT = { href: '/training/trips', label: 'Séjours' } as const;
 const SETTINGS_PARENT = { href: '/settings', label: 'Réglages' } as const;
 const TODAY_PARENT = { href: '/', label: 'Aujourd’hui' } as const;
 
@@ -54,6 +55,15 @@ const MATCHERS: Matcher[] = [
   {
     pattern: /^\/training\/sessions$/,
     resolve: () => ({ label: 'Séances prévues', defaultParent: TRAINING_PARENT }),
+  },
+  // Both trip patterns must stay above the /training/:id catch-all below.
+  {
+    pattern: /^\/training\/trips$/,
+    resolve: () => ({ label: 'Séjours', defaultParent: TRAINING_PARENT }),
+  },
+  {
+    pattern: /^\/training\/trips\/[^/]+$/,
+    resolve: () => ({ label: 'Séjour', defaultParent: TRIPS_PARENT }),
   },
   {
     pattern: /^\/training\/([^/]+)\/edit$/,

@@ -1,4 +1,27 @@
 import { ActivityType } from '@prisma/client';
+import { format as formatDateFns, parseISO } from 'date-fns';
+import { fr } from 'date-fns/locale';
+
+function asDate(value: Date | string): Date {
+  return value instanceof Date ? value : parseISO(value);
+}
+
+/**
+ * Compact day span — “1 – 6 août 2026”, collapsing the month when both ends
+ * share it. Drops the weekday, which is noise once a range spans days.
+ */
+export function formatDayRange(start: Date | string, end: Date | string): string {
+  const from = asDate(start);
+  const to = asDate(end);
+  const fullEnd = formatDateFns(to, 'd MMM yyyy', { locale: fr });
+
+  if (from.getTime() === to.getTime()) return fullEnd;
+
+  const sameMonth = from.getFullYear() === to.getFullYear() && from.getMonth() === to.getMonth();
+  return sameMonth
+    ? `${formatDateFns(from, 'd', { locale: fr })} – ${fullEnd}`
+    : `${formatDateFns(from, 'd MMM', { locale: fr })} – ${fullEnd}`;
+}
 
 export function formatDuration(seconds?: number | null): string {
   if (!seconds) return '—';

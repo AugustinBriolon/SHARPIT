@@ -1,11 +1,12 @@
 'use client';
 
-import { Check, ChevronDown, Loader2, Pencil } from 'lucide-react';
+import { Check, ChevronDown, Info, Loader2, Pencil } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { CoachContextGuide } from '@/components/coach-memory/coach-context-guide';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useSaveCoachContext } from '@/hooks/use-coach';
+import { parseDurablePreferences, shouldRenderAsBullets } from '@/lib/coach-memory/memory-summary';
 import { cn } from '@/lib/utils';
 
 const PLACEHOLDER = `Ex. :
@@ -16,6 +17,9 @@ const PLACEHOLDER = `Ex. :
 
 const EMPTY_HINT =
   'Aucune préférence enregistrée. Ajoute contraintes horaires, habitudes et contexte pro.';
+
+/** Ties the info toggle to the panel it reveals. */
+const GUIDE_ID = 'coach-context-guide';
 
 /** Collapsed read clamp — content shorter than this stays fully visible. */
 const READ_MAX_COLLAPSED_CLASS = 'max-h-40';
@@ -54,7 +58,8 @@ function ContextReadClamp({ text, empty }: { text: string; empty: boolean }) {
       <div className="relative">
         <div
           className={cn(
-            'border-analysis-border bg-background/60 rounded-analysis border px-3 py-3 text-sm leading-relaxed',
+            // No inner border: the section is already a hairline card.
+            'text-sm leading-relaxed',
             empty ? 'text-muted-foreground italic' : 'text-foreground',
             clamped &&
               cn(
@@ -71,7 +76,7 @@ function ContextReadClamp({ text, empty }: { text: string; empty: boolean }) {
 
         {clamped ? (
           <div
-            className="from-analysis-surface-alt pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-linear-to-t to-transparent"
+            className="from-chip-surface pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-linear-to-t to-transparent"
             aria-hidden
           />
         ) : null}
@@ -95,6 +100,20 @@ function ContextReadClamp({ text, empty }: { text: string; empty: boolean }) {
   );
 }
 
+/** Structured read view — one line per preference, so the layer scans at a glance. */
+function ContextBulletList({ items }: { items: string[] }) {
+  return (
+    <ul className="space-y-2">
+      {items.map((item, index) => (
+        <li key={`${index}-${item}`} className="flex gap-2.5 text-sm leading-relaxed">
+          <span className="bg-primary mt-[0.5em] size-1.5 shrink-0 rounded-full" aria-hidden />
+          <span className="min-w-0 flex-1">{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function CoachProfileContextSection({
   savedContext,
   loading = false,
@@ -108,6 +127,7 @@ export function CoachProfileContextSection({
   const [mode, setMode] = useState<'read' | 'edit'>('read');
   const [editValue, setEditValue] = useState(savedContext);
   const [justSaved, setJustSaved] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
 
   useEffect(() => {
     if (mode === 'read') setEditValue(savedContext);
@@ -165,56 +185,83 @@ export function CoachProfileContextSection({
       );
     }
 
+    // Unstructured free text keeps the clamped paragraph.
+    if (hasContent && shouldRenderAsBullets(savedContext)) {
+      return <ContextBulletList items={parseDurablePreferences(savedContext)} />;
+    }
+
     return <ContextReadClamp empty={!hasContent} text={savedContext} />;
   }
 
+  /** Read mode only confirms a save; edit mode carries the commit controls. */
+  function renderFooterAction() {
+    if (mode === 'read') {
+      if (!justSaved) return null;
+      return (
+        <span aria-live="polite" className="text-primary inline-flex items-center gap-1 text-xs">
+          <Check className="size-3.5" aria-hidden />
+          Enregistré
+        </span>
+      );
+    }
+
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="button" variant="outline" onClick={handleCancel}>
+          Annuler
+        </Button>
+        <Button disabled={!dirty || save.isPending} type="button" onClick={handleSave}>
+          {save.isPending ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : null}
+          Enregistrer
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <section
-      className="analysis-panel-alt rounded-analysis-lg space-y-4 px-5 py-5"
-      id="memory-profile-context"
-    >
-      <div>
-        <p className="text-label mb-2">Durable</p>
-        <h2 className="text-section-title">Préférences & disponibilités</h2>
-        <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-          Contraintes pro, habitudes et créneaux — ce qui ne change pas chaque semaine.
-        </p>
+    <section className="space-y-3" id="memory-profile-context">
+      {/* Header sits outside the card — the card holds the preferences only. */}
+      <div className="flex items-end justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-label text-primary mb-1">Durable</p>
+          <h2 className="text-section-title">Préférences & disponibilités</h2>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            aria-controls={GUIDE_ID}
+            aria-expanded={guideOpen}
+            aria-label="Qu'est-ce qu'un bon contexte ?"
+            className="text-muted-foreground"
+            size="icon-sm"
+            type="button"
+            variant="ghost"
+            onClick={() => setGuideOpen((open) => !open)}
+          >
+            <Info className="size-4" aria-hidden />
+          </Button>
+          {!loadError && !loading && mode === 'read' ? (
+            <Button type="button" variant="outline" onClick={handleEdit}>
+              <Pencil className="size-3.5" aria-hidden />
+              Modifier
+            </Button>
+          ) : null}
+        </div>
       </div>
 
-      {renderBody()}
+      {guideOpen ? (
+        <div className="border-analysis-border rounded-analysis-lg border border-dashed px-5 py-4">
+          <CoachContextGuide id={GUIDE_ID} />
+        </div>
+      ) : null}
+
+      <div className="chip-surface rounded-analysis-lg px-5 py-5">{renderBody()}</div>
 
       {!loadError && !loading ? (
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-muted-foreground text-xs">
-            Chat, génération de semaine, adaptation du plan.
+            Utilisé pour le chat, la génération de semaine et l&apos;adaptation du plan.
           </p>
-          {mode === 'read' ? (
-            <div className="flex items-center gap-2">
-              {justSaved ? (
-                <span
-                  aria-live="polite"
-                  className="text-primary inline-flex items-center gap-1 text-xs"
-                >
-                  <Check className="size-3.5" aria-hidden />
-                  Enregistré
-                </span>
-              ) : null}
-              <Button type="button" variant="outline" onClick={handleEdit}>
-                <Pencil className="size-3.5" aria-hidden />
-                Modifier
-              </Button>
-            </div>
-          ) : (
-            <div className="flex flex-wrap items-center gap-2">
-              <Button type="button" variant="outline" onClick={handleCancel}>
-                Annuler
-              </Button>
-              <Button disabled={!dirty || save.isPending} type="button" onClick={handleSave}>
-                {save.isPending ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : null}
-                Enregistrer
-              </Button>
-            </div>
-          )}
+          {renderFooterAction()}
         </div>
       ) : null}
 
@@ -223,8 +270,6 @@ export function CoachProfileContextSection({
           {save.error.message}
         </p>
       ) : null}
-
-      <CoachContextGuide />
     </section>
   );
 }

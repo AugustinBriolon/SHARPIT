@@ -5,12 +5,12 @@ describe('parseApiErrorBody', () => {
   it('extracts hike trip conflict fields', () => {
     expect(
       parseApiErrorBody({
-        error: 'Une activité appartient déjà à un autre déplacement',
+        error: 'Une activité appartient déjà à un autre séjour',
         tripId: 'trip-other',
         tripName: 'Alpes',
       }),
     ).toEqual({
-      error: 'Une activité appartient déjà à un autre déplacement',
+      error: 'Une activité appartient déjà à un autre séjour',
       tripId: 'trip-other',
       tripName: 'Alpes',
       details: undefined,
@@ -22,7 +22,7 @@ describe('formatApiErrorMessage', () => {
   it('prefers actionable copy when tripName is present', () => {
     expect(
       formatApiErrorMessage({
-        error: 'Une activité appartient déjà à un autre déplacement',
+        error: 'Une activité appartient déjà à un autre séjour',
         tripName: 'Alpes',
       }),
     ).toBe('Une activité est déjà dans « Alpes »');

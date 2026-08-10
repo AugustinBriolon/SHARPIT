@@ -154,8 +154,7 @@ function buildExerciseStep(
 
   if (useDuration) {
     step.endCondition = TIME_CONDITION;
-    step.endConditionValue =
-      set.durationSec != null && set.durationSec > 0 ? set.durationSec : 30;
+    step.endConditionValue = set.durationSec != null && set.durationSec > 0 ? set.durationSec : 30;
   } else {
     step.endCondition = REPS_CONDITION;
     step.endConditionValue = Math.max(1, set.reps || 1);

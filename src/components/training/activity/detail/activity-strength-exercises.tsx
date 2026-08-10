@@ -137,7 +137,7 @@ export function ActivityStrengthExercises({ activity }: { activity: ActivityDeta
                     <span className="min-w-0 flex-1 font-medium">
                       {set.exercise}
                       {media ? (
-                        <span className="text-muted-foreground block text-xs font-normal capitalize wrap-break-word">
+                        <span className="text-muted-foreground block text-xs font-normal wrap-break-word capitalize">
                           {media.target}
                           {media.equipment ? ` · ${media.equipment}` : ''}
                         </span>

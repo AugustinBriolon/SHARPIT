@@ -5,7 +5,6 @@ import { ActivityType } from '@prisma/client';
 import { MoreHorizontal, Mountain, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { StickyHeader } from '@/components/layout/sticky-header';
 import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
@@ -28,54 +27,10 @@ import { InstrumentListChip } from '@/components/ui/instrument-list-chip';
 import { Input } from '@/components/ui/input';
 import { useActivities, useHikeTripMutations } from '@/hooks/use-data';
 import { buildHikeTripMemberMeta } from '@/components/training/trip/hike-trip-timeline';
-import { formatDate } from '@/lib/format';
-import { SPORT_IDENTITY_TEXT } from '@/lib/activity/sport-identity';
-import type { HikeTripSummary } from '@/lib/activity/hike-trip-summary';
 import { cn } from '@/lib/utils';
 
-function formatTripDateRange(start: Date, end: Date): string {
-  const sameDay =
-    start.getFullYear() === end.getFullYear() &&
-    start.getMonth() === end.getMonth() &&
-    start.getDate() === end.getDate();
-  if (sameDay) return formatDate(start);
-  return `${formatDate(start)} – ${formatDate(end)}`;
-}
-
-export function HikeTripPageHeader({
-  name,
-  summary,
-  tripId,
-}: {
-  name: string;
-  summary: HikeTripSummary;
-  tripId: string;
-}) {
-  return (
-    <StickyHeader>
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-1 items-start gap-3">
-          <span className="icon-well size-11 sm:size-12" aria-hidden>
-            <Mountain className={cn('size-5 sm:size-6', SPORT_IDENTITY_TEXT[ActivityType.HIKE])} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-muted-foreground text-sm tracking-wide">Déplacement</p>
-            <h1 className="text-page-title mt-1.5 leading-snug wrap-break-word">{name}</h1>
-            <p className="text-data text-muted-foreground mt-1.5 text-sm tabular-nums">
-              {formatTripDateRange(summary.startAt, summary.endAt)}
-              {summary.memberCount > 0
-                ? ` · ${summary.memberCount} étape${summary.memberCount > 1 ? 's' : ''}`
-                : null}
-            </p>
-          </div>
-        </div>
-        <HikeTripHeaderMenu tripId={tripId} tripName={name} />
-      </div>
-    </StickyHeader>
-  );
-}
-
-function HikeTripHeaderMenu({ tripId, tripName }: { tripId: string; tripName: string }) {
+/** Rename / delete menu. Rendered inside the ink band, so it inherits ink colors. */
+export function HikeTripActionsMenu({ tripId, tripName }: { tripId: string; tripName: string }) {
   const router = useRouter();
   const { patch, remove } = useHikeTripMutations();
   const { confirm, dialog } = useConfirmDialog();
@@ -84,14 +39,14 @@ function HikeTripHeaderMenu({ tripId, tripName }: { tripId: string; tripName: st
 
   async function handleDelete() {
     const confirmed = await confirm({
-      title: 'Supprimer ce déplacement ?',
+      title: 'Supprimer ce séjour ?',
       description: 'Les randonnées liées seront conservées et détachées du dossier.',
       confirmLabel: 'Supprimer',
       variant: 'destructive',
     });
     if (!confirmed) return;
     remove.mutate(tripId, {
-      onSuccess: () => router.push('/training'),
+      onSuccess: () => router.push('/training/trips'),
     });
   }
 
@@ -119,8 +74,8 @@ function HikeTripHeaderMenu({ tripId, tripName }: { tripId: string; tripName: st
         <DropdownMenuTrigger
           render={
             <Button
-              aria-label="Actions du déplacement"
-              className="text-muted-foreground"
+              aria-label="Actions du séjour"
+              className="text-ink-surface-foreground/70 hover:text-ink-surface-foreground hover:bg-ink-surface-foreground/10"
               size="icon-sm"
               type="button"
               variant="ghost"
@@ -156,7 +111,7 @@ function HikeTripHeaderMenu({ tripId, tripName }: { tripId: string; tripName: st
         <DialogContent className="sm:max-w-md">
           <form onSubmit={handleRenameSubmit}>
             <DialogHeader>
-              <DialogTitle>Renommer le déplacement</DialogTitle>
+              <DialogTitle>Renommer le séjour</DialogTitle>
               <DialogDescription>Ex. « Queyras · août »</DialogDescription>
             </DialogHeader>
             <Input
@@ -211,6 +166,51 @@ export function HikeTripAddStepControl({ tripId }: { tripId: string }) {
     );
   }
 
+  function renderAvailableHikes() {
+    if (isPending) {
+      return <p className="text-muted-foreground text-sm">Chargement…</p>;
+    }
+    if (availableHikes.length === 0) {
+      return (
+        <InkEmptyState
+          description="Lie des randonnées depuis Training ou crée-en de nouvelles."
+          icon={Mountain}
+          title="Aucune randonnée disponible"
+          bleed
+        />
+      );
+    }
+    return (
+      <ul className="space-y-2">
+        {availableHikes.map((activity) => {
+          const selected = selectedId === activity.id;
+          return (
+            <li key={activity.id}>
+              <InstrumentListChip
+                activityType={ActivityType.HIKE}
+                className={cn(selected && 'ring-primary/40 ring-2')}
+                showArrow={false}
+                title={activity.title?.trim() || 'Randonnée'}
+                meta={buildHikeTripMemberMeta({
+                  ...activity,
+                  observedLocationLabel: null,
+                  hikeMetrics: activity.hikeMetrics
+                    ? {
+                        distanceM: activity.hikeMetrics.distanceM ?? null,
+                        elevationM: activity.hikeMetrics.elevationM ?? null,
+                        elevationLossM: null,
+                      }
+                    : null,
+                })}
+                onClick={() => setSelectedId(selected ? null : activity.id)}
+              />
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
+
   return (
     <>
       <Button size="sm" type="button" variant="outline" onClick={() => setOpen(true)}>
@@ -248,44 +248,7 @@ export function HikeTripAddStepControl({ tripId }: { tripId: string }) {
               </div>
 
               <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-                {isPending ? (
-                  <p className="text-muted-foreground text-sm">Chargement…</p>
-                ) : availableHikes.length === 0 ? (
-                  <InkEmptyState
-                    description="Lie des randonnées depuis Training ou crée-en de nouvelles."
-                    icon={Mountain}
-                    title="Aucune randonnée disponible"
-                    bleed
-                  />
-                ) : (
-                  <ul className="space-y-2">
-                    {availableHikes.map((activity) => {
-                      const selected = selectedId === activity.id;
-                      return (
-                        <li key={activity.id}>
-                          <InstrumentListChip
-                            activityType={ActivityType.HIKE}
-                            className={cn(selected && 'ring-primary/40 ring-2')}
-                            showArrow={false}
-                            title={activity.title?.trim() || 'Randonnée'}
-                            meta={buildHikeTripMemberMeta({
-                              ...activity,
-                              observedLocationLabel: null,
-                              hikeMetrics: activity.hikeMetrics
-                                ? {
-                                    distanceM: activity.hikeMetrics.distanceM ?? null,
-                                    elevationM: activity.hikeMetrics.elevationM ?? null,
-                                    elevationLossM: null,
-                                  }
-                                : null,
-                            })}
-                            onClick={() => setSelectedId(selected ? null : activity.id)}
-                          />
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
+                {renderAvailableHikes()}
               </div>
 
               <div className="border-border/60 border-t px-4 py-3">
@@ -295,7 +258,7 @@ export function HikeTripAddStepControl({ tripId }: { tripId: string }) {
                   type="button"
                   onClick={handleAdd}
                 >
-                  Ajouter au déplacement
+                  Ajouter au séjour
                 </Button>
               </div>
             </Drawer.Popup>

@@ -6,7 +6,6 @@ import {
   integrationsStatusLabel,
   memoryStatusLabel,
   themeStatusLabel,
-  tripsStatusLabel,
 } from '@/lib/settings/hub-status';
 
 describe('settings hub status labels', () => {
@@ -62,12 +61,6 @@ describe('settings hub status labels', () => {
     );
     expect(integrationsStatusLabel({ connectedCount: 0 })).toBe('Aucune connexion');
     expect(integrationsStatusLabel({ connectedCount: 3 })).toBe('3 connectées');
-  });
-
-  it('summarizes hike trips', () => {
-    expect(tripsStatusLabel(0)).toBe('Aucun déplacement');
-    expect(tripsStatusLabel(1)).toBe('1 dossier');
-    expect(tripsStatusLabel(3)).toBe('3 dossiers');
   });
 
   it('maps theme preference', () => {
