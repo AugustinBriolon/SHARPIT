@@ -126,6 +126,11 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
 
   const isOutdoor = sportSupportsOutdoorContext(activityType);
 
+  // Cache Components hides this route instead of unmounting it, so a submit
+  // error from an earlier visit would still be on screen when the athlete
+  // comes back. Clear it as the route goes hidden.
+  useEffect(() => () => form.clearErrors('root'), [form]);
+
   useEffect(() => {
     if (mode !== 'create' || locationTouchedRef.current) return;
     const dateIso = resolvedActivityDate.toISOString();
@@ -232,6 +237,10 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
       try {
         if (mode === 'create') {
           const activity = await create.mutateAsync(payload);
+          // Cache Components keeps this route mounted after we navigate away,
+          // so a saved entry would still be sitting in the fields next time
+          // the athlete opens "Saisir une séance".
+          form.reset();
           router.push(`/training/${activity.id}`);
           return;
         }
