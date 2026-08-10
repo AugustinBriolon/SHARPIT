@@ -8,14 +8,12 @@ function loadAllowedDevOrigins(): string[] {
 }
 
 const nextConfig: NextConfig = {
-  experimental: {
-    // Instant UX: keep dynamic RSC payloads briefly so in-app back/forward
-    // (and Link fallbacks) reuse the warm route instead of cold-loading.
-    staleTimes: {
-      dynamic: 30,
-      static: 180,
-    },
-  },
+  // Instant UX, framework side: every route gets a prerendered shell that is
+  // served immediately while dynamic content streams in, and <Link> prefetches
+  // one reusable shell per route instead of one payload per link.
+  // Supersedes experimental.staleTimes, which is gone.
+  cacheComponents: true,
+  partialPrefetching: true,
   turbopack: {},
   allowedDevOrigins: loadAllowedDevOrigins(),
   images: {
