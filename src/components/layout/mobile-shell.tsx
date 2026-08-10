@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutGroup, motion, useReducedMotion } from 'motion/react';
@@ -19,11 +20,12 @@ function BottomNavLink({
   onPrefetch,
 }: {
   item: AppNavItem;
-  pathname: string;
+  /** `null` while the URL is still unknown — renders the link without a highlight. */
+  pathname: string | null;
   onNavigate?: () => void;
   onPrefetch: (href: string) => void;
 }) {
-  const isActive = item.match(pathname);
+  const isActive = pathname != null && item.match(pathname);
   const Icon = item.icon;
   const reduce = useReducedMotion();
   const hint = () => onPrefetch(item.href);
@@ -60,8 +62,37 @@ function BottomNavLink({
   );
 }
 
-export function BottomNav() {
+function ActiveBottomNavLink({
+  item,
+  onPrefetch,
+}: {
+  item: AppNavItem;
+  onPrefetch: (href: string) => void;
+}) {
   const pathname = usePathname();
+  return <BottomNavLink item={item} pathname={pathname} onPrefetch={onPrefetch} />;
+}
+
+/**
+ * Same shape as the sidebar: the bar is static and prerenders, only the active
+ * highlight waits on the URL. The fallback is the identical link minus the
+ * highlight, so nothing moves when the boundary resolves.
+ */
+function SuspendedBottomNavLink({
+  item,
+  onPrefetch,
+}: {
+  item: AppNavItem;
+  onPrefetch: (href: string) => void;
+}) {
+  return (
+    <Suspense fallback={<BottomNavLink item={item} pathname={null} onPrefetch={onPrefetch} />}>
+      <ActiveBottomNavLink item={item} onPrefetch={onPrefetch} />
+    </Suspense>
+  );
+}
+
+export function BottomNav() {
   const prefetch = usePrefetchNavQuery();
 
   return (
@@ -73,7 +104,7 @@ export function BottomNav() {
       <LayoutGroup id="bottom-nav">
         <div className="mx-auto flex max-w-lg items-stretch justify-around p-2">
           {bottomNavItems.map((item) => (
-            <BottomNavLink key={item.href} item={item} pathname={pathname} onPrefetch={prefetch} />
+            <SuspendedBottomNavLink key={item.href} item={item} onPrefetch={prefetch} />
           ))}
         </div>
       </LayoutGroup>

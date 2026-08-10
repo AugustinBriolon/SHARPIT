@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { Suspense, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton, useUser } from '@clerk/nextjs';
@@ -17,10 +17,11 @@ function NavLink({
   onPrefetch,
 }: {
   item: AppNavItem;
-  pathname: string;
+  /** `null` while the URL is still unknown — renders the link without a highlight. */
+  pathname: string | null;
   onPrefetch: (href: string) => void;
 }) {
-  const isActive = item.match(pathname);
+  const isActive = pathname != null && item.match(pathname);
   const Icon = item.icon;
   const reduce = useReducedMotion();
 
@@ -50,6 +51,37 @@ function NavLink({
       <Icon className="relative size-4 shrink-0" aria-hidden />
       <span className="relative">{item.label}</span>
     </Link>
+  );
+}
+
+function ActiveNavLink({
+  item,
+  onPrefetch,
+}: {
+  item: AppNavItem;
+  onPrefetch: (href: string) => void;
+}) {
+  const pathname = usePathname();
+  return <NavLink item={item} pathname={pathname} onPrefetch={onPrefetch} />;
+}
+
+/**
+ * The nav itself is static and belongs in the prerendered shell; only the
+ * active highlight needs the URL. The fallback is the very same link without
+ * the highlight, so the boundary costs nothing visually — the highlight snaps
+ * in once the route is known.
+ */
+function SidebarNavLink({
+  item,
+  onPrefetch,
+}: {
+  item: AppNavItem;
+  onPrefetch: (href: string) => void;
+}) {
+  return (
+    <Suspense fallback={<NavLink item={item} pathname={null} onPrefetch={onPrefetch} />}>
+      <ActiveNavLink item={item} onPrefetch={onPrefetch} />
+    </Suspense>
   );
 }
 
@@ -96,7 +128,6 @@ function AccountMenu() {
 }
 
 export function Sidebar() {
-  const pathname = usePathname();
   const prefetch = usePrefetchNavQuery();
 
   return (
@@ -120,13 +151,13 @@ export function Sidebar() {
         >
           <div className="space-y-1">
             {sidebarPrimaryNavItems.map((item) => (
-              <NavLink key={item.href} item={item} pathname={pathname} onPrefetch={prefetch} />
+              <SidebarNavLink key={item.href} item={item} onPrefetch={prefetch} />
             ))}
           </div>
         </nav>
 
         <div className="border-sidebar-border space-y-2 border-t px-3 pt-3 pb-3">
-          <NavLink item={settingsNavItem} pathname={pathname} onPrefetch={prefetch} />
+          <SidebarNavLink item={settingsNavItem} onPrefetch={prefetch} />
           <AccountMenu />
         </div>
       </LayoutGroup>
