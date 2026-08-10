@@ -97,7 +97,7 @@ export function IntegrationSyncActions({
       {onFullImport && (
         <Button disabled={busy || guardDisabled} variant="outline" onClick={onFullImport}>
           {guardedActionLabel(offline, offlineLabel, fullImportLabel, {
-            active: importingAll,
+            active: importingAll ?? false,
             label: fullImportingLabel,
           })}
         </Button>
