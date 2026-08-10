@@ -11,8 +11,6 @@ async function EquipmentPanelWithProfile() {
   return <EquipmentPanel initial={normalizeAthleteEquipment(athleteProfile?.equipment ?? null)} />;
 }
 
-export const instant = true;
-
 export default function SettingsEquipmentPage() {
   return (
     <div className="space-y-4">

@@ -11,8 +11,6 @@ async function CoachMemoryManagerForFocus({
   return <CoachMemoryManager focusId={focus ?? null} />;
 }
 
-export const instant = true;
-
 export default function SettingsCoachMemoryPage({
   searchParams,
 }: {

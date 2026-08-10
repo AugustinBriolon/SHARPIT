@@ -1,8 +1,6 @@
 import { HubStatusValue } from '@/components/settings/hub-status-value';
 import { SettingsHome, type SettingsStatusSlots } from '@/components/settings/settings-home';
 
-export const instant = true;
-
 const statusSlots: SettingsStatusSlots = {
   account: <HubStatusValue statusKey="account" />,
   equipment: <HubStatusValue statusKey="equipment" />,
