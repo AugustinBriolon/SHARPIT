@@ -9,13 +9,19 @@ const STORAGE_STATE = 'e2e/.auth/athlete.json';
  * component clears it. `useResetWhenHidden` is what clears it; these specs are
  * the guard that it keeps happening.
  *
- * They need a signed-in session, since every surface here is behind the Clerk
- * allow-list. Create or refresh one with:
+ * Every surface here is behind the Clerk allow-list, so the app has to be
+ * reachable while signed in. Unlike the instant-navigation specs these assert
+ * nothing about prefetching, so they do not need a production build — run them
+ * against the dev server, where DEV_BYPASS_CLERK already stands in for a
+ * session and no credential is involved:
  *
- *   npx playwright codegen --save-storage=e2e/.auth/athlete.json http://localhost:3000
+ *   yarn dev                 # in one terminal
+ *   yarn test:e2e:dev        # in another
  *
- * With no session file the suite skips. With an expired one it skips too, and
- * says so — a stale session would otherwise read as three broken features.
+ * `yarn test:e2e` builds and starts production instead, where the bypass is off
+ * by design. There they run only if `e2e/.auth/athlete.json` holds a live
+ * session, and skip with a reason otherwise — a signed-out run would otherwise
+ * read as broken features rather than a missing session.
  *
  * Hidden Activity content stays in the DOM, so assert on *visibility*
  * (`getByRole` / `toBeVisible`), never on presence alone. The same is true of
@@ -25,18 +31,15 @@ const STORAGE_STATE = 'e2e/.auth/athlete.json';
  * [ADR-010]: docs/adr/ADR-010-cache-components-and-instant-navigation.md
  */
 
-// Resolved once, before the storageState fixture is built — a per-test
-// `test.skip()` would still try to load the missing file first.
-const describeWithSession = existsSync(STORAGE_STATE) ? test.describe : test.describe.skip;
-
-describeWithSession('transient UI state resets when a route is hidden', () => {
-  test.use({ storageState: STORAGE_STATE });
+test.describe('transient UI state resets when a route is hidden', () => {
+  // Applied only when recorded — passing a missing path fails the fixture.
+  test.use(existsSync(STORAGE_STATE) ? { storageState: STORAGE_STATE } : {});
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/training/history');
     test.skip(
       new URL(page.url()).pathname.startsWith('/sign-in'),
-      `the session in ${STORAGE_STATE} has expired — re-record it (see this file's comment)`,
+      "not signed in — run against `yarn dev` via `yarn test:e2e:dev`, or record a session (see this file's comment)",
     );
   });
 
@@ -65,10 +68,13 @@ describeWithSession('transient UI state resets when a route is hidden', () => {
       .click();
     await expect(page.getByRole('dialog')).toBeVisible();
 
-    await page.getByRole('link', { name: 'Accueil' }).first().click();
-    await expect(page).toHaveURL(/localhost:\d+\/$/);
-
+    // Leaving happens through browser back, not a nav link: the dialog is modal,
+    // so while it is open the rest of the page is out of the accessibility tree
+    // and no link is clickable. Back is the route the athlete actually takes.
     await page.goBack();
+    await expect(page).toHaveURL(/\/training\/history$/);
+
+    await page.goForward();
     await expect(page).toHaveURL(/\/settings\/memory$/);
     await expect(page.getByRole('dialog')).toBeHidden();
   });

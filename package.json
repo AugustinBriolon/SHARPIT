@@ -32,7 +32,8 @@
     "db:studio": "prisma studio",
     "db:up": "docker compose up -d",
     "db:migrate-neon": "bash scripts/migrate-to-neon.sh",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:dev": "PLAYWRIGHT_BASE_URL=http://localhost:3000 playwright test activity-state"
   },
   "dependencies": {
     "@ai-sdk/react": "4.0.35",
