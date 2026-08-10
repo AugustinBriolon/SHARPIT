@@ -9,6 +9,9 @@ import { useThemePreference } from '@/providers/theme-provider';
 import { themeStatusLabel, type SettingsHubStatus } from '@/lib/settings/hub-status';
 import { cn } from '@/lib/utils';
 
+/** One streamed status node per server-backed entry, keyed by status key. */
+export type SettingsStatusSlots = Record<keyof SettingsHubStatus, React.ReactNode>;
+
 type SettingsEntry = {
   href: string;
   title: string;
@@ -97,7 +100,19 @@ const GROUPS: SettingsGroup[] = [
   },
 ];
 
-function SettingsEntryRow({ entry, status }: { entry: SettingsEntry; status: string }) {
+/** Appearance is the one status the client owns — it comes from the theme store. */
+function AppearanceStatus() {
+  const { preference } = useThemePreference();
+  return themeStatusLabel(preference);
+}
+
+function SettingsEntryRow({
+  entry,
+  statusSlots,
+}: {
+  entry: SettingsEntry;
+  statusSlots: SettingsStatusSlots;
+}) {
   const Icon = entry.icon;
 
   return (
@@ -115,7 +130,13 @@ function SettingsEntryRow({ entry, status }: { entry: SettingsEntry; status: str
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <p className="text-sm font-medium">{entry.title}</p>
-            <p className="text-data text-muted-foreground text-xs tabular-nums">{status}</p>
+            <p className="text-data text-muted-foreground text-xs tabular-nums">
+              {entry.statusKey === 'appearance' ? (
+                <AppearanceStatus />
+              ) : (
+                statusSlots[entry.statusKey]
+              )}
+            </p>
           </div>
           <p className="text-muted-foreground mt-0.5 text-sm leading-relaxed">
             {entry.description}
@@ -132,15 +153,7 @@ function SettingsEntryRow({ entry, status }: { entry: SettingsEntry; status: str
   );
 }
 
-export function SettingsHome({ status }: { status: SettingsHubStatus }) {
-  const { preference } = useThemePreference();
-  const appearanceStatus = themeStatusLabel(preference);
-
-  function resolveStatus(key: SettingsEntry['statusKey']): string {
-    if (key === 'appearance') return appearanceStatus;
-    return status[key];
-  }
-
+export function SettingsHome({ statusSlots }: { statusSlots: SettingsStatusSlots }) {
   return (
     <div className="space-y-6">
       <StickyHeader>
@@ -163,11 +176,7 @@ export function SettingsHome({ status }: { status: SettingsHubStatus }) {
             </div>
             <ul className="space-y-2">
               {group.entries.map((entry) => (
-                <SettingsEntryRow
-                  key={entry.href}
-                  entry={entry}
-                  status={resolveStatus(entry.statusKey)}
-                />
+                <SettingsEntryRow key={entry.href} entry={entry} statusSlots={statusSlots} />
               ))}
             </ul>
           </section>

@@ -1,9 +1,17 @@
-import { SettingsHome } from '@/components/settings/settings-home';
-import { loadSettingsHubStatus } from '@/lib/settings/load-hub-status';
+import { HubStatusValue } from '@/components/settings/hub-status-value';
+import { SettingsHome, type SettingsStatusSlots } from '@/components/settings/settings-home';
 
-export const dynamic = 'force-dynamic';
+export const instant = true;
 
-export default async function SettingsPage() {
-  const status = await loadSettingsHubStatus();
-  return <SettingsHome status={status} />;
+const statusSlots: SettingsStatusSlots = {
+  account: <HubStatusValue statusKey="account" />,
+  equipment: <HubStatusValue statusKey="equipment" />,
+  goals: <HubStatusValue statusKey="goals" />,
+  memory: <HubStatusValue statusKey="memory" />,
+  integrations: <HubStatusValue statusKey="integrations" />,
+  about: <HubStatusValue statusKey="about" />,
+};
+
+export default function SettingsPage() {
+  return <SettingsHome statusSlots={statusSlots} />;
 }

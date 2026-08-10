@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { listCoachMemoryEntries } from '@/lib/coach-memory/service';
 import { getGarminAccount } from '@/lib/integrations/garmin-sync';
 import { getGoogleAccount, isGoogleConnected } from '@/lib/integrations/google-sync';
@@ -35,6 +36,13 @@ async function countConnectedIntegrations(): Promise<number> {
     isGoogleConnected(google),
   ].filter(Boolean).length;
 }
+
+/**
+ * Per-request memoized read for the settings hub. Each status chip streams into
+ * its own Suspense boundary, so the loader is called once per chip and deduped
+ * to a single round of queries here.
+ */
+export const getSettingsHubStatus = cache(loadSettingsHubStatus);
 
 /** Server snapshot for settings hub status chips. Failures degrade to neutral copy. */
 export async function loadSettingsHubStatus(): Promise<SettingsHubStatus> {
