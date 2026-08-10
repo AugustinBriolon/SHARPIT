@@ -1,7 +1,7 @@
 import type { Transition, Variants } from 'motion/react';
 import { motionTokens, springs } from '@/lib/motion/tokens';
 
-/** Opacity-only fade — safest for reduced-motion fallbacks and route fades. */
+/** Opacity-only fade — safest for reduced-motion fallbacks. */
 export const fadeVariants: Variants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1 },
@@ -27,11 +27,6 @@ export const fadeTransition: Transition = {
 
 export const fadeUpTransition: Transition = {
   duration: motionTokens.duration.normal,
-  ease: motionTokens.easing.smooth,
-};
-
-export const routeFadeTransition: Transition = {
-  duration: motionTokens.duration.slow,
   ease: motionTokens.easing.smooth,
 };
 

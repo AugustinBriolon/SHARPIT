@@ -5,7 +5,6 @@ import {
   collapseVariants,
   fadeTransition,
   fadeUpVariants,
-  routeFadeTransition,
   staggerContainer,
   staggerItem,
 } from '@/lib/motion/variants';
@@ -42,7 +41,6 @@ describe('motion variants', () => {
 
   it('transitions use token durations only', () => {
     expect(fadeTransition.duration).toBe(motionTokens.duration.fast);
-    expect(routeFadeTransition.duration).toBe(motionTokens.duration.slow);
   });
 
   it('stagger container uses token stagger', () => {

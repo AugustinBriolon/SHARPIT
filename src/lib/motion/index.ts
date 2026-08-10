@@ -13,7 +13,6 @@ export {
   fadeUpTransition,
   fadeUpVariants,
   fadeVariants,
-  routeFadeTransition,
   staggerContainer,
   staggerItem,
   staggerItemReduced,
