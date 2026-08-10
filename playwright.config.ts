@@ -2,12 +2,23 @@ import { defineConfig, devices } from '@playwright/test';
 
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
+/** Set by `yarn test:e2e:dev`, which points at an already-running `next dev`. */
+const againstDevServer = Boolean(process.env.PLAYWRIGHT_BASE_URL);
+
 /**
- * These specs assert what a navigation shows *before* the network answers, so
- * they only mean anything against a production server: `next dev` disables
- * prefetching, and without a prefetched shell `instant()` has nothing to freeze.
- * The webServer below therefore builds and starts the app rather than running
- * the dev server.
+ * Two modes, because the specs need different things from the server.
+ *
+ * **Production** (`yarn test:e2e`, the default): the webServer below builds and
+ * starts the app. Required by anything asserting what a navigation shows
+ * *before* the network answers — `next dev` disables prefetching, so without a
+ * prefetched shell `instant()` has nothing to freeze.
+ *
+ * **Dev** (`yarn test:e2e:dev`): runs against a `next dev` you already have up,
+ * where DEV_BYPASS_CLERK stands in for a session so the athlete's routes are
+ * reachable with no credential. Structural specs live here. The dev server
+ * compiles routes on demand and is a single shared resource, so this mode runs
+ * serially with a longer expect timeout — in parallel the workers queue behind
+ * each other's compiles and time out on navigations that are merely slow.
  *
  * Hidden Activity content stays in the DOM under Cache Components, so prefer
  * `getByRole` / `getByLabel` in these tests — they query the accessibility tree
@@ -15,13 +26,16 @@ const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
  */
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: true,
+  fullyParallel: !againstDevServer,
+  workers: againstDevServer ? 1 : undefined,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? 'github' : 'list',
+  expect: { timeout: againstDevServer ? 15_000 : 5_000 },
   use: {
     baseURL: BASE_URL,
     trace: 'on-first-retry',
+    navigationTimeout: againstDevServer ? 60_000 : 30_000,
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: process.env.PLAYWRIGHT_BASE_URL
