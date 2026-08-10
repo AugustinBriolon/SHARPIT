@@ -13,6 +13,7 @@
 | [ADR-007](./ADR-007-coaching-explainability-presentation.md)     | Coaching Explainability Presentation Layer                           | Accepted |
 | [ADR-008](./ADR-008-pwa-offline-snapshot-and-sw-lifecycle.md)    | PWA offline Snapshot persistence and service-worker update lifecycle | Accepted |
 | [ADR-009](./ADR-009-turbopack-build-and-serwist-configurator.md) | Turbopack builds and Serwist in configurator mode                    | Accepted |
+| [ADR-010](./ADR-010-cache-components-and-instant-navigation.md)  | Cache Components and Partial Prefetching for instant navigation      | Accepted |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 

@@ -143,6 +143,7 @@ Clerk needs outbound HTTPS from **your browser** and from **Node** (`yarn dev`) 
 ```bash
 yarn test                   # all unit and integration tests
 yarn test:watch             # watch mode
+yarn test:e2e               # Playwright — asserts what a navigation shows before the server answers
 
 # Scientific benchmark suites (CI deployment gates)
 yarn benchmark              # run all model benchmarks, human-readable output
@@ -151,6 +152,8 @@ yarn benchmark:compare      # compare v1 vs v2 model versions
 ```
 
 Scientific benchmarks gate intelligence model deployment. All four models (Recovery, Fatigue, Adaptation, Reasoning) must score **100/100 scientific regression score** and **1.0 safety score** to pass.
+
+`yarn test:e2e` builds and starts the app before running, because prefetching is disabled in `next dev` and these specs assert against prefetched shells ([ADR-010](docs/adr/ADR-010-cache-components-and-instant-navigation.md)).
 
 ## Development
 
