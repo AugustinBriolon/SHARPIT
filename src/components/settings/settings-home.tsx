@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { Brain, Dumbbell, Goal, Link2, MoonStar, ShieldCheck, User2, Wrench } from 'lucide-react';
 import { StickyHeader } from '@/components/layout/sticky-header';
@@ -212,7 +213,11 @@ export function SettingsHome({ statusSlots }: { statusSlots: SettingsStatusSlots
         </div>
       </section>
 
-      <InstallCard />
+      {/* Decides visibility from the current time against the dismissal stamp,
+          so it can't prerender. It renders nothing when hidden — no fallback. */}
+      <Suspense>
+        <InstallCard />
+      </Suspense>
     </div>
   );
 }

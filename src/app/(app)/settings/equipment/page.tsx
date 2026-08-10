@@ -1,12 +1,19 @@
+import { Suspense } from 'react';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { EquipmentPanel } from '@/components/settings/equipment';
 import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
 import { getAthleteProfile } from '@/lib/queries';
 
-export default async function SettingsEquipmentPage() {
+async function EquipmentPanelWithProfile() {
   const athleteProfile = await getAthleteProfile().catch(() => null);
 
+  return <EquipmentPanel initial={normalizeAthleteEquipment(athleteProfile?.equipment ?? null)} />;
+}
+
+export const instant = true;
+
+export default function SettingsEquipmentPage() {
   return (
     <div className="space-y-4">
       <MobileBackLink href="/settings" label="Réglages" showOnDesktop />
@@ -19,7 +26,10 @@ export default async function SettingsEquipmentPage() {
         </p>
       </StickyHeader>
 
-      <EquipmentPanel initial={normalizeAthleteEquipment(athleteProfile?.equipment ?? null)} />
+      {/* Header above is static and prerenders; only the athlete's equipment waits. */}
+      <Suspense>
+        <EquipmentPanelWithProfile />
+      </Suspense>
     </div>
   );
 }

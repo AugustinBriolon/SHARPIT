@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { PlanningView } from '@/components/planning/planning-view';
@@ -14,7 +15,11 @@ export default function TrainingPlanningPage() {
         </p>
       </StickyHeader>
 
-      <PlanningView embedded showCoachMenu />
+      {/* Suspense for `useSearchParams` (?planned= deep-link) — the view owns
+          its skeleton, and the header above stays in the shell. */}
+      <Suspense>
+        <PlanningView embedded showCoachMenu />
+      </Suspense>
     </div>
   );
 }

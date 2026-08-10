@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { ActivityForm } from '@/components/training/activity/activity-form';
@@ -13,7 +14,10 @@ export default function ManualTrainingPage() {
           Enregistrement manuel d&apos;une séance déjà réalisée (hors import Garmin / Strava).
         </p>
       </StickyHeader>
-      <ActivityForm mode="create" />
+      {/* The form defaults its date field to today — not prerenderable. */}
+      <Suspense>
+        <ActivityForm mode="create" />
+      </Suspense>
     </div>
   );
 }

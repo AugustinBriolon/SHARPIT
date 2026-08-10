@@ -1,8 +1,9 @@
+import { Suspense } from 'react';
 import { ProgressionHub } from '@/components/training/hub/progression-hub';
 import { mapAthleteProfileToFormData } from '@/lib/profile/map-athlete-profile';
 import { getAthleteProfile } from '@/lib/queries';
 
-export default async function TrainingProgressionPage() {
+async function ProgressionHubWithProfile() {
   let athleteProfile = null;
   try {
     athleteProfile = await getAthleteProfile();
@@ -11,4 +12,12 @@ export default async function TrainingProgressionPage() {
   }
 
   return <ProgressionHub initialProfile={mapAthleteProfileToFormData(athleteProfile)} />;
+}
+
+export default function TrainingProgressionPage() {
+  return (
+    <Suspense>
+      <ProgressionHubWithProfile />
+    </Suspense>
+  );
 }

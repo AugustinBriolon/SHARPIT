@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import {
@@ -14,7 +15,7 @@ import { getHikeTripById } from '@/lib/queries';
 
 type PageProps = { params: Promise<{ id: string }> };
 
-export default async function HikeTripDetailPage({ params }: PageProps) {
+async function HikeTripDetail({ params }: PageProps) {
   const { id } = await params;
   const trip = await getHikeTripById(id);
 
@@ -24,9 +25,7 @@ export default async function HikeTripDetailPage({ params }: PageProps) {
   const profile = buildHikeTripElevationProfile(trip.activities);
 
   return (
-    <div className="relative z-0 space-y-6 sm:space-y-8">
-      <MobileBackLink fallbackHref="/training/trips" fallbackLabel="Séjours" showOnDesktop />
-
+    <>
       <HikeTripInkBand
         actions={<HikeTripActionsMenu tripId={trip.id} tripName={trip.name} />}
         name={trip.name}
@@ -50,6 +49,20 @@ export default async function HikeTripDetailPage({ params }: PageProps) {
         </div>
         <HikeTripTimeline members={trip.activities} tripId={trip.id} />
       </section>
+    </>
+  );
+}
+
+export default function HikeTripDetailPage({ params }: PageProps) {
+  return (
+    <div className="relative z-0 space-y-6 sm:space-y-8">
+      <MobileBackLink fallbackHref="/training/trips" fallbackLabel="Séjours" showOnDesktop />
+
+      {/* The trip id is only known at request time — the back link above is the
+          shell, the trip streams. */}
+      <Suspense>
+        <HikeTripDetail params={params} />
+      </Suspense>
     </div>
   );
 }
