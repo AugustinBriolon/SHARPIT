@@ -10,6 +10,7 @@ import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { formatPlannedDuration } from '@/lib/planned-session/sessions';
 import { queryKeys } from '@/lib/query/keys';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { cn } from '@/lib/utils';
 import { useAppModal } from '@/providers/app-modal-provider';
 
@@ -95,6 +96,7 @@ export function MorningOrientationActions({
   onRefreshed?: () => void;
 }) {
   const queryClient = useQueryClient();
+  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
   const { openPlannedSession } = useAppModal();
   const [pending, setPending] = useState<'refresh' | 'hold' | 'apply' | null>(null);
   const [, startTransition] = useTransition();
@@ -109,6 +111,7 @@ export function MorningOrientationActions({
   }, [onRefreshed, queryClient, trainingDayId]);
 
   async function refreshEvidence() {
+    if (guardDisabled) return;
     setPending('refresh');
     try {
       const res = await fetch(
@@ -136,6 +139,7 @@ export function MorningOrientationActions({
     decisionId: string,
     direction: 'DOWN' | 'UP' | null,
   ) {
+    if (guardDisabled) return;
     setPending(action === 'reject' ? 'hold' : 'apply');
 
     try {
@@ -175,14 +179,18 @@ export function MorningOrientationActions({
         ) : null}
         <div className="flex flex-wrap items-center gap-2">
           <Button
-            disabled={pending === 'refresh'}
+            disabled={guardDisabled || pending === 'refresh'}
             size="sm"
             type="button"
             variant="accent"
             onClick={() => void refreshEvidence()}
           >
             <RefreshCw className={cn('size-3.5', pending === 'refresh' && 'animate-spin')} />
-            Actualiser les preuves
+            {pending === 'refresh'
+              ? 'Actualisation…'
+              : offline
+                ? offlineLabel
+                : 'Actualiser les preuves'}
           </Button>
         </div>
       </div>
@@ -285,21 +293,21 @@ export function MorningOrientationActions({
       <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center">
         <Button
           className="h-11 w-full rounded-full lg:h-9 lg:w-auto"
-          disabled={busy}
+          disabled={guardDisabled || busy}
           type="button"
           variant="highlight"
           onClick={() => void actRecalibration('accept', decisionId, direction)}
         >
-          {pending === 'apply' ? 'Application…' : 'Appliquer la proposée'}
+          {pending === 'apply' ? 'Application…' : offline ? offlineLabel : 'Appliquer la proposée'}
         </Button>
         <Button
           className="h-11 w-full lg:h-9 lg:w-auto"
-          disabled={busy}
+          disabled={guardDisabled || busy}
           type="button"
           variant="ghost"
           onClick={() => void actRecalibration('reject', decisionId, null)}
         >
-          {pending === 'hold' ? 'Conservation…' : 'Garder le plan'}
+          {pending === 'hold' ? 'Conservation…' : offline ? offlineLabel : 'Garder le plan'}
         </Button>
       </div>
     </section>

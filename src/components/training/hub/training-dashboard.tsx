@@ -13,9 +13,12 @@ import {
 } from '@/components/training/hub/training-dashboard-shell';
 import { TrainingTripsSection } from '@/components/training/hub/training-trips-section';
 import { TrainingWeekStrip } from '@/components/training/hub/training-week-strip';
+import { OfflineSnapshotSummary } from '@/components/pwa/offline-snapshot-summary';
 import { Badge } from '@/components/ui/badge';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { useActivities, useGoals, usePlannedSessions } from '@/hooks/use-data';
+import { useOfflineSnapshot } from '@/hooks/use-offline-snapshot';
+import { useOnlineStatus } from '@/hooks/use-online-status';
 import { isAnyInitialQueryLoad } from '@/hooks/use-query-status';
 import { useIsMobile } from '@/hooks/use-viewport';
 import { selectUpcomingPlannedPreview } from '@/lib/planned-session/planned-session-dates';
@@ -138,10 +141,18 @@ function isHeroRaceSession(session: ClientPlannedSession, goal: ClientGoal): boo
 
 export function TrainingDashboard() {
   const isMobile = useIsMobile();
+  const online = useOnlineStatus();
   const activitiesQuery = useActivities();
   const plannedQuery = usePlannedSessions();
   const goalsQuery = useGoals();
   const valuesLoading = isAnyInitialQueryLoad([activitiesQuery, plannedQuery, goalsQuery]);
+  const hasNoLiveData =
+    activitiesQuery.data == null && plannedQuery.data == null && goalsQuery.data == null;
+  const { entry: offlineEntry } = useOfflineSnapshot(!online && hasNoLiveData);
+
+  if (!online && hasNoLiveData && offlineEntry) {
+    return <OfflineSnapshotSummary entry={offlineEntry} />;
+  }
 
   if (valuesLoading) {
     return <TrainingDashboardShell />;

@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import type { SessionAnalysis } from '@/lib/validators/coach';
 import { useActivities, usePlannedSessionMutations } from '@/hooks/use-data';
 import { usePhysicalNoteMutations, usePhysicalNotes } from '@/hooks/use-physical';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { queryKeys } from '@/lib/query/keys';
 import { fetchPlannedSessionById } from '@/lib/query/fetchers';
 import { Check, CheckCircle2, HeartPulse, Link2, Loader2, Unlink, X } from 'lucide-react';
@@ -76,6 +77,7 @@ function isReassessmentAnswered(
 function PhysicalReassessmentCard({ item }: { item: PhysicalReassessment }) {
   const notesQuery = usePhysicalNotes();
   const { addCheckin } = usePhysicalNoteMutations();
+  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
   const note = notesQuery.data?.find((n) => n.id === item.noteId);
 
   const [dismissed, setDismissed] = useState(false);
@@ -90,6 +92,7 @@ function PhysicalReassessmentCard({ item }: { item: PhysicalReassessment }) {
   const isSaving = addCheckin.isPending;
 
   function handleSave() {
+    if (guardDisabled) return;
     addCheckin.mutate(
       {
         id: item.noteId,
@@ -153,9 +156,9 @@ function PhysicalReassessmentCard({ item }: { item: PhysicalReassessment }) {
         value={comment}
         onChange={(e) => setComment(e.target.value)}
       />
-      <Button disabled={isSaving} size="sm" type="button" onClick={handleSave}>
+      <Button disabled={guardDisabled || isSaving} size="sm" type="button" onClick={handleSave}>
         {isSaving ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
-        Enregistrer le point
+        {offline ? offlineLabel : 'Enregistrer le point'}
       </Button>
     </div>
   );
@@ -173,6 +176,7 @@ export function SessionRealization({
   const activitiesQuery = useActivities();
   const notesQuery = usePhysicalNotes();
   const { link, analyze } = usePlannedSessionMutations();
+  const { guardDisabled } = useOfflineGuard();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [polled, setPolled] = useState<{
@@ -318,6 +322,7 @@ export function SessionRealization({
   }
 
   async function handleManualAnalysis() {
+    if (guardDisabled) return;
     clearAnalysisPollTimedOut(session.id);
     setPollTimedOut(false);
     try {

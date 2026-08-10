@@ -11,6 +11,7 @@ import type { ClientPlannedSession } from '@/lib/query/types';
 import { activityNarrativeSchema } from '@/lib/validators/coach';
 import { cn } from '@/lib/utils';
 import { Loader2, RefreshCw, Sparkles } from 'lucide-react';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
 
 function parseActivityNarrative(raw: unknown) {
   const parsed = activityNarrativeSchema.safeParse(raw);
@@ -42,6 +43,7 @@ export function CompletedSessionStory({
   isAnalyzing?: boolean;
   onReanalyze?: () => void;
 }) {
+  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
   const { activity } = session;
   const analysis = parseSessionAnalysis(session.analysis);
   const narrative =
@@ -148,14 +150,20 @@ export function CompletedSessionStory({
         />
         {onReanalyze ? (
           <Button
-            disabled={isAnalyzing}
+            disabled={guardDisabled || isAnalyzing}
             size="sm"
             type="button"
             variant={analysis ? 'ghost' : 'outline'}
             onClick={onReanalyze}
           >
             <ReanalyzeButtonIcon analyzing={isAnalyzing} hasAnalysis={Boolean(analysis)} />
-            {analysis ? 'Recalculer la conformité' : 'Analyser la conformité'}
+            {isAnalyzing
+              ? 'Analyse…'
+              : offline
+                ? offlineLabel
+                : analysis
+                  ? 'Recalculer la conformité'
+                  : 'Analyser la conformité'}
           </Button>
         ) : null}
       </div>

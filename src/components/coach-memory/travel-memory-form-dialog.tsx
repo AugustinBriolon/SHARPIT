@@ -26,6 +26,7 @@ import {
 } from '@/lib/coach-memory/types';
 import { deriveTravelTrainingConstraint } from '@/lib/travel-context/disciplines';
 import type { TravelMemoryPayload } from '@/hooks/use-coach-memory';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { cn } from '@/lib/utils';
 
 const ENTRY_TYPE_OPTIONS: { type: CoachMemoryType; label: string }[] = [
@@ -82,6 +83,7 @@ export function TravelMemoryFormDialog({
   );
   const [applyToPlannedSessions, setApplyToPlannedSessions] = useState(() => !isEdit);
   const [error, setError] = useState<string | null>(null);
+  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
 
   useEffect(() => {
     if (!open) return;
@@ -158,6 +160,7 @@ export function TravelMemoryFormDialog({
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (guardDisabled) return;
     setError(null);
 
     if (isTravel && !place) {
@@ -363,8 +366,8 @@ export function TravelMemoryFormDialog({
             >
               Annuler
             </Button>
-            <Button disabled={saving} type="submit">
-              {submitLabel()}
+            <Button disabled={guardDisabled || saving} type="submit">
+              {saving ? 'Enregistrement…' : offline ? offlineLabel : submitLabel()}
             </Button>
           </DialogFooter>
         </form>

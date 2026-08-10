@@ -28,6 +28,7 @@ import {
   statusOrder,
 } from '@/lib/physical';
 import { usePhysicalNoteMutations } from '@/hooks/use-physical';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
 
 interface Props {
   note?: ClientPhysicalNote | null;
@@ -39,6 +40,7 @@ const BODY_PART_NONE = '__none__';
 export function PhysicalNoteDialog({ note, onClose }: Props) {
   const isEdit = Boolean(note);
   const { create, update, remove } = usePhysicalNoteMutations();
+  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
 
   const [category, setCategory] = useState<PhysicalCategory>(note?.category ?? 'PAIN');
   const [status, setStatus] = useState<PhysicalStatus>(note?.status ?? 'ACTIVE');
@@ -59,6 +61,7 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (guardDisabled) return;
     setError(null);
     const fd = new FormData(e.currentTarget);
     const payload = {
@@ -89,7 +92,7 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
   }
 
   async function handleDelete() {
-    if (!note) return;
+    if (!note || guardDisabled) return;
     const confirmed = await confirm({
       title: 'Supprimer cette note et son historique ?',
       description: 'Toutes les check-ins associés seront aussi supprimés.',
@@ -109,6 +112,7 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
 
   function getSubmitButtonLabel(): string {
     if (pending) return 'Enregistrement…';
+    if (offline) return offlineLabel;
     if (isEdit) return 'Mettre à jour';
     return 'Créer';
   }
@@ -259,12 +263,12 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
               <div>
                 {isEdit && (
                   <Button
-                    disabled={pending}
+                    disabled={guardDisabled || pending}
                     type="button"
                     variant="destructive"
                     onClick={handleDelete}
                   >
-                    Supprimer
+                    {offline ? offlineLabel : 'Supprimer'}
                   </Button>
                 )}
               </div>
@@ -272,7 +276,7 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
                 <Button disabled={pending} type="button" variant="outline" onClick={onClose}>
                   Annuler
                 </Button>
-                <Button disabled={pending} type="submit">
+                <Button disabled={guardDisabled || pending} type="submit">
                   {getSubmitButtonLabel()}
                 </Button>
               </div>

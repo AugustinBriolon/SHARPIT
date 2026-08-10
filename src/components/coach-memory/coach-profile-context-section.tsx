@@ -6,6 +6,7 @@ import { CoachContextGuide } from '@/components/coach-memory/coach-context-guide
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useSaveCoachContext } from '@/hooks/use-coach';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { parseDurablePreferences, shouldRenderAsBullets } from '@/lib/coach-memory/memory-summary';
 import { cn } from '@/lib/utils';
 
@@ -124,6 +125,7 @@ export function CoachProfileContextSection({
   loadError?: string | null;
 }) {
   const save = useSaveCoachContext();
+  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
   const [mode, setMode] = useState<'read' | 'edit'>('read');
   const [editValue, setEditValue] = useState(savedContext);
   const [justSaved, setJustSaved] = useState(false);
@@ -147,6 +149,7 @@ export function CoachProfileContextSection({
   }
 
   function handleSave() {
+    if (guardDisabled) return;
     save.mutate(editValue, {
       onSuccess: () => {
         setJustSaved(true);
@@ -210,9 +213,9 @@ export function CoachProfileContextSection({
         <Button type="button" variant="outline" onClick={handleCancel}>
           Annuler
         </Button>
-        <Button disabled={!dirty || save.isPending} type="button" onClick={handleSave}>
+        <Button disabled={guardDisabled || !dirty || save.isPending} type="button" onClick={handleSave}>
           {save.isPending ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : null}
-          Enregistrer
+          {offline ? offlineLabel : 'Enregistrer'}
         </Button>
       </div>
     );

@@ -19,12 +19,14 @@ import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
 import { useCoachMemory, useCoachMemoryMutations } from '@/hooks/use-coach-memory';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import type { CoachMemoryEntry } from '@/lib/coach-memory/types';
 
 export function CoachMemoryManager({ focusId = null }: { focusId?: string | null }) {
   const query = useCoachMemory();
   const { create, update, remove } = useCoachMemoryMutations();
+  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<CoachMemoryEntry | null>(null);
@@ -57,6 +59,7 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
   }
 
   async function handleSubmit(payload: Parameters<typeof create.mutateAsync>[0]) {
+    if (guardDisabled) return;
     try {
       if (editingEntry) {
         await update.mutateAsync({ id: editingEntry.id, payload });
@@ -73,7 +76,7 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
   }
 
   async function confirmDelete() {
-    if (!deleteTarget) return;
+    if (!deleteTarget || guardDisabled) return;
     try {
       await remove.mutateAsync(deleteTarget.id);
       toast.success('Entrée supprimée');
@@ -129,8 +132,8 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
         icon={NotebookPen}
         title="Aucune contrainte datée"
         action={
-          <Button className="mt-1" type="button" onClick={openCreate}>
-            Ajouter
+          <Button className="mt-1" disabled={guardDisabled} type="button" onClick={openCreate}>
+            {offline ? offlineLabel : 'Ajouter'}
           </Button>
         }
         bleed
@@ -146,7 +149,7 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
   function renderAddButton({ onInk = false }: { onInk?: boolean } = {}) {
     return (
       <Button
-        disabled={Boolean(loadError)}
+        disabled={Boolean(loadError) || guardDisabled}
         type="button"
         variant="outline"
         className={
@@ -157,7 +160,7 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
         onClick={openCreate}
       >
         <Plus className="size-4" aria-hidden />
-        {onInk ? 'Ajouter une contrainte' : 'Ajouter'}
+        {onInk ? (offline ? offlineLabel : 'Ajouter une contrainte') : offline ? offlineLabel : 'Ajouter'}
       </Button>
     );
   }
@@ -212,12 +215,12 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
               Annuler
             </Button>
             <Button
-              disabled={remove.isPending}
+              disabled={guardDisabled || remove.isPending}
               type="button"
               variant="destructive"
               onClick={() => void confirmDelete()}
             >
-              {remove.isPending ? 'Suppression…' : 'Supprimer'}
+              {remove.isPending ? 'Suppression…' : offline ? offlineLabel : 'Supprimer'}
             </Button>
           </DialogFooter>
         </DialogContent>

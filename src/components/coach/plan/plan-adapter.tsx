@@ -2,7 +2,7 @@
 
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Check, Loader2, Wand2, WifiOff } from 'lucide-react';
+import { Check, Loader2, Wand2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ProfileContextBanner } from '@/components/profile/profile-context-banner';
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,7 @@ import {
 import type { GateSessionResult } from '@/lib/plan-gate/types';
 import { GateStatusBadge, GateFindingsList } from '@/components/coach/plan/gate-status-badge';
 import { AdaptationTrigger } from '@/components/coach/plan/adaptation-trigger';
-import { useOnlineStatus } from '@/hooks/use-online-status';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { resolveStrengthFieldsForPersist } from '@/lib/planned-session/strength-prescription';
 
 /** REMOVE changes bypass the Gate (see coach/adapt/route.ts) — only ADD/MODIFY changes have a gate result. */
@@ -74,14 +74,8 @@ function formatChangeDate(
   return '';
 }
 
-function renderApplyButtonContent(applied: boolean, isApplying: boolean, online: boolean) {
-  if (!online) {
-    return (
-      <>
-        <WifiOff className="size-4" /> Hors ligne
-      </>
-    );
-  }
+function renderApplyButtonContent(applied: boolean, isApplying: boolean, offline: boolean, offlineLabel: string) {
+  if (offline) return offlineLabel;
   if (applied) {
     return (
       <>
@@ -127,6 +121,7 @@ export function PlanAdapter({
   const gateResults = useMemo(() => (result ? buildGateResultLookup(result) : new Map()), [result]);
 
   async function handleAdapt() {
+    if (guardDisabled) return;
     setApplyError(null);
     setApplied(false);
     const res = await adapt.mutateAsync({
@@ -151,7 +146,7 @@ export function PlanAdapter({
   }
 
   function handleApply() {
-    if (!result) return;
+    if (guardDisabled || !result) return;
     setApplyError(null);
     const changes = result.changes.filter((_, i) => selected.has(i));
     const ops: PlannedSessionBatchOp[] = [];
@@ -223,7 +218,7 @@ export function PlanAdapter({
 
   const isAdapting = adapt.isPending;
   const isApplying = applyBatch.isPending;
-  const online = useOnlineStatus();
+  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -248,11 +243,13 @@ export function PlanAdapter({
           onChange={(e) => setFocus(e.target.value)}
         />
 
-        <Button className="w-fit" disabled={isAdapting} onClick={handleAdapt}>
+        <Button className="w-fit" disabled={guardDisabled || isAdapting} onClick={handleAdapt}>
           {isAdapting ? (
             <>
               <Loader2 className="size-4 animate-spin" /> Analyse…
             </>
+          ) : offline ? (
+            offlineLabel
           ) : (
             <>
               <Wand2 className="size-4" />
@@ -372,10 +369,10 @@ export function PlanAdapter({
                     Fermer
                   </Button>
                   <Button
-                    disabled={!online || isApplying || selected.size === 0 || applied}
+                    disabled={guardDisabled || isApplying || selected.size === 0 || applied}
                     onClick={handleApply}
                   >
-                    {renderApplyButtonContent(applied, isApplying, online)}
+                    {renderApplyButtonContent(applied, isApplying, offline, offlineLabel)}
                   </Button>
                 </div>
               </div>

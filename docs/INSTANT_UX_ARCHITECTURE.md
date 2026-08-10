@@ -374,9 +374,39 @@ All CRUD above §5.2 must leave this list.
 
 ---
 
-## 12. Future offline compatibility (no implementation yet)
+## 12. Offline compatibility (v1 — read + UI guard, no outbox)
 
-Do **not** build an offline mutation queue in this sprint. Do preserve:
+**Status (2026-08-10):** v1 shipped — hub snapshot reads + write UI guard. **No offline mutation outbox** in this phase (see [ADR-008](adr/ADR-008-pwa-offline-snapshot-and-sw-lifecycle.md) read-only Snapshot contract unchanged).
+
+### Connectivity signal
+
+- `useOnlineStatus` → `!useOffline()` from Next `experimental.useOffline` — single source of truth.
+- Global `OfflineBanner` unchanged.
+
+### Offline read (Twin snapshot fallback)
+
+TanStack cache first (SWR / Instant UX). When offline **and** a hub has no usable live data, show read-only `OfflineSnapshotSummary` via `useOfflineSnapshot` — same Twin expression as Today, not client-side ViewModel reconstruction.
+
+| Hub      | Cold-offline trigger                                      |
+| -------- | --------------------------------------------------------- |
+| Today    | `!online && hasNoLiveContent` (existing)                  |
+| Biology  | `!online &&` composition/suivi query cold                 |
+| Training | `!online &&` activities + planned + goals all without data |
+| Coach    | `!online &&` no conversation cache and no active thread   |
+
+Warm cache from a prior visit still paints — snapshot is never overlaid on warm data.
+
+### Offline write (UI guard only)
+
+`useOfflineGuard()` (`src/hooks/use-offline-guard.ts`) centralizes gating: `guardDisabled`, `offlineLabel` (`Hors ligne`). Network-required CTAs are disabled or blocked at submit — athlete cannot believe a write succeeded offline.
+
+Gated surfaces (v1): coach chat send/tools, plan generate/adapt, integrations sync, wellness check-in, morning orientation actions, Today refresh, settings profile/calibration, coach memory CRUD, activity form, planned session dialog, physical notes, brick analyze.
+
+**Explicitly not gated:** silent `AthleteStateInitializer` / snapshot polling (fail soft); optimistic hook internals remain — UI simply does not invoke mutate while offline.
+
+### Still deferred — preserve for future outbox
+
+Do **not** build an offline mutation queue until explicitly approved. Existing Instant UX choices remain outbox-compatible:
 
 | Choice                                        | Offline-ready?                                          |
 | --------------------------------------------- | ------------------------------------------------------- |
@@ -385,9 +415,8 @@ Do **not** build an offline mutation queue in this sprint. Do preserve:
 | `listOptimistic` centralized helper           | Yes — extend to persisted outbox later                  |
 | Ad-hoc component `fetch` mutations            | **No** — migrate into hooks first                       |
 | Relying only on `invalidateQueries` for truth | Weak — prefer explicit patches that can be journaled    |
-| PWA `useOfflineSnapshot` read path            | Already supports offline _read_ of last Twin expression |
 
-When offline sync is later approved: outbox of `{ mutationKey, vars, apply, rollback }` drained on `online`, reconciled via existing event-driven refresh.
+When offline sync is later approved: outbox of `{ mutationKey, vars, apply, rollback }` drained on `online`, reconciled via existing event-driven refresh. No service-worker caching of `/api/**`; no Core / Twin / Decision Engine changes.
 
 ---
 

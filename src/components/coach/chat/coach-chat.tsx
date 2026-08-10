@@ -15,6 +15,7 @@ import { ToolActivityList } from '@/components/coach/chat/tool-activity-list';
 import { ToolActivity } from '@/components/coach/chat/tool-activity';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { useSaveConversation, useCreateConversation } from '@/hooks/use-coach';
 import { usePlannedSessions } from '@/hooks/use-data';
 import { lastStepApprovalResponseFingerprint } from '@/lib/coach/coach-chat-auto-send';
@@ -71,6 +72,7 @@ export function CoachChat({
   onBootstrapApplied?: () => void;
 }) {
   const queryClient = useQueryClient();
+  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
   const { mutateAsync: saveMessages } = useSaveConversation();
   const createConversation = useCreateConversation();
   const { data: plannedSessions } = usePlannedSessions();
@@ -248,7 +250,7 @@ export function CoachChat({
   const hasPendingApprovals = pendingApprovals.length > 0;
 
   // Seul le streaming bloque l'input — les propositions en attente ne doivent jamais verrouiller la conversation.
-  const inputLocked = isBusy;
+  const inputLocked = isBusy || guardDisabled;
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -284,7 +286,7 @@ export function CoachChat({
 
   async function submit(text: string) {
     const value = text.trim();
-    if (!value || inputLocked) return;
+    if (!value || inputLocked || guardDisabled) return;
 
     if (hasUnresolvedCalendarTools(messages)) {
       const dismissed = dismissUnresolvedCalendarTools(messages);
@@ -323,9 +325,11 @@ export function CoachChat({
       ? error.message
       : 'Une erreur est survenue. Réessaie dans un instant.';
 
-  const inputPlaceholder = hasPendingApprovals
-    ? "Réponds à la proposition, ou envoie un nouveau message pour l'ignorer…"
-    : 'Demande conseil à ton coach…';
+  const inputPlaceholder = guardDisabled
+    ? 'Hors ligne — envoi indisponible'
+    : hasPendingApprovals
+      ? "Réponds à la proposition, ou envoie un nouveau message pour l'ignorer…"
+      : 'Demande conseil à ton coach…';
 
   return (
     <div className="rounded-analysis-lg flex h-full min-w-0 flex-1 flex-col lg:border">
@@ -434,7 +438,7 @@ export function CoachChat({
               {pendingApprovals.map((part, i) => (
                 <ToolActivity
                   key={part.approval?.id ?? `${part.type}:${i}`}
-                  disabled={isBusy}
+                  disabled={isBusy || guardDisabled}
                   knownSessions={knownSessions}
                   part={part}
                   streamIdle={streamIdle}
@@ -512,9 +516,9 @@ export function CoachChat({
           </Button>
         ) : (
           <Button
-            aria-label="Envoyer le message"
+            aria-label={offline ? offlineLabel : 'Envoyer le message'}
             className="size-11 shrink-0"
-            disabled={!input.trim()}
+            disabled={guardDisabled || !input.trim()}
             size="icon"
             type="submit"
             variant="highlight"

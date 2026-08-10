@@ -24,6 +24,7 @@ import {
   useThresholdHistory,
   useThresholdPreview,
 } from '@/hooks/use-data';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { shouldHydrateProfileForm } from '@/lib/profile/map-athlete-profile';
 import { invalidateAfterAthleteProfileSave } from '@/lib/query/invalidate-after-athlete-profile-save';
 
@@ -62,6 +63,7 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
   const previewQuery = useThresholdPreview();
   const historyQuery = useThresholdHistory();
   const applyEstimates = useApplyThresholdEstimates();
+  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
 
   useEffect(() => {
     if (!shouldHydrateProfileForm(initial)) return;
@@ -82,6 +84,7 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
   ]);
 
   async function handleGarminImport() {
+    if (guardDisabled) return;
     setImporting(true);
     setError(null);
     setMessage(null);
@@ -119,6 +122,7 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (guardDisabled) return;
     setSaving(true);
     setError(null);
     setMessage(null);
@@ -147,6 +151,7 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
   }
 
   async function handleApplyEstimates() {
+    if (guardDisabled) return;
     setError(null);
     setMessage(null);
     try {
@@ -200,9 +205,9 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
           comparer tes progrès dans le temps.
         </p>
         <div className="flex flex-col items-end gap-0.5">
-          <Button disabled={importing} type="button" variant="outline" onClick={handleGarminImport}>
+          <Button disabled={guardDisabled || importing} type="button" variant="outline" onClick={handleGarminImport}>
             <Download className="size-3.5" aria-hidden />
-            {importing ? 'Import…' : 'Garmin'}
+            {importing ? 'Import…' : offline ? offlineLabel : 'Garmin'}
           </Button>
           {syncedLabel ? (
             <span className="text-muted-foreground text-label">
@@ -265,7 +270,7 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
               ))}
             </ul>
             <Button
-              disabled={applyEstimates.isPending}
+              disabled={guardDisabled || applyEstimates.isPending}
               type="button"
               variant="outline"
               onClick={handleApplyEstimates}
@@ -275,7 +280,7 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
               ) : (
                 <Check className="size-3.5" aria-hidden />
               )}
-              Appliquer
+              {offline ? offlineLabel : 'Appliquer'}
             </Button>
           </div>
         ) : null}
@@ -349,8 +354,8 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
           {error}
         </p>
       ) : null}
-      <Button disabled={saving || !dirty} type="submit">
-        {saving ? 'Enregistrement…' : 'Enregistrer'}
+      <Button disabled={guardDisabled || saving || !dirty} type="submit">
+        {saving ? 'Enregistrement…' : offline ? offlineLabel : 'Enregistrer'}
       </Button>
     </form>
   );

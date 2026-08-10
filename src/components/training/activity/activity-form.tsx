@@ -27,6 +27,7 @@ import {
 } from '@/components/training/activity/activity-form-helpers';
 import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
 import { useActivityMutations } from '@/hooks/use-data';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -48,6 +49,7 @@ import { createActivitySchema } from '@/lib/validators/activity';
 
 export function ActivityForm({ mode, initialData }: ActivityFormProps) {
   const router = useRouter();
+  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
   const { create, update } = useActivityMutations();
   const [location, setLocation] = useState<LocationPlaceValue>(() =>
     initialLocationFromData(initialData),
@@ -232,6 +234,7 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
 
   const onSubmit = form.handleSubmit(
     async (values) => {
+      if (guardDisabled) return;
       const payload = sanitizeActivityPayload(values);
 
       try {
@@ -567,8 +570,14 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
       )}
 
       <div className="flex gap-3">
-        <Button disabled={form.formState.isSubmitting} type="submit">
-          {mode === 'create' ? 'Enregistrer la séance' : 'Mettre à jour'}
+        <Button disabled={guardDisabled || form.formState.isSubmitting} type="submit">
+          {form.formState.isSubmitting
+            ? 'Enregistrement…'
+            : offline
+              ? offlineLabel
+              : mode === 'create'
+                ? 'Enregistrer la séance'
+                : 'Mettre à jour'}
         </Button>
         <Button type="button" variant="outline" onClick={() => router.back()}>
           Annuler

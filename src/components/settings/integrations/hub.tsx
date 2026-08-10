@@ -7,6 +7,7 @@ import { CheckCircle2, ChevronRight, CircleDashed, RefreshCw, Unplug } from 'luc
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import { IntegrationLogo } from '@/components/settings/integrations/logos';
 import {
@@ -158,6 +159,7 @@ export function IntegrationsHub({ payload }: { payload: IntegrationsPayload }) {
   const integrations = useMemo(() => buildIntegrations(payload), [payload]);
   const [openId, setOpenId] = useState<IntegrationId | null>(null);
   const [syncingAll, setSyncingAll] = useState(false);
+  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
 
   // An integration modal left open would reopen itself on the way back.
   useResetWhenHidden(() => setOpenId(null));
@@ -166,6 +168,7 @@ export function IntegrationsHub({ payload }: { payload: IntegrationsPayload }) {
   const active = openId ? integrations.find((i) => i.id === openId) : null;
 
   async function handleSyncAll() {
+    if (guardDisabled) return;
     if (connected.length === 0) {
       toast.info('Aucune source connectée', {
         description: 'Connecte au moins une application pour synchroniser.',
@@ -221,9 +224,9 @@ export function IntegrationsHub({ payload }: { payload: IntegrationsPayload }) {
             {connected.length > 1 ? 's' : ''}
           </p>
         </div>
-        <Button disabled={syncingAll || connected.length === 0} onClick={handleSyncAll}>
+        <Button disabled={guardDisabled || syncingAll || connected.length === 0} onClick={handleSyncAll}>
           <RefreshCw className={cn('size-4', syncingAll && 'animate-spin')} aria-hidden />
-          {syncingAll ? 'Synchronisation…' : 'Tout synchroniser'}
+          {syncingAll ? 'Synchronisation…' : offline ? offlineLabel : 'Tout synchroniser'}
         </Button>
       </div>
 

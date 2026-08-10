@@ -13,6 +13,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useWellnessCheckin } from '@/hooks/use-wellness-checkin';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/toast';
 
@@ -144,6 +145,7 @@ function ScalePicker({
 
 export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => void }) {
   const { completed, loading, submitting, error, submit } = useWellnessCheckin();
+  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
   const [open, setOpen] = useState(false);
   const [mood, setMood] = useState(3);
   const [energyLevel, setEnergyLevel] = useState(3);
@@ -154,6 +156,7 @@ export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => voi
   if (loading || completed) return null;
 
   async function handleSubmit() {
+    if (guardDisabled) return;
     try {
       await submit({
         mood,
@@ -173,9 +176,9 @@ export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => voi
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <Button type="button" variant="highlight" onClick={() => setOpen(true)}>
+      <Button disabled={guardDisabled} type="button" variant="highlight" onClick={() => setOpen(true)}>
         <Smile className="size-3" aria-hidden />
-        Ressenti
+        {offline ? offlineLabel : 'Ressenti'}
       </Button>
 
       <DialogContent className="flex max-h-[min(92dvh,40rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md">
@@ -244,8 +247,8 @@ export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => voi
         </div>
 
         <div className="border-border/60 bg-muted/40 shrink-0 border-t px-5 py-4">
-          <Button className="w-full" disabled={submitting} type="button" onClick={handleSubmit}>
-            {submitting ? 'Enregistrement…' : 'Valider mon ressenti'}
+          <Button className="w-full" disabled={guardDisabled || submitting} type="button" onClick={handleSubmit}>
+            {submitting ? 'Enregistrement…' : offline ? offlineLabel : 'Valider mon ressenti'}
           </Button>
         </div>
       </DialogContent>

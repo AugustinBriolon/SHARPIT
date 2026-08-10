@@ -8,6 +8,7 @@ import { activityTypeLabels } from '@/lib/format';
 import { sessionScoreColor } from '@/lib/planned-session/session-analysis-display';
 import { cn } from '@/lib/utils';
 import { useAnalyzeBrick, useBrickAnalysis, usePlannedSessions } from '@/hooks/use-data';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import type { BrickAnalysis } from '@/lib/validators/coach';
 import type { ClientPlannedSession } from '@/lib/query/types';
 
@@ -18,6 +19,9 @@ function renderAnalysisContent(
   legs: ClientPlannedSession[],
   isAnalyzing: boolean,
   onAnalyze: () => void,
+  offline: boolean,
+  guardDisabled: boolean,
+  offlineLabel: string,
 ) {
   if (!allLinked) {
     return (
@@ -72,7 +76,7 @@ function renderAnalysisContent(
 
         <button
           className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
-          disabled={isAnalyzing}
+          disabled={isAnalyzing || guardDisabled}
           type="button"
           onClick={onAnalyze}
         >
@@ -81,18 +85,20 @@ function renderAnalysisContent(
           ) : (
             <RefreshCw className="size-3" />
           )}
-          Ré-analyser l&apos;enchaînement
+          {offline ? offlineLabel : "Ré-analyser l'enchaînement"}
         </button>
       </div>
     );
   }
 
   return (
-    <Button disabled={isAnalyzing} size="sm" type="button" variant="outline" onClick={onAnalyze}>
+    <Button disabled={guardDisabled || isAnalyzing} size="sm" type="button" variant="outline" onClick={onAnalyze}>
       {isAnalyzing ? (
         <>
           <Loader2 className="size-4 animate-spin" /> Analyse de l&apos;enchaînement…
         </>
+      ) : offline ? (
+        offlineLabel
       ) : (
         <>
           <Sparkles className="size-4" /> Analyser l&apos;enchaînement
@@ -107,6 +113,7 @@ export function BrickAnalysisPanel({ brickGroupId }: { brickGroupId: string }) {
   const analysisQuery = useBrickAnalysis(brickGroupId);
   const analyzeBrick = useAnalyzeBrick();
   const [error, setError] = useState<string | null>(null);
+  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
 
   const legs = useMemo(
     () =>
@@ -122,6 +129,7 @@ export function BrickAnalysisPanel({ brickGroupId }: { brickGroupId: string }) {
   const isAnalyzing = analyzeBrick.isPending;
 
   async function handleAnalyze() {
+    if (guardDisabled) return;
     setError(null);
     const loadingToast = toast.loading("Analyse de l'enchaînement en cours");
     try {
@@ -145,7 +153,17 @@ export function BrickAnalysisPanel({ brickGroupId }: { brickGroupId: string }) {
         </span>
       </div>
 
-      {renderAnalysisContent(allLinked, analysis, linkedCount, legs, isAnalyzing, handleAnalyze)}
+      {renderAnalysisContent(
+        allLinked,
+        analysis,
+        linkedCount,
+        legs,
+        isAnalyzing,
+        handleAnalyze,
+        offline,
+        guardDisabled,
+        offlineLabel,
+      )}
 
       {error && <p className="text-destructive text-xs">{error}</p>}
     </div>

@@ -1,10 +1,19 @@
 'use client';
 
+import { format } from 'date-fns';
 import { Activity, Scale } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CompositionView } from '@/components/corps/composition/composition-view';
 import { StickyHeader } from '@/components/layout/sticky-header';
+import { OfflineSnapshotSummary } from '@/components/pwa/offline-snapshot-summary';
 import { PhysicalHealthHubView } from '@/components/physical-health/physical-health-hub-view';
+import { useOnlineStatus } from '@/hooks/use-online-status';
+import { useOfflineSnapshot } from '@/hooks/use-offline-snapshot';
+import {
+  useBodyPresentationViewModel,
+  usePhysicalHealthViewModel,
+} from '@/hooks/use-presentation-view-model';
+import { useTodaySelectedDate } from '@/hooks/use-today-selected-date';
 import { navPillClass } from '@/lib/ui/nav-pill';
 
 const TABS = [
@@ -26,6 +35,34 @@ type TabId = (typeof TABS)[number]['id'];
 
 function isTabId(value: string | null): value is TabId {
   return TABS.some((t) => t.id === value);
+}
+
+function CompositionTabBody() {
+  const online = useOnlineStatus();
+  const query = useBodyPresentationViewModel();
+  const hasNoLiveContent = query.data == null;
+  const { entry: offlineEntry } = useOfflineSnapshot(!online && hasNoLiveContent);
+
+  if (!online && hasNoLiveContent && offlineEntry) {
+    return <OfflineSnapshotSummary entry={offlineEntry} />;
+  }
+
+  return <CompositionView embedded />;
+}
+
+function SuiviTabBody() {
+  const online = useOnlineStatus();
+  const { date } = useTodaySelectedDate();
+  const trainingDayId = format(date, 'yyyy-MM-dd');
+  const query = usePhysicalHealthViewModel(trainingDayId);
+  const hasNoLiveContent = query.data == null;
+  const { entry: offlineEntry } = useOfflineSnapshot(!online && hasNoLiveContent);
+
+  if (!online && hasNoLiveContent && offlineEntry) {
+    return <OfflineSnapshotSummary entry={offlineEntry} />;
+  }
+
+  return <PhysicalHealthHubView />;
 }
 
 export function CorpsHub({ basePath = '/biology' }: { basePath?: string }) {
@@ -70,8 +107,8 @@ export function CorpsHub({ basePath = '/biology' }: { basePath?: string }) {
       </StickyHeader>
 
       <div className="space-y-4">
-        {tab === 'composition' && <CompositionView embedded />}
-        {tab === 'suivi' && <PhysicalHealthHubView />}
+        {tab === 'composition' && <CompositionTabBody />}
+        {tab === 'suivi' && <SuiviTabBody />}
       </div>
     </div>
   );

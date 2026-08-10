@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/toast';
 import { useAthleteProfile } from '@/hooks/use-data';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { athleteAgeYears, birthDateToInput } from '@/lib/profile/athlete-profile-utils';
 import {
   mapAthleteProfileToFormData,
@@ -35,6 +36,7 @@ export function PersonalProfilePanel({
   const router = useRouter();
   const queryClient = useQueryClient();
   const remoteProfile = useAthleteProfile();
+  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
   const resolvedInitial = initial ?? mapAthleteProfileToFormData(remoteProfile.data);
   const heightErrorId = useId();
   const sleepErrorId = useId();
@@ -126,6 +128,7 @@ export function PersonalProfilePanel({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (guardDisabled) return;
     setSaving(true);
     setError(null);
     setMessage(null);
@@ -279,8 +282,8 @@ export function PersonalProfilePanel({
           {error}
         </p>
       ) : null}
-      <Button disabled={saving || !dirty} type="submit">
-        {saving ? 'Enregistrement…' : 'Enregistrer'}
+      <Button disabled={guardDisabled || saving || !dirty} type="submit">
+        {saving ? 'Enregistrement…' : offline ? offlineLabel : 'Enregistrer'}
       </Button>
     </form>
   );

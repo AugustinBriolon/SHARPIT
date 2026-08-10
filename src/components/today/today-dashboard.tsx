@@ -9,6 +9,7 @@ import {
   useTodayPresentationViewModel,
 } from '@/hooks/use-presentation-view-model';
 import { useOnlineStatus } from '@/hooks/use-online-status';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { useOfflineSnapshot } from '@/hooks/use-offline-snapshot';
 import { OfflineSnapshotSummary } from '@/components/pwa/offline-snapshot-summary';
 import { TodayActionRow } from './rich/today-action-row';
@@ -64,6 +65,7 @@ export function TodayDashboard() {
   const query = useTodayPresentationViewModel(trainingDayId);
   const morningHold = useClientMorningHold(trainingDayId);
   const online = useOnlineStatus();
+  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
   const valuesLoading = isPresentationValuesLoading(query);
 
   const rawVm = query.data ?? null;
@@ -83,11 +85,15 @@ export function TodayDashboard() {
         )}
         <div className="flex justify-center">
           <button
-            className="text-muted-foreground hover:text-foreground inline-flex min-h-11 items-center px-3 text-sm underline-offset-4 transition-colors hover:underline"
+            className="text-muted-foreground hover:text-foreground inline-flex min-h-11 items-center px-3 text-sm underline-offset-4 transition-colors hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:no-underline"
+            disabled={guardDisabled || query.isFetching}
             type="button"
-            onClick={() => void query.refetch()}
+            onClick={() => {
+              if (guardDisabled) return;
+              void query.refetch();
+            }}
           >
-            Actualiser
+            {offline ? offlineLabel : 'Actualiser'}
           </button>
         </div>
       </div>

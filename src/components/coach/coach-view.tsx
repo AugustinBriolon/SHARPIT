@@ -11,6 +11,7 @@ import {
   CoachChatPanelSkeleton,
   CoachPageHeader,
 } from '@/components/coach/coach-hub-skeleton';
+import { OfflineSnapshotSummary } from '@/components/pwa/offline-snapshot-summary';
 import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
@@ -20,6 +21,9 @@ import {
   useDeleteConversation,
 } from '@/hooks/use-coach';
 import { useActivities, usePlannedSessions } from '@/hooks/use-data';
+import { useOfflineSnapshot } from '@/hooks/use-offline-snapshot';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
+import { useOnlineStatus } from '@/hooks/use-online-status';
 import { useIsMobile } from '@/hooks/use-viewport';
 import { useProjectedAthleteViewModel } from '@/hooks/use-projected-athlete-view-model';
 import type { ProjectionHorizonDays } from '@/core/projection/types';
@@ -53,6 +57,8 @@ function createEphemeralId(): string {
 export function CoachView() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const online = useOnlineStatus();
+  const { guardDisabled } = useOfflineGuard();
   const isMobile = useIsMobile();
   // Viewport defaults to desktop (SSR + first paint) — no hub safety skeleton while mounting.
   const showMobileShell = isMobile;
@@ -87,6 +93,12 @@ export function CoachView() {
   const selectedId = activeId;
   const isEphemeral = selectedId != null && ephemeralIds.has(selectedId);
   const activeConversation = useConversation(isEphemeral ? null : selectedId);
+  const activeHasMessages =
+    !isEphemeral &&
+    Array.isArray(activeConversation.data?.messages) &&
+    activeConversation.data.messages.length > 0;
+  const hasNoLiveContent = conversationsQuery.data == null && !activeHasMessages;
+  const { entry: offlineEntry } = useOfflineSnapshot(!online && hasNoLiveContent);
 
   const discussBootstrapped = useRef(false);
 
@@ -304,6 +316,15 @@ export function CoachView() {
   }
 
   function renderChat(header?: React.ReactNode) {
+    if (!online && hasNoLiveContent && offlineEntry) {
+      return (
+        <>
+          {header}
+          <OfflineSnapshotSummary entry={offlineEntry} />
+        </>
+      );
+    }
+
     if (!selectedId) {
       return <CoachChatEmptyChrome header={header} />;
     }
@@ -341,7 +362,7 @@ export function CoachView() {
       activeId={selectedId}
       conversations={conversations}
       loading={conversationsQuery.isPending}
-      newDisabled={createConversation.isPending}
+      newDisabled={createConversation.isPending || guardDisabled}
       onDelete={handleDeleteConversation}
       onNewConversation={openNewConversation}
       onSelect={setActiveId}
@@ -355,7 +376,7 @@ export function CoachView() {
         <Button
           aria-label="Nouvelle conversation"
           className="size-11"
-          disabled={createConversation.isPending}
+          disabled={createConversation.isPending || guardDisabled}
           size="icon"
           variant="highlight"
           onClick={openNewConversation}

@@ -2,7 +2,7 @@
 
 import { format, parseISO, startOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Check, Loader2, Sparkles, WifiOff } from 'lucide-react';
+import { Check, Loader2, Sparkles } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { ProfileContextBanner } from '@/components/profile/profile-context-banner';
 import { resolveDefaultPlanGoalId } from '@/lib/planned-session/plan-goal';
@@ -33,7 +33,7 @@ import { cn } from '@/lib/utils';
 import { phaseLabels } from '@/lib/training/periodization';
 import { useCoachPlan, type GeneratedSession } from '@/hooks/use-coach';
 import { useGoals, usePlannedSessionMutations, useTrainingPlan } from '@/hooks/use-data';
-import { useOnlineStatus } from '@/hooks/use-online-status';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import type { GateSessionResult } from '@/lib/plan-gate/types';
 import { GateStatusBadge, GateFindingsList } from '@/components/coach/plan/gate-status-badge';
 import { resolveStrengthFieldsForPersist } from '@/lib/planned-session/strength-prescription';
@@ -47,18 +47,6 @@ const DAYS_OPTIONS = [
 ];
 
 const NO_GOAL = 'none';
-
-function renderInsertButtonContent(online: boolean) {
-  if (!online) {
-    return (
-      <>
-        <WifiOff className="size-4" />
-        Hors ligne
-      </>
-    );
-  }
-  return 'Ajouter au planning';
-}
 
 interface PlanGeneratorProps {
   startDate?: string; // yyyy-MM-dd
@@ -103,6 +91,7 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
   }, [planQuery.data?.goalId, selectableGoalIds]);
 
   async function handleGenerate() {
+    if (guardDisabled) return;
     const result = await coachPlan.mutateAsync({
       days: Number(days),
       focus: focus.trim() || undefined,
@@ -133,7 +122,7 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
 
   /** Instant UX: optimistic batch + close immediately; toast comes from the mutation. */
   function handleInsert() {
-    if (!plan || selected.size === 0) return;
+    if (guardDisabled || !plan || selected.size === 0) return;
     const payloads = plan.sessions
       .filter((_, i) => selected.has(i))
       .map((s) => {
@@ -161,7 +150,7 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
   }
 
   const isGenerating = coachPlan.isPending;
-  const online = useOnlineStatus();
+  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -218,12 +207,18 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
               </SelectContent>
             </Select>
           </div>
-          <Button className="mb-2" disabled={isGenerating} onClick={handleGenerate}>
+          <Button
+            className="mb-2"
+            disabled={guardDisabled || isGenerating}
+            onClick={handleGenerate}
+          >
             {isGenerating ? (
               <>
                 <Loader2 className="size-4 animate-spin" />
                 Génération…
               </>
+            ) : offline ? (
+              offlineLabel
             ) : (
               <>
                 <Sparkles className="size-4" />
@@ -287,8 +282,8 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
                 <Button variant="outline" onClick={onClose}>
                   Fermer
                 </Button>
-                <Button disabled={!online || selected.size === 0} onClick={handleInsert}>
-                  {renderInsertButtonContent(online)}
+                <Button disabled={guardDisabled || selected.size === 0} onClick={handleInsert}>
+                  {offline ? offlineLabel : 'Ajouter au planning'}
                 </Button>
               </div>
             </div>

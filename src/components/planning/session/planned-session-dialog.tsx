@@ -33,6 +33,7 @@ import {
   defaultExposureForActivityType,
   sportSupportsOutdoorContext,
 } from '@/core/planned-session/defaults';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import {
   usePlannedSessionMutations,
   usePlannedSessionPresentation,
@@ -155,6 +156,7 @@ export function PlannedSessionDialog({
   }, [isEdit, session, planQuery.data?.goalId, selectableGoalIds]);
 
   const pending = create.isPending || createBrick.isPending || update.isPending || remove.isPending;
+  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
   const showOutdoorContext = createMode === 'single' && sportSupportsOutdoorContext(type);
 
   const contextQuery = usePlannedSessionPresentation(isEdit ? session?.id : null);
@@ -310,6 +312,7 @@ export function PlannedSessionDialog({
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (guardDisabled) return;
     setError(null);
     const formData = new FormData(e.currentTarget);
 
@@ -425,7 +428,7 @@ export function PlannedSessionDialog({
   }
 
   async function handleDelete() {
-    if (!session) return;
+    if (!session || guardDisabled) return;
     const confirmed = await confirm({
       title: 'Supprimer cette séance planifiée ?',
       description: 'Cette action est définitive.',
@@ -906,27 +909,24 @@ export function PlannedSessionDialog({
                     <div>
                       {isEdit && (
                         <Button
-                          disabled={pending}
+                          disabled={guardDisabled || pending}
                           size="sm"
                           type="button"
                           variant="destructive"
                           onClick={handleDelete}
                         >
-                          Supprimer
+                          {offline ? offlineLabel : 'Supprimer'}
                         </Button>
                       )}
                     </div>
                     <div className="flex gap-2">
-                      <Button
-                        disabled={pending}
-                        type="button"
-                        variant="outline"
-                        onClick={isEdit ? handleCancelEdit : onClose}
-                      >
+                      <Button disabled={pending} type="button" variant="outline" onClick={isEdit ? handleCancelEdit : onClose}>
                         Annuler
                       </Button>
-                      <Button disabled={pending} type="submit">
-                        {submitButtonLabel(pending, isEdit, createMode)}
+                      <Button disabled={guardDisabled || pending} type="submit">
+                        {offline
+                          ? offlineLabel
+                          : submitButtonLabel(pending, isEdit, createMode)}
                       </Button>
                     </div>
                   </div>
