@@ -1,4 +1,6 @@
+import { Suspense } from 'react';
 import { Activity } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function AuthShell({
   children,
@@ -19,7 +21,12 @@ export function AuthShell({
             <p className="text-muted-foreground mt-1 text-sm">{subtitle}</p>
           </div>
         </div>
-        <div className="w-full">{children}</div>
+        {/* Clerk's widget reads the URL, so it can't be prerendered. The
+            branding above it can — keep the boundary here so the auth page
+            paints its chrome immediately. */}
+        <div className="w-full">
+          <Suspense fallback={<Skeleton className="h-[26rem] w-full" />}>{children}</Suspense>
+        </div>
       </div>
     </div>
   );
