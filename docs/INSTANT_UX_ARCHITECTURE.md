@@ -158,7 +158,7 @@ All use GET `/api/presentation/*`, typically stale 5m.
 4. Reuse ViewModels from `AthleteStateInitializer` / refresh payload whenever present.
 5. Prefer **stale-while-revalidate** for all presentation GETs (minimum stale 5m except immutable streams).
 6. **One cold skeleton per surface — owned by the page, never by a route “safety” boundary.** Do not add hub `loading.tsx` (or Suspense fallbacks that render `*HubSkeleton`) when the page already paints chrome + value micro-skeletons (`*LoadingShell` / `loading` / query pending). Physio drill-downs and Instant UX hubs (Today, Coach, Biology, Training, Planning) have **no** route `loading.tsx`. Keep `Suspense` only when required (e.g. `useSearchParams`) with an empty fallback. Settings / activity-detail may keep a single route skeleton until those screens get the same page-owned micro-skeleton contract.
-7. **PWA must not wipe the query cache.** Serwist `reloadOnOnline` stays `false` (hard reload on reconnect destroys TanStack Query memory and re-shows cold skeletons). `AppShell` mounts page `{children}` once (not in both mobile and desktop shells). Registration stays manual via `SwRegister`.
+7. **PWA must not wipe the query cache.** Reconnect must never hard-reload the page (that destroys TanStack Query memory and re-shows cold skeletons). Serwist runs in configurator mode and injects no client entry, so no reload path exists ([ADR-009](adr/ADR-009-turbopack-build-and-serwist-configurator.md)). `AppShell` mounts page `{children}` once (not in both mobile and desktop shells). Registration stays manual via `SwRegister`.
 
 ---
 
