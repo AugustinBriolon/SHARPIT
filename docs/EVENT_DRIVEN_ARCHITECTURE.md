@@ -29,7 +29,7 @@ After (athlete-centric):
 
 | Trigger              | Location                | Sync          | Ingest | Features | Inference | Background        |
 | -------------------- | ----------------------- | ------------- | ------ | -------- | --------- | ----------------- |
-| Vercel cron 3×/day   | `/api/cron/sync`        | All providers | ✓      | Partial¹ | ✗         | Briefing only     |
+| Vercel cron ~3h (jour) | `/api/cron/sync`        | All providers | ✓      | Partial¹ | ✗         | Briefing only     |
 | Manual settings sync | `/api/*/sync`           | Per provider  | ✓      | Partial¹ | ✗²        | Narratives inline |
 | App / Today load     | `/api/today`            | ✗             | ✗      | Lazy     | ✓         | ✗                 |
 | Wellness POST        | `/api/wellness-checkin` | ✗             | ✓      | Partial¹ | Partial³  | ✗                 |
@@ -222,8 +222,14 @@ The athlete performs **zero sync actions**.
 On app open, sync only providers that are:
 
 - Connected, AND
-- Stale (threshold: Garmin/Strava/Google 2h, body scales 24h), OR
+- Stale (threshold: Garmin/Strava **30 min**, Google 2h, body scales 24h), OR
 - Force refresh requested
+
+Garmin staleness uses the older of health (`lastSyncAt`) and activity (`lastActivitySyncAt`)
+syncs — a successful health sync alone does not hide missing activities.
+
+App return to foreground (visibility) re-triggers the open-path refresh at most every 15 min;
+stale providers are synced selectively.
 
 Before 5:00 local: skip sync (sleep data unlikely complete).
 

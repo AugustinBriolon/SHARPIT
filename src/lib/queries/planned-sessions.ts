@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { activityInclude } from '@/lib/queries/activity-include';
+import { activityInclude, plannedSessionCoachSelect } from '@/lib/queries/activity-include';
 
 const plannedSessionInclude = {
   activity: { include: activityInclude },
@@ -11,6 +11,16 @@ export async function getPlannedSessions(params?: { from?: Date; to?: Date }) {
     where:
       params?.from || params?.to ? { date: { gte: params?.from, lte: params?.to } } : undefined,
     include: plannedSessionInclude,
+    orderBy: { date: 'asc' },
+  });
+}
+
+/** Slim planned sessions for Coach context — no activity join. */
+export async function getPlannedSessionsForCoach(params?: { from?: Date; to?: Date }) {
+  return prisma.plannedSession.findMany({
+    where:
+      params?.from || params?.to ? { date: { gte: params?.from, lte: params?.to } } : undefined,
+    select: plannedSessionCoachSelect,
     orderBy: { date: 'asc' },
   });
 }

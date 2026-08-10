@@ -1,5 +1,5 @@
 import { generateText, Output } from 'ai';
-import { COACH_MODEL, coachGatewayOptions } from '@/lib/ai';
+import { COACH_MODEL, coachAnalysisGatewayOptions } from '@/lib/ai';
 import {
   describeBikeWorkBlocks,
   parsePrescriptionTargets,
@@ -23,6 +23,9 @@ import {
   type BrickAnalysis,
   type SessionAnalysis,
 } from '@/lib/validators/coach';
+
+/** Prefer local notes when long enough — skip Strava round-trip. */
+export const LOCAL_DESCRIPTION_MIN_CHARS = 40;
 
 const TYPE_FR: Record<string, string> = {
   RUN: 'Course',
@@ -193,9 +196,16 @@ RÉÉVALUATION DU SUIVI PHYSIQUE (champ "physicalReassessments") :
 
 Sois précis, bienveillant et concis. Réponds en français.`;
 
+/** True when local athlete notes are rich enough to skip a Strava description fetch. */
+export function hasSubstantialLocalDescription(notes: string | null | undefined): boolean {
+  const trimmed = notes?.trim() ?? '';
+  return trimmed.length >= LOCAL_DESCRIPTION_MIN_CHARS;
+}
+
 /** Description libre Strava (détail réel). Best-effort : ne lève jamais. */
 async function fetchStravaDescription(activity: LinkedActivity): Promise<string | null> {
-  if (activity.source !== 'strava' || !activity.stravaId) return null;
+  if (activity.source !== 'strava' && activity.source !== 'both') return null;
+  if (!activity.stravaId) return null;
   try {
     const token = await getValidAccessToken();
     const detail = await fetchActivityDetail(token, activity.stravaId);
@@ -204,6 +214,18 @@ async function fetchStravaDescription(activity: LinkedActivity): Promise<string 
     console.error('[analyze] description Strava non récupérée', error);
     return null;
   }
+}
+
+/**
+ * Prefer substantial local notes; otherwise best-effort Strava description.
+ * Avoids a remote round-trip when the athlete already wrote enough in-app.
+ */
+export async function resolveAthleteDescription(activity: LinkedActivity): Promise<string | null> {
+  const local = activity.notes?.trim() || null;
+  if (hasSubstantialLocalDescription(local)) return local;
+  const remote = await fetchStravaDescription(activity);
+  if (remote?.trim()) return remote.trim();
+  return local;
 }
 
 /** Cached watts stream only — never triggers a remote fetch during analysis. */
@@ -223,7 +245,7 @@ export async function analyzePlannedSession(id: string): Promise<SessionAnalysis
   if (!planned || !planned.activity) return null;
 
   const [stravaDescription, profile, physicalNotes, watts] = await Promise.all([
-    fetchStravaDescription(planned.activity),
+    resolveAthleteDescription(planned.activity),
     getAthleteProfile(),
     getActivePhysicalNotes(),
     planned.activity.type === 'BIKE' ? loadCachedWatts(planned.activity.id) : Promise.resolve(null),
@@ -267,7 +289,7 @@ ${describePhysicalNotes(physicalNotes)}`;
     output: Output.object({ schema: sessionAnalysisSchema }),
     system: ANALYSIS_SYSTEM,
     prompt,
-    providerOptions: coachGatewayOptions,
+    providerOptions: coachAnalysisGatewayOptions,
   });
 
   if (!output) return null;
@@ -310,7 +332,7 @@ export async function analyzeBrick(brickGroupId: string): Promise<BrickAnalysis 
 
   const [profile, descriptions, wattsList] = await Promise.all([
     getAthleteProfile(),
-    Promise.all(legs.map((l) => fetchStravaDescription(l.activity!))),
+    Promise.all(legs.map((l) => resolveAthleteDescription(l.activity!))),
     Promise.all(
       legs.map((l) =>
         l.type === 'BIKE' && l.activity ? loadCachedWatts(l.activity.id) : Promise.resolve(null),
@@ -387,7 +409,7 @@ ${transitions.length ? transitions.join('\n') : 'Aucune donnée de transition ex
     output: Output.object({ schema: brickAnalysisSchema }),
     system: BRICK_SYSTEM,
     prompt,
-    providerOptions: coachGatewayOptions,
+    providerOptions: coachAnalysisGatewayOptions,
   });
 
   return output;

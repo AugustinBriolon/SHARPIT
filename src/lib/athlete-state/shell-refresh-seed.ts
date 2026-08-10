@@ -7,6 +7,8 @@ export type ShellRefreshSeed = {
   athleteSnapshot?: unknown;
   todayState?: unknown;
   todayPresentation?: TodayViewModel | null;
+  /** Soft open kept prior presentation — joiners should reuse RQ cache, not GET. */
+  presentationSkipped?: boolean;
 };
 
 /**
@@ -18,6 +20,10 @@ export type ShellRefreshSeed = {
  * normal fetch or offline snapshot path.
  */
 let inFlight: Promise<ShellRefreshSeed | null> | null = null;
+let lastStartedAtMs = 0;
+
+/** Minimum gap between visibility-triggered refreshes (open path is immediate). */
+export const SHELL_REFRESH_MIN_INTERVAL_MS = 15 * 60 * 1000;
 
 export function peekShellAthleteRefreshInFlight(): Promise<ShellRefreshSeed | null> | null {
   return inFlight;
@@ -26,9 +32,16 @@ export function peekShellAthleteRefreshInFlight(): Promise<ShellRefreshSeed | nu
 export function ensureShellAthleteRefresh(
   queryClient: QueryClient,
   trainingDayId: string,
+  options?: { minIntervalMs?: number },
 ): Promise<ShellRefreshSeed | null> {
   if (inFlight) return inFlight;
 
+  const minInterval = options?.minIntervalMs ?? 0;
+  if (minInterval > 0 && lastStartedAtMs > 0 && Date.now() - lastStartedAtMs < minInterval) {
+    return Promise.resolve(null);
+  }
+
+  lastStartedAtMs = Date.now();
   inFlight = (async (): Promise<ShellRefreshSeed | null> => {
     try {
       const res = await fetch(`/api/athlete-state/refresh?trainingDayId=${trainingDayId}`, {
@@ -42,6 +55,7 @@ export function ensureShellAthleteRefresh(
         athleteSnapshot?: unknown;
         todayState?: unknown;
         todayPresentation?: TodayViewModel | null;
+        presentationSkipped?: boolean;
       };
 
       if (data.athleteSnapshot) {
@@ -53,12 +67,17 @@ export function ensureShellAthleteRefresh(
       if (data.todayState) {
         queryClient.setQueryData(queryKeys.today(trainingDayId), data.todayState);
       }
-      if (data.todayPresentation) {
-        queryClient.setQueryData(
-          queryKeys.presentationToday(trainingDayId),
-          data.todayPresentation,
-        );
+
+      let todayPresentation = data.todayPresentation ?? null;
+      if (data.presentationSkipped && todayPresentation == null) {
+        // Soft open: keep warm presentation cache; cold start falls through to GET.
+        todayPresentation =
+          queryClient.getQueryData<TodayViewModel>(queryKeys.presentationToday(trainingDayId)) ??
+          null;
+      } else if (todayPresentation) {
+        queryClient.setQueryData(queryKeys.presentationToday(trainingDayId), todayPresentation);
       }
+
       if (!data.athleteSnapshot) {
         await queryClient.invalidateQueries({
           queryKey: queryKeys.athleteSnapshot(trainingDayId),
@@ -69,7 +88,8 @@ export function ensureShellAthleteRefresh(
         trainingDayId,
         athleteSnapshot: data.athleteSnapshot,
         todayState: data.todayState,
-        todayPresentation: data.todayPresentation ?? null,
+        todayPresentation,
+        presentationSkipped: data.presentationSkipped === true,
       };
     } catch {
       return null;

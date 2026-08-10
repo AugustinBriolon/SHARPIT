@@ -85,7 +85,7 @@ export function TodayDashboard() {
         )}
         <div className="flex justify-center">
           <button
-            className="text-muted-foreground hover:text-foreground inline-flex min-h-11 items-center px-3 text-sm underline-offset-4 transition-colors hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:no-underline"
+            className="text-muted-foreground hover:text-foreground inline-flex min-h-11 items-center px-3 text-sm underline-offset-4 transition-colors hover:underline disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50"
             disabled={guardDisabled || query.isFetching}
             type="button"
             onClick={() => {

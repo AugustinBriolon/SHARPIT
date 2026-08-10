@@ -20,13 +20,13 @@ export async function GET(request: NextRequest) {
   try {
     // Write side-effect stays on the route (ADR-007 incremental): ensure proposal
     // exists before read-only presentation projection.
-    const morningRecalibration = await ensureMorningRecalibration(trainingDayId).catch((error) => {
+    const morning = await ensureMorningRecalibration(trainingDayId).catch((error) => {
       console.error('[api/presentation/today/morning-recalibration]', error);
-      return null;
+      return { presentation: null, created: false };
     });
 
     const viewModel = await buildTodayPresentationViewModel(trainingDayId, {
-      morningRecalibration,
+      morningRecalibration: morning.presentation,
     });
     return NextResponse.json({ viewModel });
   } catch (error) {

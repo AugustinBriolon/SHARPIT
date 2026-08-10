@@ -36,9 +36,26 @@ function hoursSince(date: Date | null): number | null {
   return (Date.now() - date.getTime()) / 3_600_000;
 }
 
+/** Activity providers (Garmin / Strava) — near-realtime pull without webhooks. */
+export const ACTIVITY_PROVIDER_STALE_HOURS = 0.5;
+/** Body scales — daily is enough. */
+export const BODY_PROVIDER_STALE_HOURS = 24;
+/** Calendar — keep aligned with planning day. */
+export const PLANNING_PROVIDER_STALE_HOURS = 2;
+
 function providerStale(lastSync: Date | null, thresholdHours: number): boolean {
   if (!lastSync) return true;
   return hoursSince(lastSync)! > thresholdHours;
+}
+
+/** Oldest sync timestamp — missing activity sync counts as never synced. */
+export function garminSyncReference(
+  lastSyncAt: Date | null | undefined,
+  lastActivitySyncAt: Date | null | undefined,
+): Date | null {
+  if (!lastActivitySyncAt) return null;
+  if (!lastSyncAt) return lastActivitySyncAt;
+  return lastSyncAt.getTime() <= lastActivitySyncAt.getTime() ? lastSyncAt : lastActivitySyncAt;
 }
 
 type ComputingFlags = Partial<Record<AthleteStateDomain, boolean>>;
@@ -245,36 +262,42 @@ export async function computeFreshnessSnapshot(params: {
     {
       provider: 'garmin',
       connected: garmin != null,
-      lastSyncAt: garmin?.lastSyncAt?.toISOString() ?? null,
-      stale: garmin != null && providerStale(garmin.lastSyncAt, 2),
+      lastSyncAt:
+        garminSyncReference(garmin?.lastSyncAt, garmin?.lastActivitySyncAt)?.toISOString() ?? null,
+      stale:
+        garmin != null &&
+        providerStale(
+          garminSyncReference(garmin.lastSyncAt, garmin.lastActivitySyncAt),
+          ACTIVITY_PROVIDER_STALE_HOURS,
+        ),
       syncing: syncing.garmin === true,
     },
     {
       provider: 'strava',
       connected: strava != null,
       lastSyncAt: strava?.lastSyncAt?.toISOString() ?? null,
-      stale: strava != null && providerStale(strava.lastSyncAt, 2),
+      stale: strava != null && providerStale(strava.lastSyncAt, ACTIVITY_PROVIDER_STALE_HOURS),
       syncing: syncing.strava === true,
     },
     {
       provider: 'renpho',
       connected: renpho != null,
       lastSyncAt: renpho?.lastSyncAt?.toISOString() ?? null,
-      stale: renpho != null && providerStale(renpho.lastSyncAt, 24),
+      stale: renpho != null && providerStale(renpho.lastSyncAt, BODY_PROVIDER_STALE_HOURS),
       syncing: syncing.renpho === true,
     },
     {
       provider: 'withings',
       connected: withings != null,
       lastSyncAt: withings?.lastSyncAt?.toISOString() ?? null,
-      stale: withings != null && providerStale(withings.lastSyncAt, 24),
+      stale: withings != null && providerStale(withings.lastSyncAt, BODY_PROVIDER_STALE_HOURS),
       syncing: syncing.withings === true,
     },
     {
       provider: 'google',
       connected: google != null,
       lastSyncAt: google?.lastSyncAt?.toISOString() ?? null,
-      stale: google != null && providerStale(google.lastSyncAt, 2),
+      stale: google != null && providerStale(google.lastSyncAt, PLANNING_PROVIDER_STALE_HOURS),
       syncing: syncing.google === true,
     },
   ];

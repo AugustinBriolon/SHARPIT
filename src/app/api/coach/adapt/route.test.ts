@@ -27,6 +27,7 @@ vi.mock('@/lib/queries', () => ({
   getGoals: vi.fn().mockResolvedValue([]),
   getActivitiesList: vi.fn().mockResolvedValue([]),
   getPlannedSessions: vi.fn().mockResolvedValue([]),
+  getPlannedSessionsForCoach: vi.fn().mockResolvedValue([]),
   getActiveTrainingPlan: vi.fn().mockResolvedValue(null),
   getAthleteProfile: vi.fn().mockResolvedValue(null),
 }));
@@ -151,9 +152,9 @@ describe('POST /api/coach/adapt', () => {
   it('resolves a MODIFY proposal by merging the change onto the existing session for date-dependent rules', async () => {
     const { generateText } = await import('ai');
     const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
-    const { getPlannedSessions } = await import('@/lib/queries');
+    const { getPlannedSessionsForCoach } = await import('@/lib/queries');
 
-    vi.mocked(getPlannedSessions).mockResolvedValue([
+    vi.mocked(getPlannedSessionsForCoach).mockResolvedValue([
       {
         id: 'existing-1',
         date: new Date('2026-07-10T00:00:00Z'),

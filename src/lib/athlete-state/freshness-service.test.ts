@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { resolveRecommendationsFreshness } from './freshness-service';
+import {
+  ACTIVITY_PROVIDER_STALE_HOURS,
+  garminSyncReference,
+  resolveRecommendationsFreshness,
+} from './freshness-service';
 
 const EARLIER = new Date('2026-07-15T08:00:00.000Z');
 const LATER = new Date('2026-07-15T12:00:00.000Z');
@@ -45,5 +49,23 @@ describe('resolveRecommendationsFreshness', () => {
     expect(resolveRecommendationsFreshness(false, EARLIER, null, null, null, 'afternoon')).toBe(
       'fresh',
     );
+  });
+});
+
+describe('garminSyncReference', () => {
+  it('is null when activity sync never ran (forces stale)', () => {
+    expect(garminSyncReference(LATER, null)).toBeNull();
+  });
+
+  it('returns the older of health and activity syncs', () => {
+    expect(garminSyncReference(LATER, EARLIER)).toEqual(EARLIER);
+    expect(garminSyncReference(EARLIER, LATER)).toEqual(EARLIER);
+  });
+});
+
+describe('ACTIVITY_PROVIDER_STALE_HOURS', () => {
+  it('keeps near-realtime pull under one hour', () => {
+    expect(ACTIVITY_PROVIDER_STALE_HOURS).toBeLessThanOrEqual(1);
+    expect(ACTIVITY_PROVIDER_STALE_HOURS).toBeGreaterThan(0);
   });
 });

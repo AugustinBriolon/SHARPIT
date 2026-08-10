@@ -8,11 +8,23 @@
     },
     {
       "path": "/api/cron/sync",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/sync",
       "schedule": "0 12 * * *"
     },
     {
       "path": "/api/cron/sync",
+      "schedule": "0 15 * * *"
+    },
+    {
+      "path": "/api/cron/sync",
       "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/cron/sync",
+      "schedule": "0 21 * * *"
     },
     {
       "path": "/api/cron/planned-forecast",
@@ -30,6 +42,9 @@
       "maxDuration": 300
     },
     "src/app/api/withings/sync/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/garmin/connect/route.ts": {
       "maxDuration": 300
     }
   }

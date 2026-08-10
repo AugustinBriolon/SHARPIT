@@ -51,3 +51,43 @@ export const activityListSelect = {
   plannedSession: { select: plannedSessionSummarySelect },
   hikeTripId: true,
 } satisfies Prisma.ActivitySelect;
+
+/**
+ * Coach prompt activities — enough for recent summaries + PMC/load, no plannedSession join.
+ */
+export const activityCoachSelect = {
+  id: true,
+  type: true,
+  date: true,
+  title: true,
+  duration: true,
+  load: true,
+  rpe: true,
+  feeling: true,
+  runMetrics: { select: { distanceM: true, paceSecPerKm: true, avgHr: true } },
+  bikeMetrics: { select: { tss: true, avgPower: true, normalizedPower: true } },
+  swimMetrics: { select: { distanceM: true } },
+  strengthSets: {
+    select: { exercise: true, sets: true, reps: true, weightKg: true },
+    orderBy: { order: 'asc' as const },
+  },
+} satisfies Prisma.ActivitySelect;
+
+/** Coach planned sessions — no linked activity include (ids + analysis only). */
+export const plannedSessionCoachSelect = {
+  id: true,
+  date: true,
+  type: true,
+  title: true,
+  intensity: true,
+  durationMin: true,
+  load: true,
+  startTime: true,
+  description: true,
+  completed: true,
+  analysis: true,
+  exposureSetting: true,
+  locationLabel: true,
+  brickGroupId: true,
+  goalId: true,
+} satisfies Prisma.PlannedSessionSelect;

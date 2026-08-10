@@ -13,7 +13,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useWellnessCheckin } from '@/hooks/use-wellness-checkin';
-import { useOfflineGuard } from '@/hooks/use-offline-guard';
+import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/toast';
 
@@ -176,7 +176,12 @@ export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => voi
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <Button disabled={guardDisabled} type="button" variant="highlight" onClick={() => setOpen(true)}>
+      <Button
+        disabled={guardDisabled}
+        type="button"
+        variant="highlight"
+        onClick={() => setOpen(true)}
+      >
         <Smile className="size-3" aria-hidden />
         {offline ? offlineLabel : 'Ressenti'}
       </Button>
@@ -247,8 +252,16 @@ export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => voi
         </div>
 
         <div className="border-border/60 bg-muted/40 shrink-0 border-t px-5 py-4">
-          <Button className="w-full" disabled={guardDisabled || submitting} type="button" onClick={handleSubmit}>
-            {submitting ? 'Enregistrement…' : offline ? offlineLabel : 'Valider mon ressenti'}
+          <Button
+            className="w-full"
+            disabled={guardDisabled || submitting}
+            type="button"
+            onClick={handleSubmit}
+          >
+            {guardedActionLabel(offline, offlineLabel, 'Valider mon ressenti', {
+              active: submitting,
+              label: 'Enregistrement…',
+            })}
           </Button>
         </div>
       </DialogContent>

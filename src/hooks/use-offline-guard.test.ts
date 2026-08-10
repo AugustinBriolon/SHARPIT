@@ -1,7 +1,7 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useOfflineGuard } from '@/hooks/use-offline-guard';
+import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
 
 vi.mock('@/hooks/use-online-status', () => ({
   useOnlineStatus: vi.fn(),
@@ -49,5 +49,18 @@ describe('useOfflineGuard', () => {
       guardDisabled: true,
       offlineLabel: 'Hors ligne',
     });
+  });
+});
+
+describe('guardedActionLabel', () => {
+  it('prefers pending, then offline, then idle', () => {
+    expect(guardedActionLabel(true, 'Hors ligne', 'Enregistrer')).toBe('Hors ligne');
+    expect(guardedActionLabel(false, 'Hors ligne', 'Enregistrer')).toBe('Enregistrer');
+    expect(
+      guardedActionLabel(true, 'Hors ligne', 'Enregistrer', {
+        active: true,
+        label: 'Enregistrement…',
+      }),
+    ).toBe('Enregistrement…');
   });
 });

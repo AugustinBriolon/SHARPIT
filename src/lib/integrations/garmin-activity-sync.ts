@@ -21,6 +21,7 @@ import {
 } from '@/lib/integrations/garmin';
 import { getGarminAccount } from '@/lib/integrations/garmin-sync';
 import { resolveExerciseCatalogId, enrichStrengthExerciseVisuals } from '@/lib/exercises';
+import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
 import { prisma } from '@/lib/prisma';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import {
@@ -29,6 +30,9 @@ import {
 } from '@/core/adapters/garmin-activity-adapter';
 
 const ATHLETE_ID = 'default';
+
+/** Parallel per-activity fetch/eval — keep modest (shared Garmin client + rate limits). */
+export const GARMIN_ACTIVITY_CONCURRENCY = 4;
 
 /** Fires an observation into the engine. Errors are logged but never propagate to the sync. */
 async function ingestGarminActivity(
@@ -161,6 +165,147 @@ export interface GarminActivitySyncResult {
   changedActivityIds: string[];
 }
 
+type GarminActivityOutcome = {
+  skipped: number;
+  imported: number;
+  updated: number;
+  merged: number;
+  importedActivityIds: string[];
+  importedTypes: ActivityType[];
+  changed: Array<{ id: string; type: ActivityType }>;
+};
+
+const EMPTY_OUTCOME: GarminActivityOutcome = {
+  skipped: 0,
+  imported: 0,
+  updated: 0,
+  merged: 0,
+  importedActivityIds: [],
+  importedTypes: [],
+  changed: [],
+};
+
+type GarminClient = ReturnType<typeof clientFromTokens>;
+type GarminListActivity = Parameters<typeof garminActivityToSession>[0];
+
+async function processOneGarminActivity(
+  client: GarminClient,
+  activity: GarminListActivity,
+  exerciseLabelsFr: Map<string, string>,
+): Promise<GarminActivityOutcome> {
+  const garminId = String(activity.activityId);
+  const type = mapGarminType(activity.activityType?.typeKey ?? '');
+  if (!type) {
+    return { ...EMPTY_OUTCOME, skipped: 1 };
+  }
+
+  const duration = garminSessionDurationSec(activity, type);
+
+  const evaluation = await fetchGarminActivityEvaluation(client, activity.activityId);
+  const strengthSets =
+    type === ActivityType.STRENGTH
+      ? resolveGarminStrengthSets(
+          activity,
+          await fetchGarminExerciseSets(client, activity.activityId, exerciseLabelsFr),
+          exerciseLabelsFr,
+        )
+      : [];
+
+  const existingByGarmin = await prisma.activity.findUnique({
+    where: { garminId },
+    select: { id: true, rpe: true, feeling: true, stravaId: true },
+  });
+
+  if (existingByGarmin) {
+    const patch: Prisma.ActivityUpdateInput = {};
+    if (evaluation.rpe != null && evaluation.rpe !== existingByGarmin.rpe) {
+      patch.rpe = evaluation.rpe;
+    }
+    if (evaluation.feeling != null && evaluation.feeling !== existingByGarmin.feeling) {
+      patch.feeling = evaluation.feeling;
+    }
+    if (evaluation.notes) patch.notes = evaluation.notes;
+
+    const addedSets = await backfillStrengthSets(existingByGarmin.id, strengthSets);
+    const addedLegs =
+      type === ActivityType.TRIATHLON
+        ? await backfillMultisportLegs(existingByGarmin.id, activity.activityId, client)
+        : false;
+
+    if (Object.keys(patch).length > 0) {
+      await prisma.activity.update({
+        where: { id: existingByGarmin.id },
+        data: patch,
+      });
+      return {
+        ...EMPTY_OUTCOME,
+        updated: 1,
+        changed: [{ id: existingByGarmin.id, type }],
+      };
+    }
+    if (addedSets || addedLegs) {
+      return {
+        ...EMPTY_OUTCOME,
+        updated: 1,
+        changed: [{ id: existingByGarmin.id, type }],
+      };
+    }
+    return { ...EMPTY_OUTCOME, skipped: 1 };
+  }
+
+  const fingerprint = { type, date: new Date(activity.startTimeLocal), duration, garminId };
+  const match = await findMatchingActivity(fingerprint);
+
+  if (match) {
+    if (match.garminId && match.garminId !== garminId) {
+      return { ...EMPTY_OUTCOME, skipped: 1 };
+    }
+
+    await prisma.activity.update({
+      where: { id: match.id },
+      data: garminEnrichmentUpdate(activity, evaluation, type, match.stravaId),
+    });
+    await backfillStrengthSets(match.id, strengthSets);
+    await prisma.activityStream.deleteMany({ where: { activityId: match.id } });
+    await ingestGarminActivity(activity, evaluation, new Date());
+    return {
+      ...EMPTY_OUTCOME,
+      merged: 1,
+      importedActivityIds: [match.id],
+      changed: [{ id: match.id, type }],
+    };
+  }
+
+  try {
+    const multisportLegs =
+      type === ActivityType.TRIATHLON
+        ? await fetchGarminMultisportLegs(client, activity.activityId)
+        : null;
+
+    const created = await prisma.activity.create({
+      data: {
+        ...buildGarminActivityData(activity, evaluation, type, strengthSets),
+        ...(multisportLegs
+          ? { multisportLegs: multisportLegs as unknown as Prisma.InputJsonValue }
+          : {}),
+      },
+    });
+    await ingestGarminActivity(activity, evaluation, new Date());
+    return {
+      ...EMPTY_OUTCOME,
+      imported: 1,
+      importedActivityIds: [created.id],
+      importedTypes: [type],
+      changed: [{ id: created.id, type }],
+    };
+  } catch (error) {
+    if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+      return { ...EMPTY_OUTCOME, skipped: 1 };
+    }
+    throw error;
+  }
+}
+
 export async function syncGarminActivities(options?: {
   /** Fenêtre en jours (fallback si jamais sync). Ignoré si `full` ou `since`. */
   sinceDays?: number;
@@ -200,11 +345,6 @@ export async function syncGarminActivities(options?: {
   const changedTypes = new Set<ActivityType>();
   const changedActivityIds = new Set<string>();
 
-  function markChanged(activityId: string, type: ActivityType) {
-    changedTypes.add(type);
-    changedActivityIds.add(activityId);
-  }
-
   let start = 0;
 
   for (let page = 0; page < maxPages; page++) {
@@ -214,116 +354,30 @@ export async function syncGarminActivities(options?: {
     result.fetched += batch.length;
     let reachedCutoff = false;
 
+    const toProcess: GarminListActivity[] = [];
     for (const activity of batch) {
       const date = new Date(activity.startTimeLocal);
       if (cutoff && date < cutoff) {
         reachedCutoff = true;
         break;
       }
+      toProcess.push(activity);
+    }
 
-      const garminId = String(activity.activityId);
-      const type = mapGarminType(activity.activityType?.typeKey ?? '');
-      if (!type) {
-        result.skipped += 1;
-        continue;
-      }
+    const outcomes = await mapWithConcurrency(toProcess, GARMIN_ACTIVITY_CONCURRENCY, (activity) =>
+      processOneGarminActivity(client, activity, exerciseLabelsFr),
+    );
 
-      const duration = garminSessionDurationSec(activity, type);
-
-      const evaluation = await fetchGarminActivityEvaluation(client, activity.activityId);
-      const strengthSets =
-        type === ActivityType.STRENGTH
-          ? resolveGarminStrengthSets(
-              activity,
-              await fetchGarminExerciseSets(client, activity.activityId, exerciseLabelsFr),
-              exerciseLabelsFr,
-            )
-          : [];
-
-      const existingByGarmin = await prisma.activity.findUnique({
-        where: { garminId },
-        select: { id: true, rpe: true, feeling: true, stravaId: true },
-      });
-
-      if (existingByGarmin) {
-        const patch: Prisma.ActivityUpdateInput = {};
-        if (evaluation.rpe != null && evaluation.rpe !== existingByGarmin.rpe) {
-          patch.rpe = evaluation.rpe;
-        }
-        if (evaluation.feeling != null && evaluation.feeling !== existingByGarmin.feeling) {
-          patch.feeling = evaluation.feeling;
-        }
-        if (evaluation.notes) patch.notes = evaluation.notes;
-
-        const addedSets = await backfillStrengthSets(existingByGarmin.id, strengthSets);
-        const addedLegs =
-          type === ActivityType.TRIATHLON
-            ? await backfillMultisportLegs(existingByGarmin.id, activity.activityId, client)
-            : false;
-
-        if (Object.keys(patch).length > 0) {
-          await prisma.activity.update({
-            where: { id: existingByGarmin.id },
-            data: patch,
-          });
-          result.updated += 1;
-          markChanged(existingByGarmin.id, type);
-        } else if (addedSets || addedLegs) {
-          result.updated += 1;
-          markChanged(existingByGarmin.id, type);
-        } else {
-          result.skipped += 1;
-        }
-        continue;
-      }
-
-      const fingerprint = { type, date, duration, garminId };
-      const match = await findMatchingActivity(fingerprint);
-
-      if (match) {
-        if (match.garminId && match.garminId !== garminId) {
-          result.skipped += 1;
-          continue;
-        }
-
-        await prisma.activity.update({
-          where: { id: match.id },
-          data: garminEnrichmentUpdate(activity, evaluation, type, match.stravaId),
-        });
-        await backfillStrengthSets(match.id, strengthSets);
-        await prisma.activityStream.deleteMany({ where: { activityId: match.id } });
-        result.merged += 1;
-        result.importedActivityIds.push(match.id);
-        markChanged(match.id, type);
-        await ingestGarminActivity(activity, evaluation, new Date());
-        continue;
-      }
-
-      try {
-        const multisportLegs =
-          type === ActivityType.TRIATHLON
-            ? await fetchGarminMultisportLegs(client, activity.activityId)
-            : null;
-
-        const created = await prisma.activity.create({
-          data: {
-            ...buildGarminActivityData(activity, evaluation, type, strengthSets),
-            ...(multisportLegs
-              ? { multisportLegs: multisportLegs as unknown as Prisma.InputJsonValue }
-              : {}),
-          },
-        });
-        result.imported += 1;
-        result.importedActivityIds.push(created.id);
-        importedTypes.add(type);
-        markChanged(created.id, type);
-        await ingestGarminActivity(activity, evaluation, new Date());
-      } catch (error) {
-        if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
-          result.skipped += 1;
-          continue;
-        }
-        throw error;
+    for (const outcome of outcomes) {
+      result.skipped += outcome.skipped;
+      result.imported += outcome.imported;
+      result.updated += outcome.updated;
+      result.merged += outcome.merged;
+      result.importedActivityIds.push(...outcome.importedActivityIds);
+      for (const type of outcome.importedTypes) importedTypes.add(type);
+      for (const change of outcome.changed) {
+        changedTypes.add(change.type);
+        changedActivityIds.add(change.id);
       }
     }
 

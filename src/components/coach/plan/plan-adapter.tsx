@@ -3,7 +3,7 @@
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Check, Loader2, Wand2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ProfileContextBanner } from '@/components/profile/profile-context-banner';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,6 +31,7 @@ import { GateStatusBadge, GateFindingsList } from '@/components/coach/plan/gate-
 import { AdaptationTrigger } from '@/components/coach/plan/adaptation-trigger';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { resolveStrengthFieldsForPersist } from '@/lib/planned-session/strength-prescription';
+import { warmCoachContext } from '@/lib/coach/warm-coach-context';
 
 /** REMOVE changes bypass the Gate (see coach/adapt/route.ts) — only ADD/MODIFY changes have a gate result. */
 function gateKey(change: Pick<AdaptChange, 'action' | 'sessionId' | 'date' | 'type'>): string {
@@ -74,7 +75,34 @@ function formatChangeDate(
   return '';
 }
 
-function renderApplyButtonContent(applied: boolean, isApplying: boolean, offline: boolean, offlineLabel: string) {
+function renderAdaptButtonContent(
+  isAdapting: boolean,
+  offline: boolean,
+  offlineLabel: string,
+  hasResult: boolean,
+) {
+  if (isAdapting) {
+    return (
+      <>
+        <Loader2 className="size-4 animate-spin" /> Analyse…
+      </>
+    );
+  }
+  if (offline) return offlineLabel;
+  return (
+    <>
+      <Wand2 className="size-4" />
+      {hasResult ? 'Régénérer les propositions' : 'Proposer des ajustements'}
+    </>
+  );
+}
+
+function renderApplyButtonContent(
+  applied: boolean,
+  isApplying: boolean,
+  offline: boolean,
+  offlineLabel: string,
+) {
   if (offline) return offlineLabel;
   if (applied) {
     return (
@@ -104,6 +132,10 @@ export function PlanAdapter({
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [applyError, setApplyError] = useState<string | null>(null);
   const [applied, setApplied] = useState(false);
+
+  useEffect(() => {
+    warmCoachContext({ includeScenario: true });
+  }, []);
 
   const adapt = useAdaptPlan();
   const plannedQuery = usePlannedSessions();
@@ -244,18 +276,7 @@ export function PlanAdapter({
         />
 
         <Button className="w-fit" disabled={guardDisabled || isAdapting} onClick={handleAdapt}>
-          {isAdapting ? (
-            <>
-              <Loader2 className="size-4 animate-spin" /> Analyse…
-            </>
-          ) : offline ? (
-            offlineLabel
-          ) : (
-            <>
-              <Wand2 className="size-4" />
-              {result ? 'Régénérer les propositions' : 'Proposer des ajustements'}
-            </>
-          )}
+          {renderAdaptButtonContent(isAdapting, offline, offlineLabel, Boolean(result))}
         </Button>
 
         {adapt.error && (

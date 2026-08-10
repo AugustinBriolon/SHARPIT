@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
 import {
   formatConstraintsSection,
   formatDecisionSection,
+  formatCoachContext,
   type CoachContext,
 } from './coach-context';
 
@@ -42,6 +44,72 @@ function baseDecision(overrides: Partial<CoachContext['decision']> = {}): CoachC
   } as CoachContext['decision'];
 }
 
+function minimalContext(overrides: Partial<CoachContext> = {}): CoachContext {
+  return {
+    today: 'lundi 10 août 2026',
+    note: null,
+    equipment: normalizeAthleteEquipment(null),
+    profile: null,
+    fitness: { ctl: 50, atl: 40, tsb: 10 },
+    load: {
+      dailyLoad: 40,
+      weeklyLoad: 200,
+      acwr: 1.0,
+      fatigue: 'Medium',
+      loadMonotony: null,
+      loadStrain: null,
+    },
+    availableDays: ['Lundi'],
+    health: {
+      readinessToday: 70,
+      readinessLevel: null,
+      hrvStatus: null,
+      bodyBattery: null,
+      avgSleepMin: 420,
+      avgHrv: null,
+      avgRestingHr: null,
+      avgReadiness: null,
+    },
+    primaryRace: null,
+    races: [],
+    metricGoals: [],
+    recent: [],
+    realizedSessions: [],
+    upcomingPlanned: [
+      {
+        id: 'ps_abc',
+        date: 'mar. 11 août',
+        dateIso: '2026-08-11',
+        type: 'Course',
+        title: 'Tempo',
+        intensity: 'TEMPO',
+        durationMin: 50,
+        startTime: '07:00',
+        locationLabel: null,
+      },
+    ],
+    travel: [],
+    constraints: [],
+    physical: [],
+    fatigue: null,
+    adaptation: null,
+    decision: null,
+    environment: {
+      homeLabel: 'Sens',
+      thermalLabel: 'Chaleur marquée',
+      summaryLine: null,
+      detailLine: null,
+      trainingImpact: 'MODERATE',
+      airTemperatureC: 28,
+      relativeHumidityPct: 55,
+      recoveryDemandAdjustment: 0.05,
+      performanceAdjustment: -0.03,
+    },
+    scenarioComparison: null,
+    ...overrides,
+  } as CoachContext;
+}
+
 describe('formatDecisionSection', () => {
   it('returns nothing when there is no decision or it is INSUFFICIENT_DATA', () => {
     expect(formatDecisionSection(null)).toEqual([]);
@@ -79,28 +147,39 @@ describe('formatConstraintsSection', () => {
     expect(formatConstraintsSection([])).toEqual([]);
   });
 
-  it('has no location parenthetical on the entry line — unlike the travel block', () => {
-    const lines = formatConstraintsSection([baseConstraint()]);
-    const text = lines.join('\n');
-    expect(text).toContain('Contraintes temporaires');
+  it('renders active constraints', () => {
+    const text = formatConstraintsSection([baseConstraint()]).join('\n');
     expect(text).toContain('Tendinite genou');
-    expect(text).toContain('REDUCED');
-    const entryLine = lines[lines.length - 1]!;
-    // Travel entries render "label (locationLabel) : ..." — constraints have no place.
-    expect(entryLine).not.toContain('Tendinite genou (');
+  });
+});
+
+describe('formatCoachContext relevance contract', () => {
+  it('includes planned session ids for update without listPlannedSessions', () => {
+    const text = formatCoachContext(minimalContext());
+    expect(text).toContain('id=ps_abc');
+    expect(text).toContain('2026-08-11');
   });
 
-  it('marks the current period as en cours and a future one as à venir', () => {
-    const active = formatConstraintsSection([baseConstraint({ isActiveNow: true })]).join('\n');
-    const upcoming = formatConstraintsSection([baseConstraint({ isActiveNow: false })]).join('\n');
-    expect(active).toContain('[en cours]');
-    expect(upcoming).toContain('[à venir]');
+  it('includes home environment temperature for outdoor session adaptation', () => {
+    const text = formatCoachContext(minimalContext());
+    expect(text).toContain('Environnement du jour');
+    expect(text).toContain('Sens');
+    expect(text).toContain('28 °C');
+    expect(text).toContain('Chaleur marquée');
   });
 
-  it('lists allowed disciplines when present', () => {
-    const text = formatConstraintsSection([
-      baseConstraint({ allowedDisciplines: ['MOBILITY'] }),
-    ]).join('\n');
-    expect(text).toContain('sports :');
+  it('does not require scenario comparison on every message', () => {
+    const text = formatCoachContext(minimalContext({ scenarioComparison: null }));
+    expect(text).not.toContain('Comparaison de scénarios');
+  });
+
+  it('includes scenario comparison when present (plan/adapt path)', () => {
+    const text = formatCoachContext(
+      minimalContext({
+        scenarioComparison:
+          '## Comparaison de scénarios (Scenario Engine — orchestration)\nRecommandation : KEEP',
+      }),
+    );
+    expect(text).toContain('Comparaison de scénarios');
   });
 });

@@ -44,6 +44,12 @@ export type MorningRecalibrationPresentation = {
   toDescription: string | null;
 };
 
+export type EnsureMorningRecalibrationResult = {
+  presentation: MorningRecalibrationPresentation | null;
+  /** True when a new PRESENTED decision was written on this call. */
+  created: boolean;
+};
+
 function toGateProposal(
   proposal: MorningRecalibrationProposal,
   session: {
@@ -130,14 +136,15 @@ function isStaleSportProposal(
  */
 export async function ensureMorningRecalibration(
   trainingDayId: string,
-): Promise<MorningRecalibrationPresentation | null> {
+  options?: { athleteSnapshot?: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>> },
+): Promise<EnsureMorningRecalibrationResult> {
   const wellnessCompleted = await hasMorningWellnessCheckin(ATHLETE_ID, trainingDayId);
-  if (!wellnessCompleted) return null;
+  if (!wellnessCompleted) return { presentation: null, created: false };
 
   const existing = await findMorningRecalibrationDecision(trainingDayId);
   if (existing) {
     const mr = existing.snapshotContext.morningRecalibration;
-    if (!mr || !existing.proposal.sessionId) return null;
+    if (!mr || !existing.proposal.sessionId) return { presentation: null, created: false };
 
     const existingSession = await prisma.plannedSession.findUnique({
       where: { id: existing.proposal.sessionId },
@@ -154,15 +161,18 @@ export async function ensureMorningRecalibration(
       existing.status === 'ACCEPTED' ||
       existing.status === 'REJECTED'
     ) {
-      return toPresentation(
-        existing.id,
-        existing.proposal.sessionId,
-        existingSession?.type ?? existing.proposal.type,
-        mr,
-        existing.status,
-      );
+      return {
+        presentation: toPresentation(
+          existing.id,
+          existing.proposal.sessionId,
+          existingSession?.type ?? existing.proposal.type,
+          mr,
+          existing.status,
+        ),
+        created: false,
+      };
     } else {
-      return null;
+      return { presentation: null, created: false };
     }
   }
 
@@ -178,9 +188,9 @@ export async function ensureMorningRecalibration(
   });
 
   const session = sessions[0] ?? null;
-  if (!session) return null;
+  if (!session) return { presentation: null, created: false };
 
-  const snapshot = await getOrBuildAthleteSnapshot(trainingDayId);
+  const snapshot = options?.athleteSnapshot ?? (await getOrBuildAthleteSnapshot(trainingDayId));
   const proposal = evaluateMorningSessionRecalibration({
     wellnessCompleted: true,
     session: {
@@ -201,7 +211,7 @@ export async function ensureMorningRecalibration(
     },
   });
 
-  if (!proposal) return null;
+  if (!proposal) return { presentation: null, created: false };
 
   const gateProposal = toGateProposal(proposal, session);
   const gateResult = toGateResult(gateProposal, proposal.direction);
@@ -233,13 +243,16 @@ export async function ensureMorningRecalibration(
     snapshotIdAtRecommendation: null,
   });
 
-  return toPresentation(
-    decision.id,
-    proposal.sessionId,
-    session.type,
-    snapshotContext.morningRecalibration!,
-    'PRESENTED',
-  );
+  return {
+    presentation: toPresentation(
+      decision.id,
+      proposal.sessionId,
+      session.type,
+      snapshotContext.morningRecalibration!,
+      'PRESENTED',
+    ),
+    created: true,
+  };
 }
 
 export async function acceptMorningRecalibration(

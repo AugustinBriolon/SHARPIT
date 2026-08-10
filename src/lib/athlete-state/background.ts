@@ -11,17 +11,24 @@ import { prisma } from '@/lib/prisma';
  * Background path — never blocks the fast inference response.
  * Failures are logged; tasks are idempotent.
  *
- * Auto-link is intentionally NOT here: it runs awaited on the sync / import path
- * so the client sees the link when the API returns (weather/LLM used to delay it).
+ * Auto-link (DB match) stays awaited on the sync / import path.
+ * Compliance LLM analysis runs here via plannedSessionIdsToAnalyze.
  */
 export function scheduleBackgroundTasks(params: {
   activityIds: string[];
   regenerateBriefing: boolean;
   trainingDayId?: string;
+  /** Planned sessions linked this turn — analyze off the critical path. */
+  plannedSessionIdsToAnalyze?: string[];
 }): void {
-  const { activityIds, regenerateBriefing, trainingDayId } = params;
+  const { activityIds, regenerateBriefing, trainingDayId, plannedSessionIdsToAnalyze } = params;
 
-  void runBackgroundTasks(activityIds, regenerateBriefing, trainingDayId).catch((error) => {
+  void runBackgroundTasks(
+    activityIds,
+    regenerateBriefing,
+    trainingDayId,
+    plannedSessionIdsToAnalyze,
+  ).catch((error) => {
     console.error('[athlete-state/background]', error);
   });
 }
@@ -30,6 +37,7 @@ async function runBackgroundTasks(
   activityIds: string[],
   regenerateBriefing: boolean,
   trainingDayId?: string,
+  plannedSessionIdsToAnalyze?: string[],
 ): Promise<void> {
   const dayId = trainingDayId ?? trainingDayIdNow();
 
@@ -38,6 +46,16 @@ async function runBackgroundTasks(
     await enrichTodayActivitiesContext(prisma);
   } catch (error) {
     console.error('[athlete-state/background/enrich-today]', error);
+  }
+
+  if (plannedSessionIdsToAnalyze && plannedSessionIdsToAnalyze.length > 0) {
+    try {
+      const { analyzeLinkedPlannedSessions } =
+        await import('@/lib/planned-session/session-linking');
+      await analyzeLinkedPlannedSessions(plannedSessionIdsToAnalyze);
+    } catch (error) {
+      console.error('[athlete-state/background/compliance-analyze]', error);
+    }
   }
 
   // Streams → hrDrift → neuromuscular efficiency (no need to open the activity).

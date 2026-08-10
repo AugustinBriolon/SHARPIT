@@ -34,6 +34,7 @@ import {
   buildSessionDiscussPrompt,
 } from '@/lib/coach/coach-discuss-prompts';
 import { clearCoachInputDraft } from '@/lib/coach/coach-input-draft';
+import { warmCoachContext } from '@/lib/coach/warm-coach-context';
 import { createClientId } from '@/lib/client-id';
 import { activityTypeLabels } from '@/lib/format';
 import { exposureLabels } from '@/lib/planned-session/sessions';
@@ -83,6 +84,12 @@ export function CoachView() {
   const discussPromptConsumed = useRef(false);
   const initialized = useRef(false);
   const { confirm, dialog } = useConfirmDialog();
+
+  // Warm coach context cache so the first message hits TTL memory.
+  useEffect(() => {
+    if (!online) return;
+    warmCoachContext();
+  }, [online]);
 
   const conversationsQuery = useConversations();
   const createConversation = useCreateConversation();

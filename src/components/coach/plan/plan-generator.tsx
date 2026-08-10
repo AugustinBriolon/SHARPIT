@@ -6,6 +6,7 @@ import { Check, Loader2, Sparkles } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { ProfileContextBanner } from '@/components/profile/profile-context-banner';
 import { resolveDefaultPlanGoalId } from '@/lib/planned-session/plan-goal';
+import { warmCoachContext } from '@/lib/coach/warm-coach-context';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -48,6 +49,29 @@ const DAYS_OPTIONS = [
 
 const NO_GOAL = 'none';
 
+function renderGenerateButtonContent(
+  isGenerating: boolean,
+  offline: boolean,
+  offlineLabel: string,
+  hasPlan: boolean,
+) {
+  if (isGenerating) {
+    return (
+      <>
+        <Loader2 className="size-4 animate-spin" />
+        Génération…
+      </>
+    );
+  }
+  if (offline) return offlineLabel;
+  return (
+    <>
+      <Sparkles className="size-4" />
+      {hasPlan ? 'Régénérer' : 'Générer'}
+    </>
+  );
+}
+
 interface PlanGeneratorProps {
   startDate?: string; // yyyy-MM-dd
   onClose: () => void;
@@ -58,6 +82,10 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
   const [focus, setFocus] = useState('');
   const [goalId, setGoalId] = useState<string>(NO_GOAL);
   const [selected, setSelected] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    warmCoachContext({ includeScenario: true });
+  }, []);
 
   const coachPlan = useCoachPlan();
   const { createMany } = usePlannedSessionMutations();
@@ -212,19 +240,7 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
             disabled={guardDisabled || isGenerating}
             onClick={handleGenerate}
           >
-            {isGenerating ? (
-              <>
-                <Loader2 className="size-4 animate-spin" />
-                Génération…
-              </>
-            ) : offline ? (
-              offlineLabel
-            ) : (
-              <>
-                <Sparkles className="size-4" />
-                {plan ? 'Régénérer' : 'Générer'}
-              </>
-            )}
+            {renderGenerateButtonContent(isGenerating, offline, offlineLabel, Boolean(plan))}
           </Button>
         </div>
 

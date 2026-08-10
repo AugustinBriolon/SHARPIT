@@ -24,7 +24,7 @@ import {
   useThresholdHistory,
   useThresholdPreview,
 } from '@/hooks/use-data';
-import { useOfflineGuard } from '@/hooks/use-offline-guard';
+import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
 import { shouldHydrateProfileForm } from '@/lib/profile/map-athlete-profile';
 import { invalidateAfterAthleteProfileSave } from '@/lib/query/invalidate-after-athlete-profile-save';
 
@@ -205,9 +205,17 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
           comparer tes progrès dans le temps.
         </p>
         <div className="flex flex-col items-end gap-0.5">
-          <Button disabled={guardDisabled || importing} type="button" variant="outline" onClick={handleGarminImport}>
+          <Button
+            disabled={guardDisabled || importing}
+            type="button"
+            variant="outline"
+            onClick={handleGarminImport}
+          >
             <Download className="size-3.5" aria-hidden />
-            {importing ? 'Import…' : offline ? offlineLabel : 'Garmin'}
+            {guardedActionLabel(offline, offlineLabel, 'Garmin', {
+              active: importing,
+              label: 'Import…',
+            })}
           </Button>
           {syncedLabel ? (
             <span className="text-muted-foreground text-label">
@@ -355,7 +363,10 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
         </p>
       ) : null}
       <Button disabled={guardDisabled || saving || !dirty} type="submit">
-        {saving ? 'Enregistrement…' : offline ? offlineLabel : 'Enregistrer'}
+        {guardedActionLabel(offline, offlineLabel, 'Enregistrer', {
+          active: saving,
+          label: 'Enregistrement…',
+        })}
       </Button>
     </form>
   );

@@ -84,9 +84,10 @@ export async function POST(request: NextRequest) {
         console.error('[activities/POST] narrative', error);
       }
 
+      let plannedSessionIdsToAnalyze: string[] = [];
       try {
         const { autoLinkActivities } = await import('@/lib/planned-session/session-linking');
-        await autoLinkActivities([activityId]);
+        plannedSessionIdsToAnalyze = (await autoLinkActivities([activityId])).sessionIds;
       } catch (error) {
         console.error('[activities/POST] auto-link', error);
       }
@@ -96,6 +97,7 @@ export async function POST(request: NextRequest) {
         scheduleBackgroundTasks({
           activityIds: [activityId],
           regenerateBriefing: false,
+          plannedSessionIdsToAnalyze,
         });
       } catch (error) {
         console.error('[activities/POST] background', error);

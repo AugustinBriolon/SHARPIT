@@ -325,11 +325,13 @@ export function CoachChat({
       ? error.message
       : 'Une erreur est survenue. Réessaie dans un instant.';
 
-  const inputPlaceholder = guardDisabled
-    ? 'Hors ligne — envoi indisponible'
-    : hasPendingApprovals
-      ? "Réponds à la proposition, ou envoie un nouveau message pour l'ignorer…"
-      : 'Demande conseil à ton coach…';
+  const inputPlaceholder = (() => {
+    if (guardDisabled) return 'Hors ligne — envoi indisponible';
+    if (hasPendingApprovals) {
+      return "Réponds à la proposition, ou envoie un nouveau message pour l'ignorer…";
+    }
+    return 'Demande conseil à ton coach…';
+  })();
 
   return (
     <div className="rounded-analysis-lg flex h-full min-w-0 flex-1 flex-col lg:border">

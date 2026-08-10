@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json().catch(() => ({}))) as { trainingDayId?: string };
     const trainingDayId = body.trainingDayId ?? todayTrainingDayId();
-    const proposal = await ensureMorningRecalibration(trainingDayId);
+    const { presentation: proposal } = await ensureMorningRecalibration(trainingDayId);
     return NextResponse.json({ proposal });
   } catch (error) {
     console.error('[morning-recalibration]', error);
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
   const trainingDayId = searchParams.get('trainingDayId') ?? todayTrainingDayId();
 
   try {
-    const proposal = await ensureMorningRecalibration(trainingDayId);
+    const { presentation: proposal } = await ensureMorningRecalibration(trainingDayId);
     return NextResponse.json({ proposal });
   } catch (error) {
     console.error('[morning-recalibration]', error);

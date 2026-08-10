@@ -11,8 +11,12 @@ import {
 } from '@/lib/integrations/strava';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { stravaActivityToSession } from '@/core/adapters/strava-adapter';
+import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
 
 const ATHLETE_ID = 'default';
+
+/** Parallel DB upserts for Strava candidates within a page. */
+export const STRAVA_ACTIVITY_CONCURRENCY = 6;
 
 async function ingestStravaActivity(activity: StravaActivity): Promise<void> {
   try {
@@ -250,64 +254,76 @@ export async function syncStravaActivities(): Promise<SyncResult> {
       ).map((r) => r.stravaId),
     );
 
-    // 3) Création ou fusion avec une activité Garmin existante.
-    for (const { stravaId, type, strava } of candidates) {
-      if (existingIds.has(stravaId)) {
-        skipped += 1;
-        continue;
-      }
+    // 3) Création ou fusion avec une activité Garmin existante (parallel within page).
+    const pending = candidates.filter((c) => !existingIds.has(c.stravaId));
+    skipped += candidates.length - pending.length;
 
-      const date = new Date(strava.start_date);
-      const duration = strava.moving_time || strava.elapsed_time || null;
-      const match = await findMatchingActivity({
-        type,
-        date,
-        duration,
-        stravaId,
-      });
+    const outcomes = await mapWithConcurrency(
+      pending,
+      STRAVA_ACTIVITY_CONCURRENCY,
+      async ({ stravaId, type, strava }) => {
+        const date = new Date(strava.start_date);
+        const duration = strava.moving_time || strava.elapsed_time || null;
+        const match = await findMatchingActivity({
+          type,
+          date,
+          duration,
+          stravaId,
+        });
 
-      if (match) {
-        if (match.stravaId && match.stravaId !== stravaId) {
-          skipped += 1;
-          continue;
-        }
-        try {
-          await prisma.activity.update({
-            where: { id: match.id },
-            data: stravaEnrichmentUpdate(strava, type, match.garminId),
-          });
-          merged += 1;
-          importedTypes.add(type);
-          importedActivityIds.push(match.id);
-          // Only ingest into observation engine if Garmin didn't already handle this session
-          if (!match.garminId) {
-            await ingestStravaActivity(strava);
+        if (match) {
+          if (match.stravaId && match.stravaId !== stravaId) {
+            return { kind: 'skipped' as const };
           }
+          try {
+            await prisma.activity.update({
+              where: { id: match.id },
+              data: stravaEnrichmentUpdate(strava, type, match.garminId),
+            });
+            if (!match.garminId) {
+              await ingestStravaActivity(strava);
+            }
+            return {
+              kind: 'merged' as const,
+              type,
+              activityId: match.id,
+            };
+          } catch (error) {
+            if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+              return { kind: 'skipped' as const };
+            }
+            throw error;
+          }
+        }
+
+        try {
+          const created = await prisma.activity.create({
+            data: buildActivityData(strava, type),
+          });
+          await ingestStravaActivity(strava);
+          return {
+            kind: 'imported' as const,
+            type,
+            activityId: created.id,
+          };
         } catch (error) {
           if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
-            skipped += 1;
-            continue;
+            return { kind: 'skipped' as const };
           }
           throw error;
         }
+      },
+    );
+
+    for (const outcome of outcomes) {
+      if (outcome.kind === 'skipped') {
+        skipped += 1;
         continue;
       }
-
-      try {
-        const created = await prisma.activity.create({
-          data: buildActivityData(strava, type),
-        });
-        imported += 1;
-        importedTypes.add(type);
-        importedActivityIds.push(created.id);
-        await ingestStravaActivity(strava);
-      } catch (error) {
-        if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
-          skipped += 1;
-          continue;
-        }
-        throw error;
-      }
+      importedTypes.add(outcome.type);
+      importedActivityIds.push(outcome.activityId);
+      if (outcome.kind === 'merged') merged += 1;
+      else imported += 1;
     }
 
     if (activities.length < 100) break;

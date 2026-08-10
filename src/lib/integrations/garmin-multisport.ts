@@ -1,7 +1,11 @@
 import type { GarminConnect } from '@flow-js/garmin-connect';
+import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
 import { legKindLabel, mapGarminChildTypeToKind, type MultisportLeg } from '@/lib/multisport';
 
 type GCClient = InstanceType<typeof GarminConnect>;
+
+/** Parallel child activity fetches for triathlon parents. */
+const MULTISPORT_CHILD_CONCURRENCY = 4;
 
 interface GarminActivitySummaryDTO {
   duration?: number | null;
@@ -77,20 +81,37 @@ export async function fetchGarminMultisportLegs(
       return null;
     }
 
-    const legs: MultisportLeg[] = [];
-    let transitionCount = 0;
-
-    for (let i = 0; i < childIds.length; i++) {
-      const childId = childIds[i];
+    const planned = childIds.map((childId, i) => {
       const typeKey = childTypes[i] ?? '';
       const kind = mapGarminChildTypeToKind(typeKey);
-      const transitionIndex = kind === 'transition' ? ++transitionCount : null;
+      return { childId, typeKey, kind };
+    });
 
-      const child = (await client.get(
-        `https://connectapi.garmin.com/activity-service/activity/${childId}`,
-      )) as GarminActivityDetail;
+    let transitionCount = 0;
+    const withTransitionIndex = planned.map((item) => ({
+      ...item,
+      transitionIndex: item.kind === 'transition' ? ++transitionCount : null,
+    }));
 
-      const leg = parseChildSummary(childId, typeKey, child.summaryDTO, transitionIndex);
+    const children = await mapWithConcurrency(
+      withTransitionIndex,
+      MULTISPORT_CHILD_CONCURRENCY,
+      async ({ childId }) =>
+        (await client.get(
+          `https://connectapi.garmin.com/activity-service/activity/${childId}`,
+        )) as GarminActivityDetail,
+    );
+
+    const legs: MultisportLeg[] = [];
+    for (let i = 0; i < withTransitionIndex.length; i++) {
+      const meta = withTransitionIndex[i]!;
+      const child = children[i];
+      const leg = parseChildSummary(
+        meta.childId,
+        meta.typeKey,
+        child?.summaryDTO,
+        meta.transitionIndex,
+      );
       if (leg) legs.push(leg);
     }
 

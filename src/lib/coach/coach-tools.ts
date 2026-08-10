@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { after } from 'next/server';
 import { tool } from 'ai';
 import { addDays, format, startOfDay } from 'date-fns';
 import { z } from 'zod';
@@ -31,6 +32,20 @@ import {
   parseStrengthPrescription,
   resolveStrengthFieldsForPersist,
 } from '@/lib/planned-session/strength-prescription';
+import {
+  formatScenarioComparisonForCoach,
+  loadScenarioComparisonForCoach,
+} from '@/lib/presentation/scenario-comparison';
+
+function scheduleSessionContextRefresh(sessionId: string) {
+  after(async () => {
+    try {
+      await refreshAndPersistPlannedSessionContext(sessionId);
+    } catch (error) {
+      console.error('[coach] session context refresh', sessionId, error);
+    }
+  });
+}
 
 /** Option B — stamp active plan goal when the coach creates sessions without an explicit goal. */
 async function resolveCoachDefaultGoalId(): Promise<string | null> {
@@ -72,7 +87,7 @@ const strengthPrescriptionToolSchema = coachStrengthPrescriptionSchema
 export const coachTools = {
   listPlannedSessions: tool({
     description:
-      'Liste les séances planifiées à venir avec leur id, pour pouvoir les modifier ou supprimer. À appeler avant toute modification/suppression pour récupérer les bons id.',
+      'Liste les séances planifiées à venir avec leur id. Inutile si les id sont déjà dans le contexte système — à utiliser seulement pour un horizon plus long ou après une mutation validée.',
     inputSchema: z.object({
       days: z.number().int().min(1).max(60).optional().describe('Horizon en jours (défaut 21).'),
     }),
@@ -95,6 +110,30 @@ export const coachTools = {
         brickOrder: s.brickOrder,
         hasStrengthPrescription: Boolean(parseStrengthPrescription(s.strengthPrescription)),
       }));
+    },
+  }),
+
+  getScenarioProjection: tool({
+    description:
+      "Charge une comparaison de scénarios d'entraînement (projections sur l'horizon). À appeler UNIQUEMENT si l'athlète demande explicitement une projection, une comparaison d'options de plan, ou « que se passe-t-il si… ». Pas pour une simple réadaptation de séance (sommeil/récup/environnement suffisent).",
+    inputSchema: z.object({
+      horizonDays: z
+        .union([z.literal(7), z.literal(14)])
+        .optional()
+        .describe('Horizon de projection (défaut 7).'),
+    }),
+    execute: async ({ horizonDays = 7 }) => {
+      const comparison = await loadScenarioComparisonForCoach({
+        horizonDays,
+      });
+      const text = formatScenarioComparisonForCoach(comparison);
+      if (!text) {
+        return {
+          ok: false as const,
+          error: 'Aucune comparaison de scénarios disponible pour cet horizon.',
+        };
+      }
+      return { ok: true as const, markdown: text };
     },
   }),
 
@@ -150,12 +189,7 @@ export const coachTools = {
         });
 
         pushSessionToGoogleInBackground(s);
-
-        try {
-          await refreshAndPersistPlannedSessionContext(s.id);
-        } catch (error) {
-          console.error('[coach/createPlannedSession/context]', error);
-        }
+        scheduleSessionContextRefresh(s.id);
 
         return {
           ok: true,
@@ -256,7 +290,9 @@ export const coachTools = {
     description:
       'Modifie une séance planifiée existante (identifiée par son id). Ne renseigne que les champs à changer.',
     inputSchema: z.object({
-      id: z.string().describe('id de la séance (via listPlannedSessions).'),
+      id: z
+        .string()
+        .describe('id de la séance (contexte « Déjà planifié » ou listPlannedSessions).'),
       date: z.string().optional().describe('Nouvelle date yyyy-MM-dd.'),
       startTime: startTimeSchema,
       type: typeEnum.optional(),
@@ -306,12 +342,7 @@ export const coachTools = {
         }
 
         const s = await updatePlannedSession(input.id, data);
-
-        try {
-          await refreshAndPersistPlannedSessionContext(s.id);
-        } catch (error) {
-          console.error('[coach/updatePlannedSession/context]', error);
-        }
+        scheduleSessionContextRefresh(s.id);
 
         pushSessionToGoogleInBackground(s);
 
@@ -338,7 +369,9 @@ export const coachTools = {
   deletePlannedSession: tool({
     description: 'Supprime une séance planifiée (identifiée par son id).',
     inputSchema: z.object({
-      id: z.string().describe('id de la séance (via listPlannedSessions).'),
+      id: z
+        .string()
+        .describe('id de la séance (contexte « Déjà planifié » ou listPlannedSessions).'),
     }),
     execute: async ({ id }) => {
       const existing = await getPlannedSessionById(id);

@@ -12,6 +12,22 @@ import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import type { BrickAnalysis } from '@/lib/validators/coach';
 import type { ClientPlannedSession } from '@/lib/query/types';
 
+function renderAnalyzeButtonContent(isAnalyzing: boolean, offline: boolean, offlineLabel: string) {
+  if (isAnalyzing) {
+    return (
+      <>
+        <Loader2 className="size-4 animate-spin" /> Analyse de l&apos;enchaînement…
+      </>
+    );
+  }
+  if (offline) return offlineLabel;
+  return (
+    <>
+      <Sparkles className="size-4" /> Analyser l&apos;enchaînement
+    </>
+  );
+}
+
 function renderAnalysisContent(
   allLinked: boolean,
   analysis: BrickAnalysis | null,
@@ -92,18 +108,14 @@ function renderAnalysisContent(
   }
 
   return (
-    <Button disabled={guardDisabled || isAnalyzing} size="sm" type="button" variant="outline" onClick={onAnalyze}>
-      {isAnalyzing ? (
-        <>
-          <Loader2 className="size-4 animate-spin" /> Analyse de l&apos;enchaînement…
-        </>
-      ) : offline ? (
-        offlineLabel
-      ) : (
-        <>
-          <Sparkles className="size-4" /> Analyser l&apos;enchaînement
-        </>
-      )}
+    <Button
+      disabled={guardDisabled || isAnalyzing}
+      size="sm"
+      type="button"
+      variant="outline"
+      onClick={onAnalyze}
+    >
+      {renderAnalyzeButtonContent(isAnalyzing, offline, offlineLabel)}
     </Button>
   );
 }

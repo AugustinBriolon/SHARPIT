@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { refreshAthleteState } from '@/lib/athlete-state/orchestrator';
+import {
+  refreshAthleteState,
+  shouldSkipTodayPresentationRebuild,
+} from '@/lib/athlete-state/orchestrator';
 import { computeFreshnessSnapshot, trainingDayIdNow } from '@/lib/athlete-state/freshness-service';
 import { buildTodayPresentationViewModel } from '@/lib/presentation/today';
 import { ensureMorningRecalibration } from '@/lib/morning-recalibration/service';
@@ -31,24 +34,36 @@ export async function POST(request: NextRequest) {
     });
 
     // Compute presentation alongside so the client seeds both caches from one request.
-    // Failure is non-blocking — the client falls back to /api/presentation/today.
-    //
-    // Order is intentional: ensureMorning must run after refresh (snapshot freshness)
-    // and complete before buildToday (morning proposal appearance). No other
-    // independent presentation work to start in parallel here.
+    // Soft open + unchanged snapshot → skip heavy rebuild (client keeps RQ cache).
     let todayPresentation = null;
+    let presentationSkipped = false;
+
     try {
-      const morningRecalibration = await ensureMorningRecalibration(trainingDayId).catch(
-        () => null,
-      );
-      todayPresentation = await buildTodayPresentationViewModel(trainingDayId, {
-        morningRecalibration,
+      const morning = await ensureMorningRecalibration(trainingDayId, {
+        athleteSnapshot: result.athleteSnapshot,
+      }).catch(() => ({ presentation: null, created: false }));
+
+      const skip = shouldSkipTodayPresentationRebuild({
+        source,
+        forceSync,
+        syncedProviderCount: result.syncedProviders.length,
+        snapshotChanged: result.snapshotChanged,
+        morningRecalibrationCreated: morning.created,
       });
+
+      if (skip) {
+        presentationSkipped = true;
+      } else {
+        todayPresentation = await buildTodayPresentationViewModel(trainingDayId, {
+          morningRecalibration: morning.presentation,
+          athleteSnapshot: result.athleteSnapshot,
+        });
+      }
     } catch {
       // non-blocking
     }
 
-    return NextResponse.json({ ...result, todayPresentation });
+    return NextResponse.json({ ...result, todayPresentation, presentationSkipped });
   } catch (error) {
     console.error('[api/athlete-state/refresh]', error);
     return NextResponse.json(

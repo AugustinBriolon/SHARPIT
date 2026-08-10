@@ -424,6 +424,8 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
 export type BuildTodayPresentationOptions = {
   /** Pre-ensured by the route. Defaults to null (no proposal). */
   morningRecalibration?: MorningRecalibrationInput | null;
+  /** Reuse snapshot from refreshAthleteState — skips a second getOrBuild. */
+  athleteSnapshot?: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>;
 };
 
 /**
@@ -446,7 +448,9 @@ export async function buildTodayPresentationViewModel(
   // exist for consumers that only need "did/will the athlete train today" (Coach, Gate).
   const [snapshot, healthEntries, activities, plannedSessions, goals, athleteProfile] =
     await Promise.all([
-      getOrBuildAthleteSnapshot(trainingDayId),
+      options.athleteSnapshot
+        ? Promise.resolve(options.athleteSnapshot)
+        : getOrBuildAthleteSnapshot(trainingDayId),
       getHealthEntries(14, day),
       getActivitiesList({ sinceDays: 60 }),
       getPlannedSessions({ from: dayStart, to: dayEnd }),

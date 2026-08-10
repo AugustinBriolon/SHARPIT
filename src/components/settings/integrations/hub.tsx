@@ -7,7 +7,7 @@ import { CheckCircle2, ChevronRight, CircleDashed, RefreshCw, Unplug } from 'luc
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { useOfflineGuard } from '@/hooks/use-offline-guard';
+import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import { IntegrationLogo } from '@/components/settings/integrations/logos';
 import {
@@ -224,9 +224,15 @@ export function IntegrationsHub({ payload }: { payload: IntegrationsPayload }) {
             {connected.length > 1 ? 's' : ''}
           </p>
         </div>
-        <Button disabled={guardDisabled || syncingAll || connected.length === 0} onClick={handleSyncAll}>
+        <Button
+          disabled={guardDisabled || syncingAll || connected.length === 0}
+          onClick={handleSyncAll}
+        >
           <RefreshCw className={cn('size-4', syncingAll && 'animate-spin')} aria-hidden />
-          {syncingAll ? 'Synchronisation…' : offline ? offlineLabel : 'Tout synchroniser'}
+          {guardedActionLabel(offline, offlineLabel, 'Tout synchroniser', {
+            active: syncingAll,
+            label: 'Synchronisation…',
+          })}
         </Button>
       </div>
 

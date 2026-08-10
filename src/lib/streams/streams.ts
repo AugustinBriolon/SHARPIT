@@ -468,6 +468,33 @@ export async function getActivityStreams(
   }
 }
 
+/**
+ * Cached streams only — never triggers Garmin/Strava fetch.
+ * Used by post-session narrative so analysis stays off the remote critical path.
+ */
+export async function getCachedActivityStreams(
+  activityId: string,
+): Promise<ActivityStreamPayload | null> {
+  const [activity, profile] = await Promise.all([
+    prisma.activity.findUnique({
+      where: { id: activityId },
+      include: { stream: true, bikeMetrics: true },
+    }),
+    getAthleteProfile(),
+  ]);
+  if (!activity?.stream?.available || activity.stream.data == null) return null;
+
+  return buildPayload(
+    activity.stream.data as unknown as RawStreams,
+    {
+      type: activity.type,
+      duration: activity.duration,
+      bikeMetrics: activity.bikeMetrics,
+    },
+    profile,
+  );
+}
+
 /** Utilitaire backfill : récupère et persiste les streams d'une activité. */
 export async function fetchAndCacheActivityStreams(
   activityId: string,

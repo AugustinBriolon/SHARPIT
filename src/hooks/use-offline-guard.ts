@@ -16,3 +16,18 @@ export function useOfflineGuard(): {
     offlineLabel: 'Hors ligne',
   };
 }
+
+/**
+ * CTA copy: pending wins, then offline, then idle.
+ * Avoids nested ternaries at call sites (`no-nested-ternary`).
+ */
+export function guardedActionLabel(
+  offline: boolean,
+  offlineLabel: string,
+  idleLabel: string,
+  pending?: { active: boolean; label: string },
+): string {
+  if (pending?.active) return pending.label;
+  if (offline) return offlineLabel;
+  return idleLabel;
+}

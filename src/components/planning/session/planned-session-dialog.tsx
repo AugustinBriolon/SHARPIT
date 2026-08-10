@@ -920,13 +920,16 @@ export function PlannedSessionDialog({
                       )}
                     </div>
                     <div className="flex gap-2">
-                      <Button disabled={pending} type="button" variant="outline" onClick={isEdit ? handleCancelEdit : onClose}>
+                      <Button
+                        disabled={pending}
+                        type="button"
+                        variant="outline"
+                        onClick={isEdit ? handleCancelEdit : onClose}
+                      >
                         Annuler
                       </Button>
                       <Button disabled={guardDisabled || pending} type="submit">
-                        {offline
-                          ? offlineLabel
-                          : submitButtonLabel(pending, isEdit, createMode)}
+                        {offline ? offlineLabel : submitButtonLabel(pending, isEdit, createMode)}
                       </Button>
                     </div>
                   </div>

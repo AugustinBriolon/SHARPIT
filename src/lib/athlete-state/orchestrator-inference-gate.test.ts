@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { shouldForceInferenceOnRefresh } from '@/lib/athlete-state/orchestrator';
+import {
+  shouldForceInferenceOnRefresh,
+  shouldSkipTodayPresentationRebuild,
+} from '@/lib/athlete-state/orchestrator';
 
 describe('shouldForceInferenceOnRefresh', () => {
   it('keeps soft app_shell opens on Twin cache when nothing synced', () => {
@@ -44,5 +47,56 @@ describe('shouldForceInferenceOnRefresh', () => {
         syncedProviderCount: 0,
       }),
     ).toBe(true);
+  });
+});
+
+describe('shouldSkipTodayPresentationRebuild', () => {
+  it('skips on soft app_shell with unchanged snapshot and no new morning', () => {
+    expect(
+      shouldSkipTodayPresentationRebuild({
+        source: 'app_shell',
+        syncedProviderCount: 0,
+        snapshotChanged: false,
+        morningRecalibrationCreated: false,
+      }),
+    ).toBe(true);
+  });
+
+  it('rebuilds after sync, snapshot change, or new morning proposal', () => {
+    expect(
+      shouldSkipTodayPresentationRebuild({
+        source: 'app_shell',
+        syncedProviderCount: 1,
+        snapshotChanged: false,
+        morningRecalibrationCreated: false,
+      }),
+    ).toBe(false);
+    expect(
+      shouldSkipTodayPresentationRebuild({
+        source: 'app_shell',
+        syncedProviderCount: 0,
+        snapshotChanged: true,
+        morningRecalibrationCreated: false,
+      }),
+    ).toBe(false);
+    expect(
+      shouldSkipTodayPresentationRebuild({
+        source: 'app_shell',
+        syncedProviderCount: 0,
+        snapshotChanged: false,
+        morningRecalibrationCreated: true,
+      }),
+    ).toBe(false);
+  });
+
+  it('never skips today_refresh', () => {
+    expect(
+      shouldSkipTodayPresentationRebuild({
+        source: 'today_refresh',
+        syncedProviderCount: 0,
+        snapshotChanged: false,
+        morningRecalibrationCreated: false,
+      }),
+    ).toBe(false);
   });
 });

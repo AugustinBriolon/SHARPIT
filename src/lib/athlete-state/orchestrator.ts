@@ -1,4 +1,3 @@
-import type { AthleteStateDomain } from '@/core/athlete-state/freshness';
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
 import type { DataProvider } from '@/core/athlete-state/events';
 import { createEventId, createTraceId, type AthleteStateEvent } from '@/core/athlete-state/events';
@@ -12,6 +11,7 @@ import {
 } from '@/lib/athlete-state/freshness-service';
 import { regenerateAthleteSnapshotAfterInference } from '@/lib/athlete-state/snapshot-service';
 import { syncProviders, type ProviderSyncResult } from '@/lib/athlete-state/sync-providers';
+import { getLatestAthleteSnapshot } from '@/infrastructure/athlete-state/snapshot-repository';
 import { loadTodayState } from '@/lib/today/today-state-server';
 import { prisma } from '@/lib/prisma';
 import { updateRecordsForTypesSafe } from '@/lib/training/records';
@@ -27,13 +27,8 @@ export type AthleteStateRefreshResult = {
   todayState: TodayState;
   syncedProviders: DataProvider[];
   inferenceRan: boolean;
-};
-
-type OrchestratorRunContext = {
-  traceId: string;
-  trainingDayId: string;
-  syncing: Record<string, boolean>;
-  computing: Partial<Record<AthleteStateDomain, boolean>>;
+  /** True when regenerate produced a new snapshot fingerprint. */
+  snapshotChanged: boolean;
 };
 
 /**
@@ -52,8 +47,43 @@ export function shouldForceInferenceOnRefresh(input: {
 }
 
 /**
+ * Soft app_shell opens with an unchanged Twin fingerprint can skip rebuilding
+ * Today presentation (client keeps React Query cache). Always rebuild after
+ * sync, manual refresh, or a new morning proposal.
+ */
+export function shouldSkipTodayPresentationRebuild(input: {
+  source?: 'app_shell' | 'today_refresh' | 'cron';
+  forceSync?: boolean;
+  syncedProviderCount: number;
+  snapshotChanged: boolean;
+  morningRecalibrationCreated: boolean;
+}): boolean {
+  if (input.forceSync) return false;
+  if (input.source !== 'app_shell') return false;
+  if (input.syncedProviderCount > 0) return false;
+  if (input.snapshotChanged) return false;
+  if (input.morningRecalibrationCreated) return false;
+  return true;
+}
+
+async function autoLinkAndCollectSessionIds(activityIds: string[]): Promise<string[]> {
+  if (activityIds.length === 0) return [];
+  try {
+    const { autoLinkActivities } = await import('@/lib/planned-session/session-linking');
+    const result = await autoLinkActivities(activityIds);
+    return result.sessionIds;
+  } catch (error) {
+    console.error('[athlete-state/auto-link]', error);
+    return [];
+  }
+}
+
+/**
  * ApplicationOpened — athlete-centric refresh.
  * Sync only what is needed; force Twin recompute only when evidence changed or asked.
+ *
+ * Freshness is computed twice only: once to decide sync, once for the response
+ * (mid-sync / mid-compute snapshots were never returned to the client).
  */
 export async function refreshAthleteState(options?: {
   trainingDayId?: string;
@@ -63,12 +93,6 @@ export async function refreshAthleteState(options?: {
 }): Promise<AthleteStateRefreshResult> {
   const traceId = createTraceId();
   const trainingDayId = options?.trainingDayId ?? trainingDayIdNow();
-  const ctx: OrchestratorRunContext = {
-    traceId,
-    trainingDayId,
-    syncing: {},
-    computing: {},
-  };
 
   let freshness = await computeFreshnessSnapshot({ trainingDayId, athleteId: ATHLETE_ID });
 
@@ -77,16 +101,6 @@ export async function refreshAthleteState(options?: {
 
   if (!options?.skipSync && (options?.forceSync || shouldSyncOnOpen(freshness))) {
     const toSync = providersNeedingSync(freshness, { force: options?.forceSync }) as DataProvider[];
-
-    for (const p of toSync) {
-      ctx.syncing[p] = true;
-    }
-    freshness = await computeFreshnessSnapshot({
-      trainingDayId,
-      athleteId: ATHLETE_ID,
-      syncing: ctx.syncing,
-    });
-
     const results = await syncProviders(toSync);
     for (const r of results) {
       syncedProviders.push(r.provider);
@@ -100,35 +114,29 @@ export async function refreshAthleteState(options?: {
     syncedProviderCount: syncedProviders.length,
   });
 
-  ctx.computing = {
-    recovery: true,
-    training: true,
-    sleep: true,
-    reasoning: true,
-  };
-  freshness = await computeFreshnessSnapshot({
-    trainingDayId,
+  const priorSnapshot = await getLatestAthleteSnapshot({
     athleteId: ATHLETE_ID,
-    computing: ctx.computing,
+    trainingDayId,
   });
+  const priorSnapshotId = priorSnapshot?.snapshotId ?? null;
 
   const todayState = await runFastInference(trainingDayId, { forceRefresh });
   const athleteSnapshot = await regenerateAthleteSnapshotAfterInference(trainingDayId, todayState);
+  const snapshotChanged = priorSnapshotId !== athleteSnapshot.snapshotId;
 
   freshness = await computeFreshnessSnapshot({ trainingDayId, athleteId: ATHLETE_ID });
 
   const needsBriefing = freshness.domains.some(
     (d) => d.domain === 'recommendations' && d.freshness !== 'fresh',
   );
-  if (activityIds.length > 0) {
-    try {
-      const { autoLinkActivities } = await import('@/lib/planned-session/session-linking');
-      await autoLinkActivities(activityIds);
-    } catch (error) {
-      console.error('[athlete-state/auto-link]', error);
-    }
-  }
-  scheduleBackgroundTasks({ activityIds, regenerateBriefing: needsBriefing, trainingDayId });
+
+  const plannedSessionIdsToAnalyze = await autoLinkAndCollectSessionIds(activityIds);
+  scheduleBackgroundTasks({
+    activityIds,
+    regenerateBriefing: needsBriefing,
+    trainingDayId,
+    plannedSessionIdsToAnalyze,
+  });
 
   return {
     traceId,
@@ -138,6 +146,7 @@ export async function refreshAthleteState(options?: {
     todayState,
     syncedProviders,
     inferenceRan: true,
+    snapshotChanged,
   };
 }
 
@@ -158,19 +167,17 @@ export async function onProviderSyncCompleted(
     await updateRecordsForTypesSafe(types);
   }
 
-  // Await link before returning sync — cheap DB match; must not sit behind weather/LLM.
-  if (activityIds.length > 0) {
-    try {
-      const { autoLinkActivities } = await import('@/lib/planned-session/session-linking');
-      await autoLinkActivities(activityIds);
-    } catch (error) {
-      console.error('[athlete-state/auto-link]', error);
-    }
-  }
+  // Await DB link only — compliance LLM runs in scheduleBackgroundTasks.
+  const plannedSessionIdsToAnalyze = await autoLinkAndCollectSessionIds(activityIds);
 
   const todayState = await runFastInference(dayId);
   const athleteSnapshot = await regenerateAthleteSnapshotAfterInference(dayId, todayState);
-  scheduleBackgroundTasks({ activityIds, regenerateBriefing: true, trainingDayId: dayId });
+  scheduleBackgroundTasks({
+    activityIds,
+    regenerateBriefing: true,
+    trainingDayId: dayId,
+    plannedSessionIdsToAnalyze,
+  });
   return athleteSnapshot;
 }
 
@@ -206,22 +213,18 @@ export async function handleAthleteStateEvent(event: AthleteStateEvent): Promise
       break;
     case 'ActivityImported':
       {
-        if (event.activityIds.length > 0) {
-          try {
-            const { autoLinkActivities } = await import('@/lib/planned-session/session-linking');
-            await autoLinkActivities([...event.activityIds]);
-          } catch (error) {
-            console.error('[athlete-state/auto-link]', error);
-          }
-        }
+        const plannedSessionIdsToAnalyze = await autoLinkAndCollectSessionIds([
+          ...event.activityIds,
+        ]);
         const todayState = await runFastInference(event.trainingDayId);
         await regenerateAthleteSnapshotAfterInference(event.trainingDayId, todayState);
+        scheduleBackgroundTasks({
+          activityIds: [...event.activityIds],
+          regenerateBriefing: event.activityIds.length > 0,
+          trainingDayId: event.trainingDayId,
+          plannedSessionIdsToAnalyze,
+        });
       }
-      scheduleBackgroundTasks({
-        activityIds: [...event.activityIds],
-        regenerateBriefing: event.activityIds.length > 0,
-        trainingDayId: event.trainingDayId,
-      });
       break;
     case 'InferenceRequested':
       if (event.mode === 'fast') {

@@ -2,7 +2,7 @@ import Image from 'next/image';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { useOfflineGuard } from '@/hooks/use-offline-guard';
+import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
 import { motionTokens } from '@/lib/motion/tokens';
 
 export function formatIntegrationLastSync(lastSyncAt: string | null | undefined): string {
@@ -89,11 +89,17 @@ export function IntegrationSyncActions({
   return (
     <div className="flex flex-wrap gap-2 pt-1">
       <Button disabled={busy || syncDisabled || guardDisabled} onClick={onSync}>
-        {syncing ? syncingLabel : offline ? offlineLabel : syncLabel}
+        {guardedActionLabel(offline, offlineLabel, syncLabel, {
+          active: syncing,
+          label: syncingLabel,
+        })}
       </Button>
       {onFullImport && (
         <Button disabled={busy || guardDisabled} variant="outline" onClick={onFullImport}>
-          {importingAll ? fullImportingLabel : offline ? offlineLabel : fullImportLabel}
+          {guardedActionLabel(offline, offlineLabel, fullImportLabel, {
+            active: importingAll,
+            label: fullImportingLabel,
+          })}
         </Button>
       )}
       {children}

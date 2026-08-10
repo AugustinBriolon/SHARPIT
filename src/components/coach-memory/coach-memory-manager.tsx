@@ -19,7 +19,7 @@ import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
 import { useCoachMemory, useCoachMemoryMutations } from '@/hooks/use-coach-memory';
-import { useOfflineGuard } from '@/hooks/use-offline-guard';
+import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import type { CoachMemoryEntry } from '@/lib/coach-memory/types';
 
@@ -160,7 +160,7 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
         onClick={openCreate}
       >
         <Plus className="size-4" aria-hidden />
-        {onInk ? (offline ? offlineLabel : 'Ajouter une contrainte') : offline ? offlineLabel : 'Ajouter'}
+        {guardedActionLabel(offline, offlineLabel, onInk ? 'Ajouter une contrainte' : 'Ajouter')}
       </Button>
     );
   }
@@ -220,7 +220,10 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
               variant="destructive"
               onClick={() => void confirmDelete()}
             >
-              {remove.isPending ? 'Suppression…' : offline ? offlineLabel : 'Supprimer'}
+              {guardedActionLabel(offline, offlineLabel, 'Supprimer', {
+                active: remove.isPending,
+                label: 'Suppression…',
+              })}
             </Button>
           </DialogFooter>
         </DialogContent>

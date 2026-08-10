@@ -1,6 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { z } from 'zod';
-import { connectGarmin } from '@/lib/integrations/garmin-sync';
+import { onProviderSyncCompleted } from '@/lib/athlete-state/orchestrator';
+import { syncGarminActivities } from '@/lib/integrations/garmin-activity-sync';
+import { connectGarmin, syncGarminHealth } from '@/lib/integrations/garmin-sync';
+import { updateRecordsForTypes } from '@/lib/training/records';
+
+export const maxDuration = 300;
 
 const schema = z.object({
   username: z.string().min(1),
@@ -16,7 +21,36 @@ export async function POST(request: NextRequest) {
     }
 
     const profile = await connectGarmin(parsed.data.username, parsed.data.password);
-    return NextResponse.json({ success: true, profile });
+
+    // First pull right after connect — health + activities land without a manual sync.
+    after(async () => {
+      try {
+        const [health, activities] = await Promise.all([
+          syncGarminHealth({}),
+          syncGarminActivities({}),
+        ]);
+        if (activities.changedTypes.length > 0) {
+          await updateRecordsForTypes(activities.changedTypes);
+        }
+        await onProviderSyncCompleted(
+          [
+            {
+              provider: 'garmin',
+              imported: activities.imported,
+              updated: activities.updated + activities.merged,
+              observationCount: health.updated,
+              activityIds: activities.importedActivityIds,
+            },
+          ],
+          undefined,
+          { skipRecordUpdate: activities.changedTypes.length > 0 },
+        );
+      } catch (error) {
+        console.error('[api/garmin/connect] background sync failed:', error);
+      }
+    });
+
+    return NextResponse.json({ success: true, profile, syncStarted: true });
   } catch (error) {
     console.error(error);
     const message =

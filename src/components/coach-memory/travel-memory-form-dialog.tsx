@@ -26,7 +26,7 @@ import {
 } from '@/lib/coach-memory/types';
 import { deriveTravelTrainingConstraint } from '@/lib/travel-context/disciplines';
 import type { TravelMemoryPayload } from '@/hooks/use-coach-memory';
-import { useOfflineGuard } from '@/hooks/use-offline-guard';
+import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
 import { cn } from '@/lib/utils';
 
 const ENTRY_TYPE_OPTIONS: { type: CoachMemoryType; label: string }[] = [
@@ -367,7 +367,10 @@ export function TravelMemoryFormDialog({
               Annuler
             </Button>
             <Button disabled={guardDisabled || saving} type="submit">
-              {saving ? 'Enregistrement…' : offline ? offlineLabel : submitLabel()}
+              {guardedActionLabel(offline, offlineLabel, submitLabel(), {
+                active: saving,
+                label: 'Enregistrement…',
+              })}
             </Button>
           </DialogFooter>
         </form>

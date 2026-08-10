@@ -24,7 +24,7 @@ import { formatGoalDisplayValue, parseGoalMetricConfig } from '@/lib/goals/goal-
 import { resolveEnvironmentalExplanation } from '@/lib/presentation/environment';
 import { getActivePhysicalNotes, getAthleteProfile } from '@/lib/queries';
 import { buildTechnicalSessionFacts } from '@/lib/activity/activity-narrative-technical-facts';
-import { getActivityStreams } from '@/lib/streams/streams';
+import { getCachedActivityStreams } from '@/lib/streams/streams';
 
 const TYPE_FR: Record<string, string> = {
   RUN: 'Course à pied',
@@ -289,8 +289,7 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
   const [
     peers,
     healthRows,
-    loadHistory,
-    pmcHistory,
+    recentHistory,
     profile,
     physicalNotes,
     goalHits,
@@ -322,18 +321,13 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
         swimMetrics: { select: { distanceM: true, avgPaceSecPer100m: true, swolf: true } },
       },
       orderBy: { date: 'desc' },
-      take: 40,
+      take: 20,
     }),
     prisma.dailyHealth.findMany({
       where: { date: { gte: subDays(activityDay, 14), lt: activityDay } },
       orderBy: { date: 'desc' },
     }),
-    prisma.activity.findMany({
-      where: { date: { lte: activity.date } },
-      select: { date: true, load: true },
-      orderBy: { date: 'desc' },
-      take: 180,
-    }),
+    // Single history query for training load + PMC (was two near-identical scans).
     prisma.activity.findMany({
       where: { date: { lte: activity.date } },
       select: {
@@ -344,7 +338,7 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
         bikeMetrics: { select: { tss: true } },
       },
       orderBy: { date: 'desc' },
-      take: 180,
+      take: 120,
     }),
     getAthleteProfile(),
     getActivePhysicalNotes(),
@@ -369,11 +363,15 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
         observedLocationLabel: activity.observedLocationLabel,
       },
     }).catch(() => null),
-    getActivityStreams(activityId).catch((err) => {
+    // Cached streams only — never block narrative on Garmin/Strava stream fetch.
+    getCachedActivityStreams(activityId).catch((err) => {
       console.error('[activity-narrative-facts] streams', activityId, err);
       return null;
     }),
   ]);
+
+  const loadHistory = recentHistory.map((a) => ({ date: a.date, load: a.load }));
+  const pmcHistory = recentHistory;
 
   const streamPayload = streamResult;
   const streamAvgHr = streamPayload?.stats?.avgHr ?? null;

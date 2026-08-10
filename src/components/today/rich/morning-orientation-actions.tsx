@@ -10,7 +10,7 @@ import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { formatPlannedDuration } from '@/lib/planned-session/sessions';
 import { queryKeys } from '@/lib/query/keys';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
-import { useOfflineGuard } from '@/hooks/use-offline-guard';
+import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
 import { cn } from '@/lib/utils';
 import { useAppModal } from '@/providers/app-modal-provider';
 
@@ -186,11 +186,10 @@ export function MorningOrientationActions({
             onClick={() => void refreshEvidence()}
           >
             <RefreshCw className={cn('size-3.5', pending === 'refresh' && 'animate-spin')} />
-            {pending === 'refresh'
-              ? 'Actualisation…'
-              : offline
-                ? offlineLabel
-                : 'Actualiser les preuves'}
+            {guardedActionLabel(offline, offlineLabel, 'Actualiser les preuves', {
+              active: pending === 'refresh',
+              label: 'Actualisation…',
+            })}
           </Button>
         </div>
       </div>
@@ -298,7 +297,10 @@ export function MorningOrientationActions({
           variant="highlight"
           onClick={() => void actRecalibration('accept', decisionId, direction)}
         >
-          {pending === 'apply' ? 'Application…' : offline ? offlineLabel : 'Appliquer la proposée'}
+          {guardedActionLabel(offline, offlineLabel, 'Appliquer la proposée', {
+            active: pending === 'apply',
+            label: 'Application…',
+          })}
         </Button>
         <Button
           className="h-11 w-full lg:h-9 lg:w-auto"
@@ -307,7 +309,10 @@ export function MorningOrientationActions({
           variant="ghost"
           onClick={() => void actRecalibration('reject', decisionId, null)}
         >
-          {pending === 'hold' ? 'Conservation…' : offline ? offlineLabel : 'Garder le plan'}
+          {guardedActionLabel(offline, offlineLabel, 'Garder le plan', {
+            active: pending === 'hold',
+            label: 'Conservation…',
+          })}
         </Button>
       </div>
     </section>

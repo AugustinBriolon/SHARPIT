@@ -4,7 +4,7 @@ import { fr } from 'date-fns/locale';
 import { NextResponse } from 'next/server';
 import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from '@/lib/ai';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach/coach-context';
-import { getActiveTrainingPlan, getGoals, getPlannedSessions } from '@/lib/queries';
+import { getActiveTrainingPlan, getGoals, getPlannedSessionsForCoach } from '@/lib/queries';
 import { resolveDefaultPlanGoalId, selectableDatedGoalIds } from '@/lib/planned-session/plan-goal';
 import { intensityLabels } from '@/lib/planned-session/sessions';
 import {
@@ -21,7 +21,7 @@ import { buildDecisionSnapshotContext } from '@/lib/decision-memory/build-snapsh
 import { createCoachingDecision } from '@/lib/decision-memory/repository';
 
 type AdaptChange = AdaptPlan['changes'][number];
-type UpcomingSession = Awaited<ReturnType<typeof getPlannedSessions>>[number];
+type UpcomingSession = Awaited<ReturnType<typeof getPlannedSessionsForCoach>>[number];
 
 /** Merges a MODIFY's partial fields onto the current session so date/type-dependent
  * rules (weekly load, recovery spacing, ...) evaluate the resulting state, not a
@@ -111,8 +111,8 @@ export async function POST(req: Request) {
     const horizon = addDays(today, days);
 
     const [ctx, upcoming, activePlan, goals] = await Promise.all([
-      buildCoachContext(today),
-      getPlannedSessions({ from: today, to: horizon }),
+      buildCoachContext(today, { includeScenario: true }),
+      getPlannedSessionsForCoach({ from: today, to: horizon }),
       getActiveTrainingPlan(),
       getGoals(),
     ]);

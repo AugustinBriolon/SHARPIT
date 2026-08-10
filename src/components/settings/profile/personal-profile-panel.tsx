@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/toast';
 import { useAthleteProfile } from '@/hooks/use-data';
-import { useOfflineGuard } from '@/hooks/use-offline-guard';
+import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
 import { athleteAgeYears, birthDateToInput } from '@/lib/profile/athlete-profile-utils';
 import {
   mapAthleteProfileToFormData,
@@ -283,7 +283,10 @@ export function PersonalProfilePanel({
         </p>
       ) : null}
       <Button disabled={guardDisabled || saving || !dirty} type="submit">
-        {saving ? 'Enregistrement…' : offline ? offlineLabel : 'Enregistrer'}
+        {guardedActionLabel(offline, offlineLabel, 'Enregistrer', {
+          active: saving,
+          label: 'Enregistrement…',
+        })}
       </Button>
     </form>
   );

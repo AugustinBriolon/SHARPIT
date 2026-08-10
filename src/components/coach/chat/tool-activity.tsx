@@ -55,6 +55,12 @@ const META: Record<string, Meta> = {
     running: 'Consultation des séances…',
     proposal: '',
   },
+  'tool-getScenarioProjection': {
+    label: 'Scénarios projetés',
+    icon: Layers,
+    running: 'Projection des scénarios…',
+    proposal: '',
+  },
   'tool-createPlannedSession': {
     label: 'Séance ajoutée',
     icon: CalendarPlus,

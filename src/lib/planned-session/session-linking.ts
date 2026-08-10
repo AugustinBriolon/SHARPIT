@@ -31,7 +31,7 @@ export function scorePlannedActivityMatch(
 async function autoLinkOneActivity(
   activityId: string,
   reservedSessionIds: Set<string>,
-): Promise<{ sessionId: string; analyzed: boolean } | null> {
+): Promise<{ sessionId: string } | null> {
   const activity = await prisma.activity.findUnique({
     where: { id: activityId },
     select: { id: true, type: true, date: true, duration: true },
@@ -66,36 +66,44 @@ async function autoLinkOneActivity(
   await linkPlannedSessionActivity(best.s.id, activity.id);
   reservedSessionIds.add(best.s.id);
 
-  let analyzed = false;
-  if (isCoachConfigured()) {
-    try {
-      const analysis = await analyzePlannedSession(best.s.id);
-      if (analysis) {
-        await setPlannedSessionAnalysis(best.s.id, analysis);
-        analyzed = true;
-      }
-    } catch (error) {
-      console.error('[session-linking] analyze', error);
-    }
-  }
-
-  return { sessionId: best.s.id, analyzed };
+  return { sessionId: best.s.id };
 }
 
-/** Lie automatiquement les activités nouvelles aux séances planifiées du même jour. */
+/**
+ * Lie automatiquement les activités nouvelles aux séances planifiées du même jour.
+ * Compliance LLM analysis is separate ({@link analyzeLinkedPlannedSessions}) so
+ * sync / open-path can await only the cheap DB match.
+ */
 export async function autoLinkActivities(
   activityIds: string[],
-): Promise<{ linked: number; analyzed: number }> {
+): Promise<{ linked: number; sessionIds: string[] }> {
   const reserved = new Set<string>();
-  let linked = 0;
-  let analyzed = 0;
+  const sessionIds: string[] = [];
 
   for (const activityId of activityIds) {
     const result = await autoLinkOneActivity(activityId, reserved);
     if (!result) continue;
-    linked += 1;
-    if (result.analyzed) analyzed += 1;
+    sessionIds.push(result.sessionId);
   }
 
-  return { linked, analyzed };
+  return { linked: sessionIds.length, sessionIds };
+}
+
+/** Post-link compliance analysis — run off the HTTP critical path. */
+export async function analyzeLinkedPlannedSessions(sessionIds: string[]): Promise<number> {
+  if (!isCoachConfigured() || sessionIds.length === 0) return 0;
+
+  let analyzed = 0;
+  for (const sessionId of sessionIds) {
+    try {
+      const analysis = await analyzePlannedSession(sessionId);
+      if (analysis) {
+        await setPlannedSessionAnalysis(sessionId, analysis);
+        analyzed += 1;
+      }
+    } catch (error) {
+      console.error('[session-linking] analyze', sessionId, error);
+    }
+  }
+  return analyzed;
 }

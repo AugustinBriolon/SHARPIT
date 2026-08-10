@@ -23,6 +23,14 @@ export const coachGatewayOptions = {
   },
 };
 
+/** Same model as chat; separate tag for structured analyses (narrative, compliance). */
+export const coachAnalysisGatewayOptions = {
+  gateway: {
+    models: [...COACH_FALLBACK_MODELS],
+    tags: ['feature:analysis'],
+  },
+};
+
 /** Indique si une clé d'accès au gateway est configurée. */
 export function isCoachConfigured(): boolean {
   return Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN);

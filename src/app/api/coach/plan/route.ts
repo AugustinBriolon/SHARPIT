@@ -99,7 +99,7 @@ export async function POST(req: Request) {
   const start = startOfDay(startDate ?? new Date());
 
   const [ctx, busySummary, goal] = await Promise.all([
-    buildCoachContext(start),
+    buildCoachContext(start, { includeScenario: true }),
     buildBusySummary(start, days),
     goalId ? getGoalById(goalId) : Promise.resolve(null),
   ]);

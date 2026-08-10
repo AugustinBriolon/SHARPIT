@@ -5,7 +5,11 @@ import { clientFromTokens, garminTokensFromStorage } from '@/lib/integrations/ga
 import { fetchGarminMultisportLegs } from '@/lib/integrations/garmin-multisport';
 import { getGarminAccount } from '@/lib/integrations/garmin-sync';
 import { isMultisportLegArray, type MultisportLeg } from '@/lib/multisport';
-import { activityInclude, activityListSelect } from '@/lib/queries/activity-include';
+import {
+  activityInclude,
+  activityListSelect,
+  activityCoachSelect,
+} from '@/lib/queries/activity-include';
 import { linkPlannedSessionActivity } from '@/lib/queries/planned-sessions';
 import { ActivityType, Prisma } from '@prisma/client';
 import { addDays, endOfDay, startOfDay } from 'date-fns';
@@ -19,6 +23,7 @@ export {
   getBrickSessions,
   getPlannedSessionById,
   getPlannedSessions,
+  getPlannedSessionsForCoach,
   linkPlannedSessionActivity,
   setBrickAnalysis,
   setPlannedSessionAnalysis,
@@ -59,6 +64,20 @@ export async function getActivitiesList(params?: {
   return prisma.activity.findMany({
     where,
     select: activityListSelect,
+    orderBy: { date: 'desc' },
+    take: params?.limit,
+  });
+}
+
+/** Slim activities for Coach context assembly (prompt + PMC). */
+export async function getActivitiesForCoach(params?: { limit?: number; sinceDays?: number }) {
+  const where: Prisma.ActivityWhereInput = {};
+  if (params?.sinceDays) {
+    where.date = { gte: startOfDay(addDays(new Date(), -params.sinceDays)) };
+  }
+  return prisma.activity.findMany({
+    where,
+    select: activityCoachSelect,
     orderBy: { date: 'desc' },
     take: params?.limit,
   });

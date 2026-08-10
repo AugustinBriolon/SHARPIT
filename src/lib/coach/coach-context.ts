@@ -3,11 +3,11 @@ import { fr } from 'date-fns/locale';
 import { computePmcSeries, type ActivityForAnalytics } from '@/lib/analytics';
 import {
   getActivePhysicalNotes,
-  getActivities,
+  getActivitiesForCoach,
   getAthleteProfile,
   getGoals,
   getHealthEntries,
-  getPlannedSessions,
+  getPlannedSessionsForCoach,
 } from '@/lib/queries';
 import { categoryLabels, sideLabels, statusLabels } from '@/lib/physical';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
@@ -20,6 +20,7 @@ import { buildTopActionLine } from '@/lib/today/today-rich-view';
 import { decisionVerdict } from '@/lib/decision/projection';
 import { resolve, resolveCode } from '@/lib/french';
 import { computeTrainingLoad } from '@/lib/training/training-load';
+import { buildEnvironmentPresentationContext } from '@/lib/presentation/environment';
 import {
   formatScenarioComparisonForCoach,
   loadScenarioComparisonForCoach,
@@ -36,6 +37,31 @@ const TYPE_FR: Record<string, string> = {
   STRENGTH: 'Renfo',
 };
 
+/** Latest home/today weather observation for coach — cheap indexed read, never Open-Meteo. */
+async function loadHomeWeatherHint(trainingDayId: string): Promise<{
+  airTemperatureC: number | null;
+  relativeHumidityPct: number | null;
+} | null> {
+  const row = await prisma.environmentalObservationRecord.findFirst({
+    where: {
+      athleteId: 'default',
+      trainingDayId,
+      dimension: 'WEATHER',
+      supersededBy: null,
+    },
+    orderBy: { observedAt: 'desc' },
+    select: { payload: true },
+  });
+  if (!row?.payload || typeof row.payload !== 'object') return null;
+  const payload = row.payload as Record<string, unknown>;
+  const airTemperatureC =
+    typeof payload.airTemperatureC === 'number' ? payload.airTemperatureC : null;
+  const relativeHumidityPct =
+    typeof payload.relativeHumidityPct === 'number' ? payload.relativeHumidityPct : null;
+  if (airTemperatureC == null && relativeHumidityPct == null) return null;
+  return { airTemperatureC, relativeHumidityPct };
+}
+
 function formatPace(secPerKm?: number | null): string | null {
   if (secPerKm == null || secPerKm <= 0) return null;
   const m = Math.floor(secPerKm / 60);
@@ -49,6 +75,14 @@ function formatMin(seconds?: number | null): string {
 }
 
 type CoachContextData = Awaited<ReturnType<typeof buildCoachContextUncached>>;
+
+export type BuildCoachContextOptions = {
+  /**
+   * Load Scenario Engine comparison into the prompt.
+   * Use for plan / adapt (horizon decisions). Skip for chat (tool on demand).
+   */
+  includeScenario?: boolean;
+};
 
 /**
  * Cache mémoire très court du contexte coach. Plusieurs endpoints IA (plan,
@@ -68,13 +102,17 @@ export function invalidateCoachContext() {
   contextCache = null;
 }
 
-export async function buildCoachContext(refDate: Date = new Date()): Promise<CoachContextData> {
-  const key = format(startOfDay(refDate), 'yyyy-MM-dd');
+export async function buildCoachContext(
+  refDate: Date = new Date(),
+  options?: BuildCoachContextOptions,
+): Promise<CoachContextData> {
+  const includeScenario = options?.includeScenario === true;
+  const key = `${format(startOfDay(refDate), 'yyyy-MM-dd')}:sc${includeScenario ? 1 : 0}`;
   const now = Date.now();
   if (contextCache && contextCache.key === key && now - contextCache.at < CONTEXT_TTL_MS) {
     return contextCache.value;
   }
-  const value = await buildCoachContextUncached(refDate);
+  const value = await buildCoachContextUncached(refDate, { includeScenario });
   contextCache = { key, at: now, value };
   return value;
 }
@@ -84,7 +122,11 @@ export async function buildCoachContext(refDate: Date = new Date()): Promise<Coa
  * être injecté dans le prompt du Coach IA. On garde un volume de tokens faible
  * (synthèse, pas de données brutes) → coût minimal et meilleures réponses.
  */
-async function buildCoachContextUncached(refDate: Date = new Date()) {
+async function buildCoachContextUncached(
+  refDate: Date = new Date(),
+  options?: BuildCoachContextOptions,
+) {
+  const includeScenario = options?.includeScenario === true;
   const today = startOfDay(refDate);
   const trainingDayId = format(today, 'yyyy-MM-dd');
 
@@ -97,19 +139,21 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
     profile,
     physicalNotes,
     athleteSnapshot,
-    scenarioComparison,
     travelContexts,
+    homeWeather,
+    scenarioComparison,
   ] = await Promise.all([
-    getActivities({ limit: 120 }),
+    getActivitiesForCoach({ limit: 120, sinceDays: 90 }),
     getHealthEntries(30),
     getGoals(),
-    getPlannedSessions({ from: today, to: subDays(today, -21) }),
-    getPlannedSessions({ from: subDays(today, 14), to: today }),
+    getPlannedSessionsForCoach({ from: today, to: subDays(today, -21) }),
+    getPlannedSessionsForCoach({ from: subDays(today, 14), to: today }),
     getAthleteProfile(),
     getActivePhysicalNotes(),
     getOrBuildAthleteSnapshot(trainingDayId),
-    loadScenarioComparisonForCoach({ horizonDays: 7 }),
     listTravelContexts(prisma),
+    loadHomeWeatherHint(trainingDayId),
+    includeScenario ? loadScenarioComparisonForCoach({ horizonDays: 7 }) : Promise.resolve(null),
   ]);
 
   // ---- Fitness (PMC : CTL / ATL / TSB) ----
@@ -253,14 +297,33 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
       unit: g.unit,
     }));
 
-  // ---- Déjà planifié (21 prochains jours) ----
+  // ---- Déjà planifié (21 prochains jours) — ids inclus pour update/delete sans outil list ----
   const upcomingPlanned = planned.map((p) => ({
+    id: p.id,
     date: format(p.date, 'EEE d MMM', { locale: fr }),
+    dateIso: format(p.date, 'yyyy-MM-dd'),
     type: TYPE_FR[p.type] ?? p.type,
     title: p.title ?? '',
     intensity: p.intensity,
     durationMin: p.durationMin,
+    startTime: p.startTime ?? null,
+    locationLabel: p.locationLabel ?? null,
   }));
+
+  const envPresentation = buildEnvironmentPresentationContext(athleteSnapshot.environment);
+  const homeLabel =
+    profile?.homeLocationLabel?.trim() || (profile?.homeLocationLat != null ? 'Domicile' : null);
+  const environment = {
+    homeLabel,
+    thermalLabel: envPresentation.thermalLabel,
+    summaryLine: envPresentation.summaryLine,
+    detailLine: envPresentation.detailLine,
+    trainingImpact: envPresentation.trainingImpact,
+    airTemperatureC: homeWeather?.airTemperatureC ?? null,
+    relativeHumidityPct: homeWeather?.relativeHumidityPct ?? null,
+    recoveryDemandAdjustment: athleteSnapshot.environment?.recoveryDemandAdjustment ?? null,
+    performanceAdjustment: athleteSnapshot.environment?.performanceAdjustment ?? null,
+  };
 
   // ---- Condition physique (via AthleteSnapshot — pas de lecture Twin directe) ----
   const rawPhysicalHealth = athleteSnapshot.physicalHealth;
@@ -454,6 +517,7 @@ async function buildCoachContextUncached(refDate: Date = new Date()) {
     fatigue,
     adaptation,
     decision,
+    environment,
     scenarioComparison: formatScenarioComparisonForCoach(scenarioComparison),
   };
 }
@@ -698,6 +762,33 @@ export function formatCoachContext(ctx: CoachContext): string {
 
   lines.push(...formatDecisionSection(ctx.decision));
 
+  // Environnement / lieu par défaut (toujours pertinent pour adapter une séance outdoor)
+  {
+    const e = ctx.environment;
+    const bits = [
+      e.homeLabel ? `lieu ${e.homeLabel}` : null,
+      e.airTemperatureC != null ? `${Math.round(e.airTemperatureC)} °C` : null,
+      e.relativeHumidityPct != null ? `humidité ${Math.round(e.relativeHumidityPct)} %` : null,
+      e.thermalLabel,
+    ].filter(Boolean);
+    if (bits.length || e.summaryLine || e.detailLine) {
+      lines.push(`\n## Environnement du jour`);
+      if (bits.length) lines.push(bits.join(' · ') + '.');
+      if (e.summaryLine) lines.push(e.summaryLine);
+      if (e.detailLine) lines.push(e.detailLine);
+      if (e.recoveryDemandAdjustment != null && e.recoveryDemandAdjustment !== 0) {
+        lines.push(
+          `Ajustement récupération lié à l'environnement : ${e.recoveryDemandAdjustment > 0 ? '+' : ''}${Math.round(e.recoveryDemandAdjustment * 100)} %.`,
+        );
+      }
+      if (e.performanceAdjustment != null && e.performanceAdjustment !== 0) {
+        lines.push(
+          `Ajustement performance attendu : ${e.performanceAdjustment > 0 ? '+' : ''}${Math.round(e.performanceAdjustment * 100)} %.`,
+        );
+      }
+    }
+  }
+
   // Santé
   const h = ctx.health;
   const healthBits = [
@@ -837,12 +928,20 @@ export function formatCoachContext(ctx: CoachContext): string {
 
   lines.push(...formatConstraintsSection(ctx.constraints));
 
-  // Déjà planifié
+  // Déjà planifié — ids pour update/delete sans listPlannedSessions
   if (ctx.upcomingPlanned.length) {
-    lines.push('\n## Déjà planifié (ne pas dupliquer)');
+    lines.push('\n## Déjà planifié (ne pas dupliquer — utiliser les id ci-dessous)');
     for (const p of ctx.upcomingPlanned) {
+      const extras = [
+        p.startTime ? `à ${p.startTime}` : null,
+        p.intensity ? `[${p.intensity}]` : null,
+        p.durationMin ? `${p.durationMin} min` : null,
+        p.locationLabel ? `@ ${p.locationLabel}` : null,
+      ]
+        .filter(Boolean)
+        .join(' ');
       lines.push(
-        `- ${p.date} · ${p.type} ${p.title}${p.intensity ? ` [${p.intensity}]` : ''}${p.durationMin ? ` ${p.durationMin} min` : ''}`,
+        `- id=${p.id} · ${p.dateIso} (${p.date}) · ${p.type} ${p.title}${extras ? ` ${extras}` : ''}`,
       );
     }
   }

@@ -1,6 +1,10 @@
 import type { DataProvider } from '@/core/athlete-state/events';
 import { syncGarminActivities } from '@/lib/integrations/garmin-activity-sync';
-import { getGarminAccount, syncGarminHealth } from '@/lib/integrations/garmin-sync';
+import {
+  GARMIN_HEALTH_OPEN_PATH_FALLBACK_DAYS,
+  getGarminAccount,
+  syncGarminHealth,
+} from '@/lib/integrations/garmin-sync';
 import { getGoogleAccount, syncFromGoogle } from '@/lib/integrations/google-sync';
 import { getRenphoAccount, syncRenphoHealth } from '@/lib/integrations/renpho-sync';
 import { getStravaAccount, syncStravaActivities } from '@/lib/integrations/strava-sync';
@@ -18,21 +22,27 @@ async function countRecentObservations(_provider: DataProvider): Promise<number>
   return 0;
 }
 
+/**
+ * Sync requested providers in parallel (failures isolated per provider).
+ * Matches cron / manual Garmin parallelism for open-path latency.
+ */
 export async function syncProviders(
   providers: readonly DataProvider[],
 ): Promise<ProviderSyncResult[]> {
-  const results: ProviderSyncResult[] = [];
+  if (providers.length === 0) return [];
 
-  for (const provider of providers) {
-    try {
-      const result = await syncSingleProvider(provider);
-      if (result) results.push(result);
-    } catch (error) {
-      console.error(`[athlete-state/sync] ${provider} failed:`, error);
-    }
-  }
+  const settled = await Promise.all(
+    providers.map(async (provider) => {
+      try {
+        return await syncSingleProvider(provider);
+      } catch (error) {
+        console.error(`[athlete-state/sync] ${provider} failed:`, error);
+        return null;
+      }
+    }),
+  );
 
-  return results;
+  return settled.filter((r): r is ProviderSyncResult => r != null);
 }
 
 async function syncSingleProvider(provider: DataProvider): Promise<ProviderSyncResult | null> {
@@ -40,13 +50,17 @@ async function syncSingleProvider(provider: DataProvider): Promise<ProviderSyncR
     case 'garmin': {
       const account = await getGarminAccount();
       if (!account) return null;
-      await syncGarminHealth();
-      const activities = await syncGarminActivities();
+      // Health ∥ activities — open path uses a short health fallback window;
+      // cron / manual keep the wider default (60d / full).
+      const [health, activities] = await Promise.all([
+        syncGarminHealth({ days: GARMIN_HEALTH_OPEN_PATH_FALLBACK_DAYS }),
+        syncGarminActivities(),
+      ]);
       return {
         provider,
         imported: activities.imported,
         updated: activities.updated + activities.merged,
-        observationCount: await countRecentObservations(provider),
+        observationCount: health.updated,
         activityIds: activities.importedActivityIds,
       };
     }

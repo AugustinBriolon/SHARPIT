@@ -74,8 +74,11 @@ export function useTodayPresentationViewModel(trainingDayId: string) {
       const inFlight = peekShellAthleteRefreshInFlight();
       if (inFlight) {
         const seed = await inFlight;
-        if (seed?.trainingDayId === trainingDayId && seed.todayPresentation != null) {
-          return seed.todayPresentation;
+        if (seed?.trainingDayId === trainingDayId) {
+          if (seed.todayPresentation != null) {
+            return seed.todayPresentation;
+          }
+          // Soft open skipped rebuild and there was no warm cache — fall through to GET.
         }
       }
       return fetchTodayPresentation(trainingDayId);

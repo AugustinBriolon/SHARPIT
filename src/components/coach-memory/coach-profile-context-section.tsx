@@ -213,7 +213,11 @@ export function CoachProfileContextSection({
         <Button type="button" variant="outline" onClick={handleCancel}>
           Annuler
         </Button>
-        <Button disabled={guardDisabled || !dirty || save.isPending} type="button" onClick={handleSave}>
+        <Button
+          disabled={guardDisabled || !dirty || save.isPending}
+          type="button"
+          onClick={handleSave}
+        >
           {save.isPending ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : null}
           {offline ? offlineLabel : 'Enregistrer'}
         </Button>

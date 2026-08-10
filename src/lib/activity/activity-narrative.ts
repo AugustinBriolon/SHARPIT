@@ -1,16 +1,18 @@
 import { ActivityType } from '@prisma/client';
 import { generateText, Output } from 'ai';
-import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from '@/lib/ai';
+import { COACH_MODEL, coachAnalysisGatewayOptions, isCoachConfigured } from '@/lib/ai';
 import { isActivityToday } from '@/lib/activity/activity-day';
 import {
   isEligibleForActivityNarrative,
   NARRATIVE_ANALYSIS_SINCE,
 } from '@/lib/activity/activity-narrative-config';
 import { buildActivityNarrativeFacts } from '@/lib/activity/activity-narrative-facts';
-import { enrichGoalsWithProgress } from '@/lib/goals/goal-achievements';
-import { getGoals } from '@/lib/queries';
+import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
 import { prisma } from '@/lib/prisma';
 import { activityNarrativeSchema, type ActivityNarrative } from '@/lib/validators/coach';
+
+/** Parallel LLM narratives after multi-activity import — keep low to avoid gateway bursts. */
+const NARRATIVE_CONCURRENCY = 3;
 
 const NARRATIVE_SYSTEM = `Tu es un entraîneur expert en endurance pour l'application SHARPIT.
 
@@ -49,6 +51,9 @@ export async function setActivityNarrativeAnalysis(
  * Génère et persiste l'analyse narrative si absente (ou si force=true).
  * Auto path is today-only; older sessions need force or allowHistorical (backfill).
  * Retourne true si une nouvelle analyse a été créée.
+ *
+ * Goal achievements are read from DB inside facts — no enrichGoalsWithProgress
+ * on this path (achievements are already written at activity/goal sync time).
  */
 export async function runActivityNarrativeAnalysis(
   activityId: string,
@@ -66,13 +71,6 @@ export async function runActivityNarrativeAnalysis(
     return false;
   }
 
-  try {
-    const goals = await getGoals();
-    await enrichGoalsWithProgress(goals);
-  } catch (error) {
-    console.error('[activity-narrative] goals sync', error);
-  }
-
   const facts = await buildActivityNarrativeFacts(activityId);
   if (!facts) return false;
 
@@ -81,7 +79,7 @@ export async function runActivityNarrativeAnalysis(
     output: Output.object({ schema: activityNarrativeSchema }),
     system: NARRATIVE_SYSTEM,
     prompt: facts,
-    providerOptions: coachGatewayOptions,
+    providerOptions: coachAnalysisGatewayOptions,
   });
 
   if (!output) return false;
@@ -90,15 +88,15 @@ export async function runActivityNarrativeAnalysis(
   return true;
 }
 
-/** Lance l'analyse pour des activités nouvellement importées (best-effort, séquentiel). */
+/** Lance l'analyse pour des activités nouvellement importées (best-effort, parallel). */
 export async function runActivityNarrativeForIds(activityIds: string[]): Promise<void> {
-  for (const id of activityIds) {
+  await mapWithConcurrency(activityIds, NARRATIVE_CONCURRENCY, async (id) => {
     try {
       await runActivityNarrativeAnalysis(id);
     } catch (error) {
       console.error('[activity-narrative]', id, error);
     }
-  }
+  });
 }
 
 /** Remplit les analyses manquantes depuis {@link NARRATIVE_ANALYSIS_SINCE}. */
@@ -118,14 +116,15 @@ export async function backfillActivityNarratives(): Promise<{
     orderBy: { date: 'asc' },
   });
 
-  let created = 0;
-  for (const { id } of activities) {
+  const outcomes = await mapWithConcurrency(activities, NARRATIVE_CONCURRENCY, async ({ id }) => {
     try {
-      if (await runActivityNarrativeAnalysis(id, { allowHistorical: true })) created += 1;
+      return await runActivityNarrativeAnalysis(id, { allowHistorical: true });
     } catch (error) {
       console.error('[activity-narrative/backfill]', id, error);
+      return false;
     }
-  }
+  });
+  const created = outcomes.filter(Boolean).length;
 
   return { eligible: activities.length, created };
 }
