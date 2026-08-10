@@ -28,7 +28,6 @@ function loadAllowedDevOrigins(): string[] {
 
 const nextConfig: NextConfig = {
   experimental: {
-    viewTransition: true,
     // Instant UX: keep dynamic RSC payloads briefly so in-app back/forward
     // (and Link fallbacks) reuse the warm route instead of cold-loading.
     staleTimes: {
