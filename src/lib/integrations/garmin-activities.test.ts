@@ -1,6 +1,31 @@
 import { describe, expect, it } from 'vitest';
 import { ActivityType } from '@prisma/client';
-import { mapGarminType } from '@/lib/integrations/garmin-activities';
+import type { IActivity } from '@flow-js/garmin-connect/dist/garmin/types/activity';
+import { garminTrainingStressScore, mapGarminType } from '@/lib/integrations/garmin-activities';
+
+describe('garminTrainingStressScore', () => {
+  const activity = (fields: Partial<IActivity>) => fields as IActivity;
+
+  it('reads the Training Stress Score when Garmin provides one', () => {
+    expect(garminTrainingStressScore(activity({ trainingStressScore: 65 }))).toBe(65);
+  });
+
+  it('never substitutes the EPOC training load', () => {
+    // trainingStressScore is Coggan TSS (100 = one hour at threshold);
+    // activityTrainingLoad is EPOC-derived and ran ~3x that scale on real data,
+    // which is what made cross-sport load comparison meaningless.
+    expect(
+      garminTrainingStressScore(
+        activity({ trainingStressScore: null, activityTrainingLoad: 210 } as Partial<IActivity>),
+      ),
+    ).toBeNull();
+  });
+
+  it('rejects non-positive and non-numeric values', () => {
+    expect(garminTrainingStressScore(activity({ trainingStressScore: 0 }))).toBeNull();
+    expect(garminTrainingStressScore(activity({}))).toBeNull();
+  });
+});
 
 describe('mapGarminType', () => {
   it.each([

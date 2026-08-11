@@ -138,6 +138,20 @@ describe('garminActivityToSession', () => {
     expect(session?.sourceProvidedStress?.quality).toBe('ESTIMATED'); // HR present
   });
 
+  it('never substitutes the EPOC training load for a Training Stress Score', () => {
+    // activityTrainingLoad is EPOC-derived and sits on an unrelated scale — about
+    // three times the TSS scale on real data. Accepting it as a stand-in made
+    // cycling and running incomparable, so a session with no genuine TSS reports
+    // none and the Core's cascade computes the load instead.
+    const activity = buildActivity({
+      trainingStressScore: null,
+      activityTrainingLoad: 210,
+    } as Partial<IActivity>);
+    const session = garminActivityToSession(activity, RECEIVED_AT);
+
+    expect(session?.sourceProvidedStress).toBeUndefined();
+  });
+
   it('does NOT include rpe or feeling (those become SubjectiveObservation)', () => {
     const activity = buildActivity();
     const session = garminActivityToSession(activity, RECEIVED_AT);

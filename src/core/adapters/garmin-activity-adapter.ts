@@ -24,12 +24,18 @@ import type {
   SessionPaceData,
 } from '@/core/observation/types';
 
+/**
+ * Garmin's Training Stress Score, and only that.
+ *
+ * `activityTrainingLoad` used to be accepted as a substitute, but it is derived
+ * from EPOC and sits on an unrelated scale — roughly three times the TSS scale on
+ * real data. Feeding it into a field named after Training Stress made cycling and
+ * running incomparable. Sessions with no genuine TSS now report none, and the
+ * Core's five-tier cascade computes load from raw power and heart rate instead.
+ */
 function resolveGarminTrainingStress(activity: IActivity): number | undefined {
   if (typeof activity.trainingStressScore === 'number' && activity.trainingStressScore > 0) {
     return activity.trainingStressScore;
-  }
-  if (typeof activity.activityTrainingLoad === 'number' && activity.activityTrainingLoad > 0) {
-    return activity.activityTrainingLoad;
   }
   return undefined;
 }

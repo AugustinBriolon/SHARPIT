@@ -398,6 +398,28 @@ function num(v: unknown): number | null {
   return typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null;
 }
 
+/**
+ * Garmin's Training Stress Score, and only that.
+ *
+ * Garmin reports two numbers that used to be coalesced into `Activity.load`:
+ *
+ * - `trainingStressScore` — Coggan TSS, where 100 is one hour at threshold.
+ * - `activityTrainingLoad` — derived from EPOC, on an unrelated scale. Measured on
+ *   this database it ran about three times the TSS scale: cycling with a power
+ *   meter (real TSS) sat at 49 per hour while runs and swims, which only ever get
+ *   the EPOC number, sat at 151 and 161 with a maximum of 772.
+ *
+ * Storing both in one column made cross-sport load comparison meaningless and
+ * silently inflated CTL for whichever sports lacked a power meter. Only the TSS
+ * is kept; the EPOC value has no consumer, and the Core computes its own load
+ * from raw power and heart rate.
+ *
+ * @see docs/adr/ADR-002-cross-sport-tss.md
+ */
+export function garminTrainingStressScore(activity: IActivity): number | null {
+  return num(activity.trainingStressScore as number);
+}
+
 export function buildGarminActivityData(
   activity: IActivity,
   evaluation: GarminActivityEvaluation,
@@ -409,8 +431,7 @@ export function buildGarminActivityData(
   const paceSecPerKm =
     activity.averageSpeed && activity.averageSpeed > 0 ? 1000 / activity.averageSpeed : null;
 
-  const load =
-    num(activity.trainingStressScore as number) ?? num(activity.activityTrainingLoad as number);
+  const load = garminTrainingStressScore(activity);
 
   const base: Prisma.ActivityCreateInput = {
     type,
@@ -514,8 +535,7 @@ export function garminEnrichmentUpdate(
 ): Prisma.ActivityUpdateInput {
   const duration = garminSessionDurationSec(activity, type);
 
-  const load =
-    num(activity.trainingStressScore as number) ?? num(activity.activityTrainingLoad as number);
+  const load = garminTrainingStressScore(activity);
 
   const data: Prisma.ActivityUpdateInput = {
     garminId: String(activity.activityId),
