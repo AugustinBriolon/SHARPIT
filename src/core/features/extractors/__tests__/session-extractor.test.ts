@@ -195,6 +195,53 @@ describe('extractSessionFeatures — TSS: Tier 2 (TRIMP-HR)', () => {
     // 0.75 × 0.85 = 0.6375
     expect(result.confidence).toBeCloseTo(0.75 * 0.85, 4);
   });
+
+  it('does not report TRIMP when the HR range is unusable', () => {
+    // The method tag is what downstream auditing reads to know how a number was
+    // produced, so a duration-factor value must never be labelled TRIMP_HR.
+    const ctx = makeContext({ maxHr: 100, restingHr: 120 });
+    const result = extractSessionFeatures(
+      input({ sportType: 'STRENGTH', hrData: { avgBpm: 130, quality: 'MEASURED_DIRECT' } }),
+      ctx,
+    );
+    expect(result.tssMethod).toBe('DURATION_FACTOR');
+  });
+
+  it('does not report TRIMP when there is no threshold anchor to normalise against', () => {
+    // hrrLt clamps to 0 when LTHR sits at or below resting HR, leaving no
+    // "1 hour at threshold = 100 TSS" reference.
+    const ctx = makeContext({ maxHr: 200, restingHr: 50, lthr: 40 });
+    const result = extractSessionFeatures(
+      input({ sportType: 'RUN', hrData: { avgBpm: 150, quality: 'MEASURED_DIRECT' } }),
+      ctx,
+    );
+    expect(result.tssMethod).toBe('DURATION_FACTOR');
+  });
+
+  it('uses the real sport factor in the fallback, not running', () => {
+    // A hardcoded RUN factor gave strength sessions 60 TSS/h instead of 35.
+    const ctx = makeContext({ maxHr: 100, restingHr: 120 });
+    const strength = extractSessionFeatures(
+      input({
+        sportType: 'STRENGTH',
+        durationSec: 3600,
+        hrData: { avgBpm: 130, quality: 'MEASURED_DIRECT' },
+      }),
+      ctx,
+    );
+    const yoga = extractSessionFeatures(
+      input({
+        sportType: 'YOGA',
+        durationSec: 3600,
+        hrData: { avgBpm: 130, quality: 'MEASURED_DIRECT' },
+      }),
+      ctx,
+    );
+
+    expect(strength.tssScore).toBeCloseTo(35, 4);
+    expect(yoga.tssScore).toBeCloseTo(20, 4);
+    expect(strength.tssScore).not.toBeCloseTo(60, 0);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

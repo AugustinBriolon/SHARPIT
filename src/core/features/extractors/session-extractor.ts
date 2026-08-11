@@ -120,12 +120,13 @@ function computeTrimpTss(
   restingHr: number,
   lthr: number | undefined,
   hrQuality: 'MEASURED_DIRECT' | 'MEASURED_OPTICAL',
+  sportType: SportType,
 ): TssResult {
   const durationMin = durationSec / 60;
   const hrRange = maxHr - restingHr;
 
   if (hrRange <= 0) {
-    return durationFactorFallback('TRIMP_HR', durationSec, 'RUN');
+    return durationFactorFallback(durationSec, sportType);
   }
 
   const hrr = Math.max(0, Math.min(1, (avgBpm - restingHr) / hrRange));
@@ -135,10 +136,14 @@ function computeTrimpTss(
   const hrrLt = Math.max(0, Math.min(1, (effectiveLthr - restingHr) / hrRange));
   const trimpPerHourAtThreshold = 60 * hrrLt * 0.64 * Math.exp(1.92 * hrrLt);
 
-  const tssScore =
-    trimpPerHourAtThreshold > 0
-      ? (trimp / trimpPerHourAtThreshold) * 100
-      : (durationSec / 3600) * SPORT_TSS_PER_HOUR.RUN; // final fallback
+  // Without a usable threshold anchor there is no TRIMP normalisation, so this is
+  // not a TRIMP result and must not be reported as one — the method tag is what
+  // downstream auditing relies on to know how a number was produced.
+  if (trimpPerHourAtThreshold <= 0) {
+    return durationFactorFallback(durationSec, sportType);
+  }
+
+  const tssScore = (trimp / trimpPerHourAtThreshold) * 100;
 
   const baseConfidence = TSS_METHOD_CONFIDENCE.TRIMP_HR;
   const qualityConfidence = QUALITY_CONFIDENCE[hrQuality];
@@ -188,11 +193,7 @@ function computeRpeTss(durationSec: number, rpe: number): TssResult {
 /**
  * Tier 5 — Duration × sport constant (last resort).
  */
-function durationFactorFallback(
-  reason: TssMethod,
-  durationSec: number,
-  sportType: SportType,
-): TssResult {
+function durationFactorFallback(durationSec: number, sportType: SportType): TssResult {
   const durationHr = durationSec / 3600;
   const tssScore = durationHr * SPORT_TSS_PER_HOUR[sportType];
   return {
@@ -232,6 +233,7 @@ function selectBestTss(input: SessionExtractorInput, ctx: ExtractionContext): Ts
       ctx.restingHr!,
       ctx.lthr,
       session.hrData.quality,
+      sportType,
     );
   }
 
@@ -256,7 +258,7 @@ function selectBestTss(input: SessionExtractorInput, ctx: ExtractionContext): Ts
   }
 
   // Tier 5: Duration × sport factor (always succeeds)
-  return durationFactorFallback('DURATION_FACTOR', durationSec, sportType);
+  return durationFactorFallback(durationSec, sportType);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
