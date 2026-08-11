@@ -21,6 +21,11 @@ function desktopChipCols(count: number): string {
  * Compact instrument chips — no parent panel.
  * Mobile: horizontal snap scroll (native-app rhythm).
  * Desktop: even grid row.
+ *
+ * A list, not a `<nav>`: these are readings, not links, and a navigation
+ * landmark on every drill-down section drowned the landmark map. On mobile the
+ * strip scrolls sideways, so the container is focusable — otherwise a keyboard
+ * user cannot reach the chips that start off-screen.
  */
 export function DrillDownStatsStrip({
   items,
@@ -32,19 +37,21 @@ export function DrillDownStatsStrip({
   if (items.length === 0) return null;
 
   return (
-    <nav
+    <ul
       aria-busy={loading || undefined}
       aria-label="Signaux de la dimension"
+      tabIndex={0}
       className={cn(
         'flex gap-2 overflow-x-auto overscroll-x-contain',
         'snap-x snap-mandatory scroll-px-0.5',
         '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+        'focus-visible:outline-ring rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2',
         'sm:grid sm:snap-none sm:overflow-visible',
         desktopChipCols(items.length),
       )}
     >
       {items.map((item) => (
-        <div
+        <li
           key={item.label}
           className={cn(
             'border-analysis-border/80 bg-background/50',
@@ -69,8 +76,8 @@ export function DrillDownStatsStrip({
               ) : null}
             </span>
           )}
-        </div>
+        </li>
       ))}
-    </nav>
+    </ul>
   );
 }

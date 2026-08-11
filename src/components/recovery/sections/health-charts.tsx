@@ -4,7 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
 import { CorpsPanel } from '@/components/corps/corps-ui';
-import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
+import { ChartFigure } from '@/components/ui/chart-figure';
 import { CHART_ACTIVE_DOT_FILL, CHART_GRID_COLOR, CHART_TICK_COLOR } from '@/lib/theme/chart-theme';
 
 function formatMetricValue(value: number): string {
@@ -73,27 +73,40 @@ export function MetricLineChart<T extends { label: string }>({
   return (
     <CorpsPanel className="overflow-hidden p-0">
       <div className="border-border/50 border-b px-4 py-3">
-        <p className="text-sm font-semibold">{title}</p>
-        {subtitle && <p className="text-muted-foreground mt-0.5 text-[10px]">{subtitle}</p>}
+        <h3 className="text-sm font-semibold">{title}</h3>
+        {subtitle && <p className="text-muted-foreground mt-0.5 text-xs">{subtitle}</p>}
       </div>
       <div className="px-2 pt-1 pb-3">
         <div className="relative w-full">
           {hasData ? (
             <div className={cn('transition-opacity', loading && 'opacity-45')}>
-              <ResponsiveChartFrame height={192}>
+              <ChartFigure
+                height={192}
+                title={title}
+                series={[
+                  {
+                    name: title,
+                    unit,
+                    points: data.map((d) => ({
+                      label: d.label,
+                      value: typeof d[dataKey] === 'number' ? (d[dataKey] as number) : null,
+                    })),
+                  },
+                ]}
+              >
                 <LineChart data={data} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
                   <CartesianGrid stroke={CHART_GRID_COLOR} strokeDasharray="3 3" />
                   <XAxis
                     axisLine={false}
                     dataKey="label"
-                    tick={{ fill: CHART_TICK_COLOR, fontSize: 10 }}
+                    tick={{ fill: CHART_TICK_COLOR, fontSize: 11 }}
                     tickLine={false}
                     ticks={ticks.map((d) => d.label)}
                   />
                   <YAxis
                     axisLine={false}
                     domain={['auto', 'auto']}
-                    tick={{ fill: CHART_TICK_COLOR, fontSize: 10 }}
+                    tick={{ fill: CHART_TICK_COLOR, fontSize: 11 }}
                     tickFormatter={(value: number) => formatMetricValue(value)}
                     tickLine={false}
                   />
@@ -114,7 +127,7 @@ export function MetricLineChart<T extends { label: string }>({
                     connectNulls
                   />
                 </LineChart>
-              </ResponsiveChartFrame>
+              </ChartFigure>
             </div>
           ) : (
             <div className="text-muted-foreground flex h-48 items-center justify-center text-sm">

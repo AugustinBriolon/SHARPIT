@@ -165,6 +165,16 @@
   --sidebar-accent-foreground: oklch(0.315 0.073 139);
   --sidebar-border: oklch(0.315 0.073 139 / 10%);
   --sidebar-ring: oklch(0.48 0.13 142);
+
+  /*
+    Mobile bottom-nav contract. `--bottom-nav-height` is the bar itself
+    (BottomNav in `layout/mobile-shell.tsx`); `--bottom-nav-offset` adds the
+    home-indicator inset. Anything fixed above the bar — toasts, sticky action
+    bars, chat composers — must anchor on `--bottom-nav-offset` so it can never
+    swallow a nav tap.
+  */
+  --bottom-nav-height: 4.5rem;
+  --bottom-nav-offset: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
 }
 
 .dark {

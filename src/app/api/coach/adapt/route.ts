@@ -1,8 +1,8 @@
-import { generateText, Output } from 'ai';
+import { runStructuredCoachStream } from '@/lib/coach/stream-structured-generation';
 import { addDays, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { NextResponse } from 'next/server';
-import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from '@/lib/ai';
+import { isCoachConfigured } from '@/lib/ai';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach/coach-context';
 import { getActiveTrainingPlan, getGoals, getPlannedSessionsForCoach } from '@/lib/queries';
 import { resolveDefaultPlanGoalId, selectableDatedGoalIds } from '@/lib/planned-session/plan-goal';
@@ -19,6 +19,11 @@ import type { GateProposal, GateResult } from '@/lib/plan-gate/types';
 import { computeTrainingDayId } from '@/lib/training/training-day';
 import { buildDecisionSnapshotContext } from '@/lib/decision-memory/build-snapshot-context';
 import { createCoachingDecision } from '@/lib/decision-memory/repository';
+import {
+  COACH_PROGRESS_HEADERS,
+  encodeCoachProgressEvent,
+  type CoachProgressEvent,
+} from '@/lib/coach/coach-progress-stream';
 
 type AdaptChange = AdaptPlan['changes'][number];
 type UpcomingSession = Awaited<ReturnType<typeof getPlannedSessionsForCoach>>[number];
@@ -51,7 +56,10 @@ function toGateProposal(
   };
 }
 
-export const maxDuration = 60;
+// Measured at 58-68s with reasoning: 'medium' — over Vercel's 60s default and
+// unreliable right at the edge. 300s matches the other long-running routes
+// (cron/sync, garmin/connect) in vercel.json.
+export const maxDuration = 300;
 
 const TYPE_FR: Record<string, string> = {
   RUN: 'Course',
@@ -74,7 +82,9 @@ Principes :
 - Ne propose QUE des changements utiles : laisse les séances déjà bonnes telles quelles (ne les liste pas).
 - Renseigne uniquement les champs à modifier pour MODIFY ; mets null ailleurs.
 - durationMin et load doivent être des entiers (pas de décimales).
-- Pour ADD/MODIFY d'une séance STRENGTH : fournis strengthPrescription (exercices FR + séries/reps/repos). null sinon.
+- Pour ADD/MODIFY d'une séance STRENGTH : renseigne strengthPrescription. null sinon.
+
+FORMAT : le schéma de sortie fait autorité — noms de champs, valeurs autorisées et types viennent de lui, jamais de ce texte. N'ajoute aucun champ hors schéma et n'invente aucune valeur d'énumération.
 - Si le plan manque de renfo/mobilité préventive alors qu'un objectif sportif est actif, ADD des séances STRENGTH (préventif + mobilité) adaptées au sport — sauf MOBILITY_ONLY/NONE / REST_ONLY.
 Réponds en français.`;
 
@@ -121,6 +131,25 @@ export async function POST(req: Request) {
       selectableDatedGoalIds(goals),
     );
 
+    // Nothing to adapt: the model has no anchor and drifts into generating a
+    // whole plan instead — inventing fields outside the schema, which then fails
+    // validation after a full ~60s generation. Answer directly rather than pay
+    // for an answer that cannot be right.
+    if (upcoming.length === 0) {
+      return new Response(
+        encodeCoachProgressEvent<AdaptPayload, unknown>({
+          type: 'result',
+          value: {
+            summary:
+              "Aucune séance planifiée sur la fenêtre : il n'y a rien à réadapter. Génère d'abord une semaine, puis reviens ici pour l'ajuster.",
+            changes: [],
+            gate: { sessions: [], planLevelFindings: [] },
+          },
+        }),
+        { headers: COACH_PROGRESS_HEADERS },
+      );
+    }
+
     const upcomingLines = upcoming.map((p) => {
       const bits = [
         `id=${p.id}`,
@@ -145,21 +174,67 @@ ${formatCoachContext(ctx)}
 ## Séances déjà planifiées à venir (à ajuster)
 ${upcomingLines.length ? upcomingLines.join('\n') : 'Aucune séance planifiée à venir.'}`;
 
-    const { output } = await generateText({
-      model: COACH_MODEL,
-      output: Output.object({ schema: adaptPlanGenerationSchema }),
-      system: SYSTEM_PROMPT,
-      prompt,
-      providerOptions: coachGatewayOptions,
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        let closed = false;
+        const send = (event: CoachProgressEvent<AdaptPayload, unknown>) => {
+          if (closed) return;
+          try {
+            controller.enqueue(encoder.encode(encodeCoachProgressEvent(event)));
+          } catch {
+            // Athlete navigated away mid-generation — stop writing, let it unwind.
+            closed = true;
+          }
+        };
+
+        try {
+          const output = await runStructuredCoachStream({
+            schema: adaptPlanGenerationSchema,
+            system: SYSTEM_PROMPT,
+            prompt,
+            onReasoning: (delta) => send({ type: 'reasoning', delta }),
+            onPartial: (value) => send({ type: 'partial', value }),
+          });
+          send({
+            type: 'result',
+            value: await finalizeAdapt(output, upcoming, defaultGoalId, today),
+          });
+        } catch (error) {
+          console.error('[coach/adapt]', error);
+          send({ type: 'error', message: adaptErrorMessage(error) });
+        } finally {
+          closed = true;
+          controller.close();
+        }
+      },
     });
 
+    return new Response(stream, { headers: COACH_PROGRESS_HEADERS });
+  } catch (error) {
+    console.error('[coach/adapt]', error);
+    return NextResponse.json({ error: adaptErrorMessage(error) }, { status: 500 });
+  }
+}
+
+export type AdaptPayload = {
+  summary: string;
+  changes: (AdaptChange & { decisionId: string | null })[];
+  gate: GateResult;
+};
+
+/** Validates the model output, runs the Gate and records the coaching decisions. */
+async function finalizeAdapt(
+  output: unknown,
+  upcoming: UpcomingSession[],
+  defaultGoalId: string | null,
+  today: Date,
+): Promise<AdaptPayload> {
+  {
     const validated = adaptPlanSchema.safeParse(output);
     if (!validated.success) {
       console.error('[coach/adapt] validation', validated.error.flatten());
-      return NextResponse.json(
-        { error: 'Le coach a renvoyé une réponse invalide. Réessaie.' },
-        { status: 500 },
-      );
+      throw new Error('Le coach a renvoyé une réponse invalide. Réessaie.');
     }
 
     const existingById = new Map(upcoming.map((s) => [s.id, s] as const));
@@ -215,9 +290,6 @@ ${upcomingLines.length ? upcomingLines.join('\n') : 'Aucune séance planifiée �
       decisionId: decisionIdByChange.get(change) ?? null,
     }));
 
-    return NextResponse.json({ ...validated.data, changes: changesWithDecisionId, gate });
-  } catch (error) {
-    console.error('[coach/adapt]', error);
-    return NextResponse.json({ error: adaptErrorMessage(error) }, { status: 500 });
+    return { ...validated.data, changes: changesWithDecisionId, gate };
   }
 }

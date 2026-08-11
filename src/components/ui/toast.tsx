@@ -31,6 +31,20 @@ export const toast = {
     toastManager.add({ type: 'loading', title, timeout: 0, ...options }),
 };
 
+/**
+ * Sits above the mobile bottom nav (`--bottom-nav-offset`, declared in
+ * `globals.css`) so a toast can never cover a nav tap target. The nav is
+ * `lg:hidden`, so the offset is released at `lg` — not at `sm`, where the bar
+ * is still on screen. `pointer-events-none` keeps the full-width band inert;
+ * each toast Root re-enables its own pointer events.
+ */
+export const toastViewportClass =
+  'pointer-events-none fixed top-auto right-4 bottom-[calc(var(--bottom-nav-offset)+0.75rem)] left-auto z-[100] mx-auto w-[calc(100vw-2rem)] outline-none sm:right-6 sm:w-90 lg:bottom-6';
+
+/** Touch-first close target on mobile, dense on desktop — matches `Button size="icon"`. */
+export const toastCloseClass =
+  'text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-ring flex size-9 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:outline-2 focus-visible:-outline-offset-1 lg:size-7';
+
 function ToastIcon({ type }: { type: string | undefined }) {
   switch (type) {
     case 'success':
@@ -52,23 +66,20 @@ function ToastList() {
   return toasts.map((item) => (
     <ToastPrimitive.Root
       key={item.id}
-      className="bg-popover text-popover-foreground ring-foreground/10 absolute right-0 bottom-0 left-auto z-[calc(1000-var(--toast-index))] mr-0 h-(--height) w-full origin-bottom [transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)-(var(--toast-index)*var(--peek))-(var(--shrink)*var(--height))))_scale(var(--scale))] rounded-xl border shadow-none ring-1 select-none [--gap:0.75rem] [--height:var(--toast-frontmost-height,var(--toast-height))] [--offset-y:calc(var(--toast-offset-y)*-1+calc(var(--toast-index)*var(--gap)*-1)+var(--toast-swipe-movement-y))] [--peek:0.75rem] [--scale:calc(max(0,1-(var(--toast-index)*0.1)))] [--shrink:calc(1-var(--scale))] [transition:transform_0.5s_cubic-bezier(0.22,1,0.36,1),opacity_0.5s,height_0.15s] after:absolute after:top-full after:left-0 after:h-[calc(var(--gap)+1px)] after:w-full after:content-[''] data-ending-style:opacity-0 data-expanded:h-[var(--toast-height)] data-expanded:[transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--offset-y)))] data-limited:opacity-0 data-starting-style:[transform:translateY(150%)] data-ending-style:data-[swipe-direction=down]:[transform:translateY(calc(var(--toast-swipe-movement-y)+150%))] data-expanded:data-ending-style:data-[swipe-direction=down]:[transform:translateY(calc(var(--toast-swipe-movement-y)+150%))] data-ending-style:data-[swipe-direction=left]:[transform:translateX(calc(var(--toast-swipe-movement-x)-150%))_translateY(var(--offset-y))] data-expanded:data-ending-style:data-[swipe-direction=left]:[transform:translateX(calc(var(--toast-swipe-movement-x)-150%))_translateY(var(--offset-y))] data-ending-style:data-[swipe-direction=right]:[transform:translateX(calc(var(--toast-swipe-movement-x)+150%))_translateY(var(--offset-y))] data-expanded:data-ending-style:data-[swipe-direction=right]:[transform:translateX(calc(var(--toast-swipe-movement-x)+150%))_translateY(var(--offset-y))] data-ending-style:data-[swipe-direction=up]:[transform:translateY(calc(var(--toast-swipe-movement-y)-150%))] data-expanded:data-ending-style:data-[swipe-direction=up]:[transform:translateY(calc(var(--toast-swipe-movement-y)-150%))] [&[data-ending-style]:not([data-limited]):not([data-swipe-direction])]:[transform:translateY(150%)]"
+      className="bg-popover text-popover-foreground ring-foreground/10 pointer-events-auto absolute right-0 bottom-0 left-auto z-[calc(1000-var(--toast-index))] mr-0 h-(--height) w-full origin-bottom [transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)-(var(--toast-index)*var(--peek))-(var(--shrink)*var(--height))))_scale(var(--scale))] rounded-xl border shadow-none ring-1 select-none [--gap:0.75rem] [--height:var(--toast-frontmost-height,var(--toast-height))] [--offset-y:calc(var(--toast-offset-y)*-1+calc(var(--toast-index)*var(--gap)*-1)+var(--toast-swipe-movement-y))] [--peek:0.75rem] [--scale:calc(max(0,1-(var(--toast-index)*0.1)))] [--shrink:calc(1-var(--scale))] [transition:transform_0.5s_cubic-bezier(0.22,1,0.36,1),opacity_0.5s,height_0.15s] after:absolute after:top-full after:left-0 after:h-[calc(var(--gap)+1px)] after:w-full after:content-[''] data-ending-style:opacity-0 data-expanded:h-[var(--toast-height)] data-expanded:[transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--offset-y)))] data-limited:opacity-0 data-starting-style:[transform:translateY(150%)] data-ending-style:data-[swipe-direction=down]:[transform:translateY(calc(var(--toast-swipe-movement-y)+150%))] data-expanded:data-ending-style:data-[swipe-direction=down]:[transform:translateY(calc(var(--toast-swipe-movement-y)+150%))] data-ending-style:data-[swipe-direction=left]:[transform:translateX(calc(var(--toast-swipe-movement-x)-150%))_translateY(var(--offset-y))] data-expanded:data-ending-style:data-[swipe-direction=left]:[transform:translateX(calc(var(--toast-swipe-movement-x)-150%))_translateY(var(--offset-y))] data-ending-style:data-[swipe-direction=right]:[transform:translateX(calc(var(--toast-swipe-movement-x)+150%))_translateY(var(--offset-y))] data-expanded:data-ending-style:data-[swipe-direction=right]:[transform:translateX(calc(var(--toast-swipe-movement-x)+150%))_translateY(var(--offset-y))] data-ending-style:data-[swipe-direction=up]:[transform:translateY(calc(var(--toast-swipe-movement-y)-150%))] data-expanded:data-ending-style:data-[swipe-direction=up]:[transform:translateY(calc(var(--toast-swipe-movement-y)-150%))] [&[data-ending-style]:not([data-limited]):not([data-swipe-direction])]:[transform:translateY(150%)]"
       toast={item}
     >
       <ToastPrimitive.Content className="flex h-full items-center gap-3 overflow-hidden p-3 transition-opacity duration-250 ease-[cubic-bezier(0.22,1,0.36,1)] data-behind:opacity-0 data-expanded:opacity-100">
         <ToastIcon type={item.type} />
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           {item.title && (
-            <ToastPrimitive.Title className="font-heading text-sm leading-snug font-medium" />
+            <ToastPrimitive.Title className="font-heading text-sm leading-snug font-medium wrap-break-word" />
           )}
           {item.description && (
-            <ToastPrimitive.Description className="text-muted-foreground text-sm leading-snug" />
+            <ToastPrimitive.Description className="text-muted-foreground text-sm leading-snug wrap-break-word" />
           )}
         </div>
-        <ToastPrimitive.Close
-          aria-label="Fermer"
-          className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-ring flex size-7 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:outline-2 focus-visible:-outline-offset-1"
-        >
+        <ToastPrimitive.Close aria-label="Fermer" className={toastCloseClass}>
           <XIcon className="size-4" />
         </ToastPrimitive.Close>
       </ToastPrimitive.Content>
@@ -80,7 +91,7 @@ export function Toaster() {
   return (
     <ToastPrimitive.Provider toastManager={toastManager}>
       <ToastPrimitive.Portal>
-        <ToastPrimitive.Viewport className="fixed top-auto right-4 bottom-4 left-auto z-[100] mx-auto w-[calc(100vw-2rem)] outline-none sm:right-6 sm:bottom-6 sm:w-90">
+        <ToastPrimitive.Viewport className={toastViewportClass}>
           <ToastList />
         </ToastPrimitive.Viewport>
       </ToastPrimitive.Portal>

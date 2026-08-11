@@ -120,9 +120,7 @@ export function MobileShell({ children }: { children: React.ReactNode }) {
       <SyncingIndicator className="border-border/40 border-b" />
       <main
         className="no-scrollbar min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain"
-        style={{
-          paddingBottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))',
-        }}
+        style={{ paddingBottom: 'var(--bottom-nav-offset)' }}
       >
         <div
           className="mx-auto max-w-lg px-4 py-4"

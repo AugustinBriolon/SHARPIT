@@ -59,7 +59,7 @@ export function EffortDimensionsSection({
         ))}
       </div>
       {!loading && missingCount > 0 && (
-        <p className="text-muted-foreground/60 mt-3 text-[10px]">
+        <p className="text-muted-foreground mt-3 text-xs">
           {missingCount} dimension{missingCount > 1 ? 's' : ''} sans signal fiable (données
           d&apos;entraînement ou subjectives absentes).
         </p>

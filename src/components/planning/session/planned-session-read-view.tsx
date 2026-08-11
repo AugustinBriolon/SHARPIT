@@ -9,7 +9,14 @@ import {
 import { MorningProposalCompare } from '@/components/planning/session/morning-proposal-compare';
 import { SessionAccessoriesSection } from '@/components/planning/session/session-accessories-section';
 import { SessionRealization } from '@/components/planning/session/session-realization';
+import {
+  ExerciseIndex,
+  ExerciseMediaAttribution,
+  ExerciseMediaCaption,
+  ExerciseVisual,
+} from '@/components/sessions/exercise-visual';
 import { Button } from '@/components/ui/button';
+import { resolveStrengthSetMedia } from '@/lib/exercises';
 import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
 import { useSessionRationalePresentation } from '@/hooks/use-data';
 import { useGarminWorkoutPush } from '@/hooks/use-garmin-workout-push';
@@ -192,6 +199,10 @@ export function PlannedSessionReadView({
 
   const prescriptionRaw = parseStrengthPrescription(session.strengthPrescription);
   const prescription = prescriptionRaw ? attachGarminRefsToPrescription(prescriptionRaw) : null;
+  const orderedSets = prescription
+    ? prescription.sets.slice().sort((a, b) => a.order - b.order)
+    : [];
+  const hasExerciseMedia = orderedSets.some((set) => resolveStrengthSetMedia(set) != null);
 
   function watchPushButtonLabel(): string {
     if (pushing) return alreadyOnWatch ? 'Renvoi…' : 'Envoi…';
@@ -260,23 +271,26 @@ export function PlannedSessionReadView({
           </p>
         ) : null}
         <ul className="space-y-1.5">
-          {prescription.sets
-            .slice()
-            .sort((a, b) => a.order - b.order)
-            .map((set) => {
-              const volume =
-                set.durationSec && set.durationSec > 0 && set.reps <= 0
-                  ? `${set.sets}×${set.durationSec}s`
-                  : `${set.sets}×${set.reps}`;
-              const weight =
-                set.weightKg != null && set.weightKg > 0 ? ` @ ${set.weightKg} kg` : '';
-              const restLabel =
-                set.restMode === 'time' && set.restSec != null && set.restSec > 0
-                  ? `Repos ${set.restSec}s`
-                  : 'Repos Lap';
-              const watch = strengthSetWatchCompat(set);
-              return (
-                <li key={`${set.order}-${set.exercise}`} className="flex flex-col gap-0.5 text-sm">
+          {orderedSets.map((set, i) => {
+            const volume =
+              set.durationSec && set.durationSec > 0 && set.reps <= 0
+                ? `${set.sets}×${set.durationSec}s`
+                : `${set.sets}×${set.reps}`;
+            const weight = set.weightKg != null && set.weightKg > 0 ? ` @ ${set.weightKg} kg` : '';
+            const restLabel =
+              set.restMode === 'time' && set.restSec != null && set.restSec > 0
+                ? `Repos ${set.restSec}s`
+                : 'Repos Lap';
+            const watch = strengthSetWatchCompat(set);
+            const media = resolveStrengthSetMedia(set);
+            return (
+              <li key={`${set.order}-${set.exercise}`} className="flex items-start gap-3 text-sm">
+                {media ? (
+                  <ExerciseVisual label={set.exercise} media={media} />
+                ) : (
+                  <ExerciseIndex className="text-muted-foreground" index={i + 1} />
+                )}
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <div className="text-muted-foreground flex items-baseline justify-between gap-2">
                     <span className="text-foreground min-w-0 font-medium wrap-break-word">
                       {set.exercise}
@@ -286,21 +300,28 @@ export function PlannedSessionReadView({
                       {weight}
                     </span>
                   </div>
-                  <p className="text-muted-foreground/80 text-xs leading-snug">{restLabel}</p>
+                  {media ? <ExerciseMediaCaption media={media} /> : null}
+                  <p className="text-muted-foreground text-xs leading-snug">{restLabel}</p>
                   <p
                     className={cn(
                       'text-xs leading-snug',
-                      watch.status === 'unknown' && 'text-muted-foreground/80',
-                      watch.status === 'approx' && 'text-amber-700/90 dark:text-amber-400/90',
+                      watch.status === 'unknown' && 'text-muted-foreground',
+                      watch.status === 'approx' && 'text-amber-700 dark:text-amber-400',
                       watch.status === 'ready' && 'text-muted-foreground',
                     )}
                   >
                     {watch.label}
                   </p>
-                </li>
-              );
-            })}
+                </div>
+              </li>
+            );
+          })}
         </ul>
+        {hasExerciseMedia ? (
+          <ExerciseMediaAttribution>
+            Les visuels sont indicatifs — respecte la consigne du coach en cas d’écart.
+          </ExerciseMediaAttribution>
+        ) : null}
       </div>
     ) : null;
 

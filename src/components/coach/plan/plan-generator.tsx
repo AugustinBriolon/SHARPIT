@@ -32,7 +32,12 @@ import {
 } from '@/lib/planned-session/sessions';
 import { cn } from '@/lib/utils';
 import { phaseLabels } from '@/lib/training/periodization';
-import { useCoachPlan, type GeneratedSession } from '@/hooks/use-coach';
+import {
+  useCoachPlan,
+  type CoachGenerationProgress,
+  type GeneratedSession,
+} from '@/hooks/use-coach';
+import { CoachGenerationProgressPanel } from '@/components/coach/plan/generation-progress';
 import { useGoals, usePlannedSessionMutations, useTrainingPlan } from '@/hooks/use-data';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import type { GateSessionResult } from '@/lib/plan-gate/types';
@@ -87,7 +92,8 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
     warmCoachContext({ includeScenario: true });
   }, []);
 
-  const coachPlan = useCoachPlan();
+  const [progress, setProgress] = useState<CoachGenerationProgress | null>(null);
+  const coachPlan = useCoachPlan(setProgress);
   const { createMany } = usePlannedSessionMutations();
   const goalsQuery = useGoals();
   const planQuery = useTrainingPlan();
@@ -120,6 +126,7 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
 
   async function handleGenerate() {
     if (guardDisabled) return;
+    setProgress(null);
     const result = await coachPlan.mutateAsync({
       days: Number(days),
       focus: focus.trim() || undefined,
@@ -265,6 +272,8 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
             onChange={(e) => setFocus(e.target.value)}
           />
         </div>
+
+        {isGenerating && <CoachGenerationProgressPanel itemNoun="séance" progress={progress} />}
 
         {coachPlan.error && (
           <p className="bg-destructive/10 text-destructive rounded-md p-3 text-sm" role="alert">

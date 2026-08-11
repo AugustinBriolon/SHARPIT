@@ -18,7 +18,13 @@ import type { ClientPlannedSession } from '@/lib/query/types';
 import { activityTypeLabels } from '@/lib/format';
 import { intensityLabels } from '@/lib/planned-session/sessions';
 import { cn } from '@/lib/utils';
-import { useAdaptPlan, type AdaptChange, type AdaptPlanResult } from '@/hooks/use-coach';
+import {
+  useAdaptPlan,
+  type AdaptChange,
+  type AdaptPlanResult,
+  type CoachGenerationProgress,
+} from '@/hooks/use-coach';
+import { CoachGenerationProgressPanel } from '@/components/coach/plan/generation-progress';
 import {
   usePlannedSessions,
   usePlannedSessionMutations,
@@ -137,7 +143,8 @@ export function PlanAdapter({
     warmCoachContext({ includeScenario: true });
   }, []);
 
-  const adapt = useAdaptPlan();
+  const [progress, setProgress] = useState<CoachGenerationProgress | null>(null);
+  const adapt = useAdaptPlan(setProgress);
   const plannedQuery = usePlannedSessions();
   const planQuery = useTrainingPlan();
   const { applyBatch } = usePlannedSessionMutations();
@@ -156,6 +163,7 @@ export function PlanAdapter({
     if (guardDisabled) return;
     setApplyError(null);
     setApplied(false);
+    setProgress(null);
     const res = await adapt.mutateAsync({
       days: 14,
       focus: focus.trim() || undefined,
@@ -278,6 +286,8 @@ export function PlanAdapter({
         <Button className="w-fit" disabled={guardDisabled || isAdapting} onClick={handleAdapt}>
           {renderAdaptButtonContent(isAdapting, offline, offlineLabel, Boolean(result))}
         </Button>
+
+        {isAdapting && <CoachGenerationProgressPanel itemNoun="ajustement" progress={progress} />}
 
         {adapt.error && (
           <p className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">

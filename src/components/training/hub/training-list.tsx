@@ -125,7 +125,7 @@ function HikeSelectionConfirmBar({
       className={cn(
         'pointer-events-none fixed z-50',
         // Mobile: above tab bar · Desktop: bottom of viewport, inset past sidebar
-        'inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))]',
+        'inset-x-0 bottom-[var(--bottom-nav-offset)]',
         'lg:inset-x-auto lg:right-0 lg:bottom-0 lg:left-60',
       )}
     >

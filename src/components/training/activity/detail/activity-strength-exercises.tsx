@@ -4,10 +4,15 @@ import { useState } from 'react';
 import { Dumbbell, Watch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  ExerciseIndex,
+  ExerciseMediaAttribution,
+  ExerciseMediaCaption,
+  ExerciseVisual,
+} from '@/components/sessions/exercise-visual';
 import { toast } from '@/components/ui/toast';
-import { resolveStrengthSetMedia, type ResolvedExerciseMedia } from '@/lib/exercises';
+import { resolveStrengthSetMedia } from '@/lib/exercises';
 import { formatClockDuration } from '@/lib/format';
-import { cn } from '@/lib/utils';
 import type { ActivityDetail } from './types';
 
 /** Narrow client payload — id + strength sets only. */
@@ -21,39 +26,6 @@ function formatStrengthSetDetail(set: ActivityDetail['strengthSets'][number]): s
 
   const base = `${set.sets}×${set.reps}`;
   return set.weightKg ? `${base} @ ${set.weightKg} kg` : base;
-}
-
-const THUMB_CLASS =
-  'border-analysis-border bg-muted/30 relative size-12 shrink-0 overflow-hidden rounded-lg border';
-
-function ExerciseVisual({ media, label }: { media: ResolvedExerciseMedia; label: string }) {
-  const [showGif, setShowGif] = useState(false);
-
-  return (
-    <button
-      aria-label={`Voir le mouvement : ${label}`}
-      aria-pressed={showGif}
-      className={THUMB_CLASS}
-      type="button"
-      onClick={() => setShowGif((v) => !v)}
-    >
-      <img
-        alt=""
-        className="size-full object-cover"
-        decoding="async"
-        loading="lazy"
-        src={showGif ? media.gifUrl : media.thumbUrl}
-      />
-    </button>
-  );
-}
-
-function ExerciseIndex({ index, className }: { index: number; className?: string }) {
-  return (
-    <span className={cn(THUMB_CLASS, 'grid place-items-center', className)} aria-hidden>
-      <span className="font-mono text-xs font-semibold tabular-nums">{index}</span>
-    </span>
-  );
 }
 
 export function ActivityStrengthExercises({
@@ -143,12 +115,7 @@ export function ActivityStrengthExercises({
                   <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
                     <span className="min-w-0 flex-1 font-medium">
                       {set.exercise}
-                      {media ? (
-                        <span className="text-muted-foreground block text-xs font-normal wrap-break-word capitalize">
-                          {media.target}
-                          {media.equipment ? ` · ${media.equipment}` : ''}
-                        </span>
-                      ) : null}
+                      {media ? <ExerciseMediaCaption media={media} /> : null}
                       {set.notes ? (
                         <span className="text-muted-foreground block text-xs font-normal wrap-break-word">
                           {set.notes}
@@ -172,19 +139,10 @@ export function ActivityStrengthExercises({
                 </div>
               );
             })}
-            <p className="text-muted-foreground px-0.5 pt-1 text-xs leading-relaxed">
-              Visuels © Gym visual —{' '}
-              <a
-                className="underline-offset-2 hover:underline"
-                href="https://gymvisual.com/"
-                rel="noreferrer"
-                target="_blank"
-              >
-                gymvisual.com
-              </a>
-              . Toucher une vignette pour l’animation. « Envoyer à la montre » crée un workout
-              Garmin (bibliothèque + calendrier) — synchroniser la montre ensuite.
-            </p>
+            <ExerciseMediaAttribution>
+              « Envoyer à la montre » crée un workout Garmin (bibliothèque + calendrier) —
+              synchroniser la montre ensuite.
+            </ExerciseMediaAttribution>
           </>
         ) : (
           <p className="text-muted-foreground text-sm">

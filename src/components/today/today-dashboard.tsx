@@ -2,6 +2,7 @@
 
 import { format } from 'date-fns';
 import { SnapshotStatusBanner } from './dashboard/today-dashboard-states';
+import { TodayEmptyState } from './dashboard/today-empty-state';
 import { TodayVerdictHero } from './rich/today-verdict-hero';
 
 import {
@@ -79,24 +80,17 @@ export function TodayDashboard() {
     }
 
     return (
-      <div className="mx-auto space-y-4">
-        {vm?.statusMessage && (
-          <SnapshotStatusBanner isRefreshing={query.isFetching} message={vm.statusMessage} />
-        )}
-        <div className="flex justify-center">
-          <button
-            className="text-muted-foreground hover:text-foreground inline-flex min-h-11 items-center px-3 text-sm underline-offset-4 transition-colors hover:underline disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50"
-            disabled={guardDisabled || query.isFetching}
-            type="button"
-            onClick={() => {
-              if (guardDisabled) return;
-              void query.refetch();
-            }}
-          >
-            {offline ? offlineLabel : 'Actualiser'}
-          </button>
-        </div>
-      </div>
+      <TodayEmptyState
+        isRefreshing={query.isFetching}
+        refreshDisabled={guardDisabled || query.isFetching}
+        refreshLabel={offline ? offlineLabel : 'Actualiser'}
+        statusMessage={vm?.statusMessage}
+        onWellnessCompleted={() => void query.refetch()}
+        onRefresh={() => {
+          if (guardDisabled) return;
+          void query.refetch();
+        }}
+      />
     );
   }
 

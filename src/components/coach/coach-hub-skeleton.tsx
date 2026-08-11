@@ -212,7 +212,7 @@ export function CoachHubSkeleton() {
     <>
       <div
         className="bg-background safe-area-top fixed inset-x-0 top-0 z-30 flex flex-col lg:hidden"
-        style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))' }}
+        style={{ bottom: 'var(--bottom-nav-offset)' }}
       >
         <CoachChatEmptyChrome header={<CoachMobileLoadingHeader />} />
       </div>

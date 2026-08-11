@@ -1,12 +1,17 @@
-import { generateText, Output } from 'ai';
 import { addDays, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { NextResponse } from 'next/server';
-import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from '@/lib/ai';
+import { isCoachConfigured } from '@/lib/ai';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach/coach-context';
-import { getUpcomingBusy } from '@/lib/integrations/google-sync';
+import {
+  COACH_PROGRESS_HEADERS,
+  encodeCoachProgressEvent,
+  type CoachProgressEvent,
+} from '@/lib/coach/coach-progress-stream';
+import { runStructuredCoachStream } from '@/lib/coach/stream-structured-generation';
+import { buildBusySummary } from '@/lib/coach/calendar-availability';
 import { getGoalById } from '@/lib/queries';
-import { coachPlanRequestSchema, coachPlanSchema } from '@/lib/validators/coach';
+import { coachPlanRequestSchema, coachPlanSchema, type CoachPlan } from '@/lib/validators/coach';
 import { buildGateContext } from '@/lib/plan-gate/build-context';
 import { evaluatePlan } from '@/lib/plan-gate/evaluate-plan';
 import type { GateProposal } from '@/lib/plan-gate/types';
@@ -18,65 +23,30 @@ import {
   resolvePlanTargetUnderTravel,
 } from '@/lib/travel-context/training-constraint';
 
-/** Résume les créneaux occupés Google par jour, sur la fenêtre du plan. */
-async function buildBusySummary(start: Date, days: number): Promise<string> {
-  try {
-    const busy = await getUpcomingBusy(days + 1);
-    if (busy.length === 0) return '';
+// Same long-running reasoning generation as adapt — see maxDuration comment there.
+export const maxDuration = 300;
 
-    const byDay = new Map<string, string[]>();
-    for (const b of busy) {
-      const list = byDay.get(b.dayKey) ?? [];
-      list.push(`${b.start}–${b.end}`);
-      byDay.set(b.dayKey, list);
-    }
+// Kept deliberately short. A 10 872-char version of this prompt made the model
+// abandon the output schema entirely — inventing field names and enum values —
+// while the same schema and context with a brief prompt produced 8 valid
+// sessions. Domain rules stay; prose padding does not.
+const SYSTEM_PROMPT = `Tu es un entraîneur d'élite en endurance (triathlon, course, vélo, natation). Tu proposes des séances précises et sûres à partir des données réelles fournies. Jamais de plan générique. Réponds en français.
 
-    const lines: string[] = [];
-    for (let i = 0; i <= days; i += 1) {
-      const day = addDays(start, i);
-      const key = format(day, 'yyyy-MM-dd');
-      const slots = byDay.get(key);
-      const label = `${format(day, 'EEE d MMM', { locale: fr })} (dayOffset ${i})`;
-      if (slots && slots.length) {
-        lines.push(`- ${label} : occupé ${slots.join(', ')}`);
-      } else {
-        lines.push(`- ${label} : libre toute la journée`);
-      }
-    }
-    return lines.join('\n');
-  } catch (error) {
-    console.error('[coach/plan] busy summary', error);
-    return '';
-  }
-}
+Règles :
+- Périodise vers la course principale (base → spécifique → affûtage) selon les semaines restantes.
+- Module selon TSB et récupération : fatigué (TSB très négatif, readiness basse) → récup/endurance ; frais → séances clés.
+- Respecte les jours d'entraînement habituels ; repos ailleurs. Ne duplique pas ce qui est déjà planifié.
+- 80/20 : majorité d'endurance, 2-3 séances qualité/semaine max, surcharge progressive.
+- Cibles concrètes depuis les seuils (FC via LTHR/FC max, puissance via FTP, allure via allure seuil). Seuil manquant → RPE/zones, et signale-le.
+- TSS réaliste par séance. Description concrète : échauffement, corps (répétitions, durées, zones), récupération.
+- Exploite la conformité prévu/réalisé et le ressenti (RPE, feeling).
 
-export const maxDuration = 60;
+Sécurité (impératif) :
+- Respecte ABSOLUMENT la condition physique déclarée : n'aggrave jamais une zone sensible, baisse l'intensité, cible renfo/mobilité. Réduis la charge dès que la récupération signale une fatigue excessive.
+- Dès qu'un objectif sportif est présent, inclus dans la fenêtre — sauf voyage MOBILITY_ONLY/NONE ou capacité REST_ONLY — au moins une séance STRENGTH préventive spécifique au sport (stabilisateurs, chaîne postérieure, core, hanches/genoux/épaules) ET un bloc mobilité/étirements ciblés. Non optionnels.
+- Information manquante → hypothèse CONSERVATRICE. N'invente jamais de données.
 
-const SYSTEM_PROMPT = `Tu es un entraîneur d'élite en sports d'endurance (triathlon, course à pied, cyclisme, natation), spécialiste de la périodisation, de la physiologie de l'effort et du développement à long terme.
-
-Ta mission : proposer des séances précises, personnalisées et sûres à partir des données réelles de l'athlète fournies ci-dessous. Jamais de plan générique.
-
-Avant de générer, évalue : fatigue actuelle, capacité de récupération, charge accumulée, proximité des courses, progression récente, risque de blessure, temps disponible, cohérence long terme. N'optimise jamais le court terme au détriment de la progression.
-
-Principes à respecter impérativement :
-- Périodise vers la course principale (base → spécifique → affûtage). Adapte le volume et l'intensité au nombre de semaines restantes.
-- Ajuste selon la fraîcheur (TSB) et la récupération (readiness, HRV, sommeil) : si l'athlète est fatigué (TSB très négatif, readiness basse), propose de la récup/endurance ; s'il est frais, place les séances clés.
-- Respecte les jours d'entraînement habituels de l'athlète. Place le repos sur les autres jours.
-- Évite de dupliquer ce qui est déjà planifié.
-- Règle 80/20 : majorité d'endurance, séances intenses dosées (en général 2-3 séances qualité par semaine max). Surcharge progressive, sans hausse irréaliste de volume/intensité.
-- Donne des cibles concrètes basées sur les seuils de l'athlète (zones FC à partir de LTHR/FC max, puissance à partir de la FTP, allures à partir de l'allure seuil). Si les seuils manquent, raisonne en RPE/zones et signale-le.
-- Estime une charge (TSS) réaliste par séance.
-- Tiens compte de l'exécution récente (conformité prévu/réalisé) et du ressenti (RPE, feeling) : si les dernières séances clés ont été manquées ou trop dures, ajuste en conséquence.
-- Respecte IMPÉRATIVEMENT la condition physique déclarée (douleurs, blessures, mobilité) : n'aggrave jamais une zone sensible, propose du renfo/mobilité ciblé et baisse l'intensité si besoin. Réduis la charge dès que la récupération signale une fatigue excessive.
-- Sois concret dans la description : échauffement, corps de séance (répétitions, durées, allures/zones), récupération.
-- Pour toute séance type STRENGTH : renseigne OBLIGATOIREMENT strengthPrescription avec 3–8 exercices concrets (noms FR, séries, reps, repos). description = résumé court. Pour RUN/BIKE/SWIM : strengthPrescription = null.
-- Prévention blessures (comportement coach médecine du sport / ostéo) : dès qu'un objectif sportif est présent (course, triathlon, vélo, natation…), intègre OBLIGATOIREMENT dans la fenêtre planifiée — sauf contrainte voyage MOBILITY_ONLY/NONE ou fatigue REST_ONLY — au moins :
-  (1) une séance STRENGTH de renforcement préventif spécifique au sport (stabilisateurs, chaîne postérieure, core, hanches/genoux/épaules selon le sport),
-  (2) une séance STRENGTH légère ou un bloc dédié mobilité/étirements ciblés (articulations et tissus les plus exposés pour ce sport).
-  Ces séances protègent la longévité ; elles ne sont pas optionnelles « si le temps reste ». Adapte le contenu aux zones sensibles déclarées.
-- Si une information manque, fais des hypothèses CONSERVATRICES plutôt qu'agressives. N'invente jamais de données.
-
-Réponds toujours en français.`;
+Sortie : le schéma fait autorité pour les noms de champs, les types et les valeurs d'énumération — jamais ce texte. N'ajoute aucun champ hors schéma. Séance STRENGTH : strengthPrescription obligatoire (3–8 exercices, noms français) ; RUN/BIKE/SWIM : null.`;
 
 export async function POST(req: Request) {
   if (!isCoachConfigured()) {
@@ -177,14 +147,61 @@ ${focus ? `Demande spécifique de l'athlète : ${focus}\n\n` : ''}Données de l'
 
 ${contextText}${goalBlock}${macroBlock}${agendaBlock}`;
 
-  try {
-    const { output } = await generateText({
-      model: COACH_MODEL,
-      output: Output.object({ schema: coachPlanSchema }),
-      system: SYSTEM_PROMPT,
-      prompt,
-      providerOptions: coachGatewayOptions,
-    });
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      let closed = false;
+      const send = (event: CoachProgressEvent<PlanPayload, unknown>) => {
+        if (closed) return;
+        try {
+          controller.enqueue(encoder.encode(encodeCoachProgressEvent(event)));
+        } catch {
+          // Athlete navigated away mid-generation — stop writing, let it unwind.
+          closed = true;
+        }
+      };
+
+      try {
+        const output = await runStructuredCoachStream({
+          schema: coachPlanSchema,
+          system: SYSTEM_PROMPT,
+          prompt,
+          onReasoning: (delta) => send({ type: 'reasoning', delta }),
+          onPartial: (value) => send({ type: 'partial', value }),
+        });
+        send({ type: 'result', value: await finalizePlan(output, start, goalId ?? null) });
+      } catch (error) {
+        console.error('[coach/plan]', error);
+        send({ type: 'error', message: 'La génération a échoué. Réessaie dans un instant.' });
+      } finally {
+        closed = true;
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, { headers: COACH_PROGRESS_HEADERS });
+}
+
+export type PlanPayload = {
+  summary: string;
+  startDate: string;
+  sessions: (CoachPlan['sessions'][number] & {
+    date: string;
+    startTime: string | null;
+    decisionId: string;
+  })[];
+  gate: ReturnType<typeof evaluatePlan>;
+};
+
+/** Dates the proposed sessions, runs the Gate and records the coaching decisions. */
+async function finalizePlan(
+  rawOutput: unknown,
+  start: Date,
+  goalId: string | null,
+): Promise<PlanPayload> {
+  {
+    const output = coachPlanSchema.parse(rawOutput);
 
     const sessions = [...output.sessions]
       .sort((a, b) => a.dayOffset - b.dayOffset)
@@ -231,17 +248,11 @@ ${contextText}${goalBlock}${macroBlock}${agendaBlock}`;
 
     const sessionsWithDecisionId = sessions.map((s, i) => ({ ...s, decisionId: decisionIds[i] }));
 
-    return NextResponse.json({
+    return {
       summary: output.summary,
       startDate: format(start, 'yyyy-MM-dd'),
       sessions: sessionsWithDecisionId,
       gate,
-    });
-  } catch (error) {
-    console.error('[coach/plan]', error);
-    return NextResponse.json(
-      { error: 'La génération a échoué. Réessaie dans un instant.' },
-      { status: 500 },
-    );
+    };
   }
 }

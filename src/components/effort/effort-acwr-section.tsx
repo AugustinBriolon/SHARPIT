@@ -77,7 +77,7 @@ export function AcwrZoneBar({ acwr }: { acwr: number }) {
         </div>
       </div>
 
-      <div className="text-muted-foreground flex justify-between text-[10px] tabular-nums">
+      <div className="text-muted-foreground flex justify-between text-xs tabular-nums">
         <span>0</span>
         <span>0.9</span>
         <span>1.3</span>
@@ -102,7 +102,7 @@ export function EffortAcwrSection({
     <DrillDownSectionCard>
       <DrillDownSectionLabel>ACWR</DrillDownSectionLabel>
       <AcwrZoneBar acwr={acwr} />
-      <p className="text-muted-foreground/60 mt-3 text-[10px]">Gabbett 2016 · sweet spot 0.9–1.3</p>
+      <p className="text-muted-foreground mt-3 text-xs">Gabbett 2016 · sweet spot 0.9–1.3</p>
       <ul className="divide-analysis-border/50 border-analysis-border/40 mt-4 divide-y border-t">
         <li className="flex items-baseline justify-between gap-4 py-3">
           <p className="text-foreground text-sm font-medium">Charge 7j</p>

@@ -7,10 +7,11 @@ import {
   lastAssistantMessageIsCompleteWithApprovalResponses,
   type UIMessage,
 } from 'ai';
-import { Loader2, Send, Square } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowDown, Loader2, Send, Square } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CoachMessage } from '@/components/coach/chat/coach-message';
 import { CoachProvenanceChips } from '@/components/coach/chat/coach-provenance-chips';
+import { CoachReasoning } from '@/components/coach/chat/coach-reasoning';
 import { ToolActivityList } from '@/components/coach/chat/tool-activity-list';
 import { ToolActivity } from '@/components/coach/chat/tool-activity';
 import { Button } from '@/components/ui/button';
@@ -43,6 +44,8 @@ import {
   readCoachInputDraft,
   writeCoachInputDraft,
 } from '@/lib/coach/coach-input-draft';
+import { reasoningTextOf } from '@/lib/coach/coach-reasoning';
+import { isNearBottom, shouldShowJumpToLatest } from '@/lib/coach/scroll-anchor';
 import { createClientId } from '@/lib/client-id';
 import { cn } from '@/lib/utils';
 
@@ -178,6 +181,21 @@ export function CoachChat({
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const initialScrollDone = useRef(false);
+  /**
+   * Whether new content should still pull the transcript down. Set from the
+   * athlete's own scrolling, never from the stream — scrolling up to re-read
+   * must survive every token that arrives afterwards.
+   */
+  const stickToBottom = useRef(true);
+  const [showJumpToLatest, setShowJumpToLatest] = useState(false);
+
+  const scrollToLatest = useCallback((behavior: ScrollBehavior) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    stickToBottom.current = true;
+    setShowJumpToLatest(false);
+    el.scrollTo({ top: el.scrollHeight, behavior });
+  }, []);
 
   const isBusy = status === 'submitted' || status === 'streaming';
   const streamIdle = !isBusy;
@@ -252,15 +270,28 @@ export function CoachChat({
   // Seul le streaming bloque l'input — les propositions en attente ne doivent jamais verrouiller la conversation.
   const inputLocked = isBusy || guardDisabled;
 
+  // Follow the streaming tail only while the athlete has not scrolled away.
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollTo({
-      top: el.scrollHeight,
-      behavior: initialScrollDone.current ? 'smooth' : 'instant',
-    });
-    initialScrollDone.current = true;
+    if (!initialScrollDone.current) {
+      el.scrollTo({ top: el.scrollHeight, behavior: 'instant' });
+      initialScrollDone.current = true;
+      return;
+    }
+    if (!stickToBottom.current) {
+      setShowJumpToLatest(messages.length > 0);
+      return;
+    }
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [messages]);
+
+  // Re-anchor on conversation switch: a new thread always opens at its tail.
+  useEffect(() => {
+    initialScrollDone.current = false;
+    stickToBottom.current = true;
+    setShowJumpToLatest(false);
+  }, [conversationId]);
 
   useEffect(() => {
     const newlyCompletedKeys: string[] = [];
@@ -287,6 +318,10 @@ export function CoachChat({
   async function submit(text: string) {
     const value = text.trim();
     if (!value || inputLocked || guardDisabled) return;
+
+    // Sending is an explicit "show me the answer" — re-anchor on the tail.
+    stickToBottom.current = true;
+    setShowJumpToLatest(false);
 
     if (hasUnresolvedCalendarTools(messages)) {
       const dismissed = dismissUnresolvedCalendarTools(messages);
@@ -334,8 +369,18 @@ export function CoachChat({
   })();
 
   return (
-    <div className="rounded-analysis-lg flex h-full min-w-0 flex-1 flex-col lg:border">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+    <div className="rounded-analysis-lg relative flex h-full min-w-0 flex-1 flex-col lg:border">
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto"
+        onScroll={(e) => {
+          const stuck = isNearBottom(e.currentTarget);
+          stickToBottom.current = stuck;
+          setShowJumpToLatest(
+            shouldShowJumpToLatest({ stuck, hasMessages: messagesRef.current.length > 0 }),
+          );
+        }}
+      >
         {header && <div className="bg-background sticky top-0 z-10">{header}</div>}
         <div className="space-y-4 p-4">
           {messages.length === 0 && (
@@ -372,6 +417,7 @@ export function CoachChat({
               .map((p) => (p as { text: string }).text)
               .join('');
             const toolParts = message.parts.filter((p) => p.type.startsWith('tool-'));
+            const reasoning = reasoningTextOf(message.parts);
             // Skip content-visibility on the live streaming tail — height changes continuously.
             const isLiveStreamTail =
               status === 'streaming' && messageIndex === messages.length - 1 && !isUser;
@@ -393,7 +439,9 @@ export function CoachChat({
               (p) => (p as ToolPartLite).state !== 'approval-requested',
             );
 
-            if (!text && inlineParts.length === 0) return null;
+            // Reasoning alone is enough to show the bubble — it is the first
+            // content the coach produces, seconds before any answer text.
+            if (!text && !reasoning && inlineParts.length === 0) return null;
 
             return (
               <div
@@ -401,6 +449,13 @@ export function CoachChat({
                 className={cn('flex justify-start', !isLiveStreamTail && 'cv-auto')}
               >
                 <div className="bg-analysis-surface-alt text-foreground w-full max-w-[90%] space-y-2 rounded-[18px_18px_18px_4px] px-4 py-3">
+                  {reasoning ? (
+                    <CoachReasoning
+                      hasAnswerText={text.length > 0}
+                      streaming={isLiveStreamTail}
+                      text={reasoning}
+                    />
+                  ) : null}
                   {text && <CoachMessage>{text}</CoachMessage>}
                   <ToolActivityList parts={inlineParts as ToolPartLite[]} streamIdle={streamIdle} />
                   {streamIdle && text && messageIndex === lastAssistantIndex ? (
@@ -478,6 +533,21 @@ export function CoachChat({
           )}
         </div>
       </div>
+
+      {showJumpToLatest ? (
+        <div className="pointer-events-none absolute inset-x-0 bottom-20 flex justify-center">
+          <Button
+            className="pointer-events-auto h-9 gap-1.5 rounded-full px-3 text-xs shadow-sm"
+            size="sm"
+            type="button"
+            variant="outline"
+            onClick={() => scrollToLatest('smooth')}
+          >
+            <ArrowDown className="size-3.5" aria-hidden />
+            Revenir en bas
+          </Button>
+        </div>
+      ) : null}
 
       <form
         className="border-border/60 flex items-end gap-2 border-t p-3"

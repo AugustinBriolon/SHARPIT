@@ -14,6 +14,7 @@ import {
   type ClientWeeklyReview,
 } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
+import { consumeCoachProgressStream } from '@/lib/coach/coach-progress-stream';
 import type { CoachMemoryResponse } from '@/hooks/use-coach-memory';
 import type { GateResult } from '@/lib/plan-gate/types';
 
@@ -62,20 +63,66 @@ export interface GeneratePlanParams {
   planFocus?: string | null;
 }
 
-export function useCoachPlan() {
-  return useMutation<GeneratedPlan, Error, GeneratePlanParams>({
-    mutationFn: async (params) => {
-      const res = await fetch('/api/coach/plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(params),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        throw new Error(data?.error ?? 'La génération a échoué.');
-      }
-      return data as GeneratedPlan;
+/**
+ * Progress surfaced while a long generation runs.
+ *
+ * `plan` and `adapt` stream the model's reasoning before the object exists —
+ * that deliberation is the only content available for the first several seconds
+ * and is what the generation dialogs show instead of a bare spinner.
+ */
+export type CoachGenerationProgress = {
+  /** Reasoning accumulated so far, in stream order. */
+  reasoning: string;
+  /** Sessions/changes recovered from the partial JSON, may be incomplete. */
+  partialCount: number;
+};
+
+function countPartialItems(value: unknown, key: 'sessions' | 'changes'): number {
+  if (typeof value !== 'object' || value == null) return 0;
+  const list = (value as Record<string, unknown>)[key];
+  return Array.isArray(list) ? list.length : 0;
+}
+
+/**
+ * POSTs to a streaming coach endpoint and reports progress as it arrives.
+ * Non-2xx responses still answer with plain JSON (bad params, coach unconfigured).
+ */
+async function postCoachGeneration<TResult>(
+  url: string,
+  params: unknown,
+  partialKey: 'sessions' | 'changes',
+  onProgress?: (progress: CoachGenerationProgress) => void,
+  fallbackError = 'La génération a échoué.',
+): Promise<TResult> {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error((data as { error?: string } | null)?.error ?? fallbackError);
+  }
+
+  let reasoning = '';
+  let partialCount = 0;
+  return consumeCoachProgressStream<TResult, unknown>(res, {
+    onReasoning: (delta) => {
+      reasoning += delta;
+      onProgress?.({ reasoning, partialCount });
     },
+    onPartial: (value) => {
+      partialCount = countPartialItems(value, partialKey);
+      onProgress?.({ reasoning, partialCount });
+    },
+  });
+}
+
+export function useCoachPlan(onProgress?: (progress: CoachGenerationProgress) => void) {
+  return useMutation<GeneratedPlan, Error, GeneratePlanParams>({
+    mutationFn: (params) =>
+      postCoachGeneration<GeneratedPlan>('/api/coach/plan', params, 'sessions', onProgress),
   });
 }
 
@@ -113,20 +160,16 @@ export interface AdaptPlanResult {
   gate: GateResult;
 }
 
-export function useAdaptPlan() {
+export function useAdaptPlan(onProgress?: (progress: CoachGenerationProgress) => void) {
   return useMutation<AdaptPlanResult, Error, { days?: number; focus?: string }>({
-    mutationFn: async (params) => {
-      const res = await fetch('/api/coach/adapt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(params),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        throw new Error(data?.error ?? 'La réadaptation a échoué.');
-      }
-      return data as AdaptPlanResult;
-    },
+    mutationFn: (params) =>
+      postCoachGeneration<AdaptPlanResult>(
+        '/api/coach/adapt',
+        params,
+        'changes',
+        onProgress,
+        'La réadaptation a échoué.',
+      ),
   });
 }
 

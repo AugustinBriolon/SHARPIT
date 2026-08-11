@@ -1,5 +1,7 @@
 import { describe, expect, it, vi, beforeEach, beforeAll } from 'vitest';
 import { decisionState, physicalHealthData } from '@/lib/plan-gate/test-fixtures';
+import { consumeCoachProgressStream } from '@/lib/coach/coach-progress-stream';
+import type { AdaptPayload } from './route';
 
 vi.mock('@/lib/ai', () => ({
   COACH_MODEL: 'mock-model',
@@ -7,9 +9,8 @@ vi.mock('@/lib/ai', () => ({
   isCoachConfigured: () => true,
 }));
 
-vi.mock('ai', () => ({
-  generateText: vi.fn(),
-  Output: { object: (config: unknown) => config },
+vi.mock('@/lib/coach/stream-structured-generation', () => ({
+  runStructuredCoachStream: vi.fn(),
 }));
 
 vi.mock('@/lib/coach/coach-context', () => ({
@@ -53,28 +54,62 @@ describe('POST /api/coach/adapt', () => {
     await importRoute();
   });
 
-  it('does not gate REMOVE changes — they pass through with no gate entry', async () => {
-    const { generateText } = await import('ai');
-    const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
-
-    vi.mocked(generateText).mockResolvedValue({
-      output: {
-        summary: 'Suppression d’une séance en trop',
-        changes: [
-          {
-            action: 'REMOVE',
-            sessionId: 'existing-1',
-            date: null,
-            type: null,
-            intensity: null,
-            title: null,
-            description: null,
-            durationMin: null,
-            load: null,
-            reason: 'Fatigue élevée cette semaine',
-          },
-        ],
+  /** The route short-circuits when nothing is planned, so gate tests need a session. */
+  async function givenUpcomingSession() {
+    const { getPlannedSessionsForCoach } = await import('@/lib/queries');
+    vi.mocked(getPlannedSessionsForCoach).mockResolvedValue([
+      {
+        id: 'existing-1',
+        date: new Date('2026-07-20T00:00:00Z'),
+        type: 'RUN',
+        intensity: 'ENDURANCE',
+        durationMin: 45,
+        load: 40,
+        title: 'Footing',
+        completed: false,
+        brickGroupId: null,
       },
+    ] as never);
+  }
+
+  it('answers without calling the model when nothing is planned in the window', async () => {
+    const { runStructuredCoachStream } = await import('@/lib/coach/stream-structured-generation');
+    const { getPlannedSessionsForCoach } = await import('@/lib/queries');
+    vi.mocked(getPlannedSessionsForCoach).mockResolvedValue([] as never);
+
+    const { POST } = await importRoute();
+    const response = await POST(
+      new Request('http://localhost/api/coach/adapt', { method: 'POST', body: JSON.stringify({}) }),
+    );
+    const body = await consumeCoachProgressStream<AdaptPayload, unknown>(response);
+
+    expect(body.changes).toHaveLength(0);
+    expect(body.summary).toMatch(/rien à réadapter/i);
+    // The whole point: no generation is paid for when there is nothing to adapt.
+    expect(runStructuredCoachStream).not.toHaveBeenCalled();
+  });
+
+  it('does not gate REMOVE changes — they pass through with no gate entry', async () => {
+    const { runStructuredCoachStream } = await import('@/lib/coach/stream-structured-generation');
+    const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
+    await givenUpcomingSession();
+
+    vi.mocked(runStructuredCoachStream).mockResolvedValue({
+      summary: 'Suppression d’une séance en trop',
+      changes: [
+        {
+          action: 'REMOVE',
+          sessionId: 'existing-1',
+          date: null,
+          type: null,
+          intensity: null,
+          title: null,
+          description: null,
+          durationMin: null,
+          load: null,
+          reason: 'Fatigue élevée cette semaine',
+        },
+      ],
     } as never);
 
     vi.mocked(getOrBuildAthleteSnapshot).mockResolvedValue({
@@ -87,7 +122,7 @@ describe('POST /api/coach/adapt', () => {
     const response = await POST(
       new Request('http://localhost/api/coach/adapt', { method: 'POST', body: JSON.stringify({}) }),
     );
-    const body = await response.json();
+    const body = await consumeCoachProgressStream<AdaptPayload, unknown>(response);
 
     expect(response.status).toBe(200);
     expect(body.changes).toHaveLength(1);
@@ -98,27 +133,26 @@ describe('POST /api/coach/adapt', () => {
   });
 
   it('gates an ADD change and rejects it when fatigue capacity is REST_ONLY', async () => {
-    const { generateText } = await import('ai');
+    const { runStructuredCoachStream } = await import('@/lib/coach/stream-structured-generation');
     const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
+    await givenUpcomingSession();
 
-    vi.mocked(generateText).mockResolvedValue({
-      output: {
-        summary: 'Ajout d’une séance de seuil',
-        changes: [
-          {
-            action: 'ADD',
-            sessionId: null,
-            date: '2026-07-20',
-            type: 'BIKE',
-            intensity: 'THRESHOLD',
-            title: 'Seuil vélo',
-            description: null,
-            durationMin: 60,
-            load: 75,
-            reason: 'Combler le trou de la semaine',
-          },
-        ],
-      },
+    vi.mocked(runStructuredCoachStream).mockResolvedValue({
+      summary: 'Ajout d’une séance de seuil',
+      changes: [
+        {
+          action: 'ADD',
+          sessionId: null,
+          date: '2026-07-20',
+          type: 'BIKE',
+          intensity: 'THRESHOLD',
+          title: 'Seuil vélo',
+          description: null,
+          durationMin: 60,
+          load: 75,
+          reason: 'Combler le trou de la semaine',
+        },
+      ],
     } as never);
 
     vi.mocked(getOrBuildAthleteSnapshot).mockResolvedValue({
@@ -134,7 +168,7 @@ describe('POST /api/coach/adapt', () => {
     const response = await POST(
       new Request('http://localhost/api/coach/adapt', { method: 'POST', body: JSON.stringify({}) }),
     );
-    const body = await response.json();
+    const body = await consumeCoachProgressStream<AdaptPayload, unknown>(response);
 
     expect(response.status).toBe(200);
     expect(body.gate.sessions).toHaveLength(1);
@@ -150,7 +184,7 @@ describe('POST /api/coach/adapt', () => {
   });
 
   it('resolves a MODIFY proposal by merging the change onto the existing session for date-dependent rules', async () => {
-    const { generateText } = await import('ai');
+    const { runStructuredCoachStream } = await import('@/lib/coach/stream-structured-generation');
     const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
     const { getPlannedSessionsForCoach } = await import('@/lib/queries');
 
@@ -168,24 +202,22 @@ describe('POST /api/coach/adapt', () => {
       },
     ] as never);
 
-    vi.mocked(generateText).mockResolvedValue({
-      output: {
-        summary: 'Allègement de la charge',
-        changes: [
-          {
-            action: 'MODIFY',
-            sessionId: 'existing-1',
-            date: null,
-            type: null,
-            intensity: null,
-            title: null,
-            description: null,
-            durationMin: null,
-            load: 15,
-            reason: 'Fatigue accrue après la dernière séance',
-          },
-        ],
-      },
+    vi.mocked(runStructuredCoachStream).mockResolvedValue({
+      summary: 'Allègement de la charge',
+      changes: [
+        {
+          action: 'MODIFY',
+          sessionId: 'existing-1',
+          date: null,
+          type: null,
+          intensity: null,
+          title: null,
+          description: null,
+          durationMin: null,
+          load: 15,
+          reason: 'Fatigue accrue après la dernière séance',
+        },
+      ],
     } as never);
 
     vi.mocked(getOrBuildAthleteSnapshot).mockResolvedValue({
@@ -201,7 +233,7 @@ describe('POST /api/coach/adapt', () => {
     const response = await POST(
       new Request('http://localhost/api/coach/adapt', { method: 'POST', body: JSON.stringify({}) }),
     );
-    const body = await response.json();
+    const body = await consumeCoachProgressStream<AdaptPayload, unknown>(response);
 
     expect(response.status).toBe(200);
     expect(body.gate.sessions).toHaveLength(1);
@@ -212,28 +244,26 @@ describe('POST /api/coach/adapt', () => {
   });
 
   it('persists a CoachingDecision even for a REJECTED proposal, preserving the exact gate result', async () => {
-    const { generateText } = await import('ai');
+    const { runStructuredCoachStream } = await import('@/lib/coach/stream-structured-generation');
     const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
     const { createCoachingDecision } = await import('@/lib/decision-memory/repository');
 
-    vi.mocked(generateText).mockResolvedValue({
-      output: {
-        summary: 'Ajout',
-        changes: [
-          {
-            action: 'ADD',
-            sessionId: null,
-            date: '2026-07-20',
-            type: 'RUN',
-            intensity: 'VO2MAX',
-            title: 'VO2max',
-            description: null,
-            durationMin: 40,
-            load: 65,
-            reason: 'Test',
-          },
-        ],
-      },
+    vi.mocked(runStructuredCoachStream).mockResolvedValue({
+      summary: 'Ajout',
+      changes: [
+        {
+          action: 'ADD',
+          sessionId: null,
+          date: '2026-07-20',
+          type: 'RUN',
+          intensity: 'VO2MAX',
+          title: 'VO2max',
+          description: null,
+          durationMin: 40,
+          load: 65,
+          reason: 'Test',
+        },
+      ],
     } as never);
 
     vi.mocked(getOrBuildAthleteSnapshot).mockResolvedValue({
@@ -246,8 +276,15 @@ describe('POST /api/coach/adapt', () => {
     } as never);
 
     const { POST } = await importRoute();
-    await POST(
-      new Request('http://localhost/api/coach/adapt', { method: 'POST', body: JSON.stringify({}) }),
+    // The route answers with a stream: the Gate and the decision writes only run
+    // once it is drained, so consume it before asserting on the side effects.
+    await consumeCoachProgressStream(
+      await POST(
+        new Request('http://localhost/api/coach/adapt', {
+          method: 'POST',
+          body: JSON.stringify({}),
+        }),
+      ),
     );
 
     expect(createCoachingDecision).toHaveBeenCalledTimes(1);
