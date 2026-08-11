@@ -15,6 +15,7 @@
 | [ADR-009](./ADR-009-turbopack-build-and-serwist-configurator.md) | Turbopack builds and Serwist in configurator mode                    | Accepted |
 | [ADR-010](./ADR-010-cache-components-and-instant-navigation.md)  | Cache Components and Partial Prefetching for instant navigation      | Accepted |
 | [ADR-011](./ADR-011-pmc-state-and-window-semantics.md)           | PMC state and window semantics (window is display, not computation)  | Accepted |
+| [ADR-012](./ADR-012-bidirectional-threshold-recency.md)          | Bidirectional threshold revision with 120-day recency window         | Accepted |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 
