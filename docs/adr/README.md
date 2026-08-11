@@ -14,6 +14,7 @@
 | [ADR-008](./ADR-008-pwa-offline-snapshot-and-sw-lifecycle.md)    | PWA offline Snapshot persistence and service-worker update lifecycle | Accepted |
 | [ADR-009](./ADR-009-turbopack-build-and-serwist-configurator.md) | Turbopack builds and Serwist in configurator mode                    | Accepted |
 | [ADR-010](./ADR-010-cache-components-and-instant-navigation.md)  | Cache Components and Partial Prefetching for instant navigation      | Accepted |
+| [ADR-011](./ADR-011-pmc-state-and-window-semantics.md)           | PMC state and window semantics (window is display, not computation)  | Accepted |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 
