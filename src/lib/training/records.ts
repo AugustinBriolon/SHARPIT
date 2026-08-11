@@ -70,11 +70,17 @@ export interface RunBestCategory {
 export interface RunEffort {
   meters: number;
   seconds: number;
+  /** ISO date of the source activity — required for threshold recency (ADR-012). */
+  date?: string;
+  activityId?: string | null;
 }
 
 export interface BikeEffort {
   seconds: number; // durée du ride
   watts: number; // NP si dispo, sinon puissance moyenne
+  /** ISO date of the source activity — required for threshold recency (ADR-012). */
+  date?: string;
+  activityId?: string | null;
 }
 
 export interface RecordsPayload {
@@ -547,11 +553,23 @@ function computeMetricEfforts(metrics: MetricActivity[]): {
       } else if (a.runMetrics?.paceSecPerKm) {
         seconds = (a.runMetrics.paceSecPerKm * meters) / 1000;
       }
-      if (seconds && seconds > 0) runEfforts.push({ meters, seconds });
+      if (seconds && seconds > 0) {
+        runEfforts.push({
+          meters,
+          seconds,
+          date: a.date.toISOString(),
+          activityId: a.id,
+        });
+      }
     } else if (a.type === ActivityType.BIKE) {
       const watts = a.bikeMetrics?.normalizedPower ?? a.bikeMetrics?.avgPower ?? null;
       if (!watts || watts <= 0 || !a.duration || a.duration < 1200) continue; // >=20 min
-      bikeEfforts.push({ seconds: a.duration, watts });
+      bikeEfforts.push({
+        seconds: a.duration,
+        watts,
+        date: a.date.toISOString(),
+        activityId: a.id,
+      });
     }
   }
 
@@ -692,7 +710,6 @@ function runBestsToRows(bests: RunBestCategory[]): RecordRow[] {
 
 /** Persist scatter-reference efforts (no activity join on GET). */
 function effortsToRows(runEfforts: RunEffort[], bikeEfforts: BikeEffort[]): RecordRow[] {
-  const now = new Date();
   return [
     ...runEfforts.map((e, index) => ({
       group: 'run-effort' as const,
@@ -702,8 +719,8 @@ function effortsToRows(runEfforts: RunEffort[], bikeEfforts: BikeEffort[]): Reco
       value: e.meters,
       displayValue: String(e.seconds),
       sublabel: null,
-      activityId: null,
-      activityDate: now,
+      activityId: e.activityId ?? null,
+      activityDate: e.date ? new Date(e.date) : new Date(0),
       activityTitle: null,
     })),
     ...bikeEfforts.map((e, index) => ({
@@ -714,29 +731,51 @@ function effortsToRows(runEfforts: RunEffort[], bikeEfforts: BikeEffort[]): Reco
       value: e.watts,
       displayValue: String(e.seconds),
       sublabel: null,
-      activityId: null,
-      activityDate: now,
+      activityId: e.activityId ?? null,
+      activityDate: e.date ? new Date(e.date) : new Date(0),
       activityTitle: null,
     })),
   ];
 }
 
-function effortsFromRows(rows: Array<{ group: string; value: number; displayValue: string }>): {
+function effortsFromRows(
+  rows: Array<{
+    group: string;
+    value: number;
+    displayValue: string;
+    activityDate?: Date | null;
+    activityId?: string | null;
+  }>,
+): {
   runEfforts: RunEffort[];
   bikeEfforts: BikeEffort[];
 } {
   const runEfforts: RunEffort[] = [];
   const bikeEfforts: BikeEffort[] = [];
   for (const row of rows) {
+    const date =
+      row.activityDate && row.activityDate.getTime() > 0
+        ? row.activityDate.toISOString()
+        : undefined;
     if (row.group === 'run-effort') {
       const seconds = Number(row.displayValue);
       if (Number.isFinite(seconds) && seconds > 0) {
-        runEfforts.push({ meters: row.value, seconds });
+        runEfforts.push({
+          meters: row.value,
+          seconds,
+          date,
+          activityId: row.activityId ?? null,
+        });
       }
     } else if (row.group === 'bike-effort') {
       const seconds = Number(row.displayValue);
       if (Number.isFinite(seconds) && seconds > 0 && row.value > 0) {
-        bikeEfforts.push({ seconds, watts: row.value });
+        bikeEfforts.push({
+          seconds,
+          watts: row.value,
+          date,
+          activityId: row.activityId ?? null,
+        });
       }
     }
   }

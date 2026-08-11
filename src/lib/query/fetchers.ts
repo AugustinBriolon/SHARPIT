@@ -333,24 +333,9 @@ export async function fetchWeeklyReview(date: string): Promise<ClientWeeklyRevie
   };
 }
 
-export interface ThresholdApplyPreview {
-  estimates: {
-    ftpW: number | null;
-    ftpSource: string | null;
-    runThresholdPaceSecPerKm: number | null;
-  };
-  current: {
-    ftpW: number | null;
-    runThresholdPaceSecPerKm: number | null;
-  };
-  changes: {
-    field: 'ftpW' | 'runThresholdPaceSecPerKm';
-    label: string;
-    from: string;
-    to: string;
-  }[];
-  hasChanges: boolean;
-}
+import type { ThresholdApplyPreview } from '@/lib/threshold/threshold-estimates';
+
+export type { ThresholdApplyPreview };
 
 export async function fetchThresholdPreview(): Promise<ThresholdApplyPreview> {
   return fetchJson<ThresholdApplyPreview>('/api/athlete-profile/apply-estimates');
