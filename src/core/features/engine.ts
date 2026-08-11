@@ -215,11 +215,23 @@ export class FeatureEngine {
 
     try {
       switch (type) {
-        case 'SESSION':
+        case 'SESSION': {
           await this.featureRepo.invalidateForTrainingDay(athleteId, trainingDayId, ['LOAD']);
           await this.featureRepo.invalidateLoadWindow(athleteId, trainingDayId);
-          await this.computeSessionFeatures(athleteId, observation as SessionObservation);
+          // The event bus dispatches a routing-only observation carrying just the
+          // ids, so the body has to be loaded here. Extracting from the argument
+          // silently yielded a null TSS for every session ingested this way.
+          const full = await this.obsRepo.findById(observation.id);
+          const session = (full ?? observation) as SessionObservation;
+          if (session.durationSec == null || session.sportType == null) {
+            console.error(
+              `[FeatureEngine] SESSION ${observation.id} has no sportType/durationSec — skipping extraction`,
+            );
+            break;
+          }
+          await this.computeSessionFeatures(athleteId, session);
           break;
+        }
 
         case 'SLEEP':
         case 'HRV':

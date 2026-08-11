@@ -47,14 +47,10 @@ export function createFeatureEngineBus(featureEng: FeatureEngine): InProcessEven
   bus.subscribe(async (event) => {
     if (event.kind !== 'ObservationIngested') return;
 
-    // We need the full Observation object. The event carries only the ID,
-    // so the FeatureEngine's onObservationIngested is called via the ObservationEngine's
-    // repository. However, to keep this simple in v1 and avoid an extra read,
-    // we reconstruct a minimal Observation from the event for routing purposes.
-    //
-    // The FeatureEngine only uses: type, athleteId, trainingDayId, and id.
-    // For SESSION type it then reads the full observation from the repository.
-    const minimalObs = {
+    // The event carries only identifiers, so this is a routing envelope, not a
+    // usable observation. The FeatureEngine loads the body from its observation
+    // repository for the types that need it.
+    const routingObs = {
       id: event.observationId,
       athleteId: event.athleteId,
       type: event.type,
@@ -63,7 +59,7 @@ export function createFeatureEngineBus(featureEng: FeatureEngine): InProcessEven
       qualityFlags: event.flags,
     } as Observation;
 
-    await featureEng.onObservationIngested(minimalObs);
+    await featureEng.onObservationIngested(routingObs);
   });
 
   return bus;
