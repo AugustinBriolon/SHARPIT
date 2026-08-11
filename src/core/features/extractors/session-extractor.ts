@@ -211,7 +211,14 @@ function selectBestTss(input: SessionExtractorInput, ctx: ExtractionContext): Ts
   const { durationSec, sportType } = session;
 
   // Tier 1: Power-based (requires NP + FTP)
+  //
+  // Cycling only: ctx.ftpW is a cycling FTP, and Garmin's running power sits on a
+  // different scale, so dividing one by the other produced intensity factors above
+  // 1 for ordinary runs and TSS up to 438/h. Running power needs its own threshold
+  // before it can be used here; until then runs fall through to TRIMP, which is
+  // sport-agnostic.
   if (
+    (sportType === 'BIKE' || sportType === 'MTB') &&
     canUsePowerTss(ctx) &&
     session.powerData?.normalizedPower != null &&
     session.powerData.normalizedPower > 0

@@ -196,6 +196,43 @@ describe('extractSessionFeatures — TSS: Tier 2 (TRIMP-HR)', () => {
     expect(result.confidence).toBeCloseTo(0.75 * 0.85, 4);
   });
 
+  it('does not apply a cycling FTP to running power', () => {
+    // ctx.ftpW is a cycling FTP and Garmin's running power is on another scale, so
+    // dividing one by the other produced intensity factors above 1 on ordinary
+    // runs. Runs must fall through to TRIMP, which is sport-agnostic.
+    const ctx = makeContext({ ftpW: 210, maxHr: 207, restingHr: 49 });
+    const result = extractSessionFeatures(
+      input({
+        sportType: 'RUN',
+        durationSec: 3600,
+        powerData: { avgWatts: 300, normalizedPower: 310, quality: 'MEASURED_OPTICAL' },
+        hrData: { avgBpm: 148, quality: 'MEASURED_OPTICAL' },
+      }),
+      ctx,
+    );
+
+    expect(result.tssMethod).toBe('TRIMP_HR');
+    // An IF of 310/210 would have produced well over 200 TSS for one hour.
+    expect(result.tssScore).toBeLessThan(100);
+  });
+
+  it('still uses power for cycling', () => {
+    const ctx = makeContext({ ftpW: 210, maxHr: 207, restingHr: 49 });
+    const result = extractSessionFeatures(
+      input({
+        sportType: 'BIKE',
+        durationSec: 3600,
+        powerData: { avgWatts: 200, normalizedPower: 210, quality: 'MEASURED_DIRECT' },
+        hrData: { avgBpm: 148, quality: 'MEASURED_OPTICAL' },
+      }),
+      ctx,
+    );
+
+    expect(result.tssMethod).toBe('POWER_BASED');
+    // One hour at exactly FTP is 100 TSS by definition.
+    expect(result.tssScore).toBeCloseTo(100, 4);
+  });
+
   it('does not report TRIMP when the HR range is unusable', () => {
     // The method tag is what downstream auditing reads to know how a number was
     // produced, so a duration-factor value must never be labelled TRIMP_HR.
