@@ -8,6 +8,7 @@ import {
 import { PerformancePredictions } from '@/components/analytics/predictions/performance-predictions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { buildAnalyticsViewModel, type ActivityForAnalytics } from '@/lib/analytics';
+import { useAnalyticsPmc } from '@/hooks/use-presentation-view-model';
 import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
 
@@ -32,10 +33,15 @@ interface AnalyticsViewProps {
 }
 
 export function AnalyticsView({ activities }: AnalyticsViewProps) {
-  const { pmc, weeklyVolume, distribution, summary } = useMemo(
+  const { weeklyVolume, distribution, summary } = useMemo(
     () => buildAnalyticsViewModel(activities),
     [activities],
   );
+
+  // The PMC comes from the server: it is derived from the Core's Training Stress,
+  // which needs stored session features the browser cannot read. See ADR-011.
+  const { data: pmc = [] } = useAnalyticsPmc();
+  const anchor = pmc.at(-1);
 
   return (
     <div className="space-y-4">
@@ -46,17 +52,17 @@ export function AnalyticsView({ activities }: AnalyticsViewProps) {
         <AnalyticsStat
           hint="Charge chronique (42 j)"
           label="CTL · Forme"
-          value={String(summary.ctl)}
+          value={anchor ? String(anchor.ctl) : '—'}
         />
         <AnalyticsStat
           hint="Charge aiguë (7 j)"
           label="ATL · Fatigue"
-          value={String(summary.atl)}
+          value={anchor ? String(anchor.atl) : '—'}
         />
         <AnalyticsStat
           hint="CTL − ATL"
           label="TSB · Fraîcheur"
-          value={`${summary.tsb > 0 ? '+' : ''}${summary.tsb}`}
+          value={anchor ? `${anchor.tsb > 0 ? '+' : ''}${anchor.tsb}` : '—'}
         />
         <AnalyticsStat
           hint={`${summary.weeklyLoad} TSS · ${summary.totalActivities} séances`}

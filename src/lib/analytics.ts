@@ -2,8 +2,9 @@ import { ActivityType } from '@prisma/client';
 import { format, startOfDay, startOfWeek, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { estimateActivityLoad, type ActivityForAnalytics } from '@/lib/training/activity-load';
-import { slicePmcWindow } from '@/lib/training/pmc';
-import { computeAthletePmc, toPmcPoints, type PmcPoint } from '@/lib/training/pmc-history';
+// Type only: this module no longer computes a PMC, so nothing here can produce a
+// client-side CTL that diverges from the server's. See ADR-011.
+import type { PmcPoint } from '@/lib/training/pmc-history';
 
 export { estimateActivityLoad };
 export type { ActivityForAnalytics, PmcPoint };
@@ -125,17 +126,22 @@ export function computeSportDistribution(
 }
 
 export interface AnalyticsSummary {
-  ctl: number;
-  atl: number;
-  tsb: number;
   weeklyHours: number;
   weeklyLoad: number;
   totalActivities: number;
   periodDays: number;
 }
 
+/**
+ * Volume and distribution only.
+ *
+ * The PMC is deliberately absent: it needs the Core's Training Stress, which is
+ * derived from stored session features that the browser cannot read. Computing it
+ * here would silently fall back to the per-activity estimate and report a
+ * different CTL than every other surface, which is the divergence ADR-011 exists
+ * to prevent. Charts read it from `useAnalyticsPmc` instead.
+ */
 export interface AnalyticsViewModel {
-  pmc: PmcPoint[];
   weeklyVolume: WeeklyVolumePoint[];
   distribution: SportDistribution[];
   summary: AnalyticsSummary;
@@ -276,14 +282,9 @@ function computeSportDistributionFromTotals(
 }
 
 function buildAnalyticsSummary(
-  pmc: PmcPoint[],
   aggregates: Pick<AnalyticsAggregates, 'weeklyHours' | 'weeklyLoad' | 'totalActivities'>,
 ): AnalyticsSummary {
-  const latest = pmc[pmc.length - 1];
   return {
-    ctl: latest?.ctl ?? 0,
-    atl: latest?.atl ?? 0,
-    tsb: latest?.tsb ?? 0,
     weeklyHours: Number(aggregates.weeklyHours.toFixed(1)),
     weeklyLoad: Math.round(aggregates.weeklyLoad),
     totalActivities: aggregates.totalActivities,
@@ -291,51 +292,20 @@ function buildAnalyticsSummary(
   };
 }
 
-export function computeAnalyticsSummary(
-  activities: ActivityForAnalytics[],
-  pmc: PmcPoint[],
-): AnalyticsSummary {
-  const latest = pmc[pmc.length - 1];
-  const weekAgo = subDays(startOfDay(new Date()), 7);
-
-  const weekActivities = activities.filter((a) => a.date >= weekAgo);
-  const weeklyHours = weekActivities.reduce((s, a) => s + (a.duration ?? 0), 0) / 3600;
-  const weeklyLoad = weekActivities.reduce((s, a) => s + estimateActivityLoad(a), 0);
-
-  return {
-    ctl: latest?.ctl ?? 0,
-    atl: latest?.atl ?? 0,
-    tsb: latest?.tsb ?? 0,
-    weeklyHours: Number(weeklyHours.toFixed(1)),
-    weeklyLoad: Math.round(weeklyLoad),
-    totalActivities: activities.length,
-    periodDays: 180,
-  };
-}
-
 export function buildAnalyticsViewModel(
   activities: ActivityForAnalytics[],
   options?: {
-    pmcDays?: number;
     weeklyVolumeWeeks?: number;
     distributionDays?: number;
     refDate?: Date;
   },
 ): AnalyticsViewModel {
   const aggregates = aggregateAnalytics(activities, options);
-  // Computed across the whole history, then trimmed for display: `pmcDays` is a
-  // chart width, not a computation boundary. See ADR-011.
-  const pmc = slicePmcWindow(
-    toPmcPoints(computeAthletePmc(activities, { refDate: options?.refDate })),
-    options?.pmcDays ?? 180,
-    options?.refDate,
-  );
   const weeklyVolume = computeWeeklyVolumeFromBuckets(aggregates.weeklyVolumeByWeek);
   const distribution = computeSportDistributionFromTotals(aggregates.sportTotals);
-  const summary = buildAnalyticsSummary(pmc, aggregates);
+  const summary = buildAnalyticsSummary(aggregates);
 
   return {
-    pmc,
     weeklyVolume,
     distribution,
     summary,

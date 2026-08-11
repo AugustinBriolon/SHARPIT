@@ -8,6 +8,7 @@ import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import type { SleepViewModel } from '@/core/presentation/sleep-view-model';
 import type { BodyViewModel } from '@/core/presentation/body-view-model';
 import type { PhysicalHealthViewModel } from '@/core/presentation/physical-health-view-model';
+import type { PmcPoint } from '@/lib/training/pmc-history';
 
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url);
@@ -54,6 +55,11 @@ export async function fetchBodyPresentation(
   const url = `/api/presentation/body?days=${encodeURIComponent(param)}`;
   const { viewModel } = await fetchJson<{ viewModel: BodyViewModel }>(url);
   return viewModel;
+}
+
+export async function fetchAnalyticsPmc(): Promise<PmcPoint[]> {
+  const { pmc } = await fetchJson<{ pmc: PmcPoint[] }>('/api/presentation/analytics-pmc');
+  return pmc;
 }
 
 export async function fetchPhysicalHealthPresentation(
