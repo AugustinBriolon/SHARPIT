@@ -106,14 +106,22 @@ describe('storedActivityToSession', () => {
     expect(session.paceData).toBeUndefined();
   });
 
-  it('uses a stable dedup key, preferring the platform id', () => {
-    expect(
-      storedActivityToSession(activity({ garminId: 'g-1', stravaId: 's-1' }))!.externalId,
-    ).toBe('g-1');
-    expect(storedActivityToSession(activity({ garminId: null, stravaId: 's-1' }))!.externalId).toBe(
-      's-1',
-    );
-    // Re-runs must land on the same key, so fall back to the row id.
-    expect(storedActivityToSession(activity())!.externalId).toBe('act-1');
+  it('matches how the stream provider resolves a session back to its activity', () => {
+    // findSessionWhere in prisma-session-stream-provider looks up garminId for
+    // GARMIN, stravaId for STRAVA, and strips the manual: prefix for MANUAL. A
+    // mismatched pair means no stream is found and, for manual activities, a
+    // duplicate of the observation the manual sync already wrote.
+    expect(storedActivityToSession(activity({ garminId: 'g-1', stravaId: 's-1' }))).toMatchObject({
+      source: 'GARMIN',
+      externalId: 'g-1',
+    });
+    expect(storedActivityToSession(activity({ garminId: null, stravaId: 's-1' }))).toMatchObject({
+      source: 'STRAVA',
+      externalId: 's-1',
+    });
+    expect(storedActivityToSession(activity())).toMatchObject({
+      source: 'MANUAL',
+      externalId: 'manual:activity:act-1',
+    });
   });
 });

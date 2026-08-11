@@ -77,6 +77,24 @@ function positive(value: number | null | undefined): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : undefined;
 }
 
+/**
+ * Source and dedup key, matching how the stream provider resolves an observation
+ * back to its Activity (`findSessionWhere` in prisma-session-stream-provider).
+ *
+ * Getting this wrong has two consequences: the session cannot find its cached
+ * stream, so stream-derived features stay null; and it fails to deduplicate
+ * against the observation the manual sync already wrote for the same activity,
+ * producing two sessions for one activity and double-counting the day's load.
+ */
+function resolveIdentity(activity: StoredActivityForSession): {
+  source: RawSessionObservation['source'];
+  externalId: string;
+} {
+  if (activity.garminId) return { source: 'GARMIN', externalId: activity.garminId };
+  if (activity.stravaId) return { source: 'STRAVA', externalId: activity.stravaId };
+  return { source: 'MANUAL', externalId: `manual:activity:${activity.id}` };
+}
+
 export function storedActivityToSession(
   activity: StoredActivityForSession,
   options?: ActivityToSessionOptions,
@@ -123,16 +141,16 @@ export function storedActivityToSession(
       ? { avgMinPerKm: paceSecPerKm / 60, distanceM: runDistanceM }
       : undefined;
 
+  const { source, externalId } = resolveIdentity(activity);
+
   return {
     type: 'SESSION',
-    source: 'GARMIN',
+    source,
     timestamp: activity.date,
     receivedAt: options?.receivedAt ?? new Date(),
     sportType,
     durationSec,
-    // Falls back to the row id so an activity with no platform id still gets a
-    // stable dedup key across re-runs.
-    externalId: activity.garminId ?? activity.stravaId ?? activity.id,
+    externalId,
     title: activity.title ?? undefined,
     powerData,
     hrData,

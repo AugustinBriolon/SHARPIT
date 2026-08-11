@@ -142,13 +142,6 @@ function buildManualSessionObservation(
     activity.runMetrics?.elevationM ?? activity.bikeMetrics?.elevationM ?? undefined;
 
   const calories = activity.bikeMetrics?.calories ?? undefined;
-  const sourceProvidedStress =
-    activity.load != null && activity.load > 0
-      ? {
-          value: activity.load,
-          quality: 'ESTIMATED' as const,
-        }
-      : undefined;
 
   return {
     type: 'SESSION',
@@ -165,7 +158,10 @@ function buildManualSessionObservation(
     paceData,
     elevationM,
     calories,
-    sourceProvidedStress,
+    // sourceProvidedStress is deliberately omitted: Activity.load coalesced
+    // Garmin's TSS with its EPOC training load for every row written before that
+    // was separated, so feeding it in would import two mixed scales into the Core,
+    // which computes its own Training Stress from raw power and heart rate anyway.
   };
 }
 
