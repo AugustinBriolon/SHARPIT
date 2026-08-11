@@ -6,13 +6,13 @@ import type { SerializedDecisionState } from '@/core/decision/adapters';
 import type { EnvironmentalDecisionSnapshot } from '@/core/inference/environment/types';
 import type { ProjectionHorizonDays, ProjectedAthleteInput } from '@/core/projection/types';
 import type { ScenarioSessionSlice } from '@/core/scenario/types';
-import { computePmcSeries, type ActivityForAnalytics } from '@/lib/analytics';
+import { computeAthletePmc } from '@/lib/training/pmc-history';
 import { adaptationEngine } from '@/lib/engines/adaptation-engine';
 import { fatigueEngine } from '@/lib/engines/fatigue-engine';
 import { physicalHealthEngine } from '@/lib/engines/physical-health-engine';
 import { recoveryEngine } from '@/lib/engines/recovery-engine';
 import { aggregatePlanningMaps, slicePlannedSessions } from '@/lib/projection/planning-maps';
-import { getActivitiesList, getPlannedSessions } from '@/lib/queries';
+import { getActivitiesForPmc, getPlannedSessions } from '@/lib/queries';
 import { loadTodayState } from '@/lib/today/today-state-server';
 import { addTrainingDays, trainingDayIdForNow } from '@/lib/training/training-day';
 import { addDays, startOfDay } from 'date-fns';
@@ -80,27 +80,37 @@ export async function buildProjectionBaseContext(params?: {
   const futureDayIds = buildFutureDayIds(anchorTrainingDayId, horizonDays);
   const horizonEnd = new Date(`${futureDayIds[futureDayIds.length - 1]}T23:59:59.999Z`);
 
-  const [todayState, activities, plannedSessions, recovery, fatigue, adaptation, physicalHealth] =
-    await Promise.all([
-      loadTodayState({ athleteId: ATHLETE_ID, trainingDayId: anchorTrainingDayId }),
-      getActivitiesList({ sinceDays: 180 }),
-      getPlannedSessions({
-        from: startOfDay(new Date(`${anchorTrainingDayId}T12:00:00`)),
-        to: horizonEnd,
-      }),
-      loadTwinState(recoveryEngine, ATHLETE_ID, anchorTrainingDayId, (o) => o.recoveryState),
-      loadTwinState(fatigueEngine, ATHLETE_ID, anchorTrainingDayId, (o) => o.fatigueState),
-      loadTwinState(adaptationEngine, ATHLETE_ID, anchorTrainingDayId, (o) => o.adaptationState),
-      loadTwinState(
-        physicalHealthEngine,
-        ATHLETE_ID,
-        anchorTrainingDayId,
-        (o) => o.physicalHealthState,
-      ),
-    ]);
+  const [
+    todayState,
+    plannedSessions,
+    recovery,
+    fatigue,
+    adaptation,
+    physicalHealth,
+    pmcActivities,
+  ] = await Promise.all([
+    loadTodayState({ athleteId: ATHLETE_ID, trainingDayId: anchorTrainingDayId }),
+    getPlannedSessions({
+      from: startOfDay(new Date(`${anchorTrainingDayId}T12:00:00`)),
+      to: horizonEnd,
+    }),
+    loadTwinState(recoveryEngine, ATHLETE_ID, anchorTrainingDayId, (o) => o.recoveryState),
+    loadTwinState(fatigueEngine, ATHLETE_ID, anchorTrainingDayId, (o) => o.fatigueState),
+    loadTwinState(adaptationEngine, ATHLETE_ID, anchorTrainingDayId, (o) => o.adaptationState),
+    loadTwinState(
+      physicalHealthEngine,
+      ATHLETE_ID,
+      anchorTrainingDayId,
+      (o) => o.physicalHealthState,
+    ),
+    getActivitiesForPmc(),
+  ]);
 
-  const pmcSeries = computePmcSeries(activities as ActivityForAnalytics[], 180);
-  const anchorPmc = pmcSeries.at(-1);
+  // Full precision on purpose: this value seeds projectPmcForward, so rounding it
+  // here would compound across the whole projection horizon.
+  const anchorPmc = computeAthletePmc(pmcActivities, {
+    refDate: new Date(`${anchorTrainingDayId}T12:00:00.000Z`),
+  }).at(-1);
   if (!anchorPmc) return null;
 
   const sessionSlices = slicePlannedSessions(plannedSessions, futureDayIds);

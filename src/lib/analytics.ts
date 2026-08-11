@@ -1,176 +1,12 @@
 import { ActivityType } from '@prisma/client';
-import { eachDayOfInterval, format, startOfDay, startOfWeek, subDays } from 'date-fns';
+import { format, startOfDay, startOfWeek, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { estimateActivityLoad, type ActivityForAnalytics } from '@/lib/training/activity-load';
+import { slicePmcWindow } from '@/lib/training/pmc';
+import { computeAthletePmc, toPmcPoints, type PmcPoint } from '@/lib/training/pmc-history';
 
-export interface ActivityForAnalytics {
-  date: Date;
-  type: ActivityType;
-  duration: number | null;
-  load: number | null;
-  bikeMetrics: { tss: number | null } | null;
-}
-
-/**
- * Facteurs d'estimation de charge (TSS) quand aucune métrique précise disponible.
- * Basé sur intensité moyenne typique de chaque discipline.
- *
- * Formule : TSS estimé = (durée_min × facteur)
- *
- * Note : Ce sont des APPROXIMATIONS grossières. TSS réel devrait être calculé depuis :
- * - Vélo : puissance (NP / FTP)
- * - Course/Autre : fréquence cardiaque (avgHR / LTHR)
- *
- * Sources :
- * - Coggan & Allen (2006) "Training and Racing with a Power Meter"
- * - Friel, J. (2009) "The Triathlete's Training Bible" (hrTSS)
- *
- * LIMITATIONS :
- * - Suppose intensité moyenne constante (réalité : très variable)
- * - Pas de distinction selon zones (Z2 vs VO2max)
- * - Erreur peut atteindre ±30% selon profil réel séance
- * - À utiliser uniquement quand pas de données FC/puissance
- *
- * Voir `docs/models/TRAINING_STRESS_MODEL.md` et `knowledge/training-load.md` (TSS).
- */
-const LOAD_FACTOR: Record<ActivityType, number> = {
-  /** Course : 1.0 TSS/min (intensité moyenne type tempo/seuil pour séance typique) */
-  RUN: 1.0,
-  /** Vélo : 0.85 TSS/min (légèrement moins intense que course en moyenne) */
-  BIKE: 0.85,
-  /** Natation : 1.1 TSS/min (plus exigeant métaboliquement à puissance perçue équivalente) */
-  SWIM: 1.1,
-  /** Musculation : 0.7 TSS/min (repos entre séries, charge intermittente) */
-  STRENGTH: 0.7,
-  /** Multisport course : fallback conservateur quand Garmin ne fournit que la séance globale. */
-  TRIATHLON: 0.95,
-  /** Randonnée : 0.8 TSS/min (effort soutenu mais sous-maximal, port de charge variable). */
-  HIKE: 0.8,
-  /** Autre : proxy prudent quand aucun modèle spécifique n'existe encore. */
-  OTHER: 0.75,
-};
-
-export function estimateActivityLoad(activity: ActivityForAnalytics): number {
-  if (activity.load != null && activity.load > 0) return activity.load;
-  if (activity.bikeMetrics?.tss != null && activity.bikeMetrics.tss > 0) {
-    return activity.bikeMetrics.tss;
-  }
-  if (!activity.duration) return 0;
-  const minutes = activity.duration / 60;
-  return Math.round(minutes * LOAD_FACTOR[activity.type]);
-}
-
-export interface PmcPoint {
-  date: string;
-  label: string;
-  tss: number;
-  ctl: number;
-  atl: number;
-  tsb: number;
-}
-
-/**
- * Constantes du modèle Performance Management Chart (PMC).
- *
- * Le modèle utilise des moyennes mobiles exponentiellement pondérées (EWMA)
- * pour suivre l'adaptation à l'entraînement.
- *
- * Sources : Coggan (2003), TrainingPeaks, WKO5
- * Voir `docs/models/TRAINING_STRESS_MODEL.md` et `knowledge/training-load.md` (PMC).
- */
-const PMC_MODEL = {
-  /**
-   * τ (tau) pour CTL : 42 jours
-   * Chronic Training Load = "forme" à long terme, fitness de base.
-   * Constante de temps 42 jours = environ 6 semaines d'adaptation.
-   */
-  CTL_TAU: 42,
-
-  /**
-   * τ (tau) pour ATL : 7 jours
-   * Acute Training Load = "fatigue" récente immédiate.
-   * Constante de temps 7 jours = charge de la semaine en cours.
-   */
-  ATL_TAU: 7,
-} as const;
-
-/**
- * Calcule la série temporelle du Performance Management Chart (PMC) :
- * CTL / ATL / TSB sur une période donnée.
- *
- * Modèle mathématique (EWMA - Exponentially Weighted Moving Average) :
- * - CTL(t) = CTL(t-1) + (TSS(t) - CTL(t-1)) / τ_ctl
- * - ATL(t) = ATL(t-1) + (TSS(t) - ATL(t-1)) / τ_atl
- * - TSB(t) = CTL(t) - ATL(t)
- *
- * Où :
- * - CTL = Chronic Training Load ("forme", fitness de base)
- * - ATL = Acute Training Load ("fatigue" récente)
- * - TSB = Training Stress Balance ("fraîcheur", TSB = CTL - ATL)
- * - TSS = Training Stress Score (charge quotidienne)
- * - τ = constante de temps (42j pour CTL, 7j pour ATL)
- *
- * Interprétation TSB :
- * - TSB > +15 : Frais, affûté (bon pour course)
- * - TSB -10 à +5 : Zone optimale progression
- * - TSB -10 à -30 : Fatigue accumulée (surveiller récupération)
- * - TSB < -30 : Surcharge importante (risque surentraînement)
- *
- * LIMITATIONS :
- * - Suppose réponse linéaire (réalité plus complexe)
- * - Constantes τ non individualisées (peuvent varier selon athlète)
- * - Ne remplace pas l'écoute du ressenti, HRV, sommeil
- *
- * Sources :
- * - Banister et al. (1975, 1991) — Modèle impulse-response original
- * - Coggan, A. (2003) — Popularisation via TrainingPeaks
- * - Busso, T. (2003) "Variable dose-response relationship between exercise training
- *   and performance" — Med Sci Sports Exerc
- */
-export function computePmcSeries(
-  activities: ActivityForAnalytics[],
-  days = 180,
-  refDate?: Date,
-): PmcPoint[] {
-  const end = startOfDay(refDate ?? new Date());
-  const start = subDays(end, days);
-
-  // Initialiser TSS quotidien à 0 pour chaque jour de la période
-  const dailyTss = new Map<string, number>();
-  for (const day of eachDayOfInterval({ start, end })) {
-    dailyTss.set(format(day, 'yyyy-MM-dd'), 0);
-  }
-
-  // Agréger charge quotidienne (somme des TSS des activités du jour)
-  for (const activity of activities) {
-    const key = format(startOfDay(activity.date), 'yyyy-MM-dd');
-    if (!dailyTss.has(key)) continue;
-    dailyTss.set(key, (dailyTss.get(key) ?? 0) + estimateActivityLoad(activity));
-  }
-
-  // Calcul itératif du modèle EWMA
-  let ctl = 0; // Chronic Training Load (forme)
-  let atl = 0; // Acute Training Load (fatigue)
-  const series: PmcPoint[] = [];
-
-  for (const [date, tss] of [...dailyTss.entries()].sort()) {
-    // Mise à jour CTL : moyenne pondérée sur 42 jours
-    ctl += (tss - ctl) / PMC_MODEL.CTL_TAU;
-
-    // Mise à jour ATL : moyenne pondérée sur 7 jours
-    atl += (tss - atl) / PMC_MODEL.ATL_TAU;
-
-    series.push({
-      date,
-      label: format(new Date(date), 'd MMM', { locale: fr }),
-      tss,
-      ctl: Math.round(ctl),
-      atl: Math.round(atl),
-      tsb: Math.round(ctl - atl), // Training Stress Balance = forme - fatigue
-    });
-  }
-
-  return series;
-}
+export { estimateActivityLoad };
+export type { ActivityForAnalytics, PmcPoint };
 
 export interface WeeklyVolumePoint {
   week: string;
@@ -306,7 +142,6 @@ export interface AnalyticsViewModel {
 }
 
 type AnalyticsAggregates = {
-  dailyLoadByDay: Map<string, number>;
   weeklyVolumeByWeek: Map<string, WeeklyVolumePoint>;
   sportTotals: Record<ActivityType, { hours: number; count: number }>;
   weeklyHours: number;
@@ -329,39 +164,29 @@ function emptySportTotals(): Record<ActivityType, { hours: number; count: number
 function aggregateAnalytics(
   activities: ActivityForAnalytics[],
   options?: {
-    pmcDays?: number;
     weeklyVolumeWeeks?: number;
     distributionDays?: number;
     refDate?: Date;
   },
 ): AnalyticsAggregates {
   const refDate = startOfDay(options?.refDate ?? new Date());
-  const pmcDays = options?.pmcDays ?? 180;
   const weeklyVolumeWeeks = options?.weeklyVolumeWeeks ?? 16;
   const distributionDays = options?.distributionDays ?? 90;
 
-  const pmcStart = subDays(refDate, pmcDays);
   const weeklyVolumeStart = startOfWeek(subDays(refDate, weeklyVolumeWeeks * 7), {
     weekStartsOn: 1,
   });
   const distributionSince = subDays(refDate, distributionDays);
   const weekAgo = subDays(refDate, 7);
 
-  const dailyLoadByDay = new Map<string, number>();
   const weeklyVolumeByWeek = new Map<string, WeeklyVolumePoint>();
   const sportTotals = emptySportTotals();
   let weeklyHours = 0;
   let weeklyLoad = 0;
 
   for (const activity of activities) {
-    const activityDay = startOfDay(activity.date);
     const hours = (activity.duration ?? 0) / 3600;
     const load = estimateActivityLoad(activity);
-
-    if (activityDay >= pmcStart && activityDay <= refDate) {
-      const dayKey = format(activityDay, 'yyyy-MM-dd');
-      dailyLoadByDay.set(dayKey, (dailyLoadByDay.get(dayKey) ?? 0) + load);
-    }
 
     if (activity.date >= weeklyVolumeStart) {
       const weekStart = startOfWeek(activity.date, { weekStartsOn: 1 });
@@ -398,43 +223,12 @@ function aggregateAnalytics(
   }
 
   return {
-    dailyLoadByDay,
     weeklyVolumeByWeek,
     sportTotals,
     weeklyHours,
     weeklyLoad,
     totalActivities: activities.length,
   };
-}
-
-function computePmcSeriesFromDailyLoad(
-  dailyLoadByDay: Map<string, number>,
-  days = 180,
-  refDate?: Date,
-): PmcPoint[] {
-  const end = startOfDay(refDate ?? new Date());
-  const start = subDays(end, days);
-
-  let ctl = 0;
-  let atl = 0;
-  const series: PmcPoint[] = [];
-
-  for (const day of eachDayOfInterval({ start, end })) {
-    const date = format(day, 'yyyy-MM-dd');
-    const tss = dailyLoadByDay.get(date) ?? 0;
-    ctl += (tss - ctl) / PMC_MODEL.CTL_TAU;
-    atl += (tss - atl) / PMC_MODEL.ATL_TAU;
-    series.push({
-      date,
-      label: format(day, 'd MMM', { locale: fr }),
-      tss,
-      ctl: Math.round(ctl),
-      atl: Math.round(atl),
-      tsb: Math.round(ctl - atl),
-    });
-  }
-
-  return series;
 }
 
 function computeWeeklyVolumeFromBuckets(
@@ -529,8 +323,10 @@ export function buildAnalyticsViewModel(
   },
 ): AnalyticsViewModel {
   const aggregates = aggregateAnalytics(activities, options);
-  const pmc = computePmcSeriesFromDailyLoad(
-    aggregates.dailyLoadByDay,
+  // Computed across the whole history, then trimmed for display: `pmcDays` is a
+  // chart width, not a computation boundary. See ADR-011.
+  const pmc = slicePmcWindow(
+    toPmcPoints(computeAthletePmc(activities, { refDate: options?.refDate })),
     options?.pmcDays ?? 180,
     options?.refDate,
   );

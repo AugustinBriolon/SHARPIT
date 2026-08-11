@@ -328,6 +328,8 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
       orderBy: { date: 'desc' },
     }),
     // Single history query for training load + PMC (was two near-identical scans).
+    // Unbounded on purpose: the PMC recurrence needs the whole history to converge,
+    // and buildTrainingLoadFacts filters to its own 42-day window. See ADR-011.
     prisma.activity.findMany({
       where: { date: { lte: activity.date } },
       select: {
@@ -338,7 +340,6 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
         bikeMetrics: { select: { tss: true } },
       },
       orderBy: { date: 'desc' },
-      take: 120,
     }),
     getAthleteProfile(),
     getActivePhysicalNotes(),

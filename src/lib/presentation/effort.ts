@@ -1,7 +1,8 @@
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
-import { computePmcSeries, type ActivityForAnalytics } from '@/lib/analytics';
 import { computeTrainingLoad, enrichFatigueLoadDimension } from '@/lib/training/training-load';
-import { getActivitiesList } from '@/lib/queries';
+import { getActivitiesForPmc, getActivitiesList } from '@/lib/queries';
+import { slicePmcWindow } from '@/lib/training/pmc';
+import { computeAthletePmc, toPmcPoints } from '@/lib/training/pmc-history';
 import { resolve } from '@/lib/french';
 import {
   mapConfidenceToTier,
@@ -145,7 +146,10 @@ export async function buildEffortViewModel(trainingDayId: string): Promise<Effor
   if (!fatigue) return emptyEffortViewModel();
 
   const refDate = new Date(`${trainingDayId}T12:00:00.000Z`);
-  const activities = await getActivitiesList({ sinceDays: 60 });
+  const [activities, pmcActivities] = await Promise.all([
+    getActivitiesList({ sinceDays: 60 }),
+    getActivitiesForPmc(),
+  ]);
 
   const activityInputs = activities.map((a) => ({ load: a.load, date: new Date(a.date) }));
   const trainingLoad = computeTrainingLoad(activityInputs, refDate);
@@ -157,8 +161,11 @@ export async function buildEffortViewModel(trainingDayId: string): Promise<Effor
       ? mapFatigueTypeToLabel(fatigue.fatigueType as FatigueType)
       : null;
 
-  const pmcSeries = computePmcSeries(
-    activities.map((a) => ({ ...a, date: new Date(a.date) })) as ActivityForAnalytics[],
+  // 28 days is the chart width. The recurrence still runs over the whole history:
+  // seeding it 28 days back reached only ~49% of steady-state CTL, roughly halving
+  // the fitness this dashboard reported. See ADR-011.
+  const pmcSeries = slicePmcWindow(
+    toPmcPoints(computeAthletePmc(pmcActivities, { refDate })),
     28,
     refDate,
   );

@@ -9,6 +9,7 @@ import {
   activityInclude,
   activityListSelect,
   activityCoachSelect,
+  activityPmcSelect,
 } from '@/lib/queries/activity-include';
 import { linkPlannedSessionActivity } from '@/lib/queries/planned-sessions';
 import { ActivityType, Prisma } from '@prisma/client';
@@ -80,6 +81,20 @@ export async function getActivitiesForCoach(params?: { limit?: number; sinceDays
     select: activityCoachSelect,
     orderBy: { date: 'desc' },
     take: params?.limit,
+  });
+}
+
+/**
+ * Every activity ever recorded, narrowest possible shape, for the PMC.
+ *
+ * No `sinceDays`, no `limit`, on purpose: the CTL/ATL recurrence converges over
+ * ~3x its 42-day time constant, so truncating the input silently understates
+ * chronic load. See ADR-011.
+ */
+export async function getActivitiesForPmc() {
+  return prisma.activity.findMany({
+    select: activityPmcSelect,
+    orderBy: { date: 'asc' },
   });
 }
 

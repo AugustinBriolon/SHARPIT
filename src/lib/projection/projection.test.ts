@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { projectPmcForward, stepPmc } from '@/lib/projection/pmc-forward';
+import { projectPmcForward } from '@/lib/projection/pmc-forward';
+import { pmcTsb, stepPmc } from '@/lib/training/pmc';
 import {
   projectAdaptationIndex,
   projectFatigueIndex,
@@ -20,11 +21,11 @@ function dim(score: number | null, available = score != null): DimensionResult {
 }
 
 describe('pmc-forward', () => {
-  it('steps PMC with same EWMA constants as analytics', () => {
-    const next = stepPmc(50, 40, 80);
+  it('shares the recurrence with the historical series', () => {
+    const next = stepPmc({ ctl: 50, atl: 40 }, 80);
     expect(next.ctl).toBeGreaterThan(50);
     expect(next.atl).toBeGreaterThan(40);
-    expect(next.tsb).toBeCloseTo(next.ctl - next.atl, 1);
+    expect(pmcTsb(next)).toBeCloseTo(next.ctl - next.atl, 10);
   });
 
   it('projects forward over multiple days', () => {
@@ -32,6 +33,19 @@ describe('pmc-forward', () => {
     expect(series).toHaveLength(3);
     expect(series[1].atl).toBeGreaterThan(series[0].atl);
     expect(series[2].atl).toBeLessThan(series[1].atl);
+  });
+
+  it('does not accumulate rounding error across the horizon', () => {
+    // The emitted values are rounded to one decimal, but the state carried between
+    // days is not: a 90-day projection must not drift from the raw recurrence.
+    const horizon = Array.from({ length: 90 }, () => 60);
+    const projected = projectPmcForward(50, 40, horizon).at(-1)!;
+
+    let state = { ctl: 50, atl: 40 };
+    for (const tss of horizon) state = stepPmc(state, tss);
+
+    expect(projected.ctl).toBeCloseTo(state.ctl, 1);
+    expect(projected.atl).toBeCloseTo(state.atl, 1);
   });
 });
 

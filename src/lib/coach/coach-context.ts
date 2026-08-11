@@ -1,14 +1,16 @@
 import { differenceInCalendarDays, format, startOfDay, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { computePmcSeries, type ActivityForAnalytics } from '@/lib/analytics';
 import {
   getActivePhysicalNotes,
   getActivitiesForCoach,
+  getActivitiesForPmc,
   getAthleteProfile,
   getGoals,
   getHealthEntries,
   getPlannedSessionsForCoach,
 } from '@/lib/queries';
+import { computeAthletePmc } from '@/lib/training/pmc-history';
+import { pmcTsb } from '@/lib/training/pmc';
 import { categoryLabels, sideLabels, statusLabels } from '@/lib/physical';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
 import { prisma } from '@/lib/prisma';
@@ -142,6 +144,7 @@ async function buildCoachContextUncached(
     travelContexts,
     homeWeather,
     scenarioComparison,
+    pmcActivities,
   ] = await Promise.all([
     getActivitiesForCoach({ limit: 120, sinceDays: 90 }),
     getHealthEntries(30),
@@ -154,20 +157,15 @@ async function buildCoachContextUncached(
     listTravelContexts(prisma),
     loadHomeWeatherHint(trainingDayId),
     includeScenario ? loadScenarioComparisonForCoach({ horizonDays: 7 }) : Promise.resolve(null),
+    getActivitiesForPmc(),
   ]);
 
-  // ---- Fitness (PMC : CTL / ATL / TSB) ----
-  const pmcInput: ActivityForAnalytics[] = activities.map((a) => ({
-    date: a.date,
-    type: a.type,
-    duration: a.duration,
-    load: a.load,
-    bikeMetrics: a.bikeMetrics ? { tss: a.bikeMetrics.tss } : null,
-  }));
-  const pmc = computePmcSeries(pmcInput, 90);
-  const latest = pmc[pmc.length - 1];
-  const fitness = latest
-    ? { ctl: latest.ctl, atl: latest.atl, tsb: latest.tsb }
+  // ---- Fitness (PMC: CTL / ATL / TSB) ----
+  // Whole history, not the 90-day prompt window: a 90-day window reaches only 88%
+  // of steady-state CTL, so the coach used to reason on an understated fitness.
+  const anchor = computeAthletePmc(pmcActivities, { refDate: today }).at(-1);
+  const fitness = anchor
+    ? { ctl: Math.round(anchor.ctl), atl: Math.round(anchor.atl), tsb: Math.round(pmcTsb(anchor)) }
     : { ctl: 0, atl: 0, tsb: 0 };
 
   const load = computeTrainingLoad(

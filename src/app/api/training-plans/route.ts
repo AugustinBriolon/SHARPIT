@@ -1,13 +1,13 @@
 import { startOfDay } from 'date-fns';
 import { NextResponse } from 'next/server';
-import { computePmcSeries } from '@/lib/analytics';
+import { computeAthletePmc } from '@/lib/training/pmc-history';
 import { generateMacroPlan } from '@/lib/training/periodization';
 import { prisma } from '@/lib/prisma';
 import {
   archiveActiveTrainingPlans,
   createTrainingPlan,
   getActiveTrainingPlan,
-  getActivitiesList,
+  getActivitiesForPmc,
   getGoalById,
 } from '@/lib/queries';
 import { listTravelContexts } from '@/lib/travel-context/service';
@@ -49,9 +49,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'La date de course est passée' }, { status: 400 });
     }
 
-    const activities = await getActivitiesList({ limit: 200 });
-    const pmc = computePmcSeries(activities);
-    const baselineCtl = pmc[pmc.length - 1]?.ctl ?? 40;
+    // This scales the entire macro-plan: periodization derives the weekly load as
+    // baselineCtl * 7. A truncated history here understates every week of the plan.
+    const activities = await getActivitiesForPmc();
+    const anchor = computeAthletePmc(activities).at(-1);
+    const baselineCtl = anchor ? Math.round(anchor.ctl) : 40;
 
     const draft = generateMacroPlan({ raceDate, baselineCtl });
     const travels = await listTravelContexts(prisma);

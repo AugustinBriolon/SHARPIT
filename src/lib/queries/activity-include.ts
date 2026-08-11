@@ -73,6 +73,20 @@ export const activityCoachSelect = {
   },
 } satisfies Prisma.ActivitySelect;
 
+/**
+ * Minimum for the PMC recurrence: exactly the `ActivityForAnalytics` shape.
+ *
+ * Deliberately the narrowest select in this file, because the PMC is the one read
+ * that spans the athlete's entire history rather than a recent window.
+ */
+export const activityPmcSelect = {
+  date: true,
+  type: true,
+  duration: true,
+  load: true,
+  bikeMetrics: { select: { tss: true } },
+} satisfies Prisma.ActivitySelect;
+
 /** Coach planned sessions — no linked activity include (ids + analysis only). */
 export const plannedSessionCoachSelect = {
   id: true,
