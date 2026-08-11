@@ -12,7 +12,9 @@ const markdownComponents: Components = {
     </div>
   ),
   th: ({ children }) => (
-    <th className="border-border/60 border px-1.5 py-1.5 text-left sm:px-2 sm:py-2">{children}</th>
+    <th className="border-border/60 break-words border px-1.5 py-1.5 text-left sm:px-2 sm:py-2">
+      {children}
+    </th>
   ),
   td: ({ children }) => (
     <td className="border-border/60 break-words border px-1.5 py-1.5 sm:px-2 sm:py-2">{children}</td>
