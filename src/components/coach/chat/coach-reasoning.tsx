@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Brain, ChevronRight } from 'lucide-react';
+import { MotionExpand } from '@/components/motion';
 import { reasoningSummaryLabel, shouldAutoExpandReasoning } from '@/lib/coach/coach-reasoning';
 import { cn } from '@/lib/utils';
 
@@ -52,18 +53,21 @@ export function CoachReasoning({
           {reasoningSummaryLabel({ streaming, hasAnswerText })}
         </span>
         <ChevronRight
-          className={cn('size-3.5 shrink-0 transition-transform', open && 'rotate-90')}
+          className={cn(
+            'size-3.5 shrink-0 transition-transform duration-150 ease-out',
+            open && 'rotate-90',
+          )}
           aria-hidden
         />
       </button>
-      {open ? (
+      <MotionExpand open={open}>
         <div
           ref={bodyRef}
           className="text-muted-foreground max-h-56 overflow-y-auto px-2.5 pb-2.5 text-xs leading-relaxed whitespace-pre-wrap"
         >
           {text}
         </div>
-      ) : null}
+      </MotionExpand>
     </div>
   );
 }

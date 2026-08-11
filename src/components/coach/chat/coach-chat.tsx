@@ -20,6 +20,7 @@ import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { useSaveConversation, useCreateConversation } from '@/hooks/use-coach';
 import { usePlannedSessions } from '@/hooks/use-data';
 import { lastStepApprovalResponseFingerprint } from '@/lib/coach/coach-chat-auto-send';
+import { coachApprovalReason } from '@/lib/coach/coach-approval-reason';
 import { buildKnownSessions, COACH_CHAT_SUGGESTIONS } from '@/lib/coach/coach-chat-known-sessions';
 import { coachMessagesFingerprint, hasPersistableAssistant } from '@/lib/coach/coach-chat-persist';
 import {
@@ -270,28 +271,53 @@ export function CoachChat({
   // Seul le streaming bloque l'input — les propositions en attente ne doivent jamais verrouiller la conversation.
   const inputLocked = isBusy || guardDisabled;
 
-  // Follow the streaming tail only while the athlete has not scrolled away.
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    if (!initialScrollDone.current) {
-      el.scrollTo({ top: el.scrollHeight, behavior: 'instant' });
-      initialScrollDone.current = true;
-      return;
-    }
-    if (!stickToBottom.current) {
-      setShowJumpToLatest(messages.length > 0);
-      return;
-    }
-    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-  }, [messages]);
-
-  // Re-anchor on conversation switch: a new thread always opens at its tail.
+  // Re-anchor on conversation switch before any scroll follow (order matters).
   useEffect(() => {
     initialScrollDone.current = false;
     stickToBottom.current = true;
     setShowJumpToLatest(false);
   }, [conversationId]);
+
+  // Follow the streaming tail only while the athlete has not scrolled away.
+  // Initial jump waits a paint so a freshly mounted conversation lands at the true bottom.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    if (!initialScrollDone.current) {
+      const jump = () => {
+        el.scrollTo({ top: el.scrollHeight, behavior: 'instant' });
+      };
+      jump();
+      let raf2 = 0;
+      const raf1 = requestAnimationFrame(() => {
+        jump();
+        // One more frame — sticky header / message measure can still settle.
+        raf2 = requestAnimationFrame(() => {
+          jump();
+          initialScrollDone.current = true;
+        });
+      });
+      return () => {
+        cancelAnimationFrame(raf1);
+        cancelAnimationFrame(raf2);
+      };
+    }
+
+    if (!stickToBottom.current) {
+      setShowJumpToLatest(messages.length > 0);
+      return;
+    }
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  }, [messages, conversationId]);
+
+  // Pending approval cards grow the transcript — stay pinned if still following.
+  useEffect(() => {
+    if (!initialScrollDone.current || !stickToBottom.current) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  }, [hasPendingApprovals]);
 
   useEffect(() => {
     const newlyCompletedKeys: string[] = [];
@@ -476,34 +502,27 @@ export function CoachChat({
           )}
 
           {pendingApprovals.length > 0 && (
-            <div
-              aria-label="Propositions à valider"
-              className="border-primary/30 bg-primary/4 rounded-analysis space-y-2 border p-3"
-              role="region"
-            >
-              <div className="space-y-1">
-                <p className="text-primary text-xs font-medium tracking-wide uppercase">
-                  {pendingApprovals.length === 1
-                    ? '1 proposition à valider'
-                    : `${pendingApprovals.length} propositions à valider`}
-                </p>
-                <p className="text-muted-foreground text-xs">
-                  Valide ou refuse la proposition — ou envoie un nouveau message pour l'ignorer et
-                  poursuivre la conversation.
-                </p>
-              </div>
+            <div aria-label="Propositions à valider" className="space-y-1.5" role="region">
+              <p className="text-muted-foreground px-0.5 text-xs">
+                {pendingApprovals.length === 1
+                  ? 'Proposition en attente — valide ou refuse pour que le coach poursuive.'
+                  : `${pendingApprovals.length} propositions en attente — réponds pour débloquer la suite.`}
+              </p>
               {pendingApprovals.map((part, i) => (
                 <ToolActivity
                   key={part.approval?.id ?? `${part.type}:${i}`}
-                  disabled={isBusy || guardDisabled}
+                  disabled={guardDisabled}
                   knownSessions={knownSessions}
                   part={part}
                   streamIdle={streamIdle}
                   onApproval={(id, approved) => {
-                    // Athlete action unlocks auto-continue for the next approval batch.
                     blockAutoSend.current = false;
                     clearError();
-                    addToolApprovalResponse({ id, approved });
+                    addToolApprovalResponse({
+                      id,
+                      approved,
+                      reason: coachApprovalReason(approved),
+                    });
                     if (approved) {
                       invalidateAfterCoachToolApproval(queryClient, part.type);
                     }

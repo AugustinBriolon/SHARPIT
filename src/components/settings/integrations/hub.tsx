@@ -3,10 +3,19 @@
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, ChevronRight, CircleDashed, RefreshCw, Unplug } from 'lucide-react';
+import {
+  CheckCircle2,
+  ChevronRight,
+  CircleDashed,
+  Loader2,
+  RefreshCw,
+  Unplug,
+  XCircle,
+} from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import { FadePresence } from '@/components/motion';
 import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import { IntegrationLogo } from '@/components/settings/integrations/logos';
@@ -43,6 +52,8 @@ const IntegrationModalContent = dynamic(
     ),
   { ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },
 );
+
+type RowSyncState = 'running' | 'done' | 'error';
 
 function syncLabel(lastSyncAt: string | null): string {
   if (!lastSyncAt) return 'Jamais synchronisé';
@@ -81,12 +92,38 @@ function StatusBadge({ integration }: { integration: IntegrationDefinition }) {
   );
 }
 
+function RowSyncBadge({ state }: { state: RowSyncState }) {
+  if (state === 'running') {
+    return (
+      <span className="text-muted-foreground text-label inline-flex items-center gap-1 rounded-full px-2 py-0.5">
+        <Loader2 className="size-3 animate-spin" aria-hidden />
+        Sync…
+      </span>
+    );
+  }
+  if (state === 'done') {
+    return (
+      <span className="bg-primary/10 text-primary text-label inline-flex items-center gap-1 rounded-full px-2 py-0.5">
+        <CheckCircle2 className="size-3" aria-hidden />À jour
+      </span>
+    );
+  }
+  return (
+    <span className="bg-destructive/10 text-destructive text-label inline-flex items-center gap-1 rounded-full px-2 py-0.5">
+      <XCircle className="size-3" aria-hidden />
+      Échec
+    </span>
+  );
+}
+
 function IntegrationCard({
   integration,
   onOpen,
+  syncState,
 }: {
   integration: IntegrationDefinition;
   onOpen: () => void;
+  syncState?: RowSyncState;
 }) {
   return (
     <button
@@ -109,7 +146,16 @@ function IntegrationCard({
             <p className="text-muted-foreground text-xs">{integration.tagline}</p>
           </div>
         </div>
-        <StatusBadge integration={integration} />
+        <div className="flex flex-col items-end gap-1">
+          <StatusBadge integration={integration} />
+          <FadePresence
+            className="flex"
+            presenceKey={syncState ?? 'idle'}
+            show={Boolean(syncState)}
+          >
+            {syncState ? <RowSyncBadge state={syncState} /> : null}
+          </FadePresence>
+        </div>
       </div>
 
       <div className="mt-4 flex items-end justify-between gap-2">
@@ -159,6 +205,7 @@ export function IntegrationsHub({ payload }: { payload: IntegrationsPayload }) {
   const integrations = useMemo(() => buildIntegrations(payload), [payload]);
   const [openId, setOpenId] = useState<IntegrationId | null>(null);
   const [syncingAll, setSyncingAll] = useState(false);
+  const [rowSync, setRowSync] = useState<Partial<Record<IntegrationId, RowSyncState>>>({});
   const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
 
   // An integration modal left open would reopen itself on the way back.
@@ -177,6 +224,7 @@ export function IntegrationsHub({ payload }: { payload: IntegrationsPayload }) {
     }
 
     setSyncingAll(true);
+    setRowSync({});
     const loadingToast = toast.loading('Synchronisation en cours', {
       description: `${connected.length} source${connected.length > 1 ? 's' : ''} à synchroniser.`,
     });
@@ -185,13 +233,16 @@ export function IntegrationsHub({ payload }: { payload: IntegrationsPayload }) {
 
     try {
       for (const integration of connected) {
+        setRowSync((prev) => ({ ...prev, [integration.id]: 'running' }));
         try {
           const summary = await syncIntegration(integration.id);
           results.push(`${integration.name} : ${summary}`);
+          setRowSync((prev) => ({ ...prev, [integration.id]: 'done' }));
         } catch (err) {
           errors.push(
             `${integration.name} : ${err instanceof Error ? err.message : 'erreur inconnue'}`,
           );
+          setRowSync((prev) => ({ ...prev, [integration.id]: 'error' }));
         }
       }
 
@@ -211,6 +262,7 @@ export function IntegrationsHub({ payload }: { payload: IntegrationsPayload }) {
     } finally {
       toast.close(loadingToast);
       setSyncingAll(false);
+      window.setTimeout(() => setRowSync({}), 2200);
     }
   }
 
@@ -241,6 +293,7 @@ export function IntegrationsHub({ payload }: { payload: IntegrationsPayload }) {
           <IntegrationCard
             key={integration.id}
             integration={integration}
+            syncState={rowSync[integration.id]}
             onOpen={() => setOpenId(integration.id)}
           />
         ))}

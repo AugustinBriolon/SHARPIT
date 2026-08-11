@@ -1,5 +1,6 @@
 'use client';
 
+import { AnimatePresence, motion } from 'motion/react';
 import { X } from 'lucide-react';
 import { ToolActivity } from '@/components/coach/chat/tool-activity';
 import {
@@ -8,7 +9,17 @@ import {
   type ToolDisplayEntry,
 } from '@/lib/coach/coach-tool-display';
 import type { ToolPartLite } from '@/lib/coach/coach-tool-parts';
+import { useSafeMotion, useShouldAnimate } from '@/lib/motion/hooks';
+import { fadeTransition } from '@/lib/motion/variants';
 import { cn } from '@/lib/utils';
+
+function entryKey(entry: ToolDisplayEntry, index: number): string {
+  if (entry.kind === 'single') {
+    const { part } = entry;
+    return `${part.type}-${part.state ?? 'pending'}-${index}`;
+  }
+  return `condensed-${entry.titles.join('|')}-${index}`;
+}
 
 function CondensedFailures({
   entry,
@@ -48,16 +59,45 @@ export function ToolActivityList({
   streamIdle?: boolean;
 }) {
   const entries = buildToolDisplayEntries(parts);
+  const animate = useShouldAnimate({ essential: true });
+  const safe = useSafeMotion();
+
+  if (entries.length === 0) return null;
+
+  if (!animate) {
+    return (
+      <div className="space-y-1.5">
+        {entries.map((entry, i) =>
+          entry.kind === 'single' ? (
+            <ToolActivity key={entryKey(entry, i)} part={entry.part} streamIdle={streamIdle} />
+          ) : (
+            <CondensedFailures key={entryKey(entry, i)} entry={entry} />
+          ),
+        )}
+      </div>
+    );
+  }
 
   return (
-    <>
-      {entries.map((entry, i) =>
-        entry.kind === 'single' ? (
-          <ToolActivity key={i} part={entry.part} streamIdle={streamIdle} />
-        ) : (
-          <CondensedFailures key={i} entry={entry} />
-        ),
-      )}
-    </>
+    <div className="space-y-1.5">
+      <AnimatePresence initial={false} mode="popLayout">
+        {entries.map((entry, i) => (
+          <motion.div
+            key={entryKey(entry, i)}
+            animate={safe.animate}
+            exit={safe.exit}
+            initial={safe.initial}
+            transition={fadeTransition}
+            layout
+          >
+            {entry.kind === 'single' ? (
+              <ToolActivity part={entry.part} streamIdle={streamIdle} />
+            ) : (
+              <CondensedFailures entry={entry} />
+            )}
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
   );
 }

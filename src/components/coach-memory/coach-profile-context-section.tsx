@@ -3,6 +3,7 @@
 import { Check, ChevronDown, Info, Loader2, Pencil } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { CoachContextGuide } from '@/components/coach-memory/coach-context-guide';
+import { MotionExpand } from '@/components/motion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useSaveCoachContext } from '@/hooks/use-coach';
@@ -59,15 +60,17 @@ function ContextReadClamp({ text, empty }: { text: string; empty: boolean }) {
       <div className="relative">
         <div
           className={cn(
-            // No inner border: the section is already a hairline card.
             'text-sm leading-relaxed',
+            // DESIGN_LANGUAGE §9.3 — max-height + opacity via CSS, not motion height.
+            'transition-[max-height,opacity] duration-[250ms] ease-in-out motion-reduce:transition-none',
             empty ? 'text-muted-foreground italic' : 'text-foreground',
-            clamped &&
-              cn(
-                READ_MAX_COLLAPSED_CLASS,
-                'overflow-hidden',
-                '[mask-image:linear-gradient(to_bottom,black_0%,black_45%,transparent_100%)]',
-              ),
+            clamped
+              ? cn(
+                  READ_MAX_COLLAPSED_CLASS,
+                  'overflow-hidden',
+                  '[mask-image:linear-gradient(to_bottom,black_0%,black_45%,transparent_100%)]',
+                )
+              : 'max-h-[min(80vh,48rem)]',
           )}
         >
           <div ref={contentRef}>
@@ -92,7 +95,10 @@ function ContextReadClamp({ text, empty }: { text: string; empty: boolean }) {
         >
           {expanded ? 'Réduire' : 'Voir plus'}
           <ChevronDown
-            className={cn('size-3.5 transition-transform', expanded && 'rotate-180')}
+            className={cn(
+              'size-3.5 transition-transform duration-150 ease-out motion-reduce:transition-none',
+              expanded && 'rotate-180',
+            )}
             aria-hidden
           />
         </button>
@@ -255,11 +261,11 @@ export function CoachProfileContextSection({
         </div>
       </div>
 
-      {guideOpen ? (
+      <MotionExpand id={GUIDE_ID} open={guideOpen}>
         <div className="border-analysis-border rounded-analysis-lg border border-dashed px-5 py-4">
-          <CoachContextGuide id={GUIDE_ID} />
+          <CoachContextGuide />
         </div>
-      ) : null}
+      </MotionExpand>
 
       <div className="chip-surface rounded-analysis-lg px-5 py-5">{renderBody()}</div>
 

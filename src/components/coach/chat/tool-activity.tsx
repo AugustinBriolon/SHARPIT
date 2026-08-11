@@ -281,7 +281,7 @@ export function ToolActivity({
   const { state } = part;
   const isList = part.type === 'tool-listPlannedSessions';
 
-  // 1) Demande de validation : on affiche la proposition + boutons
+  // 1) Demande de validation — carte compacte (HITL), pas un formulaire lourd
   if (state === 'approval-requested' && part.approval && !part.approval.isAutomatic) {
     const { headline, lines } = describeInput(
       part.type,
@@ -290,35 +290,41 @@ export function ToolActivity({
     );
     const isDelete = part.type === 'tool-deletePlannedSession';
     return (
-      <div className="border-primary/30 bg-primary/5 rounded-lg border p-3">
-        <div className="text-foreground flex items-center gap-2 text-xs font-medium">
-          <Icon className="text-primary size-3.5 shrink-0" aria-hidden />
-          {meta.proposal}
+      <div className="border-analysis-border/70 bg-background/50 rounded-lg border px-2.5 py-2">
+        <div className="flex items-start gap-2">
+          <Icon className="text-muted-foreground mt-0.5 size-3.5 shrink-0" aria-hidden />
+          <div className="min-w-0 flex-1">
+            <p className="text-muted-foreground text-[0.65rem] font-medium tracking-wide uppercase">
+              {meta.proposal}
+            </p>
+            <p className="text-foreground mt-0.5 text-sm leading-snug font-medium">{headline}</p>
+            {lines.length > 0 ? (
+              <p className="text-muted-foreground mt-0.5 truncate text-xs">{lines.join(' · ')}</p>
+            ) : null}
+          </div>
         </div>
-        <p className="text-foreground mt-1.5 text-sm font-medium">{headline}</p>
-        {lines.length > 0 && (
-          <ul className="text-muted-foreground mt-1 space-y-0.5 text-xs">
-            {lines.map((l, i) => (
-              <li key={i}>{l}</li>
-            ))}
-          </ul>
-        )}
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-2 flex flex-wrap items-center justify-end gap-1.5">
           <Button
+            className="h-8 gap-1 px-2.5 text-xs"
             disabled={disabled}
+            size="sm"
+            type="button"
+            variant="ghost"
+            onClick={() => onApproval?.(part.approval!.id, false)}
+          >
+            <X className="size-3.5" aria-hidden />
+            Refuser
+          </Button>
+          <Button
+            className="h-8 gap-1 px-2.5 text-xs"
+            disabled={disabled}
+            size="sm"
+            type="button"
             variant={isDelete ? 'destructive' : 'default'}
             onClick={() => onApproval?.(part.approval!.id, true)}
           >
             <Check className="size-3.5" aria-hidden />
             {isDelete ? 'Supprimer' : 'Valider'}
-          </Button>
-          <Button
-            disabled={disabled}
-            variant="outline"
-            onClick={() => onApproval?.(part.approval!.id, false)}
-          >
-            <X className="size-3.5" aria-hidden />
-            Refuser
           </Button>
         </div>
       </div>
