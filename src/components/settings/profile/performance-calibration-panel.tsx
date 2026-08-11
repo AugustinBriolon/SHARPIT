@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, Download, Loader2 } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
@@ -15,6 +15,7 @@ import { commitProfileSave, saveProfilePatch } from '@/components/settings/profi
 import type { ProfileData } from '@/components/settings/profile/profile-types';
 import { ThresholdHistoryPanel } from '@/components/settings/profile/threshold-history-panel';
 import { Vo2maxIndicators } from '@/components/settings/profile/vo2max-indicators';
+import { ThresholdSuggestionCard } from '@/components/threshold/threshold-suggestion-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -290,30 +291,14 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
         compact
       >
         {preview?.hasChanges ? (
-          <div className="analysis-panel rounded-analysis space-y-2 px-3 py-2.5">
-            <p className="text-xs font-medium">Proposition depuis tes records</p>
-            <ul className="text-muted-foreground space-y-0.5 text-xs">
-              {preview.changes.map((c) => (
-                <li key={c.field}>
-                  {c.label} : <span className="text-data">{c.from}</span> →{' '}
-                  <span className="text-data text-foreground font-medium">{c.to}</span>
-                </li>
-              ))}
-            </ul>
-            <Button
-              disabled={guardDisabled || applyEstimates.isPending}
-              type="button"
-              variant="outline"
-              onClick={handleApplyEstimates}
-            >
-              {applyEstimates.isPending ? (
-                <Loader2 className="size-3.5 animate-spin" aria-hidden />
-              ) : (
-                <Check className="size-3.5" aria-hidden />
-              )}
-              {offline ? offlineLabel : 'Appliquer'}
-            </Button>
-          </div>
+          <ThresholdSuggestionCard
+            applyLabel={offline ? offlineLabel : 'Appliquer'}
+            disabled={guardDisabled}
+            pending={applyEstimates.isPending}
+            preview={preview}
+            compact
+            onApply={handleApplyEstimates}
+          />
         ) : null}
 
         {history.length > 0 ? <ThresholdHistoryPanel history={history} /> : null}
