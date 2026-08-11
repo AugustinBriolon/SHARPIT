@@ -1,17 +1,16 @@
 import { addDays, min as minDate, max as maxDate } from 'date-fns';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
 import {
-  getActivitiesList,
   getAthleteProfile,
   getGoalById,
   getActiveTrainingPlan,
   getPlannedSessions,
 } from '@/lib/queries';
 import { getGoogleAccount, getUpcomingBusy } from '@/lib/integrations/google-sync';
+import { loadDailyTrainingStressEntries } from '@/lib/training/pmc-server';
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
 import type { GateContext, GateProposal } from './types';
 
-const LOOKBACK_DAYS = 42; // matches computeTrainingLoad's chronic window
 const WINDOW_PADDING_DAYS = 7; // for recovery-spacing / duplicate checks near the proposal window edges
 
 function hasThresholds(
@@ -60,7 +59,7 @@ export async function buildGateContext(params: {
 
   const [
     snapshot,
-    recentActivities,
+    dailyTrainingStress,
     existingSessionsRaw,
     goal,
     trainingPlan,
@@ -68,7 +67,7 @@ export async function buildGateContext(params: {
     googleAccount,
   ] = await Promise.all([
     getOrBuildAthleteSnapshot(trainingDayId),
-    getActivitiesList({ sinceDays: LOOKBACK_DAYS }),
+    loadDailyTrainingStressEntries({ refDate: now }),
     getPlannedSessions({ from: windowStart, to: windowEnd }),
     goalId ? getGoalById(goalId) : Promise.resolve(null),
     getActiveTrainingPlan(),
@@ -86,7 +85,7 @@ export async function buildGateContext(params: {
     decision: snapshot.decision,
     physicalHealth: snapshot.physicalHealth,
     fatigueTrainingCapacity: snapshot.fatigue?.trainingCapacity ?? null,
-    recentActivities: recentActivities.map((a) => ({ load: a.load, date: new Date(a.date) })),
+    dailyTrainingStress,
     existingSessions: existingSessionsRaw.map((s) => ({
       id: s.id,
       date: new Date(s.date),

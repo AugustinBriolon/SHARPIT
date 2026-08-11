@@ -5,7 +5,10 @@ vi.mock('@/lib/queries', () => ({
   getActiveTrainingPlan: vi.fn(),
   getGoals: vi.fn(),
   getPlannedSessions: vi.fn(),
-  getActivitiesList: vi.fn(),
+}));
+
+vi.mock('@/lib/training/pmc-server', () => ({
+  loadDailyTrainingStressEntries: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock('@/lib/decision-memory/repository', () => ({
@@ -38,13 +41,11 @@ describe('GET /api/presentation/weekly-coaching-brief', () => {
   });
 
   it('degraded path: nothing configured produces the empty-state shape', async () => {
-    const { getActiveTrainingPlan, getGoals, getPlannedSessions, getActivitiesList } =
-      await import('@/lib/queries');
+    const { getActiveTrainingPlan, getGoals, getPlannedSessions } = await import('@/lib/queries');
     const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
     vi.mocked(getActiveTrainingPlan).mockResolvedValue(null);
     vi.mocked(getGoals).mockResolvedValue([]);
     vi.mocked(getPlannedSessions).mockResolvedValue([]);
-    vi.mocked(getActivitiesList).mockResolvedValue([]);
     vi.mocked(getOrBuildAthleteSnapshot).mockResolvedValue({ decision: null } as never);
 
     const { GET } = await importRoute();
@@ -58,8 +59,7 @@ describe('GET /api/presentation/weekly-coaching-brief', () => {
   });
 
   it('happy path: active plan + sessions produce a populated brief', async () => {
-    const { getActiveTrainingPlan, getGoals, getPlannedSessions, getActivitiesList } =
-      await import('@/lib/queries');
+    const { getActiveTrainingPlan, getGoals, getPlannedSessions } = await import('@/lib/queries');
     const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
     vi.mocked(getActiveTrainingPlan).mockResolvedValue({
       weeks: [
@@ -83,7 +83,6 @@ describe('GET /api/presentation/weekly-coaching-brief', () => {
         load: 60,
       },
     ] as never);
-    vi.mocked(getActivitiesList).mockResolvedValue([]);
     vi.mocked(getOrBuildAthleteSnapshot).mockResolvedValue({ decision: null } as never);
 
     const { GET } = await importRoute();

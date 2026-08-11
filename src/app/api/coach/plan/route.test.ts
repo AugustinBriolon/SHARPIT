@@ -31,6 +31,11 @@ vi.mock('@/lib/queries', () => ({
   getAthleteProfile: vi.fn().mockResolvedValue(null),
 }));
 
+vi.mock('@/lib/training/pmc-server', () => ({
+  loadAthletePmcAnchor: vi.fn().mockResolvedValue(null),
+  loadDailyTrainingStressEntries: vi.fn().mockResolvedValue([]),
+}));
+
 vi.mock('@/lib/athlete-state/snapshot-service', () => ({
   getOrBuildAthleteSnapshot: vi.fn(),
 }));

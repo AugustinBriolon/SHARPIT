@@ -48,7 +48,7 @@ type WeeklyCoachingBriefInput = {
   }[];
   /** Goal titles keyed by id — used to label key sessions (option B). */
   goalTitleById?: ReadonlyMap<string, string>;
-  recentActivities: readonly { load: number | null; date: Date }[];
+  dailyTrainingStress: readonly { load: number | null; date: Date }[];
   /** Origin CoachingDecision per planned session, only present for coach-proposed sessions. */
   sessionDecisions: ReadonlyMap<string, CoachingDecisionRecord>;
   todaysSnapshotContext: DecisionSnapshotContext | null;
@@ -127,7 +127,7 @@ function buildLoad(
   weekStart: Date,
   plannedSessions: WeeklyCoachingBriefInput['plannedSessions'],
   planWeek: WeeklyCoachingBriefInput['planWeek'],
-  recentActivities: WeeklyCoachingBriefInput['recentActivities'],
+  dailyTrainingStress: WeeklyCoachingBriefInput['dailyTrainingStress'],
 ): WeeklyCoachingBriefViewModel['load'] {
   const plannedLoad = Math.round(plannedSessions.reduce((sum, s) => sum + (s.load ?? 0), 0));
 
@@ -139,11 +139,11 @@ function buildLoad(
     };
   }
 
-  if (recentActivities.length === 0) {
+  if (dailyTrainingStress.length === 0) {
     return { plannedLoad, toleratedCeiling: null, toleratedSource: null };
   }
 
-  const estimate = computeTrainingLoad([...recentActivities], weekStart).weeklyLoad;
+  const estimate = computeTrainingLoad([...dailyTrainingStress], weekStart).weeklyLoad;
   return {
     plannedLoad,
     toleratedCeiling: Math.round(estimate * ACWR_THRESHOLDS.OVERLOAD_MODERATE),
@@ -244,7 +244,7 @@ export function buildWeeklyCoachingBriefViewModel(
           horizonLabel: goal.horizon ? horizonLabels[goal.horizon] : null,
         }
       : null,
-    load: buildLoad(weekStart, plannedSessions, planWeek, input.recentActivities),
+    load: buildLoad(weekStart, plannedSessions, planWeek, input.dailyTrainingStress),
     keySessions: buildKeySessions(plannedSessions, sessionDecisions, input.goalTitleById),
     recovery: buildRecoveryDays(weekStart, plannedSessions),
     limitingFactor,

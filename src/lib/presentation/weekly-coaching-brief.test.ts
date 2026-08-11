@@ -31,7 +31,7 @@ function baseInput(
     planWeek: null,
     goal: null,
     plannedSessions: [],
-    recentActivities: [],
+    dailyTrainingStress: [],
     sessionDecisions: new Map(),
     todaysSnapshotContext: null,
     learningFeedback: [],

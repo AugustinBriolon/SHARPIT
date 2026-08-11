@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { addDays, startOfWeek, subDays } from 'date-fns';
-import {
-  getActiveTrainingPlan,
-  getGoals,
-  getPlannedSessions,
-  getActivitiesList,
-} from '@/lib/queries';
+import { getActiveTrainingPlan, getGoals, getPlannedSessions } from '@/lib/queries';
 import { findPlanWeekForDate } from '@/lib/training/periodization';
 import {
   findDecisionForPlannedSession,
@@ -17,6 +12,7 @@ import { buildDecisionSnapshotContext } from '@/lib/decision-memory/build-snapsh
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
 import { computeTrainingDayId } from '@/lib/training/training-day';
 import { buildWeeklyCoachingBriefViewModel } from '@/lib/presentation/weekly-coaching-brief';
+import { loadDailyTrainingStressEntries } from '@/lib/training/pmc-server';
 import type { CoachingDecisionRecord } from '@/lib/decision-memory/types';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
@@ -29,12 +25,12 @@ export async function GET(request: NextRequest) {
   const weekEnd = addDays(weekStart, 6);
   const now = new Date();
 
-  const [activePlan, goals, plannedSessions, recentActivities, snapshot, recentOutcomes] =
+  const [activePlan, goals, plannedSessions, dailyTrainingStress, snapshot, recentOutcomes] =
     await Promise.all([
       getActiveTrainingPlan(),
       getGoals(),
       getPlannedSessions({ from: weekStart, to: weekEnd }),
-      getActivitiesList({ sinceDays: 42 }),
+      loadDailyTrainingStressEntries({ refDate: now }),
       getOrBuildAthleteSnapshot(computeTrainingDayId(now)),
       findRecentEvaluatedOutcomes(subDays(now, LEARNING_FEEDBACK_WINDOW_DAYS)),
     ]);
@@ -82,7 +78,7 @@ export async function GET(request: NextRequest) {
       goalId: s.goalId,
     })),
     goalTitleById,
-    recentActivities: recentActivities.map((a) => ({ load: a.load, date: a.date })),
+    dailyTrainingStress,
     sessionDecisions,
     todaysSnapshotContext: snapshot.decision ? buildDecisionSnapshotContext(snapshot) : null,
     learningFeedback,

@@ -19,8 +19,15 @@ export type GateContext = {
   readonly decision: SerializedDecisionState | null;
   readonly physicalHealth: PhysicalHealthData | null;
   readonly fatigueTrainingCapacity: TrainingCapacity | null;
-  /** Load history used for computeTrainingLoad (ACWR, rolling weekly load). */
-  readonly recentActivities: readonly { load: number | null; date: Date }[];
+  /**
+   * One entry per training day, carrying the Core's Training Stress, for
+   * computeTrainingLoad (ACWR, rolling weekly load).
+   *
+   * Not raw activities: reading `Activity.load` here evaluated the Gate's load
+   * ceiling against a column that mixed Garmin's TSS with its EPOC training load,
+   * landing about 15% below what the dashboard reports. See ADR-011.
+   */
+  readonly dailyTrainingStress: readonly { load: number | null; date: Date }[];
   /** Existing PlannedSession rows covering the proposal window (± lookback for spacing rules). */
   readonly existingSessions: readonly GateExistingSession[];
   readonly goal: { horizon: GoalHorizon | null; targetDate: Date | null } | null;

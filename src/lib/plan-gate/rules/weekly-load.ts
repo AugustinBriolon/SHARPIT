@@ -45,7 +45,7 @@ export const weeklyLoadRule: PlanLevelGateRule = (
 
     const ceiling = planWeek
       ? planWeek.targetLoad * WEEKLY_TARGET_TOLERANCE
-      : computeTrainingLoad([...context.recentActivities], weekStart).weeklyLoad *
+      : computeTrainingLoad([...context.dailyTrainingStress], weekStart).weeklyLoad *
         ACWR_THRESHOLDS.OVERLOAD_MODERATE;
 
     if (ceiling > 0 && projectedLoad > ceiling) {

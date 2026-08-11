@@ -8,7 +8,7 @@ export function baseContext(overrides: Partial<GateContext> = {}): GateContext {
     decision: null,
     physicalHealth: null,
     fatigueTrainingCapacity: null,
-    recentActivities: [],
+    dailyTrainingStress: [],
     existingSessions: [],
     goal: null,
     planWeeks: [],
