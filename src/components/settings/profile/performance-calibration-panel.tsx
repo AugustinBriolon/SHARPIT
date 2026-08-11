@@ -36,6 +36,17 @@ interface GarminImportResult {
   runThresholdPaceSecPerKm: number | null;
   vo2maxRunning: number | null;
   vo2maxCycling: number | null;
+  failedSources?: string[];
+}
+
+const GARMIN_SOURCE_LABELS: Record<string, string> = {
+  'user-settings': 'réglages athlète',
+  'heart-rate-zones': 'zones de FC',
+  'power-zones': 'zones de puissance',
+};
+
+function describeFailedSources(sources: string[]): string {
+  return sources.map((source) => GARMIN_SOURCE_LABELS[source] ?? source).join(', ');
 }
 
 export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData | null }) {
@@ -98,8 +109,16 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
       if (!res.ok || !data) {
         throw new Error(data?.error ?? "Échec de l'import Garmin");
       }
+      const failed = data.failedSources ?? [];
       if (!data.imported) {
-        setMessage('Aucun seuil trouvé sur ton compte Garmin.');
+        // A failed request and an empty Garmin profile are different problems.
+        if (failed.length > 0) {
+          setError(
+            `Garmin n'a pas répondu pour : ${describeFailedSources(failed)}. Ces seuils sont inconnus, pas absents — réessaie.`,
+          );
+        } else {
+          setMessage('Aucun seuil trouvé sur ton compte Garmin.');
+        }
         return;
       }
       if (data.ftpW != null) setFtpW(String(data.ftpW));
@@ -110,7 +129,11 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
       }
       setVo2maxRunning(data.vo2maxRunning);
       setVo2maxCycling(data.vo2maxCycling);
-      setMessage('Seuils importés depuis Garmin et enregistrés.');
+      setMessage(
+        failed.length > 0
+          ? `Import partiel : Garmin n'a pas répondu pour ${describeFailedSources(failed)}.`
+          : 'Seuils importés depuis Garmin et enregistrés.',
+      );
       router.refresh();
       await invalidateAfterAthleteProfileSave(queryClient);
     } catch (err) {

@@ -98,6 +98,9 @@ async function safeProfile(client: GCClient): Promise<ProfileInfo> {
   }
 }
 
+/** Garmin endpoints the thresholds are assembled from. */
+export type GarminThresholdSource = 'user-settings' | 'heart-rate-zones' | 'power-zones';
+
 export interface GarminAthleteThresholds {
   ftpW: number | null;
   maxHr: number | null;
@@ -105,6 +108,15 @@ export interface GarminAthleteThresholds {
   runThresholdPaceSecPerKm: number | null;
   vo2maxRunning: number | null;
   vo2maxCycling: number | null;
+  /**
+   * Sources that could not be read.
+   *
+   * Without this, a null field is ambiguous: it means either "Garmin has no
+   * value for this athlete" or "the request failed". Those need different
+   * handling, and conflating them let this app run for months on null maxHr and
+   * ftpW while reporting a successful sync.
+   */
+  failedSources: GarminThresholdSource[];
 }
 
 export interface GarminHeartRateZoneRow {
@@ -142,9 +154,15 @@ export async function fetchAthleteThresholds(client: GCClient): Promise<GarminAt
     runThresholdPaceSecPerKm: null,
     vo2maxRunning: null,
     vo2maxCycling: null,
+    failedSources: [],
   };
 
   const num = (v: unknown) => (typeof v === 'number' && !Number.isNaN(v) && v > 0 ? v : null);
+
+  const fail = (source: GarminThresholdSource, error: unknown) => {
+    result.failedSources.push(source);
+    console.error(`[garmin/thresholds] ${source} unavailable`, error);
+  };
 
   try {
     const settings = (await client.get(
@@ -165,8 +183,8 @@ export async function fetchAthleteThresholds(client: GCClient): Promise<GarminAt
         result.runThresholdPaceSecPerKm = speed > 0 ? Math.round(1000 / speed) : null;
       }
     }
-  } catch {
-    // réglages indisponibles
+  } catch (error) {
+    fail('user-settings', error);
   }
 
   try {
@@ -174,8 +192,8 @@ export async function fetchAthleteThresholds(client: GCClient): Promise<GarminAt
       'https://connectapi.garmin.com/biometric-service/heartRateZones',
     )) as GarminHeartRateZoneRow[] | null;
     result.maxHr = pickMaxHeartRateFromZones(zones);
-  } catch {
-    // zones FC indisponibles
+  } catch (error) {
+    fail('heart-rate-zones', error);
   }
 
   try {
@@ -183,8 +201,8 @@ export async function fetchAthleteThresholds(client: GCClient): Promise<GarminAt
       'https://connectapi.garmin.com/biometric-service/powerZones/sport/CYCLING',
     )) as { functionalThresholdPower?: number } | null;
     result.ftpW = num(power?.functionalThresholdPower);
-  } catch {
-    // pas de zones de puissance
+  } catch (error) {
+    fail('power-zones', error);
   }
 
   return result;

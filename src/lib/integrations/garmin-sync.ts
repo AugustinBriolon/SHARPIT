@@ -96,9 +96,11 @@ export async function importGarminThresholds(): Promise<GarminThresholdsImport> 
 
   const thresholds = await fetchAthleteThresholds(client);
 
-  const data: Prisma.AthleteProfileUncheckedUpdateInput = {
-    thresholdsSyncedAt: new Date(),
-  };
+  // Only claim a sync happened when every source answered. A partial import that
+  // stamps the timestamp is how this app spent months reporting "synced" with
+  // ftpW, maxHr and lthr all null.
+  const data: Prisma.AthleteProfileUncheckedUpdateInput =
+    thresholds.failedSources.length === 0 ? { thresholdsSyncedAt: new Date() } : {};
   if (thresholds.ftpW != null) data.ftpW = thresholds.ftpW;
   if (thresholds.maxHr != null) data.maxHr = thresholds.maxHr;
   if (thresholds.lthr != null) data.lthr = thresholds.lthr;
