@@ -2,6 +2,7 @@ import { featureRepository } from '@/lib/engines/feature-engine';
 import { getActivitiesForPmc } from '@/lib/queries';
 import { toTrainingDayId, type PmcDayPoint } from '@/lib/training/pmc';
 import {
+  aggregateDailyTssPreferringCore,
   computeAthletePmc,
   type CoreSessionTss,
   type PmcPoint,
@@ -49,6 +50,30 @@ export async function loadAthletePmcAnchor(
 /** Chart-ready points across the whole history; slice for display. */
 export async function loadAthletePmcPoints(options?: LoadAthletePmcOptions): Promise<PmcPoint[]> {
   return toPmcPoints(await loadAthletePmcSeries(options));
+}
+
+/**
+ * One entry per training day, carrying the Core's Training Stress.
+ *
+ * Feeds `computeTrainingLoad` (ACWR, rolling weekly load, monotony) from the same
+ * source as the PMC. Both used to read `Activity.load` independently, which meant
+ * the ACWR gauge and the fitness chart could disagree about the same week.
+ */
+export async function loadDailyTrainingStressEntries(
+  options?: LoadAthletePmcOptions,
+): Promise<{ load: number; date: Date }[]> {
+  const refDate = options?.refDate ?? new Date();
+  const activities = await getActivitiesForPmc();
+  if (activities.length === 0) return [];
+
+  const coreSessions = await loadCoreSessionTss(activities[0].date, refDate);
+  const dailyTss = aggregateDailyTssPreferringCore(activities, coreSessions);
+
+  return [...dailyTss.entries()].map(([trainingDayId, load]) => ({
+    load,
+    // Midday avoids a timezone shift when the consumer re-derives the training day.
+    date: new Date(`${trainingDayId}T12:00:00.000Z`),
+  }));
 }
 
 async function loadCoreSessionTss(from: Date, to: Date): Promise<CoreSessionTss[]> {

@@ -8,7 +8,7 @@ import {
   getHealthEntries,
   getPlannedSessionsForCoach,
 } from '@/lib/queries';
-import { loadAthletePmcAnchor } from '@/lib/training/pmc-server';
+import { loadAthletePmcAnchor, loadDailyTrainingStressEntries } from '@/lib/training/pmc-server';
 import { pmcTsb } from '@/lib/training/pmc';
 import { categoryLabels, sideLabels, statusLabels } from '@/lib/physical';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
@@ -144,6 +144,7 @@ async function buildCoachContextUncached(
     homeWeather,
     scenarioComparison,
     anchor,
+    dailyStress,
   ] = await Promise.all([
     getActivitiesForCoach({ limit: 120, sinceDays: 90 }),
     getHealthEntries(30),
@@ -157,6 +158,7 @@ async function buildCoachContextUncached(
     loadHomeWeatherHint(trainingDayId),
     includeScenario ? loadScenarioComparisonForCoach({ horizonDays: 7 }) : Promise.resolve(null),
     loadAthletePmcAnchor({ refDate: today }),
+    loadDailyTrainingStressEntries({ refDate: today }),
   ]);
 
   // ---- Fitness (PMC: CTL / ATL / TSB) ----
@@ -166,10 +168,9 @@ async function buildCoachContextUncached(
     ? { ctl: Math.round(anchor.ctl), atl: Math.round(anchor.atl), tsb: Math.round(pmcTsb(anchor)) }
     : { ctl: 0, atl: 0, tsb: 0 };
 
-  const load = computeTrainingLoad(
-    activities.map((a) => ({ load: a.load, date: a.date })),
-    refDate,
-  );
+  // Same source as the fitness figures above, so the prompt cannot state an ACWR
+  // that contradicts the CTL it sits next to.
+  const load = computeTrainingLoad(dailyStress, refDate);
 
   // ---- Disponibilités : jours d'entraînement habituels (8 dernières semaines) ----
   const since = subDays(today, 56);

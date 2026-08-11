@@ -1,8 +1,7 @@
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
 import { computeTrainingLoad, enrichFatigueLoadDimension } from '@/lib/training/training-load';
-import { getActivitiesList } from '@/lib/queries';
 import { slicePmcWindow } from '@/lib/training/pmc';
-import { loadAthletePmcPoints } from '@/lib/training/pmc-server';
+import { loadAthletePmcPoints, loadDailyTrainingStressEntries } from '@/lib/training/pmc-server';
 import { resolve } from '@/lib/french';
 import {
   mapConfidenceToTier,
@@ -146,13 +145,14 @@ export async function buildEffortViewModel(trainingDayId: string): Promise<Effor
   if (!fatigue) return emptyEffortViewModel();
 
   const refDate = new Date(`${trainingDayId}T12:00:00.000Z`);
-  const [activities, pmcPoints] = await Promise.all([
-    getActivitiesList({ sinceDays: 60 }),
+  const [pmcPoints, dailyStress] = await Promise.all([
     loadAthletePmcPoints({ refDate }),
+    loadDailyTrainingStressEntries({ refDate }),
   ]);
 
-  const activityInputs = activities.map((a) => ({ load: a.load, date: new Date(a.date) }));
-  const trainingLoad = computeTrainingLoad(activityInputs, refDate);
+  // Same source as the PMC chart above it, so the ACWR gauge and the fitness curve
+  // cannot disagree about the same week.
+  const trainingLoad = computeTrainingLoad(dailyStress, refDate);
   const dailyLoad = dailyStrain?.dailyTss ?? trainingLoad.dailyLoad;
   const strainScore = dailyStrain?.strainScore ?? null;
   const strainDisplay = mapStrainToDisplay(strainScore);
@@ -172,12 +172,11 @@ export async function buildEffortViewModel(trainingDayId: string): Promise<Effor
     weekStart.setDate(refDate.getDate() - w * 7 - 6);
     const weekEnd = new Date(refDate);
     weekEnd.setDate(refDate.getDate() - w * 7);
-    const total = activities
-      .filter((a) => {
-        const d = new Date(a.date);
-        return d >= weekStart && d <= weekEnd;
-      })
-      .reduce((s, a) => s + (a.load ?? 0), 0);
+    // From the Core's Training Stress too, so these bars are on the same scale as
+    // the ACWR gauge and the PMC curve rather than on raw Activity.load.
+    const total = dailyStress
+      .filter((entry) => entry.date >= weekStart && entry.date <= weekEnd)
+      .reduce((sum, entry) => sum + entry.load, 0);
     weeklyTss.push({ week: w === 0 ? 'Cette sem.' : `S-${w}`, tss: Math.round(total) });
   }
 

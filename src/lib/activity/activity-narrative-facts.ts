@@ -25,7 +25,7 @@ import { resolveEnvironmentalExplanation } from '@/lib/presentation/environment'
 import { getActivePhysicalNotes, getAthleteProfile } from '@/lib/queries';
 import { buildTechnicalSessionFacts } from '@/lib/activity/activity-narrative-technical-facts';
 import { getCachedActivityStreams } from '@/lib/streams/streams';
-import { loadAthletePmcAnchor } from '@/lib/training/pmc-server';
+import { loadAthletePmcAnchor, loadDailyTrainingStressEntries } from '@/lib/training/pmc-server';
 
 const TYPE_FR: Record<string, string> = {
   RUN: 'Course à pied',
@@ -290,13 +290,13 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
   const [
     peers,
     healthRows,
-    recentHistory,
     profile,
     physicalNotes,
     goalHits,
     environmentPresentation,
     streamResult,
     pmcAnchor,
+    dailyStress,
   ] = await Promise.all([
     prisma.activity.findMany({
       where: {
@@ -329,20 +329,6 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
       where: { date: { gte: subDays(activityDay, 14), lt: activityDay } },
       orderBy: { date: 'desc' },
     }),
-    // Training-load context only: buildTrainingLoadFacts filters to its own 42-day
-    // window, and the PMC is loaded separately from the Core's Training Stress.
-    prisma.activity.findMany({
-      where: { date: { lte: activity.date } },
-      select: {
-        date: true,
-        type: true,
-        duration: true,
-        load: true,
-        bikeMetrics: { select: { tss: true } },
-      },
-      orderBy: { date: 'desc' },
-      take: 120,
-    }),
     getAthleteProfile(),
     getActivePhysicalNotes(),
     prisma.goalAchievement.findMany({
@@ -374,9 +360,8 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
     // Same source as every other surface, so the narrative cannot cite a different
     // CTL than the dashboard. See ADR-011.
     loadAthletePmcAnchor({ refDate: activity.date }),
+    loadDailyTrainingStressEntries({ refDate: activity.date }),
   ]);
-
-  const loadHistory = recentHistory.map((a) => ({ date: a.date, load: a.load }));
 
   const streamPayload = streamResult;
   const streamAvgHr = streamPayload?.stats?.avgHr ?? null;
@@ -456,7 +441,8 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
     ...buildRecoveryContextFacts(activity.date, healthContext),
     '',
     '# Charge d’entraînement (contexte au jour de la séance)',
-    ...buildTrainingLoadFacts(activity.date, loadHistory),
+    // Core Training Stress, so this ACWR matches the dashboard's.
+    ...buildTrainingLoadFacts(activity.date, dailyStress),
     ...buildPmcFacts(pmcAnchor),
     '',
     '# Seuils personnels & interprétation de la performance',

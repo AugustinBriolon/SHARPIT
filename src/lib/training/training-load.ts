@@ -12,9 +12,9 @@ import { addTrainingDays, computeTrainingDayId } from './training-day';
  * - Blanch & Gabbett (2016). Validation initiale ACWR dans sports collectifs
  * - Carey et al. (2017). Revue systématique, identification seuils risque
  *
- * Seuils validés (consensus littérature) :
- * - ACWR < 0.8 : Sous-charge, désentraînement progressif
- * - ACWR 0.8-1.3 : "Sweet spot", progression optimale
+ * Seuils appliqués (voir ACWR_THRESHOLDS — cette liste doit rester alignée) :
+ * - ACWR < 0.9 : Sous-charge, désentraînement progressif
+ * - ACWR 0.9-1.3 : "Sweet spot", progression optimale
  * - ACWR 1.3-1.5 : Zone d'alerte, augmentation risque blessure
  * - ACWR > 1.5 : Zone de danger élevé (×2 à ×4 risque blessure selon études)
  *
@@ -75,6 +75,15 @@ function stdDev(values: number[]) {
   return Math.sqrt(variance);
 }
 
+/**
+ * Rolling acute/chronic load from per-day training stress.
+ *
+ * Entries are grouped by training day, so callers may pass either raw activities
+ * or one synthetic entry per day. Prefer `loadDailyTrainingStressEntries`, which
+ * supplies the Core's Training Stress: passing `Activity.load` directly means this
+ * runs on a column that mixed Garmin's TSS with its EPOC training load for every
+ * row written before the two were separated. See ADR-011.
+ */
 export function computeTrainingLoad(
   activities: { load: number | null; date: Date }[],
   refDate: Date = new Date(),

@@ -42,6 +42,7 @@ import {
   TWIN_DRILL_DOWN,
 } from '@/lib/today/today-twin-navigation';
 import { computeTrainingLoad } from '@/lib/training/training-load';
+import { loadDailyTrainingStressEntries } from '@/lib/training/pmc-server';
 import { endOfDay, isSameDay, startOfDay, subDays } from 'date-fns';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 
@@ -93,6 +94,12 @@ export type TodayPresentationInputs = {
   plannedSessions: Awaited<ReturnType<typeof getPlannedSessions>>;
   goals: Awaited<ReturnType<typeof getGoals>>;
   athleteProfile: Awaited<ReturnType<typeof getAthleteProfile>>;
+  /**
+   * One entry per training day, carrying the Core's Training Stress. Feeds the
+   * effort sparkline and the rolling load so this page cannot report a different
+   * weekly load than the effort dashboard. See ADR-011.
+   */
+  dailyStress: { load: number; date: Date }[];
   /** Ensured by the API route (write side-effect stays off this projection). */
   morningRecalibration: MorningRecalibrationInput | null;
 };
@@ -110,6 +117,7 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
     plannedSessions,
     goals,
     athleteProfile,
+    dailyStress,
     morningRecalibration,
   } = inputs;
 
@@ -136,15 +144,12 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
   // Rest days are 0 TSS (continuous series) — never null, or the sparkline breaks into holes.
   const effortSpark = Array.from({ length: 14 }, (_, i) => {
     const d = subDays(day, 13 - i);
-    return activities
-      .filter((a) => isSameDay(a.date, d))
-      .reduce((sum, a) => sum + (a.load ?? 0), 0);
+    return dailyStress
+      .filter((entry) => isSameDay(entry.date, d))
+      .reduce((sum, entry) => sum + entry.load, 0);
   });
 
-  const trainingLoad = computeTrainingLoad(
-    activities.map((a) => ({ load: a.load, date: a.date })),
-    day,
-  );
+  const trainingLoad = computeTrainingLoad(dailyStress, day);
   const { weeklyLoad } = trainingLoad;
 
   const phase = snapshot.dailyPhase?.phase ?? 'MORNING';
@@ -446,7 +451,7 @@ export async function buildTodayPresentationViewModel(
   // state-signal shape carries. `activities` also covers the 60-day trend window for
   // effortSpark/trainingLoad, not just today. `snapshot.sessionsDoneToday`/`plannedToday`
   // exist for consumers that only need "did/will the athlete train today" (Coach, Gate).
-  const [snapshot, healthEntries, activities, plannedSessions, goals, athleteProfile] =
+  const [snapshot, healthEntries, activities, plannedSessions, goals, athleteProfile, dailyStress] =
     await Promise.all([
       options.athleteSnapshot
         ? Promise.resolve(options.athleteSnapshot)
@@ -456,6 +461,7 @@ export async function buildTodayPresentationViewModel(
       getPlannedSessions({ from: dayStart, to: dayEnd }),
       getGoals(),
       getAthleteProfile(),
+      loadDailyTrainingStressEntries({ refDate: day }),
     ]);
 
   return buildTodayViewModelFromInputs({
@@ -467,6 +473,7 @@ export async function buildTodayPresentationViewModel(
     plannedSessions,
     goals,
     athleteProfile,
+    dailyStress,
     morningRecalibration: options.morningRecalibration ?? null,
   });
 }
