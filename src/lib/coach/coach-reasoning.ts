@@ -7,8 +7,9 @@
  * delta lands at ~14s. Dropping those parts is what made the athlete stare at a
  * spinner for eleven seconds while content was already arriving.
  *
- * We surface the reasoning instead: live while it streams, collapsed once the
- * answer exists. Pure helpers so the policy is testable without a stream.
+ * We still surface the reasoning (summary line + expandable panel), but the
+ * panel stays collapsed by default so the answer remains the primary focus.
+ * Pure helpers so the policy is testable without a stream.
  */
 
 /** Minimal shape of the reasoning parts the AI SDK puts on a UI message. */
@@ -28,15 +29,14 @@ export function reasoningTextOf(parts: readonly ReasoningPartLite[]): string {
 /**
  * Whether the reasoning panel opens on its own.
  *
- * Open while reasoning is the only thing there is to look at. Once the answer
- * itself starts arriving, the athlete's attention belongs on the answer, so the
- * panel collapses to a summary line they can re-open.
+ * Always closed by default — the athlete can open the summary line manually.
+ * Kept as a pure helper so the closed-by-default policy stays testable.
  */
-export function shouldAutoExpandReasoning(input: {
+export function shouldAutoExpandReasoning(_input: {
   streaming: boolean;
   hasAnswerText: boolean;
 }): boolean {
-  return input.streaming && !input.hasAnswerText;
+  return false;
 }
 
 /**

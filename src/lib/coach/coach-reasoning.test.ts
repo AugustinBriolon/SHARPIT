@@ -30,11 +30,11 @@ describe('reasoningTextOf', () => {
 });
 
 describe('shouldAutoExpandReasoning', () => {
-  it('opens while reasoning is the only content on screen', () => {
-    expect(shouldAutoExpandReasoning({ streaming: true, hasAnswerText: false })).toBe(true);
+  it('stays closed while reasoning is the only content on screen', () => {
+    expect(shouldAutoExpandReasoning({ streaming: true, hasAnswerText: false })).toBe(false);
   });
 
-  it('collapses as soon as the answer starts arriving', () => {
+  it('stays closed as soon as the answer starts arriving', () => {
     expect(shouldAutoExpandReasoning({ streaming: true, hasAnswerText: true })).toBe(false);
   });
 

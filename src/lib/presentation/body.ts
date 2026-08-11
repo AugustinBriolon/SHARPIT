@@ -10,6 +10,7 @@ import {
   computeCompositionTrend,
   dedupeBodyCompositionByDay,
   formatCompositionDelta,
+  formatWeightKgDisplay,
 } from '@/lib/health/body-composition';
 import {
   getGuide,
@@ -207,7 +208,7 @@ export async function buildBodyPresentationViewModel(days?: number | null): Prom
 
   const hero: BodyViewModel['hero'] = {
     latestWeightKg: latest.weightKg ?? null,
-    latestWeightDisplay: latest.weightKg != null ? `${latest.weightKg}` : '—',
+    latestWeightDisplay: latest.weightKg != null ? formatWeightKgDisplay(latest.weightKg) : '—',
     measuredAtLabel: displayMeasuredAt(latest.measuredAt),
     sourceLabel: sourceLabel(latest.source),
     weightDeltaDisplay: weightDelta.deltaDisplay,

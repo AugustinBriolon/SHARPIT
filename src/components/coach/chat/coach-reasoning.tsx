@@ -9,10 +9,9 @@ import { cn } from '@/lib/utils';
 /**
  * Live view on the model's deliberation.
  *
- * Reasoning is the first content the coach produces — surfacing it is what
- * turns a long silent wait into a response that starts immediately. It opens
- * itself while it is the only thing streaming, then folds away behind a summary
- * line once the answer takes over. The athlete can re-open it at any time.
+ * Reasoning is the first content the coach produces — surfacing a summary line
+ * turns a long silent wait into a response that starts immediately. The panel
+ * stays collapsed by default; the athlete can expand it at any time.
  */
 export function CoachReasoning({
   text,

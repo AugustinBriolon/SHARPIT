@@ -1,6 +1,11 @@
 import { BodyCompositionSource, type BodyCompositionMeasurement } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
-import { dedupeBodyCompositionByDay, filterCompositionSeriesByDays } from './body-composition';
+import {
+  dedupeBodyCompositionByDay,
+  filterCompositionSeriesByDays,
+  formatCompositionDelta,
+  formatWeightKgDisplay,
+} from './body-composition';
 
 function row(source: BodyCompositionSource, day: string, hour: number): BodyCompositionMeasurement {
   return {
@@ -104,5 +109,24 @@ describe('filterCompositionSeriesByDays', () => {
     expect(filterCompositionSeriesByDays([{ date: '2026-01-01', weightKg: 80 }], 14, now)).toEqual(
       [],
     );
+  });
+});
+
+describe('formatWeightKgDisplay', () => {
+  it('rounds float noise to one decimal', () => {
+    expect(formatWeightKgDisplay(81.08200000000001)).toBe('81.1');
+    expect(formatWeightKgDisplay(75)).toBe('75.0');
+    expect(formatWeightKgDisplay(74.55)).toBe('74.6');
+  });
+});
+
+describe('formatCompositionDelta', () => {
+  it('rounds float noise before formatting', () => {
+    expect(formatCompositionDelta(0.10000000000000142, ' kg')).toBe('+0.1 kg vs 7j préc.');
+    expect(formatCompositionDelta(-0.30000000000000004, ' pts')).toBe('-0.3 pts vs 7j préc.');
+  });
+
+  it('returns undefined for null', () => {
+    expect(formatCompositionDelta(null)).toBeUndefined();
   });
 });

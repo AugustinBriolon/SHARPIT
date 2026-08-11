@@ -222,8 +222,14 @@ export function filterCompositionSeriesByDays<T extends { date: string }>(
   return points.filter((point) => point.date >= sinceKey);
 }
 
+/** Display weight without IEEE float noise (e.g. 81.08200000000001 → 81.1). */
+export function formatWeightKgDisplay(weightKg: number): string {
+  return weightKg.toFixed(1);
+}
+
 export function formatCompositionDelta(delta: number | null, unit = ''): string | undefined {
   if (delta == null) return undefined;
-  const sign = delta > 0 ? '+' : '';
-  return `${sign}${delta}${unit} vs 7j préc.`;
+  const rounded = Number(delta.toFixed(2));
+  const sign = rounded > 0 ? '+' : '';
+  return `${sign}${rounded}${unit} vs 7j préc.`;
 }
