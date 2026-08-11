@@ -1,0 +1,71 @@
+import { featureRepository } from '@/lib/engines/feature-engine';
+import { getActivitiesForPmc } from '@/lib/queries';
+import { toTrainingDayId, type PmcDayPoint } from '@/lib/training/pmc';
+import {
+  computeAthletePmc,
+  type CoreSessionTss,
+  type PmcPoint,
+  toPmcPoints,
+} from '@/lib/training/pmc-history';
+
+/**
+ * The athlete's PMC series, computed from the Core's Training Stress.
+ *
+ * Single entry point for every server-side PMC read, so no surface can end up on a
+ * different load source than another. The Core derives TSS through its tiered
+ * cascade — power, then heart rate, then pace, then session RPE, then duration —
+ * and only falls back to the per-activity estimate for days it does not cover.
+ *
+ * @see docs/adr/ADR-011-pmc-state-and-window-semantics.md
+ */
+
+const ATHLETE_ID = 'default';
+
+export interface LoadAthletePmcOptions {
+  /** Last day of the series. Defaults to today. */
+  refDate?: Date;
+}
+
+export async function loadAthletePmcSeries(
+  options?: LoadAthletePmcOptions,
+): Promise<PmcDayPoint[]> {
+  const refDate = options?.refDate;
+  const activities = await getActivitiesForPmc();
+  if (activities.length === 0) return [];
+
+  const coreSessions = await loadCoreSessionTss(activities[0].date, refDate ?? new Date());
+
+  return computeAthletePmc(activities, { refDate, coreSessions });
+}
+
+/** Latest state only — what most callers actually need. */
+export async function loadAthletePmcAnchor(
+  options?: LoadAthletePmcOptions,
+): Promise<PmcDayPoint | null> {
+  const series = await loadAthletePmcSeries(options);
+  return series.at(-1) ?? null;
+}
+
+/** Chart-ready points across the whole history; slice for display. */
+export async function loadAthletePmcPoints(options?: LoadAthletePmcOptions): Promise<PmcPoint[]> {
+  return toPmcPoints(await loadAthletePmcSeries(options));
+}
+
+async function loadCoreSessionTss(from: Date, to: Date): Promise<CoreSessionTss[]> {
+  const records = await featureRepository.findSessionFeaturesByRange(
+    ATHLETE_ID,
+    toTrainingDayId(from),
+    toTrainingDayId(to),
+  );
+
+  return records.flatMap((record) => {
+    const { trainingDayId, data } = record;
+    const tssScore = data?.tssScore;
+    // A null score means extraction could not produce one; that day falls back to
+    // the per-activity estimate rather than counting the session as zero load.
+    if (trainingDayId == null || typeof tssScore !== 'number' || !Number.isFinite(tssScore)) {
+      return [];
+    }
+    return [{ trainingDayId, tssScore }];
+  });
+}

@@ -42,6 +42,66 @@ export function aggregateDailyTss(
   return dailyTss;
 }
 
+/** A session's Training Stress as computed by the Core's tiered cascade. */
+export interface CoreSessionTss {
+  /** `YYYY-MM-DD`. */
+  trainingDayId: string;
+  tssScore: number;
+}
+
+/**
+ * Daily TSS, preferring the Core's tiered cascade over the per-activity estimate.
+ *
+ * The Core derives TSS from power, then heart rate, then pace, then session RPE,
+ * then duration, tagging which method it used. `activity-load.ts` only ever has
+ * the last of those, and `Activity.load` additionally mixes Garmin's TSS with its
+ * EPOC training load for rows written before that was separated. Measured here,
+ * the legacy path put runs at 151 TSS/h against the Core's 56.
+ *
+ * A day switches to the Core only when its session count matches the day's
+ * activity count exactly. Two failure modes make anything looser unsafe:
+ *
+ * - Fewer sessions than activities means partial coverage, and blending a Core
+ *   score with a legacy estimate inside one day mixes two scales.
+ * - More sessions than activities is ambiguous. It can be a legitimate multisport
+ *   split, but it is also what a duplicated observation looks like, and the
+ *   feature payload carries no session identity to deduplicate on. Summing them
+ *   double-counts the day: on this database five recent days had a surplus
+ *   session, which inflated ATL by about a third.
+ *
+ * Either way the day falls back wholesale, which is at least one consistent scale.
+ */
+export function aggregateDailyTssPreferringCore(
+  activities: readonly ActivityForAnalytics[],
+  coreSessions: readonly CoreSessionTss[],
+): Map<string, number> {
+  const activityCountByDay = new Map<string, number>();
+  for (const activity of activities) {
+    const key = toTrainingDayId(activity.date);
+    activityCountByDay.set(key, (activityCountByDay.get(key) ?? 0) + 1);
+  }
+
+  const coreTssByDay = new Map<string, number>();
+  const coreCountByDay = new Map<string, number>();
+  for (const session of coreSessions) {
+    if (!Number.isFinite(session.tssScore)) continue;
+    const key = session.trainingDayId;
+    coreTssByDay.set(key, (coreTssByDay.get(key) ?? 0) + session.tssScore);
+    coreCountByDay.set(key, (coreCountByDay.get(key) ?? 0) + 1);
+  }
+
+  const fallback = aggregateDailyTss(activities);
+  const dailyTss = new Map(fallback);
+
+  for (const [day, coreTss] of coreTssByDay) {
+    if (coreCountByDay.get(day) === activityCountByDay.get(day)) {
+      dailyTss.set(day, coreTss);
+    }
+  }
+
+  return dailyTss;
+}
+
 export interface ComputeAthletePmcOptions {
   /** Last day to emit. Defaults to today. Days after it are ignored. */
   refDate?: Date;
@@ -54,6 +114,11 @@ export interface ComputeAthletePmcOptions {
   from?: Date;
   /** State on the day before `from`. See `runPmc`. */
   initial?: PmcState;
+  /**
+   * Core-computed session TSS. When supplied, days the Core fully covers use it
+   * instead of the per-activity estimate.
+   */
+  coreSessions?: readonly CoreSessionTss[];
 }
 
 /**
@@ -67,7 +132,9 @@ export function computeAthletePmc(
   options?: ComputeAthletePmcOptions,
 ): PmcDayPoint[] {
   const to = startOfDay(options?.refDate ?? new Date());
-  const dailyTss = aggregateDailyTss(activities);
+  const dailyTss = options?.coreSessions
+    ? aggregateDailyTssPreferringCore(activities, options.coreSessions)
+    : aggregateDailyTss(activities);
 
   const from = options?.from ? startOfDay(options.from) : earliestDay(activities);
   if (!from) return [];

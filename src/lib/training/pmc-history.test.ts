@@ -1,8 +1,13 @@
 import { ActivityType } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
 import type { ActivityForAnalytics } from './activity-load';
-import { slicePmcWindow } from './pmc';
-import { aggregateDailyTss, computeAthletePmc, toPmcPoints } from './pmc-history';
+import { slicePmcWindow, toTrainingDayId } from './pmc';
+import {
+  aggregateDailyTss,
+  aggregateDailyTssPreferringCore,
+  computeAthletePmc,
+  toPmcPoints,
+} from './pmc-history';
 
 const REF_DATE = new Date('2026-01-31T12:00:00.000Z');
 
@@ -34,6 +39,73 @@ describe('aggregateDailyTss', () => {
       makeActivity(REF_DATE, 'BIKE', 40),
     ]);
     expect(dailyTss.get('2026-01-31')).toBe(90);
+  });
+});
+
+describe('aggregateDailyTssPreferringCore', () => {
+  const day = toTrainingDayId(REF_DATE);
+
+  it('uses the Core value when it covers the day', () => {
+    // The legacy estimate would give 60 here; the Core's tiered cascade says 42.
+    const daily = aggregateDailyTssPreferringCore(
+      [makeActivity(REF_DATE, 'RUN', 60)],
+      [{ trainingDayId: day, tssScore: 42 }],
+    );
+    expect(daily.get(day)).toBe(42);
+  });
+
+  it('sums several Core sessions on the same day', () => {
+    const daily = aggregateDailyTssPreferringCore(
+      [makeActivity(REF_DATE, 'RUN', 60), makeActivity(REF_DATE, 'BIKE', 50)],
+      [
+        { trainingDayId: day, tssScore: 40 },
+        { trainingDayId: day, tssScore: 30 },
+      ],
+    );
+    expect(daily.get(day)).toBe(70);
+  });
+
+  it('falls back for the whole day when the Core covers it only partly', () => {
+    // Mixing a Core score with a legacy estimate inside one day would blend two
+    // scales, which is worse than using either consistently.
+    const daily = aggregateDailyTssPreferringCore(
+      [makeActivity(REF_DATE, 'RUN', 60), makeActivity(REF_DATE, 'BIKE', 50)],
+      [{ trainingDayId: day, tssScore: 40 }],
+    );
+    expect(daily.get(day)).toBe(110);
+  });
+
+  it('falls back when there are more Core sessions than activity rows', () => {
+    // Ambiguous: could be a multisport split, could be a duplicated observation.
+    // The payload carries no session identity to deduplicate on, so summing would
+    // risk double-counting the day — five recent days on the real database had a
+    // surplus session, which inflated ATL by about a third.
+    const daily = aggregateDailyTssPreferringCore(
+      [makeActivity(REF_DATE, 'TRIATHLON', 200)],
+      [
+        { trainingDayId: day, tssScore: 30 },
+        { trainingDayId: day, tssScore: 60 },
+      ],
+    );
+    expect(daily.get(day)).toBe(200);
+  });
+
+  it('keeps the legacy estimate for days the Core never saw', () => {
+    const older = daysBefore(3);
+    const daily = aggregateDailyTssPreferringCore(
+      [makeActivity(REF_DATE, 'RUN', 60), makeActivity(older, 'RUN', 80)],
+      [{ trainingDayId: day, tssScore: 42 }],
+    );
+    expect(daily.get(day)).toBe(42);
+    expect(daily.get(toTrainingDayId(older))).toBe(80);
+  });
+
+  it('ignores a non-finite Core score rather than counting it as zero load', () => {
+    const daily = aggregateDailyTssPreferringCore(
+      [makeActivity(REF_DATE, 'RUN', 60)],
+      [{ trainingDayId: day, tssScore: Number.NaN }],
+    );
+    expect(daily.get(day)).toBe(60);
   });
 });
 

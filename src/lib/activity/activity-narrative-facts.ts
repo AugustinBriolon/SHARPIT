@@ -25,6 +25,7 @@ import { resolveEnvironmentalExplanation } from '@/lib/presentation/environment'
 import { getActivePhysicalNotes, getAthleteProfile } from '@/lib/queries';
 import { buildTechnicalSessionFacts } from '@/lib/activity/activity-narrative-technical-facts';
 import { getCachedActivityStreams } from '@/lib/streams/streams';
+import { loadAthletePmcAnchor } from '@/lib/training/pmc-server';
 
 const TYPE_FR: Record<string, string> = {
   RUN: 'Course à pied',
@@ -295,6 +296,7 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
     goalHits,
     environmentPresentation,
     streamResult,
+    pmcAnchor,
   ] = await Promise.all([
     prisma.activity.findMany({
       where: {
@@ -327,9 +329,8 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
       where: { date: { gte: subDays(activityDay, 14), lt: activityDay } },
       orderBy: { date: 'desc' },
     }),
-    // Single history query for training load + PMC (was two near-identical scans).
-    // Unbounded on purpose: the PMC recurrence needs the whole history to converge,
-    // and buildTrainingLoadFacts filters to its own 42-day window. See ADR-011.
+    // Training-load context only: buildTrainingLoadFacts filters to its own 42-day
+    // window, and the PMC is loaded separately from the Core's Training Stress.
     prisma.activity.findMany({
       where: { date: { lte: activity.date } },
       select: {
@@ -340,6 +341,7 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
         bikeMetrics: { select: { tss: true } },
       },
       orderBy: { date: 'desc' },
+      take: 120,
     }),
     getAthleteProfile(),
     getActivePhysicalNotes(),
@@ -369,10 +371,12 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
       console.error('[activity-narrative-facts] streams', activityId, err);
       return null;
     }),
+    // Same source as every other surface, so the narrative cannot cite a different
+    // CTL than the dashboard. See ADR-011.
+    loadAthletePmcAnchor({ refDate: activity.date }),
   ]);
 
   const loadHistory = recentHistory.map((a) => ({ date: a.date, load: a.load }));
-  const pmcHistory = recentHistory;
 
   const streamPayload = streamResult;
   const streamAvgHr = streamPayload?.stats?.avgHr ?? null;
@@ -453,7 +457,7 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
     '',
     '# Charge d’entraînement (contexte au jour de la séance)',
     ...buildTrainingLoadFacts(activity.date, loadHistory),
-    ...buildPmcFacts(activity.date, pmcHistory),
+    ...buildPmcFacts(pmcAnchor),
     '',
     '# Seuils personnels & interprétation de la performance',
     ...buildThresholdPerformanceFacts(metrics, athleteProfile),

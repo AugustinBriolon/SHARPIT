@@ -3,13 +3,12 @@ import { fr } from 'date-fns/locale';
 import {
   getActivePhysicalNotes,
   getActivitiesForCoach,
-  getActivitiesForPmc,
   getAthleteProfile,
   getGoals,
   getHealthEntries,
   getPlannedSessionsForCoach,
 } from '@/lib/queries';
-import { computeAthletePmc } from '@/lib/training/pmc-history';
+import { loadAthletePmcAnchor } from '@/lib/training/pmc-server';
 import { pmcTsb } from '@/lib/training/pmc';
 import { categoryLabels, sideLabels, statusLabels } from '@/lib/physical';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
@@ -144,7 +143,7 @@ async function buildCoachContextUncached(
     travelContexts,
     homeWeather,
     scenarioComparison,
-    pmcActivities,
+    anchor,
   ] = await Promise.all([
     getActivitiesForCoach({ limit: 120, sinceDays: 90 }),
     getHealthEntries(30),
@@ -157,13 +156,12 @@ async function buildCoachContextUncached(
     listTravelContexts(prisma),
     loadHomeWeatherHint(trainingDayId),
     includeScenario ? loadScenarioComparisonForCoach({ horizonDays: 7 }) : Promise.resolve(null),
-    getActivitiesForPmc(),
+    loadAthletePmcAnchor({ refDate: today }),
   ]);
 
   // ---- Fitness (PMC: CTL / ATL / TSB) ----
   // Whole history, not the 90-day prompt window: a 90-day window reaches only 88%
   // of steady-state CTL, so the coach used to reason on an understated fitness.
-  const anchor = computeAthletePmc(pmcActivities, { refDate: today }).at(-1);
   const fitness = anchor
     ? { ctl: Math.round(anchor.ctl), atl: Math.round(anchor.atl), tsb: Math.round(pmcTsb(anchor)) }
     : { ctl: 0, atl: 0, tsb: 0 };

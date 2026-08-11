@@ -1,13 +1,12 @@
 import { startOfDay } from 'date-fns';
 import { NextResponse } from 'next/server';
-import { computeAthletePmc } from '@/lib/training/pmc-history';
+import { loadAthletePmcAnchor } from '@/lib/training/pmc-server';
 import { generateMacroPlan } from '@/lib/training/periodization';
 import { prisma } from '@/lib/prisma';
 import {
   archiveActiveTrainingPlans,
   createTrainingPlan,
   getActiveTrainingPlan,
-  getActivitiesForPmc,
   getGoalById,
 } from '@/lib/queries';
 import { listTravelContexts } from '@/lib/travel-context/service';
@@ -51,8 +50,7 @@ export async function POST(request: Request) {
 
     // This scales the entire macro-plan: periodization derives the weekly load as
     // baselineCtl * 7. A truncated history here understates every week of the plan.
-    const activities = await getActivitiesForPmc();
-    const anchor = computeAthletePmc(activities).at(-1);
+    const anchor = await loadAthletePmcAnchor();
     const baselineCtl = anchor ? Math.round(anchor.ctl) : 40;
 
     const draft = generateMacroPlan({ raceDate, baselineCtl });

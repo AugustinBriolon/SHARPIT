@@ -28,8 +28,13 @@ const globalForFeatureEngine = globalThis as unknown as {
   featureEngine: FeatureEngine | undefined;
 };
 
+/**
+ * Read-only access to stored features, for callers that need the persisted values
+ * without the engine's repair-on-read behaviour.
+ */
+export const featureRepository = new PrismaFeatureRepository(prisma);
+
 function createFeatureEngine(): FeatureEngine {
-  const featureRepository = new PrismaFeatureRepository(prisma);
   const observationRepository = new PrismaObservationRepository(prisma);
   const contextProvider = new AthleteContextProvider(prisma);
   const sessionStreamProvider = new PrismaSessionStreamProvider(prisma);

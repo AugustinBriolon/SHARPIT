@@ -1,8 +1,9 @@
 import type { ActivityType } from '@prisma/client';
 import { differenceInCalendarDays, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import type { ActivityForAnalytics, PmcPoint } from '@/lib/analytics';
-import { computeAthletePmc, toPmcPoints } from '@/lib/training/pmc-history';
+import type { PmcPoint } from '@/lib/analytics';
+import { toPmcPoints } from '@/lib/training/pmc-history';
+import type { PmcState } from '@/lib/training/pmc';
 import {
   formatActivityWeatherNarrative,
   parseActivityWeather,
@@ -219,13 +220,15 @@ export function buildTrainingLoadFacts(
   return lines;
 }
 
-export function buildPmcFacts(activityDate: Date, activities: ActivityForAnalytics[]): string[] {
-  // Running to the session day makes the last point the session day itself: no
-  // reverse-scan needed, and the recurrence spans the whole history. See ADR-011.
-  const anchor = computeAthletePmc(activities, { refDate: activityDate }).at(-1);
+/**
+ * The caller passes the PMC state on the session day, loaded through
+ * `loadAthletePmcAnchor` so this narrative cites the same numbers as every other
+ * surface. See ADR-011.
+ */
+export function buildPmcFacts(anchor: PmcState | null): string[] {
   if (!anchor) return [];
 
-  const [point] = toPmcPoints([anchor]);
+  const [point] = toPmcPoints([{ date: '', tss: 0, ctl: anchor.ctl, atl: anchor.atl }]);
   if (!point) return [];
 
   return [
