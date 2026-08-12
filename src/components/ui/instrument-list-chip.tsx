@@ -110,7 +110,7 @@ export const InstrumentListChip = memo(function InstrumentListChip({
           {title}
         </span>
         {hasMetaRow ? (
-          <span className="text-muted-foreground flex min-w-0 items-center gap-x-1.5 overflow-hidden text-xs whitespace-nowrap">
+          <span className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs">
             {activityType != null ? (
               <span className="shrink-0">
                 <ActivityTypeIndicator type={activityType} />
@@ -125,7 +125,7 @@ export const InstrumentListChip = memo(function InstrumentListChip({
                 ) : null}
                 <span
                   className={cn(
-                    'text-data min-w-0 truncate',
+                    'text-data min-w-0',
                     metaTone(item) === 'caution' && 'text-signal-caution',
                   )}
                 >

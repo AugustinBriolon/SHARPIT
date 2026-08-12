@@ -101,4 +101,20 @@ describe('InstrumentListChip', () => {
     expect(html).toContain('Sans meta');
     expect(html).toContain('Course');
   });
+
+  it('wraps meta so long facts stay visible instead of truncating', () => {
+    const html = renderToStaticMarkup(
+      createElement(InstrumentListChip, {
+        href: '/training/1',
+        title: 'Séance planifiée',
+        activityType: ActivityType.RUN,
+        meta: ['45 min Z2 endurance aérobie', '8.2 km avec dénivelé'],
+      }),
+    );
+    expect(html).toContain('flex-wrap');
+    expect(html).not.toContain('whitespace-nowrap');
+    expect(html).not.toContain('truncate');
+    expect(html).toContain('45 min Z2 endurance aérobie');
+    expect(html).toContain('8.2 km avec dénivelé');
+  });
 });

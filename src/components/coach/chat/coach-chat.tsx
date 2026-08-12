@@ -474,7 +474,7 @@ export function CoachChat({
                 key={rowKey}
                 className={cn('flex justify-start', !isLiveStreamTail && 'cv-auto')}
               >
-                <div className="bg-analysis-surface-alt text-foreground w-full max-w-[90%] space-y-2 rounded-[18px_18px_18px_4px] px-4 py-3">
+                <div className="bg-analysis-surface-alt text-foreground w-full min-w-0 max-w-[90%] space-y-2 overflow-hidden rounded-[18px_18px_18px_4px] px-4 py-3">
                   {reasoning ? (
                     <CoachReasoning
                       hasAnswerText={text.length > 0}
