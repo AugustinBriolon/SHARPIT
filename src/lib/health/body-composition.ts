@@ -224,7 +224,8 @@ export function filterCompositionSeriesByDays<T extends { date: string }>(
 
 /** Display weight without IEEE float noise (e.g. 81.08200000000001 → 81.1). */
 export function formatWeightKgDisplay(weightKg: number): string {
-  return weightKg.toFixed(1);
+  const rounded = Math.round((weightKg + Number.EPSILON) * 10) / 10;
+  return rounded.toFixed(1);
 }
 
 export function formatCompositionDelta(delta: number | null, unit = ''): string | undefined {

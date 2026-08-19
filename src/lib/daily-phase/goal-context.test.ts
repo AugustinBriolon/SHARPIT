@@ -22,21 +22,26 @@ function raceGoal(overrides: Partial<ClientGoal> = {}): ClientGoal {
 
 describe('resolveTodayGoalContext', () => {
   it('prioritises goal linked to today planned session', () => {
+    const targetDate = new Date();
+    targetDate.setUTCDate(targetDate.getUTCDate() + 45);
+    const trainingDay = new Date();
+    trainingDay.setUTCDate(trainingDay.getUTCDate() + 1);
+
     const goals = [
-      raceGoal({ id: 'g-a', title: 'Hyrox Paris' }),
-      raceGoal({ id: 'g-b', title: 'Semi Lyon', priority: GoalPriority.B }),
+      raceGoal({ id: 'g-a', title: 'Hyrox Paris', targetDate }),
+      raceGoal({ id: 'g-b', title: 'Semi Lyon', priority: GoalPriority.B, targetDate }),
     ];
 
     const ctx = resolveTodayGoalContext(
       goals,
       [
         {
-          date: new Date('2026-07-08T12:00:00'),
+          date: trainingDay,
           goalId: 'g-b',
           completed: false,
         },
       ],
-      '2026-07-08',
+      trainingDay.toISOString().slice(0, 10),
     );
 
     expect(ctx?.goalId).toBe('g-b');
@@ -45,12 +50,15 @@ describe('resolveTodayGoalContext', () => {
   });
 
   it('falls back to primary active goal when no session link', () => {
+    const targetDate = new Date();
+    targetDate.setUTCDate(targetDate.getUTCDate() + 45);
+
     const goals = [
-      raceGoal({ id: 'g-a', title: 'Hyrox Paris' }),
-      raceGoal({ id: 'g-b', title: 'Semi Lyon', priority: GoalPriority.B }),
+      raceGoal({ id: 'g-a', title: 'Hyrox Paris', targetDate }),
+      raceGoal({ id: 'g-b', title: 'Semi Lyon', priority: GoalPriority.B, targetDate }),
     ];
 
-    const ctx = resolveTodayGoalContext(goals, [], '2026-07-08');
+    const ctx = resolveTodayGoalContext(goals, [], new Date().toISOString().slice(0, 10));
 
     expect(ctx?.goalId).toBe('g-a');
     expect(ctx?.linkedToTodaySession).toBe(false);
