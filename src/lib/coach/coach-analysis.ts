@@ -14,6 +14,14 @@ import {
   getPlannedSessionById,
 } from '@/lib/queries';
 import { intensityLabels } from '@/lib/planned-session/sessions';
+import {
+  applyStrengthScoringGuards,
+  computeStrengthCompliance,
+  formatStrengthCompliance,
+  type ComparableStrengthSet,
+  type StrengthCompliance,
+} from '@/lib/planned-session/strength-compliance';
+import { parseStrengthPrescription } from '@/lib/planned-session/strength-prescription';
 import { fetchActivityDetail } from '@/lib/integrations/strava';
 import { getValidAccessToken } from '@/lib/integrations/strava-sync';
 import { prisma } from '@/lib/prisma';
@@ -44,18 +52,42 @@ function fmtPace(secPerKm?: number | null): string | null {
 type PlannedWithActivity = NonNullable<Awaited<ReturnType<typeof getPlannedSessionById>>>;
 type LinkedActivity = NonNullable<PlannedWithActivity['activity']>;
 
+/** Volume line for one prescribed / realized movement. */
+function formatStrengthSetLine(set: ComparableStrengthSet & { weightKg?: number | null }): string {
+  const volume =
+    set.durationSec != null && set.durationSec > 0 && set.reps <= 0
+      ? `${set.sets}×${set.durationSec}s`
+      : `${set.sets}×${set.reps}`;
+  const weight = set.weightKg != null && set.weightKg > 0 ? ` @ ${set.weightKg} kg` : '';
+  return `- ${set.exercise} ${volume}${weight}`;
+}
+
 function describePlanned(p: PlannedWithActivity, opts?: { ftpW?: number | null }): string {
+  const isStrength = p.type === 'STRENGTH';
   const bits = [
     `Sport : ${TYPE_FR[p.type] ?? p.type}`,
     p.brickGroupId
       ? `Jambe d'un BRICK (enchaînement multisport) — tiens compte de la fatigue/transition (ex. course en sortie de vélo).`
       : null,
     p.intensity ? `Intensité prévue : ${intensityLabels[p.intensity]}` : null,
-    p.durationMin != null ? `Durée prévue : ${p.durationMin} min` : null,
-    p.load != null ? `Charge prévue : ${Math.round(p.load)} TSS` : null,
+    // Duration and TSS are deliberately withheld for strength: execution speed is
+    // not prescribable, so they must not become compliance evidence.
+    !isStrength && p.durationMin != null ? `Durée prévue : ${p.durationMin} min` : null,
+    !isStrength && p.load != null ? `Charge prévue : ${Math.round(p.load)} TSS` : null,
     p.title ? `Titre : ${p.title}` : null,
     p.description ? `Consigne : ${p.description}` : null,
   ].filter(Boolean) as string[];
+
+  const prescription = isStrength ? parseStrengthPrescription(p.strengthPrescription) : null;
+  if (prescription) {
+    bits.push('Exercices prescrits :');
+    bits.push(
+      ...prescription.sets
+        .slice()
+        .sort((a, b) => a.order - b.order)
+        .map(formatStrengthSetLine),
+    );
+  }
 
   const ftpW = opts?.ftpW;
   if (ftpW != null && ftpW > 0 && p.type === 'BIKE') {
@@ -81,14 +113,20 @@ function describeActual(
   description?: string | null,
   opts?: { ftpW?: number | null; workSummary?: BikeWorkSummary | null },
 ): string {
+  const isStrength = a.type === 'STRENGTH';
   const bits: string[] = [
     `Sport : ${TYPE_FR[a.type] ?? a.type}`,
-    a.duration != null ? `Durée : ${Math.round(a.duration / 60)} min` : null,
-    a.load != null ? `Charge : ${Math.round(a.load)} TSS` : null,
+    !isStrength && a.duration != null ? `Durée : ${Math.round(a.duration / 60)} min` : null,
+    !isStrength && a.load != null ? `Charge : ${Math.round(a.load)} TSS` : null,
     a.rpe != null ? `RPE ressenti : ${a.rpe}/10` : null,
     a.feeling ? `Ressenti : ${a.feeling}` : null,
     a.notes ? `Notes : ${a.notes}` : null,
   ].filter(Boolean) as string[];
+
+  if (isStrength && a.strengthSets.length > 0) {
+    bits.push('Exercices réalisés :');
+    bits.push(...a.strengthSets.map(formatStrengthSetLine));
+  }
 
   // Description libre saisie sur Strava (souvent le détail réel des exercices).
   const desc = description?.trim();
@@ -177,7 +215,8 @@ Compare-les et produis une analyse exploitable :
 
 RÈGLES D'ÉVALUATION IMPORTANTES :
 - Le contenu RÉELLEMENT effectué prime sur les seules métriques. Lis attentivement la "Description (athlète)" et les "Notes" : si l'athlète y indique avoir fait tout le travail prévu, considère la séance comme conforme même si la durée enregistrée diffère.
-- Pour la MUSCULATION / le renforcement : la durée chronométrée n'est PAS un bon indicateur de conformité (temps de repos, montre lancée/arrêtée à des moments variables, exercices non détaillés sur la montre). Ne pénalise PAS le score pour un simple écart de durée si le contenu prévu (exercices, séries, répétitions) a été réalisé. Base-toi sur le travail décrit, pas sur les minutes.
+- Pour la MUSCULATION / le renforcement : la vitesse d'exécution n'est pas un paramètre prescriptible (repos variables, montre lancée/arrêtée à des moments variables). Durée et TSS ne te sont donc PAS fournis pour ces séances : juge UNIQUEMENT le contenu (exercices, séries, répétitions, charges) et les notes de l'athlète. N'invente aucune durée, ne parle pas de minutes, et n'utilise jamais les verdicts SHORTER/LONGER pour une séance de renfo.
+- Quand une section « Conformité muscu (calcul déterministe) » est fournie, elle fait autorité sur la couverture du contenu : ton complianceScore ne peut pas être inférieur à son score structurel.
 - Pour TEMPO / SEUIL / VO2 / RACE / fractionné VÉLO : la puissance moyenne, le NP et l'IF de la séance ENTIÈRE sont dilués par échauffement et récupérations. NE LES utilise PAS comme preuve que l'intensité cible n'a pas été atteinte.
 - Si une section "Blocs de travail (stream puissance)" est fournie, juge l'INTENSITÉ sur ces blocs (watts / %FTP des blocs, temps au-dessus du seuil), pas sur avg/NP globaux. La durée totale de séance peut toujours être jugée séparément (séance plus courte/longue).
 - N'affirme PAS que les intervalles « n'ont pas été effectués » si les blocs de travail montrent une puissance proche de la cible — parle plutôt d'écart de volume, de structure, ou de durée si c'est le cas.
@@ -275,12 +314,18 @@ export async function analyzePlannedSession(id: string): Promise<SessionAnalysis
         .join(', ')
     : '';
 
+  const strengthCompliance = resolveStrengthCompliance(planned);
+
   const prompt = `${seuils ? `Seuils de l'athlète : ${seuils}.\n\n` : ''}# Séance PRÉVUE
 ${describePlanned(planned, { ftpW })}
 
 # Séance RÉALISÉE
 ${describeActual(planned.activity, stravaDescription, { ftpW, workSummary })}
-
+${
+  strengthCompliance
+    ? `\n# Conformité muscu (calcul déterministe)\n${formatStrengthCompliance(strengthCompliance)}\n`
+    : ''
+}
 # Suivi physique actif de l'athlète
 ${describePhysicalNotes(physicalNotes)}`;
 
@@ -299,7 +344,19 @@ ${describePhysicalNotes(physicalNotes)}`;
     painIds.has(r.noteId),
   );
 
-  return { ...output, physicalReassessments };
+  return applyStrengthScoringGuards(
+    { ...output, physicalReassessments },
+    planned.type,
+    strengthCompliance,
+  );
+}
+
+/** Prescribed vs realized sets — null unless both sides exist. */
+function resolveStrengthCompliance(planned: PlannedWithActivity): StrengthCompliance | null {
+  if (planned.type !== 'STRENGTH' || !planned.activity) return null;
+  const prescription = parseStrengthPrescription(planned.strengthPrescription);
+  if (!prescription) return null;
+  return computeStrengthCompliance(prescription.sets, planned.activity.strengthSets);
 }
 
 const BRICK_SYSTEM = `Tu es un entraîneur expert en triathlon et en sports d'enchaînement (brick). On te donne un enchaînement multisport (ex. vélo → course) avec, pour chaque sport, ce qui était PRÉVU et ce qui a été RÉELLEMENT réalisé, dans l'ordre.
