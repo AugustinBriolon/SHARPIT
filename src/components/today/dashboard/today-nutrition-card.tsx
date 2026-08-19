@@ -25,8 +25,8 @@ export function TodayNutritionCard() {
 
   if (!isPending && (!data?.connected || !data.today)) return null;
 
-  const today = data!.today!;
-  const goals = today.goalsProgress;
+  const today = data?.today;
+  const goals = today?.goalsProgress;
 
   return (
     <section aria-busy={isPending || undefined} className="px-0.5">
@@ -46,9 +46,7 @@ export function TodayNutritionCard() {
           </div>
           <div className="min-w-0 flex-1 space-y-1.5">
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              {isPending ? (
-                <SkeletonDataValue heightClassName="h-5" widthClassName="w-16" />
-              ) : (
+              {today ? (
                 <>
                   <span
                     className={cn(
@@ -65,9 +63,11 @@ export function TodayNutritionCard() {
                     </span>
                   ) : null}
                 </>
+              ) : (
+                <SkeletonDataValue heightClassName="h-5" widthClassName="w-16" />
               )}
             </div>
-            {!isPending ? (
+            {today ? (
               <ColoredMacroStackBar
                 carbs={today.carbohydrates}
                 className="max-w-xs"
@@ -81,7 +81,7 @@ export function TodayNutritionCard() {
         </div>
 
         <div className="flex items-center justify-between gap-3 sm:shrink-0 sm:flex-col sm:items-end sm:justify-center">
-          {!isPending ? (
+          {today ? (
             <ColoredMacroPills
               carbs={today.carbohydrates}
               className="sm:justify-end"
