@@ -265,6 +265,41 @@ function validateGarminBattery(
   return { valid: true, flags: ['PROPRIETARY_MODEL_OUTPUT'] };
 }
 
+function validateNutrition(raw: Extract<RawObservation, { type: 'NUTRITION' }>): ValidationResult {
+  // Upper bounds are deliberately generous: an ultra-endurance fuelling day is a
+  // real 10 000 kcal, and rejecting it would silently drop the most informative
+  // days. The point is to catch unit mistakes, not to police the athlete's diet.
+  const energy = checkRange('energyKcal', raw.energyKcal, 0, 12000, true);
+  if (energy) return energy;
+
+  const protein = checkRange('proteinG', raw.proteinG, 0, 500, true);
+  if (protein) return protein;
+
+  const carbohydrates = checkRange('carbohydratesG', raw.carbohydratesG, 0, 1500, true);
+  if (carbohydrates) return carbohydrates;
+
+  const fat = checkRange('fatG', raw.fatG, 0, 500, true);
+  if (fat) return fat;
+
+  if (raw.goalEnergyKcal !== undefined) {
+    const goal = checkRange('goalEnergyKcal', raw.goalEnergyKcal, 500, 12000);
+    if (goal) return goal;
+  }
+
+  if (raw.exerciseEnergyKcal !== undefined) {
+    const exercise = checkRange('exerciseEnergyKcal', raw.exerciseEnergyKcal, 0, 8000);
+    if (exercise) return exercise;
+  }
+
+  // A day with intake but no entries behind it means the totals were not built
+  // from the diary, so nothing downstream can attribute them to actual food.
+  if (raw.entryCount <= 0 && raw.energyKcal > 0) {
+    return { valid: true, flags: ['UNUSUAL_VALUE'] };
+  }
+
+  return { valid: true, flags: [] };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Dispatch
 // ─────────────────────────────────────────────────────────────────────────────
@@ -289,5 +324,7 @@ export function validate(raw: RawObservation): ValidationResult {
       return validateGarminReadiness(raw);
     case 'GARMIN_BATTERY':
       return validateGarminBattery(raw);
+    case 'NUTRITION':
+      return validateNutrition(raw);
   }
 }

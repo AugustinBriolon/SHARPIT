@@ -114,6 +114,10 @@ function deriveQuality(raw: RawObservation): ObservationQuality {
     case 'GARMIN_READINESS':
     case 'GARMIN_BATTERY':
       return 'PROPRIETARY_MODEL';
+    // Food logging is the athlete choosing foods and portions by hand; no
+    // provider can raise that above self-report.
+    case 'NUTRITION':
+      return 'MANUAL';
   }
 }
 

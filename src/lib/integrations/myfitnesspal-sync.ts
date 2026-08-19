@@ -1,4 +1,6 @@
 import { format, subDays } from 'date-fns';
+import { mfpDayToNutritionObservation } from '@/core/adapters/myfitnesspal-adapter';
+import { observationEngine } from '@/lib/engines/observation-engine';
 import { prisma } from '@/lib/prisma';
 import { decryptSecret, encryptSecret } from '@/lib/secret-box';
 import { isMfpAccountConnected, ProviderAuthError } from '@/lib/integrations/connection-status';
@@ -8,6 +10,7 @@ import {
   fetchDisplayName,
   fetchNutrientGoals,
   refreshMfpSession,
+  type MfpDayResult,
   type MfpScrapedMeal,
   type MfpSession,
 } from '@/lib/integrations/myfitnesspal';
@@ -15,6 +18,7 @@ import {
 type MealEntry = MfpScrapedMeal['entries'][number];
 
 const ACCOUNT_ID = 'default';
+const ATHLETE_ID = 'default';
 
 export async function getMfpAccount() {
   return prisma.myFitnessPalAccount.findUnique({ where: { id: ACCOUNT_ID } });
@@ -64,6 +68,23 @@ async function rollSessionForward(session: MfpSession): Promise<MfpSession> {
   });
 
   return { sessionToken: refreshed.sessionToken };
+}
+
+/**
+ * Mirrors the diary day into the observation registry, the source of truth every
+ * other provider already feeds.
+ *
+ * Failures are logged and swallowed: nutrition must never be the reason a sync
+ * that already produced a usable DailyNutrition row reports an error.
+ */
+async function ingestNutritionObservation(day: MfpDayResult): Promise<void> {
+  try {
+    const raw = mfpDayToNutritionObservation(day, new Date());
+    if (!raw) return;
+    await observationEngine.ingest(ATHLETE_ID, raw);
+  } catch (err) {
+    console.error('[ObservationEngine] myfitnesspal ingest failed:', err);
+  }
 }
 
 export interface MfpSyncResult {
@@ -118,6 +139,8 @@ export async function syncMfpNutrition(lookbackDays = 7): Promise<MfpSyncResult>
       const result = await fetchDiaryDay(session, dateStr);
       const hasMeals = result.meals.some((m: MfpScrapedMeal) => m.entries.length > 0);
       if (!hasMeals && !result.goals) continue;
+
+      await ingestNutritionObservation(result);
 
       const mealSummaries = result.meals
         .filter((m: MfpScrapedMeal) => m.entries.length > 0)

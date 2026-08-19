@@ -20,6 +20,7 @@ export type {
   RawBodyCompositionObservation,
   RawGarminReadinessObservation,
   RawBodyBatteryObservation,
+  RawNutritionObservation,
   // Sub-types used in raw observations
   SessionPowerData,
   SessionHrData,

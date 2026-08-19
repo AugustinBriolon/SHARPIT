@@ -25,10 +25,11 @@ export type ObservationType =
   | 'PHYSICAL_CONDITION'
   | 'BODY_COMPOSITION'
   | 'GARMIN_READINESS'
-  | 'GARMIN_BATTERY';
+  | 'GARMIN_BATTERY'
+  | 'NUTRITION';
 
 export type ObservationSource =
-  'GARMIN' | 'STRAVA' | 'MANUAL' | 'RENPHO' | 'WITHINGS' | 'GOOGLE_FIT';
+  'GARMIN' | 'STRAVA' | 'MANUAL' | 'RENPHO' | 'WITHINGS' | 'GOOGLE_FIT' | 'MYFITNESSPAL';
 
 export type SportType =
   | 'RUN'
@@ -356,6 +357,42 @@ export type RawBodyBatteryObservation = RawObservationBase & {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// NUTRITION
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * One day of food logging, as the athlete recorded it.
+ *
+ * Always MANUAL quality: every value traces back to the athlete choosing foods
+ * and portions in a diary app, so it carries logging error no provider can
+ * correct. Absence of this observation means "not logged", never "ate nothing" —
+ * downstream extractors must not read a missing day as a zero-intake day, which
+ * is why `entryCount` travels with the totals.
+ *
+ * Goals are the athlete's own targets as configured in the provider, carried
+ * here so intake can be read against intent without a second round trip.
+ */
+export type RawNutritionObservation = RawObservationBase & {
+  type: 'NUTRITION';
+  energyKcal: number;
+  proteinG: number;
+  carbohydratesG: number;
+  fatG: number;
+  fiberG?: number;
+  sugarG?: number;
+  goalEnergyKcal?: number;
+  goalProteinG?: number;
+  goalCarbohydratesG?: number;
+  goalFatG?: number;
+  /** Energy the provider credits back from exercise, in kilocalories. */
+  exerciseEnergyKcal?: number;
+  /** True when the athlete marked the diary day as finished. */
+  diaryComplete?: boolean;
+  /** How many individual food entries back these totals. 0 means goals only. */
+  entryCount: number;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Union type — the single input accepted by the engine
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -368,7 +405,8 @@ export type RawObservation =
   | RawPhysicalConditionObservation
   | RawBodyCompositionObservation
   | RawGarminReadinessObservation
-  | RawBodyBatteryObservation;
+  | RawBodyBatteryObservation
+  | RawNutritionObservation;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Observation metadata — added by the engine to every accepted observation
@@ -406,6 +444,7 @@ export type PhysicalConditionObservation = ObservationMeta & RawPhysicalConditio
 export type BodyCompositionObservation = ObservationMeta & RawBodyCompositionObservation;
 export type GarminReadinessObservation = ObservationMeta & RawGarminReadinessObservation;
 export type BodyBatteryObservation = ObservationMeta & RawBodyBatteryObservation;
+export type NutritionObservation = ObservationMeta & RawNutritionObservation;
 
 export type Observation =
   | SessionObservation
@@ -416,7 +455,8 @@ export type Observation =
   | PhysicalConditionObservation
   | BodyCompositionObservation
   | GarminReadinessObservation
-  | BodyBatteryObservation;
+  | BodyBatteryObservation
+  | NutritionObservation;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Engine result types
