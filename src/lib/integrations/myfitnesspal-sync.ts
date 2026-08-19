@@ -6,6 +6,8 @@ import {
   MfpSessionExpiredError,
   fetchDiaryDay,
   fetchDisplayName,
+  fetchNutrientGoals,
+  refreshMfpSession,
   type MfpScrapedMeal,
   type MfpSession,
 } from '@/lib/integrations/myfitnesspal';
@@ -46,9 +48,39 @@ async function revokeMfpCredentials() {
   });
 }
 
+/**
+ * Rolls the stored cookie forward so the ~30-day expiry never lands on the user.
+ *
+ * Persists only when MFP actually hands back a new token, keeping sync a read for
+ * the common case where the session is still inside next-auth's update window.
+ */
+async function rollSessionForward(session: MfpSession): Promise<MfpSession> {
+  const refreshed = await refreshMfpSession(session);
+  if (!refreshed.rotated) return session;
+
+  await prisma.myFitnessPalAccount.update({
+    where: { id: ACCOUNT_ID },
+    data: { sessionTokenEnc: encryptSecret(refreshed.sessionToken) },
+  });
+
+  return { sessionToken: refreshed.sessionToken };
+}
+
 export interface MfpSyncResult {
   synced: number;
   errors: number;
+}
+
+export async function getLiveNutrientGoals(dateStr: string) {
+  const account = await getMfpAccount();
+  if (!account || !isMfpAccountConnected(account)) return null;
+
+  const session: MfpSession = { sessionToken: decryptSecret(account.sessionTokenEnc) };
+  try {
+    return await fetchNutrientGoals(session, dateStr);
+  } catch {
+    return null;
+  }
 }
 
 export async function syncMfpNutrition(lookbackDays = 7): Promise<MfpSyncResult> {
@@ -59,7 +91,20 @@ export async function syncMfpNutrition(lookbackDays = 7): Promise<MfpSyncResult>
     );
   }
 
-  const session: MfpSession = { sessionToken: decryptSecret(account.sessionTokenEnc) };
+  let session: MfpSession = { sessionToken: decryptSecret(account.sessionTokenEnc) };
+
+  try {
+    session = await rollSessionForward(session);
+  } catch (err) {
+    if (err instanceof MfpSessionExpiredError) {
+      await revokeMfpCredentials();
+      throw new ProviderAuthError(
+        'Session MyFitnessPal expirée. Reconnecte MyFitnessPal dans les paramètres.',
+      );
+    }
+    // A refresh outage must not block a sync the stored cookie can still serve.
+    console.error('[MFP] session refresh failed, syncing with the stored cookie:', err);
+  }
 
   const today = new Date();
   let synced = 0;
@@ -71,7 +116,8 @@ export async function syncMfpNutrition(lookbackDays = 7): Promise<MfpSyncResult>
 
     try {
       const result = await fetchDiaryDay(session, dateStr);
-      if (result.meals.every((m: MfpScrapedMeal) => m.entries.length === 0)) continue;
+      const hasMeals = result.meals.some((m: MfpScrapedMeal) => m.entries.length > 0);
+      if (!hasMeals && !result.goals) continue;
 
       const mealSummaries = result.meals
         .filter((m: MfpScrapedMeal) => m.entries.length > 0)
@@ -81,6 +127,15 @@ export async function syncMfpNutrition(lookbackDays = 7): Promise<MfpSyncResult>
           protein: Math.round(m.entries.reduce((s: number, e: MealEntry) => s + e.protein, 0)),
           carbs: Math.round(m.entries.reduce((s: number, e: MealEntry) => s + e.carbohydrates, 0)),
           fat: Math.round(m.entries.reduce((s: number, e: MealEntry) => s + e.fat, 0)),
+          entries: m.entries.map((e: MealEntry) => ({
+            name: e.name,
+            calories: Math.round(e.calories),
+            protein: Math.round(e.protein * 10) / 10,
+            carbs: Math.round(e.carbohydrates * 10) / 10,
+            fat: Math.round(e.fat * 10) / 10,
+            sugar: Math.round(e.sugar * 10) / 10,
+            fiber: Math.round(e.fiber * 10) / 10,
+          })),
         }));
 
       await prisma.dailyNutrition.upsert({
@@ -101,6 +156,11 @@ export async function syncMfpNutrition(lookbackDays = 7): Promise<MfpSyncResult>
           fiber: Math.round(result.totals.fiber * 10) / 10,
           meals: mealSummaries,
           complete: result.complete,
+          goalCalories: result.goals?.calories ?? null,
+          goalProtein: result.goals?.protein ?? null,
+          goalCarbohydrates: result.goals?.carbohydrates ?? null,
+          goalFat: result.goals?.fat ?? null,
+          exerciseCalories: result.exerciseCalories,
         },
         update: {
           calories: Math.round(result.totals.calories),
@@ -111,6 +171,11 @@ export async function syncMfpNutrition(lookbackDays = 7): Promise<MfpSyncResult>
           fiber: Math.round(result.totals.fiber * 10) / 10,
           meals: mealSummaries,
           complete: result.complete,
+          goalCalories: result.goals?.calories ?? null,
+          goalProtein: result.goals?.protein ?? null,
+          goalCarbohydrates: result.goals?.carbohydrates ?? null,
+          goalFat: result.goals?.fat ?? null,
+          exerciseCalories: result.exerciseCalories,
         },
       });
       synced++;

@@ -101,7 +101,7 @@ const MATCHERS: Matcher[] = [
 
   {
     pattern: /^\/nutrition$/,
-    resolve: () => ({ label: 'Nutrition', defaultParent: HOME_PARENT }),
+    resolve: () => ({ label: 'Nutrition', defaultParent: TODAY_PARENT }),
   },
 
   { pattern: /^\/settings$/, resolve: () => ({ label: 'Réglages', defaultParent: HOME_PARENT }) },

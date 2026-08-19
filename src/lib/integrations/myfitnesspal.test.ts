@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { buildDayResult } from './myfitnesspal';
+import {
+  buildDayResult,
+  parseNutrientGoalsForDate,
+  parseRotatedSessionToken,
+  sumExerciseCalories,
+} from './myfitnesspal';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Fixtures — shaped exactly like MFP's real read_diary response.
@@ -116,5 +121,81 @@ describe('buildDayResult', () => {
       sugar: 0,
       fiber: 0,
     });
+  });
+});
+
+describe('parseNutrientGoalsForDate', () => {
+  it('selects the goal bundle for the requested weekday', () => {
+    const goals = parseNutrientGoalsForDate(
+      [
+        {
+          valid_from: '2026-08-19',
+          valid_to: '2100-01-01',
+          daily_goals: [
+            {
+              day_of_week: 'wednesday',
+              energy: { value: 2400, unit: 'calories' },
+              protein: 180,
+              carbohydrates: 270,
+              fat: 67,
+            },
+          ],
+        },
+      ],
+      '2026-08-19',
+    );
+
+    expect(goals).toEqual({
+      calories: 2400,
+      protein: 180,
+      carbohydrates: 270,
+      fat: 67,
+      fiber: null,
+      sugar: null,
+    });
+  });
+});
+
+describe('sumExerciseCalories', () => {
+  it('ignores deleted exercise entries', () => {
+    const total = sumExerciseCalories([
+      { energy: { value: 12 }, exercise: { deleted: true } },
+      { energy: { value: 300 } },
+    ]);
+
+    expect(total).toBe(300);
+  });
+});
+
+describe('parseRotatedSessionToken', () => {
+  const cookieName = '__Secure-next-auth.session-token';
+
+  it('extracts the rotated token from a next-auth Set-Cookie header', () => {
+    const headers = [
+      'anon-device-id=abc; Domain=myfitnesspal.com; Path=/; Secure',
+      `${cookieName}=rotated.jwt.value; Path=/; HttpOnly; Secure; SameSite=Lax`,
+    ];
+
+    expect(parseRotatedSessionToken(headers)).toBe('rotated.jwt.value');
+  });
+
+  it('returns null when MFP sends no session cookie back', () => {
+    expect(parseRotatedSessionToken(['__cf_bm=noise; Path=/; Secure'])).toBeNull();
+    expect(parseRotatedSessionToken([])).toBeNull();
+  });
+
+  it('ignores chunked session cookies rather than storing a partial token', () => {
+    const headers = [
+      `${cookieName}.0=first-half; Path=/; HttpOnly; Secure`,
+      `${cookieName}.1=second-half; Path=/; HttpOnly; Secure`,
+    ];
+
+    expect(parseRotatedSessionToken(headers)).toBeNull();
+  });
+
+  it('treats a cleared session cookie as no rotation', () => {
+    expect(
+      parseRotatedSessionToken([`${cookieName}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`]),
+    ).toBeNull();
   });
 });

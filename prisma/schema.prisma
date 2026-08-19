@@ -378,6 +378,12 @@ model DailyNutrition {
   meals         Json     @default("[]")
   complete      Boolean  @default(false)
 
+  goalCalories      Int?
+  goalProtein       Float?
+  goalCarbohydrates Float?
+  goalFat           Float?
+  exerciseCalories  Int?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

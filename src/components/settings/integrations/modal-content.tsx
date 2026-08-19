@@ -956,7 +956,8 @@ function MfpContent({
             required
           />
           <p className="text-muted-foreground mt-1 text-xs">
-            Le cookie expire après ~30 jours ; il faudra le renouveler ici quand la session expire.
+            À faire une seule fois : chaque synchro prolonge la session, tant que la synchro
+            automatique tourne.
           </p>
         </div>
         {connectError && (
