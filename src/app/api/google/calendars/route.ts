@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { GoogleOAuthError } from '@/lib/integrations/google';
 import {
   getGoogleAccount,
@@ -6,7 +6,11 @@ import {
   listGoogleCalendars,
 } from '@/lib/integrations/google-sync';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Read search params before try so Cache Components prerender interrupts propagate.
+  const { searchParams } = new URL(request.url);
+  void searchParams;
+
   try {
     const account = await getGoogleAccount();
     if (!isGoogleConnected(account)) {
