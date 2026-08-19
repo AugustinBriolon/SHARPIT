@@ -3,6 +3,7 @@ import { refreshAthleteState } from '@/lib/athlete-state/orchestrator';
 import { getGarminAccount, syncGarminHealth } from '@/lib/integrations/garmin-sync';
 import { syncGarminActivities } from '@/lib/integrations/garmin-activity-sync';
 import { getGoogleAccount, syncFromGoogle } from '@/lib/integrations/google-sync';
+import { getMfpAccount, syncMfpNutrition } from '@/lib/integrations/myfitnesspal-sync';
 import { updateRecordsAfterProviderSync } from '@/lib/training/records';
 import { getRenphoAccount, syncRenphoHealth } from '@/lib/integrations/renpho-sync';
 import { getWithingsAccount, syncWithingsHealth } from '@/lib/integrations/withings-sync';
@@ -17,7 +18,7 @@ function unauthorized() {
   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 }
 
-/** Synchro planifiée (Vercel Cron) : Strava, Garmin, Renpho, Google si connectés. */
+/** Synchro planifiée (Vercel Cron) : Strava, Garmin, Renpho, Withings, Google, MyFitnessPal si connectés. */
 export async function GET(request: Request) {
   const auth = request.headers.get('authorization');
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -31,6 +32,7 @@ export async function GET(request: Request) {
     renpho: Awaited<ReturnType<typeof syncRenphoHealth>> | null;
     withings: Awaited<ReturnType<typeof syncWithingsHealth>> | null;
     google: Awaited<ReturnType<typeof syncFromGoogle>> | null;
+    mfp: Awaited<ReturnType<typeof syncMfpNutrition>> | null;
     backfill: Awaited<ReturnType<typeof backfillActivityStreams>> | null;
     briefing: boolean;
     weeklyReview: boolean;
@@ -42,19 +44,21 @@ export async function GET(request: Request) {
     renpho: null,
     withings: null,
     google: null,
+    mfp: null,
     backfill: null,
     briefing: false,
     weeklyReview: false,
     errors: [],
   };
 
-  const [stravaAccount, garminAccount, renphoAccount, withingsAccount, googleAccount] =
+  const [stravaAccount, garminAccount, renphoAccount, withingsAccount, googleAccount, mfpAccount] =
     await Promise.all([
       getStravaAccount(),
       getGarminAccount(),
       getRenphoAccount(),
       getWithingsAccount(),
       getGoogleAccount(),
+      getMfpAccount(),
     ]);
 
   // All connected providers in parallel — each failure is isolated into result.errors.
@@ -126,6 +130,17 @@ export async function GET(request: Request) {
             result.errors.push(`google: ${msg}`);
           })
       : Promise.resolve(),
+    mfpAccount
+      ? syncMfpNutrition()
+          .then((mfp) => {
+            result.mfp = mfp;
+          })
+          .catch((error) => {
+            const msg = error instanceof Error ? error.message : 'Sync MyFitnessPal échouée';
+            console.error('[cron/sync] MyFitnessPal:', msg);
+            result.errors.push(`mfp: ${msg}`);
+          })
+      : Promise.resolve(),
   ]);
 
   // Backfill progressif des streams (records & courbes) : un lot par exécution
@@ -178,7 +193,8 @@ export async function GET(request: Request) {
     !garminAccount &&
     !renphoAccount &&
     !withingsAccount &&
-    !googleAccount?.targetCalendarId
+    !googleAccount?.targetCalendarId &&
+    !mfpAccount
   ) {
     return NextResponse.json({
       ok: true,

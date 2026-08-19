@@ -20,6 +20,7 @@ export type SettingsHubMemoryFacts = {
 
 export type SettingsHubIntegrationsFacts = {
   connectedCount: number;
+  reconnectNames: string[];
 };
 
 export type SettingsHubEquipmentFacts = {
@@ -78,6 +79,12 @@ export function memoryStatusLabel(facts: SettingsHubMemoryFacts): string {
 }
 
 export function integrationsStatusLabel(facts: SettingsHubIntegrationsFacts): string {
+  if (facts.reconnectNames.length === 1) {
+    return `${facts.reconnectNames[0]} à reconnecter`;
+  }
+  if (facts.reconnectNames.length > 1) {
+    return `${facts.reconnectNames.length} à reconnecter`;
+  }
   if (facts.connectedCount === 0) return 'Aucune connexion';
   return facts.connectedCount === 1 ? '1 connectée' : `${facts.connectedCount} connectées`;
 }

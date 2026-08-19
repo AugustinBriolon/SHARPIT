@@ -16,6 +16,7 @@ import { OfflineSnapshotSummary } from '@/components/pwa/offline-snapshot-summar
 import { TodayActionRow } from './rich/today-action-row';
 import { TodaySignalStrip } from './dashboard/today-signal-strip';
 import { TodayWeeklyTrajectory } from './rich/today-weekly-trajectory';
+import { TodayNutritionCard } from './dashboard/today-nutrition-card';
 import { useClientMorningHold } from '@/components/today/rich/morning-orientation-actions';
 import { TodayDashboardShell } from './today-dashboard-shell';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
@@ -84,7 +85,9 @@ export function TodayDashboard() {
         isRefreshing={query.isFetching}
         refreshDisabled={guardDisabled || query.isFetching}
         refreshLabel={offline ? offlineLabel : 'Actualiser'}
+        statusHref={vm?.statusHref}
         statusMessage={vm?.statusMessage}
+        statusSnoozeKey={vm?.statusSnoozeKey}
         onWellnessCompleted={() => void query.refetch()}
         onRefresh={() => {
           if (guardDisabled) return;
@@ -117,7 +120,12 @@ export function TodayDashboard() {
         </p>
       ) : null}
       {!valuesLoading && content.statusMessage ? (
-        <SnapshotStatusBanner isRefreshing={query.isFetching} message={content.statusMessage} />
+        <SnapshotStatusBanner
+          href={content.statusHref}
+          isRefreshing={query.isFetching}
+          message={content.statusMessage}
+          snoozeKey={content.statusSnoozeKey}
+        />
       ) : null}
       <div className="space-y-2 lg:space-y-4">
         <TodayVerdictHero loading={valuesLoading} vm={content} />
@@ -130,6 +138,7 @@ export function TodayDashboard() {
         onWellnessCompleted={() => void query.refetch()}
       />
       <TodayWeeklyTrajectory loading={valuesLoading} vm={content} />
+      <TodayNutritionCard />
     </div>
   );
 }

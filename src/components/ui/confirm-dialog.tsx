@@ -60,14 +60,21 @@ export function useConfirmDialog() {
             <DialogDescription>{options.description}</DialogDescription>
           ) : null}
         </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => close(false)}>
-            {options.cancelLabel}
-          </Button>
-          <Button variant={options.variant} onClick={() => close(true)}>
-            {options.confirmLabel}
-          </Button>
-        </DialogFooter>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            close(true);
+          }}
+        >
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => close(false)}>
+              {options.cancelLabel}
+            </Button>
+            <Button type="submit" variant={options.variant} autoFocus>
+              {options.confirmLabel}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   ) : null;

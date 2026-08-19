@@ -19,6 +19,7 @@ import {
   useConversations,
   useCreateConversation,
   useDeleteConversation,
+  useRenameConversation,
 } from '@/hooks/use-coach';
 import { useActivities, usePlannedSessions } from '@/hooks/use-data';
 import { useOfflineSnapshot } from '@/hooks/use-offline-snapshot';
@@ -93,6 +94,7 @@ export function CoachView() {
 
   const conversationsQuery = useConversations();
   const createConversation = useCreateConversation();
+  const renameConversation = useRenameConversation();
   const deleteConversation = useDeleteConversation();
 
   const conversations = conversationsQuery.data ?? [];
@@ -372,6 +374,7 @@ export function CoachView() {
       newDisabled={createConversation.isPending || guardDisabled}
       onDelete={handleDeleteConversation}
       onNewConversation={openNewConversation}
+      onRename={(id, title) => renameConversation.mutate({ id, title })}
       onSelect={setActiveId}
     />
   );

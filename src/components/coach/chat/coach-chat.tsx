@@ -7,7 +7,7 @@ import {
   lastAssistantMessageIsCompleteWithApprovalResponses,
   type UIMessage,
 } from 'ai';
-import { ArrowDown, Loader2, Send, Square } from 'lucide-react';
+import { ArrowDown, Send, Square } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CoachMessage } from '@/components/coach/chat/coach-message';
 import { CoachProvenanceChips } from '@/components/coach/chat/coach-provenance-chips';
@@ -484,9 +484,9 @@ export function CoachChat({
                   ) : null}
                   {text && <CoachMessage streaming={isLiveStreamTail}>{text}</CoachMessage>}
                   <ToolActivityList parts={inlineParts as ToolPartLite[]} streamIdle={streamIdle} />
-                  {streamIdle && text && messageIndex === lastAssistantIndex ? (
+                  {streamIdle && text && messageIndex === lastAssistantIndex && (
                     <CoachProvenanceChips />
-                  ) : null}
+                  )}
                 </div>
               </div>
             );
@@ -494,19 +494,25 @@ export function CoachChat({
 
           {status === 'submitted' && (
             <div aria-live="polite" className="flex justify-start" role="status">
-              <div className="bg-analysis-surface-alt rounded-[18px_18px_18px_4px] px-4 py-2.5">
-                <Loader2 className="text-muted-foreground size-4 animate-spin" aria-hidden />
+              <div className="bg-analysis-surface-alt flex items-center gap-2 rounded-[18px_18px_18px_4px] px-4 py-2.5">
+                <span className="coach-orb" aria-hidden />
+                <span className="coach-thinking-shimmer text-[13px] leading-4.5 font-medium">
+                  Réflexion…
+                </span>
                 <span className="sr-only">Le coach rédige une réponse…</span>
               </div>
             </div>
           )}
 
           {pendingApprovals.length > 0 && (
-            <div aria-label="Propositions à valider" className="space-y-1.5" role="region">
-              <p className="text-muted-foreground px-0.5 text-xs">
+            <div aria-label="Propositions à valider" className="space-y-2" role="region">
+              <p className="text-muted-foreground flex items-center gap-1.5 px-0.5 text-xs">
+                <span className="bg-primary/10 text-primary inline-flex size-5 items-center justify-center rounded-full text-[10px] font-semibold">
+                  {pendingApprovals.length}
+                </span>
                 {pendingApprovals.length === 1
-                  ? 'Proposition en attente — valide ou refuse pour que le coach poursuive.'
-                  : `${pendingApprovals.length} propositions en attente — réponds pour débloquer la suite.`}
+                  ? 'Proposition en attente'
+                  : 'Propositions en attente'}
               </p>
               {pendingApprovals.map((part, i) => (
                 <ToolActivity
@@ -553,20 +559,19 @@ export function CoachChat({
         </div>
       </div>
 
-      {showJumpToLatest ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-20 flex justify-center">
+      {showJumpToLatest && (
+        <div className="pointer-events-none absolute right-2.5 bottom-20 flex justify-center">
           <Button
-            className="pointer-events-auto h-9 gap-1.5 rounded-full px-3 text-xs shadow-sm"
+            className="pointer-events-auto rounded-full px-2 text-xs shadow-sm"
             size="sm"
             type="button"
             variant="outline"
             onClick={() => scrollToLatest('smooth')}
           >
             <ArrowDown className="size-3.5" aria-hidden />
-            Revenir en bas
           </Button>
         </div>
-      ) : null}
+      )}
 
       <form
         className="border-border/60 flex items-end gap-2 border-t p-3"

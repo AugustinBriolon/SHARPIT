@@ -71,6 +71,8 @@ function ActionRow({ action }: { action: EmptyStateAction }) {
 
 export function TodayEmptyState({
   statusMessage,
+  statusHref,
+  statusSnoozeKey,
   isRefreshing,
   refreshDisabled,
   refreshLabel,
@@ -78,6 +80,8 @@ export function TodayEmptyState({
   onWellnessCompleted,
 }: {
   statusMessage?: string | null;
+  statusHref?: string | null;
+  statusSnoozeKey?: string | null;
   isRefreshing: boolean;
   refreshDisabled: boolean;
   /** Reads "Actualiser", or the offline reason when refreshing is unavailable. */
@@ -98,7 +102,12 @@ export function TodayEmptyState({
       </header>
 
       {statusMessage ? (
-        <SnapshotStatusBanner isRefreshing={isRefreshing} message={statusMessage} />
+        <SnapshotStatusBanner
+          href={statusHref}
+          isRefreshing={isRefreshing}
+          message={statusMessage}
+          snoozeKey={statusSnoozeKey}
+        />
       ) : null}
 
       <section className="space-y-3">

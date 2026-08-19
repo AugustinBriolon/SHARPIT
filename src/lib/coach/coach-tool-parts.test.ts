@@ -63,4 +63,27 @@ describe('coach-tool-parts', () => {
       isStaleCalendarToolPart({ type: 'tool-listPlannedSessions', state: 'input-available' }, true),
     ).toBe(false);
   });
+
+  it('does not mark a validated card as interrupted while other approvals wait', () => {
+    expect(
+      isStaleCalendarToolPart(
+        {
+          type: 'tool-createPlannedSession',
+          state: 'approval-responded',
+          approval: { id: 'a1', approved: true },
+        },
+        true,
+      ),
+    ).toBe(false);
+    expect(
+      isStaleCalendarToolPart(
+        {
+          type: 'tool-createPlannedSession',
+          state: 'approval-requested',
+          approval: { id: 'a2' },
+        },
+        true,
+      ),
+    ).toBe(false);
+  });
 });

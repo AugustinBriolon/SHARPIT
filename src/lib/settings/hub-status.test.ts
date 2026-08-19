@@ -59,8 +59,16 @@ describe('settings hub status labels', () => {
     expect(memoryStatusLabel({ entryCount: 1, hasProfileContext: false, activeLabel: null })).toBe(
       '1 entrée',
     );
-    expect(integrationsStatusLabel({ connectedCount: 0 })).toBe('Aucune connexion');
-    expect(integrationsStatusLabel({ connectedCount: 3 })).toBe('3 connectées');
+    expect(integrationsStatusLabel({ connectedCount: 0, reconnectNames: [] })).toBe(
+      'Aucune connexion',
+    );
+    expect(integrationsStatusLabel({ connectedCount: 3, reconnectNames: [] })).toBe('3 connectées');
+    expect(integrationsStatusLabel({ connectedCount: 2, reconnectNames: ['Garmin'] })).toBe(
+      'Garmin à reconnecter',
+    );
+    expect(
+      integrationsStatusLabel({ connectedCount: 1, reconnectNames: ['Garmin', 'Strava'] }),
+    ).toBe('2 à reconnecter');
   });
 
   it('maps theme preference', () => {

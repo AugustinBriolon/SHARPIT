@@ -353,7 +353,7 @@ export async function addPhysicalCheckin(
   noteId: string,
   data: { severity?: number | null; comment?: string | null; date?: Date },
 ) {
-  await prisma.physicalCheckin.create({
+  const checkin = await prisma.physicalCheckin.create({
     data: {
       noteId,
       severity: data.severity ?? null,
@@ -361,13 +361,55 @@ export async function addPhysicalCheckin(
       ...(data.date ? { date: data.date } : {}),
     },
   });
-  // synchronise la sévérité courante de la note avec le dernier point
+
   if (data.severity != null) {
     await prisma.physicalNote.update({
       where: { id: noteId },
       data: { severity: data.severity },
     });
   }
+
+  const condition = await prisma.condition.findUnique({
+    where: { legacyPhysicalNoteId: noteId },
+  });
+
+  if (condition) {
+    const symptomPresent = data.severity != null ? data.severity > 0 : true;
+    await prisma.conditionObservation.create({
+      data: {
+        conditionId: condition.id,
+        observedAt: data.date ?? new Date(),
+        context: 'MANUAL',
+        source: 'ATHLETE',
+        symptomPresent,
+        severityReported: data.severity ?? null,
+        functionalImpact:
+          data.severity == null
+            ? null
+            : (() => {
+                if (data.severity === 0) return 'NONE';
+                if (data.severity <= 3) return 'MILD';
+                if (data.severity <= 6) return 'MODERATE';
+                if (data.severity <= 8) return 'LIMITING';
+                return 'STOPPED';
+              })(),
+        bodyRegion: condition.bodyRegion,
+        side: condition.side,
+        type: condition.type,
+        comment: data.comment ?? null,
+        legacyPhysicalCheckinId: checkin.id,
+      },
+    });
+
+    await prisma.condition.update({
+      where: { id: condition.id },
+      data: {
+        lastObservationAt: data.date ?? new Date(),
+        observationCount: { increment: 1 },
+      },
+    });
+  }
+
   return getPhysicalNoteById(noteId);
 }
 

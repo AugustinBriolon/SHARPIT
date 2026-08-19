@@ -1,22 +1,13 @@
-'use client';
-
 import { Suspense } from 'react';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { Brain, Dumbbell, Goal, Link2, MoonStar, ShieldCheck, User2, Wrench } from 'lucide-react';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { InstallCard } from '@/components/pwa/install-card';
-import { useThemePreference } from '@/providers/theme-provider';
-import { themeStatusLabel, type SettingsHubStatus } from '@/lib/settings/hub-status';
+import { HubStatusValue } from '@/components/settings/hub-status-value';
+import { SettingsAppearanceStatus } from '@/components/settings/settings-appearance-status';
+import { SettingsHomeExtras } from '@/components/settings/settings-home-extras';
+import type { SettingsHubStatus } from '@/lib/settings/hub-status';
 import { cn } from '@/lib/utils';
-
-const SettingsMaintenancePanel = dynamic(
-  () => import('@/components/settings/maintenance').then((mod) => mod.SettingsMaintenancePanel),
-  { ssr: false },
-);
-
-/** One streamed status node per server-backed entry, keyed by status key. */
-export type SettingsStatusSlots = Record<keyof SettingsHubStatus, React.ReactNode>;
 
 type SettingsEntry = {
   href: string;
@@ -106,19 +97,14 @@ const GROUPS: SettingsGroup[] = [
   },
 ];
 
-/** Appearance is the one status the client owns — it comes from the theme store. */
-function AppearanceStatus() {
-  const { preference } = useThemePreference();
-  return themeStatusLabel(preference);
+function entryStatus(statusKey: SettingsEntry['statusKey']) {
+  if (statusKey === 'appearance') {
+    return <SettingsAppearanceStatus />;
+  }
+  return <HubStatusValue statusKey={statusKey} />;
 }
 
-function SettingsEntryRow({
-  entry,
-  statusSlots,
-}: {
-  entry: SettingsEntry;
-  statusSlots: SettingsStatusSlots;
-}) {
+function SettingsEntryRow({ entry }: { entry: SettingsEntry }) {
   const Icon = entry.icon;
 
   return (
@@ -137,11 +123,7 @@ function SettingsEntryRow({
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <p className="text-sm font-medium">{entry.title}</p>
             <p className="text-data text-muted-foreground text-xs tabular-nums">
-              {entry.statusKey === 'appearance' ? (
-                <AppearanceStatus />
-              ) : (
-                statusSlots[entry.statusKey]
-              )}
+              {entryStatus(entry.statusKey)}
             </p>
           </div>
           <p className="text-muted-foreground mt-0.5 text-sm leading-relaxed">
@@ -159,7 +141,12 @@ function SettingsEntryRow({
   );
 }
 
-export function SettingsHome({ statusSlots }: { statusSlots: SettingsStatusSlots }) {
+/**
+ * Server Component on purpose. The hub chips call `connection()` and must
+ * stay in the RSC tree so PPR can resume them. Nesting those islands as
+ * slots of a Client Component left the skeletons on screen forever.
+ */
+export function SettingsHome() {
   return (
     <div className="space-y-6">
       <StickyHeader>
@@ -182,7 +169,7 @@ export function SettingsHome({ statusSlots }: { statusSlots: SettingsStatusSlots
             </div>
             <ul className="space-y-2">
               {group.entries.map((entry) => (
-                <SettingsEntryRow key={entry.href} entry={entry} statusSlots={statusSlots} />
+                <SettingsEntryRow key={entry.href} entry={entry} />
               ))}
             </ul>
           </section>
@@ -214,7 +201,7 @@ export function SettingsHome({ statusSlots }: { statusSlots: SettingsStatusSlots
           </div>
         </div>
         <div className="mt-4">
-          <SettingsMaintenancePanel variant="embedded" />
+          <SettingsHomeExtras />
         </div>
       </section>
 

@@ -51,7 +51,13 @@ describe('reasoningSummaryLabel', () => {
     );
   });
 
-  it('reads as a settled artifact once an answer exists', () => {
+  it('shows elapsed seconds once thinking is done', () => {
+    expect(
+      reasoningSummaryLabel({ streaming: false, hasAnswerText: true, elapsedSeconds: 5 }),
+    ).toBe('A réfléchi pendant 5s');
+  });
+
+  it('falls back to generic label without elapsed seconds', () => {
     expect(reasoningSummaryLabel({ streaming: true, hasAnswerText: true })).toBe(
       'Raisonnement du coach',
     );

@@ -12,6 +12,11 @@ import {
   pickPrimaryProductMessage,
   productMessageForDomain,
 } from '@/lib/athlete-state/product-states';
+import {
+  isGarminAccountConnected,
+  isOAuthAccountConnected,
+  isRenphoAccountConnected,
+} from '@/lib/integrations/connection-status';
 
 const ATHLETE_ID = 'default';
 
@@ -43,7 +48,7 @@ export const BODY_PROVIDER_STALE_HOURS = 24;
 /** Calendar — keep aligned with planning day. */
 export const PLANNING_PROVIDER_STALE_HOURS = 2;
 
-function providerStale(lastSync: Date | null, thresholdHours: number): boolean {
+function providerStale(lastSync: Date | null | undefined, thresholdHours: number): boolean {
   if (!lastSync) return true;
   return hoursSince(lastSync)! > thresholdHours;
 }
@@ -217,14 +222,26 @@ export async function computeFreshnessSnapshot(params: {
       orderBy: { timestamp: 'desc' },
       select: { timestamp: true },
     }),
-    prisma.stravaAccount.findUnique({ where: { id: 'default' }, select: { lastSyncAt: true } }),
+    prisma.stravaAccount.findUnique({
+      where: { id: 'default' },
+      select: { lastSyncAt: true, refreshToken: true },
+    }),
     prisma.garminAccount.findUnique({
       where: { id: 'default' },
-      select: { lastSyncAt: true, lastActivitySyncAt: true },
+      select: { lastSyncAt: true, lastActivitySyncAt: true, oauth2Token: true },
     }),
-    prisma.renphoAccount.findUnique({ where: { id: 'default' }, select: { lastSyncAt: true } }),
-    prisma.withingsAccount.findUnique({ where: { id: 'default' }, select: { lastSyncAt: true } }),
-    prisma.googleAccount.findUnique({ where: { id: 'default' }, select: { lastSyncAt: true } }),
+    prisma.renphoAccount.findUnique({
+      where: { id: 'default' },
+      select: { lastSyncAt: true, passwordEnc: true },
+    }),
+    prisma.withingsAccount.findUnique({
+      where: { id: 'default' },
+      select: { lastSyncAt: true, refreshToken: true },
+    }),
+    prisma.googleAccount.findUnique({
+      where: { id: 'default' },
+      select: { lastSyncAt: true, refreshToken: true },
+    }),
     prisma.dailyBriefing.findFirst({
       where: { date: new Date(`${trainingDayId}T12:00:00.000Z`) },
       select: { generatedAt: true, phaseAtGeneration: true },
@@ -258,46 +275,52 @@ export async function computeFreshnessSnapshot(params: {
     dailyStrainAvailable && latestSnapshot?.generatedAt ? latestSnapshot.generatedAt : null;
   const trainingEvidenceAt = sessionEvidence ?? dailyStrainUpdatedAt;
 
+  const garminConnected = isGarminAccountConnected(garmin);
+  const stravaConnected = isOAuthAccountConnected(strava);
+  const renphoConnected = isRenphoAccountConnected(renpho);
+  const withingsConnected = isOAuthAccountConnected(withings);
+  const googleConnected = isOAuthAccountConnected(google);
+
   const providers: ProviderFreshness[] = [
     {
       provider: 'garmin',
-      connected: garmin != null,
+      connected: garminConnected,
       lastSyncAt:
         garminSyncReference(garmin?.lastSyncAt, garmin?.lastActivitySyncAt)?.toISOString() ?? null,
       stale:
-        garmin != null &&
+        garminConnected &&
         providerStale(
-          garminSyncReference(garmin.lastSyncAt, garmin.lastActivitySyncAt),
+          garminSyncReference(garmin?.lastSyncAt, garmin?.lastActivitySyncAt),
           ACTIVITY_PROVIDER_STALE_HOURS,
         ),
       syncing: syncing.garmin === true,
     },
     {
       provider: 'strava',
-      connected: strava != null,
+      connected: stravaConnected,
       lastSyncAt: strava?.lastSyncAt?.toISOString() ?? null,
-      stale: strava != null && providerStale(strava.lastSyncAt, ACTIVITY_PROVIDER_STALE_HOURS),
+      stale: stravaConnected && providerStale(strava?.lastSyncAt, ACTIVITY_PROVIDER_STALE_HOURS),
       syncing: syncing.strava === true,
     },
     {
       provider: 'renpho',
-      connected: renpho != null,
+      connected: renphoConnected,
       lastSyncAt: renpho?.lastSyncAt?.toISOString() ?? null,
-      stale: renpho != null && providerStale(renpho.lastSyncAt, BODY_PROVIDER_STALE_HOURS),
+      stale: renphoConnected && providerStale(renpho?.lastSyncAt, BODY_PROVIDER_STALE_HOURS),
       syncing: syncing.renpho === true,
     },
     {
       provider: 'withings',
-      connected: withings != null,
+      connected: withingsConnected,
       lastSyncAt: withings?.lastSyncAt?.toISOString() ?? null,
-      stale: withings != null && providerStale(withings.lastSyncAt, BODY_PROVIDER_STALE_HOURS),
+      stale: withingsConnected && providerStale(withings?.lastSyncAt, BODY_PROVIDER_STALE_HOURS),
       syncing: syncing.withings === true,
     },
     {
       provider: 'google',
-      connected: google != null,
+      connected: googleConnected,
       lastSyncAt: google?.lastSyncAt?.toISOString() ?? null,
-      stale: google != null && providerStale(google.lastSyncAt, PLANNING_PROVIDER_STALE_HOURS),
+      stale: googleConnected && providerStale(google?.lastSyncAt, PLANNING_PROVIDER_STALE_HOURS),
       syncing: syncing.google === true,
     },
   ];
@@ -368,8 +391,8 @@ export async function computeFreshnessSnapshot(params: {
   const bodyFreshness = resolveBodyFreshness(
     syncing.renpho === true,
     syncing.withings === true,
-    renpho != null,
-    withings != null,
+    renpho != null && isRenphoAccountConnected(renpho),
+    withings != null && isOAuthAccountConnected(withings),
     bodyEvidence,
   );
 
@@ -416,7 +439,7 @@ export async function computeFreshnessSnapshot(params: {
       'planning',
       google?.lastSyncAt ?? null,
       planningFreshness,
-      `google_sync=${google != null}`,
+      `google_sync=${googleConnected}`,
     ),
   ];
 

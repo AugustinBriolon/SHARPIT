@@ -52,7 +52,29 @@ function inferSeverityFromObservations(
   );
 
   if (symptomatic.length === 0) {
-    return { severity: 0, evidenceIds: [] };
+    // No symptomatic observations within the 28-day window.
+    // Check the most recent observation (symptomatic or not) to decide:
+    // - If the last observation reported severity 0 or was asymptomatic,
+    //   the condition is genuinely at 0.
+    // - Otherwise, carry the last known severity forward — the athlete
+    //   simply hasn't checked in recently, not improved.
+    const sorted = [...observations]
+      .filter((o) => o.severityReported != null && daysBetween(o.observedAt, referenceAt) >= 0)
+      .sort((a, b) => b.observedAt.getTime() - a.observedAt.getTime());
+
+    if (sorted.length === 0) {
+      return { severity: 0, evidenceIds: [] };
+    }
+
+    const [latest] = sorted;
+    if (!latest.symptomPresent || (latest.severityReported as number) === 0) {
+      return { severity: 0, evidenceIds: [] };
+    }
+
+    return {
+      severity: Math.round((latest.severityReported as number) * 10) / 10,
+      evidenceIds: [latest.id],
+    };
   }
 
   let weightedSum = 0;

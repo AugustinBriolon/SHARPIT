@@ -1,3 +1,5 @@
+import { ProviderAuthError } from '@/lib/integrations/connection-status';
+
 const WITHINGS_OAUTH_AUTHORIZE = 'https://account.withings.com/oauth2_user/authorize2';
 const WITHINGS_OAUTH_TOKEN = 'https://wbsapi.withings.net/v2/oauth2';
 const WITHINGS_MEASURE = 'https://wbsapi.withings.net/measure';
@@ -80,9 +82,17 @@ async function withingsFormPost<T>(
 
   const json = (await response.json()) as WithingsApiResponse<T>;
   if (!response.ok || json.status !== 0 || !json.body) {
-    throw new Error(
-      json.error ?? `Withings API error (HTTP ${response.status}, status ${json.status})`,
-    );
+    const message =
+      json.error ?? `Withings API error (HTTP ${response.status}, status ${json.status})`;
+    if (
+      response.status === 401 ||
+      response.status === 403 ||
+      json.status === 401 ||
+      json.status === 247
+    ) {
+      throw new ProviderAuthError(message);
+    }
+    throw new Error(message);
   }
   return json.body;
 }

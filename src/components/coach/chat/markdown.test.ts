@@ -32,7 +32,11 @@ Utilise \`FTP 265W\` comme référence. Voir [le détail](https://example.com/pl
 
 describe('Markdown', () => {
   it('rend une réponse coach complète sans planter', () => {
-    const html = renderToStaticMarkup(createElement(Markdown, null, SAMPLE));
+    const MarkdownElement = Markdown as unknown as (props: {
+      children?: string;
+      streaming?: boolean;
+    }) => ReturnType<typeof Markdown>;
+    const html = renderToStaticMarkup(createElement(MarkdownElement, null, SAMPLE));
 
     // Tableau encapsulé dans son conteneur scrollable, pas de débordement du bubble.
     expect(html).toContain('overflow-x-auto');
@@ -45,8 +49,12 @@ describe('Markdown', () => {
   });
 
   it('referme le markdown coupé en cours de streaming', () => {
+    const MarkdownElement = Markdown as unknown as (props: {
+      children?: string;
+      streaming?: boolean;
+    }) => ReturnType<typeof Markdown>;
     const html = renderToStaticMarkup(
-      createElement(Markdown, { streaming: true }, 'Ta **séance de seuil'),
+      createElement(MarkdownElement, { streaming: true }, 'Ta **séance de seuil'),
     );
 
     expect(html).toContain('coach-streaming');

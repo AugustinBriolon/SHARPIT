@@ -24,7 +24,9 @@ import {
   resolvePreviousLinkedActivityId,
 } from '@/lib/query/planned-session-link-optimistic';
 import type { BrickAnalysis } from '@/lib/validators/coach';
+import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import type { ActivityType, SessionIntensity } from '@prisma/client';
+import type { QueryClient } from '@tanstack/react-query';
 
 export type { PlannedSessionBatchOp };
 
@@ -99,6 +101,20 @@ export interface CreateBrickPayload {
   /** Option B — stamped on every brick leg. */
   goalId?: string | null;
   legs: BrickLegPayload[];
+}
+
+type DaySummaryLine = TodayViewModel['actionRow']['daySummaryLines'][number];
+
+function patchTodayPresentationLines(
+  qc: QueryClient,
+  fn: (lines: DaySummaryLine[]) => DaySummaryLine[],
+) {
+  qc.setQueriesData<TodayViewModel>({ queryKey: ['presentation', 'today'] }, (prev) => {
+    if (!prev) return prev;
+    const patched = fn(prev.actionRow.daySummaryLines);
+    if (patched === prev.actionRow.daySummaryLines) return prev;
+    return { ...prev, actionRow: { ...prev.actionRow, daySummaryLines: patched } };
+  });
 }
 
 export function usePlannedSessionMutations() {
@@ -230,15 +246,27 @@ export function usePlannedSessionMutations() {
     },
   });
 
+  const removeListOpts = listOptimistic<ClientPlannedSession, string>({
+    queryClient,
+    queryKey: key,
+    apply: (prev, id) => prev.filter((s) => s.id !== id),
+    success: 'Séance supprimée',
+    error: 'Impossible de supprimer la séance.',
+  });
+
   const remove = useMutation({
     mutationFn: (id: string) => sendJson(`/api/planned-sessions/${id}`, 'DELETE'),
-    ...listOptimistic<ClientPlannedSession, string>({
-      queryClient,
-      queryKey: key,
-      apply: (prev, id) => prev.filter((s) => s.id !== id),
-      success: 'Séance supprimée',
-      error: 'Impossible de supprimer la séance.',
-    }),
+    ...removeListOpts,
+    onMutate: async (id) => {
+      const listContext = await removeListOpts.onMutate?.(id);
+      patchTodayPresentationLines(queryClient, (lines) => lines.filter((l) => l.id !== id));
+      return listContext;
+    },
+    onSettled: () => {
+      removeListOpts.onSettled?.();
+      void queryClient.invalidateQueries({ queryKey: ['presentation', 'today'] });
+      void queryClient.invalidateQueries({ queryKey: ['today'] });
+    },
   });
 
   const analyze = useMutation({

@@ -45,7 +45,7 @@ export type GoogleSyncResult = {
   unlinked: number;
 };
 
-export type IntegrationId = 'strava' | 'garmin' | 'withings' | 'renpho' | 'google';
+export type IntegrationId = 'strava' | 'garmin' | 'withings' | 'renpho' | 'google' | 'myfitnesspal';
 
 async function parseJson<T>(response: Response, fallbackError: string): Promise<T> {
   const data = await response.json();
@@ -95,6 +95,13 @@ export async function runWithingsSync(options?: { full?: boolean }): Promise<Wit
 export async function runGoogleSync(): Promise<GoogleSyncResult> {
   const response = await fetch('/api/google/sync', { method: 'POST' });
   return parseJson(response, 'Synchronisation Google échouée');
+}
+
+export type MfpSyncResult = { synced: number; errors: number };
+
+export async function runMfpSync(): Promise<MfpSyncResult> {
+  const response = await fetch('/api/myfitnesspal/sync', { method: 'POST' });
+  return parseJson(response, 'Synchronisation MyFitnessPal échouée');
 }
 
 export function stravaBackfillSummary(data: StravaBackfillResult): string {

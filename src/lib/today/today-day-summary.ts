@@ -7,7 +7,7 @@ import { formatPlannedDuration, intensityLabels } from '@/lib/planned-session/se
 
 export type DaySummaryLine = {
   id: string;
-  kind: 'done' | 'planned';
+  kind: 'done' | 'planned' | 'missed';
   activityType: ActivityType;
   primary: string;
   secondary?: string;
@@ -20,6 +20,26 @@ export type TodayDaySummary = {
   lines: DaySummaryLine[];
   isEmpty: boolean;
 };
+
+/**
+ * Past planned sessions that were never realized (no activity, not completed).
+ * Looked back up to `lookbackDays` from the reference date.
+ */
+export function findMissedPlannedSessions(
+  plannedSessions: ClientPlannedSession[],
+  ref: Date,
+  lookbackDays = 7,
+): ClientPlannedSession[] {
+  const refDay = startOfDay(ref);
+  const cutoff = startOfDay(new Date(refDay.getTime() - lookbackDays * 86_400_000));
+  return plannedSessions
+    .filter((s) => {
+      if (s.completed || s.activityId) return false;
+      const day = startOfDay(new Date(s.date));
+      return day < refDay && day >= cutoff;
+    })
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
 
 export function buildTodayDaySummary(
   date: Date,

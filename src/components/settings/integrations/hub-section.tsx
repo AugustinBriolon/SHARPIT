@@ -3,11 +3,20 @@ import type { IntegrationsPayload } from '@/components/settings/integrations/typ
 import { getGarminAccount } from '@/lib/integrations/garmin-sync';
 import { isGoogleConfigured } from '@/lib/integrations/google';
 import { getGoogleAccount, isGoogleConnected } from '@/lib/integrations/google-sync';
+import { getMfpAccount } from '@/lib/integrations/myfitnesspal-sync';
+import { isMfpConfigured } from '@/lib/integrations/myfitnesspal';
+
 import { getRenphoAccount } from '@/lib/integrations/renpho-sync';
 import { isStravaConfigured } from '@/lib/integrations/strava';
 import { getStravaAccount } from '@/lib/integrations/strava-sync';
 import { isWithingsConfigured } from '@/lib/integrations/withings';
 import { getWithingsAccount } from '@/lib/integrations/withings-sync';
+import {
+  isGarminAccountConnected,
+  isMfpAccountConnected,
+  isOAuthAccountConnected,
+  isRenphoAccountConnected,
+} from '@/lib/integrations/connection-status';
 
 const statusMessages: Record<string, string> = {
   connected: 'Compte Strava connecté.',
@@ -51,8 +60,10 @@ async function buildIntegrationsPayload(
     renphoAccount,
     withingsAccount,
     googleAccount,
+    mfpAccount,
     googleConfigured,
     withingsConfigured,
+    mfpConfigured,
   ] = await Promise.all([
     getStravaAccount(),
     Promise.resolve(isStravaConfigured()),
@@ -60,8 +71,10 @@ async function buildIntegrationsPayload(
     getRenphoAccount(),
     getWithingsAccount(),
     getGoogleAccount().catch(() => null),
+    getMfpAccount().catch(() => null),
     Promise.resolve(isGoogleConfigured()),
     Promise.resolve(isWithingsConfigured()),
+    Promise.resolve(isMfpConfigured()),
   ]);
 
   const { strava, google, googleDetail, withings, withingsDetail } = params;
@@ -77,6 +90,7 @@ async function buildIntegrationsPayload(
             lastSyncAt: stravaAccount.lastSyncAt?.toISOString() ?? null,
           }
         : null,
+      needsReconnect: Boolean(stravaAccount) && !isOAuthAccountConnected(stravaAccount),
       statusMessage: strava ? statusMessages[strava] : undefined,
     },
     garmin: {
@@ -87,6 +101,7 @@ async function buildIntegrationsPayload(
             lastSyncAt: garminAccount.lastSyncAt?.toISOString() ?? null,
           }
         : null,
+      needsReconnect: Boolean(garminAccount) && !isGarminAccountConnected(garminAccount),
     },
     withings: {
       configured: withingsConfigured,
@@ -96,6 +111,7 @@ async function buildIntegrationsPayload(
             lastSyncAt: withingsAccount.lastSyncAt?.toISOString() ?? null,
           }
         : null,
+      needsReconnect: Boolean(withingsAccount) && !isOAuthAccountConnected(withingsAccount),
       statusMessage: withings
         ? [
             withingsStatusMessages[withings],
@@ -113,18 +129,19 @@ async function buildIntegrationsPayload(
             lastSyncAt: renphoAccount.lastSyncAt?.toISOString() ?? null,
           }
         : null,
+      needsReconnect: Boolean(renphoAccount) && !isRenphoAccountConnected(renphoAccount),
     },
     google: {
       configured: googleConfigured,
-      account:
-        isGoogleConnected(googleAccount) && googleAccount
-          ? {
-              email: googleAccount.email,
-              targetCalendarId: googleAccount.targetCalendarId,
-              targetCalendarName: googleAccount.targetCalendarName,
-              lastSyncAt: googleAccount.lastSyncAt?.toISOString() ?? null,
-            }
-          : null,
+      account: googleAccount
+        ? {
+            email: googleAccount.email,
+            targetCalendarId: googleAccount.targetCalendarId,
+            targetCalendarName: googleAccount.targetCalendarName,
+            lastSyncAt: googleAccount.lastSyncAt?.toISOString() ?? null,
+          }
+        : null,
+      needsReconnect: Boolean(googleAccount) && !isGoogleConnected(googleAccount),
       statusMessage: google
         ? [
             googleStatusMessages[google],
@@ -133,6 +150,16 @@ async function buildIntegrationsPayload(
             .filter(Boolean)
             .join(' ')
         : undefined,
+    },
+    myfitnesspal: {
+      configured: mfpConfigured,
+      account: mfpAccount
+        ? {
+            displayName: mfpAccount.displayName,
+            lastSyncAt: mfpAccount.lastSyncAt?.toISOString() ?? null,
+          }
+        : null,
+      needsReconnect: Boolean(mfpAccount) && !isMfpAccountConnected(mfpAccount),
     },
   };
 }

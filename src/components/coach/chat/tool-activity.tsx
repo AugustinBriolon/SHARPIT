@@ -13,13 +13,11 @@ import {
   PencilLine,
   X,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { activityTypeLabels } from '@/lib/format';
 import {
   failureHintForPart,
   failureLabelForPart,
   humanizeToolErrorMessage,
-  sessionTitleFromPart,
 } from '@/lib/coach/coach-tool-display';
 import { isStaleCalendarToolPart } from '@/lib/coach/coach-tool-parts';
 import { intensityLabels } from '@/lib/planned-session/sessions';
@@ -281,7 +279,7 @@ export function ToolActivity({
   const { state } = part;
   const isList = part.type === 'tool-listPlannedSessions';
 
-  // 1) Demande de validation — carte compacte (HITL), pas un formulaire lourd
+  // 1) Approval card — structured Beautiful UI style
   if (state === 'approval-requested' && part.approval && !part.approval.isAutomatic) {
     const { headline, lines } = describeInput(
       part.type,
@@ -290,56 +288,86 @@ export function ToolActivity({
     );
     const isDelete = part.type === 'tool-deletePlannedSession';
     return (
-      <div className="border-analysis-border/70 bg-background/50 rounded-lg border px-2.5 py-2">
-        <div className="flex items-start gap-2">
-          <Icon className="text-muted-foreground mt-0.5 size-3.5 shrink-0" aria-hidden />
-          <div className="min-w-0 flex-1">
-            <p className="text-muted-foreground text-[0.65rem] font-medium tracking-wide uppercase">
-              {meta.proposal}
-            </p>
-            <p className="text-foreground mt-0.5 text-sm leading-snug font-medium">{headline}</p>
-            {lines.length > 0 ? (
-              <p className="text-muted-foreground mt-0.5 truncate text-xs">{lines.join(' · ')}</p>
-            ) : null}
+      <div className="border-analysis-border bg-background rounded-analysis overflow-hidden border transition-all duration-200">
+        <div className="space-y-2 px-3 pt-3 pb-2">
+          <div className="flex items-center gap-2">
+            <span className="bg-primary/10 text-primary inline-flex size-6 items-center justify-center rounded-full">
+              <Icon className="size-3.5" aria-hidden />
+            </span>
+            <p className="text-muted-foreground text-xs font-medium">{meta.proposal}</p>
           </div>
+          <p className="text-foreground text-sm leading-snug font-medium">{headline}</p>
+          {lines.length > 0 && (
+            <div className="bg-muted/40 rounded-lg px-2.5 py-2">
+              {lines.map((line, i) => (
+                <p key={i} className="text-muted-foreground text-xs leading-relaxed">
+                  {line}
+                </p>
+              ))}
+            </div>
+          )}
         </div>
-        <div className="mt-2 flex flex-wrap items-center justify-end gap-1.5">
-          <Button
-            className="h-8 gap-1 px-2.5 text-xs"
+        <div className="border-border/40 flex border-t">
+          <button
+            className="text-muted-foreground hover:bg-muted/50 flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors disabled:opacity-50"
             disabled={disabled}
-            size="sm"
             type="button"
-            variant="ghost"
             onClick={() => onApproval?.(part.approval!.id, false)}
           >
             <X className="size-3.5" aria-hidden />
             Refuser
-          </Button>
-          <Button
-            className="h-8 gap-1 px-2.5 text-xs"
+          </button>
+          <span className="border-border/40 border-l" />
+          <button
             disabled={disabled}
-            size="sm"
             type="button"
-            variant={isDelete ? 'destructive' : 'default'}
+            className={cn(
+              'flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors disabled:opacity-50',
+              isDelete
+                ? 'text-destructive hover:bg-destructive/5'
+                : 'text-primary hover:bg-primary/5',
+            )}
             onClick={() => onApproval?.(part.approval!.id, true)}
           >
             <Check className="size-3.5" aria-hidden />
             {isDelete ? 'Supprimer' : 'Valider'}
-          </Button>
+          </button>
         </div>
       </div>
     );
   }
 
-  // 2) Refusé
-  if (state === 'output-denied') {
-    const reason = part.approval?.reason;
+  // 2) Approval responded — rejected
+  if (state === 'approval-responded' && part.approval?.approved === false) {
     return (
-      <div className="border-analysis-border/60 bg-analysis-surface-alt/60 text-muted-foreground flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs">
-        <X className="size-3.5 shrink-0" aria-hidden />
+      <span className="border-analysis-border/60 bg-analysis-surface-alt/60 text-muted-foreground inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium">
+        <X className="size-3 shrink-0" aria-hidden />
         <span className="line-through">{meta.proposal}</span>
-        <span className="opacity-70">— {reason?.trim() ? reason : 'proposition refusée'}</span>
-      </div>
+      </span>
+    );
+  }
+
+  // Approval responded — accepted, waiting for execution
+  if (state === 'approval-responded') {
+    return (
+      <span className="border-primary/30 bg-primary/8 text-primary inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium">
+        {streamIdle ? (
+          <Check className="size-3 shrink-0" aria-hidden />
+        ) : (
+          <Loader2 className="size-3 shrink-0 animate-spin" aria-hidden />
+        )}
+        {streamIdle ? meta.label : meta.running}
+      </span>
+    );
+  }
+
+  // 3) Output denied
+  if (state === 'output-denied') {
+    return (
+      <span className="border-analysis-border/60 bg-analysis-surface-alt/60 text-muted-foreground inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium">
+        <X className="size-3 shrink-0" aria-hidden />
+        <span className="line-through">{meta.proposal}</span>
+      </span>
     );
   }
 
@@ -348,19 +376,11 @@ export function ToolActivity({
   const stale = isStaleCalendarToolPart(part, streamIdle);
 
   if (stale) {
-    const staleMessage =
-      state === 'approval-responded'
-        ? "L'exécution a été interrompue"
-        : 'Proposition non finalisée — envoie un nouveau message pour continuer';
     return (
-      <div
-        className="border-destructive/30 bg-destructive/5 text-destructive flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs"
-        title={state === 'approval-responded' ? "La séance n'a pas pu être ajoutée" : undefined}
-      >
-        <X className="size-3.5 shrink-0" aria-hidden />
-        <span className="font-medium">{failureLabelForPart(part)}</span>
-        <span className="opacity-90">— {staleMessage}</span>
-      </div>
+      <span className="border-destructive/30 bg-destructive/5 text-destructive inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium">
+        <X className="size-3 shrink-0" aria-hidden />
+        {failureLabelForPart(part)}
+      </span>
     );
   }
 
@@ -377,65 +397,52 @@ export function ToolActivity({
   const koExec = done && output?.ok === false;
   const isFailure = failed || koExec;
 
-  let detail: string | null = null;
-  let debugDetail: string | null = null;
+  let tooltip: string | null = null;
 
   if (isFailure) {
     const { hint, debug } = failed
       ? humanizeToolErrorMessage(part.errorText)
       : failureHintForPart(part);
-    debugDetail = debug;
-    const hasTitle = Boolean(sessionTitleFromPart(part));
-    const isGenericHint =
-      hint === "L'ajout n'a pas abouti" || hint === "L'opération n'a pas abouti";
-    detail = hint && !(hasTitle && isGenericHint) ? hint : null;
+    tooltip = debug ?? hint;
   } else if (done && !isList && output) {
     if (part.type === 'tool-setTravelContext' && output.locationLabel) {
-      detail = output.locationLabel;
+      tooltip = output.locationLabel;
     } else if (part.type === 'tool-createBrickSession' && output.legs?.length) {
       const legLabels = output.legs
         .map((l) => l.title ?? (l.type ? activityTypeLabels[l.type as ActivityType] : null))
         .filter(Boolean);
-      detail = [output.date, legLabels.join(' → ')].filter(Boolean).join(' · ') || null;
+      tooltip = [output.date, legLabels.join(' → ')].filter(Boolean).join(' · ') || null;
     } else {
-      detail = [output.title, output.date].filter(Boolean).join(' · ') || null;
+      tooltip = [output.title, output.date].filter(Boolean).join(' · ') || null;
     }
   }
 
-  function getStatusClassName(): string {
-    if (isFailure) {
-      return 'border-destructive/30 bg-destructive/5 text-destructive';
-    }
-    if (done) {
-      return 'border-primary/30 bg-primary/8 text-primary';
-    }
-    return 'border-analysis-border/60 bg-analysis-surface-alt/60 text-muted-foreground';
+  let chipClass = 'border-analysis-border/60 bg-analysis-surface-alt/60 text-muted-foreground';
+  if (isFailure) {
+    chipClass = 'border-destructive/30 bg-destructive/5 text-destructive';
+  } else if (done) {
+    chipClass = 'border-primary/30 bg-primary/8 text-primary';
   }
 
-  function statusIcon() {
-    if (!done && !failed) return <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden />;
-    if (isFailure) return <X className="size-3.5 shrink-0" aria-hidden />;
-    return <Icon className="size-3.5 shrink-0" aria-hidden />;
-  }
-
-  function statusLabel(): string {
-    if (isFailure) return failureLabelForPart(part);
-    if (done) return meta.label;
-    return meta.running;
+  let chipLabel = meta.running;
+  if (isFailure) {
+    chipLabel = failureLabelForPart(part);
+  } else if (done) {
+    chipLabel = meta.label;
   }
 
   return (
-    <div
-      title={debugDetail ?? undefined}
+    <span
+      title={tooltip ?? undefined}
       className={cn(
-        'flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs',
-        getStatusClassName(),
+        'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium',
+        chipClass,
       )}
     >
-      {statusIcon()}
-      <span className="font-medium">{statusLabel()}</span>
-      {detail ? <span className="truncate opacity-80">— {detail}</span> : null}
-      {done && !isFailure && <Check className="ml-auto size-3 shrink-0" aria-hidden />}
-    </div>
+      {!done && !failed ? <Loader2 className="size-3 shrink-0 animate-spin" aria-hidden /> : null}
+      {isFailure ? <X className="size-3 shrink-0" aria-hidden /> : null}
+      {done && !isFailure ? <Icon className="size-3 shrink-0" aria-hidden /> : null}
+      {chipLabel}
+    </span>
   );
 }

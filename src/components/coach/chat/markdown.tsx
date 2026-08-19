@@ -63,9 +63,9 @@ const markdownComponents: Components = {
       <input
         checked={checked}
         className="accent-primary me-2 size-3.5 translate-y-[0.15em] cursor-default opacity-100"
+        type="checkbox"
         disabled
         readOnly
-        type="checkbox"
       />
     ) : null,
   a: ({ href, children }) => {

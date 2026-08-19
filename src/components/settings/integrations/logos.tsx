@@ -8,6 +8,7 @@ const LOGO_PATHS: Record<IntegrationId, string> = {
   withings: '/images/withings.png',
   renpho: '/images/renpho.png',
   google: '/images/googleagenda.png',
+  myfitnesspal: '/images/myfitnesspal.png',
 };
 
 export function IntegrationLogo({ id, className }: { id: IntegrationId; className?: string }) {

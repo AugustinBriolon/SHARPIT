@@ -1,4 +1,9 @@
 import type { DataProvider } from '@/core/athlete-state/events';
+import {
+  isGarminAccountConnected,
+  isOAuthAccountConnected,
+  isRenphoAccountConnected,
+} from '@/lib/integrations/connection-status';
 import { syncGarminActivities } from '@/lib/integrations/garmin-activity-sync';
 import {
   GARMIN_HEALTH_OPEN_PATH_FALLBACK_DAYS,
@@ -127,10 +132,10 @@ export async function listConnectedProviders(): Promise<DataProvider[]> {
   ]);
 
   const connected: DataProvider[] = [];
-  if (garmin) connected.push('garmin');
-  if (strava) connected.push('strava');
-  if (renpho) connected.push('renpho');
-  if (withings) connected.push('withings');
-  if (google?.targetCalendarId) connected.push('google');
+  if (isGarminAccountConnected(garmin)) connected.push('garmin');
+  if (isOAuthAccountConnected(strava)) connected.push('strava');
+  if (isRenphoAccountConnected(renpho)) connected.push('renpho');
+  if (isOAuthAccountConnected(withings)) connected.push('withings');
+  if (isOAuthAccountConnected(google) && google?.targetCalendarId) connected.push('google');
   return connected;
 }

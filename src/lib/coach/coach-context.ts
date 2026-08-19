@@ -29,6 +29,25 @@ import {
 import { formatEquipmentForCoach } from '@/lib/equipment/format';
 import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
 
+async function loadNutritionSummary(
+  trainingDayId: string,
+): Promise<{ calories: number; protein: number; carbs: number; fat: number } | null> {
+  try {
+    const row = await prisma.dailyNutrition.findFirst({
+      where: { date: new Date(`${trainingDayId}T00:00:00Z`) },
+    });
+    if (!row) return null;
+    return {
+      calories: row.calories,
+      protein: Math.round(row.protein),
+      carbs: Math.round(row.carbohydrates),
+      fat: Math.round(row.fat),
+    };
+  } catch {
+    return null;
+  }
+}
+
 const WEEKDAYS_FR = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
 const TYPE_FR: Record<string, string> = {
@@ -145,6 +164,7 @@ async function buildCoachContextUncached(
     scenarioComparison,
     anchor,
     dailyStress,
+    nutritionToday,
   ] = await Promise.all([
     getActivitiesForCoach({ limit: 120, sinceDays: 90 }),
     getHealthEntries(30),
@@ -159,6 +179,7 @@ async function buildCoachContextUncached(
     includeScenario ? loadScenarioComparisonForCoach({ horizonDays: 7 }) : Promise.resolve(null),
     loadAthletePmcAnchor({ refDate: today }),
     loadDailyTrainingStressEntries({ refDate: today }),
+    loadNutritionSummary(trainingDayId),
   ]);
 
   // ---- Fitness (PMC: CTL / ATL / TSB) ----
@@ -516,6 +537,7 @@ async function buildCoachContextUncached(
     decision,
     environment,
     scenarioComparison: formatScenarioComparisonForCoach(scenarioComparison),
+    nutrition: nutritionToday,
   };
 }
 

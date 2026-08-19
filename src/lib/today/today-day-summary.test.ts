@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildTodayDaySummary } from './today-day-summary';
+import { buildTodayDaySummary, findMissedPlannedSessions } from './today-day-summary';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 
 const TODAY = new Date('2026-07-03T10:00:00');
@@ -99,6 +99,17 @@ describe('buildTodayDaySummary', () => {
     expect(summary.lines[0]?.secondary).toContain('Sert Nice 70.3');
   });
 
+  it('excludes past unrealized sessions from today lines', () => {
+    const yesterday = new Date(TODAY.getTime() - 86_400_000);
+    const summary = buildTodayDaySummary(
+      TODAY,
+      [],
+      [planned({ id: 'p-old', title: 'Vieille séance', date: yesterday })],
+    );
+    expect(summary.lines).toHaveLength(0);
+    expect(summary.isEmpty).toBe(true);
+  });
+
   it('hides planned sessions once linked even if completed flag lags', () => {
     const summary = buildTodayDaySummary(
       TODAY,
@@ -119,5 +130,32 @@ describe('buildTodayDaySummary', () => {
     expect(summary.lines[0]?.kind).toBe('done');
     expect(summary.lines[0]?.primary).toContain('Endurance vélo');
     expect(summary.sectionLabel).not.toContain('à venir');
+  });
+});
+
+describe('findMissedPlannedSessions', () => {
+  it('returns past unrealized sessions within lookback window', () => {
+    const yesterday = new Date(TODAY.getTime() - 86_400_000);
+    const twoWeeksAgo = new Date(TODAY.getTime() - 14 * 86_400_000);
+    const missed = findMissedPlannedSessions(
+      [
+        planned({ id: 'p-yesterday', date: yesterday }),
+        planned({ id: 'p-old', date: twoWeeksAgo }),
+        planned({ id: 'p-done', date: yesterday, completed: true }),
+        planned({ id: 'p-linked', date: yesterday, activityId: 'a1' }),
+      ],
+      TODAY,
+    );
+    expect(missed).toHaveLength(1);
+    expect(missed[0]!.id).toBe('p-yesterday');
+  });
+
+  it('returns empty when all past sessions are completed', () => {
+    const yesterday = new Date(TODAY.getTime() - 86_400_000);
+    const missed = findMissedPlannedSessions(
+      [planned({ id: 'p1', date: yesterday, completed: true })],
+      TODAY,
+    );
+    expect(missed).toHaveLength(0);
   });
 });

@@ -11,7 +11,6 @@ import {
 import type { ToolPartLite } from '@/lib/coach/coach-tool-parts';
 import { useSafeMotion, useShouldAnimate } from '@/lib/motion/hooks';
 import { fadeTransition } from '@/lib/motion/variants';
-import { cn } from '@/lib/utils';
 
 function entryKey(entry: ToolDisplayEntry, index: number): string {
   if (entry.kind === 'single') {
@@ -27,27 +26,18 @@ function CondensedFailures({
   entry: Extract<ToolDisplayEntry, { kind: 'condensed-failures' }>;
 }) {
   const label = condensedFailureLabel(entry);
-  const titlePreview =
-    entry.titles.length > 0
-      ? entry.titles.slice(0, 3).join(', ') +
-        (entry.titles.length > 3 ? ` +${entry.titles.length - 3}` : '')
-      : null;
   const tooltip = [entry.debug, entry.titles.length > 3 ? entry.titles.join(', ') : null]
     .filter(Boolean)
     .join(' · ');
 
   return (
-    <div
+    <span
+      className="border-destructive/30 bg-destructive/5 text-destructive inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium"
       title={tooltip || undefined}
-      className={cn(
-        'border-destructive/30 bg-destructive/5 text-destructive flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs',
-      )}
     >
-      <X className="size-3.5 shrink-0" />
-      <span className="font-medium">{label}</span>
-      {titlePreview ? <span className="truncate opacity-80">— {titlePreview}</span> : null}
-      {entry.hint ? <span className="truncate opacity-80">· {entry.hint}</span> : null}
-    </div>
+      <X className="size-3 shrink-0" />
+      {label}
+    </span>
   );
 }
 
@@ -66,7 +56,7 @@ export function ToolActivityList({
 
   if (!animate) {
     return (
-      <div className="space-y-1.5">
+      <div className="flex flex-wrap gap-1">
         {entries.map((entry, i) =>
           entry.kind === 'single' ? (
             <ToolActivity key={entryKey(entry, i)} part={entry.part} streamIdle={streamIdle} />
@@ -79,10 +69,10 @@ export function ToolActivityList({
   }
 
   return (
-    <div className="space-y-1.5">
+    <div className="flex flex-wrap gap-1">
       <AnimatePresence initial={false} mode="popLayout">
         {entries.map((entry, i) => (
-          <motion.div
+          <motion.span
             key={entryKey(entry, i)}
             animate={safe.animate}
             exit={safe.exit}
@@ -95,7 +85,7 @@ export function ToolActivityList({
             ) : (
               <CondensedFailures entry={entry} />
             )}
-          </motion.div>
+          </motion.span>
         ))}
       </AnimatePresence>
     </div>

@@ -11,7 +11,7 @@ import {
   getPlannedSessions,
 } from '@/lib/queries';
 import { computeSharpitSleepScoreForDay, SLEEP_TARGET_MIN } from '@/lib/sleep/sleep-scoring';
-import { buildTodayDaySummary } from '@/lib/today/today-day-summary';
+import { buildTodayDaySummary, findMissedPlannedSessions } from '@/lib/today/today-day-summary';
 import {
   mapConfidenceToTier,
   mapVerdictToDisplay,
@@ -43,13 +43,30 @@ import {
 } from '@/lib/today/today-twin-navigation';
 import { computeTrainingLoad } from '@/lib/training/training-load';
 import { loadDailyTrainingStressEntries } from '@/lib/training/pmc-server';
-import { endOfDay, isSameDay, startOfDay, subDays } from 'date-fns';
+import { endOfDay, format as formatDate, isSameDay, startOfDay, subDays } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { activityTypeLabels } from '@/lib/format';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
+import { getGarminAccount } from '@/lib/integrations/garmin-sync';
+import { getGoogleAccount } from '@/lib/integrations/google-sync';
+import { getRenphoAccount } from '@/lib/integrations/renpho-sync';
+import { getStravaAccount } from '@/lib/integrations/strava-sync';
+import { getWithingsAccount } from '@/lib/integrations/withings-sync';
+import {
+  INTEGRATIONS_RECONNECT_HREF,
+  reconnectProductMessage,
+  reconnectProviderNames,
+} from '@/lib/integrations/connection-status';
+import { reconnectSnoozeKey } from '@/lib/integrations/reconnect-banner-state';
 
 function localDateFromTrainingDayId(trainingDayId: string): Date {
   const [y, m, d] = trainingDayId.split('-').map(Number);
   // Midday local avoids DST edge cases when subtracting days.
   return new Date(y, m - 1, d, 12, 0, 0);
+}
+
+function formatMissedDate(date: Date): string {
+  return `Manquée · ${formatDate(date, 'EEEE d', { locale: fr })}`;
 }
 
 function mapConfidenceTone(
@@ -70,19 +87,31 @@ function resolveSnapshotStatusMessage(
   phase: string,
   heroHeadline: string,
   heroSubline: string,
-): string | null {
+  reconnectNames: string[],
+): { message: string | null; href: string | null; snoozeKey: string | null } {
+  const reconnectMessage = reconnectProductMessage(reconnectNames);
+  if (reconnectMessage) {
+    return {
+      message: reconnectMessage,
+      href: INTEGRATIONS_RECONNECT_HREF,
+      snoozeKey: reconnectSnoozeKey(reconnectNames),
+    };
+  }
+
   const hasContent = snapshotHasDisplayableContent(snapshot);
 
-  if (phase === 'END_OF_DAY' && hasContent) return null;
+  if (phase === 'END_OF_DAY' && hasContent) return { message: null, href: null, snoozeKey: null };
 
   const candidate = hasContent
     ? snapshot.freshness.primaryProductMessage
     : (snapshot.primaryProductMessage ?? snapshot.insufficientDataMessage ?? null);
 
-  if (!candidate) return null;
-  if (hasContent && (candidate === heroHeadline || candidate === heroSubline)) return null;
+  if (!candidate) return { message: null, href: null, snoozeKey: null };
+  if (hasContent && (candidate === heroHeadline || candidate === heroSubline)) {
+    return { message: null, href: null, snoozeKey: null };
+  }
 
-  return candidate;
+  return { message: candidate, href: null, snoozeKey: null };
 }
 
 export type TodayPresentationInputs = {
@@ -94,6 +123,11 @@ export type TodayPresentationInputs = {
   plannedSessions: Awaited<ReturnType<typeof getPlannedSessions>>;
   goals: Awaited<ReturnType<typeof getGoals>>;
   athleteProfile: Awaited<ReturnType<typeof getAthleteProfile>>;
+  /**
+   * Provider display names whose credentials are dead (row still present).
+   * Empty when every linked app can still authenticate.
+   */
+  reconnectNames?: string[];
   /**
    * One entry per training day, carrying the Core's Training Stress. Feeds the
    * effort sparkline and the rolling load so this page cannot report a different
@@ -203,6 +237,10 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
     plannedSessions as unknown as ClientPlannedSession[],
     goalTitleById,
   );
+  const missedSessions = findMissedPlannedSessions(
+    plannedSessions as unknown as ClientPlannedSession[],
+    day,
+  );
   const labels = actionRowLabels(phase);
   const adaptationHints = pickAdaptationReminders(phase, 3, isRestDay);
 
@@ -246,7 +284,14 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
 
   const hasSparks = recoverySpark.some((v) => v != null) || effortSpark.some((v) => v != null);
 
-  const statusMessage = resolveSnapshotStatusMessage(snapshot, phase, heroHeadline, heroSubline);
+  const status = resolveSnapshotStatusMessage(
+    snapshot,
+    phase,
+    heroHeadline,
+    heroSubline,
+    inputs.reconnectNames ?? [],
+  );
+  const statusMessage = status.message;
   const emptyState =
     !snapshotHasDisplayableContent(snapshot) && (statusMessage || snapshot.primaryProductMessage)
       ? {
@@ -293,6 +338,8 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
     hasContent: snapshotHasDisplayableContent(snapshot),
     emptyState,
     statusMessage: effectiveStatusMessage,
+    statusHref: status.href,
+    statusSnoozeKey: status.snoozeKey,
     confidencePresentation: {
       pct: snapshot.confidence,
       label: snapshot.confidenceLabel,
@@ -362,26 +409,38 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
       actionLabel: labels.action,
       daySummaryEmptyText: 'Aucune séance prévue ni réalisée.',
       daySummaryEmptyHref: TWIN_DRILL_DOWN.planning,
-      daySummaryLines: daySummary.lines.map((line) => {
-        const plannedId = line.plannedSession?.id ?? (line.kind === 'planned' ? line.id : null);
-        const choiceLabel =
-          sessionChoice && plannedId && sessionChoice.sessionId === plannedId
-            ? sessionChoice.label
-            : null;
-        return {
-          id: line.id,
-          activityType: line.activityType,
-          primary: line.primary,
-          secondary: line.secondary ?? null,
-          kind: line.kind,
-          href:
-            line.kind === 'done'
-              ? TWIN_DRILL_DOWN.activity(line.id)
-              : TWIN_DRILL_DOWN.plannedSession(line.plannedSession?.id ?? line.id),
-          isDone: line.kind === 'done',
-          morningChoiceLabel: choiceLabel,
-        };
-      }),
+      daySummaryLines: [
+        ...daySummary.lines.map((line) => {
+          const plannedId = line.plannedSession?.id ?? (line.kind === 'planned' ? line.id : null);
+          const choiceLabel =
+            sessionChoice && plannedId && sessionChoice.sessionId === plannedId
+              ? sessionChoice.label
+              : null;
+          return {
+            id: line.id,
+            activityType: line.activityType,
+            primary: line.primary,
+            secondary: line.secondary ?? null,
+            kind: line.kind,
+            href:
+              line.kind === 'done'
+                ? TWIN_DRILL_DOWN.activity(line.id)
+                : TWIN_DRILL_DOWN.plannedSession(line.plannedSession?.id ?? line.id),
+            isDone: line.kind === 'done',
+            morningChoiceLabel: choiceLabel,
+          };
+        }),
+        ...missedSessions.map((s) => ({
+          id: s.id,
+          activityType: s.type,
+          primary: s.title?.trim() || activityTypeLabels[s.type],
+          secondary: formatMissedDate(new Date(s.date)),
+          kind: 'missed' as const,
+          href: TWIN_DRILL_DOWN.plannedSession(s.id),
+          isDone: false,
+          morningChoiceLabel: null,
+        })),
+      ],
       morningRecalibration: presentedRecalibration
         ? {
             decisionId: presentedRecalibration.decisionId,
@@ -421,6 +480,7 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
     },
     insights: [],
     environmentContext: null,
+    nutrition: null,
     hierarchy: { rootId: 'today', order: ['hero', 'why', 'actionRow', 'weeklyTrajectory'] },
     sections: [],
   };
@@ -451,18 +511,27 @@ export async function buildTodayPresentationViewModel(
   // state-signal shape carries. `activities` also covers the 60-day trend window for
   // effortSpark/trainingLoad, not just today. `snapshot.sessionsDoneToday`/`plannedToday`
   // exist for consumers that only need "did/will the athlete train today" (Coach, Gate).
-  const [snapshot, healthEntries, activities, plannedSessions, goals, athleteProfile, dailyStress] =
-    await Promise.all([
-      options.athleteSnapshot
-        ? Promise.resolve(options.athleteSnapshot)
-        : getOrBuildAthleteSnapshot(trainingDayId),
-      getHealthEntries(14, day),
-      getActivitiesList({ sinceDays: 60 }),
-      getPlannedSessions({ from: dayStart, to: dayEnd }),
-      getGoals(),
-      getAthleteProfile(),
-      loadDailyTrainingStressEntries({ refDate: day }),
-    ]);
+  const [
+    snapshot,
+    healthEntries,
+    activities,
+    plannedSessions,
+    goals,
+    athleteProfile,
+    dailyStress,
+    reconnectNames,
+  ] = await Promise.all([
+    options.athleteSnapshot
+      ? Promise.resolve(options.athleteSnapshot)
+      : getOrBuildAthleteSnapshot(trainingDayId),
+    getHealthEntries(14, day),
+    getActivitiesList({ sinceDays: 60 }),
+    getPlannedSessions({ from: new Date(dayStart.getTime() - 7 * 86_400_000), to: dayEnd }),
+    getGoals(),
+    getAthleteProfile(),
+    loadDailyTrainingStressEntries({ refDate: day }),
+    loadReconnectProviderNames(),
+  ]);
 
   return buildTodayViewModelFromInputs({
     trainingDayId,
@@ -475,5 +544,17 @@ export async function buildTodayPresentationViewModel(
     athleteProfile,
     dailyStress,
     morningRecalibration: options.morningRecalibration ?? null,
+    reconnectNames,
   });
+}
+
+async function loadReconnectProviderNames(): Promise<string[]> {
+  const [strava, garmin, withings, renpho, google] = await Promise.all([
+    getStravaAccount().catch(() => null),
+    getGarminAccount().catch(() => null),
+    getWithingsAccount().catch(() => null),
+    getRenphoAccount().catch(() => null),
+    getGoogleAccount().catch(() => null),
+  ]);
+  return reconnectProviderNames({ strava, garmin, withings, renpho, google });
 }

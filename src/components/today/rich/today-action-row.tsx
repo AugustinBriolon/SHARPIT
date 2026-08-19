@@ -121,12 +121,16 @@ export function TodayActionRow({
       {!loading && !daySummaryEmpty ? (
         <ul className="space-y-2">
           {sessionLines.map((line, index) => {
-            const meta: InstrumentListChipMeta[] = splitInstrumentMeta(line.secondary);
+            const rawMeta = splitInstrumentMeta(line.secondary);
+            const meta: InstrumentListChipMeta[] =
+              line.kind === 'missed'
+                ? rawMeta.map((text, i) => (i === 0 ? { text, tone: 'caution' as const } : text))
+                : rawMeta;
             if (line.morningChoiceLabel) {
               meta.push({ text: line.morningChoiceLabel, tone: 'caution' });
             }
             const openPlanned =
-              line.kind === 'planned'
+              line.kind === 'planned' || line.kind === 'missed'
                 ? () => openPlannedSession({ sessionId: line.id })
                 : undefined;
             return (

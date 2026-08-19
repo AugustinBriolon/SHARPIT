@@ -634,6 +634,163 @@
   }
 }
 
+/* AIcss-inspired thinking shimmer for coach TTFT */
+.coach-thinking-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted-foreground)) 0%,
+    hsl(var(--muted-foreground)) 30%,
+    hsl(var(--muted-foreground) / 0.55) 45%,
+    hsl(var(--muted-foreground) / 0.55) 55%,
+    hsl(var(--muted-foreground)) 70%,
+    hsl(var(--muted-foreground)) 100%
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: coach-shimmer 2.25s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
+}
+
+@keyframes coach-shimmer {
+  0%,
+  18% {
+    background-position: 100% 0;
+  }
+  82%,
+  100% {
+    background-position: 0% 0;
+  }
+}
+
+/* Streaming caret for coach messages */
+.coach-streaming-caret {
+  display: inline-block;
+  width: 7px;
+  height: 1.05em;
+  margin-left: 2px;
+  background: hsl(var(--foreground));
+  vertical-align: text-bottom;
+}
+
+.coach-streaming-caret[data-idle='true'] {
+  animation: coach-caret-blink 1s step-end infinite;
+}
+
+@keyframes coach-caret-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Reasoning sentence reveal */
+.coach-reasoning-sentence {
+  animation: coach-sentence-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes coach-sentence-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Reasoning viewport with top/bottom fade */
+.coach-reasoning-viewport {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 12px,
+    #000 calc(100% - 12px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 12px,
+    #000 calc(100% - 12px),
+    transparent 100%
+  );
+}
+
+.coach-reasoning-viewport[data-fade='top'] {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12px);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 12px);
+}
+
+.coach-reasoning-viewport[data-fade='bottom'] {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 12px), transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 12px), transparent 100%);
+}
+
+.coach-reasoning-viewport[data-fade='both'] {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 12px,
+    #000 calc(100% - 12px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 12px,
+    #000 calc(100% - 12px),
+    transparent 100%
+  );
+}
+
+.coach-reasoning-viewport[data-fade='none'] {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+/* TTFT orb pulse */
+.coach-orb {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: hsl(var(--muted-foreground) / 0.5);
+  animation: coach-orb-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes coach-orb-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coach-thinking-shimmer {
+    animation: none;
+    color: hsl(var(--muted-foreground));
+    -webkit-text-fill-color: hsl(var(--muted-foreground));
+  }
+  .coach-streaming-caret {
+    animation: none;
+  }
+  .coach-reasoning-sentence {
+    animation: none;
+    opacity: 1;
+  }
+  .coach-orb {
+    animation: none;
+  }
+}
+
 @keyframes vt-fade-out {
   from {
     opacity: 1;

@@ -16,10 +16,15 @@ import {
   IntegrationSyncActions,
 } from '@/components/settings/integrations/modal-parts';
 import { IntegrationLogo } from '@/components/settings/integrations/logos';
-import type { IntegrationDefinition } from '@/components/settings/integrations/types';
+import {
+  integrationConnectBody,
+  integrationConnectCta,
+  type IntegrationDefinition,
+} from '@/components/settings/integrations/types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -111,6 +116,8 @@ export function IntegrationModalContent({
       return <RenphoContent integration={integration} onUpdated={onUpdated} />;
     case 'google':
       return <GoogleContent integration={integration} onUpdated={onUpdated} />;
+    case 'myfitnesspal':
+      return <MfpContent integration={integration} onUpdated={onUpdated} />;
     default:
       return null;
   }
@@ -234,10 +241,13 @@ function StravaContent({
       <div className="space-y-4">
         <IntegrationModalHeader integration={integration} />
         <p className="text-muted-foreground text-sm leading-relaxed">
-          Connecte Strava pour importer automatiquement tes activités course, vélo et natation.
+          {integrationConnectBody(
+            integration,
+            'Connecte Strava pour importer automatiquement tes activités course, vélo et natation.',
+          )}
         </p>
         <a className={cn(buttonVariants(), 'w-full sm:w-auto')} href="/api/strava/connect">
-          Connecter Strava
+          {integrationConnectCta(integration)}
         </a>
         {integration.statusMessage && (
           <p aria-live="assertive" className="text-destructive text-sm">
@@ -362,8 +372,10 @@ function GarminContent({
       <form className="space-y-4" onSubmit={handleConnect}>
         <IntegrationModalHeader integration={integration} />
         <p className="text-muted-foreground text-sm leading-relaxed">
-          Sommeil, HRV, FC repos et séances Garmin. Mot de passe non stocké — jetons de session
-          uniquement.
+          {integrationConnectBody(
+            integration,
+            'Sommeil, HRV, FC repos et séances Garmin. Mot de passe non stocké — jetons de session uniquement.',
+          )}
         </p>
         <div className="space-y-2">
           <Label htmlFor="garmin-username">Email Garmin</Label>
@@ -379,7 +391,7 @@ function GarminContent({
           </p>
         )}
         <Button className="w-full sm:w-auto" disabled={connecting} type="submit">
-          {connecting ? 'Connexion…' : 'Connecter Garmin'}
+          {connecting ? 'Connexion…' : integrationConnectCta(integration)}
         </Button>
         <p className="text-muted-foreground text-xs">
           MFA Garmin doit être désactivée le temps de la connexion.
@@ -492,15 +504,17 @@ function WithingsContent({
       <div className="space-y-4">
         <IntegrationModalHeader integration={integration} />
         <p className="text-muted-foreground text-sm leading-relaxed">
-          Connecte ta balance Withings pour importer poids et composition corporelle. En cas de
-          chevauchement avec Renpho, <strong>Withings est prioritaire</strong>.
+          {integrationConnectBody(
+            integration,
+            'Connecte ta balance Withings pour importer poids et composition corporelle. En cas de chevauchement avec Renpho, Withings est prioritaire.',
+          )}
         </p>
         <p className="text-muted-foreground text-xs leading-relaxed">
           OAuth Withings exige une URL de redirection HTTPS (pas localhost). Sur Vercel :{' '}
           <code className="text-xs">https://ton-domaine/api/withings/callback</code>
         </p>
         <a className={cn(buttonVariants(), 'w-full sm:w-auto')} href="/api/withings/connect">
-          Connecter Withings
+          {integrationConnectCta(integration)}
         </a>
         {integration.statusMessage && (
           <p aria-live="assertive" className="text-destructive text-sm">
@@ -623,9 +637,12 @@ function RenphoContent({
       <form className="space-y-4" onSubmit={handleConnect}>
         <IntegrationModalHeader integration={integration} />
         <p className="text-muted-foreground text-sm leading-relaxed">
-          Balance Renpho Health — historique conservé.{' '}
-          {integration.badge === 'legacy' &&
-            'Withings est ta source principale : ses données remplacent Renpho sur les jours en commun.'}
+          {integrationConnectBody(
+            integration,
+            integration.badge === 'legacy'
+              ? 'Balance Renpho Health — historique conservé. Withings est ta source principale : ses données remplacent Renpho sur les jours en commun.'
+              : 'Balance Renpho Health — historique conservé.',
+          )}
         </p>
         <div className="space-y-2">
           <Label htmlFor="renpho-email">Email Renpho</Label>
@@ -641,7 +658,7 @@ function RenphoContent({
           </p>
         )}
         <Button className="w-full sm:w-auto" disabled={connecting} type="submit">
-          {connecting ? 'Connexion…' : 'Connecter Renpho'}
+          {connecting ? 'Connexion…' : integrationConnectCta(integration)}
         </Button>
       </form>
     );
@@ -778,7 +795,10 @@ function GoogleContent({
       <div className="space-y-4">
         <IntegrationModalHeader integration={integration} />
         <p className="text-muted-foreground text-sm leading-relaxed">
-          Le coach planifie tes séances dans ton agenda en évitant tes créneaux occupés.
+          {integrationConnectBody(
+            integration,
+            'Le coach planifie tes séances dans ton agenda en évitant tes créneaux occupés.',
+          )}
         </p>
         {blockedOnLan && (
           <p className="border-signal-caution/30 bg-signal-caution/10 text-signal-caution rounded-lg border px-3 py-2 text-sm leading-relaxed">
@@ -786,7 +806,7 @@ function GoogleContent({
           </p>
         )}
         <a className={cn(buttonVariants(), 'w-full sm:w-auto')} href={connectHref}>
-          Connecter Google Calendar
+          {integrationConnectCta(integration)}
         </a>
         {integration.statusMessage && (
           <p aria-live="assertive" className="text-destructive text-sm">
@@ -847,6 +867,133 @@ function GoogleContent({
   );
 }
 
+function MfpContent({
+  integration,
+  onUpdated,
+}: {
+  integration: IntegrationDefinition;
+  onUpdated?: () => void;
+}) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [syncing, setSyncing] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [stage, setStage] = useState<'manage' | 'confirm'>('manage');
+
+  async function handleSync() {
+    setSyncing(true);
+    try {
+      await fetch('/api/myfitnesspal/sync', { method: 'POST' });
+      await queryClient.invalidateQueries({ queryKey: ['presentation'] });
+      onUpdated?.();
+      router.refresh();
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    setDisconnecting(true);
+    try {
+      await fetch('/api/myfitnesspal/disconnect', { method: 'POST' });
+      await queryClient.invalidateQueries({ queryKey: ['presentation'] });
+      onUpdated?.();
+      router.refresh();
+    } finally {
+      setDisconnecting(false);
+      setStage('manage');
+    }
+  }
+
+  const [connecting, setConnecting] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
+
+  async function handleConnect(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setConnecting(true);
+    setConnectError(null);
+    const form = new FormData(e.currentTarget);
+    try {
+      const res = await fetch('/api/myfitnesspal/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionToken: form.get('sessionToken') }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: 'Connexion échouée' }));
+        setConnectError(data.error ?? 'Connexion échouée');
+        return;
+      }
+      await queryClient.invalidateQueries({ queryKey: ['presentation'] });
+      onUpdated?.();
+      router.refresh();
+    } catch {
+      setConnectError('Erreur réseau');
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  if (!integration.connected) {
+    return (
+      <form className="space-y-4" onSubmit={handleConnect}>
+        <IntegrationModalHeader integration={integration} />
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          Connecte MyFitnessPal pour importer ton journal alimentaire : calories, protéines,
+          glucides et lipides.
+        </p>
+        <p className="text-muted-foreground text-xs leading-relaxed">
+          Ouvre myfitnesspal.com dans ton navigateur, connecte-toi, puis DevTools → Application →
+          Cookies → copie la valeur de <strong>__Secure-next-auth.session-token</strong>.
+        </p>
+        <div className="space-y-2">
+          <Label htmlFor="mfp-session-token">Cookie de session MFP</Label>
+          <Textarea
+            id="mfp-session-token"
+            name="sessionToken"
+            placeholder="eyJhbG..."
+            rows={3}
+            required
+          />
+          <p className="text-muted-foreground mt-1 text-xs">
+            Le cookie expire après ~30 jours ; il faudra le renouveler ici quand la session expire.
+          </p>
+        </div>
+        {connectError && (
+          <p aria-live="assertive" className="text-destructive text-sm">
+            {connectError}
+          </p>
+        )}
+        <Button className="w-full sm:w-auto" disabled={connecting} type="submit">
+          {connecting ? 'Connexion…' : 'Connecter MyFitnessPal'}
+        </Button>
+      </form>
+    );
+  }
+
+  return (
+    <IntegrationManageStage
+      confirmDescription="Les données nutritionnelles importées sont conservées."
+      confirmTitle="Déconnecter MyFitnessPal ?"
+      disconnecting={disconnecting}
+      stage={stage}
+      onCancelConfirm={() => setStage('manage')}
+      onConfirmDisconnect={handleDisconnect}
+    >
+      <IntegrationModalHeader integration={integration} />
+      <IntegrationAccountSummary
+        label={integration.account?.label}
+        lastSyncAt={integration.account?.lastSyncAt}
+      />
+      <IntegrationSyncActions
+        syncing={syncing}
+        onDisconnect={() => setStage('confirm')}
+        onSync={handleSync}
+      />
+    </IntegrationManageStage>
+  );
+}
+
 export function integrationModalTitle(id: IntegrationId): string {
   const titles: Record<IntegrationId, string> = {
     strava: 'Strava',
@@ -854,6 +1001,7 @@ export function integrationModalTitle(id: IntegrationId): string {
     withings: 'Withings',
     renpho: 'Renpho Health',
     google: 'Google Calendar',
+    myfitnesspal: 'MyFitnessPal',
   };
   return titles[id];
 }

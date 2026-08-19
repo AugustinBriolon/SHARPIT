@@ -19,7 +19,8 @@ import {
   currentTokens,
   garminTokensFromStorage,
 } from '@/lib/integrations/garmin';
-import { getGarminAccount } from '@/lib/integrations/garmin-sync';
+import { getGarminAccount, runGarminCall } from '@/lib/integrations/garmin-sync';
+import { isGarminAccountConnected, ProviderAuthError } from '@/lib/integrations/connection-status';
 import { resolveExerciseCatalogId, enrichStrengthExerciseVisuals } from '@/lib/exercises';
 import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
 import { prisma } from '@/lib/prisma';
@@ -314,89 +315,95 @@ export async function syncGarminActivities(options?: {
   /** Récupère tout l'historique (aucune limite de date). */
   full?: boolean;
 }): Promise<GarminActivitySyncResult> {
-  const account = await getGarminAccount();
-  if (!account) throw new Error('Compte Garmin non connecté');
-
-  const client = clientFromTokens(
-    garminTokensFromStorage(account.oauth1Token, account.oauth2Token),
-  );
-  const exerciseLabelsFr = await ensureGarminExerciseLabelsFr();
-
-  const full = options?.full ?? false;
-  const lastActivitySync = account.lastActivitySyncAt ?? account.lastSyncAt;
-  const cutoff = full
-    ? null
-    : (options?.since ?? syncSinceFromLastSync(lastActivitySync, options?.sinceDays ?? 60));
-  const maxPages = full ? MAX_PAGES_FULL : MAX_PAGES;
-
-  const result: GarminActivitySyncResult = {
-    fetched: 0,
-    imported: 0,
-    updated: 0,
-    merged: 0,
-    skipped: 0,
-    importedTypes: [],
-    importedActivityIds: [],
-    changedTypes: [],
-    changedActivityIds: [],
-  };
-
-  const importedTypes = new Set<ActivityType>();
-  const changedTypes = new Set<ActivityType>();
-  const changedActivityIds = new Set<string>();
-
-  let start = 0;
-
-  for (let page = 0; page < maxPages; page++) {
-    const batch = await client.getActivities(start, PAGE_SIZE);
-    if (!batch.length) break;
-
-    result.fetched += batch.length;
-    let reachedCutoff = false;
-
-    const toProcess: GarminListActivity[] = [];
-    for (const activity of batch) {
-      const date = new Date(activity.startTimeLocal);
-      if (cutoff && date < cutoff) {
-        reachedCutoff = true;
-        break;
-      }
-      toProcess.push(activity);
+  return runGarminCall(async () => {
+    const account = await getGarminAccount();
+    if (!account || !isGarminAccountConnected(account)) {
+      throw new ProviderAuthError('Session Garmin expirée. Reconnecte Garmin dans les paramètres.');
     }
 
-    const outcomes = await mapWithConcurrency(toProcess, GARMIN_ACTIVITY_CONCURRENCY, (activity) =>
-      processOneGarminActivity(client, activity, exerciseLabelsFr),
+    const client = clientFromTokens(
+      garminTokensFromStorage(account.oauth1Token, account.oauth2Token),
     );
+    const exerciseLabelsFr = await ensureGarminExerciseLabelsFr();
 
-    for (const outcome of outcomes) {
-      result.skipped += outcome.skipped;
-      result.imported += outcome.imported;
-      result.updated += outcome.updated;
-      result.merged += outcome.merged;
-      result.importedActivityIds.push(...outcome.importedActivityIds);
-      for (const type of outcome.importedTypes) importedTypes.add(type);
-      for (const change of outcome.changed) {
-        changedTypes.add(change.type);
-        changedActivityIds.add(change.id);
+    const full = options?.full ?? false;
+    const lastActivitySync = account.lastActivitySyncAt ?? account.lastSyncAt;
+    const cutoff = full
+      ? null
+      : (options?.since ?? syncSinceFromLastSync(lastActivitySync, options?.sinceDays ?? 60));
+    const maxPages = full ? MAX_PAGES_FULL : MAX_PAGES;
+
+    const result: GarminActivitySyncResult = {
+      fetched: 0,
+      imported: 0,
+      updated: 0,
+      merged: 0,
+      skipped: 0,
+      importedTypes: [],
+      importedActivityIds: [],
+      changedTypes: [],
+      changedActivityIds: [],
+    };
+
+    const importedTypes = new Set<ActivityType>();
+    const changedTypes = new Set<ActivityType>();
+    const changedActivityIds = new Set<string>();
+
+    let start = 0;
+
+    for (let page = 0; page < maxPages; page++) {
+      const batch = await client.getActivities(start, PAGE_SIZE);
+      if (!batch.length) break;
+
+      result.fetched += batch.length;
+      let reachedCutoff = false;
+
+      const toProcess: GarminListActivity[] = [];
+      for (const activity of batch) {
+        const date = new Date(activity.startTimeLocal);
+        if (cutoff && date < cutoff) {
+          reachedCutoff = true;
+          break;
+        }
+        toProcess.push(activity);
       }
+
+      const outcomes = await mapWithConcurrency(
+        toProcess,
+        GARMIN_ACTIVITY_CONCURRENCY,
+        (activity) => processOneGarminActivity(client, activity, exerciseLabelsFr),
+      );
+
+      for (const outcome of outcomes) {
+        result.skipped += outcome.skipped;
+        result.imported += outcome.imported;
+        result.updated += outcome.updated;
+        result.merged += outcome.merged;
+        result.importedActivityIds.push(...outcome.importedActivityIds);
+        for (const type of outcome.importedTypes) importedTypes.add(type);
+        for (const change of outcome.changed) {
+          changedTypes.add(change.type);
+          changedActivityIds.add(change.id);
+        }
+      }
+
+      if (reachedCutoff || batch.length < PAGE_SIZE) break;
+      start += PAGE_SIZE;
     }
 
-    if (reachedCutoff || batch.length < PAGE_SIZE) break;
-    start += PAGE_SIZE;
-  }
+    const refreshed = currentTokens(client);
+    await prisma.garminAccount.update({
+      where: { id: ACCOUNT_ID },
+      data: {
+        oauth1Token: refreshed.oauth1 as unknown as Prisma.InputJsonValue,
+        oauth2Token: refreshed.oauth2 as unknown as Prisma.InputJsonValue,
+        lastActivitySyncAt: new Date(),
+      },
+    });
 
-  const refreshed = currentTokens(client);
-  await prisma.garminAccount.update({
-    where: { id: ACCOUNT_ID },
-    data: {
-      oauth1Token: refreshed.oauth1 as unknown as Prisma.InputJsonValue,
-      oauth2Token: refreshed.oauth2 as unknown as Prisma.InputJsonValue,
-      lastActivitySyncAt: new Date(),
-    },
+    result.importedTypes = [...importedTypes];
+    result.changedTypes = [...changedTypes];
+    result.changedActivityIds = [...changedActivityIds];
+    return result;
   });
-
-  result.importedTypes = [...importedTypes];
-  result.changedTypes = [...changedTypes];
-  result.changedActivityIds = [...changedActivityIds];
-  return result;
 }

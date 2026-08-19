@@ -12,6 +12,18 @@
  * Pure helpers so the policy is testable without a stream.
  */
 
+/**
+ * Split raw reasoning text into displayable sentences for the trace view.
+ * Splits on sentence-ending punctuation followed by whitespace, or on newlines.
+ */
+export function splitReasoningSentences(text: string): string[] {
+  if (!text.trim()) return [];
+  return text
+    .split(/(?<=[.!?…])\s+|\n+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
 /** Minimal shape of the reasoning parts the AI SDK puts on a UI message. */
 export type ReasoningPartLite = {
   type: string;
@@ -41,11 +53,16 @@ export function shouldAutoExpandReasoning(_input: {
 
 /**
  * Header label for the reasoning panel. Present tense while the coach is still
- * deliberating, past tense once the turn has produced an answer.
+ * deliberating, past tense with elapsed duration once the turn has produced an answer.
  */
 export function reasoningSummaryLabel(input: {
   streaming: boolean;
   hasAnswerText: boolean;
+  elapsedSeconds?: number | null;
 }): string {
-  return input.streaming && !input.hasAnswerText ? 'Le coach réfléchit…' : 'Raisonnement du coach';
+  if (input.streaming && !input.hasAnswerText) return 'Le coach réfléchit…';
+  if (input.elapsedSeconds != null && input.elapsedSeconds > 0) {
+    return `A réfléchi pendant ${input.elapsedSeconds}s`;
+  }
+  return 'Raisonnement du coach';
 }

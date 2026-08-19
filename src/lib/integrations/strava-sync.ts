@@ -4,6 +4,11 @@ import { findMatchingActivity, mergedSource } from '@/lib/activity/activity-dedu
 import { prisma } from '@/lib/prisma';
 import { syncSinceFromLastSync } from '@/lib/integrations/sync-since';
 import {
+  isOAuthAccountConnected,
+  isProviderAuthFailure,
+  ProviderAuthError,
+} from '@/lib/integrations/connection-status';
+import {
   fetchActivities,
   mapStravaType,
   refreshAccessToken,
@@ -38,23 +43,48 @@ export async function disconnectStrava() {
   await prisma.stravaAccount.deleteMany({ where: { id: ACCOUNT_ID } });
 }
 
+/** Keeps the Strava profile row so the hub can ask for a reconnect. */
+export async function revokeStravaCredentials() {
+  const account = await getStravaAccount();
+  if (!account) return;
+  await prisma.stravaAccount.update({
+    where: { id: ACCOUNT_ID },
+    data: {
+      accessToken: '',
+      refreshToken: '',
+      expiresAt: new Date(0),
+    },
+  });
+}
+
 export async function getValidAccessToken() {
   const account = await getStravaAccount();
   if (!account) throw new Error('Compte Strava non connecté');
+  if (!isOAuthAccountConnected(account)) {
+    throw new ProviderAuthError('Session Strava expirée. Reconnecte Strava dans les paramètres.');
+  }
 
   const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
   if (!expiresSoon) return account.accessToken;
 
-  const refreshed = await refreshAccessToken(account.refreshToken);
-  await prisma.stravaAccount.update({
-    where: { id: ACCOUNT_ID },
-    data: {
-      accessToken: refreshed.access_token,
-      refreshToken: refreshed.refresh_token,
-      expiresAt: new Date(refreshed.expires_at * 1000),
-    },
-  });
-  return refreshed.access_token;
+  try {
+    const refreshed = await refreshAccessToken(account.refreshToken);
+    await prisma.stravaAccount.update({
+      where: { id: ACCOUNT_ID },
+      data: {
+        accessToken: refreshed.access_token,
+        refreshToken: refreshed.refresh_token,
+        expiresAt: new Date(refreshed.expires_at * 1000),
+      },
+    });
+    return refreshed.access_token;
+  } catch (error) {
+    if (isProviderAuthFailure(error)) {
+      await revokeStravaCredentials();
+      throw new ProviderAuthError('Session Strava expirée. Reconnecte Strava dans les paramètres.');
+    }
+    throw error;
+  }
 }
 
 function buildActivityData(strava: StravaActivity, type: ActivityType): Prisma.ActivityCreateInput {

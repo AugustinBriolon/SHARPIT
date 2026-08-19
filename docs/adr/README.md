@@ -16,6 +16,7 @@
 | [ADR-010](./ADR-010-cache-components-and-instant-navigation.md)  | Cache Components and Partial Prefetching for instant navigation      | Accepted |
 | [ADR-011](./ADR-011-pmc-state-and-window-semantics.md)           | PMC state and window semantics (window is display, not computation)  | Accepted |
 | [ADR-012](./ADR-012-bidirectional-threshold-recency.md)          | Bidirectional threshold revision with 120-day recency window         | Accepted |
+| [ADR-013](./ADR-013-myfitnesspal-authenticated-api.md)           | MyFitnessPal integration via authenticated JSON API                  | Accepted |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 

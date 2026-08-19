@@ -99,6 +99,11 @@ const MATCHERS: Matcher[] = [
     resolve: () => ({ label: 'Corps', defaultParent: HOME_PARENT }),
   },
 
+  {
+    pattern: /^\/nutrition$/,
+    resolve: () => ({ label: 'Nutrition', defaultParent: HOME_PARENT }),
+  },
+
   { pattern: /^\/settings$/, resolve: () => ({ label: 'Réglages', defaultParent: HOME_PARENT }) },
   {
     pattern: /^\/settings\/account$/,

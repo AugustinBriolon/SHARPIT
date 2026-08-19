@@ -93,7 +93,7 @@ function SynthesisBlock({
   );
 }
 
-function renderBlock(block: CoachMessageBlock, index: number, streaming: boolean) {
+function renderBlock(block: CoachMessageBlock, index: number, streaming = false) {
   switch (block.type) {
     case 'phase':
       return (
@@ -122,6 +122,7 @@ function renderBlock(block: CoachMessageBlock, index: number, streaming: boolean
           className="text-muted-foreground border-border/50 border-t pt-3 text-sm leading-relaxed"
         >
           {block.content}
+          {streaming && <span className="coach-streaming-caret" aria-hidden />}
         </p>
       );
     case 'prose':

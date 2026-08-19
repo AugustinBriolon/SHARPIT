@@ -351,6 +351,40 @@ model WithingsAccount {
   updatedAt DateTime @updatedAt
 }
 
+model MyFitnessPalAccount {
+  id              String    @id @default("default")
+  sessionTokenEnc String
+  displayName     String?
+  lastSyncAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DailyNutrition {
+  id            String   @id @default(cuid())
+  date          DateTime
+  provider      String   @default("myfitnesspal")
+  externalId    String?  @unique
+
+  calories      Int
+  protein       Float
+  carbohydrates Float
+  fat           Float
+  fiber         Float?
+  sugar         Float?
+  water         Float?
+
+  meals         Json     @default("[]")
+  complete      Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([date, provider])
+  @@index([date])
+}
+
 model RunMetrics {
   id         String   @id @default(cuid())
   activityId String   @unique

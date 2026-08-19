@@ -1,4 +1,9 @@
 import { BodyCompositionSource, Prisma } from '@prisma/client';
+import {
+  isOAuthAccountConnected,
+  isProviderAuthFailure,
+  ProviderAuthError,
+} from '@/lib/integrations/connection-status';
 import { format, startOfDay, subDays } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import { observationEngine } from '@/lib/engines/observation-engine';
@@ -33,24 +38,53 @@ export async function disconnectWithings() {
   await prisma.withingsAccount.deleteMany({ where: { id: ACCOUNT_ID } });
 }
 
+/** Keeps the Withings profile row so the hub can ask for a reconnect. */
+export async function revokeWithingsCredentials() {
+  const account = await getWithingsAccount();
+  if (!account) return;
+  await prisma.withingsAccount.update({
+    where: { id: ACCOUNT_ID },
+    data: {
+      accessToken: '',
+      refreshToken: '',
+      expiresAt: new Date(0),
+    },
+  });
+}
+
 export async function getValidWithingsAccessToken(): Promise<string> {
   const account = await getWithingsAccount();
   if (!account) throw new Error('Compte Withings non connecté');
+  if (!isOAuthAccountConnected(account)) {
+    throw new ProviderAuthError(
+      'Session Withings expirée. Reconnecte Withings dans les paramètres.',
+    );
+  }
 
   const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
   if (!expiresSoon) return account.accessToken;
 
-  const refreshed = await refreshWithingsToken(account.refreshToken);
-  await prisma.withingsAccount.update({
-    where: { id: ACCOUNT_ID },
-    data: {
-      accessToken: refreshed.access_token,
-      refreshToken: refreshed.refresh_token,
-      expiresAt: new Date(Date.now() + refreshed.expires_in * 1000),
-      withingsUserId: String(refreshed.userid),
-    },
-  });
-  return refreshed.access_token;
+  try {
+    const refreshed = await refreshWithingsToken(account.refreshToken);
+    await prisma.withingsAccount.update({
+      where: { id: ACCOUNT_ID },
+      data: {
+        accessToken: refreshed.access_token,
+        refreshToken: refreshed.refresh_token,
+        expiresAt: new Date(Date.now() + refreshed.expires_in * 1000),
+        withingsUserId: String(refreshed.userid),
+      },
+    });
+    return refreshed.access_token;
+  } catch (error) {
+    if (isProviderAuthFailure(error)) {
+      await revokeWithingsCredentials();
+      throw new ProviderAuthError(
+        'Session Withings expirée. Reconnecte Withings dans les paramètres.',
+      );
+    }
+    throw error;
+  }
 }
 
 function measurementToPrisma(

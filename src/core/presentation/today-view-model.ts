@@ -16,6 +16,10 @@ export type TodayViewModel = {
 
   /** Texte affiché par le statut principal. */
   statusMessage: string | null;
+  /** Optional recovery action for a status that the athlete can fix (reconnect). */
+  statusHref?: string | null;
+  /** Fingerprint for snoozing the reconnect banner until the next local midnight. */
+  statusSnoozeKey?: string | null;
 
   confidencePresentation: PresentationConfidence;
 
@@ -151,7 +155,7 @@ export type TodayViewModel = {
       activityType: ActivityType;
       primary: string;
       secondary?: string | null;
-      kind: 'done' | 'planned';
+      kind: 'done' | 'planned' | 'missed';
       href: string;
       isDone: boolean;
       /** Morning choice annotation on this session (post-choice). */
@@ -201,6 +205,14 @@ export type TodayViewModel = {
     summaryLine: string | null;
     detailLine: string | null;
     thermalLabel: string | null;
+  } | null;
+
+  nutrition: {
+    visible: boolean;
+    calories: number;
+    protein: number;
+    carbohydrates: number;
+    fat: number;
   } | null;
 
   hierarchy: PresentationHierarchy;

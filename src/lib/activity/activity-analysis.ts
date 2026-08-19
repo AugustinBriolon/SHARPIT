@@ -437,7 +437,7 @@ export function resolveThresholds(
   }
 
   const maxHr = profile?.maxHr ?? streamMaxHr;
-  const lthr = profile?.lthr ?? (maxHr ? Math.round(maxHr * 0.91) : null);
+  const lthr = profile?.lthr ?? (maxHr ? Math.round(maxHr * 0.85) : null);
 
   const runThresholdPaceSecPerKm = profile?.runThresholdPaceSecPerKm ?? null;
 

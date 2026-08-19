@@ -2,9 +2,17 @@ import { cache } from 'react';
 import { listCoachMemoryEntries } from '@/lib/coach-memory/service';
 import { getGarminAccount } from '@/lib/integrations/garmin-sync';
 import { getGoogleAccount, isGoogleConnected } from '@/lib/integrations/google-sync';
+import { getMfpAccount } from '@/lib/integrations/myfitnesspal-sync';
 import { getRenphoAccount } from '@/lib/integrations/renpho-sync';
 import { getStravaAccount } from '@/lib/integrations/strava-sync';
 import { getWithingsAccount } from '@/lib/integrations/withings-sync';
+import {
+  isGarminAccountConnected,
+  isMfpAccountConnected,
+  isOAuthAccountConnected,
+  isRenphoAccountConnected,
+  reconnectProviderNames,
+} from '@/lib/integrations/connection-status';
 import { prisma } from '@/lib/prisma';
 import { getAthleteProfile, getGoals } from '@/lib/queries';
 import {
@@ -19,22 +27,39 @@ import {
 
 const APP_VERSION = '0.1.0';
 
-async function countConnectedIntegrations(): Promise<number> {
-  const [strava, garmin, withings, renpho, google] = await Promise.all([
+async function loadIntegrationHubFacts(): Promise<{
+  connectedCount: number;
+  reconnectNames: string[];
+}> {
+  const [strava, garmin, withings, renpho, google, myfitnesspal] = await Promise.all([
     getStravaAccount().catch(() => null),
     getGarminAccount().catch(() => null),
     getWithingsAccount().catch(() => null),
     getRenphoAccount().catch(() => null),
     getGoogleAccount().catch(() => null),
+    getMfpAccount().catch(() => null),
   ]);
 
-  return [
-    Boolean(strava),
-    Boolean(garmin),
-    Boolean(withings),
-    Boolean(renpho),
+  const connectedCount = [
+    isOAuthAccountConnected(strava),
+    isGarminAccountConnected(garmin),
+    isOAuthAccountConnected(withings),
+    isRenphoAccountConnected(renpho),
     isGoogleConnected(google),
+    isMfpAccountConnected(myfitnesspal),
   ].filter(Boolean).length;
+
+  return {
+    connectedCount,
+    reconnectNames: reconnectProviderNames({
+      strava,
+      garmin,
+      withings,
+      renpho,
+      google,
+      myfitnesspal,
+    }),
+  };
 }
 
 /**
@@ -46,11 +71,11 @@ export const getSettingsHubStatus = cache(loadSettingsHubStatus);
 
 /** Server snapshot for settings hub status chips. Failures degrade to neutral copy. */
 export async function loadSettingsHubStatus(): Promise<SettingsHubStatus> {
-  const [profile, goals, memory, connectedCount] = await Promise.all([
+  const [profile, goals, memory, integrationFacts] = await Promise.all([
     getAthleteProfile().catch(() => null),
     getGoals().catch(() => []),
     listCoachMemoryEntries(prisma).catch(() => null),
-    countConnectedIntegrations().catch(() => 0),
+    loadIntegrationHubFacts().catch(() => ({ connectedCount: 0, reconnectNames: [] })),
   ]);
 
   const activeEntries = goals.filter((goal) => !goal.achieved);
@@ -78,7 +103,7 @@ export async function loadSettingsHubStatus(): Promise<SettingsHubStatus> {
       hasProfileContext: Boolean(memory?.profileContext?.trim()),
       activeLabel,
     }),
-    integrations: integrationsStatusLabel({ connectedCount }),
+    integrations: integrationsStatusLabel(integrationFacts),
     about: `v${APP_VERSION}`,
   };
 }

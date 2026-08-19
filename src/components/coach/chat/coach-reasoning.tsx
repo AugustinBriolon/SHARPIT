@@ -1,17 +1,37 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { Brain, ChevronRight } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ChevronRight } from 'lucide-react';
 import { MotionExpand } from '@/components/motion';
-import { reasoningSummaryLabel, shouldAutoExpandReasoning } from '@/lib/coach/coach-reasoning';
+import {
+  reasoningSummaryLabel,
+  shouldAutoExpandReasoning,
+  splitReasoningSentences,
+} from '@/lib/coach/coach-reasoning';
 import { cn } from '@/lib/utils';
 
+const MAX_VIEWPORT_H = 180;
+
+type FadeEdge = 'none' | 'top' | 'bottom' | 'both';
+
+function resolveFade(el: HTMLDivElement | null): FadeEdge {
+  if (!el) return 'none';
+  const top = el.scrollTop > 2;
+  const bottom = el.scrollTop + el.clientHeight < el.scrollHeight - 2;
+  if (top && bottom) return 'both';
+  if (top) return 'top';
+  if (bottom) return 'bottom';
+  return 'none';
+}
+
 /**
- * Live view on the model's deliberation.
+ * Reasoning trace — Beautiful UI style.
  *
  * Reasoning is the first content the coach produces — surfacing a summary line
- * turns a long silent wait into a response that starts immediately. The panel
- * stays collapsed by default; the athlete can expand it at any time.
+ * turns a long silent wait into a response that starts immediately. Sentences
+ * reveal one-by-one while the coach thinks, then collapse to a summary the
+ * athlete can reopen at any time. A viewport with gradient fades keeps the
+ * block compact.
  */
 export function CoachReasoning({
   text,
@@ -25,46 +45,88 @@ export function CoachReasoning({
   const autoExpanded = shouldAutoExpandReasoning({ streaming, hasAnswerText });
   const [manuallyToggled, setManuallyToggled] = useState<boolean | null>(null);
   const open = manuallyToggled ?? autoExpanded;
-  const bodyRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
 
-  // Keep the newest reasoning in view inside the panel, never the page.
+  const thinkingStartRef = useRef<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState<number | null>(null);
+  const [fade, setFade] = useState<FadeEdge>('none');
+
+  const isThinking = streaming && !hasAnswerText;
+
+  useEffect(() => {
+    if (isThinking) {
+      if (thinkingStartRef.current == null) thinkingStartRef.current = Date.now();
+    } else if (thinkingStartRef.current != null && elapsedSeconds == null) {
+      setElapsedSeconds(Math.max(1, Math.round((Date.now() - thinkingStartRef.current) / 1000)));
+    }
+  }, [isThinking, elapsedSeconds]);
+
   useEffect(() => {
     if (!open || !streaming) return;
-    const el = bodyRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
+    const el = viewportRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+      setFade(resolveFade(el));
+    }
   }, [text, open, streaming]);
 
-  if (!text.trim()) return null;
+  const onScroll = useCallback(() => {
+    setFade(resolveFade(viewportRef.current));
+  }, []);
+
+  const sentences = splitReasoningSentences(text);
+  if (sentences.length === 0) return null;
+
+  const needsScroll = sentences.length > 4;
 
   return (
-    <div className="border-analysis-border/60 bg-background/40 rounded-analysis border">
+    <div className="space-y-0">
       <button
         aria-expanded={open}
-        className="text-muted-foreground hover:text-foreground flex w-full items-center gap-1.5 px-2.5 py-2 text-left text-xs transition-colors"
+        className="text-muted-foreground hover:text-foreground group flex w-full items-center gap-1.5 py-1.5 text-left text-xs transition-colors"
         type="button"
         onClick={() => setManuallyToggled(!open)}
       >
-        <Brain
-          className={cn('size-3.5 shrink-0', streaming && !hasAnswerText && 'animate-pulse')}
-          aria-hidden
-        />
-        <span className="min-w-0 flex-1 truncate font-medium">
-          {reasoningSummaryLabel({ streaming, hasAnswerText })}
-        </span>
-        <ChevronRight
+        {isThinking ? (
+          <span className="coach-orb shrink-0" aria-hidden />
+        ) : (
+          <ChevronRight
+            className={cn(
+              'size-3 shrink-0 transition-transform duration-200 ease-out',
+              open && 'rotate-90',
+            )}
+            aria-hidden
+          />
+        )}
+        <span
           className={cn(
-            'size-3.5 shrink-0 transition-transform duration-150 ease-out',
-            open && 'rotate-90',
+            'min-w-0 flex-1 truncate font-medium',
+            isThinking && 'coach-thinking-shimmer',
           )}
-          aria-hidden
-        />
+        >
+          {reasoningSummaryLabel({ streaming, hasAnswerText, elapsedSeconds })}
+        </span>
       </button>
+
       <MotionExpand open={open}>
         <div
-          ref={bodyRef}
-          className="text-muted-foreground max-h-56 overflow-y-auto px-2.5 pb-2.5 text-xs leading-relaxed whitespace-pre-wrap"
+          ref={viewportRef}
+          className={cn('overflow-y-auto pb-1 pl-4.5', needsScroll && 'coach-reasoning-viewport')}
+          data-fade={needsScroll ? fade : 'none'}
+          style={{ maxHeight: `${MAX_VIEWPORT_H}px` }}
+          onScroll={needsScroll ? onScroll : undefined}
         >
-          {text}
+          <div className="space-y-1">
+            {sentences.map((sentence, i) => (
+              <p
+                key={`${i}-${sentence.slice(0, 20)}`}
+                className="coach-reasoning-sentence text-muted-foreground text-xs leading-relaxed"
+                style={{ animationDelay: `${i * 60}ms` }}
+              >
+                {sentence}
+              </p>
+            ))}
+          </div>
         </div>
       </MotionExpand>
     </div>

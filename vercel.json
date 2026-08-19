@@ -44,6 +44,9 @@
     "src/app/api/withings/sync/route.ts": {
       "maxDuration": 300
     },
+    "src/app/api/myfitnesspal/sync/route.ts": {
+      "maxDuration": 300
+    },
     "src/app/api/garmin/connect/route.ts": {
       "maxDuration": 300
     },

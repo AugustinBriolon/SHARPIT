@@ -1,27 +1,24 @@
-import { Suspense } from 'react';
-import { connection } from 'next/server';
-import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
-import type { SettingsHubStatus } from '@/lib/settings/hub-status';
-import { getSettingsHubStatus } from '@/lib/settings/load-hub-status';
+'use client';
 
-async function HubStatusText({ statusKey }: { statusKey: keyof SettingsHubStatus }) {
-  // Which travel memory is active depends on the current date, so this is
-  // request-time by nature and must never be frozen into the shell.
-  await connection();
-  const status = await getSettingsHubStatus();
-  return status[statusKey];
+import { useQuery } from '@tanstack/react-query';
+import type { SettingsHubStatus } from '@/lib/settings/hub-status';
+
+async function fetchHubStatus(): Promise<SettingsHubStatus> {
+  const res = await fetch('/api/presentation/settings-hub');
+  if (!res.ok) throw new Error('Failed to load settings hub status');
+  return res.json();
 }
 
-/**
- * A single settings status chip, streamed. The hub list itself carries no
- * server data and stays in the prerendered shell; each chip waits behind its
- * own boundary. `getSettingsHubStatus` is request-memoized, so the chips share
- * one round of queries.
- */
 export function HubStatusValue({ statusKey }: { statusKey: keyof SettingsHubStatus }) {
-  return (
-    <Suspense fallback={<SkeletonDataValue heightClassName="h-3" widthClassName="w-16" />}>
-      <HubStatusText statusKey={statusKey} />
-    </Suspense>
-  );
+  const { data, isLoading } = useQuery({
+    queryKey: ['presentation', 'settings-hub'],
+    queryFn: fetchHubStatus,
+    staleTime: 30_000,
+  });
+
+  if (isLoading || !data) {
+    return <span className="bg-muted inline-block h-3 w-16 animate-pulse rounded" />;
+  }
+
+  return <>{data[statusKey]}</>;
 }

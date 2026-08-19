@@ -1,4 +1,5 @@
 import { ActivityType } from '@prisma/client';
+import { ProviderAuthError } from '@/lib/integrations/connection-status';
 
 const STRAVA_OAUTH_BASE = 'https://www.strava.com/oauth';
 const STRAVA_API_BASE = 'https://www.strava.com/api/v3';
@@ -94,7 +95,11 @@ export async function refreshAccessToken(refreshToken: string): Promise<StravaTo
   });
 
   if (!response.ok) {
-    throw new Error(`Refresh du token Strava échoué (${response.status})`);
+    const message = `Refresh du token Strava échoué (${response.status})`;
+    if (response.status === 400 || response.status === 401) {
+      throw new ProviderAuthError(message);
+    }
+    throw new Error(message);
   }
 
   return response.json();

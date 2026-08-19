@@ -15,6 +15,11 @@ import {
 } from '@/lib/integrations/garmin';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { garminHealthToObservations } from '@/core/adapters/garmin-health-adapter';
+import {
+  isGarminAccountConnected,
+  isProviderAuthFailure,
+  ProviderAuthError,
+} from '@/lib/integrations/connection-status';
 import { backfillHealthObservationsFromDailyHealth } from './health-observation-backfill';
 import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
 
@@ -46,12 +51,36 @@ export async function getGarminAccount() {
 /** Client Garmin authentifié (tokens en base). */
 export async function getGarminClient() {
   const account = await getGarminAccount();
-  if (!account) throw new Error('Compte Garmin non connecté');
-  return clientFromTokens(garminTokensFromStorage(account.oauth1Token, account.oauth2Token));
+  if (!account || !isGarminAccountConnected(account)) {
+    throw new ProviderAuthError('Session Garmin expirée. Reconnecte Garmin dans les paramètres.');
+  }
+  return clientFromTokens(garminTokensFromStorage(account.oauth1Token!, account.oauth2Token!));
 }
 
 export async function disconnectGarmin() {
   await prisma.garminAccount.deleteMany({ where: { id: ACCOUNT_ID } });
+}
+
+/** Keeps the Garmin profile row so the hub can ask for a reconnect. */
+export async function revokeGarminCredentials() {
+  const account = await getGarminAccount();
+  if (!account) return;
+  await prisma.garminAccount.update({
+    where: { id: ACCOUNT_ID },
+    data: { oauth1Token: {}, oauth2Token: {} },
+  });
+}
+
+export async function runGarminCall<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    if (isProviderAuthFailure(error)) {
+      await revokeGarminCredentials();
+      throw new ProviderAuthError('Session Garmin expirée. Reconnecte Garmin dans les paramètres.');
+    }
+    throw error;
+  }
 }
 
 export async function connectGarmin(username: string, password: string) {
@@ -87,52 +116,56 @@ export interface GarminThresholdsImport extends GarminAthleteThresholds {
  * remplace pas une valeur existante).
  */
 export async function importGarminThresholds(): Promise<GarminThresholdsImport> {
-  const account = await getGarminAccount();
-  if (!account) throw new Error('Compte Garmin non connecté');
+  return runGarminCall(async () => {
+    const account = await getGarminAccount();
+    if (!account || !isGarminAccountConnected(account)) {
+      throw new ProviderAuthError('Session Garmin expirée. Reconnecte Garmin dans les paramètres.');
+    }
 
-  const client = clientFromTokens(
-    garminTokensFromStorage(account.oauth1Token, account.oauth2Token),
-  );
+    const client = clientFromTokens(
+      garminTokensFromStorage(account.oauth1Token!, account.oauth2Token!),
+    );
 
-  const thresholds = await fetchAthleteThresholds(client);
+    const thresholds = await fetchAthleteThresholds(client);
 
-  // Only claim a sync happened when every source answered. A partial import that
-  // stamps the timestamp is how this app spent months reporting "synced" with
-  // ftpW, maxHr and lthr all null.
-  const data: Prisma.AthleteProfileUncheckedUpdateInput =
-    thresholds.failedSources.length === 0 ? { thresholdsSyncedAt: new Date() } : {};
-  if (thresholds.ftpW != null) data.ftpW = thresholds.ftpW;
-  if (thresholds.maxHr != null) data.maxHr = thresholds.maxHr;
-  if (thresholds.lthr != null) data.lthr = thresholds.lthr;
-  if (thresholds.runThresholdPaceSecPerKm != null)
-    data.runThresholdPaceSecPerKm = thresholds.runThresholdPaceSecPerKm;
-  if (thresholds.vo2maxRunning != null) data.vo2maxRunning = thresholds.vo2maxRunning;
-  if (thresholds.vo2maxCycling != null) data.vo2maxCycling = thresholds.vo2maxCycling;
+    // Only claim a sync happened when every source answered. A partial import that
+    // stamps the timestamp is how this app spent months reporting "synced" with
+    // ftpW, maxHr and lthr all null.
+    const data: Prisma.AthleteProfileUncheckedUpdateInput =
+      thresholds.failedSources.length === 0 ? { thresholdsSyncedAt: new Date() } : {};
+    if (thresholds.ftpW != null) data.ftpW = thresholds.ftpW;
+    if (thresholds.maxHr != null) data.maxHr = thresholds.maxHr;
+    if (thresholds.lthr != null) data.lthr = thresholds.lthr;
+    if (thresholds.runThresholdPaceSecPerKm != null)
+      data.runThresholdPaceSecPerKm = thresholds.runThresholdPaceSecPerKm;
+    if (thresholds.vo2maxRunning != null) data.vo2maxRunning = thresholds.vo2maxRunning;
+    if (thresholds.vo2maxCycling != null) data.vo2maxCycling = thresholds.vo2maxCycling;
 
-  await prisma.athleteProfile.upsert({
-    where: { id: 'default' },
-    create: { id: 'default', ...data } as Prisma.AthleteProfileUncheckedCreateInput,
-    update: data,
+    await prisma.athleteProfile.upsert({
+      where: { id: 'default' },
+      create: { id: 'default', ...data } as Prisma.AthleteProfileUncheckedCreateInput,
+      update: data,
+    });
+
+    const refreshed = currentTokens(client);
+    await prisma.garminAccount.update({
+      where: { id: ACCOUNT_ID },
+      data: {
+        oauth1Token: refreshed.oauth1 as unknown as Prisma.InputJsonValue,
+        oauth2Token: refreshed.oauth2 as unknown as Prisma.InputJsonValue,
+      },
+    });
+
+    const imported =
+      thresholds.ftpW != null ||
+      thresholds.maxHr != null ||
+      thresholds.lthr != null ||
+      thresholds.runThresholdPaceSecPerKm != null ||
+      thresholds.vo2maxRunning != null ||
+      thresholds.vo2maxCycling != null;
+
+    return { ...thresholds, imported };
   });
-
-  const refreshed = currentTokens(client);
-  await prisma.garminAccount.update({
-    where: { id: ACCOUNT_ID },
-    data: {
-      oauth1Token: refreshed.oauth1 as unknown as Prisma.InputJsonValue,
-      oauth2Token: refreshed.oauth2 as unknown as Prisma.InputJsonValue,
-    },
-  });
-
-  const imported =
-    thresholds.ftpW != null ||
-    thresholds.maxHr != null ||
-    thresholds.lthr != null ||
-    thresholds.runThresholdPaceSecPerKm != null ||
-    thresholds.vo2maxRunning != null ||
-    thresholds.vo2maxCycling != null;
-
-  return { ...thresholds, imported };
 }
 
 export interface GarminSyncResult {
@@ -246,48 +279,56 @@ export async function syncGarminHealth(options?: {
   days?: number;
   full?: boolean;
 }): Promise<GarminSyncResult> {
-  const account = await getGarminAccount();
-  if (!account) throw new Error('Compte Garmin non connecté');
+  return runGarminCall(async () => {
+    const account = await getGarminAccount();
+    if (!account || !isGarminAccountConnected(account)) {
+      throw new ProviderAuthError('Session Garmin expirée. Reconnecte Garmin dans les paramètres.');
+    }
 
-  const client = clientFromTokens(
-    garminTokensFromStorage(account.oauth1Token, account.oauth2Token),
-  );
+    const client = clientFromTokens(
+      garminTokensFromStorage(account.oauth1Token, account.oauth2Token),
+    );
 
-  const fallbackDays = options?.days ?? GARMIN_HEALTH_DEFAULT_FALLBACK_DAYS;
-  const today = startOfDay(new Date());
-  const since = options?.full
-    ? subDays(today, 365)
-    : syncSinceFromLastSync(account.lastSyncAt, fallbackDays);
-  const days = syncWindowDays(since);
+    const fallbackDays = options?.days ?? GARMIN_HEALTH_DEFAULT_FALLBACK_DAYS;
+    const today = startOfDay(new Date());
+    const since = options?.full
+      ? subDays(today, 365)
+      : syncSinceFromLastSync(account.lastSyncAt, fallbackDays);
+    const days = syncWindowDays(since);
 
-  const weightMap = await fetchWeightRange(client, since, today);
+    const weightMap = await fetchWeightRange(client, since, today);
 
-  const dates: Date[] = [];
-  for (let date = today; date >= since; date = subDays(date, 1)) {
-    dates.push(date);
-  }
+    const dates: Date[] = [];
+    for (let date = today; date >= since; date = subDays(date, 1)) {
+      dates.push(date);
+    }
 
-  const outcomes = await mapWithConcurrency(dates, GARMIN_HEALTH_DAY_CONCURRENCY, async (date) => {
-    const weightKg = weightMap.get(format(date, 'yyyy-MM-dd')) ?? null;
-    return upsertGarminHealthDay(client, date, weightKg);
+    const outcomes = await mapWithConcurrency(
+      dates,
+      GARMIN_HEALTH_DAY_CONCURRENCY,
+      async (date) => {
+        const weightKg = weightMap.get(format(date, 'yyyy-MM-dd')) ?? null;
+        return upsertGarminHealthDay(client, date, weightKg);
+      },
+    );
+
+    const updated = outcomes.filter((o) => o === 'updated').length;
+    const emptyDays = outcomes.filter((o) => o === 'empty').length;
+
+    const refreshed = currentTokens(client);
+    await prisma.garminAccount.update({
+      where: { id: ACCOUNT_ID },
+      data: {
+        oauth1Token: refreshed.oauth1 as unknown as Prisma.InputJsonValue,
+        oauth2Token: refreshed.oauth2 as unknown as Prisma.InputJsonValue,
+        lastSyncAt: new Date(),
+      },
+    });
+
+    const backfill = await backfillHealthObservationsFromDailyHealth(ATHLETE_ID, {
+      days: options?.full ? 365 : fallbackDays,
+    });
+
+    return { days, updated, emptyDays, observationsBackfilled: backfill.ingested };
   });
-
-  const updated = outcomes.filter((o) => o === 'updated').length;
-  const emptyDays = outcomes.filter((o) => o === 'empty').length;
-
-  const refreshed = currentTokens(client);
-  await prisma.garminAccount.update({
-    where: { id: ACCOUNT_ID },
-    data: {
-      oauth1Token: refreshed.oauth1 as unknown as Prisma.InputJsonValue,
-      oauth2Token: refreshed.oauth2 as unknown as Prisma.InputJsonValue,
-      lastSyncAt: new Date(),
-    },
-  });
-
-  const backfill = await backfillHealthObservationsFromDailyHealth(ATHLETE_ID, {
-    days: options?.full ? 365 : fallbackDays,
-  });
-
-  return { days, updated, emptyDays, observationsBackfilled: backfill.ingested };
 }

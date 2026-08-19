@@ -20,13 +20,27 @@ export const CALENDAR_MUTATION_TOOL_TYPES = new Set([
 
 const TERMINAL_TOOL_STATES = new Set(['output-available', 'output-error', 'output-denied']);
 
+/** HITL in progress — not executed yet, and not a failed/interrupted tool. */
+const PENDING_APPROVAL_STATES = new Set(['approval-requested', 'approval-responded']);
+
 export function isTerminalToolState(state: string | undefined): boolean {
   return state != null && TERMINAL_TOOL_STATES.has(state);
 }
 
+export function isPendingApprovalToolState(state: string | undefined): boolean {
+  return state != null && PENDING_APPROVAL_STATES.has(state);
+}
+
+/**
+ * Idle stream + calendar mutation that never reached a terminal or HITL state.
+ * `approval-responded` is NOT stale: the athlete validated one card while
+ * siblings still wait, and auto-continue only fires once every approval in
+ * the step has a response.
+ */
 export function isStaleCalendarToolPart(part: ToolPartLite, streamIdle: boolean): boolean {
   if (!streamIdle || !CALENDAR_MUTATION_TOOL_TYPES.has(part.type)) return false;
   if (isTerminalToolState(part.state)) return false;
+  if (isPendingApprovalToolState(part.state)) return false;
   return true;
 }
 

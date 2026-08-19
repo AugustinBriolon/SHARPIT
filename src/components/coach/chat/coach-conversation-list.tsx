@@ -2,8 +2,16 @@
 
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { ChevronDownIcon, MessageSquarePlus, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ChevronDownIcon, MessageSquarePlus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
@@ -18,6 +26,48 @@ import type { ClientConversationSummary } from '@/lib/query/fetchers';
 function conversationLabel(c: ClientConversationSummary): string {
   const title = c.title.trim();
   return title || 'Nouvelle conversation';
+}
+
+function InlineRenameInput({
+  initial,
+  onCommit,
+  onCancel,
+}: {
+  initial: string;
+  onCommit: (value: string) => void;
+  onCancel: () => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  const [value, setValue] = useState(initial);
+
+  useEffect(() => {
+    ref.current?.select();
+  }, []);
+
+  function commit() {
+    const trimmed = value.trim();
+    if (trimmed && trimmed !== initial) {
+      onCommit(trimmed);
+    } else {
+      onCancel();
+    }
+  }
+
+  return (
+    <input
+      ref={ref}
+      className="bg-background ring-primary/40 w-full rounded px-1 py-0.5 text-sm font-medium ring-1 outline-none"
+      maxLength={60}
+      value={value}
+      autoFocus
+      onBlur={commit}
+      onChange={(e) => setValue(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') commit();
+        if (e.key === 'Escape') onCancel();
+      }}
+    />
+  );
 }
 
 /** Mobile Select chrome — only the label text skeletons while conversations load. */
@@ -38,16 +88,6 @@ function MobileSelectLoadingRow() {
           />
         </div>
       </div>
-      <Button
-        aria-label="Supprimer la conversation"
-        className="text-muted-foreground size-11 shrink-0 lg:size-9"
-        size="icon"
-        type="button"
-        variant="ghost"
-        disabled
-      >
-        <Trash2 className="size-4" />
-      </Button>
     </div>
   );
 }
@@ -70,6 +110,122 @@ function DesktopListLoadingRows({ rows = 4 }: { rows?: number }) {
   );
 }
 
+/** Overflow menu — rename + delete in a single, discoverable trigger. */
+function ConversationOverflowMenu({
+  conversationId: _conversationId,
+  label,
+  onRename,
+  onDelete,
+}: {
+  conversationId: string;
+  label: string;
+  onRename?: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            aria-label={`Actions pour ${label}`}
+            className="text-muted-foreground size-7"
+            size="icon-xs"
+            type="button"
+            variant="ghost"
+          />
+        }
+      >
+        <MoreHorizontal className="size-3.5" aria-hidden />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-36">
+        {onRename ? (
+          <DropdownMenuItem className="cursor-pointer gap-2" onClick={onRename}>
+            <Pencil className="size-3.5" aria-hidden />
+            Renommer
+          </DropdownMenuItem>
+        ) : null}
+        {onRename ? <DropdownMenuSeparator /> : null}
+        <DropdownMenuItem className="cursor-pointer gap-2" variant="destructive" onClick={onDelete}>
+          <Trash2 className="size-3.5" aria-hidden />
+          Supprimer
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function DesktopConversationList({
+  activeId,
+  conversations,
+  onDelete,
+  onRename,
+  onSelect,
+}: {
+  activeId: string | null;
+  conversations: ClientConversationSummary[];
+  onDelete: (id: string) => void;
+  onRename?: (id: string, title: string) => void;
+  onSelect: (id: string) => void;
+}) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  return (
+    <div className="hidden max-h-[60vh] flex-1 overflow-y-auto overscroll-x-contain p-2 lg:block lg:max-h-none">
+      <ul aria-label="Conversations" className="space-y-1">
+        {conversations.map((c) => {
+          const isActive = c.id === activeId;
+          const isEditing = editingId === c.id;
+
+          return (
+            <li key={c.id} className="group relative flex items-center">
+              <button
+                aria-current={isActive ? 'page' : undefined}
+                type="button"
+                className={cn(
+                  'rounded-analysis pressable min-w-0 flex-1 border px-3 py-2.5 text-left text-sm',
+                  isActive
+                    ? 'chip-surface'
+                    : 'text-foreground/80 hover:bg-highlight/40 hover:text-foreground border-transparent',
+                )}
+                onClick={() => onSelect(c.id)}
+                onDoubleClick={() => {
+                  if (onRename) setEditingId(c.id);
+                }}
+              >
+                {isEditing ? (
+                  <InlineRenameInput
+                    initial={conversationLabel(c)}
+                    onCancel={() => setEditingId(null)}
+                    onCommit={(title) => {
+                      onRename?.(c.id, title);
+                      setEditingId(null);
+                    }}
+                  />
+                ) : (
+                  <span className="block truncate pr-6 font-medium">{conversationLabel(c)}</span>
+                )}
+                <span className="text-data text-muted-foreground block truncate text-xs">
+                  {formatDistanceToNow(c.updatedAt, { addSuffix: true, locale: fr })}
+                </span>
+              </button>
+              {!isEditing ? (
+                <div className="absolute top-1/2 right-2 -translate-y-1/2 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
+                  <ConversationOverflowMenu
+                    conversationId={c.id}
+                    label={conversationLabel(c)}
+                    onDelete={() => onDelete(c.id)}
+                    onRename={onRename ? () => setEditingId(c.id) : undefined}
+                  />
+                </div>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 export function CoachConversationList({
   activeId,
   conversations,
@@ -77,24 +233,26 @@ export function CoachConversationList({
   newDisabled = false,
   onDelete,
   onNewConversation,
+  onRename,
   onSelect,
 }: {
   conversations: ClientConversationSummary[];
   activeId: string | null;
   loading: boolean;
-  /** Desktop-only Lime Pulse pill above the list. */
   onNewConversation?: () => void;
   newDisabled?: boolean;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
+  onRename?: (id: string, title: string) => void;
 }) {
   const selectedId = activeId ?? conversations[0]?.id ?? '';
   const selected = conversations.find((c) => c.id === selectedId);
+  const [mobileRenaming, setMobileRenaming] = useState(false);
 
   return (
     <aside
       aria-busy={loading || undefined}
-      className="analysis-panel rounded-analysis-lg flex w-full shrink-0 flex-col gap-2 lg:h-full lg:w-[260px] lg:border-transparent lg:bg-transparent"
+      className="analysis-panel rounded-analysis-lg flex w-full shrink-0 flex-col gap-2 lg:h-full lg:w-65 lg:border-transparent lg:bg-transparent"
     >
       {onNewConversation ? (
         <Button
@@ -126,83 +284,60 @@ export function CoachConversationList({
         <>
           <div className="flex items-center gap-1.5 p-2 lg:hidden">
             <div className="min-w-0 flex-1">
-              <Select
-                value={selectedId}
-                onValueChange={(value) => {
-                  if (value) onSelect(value);
-                }}
-              >
-                <SelectTrigger
-                  aria-label="Conversation active"
-                  className="min-h-11 w-full min-w-0 lg:h-9"
+              {mobileRenaming && activeId ? (
+                <InlineRenameInput
+                  initial={selected ? conversationLabel(selected) : ''}
+                  onCancel={() => setMobileRenaming(false)}
+                  onCommit={(title) => {
+                    onRename?.(activeId, title);
+                    setMobileRenaming(false);
+                  }}
+                />
+              ) : (
+                <Select
+                  value={selectedId}
+                  onValueChange={(value) => {
+                    if (value) onSelect(value);
+                  }}
                 >
-                  <SelectValue placeholder="Nouvelle conversation">
-                    {selected ? conversationLabel(selected) : 'Nouvelle conversation'}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="max-h-64 w-(--anchor-width) max-w-(--anchor-width)">
-                  {conversations.map((c) => (
-                    <SelectItem key={c.id} className="min-w-0" value={c.id}>
-                      <span className="block min-w-0 truncate">{conversationLabel(c)}</span>
-                      <span className="text-muted-foreground block min-w-0 truncate text-xs">
-                        {formatDistanceToNow(c.updatedAt, { addSuffix: true, locale: fr })}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                  <SelectTrigger
+                    aria-label="Conversation active"
+                    className="min-h-11 w-full min-w-0 lg:h-9"
+                  >
+                    <SelectValue placeholder="Nouvelle conversation">
+                      {selected ? conversationLabel(selected) : 'Nouvelle conversation'}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-64 w-(--anchor-width) max-w-(--anchor-width)">
+                    {conversations.map((c) => (
+                      <SelectItem key={c.id} className="min-w-0" value={c.id}>
+                        <span className="block min-w-0 truncate">{conversationLabel(c)}</span>
+                        <span className="text-muted-foreground block min-w-0 truncate text-xs">
+                          {formatDistanceToNow(c.updatedAt, { addSuffix: true, locale: fr })}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             {activeId ? (
-              <Button
-                aria-label="Supprimer la conversation"
-                className="text-muted-foreground hover:text-destructive size-11 shrink-0 lg:size-9"
-                size="icon"
-                type="button"
-                variant="ghost"
-                onClick={() => onDelete(activeId)}
-              >
-                <Trash2 className="size-4" aria-hidden />
-              </Button>
+              <ConversationOverflowMenu
+                conversationId={activeId}
+                label={selected ? conversationLabel(selected) : 'Conversation'}
+                onDelete={() => onDelete(activeId)}
+                onRename={onRename ? () => setMobileRenaming(true) : undefined}
+              />
             ) : null}
           </div>
 
-          <div className="hidden max-h-[60vh] flex-1 overflow-y-auto overscroll-x-contain p-2 lg:block lg:max-h-none">
-            <ul aria-label="Conversations" className="space-y-1">
-              {conversations.map((c) => {
-                const isActive = c.id === activeId;
-                return (
-                  <li key={c.id} className="group flex items-center">
-                    <button
-                      aria-current={isActive ? 'page' : undefined}
-                      type="button"
-                      className={cn(
-                        'rounded-analysis pressable min-w-0 flex-1 border px-3 py-2.5 text-left text-sm',
-                        isActive
-                          ? 'chip-surface'
-                          : 'text-foreground/80 hover:bg-highlight/40 hover:text-foreground border-transparent',
-                      )}
-                      onClick={() => onSelect(c.id)}
-                    >
-                      <span className="block truncate font-medium">{conversationLabel(c)}</span>
-                      <span className="text-data text-muted-foreground block truncate text-xs">
-                        {formatDistanceToNow(c.updatedAt, { addSuffix: true, locale: fr })}
-                      </span>
-                    </button>
-                    <Button
-                      aria-label={`Supprimer ${conversationLabel(c)}`}
-                      className="text-muted-foreground hover:text-destructive size-11 shrink-0 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 lg:size-9"
-                      size="icon"
-                      type="button"
-                      variant="ghost"
-                      onClick={() => onDelete(c.id)}
-                    >
-                      <Trash2 className="size-3.5" aria-hidden />
-                    </Button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+          <DesktopConversationList
+            activeId={activeId}
+            conversations={conversations}
+            onDelete={onDelete}
+            onRename={onRename}
+            onSelect={onSelect}
+          />
         </>
       ) : null}
     </aside>

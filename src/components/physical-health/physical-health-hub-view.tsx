@@ -1,7 +1,6 @@
 'use client';
 
 import { format } from 'date-fns';
-import { useSearchParams } from 'next/navigation';
 import {
   isPresentationValuesLoading,
   usePhysicalHealthViewModel,
@@ -14,8 +13,6 @@ import { PhysicalHealthPageView } from './physical-health-page-view';
 export function PhysicalHealthHubView() {
   const { date } = useTodaySelectedDate();
   const trainingDayId = format(date, 'yyyy-MM-dd');
-  const searchParams = useSearchParams();
-  const focusConditionId = searchParams.get('condition');
   const query = usePhysicalHealthViewModel(trainingDayId);
   const valuesLoading = isPresentationValuesLoading(query);
 
@@ -28,20 +25,9 @@ export function PhysicalHealthHubView() {
   }
 
   const viewModel = query.data ?? physicalHealthLoadingShell();
-  const focused =
-    !valuesLoading && focusConditionId != null
-      ? [...viewModel.activeConditions, ...viewModel.resolvedConditions].find(
-          (c) => c.conditionId === focusConditionId,
-        )
-      : null;
 
   return (
     <div className="space-y-4">
-      {focused ? (
-        <p aria-live="polite" className="text-muted-foreground text-sm">
-          Focus : <span className="text-foreground font-medium">{focused.label}</span>
-        </p>
-      ) : null}
       {valuesLoading ? (
         <p aria-live="polite" className="sr-only">
           Chargement de l&apos;état physique…

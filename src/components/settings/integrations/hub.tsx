@@ -37,6 +37,7 @@ import { toast } from '@/components/ui/toast';
 import {
   runGarminSync,
   runGoogleSync,
+  runMfpSync,
   runRenphoSync,
   runStravaSync,
   runWithingsSync,
@@ -61,6 +62,7 @@ function syncLabel(lastSyncAt: string | null): string {
 }
 
 function integrationStatusLabel(integration: IntegrationDefinition): string {
+  if (integration.needsReconnect) return 'Session expirée — reconnecte';
   if (integration.connected) {
     return syncLabel(integration.account?.lastSyncAt ?? null);
   }
@@ -74,6 +76,13 @@ function StatusBadge({ integration }: { integration: IntegrationDefinition }) {
       <span className="bg-muted text-muted-foreground text-label inline-flex items-center gap-1 rounded-full px-2 py-0.5">
         <Unplug className="size-3" aria-hidden />
         Non configuré
+      </span>
+    );
+  }
+  if (integration.needsReconnect) {
+    return (
+      <span className="bg-signal-caution/10 text-signal-caution text-label inline-flex items-center gap-1 rounded-full px-2 py-0.5">
+        <XCircle className="size-3" aria-hidden />À reconnecter
       </span>
     );
   }
@@ -160,7 +169,7 @@ function IntegrationCard({
 
       <div className="mt-4 flex items-end justify-between gap-2">
         <div>
-          {integration.connected && integration.account?.label && (
+          {(integration.connected || integration.needsReconnect) && integration.account?.label && (
             <p className="text-sm font-medium">{integration.account.label}</p>
           )}
           <p className="text-muted-foreground text-xs">{integrationStatusLabel(integration)}</p>
@@ -195,6 +204,10 @@ async function syncIntegration(id: IntegrationId): Promise<string> {
     case 'google': {
       const d = await runGoogleSync();
       return `${d.pushed} événement(s) · ${d.updated} mis à jour`;
+    }
+    case 'myfitnesspal': {
+      const d = await runMfpSync();
+      return `${d.synced} jour(s) synchronisé(s)`;
     }
   }
 }

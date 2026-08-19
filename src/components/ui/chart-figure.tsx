@@ -51,7 +51,7 @@ export function ChartFigure({
           </thead>
           <tbody>
             {labels.map((label, i) => (
-              <tr key={label}>
+              <tr key={i}>
                 <th scope="row">{label}</th>
                 {series.map((s) => (
                   <td key={s.name}>{s.points[i]?.value ?? '—'}</td>
