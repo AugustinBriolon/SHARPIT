@@ -32,6 +32,8 @@ import {
   parseStrengthPrescription,
   resolveStrengthFieldsForPersist,
 } from '@/lib/planned-session/strength-prescription';
+import { auditStrengthPrescription } from '@/lib/planned-session/strength-session-template';
+import { suggestGarminTaxonomy } from '@/lib/integrations/garmin-exercise-taxonomy';
 import {
   formatScenarioComparisonForCoach,
   loadScenarioComparisonForCoach,
@@ -137,6 +139,37 @@ export const coachTools = {
     },
   }),
 
+  searchWatchExercises: tool({
+    description:
+      "Cherche les exercices du catalogue Garmin Connect correspondant à un mouvement. Utilise-le pour nommer les exercices d'une séance STRENGTH avec des libellés que la montre affiche tels quels. Un libellé hors catalogue reste envoyé, mais sous un nom générique.",
+    inputSchema: z.object({
+      query: z
+        .string()
+        .min(2)
+        .max(120)
+        .describe('Mouvement recherché en français (ex. « pont fessier élastique »).'),
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(10)
+        .optional()
+        .describe('Nombre de suggestions (défaut 5).'),
+    }),
+    execute: async ({ query, limit = 5 }) => {
+      const matches = suggestGarminTaxonomy(query, limit);
+      return {
+        query,
+        matches: matches.map((match) => ({
+          label: match.labelFr,
+          exerciseName: match.ref.exerciseName,
+          category: match.ref.category,
+          confidence: match.confidence,
+        })),
+      };
+    },
+  }),
+
   createPlannedSession: tool({
     description:
       'Crée UNE séance planifiée pour UN SEUL sport. Ne pas utiliser pour un enchaînement multisport (vélo+course, etc.) : utilise createBrickSession à la place.',
@@ -200,6 +233,10 @@ export const coachTools = {
           type: input.type,
           title: input.title,
           addedToGoogle: false,
+          strengthAudit: auditStrengthPrescription({
+            durationMin: input.durationMin,
+            prescription: strength.strengthPrescription,
+          }),
         };
       } catch (error) {
         console.error('[coach] createPlannedSession', error);
@@ -354,6 +391,10 @@ export const coachTools = {
           startTime: s.startTime,
           type: s.type,
           title: s.title,
+          strengthAudit: auditStrengthPrescription({
+            durationMin: input.durationMin ?? existing.durationMin,
+            prescription: parseStrengthPrescription(s.strengthPrescription),
+          }),
         };
       } catch (error) {
         console.error('[coach] updatePlannedSession', error);

@@ -18,6 +18,7 @@ import {
 import { buildBusySummary } from '@/lib/coach/calendar-availability';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach/coach-context';
 import { coachTools } from '@/lib/coach/coach-tools';
+import { formatStrengthSessionRules } from '@/lib/planned-session/strength-session-template';
 
 /** Horizon de pré-chargement de l'agenda, aligné sur les séances du contexte. */
 const AGENDA_PREFETCH_DAYS = 14;
@@ -44,6 +45,9 @@ Tu ne te contentes pas de répondre : tu prends des décisions d'entraînement e
 - createPlannedSession / updatePlannedSession acceptent exposureSetting (INDOOR/OUTDOOR), locationLabel et coordonnées. Pour une séance STRENGTH : renseigne OBLIGATOIREMENT strengthPrescription (exercices FR avec séries/reps/repos), sinon elle n'est pas envoyable à la montre. Pour RUN/BIKE/SWIM : omets-la.
 
 VALIDATION : créer/modifier/supprimer demande l'accord de l'athlète — tu proposes via l'outil, ça ne s'applique qu'après validation. Une proposition refusée (outil avec execution-denied / approved:false) n'est PAS appliquée : ne confirme JAMAIS qu'elle a été faite, n'agis pas comme si elle était validée, ne répète pas la même proposition. En une phrase, accuse le refus, puis propose une alternative concrète OU demande une précision. N'invente jamais d'id. Si tu laisses 'startTime' vide, l'app place la séance sur le premier créneau libre (06:00–21:00) ; chaque séance validée part dans le calendrier Google "SPORT".
+
+${formatStrengthSessionRules()}
+- searchWatchExercises : cherche un exercice dans le catalogue Garmin Connect avant de le nommer dans une prescription (lecture seule, pas de validation).
 
 ## Principes d'entraînement
 - Périodise vers la course principale (base → spécifique → affûtage) selon les semaines restantes.

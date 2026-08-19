@@ -7,6 +7,7 @@ import { buildCoachContext, formatCoachContext } from '@/lib/coach/coach-context
 import { getActiveTrainingPlan, getGoals, getPlannedSessionsForCoach } from '@/lib/queries';
 import { resolveDefaultPlanGoalId, selectableDatedGoalIds } from '@/lib/planned-session/plan-goal';
 import { intensityLabels } from '@/lib/planned-session/sessions';
+import { formatStrengthSessionRules } from '@/lib/planned-session/strength-session-template';
 import {
   adaptPlanGenerationSchema,
   adaptPlanSchema,
@@ -83,6 +84,8 @@ Principes :
 - Renseigne uniquement les champs à modifier pour MODIFY ; mets null ailleurs.
 - durationMin et load doivent être des entiers (pas de décimales).
 - Pour ADD/MODIFY d'une séance STRENGTH : renseigne strengthPrescription. null sinon.
+
+${formatStrengthSessionRules()}
 
 FORMAT : le schéma de sortie fait autorité — noms de champs, valeurs autorisées et types viennent de lui, jamais de ce texte. N'ajoute aucun champ hors schéma et n'invente aucune valeur d'énumération.
 - Si le plan manque de renfo/mobilité préventive alors qu'un objectif sportif est actif, ADD des séances STRENGTH (préventif + mobilité) adaptées au sport — sauf MOBILITY_ONLY/NONE / REST_ONLY.

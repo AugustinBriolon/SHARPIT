@@ -18,6 +18,7 @@ import type { GateProposal } from '@/lib/plan-gate/types';
 import { computeTrainingDayId } from '@/lib/training/training-day';
 import { buildDecisionSnapshotContext } from '@/lib/decision-memory/build-snapshot-context';
 import { createCoachingDecision } from '@/lib/decision-memory/repository';
+import { formatStrengthSessionRules } from '@/lib/planned-session/strength-session-template';
 import {
   formatTravelConstraintPromptRule,
   resolvePlanTargetUnderTravel,
@@ -46,7 +47,9 @@ Sécurité (impératif) :
 - Dès qu'un objectif sportif est présent, inclus dans la fenêtre — sauf voyage MOBILITY_ONLY/NONE ou capacité REST_ONLY — au moins une séance STRENGTH préventive spécifique au sport (stabilisateurs, chaîne postérieure, core, hanches/genoux/épaules) ET un bloc mobilité/étirements ciblés. Non optionnels.
 - Information manquante → hypothèse CONSERVATRICE. N'invente jamais de données.
 
-Sortie : le schéma fait autorité pour les noms de champs, les types et les valeurs d'énumération — jamais ce texte. N'ajoute aucun champ hors schéma. Séance STRENGTH : strengthPrescription obligatoire (3–8 exercices, noms français) ; RUN/BIKE/SWIM : null.`;
+${formatStrengthSessionRules()}
+
+Sortie : le schéma fait autorité pour les noms de champs, les types et les valeurs d'énumération — jamais ce texte. N'ajoute aucun champ hors schéma. Séance STRENGTH : strengthPrescription obligatoire (noms français, blocs et volume ci-dessus) ; RUN/BIKE/SWIM : null.`;
 
 export async function POST(req: Request) {
   if (!isCoachConfigured()) {

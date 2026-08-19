@@ -11,6 +11,7 @@ import {
   Loader2,
   MapPin,
   PencilLine,
+  Search,
   X,
 } from 'lucide-react';
 import { activityTypeLabels } from '@/lib/format';
@@ -57,6 +58,12 @@ const META: Record<string, Meta> = {
     label: 'Scénarios projetés',
     icon: Layers,
     running: 'Projection des scénarios…',
+    proposal: '',
+  },
+  'tool-searchWatchExercises': {
+    label: 'Catalogue montre consulté',
+    icon: Search,
+    running: 'Recherche dans le catalogue Garmin…',
     proposal: '',
   },
   'tool-createPlannedSession': {
