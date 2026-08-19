@@ -224,6 +224,7 @@ async function finalizePlan(
       durationMin: s.durationMin,
       load: s.load,
       title: s.title,
+      strengthPrescription: s.strengthPrescription ?? null,
       rationale: s.rationale ?? null,
       goalId: goalId ?? null,
     }));

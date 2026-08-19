@@ -10,6 +10,7 @@
  */
 
 import type { ActivityType, GoalHorizon, PlanPhase, SessionIntensity } from '@prisma/client';
+import type { CoachStrengthPrescription } from '@/lib/planned-session/strength-prescription';
 import type { SerializedDecisionState } from '@/core/decision/adapters';
 import type { PhysicalHealthData, TrainingCapacity } from '@/hooks/use-today';
 
@@ -62,6 +63,8 @@ export type GateProposal = {
   readonly durationMin: number | null;
   readonly load: number | null;
   readonly title: string | null;
+  /** Structured exercises for STRENGTH proposals — null for other sports. */
+  readonly strengthPrescription?: CoachStrengthPrescription | null;
   /** LLM's own explanation for this proposal — carried through unused by Gate rules, consumed by presentation. */
   readonly rationale: string | null;
   /**

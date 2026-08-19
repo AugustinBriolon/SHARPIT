@@ -51,6 +51,7 @@ function toGateProposal(
     durationMin: change.durationMin ?? existing?.durationMin ?? null,
     load: change.load ?? existing?.load ?? null,
     title: change.title ?? existing?.title ?? null,
+    strengthPrescription: change.strengthPrescription ?? null,
     rationale: change.reason ?? null,
     // Option B: keep existing link on MODIFY; stamp plan goal on ADD.
     goalId: existing?.goalId ?? (change.action === 'ADD' ? defaultGoalId : null),

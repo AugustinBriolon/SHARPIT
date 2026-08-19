@@ -6,6 +6,7 @@ import { recoverySpacingRule } from './rules/recovery-spacing';
 import { goalPhaseCoherenceRule } from './rules/goal-phase-coherence';
 import { dataSufficiencyRule } from './rules/data-sufficiency';
 import { calendarConflictRule } from './rules/calendar-conflict';
+import { strengthCompletenessRule } from './rules/strength-completeness';
 import { weeklyLoadRule } from './rules/weekly-load';
 import { intensityDistributionRule } from './rules/intensity-distribution';
 import type {
@@ -30,6 +31,7 @@ const RULES: readonly PlanGateRule[] = [
   goalPhaseCoherenceRule,
   dataSufficiencyRule,
   calendarConflictRule,
+  strengthCompletenessRule,
 ];
 
 const PLAN_LEVEL_RULES: readonly PlanLevelGateRule[] = [weeklyLoadRule, intensityDistributionRule];
