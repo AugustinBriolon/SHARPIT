@@ -482,7 +482,7 @@ export function CoachChat({
                       text={reasoning}
                     />
                   ) : null}
-                  {text && <CoachMessage>{text}</CoachMessage>}
+                  {text && <CoachMessage streaming={isLiveStreamTail}>{text}</CoachMessage>}
                   <ToolActivityList parts={inlineParts as ToolPartLite[]} streamIdle={streamIdle} />
                   {streamIdle && text && messageIndex === lastAssistantIndex ? (
                     <CoachProvenanceChips />

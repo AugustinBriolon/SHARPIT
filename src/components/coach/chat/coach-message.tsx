@@ -49,16 +49,22 @@ function PhaseBlock({
   title,
   metrics,
   prose,
+  streaming,
 }: {
   title: string;
   metrics: CoachMetricItem[];
   prose?: string;
+  streaming?: boolean;
 }) {
   return (
     <section className="analysis-panel rounded-analysis space-y-3 px-3.5 py-3.5">
       <h3 className="text-section-title">{title}</h3>
       {metrics.length > 0 ? <MetricGrid metrics={metrics} /> : null}
-      {prose ? <Markdown variant="compact">{prose}</Markdown> : null}
+      {prose ? (
+        <Markdown streaming={streaming} variant="compact">
+          {prose}
+        </Markdown>
+      ) : null}
     </section>
   );
 }
@@ -67,25 +73,37 @@ function SynthesisBlock({
   title,
   metrics,
   prose,
+  streaming,
 }: {
   title: string;
   metrics: CoachMetricItem[];
   prose?: string;
+  streaming?: boolean;
 }) {
   return (
     <section className="analysis-panel-alt rounded-analysis-lg space-y-3 px-3.5 py-3.5">
       <h3 className="text-section-title">{title}</h3>
       {metrics.length > 0 ? <MetricGrid metrics={metrics} /> : null}
-      {prose ? <Markdown variant="compact">{prose}</Markdown> : null}
+      {prose ? (
+        <Markdown streaming={streaming} variant="compact">
+          {prose}
+        </Markdown>
+      ) : null}
     </section>
   );
 }
 
-function renderBlock(block: CoachMessageBlock, index: number) {
+function renderBlock(block: CoachMessageBlock, index: number, streaming: boolean) {
   switch (block.type) {
     case 'phase':
       return (
-        <PhaseBlock key={index} metrics={block.metrics} prose={block.prose} title={block.title} />
+        <PhaseBlock
+          key={index}
+          metrics={block.metrics}
+          prose={block.prose}
+          streaming={streaming}
+          title={block.title}
+        />
       );
     case 'synthesis':
       return (
@@ -93,6 +111,7 @@ function renderBlock(block: CoachMessageBlock, index: number) {
           key={index}
           metrics={block.metrics}
           prose={block.prose}
+          streaming={streaming}
           title={block.title}
         />
       );
@@ -106,16 +125,30 @@ function renderBlock(block: CoachMessageBlock, index: number) {
         </p>
       );
     case 'prose':
-      return <Markdown key={index}>{block.content}</Markdown>;
+      return (
+        <Markdown key={index} streaming={streaming}>
+          {block.content}
+        </Markdown>
+      );
     default:
       return null;
   }
 }
 
-export function CoachMessage({ children }: { children: string }) {
+export function CoachMessage({
+  children,
+  streaming = false,
+}: {
+  children: string;
+  streaming?: boolean;
+}) {
   const blocks = parseCoachMessage(children);
 
   return (
-    <div className={cn('space-y-3')}>{blocks.map((block, index) => renderBlock(block, index))}</div>
+    <div className={cn('space-y-3')}>
+      {blocks.map((block, index) =>
+        renderBlock(block, index, streaming && index === blocks.length - 1),
+      )}
+    </div>
   );
 }
