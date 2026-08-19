@@ -155,7 +155,7 @@ yarn benchmark:compare      # compare v1 vs v2 model versions
 Scientific benchmarks gate intelligence model deployment. All four models (Recovery, Fatigue, Adaptation, Reasoning) must score **100/100 scientific regression score** and **1.0 safety score** to pass.
 
 The e2e suite has two modes ([ADR-010](docs/adr/ADR-010-cache-components-and-instant-navigation.md)).
-`yarn test:e2e` builds and starts the app, because anything asserting what a navigation shows *before*
+`yarn test:e2e` builds and starts the app, because anything asserting what a navigation shows _before_
 the server answers needs a prefetched shell, and `next dev` disables prefetching. It covers the routes
 reachable without a session.
 
@@ -165,18 +165,19 @@ record and nothing that can expire.
 
 ## Development
 
-| Command           | Description                               |
-| ----------------- | ----------------------------------------- |
-| `yarn dev`        | Start in watch mode (installs deps first) |
-| `yarn build`      | Production build                          |
-| `yarn lint`       | ESLint                                    |
-| `yarn lint:fix`   | Auto-fix lint errors                      |
-| `yarn format`     | Prettier write                            |
-| `yarn typecheck`  | TypeScript check without emitting         |
-| `yarn db:migrate` | Run Prisma migrations (dev)               |
-| `yarn db:push`    | Sync schema without migration             |
-| `yarn db:studio`  | Open Prisma Studio                        |
-| `yarn db:seed`    | Seed demo data                            |
+| Command                                          | Description                                                                       |
+| ------------------------------------------------ | --------------------------------------------------------------------------------- |
+| `yarn dev`                                       | Start in watch mode (installs deps first)                                         |
+| `yarn build`                                     | Production build                                                                  |
+| `yarn lint`                                      | ESLint                                                                            |
+| `yarn lint:fix`                                  | Auto-fix lint errors                                                              |
+| `yarn format`                                    | Prettier write                                                                    |
+| `yarn typecheck`                                 | TypeScript check without emitting                                                 |
+| `yarn db:migrate`                                | Run Prisma migrations (dev)                                                       |
+| `yarn db:push`                                   | Sync schema without migration                                                     |
+| `yarn db:studio`                                 | Open Prisma Studio                                                                |
+| `yarn db:seed`                                   | Seed demo data                                                                    |
+| `yarn db:backfill:body-composition-observations` | Backfill `BODY_COMPOSITION` observations from stored Withings/Renpho measurements |
 
 ## Modules
 

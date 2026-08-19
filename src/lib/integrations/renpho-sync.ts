@@ -10,6 +10,7 @@ import { type RenphoMeasurement, renphoClientFromCredentials } from '@/lib/integ
 import { decryptSecret, encryptSecret } from '@/lib/secret-box';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { renphoMeasurementToBodyComposition } from '@/core/adapters/renpho-adapter';
+import { backfillBodyCompositionObservationsFromMeasurements } from '@/lib/integrations/body-composition-observation-backfill';
 import { withingsWeighInDayKeys } from '@/lib/integrations/withings-sync';
 import { syncSinceFromLastSync, syncWindowDays } from '@/lib/integrations/sync-since';
 
@@ -116,6 +117,7 @@ export interface RenphoSyncResult {
   imported: number;
   updated: number;
   days: number;
+  observationsBackfilled?: number;
 }
 
 export async function syncRenphoHealth(options?: {
@@ -159,7 +161,6 @@ export async function syncRenphoHealth(options?: {
       );
 
       const toCreate: Prisma.BodyCompositionMeasurementCreateManyInput[] = [];
-      const toCreateMeasurements: RenphoMeasurement[] = [];
       const updateOps: Promise<unknown>[] = [];
 
       for (const measurement of measurements) {
@@ -184,7 +185,6 @@ export async function syncRenphoHealth(options?: {
           );
         } else {
           toCreate.push(data as Prisma.BodyCompositionMeasurementCreateManyInput);
-          toCreateMeasurements.push(measurement);
         }
       }
 
@@ -194,13 +194,14 @@ export async function syncRenphoHealth(options?: {
           skipDuplicates: true,
         });
         imported = result.count;
-        await Promise.all(toCreateMeasurements.map((m) => ingestRenphoMeasurement(m)));
       }
 
       if (updateOps.length > 0) {
         await Promise.all(updateOps);
         updated = updateOps.length;
       }
+
+      await Promise.all(measurements.map((m) => ingestRenphoMeasurement(m)));
     }
 
     await Promise.all(
@@ -212,7 +213,11 @@ export async function syncRenphoHealth(options?: {
       data: { lastSyncAt: new Date() },
     });
 
-    return { imported, updated, days };
+    const backfill = await backfillBodyCompositionObservationsFromMeasurements(ATHLETE_ID, {
+      since: options?.full ? subDays(startOfDay(new Date()), 365 * 3) : since,
+    });
+
+    return { imported, updated, days, observationsBackfilled: backfill.ingested };
   } catch (error) {
     if (isProviderAuthFailure(error)) {
       await revokeRenphoCredentials();

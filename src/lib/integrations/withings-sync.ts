@@ -15,6 +15,7 @@ import {
   type WithingsParsedMeasurement,
 } from '@/lib/integrations/withings';
 import { enrichMeasurementsWithHeartEcg } from '@/lib/integrations/withings-measures';
+import { backfillBodyCompositionObservationsFromMeasurements } from '@/lib/integrations/body-composition-observation-backfill';
 import { syncSinceFromLastSync, syncWindowDays } from '@/lib/integrations/sync-since';
 
 const ATHLETE_ID = 'default';
@@ -144,6 +145,7 @@ export interface WithingsSyncResult {
   imported: number;
   updated: number;
   days: number;
+  observationsBackfilled?: number;
 }
 
 export async function syncWithingsHealth(options?: {
@@ -193,7 +195,6 @@ export async function syncWithingsHealth(options?: {
     );
 
     const toCreate: Prisma.BodyCompositionMeasurementCreateManyInput[] = [];
-    const toCreateMeasurements: WithingsParsedMeasurement[] = [];
     const updateOps: Promise<unknown>[] = [];
 
     for (const measurement of measurements) {
@@ -218,7 +219,6 @@ export async function syncWithingsHealth(options?: {
         );
       } else {
         toCreate.push(data as Prisma.BodyCompositionMeasurementCreateManyInput);
-        toCreateMeasurements.push(measurement);
       }
     }
 
@@ -228,13 +228,17 @@ export async function syncWithingsHealth(options?: {
         skipDuplicates: true,
       });
       imported = result.count;
-      await Promise.all(toCreateMeasurements.map((m) => ingestWithingsMeasurement(m)));
     }
 
     if (updateOps.length > 0) {
       await Promise.all(updateOps);
       updated = updateOps.length;
     }
+
+    // Ingest every measurement in the sync window — not only new rows. Existing
+    // provider rows that predate the observation pipeline are updates here;
+    // dedup by externalId makes this safe to re-run.
+    await Promise.all(measurements.map((m) => ingestWithingsMeasurement(m)));
   }
 
   await Promise.all([...weightByDay.values()].map((m) => upsertDailyWeightFromWithings(m)));
@@ -244,7 +248,11 @@ export async function syncWithingsHealth(options?: {
     data: { lastSyncAt: new Date() },
   });
 
-  return { imported, updated, days };
+  const backfill = await backfillBodyCompositionObservationsFromMeasurements(ATHLETE_ID, {
+    since: options?.full ? subDays(startOfDay(new Date()), 365 * 3) : since,
+  });
+
+  return { imported, updated, days, observationsBackfilled: backfill.ingested };
 }
 
 /** Jours où Withings a une pesée (priorité sur Renpho pour DailyHealth). */
