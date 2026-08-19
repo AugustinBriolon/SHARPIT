@@ -4,8 +4,8 @@ export function normalizeExerciseKey(raw: string): string {
     .normalize('NFD')
     .replace(/\p{M}/gu, '')
     .toLowerCase()
-    .replace(/[_/]+/g, ' ')
-    .replace(/[^a-z0-9\s-]/g, ' ')
+    .replace(/[_/-]+/g, ' ')
+    .replace(/[^a-z0-9\s]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }

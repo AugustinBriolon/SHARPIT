@@ -120,7 +120,8 @@ function draftWatchHint(exercise: string): string | null {
 
 function watchHintClassName(hint: string): string {
   if (hint.startsWith('Hors')) return 'text-muted-foreground/80 text-xs';
-  if (hint.startsWith('Approx')) return 'text-xs text-amber-700/90 dark:text-amber-400/90';
+  if (hint.startsWith('Approx') || hint.startsWith('Générique'))
+    return 'text-xs text-amber-700/90 dark:text-amber-400/90';
   return 'text-muted-foreground text-xs';
 }
 
@@ -299,8 +300,8 @@ export function StrengthPrescriptionEditor({
       })}
       <p className="text-muted-foreground text-xs leading-relaxed">
         Match catalogue Garmin Connect (~1500 exercices). Repos Lap = tu termines le repos en
-        appuyant sur Lap. Hors catalogue = non envoyé ; massage / étirements personnalisés mappés en
-        Approx.
+        appuyant sur Lap. Chaque exercice part sur la montre : « Approx. » = nom voisin, « Générique
+        » = nom de famille le plus proche. Ton libellé reste affiché dans la description du pas.
       </p>
     </div>
   );

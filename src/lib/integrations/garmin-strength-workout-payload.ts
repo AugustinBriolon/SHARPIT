@@ -1,5 +1,9 @@
-import type { GarminExerciseRef } from '@/lib/integrations/garmin-exercise-map';
+import type {
+  GarminExerciseRef,
+  GarminMatchConfidence,
+} from '@/lib/integrations/garmin-exercise-map';
 import { canonicalizeGarminExerciseRef } from '@/lib/integrations/garmin-exercise-map';
+import { getGarminTaxonomyEntry } from '@/lib/integrations/garmin-exercise-taxonomy';
 import type { StrengthRestMode } from '@/lib/planned-session/strength-prescription';
 
 const SPORT_STRENGTH = {
@@ -50,6 +54,13 @@ const NO_TARGET = {
 const DEFAULT_STROKE = { strokeTypeId: 0, strokeTypeKey: null, displayOrder: 0 };
 const DEFAULT_EQUIPMENT = { equipmentTypeId: 0, equipmentTypeKey: null, displayOrder: 0 };
 
+/** Default step length for a timed movement with no explicit duration. */
+const DEFAULT_ISOMETRIC_SEC = 30;
+/** Mobility / soft-tissue work is held, never counted in reps. */
+const DEFAULT_MOBILITY_SEC = 45;
+/** Connect parent for stretches and soft-tissue work. */
+const MOBILITY_CATEGORY = 'WARM_UP';
+
 const POUND_UNIT = {
   unitId: 9,
   unitKey: 'pound',
@@ -68,7 +79,7 @@ export type StrengthWorkoutSetInput = {
   restMode?: StrengthRestMode | null;
   notes?: string | null;
   /** Pre-resolved Garmin enums (skips mapping). */
-  garmin?: GarminExerciseRef | null;
+  garmin?: (GarminExerciseRef & { confidence?: GarminMatchConfidence | null }) | null;
 };
 
 export type BuildStrengthWorkoutInput = {
@@ -77,9 +88,22 @@ export type BuildStrengthWorkoutInput = {
   sets: StrengthWorkoutSetInput[];
 };
 
+/** What the watch will actually display for one prescribed exercise. */
+export type StrengthWorkoutMappedStep = {
+  /** Athlete-facing label as prescribed in SHARPIT. */
+  exercise: string;
+  /** Garmin FR label shown on the watch. */
+  watchLabel: string;
+  category: string;
+  exerciseName: string;
+  /** How the label was resolved — 'fallback' means an approximate watch name. */
+  confidence: GarminMatchConfidence;
+};
+
 export type BuildStrengthWorkoutResult = {
   payload: Record<string, unknown>;
   mappedCount: number;
+  mapped: StrengthWorkoutMappedStep[];
   skipped: Array<{ exercise: string; reason: string }>;
 };
 
@@ -150,11 +174,15 @@ function buildExerciseStep(
   const notes = set.notes?.trim();
   step.description = notes ? `${exerciseLabel} — ${notes}` : exerciseLabel;
 
-  const useDuration = set.reps == null || set.reps <= 0;
+  // Stretches and massage are held for a time; "1 rep" would end the step instantly.
+  const isMobility = garmin.category === MOBILITY_CATEGORY;
+  const useDuration = set.reps == null || set.reps <= 0 || (isMobility && set.reps <= 1);
 
   if (useDuration) {
+    const defaultSec = isMobility ? DEFAULT_MOBILITY_SEC : DEFAULT_ISOMETRIC_SEC;
     step.endCondition = TIME_CONDITION;
-    step.endConditionValue = set.durationSec != null && set.durationSec > 0 ? set.durationSec : 30;
+    step.endConditionValue =
+      set.durationSec != null && set.durationSec > 0 ? set.durationSec : defaultSec;
   } else {
     step.endCondition = REPS_CONDITION;
     step.endConditionValue = Math.max(1, set.reps || 1);
@@ -195,8 +223,9 @@ function buildRestStep(
 
 /**
  * Build a Garmin Connect strength workout payload from structured sets.
- * Unmapped / invalid-category exercises are skipped (Connect rejects UNKNOWN / stale parents
- * like DIP — bodyweight dips must use SUSPENSION). Original label stays available via skip reason.
+ * Callers resolve every exercise beforehand (family fallback included), so a skip here
+ * means a truly invalid Garmin ref — Connect rejects UNKNOWN and stale parents like DIP.
+ * `mapped` reports exactly what the watch will show, label by label.
  *
  * Rest is mandatory after every set (including the last) so transitions between
  * exercises also get a Lap/timed rest. Default rest ends on Lap button press.
@@ -207,7 +236,7 @@ export function buildStrengthWorkoutPayload(
   const order = new StepOrder();
   const workoutSteps: StepBag[] = [];
   const skipped: BuildStrengthWorkoutResult['skipped'] = [];
-  let mappedCount = 0;
+  const mapped: StrengthWorkoutMappedStep[] = [];
 
   for (const set of input.sets) {
     const garmin = canonicalizeGarminExerciseRef(set.garmin);
@@ -239,7 +268,13 @@ export function buildStrengthWorkoutPayload(
       // Keep rest after the last set too (inter-exercise transition + end buffer).
       skipLastRestStep: false,
     });
-    mappedCount += 1;
+    mapped.push({
+      exercise: set.exercise,
+      watchLabel: getGarminTaxonomyEntry(garmin.exerciseName)?.labelFr ?? garmin.exerciseName,
+      category: garmin.category,
+      exerciseName: garmin.exerciseName,
+      confidence: set.garmin?.confidence ?? 'fuzzy',
+    });
   }
 
   const payload: Record<string, unknown> = {
@@ -260,5 +295,5 @@ export function buildStrengthWorkoutPayload(
     payload.description = input.description.trim().slice(0, 1024);
   }
 
-  return { payload, mappedCount, skipped };
+  return { payload, mappedCount: mapped.length, mapped, skipped };
 }

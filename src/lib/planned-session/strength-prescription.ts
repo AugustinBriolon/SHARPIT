@@ -6,7 +6,8 @@ export const strengthPrescriptionGarminSchema = z.object({
   category: z.string().trim().min(1).max(64),
   exerciseName: z.string().trim().min(1).max(96),
   labelFr: z.string().trim().min(1).max(160).optional().nullable(),
-  confidence: z.enum(['exact', 'alias', 'fuzzy']),
+  /** 'fallback' = approximate watch name chosen by movement family. */
+  confidence: z.enum(['exact', 'alias', 'fuzzy', 'fallback']),
 });
 
 export const strengthRestModeSchema = z.enum(['lap', 'time']);
@@ -146,7 +147,10 @@ export function attachGarminRefsToPrescription(
   };
 }
 
-/** Watch-compat summary for UI. */
+/**
+ * Watch-compat summary for UI — always states the exact label the watch will show.
+ * 'unknown' only remains for a set with no resolvable text at all.
+ */
 export function strengthSetWatchCompat(set: Pick<StrengthPrescriptionSet, 'garmin'>): {
   status: 'ready' | 'approx' | 'unknown';
   label: string;
@@ -155,6 +159,9 @@ export function strengthSetWatchCompat(set: Pick<StrengthPrescriptionSet, 'garmi
     return { status: 'unknown', label: 'Hors catalogue montre' };
   }
   const name = set.garmin.labelFr?.trim() || set.garmin.exerciseName;
+  if (set.garmin.confidence === 'fallback') {
+    return { status: 'approx', label: `Générique · ${name}` };
+  }
   if (set.garmin.confidence === 'fuzzy') {
     return { status: 'approx', label: `Approx. · ${name}` };
   }

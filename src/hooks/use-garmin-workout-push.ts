@@ -16,6 +16,7 @@ type GarminPushResponse = {
   error?: string;
   workoutName?: string;
   workoutId?: number | null;
+  mapped?: Array<{ exercise: string; watchLabel: string; confidence: string }>;
   skipped?: Array<{ exercise: string }>;
   scheduledDate?: string | null;
   pushedAt?: string | null;
@@ -125,6 +126,9 @@ export function useGarminWorkoutPush(session: {
         if (!response.ok) throw new Error(data.error || 'Envoi impossible');
 
         const skipped = data.skipped?.length ?? 0;
+        const mappedCount = data.mapped?.length ?? 0;
+        const approximated =
+          data.mapped?.filter((step) => step.confidence === 'fallback').length ?? 0;
         const nextPush: GarminWatchPushState = {
           workoutId: data.workoutId != null ? String(data.workoutId) : watchPush.workoutId,
           scheduledDate: data.scheduledDate ?? watchPush.scheduledDate,
@@ -141,7 +145,9 @@ export function useGarminWorkoutPush(session: {
         toast.success(force ? 'Workout renvoyé à Garmin' : 'Workout envoyé à Garmin', {
           description: [
             data.workoutName,
+            mappedCount > 0 ? `${mappedCount} exercices` : null,
             data.scheduledDate ? `calendrier ${data.scheduledDate}` : null,
+            approximated > 0 ? `${approximated} en nom générique` : null,
             skipped > 0 ? `${skipped} omis (hors catalogue)` : null,
           ]
             .filter(Boolean)

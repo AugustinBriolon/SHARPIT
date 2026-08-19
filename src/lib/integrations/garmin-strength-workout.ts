@@ -7,6 +7,7 @@ import {
 } from '@/lib/integrations/garmin-exercise-map';
 import {
   buildStrengthWorkoutPayload,
+  type StrengthWorkoutMappedStep,
   type StrengthWorkoutSetInput,
 } from '@/lib/integrations/garmin-strength-workout-payload';
 import { currentTokens, type GarminTokens } from '@/lib/integrations/garmin';
@@ -29,6 +30,8 @@ export type PushStrengthWorkoutResult = {
   workoutId: number | null;
   workoutName: string;
   mappedCount: number;
+  /** Exactly what the watch will show, exercise by exercise. */
+  mapped: StrengthWorkoutMappedStep[];
   skipped: Array<{ exercise: string; reason: string }>;
   scheduledDate: string | null;
   alreadyPushed?: boolean;
@@ -153,6 +156,7 @@ async function uploadStrengthSets(options: {
     workoutId,
     workoutName: options.workoutName,
     mappedCount: built.mappedCount,
+    mapped: built.mapped,
     skipped: built.skipped,
     scheduledDate,
     alreadyPushed: false,
@@ -300,7 +304,11 @@ export async function pushStrengthWorkoutFromPlannedSession(options: {
       restMode: set.restMode,
       notes: set.notes,
       garmin: set.garmin
-        ? { category: set.garmin.category, exerciseName: set.garmin.exerciseName }
+        ? {
+            category: set.garmin.category,
+            exerciseName: set.garmin.exerciseName,
+            confidence: set.garmin.confidence,
+          }
         : null,
     })),
     schedule: options.schedule,

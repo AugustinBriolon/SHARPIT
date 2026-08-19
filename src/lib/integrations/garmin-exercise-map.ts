@@ -1,4 +1,5 @@
 import { normalizeExerciseKey } from '@/lib/exercises/normalize';
+import { resolveGarminExerciseFallback } from '@/lib/integrations/garmin-exercise-fallback';
 import {
   getGarminTaxonomyEntry,
   matchGarminTaxonomy,
@@ -84,7 +85,6 @@ const BY_LABEL: Readonly<Record<string, GarminExerciseRef>> = {
 
   // Push-up
   'push up': { category: 'PUSH_UP', exerciseName: 'PUSH_UP' },
-  'push-up': { category: 'PUSH_UP', exerciseName: 'PUSH_UP' },
   pushup: { category: 'PUSH_UP', exerciseName: 'PUSH_UP' },
   pompe: { category: 'PUSH_UP', exerciseName: 'PUSH_UP' },
   pompes: { category: 'PUSH_UP', exerciseName: 'PUSH_UP' },
@@ -131,12 +131,10 @@ const BY_LABEL: Readonly<Record<string, GarminExerciseRef>> = {
 
   // Pull-up
   'pull up': { category: 'PULL_UP', exerciseName: 'PULL_UP' },
-  'pull-up': { category: 'PULL_UP', exerciseName: 'PULL_UP' },
   pullup: { category: 'PULL_UP', exerciseName: 'PULL_UP' },
   traction: { category: 'PULL_UP', exerciseName: 'PULL_UP' },
   tractions: { category: 'PULL_UP', exerciseName: 'PULL_UP' },
   'chin up': { category: 'PULL_UP', exerciseName: 'CHIN_UP' },
-  'chin-up': { category: 'PULL_UP', exerciseName: 'CHIN_UP' },
 
   // Curl
   curl: { category: 'CURL', exerciseName: 'CURL' },
@@ -210,7 +208,6 @@ const BY_LABEL: Readonly<Record<string, GarminExerciseRef>> = {
   'etirement chat et vache': { category: 'WARM_UP', exerciseName: 'STRETCH_CAT_COW' },
   'chat et vache': { category: 'WARM_UP', exerciseName: 'STRETCH_CAT_COW' },
   'cat cow': { category: 'WARM_UP', exerciseName: 'STRETCH_CAT_COW' },
-  'cat-cow': { category: 'WARM_UP', exerciseName: 'STRETCH_CAT_COW' },
   'etirement posture de l enfant': { category: 'WARM_UP', exerciseName: 'STRETCH_CHILDS_POSE' },
   'posture de l enfant': { category: 'WARM_UP', exerciseName: 'STRETCH_CHILDS_POSE' },
   'child pose': { category: 'WARM_UP', exerciseName: 'STRETCH_CHILDS_POSE' },
@@ -291,30 +288,6 @@ function inferCategoryFromLeaf(exerciseName: string): string | null {
   return best;
 }
 
-function resolveMobilityHeuristic(normalizedKey: string): GarminExerciseRef | null {
-  if (!/massage|boule|foam|relachement|etirement|stretch/.test(normalizedKey)) return null;
-
-  if (/sciatique|piriform/.test(normalizedKey)) {
-    return { category: 'WARM_UP', exerciseName: 'STRETCH_PIRIFORMIS' };
-  }
-  if (/fessier|glute/.test(normalizedKey)) {
-    return { category: 'WARM_UP', exerciseName: 'GLUTES_STRETCH' };
-  }
-  if (/voute|plantaire|pied|mollet|calf/.test(normalizedKey)) {
-    return { category: 'WARM_UP', exerciseName: 'STRETCH_CALF' };
-  }
-  if (/cuisse|it band|bandelette|genou/.test(normalizedKey)) {
-    return { category: 'WARM_UP', exerciseName: 'STRETCH_LYING_IT_BAND' };
-  }
-  if (/ischio|hamstring/.test(normalizedKey)) {
-    return { category: 'WARM_UP', exerciseName: 'STRETCH_HAMSTRING' };
-  }
-  if (/foam|massage|relachement/.test(normalizedKey)) {
-    return { category: 'WARM_UP', exerciseName: 'STRETCH_CAT_COW' };
-  }
-  return null;
-}
-
 function matchFromRef(
   ref: GarminExerciseRef,
   confidence: GarminMatchConfidence,
@@ -333,7 +306,8 @@ function matchFromRef(
 
 /**
  * Resolve free-text / catalog id to a Garmin Connect exercise with confidence.
- * Order: catalog id → manual aliases → live FR invert → bundled taxonomy (exact/fuzzy).
+ * Order: catalog id → manual aliases → live FR invert → bundled taxonomy (exact/fuzzy)
+ * → movement-family fallback. Only an empty label resolves to null.
  */
 export function resolveGarminExerciseMatch(input: {
   exercise: string;
@@ -353,11 +327,6 @@ export function resolveGarminExerciseMatch(input: {
     return matchFromRef(BY_LABEL[key], 'alias', 1);
   }
 
-  const mobilityRef = resolveMobilityHeuristic(key);
-  if (mobilityRef) {
-    return matchFromRef(mobilityRef, 'fuzzy', 0.6);
-  }
-
   const leaf = input.frLeafByLabel?.get(key);
   if (leaf) {
     const fromTaxonomy = getGarminTaxonomyEntry(leaf);
@@ -374,10 +343,14 @@ export function resolveGarminExerciseMatch(input: {
   }
 
   const taxonomy = matchGarminTaxonomy(input.exercise);
-  if (!taxonomy) return null;
-  const canon = canonicalizeGarminExerciseRef(taxonomy.ref);
-  if (!canon) return null;
-  return { ...taxonomy, ref: canon };
+  if (taxonomy) {
+    const canon = canonicalizeGarminExerciseRef(taxonomy.ref);
+    if (canon) return { ...taxonomy, ref: canon };
+  }
+
+  // Never leave a prescribed exercise unmapped — an approximate watch step keeps
+  // the session intact, and the athlete's own label rides along in the step description.
+  return resolveGarminExerciseFallback(input.exercise);
 }
 
 /**
