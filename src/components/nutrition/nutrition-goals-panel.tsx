@@ -1,8 +1,12 @@
 'use client';
 
-import type { NutritionGoalsProgress } from '@/core/presentation/nutrition-view-model';
+import type {
+  NutritionFuelDensity,
+  NutritionGoalsProgress,
+} from '@/core/presentation/nutrition-view-model';
 import { MacroProgressBar } from '@/components/nutrition/nutrition-macro-progress-bar';
 import { CALORIE_RING } from '@/lib/nutrition/macro-colors';
+import { formatFuelDensityReference } from '@/lib/nutrition/fuel-density-display';
 import { cn } from '@/lib/utils';
 
 function CalorieRing({
@@ -57,9 +61,11 @@ function CalorieRing({
 
 export function NutritionGoalsPanel({
   progress,
+  fuelDensity = null,
   loading = false,
 }: {
   progress: NutritionGoalsProgress | null;
+  fuelDensity?: NutritionFuelDensity | null;
   loading?: boolean;
 }) {
   if (loading) {
@@ -106,6 +112,7 @@ export function NutritionGoalsPanel({
       <div className="space-y-4 border-t pt-4">
         <MacroProgressBar
           consumed={protein.consumed}
+          densityGPerKg={fuelDensity?.proteinGPerKg}
           goal={protein.goal}
           kind="protein"
           pct={protein.pct}
@@ -114,6 +121,7 @@ export function NutritionGoalsPanel({
         />
         <MacroProgressBar
           consumed={carbohydrates.consumed}
+          densityGPerKg={fuelDensity?.carbohydratesGPerKg}
           goal={carbohydrates.goal}
           kind="carbs"
           pct={carbohydrates.pct}
@@ -129,6 +137,12 @@ export function NutritionGoalsPanel({
           unit="g"
         />
       </div>
+
+      {fuelDensity ? (
+        <p className="text-muted-foreground/80 border-t pt-3 text-[11px] leading-snug">
+          {formatFuelDensityReference(fuelDensity.referenceWeightKg)}
+        </p>
+      ) : null}
     </section>
   );
 }

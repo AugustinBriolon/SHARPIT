@@ -260,6 +260,7 @@ describe('FeatureEngine fuel extraction', () => {
         energyBudgetRatio: 0.93,
         proteinGPerKg: null,
         carbohydratesGPerKg: null,
+        referenceWeightKg: null,
         diaryComplete: false,
         confidence: 0.6,
         algorithmId: 'fuel-features-v1',

@@ -1,15 +1,22 @@
 import { format, parseISO, subDays } from 'date-fns';
-import { prisma } from '@/lib/prisma';
-import { getLiveNutrientGoals, getMfpAccount } from '@/lib/integrations/myfitnesspal-sync';
-import { buildGoalsProgress } from '@/lib/nutrition/goals-progress';
-import { formatMealLabel, mealSortIndex } from '@/lib/nutrition/meal-display';
+import type { FuelFeatureSet } from '@/core/features/types';
 import type {
   NutritionDaySummary,
   NutritionFoodEntry,
   NutritionGoalsProgress,
   NutritionMealSummary,
+  NutritionFuelDensity,
   NutritionViewModel,
 } from '@/core/presentation/nutrition-view-model';
+import { featureEngine } from '@/lib/engines/feature-engine';
+import { getLiveNutrientGoals, getMfpAccount } from '@/lib/integrations/myfitnesspal-sync';
+import { getLatestBodyWeightKg, macroGPerKg } from '@/lib/nutrition/body-weight-for-fuel';
+import { buildGoalsProgress } from '@/lib/nutrition/goals-progress';
+import { fuelFeatureSetToDensity } from '@/lib/nutrition/fuel-density-display';
+import { formatMealLabel, mealSortIndex } from '@/lib/nutrition/meal-display';
+import { prisma } from '@/lib/prisma';
+
+const ATHLETE_ID = 'default';
 
 type StoredMeal = Partial<NutritionMealSummary> & {
   name: string;
@@ -79,7 +86,44 @@ function mapRow(r: NutritionRow): NutritionDaySummary {
     complete: r.complete,
     meals: normalizeMeals(r.meals),
     goalsProgress: goalsFromRow(r),
+    fuelDensity: null,
   };
+}
+
+async function fallbackFuelDensity(
+  trainingDayId: string,
+  row: NutritionRow,
+): Promise<NutritionFuelDensity | null> {
+  const meals = normalizeMeals(row.meals);
+  const entryCount = meals.reduce((sum, meal) => sum + meal.entries.length, 0);
+  if (entryCount === 0 || row.protein <= 0) return null;
+
+  const referenceWeightKg = await getLatestBodyWeightKg(trainingDayId);
+  const proteinGPerKg = macroGPerKg(row.protein, referenceWeightKg);
+  const carbohydratesGPerKg = macroGPerKg(row.carbohydrates, referenceWeightKg);
+  if (referenceWeightKg == null || proteinGPerKg == null || carbohydratesGPerKg == null) {
+    return null;
+  }
+
+  return { proteinGPerKg, carbohydratesGPerKg, referenceWeightKg };
+}
+
+async function loadFuelDensity(
+  trainingDayId: string,
+  row?: NutritionRow,
+): Promise<NutritionFuelDensity | null> {
+  try {
+    const dayFeatures = await featureEngine.computeDayFeatures(ATHLETE_ID, trainingDayId);
+    if (dayFeatures.fuel !== 'PENDING') {
+      const fromEngine = fuelFeatureSetToDensity(dayFeatures.fuel as FuelFeatureSet);
+      if (fromEngine) return fromEngine;
+    }
+  } catch (error) {
+    console.error('[nutrition] fuel density lookup failed:', error);
+  }
+
+  if (!row) return null;
+  return fallbackFuelDensity(trainingDayId, row);
 }
 
 async function resolveGoalsProgress(
@@ -110,9 +154,12 @@ async function enrichSelectedDay(
   row: NutritionRow | undefined,
   fetchLiveGoals: boolean,
 ): Promise<NutritionDaySummary> {
-  if (!row) return { ...day, goalsProgress: null };
-  const goalsProgress = await resolveGoalsProgress(row, fetchLiveGoals);
-  return { ...day, goalsProgress };
+  if (!row) return { ...day, goalsProgress: null, fuelDensity: null };
+  const [goalsProgress, fuelDensity] = await Promise.all([
+    resolveGoalsProgress(row, fetchLiveGoals),
+    loadFuelDensity(day.date, row),
+  ]);
+  return { ...day, goalsProgress, fuelDensity };
 }
 
 export async function buildNutritionViewModel(trainingDayId?: string): Promise<NutritionViewModel> {

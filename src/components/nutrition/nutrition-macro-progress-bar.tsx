@@ -1,8 +1,51 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import type { MacroKind } from '@/lib/nutrition/macro-colors';
 import { MACRO_COLORS, MACRO_LABELS } from '@/lib/nutrition/macro-colors';
+import { formatMacroGPerKg } from '@/lib/nutrition/fuel-density-display';
 import { cn } from '@/lib/utils';
+
+function formatMacroRemainingText(remaining: number, unit: 'g'): string {
+  if (remaining > 0) return `${Math.round(remaining)} ${unit} restants`;
+  if (remaining === 0) return 'Objectif atteint';
+  return `${Math.abs(Math.round(remaining))} ${unit} au-dessus`;
+}
+
+function macroFooterNote({
+  loading,
+  remaining,
+  unit,
+  densityGPerKg,
+}: {
+  loading: boolean;
+  remaining: number | null;
+  unit: 'g';
+  densityGPerKg?: number | null;
+}): ReactNode {
+  if (loading) return null;
+  if (remaining != null) {
+    return (
+      <p className="text-muted-foreground text-xs tabular-nums">
+        {formatMacroRemainingText(remaining, unit)}
+        {densityGPerKg != null ? (
+          <span className="text-muted-foreground/80">
+            {' '}
+            · {formatMacroGPerKg(densityGPerKg)} g/kg
+          </span>
+        ) : null}
+      </p>
+    );
+  }
+  if (densityGPerKg != null) {
+    return (
+      <p className="text-muted-foreground/80 text-xs tabular-nums">
+        {formatMacroGPerKg(densityGPerKg)} g/kg
+      </p>
+    );
+  }
+  return null;
+}
 
 export function MacroProgressBar({
   kind,
@@ -11,6 +54,7 @@ export function MacroProgressBar({
   remaining,
   pct,
   unit,
+  densityGPerKg,
   loading = false,
 }: {
   kind: MacroKind;
@@ -19,6 +63,7 @@ export function MacroProgressBar({
   remaining: number | null;
   pct: number | null;
   unit: 'g';
+  densityGPerKg?: number | null;
   loading?: boolean;
 }) {
   const colors = MACRO_COLORS[kind];
@@ -47,15 +92,7 @@ export function MacroProgressBar({
           />
         ) : null}
       </div>
-      {!loading && remaining != null ? (
-        <p className="text-muted-foreground text-xs tabular-nums">
-          {remaining > 0
-            ? `${Math.round(remaining)} ${unit} restants`
-            : remaining === 0
-              ? 'Objectif atteint'
-              : `${Math.abs(Math.round(remaining))} ${unit} au-dessus`}
-        </p>
-      ) : null}
+      {macroFooterNote({ loading, remaining, unit, densityGPerKg })}
     </div>
   );
 }

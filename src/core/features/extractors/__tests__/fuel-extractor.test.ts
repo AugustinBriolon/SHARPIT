@@ -43,6 +43,7 @@ describe('extractFuelFeatures', () => {
 
     expect(features.proteinGPerKg).toBe(1.83);
     expect(features.carbohydratesGPerKg).toBe(2.96);
+    expect(features.referenceWeightKg).toBe(81.1);
   });
 
   it('leaves per-kilogram ratios null when no weight is known', () => {
@@ -50,6 +51,7 @@ describe('extractFuelFeatures', () => {
 
     expect(features.proteinGPerKg).toBeNull();
     expect(features.carbohydratesGPerKg).toBeNull();
+    expect(features.referenceWeightKg).toBeNull();
   });
 
   it('refuses to score a day the athlete never logged', () => {

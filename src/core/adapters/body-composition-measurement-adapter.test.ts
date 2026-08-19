@@ -77,4 +77,15 @@ describe('bodyCompositionMeasurementToObservation', () => {
     expect(bodyCompositionMeasurementToObservation(row({ weightKg: null }))).toBeNull();
     expect(bodyCompositionMeasurementToObservation(row({ weightKg: 0 }))).toBeNull();
   });
+
+  it('drops out-of-range optional BIA fields so weight can still ingest', () => {
+    const result = bodyCompositionMeasurementToObservation(
+      row({ musclePct: 0.4, bodyFatPct: 65, waterPct: 10 }),
+    );
+
+    expect(result?.weightKg).toBe(72.4);
+    expect(result?.musclePercent).toBeUndefined();
+    expect(result?.fatPercent).toBeUndefined();
+    expect(result?.waterPercent).toBeUndefined();
+  });
 });

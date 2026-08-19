@@ -47,7 +47,11 @@ export function NutritionPageView({
         onNextDay={onNextDay}
         onPreviousDay={onPreviousDay}
       />
-      <NutritionGoalsPanel loading={loading} progress={selectedDay?.goalsProgress ?? null} />
+      <NutritionGoalsPanel
+        fuelDensity={selectedDay?.fuelDensity ?? null}
+        loading={loading}
+        progress={selectedDay?.goalsProgress ?? null}
+      />
       <NutritionMealsSection loading={loading} meals={selectedDay?.meals ?? []} />
       <NutritionTrendSection
         averages={averages}

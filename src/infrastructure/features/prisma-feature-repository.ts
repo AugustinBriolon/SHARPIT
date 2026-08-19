@@ -13,6 +13,7 @@
 
 import { Prisma, type PrismaClient } from '@prisma/client';
 
+import { FUEL_BODY_WEIGHT_LOOKBACK_DAYS } from '@/core/features/extractors/fuel-extractor';
 import type { FeatureRepository } from '@/core/features/repository';
 import type {
   BodyFeatureSet,
@@ -320,7 +321,7 @@ export class PrismaFeatureRepository implements FeatureRepository {
   }
 
   async invalidateFuelWindow(athleteId: string, weighInTrainingDayId: string): Promise<void> {
-    const windowEnd = addDays(weighInTrainingDayId, 30);
+    const windowEnd = addDays(weighInTrainingDayId, FUEL_BODY_WEIGHT_LOOKBACK_DAYS);
 
     await this.prisma.featureSet.updateMany({
       where: {

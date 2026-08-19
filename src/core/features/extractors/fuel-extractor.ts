@@ -11,6 +11,9 @@
 import type { NutritionObservation } from '@/core/observation/types';
 import type { FuelFeatureSet } from '../types';
 
+/** Max age of a weigh-in used for per-kg fuel ratios (body mass moves slowly). */
+export const FUEL_BODY_WEIGHT_LOOKBACK_DAYS = 90;
+
 export type FuelExtractorInput = {
   readonly observation: NutritionObservation;
   /** Most recent body weight, used for the per-kilogram ratios. Null when unknown. */
@@ -75,6 +78,7 @@ export function extractFuelFeatures(input: FuelExtractorInput): FuelFeatureSet {
 
     proteinGPerKg: logged ? perKg(observation.proteinG, weightKg) : null,
     carbohydratesGPerKg: logged ? perKg(observation.carbohydratesG, weightKg) : null,
+    referenceWeightKg: logged ? weightKg : null,
 
     diaryComplete: observation.diaryComplete ?? false,
 

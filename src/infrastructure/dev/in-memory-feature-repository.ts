@@ -193,7 +193,7 @@ export class InMemoryFeatureRepository implements FeatureRepository {
 
   async invalidateFuelWindow(athleteId: string, weighInTrainingDayId: string): Promise<void> {
     const toInvalidate = new Date(weighInTrainingDayId);
-    toInvalidate.setUTCDate(toInvalidate.getUTCDate() + 30);
+    toInvalidate.setUTCDate(toInvalidate.getUTCDate() + 90);
     const [toDayId] = toInvalidate.toISOString().split('T');
 
     for (const [id, record] of this.store.entries()) {

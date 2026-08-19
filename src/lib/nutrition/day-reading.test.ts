@@ -17,6 +17,7 @@ function day(
     complete: partial.complete ?? false,
     meals: partial.meals,
     goalsProgress: partial.goalsProgress ?? null,
+    fuelDensity: partial.fuelDensity ?? null,
   };
 }
 

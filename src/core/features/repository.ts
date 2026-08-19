@@ -110,7 +110,7 @@ export interface FeatureRepository {
 
   /**
    * Mark fuel features as INVALIDATED for training days that may use this weigh-in.
-   * Per-kilogram ratios look back 30 days, so a new weight on day W affects FUEL for W…W+30.
+   * Per-kilogram ratios look back 90 days, so a new weight on day W affects FUEL for W…W+90.
    */
   invalidateFuelWindow(athleteId: string, weighInTrainingDayId: string): Promise<void>;
 

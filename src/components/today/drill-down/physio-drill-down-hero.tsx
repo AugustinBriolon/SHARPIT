@@ -9,6 +9,36 @@ import { cn } from '@/lib/utils';
 import { format as formatDate } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
+function quickReadBadge({
+  loading,
+  quickReadValue,
+  quickReadLabel,
+  quickReadSuffix,
+}: {
+  loading: boolean;
+  quickReadValue: string | null | undefined;
+  quickReadLabel?: string | null;
+  quickReadSuffix?: string | null;
+}): ReactNode {
+  if (loading && quickReadValue != null) {
+    return <SkeletonDataValue heightClassName="h-7" widthClassName="w-12" />;
+  }
+  if (quickReadValue != null) {
+    return (
+      <span
+        className="bg-highlight text-highlight-foreground text-data inline-flex items-baseline gap-1 rounded-full px-3 py-1 text-sm font-semibold"
+        title={quickReadLabel ?? undefined}
+      >
+        {quickReadValue}
+        {quickReadSuffix ? (
+          <span className="text-[10px] font-normal">{quickReadSuffix}</span>
+        ) : null}
+      </span>
+    );
+  }
+  return null;
+}
+
 /**
  * Physio drill-down plate — one dominant verdict.
  * Score/duration as a mono instrument line — no PhysioRail, no inset %, no chrome.
@@ -54,8 +84,8 @@ export function PhysioDrillDownHero({
   railMax?: number;
   railCaption?: string;
   railMarkerLabel?: string | null;
-  quickReadLabel: string;
-  quickReadValue: string;
+  quickReadLabel?: string;
+  quickReadValue?: string | null;
   quickReadSuffix?: string | null;
   quickReadCaption?: string | null;
   confidencePct?: number | null;
@@ -116,19 +146,7 @@ export function PhysioDrillDownHero({
             {eyebrow}
           </p>
 
-          {loading ? (
-            <SkeletonDataValue heightClassName="h-7" widthClassName="w-12" />
-          ) : (
-            <span
-              className="bg-highlight text-highlight-foreground text-data inline-flex items-baseline gap-1 rounded-full px-3 py-1 text-sm font-semibold"
-              title={quickReadLabel}
-            >
-              {quickReadValue}
-              {quickReadSuffix ? (
-                <span className="text-[10px] font-normal">{quickReadSuffix}</span>
-              ) : null}
-            </span>
-          )}
+          {quickReadBadge({ loading, quickReadValue, quickReadLabel, quickReadSuffix })}
         </div>
 
         {loading ? (

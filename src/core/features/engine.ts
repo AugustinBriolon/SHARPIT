@@ -50,7 +50,7 @@ import type {
 
 import { extractBodyFeatures } from './extractors/body-extractor';
 import { extractConditionFeatures } from './extractors/condition-extractor';
-import { extractFuelFeatures } from './extractors/fuel-extractor';
+import { extractFuelFeatures, FUEL_BODY_WEIGHT_LOOKBACK_DAYS } from './extractors/fuel-extractor';
 import { extractLoadFeatures } from './extractors/load-extractor';
 import { computeRpeVsTargetZone, extractRecoveryFeatures } from './extractors/recovery-extractor';
 import { extractSessionFeatures } from './extractors/session-extractor';
@@ -605,7 +605,13 @@ export class FeatureEngine {
     }
 
     const nutritionObs = await this.loadNutritionObservation(athleteId, trainingDayId);
-    const needsFuelRecompute = nutritionObs != null && !fuelRecord;
+    const latestWeightKg = nutritionObs
+      ? await this.loadLatestWeightKg(athleteId, trainingDayId)
+      : null;
+    const fuelData = fuelRecord?.data as { proteinGPerKg?: number | null } | undefined;
+    const needsFuelRecompute =
+      nutritionObs != null &&
+      (!fuelRecord || (fuelData?.proteinGPerKg == null && latestWeightKg != null));
 
     // If any window feature is missing or cached session features are malformed, trigger lazy computation
     if (
@@ -844,7 +850,7 @@ export class FeatureEngine {
     athleteId: string,
     trainingDayId: string,
   ): Promise<number | null> {
-    const from = subtractDays(trainingDayId, 30);
+    const from = subtractDays(trainingDayId, FUEL_BODY_WEIGHT_LOOKBACK_DAYS);
     const obs = await this.obsRepo.find(athleteId, {
       types: ['BODY_COMPOSITION'],
       since: new Date(`${from}T00:00:00Z`),

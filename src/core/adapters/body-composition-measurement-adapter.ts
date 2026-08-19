@@ -5,14 +5,24 @@
  * Used when backfilling observations from stored provider measurements.
  */
 
-import { BodyCompositionSource, type BodyCompositionMeasurement } from '@prisma/client';
+import type { BodyCompositionMeasurement } from '@prisma/client';
 
 import type { RawBodyCompositionObservation } from '@/core/observation/types';
 
 function sourceToObservationSource(
-  source: BodyCompositionSource,
+  source: BodyCompositionMeasurement['source'],
 ): RawBodyCompositionObservation['source'] {
-  return source === BodyCompositionSource.WITHINGS ? 'WITHINGS' : 'RENPHO';
+  return source === 'WITHINGS' ? 'WITHINGS' : 'RENPHO';
+}
+
+/** Drop optional BIA fields outside plausible range so weight can still ingest. */
+function optionalPercent(
+  value: number | null | undefined,
+  min: number,
+  max: number,
+): number | undefined {
+  if (value == null || value < min || value > max) return undefined;
+  return value;
 }
 
 /**
@@ -32,9 +42,9 @@ export function bodyCompositionMeasurementToObservation(
     receivedAt,
     externalId: row.externalId,
     weightKg: row.weightKg,
-    fatPercent: row.bodyFatPct ?? undefined,
-    musclePercent: row.musclePct ?? undefined,
-    waterPercent: row.waterPct ?? undefined,
+    fatPercent: optionalPercent(row.bodyFatPct, 1, 60),
+    musclePercent: optionalPercent(row.musclePct, 1, 70),
+    waterPercent: optionalPercent(row.waterPct, 20, 80),
     boneMassKg: row.boneKg ?? undefined,
     visceralFat: row.visceralFat ?? undefined,
     bmi: row.bmi ?? undefined,

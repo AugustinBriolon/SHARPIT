@@ -12,7 +12,7 @@ function MealCard({ meal }: { meal: NutritionMealSummary }) {
   const hasEntries = meal.entries.length > 0;
 
   return (
-    <div className="border-analysis-border/20 rounded-xl border">
+    <div className="border-analysis-border/20 overflow-hidden rounded-xl border">
       <button
         aria-expanded={open}
         disabled={!hasEntries}

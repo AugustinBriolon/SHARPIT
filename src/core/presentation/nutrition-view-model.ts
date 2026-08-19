@@ -35,6 +35,12 @@ export type NutritionMealSummary = {
   entries: NutritionFoodEntry[];
 };
 
+export type NutritionFuelDensity = {
+  proteinGPerKg: number;
+  carbohydratesGPerKg: number;
+  referenceWeightKg: number;
+};
+
 export type NutritionDaySummary = {
   date: string;
   calories: number;
@@ -46,6 +52,8 @@ export type NutritionDaySummary = {
   complete: boolean;
   meals: NutritionMealSummary[];
   goalsProgress: NutritionGoalsProgress | null;
+  /** Per-kilogram macro density when a recent body weight is available. */
+  fuelDensity: NutritionFuelDensity | null;
 };
 
 export type NutritionViewModel = {

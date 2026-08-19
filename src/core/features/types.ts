@@ -456,6 +456,9 @@ export type FuelFeatureSet = {
   readonly proteinGPerKg: number | null;
   readonly carbohydratesGPerKg: number | null;
 
+  /** Body weight used for the per-kilogram ratios (latest within 30 days). */
+  readonly referenceWeightKg: number | null;
+
   /** True when the athlete marked the diary day as finished. */
   readonly diaryComplete: boolean;
 
