@@ -34,7 +34,7 @@ import type { SportType } from '@/core/observation/types';
 
 export type FeatureStatus = 'PENDING' | 'COMPUTING' | 'COMPUTED' | 'INVALIDATED';
 
-export type FeatureCategory = 'SESSION' | 'LOAD' | 'RECOVERY' | 'BODY' | 'CONDITION';
+export type FeatureCategory = 'SESSION' | 'LOAD' | 'RECOVERY' | 'BODY' | 'CONDITION' | 'FUEL';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TSS computation metadata
@@ -405,6 +405,68 @@ export type BodyFeatureSet = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// FUEL Feature Set
+// (one per training day — derived from that day's NUTRITION observation)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * What the athlete ate on a training day, restated against their own targets
+ * and their body mass.
+ *
+ * Strictly extractive: every field is arithmetic over one nutrition observation
+ * plus the athlete's latest weight. It infers no adequacy, no deficiency and no
+ * recommendation — those would need a Nutrition Engine, which the architecture
+ * gates behind a decision-gap analysis.
+ *
+ * `logged` is the field every consumer must read first. A day the athlete never
+ * opened still produces goals, so zero intake means "unknown", not "fasted", and
+ * treating it as a real zero would poison any average built on top.
+ */
+export type FuelFeatureSet = {
+  readonly trainingDayId: string;
+  readonly observationId: string;
+
+  /** False when no food entry backs this day. Everything below is then unusable as intake. */
+  readonly logged: boolean;
+  readonly entryCount: number;
+
+  readonly energyKcal: number;
+  readonly proteinG: number;
+  readonly carbohydratesG: number;
+  readonly fatG: number;
+
+  // ── Against the athlete's own targets (null when no goal is set) ───────────
+
+  readonly energyGoalKcal: number | null;
+
+  /** Energy the provider credits back from exercise, in kilocalories. */
+  readonly exerciseEnergyKcal: number | null;
+
+  /** Goal plus exercise credit — the day's actual allowance. */
+  readonly energyBudgetKcal: number | null;
+
+  /** Intake minus budget. Negative means under the allowance. */
+  readonly energyBalanceKcal: number | null;
+
+  /** Intake as a share of budget, 1 = exactly on target. */
+  readonly energyBudgetRatio: number | null;
+
+  // ── Against body mass (null without a recent weight) ───────────────────────
+
+  readonly proteinGPerKg: number | null;
+  readonly carbohydratesGPerKg: number | null;
+
+  /** True when the athlete marked the diary day as finished. */
+  readonly diaryComplete: boolean;
+
+  // ── Feature metadata ──────────────────────────────────────────────────────
+
+  readonly confidence: number;
+  readonly algorithmId: 'fuel-features-v1';
+  readonly sourceObsIds: readonly string[];
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // CONDITION Feature Set
 // (one per training day — aggregated from all active PhysicalConditionObservations)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -452,7 +514,8 @@ export type FeatureSetRecord =
   | LoadFeatureSetRecord
   | RecoveryFeatureSetRecord
   | BodyFeatureSetRecord
-  | ConditionFeatureSetRecord;
+  | ConditionFeatureSetRecord
+  | FuelFeatureSetRecord;
 
 type FeatureSetRecordBase = {
   readonly id: string;
@@ -480,6 +543,12 @@ export type RecoveryFeatureSetRecord = FeatureSetRecordBase & {
   readonly category: 'RECOVERY';
   readonly trainingDayId: string;
   readonly data: RecoveryFeatureSet;
+};
+
+export type FuelFeatureSetRecord = FeatureSetRecordBase & {
+  readonly category: 'FUEL';
+  readonly trainingDayId: string;
+  readonly data: FuelFeatureSet;
 };
 
 export type BodyFeatureSetRecord = FeatureSetRecordBase & {
@@ -517,6 +586,7 @@ export type DayFeatures = {
   readonly recovery: RecoveryFeatureSet | 'PENDING';
   readonly body: BodyFeatureSet | 'PENDING';
   readonly condition: ConditionFeatureSet | 'PENDING';
+  readonly fuel: FuelFeatureSet | 'PENDING';
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

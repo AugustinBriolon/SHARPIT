@@ -64,6 +64,7 @@ function makeDay(recovery: RecoveryFeatureSet = makeRecovery()): DayFeatures {
     recovery,
     body: 'PENDING',
     condition: 'PENDING',
+    fuel: 'PENDING',
     retrievedAt: new Date('2026-07-02T08:00:00Z'),
   };
 }

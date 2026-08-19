@@ -15,7 +15,7 @@
 // Domain types
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type ExtractionCategory = 'SESSION' | 'LOAD' | 'RECOVERY' | 'BODY' | 'CONDITION';
+export type ExtractionCategory = 'SESSION' | 'LOAD' | 'RECOVERY' | 'BODY' | 'CONDITION' | 'FUEL';
 
 export type ExtractionEvent = {
   readonly category: ExtractionCategory;
@@ -113,6 +113,7 @@ export class EngineMetricsCollector implements MetricsCollector {
     RECOVERY: 0,
     BODY: 0,
     CONDITION: 0,
+    FUEL: 0,
   };
   private latencyByCategory: Record<ExtractionCategory, number[]> = {
     SESSION: [],
@@ -120,6 +121,7 @@ export class EngineMetricsCollector implements MetricsCollector {
     RECOVERY: [],
     BODY: [],
     CONDITION: [],
+    FUEL: [],
   };
   private allLatencies: number[] = [];
 
@@ -190,8 +192,22 @@ export class EngineMetricsCollector implements MetricsCollector {
     this.extractionTotal = 0;
     this.extractionFailed = 0;
     this.pendingInputWarnings = 0;
-    this.extractionByCategory = { SESSION: 0, LOAD: 0, RECOVERY: 0, BODY: 0, CONDITION: 0 };
-    this.latencyByCategory = { SESSION: [], LOAD: [], RECOVERY: [], BODY: [], CONDITION: [] };
+    this.extractionByCategory = {
+      SESSION: 0,
+      LOAD: 0,
+      RECOVERY: 0,
+      BODY: 0,
+      CONDITION: 0,
+      FUEL: 0,
+    };
+    this.latencyByCategory = {
+      SESSION: [],
+      LOAD: [],
+      RECOVERY: [],
+      BODY: [],
+      CONDITION: [],
+      FUEL: [],
+    };
     this.allLatencies = [];
     this.replayTotal = 0;
     this.replayFailed = 0;

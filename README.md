@@ -178,6 +178,7 @@ record and nothing that can expire.
 | `yarn db:studio`                                 | Open Prisma Studio                                                                |
 | `yarn db:seed`                                   | Seed demo data                                                                    |
 | `yarn db:backfill:body-composition-observations` | Backfill `BODY_COMPOSITION` observations from stored Withings/Renpho measurements |
+| `yarn db:recompute:fuel-features`                | Recompute FUEL feature sets for days with nutrition data (after weight backfill)  |
 
 ## Modules
 

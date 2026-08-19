@@ -18,6 +18,7 @@ import type {
   LoadFeatureSetRecord,
   RecoveryFeatureSetRecord,
   BodyFeatureSetRecord,
+  FuelFeatureSetRecord,
   ConditionFeatureSetRecord,
   FeatureStatus,
 } from '@/core/features/types';
@@ -123,6 +124,18 @@ export class InMemoryFeatureRepository implements FeatureRepository {
     );
   }
 
+  async findFuelFeatures(
+    athleteId: string,
+    trainingDayId: string,
+  ): Promise<FuelFeatureSetRecord | null> {
+    return (
+      this.queryLatestComputed(
+        (r): r is FuelFeatureSetRecord =>
+          r.athleteId === athleteId && r.category === 'FUEL' && r.trainingDayId === trainingDayId,
+      ) ?? null
+    );
+  }
+
   async findConditionFeatures(
     athleteId: string,
     trainingDayId: string,
@@ -170,6 +183,25 @@ export class InMemoryFeatureRepository implements FeatureRepository {
         record.category === 'LOAD' &&
         record.trainingDayId &&
         record.trainingDayId >= fromTrainingDayId &&
+        record.trainingDayId <= toDayId &&
+        record.status === 'COMPUTED'
+      ) {
+        this.store.set(id, { ...record, status: 'INVALIDATED' });
+      }
+    }
+  }
+
+  async invalidateFuelWindow(athleteId: string, weighInTrainingDayId: string): Promise<void> {
+    const toInvalidate = new Date(weighInTrainingDayId);
+    toInvalidate.setUTCDate(toInvalidate.getUTCDate() + 30);
+    const [toDayId] = toInvalidate.toISOString().split('T');
+
+    for (const [id, record] of this.store.entries()) {
+      if (
+        record.athleteId === athleteId &&
+        record.category === 'FUEL' &&
+        record.trainingDayId &&
+        record.trainingDayId >= weighInTrainingDayId &&
         record.trainingDayId <= toDayId &&
         record.status === 'COMPUTED'
       ) {

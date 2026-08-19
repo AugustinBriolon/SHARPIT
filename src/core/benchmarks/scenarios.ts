@@ -94,6 +94,7 @@ function day(
     recovery,
     body: 'PENDING',
     condition: 'PENDING',
+    fuel: 'PENDING',
   };
 }
 

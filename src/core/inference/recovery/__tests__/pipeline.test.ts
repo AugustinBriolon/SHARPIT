@@ -296,6 +296,7 @@ function makeFullDayFeatures(): DayFeatures {
     recovery: makeFullRecovery(),
     body: 'PENDING',
     condition: 'PENDING',
+    fuel: 'PENDING',
   };
 }
 
@@ -495,6 +496,7 @@ describe('RecoveryInferenceOrchestrator — full pipeline integration', () => {
         recovery: 'PENDING',
         body: 'PENDING',
         condition: 'PENDING',
+        fuel: 'PENDING',
       };
 
       const { orchestrator } = createPipeline(dayFeatures);

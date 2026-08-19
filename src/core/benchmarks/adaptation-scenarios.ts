@@ -147,6 +147,7 @@ function day(
     recovery: features.recovery ?? rec(),
     body: 'PENDING',
     condition: 'PENDING',
+    fuel: 'PENDING',
   };
 }
 

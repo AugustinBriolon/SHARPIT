@@ -17,6 +17,8 @@ import type { FeatureRepository } from '@/core/features/repository';
 import type {
   BodyFeatureSet,
   BodyFeatureSetRecord,
+  FuelFeatureSet,
+  FuelFeatureSetRecord,
   ConditionFeatureSet,
   ConditionFeatureSetRecord,
   FeatureCategory,
@@ -93,6 +95,20 @@ function toRecoveryRecord(row: PrismaFeatureSetRow): RecoveryFeatureSetRecord {
   };
 }
 
+function toFuelRecord(row: PrismaFeatureSetRow): FuelFeatureSetRecord {
+  return {
+    id: row.id,
+    athleteId: row.athleteId,
+    category: 'FUEL',
+    trainingDayId: row.trainingDayId!,
+    version: row.version,
+    status: row.status as FeatureStatus,
+    computedAt: row.computedAt,
+    createdAt: row.createdAt,
+    data: row.data as FuelFeatureSet,
+  };
+}
+
 function toBodyRecord(row: PrismaFeatureSetRow): BodyFeatureSetRecord {
   return {
     id: row.id,
@@ -131,6 +147,13 @@ function subtractDays(trainingDayId: string, days: number): string {
   const [year, month, day] = trainingDayId.split('-').map(Number);
   const d = new Date(Date.UTC(year, month - 1, day));
   d.setUTCDate(d.getUTCDate() - days);
+  return d.toISOString().split('T')[0];
+}
+
+function addDays(trainingDayId: string, days: number): string {
+  const [year, month, day] = trainingDayId.split('-').map(Number);
+  const d = new Date(Date.UTC(year, month - 1, day));
+  d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().split('T')[0];
 }
 
@@ -227,6 +250,18 @@ export class PrismaFeatureRepository implements FeatureRepository {
     return toRecoveryRecord(row as PrismaFeatureSetRow);
   }
 
+  async findFuelFeatures(
+    athleteId: string,
+    trainingDayId: string,
+  ): Promise<FuelFeatureSetRecord | null> {
+    const row = await this.prisma.featureSet.findFirst({
+      where: { athleteId, category: 'FUEL', trainingDayId, status: 'COMPUTED' },
+      orderBy: { version: 'desc' },
+    });
+    if (!row) return null;
+    return toFuelRecord(row as PrismaFeatureSetRow);
+  }
+
   async findBodyFeatures(
     athleteId: string,
     trainingDayId: string,
@@ -279,6 +314,20 @@ export class PrismaFeatureRepository implements FeatureRepository {
         category: 'LOAD',
         status: 'COMPUTED',
         trainingDayId: { gte: windowStart, lte: windowEnd },
+      },
+      data: { status: 'INVALIDATED' },
+    });
+  }
+
+  async invalidateFuelWindow(athleteId: string, weighInTrainingDayId: string): Promise<void> {
+    const windowEnd = addDays(weighInTrainingDayId, 30);
+
+    await this.prisma.featureSet.updateMany({
+      where: {
+        athleteId,
+        category: 'FUEL',
+        status: 'COMPUTED',
+        trainingDayId: { gte: weighInTrainingDayId, lte: windowEnd },
       },
       data: { status: 'INVALIDATED' },
     });

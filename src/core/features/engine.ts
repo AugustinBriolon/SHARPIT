@@ -23,6 +23,7 @@ import { randomUUID } from 'node:crypto';
 import type { ObservationRepository } from '@/core/observation/repository';
 import type {
   BodyCompositionObservation,
+  NutritionObservation,
   HrvObservation,
   Observation,
   PhysicalConditionObservation,
@@ -49,6 +50,7 @@ import type {
 
 import { extractBodyFeatures } from './extractors/body-extractor';
 import { extractConditionFeatures } from './extractors/condition-extractor';
+import { extractFuelFeatures } from './extractors/fuel-extractor';
 import { extractLoadFeatures } from './extractors/load-extractor';
 import { computeRpeVsTargetZone, extractRecoveryFeatures } from './extractors/recovery-extractor';
 import { extractSessionFeatures } from './extractors/session-extractor';
@@ -241,7 +243,13 @@ export class FeatureEngine {
           break;
 
         case 'BODY_COMPOSITION':
-          await this.featureRepo.invalidateForTrainingDay(athleteId, trainingDayId, ['BODY']);
+          await Promise.all([
+            this.featureRepo.invalidateForTrainingDay(athleteId, trainingDayId, ['BODY']),
+            this.featureRepo.invalidateFuelWindow(athleteId, trainingDayId),
+          ]);
+          break;
+        case 'NUTRITION':
+          await this.featureRepo.invalidateForTrainingDay(athleteId, trainingDayId, ['FUEL']);
           break;
 
         case 'PHYSICAL_CONDITION':
@@ -520,6 +528,24 @@ export class FeatureEngine {
     });
     await this.saveFeatureSet(athleteId, 'CONDITION', trainingDayId, null, conditionFeatureSet);
 
+    // ── Fuel features ─────────────────────────────────────────────────────
+    const nutritionObs = await this.loadNutritionObservation(athleteId, trainingDayId);
+    let fuelFeatureSet = null;
+    if (nutritionObs) {
+      const weightKg = await this.loadLatestWeightKg(athleteId, trainingDayId);
+      const t0Fuel = Date.now();
+      fuelFeatureSet = extractFuelFeatures({ observation: nutritionObs, weightKg });
+      this.metrics?.recordExtraction({
+        category: 'FUEL',
+        athleteId,
+        trainingDayId,
+        durationMs: Date.now() - t0Fuel,
+        success: true,
+        confidence: fuelFeatureSet.confidence,
+      });
+      await this.saveFeatureSet(athleteId, 'FUEL', trainingDayId, nutritionObs.id, fuelFeatureSet);
+    }
+
     return {
       athleteId,
       trainingDayId,
@@ -529,6 +555,7 @@ export class FeatureEngine {
       recovery: recoveryFeatureSet,
       body: bodyFeatureSet ?? 'PENDING',
       condition: conditionFeatureSet,
+      fuel: fuelFeatureSet ?? 'PENDING',
     };
   }
 
@@ -543,15 +570,23 @@ export class FeatureEngine {
    */
   async getDayFeatures(athleteId: string, trainingDayId: string): Promise<DayFeatures> {
     // Check if we have fresh COMPUTED records for all categories
-    const [sessionObs, sessionRecords, loadRecord, recoveryRecord, bodyRecord, conditionRecord] =
-      await Promise.all([
-        this.obsRepo.find(athleteId, { types: ['SESSION'], trainingDayId }),
-        this.featureRepo.findSessionFeaturesByRange(athleteId, trainingDayId, trainingDayId),
-        this.featureRepo.findLoadFeatures(athleteId, trainingDayId),
-        this.featureRepo.findRecoveryFeatures(athleteId, trainingDayId),
-        this.featureRepo.findBodyFeatures(athleteId, trainingDayId),
-        this.featureRepo.findConditionFeatures(athleteId, trainingDayId),
-      ]);
+    const [
+      sessionObs,
+      sessionRecords,
+      loadRecord,
+      recoveryRecord,
+      bodyRecord,
+      conditionRecord,
+      fuelRecord,
+    ] = await Promise.all([
+      this.obsRepo.find(athleteId, { types: ['SESSION'], trainingDayId }),
+      this.featureRepo.findSessionFeaturesByRange(athleteId, trainingDayId, trainingDayId),
+      this.featureRepo.findLoadFeatures(athleteId, trainingDayId),
+      this.featureRepo.findRecoveryFeatures(athleteId, trainingDayId),
+      this.featureRepo.findBodyFeatures(athleteId, trainingDayId),
+      this.featureRepo.findConditionFeatures(athleteId, trainingDayId),
+      this.featureRepo.findFuelFeatures(athleteId, trainingDayId),
+    ]);
 
     const hasSessionMismatch =
       sessionObs.length !== sessionRecords.length ||
@@ -569,8 +604,17 @@ export class FeatureEngine {
       sessions = await this.ensureSessionFeaturesInRange(athleteId, trainingDayId, trainingDayId);
     }
 
+    const nutritionObs = await this.loadNutritionObservation(athleteId, trainingDayId);
+    const needsFuelRecompute = nutritionObs != null && !fuelRecord;
+
     // If any window feature is missing or cached session features are malformed, trigger lazy computation
-    if (!loadRecord || !recoveryRecord || !conditionRecord || hasSessionMismatch) {
+    if (
+      !loadRecord ||
+      !recoveryRecord ||
+      !conditionRecord ||
+      hasSessionMismatch ||
+      needsFuelRecompute
+    ) {
       return this.computeDayFeatures(athleteId, trainingDayId);
     }
 
@@ -583,6 +627,7 @@ export class FeatureEngine {
       recovery: recoveryRecord.data,
       body: bodyRecord?.data ?? 'PENDING',
       condition: conditionRecord.data,
+      fuel: fuelRecord?.data ?? 'PENDING',
     };
   }
 
@@ -767,6 +812,50 @@ export class FeatureEngine {
     return { hrv, rhr, sleep, subjective };
   }
 
+  /**
+   * The day's nutrition observation.
+   *
+   * Nutrition carries no externalId, so a re-synced diary appends rather than
+   * replacing: the newest record is the one that reflects what the athlete has
+   * logged so far today.
+   */
+  private async loadNutritionObservation(
+    athleteId: string,
+    trainingDayId: string,
+  ): Promise<NutritionObservation | null> {
+    const obs = await this.obsRepo.find(athleteId, {
+      types: ['NUTRITION'],
+      trainingDayId,
+    });
+    if (obs.length === 0) return null;
+
+    const [newest] = [...obs].sort((a, b) => b.receivedAt.getTime() - a.receivedAt.getTime());
+    return newest as NutritionObservation;
+  }
+
+  /**
+   * Latest known body weight, for the per-kilogram fuel ratios.
+   *
+   * Looks back rather than requiring a weigh-in on the day itself: body mass
+   * moves slowly, and demanding same-day weight would blank the ratios on every
+   * day the athlete skipped the scale.
+   */
+  private async loadLatestWeightKg(
+    athleteId: string,
+    trainingDayId: string,
+  ): Promise<number | null> {
+    const from = subtractDays(trainingDayId, 30);
+    const obs = await this.obsRepo.find(athleteId, {
+      types: ['BODY_COMPOSITION'],
+      since: new Date(`${from}T00:00:00Z`),
+      until: new Date(`${trainingDayId}T23:59:59Z`),
+    });
+    if (obs.length === 0) return null;
+
+    const [newest] = [...obs].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    return (newest as BodyCompositionObservation).weightKg ?? null;
+  }
+
   private async loadBodyObservation(
     athleteId: string,
     trainingDayId: string,
@@ -854,14 +943,15 @@ export class FeatureEngine {
 
   private async saveFeatureSet(
     athleteId: string,
-    category: 'LOAD' | 'RECOVERY' | 'BODY' | 'CONDITION',
+    category: 'LOAD' | 'RECOVERY' | 'BODY' | 'CONDITION' | 'FUEL',
     trainingDayId: string,
     sessionObsId: string | null,
     data:
       | LoadFeatureSet
       | ReturnType<typeof extractRecoveryFeatures>
       | ReturnType<typeof extractBodyFeatures>
-      | ReturnType<typeof extractConditionFeatures>,
+      | ReturnType<typeof extractConditionFeatures>
+      | ReturnType<typeof extractFuelFeatures>,
   ): Promise<FeatureSetRecord> {
     const version = await this.featureRepo.nextVersion(
       athleteId,

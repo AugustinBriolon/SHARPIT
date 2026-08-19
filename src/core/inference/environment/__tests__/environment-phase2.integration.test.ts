@@ -154,6 +154,7 @@ describe('environment phase 2 integration', () => {
       recovery: 'PENDING',
       load: 'PENDING',
       condition: 'PENDING',
+      fuel: 'PENDING',
       sessions: [],
     } as unknown as DayFeatures;
 

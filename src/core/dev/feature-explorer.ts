@@ -342,6 +342,8 @@ export class FeatureExplorer {
         return this.featureRepo.findBodyFeatures(athleteId, trainingDayId);
       case 'CONDITION':
         return this.featureRepo.findConditionFeatures(athleteId, trainingDayId);
+      case 'FUEL':
+        return this.featureRepo.findFuelFeatures(athleteId, trainingDayId);
     }
   }
 }

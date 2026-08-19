@@ -3,7 +3,6 @@
 import type { NutritionGoalsProgress } from '@/core/presentation/nutrition-view-model';
 import { MacroProgressBar } from '@/components/nutrition/nutrition-macro-progress-bar';
 import { CALORIE_RING } from '@/lib/nutrition/macro-colors';
-import { formatRemainingCalories } from '@/lib/nutrition/goals-progress';
 import { cn } from '@/lib/utils';
 
 function CalorieRing({
@@ -86,9 +85,6 @@ export function NutritionGoalsPanel({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-section-title">Objectifs MyFitnessPal</p>
-          <p className="text-muted-foreground mt-1 text-sm">
-            {formatRemainingCalories(calories.remaining)}
-          </p>
         </div>
         <div className="text-right">
           <p className="text-data text-sm font-semibold tabular-nums">

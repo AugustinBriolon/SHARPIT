@@ -123,6 +123,7 @@ function makeDay(
     recovery,
     body: 'PENDING',
     condition: 'PENDING',
+    fuel: 'PENDING',
   };
 }
 

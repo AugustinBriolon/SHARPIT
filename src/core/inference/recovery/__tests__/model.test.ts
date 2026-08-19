@@ -92,6 +92,7 @@ function makeDayFeatures(
     recovery,
     body: 'PENDING',
     condition: 'PENDING',
+    fuel: 'PENDING',
   };
 }
 

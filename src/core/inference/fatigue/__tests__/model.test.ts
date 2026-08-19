@@ -149,6 +149,7 @@ function makeDayFeatures(
     recovery: makeRecovery(),
     body: 'PENDING',
     condition: 'PENDING',
+    fuel: 'PENDING',
     ...overrides,
   };
 }

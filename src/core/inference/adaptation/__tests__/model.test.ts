@@ -120,6 +120,7 @@ function makeFeatures(overrides: Partial<DayFeatures> = {}): DayFeatures {
     sessions: [makeSession({ hrDriftPercent: 2.0, intensityFactor: 0.78 })],
     body: 'PENDING',
     condition: 'PENDING',
+    fuel: 'PENDING',
     ...overrides,
   };
 }
@@ -513,6 +514,7 @@ describe('runAdaptationModel', () => {
       sessions: [],
       body: 'PENDING',
       condition: 'PENDING',
+      fuel: 'PENDING',
     };
     const context: AdaptationModelContext = {
       trainingDayId: '2026-07-02',

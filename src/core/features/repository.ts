@@ -15,6 +15,7 @@ import type {
   LoadFeatureSetRecord,
   RecoveryFeatureSetRecord,
   BodyFeatureSetRecord,
+  FuelFeatureSetRecord,
   ConditionFeatureSetRecord,
   FeatureStatus,
 } from './types';
@@ -72,6 +73,8 @@ export interface FeatureRepository {
   /** Retrieve the latest BODY FeatureSetRecord for a training day. */
   findBodyFeatures(athleteId: string, trainingDayId: string): Promise<BodyFeatureSetRecord | null>;
 
+  findFuelFeatures(athleteId: string, trainingDayId: string): Promise<FuelFeatureSetRecord | null>;
+
   /** Retrieve the latest CONDITION FeatureSetRecord for a training day. */
   findConditionFeatures(
     athleteId: string,
@@ -104,6 +107,12 @@ export interface FeatureRepository {
    * Called when a new SESSION observation arrives (since it affects the rolling window).
    */
   invalidateLoadWindow(athleteId: string, fromTrainingDayId: string): Promise<void>;
+
+  /**
+   * Mark fuel features as INVALIDATED for training days that may use this weigh-in.
+   * Per-kilogram ratios look back 30 days, so a new weight on day W affects FUEL for W…W+30.
+   */
+  invalidateFuelWindow(athleteId: string, weighInTrainingDayId: string): Promise<void>;
 
   // ─────────────────────────────────────────────────────────────────────────
   // Status
