@@ -457,6 +457,7 @@ export async function createThresholdSnapshot(data: {
   ftpW?: number | null;
   lthr?: number | null;
   runThresholdPaceSecPerKm?: number | null;
+  swimCssSecPer100m?: number | null;
 }) {
   return prisma.athleteThresholdSnapshot.create({
     data: { profileId: PROFILE_ID, ...data },

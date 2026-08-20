@@ -200,6 +200,8 @@ export interface AthleteProfilePayload {
   maxHr: number | null;
   lthr: number | null;
   runThresholdPaceSecPerKm: number | null;
+  swimCssSecPer100m: number | null;
+  defaultPoolLengthM: number | null;
   sleepTargetMinutes: number | null;
   sleepBedtimeTargetMin: number | null;
 }

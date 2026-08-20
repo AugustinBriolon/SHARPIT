@@ -9,6 +9,7 @@ import type { AthleteThresholds } from '@/lib/planned-session/endurance/enduranc
 
 const THRESHOLDS: AthleteThresholds = {
   runThresholdPaceSecPerKm: 240,
+  swimCssSecPer100m: 100,
   ftpW: 250,
   lthr: 165,
   maxHr: 190,
@@ -64,7 +65,7 @@ describe('effectiveEndurancePrescription', () => {
     });
   });
 
-  it('does not invent a target for a sport with no validated table', () => {
+  it('derives a swim pace band from CSS', () => {
     const { prescription, warnings } = effectiveEndurancePrescription({
       sport: 'SWIM',
       durationMin: 60,
@@ -74,8 +75,22 @@ describe('effectiveEndurancePrescription', () => {
     });
 
     const [block] = prescription.blocks;
+    expect(block.kind === 'step' && block.step.target).toMatchObject({ metric: 'pace' });
+    expect(warnings).toEqual([]);
+  });
+
+  it('sends a swim session free rather than guessing when CSS is unknown', () => {
+    const { prescription, warnings } = effectiveEndurancePrescription({
+      sport: 'SWIM',
+      durationMin: 60,
+      intensity: 'TEMPO',
+      stored: null,
+      thresholds: { ...THRESHOLDS, swimCssSecPer100m: null },
+    });
+
+    const [block] = prescription.blocks;
     expect(block.kind === 'step' && block.step.target).toEqual({ metric: 'none' });
-    expect(warnings.join(' ')).toMatch(/pas de table de cibles/i);
+    expect(warnings.join(' ')).toMatch(/vitesse critique/i);
   });
 
   it('derives a power band for a bike session, and none without an FTP', () => {
@@ -226,12 +241,13 @@ describe('pool length', () => {
     expect(prescription.poolLengthM).toBeUndefined();
   });
 
-  it('sends a swim session without a pace band, and says why', () => {
+  it('still stamps a pool length when CSS is unknown', () => {
     const { prescription, warnings } = effectiveEndurancePrescription({
       ...swimBase,
       stored: null,
+      thresholds: { ...THRESHOLDS, swimCssSecPer100m: null },
     });
-    expect(prescription.blocks).toHaveLength(1);
+    expect(prescription.poolLengthM).toBe(DEFAULT_POOL_LENGTH_M);
     expect(warnings[0]).toContain('sans guidage chiffré');
   });
 });

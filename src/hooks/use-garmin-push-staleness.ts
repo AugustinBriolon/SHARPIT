@@ -14,6 +14,7 @@ import type { AthleteThresholds } from '@/lib/planned-session/endurance/enduranc
 
 const THRESHOLD_LABEL_FR: Record<keyof AthleteThresholds, string> = {
   runThresholdPaceSecPerKm: 'allure seuil',
+  swimCssSecPer100m: 'vitesse critique',
   ftpW: 'FTP',
   lthr: 'FC seuil',
   maxHr: 'FC max',
@@ -57,6 +58,7 @@ export function useGarminPushStaleness(session: {
 
     const currentThresholds: AthleteThresholds = {
       runThresholdPaceSecPerKm: profile.runThresholdPaceSecPerKm,
+      swimCssSecPer100m: profile.swimCssSecPer100m,
       ftpW: profile.ftpW,
       lthr: profile.lthr,
       maxHr: profile.maxHr,

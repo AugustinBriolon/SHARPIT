@@ -90,6 +90,7 @@ export function parsePushedThresholds(raw: unknown): Partial<AthleteThresholds> 
 
   return {
     runThresholdPaceSecPerKm: numberOrNull(record.runThresholdPaceSecPerKm),
+    swimCssSecPer100m: numberOrNull(record.swimCssSecPer100m),
     ftpW: numberOrNull(record.ftpW),
     lthr: numberOrNull(record.lthr),
     maxHr: numberOrNull(record.maxHr),

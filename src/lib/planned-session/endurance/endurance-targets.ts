@@ -7,10 +7,15 @@ import type {
 /** Athlete reference values a relative target is resolved against. */
 export type AthleteThresholds = {
   runThresholdPaceSecPerKm: number | null;
+  /** Critical swim speed, seconds per 100 m — the swimmer's threshold pace. */
+  swimCssSecPer100m: number | null;
   ftpW: number | null;
   lthr: number | null;
   maxHr: number | null;
 };
+
+/** Pace reads per kilometre on land and per 100 m in the water. */
+export type PaceUnit = 'km' | '100m';
 
 export type ResolvedTarget =
   | { metric: 'none' }
@@ -19,9 +24,10 @@ export type ResolvedTarget =
       /** Garmin stores a pace target as a speed range in m/s, ascending. */
       speedMsMin: number;
       speedMsMax: number;
-      /** Same band, athlete-facing. `fast` is the smaller number of seconds. */
-      secPerKmFast: number;
-      secPerKmSlow: number;
+      paceUnit: PaceUnit;
+      /** Same band, athlete-facing, in seconds per unit. `fast` is the smaller. */
+      paceSecFast: number;
+      paceSecSlow: number;
     }
   | { metric: 'hr'; bpmMin: number; bpmMax: number }
   | { metric: 'power'; wattsMin: number; wattsMax: number }
@@ -53,6 +59,19 @@ const RUN_SPEED_ANCHOR_PCT: Partial<Record<SessionIntensity, number>> = {
   TEMPO: 90,
   THRESHOLD: 100,
   VO2MAX: 107,
+};
+
+/**
+ * Centre of the band, in percent of CSS *speed* (100 % = critical swim speed).
+ * A swimmer's easy and threshold speeds sit far closer together than a runner's —
+ * water punishes the range — so the anchors are compressed accordingly.
+ */
+const SWIM_SPEED_ANCHOR_PCT: Partial<Record<SessionIntensity, number>> = {
+  RECOVERY: 85,
+  ENDURANCE: 90,
+  TEMPO: 96,
+  THRESHOLD: 100,
+  VO2MAX: 105,
 };
 
 /**
@@ -101,9 +120,6 @@ export function defaultTargetForIntensity(
   sport: EnduranceSport,
   intensity: SessionIntensity | null,
 ): { target: EnduranceTarget; warnings: string[] } {
-  // Swimming has no validated table — inventing one would put made-up numbers on the wrist.
-  if (sport === 'SWIM') return { target: { metric: 'none' }, warnings: [] };
-
   const warnings: string[] = [];
   let effective = intensity ?? 'ENDURANCE';
   if (effective === 'RACE') {
@@ -120,7 +136,8 @@ export function defaultTargetForIntensity(
     };
   }
 
-  const centre = RUN_SPEED_ANCHOR_PCT[effective];
+  const anchors = sport === 'SWIM' ? SWIM_SPEED_ANCHOR_PCT : RUN_SPEED_ANCHOR_PCT;
+  const centre = anchors[effective];
   if (centre == null) return { target: { metric: 'none' }, warnings };
 
   return { target: { metric: 'pace', ...bandAround(centre, effective, OPEN_FLOOR_PCT) }, warnings };
@@ -188,14 +205,20 @@ function relativeBand(
 function resolvePace(
   target: EnduranceTarget,
   thresholds: AthleteThresholds,
+  sport: EnduranceSport,
   warnings: string[],
 ): ResolvedTarget | null {
   const bounds = mergeBounds(
     target,
     () => {
-      const threshold = thresholds.runThresholdPaceSecPerKm;
+      const threshold =
+        sport === 'SWIM' ? thresholds.swimCssSecPer100m : thresholds.runThresholdPaceSecPerKm;
       if (threshold == null || threshold <= 0) {
-        warnings.push('Allure seuil inconnue — cible allure impossible.');
+        warnings.push(
+          sport === 'SWIM'
+            ? 'Vitesse critique (CSS) inconnue — cible allure impossible.'
+            : 'Allure seuil inconnue — cible allure impossible.',
+        );
         return null;
       }
       // Percentages are on speed, so the slower bound divides by the *lower* percent.
@@ -212,19 +235,24 @@ function resolvePace(
   );
   if (!bounds) return null;
 
-  const secPerKmSlow = Math.max(bounds.easy, bounds.hard);
-  const secPerKmFast = Math.min(bounds.easy, bounds.hard);
-  if (secPerKmFast <= 0) {
+  const paceSecSlow = Math.max(bounds.easy, bounds.hard);
+  const paceSecFast = Math.min(bounds.easy, bounds.hard);
+  if (paceSecFast <= 0) {
     warnings.push(UNUSABLE_BAND_WARNING);
     return null;
   }
 
+  // Connect always wants m/s, whatever unit the athlete reads.
+  const paceUnit: PaceUnit = sport === 'SWIM' ? '100m' : 'km';
+  const metresPerUnit = paceUnit === '100m' ? 100 : 1000;
+
   return {
     metric: 'pace',
-    speedMsMin: round(1000 / secPerKmSlow, 4),
-    speedMsMax: round(1000 / secPerKmFast, 4),
-    secPerKmFast: Math.round(secPerKmFast),
-    secPerKmSlow: Math.round(secPerKmSlow),
+    speedMsMin: round(metresPerUnit / paceSecSlow, 4),
+    speedMsMax: round(metresPerUnit / paceSecFast, 4),
+    paceUnit,
+    paceSecFast: Math.round(paceSecFast),
+    paceSecSlow: Math.round(paceSecSlow),
   };
 }
 
@@ -321,11 +349,12 @@ function resolveCadence(target: EnduranceTarget, warnings: string[]): ResolvedTa
 export function resolveEnduranceTarget(
   target: EnduranceTarget,
   thresholds: AthleteThresholds,
+  sport: EnduranceSport,
 ): TargetResolution {
   const warnings: string[] = [];
   let resolved: ResolvedTarget | null = null;
 
-  if (target.metric === 'pace') resolved = resolvePace(target, thresholds, warnings);
+  if (target.metric === 'pace') resolved = resolvePace(target, thresholds, sport, warnings);
   else if (target.metric === 'hr') resolved = resolveHr(target, thresholds, warnings);
   else if (target.metric === 'power') resolved = resolvePower(target, thresholds, warnings);
   else if (target.metric === 'cadence') resolved = resolveCadence(target, warnings);
@@ -333,9 +362,13 @@ export function resolveEnduranceTarget(
   return { resolved: resolved ?? { metric: 'none' }, warnings };
 }
 
-/** Athlete-facing pace label, e.g. "3:54–4:06/km". */
-export function formatPaceBand(secPerKmFast: number, secPerKmSlow: number): string {
-  return `${formatPace(secPerKmFast)}–${formatPace(secPerKmSlow)}/km`;
+/** Athlete-facing pace label, e.g. "3:54–4:06/km" or "1:38–1:43/100m". */
+export function formatPaceBand(
+  paceSecFast: number,
+  paceSecSlow: number,
+  unit: PaceUnit = 'km',
+): string {
+  return `${formatPace(paceSecFast)}–${formatPace(paceSecSlow)}/${unit}`;
 }
 
 export function formatPace(secPerKm: number): string {

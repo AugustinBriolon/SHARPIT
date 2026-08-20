@@ -197,7 +197,7 @@ describe('previewThresholdApply', () => {
 
     const preview = previewThresholdApply(
       records,
-      { ftpW: 210, runThresholdPaceSecPerKm: 277 },
+      { ftpW: 210, runThresholdPaceSecPerKm: 277, swimCssSecPer100m: null },
       { now: NOW },
     );
 
@@ -224,7 +224,7 @@ describe('previewThresholdApply', () => {
 
     const preview = previewThresholdApply(
       records,
-      { ftpW: 210, runThresholdPaceSecPerKm: null },
+      { ftpW: 210, runThresholdPaceSecPerKm: null, swimCssSecPer100m: null },
       { now: NOW },
     );
 
@@ -248,7 +248,7 @@ describe('previewThresholdApply', () => {
 
     const preview = previewThresholdApply(
       records,
-      { ftpW: 200, runThresholdPaceSecPerKm: null },
+      { ftpW: 200, runThresholdPaceSecPerKm: null, swimCssSecPer100m: null },
       { now: NOW },
     );
 
@@ -281,7 +281,7 @@ describe('previewThresholdApply', () => {
 
     const preview = previewThresholdApply(
       records,
-      { ftpW: 210, runThresholdPaceSecPerKm: null },
+      { ftpW: 210, runThresholdPaceSecPerKm: null, swimCssSecPer100m: null },
       { now: NOW },
     );
 
@@ -330,7 +330,7 @@ describe('previewThresholdApply', () => {
 
     const preview = previewThresholdApply(
       records,
-      { ftpW: null, runThresholdPaceSecPerKm: null },
+      { ftpW: null, runThresholdPaceSecPerKm: null, swimCssSecPer100m: null },
       { now: NOW },
     );
 

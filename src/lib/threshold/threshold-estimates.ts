@@ -4,6 +4,12 @@ import {
   estimateRunThresholdPace,
   fmtPaceSecPerKm,
 } from '@/lib/training/performance-predictor';
+import {
+  estimateSwimCss,
+  fmtCssSecPer100m,
+  shouldSuggestSwimCss,
+  type SwimCssSample,
+} from '@/lib/threshold/swim-css';
 import type {
   BikeEffort,
   PowerCurvePoint,
@@ -28,6 +34,8 @@ export interface ThresholdEstimates {
   ftpW: number | null;
   ftpSource: string | null;
   runThresholdPaceSecPerKm: number | null;
+  /** Critical swim speed (s/100 m), median of qualifying pool sessions. */
+  swimCssSecPer100m: number | null;
   /** Days of history the estimate was allowed to see. */
   windowDays: number;
 }
@@ -35,7 +43,7 @@ export interface ThresholdEstimates {
 export type ThresholdChangeDirection = 'up' | 'down' | 'set';
 
 export interface ThresholdChange {
-  field: 'ftpW' | 'runThresholdPaceSecPerKm';
+  field: 'ftpW' | 'runThresholdPaceSecPerKm' | 'swimCssSecPer100m';
   label: string;
   from: string;
   to: string;
@@ -47,6 +55,7 @@ export interface ThresholdApplyPreview {
   current: {
     ftpW: number | null;
     runThresholdPaceSecPerKm: number | null;
+    swimCssSecPer100m: number | null;
   };
   changes: ThresholdChange[];
   hasChanges: boolean;
@@ -91,17 +100,21 @@ export function filterRecordsForThresholdWindow(
 
 export function computeThresholdEstimates(
   records: RecordsPayload,
-  options?: { windowDays?: number; now?: Date },
+  options?: { windowDays?: number; now?: Date; swimSamples?: SwimCssSample[] },
 ): ThresholdEstimates {
   const windowDays = options?.windowDays ?? THRESHOLD_RECENCY_WINDOW_DAYS;
   const now = options?.now ?? new Date();
   const windowed = filterRecordsForThresholdWindow(records, windowDays, now);
   const ftp = estimateFtp(windowed.powerCurve, windowed.bikeEfforts);
   const pace = estimateRunThresholdPace(windowed.runBests, windowed.runEfforts);
+  // Swim CSS comes straight from realised sessions, not from the records pipeline:
+  // Garmin already computes it per session, so there is nothing to rank or fit.
+  const css = estimateSwimCss(options?.swimSamples ?? [], { windowDays, now });
   return {
     ftpW: ftp?.watts ?? null,
     ftpSource: ftp?.source ?? null,
     runThresholdPaceSecPerKm: pace,
+    swimCssSecPer100m: css,
     windowDays,
   };
 }
@@ -148,13 +161,14 @@ function paceDirection(current: number | null, estimated: number): ThresholdChan
 /** Compare windowed estimates to the athlete's current thresholds. */
 export function previewThresholdApply(
   records: RecordsPayload,
-  profile: Pick<AthleteProfile, 'ftpW' | 'runThresholdPaceSecPerKm'> | null,
-  options?: { windowDays?: number; now?: Date },
+  profile: Pick<AthleteProfile, 'ftpW' | 'runThresholdPaceSecPerKm' | 'swimCssSecPer100m'> | null,
+  options?: { windowDays?: number; now?: Date; swimSamples?: SwimCssSample[] },
 ): ThresholdApplyPreview {
   const estimates = computeThresholdEstimates(records, options);
   const current = {
     ftpW: profile?.ftpW ?? null,
     runThresholdPaceSecPerKm: profile?.runThresholdPaceSecPerKm ?? null,
+    swimCssSecPer100m: profile?.swimCssSecPer100m ?? null,
   };
 
   const changes: ThresholdChange[] = [];
@@ -187,6 +201,20 @@ export function previewThresholdApply(
         current.runThresholdPaceSecPerKm,
         estimates.runThresholdPaceSecPerKm,
       ),
+    });
+  }
+
+  if (
+    shouldSuggestSwimCss(current.swimCssSecPer100m, estimates.swimCssSecPer100m) &&
+    estimates.swimCssSecPer100m != null
+  ) {
+    changes.push({
+      field: 'swimCssSecPer100m',
+      label: 'Vitesse critique natation',
+      from: current.swimCssSecPer100m ? fmtCssSecPer100m(current.swimCssSecPer100m) : '—',
+      to: fmtCssSecPer100m(estimates.swimCssSecPer100m),
+      // Lower seconds per 100 m is faster, same inversion as running pace.
+      direction: paceDirection(current.swimCssSecPer100m, estimates.swimCssSecPer100m),
     });
   }
 

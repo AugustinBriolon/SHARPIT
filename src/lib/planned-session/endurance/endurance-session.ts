@@ -30,14 +30,9 @@ const DEFAULT_SESSION_MIN = 45;
  */
 export const DEFAULT_POOL_LENGTH_M = 25;
 
-/**
- * Swimming has no validated target table (ADR-017). Inventing a band would put a
- * wrong number on the watch, so the step goes out free and the athlete is told why.
- */
-const NO_TARGET_TABLE_WARNING =
-  'Pas de table de cibles validée pour ce sport — étape envoyée sans guidage chiffré.';
-
 const NO_FTP_WARNING = 'FTP inconnue — séance vélo envoyée sans guidage chiffré.';
+
+const NO_CSS_WARNING = 'Vitesse critique natation inconnue — séance envoyée sans guidage chiffré.';
 
 export type EffectiveEndurancePrescription = {
   prescription: EndurancePrescription;
@@ -55,7 +50,14 @@ export function fallbackTarget(
   intensity: SessionIntensity | null,
   thresholds: AthleteThresholds,
 ): { target: EnduranceTarget; warnings: string[] } {
-  if (sport === 'SWIM') return { target: NO_TARGET, warnings: [NO_TARGET_TABLE_WARNING] };
+  if (sport === 'SWIM') {
+    // Heart rate is unusable in the water on most watches, so it is pace or nothing.
+    const paceDefault = defaultTargetForIntensity(sport, intensity);
+    if (paceDefault.target.metric === 'pace' && thresholds.swimCssSecPer100m != null) {
+      return paceDefault;
+    }
+    return { target: NO_TARGET, warnings: [...paceDefault.warnings, NO_CSS_WARNING] };
+  }
 
   if (sport === 'BIKE') {
     // Power only: heart rate would be anchored on running references, which are not the bike's.

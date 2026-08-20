@@ -59,6 +59,7 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
   const [thresholdPace, setThresholdPace] = useState(() =>
     paceToInput(initial?.runThresholdPaceSecPerKm ?? null),
   );
+  const [swimCss, setSwimCss] = useState(() => paceToInput(initial?.swimCssSecPer100m ?? null));
   const [poolLength, setPoolLength] = useState(initial?.defaultPoolLengthM?.toString() ?? '');
   const [vo2maxRunning, setVo2maxRunning] = useState<number | null>(initial?.vo2maxRunning ?? null);
   const [vo2maxCycling, setVo2maxCycling] = useState<number | null>(initial?.vo2maxCycling ?? null);
@@ -84,6 +85,8 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
     setMaxHr(initial.maxHr?.toString() ?? '');
     setLthr(initial.lthr?.toString() ?? '');
     setThresholdPace(paceToInput(initial.runThresholdPaceSecPerKm ?? null));
+    setSwimCss(paceToInput(initial.swimCssSecPer100m ?? null));
+    setPoolLength(initial.defaultPoolLengthM?.toString() ?? '');
     setVo2maxRunning(initial.vo2maxRunning ?? null);
     setVo2maxCycling(initial.vo2maxCycling ?? null);
   }, [
@@ -92,6 +95,8 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
     initial?.maxHr,
     initial?.lthr,
     initial?.runThresholdPaceSecPerKm,
+    initial?.swimCssSecPer100m,
+    initial?.defaultPoolLengthM,
     initial?.vo2maxRunning,
     initial?.vo2maxCycling,
   ]);
@@ -157,6 +162,7 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
         maxHr: maxHr ? Number(maxHr) : null,
         lthr: lthr ? Number(lthr) : null,
         runThresholdPaceSecPerKm: parsePaceInput(thresholdPace),
+        swimCssSecPer100m: parsePaceInput(swimCss),
         defaultPoolLengthM: poolLength ? Number(poolLength) : null,
       };
       const previousProfile = saveProfilePatch(queryClient, patch);
@@ -352,6 +358,19 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
               value={thresholdPace}
               onChange={(e) => setThresholdPace(e.target.value)}
             />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="swimCss">Vitesse critique natation (min:sec/100m)</Label>
+            <Input
+              className={NUMERIC_INPUT_CLASS}
+              id="swimCss"
+              placeholder="1:38"
+              value={swimCss}
+              onChange={(e) => setSwimCss(e.target.value)}
+            />
+            <p className="text-muted-foreground/80 text-xs">
+              Estimée depuis tes séances piscine — « Appliquer » la met à jour.
+            </p>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="defaultPoolLengthM">Longueur de bassin (m)</Label>

@@ -224,6 +224,7 @@ model AthleteProfile {
   maxHr                    Int? // FC max (bpm)
   lthr                     Int? // FC seuil lactique (bpm)
   runThresholdPaceSecPerKm Float? // allure seuil (s/km)
+  swimCssSecPer100m        Float? // vitesse critique natation (s/100m)
   vo2maxRunning            Int? // VO2max course
   vo2maxCycling            Int? // VO2max vélo
   thresholdsSyncedAt       DateTime? // dernier import depuis Garmin
@@ -259,6 +260,7 @@ model AthleteThresholdSnapshot {
   ftpW                     Int?
   lthr                     Int?
   runThresholdPaceSecPerKm Float?
+  swimCssSecPer100m        Float?
 
   createdAt DateTime @default(now())
 

@@ -11,6 +11,7 @@ import {
 /** Threshold pace 4:00/km — every expectation below is derived from it. */
 const THRESHOLDS: AthleteThresholds = {
   runThresholdPaceSecPerKm: 240,
+  swimCssSecPer100m: 100,
   ftpW: 250,
   lthr: 165,
   maxHr: 190,
@@ -18,6 +19,7 @@ const THRESHOLDS: AthleteThresholds = {
 
 const NO_THRESHOLDS: AthleteThresholds = {
   runThresholdPaceSecPerKm: null,
+  swimCssSecPer100m: null,
   ftpW: null,
   lthr: null,
   maxHr: null,
@@ -43,28 +45,38 @@ describe('defaultTargetForIntensity', () => {
     expect(warnings[0]).toContain('RACE');
   });
 
-  it('anchors a bike band on FTP and leaves swimming without a table', () => {
+  it('anchors a bike band on FTP', () => {
     expect(defaultTargetForIntensity('BIKE', 'THRESHOLD').target).toMatchObject({
       metric: 'power',
       pctMin: 95.5,
       pctMax: 100.5,
     });
-    expect(defaultTargetForIntensity('SWIM', 'THRESHOLD').target).toEqual({ metric: 'none' });
+  });
+
+  it('anchors a swim band on CSS, compressed against the running spread', () => {
+    expect(defaultTargetForIntensity('SWIM', 'THRESHOLD').target).toMatchObject({
+      metric: 'pace',
+      pctMin: 97.5,
+      pctMax: 102.5,
+    });
+    // Easy swimming sits far closer to threshold than easy running does.
+    expect(defaultTargetForIntensity('SWIM', 'ENDURANCE').target.pctMax).toBe(92.5);
+    expect(defaultTargetForIntensity('RUN', 'ENDURANCE').target.pctMax).toBe(82.5);
   });
 });
 
 describe('resolveEnduranceTarget — pace', () => {
   it('resolves a threshold band to 3:54–4:06 at a 4:00/km threshold', () => {
     const { target } = defaultTargetForIntensity('RUN', 'THRESHOLD');
-    const { resolved } = resolveEnduranceTarget(target, THRESHOLDS);
+    const { resolved } = resolveEnduranceTarget(target, THRESHOLDS, 'RUN');
 
-    expect(resolved).toMatchObject({ metric: 'pace', secPerKmFast: 234, secPerKmSlow: 246 });
+    expect(resolved).toMatchObject({ metric: 'pace', paceSecFast: 234, paceSecSlow: 246 });
     expect(formatPaceBand(234, 246)).toBe('3:54–4:06/km');
   });
 
   it('keeps the speed range ascending, the order Garmin expects', () => {
     const { target } = defaultTargetForIntensity('RUN', 'THRESHOLD');
-    const { resolved } = resolveEnduranceTarget(target, THRESHOLDS);
+    const { resolved } = resolveEnduranceTarget(target, THRESHOLDS, 'RUN');
     if (resolved.metric !== 'pace') throw new Error('expected a pace target');
 
     expect(resolved.speedMsMin).toBeLessThan(resolved.speedMsMax);
@@ -76,32 +88,34 @@ describe('resolveEnduranceTarget — pace', () => {
 
   it('never lets an easy floor alert on a slow run', () => {
     const { target } = defaultTargetForIntensity('RUN', 'RECOVERY');
-    const { resolved } = resolveEnduranceTarget(target, THRESHOLDS);
+    const { resolved } = resolveEnduranceTarget(target, THRESHOLDS, 'RUN');
     if (resolved.metric !== 'pace') throw new Error('expected a pace target');
 
-    expect(resolved.secPerKmFast).toBe(340); // 5:40/km cap
-    expect(resolved.secPerKmSlow).toBe(600); // 10:00/km floor, unreachable in practice
+    expect(resolved.paceSecFast).toBe(340); // 5:40/km cap
+    expect(resolved.paceSecSlow).toBe(600); // 10:00/km floor, unreachable in practice
   });
 
   it('lets an absolute override win over the relative band', () => {
     const { resolved } = resolveEnduranceTarget(
       { metric: 'pace', pctMin: 97.5, pctMax: 102.5, absEasy: 250, absHard: 240 },
       THRESHOLDS,
+      'RUN',
     );
-    expect(resolved).toMatchObject({ secPerKmFast: 240, secPerKmSlow: 250 });
+    expect(resolved).toMatchObject({ paceSecFast: 240, paceSecSlow: 250 });
   });
 
   it('corrects an override given the wrong way round', () => {
     const { resolved } = resolveEnduranceTarget(
       { metric: 'pace', absEasy: 240, absHard: 250 },
       THRESHOLDS,
+      'RUN',
     );
-    expect(resolved).toMatchObject({ secPerKmFast: 240, secPerKmSlow: 250 });
+    expect(resolved).toMatchObject({ paceSecFast: 240, paceSecSlow: 250 });
   });
 
   it('drops the target and warns when no threshold pace is known', () => {
     const { target } = defaultTargetForIntensity('RUN', 'THRESHOLD');
-    const { resolved, warnings } = resolveEnduranceTarget(target, NO_THRESHOLDS);
+    const { resolved, warnings } = resolveEnduranceTarget(target, NO_THRESHOLDS, 'RUN');
 
     expect(resolved).toEqual({ metric: 'none' });
     expect(warnings[0]).toContain('Allure seuil inconnue');
@@ -113,6 +127,7 @@ describe('resolveEnduranceTarget — heart rate', () => {
     const { resolved } = resolveEnduranceTarget(
       defaultHrTargetForIntensity('THRESHOLD'),
       THRESHOLDS,
+      'RUN',
     );
     expect(resolved).toEqual({ metric: 'hr', bpmMin: 161, bpmMax: 169 });
   });
@@ -121,6 +136,7 @@ describe('resolveEnduranceTarget — heart rate', () => {
     const { resolved } = resolveEnduranceTarget(
       { metric: 'hr', hrRef: 'auto', pctMin: 90, pctMax: 100 },
       { ...NO_THRESHOLDS, maxHr: 190 },
+      'RUN',
     );
     expect(resolved).toEqual({ metric: 'hr', bpmMin: 171, bpmMax: 190 });
   });
@@ -129,6 +145,7 @@ describe('resolveEnduranceTarget — heart rate', () => {
     const { resolved, warnings } = resolveEnduranceTarget(
       { metric: 'hr', pctMin: 90, pctMax: 100 },
       NO_THRESHOLDS,
+      'RUN',
     );
     expect(resolved).toEqual({ metric: 'none' });
     expect(warnings[0]).toContain('FC seuil');
@@ -140,6 +157,7 @@ describe('resolveEnduranceTarget — power', () => {
     const { resolved } = resolveEnduranceTarget(
       { metric: 'power', pctMin: 95, pctMax: 105 },
       THRESHOLDS,
+      'RUN',
     );
     expect(resolved).toEqual({ metric: 'power', wattsMin: 238, wattsMax: 263 });
   });
@@ -148,6 +166,7 @@ describe('resolveEnduranceTarget — power', () => {
     const { resolved, warnings } = resolveEnduranceTarget(
       { metric: 'power', pctMin: 95, pctMax: 105 },
       NO_THRESHOLDS,
+      'RUN',
     );
     expect(resolved).toEqual({ metric: 'none' });
     expect(warnings[0]).toContain('FTP inconnue');
@@ -168,8 +187,9 @@ describe('absolute overrides', () => {
     const { resolved, warnings } = resolveEnduranceTarget(
       { metric: 'pace', pctMin: 97.5, pctMax: 102.5, absHard: 220 },
       THRESHOLDS,
+      'RUN',
     );
-    expect(resolved).toMatchObject({ metric: 'pace', secPerKmFast: 220, secPerKmSlow: 246 });
+    expect(resolved).toMatchObject({ metric: 'pace', paceSecFast: 220, paceSecSlow: 246 });
     expect(warnings).toEqual([]);
   });
 
@@ -177,6 +197,7 @@ describe('absolute overrides', () => {
     const { resolved, warnings } = resolveEnduranceTarget(
       { metric: 'pace', absHard: 220 },
       THRESHOLDS,
+      'RUN',
     );
     expect(resolved).toEqual({ metric: 'none' });
     expect(warnings.join(' ')).toMatch(/sans guidage/i);
@@ -186,6 +207,7 @@ describe('absolute overrides', () => {
     const { resolved, warnings } = resolveEnduranceTarget(
       { metric: 'cadence', absEasy: 85 },
       THRESHOLDS,
+      'RUN',
     );
     expect(resolved).toEqual({ metric: 'none' });
     expect(warnings.join(' ')).toMatch(/sans guidage/i);
@@ -195,8 +217,47 @@ describe('absolute overrides', () => {
     const { resolved, warnings } = resolveEnduranceTarget(
       { metric: 'pace', absEasy: 0, absHard: 0 },
       THRESHOLDS,
+      'RUN',
     );
     expect(resolved).toEqual({ metric: 'none' });
     expect(warnings.length).toBeGreaterThan(0);
+  });
+});
+
+describe('resolveEnduranceTarget — swimming', () => {
+  it('reads per 100 m, not per kilometre', () => {
+    const { target } = defaultTargetForIntensity('SWIM', 'THRESHOLD');
+    const { resolved } = resolveEnduranceTarget(target, THRESHOLDS, 'SWIM');
+    if (resolved.metric !== 'pace') throw new Error('expected a pace target');
+
+    expect(resolved.paceUnit).toBe('100m');
+    // CSS 100 s/100 m, band 97.5–102.5 % of speed.
+    expect(resolved.paceSecFast).toBe(98);
+    expect(resolved.paceSecSlow).toBe(103);
+    expect(formatPaceBand(resolved.paceSecFast, resolved.paceSecSlow, resolved.paceUnit)).toBe(
+      '1:38–1:43/100m',
+    );
+  });
+
+  it('converts to m/s over 100 m, so the speed stays swimmer-sized', () => {
+    const { target } = defaultTargetForIntensity('SWIM', 'THRESHOLD');
+    const { resolved } = resolveEnduranceTarget(target, THRESHOLDS, 'SWIM');
+    if (resolved.metric !== 'pace') throw new Error('expected a pace target');
+
+    expect(resolved.speedMsMin).toBeLessThan(resolved.speedMsMax);
+    expect(resolved.speedMsMin).toBeCloseTo(0.975, 3);
+    expect(resolved.speedMsMax).toBeCloseTo(1.025, 3);
+  });
+
+  it('anchors on CSS, never on the running threshold', () => {
+    const { target } = defaultTargetForIntensity('SWIM', 'THRESHOLD');
+    const { resolved, warnings } = resolveEnduranceTarget(
+      target,
+      { ...THRESHOLDS, swimCssSecPer100m: null },
+      'SWIM',
+    );
+
+    expect(resolved).toEqual({ metric: 'none' });
+    expect(warnings[0]).toContain('CSS');
   });
 });

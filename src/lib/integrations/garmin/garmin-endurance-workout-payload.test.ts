@@ -5,6 +5,7 @@ import type { AthleteThresholds } from '@/lib/planned-session/endurance/enduranc
 
 const THRESHOLDS: AthleteThresholds = {
   runThresholdPaceSecPerKm: 240,
+  swimCssSecPer100m: 100,
   ftpW: 250,
   lthr: 165,
   maxHr: 190,
@@ -235,6 +236,35 @@ describe('buildEnduranceWorkoutPayload — swimming', () => {
     };
     expect(rest.endCondition.conditionTypeKey).toBe('lap.button');
     expect(rest.endConditionValue).toBeNull();
+  });
+
+  it('guides a pool set on CSS, labelled per 100 m', () => {
+    const { payload, mapped } = buildEnduranceWorkoutPayload({
+      workoutName: 'Piscine 8x50',
+      prescription: {
+        ...POOL_SESSION,
+        blocks: [
+          {
+            kind: 'step',
+            step: {
+              kind: 'interval',
+              duration: { type: 'distance', meters: 400 },
+              target: { metric: 'pace', pctMin: 97.5, pctMax: 102.5 },
+            },
+          },
+        ],
+      },
+      thresholds: THRESHOLDS,
+    });
+
+    const step = segmentSteps(payload)[0] as unknown as {
+      targetType: { workoutTargetTypeKey: string };
+      targetValueOne: number;
+      targetValueTwo: number;
+    };
+    expect(step.targetType.workoutTargetTypeKey).toBe('pace.zone');
+    expect(step.targetValueOne).toBeLessThan(step.targetValueTwo);
+    expect(mapped[0].targetLabel).toBe('1:38–1:43/100m');
   });
 
   it('counts distances in metres, as a pool set reads', () => {

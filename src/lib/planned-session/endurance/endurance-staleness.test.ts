@@ -67,6 +67,7 @@ describe('thresholdKeysUsedBy', () => {
 describe('garminPushStaleness', () => {
   const current = {
     runThresholdPaceSecPerKm: 232,
+    swimCssSecPer100m: 100,
     ftpW: 250,
     lthr: 165,
     maxHr: 190,
@@ -109,6 +110,7 @@ describe('parsePushedThresholds', () => {
   it('degrades unusable values to null instead of throwing', () => {
     expect(parsePushedThresholds({ runThresholdPaceSecPerKm: '240', lthr: 165 })).toEqual({
       runThresholdPaceSecPerKm: null,
+      swimCssSecPer100m: null,
       ftpW: null,
       lthr: 165,
       maxHr: null,

@@ -54,6 +54,7 @@ export async function loadPushProfile(): Promise<PushProfile> {
     where: { id: PROFILE_ID },
     select: {
       runThresholdPaceSecPerKm: true,
+      swimCssSecPer100m: true,
       ftpW: true,
       lthr: true,
       maxHr: true,
@@ -64,6 +65,7 @@ export async function loadPushProfile(): Promise<PushProfile> {
   return {
     thresholds: {
       runThresholdPaceSecPerKm: profile?.runThresholdPaceSecPerKm ?? null,
+      swimCssSecPer100m: profile?.swimCssSecPer100m ?? null,
       ftpW: profile?.ftpW ?? null,
       lthr: profile?.lthr ?? null,
       maxHr: profile?.maxHr ?? null,

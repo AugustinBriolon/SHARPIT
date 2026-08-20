@@ -107,7 +107,7 @@ function formatDurationLabel(duration: EnduranceDuration): string {
 function formatTargetLabel(resolved: ResolvedTarget): string | null {
   switch (resolved.metric) {
     case 'pace':
-      return formatPaceBand(resolved.secPerKmFast, resolved.secPerKmSlow);
+      return formatPaceBand(resolved.paceSecFast, resolved.paceSecSlow, resolved.paceUnit);
     case 'hr':
       return `${resolved.bpmMin}–${resolved.bpmMax} bpm`;
     case 'power':
@@ -164,18 +164,29 @@ function applyTarget(step: StepBag, resolved: ResolvedTarget): void {
   }
 }
 
+/** Everything a step needs beyond itself: how to resolve targets, where to report. */
+type BuildContext = {
+  sport: EnduranceSport;
+  thresholds: AthleteThresholds;
+  mapped: EnduranceWorkoutMappedStep[];
+  warnings: Set<string>;
+};
+
 function buildStep(
   order: StepOrder,
   childStepId: number | null,
   step: EnduranceStep,
-  thresholds: AthleteThresholds,
-  collected: { mapped: EnduranceWorkoutMappedStep[]; warnings: Set<string> },
+  context: BuildContext,
 ): StepBag {
   const bag = baseExecutableStep(order.nextOrder(), STEP_TYPE_BY_KIND[step.kind], childStepId);
   applyDuration(bag, step.duration);
 
-  const { resolved, warnings } = resolveEnduranceTarget(step.target, thresholds);
-  warnings.forEach((warning) => collected.warnings.add(warning));
+  const { resolved, warnings } = resolveEnduranceTarget(
+    step.target,
+    context.thresholds,
+    context.sport,
+  );
+  warnings.forEach((warning) => context.warnings.add(warning));
   applyTarget(bag, resolved);
 
   const targetLabel = formatTargetLabel(resolved);
@@ -183,7 +194,7 @@ function buildStep(
   const parts = [KIND_LABEL_FR[step.kind], targetLabel, notes].filter(Boolean);
   bag.description = parts.join(' · ').slice(0, 512);
 
-  collected.mapped.push({
+  context.mapped.push({
     kind: step.kind,
     durationLabel: formatDurationLabel(step.duration),
     targetLabel,
@@ -205,20 +216,23 @@ export function buildEnduranceWorkoutPayload(
   const { prescription, thresholds } = input;
   const sportType = SPORT_BY_KEY[prescription.sport];
   const order = new StepOrder();
-  const collected = { mapped: [] as EnduranceWorkoutMappedStep[], warnings: new Set<string>() };
+  const context: BuildContext = {
+    sport: prescription.sport,
+    thresholds,
+    mapped: [],
+    warnings: new Set<string>(),
+  };
   const workoutSteps: StepBag[] = [];
 
   for (const block of prescription.blocks) {
     if (block.kind === 'step') {
-      workoutSteps.push(buildStep(order, null, block.step, thresholds, collected));
+      workoutSteps.push(buildStep(order, null, block.step, context));
       continue;
     }
 
     const childId = order.nextChildId();
     const groupOrder = order.nextOrder();
-    const children = block.steps.map((step) =>
-      buildStep(order, childId, step, thresholds, collected),
-    );
+    const children = block.steps.map((step) => buildStep(order, childId, step, context));
     workoutSteps.push({
       type: 'RepeatGroupDTO',
       stepOrder: groupOrder,
@@ -253,7 +267,7 @@ export function buildEnduranceWorkoutPayload(
   return {
     payload,
     stepCount: enduranceStepCount(prescription),
-    mapped: collected.mapped,
-    warnings: [...collected.warnings],
+    mapped: context.mapped,
+    warnings: [...context.warnings],
   };
 }
