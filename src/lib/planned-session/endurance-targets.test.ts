@@ -1,0 +1,158 @@
+import { describe, expect, it } from 'vitest';
+import {
+  defaultHrTargetForIntensity,
+  defaultTargetForIntensity,
+  formatPace,
+  formatPaceBand,
+  resolveEnduranceTarget,
+  type AthleteThresholds,
+} from '@/lib/planned-session/endurance-targets';
+
+/** Threshold pace 4:00/km — every expectation below is derived from it. */
+const THRESHOLDS: AthleteThresholds = {
+  runThresholdPaceSecPerKm: 240,
+  ftpW: 250,
+  lthr: 165,
+  maxHr: 190,
+};
+
+const NO_THRESHOLDS: AthleteThresholds = {
+  runThresholdPaceSecPerKm: null,
+  ftpW: null,
+  lthr: null,
+  maxHr: null,
+};
+
+describe('defaultTargetForIntensity', () => {
+  it('centres a quality band on the anchor with a ±2.5 % half-band', () => {
+    const { target } = defaultTargetForIntensity('RUN', 'THRESHOLD');
+    expect(target).toMatchObject({ metric: 'pace', pctMin: 97.5, pctMax: 102.5 });
+  });
+
+  it('caps easy sessions instead of closing the band', () => {
+    const { target } = defaultTargetForIntensity('RUN', 'ENDURANCE');
+    expect(target.pctMax).toBe(82.5);
+    // Floor is wide enough that a slower run never triggers an alert.
+    expect(target.pctMin).toBe(40);
+  });
+
+  it('falls back to threshold for RACE and says so', () => {
+    const { target, warnings } = defaultTargetForIntensity('RUN', 'RACE');
+    expect(target).toMatchObject({ pctMin: 97.5, pctMax: 102.5 });
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain('RACE');
+  });
+
+  it('emits no target for sports not wired yet', () => {
+    expect(defaultTargetForIntensity('BIKE', 'THRESHOLD').target).toEqual({ metric: 'none' });
+    expect(defaultTargetForIntensity('SWIM', 'THRESHOLD').target).toEqual({ metric: 'none' });
+  });
+});
+
+describe('resolveEnduranceTarget — pace', () => {
+  it('resolves a threshold band to 3:54–4:06 at a 4:00/km threshold', () => {
+    const { target } = defaultTargetForIntensity('RUN', 'THRESHOLD');
+    const { resolved } = resolveEnduranceTarget(target, THRESHOLDS);
+
+    expect(resolved).toMatchObject({ metric: 'pace', secPerKmFast: 234, secPerKmSlow: 246 });
+    expect(formatPaceBand(234, 246)).toBe('3:54–4:06/km');
+  });
+
+  it('keeps the speed range ascending, the order Garmin expects', () => {
+    const { target } = defaultTargetForIntensity('RUN', 'THRESHOLD');
+    const { resolved } = resolveEnduranceTarget(target, THRESHOLDS);
+    if (resolved.metric !== 'pace') throw new Error('expected a pace target');
+
+    expect(resolved.speedMsMin).toBeLessThan(resolved.speedMsMax);
+    // Speed comes from the unrounded pace (240 / 0.975 = 246.15 s/km), not the
+    // rounded value shown to the athlete — the watch gets the precise band.
+    expect(resolved.speedMsMin).toBeCloseTo(4.0625, 4);
+    expect(resolved.speedMsMax).toBeCloseTo(4.2708, 4);
+  });
+
+  it('never lets an easy floor alert on a slow run', () => {
+    const { target } = defaultTargetForIntensity('RUN', 'RECOVERY');
+    const { resolved } = resolveEnduranceTarget(target, THRESHOLDS);
+    if (resolved.metric !== 'pace') throw new Error('expected a pace target');
+
+    expect(resolved.secPerKmFast).toBe(340); // 5:40/km cap
+    expect(resolved.secPerKmSlow).toBe(600); // 10:00/km floor, unreachable in practice
+  });
+
+  it('lets an absolute override win over the relative band', () => {
+    const { resolved } = resolveEnduranceTarget(
+      { metric: 'pace', pctMin: 97.5, pctMax: 102.5, absEasy: 250, absHard: 240 },
+      THRESHOLDS,
+    );
+    expect(resolved).toMatchObject({ secPerKmFast: 240, secPerKmSlow: 250 });
+  });
+
+  it('corrects an override given the wrong way round', () => {
+    const { resolved } = resolveEnduranceTarget(
+      { metric: 'pace', absEasy: 240, absHard: 250 },
+      THRESHOLDS,
+    );
+    expect(resolved).toMatchObject({ secPerKmFast: 240, secPerKmSlow: 250 });
+  });
+
+  it('drops the target and warns when no threshold pace is known', () => {
+    const { target } = defaultTargetForIntensity('RUN', 'THRESHOLD');
+    const { resolved, warnings } = resolveEnduranceTarget(target, NO_THRESHOLDS);
+
+    expect(resolved).toEqual({ metric: 'none' });
+    expect(warnings[0]).toContain('Allure seuil inconnue');
+  });
+});
+
+describe('resolveEnduranceTarget — heart rate', () => {
+  it('anchors on LTHR by default', () => {
+    const { resolved } = resolveEnduranceTarget(
+      defaultHrTargetForIntensity('THRESHOLD'),
+      THRESHOLDS,
+    );
+    expect(resolved).toEqual({ metric: 'hr', bpmMin: 161, bpmMax: 169 });
+  });
+
+  it('falls back to max HR when LTHR is missing', () => {
+    const { resolved } = resolveEnduranceTarget(
+      { metric: 'hr', hrRef: 'auto', pctMin: 90, pctMax: 100 },
+      { ...NO_THRESHOLDS, maxHr: 190 },
+    );
+    expect(resolved).toEqual({ metric: 'hr', bpmMin: 171, bpmMax: 190 });
+  });
+
+  it('warns when neither reference exists', () => {
+    const { resolved, warnings } = resolveEnduranceTarget(
+      { metric: 'hr', pctMin: 90, pctMax: 100 },
+      NO_THRESHOLDS,
+    );
+    expect(resolved).toEqual({ metric: 'none' });
+    expect(warnings[0]).toContain('FC seuil');
+  });
+});
+
+describe('resolveEnduranceTarget — power', () => {
+  it('resolves a band as a percentage of FTP', () => {
+    const { resolved } = resolveEnduranceTarget(
+      { metric: 'power', pctMin: 95, pctMax: 105 },
+      THRESHOLDS,
+    );
+    expect(resolved).toEqual({ metric: 'power', wattsMin: 238, wattsMax: 263 });
+  });
+
+  it('warns when FTP is missing', () => {
+    const { resolved, warnings } = resolveEnduranceTarget(
+      { metric: 'power', pctMin: 95, pctMax: 105 },
+      NO_THRESHOLDS,
+    );
+    expect(resolved).toEqual({ metric: 'none' });
+    expect(warnings[0]).toContain('FTP inconnue');
+  });
+});
+
+describe('formatPace', () => {
+  it('pads seconds', () => {
+    expect(formatPace(245)).toBe('4:05');
+    expect(formatPace(240)).toBe('4:00');
+  });
+});

@@ -1,6 +1,7 @@
 import { ActivityType, SessionIntensity } from '@prisma/client';
 import { z } from 'zod';
 import { isEquipmentItemId } from '@/lib/equipment/catalog';
+import { endurancePrescriptionSchema } from '@/lib/planned-session/endurance-prescription';
 import { strengthPrescriptionSchema } from '@/lib/planned-session/strength-prescription';
 
 const optionalNumber = z.coerce.number().optional().nullable();
@@ -41,6 +42,15 @@ const optionalStrengthPrescription = strengthPrescriptionSchema
     return v;
   });
 
+const optionalEndurancePrescription = endurancePrescriptionSchema
+  .nullable()
+  .optional()
+  .transform((v) => {
+    if (v == null) return null;
+    if (v.blocks.length === 0) return null;
+    return v;
+  });
+
 const optionalAccessories = z
   .array(z.string())
   .max(20)
@@ -59,6 +69,7 @@ const basePlannedSessionSchema = z.object({
   title: optionalString,
   description: optionalString,
   strengthPrescription: optionalStrengthPrescription,
+  endurancePrescription: optionalEndurancePrescription,
   accessories: optionalAccessories,
   durationMin: optionalNumber,
   load: optionalNumber,
@@ -100,6 +111,7 @@ export const createPlannedSessionSchema = basePlannedSessionSchema
   .transform((data) => ({
     ...data,
     strengthPrescription: data.type === ActivityType.STRENGTH ? data.strengthPrescription : null,
+    endurancePrescription: data.type === ActivityType.STRENGTH ? null : data.endurancePrescription,
   }));
 
 export const updatePlannedSessionSchema = basePlannedSessionSchema
@@ -124,10 +136,10 @@ export const updatePlannedSessionSchema = basePlannedSessionSchema
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: issue.message, path: [...issue.path] });
   })
   .transform((data) => {
-    if (data.type != null && data.type !== ActivityType.STRENGTH) {
-      return { ...data, strengthPrescription: null };
-    }
-    return data;
+    if (data.type == null) return data;
+    return data.type === ActivityType.STRENGTH
+      ? { ...data, endurancePrescription: null }
+      : { ...data, strengthPrescription: null };
   });
 
 export type CreatePlannedSessionInput = z.infer<typeof createPlannedSessionSchema>;
