@@ -5,54 +5,20 @@ import type {
 import { canonicalizeGarminExerciseRef } from '@/lib/integrations/garmin-exercise-map';
 import { getGarminTaxonomyEntry } from '@/lib/integrations/garmin-exercise-taxonomy';
 import type { StrengthRestMode } from '@/lib/planned-session/strength-prescription';
-
-const SPORT_STRENGTH = {
-  sportTypeId: 5,
-  sportTypeKey: 'strength_training',
-  displayOrder: 5,
-} as const;
-
-const STEP_INTERVAL = { stepTypeId: 3, stepTypeKey: 'interval', displayOrder: 3 };
-const STEP_REST = { stepTypeId: 5, stepTypeKey: 'rest', displayOrder: 5 };
-const STEP_REPEAT = { stepTypeId: 6, stepTypeKey: 'repeat', displayOrder: 6 };
-
-const REPS_CONDITION = {
-  conditionTypeId: 10,
-  conditionTypeKey: 'reps',
-  displayOrder: 10,
-  displayable: true,
-};
-
-const TIME_CONDITION = {
-  conditionTypeId: 2,
-  conditionTypeKey: 'time',
-  displayOrder: 2,
-  displayable: true,
-};
-
-/** Open-ended rest — ends when athlete presses Lap on the watch. */
-const LAP_BUTTON_CONDITION = {
-  conditionTypeId: 1,
-  conditionTypeKey: 'lap.button',
-  displayOrder: 1,
-  displayable: true,
-};
-
-const ITERATIONS_CONDITION = {
-  conditionTypeId: 7,
-  conditionTypeKey: 'iterations',
-  displayOrder: 7,
-  displayable: false,
-};
-
-const NO_TARGET = {
-  workoutTargetTypeId: 1,
-  workoutTargetTypeKey: 'no.target',
-  displayOrder: 1,
-};
-
-const DEFAULT_STROKE = { strokeTypeId: 0, strokeTypeKey: null, displayOrder: 0 };
-const DEFAULT_EQUIPMENT = { equipmentTypeId: 0, equipmentTypeKey: null, displayOrder: 0 };
+import {
+  ITERATIONS_CONDITION,
+  LAP_BUTTON_CONDITION,
+  POUND_UNIT,
+  REPS_CONDITION,
+  SPORT_STRENGTH,
+  STEP_INTERVAL,
+  STEP_REPEAT,
+  STEP_REST,
+  StepOrder,
+  TIME_CONDITION,
+  baseExecutableStep,
+  type StepBag,
+} from '@/lib/integrations/garmin-workout-enums';
 
 /** Default step length for a timed movement with no explicit duration. */
 const DEFAULT_ISOMETRIC_SEC = 30;
@@ -60,12 +26,6 @@ const DEFAULT_ISOMETRIC_SEC = 30;
 const DEFAULT_MOBILITY_SEC = 45;
 /** Connect parent for stretches and soft-tissue work. */
 const MOBILITY_CATEGORY = 'WARM_UP';
-
-const POUND_UNIT = {
-  unitId: 9,
-  unitKey: 'pound',
-  factor: 453.59237,
-};
 
 export type StrengthWorkoutSetInput = {
   exercise: string;
@@ -107,58 +67,8 @@ export type BuildStrengthWorkoutResult = {
   skipped: Array<{ exercise: string; reason: string }>;
 };
 
-type StepBag = Record<string, unknown>;
-
-class StepOrder {
-  private order = 0;
-  private childId = 0;
-
-  nextOrder(): number {
-    this.order += 1;
-    return this.order;
-  }
-
-  nextChildId(): number {
-    this.childId += 1;
-    return this.childId;
-  }
-}
-
 function kgToLbs(kg: number): number {
   return Math.round(kg * 2.2046226218 * 10) / 10;
-}
-
-function baseExecutable(
-  stepOrder: number,
-  stepType: typeof STEP_INTERVAL | typeof STEP_REST,
-  childStepId: number | null,
-): StepBag {
-  return {
-    type: 'ExecutableStepDTO',
-    stepOrder,
-    stepType,
-    childStepId,
-    description: null,
-    targetType: NO_TARGET,
-    targetValueOne: null,
-    targetValueTwo: null,
-    targetValueUnit: null,
-    zoneNumber: null,
-    secondaryTargetType: null,
-    secondaryTargetValueOne: null,
-    secondaryTargetValueTwo: null,
-    secondaryTargetValueUnit: null,
-    secondaryZoneNumber: null,
-    endConditionZone: null,
-    preferredEndConditionUnit: null,
-    endConditionCompare: null,
-    strokeType: DEFAULT_STROKE,
-    equipmentType: DEFAULT_EQUIPMENT,
-    category: null,
-    exerciseName: null,
-    weightValue: null,
-    weightUnit: null,
-  };
 }
 
 function buildExerciseStep(
@@ -167,7 +77,7 @@ function buildExerciseStep(
   set: StrengthWorkoutSetInput,
   garmin: GarminExerciseRef,
 ): StepBag {
-  const step = baseExecutable(order.nextOrder(), STEP_INTERVAL, childStepId);
+  const step = baseExecutableStep(order.nextOrder(), STEP_INTERVAL, childStepId);
   step.category = garmin.category;
   step.exerciseName = garmin.exerciseName;
   const exerciseLabel = set.exercise?.trim() || '';
@@ -207,7 +117,7 @@ function buildRestStep(
   childStepId: number | null,
   set: StrengthWorkoutSetInput,
 ): StepBag {
-  const step = baseExecutable(order.nextOrder(), STEP_REST, childStepId);
+  const step = baseExecutableStep(order.nextOrder(), STEP_REST, childStepId);
   const mode = resolveRestMode(set);
   if (mode === 'time' && set.restSec != null && set.restSec > 0) {
     step.endCondition = TIME_CONDITION;

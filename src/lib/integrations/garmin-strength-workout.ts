@@ -1,4 +1,4 @@
-import { ActivityType, Prisma } from '@prisma/client';
+import { ActivityType } from '@prisma/client';
 import { format } from 'date-fns';
 import { ensureGarminExerciseLabelsFr } from '@/lib/integrations/garmin-exercise-labels';
 import {
@@ -10,21 +10,16 @@ import {
   type StrengthWorkoutMappedStep,
   type StrengthWorkoutSetInput,
 } from '@/lib/integrations/garmin-strength-workout-payload';
-import { currentTokens, type GarminTokens } from '@/lib/integrations/garmin';
-import { getGarminClient } from '@/lib/integrations/garmin-sync';
 import {
-  buildAlreadyPushedError,
-  type GarminPushBlockReason,
-  type GarminPushReceipt,
-} from '@/lib/integrations/garmin-workout-push-state';
+  assertNotAlreadyPushed,
+  createAndScheduleWorkout,
+} from '@/lib/integrations/garmin-workout-push';
 import {
   formatStrengthPrescriptionSummary,
   attachGarminRefsToPrescription,
   parseStrengthPrescription,
 } from '@/lib/planned-session/strength-prescription';
 import { prisma } from '@/lib/prisma';
-
-const ACCOUNT_ID = 'default';
 
 export type PushStrengthWorkoutResult = {
   workoutId: number | null;
@@ -39,60 +34,6 @@ export type PushStrengthWorkoutResult = {
   calendarActive?: boolean | null;
   pushedAt?: string | null;
 };
-
-export class GarminWorkoutAlreadyPushedError extends Error {
-  readonly status = 409;
-  readonly body: GarminPushBlockReason;
-
-  constructor(body: GarminPushBlockReason) {
-    super(body.message);
-    this.name = 'GarminWorkoutAlreadyPushedError';
-    this.body = body;
-  }
-}
-
-async function persistGarminTokens(tokens: GarminTokens): Promise<void> {
-  await prisma.garminAccount.update({
-    where: { id: ACCOUNT_ID },
-    data: {
-      oauth1Token: tokens.oauth1 as unknown as Prisma.InputJsonValue,
-      oauth2Token: tokens.oauth2 as unknown as Prisma.InputJsonValue,
-    },
-  });
-}
-
-async function workoutExistsOnConnect(
-  client: Awaited<ReturnType<typeof getGarminClient>>,
-  workoutId: string,
-): Promise<boolean | null> {
-  try {
-    await client.getWorkoutDetail({ workoutId });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function workoutActiveOnCalendar(
-  client: Awaited<ReturnType<typeof getGarminClient>>,
-  workoutId: string,
-  scheduledDate: string | null,
-): Promise<boolean | null> {
-  if (!scheduledDate || !/^\d{4}-\d{2}-\d{2}$/.test(scheduledDate)) return null;
-  const [y, m] = scheduledDate.split('-').map(Number);
-  try {
-    const calendar = await client.getMonthCalendarEvents(y, m - 1);
-    const idNum = Number(workoutId);
-    return calendar.calendarItems.some(
-      (item) =>
-        item.date === scheduledDate &&
-        item.workoutId != null &&
-        (String(item.workoutId) === workoutId || item.workoutId === idNum),
-    );
-  } catch {
-    return null;
-  }
-}
 
 async function uploadStrengthSets(options: {
   workoutName: string;
@@ -127,42 +68,24 @@ async function uploadStrengthSets(options: {
     throw new Error('Aucun exercice à envoyer');
   }
 
-  const client = await getGarminClient();
-
-  if (options.replaceWorkoutId) {
-    try {
-      await client.deleteWorkout({ workoutId: options.replaceWorkoutId });
-    } catch (error) {
-      console.warn('[Garmin] delete previous workout failed:', error);
-    }
-  }
-
-  const created = (await client.createWorkout(
-    built.payload as unknown as Parameters<typeof client.createWorkout>[0],
-  )) as { workoutId?: number };
-
-  const workoutId = created.workoutId ?? null;
-  let scheduledDate: string | null = null;
-
-  const shouldSchedule = options.schedule !== false;
-  if (shouldSchedule && workoutId != null) {
-    scheduledDate = options.scheduleDate?.trim() || format(new Date(), 'yyyy-MM-dd');
-    await client.scheduleWorkout({ workoutId: String(workoutId) }, scheduledDate);
-  }
-
-  await persistGarminTokens(currentTokens(client));
+  const created = await createAndScheduleWorkout({
+    payload: built.payload,
+    schedule: options.schedule,
+    scheduleDate: options.scheduleDate,
+    replaceWorkoutId: options.replaceWorkoutId,
+  });
 
   return {
-    workoutId,
+    workoutId: created.workoutId,
     workoutName: options.workoutName,
     mappedCount: built.mappedCount,
     mapped: built.mapped,
     skipped: built.skipped,
-    scheduledDate,
+    scheduledDate: created.scheduledDate,
     alreadyPushed: false,
-    calendarActive: scheduledDate != null,
-    workoutExists: workoutId != null,
-    pushedAt: new Date().toISOString(),
+    calendarActive: created.scheduledDate != null,
+    workoutExists: created.workoutId != null,
+    pushedAt: created.pushedAt,
   };
 }
 
@@ -250,30 +173,7 @@ export async function pushStrengthWorkoutFromPlannedSession(options: {
     throw new Error('Seules les séances de musculation peuvent être envoyées à la montre');
   }
 
-  if (session.garminWorkoutId && !options.force) {
-    const receipt: GarminPushReceipt = {
-      workoutId: session.garminWorkoutId,
-      scheduledDate: session.garminWorkoutScheduledDate,
-      pushedAt: (session.garminWorkoutPushedAt ?? new Date()).toISOString(),
-    };
-    let workoutExists: boolean | null = null;
-    let calendarActive: boolean | null = null;
-    try {
-      const client = await getGarminClient();
-      workoutExists = await workoutExistsOnConnect(client, session.garminWorkoutId);
-      calendarActive = await workoutActiveOnCalendar(
-        client,
-        session.garminWorkoutId,
-        session.garminWorkoutScheduledDate,
-      );
-      await persistGarminTokens(currentTokens(client));
-    } catch {
-      // Status probe is best-effort — still block duplicate create.
-    }
-    throw new GarminWorkoutAlreadyPushedError(
-      buildAlreadyPushedError({ receipt, workoutExists, calendarActive }),
-    );
-  }
+  if (!options.force) await assertNotAlreadyPushed(session);
 
   const prescriptionParsed = parseStrengthPrescription(session.strengthPrescription);
   const prescription = prescriptionParsed
