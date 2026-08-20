@@ -20,6 +20,7 @@
 | [ADR-014](./ADR-014-myfitnesspal-rolling-session.md)             | MyFitnessPal session kept alive by rolling next-auth's cookie forward   | Accepted |
 | [ADR-015](./ADR-015-strength-watch-fidelity-and-scoring.md)      | Strength sessions — full watch push, compliance scored without duration | Accepted |
 | [ADR-016](./ADR-016-endurance-prescription-relative-targets.md)  | Endurance prescriptions — relative targets resolved at watch push time  | Accepted |
+| [ADR-017](./ADR-017-endurance-prescription-authoring.md)         | Endurance prescriptions — authored by coach and athlete, prose derived  | Accepted |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 
