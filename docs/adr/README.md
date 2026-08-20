@@ -19,6 +19,7 @@
 | [ADR-013](./ADR-013-myfitnesspal-authenticated-api.md)           | MyFitnessPal integration via authenticated JSON API                     | Accepted |
 | [ADR-014](./ADR-014-myfitnesspal-rolling-session.md)             | MyFitnessPal session kept alive by rolling next-auth's cookie forward   | Accepted |
 | [ADR-015](./ADR-015-strength-watch-fidelity-and-scoring.md)      | Strength sessions — full watch push, compliance scored without duration | Accepted |
+| [ADR-016](./ADR-016-endurance-prescription-relative-targets.md)  | Endurance prescriptions — relative targets resolved at watch push time  | Accepted |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 
