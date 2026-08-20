@@ -1,4 +1,4 @@
-import { groupPlannedSessions } from '@/lib/planned-session/brick-sessions';
+import { groupPlannedSessions } from '@/lib/planned-session/brick/brick-sessions';
 import type { CalendarDay } from '@/lib/calendar';
 import type { ClientPlannedSession } from '@/lib/query/types';
 import { ActivityChip, BrickChip, GoogleEventChip, PlannedChip } from './calendar-chips';

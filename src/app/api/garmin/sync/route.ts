@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { onProviderSyncCompleted } from '@/lib/athlete-state/orchestrator';
-import { syncGarminActivities } from '@/lib/integrations/garmin-activity-sync';
-import { syncGarminHealth } from '@/lib/integrations/garmin-sync';
+import { syncGarminActivities } from '@/lib/integrations/garmin/garmin-activity-sync';
+import { syncGarminHealth } from '@/lib/integrations/garmin/garmin-sync';
 import { filterRecordChangesByActivities, updateRecordsForTypes } from '@/lib/training/records';
 
 export const maxDuration = 300;

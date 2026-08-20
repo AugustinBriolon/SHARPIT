@@ -1,9 +1,9 @@
 import { ActivityType } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { pushEnduranceWorkoutFromPlannedSession } from '@/lib/integrations/garmin-endurance-workout';
-import { pushStrengthWorkoutFromPlannedSession } from '@/lib/integrations/garmin-strength-workout';
-import { GarminWorkoutAlreadyPushedError } from '@/lib/integrations/garmin-workout-push';
+import { pushEnduranceWorkoutFromPlannedSession } from '@/lib/integrations/garmin/garmin-endurance-workout';
+import { pushStrengthWorkoutFromPlannedSession } from '@/lib/integrations/garmin/garmin-strength-workout';
+import { GarminWorkoutAlreadyPushedError } from '@/lib/integrations/garmin/garmin-workout-push';
 import { prisma } from '@/lib/prisma';
 
 const bodySchema = z.object({

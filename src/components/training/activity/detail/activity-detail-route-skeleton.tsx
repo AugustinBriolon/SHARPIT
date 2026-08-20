@@ -6,7 +6,7 @@ import { useActivities } from '@/hooks/use-data';
 import {
   resolveActivityDetailSkeletonLayout,
   type ActivityDetailSkeletonLayout,
-} from '@/lib/activity/activity-detail-skeleton-layout';
+} from '@/lib/activity/detail/activity-detail-skeleton-layout';
 
 /**
  * Route loading shell — picks map / strength / no-map from the activities

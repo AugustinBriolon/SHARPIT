@@ -1,5 +1,5 @@
 import type { BriefingDayContext } from '@/lib/briefing/briefing-context';
-import type { CoachContext } from '@/lib/coach/coach-context';
+import type { CoachContext } from '@/lib/coach/context/coach-context';
 
 const SPORT_PATTERNS: Array<{ key: string; patterns: RegExp[] }> = [
   { key: 'BIKE', patterns: [/\bvélo\b/i, /\bvelo\b/i, /\bcycl/i] },

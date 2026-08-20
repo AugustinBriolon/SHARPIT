@@ -138,18 +138,26 @@ src/core/                 ← frozen Core (models, inference, decision, observat
   inference/              ← recovery, fatigue, adaptation, reasoning, environment, …
   decision/, features/, observation/, digital-twin/, presentation/, …
 src/lib/
-  integrations/           ← Garmin, Strava, Renpho, Withings, Google sync
+  integrations/           ← provider folders: garmin/, strava/, withings/, renpho/,
+                            google/, myfitnesspal/; shared/ for cross-provider helpers
   engines/                ← lazy singletons wrapping core inference for the app
   query/                  ← TanStack Query keys, fetchers, optimistic helpers
   validators/             ← Zod schemas
   presentation/           ← ViewModel builders (pure; I/O stays in api/presentation)
   product-insight/        ← page insight projections over core/product-insight
   decision-memory/        ← coaching decision aggregate helpers
-  [domain folders]        ← today, effort, plan-gate, planned-session, travel-context, …
+  activity/               ← narrative/, list/, detail/, weather/, hike/, location/
+  planned-session/        ← accessories/, strength/, endurance/, linking/, forecast/,
+                            display/, brick/
+  coach/                  ← chat/, plan/, context/
+  plan-gate/rules/        ← existing nested template
+  [domain folders]        ← today, effort, travel-context, …
   [flat utils]            ← format, analytics, periodization, recovery helpers, …
 ```
 
-**Rule:** integration adapters → `integrations/`; engine singletons → `engines/`; React Query → `query/`; pure Twin/inference → `core/`. Do not add files to a subdirectory without that clear classification.
+**Rule:** integration adapters → `integrations/<provider>/`; engine singletons → `engines/`; React Query → `query/`; pure Twin/inference → `core/`. Do not add files to a subdirectory without that clear classification.
+
+**Lib nesting (mirror UI seams):** when a `src/lib/<domain>/` folder exceeds ~10–12 depth-1 files, nest by the same concepts as the matching `src/components/` surface so a change has vertical locality (UI + lib in parallel folders). Keep a thin root for entry modules that many call sites import (e.g. `activity-service`, `sessions`).
 
 ### 3.3 Route handler organization
 
@@ -172,13 +180,74 @@ Components live in `src/components/[domain]/`. A component belongs to the domain
 ```
 src/components/
   today/          ← Morning Experience + drill-downs (dashboard/, drill-down/, rich/)
-  sleep/, recovery/, effort/, adaptation/
-  training/, planning/, calendar/, coach/, coach-memory/
+  sleep/, recovery/, effort/, adaptation/, nutrition/
+  training/, planning/, calendar/, sessions/, coaching/, coach/, coach-memory/
   corps/, goals/, settings/, analytics/, physical-health/
-  ui/             ← reusable primitives (Button, Card, Skeleton, …)
+  ui/             ← reusable primitives at root; charts/, instruments/, map/ nested
   layout/         ← StickyHeader, Shell, Sidebar — structural chrome
   pwa/            ← install / offline / SW toasts
 ```
+
+**Domain folder nesting (locality rule):** keep the root of a domain folder thin. Soft cap ≈ 8–10 files at depth 1; when a folder grows past that, nest by concept rather than dumping siblings.
+
+| Shape                                                                             | Root (public interface)                                                           | Implementation                                       |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Physio drill-down page (`recovery`, `effort`, `sleep`, `adaptation`, `nutrition`) | `*-screen.tsx`, `*-page-view.tsx`, plus any types or widgets other domains import | `blocks/` — hero, why, stats, charts, section panels |
+| Activity surface (`training/activity`)                                            | nothing at root — import from named seams                                         | `list/`, `form/`, `insights/`, `detail/`             |
+| Planned session (`planning/session`)                                              | `session-defaults.ts` (shared constants)                                          | `edit/`, `read/`, `realize/`, `accessories/`         |
+| Interactive hub (`physical-health`, `goals`)                                      | screen / page-view / hub                                                          | `cards/` and `dialogs/`                              |
+| COACHING shared (`coaching/`)                                                     | widgets shared by sessions + calendar + planning                                  | e.g. `coach-menu.tsx`                                |
+| Shared widgets used outside the page                                              | stay at the domain root (they are part of the module interface)                   | —                                                    |
+
+**`ui/` nesting:** keep chrome primitives at the root (`button`, `dialog`, `input`, …). Nest specialized concerns:
+
+```
+src/components/ui/
+  button.tsx, dialog.tsx, …          ← primitives (stable import paths)
+  location-place-picker.tsx          ← multi-domain place picker
+  charts/                            ← chart-figure, chart-tooltip, responsive-chart-frame
+  instruments/                       ← chips, metric-cell, confidence-bars, activity-type-indicator, …
+  map/map.tsx                        ← deep map module
+```
+
+Example:
+
+```
+src/components/effort/
+  effort-screen.tsx
+  effort-page-view.tsx
+  blocks/
+    effort-hero.tsx
+    effort-why-block.tsx
+    …
+
+src/components/nutrition/
+  nutrition-screen.tsx
+  nutrition-page-view.tsx
+  nutrition-hub.tsx
+  nutrition-macro-display.tsx   ← imported by Today; public interface
+  nutrition-goals-panel.tsx     ← public interface
+  blocks/
+    nutrition-hero.tsx
+    …
+
+src/components/training/activity/
+  list/activity-list.tsx
+  form/activity-form.tsx
+  insights/…                    ← charts, map, narrative, triathlon
+  detail/…                      ← header, hero, meta, hike overnight
+
+src/components/planning/session/
+  session-defaults.ts           ← EMPTY_GOALS (public)
+  edit/planned-session-dialog.tsx
+  read/planned-session-read-view.tsx
+  realize/session-realization.tsx
+  accessories/…
+```
+
+Cross-domain primitives (used by more than two domains) live in `ui/` — e.g. `activity-type-indicator`.
+
+Do not introduce a parallel name for `blocks/` (no `sections/`, `parts/`, …). Prefer one vocabulary across physio pages. Tests stay colocated with the file they verify (`kebab-case.test.ts`), including under `blocks/` / `cards/` / `dialogs/` / concept folders.
 
 ---
 

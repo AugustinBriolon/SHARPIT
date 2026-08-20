@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/toast';
 import { activityTypeLabels } from '@/lib/format';
-import { sessionScoreColor } from '@/lib/planned-session/session-analysis-display';
+import { sessionScoreColor } from '@/lib/planned-session/display/session-analysis-display';
 import { cn } from '@/lib/utils';
 import { useAnalyzeBrick, useBrickAnalysis, usePlannedSessions } from '@/hooks/use-data';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';

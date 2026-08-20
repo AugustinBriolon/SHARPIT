@@ -4,7 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   LocationPlacePicker,
   type LocationPlaceValue,
-} from '@/components/planning/location-place-picker';
+} from '@/components/ui/location-place-picker';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {

@@ -21,7 +21,7 @@ import {
 import { buildWeeklyDeltaPresentation, resolveMetricValueTone } from '@/lib/health/health-status';
 import { buildBodyPageInsights } from '@/lib/product-insight/body-page-insights';
 import { getAthleteProfile, getBodyCompositionMeasurements } from '@/lib/queries';
-import { parseWithingsEcgStats } from '@/lib/integrations/withings-ecg-display';
+import { parseWithingsEcgStats } from '@/lib/integrations/withings/withings-ecg-display';
 
 const TREND_WINDOWS = [
   { id: '14d', label: '14 j', days: 14 },

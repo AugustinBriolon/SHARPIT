@@ -7,7 +7,7 @@ vi.mock('@/lib/queries', () => ({
   getPlannedSessions: vi.fn(),
 }));
 
-vi.mock('@/lib/integrations/google-sync', () => ({
+vi.mock('@/lib/integrations/google/google-sync', () => ({
   pushSessionToGoogle: vi.fn().mockResolvedValue(undefined),
 }));
 

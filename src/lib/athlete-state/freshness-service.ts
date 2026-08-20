@@ -16,7 +16,7 @@ import {
   isGarminAccountConnected,
   isOAuthAccountConnected,
   isRenphoAccountConnected,
-} from '@/lib/integrations/connection-status';
+} from '@/lib/integrations/shared/connection-status';
 
 const ATHLETE_ID = 'default';
 

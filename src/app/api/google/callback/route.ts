@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { emailFromIdToken, exchangeCodeForToken } from '@/lib/integrations/google';
+import { emailFromIdToken, exchangeCodeForToken } from '@/lib/integrations/google/google';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {

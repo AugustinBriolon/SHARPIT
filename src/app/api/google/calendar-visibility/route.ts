@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getGoogleAccount, setHiddenCalendars } from '@/lib/integrations/google-sync';
+import { getGoogleAccount, setHiddenCalendars } from '@/lib/integrations/google/google-sync';
 
 const schema = z.object({
   hiddenCalendarIds: z.array(z.string()),

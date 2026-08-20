@@ -1,15 +1,15 @@
 'use client';
 
 import { selectUpcomingPlannedPreview } from '@/lib/planned-session/planned-session-dates';
-import { resolvePlannedSessionDisplay } from '@/lib/planned-session/planned-session-display';
-import { forecastBadgeFromContext } from '@/lib/planned-session/forecast-badge';
+import { resolvePlannedSessionDisplay } from '@/lib/planned-session/display/planned-session-display';
+import { forecastBadgeFromContext } from '@/lib/planned-session/forecast/forecast-badge';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import type { ClientPlannedSession } from '@/lib/query/types';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   InstrumentListChip,
   type InstrumentListChipMeta,
-} from '@/components/ui/instrument-list-chip';
+} from '@/components/ui/instruments/instrument-list-chip';
 import { useAppModal } from '@/providers/app-modal-provider';
 import { cn } from '@/lib/utils';
 

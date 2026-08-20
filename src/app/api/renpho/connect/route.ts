@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { connectRenpho, syncRenphoHealth } from '@/lib/integrations/renpho-sync';
+import { connectRenpho, syncRenphoHealth } from '@/lib/integrations/renpho/renpho-sync';
 
 const schema = z.object({
   email: z.string().email(),

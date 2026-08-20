@@ -4,8 +4,11 @@ import Link from 'next/link';
 import { CalendarClock } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
-import { InstrumentListChip, splitInstrumentMeta } from '@/components/ui/instrument-list-chip';
-import type { InstrumentListChipMeta } from '@/components/ui/instrument-list-chip';
+import {
+  InstrumentListChip,
+  splitInstrumentMeta,
+} from '@/components/ui/instruments/instrument-list-chip';
+import type { InstrumentListChipMeta } from '@/components/ui/instruments/instrument-list-chip';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { MorningOrientationActions } from '@/components/today/rich/morning-orientation-actions';

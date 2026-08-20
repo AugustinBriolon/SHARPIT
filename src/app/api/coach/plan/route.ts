@@ -2,14 +2,14 @@ import { addDays, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
-import { buildCoachContext, formatCoachContext } from '@/lib/coach/coach-context';
+import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
 import {
   COACH_PROGRESS_HEADERS,
   encodeCoachProgressEvent,
   type CoachProgressEvent,
-} from '@/lib/coach/coach-progress-stream';
+} from '@/lib/coach/chat/coach-progress-stream';
 import { runStructuredCoachStream } from '@/lib/coach/stream-structured-generation';
-import { buildBusySummary } from '@/lib/coach/calendar-availability';
+import { buildBusySummary } from '@/lib/coach/plan/calendar-availability';
 import { getGoalById } from '@/lib/queries';
 import { coachPlanRequestSchema, coachPlanSchema, type CoachPlan } from '@/lib/validators/coach';
 import { buildGateContext } from '@/lib/plan-gate/build-context';
@@ -18,7 +18,7 @@ import type { GateProposal } from '@/lib/plan-gate/types';
 import { computeTrainingDayId } from '@/lib/training/training-day';
 import { buildDecisionSnapshotContext } from '@/lib/decision-memory/build-snapshot-context';
 import { createCoachingDecision } from '@/lib/decision-memory/repository';
-import { formatStrengthSessionRules } from '@/lib/planned-session/strength-session-template';
+import { formatStrengthSessionRules } from '@/lib/planned-session/strength/strength-session-template';
 import {
   formatTravelConstraintPromptRule,
   resolvePlanTargetUnderTravel,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCalendarEvents, getGoogleAccount } from '@/lib/integrations/google-sync';
+import { getCalendarEvents, getGoogleAccount } from '@/lib/integrations/google/google-sync';
 
 export async function GET(request: NextRequest) {
   // Read search params before try so Cache Components prerender interrupts propagate.

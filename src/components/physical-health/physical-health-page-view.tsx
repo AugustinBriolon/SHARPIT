@@ -18,8 +18,8 @@ import { usePhysicalNotes } from '@/hooks/use-physical';
 import { corpsToneFromPhysicalSeverity } from '@/lib/health/health-status';
 import type { CorpsTone } from '@/lib/ui/metric-tone';
 import type { ClientPhysicalNote } from '@/lib/query/types';
-import { PhysicalHealthConditionCardView } from './condition-card';
-import { PhysicalNoteDialog } from './physical-note-dialog';
+import { PhysicalHealthConditionCardView } from './cards/condition-card';
+import { PhysicalNoteDialog } from './dialogs/physical-note-dialog';
 
 type DialogState = { mode: 'create' } | { mode: 'edit'; note: ClientPhysicalNote } | null;
 

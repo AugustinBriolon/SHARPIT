@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { activityWeatherWindow } from '@/lib/activity/activity-weather-window';
+import { activityWeatherWindow } from '@/lib/activity/weather/activity-weather-window';
 import {
   extractActivityWeatherSnapshot,
   formatActivityWeatherNarrative,
   serializeActivityWeather,
-} from '@/lib/activity/activity-weather';
-import { fetchForecastPredictions } from '@/lib/planned-session/forecast-fetch';
+} from '@/lib/activity/weather/activity-weather';
+import { fetchForecastPredictions } from '@/lib/planned-session/forecast/forecast-fetch';
 import { computeTrainingDayId } from '@/lib/training/training-day';
 
 const schema = z.object({

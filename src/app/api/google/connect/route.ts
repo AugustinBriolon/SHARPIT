@@ -5,7 +5,7 @@ import {
   buildAuthorizeUrl,
   getGoogleRedirectUri,
   isGoogleConfigured,
-} from '@/lib/integrations/google';
+} from '@/lib/integrations/google/google';
 
 const OAUTH_COOKIE_OPTS = {
   httpOnly: true,

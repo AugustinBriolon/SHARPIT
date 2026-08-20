@@ -1,6 +1,6 @@
 'use client';
 
-import { MetricCell } from '@/components/ui/metric-cell';
+import { MetricCell } from '@/components/ui/instruments/metric-cell';
 import type { CorpsTone } from '@/lib/ui/metric-tone';
 import type { CompositionMetricId } from '@/lib/health/composition-metric-guides';
 

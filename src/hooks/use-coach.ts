@@ -14,7 +14,7 @@ import {
   type ClientWeeklyReview,
 } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
-import { consumeCoachProgressStream } from '@/lib/coach/coach-progress-stream';
+import { consumeCoachProgressStream } from '@/lib/coach/chat/coach-progress-stream';
 import type { CoachMemoryResponse } from '@/hooks/use-coach-memory';
 import type { GateResult } from '@/lib/plan-gate/types';
 

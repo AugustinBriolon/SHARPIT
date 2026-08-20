@@ -42,7 +42,8 @@ async function runBackgroundTasks(
   const dayId = trainingDayId ?? trainingDayIdNow();
 
   try {
-    const { enrichTodayActivitiesContext } = await import('@/lib/activity/enrich-observed-context');
+    const { enrichTodayActivitiesContext } =
+      await import('@/lib/activity/detail/enrich-observed-context');
     await enrichTodayActivitiesContext(prisma);
   } catch (error) {
     console.error('[athlete-state/background/enrich-today]', error);
@@ -51,7 +52,7 @@ async function runBackgroundTasks(
   if (plannedSessionIdsToAnalyze && plannedSessionIdsToAnalyze.length > 0) {
     try {
       const { analyzeLinkedPlannedSessions } =
-        await import('@/lib/planned-session/session-linking');
+        await import('@/lib/planned-session/linking/session-linking');
       await analyzeLinkedPlannedSessions(plannedSessionIdsToAnalyze);
     } catch (error) {
       console.error('[athlete-state/background/compliance-analyze]', error);
@@ -86,7 +87,8 @@ async function runBackgroundTasks(
   }
 
   if (activityIds.length > 0 && isCoachConfigured()) {
-    const { runActivityNarrativeForIds } = await import('@/lib/activity/activity-narrative');
+    const { runActivityNarrativeForIds } =
+      await import('@/lib/activity/narrative/activity-narrative');
     await runActivityNarrativeForIds(activityIds);
   }
 

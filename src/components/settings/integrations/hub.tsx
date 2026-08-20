@@ -42,7 +42,7 @@ import {
   runStravaSync,
   runWithingsSync,
   type IntegrationId,
-} from '@/lib/integrations/client-sync';
+} from '@/lib/integrations/shared/client-sync';
 import { invalidateAfterProviderSync } from '@/lib/query/invalidate-after-provider-sync';
 import { cn } from '@/lib/utils';
 

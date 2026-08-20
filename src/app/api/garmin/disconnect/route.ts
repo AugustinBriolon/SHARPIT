@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { disconnectGarmin } from '@/lib/integrations/garmin-sync';
+import { disconnectGarmin } from '@/lib/integrations/garmin/garmin-sync';
 
 export async function POST() {
   try {

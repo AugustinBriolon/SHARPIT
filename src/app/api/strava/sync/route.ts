@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { onProviderSyncCompleted } from '@/lib/athlete-state/orchestrator';
 import { filterRecordChangesByActivities, updateRecordsForTypes } from '@/lib/training/records';
-import { syncStravaActivities } from '@/lib/integrations/strava-sync';
+import { syncStravaActivities } from '@/lib/integrations/strava/strava-sync';
 
 export async function POST() {
   try {

@@ -19,11 +19,11 @@ import {
   type PlannedSessionCacheSeed,
 } from '@/lib/query/seed-planned-session-cache';
 import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-compare';
-import { EMPTY_GOALS } from '@/components/planning/session/planned-session-dialog-helpers';
+import { EMPTY_GOALS } from '@/components/planning/session/session-defaults';
 
 const PlannedSessionDialog = dynamic(
   () =>
-    import('@/components/planning/session/planned-session-dialog').then(
+    import('@/components/planning/session/edit/planned-session-dialog').then(
       (mod) => mod.PlannedSessionDialog,
     ),
   { ssr: false },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { BriefingDayContext } from '@/lib/briefing/briefing-context';
-import type { CoachContext } from '@/lib/coach/coach-context';
+import type { CoachContext } from '@/lib/coach/context/coach-context';
 import {
   buildDeterministicBriefingFallback,
   validateBriefingContent,

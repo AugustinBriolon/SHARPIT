@@ -15,7 +15,7 @@ import {
   buildCoachContext,
   formatCoachContext,
   invalidateCoachContext,
-} from '@/lib/coach/coach-context';
+} from '@/lib/coach/context/coach-context';
 import { prisma } from '@/lib/prisma';
 import { getActivities, getPlannedSessions } from '@/lib/queries';
 import { startOfDay } from 'date-fns';

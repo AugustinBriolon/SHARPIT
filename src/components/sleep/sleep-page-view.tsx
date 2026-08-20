@@ -1,10 +1,10 @@
 'use client';
 
-import { SleepCoachTonight } from '@/components/sleep/sleep-coach-tonight';
-import { SleepHero } from '@/components/sleep/sleep-hero';
-import { SleepPhasesSection } from '@/components/sleep/sleep-phases-section';
-import { SleepStatsStrip } from '@/components/sleep/sleep-stats-strip';
-import { SleepWhyBlock } from '@/components/sleep/sleep-why-block';
+import { SleepCoachTonight } from '@/components/sleep/blocks/sleep-coach-tonight';
+import { SleepHero } from '@/components/sleep/blocks/sleep-hero';
+import { SleepPhasesSection } from '@/components/sleep/blocks/sleep-phases-section';
+import { SleepStatsStrip } from '@/components/sleep/blocks/sleep-stats-strip';
+import { SleepWhyBlock } from '@/components/sleep/blocks/sleep-why-block';
 import type { SleepPageViewProps } from '@/components/sleep/types';
 import { MetricDrillDownPage } from '@/components/today/drill-down/metric-drill-down-page';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,7 +12,7 @@ import { formatClock, formatDuration } from '@/lib/sleep/sleep';
 import dynamic from 'next/dynamic';
 
 const SleepTrendSection = dynamic(
-  () => import('@/components/sleep/sleep-trend-chart').then((mod) => mod.SleepTrendSection),
+  () => import('@/components/sleep/blocks/sleep-trend-chart').then((mod) => mod.SleepTrendSection),
   { ssr: false, loading: () => <Skeleton className="h-[160px] w-full" /> },
 );
 

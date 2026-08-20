@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ClinicalAnnotation } from '@/components/ui/clinical-annotation';
+import { ClinicalAnnotation } from '@/components/ui/instruments/clinical-annotation';
 import { useCoachContext } from '@/hooks/use-coach';
 import { useAthleteProfile } from '@/hooks/use-data';
 import { getProfileCompleteness } from '@/lib/profile/profile-completeness';

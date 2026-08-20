@@ -2,7 +2,7 @@ import {
   resolveConfidenceHrefFromDecision,
   resolveLimitingFactorHrefFromDecision,
 } from '@/lib/decision/projection';
-import { plannedSessionHref } from '@/lib/planned-session/session-analysis-display';
+import { plannedSessionHref } from '@/lib/planned-session/display/session-analysis-display';
 
 /**
  * Canonical drill-down routes for Digital Twin dimensions on Today.

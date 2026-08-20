@@ -1,7 +1,7 @@
 import { randomBytes } from 'crypto';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { buildAuthorizeUrl, isStravaConfigured } from '@/lib/integrations/strava';
+import { buildAuthorizeUrl, isStravaConfigured } from '@/lib/integrations/strava/strava';
 
 export async function GET(request: NextRequest) {
   if (!isStravaConfigured()) {

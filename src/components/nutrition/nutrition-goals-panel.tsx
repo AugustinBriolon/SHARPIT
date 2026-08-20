@@ -4,7 +4,7 @@ import type {
   NutritionFuelDensity,
   NutritionGoalsProgress,
 } from '@/core/presentation/nutrition-view-model';
-import { MacroProgressBar } from '@/components/nutrition/nutrition-macro-progress-bar';
+import { MacroProgressBar } from '@/components/nutrition/blocks/nutrition-macro-progress-bar';
 import { CALORIE_RING } from '@/lib/nutrition/macro-colors';
 import { formatFuelDensityReference } from '@/lib/nutrition/fuel-density-display';
 import { cn } from '@/lib/utils';

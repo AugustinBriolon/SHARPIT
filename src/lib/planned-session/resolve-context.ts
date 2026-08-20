@@ -40,10 +40,10 @@ import { geocodePlaceLabel } from '@/lib/geocoding/nominatim';
 import { resolveHomeLocation } from '@/lib/geocoding/home-location';
 import { resolveAthleteGeoLocation } from '@/lib/environment/athlete-location';
 import { getActiveTravelContext } from '@/lib/travel-context/service';
-import { extractSessionWeatherSignals } from '@/lib/planned-session/weather-signals';
+import { extractSessionWeatherSignals } from '@/lib/planned-session/forecast/weather-signals';
 import { prisma } from '@/lib/prisma';
 import { computeTrainingDayId } from '@/lib/training/training-day';
-import { fetchForecastPredictions } from '@/lib/planned-session/forecast-fetch';
+import { fetchForecastPredictions } from '@/lib/planned-session/forecast/forecast-fetch';
 
 const ATHLETE_ID = 'default';
 const CONTEXT_STALE_MS = 3 * 60 * 60 * 1000;

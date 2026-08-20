@@ -1,8 +1,8 @@
 import { ActivityType, SessionIntensity } from '@prisma/client';
 import { z } from 'zod';
 import { isEquipmentItemId } from '@/lib/equipment/catalog';
-import { endurancePrescriptionSchema } from '@/lib/planned-session/endurance-prescription';
-import { strengthPrescriptionSchema } from '@/lib/planned-session/strength-prescription';
+import { endurancePrescriptionSchema } from '@/lib/planned-session/endurance/endurance-prescription';
+import { strengthPrescriptionSchema } from '@/lib/planned-session/strength/strength-prescription';
 
 const optionalNumber = z.coerce.number().optional().nullable();
 const optionalString = z
@@ -79,6 +79,24 @@ const basePlannedSessionSchema = z.object({
   ...contextualFields,
 });
 
+/**
+ * The prescription carries its own sport and the payload sent to Garmin is built
+ * from it, so a mismatch would put a run workout on a ride. Reject it at the door.
+ */
+function requireMatchingEnduranceSport(data: {
+  type: ActivityType;
+  endurancePrescription?: { sport: string } | null;
+}) {
+  const sport = data.endurancePrescription?.sport;
+  // Strength sessions drop the endurance prescription in the transform below.
+  if (!sport || data.type === ActivityType.STRENGTH) return null;
+  if (sport === data.type) return null;
+  return {
+    message: `Le déroulé structuré est en ${sport} mais la séance est en ${data.type}.`,
+    path: ['endurancePrescription', 'sport'] as const,
+  };
+}
+
 function requireSessionDetails(data: {
   type: ActivityType;
   description?: string | null;
@@ -104,9 +122,10 @@ function requireSessionDetails(data: {
 
 export const createPlannedSessionSchema = basePlannedSessionSchema
   .superRefine((data, ctx) => {
-    const issue = requireSessionDetails(data);
-    if (!issue) return;
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: issue.message, path: [...issue.path] });
+    for (const issue of [requireSessionDetails(data), requireMatchingEnduranceSport(data)]) {
+      if (!issue) continue;
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: issue.message, path: [...issue.path] });
+    }
   })
   .transform((data) => ({
     ...data,
@@ -127,13 +146,18 @@ export const updatePlannedSessionSchema = basePlannedSessionSchema
     }
     const { type } = data;
     if (type == null) return;
-    const issue = requireSessionDetails({
-      type,
-      description: data.description,
-      strengthPrescription: data.strengthPrescription,
-    });
-    if (!issue) return;
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: issue.message, path: [...issue.path] });
+    const issues = [
+      requireSessionDetails({
+        type,
+        description: data.description,
+        strengthPrescription: data.strengthPrescription,
+      }),
+      requireMatchingEnduranceSport({ type, endurancePrescription: data.endurancePrescription }),
+    ];
+    for (const issue of issues) {
+      if (!issue) continue;
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: issue.message, path: [...issue.path] });
+    }
   })
   .transform((data) => {
     if (data.type == null) return data;

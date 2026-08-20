@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { TodayDateSelector } from '@/components/today/drill-down/date-selector';
-import { ConfidenceBars, confidenceBarsFromPct } from '@/components/ui/confidence-bars';
+import { ConfidenceBars, confidenceBarsFromPct } from '@/components/ui/instruments/confidence-bars';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';

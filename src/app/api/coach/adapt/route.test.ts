@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach, beforeAll } from 'vitest';
 import { decisionState, physicalHealthData } from '@/lib/plan-gate/test-fixtures';
-import { consumeCoachProgressStream } from '@/lib/coach/coach-progress-stream';
+import { consumeCoachProgressStream } from '@/lib/coach/chat/coach-progress-stream';
 import type { AdaptPayload } from './route';
 
 vi.mock('@/lib/ai', () => ({
@@ -13,12 +13,12 @@ vi.mock('@/lib/coach/stream-structured-generation', () => ({
   runStructuredCoachStream: vi.fn(),
 }));
 
-vi.mock('@/lib/coach/coach-context', () => ({
+vi.mock('@/lib/coach/context/coach-context', () => ({
   buildCoachContext: vi.fn().mockResolvedValue({}),
   formatCoachContext: () => 'mock coach context',
 }));
 
-vi.mock('@/lib/integrations/google-sync', () => ({
+vi.mock('@/lib/integrations/google/google-sync', () => ({
   getUpcomingBusy: vi.fn().mockResolvedValue([]),
   getGoogleAccount: vi.fn().mockResolvedValue(null),
 }));

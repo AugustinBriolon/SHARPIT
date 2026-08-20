@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
-import { enrichActivityObservedContext } from '@/lib/activity/enrich-observed-context';
-import { analyzePlannedSession } from '@/lib/coach/coach-analysis';
+import { enrichActivityObservedContext } from '@/lib/activity/detail/enrich-observed-context';
+import { analyzePlannedSession } from '@/lib/coach/plan/coach-analysis';
 import { prisma } from '@/lib/prisma';
 import {
   getPlannedSessionById,

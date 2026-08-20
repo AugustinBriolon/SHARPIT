@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getPlannedSessionById } from '@/lib/queries';
 import { buildPlannedSessionViewModel } from '@/lib/presentation/planned-session';
 import { resolvePlannedSessionContext } from '@/lib/planned-session/resolve-context';
-import { buildPlannedSessionCompletionComparison } from '@/lib/planned-session/completion-comparison';
+import { buildPlannedSessionCompletionComparison } from '@/lib/planned-session/display/completion-comparison';
 import { resolveActivityEnvironmentPresentation } from '@/lib/environment/activity-environment';
 
 type RouteProps = { params: Promise<{ id: string }> };

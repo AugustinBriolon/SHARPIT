@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { MfpSessionExpiredError } from '@/lib/integrations/myfitnesspal';
-import { connectMfp, syncMfpNutrition } from '@/lib/integrations/myfitnesspal-sync';
+import { MfpSessionExpiredError } from '@/lib/integrations/myfitnesspal/myfitnesspal';
+import { connectMfp, syncMfpNutrition } from '@/lib/integrations/myfitnesspal/myfitnesspal-sync';
 
 const schema = z.object({
   sessionToken: z.string().min(1),

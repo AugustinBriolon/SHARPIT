@@ -1,9 +1,9 @@
-import { ActivityHeroStats } from '@/components/training/activity/activity-hero-stats';
-import { TriathlonHeroCards } from '@/components/training/activity/triathlon-hero-cards';
+import { ActivityHeroStats } from './activity-hero-stats';
+import { TriathlonHeroCards } from './triathlon-hero-cards';
 import {
   InstrumentMetricChip,
   InstrumentMetricGridShell,
-} from '@/components/ui/instrument-metric-chip';
+} from '@/components/ui/instruments/instrument-metric-chip';
 import type { MultisportLeg } from '@/lib/multisport';
 import { toHeroActivity } from './activity-detail-helpers';
 import type { ActivityDetail, ActivityStat } from './types';

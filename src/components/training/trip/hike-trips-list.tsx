@@ -3,10 +3,10 @@
 import { MapPinned } from 'lucide-react';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
-import { InstrumentListChip } from '@/components/ui/instrument-list-chip';
+import { InstrumentListChip } from '@/components/ui/instruments/instrument-list-chip';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { useHikeTrips } from '@/hooks/use-data';
-import { buildHikeTripListMeta } from '@/lib/activity/hike-trip-summary';
+import { buildHikeTripListMeta } from '@/lib/activity/hike/hike-trip-summary';
 
 function TripsPageHeader() {
   return (

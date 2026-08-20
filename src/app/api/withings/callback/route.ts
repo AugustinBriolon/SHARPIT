@@ -1,8 +1,8 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { exchangeWithingsCode, getWithingsRedirectUri } from '@/lib/integrations/withings';
-import { syncWithingsHealth } from '@/lib/integrations/withings-sync';
+import { exchangeWithingsCode, getWithingsRedirectUri } from '@/lib/integrations/withings/withings';
+import { syncWithingsHealth } from '@/lib/integrations/withings/withings-sync';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);

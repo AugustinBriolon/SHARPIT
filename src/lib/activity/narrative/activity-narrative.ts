@@ -1,0 +1,130 @@
+import { ActivityType } from '@prisma/client';
+import { generateText, Output } from 'ai';
+import { COACH_MODEL, coachAnalysisGatewayOptions, isCoachConfigured } from '@/lib/ai';
+import { isActivityToday } from '@/lib/activity/list/activity-day';
+import {
+  isEligibleForActivityNarrative,
+  NARRATIVE_ANALYSIS_SINCE,
+} from '@/lib/activity/narrative/activity-narrative-config';
+import { buildActivityNarrativeFacts } from '@/lib/activity/narrative/activity-narrative-facts';
+import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
+import { prisma } from '@/lib/prisma';
+import { activityNarrativeSchema, type ActivityNarrative } from '@/lib/validators/coach';
+
+/** Parallel LLM narratives after multi-activity import — keep low to avoid gateway bursts. */
+const NARRATIVE_CONCURRENCY = 3;
+
+const NARRATIVE_SYSTEM = `Tu es un entraîneur expert en endurance pour l'application SHARPIT.
+
+On te fournit des FAITS structurés sur la séance ET le contexte athlète (récupération, sommeil, charge, seuils personnels, conditions physiques, environnement). Tu rédiges une analyse narrative courte en français.
+
+OBJECTIF : croiser les dimensions — pas seulement décrire la séance. Cherche des liens plausibles entre performance, récupération, charge récente, sommeil, conditions physiques et environnement.
+
+RÈGLES :
+- Appuie-toi UNIQUEMENT sur les faits fournis. N'invente aucun chiffre.
+- Ne répète PAS mécaniquement distance, durée, TSS ou allure déjà visibles ailleurs sur la page : cite-les seulement s'ils servent de preuve à une interprétation (ex. « allure ralentie malgré FC modérée → chaleur ou fatigue cumulée »).
+- Si readiness basse : cherche une cause probable dans sommeil/dette de sommeil, charge (ACWR/TSB), HRV ou condition physique active — pas seulement la météo.
+- Si une condition physique active existe (douleur, posture, sciatique…) et que la séance sollicite potentiellement cette zone, mentionne-la avec prudence et un point de vigilance concret.
+- Compare la performance aux seuils personnels (LTHR, FTP, allure seuil) quand disponibles, plutôt qu'à des moyennes génériques seules.
+- Technique : s'il existe une section « Technique », tu peux en tirer AU PLUS une remarque — et seulement si elle change vraiment l'interprétation (dérive aérobie, intensité mal placée en zones, irrégularité marquante). Sinon, ignore la section. Interdit : conseils de forme permanents, cibles de cadence « idéales », pose du pied, « tu devrais » générique.
+- Ton bienveillant, précis, sans jargon inutile.
+- headline : une phrase accrocheuse orientée interprétation (max ~100 caractères).
+- narrative : 2 à 4 phrases fluides avec au moins une connexion entre systèmes (pas une liste de stats). Intègre les chiffres clés dans le texte plutôt que sous forme de liste.
+- Si peu de données contextuelles, dis-le honnêtement et concentre-toi sur ce qui est disponible.
+- Mentionne les objectifs validés si présents.`;
+
+export async function setActivityNarrativeAnalysis(
+  activityId: string,
+  analysis: ActivityNarrative,
+): Promise<void> {
+  const analyzedAt = new Date();
+  await prisma.activity.update({
+    where: { id: activityId },
+    data: {
+      narrativeAnalysis: analysis,
+      narrativeAnalyzedAt: analyzedAt,
+    },
+  });
+}
+
+/**
+ * Génère et persiste l'analyse narrative si absente (ou si force=true).
+ * Auto path is today-only; older sessions need force or allowHistorical (backfill).
+ * Retourne true si une nouvelle analyse a été créée.
+ *
+ * Goal achievements are read from DB inside facts — no enrichGoalsWithProgress
+ * on this path (achievements are already written at activity/goal sync time).
+ */
+export async function runActivityNarrativeAnalysis(
+  activityId: string,
+  options?: { force?: boolean; allowHistorical?: boolean },
+): Promise<boolean> {
+  if (!isCoachConfigured()) return false;
+
+  const existing = await prisma.activity.findUnique({
+    where: { id: activityId },
+    select: { narrativeAnalyzedAt: true, date: true, narrativeAnalysis: true },
+  });
+  if (!existing || !isEligibleForActivityNarrative(existing.date)) return false;
+  if (existing.narrativeAnalyzedAt && !options?.force) return false;
+  if (!options?.force && !options?.allowHistorical && !isActivityToday(existing.date)) {
+    return false;
+  }
+
+  const facts = await buildActivityNarrativeFacts(activityId);
+  if (!facts) return false;
+
+  const { output } = await generateText({
+    model: COACH_MODEL,
+    output: Output.object({ schema: activityNarrativeSchema }),
+    system: NARRATIVE_SYSTEM,
+    prompt: facts,
+    providerOptions: coachAnalysisGatewayOptions,
+  });
+
+  if (!output) return false;
+
+  await setActivityNarrativeAnalysis(activityId, output);
+  return true;
+}
+
+/** Lance l'analyse pour des activités nouvellement importées (best-effort, parallel). */
+export async function runActivityNarrativeForIds(activityIds: string[]): Promise<void> {
+  await mapWithConcurrency(activityIds, NARRATIVE_CONCURRENCY, async (id) => {
+    try {
+      await runActivityNarrativeAnalysis(id);
+    } catch (error) {
+      console.error('[activity-narrative]', id, error);
+    }
+  });
+}
+
+/** Remplit les analyses manquantes depuis {@link NARRATIVE_ANALYSIS_SINCE}. */
+export async function backfillActivityNarratives(): Promise<{
+  eligible: number;
+  created: number;
+}> {
+  if (!isCoachConfigured()) return { eligible: 0, created: 0 };
+
+  const activities = await prisma.activity.findMany({
+    where: {
+      narrativeAnalyzedAt: null,
+      date: { gte: NARRATIVE_ANALYSIS_SINCE },
+      type: { in: [ActivityType.RUN, ActivityType.BIKE, ActivityType.SWIM] },
+    },
+    select: { id: true },
+    orderBy: { date: 'asc' },
+  });
+
+  const outcomes = await mapWithConcurrency(activities, NARRATIVE_CONCURRENCY, async ({ id }) => {
+    try {
+      return await runActivityNarrativeAnalysis(id, { allowHistorical: true });
+    } catch (error) {
+      console.error('[activity-narrative/backfill]', id, error);
+      return false;
+    }
+  });
+  const created = outcomes.filter(Boolean).length;
+
+  return { eligible: activities.length, created };
+}

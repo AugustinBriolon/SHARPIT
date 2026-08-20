@@ -1,12 +1,12 @@
 'use client';
 
-import { EffortAlertsSection } from '@/components/effort/effort-alerts-section';
-import { EffortDimensionsSection } from '@/components/effort/effort-dimensions-section';
-import { EffortHero } from '@/components/effort/effort-hero';
-import { EffortStatsStrip } from '@/components/effort/effort-stats-strip';
-import { EffortStrainCompositionSection } from '@/components/effort/effort-strain-composition-section';
-import { EffortVerdictSection } from '@/components/effort/effort-verdict-section';
-import { EffortWhyBlock } from '@/components/effort/effort-why-block';
+import { EffortAlertsSection } from '@/components/effort/blocks/effort-alerts-section';
+import { EffortDimensionsSection } from '@/components/effort/blocks/effort-dimensions-section';
+import { EffortHero } from '@/components/effort/blocks/effort-hero';
+import { EffortStatsStrip } from '@/components/effort/blocks/effort-stats-strip';
+import { EffortStrainCompositionSection } from '@/components/effort/blocks/effort-strain-composition-section';
+import { EffortVerdictSection } from '@/components/effort/blocks/effort-verdict-section';
+import { EffortWhyBlock } from '@/components/effort/blocks/effort-why-block';
 import {
   DataReliabilityFooter,
   MetricDrillDownPage,
@@ -19,12 +19,15 @@ import type { DimensionResult } from '@/hooks/use-today';
 import dynamic from 'next/dynamic';
 
 const EffortPmcSection = dynamic(
-  () => import('@/components/effort/effort-charts-section').then((mod) => mod.EffortPmcSection),
+  () =>
+    import('@/components/effort/blocks/effort-charts-section').then((mod) => mod.EffortPmcSection),
   { ssr: false, loading: () => <Skeleton className="h-[140px] w-full" /> },
 );
 const EffortWeeklyTssSection = dynamic(
   () =>
-    import('@/components/effort/effort-charts-section').then((mod) => mod.EffortWeeklyTssSection),
+    import('@/components/effort/blocks/effort-charts-section').then(
+      (mod) => mod.EffortWeeklyTssSection,
+    ),
   { ssr: false, loading: () => <Skeleton className="h-[140px] w-full" /> },
 );
 

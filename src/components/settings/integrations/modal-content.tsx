@@ -8,7 +8,7 @@ import {
   GOOGLE_OAUTH_LAN_HINT,
   googleOAuthLocalConnectHref,
   isGoogleOAuthBlockedOnCurrentHost,
-} from '@/lib/integrations/google-oauth-hint';
+} from '@/lib/integrations/google/google-oauth-hint';
 import {
   IntegrationAccountCard,
   IntegrationAccountSummary,
@@ -44,7 +44,7 @@ import {
   runWithingsSync,
   stravaBackfillSummary,
   type IntegrationId,
-} from '@/lib/integrations/client-sync';
+} from '@/lib/integrations/shared/client-sync';
 import { invalidateAfterProviderSync } from '@/lib/query/invalidate-after-provider-sync';
 import { queryKeys } from '@/lib/query/keys';
 import type { RecordChange } from '@/lib/training/records';

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pushSessionToGoogleInBackground } from '@/lib/integrations/google-sync';
+import { pushSessionToGoogleInBackground } from '@/lib/integrations/google/google-sync';
 import { createBrickSessions, getPlannedSessionById } from '@/lib/queries';
 import { createBrickSchema } from '@/lib/validators/planned-session';
 

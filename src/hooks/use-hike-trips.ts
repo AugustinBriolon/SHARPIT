@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/components/ui/toast';
-import { buildHikeTripSummary } from '@/lib/activity/hike-trip-summary';
+import { buildHikeTripSummary } from '@/lib/activity/hike/hike-trip-summary';
 import { fetchHikeTrip, fetchHikeTrips, hydrateHikeTrip } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 import { formatApiErrorMessage, parseApiErrorBody } from '@/lib/query/api-error';

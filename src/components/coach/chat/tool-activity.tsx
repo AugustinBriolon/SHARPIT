@@ -19,8 +19,8 @@ import {
   failureHintForPart,
   failureLabelForPart,
   humanizeToolErrorMessage,
-} from '@/lib/coach/coach-tool-display';
-import { isStaleCalendarToolPart } from '@/lib/coach/coach-tool-parts';
+} from '@/lib/coach/chat/coach-tool-display';
+import { isStaleCalendarToolPart } from '@/lib/coach/chat/coach-tool-parts';
 import { intensityLabels } from '@/lib/planned-session/sessions';
 import { cn } from '@/lib/utils';
 

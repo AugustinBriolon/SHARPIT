@@ -4,7 +4,7 @@ import { CalendarCheck } from 'lucide-react';
 import { ActivityMetaChip } from '@/components/training/activity/detail/activity-meta-chip';
 import { useAppModal } from '@/providers/app-modal-provider';
 import { activityTypeLabels } from '@/lib/format';
-import { parseSessionAnalysis } from '@/lib/planned-session/session-analysis-display';
+import { parseSessionAnalysis } from '@/lib/planned-session/display/session-analysis-display';
 import type { PlannedSessionSummary } from './types';
 
 /**

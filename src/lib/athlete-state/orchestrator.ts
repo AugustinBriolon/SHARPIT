@@ -69,7 +69,7 @@ export function shouldSkipTodayPresentationRebuild(input: {
 async function autoLinkAndCollectSessionIds(activityIds: string[]): Promise<string[]> {
   if (activityIds.length === 0) return [];
   try {
-    const { autoLinkActivities } = await import('@/lib/planned-session/session-linking');
+    const { autoLinkActivities } = await import('@/lib/planned-session/linking/session-linking');
     const result = await autoLinkActivities(activityIds);
     return result.sessionIds;
   } catch (error) {

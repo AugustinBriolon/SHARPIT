@@ -1,5 +1,5 @@
 import { ActivityType } from '@prisma/client';
-import { ActivityTypeIndicator } from '@/components/activity/activity-type-indicator';
+import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
 
 export function Vo2maxIndicators({
   vo2maxRunning,

@@ -47,17 +47,17 @@ import { endOfDay, format as formatDate, isSameDay, startOfDay, subDays } from '
 import { fr } from 'date-fns/locale';
 import { activityTypeLabels } from '@/lib/format';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
-import { getGarminAccount } from '@/lib/integrations/garmin-sync';
-import { getGoogleAccount } from '@/lib/integrations/google-sync';
-import { getRenphoAccount } from '@/lib/integrations/renpho-sync';
-import { getStravaAccount } from '@/lib/integrations/strava-sync';
-import { getWithingsAccount } from '@/lib/integrations/withings-sync';
+import { getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
+import { getGoogleAccount } from '@/lib/integrations/google/google-sync';
+import { getRenphoAccount } from '@/lib/integrations/renpho/renpho-sync';
+import { getStravaAccount } from '@/lib/integrations/strava/strava-sync';
+import { getWithingsAccount } from '@/lib/integrations/withings/withings-sync';
 import {
   INTEGRATIONS_RECONNECT_HREF,
   reconnectProductMessage,
   reconnectProviderNames,
-} from '@/lib/integrations/connection-status';
-import { reconnectSnoozeKey } from '@/lib/integrations/reconnect-banner-state';
+} from '@/lib/integrations/shared/connection-status';
+import { reconnectSnoozeKey } from '@/lib/integrations/shared/reconnect-banner-state';
 
 function localDateFromTrainingDayId(trainingDayId: string): Date {
   const [y, m, d] = trainingDayId.split('-').map(Number);

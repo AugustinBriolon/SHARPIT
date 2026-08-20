@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/components/ui/toast';
-import { buildPushToastDescription } from '@/lib/integrations/garmin-push-summary';
+import { buildPushToastDescription } from '@/lib/integrations/garmin/garmin-push-summary';
 import { queryKeys } from '@/lib/query/keys';
 import type { ClientPlannedSession } from '@/lib/query/types';
 

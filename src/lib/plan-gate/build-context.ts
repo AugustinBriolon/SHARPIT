@@ -6,7 +6,7 @@ import {
   getActiveTrainingPlan,
   getPlannedSessions,
 } from '@/lib/queries';
-import { getGoogleAccount, getUpcomingBusy } from '@/lib/integrations/google-sync';
+import { getGoogleAccount, getUpcomingBusy } from '@/lib/integrations/google/google-sync';
 import { loadDailyTrainingStressEntries } from '@/lib/training/pmc-server';
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
 import type { GateContext, GateProposal } from './types';

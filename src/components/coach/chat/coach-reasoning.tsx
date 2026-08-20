@@ -7,7 +7,7 @@ import {
   reasoningSummaryLabel,
   shouldAutoExpandReasoning,
   splitReasoningSentences,
-} from '@/lib/coach/coach-reasoning';
+} from '@/lib/coach/chat/coach-reasoning';
 import { cn } from '@/lib/utils';
 
 const MAX_VIEWPORT_H = 180;

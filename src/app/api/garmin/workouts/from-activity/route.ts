@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { pushStrengthWorkoutFromActivity } from '@/lib/integrations/garmin-strength-workout';
+import { pushStrengthWorkoutFromActivity } from '@/lib/integrations/garmin/garmin-strength-workout';
 
 const bodySchema = z.object({
   activityId: z.string().min(1),

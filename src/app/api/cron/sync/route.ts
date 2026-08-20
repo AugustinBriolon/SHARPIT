@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import { refreshAthleteState } from '@/lib/athlete-state/orchestrator';
-import { getGarminAccount, syncGarminHealth } from '@/lib/integrations/garmin-sync';
-import { syncGarminActivities } from '@/lib/integrations/garmin-activity-sync';
-import { getGoogleAccount, syncFromGoogle } from '@/lib/integrations/google-sync';
-import { getMfpAccount, syncMfpNutrition } from '@/lib/integrations/myfitnesspal-sync';
+import { getGarminAccount, syncGarminHealth } from '@/lib/integrations/garmin/garmin-sync';
+import { syncGarminActivities } from '@/lib/integrations/garmin/garmin-activity-sync';
+import { getGoogleAccount, syncFromGoogle } from '@/lib/integrations/google/google-sync';
+import { getMfpAccount, syncMfpNutrition } from '@/lib/integrations/myfitnesspal/myfitnesspal-sync';
 import { updateRecordsAfterProviderSync } from '@/lib/training/records';
-import { getRenphoAccount, syncRenphoHealth } from '@/lib/integrations/renpho-sync';
-import { getWithingsAccount, syncWithingsHealth } from '@/lib/integrations/withings-sync';
+import { getRenphoAccount, syncRenphoHealth } from '@/lib/integrations/renpho/renpho-sync';
+import { getWithingsAccount, syncWithingsHealth } from '@/lib/integrations/withings/withings-sync';
 import { CRON_BACKFILL_BATCH, backfillActivityStreams } from '@/lib/streams/stream-backfill';
-import { getStravaAccount, syncStravaActivities } from '@/lib/integrations/strava-sync';
+import { getStravaAccount, syncStravaActivities } from '@/lib/integrations/strava/strava-sync';
 import { generateAndStoreWeeklyReview, isSunday } from '@/lib/weekly-review';
 import { isCoachConfigured } from '@/lib/ai';
 

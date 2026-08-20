@@ -1,4 +1,4 @@
-import type { IntegrationId } from '@/lib/integrations/client-sync';
+import type { IntegrationId } from '@/lib/integrations/shared/client-sync';
 
 export const INTEGRATION_CATALOG: Array<{
   id: IntegrationId;

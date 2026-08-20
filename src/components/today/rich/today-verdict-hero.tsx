@@ -5,7 +5,7 @@ import Link from 'next/link';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { ConfidenceBars, confidenceBarsFromPct } from '@/components/ui/confidence-bars';
+import { ConfidenceBars, confidenceBarsFromPct } from '@/components/ui/instruments/confidence-bars';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import { Skeleton } from '@/components/ui/skeleton';
 

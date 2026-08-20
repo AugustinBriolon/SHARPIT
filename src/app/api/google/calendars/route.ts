@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleOAuthError } from '@/lib/integrations/google';
+import { GoogleOAuthError } from '@/lib/integrations/google/google';
 import {
   getGoogleAccount,
   isGoogleConnected,
   listGoogleCalendars,
-} from '@/lib/integrations/google-sync';
+} from '@/lib/integrations/google/google-sync';
 
 export async function GET(request: NextRequest) {
   // Read search params before try so Cache Components prerender interrupts propagate.

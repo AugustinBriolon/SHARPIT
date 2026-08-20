@@ -1,12 +1,12 @@
 'use client';
 
-import { RecoveryAlertsSection } from '@/components/recovery/sections/recovery-alerts-section';
-import { RecoveryDimensionsSection } from '@/components/recovery/sections/recovery-dimensions-section';
-import { RecoveryEvidenceSection } from '@/components/recovery/sections/recovery-evidence-section';
-import { RecoveryHero } from '@/components/recovery/sections/recovery-hero';
-import { RecoverySignalsSection } from '@/components/recovery/sections/recovery-signals-section';
-import { RecoveryStatsStrip } from '@/components/recovery/sections/recovery-stats-strip';
-import { RecoveryWhyBlock } from '@/components/recovery/sections/recovery-why-block';
+import { RecoveryAlertsSection } from '@/components/recovery/blocks/recovery-alerts-section';
+import { RecoveryDimensionsSection } from '@/components/recovery/blocks/recovery-dimensions-section';
+import { RecoveryEvidenceSection } from '@/components/recovery/blocks/recovery-evidence-section';
+import { RecoveryHero } from '@/components/recovery/blocks/recovery-hero';
+import { RecoverySignalsSection } from '@/components/recovery/blocks/recovery-signals-section';
+import { RecoveryStatsStrip } from '@/components/recovery/blocks/recovery-stats-strip';
+import { RecoveryWhyBlock } from '@/components/recovery/blocks/recovery-why-block';
 import {
   DataReliabilityFooter,
   MetricDrillDownPage,
@@ -18,7 +18,7 @@ import dynamic from 'next/dynamic';
 
 const RecoveryTrendsSection = dynamic(
   () =>
-    import('@/components/recovery/sections/recovery-trends-section').then(
+    import('@/components/recovery/blocks/recovery-trends-section').then(
       (mod) => mod.RecoveryTrendsSection,
     ),
   { ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },

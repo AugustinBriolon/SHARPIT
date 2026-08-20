@@ -1,9 +1,9 @@
 'use client';
 
 import { NutritionGoalsPanel } from '@/components/nutrition/nutrition-goals-panel';
-import { NutritionHero } from '@/components/nutrition/nutrition-hero';
-import { NutritionMealsSection } from '@/components/nutrition/nutrition-meals-section';
-import { NutritionTrendSection } from '@/components/nutrition/nutrition-trend-section';
+import { NutritionHero } from '@/components/nutrition/blocks/nutrition-hero';
+import { NutritionMealsSection } from '@/components/nutrition/blocks/nutrition-meals-section';
+import { NutritionTrendSection } from '@/components/nutrition/blocks/nutrition-trend-section';
 import { MetricDrillDownPage } from '@/components/today/drill-down/metric-drill-down-page';
 import type { NutritionViewModel } from '@/core/presentation/nutrition-view-model';
 

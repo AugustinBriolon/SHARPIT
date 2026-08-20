@@ -10,8 +10,8 @@ import {
 import type { ActivityType } from '@prisma/client';
 import { PrismaEnvironmentalObservationRepository } from '@/infrastructure/environment/prisma-environment-observation-repository';
 import { resolveAthleteGeoLocation } from '@/lib/environment/athlete-location';
-import { activityWeatherWindow } from '@/lib/activity/activity-weather-window';
-import { isIndoorActivitySession } from '@/lib/activity/indoor-activity';
+import { activityWeatherWindow } from '@/lib/activity/weather/activity-weather-window';
+import { isIndoorActivitySession } from '@/lib/activity/location/indoor-activity';
 import { prisma } from '@/lib/prisma';
 import { computeTrainingDayId } from '@/lib/training/training-day';
 

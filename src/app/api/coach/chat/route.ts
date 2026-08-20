@@ -15,10 +15,10 @@ import {
   coachGatewayOptions,
   isCoachConfigured,
 } from '@/lib/ai';
-import { buildBusySummary } from '@/lib/coach/calendar-availability';
-import { buildCoachContext, formatCoachContext } from '@/lib/coach/coach-context';
-import { coachTools } from '@/lib/coach/coach-tools';
-import { formatStrengthSessionRules } from '@/lib/planned-session/strength-session-template';
+import { buildBusySummary } from '@/lib/coach/plan/calendar-availability';
+import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
+import { coachTools } from '@/lib/coach/chat/coach-tools';
+import { formatStrengthSessionRules } from '@/lib/planned-session/strength/strength-session-template';
 
 /** Horizon de pré-chargement de l'agenda, aligné sur les séances du contexte. */
 const AGENDA_PREFETCH_DAYS = 14;

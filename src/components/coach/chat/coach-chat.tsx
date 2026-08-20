@@ -19,34 +19,40 @@ import { Textarea } from '@/components/ui/textarea';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { useSaveConversation, useCreateConversation } from '@/hooks/use-coach';
 import { usePlannedSessions } from '@/hooks/use-data';
-import { lastStepApprovalResponseFingerprint } from '@/lib/coach/coach-chat-auto-send';
-import { coachApprovalReason } from '@/lib/coach/coach-approval-reason';
-import { buildKnownSessions, COACH_CHAT_SUGGESTIONS } from '@/lib/coach/coach-chat-known-sessions';
-import { coachMessagesFingerprint, hasPersistableAssistant } from '@/lib/coach/coach-chat-persist';
+import { lastStepApprovalResponseFingerprint } from '@/lib/coach/chat/coach-chat-auto-send';
+import { coachApprovalReason } from '@/lib/coach/plan/coach-approval-reason';
+import {
+  buildKnownSessions,
+  COACH_CHAT_SUGGESTIONS,
+} from '@/lib/coach/chat/coach-chat-known-sessions';
+import {
+  coachMessagesFingerprint,
+  hasPersistableAssistant,
+} from '@/lib/coach/chat/coach-chat-persist';
 import {
   abortChatFetch,
   endAutoReply,
   replaceChatFetchSignal,
   tryBeginAutoReply,
-} from '@/lib/coach/coach-chat-request-lock';
+} from '@/lib/coach/chat/coach-chat-request-lock';
 import {
   CALENDAR_MUTATION_TOOL_TYPES,
   dismissUnresolvedCalendarTools,
   hasUnresolvedCalendarTools,
   type ToolPartLite,
-} from '@/lib/coach/coach-tool-parts';
+} from '@/lib/coach/chat/coach-tool-parts';
 import {
   invalidateAfterCoachToolApproval,
   invalidateAfterCoachTools,
   invalidatePlannedSessionsAfterCoachTurn,
-} from '@/lib/coach/coach-chat-cache';
+} from '@/lib/coach/chat/coach-chat-cache';
 import {
   clearCoachInputDraft,
   readCoachInputDraft,
   writeCoachInputDraft,
-} from '@/lib/coach/coach-input-draft';
-import { reasoningTextOf } from '@/lib/coach/coach-reasoning';
-import { isNearBottom, shouldShowJumpToLatest } from '@/lib/coach/scroll-anchor';
+} from '@/lib/coach/chat/coach-input-draft';
+import { reasoningTextOf } from '@/lib/coach/chat/coach-reasoning';
+import { isNearBottom, shouldShowJumpToLatest } from '@/lib/coach/chat/scroll-anchor';
 import { createClientId } from '@/lib/client-id';
 import { cn } from '@/lib/utils';
 

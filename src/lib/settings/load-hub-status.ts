@@ -1,18 +1,18 @@
 import { cache } from 'react';
 import { listCoachMemoryEntries } from '@/lib/coach-memory/service';
-import { getGarminAccount } from '@/lib/integrations/garmin-sync';
-import { getGoogleAccount, isGoogleConnected } from '@/lib/integrations/google-sync';
-import { getMfpAccount } from '@/lib/integrations/myfitnesspal-sync';
-import { getRenphoAccount } from '@/lib/integrations/renpho-sync';
-import { getStravaAccount } from '@/lib/integrations/strava-sync';
-import { getWithingsAccount } from '@/lib/integrations/withings-sync';
+import { getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
+import { getGoogleAccount, isGoogleConnected } from '@/lib/integrations/google/google-sync';
+import { getMfpAccount } from '@/lib/integrations/myfitnesspal/myfitnesspal-sync';
+import { getRenphoAccount } from '@/lib/integrations/renpho/renpho-sync';
+import { getStravaAccount } from '@/lib/integrations/strava/strava-sync';
+import { getWithingsAccount } from '@/lib/integrations/withings/withings-sync';
 import {
   isGarminAccountConnected,
   isMfpAccountConnected,
   isOAuthAccountConnected,
   isRenphoAccountConnected,
   reconnectProviderNames,
-} from '@/lib/integrations/connection-status';
+} from '@/lib/integrations/shared/connection-status';
 import { prisma } from '@/lib/prisma';
 import { getAthleteProfile, getGoals } from '@/lib/queries';
 import {

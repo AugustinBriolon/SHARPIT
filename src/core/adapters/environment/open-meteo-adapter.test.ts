@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { parseOpenMeteoHourlyTime } from '@/core/adapters/environment/open-meteo-adapter';
-import { shouldUseWeatherArchive } from '@/lib/planned-session/forecast-fetch';
+import { shouldUseWeatherArchive } from '@/lib/planned-session/forecast/forecast-fetch';
 
 describe('parseOpenMeteoHourlyTime', () => {
   const previousTz = process.env.TZ;

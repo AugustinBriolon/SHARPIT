@@ -23,7 +23,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
-import { InstrumentListChip } from '@/components/ui/instrument-list-chip';
+import { InstrumentListChip } from '@/components/ui/instruments/instrument-list-chip';
 import { Input } from '@/components/ui/input';
 import { useActivities, useHikeTripMutations } from '@/hooks/use-data';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';

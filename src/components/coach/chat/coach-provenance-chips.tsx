@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { buildCoachProvenanceChips } from '@/lib/coach/coach-provenance';
+import { buildCoachProvenanceChips } from '@/lib/coach/chat/coach-provenance';
 import { trainingDayIdForNow } from '@/lib/training/training-day';
 import { useTodayPresentationViewModel } from '@/hooks/use-presentation-view-model';
 

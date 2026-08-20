@@ -1,5 +1,9 @@
+import { Prisma } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteSessionFromGoogle, pushSessionToGoogle } from '@/lib/integrations/google-sync';
+import {
+  deleteSessionFromGoogle,
+  pushSessionToGoogle,
+} from '@/lib/integrations/google/google-sync';
 import { deletePlannedSession, getPlannedSessionById, updatePlannedSession } from '@/lib/queries';
 import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/resolve-context';
 import { updatePlannedSessionSchema } from '@/lib/validators/planned-session';
@@ -8,7 +12,8 @@ import {
   findDecisionForPlannedSession,
   recordDecisionAction,
 } from '@/lib/decision-memory/repository';
-import { garminPushClearOnSessionChange } from '@/lib/integrations/garmin-workout-push-state';
+import { garminPushClearOnSessionChange } from '@/lib/integrations/garmin/garmin-workout-push-state';
+import { enduranceSportFromActivityType } from '@/lib/planned-session/endurance/endurance-prescription';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -88,9 +93,25 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       }
     }
 
+    // The patch may omit `type`, so the schema cannot check the prescription sport
+    // on its own — the session's stored type is the reference here.
+    const effectiveType = parsed.data.type ?? existing.type;
+    const effectiveSport = enduranceSportFromActivityType(effectiveType);
+    const patchedSport = parsed.data.endurancePrescription?.sport;
+    if (patchedSport && effectiveSport && patchedSport !== effectiveSport) {
+      return NextResponse.json(
+        {
+          error: `Le déroulé structuré est en ${patchedSport} mais la séance est en ${effectiveType}.`,
+        },
+        { status: 400 },
+      );
+    }
+
     const clearGarminPush = garminPushClearOnSessionChange(parsed.data);
     const session = await updatePlannedSession(id, {
       ...(parsed.data as Parameters<typeof updatePlannedSession>[1]),
+      // A session that is not an endurance sport carries no structured prescription.
+      ...(patchedSport && !effectiveSport ? { endurancePrescription: Prisma.DbNull } : {}),
       ...(clearGarminPush ?? {}),
     });
 

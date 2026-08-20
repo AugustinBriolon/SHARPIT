@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { setTargetCalendar } from '@/lib/integrations/google-sync';
+import { setTargetCalendar } from '@/lib/integrations/google/google-sync';
 
 const schema = z.object({
   calendarId: z.string().min(1),

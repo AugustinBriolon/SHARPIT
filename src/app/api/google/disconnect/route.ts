@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { disconnectGoogle } from '@/lib/integrations/google-sync';
+import { disconnectGoogle } from '@/lib/integrations/google/google-sync';
 
 export async function POST() {
   try {

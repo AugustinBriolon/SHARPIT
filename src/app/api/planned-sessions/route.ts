@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { defaultExposureForActivityType } from '@/core/planned-session/defaults';
-import { pushSessionToGoogle } from '@/lib/integrations/google-sync';
+import { pushSessionToGoogle } from '@/lib/integrations/google/google-sync';
 import { createPlannedSession, getPlannedSessionById, getPlannedSessions } from '@/lib/queries';
 import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/resolve-context';
 import { createPlannedSessionSchema } from '@/lib/validators/planned-session';

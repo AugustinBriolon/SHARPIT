@@ -1,9 +1,9 @@
 import { cache } from 'react';
 import { after } from 'next/server';
 import { dedupeBodyCompositionByDay } from '@/lib/health/body-composition';
-import { clientFromTokens, garminTokensFromStorage } from '@/lib/integrations/garmin';
-import { fetchGarminMultisportLegs } from '@/lib/integrations/garmin-multisport';
-import { getGarminAccount } from '@/lib/integrations/garmin-sync';
+import { clientFromTokens, garminTokensFromStorage } from '@/lib/integrations/garmin/garmin';
+import { fetchGarminMultisportLegs } from '@/lib/integrations/garmin/garmin-multisport';
+import { getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
 import { isMultisportLegArray, type MultisportLeg } from '@/lib/multisport';
 import {
   activityInclude,

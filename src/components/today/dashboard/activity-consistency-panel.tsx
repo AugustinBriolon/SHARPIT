@@ -14,7 +14,7 @@ import {
   HEATMAP_LEVEL_CLASS,
   type ActivityConsistencyStats,
   type HeatmapCell,
-} from '@/lib/activity/activity-consistency';
+} from '@/lib/activity/list/activity-consistency';
 import { cn } from '@/lib/utils';
 
 /** Fixed anchor for prerender-safe loading heatmap layout. */

@@ -4,15 +4,12 @@ import { PageHeader } from '@/components/layout/sticky-header';
 import { ProjectedAthleteCard } from '@/components/planning/scenario/projected-athlete-card';
 import { TravelContextBanner } from '@/components/planning/travel-context-banner';
 import { parseCalendarDateParam } from '@/components/calendar/calendar-utils';
-import {
-  SessionsCoachMenu,
-  type SessionsCoachAction,
-} from '@/components/sessions/sessions-coach-menu';
+import { SessionsCoachMenu, type SessionsCoachAction } from '@/components/coaching/coach-menu';
 import { Button } from '@/components/ui/button';
 import {
   InstrumentListChip,
   type InstrumentListChipMeta,
-} from '@/components/ui/instrument-list-chip';
+} from '@/components/ui/instruments/instrument-list-chip';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ProjectionHorizonDays } from '@/core/projection/types';
 import { useActivities, useGoals, usePlannedSessions, useTrainingPlan } from '@/hooks/use-data';
@@ -20,7 +17,7 @@ import { useProjectedAthleteViewModel } from '@/hooks/use-projected-athlete-view
 import { isAnyInitialQueryLoad } from '@/hooks/use-query-status';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import { useScenarioComparisonViewModel } from '@/hooks/use-scenario-comparison-view-model';
-import { groupPlannedSessions } from '@/lib/planned-session/brick-sessions';
+import { groupPlannedSessions } from '@/lib/planned-session/brick/brick-sessions';
 import { activityTypeLabels } from '@/lib/format';
 import { phaseColors, phaseLabels } from '@/lib/training/periodization';
 import { buildPlanningWeeks, resolvePlanningWeek } from '@/lib/planned-session/planning';
@@ -35,11 +32,11 @@ import dynamic from 'next/dynamic';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { EMPTY_GOALS } from '@/components/planning/session/planned-session-dialog-helpers';
+import { EMPTY_GOALS } from '@/components/planning/session/session-defaults';
 
 const PlannedSessionDialog = dynamic(
   () =>
-    import('@/components/planning/session/planned-session-dialog').then(
+    import('@/components/planning/session/edit/planned-session-dialog').then(
       (mod) => mod.PlannedSessionDialog,
     ),
   { ssr: false },

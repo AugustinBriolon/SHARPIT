@@ -8,7 +8,7 @@ import { CreateHikeTripDialog } from '@/components/training/trip/create-hike-tri
 import { buildHikeTripMemberMeta } from '@/components/training/trip/hike-trip-timeline';
 import { Button } from '@/components/ui/button';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
-import { InstrumentListChip } from '@/components/ui/instrument-list-chip';
+import { InstrumentListChip } from '@/components/ui/instruments/instrument-list-chip';
 import { useActivities } from '@/hooks/use-data';
 import { cn } from '@/lib/utils';
 

@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { TriathlonLegsPanel } from '@/components/training/activity/triathlon-legs-panel';
+import { TriathlonLegsPanel } from '@/components/training/activity/insights/triathlon-legs-panel';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { ActivityDetailHeader } from '@/components/training/activity/detail/activity-detail-header';
 import { ActivityDetailHero } from '@/components/training/activity/detail/activity-detail-hero';
@@ -14,11 +14,11 @@ import { ActivityDetailRouteSkeleton } from '@/components/training/activity/deta
 import { ActivitySpecsNotes } from '@/components/training/activity/detail/activity-specs-notes';
 import { ActivityStrengthExercises } from '@/components/training/activity/detail/activity-strength-exercises';
 import { ActivityGoalValidationsCard } from '@/components/goals/cards/activity-goal-validations-card';
-import { ActivityDetailInsights } from '@/components/training/activity/activity-detail-insights';
-import { ActivityNarrativeSection } from '@/components/training/activity/activity-narrative-section';
-import { isEligibleForActivityNarrative } from '@/lib/activity/activity-narrative-config';
-import { activityDetailExpectsMap } from '@/lib/activity/activity-detail-skeleton-layout';
-import { buildHikeOvernightSummary } from '@/lib/activity/hike-overnight-summary';
+import { ActivityDetailInsights } from '@/components/training/activity/insights/activity-detail-insights';
+import { ActivityNarrativeSection } from '@/components/training/activity/insights/activity-narrative-section';
+import { isEligibleForActivityNarrative } from '@/lib/activity/narrative/activity-narrative-config';
+import { activityDetailExpectsMap } from '@/lib/activity/detail/activity-detail-skeleton-layout';
+import { buildHikeOvernightSummary } from '@/lib/activity/hike/hike-overnight-summary';
 import { getActivityById, getMultisportLegsForActivity } from '@/lib/queries';
 import { getGoalAchievementsForActivity } from '@/lib/goals/goal-achievements';
 import { isCoachConfigured } from '@/lib/ai';

@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { buildHikeTripSummary, type HikeTripSummary } from '@/lib/activity/hike-trip-summary';
+import { buildHikeTripSummary, type HikeTripSummary } from '@/lib/activity/hike/hike-trip-summary';
 import { prisma } from '@/lib/prisma';
 import { ActivityType, Prisma } from '@prisma/client';
 
