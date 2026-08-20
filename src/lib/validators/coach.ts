@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { coachEndurancePrescriptionSchema } from '@/lib/planned-session/endurance/coach-endurance-prescription';
 import { coachStrengthPrescriptionSchema } from '@/lib/planned-session/strength/strength-prescription';
 
 /** Schéma de sortie structurée du générateur de séances. */
@@ -37,6 +38,12 @@ export const coachPlanSchema = z.object({
           .optional()
           .describe(
             'OBLIGATOIRE si type=STRENGTH (exercices + séries/reps). null pour RUN/BIKE/SWIM.',
+          ),
+        endurancePrescription: coachEndurancePrescriptionSchema
+          .nullable()
+          .optional()
+          .describe(
+            'Déroulé structuré pour RUN et BIKE dès que la séance a une structure (fractionné, blocs au seuil, progressif). null pour STRENGTH, SWIM, et pour une sortie continue sans structure.',
           ),
         durationMin: z.number().int().min(10).max(420),
         load: z.number().int().min(0).max(400).describe('Charge / TSS estimé de la séance.'),

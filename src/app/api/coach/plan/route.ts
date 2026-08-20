@@ -49,7 +49,7 @@ Sécurité (impératif) :
 
 ${formatStrengthSessionRules()}
 
-Sortie : le schéma fait autorité pour les noms de champs, les types et les valeurs d'énumération — jamais ce texte. N'ajoute aucun champ hors schéma. Séance STRENGTH : strengthPrescription obligatoire (noms français, blocs et volume ci-dessus) ; RUN/BIKE/SWIM : null.`;
+Sortie : le schéma fait autorité pour les noms de champs, les types et les valeurs d'énumération — jamais ce texte. N'ajoute aucun champ hors schéma. Séance STRENGTH : strengthPrescription obligatoire (noms français, blocs et volume ci-dessus) ; RUN/BIKE/SWIM : null. Séance RUN ou BIKE structurée (fractionné, blocs au seuil, progressif) : remplis endurancePrescription — étapes et groupes répétés avec leur intensité, jamais d'allure ni de watts, l'app les dérive des seuils.`;
 
 export async function POST(req: Request) {
   if (!isCoachConfigured()) {
@@ -225,6 +225,7 @@ async function finalizePlan(
       load: s.load,
       title: s.title,
       strengthPrescription: s.strengthPrescription ?? null,
+      endurancePrescription: s.endurancePrescription ?? null,
       rationale: s.rationale ?? null,
       goalId: goalId ?? null,
     }));

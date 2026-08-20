@@ -42,6 +42,7 @@ import { useGoals, usePlannedSessionMutations, useTrainingPlan } from '@/hooks/u
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import type { GateSessionResult } from '@/lib/plan-gate/types';
 import { GateStatusBadge, GateFindingsList } from '@/components/coach/plan/gate-status-badge';
+import { resolveEnduranceFieldsForPersist } from '@/lib/planned-session/endurance/coach-endurance-prescription';
 import { resolveStrengthFieldsForPersist } from '@/lib/planned-session/strength/strength-prescription';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
@@ -166,13 +167,20 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
           description: s.description,
           strengthPrescription: s.strengthPrescription,
         });
+        const endurance = resolveEnduranceFieldsForPersist({
+          type: s.type,
+          description: strength.description,
+          intensity: s.intensity,
+          endurancePrescription: s.endurancePrescription,
+        });
         return {
           type: s.type,
           date: new Date(`${s.date}T12:00:00`),
           startTime: s.startTime,
           title: s.title,
-          description: strength.description,
+          description: endurance.description,
           strengthPrescription: strength.strengthPrescription,
+          endurancePrescription: endurance.endurancePrescription,
           durationMin: s.durationMin,
           load: s.load,
           intensity: s.intensity,

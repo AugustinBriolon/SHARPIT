@@ -16,6 +16,7 @@ import {
 import { queryKeys } from '@/lib/query/keys';
 import { consumeCoachProgressStream } from '@/lib/coach/chat/coach-progress-stream';
 import type { CoachMemoryResponse } from '@/hooks/use-coach-memory';
+import type { CoachEndurancePrescription } from '@/lib/planned-session/endurance/coach-endurance-prescription';
 import type { GateResult } from '@/lib/plan-gate/types';
 
 let createConversationPromise: Promise<ClientConversation> | null = null;
@@ -39,6 +40,7 @@ export interface GeneratedSession {
       notes?: string | null;
     }>;
   } | null;
+  endurancePrescription?: CoachEndurancePrescription | null;
   durationMin: number;
   load: number;
   rationale: string;
