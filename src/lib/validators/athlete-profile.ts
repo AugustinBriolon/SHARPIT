@@ -7,6 +7,12 @@ const nullableInt = z.preprocess(
   z.union([z.null(), z.number().int().positive()]),
 );
 
+/** Garmin accepts pool lengths from 10 m to 100 m. */
+const nullablePoolLengthM = z.preprocess(
+  (v) => (v === '' || v === undefined || v === null ? null : Number(v)),
+  z.union([z.null(), z.number().int().min(10).max(100)]),
+);
+
 const nullablePace = z.preprocess(
   (v) => (v === '' || v === undefined || v === null ? null : Number(v)),
   z.union([z.null(), z.number().positive()]),
@@ -57,6 +63,7 @@ export const athleteProfileSchema = z
     maxHr: nullableInt,
     lthr: nullableInt,
     runThresholdPaceSecPerKm: nullablePace,
+    defaultPoolLengthM: nullablePoolLengthM,
     sleepTargetMinutes: nullableSleepMinutes,
     sleepBedtimeTargetMin: nullableBedtimeMin,
     equipment: athleteEquipmentSchema.nullable(),

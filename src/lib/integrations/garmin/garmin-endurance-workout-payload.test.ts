@@ -178,3 +178,80 @@ describe('buildEnduranceWorkoutPayload', () => {
     expect(payload.sportType).toMatchObject({ sportTypeKey: 'running', sportTypeId: 1 });
   });
 });
+
+describe('buildEnduranceWorkoutPayload — swimming', () => {
+  /** 400 m warm-up · 8 × (50 m / rest at the wall) — no pace band yet. */
+  const POOL_SESSION: EndurancePrescription = {
+    version: 1,
+    sport: 'SWIM',
+    poolLengthM: 25,
+    blocks: [
+      {
+        kind: 'step',
+        step: {
+          kind: 'warmup',
+          duration: { type: 'distance', meters: 400 },
+          target: { metric: 'none' },
+        },
+      },
+      {
+        kind: 'repeat',
+        iterations: 8,
+        steps: [
+          {
+            kind: 'interval',
+            duration: { type: 'distance', meters: 50 },
+            target: { metric: 'none' },
+          },
+          { kind: 'rest', duration: { type: 'lap' }, target: { metric: 'none' } },
+        ],
+      },
+    ],
+  };
+
+  it('declares the pool so Connect can render a pool workout', () => {
+    const { payload } = buildEnduranceWorkoutPayload({
+      workoutName: 'Piscine 8x50',
+      prescription: POOL_SESSION,
+      thresholds: THRESHOLDS,
+    });
+
+    expect(payload.sportType).toMatchObject({ sportTypeKey: 'swimming' });
+    expect(payload.poolLength).toBe(25);
+    expect(payload.poolLengthUnit).toMatchObject({ unitKey: 'meter' });
+  });
+
+  it('ends a wall rest on the Lap button rather than a countdown', () => {
+    const { payload } = buildEnduranceWorkoutPayload({
+      workoutName: 'Piscine 8x50',
+      prescription: POOL_SESSION,
+      thresholds: THRESHOLDS,
+    });
+
+    const group = segmentSteps(payload)[1] as unknown as { workoutSteps: Step[] };
+    const rest = group.workoutSteps[1] as unknown as {
+      endCondition: { conditionTypeKey: string };
+      endConditionValue: number | null;
+    };
+    expect(rest.endCondition.conditionTypeKey).toBe('lap.button');
+    expect(rest.endConditionValue).toBeNull();
+  });
+
+  it('counts distances in metres, as a pool set reads', () => {
+    const { payload, stepCount } = buildEnduranceWorkoutPayload({
+      workoutName: 'Piscine 8x50',
+      prescription: POOL_SESSION,
+      thresholds: THRESHOLDS,
+    });
+
+    const warmup = segmentSteps(payload)[0] as unknown as {
+      endConditionValue: number;
+      preferredEndConditionUnit: { unitKey: string };
+    };
+    expect(warmup.endConditionValue).toBe(400);
+    expect(warmup.preferredEndConditionUnit.unitKey).toBe('meter');
+    // 400 warm-up + 8 × 50
+    expect(payload.estimatedDistanceInMeters).toBe(800);
+    expect(stepCount).toBe(17);
+  });
+});

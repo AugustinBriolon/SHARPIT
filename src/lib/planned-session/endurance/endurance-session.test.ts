@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { STEP_MIN_SECONDS } from '@/lib/planned-session/endurance/endurance-prescription';
-import { effectiveEndurancePrescription } from '@/lib/planned-session/endurance/endurance-session';
+import {
+  DEFAULT_POOL_LENGTH_M,
+  effectiveEndurancePrescription,
+} from '@/lib/planned-session/endurance/endurance-session';
 import { garminPushStaleness } from '@/lib/planned-session/endurance/endurance-staleness';
 import type { AthleteThresholds } from '@/lib/planned-session/endurance/endurance-targets';
 
@@ -163,5 +166,72 @@ describe('staleness of a derived session', () => {
     });
 
     expect(result.stale).toBe(false);
+  });
+});
+
+describe('pool length', () => {
+  const swimBase = {
+    sport: 'SWIM' as const,
+    durationMin: 45,
+    intensity: 'ENDURANCE' as const,
+    thresholds: THRESHOLDS,
+  };
+
+  it('falls back to 25 m when the athlete has not set one', () => {
+    const { prescription } = effectiveEndurancePrescription({ ...swimBase, stored: null });
+    expect(prescription.poolLengthM).toBe(DEFAULT_POOL_LENGTH_M);
+  });
+
+  it("uses the athlete's usual pool", () => {
+    const { prescription } = effectiveEndurancePrescription({
+      ...swimBase,
+      stored: null,
+      defaultPoolLengthM: 50,
+    });
+    expect(prescription.poolLengthM).toBe(50);
+  });
+
+  it('lets the session override the athlete default', () => {
+    const { prescription } = effectiveEndurancePrescription({
+      ...swimBase,
+      defaultPoolLengthM: 50,
+      stored: {
+        version: 1,
+        sport: 'SWIM',
+        poolLengthM: 33,
+        blocks: [
+          {
+            kind: 'step',
+            step: {
+              kind: 'interval',
+              duration: { type: 'distance', meters: 400 },
+              target: { metric: 'none' },
+            },
+          },
+        ],
+      },
+    });
+    expect(prescription.poolLengthM).toBe(33);
+  });
+
+  it('leaves land sports alone', () => {
+    const { prescription } = effectiveEndurancePrescription({
+      sport: 'RUN',
+      durationMin: 45,
+      intensity: 'ENDURANCE',
+      stored: null,
+      thresholds: THRESHOLDS,
+      defaultPoolLengthM: 50,
+    });
+    expect(prescription.poolLengthM).toBeUndefined();
+  });
+
+  it('sends a swim session without a pace band, and says why', () => {
+    const { prescription, warnings } = effectiveEndurancePrescription({
+      ...swimBase,
+      stored: null,
+    });
+    expect(prescription.blocks).toHaveLength(1);
+    expect(warnings[0]).toContain('sans guidage chiffré');
   });
 });

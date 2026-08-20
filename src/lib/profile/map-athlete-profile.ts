@@ -8,6 +8,7 @@ export type AthleteProfileFormData = {
   maxHr: number | null;
   lthr: number | null;
   runThresholdPaceSecPerKm: number | null;
+  defaultPoolLengthM: number | null;
   vo2maxRunning: number | null;
   vo2maxCycling: number | null;
   thresholdsSyncedAt: string | null;
@@ -22,6 +23,7 @@ type ProfileRow = {
   maxHr?: number | null;
   lthr?: number | null;
   runThresholdPaceSecPerKm?: number | null;
+  defaultPoolLengthM?: number | null;
   vo2maxRunning?: number | null;
   vo2maxCycling?: number | null;
   thresholdsSyncedAt?: Date | string | null;
@@ -47,6 +49,7 @@ export function mapAthleteProfileToFormData(
     maxHr: profile.maxHr ?? null,
     lthr: profile.lthr ?? null,
     runThresholdPaceSecPerKm: profile.runThresholdPaceSecPerKm ?? null,
+    defaultPoolLengthM: profile.defaultPoolLengthM ?? null,
     vo2maxRunning: profile.vo2maxRunning ?? null,
     vo2maxCycling: profile.vo2maxCycling ?? null,
     thresholdsSyncedAt: toIsoOrNull(profile.thresholdsSyncedAt),

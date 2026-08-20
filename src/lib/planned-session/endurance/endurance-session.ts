@@ -24,6 +24,13 @@ import {
 const DEFAULT_SESSION_MIN = 45;
 
 /**
+ * Connect cannot render a pool workout without a length, so a swim session always
+ * leaves with one. 25 m is the near-universal default when the athlete has not
+ * said otherwise — better than refusing to send the session.
+ */
+export const DEFAULT_POOL_LENGTH_M = 25;
+
+/**
  * Swimming has no validated target table (ADR-017). Inventing a band would put a
  * wrong number on the watch, so the step goes out free and the athlete is told why.
  */
@@ -78,11 +85,13 @@ export function effectiveEndurancePrescription(input: {
   intensity: SessionIntensity | null;
   stored: unknown;
   thresholds: AthleteThresholds;
+  /** Athlete's usual pool length — only consulted for swimming. */
+  defaultPoolLengthM?: number | null;
 }): EffectiveEndurancePrescription {
   const stored = parseEndurancePrescription(input.stored);
   if (stored) {
     return {
-      prescription: { ...stored, sport: input.sport },
+      prescription: withPoolLength({ ...stored, sport: input.sport }, input.defaultPoolLengthM),
       derived: false,
       warnings: [],
     };
@@ -93,8 +102,23 @@ export function effectiveEndurancePrescription(input: {
   const { target, warnings } = fallbackTarget(input.sport, input.intensity, input.thresholds);
 
   return {
-    prescription: singleStepPrescription({ sport: input.sport, durationMin, target }),
+    prescription: withPoolLength(
+      singleStepPrescription({ sport: input.sport, durationMin, target }),
+      input.defaultPoolLengthM,
+    ),
     derived: true,
     warnings,
+  };
+}
+
+/** Stamp a pool length on a swim prescription: its own, the athlete's, then 25 m. */
+function withPoolLength(
+  prescription: EndurancePrescription,
+  defaultPoolLengthM: number | null | undefined,
+): EndurancePrescription {
+  if (prescription.sport !== 'SWIM') return prescription;
+  return {
+    ...prescription,
+    poolLengthM: prescription.poolLengthM ?? defaultPoolLengthM ?? DEFAULT_POOL_LENGTH_M,
   };
 }

@@ -48,6 +48,7 @@ describe('shouldHydrateProfileForm', () => {
         maxHr: null,
         lthr: null,
         runThresholdPaceSecPerKm: null,
+        defaultPoolLengthM: null,
         vo2maxRunning: null,
         vo2maxCycling: null,
         thresholdsSyncedAt: null,

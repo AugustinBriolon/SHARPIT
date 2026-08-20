@@ -42,17 +42,33 @@ export type PushEnduranceWorkoutResult = {
   pushedAt?: string | null;
 };
 
-export async function loadAthleteThresholds(): Promise<AthleteThresholds> {
+type PushProfile = {
+  thresholds: AthleteThresholds;
+  /** Athlete's usual pool length — Garmin needs one to render a swim workout. */
+  defaultPoolLengthM: number | null;
+};
+
+/** One read for everything the payload needs from the athlete profile. */
+export async function loadPushProfile(): Promise<PushProfile> {
   const profile = await prisma.athleteProfile.findUnique({
     where: { id: PROFILE_ID },
-    select: { runThresholdPaceSecPerKm: true, ftpW: true, lthr: true, maxHr: true },
+    select: {
+      runThresholdPaceSecPerKm: true,
+      ftpW: true,
+      lthr: true,
+      maxHr: true,
+      defaultPoolLengthM: true,
+    },
   });
 
   return {
-    runThresholdPaceSecPerKm: profile?.runThresholdPaceSecPerKm ?? null,
-    ftpW: profile?.ftpW ?? null,
-    lthr: profile?.lthr ?? null,
-    maxHr: profile?.maxHr ?? null,
+    thresholds: {
+      runThresholdPaceSecPerKm: profile?.runThresholdPaceSecPerKm ?? null,
+      ftpW: profile?.ftpW ?? null,
+      lthr: profile?.lthr ?? null,
+      maxHr: profile?.maxHr ?? null,
+    },
+    defaultPoolLengthM: profile?.defaultPoolLengthM ?? null,
   };
 }
 
@@ -95,13 +111,14 @@ export async function pushEnduranceWorkoutFromPlannedSession(options: {
 
   if (!options.force) await assertNotAlreadyPushed(session);
 
-  const thresholds = await loadAthleteThresholds();
+  const { thresholds, defaultPoolLengthM } = await loadPushProfile();
   const { prescription, derived, warnings } = effectiveEndurancePrescription({
     sport,
     durationMin: session.durationMin,
     intensity: session.intensity,
     stored: session.endurancePrescription,
     thresholds,
+    defaultPoolLengthM,
   });
 
   const workoutName =

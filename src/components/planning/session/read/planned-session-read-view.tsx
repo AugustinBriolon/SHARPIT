@@ -279,25 +279,36 @@ export function PlannedSessionReadView({
     </div>
   ) : null;
 
-  // Running and bike have a validated target table (ADR-017); swimming does not,
-  // so it stays out rather than receiving steps with no guidance.
-  const guidedSport = session.type === ActivityType.RUN || session.type === ActivityType.BIKE;
+  // Swimming ships without a target table: the watch gets the set structure but no
+  // pace band, which is where most of the value is in a pool anyway.
+  const isSwim = session.type === ActivityType.SWIM;
+  const pushableSport =
+    session.type === ActivityType.RUN || session.type === ActivityType.BIKE || isSwim;
   const enduranceBlock =
-    guidedSport && !isRealized ? (
+    pushableSport && !isRealized ? (
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
           <p className="text-foreground/85 inline-flex items-center gap-1.5 text-sm font-medium">
             <Watch className="text-muted-foreground size-3.5" />
-            Séance guidée
+            {isSwim ? 'Séance sur la montre' : 'Séance guidée'}
           </p>
           {watchPushButton(true)}
         </div>
         {watchStatusLine}
         {watchStaleLine}
         <p className="text-muted-foreground/80 text-xs leading-snug">
-          La montre affiche la fourchette{' '}
-          {session.type === ActivityType.BIKE ? 'de puissance' : "d'allure"} et alerte quand tu sors
-          de la zone.
+          {isSwim ? (
+            <>
+              La montre affiche le déroulé série par série. Pas encore de cible d&apos;allure en
+              natation.
+            </>
+          ) : (
+            <>
+              La montre affiche la fourchette{' '}
+              {session.type === ActivityType.BIKE ? 'de puissance' : "d'allure"} et alerte quand tu
+              sors de la zone.
+            </>
+          )}
         </p>
       </div>
     ) : null;

@@ -234,6 +234,10 @@ model AthleteProfile {
   /// Shape: { version: 1, strengthVenue: 'gym'|'home'|'both'|'bodyweight'|null, owned: string[] }
   equipment Json?
 
+  /// Longueur du bassin habituel (m) — Garmin en a besoin pour rendre une séance
+  /// de natation en piscine. Surchargeable séance par séance.
+  defaultPoolLengthM       Int?
+
   sleepTargetMinutes    Int? // durée de sommeil visée (min)
   sleepBedtimeTargetMin Int? // heure de coucher visée (minutes depuis minuit, locale)
 

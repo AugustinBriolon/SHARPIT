@@ -59,6 +59,7 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
   const [thresholdPace, setThresholdPace] = useState(() =>
     paceToInput(initial?.runThresholdPaceSecPerKm ?? null),
   );
+  const [poolLength, setPoolLength] = useState(initial?.defaultPoolLengthM?.toString() ?? '');
   const [vo2maxRunning, setVo2maxRunning] = useState<number | null>(initial?.vo2maxRunning ?? null);
   const [vo2maxCycling, setVo2maxCycling] = useState<number | null>(initial?.vo2maxCycling ?? null);
   const [saving, setSaving] = useState(false);
@@ -156,6 +157,7 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
         maxHr: maxHr ? Number(maxHr) : null,
         lthr: lthr ? Number(lthr) : null,
         runThresholdPaceSecPerKm: parsePaceInput(thresholdPace),
+        defaultPoolLengthM: poolLength ? Number(poolLength) : null,
       };
       const previousProfile = saveProfilePatch(queryClient, patch);
 
@@ -350,6 +352,22 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
               value={thresholdPace}
               onChange={(e) => setThresholdPace(e.target.value)}
             />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="defaultPoolLengthM">Longueur de bassin (m)</Label>
+            <Input
+              className={NUMERIC_INPUT_CLASS}
+              id="defaultPoolLengthM"
+              max={100}
+              min={10}
+              placeholder="25"
+              type="number"
+              value={poolLength}
+              onChange={(e) => setPoolLength(e.target.value)}
+            />
+            <p className="text-muted-foreground/80 text-xs">
+              Requis par Garmin pour envoyer une séance de natation. 25 m par défaut.
+            </p>
           </div>
         </div>
       </ProfileFormSection>
