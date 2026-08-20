@@ -1,6 +1,9 @@
 import type { CorpsTone } from '@/components/corps/corps-ui';
 import { corpsToneFromAgeDelta, maxCorpsTone } from './health-status';
-import { getAfibInterpretation, afibToScaleValue } from '@/lib/integrations/withings-ecg-display';
+import {
+  getAfibInterpretation,
+  afibToScaleValue,
+} from '@/lib/integrations/withings/withings-ecg-display';
 
 export type CompositionMetricId =
   | 'bmi'

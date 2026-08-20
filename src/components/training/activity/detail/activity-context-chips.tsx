@@ -5,8 +5,8 @@ import {
   activityWeatherIconClassName,
   formatActivityWeatherChip,
   parseActivityWeather,
-} from '@/lib/activity/activity-weather';
-import { isIndoorActivitySession } from '@/lib/activity/indoor-activity';
+} from '@/lib/activity/weather/activity-weather';
+import { isIndoorActivitySession } from '@/lib/activity/location/indoor-activity';
 import { recordCategoryHref } from '@/lib/training/records';
 import { ActivityPlannedSessionChip } from './activity-planned-session-chip';
 import { ActivityMetaChip } from './activity-meta-chip';

@@ -2,7 +2,7 @@
 
 import { CartesianGrid, Legend, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
+import { ResponsiveChartFrame } from '@/components/ui/charts/responsive-chart-frame';
 import { CHART_COLORS, type PmcPoint } from '@/lib/analytics';
 
 interface LoadChartProps {

@@ -4,15 +4,12 @@ import { CalendarView } from '@/components/calendar/calendar-view';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { PlanningView } from '@/components/planning/planning-view';
-import {
-  SessionsCoachMenu,
-  type SessionsCoachAction,
-} from '@/components/sessions/sessions-coach-menu';
+import { SessionsCoachMenu, type SessionsCoachAction } from '@/components/coaching/coach-menu';
 import { TrainingList } from '@/components/training/hub/training-list';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonCard } from '@/components/ui/skeleton-patterns';
 import { useGoals } from '@/hooks/use-data';
-import { EMPTY_GOALS } from '@/components/planning/session/planned-session-dialog-helpers';
+import { EMPTY_GOALS } from '@/components/planning/session/session-defaults';
 import { navPillClass } from '@/lib/ui/nav-pill';
 import { CalendarRange, ClipboardList, List } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -20,7 +17,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 const PlannedSessionDialog = dynamic(
   () =>
-    import('@/components/planning/session/planned-session-dialog').then(
+    import('@/components/planning/session/edit/planned-session-dialog').then(
       (mod) => mod.PlannedSessionDialog,
     ),
   { ssr: false },

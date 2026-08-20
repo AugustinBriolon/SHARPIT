@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import type { IntegrationId } from '@/lib/integrations/client-sync';
+import type { IntegrationId } from '@/lib/integrations/shared/client-sync';
 
 const LOGO_PATHS: Record<IntegrationId, string> = {
   strava: '/images/strava.png',

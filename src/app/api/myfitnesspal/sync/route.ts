@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { syncMfpNutrition } from '@/lib/integrations/myfitnesspal-sync';
+import { syncMfpNutrition } from '@/lib/integrations/myfitnesspal/myfitnesspal-sync';
 
 export async function POST() {
   try {

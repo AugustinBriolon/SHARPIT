@@ -5,7 +5,7 @@ import {
   buildWithingsAuthorizeUrl,
   getWithingsRedirectUri,
   isWithingsConfigured,
-} from '@/lib/integrations/withings';
+} from '@/lib/integrations/withings/withings';
 
 export async function GET(request: NextRequest) {
   if (!isWithingsConfigured()) {

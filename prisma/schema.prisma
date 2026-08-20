@@ -1180,6 +1180,9 @@ model PlannedSession {
   description String?
   /// Structured strength prescription (sets/reps) — STRENGTH only. Not an engine output.
   strengthPrescription Json?
+  /// Structured endurance prescription (steps/targets) — RUN/BIKE/SWIM. Not an engine output.
+  /// Targets are stored relative to athlete thresholds and resolved at push time.
+  endurancePrescription Json?
   /// Session-specific accessories (EquipmentItemId[]) — athlete prep checklist.
   accessories Json?
   durationMin Int? // durée prévue en minutes
@@ -1220,6 +1223,9 @@ model PlannedSession {
   garminWorkoutId String?
   garminWorkoutScheduledDate String? // YYYY-MM-DD
   garminWorkoutPushedAt DateTime?
+  /// Seuils athlète utilisés pour résoudre les cibles envoyées — sert à détecter
+  /// qu'une séance déjà envoyée est périmée parce que les seuils ont bougé depuis.
+  garminWorkoutThresholds Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

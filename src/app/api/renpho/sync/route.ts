@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { syncRenphoHealth } from '@/lib/integrations/renpho-sync';
+import { syncRenphoHealth } from '@/lib/integrations/renpho/renpho-sync';
 
 export const maxDuration = 300;
 

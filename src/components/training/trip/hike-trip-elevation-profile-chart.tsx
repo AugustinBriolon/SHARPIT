@@ -1,7 +1,7 @@
 'use client';
 
 import { Area, AreaChart, ReferenceDot, ReferenceLine, XAxis, YAxis } from 'recharts';
-import { ResponsiveChartFrame } from '@/components/ui/responsive-chart-frame';
+import { ResponsiveChartFrame } from '@/components/ui/charts/responsive-chart-frame';
 import {
   CHART_GRID_COLOR,
   CHART_INK_GRID_COLOR,
@@ -12,7 +12,7 @@ import {
 import {
   formatRelativeGain,
   type HikeTripElevationProfile as Profile,
-} from '@/lib/activity/hike-trip-elevation';
+} from '@/lib/activity/hike/hike-trip-elevation';
 import { cn } from '@/lib/utils';
 
 /**

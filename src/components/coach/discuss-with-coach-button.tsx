@@ -4,8 +4,8 @@ import { MessageCircle } from 'lucide-react';
 import type { VariantProps } from 'class-variance-authority';
 import type { buttonVariants } from '@/components/ui/button';
 import { LinkButton } from '@/components/ui/link-button';
-import { usePlannedSessionNavDismiss } from '@/components/planning/session/planned-session-nav-dismiss';
-import { coachDiscussHref, type CoachDiscussTarget } from '@/lib/coach/coach-discuss-href';
+import { usePlannedSessionNavDismiss } from '@/components/planning/session/edit/planned-session-nav-dismiss';
+import { coachDiscussHref, type CoachDiscussTarget } from '@/lib/coach/chat/coach-discuss-href';
 import { useAppModalOptional } from '@/providers/app-modal-provider';
 
 type ButtonVariant = VariantProps<typeof buttonVariants>;

@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { createPortal } from 'react-dom';
-import { ActivityList } from '@/components/training/activity/activity-list';
+import { ActivityList } from '@/components/training/activity/list/activity-list';
 import { HistoryFilters } from '@/components/training/hub/history-filters';
 import type { ClientActivity } from '@/lib/query/types';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { LinkButton } from '@/components/ui/link-button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
-import { InstrumentListChipSkeleton } from '@/components/ui/instrument-list-chip';
+import { InstrumentListChipSkeleton } from '@/components/ui/instruments/instrument-list-chip';
 import { useActivities, useRecords } from '@/hooks/use-data';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import {

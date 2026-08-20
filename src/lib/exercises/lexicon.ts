@@ -76,10 +76,15 @@ const QUALIFIERS = new Set([
   'dynamique',
   'excentrique',
   'gauche',
+  'gilet',
   'isometrie',
   'isometrique',
   'lent',
   'lente',
+  'leste',
+  'lestee',
+  'lestees',
+  'lestes',
   'mur',
   'pause',
   'sol',
@@ -105,6 +110,7 @@ export const EQUIPMENT_CONCEPTS = new Set([
   'sled',
   'rope',
   'suspension',
+  'ring',
 ]);
 
 /**
@@ -195,6 +201,8 @@ const SYNONYM_GROUPS: readonly (readonly string[])[] = [
   ['machine', 'poulie', 'cable'],
   ['ball', 'ballon', 'swiss', 'medecine'],
   ['suspension', 'trx', 'sangle', 'sangles'],
+  ['ring', 'rings', 'anneau', 'anneaux'],
+  ['dip', 'dips'],
 ];
 
 const CANONICAL_BY_TOKEN: ReadonlyMap<string, string> = (() => {
@@ -219,6 +227,7 @@ const BIGRAM_MERGES: readonly (readonly [string, string])[] = [
   ['clam shells', 'clamshell'],
   ['nerve flossing', 'sciatique'],
   ['hollow body', 'hollow'],
+  ['muscle up', 'muscleup'],
 ];
 
 export function canonicalConcept(token: string): string {

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { disconnectStrava } from '@/lib/integrations/strava-sync';
+import { disconnectStrava } from '@/lib/integrations/strava/strava-sync';
 
 export async function POST() {
   try {

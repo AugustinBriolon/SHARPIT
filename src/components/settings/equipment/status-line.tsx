@@ -38,7 +38,7 @@ export function strengthInventoryMessage(venue: StrengthVenue | null): string | 
     return "Pas besoin d'inventaire salle : le coach part du matériel standard.";
   }
   if (venue === 'bodyweight') {
-    return 'Aucun matériel de charge — le coach restera sur le poids du corps.';
+    return "Poids du corps — seul le lest portable (gilet, ceinture) peut s'ajouter.";
   }
   return null;
 }

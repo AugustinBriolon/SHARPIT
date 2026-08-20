@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { ActivityType } from '@prisma/client';
 import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
-import { enrichActivityObservedContext } from '@/lib/activity/enrich-observed-context';
+import { enrichActivityObservedContext } from '@/lib/activity/detail/enrich-observed-context';
 import { buildActivityCreateData } from '@/lib/activity/activity-service';
-import { runActivityNarrativeAnalysis } from '@/lib/activity/activity-narrative';
+import { runActivityNarrativeAnalysis } from '@/lib/activity/narrative/activity-narrative';
 import { syncManualActivityObservations } from '@/lib/manual-observation-sync';
 import { createActivity, getActivitiesList } from '@/lib/queries';
 import { prisma } from '@/lib/prisma';
@@ -86,7 +86,8 @@ export async function POST(request: NextRequest) {
 
       let plannedSessionIdsToAnalyze: string[] = [];
       try {
-        const { autoLinkActivities } = await import('@/lib/planned-session/session-linking');
+        const { autoLinkActivities } =
+          await import('@/lib/planned-session/linking/session-linking');
         plannedSessionIdsToAnalyze = (await autoLinkActivities([activityId])).sessionIds;
       } catch (error) {
         console.error('[activities/POST] auto-link', error);

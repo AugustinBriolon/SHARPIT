@@ -1,26 +1,26 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-vi.mock('@/lib/integrations/garmin-activity-sync', () => ({
+vi.mock('@/lib/integrations/garmin/garmin-activity-sync', () => ({
   syncGarminActivities: vi.fn(),
 }));
-vi.mock('@/lib/integrations/garmin-sync', () => ({
+vi.mock('@/lib/integrations/garmin/garmin-sync', () => ({
   getGarminAccount: vi.fn(),
   syncGarminHealth: vi.fn(),
   GARMIN_HEALTH_OPEN_PATH_FALLBACK_DAYS: 14,
 }));
-vi.mock('@/lib/integrations/strava-sync', () => ({
+vi.mock('@/lib/integrations/strava/strava-sync', () => ({
   getStravaAccount: vi.fn(),
   syncStravaActivities: vi.fn(),
 }));
-vi.mock('@/lib/integrations/renpho-sync', () => ({
+vi.mock('@/lib/integrations/renpho/renpho-sync', () => ({
   getRenphoAccount: vi.fn().mockResolvedValue(null),
   syncRenphoHealth: vi.fn(),
 }));
-vi.mock('@/lib/integrations/withings-sync', () => ({
+vi.mock('@/lib/integrations/withings/withings-sync', () => ({
   getWithingsAccount: vi.fn().mockResolvedValue(null),
   syncWithingsHealth: vi.fn(),
 }));
-vi.mock('@/lib/integrations/google-sync', () => ({
+vi.mock('@/lib/integrations/google/google-sync', () => ({
   getGoogleAccount: vi.fn().mockResolvedValue(null),
   syncFromGoogle: vi.fn(),
 }));
@@ -31,8 +31,9 @@ describe('syncProviders', () => {
   });
 
   it('runs garmin health and activities in parallel', async () => {
-    const { getGarminAccount, syncGarminHealth } = await import('@/lib/integrations/garmin-sync');
-    const { syncGarminActivities } = await import('@/lib/integrations/garmin-activity-sync');
+    const { getGarminAccount, syncGarminHealth } =
+      await import('@/lib/integrations/garmin/garmin-sync');
+    const { syncGarminActivities } = await import('@/lib/integrations/garmin/garmin-activity-sync');
     const { syncProviders } = await import('@/lib/athlete-state/sync-providers');
 
     let healthStarted = false;
@@ -75,10 +76,11 @@ describe('syncProviders', () => {
   });
 
   it('syncs distinct providers concurrently and isolates failures', async () => {
-    const { getGarminAccount, syncGarminHealth } = await import('@/lib/integrations/garmin-sync');
-    const { syncGarminActivities } = await import('@/lib/integrations/garmin-activity-sync');
+    const { getGarminAccount, syncGarminHealth } =
+      await import('@/lib/integrations/garmin/garmin-sync');
+    const { syncGarminActivities } = await import('@/lib/integrations/garmin/garmin-activity-sync');
     const { getStravaAccount, syncStravaActivities } =
-      await import('@/lib/integrations/strava-sync');
+      await import('@/lib/integrations/strava/strava-sync');
     const { syncProviders } = await import('@/lib/athlete-state/sync-providers');
 
     let stravaStartedWhileGarminPending = false;

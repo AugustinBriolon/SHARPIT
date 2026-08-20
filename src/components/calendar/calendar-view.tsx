@@ -1,9 +1,6 @@
 'use client';
 
-import {
-  SessionsCoachMenu,
-  type SessionsCoachAction,
-} from '@/components/sessions/sessions-coach-menu';
+import { SessionsCoachMenu, type SessionsCoachAction } from '@/components/coaching/coach-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   SkeletonCard,
@@ -52,7 +49,7 @@ import {
   groupEventsByDay,
   parseCalendarDateParam,
 } from './calendar-utils';
-import { EMPTY_GOALS } from '@/components/planning/session/planned-session-dialog-helpers';
+import { EMPTY_GOALS } from '@/components/planning/session/session-defaults';
 
 const BrickDialog = dynamic(
   () => import('@/components/planning/brick/brick-dialog').then((mod) => mod.BrickDialog),
@@ -60,7 +57,7 @@ const BrickDialog = dynamic(
 );
 const PlannedSessionDialog = dynamic(
   () =>
-    import('@/components/planning/session/planned-session-dialog').then(
+    import('@/components/planning/session/edit/planned-session-dialog').then(
       (mod) => mod.PlannedSessionDialog,
     ),
   { ssr: false },

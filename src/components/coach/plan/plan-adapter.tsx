@@ -36,7 +36,7 @@ import type { GateSessionResult } from '@/lib/plan-gate/types';
 import { GateStatusBadge, GateFindingsList } from '@/components/coach/plan/gate-status-badge';
 import { AdaptationTrigger } from '@/components/coach/plan/adaptation-trigger';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
-import { resolveStrengthFieldsForPersist } from '@/lib/planned-session/strength-prescription';
+import { resolveStrengthFieldsForPersist } from '@/lib/planned-session/strength/strength-prescription';
 import { warmCoachContext } from '@/lib/coach/warm-coach-context';
 
 /** REMOVE changes bypass the Gate (see coach/adapt/route.ts) — only ADD/MODIFY changes have a gate result. */

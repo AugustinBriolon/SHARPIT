@@ -1,4 +1,4 @@
-import { auditStrengthPrescription } from '@/lib/planned-session/strength-session-template';
+import { auditStrengthPrescription } from '@/lib/planned-session/strength/strength-session-template';
 import type { GateContext, GateProposal, PlanGateRule, RuleFinding } from '../types';
 
 /**

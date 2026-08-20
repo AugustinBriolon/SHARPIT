@@ -1,22 +1,22 @@
 import { IntegrationsHub } from '@/components/settings/integrations/hub';
 import type { IntegrationsPayload } from '@/components/settings/integrations/types';
-import { getGarminAccount } from '@/lib/integrations/garmin-sync';
-import { isGoogleConfigured } from '@/lib/integrations/google';
-import { getGoogleAccount, isGoogleConnected } from '@/lib/integrations/google-sync';
-import { getMfpAccount } from '@/lib/integrations/myfitnesspal-sync';
-import { isMfpConfigured } from '@/lib/integrations/myfitnesspal';
+import { getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
+import { isGoogleConfigured } from '@/lib/integrations/google/google';
+import { getGoogleAccount, isGoogleConnected } from '@/lib/integrations/google/google-sync';
+import { getMfpAccount } from '@/lib/integrations/myfitnesspal/myfitnesspal-sync';
+import { isMfpConfigured } from '@/lib/integrations/myfitnesspal/myfitnesspal';
 
-import { getRenphoAccount } from '@/lib/integrations/renpho-sync';
-import { isStravaConfigured } from '@/lib/integrations/strava';
-import { getStravaAccount } from '@/lib/integrations/strava-sync';
-import { isWithingsConfigured } from '@/lib/integrations/withings';
-import { getWithingsAccount } from '@/lib/integrations/withings-sync';
+import { getRenphoAccount } from '@/lib/integrations/renpho/renpho-sync';
+import { isStravaConfigured } from '@/lib/integrations/strava/strava';
+import { getStravaAccount } from '@/lib/integrations/strava/strava-sync';
+import { isWithingsConfigured } from '@/lib/integrations/withings/withings';
+import { getWithingsAccount } from '@/lib/integrations/withings/withings-sync';
 import {
   isGarminAccountConnected,
   isMfpAccountConnected,
   isOAuthAccountConnected,
   isRenphoAccountConnected,
-} from '@/lib/integrations/connection-status';
+} from '@/lib/integrations/shared/connection-status';
 
 const statusMessages: Record<string, string> = {
   connected: 'Compte Strava connecté.',

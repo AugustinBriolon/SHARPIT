@@ -10,7 +10,7 @@
  */
 
 import type { ActivityType, GoalHorizon, PlanPhase, SessionIntensity } from '@prisma/client';
-import type { CoachStrengthPrescription } from '@/lib/planned-session/strength-prescription';
+import type { CoachStrengthPrescription } from '@/lib/planned-session/strength/strength-prescription';
 import type { SerializedDecisionState } from '@/core/decision/adapters';
 import type { PhysicalHealthData, TrainingCapacity } from '@/hooks/use-today';
 

@@ -5,7 +5,7 @@ import { fr } from 'date-fns/locale';
 import { Check, ChevronRight, Layers, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { BrickAnalysisPanel } from '@/components/planning/brick/brick-analysis-panel';
-import { SessionRealization } from '@/components/planning/session/session-realization';
+import { SessionRealization } from '@/components/planning/session/realize/session-realization';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { ClientPlannedSession } from '@/lib/query/types';

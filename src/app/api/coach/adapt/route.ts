@@ -3,11 +3,11 @@ import { addDays, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
-import { buildCoachContext, formatCoachContext } from '@/lib/coach/coach-context';
+import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
 import { getActiveTrainingPlan, getGoals, getPlannedSessionsForCoach } from '@/lib/queries';
 import { resolveDefaultPlanGoalId, selectableDatedGoalIds } from '@/lib/planned-session/plan-goal';
 import { intensityLabels } from '@/lib/planned-session/sessions';
-import { formatStrengthSessionRules } from '@/lib/planned-session/strength-session-template';
+import { formatStrengthSessionRules } from '@/lib/planned-session/strength/strength-session-template';
 import {
   adaptPlanGenerationSchema,
   adaptPlanSchema,
@@ -24,7 +24,7 @@ import {
   COACH_PROGRESS_HEADERS,
   encodeCoachProgressEvent,
   type CoachProgressEvent,
-} from '@/lib/coach/coach-progress-stream';
+} from '@/lib/coach/chat/coach-progress-stream';
 
 type AdaptChange = AdaptPlan['changes'][number];
 type UpcomingSession = Awaited<ReturnType<typeof getPlannedSessionsForCoach>>[number];

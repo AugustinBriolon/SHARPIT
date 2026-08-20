@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { mfpDayToNutritionObservation } from './myfitnesspal-adapter';
-import type { MfpDayResult } from '@/lib/integrations/myfitnesspal';
+import type { MfpDayResult } from '@/lib/integrations/myfitnesspal/myfitnesspal';
 
 const RECEIVED_AT = new Date('2026-08-19T18:30:00Z');
 

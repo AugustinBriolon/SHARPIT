@@ -26,7 +26,7 @@ import { useMemo, useState } from 'react';
 
 const MetricLineChart = dynamic(
   () =>
-    import('@/components/recovery/sections/health-charts').then(
+    import('@/components/recovery/blocks/health-charts').then(
       (mod) => mod.MetricLineChart<BodyChartPoint>,
     ),
   { ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },

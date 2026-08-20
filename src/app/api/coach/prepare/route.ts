@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { buildCoachContext } from '@/lib/coach/coach-context';
+import { buildCoachContext } from '@/lib/coach/context/coach-context';
 
 export const maxDuration = 60;
 

@@ -7,8 +7,8 @@ import {
   buildToolDisplayEntries,
   condensedFailureLabel,
   type ToolDisplayEntry,
-} from '@/lib/coach/coach-tool-display';
-import type { ToolPartLite } from '@/lib/coach/coach-tool-parts';
+} from '@/lib/coach/chat/coach-tool-display';
+import type { ToolPartLite } from '@/lib/coach/chat/coach-tool-parts';
 import { useSafeMotion, useShouldAnimate } from '@/lib/motion/hooks';
 import { fadeTransition } from '@/lib/motion/variants';
 

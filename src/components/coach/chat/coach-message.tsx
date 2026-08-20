@@ -1,8 +1,8 @@
 'use client';
 
 import { Markdown } from '@/components/coach/chat/markdown';
-import type { CoachMessageBlock, CoachMetricItem } from '@/lib/coach/coach-message-structure';
-import { parseCoachMessage } from '@/lib/coach/coach-message-structure';
+import type { CoachMessageBlock, CoachMetricItem } from '@/lib/coach/chat/coach-message-structure';
+import { parseCoachMessage } from '@/lib/coach/chat/coach-message-structure';
 import { cn } from '@/lib/utils';
 
 function MetricValue({ value }: { value: string }) {

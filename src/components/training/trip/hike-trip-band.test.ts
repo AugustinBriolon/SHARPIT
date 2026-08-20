@@ -2,7 +2,7 @@ import { createElement } from 'react';
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ActivityType } from '@prisma/client';
-import type { HikeTripSummary } from '@/lib/activity/hike-trip-summary';
+import type { HikeTripSummary } from '@/lib/activity/hike/hike-trip-summary';
 import { buildHikeTripBandMetrics, HikeTripInkBand } from './hike-trip-ink-band';
 import { HikeTripTimelineList, RemoveMemberButton } from './hike-trip-timeline';
 import { HikeTripWaypoints } from './hike-trip-waypoints';

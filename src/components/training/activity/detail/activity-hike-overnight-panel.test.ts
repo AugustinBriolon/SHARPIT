@@ -1,7 +1,7 @@
 import { createElement } from 'react';
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { HikeOvernightSummary } from '@/lib/activity/hike-overnight-summary';
+import type { HikeOvernightSummary } from '@/lib/activity/hike/hike-overnight-summary';
 import { ActivityHikeOvernightPanel } from './activity-hike-overnight-panel';
 
 const base: Omit<HikeOvernightSummary, 'variant'> = {

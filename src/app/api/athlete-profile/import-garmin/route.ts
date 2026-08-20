@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { importGarminThresholds } from '@/lib/integrations/garmin-sync';
+import { importGarminThresholds } from '@/lib/integrations/garmin/garmin-sync';
 
 export async function POST() {
   try {

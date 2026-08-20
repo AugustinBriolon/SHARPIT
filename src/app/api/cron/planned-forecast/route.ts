@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { refreshUpcomingPlannedSessionForecasts } from '@/lib/planned-session/refresh-forecasts';
+import { refreshUpcomingPlannedSessionForecasts } from '@/lib/planned-session/forecast/refresh-forecasts';
 
 export const maxDuration = 300;
 

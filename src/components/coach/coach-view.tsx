@@ -33,13 +33,13 @@ import {
   buildPlanningDiscussPrompt,
   buildPlannedSessionDiscussPrompt,
   buildSessionDiscussPrompt,
-} from '@/lib/coach/coach-discuss-prompts';
-import { clearCoachInputDraft } from '@/lib/coach/coach-input-draft';
+} from '@/lib/coach/chat/coach-discuss-prompts';
+import { clearCoachInputDraft } from '@/lib/coach/chat/coach-input-draft';
 import { warmCoachContext } from '@/lib/coach/warm-coach-context';
 import { createClientId } from '@/lib/client-id';
 import { activityTypeLabels } from '@/lib/format';
 import { exposureLabels } from '@/lib/planned-session/sessions';
-import { parseSessionAnalysis } from '@/lib/planned-session/session-analysis-display';
+import { parseSessionAnalysis } from '@/lib/planned-session/display/session-analysis-display';
 import type { SessionAnalysis } from '@/lib/validators/coach';
 
 const inFlightDiscussBootstraps = new Set<string>();

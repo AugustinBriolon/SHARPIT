@@ -19,16 +19,16 @@ vi.mock('@/lib/queries/planned-sessions', async (importOriginal) => {
   };
 });
 
-vi.mock('@/lib/integrations/garmin', () => ({
+vi.mock('@/lib/integrations/garmin/garmin', () => ({
   clientFromTokens: vi.fn(),
   garminTokensFromStorage: vi.fn(),
 }));
 
-vi.mock('@/lib/integrations/garmin-multisport', () => ({
+vi.mock('@/lib/integrations/garmin/garmin-multisport', () => ({
   fetchGarminMultisportLegs: vi.fn(),
 }));
 
-vi.mock('@/lib/integrations/garmin-sync', () => ({
+vi.mock('@/lib/integrations/garmin/garmin-sync', () => ({
   getGarminAccount: vi.fn(),
 }));
 

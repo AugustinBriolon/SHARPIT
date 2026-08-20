@@ -1,7 +1,7 @@
 'use client';
 
-import { AdaptationStatsStrip } from '@/components/adaptation/adaptation-stats-strip';
-import { AdaptationWhyBlock } from '@/components/adaptation/adaptation-why-block';
+import { AdaptationStatsStrip } from '@/components/adaptation/blocks/adaptation-stats-strip';
+import { AdaptationWhyBlock } from '@/components/adaptation/blocks/adaptation-why-block';
 import { DrillDownDimensionRow } from '@/components/today/drill-down/dimension-row';
 import {
   DataReliabilityFooter,

@@ -8,7 +8,7 @@
  * vocabulary — it derives nothing.
  */
 
-import type { MfpDayResult } from '@/lib/integrations/myfitnesspal';
+import type { MfpDayResult } from '@/lib/integrations/myfitnesspal/myfitnesspal';
 import type { RawNutritionObservation } from '@/core/observation/types';
 
 /** Midday keeps the anchor clear of every training-day boundary and timezone offset. */

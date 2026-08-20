@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { exchangeCodeForToken } from '@/lib/integrations/strava';
+import { exchangeCodeForToken } from '@/lib/integrations/strava/strava';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);

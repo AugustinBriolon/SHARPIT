@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { getAthleteProfile, upsertAthleteProfile } from '@/lib/queries';
 import { athleteProfileSchema } from '@/lib/validators/athlete-profile';
-import { invalidateCoachContext } from '@/lib/coach/coach-context';
+import { invalidateCoachContext } from '@/lib/coach/context/coach-context';
 import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
 
 function profileUpdateError(error: unknown) {

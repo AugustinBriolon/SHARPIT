@@ -1,4 +1,4 @@
-import type { HeroActivity } from '@/components/training/activity/activity-hero-stats';
+import type { HeroActivity } from './activity-hero-stats';
 import { SPORT_IDENTITY_SURFACE } from '@/lib/activity/sport-identity';
 import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
 import { ActivityType } from '@prisma/client';

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
-import { runActivityNarrativeAnalysis } from '@/lib/activity/activity-narrative';
+import { runActivityNarrativeAnalysis } from '@/lib/activity/narrative/activity-narrative';
 import { prisma } from '@/lib/prisma';
 
 type RouteContext = { params: Promise<{ id: string }> };

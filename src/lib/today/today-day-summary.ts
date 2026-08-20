@@ -1,7 +1,7 @@
 import { isSameDay, startOfDay } from 'date-fns';
 import type { ActivityType } from '@prisma/client';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
-import { groupPlannedSessions } from '@/lib/planned-session/brick-sessions';
+import { groupPlannedSessions } from '@/lib/planned-session/brick/brick-sessions';
 import { activityTypeLabels, formatDuration } from '@/lib/format';
 import { formatPlannedDuration, intensityLabels } from '@/lib/planned-session/sessions';
 

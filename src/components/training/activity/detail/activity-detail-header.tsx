@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { ActivityType } from '@prisma/client';
 import { Link2, MoreHorizontal, Mountain, Pencil, Trash2 } from 'lucide-react';
 import { StickyHeader } from '@/components/layout/sticky-header';
-import { DiscussCoachLink } from '@/components/training/activity/discuss-coach-link';
+import { DiscussCoachLink } from './discuss-coach-link';
 import { LinkHikeActivitiesSheet } from '@/components/training/trip/link-hike-activities-sheet';
 import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';

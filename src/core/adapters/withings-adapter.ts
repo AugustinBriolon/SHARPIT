@@ -2,7 +2,7 @@
  * ADAPTER — Withings Measurement → RawBodyCompositionObservation
  */
 
-import type { WithingsParsedMeasurement } from '@/lib/integrations/withings';
+import type { WithingsParsedMeasurement } from '@/lib/integrations/withings/withings';
 import type { RawBodyCompositionObservation } from '@/core/observation/types';
 
 export function withingsMeasurementToBodyComposition(

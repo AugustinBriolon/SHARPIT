@@ -6,7 +6,7 @@ import { type ReactNode } from 'react';
 import Link from 'next/link';
 import { PlanningRow } from '@/components/today/dashboard/planning-row';
 import { ActivityConsistencyPanel } from '@/components/today/dashboard/activity-consistency-panel';
-import { ActivityList } from '@/components/training/activity/activity-list';
+import { ActivityList } from '@/components/training/activity/list/activity-list';
 import {
   TrainingDashboardShell,
   TrainingSectionLink,
@@ -22,7 +22,7 @@ import { useOnlineStatus } from '@/hooks/use-online-status';
 import { isAnyInitialQueryLoad } from '@/hooks/use-query-status';
 import { useIsMobile } from '@/hooks/use-viewport';
 import { selectUpcomingPlannedPreview } from '@/lib/planned-session/planned-session-dates';
-import { resolvePlannedSessionDisplay } from '@/lib/planned-session/planned-session-display';
+import { resolvePlannedSessionDisplay } from '@/lib/planned-session/display/planned-session-display';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import { cn } from '@/lib/utils';
 import { GoalKind } from '@prisma/client';

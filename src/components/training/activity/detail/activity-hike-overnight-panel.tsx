@@ -1,5 +1,5 @@
 import { formatDate, formatDistance, formatDuration } from '@/lib/format';
-import type { HikeOvernightSummary } from '@/lib/activity/hike-overnight-summary';
+import type { HikeOvernightSummary } from '@/lib/activity/hike/hike-overnight-summary';
 import { SPORT_IDENTITY_PANEL } from '@/lib/activity/sport-identity';
 import { ActivityType } from '@prisma/client';
 import { cn } from '@/lib/utils';

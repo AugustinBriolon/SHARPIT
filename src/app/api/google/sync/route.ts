@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { GoogleOAuthError } from '@/lib/integrations/google';
-import { syncFromGoogle } from '@/lib/integrations/google-sync';
+import { GoogleOAuthError } from '@/lib/integrations/google/google';
+import { syncFromGoogle } from '@/lib/integrations/google/google-sync';
 
 export async function POST() {
   try {

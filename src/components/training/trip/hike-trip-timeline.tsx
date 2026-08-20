@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { HikeStepSparkline } from '@/components/training/trip/hike-trip-elevation-profile-chart';
 import { useHikeTripMutations } from '@/hooks/use-data';
-import { buildHikeStepSparkline } from '@/lib/activity/hike-trip-elevation';
+import { buildHikeStepSparkline } from '@/lib/activity/hike/hike-trip-elevation';
 import { formatDate, formatDistance, formatDuration } from '@/lib/format';
 import type { ClientHikeTrip } from '@/lib/query/types';
 import { cn } from '@/lib/utils';

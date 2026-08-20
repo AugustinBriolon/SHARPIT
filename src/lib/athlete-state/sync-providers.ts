@@ -3,17 +3,17 @@ import {
   isGarminAccountConnected,
   isOAuthAccountConnected,
   isRenphoAccountConnected,
-} from '@/lib/integrations/connection-status';
-import { syncGarminActivities } from '@/lib/integrations/garmin-activity-sync';
+} from '@/lib/integrations/shared/connection-status';
+import { syncGarminActivities } from '@/lib/integrations/garmin/garmin-activity-sync';
 import {
   GARMIN_HEALTH_OPEN_PATH_FALLBACK_DAYS,
   getGarminAccount,
   syncGarminHealth,
-} from '@/lib/integrations/garmin-sync';
-import { getGoogleAccount, syncFromGoogle } from '@/lib/integrations/google-sync';
-import { getRenphoAccount, syncRenphoHealth } from '@/lib/integrations/renpho-sync';
-import { getStravaAccount, syncStravaActivities } from '@/lib/integrations/strava-sync';
-import { getWithingsAccount, syncWithingsHealth } from '@/lib/integrations/withings-sync';
+} from '@/lib/integrations/garmin/garmin-sync';
+import { getGoogleAccount, syncFromGoogle } from '@/lib/integrations/google/google-sync';
+import { getRenphoAccount, syncRenphoHealth } from '@/lib/integrations/renpho/renpho-sync';
+import { getStravaAccount, syncStravaActivities } from '@/lib/integrations/strava/strava-sync';
+import { getWithingsAccount, syncWithingsHealth } from '@/lib/integrations/withings/withings-sync';
 
 export type ProviderSyncResult = {
   provider: DataProvider;

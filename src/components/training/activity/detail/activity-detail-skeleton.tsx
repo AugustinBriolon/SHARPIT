@@ -7,7 +7,7 @@ import {
   SkeletonText,
   SkeletonTitle,
 } from '@/components/ui/skeleton-patterns';
-import type { ActivityDetailSkeletonLayout } from '@/lib/activity/activity-detail-skeleton-layout';
+import type { ActivityDetailSkeletonLayout } from '@/lib/activity/detail/activity-detail-skeleton-layout';
 import { cn } from '@/lib/utils';
 
 /** KPI strip — mirrors InstrumentMetricGrid chrome (hero Distance / Temps / …). */

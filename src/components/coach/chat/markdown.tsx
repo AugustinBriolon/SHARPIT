@@ -8,7 +8,7 @@ import {
   closeOpenMarkdown,
   remarkSoftBreaks,
   splitMarkdownBlocks,
-} from '@/lib/coach/markdown-render';
+} from '@/lib/coach/chat/markdown-render';
 import { cn } from '@/lib/utils';
 
 const REMARK_PLUGINS = [remarkGfm, remarkSoftBreaks];

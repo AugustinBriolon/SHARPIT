@@ -3,16 +3,16 @@ import {
   analyzeActivityStreams,
   resolveThresholds,
   type ActivityAnalysis,
-} from '@/lib/activity/activity-analysis';
+} from '@/lib/activity/detail/activity-analysis';
 import {
   fetchGarminActivityStreams,
   rawStreamsHaveSignal,
   type RawStreams,
-} from '@/lib/integrations/garmin-streams';
-import { getGarminClient } from '@/lib/integrations/garmin-sync';
+} from '@/lib/integrations/garmin/garmin-streams';
+import { getGarminClient } from '@/lib/integrations/garmin/garmin-sync';
 import { getAthleteProfile } from '@/lib/queries';
-import { fetchActivityStreams, type StravaStreamSet } from '@/lib/integrations/strava';
-import { getValidAccessToken } from '@/lib/integrations/strava-sync';
+import { fetchActivityStreams, type StravaStreamSet } from '@/lib/integrations/strava/strava';
+import { getValidAccessToken } from '@/lib/integrations/strava/strava-sync';
 import type { ActivityType } from '@prisma/client';
 import {
   isMultisportLegArray,

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { disconnectRenpho } from '@/lib/integrations/renpho-sync';
+import { disconnectRenpho } from '@/lib/integrations/renpho/renpho-sync';
 
 export async function POST() {
   await disconnectRenpho();

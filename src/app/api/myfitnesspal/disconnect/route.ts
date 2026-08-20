@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { disconnectMfp } from '@/lib/integrations/myfitnesspal-sync';
+import { disconnectMfp } from '@/lib/integrations/myfitnesspal/myfitnesspal-sync';
 
 export async function POST() {
   try {

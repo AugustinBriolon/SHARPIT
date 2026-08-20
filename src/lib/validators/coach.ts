@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { coachStrengthPrescriptionSchema } from '@/lib/planned-session/strength-prescription';
+import { coachStrengthPrescriptionSchema } from '@/lib/planned-session/strength/strength-prescription';
 
 /** Schéma de sortie structurée du générateur de séances. */
 export const coachPlanSchema = z.object({

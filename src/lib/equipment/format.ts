@@ -8,6 +8,10 @@ import {
 import { hasConfiguredEquipment } from '@/lib/equipment/parse';
 import type { AthleteEquipment } from '@/lib/equipment/types';
 
+/** Portable load travels across sports — it is listed under STRENGTH but usable on the run. */
+const PORTABLE_LOAD_ID = 'strength_weighted_vest';
+const PORTABLE_LOAD_RUN_NOTE = 'Lest portable disponible (côtes lestées, rucking)';
+
 function venueLabel(venue: AthleteEquipment['strengthVenue']): string | null {
   if (venue == null) return null;
   return STRENGTH_VENUE_OPTIONS.find((option) => option.id === venue)?.title ?? venue;
@@ -33,6 +37,10 @@ function linesForSport(equipment: AthleteEquipment, sport: EquipmentSport): stri
 
   if (ownedLabels.length) {
     lines.push(`Matériel : ${ownedLabels.join(', ')}`);
+  }
+
+  if (sport === 'RUN' && equipment.owned.includes(PORTABLE_LOAD_ID)) {
+    lines.push(PORTABLE_LOAD_RUN_NOTE);
   }
 
   return lines;
@@ -80,6 +88,10 @@ export function equipmentSportHint(
       return 'Séances au poids du corps uniquement.';
     }
     return null;
+  }
+
+  if (sport === 'RUN' && equipment.owned.includes(PORTABLE_LOAD_ID)) {
+    return 'Côtes et rucking lestés possibles avec ton gilet.';
   }
 
   const count = EQUIPMENT_CATALOG.filter(

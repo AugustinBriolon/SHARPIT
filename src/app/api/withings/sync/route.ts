@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { syncWithingsHealth } from '@/lib/integrations/withings-sync';
+import { syncWithingsHealth } from '@/lib/integrations/withings/withings-sync';
 
 export const maxDuration = 300;
 

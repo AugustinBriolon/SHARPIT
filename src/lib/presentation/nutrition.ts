@@ -9,7 +9,10 @@ import type {
   NutritionViewModel,
 } from '@/core/presentation/nutrition-view-model';
 import { featureEngine } from '@/lib/engines/feature-engine';
-import { getLiveNutrientGoals, getMfpAccount } from '@/lib/integrations/myfitnesspal-sync';
+import {
+  getLiveNutrientGoals,
+  getMfpAccount,
+} from '@/lib/integrations/myfitnesspal/myfitnesspal-sync';
 import { getLatestBodyWeightKg, macroGPerKg } from '@/lib/nutrition/body-weight-for-fuel';
 import { buildGoalsProgress } from '@/lib/nutrition/goals-progress';
 import { fuelFeatureSetToDensity } from '@/lib/nutrition/fuel-density-display';

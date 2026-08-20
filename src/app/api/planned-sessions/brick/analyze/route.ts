@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
-import { analyzeBrick } from '@/lib/coach/coach-analysis';
+import { analyzeBrick } from '@/lib/coach/plan/coach-analysis';
 import { getBrickAnalysis, getBrickSessions, setBrickAnalysis } from '@/lib/queries';
 
 export const maxDuration = 60;

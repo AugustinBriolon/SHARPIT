@@ -1,4 +1,4 @@
-import { InstrumentListChipSkeleton } from '@/components/ui/instrument-list-chip';
+import { InstrumentListChipSkeleton } from '@/components/ui/instruments/instrument-list-chip';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 
 /** Instant shell while the activity detail RSC resolves. */

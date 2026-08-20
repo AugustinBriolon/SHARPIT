@@ -18,6 +18,8 @@ export const EXERCISE_ALIASES: Readonly<Record<string, string>> = {
   pushup: '0662',
   pompe: '0662',
   pompes: '0662',
+  'pompe lestee': '0662',
+  'pompes lestees': '0662',
 
   // Dip
   'chest dip': '0251',
@@ -27,11 +29,21 @@ export const EXERCISE_ALIASES: Readonly<Record<string, string>> = {
   'dips avec poids du corps': '0251',
   'bodyweight dip': '0251',
   'body weight dip': '0251',
+  // Dip — loaded (vest / dip belt) and rings
+  'dip leste': '1767',
+  'dips lestes': '1767',
+  'weighted dip': '1767',
+  'ring dips': '0677',
+  'dips aux anneaux': '0677',
+  'dips anneaux': '0677',
 
   // Squat
   'barbell full squat': '0043',
   'barbell squat': '0043',
   squat: '0043',
+  'squat leste': '0852',
+  'squats lestes': '0852',
+  'weighted squat': '0852',
   'squat sans charge': '1685',
   'bodyweight squat': '1685',
   'body weight squat': '1685',
@@ -59,6 +71,14 @@ export const EXERCISE_ALIASES: Readonly<Record<string, string>> = {
   pullup: '0652',
   tractions: '0652',
   traction: '0652',
+  'weighted pull up': '0841',
+  'weighted pull-up': '0841',
+  'traction lestee': '0841',
+  'tractions lestees': '0841',
+  'muscle up leste': '3286',
+  'rowing aux anneaux': '0808',
+  'rowing anneaux': '0808',
+  'ring row': '0808',
 
   // Curl
   'dumbbell curl': '0294',

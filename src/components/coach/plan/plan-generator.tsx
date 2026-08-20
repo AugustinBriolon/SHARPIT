@@ -42,7 +42,7 @@ import { useGoals, usePlannedSessionMutations, useTrainingPlan } from '@/hooks/u
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import type { GateSessionResult } from '@/lib/plan-gate/types';
 import { GateStatusBadge, GateFindingsList } from '@/components/coach/plan/gate-status-badge';
-import { resolveStrengthFieldsForPersist } from '@/lib/planned-session/strength-prescription';
+import { resolveStrengthFieldsForPersist } from '@/lib/planned-session/strength/strength-prescription';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 
