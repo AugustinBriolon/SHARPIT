@@ -14,6 +14,17 @@ import {
   strengthPrescriptionFromDraft,
   type StrengthPrescriptionDraftRow,
 } from './strength-prescription-editor';
+import { EndurancePrescriptionEditor } from './endurance-prescription-editor';
+import {
+  draftFromEndurancePrescription,
+  endurancePrescriptionFromDraft,
+  type EnduranceDraftBlock,
+} from '@/lib/planned-session/endurance/endurance-draft';
+import { formatEndurancePrescriptionSummary } from '@/lib/planned-session/endurance/coach-endurance-prescription';
+import {
+  enduranceSportFromActivityType,
+  parseEndurancePrescription,
+} from '@/lib/planned-session/endurance/endurance-prescription';
 import type { EquipmentItemId } from '@/lib/equipment/catalog';
 import { parseSessionAccessories } from '@/lib/planned-session/accessories/session-accessories';
 import { Button } from '@/components/ui/button';
@@ -124,11 +135,15 @@ export function PlannedSessionDialog({
   const [strengthRows, setStrengthRows] = useState<StrengthPrescriptionDraftRow[]>(() =>
     draftFromStrengthPrescription(parseStrengthPrescription(session?.strengthPrescription)),
   );
+  const [enduranceBlocks, setEnduranceBlocks] = useState<EnduranceDraftBlock[]>(() =>
+    draftFromEndurancePrescription(parseEndurancePrescription(session?.endurancePrescription)),
+  );
   const [accessories, setAccessories] = useState<EquipmentItemId[]>(() =>
     parseSessionAccessories(session?.accessories),
   );
   const [error, setError] = useState<string | null>(null);
   const { confirm, dialog } = useConfirmDialog();
+  const enduranceSport = enduranceSportFromActivityType(type);
 
   const initialDate = session?.date ? new Date(session.date) : (defaultDate ?? new Date());
 
@@ -223,6 +238,9 @@ export function PlannedSessionDialog({
     setStrengthRows(
       draftFromStrengthPrescription(parseStrengthPrescription(session.strengthPrescription)),
     );
+    setEnduranceBlocks(
+      draftFromEndurancePrescription(parseEndurancePrescription(session.endurancePrescription)),
+    );
     setAccessories(parseSessionAccessories(session.accessories));
   }
 
@@ -235,6 +253,19 @@ export function PlannedSessionDialog({
       description?.trim() ||
       (prescription ? formatStrengthPrescriptionSummary(prescription) : null);
     return { strengthPrescription: prescription, description: nextDescription };
+  }
+
+  /**
+   * The structure is authoritative (ADR-017): when the athlete drafted one, the
+   * description renders it rather than stating the session a second time.
+   */
+  function resolveEndurancePayload(description: string | null) {
+    const prescription = endurancePrescriptionFromDraft(enduranceBlocks, { type, intensity });
+    if (!prescription) return { endurancePrescription: null, description };
+    return {
+      endurancePrescription: prescription,
+      description: formatEndurancePrescriptionSummary(prescription),
+    };
   }
 
   function resolveLocationPayload(): {
@@ -334,7 +365,8 @@ export function PlannedSessionDialog({
       const location = resolveLocationPayload();
       const descriptionRaw = (formData.get('description') as string) || null;
       const strength = resolveStrengthPrescriptionPayload(descriptionRaw);
-      if (type !== ActivityType.STRENGTH && !(strength.description ?? '').trim()) {
+      const endurance = resolveEndurancePayload(strength.description);
+      if (type !== ActivityType.STRENGTH && !(endurance.description ?? '').trim()) {
         setError('Le déroulé de la séance est requis (description).');
         return;
       }
@@ -346,8 +378,9 @@ export function PlannedSessionDialog({
             date: new Date(`${dateValue}T12:00:00`),
             startTime: startTimeValue || null,
             title: (formData.get('title') as string) || null,
-            description: strength.description,
+            description: endurance.description,
             strengthPrescription: strength.strengthPrescription,
+            endurancePrescription: endurance.endurancePrescription,
             accessories: accessories.length > 0 ? accessories : null,
             durationMin: durationRaw ? Number(durationRaw) : null,
             load: loadRaw ? Number(loadRaw) : null,
@@ -398,7 +431,8 @@ export function PlannedSessionDialog({
     const location = resolveLocationPayload();
     const descriptionRaw = (formData.get('description') as string) || null;
     const strength = resolveStrengthPrescriptionPayload(descriptionRaw);
-    if (type !== ActivityType.STRENGTH && !(strength.description ?? '').trim()) {
+    const endurance = resolveEndurancePayload(strength.description);
+    if (type !== ActivityType.STRENGTH && !(endurance.description ?? '').trim()) {
       setError('Le déroulé de la séance est requis (description).');
       return;
     }
@@ -408,8 +442,9 @@ export function PlannedSessionDialog({
         date: new Date(`${dateValue}T12:00:00`),
         startTime: startTimeValue || null,
         title: (formData.get('title') as string) || null,
-        description: strength.description,
+        description: endurance.description,
         strengthPrescription: strength.strengthPrescription,
+        endurancePrescription: endurance.endurancePrescription,
         accessories: accessories.length > 0 ? accessories : null,
         durationMin: durationRaw ? Number(durationRaw) : null,
         load: loadRaw ? Number(loadRaw) : null,
@@ -752,6 +787,14 @@ export function PlannedSessionDialog({
                           rows={strengthRows}
                           required
                           onChange={setStrengthRows}
+                        />
+                      ) : null}
+
+                      {enduranceSport ? (
+                        <EndurancePrescriptionEditor
+                          blocks={enduranceBlocks}
+                          sport={enduranceSport}
+                          onChange={setEnduranceBlocks}
                         />
                       ) : null}
 
