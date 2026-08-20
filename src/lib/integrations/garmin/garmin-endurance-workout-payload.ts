@@ -10,6 +10,7 @@ import {
   SPORT_CYCLING,
   SPORT_RUNNING,
   SPORT_SWIMMING,
+  SWIM_STROKE_BY_KEY,
   STEP_COOLDOWN,
   STEP_INTERVAL,
   STEP_RECOVERY,
@@ -33,6 +34,7 @@ import {
   type EnduranceSport,
   type EnduranceStep,
   type EnduranceStepKind,
+  type SwimStroke,
 } from '@/lib/planned-session/endurance/endurance-prescription';
 import {
   formatPaceBand,
@@ -55,6 +57,16 @@ const STEP_TYPE_BY_KIND: Record<EnduranceStepKind, GarminStepTypeDto> = {
   cooldown: STEP_COOLDOWN,
 };
 
+const STROKE_LABEL_FR: Record<SwimStroke, string> = {
+  free: 'Crawl',
+  back: 'Dos',
+  breast: 'Brasse',
+  fly: 'Papillon',
+  im: '4 nages',
+  drill: 'Éducatif',
+  mixed: 'Nage libre',
+};
+
 const KIND_LABEL_FR: Record<EnduranceStepKind, string> = {
   warmup: 'Échauffement',
   interval: 'Bloc',
@@ -73,6 +85,8 @@ export type EnduranceWorkoutMappedStep = {
   durationLabel: string;
   /** Resolved target band, or null when the step is free. */
   targetLabel: string | null;
+  /** Stroke shown on the watch, or null when unspecified / not a swim. */
+  strokeLabel: string | null;
 };
 
 export type BuildEnduranceWorkoutInput = {
@@ -187,17 +201,27 @@ function buildStep(
     context.sport,
   );
   warnings.forEach((warning) => context.warnings.add(warning));
+
+  // Connect only reads a stroke on a pool workout; on land it must stay unset.
+  const stroke = context.sport === 'SWIM' ? (step.stroke ?? null) : null;
+  if (stroke) bag.strokeType = SWIM_STROKE_BY_KEY[stroke];
   applyTarget(bag, resolved);
 
   const targetLabel = formatTargetLabel(resolved);
   const notes = step.notes?.trim();
-  const parts = [KIND_LABEL_FR[step.kind], targetLabel, notes].filter(Boolean);
+  const parts = [
+    KIND_LABEL_FR[step.kind],
+    stroke ? STROKE_LABEL_FR[stroke] : null,
+    targetLabel,
+    notes,
+  ].filter(Boolean);
   bag.description = parts.join(' · ').slice(0, 512);
 
   context.mapped.push({
     kind: step.kind,
     durationLabel: formatDurationLabel(step.duration),
     targetLabel,
+    strokeLabel: stroke ? STROKE_LABEL_FR[stroke] : null,
   });
   return bag;
 }

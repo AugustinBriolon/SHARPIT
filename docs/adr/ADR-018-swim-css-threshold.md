@@ -78,7 +78,7 @@ Zero risk of prescribing a wrong pace. Rejected because the reference was deriva
 ### Neutral
 
 - `ThresholdEstimates`, its preview and its apply path now carry three references instead of two; the existing "apply estimates" UI surfaces the swim change with no further work.
-- Stroke type per step is still the Connect default: every step goes out as unspecified stroke, so drill sets read as plain swimming on the watch.
+- Stroke is authored per step and sent to Connect, so a drill set reads as a drill set. The stroke ids themselves are Connect's own and are not exposed by the client library — they are asserted from Connect's documented list and centralised in `SWIM_STROKE_BY_KEY`, so a wrong one is a single-line correction rather than a hunt.
 
 ---
 

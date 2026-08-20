@@ -112,3 +112,56 @@ describe('draftFromEndurancePrescription', () => {
     expect(draftFromEndurancePrescription(null)).toEqual([]);
   });
 });
+
+describe('swim stroke', () => {
+  const swimSession = { type: 'SWIM', intensity: 'ENDURANCE' as const };
+
+  it('carries an authored stroke into the stored step', () => {
+    const prescription = endurancePrescriptionFromDraft(
+      [
+        newEnduranceDraftBlock({
+          times: '8',
+          steps: [newEnduranceDraftStep({ mode: 'distance', value: '50', stroke: 'drill' })],
+        }),
+      ],
+      swimSession,
+    );
+
+    const [block] = prescription!.blocks;
+    expect(block.kind === 'repeat' && block.steps[0].stroke).toBe('drill');
+  });
+
+  it('leaves the stroke off when it was not picked', () => {
+    const prescription = endurancePrescriptionFromDraft(
+      [newEnduranceDraftBlock({ steps: [newEnduranceDraftStep({ stroke: 'auto' })] })],
+      swimSession,
+    );
+
+    const [block] = prescription!.blocks;
+    expect(block.kind === 'step' && block.step.stroke).toBeUndefined();
+  });
+
+  it('drops a stroke authored on a land session', () => {
+    const prescription = endurancePrescriptionFromDraft(
+      [newEnduranceDraftBlock({ steps: [newEnduranceDraftStep({ stroke: 'free' })] })],
+      { type: 'RUN', intensity: 'ENDURANCE' },
+    );
+
+    const [block] = prescription!.blocks;
+    expect(block.kind === 'step' && block.step.stroke).toBeUndefined();
+  });
+
+  it('reads a stored stroke back into the editor', () => {
+    const prescription = endurancePrescriptionFromDraft(
+      [
+        newEnduranceDraftBlock({
+          steps: [newEnduranceDraftStep({ mode: 'distance', value: '100', stroke: 'back' })],
+        }),
+      ],
+      swimSession,
+    );
+
+    const [block] = draftFromEndurancePrescription(prescription);
+    expect(block.steps[0].stroke).toBe('back');
+  });
+});

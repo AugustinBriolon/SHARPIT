@@ -145,6 +145,27 @@ export const PACE_TARGET = {
 } as const;
 
 export const DEFAULT_STROKE = { strokeTypeId: 0, strokeTypeKey: null, displayOrder: 0 } as const;
+
+export type GarminStrokeDto = {
+  strokeTypeId: number;
+  strokeTypeKey: string;
+  displayOrder: number;
+};
+
+/**
+ * Connect's swim stroke list, in its own order. These ids are Connect's and are
+ * not exposed by the client library — if the watch ever shows the wrong stroke,
+ * this table is the single place to correct.
+ */
+export const SWIM_STROKE_BY_KEY: Record<string, GarminStrokeDto> = {
+  back: { strokeTypeId: 1, strokeTypeKey: 'backstroke', displayOrder: 1 },
+  breast: { strokeTypeId: 2, strokeTypeKey: 'breaststroke', displayOrder: 2 },
+  drill: { strokeTypeId: 3, strokeTypeKey: 'drill', displayOrder: 3 },
+  fly: { strokeTypeId: 4, strokeTypeKey: 'fly', displayOrder: 4 },
+  free: { strokeTypeId: 5, strokeTypeKey: 'free', displayOrder: 5 },
+  im: { strokeTypeId: 6, strokeTypeKey: 'im', displayOrder: 6 },
+  mixed: { strokeTypeId: 7, strokeTypeKey: 'mixed', displayOrder: 7 },
+};
 export const DEFAULT_EQUIPMENT = {
   equipmentTypeId: 0,
   equipmentTypeKey: null,

@@ -13,6 +13,7 @@ import {
   type CoachEndurancePrescription,
 } from '@/lib/planned-session/endurance/coach-endurance-prescription';
 import type {
+  SwimStroke,
   EndurancePrescription,
   EnduranceSport,
   EnduranceStep,
@@ -25,6 +26,9 @@ import { defaultTargetForIntensity } from '@/lib/planned-session/endurance/endur
 export type EnduranceDraftEffort = SessionIntensity | 'auto';
 export type EnduranceDraftMode = 'time' | 'distance' | 'lap';
 
+/** `auto` = stroke left unspecified, which is what a plain swim wants. */
+export type EnduranceDraftStroke = SwimStroke | 'auto';
+
 export type EnduranceDraftStep = {
   key: string;
   kind: EnduranceStepKind;
@@ -32,6 +36,8 @@ export type EnduranceDraftStep = {
   /** Minutes when mode is `time`, metres when `distance`, ignored on `lap`. */
   value: string;
   effort: EnduranceDraftEffort;
+  /** SWIM only — ignored when the session is not in a pool. */
+  stroke: EnduranceDraftStroke;
   notes: string;
 };
 
@@ -57,6 +63,7 @@ export function newEnduranceDraftStep(partial?: Partial<EnduranceDraftStep>): En
     mode: 'time',
     value: '5',
     effort: 'auto',
+    stroke: 'auto',
     notes: '',
     ...partial,
   };
@@ -105,6 +112,7 @@ function draftStepFrom(step: EnduranceStep, sport: EnduranceSport): EnduranceDra
     mode,
     value,
     effort: effortFromTarget(sport, step.target),
+    stroke: step.stroke ?? 'auto',
     notes: step.notes ?? '',
   });
 }
@@ -139,6 +147,7 @@ function coachStepFrom(step: EnduranceDraftStep) {
     ...(step.mode === 'time' && usable ? { minutes: numeric } : {}),
     ...(step.mode === 'distance' && usable ? { meters: Math.round(numeric) } : {}),
     ...(step.effort === 'auto' ? {} : { effort: step.effort }),
+    ...(step.stroke === 'auto' ? {} : { stroke: step.stroke }),
     ...(step.notes.trim() ? { notes: step.notes.trim() } : {}),
   };
 }

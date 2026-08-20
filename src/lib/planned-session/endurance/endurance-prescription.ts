@@ -60,10 +60,20 @@ export const enduranceTargetSchema = z.object({
 });
 export type EnduranceTarget = z.infer<typeof enduranceTargetSchema>;
 
+/**
+ * Stroke for a pool step. `mixed` is Connect's "whatever you like" rather than a
+ * stroke in its own right; omitting the field leaves the step unspecified, which
+ * is what a plain swim wants.
+ */
+export const swimStrokeSchema = z.enum(['free', 'back', 'breast', 'fly', 'im', 'drill', 'mixed']);
+export type SwimStroke = z.infer<typeof swimStrokeSchema>;
+
 export const enduranceStepSchema = z.object({
   kind: enduranceStepKindSchema,
   duration: enduranceDurationSchema,
   target: enduranceTargetSchema,
+  /** SWIM only — ignored by Connect for land sports. */
+  stroke: swimStrokeSchema.nullable().optional(),
   notes: z.string().trim().max(240).nullable().optional(),
 });
 export type EnduranceStep = z.infer<typeof enduranceStepSchema>;

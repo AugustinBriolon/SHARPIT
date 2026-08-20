@@ -13,12 +13,14 @@ import {
   NO_TARGET,
   STEP_MAX_SECONDS,
   STEP_MIN_SECONDS,
+  swimStrokeSchema,
   type EnduranceBlock,
   type EnduranceDuration,
   type EndurancePrescription,
   type EnduranceSport,
   type EnduranceStep,
   type EnduranceStepKind,
+  type SwimStroke,
 } from '@/lib/planned-session/endurance/endurance-prescription';
 import { defaultTargetForIntensity } from '@/lib/planned-session/endurance/endurance-targets';
 
@@ -52,6 +54,11 @@ const coachEnduranceStepSchema = z
       .optional()
       .describe(
         "Intensité visée pour CETTE étape. L'app en dérive la fourchette chiffrée depuis les seuils de l'athlète — n'écris jamais d'allure, de watts ni de pourcentage toi-même. Omettre sur un rest.",
+      ),
+    stroke: swimStrokeSchema
+      .optional()
+      .describe(
+        'NATATION uniquement : nage de cette étape — free (crawl), back (dos), breast (brasse), fly (papillon), im (4 nages), drill (éducatif), mixed (nage au choix). Omettre hors natation.',
       ),
     notes: z
       .string()
@@ -95,7 +102,7 @@ export const coachEndurancePrescriptionSchema = z
       .describe('Longueur du bassin en mètres. Natation uniquement.'),
   })
   .describe(
-    "Déroulé structuré d'une séance d'endurance (montre Garmin). Pour RUN et BIKE. Omettre pour STRENGTH.",
+    "Déroulé structuré d'une séance d'endurance (montre Garmin). Pour RUN, BIKE et SWIM. Omettre pour STRENGTH.",
   );
 
 export type CoachEndurancePrescription = z.infer<typeof coachEndurancePrescriptionSchema>;
@@ -134,6 +141,8 @@ function normalizeStep(
     kind,
     duration: durationOf(step),
     target,
+    // A stroke on a run or ride would be meaningless to Connect and to the athlete.
+    ...(sport === 'SWIM' && step.stroke ? { stroke: step.stroke } : {}),
     ...(step.notes?.trim() ? { notes: step.notes.trim() } : {}),
   };
 }
@@ -193,9 +202,20 @@ function formatDuration(duration: EnduranceDuration): string {
   return minutes >= 1 ? `${minutes} min` : `${duration.seconds} s`;
 }
 
+const STROKE_LABEL_FR: Record<SwimStroke, string> = {
+  free: 'crawl',
+  back: 'dos',
+  breast: 'brasse',
+  fly: 'papillon',
+  im: '4 nages',
+  drill: 'éducatif',
+  mixed: 'nage au choix',
+};
+
 function formatStep(step: EnduranceStep): string {
-  const parts = [formatDuration(step.duration), KIND_LABEL_FR[step.kind]];
-  return parts.join(' ');
+  // The stroke is what a pool set is about, so it replaces the generic step label.
+  const label = step.stroke ? STROKE_LABEL_FR[step.stroke] : KIND_LABEL_FR[step.kind];
+  return [formatDuration(step.duration), label].join(' ');
 }
 
 /**

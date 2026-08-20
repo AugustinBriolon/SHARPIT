@@ -151,6 +151,7 @@ describe('buildEnduranceWorkoutPayload', () => {
       kind: 'interval',
       durationLabel: '800 m',
       targetLabel: '3:54–4:06/km',
+      strokeLabel: null,
     });
     expect(mapped[0].durationLabel).toBe('15 min');
   });
@@ -283,5 +284,82 @@ describe('buildEnduranceWorkoutPayload — swimming', () => {
     // 400 warm-up + 8 × 50
     expect(payload.estimatedDistanceInMeters).toBe(800);
     expect(stepCount).toBe(17);
+  });
+});
+
+describe('swim stroke', () => {
+  function poolStep(stroke: 'drill' | 'free' | undefined) {
+    return {
+      version: 1,
+      sport: 'SWIM',
+      poolLengthM: 25,
+      blocks: [
+        {
+          kind: 'step',
+          step: {
+            kind: 'interval',
+            duration: { type: 'distance', meters: 200 },
+            target: { metric: 'none' },
+            ...(stroke ? { stroke } : {}),
+          },
+        },
+      ],
+    } as EndurancePrescription;
+  }
+
+  it('sends the stroke so a drill set does not read as plain swimming', () => {
+    const { payload, mapped } = buildEnduranceWorkoutPayload({
+      workoutName: 'Éducatifs',
+      prescription: poolStep('drill'),
+      thresholds: THRESHOLDS,
+    });
+
+    const step = segmentSteps(payload)[0] as unknown as {
+      strokeType: { strokeTypeKey: string };
+      description: string;
+    };
+    expect(step.strokeType.strokeTypeKey).toBe('drill');
+    expect(step.description).toContain('Éducatif');
+    expect(mapped[0].strokeLabel).toBe('Éducatif');
+  });
+
+  it('leaves the stroke unset when the athlete did not pick one', () => {
+    const { payload, mapped } = buildEnduranceWorkoutPayload({
+      workoutName: 'Nage',
+      prescription: poolStep(undefined),
+      thresholds: THRESHOLDS,
+    });
+
+    const step = segmentSteps(payload)[0] as unknown as {
+      strokeType: { strokeTypeKey: string | null };
+    };
+    expect(step.strokeType.strokeTypeKey).toBeNull();
+    expect(mapped[0].strokeLabel).toBeNull();
+  });
+
+  it('never puts a stroke on a land step', () => {
+    const { payload } = buildEnduranceWorkoutPayload({
+      workoutName: 'Seuil 5x800',
+      prescription: {
+        ...INTERVAL_SESSION,
+        blocks: [
+          {
+            kind: 'step',
+            step: {
+              kind: 'interval',
+              duration: { type: 'time', seconds: 600 },
+              target: { metric: 'none' },
+              stroke: 'free',
+            },
+          },
+        ],
+      },
+      thresholds: THRESHOLDS,
+    });
+
+    const step = segmentSteps(payload)[0] as unknown as {
+      strokeType: { strokeTypeKey: string | null };
+    };
+    expect(step.strokeType.strokeTypeKey).toBeNull();
   });
 });

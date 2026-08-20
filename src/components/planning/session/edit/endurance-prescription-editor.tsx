@@ -18,6 +18,7 @@ import {
   type EnduranceDraftEffort,
   type EnduranceDraftMode,
   type EnduranceDraftStep,
+  type EnduranceDraftStroke,
 } from '@/lib/planned-session/endurance/endurance-draft';
 import type {
   EnduranceSport,
@@ -47,6 +48,17 @@ const EFFORT_OPTIONS: { value: EnduranceDraftEffort; label: string }[] = [
   { value: 'VO2MAX', label: 'VO2max' },
 ];
 
+const STROKE_OPTIONS: { value: EnduranceDraftStroke; label: string }[] = [
+  { value: 'auto', label: 'Non précisée' },
+  { value: 'free', label: 'Crawl' },
+  { value: 'back', label: 'Dos' },
+  { value: 'breast', label: 'Brasse' },
+  { value: 'fly', label: 'Papillon' },
+  { value: 'im', label: '4 nages' },
+  { value: 'drill', label: 'Éducatif' },
+  { value: 'mixed', label: 'Nage au choix' },
+];
+
 function labelOf<T extends string>(options: { value: T; label: string }[], value: T): string {
   return options.find((option) => option.value === value)?.label ?? value;
 }
@@ -70,11 +82,13 @@ function fieldId(stepKey: string, field: string): string {
 
 function StepRow({
   step,
+  sport,
   onChange,
   onRemove,
   removable,
 }: {
   step: EnduranceDraftStep;
+  sport: EnduranceSport;
   onChange: (patch: Partial<EnduranceDraftStep>) => void;
   onRemove: () => void;
   removable: boolean;
@@ -83,6 +97,7 @@ function StepRow({
   const modeId = fieldId(step.key, 'mode');
   const valueId = fieldId(step.key, 'value');
   const effortId = fieldId(step.key, 'effort');
+  const strokeId = fieldId(step.key, 'stroke');
 
   return (
     <div className="border-analysis-border/50 space-y-2 rounded-md border p-2.5">
@@ -180,6 +195,29 @@ function StepRow({
           </SelectContent>
         </Select>
       </div>
+
+      {sport === 'SWIM' ? (
+        <div className="space-y-1">
+          <Label className="text-label" htmlFor={strokeId}>
+            Nage
+          </Label>
+          <Select
+            value={step.stroke}
+            onValueChange={(value) => onChange({ stroke: value as EnduranceDraftStroke })}
+          >
+            <SelectTrigger id={strokeId}>
+              <SelectValue>{labelOf(STROKE_OPTIONS, step.stroke)}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {STROKE_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      ) : null}
 
       <Input
         aria-label="Consigne de l'étape"
@@ -296,6 +334,7 @@ export function EndurancePrescriptionEditor({
               <StepRow
                 key={step.key}
                 removable={block.steps.length > 1}
+                sport={sport}
                 step={step}
                 onChange={(patch) => updateStep(block.key, step.key, patch)}
                 onRemove={() =>
