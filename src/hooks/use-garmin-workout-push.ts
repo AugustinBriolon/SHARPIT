@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/components/ui/toast';
+import { buildPushToastDescription } from '@/lib/integrations/garmin-push-summary';
 import { queryKeys } from '@/lib/query/keys';
 import type { ClientPlannedSession } from '@/lib/query/types';
 
@@ -16,8 +17,19 @@ type GarminPushResponse = {
   error?: string;
   workoutName?: string;
   workoutId?: number | null;
-  mapped?: Array<{ exercise: string; watchLabel: string; confidence: string }>;
+  /** Strength: one entry per exercise. Endurance: one per prescribed step. */
+  mapped?: Array<{
+    exercise?: string;
+    watchLabel?: string;
+    confidence?: string;
+    kind?: string;
+    durationLabel?: string;
+    targetLabel?: string | null;
+  }>;
   skipped?: Array<{ exercise: string }>;
+  stepCount?: number;
+  derived?: boolean;
+  warnings?: string[];
   scheduledDate?: string | null;
   pushedAt?: string | null;
   alreadyPushed?: boolean;
@@ -62,8 +74,8 @@ function patchPlannedSessionGarminFields(
 }
 
 /**
- * Push / re-push a planned strength session workout to Garmin Connect.
- * Preserves toast + 409 handling from the planned-session read view.
+ * Push / re-push a planned session workout to Garmin Connect — strength or
+ * endurance, the route dispatches on the session sport.
  */
 export function useGarminWorkoutPush(session: {
   id: string;
@@ -125,10 +137,6 @@ export function useGarminWorkoutPush(session: {
 
         if (!response.ok) throw new Error(data.error || 'Envoi impossible');
 
-        const skipped = data.skipped?.length ?? 0;
-        const mappedCount = data.mapped?.length ?? 0;
-        const approximated =
-          data.mapped?.filter((step) => step.confidence === 'fallback').length ?? 0;
         const nextPush: GarminWatchPushState = {
           workoutId: data.workoutId != null ? String(data.workoutId) : watchPush.workoutId,
           scheduledDate: data.scheduledDate ?? watchPush.scheduledDate,
@@ -143,15 +151,7 @@ export function useGarminWorkoutPush(session: {
         void queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
 
         toast.success(force ? 'Workout renvoyé à Garmin' : 'Workout envoyé à Garmin', {
-          description: [
-            data.workoutName,
-            mappedCount > 0 ? `${mappedCount} exercices` : null,
-            data.scheduledDate ? `calendrier ${data.scheduledDate}` : null,
-            approximated > 0 ? `${approximated} en nom générique` : null,
-            skipped > 0 ? `${skipped} omis (hors catalogue)` : null,
-          ]
-            .filter(Boolean)
-            .join(' · '),
+          description: buildPushToastDescription(data),
         });
       } catch (error) {
         toast.error(error instanceof Error ? error.message : 'Envoi vers Garmin impossible');

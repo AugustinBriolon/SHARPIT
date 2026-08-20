@@ -37,6 +37,7 @@ const SESSION_DEFINING_FIELDS = [
   'type',
   'date',
   'strengthPrescription',
+  'endurancePrescription',
 ] as const;
 
 function changesSessionDefiningField(

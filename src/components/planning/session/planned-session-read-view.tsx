@@ -214,6 +214,37 @@ export function PlannedSessionReadView({
     return alreadyOnWatch ? 'Renvoyer' : 'Montre';
   }
 
+  const watchStatusLine = alreadyOnWatch ? (
+    <p className="text-muted-foreground text-xs leading-snug">
+      Sur Garmin
+      {watchPush.scheduledDate ? ` · calendrier ${watchPush.scheduledDate}` : ''}
+      {watchPush.pushedAt
+        ? ` · envoyé ${new Date(watchPush.pushedAt).toLocaleString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+          })}`
+        : ''}
+      . La montre récupère le workout au prochain sync Connect.
+    </p>
+  ) : null;
+
+  const watchPushButton = (canPush: boolean) => (
+    <Button
+      className="h-8 shrink-0 gap-1 px-2.5 text-xs lg:h-7"
+      disabled={pushing}
+      size="xs"
+      type="button"
+      variant="outline"
+      onClick={() => void sendToWatch({ canPush })}
+    >
+      <Watch className="size-3.5" />
+      <span className="hidden sm:inline">{watchPushButtonLabel()}</span>
+      <span className="sm:hidden">{watchPushButtonLabelShort()}</span>
+    </Button>
+  );
+
   const derouleBlock = !morningProposal ? (
     <div className="space-y-1.5">
       {session.description?.trim() ? (
@@ -232,6 +263,25 @@ export function PlannedSessionReadView({
     </div>
   ) : null;
 
+  // Guided endurance is wired for running first — bike and swim have no validated
+  // target table yet, so the watch would receive steps without guidance.
+  const enduranceBlock =
+    session.type === ActivityType.RUN && !isRealized ? (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-foreground/85 inline-flex items-center gap-1.5 text-sm font-medium">
+            <Watch className="text-muted-foreground size-3.5" />
+            Séance guidée
+          </p>
+          {watchPushButton(true)}
+        </div>
+        {watchStatusLine}
+        <p className="text-muted-foreground/80 text-xs leading-snug">
+          La montre affiche la fourchette d&apos;allure et alerte quand tu sors de la zone.
+        </p>
+      </div>
+    ) : null;
+
   const strengthBlock =
     session.type === ActivityType.STRENGTH && prescription ? (
       <div className="space-y-2">
@@ -240,36 +290,9 @@ export function PlannedSessionReadView({
             <Dumbbell className="text-muted-foreground size-3.5" />
             Exercices prescrits
           </p>
-          {!isRealized ? (
-            <Button
-              className="h-8 shrink-0 gap-1 px-2.5 text-xs lg:h-7"
-              disabled={pushing}
-              size="xs"
-              type="button"
-              variant="outline"
-              onClick={() => void sendToWatch({ canPush: Boolean(prescription) })}
-            >
-              <Watch className="size-3.5" />
-              <span className="hidden sm:inline">{watchPushButtonLabel()}</span>
-              <span className="sm:hidden">{watchPushButtonLabelShort()}</span>
-            </Button>
-          ) : null}
+          {!isRealized ? watchPushButton(Boolean(prescription)) : null}
         </div>
-        {alreadyOnWatch ? (
-          <p className="text-muted-foreground text-xs leading-snug">
-            Sur Garmin
-            {watchPush.scheduledDate ? ` · calendrier ${watchPush.scheduledDate}` : ''}
-            {watchPush.pushedAt
-              ? ` · envoyé ${new Date(watchPush.pushedAt).toLocaleString('fr-FR', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}`
-              : ''}
-            . La montre récupère le workout au prochain sync Connect.
-          </p>
-        ) : null}
+        {watchStatusLine}
         <ul className="space-y-1.5">
           {orderedSets.map((set, i) => {
             const volume =
@@ -465,6 +488,10 @@ export function PlannedSessionReadView({
 
       {strengthBlock ? (
         <div className="border-analysis-border/60 rounded-lg border p-3">{strengthBlock}</div>
+      ) : null}
+
+      {enduranceBlock ? (
+        <div className="border-analysis-border/60 rounded-lg border p-3">{enduranceBlock}</div>
       ) : null}
 
       {secondaryDetails}
