@@ -149,6 +149,7 @@ export interface AdaptChange {
       notes?: string | null;
     }>;
   } | null;
+  endurancePrescription?: CoachEndurancePrescription | null;
   durationMin: number | null;
   load: number | null;
   reason: string;

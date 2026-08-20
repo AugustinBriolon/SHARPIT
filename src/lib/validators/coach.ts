@@ -184,6 +184,12 @@ const adaptChangeBase = {
     .describe(
       'Pour ADD/MODIFY STRENGTH : prescription structurée. null/omit = ne pas changer (MODIFY) ou non-STRENGTH.',
     ),
+  endurancePrescription: coachEndurancePrescriptionSchema
+    .nullable()
+    .optional()
+    .describe(
+      'Pour ADD/MODIFY RUN ou BIKE structurée : déroulé en étapes et groupes répétés. null/omit = ne pas changer (MODIFY) ou séance sans structure.',
+    ),
   durationMin: z.number().nullable().describe('Durée en minutes (entier).'),
   load: z.number().nullable().describe('Charge TSS (entier).'),
   reason: z.string().describe('Pourquoi cet ajustement.'),
@@ -211,6 +217,7 @@ export const adaptPlanSchema = z.object({
         title: nullableAdaptString,
         description: nullableAdaptString,
         strengthPrescription: adaptChangeBase.strengthPrescription,
+        endurancePrescription: adaptChangeBase.endurancePrescription,
         durationMin: nullableAdaptInt,
         load: nullableAdaptInt,
         reason: adaptChangeBase.reason,

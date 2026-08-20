@@ -52,6 +52,7 @@ function toGateProposal(
     load: change.load ?? existing?.load ?? null,
     title: change.title ?? existing?.title ?? null,
     strengthPrescription: change.strengthPrescription ?? null,
+    endurancePrescription: change.endurancePrescription ?? null,
     rationale: change.reason ?? null,
     // Option B: keep existing link on MODIFY; stamp plan goal on ADD.
     goalId: existing?.goalId ?? (change.action === 'ADD' ? defaultGoalId : null),
@@ -85,6 +86,7 @@ Principes :
 - Renseigne uniquement les champs à modifier pour MODIFY ; mets null ailleurs.
 - durationMin et load doivent être des entiers (pas de décimales).
 - Pour ADD/MODIFY d'une séance STRENGTH : renseigne strengthPrescription. null sinon.
+- Pour ADD/MODIFY d'une séance RUN ou BIKE structurée : renseigne endurancePrescription (étapes et groupes répétés avec leur intensité, jamais d'allure ni de watts).
 
 ${formatStrengthSessionRules()}
 

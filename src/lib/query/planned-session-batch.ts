@@ -10,6 +10,7 @@ export interface PlannedSessionBatchPayload {
   title?: string | null;
   description?: string | null;
   strengthPrescription?: unknown | null;
+  endurancePrescription?: unknown | null;
   accessories?: string[] | null;
   durationMin?: number | null;
   load?: number | null;

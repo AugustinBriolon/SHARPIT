@@ -36,6 +36,7 @@ import type { GateSessionResult } from '@/lib/plan-gate/types';
 import { GateStatusBadge, GateFindingsList } from '@/components/coach/plan/gate-status-badge';
 import { AdaptationTrigger } from '@/components/coach/plan/adaptation-trigger';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
+import { resolveEnduranceFieldsForPersist } from '@/lib/planned-session/endurance/coach-endurance-prescription';
 import { resolveStrengthFieldsForPersist } from '@/lib/planned-session/strength/strength-prescription';
 import { warmCoachContext } from '@/lib/coach/warm-coach-context';
 
@@ -215,6 +216,17 @@ export function PlanAdapter({
           data.description = strength.description;
           data.strengthPrescription = strength.strengthPrescription;
         }
+        if (c.endurancePrescription != null) {
+          const existing = sessionsById.get(c.sessionId);
+          const endurance = resolveEnduranceFieldsForPersist({
+            type: c.type ?? existing?.type ?? 'RUN',
+            description: data.description ?? c.description ?? existing?.description,
+            intensity: c.intensity ?? existing?.intensity,
+            endurancePrescription: c.endurancePrescription,
+          });
+          data.description = endurance.description;
+          data.endurancePrescription = endurance.endurancePrescription;
+        }
         data.decisionId = c.decisionId;
         ops.push({ op: 'update', id: c.sessionId, data });
         continue;
@@ -225,14 +237,21 @@ export function PlanAdapter({
           description: c.description,
           strengthPrescription: c.strengthPrescription,
         });
+        const endurance = resolveEnduranceFieldsForPersist({
+          type: c.type,
+          description: strength.description,
+          intensity: c.intensity,
+          endurancePrescription: c.endurancePrescription,
+        });
         ops.push({
           op: 'create',
           payload: {
             type: c.type,
             date: new Date(`${c.date}T12:00:00`),
             title: c.title,
-            description: strength.description,
+            description: endurance.description,
             strengthPrescription: strength.strengthPrescription,
+            endurancePrescription: endurance.endurancePrescription,
             durationMin: c.durationMin,
             load: c.load,
             intensity: c.intensity,

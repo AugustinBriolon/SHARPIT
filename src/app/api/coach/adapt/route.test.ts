@@ -248,6 +248,66 @@ describe('POST /api/coach/adapt', () => {
     expect(body.gate.sessions[0].proposal.date).toBe('2026-07-10');
   });
 
+  it('carries an authored endurance structure onto the gated proposal', async () => {
+    const { runStructuredCoachStream } = await import('@/lib/coach/stream-structured-generation');
+    const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
+    const { createCoachingDecision } = await import('@/lib/decision-memory/repository');
+    await givenUpcomingSession();
+
+    vi.mocked(runStructuredCoachStream).mockResolvedValue({
+      summary: 'Structurer la séance de seuil',
+      changes: [
+        {
+          action: 'ADD',
+          sessionId: null,
+          date: '2026-07-20',
+          type: 'RUN',
+          intensity: 'THRESHOLD',
+          title: '5×5 min seuil',
+          description: null,
+          durationMin: 60,
+          load: 70,
+          reason: 'Bloc qualité de la semaine',
+          endurancePrescription: {
+            blocks: [
+              { steps: [{ kind: 'warmup', minutes: 15 }] },
+              {
+                times: 5,
+                steps: [
+                  { kind: 'interval', minutes: 5, effort: 'THRESHOLD' },
+                  { kind: 'recovery', minutes: 2 },
+                ],
+              },
+            ],
+          },
+        },
+      ],
+    } as never);
+
+    vi.mocked(getOrBuildAthleteSnapshot).mockResolvedValue({
+      snapshotId: 'snap-adapt-2',
+      confidence: 0.8,
+      decision: decisionState(),
+      physicalHealth: physicalHealthData(),
+      fatigue: { trainingCapacity: 'FULL' },
+      todaysDecision: 'TRAIN_SMART',
+    } as never);
+
+    const { POST } = await importRoute();
+    const body = await consumeCoachProgressStream<AdaptPayload, unknown>(
+      await POST(
+        new Request('http://localhost/api/coach/adapt', {
+          method: 'POST',
+          body: JSON.stringify({}),
+        }),
+      ),
+    );
+
+    expect(body.changes[0].endurancePrescription?.blocks).toHaveLength(2);
+    const [[call]] = vi.mocked(createCoachingDecision).mock.calls;
+    expect(call.proposal.endurancePrescription?.blocks?.[1]?.times).toBe(5);
+  });
+
   it('persists a CoachingDecision even for a REJECTED proposal, preserving the exact gate result', async () => {
     const { runStructuredCoachStream } = await import('@/lib/coach/stream-structured-generation');
     const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
