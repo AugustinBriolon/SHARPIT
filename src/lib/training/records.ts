@@ -645,6 +645,20 @@ export type RecordGroup =
 const METRIC_GROUPS: ReadonlyArray<RecordGroup> = ['run', 'bike', 'swim'];
 const EFFORT_GROUPS: ReadonlyArray<RecordGroup> = ['run-effort', 'bike-effort'];
 
+/**
+ * Les efforts de référence (nuage de points des prédictions) partagent la table
+ * `PerformanceRecord` mais n'en sont PAS : chaque séance course/vélo produit une
+ * ligne. Ils ne doivent jamais alimenter un badge « Record » ni un diff de sync.
+ */
+export function isEffortRecordGroup(group: string): boolean {
+  return (EFFORT_GROUPS as ReadonlyArray<string>).includes(group);
+}
+
+/** Retire les lignes d'effort d'un lot de lignes de records. */
+export function excludeEffortRows<T extends { group: string }>(rows: readonly T[]): T[] {
+  return rows.filter((row) => !isEffortRecordGroup(row.group));
+}
+
 /** Groupes de records impactés par une activité d'un type donné. */
 function groupsForType(type: ActivityType): RecordGroup[] {
   switch (type) {
@@ -715,7 +729,8 @@ function effortsToRows(runEfforts: RunEffort[], bikeEfforts: BikeEffort[]): Reco
       group: 'run-effort' as const,
       category: `run-effort-${index}`,
       label: 'Run effort',
-      rank: 1,
+      // rank 0 : point de référence, pas un classement (les records sont rank >= 1).
+      rank: 0,
       value: e.meters,
       displayValue: String(e.seconds),
       sublabel: null,
@@ -727,7 +742,7 @@ function effortsToRows(runEfforts: RunEffort[], bikeEfforts: BikeEffort[]): Reco
       group: 'bike-effort' as const,
       category: `bike-effort-${index}`,
       label: 'Bike effort',
-      rank: 1,
+      rank: 0,
       value: e.watts,
       displayValue: String(e.seconds),
       sublabel: null,
@@ -863,7 +878,7 @@ function diffRecordChanges(
   afterRows: RecordRow[],
 ): RecordChange[] {
   const afterLeaders = new Map<string, RecordRow>();
-  for (const row of afterRows) {
+  for (const row of excludeEffortRows(afterRows)) {
     if (row.rank === 1) afterLeaders.set(row.category, row);
   }
 
@@ -898,7 +913,8 @@ export function filterRecordChangesByActivities(
 /** Records personnels (#1) détenus par une séance. */
 export async function getPerformanceRecordsForActivity(activityId: string) {
   return prisma.performanceRecord.findMany({
-    where: { activityId, rank: 1 },
+    // `notIn` couvre les lignes d'effort déjà stockées en rank 1 (avant fix).
+    where: { activityId, rank: 1, group: { notIn: [...EFFORT_GROUPS] } },
     orderBy: { label: 'asc' },
     select: {
       category: true,
