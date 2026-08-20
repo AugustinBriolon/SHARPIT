@@ -55,6 +55,19 @@ const RUN_SPEED_ANCHOR_PCT: Partial<Record<SessionIntensity, number>> = {
   VO2MAX: 107,
 };
 
+/**
+ * Centre of the band, in percent of FTP (ADR-017).
+ * Values sit inside the classic Coggan zone bands rather than at their edges, so a
+ * step lands unambiguously in its intended zone.
+ */
+const BIKE_POWER_ANCHOR_PCT: Partial<Record<SessionIntensity, number>> = {
+  RECOVERY: 50,
+  ENDURANCE: 65,
+  TEMPO: 83,
+  THRESHOLD: 98,
+  VO2MAX: 112,
+};
+
 /** Fallback centre when no threshold pace is known, in percent of LTHR. */
 const RUN_HR_ANCHOR_PCT: Partial<Record<SessionIntensity, number>> = {
   RECOVERY: 72,
@@ -88,15 +101,23 @@ export function defaultTargetForIntensity(
   sport: EnduranceSport,
   intensity: SessionIntensity | null,
 ): { target: EnduranceTarget; warnings: string[] } {
-  if (sport !== 'RUN') {
-    return { target: { metric: 'none' }, warnings: [] };
-  }
+  // Swimming has no validated table — inventing one would put made-up numbers on the wrist.
+  if (sport === 'SWIM') return { target: { metric: 'none' }, warnings: [] };
 
   const warnings: string[] = [];
   let effective = intensity ?? 'ENDURANCE';
   if (effective === 'RACE') {
     effective = RACE_FALLBACK_INTENSITY;
     warnings.push(RACE_FALLBACK_WARNING);
+  }
+
+  if (sport === 'BIKE') {
+    const centre = BIKE_POWER_ANCHOR_PCT[effective];
+    if (centre == null) return { target: { metric: 'none' }, warnings };
+    return {
+      target: { metric: 'power', ...bandAround(centre, effective, OPEN_FLOOR_PCT) },
+      warnings,
+    };
   }
 
   const centre = RUN_SPEED_ANCHOR_PCT[effective];

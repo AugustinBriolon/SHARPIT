@@ -63,7 +63,7 @@ describe('effectiveEndurancePrescription', () => {
 
   it('does not invent a target for a sport with no validated table', () => {
     const { prescription, warnings } = effectiveEndurancePrescription({
-      sport: 'BIKE',
+      sport: 'SWIM',
       durationMin: 60,
       intensity: 'TEMPO',
       stored: null,
@@ -73,6 +73,29 @@ describe('effectiveEndurancePrescription', () => {
     const [block] = prescription.blocks;
     expect(block.kind === 'step' && block.step.target).toEqual({ metric: 'none' });
     expect(warnings.join(' ')).toMatch(/pas de table de cibles/i);
+  });
+
+  it('derives a power band for a bike session, and none without an FTP', () => {
+    const withFtp = effectiveEndurancePrescription({
+      sport: 'BIKE',
+      durationMin: 60,
+      intensity: 'TEMPO',
+      stored: null,
+      thresholds: THRESHOLDS,
+    });
+    const [powered] = withFtp.prescription.blocks;
+    expect(powered.kind === 'step' && powered.step.target).toMatchObject({ metric: 'power' });
+
+    const withoutFtp = effectiveEndurancePrescription({
+      sport: 'BIKE',
+      durationMin: 60,
+      intensity: 'TEMPO',
+      stored: null,
+      thresholds: { ...THRESHOLDS, ftpW: null },
+    });
+    const [free] = withoutFtp.prescription.blocks;
+    expect(free.kind === 'step' && free.step.target).toEqual({ metric: 'none' });
+    expect(withoutFtp.warnings.join(' ')).toMatch(/ftp inconnue/i);
   });
 
   it('forces the stored prescription onto the session sport', () => {

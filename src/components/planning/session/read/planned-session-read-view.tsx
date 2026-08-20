@@ -279,10 +279,11 @@ export function PlannedSessionReadView({
     </div>
   ) : null;
 
-  // Guided endurance is wired for running first — bike and swim have no validated
-  // target table yet, so the watch would receive steps without guidance.
+  // Running and bike have a validated target table (ADR-017); swimming does not,
+  // so it stays out rather than receiving steps with no guidance.
+  const guidedSport = session.type === ActivityType.RUN || session.type === ActivityType.BIKE;
   const enduranceBlock =
-    session.type === ActivityType.RUN && !isRealized ? (
+    guidedSport && !isRealized ? (
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
           <p className="text-foreground/85 inline-flex items-center gap-1.5 text-sm font-medium">
@@ -294,7 +295,9 @@ export function PlannedSessionReadView({
         {watchStatusLine}
         {watchStaleLine}
         <p className="text-muted-foreground/80 text-xs leading-snug">
-          La montre affiche la fourchette d&apos;allure et alerte quand tu sors de la zone.
+          La montre affiche la fourchette{' '}
+          {session.type === ActivityType.BIKE ? 'de puissance' : "d'allure"} et alerte quand tu sors
+          de la zone.
         </p>
       </div>
     ) : null;

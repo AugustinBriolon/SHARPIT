@@ -32,6 +32,11 @@ import {
   parseStrengthPrescription,
   resolveStrengthFieldsForPersist,
 } from '@/lib/planned-session/strength/strength-prescription';
+import {
+  coachEndurancePrescriptionSchema,
+  resolveEnduranceFieldsForPersist,
+} from '@/lib/planned-session/endurance/coach-endurance-prescription';
+import { garminPushClearOnSessionChange } from '@/lib/integrations/garmin/garmin-workout-push-state';
 import { auditStrengthPrescription } from '@/lib/planned-session/strength/strength-session-template';
 import { suggestGarminTaxonomy } from '@/lib/integrations/garmin/garmin-exercise-taxonomy';
 import {
@@ -74,6 +79,12 @@ const startTimeSchema = z
   .optional()
   .describe(
     "Heure de début 'HH:mm' (locale). Laisse vide pour que l'app place automatiquement la séance sur un créneau libre de l'agenda Google.",
+  );
+
+const endurancePrescriptionToolSchema = coachEndurancePrescriptionSchema
+  .optional()
+  .describe(
+    "Déroulé structuré pour RUN et BIKE : étapes et groupes répétés, chacun avec son intensité. L'app en dérive les cibles chiffrées et la description de la séance. Omettre pour STRENGTH, ou pour une sortie sans structure (l'app enverra alors un bloc unique).",
   );
 
 const strengthPrescriptionToolSchema = coachStrengthPrescriptionSchema
@@ -184,6 +195,7 @@ export const coachTools = {
         .optional()
         .describe('Structure détaillée (échauffement, corps, récup).'),
       strengthPrescription: strengthPrescriptionToolSchema,
+      endurancePrescription: endurancePrescriptionToolSchema,
       durationMin: z.number().min(5).max(420).optional(),
       load: z.number().min(0).max(400).optional().describe('TSS estimé.'),
       exposureSetting: exposureEnum
@@ -203,14 +215,21 @@ export const coachTools = {
           description: input.description,
           strengthPrescription: input.strengthPrescription,
         });
+        const endurance = resolveEnduranceFieldsForPersist({
+          type: input.type,
+          description: strength.description,
+          intensity: input.intensity ?? null,
+          endurancePrescription: input.endurancePrescription,
+        });
         const goalId = await resolveCoachDefaultGoalId();
         const s = await createPlannedSession({
           type: input.type,
           date: toDate(input.date),
           startTime: input.startTime ?? null,
           title: input.title,
-          description: strength.description,
+          description: endurance.description,
           strengthPrescription: strength.strengthPrescription ?? undefined,
+          endurancePrescription: endurance.endurancePrescription ?? undefined,
           durationMin: input.durationMin != null ? Math.round(input.durationMin) : null,
           load: input.load != null ? Math.round(input.load) : null,
           intensity: input.intensity ?? null,
@@ -337,6 +356,7 @@ export const coachTools = {
       title: z.string().optional(),
       description: z.string().optional(),
       strengthPrescription: strengthPrescriptionToolSchema,
+      endurancePrescription: endurancePrescriptionToolSchema,
       durationMin: z.number().int().min(5).max(420).optional(),
       load: z.number().int().min(0).max(400).optional(),
       exposureSetting: exposureEnum.optional(),
@@ -377,6 +397,36 @@ export const coachTools = {
         } else if (input.type && input.type !== 'STRENGTH') {
           data.strengthPrescription = Prisma.DbNull;
         }
+
+        if (input.endurancePrescription !== undefined) {
+          const endurance = resolveEnduranceFieldsForPersist({
+            type: nextType,
+            description: typeof data.description === 'string' ? data.description : null,
+            intensity: input.intensity ?? existing.intensity,
+            endurancePrescription: input.endurancePrescription,
+          });
+          data.description = endurance.description;
+          data.endurancePrescription =
+            endurance.endurancePrescription === null
+              ? Prisma.DbNull
+              : endurance.endurancePrescription;
+        } else if (input.type === 'STRENGTH') {
+          data.endurancePrescription = Prisma.DbNull;
+        }
+
+        // The watch holds what was pushed, not what the coach just changed.
+        Object.assign(
+          data,
+          garminPushClearOnSessionChange({
+            ...(input.strengthPrescription !== undefined
+              ? { strengthPrescription: input.strengthPrescription }
+              : {}),
+            ...(input.endurancePrescription !== undefined
+              ? { endurancePrescription: input.endurancePrescription }
+              : {}),
+            ...(input.date ? { date: input.date } : {}),
+          }) ?? {},
+        );
 
         const s = await updatePlannedSession(input.id, data);
         scheduleSessionContextRefresh(s.id);

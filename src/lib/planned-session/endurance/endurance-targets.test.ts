@@ -43,8 +43,12 @@ describe('defaultTargetForIntensity', () => {
     expect(warnings[0]).toContain('RACE');
   });
 
-  it('emits no target for sports not wired yet', () => {
-    expect(defaultTargetForIntensity('BIKE', 'THRESHOLD').target).toEqual({ metric: 'none' });
+  it('anchors a bike band on FTP and leaves swimming without a table', () => {
+    expect(defaultTargetForIntensity('BIKE', 'THRESHOLD').target).toMatchObject({
+      metric: 'power',
+      pctMin: 95.5,
+      pctMax: 100.5,
+    });
     expect(defaultTargetForIntensity('SWIM', 'THRESHOLD').target).toEqual({ metric: 'none' });
   });
 });
