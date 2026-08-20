@@ -117,13 +117,9 @@ export async function syncMfpNutrition(lookbackDays = 7): Promise<MfpSyncResult>
   try {
     session = await rollSessionForward(session);
   } catch (err) {
-    if (err instanceof MfpSessionExpiredError) {
-      await revokeMfpCredentials();
-      throw new ProviderAuthError(
-        'Session MyFitnessPal expirée. Reconnecte MyFitnessPal dans les paramètres.',
-      );
-    }
-    // A refresh outage must not block a sync the stored cookie can still serve.
+    // Never destructive: the refresh is an optimisation, and it cannot tell a
+    // dead cookie apart from a bad minute at the edge. Expiry is decided by the
+    // diary reads below, which answer 401/403 when the credential is truly gone.
     console.error('[MFP] session refresh failed, syncing with the stored cookie:', err);
   }
 

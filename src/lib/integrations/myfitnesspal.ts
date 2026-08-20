@@ -83,6 +83,13 @@ export function parseRotatedSessionToken(setCookieHeaders: string[]): string | n
  * next-auth re-issues its JWT cookie once a session is older than `updateAge`, so
  * calling this on every sync rolls the ~30-day expiry forward indefinitely and
  * removes the manual re-paste. Returns the token to use from now on.
+ *
+ * This function never reports expiry. The endpoint answers `200 {}` both for a
+ * dead cookie and for a request that never carried a live one — a Cloudflare
+ * interstitial, an edge hiccup, a throttle — and those are indistinguishable
+ * from here. Treating that as expiry once revoked a still-valid credential in
+ * production and forced a manual reconnect, which is the exact pain rotation
+ * exists to remove. Only a 401/403 on a real diary read may conclude expiry.
  */
 export async function refreshMfpSession(session: MfpSession): Promise<MfpSessionRefresh> {
   const res = await fetch(`${MFP_BASE}/api/auth/session`, {
@@ -93,13 +100,9 @@ export async function refreshMfpSession(session: MfpSession): Promise<MfpSession
     throw new Error(`MFP session refresh failed: ${res.status}`);
   }
 
-  // The endpoint answers 200 with an empty object when the cookie is no longer
-  // valid, so an absent user is the real expiry signal here — not the status code.
   const payload = (await res.json().catch(() => ({}))) as { user?: unknown };
   if (!payload.user) {
-    throw new MfpSessionExpiredError(
-      'Session MyFitnessPal expirée. Reconnecte-toi avec un nouveau cookie de session.',
-    );
+    throw new Error('MFP session refresh returned no user; keeping the stored cookie');
   }
 
   const rotatedToken = parseRotatedSessionToken(readSetCookieHeaders(res));

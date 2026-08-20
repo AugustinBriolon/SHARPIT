@@ -1,8 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import {
+  MfpSessionExpiredError,
   buildDayResult,
   parseNutrientGoalsForDate,
   parseRotatedSessionToken,
+  refreshMfpSession,
   sumExerciseCalories,
 } from './myfitnesspal';
 
@@ -197,5 +199,42 @@ describe('parseRotatedSessionToken', () => {
     expect(
       parseRotatedSessionToken([`${cookieName}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`]),
     ).toBeNull();
+  });
+});
+
+describe('refreshMfpSession', () => {
+  const originalFetch = globalThis.fetch;
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  function mockSessionResponse(body: unknown, setCookie: string[] = []) {
+    const headers = new Headers();
+    for (const cookie of setCookie) headers.append('set-cookie', cookie);
+
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify(body), { status: 200, headers })) as typeof fetch;
+  }
+
+  it('rolls the cookie forward when MFP re-issues one', async () => {
+    mockSessionResponse({ user: { name: 'athlete' } }, [
+      '__Secure-next-auth.session-token=rotated.jwt; Path=/; HttpOnly; Secure',
+    ]);
+
+    const refreshed = await refreshMfpSession({ sessionToken: 'old.jwt' });
+
+    expect(refreshed).toEqual({ sessionToken: 'rotated.jwt', rotated: true });
+  });
+
+  it('never reports expiry when the session endpoint answers without a user', async () => {
+    // MFP answers 200 {} both for a dead cookie and for a request that never
+    // carried a live one. Concluding expiry here revoked a valid credential in
+    // production, so this must stay a plain failure the sync can shrug off.
+    mockSessionResponse({});
+
+    await expect(refreshMfpSession({ sessionToken: 'still.valid.jwt' })).rejects.not.toBeInstanceOf(
+      MfpSessionExpiredError,
+    );
   });
 });
