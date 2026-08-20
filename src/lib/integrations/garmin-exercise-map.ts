@@ -96,6 +96,9 @@ const BY_LABEL: Readonly<Record<string, GarminExerciseRef>> = {
   'bodyweight dip': { category: 'SUSPENSION', exerciseName: 'DIP' },
   'body weight dip': { category: 'SUSPENSION', exerciseName: 'DIP' },
   'dip avec poids du corps': { category: 'SUSPENSION', exerciseName: 'DIP' },
+  // Loaded dips stay the same movement — the vest / belt is a qualifier, not a variant
+  'dip leste': { category: 'SUSPENSION', exerciseName: 'DIP' },
+  'dips lestes': { category: 'SUSPENSION', exerciseName: 'DIP' },
   'dips avec poids du corps': { category: 'SUSPENSION', exerciseName: 'DIP' },
   'dip en suspension': { category: 'SUSPENSION', exerciseName: 'DIP' },
 
