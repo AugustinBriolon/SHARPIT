@@ -3,6 +3,7 @@ import {
   catalogItemsForSport,
   EQUIPMENT_CATALOG,
   EQUIPMENT_ITEM_IDS,
+  type StrengthVenue,
 } from '@/lib/equipment/catalog';
 import { formatEquipmentForCoach, equipmentSportHint } from '@/lib/equipment/format';
 import {
@@ -12,7 +13,11 @@ import {
   setStrengthVenue,
   toggleOwnedItem,
 } from '@/lib/equipment/parse';
-import { EMPTY_ATHLETE_EQUIPMENT } from '@/lib/equipment/types';
+import { EMPTY_ATHLETE_EQUIPMENT, type AthleteEquipment } from '@/lib/equipment/types';
+
+function strengthIdsFor(venue: StrengthVenue | null) {
+  return catalogItemsForSport('STRENGTH', venue).map((item) => item.id);
+}
 
 describe('equipment catalog', () => {
   it('only lists impactful items (no comfort accessories)', () => {
@@ -24,11 +29,17 @@ describe('equipment catalog', () => {
   });
 
   it('hides home strength items until venue allows them', () => {
-    expect(catalogItemsForSport('STRENGTH', null)).toHaveLength(0);
-    expect(catalogItemsForSport('STRENGTH', 'gym')).toHaveLength(0);
-    expect(catalogItemsForSport('STRENGTH', 'bodyweight')).toHaveLength(0);
-    expect(catalogItemsForSport('STRENGTH', 'home').length).toBeGreaterThan(0);
-    expect(catalogItemsForSport('STRENGTH', 'both').length).toBeGreaterThan(0);
+    expect(strengthIdsFor(null)).toEqual(['strength_weighted_vest']);
+    expect(strengthIdsFor('gym')).toEqual(['strength_weighted_vest']);
+    expect(strengthIdsFor('bodyweight')).toEqual(['strength_weighted_vest']);
+    expect(strengthIdsFor('home')).toContain('strength_barbell');
+    expect(strengthIdsFor('both')).toContain('strength_barbell');
+  });
+
+  it('keeps portable load available in every venue', () => {
+    for (const venue of [null, 'gym', 'home', 'both', 'bodyweight'] as const) {
+      expect(strengthIdsFor(venue)).toContain('strength_weighted_vest');
+    }
   });
 });
 
@@ -59,6 +70,9 @@ describe('equipment mutations', () => {
     equipment = setStrengthVenue(equipment, 'gym');
     expect(equipment.owned).toEqual(['bike_home_trainer']);
     expect(sanitizeOwnedForVenue(['strength_barbell'], 'bodyweight')).toEqual([]);
+    expect(sanitizeOwnedForVenue(['strength_weighted_vest'], 'bodyweight')).toEqual([
+      'strength_weighted_vest',
+    ]);
   });
 });
 
@@ -85,6 +99,16 @@ describe('formatEquipmentForCoach', () => {
 });
 
 describe('equipmentSportHint', () => {
+  it('surfaces portable load for running', () => {
+    const equipment: AthleteEquipment = {
+      version: 1,
+      strengthVenue: 'gym',
+      owned: ['strength_weighted_vest'],
+    };
+    expect(equipmentSportHint(equipment, 'RUN')).toMatch(/lest/i);
+    expect(formatEquipmentForCoach(equipment)).toContain('Lest portable disponible');
+  });
+
   it('explains gym shortcut', () => {
     expect(equipmentSportHint({ version: 1, strengthVenue: 'gym', owned: [] }, 'STRENGTH')).toMatch(
       /salle/i,

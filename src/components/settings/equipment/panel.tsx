@@ -39,17 +39,12 @@ export function EquipmentPanel({ initial }: { initial: AthleteEquipment }) {
     sport === 'STRENGTH' &&
     (equipment.strengthVenue === 'home' || equipment.strengthVenue === 'both');
 
-  let inventoryBody: ReactNode = null;
-  if (items.length > 0) {
-    inventoryBody = (
+  const venueNote = sport === 'STRENGTH' ? strengthInventoryMessage(equipment.strengthVenue) : null;
+
+  const inventoryBody: ReactNode =
+    items.length > 0 ? (
       <EquipmentItemChecklist items={items} owned={equipment.owned} onToggle={onToggleItem} />
-    );
-  } else if (sport === 'STRENGTH') {
-    const emptyMessage = strengthInventoryMessage(equipment.strengthVenue);
-    if (emptyMessage) {
-      inventoryBody = <p className="text-muted-foreground text-sm">{emptyMessage}</p>;
-    }
-  }
+    ) : null;
 
   return (
     <div className="space-y-4">
@@ -65,6 +60,8 @@ export function EquipmentPanel({ initial }: { initial: AthleteEquipment }) {
       {sport === 'STRENGTH' ? (
         <StrengthVenuePicker value={equipment.strengthVenue} onSelect={onSelectVenue} />
       ) : null}
+
+      {venueNote ? <p className="text-muted-foreground text-sm">{venueNote}</p> : null}
 
       {showHomeGearCaption ? (
         <p className="text-muted-foreground text-xs">Matériel maison à fort impact</p>

@@ -26,9 +26,13 @@ export const EQUIPMENT_ITEM_IDS = [
   'strength_pullup_bar',
   'strength_bands',
   'strength_trx',
+  'strength_rings',
+  'strength_dip_bars',
+  'strength_weighted_vest',
   'mobility_foam_roller',
   'mobility_bands',
   'mobility_tennis_ball',
+  'mobility_yoga_block',
 ] as const;
 
 export type EquipmentItemId = (typeof EQUIPMENT_ITEM_IDS)[number];
@@ -182,6 +186,26 @@ export const EQUIPMENT_CATALOG: readonly EquipmentCatalogItem[] = [
     requiresStrengthVenue: ['home', 'both'],
   },
   {
+    id: 'strength_rings',
+    sport: 'STRENGTH',
+    label: 'Anneaux de gymnastique',
+    impact: 'Tirage et poussée instables — rowing, dips anneaux, muscle-up.',
+    requiresStrengthVenue: ['home', 'both'],
+  },
+  {
+    id: 'strength_dip_bars',
+    sport: 'STRENGTH',
+    label: 'Barre / station de dips',
+    impact: 'Poussée verticale lestable et gainage bras tendus.',
+    requiresStrengthVenue: ['home', 'both'],
+  },
+  {
+    id: 'strength_weighted_vest',
+    sport: 'STRENGTH',
+    label: 'Gilet lesté / ceinture de lest',
+    impact: 'Lest portable — tractions, dips, pompes et côtes lestées.',
+  },
+  {
     id: 'mobility_foam_roller',
     sport: 'MOBILITY',
     label: 'Foam roller / stick',
@@ -198,6 +222,12 @@ export const EQUIPMENT_CATALOG: readonly EquipmentCatalogItem[] = [
     sport: 'MOBILITY',
     label: 'Balle de tennis / massage',
     impact: 'Points gâchettes, pieds, fessiers — travail localisé.',
+  },
+  {
+    id: 'mobility_yoga_block',
+    sport: 'MOBILITY',
+    label: 'Brique de yoga',
+    impact: 'Amplitude assistée — postures rapprochées du sol et étirements soutenus.',
   },
 ] as const;
 

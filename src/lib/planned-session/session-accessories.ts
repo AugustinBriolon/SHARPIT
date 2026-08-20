@@ -22,9 +22,13 @@ const SESSION_PROP_IDS: readonly EquipmentItemId[] = [
   'strength_pullup_bar',
   'strength_bands',
   'strength_trx',
+  'strength_rings',
+  'strength_dip_bars',
+  'strength_weighted_vest',
   'mobility_foam_roller',
   'mobility_bands',
   'mobility_tennis_ball',
+  'mobility_yoga_block',
   'bike_home_trainer',
   'run_treadmill',
 ];
@@ -40,6 +44,12 @@ const KEYWORD_TO_IDS: ReadonlyArray<{ pattern: RegExp; ids: EquipmentItemId[] }>
   },
   { pattern: /foam[\s-]?roller|rouleau|\bstick\b/i, ids: ['mobility_foam_roller'] },
   { pattern: /\btrx\b|sangles?|suspension/i, ids: ['strength_trx'] },
+  { pattern: /anneaux?|\brings?\b|muscle[\s-]?up/i, ids: ['strength_rings'] },
+  { pattern: /\bdips?\b/i, ids: ['strength_dip_bars'] },
+  {
+    pattern: /gilet lest|ceinture de lest|lest[eé]|weighted vest|rucking/i,
+    ids: ['strength_weighted_vest'],
+  },
   {
     pattern: /halt[eè]res?|kettlebell|dumbbell/i,
     ids: ['strength_dumbbells'],
@@ -48,6 +58,7 @@ const KEYWORD_TO_IDS: ReadonlyArray<{ pattern: RegExp; ids: EquipmentItemId[] }>
   { pattern: /\bbanc\b|\bbench\b/i, ids: ['strength_bench'] },
   { pattern: /traction|pull[\s-]?up/i, ids: ['strength_pullup_bar'] },
   { pattern: /\bballe\b|tennis ball|gâchettes?/i, ids: ['mobility_tennis_ball'] },
+  { pattern: /briques?|yoga block/i, ids: ['mobility_yoga_block'] },
   { pattern: /home[\s-]?trainer|hometrainer/i, ids: ['bike_home_trainer'] },
   { pattern: /\btapis\b|treadmill/i, ids: ['run_treadmill'] },
 ];
@@ -61,7 +72,8 @@ function sportAllows(id: EquipmentItemId, type: ActivityType): boolean {
   if (!item) return false;
   if (type === 'SWIM') return item.sport === 'SWIM';
   if (type === 'BIKE') return item.sport === 'BIKE';
-  if (type === 'RUN') return item.sport === 'RUN';
+  // Portable load is catalogued under STRENGTH but packs for a run (hill reps, rucking).
+  if (type === 'RUN') return item.sport === 'RUN' || id === 'strength_weighted_vest';
   if (type === 'STRENGTH') return item.sport === 'STRENGTH' || item.sport === 'MOBILITY';
   // OTHER / TRIATHLON — allow session props across sports
   return SESSION_PROP_IDS.includes(id);
