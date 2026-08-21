@@ -134,7 +134,6 @@ export type TodayPresentationInputs = {
  */
 export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): TodayViewModel {
   const {
-    trainingDayId,
     day,
     snapshot,
     healthEntries,
@@ -425,11 +424,10 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
     },
     insights: [],
     header: {
-      dayKey: trainingDayId,
       weather: weather
         ? {
             city: weather.city,
-            tempC: weather.avgTempC,
+            tempC: weather.tempC,
             condition: weather.condition,
             locationKnown: weather.locationKnown,
           }

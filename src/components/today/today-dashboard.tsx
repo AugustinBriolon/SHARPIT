@@ -128,7 +128,11 @@ export function TodayDashboard() {
         />
       ) : null}
       <div className="space-y-2 lg:space-y-4">
-        <TodayHeader dayKey={content.header.dayKey} weather={content.header.weather} />
+        <TodayHeader
+          dayKey={trainingDayId}
+          loading={valuesLoading}
+          weather={content.header.weather}
+        />
         <TodayVerdictHero loading={valuesLoading} vm={content} />
         <TodaySignalStrip loading={valuesLoading} metricsRow={content.hero.metricsRow} />
       </div>

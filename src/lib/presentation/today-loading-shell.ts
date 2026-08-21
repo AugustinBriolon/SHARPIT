@@ -88,7 +88,7 @@ export function todayLoadingShell(now: Date = LOADING_SHELL_REFERENCE): TodayVie
       morningRecalibration: null,
     },
     insights: [],
-    header: { dayKey: '', weather: null },
+    header: { weather: null },
     environmentContext: null,
     nutrition: null,
     hierarchy: { rootId: 'today', order: [] },

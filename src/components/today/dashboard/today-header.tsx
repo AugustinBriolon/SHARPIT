@@ -7,6 +7,7 @@ import {
   activityWeatherIconClassName,
   type ActivityWeatherCondition,
 } from '@/lib/activity/weather/activity-weather';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { toLocalCalendarDate } from '@/lib/date/day-key';
@@ -22,11 +23,11 @@ import { cn } from '@/lib/utils';
  */
 function useDeviceLocation() {
   const queryClient = useQueryClient();
-  const [state, setState] = useState<'idle' | 'asking' | 'denied' | 'failed'>('idle');
+  const [state, setState] = useState<DeviceLocationState>('idle');
 
   const ask = useCallback(() => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setState('failed');
+      setState('unsupported');
       return;
     }
     setState('asking');
@@ -41,20 +42,33 @@ function useDeviceLocation() {
               longitude: position.coords.longitude,
             }),
           });
-          if (!res.ok) throw new Error('save failed');
+          if (!res.ok) throw new Error(`save failed: ${res.status}`);
           setState('idle');
           await queryClient.invalidateQueries();
-        } catch {
-          setState('failed');
+        } catch (error) {
+          // Swallowing this cost an afternoon of "no error in the console".
+          console.error('[home-location] save failed', error);
+          setState('saveFailed');
         }
       },
-      (error) => setState(error.code === error.PERMISSION_DENIED ? 'denied' : 'failed'),
-      { timeout: 10_000, maximumAge: 600_000 },
+      (error) => {
+        console.warn('[home-location] geolocation refused', {
+          code: error.code,
+          message: error.message,
+        });
+        if (error.code === error.PERMISSION_DENIED) setState('denied');
+        else if (error.code === error.TIMEOUT) setState('timeout');
+        else setState('unavailable');
+      },
+      { timeout: 15_000, maximumAge: 600_000 },
     );
   }, [queryClient]);
 
   return { state, ask };
 }
+
+type DeviceLocationState =
+  'idle' | 'asking' | 'denied' | 'unavailable' | 'timeout' | 'unsupported' | 'saveFailed';
 
 type TodayHeaderWeather = {
   city: string;
@@ -82,18 +96,28 @@ function WeatherMark({ icon: Icon, className }: { icon: LucideIcon; className?: 
   return <Icon className={className} aria-hidden />;
 }
 
-const PROMPT_COPY: Record<'idle' | 'asking' | 'denied' | 'failed', string> = {
+/**
+ * Each failure names its own cause. One catch-all "indisponible" sent the athlete
+ * hunting for a browser prompt the operating system had already declined to show.
+ */
+const PROMPT_COPY: Record<DeviceLocationState, string> = {
   idle: 'Utiliser ma position',
   asking: 'Localisation…',
-  denied: 'Position refusée',
-  failed: 'Position indisponible',
+  denied: 'Position refusée par le navigateur',
+  unavailable: 'Localisation désactivée sur l’appareil',
+  timeout: 'Localisation trop lente',
+  unsupported: 'Localisation non supportée',
+  saveFailed: 'Enregistrement impossible',
 };
+
+/** States that still leave something to click. */
+const ACTIONABLE_STATES = new Set<DeviceLocationState>(['idle', 'asking']);
 
 /** Offers the fix rather than announcing the gap. */
 function LocationPrompt() {
   const { state, ask } = useDeviceLocation();
 
-  if (state === 'denied' || state === 'failed') {
+  if (!ACTIONABLE_STATES.has(state)) {
     return <span className="text-muted-foreground/60">{PROMPT_COPY[state]}</span>;
   }
 
@@ -119,16 +143,21 @@ function LocationPrompt() {
 export function TodayHeader({
   dayKey,
   weather,
+  loading = false,
 }: {
   dayKey: string;
   weather: TodayHeaderWeather | null;
+  /** Weather is still being fetched. The date never is. */
+  loading?: boolean;
 }) {
   const label = formatDay(dayKey);
-  if (!label && !weather) return null;
+  if (!label && !weather && !loading) return null;
 
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
       <p className="text-muted-foreground text-sm first-letter:uppercase">{label}</p>
+
+      {loading && !weather ? <Skeleton className="h-4 w-28 rounded" /> : null}
 
       {weather ? (
         <p className="text-muted-foreground inline-flex items-baseline gap-1.5 text-sm">

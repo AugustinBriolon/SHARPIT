@@ -185,10 +185,8 @@ export type TodayViewModel = {
   insights: ProductInsight[];
 
   /** Environmental context when training impact is significant (Phase 3). */
-  /** Date and weather at the top of the morning screen. */
+  /** Weather at the top of the morning screen. The date needs no fetch. */
   header: {
-    /** ISO day the screen is reading, "YYYY-MM-DD". */
-    dayKey: string;
     weather: {
       city: string;
       tempC: number;

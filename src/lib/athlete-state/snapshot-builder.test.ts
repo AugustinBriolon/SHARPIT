@@ -142,7 +142,10 @@ describe('buildAthleteSnapshot daily phase', () => {
     });
 
     expect(snapshot.dailyPhase.phase).toBe('SESSION_COMPLETED');
-    expect(snapshot.phaseNarrative.heroHeadline).toMatch(/exigeante|Course/);
+    // The headline weighs the day rather than naming the sport: the session is
+    // already listed on the same screen, so repeating it spends the sentence.
+    expect(snapshot.phaseNarrative.heroHeadline).toMatch(/^Journée /);
+    expect(snapshot.phaseNarrative.heroHeadline).not.toMatch(/Course|Vélo|Natation|Musculation/);
     expect(snapshot.sessionsDoneToday).toHaveLength(1);
     expect(snapshot.sessionsDoneToday[0]?.id).toBe('a1');
   });

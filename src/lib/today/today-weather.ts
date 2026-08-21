@@ -1,16 +1,22 @@
 /**
  * Today's weather for the morning screen.
  *
- * Reuses the activity weather extractor so a forecast and a realised session
- * read the same way — same condition thresholds, same city formatting.
+ * Reuses the activity condition thresholds and city formatting so a forecast and
+ * a realised session read alike — but not the activity averaging. An activity
+ * averages over the effort it actually covered; a header answers "what am I
+ * walking into now", and a mean is the wrong answer to that question.
  *
- * Carries `locationKnown`. The location chain ends on hard-coded coordinates
- * when nothing is configured, and weather for a city the athlete does not live
- * in must not be presented as a fact about their morning.
+ * Carries `locationKnown`. The location chain ends on hard-coded coordinates when
+ * nothing is configured, and weather for a city the athlete does not live in must
+ * not be presented as a fact about their morning.
  */
+import { endOfDay, startOfDay } from 'date-fns';
+import type { EnvironmentalPrediction } from '@/core/environment';
 import {
-  extractActivityWeatherSnapshot,
-  type ActivityWeatherSnapshot,
+  formatCityFromLocationLabel,
+  inferActivityWeatherCondition,
+  readWeatherMeasurements,
+  type ActivityWeatherCondition,
 } from '@/lib/activity/weather/activity-weather';
 import { resolveAthleteGeoLocation } from '@/lib/environment/athlete-location';
 import { fetchForecastPredictions } from '@/lib/planned-session/forecast/forecast-fetch';
@@ -19,10 +25,102 @@ import { approximateTrainingDayUtcRange } from '@/lib/training/training-day';
 
 const ATHLETE_ID = 'default';
 
-export type TodayWeather = ActivityWeatherSnapshot & {
-  /** False when the reading is for hard-coded coordinates, not a place we know. */
+export type TodayWeather = {
+  city: string;
+  /** Temperature at the hour nearest now, not a daily mean. */
+  tempC: number;
+  condition: ActivityWeatherCondition;
   locationKnown: boolean;
 };
+
+/** One forecast hour, reduced to what the header needs. */
+export type WeatherHour = {
+  at: Date;
+  airTemperatureC: number | null;
+  precipitationMm: number | null;
+  cloudCoverPct: number | null;
+  solarRadiationWm2: number | null;
+};
+
+export function toWeatherHours(predictions: EnvironmentalPrediction[]): WeatherHour[] {
+  return predictions
+    .filter((prediction) => prediction.dimension === 'WEATHER')
+    .flatMap((prediction) => {
+      const data = readWeatherMeasurements(prediction);
+      const at = prediction.targetAt ? new Date(prediction.targetAt) : null;
+      if (!data || !at || Number.isNaN(at.getTime())) return [];
+      return [
+        {
+          at,
+          airTemperatureC: data.airTemperatureC ?? null,
+          precipitationMm: data.precipitationMm ?? null,
+          cloudCoverPct: data.cloudCoverPct ?? null,
+          solarRadiationWm2: data.solarRadiationWm2 ?? null,
+        },
+      ];
+    })
+    .sort((a, b) => a.at.getTime() - b.at.getTime());
+}
+
+function mean(values: number[]): number | null {
+  if (values.length === 0) return null;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+/**
+ * Temperature now, condition for what is left of the day.
+ *
+ * The provider is queried over a padded range so time zones cannot clip the day;
+ * everything outside the athlete's actual day is dropped here. Late in the
+ * evening nothing remains ahead, so the condition falls back to the whole day
+ * rather than reporting nothing.
+ */
+export function selectTodayWeather(
+  hours: WeatherHour[],
+  now: Date,
+): { tempC: number; condition: ActivityWeatherCondition } | null {
+  const dayStart = startOfDay(now).getTime();
+  const dayEnd = endOfDay(now).getTime();
+  const today = hours.filter((hour) => {
+    const time = hour.at.getTime();
+    return time >= dayStart && time <= dayEnd;
+  });
+  if (today.length === 0) return null;
+
+  const withTemp = today.filter((hour) => hour.airTemperatureC != null);
+  if (withTemp.length === 0) return null;
+
+  const nearest = withTemp.reduce((best, hour) =>
+    Math.abs(hour.at.getTime() - now.getTime()) < Math.abs(best.at.getTime() - now.getTime())
+      ? hour
+      : best,
+  );
+
+  const ahead = today.filter((hour) => hour.at.getTime() >= now.getTime());
+  const forCondition = ahead.length > 0 ? ahead : today;
+
+  const precipitations = forCondition
+    .map((hour) => hour.precipitationMm)
+    .filter((value): value is number => value != null);
+
+  return {
+    tempC: nearest.airTemperatureC as number,
+    condition: inferActivityWeatherCondition({
+      maxPrecipitationMm: precipitations.length > 0 ? Math.max(...precipitations) : null,
+      avgPrecipitationMm: mean(precipitations),
+      avgCloudCoverPct: mean(
+        forCondition
+          .map((hour) => hour.cloudCoverPct)
+          .filter((value): value is number => value != null),
+      ),
+      avgSolarRadiationWm2: mean(
+        forCondition
+          .map((hour) => hour.solarRadiationWm2)
+          .filter((value): value is number => value != null),
+      ),
+    }),
+  };
+}
 
 export async function loadTodayWeather(trainingDayId: string): Promise<TodayWeather | null> {
   try {
@@ -37,10 +135,16 @@ export async function loadTodayWeather(trainingDayId: string): Promise<TodayWeat
       trainingDayId,
     });
 
-    const snapshot = extractActivityWeatherSnapshot(predictions, location.label ?? null);
-    if (!snapshot) return null;
+    const selected = selectTodayWeather(toWeatherHours(predictions), new Date());
+    const city = location.label?.trim();
+    if (!selected || !city) return null;
 
-    return { ...snapshot, locationKnown: location.source !== 'default' };
+    return {
+      city: formatCityFromLocationLabel(city),
+      tempC: selected.tempC,
+      condition: selected.condition,
+      locationKnown: location.source !== 'default',
+    };
   } catch {
     // The morning screen must render without a forecast provider.
     return null;

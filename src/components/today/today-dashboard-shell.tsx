@@ -2,6 +2,7 @@
 
 import { todayLoadingShell } from '@/lib/presentation/today-loading-shell';
 import { TodayActionRow } from './rich/today-action-row';
+import { TodayHeader } from './dashboard/today-header';
 import { TodaySignalStrip } from './dashboard/today-signal-strip';
 import { TodayVerdictHero } from './rich/today-verdict-hero';
 
@@ -16,6 +17,7 @@ export function TodayDashboardShell({ trainingDayId }: { trainingDayId?: string 
   return (
     <div className="mx-auto space-y-6 lg:space-y-8">
       <div className="space-y-2 lg:space-y-4">
+        <TodayHeader dayKey={dayId} weather={null} loading />
         <TodayVerdictHero vm={content} loading />
         <TodaySignalStrip metricsRow={content.hero.metricsRow} loading />
       </div>

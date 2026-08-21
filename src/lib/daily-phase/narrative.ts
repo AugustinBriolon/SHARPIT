@@ -213,35 +213,6 @@ function resolveEffortLevel(input: PhaseNarrativeInput): TodayEffortLevel | null
   return input.evening?.effortLevel ?? inferEffortFromTss(input.totalTssToday);
 }
 
-function sportAfterPhrase(sport: string): string {
-  switch (sport) {
-    case 'Course':
-      return 'ta course';
-    case 'Vélo':
-      return 'le vélo';
-    case 'Natation':
-      return 'ta natation';
-    case 'Musculation':
-      return 'ta musculation';
-    case 'Triathlon':
-      return 'le triathlon';
-    default:
-      return 'la séance';
-  }
-}
-
-function sportEffortWord(sport: string, level: TodayEffortLevel | null): string {
-  const isMasculine = sport === 'Vélo' || sport === 'Triathlon';
-  switch (level) {
-    case 'high':
-      return isMasculine ? 'exigeant' : 'exigeante';
-    case 'moderate':
-      return isMasculine ? 'modéré' : 'modérée';
-    default:
-      return isMasculine ? 'léger' : 'légère';
-  }
-}
-
 /** RECOVERY_WINDOW on a day with zero sessions — no "après {sport}" premise to build on. */
 function restDayRecoveryHeadline(posture: TodayPosture): string {
   return posture === 'protect'
@@ -249,53 +220,56 @@ function restDayRecoveryHeadline(posture: TodayPosture): string {
     : 'Jour de repos — fenêtre d’adaptation ouverte';
 }
 
+/**
+ * How the day weighed, not what was done in it.
+ *
+ * The athlete knows which session he did — it is listed below on the same screen.
+ * Naming it again spends the one sentence that should be telling him something he
+ * does not already know: how much the day cost him.
+ */
+function dayLoadLabel(effortLevel: TodayEffortLevel | null, multi: boolean): string {
+  if (multi) return 'Journée chargée';
+  if (effortLevel === 'high') return 'Journée exigeante';
+  if (effortLevel === 'moderate') return 'Journée active';
+  return 'Journée engagée';
+}
+
 function postTrainingHeadline(
   phase: 'SESSION_COMPLETED' | 'RECOVERY_WINDOW',
   input: PhaseNarrativeInput,
   posture: TodayPosture,
 ): string {
-  const sport = input.sportLabel ?? 'Séance';
   const effortLevel = resolveEffortLevel(input);
   const recoveryStress = isRecoveryStress(input.limitingFactorMessage);
   const multi = (input.evening?.completedSessionCount ?? 1) >= 2;
   const goal = input.goalContext;
+  const load = dayLoadLabel(effortLevel, multi);
 
   if (phase === 'SESSION_COMPLETED') {
     if (goal?.linkedToTodaySession) {
-      return `${sport} faite — au service de ${goal.title}`;
-    }
-    if (multi) {
-      return 'Double séance — récupération prioritaire maintenant';
+      return `${load} — au service de ${goal.title}`;
     }
     if (recoveryStress || posture === 'protect') {
-      return `${sport} faite — récupération prioritaire maintenant`;
+      return `${load} — récupération prioritaire maintenant`;
     }
     if (effortLevel === 'high') {
-      return `${sport} ${sportEffortWord(sport, effortLevel)} — laisse le corps digérer`;
+      return `${load} — laisse le corps digérer`;
     }
     if (effortLevel === 'moderate') {
-      return `${sport} faite — place à la récupération`;
+      return `${load} — place à la récupération`;
     }
-    return `${sport} faite — séance dans les jambes`;
+    return `${load} — séance dans les jambes`;
   }
-
-  if (multi) {
-    return posture === 'protect'
-      ? 'Après le double bloc — récupération à consolider'
-      : 'Après le double bloc — fenêtre d’adaptation ouverte';
-  }
-
-  const after = sportAfterPhrase(sport);
 
   if (recoveryStress || posture === 'protect') {
-    return `Après ${after} — récupération à consolider`;
+    return `${load} — récupération à consolider`;
   }
 
   if (effortLevel === 'high') {
-    return `Après ${after} — nutrition et sommeil d'abord`;
+    return `${load} — nutrition et sommeil d'abord`;
   }
 
-  return `Après ${after} — fenêtre d’adaptation ouverte`;
+  return `${load} — fenêtre d’adaptation ouverte`;
 }
 
 function headlineForPhase(input: PhaseNarrativeInput, posture: TodayPosture): string {
