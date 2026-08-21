@@ -84,7 +84,7 @@ export function PhysioRail({
         ) : null}
       </div>
       {markerLabel ? (
-        <p className="text-muted-foreground text-[10px] leading-none">{markerLabel}</p>
+        <p className="text-muted-foreground text-xs leading-none">{markerLabel}</p>
       ) : null}
     </div>
   );

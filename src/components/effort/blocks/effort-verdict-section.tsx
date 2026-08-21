@@ -84,7 +84,9 @@ export function EffortVerdictSection({
       <p className="text-label mb-2">Montée de charge</p>
 
       {hasAcwr && zone ? (
-        <div className="space-y-2">
+        /* Capped like the readings above: a scale stretched to the viewport offers
+           more precision than a ratio rounded to two decimals ever carries. */
+        <div className="max-w-3xl space-y-2">
           <div className="flex items-baseline justify-between gap-3">
             <div className="min-w-0">
               <p className="text-foreground text-sm font-medium">{acwrZoneLabel(zone)}</p>
@@ -95,7 +97,7 @@ export function EffortVerdictSection({
             </p>
           </div>
           <AcwrZoneBar acwr={acwr} />
-          <p className="text-muted-foreground text-[10px] tracking-wide">
+          <p className="text-muted-foreground text-xs tracking-wide">
             Ratio charge aiguë / chronique (ACWR)
           </p>
         </div>

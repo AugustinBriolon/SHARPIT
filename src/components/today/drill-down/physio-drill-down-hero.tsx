@@ -30,9 +30,7 @@ function quickReadBadge({
         title={quickReadLabel ?? undefined}
       >
         {quickReadValue}
-        {quickReadSuffix ? (
-          <span className="text-[10px] font-normal">{quickReadSuffix}</span>
-        ) : null}
+        {quickReadSuffix ? <span className="text-xs font-normal">{quickReadSuffix}</span> : null}
       </span>
     );
   }

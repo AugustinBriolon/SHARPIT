@@ -48,7 +48,7 @@ export function EffortStrainCompositionSection({
                 {!loading && !(row.available && row.load != null) ? (
                   <p className="text-muted-foreground/40 text-sm">—</p>
                 ) : null}
-                <p className="text-muted-foreground text-[10px] tracking-wide">charge</p>
+                <p className="text-muted-foreground text-xs tracking-wide">charge</p>
               </div>
             </div>
           );

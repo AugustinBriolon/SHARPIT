@@ -46,7 +46,9 @@ export function DrillDownStatsStrip({
         'snap-x snap-mandatory scroll-px-0.5',
         '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
         'focus-visible:outline-ring rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2',
-        'sm:grid sm:snap-none sm:overflow-visible',
+        // Capped: three readings spread across a 1900 px row put fifteen characters
+        // in a 650 px chip and pushed each label away from the next.
+        'sm:grid sm:max-w-3xl sm:snap-none sm:overflow-visible',
         desktopChipCols(items.length),
       )}
     >

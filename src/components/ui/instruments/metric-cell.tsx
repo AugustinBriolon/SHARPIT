@@ -66,7 +66,7 @@ export function MetricCell({
             <SkeletonDataValue heightClassName="h-2.5" widthClassName="w-14" />
           </div>
         ) : null}
-        {!loading && sub ? <p className="text-muted-foreground mt-0.5 text-[10px]">{sub}</p> : null}
+        {!loading && sub ? <p className="text-muted-foreground mt-0.5 text-xs">{sub}</p> : null}
       </div>
     );
   }
@@ -82,7 +82,7 @@ export function MetricCell({
         ) : (
           <p className={cn('mt-1 text-base font-semibold tabular-nums', valueClass)}>{value}</p>
         )}
-        {!loading && sub ? <p className="text-muted-foreground mt-0.5 text-[10px]">{sub}</p> : null}
+        {!loading && sub ? <p className="text-muted-foreground mt-0.5 text-xs">{sub}</p> : null}
       </div>
     );
   }
@@ -134,7 +134,7 @@ export function MetricCell({
       {!loading && footer ? (
         <p
           className={cn(
-            'mt-1 text-[10px] leading-snug',
+            'mt-1 text-xs leading-snug',
             footerTone && isDeltaStatusTone(footerTone)
               ? CORPS_TONE_TEXT[footerTone]
               : 'text-muted-foreground',
