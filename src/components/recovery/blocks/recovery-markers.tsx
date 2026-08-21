@@ -43,7 +43,9 @@ export function RecoveryMarkers({
   const batteryObserved = observedRange(batterySeries);
 
   return (
-    <div className="divide-analysis-border/40 divide-y">
+    /* Three blocks side by side on a wide screen: the row used sixteen percent of
+       its width and left the rest empty, which is not restraint but waste. */
+    <div className="grid gap-x-8 gap-y-1 sm:grid-cols-3 sm:gap-y-0">
       <MarkerBand
         delta={deltaVsTrailingWeek(hrvValues)}
         label="VFC"

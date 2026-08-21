@@ -82,36 +82,14 @@ export function MarkerBand({
 
   return (
     <div className="py-3">
-      {/* Columns stay grouped instead of spanning the viewport: a wide screen must
-          not push a label six hundred pixels from the value it names. */}
-      <div className="flex items-center gap-3">
-        <span className="text-foreground w-24 shrink-0 truncate text-sm font-medium sm:w-32">
-          {label}
-        </span>
-
-        {/* Fixed width: the scale must not stretch with the viewport, and the value
-            has to stay within a glance of its own position. */}
-        {range && value != null ? (
-          <div className="relative h-3 w-24 shrink-0 sm:w-32">
-            <div
-              className="bg-muted-foreground/25 absolute top-1/2 h-1 -translate-y-1/2 rounded-full"
-              style={{ left: `${BAND_START_PCT}%`, width: `${BAND_WIDTH_PCT}%` }}
-            />
-            <div
-              style={{ left: `${markerPositionPct(value, range)}%` }}
-              className={cn(
-                'absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full',
-                concerning ? 'bg-signal-caution' : 'bg-foreground',
-              )}
-              aria-hidden
-            />
-          </div>
-        ) : null}
-
+      {/* Header: the label stays quiet, the value carries the chroma, so the eye
+          lands on the number instead of sweeping a row of uniformly bright text. */}
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-foreground min-w-0 truncate text-sm font-medium">{label}</span>
         <span
           className={cn(
-            'text-data w-24 shrink-0 text-sm tabular-nums',
-            concerning ? 'text-signal-caution' : 'text-foreground',
+            'text-data shrink-0 text-base font-semibold tabular-nums',
+            concerning ? 'text-signal-caution' : 'text-primary',
           )}
         >
           {value != null ? value : '—'}
@@ -119,7 +97,26 @@ export function MarkerBand({
         </span>
       </div>
 
-      <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+      {/* The scale spans the block rather than the viewport: as a grid cell it uses
+          the width it is given, and never stretches into false precision. */}
+      {range && value != null ? (
+        <div className="relative mt-2 h-3 w-full">
+          <div
+            className="bg-muted-foreground/55 absolute top-1/2 h-1 -translate-y-1/2 rounded-full"
+            style={{ left: `${BAND_START_PCT}%`, width: `${BAND_WIDTH_PCT}%` }}
+          />
+          <div
+            style={{ left: `${markerPositionPct(value, range)}%` }}
+            className={cn(
+              'absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full',
+              concerning ? 'bg-signal-caution' : 'bg-primary',
+            )}
+            aria-hidden
+          />
+        </div>
+      ) : null}
+
+      <div className="text-muted-foreground mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
         {position ? (
           <span className={cn(concerning && 'text-signal-caution font-medium')}>
             {POSITION_WORD[position]} {rangeWord}
@@ -139,7 +136,7 @@ export function MarkerBand({
         ) : null}
 
         {series && series.length > 1 ? (
-          <span className="text-muted-foreground inline-block w-16">
+          <span className="text-muted-foreground ml-auto inline-block w-16">
             <Sparkline h={14} stroke="currentColor" values={series} />
           </span>
         ) : null}
