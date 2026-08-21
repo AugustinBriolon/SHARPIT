@@ -11,7 +11,7 @@ const NOW = new Date('2026-08-20T12:00:00.000Z');
 
 function sample(overrides: Partial<SwimCssSample> = {}): SwimCssSample {
   return {
-    cssSecPer100m: 100,
+    paceSecPer100m: 100,
     distanceM: 2000,
     date: '2026-08-10T09:00:00.000Z',
     ...overrides,
@@ -19,29 +19,46 @@ function sample(overrides: Partial<SwimCssSample> = {}): SwimCssSample {
 }
 
 describe('estimateSwimCss', () => {
-  it('takes the median so one fast session cannot set the reference', () => {
+  it('takes the second-fastest, so one anomalous session cannot set the threshold', () => {
     const estimate = estimateSwimCss(
       [
-        sample({ cssSecPer100m: 98 }),
-        sample({ cssSecPer100m: 102 }),
-        sample({ cssSecPer100m: 85 }),
+        sample({ paceSecPer100m: 91 }), // mis-recorded, twenty seconds clear of the rest
+        sample({ paceSecPer100m: 109 }),
+        sample({ paceSecPer100m: 110 }),
+        sample({ paceSecPer100m: 118 }),
       ],
       { windowDays: 120, now: NOW },
     );
-    expect(estimate).toBe(98);
+    expect(estimate).toBe(109);
   });
 
-  it('averages the middle pair on an even count', () => {
+  it('is not dragged slow by a technique-heavy session', () => {
     const estimate = estimateSwimCss(
-      [sample({ cssSecPer100m: 100 }), sample({ cssSecPer100m: 105 })],
+      [
+        sample({ paceSecPer100m: 100 }),
+        sample({ paceSecPer100m: 104 }),
+        sample({ paceSecPer100m: 245 }),
+      ],
       { windowDays: 120, now: NOW },
     );
-    expect(estimate).toBe(102.5);
+    expect(estimate).toBe(104);
   });
 
-  it('drops short sessions, where CSS reflects drills rather than speed', () => {
+  it('falls back to the only session it has when there is nothing to trim', () => {
+    expect(estimateSwimCss([sample({ paceSecPer100m: 105 })], { windowDays: 120, now: NOW })).toBe(
+      105,
+    );
+    expect(
+      estimateSwimCss([sample({ paceSecPer100m: 105 }), sample({ paceSecPer100m: 120 })], {
+        windowDays: 120,
+        now: NOW,
+      }),
+    ).toBe(105);
+  });
+
+  it('drops short sessions, where the average reflects drills rather than speed', () => {
     const estimate = estimateSwimCss(
-      [sample({ cssSecPer100m: 130, distanceM: 400 }), sample({ cssSecPer100m: 100 })],
+      [sample({ paceSecPer100m: 80, distanceM: 400 }), sample({ paceSecPer100m: 100 })],
       { windowDays: 120, now: NOW },
     );
     expect(estimate).toBe(100);
@@ -50,8 +67,8 @@ describe('estimateSwimCss', () => {
   it('ignores sessions outside the recency window', () => {
     const estimate = estimateSwimCss(
       [
-        sample({ cssSecPer100m: 130, date: '2025-01-01T09:00:00.000Z' }),
-        sample({ cssSecPer100m: 100 }),
+        sample({ paceSecPer100m: 80, date: '2025-01-01T09:00:00.000Z' }),
+        sample({ paceSecPer100m: 100 }),
       ],
       { windowDays: 120, now: NOW },
     );

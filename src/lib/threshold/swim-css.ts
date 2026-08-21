@@ -1,46 +1,56 @@
 /**
- * Athlete-level critical swim speed, derived from the CSS Garmin already computes
- * on each pool session.
+ * Athlete-level critical swim speed, estimated from realised pool sessions.
  *
  * CSS is the swimmer's threshold — the equivalent of threshold pace on land and
- * FTP on the bike — so it belongs on the profile, not scattered across realised
- * activities. Deriving it keeps the reference moving with the athlete, the way
- * the other thresholds do (ADR-012).
+ * FTP on the bike — so it belongs on the profile rather than scattered across
+ * activities, and it should move with the athlete the way the others do
+ * (ADR-012).
+ *
+ * The estimate is a proxy, not a measurement. Properly, CSS comes from two time
+ * trials: (400 - 200) / (T400 - T200). Nothing in the database records a time
+ * trial, so this reads the average swim pace of long sessions instead, and takes
+ * the fastest — see ADR-021 for why that direction, and for what would replace it.
  */
 
 /** One realised swim, as far as this estimate is concerned. */
 export type SwimCssSample = {
-  cssSecPer100m: number;
+  /** Average pace of the session, seconds per 100 m. */
+  paceSecPer100m: number;
   distanceM: number;
   /** ISO date of the session. */
   date: string;
 };
 
 /**
- * Below this, a session is technique work or a warm-up fragment: its CSS reflects
- * drills and rests rather than sustainable speed.
+ * Below this, a session is technique work or a warm-up fragment: its average pace
+ * reflects drills and rests rather than sustainable speed.
  */
 export const SWIM_CSS_MIN_DISTANCE_M = 800;
 
 /** CSS must move by at least this many s/100 m to be worth suggesting. */
 export const CSS_MATERIALITY_SEC_PER_100M = 2;
 
-function median(values: number[]): number {
-  const sorted = [...values].sort((a, b) => a - b);
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 1 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
-}
-
 function ageDays(iso: string, now: Date): number {
   return (now.getTime() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24);
 }
 
+/** Below this many qualifying sessions, there is nothing to trim against. */
+const MIN_SAMPLES_TO_TRIM = 3;
+
 /**
- * Median CSS across qualifying sessions in the window.
+ * Second-fastest average pace across qualifying sessions in the window.
  *
- * Median rather than best: the best swim of a season overstates what the athlete
- * can hold and would prescribe every set too fast. Median rather than mean: one
- * technique-heavy session should not drag the reference.
+ * Two biases pull in opposite directions and neither is small. A whole-session
+ * average mixes warm-up, drills and rest into the number, so it reads slower than
+ * the pace the athlete can hold — which argues for taking the fastest session.
+ * But a single mis-recorded session, a short-course swim or a set with fins reads
+ * far faster than anything real, and taking the fastest lets one such record set
+ * the threshold. On this athlete's history the fastest session sits twenty
+ * seconds per 100 m clear of the next four, which are tightly clustered.
+ *
+ * Taking the second-fastest keeps most of the first correction while requiring
+ * two sessions to agree before the reference moves. Prescribing too fast is the
+ * dangerous direction; this errs slow, which is the recoverable one.
  */
 export function estimateSwimCss(
   samples: SwimCssSample[],
@@ -50,15 +60,17 @@ export function estimateSwimCss(
 
   const usable = samples
     .filter((sample) => sample.distanceM >= SWIM_CSS_MIN_DISTANCE_M)
-    .filter((sample) => sample.cssSecPer100m > 0)
+    .filter((sample) => sample.paceSecPer100m > 0)
     .filter((sample) => {
       const age = ageDays(sample.date, now);
       return age >= 0 && age <= options.windowDays;
     })
-    .map((sample) => sample.cssSecPer100m);
+    .map((sample) => sample.paceSecPer100m)
+    .sort((a, b) => a - b);
 
   if (usable.length === 0) return null;
-  return Math.round(median(usable) * 10) / 10;
+  const chosen = usable.length >= MIN_SAMPLES_TO_TRIM ? usable[1] : usable[0];
+  return Math.round(chosen * 10) / 10;
 }
 
 /** Only suggest a revision the athlete would actually feel in the water. */

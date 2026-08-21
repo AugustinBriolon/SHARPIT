@@ -5,27 +5,30 @@ import { SWIM_CSS_MIN_DISTANCE_M, type SwimCssSample } from '@/lib/threshold/swi
 import { computeThresholdEstimates, previewThresholdApply } from './threshold-estimates';
 
 /**
- * Realised pool sessions carrying a CSS. Garmin computes it per session, so the
- * estimate reads them directly rather than going through the records pipeline.
+ * Realised pool sessions long enough for their average pace to mean something.
+ *
+ * `SwimMetrics.cssSecPer100m` exists but no sync path writes it — it is a
+ * manual-entry field, empty in practice — so the estimate reads the average pace
+ * Garmin does record (ADR-021).
  */
 async function loadSwimCssSamples(): Promise<SwimCssSample[]> {
   const rows = await prisma.swimMetrics.findMany({
     where: {
-      cssSecPer100m: { gt: 0 },
+      avgPaceSecPer100m: { gt: 0 },
       distanceM: { gte: SWIM_CSS_MIN_DISTANCE_M },
     },
     select: {
-      cssSecPer100m: true,
+      avgPaceSecPer100m: true,
       distanceM: true,
       activity: { select: { date: true } },
     },
   });
 
   return rows.flatMap((row) =>
-    row.cssSecPer100m != null && row.distanceM != null
+    row.avgPaceSecPer100m != null && row.distanceM != null
       ? [
           {
-            cssSecPer100m: row.cssSecPer100m,
+            paceSecPer100m: row.avgPaceSecPer100m,
             distanceM: row.distanceM,
             date: row.activity.date.toISOString(),
           },
