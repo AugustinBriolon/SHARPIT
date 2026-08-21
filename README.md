@@ -11,12 +11,14 @@ Performance operating system for endurance athletes — training load management
 - Computes four scientific intelligence states via a Digital Twin: Recovery, Fatigue, Adaptation, and cross-model Reasoning
 - Provides AI-powered coaching recommendations via the Claude API
 - Manages training planning, periodization, and race goal tracking
+- Sends structured sessions to a Garmin watch — steps, repeat groups, and pace, power or heart-rate targets derived from the athlete's own thresholds
 
 **What this application does not do:**
 
 - Replace medical advice or clinical health assessment
 - Provide real-time device data streaming (syncs are batch-based)
 - Compute power curve or VO2max from device data (future capability)
+- Guide open-water swimming — Garmin structures pool sessions only
 
 **Main dependencies:**
 
@@ -185,9 +187,9 @@ record and nothing that can expire.
 | Module        | Description                                                                                                                                                                                    |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Today**     | Daily Brief — physiological score cards (Recovery, Effort, Sleep) + narrative decision center (what to do, why, session, health signals, confidence) via the Reasoning Engine and Digital Twin |
-| **Training**  | Activity CRUD (run, bike, swim, strength) with load and stream analysis                                                                                                                        |
+| **Training**  | Activity CRUD (run, bike, swim, strength) with load and stream analysis; threshold calibration under **Progression** (FTP, threshold pace, swim CSS, pool length)                              |
 | **Analytics** | PMC chart (CTL, ATL, TSB), performance metrics, personal records                                                                                                                               |
-| **Planning**  | Macrocycle planning with brick analysis                                                                                                                                                        |
+| **Planning**  | Macrocycle planning with brick analysis; session authoring and push to the Garmin watch                                                                                                        |
 | **Goals**     | Race goals and countdown tracking                                                                                                                                                              |
 | **Calendar**  | Month view of planned and completed sessions                                                                                                                                                   |
 | **Settings**  | Strava, Garmin, Renpho, Google Calendar integrations                                                                                                                                           |
@@ -202,11 +204,44 @@ record and nothing that can expire.
 
 ### Garmin
 
-Set `GARMIN_CONSUMER_KEY` and `GARMIN_CONSUMER_SECRET` in `.env`, then connect via **Settings → Garmin**.
+Set `GARMIN_CONSUMER_KEY` and `GARMIN_CONSUMER_SECRET` in `.env`, then connect via **Settings → Integrations → Garmin**.
+
+Garmin is the only integration SHARPIT **writes** to. A planned session can be sent to
+Connect as a structured workout, scheduled on the athlete calendar, and picked up by the
+watch on its next sync — see [Watch workouts](#watch-workouts).
 
 ### Renpho
 
 Connect via **Settings → Renpho**. Body composition observations are automatically ingested on sync.
+
+## Watch workouts
+
+Planned run, bike and swim sessions are sent to Garmin Connect as structured workouts. The
+watch guides each step and alerts when the athlete leaves the prescribed band.
+
+**How targets are produced.** A session stores its steps with targets expressed _relative_ to
+the athlete's references — percent of threshold speed, FTP or CSS — and they are resolved into
+absolute numbers at push time, against the thresholds in force that day. A session planned
+weeks ahead therefore leaves with current numbers, and one already on the watch is flagged
+when a reference it depends on moves ([ADR-016](./docs/adr/ADR-016-endurance-prescription-relative-targets.md)).
+
+**What carries a target.** Work steps do. Warm-up, recovery, rest and cool-down do not: they
+are defined by being easy rather than by holding a number
+([ADR-020](./docs/adr/ADR-020-readable-easy-bands.md)).
+
+**Per sport:**
+
+| Sport | Target              | Reference                  | Notes                                                     |
+| ----- | ------------------- | -------------------------- | --------------------------------------------------------- |
+| Run   | Pace band (`/km`)   | `runThresholdPaceSecPerKm` | Falls back to heart rate when no threshold pace is set    |
+| Bike  | Power band (watts)  | `ftpW`                     | Explicit watts, never a Connect zone index                |
+| Swim  | Pace band (`/100m`) | `swimCssSecPer100m`        | Stroke per step; pool length required; no fallback metric |
+
+Thresholds are set or estimated under **Training → Progression**. Swim CSS is estimated from
+realised pool sessions ([ADR-021](./docs/adr/ADR-021-swim-css-from-session-pace.md)).
+
+A session with no authored structure is still sent, as a single timed step derived from its
+duration and intensity, and reported as derived rather than prescribed.
 
 ## Related documentation
 
@@ -216,5 +251,6 @@ Connect via **Settings → Renpho**. Body composition observations are automatic
 - [`docs/models/README.md`](./docs/models/README.md) — inference model index
 - [`docs/adr/`](./docs/adr/) — Architecture Decision Records
 - [`docs/design/DESIGN_LANGUAGE.md`](./docs/design/DESIGN_LANGUAGE.md) — design language
+- [`docs/adr/ADR-016`](./docs/adr/ADR-016-endurance-prescription-relative-targets.md) · [`ADR-017`](./docs/adr/ADR-017-endurance-prescription-authoring.md) · [`ADR-020`](./docs/adr/ADR-020-readable-easy-bands.md) · [`ADR-021`](./docs/adr/ADR-021-swim-css-from-session-pace.md) — watch workouts
 - [`knowledge/README.md`](./knowledge/README.md) — scientific reference corpus
 - [`docs/DOCUMENTATION_MIGRATION_PLAN.md`](./docs/DOCUMENTATION_MIGRATION_PLAN.md) — consolidation map (July 2026)
