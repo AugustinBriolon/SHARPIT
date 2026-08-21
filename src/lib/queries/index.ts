@@ -431,6 +431,11 @@ export async function upsertAthleteProfile(data: {
   maxHr?: number | null;
   lthr?: number | null;
   runThresholdPaceSecPerKm?: number | null;
+  swimCssSecPer100m?: number | null;
+  defaultPoolLengthM?: number | null;
+  homeLocationLabel?: string | null;
+  homeLocationLat?: number | null;
+  homeLocationLng?: number | null;
   context?: string | null;
   thresholdsSyncedAt?: Date | null;
   sleepTargetMinutes?: number | null;
