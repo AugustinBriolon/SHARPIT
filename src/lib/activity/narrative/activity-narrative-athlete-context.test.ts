@@ -5,6 +5,7 @@ import {
   buildThresholdPerformanceFacts,
   buildTrainingLoadFacts,
   type NarrativeHealthRow,
+  buildPmcFacts,
 } from '@/lib/activity/narrative/activity-narrative-athlete-context';
 
 describe('activity-narrative-athlete-context', () => {
@@ -99,6 +100,21 @@ describe('activity-narrative-athlete-context', () => {
     expect(lines[0]).toContain('Sciatique');
     expect(lines[0]).toContain('sévérité 7/10');
     expect(lines[0]).toContain('aggravation');
+  });
+
+  it('states the PMC anchor without needing a day to label', () => {
+    // The anchor is a state, not a dated point: reaching for the chart adapter
+    // here produced an unlabellable date and threw on every narrative.
+    const lines = buildPmcFacts({ ctl: 62.4, atl: 78.9 });
+
+    expect(lines[0]).toContain('CTL 62');
+    expect(lines[0]).toContain('ATL 79');
+    expect(lines[0]).toContain('TSB -17');
+    expect(lines[1]).toMatch(/TSB/);
+  });
+
+  it('says nothing when there is no anchor', () => {
+    expect(buildPmcFacts(null)).toEqual([]);
   });
 
   it('computes weekly load at session date', () => {

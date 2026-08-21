@@ -1,9 +1,7 @@
 import type { ActivityType } from '@prisma/client';
 import { differenceInCalendarDays, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import type { PmcPoint } from '@/lib/analytics';
-import { toPmcPoints } from '@/lib/training/pmc-history';
-import type { PmcState } from '@/lib/training/pmc';
+import { pmcTsb, type PmcState } from '@/lib/training/pmc';
 import {
   formatActivityWeatherNarrative,
   parseActivityWeather,
@@ -228,21 +226,22 @@ export function buildTrainingLoadFacts(
 export function buildPmcFacts(anchor: PmcState | null): string[] {
   if (!anchor) return [];
 
-  const [point] = toPmcPoints([{ date: '', tss: 0, ctl: anchor.ctl, atl: anchor.atl }]);
-  if (!point) return [];
+  // TSB comes straight from the state: `toPmcPoints` is the chart adapter and
+  // formats a date label, which a stateless anchor has no day to supply.
+  const tsb = Math.round(pmcTsb(anchor));
 
   return [
-    `Forme (PMC au jour de la séance) : CTL ${Math.round(point.ctl)}, ATL ${Math.round(point.atl)}, TSB ${Math.round(point.tsb)}.`,
-    interpretTsb(point),
+    `Forme (PMC au jour de la séance) : CTL ${Math.round(anchor.ctl)}, ATL ${Math.round(anchor.atl)}, TSB ${tsb}.`,
+    interpretTsb(tsb),
   ];
 }
 
-function interpretTsb(point: PmcPoint): string {
-  if (point.tsb >= 15)
+function interpretTsb(tsb: number): string {
+  if (tsb >= 15)
     return 'TSB positif marqué : fraîcheur relative possible (affûtage ou sous-charge récente).';
-  if (point.tsb >= 0)
+  if (tsb >= 0)
     return 'TSB légèrement positif : équilibre charge/récupération globalement favorable.';
-  if (point.tsb >= -20)
+  if (tsb >= -20)
     return 'TSB légèrement négatif : fatigue d’entraînement normale en phase de charge.';
   return 'TSB très négatif : fatigue accumulée importante à croiser avec sommeil/récupération/conditions physiques.';
 }
