@@ -39,7 +39,7 @@ describe('resolveAthleteGeoLocation', () => {
 
     const result = await resolveAthleteGeoLocation(prisma, 'default', '2026-07-19');
 
-    expect(result).toEqual({ latitude: 48.2, longitude: 2.2 });
+    expect(result).toEqual({ latitude: 48.2, longitude: 2.2, source: 'activity-gps' });
     expect(resolveDefaultActivityLocation).not.toHaveBeenCalled();
   });
 
@@ -61,6 +61,7 @@ describe('resolveAthleteGeoLocation', () => {
       latitude: 48.92,
       longitude: 2.25,
       label: 'Colombes, France',
+      source: 'activity-observed',
     });
     expect(resolveDefaultActivityLocation).not.toHaveBeenCalled();
   });

@@ -6,7 +6,8 @@ export type DefaultActivityLocation = {
   latitude: number;
   longitude: number;
   label: string;
-  source: 'travel' | 'home';
+  /** `default` = nothing configured, these are hard-coded coordinates. */
+  source: 'travel' | 'home' | 'default';
 };
 
 /** Lieu par défaut pour une activité : vacances actives à la date, sinon domicile. */
@@ -29,6 +30,6 @@ export async function resolveDefaultActivityLocation(
     latitude: home.latitude,
     longitude: home.longitude,
     label: home.label ?? 'Domicile',
-    source: 'home',
+    source: home.source === 'profile' ? 'home' : 'default',
   };
 }

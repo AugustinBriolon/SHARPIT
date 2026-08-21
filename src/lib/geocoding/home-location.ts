@@ -7,6 +7,9 @@ const DEFAULT_HOME: GeoLocation = {
   label: 'Colombes, France',
 };
 
+/** Where a resolved home location actually came from. */
+export type HomeLocationSource = 'profile' | 'default';
+
 export function homeLocationFromEnv(): GeoLocation {
   const latitude = Number(process.env.SHARPIT_DEFAULT_LATITUDE);
   const longitude = Number(process.env.SHARPIT_DEFAULT_LONGITUDE);
@@ -16,7 +19,16 @@ export function homeLocationFromEnv(): GeoLocation {
   return DEFAULT_HOME;
 }
 
-export async function resolveHomeLocation(prisma: PrismaClient): Promise<GeoLocation> {
+/**
+ * The athlete's home, and whether we actually know it.
+ *
+ * The last fallback is a hard-coded city. Callers that surface weather or
+ * environment to the athlete need to know they are showing someone else's
+ * coordinates, or the reading looks like a fact when it is a guess.
+ */
+export async function resolveHomeLocation(
+  prisma: PrismaClient,
+): Promise<GeoLocation & { source: HomeLocationSource }> {
   const profile = await prisma.athleteProfile.findUnique({
     where: { id: 'default' },
     select: { homeLocationLabel: true, homeLocationLat: true, homeLocationLng: true },
@@ -32,8 +44,9 @@ export async function resolveHomeLocation(prisma: PrismaClient): Promise<GeoLoca
       latitude: profile.homeLocationLat,
       longitude: profile.homeLocationLng,
       label: profile.homeLocationLabel ?? 'Domicile',
+      source: 'profile',
     };
   }
 
-  return homeLocationFromEnv();
+  return { ...homeLocationFromEnv(), source: 'default' };
 }
