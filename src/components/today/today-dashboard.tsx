@@ -15,7 +15,6 @@ import { useOfflineSnapshot } from '@/hooks/use-offline-snapshot';
 import { OfflineSnapshotSummary } from '@/components/pwa/offline-snapshot-summary';
 import { TodayActionRow } from './rich/today-action-row';
 import { TodaySignalStrip } from './dashboard/today-signal-strip';
-import { TodayWeeklyTrajectory } from './rich/today-weekly-trajectory';
 import { TodayNutritionCard } from './dashboard/today-nutrition-card';
 import { useClientMorningHold } from '@/components/today/rich/morning-orientation-actions';
 import { TodayDashboardShell } from './today-dashboard-shell';
@@ -137,7 +136,6 @@ export function TodayDashboard() {
         vm={content}
         onWellnessCompleted={() => void query.refetch()}
       />
-      <TodayWeeklyTrajectory loading={valuesLoading} vm={content} />
       <TodayNutritionCard />
     </div>
   );

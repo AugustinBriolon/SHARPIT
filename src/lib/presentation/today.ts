@@ -19,10 +19,8 @@ import {
 } from '@/lib/today/today-mapping';
 import {
   actionRowLabels,
-  buildProgressionSummary,
   buildTopActionLine,
   shouldShowForwardTrainingCopy,
-  trajectoryEyebrow,
   whyBlockTitle,
 } from '@/lib/today/today-rich-view';
 import {
@@ -36,14 +34,9 @@ import {
   resolveLimitingFactorHrefFromDecision,
 } from '@/lib/decision/projection';
 import { buildTodayLimitingFacts, buildTodayWhyFacts } from '@/lib/today/today-instrument-facts';
-import {
-  TRAJECTORY_DRILL_DOWNS,
-  TWIN_DIMENSION_LABEL,
-  TWIN_DRILL_DOWN,
-} from '@/lib/today/today-twin-navigation';
-import { computeTrainingLoad } from '@/lib/training/training-load';
+import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
 import { loadDailyTrainingStressEntries } from '@/lib/training/pmc-server';
-import { endOfDay, format as formatDate, isSameDay, startOfDay, subDays } from 'date-fns';
+import { endOfDay, format as formatDate, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { activityTypeLabels } from '@/lib/format';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
@@ -151,7 +144,6 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
     plannedSessions,
     goals,
     athleteProfile,
-    dailyStress,
     morningRecalibration,
   } = inputs;
 
@@ -169,22 +161,6 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
   const adaptationScore = snapshot.adaptationIndex;
   const adaptationUnavailableCaption =
     snapshot.adaptationIndex == null ? 'Historique insuffisant' : null;
-
-  const recoverySpark = Array.from({ length: 14 }, (_, i) => {
-    const d = subDays(day, 13 - i);
-    return healthEntries.find((e) => isSameDay(e.date, d))?.recoveryScore ?? null;
-  });
-
-  // Rest days are 0 TSS (continuous series) — never null, or the sparkline breaks into holes.
-  const effortSpark = Array.from({ length: 14 }, (_, i) => {
-    const d = subDays(day, 13 - i);
-    return dailyStress
-      .filter((entry) => isSameDay(entry.date, d))
-      .reduce((sum, entry) => sum + entry.load, 0);
-  });
-
-  const trainingLoad = computeTrainingLoad(dailyStress, day);
-  const { weeklyLoad } = trainingLoad;
 
   const phase = snapshot.dailyPhase?.phase ?? 'MORNING';
   const isRestDay = snapshot.dailyPhase?.signals.sessionStatus === 'NONE_TODAY';
@@ -270,19 +246,6 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
         : null;
     limitingMode = limitingFacts.length > 0 || limitingText ? 'facts' : 'none';
   }
-
-  const weeklyTrajectoryProgression = buildProgressionSummary(
-    snapshot.adaptationIndex != null && snapshot.adaptationStatus
-      ? {
-          adaptationIndex: snapshot.adaptationIndex,
-          adaptationStatus: snapshot.adaptationStatus,
-          adaptationTrend: snapshot.adaptationTrend ?? 'STABLE',
-        }
-      : null,
-    weeklyLoad,
-  );
-
-  const hasSparks = recoverySpark.some((v) => v != null) || effortSpark.some((v) => v != null);
 
   const status = resolveSnapshotStatusMessage(
     snapshot,
@@ -461,27 +424,10 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
           }
         : null,
     },
-    weeklyTrajectory: {
-      eyebrow: trajectoryEyebrow(phase),
-      headline: weeklyTrajectoryProgression.headline,
-      detail: weeklyTrajectoryProgression.detail,
-      trendArrow: weeklyTrajectoryProgression.trendArrow,
-      trendClass: weeklyTrajectoryProgression.trendClass,
-      drillDownLinks: TRAJECTORY_DRILL_DOWNS.map(({ dimension, href }) => ({
-        label: TWIN_DIMENSION_LABEL[dimension],
-        href,
-      })),
-      hasSparks,
-      emptyTrajectoryText: "Pas encore assez d'historique pour une trajectoire hebdomadaire.",
-      sparks: {
-        recoveryValues: recoverySpark,
-        effortValues: effortSpark,
-      },
-    },
     insights: [],
     environmentContext: null,
     nutrition: null,
-    hierarchy: { rootId: 'today', order: ['hero', 'why', 'actionRow', 'weeklyTrajectory'] },
+    hierarchy: { rootId: 'today', order: ['hero', 'why', 'actionRow'] },
     sections: [],
   };
 }

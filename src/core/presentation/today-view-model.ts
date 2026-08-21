@@ -182,21 +182,6 @@ export type TodayViewModel = {
     } | null;
   };
 
-  weeklyTrajectory: {
-    eyebrow: string;
-    headline: string;
-    detail: string | null;
-    trendArrow: string;
-    trendClass: string;
-    drillDownLinks: Array<{ label: string; href: string }>;
-    hasSparks: boolean;
-    emptyTrajectoryText: string;
-    sparks: {
-      recoveryValues: Array<number | null>;
-      effortValues: Array<number | null>;
-    };
-  };
-
   insights: ProductInsight[];
 
   /** Environmental context when training impact is significant (Phase 3). */

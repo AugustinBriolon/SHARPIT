@@ -4,7 +4,6 @@ import { todayLoadingShell } from '@/lib/presentation/today-loading-shell';
 import { TodayActionRow } from './rich/today-action-row';
 import { TodaySignalStrip } from './dashboard/today-signal-strip';
 import { TodayVerdictHero } from './rich/today-verdict-hero';
-import { TodayWeeklyTrajectory } from './rich/today-weekly-trajectory';
 
 /** Placeholder day id for prerender-safe loading shell (never used while `loading`). */
 const SHELL_PLACEHOLDER_DAY_ID = '0000-00-00';
@@ -21,7 +20,6 @@ export function TodayDashboardShell({ trainingDayId }: { trainingDayId?: string 
         <TodaySignalStrip metricsRow={content.hero.metricsRow} loading />
       </div>
       <TodayActionRow trainingDayId={dayId} vm={content} loading />
-      <TodayWeeklyTrajectory vm={content} loading />
     </div>
   );
 }

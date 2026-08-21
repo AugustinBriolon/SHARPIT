@@ -1,7 +1,7 @@
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import type { DailyPhase } from '@/lib/daily-phase/types';
 import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
-import { actionRowLabels, trajectoryEyebrow, whyBlockTitle } from '@/lib/today/today-rich-view';
+import { actionRowLabels, whyBlockTitle } from '@/lib/today/today-rich-view';
 
 function shellPhaseFromLocalHour(hour: number): DailyPhase {
   if (hour >= 22) return 'END_OF_DAY';
@@ -86,20 +86,6 @@ export function todayLoadingShell(now: Date = LOADING_SHELL_REFERENCE): TodayVie
       daySummaryEmptyHref: TWIN_DRILL_DOWN.planning,
       daySummaryLines: [],
       morningRecalibration: null,
-    },
-    weeklyTrajectory: {
-      eyebrow: trajectoryEyebrow(phase),
-      headline: '',
-      detail: null,
-      trendArrow: '',
-      trendClass: 'text-muted-foreground',
-      drillDownLinks: [],
-      hasSparks: true,
-      emptyTrajectoryText: '',
-      sparks: {
-        recoveryValues: [],
-        effortValues: [],
-      },
     },
     insights: [],
     environmentContext: null,

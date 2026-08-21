@@ -62,7 +62,6 @@ describe('today hub loading gate', () => {
     expect(shell.hero.headline).toBe('');
     expect(shell.whyBlock.visible).toBe(false);
     expect(shell.actionRow.actionLabel.length).toBeGreaterThan(0);
-    expect(shell.weeklyTrajectory.eyebrow.length).toBeGreaterThan(0);
   });
 });
 
