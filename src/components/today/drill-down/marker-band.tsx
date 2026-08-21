@@ -67,96 +67,73 @@ function isConcerning(position: Position, lowerIsBetter: boolean): boolean {
   return lowerIsBetter ? position === 'above' : position === 'below';
 }
 
-export function MarkerBand({
+/**
+ * The card states the reading; the working lives behind it.
+ *
+ * Label, value, and where that value sits — nothing else. The scale, the trend
+ * and the sentence explaining what the marker measures open on demand, so a
+ * screen read every morning is not carrying an explanation nobody rereads.
+ */
+export function MarkerCard({
   label,
   value,
   unit,
-  delta = null,
   lowerIsBetter = false,
   range = null,
-  series,
-}: MarkerBandProps) {
+  onOpen,
+}: {
+  label: string;
+  value: number | null;
+  unit: string;
+  lowerIsBetter?: boolean;
+  range?: MarkerRange | null;
+  onOpen: () => void;
+}) {
   const position = value != null && range != null ? positionOf(value, range) : null;
   const concerning = position != null && isConcerning(position, lowerIsBetter);
   const rangeWord = range?.kind === 'baseline' ? 'norme' : '14 j';
 
   return (
-    <div className="py-3">
-      {/* Header: the label stays quiet, the value carries the chroma, so the eye
-          lands on the number instead of sweeping a row of uniformly bright text. */}
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-foreground min-w-0 truncate text-sm font-medium">{label}</span>
+    <button
+      type="button"
+      className={cn(
+        'border-analysis-border/60 bg-background/40 rounded-analysis w-full border p-3 text-left',
+        'hover:border-analysis-border focus-visible:outline-ring transition-colors',
+        'focus-visible:outline-2 focus-visible:outline-offset-2',
+      )}
+      onClick={onOpen}
+    >
+      <span className="text-muted-foreground block truncate text-sm">{label}</span>
+
+      <span className="mt-1 flex items-baseline gap-1">
         <span
           className={cn(
-            'text-data shrink-0 text-base font-semibold tabular-nums',
+            'text-data text-2xl font-semibold tabular-nums',
             concerning ? 'text-signal-caution' : 'text-primary',
           )}
         >
           {value != null ? value : '—'}
-          <span className="text-muted-foreground ml-1 text-xs font-normal">{unit}</span>
         </span>
-      </div>
-
-      {/* The scale spans the block rather than the viewport: as a grid cell it uses
-          the width it is given, and never stretches into false precision. */}
-      {range && value != null ? (
-        <div className="relative mt-2 h-3 w-full">
-          {/* Full rail first: a value far outside its reference used to float in blank
-              space twenty pixels before the track began, reading as detached rather
-              than as low. On a rail it is always somewhere. */}
-          <div className="bg-muted-foreground/20 absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full" />
-          <div
-            className="bg-muted-foreground/60 absolute top-1/2 h-1 -translate-y-1/2 rounded-full"
-            style={{ left: `${BAND_START_PCT}%`, width: `${BAND_WIDTH_PCT}%` }}
-          />
-          <div
-            style={{ left: `${markerPositionPct(value, range)}%` }}
-            className={cn(
-              'absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full',
-              concerning ? 'bg-signal-caution' : 'bg-primary',
-            )}
-            aria-hidden
-          />
-        </div>
-      ) : null}
-
-      <div className="text-muted-foreground mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-        {position ? (
-          <span className={cn(concerning && 'text-signal-caution font-medium')}>
-            {POSITION_WORD[position]} {rangeWord}
-            <span className="text-data ml-1.5 tabular-nums">
-              {range?.low}–{range?.high}
-            </span>
-          </span>
-        ) : (
-          <span>Pas de référence</span>
-        )}
-
-        {delta != null && delta !== 0 ? (
-          <span className="text-data tabular-nums">
-            {delta > 0 ? '+' : '−'}
-            {Math.abs(Math.round(delta))} / 7 j
-          </span>
-        ) : null}
-
-        {series && series.length > 1 ? (
-          <span className="text-muted-foreground ml-auto inline-block w-16">
-            <Sparkline h={14} stroke="currentColor" values={series} />
-          </span>
-        ) : null}
-      </div>
-
-      <span className="sr-only">
-        {value == null
-          ? `${label} indisponible`
-          : `${label} ${value} ${unit}${
-              position && range
-                ? `, ${POSITION_WORD[position]} ${
-                    range.kind === 'baseline' ? 'la norme' : 'la plage des 14 jours'
-                  } ${range.low} à ${range.high}`
-                : ''
-            }${delta != null && delta !== 0 ? `, ${delta > 0 ? 'en hausse' : 'en baisse'} de ${Math.abs(Math.round(delta))} sur 7 jours` : ''}`}
+        <span className="text-muted-foreground text-xs">{unit}</span>
       </span>
-    </div>
+
+      <span
+        className={cn(
+          'mt-1 block text-xs',
+          concerning ? 'text-signal-caution' : 'text-muted-foreground',
+        )}
+      >
+        {position ? `${POSITION_WORD[position]} ${rangeWord}` : 'Pas de référence'}
+      </span>
+    </button>
   );
 }
+
+export {
+  positionOf,
+  isConcerning,
+  POSITION_WORD,
+  markerPositionPct,
+  BAND_START_PCT,
+  BAND_WIDTH_PCT,
+};
