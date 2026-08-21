@@ -101,8 +101,12 @@ export function MarkerBand({
           the width it is given, and never stretches into false precision. */}
       {range && value != null ? (
         <div className="relative mt-2 h-3 w-full">
+          {/* Full rail first: a value far outside its reference used to float in blank
+              space twenty pixels before the track began, reading as detached rather
+              than as low. On a rail it is always somewhere. */}
+          <div className="bg-muted-foreground/20 absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full" />
           <div
-            className="bg-muted-foreground/55 absolute top-1/2 h-1 -translate-y-1/2 rounded-full"
+            className="bg-muted-foreground/60 absolute top-1/2 h-1 -translate-y-1/2 rounded-full"
             style={{ left: `${BAND_START_PCT}%`, width: `${BAND_WIDTH_PCT}%` }}
           />
           <div

@@ -76,18 +76,24 @@ export function EffortPmcSection({ data }: { data: PmcPoint[] }) {
           <Line
             dataKey="ctl"
             dot={false}
+            isAnimationActive={false}
             name="Forme chronique"
             stroke={CHART_BASE_STROKE}
-            strokeWidth={1.5}
+            strokeWidth={2}
             type="monotone"
           />
           <Line
             dataKey="atl"
             dot={false}
             name="Fatigue aiguë"
+            // Two series at 1.58:1 cannot be told apart by hue: the dash is the
+            // channel that survives a colour-blind reader and a dim screen alike.
+            // Recharts animates stroke-dasharray, so its animation must be off or it
+            // overwrites the pattern and leaves the line at zero length.
+            isAnimationActive={false}
             stroke={CHART_CAUTION_STROKE}
-            strokeOpacity={0.85}
-            strokeWidth={1.5}
+            strokeDasharray="5 3"
+            strokeWidth={2}
             type="monotone"
           />
           <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} />
