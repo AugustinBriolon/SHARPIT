@@ -74,6 +74,46 @@ function isConcerning(position: Position, lowerIsBetter: boolean): boolean {
  * and the sentence explaining what the marker measures open on demand, so a
  * screen read every morning is not carrying an explanation nobody rereads.
  */
+
+/**
+ * Where the value sits, drawn on a full rail with the reference interval marked.
+ *
+ * Shared by the card and the module: the athlete reads the same picture in both,
+ * so opening the detail confirms what the card said instead of restating it in
+ * another form.
+ */
+export function MarkerScale({
+  value,
+  range,
+  concerning,
+  className,
+}: {
+  value: number;
+  range: MarkerRange;
+  concerning: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={cn('relative h-3 w-full', className)}>
+      {/* Full rail first: a value outside its interval must sit on something, or it
+          reads as detached rather than as low. */}
+      <div className="bg-muted-foreground/20 absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full" />
+      <div
+        className="bg-muted-foreground/60 absolute top-1/2 h-1 -translate-y-1/2 rounded-full"
+        style={{ left: `${BAND_START_PCT}%`, width: `${BAND_WIDTH_PCT}%` }}
+      />
+      <div
+        style={{ left: `${markerPositionPct(value, range)}%` }}
+        className={cn(
+          'absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full',
+          concerning ? 'bg-signal-caution' : 'bg-primary',
+        )}
+        aria-hidden
+      />
+    </div>
+  );
+}
+
 export function MarkerCard({
   label,
   value,
@@ -117,9 +157,13 @@ export function MarkerCard({
         <span className="text-muted-foreground text-xs">{unit}</span>
       </span>
 
+      {range && value != null ? (
+        <MarkerScale className="mt-2" concerning={concerning} range={range} value={value} />
+      ) : null}
+
       <span
         className={cn(
-          'mt-1 block text-xs',
+          'mt-1.5 block text-xs',
           concerning ? 'text-signal-caution' : 'text-muted-foreground',
         )}
       >
