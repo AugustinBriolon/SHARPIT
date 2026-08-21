@@ -96,10 +96,8 @@ export function predictionToRaceGoalDefaults(
  * Les efforts métriques couvrent tout l'historique, pas seulement les rares
  * activités avec trace GPS — c'est ce qui rend les prédictions fiables.
  */
-function collectRunReferences(
-  runBests: RunBestCategory[],
-  runEfforts: RunEffort[],
-): RunReference[] {
+/** Every usable reference, sorted by distance and not yet deduped. */
+function gatherRunReferences(runBests: RunBestCategory[], runEfforts: RunEffort[]): RunReference[] {
   const refs: RunReference[] = [];
 
   for (const cat of runBests) {
@@ -116,9 +114,18 @@ function collectRunReferences(
   }
 
   refs.sort((a, b) => a.meters - b.meters);
+  return refs;
+}
 
-  // À distance proche (±15 %), on ne garde que l'effort le plus rapide.
-  // Évite qu'un segment GPS lent (ex. 5 km dans un footing) masque un vrai 5 km.
+/**
+ * À distance proche (±15 %), on ne garde que l'effort le plus rapide.
+ * Évite qu'un segment GPS lent (ex. 5 km dans un footing) masque un vrai 5 km.
+ *
+ * À n'appliquer qu'entre références comparables : dédupliquer avant de filtrer
+ * sur une bande de distance laisse une référence hors bande en éliminer une
+ * dans la bande, et l'estimation retombe alors sur un effort bien plus lent.
+ */
+function dedupeRunReferences(refs: RunReference[]): RunReference[] {
   const deduped: RunReference[] = [];
   for (const ref of refs) {
     const last = deduped[deduped.length - 1];
@@ -132,6 +139,13 @@ function collectRunReferences(
   }
 
   return deduped;
+}
+
+function collectRunReferences(
+  runBests: RunBestCategory[],
+  runEfforts: RunEffort[],
+): RunReference[] {
+  return dedupeRunReferences(gatherRunReferences(runBests, runEfforts));
 }
 
 /**
@@ -207,16 +221,22 @@ export function estimateRunThresholdPace(
   runBests: RunBestCategory[],
   runEfforts: RunEffort[] = [],
 ): number | null {
-  const refs = collectRunReferences(runBests, runEfforts);
+  const refs = gatherRunReferences(runBests, runEfforts);
   if (refs.length === 0) return null;
 
   // Pour l'allure seuil, on cherche l'enveloppe de performance démontrée autour
   // d'un effort ~1 h, pas l'effort de distance la plus proche. Sinon un long run
   // d'endurance ~15 km peut "écraser" un vrai niveau seuil/compétition.
-  const pool = refs.filter(
-    (r) => r.meters >= 0.7 * THRESHOLD_PROXY_METERS && r.meters <= 3 * THRESHOLD_PROXY_METERS,
+  //
+  // La bande est appliquée avant la déduplication : un 10 km rapide ne doit pas
+  // éliminer un 11 km légèrement plus lent qui, lui, est dans la bande — sinon
+  // il ne reste que les longues sorties lentes.
+  const pool = dedupeRunReferences(
+    refs.filter(
+      (r) => r.meters >= 0.7 * THRESHOLD_PROXY_METERS && r.meters <= 3 * THRESHOLD_PROXY_METERS,
+    ),
   );
-  const candidates = pool.length > 0 ? pool : [refs[refs.length - 1]];
+  const candidates = pool.length > 0 ? pool : [dedupeRunReferences(refs).slice(-1)[0]];
 
   let bestPace: number | null = null;
   for (const ref of candidates) {

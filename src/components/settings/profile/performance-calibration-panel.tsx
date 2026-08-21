@@ -212,7 +212,9 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
         year: 'numeric',
       })
     : null;
-  const hasThresholds = [ftpW, maxHr, lthr, thresholdPace].some((value) => value.trim().length > 0);
+  const hasThresholds = [ftpW, maxHr, lthr, thresholdPace, swimCss].some(
+    (value) => value.trim().length > 0,
+  );
 
   const baseline = useMemo(
     () => ({
@@ -220,14 +222,19 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
       maxHr: initial?.maxHr?.toString() ?? '',
       lthr: initial?.lthr?.toString() ?? '',
       thresholdPace: paceToInput(initial?.runThresholdPaceSecPerKm ?? null),
+      swimCss: paceToInput(initial?.swimCssSecPer100m ?? null),
+      poolLength: initial?.defaultPoolLengthM?.toString() ?? '',
     }),
     [initial],
   );
+  // Every editable field belongs here: one left out silently disables Save.
   const dirty =
     ftpW !== baseline.ftpW ||
     maxHr !== baseline.maxHr ||
     lthr !== baseline.lthr ||
-    thresholdPace !== baseline.thresholdPace;
+    thresholdPace !== baseline.thresholdPace ||
+    swimCss !== baseline.swimCss ||
+    poolLength !== baseline.poolLength;
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>

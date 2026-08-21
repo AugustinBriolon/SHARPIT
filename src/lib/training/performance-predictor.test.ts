@@ -96,6 +96,24 @@ describe('estimateRunThresholdPace', () => {
     expect(pace!).toBeLessThan(300);
     expect(fmtPaceSecPerKm(pace!)).toBe('4:37/km');
   });
+
+  it("n'est pas dégradée par un 10 km rapide juste sous la bande", () => {
+    // Le 10 km est hors bande (< 10,5 km) mais à moins de 15 % du 11,14 km.
+    // Dédupliquer avant de filtrer le faisait éliminer la seule bonne référence
+    // de la bande, ne laissant que la sortie longue lente.
+    const efforts = [
+      { meters: 11140, seconds: 3354 }, // 5:01/km
+      { meters: 13010, seconds: 4568 }, // 5:51/km, sortie longue
+    ];
+    const bests = [runBest(10000, 2953, '10 km')]; // 4:55/km
+
+    const withoutBests = estimateRunThresholdPace([], efforts);
+    const withBests = estimateRunThresholdPace(bests, efforts);
+
+    expect(fmtPaceSecPerKm(withoutBests!)).toBe('5:06/km');
+    // Ajouter une référence plus rapide ne doit jamais ralentir l'estimation.
+    expect(withBests!).toBeLessThanOrEqual(withoutBests!);
+  });
 });
 
 describe('estimateFtp', () => {
