@@ -4,6 +4,7 @@ import { parsePlannedStart } from '@/lib/daily-phase/day-context';
 import { activityTypeLabels } from '@/lib/format';
 import { formatClock, formatDuration } from '@/lib/sleep/sleep';
 import type { TodayEffortLevel } from '@/lib/today/today-narrative-context';
+import { dayLoadLabel } from '@/lib/daily-phase/day-load';
 
 export type PlannedSessionEveningRef = {
   date: Date | string;
@@ -32,18 +33,6 @@ export type EndOfDayNarrativeCopy = {
   focusPriority: string;
 };
 
-function effortAdjective(sport: string, level: TodayEffortLevel | null): string {
-  const isMasculine = sport === 'Vélo' || sport === 'Triathlon';
-  switch (level) {
-    case 'high':
-      return isMasculine ? 'exigeant' : 'exigeante';
-    case 'moderate':
-      return isMasculine ? 'modéré' : 'modérée';
-    default:
-      return isMasculine ? 'léger' : 'légère';
-  }
-}
-
 function todayBilanHeadline(input: {
   sportLabel: string | null;
   effortLevel: TodayEffortLevel | null;
@@ -52,14 +41,7 @@ function todayBilanHeadline(input: {
   recoveryStress: boolean;
   sleepDebt: boolean;
 }): string {
-  const {
-    sportLabel,
-    effortLevel,
-    completedSessionCount,
-    tomorrowSession,
-    recoveryStress,
-    sleepDebt,
-  } = input;
+  const { effortLevel, completedSessionCount, tomorrowSession, recoveryStress, sleepDebt } = input;
 
   if (completedSessionCount === 0) {
     if (tomorrowSession) {
@@ -79,37 +61,37 @@ function todayBilanHeadline(input: {
     return 'Double entraînement — le sommeil consolidera tout';
   }
 
-  const sport = sportLabel ?? 'Entraînement';
-  const qual = effortAdjective(sport, effortLevel);
+  // The session is listed on the same screen; this sentence weighs the day instead.
+  const load = dayLoadLabel(effortLevel, false);
 
   if (recoveryStress && effortLevel === 'high') {
-    return `${sport} ${qual} — le sommeil comptera ce soir`;
+    return `${load} — le sommeil comptera ce soir`;
   }
 
   if (recoveryStress) {
-    return `${sport} ${qual} — récupère bien, le corps en demande`;
+    return `${load} — récupère bien, le corps en demande`;
   }
 
   if (sleepDebt && effortLevel !== 'light') {
-    return `${sport} ${qual} — repose la dette de sommeil ce soir`;
+    return `${load} — repose la dette de sommeil ce soir`;
   }
 
   if (effortLevel === 'high') {
-    return `${sport} ${qual} — protège la récup ce soir`;
+    return `${load} — protège la récup ce soir`;
   }
 
   if (effortLevel === 'moderate') {
     if (tomorrowSession) {
-      return `${sport} ${qual} — prépare le ${tomorrowSession.sportLabel.toLowerCase()} de demain`;
+      return `${load} — prépare le ${tomorrowSession.sportLabel.toLowerCase()} de demain`;
     }
-    return `${sport} ${qual} — le corps digère encore`;
+    return `${load} — le corps digère encore`;
   }
 
   if (tomorrowSession?.startHour != null && tomorrowSession.startHour < 9) {
-    return `${sport} ${qual} — couche-toi tôt pour demain`;
+    return `${load} — couche-toi tôt pour demain`;
   }
 
-  return `${sport} ${qual} — consolidation en cours`;
+  return `${load} — consolidation en cours`;
 }
 
 export function pickTomorrowSessionHint(

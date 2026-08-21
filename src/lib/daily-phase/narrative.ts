@@ -9,6 +9,7 @@ import type { OverallVerdict } from '@/lib/today/today-mapping';
 import type { TodayEffortLevel } from '@/lib/today/today-narrative-context';
 import type { DailyPhase, DailyPhaseResolution, DailyPhaseWhyFocus } from '@/lib/daily-phase/types';
 import { isForwardAdvicePhase, isPostTrainingPhase } from '@/lib/daily-phase/resolve';
+import { dayLoadLabel } from '@/lib/daily-phase/day-load';
 
 export type TodayPosture = 'protect' | 'steady' | 'push' | 'uncertain';
 
@@ -218,20 +219,6 @@ function restDayRecoveryHeadline(posture: TodayPosture): string {
   return posture === 'protect'
     ? 'Jour de repos — récupération à préserver'
     : 'Jour de repos — fenêtre d’adaptation ouverte';
-}
-
-/**
- * How the day weighed, not what was done in it.
- *
- * The athlete knows which session he did — it is listed below on the same screen.
- * Naming it again spends the one sentence that should be telling him something he
- * does not already know: how much the day cost him.
- */
-function dayLoadLabel(effortLevel: TodayEffortLevel | null, multi: boolean): string {
-  if (multi) return 'Journée chargée';
-  if (effortLevel === 'high') return 'Journée exigeante';
-  if (effortLevel === 'moderate') return 'Journée active';
-  return 'Journée engagée';
 }
 
 function postTrainingHeadline(

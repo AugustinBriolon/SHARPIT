@@ -256,7 +256,7 @@ describe('buildPhaseNarrative', () => {
       },
     });
     expect(n.heroEyebrow).toBe('Ce soir');
-    expect(n.heroHeadline).toMatch(/Journée modérée|Course modérée/);
+    expect(n.heroHeadline).toMatch(/^Journée (active|exigeante|chargée|engagée) —/);
     expect(n.posture).toBe('protect');
     expect(n.postureLabel).toBe('');
     expect(n.focusPriority).toMatch(/Coucher vers/);
@@ -365,7 +365,7 @@ describe('buildPhaseNarrative', () => {
         },
       },
     });
-    expect(n.heroHeadline).toBe('Course légère — récupère bien, le corps en demande');
+    expect(n.heroHeadline).toBe('Journée engagée — récupère bien, le corps en demande');
     expect(n.focusPriority).toMatch(/Coucher vers/);
     expect(n.focusPriority).toMatch(/récupérer/);
     expect(n.heroHeadline).not.toMatch(/protéger|Demain :|TSS/i);
