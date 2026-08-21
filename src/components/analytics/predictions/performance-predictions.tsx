@@ -98,7 +98,7 @@ export function PerformancePredictions() {
                   Voir dans Calibration →
                 </Link>
               }
-              onApply={() => apply.mutate()}
+              onApply={(fields) => apply.mutate(fields)}
             />
           ) : null}
 

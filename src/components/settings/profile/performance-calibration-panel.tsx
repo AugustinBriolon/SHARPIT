@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import { ProfileFormSection } from '@/components/settings/profile/profile-form-section';
+import type { ThresholdField } from '@/lib/threshold/threshold-estimates';
 import {
   NUMERIC_INPUT_CLASS,
   paceToInput,
@@ -182,15 +183,22 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
     }
   }
 
-  async function handleApplyEstimates() {
+  async function handleApplyEstimates(fields: ThresholdField[]) {
     if (guardDisabled) return;
     setError(null);
     setMessage(null);
     try {
-      const result = await applyEstimates.mutateAsync();
+      const result = await applyEstimates.mutateAsync(fields);
       const applied = result as {
-        profile?: { ftpW?: number | null; runThresholdPaceSecPerKm?: number | null };
+        profile?: {
+          ftpW?: number | null;
+          runThresholdPaceSecPerKm?: number | null;
+          swimCssSecPer100m?: number | null;
+        };
       };
+      if (applied.profile?.swimCssSecPer100m != null) {
+        setSwimCss(paceToInput(applied.profile.swimCssSecPer100m));
+      }
       if (applied.profile?.ftpW != null) setFtpW(String(applied.profile.ftpW));
       if (applied.profile?.runThresholdPaceSecPerKm != null) {
         setThresholdPace(paceToInput(applied.profile.runThresholdPaceSecPerKm));

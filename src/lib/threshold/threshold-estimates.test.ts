@@ -5,6 +5,7 @@ import {
   isMaterialFtpChange,
   isMaterialPaceChange,
   previewThresholdApply,
+  resolveAcceptedFields,
   THRESHOLD_RECENCY_WINDOW_DAYS,
 } from './threshold-estimates';
 import type { RecordsPayload } from '@/lib/training/records';
@@ -340,5 +341,36 @@ describe('previewThresholdApply', () => {
     expect(paceChange!.from).toBe('—');
     // Must not be the stale 4:37
     expect(paceChange!.to).not.toBe('4:37/km');
+  });
+});
+
+describe('resolveAcceptedFields', () => {
+  it('takes everything on offer when nothing is specified', () => {
+    expect(resolveAcceptedFields(['ftpW', 'swimCssSecPer100m'])).toEqual([
+      'ftpW',
+      'swimCssSecPer100m',
+    ]);
+  });
+
+  it('keeps only what the athlete ticked', () => {
+    expect(
+      resolveAcceptedFields(
+        ['ftpW', 'runThresholdPaceSecPerKm', 'swimCssSecPer100m'],
+        ['swimCssSecPer100m'],
+      ),
+    ).toEqual(['swimCssSecPer100m']);
+  });
+
+  it('never writes a field the preview does not propose', () => {
+    // A stale page still offering a revision that has since been applied.
+    expect(resolveAcceptedFields(['swimCssSecPer100m'], ['ftpW'])).toEqual([]);
+  });
+
+  it('refusing everything applies nothing', () => {
+    expect(resolveAcceptedFields(['ftpW'], [])).toEqual([]);
+  });
+
+  it('ignores a field ticked twice', () => {
+    expect(resolveAcceptedFields(['ftpW'], ['ftpW', 'ftpW'])).toEqual(['ftpW']);
   });
 });

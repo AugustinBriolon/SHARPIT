@@ -2,7 +2,12 @@ import { prisma } from '@/lib/prisma';
 import { createThresholdSnapshot, getAthleteProfile, upsertAthleteProfile } from '@/lib/queries';
 import { getStoredRecords } from '@/lib/training/records';
 import { SWIM_CSS_MIN_DISTANCE_M, type SwimCssSample } from '@/lib/threshold/swim-css';
-import { computeThresholdEstimates, previewThresholdApply } from './threshold-estimates';
+import {
+  computeThresholdEstimates,
+  previewThresholdApply,
+  resolveAcceptedFields,
+  type ThresholdField,
+} from './threshold-estimates';
 
 /**
  * Realised pool sessions long enough for their average pace to mean something.
@@ -51,7 +56,15 @@ export async function getThresholdApplyPreview() {
   return previewThresholdApply(records, profile, { swimSamples });
 }
 
-export async function applyEstimatedThresholds() {
+/**
+ * Apply the estimates the athlete accepted.
+ *
+ * `fields` omitted means every proposed change, which is the historical
+ * behaviour. Passing a subset lets the athlete take one sport's revision without
+ * the others — a swim reference can be worth accepting on a day the running one
+ * is not.
+ */
+export async function applyEstimatedThresholds(options?: { fields?: ThresholdField[] }) {
   const { records, profile, swimSamples } = await loadPreviewInputs();
   const preview = previewThresholdApply(records, profile, { swimSamples });
   const { estimates } = preview;
@@ -64,28 +77,48 @@ export async function applyEstimatedThresholds() {
     return { applied: false as const, reason: 'unchanged' as const, preview };
   }
 
+  const accepted = new Set(
+    resolveAcceptedFields(
+      preview.changes.map((change) => change.field),
+      options?.fields,
+    ),
+  );
+
+  if (accepted.size === 0) {
+    return { applied: false as const, reason: 'nothing_selected' as const, preview };
+  }
+
+  const pick = <T>(field: ThresholdField, value: T | null): T | null =>
+    accepted.has(field) ? value : null;
+
+  const ftpW = pick('ftpW', estimates.ftpW);
+  const runThresholdPaceSecPerKm = pick(
+    'runThresholdPaceSecPerKm',
+    estimates.runThresholdPaceSecPerKm,
+  );
+  const swimCssSecPer100m = pick('swimCssSecPer100m', estimates.swimCssSecPer100m);
+
   const update: {
     ftpW?: number;
     runThresholdPaceSecPerKm?: number;
     swimCssSecPer100m?: number;
   } = {};
-  if (estimates.ftpW != null) update.ftpW = estimates.ftpW;
-  if (estimates.runThresholdPaceSecPerKm != null) {
-    update.runThresholdPaceSecPerKm = estimates.runThresholdPaceSecPerKm;
+  if (ftpW != null) update.ftpW = ftpW;
+  if (runThresholdPaceSecPerKm != null) {
+    update.runThresholdPaceSecPerKm = runThresholdPaceSecPerKm;
   }
-  if (estimates.swimCssSecPer100m != null) {
-    update.swimCssSecPer100m = estimates.swimCssSecPer100m;
-  }
+  if (swimCssSecPer100m != null) update.swimCssSecPer100m = swimCssSecPer100m;
 
   const updated = await upsertAthleteProfile(update);
+  // The snapshot records what was applied, not what was offered.
   await createThresholdSnapshot({
     source: 'estimated',
-    ftpW: estimates.ftpW,
-    runThresholdPaceSecPerKm: estimates.runThresholdPaceSecPerKm,
-    swimCssSecPer100m: estimates.swimCssSecPer100m,
+    ftpW,
+    runThresholdPaceSecPerKm,
+    swimCssSecPer100m,
   });
 
-  return { applied: true as const, profile: updated, preview };
+  return { applied: true as const, profile: updated, preview, appliedFields: [...accepted] };
 }
 
 export { computeThresholdEstimates };

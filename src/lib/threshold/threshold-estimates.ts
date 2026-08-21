@@ -42,12 +42,31 @@ export interface ThresholdEstimates {
 
 export type ThresholdChangeDirection = 'up' | 'down' | 'set';
 
+/** A reference the estimator can revise, and the athlete can accept one by one. */
+export type ThresholdField = 'ftpW' | 'runThresholdPaceSecPerKm' | 'swimCssSecPer100m';
+
 export interface ThresholdChange {
-  field: 'ftpW' | 'runThresholdPaceSecPerKm' | 'swimCssSecPer100m';
+  field: ThresholdField;
   label: string;
   from: string;
   to: string;
   direction: ThresholdChangeDirection;
+}
+
+/**
+ * Which revisions to actually write.
+ *
+ * `requested` omitted means the athlete took everything on offer. Anything
+ * requested that the preview does not propose is dropped: a stale page or a
+ * hand-made request must never write a value nobody was shown.
+ */
+export function resolveAcceptedFields(
+  proposed: ThresholdField[],
+  requested?: ThresholdField[],
+): ThresholdField[] {
+  const offered = new Set(proposed);
+  if (!requested) return [...offered];
+  return [...new Set(requested.filter((field) => offered.has(field)))];
 }
 
 export interface ThresholdApplyPreview {

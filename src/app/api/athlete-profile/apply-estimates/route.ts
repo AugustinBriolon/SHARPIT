@@ -1,8 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import {
   applyEstimatedThresholds,
   getThresholdApplyPreview,
 } from '@/lib/threshold/threshold-service';
+
+const bodySchema = z.object({
+  /** Omitted = accept every proposed change, the historical behaviour. */
+  fields: z.array(z.enum(['ftpW', 'runThresholdPaceSecPerKm', 'swimCssSecPer100m'])).optional(),
+});
 
 export async function GET() {
   try {
@@ -14,9 +20,15 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
-    const result = await applyEstimatedThresholds();
+    const raw = await request.json().catch(() => ({}));
+    const parsed = bodySchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Sélection invalide' }, { status: 400 });
+    }
+
+    const result = await applyEstimatedThresholds({ fields: parsed.data.fields });
     if (!result.applied) {
       return NextResponse.json(result, { status: 400 });
     }

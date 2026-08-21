@@ -12,6 +12,7 @@ import {
   fetchTrainingPlan,
 } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
+import type { ThresholdField } from '@/lib/threshold/threshold-estimates';
 import { sendJson } from '@/lib/query/send-json';
 
 export {
@@ -119,7 +120,8 @@ export function useTrainingPlanMutations() {
 export function useApplyThresholdEstimates() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => sendJson('/api/athlete-profile/apply-estimates', 'POST'),
+    mutationFn: (fields?: ThresholdField[]) =>
+      sendJson('/api/athlete-profile/apply-estimates', 'POST', fields ? { fields } : {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.thresholdPreview });
       queryClient.invalidateQueries({ queryKey: queryKeys.thresholdHistory });
