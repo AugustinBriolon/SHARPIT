@@ -20,6 +20,7 @@ import { resolveStrengthSetMedia } from '@/lib/exercises';
 import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
 import { useSessionRationalePresentation } from '@/hooks/use-data';
 import { useGarminPushStaleness } from '@/hooks/use-garmin-push-staleness';
+import { useEndurancePreview } from '@/hooks/use-endurance-preview';
 import { useGarminWorkoutPush } from '@/hooks/use-garmin-workout-push';
 import type { PlannedSessionViewModel } from '@/core/presentation/planned-session-view-model';
 import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
@@ -34,6 +35,8 @@ import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import { exposureLabels, intensityLabels } from '@/lib/planned-session/sessions';
 import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-compare';
 import { Brain, ChevronRight, ClipboardList, Dumbbell, MapPin, Pencil, Watch } from 'lucide-react';
+import { EnduranceStepList } from '@/components/planning/session/read/endurance-step-list';
+import { dayLabelFromDayKey } from '@/lib/date/day-key';
 import { cn } from '@/lib/utils';
 import { ActivityType } from '@prisma/client';
 
@@ -225,10 +228,12 @@ export function PlannedSessionReadView({
     return alreadyOnWatch ? 'Renvoyer' : 'Montre';
   }
 
+  // Facts only: the day it sits on and when it left. The sync-on-next-connect
+  // sentence was a standing explanation that stopped informing after the first read.
   const watchStatusLine = alreadyOnWatch ? (
     <p className="text-muted-foreground text-xs leading-snug">
       Sur Garmin
-      {watchPush.scheduledDate ? ` · calendrier ${watchPush.scheduledDate}` : ''}
+      {watchPush.scheduledDate ? ` · ${dayLabelFromDayKey(watchPush.scheduledDate)}` : ''}
       {watchPush.pushedAt
         ? ` · envoyé ${new Date(watchPush.pushedAt).toLocaleString('fr-FR', {
             day: '2-digit',
@@ -237,7 +242,6 @@ export function PlannedSessionReadView({
             minute: '2-digit',
           })}`
         : ''}
-      . La montre récupère le workout au prochain sync Connect.
     </p>
   ) : null;
 
@@ -282,6 +286,7 @@ export function PlannedSessionReadView({
   // Swimming ships without a target table: the watch gets the set structure but no
   // pace band, which is where most of the value is in a pool anyway.
   const isSwim = session.type === ActivityType.SWIM;
+  const endurancePreview = useEndurancePreview(session);
   const pushableSport =
     session.type === ActivityType.RUN || session.type === ActivityType.BIKE || isSwim;
   const enduranceBlock =
@@ -296,20 +301,18 @@ export function PlannedSessionReadView({
         </div>
         {watchStatusLine}
         {watchStaleLine}
-        <p className="text-muted-foreground/80 text-xs leading-snug">
-          {isSwim ? (
-            <>
-              La montre affiche le déroulé série par série. Pas encore de cible d&apos;allure en
-              natation.
-            </>
-          ) : (
-            <>
-              La montre affiche la fourchette{' '}
-              {session.type === ActivityType.BIKE ? 'de puissance' : "d'allure"} et alerte quand tu
-              sors de la zone.
-            </>
-          )}
-        </p>
+        <EnduranceStepList steps={endurancePreview.steps} />
+        {endurancePreview.derived ? (
+          <p className="text-muted-foreground/80 text-xs leading-snug">
+            Séance sans déroulé — elle partira en un bloc unique, dérivé de la durée et de
+            l&apos;intensité.
+          </p>
+        ) : null}
+        {endurancePreview.warnings.length > 0 ? (
+          <p className="text-muted-foreground/80 text-xs leading-snug">
+            {endurancePreview.warnings[0]}
+          </p>
+        ) : null}
       </div>
     ) : null;
 
@@ -449,7 +452,7 @@ export function PlannedSessionReadView({
   // ── Realized: story first, plan details after ────────────────────────────
   if (isRealized) {
     return (
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4">
         {header}
 
         <SessionRealization
@@ -493,8 +496,10 @@ export function PlannedSessionReadView({
   }
 
   // ── Planned (not yet done) ───────────────────────────────────────────────
+  // min-w-0: this is a grid item inside the dialog, and without it fixed-width
+  // content refuses to shrink and the panel overflows the viewport on mobile.
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       {header}
 
       {morningProposal ? (

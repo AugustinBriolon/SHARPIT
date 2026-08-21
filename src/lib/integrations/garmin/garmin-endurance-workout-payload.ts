@@ -26,6 +26,13 @@ import {
   type StepBag,
 } from '@/lib/integrations/garmin/garmin-workout-enums';
 import {
+  KIND_LABEL_FR,
+  METER_DISPLAY_CEILING_M,
+  STROKE_LABEL_FR,
+  formatDurationLabel,
+  formatTargetLabel,
+} from '@/lib/planned-session/endurance/endurance-preview';
+import {
   endurancePlannedMeters,
   endurancePlannedSeconds,
   enduranceStepCount,
@@ -34,10 +41,8 @@ import {
   type EnduranceSport,
   type EnduranceStep,
   type EnduranceStepKind,
-  type SwimStroke,
 } from '@/lib/planned-session/endurance/endurance-prescription';
 import {
-  formatPaceBand,
   resolveEnduranceTarget,
   type AthleteThresholds,
   type ResolvedTarget,
@@ -56,27 +61,6 @@ const STEP_TYPE_BY_KIND: Record<EnduranceStepKind, GarminStepTypeDto> = {
   rest: STEP_REST,
   cooldown: STEP_COOLDOWN,
 };
-
-const STROKE_LABEL_FR: Record<SwimStroke, string> = {
-  free: 'Crawl',
-  back: 'Dos',
-  breast: 'Brasse',
-  fly: 'Papillon',
-  im: '4 nages',
-  drill: 'Éducatif',
-  mixed: 'Nage libre',
-};
-
-const KIND_LABEL_FR: Record<EnduranceStepKind, string> = {
-  warmup: 'Échauffement',
-  interval: 'Bloc',
-  recovery: 'Récup',
-  rest: 'Repos',
-  cooldown: 'Retour au calme',
-};
-
-/** Below a kilometre the watch reads better in metres (400 m, not 0.4 km). */
-const METER_DISPLAY_CEILING_M = 1000;
 
 /** What the watch will actually display for one prescribed step. */
 export type EnduranceWorkoutMappedStep = {
@@ -104,34 +88,6 @@ export type BuildEnduranceWorkoutResult = {
   /** Targets that could not be resolved, athlete-facing. */
   warnings: string[];
 };
-
-function formatDurationLabel(duration: EnduranceDuration): string {
-  if (duration.type === 'lap') return 'Bouton Lap';
-  if (duration.type === 'distance') {
-    return duration.meters < METER_DISPLAY_CEILING_M
-      ? `${duration.meters} m`
-      : `${Math.round(duration.meters / 100) / 10} km`;
-  }
-  const minutes = Math.floor(duration.seconds / 60);
-  const seconds = duration.seconds % 60;
-  if (minutes === 0) return `${seconds} s`;
-  return seconds === 0 ? `${minutes} min` : `${minutes} min ${seconds} s`;
-}
-
-function formatTargetLabel(resolved: ResolvedTarget): string | null {
-  switch (resolved.metric) {
-    case 'pace':
-      return formatPaceBand(resolved.paceSecFast, resolved.paceSecSlow, resolved.paceUnit);
-    case 'hr':
-      return `${resolved.bpmMin}–${resolved.bpmMax} bpm`;
-    case 'power':
-      return `${resolved.wattsMin}–${resolved.wattsMax} W`;
-    case 'cadence':
-      return `${resolved.min}–${resolved.max} rpm`;
-    default:
-      return null;
-  }
-}
 
 function applyDuration(step: StepBag, duration: EnduranceDuration): void {
   if (duration.type === 'time') {

@@ -36,3 +36,9 @@ export function shortDayFromDate(date: Date): string {
 export function toLocalCalendarDate(date: Date): Date {
   return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 }
+
+/** "2026-08-21" as the athlete reads it: "21/08". Machine keys stay out of the UI. */
+export function dayLabelFromDayKey(dayKey: string): string {
+  const [, month, day] = dayKey.split('-');
+  return month && day ? `${day}/${month}` : dayKey;
+}
