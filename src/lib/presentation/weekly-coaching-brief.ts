@@ -23,6 +23,7 @@ import type {
   WeeklyCoachingBriefViewModel,
 } from '@/core/presentation/weekly-coaching-brief-view-model';
 import type { CoachingDecisionRecord, DecisionSnapshotContext } from '@/lib/decision-memory/types';
+import { dayKeyFromDate } from '@/lib/date/day-key';
 
 const KEY_INTENSITIES = new Set<SessionIntensity>(['THRESHOLD', 'VO2MAX', 'RACE']);
 const WEEK_DAYS = 7;
@@ -99,7 +100,7 @@ function buildRecoveryDays(
 ): { protectedDayLabels: string[]; note: string } {
   const sessionsByDay = new Map<string, WeeklyCoachingBriefInput['plannedSessions'][number][]>();
   for (const s of plannedSessions) {
-    const key = format(s.date, 'yyyy-MM-dd');
+    const key = dayKeyFromDate(s.date);
     const list = sessionsByDay.get(key) ?? [];
     list.push(s);
     sessionsByDay.set(key, list);

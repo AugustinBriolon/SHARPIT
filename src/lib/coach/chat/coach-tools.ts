@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { after } from 'next/server';
 import { tool } from 'ai';
-import { addDays, format, startOfDay } from 'date-fns';
+import { addDays, startOfDay } from 'date-fns';
 import { z } from 'zod';
 import {
   deleteSessionFromGoogle,
@@ -36,6 +36,7 @@ import {
   coachEndurancePrescriptionSchema,
   resolveEnduranceFieldsForPersist,
 } from '@/lib/planned-session/endurance/coach-endurance-prescription';
+import { dayKeyFromDate } from '@/lib/date/day-key';
 import { garminPushClearOnSessionChange } from '@/lib/integrations/garmin/garmin-workout-push-state';
 import { auditStrengthPrescription } from '@/lib/planned-session/strength/strength-session-template';
 import { suggestGarminTaxonomy } from '@/lib/integrations/garmin/garmin-exercise-taxonomy';
@@ -112,7 +113,7 @@ export const coachTools = {
       });
       return sessions.map((s) => ({
         id: s.id,
-        date: format(s.date, 'yyyy-MM-dd'),
+        date: dayKeyFromDate(s.date),
         type: s.type,
         intensity: s.intensity,
         title: s.title,
@@ -437,7 +438,7 @@ export const coachTools = {
           ok: true,
           id: s.id,
           action: 'updated' as const,
-          date: format(s.date, 'yyyy-MM-dd'),
+          date: dayKeyFromDate(s.date),
           startTime: s.startTime,
           type: s.type,
           title: s.title,
@@ -484,7 +485,7 @@ export const coachTools = {
         id,
         action: 'deleted' as const,
         title: existing.title,
-        date: format(existing.date, 'yyyy-MM-dd'),
+        date: dayKeyFromDate(existing.date),
       };
     },
   }),

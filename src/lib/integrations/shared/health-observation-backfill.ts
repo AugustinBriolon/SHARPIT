@@ -1,10 +1,11 @@
-import { format, startOfDay, subDays } from 'date-fns';
+import { startOfDay, subDays } from 'date-fns';
 import type { DailyHealth } from '@prisma/client';
 import { garminHealthToObservations } from '@/core/adapters/garmin-health-adapter';
 import type { RawObservation } from '@/core/observation/types';
 import type { GarminDailyHealth } from '@/lib/integrations/garmin/garmin';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { prisma } from '@/lib/prisma';
+import { dayKeyFromDate } from '@/lib/date/day-key';
 
 const ATHLETE_ID = 'default';
 
@@ -16,7 +17,7 @@ export type HealthObservationBackfillResult = {
 
 function dailyHealthToGarminHealth(row: DailyHealth): GarminDailyHealth {
   return {
-    date: format(row.date, 'yyyy-MM-dd'),
+    date: dayKeyFromDate(row.date),
     sleepMinutes: row.sleepMinutes,
     napMinutes: row.napMinutes,
     restingHr: row.restingHr,
@@ -74,7 +75,7 @@ export async function backfillHealthObservationsFromDailyHealth(
   let skipped = 0;
 
   for (const row of rows) {
-    const trainingDayId = format(row.date, 'yyyy-MM-dd');
+    const trainingDayId = dayKeyFromDate(row.date);
     const existing = await prisma.observation.findMany({
       where: {
         athleteId,

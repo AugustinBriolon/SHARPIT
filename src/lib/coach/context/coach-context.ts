@@ -28,6 +28,7 @@ import {
 } from '@/lib/presentation/scenario-comparison';
 import { formatEquipmentForCoach } from '@/lib/equipment/format';
 import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
+import { dayKeyFromDate, toLocalCalendarDate } from '@/lib/date/day-key';
 
 async function loadNutritionSummary(
   trainingDayId: string,
@@ -261,7 +262,7 @@ async function buildCoachContextUncached(
         summary?: string;
       };
       return {
-        date: format(p.date, 'EEE d MMM', { locale: fr }),
+        date: format(toLocalCalendarDate(p.date), 'EEE d MMM', { locale: fr }),
         type: TYPE_FR[p.type] ?? p.type,
         title: p.title ?? '',
         score: a.complianceScore ?? null,
@@ -318,8 +319,8 @@ async function buildCoachContextUncached(
   // ---- Déjà planifié (21 prochains jours) — ids inclus pour update/delete sans outil list ----
   const upcomingPlanned = planned.map((p) => ({
     id: p.id,
-    date: format(p.date, 'EEE d MMM', { locale: fr }),
-    dateIso: format(p.date, 'yyyy-MM-dd'),
+    date: format(toLocalCalendarDate(p.date), 'EEE d MMM', { locale: fr }),
+    dateIso: dayKeyFromDate(p.date),
     type: TYPE_FR[p.type] ?? p.type,
     title: p.title ?? '',
     intensity: p.intensity,

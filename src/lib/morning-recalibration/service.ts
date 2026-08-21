@@ -3,7 +3,7 @@
  * Presentation + Decision Memory only (Core frozen).
  */
 
-import { endOfDay, format, startOfDay } from 'date-fns';
+import { endOfDay, startOfDay } from 'date-fns';
 import type { GateProposal, GateSessionResult } from '@/lib/plan-gate/types';
 import { buildDecisionSnapshotContext } from '@/lib/decision-memory/build-snapshot-context';
 import {
@@ -23,6 +23,7 @@ import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service'
 import { hasMorningWellnessCheckin } from '@/lib/health/wellness-checkin';
 import { prisma } from '@/lib/prisma';
 import { updatePlannedSession } from '@/lib/queries';
+import { dayKeyFromDate } from '@/lib/date/day-key';
 
 const ATHLETE_ID = 'default';
 
@@ -62,7 +63,7 @@ function toGateProposal(
   return {
     sessionId: proposal.sessionId,
     action: 'MODIFY',
-    date: format(session.date, 'yyyy-MM-dd'),
+    date: dayKeyFromDate(session.date),
     startTime: null,
     type: session.type,
     intensity: proposal.toIntensity,

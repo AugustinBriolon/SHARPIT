@@ -25,3 +25,14 @@ export function shortDayFromDate(date: Date): string {
   const day = String(date.getUTCDate()).padStart(2, '0');
   return `${day}/${month}`;
 }
+
+/**
+ * The same calendar day, as a Date at *local* midnight.
+ *
+ * For the cases a plain formatter has to handle — a localized label like
+ * "mer. 22 août". Formatting the stored value directly reads the wrong day west
+ * of UTC; shifting it here lets any local formatter be correct.
+ */
+export function toLocalCalendarDate(date: Date): Date {
+  return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}

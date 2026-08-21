@@ -20,6 +20,7 @@ import type { GateProposal, GateResult } from '@/lib/plan-gate/types';
 import { computeTrainingDayId } from '@/lib/training/training-day';
 import { buildDecisionSnapshotContext } from '@/lib/decision-memory/build-snapshot-context';
 import { createCoachingDecision } from '@/lib/decision-memory/repository';
+import { dayKeyFromDate } from '@/lib/date/day-key';
 import {
   COACH_PROGRESS_HEADERS,
   encodeCoachProgressEvent,
@@ -37,7 +38,7 @@ function toGateProposal(
   existing: UpcomingSession | null,
   defaultGoalId: string | null,
 ): GateProposal | null {
-  const date = change.date ?? (existing ? format(existing.date, 'yyyy-MM-dd') : null);
+  const date = change.date ?? (existing ? dayKeyFromDate(existing.date) : null);
   const type = change.type ?? existing?.type ?? null;
   if (!date || !type) return null;
 
