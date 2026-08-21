@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { format } from 'date-fns';
+import { dayKeyFromDate, shortDayFromDate } from '@/lib/date/day-key';
 import {
   buildEnduranceWorkoutPayload,
   type EnduranceWorkoutMappedStep,
@@ -124,7 +124,7 @@ export async function pushEnduranceWorkoutFromPlannedSession(options: {
   });
 
   const workoutName =
-    session.title?.trim() || `SHARPIT ${SPORT_LABEL_FR[sport]} ${format(session.date, 'dd/MM')}`;
+    session.title?.trim() || `SHARPIT ${SPORT_LABEL_FR[sport]} ${shortDayFromDate(session.date)}`;
 
   const built = buildEnduranceWorkoutPayload({
     workoutName,
@@ -138,7 +138,7 @@ export async function pushEnduranceWorkoutFromPlannedSession(options: {
   const created = await createAndScheduleWorkout({
     payload: built.payload,
     schedule: options.schedule,
-    scheduleDate: options.scheduleDate ?? format(session.date, 'yyyy-MM-dd'),
+    scheduleDate: options.scheduleDate ?? dayKeyFromDate(session.date),
     replaceWorkoutId: options.force ? session.garminWorkoutId : null,
   });
 

@@ -1,4 +1,5 @@
 import type { PlannedSession } from '@prisma/client';
+import { dayKeyFromDate } from '@/lib/date/day-key';
 import { prisma } from '@/lib/prisma';
 import {
   createEvent,
@@ -111,14 +112,6 @@ export async function listGoogleCalendars() {
 }
 
 // ---- Outils de date / fuseau ----
-
-/** Clé jour "YYYY-MM-DD" à partir des composantes UTC de la date (stockée en @db.Date). */
-function dayKeyFromDate(date: Date): string {
-  const y = date.getUTCFullYear();
-  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(date.getUTCDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
 
 /** Composantes (jour local + minutes) d'un instant dans un fuseau donné. */
 function zonedDayAndMinutes(instant: Date, timeZone: string): { dayKey: string; minutes: number } {

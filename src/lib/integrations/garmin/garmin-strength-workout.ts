@@ -1,5 +1,6 @@
 import { ActivityType } from '@prisma/client';
 import { format } from 'date-fns';
+import { dayKeyFromDate, shortDayFromDate } from '@/lib/date/day-key';
 import { ensureGarminExerciseLabelsFr } from '@/lib/integrations/garmin/garmin-exercise-labels';
 import {
   invertGarminExerciseLabelsFr,
@@ -130,6 +131,7 @@ export async function pushStrengthWorkoutFromActivity(options: {
     throw new Error('Aucun exercice à envoyer');
   }
 
+  // Activity.date is an instant, not a calendar day — the athlete's local day is right here.
   const workoutName = activity.title?.trim() || `SHARPIT muscu ${format(activity.date, 'dd/MM')}`;
 
   return uploadStrengthSets({
@@ -183,7 +185,7 @@ export async function pushStrengthWorkoutFromPlannedSession(options: {
     throw new Error('Aucun exercice prescrit — ajoute des exercices à la séance planifiée');
   }
 
-  const workoutName = session.title?.trim() || `SHARPIT muscu ${format(session.date, 'dd/MM')}`;
+  const workoutName = session.title?.trim() || `SHARPIT muscu ${shortDayFromDate(session.date)}`;
 
   const description =
     session.description?.trim() ||
@@ -212,7 +214,7 @@ export async function pushStrengthWorkoutFromPlannedSession(options: {
         : null,
     })),
     schedule: options.schedule,
-    scheduleDate: options.scheduleDate ?? format(session.date, 'yyyy-MM-dd'),
+    scheduleDate: options.scheduleDate ?? dayKeyFromDate(session.date),
     replaceWorkoutId: options.force ? session.garminWorkoutId : null,
   });
 
