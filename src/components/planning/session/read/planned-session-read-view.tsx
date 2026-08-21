@@ -35,9 +35,10 @@ import { sportIdentityHex } from '@/lib/activity/sport-identity';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import { exposureLabels, intensityLabels } from '@/lib/planned-session/sessions';
 import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-compare';
-import { Brain, ChevronRight, ClipboardList, MapPin, Pencil, Watch } from 'lucide-react';
+import { Brain, ClipboardList, MapPin, Pencil, Watch } from 'lucide-react';
 import { EnduranceStepList } from '@/components/planning/session/read/endurance-step-list';
 import { dayLabelFromDayKey } from '@/lib/date/day-key';
+import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { cn } from '@/lib/utils';
 import { ActivityType } from '@prisma/client';
 
@@ -57,36 +58,6 @@ function KeyChipsRow({ chips }: { chips: KeyChip[] }) {
         </div>
       ))}
     </div>
-  );
-}
-
-function CollapsibleSection({
-  icon: Icon,
-  label,
-  summary,
-  defaultOpen,
-  children,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  summary?: string | null;
-  defaultOpen: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <details className="group border-analysis-border/60 border-t" open={defaultOpen}>
-      <summary className="hover:text-foreground flex cursor-pointer list-none items-center justify-between gap-2 py-2.5 text-sm [&::-webkit-details-marker]:hidden">
-        <span className="text-foreground/85 inline-flex min-w-0 items-center gap-1.5 font-medium">
-          <Icon className="text-muted-foreground size-3.5 shrink-0" />
-          {label}
-        </span>
-        <span className="text-muted-foreground/70 inline-flex min-w-0 items-center gap-1.5">
-          {summary ? <span className="text-data truncate text-xs">{summary}</span> : null}
-          <ChevronRight className="size-3.5 shrink-0 transition-transform group-open:rotate-90" />
-        </span>
-      </summary>
-      <div className="pt-1 pb-3">{children}</div>
-    </details>
   );
 }
 

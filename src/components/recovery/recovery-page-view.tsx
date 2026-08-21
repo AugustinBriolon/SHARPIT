@@ -2,7 +2,6 @@
 
 import { RecoveryAlertsSection } from '@/components/recovery/blocks/recovery-alerts-section';
 import { RecoveryDimensionsSection } from '@/components/recovery/blocks/recovery-dimensions-section';
-import { RecoveryEvidenceSection } from '@/components/recovery/blocks/recovery-evidence-section';
 import { RecoveryHero } from '@/components/recovery/blocks/recovery-hero';
 import { RecoverySignalsSection } from '@/components/recovery/blocks/recovery-signals-section';
 import { RecoveryStatsStrip } from '@/components/recovery/blocks/recovery-stats-strip';
@@ -15,6 +14,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import type { DimensionResult } from '@/hooks/use-today';
 import dynamic from 'next/dynamic';
+import { CollapsibleSection } from '@/components/ui/collapsible-section';
 
 const RecoveryTrendsSection = dynamic(
   () =>
@@ -145,34 +145,36 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
         rationale={rationale}
       />
 
-      {!loading ? (
-        <RecoverySignalsSection
-          autonomicLabel={autonomicLabel}
-          dissonanceDetected={dissonanceDetected}
-          loadLabel={loadLabel}
-          wellnessLabel={wellnessLabel}
-        />
-      ) : null}
+      {/* Alerts stay open: an illness or overreaching signal is the reason to have
+          opened this screen at all, and folding it would bury the exception. */}
+      {!loading ? <RecoveryAlertsSection illness={illness} overreaching={overreaching} /> : null}
 
-      <RecoveryDimensionsSection dimensions={dimensions} loading={loading} />
-
+      {/* Everything below answers "why", not "what now". The athlete opens it when
+          the verdict above surprises them — which is not most mornings. */}
       {!loading ? (
         <>
-          <RecoveryTrendsSection
-            baselineHigh={baselineHigh}
-            baselineLow={baselineLow}
-            dualData={dualData}
-            sparkHrv={sparkHrv}
-            sparkRhr={sparkRhr}
-          />
+          <CollapsibleSection label="Lecture des signaux" summary={autonomicLabel}>
+            <RecoverySignalsSection
+              autonomicLabel={autonomicLabel}
+              dissonanceDetected={dissonanceDetected}
+              loadLabel={loadLabel}
+              wellnessLabel={wellnessLabel}
+            />
+          </CollapsibleSection>
 
-          <RecoveryAlertsSection illness={illness} overreaching={overreaching} />
+          <CollapsibleSection label="Contribution au score" summary={limiterLabel}>
+            <RecoveryDimensionsSection dimensions={dimensions} loading={false} />
+          </CollapsibleSection>
 
-          <RecoveryEvidenceSection
-            intensityLabel={intensityLabel}
-            limiterLabel={limiterLabel}
-            readinessScore={readinessScore}
-          />
+          <CollapsibleSection label="Tendances 14 jours">
+            <RecoveryTrendsSection
+              baselineHigh={baselineHigh}
+              baselineLow={baselineLow}
+              dualData={dualData}
+              sparkHrv={sparkHrv}
+              sparkRhr={sparkRhr}
+            />
+          </CollapsibleSection>
         </>
       ) : null}
     </MetricDrillDownPage>
