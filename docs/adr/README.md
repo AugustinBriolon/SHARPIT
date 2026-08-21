@@ -22,6 +22,7 @@
 | [ADR-016](./ADR-016-endurance-prescription-relative-targets.md)  | Endurance prescriptions — relative targets resolved at watch push time       | Accepted |
 | [ADR-017](./ADR-017-endurance-prescription-authoring.md)         | Endurance prescriptions — authored by coach and athlete, prose derived       | Accepted |
 | [ADR-018](./ADR-018-swim-css-threshold.md)                       | Swim pace targets anchored on a CSS threshold derived from realised sessions | Accepted |
+| [ADR-019](./ADR-019-endurance-compliance.md)                     | Endurance compliance measured per step on a stream-derived segmentation      | Accepted |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 
