@@ -31,11 +31,10 @@ describe('defaultTargetForIntensity', () => {
     expect(target).toMatchObject({ metric: 'pace', pctMin: 97.5, pctMax: 102.5 });
   });
 
-  it('caps easy sessions instead of closing the band', () => {
+  it('widens an easy band rather than leaving its slow bound open', () => {
     const { target } = defaultTargetForIntensity('RUN', 'ENDURANCE');
-    expect(target.pctMax).toBe(82.5);
-    // Floor is wide enough that a slower run never triggers an alert.
-    expect(target.pctMin).toBe(40);
+    // Connect displays both bounds, so the slow one has to be a pace, not a floor.
+    expect(target).toMatchObject({ pctMin: 72.5, pctMax: 87.5 });
   });
 
   it('falls back to threshold for RACE and says so', () => {
@@ -60,8 +59,8 @@ describe('defaultTargetForIntensity', () => {
       pctMax: 102.5,
     });
     // Easy swimming sits far closer to threshold than easy running does.
-    expect(defaultTargetForIntensity('SWIM', 'ENDURANCE').target.pctMax).toBe(92.5);
-    expect(defaultTargetForIntensity('RUN', 'ENDURANCE').target.pctMax).toBe(82.5);
+    expect(defaultTargetForIntensity('SWIM', 'ENDURANCE').target.pctMax).toBe(97.5);
+    expect(defaultTargetForIntensity('RUN', 'ENDURANCE').target.pctMax).toBe(87.5);
   });
 });
 
@@ -86,13 +85,14 @@ describe('resolveEnduranceTarget — pace', () => {
     expect(resolved.speedMsMax).toBeCloseTo(4.2708, 4);
   });
 
-  it('never lets an easy floor alert on a slow run', () => {
+  it('keeps an easy band readable on the watch', () => {
     const { target } = defaultTargetForIntensity('RUN', 'RECOVERY');
     const { resolved } = resolveEnduranceTarget(target, THRESHOLDS, 'RUN');
     if (resolved.metric !== 'pace') throw new Error('expected a pace target');
 
-    expect(resolved.paceSecFast).toBe(340); // 5:40/km cap
-    expect(resolved.paceSecSlow).toBe(600); // 10:00/km floor, unreachable in practice
+    // 4:00/km threshold, recovery centred on 68 % of speed, ±7.5 %.
+    expect(resolved.paceSecFast).toBe(318); // 5:18/km
+    expect(resolved.paceSecSlow).toBe(397); // 6:37/km — a pace, not a placeholder
   });
 
   it('lets an absolute override win over the relative band', () => {

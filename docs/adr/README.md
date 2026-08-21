@@ -23,6 +23,7 @@
 | [ADR-017](./ADR-017-endurance-prescription-authoring.md)         | Endurance prescriptions — authored by coach and athlete, prose derived       | Accepted |
 | [ADR-018](./ADR-018-swim-css-threshold.md)                       | Swim pace targets anchored on a CSS threshold derived from realised sessions | Accepted |
 | [ADR-019](./ADR-019-endurance-compliance.md)                     | Endurance compliance measured per step on a stream-derived segmentation      | Accepted |
+| [ADR-020](./ADR-020-readable-easy-bands.md)                      | Easy steps get a readable band; warm-up, recovery and cool-down carry none   | Accepted |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 

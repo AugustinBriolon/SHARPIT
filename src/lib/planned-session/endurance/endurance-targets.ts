@@ -43,13 +43,13 @@ export type TargetResolution = {
 export const QUALITY_HALF_BAND_PCT = 2.5;
 
 /**
- * Easy sessions get a cap, not a two-sided band: running slower than prescribed on
- * a recovery run is not an error, and a "too slow" alert is what makes an athlete
- * turn guidance off. Garmin still requires both bounds, so the floor is set wide
- * enough that it never fires.
+ * Half-width on an easy step. Wider than a quality band because the pace does not
+ * need policing, narrow enough that Connect renders a range an athlete can read:
+ * the earlier design left the slow bound open so it would never alert, but the
+ * watch displays both bounds, and a band reaching 14:45/km is unreadable.
  */
-const OPEN_FLOOR_PCT = 40;
-const OPEN_FLOOR_HR_PCT = 50;
+export const EASY_HALF_BAND_PCT = 7.5;
+
 const EASY_INTENSITIES = new Set<SessionIntensity>(['RECOVERY', 'ENDURANCE']);
 
 /** Centre of the band, in percent of threshold *speed* (100 % = threshold pace). */
@@ -101,14 +101,9 @@ const RACE_FALLBACK_INTENSITY: SessionIntensity = 'THRESHOLD';
 const RACE_FALLBACK_WARNING =
   'Allure RACE non dérivable (objectif sans distance structurée) — repli sur allure seuil.';
 
-function bandAround(centrePct: number, intensity: SessionIntensity, floorPct: number) {
-  if (EASY_INTENSITIES.has(intensity)) {
-    return { pctMin: floorPct, pctMax: centrePct + QUALITY_HALF_BAND_PCT };
-  }
-  return {
-    pctMin: centrePct - QUALITY_HALF_BAND_PCT,
-    pctMax: centrePct + QUALITY_HALF_BAND_PCT,
-  };
+function bandAround(centrePct: number, intensity: SessionIntensity) {
+  const half = EASY_INTENSITIES.has(intensity) ? EASY_HALF_BAND_PCT : QUALITY_HALF_BAND_PCT;
+  return { pctMin: centrePct - half, pctMax: centrePct + half };
 }
 
 /**
@@ -131,7 +126,7 @@ export function defaultTargetForIntensity(
     const centre = BIKE_POWER_ANCHOR_PCT[effective];
     if (centre == null) return { target: { metric: 'none' }, warnings };
     return {
-      target: { metric: 'power', ...bandAround(centre, effective, OPEN_FLOOR_PCT) },
+      target: { metric: 'power', ...bandAround(centre, effective) },
       warnings,
     };
   }
@@ -140,7 +135,7 @@ export function defaultTargetForIntensity(
   const centre = anchors[effective];
   if (centre == null) return { target: { metric: 'none' }, warnings };
 
-  return { target: { metric: 'pace', ...bandAround(centre, effective, OPEN_FLOOR_PCT) }, warnings };
+  return { target: { metric: 'pace', ...bandAround(centre, effective) }, warnings };
 }
 
 /** Heart-rate equivalent of `defaultTargetForIntensity`, used when pace is unavailable. */
@@ -151,7 +146,7 @@ export function defaultHrTargetForIntensity(intensity: SessionIntensity | null):
   return {
     metric: 'hr',
     hrRef: 'lthr',
-    ...bandAround(centre, effective, OPEN_FLOOR_HR_PCT),
+    ...bandAround(centre, effective),
   };
 }
 

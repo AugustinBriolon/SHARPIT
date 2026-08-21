@@ -60,21 +60,37 @@ describe('normalizeCoachEndurancePrescription', () => {
     expect(work?.target).toMatchObject({ metric: 'power', pctMin: 80.5, pctMax: 85.5 });
   });
 
-  it('leaves a rest step free and lets warmup imply an easy effort', () => {
+  it('guides the work and leaves everything around it free', () => {
     const prescription = normalizeCoachEndurancePrescription({
       prescription: {
         blocks: [
           { steps: [{ kind: 'warmup', minutes: 15 }] },
+          { steps: [{ kind: 'interval', minutes: 10 }] },
+          { steps: [{ kind: 'recovery', minutes: 3 }] },
           { steps: [{ kind: 'rest', minutes: 3 }] },
+          { steps: [{ kind: 'cooldown', minutes: 10 }] },
         ],
       },
       type: 'RUN',
       intensity: 'VO2MAX',
     });
 
-    const [warmup, rest] = prescription?.blocks ?? [];
-    expect(warmup?.kind === 'step' && warmup.step.target.metric).toBe('pace');
-    expect(rest?.kind === 'step' && rest.step.target).toEqual({ metric: 'none' });
+    const [warmup, interval, recovery, rest, cooldown] = prescription?.blocks ?? [];
+    expect(interval?.kind === 'step' && interval.step.target.metric).toBe('pace');
+    for (const block of [warmup, recovery, rest, cooldown]) {
+      expect(block?.kind === 'step' && block.step.target).toEqual({ metric: 'none' });
+    }
+  });
+
+  it('ignores an effort explicitly set on a step that carries no guidance', () => {
+    const prescription = normalizeCoachEndurancePrescription({
+      prescription: { blocks: [{ steps: [{ kind: 'warmup', minutes: 15, effort: 'TEMPO' }] }] },
+      type: 'RUN',
+      intensity: 'VO2MAX',
+    });
+
+    const [warmup] = prescription?.blocks ?? [];
+    expect(warmup?.kind === 'step' && warmup.step.target).toEqual({ metric: 'none' });
   });
 
   it('reads a step with no stated end as a Lap-button step', () => {

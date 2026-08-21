@@ -108,12 +108,14 @@ export const coachEndurancePrescriptionSchema = z
 export type CoachEndurancePrescription = z.infer<typeof coachEndurancePrescriptionSchema>;
 type CoachEnduranceStep = z.infer<typeof coachEnduranceStepSchema>;
 
-/** Recovery and rest carry their own intent, so they do not inherit the session's effort. */
-const IMPLIED_EFFORT: Partial<Record<EnduranceStepKind, SessionIntensity>> = {
-  warmup: 'RECOVERY',
-  recovery: 'RECOVERY',
-  cooldown: 'RECOVERY',
-};
+/**
+ * Steps that carry no pace, power or heart-rate band at all.
+ *
+ * A warm-up, a recovery jog and a cool-down are defined by being easy, not by
+ * holding a number, and the watch showing a range on them is noise the athlete
+ * has to read past on every step. Guidance is reserved for the work.
+ */
+const UNGUIDED_KINDS = new Set<EnduranceStepKind>(['warmup', 'recovery', 'rest', 'cooldown']);
 
 function clampSeconds(minutes: number): number {
   return Math.min(STEP_MAX_SECONDS, Math.max(STEP_MIN_SECONDS, Math.round(minutes * 60)));
@@ -133,9 +135,11 @@ function normalizeStep(
   sessionIntensity: SessionIntensity | null,
 ): EnduranceStep {
   const { kind } = step;
-  const effort = step.effort ?? IMPLIED_EFFORT[kind] ?? sessionIntensity;
+  const effort = step.effort ?? sessionIntensity;
   const target =
-    kind === 'rest' || effort == null ? NO_TARGET : defaultTargetForIntensity(sport, effort).target;
+    UNGUIDED_KINDS.has(kind) || effort == null
+      ? NO_TARGET
+      : defaultTargetForIntensity(sport, effort).target;
 
   return {
     kind,
