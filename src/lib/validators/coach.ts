@@ -31,7 +31,7 @@ export const coachPlanSchema = z.object({
         description: z
           .string()
           .describe(
-            'Structure détaillée : échauffement, corps de séance (intervalles, allures/zones cibles), récupération. Pour STRENGTH : résumé court si strengthPrescription est rempli.',
+            'Structure détaillée : échauffement, corps de séance (intervalles, allures/zones cibles), récupération. Pour STRENGTH : intention courte uniquement (ex. « Focus chaîne postérieure ») — la liste d’exercices va dans strengthPrescription, jamais en liste numérotée ici.',
           ),
         strengthPrescription: coachStrengthPrescriptionSchema
           .nullable()

@@ -27,6 +27,7 @@ import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
 import { formatPlannedSessionLocationDisplay } from '@/lib/planned-session/display/planned-session-display';
 import {
   attachGarminRefsToPrescription,
+  extractStrengthSessionIntent,
   parseStrengthPrescription,
   strengthSetWatchCompat,
 } from '@/lib/planned-session/strength/strength-prescription';
@@ -34,7 +35,7 @@ import { sportIdentityHex } from '@/lib/activity/sport-identity';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import { exposureLabels, intensityLabels } from '@/lib/planned-session/sessions';
 import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-compare';
-import { Brain, ChevronRight, ClipboardList, Dumbbell, MapPin, Pencil, Watch } from 'lucide-react';
+import { Brain, ChevronRight, ClipboardList, MapPin, Pencil, Watch } from 'lucide-react';
 import { EnduranceStepList } from '@/components/planning/session/read/endurance-step-list';
 import { dayLabelFromDayKey } from '@/lib/date/day-key';
 import { cn } from '@/lib/utils';
@@ -215,6 +216,27 @@ export function PlannedSessionReadView({
     ? prescription.sets.slice().sort((a, b) => a.order - b.order)
     : [];
   const hasExerciseMedia = orderedSets.some((set) => resolveStrengthSetMedia(set) != null);
+  const strengthIntent =
+    session.type === ActivityType.STRENGTH && prescription
+      ? extractStrengthSessionIntent(session.description)
+      : null;
+
+  // Swimming ships without a target table: the watch gets the set structure but no
+  // pace band, which is where most of the value is in a pool anyway.
+  const isSwim = session.type === ActivityType.SWIM;
+  const endurancePreview = useEndurancePreview(session);
+  const pushableSport =
+    session.type === ActivityType.RUN || session.type === ActivityType.BIKE || isSwim;
+
+  /**
+   * One athlete-facing surface across sports: structure IS the déroulé when it
+   * exists (strength sets / endurance steps). Free-text only fills the gap for
+   * sessions without a structured plan — never a second copy of the same list.
+   */
+  const hasStrengthPlan = session.type === ActivityType.STRENGTH && prescription != null;
+  const hasEndurancePlan = pushableSport && !isRealized;
+  const hasStructuredDeroule = hasStrengthPlan || hasEndurancePlan;
+  const freeTextDeroule = hasStructuredDeroule ? null : session.description?.trim() || null;
 
   function watchPushButtonLabel(): string {
     if (pushing) return alreadyOnWatch ? 'Renvoi…' : 'Envoi…';
@@ -265,123 +287,107 @@ export function PlannedSessionReadView({
     </Button>
   );
 
-  const derouleBlock = !morningProposal ? (
-    <div className="space-y-1.5">
-      {session.description?.trim() ? (
-        <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
-          {session.description}
+  const strengthDerouleContent = hasStrengthPlan ? (
+    <ul className="space-y-1.5">
+      {orderedSets.map((set, i) => {
+        const volume =
+          set.durationSec && set.durationSec > 0 && set.reps <= 0
+            ? `${set.sets}×${set.durationSec}s`
+            : `${set.sets}×${set.reps}`;
+        const weight = set.weightKg != null && set.weightKg > 0 ? ` @ ${set.weightKg} kg` : '';
+        const restLabel =
+          set.restMode === 'time' && set.restSec != null && set.restSec > 0
+            ? `Repos ${set.restSec}s`
+            : 'Repos Lap';
+        const watch = strengthSetWatchCompat(set);
+        const media = resolveStrengthSetMedia(set);
+        return (
+          <li key={`${set.order}-${set.exercise}`} className="flex items-start gap-3 text-sm">
+            {media ? (
+              <ExerciseVisual label={set.exercise} media={media} />
+            ) : (
+              <ExerciseIndex className="text-muted-foreground" index={i + 1} />
+            )}
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <div className="text-muted-foreground flex items-baseline justify-between gap-2">
+                <span className="text-foreground min-w-0 font-medium wrap-break-word">
+                  {set.exercise}
+                </span>
+                <span className="text-data shrink-0 font-mono text-xs tabular-nums">
+                  {volume}
+                  {weight}
+                </span>
+              </div>
+              {media ? <ExerciseMediaCaption media={media} /> : null}
+              <p className="text-muted-foreground text-xs leading-snug">{restLabel}</p>
+              <p
+                className={cn(
+                  'text-xs leading-snug',
+                  watch.status === 'unknown' && 'text-muted-foreground',
+                  watch.status === 'approx' && 'text-amber-700 dark:text-amber-400',
+                  watch.status === 'ready' && 'text-muted-foreground',
+                )}
+              >
+                {watch.label}
+              </p>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  ) : null;
+
+  const enduranceDerouleContent = hasEndurancePlan ? (
+    <div className="space-y-2">
+      <EnduranceStepList steps={endurancePreview.steps} />
+      {endurancePreview.derived ? (
+        <p className="text-muted-foreground/80 text-xs leading-snug">
+          Sans étapes détaillées — un bloc unique dérivé de la durée et de l&apos;intensité.
         </p>
       ) : null}
-      {!session.description?.trim() && session.type === ActivityType.STRENGTH && prescription ? (
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          Voir les exercices prescrits.
+      {endurancePreview.warnings.length > 0 ? (
+        <p className="text-muted-foreground/80 text-xs leading-snug">
+          {endurancePreview.warnings[0]}
         </p>
-      ) : null}
-      {!session.description?.trim() && !(session.type === ActivityType.STRENGTH && prescription) ? (
-        <p className="text-muted-foreground/70 text-sm italic">Aucun déroulé renseigné.</p>
       ) : null}
     </div>
   ) : null;
 
-  // Swimming ships without a target table: the watch gets the set structure but no
-  // pace band, which is where most of the value is in a pool anyway.
-  const isSwim = session.type === ActivityType.SWIM;
-  const endurancePreview = useEndurancePreview(session);
-  const pushableSport =
-    session.type === ActivityType.RUN || session.type === ActivityType.BIKE || isSwim;
-  const enduranceBlock =
-    pushableSport && !isRealized ? (
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-foreground/85 inline-flex items-center gap-1.5 text-sm font-medium">
-            <Watch className="text-muted-foreground size-3.5" />
-            {isSwim ? 'Séance sur la montre' : 'Séance guidée'}
-          </p>
-          {watchPushButton(true)}
-        </div>
-        {watchStatusLine}
-        {watchStaleLine}
-        <EnduranceStepList steps={endurancePreview.steps} />
-        {endurancePreview.derived ? (
-          <p className="text-muted-foreground/80 text-xs leading-snug">
-            Séance sans déroulé — elle partira en un bloc unique, dérivé de la durée et de
-            l&apos;intensité.
-          </p>
-        ) : null}
-        {endurancePreview.warnings.length > 0 ? (
-          <p className="text-muted-foreground/80 text-xs leading-snug">
-            {endurancePreview.warnings[0]}
-          </p>
-        ) : null}
+  const deroulePanel = !morningProposal ? (
+    <div className="border-analysis-border/60 space-y-3 rounded-lg border p-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-foreground/85 text-sm font-medium">Déroulé</p>
+        {!isRealized && hasStrengthPlan ? watchPushButton(Boolean(prescription)) : null}
+        {!isRealized && hasEndurancePlan ? watchPushButton(true) : null}
       </div>
-    ) : null;
 
-  const strengthBlock =
-    session.type === ActivityType.STRENGTH && prescription ? (
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-foreground/85 inline-flex items-center gap-1.5 text-sm font-medium">
-            <Dumbbell className="text-muted-foreground size-3.5" />
-            Exercices prescrits
-          </p>
-          {!isRealized ? watchPushButton(Boolean(prescription)) : null}
-        </div>
-        {watchStatusLine}
-        {watchStaleLine}
-        <ul className="space-y-1.5">
-          {orderedSets.map((set, i) => {
-            const volume =
-              set.durationSec && set.durationSec > 0 && set.reps <= 0
-                ? `${set.sets}×${set.durationSec}s`
-                : `${set.sets}×${set.reps}`;
-            const weight = set.weightKg != null && set.weightKg > 0 ? ` @ ${set.weightKg} kg` : '';
-            const restLabel =
-              set.restMode === 'time' && set.restSec != null && set.restSec > 0
-                ? `Repos ${set.restSec}s`
-                : 'Repos Lap';
-            const watch = strengthSetWatchCompat(set);
-            const media = resolveStrengthSetMedia(set);
-            return (
-              <li key={`${set.order}-${set.exercise}`} className="flex items-start gap-3 text-sm">
-                {media ? (
-                  <ExerciseVisual label={set.exercise} media={media} />
-                ) : (
-                  <ExerciseIndex className="text-muted-foreground" index={i + 1} />
-                )}
-                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <div className="text-muted-foreground flex items-baseline justify-between gap-2">
-                    <span className="text-foreground min-w-0 font-medium wrap-break-word">
-                      {set.exercise}
-                    </span>
-                    <span className="text-data shrink-0 font-mono text-xs tabular-nums">
-                      {volume}
-                      {weight}
-                    </span>
-                  </div>
-                  {media ? <ExerciseMediaCaption media={media} /> : null}
-                  <p className="text-muted-foreground text-xs leading-snug">{restLabel}</p>
-                  <p
-                    className={cn(
-                      'text-xs leading-snug',
-                      watch.status === 'unknown' && 'text-muted-foreground',
-                      watch.status === 'approx' && 'text-amber-700 dark:text-amber-400',
-                      watch.status === 'ready' && 'text-muted-foreground',
-                    )}
-                  >
-                    {watch.label}
-                  </p>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-        {hasExerciseMedia ? (
-          <ExerciseMediaAttribution>
-            Les visuels sont indicatifs — respecte la consigne du coach en cas d’écart.
-          </ExerciseMediaAttribution>
-        ) : null}
-      </div>
-    ) : null;
+      {strengthIntent ? (
+        <p className="text-muted-foreground text-sm leading-relaxed">{strengthIntent}</p>
+      ) : null}
+
+      {watchStatusLine}
+      {watchStaleLine}
+
+      {strengthDerouleContent}
+      {enduranceDerouleContent}
+
+      {!hasStructuredDeroule && freeTextDeroule ? (
+        <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
+          {freeTextDeroule}
+        </p>
+      ) : null}
+
+      {!hasStructuredDeroule && !freeTextDeroule ? (
+        <p className="text-muted-foreground/70 text-sm italic">Aucun déroulé renseigné.</p>
+      ) : null}
+
+      {hasStrengthPlan && hasExerciseMedia ? (
+        <ExerciseMediaAttribution>
+          Les visuels sont indicatifs — respecte la consigne du coach en cas d’écart.
+        </ExerciseMediaAttribution>
+      ) : null}
+    </div>
+  ) : null;
 
   const header = (
     <header className="space-y-1">
@@ -478,7 +484,7 @@ export function PlannedSessionReadView({
             }
           >
             <div className="space-y-3">
-              {derouleBlock}
+              {deroulePanel}
               <SessionAccessoriesSection
                 accessories={session.accessories}
                 description={session.description}
@@ -486,7 +492,6 @@ export function PlannedSessionReadView({
                 title={session.title}
                 type={session.type}
               />
-              {strengthBlock}
             </div>
           </CollapsibleSection>
           {secondaryDetails}
@@ -508,12 +513,7 @@ export function PlannedSessionReadView({
         <KeyChipsRow chips={chips} />
       )}
 
-      {!morningProposal ? (
-        <div className="border-analysis-border/60 space-y-1.5 rounded-lg border p-3">
-          <p className="text-foreground/85 text-sm font-medium">Déroulé</p>
-          {derouleBlock}
-        </div>
-      ) : null}
+      {deroulePanel}
 
       <SessionAccessoriesSection
         accessories={session.accessories}
@@ -522,14 +522,6 @@ export function PlannedSessionReadView({
         title={session.title}
         type={session.type}
       />
-
-      {strengthBlock ? (
-        <div className="border-analysis-border/60 rounded-lg border p-3">{strengthBlock}</div>
-      ) : null}
-
-      {enduranceBlock ? (
-        <div className="border-analysis-border/60 rounded-lg border p-3">{enduranceBlock}</div>
-      ) : null}
 
       {secondaryDetails}
 

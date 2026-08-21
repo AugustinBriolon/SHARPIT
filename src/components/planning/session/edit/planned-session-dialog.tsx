@@ -55,8 +55,9 @@ import {
 import { resolveDefaultPlanGoalId, selectableDatedGoalIds } from '@/lib/planned-session/plan-goal';
 import { activityTypeLabels } from '@/lib/format';
 import {
-  formatStrengthPrescriptionSummary,
+  extractStrengthSessionIntent,
   parseStrengthPrescription,
+  resolveStrengthFieldsForPersist,
 } from '@/lib/planned-session/strength/strength-prescription';
 import { queryKeys } from '@/lib/query/keys';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
@@ -248,11 +249,11 @@ export function PlannedSessionDialog({
     if (type !== ActivityType.STRENGTH) {
       return { strengthPrescription: null as null, description };
     }
-    const prescription = strengthPrescriptionFromDraft(strengthRows);
-    const nextDescription =
-      description?.trim() ||
-      (prescription ? formatStrengthPrescriptionSummary(prescription) : null);
-    return { strengthPrescription: prescription, description: nextDescription };
+    return resolveStrengthFieldsForPersist({
+      type: ActivityType.STRENGTH,
+      description,
+      strengthPrescription: strengthPrescriptionFromDraft(strengthRows),
+    });
   }
 
   /**
@@ -761,41 +762,76 @@ export function PlannedSessionDialog({
                         </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="description">
-                          Déroulé
-                          {type !== ActivityType.STRENGTH ? (
-                            <span className="text-destructive"> *</span>
-                          ) : null}
-                        </Label>
-                        <Textarea
-                          defaultValue={session?.description ?? ''}
-                          id="description"
-                          name="description"
-                          required={type !== ActivityType.STRENGTH}
-                          rows={3}
-                          placeholder={
-                            type === ActivityType.STRENGTH
-                              ? 'Notes libres (sinon résumé auto des exercices)'
-                              : "3×10' au seuil, récup 3'… — détaille le déroulé"
-                          }
-                        />
-                      </div>
-
                       {type === ActivityType.STRENGTH ? (
-                        <StrengthPrescriptionEditor
-                          rows={strengthRows}
-                          required
-                          onChange={setStrengthRows}
-                        />
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="description">Intention</Label>
+                            <Textarea
+                              id="description"
+                              name="description"
+                              placeholder="Focus chaîne postérieure, charge légère…"
+                              rows={2}
+                              defaultValue={
+                                session?.description
+                                  ? (extractStrengthSessionIntent(session.description) ?? '')
+                                  : ''
+                              }
+                            />
+                            <p className="text-muted-foreground text-xs leading-relaxed">
+                              Optionnel — le déroulé, c’est la liste d’exercices ci-dessous.
+                            </p>
+                          </div>
+                          <StrengthPrescriptionEditor
+                            rows={strengthRows}
+                            required
+                            onChange={setStrengthRows}
+                          />
+                        </>
+                      ) : null}
+
+                      {type !== ActivityType.STRENGTH && !enduranceSport ? (
+                        <div className="space-y-2">
+                          <Label htmlFor="description">
+                            Déroulé
+                            <span className="text-destructive"> *</span>
+                          </Label>
+                          <Textarea
+                            defaultValue={session?.description ?? ''}
+                            id="description"
+                            name="description"
+                            placeholder="3×10' au seuil, récup 3'… — détaille le déroulé"
+                            rows={3}
+                            required
+                          />
+                        </div>
                       ) : null}
 
                       {enduranceSport ? (
-                        <EndurancePrescriptionEditor
-                          blocks={enduranceBlocks}
-                          sport={enduranceSport}
-                          onChange={setEnduranceBlocks}
-                        />
+                        <>
+                          <EndurancePrescriptionEditor
+                            blocks={enduranceBlocks}
+                            sport={enduranceSport}
+                            onChange={setEnduranceBlocks}
+                          />
+                          {enduranceBlocks.length === 0 ? (
+                            <div className="space-y-2">
+                              <Label htmlFor="description">
+                                Ou déroulé en texte
+                                <span className="text-destructive"> *</span>
+                              </Label>
+                              <Textarea
+                                defaultValue={session?.description ?? ''}
+                                id="description"
+                                name="description"
+                                placeholder="Sans étapes ci-dessus, décris la séance ici"
+                                rows={3}
+                                required
+                              />
+                            </div>
+                          ) : (
+                            <input name="description" type="hidden" value="" />
+                          )}
+                        </>
                       ) : null}
 
                       <SessionAccessoriesPicker

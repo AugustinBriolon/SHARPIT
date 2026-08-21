@@ -146,7 +146,7 @@ export function StrengthPrescriptionEditor({
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm leading-none font-medium">
-          Exercices (montre){required ? <span className="text-destructive"> *</span> : null}
+          Déroulé{required ? <span className="text-destructive"> *</span> : null}
         </p>
         <Button
           size="sm"

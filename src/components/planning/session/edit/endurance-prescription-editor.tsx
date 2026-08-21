@@ -275,7 +275,7 @@ export function EndurancePrescriptionEditor({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm leading-none font-medium">Déroulé (montre)</p>
+        <p className="text-sm leading-none font-medium">Déroulé</p>
         <Button
           size="sm"
           type="button"
@@ -289,8 +289,8 @@ export function EndurancePrescriptionEditor({
 
       {blocks.length === 0 ? (
         <p className="text-muted-foreground text-xs leading-relaxed">
-          Sans déroulé, la séance part à la montre en un bloc unique dérivé de la durée et de
-          l&apos;intensité. Ajoute des étapes pour un fractionné guidé.
+          Sans étapes, la séance part à la montre en un bloc unique dérivé de la durée et de
+          l&apos;intensité — ou décris-la en texte libre ci-dessous.
         </p>
       ) : (
         <p className="text-muted-foreground text-xs leading-relaxed">

@@ -211,7 +211,35 @@ export function normalizeCoachStrengthPrescription(
 }
 
 /**
- * For STRENGTH sessions: keep/normalize prescription and fill empty description.
+ * Coach free-text often embeds a numbered exercise dump that contradicts
+ * `strengthPrescription` (the watch / UI source of truth). Keep only the intent
+ * clause before the first "1. …" item; drop auto-summaries that merely restate sets.
+ */
+export function extractStrengthSessionIntent(
+  description: string | null | undefined,
+): string | null {
+  const trimmed = description?.trim();
+  if (!trimmed) return null;
+
+  const numbered = trimmed.match(/^([\s\S]*?)(?=(?:\n|\s)1[.)\-–—:]\s+\S)/);
+  if (numbered) {
+    const intent = numbered[1]?.trim() ?? '';
+    return intent.length > 0 ? intent : null;
+  }
+
+  // Also catch "1. Exo" at the very start (no preamble).
+  if (/^1[.)\-–—:]\s+\S/.test(trimmed)) return null;
+
+  // Derived summaries look like "Squat 3×12 · Pont 3×15" — not athlete-facing intent.
+  if (trimmed.includes('·') && /×/.test(trimmed)) return null;
+
+  return trimmed;
+}
+
+/**
+ * For STRENGTH sessions: keep/normalize prescription.
+ * Description stores coach intent only when a structured prescription exists
+ * (aligned with ADR-017: structure is authoritative for the exercise list).
  * For other sports: clear prescription.
  */
 export function resolveStrengthFieldsForPersist(input: {
@@ -230,9 +258,16 @@ export function resolveStrengthFieldsForPersist(input: {
   }
 
   const prescription = normalizeCoachStrengthPrescription(input.strengthPrescription);
+  if (!prescription) {
+    return {
+      strengthPrescription: null,
+      description: input.description?.trim() || null,
+    };
+  }
+
   const description =
-    input.description?.trim() ||
-    (prescription ? formatStrengthPrescriptionSummary(prescription) : null);
+    extractStrengthSessionIntent(input.description) ??
+    formatStrengthPrescriptionSummary(prescription);
 
   return { strengthPrescription: prescription, description };
 }
