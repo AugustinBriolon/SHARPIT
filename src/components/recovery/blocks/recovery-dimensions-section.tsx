@@ -1,4 +1,4 @@
-import { DrillDownDimensionRow } from '@/components/today/drill-down/dimension-row';
+import { ContributionBars } from '@/components/today/drill-down/contribution-bars';
 import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
 import type { DimensionResult } from '@/hooks/use-today';
@@ -19,29 +19,28 @@ const DIMENSION_DESCRIPTION: Record<string, string> = {
 
 export function RecoveryDimensionsSection({
   dimensions,
+  limiterKey = null,
   loading = false,
 }: {
   dimensions: Record<string, DimensionResult>;
+  /** Dimension the verdict blames — emphasised instead of merely listed. */
+  limiterKey?: string | null;
   loading?: boolean;
 }) {
-  const entries = Object.keys(DIMENSION_LABEL).map((key) => [
+  if (loading) return null;
+
+  const items = Object.keys(DIMENSION_LABEL).map((key) => ({
     key,
-    dimensions[key] ?? { score: null, status: 'PENDING', available: false },
-  ]) as [string, DimensionResult][];
+    label: DIMENSION_LABEL[key] ?? key,
+    score: dimensions[key]?.score ?? null,
+    hint: DIMENSION_DESCRIPTION[key] ?? null,
+  }));
 
   return (
     <DrillDownSectionCard>
       <DrillDownSectionLabel>Contribution au score</DrillDownSectionLabel>
-      <div className="space-y-4">
-        {entries.map(([key, dim]) => (
-          <DrillDownDimensionRow
-            key={key}
-            description={DIMENSION_DESCRIPTION[key] ?? ''}
-            dim={dim}
-            label={DIMENSION_LABEL[key] ?? key}
-            loading={loading}
-          />
-        ))}
+      <div className="mt-3">
+        <ContributionBars items={items} limiterKey={limiterKey} />
       </div>
     </DrillDownSectionCard>
   );

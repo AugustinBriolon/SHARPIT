@@ -4,6 +4,7 @@ import { RecoveryAlertsSection } from '@/components/recovery/blocks/recovery-ale
 import { RecoveryDimensionsSection } from '@/components/recovery/blocks/recovery-dimensions-section';
 import { RecoveryHero } from '@/components/recovery/blocks/recovery-hero';
 import { RecoverySignalsSection } from '@/components/recovery/blocks/recovery-signals-section';
+import { RecoveryMarkers } from '@/components/recovery/blocks/recovery-markers';
 import { RecoveryStatsStrip } from '@/components/recovery/blocks/recovery-stats-strip';
 import { RecoveryWhyBlock } from '@/components/recovery/blocks/recovery-why-block';
 import {
@@ -130,12 +131,20 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
         onPreviousDay={onPreviousDay}
       />
 
-      <RecoveryStatsStrip
-        bodyBattery={bodyBattery}
-        hrv={hrv}
-        loading={loading}
-        restingHr={restingHr}
-      />
+      {loading ? (
+        <RecoveryStatsStrip bodyBattery={null} hrv={null} restingHr={null} loading />
+      ) : (
+        <RecoveryMarkers
+          baselineHigh={baselineHigh}
+          baselineLow={baselineLow}
+          batterySeries={dualData.map((point) => point.a)}
+          bodyBattery={bodyBattery}
+          hrv={hrv}
+          restingHr={restingHr}
+          sparkHrv={sparkHrv}
+          sparkRhr={sparkRhr}
+        />
+      )}
 
       <RecoveryWhyBlock
         intensityClassName={intensityClassName}
@@ -149,23 +158,20 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
           opened this screen at all, and folding it would bury the exception. */}
       {!loading ? <RecoveryAlertsSection illness={illness} overreaching={overreaching} /> : null}
 
-      {/* Everything below answers "why", not "what now". The athlete opens it when
-          the verdict above surprises them — which is not most mornings. */}
       {!loading ? (
         <>
-          <CollapsibleSection label="Lecture des signaux" summary={autonomicLabel}>
-            <RecoverySignalsSection
-              autonomicLabel={autonomicLabel}
-              dissonanceDetected={dissonanceDetected}
-              loadLabel={loadLabel}
-              wellnessLabel={wellnessLabel}
-            />
-          </CollapsibleSection>
+          <RecoverySignalsSection
+            autonomicLabel={autonomicLabel}
+            dissonanceDetected={dissonanceDetected}
+            loadLabel={loadLabel}
+            wellnessLabel={wellnessLabel}
+          />
 
-          <CollapsibleSection label="Contribution au score" summary={limiterLabel}>
-            <RecoveryDimensionsSection dimensions={dimensions} loading={false} />
-          </CollapsibleSection>
+          <RecoveryDimensionsSection dimensions={dimensions} loading={false} />
 
+          {/* The only thing still folded: each marker now carries its own sparkline,
+              so the full charts answer a question the athlete has already had
+              answered above — kept for when he wants to look closely, not by default. */}
           <CollapsibleSection label="Tendances 14 jours">
             <RecoveryTrendsSection
               baselineHigh={baselineHigh}
