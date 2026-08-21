@@ -153,18 +153,23 @@ export type GarminStrokeDto = {
 };
 
 /**
- * Connect's swim stroke list, in its own order. These ids are Connect's and are
- * not exposed by the client library — if the watch ever shows the wrong stroke,
- * this table is the single place to correct.
+ * Connect's swim stroke list, in its own order.
+ *
+ * Verified against a real watch: sending 1 rendered "Choix", 5 rendered
+ * "Papillon" and 7 rendered "Épreuve individuelle quatre nages". That fixes the
+ * list as alphabetical with a leading "any" entry — the ids are not exposed by
+ * the client library, and an earlier table that omitted "any" shifted every
+ * stroke by one. `back`, `breast`, `drill` and `mixed` follow from the same
+ * ordering but have not been seen on the watch.
  */
 export const SWIM_STROKE_BY_KEY: Record<string, GarminStrokeDto> = {
-  back: { strokeTypeId: 1, strokeTypeKey: 'backstroke', displayOrder: 1 },
-  breast: { strokeTypeId: 2, strokeTypeKey: 'breaststroke', displayOrder: 2 },
-  drill: { strokeTypeId: 3, strokeTypeKey: 'drill', displayOrder: 3 },
-  fly: { strokeTypeId: 4, strokeTypeKey: 'fly', displayOrder: 4 },
-  free: { strokeTypeId: 5, strokeTypeKey: 'free', displayOrder: 5 },
-  im: { strokeTypeId: 6, strokeTypeKey: 'im', displayOrder: 6 },
-  mixed: { strokeTypeId: 7, strokeTypeKey: 'mixed', displayOrder: 7 },
+  back: { strokeTypeId: 2, strokeTypeKey: 'backstroke', displayOrder: 2 },
+  breast: { strokeTypeId: 3, strokeTypeKey: 'breaststroke', displayOrder: 3 },
+  drill: { strokeTypeId: 4, strokeTypeKey: 'drill', displayOrder: 4 },
+  fly: { strokeTypeId: 5, strokeTypeKey: 'fly', displayOrder: 5 },
+  free: { strokeTypeId: 6, strokeTypeKey: 'free', displayOrder: 6 },
+  im: { strokeTypeId: 7, strokeTypeKey: 'im', displayOrder: 7 },
+  mixed: { strokeTypeId: 8, strokeTypeKey: 'mixed', displayOrder: 8 },
 };
 export const DEFAULT_EQUIPMENT = {
   equipmentTypeId: 0,

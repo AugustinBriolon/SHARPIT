@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildEnduranceWorkoutPayload } from '@/lib/integrations/garmin/garmin-endurance-workout-payload';
+import { SWIM_STROKE_BY_KEY } from '@/lib/integrations/garmin/garmin-workout-enums';
 import type { EndurancePrescription } from '@/lib/planned-session/endurance/endurance-prescription';
 import type { AthleteThresholds } from '@/lib/planned-session/endurance/endurance-targets';
 
@@ -306,6 +307,18 @@ describe('swim stroke', () => {
       ],
     } as EndurancePrescription;
   }
+
+  it('uses the stroke ids the watch actually renders', () => {
+    // Observed on a real watch: 1 rendered "Choix", 5 "Papillon", 7 "quatre nages".
+    // An earlier table omitted Connect's leading "any" entry and shifted every id.
+    expect(SWIM_STROKE_BY_KEY.fly.strokeTypeId).toBe(5);
+    expect(SWIM_STROKE_BY_KEY.im.strokeTypeId).toBe(7);
+    expect(SWIM_STROKE_BY_KEY.free.strokeTypeId).toBe(6);
+    // Nothing may claim id 1: that slot is Connect's "any", i.e. no stroke asked for.
+    const ids = Object.values(SWIM_STROKE_BY_KEY).map((stroke) => stroke.strokeTypeId);
+    expect(ids).not.toContain(1);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
 
   it('sends the stroke so a drill set does not read as plain swimming', () => {
     const { payload, mapped } = buildEnduranceWorkoutPayload({
