@@ -185,6 +185,19 @@ export type TodayViewModel = {
   insights: ProductInsight[];
 
   /** Environmental context when training impact is significant (Phase 3). */
+  /** Date and weather at the top of the morning screen. */
+  header: {
+    /** ISO day the screen is reading, "YYYY-MM-DD". */
+    dayKey: string;
+    weather: {
+      city: string;
+      tempC: number;
+      condition: string;
+      /** False when the reading is for hard-coded coordinates. */
+      locationKnown: boolean;
+    } | null;
+  };
+
   environmentContext: {
     visible: boolean;
     summaryLine: string | null;

@@ -15,6 +15,7 @@ import { useOfflineSnapshot } from '@/hooks/use-offline-snapshot';
 import { OfflineSnapshotSummary } from '@/components/pwa/offline-snapshot-summary';
 import { TodayActionRow } from './rich/today-action-row';
 import { TodaySignalStrip } from './dashboard/today-signal-strip';
+import { TodayHeader } from './dashboard/today-header';
 import { TodayNutritionCard } from './dashboard/today-nutrition-card';
 import { useClientMorningHold } from '@/components/today/rich/morning-orientation-actions';
 import { TodayDashboardShell } from './today-dashboard-shell';
@@ -127,6 +128,7 @@ export function TodayDashboard() {
         />
       ) : null}
       <div className="space-y-2 lg:space-y-4">
+        <TodayHeader dayKey={content.header.dayKey} weather={content.header.weather} />
         <TodayVerdictHero loading={valuesLoading} vm={content} />
         <TodaySignalStrip loading={valuesLoading} metricsRow={content.hero.metricsRow} />
       </div>

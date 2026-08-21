@@ -35,7 +35,6 @@ import {
 } from '@/lib/decision/projection';
 import { buildTodayLimitingFacts, buildTodayWhyFacts } from '@/lib/today/today-instrument-facts';
 import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
-import { loadDailyTrainingStressEntries } from '@/lib/training/pmc-server';
 import { endOfDay, format as formatDate, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { activityTypeLabels } from '@/lib/format';
@@ -51,6 +50,8 @@ import {
   reconnectProviderNames,
 } from '@/lib/integrations/shared/connection-status';
 import { reconnectSnoozeKey } from '@/lib/integrations/shared/reconnect-banner-state';
+import type { TodayWeather } from '@/lib/today/today-weather';
+import { loadTodayWeather } from '@/lib/today/today-weather';
 
 function localDateFromTrainingDayId(trainingDayId: string): Date {
   const [y, m, d] = trainingDayId.split('-').map(Number);
@@ -111,6 +112,8 @@ export type TodayPresentationInputs = {
   trainingDayId: string;
   day: Date;
   snapshot: AthleteSnapshot;
+  /** Today's forecast for the header. Null when unavailable — the screen renders without it. */
+  weather?: TodayWeather | null;
   healthEntries: Awaited<ReturnType<typeof getHealthEntries>>;
   activities: Awaited<ReturnType<typeof getActivitiesList>>;
   plannedSessions: Awaited<ReturnType<typeof getPlannedSessions>>;
@@ -121,12 +124,6 @@ export type TodayPresentationInputs = {
    * Empty when every linked app can still authenticate.
    */
   reconnectNames?: string[];
-  /**
-   * One entry per training day, carrying the Core's Training Stress. Feeds the
-   * effort sparkline and the rolling load so this page cannot report a different
-   * weekly load than the effort dashboard. See ADR-011.
-   */
-  dailyStress: { load: number; date: Date }[];
   /** Ensured by the API route (write side-effect stays off this projection). */
   morningRecalibration: MorningRecalibrationInput | null;
 };
@@ -137,6 +134,7 @@ export type TodayPresentationInputs = {
  */
 export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): TodayViewModel {
   const {
+    trainingDayId,
     day,
     snapshot,
     healthEntries,
@@ -145,6 +143,7 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
     goals,
     athleteProfile,
     morningRecalibration,
+    weather,
   } = inputs;
 
   const sleepTargetMin = athleteProfile?.sleepTargetMinutes ?? SLEEP_TARGET_MIN;
@@ -425,6 +424,17 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
         : null,
     },
     insights: [],
+    header: {
+      dayKey: trainingDayId,
+      weather: weather
+        ? {
+            city: weather.city,
+            tempC: weather.avgTempC,
+            condition: weather.condition,
+            locationKnown: weather.locationKnown,
+          }
+        : null,
+    },
     environmentContext: null,
     nutrition: null,
     hierarchy: { rootId: 'today', order: ['hero', 'why', 'actionRow'] },
@@ -464,8 +474,8 @@ export async function buildTodayPresentationViewModel(
     plannedSessions,
     goals,
     athleteProfile,
-    dailyStress,
     reconnectNames,
+    weather,
   ] = await Promise.all([
     options.athleteSnapshot
       ? Promise.resolve(options.athleteSnapshot)
@@ -475,8 +485,8 @@ export async function buildTodayPresentationViewModel(
     getPlannedSessions({ from: new Date(dayStart.getTime() - 7 * 86_400_000), to: dayEnd }),
     getGoals(),
     getAthleteProfile(),
-    loadDailyTrainingStressEntries({ refDate: day }),
     loadReconnectProviderNames(),
+    loadTodayWeather(trainingDayId),
   ]);
 
   return buildTodayViewModelFromInputs({
@@ -488,9 +498,9 @@ export async function buildTodayPresentationViewModel(
     plannedSessions,
     goals,
     athleteProfile,
-    dailyStress,
     morningRecalibration: options.morningRecalibration ?? null,
     reconnectNames,
+    weather,
   });
 }
 
