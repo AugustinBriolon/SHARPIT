@@ -4,8 +4,36 @@ import { differenceInCalendarDays, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { ClientGoal } from '@/lib/query/types';
 import type { ThreadCoachLine } from '@/lib/training/thread/thread-coach-line';
-import type { ThreadWeek } from '@/lib/training/thread/thread-model';
+import type { ThreadAdherence, ThreadWeek } from '@/lib/training/thread/thread-model';
 import { cn } from '@/lib/utils';
+
+function Rule() {
+  return <span className="bg-ink-surface-foreground/15 w-px self-stretch" aria-hidden />;
+}
+
+function Figure({
+  label,
+  value,
+  suffix = null,
+}: {
+  label: string;
+  value: string;
+  suffix?: string | null;
+}) {
+  return (
+    <div>
+      <p className="text-ink-surface-foreground/55 text-[10px] font-semibold tracking-wide uppercase">
+        {label}
+      </p>
+      <p className="text-data text-ink-surface-foreground mt-1 text-xl font-semibold tabular-nums">
+        {value}
+        {suffix ? (
+          <span className="text-ink-surface-foreground/50 text-sm font-normal"> {suffix}</span>
+        ) : null}
+      </p>
+    </div>
+  );
+}
 
 /** A step of zero is a held week, not a rise — say so rather than printing "+0". */
 function signOf(step: number): string {
@@ -27,11 +55,13 @@ export function ThreadGoalBanner({
   coachLine,
   currentWeek,
   previousWeek,
+  adherence,
 }: {
   goal: ClientGoal | null;
   coachLine: ThreadCoachLine | null;
   currentWeek: ThreadWeek | null;
   previousWeek: ThreadWeek | null;
+  adherence: ThreadAdherence;
 }) {
   const days = goal?.targetDate
     ? differenceInCalendarDays(new Date(goal.targetDate), new Date())
@@ -59,84 +89,75 @@ export function ThreadGoalBanner({
   if (!goal && !coachLine && done == null) return null;
 
   return (
-    <section className="surface-ink rounded-analysis-lg overflow-hidden px-5 py-5 sm:px-6">
-      {goal ? (
-        <>
-          <p className="text-ink-surface-foreground/60 text-data inline-flex items-center gap-2 text-[10px] font-semibold tracking-wide uppercase">
-            <span
-              className="bg-highlight dark:bg-ink-surface-foreground size-[9px] shrink-0 rounded-full"
-              aria-hidden
-            />
-            Objectif
-          </p>
-
-          <p className="text-ink-surface-foreground mt-2 text-lg">
-            {countdown ? (
-              <span className="text-data text-highlight dark:text-ink-surface-foreground font-semibold">
-                {countdown}
-              </span>
-            ) : null}
-            {countdown ? (
-              <span className="text-ink-surface-foreground/50" aria-hidden>
-                {' · '}
-              </span>
-            ) : null}
-            {goal.title}
-          </p>
-
-          {goal.targetDate ? (
-            <p className="text-data text-ink-surface-foreground/55 mt-1 text-[11px]">
-              {format(new Date(goal.targetDate), 'EEEE d MMM yyyy', { locale: fr })}
-              {goal.raceFormat ? ` · ${goal.raceFormat}` : ''}
+    <section className="surface-ink rounded-analysis-lg overflow-hidden px-5 py-5 sm:px-6 lg:flex lg:items-center lg:justify-between lg:gap-8">
+      <div className="min-w-0 lg:max-w-[46ch]">
+        {goal ? (
+          <>
+            <p className="text-ink-surface-foreground/60 text-data inline-flex items-center gap-2 text-[10px] font-semibold tracking-wide uppercase">
+              <span
+                className="bg-highlight dark:bg-ink-surface-foreground size-[9px] shrink-0 rounded-full"
+                aria-hidden
+              />
+              Objectif
             </p>
-          ) : null}
-        </>
-      ) : null}
 
-      {coachLine ? (
-        <p
-          className={cn(
-            'border-highlight text-ink-surface-foreground/85 border-l-2 pl-3 text-[13.5px] leading-relaxed',
-            goal ? 'mt-4' : '',
-          )}
-        >
-          {coachLine.text}
-        </p>
-      ) : null}
-
-      {done != null ? (
-        <div className="mt-4 flex items-stretch gap-4">
-          <div>
-            <p className="text-ink-surface-foreground/55 text-[10px] font-semibold tracking-wide uppercase">
-              Charge 7 j
-            </p>
-            <p className="text-data text-ink-surface-foreground mt-1 text-xl font-semibold tabular-nums">
-              {done}
-              {planned != null && planned > 0 ? (
-                <span className="text-ink-surface-foreground/50 text-sm font-normal">
-                  {' '}
-                  /{planned}
+            <p className="text-ink-surface-foreground mt-2 text-lg">
+              {countdown ? (
+                <span className="text-data text-highlight dark:text-ink-surface-foreground font-semibold">
+                  {countdown}
                 </span>
               ) : null}
+              {countdown ? (
+                <span className="text-ink-surface-foreground/50" aria-hidden>
+                  {' · '}
+                </span>
+              ) : null}
+              {goal.title}
             </p>
-          </div>
 
-          {step != null ? (
-            <>
-              <span className="bg-ink-surface-foreground/15 w-px" aria-hidden />
-              <div>
-                <p className="text-ink-surface-foreground/55 text-[10px] font-semibold tracking-wide uppercase">
-                  vs semaine passée
-                </p>
-                <p className="text-data text-ink-surface-foreground mt-1 text-xl font-semibold tabular-nums">
-                  {signOf(step)}
-                  {Math.abs(step)} %
-                </p>
-              </div>
-            </>
-          ) : null}
-        </div>
-      ) : null}
+            {goal.targetDate ? (
+              <p className="text-data text-ink-surface-foreground/55 mt-1 text-[11px]">
+                {format(new Date(goal.targetDate), 'EEEE d MMM yyyy', { locale: fr })}
+                {goal.raceFormat ? ` · ${goal.raceFormat}` : ''}
+              </p>
+            ) : null}
+          </>
+        ) : null}
+
+        {coachLine ? (
+          <p
+            className={cn(
+              'border-highlight text-ink-surface-foreground/85 border-l-2 pl-3 text-[13.5px] leading-relaxed',
+              goal ? 'mt-4' : '',
+            )}
+          >
+            {coachLine.text}
+          </p>
+        ) : null}
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-stretch gap-x-5 gap-y-3">
+        {done != null ? (
+          <Figure label="Charge 7 j" suffix={planned ? `/${planned}` : null} value={String(done)} />
+        ) : null}
+
+        {step != null ? (
+          <>
+            <Rule />
+            <Figure label="vs semaine passée" value={`${signOf(step)}${Math.abs(step)} %`} />
+          </>
+        ) : null}
+
+        {adherence.ratio != null ? (
+          <>
+            <Rule />
+            <Figure
+              label="Séances tenues"
+              value={`${adherence.completed}/${adherence.prescribed}`}
+            />
+          </>
+        ) : null}
+      </div>
     </section>
   );
 }

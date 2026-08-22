@@ -55,3 +55,19 @@ export type ThreadWeek = {
   /** Wholly ahead of the pivot — drawn as outline, never as fact. */
   readonly isFuture: boolean;
 };
+
+/**
+ * How much of the plan actually happened, across the window.
+ *
+ * Two figures, both of which change what the athlete does next: the share of
+ * prescribed sessions he completed, and the last week where that share dipped —
+ * because a dip has a cause worth remembering, and an average alone hides it.
+ */
+export type ThreadAdherence = {
+  readonly completed: number;
+  readonly prescribed: number;
+  /** 0–1, or null when nothing was ever prescribed in the window. */
+  readonly ratio: number | null;
+  /** Label of the weakest week that had a plan at all. */
+  readonly worstWeekLabel: string | null;
+};

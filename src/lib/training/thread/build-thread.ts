@@ -23,7 +23,7 @@ function weekStart(date: Date): Date {
   return startOfWeek(date, { weekStartsOn: 1 });
 }
 
-function isoWeekKey(date: Date): string {
+export function isoWeekKeyOf(date: Date): string {
   const start = weekStart(date);
   // Thursday of the same week decides the ISO year.
   const thursday = new Date(start);
@@ -108,7 +108,7 @@ export function buildThread({
   const pivotWeekStart = weekStart(pivot);
   const floor = new Date(pivotWeekStart);
   floor.setDate(floor.getDate() - weeksBack * 7);
-  const currentWeekKey = isoWeekKey(pivot);
+  const currentWeekKey = isoWeekKeyOf(pivot);
   const pivotDayKey = localDayKey(pivot);
 
   const byWeek = new Map<string, ThreadEntry[]>();
@@ -116,7 +116,7 @@ export function buildThread({
     const [year, month, day] = entry.dayKey.split('-').map(Number);
     const date = new Date(year!, (month ?? 1) - 1, day ?? 1);
     if (date < floor) continue;
-    const key = isoWeekKey(date);
+    const key = isoWeekKeyOf(date);
     const bucket = byWeek.get(key);
     if (bucket) bucket.push(entry);
     else byWeek.set(key, [entry]);

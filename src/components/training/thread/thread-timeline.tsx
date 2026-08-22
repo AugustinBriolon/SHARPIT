@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ArrowUp } from 'lucide-react';
 import { ThreadEntryRow } from '@/components/training/thread/thread-entry-row';
+import { ThreadTodayCard } from '@/components/training/thread/thread-today-card';
 import { dayKeyFromDate } from '@/lib/date/day-key';
 import type { ThreadWeek } from '@/lib/training/thread/thread-model';
 import { cn } from '@/lib/utils';
@@ -28,13 +29,28 @@ export function ThreadTimeline({
   onLoadEarlier,
   earliestLabel,
   earliestLoad,
+  earliestCount,
+  pivotEntryId = null,
+  constraintByWeek,
 }: {
   weeks: readonly ThreadWeek[];
   onLoadEarlier: () => void;
   earliestLabel: string | null;
   earliestLoad: number | null;
+  earliestCount: number | null;
+  /** The session the current week turns on — marked, not merely listed. */
+  pivotEntryId?: string | null;
+  /** Travel and other commitments, keyed by week, shown where they bite. */
+  constraintByWeek?: ReadonlyMap<string, string>;
 }) {
   const today = todayDayKey();
+
+  /* The first session still owed today — the others stay rows. */
+  const expandedTodayId =
+    weeks
+      .flatMap((week) => week.days)
+      .find((day) => day.dayKey === today)
+      ?.entries.find((entry) => entry.kind === 'planned')?.id ?? null;
   const markerRef = useRef<HTMLLIElement>(null);
   const hasScrolled = useRef(false);
 
@@ -60,6 +76,9 @@ export function ThreadTimeline({
             {' · '}
             {earliestLabel}
             {earliestLoad != null && earliestLoad > 0 ? ` — ${earliestLoad} TSS` : ''}
+            {earliestCount != null && earliestCount > 0
+              ? ` · ${earliestCount} séance${earliestCount > 1 ? 's' : ''}`
+              : ''}
           </span>
         ) : null}
       </button>
@@ -73,6 +92,13 @@ export function ThreadTimeline({
                 {week.plannedLoad > 0 ? ` · prévu ${week.plannedLoad} TSS` : ''}
               </p>
               <span className="border-analysis-border/60 h-px flex-1 border-t" aria-hidden />
+              {/* A trip is not a section of its own — it is a constraint on the week
+                  it falls in, and it belongs where the week is read. */}
+              {constraintByWeek?.get(week.weekKey) ? (
+                <p className="text-signal-caution text-data shrink-0 text-[11px]">
+                  {constraintByWeek.get(week.weekKey)}
+                </p>
+              ) : null}
             </div>
 
             <ol className="space-y-2">
@@ -111,7 +137,17 @@ export function ThreadTimeline({
                       <ol className="min-w-0 flex-1 space-y-2">
                         {day.entries.map((entry) => (
                           <li key={entry.id}>
-                            <ThreadEntryRow entry={entry} />
+                            {/* One card, not every session of the day: the expanded
+                                treatment means "this is the one to do now", and
+                                giving it to three of them says nothing. */}
+                            {isToday && entry.id === expandedTodayId ? (
+                              <ThreadTodayCard
+                                entry={entry}
+                                instruction={entry.planned?.description?.trim() || null}
+                              />
+                            ) : (
+                              <ThreadEntryRow entry={entry} isPivot={entry.id === pivotEntryId} />
+                            )}
                           </li>
                         ))}
                       </ol>

@@ -2,14 +2,28 @@
 
 import { useMemo } from 'react';
 import { GoalKind } from '@prisma/client';
+import { differenceInCalendarDays } from 'date-fns';
+import { Plus } from 'lucide-react';
+import Link from 'next/link';
+import {
+  ThreadConstraintsCard,
+  buildThreadConstraints,
+} from '@/components/training/thread/thread-constraints-card';
+import { ThreadFormReadings } from '@/components/training/thread/thread-form-readings';
 import { ThreadGoalBanner } from '@/components/training/thread/thread-goal-banner';
 import { ThreadLoadRuler } from '@/components/training/thread/thread-load-ruler';
+import { ThreadPlanChart } from '@/components/training/thread/thread-plan-chart';
 import { ThreadSportFilters } from '@/components/training/thread/thread-sport-filters';
 import { ThreadTimeline } from '@/components/training/thread/thread-timeline';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useCoachMemory } from '@/hooks/use-coach-memory';
 import { useTrainingThread } from '@/hooks/use-training-thread';
+import { useThreadFormReadings } from '@/hooks/use-thread-form-readings';
+import { isoWeekKeyOf } from '@/lib/training/thread/build-thread';
+import { buildThreadAdherence } from '@/lib/training/thread/thread-adherence';
 import { buildThreadCoachLine } from '@/lib/training/thread/thread-coach-line';
+import { cn } from '@/lib/utils';
 
 /**
  * Le fil — planning, calendar and history as one continuous view.
@@ -18,15 +32,41 @@ import { buildThreadCoachLine } from '@/lib/training/thread/thread-coach-line';
  * showed what was done against it, the history never showed what had been asked.
  * The athlete had to hold one in his head while reading the other. Here they are
  * the same list, and the comparison is drawn for him.
+ *
+ * Desktop is not the phone stretched. The thread keeps a readable measure in the
+ * left column and the readings that were a grid of cards become a 300 px rail —
+ * present, glanceable, and never competing with the list for the eye.
  */
 export function TrainingThreadView() {
   const thread = useTrainingThread();
+  const memory = useCoachMemory();
+  const readings = useThreadFormReadings();
 
   const currentIndex = thread.weeks.findIndex((week) => week.isCurrent);
   const currentWeek = currentIndex >= 0 ? thread.weeks[currentIndex] : null;
   const previousWeek = currentIndex > 0 ? thread.weeks[currentIndex - 1] : null;
 
   const coachLine = useMemo(() => buildThreadCoachLine(currentWeek ?? null), [currentWeek]);
+  const adherence = useMemo(() => buildThreadAdherence(thread.weeks), [thread.weeks]);
+
+  const constraints = useMemo(
+    () => buildThreadConstraints(memory.data?.entries ?? [], isoWeekKeyOf),
+    [memory.data],
+  );
+
+  /* Keyed by week so the separator can carry it: a constraint read next to the
+     week it lands on is a plan; read in a list of its own it is trivia. */
+  const constraintByWeek = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const constraint of constraints) {
+      const entry = memory.data?.entries.find((e) => e.id === constraint.id);
+      const days = entry
+        ? differenceInCalendarDays(new Date(entry.endDate), new Date(entry.startDate)) + 1
+        : null;
+      map.set(constraint.weekKey, days ? `${constraint.label} · ${days} j` : constraint.label);
+    }
+    return map;
+  }, [constraints, memory.data]);
 
   const nextRaceGoal = useMemo(() => {
     const now = Date.now();
@@ -49,30 +89,73 @@ export function TrainingThreadView() {
     );
   }
 
+  const filters = (
+    <ThreadSportFilters counts={thread.counts} value={thread.sport} onChange={thread.setSport} />
+  );
+
   return (
     <div className="space-y-5">
       <StickyHeader>
-        <p className="text-label">Entraînement</p>
-        <h1 className="text-page-title mt-1">Le fil</h1>
+        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
+          <div>
+            <p className="text-label">Entraînement</p>
+            <h1 className="text-page-title mt-1">Le fil</h1>
+          </div>
+
+          <div className="hidden items-center gap-2 lg:flex">
+            {filters}
+            <Link
+              href="/training/manual"
+              className={cn(
+                'bg-highlight text-highlight-foreground inline-flex min-h-9 shrink-0 items-center gap-1.5',
+                'rounded-full px-3.5 text-xs font-medium transition-transform hover:scale-[1.02]',
+                'focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
+              )}
+            >
+              <Plus className="size-3.5" aria-hidden />
+              Séance
+            </Link>
+          </div>
+        </div>
       </StickyHeader>
 
       <ThreadGoalBanner
+        adherence={adherence}
         coachLine={coachLine}
         currentWeek={currentWeek}
         goal={nextRaceGoal}
         previousWeek={previousWeek}
       />
 
-      <ThreadLoadRuler bars={thread.ruler} />
+      <div className="grid gap-6 lg:grid-cols-[1fr_300px] lg:items-start lg:gap-8">
+        <div className="min-w-0 space-y-4">
+          <ThreadLoadRuler bars={thread.ruler} />
 
-      <ThreadSportFilters counts={thread.counts} value={thread.sport} onChange={thread.setSport} />
+          <div className="lg:hidden">{filters}</div>
 
-      <ThreadTimeline
-        earliestLabel={thread.oldestLoaded?.label ?? null}
-        earliestLoad={thread.oldestLoaded?.doneLoad ?? null}
-        weeks={thread.weeks}
-        onLoadEarlier={thread.loadEarlier}
-      />
+          <ThreadTimeline
+            constraintByWeek={constraintByWeek}
+            earliestLabel={thread.oldestLoaded?.label ?? null}
+            earliestLoad={thread.oldestLoaded?.doneLoad ?? null}
+            pivotEntryId={coachLine?.pivotEntryId ?? null}
+            weeks={thread.weeks}
+            earliestCount={
+              thread.oldestLoaded?.days.reduce((sum, day) => sum + day.entries.length, 0) ?? null
+            }
+            onLoadEarlier={thread.loadEarlier}
+          />
+
+          {/* Mobile keeps the readings at the foot of the thread; desktop lifts
+              them into the rail, where they are visible without a scroll. */}
+          <ThreadFormReadings className="lg:hidden" readings={readings} />
+        </div>
+
+        <aside className="hidden space-y-4 lg:block">
+          <ThreadPlanChart adherence={adherence} weeks={thread.weeks} />
+          <ThreadFormReadings readings={readings} title="Ta forme" />
+          <ThreadConstraintsCard constraints={constraints} />
+        </aside>
+      </div>
     </div>
   );
 }
