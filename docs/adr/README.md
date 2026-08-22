@@ -25,6 +25,7 @@
 | [ADR-019](./ADR-019-endurance-compliance.md)                     | Endurance compliance measured per step on a stream-derived segmentation           | Accepted |
 | [ADR-020](./ADR-020-readable-easy-bands.md)                      | Easy steps get a readable band; warm-up, recovery and cool-down carry none        | Accepted |
 | [ADR-021](./ADR-021-swim-css-from-session-pace.md)               | Swim CSS estimated from trimmed session pace; the ADR-018 column is never written | Accepted |
+| [ADR-022](./ADR-022-temporal-product-navigation.md)              | Temporal product navigation                                                       | Accepted |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 

@@ -251,6 +251,7 @@ duration and intensity, and reported as derived rather than prescribed.
 - [`docs/models/README.md`](./docs/models/README.md) — inference model index
 - [`docs/adr/`](./docs/adr/) — Architecture Decision Records
 - [`docs/design/DESIGN_LANGUAGE.md`](./docs/design/DESIGN_LANGUAGE.md) — design language
+- [`docs/design/INFORMATION_ARCHITECTURE.md`](./docs/design/INFORMATION_ARCHITECTURE.md) — athlete-facing navigation and surface hierarchy
 - [`docs/adr/ADR-016`](./docs/adr/ADR-016-endurance-prescription-relative-targets.md) · [`ADR-017`](./docs/adr/ADR-017-endurance-prescription-authoring.md) · [`ADR-020`](./docs/adr/ADR-020-readable-easy-bands.md) · [`ADR-021`](./docs/adr/ADR-021-swim-css-from-session-pace.md) — watch workouts
 - [`knowledge/README.md`](./knowledge/README.md) — scientific reference corpus
 - [`docs/DOCUMENTATION_MIGRATION_PLAN.md`](./docs/DOCUMENTATION_MIGRATION_PLAN.md) — consolidation map (July 2026)

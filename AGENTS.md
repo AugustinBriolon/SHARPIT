@@ -18,6 +18,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - [`docs/product/PRODUCT.md`](docs/product/PRODUCT.md) — constitution, execution doctrine, athlete journey
 - [`docs/design/DESIGN_LANGUAGE.md`](docs/design/DESIGN_LANGUAGE.md) — visual and interaction law
 - [`docs/design/DESIGN_SYSTEM_PROMPT.md`](docs/design/DESIGN_SYSTEM_PROMPT.md) — agent-facing design prompt (tokens, patterns, anti-patterns)
+- [`docs/design/INFORMATION_ARCHITECTURE.md`](docs/design/INFORMATION_ARCHITECTURE.md) — required when changing navigation, page hierarchy, contextual Coach entry points, or athlete-facing information structure
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — code structure and conventions
 - [`docs/domain/DOMAIN.md`](docs/domain/DOMAIN.md) — domain concepts and Digital Twin
 - [`docs/EVENT_DRIVEN_ARCHITECTURE.md`](docs/EVENT_DRIVEN_ARCHITECTURE.md) — sync and orchestration (athlete-centric)
