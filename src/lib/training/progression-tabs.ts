@@ -1,10 +1,15 @@
 /**
- * The three faces of Progression, defined once.
+ * The three readings of the athlete's own level, defined once.
  *
  * They were written inside the hub component, which meant the only way to reach
  * Records or Calibration was to already be on the hub and see its tab bar. Any
  * screen that wants to send someone straight to one of them needs the same label,
  * the same sentence and the same URL — so all three live here.
+ *
+ * "Progression" is the route's name, not theirs. Nothing about a threshold table
+ * or a personal-best list is progression, and a heading that says so sends people
+ * past the thing they were looking for. What the three actually share is that they
+ * all answer "what is my level" — now, at best, and as the model reads it.
  */
 export type ProgressionTabId = 'etat' | 'records' | 'calibration';
 
@@ -38,6 +43,9 @@ export const PROGRESSION_TABS: readonly ProgressionTab[] = [
 ] as const;
 
 export const PROGRESSION_BASE_PATH = '/training/progression';
+
+/** What the three have in common, said in the words an athlete would use. */
+export const PROGRESSION_SECTION_TITLE = 'Ton niveau';
 
 export function progressionTabHref(id: ProgressionTabId): string {
   return `${PROGRESSION_BASE_PATH}?tab=${id}`;

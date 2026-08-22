@@ -37,7 +37,7 @@ export function ProgressionHubSkeleton() {
       <MobileBackLink showOnDesktop />
       <StickyHeader>
         <p className="text-label">Entraînement</p>
-        <h1 className="text-page-title mt-1">Progression</h1>
+        <h1 className="text-page-title mt-1">Ton niveau</h1>
         <p className="text-muted-foreground mt-1 text-sm">{DEFAULT_TAB.description}</p>
 
         <nav

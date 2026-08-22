@@ -11,6 +11,7 @@ import type { ProfileData } from '@/components/settings/profile';
 import { navPillClass } from '@/lib/ui/nav-pill';
 import {
   PROGRESSION_BASE_PATH,
+  PROGRESSION_SECTION_TITLE,
   PROGRESSION_TABS,
   isProgressionTabId,
   type ProgressionTabId,
@@ -60,7 +61,9 @@ export function ProgressionHub({
       <MobileBackLink showOnDesktop />
       <StickyHeader>
         <p className="text-label">Entraînement</p>
-        <h1 className="text-page-title mt-1">Progression</h1>
+        {/* Matches the door that leads here. The route keeps its old name —
+            renaming a URL breaks bookmarks to buy nothing. */}
+        <h1 className="text-page-title mt-1">{PROGRESSION_SECTION_TITLE}</h1>
         <p className="text-muted-foreground mt-1 text-sm">{activeTab.description}</p>
 
         <nav

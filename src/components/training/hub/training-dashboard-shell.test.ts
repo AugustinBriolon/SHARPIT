@@ -17,7 +17,7 @@ describe('TrainingDashboardShell', () => {
     expect(html).toContain('Activités récentes');
     // Progression's three destinations are static, so the shell renders them for
     // real — the section must not move when the data lands.
-    expect(html).toContain('Progression');
+    expect(html).toContain('Ton niveau');
     expect(html).toContain('Records');
     expect(html).toContain('Calibration');
     expect(html).toContain('/training/progression?tab=calibration');
