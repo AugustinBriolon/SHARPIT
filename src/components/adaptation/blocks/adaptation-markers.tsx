@@ -42,7 +42,7 @@ export function AdaptationMarkers({
       points: [],
       range: { ...LOAD_BAND, kind: 'baseline' },
       explanation: EXPLANATION.load,
-      format: (value) => (Math.abs(value - 1) < 0.005 ? 'neutre' : `×${value.toFixed(2)}`),
+      format: (value) => (Math.abs(value - 1) < 0.005 ? 'Neutre' : `×${value.toFixed(2)}`),
     },
   ];
 

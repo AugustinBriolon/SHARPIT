@@ -14,14 +14,14 @@ export function SleepPhasesSection({
   lightMin,
   awakeMin,
   totalMin,
-  whyPanel,
+  sidePanel,
 }: {
   deepMin: number | null;
   remMin: number | null;
   lightMin: number | null;
   awakeMin: number | null;
   totalMin: number;
-  whyPanel?: ReactNode;
+  sidePanel?: ReactNode;
 }) {
   const structure = (
     <DrillDownSectionCard className="h-full">
@@ -36,11 +36,11 @@ export function SleepPhasesSection({
     </DrillDownSectionCard>
   );
 
-  if (!whyPanel) return structure;
+  if (!sidePanel) return structure;
 
   return (
     <div className={cn('grid gap-4', 'lg:grid-cols-2 lg:items-stretch')}>
-      <div className="order-1 lg:order-2">{whyPanel}</div>
+      <div className="order-1 lg:order-2">{sidePanel}</div>
       <div className="order-2 lg:order-1">{structure}</div>
     </div>
   );

@@ -4,7 +4,6 @@ import { SleepCoachTonight } from '@/components/sleep/blocks/sleep-coach-tonight
 import { SleepHero } from '@/components/sleep/blocks/sleep-hero';
 import { SleepPhasesSection } from '@/components/sleep/blocks/sleep-phases-section';
 import { SleepStatsStrip } from '@/components/sleep/blocks/sleep-stats-strip';
-import { SleepWhyBlock } from '@/components/sleep/blocks/sleep-why-block';
 import type { SleepPageViewProps } from '@/components/sleep/types';
 import { MetricDrillDownPage } from '@/components/today/drill-down/metric-drill-down-page';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -48,8 +47,16 @@ function sleepActionLine(props: SleepPageViewProps): string | null {
   return null;
 }
 
+/**
+ * The plate states, the card explains.
+ *
+ * The coaching paragraph led here and repeated, verbatim, what the "Ce soir" card
+ * now says two sections down — the debt, the target, the catch-up. The short
+ * action goes first; the paragraph only stands in when there is no bedtime to
+ * name and the card would have nothing to hold.
+ */
 function pickHeroInsight(props: SleepPageViewProps): string | null {
-  return pickCoachingLine(props) ?? sleepActionLine(props);
+  return sleepActionLine(props) ?? pickCoachingLine(props);
 }
 
 export function SleepPageView(props: SleepPageViewProps) {
@@ -89,13 +96,14 @@ export function SleepPageView(props: SleepPageViewProps) {
     footer = undefined;
   }
 
-  const whyPanel = (
-    <SleepWhyBlock
-      debt7Min={coachView.debt7Min}
-      loading={loading}
+  /* The plan now occupies the slot the "Pourquoi" narrative used to hold, beside
+     the night structure — what to do tonight, next to how last night went. */
+  const tonightPanel = (
+    <SleepCoachTonight
       nightStatus={nightStatus}
       restorativeRatio={scoreBreakdown.restorativeRatio}
       targetDeltaMin={props.targetDeltaMin}
+      view={coachView}
       asPanel
     />
   );
@@ -136,14 +144,12 @@ export function SleepPageView(props: SleepPageViewProps) {
               deepMin={deepMin}
               lightMin={lightMin}
               remMin={remMin}
+              sidePanel={tonightPanel}
               totalMin={totalSleepMin}
-              whyPanel={whyPanel}
             />
           ) : (
-            whyPanel
+            tonightPanel
           )}
-
-          <SleepCoachTonight coachingLine={null} view={coachView} />
 
           <SleepTrendSection data={barData} targetMin={props.sleepTargetMin} />
         </>
