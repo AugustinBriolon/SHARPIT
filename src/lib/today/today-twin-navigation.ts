@@ -33,6 +33,22 @@ export function twinDrillDownHref(dimension: TwinDimension): string {
   return TWIN_DRILL_DOWN[dimension];
 }
 
+/**
+ * Which dimension a drill-down link points at.
+ *
+ * The limiter reaches the home screen as a route, because that is what the
+ * decision layer produces. Reading the dimension back out of it belongs here,
+ * next to the map that defines the routes, rather than as string matching
+ * scattered through whatever component needs to know.
+ */
+export function twinDimensionFromHref(href: string | null): TwinDimension | null {
+  if (!href) return null;
+  const match = (Object.keys(TWIN_DIMENSION_LABEL) as TwinDimension[]).find(
+    (dimension) => TWIN_DRILL_DOWN[dimension] === href,
+  );
+  return match ?? null;
+}
+
 export const TRAJECTORY_DRILL_DOWNS: { dimension: TwinDimension; href: string }[] = [
   { dimension: 'sleep', href: TWIN_DRILL_DOWN.sleep },
   { dimension: 'recovery', href: TWIN_DRILL_DOWN.recovery },

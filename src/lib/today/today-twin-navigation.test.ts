@@ -3,6 +3,7 @@ import {
   resolveConfidenceHrefFromDecision,
   resolveLimitingFactorHrefFromDecision,
   TWIN_DRILL_DOWN,
+  twinDimensionFromHref,
 } from './today-twin-navigation';
 import type { DecisionData } from '@/hooks/use-today';
 
@@ -99,6 +100,19 @@ describe('today-twin-navigation', () => {
       ),
     ).toBe(TWIN_DRILL_DOWN.adaptation);
     expect(resolveLimitingFactorHrefFromDecision(null)).toBeNull();
+  });
+
+  it('reads each dimension back out of its own route', () => {
+    expect(twinDimensionFromHref(TWIN_DRILL_DOWN.sleep)).toBe('sleep');
+    expect(twinDimensionFromHref(TWIN_DRILL_DOWN.recovery)).toBe('recovery');
+    expect(twinDimensionFromHref(TWIN_DRILL_DOWN.effort)).toBe('effort');
+    expect(twinDimensionFromHref(TWIN_DRILL_DOWN.adaptation)).toBe('adaptation');
+  });
+
+  it('returns no dimension for routes that are not a twin page', () => {
+    expect(twinDimensionFromHref(TWIN_DRILL_DOWN.planning)).toBeNull();
+    expect(twinDimensionFromHref(TWIN_DRILL_DOWN.physical)).toBeNull();
+    expect(twinDimensionFromHref(null)).toBeNull();
   });
 
   it('maps confidence to the attention priority model from DecisionState', () => {

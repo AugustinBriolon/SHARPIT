@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { mapStripScoreToColorClass, mapStripStrainToColorClass } from '@/lib/today/today-mapping';
-import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
+import { TWIN_DRILL_DOWN, twinDimensionFromHref } from '@/lib/today/today-twin-navigation';
 import { cn } from '@/lib/utils';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 
@@ -20,7 +20,7 @@ type Signal = {
   dotClass: string;
 };
 
-/** Dimension identity dots — glanceable, not judgmental. */
+/** Dimension identity dots — which signal, not how it reads. */
 const DIMENSION_DOT: Record<SignalKey, string> = {
   sleep: 'bg-[var(--color-signal-base)]',
   recovery: 'bg-[var(--color-signal-recovery)]',
@@ -42,15 +42,31 @@ function formatStrain(value: number | null): string {
  * Compact drill-down chips — no parent panel.
  * Mobile 2×2 · desktop one row.
  */
+/**
+ * The four dimensions, with the one holding the day back named.
+ *
+ * Four equal chips left the athlete to rank 78 / 68 / 54 / 5,8 himself every
+ * morning — the screen had the answer and declined to give it. The limiter is
+ * marked in place rather than sorted to the front: a screen read daily earns
+ * spatial memory, and a strip that reorders itself spends that memory to say
+ * something a tag already says.
+ */
 export function TodaySignalStrip({
   metricsRow,
+  limiterHref = null,
+  limiterText = null,
   className,
   loading = false,
 }: {
   metricsRow: MetricsRow;
+  /** Drill-down of today's limiting dimension, when the model named one. */
+  limiterHref?: string | null;
+  /** Why that dimension is the brake — more specific than the dimension name. */
+  limiterText?: string | null;
   className?: string;
   loading?: boolean;
 }) {
+  const limiting = loading ? null : twinDimensionFromHref(limiterHref);
   const signals: Signal[] = [
     {
       key: 'sleep',
@@ -86,45 +102,81 @@ export function TodaySignalStrip({
     },
   ];
 
+  const reason = loading ? null : limiterText;
+
   return (
-    <nav
-      aria-busy={loading || undefined}
-      aria-label="Signaux physiologiques — ouvrir le détail"
-      className={cn('grid grid-cols-2 gap-2 sm:grid-cols-4', className)}
-    >
-      {signals.map((signal) => (
-        <Link
-          key={signal.key}
-          href={signal.href}
-          title={`Voir le détail — ${signal.label}`}
-          className={cn(
-            'chip-surface-lg hover:border-primary/35 group',
-            'focus-visible:ring-primary/35 inline-flex min-h-11 w-full min-w-0 items-center justify-between gap-1.5',
-            'rounded-2xl px-3 py-2 transition-[border-color,background-color,transform] duration-150 ease-out',
-            'focus-visible:ring-2 focus-visible:outline-hidden lg:min-h-9 lg:px-2.5 lg:py-1.5',
-          )}
-        >
-          <span className="inline-flex min-w-0 items-center gap-1.5">
-            <span className={cn('h-2 w-2 shrink-0 rounded-full', signal.dotClass)} aria-hidden />
-            <span className="text-muted-foreground text-xs font-medium tracking-wide">
-              {signal.label}
-            </span>
-            {loading ? (
-              <SkeletonDataValue heightClassName="h-5" widthClassName="w-7" />
-            ) : (
-              <span className={cn('text-data text-sm tabular-nums', signal.valueClass)}>
-                {signal.display}
+    <div className={className}>
+      <nav
+        aria-busy={loading || undefined}
+        aria-label="Signaux physiologiques — ouvrir le détail"
+        className="grid grid-cols-2 gap-2 sm:grid-cols-4"
+      >
+        {signals.map((signal) => {
+          const isLimiter = limiting === signal.key;
+          return (
+            <Link
+              key={signal.key}
+              href={signal.href}
+              className={cn(
+                'chip-surface-lg hover:border-primary/35 group',
+                'focus-visible:ring-primary/35 inline-flex min-h-11 w-full min-w-0 items-center justify-between gap-1.5',
+                'rounded-2xl px-3 py-2 transition-[border-color,background-color,transform] duration-150 ease-out',
+                'focus-visible:ring-2 focus-visible:outline-hidden lg:min-h-9 lg:px-2.5 lg:py-1.5',
+                isLimiter && 'border-signal-caution/45 bg-signal-caution/8',
+              )}
+              title={
+                isLimiter
+                  ? `Frein aujourd’hui — ${signal.label}`
+                  : `Voir le détail — ${signal.label}`
+              }
+            >
+              <span className="inline-flex min-w-0 items-center gap-1.5">
+                <span
+                  className={cn(
+                    'h-2 w-2 shrink-0 rounded-full',
+                    isLimiter ? 'bg-signal-caution' : signal.dotClass,
+                  )}
+                  aria-hidden
+                />
+                <span className="text-muted-foreground text-xs font-medium tracking-wide">
+                  {signal.label}
+                </span>
+                {loading ? (
+                  <SkeletonDataValue heightClassName="h-5" widthClassName="w-7" />
+                ) : (
+                  <span className={cn('text-data text-sm tabular-nums', signal.valueClass)}>
+                    {signal.display}
+                  </span>
+                )}
               </span>
-            )}
-          </span>
-          <span
-            className="text-muted-foreground/70 text-data shrink-0 text-xs tracking-wider transition-transform duration-150 ease-[cubic-bezier(0.2,0,0,1)] group-hover:translate-x-0.5"
-            aria-hidden
-          >
-            →
-          </span>
+              {/* Named, not merely tinted: colour alone would carry the ranking. */}
+              {isLimiter ? (
+                <span className="text-signal-caution text-label shrink-0">Frein</span>
+              ) : (
+                <span
+                  className="text-muted-foreground/70 text-data shrink-0 text-xs tracking-wider transition-transform duration-150 ease-[cubic-bezier(0.2,0,0,1)] group-hover:translate-x-0.5"
+                  aria-hidden
+                >
+                  →
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* The tag says which dimension; this says why, which is the part that
+        decides what to do about it. */}
+      {reason && limiterHref ? (
+        <Link
+          className="text-muted-foreground hover:text-foreground mt-2 inline-flex items-center gap-1.5 text-xs transition-colors"
+          href={limiterHref}
+        >
+          <span className="text-label text-signal-caution">Frein</span>
+          <span>{reason}</span>
+          <span aria-hidden>→</span>
         </Link>
-      ))}
-    </nav>
+      ) : null}
+    </div>
   );
 }

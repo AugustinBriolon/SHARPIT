@@ -63,7 +63,7 @@ export function todayLoadingShell(now: Date = LOADING_SHELL_REFERENCE): TodayVie
         confidenceLabel: null,
         confidencePctRounded: null,
         confidenceHref: null,
-        limitingFactorText: null,
+        limitingCauseText: null,
         limitingFactorHref: null,
       },
     },

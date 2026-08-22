@@ -41,7 +41,7 @@ export function TodayActionRow({
   const daySummaryEmpty = !loading && vm.actionRow.daySummaryLines.length === 0;
   const reminders =
     !loading &&
-    !vm.hero.twinTrustStrip.limitingFactorText &&
+    !vm.hero.twinTrustStrip.limitingCauseText &&
     vm.actionRow.limitingMode === 'facts' &&
     vm.actionRow.limitingFacts.length > 0
       ? vm.actionRow.limitingFacts

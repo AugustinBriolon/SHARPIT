@@ -284,9 +284,12 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
   let plateLimiterText: string | null = null;
   let plateLimiterHref: string | null = null;
   if (snapshot.limitingFactor != null) {
+    /* The cause, not the system. The signal strip already names the dimension on
+       the chip it tints, so repeating "Récupération" underneath it said nothing;
+       "Qualité du sommeil" is the part that decides what to do about it. */
     plateLimiterText =
       buildTodayLimitingFacts({ limitingFactor: snapshot.limitingFactor }).facts.find(
-        (f) => f.label === 'Frein',
+        (f) => f.label === 'Cause',
       )?.value ?? null;
     plateLimiterHref =
       resolveLimitingFactorHrefFromDecision(snapshot.decision) ?? TWIN_DRILL_DOWN.recovery;
@@ -345,7 +348,7 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
         confidenceLabel: hideHeroConfidence ? null : confidenceLabel,
         confidencePctRounded: hideHeroConfidence ? null : confidencePctRounded,
         confidenceHref: hideHeroConfidence ? null : confidenceHref,
-        limitingFactorText: plateLimiterText,
+        limitingCauseText: plateLimiterText,
         limitingFactorHref: plateLimiterHref,
       },
     },

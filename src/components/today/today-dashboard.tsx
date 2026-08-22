@@ -17,6 +17,8 @@ import { TodayActionRow } from './rich/today-action-row';
 import { TodaySignalStrip } from './dashboard/today-signal-strip';
 import { TodayHeader } from './dashboard/today-header';
 import { TodayNutritionCard } from './dashboard/today-nutrition-card';
+import { ActivityConsistencyPanel } from './dashboard/activity-consistency-panel';
+import { useActivities } from '@/hooks/use-activities';
 import { useClientMorningHold } from '@/components/today/rich/morning-orientation-actions';
 import { TodayDashboardShell } from './today-dashboard-shell';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
@@ -67,6 +69,10 @@ export function TodayDashboard() {
   const query = useTodayPresentationViewModel(trainingDayId);
   const morningHold = useClientMorningHold(trainingDayId);
   const online = useOnlineStatus();
+  /* Regularity lived on /training, which is why it was never read: the question
+     "am I actually training regularly" is a morning question, and the morning
+     screen is not /training. */
+  const activitiesQuery = useActivities();
   const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
   const valuesLoading = isPresentationValuesLoading(query);
 
@@ -134,13 +140,22 @@ export function TodayDashboard() {
           weather={content.header.weather}
         />
         <TodayVerdictHero loading={valuesLoading} vm={content} />
-        <TodaySignalStrip loading={valuesLoading} metricsRow={content.hero.metricsRow} />
+        <TodaySignalStrip
+          limiterHref={content.hero.twinTrustStrip.limitingFactorHref}
+          limiterText={content.hero.twinTrustStrip.limitingCauseText}
+          loading={valuesLoading}
+          metricsRow={content.hero.metricsRow}
+        />
       </div>
       <TodayActionRow
         loading={valuesLoading}
         trainingDayId={trainingDayId}
         vm={content}
         onWellnessCompleted={() => void query.refetch()}
+      />
+      <ActivityConsistencyPanel
+        activities={activitiesQuery.data ?? []}
+        loading={activitiesQuery.data == null}
       />
       <TodayNutritionCard />
     </div>

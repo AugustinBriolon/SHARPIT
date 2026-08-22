@@ -124,7 +124,8 @@ export type TodayViewModel = {
       confidenceLabel: string | null;
       confidencePctRounded: number | null;
       confidenceHref: string | null;
-      limitingFactorText: string | null;
+      /** Why the limiting dimension is limiting — not its name. */
+      limitingCauseText: string | null;
       /** Drill-down when plate limiter is shown. */
       limitingFactorHref: string | null;
     };
