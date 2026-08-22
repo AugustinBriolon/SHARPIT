@@ -13,7 +13,7 @@ const DIMENSION_LABEL: Record<string, string> = {
 };
 
 const DIMENSION_DESCRIPTION: Record<string, string> = {
-  load: 'TSS, ACWR, tendance',
+  load: 'Charge, montée de charge, tendance',
   neuromuscular: 'Force, vitesse, récupération musculaire',
   metabolic: 'Volume intensité, dette lactique',
   cumulative: 'Accumulation multi-semaines',

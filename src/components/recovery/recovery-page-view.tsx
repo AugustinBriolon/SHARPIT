@@ -3,27 +3,14 @@
 import { RecoveryAlertsSection } from '@/components/recovery/blocks/recovery-alerts-section';
 import { RecoveryDimensionsSection } from '@/components/recovery/blocks/recovery-dimensions-section';
 import { RecoveryHero } from '@/components/recovery/blocks/recovery-hero';
-import { RecoverySignalsSection } from '@/components/recovery/blocks/recovery-signals-section';
 import { RecoveryMarkers } from '@/components/recovery/blocks/recovery-markers';
 import { RecoveryStatsStrip } from '@/components/recovery/blocks/recovery-stats-strip';
-import { RecoveryWhyBlock } from '@/components/recovery/blocks/recovery-why-block';
 import {
   DataReliabilityFooter,
   MetricDrillDownPage,
   type MetricTone,
 } from '@/components/today/drill-down/metric-drill-down-page';
-import { Skeleton } from '@/components/ui/skeleton';
 import type { DimensionResult } from '@/hooks/use-today';
-import dynamic from 'next/dynamic';
-import { CollapsibleSection } from '@/components/ui/collapsible-section';
-
-const RecoveryTrendsSection = dynamic(
-  () =>
-    import('@/components/recovery/blocks/recovery-trends-section').then(
-      (mod) => mod.RecoveryTrendsSection,
-    ),
-  { ssr: false, loading: () => <Skeleton className="h-48 w-full" /> },
-);
 
 export type RecoveryPageViewProps = {
   date: Date;
@@ -82,11 +69,6 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
     availableDimCount,
     dimensions,
     intensityLabel,
-    intensityClassName,
-    rationale,
-    autonomicLabel,
-    wellnessLabel,
-    loadLabel,
     dissonanceDetected,
     sparkHrv,
     sparkRhr,
@@ -119,6 +101,7 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
         confidencePct={confidencePct}
         date={date}
         estimatedRecoveryDays={estimatedRecoveryDays}
+        intensityLabel={intensityLabel}
         isCalibrating={isCalibrating}
         isToday={isToday}
         limiterLabel={limiterLabel}
@@ -137,7 +120,7 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
         <RecoveryMarkers
           baselineHigh={baselineHigh}
           baselineLow={baselineLow}
-          batterySeries={dualData.map((point) => point.a)}
+          batterySeries={dualData.map((point) => ({ date: point.date, value: point.a }))}
           bodyBattery={bodyBattery}
           hrv={hrv}
           restingHr={restingHr}
@@ -146,41 +129,19 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
         />
       )}
 
-      <RecoveryWhyBlock
-        intensityClassName={intensityClassName}
-        intensityLabel={intensityLabel}
-        limiterLabel={limiterLabel}
-        loading={loading}
-        rationale={rationale}
-      />
-
       {/* Alerts stay open: an illness or overreaching signal is the reason to have
           opened this screen at all, and folding it would bury the exception. */}
-      {!loading ? <RecoveryAlertsSection illness={illness} overreaching={overreaching} /> : null}
+      {!loading ? (
+        <RecoveryAlertsSection
+          dissonanceDetected={dissonanceDetected}
+          illness={illness}
+          overreaching={overreaching}
+        />
+      ) : null}
 
       {!loading ? (
         <>
-          <RecoverySignalsSection
-            autonomicLabel={autonomicLabel}
-            dissonanceDetected={dissonanceDetected}
-            loadLabel={loadLabel}
-            wellnessLabel={wellnessLabel}
-          />
-
           <RecoveryDimensionsSection dimensions={dimensions} loading={false} />
-
-          {/* The only thing still folded: each marker now carries its own sparkline,
-              so the full charts answer a question the athlete has already had
-              answered above — kept for when he wants to look closely, not by default. */}
-          <CollapsibleSection label="Tendances 14 jours">
-            <RecoveryTrendsSection
-              baselineHigh={baselineHigh}
-              baselineLow={baselineLow}
-              dualData={dualData}
-              sparkHrv={sparkHrv}
-              sparkRhr={sparkRhr}
-            />
-          </CollapsibleSection>
         </>
       ) : null}
     </MetricDrillDownPage>

@@ -1,4 +1,5 @@
 import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
+import { TermInfo } from '@/components/ui/term-info';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import type { EffortStrainCompositionView } from '@/lib/presentation/effort-strain-composition';
@@ -15,9 +16,13 @@ export function EffortStrainCompositionSection({
 
   return (
     <DrillDownSectionCard>
-      <DrillDownSectionLabel>D’où vient la charge du jour</DrillDownSectionLabel>
-      <p className="text-muted-foreground mb-4 text-xs">
-        Entraînement, stress cardio (Garmin), et pas — en unités TSS-équivalentes.
+      <div className="flex items-center gap-1.5">
+        <DrillDownSectionLabel>D’où vient la charge du jour</DrillDownSectionLabel>
+        <TermInfo term="strain" />
+      </div>
+      <p className="text-muted-foreground mb-4 flex items-center gap-1 text-xs">
+        Entraînement, stress cardio et pas, ramenés à la même échelle
+        <TermInfo term="tss" />
       </p>
       <div className="space-y-4">
         {composition.contributors.map((row) => {

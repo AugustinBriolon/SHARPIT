@@ -1,7 +1,10 @@
 'use client';
 
-import { AdaptationStatsStrip } from '@/components/adaptation/blocks/adaptation-stats-strip';
-import { AdaptationWhyBlock } from '@/components/adaptation/blocks/adaptation-why-block';
+import { AdaptationMarkers } from '@/components/adaptation/blocks/adaptation-markers';
+import {
+  DrillDownAlertSection,
+  type DrillDownAlert,
+} from '@/components/today/drill-down/alert-section';
 import { DrillDownDimensionRow } from '@/components/today/drill-down/dimension-row';
 import {
   DataReliabilityFooter,
@@ -65,7 +68,6 @@ export function AdaptationPageView({
   statusLabel,
   statusClassName,
   trendLabel,
-  verdictKey,
   loadMultiplier,
   limitingFactor,
   plateauRisk,
@@ -76,6 +78,23 @@ export function AdaptationPageView({
   confidencePct,
 }: AdaptationPageViewProps) {
   const limitingScore = loading ? null : limitingScoreFromDimensions(limitingFactor, dimensions);
+
+  /* Plateau and unrewarded overload were the last two lines of a fold nobody
+     opened. They are exceptions, not context — they belong where exceptions go. */
+  const alerts = loading
+    ? []
+    : [
+        plateauRisk && {
+          colorClass: 'text-signal-caution',
+          label: 'ton adaptation stagne sur la fenêtre récente.',
+          prefix: 'Plateau',
+        },
+        overreachingWithoutAdaptation && {
+          colorClass: 'text-signal-risk',
+          label: 'charge haute sans réponse adaptative en face.',
+          prefix: 'Surcharge sans gain',
+        },
+      ].filter((alert): alert is DrillDownAlert => typeof alert === 'object' && alert !== null);
 
   const neuromuscular = dimensions.find((d) => d.key === 'neuromuscularEfficiency');
   const neuromuscularMissing = !loading && neuromuscular != null && !neuromuscular.dim.available;
@@ -92,17 +111,10 @@ export function AdaptationPageView({
       : null;
   const otherDimensions = displayDimensions.filter((d) => d !== freinDimension);
 
-  let actionLine: string | null = null;
-  if (!loading) {
-    if (limitingFactor) {
-      actionLine =
-        limitingScore != null
-          ? `Limité par · ${limitingFactor} (${Math.round(limitingScore)})`
-          : `Limité par · ${limitingFactor}`;
-    } else if (trendLabel && trendLabel !== '—') {
-      actionLine = trendLabel;
-    }
-  }
+  /* The limiter and its score are the first card below; repeating them here left
+     the plate saying nothing the next 3 cm did not already say. The trend is the
+     one reading no card carries. */
+  const actionLine = !loading && trendLabel && trendLabel !== '—' ? trendLabel : null;
 
   return (
     <MetricDrillDownPage
@@ -135,27 +147,15 @@ export function AdaptationPageView({
         onPreviousDay={onPreviousDay}
       />
 
-      <AdaptationStatsStrip
-        limitingFactor={limitingFactor}
-        limitingScore={limitingScore}
-        loading={loading}
-        loadMultiplier={loadMultiplier}
-        trendLabel={trendLabel}
-      />
+      {!loading ? (
+        <AdaptationMarkers
+          limitingFactor={limitingFactor}
+          limitingScore={limitingScore}
+          loadMultiplier={loadMultiplier}
+        />
+      ) : null}
 
-      <AdaptationWhyBlock
-        adaptationIndex={adaptationIndex}
-        historyLength={historyLength}
-        limitingFactor={limitingFactor}
-        limitingScore={limitingScore}
-        loading={loading}
-        loadMultiplier={loadMultiplier}
-        overreachingWithoutAdaptation={overreachingWithoutAdaptation}
-        plateauRisk={plateauRisk}
-        statusLabel={statusLabel}
-        trendLabel={trendLabel}
-        verdictKey={verdictKey}
-      />
+      <DrillDownAlertSection alerts={alerts} />
 
       <section className="px-0.5">
         <DrillDownSectionLabel>Dimensions</DrillDownSectionLabel>

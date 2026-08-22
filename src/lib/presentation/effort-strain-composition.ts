@@ -12,10 +12,24 @@ export type EffortStrainContributorView = {
   readonly signalSummary: string | null;
 };
 
+/**
+ * The raw daily readings, kept out of the summary strings.
+ *
+ * Steps, stress and Body Battery were only reachable as a formatted sentence
+ * ("stress 34 · Body Battery 61"), which meant nothing could put them on a scale
+ * or chart them. They are numbers; they leave here as numbers.
+ */
+export type EffortDailySignals = {
+  readonly steps: number | null;
+  readonly stress: number | null;
+  readonly bodyBattery: number | null;
+};
+
 export type EffortStrainCompositionView = {
   readonly available: boolean;
   readonly dominantKey: EffortStrainContributorKey | null;
   readonly contributors: readonly EffortStrainContributorView[];
+  readonly signals: EffortDailySignals;
 };
 
 const CONTRIBUTOR_META: Record<
@@ -38,27 +52,6 @@ const CONTRIBUTOR_META: Record<
     availableDescription: 'Pas quotidiens',
   },
 };
-
-function formatSteps(steps: number): string {
-  return `${steps.toLocaleString('fr-FR')} pas`;
-}
-
-function buildCardiovascularSummary(strain: DailyStrainData): string | null {
-  const { stress, bodyBattery, recoveryScore } = strain.trace.cardiovascularSignals;
-  const parts: string[] = [];
-  if (stress != null) parts.push(`stress ${Math.round(stress)}`);
-  if (bodyBattery != null) parts.push(`Body Battery ${Math.round(bodyBattery)}`);
-  if (recoveryScore != null && stress == null && bodyBattery == null) {
-    parts.push(`readiness Garmin ${Math.round(recoveryScore)}`);
-  }
-  return parts.length > 0 ? parts.join(' · ') : null;
-}
-
-function buildMovementSummary(strain: DailyStrainData): string | null {
-  const steps = strain.trace.movementSignals?.totalSteps;
-  if (steps != null && steps > 0) return formatSteps(steps);
-  return null;
-}
 
 function toContributor(
   key: EffortStrainContributorKey,
@@ -114,6 +107,7 @@ export function buildEffortStrainComposition(
         toContributor('cardiovascular', emptyContribution(), null),
         toContributor('movement', emptyContribution(), null),
       ],
+      signals: { steps: null, stress: null, bodyBattery: null },
     };
   }
 
@@ -122,17 +116,14 @@ export function buildEffortStrainComposition(
     dominantKey: mapDominantKey(dailyStrain.dominantContributor),
     contributors: [
       toContributor('training', dailyStrain.contributions.training, null),
-      toContributor(
-        'cardiovascular',
-        dailyStrain.contributions.cardiovascular,
-        buildCardiovascularSummary(dailyStrain),
-      ),
-      toContributor(
-        'movement',
-        dailyStrain.contributions.movement,
-        buildMovementSummary(dailyStrain),
-      ),
+      toContributor('cardiovascular', dailyStrain.contributions.cardiovascular, null),
+      toContributor('movement', dailyStrain.contributions.movement, null),
     ],
+    signals: {
+      steps: dailyStrain.trace.movementSignals?.totalSteps ?? null,
+      stress: dailyStrain.trace.cardiovascularSignals.stress ?? null,
+      bodyBattery: dailyStrain.trace.cardiovascularSignals.bodyBattery ?? null,
+    },
   };
 }
 

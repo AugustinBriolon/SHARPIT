@@ -3,10 +3,9 @@
 import { EffortAlertsSection } from '@/components/effort/blocks/effort-alerts-section';
 import { EffortDimensionsSection } from '@/components/effort/blocks/effort-dimensions-section';
 import { EffortHero } from '@/components/effort/blocks/effort-hero';
-import { EffortStatsStrip } from '@/components/effort/blocks/effort-stats-strip';
+import { EffortDailySignalsCards } from '@/components/effort/blocks/effort-daily-signals';
+import { EffortMarkers } from '@/components/effort/blocks/effort-markers';
 import { EffortStrainCompositionSection } from '@/components/effort/blocks/effort-strain-composition-section';
-import { EffortVerdictSection } from '@/components/effort/blocks/effort-verdict-section';
-import { EffortWhyBlock } from '@/components/effort/blocks/effort-why-block';
 import {
   DataReliabilityFooter,
   MetricDrillDownPage,
@@ -96,16 +95,11 @@ export function EffortPageView(props: EffortPageViewProps) {
     strainStatusLabel,
     strainStatusClassName,
     acwr,
-    chronicWeeklyAvg,
     tsb,
     confidencePct,
     completenessLabel,
-    verdictKey,
-    trainingCapacity,
     dimensions,
     missingDimCount,
-    dominantDimension,
-    isLowFatigue,
     pmcSeries,
     weeklyTss,
     avgWeeklyTss,
@@ -145,68 +139,28 @@ export function EffortPageView(props: EffortPageViewProps) {
         onPreviousDay={onPreviousDay}
       />
 
-      <EffortStatsStrip acwr={acwr} loading={loading} tsb={tsb} weeklyTss={weeklyLoad} />
-
-      <EffortWhyBlock
-        acwr={acwr}
-        chronicWeeklyAvg={chronicWeeklyAvg}
-        loading={loading}
-        trainingCapacity={trainingCapacity}
-        tsb={tsb}
-        verdictKey={verdictKey}
-        weeklyLoad={weeklyLoad}
-      />
-
       {!loading ? (
-        <EffortVerdictSection
+        <EffortMarkers
           acwr={acwr}
-          chronicWeeklyAvg={chronicWeeklyAvg}
-          dominantDimension={dominantDimension}
-          isLowFatigue={isLowFatigue}
-          trainingCapacity={trainingCapacity}
+          pmcSeries={pmcSeries}
           tsb={tsb}
-          verdictKey={verdictKey}
           weeklyLoad={weeklyLoad}
+          weeklyTss={weeklyTss}
         />
       ) : null}
+
+      {/* The day outside training — reachable before, but only by opening a fold. */}
+      {!loading ? <EffortDailySignalsCards signals={strainComposition.signals} /> : null}
 
       {!loading ? <EffortPmcSection data={pmcSeries} /> : null}
 
       {!loading ? (
-        <details className="group">
-          <summary className="text-muted-foreground hover:text-foreground cursor-pointer list-none py-2 text-xs font-medium tracking-wide transition-colors [&::-webkit-details-marker]:hidden">
-            <span className="underline-offset-2 group-open:no-underline">
-              Détail · composition, dimensions, historique
-            </span>
-          </summary>
-          <div className="mt-3 space-y-4">
-            <EffortStrainCompositionSection composition={strainComposition} />
-            <EffortDimensionsSection dimensions={dimensions} missingCount={missingDimCount} />
-            <EffortWeeklyTssSection avgWeeklyTss={avgWeeklyTss} data={weeklyTss} />
-            <EffortAlertsSection overreaching={overreaching} />
-            <section className="px-0.5">
-              <p className="text-label mb-2">Glossaire</p>
-              <ul className="text-muted-foreground space-y-1.5 text-xs leading-relaxed">
-                <li>
-                  <span className="text-foreground font-medium">TSS</span> — charge d’une séance
-                  (Training Stress Score)
-                </li>
-                <li>
-                  <span className="text-foreground font-medium">ACWR</span> — ratio charge 7 j /
-                  base chronique (montée)
-                </li>
-                <li>
-                  <span className="text-foreground font-medium">TSB</span> — forme nette (forme
-                  chronique − fatigue aiguë)
-                </li>
-                <li>
-                  <span className="text-foreground font-medium">CTL / ATL</span> — forme chronique /
-                  fatigue aiguë
-                </li>
-              </ul>
-            </section>
-          </div>
-        </details>
+        <>
+          <EffortStrainCompositionSection composition={strainComposition} />
+          <EffortDimensionsSection dimensions={dimensions} missingCount={missingDimCount} />
+          <EffortWeeklyTssSection avgWeeklyTss={avgWeeklyTss} data={weeklyTss} />
+          <EffortAlertsSection overreaching={overreaching} />
+        </>
       ) : null}
     </MetricDrillDownPage>
   );

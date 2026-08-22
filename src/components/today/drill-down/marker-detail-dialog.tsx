@@ -1,6 +1,9 @@
 'use client';
 
-import { Sparkline } from '@/components/today/dashboard/sparkline';
+import {
+  MarkerHistoryChart,
+  type MarkerHistoryPoint,
+} from '@/components/today/drill-down/marker-history-chart';
 import {
   Dialog,
   DialogContent,
@@ -30,7 +33,10 @@ export type MarkerDetail = {
   unit: string;
   delta: number | null;
   range: MarkerRange | null;
-  series: (number | null)[];
+  /** Day-labelled so the history can be read point by point, not just as a shape. */
+  series: MarkerHistoryPoint[];
+  /** Same renderer the card uses, so the two never disagree on a value. */
+  format?: (value: number) => string;
   /** What this marker measures, in plain words. */
   explanation: string;
   /** Why it matters for a decision today. */
@@ -38,15 +44,6 @@ export type MarkerDetail = {
   concerning: boolean;
   positionWord: string | null;
 };
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="border-analysis-border/40 flex items-baseline justify-between gap-4 border-b py-2.5 last:border-0">
-      <span className="text-muted-foreground text-sm">{label}</span>
-      <span className="text-data text-foreground text-sm tabular-nums">{value}</span>
-    </div>
-  );
-}
 
 export function MarkerDetailDialog({
   detail,
@@ -58,6 +55,7 @@ export function MarkerDetailDialog({
   if (!detail) return null;
 
   const { range, value, delta, series } = detail;
+  const format = detail.format ?? ((raw: number) => String(raw));
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -75,7 +73,7 @@ export function MarkerDetailDialog({
               detail.concerning ? 'text-signal-caution' : 'text-primary',
             )}
           >
-            {value != null ? value : '—'}
+            {value != null ? format(value) : '—'}
           </span>
           <span className="text-muted-foreground text-sm">{detail.unit}</span>
         </div>
@@ -90,7 +88,7 @@ export function MarkerDetailDialog({
                 className="text-data absolute -translate-x-1/2 tabular-nums"
                 style={{ left: `${BAND_START_PCT}%` }}
               >
-                {range.low}
+                {format(range.low)}
               </span>
               <span
                 className="absolute -translate-x-1/2"
@@ -102,7 +100,7 @@ export function MarkerDetailDialog({
                 className="text-data absolute -translate-x-1/2 tabular-nums"
                 style={{ left: `${BAND_START_PCT + BAND_WIDTH_PCT}%` }}
               >
-                {range.high}
+                {format(range.high)}
               </span>
             </div>
           </div>
@@ -124,19 +122,16 @@ export function MarkerDetailDialog({
         {/* History second, and only then. */}
         {series.length > 1 ? (
           <div className="border-analysis-border/40 border-t pt-3">
-            <p className="text-label text-muted-foreground">Évolution</p>
-            <div className="text-muted-foreground mt-2">
-              <Sparkline h={44} stroke="currentColor" values={series} />
-            </div>
-            <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-muted-foreground text-xs">14 derniers jours</span>
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-label text-muted-foreground">Évolution</p>
               {delta != null ? (
-                <span className="text-data text-foreground text-xs tabular-nums">
+                <span className="text-data text-muted-foreground text-xs tabular-nums">
                   {delta > 0 ? '+' : '−'}
                   {Math.abs(Math.round(delta))} {detail.unit} / 7 j
                 </span>
               ) : null}
             </div>
+            <MarkerHistoryChart className="mt-2" points={series} unit={detail.unit} />
           </div>
         ) : null}
 

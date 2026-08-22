@@ -5,6 +5,9 @@
 
 export type AcwrZone = 'under' | 'optimal' | 'alert' | 'danger';
 
+/** The window `classifyAcwrZone` calls optimal — exported so scales draw the same band. */
+export const ACWR_SWEET_SPOT = { low: 0.9, high: 1.3 } as const;
+
 export function classifyAcwrZone(acwr: number): AcwrZone {
   if (acwr < 0.9) return 'under';
   if (acwr <= 1.3) return 'optimal';

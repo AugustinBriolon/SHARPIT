@@ -1,9 +1,27 @@
 import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
 
+function buildActionLine({
+  loading,
+  intensityLabel,
+  limiterLabel,
+}: {
+  loading: boolean;
+  intensityLabel: string;
+  limiterLabel: string | null;
+}): string | null {
+  if (loading) return null;
+  const intensity = intensityLabel?.trim() || null;
+  if (intensity && limiterLabel) return `${intensity} · limité par ${limiterLabel.toLowerCase()}`;
+  if (intensity) return intensity;
+  if (limiterLabel) return `Limité par · ${limiterLabel}`;
+  return null;
+}
+
 export function RecoveryHero({
   date,
   readinessScore,
   signal,
+  intensityLabel,
   limiterLabel,
   estimatedRecoveryDays,
   isCalibrating,
@@ -19,6 +37,7 @@ export function RecoveryHero({
   date: Date;
   readinessScore: number | null;
   signal: { label: string; qualityClass: string; arrow: string };
+  intensityLabel: string;
   limiterLabel: string | null;
   estimatedRecoveryDays: number | null;
   isCalibrating: boolean;
@@ -31,7 +50,10 @@ export function RecoveryHero({
   confidencePct?: number | null;
   loading?: boolean;
 }) {
-  const actionLine = !loading && limiterLabel ? `Limité par · ${limiterLabel}` : null;
+  // The intensity to aim for used to live in a paragraph below the fold that the
+  // athlete never read. It is the only actionable sentence on the screen, so it
+  // rides the plate next to the limiter instead of forming a section of its own.
+  const actionLine = buildActionLine({ loading, intensityLabel, limiterLabel });
   const recoveryEta =
     !loading && estimatedRecoveryDays != null && estimatedRecoveryDays > 0
       ? `Récupération estimée dans ${

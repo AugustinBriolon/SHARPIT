@@ -1,0 +1,1069 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "squat-barre-dos",
+      "labels": ["Squat avec barre", "Squat barre", "Back squat", "Squat arrière"],
+      "pattern": "SQUAT",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 1,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "squat-avant",
+      "labels": ["Squat avant", "Front squat"],
+      "pattern": "SQUAT",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 0.85,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "squat-gobelet",
+      "labels": [
+        "Squat gobelet",
+        "Goblet squat",
+        "Squat avec kettlebell",
+        "Squat avec haltère",
+        "Squat avec haltères"
+      ],
+      "pattern": "SQUAT",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 0.6,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "squat-poids-de-corps",
+      "labels": ["Squat", "Squat sans charge", "Air squat", "Squat au poids du corps"],
+      "pattern": "SQUAT",
+      "intent": "STRENGTH",
+      "modality": "BODYWEIGHT_LOADABLE",
+      "leverageFactor": 0.65,
+      "centrality": 0.4,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "presse-a-cuisses",
+      "labels": ["Presse à cuisses", "Presse à jambes", "Leg press"],
+      "pattern": "SQUAT",
+      "intent": "STRENGTH",
+      "modality": "MACHINE_STACK",
+      "leverageFactor": null,
+      "centrality": 0.3,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "chaise-murale",
+      "labels": ["Chaise", "Chaise contre le mur", "Wall sit"],
+      "pattern": "SQUAT",
+      "intent": "STRENGTH",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.65,
+      "centrality": 0.15,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "extension-de-jambes",
+      "labels": ["Extension de jambes", "Leg extension"],
+      "pattern": "SQUAT",
+      "intent": "STRENGTH",
+      "modality": "MACHINE_STACK",
+      "leverageFactor": null,
+      "centrality": 0.15,
+      "unilateral": false,
+      "skillLimited": false
+    },
+
+    {
+      "id": "fente",
+      "labels": ["Fente", "Fentes", "Fente avant", "Lunge"],
+      "pattern": "SQUAT_UNILATERAL",
+      "intent": "STRENGTH",
+      "modality": "BODYWEIGHT_LOADABLE",
+      "leverageFactor": 0.7,
+      "centrality": 0.5,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "fente-halteres",
+      "labels": ["Fente avec haltères", "Dumbbell lunge"],
+      "pattern": "SQUAT_UNILATERAL",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 0.6,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "fente-laterale",
+      "labels": ["Fente latérale", "Fente sur le côté avec haltères", "Side lunge"],
+      "pattern": "SQUAT_UNILATERAL",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 0.3,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "fente-bulgare",
+      "labels": [
+        "Fente bulgare",
+        "Squat bulgare",
+        "Squat bulgare avec barre à disques",
+        "Bulgarian split squat",
+        "Split squat"
+      ],
+      "pattern": "SQUAT_UNILATERAL",
+      "intent": "STRENGTH",
+      "modality": "BODYWEIGHT_LOADABLE",
+      "leverageFactor": 0.85,
+      "centrality": 0.7,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "pistol-squat",
+      "labels": ["Pistol squat", "Squat une jambe"],
+      "pattern": "SQUAT_UNILATERAL",
+      "intent": "STRENGTH",
+      "modality": "BODYWEIGHT_LOADABLE",
+      "leverageFactor": 0.75,
+      "centrality": 0.5,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "montee-de-banc",
+      "labels": ["Montée sur banc", "Montée de banc", "Step up"],
+      "pattern": "SQUAT_UNILATERAL",
+      "intent": "STRENGTH",
+      "modality": "BODYWEIGHT_LOADABLE",
+      "leverageFactor": 0.75,
+      "centrality": 0.4,
+      "unilateral": true,
+      "skillLimited": false
+    },
+
+    {
+      "id": "souleve-de-terre",
+      "labels": ["Soulevé de terre avec barre", "Soulevé de terre", "Deadlift"],
+      "pattern": "HINGE",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 1,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "souleve-de-terre-roumain",
+      "labels": [
+        "Soulevé de terre roumain",
+        "Soulevé de terre jambes tendues avec haltères",
+        "Soulevé de terre jambes tendues",
+        "Romanian deadlift"
+      ],
+      "pattern": "HINGE",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 0.7,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "good-morning",
+      "labels": ["Good morning"],
+      "pattern": "HINGE",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 0.4,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "swing-kettlebell",
+      "labels": ["Kettlebell swing", "Swing kettlebell", "Balancement kettlebell"],
+      "pattern": "HINGE",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 0.3,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "hyperextension",
+      "labels": ["Hyperextension", "Extension lombaire", "Extension du dos"],
+      "pattern": "HINGE",
+      "intent": "STRENGTH",
+      "modality": "BODYWEIGHT_LOADABLE",
+      "leverageFactor": 0.45,
+      "centrality": 0.25,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "epaule-jete",
+      "labels": ["Épaulé-jeté", "Épaulé jeté", "Clean and jerk"],
+      "pattern": "HINGE",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 0.2,
+      "unilateral": false,
+      "skillLimited": true
+    },
+    {
+      "id": "arrache",
+      "labels": ["Arraché", "Snatch"],
+      "pattern": "HINGE",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 0.2,
+      "unilateral": false,
+      "skillLimited": true
+    },
+
+    {
+      "id": "souleve-de-terre-une-jambe",
+      "labels": [
+        "Soulevé de terre une jambe",
+        "Soulevé de terre unijambiste",
+        "Single leg deadlift"
+      ],
+      "pattern": "HINGE_UNILATERAL",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 0.4,
+      "unilateral": true,
+      "skillLimited": false
+    },
+
+    {
+      "id": "hip-thrust",
+      "labels": [
+        "Hip thrust",
+        "Relevé de bassin avec barre sur banc",
+        "Relevé de bassin",
+        "Poussée de hanche"
+      ],
+      "pattern": "HIP_EXTENSION",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 1,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "pont-fessier",
+      "labels": ["Glute Bridge", "Pont fessier", "Pont", "Extension De La Hanche"],
+      "pattern": "HIP_EXTENSION",
+      "intent": "STRENGTH",
+      "modality": "BODYWEIGHT_LOADABLE",
+      "leverageFactor": 0.35,
+      "centrality": 0.5,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "pont-fessier-une-jambe",
+      "labels": [
+        "Extension de hanche sur une jambe",
+        "Pont fessier une jambe",
+        "Single leg glute bridge"
+      ],
+      "pattern": "HIP_EXTENSION",
+      "intent": "STRENGTH",
+      "modality": "BODYWEIGHT_LOADABLE",
+      "leverageFactor": 0.5,
+      "centrality": 0.35,
+      "unilateral": true,
+      "skillLimited": false
+    },
+
+    {
+      "id": "clamshell",
+      "labels": ["Clamshell avec élastique", "Clamshell", "Coquillage"],
+      "pattern": "HIP_ABDUCTION",
+      "intent": "STRENGTH",
+      "modality": "BAND",
+      "leverageFactor": null,
+      "centrality": 0.4,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "abduction-hanche",
+      "labels": ["Abduction de hanche", "Hip abduction", "Élévation latérale de jambe"],
+      "pattern": "HIP_ABDUCTION",
+      "intent": "STRENGTH",
+      "modality": "BAND",
+      "leverageFactor": null,
+      "centrality": 0.5,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "monster-walk",
+      "labels": ["Monster walk", "Marche latérale avec élastique"],
+      "pattern": "HIP_ABDUCTION",
+      "intent": "STRENGTH",
+      "modality": "BAND",
+      "leverageFactor": null,
+      "centrality": 0.3,
+      "unilateral": false,
+      "skillLimited": false
+    },
+
+    {
+      "id": "developpe-couche",
+      "labels": ["Développé couché", "Développé couché avec barre", "Bench press"],
+      "pattern": "HORIZONTAL_PUSH",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 1,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "developpe-halteres",
+      "labels": ["Développé avec haltères", "Développé couché haltères", "Dumbbell bench press"],
+      "pattern": "HORIZONTAL_PUSH",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 0.7,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "pompe",
+      "labels": ["Pompe", "Pompes", "Push-up", "Push up"],
+      "pattern": "HORIZONTAL_PUSH",
+      "intent": "STRENGTH",
+      "modality": "BODYWEIGHT_LOADABLE",
+      "leverageFactor": 0.64,
+      "centrality": 0.6,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "pompe-genoux",
+      "labels": ["Pompe sur les genoux", "Pompes genoux", "Knee push-up"],
+      "pattern": "HORIZONTAL_PUSH",
+      "intent": "STRENGTH",
+      "modality": "BODYWEIGHT_LOADABLE",
+      "leverageFactor": 0.49,
+      "centrality": 0.3,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "ecarte",
+      "labels": ["Écarté", "Écartés", "Écarté couché", "Flye"],
+      "pattern": "HORIZONTAL_PUSH",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 0.25,
+      "unilateral": false,
+      "skillLimited": false
+    },
+
+    {
+      "id": "developpe-militaire",
+      "labels": [
+        "Développé militaire",
+        "Développé épaules",
+        "Développé vertical",
+        "Overhead press"
+      ],
+      "pattern": "VERTICAL_PUSH",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 1,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "dips",
+      "labels": ["Dip avec poids du corps", "Dip en suspension", "Dips", "Dip"],
+      "pattern": "VERTICAL_PUSH",
+      "intent": "STRENGTH",
+      "modality": "BODYWEIGHT_LOADABLE",
+      "leverageFactor": 0.95,
+      "centrality": 0.6,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "pompe-piquee",
+      "labels": ["Pompe piquée", "Pike push-up"],
+      "pattern": "VERTICAL_PUSH",
+      "intent": "STRENGTH",
+      "modality": "BODYWEIGHT_LOADABLE",
+      "leverageFactor": 0.7,
+      "centrality": 0.35,
+      "unilateral": false,
+      "skillLimited": false
+    },
+
+    {
+      "id": "rowing-barre",
+      "labels": ["Rowing barre", "Rowing", "Tirage horizontal", "Barbell row"],
+      "pattern": "HORIZONTAL_PULL",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 1,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "rowing-haltere",
+      "labels": ["Rowing haltère", "Rowing avec haltère", "Dumbbell row"],
+      "pattern": "HORIZONTAL_PULL",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 0.7,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "rameur-assis",
+      "labels": ["Rameur assis", "Tirage assis", "Seated cable row"],
+      "pattern": "HORIZONTAL_PULL",
+      "intent": "STRENGTH",
+      "modality": "MACHINE_STACK",
+      "leverageFactor": null,
+      "centrality": 0.4,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "tirage-inverse",
+      "labels": ["Tirage australien", "Tirage inversé", "Inverted row"],
+      "pattern": "HORIZONTAL_PULL",
+      "intent": "STRENGTH",
+      "modality": "BODYWEIGHT_LOADABLE",
+      "leverageFactor": 0.6,
+      "centrality": 0.5,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "tirage-face",
+      "labels": ["Tirage face", "Face pull"],
+      "pattern": "HORIZONTAL_PULL",
+      "intent": "STRENGTH",
+      "modality": "BAND",
+      "leverageFactor": null,
+      "centrality": 0.2,
+      "unilateral": false,
+      "skillLimited": false
+    },
+
+    {
+      "id": "traction",
+      "labels": ["Traction", "Tractions", "Traction pronation", "Pull-up"],
+      "pattern": "VERTICAL_PULL",
+      "intent": "STRENGTH",
+      "modality": "BODYWEIGHT_LOADABLE",
+      "leverageFactor": 1,
+      "centrality": 1,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "traction-supination",
+      "labels": ["Traction supination", "Traction en supination", "Chin-up"],
+      "pattern": "VERTICAL_PULL",
+      "intent": "STRENGTH",
+      "modality": "BODYWEIGHT_LOADABLE",
+      "leverageFactor": 1,
+      "centrality": 0.8,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "traction-assistee",
+      "labels": ["Traction assistée", "Traction avec élastique", "Assisted pull-up"],
+      "pattern": "VERTICAL_PULL",
+      "intent": "STRENGTH",
+      "modality": "ASSISTED",
+      "leverageFactor": 1,
+      "centrality": 0.5,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "tirage-vertical",
+      "labels": ["Tirage vertical", "Tirage nuque", "Tirage poitrine", "Lat pulldown"],
+      "pattern": "VERTICAL_PULL",
+      "intent": "STRENGTH",
+      "modality": "MACHINE_STACK",
+      "leverageFactor": null,
+      "centrality": 0.5,
+      "unilateral": false,
+      "skillLimited": false
+    },
+
+    {
+      "id": "mollet-debout",
+      "labels": [
+        "Exercice de mollet debout",
+        "Mollets debout",
+        "Extension des mollets",
+        "Élévation de mollets",
+        "Calf Raise"
+      ],
+      "pattern": "CALF_RAISE",
+      "intent": "STRENGTH",
+      "modality": "BODYWEIGHT_LOADABLE",
+      "leverageFactor": 0.9,
+      "centrality": 1,
+      "unilateral": false,
+      "skillLimited": false
+    },
+
+    {
+      "id": "curl",
+      "labels": ["Curl", "Curl biceps", "Flexion des biceps", "Biceps curl"],
+      "pattern": "ELBOW_FLEXION",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 1,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "extension-triceps",
+      "labels": ["Extension triceps", "Extension des triceps", "Triceps extension"],
+      "pattern": "ELBOW_EXTENSION",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 1,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "elevation-laterale",
+      "labels": ["Élévation latérale", "Élévations latérales", "Lateral raise"],
+      "pattern": "SHOULDER_ABDUCTION",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 1,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "marche-du-fermier",
+      "labels": ["Marche du fermier", "Port de charge", "Farmer's walk", "Farmer walk"],
+      "pattern": "CARRY",
+      "intent": "STRENGTH",
+      "modality": "EXTERNAL_ABSOLUTE",
+      "leverageFactor": null,
+      "centrality": 1,
+      "unilateral": false,
+      "skillLimited": false
+    },
+
+    {
+      "id": "planche",
+      "labels": ["Planche", "Posture de la planche", "Gainage", "Gainage ventral", "Plank"],
+      "pattern": "CORE_ANTI_EXTENSION",
+      "intent": "CORE",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.6,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "planche-elevation-bras",
+      "labels": ["Planche avec élévation de bras", "Plank with arm raise"],
+      "pattern": "CORE_ANTI_EXTENSION",
+      "intent": "CORE",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.6,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "dead-bug",
+      "labels": ["Dead Bug"],
+      "pattern": "CORE_ANTI_EXTENSION",
+      "intent": "CORE",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.2,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "position-grimpeur",
+      "labels": ["Position grimpeur", "Grimpeur", "Mountain climber"],
+      "pattern": "CORE_ANTI_EXTENSION",
+      "intent": "CORE",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.6,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "roue-abdominale",
+      "labels": ["Roue abdominale", "Ab wheel", "Wheel rollout"],
+      "pattern": "CORE_ANTI_EXTENSION",
+      "intent": "CORE",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.7,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "nage-au-sol",
+      "labels": ["Swimming", "Nage au sol", "Nage à plat ventre"],
+      "pattern": "CORE_ANTI_EXTENSION",
+      "intent": "CORE",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.3,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "knee-folds",
+      "labels": ["Knee Folds", "Bascule de genou"],
+      "pattern": "CORE_ANTI_EXTENSION",
+      "intent": "CORE",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.15,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    },
+
+    {
+      "id": "bird-dog",
+      "labels": ["Bras et jambe opposés en équilibre", "Bird dog", "Chien d'arrêt"],
+      "pattern": "CORE_ANTI_ROTATION",
+      "intent": "CORE",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.3,
+      "centrality": 0,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "pallof-press",
+      "labels": ["Pallof press", "Presse Pallof"],
+      "pattern": "CORE_ANTI_ROTATION",
+      "intent": "CORE",
+      "modality": "BAND",
+      "leverageFactor": null,
+      "centrality": 0,
+      "unilateral": true,
+      "skillLimited": false
+    },
+
+    {
+      "id": "planche-laterale",
+      "labels": ["Planche latérale", "Gainage latéral", "Side plank"],
+      "pattern": "CORE_ANTI_LATERAL",
+      "intent": "CORE",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.55,
+      "centrality": 0,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "planche-laterale-une-jambe",
+      "labels": ["Planche latérale à une jambe", "Single leg side plank"],
+      "pattern": "CORE_ANTI_LATERAL",
+      "intent": "CORE",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.6,
+      "centrality": 0,
+      "unilateral": true,
+      "skillLimited": false
+    },
+
+    {
+      "id": "crunch",
+      "labels": ["Crunch", "Abdominaux", "Redressement assis", "Sit-up", "3/4 sit-up"],
+      "pattern": "CORE_FLEXION",
+      "intent": "CORE",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.3,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "releve-de-jambes",
+      "labels": ["Relevé de jambes", "Relevé de jambes suspendu", "Lower Lift", "Leg raise"],
+      "pattern": "CORE_FLEXION",
+      "intent": "CORE",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.3,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "scissors",
+      "labels": ["Scissors", "Ciseaux"],
+      "pattern": "CORE_FLEXION",
+      "intent": "CORE",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.25,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "single-leg-stretch",
+      "labels": ["Single Leg Stretch"],
+      "pattern": "CORE_FLEXION",
+      "intent": "CORE",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.25,
+      "centrality": 0,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "roll-up",
+      "labels": ["Roll Down", "Roll Up", "Déroulé du buste"],
+      "pattern": "CORE_FLEXION",
+      "intent": "CORE",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.3,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "roll-over",
+      "labels": ["Roll Over"],
+      "pattern": "CORE_FLEXION",
+      "intent": "CORE",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.4,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    },
+
+    {
+      "id": "crunch-bicyclette",
+      "labels": ["Crunch bicyclette", "Bicycle crunch"],
+      "pattern": "CORE_ROTATION",
+      "intent": "CORE",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.3,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "planche-crunch-oblique",
+      "labels": ["Planche avec crunch oblique", "Oblique crunch plank"],
+      "pattern": "CORE_ROTATION",
+      "intent": "CORE",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.6,
+      "centrality": 0,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "tick-tock",
+      "labels": ["Tick Tock Side Roll", "Tick tock"],
+      "pattern": "CORE_ROTATION",
+      "intent": "CORE",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.3,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "chop",
+      "labels": ["Chop", "Wood chop", "Bûcheron"],
+      "pattern": "CORE_ROTATION",
+      "intent": "CORE",
+      "modality": "BAND",
+      "leverageFactor": null,
+      "centrality": 0,
+      "unilateral": true,
+      "skillLimited": false
+    },
+
+    {
+      "id": "squat-saute",
+      "labels": ["Squat sauté", "Squats sautés", "Squats sautés ouverts", "Jump squat"],
+      "pattern": "SQUAT",
+      "intent": "PLYOMETRIC",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.65,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "fente-sautee",
+      "labels": ["Fente sautée alternée", "Fente sautée", "Jumping lunge"],
+      "pattern": "SQUAT_UNILATERAL",
+      "intent": "PLYOMETRIC",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.7,
+      "centrality": 0,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "box-jump",
+      "labels": ["Box jump", "Saut sur boîte"],
+      "pattern": "SQUAT",
+      "intent": "PLYOMETRIC",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.65,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    },
+
+    {
+      "id": "jumping-jack",
+      "labels": ["Écartés-sautés", "Jumping jack", "Jumping jacks"],
+      "pattern": null,
+      "intent": "CONDITIONING",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.4,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "squat-thrust",
+      "labels": ["Squat Thrusts (haut-bas)", "Squat thrust", "Burpee", "Burpees"],
+      "pattern": null,
+      "intent": "CONDITIONING",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.6,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "fente-avec-releve-de-genou",
+      "labels": ["Lunges With Knee Lift", "Fente avec relevé de genou"],
+      "pattern": "SQUAT_UNILATERAL",
+      "intent": "CONDITIONING",
+      "modality": "BODYWEIGHT_FIXED",
+      "leverageFactor": 0.6,
+      "centrality": 0,
+      "unilateral": true,
+      "skillLimited": false
+    },
+
+    {
+      "id": "etirement-90-90",
+      "labels": ["Étirement 90/90", "90/90"],
+      "pattern": null,
+      "intent": "MOBILITY",
+      "modality": "NONE",
+      "leverageFactor": null,
+      "centrality": 0,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "etirement-chat-vache",
+      "labels": ["Étirement chat et vache", "Chat vache", "Cat cow"],
+      "pattern": null,
+      "intent": "MOBILITY",
+      "modality": "NONE",
+      "leverageFactor": null,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "posture-de-l-enfant",
+      "labels": ["Étirement posture de l'enfant", "Posture de l'enfant", "Child's pose"],
+      "pattern": null,
+      "intent": "MOBILITY",
+      "modality": "NONE",
+      "leverageFactor": null,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "etirement-piriforme",
+      "labels": ["Étirement du muscle piriforme", "Étirement piriforme"],
+      "pattern": null,
+      "intent": "MOBILITY",
+      "modality": "NONE",
+      "leverageFactor": null,
+      "centrality": 0,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "etirement-ischio-debout",
+      "labels": ["Étirement ischio debout"],
+      "pattern": null,
+      "intent": "MOBILITY",
+      "modality": "NONE",
+      "leverageFactor": null,
+      "centrality": 0,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "etirement-ischio",
+      "labels": ["Étirement des ischio-jambiers", "Étirement ischio-jambiers"],
+      "pattern": null,
+      "intent": "MOBILITY",
+      "modality": "NONE",
+      "leverageFactor": null,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    },
+    {
+      "id": "etirement-obliques",
+      "labels": ["Étirement des obliques"],
+      "pattern": null,
+      "intent": "MOBILITY",
+      "modality": "NONE",
+      "leverageFactor": null,
+      "centrality": 0,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "etirement-flechisseur-hanche",
+      "labels": [
+        "Étirement fléchisseur de la hanche en fente",
+        "Étirement du fléchisseur de hanche"
+      ],
+      "pattern": null,
+      "intent": "MOBILITY",
+      "modality": "NONE",
+      "leverageFactor": null,
+      "centrality": 0,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "cercles-de-hanche",
+      "labels": ["Cercles de hanche", "Knee Circles", "Hip circles"],
+      "pattern": null,
+      "intent": "MOBILITY",
+      "modality": "NONE",
+      "leverageFactor": null,
+      "centrality": 0,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "cercles-de-jambe",
+      "labels": ["Single Leg Circles", "Cercles de jambe"],
+      "pattern": null,
+      "intent": "MOBILITY",
+      "modality": "NONE",
+      "leverageFactor": null,
+      "centrality": 0,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "balancement-des-jambes",
+      "labels": ["Balancement des jambes avant et arrière", "Balancement de jambe", "Leg swing"],
+      "pattern": null,
+      "intent": "MOBILITY",
+      "modality": "NONE",
+      "leverageFactor": null,
+      "centrality": 0,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "rotation-thoracique",
+      "labels": ["Rotation thoracique", "Thoracic rotation"],
+      "pattern": null,
+      "intent": "MOBILITY",
+      "modality": "NONE",
+      "leverageFactor": null,
+      "centrality": 0,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "etirement-mollet",
+      "labels": ["Étirement du mollet", "Étirement des mollets"],
+      "pattern": null,
+      "intent": "MOBILITY",
+      "modality": "NONE",
+      "leverageFactor": null,
+      "centrality": 0,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "etirement-fessier",
+      "labels": ["Étirement fessier", "Étirement des fessiers"],
+      "pattern": null,
+      "intent": "MOBILITY",
+      "modality": "NONE",
+      "leverageFactor": null,
+      "centrality": 0,
+      "unilateral": true,
+      "skillLimited": false
+    },
+    {
+      "id": "flexion-buste-avant",
+      "labels": ["Flexion Buste Avant", "Flexion du buste avant", "Forward fold"],
+      "pattern": null,
+      "intent": "MOBILITY",
+      "modality": "NONE",
+      "leverageFactor": null,
+      "centrality": 0,
+      "unilateral": false,
+      "skillLimited": false
+    }
+  ]
+}

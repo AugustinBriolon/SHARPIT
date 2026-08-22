@@ -1,6 +1,5 @@
 'use client';
 
-import { Sparkline } from '@/components/today/dashboard/sparkline';
 import { cn } from '@/lib/utils';
 
 /**
@@ -35,6 +34,10 @@ export type MarkerBandProps = {
 
 const BAND_START_PCT = 24;
 const BAND_WIDTH_PCT = 52;
+export function defaultFormat(value: number): string {
+  return String(value);
+}
+
 const MARKER_MIN_PCT = 4;
 const MARKER_MAX_PCT = 96;
 
@@ -120,6 +123,7 @@ export function MarkerCard({
   unit,
   lowerIsBetter = false,
   range = null,
+  format = defaultFormat,
   onOpen,
 }: {
   label: string;
@@ -127,6 +131,8 @@ export function MarkerCard({
   unit: string;
   lowerIsBetter?: boolean;
   range?: MarkerRange | null;
+  /** Ratios and signed balances need their own rendering; counts do not. */
+  format?: (value: number) => string;
   onOpen: () => void;
 }) {
   const position = value != null && range != null ? positionOf(value, range) : null;
@@ -152,7 +158,7 @@ export function MarkerCard({
             concerning ? 'text-signal-caution' : 'text-primary',
           )}
         >
-          {value != null ? value : '—'}
+          {value != null ? format(value) : '—'}
         </span>
         <span className="text-muted-foreground text-xs">{unit}</span>
       </span>

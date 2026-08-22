@@ -1,3 +1,4 @@
+import { TermInfo } from '@/components/ui/term-info';
 import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
 import { ChartTooltipCard } from '@/components/ui/charts/chart-tooltip';
@@ -32,7 +33,25 @@ export function EffortPmcSection({ data }: { data: PmcPoint[] }) {
 
   return (
     <DrillDownSectionCard>
-      <DrillDownSectionLabel>{PMC_TITLE}</DrillDownSectionLabel>
+      {/* The definitions sit on the terms rather than in a fold beneath the chart:
+          the acronym is read while looking at its curve, not two scrolls later. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <DrillDownSectionLabel>{PMC_TITLE}</DrillDownSectionLabel>
+        <span className="text-muted-foreground flex items-center gap-2 text-xs">
+          <span className="inline-flex items-center gap-1">
+            Forme chronique
+            <TermInfo term="ctl" />
+          </span>
+          <span className="inline-flex items-center gap-1">
+            Fatigue aiguë
+            <TermInfo term="atl" />
+          </span>
+          <span className="inline-flex items-center gap-1">
+            Forme nette
+            <TermInfo term="tsb" />
+          </span>
+        </span>
+      </div>
       <ChartFigure
         height={120}
         title={PMC_TITLE}
@@ -99,16 +118,6 @@ export function EffortPmcSection({ data }: { data: PmcPoint[] }) {
           <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} />
         </LineChart>
       </ChartFigure>
-      <details className="group mt-2">
-        <summary className="text-muted-foreground hover:text-foreground cursor-pointer list-none text-xs tracking-wide transition-colors [&::-webkit-details-marker]:hidden">
-          <span className="underline-offset-2 group-open:no-underline">
-            Glossaire CTL / ATL / TSB
-          </span>
-        </summary>
-        <p className="text-muted-foreground mt-1.5 text-xs leading-relaxed">
-          CTL = forme chronique · ATL = fatigue aiguë · TSB = forme nette (CTL − ATL)
-        </p>
-      </details>
     </DrillDownSectionCard>
   );
 }
@@ -124,7 +133,10 @@ export function EffortWeeklyTssSection({
 
   return (
     <DrillDownSectionCard>
-      <DrillDownSectionLabel>{WEEKLY_TSS_TITLE}</DrillDownSectionLabel>
+      <div className="flex items-center gap-1.5">
+        <DrillDownSectionLabel>{WEEKLY_TSS_TITLE}</DrillDownSectionLabel>
+        <TermInfo term="tss" />
+      </div>
       <ChartFigure
         height={100}
         title={WEEKLY_TSS_TITLE}

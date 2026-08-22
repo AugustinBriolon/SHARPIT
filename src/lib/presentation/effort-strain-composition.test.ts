@@ -68,12 +68,21 @@ describe('buildEffortStrainComposition', () => {
     const movement = view.contributors.find((c) => c.key === 'movement');
 
     expect(cardio?.available).toBe(true);
-    expect(cardio?.description).toContain('stress 48');
-    expect(cardio?.description).toContain('Body Battery 55');
-
     expect(movement?.available).toBe(true);
-    expect(movement?.description).toContain('12');
-    expect(movement?.description).toContain('pas');
+  });
+
+  it('exposes the raw daily readings so cards can scale and chart them', () => {
+    const view = buildEffortStrainComposition(makeStrain());
+
+    expect(view.signals).toEqual({ steps: 12_000, stress: 48, bodyBattery: 55 });
+  });
+
+  it('reports empty signals when daily strain is missing', () => {
+    expect(buildEffortStrainComposition(null).signals).toEqual({
+      steps: null,
+      stress: null,
+      bodyBattery: null,
+    });
   });
 
   it('returns unavailable rows when daily strain is missing', () => {
