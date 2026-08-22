@@ -159,10 +159,24 @@ function plannedLabel(session: ClientPlannedSession): string {
   return title ?? activityTypeLabels[session.type];
 }
 
+/**
+ * What a finished session cost, on one line.
+ *
+ * RPE was fetched, carried all the way here, and dropped — the home screen showed
+ * duration and TSS, both of which a watch computes, and left out the only number
+ * the athlete supplies himself. It is also the one that disagrees: same load, a
+ * rising RPE, is fatigue the load model cannot see.
+ *
+ * Spelled "RPE 7" to match the activity detail header. The two lines are
+ * deliberately not sharing a formatter — one is a compact summary that drops
+ * empty parts, the other a detail header that always leads with duration, and
+ * they answer to different screens.
+ */
 function activityMeta(activity: ClientActivity): string | undefined {
   const parts: string[] = [];
   if (activity.duration) parts.push(formatDuration(activity.duration));
   if (activity.load != null) parts.push(`${Math.round(activity.load)} TSS`);
+  if (activity.rpe != null) parts.push(`RPE ${activity.rpe}`);
   return parts.length > 0 ? parts.join(' · ') : undefined;
 }
 

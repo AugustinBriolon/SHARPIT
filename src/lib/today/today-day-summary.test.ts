@@ -46,6 +46,20 @@ describe('buildTodayDaySummary', () => {
     expect(summary.lines[1].primary).toContain('Endurance vélo');
   });
 
+  it('carries the session RPE, the one number the athlete supplies himself', () => {
+    const summary = buildTodayDaySummary(TODAY, [activity({ id: 'a1', rpe: 7 })], []);
+
+    expect(summary.lines[0].secondary).toContain('RPE 7');
+    expect(summary.lines[0].secondary).toContain('45 TSS');
+  });
+
+  it('omits RPE rather than inventing one when the session was never rated', () => {
+    const summary = buildTodayDaySummary(TODAY, [activity({ id: 'a1', rpe: null })], []);
+
+    expect(summary.lines[0].secondary).not.toContain('RPE');
+    expect(summary.lines[0].secondary).toContain('45 TSS');
+  });
+
   it('shows planned sessions when nothing was done today', () => {
     const summary = buildTodayDaySummary(TODAY, [], [planned({ id: 'p1', title: 'Endurance' })]);
 
