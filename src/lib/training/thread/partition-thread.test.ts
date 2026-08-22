@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { partitionThread } from './partition-thread';
+import { partitionThread, takeThreadDays } from './partition-thread';
 import type { ThreadDay, ThreadEntry, ThreadWeek } from './thread-model';
 
 function day(dayKey: string): ThreadDay {
@@ -79,5 +79,39 @@ describe('partitionThread', () => {
     const { upcoming, past } = partitionThread([week('2026-W34', ['2026-08-18'])], PIVOT);
     expect(upcoming).toEqual([]);
     expect(past).toHaveLength(1);
+  });
+});
+
+describe('takeThreadDays', () => {
+  it('stops once the digest is full', () => {
+    const days = takeThreadDays([week('2026-W35', ['2026-08-24', '2026-08-25', '2026-08-26'])], 2);
+    expect(days.map((d) => d.dayKey)).toEqual(['2026-08-24', '2026-08-25']);
+  });
+
+  it('never shows half a day', () => {
+    const twoSessions = week('2026-W35', ['2026-08-24']);
+    const busy: ThreadWeek = {
+      ...twoSessions,
+      days: [
+        {
+          ...twoSessions.days[0],
+          entries: [...twoSessions.days[0].entries, { ...twoSessions.days[0].entries[0], id: 'b' }],
+        },
+      ],
+    };
+    // The limit is one, but the day holds two — it comes whole or not at all.
+    expect(takeThreadDays([busy], 1)[0].entries).toHaveLength(2);
+  });
+
+  it('crosses week boundaries without a gap', () => {
+    const days = takeThreadDays(
+      [week('2026-W35', ['2026-08-25']), week('2026-W36', ['2026-09-01'])],
+      5,
+    );
+    expect(days.map((d) => d.dayKey)).toEqual(['2026-08-25', '2026-09-01']);
+  });
+
+  it('returns nothing rather than failing on an empty side', () => {
+    expect(takeThreadDays([], 3)).toEqual([]);
   });
 });

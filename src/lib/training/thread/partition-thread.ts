@@ -1,4 +1,4 @@
-import type { ThreadWeek } from './thread-model';
+import type { ThreadDay, ThreadWeek } from './thread-model';
 
 /**
  * Splits the thread into what is coming and what is done.
@@ -41,4 +41,31 @@ export function partitionThread(
   }
 
   return { upcoming, past: past.reverse() };
+}
+
+/**
+ * The first `limit` sessions of a side, still grouped by the day they fall on.
+ *
+ * The hub shows a digest, not the whole thread: the next few sessions and the
+ * last few, with the complete Planning and History a click away. Truncating by
+ * session count rather than by date keeps that digest a fixed size — a week
+ * window would show five rows in a heavy block and none in a rest week, which
+ * makes the page's height a function of the training rather than of its purpose.
+ *
+ * Days are never split: a day is either wholly in or wholly out, so the last
+ * visible day never shows one of its two sessions and hides the other.
+ */
+export function takeThreadDays(weeks: readonly ThreadWeek[], limit: number): readonly ThreadDay[] {
+  const days: ThreadDay[] = [];
+  let taken = 0;
+
+  for (const week of weeks) {
+    for (const day of week.days) {
+      if (taken >= limit) return days;
+      days.push(day);
+      taken += day.entries.length;
+    }
+  }
+
+  return days;
 }

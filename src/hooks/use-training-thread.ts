@@ -21,14 +21,6 @@ import type { ThreadWeek } from '@/lib/training/thread/thread-model';
  */
 
 /**
- * A week of history is what explains today: yesterday's session is why the legs
- * feel heavy, a session three weeks back is not. Everything else is one press
- * away, and it costs nothing to fetch because it is already in memory.
- */
-export const THREAD_INITIAL_DAYS_BACK = 7;
-export const THREAD_DAYS_STEP = 7;
-
-/**
  * The span the instruments always read, whatever the thread has loaded.
  *
  * The ruler and the plan chart are maps of the season, not views of the reading
@@ -45,22 +37,15 @@ export function useTrainingThread() {
   const plannedQuery = usePlannedSessions();
   const goalsQuery = useGoals();
 
-  const [daysBack, setDaysBack] = useState(THREAD_INITIAL_DAYS_BACK);
   const [sport, setSport] = useState<ThreadSportFilter>('ALL');
 
   const activities = useMemo(() => activitiesQuery.data ?? [], [activitiesQuery.data]);
   const planned = useMemo(() => plannedQuery.data ?? [], [plannedQuery.data]);
 
-  /* Built unfiltered so the sport pills can count what they would show, and so
-     changing the filter never re-derives the arrangement underneath. */
+  /* One arrangement, unfiltered, over a fixed season. Unfiltered so the sport
+     pills can count what they would show; fixed so nothing on the page redraws
+     itself because the reader looked at it differently. */
   const weeks = useMemo(
-    () => buildThread({ activities, plannedSessions: planned, pivot: new Date(), daysBack }),
-    [activities, planned, daysBack],
-  );
-
-  /* A second, wider arrangement for the instruments. Same builder, same inputs,
-     fixed span — so paging the thread never redraws the season behind it. */
-  const seasonWeeks = useMemo(
     () =>
       buildThread({
         activities,
@@ -99,23 +84,17 @@ export function useTrainingThread() {
 
   /* Unfiltered and unpaged on purpose: a map that redraws itself when you filter,
      or when you ask to see one more week, is no longer a map. */
-  const ruler = useMemo(() => buildLoadRuler(seasonWeeks), [seasonWeeks]);
-
-  const oldestLoaded = weeks[0] ?? null;
+  const ruler = useMemo(() => buildLoadRuler(weeks), [weeks]);
 
   return {
     weeks: filtered,
     /** Nine weeks, fixed — for the ruler, the plan chart and adherence. */
-    seasonWeeks,
+    seasonWeeks: weeks,
     ruler,
     counts,
     sport,
     setSport,
     goals: goalsQuery.data ?? [],
     loading: isAnyInitialQueryLoad([activitiesQuery, plannedQuery, goalsQuery]),
-    daysBack,
-    /** Everything is already cached — this widens the view, it does not fetch. */
-    loadEarlier: () => setDaysBack((current) => current + THREAD_DAYS_STEP),
-    oldestLoaded,
   };
 }

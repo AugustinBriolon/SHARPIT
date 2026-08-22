@@ -2,7 +2,6 @@
 
 import { useMemo } from 'react';
 import { GoalKind } from '@prisma/client';
-import { differenceInCalendarDays } from 'date-fns';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import {
@@ -21,7 +20,7 @@ import { useCoachMemory } from '@/hooks/use-coach-memory';
 import { useTrainingThread } from '@/hooks/use-training-thread';
 import { useThreadFormReadings } from '@/hooks/use-thread-form-readings';
 import { isoWeekKeyOf } from '@/lib/training/thread/build-thread';
-import { partitionThread } from '@/lib/training/thread/partition-thread';
+import { partitionThread, takeThreadDays } from '@/lib/training/thread/partition-thread';
 import { dayKeyFromDate } from '@/lib/date/day-key';
 import { buildThreadAdherence } from '@/lib/training/thread/thread-adherence';
 import { buildThreadCoachLine } from '@/lib/training/thread/thread-coach-line';
@@ -50,12 +49,23 @@ export function TrainingThreadView() {
 
   const coachLine = useMemo(() => buildThreadCoachLine(currentWeek ?? null), [currentWeek]);
 
-  const partition = useMemo(() => {
+  /**
+   * The digest: the next few sessions and the last few.
+   *
+   * Three ahead is enough to see what today sits inside; five behind is enough to
+   * explain how the legs feel. Anything more is the Planning and History pages,
+   * which is why each side carries a link to its own.
+   */
+  const digest = useMemo(() => {
     const now = new Date();
     const pivotDayKey = dayKeyFromDate(
       new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())),
     );
-    return partitionThread(thread.weeks, pivotDayKey);
+    const { upcoming, past } = partitionThread(thread.seasonWeeks, pivotDayKey);
+    return {
+      upcoming: takeThreadDays(upcoming, 3),
+      past: takeThreadDays(past, 5),
+    };
   }, [thread.weeks]);
   /* Graded over the season, not over what happens to be loaded: "5/7" flipping to
      "23/29" because the athlete pressed "charger plus" would make the figure a
@@ -66,20 +76,6 @@ export function TrainingThreadView() {
     () => buildThreadConstraints(memory.data?.entries ?? [], isoWeekKeyOf),
     [memory.data],
   );
-
-  /* Keyed by week so the separator can carry it: a constraint read next to the
-     week it lands on is a plan; read in a list of its own it is trivia. */
-  const constraintByWeek = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const constraint of constraints) {
-      const entry = memory.data?.entries.find((e) => e.id === constraint.id);
-      const days = entry
-        ? differenceInCalendarDays(new Date(entry.endDate), new Date(entry.startDate)) + 1
-        : null;
-      map.set(constraint.weekKey, days ? `${constraint.label} · ${days} j` : constraint.label);
-    }
-    return map;
-  }, [constraints, memory.data]);
 
   const nextRaceGoal = useMemo(() => {
     const now = Date.now();
@@ -147,12 +143,9 @@ export function TrainingThreadView() {
           <div className="lg:hidden">{filters}</div>
 
           <ThreadTimeline
-            constraintByWeek={constraintByWeek}
-            daysLoaded={thread.daysBack}
-            past={partition.past}
+            past={digest.past}
             pivotEntryId={coachLine?.pivotEntryId ?? null}
-            upcoming={partition.upcoming}
-            onLoadEarlier={thread.loadEarlier}
+            upcoming={digest.upcoming}
           />
 
           {/* Mobile keeps the readings at the foot of the thread; desktop lifts
