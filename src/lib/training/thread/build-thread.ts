@@ -96,18 +96,19 @@ export function buildThread({
   activities,
   plannedSessions,
   pivot,
-  weeksBack,
+  daysBack,
 }: {
   activities: readonly ClientActivity[];
   plannedSessions: readonly ClientPlannedSession[];
   pivot: Date;
-  /** How far into the past the window reaches. The future is never truncated:
-   *  everything planned is what the athlete is committed to. */
-  weeksBack: number;
+  /** How far into the past the window reaches, in days. The future is never
+   *  truncated: everything planned is what the athlete is committed to. */
+  daysBack: number;
 }): ThreadWeek[] {
   const pivotWeekStart = weekStart(pivot);
-  const floor = new Date(pivotWeekStart);
-  floor.setDate(floor.getDate() - weeksBack * 7);
+  const floor = new Date(pivot);
+  floor.setHours(0, 0, 0, 0);
+  floor.setDate(floor.getDate() - daysBack);
   const currentWeekKey = isoWeekKeyOf(pivot);
   const pivotDayKey = localDayKey(pivot);
 

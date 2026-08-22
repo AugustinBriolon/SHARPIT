@@ -42,7 +42,7 @@ describe('buildThread', () => {
         activities: [activity({ id: 'a1', plannedSession: prescription })],
         plannedSessions: [prescription],
         pivot: PIVOT,
-        weeksBack: 4,
+        daysBack: 28,
       }),
     );
 
@@ -58,7 +58,7 @@ describe('buildThread', () => {
         activities: [activity({ id: 'a1' })],
         plannedSessions: [planned({ id: 'p1' })],
         pivot: PIVOT,
-        weeksBack: 4,
+        daysBack: 28,
       }),
     );
 
@@ -71,21 +71,21 @@ describe('buildThread', () => {
         activities: [],
         plannedSessions: [planned({ id: 'p1', activityId: 'a1' })],
         pivot: PIVOT,
-        weeksBack: 4,
+        daysBack: 28,
       }),
     );
 
     expect(entries).toHaveLength(0);
   });
 
-  it('windows the past but never the future', () => {
+  it('windows the past in days, and never the future', () => {
     const longAgo = new Date(2026, 5, 1);
     const farAhead = new Date(2026, 10, 1);
     const weeks = buildThread({
       activities: [activity({ id: 'old', date: longAgo })],
       plannedSessions: [planned({ id: 'ahead', date: farAhead })],
       pivot: PIVOT,
-      weeksBack: 4,
+      daysBack: 28,
     });
 
     const ids = allWeeks(weeks).map((e) => e.id);
@@ -99,7 +99,7 @@ describe('buildThread', () => {
       activities: [activity({ id: 'a1', load: 45, plannedSession: prescription })],
       plannedSessions: [prescription, planned({ id: 'p2', load: 80 })],
       pivot: PIVOT,
-      weeksBack: 4,
+      daysBack: 28,
     });
 
     expect(week.doneLoad).toBe(45);
@@ -112,7 +112,7 @@ describe('buildThread', () => {
       activities: [activity({ id: 'a1', load: null })],
       plannedSessions: [],
       pivot: PIVOT,
-      weeksBack: 4,
+      daysBack: 28,
     });
     expect(withoutLoad.doneLoad).toBe(0);
     expect(withoutLoad.doneLoadKnown).toBe(false);
@@ -121,7 +121,7 @@ describe('buildThread', () => {
       activities: [activity({ id: 'a1', load: 45 })],
       plannedSessions: [],
       pivot: PIVOT,
-      weeksBack: 4,
+      daysBack: 28,
     });
     expect(withLoad.doneLoadKnown).toBe(true);
   });
@@ -132,7 +132,7 @@ describe('buildThread', () => {
       activities: [],
       plannedSessions: [planned({ id: 'p1', date: nextWeek })],
       pivot: PIVOT,
-      weeksBack: 4,
+      daysBack: 28,
     });
 
     expect(weeks.at(-1)?.isFuture).toBe(true);
@@ -143,7 +143,7 @@ describe('buildThread', () => {
       activities: [activity({ id: 'a1', date: new Date(2026, 7, 12) })],
       plannedSessions: [planned({ id: 'p1', date: new Date(2026, 8, 2) })],
       pivot: PIVOT,
-      weeksBack: 4,
+      daysBack: 28,
     });
 
     const keys = weeks.map((w) => w.weekKey);

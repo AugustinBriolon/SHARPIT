@@ -21,6 +21,8 @@ import { useCoachMemory } from '@/hooks/use-coach-memory';
 import { useTrainingThread } from '@/hooks/use-training-thread';
 import { useThreadFormReadings } from '@/hooks/use-thread-form-readings';
 import { isoWeekKeyOf } from '@/lib/training/thread/build-thread';
+import { partitionThread } from '@/lib/training/thread/partition-thread';
+import { dayKeyFromDate } from '@/lib/date/day-key';
 import { buildThreadAdherence } from '@/lib/training/thread/thread-adherence';
 import { buildThreadCoachLine } from '@/lib/training/thread/thread-coach-line';
 import { cn } from '@/lib/utils';
@@ -47,6 +49,14 @@ export function TrainingThreadView() {
   const previousWeek = currentIndex > 0 ? thread.weeks[currentIndex - 1] : null;
 
   const coachLine = useMemo(() => buildThreadCoachLine(currentWeek ?? null), [currentWeek]);
+
+  const partition = useMemo(() => {
+    const now = new Date();
+    const pivotDayKey = dayKeyFromDate(
+      new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())),
+    );
+    return partitionThread(thread.weeks, pivotDayKey);
+  }, [thread.weeks]);
   const adherence = useMemo(() => buildThreadAdherence(thread.weeks), [thread.weeks]);
 
   const constraints = useMemo(
@@ -135,13 +145,10 @@ export function TrainingThreadView() {
 
           <ThreadTimeline
             constraintByWeek={constraintByWeek}
-            earliestLabel={thread.oldestLoaded?.label ?? null}
-            earliestLoad={thread.oldestLoaded?.doneLoad ?? null}
+            daysLoaded={thread.daysBack}
+            past={partition.past}
             pivotEntryId={coachLine?.pivotEntryId ?? null}
-            weeks={thread.weeks}
-            earliestCount={
-              thread.oldestLoaded?.days.reduce((sum, day) => sum + day.entries.length, 0) ?? null
-            }
+            upcoming={partition.upcoming}
             onLoadEarlier={thread.loadEarlier}
           />
 

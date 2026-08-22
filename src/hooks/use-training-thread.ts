@@ -20,9 +20,13 @@ import type { ThreadWeek } from '@/lib/training/thread/thread-model';
  * "Remonter le fil" is a render, not a request.
  */
 
-/** Four weeks back reaches the last block without dragging a season into the DOM. */
-export const THREAD_INITIAL_WEEKS_BACK = 4;
-export const THREAD_WEEKS_STEP = 4;
+/**
+ * A week of history is what explains today: yesterday's session is why the legs
+ * feel heavy, a session three weeks back is not. Everything else is one press
+ * away, and it costs nothing to fetch because it is already in memory.
+ */
+export const THREAD_INITIAL_DAYS_BACK = 7;
+export const THREAD_DAYS_STEP = 7;
 
 export type ThreadSportFilter = ActivityType | 'ALL';
 
@@ -31,7 +35,7 @@ export function useTrainingThread() {
   const plannedQuery = usePlannedSessions();
   const goalsQuery = useGoals();
 
-  const [weeksBack, setWeeksBack] = useState(THREAD_INITIAL_WEEKS_BACK);
+  const [daysBack, setDaysBack] = useState(THREAD_INITIAL_DAYS_BACK);
   const [sport, setSport] = useState<ThreadSportFilter>('ALL');
 
   const activities = useMemo(() => activitiesQuery.data ?? [], [activitiesQuery.data]);
@@ -40,8 +44,8 @@ export function useTrainingThread() {
   /* Built unfiltered so the sport pills can count what they would show, and so
      changing the filter never re-derives the arrangement underneath. */
   const weeks = useMemo(
-    () => buildThread({ activities, plannedSessions: planned, pivot: new Date(), weeksBack }),
-    [activities, planned, weeksBack],
+    () => buildThread({ activities, plannedSessions: planned, pivot: new Date(), daysBack }),
+    [activities, planned, daysBack],
   );
 
   const filtered = useMemo<ThreadWeek[]>(() => {
@@ -84,8 +88,9 @@ export function useTrainingThread() {
     setSport,
     goals: goalsQuery.data ?? [],
     loading: isAnyInitialQueryLoad([activitiesQuery, plannedQuery, goalsQuery]),
+    daysBack,
     /** Everything is already cached — this widens the view, it does not fetch. */
-    loadEarlier: () => setWeeksBack((current) => current + THREAD_WEEKS_STEP),
+    loadEarlier: () => setDaysBack((current) => current + THREAD_DAYS_STEP),
     oldestLoaded,
   };
 }
