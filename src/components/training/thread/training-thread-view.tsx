@@ -57,7 +57,10 @@ export function TrainingThreadView() {
     );
     return partitionThread(thread.weeks, pivotDayKey);
   }, [thread.weeks]);
-  const adherence = useMemo(() => buildThreadAdherence(thread.weeks), [thread.weeks]);
+  /* Graded over the season, not over what happens to be loaded: "5/7" flipping to
+     "23/29" because the athlete pressed "charger plus" would make the figure a
+     property of the scroll position rather than of the plan. */
+  const adherence = useMemo(() => buildThreadAdherence(thread.seasonWeeks), [thread.seasonWeeks]);
 
   const constraints = useMemo(
     () => buildThreadConstraints(memory.data?.entries ?? [], isoWeekKeyOf),
@@ -158,7 +161,7 @@ export function TrainingThreadView() {
         </div>
 
         <aside className="hidden space-y-4 lg:block">
-          <ThreadPlanChart adherence={adherence} weeks={thread.weeks} />
+          <ThreadPlanChart adherence={adherence} weeks={thread.seasonWeeks} />
           <ThreadFormReadings readings={readings} title="Ta forme" />
           <ThreadConstraintsCard constraints={constraints} />
         </aside>

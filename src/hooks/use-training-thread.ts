@@ -28,6 +28,16 @@ import type { ThreadWeek } from '@/lib/training/thread/thread-model';
 export const THREAD_INITIAL_DAYS_BACK = 7;
 export const THREAD_DAYS_STEP = 7;
 
+/**
+ * The span the instruments always read, whatever the thread has loaded.
+ *
+ * The ruler and the plan chart are maps of the season, not views of the reading
+ * window — a ruler that shrinks to two bars because the athlete has only paged in
+ * a week has stopped being a map. Nine weeks is what the ruler draws; the chart
+ * takes the last eight of them.
+ */
+export const THREAD_SEASON_DAYS = 9 * 7;
+
 export type ThreadSportFilter = ActivityType | 'ALL';
 
 export function useTrainingThread() {
@@ -46,6 +56,19 @@ export function useTrainingThread() {
   const weeks = useMemo(
     () => buildThread({ activities, plannedSessions: planned, pivot: new Date(), daysBack }),
     [activities, planned, daysBack],
+  );
+
+  /* A second, wider arrangement for the instruments. Same builder, same inputs,
+     fixed span — so paging the thread never redraws the season behind it. */
+  const seasonWeeks = useMemo(
+    () =>
+      buildThread({
+        activities,
+        plannedSessions: planned,
+        pivot: new Date(),
+        daysBack: THREAD_SEASON_DAYS,
+      }),
+    [activities, planned],
   );
 
   const filtered = useMemo<ThreadWeek[]>(() => {
@@ -74,14 +97,16 @@ export function useTrainingThread() {
     return { all, byType };
   }, [weeks]);
 
-  /* The ruler reads the unfiltered weeks on purpose: it is a map of the season,
-     and a map that redraws itself when you filter is no longer a map. */
-  const ruler = useMemo(() => buildLoadRuler(weeks), [weeks]);
+  /* Unfiltered and unpaged on purpose: a map that redraws itself when you filter,
+     or when you ask to see one more week, is no longer a map. */
+  const ruler = useMemo(() => buildLoadRuler(seasonWeeks), [seasonWeeks]);
 
   const oldestLoaded = weeks[0] ?? null;
 
   return {
     weeks: filtered,
+    /** Nine weeks, fixed — for the ruler, the plan chart and adherence. */
+    seasonWeeks,
     ruler,
     counts,
     sport,
