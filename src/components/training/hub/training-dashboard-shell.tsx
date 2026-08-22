@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 
-import { ActivityConsistencyPanel } from '@/components/today/dashboard/activity-consistency-panel';
+import { ProgressionDoors } from '@/components/training/hub/progression-doors';
 import { TrainingWeekStrip } from '@/components/training/hub/training-week-strip';
 import { InstrumentListChipSkeleton } from '@/components/ui/instruments/instrument-list-chip';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
@@ -125,14 +125,7 @@ export function TrainingDashboardShell() {
         </section>
       </div>
 
-      <section>
-        <TrainingSectionLink
-          cta="Progression"
-          href="/training/progression"
-          title="Dynamique récente"
-        />
-        <ActivityConsistencyPanel activities={[]} loading />
-      </section>
+      <ProgressionDoors />
     </div>
   );
 }

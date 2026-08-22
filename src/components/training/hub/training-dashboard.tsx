@@ -5,12 +5,12 @@ import { fr } from 'date-fns/locale';
 import { type ReactNode } from 'react';
 import Link from 'next/link';
 import { PlanningRow } from '@/components/today/dashboard/planning-row';
-import { ActivityConsistencyPanel } from '@/components/today/dashboard/activity-consistency-panel';
 import { ActivityList } from '@/components/training/activity/list/activity-list';
 import {
   TrainingDashboardShell,
   TrainingSectionLink,
 } from '@/components/training/hub/training-dashboard-shell';
+import { ProgressionDoors } from '@/components/training/hub/progression-doors';
 import { TrainingTripsSection } from '@/components/training/hub/training-trips-section';
 import { TrainingWeekStrip } from '@/components/training/hub/training-week-strip';
 import { OfflineSnapshotSummary } from '@/components/pwa/offline-snapshot-summary';
@@ -242,14 +242,7 @@ export function TrainingDashboard() {
         )}
       />
 
-      <section>
-        <TrainingSectionLink
-          cta="Progression"
-          href="/training/progression"
-          title="Dynamique récente"
-        />
-        <ActivityConsistencyPanel activities={activities} loading={false} />
-      </section>
+      <ProgressionDoors />
     </div>
   );
 }

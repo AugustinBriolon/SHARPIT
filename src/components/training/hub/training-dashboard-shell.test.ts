@@ -15,7 +15,12 @@ describe('TrainingDashboardShell', () => {
     expect(html).toContain('chip-surface rounded-analysis');
     expect(html).toContain('Séances à venir');
     expect(html).toContain('Activités récentes');
-    expect(html).toContain('Dynamique récente');
+    // Progression's three destinations are static, so the shell renders them for
+    // real — the section must not move when the data lands.
+    expect(html).toContain('Progression');
+    expect(html).toContain('Records');
+    expect(html).toContain('Calibration');
+    expect(html).toContain('/training/progression?tab=calibration');
     // Chips 3–4 stay in DOM for desktop, hidden on mobile (prerender-safe parity).
     expect(html).toContain('hidden lg:block');
   });

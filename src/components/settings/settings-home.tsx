@@ -1,12 +1,23 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { Brain, Dumbbell, Goal, Link2, MoonStar, ShieldCheck, User2, Wrench } from 'lucide-react';
+import {
+  Brain,
+  Dumbbell,
+  Goal,
+  Link2,
+  MoonStar,
+  ShieldCheck,
+  SlidersHorizontal,
+  User2,
+  Wrench,
+} from 'lucide-react';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { InstallCard } from '@/components/pwa/install-card';
 import { HubStatusValue } from '@/components/settings/hub-status-value';
 import { SettingsAppearanceStatus } from '@/components/settings/settings-appearance-status';
 import { SettingsHomeExtras } from '@/components/settings/settings-home-extras';
 import type { SettingsHubStatus } from '@/lib/settings/hub-status';
+import { progressionTabHref } from '@/lib/training/progression-tabs';
 import { cn } from '@/lib/utils';
 
 type SettingsEntry = {
@@ -14,7 +25,8 @@ type SettingsEntry = {
   title: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
-  statusKey: keyof SettingsHubStatus | 'appearance';
+  /** Omitted when the entry has no single value worth reading at a glance. */
+  statusKey?: keyof SettingsHubStatus | 'appearance';
 };
 
 type SettingsGroup = {
@@ -50,6 +62,15 @@ const GROUPS: SettingsGroup[] = [
         description: 'Courses cibles et objectifs chiffrés.',
         icon: Goal,
         statusKey: 'goals',
+      },
+      {
+        // Lives under Progression, which is where it is edited — but nobody looks
+        // for their FTP inside a training hub, and its panel has always been a
+        // settings panel. This is the door people actually try.
+        href: progressionTabHref('calibration'),
+        title: 'Seuils & repères',
+        description: 'FTP, allure seuil, FC max — ce que le Twin compare tes efforts à.',
+        icon: SlidersHorizontal,
       },
     ],
   },
@@ -98,6 +119,7 @@ const GROUPS: SettingsGroup[] = [
 ];
 
 function entryStatus(statusKey: SettingsEntry['statusKey']) {
+  if (!statusKey) return null;
   if (statusKey === 'appearance') {
     return <SettingsAppearanceStatus />;
   }

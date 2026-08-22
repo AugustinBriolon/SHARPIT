@@ -9,6 +9,18 @@ import { StickyHeader } from '@/components/layout/sticky-header';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ProfileData } from '@/components/settings/profile';
 import { navPillClass } from '@/lib/ui/nav-pill';
+import {
+  PROGRESSION_BASE_PATH,
+  PROGRESSION_TABS,
+  isProgressionTabId,
+  type ProgressionTabId,
+} from '@/lib/training/progression-tabs';
+
+const TAB_ICON: Record<ProgressionTabId, typeof Activity> = {
+  etat: Activity,
+  records: Medal,
+  calibration: SlidersHorizontal,
+};
 
 const AnalyticsClient = dynamic(
   () => import('@/components/analytics/analytics-client').then((mod) => mod.AnalyticsClient),
@@ -26,36 +38,9 @@ const PerformanceCalibrationPanel = dynamic(
   { ssr: false, loading: () => <Skeleton className="h-64 w-full" /> },
 );
 
-const TABS = [
-  {
-    id: 'etat',
-    label: 'État',
-    description: 'Où tu en es maintenant — forme, charge, fraîcheur et projection.',
-    icon: Activity,
-  },
-  {
-    id: 'records',
-    label: 'Records',
-    description: 'Tes meilleures performances observées et courbes de référence.',
-    icon: Medal,
-  },
-  {
-    id: 'calibration',
-    label: 'Calibration',
-    description: 'Les repères utilisés par SHARPIT pour interpréter tes efforts.',
-    icon: SlidersHorizontal,
-  },
-] as const;
-
-type TabId = (typeof TABS)[number]['id'];
-
-function isTabId(value: string | null): value is TabId {
-  return TABS.some((tab) => tab.id === value);
-}
-
 export function ProgressionHub({
   initialProfile,
-  basePath = '/training/progression',
+  basePath = PROGRESSION_BASE_PATH,
 }: {
   initialProfile: ProfileData | null;
   basePath?: string;
@@ -63,8 +48,8 @@ export function ProgressionHub({
   const router = useRouter();
   const searchParams = useSearchParams();
   const raw = searchParams.get('tab');
-  const tab: TabId = isTabId(raw) ? raw : 'etat';
-  const activeTab = TABS.find((item) => item.id === tab) ?? TABS[0];
+  const tab: ProgressionTabId = isProgressionTabId(raw) ? raw : 'etat';
+  const activeTab = PROGRESSION_TABS.find((item) => item.id === tab) ?? PROGRESSION_TABS[0];
 
   function setTab(next: string) {
     router.replace(`${basePath}?tab=${next}`, { scroll: false });
@@ -82,8 +67,8 @@ export function ProgressionHub({
           aria-label="Sections Progression"
           className="-mx-1 mt-4 flex scrollbar-none gap-1.5 overflow-x-auto pb-0.5"
         >
-          {TABS.map((item) => {
-            const Icon = item.icon;
+          {PROGRESSION_TABS.map((item) => {
+            const Icon = TAB_ICON[item.id];
             const active = tab === item.id;
             return (
               <button
