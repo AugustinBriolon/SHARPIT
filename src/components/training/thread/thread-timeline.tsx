@@ -4,23 +4,43 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ThreadEntryRow } from '@/components/training/thread/thread-entry-row';
 import { ThreadTodayCard } from '@/components/training/thread/thread-today-card';
-import { TrainingSectionLink } from '@/components/training/hub/training-dashboard-shell';
+import Link from 'next/link';
 import { dayKeyFromDate } from '@/lib/date/day-key';
 import type { ThreadDay } from '@/lib/training/thread/thread-model';
 import { cn } from '@/lib/utils';
 
 /**
- * The thread: the next few sessions, then the last few.
+ * The thread: one list, read downward, newest first.
  *
- * A digest rather than the whole archive. Week separators are gone with it —
- * once the past reads backwards and the future forwards, a list carrying both
- * ran S34 → S35 → S34 down the page, with the current week printed twice and the
- * next one wedged between its two halves.
+ * Two lists running in opposite directions was the mistake — the page had a
+ * heading, an ascending block, another heading and a descending block, and the
+ * reader had to work out which way each half ran. A single direction needs no
+ * explaining: further down is further back, everywhere, always.
  *
- * What replaces them is a door on each side. Planning holds the whole plan and
- * History the whole archive; this page holds the part that bears on today, and
- * says plainly where the rest is.
+ * The "aujourd'hui" rule is a waterline rather than a label. Everything above it
+ * is still owed, everything below already happened, and the eye finds the
+ * boundary without reading the date beside it.
+ *
+ * Each door sits at the end of the direction it extends: Planning above, where
+ * the future continues past what is shown, Historique below, where the past does.
  */
+
+/** A door at the end of the direction it extends. */
+function EdgeLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        'text-muted-foreground hover:text-primary inline-flex min-h-11 items-center gap-1 lg:min-h-9',
+        'text-data text-xs tracking-wide transition-colors',
+        'focus-visible:ring-primary/35 rounded-sm focus-visible:ring-2 focus-visible:outline-hidden',
+      )}
+    >
+      {label}
+      <span aria-hidden>→</span>
+    </Link>
+  );
+}
 
 function todayDayKey(): string {
   const now = new Date();
@@ -39,16 +59,7 @@ function DayGroup({
   pivotEntryId: string | null;
 }) {
   return (
-    <li aria-current={isToday ? 'date' : undefined}>
-      {isToday ? (
-        <div className="mb-2 flex items-center gap-3">
-          <p className="text-data text-primary shrink-0 text-[11px] font-semibold tracking-wide uppercase">
-            Aujourd’hui · {format(day.date, 'EEE d', { locale: fr })}
-          </p>
-          <span className="bg-primary h-0.5 flex-1 rounded-full" aria-hidden />
-        </div>
-      ) : null}
-
+    <li>
       <div className="flex gap-2.5">
         <p
           className={cn(
@@ -91,7 +102,7 @@ export function ThreadTimeline({
   past,
   pivotEntryId = null,
 }: {
-  /** Today and after, in the order it will happen. */
+  /** Today and after, nearest first — reversed here so the list reads downward. */
   upcoming: readonly ThreadDay[];
   /** Before today, most recent first. */
   past: readonly ThreadDay[];
@@ -100,48 +111,66 @@ export function ThreadTimeline({
 }) {
   const today = todayDayKey();
 
-  /* The first session still owed today — the others stay rows. */
+  /* The last session still owed today — nearest the waterline once reversed. */
   const expandedTodayId =
     upcoming.find((day) => day.dayKey === today)?.entries.find((e) => e.kind === 'planned')?.id ??
     null;
 
+  /* Reversed to the day and to the session: one direction means one direction,
+     and a day that read forward inside a list reading backward would be the same
+     mistake at a smaller scale. */
+  const ahead = [...upcoming]
+    .reverse()
+    .map((day) => ({ ...day, entries: [...day.entries].reverse() }));
+
   return (
-    <div className="space-y-6">
-      <section>
-        <TrainingSectionLink cta="Planning" href="/training/planning" title="À venir" />
-        {upcoming.length > 0 ? (
-          <ol className="space-y-2">
-            {upcoming.map((day) => (
-              <DayGroup
-                key={`up-${day.dayKey}`}
-                day={day}
-                expandedTodayId={expandedTodayId}
-                isToday={day.dayKey === today}
-                pivotEntryId={pivotEntryId}
-              />
-            ))}
-          </ol>
-        ) : (
-          <p className="text-muted-foreground px-0.5 text-sm">Aucune séance prévue.</p>
-        )}
-      </section>
+    <div>
+      {/* Above the list, because upward is where the plan continues. */}
+      <div className="mb-2 flex justify-end px-0.5">
+        <EdgeLink href="/training/planning" label="Tout le planning" />
+      </div>
+
+      <ol className="space-y-2">
+        {ahead.map((day) => (
+          <DayGroup
+            key={`up-${day.dayKey}`}
+            day={day}
+            expandedTodayId={expandedTodayId}
+            isToday={day.dayKey === today}
+            pivotEntryId={pivotEntryId}
+          />
+        ))}
+      </ol>
+
+      {/* The waterline: owed above, done below. */}
+      <div className="my-3 flex items-center gap-3" aria-hidden>
+        <span className="bg-primary h-0.5 flex-1 rounded-full" />
+        <p className="text-data text-primary shrink-0 text-[11px] font-semibold tracking-wide uppercase">
+          Aujourd’hui · {format(new Date(), 'EEE d', { locale: fr })}
+        </p>
+        <span className="bg-primary h-0.5 flex-1 rounded-full" />
+      </div>
 
       {past.length > 0 ? (
-        <section>
-          <TrainingSectionLink cta="Historique" href="/training/history" title="Déjà fait" />
-          <ol className="space-y-2">
-            {past.map((day) => (
-              <DayGroup
-                key={`past-${day.dayKey}`}
-                day={day}
-                expandedTodayId={null}
-                isToday={false}
-                pivotEntryId={null}
-              />
-            ))}
-          </ol>
-        </section>
-      ) : null}
+        <ol className="space-y-2">
+          {past.map((day) => (
+            <DayGroup
+              key={`past-${day.dayKey}`}
+              day={day}
+              expandedTodayId={null}
+              isToday={false}
+              pivotEntryId={null}
+            />
+          ))}
+        </ol>
+      ) : (
+        <p className="text-muted-foreground px-0.5 text-sm">Aucune séance enregistrée.</p>
+      )}
+
+      {/* Below it, because downward is where the past continues. */}
+      <div className="mt-3 flex justify-end px-0.5">
+        <EdgeLink href="/training/history" label="Tout l’historique" />
+      </div>
     </div>
   );
 }
