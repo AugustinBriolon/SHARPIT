@@ -15,6 +15,17 @@ export const CHART_VO2_STROKE = 'var(--signal-vo2)';
 export const CHART_RECORD_STROKE = 'var(--record-accent)';
 
 export const CHART_CAUTION_STROKE = 'var(--signal-caution)';
+/**
+ * The second line of a two-line chart, tuned only for separation from `--primary`.
+ *
+ * Not `--signal-caution`: that token answers "is this a warning", and once it was
+ * darkened enough to be legible as text it landed almost on top of the brand green
+ * in luminance. A series is not a state. Even so, the gap here is ~2.7:1 on the
+ * light canvas and less on dark — a palette anchored on one background cannot buy
+ * three levels of 3:1 out of a 21:1 range — so the pattern, not the colour, is
+ * what actually tells the two curves apart.
+ */
+export const CHART_COUNTER_STROKE = 'var(--signal-threshold)';
 export const CHART_RISK_STROKE = 'var(--signal-risk)';
 
 export const CHART_REFERENCE_LINE = 'var(--analysis-border)';

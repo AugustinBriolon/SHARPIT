@@ -81,20 +81,23 @@ export function AdaptationPageView({
 
   /* Plateau and unrewarded overload were the last two lines of a fold nobody
      opened. They are exceptions, not context — they belong where exceptions go. */
-  const alerts = loading
+  const alerts: DrillDownAlert[] = loading
     ? []
-    : [
-        plateauRisk && {
-          colorClass: 'text-signal-caution',
-          label: 'ton adaptation stagne sur la fenêtre récente.',
-          prefix: 'Plateau',
-        },
-        overreachingWithoutAdaptation && {
-          colorClass: 'text-signal-risk',
-          label: 'charge haute sans réponse adaptative en face.',
-          prefix: 'Surcharge sans gain',
-        },
-      ].filter((alert): alert is DrillDownAlert => typeof alert === 'object' && alert !== null);
+    : (
+        [
+          plateauRisk && {
+            colorClass: 'text-signal-caution',
+            label: 'ton adaptation stagne sur la fenêtre récente.',
+            prefix: 'Plateau',
+          },
+          overreachingWithoutAdaptation && {
+            colorClass: 'text-signal-risk',
+            label: 'charge haute sans réponse adaptative en face.',
+            prefix: 'Surcharge sans gain',
+            tone: 'risk',
+          },
+        ] as (DrillDownAlert | false)[]
+      ).filter((alert): alert is DrillDownAlert => alert !== false);
 
   const neuromuscular = dimensions.find((d) => d.key === 'neuromuscularEfficiency');
   const neuromuscularMissing = !loading && neuromuscular != null && !neuromuscular.dim.available;

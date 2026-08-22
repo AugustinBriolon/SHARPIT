@@ -5,7 +5,7 @@ import { ChartTooltipCard } from '@/components/ui/charts/chart-tooltip';
 import { ChartFigure } from '@/components/ui/charts/chart-figure';
 import {
   CHART_BASE_STROKE,
-  CHART_CAUTION_STROKE,
+  CHART_COUNTER_STROKE,
   CHART_REFERENCE_LINE,
   CHART_TICK_COLOR,
 } from '@/lib/theme/chart-theme';
@@ -110,7 +110,7 @@ export function EffortPmcSection({ data }: { data: PmcPoint[] }) {
             // Recharts animates stroke-dasharray, so its animation must be off or it
             // overwrites the pattern and leaves the line at zero length.
             isAnimationActive={false}
-            stroke={CHART_CAUTION_STROKE}
+            stroke={CHART_COUNTER_STROKE}
             strokeDasharray="5 3"
             strokeWidth={2}
             type="monotone"
