@@ -25,7 +25,7 @@ export function MobileDrillDownHeader({
   return (
     <StickyHeader className={cn('mb-3 space-y-1 pt-14 max-lg:py-0 lg:mb-4 lg:pt-0', className)}>
       <Link
-        className="text-muted-foreground hover:text-foreground bg-background/80 fixed inset-x-0 top-0 z-40 flex min-h-14 items-center gap-1 px-4 text-sm backdrop-blur-xl transition-colors lg:static lg:min-h-0 lg:bg-transparent lg:px-0 lg:backdrop-blur-none"
+        className="text-muted-foreground hover:text-foreground bg-background/80 fixed inset-x-0 top-0 z-40 flex min-h-14 items-center gap-1 px-4 text-sm backdrop-blur-xl transition-colors lg:static lg:min-h-11 lg:bg-transparent lg:px-0 lg:backdrop-blur-none"
         href={backHref}
       >
         <ChevronLeft className="size-4 shrink-0" aria-hidden />

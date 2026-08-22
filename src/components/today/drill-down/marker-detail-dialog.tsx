@@ -109,7 +109,7 @@ export function MarkerDetailDialog({
         {detail.positionWord ? (
           <p
             className={cn(
-              'text-sm font-medium',
+              'text-sm font-medium first-letter:uppercase',
               detail.concerning ? 'text-signal-caution' : 'text-foreground',
             )}
           >

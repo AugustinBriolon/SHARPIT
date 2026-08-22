@@ -32,7 +32,7 @@ export function TermInfo({ term, className }: { term: GlossaryKey; className?: s
         type="button"
         className={cn(
           'text-muted-foreground/60 hover:text-foreground focus-visible:outline-ring',
-          'inline-flex shrink-0 translate-y-px items-center rounded-full align-middle transition-colors',
+          'inline-flex shrink-0 items-center rounded-full transition-colors',
           'focus-visible:outline-2 focus-visible:outline-offset-2',
           className,
         )}

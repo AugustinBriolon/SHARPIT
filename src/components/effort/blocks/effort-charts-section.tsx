@@ -35,9 +35,9 @@ export function EffortPmcSection({ data }: { data: PmcPoint[] }) {
     <DrillDownSectionCard>
       {/* The definitions sit on the terms rather than in a fold beneath the chart:
           the acronym is read while looking at its curve, not two scrolls later. */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <DrillDownSectionLabel>{PMC_TITLE}</DrillDownSectionLabel>
-        <span className="text-muted-foreground flex items-center gap-2 text-xs">
+      <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <DrillDownSectionLabel className="mb-0">{PMC_TITLE}</DrillDownSectionLabel>
+        <span className="text-muted-foreground flex items-center gap-2 text-xs leading-none">
           <span className="inline-flex items-center gap-1">
             Forme chronique
             <TermInfo term="ctl" />
@@ -133,8 +133,8 @@ export function EffortWeeklyTssSection({
 
   return (
     <DrillDownSectionCard>
-      <div className="flex items-center gap-1.5">
-        <DrillDownSectionLabel>{WEEKLY_TSS_TITLE}</DrillDownSectionLabel>
+      <div className="mb-3 flex items-center gap-1.5">
+        <DrillDownSectionLabel className="mb-0">{WEEKLY_TSS_TITLE}</DrillDownSectionLabel>
         <TermInfo term="tss" />
       </div>
       <ChartFigure

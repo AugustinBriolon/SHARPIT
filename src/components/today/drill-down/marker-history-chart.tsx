@@ -80,7 +80,7 @@ export function MarkerHistoryChart({
       <div className="text-muted-foreground flex items-baseline justify-between gap-3 text-xs">
         <span>{active?.label ?? '—'}</span>
         <span className="text-data text-foreground tabular-nums">
-          {activeValue != null ? `${activeValue} ${unit}` : 'pas de mesure'}
+          {activeValue != null ? `${activeValue} ${unit}` : 'Pas de mesure'}
         </span>
       </div>
 

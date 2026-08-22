@@ -169,7 +169,7 @@ export function MarkerCard({
 
       <span
         className={cn(
-          'mt-1.5 block text-xs',
+          'mt-1.5 block text-xs first-letter:uppercase',
           concerning ? 'text-signal-caution' : 'text-muted-foreground',
         )}
       >

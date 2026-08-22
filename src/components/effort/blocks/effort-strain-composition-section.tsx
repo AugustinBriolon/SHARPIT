@@ -16,8 +16,8 @@ export function EffortStrainCompositionSection({
 
   return (
     <DrillDownSectionCard>
-      <div className="flex items-center gap-1.5">
-        <DrillDownSectionLabel>D’où vient la charge du jour</DrillDownSectionLabel>
+      <div className="mb-1.5 flex items-center gap-1.5">
+        <DrillDownSectionLabel className="mb-0">D’où vient la charge du jour</DrillDownSectionLabel>
         <TermInfo term="strain" />
       </div>
       <p className="text-muted-foreground mb-4 flex items-center gap-1 text-xs">
@@ -53,7 +53,7 @@ export function EffortStrainCompositionSection({
                 {!loading && !(row.available && row.load != null) ? (
                   <p className="text-muted-foreground/40 text-sm">—</p>
                 ) : null}
-                <p className="text-muted-foreground text-xs tracking-wide">charge</p>
+                <p className="text-muted-foreground text-xs tracking-wide">Charge</p>
               </div>
             </div>
           );
