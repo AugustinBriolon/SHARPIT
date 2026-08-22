@@ -1,4 +1,5 @@
 import { GoalKind, GoalPriority } from '@prisma/client';
+import { format } from 'date-fns';
 import { describe, expect, it } from 'vitest';
 import { resolveTodayGoalContext } from '@/lib/daily-phase/goal-context';
 import type { ClientGoal } from '@/lib/query/types';
@@ -41,7 +42,11 @@ describe('resolveTodayGoalContext', () => {
           completed: false,
         },
       ],
-      trainingDay.toISOString().slice(0, 10),
+      // `resolveTodayGoalContext` matches sessions on the *local* calendar day, as
+      // every caller does. Building the id from `toISOString` compared a UTC day
+      // against a local one, so the test failed for the two hours a day when the
+      // two disagree — which is how it passed for months and broke at 01:08.
+      format(trainingDay, 'yyyy-MM-dd'),
     );
 
     expect(ctx?.goalId).toBe('g-b');
@@ -58,7 +63,7 @@ describe('resolveTodayGoalContext', () => {
       raceGoal({ id: 'g-b', title: 'Semi Lyon', priority: GoalPriority.B, targetDate }),
     ];
 
-    const ctx = resolveTodayGoalContext(goals, [], new Date().toISOString().slice(0, 10));
+    const ctx = resolveTodayGoalContext(goals, [], format(new Date(), 'yyyy-MM-dd'));
 
     expect(ctx?.goalId).toBe('g-a');
     expect(ctx?.linkedToTodaySession).toBe(false);
