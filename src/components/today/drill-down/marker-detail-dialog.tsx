@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 import {
   MarkerHistoryChart,
   type MarkerHistoryPoint,
@@ -43,6 +45,8 @@ export type MarkerDetail = {
   reading?: string | null;
   concerning: boolean;
   positionWord: string | null;
+  /** Where the athlete goes when the reading itself looks wrong. */
+  action?: { label: string; href: string } | null;
 };
 
 export function MarkerDetailDialog({
@@ -137,6 +141,16 @@ export function MarkerDetailDialog({
 
         {detail.reading ? (
           <p className="text-foreground text-sm leading-relaxed">{detail.reading}</p>
+        ) : null}
+
+        {detail.action ? (
+          <Link
+            className="text-primary hover:text-foreground border-analysis-border/40 inline-flex items-center gap-1.5 border-t pt-3 text-sm transition-colors"
+            href={detail.action.href}
+          >
+            {detail.action.label}
+            <span aria-hidden>→</span>
+          </Link>
         ) : null}
       </DialogContent>
     </Dialog>

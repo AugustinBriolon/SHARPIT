@@ -30,6 +30,8 @@ export type MarkerSpec = {
   /** What it means for today, when the number alone does not say. */
   reading?: string | null;
   format?: (value: number) => string;
+  /** Where "is this number even right?" gets answered. */
+  action?: { label: string; href: string } | null;
 };
 
 function toDetail(spec: MarkerSpec): MarkerDetail {
@@ -47,6 +49,7 @@ function toDetail(spec: MarkerSpec): MarkerDetail {
     explanation: spec.explanation,
     reading: spec.reading ?? null,
     format: spec.format,
+    action: spec.action ?? null,
     concerning: position != null && isConcerning(position, spec.lowerIsBetter ?? false),
     positionWord: position ? `${POSITION_WORD[position]} ${rangeWord}` : null,
   };

@@ -112,6 +112,8 @@ describe('today-twin-navigation', () => {
   it('returns no dimension for routes that are not a twin page', () => {
     expect(twinDimensionFromHref(TWIN_DRILL_DOWN.planning)).toBeNull();
     expect(twinDimensionFromHref(TWIN_DRILL_DOWN.physical)).toBeNull();
+    expect(twinDimensionFromHref(TWIN_DRILL_DOWN.calibration)).toBeNull();
+    expect(twinDimensionFromHref(TWIN_DRILL_DOWN.records)).toBeNull();
     expect(twinDimensionFromHref(null)).toBeNull();
   });
 
