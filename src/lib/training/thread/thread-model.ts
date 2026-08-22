@@ -41,6 +41,14 @@ export type ThreadWeek = {
   readonly days: readonly ThreadDay[];
   /** Load actually recorded this week. */
   readonly doneLoad: number;
+  /**
+   * Whether any completed session this week carried a load at all.
+   *
+   * Without this a week of five sessions that never got a TSS reads "0", and a
+   * zero that means "not measured" is worse than no figure: it says the athlete
+   * did nothing on a week he trained five times.
+   */
+  readonly doneLoadKnown: boolean;
   /** Load the plan asks for this week. */
   readonly plannedLoad: number;
   readonly isCurrent: boolean;

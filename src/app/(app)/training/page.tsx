@@ -1,12 +1,11 @@
 import { Suspense } from 'react';
-import { TrainingDashboard } from '@/components/training/hub/training-dashboard';
-import { TrainingDashboardShell } from '@/components/training/hub/training-dashboard-shell';
+import { Skeleton } from '@/components/ui/skeleton';
+import { TrainingThreadView } from '@/components/training/thread/training-thread-view';
 
-/** Suspense for the current-date read only — the hub owns its skeletons. */
 export default function TrainingPage() {
   return (
-    <Suspense fallback={<TrainingDashboardShell />}>
-      <TrainingDashboard />
+    <Suspense fallback={<Skeleton className="h-96 w-full rounded-2xl" />}>
+      <TrainingThreadView />
     </Suspense>
   );
 }

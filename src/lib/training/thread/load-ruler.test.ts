@@ -8,6 +8,7 @@ function week(partial: Partial<ThreadWeek> & { weekKey: string }): ThreadWeek {
     start: new Date(2026, 0, 1),
     days: [],
     doneLoad: 0,
+    doneLoadKnown: false,
     plannedLoad: 0,
     isCurrent: false,
     isFuture: false,

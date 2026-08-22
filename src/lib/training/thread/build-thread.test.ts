@@ -107,6 +107,25 @@ describe('buildThread', () => {
     expect(week.isCurrent).toBe(true);
   });
 
+  it('says when a week has sessions but no load, rather than reporting zero', () => {
+    const [withoutLoad] = buildThread({
+      activities: [activity({ id: 'a1', load: null })],
+      plannedSessions: [],
+      pivot: PIVOT,
+      weeksBack: 4,
+    });
+    expect(withoutLoad.doneLoad).toBe(0);
+    expect(withoutLoad.doneLoadKnown).toBe(false);
+
+    const [withLoad] = buildThread({
+      activities: [activity({ id: 'a1', load: 45 })],
+      plannedSessions: [],
+      pivot: PIVOT,
+      weeksBack: 4,
+    });
+    expect(withLoad.doneLoadKnown).toBe(true);
+  });
+
   it('marks a week as future only when no day of it has passed', () => {
     const nextWeek = new Date(2026, 8, 2);
     const weeks = buildThread({

@@ -145,9 +145,13 @@ export function buildThread({
     const totals = entries.reduce(
       (acc, entry) => {
         const { done, planned } = loadOf(entry);
-        return { done: acc.done + done, planned: acc.planned + planned };
+        return {
+          done: acc.done + done,
+          planned: acc.planned + planned,
+          doneKnown: acc.doneKnown || entry.activity?.load != null,
+        };
       },
-      { done: 0, planned: 0 },
+      { done: 0, planned: 0, doneKnown: false },
     );
 
     const start = days[0]?.date ?? pivotWeekStart;
@@ -157,6 +161,7 @@ export function buildThread({
       start: weekStart(start),
       days,
       doneLoad: Math.round(totals.done),
+      doneLoadKnown: totals.doneKnown,
       plannedLoad: Math.round(totals.planned),
       isCurrent: weekKey === currentWeekKey,
       isFuture: days.every((d) => d.dayKey > pivotDayKey),
