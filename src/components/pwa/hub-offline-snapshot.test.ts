@@ -62,6 +62,7 @@ vi.mock('@/hooks/use-data', () => ({
   useGoals: vi.fn(),
   useAthleteProfile: () => ({ data: undefined }),
   useRecords: () => ({ data: undefined }),
+  useThresholdHistory: () => ({ data: undefined }),
 }));
 
 /* The thread reads these too, and hooks cannot be conditional — they run before

@@ -18,6 +18,14 @@ export type RulerBar = {
   /** 0–1 against the tallest bar in the window. */
   readonly height: number;
   readonly state: 'past' | 'current' | 'future';
+  /**
+   * A past week whose sessions carried no load at all.
+   *
+   * Drawing it as a bar of zero says the athlete did nothing that week, when in
+   * fact he trained and the load was never recorded. The two are opposite
+   * readings and only one of them is true.
+   */
+  readonly unmeasured: boolean;
 };
 
 /** Nine weeks fit a phone without the bars becoming lines. */
@@ -39,12 +47,14 @@ export function buildLoadRuler(weeks: readonly ThreadWeek[], window = RULER_WIND
     let state: RulerBar['state'] = 'past';
     if (week.isCurrent) state = 'current';
     else if (week.isFuture) state = 'future';
+    const load = state === 'future' ? week.plannedLoad : week.doneLoad;
     return {
       weekKey: week.weekKey,
       label: week.label,
-      load: state === 'future' ? week.plannedLoad : week.doneLoad,
+      load,
       height: 0,
       state,
+      unmeasured: state !== 'future' && !week.doneLoadKnown && week.days.length > 0,
     };
   });
 

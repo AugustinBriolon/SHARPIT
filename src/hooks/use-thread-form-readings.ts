@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useAthleteProfile, useRecords } from '@/hooks/use-data';
+import { useAthleteProfile, useRecords, useThresholdHistory } from '@/hooks/use-data';
 import type { ThreadReading } from '@/components/training/thread/thread-form-readings';
 import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
 
@@ -33,8 +33,24 @@ function timeLabel(seconds: number): string {
 export function useThreadFormReadings(): ThreadReading[] {
   const profileQuery = useAthleteProfile();
   const recordsQuery = useRecords();
+  const historyQuery = useThresholdHistory();
 
   return useMemo(() => {
+    /* Snapshots arrive newest first; a trace has to run the other way or every
+       improvement would be drawn as a decline. */
+    const history = [...(historyQuery.data ?? [])].reverse();
+    const seriesOf = (pick: (snapshot: (typeof history)[number]) => number | null | undefined) => {
+      const points = history.map((snapshot) => pick(snapshot) ?? null);
+      const known = points.filter((value): value is number => value != null);
+      /* Two readings minimum, and they have to differ. A flat line drawn from
+         twelve identical snapshots claims a stability that was measured, when in
+         fact the figure was simply never revised — and a trace nobody can act on
+         is a number without a decision behind it. */
+      if (known.length < 2) return null;
+      if (Math.min(...known) === Math.max(...known)) return null;
+      return points;
+    };
+
     const readings: ThreadReading[] = [];
     const profile = profileQuery.data;
 
@@ -43,6 +59,9 @@ export function useThreadFormReadings(): ThreadReading[] {
         key: 'run-threshold',
         label: 'Seuil course',
         value: paceLabel(profile.runThresholdPaceSecPerKm),
+        // Seconds per kilometre: falling is getting faster.
+        lowerIsBetter: true,
+        series: seriesOf((snapshot) => snapshot.runThresholdPaceSecPerKm),
         href: TWIN_DRILL_DOWN.calibration,
       });
     }
@@ -52,6 +71,7 @@ export function useThreadFormReadings(): ThreadReading[] {
         key: 'ftp',
         label: 'FTP vélo',
         value: `${profile.ftpW} W`,
+        series: seriesOf((snapshot) => snapshot.ftpW),
         href: TWIN_DRILL_DOWN.calibration,
       });
     }
@@ -75,5 +95,5 @@ export function useThreadFormReadings(): ThreadReading[] {
     }
 
     return readings;
-  }, [profileQuery.data, recordsQuery.data]);
+  }, [profileQuery.data, recordsQuery.data, historyQuery.data]);
 }

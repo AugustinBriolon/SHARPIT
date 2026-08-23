@@ -10,6 +10,11 @@ const STATE_READING: Record<RulerBar['state'], string> = {
   future: 'prévu',
 };
 
+function barReading(bar: RulerBar): string {
+  if (bar.unmeasured) return 'séances faites, charge non mesurée';
+  return `${bar.load} TSS · ${STATE_READING[bar.state]}`;
+}
+
 /**
  * Nine weeks of load, as a shape.
  *
@@ -76,7 +81,7 @@ export function ThreadLoadRuler({
       <ul className="sr-only">
         {bars.map((bar) => (
           <li key={bar.weekKey}>
-            {bar.label} · {bar.load} TSS · {STATE_READING[bar.state]}
+            {bar.label} · {barReading(bar)}
           </li>
         ))}
       </ul>

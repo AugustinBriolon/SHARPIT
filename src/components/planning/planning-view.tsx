@@ -1,9 +1,15 @@
 'use client';
 
+/** `?date=2026-08-23` from a deep link, or nothing if it is not a plain day. */
+function parseCalendarDateParam(value: string | null): Date | null {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const parsed = new Date(`${value}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 import { PageHeader } from '@/components/layout/sticky-header';
 import { ProjectedAthleteCard } from '@/components/planning/scenario/projected-athlete-card';
 import { TravelContextBanner } from '@/components/planning/travel-context-banner';
-import { parseCalendarDateParam } from '@/components/calendar/calendar-utils';
 import { SessionsCoachMenu, type SessionsCoachAction } from '@/components/coaching/coach-menu';
 import { Button } from '@/components/ui/button';
 import {

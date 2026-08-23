@@ -81,10 +81,6 @@ export function usePrefetchNavQuery() {
           pre(queryKeys.activities, fetchActivities);
           pre(queryKeys.conversations, fetchConversations);
           break;
-        case '/training/calendar':
-          pre(queryKeys.plannedSessions, fetchPlannedSessions);
-          pre(queryKeys.goals, fetchGoals);
-          break;
         case '/training/planning':
           pre(queryKeys.plannedSessions, fetchPlannedSessions);
           pre(queryKeys.goals, fetchGoals);

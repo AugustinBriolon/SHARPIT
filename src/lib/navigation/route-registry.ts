@@ -44,10 +44,6 @@ const MATCHERS: Matcher[] = [
     pattern: /^\/training\/planning$/,
     resolve: () => ({ label: 'Planification', defaultParent: TRAINING_PARENT }),
   },
-  {
-    pattern: /^\/training\/calendar$/,
-    resolve: () => ({ label: 'Calendrier', defaultParent: TRAINING_PARENT }),
-  },
   // Both trip patterns must stay above the /training/:id catch-all below.
   {
     pattern: /^\/training\/trips$/,

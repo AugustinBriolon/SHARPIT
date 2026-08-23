@@ -125,12 +125,8 @@ export function ThreadTimeline({
 
   return (
     <div>
-      {/* Above the list, because upward is where the plan continues. The month
-          view sits beside it: the thread answers "what is next", a calendar
-          answers "what does the shape of the month look like", and neither
-          replaces the other. */}
-      <div className="mb-2 flex justify-end gap-3 px-0.5">
-        <EdgeLink href="/training/calendar" label="Calendrier" />
+      {/* Above the list, because upward is where the plan continues. */}
+      <div className="mb-2 flex justify-end px-0.5">
         <EdgeLink href="/training/planning" label="Tout le planning" />
       </div>
 

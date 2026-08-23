@@ -54,7 +54,9 @@ export function ThreadPlanChart({
       <ul className="sr-only">
         {window.map((week) => (
           <li key={week.weekKey}>
-            {week.label} · prévu {week.plannedLoad} TSS · réalisé {week.doneLoad} TSS
+            {week.label} ·{' '}
+            {week.plannedLoad > 0 ? `prévu ${week.plannedLoad} TSS · ` : 'aucune charge prévue · '}
+            {week.doneLoadKnown ? `réalisé ${week.doneLoad} TSS` : 'charge réalisée non mesurée'}
           </li>
         ))}
       </ul>
