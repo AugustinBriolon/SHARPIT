@@ -20,6 +20,7 @@ import { OfflineSnapshotSummary } from '@/components/pwa/offline-snapshot-summar
 import { useCoachMemory } from '@/hooks/use-coach-memory';
 import { useOfflineSnapshot } from '@/hooks/use-offline-snapshot';
 import { useOnlineStatus } from '@/hooks/use-online-status';
+import { usePlannedSessionActions } from '@/hooks/use-planned-session-actions';
 import { useTrainingThread } from '@/hooks/use-training-thread';
 import { useThreadFormReadings } from '@/hooks/use-thread-form-readings';
 import { isoWeekKeyOf } from '@/lib/training/thread/build-thread';
@@ -51,6 +52,7 @@ import { cn } from '@/lib/utils';
 export function TrainingThreadView() {
   const thread = useTrainingThread();
   const memory = useCoachMemory();
+  const { moveTo } = usePlannedSessionActions();
   const readings = useThreadFormReadings();
 
   /* Offline with every cache cold: show the last snapshot rather than skeletons
@@ -69,6 +71,24 @@ export function TrainingThreadView() {
   /* Which week the digest reads from. Null means today, which is the only state
      where "aujourd'hui" is a waterline rather than a date somewhere above. */
   const [anchorWeekKey, setAnchorWeekKey] = useState<string | null>(null);
+
+  /* The drop target knows the day, not the session — so the view resolves the id
+     against what it already holds rather than serialising a session into the
+     drag payload, where it would go stale the moment anything else changed it. */
+  const sessionById = useMemo(() => {
+    const map = new Map<
+      string,
+      NonNullable<(typeof thread.seasonWeeks)[number]['days'][number]['entries'][number]['planned']>
+    >();
+    for (const week of thread.seasonWeeks) {
+      for (const day of week.days) {
+        for (const entry of day.entries) {
+          if (entry.planned) map.set(entry.planned.id, entry.planned);
+        }
+      }
+    }
+    return map;
+  }, [thread.seasonWeeks]);
 
   const anchorLabel = anchorWeekKey
     ? (thread.seasonWeeks.find((week) => week.weekKey === anchorWeekKey)?.label ?? null)
@@ -204,13 +224,18 @@ export function TrainingThreadView() {
 
           <div className="lg:hidden">{filters}</div>
 
+          {/* `pivotEntryId` is this week's turning point; pointing at it from
+              another week would mark a session with nothing to do with what is
+              on screen, so it goes when the reader scrubs away. */}
           <ThreadTimeline
             anchorLabel={anchorLabel}
             past={digest.past}
-            upcoming={digest.upcoming}
-            /* The pivot is this week's turning point; pointing at it from another
-               week would mark a session that has nothing to do with what is read. */
             pivotEntryId={anchorWeekKey ? null : (coachLine?.pivotEntryId ?? null)}
+            upcoming={digest.upcoming}
+            onDropSession={(sessionId, target) => {
+              const session = sessionById.get(sessionId);
+              if (session) moveTo(session, target);
+            }}
           />
 
           {/* Mobile keeps the readings at the foot of the thread; desktop lifts

@@ -52,6 +52,26 @@ export function easeSession(
   };
 }
 
+/**
+ * Same session, on a day the athlete picked.
+ *
+ * The clock is carried over rather than reset: a session planned for 7 a.m. that
+ * moves to Thursday is still a 7 a.m. session, and dropping it to midnight would
+ * quietly reorder it against everything else that day.
+ */
+export function moveToDay(
+  session: Pick<ClientPlannedSession, 'date'>,
+  target: Date,
+): SessionAdjustment | null {
+  const from = new Date(session.date);
+  const next = new Date(target);
+  next.setHours(from.getHours(), from.getMinutes(), 0, 0);
+
+  // Dropping a session back where it already was is not a move.
+  if (next.toDateString() === from.toDateString()) return null;
+  return { date: next };
+}
+
 /** The values to write back to put a session exactly as it was. */
 export function undoOf(
   session: Pick<ClientPlannedSession, 'date' | 'durationMin' | 'load'>,

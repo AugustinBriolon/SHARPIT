@@ -1,11 +1,14 @@
 'use client';
 
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { useCallback } from 'react';
 import { toast } from '@/components/ui/toast';
 import { usePlannedSessionMutations } from '@/hooks/use-planned-sessions';
 import type { ClientPlannedSession } from '@/lib/query/types';
 import {
   easeSession,
+  moveToDay,
   shiftByOneDay,
   undoOf,
   type SessionAdjustment,
@@ -68,5 +71,19 @@ export function usePlannedSessionActions() {
     [apply],
   );
 
-  return { shift, ease, pending: update.isPending };
+  const moveTo = useCallback(
+    (session: ClientPlannedSession, target: Date) => {
+      const adjustment = moveToDay(session, target);
+      // A drop back onto the same day is a no-op; announcing it would be noise.
+      if (!adjustment) return;
+      apply(
+        session,
+        adjustment,
+        `Séance déplacée au ${format(target, 'EEEE d MMMM', { locale: fr })}`,
+      );
+    },
+    [apply],
+  );
+
+  return { shift, ease, moveTo, pending: update.isPending };
 }

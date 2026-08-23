@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ClientPlannedSession } from '@/lib/query/types';
-import { easeSession, shiftByOneDay, undoOf } from './session-adjust';
+import { easeSession, moveToDay, shiftByOneDay, undoOf } from './session-adjust';
 
 function session(partial: Partial<ClientPlannedSession> = {}): ClientPlannedSession {
   return {
@@ -41,6 +41,22 @@ describe('easeSession', () => {
   it('refuses when there is nothing to reduce', () => {
     expect(easeSession(session({ durationMin: null, load: null }))).toBeNull();
     expect(easeSession(session({ durationMin: 0, load: 0 }))).toBeNull();
+  });
+});
+
+describe('moveToDay', () => {
+  it('keeps the time of day when the date changes', () => {
+    const moved = moveToDay(session(), new Date(2026, 7, 29));
+    expect(moved?.date?.getDate()).toBe(29);
+    expect(moved?.date?.getHours()).toBe(9);
+  });
+
+  it('refuses a drop back onto the same day', () => {
+    expect(moveToDay(session(), new Date(2026, 7, 26, 18))).toBeNull();
+  });
+
+  it('moves backwards as readily as forwards', () => {
+    expect(moveToDay(session(), new Date(2026, 7, 20))?.date?.getDate()).toBe(20);
   });
 });
 

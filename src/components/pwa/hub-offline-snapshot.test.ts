@@ -71,6 +71,15 @@ vi.mock('@/hooks/use-coach-memory', () => ({
   useCoachMemory: () => ({ data: undefined }),
 }));
 
+vi.mock('@/hooks/use-planned-session-actions', () => ({
+  usePlannedSessionActions: () => ({
+    shift: vi.fn(),
+    ease: vi.fn(),
+    moveTo: vi.fn(),
+    pending: false,
+  }),
+}));
+
 vi.mock('@/hooks/use-viewport', () => ({
   useIsMobile: () => false,
 }));
