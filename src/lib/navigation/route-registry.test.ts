@@ -4,9 +4,9 @@ import { resolveRouteFallback, resolveRouteLabel } from './route-registry';
 describe('route-registry', () => {
   describe('resolveRouteLabel', () => {
     it('matches static routes', () => {
-      expect(resolveRouteLabel('/training')).toBe('Entraînement');
+      expect(resolveRouteLabel('/training')).toBe('Ma semaine');
       expect(resolveRouteLabel('/training/history')).toBe('Historique');
-      expect(resolveRouteLabel('/settings')).toBe('Réglages');
+      expect(resolveRouteLabel('/settings')).toBe('Profil');
       expect(resolveRouteLabel('/coach')).toBe('Coach');
       expect(resolveRouteLabel('/')).toBe('Aujourd’hui');
     });
@@ -34,7 +34,7 @@ describe('route-registry', () => {
       });
       expect(resolveRouteFallback('/training/history')).toEqual({
         href: '/training',
-        label: 'Entraînement',
+        label: 'Ma semaine',
       });
     });
 
@@ -48,15 +48,15 @@ describe('route-registry', () => {
     it('sends every /settings child back to /settings', () => {
       expect(resolveRouteFallback('/settings/account')).toEqual({
         href: '/settings',
-        label: 'Réglages',
+        label: 'Profil',
       });
       expect(resolveRouteFallback('/settings/integrations')).toEqual({
         href: '/settings',
-        label: 'Réglages',
+        label: 'Profil',
       });
       expect(resolveRouteFallback('/settings/equipment')).toEqual({
         href: '/settings',
-        label: 'Réglages',
+        label: 'Profil',
       });
     });
 
@@ -72,7 +72,7 @@ describe('route-registry', () => {
     });
 
     it('defaults to home when no matcher applies', () => {
-      expect(resolveRouteFallback('/unknown')).toEqual({ href: '/', label: 'Accueil' });
+      expect(resolveRouteFallback('/unknown')).toEqual({ href: '/', label: 'Aujourd’hui' });
     });
   });
 });

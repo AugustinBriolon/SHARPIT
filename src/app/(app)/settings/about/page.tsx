@@ -4,9 +4,9 @@ import { StickyHeader } from '@/components/layout/sticky-header';
 export default function SettingsAboutPage() {
   return (
     <div className="space-y-4">
-      <MobileBackLink href="/settings" label="Réglages" showOnDesktop />
+      <MobileBackLink href="/settings" label="Profil" showOnDesktop />
       <StickyHeader>
-        <p className="text-label">Réglages</p>
+        <p className="text-label">Profil</p>
         <h1 className="text-page-title mt-1">À propos</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           SHARPIT est un système de coaching sportif personnel centré sur la physiologie et la

@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { UserButton, useUser } from '@clerk/nextjs';
 import { Activity } from 'lucide-react';
 import { LayoutGroup, motion, useReducedMotion } from 'motion/react';
-import { settingsNavItem, sidebarPrimaryNavItems, type AppNavItem } from '@/lib/app-navigation';
+import { profileNavItem, sidebarPrimaryNavItems, type AppNavItem } from '@/lib/app-navigation';
 import { usePrefetchNavQuery } from '@/hooks/use-prefetch-nav';
 import { springs } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
@@ -157,7 +157,7 @@ export function Sidebar() {
         </nav>
 
         <div className="border-sidebar-border space-y-2 border-t px-3 pt-3 pb-3">
-          <SidebarNavLink item={settingsNavItem} onPrefetch={prefetch} />
+          <SidebarNavLink item={profileNavItem} onPrefetch={prefetch} />
           <AccountMenu />
         </div>
       </LayoutGroup>

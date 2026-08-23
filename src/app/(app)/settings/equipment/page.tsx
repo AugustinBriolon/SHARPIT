@@ -34,9 +34,9 @@ async function EquipmentPanelWithProfile() {
 export default function SettingsEquipmentPage() {
   return (
     <div className="space-y-4">
-      <MobileBackLink href="/settings" label="Réglages" showOnDesktop />
+      <MobileBackLink href="/settings" label="Profil" showOnDesktop />
       <StickyHeader>
-        <p className="text-label">Réglages</p>
+        <p className="text-label">Profil</p>
         <h1 className="text-page-title mt-1">Équipement</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Capacités d&apos;entraînement par sport — pour adapter les séances à ce que tu as

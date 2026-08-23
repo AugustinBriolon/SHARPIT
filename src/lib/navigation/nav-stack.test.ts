@@ -43,15 +43,15 @@ async function loadNavStack() {
 describe('navStack', () => {
   it('push then peek returns the last entry', async () => {
     const { navStack } = await loadNavStack();
-    navStack.push({ href: '/training', label: 'Entraînement', ts: 1 });
-    expect(navStack.peek()).toEqual({ href: '/training', label: 'Entraînement', ts: 1 });
+    navStack.push({ href: '/training', label: 'Ma semaine', ts: 1 });
+    expect(navStack.peek()).toEqual({ href: '/training', label: 'Ma semaine', ts: 1 });
   });
 
   it('collapses consecutive duplicates instead of stacking twice', async () => {
     const { navStack } = await loadNavStack();
-    navStack.push({ href: '/training', label: 'Entraînement', ts: 1 });
-    navStack.push({ href: '/training', label: 'Entraînement', ts: 2 });
-    navStack.push({ href: '/training', label: 'Entraînement', ts: 3 });
+    navStack.push({ href: '/training', label: 'Ma semaine', ts: 1 });
+    navStack.push({ href: '/training', label: 'Ma semaine', ts: 2 });
+    navStack.push({ href: '/training', label: 'Ma semaine', ts: 3 });
     expect(navStack.all()).toHaveLength(1);
     expect(navStack.peek()?.ts).toBe(3);
   });
@@ -96,7 +96,7 @@ describe('navStack', () => {
 
   it('persists across a reload (sessionStorage roundtrip)', async () => {
     const { navStack, NAV_STACK_STORAGE_KEY } = await loadNavStack();
-    navStack.push({ href: '/training', label: 'Entraînement', ts: 1 });
+    navStack.push({ href: '/training', label: 'Ma semaine', ts: 1 });
     navStack.push({ href: '/training/history', label: 'Historique', ts: 2 });
 
     const raw = storageMock.getItem(NAV_STACK_STORAGE_KEY);
@@ -124,7 +124,7 @@ describe('navStack', () => {
 
   it('rewinds to an existing pathname (pop-above) and refreshes it with the latest href', async () => {
     const { navStack } = await loadNavStack();
-    navStack.push({ href: '/training', label: 'Entraînement', ts: 1 });
+    navStack.push({ href: '/training', label: 'Ma semaine', ts: 1 });
     navStack.push({
       href: '/training/progression?tab=records&sport=bike',
       label: 'Progression',
@@ -146,19 +146,19 @@ describe('navStack', () => {
 
   it('rewinds all the way back on repeated activity → back cycles (no history bloat)', async () => {
     const { navStack } = await loadNavStack();
-    navStack.push({ href: '/training', label: 'Entraînement', ts: 1 });
+    navStack.push({ href: '/training', label: 'Ma semaine', ts: 1 });
     navStack.push({ href: '/training/progression?tab=records', label: 'Progression', ts: 2 });
     navStack.push({ href: '/training/abc', label: 'Séance', ts: 3 });
     navStack.push({ href: '/training/progression?tab=records', label: 'Progression', ts: 4 });
     navStack.push({ href: '/training/def', label: 'Séance', ts: 5 });
     navStack.push({ href: '/training/progression?tab=records', label: 'Progression', ts: 6 });
-    navStack.push({ href: '/training', label: 'Entraînement', ts: 7 });
+    navStack.push({ href: '/training', label: 'Ma semaine', ts: 7 });
     expect(navStack.all().map((e) => e.href)).toEqual(['/training']);
   });
 
   it('clear wipes storage', async () => {
     const { navStack, NAV_STACK_STORAGE_KEY } = await loadNavStack();
-    navStack.push({ href: '/training', label: 'Entraînement', ts: 1 });
+    navStack.push({ href: '/training', label: 'Ma semaine', ts: 1 });
     navStack.clear();
     expect(navStack.all()).toEqual([]);
     expect(storageMock.getItem(NAV_STACK_STORAGE_KEY)).toBeNull();

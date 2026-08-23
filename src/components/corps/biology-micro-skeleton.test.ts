@@ -25,10 +25,10 @@ describe('biology hub loading gate', () => {
 });
 
 describe('CorpsHubSkeleton', () => {
-  it('renders Mon corps header, Composition tab active, and value pulses', () => {
+  it('renders Progression header, Composition tab active, and value pulses', () => {
     const html = renderToStaticMarkup(createElement(CorpsHubSkeleton));
 
-    expect(html).toContain('Mon corps');
+    expect(html).toContain('Progression');
     expect(html).toContain('Forme &amp; bien-être');
     expect(html).toContain('Poids, masse grasse');
     expect(html).toContain('Composition');

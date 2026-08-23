@@ -13,7 +13,7 @@ describe('ThreadPageSkeleton', () => {
 
   it('names the page rather than showing three grey rectangles', () => {
     expect(html).toContain('Le fil');
-    expect(html).toContain('Entraînement');
+    expect(html).toContain('Ma semaine');
   });
 
   it('keeps every heading that is structure rather than data', () => {

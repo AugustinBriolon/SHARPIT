@@ -170,7 +170,7 @@ export function ThreadPageSkeleton() {
   return (
     <div className="space-y-5">
       <div className="py-3 lg:py-4">
-        <p className="text-label">Entraînement</p>
+        <p className="text-label">Ma semaine</p>
         <h1 className="text-page-title mt-1">Le fil</h1>
       </div>
 

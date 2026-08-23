@@ -92,7 +92,7 @@ export function PhysicalHealthPageView({
         <CorpsSectionHeader
           action={headerAction}
           description="État inféré à partir de tes observations — symptômes et capacité fonctionnelle sont distincts."
-          label="Physiologie"
+          label="Progression"
           title="Santé physique"
         />
       )}

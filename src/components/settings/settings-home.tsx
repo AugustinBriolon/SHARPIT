@@ -170,7 +170,7 @@ export function SettingsHome() {
   return (
     <div className="space-y-6">
       <StickyHeader>
-        <p className="text-label">Réglages</p>
+        <p className="text-label">Profil</p>
         <h1 className="text-page-title mt-1">Compte, données & application</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Rangées par rôle : ce qui te définit, ce qui contextualise le coach, puis

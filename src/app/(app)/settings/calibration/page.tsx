@@ -28,9 +28,9 @@ async function CalibrationPanelWithProfile() {
 export default function SettingsCalibrationPage() {
   return (
     <div className="space-y-4">
-      <MobileBackLink href="/settings" label="Réglages" showOnDesktop />
+      <MobileBackLink href="/settings" label="Profil" showOnDesktop />
       <StickyHeader>
-        <p className="text-label">Réglages</p>
+        <p className="text-label">Profil</p>
         <h1 className="text-page-title mt-1">Seuils &amp; repères</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Les repères utilisés pour lire l’intensité, la charge et les écarts à ton niveau réel.

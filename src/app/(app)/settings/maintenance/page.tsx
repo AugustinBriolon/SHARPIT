@@ -5,9 +5,9 @@ import { SettingsMaintenancePanel } from '@/components/settings/maintenance';
 export default function SettingsMaintenancePage() {
   return (
     <div className="space-y-4">
-      <MobileBackLink href="/settings" label="Réglages" showOnDesktop />
+      <MobileBackLink href="/settings" label="Profil" showOnDesktop />
       <StickyHeader>
-        <p className="text-label">Réglages</p>
+        <p className="text-label">Profil</p>
         <h1 className="text-page-title mt-1">Maintenance</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Outils techniques pour repartir d&apos;une base propre et relancer les données.

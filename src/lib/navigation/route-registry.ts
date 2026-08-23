@@ -17,12 +17,11 @@ type Matcher = {
   resolve: (match: RegExpMatchArray) => RouteEntry;
 };
 
-const HOME_PARENT = { href: '/', label: 'Accueil' } as const;
-const TRAINING_PARENT = { href: '/training', label: 'Entraînement' } as const;
+const HOME_PARENT = { href: '/', label: 'Aujourd’hui' } as const;
+const TRAINING_PARENT = { href: '/training', label: 'Ma semaine' } as const;
 const HISTORY_PARENT = { href: '/training/history', label: 'Historique' } as const;
 const TRIPS_PARENT = { href: '/training/trips', label: 'Séjours' } as const;
-const SETTINGS_PARENT = { href: '/settings', label: 'Réglages' } as const;
-const TODAY_PARENT = { href: '/', label: 'Aujourd’hui' } as const;
+const SETTINGS_PARENT = { href: '/settings', label: 'Profil' } as const;
 
 const MATCHERS: Matcher[] = [
   { pattern: /^\/$/, resolve: () => ({ label: 'Aujourd’hui' }) },
@@ -30,7 +29,7 @@ const MATCHERS: Matcher[] = [
 
   {
     pattern: /^\/training$/,
-    resolve: () => ({ label: 'Entraînement', defaultParent: HOME_PARENT }),
+    resolve: () => ({ label: 'Ma semaine', defaultParent: HOME_PARENT }),
   },
   {
     pattern: /^\/training\/history$/,
@@ -67,32 +66,32 @@ const MATCHERS: Matcher[] = [
 
   {
     pattern: /^\/today\/recovery$/,
-    resolve: () => ({ label: 'Récupération', defaultParent: TODAY_PARENT }),
+    resolve: () => ({ label: 'Récupération', defaultParent: HOME_PARENT }),
   },
   {
     pattern: /^\/today\/effort$/,
-    resolve: () => ({ label: 'Effort', defaultParent: TODAY_PARENT }),
+    resolve: () => ({ label: 'Effort', defaultParent: HOME_PARENT }),
   },
   {
     pattern: /^\/today\/sleep$/,
-    resolve: () => ({ label: 'Sommeil', defaultParent: TODAY_PARENT }),
+    resolve: () => ({ label: 'Sommeil', defaultParent: HOME_PARENT }),
   },
   {
     pattern: /^\/today\/adaptation$/,
-    resolve: () => ({ label: 'Adaptation', defaultParent: TODAY_PARENT }),
+    resolve: () => ({ label: 'Adaptation', defaultParent: HOME_PARENT }),
   },
 
   {
     pattern: /^\/biology$/,
-    resolve: () => ({ label: 'Corps', defaultParent: HOME_PARENT }),
+    resolve: () => ({ label: 'Progression', defaultParent: HOME_PARENT }),
   },
 
   {
     pattern: /^\/nutrition$/,
-    resolve: () => ({ label: 'Nutrition', defaultParent: TODAY_PARENT }),
+    resolve: () => ({ label: 'Nutrition', defaultParent: HOME_PARENT }),
   },
 
-  { pattern: /^\/settings$/, resolve: () => ({ label: 'Réglages', defaultParent: HOME_PARENT }) },
+  { pattern: /^\/settings$/, resolve: () => ({ label: 'Profil', defaultParent: HOME_PARENT }) },
   {
     pattern: /^\/settings\/calibration$/,
     resolve: () => ({ label: 'Seuils & repères', defaultParent: SETTINGS_PARENT }),

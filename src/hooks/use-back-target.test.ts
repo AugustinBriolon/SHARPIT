@@ -6,9 +6,9 @@ describe('resolveBackTargetWithoutStack', () => {
     expect(
       resolveBackTargetWithoutStack('/training/abc', {
         href: '/training',
-        label: 'Entraînement',
+        label: 'Ma semaine',
       }),
-    ).toEqual({ href: '/training', label: 'Entraînement', fromStack: false });
+    ).toEqual({ href: '/training', label: 'Ma semaine', fromStack: false });
   });
 
   it('falls back to the route registry for activity detail', () => {
@@ -22,7 +22,7 @@ describe('resolveBackTargetWithoutStack', () => {
   it('falls back to settings for the calibration page', () => {
     expect(resolveBackTargetWithoutStack('/settings/calibration')).toEqual({
       href: '/settings',
-      label: 'Réglages',
+      label: 'Profil',
       fromStack: false,
     });
   });

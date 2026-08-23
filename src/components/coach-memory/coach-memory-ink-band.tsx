@@ -41,7 +41,7 @@ export function CoachMemoryInkBand({
               className="bg-ink-surface-foreground/12 text-ink-accent flex size-11 shrink-0 items-center justify-center rounded-full sm:size-12"
               aria-hidden
             >
-              {/* Same mark as the Réglages entry that leads here. */}
+              {/* Same mark as the Profil entry that leads here. */}
               <Brain className="size-5 sm:size-6" strokeWidth={2} />
             </span>
             <div className="min-w-0 flex-1">

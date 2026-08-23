@@ -92,10 +92,10 @@ export function GoalsView() {
 
   return (
     <div className="space-y-8">
-      <MobileBackLink href="/settings" label="Réglages" showOnDesktop />
+      <MobileBackLink href="/settings" label="Profil" showOnDesktop />
       <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-label">Réglages</p>
+          <p className="text-label">Profil</p>
           <h1 className="text-page-title mt-1">Objectifs</h1>
           <p className="text-muted-foreground mt-1">
             Des courses aux objectifs hebdomadaires — toute la hiérarchie.

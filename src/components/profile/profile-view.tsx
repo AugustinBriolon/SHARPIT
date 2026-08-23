@@ -11,7 +11,7 @@ export function ProfileView({
 }) {
   return (
     <div className="space-y-4">
-      <MobileBackLink href="/settings" label="Réglages" showOnDesktop />
+      <MobileBackLink href="/settings" label="Profil" showOnDesktop />
       <StickyHeader>
         <p className="text-label">Profil</p>
         <h1 className="text-page-title mt-1">Mon profil</h1>

@@ -11,9 +11,9 @@ import { buildHikeTripListMeta } from '@/lib/activity/hike/hike-trip-summary';
 function TripsPageHeader() {
   return (
     <>
-      <MobileBackLink href="/training" label="Entraînement" showOnDesktop />
+      <MobileBackLink href="/training" label="Ma semaine" showOnDesktop />
       <StickyHeader>
-        <p className="text-label">Entraînement</p>
+        <p className="text-label">Ma semaine</p>
         <h1 className="text-page-title mt-1">Séjours</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Randonnées de plusieurs jours regroupées — étapes et totaux par séjour.

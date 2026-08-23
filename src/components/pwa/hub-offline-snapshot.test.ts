@@ -144,10 +144,10 @@ describe('CorpsHub offline snapshot render', () => {
     } as never);
   });
 
-  it('renders snapshot in tab body while keeping Mon corps chrome', () => {
+  it('renders snapshot in tab body while keeping Progression chrome', () => {
     const html = renderToStaticMarkup(createElement(CorpsHub));
 
-    expect(html).toContain('Mon corps');
+    expect(html).toContain('Progression');
     expect(html).toContain('Forme &amp; bien-être');
     expect(html).toContain('Composition');
     expect(html).toContain(OFFLINE_BANNER);

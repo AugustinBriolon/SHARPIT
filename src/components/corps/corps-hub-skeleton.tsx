@@ -72,17 +72,17 @@ function CompositionValuePulse() {
   );
 }
 
-/** Stable Mon corps chrome for Suspense fallback — default Composition tab, no search params. */
+/** Stable Progression chrome for Suspense fallback — default Composition tab, no search params. */
 export function CorpsHubSkeleton() {
   return (
     <div className="space-y-4">
       <StickyHeader>
-        <p className="text-label">Mon corps</p>
+        <p className="text-label">Progression</p>
         <h1 className="text-page-title mt-1">Forme & bien-être</h1>
         <p className="text-muted-foreground mt-1 text-sm">{DEFAULT_TAB.description}</p>
 
         <nav
-          aria-label="Sections Mon corps"
+          aria-label="Sections Progression"
           className="-mx-1 mt-4 flex scrollbar-none gap-1.5 overflow-x-auto pb-0.5"
         >
           {TABS.map((tab) => {

@@ -1,7 +1,12 @@
-import { Dumbbell, HeartPulse, MessagesSquare, Settings, Sun } from 'lucide-react';
+import { CalendarDays, CircleUser, MessagesSquare, Sun, TrendingUp } from 'lucide-react';
 
 /**
  * Primary nav uses canonical hrefs only (`/`, `/training`, `/biology`, `/coach`, `/settings`).
+ *
+ * The five destinations are temporal, not domain-led (ADR-022). Stage 1 of that
+ * migration renames them where they stand — the hrefs still point at the routes
+ * that exist today, so `Ma semaine` is served by the training thread and
+ * `Progression` by the body hub until their surfaces are assembled.
  */
 
 export type NavIcon = typeof Sun;
@@ -15,22 +20,24 @@ export type AppNavItem = {
 
 export const todayNavItem: AppNavItem = {
   href: '/',
-  label: 'Accueil',
+  label: 'Aujourd’hui',
   icon: Sun,
-  match: (p) => p === '/' || p.startsWith('/today'),
+  // Nutrition is a Today detail, not a destination — it lights this tab rather
+  // than leaving the bar with nothing marked current.
+  match: (p) => p === '/' || p.startsWith('/today') || p.startsWith('/nutrition'),
 };
 
-export const trainingNavItem: AppNavItem = {
+export const weekNavItem: AppNavItem = {
   href: '/training',
-  label: 'Entraînement',
-  icon: Dumbbell,
+  label: 'Ma semaine',
+  icon: CalendarDays,
   match: (p) => p.startsWith('/training'),
 };
 
-export const biologyNavItem: AppNavItem = {
+export const progressNavItem: AppNavItem = {
   href: '/biology',
-  label: 'Physiologie',
-  icon: HeartPulse,
+  label: 'Progression',
+  icon: TrendingUp,
   match: (p) => p.startsWith('/biology'),
 };
 
@@ -41,29 +48,29 @@ export const coachNavItem: AppNavItem = {
   match: (p) => p.startsWith('/coach'),
 };
 
-export const settingsNavItem: AppNavItem = {
+export const profileNavItem: AppNavItem = {
   href: '/settings',
-  label: 'Réglages',
-  icon: Settings,
+  label: 'Profil',
+  icon: CircleUser,
   match: (p) => p.startsWith('/settings'),
 };
 
-/** Destinations principales sidebar desktop (sans Réglages). */
+/** Destinations principales sidebar desktop (sans Profil). */
 export const sidebarPrimaryNavItems: AppNavItem[] = [
   todayNavItem,
-  trainingNavItem,
-  biologyNavItem,
+  weekNavItem,
+  progressNavItem,
   coachNavItem,
 ];
 
-/** Navigation sidebar desktop (ordre complet, y compris Réglages). */
-export const sidebarNavItems: AppNavItem[] = [...sidebarPrimaryNavItems, settingsNavItem];
+/** Navigation sidebar desktop (ordre complet, y compris Profil). */
+export const sidebarNavItems: AppNavItem[] = [...sidebarPrimaryNavItems, profileNavItem];
 
 /** Onglets bottom bar mobile. */
 export const bottomNavItems: AppNavItem[] = [
   todayNavItem,
-  trainingNavItem,
-  biologyNavItem,
+  weekNavItem,
+  progressNavItem,
   coachNavItem,
-  settingsNavItem,
+  profileNavItem,
 ];

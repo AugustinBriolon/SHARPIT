@@ -140,7 +140,7 @@ export function TrainingThreadView() {
       <StickyHeader>
         <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
           <div>
-            <p className="text-label">Entraînement</p>
+            <p className="text-label">Ma semaine</p>
             <h1 className="text-page-title mt-1">Le fil</h1>
           </div>
 
