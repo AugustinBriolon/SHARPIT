@@ -13,7 +13,7 @@ describe('ActivityConsistencyPanel', () => {
     vi.useRealTimers();
   });
 
-  it('renders a highlighted current streak signal', () => {
+  it('leads with the streak as a reading, not as a sentence', () => {
     const html = renderToStaticMarkup(
       createElement(ActivityConsistencyPanel, {
         activities: [
@@ -23,10 +23,22 @@ describe('ActivityConsistencyPanel', () => {
       }),
     );
 
-    expect(html).toContain('Série en cours');
-    expect(html).toContain('sem. avec charge');
-    expect(html).toContain('Semaine active');
-    expect(html).toContain('analysis-panel-alt');
+    expect(html).toContain('semaines');
+    expect(html).toContain('de suite, celle-ci comprise');
+    // Sized and faced like every other instrument in the app.
+    expect(html).toContain('text-data');
+    expect(html).toContain('text-2xl');
+  });
+
+  it('states the density beside it', () => {
+    const html = renderToStaticMarkup(
+      createElement(ActivityConsistencyPanel, {
+        activities: [{ date: new Date('2026-07-28T07:00:00Z'), load: 55 }],
+      }),
+    );
+
+    expect(html).toContain('jours');
+    expect(html).toContain('séances enregistrées');
   });
 
   it('renders desktop hover details for in-range cells', () => {
@@ -50,7 +62,7 @@ describe('ActivityConsistencyPanel', () => {
       }),
     );
 
-    expect(html).toContain('Semaine en cours encore ouverte');
+    expect(html).toContain('de suite, celle-ci encore ouverte');
     expect(html).toContain('ring-analysis-border');
     expect(html).toContain('right-0');
     expect(html).toContain('top-[calc(100%+0.45rem)]');

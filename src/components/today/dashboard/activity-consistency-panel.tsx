@@ -12,7 +12,6 @@ import {
   formatHeatmapRangeLabel,
   HEATMAP_DAYS_MOBILE,
   HEATMAP_LEVEL_CLASS,
-  type ActivityConsistencyStats,
   type HeatmapCell,
 } from '@/lib/activity/list/activity-consistency';
 import { cn } from '@/lib/utils';
@@ -42,31 +41,39 @@ function formatCellLoadLabel(cell: HeatmapCell): string | null {
   return `${cell.load} TSS`;
 }
 
-/** Instrument reading — consecutive weeks with load, not a streak game. */
-function CurrentStreakSignal({ stats }: { stats: ActivityConsistencyStats }) {
-  const { currentStreak, activeThisWeek } = stats;
-
-  if (currentStreak === 0) {
-    return (
-      <div className="analysis-panel-alt rounded-analysis px-3 py-2.5 sm:min-w-[11rem]">
-        <p className="text-label">Série en cours</p>
-        <p className="text-muted-foreground mt-1 text-xs">Aucune semaine avec charge récente</p>
-      </div>
-    );
-  }
-
+/**
+ * A reading, sized like one.
+ *
+ * The streak and the density were a grey sentence at 11 px while the headline
+ * was the word "Régularité". These are the two figures an athlete comes here
+ * for — whether the habit is alive, and how dense it is — so they get the room
+ * and the mono face every other instrument in the app uses.
+ */
+function Reading({
+  value,
+  unit,
+  caption,
+  emphasis = false,
+}: {
+  value: string;
+  unit: string;
+  caption: string;
+  emphasis?: boolean;
+}) {
   return (
-    <div className="analysis-panel-alt rounded-analysis px-3 py-2.5 sm:min-w-[11rem]">
-      <p className="text-label">Série en cours</p>
-      <div className="mt-1 flex items-end gap-2">
-        <p className="text-foreground text-instrument text-lg font-semibold tabular-nums">
-          {currentStreak}
-        </p>
-        <p className="text-muted-foreground pb-0.5 text-xs">sem. avec charge</p>
-      </div>
-      <p className="text-muted-foreground mt-1 text-xs">
-        {activeThisWeek ? 'Semaine active' : 'Semaine en cours encore ouverte'}
+    <div className="min-w-0">
+      <p className="flex items-baseline gap-1.5">
+        <span
+          className={cn(
+            'text-data text-2xl font-semibold tabular-nums',
+            emphasis ? 'text-primary' : 'text-foreground',
+          )}
+        >
+          {value}
+        </span>
+        <span className="text-muted-foreground text-xs">{unit}</span>
       </p>
+      <p className="text-muted-foreground mt-0.5 truncate text-[11px]">{caption}</p>
     </div>
   );
 }
@@ -187,29 +194,38 @@ export function ActivityConsistencyPanel({
         className,
       )}
     >
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <EyebrowLabel variant="dashboard">Régularité</EyebrowLabel>
-          {loading ? (
-            <div className="mt-1.5">
-              <SkeletonDataValue heightClassName="h-3" widthClassName="w-40" />
-            </div>
-          ) : (
-            <p className="text-muted-foreground mt-0.5 text-[11px]">
-              {stats.trailingYearActivityCount} séance
-              {stats.trailingYearActivityCount > 1 ? 's' : ''} sur {rangeLabel}
-              {' · '}
-              {stats.activeDays} {stats.activeDays > 1 ? 'jours actifs' : 'jour actif'} sur{' '}
-              {stats.heatmapDays}
-            </p>
-          )}
-        </div>
-        {loading ? (
-          <SkeletonDataValue heightClassName="h-3" widthClassName="w-28" />
-        ) : (
-          <CurrentStreakSignal stats={stats} />
-        )}
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <EyebrowLabel variant="dashboard">Régularité</EyebrowLabel>
+        <p className="text-data text-muted-foreground text-[11px]">{rangeLabel}</p>
       </div>
+
+      {loading ? (
+        <div className="mb-4 flex gap-6">
+          <SkeletonDataValue heightClassName="h-7" widthClassName="w-16" />
+          <SkeletonDataValue heightClassName="h-7" widthClassName="w-20" />
+        </div>
+      ) : (
+        <div className="mb-4 flex gap-6">
+          {/* Emphasised because it is the one with a decision behind it: a streak
+              is kept alive or it is not, and today is when that is decided. */}
+          <Reading
+            emphasis={stats.currentStreak > 0}
+            unit={stats.currentStreak > 1 ? 'semaines' : 'semaine'}
+            value={stats.currentStreak > 0 ? String(stats.currentStreak) : '—'}
+            caption={
+              stats.activeThisWeek
+                ? 'de suite, celle-ci comprise'
+                : 'de suite, celle-ci encore ouverte'
+            }
+          />
+          <span className="bg-analysis-border/60 w-px self-stretch" aria-hidden />
+          <Reading
+            caption={`${stats.trailingYearActivityCount} séances enregistrées`}
+            unit={`/ ${stats.heatmapDays} jours`}
+            value={String(stats.activeDays)}
+          />
+        </div>
+      )}
 
       {loading ? (
         <div className="flex w-full items-start gap-[2px]" aria-hidden>
@@ -228,17 +244,18 @@ export function ActivityConsistencyPanel({
         <HeatmapGrid activeThisWeek={stats.activeThisWeek} weekColumns={stats.weekColumns} />
       )}
 
-      <div className="mt-3 flex items-center justify-end gap-3 border-t pt-3">
-        <div className="flex items-center gap-1.5">
-          <span className="text-muted-foreground text-[10px]">Moins</span>
-          {([0, 1, 2, 3, 4] as const).map((level) => (
-            <div
-              key={level}
-              className={cn('size-2.5 rounded-[2px] sm:size-[9px]', HEATMAP_LEVEL_CLASS[level])}
-            />
-          ))}
-          <span className="text-muted-foreground text-[10px]">Plus</span>
-        </div>
+      {/* Inline rather than a row of its own: a scale explaining a gradient the
+          grid already shows does not deserve a border and its own band. */}
+      <div className="mt-2.5 flex items-center justify-end gap-1.5">
+        <span className="text-muted-foreground text-[10px]">Moins</span>
+        {([0, 1, 2, 3, 4] as const).map((level) => (
+          <div
+            key={level}
+            className={cn('size-2 rounded-[2px]', HEATMAP_LEVEL_CLASS[level])}
+            aria-hidden
+          />
+        ))}
+        <span className="text-muted-foreground text-[10px]">Plus</span>
       </div>
     </div>
   );

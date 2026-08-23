@@ -177,10 +177,19 @@ export function formatHeatmapRangeLabel(days: number): string {
   return weeks === 1 ? '1 semaine' : `${weeks} semaines`;
 }
 
+/**
+ * Five steps that are actually five steps.
+ *
+ * The old ramp went 25 / 45 / 70 / 100 % alpha of one colour, which on a pale
+ * canvas is four barely separable washes — the grid read as one flat texture.
+ * The gaps are widened at the light end, where the eye separates least, and the
+ * empty cell gets a faint outline so a rest day reads as a day rather than as
+ * nothing at all.
+ */
 export const HEATMAP_LEVEL_CLASS: Record<HeatmapLevel, string> = {
-  0: 'bg-analysis-surface-alt dark:bg-analysis-surface',
-  1: 'bg-primary/25 dark:bg-primary/20',
-  2: 'bg-primary/45 dark:bg-primary/35',
-  3: 'bg-primary/70 dark:bg-primary/55',
-  4: 'bg-primary dark:bg-primary/80',
+  0: 'bg-analysis-surface-alt ring-analysis-border/40 ring-1 ring-inset dark:bg-analysis-surface',
+  1: 'bg-primary/20 dark:bg-primary/18',
+  2: 'bg-primary/45 dark:bg-primary/38',
+  3: 'bg-primary/72 dark:bg-primary/62',
+  4: 'bg-primary dark:bg-primary/90',
 };
