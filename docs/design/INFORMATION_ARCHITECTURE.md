@@ -106,12 +106,15 @@ An active physical-health restriction is always visible when it constrains Today
 
 **Daily phases:** the same route changes emphasis without becoming a different dashboard.
 
-| Phase           | Dominant need                       | Required outcome                                                                                        |
-| --------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Morning         | Can I train, and how?               | A clear daily orientation plus a low-friction wellness check-in when it can alter confidence or advice. |
-| Before training | Is this session still appropriate?  | Execute, adapt, move, or discuss the planned session.                                                   |
-| After training  | What did that session mean?         | Capture perceived effort, reveal the session story, and make its likely effect on tomorrow legible.     |
-| Evening         | What should I protect for tomorrow? | A brief closure, recovery priority, and provisional next-day outlook.                                   |
+The phase is resolved in `src/lib/daily-phase/`, from session status first, athlete state second, and local time only as a fallback — never from the clock alone. There are five, not four: the window right after a session and the close of the day ask different questions and must not be collapsed.
+
+| Phase (`DailyPhase`) | Dominant need                       | Required outcome                                                                                        |
+| -------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `MORNING`            | Can I train, and how?               | A clear daily orientation plus a low-friction wellness check-in when it can alter confidence or advice. |
+| `BEFORE_SESSION`     | Is this session still appropriate?  | Execute, adapt, move, or discuss the planned session.                                                   |
+| `SESSION_COMPLETED`  | What did that session mean?         | Capture perceived effort, reveal the session story, and make its likely effect on tomorrow legible.     |
+| `RECOVERY_WINDOW`    | What maximises adaptation now?      | A recovery priority while the window is still open, not a retrospective.                                |
+| `END_OF_DAY`         | What should I protect for tomorrow? | A brief closure, recovery priority, and provisional next-day outlook.                                   |
 
 ### My week
 
@@ -234,7 +237,10 @@ The week hub already exists as the training thread, so stage 1 is a rename and n
 
    Two consequences of renaming before moving, visible until stage 3: `Progression` is served by the body hub, whose page still reads `Forme & bien-être` and holds no goals; and `Ma semaine` is served by the training thread, which spans more than a week.
 
-2. **Daily loop (medium):** complete the Today phase transitions and contextual Coach/session actions.
+2. **Daily loop (medium) — shipped.** The phase transitions were already in place: five phases resolved from session status and athlete state, each driving its own hero narrative, action labels, why-block title, trajectory eyebrow and adaptation hints, with the morning wellness check-in and post-session effort capture already surfaced. The gap was the contextual Coach, and that is what this stage closed.
+
+   Every surface the Coach section names can now start a conversation — Today, a planned session, an activity, My week, a goal, a record, an active physical constraint — and each one arrives with its context named in a chip above the composer, a link back to where it came from, and a control that drops it before sending. The attachment is the athlete's to keep or discard; it is no longer implicit in a wall of prefilled text.
+
 3. **Longitudinal space (large):** create Progress; assemble Goals, Performance, and Body & health; split `/biology` across two sections; move goals and calibration out of Settings and retarget the `/training/progression` redirect.
 4. **Reading levels (medium):** add progressive Advanced evidence after the Standard hierarchy is stable.
 
