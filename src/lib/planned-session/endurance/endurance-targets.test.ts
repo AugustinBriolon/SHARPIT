@@ -4,6 +4,7 @@ import {
   defaultTargetForIntensity,
   formatPace,
   formatPaceBand,
+  intensityFromTarget,
   resolveEnduranceTarget,
   type AthleteThresholds,
 } from '@/lib/planned-session/endurance/endurance-targets';
@@ -259,5 +260,31 @@ describe('resolveEnduranceTarget — swimming', () => {
 
     expect(resolved).toEqual({ metric: 'none' });
     expect(warnings[0]).toContain('CSS');
+  });
+});
+
+describe('intensityFromTarget', () => {
+  it('reads back every band it produced', () => {
+    for (const intensity of ['RECOVERY', 'ENDURANCE', 'TEMPO', 'THRESHOLD', 'VO2MAX'] as const) {
+      for (const sport of ['RUN', 'SWIM', 'BIKE'] as const) {
+        const { target } = defaultTargetForIntensity(sport, intensity);
+        expect(intensityFromTarget(sport, target), `${sport}/${intensity}`).toBe(intensity);
+      }
+    }
+  });
+
+  it('needs the sport, because the tables collide', () => {
+    const { target } = defaultTargetForIntensity('RUN', 'TEMPO');
+    // 90 % of threshold speed is a runner's tempo and a swimmer's endurance —
+    // water compresses the range. Read against the wrong table it answers, and
+    // answers wrong, so the caller must pass the prescription's own sport.
+    expect(intensityFromTarget('RUN', target)).toBe('TEMPO');
+    expect(intensityFromTarget('SWIM', target)).toBe('ENDURANCE');
+  });
+
+  it('gives up on a band no table produced', () => {
+    expect(intensityFromTarget('RUN', { metric: 'pace', pctMin: 71, pctMax: 74 })).toBeNull();
+    expect(intensityFromTarget('RUN', { metric: 'none' })).toBeNull();
+    expect(intensityFromTarget('RUN', { metric: 'pace', absEasy: 300, absHard: 320 })).toBeNull();
   });
 });

@@ -138,6 +138,45 @@ export function defaultTargetForIntensity(
   return { target: { metric: 'pace', ...bandAround(centre, effective) }, warnings };
 }
 
+/**
+ * Read an intensity back out of a stored band — the inverse of the anchor tables.
+ *
+ * A stored target carries percentages, not the word the athlete thinks in. The
+ * summary line needs "tempo", and resolving the band into 5:31–5:50/km to get
+ * there would freeze numbers that go stale the day a threshold moves. The
+ * percentages do not: they are the intent itself.
+ *
+ * Returns null for a band nobody's table produced — an athlete override, or a
+ * metric with no anchors — and the caller falls back to the step's role.
+ */
+/** The table a band was drawn from: the metric decides, then the sport. */
+function anchorTableFor(
+  sport: EnduranceSport,
+  metric: 'pace' | 'hr' | 'power',
+): Partial<Record<SessionIntensity, number>> {
+  if (metric === 'power') return BIKE_POWER_ANCHOR_PCT;
+  if (metric === 'hr') return RUN_HR_ANCHOR_PCT;
+  return sport === 'SWIM' ? SWIM_SPEED_ANCHOR_PCT : RUN_SPEED_ANCHOR_PCT;
+}
+
+export function intensityFromTarget(
+  sport: EnduranceSport,
+  target: EnduranceTarget,
+): SessionIntensity | null {
+  if (target.metric === 'none' || target.metric === 'cadence') return null;
+
+  const anchors = anchorTableFor(sport, target.metric);
+
+  // An absolute override carries no percentages, and neither does a hand-typed band.
+  if (target.pctMin == null || target.pctMax == null) return null;
+
+  const centre = (target.pctMin + target.pctMax) / 2;
+  for (const [intensity, anchor] of Object.entries(anchors)) {
+    if (anchor != null && Math.abs(anchor - centre) < 0.01) return intensity as SessionIntensity;
+  }
+  return null;
+}
+
 /** Heart-rate equivalent of `defaultTargetForIntensity`, used when pace is unavailable. */
 export function defaultHrTargetForIntensity(intensity: SessionIntensity | null): EnduranceTarget {
   const effective = intensity === 'RACE' || intensity == null ? 'THRESHOLD' : intensity;
