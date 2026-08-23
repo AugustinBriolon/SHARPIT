@@ -13,6 +13,7 @@ import {
   parsePaceInput,
 } from '@/components/settings/profile/profile-input-format';
 import { commitProfileSave, saveProfilePatch } from '@/components/settings/profile/profile-save';
+import { changedProfileFields } from '@/lib/profile/profile-patch';
 import type { ProfileData } from '@/components/settings/profile/profile-types';
 import { ThresholdHistoryPanel } from '@/components/settings/profile/threshold-history-panel';
 import { Vo2maxIndicators } from '@/components/settings/profile/vo2max-indicators';
@@ -158,14 +159,34 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
     setError(null);
     setMessage(null);
     try {
-      const patch = {
-        ftpW: ftpW ? Number(ftpW) : null,
-        maxHr: maxHr ? Number(maxHr) : null,
-        lthr: lthr ? Number(lthr) : null,
-        runThresholdPaceSecPerKm: parsePaceInput(thresholdPace),
-        swimCssSecPer100m: parsePaceInput(swimCss),
-        defaultPoolLengthM: poolLength ? Number(poolLength) : null,
-      };
+      /* Only the fields that moved — see `changedProfileFields`. Sending the
+         whole set with `null` for each empty one turns any failed load into a
+         silent wipe of everything the athlete did not retype. */
+      const patch = changedProfileFields(
+        {
+          ftpW: initial?.ftpW ?? null,
+          maxHr: initial?.maxHr ?? null,
+          lthr: initial?.lthr ?? null,
+          runThresholdPaceSecPerKm: initial?.runThresholdPaceSecPerKm ?? null,
+          swimCssSecPer100m: initial?.swimCssSecPer100m ?? null,
+          defaultPoolLengthM: initial?.defaultPoolLengthM ?? null,
+        },
+        {
+          ftpW: ftpW ? Number(ftpW) : null,
+          maxHr: maxHr ? Number(maxHr) : null,
+          lthr: lthr ? Number(lthr) : null,
+          runThresholdPaceSecPerKm: parsePaceInput(thresholdPace),
+          swimCssSecPer100m: parsePaceInput(swimCss),
+          defaultPoolLengthM: poolLength ? Number(poolLength) : null,
+        },
+      );
+
+      if (Object.keys(patch).length === 0) {
+        setMessage('Rien à enregistrer.');
+        setSaving(false);
+        return;
+      }
+
       const previousProfile = saveProfilePatch(queryClient, patch);
 
       const res = await fetch('/api/athlete-profile', {
@@ -422,7 +443,8 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
           {error}
         </p>
       ) : null}
-      <Button disabled={guardDisabled || saving || !dirty} type="submit">
+      {/* A diff needs a baseline: no profile loaded, nothing safe to write. */}
+      <Button disabled={guardDisabled || saving || !dirty || initial == null} type="submit">
         {guardedActionLabel(offline, offlineLabel, 'Enregistrer', {
           active: saving,
           label: 'Enregistrement…',

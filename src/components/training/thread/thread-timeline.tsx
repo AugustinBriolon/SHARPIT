@@ -2,8 +2,7 @@
 
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useState } from 'react';
-import { THREAD_DRAG_MIME, ThreadEntryRow } from '@/components/training/thread/thread-entry-row';
+import { ThreadEntryRow } from '@/components/training/thread/thread-entry-row';
 import { ThreadTodayCard } from '@/components/training/thread/thread-today-card';
 import Link from 'next/link';
 import { dayKeyFromDate } from '@/lib/date/day-key';
@@ -53,46 +52,15 @@ function DayGroup({
   isToday,
   expandedTodayId,
   pivotEntryId,
-  onDropSession,
 }: {
   day: ThreadDay;
   isToday: boolean;
   expandedTodayId: string | null;
   pivotEntryId: string | null;
-  onDropSession?: (sessionId: string, target: Date) => void;
 }) {
-  const [over, setOver] = useState(false);
-
   return (
     <li>
-      <div
-        className={cn(
-          'flex gap-2.5 rounded-[14px] transition-colors',
-          /* The whole day is the target, gutter included: aiming at a date is
-             easier than aiming between two rows, and it is the day that changes. */
-          over && 'bg-accent/60 ring-primary/40 ring-1',
-        )}
-        onDragEnter={(event) => {
-          if (!onDropSession || !event.dataTransfer.types.includes(THREAD_DRAG_MIME)) return;
-          setOver(true);
-        }}
-        onDragLeave={(event) => {
-          if (event.currentTarget.contains(event.relatedTarget as Node)) return;
-          setOver(false);
-        }}
-        onDragOver={(event) => {
-          if (!onDropSession || !event.dataTransfer.types.includes(THREAD_DRAG_MIME)) return;
-          event.preventDefault();
-          event.dataTransfer.dropEffect = 'move';
-        }}
-        onDrop={(event) => {
-          setOver(false);
-          const sessionId = event.dataTransfer.getData(THREAD_DRAG_MIME);
-          if (!sessionId || !onDropSession) return;
-          event.preventDefault();
-          onDropSession(sessionId, day.date);
-        }}
-      >
+      <div className="flex gap-2.5">
         <p
           className={cn(
             'text-data w-11 shrink-0 pt-2.5 text-right text-[11px] leading-none tabular-nums lg:w-[60px]',
@@ -134,7 +102,6 @@ export function ThreadTimeline({
   past,
   pivotEntryId = null,
   anchorLabel = null,
-  onDropSession,
 }: {
   /** Today and after, nearest first — reversed here so the list reads downward. */
   upcoming: readonly ThreadDay[];
@@ -144,7 +111,6 @@ export function ThreadTimeline({
   pivotEntryId?: string | null;
   /** Set while reading a week other than this one; the line stops saying "today". */
   anchorLabel?: string | null;
-  onDropSession?: (sessionId: string, target: Date) => void;
 }) {
   const today = todayDayKey();
 
@@ -214,7 +180,6 @@ export function ThreadTimeline({
               expandedTodayId={null}
               isToday={false}
               pivotEntryId={null}
-              onDropSession={onDropSession}
             />
           ))}
         </ol>

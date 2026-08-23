@@ -1,7 +1,6 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 import { CalendarPlus, Check, ChevronRight, Feather } from 'lucide-react';
 import Link from 'next/link';
 import { activityTypeLabels, formatDuration } from '@/lib/format';
@@ -155,12 +154,6 @@ function RowActions({
 }
 
 /**
- * A private type, so a session dragged out of the thread cannot be dropped into
- * some other list that happens to accept plain text.
- */
-export const THREAD_DRAG_MIME = 'application/x-sharpit-planned-session';
-
-/**
  * Width of the panel the swipe uncovers.
  *
  * Fixed, and the panel is pinned to it — computing one from the other at runtime
@@ -194,7 +187,6 @@ function PlannedRow({
   onPrefetch: () => void;
 }) {
   const swipe = useSwipeReveal(SWIPE_PANEL_PX);
-  const [dragging, setDragging] = useState(false);
 
   return (
     /* Clipped: the row slides the full width of the panel, and without this it
@@ -210,24 +202,12 @@ function PlannedRow({
       </div>
 
       <div
-        /* Drag is mouse-only by construction — touch never fires `dragstart` — so
-           the phone keeps the swipe and the desktop gets the drop. */
         style={{ transform: `translateX(${swipe.offset}px)` }}
         className={cn(
-          /* Without this the browser starts a text selection instead of a drag
-             whenever the pointer goes down on the title. */
-          'bg-background relative select-none',
-          dragging && 'opacity-40',
+          'bg-background relative',
           swipe.dragging ? '' : 'transition-transform duration-200 ease-out',
           'motion-reduce:transition-none',
         )}
-        draggable
-        onDragEnd={() => setDragging(false)}
-        onDragStart={(event) => {
-          event.dataTransfer.setData(THREAD_DRAG_MIME, session.id);
-          event.dataTransfer.effectAllowed = 'move';
-          setDragging(true);
-        }}
         {...swipe.handlers}
       >
         <button

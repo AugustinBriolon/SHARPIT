@@ -11,6 +11,7 @@ import {
   parseClockInput,
 } from '@/components/settings/profile/profile-input-format';
 import { commitProfileSave, saveProfilePatch } from '@/components/settings/profile/profile-save';
+import { changedProfileFields } from '@/lib/profile/profile-patch';
 import type { ProfileData } from '@/components/settings/profile/profile-types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -148,12 +149,29 @@ export function PersonalProfilePanel({
       const sleepMinutes = sleepHours.trim() ? Math.round(Number(sleepHours) * 60) : null;
       const bedtimeMin = parseClockInput(sleepBedtime);
 
-      const patch = {
-        heightCm: heightCm.trim() ? Number(heightCm) : null,
-        birthDate: birthDate.trim() || null,
-        sleepTargetMinutes: sleepMinutes,
-        sleepBedtimeTargetMin: bedtimeMin,
-      };
+      /* Only the fields that moved. Sending all four — `null` for each empty
+         one — is what wiped this profile: a load that failed renders empty
+         fields, and editing one of them then cleared the other three. */
+      const patch = changedProfileFields(
+        {
+          heightCm: resolvedInitial?.heightCm ?? null,
+          birthDate: resolvedInitial?.birthDate ?? null,
+          sleepTargetMinutes: resolvedInitial?.sleepTargetMinutes ?? null,
+          sleepBedtimeTargetMin: resolvedInitial?.sleepBedtimeTargetMin ?? null,
+        },
+        {
+          heightCm: heightCm.trim() ? Number(heightCm) : null,
+          birthDate: birthDate.trim() || null,
+          sleepTargetMinutes: sleepMinutes,
+          sleepBedtimeTargetMin: bedtimeMin,
+        },
+      );
+
+      if (Object.keys(patch).length === 0) {
+        setMessage('Rien à enregistrer.');
+        setSaving(false);
+        return;
+      }
 
       const previousProfile = saveProfilePatch(queryClient, patch);
 
@@ -282,7 +300,9 @@ export function PersonalProfilePanel({
           {error}
         </p>
       ) : null}
-      <Button disabled={guardDisabled || saving || !dirty} type="submit">
+      {/* A diff needs a baseline. Saving against one that never loaded is how
+          the fields were emptied in the first place. */}
+      <Button disabled={guardDisabled || saving || !dirty || showLoadWarning} type="submit">
         {guardedActionLabel(offline, offlineLabel, 'Enregistrer', {
           active: saving,
           label: 'Enregistrement…',
