@@ -1,6 +1,5 @@
 'use client';
 
-import { ArrowRight } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -18,7 +17,6 @@ import {
 import { parseEndurancePrescription } from '@/lib/planned-session/endurance/endurance-prescription';
 import { parseStrengthPrescription } from '@/lib/planned-session/strength/strength-prescription';
 import { easeSession } from '@/lib/training/thread/session-adjust';
-import { cn } from '@/lib/utils';
 
 /**
  * What easing this session would actually cost, before it costs it.
@@ -29,30 +27,6 @@ import { cn } from '@/lib/utils';
  * 40, or off a load that carries downstream, is not. Showing both figures side by
  * side turns a guess into a decision.
  */
-
-function Figure({
-  label,
-  value,
-  muted = false,
-}: {
-  label: string;
-  value: string;
-  muted?: boolean;
-}) {
-  return (
-    <div>
-      <p className="text-label">{label}</p>
-      <p
-        className={cn(
-          'text-data mt-1 text-lg font-semibold tabular-nums',
-          muted ? 'text-muted-foreground' : 'text-foreground',
-        )}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
 
 export function ThreadEaseDialog({
   session,
@@ -103,49 +77,70 @@ export function ThreadEaseDialog({
 
         {proposal ? (
           <>
-            <div className="border-analysis-border/50 rounded-analysis grid grid-cols-[1fr_auto_1fr] items-center gap-4 border px-4 py-3.5">
-              <div className="space-y-3">
-                <Figure label="Durée" value={durationBefore} muted />
-                <Figure label="Charge" value={loadBefore} muted />
-              </div>
+            {/* A real table, because this is tabular data and the meaning was
+                carried by an arrow that assistive tech never sees. Read linearly
+                the old layout said "Durée 35 min Charge 35 TSS Durée 25 min" —
+                two figures with the same label and nothing to tell them apart. */}
+            <table className="w-full border-collapse text-left">
+              <thead>
+                <tr className="border-analysis-border/50 border-b">
+                  <th className="text-label pb-2 font-medium">
+                    <span className="sr-only">Mesure</span>
+                  </th>
+                  <th className="text-label pb-2 font-medium">Actuel</th>
+                  <th className="text-label pb-2 font-medium">Allégé</th>
+                </tr>
+              </thead>
+              <tbody className="divide-analysis-border/40 divide-y">
+                <tr>
+                  <th className="text-muted-foreground py-2 text-[13px] font-normal">Durée</th>
+                  <td className="text-data text-muted-foreground py-2 text-[15px] tabular-nums">
+                    {durationBefore}
+                  </td>
+                  <td className="text-data text-foreground py-2 text-[15px] font-semibold tabular-nums">
+                    {changesDuration ? durationAfter : durationBefore}
+                  </td>
+                </tr>
+                <tr>
+                  <th className="text-muted-foreground py-2 text-[13px] font-normal">Charge</th>
+                  <td className="text-data text-muted-foreground py-2 text-[15px] tabular-nums">
+                    {loadBefore}
+                  </td>
+                  <td className="text-data text-foreground py-2 text-[15px] font-semibold tabular-nums">
+                    {changesLoad ? loadAfter : loadBefore}
+                  </td>
+                </tr>
 
-              <ArrowRight className="text-muted-foreground/60 size-4" aria-hidden />
+                {enduranceLines.map((line, index) => (
+                  <tr key={`${line.before}-${line.after}`}>
+                    <th className="text-muted-foreground py-2 text-[13px] font-normal">
+                      {index === 0 ? 'Déroulé' : ''}
+                      <span className="sr-only">{index === 0 ? '' : 'Déroulé, suite'}</span>
+                    </th>
+                    <td className="text-data text-muted-foreground py-2 text-[13px] tabular-nums">
+                      {line.before}
+                    </td>
+                    <td className="text-data text-foreground py-2 text-[13px] font-medium tabular-nums">
+                      {line.after}
+                    </td>
+                  </tr>
+                ))}
 
-              <div className="space-y-3">
-                <Figure label="Durée" value={changesDuration ? durationAfter : durationBefore} />
-                <Figure label="Charge" value={changesLoad ? loadAfter : loadBefore} />
-              </div>
-            </div>
-
-            {enduranceLines.length > 0 || strengthLines.length > 0 ? (
-              <div>
-                <p className="text-label mb-2">Déroulé</p>
-                <ul className="divide-analysis-border/40 divide-y">
-                  {enduranceLines.map((line) => (
-                    <li
-                      key={`${line.before}-${line.after}`}
-                      className="text-data flex items-center gap-2 py-1.5 text-[13px] tabular-nums"
-                    >
-                      <span className="text-muted-foreground">{line.before}</span>
-                      <ArrowRight className="text-muted-foreground/50 size-3.5" aria-hidden />
-                      <span className="text-foreground font-medium">{line.after}</span>
-                    </li>
-                  ))}
-                  {strengthLines.map((line) => (
-                    <li key={line.label} className="flex items-center gap-2 py-1.5 text-[13px]">
-                      <span className="text-foreground min-w-0 flex-1 truncate">{line.label}</span>
-                      <span className="text-data text-muted-foreground tabular-nums">
-                        {line.before}
-                      </span>
-                      <ArrowRight className="text-muted-foreground/50 size-3.5" aria-hidden />
-                      <span className="text-data text-foreground font-medium tabular-nums">
-                        {line.after}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
+                {strengthLines.map((line) => (
+                  <tr key={line.label}>
+                    <th className="text-muted-foreground py-2 text-[13px] font-normal">
+                      {line.label}
+                    </th>
+                    <td className="text-data text-muted-foreground py-2 text-[13px] tabular-nums">
+                      {line.before}
+                    </td>
+                    <td className="text-data text-foreground py-2 text-[13px] font-medium tabular-nums">
+                      {line.after}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
             <p className="text-muted-foreground text-sm leading-relaxed">
               Un quart en moins. Les séries perdent des répétitions plutôt que de la longueur, et
