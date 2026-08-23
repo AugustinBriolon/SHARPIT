@@ -2,40 +2,55 @@ import { z } from 'zod';
 import { parseBirthDateInput } from '@/lib/profile/athlete-profile-utils';
 import { EQUIPMENT_ITEM_IDS, STRENGTH_VENUES } from '@/lib/equipment/catalog';
 
-const nullableInt = z.preprocess(
-  (v) => (v === '' || v === undefined || v === null ? null : Number(v)),
-  z.union([z.null(), z.number().int().positive()]),
-);
+/**
+ * Absent is not the same as cleared.
+ *
+ * `z.preprocess` runs for missing keys too — Zod hands the preprocessor
+ * `undefined`. Mapping that to `null` materialised every field the caller never
+ * sent, and `.partial()` could no longer drop it: a `PATCH {"ftpW":215}` parsed
+ * to ftpW plus nine explicit nulls, and the upsert wrote all ten. That is how a
+ * profile lost its thresholds on a one-field save.
+ *
+ * `undefined` therefore stays `undefined` and the key disappears; only an
+ * explicit `null` or an empty string means "clear this one".
+ */
+function patchField<T extends z.ZodTypeAny>(coerce: (value: unknown) => unknown, schema: T) {
+  return z.preprocess((value) => {
+    if (value === undefined) return undefined;
+    if (value === '' || value === null) return null;
+    return coerce(value);
+  }, schema);
+}
+
+const toNumber = (value: unknown) => Number(value);
+
+const nullableInt = patchField(toNumber, z.union([z.null(), z.number().int().positive()]));
 
 /** Garmin accepts pool lengths from 10 m to 100 m. */
-const nullablePoolLengthM = z.preprocess(
-  (v) => (v === '' || v === undefined || v === null ? null : Number(v)),
+const nullablePoolLengthM = patchField(
+  toNumber,
   z.union([z.null(), z.number().int().min(10).max(100)]),
 );
 
-const nullablePace = z.preprocess(
-  (v) => (v === '' || v === undefined || v === null ? null : Number(v)),
-  z.union([z.null(), z.number().positive()]),
-);
+const nullablePace = patchField(toNumber, z.union([z.null(), z.number().positive()]));
 
-const nullableBedtimeMin = z.preprocess(
-  (v) => (v === '' || v === undefined || v === null ? null : Number(v)),
+const nullableBedtimeMin = patchField(
+  toNumber,
   z.union([z.null(), z.number().int().min(0).max(1439)]),
 );
 
-const nullableSleepMinutes = z.preprocess(
-  (v) => (v === '' || v === undefined || v === null ? null : Number(v)),
+const nullableSleepMinutes = patchField(
+  toNumber,
   z.union([z.null(), z.number().int().min(240).max(720)]),
 );
 
-const nullableHeightCm = z.preprocess(
-  (v) => (v === '' || v === undefined || v === null ? null : Number(v)),
+const nullableHeightCm = patchField(
+  toNumber,
   z.union([z.null(), z.number().int().min(100).max(250)]),
 );
 
-const nullableBirthDate = z.preprocess(
+const nullableBirthDate = patchField(
   (v) => {
-    if (v === '' || v === undefined || v === null) return null;
     if (typeof v === 'string') return parseBirthDateInput(v);
     if (v instanceof Date) return v;
     return v;
