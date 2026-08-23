@@ -187,12 +187,11 @@ record and nothing that can expire.
 | Module        | Description                                                                                                                                                                                    |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Today**     | Daily Brief — physiological score cards (Recovery, Effort, Sleep) + narrative decision center (what to do, why, session, health signals, confidence) via the Reasoning Engine and Digital Twin |
-| **Training**  | Activity CRUD (run, bike, swim, strength) with load and stream analysis; threshold calibration under **Progression** (FTP, threshold pace, swim CSS, pool length)                              |
+| **Training**  | Activity CRUD (run, bike, swim, strength) with load and stream analysis; the thread of planned and completed sessions                                                                          |
 | **Analytics** | PMC chart (CTL, ATL, TSB), performance metrics, personal records                                                                                                                               |
 | **Planning**  | Macrocycle planning with brick analysis; session authoring and push to the Garmin watch                                                                                                        |
 | **Goals**     | Race goals and countdown tracking                                                                                                                                                              |
-| **Calendar**  | Month view of planned and completed sessions                                                                                                                                                   |
-| **Settings**  | Strava, Garmin, Renpho, Google Calendar integrations                                                                                                                                           |
+| **Settings**  | Strava, Garmin, Renpho, Google Calendar integrations; threshold calibration (FTP, LTHR, threshold pace, swim CSS, pool length)                                                                 |
 
 ## Integrations
 
