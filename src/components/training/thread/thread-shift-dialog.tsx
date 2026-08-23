@@ -77,7 +77,8 @@ export function ThreadShiftDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
+      {/* No cross — see the ease dialog: "Annuler" already carries this. */}
+      <DialogContent className="sm:max-w-sm" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>Décaler la séance</DialogTitle>
           <DialogDescription>{session.title ?? 'Séance prévue'}</DialogDescription>

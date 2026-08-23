@@ -62,11 +62,11 @@ export function ThreadTodayCard({
     <>
       <div
         className={cn(
-          'chip-surface-lg rounded-analysis-lg px-4 py-4 shadow-[0_1px_2px_rgb(0_0_0/0.04)]',
+          'group chip-surface-lg rounded-analysis-lg px-4 py-4 shadow-[0_1px_2px_rgb(0_0_0/0.04)]',
           sessionId && 'hover:border-primary/25 cursor-pointer transition-colors',
         )}
         /* The whole card opens the session. The arrow stays as the labelled control
-         for keyboard and assistive tech — this is a convenience on top of it, not
+          for keyboard and assistive tech — this is a convenience on top of it, not
          a replacement, so the card itself is not a fake button wrapping real ones. */
         onClick={sessionId ? open : undefined}
         onPointerEnter={() => sessionId && prefetchPlannedSessionDetail(queryClient, sessionId)}
@@ -91,7 +91,7 @@ export function ThreadTodayCard({
               className={cn(
                 'bg-highlight text-highlight-foreground inline-flex size-9 shrink-0 items-center justify-center rounded-full',
                 'focus-visible:ring-primary/35 transition-transform focus-visible:ring-2 focus-visible:outline-hidden',
-                'hover:scale-105',
+                'group-hover:scale-105',
               )}
               onClick={open}
             >
@@ -101,7 +101,7 @@ export function ThreadTodayCard({
         </div>
 
         {instruction ? (
-          <p className="border-primary text-foreground/85 mt-3 border-l-2 pl-3 text-[13.5px] leading-relaxed">
+          <p className="text-foreground/85 mt-3 pl-3 text-[13.5px] leading-relaxed">
             {instruction}
           </p>
         ) : null}
