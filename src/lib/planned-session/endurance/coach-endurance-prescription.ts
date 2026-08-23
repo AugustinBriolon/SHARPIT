@@ -22,7 +22,10 @@ import {
   type EnduranceStepKind,
   type SwimStroke,
 } from '@/lib/planned-session/endurance/endurance-prescription';
-import { defaultTargetForIntensity } from '@/lib/planned-session/endurance/endurance-targets';
+import {
+  defaultTargetForIntensity,
+  intensityFromTarget,
+} from '@/lib/planned-session/endurance/endurance-targets';
 
 const effortEnum = z.enum(['RECOVERY', 'ENDURANCE', 'TEMPO', 'THRESHOLD', 'VO2MAX', 'RACE']);
 
@@ -31,7 +34,7 @@ const coachEnduranceStepSchema = z
     kind: z
       .enum(['warmup', 'interval', 'recovery', 'rest', 'cooldown'])
       .describe(
-        "Rôle de l'étape : warmup (échauffement), interval (bloc de travail), recovery (récup active entre blocs), rest (repos complet), cooldown (retour au calme).",
+        "Rôle de l'étape : warmup (échauffement), interval (bloc de travail), recovery (récup active entre blocs), rest (repos complet), cooldown (retour au calme). Dans un groupe répété, l'étape facile qui sépare deux blocs est un recovery, jamais un interval.",
       ),
     minutes: z
       .number()
@@ -107,6 +110,7 @@ export const coachEndurancePrescriptionSchema = z
 
 export type CoachEndurancePrescription = z.infer<typeof coachEndurancePrescriptionSchema>;
 type CoachEnduranceStep = z.infer<typeof coachEnduranceStepSchema>;
+type CoachEffort = z.infer<typeof effortEnum>;
 
 /**
  * Steps that carry no pace, power or heart-rate band at all.
@@ -127,6 +131,45 @@ function durationOf(step: CoachEnduranceStep): EnduranceDuration {
   if (step.minutes != null) return { type: 'time', seconds: clampSeconds(step.minutes) };
   // A step with no stated end is an athlete-driven one — Lap is the honest reading.
   return { type: 'lap' };
+}
+
+/** Ascending, so two steps in a group can be compared. */
+const EFFORT_RANK: Record<CoachEffort, number> = {
+  RECOVERY: 0,
+  ENDURANCE: 1,
+  TEMPO: 2,
+  THRESHOLD: 3,
+  RACE: 3,
+  VO2MAX: 4,
+};
+
+/**
+ * The easy step between two blocks is a recovery, whatever the model called it.
+ *
+ * `interval` at RECOVERY effort inside a repeat group is a contradiction: it
+ * reaches the watch labelled as work, and it earns a policed pace band that a
+ * recovery jog has no use for. Only a group holding something harder can turn a
+ * step into a recovery — a set of easy repeats is not a set of recoveries.
+ */
+function reclassifyRecoverySteps(
+  steps: CoachEnduranceStep[],
+  sessionIntensity: SessionIntensity | null,
+): CoachEnduranceStep[] {
+  const effortOf = (step: CoachEnduranceStep) => step.effort ?? sessionIntensity ?? null;
+  const ranks = steps
+    .map(effortOf)
+    .filter((effort): effort is CoachEffort => effort != null)
+    .map((effort) => EFFORT_RANK[effort]);
+  if (ranks.length === 0) return steps;
+
+  const hardest = Math.max(...ranks);
+  if (hardest <= EFFORT_RANK.RECOVERY) return steps;
+
+  return steps.map((step) => {
+    const effort = effortOf(step);
+    if (step.kind !== 'interval' || effort == null) return step;
+    return EFFORT_RANK[effort] === EFFORT_RANK.RECOVERY ? { ...step, kind: 'recovery' } : step;
+  });
 }
 
 function normalizeStep(
@@ -165,7 +208,11 @@ export function normalizeCoachEndurancePrescription(input: {
 
   const blocks: EnduranceBlock[] = [];
   for (const block of input.prescription.blocks) {
-    const steps = block.steps.map((step) => normalizeStep(step, sport, input.intensity ?? null));
+    const authored =
+      block.times != null && block.times > 1
+        ? reclassifyRecoverySteps(block.steps, input.intensity ?? null)
+        : block.steps;
+    const steps = authored.map((step) => normalizeStep(step, sport, input.intensity ?? null));
     if (steps.length === 0) continue;
 
     if (block.times != null && block.times > 1) {
@@ -216,21 +263,48 @@ const STROKE_LABEL_FR: Record<SwimStroke, string> = {
   mixed: 'nage au choix',
 };
 
-function formatStep(step: EnduranceStep): string {
+const INTENSITY_LABEL_FR: Partial<Record<SessionIntensity, string>> = {
+  RECOVERY: 'récup',
+  ENDURANCE: 'endurance',
+  TEMPO: 'tempo',
+  THRESHOLD: 'seuil',
+  VO2MAX: 'VO2max',
+};
+
+/**
+ * Steps named by what they are for, not by how hard they are.
+ *
+ * A warm-up is a warm-up whatever pace it holds; calling it "endurance" would
+ * lose the only thing the reader needed. The work steps are the opposite — "bloc"
+ * says nothing a glance can use.
+ */
+const ROLE_NAMED_KINDS = new Set<EnduranceStepKind>(['warmup', 'cooldown', 'rest']);
+
+function formatStep(step: EnduranceStep, sport: EnduranceSport): string {
   // The stroke is what a pool set is about, so it replaces the generic step label.
-  const label = step.stroke ? STROKE_LABEL_FR[step.stroke] : KIND_LABEL_FR[step.kind];
+  if (step.stroke) return [formatDuration(step.duration), STROKE_LABEL_FR[step.stroke]].join(' ');
+
+  const intensity = ROLE_NAMED_KINDS.has(step.kind)
+    ? null
+    : intensityFromTarget(sport, step.target);
+  const label = (intensity && INTENSITY_LABEL_FR[intensity]) ?? KIND_LABEL_FR[step.kind];
   return [formatDuration(step.duration), label].join(' ');
 }
 
 /**
  * Athlete-facing rendering of the structure, e.g.
- * "20 min échauffement · 6× (1 km bloc + 2 min récup) · 10 min retour au calme".
+ * "20 min échauffement · 6× (1 km seuil + 2 min récup) · 10 min retour au calme".
+ *
+ * Names the intent, never the resolved numbers. This line is persisted as the
+ * session description, and a band written into it would still read 5:31/km long
+ * after the threshold that produced it had moved.
  */
 export function formatEndurancePrescriptionSummary(prescription: EndurancePrescription): string {
+  const { sport } = prescription;
   return prescription.blocks
     .map((block) => {
-      if (block.kind === 'step') return formatStep(block.step);
-      const inner = block.steps.map(formatStep).join(' + ');
+      if (block.kind === 'step') return formatStep(block.step, sport);
+      const inner = block.steps.map((step) => formatStep(step, sport)).join(' + ');
       return `${block.iterations}× (${inner})`;
     })
     .join(' · ');

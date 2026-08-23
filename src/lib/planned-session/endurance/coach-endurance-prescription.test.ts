@@ -123,7 +123,7 @@ describe('formatEndurancePrescriptionSummary', () => {
     });
 
     expect(formatEndurancePrescriptionSummary(prescription!)).toBe(
-      '20 min échauffement · 6× (1 km bloc + 2 min récup) · 10 min retour au calme',
+      '20 min échauffement · 6× (1 km seuil + 2 min récup) · 10 min retour au calme',
     );
   });
 });
@@ -139,7 +139,7 @@ describe('resolveEnduranceFieldsForPersist', () => {
 
     expect(resolved.endurancePrescription).not.toBeNull();
     expect(resolved.description).toBe(
-      '20 min échauffement · 6× (1 km bloc + 2 min récup) · 10 min retour au calme',
+      '20 min échauffement · 6× (1 km seuil + 2 min récup) · 10 min retour au calme',
     );
   });
 
@@ -169,5 +169,89 @@ describe('resolveEnduranceFieldsForPersist', () => {
     });
 
     expect(resolved.endurancePrescription).toEqual(stored);
+  });
+});
+
+describe('recovery steps mislabelled as work', () => {
+  /** What the coach actually emitted: the easy leg typed as a work interval. */
+  const MISLABELLED: CoachEndurancePrescription = {
+    blocks: [
+      { steps: [{ kind: 'warmup', minutes: 20 }] },
+      {
+        times: 2,
+        steps: [
+          { kind: 'interval', minutes: 15, effort: 'TEMPO' },
+          { kind: 'interval', minutes: 3, effort: 'RECOVERY' },
+        ],
+      },
+      { steps: [{ kind: 'cooldown', minutes: 15 }] },
+    ],
+  };
+
+  it('reads the easy leg of a repeat group as a recovery', () => {
+    const prescription = normalizeCoachEndurancePrescription({
+      prescription: MISLABELLED,
+      type: 'RUN',
+    });
+    const group = prescription?.blocks[1];
+
+    expect(group?.kind).toBe('repeat');
+    if (group?.kind !== 'repeat') return;
+    expect(group.steps.map((step) => step.kind)).toEqual(['interval', 'recovery']);
+    // A recovery jog carries no policed band — the watch would alert on nothing.
+    expect(group.steps[1].target).toEqual({ metric: 'none' });
+    // The work step keeps its guidance, which is the whole point of the push.
+    expect(group.steps[0].target.metric).toBe('pace');
+  });
+
+  it('says what each leg is for', () => {
+    const prescription = normalizeCoachEndurancePrescription({
+      prescription: MISLABELLED,
+      type: 'RUN',
+    });
+
+    expect(formatEndurancePrescriptionSummary(prescription!)).toBe(
+      '20 min échauffement · 2× (15 min tempo + 3 min récup) · 15 min retour au calme',
+    );
+  });
+
+  it('leaves a set of easy repeats alone', () => {
+    // Nothing harder in the group, so nothing here is a recovery from anything.
+    const prescription = normalizeCoachEndurancePrescription({
+      prescription: {
+        blocks: [
+          {
+            times: 3,
+            steps: [
+              { kind: 'interval', minutes: 10, effort: 'RECOVERY' },
+              { kind: 'rest', minutes: 1 },
+            ],
+          },
+        ],
+      },
+      type: 'RUN',
+    });
+    const group = prescription?.blocks[0];
+
+    expect(group?.kind).toBe('repeat');
+    if (group?.kind !== 'repeat') return;
+    expect(group.steps.map((step) => step.kind)).toEqual(['interval', 'rest']);
+  });
+
+  it('leaves a standalone easy block alone', () => {
+    const prescription = normalizeCoachEndurancePrescription({
+      prescription: {
+        blocks: [
+          { steps: [{ kind: 'interval', minutes: 40, effort: 'THRESHOLD' }] },
+          { steps: [{ kind: 'interval', minutes: 10, effort: 'RECOVERY' }] },
+        ],
+      },
+      type: 'RUN',
+    });
+
+    expect(prescription?.blocks.map((b) => (b.kind === 'step' ? b.step.kind : b.kind))).toEqual([
+      'interval',
+      'interval',
+    ]);
   });
 });
