@@ -200,17 +200,17 @@ The table below lists routes that exist in `src/app/(app)`. Routes that already 
 
 There is no `/training/calendar` route. The calendar is a rendering mode inside the thread.
 
-### Splitting `/biology`
+### How `/biology` was split
 
-`CorpsHub` currently mounts three tabs under one route. Progress separates them by purpose, so this is a genuine migration and not a relabel:
+`CorpsHub` mounted three tabs under one route. Progress separates them by the question each answers, which made this a migration rather than a relabel — the hub is gone and `/biology` is a redirect:
 
-| Current tab    | Target Progress section | Note                                                             |
-| -------------- | ----------------------- | ---------------------------------------------------------------- |
-| Composition    | Body & health           | Body composition trends.                                         |
-| Suivi physique | Body & health           | Active conditions, condition history, and training implications. |
-| Records        | Performance             | Records are a performance reading, not a body reading.           |
+| Old tab        | Progress section | Why                                                              |
+| -------------- | ---------------- | ---------------------------------------------------------------- |
+| Composition    | Corps & santé    | Body composition trends.                                         |
+| Suivi physique | Corps & santé    | Active conditions, condition history, and training implications. |
+| Records        | Performance      | Records are a performance reading, not a body reading.           |
 
-`/biology?tab=records` must keep resolving — `/training/progression?tab=records` already redirects to it, so breaking it breaks two links.
+`/biology?tab=records` still resolves, to `/progress?tab=performance` — `/training/progression?tab=records` pointed at it, so breaking it would have broken two links. `recordCategoryHref` was retargeted with it: it built `?tab=records`, which the new hub would have silently dropped onto the default section.
 
 ## States and feedback
 
@@ -241,7 +241,12 @@ The week hub already exists as the training thread, so stage 1 is a rename and n
 
    Every surface the Coach section names can now start a conversation — Today, a planned session, an activity, My week, a goal, a record, an active physical constraint — and each one arrives with its context named in a chip above the composer, a link back to where it came from, and a control that drops it before sending. The attachment is the athlete's to keep or discard; it is no longer implicit in a wall of prefilled text.
 
-3. **Longitudinal space (large):** create Progress; assemble Goals, Performance, and Body & health; split `/biology` across two sections; move goals and calibration out of Settings and retarget the `/training/progression` redirect.
+3. **Longitudinal space (large) — shipped.** `/progress` carries Goals, Performance and Corps & santé as sections of one hub. Records left the body hub for Performance and sit next to the thresholds they are read against; goals and calibration left Settings, which keeps a pointer to each rather than the surface. `/biology`, `/settings/goals` and `/settings/calibration` are redirects, and `/training/progression` no longer chains through them.
+
+   The offline gate is at the hub, not in a section: Progress opens on Goals, and an athlete offline with a cold cache must not have to know to switch tabs before the snapshot appears.
+
+   This closes the two incoherences stage 1 knowingly shipped — Progression now holds goals, and nothing calls a body hub by a longitudinal name.
+
 4. **Reading levels (medium):** add progressive Advanced evidence after the Standard hierarchy is stable.
 
 No stage introduces a new inference engine. Each stage must be released with route, loading, mobile, accessibility, and Instant UX coverage.

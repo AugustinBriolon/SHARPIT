@@ -190,10 +190,9 @@ record and nothing that can expire.
 | **Drill-downs** | `/today/{sleep,recovery,effort,adaptation}` | One page per Digital Twin dimension; the Effort drill-down carries the PMC chart (CTL, ATL, TSB)                                                                                               |
 | **Training**    | `/training`                                 | The thread — planned and completed sessions in one timeline, merging calendar, planning and history; activity CRUD (run, bike, swim, strength) with load and stream analysis                   |
 | **Planning**    | `/training/planning`                        | Macrocycle planning with brick analysis; session authoring and push to the Garmin watch                                                                                                        |
-| **Physiologie** | `/biology`                                  | Personal records and power curve, body composition trends, physical-health tracking                                                                                                            |
+| **Progression** | `/progress`                                 | Goals, personal records and power curve, threshold calibration, body composition trends, physical-health tracking                                                                              |
 | **Nutrition**   | `/nutrition`                                | Daily fuelling read from MyFitnessPal, with weight-aware ratios                                                                                                                                |
 | **Coach**       | `/coach`                                    | Conversations plus the session, weekly-brief and plan-adjustment entry points                                                                                                                  |
-| **Goals**       | `/settings/goals`                           | Race goals and countdown tracking                                                                                                                                                              |
 | **Settings**    | `/settings/*`                               | Strava, Garmin, Renpho, Google Calendar integrations; threshold calibration (FTP, LTHR, threshold pace, swim CSS, pool length)                                                                 |
 
 The athlete-facing hierarchy these routes are migrating toward is defined in
@@ -243,7 +242,7 @@ are defined by being easy rather than by holding a number
 | Bike  | Power band (watts)  | `ftpW`                     | Explicit watts, never a Connect zone index                |
 | Swim  | Pace band (`/100m`) | `swimCssSecPer100m`        | Stroke per step; pool length required; no fallback metric |
 
-Thresholds are set or estimated under **Settings → Seuils & repères** (`/settings/calibration`). Swim CSS is estimated from
+Thresholds are set or estimated under **Progression → Performance** (`/progress?tab=performance`). Swim CSS is estimated from
 realised pool sessions ([ADR-021](./docs/adr/ADR-021-swim-css-from-session-pace.md)).
 
 A session with no authored structure is still sent, as a single timed step derived from its
