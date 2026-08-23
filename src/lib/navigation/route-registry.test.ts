@@ -18,7 +18,7 @@ describe('route-registry', () => {
 
     it('ignores search / hash when matching', () => {
       expect(resolveRouteLabel('/training/history?tab=running')).toBe('Historique');
-      expect(resolveRouteLabel('/settings/calibration#ftp')).toBe('Seuils & repères');
+      expect(resolveRouteLabel('/progress?tab=performance')).toBe('Progression');
     });
 
     it('falls back to a generic label for unknown routes', () => {

@@ -44,7 +44,7 @@ describe('describeCoachDiscussContext', () => {
       '/training/a-1',
     );
     expect(describeCoachDiscussContext({ kind: 'record', categoryKey: 'k' }).sourceHref).toBe(
-      '/biology?tab=records',
+      '/progress?tab=performance',
     );
   });
 });

@@ -270,7 +270,7 @@ function emptyViewModel(): PhysicalHealthViewModel {
       title: 'Aucune condition suivie',
       description:
         'Ajoute une condition (douleur, mobilité, posture…) pour construire une mémoire physiologique durable.',
-      action: { label: 'Ajouter une condition', href: '/biology?tab=suivi' },
+      action: { label: 'Ajouter une condition', href: '/progress?tab=body' },
     },
     hierarchy: { rootId: 'hero', order: ['hero', 'conditions', 'history'] },
     sections: [],

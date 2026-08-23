@@ -56,18 +56,19 @@ const GROUPS: SettingsGroup[] = [
         statusKey: 'equipment',
       },
       {
-        href: '/settings/goals',
+        // Listed, not owned. Goals and thresholds describe the athlete, so they
+        // live in Progression (ADR-022) — but this is where people learned to
+        // look for them, and a pointer costs less than a hunt.
+        href: '/progress?tab=goals',
         title: 'Objectifs',
-        description: 'Courses cibles et objectifs chiffrés.',
+        description: 'Courses cibles et objectifs chiffrés — dans Progression.',
         icon: Goal,
         statusKey: 'goals',
       },
       {
-        // Its own page now: the panel has always been a settings panel, and
-        // nobody looks for their FTP inside a training hub.
-        href: '/settings/calibration',
+        href: '/progress?tab=performance',
         title: 'Seuils & repères',
-        description: 'FTP, allure seuil, FC max — ce que le Twin compare tes efforts à.',
+        description: 'FTP, allure seuil, FC max — dans Progression.',
         icon: SlidersHorizontal,
       },
     ],

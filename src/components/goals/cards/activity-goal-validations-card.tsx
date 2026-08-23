@@ -42,7 +42,7 @@ export function ActivityGoalValidationsCard({ validations }: ActivityGoalValidat
             const valueLabel = formatGoalDisplayValue(v.value, v.goal.unit, config);
             return (
               <li key={v.id} className="bg-background/70 rounded-lg border p-3 text-sm">
-                <Link className="font-medium hover:underline" href="/settings/goals">
+                <Link className="font-medium hover:underline" href="/progress?tab=goals">
                   {v.goal.title}
                 </Link>
                 <p className="text-muted-foreground mt-1 text-xs">

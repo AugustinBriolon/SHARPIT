@@ -2,11 +2,11 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
-import { CorpsHubSkeleton } from '@/components/corps/corps-hub-skeleton';
+import { ProgressHubSkeleton } from '@/components/progress/progress-hub-skeleton';
 import { isPresentationValuesLoading } from '@/hooks/use-presentation-view-model';
 import { physicalHealthLoadingShell } from '@/lib/presentation/physical-health-loading-shell';
 
-describe('biology hub loading gate', () => {
+describe('progress hub loading gate', () => {
   it('treats cold start and placeholder as values-loading', () => {
     expect(isPresentationValuesLoading({ isPending: true, isPlaceholderData: false })).toBe(true);
     expect(isPresentationValuesLoading({ isPending: false, isPlaceholderData: true })).toBe(true);
@@ -24,18 +24,14 @@ describe('biology hub loading gate', () => {
   });
 });
 
-describe('CorpsHubSkeleton', () => {
-  it('renders Progression header, Composition tab active, and value pulses', () => {
-    const html = renderToStaticMarkup(createElement(CorpsHubSkeleton));
+describe('ProgressHubSkeleton', () => {
+  it('renders Progression chrome with the three sections and Objectifs active', () => {
+    const html = renderToStaticMarkup(createElement(ProgressHubSkeleton));
 
     expect(html).toContain('Progression');
-    expect(html).toContain('Forme &amp; bien-être');
-    expect(html).toContain('Poids, masse grasse');
-    expect(html).toContain('Composition');
-    expect(html).toContain('Suivi physique');
+    expect(html).toContain('Objectifs');
+    expect(html).toContain('Performance');
+    expect(html).toContain('Corps &amp; santé');
     expect(html).toContain('!bg-highlight');
-    expect(html).toContain('surface-ink');
-    expect(html).toContain('Dernière pesée');
-    expect(html).toContain('Signaux de composition');
   });
 });

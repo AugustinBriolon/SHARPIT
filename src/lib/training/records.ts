@@ -925,7 +925,7 @@ export async function getPerformanceRecordsForActivity(activityId: string) {
 
 export type RecordSportTab = 'run' | 'bike' | 'swim';
 
-export const RECORDS_PAGE_PATH = '/biology';
+export const RECORDS_PAGE_PATH = '/progress';
 
 /** Identifiant d'ancre DOM pour une catégorie de record (ex. `swim-distance`). */
 export function recordCategoryAnchorId(category: string): string {
@@ -940,11 +940,11 @@ export function recordSportTabFromCategory(category: string): RecordSportTab | n
   return null;
 }
 
-/** Lien vers la catégorie sur la page des records (onglet Progression + sport + ancre). */
+/** Lien vers la catégorie sur la page des records (section Performance + sport + ancre). */
 export function recordCategoryHref(category: string): string {
   const sport = recordSportTabFromCategory(category);
   const sportQuery = sport ? `&sport=${sport}` : '';
-  return `${RECORDS_PAGE_PATH}?tab=records${sportQuery}#${recordCategoryAnchorId(category)}`;
+  return `${RECORDS_PAGE_PATH}?tab=performance${sportQuery}#${recordCategoryAnchorId(category)}`;
 }
 
 /** Recalcule uniquement les `groups` ciblés et remplace ces lignes en base. */

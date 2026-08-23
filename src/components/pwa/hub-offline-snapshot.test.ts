@@ -4,7 +4,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { CorpsHub } from '@/components/corps/corps-hub';
+import { ProgressHub } from '@/components/progress/progress-hub';
 import { TrainingThreadView } from '@/components/training/thread/training-thread-view';
 import type { PersistedSnapshotEntry } from '@/lib/pwa/snapshot-store-validation';
 
@@ -86,12 +86,15 @@ vi.mock('@/hooks/use-viewport', () => ({
 
 import { useOnlineStatus } from '@/hooks/use-online-status';
 import { useOfflineSnapshot } from '@/hooks/use-offline-snapshot';
-import { useBodyPresentationViewModel } from '@/hooks/use-presentation-view-model';
+import {
+  useBodyPresentationViewModel,
+  usePhysicalHealthViewModel,
+} from '@/hooks/use-presentation-view-model';
 import { useActivities, useGoals, usePlannedSessions } from '@/hooks/use-data';
 
 describe('hub offline snapshot contracts', () => {
-  const corpsSource = readFileSync(
-    resolve(process.cwd(), 'src/components/corps/corps-hub.tsx'),
+  const progressSource = readFileSync(
+    resolve(process.cwd(), 'src/components/progress/progress-hub.tsx'),
     'utf8',
   );
   const trainingSource = readFileSync(
@@ -107,11 +110,11 @@ describe('hub offline snapshot contracts', () => {
     'utf8',
   );
 
-  it('CorpsHub keeps chrome and gates snapshot on cold tab data', () => {
-    expect(corpsSource).toContain('StickyHeader');
-    expect(corpsSource).toContain('query.data == null');
-    expect(corpsSource).toContain('useOfflineSnapshot(!online && hasNoLiveContent)');
-    expect(corpsSource).toContain('<OfflineSnapshotSummary entry={offlineEntry} />');
+  it('ProgressHub keeps chrome and gates the snapshot on cold data across sections', () => {
+    expect(progressSource).toContain('StickyHeader');
+    expect(progressSource).toContain('goalsQuery.data == null');
+    expect(progressSource).toContain('useOfflineSnapshot(!online && hasNoLiveContent)');
+    expect(progressSource).toContain('<OfflineSnapshotSummary entry={offlineEntry} />');
   });
 
   it('TrainingThreadView short-circuits the skeletons when offline and all queries cold', () => {
@@ -133,7 +136,7 @@ describe('hub offline snapshot contracts', () => {
   });
 });
 
-describe('CorpsHub offline snapshot render', () => {
+describe('ProgressHub offline snapshot render', () => {
   beforeEach(() => {
     vi.mocked(useOnlineStatus).mockReturnValue(false);
     vi.mocked(useOfflineSnapshot).mockReturnValue({ entry: mockOfflineEntry(), loading: false });
@@ -142,14 +145,20 @@ describe('CorpsHub offline snapshot render', () => {
       isPending: true,
       isPlaceholderData: false,
     } as never);
+    vi.mocked(useGoals).mockReturnValue({ data: undefined, isPending: true } as never);
+    vi.mocked(usePhysicalHealthViewModel).mockReturnValue({
+      data: undefined,
+      isPending: true,
+      isPlaceholderData: false,
+    } as never);
   });
 
-  it('renders snapshot in tab body while keeping Progression chrome', () => {
-    const html = renderToStaticMarkup(createElement(CorpsHub));
+  it('renders the snapshot on the default section, not only under Corps & santé', () => {
+    const html = renderToStaticMarkup(createElement(ProgressHub));
 
     expect(html).toContain('Progression');
-    expect(html).toContain('Forme &amp; bien-être');
-    expect(html).toContain('Composition');
+    expect(html).toContain('Objectifs');
+    expect(html).toContain('Corps &amp; santé');
     expect(html).toContain(OFFLINE_BANNER);
     expect(html).not.toContain('composition-live');
   });

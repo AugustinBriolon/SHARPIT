@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { recordCategoryAnchorId, recordCategoryHref, recordSportTabFromCategory } from './records';
 
 describe('recordCategoryHref', () => {
-  it('opens Progression on the records tab with sport filter and category anchor', () => {
-    expect(recordCategoryHref('run-5k')).toBe('/biology?tab=records&sport=run#run-5k');
-    expect(recordCategoryHref('bike-ftp')).toBe('/biology?tab=records&sport=bike#bike-ftp');
+  it('opens Progression on the performance section with sport filter and category anchor', () => {
+    expect(recordCategoryHref('run-5k')).toBe('/progress?tab=performance&sport=run#run-5k');
+    expect(recordCategoryHref('bike-ftp')).toBe('/progress?tab=performance&sport=bike#bike-ftp');
     expect(recordCategoryHref('swim-distance')).toBe(
-      '/biology?tab=records&sport=swim#swim-distance',
+      '/progress?tab=performance&sport=swim#swim-distance',
     );
   });
 

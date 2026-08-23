@@ -1,12 +1,12 @@
 import { CalendarDays, CircleUser, MessagesSquare, Sun, TrendingUp } from 'lucide-react';
 
 /**
- * Primary nav uses canonical hrefs only (`/`, `/training`, `/biology`, `/coach`, `/settings`).
+ * Primary nav uses canonical hrefs only (`/`, `/training`, `/progress`, `/coach`, `/settings`).
  *
  * The five destinations are temporal, not domain-led (ADR-022). Stage 1 of that
  * migration renames them where they stand — the hrefs still point at the routes
- * that exist today, so `Ma semaine` is served by the training thread and
- * `Progression` by the body hub until their surfaces are assembled.
+ * that exist today, so `Ma semaine` is still served by the training thread.
+ * `Progression` now has its own surface (stage 3).
  */
 
 export type NavIcon = typeof Sun;
@@ -35,10 +35,12 @@ export const weekNavItem: AppNavItem = {
 };
 
 export const progressNavItem: AppNavItem = {
-  href: '/biology',
+  href: '/progress',
   label: 'Progression',
   icon: TrendingUp,
-  match: (p) => p.startsWith('/biology'),
+  // `/biology` still matches: it redirects here, and the tab should not go dark
+  // for the frame the redirect takes.
+  match: (p) => p.startsWith('/progress') || p.startsWith('/biology'),
 };
 
 export const coachNavItem: AppNavItem = {

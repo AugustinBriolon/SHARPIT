@@ -82,7 +82,7 @@ const MATCHERS: Matcher[] = [
   },
 
   {
-    pattern: /^\/biology$/,
+    pattern: /^\/progress$/,
     resolve: () => ({ label: 'Progression', defaultParent: HOME_PARENT }),
   },
 
@@ -93,16 +93,8 @@ const MATCHERS: Matcher[] = [
 
   { pattern: /^\/settings$/, resolve: () => ({ label: 'Profil', defaultParent: HOME_PARENT }) },
   {
-    pattern: /^\/settings\/calibration$/,
-    resolve: () => ({ label: 'Seuils & repères', defaultParent: SETTINGS_PARENT }),
-  },
-  {
     pattern: /^\/settings\/account$/,
     resolve: () => ({ label: 'Compte', defaultParent: SETTINGS_PARENT }),
-  },
-  {
-    pattern: /^\/settings\/goals$/,
-    resolve: () => ({ label: 'Objectifs', defaultParent: SETTINGS_PARENT }),
   },
   {
     pattern: /^\/settings\/integrations$/,

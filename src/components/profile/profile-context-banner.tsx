@@ -25,7 +25,7 @@ export function ProfileContextBanner() {
           Modifier le contexte
         </Link>
         {' · '}
-        <Link className="text-primary font-medium hover:underline" href="/settings/calibration">
+        <Link className="text-primary font-medium hover:underline" href="/progress?tab=performance">
           Calibration
         </Link>
       </ClinicalAnnotation>

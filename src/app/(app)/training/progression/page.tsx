@@ -13,10 +13,10 @@ export const instant = false;
 /**
  * Progression is gone; its three tabs went where each of them belonged.
  *
- * Calibration is a settings panel and now lives in Settings. Records are a
- * physiological reading and live under Physiologie. État was the current form,
- * which the thread already carries. Bookmarks into the old tabs keep working
- * because the query decides which of the three the reader wanted.
+ * Calibration and records both live under Progression now — one is the
+ * yardstick, the other the reading it scales. État was the current form, which
+ * the thread already carries. Bookmarks into the old tabs keep working because
+ * the query decides which of the three the reader wanted.
  */
 export default async function TrainingProgressionRedirect({
   searchParams,
@@ -24,7 +24,7 @@ export default async function TrainingProgressionRedirect({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const { tab } = await searchParams;
-  if (tab === 'calibration') redirect('/settings/calibration');
-  if (tab === 'records') redirect('/biology?tab=records');
+  if (tab === 'calibration') redirect('/progress?tab=performance');
+  if (tab === 'records') redirect('/progress?tab=performance');
   redirect('/training');
 }

@@ -64,7 +64,7 @@ function pathnameOf(href: string): string {
  *
  * - Same pathname as an existing entry → **rewind** to that entry (pop all
  *   entries above) and refresh its href/label to preserve the latest state
- *   (e.g. `?tab=records&sport=bike`). This is how Back from an activity
+ *   (e.g. `?tab=performance&sport=bike`). This is how Back from an activity
  *   returns to Progression on the sport tab you left, and how repeated
  *   activity-then-back cycles do not accumulate history.
  * - Query-only change on the current top (same pathname) → replace in place

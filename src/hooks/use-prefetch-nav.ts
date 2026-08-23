@@ -29,7 +29,7 @@ function prefetchTrainingHub(pre: <T>(key: readonly unknown[], fn: () => Promise
   pre(queryKeys.goals, fetchGoals);
 }
 
-function prefetchBiologyHub(
+function prefetchProgressHub(
   pre: <T>(key: readonly unknown[], fn: () => Promise<T>) => void,
   trainingDayId: string,
 ) {
@@ -43,7 +43,7 @@ function prefetchBiologyHub(
 
 /**
  * Warm TanStack Query cache for primary nav destinations.
- * Hrefs must match canonical routes (`/training`, `/biology`, `/today/…`, …).
+ * Hrefs must match canonical routes (`/training`, `/progress`, `/today/…`, …).
  */
 export function usePrefetchNavQuery() {
   const queryClient = useQueryClient();
@@ -68,11 +68,11 @@ export function usePrefetchNavQuery() {
         case '/training':
           prefetchTrainingHub(pre);
           break;
-        case '/biology':
-          prefetchBiologyHub(pre, trainingDayId);
+        case '/progress':
+          pre(queryKeys.goals, fetchGoals);
+          prefetchProgressHub(pre, trainingDayId);
           break;
         case '/settings':
-        case '/settings/goals':
         case '/settings/account':
           pre(queryKeys.goals, fetchGoals);
           break;

@@ -19,10 +19,10 @@ describe('resolveBackTargetWithoutStack', () => {
     });
   });
 
-  it('falls back to settings for the calibration page', () => {
-    expect(resolveBackTargetWithoutStack('/settings/calibration')).toEqual({
-      href: '/settings',
-      label: 'Profil',
+  it('falls back home for Progression, which no longer hangs off Settings', () => {
+    expect(resolveBackTargetWithoutStack('/progress')).toEqual({
+      href: '/',
+      label: 'Aujourd’hui',
       fromStack: false,
     });
   });

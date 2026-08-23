@@ -59,19 +59,19 @@ export function describeCoachDiscussContext(
       return {
         kind: target.kind,
         label: named ? `Objectif · ${named}` : 'Un objectif',
-        sourceHref: '/settings/goals',
+        sourceHref: '/progress?tab=goals',
       };
     case 'record':
       return {
         kind: target.kind,
         label: named ? `Records · ${named}` : 'Tes records',
-        sourceHref: '/biology?tab=records',
+        sourceHref: '/progress?tab=performance',
       };
     case 'physical-condition':
       return {
         kind: target.kind,
         label: named ? `Contrainte physique · ${named}` : 'Une contrainte physique',
-        sourceHref: '/biology?tab=suivi',
+        sourceHref: '/progress?tab=body',
       };
   }
 }
