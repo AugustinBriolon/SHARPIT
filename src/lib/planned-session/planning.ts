@@ -8,7 +8,7 @@ import {
   isWithinInterval,
   startOfWeek,
 } from 'date-fns';
-import { estimateActivityLoad } from '@/lib/analytics';
+import { estimateActivityLoad } from '@/lib/training/activity-load';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };

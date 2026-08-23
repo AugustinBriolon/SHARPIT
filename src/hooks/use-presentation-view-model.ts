@@ -9,10 +9,8 @@ import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import type { BodyViewModel } from '@/core/presentation/body-view-model';
 import type { NutritionViewModel } from '@/core/presentation/nutrition-view-model';
 import type { PhysicalHealthViewModel } from '@/core/presentation/physical-health-view-model';
-import type { PmcPoint } from '@/lib/training/pmc-history';
 import {
   fetchAdaptationPresentation,
-  fetchAnalyticsPmc,
   fetchEffortPresentation,
   fetchPhysicalHealthPresentation,
   fetchRecoveryPresentation,
@@ -53,22 +51,6 @@ export function useEffortViewModel(trainingDayId: string) {
   return useQuery<EffortViewModel>({
     queryKey: ['presentation', 'effort', trainingDayId],
     queryFn: () => fetchEffortPresentation(trainingDayId),
-    staleTime: 5 * 60_000,
-    placeholderData: keepPreviousData,
-  });
-}
-
-/**
- * The PMC series, always from the server.
- *
- * The Core's Training Stress is derived from stored session features, which the
- * browser cannot read, so computing this client-side silently falls back to the
- * per-activity estimate and reports a different CTL than the rest of the app.
- */
-export function useAnalyticsPmc() {
-  return useQuery<PmcPoint[]>({
-    queryKey: ['presentation', 'analytics-pmc'],
-    queryFn: fetchAnalyticsPmc,
     staleTime: 5 * 60_000,
     placeholderData: keepPreviousData,
   });
