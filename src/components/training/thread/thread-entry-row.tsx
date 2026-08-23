@@ -1,6 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { CalendarPlus, Check, ChevronRight, Feather } from 'lucide-react';
 import Link from 'next/link';
 import { activityTypeLabels, formatDuration } from '@/lib/format';
@@ -9,6 +10,8 @@ import { durationDelta, formatDelta, loadDelta } from '@/lib/training/thread/thr
 import type { ThreadEntry } from '@/lib/training/thread/thread-model';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
+import { ThreadEaseDialog } from '@/components/training/thread/thread-ease-dialog';
+import { ThreadShiftDialog } from '@/components/training/thread/thread-shift-dialog';
 import { usePlannedSessionActions } from '@/hooks/use-planned-session-actions';
 import { useSwipeReveal } from '@/hooks/use-swipe-reveal';
 import { useAppModal } from '@/providers/app-modal-provider';
@@ -105,7 +108,9 @@ function RowActions({
   session: NonNullable<ThreadEntry['planned']>;
   onDone?: () => void;
 }) {
-  const { shift, ease, pending } = usePlannedSessionActions();
+  const { ease, reschedule, pending } = usePlannedSessionActions();
+  const [shiftOpen, setShiftOpen] = useState(false);
+  const [easeOpen, setEaseOpen] = useState(false);
 
   const buttonClass = cn(
     'text-muted-foreground/70 hover:text-foreground rounded-[14px] px-3',
@@ -127,7 +132,7 @@ function RowActions({
           // The row itself opens the session; these must not do both.
           event.stopPropagation();
           event.preventDefault();
-          shift(session);
+          setShiftOpen(true);
           onDone?.();
         }}
       >
@@ -142,13 +147,29 @@ function RowActions({
         onClick={(event) => {
           event.stopPropagation();
           event.preventDefault();
-          ease(session);
+          setEaseOpen(true);
           onDone?.();
         }}
       >
         <Feather className="size-3.5" aria-hidden />
         <span className="lg:hidden">Alléger</span>
       </button>
+
+      {/* Same labels, same dialogs as the day's card. A word that means "move it
+          one day" on one row and "choose when" three rows up is worse than
+          either. */}
+      <ThreadShiftDialog
+        open={shiftOpen}
+        session={session}
+        onConfirm={(day, startTime) => reschedule(session, day, startTime)}
+        onOpenChange={setShiftOpen}
+      />
+      <ThreadEaseDialog
+        open={easeOpen}
+        session={session}
+        onConfirm={() => ease(session)}
+        onOpenChange={setEaseOpen}
+      />
     </span>
   );
 }

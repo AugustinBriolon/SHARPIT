@@ -7,6 +7,7 @@ import { ComparisonPill, SportDot, entryMeta } from '@/components/training/threa
 import { coachDiscussHref } from '@/lib/coach/chat/coach-discuss-href';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import type { ThreadEntry } from '@/lib/training/thread/thread-model';
+import { ThreadEaseDialog } from '@/components/training/thread/thread-ease-dialog';
 import { ThreadShiftDialog } from '@/components/training/thread/thread-shift-dialog';
 import { usePlannedSessionActions } from '@/hooks/use-planned-session-actions';
 import { useAppModal } from '@/providers/app-modal-provider';
@@ -48,6 +49,7 @@ export function ThreadTodayCard({
   const { openPlannedSession } = useAppModal();
   const { ease, reschedule, pending } = usePlannedSessionActions();
   const [shiftOpen, setShiftOpen] = useState(false);
+  const [easeOpen, setEaseOpen] = useState(false);
 
   const sessionId = entry.planned?.id ?? null;
   const meta = entryMeta(entry);
@@ -109,11 +111,7 @@ export function ThreadTodayCard({
             {entry.planned ? (
               <>
                 <ActionPill disabled={pending} label="Décaler" onClick={() => setShiftOpen(true)} />
-                <ActionPill
-                  disabled={pending}
-                  label="Alléger"
-                  onClick={() => ease(entry.planned!)}
-                />
+                <ActionPill disabled={pending} label="Alléger" onClick={() => setEaseOpen(true)} />
               </>
             ) : null}
             <Link
@@ -134,12 +132,20 @@ export function ThreadTodayCard({
           events through the React tree, so a press on "Valider" inside the dialog
           reached the card behind it and opened the session as well. */}
       {entry.planned ? (
-        <ThreadShiftDialog
-          open={shiftOpen}
-          session={entry.planned}
-          onConfirm={(day, startTime) => reschedule(entry.planned!, day, startTime)}
-          onOpenChange={setShiftOpen}
-        />
+        <>
+          <ThreadShiftDialog
+            open={shiftOpen}
+            session={entry.planned}
+            onConfirm={(day, startTime) => reschedule(entry.planned!, day, startTime)}
+            onOpenChange={setShiftOpen}
+          />
+          <ThreadEaseDialog
+            open={easeOpen}
+            session={entry.planned}
+            onConfirm={() => ease(entry.planned!)}
+            onOpenChange={setEaseOpen}
+          />
+        </>
       ) : null}
     </>
   );
