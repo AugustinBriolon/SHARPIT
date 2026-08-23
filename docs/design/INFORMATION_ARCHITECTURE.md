@@ -230,7 +230,10 @@ Every primary surface must support loading, partial-data, offline, empty, and er
 
 The week hub already exists as the training thread, so stage 1 is a rename and not a consolidation. Progress is the one destination with no current surface, and carries most of the work.
 
-1. **Navigation foundation (small):** adopt the five labels in `app-navigation.ts`, resolve the `Ma semaine` collision, update `match()` predicates and prefetch targets, retain every compatible link. No route moves.
+1. **Navigation foundation (small) — shipped.** The five labels are live in `app-navigation.ts` and in the route registry that feeds every back-link. The Coach menu's weekly brief became `Bilan hebdo` so the destination could take `Ma semaine`. `/nutrition` now lights Today instead of leaving the bar unmarked. No route moved, and no deep link changed.
+
+   Two consequences of renaming before moving, visible until stage 3: `Progression` is served by the body hub, whose page still reads `Forme & bien-être` and holds no goals; and `Ma semaine` is served by the training thread, which spans more than a week.
+
 2. **Daily loop (medium):** complete the Today phase transitions and contextual Coach/session actions.
 3. **Longitudinal space (large):** create Progress; assemble Goals, Performance, and Body & health; split `/biology` across two sections; move goals and calibration out of Settings and retarget the `/training/progression` redirect.
 4. **Reading levels (medium):** add progressive Advanced evidence after the Standard hierarchy is stable.
