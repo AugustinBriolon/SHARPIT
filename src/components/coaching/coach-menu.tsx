@@ -77,7 +77,7 @@ export function SessionsCoachMenu({
           >
             <NotebookText className="text-foreground/70 size-4" />
             <div className="min-w-0">
-              <p className="font-medium">Ma semaine</p>
+              <p className="font-medium">Bilan hebdo</p>
               <p className="text-muted-foreground text-xs">
                 Objectif, charge et séances clés expliqués
               </p>

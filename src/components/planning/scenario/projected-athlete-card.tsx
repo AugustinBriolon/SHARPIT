@@ -18,7 +18,7 @@ const HORIZON_OPTIONS: { days: ProjectionHorizonDays; label: string }[] = [
 
 /**
  * Projected athlete trajectory for Planning — instrument Projection only.
- * Coach discussion lives on /coach (menu « Ma semaine » / discuss deep-links elsewhere).
+ * Coach discussion lives on /coach (menu « Bilan hebdo » / discuss deep-links elsewhere).
  */
 export function ProjectedAthleteCard({
   className,

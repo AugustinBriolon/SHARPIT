@@ -37,7 +37,7 @@ export function WeeklyBrief({ onClose }: { onClose: () => void }) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <NotebookText className="text-primary size-4" />
-            Ma semaine
+            Bilan hebdo
           </DialogTitle>
           <DialogDescription>
             {vm ? `${vm.weekStartLabel} — ${vm.weekEndLabel}` : 'Chargement…'}
