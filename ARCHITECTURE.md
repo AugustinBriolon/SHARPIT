@@ -563,7 +563,7 @@ model AthleteProfile {
 
 ### 8.2 Load units
 
-`Activity.load` and `PlannedSession.load` represent **Training Stress Score (TSS) equivalents**. For all sports and all entry paths, load must be normalized to the same unit before being written to the database. Use `estimateActivityLoad()` from `src/lib/analytics.ts` as the normalizer.
+`Activity.load` and `PlannedSession.load` represent **Training Stress Score (TSS) equivalents**. For all sports and all entry paths, load must be normalized to the same unit before being written to the database. Use `estimateActivityLoad()` from `src/lib/training/activity-load.ts` as the normalizer.
 
 If a load value cannot be expressed in TSS equivalents, it must not be stored in `load`. Use a sport-specific metrics field instead.
 

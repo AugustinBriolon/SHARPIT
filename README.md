@@ -184,14 +184,14 @@ record and nothing that can expire.
 
 ## Modules
 
-| Module        | Description                                                                                                                                                                                    |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Today**     | Daily Brief — physiological score cards (Recovery, Effort, Sleep) + narrative decision center (what to do, why, session, health signals, confidence) via the Reasoning Engine and Digital Twin |
-| **Training**  | Activity CRUD (run, bike, swim, strength) with load and stream analysis; the thread of planned and completed sessions                                                                          |
-| **Analytics** | PMC chart (CTL, ATL, TSB), performance metrics, personal records                                                                                                                               |
-| **Planning**  | Macrocycle planning with brick analysis; session authoring and push to the Garmin watch                                                                                                        |
-| **Goals**     | Race goals and countdown tracking                                                                                                                                                              |
-| **Settings**  | Strava, Garmin, Renpho, Google Calendar integrations; threshold calibration (FTP, LTHR, threshold pace, swim CSS, pool length)                                                                 |
+| Module          | Description                                                                                                                                                                                                                                                 |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Today**       | Daily Brief — physiological score cards (Recovery, Effort, Sleep) + narrative decision center (what to do, why, session, health signals, confidence) via the Reasoning Engine and Digital Twin; the Effort drill-down carries the PMC chart (CTL, ATL, TSB) |
+| **Training**    | Activity CRUD (run, bike, swim, strength) with load and stream analysis; the thread of planned and completed sessions                                                                                                                                       |
+| **Physiologie** | Personal records and power curve, body composition trends, physical-health tracking (`/biology`)                                                                                                                                                            |
+| **Planning**    | Macrocycle planning with brick analysis; session authoring and push to the Garmin watch                                                                                                                                                                     |
+| **Goals**       | Race goals and countdown tracking                                                                                                                                                                                                                           |
+| **Settings**    | Strava, Garmin, Renpho, Google Calendar integrations; threshold calibration (FTP, LTHR, threshold pace, swim CSS, pool length)                                                                                                                              |
 
 ## Integrations
 
@@ -236,7 +236,7 @@ are defined by being easy rather than by holding a number
 | Bike  | Power band (watts)  | `ftpW`                     | Explicit watts, never a Connect zone index                |
 | Swim  | Pace band (`/100m`) | `swimCssSecPer100m`        | Stroke per step; pool length required; no fallback metric |
 
-Thresholds are set or estimated under **Training → Progression**. Swim CSS is estimated from
+Thresholds are set or estimated under **Settings → Seuils & repères** (`/settings/calibration`). Swim CSS is estimated from
 realised pool sessions ([ADR-021](./docs/adr/ADR-021-swim-css-from-session-pace.md)).
 
 A session with no authored structure is still sent, as a single timed step derived from its

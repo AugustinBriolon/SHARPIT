@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildFormView, buildReadinessView, buildHrvStatusView } from './recovery';
-import type { PmcPoint } from '@/lib/analytics';
+import type { PmcPoint } from '@/lib/training/pmc-history';
 
 describe('buildReadinessView', () => {
   it('classifie score >= 75 comme "good"', () => {
