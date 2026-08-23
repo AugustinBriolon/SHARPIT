@@ -13,6 +13,9 @@ import {
   productMessageForDomain,
 } from '@/lib/athlete-state/product-states';
 import {
+  GARMIN_CONNECTION_SELECT,
+  OAUTH_CONNECTION_SELECT,
+  RENPHO_CONNECTION_SELECT,
   isGarminAccountConnected,
   isOAuthAccountConnected,
   isRenphoAccountConnected,
@@ -224,23 +227,23 @@ export async function computeFreshnessSnapshot(params: {
     }),
     prisma.stravaAccount.findUnique({
       where: { id: 'default' },
-      select: { lastSyncAt: true, refreshToken: true },
+      select: { lastSyncAt: true, ...OAUTH_CONNECTION_SELECT },
     }),
     prisma.garminAccount.findUnique({
       where: { id: 'default' },
-      select: { lastSyncAt: true, lastActivitySyncAt: true, oauth2Token: true },
+      select: { lastSyncAt: true, lastActivitySyncAt: true, ...GARMIN_CONNECTION_SELECT },
     }),
     prisma.renphoAccount.findUnique({
       where: { id: 'default' },
-      select: { lastSyncAt: true, passwordEnc: true },
+      select: { lastSyncAt: true, ...RENPHO_CONNECTION_SELECT },
     }),
     prisma.withingsAccount.findUnique({
       where: { id: 'default' },
-      select: { lastSyncAt: true, refreshToken: true },
+      select: { lastSyncAt: true, ...OAUTH_CONNECTION_SELECT },
     }),
     prisma.googleAccount.findUnique({
       where: { id: 'default' },
-      select: { lastSyncAt: true, refreshToken: true },
+      select: { lastSyncAt: true, ...OAUTH_CONNECTION_SELECT },
     }),
     prisma.dailyBriefing.findFirst({
       where: { date: new Date(`${trainingDayId}T12:00:00.000Z`) },

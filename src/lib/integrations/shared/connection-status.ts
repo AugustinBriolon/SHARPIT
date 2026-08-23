@@ -26,6 +26,22 @@ export function isProviderAuthFailure(error: unknown): error is ProviderAuthErro
 
 type MaybeAccount = Record<string, unknown> | null | undefined;
 
+/**
+ * The columns each predicate reads, as Prisma selects.
+ *
+ * They live beside the predicates because a caller that selects less than the
+ * check needs gets `undefined`, and `undefined != null` is false — so the account
+ * reads as disconnected with no error anywhere. Every provider was reported
+ * disconnected for exactly that reason, which silently disabled provider sync
+ * across the whole app.
+ *
+ * Spread these rather than listing columns by hand, and the two cannot drift.
+ */
+export const OAUTH_CONNECTION_SELECT = { accessToken: true, refreshToken: true } as const;
+export const GARMIN_CONNECTION_SELECT = { oauth1Token: true, oauth2Token: true } as const;
+export const RENPHO_CONNECTION_SELECT = { email: true, passwordEnc: true } as const;
+export const MFP_CONNECTION_SELECT = { sessionTokenEnc: true } as const;
+
 export function isOAuthAccountConnected(account: MaybeAccount): boolean {
   if (!account) return false;
   return account.accessToken != null && account.refreshToken != null;

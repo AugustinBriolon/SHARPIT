@@ -186,7 +186,7 @@ export function MorningOrientationActions({
             onClick={() => void refreshEvidence()}
           >
             <RefreshCw className={cn('size-3.5', pending === 'refresh' && 'animate-spin')} />
-            {guardedActionLabel(offline, offlineLabel, 'Actualiser les preuves', {
+            {guardedActionLabel(offline, offlineLabel, 'Actualiser les données', {
               active: pending === 'refresh',
               label: 'Actualisation…',
             })}
