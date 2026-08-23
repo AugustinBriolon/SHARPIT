@@ -2,6 +2,7 @@
 
 import { Toast as ToastPrimitive } from '@base-ui/react/toast';
 import { CircleCheckIcon, CircleXIcon, InfoIcon, LoaderIcon, XIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 /**
  * Manager global : permet de déclencher des toasts depuis n'importe où, y
@@ -14,6 +15,15 @@ type ToastInput = {
   title?: React.ReactNode;
   description?: React.ReactNode;
   timeout?: number;
+  /**
+   * One button, for undoing what the toast just announced.
+   *
+   * A destructive or hard-to-reverse action is far cheaper to offer back than to
+   * confirm up front: a confirm dialog taxes every correct action to protect
+   * against the rare wrong one, while an undo taxes nothing and costs a click
+   * only when it was actually needed.
+   */
+  actionProps?: React.ComponentPropsWithoutRef<'button'>;
 };
 
 export const toast = {
@@ -79,6 +89,15 @@ function ToastList() {
             <ToastPrimitive.Description className="text-muted-foreground text-sm leading-snug wrap-break-word" />
           )}
         </div>
+        {item.actionProps ? (
+          <ToastPrimitive.Action
+            className={cn(
+              'border-analysis-border/70 text-foreground hover:border-primary/40 shrink-0',
+              'inline-flex min-h-9 items-center rounded-full border px-3 text-xs font-medium',
+              'focus-visible:ring-primary/35 transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
+            )}
+          />
+        ) : null}
         <ToastPrimitive.Close aria-label="Fermer" className={toastCloseClass}>
           <XIcon className="size-4" />
         </ToastPrimitive.Close>

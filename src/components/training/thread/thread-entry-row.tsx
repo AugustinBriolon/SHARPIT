@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, ChevronRight } from 'lucide-react';
+import { CalendarPlus, Check, ChevronRight, Feather } from 'lucide-react';
 import Link from 'next/link';
 import { activityTypeLabels, formatDuration } from '@/lib/format';
 import { SPORT_IDENTITY_TEXT } from '@/lib/activity/sport-identity';
@@ -9,6 +9,7 @@ import { durationDelta, formatDelta, loadDelta } from '@/lib/training/thread/thr
 import type { ThreadEntry } from '@/lib/training/thread/thread-model';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
+import { usePlannedSessionActions } from '@/hooks/use-planned-session-actions';
 import { useAppModal } from '@/providers/app-modal-provider';
 import { cn } from '@/lib/utils';
 
@@ -89,6 +90,56 @@ export function SportDot({ entry, className }: { entry: ThreadEntry; className?:
   );
 }
 
+/**
+ * Adjusting a planned session from the row it sits on.
+ *
+ * Revealed on hover, but present in the tab order at all times — a control that
+ * only exists while a mouse is over it does not exist for a keyboard, and these
+ * are the two adjustments an athlete makes most often.
+ */
+function RowActions({ session }: { session: NonNullable<ThreadEntry['planned']> }) {
+  const { shift, ease, pending } = usePlannedSessionActions();
+
+  const buttonClass = cn(
+    'text-muted-foreground/70 hover:text-foreground hover:bg-accent/60 rounded-full p-1.5',
+    'opacity-0 transition-[opacity,color,background-color] group-hover:opacity-100 focus-visible:opacity-100',
+    'focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
+    'disabled:opacity-30 max-lg:opacity-100',
+  );
+
+  return (
+    <span className="flex shrink-0 items-center gap-0.5">
+      <button
+        aria-label={`Décaler ${session.title ?? 'la séance'} d’un jour`}
+        className={buttonClass}
+        disabled={pending}
+        type="button"
+        onClick={(event) => {
+          // The row itself opens the session; these must not do both.
+          event.stopPropagation();
+          event.preventDefault();
+          shift(session);
+        }}
+      >
+        <CalendarPlus className="size-3.5" aria-hidden />
+      </button>
+      <button
+        aria-label={`Alléger ${session.title ?? 'la séance'}`}
+        className={buttonClass}
+        disabled={pending}
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          event.preventDefault();
+          ease(session);
+        }}
+      >
+        <Feather className="size-3.5" aria-hidden />
+      </button>
+    </span>
+  );
+}
+
 export function ThreadEntryRow({
   entry,
   isPivot = false,
@@ -139,7 +190,7 @@ export function ThreadEntryRow({
   );
 
   const shell = cn(
-    'flex w-full items-start gap-2.5 rounded-[14px] px-3 py-2.5 text-left transition-colors lg:items-center',
+    'group flex w-full items-start gap-2.5 rounded-[14px] px-3 py-2.5 text-left transition-colors lg:items-center',
     'focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
     isPlanned
       ? 'border-analysis-border/70 hover:border-primary/30 border border-dashed'
@@ -149,18 +200,23 @@ export function ThreadEntryRow({
   );
 
   if (isPlanned && entry.planned) {
-    const sessionId = entry.planned.id;
+    const session = entry.planned;
+    // The row is a <button>; the actions cannot nest inside it, so they sit
+    // beside it and the group is what reveals them on hover.
     return (
-      <button
-        aria-label={`${activityTypeLabels[entry.type]} prévue · ${entry.title}`}
-        className={shell}
-        type="button"
-        onClick={() => openPlannedSession({ sessionId })}
-        onFocus={() => prefetchPlannedSessionDetail(queryClient, sessionId)}
-        onPointerEnter={() => prefetchPlannedSessionDetail(queryClient, sessionId)}
-      >
-        {body}
-      </button>
+      <div className="group flex items-center gap-1">
+        <button
+          aria-label={`${activityTypeLabels[entry.type]} prévue · ${entry.title}`}
+          className={cn(shell, 'min-w-0 flex-1')}
+          type="button"
+          onClick={() => openPlannedSession({ sessionId: session.id })}
+          onFocus={() => prefetchPlannedSessionDetail(queryClient, session.id)}
+          onPointerEnter={() => prefetchPlannedSessionDetail(queryClient, session.id)}
+        >
+          {body}
+        </button>
+        <RowActions session={session} />
+      </div>
     );
   }
 

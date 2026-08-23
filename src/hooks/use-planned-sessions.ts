@@ -118,6 +118,13 @@ function patchTodayPresentationLines(
   });
 }
 
+/** `silent` suppresses the generic toast when the caller raises its own. */
+export type PlannedSessionUpdateVars = {
+  id: string;
+  data: Partial<PlannedSessionPayload>;
+  silent?: boolean;
+};
+
 export function usePlannedSessionMutations() {
   const queryClient = useQueryClient();
   const key = queryKeys.plannedSessions;
@@ -221,10 +228,7 @@ export function usePlannedSessionMutations() {
     }),
   });
 
-  const updateListOpts = listOptimistic<
-    ClientPlannedSession,
-    { id: string; data: Partial<PlannedSessionPayload> }
-  >({
+  const updateListOpts = listOptimistic<ClientPlannedSession, PlannedSessionUpdateVars>({
     queryClient,
     queryKey: key,
     apply: (prev, { id, data }) =>
@@ -232,11 +236,14 @@ export function usePlannedSessionMutations() {
         s.id === id ? ({ ...s, ...data, updatedAt: new Date() } as ClientPlannedSession) : s,
       ),
     error: 'Impossible de mettre à jour la séance.',
-    success: 'Séance mise à jour',
+    /* Silent when the caller says what happened itself — otherwise a single press
+       raises two toasts, and the generic one covers the "Annuler" on the other. */
+    success: ({ silent }) => (silent ? undefined : 'Séance mise à jour'),
   });
 
   const update = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<PlannedSessionPayload> }) =>
+    // `silent` stays in the variables and never reaches the request body.
+    mutationFn: ({ id, data }: PlannedSessionUpdateVars) =>
       sendJson(`/api/planned-sessions/${id}`, 'PATCH', data),
     ...updateListOpts,
     onSettled: (_data, _error, variables) => {

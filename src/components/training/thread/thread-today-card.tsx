@@ -6,6 +6,7 @@ import { ComparisonPill, SportDot, entryMeta } from '@/components/training/threa
 import { coachDiscussHref } from '@/lib/coach/chat/coach-discuss-href';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import type { ThreadEntry } from '@/lib/training/thread/thread-model';
+import { usePlannedSessionActions } from '@/hooks/use-planned-session-actions';
 import { useAppModal } from '@/providers/app-modal-provider';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -25,17 +26,14 @@ import Link from 'next/link';
 export function ThreadTodayCard({
   entry,
   instruction,
-  onShift,
-  onEase,
 }: {
   entry: ThreadEntry;
   /** The coach's word on this session, when there is one. */
   instruction: string | null;
-  onShift?: () => void;
-  onEase?: () => void;
 }) {
   const queryClient = useQueryClient();
   const { openPlannedSession } = useAppModal();
+  const { shift, ease, pending } = usePlannedSessionActions();
 
   const sessionId = entry.planned?.id ?? null;
   const meta = entryMeta(entry);
@@ -88,8 +86,16 @@ export function ThreadTodayCard({
 
       {sessionId ? (
         <div className="mt-3.5 flex flex-wrap gap-2">
-          {onShift ? <ActionPill label="Décaler" onClick={onShift} /> : null}
-          {onEase ? <ActionPill label="Alléger" onClick={onEase} /> : null}
+          {entry.planned ? (
+            <>
+              <ActionPill
+                disabled={pending}
+                label="Décaler"
+                onClick={() => shift(entry.planned!)}
+              />
+              <ActionPill disabled={pending} label="Alléger" onClick={() => ease(entry.planned!)} />
+            </>
+          ) : null}
           <ActionPill label="Remplacer" onClick={open} />
           <Link
             href={coachDiscussHref({ kind: 'planned-session', sessionId })}
@@ -107,14 +113,24 @@ export function ThreadTodayCard({
   );
 }
 
-function ActionPill({ label, onClick }: { label: string; onClick: () => void }) {
+function ActionPill({
+  label,
+  onClick,
+  disabled = false,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
   return (
     <button
+      disabled={disabled}
       type="button"
       className={cn(
         'border-analysis-border/70 text-muted-foreground hover:text-foreground hover:border-primary/30',
         'inline-flex min-h-9 items-center rounded-full border px-3 text-xs transition-colors',
         'focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
+        'disabled:opacity-50',
       )}
       onClick={onClick}
     >
