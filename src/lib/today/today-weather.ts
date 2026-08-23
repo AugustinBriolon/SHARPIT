@@ -9,6 +9,12 @@
  * Carries `locationKnown`. The location chain ends on hard-coded coordinates when
  * nothing is configured, and weather for a city the athlete does not live in must
  * not be presented as a fact about their morning.
+ *
+ * Reads the athlete's own place — travel context, else home — rather than the
+ * GPS chain an activity uses. A header answers "what am I walking into", asked
+ * from where the athlete is standing, not from the midpoint of this morning's
+ * run. That chain also answers with bare coordinates, and a reading with no
+ * name is still a reading.
  */
 import { endOfDay, startOfDay } from 'date-fns';
 import type { EnvironmentalPrediction } from '@/core/environment';
@@ -18,7 +24,7 @@ import {
   readWeatherMeasurements,
   type ActivityWeatherCondition,
 } from '@/lib/activity/weather/activity-weather';
-import { resolveAthleteGeoLocation } from '@/lib/environment/athlete-location';
+import { resolveDefaultActivityLocation } from '@/lib/geocoding/default-activity-location';
 import { fetchForecastPredictions } from '@/lib/planned-session/forecast/forecast-fetch';
 import { prisma } from '@/lib/prisma';
 import { approximateTrainingDayUtcRange } from '@/lib/training/training-day';
@@ -122,10 +128,27 @@ export function selectTodayWeather(
   };
 }
 
+/**
+ * How the header names where the reading was taken.
+ *
+ * A place we cannot name is not a reason to withhold the temperature — it is the
+ * reason `locationKnown` exists, and the header offers to fix it instead of
+ * going blank. Hard-coded coordinates stay unnamed however good their label
+ * looks: `default` means nothing was configured.
+ */
+export function nameWeatherLocation(location: { label?: string | null; source: string }): {
+  city: string;
+  locationKnown: boolean;
+} {
+  const city = location.label?.trim();
+  if (!city || location.source === 'default') return { city: '', locationKnown: false };
+  return { city: formatCityFromLocationLabel(city), locationKnown: true };
+}
+
 export async function loadTodayWeather(trainingDayId: string): Promise<TodayWeather | null> {
   try {
-    const location = await resolveAthleteGeoLocation(prisma, ATHLETE_ID, trainingDayId);
     const { gte: windowStart, lte: windowEnd } = approximateTrainingDayUtcRange(trainingDayId);
+    const location = await resolveDefaultActivityLocation(prisma, windowStart);
 
     const { predictions } = await fetchForecastPredictions({
       location,
@@ -136,14 +159,12 @@ export async function loadTodayWeather(trainingDayId: string): Promise<TodayWeat
     });
 
     const selected = selectTodayWeather(toWeatherHours(predictions), new Date());
-    const city = location.label?.trim();
-    if (!selected || !city) return null;
+    if (!selected) return null;
 
     return {
-      city: formatCityFromLocationLabel(city),
+      ...nameWeatherLocation(location),
       tempC: selected.tempC,
       condition: selected.condition,
-      locationKnown: location.source !== 'default',
     };
   } catch {
     // The morning screen must render without a forecast provider.

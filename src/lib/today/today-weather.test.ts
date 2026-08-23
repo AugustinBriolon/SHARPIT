@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { selectTodayWeather, type WeatherHour } from '@/lib/today/today-weather';
+import {
+  nameWeatherLocation,
+  selectTodayWeather,
+  type WeatherHour,
+} from '@/lib/today/today-weather';
 
 const NOW = new Date('2026-08-21T09:30:00');
 
@@ -68,5 +72,39 @@ describe('selectTodayWeather', () => {
     expect(
       selectTodayWeather([hour('2026-08-21T09:00:00', { airTemperatureC: null })], NOW),
     ).toBeNull();
+  });
+});
+
+describe('nameWeatherLocation', () => {
+  it('names the place the athlete configured', () => {
+    expect(
+      nameWeatherLocation({ label: '132, Rue Moslard, Petit-Colombes', source: 'home' }),
+    ).toEqual({
+      city: 'Petit-Colombes',
+      locationKnown: true,
+    });
+  });
+
+  it('follows the athlete when they are away', () => {
+    expect(nameWeatherLocation({ label: 'Chamonix-Mont-Blanc', source: 'travel' })).toEqual({
+      city: 'Chamonix-Mont-Blanc',
+      locationKnown: true,
+    });
+  });
+
+  it('stays unnamed rather than dropping the reading', () => {
+    // The GPS chain answers with bare coordinates. The header showed nothing at
+    // all on any day carrying a tracked activity.
+    expect(nameWeatherLocation({ source: 'activity-gps' })).toEqual({
+      city: '',
+      locationKnown: false,
+    });
+  });
+
+  it('does not let hard-coded coordinates pass as a known place', () => {
+    expect(nameWeatherLocation({ label: 'Domicile', source: 'default' })).toEqual({
+      city: '',
+      locationKnown: false,
+    });
   });
 });
