@@ -53,6 +53,8 @@ import {
 } from '@/lib/coach/chat/coach-input-draft';
 import { reasoningTextOf } from '@/lib/coach/chat/coach-reasoning';
 import { isNearBottom, shouldShowJumpToLatest } from '@/lib/coach/chat/scroll-anchor';
+import { CoachContextChip } from '@/components/coach/chat/coach-context-chip';
+import type { CoachDiscussContext } from '@/lib/coach/chat/coach-discuss-context';
 import { createClientId } from '@/lib/client-id';
 import { cn } from '@/lib/utils';
 
@@ -62,6 +64,8 @@ export function CoachChat({
   conversationId,
   initialMessages,
   bootstrapPrompt,
+  attachedContext,
+  onDetachContext,
   isEphemeral = false,
   autoReply = false,
   header,
@@ -72,6 +76,10 @@ export function CoachChat({
   conversationId: string;
   initialMessages: UIMessage[];
   bootstrapPrompt?: string;
+  /** Context carried by a contextual conversation, shown above the composer. */
+  attachedContext?: CoachDiscussContext | null;
+  /** Drops the attachment: clears the prefilled message and hides the chip. */
+  onDetachContext?: () => void;
   isEphemeral?: boolean;
   autoReply?: boolean;
   /** Rendered sticky at the top of the message scroll region (mobile fixed layout). */
@@ -579,8 +587,22 @@ export function CoachChat({
         </div>
       )}
 
+      {attachedContext ? (
+        <CoachContextChip
+          context={attachedContext}
+          onDetach={() => {
+            setInput('');
+            writeCoachInputDraft(conversationId, '');
+            onDetachContext?.();
+          }}
+        />
+      ) : null}
+
       <form
-        className="border-border/60 flex items-end gap-2 border-t p-3"
+        className={cn(
+          'flex items-end gap-2 p-3',
+          attachedContext ? 'pt-2' : 'border-border/60 border-t',
+        )}
         onSubmit={(e) => {
           e.preventDefault();
           submit(input);

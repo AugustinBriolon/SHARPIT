@@ -3,6 +3,7 @@
 import type { UIMessage } from 'ai';
 import { MessageSquarePlus } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { format } from 'date-fns';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { CoachConversationList } from '@/components/coach/chat/coach-conversation-list';
@@ -21,7 +22,9 @@ import {
   useDeleteConversation,
   useRenameConversation,
 } from '@/hooks/use-coach';
-import { useActivities, usePlannedSessions } from '@/hooks/use-data';
+import { useActivities, useGoals, usePlannedSessions, useRecords } from '@/hooks/use-data';
+import { usePhysicalNotes } from '@/hooks/use-physical';
+import { useTodayPresentationViewModel } from '@/hooks/use-presentation-view-model';
 import { useOfflineSnapshot } from '@/hooks/use-offline-snapshot';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { useOnlineStatus } from '@/hooks/use-online-status';
@@ -30,10 +33,18 @@ import { useProjectedAthleteViewModel } from '@/hooks/use-projected-athlete-view
 import type { ProjectionHorizonDays } from '@/core/projection/types';
 import {
   buildActivityDiscussPrompt,
+  buildGoalDiscussPrompt,
+  buildPhysicalConditionDiscussPrompt,
   buildPlanningDiscussPrompt,
   buildPlannedSessionDiscussPrompt,
+  buildRecordDiscussPrompt,
   buildSessionDiscussPrompt,
+  buildTodayDiscussPrompt,
 } from '@/lib/coach/chat/coach-discuss-prompts';
+import {
+  describeCoachDiscussContext,
+  type CoachDiscussContext,
+} from '@/lib/coach/chat/coach-discuss-context';
 import { clearCoachInputDraft } from '@/lib/coach/chat/coach-input-draft';
 import { warmCoachContext } from '@/lib/coach/warm-coach-context';
 import { createClientId } from '@/lib/client-id';
@@ -41,8 +52,25 @@ import { activityTypeLabels } from '@/lib/format';
 import { exposureLabels } from '@/lib/planned-session/sessions';
 import { parseSessionAnalysis } from '@/lib/planned-session/display/session-analysis-display';
 import type { SessionAnalysis } from '@/lib/validators/coach';
+import type { RecordCategory } from '@/lib/training/records';
 
 const inFlightDiscussBootstraps = new Set<string>();
+
+const RECORD_SPORT_LABEL = { run: 'course', bike: 'vélo', swim: 'natation' } as const;
+
+/** Records are grouped by sport, so the sport is recovered from where the key sits. */
+function findRecordCategory(
+  payload:
+    { prs: { run: RecordCategory[]; bike: RecordCategory[]; swim: RecordCategory[] } } | undefined,
+  key: string,
+): { category: RecordCategory; sportLabel: string } | null {
+  if (!payload) return null;
+  for (const sport of ['run', 'bike', 'swim'] as const) {
+    const category = payload.prs[sport].find((c) => c.key === key);
+    if (category) return { category, sportLabel: RECORD_SPORT_LABEL[sport] };
+  }
+  return null;
+}
 
 const CoachChat = dynamic(
   () => import('@/components/coach/chat/coach-chat').then((mod) => mod.CoachChat),
@@ -71,15 +99,33 @@ export function CoachView() {
   const discussPlanningHorizon = [1, 3, 7, 14].includes(Number(discussPlanningRaw))
     ? (Number(discussPlanningRaw) as ProjectionHorizonDays)
     : null;
-  const hasDiscussIntent = Boolean(discussId || discussActivityId || discussPlanningHorizon);
+  const discussToday = searchParams.get('discussToday') === '1';
+  const discussGoalId = searchParams.get('discussGoal');
+  const discussRecordKey = searchParams.get('discussRecord');
+  const discussConditionId = searchParams.get('discussCondition');
+  const hasDiscussIntent = Boolean(
+    discussId ||
+    discussActivityId ||
+    discussPlanningHorizon ||
+    discussToday ||
+    discussGoalId ||
+    discussConditionId ||
+    discussRecordKey,
+  );
   const plannedQuery = usePlannedSessions();
   const activitiesQuery = useActivities();
   const projectionQuery = useProjectedAthleteViewModel(discussPlanningHorizon ?? 7);
+  const goalsQuery = useGoals();
+  const physicalNotesQuery = usePhysicalNotes();
+  const todayQuery = useTodayPresentationViewModel(format(new Date(), 'yyyy-MM-dd'));
+  const recordsQuery = useRecords();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [ephemeralIds, setEphemeralIds] = useState<Set<string>>(() => new Set());
   const [autoReplyId, setAutoReplyId] = useState<string | null>(null);
   /** One-shot discuss bootstrap text — latched during render, not via effect→setState. */
   const latchedBootstrapPromptRef = useRef<string | undefined>(undefined);
+  /** Latched with the prompt: the URL params are stripped once the thread exists. */
+  const latchedContextRef = useRef<CoachDiscussContext | null>(null);
   const [, setBootstrapLatchEpoch] = useState(0);
   /** Once the discuss prompt is latched, ignore URL params (avoids re-prefill loops). */
   const discussPromptConsumed = useRef(false);
@@ -117,11 +163,22 @@ export function CoachView() {
     setBootstrapLatchEpoch((n) => n + 1);
   }
 
+  /**
+   * Dropping the attachment is the athlete's choice, not a consequence of the
+   * prompt having been written into the composer — the two are cleared apart.
+   */
+  function detachLatchedContext() {
+    if (latchedContextRef.current === null) return;
+    latchedContextRef.current = null;
+    setBootstrapLatchEpoch((n) => n + 1);
+  }
+
   function openNewConversation() {
     const id = createEphemeralId();
     setEphemeralIds((prev) => new Set(prev).add(id));
     setActiveId(id);
     clearLatchedBootstrapPrompt();
+    detachLatchedContext();
     discussPromptConsumed.current = false;
     return id;
   }
@@ -146,6 +203,61 @@ export function CoachView() {
 
   const bootstrapPrompt = useMemo(() => {
     if (discussPromptConsumed.current) return undefined;
+
+    if (discussToday) {
+      const vm = todayQuery.data;
+      if (!vm) return undefined;
+      return buildTodayDiscussPrompt({
+        verdictLabel: vm.hero.headline,
+        phaseQuestion: vm.hero.eyebrow,
+        limitingFactor: vm.hero.twinTrustStrip.limitingCauseText,
+        confidenceLabel: vm.hero.twinTrustStrip.confidenceLabel,
+        sessionTitle: vm.hero.actionLine,
+      });
+    }
+
+    if (discussGoalId) {
+      const goal = (goalsQuery.data ?? []).find((g) => g.id === discussGoalId);
+      if (!goal) return undefined;
+      const targetDate = goal.targetDate ? new Date(goal.targetDate) : null;
+      const daysRemaining = targetDate
+        ? Math.ceil((targetDate.getTime() - Date.now()) / 86_400_000)
+        : null;
+      return buildGoalDiscussPrompt({
+        title: goal.title,
+        targetDate,
+        daysRemaining: daysRemaining != null && daysRemaining >= 0 ? daysRemaining : null,
+        targetPerformance: goal.targetPerformance,
+        currentValue: goal.currentValue,
+        targetValue: goal.targetValue,
+        unit: goal.unit,
+      });
+    }
+
+    if (discussConditionId) {
+      const note = (physicalNotesQuery.data ?? []).find((n) => n.id === discussConditionId);
+      if (!note) return undefined;
+      return buildPhysicalConditionDiscussPrompt({
+        title: note.title,
+        bodyPart: note.bodyPart,
+        severity: note.severity,
+        startedOn: note.startDate ? new Date(note.startDate) : null,
+        affectsTraining: note.affectsTraining,
+        description: note.description,
+      });
+    }
+
+    if (discussRecordKey) {
+      const found = findRecordCategory(recordsQuery.data, discussRecordKey);
+      if (!found) return undefined;
+      const best = found.category.entries[0] ?? null;
+      return buildRecordDiscussPrompt({
+        categoryLabel: found.category.label,
+        sportLabel: found.sportLabel,
+        bestLabel: best?.displayValue ?? null,
+        achievedOn: best?.date ? new Date(best.date) : null,
+      });
+    }
 
     if (discussPlanningHorizon) {
       const projection = projectionQuery.data;
@@ -228,6 +340,70 @@ export function CoachView() {
     projectionQuery.data,
     discussId,
     discussActivityId,
+    discussToday,
+    discussGoalId,
+    discussConditionId,
+    discussRecordKey,
+    plannedQuery.data,
+    activitiesQuery.data,
+    goalsQuery.data,
+    physicalNotesQuery.data,
+    todayQuery.data,
+    recordsQuery.data,
+  ]);
+
+  const discussContext = useMemo((): CoachDiscussContext | null => {
+    if (discussToday) return describeCoachDiscussContext({ kind: 'today' });
+    if (discussGoalId) {
+      const goal = (goalsQuery.data ?? []).find((g) => g.id === discussGoalId);
+      return describeCoachDiscussContext({ kind: 'goal', goalId: discussGoalId }, goal?.title);
+    }
+    if (discussConditionId) {
+      const note = (physicalNotesQuery.data ?? []).find((n) => n.id === discussConditionId);
+      return describeCoachDiscussContext(
+        { kind: 'physical-condition', noteId: discussConditionId },
+        note?.title,
+      );
+    }
+    if (discussRecordKey) {
+      const found = findRecordCategory(recordsQuery.data, discussRecordKey);
+      return describeCoachDiscussContext(
+        { kind: 'record', categoryKey: discussRecordKey },
+        found ? `${found.category.label} · ${found.sportLabel}` : null,
+      );
+    }
+    if (discussPlanningHorizon) {
+      return describeCoachDiscussContext({
+        kind: 'planning',
+        horizonDays: discussPlanningHorizon,
+      });
+    }
+    if (discussId) {
+      const session = (plannedQuery.data ?? []).find((sn) => sn.id === discussId);
+      return describeCoachDiscussContext(
+        { kind: 'planned-session', sessionId: discussId },
+        session?.title,
+      );
+    }
+    if (discussActivityId) {
+      const activity = (activitiesQuery.data ?? []).find((a) => a.id === discussActivityId);
+      return describeCoachDiscussContext(
+        { kind: 'activity', activityId: discussActivityId },
+        activity?.title,
+      );
+    }
+    return null;
+  }, [
+    discussToday,
+    discussGoalId,
+    discussConditionId,
+    discussRecordKey,
+    discussPlanningHorizon,
+    discussId,
+    discussActivityId,
+    goalsQuery.data,
+    physicalNotesQuery.data,
+    recordsQuery.data,
     plannedQuery.data,
     activitiesQuery.data,
   ]);
@@ -236,11 +412,37 @@ export function CoachView() {
   if (bootstrapPrompt && !discussPromptConsumed.current) {
     discussPromptConsumed.current = true;
     latchedBootstrapPromptRef.current = bootstrapPrompt;
+    latchedContextRef.current = discussContext;
   }
   const latchedBootstrapPrompt = latchedBootstrapPromptRef.current;
+  const latchedContext = latchedContextRef.current;
 
   useEffect(() => {
     if (discussBootstrapped.current) return;
+    if (discussToday) {
+      if (todayQuery.isPending) return;
+      if (!todayQuery.data) return;
+      bootstrapDiscussConversation('today');
+      return;
+    }
+    if (discussGoalId) {
+      if (goalsQuery.isPending) return;
+      if (!(goalsQuery.data ?? []).some((g) => g.id === discussGoalId)) return;
+      bootstrapDiscussConversation(`goal:${discussGoalId}`);
+      return;
+    }
+    if (discussConditionId) {
+      if (physicalNotesQuery.isPending) return;
+      if (!(physicalNotesQuery.data ?? []).some((n) => n.id === discussConditionId)) return;
+      bootstrapDiscussConversation(`condition:${discussConditionId}`);
+      return;
+    }
+    if (discussRecordKey) {
+      if (recordsQuery.isPending) return;
+      if (!findRecordCategory(recordsQuery.data, discussRecordKey)) return;
+      bootstrapDiscussConversation(`record:${discussRecordKey}`);
+      return;
+    }
     if (discussPlanningHorizon) {
       if (projectionQuery.isPending) return;
       if (!projectionQuery.data?.visible) return;
@@ -270,6 +472,18 @@ export function CoachView() {
     plannedQuery.data,
     activitiesQuery.isPending,
     activitiesQuery.data,
+    discussToday,
+    todayQuery.isPending,
+    todayQuery.data,
+    discussGoalId,
+    goalsQuery.isPending,
+    goalsQuery.data,
+    discussConditionId,
+    physicalNotesQuery.isPending,
+    physicalNotesQuery.data,
+    discussRecordKey,
+    recordsQuery.isPending,
+    recordsQuery.data,
     createConversation,
   ]);
 
@@ -342,6 +556,7 @@ export function CoachView() {
       return (
         <CoachChat
           key={selectedId}
+          attachedContext={latchedContext}
           autoReply={autoReplyId === selectedId}
           bootstrapPrompt={latchedBootstrapPrompt}
           conversationId={selectedId}
@@ -350,6 +565,7 @@ export function CoachView() {
           isEphemeral={isEphemeral}
           onAutoReplyStarted={() => setAutoReplyId(null)}
           onBootstrapApplied={() => clearLatchedBootstrapPrompt()}
+          onDetachContext={() => detachLatchedContext()}
           onConversationCreated={(id) => {
             setEphemeralIds((prev) => {
               const next = new Set(prev);
