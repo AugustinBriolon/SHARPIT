@@ -1,6 +1,16 @@
 import { redirect } from 'next/navigation';
 
 /**
+ * Blocking, because the query is the whole page.
+ *
+ * This route exists only to read `?tab=` and send the reader on. There is nothing
+ * to stream a placeholder for — a fallback would render, then immediately
+ * redirect — so it opts out of prerendering rather than wrapping a redirect in
+ * Suspense.
+ */
+export const instant = false;
+
+/**
  * Progression is gone; its three tabs went where each of them belonged.
  *
  * Calibration is a settings panel and now lives in Settings. Records are a
