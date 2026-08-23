@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { differenceInCalendarDays, format, formatDistanceToNowStrict } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Bike, Footprints, Waves } from 'lucide-react';
+import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -142,11 +143,21 @@ function RecordCategoryLeaderboard({ category }: { category: RecordCategory }) {
       className="analysis-panel rounded-analysis-lg scroll-mt-24 space-y-3 p-3"
       id={recordCategoryAnchorId(category.key)}
     >
-      <div className="space-y-1">
-        <p className="text-label">{category.label}</p>
-        <p className="text-muted-foreground text-[11px]">
-          Top 5 observé sur tes séances enregistrées.
-        </p>
+      <div className="flex items-start justify-between gap-2">
+        <div className="space-y-1">
+          <p className="text-label">{category.label}</p>
+          <p className="text-muted-foreground text-[11px]">
+            Top 5 observé sur tes séances enregistrées.
+          </p>
+        </div>
+        {best ? (
+          <DiscussWithCoachButton
+            label="Discuter"
+            size="sm"
+            target={{ kind: 'record', categoryKey: category.key }}
+            variant="ghost"
+          />
+        ) : null}
       </div>
 
       {best ? (

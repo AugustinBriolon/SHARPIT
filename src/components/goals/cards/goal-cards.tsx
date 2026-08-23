@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import type { GoalForEdit } from '@/components/goals/dialogs/goal-dialog';
 import { Button } from '@/components/ui/button';
+import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
@@ -210,6 +211,13 @@ export function RaceCard({ goal }: { goal: GoalItem }) {
             >
               <Trash2 className="size-3.5" aria-hidden /> Supprimer
             </Button>
+            <DiscussWithCoachButton
+              className="ml-auto"
+              label="Discuter"
+              size="sm"
+              target={{ kind: 'goal', goalId: goal.id }}
+              variant="ghost"
+            />
           </div>
         </CardContent>
       </Card>
@@ -367,6 +375,13 @@ export function MetricGoalCard({ goal }: { goal: GoalItem }) {
             >
               <Trash2 className="size-3.5" aria-hidden /> Supprimer
             </Button>
+            <DiscussWithCoachButton
+              className="ml-auto"
+              label="Discuter"
+              size="sm"
+              target={{ kind: 'goal', goalId: goal.id }}
+              variant="ghost"
+            />
           </div>
         </CardContent>
       </Card>

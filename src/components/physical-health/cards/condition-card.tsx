@@ -3,6 +3,7 @@
 import { TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
   Dialog,
@@ -120,6 +121,16 @@ export function PhysicalHealthConditionCardView({
             >
               Ajouter une observation
             </button>
+          )}
+          {condition.legacyPhysicalNoteId && condition.isActive && (
+            <DiscussWithCoachButton
+              label="Discuter"
+              size="sm"
+              target={{
+                kind: 'physical-condition',
+                noteId: condition.legacyPhysicalNoteId,
+              }}
+            />
           )}
           <ConditionDetailDialog condition={condition} />
         </div>

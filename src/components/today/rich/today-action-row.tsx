@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
 import { CalendarClock } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
@@ -152,6 +153,15 @@ export function TodayActionRow({
           })}
         </ul>
       ) : null}
+
+      {loading ? null : (
+        <DiscussWithCoachButton
+          className="w-full"
+          label="Discuter de ma journée"
+          size="sm"
+          target={{ kind: 'today' }}
+        />
+      )}
     </section>
   );
 }

@@ -7,6 +7,7 @@ import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { isPresentationValuesLoading } from '@/hooks/use-presentation-view-model';
 import { cn } from '@/lib/utils';
+import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
 import { GitBranch } from 'lucide-react';
 
 const HORIZON_OPTIONS: { days: ProjectionHorizonDays; label: string }[] = [
@@ -17,8 +18,14 @@ const HORIZON_OPTIONS: { days: ProjectionHorizonDays; label: string }[] = [
 ];
 
 /**
- * Projected athlete trajectory for Planning — instrument Projection only.
- * Coach discussion lives on /coach (menu « Bilan hebdo » / discuss deep-links elsewhere).
+ * Projected athlete trajectory for Planning — the instrument, plus the one
+ * action it earns.
+ *
+ * This card used to host no coach entry at all: discussion lived on /coach and
+ * was reached from elsewhere. ADR-022 makes My week a place a conversation can
+ * start from, and the projection is what an athlete argues with — so the
+ * discuss action attaches the horizon being read rather than sending the
+ * athlete to /coach to restate it.
  */
 export function ProjectedAthleteCard({
   className,
@@ -90,6 +97,13 @@ export function ProjectedAthleteCard({
             {option.label}
           </button>
         ))}
+        <DiscussWithCoachButton
+          className="ml-auto"
+          label="Discuter ma semaine"
+          size="sm"
+          target={{ kind: 'planning', horizonDays: horizon }}
+          variant="ghost"
+        />
       </div>
     </section>
   );
