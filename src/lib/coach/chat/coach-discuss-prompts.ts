@@ -192,3 +192,117 @@ ${input.synthesisSentence}${cautionBlock}
 
 J'aimerais en discuter avec toi : ce plan me convient-il, et que devrais-je ajuster ?`;
 }
+
+/** Message pour discuter de la décision du jour depuis Today. */
+export function buildTodayDiscussPrompt(input: {
+  verdictLabel: string;
+  phaseQuestion: string;
+  limitingFactor?: string | null;
+  confidenceLabel?: string | null;
+  sessionTitle?: string | null;
+}): string {
+  const bits = [
+    input.limitingFactor ? `frein : ${input.limitingFactor}` : null,
+    input.confidenceLabel ? `confiance : ${input.confidenceLabel}` : null,
+    input.sessionTitle ? `séance du jour : ${input.sessionTitle}` : null,
+  ].filter(Boolean);
+
+  const detail = bits.length > 0 ? `\n\nDétail :\n- ${bits.join('\n- ')}` : '';
+
+  return `Je consulte mon état du jour. Le verdict est « ${input.verdictLabel} ».${detail}
+
+J'aimerais en discuter avec toi : ${input.phaseQuestion}`;
+}
+
+/** Message pour discuter d'un objectif depuis Progression. */
+export function buildGoalDiscussPrompt(input: {
+  title: string;
+  targetDate?: Date | null;
+  daysRemaining?: number | null;
+  targetPerformance?: string | null;
+  currentValue?: number | null;
+  targetValue?: number | null;
+  unit?: string | null;
+}): string {
+  const dateLabel = input.targetDate
+    ? input.targetDate.toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+    : null;
+
+  const bits = [
+    dateLabel ? `échéance : ${dateLabel}` : null,
+    input.daysRemaining != null ? `J-${input.daysRemaining}` : null,
+    input.targetPerformance ? `objectif visé : ${input.targetPerformance}` : null,
+    input.currentValue != null && input.targetValue != null
+      ? `progression : ${input.currentValue} → ${input.targetValue}${input.unit ? ` ${input.unit}` : ''}`
+      : null,
+  ].filter(Boolean);
+
+  const detail = bits.length > 0 ? `\n\nDétail :\n- ${bits.join('\n- ')}` : '';
+
+  return `Je consulte mon objectif « ${input.title} ».${detail}
+
+J'aimerais en discuter avec toi : suis-je sur la bonne trajectoire, et que devrais-je ajuster ?`;
+}
+
+/** Message pour discuter d'une famille de records depuis Progression. */
+export function buildRecordDiscussPrompt(input: {
+  categoryLabel: string;
+  sportLabel: string;
+  bestLabel?: string | null;
+  achievedOn?: Date | null;
+}): string {
+  const dateLabel = input.achievedOn
+    ? input.achievedOn.toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+    : null;
+
+  const bits = [
+    input.bestLabel ? `meilleure performance : ${input.bestLabel}` : null,
+    dateLabel ? `réalisée le ${dateLabel}` : null,
+  ].filter(Boolean);
+
+  const detail = bits.length > 0 ? `\n\nDétail :\n- ${bits.join('\n- ')}` : '';
+
+  return `Je consulte mes records ${input.categoryLabel} en ${input.sportLabel}.${detail}
+
+J'aimerais en discuter avec toi : qu'est-ce qui limite cette performance, et comment la faire progresser ?`;
+}
+
+/** Message pour discuter d'une contrainte physique active. */
+export function buildPhysicalConditionDiscussPrompt(input: {
+  title: string;
+  bodyPart?: string | null;
+  severity?: number | null;
+  startedOn?: Date | null;
+  affectsTraining: boolean;
+  description?: string | null;
+}): string {
+  const dateLabel = input.startedOn
+    ? input.startedOn.toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+    : null;
+
+  const bits = [
+    input.bodyPart ? `zone : ${input.bodyPart}` : null,
+    input.severity != null ? `sévérité : ${input.severity}/10` : null,
+    dateLabel ? `depuis le ${dateLabel}` : null,
+    input.affectsTraining ? 'déclarée comme affectant mon entraînement' : null,
+    input.description ? `note : ${input.description}` : null,
+  ].filter(Boolean);
+
+  const detail = bits.length > 0 ? `\n\nDétail :\n- ${bits.join('\n- ')}` : '';
+
+  return `Je consulte ma contrainte physique « ${input.title} ».${detail}
+
+J'aimerais en discuter avec toi : comment devrais-je adapter mon entraînement tant qu'elle est active ?`;
+}
