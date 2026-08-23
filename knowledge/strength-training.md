@@ -18,7 +18,7 @@ Strength training does not fit naturally into the PMC model. The PMC was designe
 
 ## Strength Load Estimation
 
-**Implementation:** `LOAD_FACTOR.STRENGTH = 0.7 TSS/min` in `src/lib/analytics.ts`
+**Implementation:** `LOAD_FACTOR.STRENGTH = 0.7 TSS/min` in `src/lib/training/activity-load.ts`
 
 This factor was estimated based on typical metabolic cost of moderate-intensity strength training relative to moderate-intensity running. It has no published source and carries low confidence (see `training-load.md`).
 

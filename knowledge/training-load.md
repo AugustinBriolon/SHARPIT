@@ -17,7 +17,7 @@ Training load is the foundational input of every SHARPIT recommendation. If load
 ## Model 1: Performance Management Chart (PMC)
 
 **Primary use:** long-term fitness tracking, form/freshness for race planning  
-**Implementation:** `computePmcSeries()` in `src/lib/analytics.ts`  
+**Implementation:** `runPmc()` / `stepPmc()` in `src/lib/training/pmc.ts`, driven over the athlete's history by `computeAthletePmc()` in `src/lib/training/pmc-history.ts`  
 **Evidence level:** Level 2-3 (validated in endurance sports)
 
 ### What it computes
@@ -76,7 +76,7 @@ The PMC is 50 years old. It is also the most extensively validated training load
 ## Model 2: Acute:Chronic Workload Ratio (ACWR)
 
 **Primary use:** injury risk screening  
-**Implementation:** `computeTrainingLoad()` in `src/lib/training-load.ts`  
+**Implementation:** `computeTrainingLoad()` in `src/lib/training/training-load.ts`  
 **Evidence level:** Level 1-3 (meta-analyses exist; extrapolation to endurance sports uncertain)
 
 ### What it computes
