@@ -23,10 +23,17 @@ export function TodayNutritionCard() {
     staleTime: 60_000,
   });
 
-  if (!isPending && (!data?.connected || !data.today)) return null;
-
   const today = data?.today;
   const goals = today?.goalsProgress;
+
+  /* The card stays even with nothing logged. Disappearing on an empty day taught
+     the wrong lesson twice over: the section moved every time the page was
+     opened before lunch, and the one moment worth prompting a log — before
+     anything is eaten — was the moment the prompt was hidden. */
+  const empty = !isPending && (!data?.connected || !today);
+  const emptyCopy = data?.connected
+    ? 'Rien enregistré aujourd’hui'
+    : 'Journal alimentaire non connecté';
 
   return (
     <section aria-busy={isPending || undefined} className="px-0.5">
@@ -63,9 +70,9 @@ export function TodayNutritionCard() {
                     </span>
                   ) : null}
                 </>
-              ) : (
-                <SkeletonDataValue heightClassName="h-5" widthClassName="w-16" />
-              )}
+              ) : null}
+              {empty ? <span className="text-muted-foreground text-sm">{emptyCopy}</span> : null}
+              {isPending ? <SkeletonDataValue heightClassName="h-5" widthClassName="w-16" /> : null}
             </div>
             {today ? (
               <ColoredMacroStackBar
@@ -74,9 +81,13 @@ export function TodayNutritionCard() {
                 fat={today.fat}
                 protein={today.protein}
               />
-            ) : (
+            ) : null}
+            {isPending ? (
               <div className="bg-muted h-2 max-w-xs animate-pulse rounded-full" />
-            )}
+            ) : null}
+            {/* An empty rail rather than none: the bar is where the day will be
+                drawn, and leaving a gap there makes the card jump on first log. */}
+            {empty ? <div className="bg-muted/40 h-2 max-w-xs rounded-full" /> : null}
           </div>
         </div>
 
@@ -88,9 +99,13 @@ export function TodayNutritionCard() {
               fat={today.fat}
               protein={today.protein}
             />
-          ) : (
-            <SkeletonDataValue heightClassName="h-3" widthClassName="w-36" />
-          )}
+          ) : null}
+          {isPending ? <SkeletonDataValue heightClassName="h-3" widthClassName="w-36" /> : null}
+          {empty ? (
+            <span className="text-muted-foreground text-xs">
+              {data?.connected ? 'Ouvrir le journal' : 'Connecter'}
+            </span>
+          ) : null}
           <span
             className="text-muted-foreground/70 text-data shrink-0 text-xs tracking-wider transition-transform duration-150 ease-[cubic-bezier(0.2,0,0,1)] group-hover:translate-x-0.5"
             aria-hidden
@@ -99,6 +114,39 @@ export function TodayNutritionCard() {
           </span>
         </div>
       </Link>
+    </section>
+  );
+}
+
+/**
+ * The card's shape without its figures, for the Today shell.
+ *
+ * Rendered rather than imported from the live card so the shell stays free of
+ * the query — a fallback that fetches is not a fallback.
+ */
+export function TodayNutritionCardSkeleton() {
+  return (
+    <section className="px-0.5" aria-busy>
+      <h2 className="text-label">Nutrition</h2>
+      <div
+        className={cn(
+          'chip-surface-lg mt-2 flex w-full min-w-0 flex-col gap-2.5',
+          'rounded-2xl px-3.5 py-3 sm:flex-row sm:items-center',
+        )}
+      >
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="icon-well size-9 shrink-0" aria-hidden>
+            <Apple className="size-4" />
+          </div>
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <SkeletonDataValue heightClassName="h-5" widthClassName="w-16" />
+            <div className="bg-muted h-2 max-w-xs animate-pulse rounded-full" />
+          </div>
+        </div>
+        <div className="sm:shrink-0">
+          <SkeletonDataValue heightClassName="h-3" widthClassName="w-36" />
+        </div>
+      </div>
     </section>
   );
 }
