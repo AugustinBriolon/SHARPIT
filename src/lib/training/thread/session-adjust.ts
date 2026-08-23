@@ -13,19 +13,40 @@ const EASE_FACTOR = 0.75;
 
 export type SessionAdjustment = {
   readonly date?: Date;
+  /** "HH:mm" local, stored apart from the day — see `rescheduleSession`. */
+  readonly startTime?: string | null;
   readonly durationMin?: number | null;
   readonly load?: number | null;
 };
+
+/**
+ * `PlannedSession.date` is a `@db.Date`: a calendar day held at UTC midnight,
+ * with no meaningful time inside it. Reading it with local getters turns that
+ * midnight into 02:00 east of Greenwich and into the previous evening west of it,
+ * so both directions have to go through UTC or the day silently shifts.
+ */
+function utcDayOf(date: Date): Date {
+  const at = new Date(date);
+  return new Date(Date.UTC(at.getUTCFullYear(), at.getUTCMonth(), at.getUTCDate()));
+}
+
+/** The calendar day a stored date stands for, as `yyyy-MM-dd`. */
+export function plannedDayKey(date: Date | string): string {
+  const at = new Date(date);
+  const month = String(at.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(at.getUTCDate()).padStart(2, '0');
+  return `${at.getUTCFullYear()}-${month}-${day}`;
+}
 
 /** Round to the nearest five minutes: nobody plans a 41-minute session. */
 function roundMinutes(value: number): number {
   return Math.max(5, Math.round(value / 5) * 5);
 }
 
-/** Same session, one day later. */
+/** Same session, one calendar day later. */
 export function shiftByOneDay(session: Pick<ClientPlannedSession, 'date'>): SessionAdjustment {
-  const next = new Date(session.date);
-  next.setDate(next.getDate() + 1);
+  const next = utcDayOf(session.date);
+  next.setUTCDate(next.getUTCDate() + 1);
   return { date: next };
 }
 
@@ -53,32 +74,43 @@ export function easeSession(
 }
 
 /**
- * Same session, on a day the athlete picked.
+ * Same session, on a day and at a time the athlete picked.
  *
- * The clock is carried over rather than reset: a session planned for 7 a.m. that
- * moves to Thursday is still a 7 a.m. session, and dropping it to midnight would
- * quietly reorder it against everything else that day.
+ * Day and clock are two columns, not one instant: `date` holds the calendar day
+ * and `startTime` the "HH:mm" the athlete reads. Folding the clock into the date
+ * would write a time nothing else reads and leave the displayed one untouched.
+ *
+ * `targetDay` is interpreted in local calendar terms — it comes from a date input
+ * the athlete filled — and stored as the UTC midnight that stands for that day.
  */
-export function moveToDay(
-  session: Pick<ClientPlannedSession, 'date'>,
-  target: Date,
+export function rescheduleSession(
+  session: Pick<ClientPlannedSession, 'date' | 'startTime'>,
+  targetDay: { year: number; month: number; day: number },
+  startTime: string | null,
 ): SessionAdjustment | null {
-  const from = new Date(session.date);
-  const next = new Date(target);
-  next.setHours(from.getHours(), from.getMinutes(), 0, 0);
+  const next = new Date(Date.UTC(targetDay.year, targetDay.month - 1, targetDay.day));
+  const sameDay = next.getTime() === utcDayOf(session.date).getTime();
+  const sameTime = (startTime ?? null) === (session.startTime ?? null);
 
-  // Dropping a session back where it already was is not a move.
-  if (next.toDateString() === from.toDateString()) return null;
-  return { date: next };
+  // Confirming what is already true is not a move.
+  if (sameDay && sameTime) return null;
+
+  const adjustment: SessionAdjustment = {};
+  if (!sameDay) Object.assign(adjustment, { date: next });
+  if (!sameTime) Object.assign(adjustment, { startTime });
+  return adjustment;
 }
 
 /** The values to write back to put a session exactly as it was. */
 export function undoOf(
-  session: Pick<ClientPlannedSession, 'date' | 'durationMin' | 'load'>,
+  session: Pick<ClientPlannedSession, 'date' | 'startTime' | 'durationMin' | 'load'>,
   applied: SessionAdjustment,
 ): SessionAdjustment {
   const previous: SessionAdjustment = {};
-  if (applied.date !== undefined) Object.assign(previous, { date: new Date(session.date) });
+  if (applied.date !== undefined) Object.assign(previous, { date: utcDayOf(session.date) });
+  if (applied.startTime !== undefined) {
+    Object.assign(previous, { startTime: session.startTime ?? null });
+  }
   if (applied.durationMin !== undefined) {
     Object.assign(previous, { durationMin: session.durationMin });
   }

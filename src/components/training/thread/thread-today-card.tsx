@@ -1,15 +1,28 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { ComparisonPill, SportDot, entryMeta } from '@/components/training/thread/thread-entry-row';
 import { coachDiscussHref } from '@/lib/coach/chat/coach-discuss-href';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import type { ThreadEntry } from '@/lib/training/thread/thread-model';
+import { ThreadShiftDialog } from '@/components/training/thread/thread-shift-dialog';
 import { usePlannedSessionActions } from '@/hooks/use-planned-session-actions';
 import { useAppModal } from '@/providers/app-modal-provider';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+
+/**
+ * Stops a press on an action from also opening the session behind it.
+ *
+ * The card is clickable everywhere, which is what makes it feel like the object
+ * it represents — but "Alléger" must alter the session, not alter it and then
+ * navigate away from the result.
+ */
+function swallow(event: React.MouseEvent) {
+  event.stopPropagation();
+}
 
 /**
  * Today's session, opened out.
@@ -33,7 +46,8 @@ export function ThreadTodayCard({
 }) {
   const queryClient = useQueryClient();
   const { openPlannedSession } = useAppModal();
-  const { shift, ease, pending } = usePlannedSessionActions();
+  const { ease, reschedule, pending } = usePlannedSessionActions();
+  const [shiftOpen, setShiftOpen] = useState(false);
 
   const sessionId = entry.planned?.id ?? null;
   const meta = entryMeta(entry);
@@ -43,73 +57,91 @@ export function ThreadTodayCard({
   };
 
   return (
-    <div
-      className={cn(
-        'chip-surface-lg rounded-analysis-lg px-4 py-4 shadow-[0_1px_2px_rgb(0_0_0/0.04)]',
-      )}
-      onPointerEnter={() => sessionId && prefetchPlannedSessionDetail(queryClient, sessionId)}
-    >
-      <div className="flex items-start gap-2.5">
-        <SportDot className="mt-2" entry={entry} />
+    <>
+      <div
+        className={cn(
+          'chip-surface-lg rounded-analysis-lg px-4 py-4 shadow-[0_1px_2px_rgb(0_0_0/0.04)]',
+          sessionId && 'hover:border-primary/25 cursor-pointer transition-colors',
+        )}
+        /* The whole card opens the session. The arrow stays as the labelled control
+         for keyboard and assistive tech — this is a convenience on top of it, not
+         a replacement, so the card itself is not a fake button wrapping real ones. */
+        onClick={sessionId ? open : undefined}
+        onPointerEnter={() => sessionId && prefetchPlannedSessionDetail(queryClient, sessionId)}
+      >
+        <div className="flex items-start gap-2.5">
+          <SportDot className="mt-2" entry={entry} />
 
-        <div className="min-w-0 flex-1">
-          <p className="text-verdict text-foreground text-base leading-tight sm:text-[17px]">
-            {entry.title}
-          </p>
-          <p className="text-muted-foreground text-data mt-1.5 text-[11px] tabular-nums">
-            {meta.join(' · ')}
-          </p>
-          <ComparisonPill entry={entry} />
+          <div className="min-w-0 flex-1">
+            <p className="text-verdict text-foreground text-base leading-tight sm:text-[17px]">
+              {entry.title}
+            </p>
+            <p className="text-muted-foreground text-data mt-1.5 text-[11px] tabular-nums">
+              {meta.join(' · ')}
+            </p>
+            <ComparisonPill entry={entry} />
+          </div>
+
+          {sessionId ? (
+            <button
+              aria-label={`Ouvrir ${entry.title}`}
+              type="button"
+              className={cn(
+                'bg-highlight text-highlight-foreground inline-flex size-9 shrink-0 items-center justify-center rounded-full',
+                'focus-visible:ring-primary/35 transition-transform focus-visible:ring-2 focus-visible:outline-hidden',
+                'hover:scale-105',
+              )}
+              onClick={open}
+            >
+              <ArrowRight className="size-4" aria-hidden />
+            </button>
+          ) : null}
         </div>
 
+        {instruction ? (
+          <p className="border-primary text-foreground/85 mt-3 border-l-2 pl-3 text-[13.5px] leading-relaxed">
+            {instruction}
+          </p>
+        ) : null}
+
         {sessionId ? (
-          <button
-            aria-label={`Ouvrir ${entry.title}`}
-            type="button"
-            className={cn(
-              'bg-highlight text-highlight-foreground inline-flex size-9 shrink-0 items-center justify-center rounded-full',
-              'focus-visible:ring-primary/35 transition-transform focus-visible:ring-2 focus-visible:outline-hidden',
-              'hover:scale-105',
-            )}
-            onClick={open}
-          >
-            <ArrowRight className="size-4" aria-hidden />
-          </button>
+          <div className="mt-3.5 flex flex-wrap gap-2" onClick={swallow}>
+            {entry.planned ? (
+              <>
+                <ActionPill disabled={pending} label="Décaler" onClick={() => setShiftOpen(true)} />
+                <ActionPill
+                  disabled={pending}
+                  label="Alléger"
+                  onClick={() => ease(entry.planned!)}
+                />
+              </>
+            ) : null}
+            <Link
+              href={coachDiscussHref({ kind: 'planned-session', sessionId })}
+              className={cn(
+                'border-analysis-border/70 text-muted-foreground hover:text-foreground hover:border-primary/30',
+                'inline-flex min-h-9 items-center rounded-full border px-3 text-xs transition-colors',
+                'focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
+              )}
+            >
+              Discuter avec le coach
+            </Link>
+          </div>
         ) : null}
       </div>
 
-      {instruction ? (
-        <p className="border-primary text-foreground/85 mt-3 border-l-2 pl-3 text-[13.5px] leading-relaxed">
-          {instruction}
-        </p>
+      {/* Outside the clickable card on purpose. A React portal still propagates
+          events through the React tree, so a press on "Valider" inside the dialog
+          reached the card behind it and opened the session as well. */}
+      {entry.planned ? (
+        <ThreadShiftDialog
+          open={shiftOpen}
+          session={entry.planned}
+          onConfirm={(day, startTime) => reschedule(entry.planned!, day, startTime)}
+          onOpenChange={setShiftOpen}
+        />
       ) : null}
-
-      {sessionId ? (
-        <div className="mt-3.5 flex flex-wrap gap-2">
-          {entry.planned ? (
-            <>
-              <ActionPill
-                disabled={pending}
-                label="Décaler"
-                onClick={() => shift(entry.planned!)}
-              />
-              <ActionPill disabled={pending} label="Alléger" onClick={() => ease(entry.planned!)} />
-            </>
-          ) : null}
-          <ActionPill label="Remplacer" onClick={open} />
-          <Link
-            href={coachDiscussHref({ kind: 'planned-session', sessionId })}
-            className={cn(
-              'border-analysis-border/70 text-muted-foreground hover:text-foreground hover:border-primary/30',
-              'inline-flex min-h-9 items-center rounded-full border px-3 text-xs transition-colors',
-              'focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
-            )}
-          >
-            Discuter avec le coach
-          </Link>
-        </div>
-      ) : null}
-    </div>
+    </>
   );
 }
 

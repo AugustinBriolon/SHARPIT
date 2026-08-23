@@ -8,7 +8,8 @@ import { usePlannedSessionMutations } from '@/hooks/use-planned-sessions';
 import type { ClientPlannedSession } from '@/lib/query/types';
 import {
   easeSession,
-  moveToDay,
+  plannedDayKey,
+  rescheduleSession,
   shiftByOneDay,
   undoOf,
   type SessionAdjustment,
@@ -71,19 +72,28 @@ export function usePlannedSessionActions() {
     [apply],
   );
 
-  const moveTo = useCallback(
-    (session: ClientPlannedSession, target: Date) => {
-      const adjustment = moveToDay(session, target);
-      // A drop back onto the same day is a no-op; announcing it would be noise.
+  const reschedule = useCallback(
+    (
+      session: ClientPlannedSession,
+      day: { year: number; month: number; day: number },
+      startTime: string | null,
+    ) => {
+      const adjustment = rescheduleSession(session, day, startTime);
+      // Confirming the session's own slot is a no-op; announcing it would be noise.
       if (!adjustment) return;
+
+      const movedTo = new Date(day.year, day.month - 1, day.day);
+      const dayChanged = adjustment.date !== undefined;
       apply(
         session,
         adjustment,
-        `Séance déplacée au ${format(target, 'EEEE d MMMM', { locale: fr })}`,
+        dayChanged
+          ? `Séance déplacée au ${format(movedTo, 'EEEE d MMMM', { locale: fr })}`
+          : `Séance déplacée à ${startTime}`,
       );
     },
     [apply],
   );
 
-  return { shift, ease, moveTo, pending: update.isPending };
+  return { shift, ease, reschedule, plannedDayKey, pending: update.isPending };
 }
