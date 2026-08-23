@@ -66,7 +66,6 @@ export function usePrefetchNavQuery() {
           );
           break;
         case '/training':
-        case '/training/sessions':
           prefetchTrainingHub(pre);
           break;
         case '/biology':

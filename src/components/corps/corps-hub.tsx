@@ -1,9 +1,16 @@
 'use client';
 
 import { format } from 'date-fns';
-import { Activity, Scale } from 'lucide-react';
+import { Activity, Medal, Scale } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { CompositionView } from '@/components/corps/composition/composition-view';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const RecordsPanel = dynamic(
+  () => import('@/components/analytics/records/records-panel').then((mod) => mod.RecordsPanel),
+  { ssr: false, loading: () => <Skeleton className="h-64 w-full" /> },
+);
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { OfflineSnapshotSummary } from '@/components/pwa/offline-snapshot-summary';
 import { PhysicalHealthHubView } from '@/components/physical-health/physical-health-hub-view';
@@ -28,6 +35,15 @@ const TABS = [
     label: 'Suivi physique',
     description: 'Douleurs, blessures et points de vigilance.',
     icon: Activity,
+  },
+  {
+    /* Records are a physiological reading, not a training log: they say what the
+       body has actually produced. They lived under a training hub because that is
+       where the charts happened to be built, which is not a reason. */
+    id: 'records',
+    label: 'Records',
+    description: 'Tes meilleures performances observées et courbes de référence.',
+    icon: Medal,
   },
 ] as const;
 
@@ -109,6 +125,7 @@ export function CorpsHub({ basePath = '/biology' }: { basePath?: string }) {
       <div className="space-y-4">
         {tab === 'composition' && <CompositionTabBody />}
         {tab === 'suivi' && <SuiviTabBody />}
+        {tab === 'records' && <RecordsPanel />}
       </div>
     </div>
   );

@@ -19,10 +19,10 @@ describe('resolveBackTargetWithoutStack', () => {
     });
   });
 
-  it('falls back to training for progression', () => {
-    expect(resolveBackTargetWithoutStack('/training/progression')).toEqual({
-      href: '/training',
-      label: 'Entraînement',
+  it('falls back to settings for the calibration page', () => {
+    expect(resolveBackTargetWithoutStack('/settings/calibration')).toEqual({
+      href: '/settings',
+      label: 'Réglages',
       fromStack: false,
     });
   });

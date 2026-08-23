@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CorpsHub } from '@/components/corps/corps-hub';
-import { TrainingDashboard } from '@/components/training/hub/training-dashboard';
+import { TrainingThreadView } from '@/components/training/thread/training-thread-view';
 import type { PersistedSnapshotEntry } from '@/lib/pwa/snapshot-store-validation';
 
 const OFFLINE_BANNER = 'Lecture seule — hors ligne, données non synchronisables';
@@ -60,6 +60,14 @@ vi.mock('@/hooks/use-data', () => ({
   useActivities: vi.fn(),
   usePlannedSessions: vi.fn(),
   useGoals: vi.fn(),
+  useAthleteProfile: () => ({ data: undefined }),
+  useRecords: () => ({ data: undefined }),
+}));
+
+/* The thread reads these too, and hooks cannot be conditional — they run before
+   the offline short-circuit even when there is nothing to render. */
+vi.mock('@/hooks/use-coach-memory', () => ({
+  useCoachMemory: () => ({ data: undefined }),
 }));
 
 vi.mock('@/hooks/use-viewport', () => ({
@@ -77,7 +85,7 @@ describe('hub offline snapshot contracts', () => {
     'utf8',
   );
   const trainingSource = readFileSync(
-    resolve(process.cwd(), 'src/components/training/hub/training-dashboard.tsx'),
+    resolve(process.cwd(), 'src/components/training/thread/training-thread-view.tsx'),
     'utf8',
   );
   const coachSource = readFileSync(
@@ -96,8 +104,7 @@ describe('hub offline snapshot contracts', () => {
     expect(corpsSource).toContain('<OfflineSnapshotSummary entry={offlineEntry} />');
   });
 
-  it('TrainingDashboard short-circuits shell when offline and all queries cold', () => {
-    expect(trainingSource).toMatch(/hasNoLiveData[\s\S]*activitiesQuery\.data == null/);
+  it('TrainingThreadView short-circuits the skeletons when offline and all queries cold', () => {
     expect(trainingSource).toContain('useOfflineSnapshot(!online && hasNoLiveData)');
     expect(trainingSource).toMatch(
       /if\s*\(\s*!online\s*&&\s*hasNoLiveData\s*&&\s*offlineEntry\s*\)/,
@@ -138,7 +145,7 @@ describe('CorpsHub offline snapshot render', () => {
   });
 });
 
-describe('TrainingDashboard offline snapshot render', () => {
+describe('TrainingThreadView offline snapshot render', () => {
   beforeEach(() => {
     vi.mocked(useOnlineStatus).mockReturnValue(false);
     vi.mocked(useOfflineSnapshot).mockReturnValue({ entry: mockOfflineEntry(), loading: false });
@@ -148,9 +155,9 @@ describe('TrainingDashboard offline snapshot render', () => {
   });
 
   it('renders snapshot instead of the loading shell when offline and cold', () => {
-    const html = renderToStaticMarkup(createElement(TrainingDashboard));
+    const html = renderToStaticMarkup(createElement(TrainingThreadView));
 
     expect(html).toContain(OFFLINE_BANNER);
-    expect(html).not.toContain('Rythme hebdo');
+    expect(html).not.toContain('Réglette de charge');
   });
 });

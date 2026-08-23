@@ -3,12 +3,10 @@ import { recordCategoryAnchorId, recordCategoryHref, recordSportTabFromCategory 
 
 describe('recordCategoryHref', () => {
   it('opens Progression on the records tab with sport filter and category anchor', () => {
-    expect(recordCategoryHref('run-5k')).toBe('/training/progression?tab=records&sport=run#run-5k');
-    expect(recordCategoryHref('bike-ftp')).toBe(
-      '/training/progression?tab=records&sport=bike#bike-ftp',
-    );
+    expect(recordCategoryHref('run-5k')).toBe('/biology?tab=records&sport=run#run-5k');
+    expect(recordCategoryHref('bike-ftp')).toBe('/biology?tab=records&sport=bike#bike-ftp');
     expect(recordCategoryHref('swim-distance')).toBe(
-      '/training/progression?tab=records&sport=swim#swim-distance',
+      '/biology?tab=records&sport=swim#swim-distance',
     );
   });
 

@@ -925,7 +925,7 @@ export async function getPerformanceRecordsForActivity(activityId: string) {
 
 export type RecordSportTab = 'run' | 'bike' | 'swim';
 
-export const RECORDS_PAGE_PATH = '/training/progression';
+export const RECORDS_PAGE_PATH = '/biology';
 
 /** Identifiant d'ancre DOM pour une catégorie de record (ex. `swim-distance`). */
 export function recordCategoryAnchorId(category: string): string {

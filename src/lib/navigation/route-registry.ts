@@ -41,20 +41,12 @@ const MATCHERS: Matcher[] = [
     resolve: () => ({ label: 'Nouvelle activité', defaultParent: HISTORY_PARENT }),
   },
   {
-    pattern: /^\/training\/progression$/,
-    resolve: () => ({ label: 'Progression', defaultParent: TRAINING_PARENT }),
-  },
-  {
     pattern: /^\/training\/planning$/,
     resolve: () => ({ label: 'Planification', defaultParent: TRAINING_PARENT }),
   },
   {
     pattern: /^\/training\/calendar$/,
     resolve: () => ({ label: 'Calendrier', defaultParent: TRAINING_PARENT }),
-  },
-  {
-    pattern: /^\/training\/sessions$/,
-    resolve: () => ({ label: 'Séances prévues', defaultParent: TRAINING_PARENT }),
   },
   // Both trip patterns must stay above the /training/:id catch-all below.
   {
@@ -105,6 +97,10 @@ const MATCHERS: Matcher[] = [
   },
 
   { pattern: /^\/settings$/, resolve: () => ({ label: 'Réglages', defaultParent: HOME_PARENT }) },
+  {
+    pattern: /^\/settings\/calibration$/,
+    resolve: () => ({ label: 'Seuils & repères', defaultParent: SETTINGS_PARENT }),
+  },
   {
     pattern: /^\/settings\/account$/,
     resolve: () => ({ label: 'Compte', defaultParent: SETTINGS_PARENT }),

@@ -17,7 +17,6 @@ import { HubStatusValue } from '@/components/settings/hub-status-value';
 import { SettingsAppearanceStatus } from '@/components/settings/settings-appearance-status';
 import { SettingsHomeExtras } from '@/components/settings/settings-home-extras';
 import type { SettingsHubStatus } from '@/lib/settings/hub-status';
-import { progressionTabHref } from '@/lib/training/progression-tabs';
 import { cn } from '@/lib/utils';
 
 type SettingsEntry = {
@@ -64,10 +63,9 @@ const GROUPS: SettingsGroup[] = [
         statusKey: 'goals',
       },
       {
-        // Lives under Progression, which is where it is edited — but nobody looks
-        // for their FTP inside a training hub, and its panel has always been a
-        // settings panel. This is the door people actually try.
-        href: progressionTabHref('calibration'),
+        // Its own page now: the panel has always been a settings panel, and
+        // nobody looks for their FTP inside a training hub.
+        href: '/settings/calibration',
         title: 'Seuils & repères',
         description: 'FTP, allure seuil, FC max — ce que le Twin compare tes efforts à.',
         icon: SlidersHorizontal,

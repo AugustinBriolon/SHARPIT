@@ -14,10 +14,10 @@ export const TWIN_DRILL_DOWN = {
   adaptation: '/today/adaptation',
   physical: '/biology?tab=suivi',
   sessions: '/training',
-  /** The thresholds every load figure is computed against. */
-  calibration: '/training/progression?tab=calibration',
-  /** Observed best efforts — the evidence behind "am I getting better". */
-  records: '/training/progression?tab=records',
+  /** The thresholds every load figure is computed against — a setting, so Settings. */
+  calibration: '/settings/calibration',
+  /** Observed best efforts: what the body produced, so Physiologie. */
+  records: '/biology?tab=records',
   planning: '/training/planning',
   activity: (id: string) => `/training/${id}` as const,
   /** Deep-link to Planning with dialog (bookmarks / share). Prefer `useAppModal().openPlannedSession` in-app. */

@@ -96,5 +96,8 @@ export function useTrainingThread() {
     setSport,
     goals: goalsQuery.data ?? [],
     loading: isAnyInitialQueryLoad([activitiesQuery, plannedQuery, goalsQuery]),
+    /** Every cache cold — nothing to render, offline or not. */
+    hasNoLiveData:
+      activitiesQuery.data == null && plannedQuery.data == null && goalsQuery.data == null,
   };
 }

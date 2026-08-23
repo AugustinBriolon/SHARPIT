@@ -93,7 +93,7 @@ export function PerformancePredictions() {
               footer={
                 <Link
                   className="text-muted-foreground hover:text-foreground text-xs"
-                  href="/training/progression?tab=calibration"
+                  href="/settings/calibration"
                 >
                   Voir dans Calibration →
                 </Link>

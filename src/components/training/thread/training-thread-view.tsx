@@ -16,7 +16,10 @@ import { ThreadSportFilters } from '@/components/training/thread/thread-sport-fi
 import { ThreadTimeline } from '@/components/training/thread/thread-timeline';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { Skeleton } from '@/components/ui/skeleton';
+import { OfflineSnapshotSummary } from '@/components/pwa/offline-snapshot-summary';
 import { useCoachMemory } from '@/hooks/use-coach-memory';
+import { useOfflineSnapshot } from '@/hooks/use-offline-snapshot';
+import { useOnlineStatus } from '@/hooks/use-online-status';
 import { useTrainingThread } from '@/hooks/use-training-thread';
 import { useThreadFormReadings } from '@/hooks/use-thread-form-readings';
 import { isoWeekKeyOf } from '@/lib/training/thread/build-thread';
@@ -42,6 +45,13 @@ export function TrainingThreadView() {
   const thread = useTrainingThread();
   const memory = useCoachMemory();
   const readings = useThreadFormReadings();
+
+  /* Offline with every cache cold: show the last snapshot rather than skeletons
+     that will never resolve. A spinner with no network behind it is a lie about
+     what is about to happen. */
+  const online = useOnlineStatus();
+  const { hasNoLiveData } = thread;
+  const { entry: offlineEntry } = useOfflineSnapshot(!online && hasNoLiveData);
 
   const currentIndex = thread.weeks.findIndex((week) => week.isCurrent);
   const currentWeek = currentIndex >= 0 ? thread.weeks[currentIndex] : null;
@@ -87,6 +97,10 @@ export function TrainingThreadView() {
       null
     );
   }, [thread.goals]);
+
+  if (!online && hasNoLiveData && offlineEntry) {
+    return <OfflineSnapshotSummary entry={offlineEntry} />;
+  }
 
   if (thread.loading) {
     return (

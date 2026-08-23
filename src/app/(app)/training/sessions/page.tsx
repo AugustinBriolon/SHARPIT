@@ -1,10 +1,12 @@
-import { Suspense } from 'react';
-import { SessionsHub, SessionsHubSkeleton } from '@/components/sessions/sessions-hub';
+import { redirect } from 'next/navigation';
 
-export default function TrainingSessionsPage() {
-  return (
-    <Suspense fallback={<SessionsHubSkeleton />}>
-      <SessionsHub basePath="/training/sessions" />
-    </Suspense>
-  );
+/**
+ * Superseded by the thread.
+ *
+ * This page mounted Calendar, Planning and History as three tabs — the same merge
+ * the thread performs, but leaving the reader to switch between them and hold the
+ * comparison in his head. That is the problem the thread was built to remove.
+ */
+export default function TrainingSessionsRedirect() {
+  redirect('/training');
 }

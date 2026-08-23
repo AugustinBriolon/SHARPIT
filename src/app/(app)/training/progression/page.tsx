@@ -1,24 +1,20 @@
-import { Suspense } from 'react';
-import { ProgressionHub } from '@/components/training/hub/progression-hub';
-import { ProgressionHubSkeleton } from '@/components/training/hub/progression-hub-skeleton';
-import { mapAthleteProfileToFormData } from '@/lib/profile/map-athlete-profile';
-import { getAthleteProfile } from '@/lib/queries';
+import { redirect } from 'next/navigation';
 
-async function ProgressionHubWithProfile() {
-  let athleteProfile = null;
-  try {
-    athleteProfile = await getAthleteProfile();
-  } catch (error) {
-    console.error('[training/progression] getAthleteProfile failed', error);
-  }
-
-  return <ProgressionHub initialProfile={mapAthleteProfileToFormData(athleteProfile)} />;
-}
-
-export default function TrainingProgressionPage() {
-  return (
-    <Suspense fallback={<ProgressionHubSkeleton />}>
-      <ProgressionHubWithProfile />
-    </Suspense>
-  );
+/**
+ * Progression is gone; its three tabs went where each of them belonged.
+ *
+ * Calibration is a settings panel and now lives in Settings. Records are a
+ * physiological reading and live under Physiologie. État was the current form,
+ * which the thread already carries. Bookmarks into the old tabs keep working
+ * because the query decides which of the three the reader wanted.
+ */
+export default async function TrainingProgressionRedirect({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { tab } = await searchParams;
+  if (tab === 'calibration') redirect('/settings/calibration');
+  if (tab === 'records') redirect('/biology?tab=records');
+  redirect('/training');
 }

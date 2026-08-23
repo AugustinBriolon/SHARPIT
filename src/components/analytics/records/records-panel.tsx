@@ -221,7 +221,7 @@ export function RecordsPanel() {
     params.set('tab', 'records');
     params.set('sport', next);
     const hash = typeof window !== 'undefined' ? window.location.hash : '';
-    router.replace(`/training/progression?${params.toString()}${hash}`, { scroll: false });
+    router.replace(`/biology?${params.toString()}${hash}`, { scroll: false });
   }
 
   useEffect(() => {
@@ -233,7 +233,7 @@ export function RecordsPanel() {
       const params = new URLSearchParams(searchParams.toString());
       params.set('tab', 'records');
       params.set('sport', sport);
-      router.replace(`/training/progression?${params.toString()}#${categoryId}`, {
+      router.replace(`/biology?${params.toString()}#${categoryId}`, {
         scroll: false,
       });
     }
