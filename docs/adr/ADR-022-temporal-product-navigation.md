@@ -12,7 +12,9 @@
 
 ## Context
 
-SHARPIT currently exposes product areas through domain-led destinations: Home, Training, Physiology, Coach, and Settings. A single athlete intention can span several of those areas: weekly planning appears in Training, Planning, Calendar, and Sessions; goals live in Settings even though they govern the plan; and physiological evidence competes with the day-level decision instead of consistently explaining it.
+SHARPIT currently exposes product areas through domain-led destinations: Accueil, Entraînement, Physiologie, Coach, and Réglages. A single athlete intention can span several of those areas: goals and threshold calibration live in Réglages even though they govern the plan and describe the athlete; records sit under Physiologie while activity history sits under Entraînement; and physiological evidence competes with the day-level decision instead of consistently explaining it.
+
+Part of the problem has already been solved under a different name. `/training` is a unified thread that merges calendar, planning, and history; `/training/sessions` and `/training/progression` are redirects into it and into Réglages. There is no `/training/calendar`. So the remaining defect is not duplicate planning hubs — it is that the destinations are named after data domains, and that longitudinal athlete development has no home at all.
 
 The product's primary use is a daily orientation based on sleep, recovery, environmental context, training load, and other athlete observations. Secondary needs are planning a week, reviewing progress, discussing a question with the Coach, and maintaining the athlete profile. The frozen Core already produces the necessary state and decisions; this is a product-surface problem, not an inference problem.
 
@@ -24,13 +26,15 @@ The complete surface contract and route direction are defined in [INFORMATION_AR
 
 ## Rationale
 
-The chosen structure follows the athlete's actual rhythm: decide today, organise the week, evaluate progress, seek reflection, and maintain the model. It expresses the Digital Twin vertically without introducing a new Core engine, removes competing hubs for the same intent, and supports novice-to-expert progressive disclosure without changing the underlying decision.
+The chosen structure follows the athlete's actual rhythm: decide today, organise the week, evaluate progress, seek reflection, and maintain the model. It expresses the Digital Twin vertically without introducing a new Core engine, gives longitudinal development the home it currently lacks, and supports novice-to-expert progressive disclosure without changing the underlying decision.
+
+The training thread already proved the principle for the week horizon: one surface, view state instead of sibling hubs. This decision applies the same rule to the remaining horizons rather than inventing a new one.
 
 ## Alternatives considered
 
 ### Alternative 1: Keep the domain-led navigation
 
-**Description:** Retain Home, Training, Physiology, Coach, and Settings as the primary navigation and improve individual pages locally.
+**Description:** Retain Accueil, Entraînement, Physiologie, Coach, and Réglages as the primary navigation and improve individual pages locally.
 
 **Pros:**
 
@@ -40,7 +44,7 @@ The chosen structure follows the athlete's actual rhythm: decide today, organise
 **Cons:**
 
 - The athlete must infer which technical domain contains an answer to a time-based decision.
-- Duplicate planning hubs and hidden goals remain structural problems.
+- Goals and calibration stay filed as configuration, and longitudinal development keeps no home of its own.
 - Contextual evidence continues to compete with the primary decision.
 
 **Rejected because:** local page refinement cannot resolve a navigation model that is organised around the system instead of the athlete's moment.
@@ -92,6 +96,19 @@ The chosen structure follows the athlete's actual rhythm: decide today, organise
 - Implementing the decision requires a staged migration of routes, navigation matching, prefetching, back-links, empty states, and offline surface mappings.
 - Existing users and internal documentation will need transitional labels and compatible deep links.
 - Progress becomes a broad surface and needs strict progressive disclosure to avoid becoming a dashboard.
+- Threshold calibration and records move again, having been placed in their current homes only recently. See below.
+- `/biology` stops being one hub: its three tabs split across two Progress sections, so `?tab=` deep links must be preserved by hand.
+
+### Decisions this reverses
+
+No prior ADR covers them, so there is nothing to formally supersede — but two placements made deliberately in code are undone here, and the reasoning must not be lost:
+
+| Placement                                    | Original reasoning                     | Why it changes                                                                                             |
+| -------------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Calibration moved to `/settings/calibration` | "Calibration is a settings panel."     | It is a description of the athlete, not a product preference. It belongs with the performance it explains. |
+| Records moved to `/biology?tab=records`      | "Records are a physiological reading." | Records are a performance reading. Body composition and conditions are the physiological ones.             |
+
+Both moves were correct against the old destination set, where the only alternatives were a training hub and a data domain. They are wrong against a set that contains Progress. Neither reversal happens before Progress exists; until then, both routes stay where they are.
 
 ### Scientific debt created
 

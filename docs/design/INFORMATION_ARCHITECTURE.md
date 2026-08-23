@@ -36,19 +36,47 @@ Use a temporal, decision-led navigation model with five primary destinations:
 
 On desktop these destinations form the primary sidebar. On mobile they form the bottom navigation. `Profile` is a utility destination; it must not compete visually with the daily decision.
 
+### Shipped labels
+
+This document is written in English; the application ships in French. The destination names above are concepts, not strings. These are the labels to render, and the items they replace in [`src/lib/app-navigation.ts`](../../src/lib/app-navigation.ts):
+
+| Destination | Shipped label | Replaces       |
+| ----------- | ------------- | -------------- |
+| Today       | `Aujourd'hui` | `Accueil`      |
+| My week     | `Ma semaine`  | `Entraînement` |
+| Progress    | `Progression` | `Physiologie`  |
+| Coach       | `Coach`       | `Coach`        |
+| Profile     | `Profil`      | `Réglages`     |
+
+Two label collisions must be resolved as part of the rename, not left to the implementer:
+
+- **`Ma semaine`** is currently a Coach-menu entry for the Weekly Coaching Brief ([`coach-menu.tsx`](../../src/components/coaching/coach-menu.tsx), [`weekly-brief.tsx`](../../src/components/coach/weekly-brief.tsx), ADR-007). The primary destination takes the name; the Coach entry becomes `Bilan hebdo`. The brief itself does not move — it stays a Coach artefact reachable from My week.
+- **`Progression`** was a training route (`/training/progression`) that now only redirects. The word is free to reuse, but the redirect must keep working and must not be mistaken for the new destination.
+
+### Vocabulary
+
+One concept currently carries up to four names across route, label, component, and doc. The rename is the moment to collapse them. Target vocabulary:
+
+| Concept                     | Route      | Label            | Code                | Superseded names                                         |
+| --------------------------- | ---------- | ---------------- | ------------------- | -------------------------------------------------------- |
+| Body composition and health | `/biology` | `Corps & santé`  | `corps/*`           | `Physiologie`, `Biology`, `Mon corps`, `Body & health`   |
+| Physical condition tracking | —          | `Suivi physique` | `physical-health/*` | `physical notes`, `physical conditions`, `Corps (suivi)` |
+
+The API route `/api/physical-notes` and the Prisma model keep their names; this contract governs athlete-facing surfaces and component naming only.
+
 ## Navigation principles
 
 ### One intention, one canonical destination
 
 A task has one primary home. Alternate URLs may remain as compatible deep links, but they must resolve to the same surface instead of creating competing hubs.
 
-| Intention               | Canonical surface | Current duplicate or dispersed locations                        |
-| ----------------------- | ----------------- | --------------------------------------------------------------- |
-| Decide today's training | Today             | Home, Training, and individual physiology routes                |
-| Build or adjust a week  | My week           | Training, Planning, Calendar, and Sessions                      |
-| Review development      | Progress          | Training progression, History, Biology, and Goals in Settings   |
-| Discuss with the Coach  | Coach             | Coach route plus implicit deep links from sessions and planning |
-| Configure the product   | Profile           | Settings subpages                                               |
+| Intention               | Canonical surface | Where it lives today                                                                              | Remaining dispersion                                             |
+| ----------------------- | ----------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Decide today's training | Today             | `/` plus the `/today/*` drill-downs                                                               | None. Rename only.                                               |
+| Build or adjust a week  | My week           | `/training` (the thread — already merges calendar, planning and history) and `/training/planning` | `/training/planning` is still a separate page beside the thread. |
+| Review development      | Progress          | `/training/history`, `/biology` (composition, suivi, records), `/settings/goals`                  | Three surfaces, two of them under Settings or a data domain.     |
+| Discuss with the Coach  | Coach             | `/coach` plus deep links from sessions and planning                                               | Contextual entry points are partial, not duplicated.             |
+| Configure the product   | Profile           | `/settings/*`                                                                                     | Holds `goals` and `calibration`, which are not configuration.    |
 
 ### Context is evidence, not navigation
 
@@ -129,6 +157,8 @@ Every contextual conversation must identify the attached context in plain langua
 
 Profile contains account details, equipment, integrations and synchronisation, Coach memory, appearance, maintenance, and product information. Goals and performance calibration do not belong here: they are athlete-development concepts and live in Progress.
 
+`/settings/calibration` and `/settings/goals` exist today, and calibration was moved into Settings deliberately and recently. Moving it out is a reversal, argued in [ADR-022](../adr/ADR-022-temporal-product-navigation.md). It happens in stage 3, once Progress → Performance exists — not before.
+
 ## Reading levels
 
 SHARPIT serves novice and expert athletes through one decision model and two reading levels.
@@ -144,14 +174,40 @@ The selected reading level is a presentation preference, not a physiological set
 
 This map is a target for staged implementation. Existing deep links must continue to work until a deliberate redirect and navigation migration is verified.
 
-| Current route or route group                                                                     | Target surface           | Migration intent                                                                                 |
-| ------------------------------------------------------------------------------------------------ | ------------------------ | ------------------------------------------------------------------------------------------------ |
-| `/` and `/today/*`                                                                               | Today                    | Keep `/` as the canonical daily entry; preserve drill-down routes as evidence views.             |
-| `/training`, `/training/planning`, `/training/calendar`, `/training/sessions`                    | My week                  | Consolidate into one week hub with view state rather than multiple competing hubs.               |
-| `/training/history`, `/training/progression`, `/training/trips/*`, `/biology`, `/settings/goals` | Progress                 | Group by goals, performance, and body & health while preserving direct links.                    |
-| `/nutrition`                                                                                     | Today or Progress detail | Keep a direct route if needed, but reach it contextually rather than through primary navigation. |
-| `/coach`                                                                                         | Coach                    | Retain as the canonical free-conversation destination.                                           |
-| `/settings/*`                                                                                    | Profile                  | Retain utility routes; move goals and calibration only when their Progress surfaces exist.       |
+The table below lists routes that exist in `src/app/(app)`. Routes that already redirect are marked as such: they are the previous consolidation, not work still to do.
+
+| Current route                                                                            | Status today                                         | Target surface           | Migration intent                                                                                |
+| ---------------------------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------- |
+| `/`                                                                                      | Live                                                 | Today                    | Keep `/` as the canonical daily entry.                                                          |
+| `/today/sleep`, `/today/recovery`, `/today/effort`, `/today/adaptation`                  | Live                                                 | Today evidence           | Preserve as drill-downs; never promote to destinations.                                         |
+| `/training`                                                                              | Live — the thread (calendar + planning + history)    | My week                  | This is already the week hub. Rename and absorb the remaining planning page; do not rebuild it. |
+| `/training/planning`                                                                     | Live                                                 | My week                  | Fold into the thread as view state, or keep as a deep link into it.                             |
+| `/training/sessions`                                                                     | Redirects to `/training`                             | My week                  | Leave the redirect in place.                                                                    |
+| `/training/manual`                                                                       | Live                                                 | My week action           | Activity authoring; reached from the week hub, not from navigation.                             |
+| `/training/[id]`, `/training/[id]/edit`                                                  | Live                                                 | Shared detail            | Session/activity detail reached from Today, My week and Progress alike.                         |
+| `/training/history`                                                                      | Live                                                 | Progress → Performance   | Becomes the activity-history view inside Performance.                                           |
+| `/training/trips/*`                                                                      | Live                                                 | Progress → Performance   | An activity-history grouping, not a destination.                                                |
+| `/training/progression`                                                                  | Redirects (`?tab=` splits to calibration/records)    | Progress                 | Retarget the redirect once Progress exists; keep both query cases working.                      |
+| `/biology`                                                                               | Live — `CorpsHub`, tabs: composition, suivi, records | Progress (split)         | The three tabs do not move together. See below.                                                 |
+| `/settings/goals`                                                                        | Live                                                 | Progress → Goals         | Goals govern the plan; they are not configuration.                                              |
+| `/settings/calibration`                                                                  | Live                                                 | Progress → Performance   | Reverses a recent move into Settings. See ADR-022.                                              |
+| `/nutrition`                                                                             | Live                                                 | Today or Progress detail | Keep the direct route; reach it contextually, not through primary navigation.                   |
+| `/coach`                                                                                 | Live                                                 | Coach                    | Retain as the canonical free-conversation destination.                                          |
+| `/settings/*` (account, equipment, integrations, memory, appearance, maintenance, about) | Live                                                 | Profile                  | Retain utility routes as-is.                                                                    |
+
+There is no `/training/calendar` route. The calendar is a rendering mode inside the thread.
+
+### Splitting `/biology`
+
+`CorpsHub` currently mounts three tabs under one route. Progress separates them by purpose, so this is a genuine migration and not a relabel:
+
+| Current tab    | Target Progress section | Note                                                             |
+| -------------- | ----------------------- | ---------------------------------------------------------------- |
+| Composition    | Body & health           | Body composition trends.                                         |
+| Suivi physique | Body & health           | Active conditions, condition history, and training implications. |
+| Records        | Performance             | Records are a performance reading, not a body reading.           |
+
+`/biology?tab=records` must keep resolving — `/training/progression?tab=records` already redirects to it, so breaking it breaks two links.
 
 ## States and feedback
 
@@ -172,9 +228,11 @@ Every primary surface must support loading, partial-data, offline, empty, and er
 
 ## Delivery sequence
 
-1. **Navigation foundation:** adopt the five labels, retain compatible links, and establish the canonical My week hub.
-2. **Daily loop:** complete the Today phase transitions and contextual Coach/session actions.
-3. **Longitudinal space:** assemble Goals, Performance, and Body & health under Progress; move calibration and goals out of Profile.
-4. **Reading levels:** add progressive Advanced evidence after the Standard hierarchy is stable.
+The week hub already exists as the training thread, so stage 1 is a rename and not a consolidation. Progress is the one destination with no current surface, and carries most of the work.
+
+1. **Navigation foundation (small):** adopt the five labels in `app-navigation.ts`, resolve the `Ma semaine` collision, update `match()` predicates and prefetch targets, retain every compatible link. No route moves.
+2. **Daily loop (medium):** complete the Today phase transitions and contextual Coach/session actions.
+3. **Longitudinal space (large):** create Progress; assemble Goals, Performance, and Body & health; split `/biology` across two sections; move goals and calibration out of Settings and retarget the `/training/progression` redirect.
+4. **Reading levels (medium):** add progressive Advanced evidence after the Standard hierarchy is stable.
 
 No stage introduces a new inference engine. Each stage must be released with route, loading, mobile, accessibility, and Instant UX coverage.
