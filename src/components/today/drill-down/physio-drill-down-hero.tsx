@@ -164,12 +164,12 @@ export function PhysioDrillDownHero({
         )}
 
         {loading ? (
-          <div className="border-primary mt-4 border-l-2 pl-3 sm:mt-5">
+          <div className="mt-4 sm:mt-5">
             <Skeleton className="h-4 w-[min(100%,16rem)] rounded-full" />
           </div>
         ) : (
           quickReadCaption && (
-            <p className="border-primary text-foreground/85 mt-4 max-w-2xl border-l-2 pl-3 text-sm leading-relaxed sm:mt-5">
+            <p className="text-foreground/85 mt-4 max-w-2xl text-sm leading-relaxed sm:mt-5">
               {quickReadCaption}
             </p>
           )
