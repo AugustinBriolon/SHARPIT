@@ -184,14 +184,21 @@ record and nothing that can expire.
 
 ## Modules
 
-| Module          | Description                                                                                                                                                                                                                                                 |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Today**       | Daily Brief — physiological score cards (Recovery, Effort, Sleep) + narrative decision center (what to do, why, session, health signals, confidence) via the Reasoning Engine and Digital Twin; the Effort drill-down carries the PMC chart (CTL, ATL, TSB) |
-| **Training**    | Activity CRUD (run, bike, swim, strength) with load and stream analysis; the thread of planned and completed sessions                                                                                                                                       |
-| **Physiologie** | Personal records and power curve, body composition trends, physical-health tracking (`/biology`)                                                                                                                                                            |
-| **Planning**    | Macrocycle planning with brick analysis; session authoring and push to the Garmin watch                                                                                                                                                                     |
-| **Goals**       | Race goals and countdown tracking                                                                                                                                                                                                                           |
-| **Settings**    | Strava, Garmin, Renpho, Google Calendar integrations; threshold calibration (FTP, LTHR, threshold pace, swim CSS, pool length)                                                                                                                              |
+| Module          | Route                                       | Description                                                                                                                                                                                    |
+| --------------- | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Today**       | `/`                                         | Daily Brief — physiological score cards (Recovery, Effort, Sleep) + narrative decision center (what to do, why, session, health signals, confidence) via the Reasoning Engine and Digital Twin |
+| **Drill-downs** | `/today/{sleep,recovery,effort,adaptation}` | One page per Digital Twin dimension; the Effort drill-down carries the PMC chart (CTL, ATL, TSB)                                                                                               |
+| **Training**    | `/training`                                 | The thread — planned and completed sessions in one timeline, merging calendar, planning and history; activity CRUD (run, bike, swim, strength) with load and stream analysis                   |
+| **Planning**    | `/training/planning`                        | Macrocycle planning with brick analysis; session authoring and push to the Garmin watch                                                                                                        |
+| **Physiologie** | `/biology`                                  | Personal records and power curve, body composition trends, physical-health tracking                                                                                                            |
+| **Nutrition**   | `/nutrition`                                | Daily fuelling read from MyFitnessPal, with weight-aware ratios                                                                                                                                |
+| **Coach**       | `/coach`                                    | Conversations plus the session, weekly-brief and plan-adjustment entry points                                                                                                                  |
+| **Goals**       | `/settings/goals`                           | Race goals and countdown tracking                                                                                                                                                              |
+| **Settings**    | `/settings/*`                               | Strava, Garmin, Renpho, Google Calendar integrations; threshold calibration (FTP, LTHR, threshold pace, swim CSS, pool length)                                                                 |
+
+The athlete-facing hierarchy these routes are migrating toward is defined in
+[INFORMATION_ARCHITECTURE.md](./docs/design/INFORMATION_ARCHITECTURE.md) and decided in
+[ADR-022](./docs/adr/ADR-022-temporal-product-navigation.md).
 
 ## Integrations
 
