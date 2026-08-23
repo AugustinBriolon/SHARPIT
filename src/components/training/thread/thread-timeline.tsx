@@ -101,6 +101,7 @@ export function ThreadTimeline({
   upcoming,
   past,
   pivotEntryId = null,
+  anchorLabel = null,
 }: {
   /** Today and after, nearest first — reversed here so the list reads downward. */
   upcoming: readonly ThreadDay[];
@@ -108,6 +109,8 @@ export function ThreadTimeline({
   past: readonly ThreadDay[];
   /** The session the current week turns on — marked, not merely listed. */
   pivotEntryId?: string | null;
+  /** Set while reading a week other than this one; the line stops saying "today". */
+  anchorLabel?: string | null;
 }) {
   const today = todayDayKey();
 
@@ -142,13 +145,30 @@ export function ThreadTimeline({
         ))}
       </ol>
 
-      {/* The waterline: owed above, done below. */}
+      {/* The waterline: owed above, done below. Scrubbed into the past there is
+          nothing owed, so it names the week being read instead of lying about
+          which day this is. */}
       <div className="my-3 flex items-center gap-3" aria-hidden>
-        <span className="bg-primary h-0.5 flex-1 rounded-full" />
-        <p className="text-data text-primary shrink-0 text-[11px] font-semibold tracking-wide uppercase">
-          Aujourd’hui · {format(new Date(), 'EEE d', { locale: fr })}
+        <span
+          className={cn(
+            'h-0.5 flex-1 rounded-full',
+            anchorLabel ? 'bg-muted-foreground/30' : 'bg-primary',
+          )}
+        />
+        <p
+          className={cn(
+            'text-data shrink-0 text-[11px] font-semibold tracking-wide uppercase',
+            anchorLabel ? 'text-muted-foreground' : 'text-primary',
+          )}
+        >
+          {anchorLabel ?? `Aujourd’hui · ${format(new Date(), 'EEE d', { locale: fr })}`}
         </p>
-        <span className="bg-primary h-0.5 flex-1 rounded-full" />
+        <span
+          className={cn(
+            'h-0.5 flex-1 rounded-full',
+            anchorLabel ? 'bg-muted-foreground/30' : 'bg-primary',
+          )}
+        />
       </div>
 
       {past.length > 0 ? (

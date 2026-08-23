@@ -2,6 +2,7 @@
 
 import type { RulerBar } from '@/lib/training/thread/load-ruler';
 import { rulerRangeLabel } from '@/lib/training/thread/load-ruler';
+import { useThreadScrubber } from '@/hooks/use-thread-scrubber';
 import { cn } from '@/lib/utils';
 
 const STATE_READING: Record<RulerBar['state'], string> = {
@@ -26,13 +27,35 @@ function barReading(bar: RulerBar): string {
 export function ThreadLoadRuler({
   bars,
   className,
+  anchorWeekKey = null,
+  onAnchorChange,
 }: {
   bars: readonly RulerBar[];
   className?: string;
+  /** The week the list below is anchored on — the current one unless scrubbed. */
+  anchorWeekKey?: string | null;
+  onAnchorChange?: (weekKey: string) => void;
 }) {
+  const activeIndex = Math.max(
+    0,
+    bars.findIndex((bar) =>
+      anchorWeekKey ? bar.weekKey === anchorWeekKey : bar.state === 'current',
+    ),
+  );
+
+  const scrubber = useThreadScrubber({
+    count: bars.length,
+    activeIndex,
+    onChange: (index) => {
+      const bar = bars[index];
+      if (bar) onAnchorChange?.(bar.weekKey);
+    },
+  });
+
   if (bars.length === 0) return null;
 
   const range = rulerRangeLabel(bars);
+  const activeBar = bars[activeIndex];
 
   return (
     <div className={className}>
@@ -41,9 +64,24 @@ export function ThreadLoadRuler({
         {range ? <p className="text-data text-muted-foreground text-xs">{range}</p> : null}
       </div>
 
-      <div className="chip-surface-lg rounded-analysis-lg px-3 py-3">
+      <div
+        ref={scrubber.trackRef}
+        aria-label={onAnchorChange ? 'Semaine lue dans le fil' : undefined}
+        aria-valuemax={onAnchorChange ? bars.length - 1 : undefined}
+        aria-valuemin={onAnchorChange ? 0 : undefined}
+        aria-valuenow={onAnchorChange ? activeIndex : undefined}
+        aria-valuetext={onAnchorChange ? activeBar?.label : undefined}
+        role={onAnchorChange ? 'slider' : undefined}
+        tabIndex={onAnchorChange ? 0 : undefined}
+        className={cn(
+          'chip-surface-lg rounded-analysis-lg px-3 py-3',
+          'focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
+          onAnchorChange && 'cursor-pointer touch-none select-none',
+        )}
+        {...(onAnchorChange ? scrubber.handlers : {})}
+      >
         <div className="flex h-16 items-end gap-1.5" aria-hidden>
-          {bars.map((bar) => (
+          {bars.map((bar, index) => (
             <div
               key={bar.weekKey}
               style={{ height: `${Math.max(6, bar.height * 100)}%` }}
@@ -53,6 +91,10 @@ export function ThreadLoadRuler({
                   ? 'border-analysis-border border border-dashed'
                   : 'bg-muted-foreground/30',
                 bar.state === 'current' && 'bg-primary ring-primary/30 ring-1',
+                /* The week being read, when it is not the current one. */
+                index === activeIndex &&
+                  bar.state !== 'current' &&
+                  'ring-primary/60 bg-primary/70 ring-1',
               )}
             />
           ))}
@@ -75,6 +117,7 @@ export function ThreadLoadRuler({
 
       {/* Spelled out once, because fill-versus-outline is the page's whole grammar. */}
       <p className="text-muted-foreground mt-1.5 text-[11px]">
+        {onAnchorChange ? 'Glisse pour te déplacer dans la saison. ' : ''}
         Plein = réalisé, pointillé = prévu.
       </p>
 

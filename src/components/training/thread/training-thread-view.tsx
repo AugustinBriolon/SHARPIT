@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { GoalKind } from '@prisma/client';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
@@ -25,6 +25,13 @@ import { useThreadFormReadings } from '@/hooks/use-thread-form-readings';
 import { isoWeekKeyOf } from '@/lib/training/thread/build-thread';
 import { partitionThread, takeThreadDays } from '@/lib/training/thread/partition-thread';
 import { dayKeyFromDate } from '@/lib/date/day-key';
+
+/** Sunday of the week starting on `start` — the last day it contains. */
+function endOfWeekDay(start: Date): Date {
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  return end;
+}
 import { buildThreadAdherence } from '@/lib/training/thread/thread-adherence';
 import { buildThreadCoachLine } from '@/lib/training/thread/thread-coach-line';
 import { cn } from '@/lib/utils';
@@ -59,6 +66,14 @@ export function TrainingThreadView() {
 
   const coachLine = useMemo(() => buildThreadCoachLine(currentWeek ?? null), [currentWeek]);
 
+  /* Which week the digest reads from. Null means today, which is the only state
+     where "aujourd'hui" is a waterline rather than a date somewhere above. */
+  const [anchorWeekKey, setAnchorWeekKey] = useState<string | null>(null);
+
+  const anchorLabel = anchorWeekKey
+    ? (thread.seasonWeeks.find((week) => week.weekKey === anchorWeekKey)?.label ?? null)
+    : null;
+
   /**
    * The digest: the next few sessions and the last few.
    *
@@ -67,16 +82,23 @@ export function TrainingThreadView() {
    * which is why each side carries a link to its own.
    */
   const digest = useMemo(() => {
-    const now = new Date();
+    const anchored = anchorWeekKey
+      ? thread.seasonWeeks.find((week) => week.weekKey === anchorWeekKey)
+      : null;
+
+    /* Scrubbed: read from the end of that week, so its own sessions land in the
+       "already done" half rather than being split across the waterline. */
+    const pivot = anchored ? endOfWeekDay(anchored.start) : new Date();
     const pivotDayKey = dayKeyFromDate(
-      new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())),
+      new Date(Date.UTC(pivot.getFullYear(), pivot.getMonth(), pivot.getDate())),
     );
+
     const { upcoming, past } = partitionThread(thread.seasonWeeks, pivotDayKey);
     return {
       upcoming: takeThreadDays(upcoming, 3),
       past: takeThreadDays(past, 5),
     };
-  }, [thread.weeks]);
+  }, [thread.seasonWeeks, anchorWeekKey]);
   /* Graded over the season, not over what happens to be loaded: "5/7" flipping to
      "23/29" because the athlete pressed "charger plus" would make the figure a
      property of the scroll position rather than of the plan. */
@@ -152,14 +174,43 @@ export function TrainingThreadView() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_300px] lg:items-start lg:gap-8">
         <div className="min-w-0 space-y-4">
-          <ThreadLoadRuler bars={thread.ruler} />
+          <ThreadLoadRuler
+            anchorWeekKey={anchorWeekKey}
+            bars={thread.ruler}
+            onAnchorChange={(weekKey) =>
+              setAnchorWeekKey(
+                thread.ruler.find((bar) => bar.weekKey === weekKey)?.state === 'current'
+                  ? null
+                  : weekKey,
+              )
+            }
+          />
+
+          {/* Only while away from today: a permanent "back to today" on a page
+              already showing today is a control that does nothing. */}
+          {anchorWeekKey ? (
+            <button
+              type="button"
+              className={cn(
+                'text-primary hover:text-foreground text-data inline-flex items-center gap-1.5',
+                'text-xs transition-colors',
+                'focus-visible:ring-primary/35 rounded-sm focus-visible:ring-2 focus-visible:outline-hidden',
+              )}
+              onClick={() => setAnchorWeekKey(null)}
+            >
+              ← Revenir à aujourd’hui
+            </button>
+          ) : null}
 
           <div className="lg:hidden">{filters}</div>
 
           <ThreadTimeline
+            anchorLabel={anchorLabel}
             past={digest.past}
-            pivotEntryId={coachLine?.pivotEntryId ?? null}
             upcoming={digest.upcoming}
+            /* The pivot is this week's turning point; pointing at it from another
+               week would mark a session that has nothing to do with what is read. */
+            pivotEntryId={anchorWeekKey ? null : (coachLine?.pivotEntryId ?? null)}
           />
 
           {/* Mobile keeps the readings at the foot of the thread; desktop lifts
