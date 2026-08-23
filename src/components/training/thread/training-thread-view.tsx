@@ -15,7 +15,12 @@ import { ThreadPlanChart } from '@/components/training/thread/thread-plan-chart'
 import { ThreadSportFilters } from '@/components/training/thread/thread-sport-filters';
 import { ThreadTimeline } from '@/components/training/thread/thread-timeline';
 import { StickyHeader } from '@/components/layout/sticky-header';
-import { Skeleton } from '@/components/ui/skeleton';
+import {
+  ThreadGoalBannerSkeleton,
+  ThreadRailSkeleton,
+  ThreadRulerSkeleton,
+  ThreadTimelineSkeleton,
+} from '@/components/training/thread/thread-skeleton';
 import { OfflineSnapshotSummary } from '@/components/pwa/offline-snapshot-summary';
 import { useCoachMemory } from '@/hooks/use-coach-memory';
 import { useOfflineSnapshot } from '@/hooks/use-offline-snapshot';
@@ -124,15 +129,7 @@ export function TrainingThreadView() {
     return <OfflineSnapshotSummary entry={offlineEntry} />;
   }
 
-  if (thread.loading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-40 w-full rounded-2xl" />
-        <Skeleton className="h-28 w-full rounded-2xl" />
-        <Skeleton className="h-64 w-full rounded-2xl" />
-      </div>
-    );
-  }
+  const { loading } = thread;
 
   const filters = (
     <ThreadSportFilters counts={thread.counts} value={thread.sport} onChange={thread.setSport} />
@@ -148,7 +145,7 @@ export function TrainingThreadView() {
           </div>
 
           <div className="hidden items-center gap-2 lg:flex">
-            {filters}
+            {loading ? null : filters}
             <Link
               href="/training/manual"
               className={cn(
@@ -164,27 +161,37 @@ export function TrainingThreadView() {
         </div>
       </StickyHeader>
 
-      <ThreadGoalBanner
-        adherence={adherence}
-        coachLine={coachLine}
-        currentWeek={currentWeek}
-        goal={nextRaceGoal}
-        previousWeek={previousWeek}
-      />
+      {/* The chrome is not data: headings, rules and doors are on screen from the
+          first frame, and only the figures pulse. Nothing moves when the fetch
+          returns, and the page reads as this page before a number exists. */}
+      {loading ? (
+        <ThreadGoalBannerSkeleton />
+      ) : (
+        <ThreadGoalBanner
+          adherence={adherence}
+          coachLine={coachLine}
+          currentWeek={currentWeek}
+          goal={nextRaceGoal}
+          previousWeek={previousWeek}
+        />
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_300px] lg:items-start lg:gap-8">
         <div className="min-w-0 space-y-4">
-          <ThreadLoadRuler
-            anchorWeekKey={anchorWeekKey}
-            bars={thread.ruler}
-            onAnchorChange={(weekKey) =>
-              setAnchorWeekKey(
-                thread.ruler.find((bar) => bar.weekKey === weekKey)?.state === 'current'
-                  ? null
-                  : weekKey,
-              )
-            }
-          />
+          {loading ? <ThreadRulerSkeleton /> : null}
+          {loading ? null : (
+            <ThreadLoadRuler
+              anchorWeekKey={anchorWeekKey}
+              bars={thread.ruler}
+              onAnchorChange={(weekKey) =>
+                setAnchorWeekKey(
+                  thread.ruler.find((bar) => bar.weekKey === weekKey)?.state === 'current'
+                    ? null
+                    : weekKey,
+                )
+              }
+            />
+          )}
 
           {/* Only while away from today: a permanent "back to today" on a page
               already showing today is a control that does nothing. */}
@@ -202,28 +209,36 @@ export function TrainingThreadView() {
             </button>
           ) : null}
 
-          <div className="lg:hidden">{filters}</div>
+          <div className="lg:hidden">{loading ? null : filters}</div>
 
           {/* `pivotEntryId` is this week's turning point; pointing at it from
               another week would mark a session with nothing to do with what is
               on screen, so it goes when the reader scrubs away. */}
-          <ThreadTimeline
-            anchorLabel={anchorLabel}
-            past={digest.past}
-            pivotEntryId={anchorWeekKey ? null : (coachLine?.pivotEntryId ?? null)}
-            upcoming={digest.upcoming}
-          />
+          {loading ? (
+            <ThreadTimelineSkeleton />
+          ) : (
+            <ThreadTimeline
+              anchorLabel={anchorLabel}
+              past={digest.past}
+              pivotEntryId={anchorWeekKey ? null : (coachLine?.pivotEntryId ?? null)}
+              upcoming={digest.upcoming}
+            />
+          )}
 
           {/* Mobile keeps the readings at the foot of the thread; desktop lifts
               them into the rail, where they are visible without a scroll. */}
           <ThreadFormReadings className="lg:hidden" readings={readings} />
         </div>
 
-        <aside className="hidden space-y-4 lg:block">
-          <ThreadPlanChart adherence={adherence} weeks={thread.seasonWeeks} />
-          <ThreadFormReadings readings={readings} title="Ta forme" />
-          <ThreadConstraintsCard constraints={constraints} />
-        </aside>
+        {loading ? (
+          <ThreadRailSkeleton className="hidden lg:block" />
+        ) : (
+          <aside className="hidden space-y-4 lg:block">
+            <ThreadPlanChart adherence={adherence} weeks={thread.seasonWeeks} />
+            <ThreadFormReadings readings={readings} title="Ta forme" />
+            <ThreadConstraintsCard constraints={constraints} />
+          </aside>
+        )}
       </div>
     </div>
   );
