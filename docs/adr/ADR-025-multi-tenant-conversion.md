@@ -120,9 +120,10 @@ See Decision 1. Rejected: no blast-radius reduction, extra join, no product need
 
 ---
 
-## Roadmap (not implemented in this phase)
+## Roadmap
 
-- **Phase 1**: sweep the ~30 files carrying a hardcoded `ATHLETE_ID`/`PROFILE_ID`/`ACCOUNT_ID` constant or a literal `'default'` introduced by this phase's compile-fix pass, threading `getCurrentAthleteId()` in once at each route/RSC boundary — never inside a pure presentation builder (extends ADR-007's "no I/O in builders" one hop further upstream). Convert the OAuth/connect callback routes to upsert on `athleteId` instead of `'default'`. Loop `POST /api/cron/sync` and `GET /api/cron/planned-forecast` over all athletes with bounded concurrency (reuse `mapWithConcurrency`, already in `src/lib/integrations/garmin/garmin-sync.ts`). Drop the `@default("default")` bootstrap once every write path is confirmed explicit.
+- **Phase 1 — done**: swept every route/RSC boundary that carried a hardcoded `ATHLETE_ID`/`PROFILE_ID`/`ACCOUNT_ID` constant or a literal `'default'` introduced by Phase 0's compile-fix pass, threading `getCurrentAthleteId()` in once at each boundary — never inside a pure presentation builder (extends ADR-007's "no I/O in builders" one hop further upstream). The OAuth/connect callback routes now upsert on the resolved `athleteId` instead of `'default'`. `POST /api/cron/sync` loops every `AthleteProfile` with bounded concurrency (`mapWithConcurrency`, already in `src/lib/integrations/garmin/garmin-sync.ts`).
+- **Phase 1 — still outstanding**: `GET /api/cron/planned-forecast` (`src/app/api/cron/planned-forecast/route.ts`) still calls `refreshUpcomingPlannedSessionForecasts()` with no athlete loop — needs the same multi-athlete sweep as `cron/sync` before a second tenant's forecasts would refresh. Dropping the `@default("default")` bootstrap on the 17 columns is still deferred to its own migration, once a final audit confirms every write path passes `athleteId` explicitly.
 - **Phase 2**: retire or repurpose `ALLOWED_EMAILS` (`src/lib/auth.ts`, `src/components/auth/access-gate.tsx`); design onboarding UX for a genuinely-empty new athlete's first login; revisit the original demo-mode request now that a real, low-privilege second tenant is a normal signup rather than a special-cased fixture; decide whether per-athlete AI/coach cost accounting is needed before opening broadly (`src/lib/ai.ts` currently tags spend by feature only, via one shared `AI_GATEWAY_API_KEY`).
 
 ## Explicitly deferred, not forgotten
