@@ -14,12 +14,13 @@ import {
 } from '@/lib/integrations/garmin/garmin-activities';
 import { ensureGarminExerciseLabelsFr } from '@/lib/integrations/garmin/garmin-exercise-labels';
 import { fetchGarminMultisportLegs } from '@/lib/integrations/garmin/garmin-multisport';
+import { clientFromTokens, currentTokens } from '@/lib/integrations/garmin/garmin';
 import {
-  clientFromTokens,
-  currentTokens,
-  garminTokensFromStorage,
-} from '@/lib/integrations/garmin/garmin';
-import { getGarminAccount, runGarminCall } from '@/lib/integrations/garmin/garmin-sync';
+  decryptGarminTokens,
+  encryptGarminToken,
+  getGarminAccount,
+  runGarminCall,
+} from '@/lib/integrations/garmin/garmin-sync';
 import {
   isGarminAccountConnected,
   ProviderAuthError,
@@ -328,7 +329,7 @@ export async function syncGarminActivities(
     }
 
     const client = clientFromTokens(
-      garminTokensFromStorage(account.oauth1Token, account.oauth2Token),
+      decryptGarminTokens(account.oauth1TokenEnc, account.oauth2TokenEnc),
     );
     const exerciseLabelsFr = await ensureGarminExerciseLabelsFr();
 
@@ -401,8 +402,8 @@ export async function syncGarminActivities(
     await prisma.garminAccount.update({
       where: { athleteId },
       data: {
-        oauth1Token: refreshed.oauth1 as unknown as Prisma.InputJsonValue,
-        oauth2Token: refreshed.oauth2 as unknown as Prisma.InputJsonValue,
+        oauth1TokenEnc: encryptGarminToken(refreshed.oauth1),
+        oauth2TokenEnc: encryptGarminToken(refreshed.oauth2),
         lastActivitySyncAt: new Date(),
       },
     });

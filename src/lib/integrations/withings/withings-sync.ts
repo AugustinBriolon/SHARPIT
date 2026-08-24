@@ -17,6 +17,7 @@ import {
 import { enrichMeasurementsWithHeartEcg } from '@/lib/integrations/withings/withings-measures';
 import { backfillBodyCompositionObservationsFromMeasurements } from '@/lib/integrations/shared/body-composition-observation-backfill';
 import { syncSinceFromLastSync, syncWindowDays } from '@/lib/integrations/shared/sync-since';
+import { decryptSecret, encryptSecret } from '@/lib/secret-box';
 
 async function ingestWithingsMeasurement(
   athleteId: string,
@@ -46,8 +47,8 @@ export async function revokeWithingsCredentials(athleteId: string) {
   await prisma.withingsAccount.update({
     where: { athleteId },
     data: {
-      accessToken: '',
-      refreshToken: '',
+      accessTokenEnc: '',
+      refreshTokenEnc: '',
       expiresAt: new Date(0),
     },
   });
@@ -63,15 +64,15 @@ export async function getValidWithingsAccessToken(athleteId: string): Promise<st
   }
 
   const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
-  if (!expiresSoon) return account.accessToken;
+  if (!expiresSoon) return decryptSecret(account.accessTokenEnc);
 
   try {
-    const refreshed = await refreshWithingsToken(account.refreshToken);
+    const refreshed = await refreshWithingsToken(decryptSecret(account.refreshTokenEnc));
     await prisma.withingsAccount.update({
       where: { athleteId },
       data: {
-        accessToken: refreshed.access_token,
-        refreshToken: refreshed.refresh_token,
+        accessTokenEnc: encryptSecret(refreshed.access_token),
+        refreshTokenEnc: encryptSecret(refreshed.refresh_token),
         expiresAt: new Date(Date.now() + refreshed.expires_in * 1000),
         withingsUserId: String(refreshed.userid),
       },

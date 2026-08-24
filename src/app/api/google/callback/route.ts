@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { emailFromIdToken, exchangeCodeForToken } from '@/lib/integrations/google/google';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { prisma } from '@/lib/prisma';
+import { encryptSecret } from '@/lib/secret-box';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -41,8 +42,8 @@ export async function GET(request: NextRequest) {
     const email = emailFromIdToken(token.id_token);
     const data = {
       email,
-      accessToken: token.access_token,
-      refreshToken: token.refresh_token,
+      accessTokenEnc: encryptSecret(token.access_token),
+      refreshTokenEnc: encryptSecret(token.refresh_token),
       expiresAt: new Date(Date.now() + token.expires_in * 1000),
       scope: token.scope ?? null,
     };

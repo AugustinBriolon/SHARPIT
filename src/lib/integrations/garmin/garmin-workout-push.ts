@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { currentTokens, type GarminTokens } from '@/lib/integrations/garmin/garmin';
-import { getGarminClient } from '@/lib/integrations/garmin/garmin-sync';
+import { encryptGarminToken, getGarminClient } from '@/lib/integrations/garmin/garmin-sync';
 import {
   buildAlreadyPushedError,
   type GarminPushBlockReason,
@@ -25,8 +25,8 @@ export async function persistGarminTokens(athleteId: string, tokens: GarminToken
   await prisma.garminAccount.update({
     where: { athleteId },
     data: {
-      oauth1Token: tokens.oauth1 as unknown as never,
-      oauth2Token: tokens.oauth2 as unknown as never,
+      oauth1TokenEnc: encryptGarminToken(tokens.oauth1),
+      oauth2TokenEnc: encryptGarminToken(tokens.oauth2),
     },
   });
 }

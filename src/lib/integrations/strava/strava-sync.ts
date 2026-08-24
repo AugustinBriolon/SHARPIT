@@ -17,6 +17,7 @@ import {
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { stravaActivityToSession } from '@/core/adapters/strava-adapter';
 import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
+import { decryptSecret, encryptSecret } from '@/lib/secret-box';
 
 /** Parallel DB upserts for Strava candidates within a page. */
 export const STRAVA_ACTIVITY_CONCURRENCY = 6;
@@ -46,8 +47,8 @@ export async function revokeStravaCredentials(athleteId: string) {
   await prisma.stravaAccount.update({
     where: { athleteId },
     data: {
-      accessToken: '',
-      refreshToken: '',
+      accessTokenEnc: '',
+      refreshTokenEnc: '',
       expiresAt: new Date(0),
     },
   });
@@ -61,15 +62,15 @@ export async function getValidAccessToken(athleteId: string) {
   }
 
   const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
-  if (!expiresSoon) return account.accessToken;
+  if (!expiresSoon) return decryptSecret(account.accessTokenEnc);
 
   try {
-    const refreshed = await refreshAccessToken(account.refreshToken);
+    const refreshed = await refreshAccessToken(decryptSecret(account.refreshTokenEnc));
     await prisma.stravaAccount.update({
       where: { athleteId },
       data: {
-        accessToken: refreshed.access_token,
-        refreshToken: refreshed.refresh_token,
+        accessTokenEnc: encryptSecret(refreshed.access_token),
+        refreshTokenEnc: encryptSecret(refreshed.refresh_token),
         expiresAt: new Date(refreshed.expires_at * 1000),
       },
     });

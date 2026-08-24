@@ -14,6 +14,7 @@ import {
 } from '@/lib/integrations/google/google';
 
 import { syncSinceFromLastSync } from '@/lib/integrations/shared/sync-since';
+import { decryptSecret, encryptSecret } from '@/lib/secret-box';
 
 const DAY_START_MIN = 6 * 60; // 06:00
 const DAY_END_MIN = 21 * 60; // 21:00
@@ -32,9 +33,9 @@ export async function getGoogleAccount(athleteId: string) {
 }
 
 export function isGoogleConnected(
-  account: { refreshToken: string } | null | undefined,
-): account is { refreshToken: string } {
-  return Boolean(account?.refreshToken);
+  account: { refreshTokenEnc: string } | null | undefined,
+): account is { refreshTokenEnc: string } {
+  return Boolean(account?.refreshTokenEnc);
 }
 
 /** Invalide les jetons OAuth tout en conservant le calendrier cible et les préférences. */
@@ -44,8 +45,8 @@ export async function revokeGoogleCredentials(athleteId: string) {
   await prisma.googleAccount.update({
     where: { athleteId },
     data: {
-      accessToken: '',
-      refreshToken: '',
+      accessTokenEnc: '',
+      refreshTokenEnc: '',
       expiresAt: new Date(0),
     },
   });
@@ -87,17 +88,19 @@ export async function getValidAccessToken(athleteId: string) {
   if (!isGoogleConnected(account)) throw new Error('Compte Google non connecté');
 
   const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
-  if (!expiresSoon) return account.accessToken;
+  if (!expiresSoon) return decryptSecret(account.accessTokenEnc);
 
   try {
-    const refreshed = await refreshAccessToken(account.refreshToken);
+    const refreshed = await refreshAccessToken(decryptSecret(account.refreshTokenEnc));
     await prisma.googleAccount.update({
       where: { athleteId },
       data: {
-        accessToken: refreshed.access_token,
+        accessTokenEnc: encryptSecret(refreshed.access_token),
         expiresAt: new Date(Date.now() + refreshed.expires_in * 1000),
         // Google ne renvoie pas toujours un nouveau refresh_token : on garde l'ancien.
-        ...(refreshed.refresh_token ? { refreshToken: refreshed.refresh_token } : {}),
+        ...(refreshed.refresh_token
+          ? { refreshTokenEnc: encryptSecret(refreshed.refresh_token) }
+          : {}),
       },
     });
     return refreshed.access_token;

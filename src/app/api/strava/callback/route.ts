@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { exchangeCodeForToken } from '@/lib/integrations/strava/strava';
+import { encryptSecret } from '@/lib/secret-box';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -41,8 +42,8 @@ export async function GET(request: NextRequest) {
       firstName: athlete.firstname ?? null,
       lastName: athlete.lastname ?? null,
       avatarUrl: athlete.profile ?? null,
-      accessToken: token.access_token,
-      refreshToken: token.refresh_token,
+      accessTokenEnc: encryptSecret(token.access_token),
+      refreshTokenEnc: encryptSecret(token.refresh_token),
       expiresAt: new Date(token.expires_at * 1000),
     };
 

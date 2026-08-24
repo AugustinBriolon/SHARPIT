@@ -329,8 +329,9 @@ model GarminAccount {
   athlete            AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   displayName        String?
   fullName           String?
-  oauth1Token        Json
-  oauth2Token        Json
+  /// AES-256-GCM encrypted JSON (secret-box.ts) — never stored in plain Json.
+  oauth1TokenEnc     String
+  oauth2TokenEnc     String
   lastSyncAt         DateTime?
   lastActivitySyncAt DateTime?
 
@@ -346,8 +347,9 @@ model StravaAccount {
   firstName       String?
   lastName        String?
   avatarUrl       String?
-  accessToken     String
-  refreshToken    String
+  /// AES-256-GCM encrypted (secret-box.ts).
+  accessTokenEnc  String
+  refreshTokenEnc String
   expiresAt       DateTime
   scope           String?
   lastSyncAt      DateTime?
@@ -357,13 +359,14 @@ model StravaAccount {
 }
 
 model GoogleAccount {
-  athleteId    String         @id
-  athlete      AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
-  email        String?
-  accessToken  String
-  refreshToken String
-  expiresAt    DateTime
-  scope        String?
+  athleteId       String         @id
+  athlete         AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  email           String?
+  /// AES-256-GCM encrypted (secret-box.ts).
+  accessTokenEnc  String
+  refreshTokenEnc String
+  expiresAt       DateTime
+  scope           String?
 
   // Calendrier cible où le coach écrit les séances (ex: calendrier "SPORT")
   targetCalendarId   String?
@@ -393,14 +396,15 @@ model RenphoAccount {
 }
 
 model WithingsAccount {
-  athleteId      String         @id
-  athlete        AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
-  withingsUserId String
-  accessToken    String
-  refreshToken   String
-  expiresAt      DateTime
-  displayName    String?
-  lastSyncAt     DateTime?
+  athleteId       String         @id
+  athlete         AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  withingsUserId  String
+  /// AES-256-GCM encrypted (secret-box.ts).
+  accessTokenEnc  String
+  refreshTokenEnc String
+  expiresAt       DateTime
+  displayName     String?
+  lastSyncAt      DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

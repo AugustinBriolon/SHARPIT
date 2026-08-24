@@ -22,6 +22,21 @@ import {
 } from '@/lib/integrations/shared/connection-status';
 import { backfillHealthObservationsFromDailyHealth } from '../shared/health-observation-backfill';
 import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
+import { decryptSecret, encryptSecret } from '@/lib/secret-box';
+import type { GarminTokens } from '@/lib/integrations/garmin/garmin';
+
+/** Encrypts one OAuth token object for storage in the `*TokenEnc` columns. */
+export function encryptGarminToken(token: unknown): string {
+  return encryptSecret(JSON.stringify(token));
+}
+
+/** Reverses `encryptGarminToken` — reads a stored `*TokenEnc` column back into tokens. */
+export function decryptGarminTokens(oauth1Enc: string, oauth2Enc: string): GarminTokens {
+  return garminTokensFromStorage(
+    JSON.parse(decryptSecret(oauth1Enc)),
+    JSON.parse(decryptSecret(oauth2Enc)),
+  );
+}
 
 /** Cold open-path fallback when Garmin never synced — cron covers deeper history. */
 export const GARMIN_HEALTH_OPEN_PATH_FALLBACK_DAYS = 14;
@@ -54,7 +69,7 @@ export async function getGarminClient(athleteId: string) {
   if (!account || !isGarminAccountConnected(account)) {
     throw new ProviderAuthError('Session Garmin expirée. Reconnecte Garmin dans les paramètres.');
   }
-  return clientFromTokens(garminTokensFromStorage(account.oauth1Token!, account.oauth2Token!));
+  return clientFromTokens(decryptGarminTokens(account.oauth1TokenEnc, account.oauth2TokenEnc));
 }
 
 export async function disconnectGarmin(athleteId: string) {
@@ -67,7 +82,7 @@ export async function revokeGarminCredentials(athleteId: string) {
   if (!account) return;
   await prisma.garminAccount.update({
     where: { athleteId },
-    data: { oauth1Token: {}, oauth2Token: {} },
+    data: { oauth1TokenEnc: '', oauth2TokenEnc: '' },
   });
 }
 
@@ -92,14 +107,14 @@ export async function connectGarmin(athleteId: string, username: string, passwor
       athleteId,
       displayName: profile.displayName,
       fullName: profile.fullName,
-      oauth1Token: tokens.oauth1 as unknown as Prisma.InputJsonValue,
-      oauth2Token: tokens.oauth2 as unknown as Prisma.InputJsonValue,
+      oauth1TokenEnc: encryptGarminToken(tokens.oauth1),
+      oauth2TokenEnc: encryptGarminToken(tokens.oauth2),
     },
     update: {
       displayName: profile.displayName,
       fullName: profile.fullName,
-      oauth1Token: tokens.oauth1 as unknown as Prisma.InputJsonValue,
-      oauth2Token: tokens.oauth2 as unknown as Prisma.InputJsonValue,
+      oauth1TokenEnc: encryptGarminToken(tokens.oauth1),
+      oauth2TokenEnc: encryptGarminToken(tokens.oauth2),
     },
   });
 
@@ -123,7 +138,7 @@ export async function importGarminThresholds(athleteId: string): Promise<GarminT
     }
 
     const client = clientFromTokens(
-      garminTokensFromStorage(account.oauth1Token!, account.oauth2Token!),
+      decryptGarminTokens(account.oauth1TokenEnc, account.oauth2TokenEnc),
     );
 
     const thresholds = await fetchAthleteThresholds(client);
@@ -152,8 +167,8 @@ export async function importGarminThresholds(athleteId: string): Promise<GarminT
     await prisma.garminAccount.update({
       where: { athleteId },
       data: {
-        oauth1Token: refreshed.oauth1 as unknown as Prisma.InputJsonValue,
-        oauth2Token: refreshed.oauth2 as unknown as Prisma.InputJsonValue,
+        oauth1TokenEnc: encryptGarminToken(refreshed.oauth1),
+        oauth2TokenEnc: encryptGarminToken(refreshed.oauth2),
       },
     });
 
@@ -292,7 +307,7 @@ export async function syncGarminHealth(
     }
 
     const client = clientFromTokens(
-      garminTokensFromStorage(account.oauth1Token, account.oauth2Token),
+      decryptGarminTokens(account.oauth1TokenEnc, account.oauth2TokenEnc),
     );
 
     const fallbackDays = options?.days ?? GARMIN_HEALTH_DEFAULT_FALLBACK_DAYS;
@@ -325,8 +340,8 @@ export async function syncGarminHealth(
     await prisma.garminAccount.update({
       where: { athleteId },
       data: {
-        oauth1Token: refreshed.oauth1 as unknown as Prisma.InputJsonValue,
-        oauth2Token: refreshed.oauth2 as unknown as Prisma.InputJsonValue,
+        oauth1TokenEnc: encryptGarminToken(refreshed.oauth1),
+        oauth2TokenEnc: encryptGarminToken(refreshed.oauth2),
         lastSyncAt: new Date(),
       },
     });

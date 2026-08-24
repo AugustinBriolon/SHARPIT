@@ -1,8 +1,24 @@
 import crypto from 'crypto';
 
+/**
+ * `SECRET_ENCRYPTION_KEY` is the only secret this module should ever use —
+ * a dedicated value with no purpose but encrypting provider credentials at
+ * rest. `CRON_SECRET`/`DATABASE_URL` stay as a local-dev convenience only
+ * (never set `SECRET_ENCRYPTION_KEY` locally? this still works); production
+ * must configure the dedicated key explicitly, since silently falling back
+ * to a secret rotated for an unrelated reason would make every already-
+ * encrypted row unreadable without warning.
+ */
 function encryptionKey(): Buffer {
-  const secret = process.env.CRON_SECRET ?? process.env.DATABASE_URL ?? 'sharpit-dev-insecure';
-  return crypto.createHash('sha256').update(secret).digest();
+  const secret =
+    process.env.SECRET_ENCRYPTION_KEY ?? process.env.CRON_SECRET ?? process.env.DATABASE_URL;
+  if (secret) return crypto.createHash('sha256').update(secret).digest();
+  if (process.env.NODE_ENV === 'development') {
+    return crypto.createHash('sha256').update('sharpit-dev-insecure').digest();
+  }
+  throw new Error(
+    'SECRET_ENCRYPTION_KEY is not configured — refusing to encrypt/decrypt provider credentials with no key in production.',
+  );
 }
 
 /** Chiffre une valeur sensible (ex. mot de passe Renpho) avant stockage en base. */

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { exchangeWithingsCode, getWithingsRedirectUri } from '@/lib/integrations/withings/withings';
 import { syncWithingsHealth } from '@/lib/integrations/withings/withings-sync';
+import { encryptSecret } from '@/lib/secret-box';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -40,15 +41,15 @@ export async function GET(request: NextRequest) {
       create: {
         athleteId,
         withingsUserId: String(token.userid),
-        accessToken: token.access_token,
-        refreshToken: token.refresh_token,
+        accessTokenEnc: encryptSecret(token.access_token),
+        refreshTokenEnc: encryptSecret(token.refresh_token),
         expiresAt: new Date(Date.now() + token.expires_in * 1000),
         displayName: `Withings #${token.userid}`,
       },
       update: {
         withingsUserId: String(token.userid),
-        accessToken: token.access_token,
-        refreshToken: token.refresh_token,
+        accessTokenEnc: encryptSecret(token.access_token),
+        refreshTokenEnc: encryptSecret(token.refresh_token),
         expiresAt: new Date(Date.now() + token.expires_in * 1000),
       },
     });

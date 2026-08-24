@@ -37,24 +37,38 @@ type MaybeAccount = Record<string, unknown> | null | undefined;
  *
  * Spread these rather than listing columns by hand, and the two cannot drift.
  */
-export const OAUTH_CONNECTION_SELECT = { accessToken: true, refreshToken: true } as const;
-export const GARMIN_CONNECTION_SELECT = { oauth1Token: true, oauth2Token: true } as const;
+export const OAUTH_CONNECTION_SELECT = { accessTokenEnc: true, refreshTokenEnc: true } as const;
+export const GARMIN_CONNECTION_SELECT = { oauth1TokenEnc: true, oauth2TokenEnc: true } as const;
 export const RENPHO_CONNECTION_SELECT = { email: true, passwordEnc: true } as const;
 export const MFP_CONNECTION_SELECT = { sessionTokenEnc: true } as const;
 
 export function isOAuthAccountConnected(account: MaybeAccount): boolean {
   if (!account) return false;
-  return account.accessToken != null && account.refreshToken != null;
+  return (
+    typeof account.accessTokenEnc === 'string' &&
+    account.accessTokenEnc.length > 0 &&
+    typeof account.refreshTokenEnc === 'string' &&
+    account.refreshTokenEnc.length > 0
+  );
 }
 
 export function isGarminAccountConnected(account: MaybeAccount): boolean {
   if (!account) return false;
-  return account.oauth1Token != null && account.oauth2Token != null;
+  return (
+    typeof account.oauth1TokenEnc === 'string' &&
+    account.oauth1TokenEnc.length > 0 &&
+    typeof account.oauth2TokenEnc === 'string' &&
+    account.oauth2TokenEnc.length > 0
+  );
 }
 
 export function isRenphoAccountConnected(account: MaybeAccount): boolean {
   if (!account) return false;
-  return account.email != null && account.passwordEnc != null;
+  return (
+    account.email != null &&
+    typeof account.passwordEnc === 'string' &&
+    account.passwordEnc.length > 0
+  );
 }
 
 export function isMfpAccountConnected(account: MaybeAccount): boolean {
@@ -87,7 +101,7 @@ export function reconnectProviderNames(accounts: ProviderAccounts): string[] {
   if (accounts.garmin && !isGarminAccountConnected(accounts.garmin)) names.push('Garmin');
   if (accounts.withings && !isOAuthAccountConnected(accounts.withings)) names.push('Withings');
   if (accounts.renpho && !isRenphoAccountConnected(accounts.renpho)) names.push('Renpho');
-  if (accounts.google && !accounts.google.refreshToken) names.push('Google');
+  if (accounts.google && !isOAuthAccountConnected(accounts.google)) names.push('Google');
   if (accounts.myfitnesspal && !isMfpAccountConnected(accounts.myfitnesspal))
     names.push('MyFitnessPal');
   return names;
