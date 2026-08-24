@@ -29,7 +29,12 @@ export function StickyHeader({
     const mq = window.matchMedia('(min-width: 1024px)');
     if (!mq.matches) return;
 
+    // root: null (viewport) assumes the header's sticky point sits at
+    // viewport y≈0 — false whenever something persistent renders above
+    // <main> (e.g. DemoBanner). Anchor to the actual scrolling ancestor
+    // instead, so this holds regardless of what's stacked above it.
     const observer = new IntersectionObserver(([entry]) => setStuck(entry.intersectionRatio < 1), {
+      root: el.closest('main'),
       threshold: [1],
       rootMargin: '-1px 0px 0px 0px',
     });
