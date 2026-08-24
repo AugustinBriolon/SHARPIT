@@ -3,13 +3,8 @@
 import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts';
 import { ChartTooltipCard } from '@/components/ui/charts/chart-tooltip';
 import type { NutritionMacroTrendPoint } from '@/core/presentation/nutrition-macro-trend-view-model';
-import {
-  CHART_GRID_COLOR,
-  CHART_TICK_COLOR,
-  MACRO_CARB_COLOR,
-  MACRO_FAT_COLOR,
-  MACRO_PROTEIN_COLOR,
-} from '@/lib/theme/chart-theme';
+import { CHART_GRID_COLOR, CHART_TICK_COLOR } from '@/lib/theme/chart-theme';
+import { MACRO_CSS_COLOR } from '@/lib/nutrition/macro-colors';
 
 function MacroTrendTooltip({
   active,
@@ -54,11 +49,16 @@ export function StackedMacroChart({ points }: { points: NutritionMacroTrendPoint
         width={32}
       />
       <Tooltip content={<MacroTrendTooltip />} cursor={{ fill: 'var(--muted)', opacity: 0.4 }} />
-      <Bar dataKey="proteinAvgG" fill={MACRO_PROTEIN_COLOR} name="Protéines" stackId="macros" />
-      <Bar dataKey="carbohydratesAvgG" fill={MACRO_CARB_COLOR} name="Glucides" stackId="macros" />
+      <Bar dataKey="proteinAvgG" fill={MACRO_CSS_COLOR.protein} name="Protéines" stackId="macros" />
+      <Bar
+        dataKey="carbohydratesAvgG"
+        fill={MACRO_CSS_COLOR.carbs}
+        name="Glucides"
+        stackId="macros"
+      />
       <Bar
         dataKey="fatAvgG"
-        fill={MACRO_FAT_COLOR}
+        fill={MACRO_CSS_COLOR.fat}
         name="Lipides"
         radius={[4, 4, 0, 0]}
         stackId="macros"

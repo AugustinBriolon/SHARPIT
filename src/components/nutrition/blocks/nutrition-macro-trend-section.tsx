@@ -14,7 +14,7 @@ import {
   isPresentationValuesLoading,
   useNutritionMacroTrendViewModel,
 } from '@/hooks/use-presentation-view-model';
-import { MACRO_CARB_COLOR, MACRO_FAT_COLOR, MACRO_PROTEIN_COLOR } from '@/lib/theme/chart-theme';
+import { MACRO_COLORS } from '@/lib/nutrition/macro-colors';
 import { cn } from '@/lib/utils';
 
 const StackedMacroChart = dynamic(
@@ -105,18 +105,18 @@ function MacroTrendBody({ points }: { points: NutritionMacroTrendPoint[] }) {
       </ChartFigure>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-        <Legend color={MACRO_PROTEIN_COLOR} label="Protéines" />
-        <Legend color={MACRO_CARB_COLOR} label="Glucides" />
-        <Legend color={MACRO_FAT_COLOR} label="Lipides" />
+        <Legend dotClassName={MACRO_COLORS.protein.dot} label="Protéines" />
+        <Legend dotClassName={MACRO_COLORS.carbs.dot} label="Glucides" />
+        <Legend dotClassName={MACRO_COLORS.fat.dot} label="Lipides" />
       </div>
     </div>
   );
 }
 
-function Legend({ color, label }: { color: string; label: string }) {
+function Legend({ dotClassName, label }: { dotClassName: string; label: string }) {
   return (
     <span className="text-muted-foreground inline-flex items-center gap-1.5">
-      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} aria-hidden />
+      <span className={cn('h-2 w-2 rounded-full', dotClassName)} aria-hidden />
       {label}
     </span>
   );

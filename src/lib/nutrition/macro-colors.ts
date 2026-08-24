@@ -27,6 +27,18 @@ export const MACRO_COLORS: Record<
   },
 };
 
+/**
+ * Same three hues as `MACRO_COLORS`, as raw CSS values for SVG contexts
+ * (Recharts fill/stroke) that can't consume Tailwind utility classes.
+ * `--color-*` are Tailwind v4's own generated theme variables, so this can
+ * never drift from the `bg-sky-500` etc. used everywhere else for macros.
+ */
+export const MACRO_CSS_COLOR: Record<MacroKind, string> = {
+  protein: 'var(--color-sky-500)',
+  carbs: 'var(--color-amber-400)',
+  fat: 'var(--color-rose-500)',
+};
+
 export const CALORIE_RING = {
   bar: 'bg-primary',
   track: 'bg-primary/15',
