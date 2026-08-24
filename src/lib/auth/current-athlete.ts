@@ -2,6 +2,7 @@ import { cache } from 'react';
 import { auth } from '@clerk/nextjs/server';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { prisma } from '@/lib/prisma';
+import { isDevClerkBypass } from '@/lib/dev/dev-auth';
 
 /**
  * Resolves the signed-in Clerk user to their `AthleteProfile.id` (ADR-025).
@@ -15,6 +16,15 @@ import { prisma } from '@/lib/prisma';
  * deduped within one request/render tree, not across requests.
  */
 export const getCurrentAthleteId = cache(async (): Promise<string> => {
+  // Mirrors AccessGate's bypass (src/components/auth/access-gate.tsx): when
+  // Clerk's backend is unreachable (corporate proxy / SSL inspection), the
+  // proxy skips auth.protect() entirely — there is no session to resolve.
+  // Single-athlete dev fallback: the one existing profile row.
+  if (isDevClerkBypass()) {
+    const athlete = await prisma.athleteProfile.findFirstOrThrow();
+    return athlete.id;
+  }
+
   const { userId } = await auth();
   if (!userId) {
     throw new Error('getCurrentAthleteId called without an authenticated session');
