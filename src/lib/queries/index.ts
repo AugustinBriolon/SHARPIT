@@ -422,6 +422,7 @@ export async function addPhysicalCheckin(
     const symptomPresent = data.severity != null ? data.severity > 0 : true;
     await prisma.conditionObservation.create({
       data: {
+        athleteId,
         conditionId: condition.id,
         observedAt: data.date ?? new Date(),
         context: 'MANUAL',
@@ -554,7 +555,7 @@ export async function archiveActiveTrainingPlans(athleteId: string) {
 
 export async function createTrainingPlan(
   athleteId: string,
-  data: Prisma.TrainingPlanUncheckedCreateInput & {
+  data: Omit<Prisma.TrainingPlanUncheckedCreateInput, 'athleteId'> & {
     weeks: Omit<Prisma.PlanWeekUncheckedCreateInput, 'planId'>[];
   },
 ) {

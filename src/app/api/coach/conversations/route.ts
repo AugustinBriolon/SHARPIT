@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createConversation, listConversations } from '@/lib/conversations';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 
 export async function GET() {
   try {
-    const conversations = await listConversations();
+    const athleteId = await getCurrentAthleteId();
+    const conversations = await listConversations(athleteId);
     return NextResponse.json(conversations);
   } catch (error) {
     console.error('[coach/conversations] GET', error);
@@ -13,12 +15,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const athleteId = await getCurrentAthleteId();
     const body = await request.json().catch(() => ({}));
     const { messages, bootstrapKey } = body as {
       messages?: unknown;
       bootstrapKey?: string;
     };
     const conversation = await createConversation(
+      athleteId,
       messages,
       typeof bootstrapKey === 'string' && bootstrapKey.trim() ? bootstrapKey.trim() : undefined,
     );

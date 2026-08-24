@@ -5,13 +5,15 @@ import {
   renameConversation,
   saveConversationMessages,
 } from '@/lib/conversations';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const conversation = await getConversation(id);
+    const athleteId = await getCurrentAthleteId();
+    const conversation = await getConversation(athleteId, id);
     if (!conversation) {
       return NextResponse.json({ error: 'Conversation introuvable' }, { status: 404 });
     }
@@ -25,9 +27,10 @@ export async function GET(_request: Request, context: RouteContext) {
 export async function PUT(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
+    const athleteId = await getCurrentAthleteId();
     const body = await request.json().catch(() => ({}));
     const { messages } = body as { messages?: unknown };
-    const updated = await saveConversationMessages(id, messages);
+    const updated = await saveConversationMessages(athleteId, id, messages);
     if (!updated) {
       return NextResponse.json({ error: 'Conversation introuvable' }, { status: 404 });
     }
@@ -41,12 +44,16 @@ export async function PUT(request: Request, context: RouteContext) {
 export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
+    const athleteId = await getCurrentAthleteId();
     const body = await request.json().catch(() => ({}));
     const { title } = body as { title?: unknown };
     if (typeof title !== 'string') {
       return NextResponse.json({ error: 'Titre invalide' }, { status: 400 });
     }
-    const updated = await renameConversation(id, title);
+    const updated = await renameConversation(athleteId, id, title);
+    if (!updated) {
+      return NextResponse.json({ error: 'Conversation introuvable' }, { status: 404 });
+    }
     return NextResponse.json(updated);
   } catch (error) {
     console.error('[coach/conversations/:id] PATCH', error);
@@ -57,7 +64,8 @@ export async function PATCH(request: Request, context: RouteContext) {
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
-    await deleteConversation(id);
+    const athleteId = await getCurrentAthleteId();
+    await deleteConversation(athleteId, id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('[coach/conversations/:id] DELETE', error);

@@ -71,7 +71,7 @@ export async function setPlannedSessionAnalysis(
 
 export async function createPlannedSession(
   athleteId: string,
-  data: Prisma.PlannedSessionUncheckedCreateInput,
+  data: Omit<Prisma.PlannedSessionUncheckedCreateInput, 'athleteId'>,
 ) {
   return prisma.plannedSession.create({ data: { ...data, athleteId } });
 }
@@ -83,7 +83,10 @@ export async function createPlannedSession(
  */
 export async function createBrickSessions(
   athleteId: string,
-  legs: Omit<Prisma.PlannedSessionUncheckedCreateInput, 'brickGroupId' | 'brickOrder'>[],
+  legs: Omit<
+    Prisma.PlannedSessionUncheckedCreateInput,
+    'athleteId' | 'brickGroupId' | 'brickOrder'
+  >[],
 ) {
   const brickGroupId = crypto.randomUUID();
   return prisma.$transaction(

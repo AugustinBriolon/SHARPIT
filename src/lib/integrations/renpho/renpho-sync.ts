@@ -76,7 +76,9 @@ export async function revokeRenphoCredentials(athleteId: string) {
   });
 }
 
-function measurementToPrisma(m: RenphoMeasurement): Prisma.BodyCompositionMeasurementCreateInput {
+function measurementToPrisma(
+  m: RenphoMeasurement,
+): Omit<Prisma.BodyCompositionMeasurementUncheckedCreateInput, 'athleteId'> {
   return {
     source: BodyCompositionSource.RENPHO,
     externalId: m.id,

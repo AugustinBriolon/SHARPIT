@@ -180,7 +180,7 @@ model Activity {
   weather  String?
   load     Float?
 
-  athleteId String         @default("default")
+  athleteId String
   athlete   AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
 
   source   String  @default("manual") // manual | garmin | strava | both
@@ -297,7 +297,7 @@ model AthleteProfile {
 
 model AthleteThresholdSnapshot {
   id                       String         @id @default(cuid())
-  profileId                String         @default("default")
+  profileId                String
   profile                  AthleteProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
   source                   String // estimated | garmin | manual
   ftpW                     Int?
@@ -419,7 +419,7 @@ model MyFitnessPalAccount {
 
 model DailyNutrition {
   id         String         @id @default(cuid())
-  athleteId  String         @default("default")
+  athleteId  String
   athlete    AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   date       DateTime
   provider   String         @default("myfitnesspal")
@@ -496,7 +496,7 @@ model SwimMetrics {
 
 model HikeTrip {
   id         String         @id @default(cuid())
-  athleteId  String         @default("default")
+  athleteId  String
   athlete    AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   name       String
   createdAt  DateTime       @default(now())
@@ -543,7 +543,7 @@ model StrengthSet {
 
 model DailyHealth {
   id        String         @id @default(cuid())
-  athleteId String         @default("default")
+  athleteId String
   athlete   AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   date      DateTime       @db.Date
 
@@ -593,7 +593,7 @@ enum BodyCompositionSource {
 
 model BodyCompositionMeasurement {
   id         String                @id @default(cuid())
-  athleteId  String                @default("default")
+  athleteId  String
   athlete    AthleteProfile        @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   source     BodyCompositionSource
   externalId String
@@ -641,7 +641,7 @@ model BodyCompositionMeasurement {
 
 model Goal {
   id            String         @id @default(cuid())
-  athleteId     String         @default("default")
+  athleteId     String
   athlete       AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   title         String
   kind          GoalKind       @default(METRIC)
@@ -697,7 +697,7 @@ model GoalAchievement {
 
 model TrainingPlan {
   id          String             @id @default(cuid())
-  athleteId   String             @default("default")
+  athleteId   String
   athlete     AthleteProfile     @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   goalId      String?
   goal        Goal?              @relation(fields: [goalId], references: [id], onDelete: SetNull)
@@ -736,7 +736,7 @@ model PlanWeek {
 
 model PhysicalNote {
   id              String           @id @default(cuid())
-  athleteId       String           @default("default")
+  athleteId       String
   athlete         AthleteProfile   @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   category        PhysicalCategory @default(PAIN)
   status          PhysicalStatus   @default(ACTIVE)
@@ -778,7 +778,7 @@ model PhysicalCheckin {
 /// Never deleted. Resolved conditions remain in physiological history.
 model Condition {
   id                    String          @id @default(cuid())
-  athleteId             String          @default("default")
+  athleteId             String
   athlete               AthleteProfile  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   scope                 ConditionScope
   type                  ConditionType
@@ -838,7 +838,7 @@ model ConditionObservation {
   id               String             @id @default(cuid())
   // Every other relation on this row is optional (SetNull) — it does not
   // reliably inherit a tenant from any parent, so it carries its own.
-  athleteId        String             @default("default")
+  athleteId        String
   athlete          AthleteProfile     @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   conditionId      String?
   condition        Condition?         @relation(fields: [conditionId], references: [id], onDelete: SetNull)
@@ -907,7 +907,7 @@ model ConditionKnowledge {
 
 model DailyBriefing {
   id                String         @id @default(cuid())
-  athleteId         String         @default("default")
+  athleteId         String
   athlete           AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   date              DateTime       @db.Date
   content           String         @db.Text // bilan du jour en markdown généré par le coach IA
@@ -922,7 +922,7 @@ model DailyBriefing {
 
 model WeeklyReview {
   id          String         @id @default(cuid())
-  athleteId   String         @default("default")
+  athleteId   String
   athlete     AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   weekStart   DateTime       @db.Date // lundi de la semaine concernée
   content     String         @db.Text // rétro hebdo en markdown générée par le coach IA
@@ -936,7 +936,7 @@ model WeeklyReview {
 
 model PerformanceRecord {
   id            String         @id @default(cuid())
-  athleteId     String         @default("default")
+  athleteId     String
   athlete       AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   group         String // "run" | "bike" | "swim" | "power" | "run-best" | "run-effort" | "bike-effort"
   category      String // clé unique du record, ex: "run-distance", "power-300", "run-best-5000"
@@ -972,7 +972,7 @@ model PerformanceRecord {
 
 model Observation {
   id            String         @id // UUID assigned by the engine
-  athleteId     String         @default("default")
+  athleteId     String
   athlete       AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   type          String // ObservationType literal
   source        String // ObservationSource literal
@@ -1014,7 +1014,7 @@ model Observation {
 
 model FeatureSet {
   id            String         @id // UUID assigned by FeatureEngine
-  athleteId     String         @default("default")
+  athleteId     String
   athlete       AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   category      String // 'SESSION' | 'LOAD' | 'RECOVERY' | 'BODY' | 'CONDITION'
   trainingDayId String? // YYYY-MM-DD (null only for legacy compat — always set in v1)
@@ -1171,7 +1171,7 @@ enum CoachingOutcomeStatus {
 /// context at the moment it was shown to the athlete. Never updated after insert.
 model CoachingDecision {
   id            String                 @id @default(cuid())
-  athleteId     String                 @default("default")
+  athleteId     String
   athlete       AthleteProfile         @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   trainingDayId String
   source        CoachingDecisionSource
@@ -1265,7 +1265,7 @@ model AthleteSnapshotRecord {
 
 model Conversation {
   id        String         @id @default(cuid())
-  athleteId String         @default("default")
+  athleteId String
   athlete   AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   title     String         @default("Nouvelle conversation")
   // Historique complet des messages UI (UIMessage[] du AI SDK), sérialisé en JSON.
@@ -1280,7 +1280,7 @@ model Conversation {
 
 model PlannedSession {
   id                    String            @id @default(cuid())
-  athleteId             String            @default("default")
+  athleteId             String
   athlete               AthleteProfile    @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   type                  ActivityType
   date                  DateTime          @db.Date
@@ -1378,7 +1378,7 @@ enum AthleteMemoryEntryType {
 /// renaming would touch every call site for zero functional benefit.
 model AthleteTravelContext {
   id                 String                   @id @default(cuid())
-  athleteId          String                   @default("default")
+  athleteId          String
   athlete            AthleteProfile           @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   type               AthleteMemoryEntryType   @default(TRAVEL)
   label              String?
@@ -1407,7 +1407,7 @@ model AthleteTravelContext {
 // individuelle dans PlannedSession.analysis).
 model BrickAnalysis {
   brickGroupId String         @id
-  athleteId    String         @default("default")
+  athleteId    String
   athlete      AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   content      Json // { overallScore, summary, transition, remarks[], recommendation }
   generatedAt  DateTime       @default(now())

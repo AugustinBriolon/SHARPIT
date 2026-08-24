@@ -38,8 +38,9 @@ function deriveTitle(messages: unknown): string {
 }
 
 /** Liste des conversations (sans les messages, pour la sidebar). */
-export async function listConversations() {
+export async function listConversations(athleteId: string) {
   const rows = await prisma.conversation.findMany({
+    where: { athleteId },
     orderBy: { updatedAt: 'desc' },
     select: { id: true, title: true, createdAt: true, updatedAt: true, messages: true },
   });
@@ -49,12 +50,16 @@ export async function listConversations() {
     .map(({ messages: _messages, ...summary }) => summary);
 }
 
-export async function getConversation(id: string) {
-  return prisma.conversation.findUnique({ where: { id } });
+export async function getConversation(athleteId: string, id: string) {
+  return prisma.conversation.findFirst({ where: { id, athleteId } });
 }
 
 /** Crée une conversation, en option avec des messages initiaux (titre auto). */
-export async function createConversation(messages?: unknown, bootstrapKey?: string) {
+export async function createConversation(
+  athleteId: string,
+  messages?: unknown,
+  bootstrapKey?: string,
+) {
   const hasMessages = Array.isArray(messages) && messages.length > 0;
   const hasBootstrapKey = typeof bootstrapKey === 'string' && bootstrapKey.trim().length > 0;
 
@@ -72,7 +77,9 @@ export async function createConversation(messages?: unknown, bootstrapKey?: stri
 
     const cached = bootstrapConversationIds.get(bootstrapKey);
     if (cached) {
-      const existing = await prisma.conversation.findUnique({ where: { id: cached.id } });
+      const existing = await prisma.conversation.findFirst({
+        where: { id: cached.id, athleteId },
+      });
       if (existing) return existing;
       bootstrapConversationIds.delete(bootstrapKey);
     }
@@ -80,6 +87,7 @@ export async function createConversation(messages?: unknown, bootstrapKey?: stri
 
   const conversation = await prisma.conversation.create({
     data: {
+      athleteId,
       title: hasMessages ? deriveTitle(messages) : DEFAULT_TITLE,
       messages: (hasMessages ? messages : []) as Prisma.InputJsonValue,
     },
@@ -96,31 +104,40 @@ export async function createConversation(messages?: unknown, bootstrapKey?: stri
 }
 
 /** Enregistre l'historique complet ; régénère le titre s'il est encore par défaut. */
-export async function saveConversationMessages(id: string, messages: unknown) {
-  const existing = await prisma.conversation.findUnique({
-    where: { id },
+export async function saveConversationMessages(athleteId: string, id: string, messages: unknown) {
+  const existing = await prisma.conversation.findFirst({
+    where: { id, athleteId },
     select: { title: true },
   });
   if (!existing) return null;
 
   const shouldRetitle = existing.title === DEFAULT_TITLE;
-  return prisma.conversation.update({
-    where: { id },
+  const { count } = await prisma.conversation.updateMany({
+    where: { id, athleteId },
     data: {
       messages: (messages ?? []) as Prisma.InputJsonValue,
       ...(shouldRetitle ? { title: deriveTitle(messages) } : {}),
     },
   });
+  if (count === 0) return null;
+  return prisma.conversation.findUnique({ where: { id } });
 }
 
-export async function renameConversation(id: string, title: string) {
+export async function renameConversation(athleteId: string, id: string, title: string) {
   const clean = title.trim().slice(0, TITLE_MAX) || DEFAULT_TITLE;
-  return prisma.conversation.update({
-    where: { id },
+  const { count } = await prisma.conversation.updateMany({
+    where: { id, athleteId },
     data: { title: clean },
   });
+  if (count === 0) return null;
+  return prisma.conversation.findUnique({ where: { id } });
 }
 
-export async function deleteConversation(id: string) {
+export async function deleteConversation(athleteId: string, id: string) {
+  const owned = await prisma.conversation.findFirst({
+    where: { id, athleteId },
+    select: { id: true },
+  });
+  if (!owned) return null;
   return prisma.conversation.delete({ where: { id } });
 }

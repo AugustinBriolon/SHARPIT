@@ -86,8 +86,8 @@ export async function getValidAccessToken(athleteId: string) {
 function buildActivityData(
   strava: StravaActivity,
   type: ActivityType,
-): Prisma.ActivityUncheckedCreateInput {
-  const base: Prisma.ActivityUncheckedCreateInput = {
+): Omit<Prisma.ActivityUncheckedCreateInput, 'athleteId'> {
+  const base: Omit<Prisma.ActivityUncheckedCreateInput, 'athleteId'> = {
     type,
     date: new Date(strava.start_date),
     title: strava.name,

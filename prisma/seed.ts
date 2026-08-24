@@ -14,8 +14,12 @@ async function main() {
 
   const today = startOfDay(new Date());
 
+  const athlete = await prisma.athleteProfile.findFirstOrThrow();
+  const athleteId = athlete.id;
+
   await prisma.goal.create({
     data: {
+      athleteId,
       title: 'Ironman < 10h',
       horizon: GoalHorizon.LONG_TERM,
       metricKey: 'ironman_time',
@@ -28,6 +32,7 @@ async function main() {
 
   await prisma.dailyHealth.create({
     data: {
+      athleteId,
       date: today,
       sleepMinutes: 494,
       hrv: 89,
@@ -42,6 +47,7 @@ async function main() {
 
   await prisma.activity.create({
     data: {
+      athleteId,
       type: ActivityType.BIKE,
       date: today,
       title: 'Bike Z2',
@@ -67,6 +73,7 @@ async function main() {
 
   await prisma.activity.create({
     data: {
+      athleteId,
       type: ActivityType.RUN,
       date: subDays(today, 1),
       title: 'Sortie endurance',
@@ -89,6 +96,7 @@ async function main() {
 
   await prisma.activity.create({
     data: {
+      athleteId,
       type: ActivityType.SWIM,
       date: subDays(today, 2),
       title: 'CSS intervals',
@@ -110,6 +118,7 @@ async function main() {
 
   await prisma.activity.create({
     data: {
+      athleteId,
       type: ActivityType.STRENGTH,
       date: subDays(today, 3),
       title: 'Force bas du corps',

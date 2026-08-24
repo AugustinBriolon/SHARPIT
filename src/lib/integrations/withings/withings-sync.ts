@@ -90,7 +90,7 @@ export async function getValidWithingsAccessToken(athleteId: string): Promise<st
 
 function measurementToPrisma(
   m: WithingsParsedMeasurement,
-): Prisma.BodyCompositionMeasurementCreateInput {
+): Omit<Prisma.BodyCompositionMeasurementUncheckedCreateInput, 'athleteId'> {
   const musclePct =
     m.muscleKg != null && m.weightKg != null && m.weightKg > 0
       ? (m.muscleKg / m.weightKg) * 100
