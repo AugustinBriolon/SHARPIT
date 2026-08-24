@@ -333,6 +333,10 @@ All animations respect `prefers-reduced-motion`. When reduced motion is set:
 - Transitions are still applied (avoid snap-to state)
 - The state change still happens; only the animation is removed
 
+### 9.6 Reveal Animations — a Named Exception to 9.2's Cap
+
+§9.2's 300ms cap governs interface chrome: tooltips, expand/collapse, page transitions, skeletons. It does not extend to a **reveal** — a one-time animation of an already-complete, non-interactive dataset on its first appearance, communicating a fact the data already carries (a GPS track is a record of movement through time, not a static shape). [ADR-024](../adr/ADR-024-route-reveal-motion-exception.md) defines the category and its sole current instance, the route trace on `RouteMap`. It is not a general license — a slower badge, expand, or transition is still prohibited. A new candidate for this category needs its own argument, not a citation of this section.
+
 ---
 
 ## 10. Color Philosophy
@@ -583,18 +587,18 @@ Settings are a utility context, not a product context. The design principles app
 
 These patterns must never appear in SHARPIT. They are listed because they are tempting, common, and contrary to the design language.
 
-| Anti-pattern                                 | Why it's prohibited                                                               |
-| -------------------------------------------- | --------------------------------------------------------------------------------- |
-| Progress rings / radial charts               | Gamification. Communicates achievement, not physiology.                           |
-| Streak counters                              | Behavioral manipulation. Contradicts scientific integrity.                        |
-| Animated number counters                     | Decorative. The final number is what matters, not the animation.                  |
-| Large hero images or gradients               | Consumerism. A precision instrument has no background photography.                |
-| Notification badges on tab icons             | Dashboard thinking. SHARPIT is not a notification center.                         |
-| Color gradients between two semantic colors  | Creates ambiguous meaning.                                                        |
-| "Great job!" or motivational micro-copy      | Patronizing. The athlete is intelligent; SHARPIT is informative, not encouraging. |
-| Card grid / masonry layouts                  | Fragments the causal narrative. The one-column layout is not negotiable.          |
-| Toggle between "simple" and "advanced" modes | Implies the athlete needs protection from their own data.                         |
-| Pull-to-refresh with animated mascot         | Consumer fitness app DNA.                                                         |
+| Anti-pattern                                                                   | Why it's prohibited                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Progress rings / radial charts                                                 | Gamification. Communicates achievement, not physiology.                                                                                                                                                                                                                                                                                                          |
+| Streak counters                                                                | Behavioral manipulation. Contradicts scientific integrity.                                                                                                                                                                                                                                                                                                       |
+| Animated number counters                                                       | Decorative. The final number is what matters, not the animation.                                                                                                                                                                                                                                                                                                 |
+| Large hero images or gradients                                                 | Consumerism. A precision instrument has no background photography.                                                                                                                                                                                                                                                                                               |
+| Notification badges on tab icons                                               | Dashboard thinking. SHARPIT is not a notification center.                                                                                                                                                                                                                                                                                                        |
+| Color gradients between two semantic colors                                    | Creates ambiguous meaning.                                                                                                                                                                                                                                                                                                                                       |
+| "Great job!" or motivational micro-copy                                        | Patronizing. The athlete is intelligent; SHARPIT is informative, not encouraging.                                                                                                                                                                                                                                                                                |
+| Card grid / masonry layouts                                                    | Fragments the causal narrative. The one-column layout is not negotiable.                                                                                                                                                                                                                                                                                         |
+| A per-surface "simple"/"advanced" toggle, or one that hides a specific finding | Implies the athlete needs protection from their own data. The one sanctioned exception is the athlete-level reading density in [ADR-023](../adr/ADR-023-reading-density-expert-mode.md) — a single Essential/Expert preference for the whole app, gating vocabulary literacy, never a specific reading. Inventing a second toggle anywhere is this anti-pattern. |
+| Pull-to-refresh with animated mascot                                           | Consumer fitness app DNA.                                                                                                                                                                                                                                                                                                                                        |
 
 ---
 
