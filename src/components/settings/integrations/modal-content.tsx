@@ -949,6 +949,7 @@ function MfpContent({
         <div className="space-y-2">
           <Label htmlFor="mfp-session-token">Cookie de session MFP</Label>
           <Textarea
+            className="w-full max-w-full break-all"
             id="mfp-session-token"
             name="sessionToken"
             placeholder="eyJhbG..."
