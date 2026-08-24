@@ -479,9 +479,9 @@ export function CoachChat({
               (p) => (p as ToolPartLite).state !== 'approval-requested',
             );
 
-            // Reasoning alone is enough to show the bubble — it is the first
-            // content the coach produces, seconds before any answer text.
-            if (!text && !reasoning && inlineParts.length === 0) return null;
+            // The live streaming tail keeps the bubble up even before any part
+            // has arrived — that's the "still thinking" indicator's slot.
+            if (!text && !reasoning && inlineParts.length === 0 && !isLiveStreamTail) return null;
 
             return (
               <div
@@ -489,13 +489,11 @@ export function CoachChat({
                 className={cn('flex justify-start', !isLiveStreamTail && 'cv-auto')}
               >
                 <div className="bg-analysis-surface-alt text-foreground w-full max-w-[90%] min-w-0 space-y-2 overflow-hidden rounded-[18px_18px_18px_4px] px-4 py-3">
-                  {reasoning ? (
-                    <CoachReasoning
-                      hasAnswerText={text.length > 0}
-                      streaming={isLiveStreamTail}
-                      text={reasoning}
-                    />
-                  ) : null}
+                  <CoachReasoning
+                    hasAnswerText={text.length > 0}
+                    streaming={isLiveStreamTail}
+                    text={reasoning}
+                  />
                   {text && <CoachMessage streaming={isLiveStreamTail}>{text}</CoachMessage>}
                   <ToolActivityList parts={inlineParts as ToolPartLite[]} streamIdle={streamIdle} />
                   {streamIdle && text && messageIndex === lastAssistantIndex && (

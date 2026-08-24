@@ -55,12 +55,14 @@ export const COACH_MAX_OUTPUT_TOKENS = {
 } as const;
 
 /**
- * `includeThoughts` garde le flux de raisonnement visible côté athlète : c'est
- * lui qui fait apparaître du contenu à ~3 s au lieu de ~14 s. Le réduire est
- * voulu, le couper ne l'est pas.
+ * `includeThoughts: false` — le résumé de raisonnement coûtait des tokens de
+ * sortie pour un contenu que l'athlète ne lisait pas vraiment (juste un signal
+ * "ça travaille"). Contrepartie assumée : le premier contenu remonte à nouveau
+ * en ~14 s au lieu de ~3 s ; l'UI affiche un simple indicateur de réflexion
+ * (`CoachReasoning`) pendant cette attente plutôt que le résumé.
  */
 const googleThinkingOptions = {
-  google: { thinkingConfig: { includeThoughts: true } },
+  google: { thinkingConfig: { includeThoughts: false } },
 };
 
 /**
