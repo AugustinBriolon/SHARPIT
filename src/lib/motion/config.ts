@@ -30,3 +30,11 @@ export const motionConfig = {
     return motionTokens.duration.normal;
   },
 };
+
+/**
+ * Reveal animations (a route tracing in, a chart drawing on) are a distinct
+ * category from interface chrome — ADR-024 exempts them from `motionTokens`'
+ * 300ms cap. Nothing here governs hover, press, expand, or any transition
+ * `motionTokens.duration` already covers; that cap is untouched.
+ */
+export const REVEAL_DURATION_MS = 900;

@@ -19,6 +19,8 @@ import {
 import { createPortal } from 'react-dom';
 import { X, Minus, Plus, Locate, Maximize, Loader2 } from 'lucide-react';
 
+import { motionConfig, REVEAL_DURATION_MS } from '@/lib/motion/config';
+import { isRevealComplete, revealedPointCount } from '@/lib/motion/route-reveal';
 import { cn } from '@/lib/utils';
 
 const defaultStyles = {
@@ -1033,6 +1035,12 @@ type MapRouteProps = {
   onMouseLeave?: () => void;
   /** Whether the route is interactive - shows pointer cursor on hover (default: true) */
   interactive?: boolean;
+  /**
+   * Draw the line start-to-finish on first appearance instead of setting it
+   * whole. ADR-024's reveal exception, not a general animation switch — see
+   * `REVEAL_DURATION_MS`. Skipped under reduced motion or on a low-end device.
+   */
+  animate?: boolean;
 };
 
 function MapRoute({
@@ -1046,6 +1054,7 @@ function MapRoute({
   onMouseEnter,
   onMouseLeave,
   interactive = true,
+  animate = false,
 }: MapRouteProps) {
   const { map, isLoaded } = useMap();
   const autoId = useId();
@@ -1097,19 +1106,44 @@ function MapRoute({
     };
   }, [isLoaded, map, sourceId, layerId]);
 
-  // When coordinates change, update data.
+  // When coordinates change, update data — drawn instantly, or revealed
+  // start-to-finish once per new route when `animate` asks for it (ADR-024).
   useEffect(() => {
     if (!isLoaded || !map || coordinates.length < 2) return;
 
     const source = map.getSource(sourceId) as MapLibreGL.GeoJSONSource;
-    if (source) {
+    if (!source) return;
+
+    const setLine = (points: [number, number][]) => {
       source.setData({
         type: 'Feature',
         properties: {},
-        geometry: { type: 'LineString', coordinates },
+        geometry: { type: 'LineString', coordinates: points },
       });
+    };
+
+    if (!animate || !motionConfig.shouldAnimate({ essential: false })) {
+      setLine(coordinates);
+      return;
     }
-  }, [isLoaded, map, coordinates, sourceId]);
+
+    let frameId: number;
+    const startedAt = performance.now();
+
+    const step = (now: number) => {
+      const elapsed = now - startedAt;
+      setLine(
+        coordinates.slice(0, revealedPointCount(elapsed, REVEAL_DURATION_MS, coordinates.length)),
+      );
+
+      if (!isRevealComplete(elapsed, REVEAL_DURATION_MS)) {
+        frameId = requestAnimationFrame(step);
+      }
+    };
+
+    frameId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frameId);
+  }, [isLoaded, map, coordinates, sourceId, animate]);
 
   useEffect(() => {
     if (!isLoaded || !map || !map.getLayer(layerId)) return;

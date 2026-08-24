@@ -58,6 +58,7 @@ export default function RouteMapInner({
         coordinates={coordinates}
         opacity={hovered ? 1 : 0.9}
         width={hovered ? 6 : 4}
+        animate
         interactive
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
