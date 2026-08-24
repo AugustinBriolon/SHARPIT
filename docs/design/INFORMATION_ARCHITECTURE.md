@@ -166,12 +166,18 @@ Profile contains account details, equipment, integrations and synchronisation, C
 
 SHARPIT serves novice and expert athletes through one decision model and two reading levels.
 
-| Level        | Always visible                                                                                                            | Revealed on demand                                                                           |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| **Standard** | Verdict, practical reason, action choices, one relevant trend, and uncertainty in plain language.                         | Technical evidence through an explicit “Understand more” action.                             |
-| **Advanced** | The Standard layer plus confidence, source signals, thresholds, CTL/ATL/TSB where relevant, methods, and complete charts. | Raw or historical detail that is useful for interpretation but not for the immediate choice. |
+| Level                       | Always visible                                                                                                             | Revealed on demand                                                                           |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| **Essential** (_Essentiel_) | Verdict, practical reason, action choices, one relevant trend, and uncertainty in plain language.                          | Technical evidence through an explicit “Understand more” action.                             |
+| **Expert** (_Expert_)       | The Essential layer plus confidence, source signals, thresholds, CTL/ATL/TSB where relevant, methods, and complete charts. | Raw or historical detail that is useful for interpretation but not for the immediate choice. |
 
 The selected reading level is a presentation preference, not a physiological setting. It must not alter the Digital Twin, DecisionState, safety restrictions, or recommended action.
+
+**Where it lives.** The level is `AthleteProfile.displayMode` — an athlete property, not a device one, so it follows the athlete across screens. It is chosen in Profile → Apparence, alongside the theme, and shipped as `essential` by default; profiles that predate the column were backfilled to `expert` so nothing was taken away from the athlete already reading it. [ADR-023](../adr/ADR-023-reading-density-expert-mode.md) records why.
+
+**How a surface honours it.** By wrapping the technical block in `<ExpertOnly>` (`src/components/display-mode/`), or by filtering a shared metric list with `filterByAudience`. Never by branching inside a ViewModel builder, an API route, or an engine: the level decides what is shown, never what is computed.
+
+**What is expert.** A metric belongs to the Expert level when understanding its name is a prerequisite to reading its value — NP, IF, VI, TSS, efficiency factor, decoupling, zone distributions, the power curve, ACWR, TSB, CTL/ATL and the PMC chart, threshold calibration. Distance, duration, elevation, splits, heart-rate and pace curves, records, body composition and every coach-written sentence stay in the Essential level. `/settings/calibration` stays reachable at both levels: the thresholds still drive what the engines compute, so they remain editable even when the metrics they scale are hidden.
 
 ## Canonical route direction
 

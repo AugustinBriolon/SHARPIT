@@ -12,6 +12,7 @@ Performance operating system for endurance athletes — training load management
 - Provides AI-powered coaching recommendations via the Claude API
 - Manages training planning, periodization, and race goal tracking
 - Sends structured sessions to a Garmin watch — steps, repeat groups, and pace, power or heart-rate targets derived from the athlete's own thresholds
+- Serves the same twin at two reading densities — Essential hides the technical metric layer, Expert exposes it ([ADR-023](./docs/adr/ADR-023-reading-density-expert-mode.md))
 
 **What this application does not do:**
 
@@ -193,7 +194,7 @@ record and nothing that can expire.
 | **Progression** | `/progress`                                 | Goals, personal records and power curve, threshold calibration, body composition trends, physical-health tracking                                                                              |
 | **Nutrition**   | `/nutrition`                                | Daily fuelling read from MyFitnessPal, with weight-aware ratios                                                                                                                                |
 | **Coach**       | `/coach`                                    | Conversations plus the session, weekly-brief and plan-adjustment entry points                                                                                                                  |
-| **Settings**    | `/settings/*`                               | Strava, Garmin, Renpho, Google Calendar integrations; threshold calibration (FTP, LTHR, threshold pace, swim CSS, pool length)                                                                 |
+| **Settings**    | `/settings/*`                               | Strava, Garmin, Renpho, Google Calendar integrations; threshold calibration (FTP, LTHR, threshold pace, swim CSS, pool length); theme and reading density (Essential / Expert)                 |
 
 The athlete-facing hierarchy these routes are migrating toward is defined in
 [INFORMATION_ARCHITECTURE.md](./docs/design/INFORMATION_ARCHITECTURE.md) and decided in
