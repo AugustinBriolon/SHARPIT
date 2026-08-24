@@ -100,6 +100,8 @@ function useResolvedTheme(themeProp?: 'light' | 'dark'): Theme {
 type MapContextValue = {
   map: MapLibreGL.Map | null;
   isLoaded: boolean;
+  /** True once the map's container has actually scrolled into view. */
+  isVisible: boolean;
   resolvedTheme: Theme;
 };
 
@@ -209,6 +211,7 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
   const [mapInstance, setMapInstance] = useState<MapLibreGL.Map | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isStyleLoaded, setIsStyleLoaded] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const currentStyleRef = useRef<MapStyleOption | null>(null);
   const styleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const internalUpdateRef = useRef(false);
@@ -299,6 +302,31 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
     };
   }, []);
 
+  // A route reveal that runs while the map is scrolled off-screen finishes
+  // unseen — by the time the athlete scrolls to it, the line is already
+  // fully drawn. Gate reveal-dependent consumers on actual visibility
+  // instead of just mount + load.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setIsVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.2 },
+    );
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, []);
+
   // Sync controlled viewport to map
   useEffect(() => {
     if (!mapInstance || !isControlled || !viewport) return;
@@ -352,9 +380,10 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
     () => ({
       map: mapInstance,
       isLoaded: isLoaded && isStyleLoaded,
+      isVisible,
       resolvedTheme,
     }),
-    [mapInstance, isLoaded, isStyleLoaded, resolvedTheme],
+    [mapInstance, isLoaded, isStyleLoaded, isVisible, resolvedTheme],
   );
 
   return (
@@ -1056,7 +1085,7 @@ function MapRoute({
   interactive = true,
   animate = false,
 }: MapRouteProps) {
-  const { map, isLoaded } = useMap();
+  const { map, isLoaded, isVisible } = useMap();
   const autoId = useId();
   const id = propId ?? autoId;
   const sourceId = `route-source-${id}`;
@@ -1108,8 +1137,14 @@ function MapRoute({
 
   // When coordinates change, update data — drawn instantly, or revealed
   // start-to-finish once per new route when `animate` asks for it (ADR-024).
+  //
+  // A reveal that starts the moment the map mounts finishes before the athlete
+  // ever scrolls to it on a page with content above the fold — by the time it's
+  // in view, the line is already fully drawn. `animate` runs wait for `isVisible`
+  // too, so the trace only starts once there's actually someone to see it.
   useEffect(() => {
     if (!isLoaded || !map || coordinates.length < 2) return;
+    if (animate && !isVisible) return;
 
     const source = map.getSource(sourceId) as MapLibreGL.GeoJSONSource;
     if (!source) return;
@@ -1143,7 +1178,7 @@ function MapRoute({
 
     frameId = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frameId);
-  }, [isLoaded, map, coordinates, sourceId, animate]);
+  }, [isLoaded, isVisible, map, coordinates, sourceId, animate]);
 
   useEffect(() => {
     if (!isLoaded || !map || !map.getLayer(layerId)) return;
