@@ -102,7 +102,7 @@ const GROUPS: SettingsGroup[] = [
       {
         href: '/settings/appearance',
         title: 'Apparence',
-        description: 'Thème clair, sombre ou système.',
+        description: 'Thème et densité de lecture.',
         icon: MoonStar,
         statusKey: 'appearance',
       },

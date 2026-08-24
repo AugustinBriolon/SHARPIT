@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { parseBirthDateInput } from '@/lib/profile/athlete-profile-utils';
 import { EQUIPMENT_ITEM_IDS, STRENGTH_VENUES } from '@/lib/equipment/catalog';
+import { DISPLAY_MODES } from '@/lib/preferences/display-mode';
 
 /**
  * Absent is not the same as cleared.
@@ -83,6 +84,7 @@ export const athleteProfileSchema = z
     sleepTargetMinutes: nullableSleepMinutes,
     sleepBedtimeTargetMin: nullableBedtimeMin,
     equipment: athleteEquipmentSchema.nullable(),
+    displayMode: z.enum(DISPLAY_MODES),
   })
   .partial()
   .refine((data) => Object.keys(data).length > 0, {

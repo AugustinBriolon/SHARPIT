@@ -4,6 +4,7 @@ import { getAthleteProfile, upsertAthleteProfile } from '@/lib/queries';
 import { athleteProfileSchema } from '@/lib/validators/athlete-profile';
 import { invalidateCoachContext } from '@/lib/coach/context/coach-context';
 import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
+import { DEFAULT_DISPLAY_MODE } from '@/lib/preferences/display-mode';
 
 function profileUpdateError(error: unknown) {
   console.error('[athlete-profile PATCH]', error);
@@ -33,7 +34,8 @@ function profileUpdateError(error: unknown) {
 export async function GET() {
   try {
     const profile = await getAthleteProfile();
-    return NextResponse.json(profile ?? { id: 'default' });
+    // An athlete with no profile row still has a reading density — the default one.
+    return NextResponse.json(profile ?? { id: 'default', displayMode: DEFAULT_DISPLAY_MODE });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Impossible de charger le profil athlète' }, { status: 500 });

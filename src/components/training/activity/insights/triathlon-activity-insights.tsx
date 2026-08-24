@@ -5,6 +5,7 @@ import { Bike, Footprints, MapPin, Waves } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
 import { PerformanceMetrics, ThresholdsHint } from './performance-metrics';
+import { ExpertOnly } from '@/components/display-mode';
 import { MemoizedRouteMap as RouteMap } from './route-map';
 import { SplitsTable } from './splits-table';
 import { ZoneDistribution } from './zone-distribution';
@@ -144,7 +145,7 @@ function SportLegInsights({ entry }: { entry: MultisportLegStream }) {
       )}
 
       {analysis && (
-        <>
+        <ExpertOnly>
           <PerformanceMetrics analysis={analysis} />
           {(leg.kind === 'bike' || leg.kind === 'run') && <ThresholdsHint analysis={analysis} />}
           <ZoneSection
@@ -154,7 +155,7 @@ function SportLegInsights({ entry }: { entry: MultisportLegStream }) {
             powerZones={powerZones}
             type={type}
           />
-        </>
+        </ExpertOnly>
       )}
 
       <div className="space-y-4">

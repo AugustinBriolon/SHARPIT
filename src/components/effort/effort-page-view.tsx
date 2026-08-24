@@ -16,6 +16,7 @@ import type { EffortStrainCompositionView } from '@/lib/presentation/effort-stra
 import type { FatigueType, TrainingCapacity } from '@/lib/today/today-mapping';
 import type { DimensionResult } from '@/hooks/use-today';
 import dynamic from 'next/dynamic';
+import { ExpertOnly } from '@/components/display-mode';
 
 const EffortPmcSection = dynamic(
   () =>
@@ -139,20 +140,28 @@ export function EffortPageView(props: EffortPageViewProps) {
         onPreviousDay={onPreviousDay}
       />
 
+      {/* ACWR, TSB and the PMC curves are the training-load vocabulary — shown
+          to the athlete who asked for it, held back from the one who did not. */}
       {!loading ? (
-        <EffortMarkers
-          acwr={acwr}
-          pmcSeries={pmcSeries}
-          tsb={tsb}
-          weeklyLoad={weeklyLoad}
-          weeklyTss={weeklyTss}
-        />
+        <ExpertOnly>
+          <EffortMarkers
+            acwr={acwr}
+            pmcSeries={pmcSeries}
+            tsb={tsb}
+            weeklyLoad={weeklyLoad}
+            weeklyTss={weeklyTss}
+          />
+        </ExpertOnly>
       ) : null}
 
       {/* The day outside training — reachable before, but only by opening a fold. */}
       {!loading ? <EffortDailySignalsCards signals={strainComposition.signals} /> : null}
 
-      {!loading ? <EffortPmcSection data={pmcSeries} /> : null}
+      {!loading ? (
+        <ExpertOnly>
+          <EffortPmcSection data={pmcSeries} />
+        </ExpertOnly>
+      ) : null}
 
       {!loading ? (
         <>

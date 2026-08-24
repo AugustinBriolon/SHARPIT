@@ -231,6 +231,10 @@ model AthleteProfile {
 
   context String? @db.Text // contexte libre éditable (dispos, contraintes pro, préférences) injecté dans le coach IA
 
+  /// Densité de lecture choisie par l'athlète : 'essential' | 'expert'.
+  /// 'expert' déverrouille les métriques techniques (TSS, IF, CTL/ATL/TSB, seuils…).
+  displayMode String @default("essential")
+
   /// Capability inventory for session generation (home trainer, fins, gym membership…).
   /// Shape: { version: 1, strengthVenue: 'gym'|'home'|'both'|'bodyweight'|null, owned: string[] }
   equipment Json?

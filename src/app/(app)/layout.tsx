@@ -4,6 +4,7 @@ import { AccessGate } from '@/components/auth/access-gate';
 import { AppErrorBoundary } from '@/components/error/app-error-boundary';
 import { AppShell } from '@/components/layout/app-shell';
 import { NavStackTracker } from '@/components/layout/nav-stack-tracker';
+import { DisplayModeProvider } from '@/providers/display-mode-provider';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -15,9 +16,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </Suspense>
       {/* Scoped to the page so a failed render keeps the nav and the athlete
           can move elsewhere instead of facing a blank app. */}
-      <AppShell>
-        <AppErrorBoundary>{children}</AppErrorBoundary>
-      </AppShell>
+      <DisplayModeProvider>
+        <AppShell>
+          <AppErrorBoundary>{children}</AppErrorBoundary>
+        </AppShell>
+      </DisplayModeProvider>
       {/* Awaits Clerk at request time, alongside the shell rather than above it,
           so the chrome and every page below still prerender. */}
       <Suspense>

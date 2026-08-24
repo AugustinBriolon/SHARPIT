@@ -15,6 +15,7 @@ import { linkPlannedSessionActivity } from '@/lib/queries/planned-sessions';
 import { ActivityType, Prisma } from '@prisma/client';
 import { addDays, endOfDay, startOfDay } from 'date-fns';
 import { prisma } from '@/lib/prisma';
+import type { DisplayMode } from '@/lib/preferences/display-mode';
 
 export {
   createBrickSessions,
@@ -441,6 +442,7 @@ export async function upsertAthleteProfile(data: {
   sleepTargetMinutes?: number | null;
   sleepBedtimeTargetMin?: number | null;
   equipment?: Prisma.InputJsonValue | typeof Prisma.JsonNull | null;
+  displayMode?: DisplayMode;
 }) {
   const { equipment, ...rest } = data;
   const payload = {

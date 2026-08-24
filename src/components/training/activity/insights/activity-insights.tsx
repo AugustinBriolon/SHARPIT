@@ -5,6 +5,7 @@ import { MapPin } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { type ReactNode, useMemo } from 'react';
 import { PerformanceMetrics, ThresholdsHint } from './performance-metrics';
+import { ExpertOnly } from '@/components/display-mode';
 import { MemoizedRouteMap as RouteMap } from './route-map';
 import { SplitsTable } from './splits-table';
 import { ZoneDistribution } from './zone-distribution';
@@ -115,13 +116,15 @@ export function ActivityInsights({
             <div className="order-1 flex min-h-0 flex-col gap-4 lg:order-2">
               {coachPanel}
               {analysis ? (
-                <ZoneSection
-                  ftp={analysis.thresholds.ftp}
-                  hrZones={hrZones}
-                  lthr={analysis.thresholds.lthr}
-                  powerZones={powerZones}
-                  compact
-                />
+                <ExpertOnly>
+                  <ZoneSection
+                    ftp={analysis.thresholds.ftp}
+                    hrZones={hrZones}
+                    lthr={analysis.thresholds.lthr}
+                    powerZones={powerZones}
+                    compact
+                  />
+                </ExpertOnly>
               ) : null}
             </div>
           ) : null}
@@ -135,7 +138,7 @@ export function ActivityInsights({
       ) : null}
 
       {analysis && (
-        <>
+        <ExpertOnly>
           <PerformanceMetrics analysis={analysis} />
           <ThresholdsHint analysis={analysis} />
           {!coachPanel ? (
@@ -146,7 +149,7 @@ export function ActivityInsights({
               powerZones={powerZones}
             />
           ) : null}
-        </>
+        </ExpertOnly>
       )}
 
       <ActivityStreamChart has={has} samples={normalizedSamples} type={type} />

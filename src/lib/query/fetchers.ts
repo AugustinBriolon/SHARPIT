@@ -204,6 +204,7 @@ export interface AthleteProfilePayload {
   defaultPoolLengthM: number | null;
   sleepTargetMinutes: number | null;
   sleepBedtimeTargetMin: number | null;
+  displayMode: DisplayMode;
 }
 
 export async function fetchAthleteProfile(): Promise<AthleteProfilePayload> {
@@ -336,6 +337,7 @@ export async function fetchWeeklyReview(date: string): Promise<ClientWeeklyRevie
 }
 
 import type { ThresholdApplyPreview } from '@/lib/threshold/threshold-estimates';
+import type { DisplayMode } from '@/lib/preferences/display-mode';
 
 export type { ThresholdApplyPreview };
 

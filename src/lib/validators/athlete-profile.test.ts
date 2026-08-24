@@ -46,4 +46,18 @@ describe('athleteProfileSchema', () => {
   it('refuses a patch that carries nothing at all', () => {
     expect(() => athleteProfileSchema.parse({})).toThrow();
   });
+
+  it('carries the reading density on its own', () => {
+    expect(athleteProfileSchema.parse({ displayMode: 'expert' })).toEqual({
+      displayMode: 'expert',
+    });
+    expect(athleteProfileSchema.parse({ displayMode: 'essential' })).toEqual({
+      displayMode: 'essential',
+    });
+  });
+
+  it('refuses a density it does not know — the column is never nullable', () => {
+    expect(() => athleteProfileSchema.parse({ displayMode: 'advanced' })).toThrow();
+    expect(() => athleteProfileSchema.parse({ displayMode: null })).toThrow();
+  });
 });

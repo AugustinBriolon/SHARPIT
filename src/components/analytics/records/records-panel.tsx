@@ -27,6 +27,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
+import { ExpertOnly } from '@/components/display-mode';
 
 const PowerCurveChart = dynamic(
   () =>
@@ -207,16 +208,18 @@ function GpsAnalysisSection({
   if (powerCurve.length === 0) return null;
 
   return (
-    <section className="space-y-2">
-      <div className="space-y-1">
-        <p className="text-label">Analyse secondaire</p>
-        <h3 className="text-section-title">Courbe de puissance</h3>
-        <p className="text-muted-foreground text-xs leading-relaxed">
-          Référence vélo complémentaire issue des données capteur en cache.
-        </p>
-      </div>
-      <PowerCurveChart data={powerCurve} />
-    </section>
+    <ExpertOnly>
+      <section className="space-y-2">
+        <div className="space-y-1">
+          <p className="text-label">Analyse secondaire</p>
+          <h3 className="text-section-title">Courbe de puissance</h3>
+          <p className="text-muted-foreground text-xs leading-relaxed">
+            Référence vélo complémentaire issue des données capteur en cache.
+          </p>
+        </div>
+        <PowerCurveChart data={powerCurve} />
+      </section>
+    </ExpertOnly>
   );
 }
 
