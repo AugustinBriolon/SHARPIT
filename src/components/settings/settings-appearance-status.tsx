@@ -14,13 +14,14 @@ const DENSITY_LABELS: Record<string, string> = {
   expert: 'Expert',
 };
 
-/** Both preferences the Apparence page owns, read at a glance from the hub. */
+/** Read at a glance from the hub — the Apparence row owns the theme only. */
 export function SettingsAppearanceStatus() {
   const { preference } = useThemePreference();
+  return <>{THEME_LABELS[preference] ?? preference}</>;
+}
+
+/** Read at a glance from the hub — the Mode Expert row owns the density. */
+export function SettingsExpertModeStatus() {
   const { mode } = useDisplayMode();
-
-  const theme = THEME_LABELS[preference] ?? preference;
-  const density = DENSITY_LABELS[mode] ?? mode;
-
-  return <>{`${theme} · ${density}`}</>;
+  return <>{DENSITY_LABELS[mode] ?? mode}</>;
 }

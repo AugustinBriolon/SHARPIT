@@ -112,7 +112,7 @@ const MATCHERS: Matcher[] = [
     pattern: /^\/settings\/appearance\/expert-mode$/,
     resolve: () => ({
       label: 'Mode Expert',
-      defaultParent: { href: '/settings/appearance', label: 'Apparence' },
+      defaultParent: SETTINGS_PARENT,
     }),
   },
   {

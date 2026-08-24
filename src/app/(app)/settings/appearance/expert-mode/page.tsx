@@ -7,7 +7,7 @@ export default function SettingsExpertModePage() {
     <div className="space-y-4">
       <MobileBackLink showOnDesktop />
       <StickyHeader>
-        <p className="text-label">Apparence</p>
+        <p className="text-label">Profil</p>
         <h1 className="text-page-title mt-1">Mode Expert</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Une seule bascule pour révéler ou masquer la couche technique derrière chaque lecture.

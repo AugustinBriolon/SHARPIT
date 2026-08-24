@@ -5,6 +5,7 @@ import {
   Dumbbell,
   Goal,
   Link2,
+  Microscope,
   MoonStar,
   ShieldCheck,
   SlidersHorizontal,
@@ -14,7 +15,10 @@ import {
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { InstallCard } from '@/components/pwa/install-card';
 import { HubStatusValue } from '@/components/settings/hub-status-value';
-import { SettingsAppearanceStatus } from '@/components/settings/settings-appearance-status';
+import {
+  SettingsAppearanceStatus,
+  SettingsExpertModeStatus,
+} from '@/components/settings/settings-appearance-status';
 import { SettingsHomeExtras } from '@/components/settings/settings-home-extras';
 import type { SettingsHubStatus } from '@/lib/settings/hub-status';
 import { cn } from '@/lib/utils';
@@ -25,7 +29,7 @@ type SettingsEntry = {
   description: string;
   icon: React.ComponentType<{ className?: string }>;
   /** Omitted when the entry has no single value worth reading at a glance. */
-  statusKey?: keyof SettingsHubStatus | 'appearance';
+  statusKey?: keyof SettingsHubStatus | 'appearance' | 'expertMode';
 };
 
 type SettingsGroup = {
@@ -102,9 +106,16 @@ const GROUPS: SettingsGroup[] = [
       {
         href: '/settings/appearance',
         title: 'Apparence',
-        description: 'Thème et densité de lecture.',
+        description: 'Thème clair, sombre ou système.',
         icon: MoonStar,
         statusKey: 'appearance',
+      },
+      {
+        href: '/settings/appearance/expert-mode',
+        title: 'Mode Expert',
+        description: 'Densité de lecture — révèle ou masque la couche technique.',
+        icon: Microscope,
+        statusKey: 'expertMode',
       },
       {
         href: '/settings/about',
@@ -121,6 +132,9 @@ function entryStatus(statusKey: SettingsEntry['statusKey']) {
   if (!statusKey) return null;
   if (statusKey === 'appearance') {
     return <SettingsAppearanceStatus />;
+  }
+  if (statusKey === 'expertMode') {
+    return <SettingsExpertModeStatus />;
   }
   return <HubStatusValue statusKey={statusKey} />;
 }
