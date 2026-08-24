@@ -66,10 +66,10 @@ describe('syncProviders', () => {
       };
     });
 
-    const results = await syncProviders(['garmin']);
+    const results = await syncProviders('default', ['garmin']);
 
     expect(activitiesStartedWhileHealthPending).toBe(true);
-    expect(syncGarminHealth).toHaveBeenCalledWith({ days: 14 });
+    expect(syncGarminHealth).toHaveBeenCalledWith('default', { days: 14 });
     expect(results).toHaveLength(1);
     expect(results[0]?.activityIds).toEqual(['a1']);
     expect(results[0]?.observationCount).toBe(1);
@@ -116,7 +116,7 @@ describe('syncProviders', () => {
       throw new Error('strava down');
     });
 
-    const results = await syncProviders(['garmin', 'strava']);
+    const results = await syncProviders('default', ['garmin', 'strava']);
 
     expect(stravaStartedWhileGarminPending).toBe(true);
     expect(results.map((r) => r.provider)).toEqual(['garmin']);

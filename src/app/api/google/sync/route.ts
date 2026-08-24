@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { GoogleOAuthError } from '@/lib/integrations/google/google';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { syncFromGoogle } from '@/lib/integrations/google/google-sync';
 
 export async function POST() {
   try {
-    const result = await syncFromGoogle();
+    const athleteId = await getCurrentAthleteId();
+    const result = await syncFromGoogle(athleteId);
     return NextResponse.json(result);
   } catch (error) {
     console.error(error);

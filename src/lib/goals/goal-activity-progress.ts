@@ -189,17 +189,18 @@ export function computeMetricCurrentValue(
   return aggregatePeriodMeasure(activities, config.measure, config.sport, config.period, ref);
 }
 
-export async function loadActivitiesForGoals(): Promise<ActivityRow[]> {
+export async function loadActivitiesForGoals(athleteId: string): Promise<ActivityRow[]> {
   const yearStart = startOfYear(new Date());
   return prisma.activity.findMany({
-    where: { date: { gte: yearStart } },
+    where: { athleteId, date: { gte: yearStart } },
     select: activitySelect,
     orderBy: { date: 'desc' },
   });
 }
 
-export async function loadAllActivitiesForPerformance(): Promise<ActivityRow[]> {
+export async function loadAllActivitiesForPerformance(athleteId: string): Promise<ActivityRow[]> {
   return prisma.activity.findMany({
+    where: { athleteId },
     select: activitySelect,
     orderBy: { date: 'desc' },
   });

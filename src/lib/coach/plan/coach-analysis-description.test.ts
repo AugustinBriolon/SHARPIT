@@ -54,7 +54,7 @@ describe('resolveAthleteDescription', () => {
     const notes = 'Séance complète : 4x8 min à 90% FTP avec 4 min récup, bien ressenti.';
     expect(notes.length).toBeGreaterThanOrEqual(LOCAL_DESCRIPTION_MIN_CHARS);
 
-    const result = await resolveAthleteDescription({
+    const result = await resolveAthleteDescription('default', {
       source: 'strava',
       stravaId: '123',
       notes,
@@ -72,7 +72,7 @@ describe('resolveAthleteDescription', () => {
       description: 'Remote Strava detail',
     } as never);
 
-    const result = await resolveAthleteDescription({
+    const result = await resolveAthleteDescription('default', {
       source: 'strava',
       stravaId: '123',
       notes: 'ok',

@@ -19,8 +19,6 @@ import { fuelFeatureSetToDensity } from '@/lib/nutrition/fuel-density-display';
 import { formatMealLabel, mealSortIndex } from '@/lib/nutrition/meal-display';
 import { prisma } from '@/lib/prisma';
 
-const ATHLETE_ID = 'default';
-
 type StoredMeal = Partial<NutritionMealSummary> & {
   name: string;
   calories: number;
@@ -94,6 +92,7 @@ function mapRow(r: NutritionRow): NutritionDaySummary {
 }
 
 async function fallbackFuelDensity(
+  athleteId: string,
   trainingDayId: string,
   row: NutritionRow,
 ): Promise<NutritionFuelDensity | null> {
@@ -101,7 +100,7 @@ async function fallbackFuelDensity(
   const entryCount = meals.reduce((sum, meal) => sum + meal.entries.length, 0);
   if (entryCount === 0 || row.protein <= 0) return null;
 
-  const referenceWeightKg = await getLatestBodyWeightKg(trainingDayId);
+  const referenceWeightKg = await getLatestBodyWeightKg(athleteId, trainingDayId);
   const proteinGPerKg = macroGPerKg(row.protein, referenceWeightKg);
   const carbohydratesGPerKg = macroGPerKg(row.carbohydrates, referenceWeightKg);
   if (referenceWeightKg == null || proteinGPerKg == null || carbohydratesGPerKg == null) {
@@ -112,11 +111,12 @@ async function fallbackFuelDensity(
 }
 
 async function loadFuelDensity(
+  athleteId: string,
   trainingDayId: string,
   row?: NutritionRow,
 ): Promise<NutritionFuelDensity | null> {
   try {
-    const dayFeatures = await featureEngine.computeDayFeatures(ATHLETE_ID, trainingDayId);
+    const dayFeatures = await featureEngine.computeDayFeatures(athleteId, trainingDayId);
     if (dayFeatures.fuel !== 'PENDING') {
       const fromEngine = fuelFeatureSetToDensity(dayFeatures.fuel as FuelFeatureSet);
       if (fromEngine) return fromEngine;
@@ -126,17 +126,18 @@ async function loadFuelDensity(
   }
 
   if (!row) return null;
-  return fallbackFuelDensity(trainingDayId, row);
+  return fallbackFuelDensity(athleteId, trainingDayId, row);
 }
 
 async function resolveGoalsProgress(
+  athleteId: string,
   row: NutritionRow,
   fetchLive: boolean,
 ): Promise<NutritionGoalsProgress | null> {
   const cached = goalsFromRow(row);
   if (cached || !fetchLive) return cached;
 
-  const live = await getLiveNutrientGoals(format(row.date, 'yyyy-MM-dd'));
+  const live = await getLiveNutrientGoals(athleteId, format(row.date, 'yyyy-MM-dd'));
   if (!live) return null;
 
   return buildGoalsProgress({
@@ -153,20 +154,24 @@ async function resolveGoalsProgress(
 }
 
 async function enrichSelectedDay(
+  athleteId: string,
   day: NutritionDaySummary,
   row: NutritionRow | undefined,
   fetchLiveGoals: boolean,
 ): Promise<NutritionDaySummary> {
   if (!row) return { ...day, goalsProgress: null, fuelDensity: null };
   const [goalsProgress, fuelDensity] = await Promise.all([
-    resolveGoalsProgress(row, fetchLiveGoals),
-    loadFuelDensity(day.date, row),
+    resolveGoalsProgress(athleteId, row, fetchLiveGoals),
+    loadFuelDensity(athleteId, day.date, row),
   ]);
   return { ...day, goalsProgress, fuelDensity };
 }
 
-export async function buildNutritionViewModel(trainingDayId?: string): Promise<NutritionViewModel> {
-  const account = await getMfpAccount().catch(() => null);
+export async function buildNutritionViewModel(
+  athleteId: string,
+  trainingDayId?: string,
+): Promise<NutritionViewModel> {
+  const account = await getMfpAccount(athleteId).catch(() => null);
   const connected = Boolean(account);
 
   if (!connected) {
@@ -190,6 +195,7 @@ export async function buildNutritionViewModel(trainingDayId?: string): Promise<N
 
   const rows = (await prisma.dailyNutrition.findMany({
     where: {
+      athleteId,
       date: { gte: new Date(`${format(from, 'yyyy-MM-dd')}T00:00:00Z`) },
     },
     orderBy: { date: 'desc' },
@@ -199,13 +205,18 @@ export async function buildNutritionViewModel(trainingDayId?: string): Promise<N
   const selectedRow = rows.find((d) => format(d.date, 'yyyy-MM-dd') === selectedDayId);
   const selectedDayBase = history.find((d) => d.date === selectedDayId) ?? null;
   const selectedDay = selectedDayBase
-    ? await enrichSelectedDay(selectedDayBase, selectedRow, selectedRow?.goalCalories == null)
+    ? await enrichSelectedDay(
+        athleteId,
+        selectedDayBase,
+        selectedRow,
+        selectedRow?.goalCalories == null,
+      )
     : null;
 
   const todayRow = rows.find((d) => format(d.date, 'yyyy-MM-dd') === todayId);
   const todayBase = history.find((d) => d.date === todayId) ?? null;
   const today = todayBase
-    ? await enrichSelectedDay(todayBase, todayRow, todayRow?.goalCalories == null)
+    ? await enrichSelectedDay(athleteId, todayBase, todayRow, todayRow?.goalCalories == null)
     : null;
 
   const averages =

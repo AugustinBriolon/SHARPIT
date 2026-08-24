@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { resolveDefaultActivityLocation } from '@/lib/geocoding/default-activity-location';
 import { prisma } from '@/lib/prisma';
 
@@ -8,8 +9,10 @@ export async function GET(request: NextRequest) {
   const onDate = dateParam ? new Date(dateParam) : new Date();
 
   try {
+    const athleteId = await getCurrentAthleteId();
     const location = await resolveDefaultActivityLocation(
       prisma,
+      athleteId,
       Number.isNaN(onDate.getTime()) ? new Date() : onDate,
     );
     return NextResponse.json({ home: location, source: location.source });

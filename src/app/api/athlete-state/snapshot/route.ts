@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
 import { trainingDayIdNow } from '@/lib/athlete-state/freshness-service';
 
@@ -20,7 +21,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const snapshot = await getOrBuildAthleteSnapshot(trainingDayId);
+    const athleteId = await getCurrentAthleteId();
+    const snapshot = await getOrBuildAthleteSnapshot(athleteId, trainingDayId);
     return NextResponse.json({ snapshot, isRefreshing: false });
   } catch (error) {
     console.error('[api/athlete-state/snapshot]', error);

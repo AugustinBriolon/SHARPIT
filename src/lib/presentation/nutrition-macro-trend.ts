@@ -13,9 +13,10 @@ const LOOKBACK_DAYS: Record<NutritionMacroTrendGranularity, number> = {
 };
 
 export async function buildNutritionMacroTrendViewModel(
+  athleteId: string,
   granularity: NutritionMacroTrendGranularity,
 ): Promise<NutritionMacroTrendViewModel> {
-  const account = await getMfpAccount().catch(() => null);
+  const account = await getMfpAccount(athleteId).catch(() => null);
   const connected = Boolean(account);
 
   if (!connected) {
@@ -33,7 +34,7 @@ export async function buildNutritionMacroTrendViewModel(
   const from = subDays(new Date(), LOOKBACK_DAYS[granularity]);
 
   const rows = (await prisma.dailyNutrition.findMany({
-    where: { date: { gte: from } },
+    where: { athleteId, date: { gte: from } },
     orderBy: { date: 'asc' },
     select: { date: true, calories: true, protein: true, carbohydrates: true, fat: true },
   })) as MacroTrendRow[];

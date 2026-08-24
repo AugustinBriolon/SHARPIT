@@ -14,10 +14,11 @@ import type { OutcomeEvaluationInput } from './types';
 const RECOVERY_WINDOW_DAYS = [1, 2, 3];
 
 export async function buildOutcomeEvaluationContext(
+  athleteId: string,
   plannedSessionId: string,
   now: Date = new Date(),
 ): Promise<OutcomeEvaluationInput | null> {
-  const session = await getPlannedSessionById(plannedSessionId);
+  const session = await getPlannedSessionById(athleteId, plannedSessionId);
   if (!session) return null;
 
   const trainingDayId = computeTrainingDayId(session.date);
@@ -25,11 +26,11 @@ export async function buildOutcomeEvaluationContext(
 
   const [conditionObservations, snapshotRecords] = await Promise.all([
     prisma.conditionObservation.findMany({
-      where: { plannedSessionId },
+      where: { plannedSessionId, athleteId },
       select: { observedAt: true, symptomPresent: true, severityReported: true, comment: true },
     }),
     prisma.athleteSnapshotRecord.findMany({
-      where: { trainingDayId: { in: windowDayIds } },
+      where: { athleteId, trainingDayId: { in: windowDayIds } },
       select: { trainingDayId: true, payload: true },
     }),
   ]);

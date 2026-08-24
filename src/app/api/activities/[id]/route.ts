@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildActivityUpdateData } from '@/lib/activity/activity-service';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import {
   removeManualActivityObservations,
   syncManualActivityObservations,
@@ -13,7 +14,8 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const activity = await getActivityById(id);
+    const athleteId = await getCurrentAthleteId();
+    const activity = await getActivityById(athleteId, id);
 
     if (!activity) {
       return NextResponse.json({ error: 'Séance introuvable' }, { status: 404 });
@@ -29,6 +31,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
+    const athleteId = await getCurrentAthleteId();
     const body = await request.json();
     const parsed = updateActivitySchema.safeParse(body);
 
@@ -39,23 +42,27 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    const existing = await getActivityById(id);
+    const existing = await getActivityById(athleteId, id);
     if (!existing) {
       return NextResponse.json({ error: 'Séance introuvable' }, { status: 404 });
     }
 
     const newType = parsed.data.type ?? existing.type;
     const activity = await updateActivity(
+      athleteId,
       id,
       buildActivityUpdateData({
         ...parsed.data,
         type: newType,
-      }) as Parameters<typeof updateActivity>[1],
+      }) as Parameters<typeof updateActivity>[2],
     );
+    if (!activity) {
+      return NextResponse.json({ error: 'Séance introuvable' }, { status: 404 });
+    }
     await syncManualActivityObservations(activity);
 
     // L'ancien et le nouveau type peuvent différer : on recalcule les deux.
-    await updateRecordsForTypesSafe([existing.type, newType]);
+    await updateRecordsForTypesSafe(athleteId, [existing.type, newType]);
 
     return NextResponse.json(activity);
   } catch (error) {
@@ -67,10 +74,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const existing = await getActivityById(id);
-    await deleteActivity(id);
-    await removeManualActivityObservations(id);
-    if (existing) await updateRecordsForTypesSafe([existing.type]);
+    const athleteId = await getCurrentAthleteId();
+    const existing = await getActivityById(athleteId, id);
+    await deleteActivity(athleteId, id);
+    await removeManualActivityObservations(athleteId, id);
+    if (existing) await updateRecordsForTypesSafe(athleteId, [existing.type]);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);

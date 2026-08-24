@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { createTravelMemoryEntry, listCoachMemoryEntries } from '@/lib/coach-memory/service';
 import { applyTravelContextToUpcomingSessions } from '@/lib/travel-context/service';
 import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/resolve-context';
@@ -35,7 +36,8 @@ const travelPayloadSchema = z
 
 export async function GET() {
   try {
-    const data = await listCoachMemoryEntries(prisma);
+    const athleteId = await getCurrentAthleteId();
+    const data = await listCoachMemoryEntries(prisma, athleteId);
     return NextResponse.json(data);
   } catch (error) {
     console.error(error);
@@ -64,7 +66,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const entry = await createTravelMemoryEntry(prisma, {
+    const athleteId = await getCurrentAthleteId();
+    const entry = await createTravelMemoryEntry(prisma, athleteId, {
       ...parsed.data,
       source: 'USER',
     });
@@ -72,9 +75,10 @@ export async function POST(request: NextRequest) {
     let updatedSessions = 0;
     // Nothing to push to planned sessions for a Contrainte — it has no location.
     if (parsed.data.type === 'TRAVEL' && parsed.data.applyToPlannedSessions !== false) {
-      updatedSessions = await applyTravelContextToUpcomingSessions(prisma, entry.id);
+      updatedSessions = await applyTravelContextToUpcomingSessions(prisma, athleteId, entry.id);
       const sessions = await prisma.plannedSession.findMany({
         where: {
+          athleteId,
           date: {
             gte: new Date(parsed.data.startDate),
             lte: new Date(parsed.data.endDate),
@@ -86,7 +90,7 @@ export async function POST(request: NextRequest) {
       });
       for (const session of sessions) {
         try {
-          await refreshAndPersistPlannedSessionContext(session.id);
+          await refreshAndPersistPlannedSessionContext(athleteId, session.id);
         } catch (error) {
           console.error('[coach-memory/refresh]', session.id, error);
         }

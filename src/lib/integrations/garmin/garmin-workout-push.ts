@@ -8,8 +8,6 @@ import {
 } from '@/lib/integrations/garmin/garmin-workout-push-state';
 import { prisma } from '@/lib/prisma';
 
-const ACCOUNT_ID = 'default';
-
 export type GarminClient = Awaited<ReturnType<typeof getGarminClient>>;
 
 export class GarminWorkoutAlreadyPushedError extends Error {
@@ -23,9 +21,9 @@ export class GarminWorkoutAlreadyPushedError extends Error {
   }
 }
 
-export async function persistGarminTokens(tokens: GarminTokens): Promise<void> {
+export async function persistGarminTokens(athleteId: string, tokens: GarminTokens): Promise<void> {
   await prisma.garminAccount.update({
-    where: { athleteId: ACCOUNT_ID },
+    where: { athleteId },
     data: {
       oauth1Token: tokens.oauth1 as unknown as never,
       oauth2Token: tokens.oauth2 as unknown as never,
@@ -71,11 +69,14 @@ export async function workoutActiveOnCalendar(
  * The Connect status probe is best-effort: a network failure still blocks the
  * duplicate create, it just cannot say whether the previous workout survives.
  */
-export async function assertNotAlreadyPushed(session: {
-  garminWorkoutId: string | null;
-  garminWorkoutScheduledDate: string | null;
-  garminWorkoutPushedAt: Date | null;
-}): Promise<void> {
+export async function assertNotAlreadyPushed(
+  athleteId: string,
+  session: {
+    garminWorkoutId: string | null;
+    garminWorkoutScheduledDate: string | null;
+    garminWorkoutPushedAt: Date | null;
+  },
+): Promise<void> {
   if (!session.garminWorkoutId) return;
 
   const receipt: GarminPushReceipt = {
@@ -87,14 +88,14 @@ export async function assertNotAlreadyPushed(session: {
   let workoutExists: boolean | null = null;
   let calendarActive: boolean | null = null;
   try {
-    const client = await getGarminClient();
+    const client = await getGarminClient(athleteId);
     workoutExists = await workoutExistsOnConnect(client, session.garminWorkoutId);
     calendarActive = await workoutActiveOnCalendar(
       client,
       session.garminWorkoutId,
       session.garminWorkoutScheduledDate,
     );
-    await persistGarminTokens(currentTokens(client));
+    await persistGarminTokens(athleteId, currentTokens(client));
   } catch {
     // Probe is advisory only.
   }
@@ -115,14 +116,17 @@ export type CreatedWorkout = {
  * calendar — that scheduling step is what makes the watch pick it up on the
  * next device sync.
  */
-export async function createAndScheduleWorkout(options: {
-  payload: Record<string, unknown>;
-  schedule?: boolean;
-  scheduleDate?: string | null;
-  /** Previous Connect workout to delete when force-replacing. */
-  replaceWorkoutId?: string | null;
-}): Promise<CreatedWorkout> {
-  const client = await getGarminClient();
+export async function createAndScheduleWorkout(
+  athleteId: string,
+  options: {
+    payload: Record<string, unknown>;
+    schedule?: boolean;
+    scheduleDate?: string | null;
+    /** Previous Connect workout to delete when force-replacing. */
+    replaceWorkoutId?: string | null;
+  },
+): Promise<CreatedWorkout> {
+  const client = await getGarminClient(athleteId);
 
   if (options.replaceWorkoutId) {
     try {
@@ -144,7 +148,7 @@ export async function createAndScheduleWorkout(options: {
     await client.scheduleWorkout({ workoutId: String(workoutId) }, scheduledDate);
   }
 
-  await persistGarminTokens(currentTokens(client));
+  await persistGarminTokens(athleteId, currentTokens(client));
 
   return { workoutId, scheduledDate, pushedAt: new Date().toISOString() };
 }

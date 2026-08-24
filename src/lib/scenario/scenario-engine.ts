@@ -17,11 +17,14 @@ import {
   resolveAnchorDecisionDomain,
 } from '@/lib/scenario/generate-from-decision';
 
-export async function runScenarioComparison(params?: {
-  horizonDays?: ProjectionHorizonDays;
-  anchorTrainingDayId?: string;
-}): Promise<ScenarioComparison | null> {
-  const context = await buildProjectionBaseContext(params);
+export async function runScenarioComparison(
+  athleteId: string,
+  params?: {
+    horizonDays?: ProjectionHorizonDays;
+    anchorTrainingDayId?: string;
+  },
+): Promise<ScenarioComparison | null> {
+  const context = await buildProjectionBaseContext(athleteId, params);
   if (!context) return null;
 
   const { base, futureDayIds, sessionSlices, anchorDecision } = context;

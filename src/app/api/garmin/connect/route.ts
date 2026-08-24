@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { z } from 'zod';
 import { onProviderSyncCompleted } from '@/lib/athlete-state/orchestrator';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { syncGarminActivities } from '@/lib/integrations/garmin/garmin-activity-sync';
 import { connectGarmin, syncGarminHealth } from '@/lib/integrations/garmin/garmin-sync';
 import { updateRecordsForTypes } from '@/lib/training/records';
@@ -20,19 +21,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email et mot de passe requis' }, { status: 400 });
     }
 
-    const profile = await connectGarmin(parsed.data.username, parsed.data.password);
+    const athleteId = await getCurrentAthleteId();
+    const profile = await connectGarmin(athleteId, parsed.data.username, parsed.data.password);
 
     // First pull right after connect — health + activities land without a manual sync.
     after(async () => {
       try {
         const [health, activities] = await Promise.all([
-          syncGarminHealth({}),
-          syncGarminActivities({}),
+          syncGarminHealth(athleteId, {}),
+          syncGarminActivities(athleteId, {}),
         ]);
         if (activities.changedTypes.length > 0) {
-          await updateRecordsForTypes(activities.changedTypes);
+          await updateRecordsForTypes(athleteId, activities.changedTypes);
         }
         await onProviderSyncCompleted(
+          athleteId,
           [
             {
               provider: 'garmin',

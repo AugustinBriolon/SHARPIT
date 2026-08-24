@@ -94,11 +94,14 @@ function buildExplainerVm(args: {
   };
 }
 
-export async function buildBodyPresentationViewModel(days?: number | null): Promise<BodyViewModel> {
+export async function buildBodyPresentationViewModel(
+  athleteId: string,
+  days?: number | null,
+): Promise<BodyViewModel> {
   const activeTrendWindowId = inferActiveTrendWindowId(days);
   const trendWindows = TREND_WINDOWS.map((w) => ({ ...w }));
 
-  const measurements = await getBodyCompositionMeasurements(days ?? undefined);
+  const measurements = await getBodyCompositionMeasurements(athleteId, days ?? undefined);
   const entries = measurements ?? [];
 
   if (!entries.length) {
@@ -164,7 +167,7 @@ export async function buildBodyPresentationViewModel(days?: number | null): Prom
   const latest = entries[0]!;
 
   // Build interpretive context for the metric guides (server-side).
-  const profile = await getAthleteProfile();
+  const profile = await getAthleteProfile(athleteId);
   const baseCtx = athleteCompositionContext(profile);
   const heightM = baseCtx.heightM ?? heightFromWithingsExtras(latest.withingsExtras);
 

@@ -83,7 +83,7 @@ describe('backfillBodyCompositionObservationsFromMeasurements', () => {
   it('returns zero counts when no measurements are in scope', async () => {
     mockFindManyMeasurements.mockResolvedValue([]);
 
-    const result = await backfillBodyCompositionObservationsFromMeasurements();
+    const result = await backfillBodyCompositionObservationsFromMeasurements('default');
 
     expect(result).toEqual({ scanned: 0, ingested: 0, skipped: 0 });
     expect(mockIngestBatch).not.toHaveBeenCalled();

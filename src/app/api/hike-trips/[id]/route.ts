@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import {
   deleteHikeTrip,
   getHikeTripById,
@@ -38,7 +39,8 @@ function hikeTripErrorResponse(error: unknown, fallbackMessage: string): NextRes
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const trip = await getHikeTripById(id);
+    const athleteId = await getCurrentAthleteId();
+    const trip = await getHikeTripById(athleteId, id);
 
     if (!trip) {
       return NextResponse.json({ error: 'Dossier introuvable' }, { status: 404 });
@@ -63,7 +65,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    const trip = await updateHikeTrip(id, parsed.data);
+    const athleteId = await getCurrentAthleteId();
+    const trip = await updateHikeTrip(athleteId, id, parsed.data);
     return NextResponse.json(trip);
   } catch (error) {
     return hikeTripErrorResponse(error, 'Impossible de mettre à jour le séjour');
@@ -73,7 +76,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
-    await deleteHikeTrip(id);
+    const athleteId = await getCurrentAthleteId();
+    await deleteHikeTrip(athleteId, id);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     return hikeTripErrorResponse(error, 'Impossible de supprimer le séjour');

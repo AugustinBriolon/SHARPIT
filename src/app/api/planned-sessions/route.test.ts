@@ -7,6 +7,10 @@ vi.mock('@/lib/queries', () => ({
   getPlannedSessions: vi.fn(),
 }));
 
+vi.mock('@/lib/auth/current-athlete', () => ({
+  getCurrentAthleteId: vi.fn().mockResolvedValue('default'),
+}));
+
 vi.mock('@/lib/integrations/google/google-sync', () => ({
   pushSessionToGoogle: vi.fn().mockResolvedValue(undefined),
 }));
@@ -71,7 +75,7 @@ describe('POST /api/planned-sessions', () => {
     );
 
     expect(response.status).toBe(201);
-    expect(recordDecisionAction).toHaveBeenCalledWith({
+    expect(recordDecisionAction).toHaveBeenCalledWith('default', {
       decisionId: 'decision-1',
       actionType: 'ACCEPTED',
       source: 'PLAN_REVIEW_UI',

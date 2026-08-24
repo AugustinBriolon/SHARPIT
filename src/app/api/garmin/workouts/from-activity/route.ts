@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { pushStrengthWorkoutFromActivity } from '@/lib/integrations/garmin/garmin-strength-workout';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 
 const bodySchema = z.object({
   activityId: z.string().min(1),
@@ -23,7 +24,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await pushStrengthWorkoutFromActivity(parsed.data);
+    const athleteId = await getCurrentAthleteId();
+    const result = await pushStrengthWorkoutFromActivity(athleteId, parsed.data);
     return NextResponse.json(result);
   } catch (error) {
     console.error('[garmin/workouts]', error);

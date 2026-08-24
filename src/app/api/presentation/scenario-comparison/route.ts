@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { ProjectionHorizonDays } from '@/core/projection/types';
 import { buildScenarioComparisonPresentationViewModel } from '@/lib/presentation/scenario-comparison';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 
 const VALID_HORIZONS = new Set<number>([1, 3, 7, 14]);
 
@@ -26,7 +27,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const viewModel = await buildScenarioComparisonPresentationViewModel({
+    const athleteId = await getCurrentAthleteId();
+    const viewModel = await buildScenarioComparisonPresentationViewModel(athleteId, {
       horizonDays: horizonDays as ProjectionHorizonDays,
       anchorTrainingDayId: trainingDayId ?? undefined,
     });

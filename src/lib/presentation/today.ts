@@ -455,6 +455,7 @@ export type BuildTodayPresentationOptions = {
  * Does not write morning recalibration — callers must ensure first when needed.
  */
 export async function buildTodayPresentationViewModel(
+  athleteId: string,
   trainingDayId: string,
   options: BuildTodayPresentationOptions = {},
 ): Promise<TodayViewModel> {
@@ -480,14 +481,17 @@ export async function buildTodayPresentationViewModel(
   ] = await Promise.all([
     options.athleteSnapshot
       ? Promise.resolve(options.athleteSnapshot)
-      : getOrBuildAthleteSnapshot(trainingDayId),
-    getHealthEntries(14, day),
-    getActivitiesList({ sinceDays: 60 }),
-    getPlannedSessions({ from: new Date(dayStart.getTime() - 7 * 86_400_000), to: dayEnd }),
-    getGoals(),
-    getAthleteProfile(),
-    loadReconnectProviderNames(),
-    loadTodayWeather(trainingDayId),
+      : getOrBuildAthleteSnapshot(athleteId, trainingDayId),
+    getHealthEntries(athleteId, 14, day),
+    getActivitiesList(athleteId, { sinceDays: 60 }),
+    getPlannedSessions(athleteId, {
+      from: new Date(dayStart.getTime() - 7 * 86_400_000),
+      to: dayEnd,
+    }),
+    getGoals(athleteId),
+    getAthleteProfile(athleteId),
+    loadReconnectProviderNames(athleteId),
+    loadTodayWeather(athleteId, trainingDayId),
   ]);
 
   return buildTodayViewModelFromInputs({
@@ -505,13 +509,13 @@ export async function buildTodayPresentationViewModel(
   });
 }
 
-async function loadReconnectProviderNames(): Promise<string[]> {
+async function loadReconnectProviderNames(athleteId: string): Promise<string[]> {
   const [strava, garmin, withings, renpho, google] = await Promise.all([
-    getStravaAccount().catch(() => null),
-    getGarminAccount().catch(() => null),
-    getWithingsAccount().catch(() => null),
-    getRenphoAccount().catch(() => null),
-    getGoogleAccount().catch(() => null),
+    getStravaAccount(athleteId).catch(() => null),
+    getGarminAccount(athleteId).catch(() => null),
+    getWithingsAccount(athleteId).catch(() => null),
+    getRenphoAccount(athleteId).catch(() => null),
+    getGoogleAccount(athleteId).catch(() => null),
   ]);
   return reconnectProviderNames({ strava, garmin, withings, renpho, google });
 }

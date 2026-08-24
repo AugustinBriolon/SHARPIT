@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { getActivityStreams } from '@/lib/streams/streams';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -6,7 +7,8 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const payload = await getActivityStreams(id);
+    const athleteId = await getCurrentAthleteId();
+    const payload = await getActivityStreams(athleteId, id);
 
     if (payload == null) {
       return NextResponse.json({ error: 'Streams indisponibles pour le moment' }, { status: 503 });

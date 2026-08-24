@@ -56,13 +56,14 @@ export async function setActivityNarrativeAnalysis(
  * on this path (achievements are already written at activity/goal sync time).
  */
 export async function runActivityNarrativeAnalysis(
+  athleteId: string,
   activityId: string,
   options?: { force?: boolean; allowHistorical?: boolean },
 ): Promise<boolean> {
   if (!isCoachConfigured()) return false;
 
-  const existing = await prisma.activity.findUnique({
-    where: { id: activityId },
+  const existing = await prisma.activity.findFirst({
+    where: { id: activityId, athleteId },
     select: { narrativeAnalyzedAt: true, date: true, narrativeAnalysis: true },
   });
   if (!existing || !isEligibleForActivityNarrative(existing.date)) return false;
@@ -71,7 +72,7 @@ export async function runActivityNarrativeAnalysis(
     return false;
   }
 
-  const facts = await buildActivityNarrativeFacts(activityId);
+  const facts = await buildActivityNarrativeFacts(athleteId, activityId);
   if (!facts) return false;
 
   const { output } = await generateText({
@@ -89,10 +90,13 @@ export async function runActivityNarrativeAnalysis(
 }
 
 /** Lance l'analyse pour des activités nouvellement importées (best-effort, parallel). */
-export async function runActivityNarrativeForIds(activityIds: string[]): Promise<void> {
+export async function runActivityNarrativeForIds(
+  athleteId: string,
+  activityIds: string[],
+): Promise<void> {
   await mapWithConcurrency(activityIds, NARRATIVE_CONCURRENCY, async (id) => {
     try {
-      await runActivityNarrativeAnalysis(id);
+      await runActivityNarrativeAnalysis(athleteId, id);
     } catch (error) {
       console.error('[activity-narrative]', id, error);
     }
@@ -100,7 +104,7 @@ export async function runActivityNarrativeForIds(activityIds: string[]): Promise
 }
 
 /** Remplit les analyses manquantes depuis {@link NARRATIVE_ANALYSIS_SINCE}. */
-export async function backfillActivityNarratives(): Promise<{
+export async function backfillActivityNarratives(athleteId: string): Promise<{
   eligible: number;
   created: number;
 }> {
@@ -108,6 +112,7 @@ export async function backfillActivityNarratives(): Promise<{
 
   const activities = await prisma.activity.findMany({
     where: {
+      athleteId,
       narrativeAnalyzedAt: null,
       date: { gte: NARRATIVE_ANALYSIS_SINCE },
       type: { in: [ActivityType.RUN, ActivityType.BIKE, ActivityType.SWIM] },
@@ -118,7 +123,7 @@ export async function backfillActivityNarratives(): Promise<{
 
   const outcomes = await mapWithConcurrency(activities, NARRATIVE_CONCURRENCY, async ({ id }) => {
     try {
-      return await runActivityNarrativeAnalysis(id, { allowHistorical: true });
+      return await runActivityNarrativeAnalysis(athleteId, id, { allowHistorical: true });
     } catch (error) {
       console.error('[activity-narrative/backfill]', id, error);
       return false;

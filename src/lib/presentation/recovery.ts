@@ -110,14 +110,17 @@ function emptyRecoveryViewModel(): RecoveryViewModel {
   };
 }
 
-export async function buildRecoveryViewModel(trainingDayId: string): Promise<RecoveryViewModel> {
-  const snapshot: AthleteSnapshot = await getOrBuildAthleteSnapshot(trainingDayId);
+export async function buildRecoveryViewModel(
+  athleteId: string,
+  trainingDayId: string,
+): Promise<RecoveryViewModel> {
+  const snapshot: AthleteSnapshot = await getOrBuildAthleteSnapshot(athleteId, trainingDayId);
   const { recovery } = snapshot;
 
   if (!recovery) return emptyRecoveryViewModel();
 
   const refDate = new Date(`${trainingDayId}T12:00:00.000Z`);
-  const healthEntries = await getHealthEntries(14, refDate);
+  const healthEntries = await getHealthEntries(athleteId, 14, refDate);
   const healthByDay = indexHealthEntriesByDay(healthEntries);
   const todayEntry = getIndexedHealthEntry(healthByDay, refDate);
 

@@ -26,12 +26,15 @@ export type ApplyScenarioComparisonResult =
     }
   | { ok: false; error: string };
 
-export async function applyScenarioComparisonChoice(input: {
-  scenarioId: string;
-  horizonDays?: ProjectionHorizonDays;
-  anchorTrainingDayId?: string;
-}): Promise<ApplyScenarioComparisonResult> {
-  const context = await buildProjectionBaseContext({
+export async function applyScenarioComparisonChoice(
+  athleteId: string,
+  input: {
+    scenarioId: string;
+    horizonDays?: ProjectionHorizonDays;
+    anchorTrainingDayId?: string;
+  },
+): Promise<ApplyScenarioComparisonResult> {
+  const context = await buildProjectionBaseContext(athleteId, {
     horizonDays: input.horizonDays,
     anchorTrainingDayId: input.anchorTrainingDayId,
   });
@@ -63,7 +66,7 @@ export async function applyScenarioComparisonChoice(input: {
     return { ok: false, error: 'Scénario sans séance cible' };
   }
 
-  const existing = await getPlannedSessionById(definition.targetSessionId);
+  const existing = await getPlannedSessionById(athleteId, definition.targetSessionId);
   if (!existing) {
     return { ok: false, error: 'Séance cible introuvable' };
   }
@@ -74,9 +77,9 @@ export async function applyScenarioComparisonChoice(input: {
   }
 
   if (applyOp.op === 'remove') {
-    await deletePlannedSession(applyOp.sessionId);
+    await deletePlannedSession(athleteId, applyOp.sessionId);
   } else {
-    await updatePlannedSession(applyOp.sessionId, applyOp.data);
+    await updatePlannedSession(athleteId, applyOp.sessionId, applyOp.data);
   }
 
   return {

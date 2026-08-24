@@ -2,6 +2,7 @@ import { addDays, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
 import {
   COACH_PROGRESS_HEADERS,
@@ -70,11 +71,12 @@ export async function POST(req: Request) {
 
   const { startDate, days = 7, focus, goalId, targetLoad, planPhase, planFocus } = parsed.data;
   const start = startOfDay(startDate ?? new Date());
+  const athleteId = await getCurrentAthleteId();
 
   const [ctx, busySummary, goal] = await Promise.all([
-    buildCoachContext(start, { includeScenario: true }),
-    buildBusySummary(start, days),
-    goalId ? getGoalById(goalId) : Promise.resolve(null),
+    buildCoachContext(athleteId, start, { includeScenario: true }),
+    buildBusySummary(athleteId, start, days),
+    goalId ? getGoalById(athleteId, goalId) : Promise.resolve(null),
   ]);
   const contextText = formatCoachContext(ctx);
 
@@ -172,7 +174,10 @@ ${contextText}${goalBlock}${macroBlock}${agendaBlock}`;
           onReasoning: (delta) => send({ type: 'reasoning', delta }),
           onPartial: (value) => send({ type: 'partial', value }),
         });
-        send({ type: 'result', value: await finalizePlan(output, start, goalId ?? null) });
+        send({
+          type: 'result',
+          value: await finalizePlan(athleteId, output, start, goalId ?? null),
+        });
       } catch (error) {
         console.error('[coach/plan]', error);
         send({ type: 'error', message: 'La génération a échoué. Réessaie dans un instant.' });
@@ -199,6 +204,7 @@ export type PlanPayload = {
 
 /** Dates the proposed sessions, runs the Gate and records the coaching decisions. */
 async function finalizePlan(
+  athleteId: string,
   rawOutput: unknown,
   start: Date,
   goalId: string | null,
@@ -231,6 +237,7 @@ async function finalizePlan(
     }));
 
     const { context: gateContext, snapshot } = await buildGateContext({
+      athleteId,
       trainingDayId: computeTrainingDayId(start),
       proposals,
       goalId,
@@ -240,7 +247,7 @@ async function finalizePlan(
     const snapshotContext = buildDecisionSnapshotContext(snapshot);
     const decisionIds = await Promise.all(
       gate.sessions.map((sessionResult) =>
-        createCoachingDecision({
+        createCoachingDecision(athleteId, {
           trainingDayId: computeTrainingDayId(new Date(`${sessionResult.proposal.date}T00:00:00`)),
           source: 'PLAN_GENERATOR',
           proposal: sessionResult.proposal,

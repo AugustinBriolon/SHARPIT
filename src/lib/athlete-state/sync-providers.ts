@@ -32,6 +32,7 @@ async function countRecentObservations(_provider: DataProvider): Promise<number>
  * Matches cron / manual Garmin parallelism for open-path latency.
  */
 export async function syncProviders(
+  athleteId: string,
   providers: readonly DataProvider[],
 ): Promise<ProviderSyncResult[]> {
   if (providers.length === 0) return [];
@@ -39,7 +40,7 @@ export async function syncProviders(
   const settled = await Promise.all(
     providers.map(async (provider) => {
       try {
-        return await syncSingleProvider(provider);
+        return await syncSingleProvider(athleteId, provider);
       } catch (error) {
         console.error(`[athlete-state/sync] ${provider} failed:`, error);
         return null;
@@ -50,16 +51,19 @@ export async function syncProviders(
   return settled.filter((r): r is ProviderSyncResult => r != null);
 }
 
-async function syncSingleProvider(provider: DataProvider): Promise<ProviderSyncResult | null> {
+async function syncSingleProvider(
+  athleteId: string,
+  provider: DataProvider,
+): Promise<ProviderSyncResult | null> {
   switch (provider) {
     case 'garmin': {
-      const account = await getGarminAccount();
+      const account = await getGarminAccount(athleteId);
       if (!account) return null;
       // Health ∥ activities — open path uses a short health fallback window;
       // cron / manual keep the wider default (60d / full).
       const [health, activities] = await Promise.all([
-        syncGarminHealth({ days: GARMIN_HEALTH_OPEN_PATH_FALLBACK_DAYS }),
-        syncGarminActivities(),
+        syncGarminHealth(athleteId, { days: GARMIN_HEALTH_OPEN_PATH_FALLBACK_DAYS }),
+        syncGarminActivities(athleteId),
       ]);
       return {
         provider,
@@ -70,9 +74,9 @@ async function syncSingleProvider(provider: DataProvider): Promise<ProviderSyncR
       };
     }
     case 'strava': {
-      const account = await getStravaAccount();
+      const account = await getStravaAccount(athleteId);
       if (!account) return null;
-      const strava = await syncStravaActivities();
+      const strava = await syncStravaActivities(athleteId);
       return {
         provider,
         imported: strava.imported,
@@ -82,9 +86,9 @@ async function syncSingleProvider(provider: DataProvider): Promise<ProviderSyncR
       };
     }
     case 'renpho': {
-      const account = await getRenphoAccount();
+      const account = await getRenphoAccount(athleteId);
       if (!account) return null;
-      const renpho = await syncRenphoHealth();
+      const renpho = await syncRenphoHealth(athleteId);
       return {
         provider,
         imported: renpho.imported,
@@ -94,9 +98,9 @@ async function syncSingleProvider(provider: DataProvider): Promise<ProviderSyncR
       };
     }
     case 'withings': {
-      const account = await getWithingsAccount();
+      const account = await getWithingsAccount(athleteId);
       if (!account) return null;
-      const withings = await syncWithingsHealth();
+      const withings = await syncWithingsHealth(athleteId);
       return {
         provider,
         imported: withings.imported,
@@ -106,9 +110,9 @@ async function syncSingleProvider(provider: DataProvider): Promise<ProviderSyncR
       };
     }
     case 'google': {
-      const account = await getGoogleAccount();
+      const account = await getGoogleAccount(athleteId);
       if (!account?.targetCalendarId) return null;
-      const google = await syncFromGoogle();
+      const google = await syncFromGoogle(athleteId);
       return {
         provider,
         imported: google.pushed,
@@ -122,13 +126,13 @@ async function syncSingleProvider(provider: DataProvider): Promise<ProviderSyncR
   }
 }
 
-export async function listConnectedProviders(): Promise<DataProvider[]> {
+export async function listConnectedProviders(athleteId: string): Promise<DataProvider[]> {
   const [strava, garmin, renpho, withings, google] = await Promise.all([
-    getStravaAccount(),
-    getGarminAccount(),
-    getRenphoAccount(),
-    getWithingsAccount(),
-    getGoogleAccount(),
+    getStravaAccount(athleteId),
+    getGarminAccount(athleteId),
+    getRenphoAccount(athleteId),
+    getWithingsAccount(athleteId),
+    getGoogleAccount(athleteId),
   ]);
 
   const connected: DataProvider[] = [];

@@ -2,13 +2,15 @@ import { notFound } from 'next/navigation';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { ActivityForm } from '@/components/training/activity/form/activity-form';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { getActivityById } from '@/lib/queries';
 
 type PageProps = { params: Promise<{ id: string }> };
 
 export default async function EditTrainingPage({ params }: PageProps) {
   const { id } = await params;
-  const activity = await getActivityById(id);
+  const athleteId = await getCurrentAthleteId();
+  const activity = await getActivityById(athleteId, id);
 
   if (!activity) notFound();
 

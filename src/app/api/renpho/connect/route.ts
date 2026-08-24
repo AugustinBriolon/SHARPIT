@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { connectRenpho, syncRenphoHealth } from '@/lib/integrations/renpho/renpho-sync';
 
 const schema = z.object({
@@ -9,14 +10,15 @@ const schema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const athleteId = await getCurrentAthleteId();
     const body = await request.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: 'Email et mot de passe requis' }, { status: 400 });
     }
 
-    const user = await connectRenpho(parsed.data.email, parsed.data.password);
-    const sync = await syncRenphoHealth({ days: 90 });
+    const user = await connectRenpho(athleteId, parsed.data.email, parsed.data.password);
+    const sync = await syncRenphoHealth(athleteId, { days: 90 });
 
     return NextResponse.json({
       success: true,

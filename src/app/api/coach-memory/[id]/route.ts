@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { deleteCoachMemoryEntry, updateTravelMemoryEntry } from '@/lib/coach-memory/service';
 import { travelContextToMemoryEntry } from '@/lib/coach-memory/present';
 
@@ -73,7 +74,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    const entry = await updateTravelMemoryEntry(prisma, id, parsed.data);
+    const athleteId = await getCurrentAthleteId();
+    const entry = await updateTravelMemoryEntry(prisma, athleteId, id, parsed.data);
     return NextResponse.json({ entry });
   } catch (error) {
     console.error(error);
@@ -91,7 +93,8 @@ export async function DELETE(_request: Request, context: RouteContext) {
       return NextResponse.json({ error: 'Entrée introuvable' }, { status: 404 });
     }
 
-    await deleteCoachMemoryEntry(prisma, id);
+    const athleteId = await getCurrentAthleteId();
+    await deleteCoachMemoryEntry(prisma, athleteId, id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);

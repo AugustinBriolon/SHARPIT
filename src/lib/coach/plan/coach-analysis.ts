@@ -242,11 +242,14 @@ export function hasSubstantialLocalDescription(notes: string | null | undefined)
 }
 
 /** Description libre Strava (détail réel). Best-effort : ne lève jamais. */
-async function fetchStravaDescription(activity: LinkedActivity): Promise<string | null> {
+async function fetchStravaDescription(
+  athleteId: string,
+  activity: LinkedActivity,
+): Promise<string | null> {
   if (activity.source !== 'strava' && activity.source !== 'both') return null;
   if (!activity.stravaId) return null;
   try {
-    const token = await getValidAccessToken();
+    const token = await getValidAccessToken(athleteId);
     const detail = await fetchActivityDetail(token, activity.stravaId);
     return detail?.description ?? detail?.private_note ?? null;
   } catch (error) {
@@ -259,10 +262,13 @@ async function fetchStravaDescription(activity: LinkedActivity): Promise<string 
  * Prefer substantial local notes; otherwise best-effort Strava description.
  * Avoids a remote round-trip when the athlete already wrote enough in-app.
  */
-export async function resolveAthleteDescription(activity: LinkedActivity): Promise<string | null> {
+export async function resolveAthleteDescription(
+  athleteId: string,
+  activity: LinkedActivity,
+): Promise<string | null> {
   const local = activity.notes?.trim() || null;
   if (hasSubstantialLocalDescription(local)) return local;
-  const remote = await fetchStravaDescription(activity);
+  const remote = await fetchStravaDescription(athleteId, activity);
   if (remote?.trim()) return remote.trim();
   return local;
 }
@@ -279,14 +285,17 @@ async function loadCachedWatts(activityId: string): Promise<number[] | null> {
   return data.watts.map((w) => (typeof w === 'number' && Number.isFinite(w) ? w : 0));
 }
 
-export async function analyzePlannedSession(id: string): Promise<SessionAnalysis | null> {
-  const planned = await getPlannedSessionById(id);
+export async function analyzePlannedSession(
+  athleteId: string,
+  id: string,
+): Promise<SessionAnalysis | null> {
+  const planned = await getPlannedSessionById(athleteId, id);
   if (!planned || !planned.activity) return null;
 
   const [stravaDescription, profile, physicalNotes, watts] = await Promise.all([
-    resolveAthleteDescription(planned.activity),
-    getAthleteProfile(),
-    getActivePhysicalNotes(),
+    resolveAthleteDescription(athleteId, planned.activity),
+    getAthleteProfile(athleteId),
+    getActivePhysicalNotes(athleteId),
     planned.activity.type === 'BIKE' ? loadCachedWatts(planned.activity.id) : Promise.resolve(null),
   ]);
 
@@ -382,14 +391,17 @@ function fmtClock(d: Date): string {
  * les transitions (dérive FC, sortie de vélo). Renvoie null si le brick n'a pas
  * au moins 2 jambes toutes liées à une activité réalisée.
  */
-export async function analyzeBrick(brickGroupId: string): Promise<BrickAnalysis | null> {
-  const legs = await getBrickSessions(brickGroupId);
+export async function analyzeBrick(
+  athleteId: string,
+  brickGroupId: string,
+): Promise<BrickAnalysis | null> {
+  const legs = await getBrickSessions(athleteId, brickGroupId);
   if (legs.length < 2) return null;
   if (legs.some((l) => !l.activity)) return null;
 
   const [profile, descriptions, wattsList] = await Promise.all([
-    getAthleteProfile(),
-    Promise.all(legs.map((l) => resolveAthleteDescription(l.activity!))),
+    getAthleteProfile(athleteId),
+    Promise.all(legs.map((l) => resolveAthleteDescription(athleteId, l.activity!))),
     Promise.all(
       legs.map((l) =>
         l.type === 'BIKE' && l.activity ? loadCachedWatts(l.activity.id) : Promise.resolve(null),

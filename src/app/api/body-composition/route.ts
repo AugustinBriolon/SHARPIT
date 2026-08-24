@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { getBodyCompositionMeasurements } from '@/lib/queries';
 
 export async function GET(request: NextRequest) {
@@ -8,6 +9,7 @@ export async function GET(request: NextRequest) {
     parsedDays != null && Number.isFinite(parsedDays) && parsedDays > 0
       ? Math.min(parsedDays, 365 * 20)
       : undefined;
-  const entries = await getBodyCompositionMeasurements(days);
+  const athleteId = await getCurrentAthleteId();
+  const entries = await getBodyCompositionMeasurements(athleteId, days);
   return NextResponse.json(entries);
 }

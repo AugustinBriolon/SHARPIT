@@ -17,7 +17,8 @@ import {
 } from '@/lib/ai';
 import { buildBusySummary } from '@/lib/coach/plan/calendar-availability';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
-import { coachTools } from '@/lib/coach/chat/coach-tools';
+import { createCoachTools } from '@/lib/coach/chat/coach-tools';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { formatStrengthSessionRules } from '@/lib/planned-session/strength/strength-session-template';
 
 /** Horizon de pré-chargement de l'agenda, aligné sur les séances du contexte. */
@@ -88,13 +89,15 @@ export async function POST(req: Request) {
     );
   }
 
+  const athleteId = await getCurrentAthleteId();
+
   // The agenda ships with the context rather than behind a tool: a scheduling
   // turn otherwise spent a whole extra step fetching it, resending the entire
   // prefix afterwards. One cheap read here replaces that round trip.
   const [{ messages }, ctx, busySummary] = await Promise.all([
     req.json() as Promise<{ messages: UIMessage[] }>,
-    buildCoachContext(),
-    buildBusySummary(new Date(), AGENDA_PREFETCH_DAYS),
+    buildCoachContext(athleteId),
+    buildBusySummary(athleteId, new Date(), AGENDA_PREFETCH_DAYS),
   ]);
 
   const agendaBlock = busySummary
@@ -107,7 +110,7 @@ export async function POST(req: Request) {
     model: COACH_MODEL,
     system,
     messages: await convertToModelMessages(messages),
-    tools: coachTools,
+    tools: createCoachTools(athleteId),
     // Les actions qui modifient le calendrier nécessitent la validation de l'athlète.
     // listPlannedSessions (lecture seule) s'exécute automatiquement.
     toolApproval: {

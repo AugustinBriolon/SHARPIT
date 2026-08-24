@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { analyzeBrick } from '@/lib/coach/plan/coach-analysis';
 import { getBrickAnalysis, getBrickSessions, setBrickAnalysis } from '@/lib/queries';
 
@@ -13,7 +14,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const analysis = await getBrickAnalysis(groupId);
+    const athleteId = await getCurrentAthleteId();
+    const analysis = await getBrickAnalysis(athleteId, groupId);
     return NextResponse.json({ analysis });
   } catch (error) {
     console.error('[brick/analyze][GET]', error);
@@ -30,13 +32,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const athleteId = await getCurrentAthleteId();
     const body = await request.json().catch(() => ({}));
     const groupId = typeof body?.brickGroupId === 'string' ? body.brickGroupId : null;
     if (!groupId) {
       return NextResponse.json({ error: 'brickGroupId requis' }, { status: 400 });
     }
 
-    const legs = await getBrickSessions(groupId);
+    const legs = await getBrickSessions(athleteId, groupId);
     if (legs.length < 2) {
       return NextResponse.json({ error: 'Brick introuvable ou incomplet' }, { status: 404 });
     }
@@ -50,12 +53,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const analysis = await analyzeBrick(groupId);
+    const analysis = await analyzeBrick(athleteId, groupId);
     if (!analysis) {
       return NextResponse.json({ error: 'Analyse impossible' }, { status: 500 });
     }
 
-    const saved = await setBrickAnalysis(groupId, analysis);
+    const saved = await setBrickAnalysis(athleteId, groupId, analysis);
     return NextResponse.json({ analysis: saved });
   } catch (error) {
     console.error('[brick/analyze][POST]', error);

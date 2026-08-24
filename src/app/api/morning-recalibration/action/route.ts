@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import {
   acceptMorningRecalibration,
   rejectMorningRecalibration,
@@ -19,15 +20,16 @@ export async function POST(request: Request) {
     }
 
     const { decisionId, action } = parsed.data;
+    const athleteId = await getCurrentAthleteId();
     if (action === 'accept') {
-      const result = await acceptMorningRecalibration(decisionId);
+      const result = await acceptMorningRecalibration(athleteId, decisionId);
       if (!result.ok) {
         return NextResponse.json({ error: result.error }, { status: 422 });
       }
       return NextResponse.json({ ok: true, sessionId: result.sessionId });
     }
 
-    const result = await rejectMorningRecalibration(decisionId);
+    const result = await rejectMorningRecalibration(athleteId, decisionId);
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 422 });
     }

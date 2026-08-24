@@ -12,6 +12,7 @@ import { HikeTripWaypoints } from '@/components/training/trip/hike-trip-waypoint
 import { Skeleton } from '@/components/ui/skeleton';
 import { buildHikeTripElevationProfile } from '@/lib/activity/hike/hike-trip-elevation';
 import { buildHikeTripSummary } from '@/lib/activity/hike/hike-trip-summary';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { getHikeTripById } from '@/lib/queries';
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -55,7 +56,8 @@ function HikeTripDetailSkeleton() {
 
 async function HikeTripDetail({ params }: PageProps) {
   const { id } = await params;
-  const trip = await getHikeTripById(id);
+  const athleteId = await getCurrentAthleteId();
+  const trip = await getHikeTripById(athleteId, id);
 
   if (!trip) notFound();
 

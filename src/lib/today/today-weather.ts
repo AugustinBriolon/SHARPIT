@@ -29,8 +29,6 @@ import { fetchForecastPredictions } from '@/lib/planned-session/forecast/forecas
 import { prisma } from '@/lib/prisma';
 import { approximateTrainingDayUtcRange } from '@/lib/training/training-day';
 
-const ATHLETE_ID = 'default';
-
 export type TodayWeather = {
   city: string;
   /** Temperature at the hour nearest now, not a daily mean. */
@@ -145,16 +143,19 @@ export function nameWeatherLocation(location: { label?: string | null; source: s
   return { city: formatCityFromLocationLabel(city), locationKnown: true };
 }
 
-export async function loadTodayWeather(trainingDayId: string): Promise<TodayWeather | null> {
+export async function loadTodayWeather(
+  athleteId: string,
+  trainingDayId: string,
+): Promise<TodayWeather | null> {
   try {
     const { gte: windowStart, lte: windowEnd } = approximateTrainingDayUtcRange(trainingDayId);
-    const location = await resolveDefaultActivityLocation(prisma, windowStart);
+    const location = await resolveDefaultActivityLocation(prisma, athleteId, windowStart);
 
     const { predictions } = await fetchForecastPredictions({
       location,
       windowStart,
       windowEnd,
-      athleteId: ATHLETE_ID,
+      athleteId,
       trainingDayId,
     });
 

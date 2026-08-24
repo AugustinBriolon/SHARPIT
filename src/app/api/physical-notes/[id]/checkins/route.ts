@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { syncPhysicalConditionObservation } from '@/lib/manual-observation-sync';
 import { addPhysicalCheckin, getPhysicalNoteById } from '@/lib/queries';
 import { createCheckinSchema } from '@/lib/validators/physical-note';
@@ -17,12 +18,13 @@ export async function POST(request: NextRequest, context: RouteContext) {
       );
     }
 
-    const existing = await getPhysicalNoteById(id);
+    const athleteId = await getCurrentAthleteId();
+    const existing = await getPhysicalNoteById(athleteId, id);
     if (!existing) {
       return NextResponse.json({ error: 'Note introuvable' }, { status: 404 });
     }
 
-    const note = await addPhysicalCheckin(id, parsed.data);
+    const note = await addPhysicalCheckin(athleteId, id, parsed.data);
     if (note) {
       await syncPhysicalConditionObservation(note);
     }

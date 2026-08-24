@@ -13,9 +13,10 @@ export type DefaultActivityLocation = {
 /** Lieu par défaut pour une activité : vacances actives à la date, sinon domicile. */
 export async function resolveDefaultActivityLocation(
   prisma: PrismaClient,
+  athleteId: string,
   onDate = new Date(),
 ): Promise<DefaultActivityLocation> {
-  const travel = await getActiveTravelContext(prisma, onDate);
+  const travel = await getActiveTravelContext(prisma, athleteId, onDate);
   if (travel) {
     return {
       latitude: travel.locationLat,
@@ -25,7 +26,7 @@ export async function resolveDefaultActivityLocation(
     };
   }
 
-  const home = await resolveHomeLocation(prisma);
+  const home = await resolveHomeLocation(prisma, athleteId);
   return {
     latitude: home.latitude,
     longitude: home.longitude,

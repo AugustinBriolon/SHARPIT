@@ -19,6 +19,7 @@ import { ActivityNarrativeSection } from '@/components/training/activity/insight
 import { isEligibleForActivityNarrative } from '@/lib/activity/narrative/activity-narrative-config';
 import { activityDetailExpectsMap } from '@/lib/activity/detail/activity-detail-skeleton-layout';
 import { buildHikeOvernightSummary } from '@/lib/activity/hike/hike-overnight-summary';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { getActivityById, getMultisportLegsForActivity } from '@/lib/queries';
 import { getGoalAchievementsForActivity } from '@/lib/goals/goal-achievements';
 import { isCoachConfigured } from '@/lib/ai';
@@ -35,10 +36,11 @@ const NARRATIVE_TYPES = new Set<ActivityType>([
 ]);
 
 async function ActivityDetailBody({ id }: { id: string }) {
+  const athleteId = await getCurrentAthleteId();
   // Start independent fetches immediately — do not wait for activity first.
-  const activityPromise = getActivityById(id);
+  const activityPromise = getActivityById(athleteId, id);
   const goalValidationsPromise = getGoalAchievementsForActivity(id);
-  const performanceRecordsPromise = getPerformanceRecordsForActivity(id);
+  const performanceRecordsPromise = getPerformanceRecordsForActivity(athleteId, id);
 
   const activity = await activityPromise;
   if (!activity) notFound();
@@ -65,7 +67,7 @@ async function ActivityDetailBody({ id }: { id: string }) {
 
   // Legs depend on activity; goals/records already started above.
   const [multisportLegs, goalValidations, performanceRecords] = await Promise.all([
-    isTriathlon ? getMultisportLegsForActivity(activity) : Promise.resolve(null),
+    isTriathlon ? getMultisportLegsForActivity(athleteId, activity) : Promise.resolve(null),
     goalValidationsPromise,
     performanceRecordsPromise,
   ]);

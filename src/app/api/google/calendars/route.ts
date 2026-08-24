@@ -5,6 +5,7 @@ import {
   isGoogleConnected,
   listGoogleCalendars,
 } from '@/lib/integrations/google/google-sync';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 
 export async function GET(request: NextRequest) {
   // Read search params before try so Cache Components prerender interrupts propagate.
@@ -12,12 +13,13 @@ export async function GET(request: NextRequest) {
   void searchParams;
 
   try {
-    const account = await getGoogleAccount();
+    const athleteId = await getCurrentAthleteId();
+    const account = await getGoogleAccount(athleteId);
     if (!isGoogleConnected(account)) {
       return NextResponse.json([]);
     }
 
-    const [calendars] = await Promise.all([listGoogleCalendars()]);
+    const [calendars] = await Promise.all([listGoogleCalendars(athleteId)]);
     const hidden = new Set(account?.hiddenCalendarIds ?? []);
     const targetId = account?.targetCalendarId ?? null;
     return NextResponse.json(

@@ -9,6 +9,10 @@ vi.mock('@/lib/ai', () => ({
   isCoachConfigured: () => true,
 }));
 
+vi.mock('@/lib/auth/current-athlete', () => ({
+  getCurrentAthleteId: vi.fn().mockResolvedValue('default'),
+}));
+
 vi.mock('@/lib/coach/stream-structured-generation', () => ({
   runStructuredCoachStream: vi.fn(),
 }));
@@ -304,7 +308,7 @@ describe('POST /api/coach/adapt', () => {
     );
 
     expect(body.changes[0].endurancePrescription?.blocks).toHaveLength(2);
-    const [[call]] = vi.mocked(createCoachingDecision).mock.calls;
+    const [[, call]] = vi.mocked(createCoachingDecision).mock.calls;
     expect(call.proposal.endurancePrescription?.blocks?.[1]?.times).toBe(5);
   });
 
@@ -353,7 +357,7 @@ describe('POST /api/coach/adapt', () => {
     );
 
     expect(createCoachingDecision).toHaveBeenCalledTimes(1);
-    const [[call]] = vi.mocked(createCoachingDecision).mock.calls;
+    const [[, call]] = vi.mocked(createCoachingDecision).mock.calls;
     expect(call.source).toBe('PLAN_ADAPTER');
     expect(call.gateResult.status).toBe('REJECTED');
     expect(call.snapshotIdAtRecommendation).toBe('snap-adapt-3');

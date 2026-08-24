@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { featureEngine } from '@/lib/engines/feature-engine';
 import { prisma } from '@/lib/prisma';
 import { computeDailyStrain } from '@/lib/training/daily-strain';
@@ -12,7 +13,6 @@ import {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const trainingDayId = searchParams.get('trainingDayId');
-  const athleteId = searchParams.get('athleteId') ?? 'default';
 
   if (!trainingDayId || !/^\d{4}-\d{2}-\d{2}$/.test(trainingDayId)) {
     return NextResponse.json(
@@ -22,10 +22,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const athleteId = await getCurrentAthleteId();
     const [features, activities, athleteProfile, googleAccount, healthEntry] = await Promise.all([
       featureEngine.getDayFeatures(athleteId, trainingDayId),
       prisma.activity.findMany({
         where: {
+          athleteId,
           date: approximateTrainingDayUtcRange(trainingDayId),
         },
         include: {

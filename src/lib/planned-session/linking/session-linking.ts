@@ -29,11 +29,12 @@ export function scorePlannedActivityMatch(
 }
 
 async function autoLinkOneActivity(
+  athleteId: string,
   activityId: string,
   reservedSessionIds: Set<string>,
 ): Promise<{ sessionId: string } | null> {
-  const activity = await prisma.activity.findUnique({
-    where: { id: activityId },
+  const activity = await prisma.activity.findFirst({
+    where: { id: activityId, athleteId },
     select: { id: true, type: true, date: true, duration: true },
   });
   if (!activity) return null;
@@ -47,6 +48,7 @@ async function autoLinkOneActivity(
   const day = startOfDay(activity.date);
   const candidates = await prisma.plannedSession.findMany({
     where: {
+      athleteId,
       activityId: null,
       type: activity.type,
       date: { gte: day, lt: addDays(day, 1) },
@@ -63,7 +65,7 @@ async function autoLinkOneActivity(
 
   if (!best) return null;
 
-  await linkPlannedSessionActivity(best.s.id, activity.id);
+  await linkPlannedSessionActivity(athleteId, best.s.id, activity.id);
   reservedSessionIds.add(best.s.id);
 
   return { sessionId: best.s.id };
@@ -75,13 +77,14 @@ async function autoLinkOneActivity(
  * sync / open-path can await only the cheap DB match.
  */
 export async function autoLinkActivities(
+  athleteId: string,
   activityIds: string[],
 ): Promise<{ linked: number; sessionIds: string[] }> {
   const reserved = new Set<string>();
   const sessionIds: string[] = [];
 
   for (const activityId of activityIds) {
-    const result = await autoLinkOneActivity(activityId, reserved);
+    const result = await autoLinkOneActivity(athleteId, activityId, reserved);
     if (!result) continue;
     sessionIds.push(result.sessionId);
   }
@@ -90,15 +93,18 @@ export async function autoLinkActivities(
 }
 
 /** Post-link compliance analysis — run off the HTTP critical path. */
-export async function analyzeLinkedPlannedSessions(sessionIds: string[]): Promise<number> {
+export async function analyzeLinkedPlannedSessions(
+  athleteId: string,
+  sessionIds: string[],
+): Promise<number> {
   if (!isCoachConfigured() || sessionIds.length === 0) return 0;
 
   let analyzed = 0;
   for (const sessionId of sessionIds) {
     try {
-      const analysis = await analyzePlannedSession(sessionId);
+      const analysis = await analyzePlannedSession(athleteId, sessionId);
       if (analysis) {
-        await setPlannedSessionAnalysis(sessionId, analysis);
+        await setPlannedSessionAnalysis(athleteId, sessionId, analysis);
         analyzed += 1;
       }
     } catch (error) {

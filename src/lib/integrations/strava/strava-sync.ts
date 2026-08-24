@@ -18,37 +18,33 @@ import { observationEngine } from '@/lib/engines/observation-engine';
 import { stravaActivityToSession } from '@/core/adapters/strava-adapter';
 import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
 
-const ATHLETE_ID = 'default';
-
 /** Parallel DB upserts for Strava candidates within a page. */
 export const STRAVA_ACTIVITY_CONCURRENCY = 6;
 
-async function ingestStravaActivity(activity: StravaActivity): Promise<void> {
+async function ingestStravaActivity(athleteId: string, activity: StravaActivity): Promise<void> {
   try {
     const raw = stravaActivityToSession(activity, new Date());
     if (!raw) return;
-    await observationEngine.ingest(ATHLETE_ID, raw);
+    await observationEngine.ingest(athleteId, raw);
   } catch (err) {
     console.error('[ObservationEngine] strava ingest failed:', err);
   }
 }
 
-const ACCOUNT_ID = 'default';
-
-export async function getStravaAccount() {
-  return prisma.stravaAccount.findUnique({ where: { athleteId: ACCOUNT_ID } });
+export async function getStravaAccount(athleteId: string) {
+  return prisma.stravaAccount.findUnique({ where: { athleteId } });
 }
 
-export async function disconnectStrava() {
-  await prisma.stravaAccount.deleteMany({ where: { athleteId: ACCOUNT_ID } });
+export async function disconnectStrava(athleteId: string) {
+  await prisma.stravaAccount.deleteMany({ where: { athleteId } });
 }
 
 /** Keeps the Strava profile row so the hub can ask for a reconnect. */
-export async function revokeStravaCredentials() {
-  const account = await getStravaAccount();
+export async function revokeStravaCredentials(athleteId: string) {
+  const account = await getStravaAccount(athleteId);
   if (!account) return;
   await prisma.stravaAccount.update({
-    where: { athleteId: ACCOUNT_ID },
+    where: { athleteId },
     data: {
       accessToken: '',
       refreshToken: '',
@@ -57,8 +53,8 @@ export async function revokeStravaCredentials() {
   });
 }
 
-export async function getValidAccessToken() {
-  const account = await getStravaAccount();
+export async function getValidAccessToken(athleteId: string) {
+  const account = await getStravaAccount(athleteId);
   if (!account) throw new Error('Compte Strava non connecté');
   if (!isOAuthAccountConnected(account)) {
     throw new ProviderAuthError('Session Strava expirée. Reconnecte Strava dans les paramètres.');
@@ -70,7 +66,7 @@ export async function getValidAccessToken() {
   try {
     const refreshed = await refreshAccessToken(account.refreshToken);
     await prisma.stravaAccount.update({
-      where: { athleteId: ACCOUNT_ID },
+      where: { athleteId },
       data: {
         accessToken: refreshed.access_token,
         refreshToken: refreshed.refresh_token,
@@ -80,15 +76,18 @@ export async function getValidAccessToken() {
     return refreshed.access_token;
   } catch (error) {
     if (isProviderAuthFailure(error)) {
-      await revokeStravaCredentials();
+      await revokeStravaCredentials(athleteId);
       throw new ProviderAuthError('Session Strava expirée. Reconnecte Strava dans les paramètres.');
     }
     throw error;
   }
 }
 
-function buildActivityData(strava: StravaActivity, type: ActivityType): Prisma.ActivityCreateInput {
-  const base: Prisma.ActivityCreateInput = {
+function buildActivityData(
+  strava: StravaActivity,
+  type: ActivityType,
+): Prisma.ActivityUncheckedCreateInput {
+  const base: Prisma.ActivityUncheckedCreateInput = {
     type,
     date: new Date(strava.start_date),
     title: strava.name,
@@ -237,8 +236,11 @@ export interface SyncResult {
   importedActivityIds: string[];
 }
 
-export async function syncStravaActivities(): Promise<SyncResult> {
-  const [accessToken, account] = await Promise.all([getValidAccessToken(), getStravaAccount()]);
+export async function syncStravaActivities(athleteId: string): Promise<SyncResult> {
+  const [accessToken, account] = await Promise.all([
+    getValidAccessToken(athleteId),
+    getStravaAccount(athleteId),
+  ]);
 
   const after = Math.floor(syncSinceFromLastSync(account?.lastSyncAt, 90).getTime() / 1000);
 
@@ -278,7 +280,7 @@ export async function syncStravaActivities(): Promise<SyncResult> {
     const existingIds = new Set(
       (
         await prisma.activity.findMany({
-          where: { stravaId: { in: candidates.map((c) => c.stravaId) } },
+          where: { athleteId, stravaId: { in: candidates.map((c) => c.stravaId) } },
           select: { stravaId: true },
         })
       ).map((r) => r.stravaId),
@@ -294,7 +296,7 @@ export async function syncStravaActivities(): Promise<SyncResult> {
       async ({ stravaId, type, strava }) => {
         const date = new Date(strava.start_date);
         const duration = strava.moving_time || strava.elapsed_time || null;
-        const match = await findMatchingActivity({
+        const match = await findMatchingActivity(athleteId, {
           type,
           date,
           duration,
@@ -311,7 +313,7 @@ export async function syncStravaActivities(): Promise<SyncResult> {
               data: stravaEnrichmentUpdate(strava, type, match.garminId),
             });
             if (!match.garminId) {
-              await ingestStravaActivity(strava);
+              await ingestStravaActivity(athleteId, strava);
             }
             return {
               kind: 'merged' as const,
@@ -328,9 +330,9 @@ export async function syncStravaActivities(): Promise<SyncResult> {
 
         try {
           const created = await prisma.activity.create({
-            data: buildActivityData(strava, type),
+            data: { ...buildActivityData(strava, type), athleteId },
           });
-          await ingestStravaActivity(strava);
+          await ingestStravaActivity(athleteId, strava);
           return {
             kind: 'imported' as const,
             type,
@@ -361,7 +363,7 @@ export async function syncStravaActivities(): Promise<SyncResult> {
   }
 
   await prisma.stravaAccount.update({
-    where: { athleteId: ACCOUNT_ID },
+    where: { athleteId },
     data: { lastSyncAt: new Date() },
   });
 

@@ -5,11 +5,12 @@ import type { OutcomeEvaluation } from './types';
 
 /** Builds context, evaluates, and persists the outcome for one decision. Returns null if the linked PlannedSession no longer exists (SUPERSEDED — nothing to evaluate). */
 export async function evaluateAndSaveDecisionOutcome(
+  athleteId: string,
   decisionId: string,
   plannedSessionId: string,
   now: Date = new Date(),
 ): Promise<OutcomeEvaluation | null> {
-  const context = await buildOutcomeEvaluationContext(plannedSessionId, now);
+  const context = await buildOutcomeEvaluationContext(athleteId, plannedSessionId, now);
   if (!context) return null;
   const evaluation = evaluateOutcome(context);
   await saveOutcome(decisionId, evaluation);

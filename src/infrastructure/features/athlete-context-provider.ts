@@ -17,10 +17,9 @@ export class AthleteContextProvider implements ExtractionContextProvider {
   constructor(private readonly prisma: PrismaClient) {}
 
   async getContext(athleteId: string, trainingDayId: string): Promise<ExtractionContext> {
-    // AthleteProfile uses id = 'default' (single-athlete app)
     const [profile, recentRhrObs] = await Promise.all([
       this.prisma.athleteProfile.findUnique({
-        where: { id: 'default' },
+        where: { id: athleteId },
       }),
       // Use most recent resting HR observation as restingHr proxy
       this.prisma.observation.findFirst({
@@ -39,6 +38,7 @@ export class AthleteContextProvider implements ExtractionContextProvider {
 
     // Determine timezone from the athlete's Google account (if set)
     const googleAccount = await this.prisma.googleAccount.findFirst({
+      where: { athleteId },
       select: { timeZone: true },
     });
 

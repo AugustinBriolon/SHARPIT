@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { syncRenphoHealth } from '@/lib/integrations/renpho/renpho-sync';
 
 export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   try {
+    const athleteId = await getCurrentAthleteId();
     let full = false;
     try {
       const body = await request.json();
@@ -13,7 +15,7 @@ export async function POST(request: NextRequest) {
       // pas de body → sync incrémentale depuis dernière sync
     }
 
-    const result = await syncRenphoHealth(full ? { full: true } : {});
+    const result = await syncRenphoHealth(athleteId, full ? { full: true } : {});
     return NextResponse.json(result);
   } catch (error) {
     console.error(error);

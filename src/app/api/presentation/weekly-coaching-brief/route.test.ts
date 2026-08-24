@@ -7,6 +7,10 @@ vi.mock('@/lib/queries', () => ({
   getPlannedSessions: vi.fn(),
 }));
 
+vi.mock('@/lib/auth/current-athlete', () => ({
+  getCurrentAthleteId: vi.fn().mockResolvedValue('default'),
+}));
+
 vi.mock('@/lib/training/pmc-server', () => ({
   loadDailyTrainingStressEntries: vi.fn().mockResolvedValue([]),
 }));

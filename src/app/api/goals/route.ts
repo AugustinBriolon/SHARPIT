@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { enrichGoalsWithProgress } from '@/lib/goals/goal-achievements';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { createGoal, getGoals } from '@/lib/queries';
 import { createGoalSchema } from '@/lib/validators/goal';
 
 export async function GET() {
   try {
-    const goals = await getGoals();
-    const enriched = await enrichGoalsWithProgress(goals);
+    const athleteId = await getCurrentAthleteId();
+    const goals = await getGoals(athleteId);
+    const enriched = await enrichGoalsWithProgress(athleteId, goals);
     return NextResponse.json(enriched);
   } catch (error) {
     console.error(error);
@@ -16,6 +18,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const athleteId = await getCurrentAthleteId();
     const body = await request.json();
     const parsed = createGoalSchema.safeParse(body);
 
@@ -26,7 +29,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const goal = await createGoal(parsed.data as Parameters<typeof createGoal>[0]);
+    const goal = await createGoal(athleteId, parsed.data as Parameters<typeof createGoal>[1]);
     return NextResponse.json(goal, { status: 201 });
   } catch (error) {
     console.error('[goals/POST]', error);

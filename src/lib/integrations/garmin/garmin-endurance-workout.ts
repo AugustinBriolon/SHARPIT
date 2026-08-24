@@ -16,8 +16,6 @@ import { effectiveEndurancePrescription } from '@/lib/planned-session/endurance/
 import { type AthleteThresholds } from '@/lib/planned-session/endurance/endurance-targets';
 import { prisma } from '@/lib/prisma';
 
-const PROFILE_ID = 'default';
-
 const SPORT_LABEL_FR: Record<EnduranceSport, string> = {
   RUN: 'course',
   BIKE: 'vélo',
@@ -49,9 +47,9 @@ type PushProfile = {
 };
 
 /** One read for everything the payload needs from the athlete profile. */
-export async function loadPushProfile(): Promise<PushProfile> {
+export async function loadPushProfile(athleteId: string): Promise<PushProfile> {
   const profile = await prisma.athleteProfile.findUnique({
-    where: { id: PROFILE_ID },
+    where: { id: athleteId },
     select: {
       runThresholdPaceSecPerKm: true,
       swimCssSecPer100m: true,
@@ -80,15 +78,18 @@ export async function loadPushProfile(): Promise<PushProfile> {
  * thresholds, and those thresholds are stored with the receipt so a later
  * threshold change can be surfaced as "already sent, now out of date".
  */
-export async function pushEnduranceWorkoutFromPlannedSession(options: {
-  plannedSessionId: string;
-  scheduleDate?: string | null;
-  schedule?: boolean;
-  /** Replace previous Garmin workout if already pushed. */
-  force?: boolean;
-}): Promise<PushEnduranceWorkoutResult> {
-  const session = await prisma.plannedSession.findUnique({
-    where: { id: options.plannedSessionId },
+export async function pushEnduranceWorkoutFromPlannedSession(
+  athleteId: string,
+  options: {
+    plannedSessionId: string;
+    scheduleDate?: string | null;
+    schedule?: boolean;
+    /** Replace previous Garmin workout if already pushed. */
+    force?: boolean;
+  },
+): Promise<PushEnduranceWorkoutResult> {
+  const session = await prisma.plannedSession.findFirst({
+    where: { id: options.plannedSessionId, athleteId },
     select: {
       id: true,
       type: true,
@@ -111,9 +112,9 @@ export async function pushEnduranceWorkoutFromPlannedSession(options: {
     throw new Error('Seules les séances course, vélo et natation peuvent être envoyées ainsi');
   }
 
-  if (!options.force) await assertNotAlreadyPushed(session);
+  if (!options.force) await assertNotAlreadyPushed(athleteId, session);
 
-  const { thresholds, defaultPoolLengthM } = await loadPushProfile();
+  const { thresholds, defaultPoolLengthM } = await loadPushProfile(athleteId);
   const { prescription, derived, warnings } = effectiveEndurancePrescription({
     sport,
     durationMin: session.durationMin,
@@ -135,7 +136,7 @@ export async function pushEnduranceWorkoutFromPlannedSession(options: {
 
   if (built.stepCount === 0) throw new Error('Aucune étape à envoyer');
 
-  const created = await createAndScheduleWorkout({
+  const created = await createAndScheduleWorkout(athleteId, {
     payload: built.payload,
     schedule: options.schedule,
     scheduleDate: options.scheduleDate ?? dayKeyFromDate(session.date),

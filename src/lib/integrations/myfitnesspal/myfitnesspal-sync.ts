@@ -20,37 +20,34 @@ import {
 
 type MealEntry = MfpScrapedMeal['entries'][number];
 
-const ACCOUNT_ID = 'default';
-const ATHLETE_ID = 'default';
-
-export async function getMfpAccount() {
-  return prisma.myFitnessPalAccount.findUnique({ where: { athleteId: ACCOUNT_ID } });
+export async function getMfpAccount(athleteId: string) {
+  return prisma.myFitnessPalAccount.findUnique({ where: { athleteId } });
 }
 
-export async function connectMfp(sessionToken: string) {
+export async function connectMfp(athleteId: string, sessionToken: string) {
   const session: MfpSession = { sessionToken };
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   await fetchDiaryDay(session, todayStr); // validates the cookie before storing it
   const displayName = await fetchDisplayName(session);
 
   await prisma.myFitnessPalAccount.upsert({
-    where: { athleteId: ACCOUNT_ID },
-    create: { athleteId: ACCOUNT_ID, sessionTokenEnc: encryptSecret(sessionToken), displayName },
+    where: { athleteId },
+    create: { athleteId, sessionTokenEnc: encryptSecret(sessionToken), displayName },
     update: { sessionTokenEnc: encryptSecret(sessionToken), displayName },
   });
 
   return { displayName };
 }
 
-export async function disconnectMfp() {
-  await prisma.myFitnessPalAccount.deleteMany({ where: { athleteId: ACCOUNT_ID } });
+export async function disconnectMfp(athleteId: string) {
+  await prisma.myFitnessPalAccount.deleteMany({ where: { athleteId } });
 }
 
-async function revokeMfpCredentials() {
-  const account = await getMfpAccount();
+async function revokeMfpCredentials(athleteId: string) {
+  const account = await getMfpAccount(athleteId);
   if (!account) return;
   await prisma.myFitnessPalAccount.update({
-    where: { athleteId: ACCOUNT_ID },
+    where: { athleteId },
     data: { sessionTokenEnc: '' },
   });
 }
@@ -61,12 +58,12 @@ async function revokeMfpCredentials() {
  * Persists only when MFP actually hands back a new token, keeping sync a read for
  * the common case where the session is still inside next-auth's update window.
  */
-async function rollSessionForward(session: MfpSession): Promise<MfpSession> {
+async function rollSessionForward(athleteId: string, session: MfpSession): Promise<MfpSession> {
   const refreshed = await refreshMfpSession(session);
   if (!refreshed.rotated) return session;
 
   await prisma.myFitnessPalAccount.update({
-    where: { athleteId: ACCOUNT_ID },
+    where: { athleteId },
     data: { sessionTokenEnc: encryptSecret(refreshed.sessionToken) },
   });
 
@@ -80,11 +77,11 @@ async function rollSessionForward(session: MfpSession): Promise<MfpSession> {
  * Failures are logged and swallowed: nutrition must never be the reason a sync
  * that already produced a usable DailyNutrition row reports an error.
  */
-async function ingestNutritionObservation(day: MfpDayResult): Promise<void> {
+async function ingestNutritionObservation(athleteId: string, day: MfpDayResult): Promise<void> {
   try {
     const raw = mfpDayToNutritionObservation(day, new Date());
     if (!raw) return;
-    await observationEngine.ingest(ATHLETE_ID, raw);
+    await observationEngine.ingest(athleteId, raw);
   } catch (err) {
     console.error('[ObservationEngine] myfitnesspal ingest failed:', err);
   }
@@ -95,8 +92,8 @@ export interface MfpSyncResult {
   errors: number;
 }
 
-export async function getLiveNutrientGoals(dateStr: string) {
-  const account = await getMfpAccount();
+export async function getLiveNutrientGoals(athleteId: string, dateStr: string) {
+  const account = await getMfpAccount(athleteId);
   if (!account || !isMfpAccountConnected(account)) return null;
 
   const session: MfpSession = { sessionToken: decryptSecret(account.sessionTokenEnc) };
@@ -107,8 +104,11 @@ export async function getLiveNutrientGoals(dateStr: string) {
   }
 }
 
-export async function syncMfpNutrition(lookbackDays = 7): Promise<MfpSyncResult> {
-  const account = await getMfpAccount();
+export async function syncMfpNutrition(
+  athleteId: string,
+  lookbackDays = 7,
+): Promise<MfpSyncResult> {
+  const account = await getMfpAccount(athleteId);
   if (!account || !isMfpAccountConnected(account)) {
     throw new ProviderAuthError(
       'Session MyFitnessPal expirée. Reconnecte MyFitnessPal dans les paramètres.',
@@ -118,7 +118,7 @@ export async function syncMfpNutrition(lookbackDays = 7): Promise<MfpSyncResult>
   let session: MfpSession = { sessionToken: decryptSecret(account.sessionTokenEnc) };
 
   try {
-    session = await rollSessionForward(session);
+    session = await rollSessionForward(athleteId, session);
   } catch (err) {
     // Never destructive: the refresh is an optimisation, and it cannot tell a
     // dead cookie apart from a bad minute at the edge. Expiry is decided by the
@@ -139,7 +139,7 @@ export async function syncMfpNutrition(lookbackDays = 7): Promise<MfpSyncResult>
       const hasMeals = result.meals.some((m: MfpScrapedMeal) => m.entries.length > 0);
       if (!hasMeals && !result.goals) continue;
 
-      await ingestNutritionObservation(result);
+      await ingestNutritionObservation(athleteId, result);
 
       const mealSummaries = result.meals
         .filter((m: MfpScrapedMeal) => m.entries.length > 0)
@@ -163,12 +163,13 @@ export async function syncMfpNutrition(lookbackDays = 7): Promise<MfpSyncResult>
       await prisma.dailyNutrition.upsert({
         where: {
           athleteId_date_provider: {
-            athleteId: 'default',
+            athleteId,
             date: new Date(`${dateStr}T00:00:00Z`),
             provider: 'myfitnesspal',
           },
         },
         create: {
+          athleteId,
           date: new Date(`${dateStr}T00:00:00Z`),
           provider: 'myfitnesspal',
           calories: Math.round(result.totals.calories),
@@ -204,7 +205,7 @@ export async function syncMfpNutrition(lookbackDays = 7): Promise<MfpSyncResult>
       synced++;
     } catch (err) {
       if (err instanceof MfpSessionExpiredError) {
-        await revokeMfpCredentials();
+        await revokeMfpCredentials(athleteId);
         throw new ProviderAuthError(
           'Session MyFitnessPal expirée. Reconnecte MyFitnessPal dans les paramètres.',
         );
@@ -215,7 +216,7 @@ export async function syncMfpNutrition(lookbackDays = 7): Promise<MfpSyncResult>
   }
 
   await prisma.myFitnessPalAccount.update({
-    where: { athleteId: ACCOUNT_ID },
+    where: { athleteId },
     data: { lastSyncAt: new Date() },
   });
 

@@ -137,8 +137,11 @@ function emptyEffortViewModel(): EffortViewModel {
   };
 }
 
-export async function buildEffortViewModel(trainingDayId: string): Promise<EffortViewModel> {
-  const snapshot = await getOrBuildAthleteSnapshot(trainingDayId);
+export async function buildEffortViewModel(
+  athleteId: string,
+  trainingDayId: string,
+): Promise<EffortViewModel> {
+  const snapshot = await getOrBuildAthleteSnapshot(athleteId, trainingDayId);
   const { fatigue } = snapshot;
   const { dailyStrain } = snapshot;
 
@@ -146,8 +149,8 @@ export async function buildEffortViewModel(trainingDayId: string): Promise<Effor
 
   const refDate = new Date(`${trainingDayId}T12:00:00.000Z`);
   const [pmcPoints, dailyStress] = await Promise.all([
-    loadAthletePmcPoints({ refDate }),
-    loadDailyTrainingStressEntries({ refDate }),
+    loadAthletePmcPoints(athleteId, { refDate }),
+    loadDailyTrainingStressEntries(athleteId, { refDate }),
   ]);
 
   // Same source as the PMC chart above it, so the ACWR gauge and the fitness curve

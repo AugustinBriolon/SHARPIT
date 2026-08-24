@@ -425,7 +425,7 @@ export function buildGarminActivityData(
   evaluation: GarminActivityEvaluation,
   type: ActivityType,
   strengthSets: ParsedStrengthSet[] = [],
-): Prisma.ActivityCreateInput {
+): Prisma.ActivityUncheckedCreateInput {
   const duration = garminSessionDurationSec(activity, type);
 
   const paceSecPerKm =
@@ -433,7 +433,7 @@ export function buildGarminActivityData(
 
   const load = garminTrainingStressScore(activity);
 
-  const base: Prisma.ActivityCreateInput = {
+  const base: Prisma.ActivityUncheckedCreateInput = {
     type,
     date: new Date(activity.startTimeLocal),
     title: activity.activityName || null,

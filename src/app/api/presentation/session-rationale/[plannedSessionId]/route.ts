@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getPlannedSessionById } from '@/lib/queries';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import {
   findDecisionForPlannedSession,
   findDecisionWithHistory,
@@ -10,14 +11,17 @@ type RouteProps = { params: Promise<{ plannedSessionId: string }> };
 
 export async function GET(_req: Request, { params }: RouteProps) {
   const { plannedSessionId } = await params;
-  const session = await getPlannedSessionById(plannedSessionId);
+  const athleteId = await getCurrentAthleteId();
+  const session = await getPlannedSessionById(athleteId, plannedSessionId);
 
   if (!session) {
     return NextResponse.json({ error: 'Séance planifiée introuvable.' }, { status: 404 });
   }
 
-  const originDecision = await findDecisionForPlannedSession(plannedSessionId);
-  const decision = originDecision ? await findDecisionWithHistory(originDecision.id) : null;
+  const originDecision = await findDecisionForPlannedSession(athleteId, plannedSessionId);
+  const decision = originDecision
+    ? await findDecisionWithHistory(athleteId, originDecision.id)
+    : null;
 
   const viewModel = buildSessionRationaleViewModel({
     session: {

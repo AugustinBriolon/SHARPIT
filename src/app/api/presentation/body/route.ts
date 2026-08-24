@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { buildBodyPresentationViewModel } from '@/lib/presentation/body';
 
 export async function GET(request: NextRequest) {
@@ -16,7 +17,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const viewModel = await buildBodyPresentationViewModel(days);
+    const athleteId = await getCurrentAthleteId();
+    const viewModel = await buildBodyPresentationViewModel(athleteId, days);
     return NextResponse.json({ viewModel });
   } catch (error) {
     console.error('[api/presentation/body]', error);

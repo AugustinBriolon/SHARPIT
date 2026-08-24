@@ -80,6 +80,7 @@ export type BriefingDayContext = {
 
 /** Contexte structuré pour le briefing — sépare strictement aujourd'hui / hier / prévu. */
 export async function buildBriefingDayContext(
+  athleteId: string,
   refDate: Date = new Date(),
   dailyPhase: DailyPhase | null = null,
 ): Promise<BriefingDayContext> {
@@ -87,8 +88,8 @@ export async function buildBriefingDayContext(
   const yesterday = subDays(today, 1);
 
   const [activities, plannedToday] = await Promise.all([
-    getActivities({ limit: 40 }),
-    getPlannedSessions({ from: today, to: today }),
+    getActivities(athleteId, { limit: 40 }),
+    getPlannedSessions(athleteId, { from: today, to: today }),
   ]);
 
   const doneToday = activities

@@ -7,6 +7,10 @@ vi.mock('@/lib/queries', () => ({
   deletePlannedSession: vi.fn(),
 }));
 
+vi.mock('@/lib/auth/current-athlete', () => ({
+  getCurrentAthleteId: vi.fn().mockResolvedValue('default'),
+}));
+
 vi.mock('@/lib/integrations/google/google-sync', () => ({
   pushSessionToGoogle: vi.fn().mockResolvedValue(undefined),
   deleteSessionFromGoogle: vi.fn().mockResolvedValue(undefined),
@@ -89,7 +93,7 @@ describe('PATCH /api/planned-sessions/[id]', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(recordDecisionAction).toHaveBeenCalledWith({
+    expect(recordDecisionAction).toHaveBeenCalledWith('default', {
       decisionId: 'decision-1',
       actionType: 'ACCEPTED',
       source: 'PLAN_REVIEW_UI',
@@ -132,8 +136,8 @@ describe('PATCH /api/planned-sessions/[id]', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(findDecisionForPlannedSession).toHaveBeenCalledWith('session-1');
-    expect(recordDecisionAction).toHaveBeenCalledWith({
+    expect(findDecisionForPlannedSession).toHaveBeenCalledWith('default', 'session-1');
+    expect(recordDecisionAction).toHaveBeenCalledWith('default', {
       decisionId: 'decision-2',
       actionType: 'OVERRIDDEN',
       source: 'CALENDAR_EDIT',
@@ -172,7 +176,7 @@ describe('PATCH /api/planned-sessions/[id]', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(findDecisionForPlannedSession).toHaveBeenCalledWith('session-1');
+    expect(findDecisionForPlannedSession).toHaveBeenCalledWith('default', 'session-1');
     expect(recordDecisionAction).not.toHaveBeenCalled();
   });
 });

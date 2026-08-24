@@ -6,6 +6,7 @@ import type { PlannedSessionRecord } from '@/lib/planned-session/resolve-context
 function session(partial: Partial<PlannedSessionRecord> = {}): PlannedSessionRecord {
   return {
     id: 's1',
+    athleteId: 'default',
     type: 'BIKE',
     date: new Date('2026-07-20T12:00:00Z'),
     startTime: '09:00',

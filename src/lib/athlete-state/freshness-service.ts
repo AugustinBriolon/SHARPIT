@@ -21,8 +21,6 @@ import {
   isRenphoAccountConnected,
 } from '@/lib/integrations/shared/connection-status';
 
-const ATHLETE_ID = 'default';
-
 type TwinState = { computedAt?: string | Date } | null;
 
 function readComputedAt(state: unknown): Date | null {
@@ -180,13 +178,12 @@ function resolvePlanningFreshness(
 }
 
 export async function computeFreshnessSnapshot(params: {
+  athleteId: string;
   trainingDayId: string;
-  athleteId?: string;
   computing?: ComputingFlags;
   syncing?: SyncingFlags;
 }): Promise<AthleteFreshnessSnapshot> {
-  const athleteId = params.athleteId ?? ATHLETE_ID;
-  const { trainingDayId } = params;
+  const { athleteId, trainingDayId } = params;
   const computing = params.computing ?? {};
   const syncing = params.syncing ?? {};
 

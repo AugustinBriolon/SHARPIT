@@ -233,9 +233,12 @@ function mapPhysicalNotes(
   }));
 }
 
-export async function buildActivityNarrativeFacts(activityId: string): Promise<string | null> {
-  const activity = await prisma.activity.findUnique({
-    where: { id: activityId },
+export async function buildActivityNarrativeFacts(
+  athleteId: string,
+  activityId: string,
+): Promise<string | null> {
+  const activity = await prisma.activity.findFirst({
+    where: { id: activityId, athleteId },
     select: {
       id: true,
       type: true,
@@ -300,6 +303,7 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
   ] = await Promise.all([
     prisma.activity.findMany({
       where: {
+        athleteId,
         type: activity.type,
         date: { gte: since30, lt: activity.date },
         id: { not: activity.id },
@@ -326,11 +330,11 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
       take: 20,
     }),
     prisma.dailyHealth.findMany({
-      where: { date: { gte: subDays(activityDay, 14), lt: activityDay } },
+      where: { athleteId, date: { gte: subDays(activityDay, 14), lt: activityDay } },
       orderBy: { date: 'desc' },
     }),
-    getAthleteProfile(),
-    getActivePhysicalNotes(),
+    getAthleteProfile(athleteId),
+    getActivePhysicalNotes(athleteId),
     prisma.goalAchievement.findMany({
       where: { activityId: activity.id },
       include: {
@@ -338,7 +342,7 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
       },
     }),
     resolveActivityEnvironmentPresentation({
-      athleteId: 'default',
+      athleteId,
       activity: {
         id: activity.id,
         type: activity.type,
@@ -353,14 +357,14 @@ export async function buildActivityNarrativeFacts(activityId: string): Promise<s
       },
     }).catch(() => null),
     // Cached streams only — never block narrative on Garmin/Strava stream fetch.
-    getCachedActivityStreams(activityId).catch((err) => {
+    getCachedActivityStreams(athleteId, activityId).catch((err) => {
       console.error('[activity-narrative-facts] streams', activityId, err);
       return null;
     }),
     // Same source as every other surface, so the narrative cannot cite a different
     // CTL than the dashboard. See ADR-011.
-    loadAthletePmcAnchor({ refDate: activity.date }),
-    loadDailyTrainingStressEntries({ refDate: activity.date }),
+    loadAthletePmcAnchor(athleteId, { refDate: activity.date }),
+    loadDailyTrainingStressEntries(athleteId, { refDate: activity.date }),
   ]);
 
   const streamPayload = streamResult;

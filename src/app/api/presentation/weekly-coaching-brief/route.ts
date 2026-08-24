@@ -13,6 +13,7 @@ import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service'
 import { computeTrainingDayId } from '@/lib/training/training-day';
 import { buildWeeklyCoachingBriefViewModel } from '@/lib/presentation/weekly-coaching-brief';
 import { loadDailyTrainingStressEntries } from '@/lib/training/pmc-server';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import type { CoachingDecisionRecord } from '@/lib/decision-memory/types';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
@@ -25,14 +26,15 @@ export async function GET(request: NextRequest) {
   const weekEnd = addDays(weekStart, 6);
   const now = new Date();
 
+  const athleteId = await getCurrentAthleteId();
   const [activePlan, goals, plannedSessions, dailyTrainingStress, snapshot, recentOutcomes] =
     await Promise.all([
-      getActiveTrainingPlan(),
-      getGoals(),
-      getPlannedSessions({ from: weekStart, to: weekEnd }),
-      loadDailyTrainingStressEntries({ refDate: now }),
-      getOrBuildAthleteSnapshot(computeTrainingDayId(now)),
-      findRecentEvaluatedOutcomes(subDays(now, LEARNING_FEEDBACK_WINDOW_DAYS)),
+      getActiveTrainingPlan(athleteId),
+      getGoals(athleteId),
+      getPlannedSessions(athleteId, { from: weekStart, to: weekEnd }),
+      loadDailyTrainingStressEntries(athleteId, { refDate: now }),
+      getOrBuildAthleteSnapshot(athleteId, computeTrainingDayId(now)),
+      findRecentEvaluatedOutcomes(athleteId, subDays(now, LEARNING_FEEDBACK_WINDOW_DAYS)),
     ]);
 
   const planWeek = activePlan ? (findPlanWeekForDate(activePlan.weeks, weekStart) ?? null) : null;
@@ -49,7 +51,7 @@ export async function GET(request: NextRequest) {
   const sessionDecisions = new Map<string, CoachingDecisionRecord>();
   await Promise.all(
     plannedSessions.map(async (session) => {
-      const decision = await findDecisionForPlannedSession(session.id);
+      const decision = await findDecisionForPlannedSession(athleteId, session.id);
       if (decision) sessionDecisions.set(session.id, decision);
     }),
   );

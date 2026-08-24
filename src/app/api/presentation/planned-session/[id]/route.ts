@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getPlannedSessionById } from '@/lib/queries';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { buildPlannedSessionViewModel } from '@/lib/presentation/planned-session';
 import { resolvePlannedSessionContext } from '@/lib/planned-session/resolve-context';
 import { buildPlannedSessionCompletionComparison } from '@/lib/planned-session/display/completion-comparison';
@@ -9,7 +10,8 @@ type RouteProps = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, { params }: RouteProps) {
   const { id } = await params;
-  const session = await getPlannedSessionById(id);
+  const athleteId = await getCurrentAthleteId();
+  const session = await getPlannedSessionById(athleteId, id);
 
   if (!session) {
     return NextResponse.json({ error: 'Séance planifiée introuvable.' }, { status: 404 });
@@ -20,7 +22,7 @@ export async function GET(_req: Request, { params }: RouteProps) {
   let completion = null;
   if (session.activityId && session.activity) {
     const envPresentation = await resolveActivityEnvironmentPresentation({
-      athleteId: 'default',
+      athleteId,
       activity: {
         id: session.activity.id,
         type: session.activity.type,

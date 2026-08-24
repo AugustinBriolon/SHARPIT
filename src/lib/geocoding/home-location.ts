@@ -28,9 +28,10 @@ export function homeLocationFromEnv(): GeoLocation {
  */
 export async function resolveHomeLocation(
   prisma: PrismaClient,
+  athleteId: string,
 ): Promise<GeoLocation & { source: HomeLocationSource }> {
   const profile = await prisma.athleteProfile.findUnique({
-    where: { id: 'default' },
+    where: { id: athleteId },
     select: { homeLocationLabel: true, homeLocationLat: true, homeLocationLng: true },
   });
 

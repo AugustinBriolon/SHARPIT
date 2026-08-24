@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { generateAndStoreDailyBriefing, getDailyBriefing } from '@/lib/briefing/daily-briefing';
 
 export const maxDuration = 60;
@@ -17,7 +18,8 @@ export async function GET(request: NextRequest) {
   const date = parseDate(request.nextUrl.searchParams.get('date'));
 
   try {
-    const briefing = await getDailyBriefing(date);
+    const athleteId = await getCurrentAthleteId();
+    const briefing = await getDailyBriefing(athleteId, date);
     return NextResponse.json({ briefing: briefing ?? null });
   } catch (error) {
     console.error('[coach/briefing] GET', error);
@@ -35,7 +37,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
     const date = parseDate((body as { date?: string }).date ?? null);
-    const briefing = await generateAndStoreDailyBriefing(date);
+    const athleteId = await getCurrentAthleteId();
+    const briefing = await generateAndStoreDailyBriefing(athleteId, date);
     return NextResponse.json({ briefing });
   } catch (error) {
     console.error('[coach/briefing] POST', error);

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { buildPhysicalHealthPresentationViewModel } from '@/lib/presentation/physical-health';
 
 export async function GET(request: NextRequest) {
@@ -13,7 +14,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const viewModel = await buildPhysicalHealthPresentationViewModel(trainingDayId);
+    const athleteId = await getCurrentAthleteId();
+    const viewModel = await buildPhysicalHealthPresentationViewModel(athleteId, trainingDayId);
     return NextResponse.json({ viewModel });
   } catch (error) {
     console.error('[api/presentation/physical-health]', error);

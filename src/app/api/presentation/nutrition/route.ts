@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { format } from 'date-fns';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { buildNutritionViewModel } from '@/lib/presentation/nutrition';
 
 export async function GET(request: NextRequest) {
@@ -15,7 +16,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const viewModel = await buildNutritionViewModel(trainingDayId ?? fallbackDayId);
+    const athleteId = await getCurrentAthleteId();
+    const viewModel = await buildNutritionViewModel(athleteId, trainingDayId ?? fallbackDayId);
     return NextResponse.json({ viewModel });
   } catch (error) {
     console.error('[api/presentation/nutrition]', error);

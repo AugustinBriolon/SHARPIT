@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { ensureMorningRecalibration } from '@/lib/morning-recalibration/service';
 import { todayTrainingDayId } from '@/lib/health/wellness-checkin';
 
@@ -7,7 +8,8 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json().catch(() => ({}))) as { trainingDayId?: string };
     const trainingDayId = body.trainingDayId ?? todayTrainingDayId();
-    const { presentation: proposal } = await ensureMorningRecalibration(trainingDayId);
+    const athleteId = await getCurrentAthleteId();
+    const { presentation: proposal } = await ensureMorningRecalibration(athleteId, trainingDayId);
     return NextResponse.json({ proposal });
   } catch (error) {
     console.error('[morning-recalibration]', error);
@@ -21,7 +23,8 @@ export async function GET(request: Request) {
   const trainingDayId = searchParams.get('trainingDayId') ?? todayTrainingDayId();
 
   try {
-    const { presentation: proposal } = await ensureMorningRecalibration(trainingDayId);
+    const athleteId = await getCurrentAthleteId();
+    const { presentation: proposal } = await ensureMorningRecalibration(athleteId, trainingDayId);
     return NextResponse.json({ proposal });
   } catch (error) {
     console.error('[morning-recalibration]', error);

@@ -58,12 +58,15 @@ export function activitiesMatch(a: ActivityFingerprint, b: ActivityFingerprint):
  * (type + heure de début + durée) pour éviter les doublons Garmin/Strava.
  */
 export async function findMatchingActivity(
+  athleteId: string,
   candidate: ActivityFingerprint & {
     garminId?: string | null;
     stravaId?: string | null;
     excludeId?: string;
   },
 ): Promise<MatchedActivity | null> {
+  // garminId/stravaId are unique in the provider's own id space, not just within
+  // one connected account — no athleteId needed to disambiguate those two.
   if (candidate.garminId) {
     const byGarmin = await prisma.activity.findUnique({
       where: { garminId: candidate.garminId },
@@ -82,6 +85,7 @@ export async function findMatchingActivity(
 
   const nearby = await prisma.activity.findMany({
     where: {
+      athleteId,
       type: candidate.type,
       date: {
         gte: subHours(candidate.date, 12),

@@ -98,8 +98,11 @@ export function sleepAdequacySignalForNight(
   return mapSleepScoreToAdequacy(sleepScore) ?? 'MISSING';
 }
 
-export async function buildSleepViewModel(trainingDayId: string): Promise<SleepViewModel> {
-  const snapshot = await getOrBuildAthleteSnapshot(trainingDayId);
+export async function buildSleepViewModel(
+  athleteId: string,
+  trainingDayId: string,
+): Promise<SleepViewModel> {
+  const snapshot = await getOrBuildAthleteSnapshot(athleteId, trainingDayId);
   const { recovery } = snapshot;
 
   if (!recovery) return emptySleepViewModel();
@@ -107,8 +110,8 @@ export async function buildSleepViewModel(trainingDayId: string): Promise<SleepV
   const refDate = parseISO(trainingDayId);
 
   const [healthEntries, athleteProfile] = await Promise.all([
-    getHealthEntries(30, refDate),
-    getAthleteProfile(),
+    getHealthEntries(athleteId, 30, refDate),
+    getAthleteProfile(athleteId),
   ]);
 
   const sleepGoals = {

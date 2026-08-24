@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { defaultExposureForActivityType } from '@/core/planned-session/defaults';
 import { pushSessionToGoogle } from '@/lib/integrations/google/google-sync';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { createPlannedSession, getPlannedSessionById, getPlannedSessions } from '@/lib/queries';
 import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/resolve-context';
 import { createPlannedSessionSchema } from '@/lib/validators/planned-session';
@@ -13,7 +14,8 @@ export async function GET(request: NextRequest) {
   const toParam = searchParams.get('to');
 
   try {
-    const sessions = await getPlannedSessions({
+    const athleteId = await getCurrentAthleteId();
+    const sessions = await getPlannedSessions(athleteId, {
       from: fromParam ? new Date(fromParam) : undefined,
       to: toParam ? new Date(toParam) : undefined,
     });
@@ -29,6 +31,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const athleteId = await getCurrentAthleteId();
     const body = await request.json();
     const { decisionId, ...sessionBody } = body as { decisionId?: string };
     const parsed = createPlannedSessionSchema.safeParse(sessionBody);
@@ -45,7 +48,7 @@ export async function POST(request: NextRequest) {
     // control for REJECTED sessions, but the server is the enforcement boundary: a
     // direct API call must not be able to bypass the Gate's verdict.
     if (decisionId) {
-      const decision = await findCoachingDecisionById(decisionId);
+      const decision = await findCoachingDecisionById(athleteId, decisionId);
       if (decision?.gateResult.status === 'REJECTED') {
         return NextResponse.json(
           { error: 'Cette proposition a été rejetée par le Gate et ne peut pas être appliquée.' },
@@ -54,8 +57,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const session = await createPlannedSession({
-      ...(parsed.data as Parameters<typeof createPlannedSession>[0]),
+    const session = await createPlannedSession(athleteId, {
+      ...(parsed.data as Parameters<typeof createPlannedSession>[1]),
       exposureSetting:
         parsed.data.exposureSetting ?? defaultExposureForActivityType(parsed.data.type),
     });
@@ -64,7 +67,7 @@ export async function POST(request: NextRequest) {
     // an invalid/unknown decisionId must never fail the session creation itself).
     if (decisionId) {
       try {
-        await recordDecisionAction({
+        await recordDecisionAction(athleteId, {
           decisionId,
           actionType: 'ACCEPTED',
           source: 'PLAN_REVIEW_UI',
@@ -77,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     // Context refresh + Google push are independent best-effort side effects.
     await Promise.all([
-      refreshAndPersistPlannedSessionContext(session.id).catch((ctxError) => {
+      refreshAndPersistPlannedSessionContext(athleteId, session.id).catch((ctxError) => {
         console.error('[planned-sessions/context]', ctxError);
       }),
       pushSessionToGoogle(session).catch((syncError) => {
@@ -85,7 +88,7 @@ export async function POST(request: NextRequest) {
       }),
     ]);
 
-    const fresh = await getPlannedSessionById(session.id);
+    const fresh = await getPlannedSessionById(athleteId, session.id);
     return NextResponse.json(fresh ?? session, { status: 201 });
   } catch (error) {
     console.error(error);

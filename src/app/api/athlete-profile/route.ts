@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { getAthleteProfile, upsertAthleteProfile } from '@/lib/queries';
 import { athleteProfileSchema } from '@/lib/validators/athlete-profile';
 import { invalidateCoachContext } from '@/lib/coach/context/coach-context';
@@ -33,9 +34,10 @@ function profileUpdateError(error: unknown) {
 
 export async function GET() {
   try {
-    const profile = await getAthleteProfile();
+    const athleteId = await getCurrentAthleteId();
+    const profile = await getAthleteProfile(athleteId);
     // An athlete with no profile row still has a reading density — the default one.
-    return NextResponse.json(profile ?? { id: 'default', displayMode: DEFAULT_DISPLAY_MODE });
+    return NextResponse.json(profile ?? { id: athleteId, displayMode: DEFAULT_DISPLAY_MODE });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Impossible de charger le profil athlète' }, { status: 500 });
@@ -64,7 +66,8 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const { equipment, ...rest } = parsed.data;
-    const profile = await upsertAthleteProfile({
+    const athleteId = await getCurrentAthleteId();
+    const profile = await upsertAthleteProfile(athleteId, {
       ...rest,
       ...(equipment !== undefined
         ? {

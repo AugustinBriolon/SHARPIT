@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { emailFromIdToken, exchangeCodeForToken } from '@/lib/integrations/google/google';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
@@ -28,6 +29,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const athleteId = await getCurrentAthleteId();
     const token = await exchangeCodeForToken(code, storedRedirect ?? undefined);
 
     if (!token.refresh_token) {
@@ -46,8 +48,8 @@ export async function GET(request: NextRequest) {
     };
 
     await prisma.googleAccount.upsert({
-      where: { athleteId: 'default' },
-      create: { athleteId: 'default', ...data },
+      where: { athleteId },
+      create: { athleteId, ...data },
       update: data,
     });
 

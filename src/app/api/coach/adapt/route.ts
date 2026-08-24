@@ -3,6 +3,7 @@ import { addDays, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
 import { getActiveTrainingPlan, getGoals, getPlannedSessionsForCoach } from '@/lib/queries';
 import { resolveDefaultPlanGoalId, selectableDatedGoalIds } from '@/lib/planned-session/plan-goal';
@@ -126,12 +127,13 @@ export async function POST(req: Request) {
 
     const today = startOfDay(new Date());
     const horizon = addDays(today, days);
+    const athleteId = await getCurrentAthleteId();
 
     const [ctx, upcoming, activePlan, goals] = await Promise.all([
-      buildCoachContext(today, { includeScenario: true }),
-      getPlannedSessionsForCoach({ from: today, to: horizon }),
-      getActiveTrainingPlan(),
-      getGoals(),
+      buildCoachContext(athleteId, today, { includeScenario: true }),
+      getPlannedSessionsForCoach(athleteId, { from: today, to: horizon }),
+      getActiveTrainingPlan(athleteId),
+      getGoals(athleteId),
     ]);
     const defaultGoalId = resolveDefaultPlanGoalId(
       activePlan?.goalId,
@@ -205,7 +207,7 @@ ${upcomingLines.length ? upcomingLines.join('\n') : 'Aucune séance planifiée �
           });
           send({
             type: 'result',
-            value: await finalizeAdapt(output, upcoming, defaultGoalId, today),
+            value: await finalizeAdapt(athleteId, output, upcoming, defaultGoalId, today),
           });
         } catch (error) {
           console.error('[coach/adapt]', error);
@@ -232,6 +234,7 @@ export type AdaptPayload = {
 
 /** Validates the model output, runs the Gate and records the coaching decisions. */
 async function finalizeAdapt(
+  athleteId: string,
   output: unknown,
   upcoming: UpcomingSession[],
   defaultGoalId: string | null,
@@ -268,6 +271,7 @@ async function finalizeAdapt(
     const decisionIdByChange = new Map<AdaptChange, string>();
     if (proposals.length > 0) {
       const { context: gateContext, snapshot } = await buildGateContext({
+        athleteId,
         trainingDayId: computeTrainingDayId(today),
         proposals,
         goalId: defaultGoalId,
@@ -277,7 +281,7 @@ async function finalizeAdapt(
       const snapshotContext = buildDecisionSnapshotContext(snapshot);
       const decisions = await Promise.all(
         gate.sessions.map((sessionResult) =>
-          createCoachingDecision({
+          createCoachingDecision(athleteId, {
             trainingDayId: computeTrainingDayId(
               new Date(`${sessionResult.proposal.date}T00:00:00`),
             ),

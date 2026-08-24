@@ -4,6 +4,7 @@ import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
 import { enrichActivityObservedContext } from '@/lib/activity/detail/enrich-observed-context';
 import { buildActivityCreateData } from '@/lib/activity/activity-service';
 import { runActivityNarrativeAnalysis } from '@/lib/activity/narrative/activity-narrative';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { syncManualActivityObservations } from '@/lib/manual-observation-sync';
 import { createActivity, getActivitiesList } from '@/lib/queries';
 import { prisma } from '@/lib/prisma';
@@ -20,8 +21,9 @@ export async function GET(request: NextRequest) {
   try {
     // Weather / narrative enrichment runs on athlete-state refresh & provider sync —
     // never as a side-effect of listing activities (avoids Neon work on every GET).
+    const athleteId = await getCurrentAthleteId();
 
-    const activities = await getActivitiesList({
+    const activities = await getActivitiesList(athleteId, {
       type: type && Object.values(ActivityType).includes(type) ? type : undefined,
       limit: limit ? Number(limit) : undefined,
       sinceDays: sinceDays ? Number(sinceDays) : undefined,
@@ -36,6 +38,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const athleteId = await getCurrentAthleteId();
     const body = await request.json();
     const parsed = createActivitySchema.safeParse(body);
 
@@ -47,7 +50,8 @@ export async function POST(request: NextRequest) {
     }
 
     const activity = await createActivity(
-      buildActivityCreateData(parsed.data) as Parameters<typeof createActivity>[0],
+      athleteId,
+      buildActivityCreateData(parsed.data) as Parameters<typeof createActivity>[1],
     );
     // Observations do not mutate the returned activity JSON; kept awaited so ingest
     // finishes before Instant UX continues (downstream twin consistency).
@@ -65,21 +69,21 @@ export async function POST(request: NextRequest) {
     // after() work completes — do not block 201 on enrich.
     after(async () => {
       try {
-        await updateRecordsForTypesSafe([activityType]);
+        await updateRecordsForTypesSafe(athleteId, [activityType]);
       } catch (error) {
         console.error('[activities/POST] records', error);
       }
 
       if (shouldEnrich) {
         try {
-          await enrichActivityObservedContext(prisma, activityId);
+          await enrichActivityObservedContext(prisma, athleteId, activityId);
         } catch (error) {
           console.error('[activities/POST] enrich-context', error);
         }
       }
 
       try {
-        await runActivityNarrativeAnalysis(activityId);
+        await runActivityNarrativeAnalysis(athleteId, activityId);
       } catch (error) {
         console.error('[activities/POST] narrative', error);
       }
@@ -88,7 +92,7 @@ export async function POST(request: NextRequest) {
       try {
         const { autoLinkActivities } =
           await import('@/lib/planned-session/linking/session-linking');
-        plannedSessionIdsToAnalyze = (await autoLinkActivities([activityId])).sessionIds;
+        plannedSessionIdsToAnalyze = (await autoLinkActivities(athleteId, [activityId])).sessionIds;
       } catch (error) {
         console.error('[activities/POST] auto-link', error);
       }
@@ -96,6 +100,7 @@ export async function POST(request: NextRequest) {
       try {
         const { scheduleBackgroundTasks } = await import('@/lib/athlete-state/background');
         scheduleBackgroundTasks({
+          athleteId,
           activityIds: [activityId],
           regenerateBriefing: false,
           plannedSessionIdsToAnalyze,

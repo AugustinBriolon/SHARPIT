@@ -7,8 +7,6 @@ import { observationEngine } from '@/lib/engines/observation-engine';
 import { prisma } from '@/lib/prisma';
 import { dayKeyFromDate } from '@/lib/date/day-key';
 
-const ATHLETE_ID = 'default';
-
 export type HealthObservationBackfillResult = {
   scanned: number;
   ingested: number;
@@ -62,12 +60,12 @@ function filterMissingObservations(
  * Observation Engine pipeline (or missed ingest on prior syncs).
  */
 export async function backfillHealthObservationsFromDailyHealth(
-  athleteId: string = ATHLETE_ID,
+  athleteId: string,
   options?: { days?: number },
 ): Promise<HealthObservationBackfillResult> {
   const since = subDays(startOfDay(new Date()), options?.days ?? 365);
   const rows = await prisma.dailyHealth.findMany({
-    where: { date: { gte: since } },
+    where: { athleteId, date: { gte: since } },
     orderBy: { date: 'desc' },
   });
 

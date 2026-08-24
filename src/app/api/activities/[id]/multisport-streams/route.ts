@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { getMultisportLegStreams } from '@/lib/streams/streams';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -6,7 +7,8 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const payload = await getMultisportLegStreams(id);
+    const athleteId = await getCurrentAthleteId();
+    const payload = await getMultisportLegStreams(athleteId, id);
 
     if (payload == null) {
       return NextResponse.json(

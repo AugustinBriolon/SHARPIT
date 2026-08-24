@@ -3,6 +3,7 @@ import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { EquipmentPanel } from '@/components/settings/equipment';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
 import { getAthleteProfile } from '@/lib/queries';
 
@@ -26,7 +27,8 @@ function EquipmentPanelSkeleton() {
 }
 
 async function EquipmentPanelWithProfile() {
-  const athleteProfile = await getAthleteProfile().catch(() => null);
+  const athleteId = await getCurrentAthleteId();
+  const athleteProfile = await getAthleteProfile(athleteId).catch(() => null);
 
   return <EquipmentPanel initial={normalizeAthleteEquipment(athleteProfile?.equipment ?? null)} />;
 }

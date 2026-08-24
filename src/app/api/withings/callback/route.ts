@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { exchangeWithingsCode, getWithingsRedirectUri } from '@/lib/integrations/withings/withings';
 import { syncWithingsHealth } from '@/lib/integrations/withings/withings-sync';
 
@@ -31,12 +32,13 @@ export async function GET(request: NextRequest) {
   const redirectUri = storedRedirectUri ?? getWithingsRedirectUri(new URL(request.url).origin);
 
   try {
+    const athleteId = await getCurrentAthleteId();
     const token = await exchangeWithingsCode(code, redirectUri);
 
     await prisma.withingsAccount.upsert({
-      where: { athleteId: 'default' },
+      where: { athleteId },
       create: {
-        athleteId: 'default',
+        athleteId,
         withingsUserId: String(token.userid),
         accessToken: token.access_token,
         refreshToken: token.refresh_token,
@@ -52,7 +54,7 @@ export async function GET(request: NextRequest) {
     });
 
     try {
-      await syncWithingsHealth({ days: 90 });
+      await syncWithingsHealth(athleteId, { days: 90 });
     } catch (syncErr) {
       console.error('[withings/callback] sync initial:', syncErr);
     }

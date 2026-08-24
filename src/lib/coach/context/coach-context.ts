@@ -31,11 +31,12 @@ import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
 import { dayKeyFromDate, toLocalCalendarDate } from '@/lib/date/day-key';
 
 async function loadNutritionSummary(
+  athleteId: string,
   trainingDayId: string,
 ): Promise<{ calories: number; protein: number; carbs: number; fat: number } | null> {
   try {
     const row = await prisma.dailyNutrition.findFirst({
-      where: { date: new Date(`${trainingDayId}T00:00:00Z`) },
+      where: { athleteId, date: new Date(`${trainingDayId}T00:00:00Z`) },
     });
     if (!row) return null;
     return {
@@ -59,13 +60,16 @@ const TYPE_FR: Record<string, string> = {
 };
 
 /** Latest home/today weather observation for coach — cheap indexed read, never Open-Meteo. */
-async function loadHomeWeatherHint(trainingDayId: string): Promise<{
+async function loadHomeWeatherHint(
+  athleteId: string,
+  trainingDayId: string,
+): Promise<{
   airTemperatureC: number | null;
   relativeHumidityPct: number | null;
 } | null> {
   const row = await prisma.environmentalObservationRecord.findFirst({
     where: {
-      athleteId: 'default',
+      athleteId,
       trainingDayId,
       dimension: 'WEATHER',
       supersededBy: null,
@@ -124,16 +128,17 @@ export function invalidateCoachContext() {
 }
 
 export async function buildCoachContext(
+  athleteId: string,
   refDate: Date = new Date(),
   options?: BuildCoachContextOptions,
 ): Promise<CoachContextData> {
   const includeScenario = options?.includeScenario === true;
-  const key = `${format(startOfDay(refDate), 'yyyy-MM-dd')}:sc${includeScenario ? 1 : 0}`;
+  const key = `${athleteId}:${format(startOfDay(refDate), 'yyyy-MM-dd')}:sc${includeScenario ? 1 : 0}`;
   const now = Date.now();
   if (contextCache && contextCache.key === key && now - contextCache.at < CONTEXT_TTL_MS) {
     return contextCache.value;
   }
-  const value = await buildCoachContextUncached(refDate, { includeScenario });
+  const value = await buildCoachContextUncached(athleteId, refDate, { includeScenario });
   contextCache = { key, at: now, value };
   return value;
 }
@@ -144,6 +149,7 @@ export async function buildCoachContext(
  * (synthèse, pas de données brutes) → coût minimal et meilleures réponses.
  */
 async function buildCoachContextUncached(
+  athleteId: string,
   refDate: Date = new Date(),
   options?: BuildCoachContextOptions,
 ) {
@@ -167,20 +173,22 @@ async function buildCoachContextUncached(
     dailyStress,
     nutritionToday,
   ] = await Promise.all([
-    getActivitiesForCoach({ limit: 120, sinceDays: 90 }),
-    getHealthEntries(30),
-    getGoals(),
-    getPlannedSessionsForCoach({ from: today, to: subDays(today, -21) }),
-    getPlannedSessionsForCoach({ from: subDays(today, 14), to: today }),
-    getAthleteProfile(),
-    getActivePhysicalNotes(),
-    getOrBuildAthleteSnapshot(trainingDayId),
-    listTravelContexts(prisma),
-    loadHomeWeatherHint(trainingDayId),
-    includeScenario ? loadScenarioComparisonForCoach({ horizonDays: 7 }) : Promise.resolve(null),
-    loadAthletePmcAnchor({ refDate: today }),
-    loadDailyTrainingStressEntries({ refDate: today }),
-    loadNutritionSummary(trainingDayId),
+    getActivitiesForCoach(athleteId, { limit: 120, sinceDays: 90 }),
+    getHealthEntries(athleteId, 30),
+    getGoals(athleteId),
+    getPlannedSessionsForCoach(athleteId, { from: today, to: subDays(today, -21) }),
+    getPlannedSessionsForCoach(athleteId, { from: subDays(today, 14), to: today }),
+    getAthleteProfile(athleteId),
+    getActivePhysicalNotes(athleteId),
+    getOrBuildAthleteSnapshot(athleteId, trainingDayId),
+    listTravelContexts(prisma, athleteId),
+    loadHomeWeatherHint(athleteId, trainingDayId),
+    includeScenario
+      ? loadScenarioComparisonForCoach(athleteId, { horizonDays: 7 })
+      : Promise.resolve(null),
+    loadAthletePmcAnchor(athleteId, { refDate: today }),
+    loadDailyTrainingStressEntries(athleteId, { refDate: today }),
+    loadNutritionSummary(athleteId, trainingDayId),
   ]);
 
   // ---- Fitness (PMC: CTL / ATL / TSB) ----

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { getAthleteProfile, upsertAthleteProfile } from '@/lib/queries';
 
 const schema = z.object({
@@ -8,7 +9,8 @@ const schema = z.object({
 
 export async function GET() {
   try {
-    const profile = await getAthleteProfile();
+    const athleteId = await getCurrentAthleteId();
+    const profile = await getAthleteProfile(athleteId);
     return NextResponse.json({ context: profile?.context ?? '' });
   } catch (error) {
     console.error(error);
@@ -24,7 +26,8 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Données invalides' }, { status: 400 });
     }
     const value = parsed.data.context?.trim() || null;
-    const profile = await upsertAthleteProfile({ context: value });
+    const athleteId = await getCurrentAthleteId();
+    const profile = await upsertAthleteProfile(athleteId, { context: value });
     return NextResponse.json({ context: profile.context ?? '' });
   } catch (error) {
     console.error(error);

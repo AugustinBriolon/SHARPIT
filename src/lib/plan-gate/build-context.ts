@@ -40,12 +40,13 @@ function hasThresholds(
  * fetch it a second time.
  */
 export async function buildGateContext(params: {
+  athleteId: string;
   trainingDayId: string;
   proposals: readonly GateProposal[];
   goalId?: string | null;
   now?: Date;
 }): Promise<{ context: GateContext; snapshot: AthleteSnapshot }> {
-  const { trainingDayId, proposals, goalId, now = new Date() } = params;
+  const { athleteId, trainingDayId, proposals, goalId, now = new Date() } = params;
 
   const proposalDates = proposals.map((p) => new Date(`${p.date}T00:00:00`));
   const windowStart =
@@ -66,18 +67,21 @@ export async function buildGateContext(params: {
     athleteProfile,
     googleAccount,
   ] = await Promise.all([
-    getOrBuildAthleteSnapshot(trainingDayId),
-    loadDailyTrainingStressEntries({ refDate: now }),
-    getPlannedSessions({ from: windowStart, to: windowEnd }),
-    goalId ? getGoalById(goalId) : Promise.resolve(null),
-    getActiveTrainingPlan(),
-    getAthleteProfile(),
-    getGoogleAccount(),
+    getOrBuildAthleteSnapshot(athleteId, trainingDayId),
+    loadDailyTrainingStressEntries(athleteId, { refDate: now }),
+    getPlannedSessions(athleteId, { from: windowStart, to: windowEnd }),
+    goalId ? getGoalById(athleteId, goalId) : Promise.resolve(null),
+    getActiveTrainingPlan(athleteId),
+    getAthleteProfile(athleteId),
+    getGoogleAccount(athleteId),
   ]);
 
   // null = no calendar connected (skip the rule); [] = connected with nothing busy.
   const busyBlocks = googleAccount
-    ? await getUpcomingBusy(WINDOW_PADDING_DAYS + Math.max(1, proposalDates.length)).catch(() => [])
+    ? await getUpcomingBusy(
+        athleteId,
+        WINDOW_PADDING_DAYS + Math.max(1, proposalDates.length),
+      ).catch(() => [])
     : null;
 
   const context: GateContext = {

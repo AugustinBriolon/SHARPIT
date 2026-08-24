@@ -59,16 +59,20 @@ function toDomain(row: CoachingDecisionRow): CoachingDecisionRecord {
   };
 }
 
-export async function createCoachingDecision(input: {
-  trainingDayId: string;
-  source: CoachingDecisionSource;
-  proposal: GateProposal;
-  gateResult: GateSessionResult;
-  snapshotContext: DecisionSnapshotContext;
-  snapshotIdAtRecommendation: string | null;
-}): Promise<CoachingDecisionRecord> {
+export async function createCoachingDecision(
+  athleteId: string,
+  input: {
+    trainingDayId: string;
+    source: CoachingDecisionSource;
+    proposal: GateProposal;
+    gateResult: GateSessionResult;
+    snapshotContext: DecisionSnapshotContext;
+    snapshotIdAtRecommendation: string | null;
+  },
+): Promise<CoachingDecisionRecord> {
   const row = await prisma.coachingDecision.create({
     data: {
+      athleteId,
       trainingDayId: input.trainingDayId,
       source: input.source,
       proposal: input.proposal as object,
@@ -80,8 +84,11 @@ export async function createCoachingDecision(input: {
   return toDomain(row);
 }
 
-export async function findCoachingDecisionById(id: string): Promise<CoachingDecisionRecord | null> {
-  const row = await prisma.coachingDecision.findUnique({ where: { id } });
+export async function findCoachingDecisionById(
+  athleteId: string,
+  id: string,
+): Promise<CoachingDecisionRecord | null> {
+  const row = await prisma.coachingDecision.findFirst({ where: { id, athleteId } });
   return row ? toDomain(row) : null;
 }
 
@@ -90,11 +97,12 @@ export async function findCoachingDecisionById(id: string): Promise<CoachingDeci
  * Identified via snapshotContext.morningRecalibration (PLAN_ADAPTER source).
  */
 export async function findMorningRecalibrationDecision(
+  athleteId: string,
   trainingDayId: string,
   sessionId?: string,
 ): Promise<CoachingDecisionRecord | null> {
   const rows = await prisma.coachingDecision.findMany({
-    where: { trainingDayId, source: 'PLAN_ADAPTER' },
+    where: { athleteId, trainingDayId, source: 'PLAN_ADAPTER' },
     orderBy: { createdAt: 'desc' },
     take: 20,
   });
@@ -114,14 +122,18 @@ export async function findMorningRecalibrationDecision(
  * Used by the override-detection hook on the manual planned-session edit route.
  */
 export async function findDecisionForPlannedSession(
+  athleteId: string,
   plannedSessionId: string,
 ): Promise<CoachingDecisionRecord | null> {
   const action = await prisma.coachingDecisionAction.findFirst({
-    where: { resultingPlannedSessionId: plannedSessionId },
+    where: {
+      resultingPlannedSessionId: plannedSessionId,
+      decision: { athleteId },
+    },
     orderBy: { occurredAt: 'desc' },
   });
   if (!action) return null;
-  return findCoachingDecisionById(action.decisionId);
+  return findCoachingDecisionById(athleteId, action.decisionId);
 }
 
 /**
@@ -129,10 +141,11 @@ export async function findDecisionForPlannedSession(
  * read shape presentation builders need. Read-only: no write path added here.
  */
 export async function findDecisionWithHistory(
+  athleteId: string,
   decisionId: string,
 ): Promise<CoachingDecisionWithHistory | null> {
-  const row = await prisma.coachingDecision.findUnique({
-    where: { id: decisionId },
+  const row = await prisma.coachingDecision.findFirst({
+    where: { id: decisionId, athleteId },
     include: {
       actions: { orderBy: { occurredAt: 'asc' } },
       outcome: true,
@@ -173,14 +186,19 @@ export async function findDecisionWithHistory(
  * since this is typically called from best-effort hooks (e.g. a calendar edit) that must
  * not fail the primary operation.
  */
-export async function recordDecisionAction(input: {
-  decisionId: string;
-  actionType: CoachingDecisionActionType;
-  source: CoachingDecisionActionSource;
-  rationale?: string | null;
-  resultingPlannedSessionId?: string | null;
-}): Promise<CoachingDecisionActionRecord | null> {
-  const decision = await prisma.coachingDecision.findUnique({ where: { id: input.decisionId } });
+export async function recordDecisionAction(
+  athleteId: string,
+  input: {
+    decisionId: string;
+    actionType: CoachingDecisionActionType;
+    source: CoachingDecisionActionSource;
+    rationale?: string | null;
+    resultingPlannedSessionId?: string | null;
+  },
+): Promise<CoachingDecisionActionRecord | null> {
+  const decision = await prisma.coachingDecision.findFirst({
+    where: { id: input.decisionId, athleteId },
+  });
   if (!decision) return null;
   if (!canRecordAction(decision.status, input.actionType)) return null;
 
@@ -223,6 +241,18 @@ export async function findStalePresentedDecisions(
   return rows.map(toDomain);
 }
 
+/** Same as {@link findStalePresentedDecisions}, scoped to one athlete. */
+export async function findStalePresentedDecisionsForAthlete(
+  athleteId: string,
+  now: Date = new Date(),
+): Promise<CoachingDecisionRecord[]> {
+  const threshold = addHours(now, -PRESENTED_EXPIRY_HOURS);
+  const rows = await prisma.coachingDecision.findMany({
+    where: { athleteId, status: 'PRESENTED', createdAt: { lt: threshold } },
+  });
+  return rows.map(toDomain);
+}
+
 export async function expireDecision(decisionId: string, now: Date = new Date()): Promise<void> {
   await prisma.$transaction([
     prisma.coachingDecision.update({ where: { id: decisionId }, data: { status: 'EXPIRED' } }),
@@ -256,6 +286,7 @@ export async function findDecisionsPendingOutcomeEvaluation(
         outcome: null,
       },
     },
+    // Cron-wide sweep across all athletes — this one intentionally stays global.
     include: { decision: true },
     orderBy: { occurredAt: 'desc' },
   });
@@ -302,12 +333,17 @@ export async function saveOutcome(
  * here; that's `buildLearningFeedback` (pure, src/lib/decision-memory/learning-feedback.ts).
  */
 export async function findRecentEvaluatedOutcomes(
+  athleteId: string,
   sinceDate: Date,
 ): Promise<
   { outcome: OutcomeEvaluation; type: GateProposal['type']; intensity: GateProposal['intensity'] }[]
 > {
   const rows = await prisma.coachingDecisionOutcome.findMany({
-    where: { evaluatedAt: { gte: sinceDate }, outcomeStatus: 'EVALUATED' },
+    where: {
+      evaluatedAt: { gte: sinceDate },
+      outcomeStatus: 'EVALUATED',
+      decision: { athleteId },
+    },
     include: { decision: true },
   });
 

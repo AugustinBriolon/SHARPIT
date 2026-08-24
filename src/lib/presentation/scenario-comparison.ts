@@ -217,11 +217,14 @@ export function buildScenarioComparisonViewModel(
   };
 }
 
-export async function buildScenarioComparisonPresentationViewModel(params?: {
-  horizonDays?: ProjectionHorizonDays;
-  anchorTrainingDayId?: string;
-}): Promise<ScenarioComparisonViewModel> {
-  const comparison = await runScenarioComparison(params);
+export async function buildScenarioComparisonPresentationViewModel(
+  athleteId: string,
+  params?: {
+    horizonDays?: ProjectionHorizonDays;
+    anchorTrainingDayId?: string;
+  },
+): Promise<ScenarioComparisonViewModel> {
+  const comparison = await runScenarioComparison(athleteId, params);
   return buildScenarioComparisonViewModel(comparison);
 }
 
@@ -274,8 +277,11 @@ export function formatScenarioComparisonForCoach(
   return lines.join('\n');
 }
 
-export async function loadScenarioComparisonForCoach(params?: {
-  horizonDays?: ProjectionHorizonDays;
-}): Promise<ScenarioComparison | null> {
-  return runScenarioComparison({ horizonDays: params?.horizonDays ?? 7 });
+export async function loadScenarioComparisonForCoach(
+  athleteId: string,
+  params?: {
+    horizonDays?: ProjectionHorizonDays;
+  },
+): Promise<ScenarioComparison | null> {
+  return runScenarioComparison(athleteId, { horizonDays: params?.horizonDays ?? 7 });
 }

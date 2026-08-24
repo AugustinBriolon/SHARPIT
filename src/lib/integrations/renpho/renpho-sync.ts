@@ -17,36 +17,35 @@ import { backfillBodyCompositionObservationsFromMeasurements } from '@/lib/integ
 import { withingsWeighInDayKeys } from '@/lib/integrations/withings/withings-sync';
 import { syncSinceFromLastSync, syncWindowDays } from '@/lib/integrations/shared/sync-since';
 
-const ATHLETE_ID = 'default';
-
-async function ingestRenphoMeasurement(measurement: RenphoMeasurement): Promise<void> {
+async function ingestRenphoMeasurement(
+  athleteId: string,
+  measurement: RenphoMeasurement,
+): Promise<void> {
   try {
     const raw = renphoMeasurementToBodyComposition(measurement, new Date());
     if (!raw) return;
-    await observationEngine.ingest(ATHLETE_ID, raw);
+    await observationEngine.ingest(athleteId, raw);
   } catch (err) {
     console.error('[ObservationEngine] renpho ingest failed:', err);
   }
 }
 
-const ACCOUNT_ID = 'default';
-
-export async function getRenphoAccount() {
-  return prisma.renphoAccount.findUnique({ where: { athleteId: ACCOUNT_ID } });
+export async function getRenphoAccount(athleteId: string) {
+  return prisma.renphoAccount.findUnique({ where: { athleteId } });
 }
 
 function getRenphoClientFromAccount(account: { email: string; passwordEnc: string }) {
   return renphoClientFromCredentials(account.email, decryptSecret(account.passwordEnc));
 }
 
-export async function connectRenpho(email: string, password: string) {
+export async function connectRenpho(athleteId: string, email: string, password: string) {
   const client = renphoClientFromCredentials(email, password);
   const user = await client.getCurrentUser();
 
   await prisma.renphoAccount.upsert({
-    where: { athleteId: ACCOUNT_ID },
+    where: { athleteId },
     create: {
-      athleteId: ACCOUNT_ID,
+      athleteId,
       email,
       passwordEnc: encryptSecret(password),
       displayName: user.account_name ?? user.first_name ?? email,
@@ -63,16 +62,16 @@ export async function connectRenpho(email: string, password: string) {
   return user;
 }
 
-export async function disconnectRenpho() {
-  await prisma.renphoAccount.deleteMany({ where: { athleteId: ACCOUNT_ID } });
+export async function disconnectRenpho(athleteId: string) {
+  await prisma.renphoAccount.deleteMany({ where: { athleteId } });
 }
 
 /** Keeps the Renpho profile row so the hub can ask for a reconnect. */
-export async function revokeRenphoCredentials() {
-  const account = await getRenphoAccount();
+export async function revokeRenphoCredentials(athleteId: string) {
+  const account = await getRenphoAccount(athleteId);
   if (!account) return;
   await prisma.renphoAccount.update({
-    where: { athleteId: ACCOUNT_ID },
+    where: { athleteId },
     data: { passwordEnc: '' },
   });
 }
@@ -100,7 +99,11 @@ function measurementToPrisma(m: RenphoMeasurement): Prisma.BodyCompositionMeasur
 }
 
 /** Met à jour le poids du jour dans DailyHealth — sauf si Withings a déjà une pesée ce jour-là. */
-async function upsertDailyWeightFromMeasurement(m: RenphoMeasurement, withingsDays: Set<string>) {
+async function upsertDailyWeightFromMeasurement(
+  athleteId: string,
+  m: RenphoMeasurement,
+  withingsDays: Set<string>,
+) {
   if (m.weight == null) return;
 
   const local = new Date(m.time_stamp * 1000);
@@ -110,8 +113,8 @@ async function upsertDailyWeightFromMeasurement(m: RenphoMeasurement, withingsDa
   const day = new Date(Date.UTC(local.getFullYear(), local.getMonth(), local.getDate()));
 
   await prisma.dailyHealth.upsert({
-    where: { athleteId_date: { athleteId: 'default', date: day } },
-    create: { date: day, weightKg: m.weight },
+    where: { athleteId_date: { athleteId, date: day } },
+    create: { athleteId, date: day, weightKg: m.weight },
     update: { weightKg: m.weight },
   });
 }
@@ -123,11 +126,14 @@ export interface RenphoSyncResult {
   observationsBackfilled?: number;
 }
 
-export async function syncRenphoHealth(options?: {
-  days?: number;
-  full?: boolean;
-}): Promise<RenphoSyncResult> {
-  const account = await getRenphoAccount();
+export async function syncRenphoHealth(
+  athleteId: string,
+  options?: {
+    days?: number;
+    full?: boolean;
+  },
+): Promise<RenphoSyncResult> {
+  const account = await getRenphoAccount(athleteId);
   if (!account || !isRenphoAccountConnected(account)) {
     throw new ProviderAuthError('Session Renpho expirée. Reconnecte Renpho dans les paramètres.');
   }
@@ -143,7 +149,7 @@ export async function syncRenphoHealth(options?: {
 
     const [measurements, withingsDays] = await Promise.all([
       client.getMeasurements({ sinceTimestamp, limit }),
-      withingsWeighInDayKeys(since),
+      withingsWeighInDayKeys(athleteId, since),
     ]);
 
     let imported = 0;
@@ -154,6 +160,7 @@ export async function syncRenphoHealth(options?: {
       const externalIds = measurements.map((m) => m.id);
       const existingRows = await prisma.bodyCompositionMeasurement.findMany({
         where: {
+          athleteId,
           source: BodyCompositionSource.RENPHO,
           externalId: { in: externalIds },
         },
@@ -179,7 +186,7 @@ export async function syncRenphoHealth(options?: {
             prisma.bodyCompositionMeasurement.update({
               where: {
                 athleteId_source_externalId: {
-                  athleteId: 'default',
+                  athleteId,
                   source: BodyCompositionSource.RENPHO,
                   externalId: measurement.id,
                 },
@@ -188,7 +195,7 @@ export async function syncRenphoHealth(options?: {
             }),
           );
         } else {
-          toCreate.push(data as Prisma.BodyCompositionMeasurementCreateManyInput);
+          toCreate.push({ ...data, athleteId } as Prisma.BodyCompositionMeasurementCreateManyInput);
         }
       }
 
@@ -205,26 +212,28 @@ export async function syncRenphoHealth(options?: {
         updated = updateOps.length;
       }
 
-      await Promise.all(measurements.map((m) => ingestRenphoMeasurement(m)));
+      await Promise.all(measurements.map((m) => ingestRenphoMeasurement(athleteId, m)));
     }
 
     await Promise.all(
-      [...weightByDay.values()].map((m) => upsertDailyWeightFromMeasurement(m, withingsDays)),
+      [...weightByDay.values()].map((m) =>
+        upsertDailyWeightFromMeasurement(athleteId, m, withingsDays),
+      ),
     );
 
     await prisma.renphoAccount.update({
-      where: { athleteId: ACCOUNT_ID },
+      where: { athleteId },
       data: { lastSyncAt: new Date() },
     });
 
-    const backfill = await backfillBodyCompositionObservationsFromMeasurements(ATHLETE_ID, {
+    const backfill = await backfillBodyCompositionObservationsFromMeasurements(athleteId, {
       since: options?.full ? subDays(startOfDay(new Date()), 365 * 3) : since,
     });
 
     return { imported, updated, days, observationsBackfilled: backfill.ingested };
   } catch (error) {
     if (isProviderAuthFailure(error)) {
-      await revokeRenphoCredentials();
+      await revokeRenphoCredentials(athleteId);
       throw new ProviderAuthError('Session Renpho expirée. Reconnecte Renpho dans les paramètres.');
     }
     throw error;

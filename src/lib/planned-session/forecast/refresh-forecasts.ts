@@ -15,7 +15,7 @@ export async function refreshPlannedSessionForecastsForDate(targetDate: Date): P
       completed: false,
       exposureSetting: 'OUTDOOR',
     },
-    select: { id: true },
+    select: { id: true, athleteId: true },
   });
 
   let refreshed = 0;
@@ -23,7 +23,7 @@ export async function refreshPlannedSessionForecastsForDate(targetDate: Date): P
 
   for (const session of sessions) {
     try {
-      await refreshAndPersistPlannedSessionContext(session.id);
+      await refreshAndPersistPlannedSessionContext(session.athleteId, session.id);
       refreshed += 1;
     } catch (error) {
       errors.push(`${session.id}: ${error instanceof Error ? error.message : 'refresh failed'}`);

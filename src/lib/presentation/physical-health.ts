@@ -235,8 +235,9 @@ function buildConditionCard(
   };
 }
 
-async function loadConditions() {
+async function loadConditions(athleteId: string) {
   return prisma.condition.findMany({
+    where: { athleteId },
     include: {
       episodes: { orderBy: { episodeNumber: 'asc' } },
       observations: { orderBy: { observedAt: 'asc' } },
@@ -278,11 +279,12 @@ function emptyViewModel(): PhysicalHealthViewModel {
 }
 
 export async function buildPhysicalHealthPresentationViewModel(
+  athleteId: string,
   trainingDayId: string,
 ): Promise<PhysicalHealthViewModel> {
   const [snapshot, rows] = await Promise.all([
-    getOrBuildAthleteSnapshot(trainingDayId),
-    loadConditions(),
+    getOrBuildAthleteSnapshot(athleteId, trainingDayId),
+    loadConditions(athleteId),
   ]);
 
   if (rows.length === 0 && !snapshot.physicalHealth) {

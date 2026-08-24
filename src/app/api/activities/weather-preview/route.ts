@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { activityWeatherWindow } from '@/lib/activity/weather/activity-weather-window';
 import {
   extractActivityWeatherSnapshot,
@@ -33,11 +34,12 @@ export async function POST(request: Request) {
     const trainingDayId = computeTrainingDayId(date);
     const locationLabel = label?.trim() || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
 
+    const athleteId = await getCurrentAthleteId();
     const { predictions } = await fetchForecastPredictions({
       location: { latitude, longitude, label: locationLabel },
       windowStart: window.start,
       windowEnd: window.end,
-      athleteId: 'default',
+      athleteId,
       trainingDayId,
     });
 

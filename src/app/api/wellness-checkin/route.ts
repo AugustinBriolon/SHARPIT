@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import {
   hasMorningWellnessCheckin,
   submitMorningWellnessCheckin,
   todayTrainingDayId,
 } from '@/lib/health/wellness-checkin';
 import { wellnessCheckinSchema } from '@/lib/validators/wellness-checkin';
-
-const ATHLETE_ID = 'default';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -19,7 +18,8 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const completed = await hasMorningWellnessCheckin(ATHLETE_ID, trainingDayId);
+  const athleteId = await getCurrentAthleteId();
+  const completed = await hasMorningWellnessCheckin(athleteId, trainingDayId);
   return NextResponse.json({ trainingDayId, completed });
 }
 
@@ -44,7 +44,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await submitMorningWellnessCheckin(trainingDayId, parsed.data);
+    const athleteId = await getCurrentAthleteId();
+    const result = await submitMorningWellnessCheckin(athleteId, trainingDayId, parsed.data);
     return NextResponse.json(
       { trainingDayId, completed: true, alreadyCompleted: result.alreadyCompleted },
       { status: result.alreadyCompleted ? 200 : 201 },

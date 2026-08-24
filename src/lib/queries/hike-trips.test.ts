@@ -1,10 +1,12 @@
 import { ActivityType } from '@prisma/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const ATHLETE_ID = 'default';
+
 const mockFindMany = vi.fn();
-const mockFindUnique = vi.fn();
+const mockFindFirst = vi.fn();
 const mockCreate = vi.fn();
-const mockUpdate = vi.fn();
+const mockTripUpdateMany = vi.fn();
 const mockUpdateMany = vi.fn();
 const mockDelete = vi.fn();
 const mockTransaction = vi.fn();
@@ -16,10 +18,10 @@ vi.mock('@/lib/prisma', () => ({
       updateMany: mockUpdateMany,
     },
     hikeTrip: {
-      findUnique: mockFindUnique,
+      findFirst: mockFindFirst,
       findMany: vi.fn(),
       create: mockCreate,
-      update: mockUpdate,
+      updateMany: mockTripUpdateMany,
       delete: mockDelete,
     },
     $transaction: mockTransaction,
@@ -68,7 +70,7 @@ describe('createHikeTrip', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-    mockFindUnique.mockResolvedValueOnce({
+    mockFindFirst.mockResolvedValueOnce({
       id: 'trip-1',
       name: 'Week-end',
       createdAt: new Date(),
@@ -76,11 +78,14 @@ describe('createHikeTrip', () => {
       activities: [hikeActivity('a1'), hikeActivity('a2')],
     });
 
-    const result = await createHikeTrip({ name: 'Week-end', activityIds: ['a1', 'a2'] });
+    const result = await createHikeTrip(ATHLETE_ID, {
+      name: 'Week-end',
+      activityIds: ['a1', 'a2'],
+    });
 
-    expect(mockCreate).toHaveBeenCalledWith({ data: { name: 'Week-end' } });
+    expect(mockCreate).toHaveBeenCalledWith({ data: { name: 'Week-end', athleteId: ATHLETE_ID } });
     expect(mockUpdateMany).toHaveBeenCalledWith({
-      where: { id: { in: ['a1', 'a2'] } },
+      where: { id: { in: ['a1', 'a2'] }, athleteId: ATHLETE_ID },
       data: { hikeTripId: 'trip-1' },
     });
     expect(result.id).toBe('trip-1');
@@ -91,7 +96,7 @@ describe('createHikeTrip', () => {
     const { createHikeTrip, HikeTripValidationError } = await import('@/lib/queries/hike-trips');
 
     await expect(
-      createHikeTrip({ name: 'Week-end', activityIds: ['a1', 'a1'] }),
+      createHikeTrip(ATHLETE_ID, { name: 'Week-end', activityIds: ['a1', 'a1'] }),
     ).rejects.toBeInstanceOf(HikeTripValidationError);
 
     expect(mockFindMany).not.toHaveBeenCalled();
@@ -103,7 +108,7 @@ describe('createHikeTrip', () => {
     mockFindMany.mockResolvedValueOnce([hikeActivity('a1')]);
 
     await expect(
-      createHikeTrip({ name: 'Week-end', activityIds: ['a1', 'a2'] }),
+      createHikeTrip(ATHLETE_ID, { name: 'Week-end', activityIds: ['a1', 'a2'] }),
     ).rejects.toBeInstanceOf(HikeTripValidationError);
   });
 
@@ -116,7 +121,7 @@ describe('createHikeTrip', () => {
     ]);
 
     await expect(
-      createHikeTrip({ name: 'Week-end', activityIds: ['a1', 'a2'] }),
+      createHikeTrip(ATHLETE_ID, { name: 'Week-end', activityIds: ['a1', 'a2'] }),
     ).rejects.toBeInstanceOf(HikeTripValidationError);
   });
 
@@ -132,7 +137,7 @@ describe('createHikeTrip', () => {
     ]);
 
     await expect(
-      createHikeTrip({ name: 'Week-end', activityIds: ['a1', 'a2'] }),
+      createHikeTrip(ATHLETE_ID, { name: 'Week-end', activityIds: ['a1', 'a2'] }),
     ).rejects.toMatchObject({
       name: 'HikeTripConflictError',
       tripId: 'other-trip',
@@ -146,7 +151,7 @@ describe('updateHikeTrip', () => {
     vi.clearAllMocks();
     mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
       fn({
-        hikeTrip: { update: mockUpdate },
+        hikeTrip: { updateMany: mockTripUpdateMany },
         activity: { updateMany: mockUpdateMany },
       }),
     );
@@ -155,7 +160,7 @@ describe('updateHikeTrip', () => {
   it('allows removing a member when add ids are already in the trip', async () => {
     const { updateHikeTrip } = await import('@/lib/queries/hike-trips');
 
-    mockFindUnique
+    mockFindFirst
       .mockResolvedValueOnce({
         id: 'trip-1',
         name: 'Duo',
@@ -172,14 +177,14 @@ describe('updateHikeTrip', () => {
       });
     mockFindMany.mockResolvedValueOnce([hikeActivity('a2', { hikeTripId: 'trip-1' })]);
 
-    const result = await updateHikeTrip('trip-1', {
+    const result = await updateHikeTrip(ATHLETE_ID, 'trip-1', {
       removeActivityIds: ['a1'],
       addActivityIds: ['a2'],
     });
 
     expect(result.activities).toHaveLength(1);
     expect(mockUpdateMany).toHaveBeenCalledWith({
-      where: { id: { in: ['a1'] }, hikeTripId: 'trip-1' },
+      where: { id: { in: ['a1'] }, hikeTripId: 'trip-1', athleteId: ATHLETE_ID },
       data: { hikeTripId: null },
     });
   });
@@ -187,7 +192,7 @@ describe('updateHikeTrip', () => {
   it('blocks removing the last member', async () => {
     const { updateHikeTrip, HikeTripValidationError } = await import('@/lib/queries/hike-trips');
 
-    mockFindUnique.mockResolvedValueOnce({
+    mockFindFirst.mockResolvedValueOnce({
       id: 'trip-1',
       name: 'Solo',
       createdAt: new Date(),
@@ -195,9 +200,9 @@ describe('updateHikeTrip', () => {
       activities: [hikeActivity('a1')],
     });
 
-    await expect(updateHikeTrip('trip-1', { removeActivityIds: ['a1'] })).rejects.toBeInstanceOf(
-      HikeTripValidationError,
-    );
+    await expect(
+      updateHikeTrip(ATHLETE_ID, 'trip-1', { removeActivityIds: ['a1'] }),
+    ).rejects.toBeInstanceOf(HikeTripValidationError);
   });
 });
 
@@ -215,12 +220,12 @@ describe('deleteHikeTrip', () => {
   it('unlinks members then deletes the trip', async () => {
     const { deleteHikeTrip } = await import('@/lib/queries/hike-trips');
 
-    mockFindUnique.mockResolvedValueOnce({ id: 'trip-1' });
+    mockFindFirst.mockResolvedValueOnce({ id: 'trip-1' });
 
-    await deleteHikeTrip('trip-1');
+    await deleteHikeTrip(ATHLETE_ID, 'trip-1');
 
     expect(mockUpdateMany).toHaveBeenCalledWith({
-      where: { hikeTripId: 'trip-1' },
+      where: { hikeTripId: 'trip-1', athleteId: ATHLETE_ID },
       data: { hikeTripId: null },
     });
     expect(mockDelete).toHaveBeenCalledWith({ where: { id: 'trip-1' } });

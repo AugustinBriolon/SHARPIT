@@ -14,13 +14,15 @@ import {
 } from '@/lib/decision-memory/repository';
 import { garminPushClearOnSessionChange } from '@/lib/integrations/garmin/garmin-workout-push-state';
 import { enduranceSportFromActivityType } from '@/lib/planned-session/endurance/endurance-prescription';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const session = await getPlannedSessionById(id);
+    const athleteId = await getCurrentAthleteId();
+    const session = await getPlannedSessionById(athleteId, id);
     if (!session) {
       return NextResponse.json({ error: 'Séance planifiée introuvable' }, { status: 404 });
     }
@@ -65,6 +67,7 @@ function changesSessionDefiningField(
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
+    const athleteId = await getCurrentAthleteId();
     const body = await request.json();
     const { decisionId, ...sessionBody } = body as { decisionId?: string };
     const parsed = updatePlannedSessionSchema.safeParse(sessionBody);
@@ -76,7 +79,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    const existing = await getPlannedSessionById(id);
+    const existing = await getPlannedSessionById(athleteId, id);
     if (!existing) {
       return NextResponse.json({ error: 'Séance planifiée introuvable' }, { status: 404 });
     }
@@ -84,7 +87,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     // Same server-side enforcement as POST /api/planned-sessions — a Gate-rejected
     // proposal must never be applied via a direct API call either.
     if (decisionId) {
-      const decision = await findCoachingDecisionById(decisionId);
+      const decision = await findCoachingDecisionById(athleteId, decisionId);
       if (decision?.gateResult.status === 'REJECTED') {
         return NextResponse.json(
           { error: 'Cette proposition a été rejetée par le Gate et ne peut pas être appliquée.' },
@@ -108,12 +111,15 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     const clearGarminPush = garminPushClearOnSessionChange(parsed.data);
-    const session = await updatePlannedSession(id, {
-      ...(parsed.data as Parameters<typeof updatePlannedSession>[1]),
+    const session = await updatePlannedSession(athleteId, id, {
+      ...(parsed.data as Parameters<typeof updatePlannedSession>[2]),
       // A session that is not an endurance sport carries no structured prescription.
       ...(patchedSport && !effectiveSport ? { endurancePrescription: Prisma.DbNull } : {}),
       ...(clearGarminPush ?? {}),
     });
+    if (!session) {
+      return NextResponse.json({ error: 'Séance planifiée introuvable' }, { status: 404 });
+    }
 
     // Athlete applying a coach-proposed adapt change → ACCEPTED. Otherwise, if this
     // session already originated from a coach recommendation and the edit touches a
@@ -121,7 +127,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     // an audit-log failure must never fail the underlying session update.
     try {
       if (decisionId) {
-        await recordDecisionAction({
+        await recordDecisionAction(athleteId, {
           decisionId,
           actionType: 'ACCEPTED',
           source: 'PLAN_REVIEW_UI',
@@ -133,9 +139,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
           parsed.data as Record<string, unknown>,
         )
       ) {
-        const priorDecision = await findDecisionForPlannedSession(id);
+        const priorDecision = await findDecisionForPlannedSession(athleteId, id);
         if (priorDecision) {
-          await recordDecisionAction({
+          await recordDecisionAction(athleteId, {
             decisionId: priorDecision.id,
             actionType: 'OVERRIDDEN',
             source: 'CALENDAR_EDIT',
@@ -149,7 +155,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     // Context refresh + Google push are independent best-effort side effects.
     await Promise.all([
-      refreshAndPersistPlannedSessionContext(id).catch((ctxError) => {
+      refreshAndPersistPlannedSessionContext(athleteId, id).catch((ctxError) => {
         console.error('[planned-sessions/context]', ctxError);
       }),
       pushSessionToGoogle(session).catch((syncError) => {
@@ -157,7 +163,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       }),
     ]);
 
-    const fresh = await getPlannedSessionById(id);
+    const fresh = await getPlannedSessionById(athleteId, id);
     return NextResponse.json(fresh ?? session);
   } catch (error) {
     console.error(error);
@@ -171,9 +177,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
+    const athleteId = await getCurrentAthleteId();
 
     // Supprime l'événement Google associé avant de supprimer la séance (best-effort).
-    const existing = await getPlannedSessionById(id);
+    const existing = await getPlannedSessionById(athleteId, id);
     if (existing?.googleEventId) {
       try {
         await deleteSessionFromGoogle(existing);
@@ -182,7 +189,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
       }
     }
 
-    await deletePlannedSession(id);
+    await deletePlannedSession(athleteId, id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);

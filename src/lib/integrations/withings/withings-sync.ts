@@ -18,33 +18,33 @@ import { enrichMeasurementsWithHeartEcg } from '@/lib/integrations/withings/with
 import { backfillBodyCompositionObservationsFromMeasurements } from '@/lib/integrations/shared/body-composition-observation-backfill';
 import { syncSinceFromLastSync, syncWindowDays } from '@/lib/integrations/shared/sync-since';
 
-const ATHLETE_ID = 'default';
-const ACCOUNT_ID = 'default';
-
-async function ingestWithingsMeasurement(measurement: WithingsParsedMeasurement): Promise<void> {
+async function ingestWithingsMeasurement(
+  athleteId: string,
+  measurement: WithingsParsedMeasurement,
+): Promise<void> {
   try {
     const raw = withingsMeasurementToBodyComposition(measurement, new Date());
     if (!raw) return;
-    await observationEngine.ingest(ATHLETE_ID, raw);
+    await observationEngine.ingest(athleteId, raw);
   } catch (err) {
     console.error('[ObservationEngine] withings ingest failed:', err);
   }
 }
 
-export async function getWithingsAccount() {
-  return prisma.withingsAccount.findUnique({ where: { athleteId: ACCOUNT_ID } });
+export async function getWithingsAccount(athleteId: string) {
+  return prisma.withingsAccount.findUnique({ where: { athleteId } });
 }
 
-export async function disconnectWithings() {
-  await prisma.withingsAccount.deleteMany({ where: { athleteId: ACCOUNT_ID } });
+export async function disconnectWithings(athleteId: string) {
+  await prisma.withingsAccount.deleteMany({ where: { athleteId } });
 }
 
 /** Keeps the Withings profile row so the hub can ask for a reconnect. */
-export async function revokeWithingsCredentials() {
-  const account = await getWithingsAccount();
+export async function revokeWithingsCredentials(athleteId: string) {
+  const account = await getWithingsAccount(athleteId);
   if (!account) return;
   await prisma.withingsAccount.update({
-    where: { athleteId: ACCOUNT_ID },
+    where: { athleteId },
     data: {
       accessToken: '',
       refreshToken: '',
@@ -53,8 +53,8 @@ export async function revokeWithingsCredentials() {
   });
 }
 
-export async function getValidWithingsAccessToken(): Promise<string> {
-  const account = await getWithingsAccount();
+export async function getValidWithingsAccessToken(athleteId: string): Promise<string> {
+  const account = await getWithingsAccount(athleteId);
   if (!account) throw new Error('Compte Withings non connecté');
   if (!isOAuthAccountConnected(account)) {
     throw new ProviderAuthError(
@@ -68,7 +68,7 @@ export async function getValidWithingsAccessToken(): Promise<string> {
   try {
     const refreshed = await refreshWithingsToken(account.refreshToken);
     await prisma.withingsAccount.update({
-      where: { athleteId: ACCOUNT_ID },
+      where: { athleteId },
       data: {
         accessToken: refreshed.access_token,
         refreshToken: refreshed.refresh_token,
@@ -79,7 +79,7 @@ export async function getValidWithingsAccessToken(): Promise<string> {
     return refreshed.access_token;
   } catch (error) {
     if (isProviderAuthFailure(error)) {
-      await revokeWithingsCredentials();
+      await revokeWithingsCredentials(athleteId);
       throw new ProviderAuthError(
         'Session Withings expirée. Reconnecte Withings dans les paramètres.',
       );
@@ -128,15 +128,15 @@ function measurementToPrisma(
   };
 }
 
-async function upsertDailyWeightFromWithings(m: WithingsParsedMeasurement) {
+async function upsertDailyWeightFromWithings(athleteId: string, m: WithingsParsedMeasurement) {
   if (m.weightKg == null) return;
 
   const local = m.measuredAt;
   const day = new Date(Date.UTC(local.getFullYear(), local.getMonth(), local.getDate()));
 
   await prisma.dailyHealth.upsert({
-    where: { athleteId_date: { athleteId: 'default', date: day } },
-    create: { date: day, weightKg: m.weightKg },
+    where: { athleteId_date: { athleteId, date: day } },
+    create: { athleteId, date: day, weightKg: m.weightKg },
     update: { weightKg: m.weightKg },
   });
 }
@@ -148,14 +148,17 @@ export interface WithingsSyncResult {
   observationsBackfilled?: number;
 }
 
-export async function syncWithingsHealth(options?: {
-  days?: number;
-  full?: boolean;
-}): Promise<WithingsSyncResult> {
-  const account = await getWithingsAccount();
+export async function syncWithingsHealth(
+  athleteId: string,
+  options?: {
+    days?: number;
+    full?: boolean;
+  },
+): Promise<WithingsSyncResult> {
+  const account = await getWithingsAccount(athleteId);
   if (!account) throw new Error('Compte Withings non connecté');
 
-  const accessToken = await getValidWithingsAccessToken();
+  const accessToken = await getValidWithingsAccessToken(athleteId);
   const since = options?.full
     ? subDays(startOfDay(new Date()), 365 * 3)
     : syncSinceFromLastSync(account.lastSyncAt, options?.days ?? 90);
@@ -185,6 +188,7 @@ export async function syncWithingsHealth(options?: {
     const externalIds = measurements.map((m) => m.grpid);
     const existingRows = await prisma.bodyCompositionMeasurement.findMany({
       where: {
+        athleteId,
         source: BodyCompositionSource.WITHINGS,
         externalId: { in: externalIds },
       },
@@ -210,7 +214,7 @@ export async function syncWithingsHealth(options?: {
           prisma.bodyCompositionMeasurement.update({
             where: {
               athleteId_source_externalId: {
-                athleteId: 'default',
+                athleteId,
                 source: BodyCompositionSource.WITHINGS,
                 externalId: measurement.grpid,
               },
@@ -219,7 +223,7 @@ export async function syncWithingsHealth(options?: {
           }),
         );
       } else {
-        toCreate.push(data as Prisma.BodyCompositionMeasurementCreateManyInput);
+        toCreate.push({ ...data, athleteId } as Prisma.BodyCompositionMeasurementCreateManyInput);
       }
     }
 
@@ -239,17 +243,19 @@ export async function syncWithingsHealth(options?: {
     // Ingest every measurement in the sync window — not only new rows. Existing
     // provider rows that predate the observation pipeline are updates here;
     // dedup by externalId makes this safe to re-run.
-    await Promise.all(measurements.map((m) => ingestWithingsMeasurement(m)));
+    await Promise.all(measurements.map((m) => ingestWithingsMeasurement(athleteId, m)));
   }
 
-  await Promise.all([...weightByDay.values()].map((m) => upsertDailyWeightFromWithings(m)));
+  await Promise.all(
+    [...weightByDay.values()].map((m) => upsertDailyWeightFromWithings(athleteId, m)),
+  );
 
   await prisma.withingsAccount.update({
-    where: { athleteId: ACCOUNT_ID },
+    where: { athleteId },
     data: { lastSyncAt: new Date() },
   });
 
-  const backfill = await backfillBodyCompositionObservationsFromMeasurements(ATHLETE_ID, {
+  const backfill = await backfillBodyCompositionObservationsFromMeasurements(athleteId, {
     since: options?.full ? subDays(startOfDay(new Date()), 365 * 3) : since,
   });
 
@@ -257,9 +263,10 @@ export async function syncWithingsHealth(options?: {
 }
 
 /** Jours où Withings a une pesée (priorité sur Renpho pour DailyHealth). */
-export async function withingsWeighInDayKeys(since: Date): Promise<Set<string>> {
+export async function withingsWeighInDayKeys(athleteId: string, since: Date): Promise<Set<string>> {
   const rows = await prisma.bodyCompositionMeasurement.findMany({
     where: {
+      athleteId,
       source: BodyCompositionSource.WITHINGS,
       measuredAt: { gte: since },
     },

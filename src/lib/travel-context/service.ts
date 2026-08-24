@@ -105,10 +105,15 @@ async function resolveLocationFields(input: TravelContextInput): Promise<{
   });
 }
 
-export async function getActiveTravelContext(prisma: PrismaClient, onDate = new Date()) {
+export async function getActiveTravelContext(
+  prisma: PrismaClient,
+  athleteId: string,
+  onDate = new Date(),
+) {
   const day = toUtcDateOnly(onDate);
   const travel = await prisma.athleteTravelContext.findFirst({
     where: {
+      athleteId,
       type: 'TRAVEL',
       startDate: { lte: day },
       endDate: { gte: day },
@@ -125,11 +130,16 @@ export async function getActiveTravelContext(prisma: PrismaClient, onDate = new 
   };
 }
 
-/** All TRAVEL entries overlapping a calendar day (inclusive). */
-export async function listActiveTravelContexts(prisma: PrismaClient, onDate = new Date()) {
+/** All TRAVEL entries overlapping a calendar day (inclusive), for the given athlete. */
+export async function listActiveTravelContexts(
+  prisma: PrismaClient,
+  athleteId: string,
+  onDate = new Date(),
+) {
   const day = toUtcDateOnly(onDate);
   const travels = await prisma.athleteTravelContext.findMany({
     where: {
+      athleteId,
       type: 'TRAVEL',
       startDate: { lte: day },
       endDate: { gte: day },
@@ -148,29 +158,42 @@ export async function listActiveTravelContexts(prisma: PrismaClient, onDate = ne
  * Hard-delete travel/constraint rows whose last day is already past.
  * Lazy cleanup — called from list paths so planning + memory never surface history.
  */
-export async function purgeExpiredTravelContexts(prisma: PrismaClient, onDate = new Date()) {
+export async function purgeExpiredTravelContexts(
+  prisma: PrismaClient,
+  athleteId: string,
+  onDate = new Date(),
+) {
   const day = toUtcDateOnly(onDate);
   const result = await prisma.athleteTravelContext.deleteMany({
-    where: { endDate: { lt: day } },
+    where: { athleteId, endDate: { lt: day } },
   });
   return result.count;
 }
 
 /** Active + upcoming only (expired rows are purged first). */
-export async function listTravelContexts(prisma: PrismaClient, onDate = new Date()) {
+export async function listTravelContexts(
+  prisma: PrismaClient,
+  athleteId: string,
+  onDate = new Date(),
+) {
   const day = toUtcDateOnly(onDate);
-  await purgeExpiredTravelContexts(prisma, day);
+  await purgeExpiredTravelContexts(prisma, athleteId, day);
   return prisma.athleteTravelContext.findMany({
-    where: { endDate: { gte: day } },
+    where: { athleteId, endDate: { gte: day } },
     orderBy: [{ startDate: 'asc' }],
   });
 }
 
-export async function createTravelContext(prisma: PrismaClient, input: TravelContextInput) {
+export async function createTravelContext(
+  prisma: PrismaClient,
+  athleteId: string,
+  input: TravelContextInput,
+) {
   const coords = await resolveLocationFields(input);
   const training = resolveTrainingFields(input);
   return prisma.athleteTravelContext.create({
     data: {
+      athleteId,
       type: input.type ?? 'TRAVEL',
       label: input.label ?? null,
       locationLabel: coords.locationLabel,
@@ -188,13 +211,14 @@ export async function createTravelContext(prisma: PrismaClient, input: TravelCon
 
 export async function updateTravelContext(
   prisma: PrismaClient,
+  athleteId: string,
   id: string,
   input: TravelContextInput,
 ) {
   const coords = await resolveLocationFields(input);
   const training = resolveTrainingFields(input);
-  return prisma.athleteTravelContext.update({
-    where: { id },
+  const { count } = await prisma.athleteTravelContext.updateMany({
+    where: { id, athleteId },
     data: {
       label: input.label ?? null,
       locationLabel: coords.locationLabel,
@@ -207,17 +231,27 @@ export async function updateTravelContext(
       allowedDisciplines: training.allowedDisciplines,
     },
   });
+  if (count === 0) return null;
+  return prisma.athleteTravelContext.findUnique({ where: { id } });
 }
 
-export async function deleteTravelContext(prisma: PrismaClient, id: string) {
+export async function deleteTravelContext(prisma: PrismaClient, athleteId: string, id: string) {
+  const owned = await prisma.athleteTravelContext.findFirst({
+    where: { id, athleteId },
+    select: { id: true },
+  });
+  if (!owned) return null;
   return prisma.athleteTravelContext.delete({ where: { id } });
 }
 
 export async function applyTravelContextToUpcomingSessions(
   prisma: PrismaClient,
+  athleteId: string,
   travelId: string,
 ): Promise<number> {
-  const travel = await prisma.athleteTravelContext.findUnique({ where: { id: travelId } });
+  const travel = await prisma.athleteTravelContext.findFirst({
+    where: { id: travelId, athleteId },
+  });
   if (!travel || travel.type !== 'TRAVEL') return 0;
 
   const today = toUtcDateOnly(new Date());
@@ -225,6 +259,7 @@ export async function applyTravelContextToUpcomingSessions(
 
   const sessions = await prisma.plannedSession.findMany({
     where: {
+      athleteId,
       date: { gte: today, lte: horizon },
       completed: false,
       OR: [
@@ -241,7 +276,7 @@ export async function applyTravelContextToUpcomingSessions(
   if (inWindow.length === 0) return 0;
 
   await prisma.plannedSession.updateMany({
-    where: { id: { in: inWindow.map((s) => s.id) } },
+    where: { id: { in: inWindow.map((s) => s.id) }, athleteId },
     data: {
       exposureSetting: 'OUTDOOR',
       locationLabel: travel.locationLabel,

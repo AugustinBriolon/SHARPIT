@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { reverseGeocode } from '@/lib/geocoding/nominatim';
 import { upsertAthleteProfile } from '@/lib/queries';
 
@@ -27,7 +28,8 @@ export async function POST(request: NextRequest) {
     // A failed lookup must not lose the coordinates: they are the useful part.
     const place = await reverseGeocode(latitude, longitude).catch(() => null);
 
-    const profile = await upsertAthleteProfile({
+    const athleteId = await getCurrentAthleteId();
+    const profile = await upsertAthleteProfile(athleteId, {
       homeLocationLat: latitude,
       homeLocationLng: longitude,
       homeLocationLabel: place?.label ?? null,

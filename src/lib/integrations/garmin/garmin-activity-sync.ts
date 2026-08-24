@@ -33,13 +33,12 @@ import {
   garminEvaluationToSubjective,
 } from '@/core/adapters/garmin-activity-adapter';
 
-const ATHLETE_ID = 'default';
-
 /** Parallel per-activity fetch/eval — keep modest (shared Garmin client + rate limits). */
 export const GARMIN_ACTIVITY_CONCURRENCY = 4;
 
 /** Fires an observation into the engine. Errors are logged but never propagate to the sync. */
 async function ingestGarminActivity(
+  athleteId: string,
   activity: Parameters<typeof garminActivityToSession>[0],
   evaluation: Parameters<typeof garminEvaluationToSubjective>[0],
   receivedAt: Date,
@@ -48,7 +47,7 @@ async function ingestGarminActivity(
     const rawSession = garminActivityToSession(activity, receivedAt);
     if (!rawSession) return;
 
-    await observationEngine.ingest(ATHLETE_ID, rawSession);
+    await observationEngine.ingest(athleteId, rawSession);
 
     const rawSubjective = garminEvaluationToSubjective(
       evaluation,
@@ -57,14 +56,13 @@ async function ingestGarminActivity(
       receivedAt,
     );
     if (rawSubjective) {
-      await observationEngine.ingest(ATHLETE_ID, rawSubjective);
+      await observationEngine.ingest(athleteId, rawSubjective);
     }
   } catch (err) {
     console.error('[ObservationEngine] garmin-activity ingest failed:', err);
   }
 }
 
-const ACCOUNT_ID = 'default';
 const PAGE_SIZE = 50;
 /** Limite par défaut (fenêtre glissante) : ~600 activités suffisent largement. */
 const MAX_PAGES = 12;
@@ -193,6 +191,7 @@ type GarminClient = ReturnType<typeof clientFromTokens>;
 type GarminListActivity = Parameters<typeof garminActivityToSession>[0];
 
 async function processOneGarminActivity(
+  athleteId: string,
   client: GarminClient,
   activity: GarminListActivity,
   exerciseLabelsFr: Map<string, string>,
@@ -215,8 +214,8 @@ async function processOneGarminActivity(
         )
       : [];
 
-  const existingByGarmin = await prisma.activity.findUnique({
-    where: { garminId },
+  const existingByGarmin = await prisma.activity.findFirst({
+    where: { garminId, athleteId },
     select: { id: true, rpe: true, feeling: true, stravaId: true },
   });
 
@@ -258,7 +257,7 @@ async function processOneGarminActivity(
   }
 
   const fingerprint = { type, date: new Date(activity.startTimeLocal), duration, garminId };
-  const match = await findMatchingActivity(fingerprint);
+  const match = await findMatchingActivity(athleteId, fingerprint);
 
   if (match) {
     if (match.garminId && match.garminId !== garminId) {
@@ -271,7 +270,7 @@ async function processOneGarminActivity(
     });
     await backfillStrengthSets(match.id, strengthSets);
     await prisma.activityStream.deleteMany({ where: { activityId: match.id } });
-    await ingestGarminActivity(activity, evaluation, new Date());
+    await ingestGarminActivity(athleteId, activity, evaluation, new Date());
     return {
       ...EMPTY_OUTCOME,
       merged: 1,
@@ -289,12 +288,13 @@ async function processOneGarminActivity(
     const created = await prisma.activity.create({
       data: {
         ...buildGarminActivityData(activity, evaluation, type, strengthSets),
+        athleteId,
         ...(multisportLegs
           ? { multisportLegs: multisportLegs as unknown as Prisma.InputJsonValue }
           : {}),
       },
     });
-    await ingestGarminActivity(activity, evaluation, new Date());
+    await ingestGarminActivity(athleteId, activity, evaluation, new Date());
     return {
       ...EMPTY_OUTCOME,
       imported: 1,
@@ -310,16 +310,19 @@ async function processOneGarminActivity(
   }
 }
 
-export async function syncGarminActivities(options?: {
-  /** Fenêtre en jours (fallback si jamais sync). Ignoré si `full` ou `since`. */
-  sinceDays?: number;
-  /** Borne basse explicite (prioritaire sur sinceDays). */
-  since?: Date;
-  /** Récupère tout l'historique (aucune limite de date). */
-  full?: boolean;
-}): Promise<GarminActivitySyncResult> {
-  return runGarminCall(async () => {
-    const account = await getGarminAccount();
+export async function syncGarminActivities(
+  athleteId: string,
+  options?: {
+    /** Fenêtre en jours (fallback si jamais sync). Ignoré si `full` ou `since`. */
+    sinceDays?: number;
+    /** Borne basse explicite (prioritaire sur sinceDays). */
+    since?: Date;
+    /** Récupère tout l'historique (aucune limite de date). */
+    full?: boolean;
+  },
+): Promise<GarminActivitySyncResult> {
+  return runGarminCall(athleteId, async () => {
+    const account = await getGarminAccount(athleteId);
     if (!account || !isGarminAccountConnected(account)) {
       throw new ProviderAuthError('Session Garmin expirée. Reconnecte Garmin dans les paramètres.');
     }
@@ -374,7 +377,7 @@ export async function syncGarminActivities(options?: {
       const outcomes = await mapWithConcurrency(
         toProcess,
         GARMIN_ACTIVITY_CONCURRENCY,
-        (activity) => processOneGarminActivity(client, activity, exerciseLabelsFr),
+        (activity) => processOneGarminActivity(athleteId, client, activity, exerciseLabelsFr),
       );
 
       for (const outcome of outcomes) {
@@ -396,7 +399,7 @@ export async function syncGarminActivities(options?: {
 
     const refreshed = currentTokens(client);
     await prisma.garminAccount.update({
-      where: { athleteId: ACCOUNT_ID },
+      where: { athleteId },
       data: {
         oauth1Token: refreshed.oauth1 as unknown as Prisma.InputJsonValue,
         oauth2Token: refreshed.oauth2 as unknown as Prisma.InputJsonValue,

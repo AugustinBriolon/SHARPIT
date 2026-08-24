@@ -25,11 +25,10 @@ export async function resolveAthleteGeoLocation(
   athleteId: string,
   trainingDayId: string,
 ): Promise<GeoLocation & { source: AthleteLocationSource }> {
-  void athleteId;
   const { gte: start, lte: end } = approximateTrainingDayUtcRange(trainingDayId);
 
   const recentActivity = await prisma.activity.findFirst({
-    where: { date: { gte: start, lte: end } },
+    where: { athleteId, date: { gte: start, lte: end } },
     orderBy: { date: 'desc' },
     select: {
       observedLocationLat: true,
@@ -54,5 +53,5 @@ export async function resolveAthleteGeoLocation(
     };
   }
 
-  return resolveDefaultActivityLocation(prisma, start);
+  return resolveDefaultActivityLocation(prisma, athleteId, start);
 }

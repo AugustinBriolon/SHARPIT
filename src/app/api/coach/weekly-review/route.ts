@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { generateAndStoreWeeklyReview, getWeeklyReview } from '@/lib/weekly-review';
 
 export const maxDuration = 60;
@@ -17,7 +18,8 @@ export async function GET(request: NextRequest) {
   const date = parseDate(request.nextUrl.searchParams.get('date'));
 
   try {
-    const review = await getWeeklyReview(date);
+    const athleteId = await getCurrentAthleteId();
+    const review = await getWeeklyReview(athleteId, date);
     return NextResponse.json({ review: review ?? null });
   } catch (error) {
     console.error('[coach/weekly-review] GET', error);
@@ -36,7 +38,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const date = parseDate((body as { date?: string }).date ?? null);
     // Depuis l'app, on veut la rétro de la semaine EN COURS (current: true).
-    const review = await generateAndStoreWeeklyReview(date, { current: true });
+    const athleteId = await getCurrentAthleteId();
+    const review = await generateAndStoreWeeklyReview(athleteId, date, { current: true });
     return NextResponse.json({ review });
   } catch (error) {
     console.error('[coach/weekly-review] POST', error);

@@ -37,14 +37,15 @@ export function shouldRefreshActivityNarrative(input: {
 
 export async function enrichActivityObservedContext(
   prisma: PrismaClient,
+  athleteId: string,
   activityId: string,
   options?: { forceNarrative?: boolean },
 ): Promise<{ weatherUpdated: boolean; narrativeRefreshed: boolean }> {
   let weatherUpdated = false;
   let narrativeRefreshed = false;
 
-  const activity = await prisma.activity.findUnique({
-    where: { id: activityId },
+  const activity = await prisma.activity.findFirst({
+    where: { id: activityId, athleteId },
     select: {
       id: true,
       type: true,
@@ -94,7 +95,7 @@ export async function enrichActivityObservedContext(
 
     if (shouldRefresh) {
       // Never clear narrative before success — a failed LLM would leave a forever-pending UI.
-      narrativeRefreshed = await runActivityNarrativeAnalysis(activityId, {
+      narrativeRefreshed = await runActivityNarrativeAnalysis(athleteId, activityId, {
         force: Boolean(options?.forceNarrative) || (hasNarrative && isToday && weatherUpdated),
       });
     }
@@ -104,7 +105,7 @@ export async function enrichActivityObservedContext(
 
   // Manual / forced narrative on a historical outdoor session: no weather backfill.
   if (!isToday) {
-    narrativeRefreshed = await runActivityNarrativeAnalysis(activityId, { force: true });
+    narrativeRefreshed = await runActivityNarrativeAnalysis(athleteId, activityId, { force: true });
     return { weatherUpdated, narrativeRefreshed };
   }
 
@@ -136,7 +137,7 @@ export async function enrichActivityObservedContext(
       },
       windowStart: window.start,
       windowEnd: window.end,
-      athleteId: 'default',
+      athleteId,
       trainingDayId,
     });
 
@@ -162,7 +163,7 @@ export async function enrichActivityObservedContext(
 
   if (shouldRefresh) {
     // Never clear narrative before success — a failed LLM would leave a forever-pending UI.
-    narrativeRefreshed = await runActivityNarrativeAnalysis(activityId, {
+    narrativeRefreshed = await runActivityNarrativeAnalysis(athleteId, activityId, {
       force:
         Boolean(options?.forceNarrative) ||
         (hasNarrative && isToday && (weatherUpdated || locationNew)),
@@ -173,10 +174,14 @@ export async function enrichActivityObservedContext(
 }
 
 /** Enrichit les activités outdoor du jour dont la météo est absente ou non affichable. */
-export async function enrichTodayActivitiesContext(prisma: PrismaClient): Promise<void> {
+export async function enrichTodayActivitiesContext(
+  prisma: PrismaClient,
+  athleteId: string,
+): Promise<void> {
   const today = startOfDay(new Date());
   const activities = await prisma.activity.findMany({
     where: {
+      athleteId,
       date: { gte: today, lt: addDays(today, 1) },
       type: { in: [...OUTDOOR_TYPES] },
     },
@@ -188,7 +193,7 @@ export async function enrichTodayActivitiesContext(prisma: PrismaClient): Promis
       .filter((row) => !isIndoorActivitySession(row) && needsWeatherEnrichment(row.weather))
       .map(async ({ id }) => {
         try {
-          await enrichActivityObservedContext(prisma, id);
+          await enrichActivityObservedContext(prisma, athleteId, id);
         } catch (error) {
           console.error('[enrich-today-activities]', id, error);
         }

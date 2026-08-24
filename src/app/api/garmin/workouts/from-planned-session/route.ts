@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { pushEnduranceWorkoutFromPlannedSession } from '@/lib/integrations/garmin/garmin-endurance-workout';
 import { pushStrengthWorkoutFromPlannedSession } from '@/lib/integrations/garmin/garmin-strength-workout';
 import { GarminWorkoutAlreadyPushedError } from '@/lib/integrations/garmin/garmin-workout-push';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { prisma } from '@/lib/prisma';
 
 const bodySchema = z.object({
@@ -20,20 +21,21 @@ const bodySchema = z.object({
 type PushInput = z.infer<typeof bodySchema>;
 
 /** Strength and endurance build different payloads from different prescriptions. */
-async function pushBySport(input: PushInput) {
-  const session = await prisma.plannedSession.findUnique({
-    where: { id: input.plannedSessionId },
+async function pushBySport(athleteId: string, input: PushInput) {
+  const session = await prisma.plannedSession.findFirst({
+    where: { id: input.plannedSessionId, athleteId },
     select: { type: true },
   });
   if (!session) throw new Error('Séance planifiée introuvable');
 
   return session.type === ActivityType.STRENGTH
-    ? pushStrengthWorkoutFromPlannedSession(input)
-    : pushEnduranceWorkoutFromPlannedSession(input);
+    ? pushStrengthWorkoutFromPlannedSession(athleteId, input)
+    : pushEnduranceWorkoutFromPlannedSession(athleteId, input);
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const athleteId = await getCurrentAthleteId();
     const json = await request.json();
     const parsed = bodySchema.safeParse(json);
     if (!parsed.success) {
@@ -43,7 +45,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(await pushBySport(parsed.data));
+    return NextResponse.json(await pushBySport(athleteId, parsed.data));
   } catch (error) {
     if (error instanceof GarminWorkoutAlreadyPushedError) {
       return NextResponse.json(

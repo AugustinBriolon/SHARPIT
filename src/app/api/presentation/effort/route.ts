@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { buildEffortViewModel } from '@/lib/presentation/effort';
 
 export async function GET(request: NextRequest) {
@@ -13,7 +14,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const viewModel = await buildEffortViewModel(trainingDayId);
+    const athleteId = await getCurrentAthleteId();
+    const viewModel = await buildEffortViewModel(athleteId, trainingDayId);
     return NextResponse.json({ viewModel });
   } catch (error) {
     console.error('[api/presentation/effort]', error);

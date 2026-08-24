@@ -4,8 +4,6 @@ import type { WellnessCheckinPayload } from '@/lib/validators/wellness-checkin';
 import { onWellnessSubmitted } from '@/lib/athlete-state/orchestrator';
 import { trainingDayIdForNow } from '@/lib/training/training-day';
 
-const ATHLETE_ID = 'default';
-
 export async function hasMorningWellnessCheckin(
   athleteId: string,
   trainingDayId: string,
@@ -27,11 +25,10 @@ export async function hasMorningWellnessCheckin(
 }
 
 export async function submitMorningWellnessCheckin(
+  athleteId: string,
   trainingDayId: string,
   payload: WellnessCheckinPayload,
 ): Promise<{ alreadyCompleted: boolean }> {
-  const athleteId = ATHLETE_ID;
-
   if (await hasMorningWellnessCheckin(athleteId, trainingDayId)) {
     return { alreadyCompleted: true };
   }
@@ -53,12 +50,12 @@ export async function submitMorningWellnessCheckin(
     throw new Error(`Observation rejetée (${result.reason.code})`);
   }
 
-  await onWellnessSubmitted(trainingDayId);
+  await onWellnessSubmitted(athleteId, trainingDayId);
 
   // Best-effort: evaluate morning session recalibration after Twin refresh.
   try {
     const { ensureMorningRecalibration } = await import('@/lib/morning-recalibration/service');
-    await ensureMorningRecalibration(trainingDayId);
+    await ensureMorningRecalibration(athleteId, trainingDayId);
   } catch (error) {
     console.error('[wellness-checkin/morning-recalibration]', error);
   }

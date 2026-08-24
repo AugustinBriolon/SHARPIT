@@ -83,14 +83,14 @@ export interface WeeklyStats {
 }
 
 /** Construit les statistiques de la semaine [weekStart, weekStart+6]. */
-async function buildWeeklyStats(weekStart: Date): Promise<WeeklyStats> {
+async function buildWeeklyStats(athleteId: string, weekStart: Date): Promise<WeeklyStats> {
   const weekEnd = addDays(weekStart, 6);
   const prevStart = subDays(weekStart, 7);
 
   const [activities, planned, health] = await Promise.all([
-    getActivities({ limit: 200 }),
-    getPlannedSessions({ from: weekStart, to: weekEnd }),
-    getHealthEntries(21),
+    getActivities(athleteId, { limit: 200 }),
+    getPlannedSessions(athleteId, { from: weekStart, to: weekEnd }),
+    getHealthEntries(athleteId, 21),
   ]);
 
   const inWeek = activities.filter((a) => {
@@ -208,11 +208,12 @@ function formatWeeklyStats(stats: WeeklyStats): string {
 
 /** Génère le texte de la rétro hebdo (sans la persister). */
 export async function generateWeeklyReviewContent(
+  athleteId: string,
   weekStart: Date,
 ): Promise<{ content: string; stats: WeeklyStats }> {
   const [stats, ctx] = await Promise.all([
-    buildWeeklyStats(weekStart),
-    buildCoachContext(addDays(weekStart, 6)),
+    buildWeeklyStats(athleteId, weekStart),
+    buildCoachContext(athleteId, addDays(weekStart, 6)),
   ]);
   // Contexte global de l'athlète (objectifs, forme, blessures, planifié à venir),
   // pris à la fin de la semaine concernée.
@@ -234,10 +235,10 @@ Rédige la rétrospective hebdomadaire en suivant la structure imposée. Mets l'
 }
 
 /** Lit la rétro hebdo stockée pour la semaine contenant `refDate`. */
-export async function getWeeklyReview(refDate: Date = new Date()) {
+export async function getWeeklyReview(athleteId: string, refDate: Date = new Date()) {
   return prisma.weeklyReview.findUnique({
     where: {
-      athleteId_weekStart: { athleteId: 'default', weekStart: utcDateOnly(weekStartFor(refDate)) },
+      athleteId_weekStart: { athleteId, weekStart: utcDateOnly(weekStartFor(refDate)) },
     },
   });
 }
@@ -247,6 +248,7 @@ export async function getWeeklyReview(refDate: Date = new Date()) {
  * (utile pour un cron lancé en début de semaine), sauf si `current` est vrai.
  */
 export async function generateAndStoreWeeklyReview(
+  athleteId: string,
   refDate: Date = new Date(),
   options: { current?: boolean } = {},
 ) {
@@ -255,11 +257,11 @@ export async function generateAndStoreWeeklyReview(
   }
   const base = options.current ? refDate : subDays(weekStartFor(refDate), 1);
   const weekStart = weekStartFor(base);
-  const { content, stats } = await generateWeeklyReviewContent(weekStart);
+  const { content, stats } = await generateWeeklyReviewContent(athleteId, weekStart);
   const date = utcDateOnly(weekStart);
   return prisma.weeklyReview.upsert({
-    where: { athleteId_weekStart: { athleteId: 'default', weekStart: date } },
-    create: { weekStart: date, content, stats: stats as object },
+    where: { athleteId_weekStart: { athleteId, weekStart: date } },
+    create: { athleteId, weekStart: date, content, stats: stats as object },
     update: { content, stats: stats as object, generatedAt: new Date() },
   });
 }

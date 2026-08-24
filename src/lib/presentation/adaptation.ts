@@ -92,9 +92,10 @@ function emptyAdaptationViewModel(): AdaptationViewModel {
 }
 
 export async function buildAdaptationViewModel(
+  athleteId: string,
   trainingDayId: string,
 ): Promise<AdaptationViewModel> {
-  const snapshot = await getOrBuildAthleteSnapshot(trainingDayId);
+  const snapshot = await getOrBuildAthleteSnapshot(athleteId, trainingDayId);
   const { adaptation } = snapshot;
   if (!adaptation || adaptation.adaptationStatus === 'INSUFFICIENT_DATA') {
     return emptyAdaptationViewModel();

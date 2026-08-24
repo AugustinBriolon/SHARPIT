@@ -75,9 +75,12 @@ type ActivityMembershipRow = {
   hikeTrip: { id: string; name: string } | null;
 };
 
-async function loadActivitiesForMembership(ids: string[]): Promise<ActivityMembershipRow[]> {
+async function loadActivitiesForMembership(
+  athleteId: string,
+  ids: string[],
+): Promise<ActivityMembershipRow[]> {
   return prisma.activity.findMany({
-    where: { id: { in: ids } },
+    where: { id: { in: ids }, athleteId },
     select: {
       id: true,
       type: true,
@@ -115,16 +118,19 @@ function assertNotLinkedElsewhere(
 }
 
 /** Per-request dedupe for trip detail + member links. */
-export const getHikeTripById = cache(async (id: string): Promise<HikeTripWithActivities | null> => {
-  const trip = await prisma.hikeTrip.findUnique({
-    where: { id },
-    include: hikeTripInclude,
-  });
-  return trip ? mapTrip(trip) : null;
-});
+export const getHikeTripById = cache(
+  async (athleteId: string, id: string): Promise<HikeTripWithActivities | null> => {
+    const trip = await prisma.hikeTrip.findFirst({
+      where: { id, athleteId },
+      include: hikeTripInclude,
+    });
+    return trip ? mapTrip(trip) : null;
+  },
+);
 
-export async function listHikeTrips(): Promise<HikeTripListItem[]> {
+export async function listHikeTrips(athleteId: string): Promise<HikeTripListItem[]> {
   const trips = await prisma.hikeTrip.findMany({
+    where: { athleteId },
     include: hikeTripInclude,
     orderBy: { updatedAt: 'desc' },
   });
@@ -138,29 +144,32 @@ export async function listHikeTrips(): Promise<HikeTripListItem[]> {
   });
 }
 
-export async function createHikeTrip(input: {
-  name: string;
-  activityIds: string[];
-}): Promise<HikeTripWithActivities> {
+export async function createHikeTrip(
+  athleteId: string,
+  input: {
+    name: string;
+    activityIds: string[];
+  },
+): Promise<HikeTripWithActivities> {
   const uniqueIds = [...new Set(input.activityIds)];
   if (uniqueIds.length < 2) {
     throw new HikeTripValidationError('Au moins deux randonnées distinctes');
   }
-  const activities = await loadActivitiesForMembership(uniqueIds);
+  const activities = await loadActivitiesForMembership(athleteId, uniqueIds);
   assertActivitiesExist(uniqueIds, activities);
   assertAllHikes(activities);
   assertNotLinkedElsewhere(activities);
 
   const trip = await prisma.$transaction(async (tx) => {
-    const created = await tx.hikeTrip.create({ data: { name: input.name } });
+    const created = await tx.hikeTrip.create({ data: { name: input.name, athleteId } });
     await tx.activity.updateMany({
-      where: { id: { in: uniqueIds } },
+      where: { id: { in: uniqueIds }, athleteId },
       data: { hikeTripId: created.id },
     });
     return created;
   });
 
-  const result = await getHikeTripById(trip.id);
+  const result = await getHikeTripById(athleteId, trip.id);
   if (!result) {
     throw new HikeTripValidationError('Dossier introuvable après création');
   }
@@ -168,6 +177,7 @@ export async function createHikeTrip(input: {
 }
 
 export async function updateHikeTrip(
+  athleteId: string,
   id: string,
   patch: {
     name?: string;
@@ -175,7 +185,7 @@ export async function updateHikeTrip(
     removeActivityIds?: string[];
   },
 ): Promise<HikeTripWithActivities> {
-  const existing = await getHikeTripById(id);
+  const existing = await getHikeTripById(athleteId, id);
   if (!existing) {
     throw new HikeTripValidationError('Dossier introuvable');
   }
@@ -202,7 +212,7 @@ export async function updateHikeTrip(
   }
 
   if (addIds.length > 0) {
-    const activitiesToAdd = await loadActivitiesForMembership(addIds);
+    const activitiesToAdd = await loadActivitiesForMembership(athleteId, addIds);
     assertActivitiesExist(addIds, activitiesToAdd);
     assertAllHikes(activitiesToAdd);
     assertNotLinkedElsewhere(activitiesToAdd, id);
@@ -210,38 +220,41 @@ export async function updateHikeTrip(
 
   await prisma.$transaction(async (tx) => {
     if (patch.name != null) {
-      await tx.hikeTrip.update({ where: { id }, data: { name: patch.name } });
+      await tx.hikeTrip.updateMany({ where: { id, athleteId }, data: { name: patch.name } });
     }
     if (removeIds.length > 0) {
       await tx.activity.updateMany({
-        where: { id: { in: removeIds }, hikeTripId: id },
+        where: { id: { in: removeIds }, hikeTripId: id, athleteId },
         data: { hikeTripId: null },
       });
     }
     if (addIds.length > 0) {
       await tx.activity.updateMany({
-        where: { id: { in: addIds } },
+        where: { id: { in: addIds }, athleteId },
         data: { hikeTripId: id },
       });
     }
   });
 
-  const result = await getHikeTripById(id);
+  const result = await getHikeTripById(athleteId, id);
   if (!result) {
     throw new HikeTripValidationError('Dossier introuvable après mise à jour');
   }
   return result;
 }
 
-export async function deleteHikeTrip(id: string): Promise<void> {
-  const existing = await prisma.hikeTrip.findUnique({ where: { id }, select: { id: true } });
+export async function deleteHikeTrip(athleteId: string, id: string): Promise<void> {
+  const existing = await prisma.hikeTrip.findFirst({
+    where: { id, athleteId },
+    select: { id: true },
+  });
   if (!existing) {
     throw new HikeTripValidationError('Dossier introuvable');
   }
 
   await prisma.$transaction(async (tx) => {
     await tx.activity.updateMany({
-      where: { hikeTripId: id },
+      where: { hikeTripId: id, athleteId },
       data: { hikeTripId: null },
     });
     await tx.hikeTrip.delete({ where: { id } });

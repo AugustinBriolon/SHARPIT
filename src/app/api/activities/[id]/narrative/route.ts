@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
 import { runActivityNarrativeAnalysis } from '@/lib/activity/narrative/activity-narrative';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { prisma } from '@/lib/prisma';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -11,6 +12,7 @@ export const maxDuration = 60;
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
+    const athleteId = await getCurrentAthleteId();
     if (!isCoachConfigured()) {
       return NextResponse.json(
         { error: 'Coach IA non configuré. Ajoute AI_GATEWAY_API_KEY dans .env.' },
@@ -18,8 +20,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
       );
     }
 
-    const existing = await prisma.activity.findUnique({
-      where: { id },
+    const existing = await prisma.activity.findFirst({
+      where: { id, athleteId },
       select: { id: true },
     });
     if (!existing) {
@@ -31,7 +33,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const wait = Boolean(body?.wait);
 
     if (wait) {
-      const ok = await runActivityNarrativeAnalysis(id, { force });
+      const ok = await runActivityNarrativeAnalysis(athleteId, id, { force });
       if (!ok) {
         return NextResponse.json({ error: 'Synthèse impossible' }, { status: 500 });
       }
@@ -41,7 +43,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     after(async () => {
       try {
-        await runActivityNarrativeAnalysis(id, { force });
+        await runActivityNarrativeAnalysis(athleteId, id, { force });
       } catch (error) {
         console.error('[activities/narrative]', id, error);
       }

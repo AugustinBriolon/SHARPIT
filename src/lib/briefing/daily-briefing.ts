@@ -20,11 +20,11 @@ import { prisma } from '@/lib/prisma';
 import { getActivities, getPlannedSessions } from '@/lib/queries';
 import { startOfDay } from 'date-fns';
 
-async function resolveAthleteCentricBriefingPhase(refDate: Date) {
+async function resolveAthleteCentricBriefingPhase(athleteId: string, refDate: Date) {
   const dayStart = startOfDay(refDate);
   const [activities, plannedSessions] = await Promise.all([
-    getActivities({ limit: 40 }),
-    getPlannedSessions({ from: dayStart, to: dayStart }),
+    getActivities(athleteId, { limit: 40 }),
+    getPlannedSessions(athleteId, { from: dayStart, to: dayStart }),
   ]);
   const dayContext = buildDailyPhaseDayContext(
     refDate,
@@ -91,16 +91,22 @@ function utcDateOnly(d: Date): Date {
 }
 
 /** Génère le texte du bilan du jour (sans le persister). */
-export async function generateDailyBriefingContent(refDate: Date = new Date()): Promise<{
+export async function generateDailyBriefingContent(
+  athleteId: string,
+  refDate: Date = new Date(),
+): Promise<{
   content: string;
   readiness: number | null;
   phaseAtGeneration: ReturnType<typeof resolveBriefingPhase>;
 }> {
   invalidateCoachContext();
-  const { briefingPhase: phase, dailyPhase } = await resolveAthleteCentricBriefingPhase(refDate);
+  const { briefingPhase: phase, dailyPhase } = await resolveAthleteCentricBriefingPhase(
+    athleteId,
+    refDate,
+  );
   const [ctx, dayCtx] = await Promise.all([
-    buildCoachContext(refDate),
-    buildBriefingDayContext(refDate, dailyPhase),
+    buildCoachContext(athleteId, refDate),
+    buildBriefingDayContext(athleteId, refDate, dailyPhase),
   ]);
 
   const prompt = `${formatCoachContext(ctx)}
@@ -128,22 +134,25 @@ Rédige le ${dayCtx.phaseLabel} en suivant la structure imposée et les règles 
 }
 
 /** Lit le bilan stocké pour une date (null si absent). */
-export async function getDailyBriefing(refDate: Date = new Date()) {
+export async function getDailyBriefing(athleteId: string, refDate: Date = new Date()) {
   return prisma.dailyBriefing.findUnique({
-    where: { athleteId_date: { athleteId: 'default', date: utcDateOnly(refDate) } },
+    where: { athleteId_date: { athleteId, date: utcDateOnly(refDate) } },
   });
 }
 
 /** Génère le bilan du jour et le stocke (upsert sur la date). */
-export async function generateAndStoreDailyBriefing(refDate: Date = new Date()) {
+export async function generateAndStoreDailyBriefing(athleteId: string, refDate: Date = new Date()) {
   if (!isCoachConfigured()) {
     throw new Error('Coach IA non configuré (AI_GATEWAY_API_KEY manquante).');
   }
-  const { content, readiness, phaseAtGeneration } = await generateDailyBriefingContent(refDate);
+  const { content, readiness, phaseAtGeneration } = await generateDailyBriefingContent(
+    athleteId,
+    refDate,
+  );
   const date = utcDateOnly(refDate);
   return prisma.dailyBriefing.upsert({
-    where: { athleteId_date: { athleteId: 'default', date } },
-    create: { date, content, readiness, phaseAtGeneration },
+    where: { athleteId_date: { athleteId, date } },
+    create: { athleteId, date, content, readiness, phaseAtGeneration },
     update: { content, readiness, phaseAtGeneration, generatedAt: new Date() },
   });
 }

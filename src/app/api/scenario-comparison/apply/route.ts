@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import type { ProjectionHorizonDays } from '@/core/projection/types';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { applyScenarioComparisonChoice } from '@/lib/scenario/apply-scenario';
 
 const VALID_HORIZONS = new Set([1, 3, 7, 14]);
@@ -27,7 +28,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'horizonDays doit être 1, 3, 7 ou 14' }, { status: 400 });
     }
 
-    const result = await applyScenarioComparisonChoice({
+    const athleteId = await getCurrentAthleteId();
+    const result = await applyScenarioComparisonChoice(athleteId, {
       scenarioId,
       horizonDays: (horizonDays ?? 7) as ProjectionHorizonDays,
       anchorTrainingDayId,

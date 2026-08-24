@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { exchangeCodeForToken } from '@/lib/integrations/strava/strava';
 
 export async function GET(request: NextRequest) {
@@ -26,6 +27,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const athleteId = await getCurrentAthleteId();
     const token = await exchangeCodeForToken(code);
     const { athlete } = token;
 
@@ -45,8 +47,8 @@ export async function GET(request: NextRequest) {
     };
 
     await prisma.stravaAccount.upsert({
-      where: { athleteId: 'default' },
-      create: { athleteId: 'default', ...data },
+      where: { athleteId },
+      create: { athleteId, ...data },
       update: data,
     });
 

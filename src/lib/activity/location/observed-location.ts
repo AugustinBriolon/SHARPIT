@@ -29,6 +29,7 @@ export async function backfillActivityObservedLocation(
   const activity = await prisma.activity.findUnique({
     where: { id: activityId },
     select: {
+      athleteId: true,
       observedLocationLat: true,
       observedLocationLng: true,
       observedLocationLabel: true,
@@ -99,7 +100,7 @@ export async function backfillActivityObservedLocation(
   }
 
   const trainingDayId = activity.date.toISOString().slice(0, 10);
-  const fallback = await resolveAthleteGeoLocation(prisma, 'default', trainingDayId);
+  const fallback = await resolveAthleteGeoLocation(prisma, activity.athleteId, trainingDayId);
   const coords = { latitude: fallback.latitude, longitude: fallback.longitude };
 
   const place = await reverseGeocode(coords.latitude, coords.longitude);

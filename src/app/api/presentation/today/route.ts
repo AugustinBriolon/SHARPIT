@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildTodayPresentationViewModel } from '@/lib/presentation/today';
 import { ensureMorningRecalibration } from '@/lib/morning-recalibration/service';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 
 function isValidTrainingDayId(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
@@ -18,14 +19,15 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const athleteId = await getCurrentAthleteId();
     // Write side-effect stays on the route (ADR-007 incremental): ensure proposal
     // exists before read-only presentation projection.
-    const morning = await ensureMorningRecalibration(trainingDayId).catch((error) => {
+    const morning = await ensureMorningRecalibration(athleteId, trainingDayId).catch((error) => {
       console.error('[api/presentation/today/morning-recalibration]', error);
       return { presentation: null, created: false };
     });
 
-    const viewModel = await buildTodayPresentationViewModel(trainingDayId, {
+    const viewModel = await buildTodayPresentationViewModel(athleteId, trainingDayId, {
       morningRecalibration: morning.presentation,
     });
     return NextResponse.json({ viewModel });

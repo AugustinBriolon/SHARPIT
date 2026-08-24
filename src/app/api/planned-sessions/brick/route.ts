@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pushSessionToGoogleInBackground } from '@/lib/integrations/google/google-sync';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { createBrickSessions, getPlannedSessionById } from '@/lib/queries';
 import { createBrickSchema } from '@/lib/validators/planned-session';
 
 export async function POST(request: NextRequest) {
   try {
+    const athleteId = await getCurrentAthleteId();
     const body = await request.json();
     const parsed = createBrickSchema.safeParse(body);
 
@@ -17,6 +19,7 @@ export async function POST(request: NextRequest) {
 
     const { date, startTime, goalId, legs } = parsed.data;
     const created = await createBrickSessions(
+      athleteId,
       legs.map((leg) => ({
         type: leg.type,
         date,
@@ -34,7 +37,7 @@ export async function POST(request: NextRequest) {
       pushSessionToGoogleInBackground(session);
     }
 
-    const fresh = await Promise.all(created.map((s) => getPlannedSessionById(s.id)));
+    const fresh = await Promise.all(created.map((s) => getPlannedSessionById(athleteId, s.id)));
     return NextResponse.json(fresh.filter(Boolean), { status: 201 });
   } catch (error) {
     console.error(error);

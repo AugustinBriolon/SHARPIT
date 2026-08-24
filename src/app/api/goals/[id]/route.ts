@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { deleteGoal, getGoalById, updateGoal } from '@/lib/queries';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { recordManualGoalAchievement } from '@/lib/goals/goal-achievements';
 import { updateGoalSchema } from '@/lib/validators/goal';
 
@@ -8,6 +9,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
+    const athleteId = await getCurrentAthleteId();
     const body = await request.json();
     const parsed = updateGoalSchema.safeParse(body);
 
@@ -18,12 +20,15 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    const existing = await getGoalById(id);
+    const existing = await getGoalById(athleteId, id);
     if (!existing) {
       return NextResponse.json({ error: 'Objectif introuvable' }, { status: 404 });
     }
 
-    const goal = await updateGoal(id, parsed.data as Parameters<typeof updateGoal>[1]);
+    const goal = await updateGoal(athleteId, id, parsed.data as Parameters<typeof updateGoal>[2]);
+    if (!goal) {
+      return NextResponse.json({ error: 'Objectif introuvable' }, { status: 404 });
+    }
 
     if (parsed.data.achieved === true && !existing.achieved) {
       await recordManualGoalAchievement({ ...existing, ...goal });
@@ -41,7 +46,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
-    await deleteGoal(id);
+    const athleteId = await getCurrentAthleteId();
+    await deleteGoal(athleteId, id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);

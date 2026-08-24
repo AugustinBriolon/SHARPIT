@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import {
   applyEstimatedThresholds,
   getThresholdApplyPreview,
@@ -12,7 +13,8 @@ const bodySchema = z.object({
 
 export async function GET() {
   try {
-    const preview = await getThresholdApplyPreview();
+    const athleteId = await getCurrentAthleteId();
+    const preview = await getThresholdApplyPreview(athleteId);
     return NextResponse.json(preview);
   } catch (error) {
     console.error('[apply-estimates]', error);
@@ -28,7 +30,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Sélection invalide' }, { status: 400 });
     }
 
-    const result = await applyEstimatedThresholds({ fields: parsed.data.fields });
+    const athleteId = await getCurrentAthleteId();
+    const result = await applyEstimatedThresholds(athleteId, { fields: parsed.data.fields });
     if (!result.applied) {
       return NextResponse.json(result, { status: 400 });
     }

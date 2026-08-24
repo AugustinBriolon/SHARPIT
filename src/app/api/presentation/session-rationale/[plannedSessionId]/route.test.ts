@@ -5,6 +5,10 @@ vi.mock('@/lib/queries', () => ({
   getPlannedSessionById: vi.fn(),
 }));
 
+vi.mock('@/lib/auth/current-athlete', () => ({
+  getCurrentAthleteId: vi.fn().mockResolvedValue('default'),
+}));
+
 vi.mock('@/lib/decision-memory/repository', () => ({
   findDecisionForPlannedSession: vi.fn(),
   findDecisionWithHistory: vi.fn(),

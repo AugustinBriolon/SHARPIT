@@ -88,7 +88,7 @@ describe('resolveAthleteGeoLocation', () => {
       source: 'travel',
     });
     expect(resolveDefaultActivityLocation).toHaveBeenCalledTimes(1);
-    const [[, onDate]] = vi.mocked(resolveDefaultActivityLocation).mock.calls;
+    const [[, , onDate]] = vi.mocked(resolveDefaultActivityLocation).mock.calls;
     expect(onDate).toBeInstanceOf(Date);
   });
 

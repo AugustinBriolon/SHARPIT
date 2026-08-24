@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import {
   refreshAthleteState,
   shouldSkipTodayPresentationRebuild,
@@ -27,7 +28,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const result = await refreshAthleteState({
+    const athleteId = await getCurrentAthleteId();
+    const result = await refreshAthleteState(athleteId, {
       trainingDayId,
       source,
       forceSync,
@@ -39,7 +41,7 @@ export async function POST(request: NextRequest) {
     let presentationSkipped = false;
 
     try {
-      const morning = await ensureMorningRecalibration(trainingDayId, {
+      const morning = await ensureMorningRecalibration(athleteId, trainingDayId, {
         athleteSnapshot: result.athleteSnapshot,
       }).catch(() => ({ presentation: null, created: false }));
 
@@ -54,7 +56,7 @@ export async function POST(request: NextRequest) {
       if (skip) {
         presentationSkipped = true;
       } else {
-        todayPresentation = await buildTodayPresentationViewModel(trainingDayId, {
+        todayPresentation = await buildTodayPresentationViewModel(athleteId, trainingDayId, {
           morningRecalibration: morning.presentation,
           athleteSnapshot: result.athleteSnapshot,
         });
@@ -78,7 +80,8 @@ export async function GET(request: NextRequest) {
   const trainingDayId = searchParams.get('trainingDayId') ?? trainingDayIdNow();
 
   try {
-    const freshness = await computeFreshnessSnapshot({ trainingDayId });
+    const athleteId = await getCurrentAthleteId();
+    const freshness = await computeFreshnessSnapshot({ athleteId, trainingDayId });
     return NextResponse.json(freshness);
   } catch (error) {
     console.error('[api/athlete-state/freshness]', error);

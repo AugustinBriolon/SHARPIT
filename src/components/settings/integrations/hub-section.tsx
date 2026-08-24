@@ -1,5 +1,6 @@
 import { IntegrationsHub } from '@/components/settings/integrations/hub';
 import type { IntegrationsPayload } from '@/components/settings/integrations/types';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
 import { isGoogleConfigured } from '@/lib/integrations/google/google';
 import { getGoogleAccount, isGoogleConnected } from '@/lib/integrations/google/google-sync';
@@ -53,6 +54,7 @@ type IntegrationsSearchParams = {
 async function buildIntegrationsPayload(
   params: IntegrationsSearchParams,
 ): Promise<IntegrationsPayload> {
+  const athleteId = await getCurrentAthleteId();
   const [
     stravaAccount,
     configured,
@@ -65,13 +67,13 @@ async function buildIntegrationsPayload(
     withingsConfigured,
     mfpConfigured,
   ] = await Promise.all([
-    getStravaAccount(),
+    getStravaAccount(athleteId),
     Promise.resolve(isStravaConfigured()),
-    getGarminAccount(),
-    getRenphoAccount(),
-    getWithingsAccount(),
-    getGoogleAccount().catch(() => null),
-    getMfpAccount().catch(() => null),
+    getGarminAccount(athleteId),
+    getRenphoAccount(athleteId),
+    getWithingsAccount(athleteId),
+    getGoogleAccount(athleteId).catch(() => null),
+    getMfpAccount(athleteId).catch(() => null),
     Promise.resolve(isGoogleConfigured()),
     Promise.resolve(isWithingsConfigured()),
     Promise.resolve(isMfpConfigured()),

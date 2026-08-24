@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { MfpSessionExpiredError } from '@/lib/integrations/myfitnesspal/myfitnesspal';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { connectMfp, syncMfpNutrition } from '@/lib/integrations/myfitnesspal/myfitnesspal-sync';
 
 const schema = z.object({
@@ -15,8 +16,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { displayName } = await connectMfp(parsed.data.sessionToken);
-    const sync = await syncMfpNutrition();
+    const athleteId = await getCurrentAthleteId();
+    const { displayName } = await connectMfp(athleteId, parsed.data.sessionToken);
+    const sync = await syncMfpNutrition(athleteId);
 
     return NextResponse.json({ success: true, displayName, sync });
   } catch (err) {

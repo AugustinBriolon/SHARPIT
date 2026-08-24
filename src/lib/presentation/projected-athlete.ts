@@ -156,16 +156,19 @@ export function buildProjectedAthleteViewModel(
   };
 }
 
-export async function buildProjectedAthletePresentationViewModel(params?: {
-  horizonDays?: ProjectionHorizonDays;
-  anchorTrainingDayId?: string;
-}): Promise<ProjectedAthleteCardViewModel> {
+export async function buildProjectedAthletePresentationViewModel(
+  athleteId: string,
+  params?: {
+    horizonDays?: ProjectionHorizonDays;
+    anchorTrainingDayId?: string;
+  },
+): Promise<ProjectedAthleteCardViewModel> {
   const horizonDays = params?.horizonDays ?? 7;
   if (!HORIZON_OPTIONS.includes(horizonDays)) {
     return buildProjectedAthleteViewModel(null, 7);
   }
 
-  const input = await buildProjectedAthleteInput({
+  const input = await buildProjectedAthleteInput(athleteId, {
     horizonDays,
     anchorTrainingDayId: params?.anchorTrainingDayId,
   });

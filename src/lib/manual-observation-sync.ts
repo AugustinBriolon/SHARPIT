@@ -15,8 +15,6 @@ import type {
   SportType,
 } from '@/core/observation';
 
-const ATHLETE_ID = 'default';
-
 function manualActivityExternalId(activityId: string): string {
   return `manual:activity:${activityId}`;
 }
@@ -183,10 +181,13 @@ function buildManualSubjectiveObservation(
   };
 }
 
-async function deleteManualSubjectiveObservations(sessionExternalId: string): Promise<void> {
+async function deleteManualSubjectiveObservations(
+  athleteId: string,
+  sessionExternalId: string,
+): Promise<void> {
   const rows = await prisma.observation.findMany({
     where: {
-      athleteId: ATHLETE_ID,
+      athleteId,
       type: 'SUBJECTIVE',
       source: 'MANUAL',
     },
@@ -205,33 +206,37 @@ async function deleteManualSubjectiveObservations(sessionExternalId: string): Pr
   }
 }
 
-export async function removeManualActivityObservations(activityId: string): Promise<void> {
+export async function removeManualActivityObservations(
+  athleteId: string,
+  activityId: string,
+): Promise<void> {
   const externalId = manualActivityExternalId(activityId);
 
   await prisma.observation.deleteMany({
     where: {
-      athleteId: ATHLETE_ID,
+      athleteId,
       type: 'SESSION',
       externalId,
     },
   });
 
-  await deleteManualSubjectiveObservations(externalId);
+  await deleteManualSubjectiveObservations(athleteId, externalId);
 }
 
 export async function syncManualActivityObservations(
   activity: NonNullable<Awaited<ReturnType<typeof getActivityById>>>,
 ): Promise<void> {
-  await removeManualActivityObservations(activity.id);
+  const { athleteId } = activity;
+  await removeManualActivityObservations(athleteId, activity.id);
 
   const rawSession = buildManualSessionObservation(activity);
   if (!rawSession) return;
 
-  await observationEngine.ingest(ATHLETE_ID, rawSession);
+  await observationEngine.ingest(athleteId, rawSession);
 
   const rawSubjective = buildManualSubjectiveObservation(activity);
   if (rawSubjective) {
-    await observationEngine.ingest(ATHLETE_ID, rawSubjective);
+    await observationEngine.ingest(athleteId, rawSubjective);
   }
 }
 
@@ -269,11 +274,14 @@ function buildPhysicalConditionObservation(
   };
 }
 
-export async function removePhysicalConditionObservations(noteId: string): Promise<void> {
+export async function removePhysicalConditionObservations(
+  athleteId: string,
+  noteId: string,
+): Promise<void> {
   const conditionId = manualConditionExternalId(noteId);
   const rows = await prisma.observation.findMany({
     where: {
-      athleteId: ATHLETE_ID,
+      athleteId,
       type: 'PHYSICAL_CONDITION',
       source: 'MANUAL',
     },
@@ -295,6 +303,6 @@ export async function removePhysicalConditionObservations(noteId: string): Promi
 export async function syncPhysicalConditionObservation(
   note: NonNullable<Awaited<ReturnType<typeof getPhysicalNoteById>>>,
 ): Promise<void> {
-  await removePhysicalConditionObservations(note.id);
-  await observationEngine.ingest(ATHLETE_ID, buildPhysicalConditionObservation(note));
+  await removePhysicalConditionObservations(note.athleteId, note.id);
+  await observationEngine.ingest(note.athleteId, buildPhysicalConditionObservation(note));
 }

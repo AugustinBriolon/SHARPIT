@@ -26,8 +26,6 @@ import { analyzeSleep, toSleepEntryInputs } from '@/lib/sleep/sleep';
 import { addDays, startOfDay } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 
-const ATHLETE_ID = 'default';
-
 function phaseNarrativeNeedsUpgrade(snapshot: AthleteSnapshot): boolean {
   const phase = snapshot.dailyPhase?.phase;
   if (!phase || !snapshot.phaseNarrative) return false;
@@ -38,9 +36,12 @@ function phaseNarrativeNeedsUpgrade(snapshot: AthleteSnapshot): boolean {
   return /entraîne-toi|train hard/i.test(snapshot.phaseNarrative.heroSubline);
 }
 
-async function loadBriefingForDay(trainingDayId: string): Promise<AthleteSnapshotBriefing | null> {
+async function loadBriefingForDay(
+  athleteId: string,
+  trainingDayId: string,
+): Promise<AthleteSnapshotBriefing | null> {
   const refDate = new Date(`${trainingDayId}T12:00:00.000Z`);
-  const row = await getDailyBriefing(refDate);
+  const row = await getDailyBriefing(athleteId, refDate);
   if (!row) return null;
   return {
     content: row.content,
@@ -49,15 +50,15 @@ async function loadBriefingForDay(trainingDayId: string): Promise<AthleteSnapsho
   };
 }
 
-async function loadPhaseObservationSignals(trainingDayId: string) {
+async function loadPhaseObservationSignals(athleteId: string, trainingDayId: string) {
   const [latestSession, latestSleep] = await Promise.all([
     prisma.observation.findFirst({
-      where: { athleteId: ATHLETE_ID, type: 'SESSION', trainingDayId },
+      where: { athleteId, type: 'SESSION', trainingDayId },
       orderBy: { timestamp: 'desc' },
       select: { timestamp: true },
     }),
     prisma.observation.findFirst({
-      where: { athleteId: ATHLETE_ID, type: 'SLEEP', trainingDayId },
+      where: { athleteId, type: 'SLEEP', trainingDayId },
       orderBy: { timestamp: 'desc' },
       select: { timestamp: true },
     }),
@@ -74,6 +75,7 @@ async function loadPhaseObservationSignals(trainingDayId: string) {
 }
 
 async function loadSnapshotPhaseContext(
+  athleteId: string,
   trainingDayId: string,
   priorSnapshot: AthleteSnapshot | null,
   refDate: Date = new Date(),
@@ -82,14 +84,14 @@ async function loadSnapshotPhaseContext(
   const dayEnd = startOfDay(addDays(refDate, 1));
   const [activities, plannedSessions, rawGoals, athleteProfile, healthEntries, observationSignals] =
     await Promise.all([
-      getActivitiesForSnapshotPhase(40),
-      getPlannedSessions({ from: dayStart, to: dayEnd }),
-      getGoals(),
-      getAthleteProfile(),
-      getHealthEntries(14, refDate),
-      loadPhaseObservationSignals(trainingDayId),
+      getActivitiesForSnapshotPhase(athleteId, 40),
+      getPlannedSessions(athleteId, { from: dayStart, to: dayEnd }),
+      getGoals(athleteId),
+      getAthleteProfile(athleteId),
+      getHealthEntries(athleteId, 14, refDate),
+      loadPhaseObservationSignals(athleteId, trainingDayId),
     ]);
-  const goals = await enrichGoalsWithProgress(rawGoals);
+  const goals = await enrichGoalsWithProgress(athleteId, rawGoals);
 
   const sleepCoach = analyzeSleep(toSleepEntryInputs(healthEntries), {
     targetDurationMin: athleteProfile?.sleepTargetMinutes,
@@ -127,7 +129,7 @@ async function loadSnapshotPhaseContext(
 }
 
 export type GenerateSnapshotOptions = {
-  athleteId?: string;
+  athleteId: string;
   trainingDayId: string;
   todayState?: TodayState;
   forceRefresh?: boolean;
@@ -141,8 +143,7 @@ export type GenerateSnapshotOptions = {
 export async function generateAthleteSnapshot(
   options: GenerateSnapshotOptions,
 ): Promise<AthleteSnapshot> {
-  const athleteId = options.athleteId ?? ATHLETE_ID;
-  const { trainingDayId } = options;
+  const { athleteId, trainingDayId } = options;
   const refDate = options.refDate ?? new Date();
 
   const priorSnapshot = await getLatestAthleteSnapshot({ athleteId, trainingDayId });
@@ -155,8 +156,8 @@ export async function generateAthleteSnapshot(
         forceRefresh: options.forceRefresh ?? false,
       }),
     computeFreshnessSnapshot({ athleteId, trainingDayId }),
-    loadBriefingForDay(trainingDayId),
-    loadSnapshotPhaseContext(trainingDayId, priorSnapshot, refDate),
+    loadBriefingForDay(athleteId, trainingDayId),
+    loadSnapshotPhaseContext(athleteId, trainingDayId, priorSnapshot, refDate),
   ]);
 
   const buildInput: SnapshotBuildInput = {
@@ -179,13 +180,16 @@ export async function generateAthleteSnapshot(
   return snapshot;
 }
 
-export async function getOrBuildAthleteSnapshot(trainingDayId: string): Promise<AthleteSnapshot> {
+export async function getOrBuildAthleteSnapshot(
+  athleteId: string,
+  trainingDayId: string,
+): Promise<AthleteSnapshot> {
   const [persisted, latestBriefing] = await Promise.all([
     getLatestAthleteSnapshot({
-      athleteId: ATHLETE_ID,
+      athleteId,
       trainingDayId,
     }),
-    loadBriefingForDay(trainingDayId),
+    loadBriefingForDay(athleteId, trainingDayId),
   ]);
 
   if (persisted) {
@@ -208,6 +212,7 @@ export async function getOrBuildAthleteSnapshot(trainingDayId: string): Promise<
     }
 
     return generateAthleteSnapshot({
+      athleteId,
       trainingDayId,
       todayState: {
         reasoning: persisted.reasoning,
@@ -223,14 +228,16 @@ export async function getOrBuildAthleteSnapshot(trainingDayId: string): Promise<
     });
   }
 
-  return generateAthleteSnapshot({ trainingDayId, forceRefresh: false });
+  return generateAthleteSnapshot({ athleteId, trainingDayId, forceRefresh: false });
 }
 
 export async function regenerateAthleteSnapshotAfterInference(
+  athleteId: string,
   trainingDayId: string,
   todayState: TodayState,
 ): Promise<AthleteSnapshot> {
   return generateAthleteSnapshot({
+    athleteId,
     trainingDayId,
     todayState,
     forceRefresh: false,
@@ -238,17 +245,19 @@ export async function regenerateAthleteSnapshotAfterInference(
 }
 
 export async function regenerateAthleteSnapshotAfterBriefing(
+  athleteId: string,
   trainingDayId?: string,
 ): Promise<AthleteSnapshot | null> {
   const dayId = trainingDayId ?? new Date().toISOString().slice(0, 10);
 
   const existing = await getLatestAthleteSnapshot({
-    athleteId: ATHLETE_ID,
+    athleteId,
     trainingDayId: dayId,
   });
   if (!existing) return null;
 
   return generateAthleteSnapshot({
+    athleteId,
     trainingDayId: dayId,
     todayState: {
       reasoning: existing.reasoning,

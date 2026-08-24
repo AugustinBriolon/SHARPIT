@@ -9,6 +9,10 @@ vi.mock('@/lib/ai', () => ({
   isCoachConfigured: () => true,
 }));
 
+vi.mock('@/lib/auth/current-athlete', () => ({
+  getCurrentAthleteId: vi.fn().mockResolvedValue('default'),
+}));
+
 vi.mock('@/lib/coach/stream-structured-generation', () => ({
   runStructuredCoachStream: vi.fn(),
 }));
@@ -205,7 +209,7 @@ describe('POST /api/coach/plan', () => {
     );
 
     expect(body.sessions[0].endurancePrescription?.blocks).toHaveLength(3);
-    const [[call]] = vi.mocked(createCoachingDecision).mock.calls;
+    const [[, call]] = vi.mocked(createCoachingDecision).mock.calls;
     expect(call.proposal.endurancePrescription?.blocks?.[1]?.times).toBe(6);
   });
 
@@ -253,7 +257,7 @@ describe('POST /api/coach/plan', () => {
     );
 
     expect(createCoachingDecision).toHaveBeenCalledTimes(1);
-    const [[call]] = vi.mocked(createCoachingDecision).mock.calls;
+    const [[, call]] = vi.mocked(createCoachingDecision).mock.calls;
     expect(call.source).toBe('PLAN_GENERATOR');
     expect(call.proposal.type).toBe('BIKE');
     expect(call.proposal.intensity).toBe('ENDURANCE');

@@ -10,6 +10,7 @@ export { FUEL_BODY_WEIGHT_LOOKBACK_DAYS };
  * Used when the observation registry lags BodyCompositionMeasurement.
  */
 export async function getLatestBodyWeightKg(
+  athleteId: string,
   trainingDayId: string,
   lookbackDays: number = FUEL_BODY_WEIGHT_LOOKBACK_DAYS,
 ): Promise<number | null> {
@@ -18,6 +19,7 @@ export async function getLatestBodyWeightKg(
 
   const row = await prisma.bodyCompositionMeasurement.findFirst({
     where: {
+      athleteId,
       measuredAt: { gte: since, lte: until },
       weightKg: { gt: 0 },
     },

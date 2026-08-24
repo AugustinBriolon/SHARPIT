@@ -27,17 +27,17 @@ import {
 
 const APP_VERSION = '0.1.0';
 
-async function loadIntegrationHubFacts(): Promise<{
+async function loadIntegrationHubFacts(athleteId: string): Promise<{
   connectedCount: number;
   reconnectNames: string[];
 }> {
   const [strava, garmin, withings, renpho, google, myfitnesspal] = await Promise.all([
-    getStravaAccount().catch(() => null),
-    getGarminAccount().catch(() => null),
-    getWithingsAccount().catch(() => null),
-    getRenphoAccount().catch(() => null),
-    getGoogleAccount().catch(() => null),
-    getMfpAccount().catch(() => null),
+    getStravaAccount(athleteId).catch(() => null),
+    getGarminAccount(athleteId).catch(() => null),
+    getWithingsAccount(athleteId).catch(() => null),
+    getRenphoAccount(athleteId).catch(() => null),
+    getGoogleAccount(athleteId).catch(() => null),
+    getMfpAccount(athleteId).catch(() => null),
   ]);
 
   const connectedCount = [
@@ -70,12 +70,12 @@ async function loadIntegrationHubFacts(): Promise<{
 export const getSettingsHubStatus = cache(loadSettingsHubStatus);
 
 /** Server snapshot for settings hub status chips. Failures degrade to neutral copy. */
-export async function loadSettingsHubStatus(): Promise<SettingsHubStatus> {
+export async function loadSettingsHubStatus(athleteId: string): Promise<SettingsHubStatus> {
   const [profile, goals, memory, integrationFacts] = await Promise.all([
-    getAthleteProfile().catch(() => null),
-    getGoals().catch(() => []),
-    listCoachMemoryEntries(prisma).catch(() => null),
-    loadIntegrationHubFacts().catch(() => ({ connectedCount: 0, reconnectNames: [] })),
+    getAthleteProfile(athleteId).catch(() => null),
+    getGoals(athleteId).catch(() => []),
+    listCoachMemoryEntries(prisma, athleteId).catch(() => null),
+    loadIntegrationHubFacts(athleteId).catch(() => ({ connectedCount: 0, reconnectNames: [] })),
   ]);
 
   const activeEntries = goals.filter((goal) => !goal.achieved);

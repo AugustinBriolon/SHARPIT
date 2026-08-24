@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { buildCoachContext } from '@/lib/coach/context/coach-context';
 
 export const maxDuration = 60;
@@ -20,7 +21,8 @@ export async function POST(req: NextRequest) {
     const json = await req.json().catch(() => ({}));
     const parsed = bodySchema.safeParse(json);
     const includeScenario = parsed.success ? parsed.data?.includeScenario === true : false;
-    await buildCoachContext(new Date(), { includeScenario });
+    const athleteId = await getCurrentAthleteId();
+    await buildCoachContext(athleteId, new Date(), { includeScenario });
     return NextResponse.json({ ok: true, warmed: true, includeScenario });
   } catch (error) {
     console.error('[api/coach/prepare]', error);

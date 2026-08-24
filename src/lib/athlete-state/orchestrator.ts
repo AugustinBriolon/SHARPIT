@@ -16,8 +16,6 @@ import { loadTodayState } from '@/lib/today/today-state-server';
 import { prisma } from '@/lib/prisma';
 import { updateRecordsForTypesSafe } from '@/lib/training/records';
 
-const ATHLETE_ID = 'default';
-
 export type AthleteStateRefreshResult = {
   traceId: string;
   trainingDayId: string;
@@ -66,11 +64,14 @@ export function shouldSkipTodayPresentationRebuild(input: {
   return true;
 }
 
-async function autoLinkAndCollectSessionIds(activityIds: string[]): Promise<string[]> {
+async function autoLinkAndCollectSessionIds(
+  athleteId: string,
+  activityIds: string[],
+): Promise<string[]> {
   if (activityIds.length === 0) return [];
   try {
     const { autoLinkActivities } = await import('@/lib/planned-session/linking/session-linking');
-    const result = await autoLinkActivities(activityIds);
+    const result = await autoLinkActivities(athleteId, activityIds);
     return result.sessionIds;
   } catch (error) {
     console.error('[athlete-state/auto-link]', error);
@@ -85,23 +86,26 @@ async function autoLinkAndCollectSessionIds(activityIds: string[]): Promise<stri
  * Freshness is computed twice only: once to decide sync, once for the response
  * (mid-sync / mid-compute snapshots were never returned to the client).
  */
-export async function refreshAthleteState(options?: {
-  trainingDayId?: string;
-  source?: 'app_shell' | 'today_refresh' | 'cron';
-  forceSync?: boolean;
-  skipSync?: boolean;
-}): Promise<AthleteStateRefreshResult> {
+export async function refreshAthleteState(
+  athleteId: string,
+  options?: {
+    trainingDayId?: string;
+    source?: 'app_shell' | 'today_refresh' | 'cron';
+    forceSync?: boolean;
+    skipSync?: boolean;
+  },
+): Promise<AthleteStateRefreshResult> {
   const traceId = createTraceId();
   const trainingDayId = options?.trainingDayId ?? trainingDayIdNow();
 
-  let freshness = await computeFreshnessSnapshot({ trainingDayId, athleteId: ATHLETE_ID });
+  let freshness = await computeFreshnessSnapshot({ trainingDayId, athleteId });
 
   const syncedProviders: DataProvider[] = [];
   let activityIds: string[] = [];
 
   if (!options?.skipSync && (options?.forceSync || shouldSyncOnOpen(freshness))) {
     const toSync = providersNeedingSync(freshness, { force: options?.forceSync }) as DataProvider[];
-    const results = await syncProviders(toSync);
+    const results = await syncProviders(athleteId, toSync);
     for (const r of results) {
       syncedProviders.push(r.provider);
       activityIds.push(...r.activityIds);
@@ -115,23 +119,28 @@ export async function refreshAthleteState(options?: {
   });
 
   const priorSnapshot = await getLatestAthleteSnapshot({
-    athleteId: ATHLETE_ID,
+    athleteId,
     trainingDayId,
   });
   const priorSnapshotId = priorSnapshot?.snapshotId ?? null;
 
-  const todayState = await runFastInference(trainingDayId, { forceRefresh });
-  const athleteSnapshot = await regenerateAthleteSnapshotAfterInference(trainingDayId, todayState);
+  const todayState = await runFastInference(athleteId, trainingDayId, { forceRefresh });
+  const athleteSnapshot = await regenerateAthleteSnapshotAfterInference(
+    athleteId,
+    trainingDayId,
+    todayState,
+  );
   const snapshotChanged = priorSnapshotId !== athleteSnapshot.snapshotId;
 
-  freshness = await computeFreshnessSnapshot({ trainingDayId, athleteId: ATHLETE_ID });
+  freshness = await computeFreshnessSnapshot({ trainingDayId, athleteId });
 
   const needsBriefing = freshness.domains.some(
     (d) => d.domain === 'recommendations' && d.freshness !== 'fresh',
   );
 
-  const plannedSessionIdsToAnalyze = await autoLinkAndCollectSessionIds(activityIds);
+  const plannedSessionIdsToAnalyze = await autoLinkAndCollectSessionIds(athleteId, activityIds);
   scheduleBackgroundTasks({
+    athleteId,
     activityIds,
     regenerateBriefing: needsBriefing,
     trainingDayId,
@@ -151,6 +160,7 @@ export async function refreshAthleteState(options?: {
 }
 
 export async function onProviderSyncCompleted(
+  athleteId: string,
   results: ProviderSyncResult[],
   trainingDayId?: string,
   options?: { skipRecordUpdate?: boolean },
@@ -160,19 +170,24 @@ export async function onProviderSyncCompleted(
 
   if (!options?.skipRecordUpdate && activityIds.length > 0) {
     const activities = await prisma.activity.findMany({
-      where: { id: { in: activityIds } },
+      where: { id: { in: activityIds }, athleteId },
       select: { type: true },
     });
     const types = [...new Set(activities.map((a) => a.type))];
-    await updateRecordsForTypesSafe(types);
+    await updateRecordsForTypesSafe(athleteId, types);
   }
 
   // Await DB link only — compliance LLM runs in scheduleBackgroundTasks.
-  const plannedSessionIdsToAnalyze = await autoLinkAndCollectSessionIds(activityIds);
+  const plannedSessionIdsToAnalyze = await autoLinkAndCollectSessionIds(athleteId, activityIds);
 
-  const todayState = await runFastInference(dayId);
-  const athleteSnapshot = await regenerateAthleteSnapshotAfterInference(dayId, todayState);
+  const todayState = await runFastInference(athleteId, dayId);
+  const athleteSnapshot = await regenerateAthleteSnapshotAfterInference(
+    athleteId,
+    dayId,
+    todayState,
+  );
   scheduleBackgroundTasks({
+    athleteId,
     activityIds,
     regenerateBriefing: true,
     trainingDayId: dayId,
@@ -181,17 +196,21 @@ export async function onProviderSyncCompleted(
   return athleteSnapshot;
 }
 
-export async function onWellnessSubmitted(trainingDayId: string): Promise<AthleteSnapshot> {
-  const todayState = await runFastInference(trainingDayId);
-  return regenerateAthleteSnapshotAfterInference(trainingDayId, todayState);
+export async function onWellnessSubmitted(
+  athleteId: string,
+  trainingDayId: string,
+): Promise<AthleteSnapshot> {
+  const todayState = await runFastInference(athleteId, trainingDayId);
+  return regenerateAthleteSnapshotAfterInference(athleteId, trainingDayId, todayState);
 }
 
 async function runFastInference(
+  athleteId: string,
   trainingDayId: string,
   options?: { forceRefresh?: boolean },
 ): Promise<TodayState> {
   return loadTodayState({
-    athleteId: ATHLETE_ID,
+    athleteId,
     trainingDayId,
     // Event-driven paths (activity/wellness/explicit inference) default to recompute.
     forceRefresh: options?.forceRefresh ?? true,
@@ -200,25 +219,27 @@ async function runFastInference(
 
 export async function handleAthleteStateEvent(event: AthleteStateEvent): Promise<void> {
   console.info('[athlete-state/event]', event.kind, event.traceId);
+  const { athleteId } = event;
 
   switch (event.kind) {
     case 'ApplicationOpened':
-      await refreshAthleteState({
+      await refreshAthleteState(athleteId, {
         trainingDayId: event.trainingDayId,
         source: event.source,
       });
       break;
     case 'ManualWellnessSubmitted':
-      await onWellnessSubmitted(event.trainingDayId);
+      await onWellnessSubmitted(athleteId, event.trainingDayId);
       break;
     case 'ActivityImported':
       {
-        const plannedSessionIdsToAnalyze = await autoLinkAndCollectSessionIds([
+        const plannedSessionIdsToAnalyze = await autoLinkAndCollectSessionIds(athleteId, [
           ...event.activityIds,
         ]);
-        const todayState = await runFastInference(event.trainingDayId);
-        await regenerateAthleteSnapshotAfterInference(event.trainingDayId, todayState);
+        const todayState = await runFastInference(athleteId, event.trainingDayId);
+        await regenerateAthleteSnapshotAfterInference(athleteId, event.trainingDayId, todayState);
         scheduleBackgroundTasks({
+          athleteId,
           activityIds: [...event.activityIds],
           regenerateBriefing: event.activityIds.length > 0,
           trainingDayId: event.trainingDayId,
@@ -228,8 +249,8 @@ export async function handleAthleteStateEvent(event: AthleteStateEvent): Promise
       break;
     case 'InferenceRequested':
       if (event.mode === 'fast') {
-        const todayState = await runFastInference(event.trainingDayId);
-        await regenerateAthleteSnapshotAfterInference(event.trainingDayId, todayState);
+        const todayState = await runFastInference(athleteId, event.trainingDayId);
+        await regenerateAthleteSnapshotAfterInference(athleteId, event.trainingDayId, todayState);
       }
       break;
     default:

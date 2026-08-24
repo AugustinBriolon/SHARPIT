@@ -1,19 +1,22 @@
 import { NextResponse } from 'next/server';
 import { onProviderSyncCompleted } from '@/lib/athlete-state/orchestrator';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { filterRecordChangesByActivities, updateRecordsForTypes } from '@/lib/training/records';
 import { syncStravaActivities } from '@/lib/integrations/strava/strava-sync';
 
 export async function POST() {
   try {
-    const result = await syncStravaActivities();
+    const athleteId = await getCurrentAthleteId();
+    const result = await syncStravaActivities(athleteId);
     let recordChanges: Awaited<ReturnType<typeof updateRecordsForTypes>> = [];
 
     if (result.importedTypes.length > 0) {
-      const allChanges = await updateRecordsForTypes(result.importedTypes);
+      const allChanges = await updateRecordsForTypes(athleteId, result.importedTypes);
       recordChanges = filterRecordChangesByActivities(allChanges, result.importedActivityIds);
     }
 
     await onProviderSyncCompleted(
+      athleteId,
       [
         {
           provider: 'strava',

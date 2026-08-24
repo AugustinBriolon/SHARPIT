@@ -15,7 +15,6 @@ import {
 
 import { syncSinceFromLastSync } from '@/lib/integrations/shared/sync-since';
 
-const ACCOUNT_ID = 'default';
 const DAY_START_MIN = 6 * 60; // 06:00
 const DAY_END_MIN = 21 * 60; // 21:00
 const DEFAULT_DURATION_MIN = 60;
@@ -28,8 +27,8 @@ const TYPE_LABELS: Record<string, string> = {
   STRENGTH: 'Renfo',
 };
 
-export async function getGoogleAccount() {
-  return prisma.googleAccount.findUnique({ where: { athleteId: ACCOUNT_ID } });
+export async function getGoogleAccount(athleteId: string) {
+  return prisma.googleAccount.findUnique({ where: { athleteId } });
 }
 
 export function isGoogleConnected(
@@ -39,11 +38,11 @@ export function isGoogleConnected(
 }
 
 /** Invalide les jetons OAuth tout en conservant le calendrier cible et les préférences. */
-export async function revokeGoogleCredentials() {
-  const account = await getGoogleAccount();
+export async function revokeGoogleCredentials(athleteId: string) {
+  const account = await getGoogleAccount(athleteId);
   if (!account) return;
   await prisma.googleAccount.update({
-    where: { athleteId: ACCOUNT_ID },
+    where: { athleteId },
     data: {
       accessToken: '',
       refreshToken: '',
@@ -52,35 +51,39 @@ export async function revokeGoogleCredentials() {
   });
 }
 
-export async function disconnectGoogle() {
-  await prisma.googleAccount.deleteMany({ where: { athleteId: ACCOUNT_ID } });
+export async function disconnectGoogle(athleteId: string) {
+  await prisma.googleAccount.deleteMany({ where: { athleteId } });
   // On délie les séances : les events Google restent, mais l'app oublie le lien.
   await prisma.plannedSession.updateMany({
-    where: { googleEventId: { not: null } },
+    where: { athleteId, googleEventId: { not: null } },
     data: { googleEventId: null },
   });
 }
 
-export async function setTargetCalendar(calendarId: string | null, calendarName: string | null) {
+export async function setTargetCalendar(
+  athleteId: string,
+  calendarId: string | null,
+  calendarName: string | null,
+) {
   return prisma.googleAccount.update({
-    where: { athleteId: ACCOUNT_ID },
+    where: { athleteId },
     data: { targetCalendarId: calendarId, targetCalendarName: calendarName },
   });
 }
 
-export async function setHiddenCalendars(ids: string[]) {
-  const account = await getGoogleAccount();
+export async function setHiddenCalendars(athleteId: string, ids: string[]) {
+  const account = await getGoogleAccount(athleteId);
   if (!account) {
     throw new Error('Compte Google non connecté');
   }
   return prisma.googleAccount.update({
-    where: { athleteId: ACCOUNT_ID },
+    where: { athleteId },
     data: { hiddenCalendarIds: ids },
   });
 }
 
-export async function getValidAccessToken() {
-  const account = await getGoogleAccount();
+export async function getValidAccessToken(athleteId: string) {
+  const account = await getGoogleAccount(athleteId);
   if (!isGoogleConnected(account)) throw new Error('Compte Google non connecté');
 
   const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
@@ -89,7 +92,7 @@ export async function getValidAccessToken() {
   try {
     const refreshed = await refreshAccessToken(account.refreshToken);
     await prisma.googleAccount.update({
-      where: { athleteId: ACCOUNT_ID },
+      where: { athleteId },
       data: {
         accessToken: refreshed.access_token,
         expiresAt: new Date(Date.now() + refreshed.expires_in * 1000),
@@ -100,14 +103,14 @@ export async function getValidAccessToken() {
     return refreshed.access_token;
   } catch (error) {
     if (error instanceof GoogleOAuthError && error.needsReconnect) {
-      await revokeGoogleCredentials();
+      await revokeGoogleCredentials(athleteId);
     }
     throw error;
   }
 }
 
-export async function listGoogleCalendars() {
-  const token = await getValidAccessToken();
+export async function listGoogleCalendars(athleteId: string) {
+  const token = await getValidAccessToken(athleteId);
   return listCalendars(token);
 }
 
@@ -184,11 +187,12 @@ interface PushResult {
  * n'est pas déjà fixée. Met à jour la séance en base (googleEventId, startTime).
  */
 export async function pushSessionToGoogle(session: PlannedSession): Promise<PushResult> {
-  const account = await getGoogleAccount();
+  const { athleteId } = session;
+  const account = await getGoogleAccount(athleteId);
   if (!account) return { synced: false, reason: 'not_connected' };
   if (!account.targetCalendarId) return { synced: false, reason: 'no_target_calendar' };
 
-  const token = await getValidAccessToken();
+  const token = await getValidAccessToken(athleteId);
   const { timeZone } = account;
   const duration = session.durationMin ?? DEFAULT_DURATION_MIN;
   const dayKey = dayKeyFromDate(session.date);
@@ -245,12 +249,12 @@ export function pushSessionToGoogleInBackground(session: PlannedSession): void {
 }
 
 export async function deleteSessionFromGoogle(
-  session: Pick<PlannedSession, 'googleEventId'>,
+  session: Pick<PlannedSession, 'athleteId' | 'googleEventId'>,
 ): Promise<void> {
   if (!session.googleEventId) return;
-  const account = await getGoogleAccount();
+  const account = await getGoogleAccount(session.athleteId);
   if (!account?.targetCalendarId) return;
-  const token = await getValidAccessToken();
+  const token = await getValidAccessToken(session.athleteId);
   await deleteEvent(token, account.targetCalendarId, session.googleEventId);
 }
 
@@ -269,12 +273,12 @@ export interface GooglePullResult {
  *    - événement déplacé → met à jour date + heure de la séance
  *    - événement supprimé → délie la séance (googleEventId = null)
  */
-export async function syncFromGoogle(): Promise<GooglePullResult> {
-  const account = await getGoogleAccount();
+export async function syncFromGoogle(athleteId: string): Promise<GooglePullResult> {
+  const account = await getGoogleAccount(athleteId);
   if (!account?.targetCalendarId) {
     throw new Error('Aucun calendrier cible sélectionné');
   }
-  const token = await getValidAccessToken();
+  const token = await getValidAccessToken(athleteId);
   const { timeZone } = account;
 
   const now = new Date();
@@ -285,7 +289,7 @@ export async function syncFromGoogle(): Promise<GooglePullResult> {
   const todayStart = new Date(now);
   todayStart.setHours(0, 0, 0, 0);
   const unsynced = await prisma.plannedSession.findMany({
-    where: { googleEventId: null, date: { gte: todayStart } },
+    where: { athleteId, googleEventId: null, date: { gte: todayStart } },
   });
   let pushed = 0;
   for (const session of unsynced) {
@@ -301,7 +305,7 @@ export async function syncFromGoogle(): Promise<GooglePullResult> {
   const [events, sessions] = await Promise.all([
     listEvents(token, account.targetCalendarId, from, to),
     prisma.plannedSession.findMany({
-      where: { googleEventId: { not: null } },
+      where: { athleteId, googleEventId: { not: null } },
     }),
   ]);
 
@@ -345,7 +349,7 @@ export async function syncFromGoogle(): Promise<GooglePullResult> {
   }
 
   await prisma.googleAccount.update({
-    where: { athleteId: ACCOUNT_ID },
+    where: { athleteId },
     data: { lastSyncAt: new Date() },
   });
 
@@ -368,10 +372,14 @@ export interface CalendarEventView {
  * déjà représenté par les séances planifiées) sur une période, pour les afficher
  * dans la page Calendrier et visualiser les occupations perso.
  */
-export async function getCalendarEvents(from: Date, to: Date): Promise<CalendarEventView[]> {
-  const account = await getGoogleAccount();
+export async function getCalendarEvents(
+  athleteId: string,
+  from: Date,
+  to: Date,
+): Promise<CalendarEventView[]> {
+  const account = await getGoogleAccount(athleteId);
   if (!account) return [];
-  const token = await getValidAccessToken();
+  const token = await getValidAccessToken(athleteId);
   const calendars = await listCalendars(token);
 
   const hidden = new Set(account.hiddenCalendarIds ?? []);
@@ -410,11 +418,12 @@ export async function getCalendarEvents(from: Date, to: Date): Promise<CalendarE
 
 /** Intervalles occupés à venir, résumés pour le contexte du coach. */
 export async function getUpcomingBusy(
+  athleteId: string,
   days = 21,
 ): Promise<Array<{ dayKey: string; start: string; end: string }>> {
-  const account = await getGoogleAccount();
+  const account = await getGoogleAccount(athleteId);
   if (!account) return [];
-  const token = await getValidAccessToken();
+  const token = await getValidAccessToken(athleteId);
 
   const now = new Date();
   const to = new Date(now.getTime() + days * 86400_000);

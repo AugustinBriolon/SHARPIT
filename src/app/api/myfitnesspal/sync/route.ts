@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { syncMfpNutrition } from '@/lib/integrations/myfitnesspal/myfitnesspal-sync';
 
 export async function POST() {
   try {
-    const result = await syncMfpNutrition();
+    const athleteId = await getCurrentAthleteId();
+    const result = await syncMfpNutrition(athleteId);
     return NextResponse.json(result);
   } catch (error) {
     console.error(error);

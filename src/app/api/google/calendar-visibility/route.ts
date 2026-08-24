@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getGoogleAccount, setHiddenCalendars } from '@/lib/integrations/google/google-sync';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 
 const schema = z.object({
   hiddenCalendarIds: z.array(z.string()),
@@ -8,7 +9,8 @@ const schema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const account = await getGoogleAccount();
+    const athleteId = await getCurrentAthleteId();
+    const account = await getGoogleAccount(athleteId);
     if (!account) {
       return NextResponse.json({ error: 'Compte Google non connecté' }, { status: 400 });
     }
@@ -19,7 +21,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Données invalides' }, { status: 400 });
     }
 
-    await setHiddenCalendars(parsed.data.hiddenCalendarIds);
+    await setHiddenCalendars(athleteId, parsed.data.hiddenCalendarIds);
     return NextResponse.json({
       success: true,
       hiddenCalendarIds: parsed.data.hiddenCalendarIds,

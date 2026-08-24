@@ -19,8 +19,6 @@ import { addDays, startOfDay } from 'date-fns';
 
 export { localDateLabel, trainingDayIdToDate } from '@/lib/training/training-day';
 
-const ATHLETE_ID = 'default';
-
 async function loadTwinState<TOutput, TState>(
   loader: {
     getLatest: (athleteId: string, trainingDayId: string) => Promise<{ output: TOutput } | null>;
@@ -66,10 +64,13 @@ export function buildProjectedInputFromBase(
   };
 }
 
-export async function buildProjectionBaseContext(params?: {
-  horizonDays?: ProjectionHorizonDays;
-  anchorTrainingDayId?: string;
-}): Promise<{
+export async function buildProjectionBaseContext(
+  athleteId: string,
+  params?: {
+    horizonDays?: ProjectionHorizonDays;
+    anchorTrainingDayId?: string;
+  },
+): Promise<{
   base: ProjectionBaseContext;
   futureDayIds: string[];
   sessionSlices: ScenarioSessionSlice[];
@@ -82,21 +83,23 @@ export async function buildProjectionBaseContext(params?: {
 
   const [todayState, plannedSessions, recovery, fatigue, adaptation, physicalHealth, anchorPmc] =
     await Promise.all([
-      loadTodayState({ athleteId: ATHLETE_ID, trainingDayId: anchorTrainingDayId }),
-      getPlannedSessions({
+      loadTodayState({ athleteId, trainingDayId: anchorTrainingDayId }),
+      getPlannedSessions(athleteId, {
         from: startOfDay(new Date(`${anchorTrainingDayId}T12:00:00`)),
         to: horizonEnd,
       }),
-      loadTwinState(recoveryEngine, ATHLETE_ID, anchorTrainingDayId, (o) => o.recoveryState),
-      loadTwinState(fatigueEngine, ATHLETE_ID, anchorTrainingDayId, (o) => o.fatigueState),
-      loadTwinState(adaptationEngine, ATHLETE_ID, anchorTrainingDayId, (o) => o.adaptationState),
+      loadTwinState(recoveryEngine, athleteId, anchorTrainingDayId, (o) => o.recoveryState),
+      loadTwinState(fatigueEngine, athleteId, anchorTrainingDayId, (o) => o.fatigueState),
+      loadTwinState(adaptationEngine, athleteId, anchorTrainingDayId, (o) => o.adaptationState),
       loadTwinState(
         physicalHealthEngine,
-        ATHLETE_ID,
+        athleteId,
         anchorTrainingDayId,
         (o) => o.physicalHealthState,
       ),
-      loadAthletePmcAnchor({ refDate: new Date(`${anchorTrainingDayId}T12:00:00.000Z`) }),
+      loadAthletePmcAnchor(athleteId, {
+        refDate: new Date(`${anchorTrainingDayId}T12:00:00.000Z`),
+      }),
     ]);
 
   // Full precision on purpose: this value seeds projectPmcForward, so rounding it
@@ -113,7 +116,7 @@ export async function buildProjectionBaseContext(params?: {
 
   return {
     base: {
-      athleteId: ATHLETE_ID,
+      athleteId,
       anchorTrainingDayId,
       horizonDays,
       recovery,
@@ -131,12 +134,15 @@ export async function buildProjectionBaseContext(params?: {
   };
 }
 
-export async function buildProjectedAthleteInput(params?: {
-  horizonDays?: ProjectionHorizonDays;
-  anchorTrainingDayId?: string;
-  sessionOverrides?: readonly ScenarioSessionSlice[];
-}): Promise<ProjectedAthleteInput | null> {
-  const context = await buildProjectionBaseContext(params);
+export async function buildProjectedAthleteInput(
+  athleteId: string,
+  params?: {
+    horizonDays?: ProjectionHorizonDays;
+    anchorTrainingDayId?: string;
+    sessionOverrides?: readonly ScenarioSessionSlice[];
+  },
+): Promise<ProjectedAthleteInput | null> {
+  const context = await buildProjectionBaseContext(athleteId, params);
   if (!context) return null;
 
   const sessions = params?.sessionOverrides ?? context.sessionSlices;

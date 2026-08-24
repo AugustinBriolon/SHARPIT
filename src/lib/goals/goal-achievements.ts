@@ -157,6 +157,7 @@ export async function getLatestAchievementForGoal(goalId: string) {
 }
 
 export async function enrichGoalsWithProgress<T extends Goal>(
+  athleteId: string,
   goals: T[],
 ): Promise<
   (T & {
@@ -172,8 +173,10 @@ export async function enrichGoalsWithProgress<T extends Goal>(
   });
 
   const [periodActivities, performanceActivities] = await Promise.all([
-    loadActivitiesForGoals(),
-    hasPerformance ? loadAllActivitiesForPerformance() : Promise.resolve([] as ActivityRow[]),
+    loadActivitiesForGoals(athleteId),
+    hasPerformance
+      ? loadAllActivitiesForPerformance(athleteId)
+      : Promise.resolve([] as ActivityRow[]),
   ]);
 
   const ref = new Date();

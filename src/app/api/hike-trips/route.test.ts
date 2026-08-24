@@ -10,6 +10,10 @@ vi.mock('@/lib/queries', async (importOriginal) => {
   };
 });
 
+vi.mock('@/lib/auth/current-athlete', () => ({
+  getCurrentAthleteId: vi.fn().mockResolvedValue('default'),
+}));
+
 async function importRoute() {
   return await import('./route');
 }
@@ -72,7 +76,7 @@ describe('POST /api/hike-trips', () => {
       createdAt: TRIP.createdAt.toISOString(),
       updatedAt: TRIP.updatedAt.toISOString(),
     });
-    expect(createHikeTrip).toHaveBeenCalledWith({
+    expect(createHikeTrip).toHaveBeenCalledWith('default', {
       name: 'Pyrénées',
       activityIds: ['act-1', 'act-2'],
     });

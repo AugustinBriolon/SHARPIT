@@ -20,36 +20,43 @@ import {
  * @see docs/adr/ADR-011-pmc-state-and-window-semantics.md
  */
 
-const ATHLETE_ID = 'default';
-
 export interface LoadAthletePmcOptions {
   /** Last day of the series. Defaults to today. */
   refDate?: Date;
 }
 
 export async function loadAthletePmcSeries(
+  athleteId: string,
   options?: LoadAthletePmcOptions,
 ): Promise<PmcDayPoint[]> {
   const refDate = options?.refDate;
-  const activities = await getActivitiesForPmc();
+  const activities = await getActivitiesForPmc(athleteId);
   if (activities.length === 0) return [];
 
-  const coreSessions = await loadCoreSessionTss(activities[0].date, refDate ?? new Date());
+  const coreSessions = await loadCoreSessionTss(
+    athleteId,
+    activities[0].date,
+    refDate ?? new Date(),
+  );
 
   return computeAthletePmc(activities, { refDate, coreSessions });
 }
 
 /** Latest state only — what most callers actually need. */
 export async function loadAthletePmcAnchor(
+  athleteId: string,
   options?: LoadAthletePmcOptions,
 ): Promise<PmcDayPoint | null> {
-  const series = await loadAthletePmcSeries(options);
+  const series = await loadAthletePmcSeries(athleteId, options);
   return series.at(-1) ?? null;
 }
 
 /** Chart-ready points across the whole history; slice for display. */
-export async function loadAthletePmcPoints(options?: LoadAthletePmcOptions): Promise<PmcPoint[]> {
-  return toPmcPoints(await loadAthletePmcSeries(options));
+export async function loadAthletePmcPoints(
+  athleteId: string,
+  options?: LoadAthletePmcOptions,
+): Promise<PmcPoint[]> {
+  return toPmcPoints(await loadAthletePmcSeries(athleteId, options));
 }
 
 /**
@@ -60,13 +67,14 @@ export async function loadAthletePmcPoints(options?: LoadAthletePmcOptions): Pro
  * the ACWR gauge and the fitness chart could disagree about the same week.
  */
 export async function loadDailyTrainingStressEntries(
+  athleteId: string,
   options?: LoadAthletePmcOptions,
 ): Promise<{ load: number; date: Date }[]> {
   const refDate = options?.refDate ?? new Date();
-  const activities = await getActivitiesForPmc();
+  const activities = await getActivitiesForPmc(athleteId);
   if (activities.length === 0) return [];
 
-  const coreSessions = await loadCoreSessionTss(activities[0].date, refDate);
+  const coreSessions = await loadCoreSessionTss(athleteId, activities[0].date, refDate);
   const dailyTss = aggregateDailyTssPreferringCore(activities, coreSessions);
 
   return [...dailyTss.entries()].map(([trainingDayId, load]) => ({
@@ -76,9 +84,13 @@ export async function loadDailyTrainingStressEntries(
   }));
 }
 
-async function loadCoreSessionTss(from: Date, to: Date): Promise<CoreSessionTss[]> {
+async function loadCoreSessionTss(
+  athleteId: string,
+  from: Date,
+  to: Date,
+): Promise<CoreSessionTss[]> {
   const records = await featureRepository.findSessionFeaturesByRange(
-    ATHLETE_ID,
+    athleteId,
     toTrainingDayId(from),
     toTrainingDayId(to),
   );

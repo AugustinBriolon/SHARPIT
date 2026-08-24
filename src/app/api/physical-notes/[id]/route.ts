@@ -3,6 +3,7 @@ import {
   removePhysicalConditionObservations,
   syncPhysicalConditionObservation,
 } from '@/lib/manual-observation-sync';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { deletePhysicalNote, getPhysicalNoteById, updatePhysicalNote } from '@/lib/queries';
 import { updatePhysicalNoteSchema } from '@/lib/validators/physical-note';
 
@@ -11,6 +12,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
+    const athleteId = await getCurrentAthleteId();
     const body = await request.json();
     const parsed = updatePhysicalNoteSchema.safeParse(body);
     if (!parsed.success) {
@@ -20,12 +22,12 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    const existing = await getPhysicalNoteById(id);
+    const existing = await getPhysicalNoteById(athleteId, id);
     if (!existing) {
       return NextResponse.json({ error: 'Note introuvable' }, { status: 404 });
     }
 
-    const data = { ...parsed.data } as Parameters<typeof updatePhysicalNote>[1];
+    const data = { ...parsed.data } as Parameters<typeof updatePhysicalNote>[2];
     // si on passe en résolu et pas de date fournie, on la pose
     if (
       parsed.data.status === 'RESOLVED' &&
@@ -38,7 +40,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       (data as { resolvedAt?: Date | null }).resolvedAt = null;
     }
 
-    const note = await updatePhysicalNote(id, data);
+    const note = await updatePhysicalNote(athleteId, id, data);
+    if (!note) {
+      return NextResponse.json({ error: 'Note introuvable' }, { status: 404 });
+    }
     await syncPhysicalConditionObservation(note);
     return NextResponse.json(note);
   } catch (error) {
@@ -50,8 +55,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
-    await deletePhysicalNote(id);
-    await removePhysicalConditionObservations(id);
+    const athleteId = await getCurrentAthleteId();
+    await deletePhysicalNote(athleteId, id);
+    await removePhysicalConditionObservations(athleteId, id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);

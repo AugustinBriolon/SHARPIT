@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { parseISO } from 'date-fns';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { getHealthEntries } from '@/lib/queries';
 
 export async function GET(request: NextRequest) {
@@ -11,7 +12,8 @@ export async function GET(request: NextRequest) {
   const refDate = dateParam ? parseISO(dateParam) : new Date();
 
   try {
-    const entries = await getHealthEntries(days, refDate);
+    const athleteId = await getCurrentAthleteId();
+    const entries = await getHealthEntries(athleteId, days, refDate);
     return NextResponse.json(entries);
   } catch (error) {
     console.error(error);

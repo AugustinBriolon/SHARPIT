@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import {
   createHikeTrip,
   HikeTripConflictError,
@@ -34,7 +35,8 @@ function hikeTripErrorResponse(error: unknown, fallbackMessage: string): NextRes
 
 export async function GET() {
   try {
-    const trips = await listHikeTrips();
+    const athleteId = await getCurrentAthleteId();
+    const trips = await listHikeTrips(athleteId);
     return NextResponse.json(trips);
   } catch (error) {
     return hikeTripErrorResponse(error, 'Impossible de charger les séjours');
@@ -53,7 +55,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const trip = await createHikeTrip(parsed.data);
+    const athleteId = await getCurrentAthleteId();
+    const trip = await createHikeTrip(athleteId, parsed.data);
     return NextResponse.json(trip, { status: 201 });
   } catch (error) {
     return hikeTripErrorResponse(error, 'Impossible de créer le séjour');

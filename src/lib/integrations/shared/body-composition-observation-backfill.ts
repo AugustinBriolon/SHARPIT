@@ -5,8 +5,6 @@ import type { RawObservation } from '@/core/observation/types';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { prisma } from '@/lib/prisma';
 
-const ATHLETE_ID = 'default';
-
 export type BodyCompositionObservationBackfillResult = {
   scanned: number;
   ingested: number;
@@ -20,13 +18,14 @@ export type BodyCompositionObservationBackfillResult = {
  * Idempotent: deduplicates by externalId via ObservationEngine.ingest.
  */
 export async function backfillBodyCompositionObservationsFromMeasurements(
-  athleteId: string = ATHLETE_ID,
+  athleteId: string,
   options?: { days?: number; since?: Date },
 ): Promise<BodyCompositionObservationBackfillResult> {
   const since = options?.since ?? subDays(startOfDay(new Date()), options?.days ?? 365 * 3);
 
   const rows = await prisma.bodyCompositionMeasurement.findMany({
     where: {
+      athleteId,
       measuredAt: { gte: since },
       weightKg: { gt: 0 },
     },

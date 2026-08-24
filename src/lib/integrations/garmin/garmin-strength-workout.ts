@@ -36,15 +36,18 @@ export type PushStrengthWorkoutResult = {
   pushedAt?: string | null;
 };
 
-async function uploadStrengthSets(options: {
-  workoutName: string;
-  description?: string | null;
-  sets: StrengthWorkoutSetInput[];
-  schedule?: boolean;
-  scheduleDate?: string | null;
-  /** Previous Connect workout to delete when force-replacing. */
-  replaceWorkoutId?: string | null;
-}): Promise<PushStrengthWorkoutResult> {
+async function uploadStrengthSets(
+  athleteId: string,
+  options: {
+    workoutName: string;
+    description?: string | null;
+    sets: StrengthWorkoutSetInput[];
+    schedule?: boolean;
+    scheduleDate?: string | null;
+    /** Previous Connect workout to delete when force-replacing. */
+    replaceWorkoutId?: string | null;
+  },
+): Promise<PushStrengthWorkoutResult> {
   const labelsFr = await ensureGarminExerciseLabelsFr();
   const frLeafByLabel = invertGarminExerciseLabelsFr(labelsFr);
 
@@ -69,7 +72,7 @@ async function uploadStrengthSets(options: {
     throw new Error('Aucun exercice à envoyer');
   }
 
-  const created = await createAndScheduleWorkout({
+  const created = await createAndScheduleWorkout(athleteId, {
     payload: built.payload,
     schedule: options.schedule,
     scheduleDate: options.scheduleDate,
@@ -94,14 +97,17 @@ async function uploadStrengthSets(options: {
  * Push a STRENGTH activity's sets to Garmin Connect as a workout template,
  * optionally scheduled on the athlete calendar (syncs to watch on next device sync).
  */
-export async function pushStrengthWorkoutFromActivity(options: {
-  activityId: string;
-  /** YYYY-MM-DD — defaults to today when schedule=true */
-  scheduleDate?: string | null;
-  schedule?: boolean;
-}): Promise<PushStrengthWorkoutResult> {
-  const activity = await prisma.activity.findUnique({
-    where: { id: options.activityId },
+export async function pushStrengthWorkoutFromActivity(
+  athleteId: string,
+  options: {
+    activityId: string;
+    /** YYYY-MM-DD — defaults to today when schedule=true */
+    scheduleDate?: string | null;
+    schedule?: boolean;
+  },
+): Promise<PushStrengthWorkoutResult> {
+  const activity = await prisma.activity.findFirst({
+    where: { id: options.activityId, athleteId },
     select: {
       id: true,
       type: true,
@@ -134,7 +140,7 @@ export async function pushStrengthWorkoutFromActivity(options: {
   // Activity.date is an instant, not a calendar day — the athlete's local day is right here.
   const workoutName = activity.title?.trim() || `SHARPIT muscu ${format(activity.date, 'dd/MM')}`;
 
-  return uploadStrengthSets({
+  return uploadStrengthSets(athleteId, {
     workoutName,
     description: 'Envoyé depuis SHARPIT (séance réalisée)',
     sets: activity.strengthSets,
@@ -148,15 +154,18 @@ export async function pushStrengthWorkoutFromActivity(options: {
  * scheduled on the planned session date by default.
  * Blocks duplicate pushes unless `force` is true (replaces previous workout).
  */
-export async function pushStrengthWorkoutFromPlannedSession(options: {
-  plannedSessionId: string;
-  scheduleDate?: string | null;
-  schedule?: boolean;
-  /** Replace previous Garmin workout if already pushed. */
-  force?: boolean;
-}): Promise<PushStrengthWorkoutResult> {
-  const session = await prisma.plannedSession.findUnique({
-    where: { id: options.plannedSessionId },
+export async function pushStrengthWorkoutFromPlannedSession(
+  athleteId: string,
+  options: {
+    plannedSessionId: string;
+    scheduleDate?: string | null;
+    schedule?: boolean;
+    /** Replace previous Garmin workout if already pushed. */
+    force?: boolean;
+  },
+): Promise<PushStrengthWorkoutResult> {
+  const session = await prisma.plannedSession.findFirst({
+    where: { id: options.plannedSessionId, athleteId },
     select: {
       id: true,
       type: true,
@@ -175,7 +184,7 @@ export async function pushStrengthWorkoutFromPlannedSession(options: {
     throw new Error('Seules les séances de musculation peuvent être envoyées à la montre');
   }
 
-  if (!options.force) await assertNotAlreadyPushed(session);
+  if (!options.force) await assertNotAlreadyPushed(athleteId, session);
 
   const prescriptionParsed = parseStrengthPrescription(session.strengthPrescription);
   const prescription = prescriptionParsed
@@ -192,7 +201,7 @@ export async function pushStrengthWorkoutFromPlannedSession(options: {
     formatStrengthPrescriptionSummary(prescription) ||
     'Envoyé depuis SHARPIT (séance planifiée)';
 
-  const result = await uploadStrengthSets({
+  const result = await uploadStrengthSets(athleteId, {
     workoutName,
     description,
     sets: prescription.sets.map((set) => ({

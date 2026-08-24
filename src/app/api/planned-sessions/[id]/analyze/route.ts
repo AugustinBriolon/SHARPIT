@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { analyzePlannedSession } from '@/lib/coach/plan/coach-analysis';
 import { getPlannedSessionById, setPlannedSessionAnalysis } from '@/lib/queries';
 
@@ -18,7 +19,8 @@ export async function POST(_request: NextRequest, context: RouteContext) {
       );
     }
 
-    const existing = await getPlannedSessionById(id);
+    const athleteId = await getCurrentAthleteId();
+    const existing = await getPlannedSessionById(athleteId, id);
     if (!existing) {
       return NextResponse.json({ error: 'Séance planifiée introuvable' }, { status: 404 });
     }
@@ -26,12 +28,12 @@ export async function POST(_request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Aucune activité liée à analyser' }, { status: 400 });
     }
 
-    const analysis = await analyzePlannedSession(id);
+    const analysis = await analyzePlannedSession(athleteId, id);
     if (!analysis) {
       return NextResponse.json({ error: 'Analyse impossible' }, { status: 500 });
     }
 
-    const session = await setPlannedSessionAnalysis(id, analysis);
+    const session = await setPlannedSessionAnalysis(athleteId, id, analysis);
     return NextResponse.json(session);
   } catch (error) {
     console.error('[planned-sessions/analyze]', error);

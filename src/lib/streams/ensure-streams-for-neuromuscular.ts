@@ -21,10 +21,13 @@ export type EnsureNmeStreamsResult = {
  * Ensure GPS/HR streams exist for recent outdoor sessions that can feed
  * `hrDriftPercent` → neuromuscular efficiency — without opening the activity UI.
  */
-export async function ensureStreamsForNeuromuscularEfficiency(input: {
-  activityIds?: string[];
-  trainingDayId: string;
-}): Promise<EnsureNmeStreamsResult> {
+export async function ensureStreamsForNeuromuscularEfficiency(
+  athleteId: string,
+  input: {
+    activityIds?: string[];
+    trainingDayId: string;
+  },
+): Promise<EnsureNmeStreamsResult> {
   const fromDayId = addTrainingDays(
     input.trainingDayId,
     -(NEUROMUSCULAR_EFFICIENCY_LOOKBACK_DAYS - 1),
@@ -34,6 +37,7 @@ export async function ensureStreamsForNeuromuscularEfficiency(input: {
 
   const candidates = await prisma.activity.findMany({
     where: {
+      athleteId,
       type: { in: NME_STREAM_TYPES },
       duration: { gte: MIN_DURATION_SEC },
       stream: null,
@@ -63,7 +67,7 @@ export async function ensureStreamsForNeuromuscularEfficiency(input: {
     if (!activity.garminId && !activity.stravaId) continue;
 
     try {
-      const { available } = await fetchAndCacheActivityStreams(activity.id, {
+      const { available } = await fetchAndCacheActivityStreams(athleteId, activity.id, {
         garminId: activity.garminId,
         stravaId: activity.stravaId,
       });
@@ -85,10 +89,11 @@ export async function ensureStreamsForNeuromuscularEfficiency(input: {
  *   (heals the old "today-only sessions" bug without looping when drift is genuinely absent).
  */
 export async function shouldRecomputeNeuromuscularAdaptation(
+  athleteId: string,
   trainingDayId: string,
 ): Promise<boolean> {
   const twin = await prisma.digitalTwin.findUnique({
-    where: { athleteId: 'default' },
+    where: { athleteId },
     select: { adaptationState: true },
   });
 
@@ -109,7 +114,7 @@ export async function shouldRecomputeNeuromuscularAdaptation(
 
   const sessionFeatures = await prisma.featureSet.findMany({
     where: {
-      athleteId: 'default',
+      athleteId,
       category: 'SESSION',
       status: 'COMPUTED',
       trainingDayId: { gte: fromDayId, lte: trainingDayId },
@@ -134,6 +139,7 @@ export async function shouldRecomputeNeuromuscularAdaptation(
   const { gte } = approximateTrainingDayUtcRange(fromDayId);
   const streamedEligible = await prisma.activity.count({
     where: {
+      athleteId,
       type: { in: NME_STREAM_TYPES },
       duration: { gte: MIN_DURATION_SEC },
       date: { gte },

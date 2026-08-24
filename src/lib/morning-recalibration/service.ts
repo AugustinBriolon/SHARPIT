@@ -25,8 +25,6 @@ import { prisma } from '@/lib/prisma';
 import { updatePlannedSession } from '@/lib/queries';
 import { dayKeyFromDate } from '@/lib/date/day-key';
 
-const ATHLETE_ID = 'default';
-
 export type MorningRecalibrationPresentation = {
   decisionId: string;
   sessionId: string;
@@ -136,19 +134,20 @@ function isStaleSportProposal(
  * decision when a meaningful adjustment exists and none is open/settled yet.
  */
 export async function ensureMorningRecalibration(
+  athleteId: string,
   trainingDayId: string,
   options?: { athleteSnapshot?: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>> },
 ): Promise<EnsureMorningRecalibrationResult> {
-  const wellnessCompleted = await hasMorningWellnessCheckin(ATHLETE_ID, trainingDayId);
+  const wellnessCompleted = await hasMorningWellnessCheckin(athleteId, trainingDayId);
   if (!wellnessCompleted) return { presentation: null, created: false };
 
-  const existing = await findMorningRecalibrationDecision(trainingDayId);
+  const existing = await findMorningRecalibrationDecision(athleteId, trainingDayId);
   if (existing) {
     const mr = existing.snapshotContext.morningRecalibration;
     if (!mr || !existing.proposal.sessionId) return { presentation: null, created: false };
 
-    const existingSession = await prisma.plannedSession.findUnique({
-      where: { id: existing.proposal.sessionId },
+    const existingSession = await prisma.plannedSession.findFirst({
+      where: { id: existing.proposal.sessionId, athleteId },
       select: { type: true },
     });
     const stale =
@@ -181,6 +180,7 @@ export async function ensureMorningRecalibration(
   const day = startOfDay(new Date(y, m - 1, d, 12, 0, 0));
   const sessions = await prisma.plannedSession.findMany({
     where: {
+      athleteId,
       date: { gte: day, lte: endOfDay(day) },
       completed: false,
       activityId: null,
@@ -191,7 +191,8 @@ export async function ensureMorningRecalibration(
   const session = sessions[0] ?? null;
   if (!session) return { presentation: null, created: false };
 
-  const snapshot = options?.athleteSnapshot ?? (await getOrBuildAthleteSnapshot(trainingDayId));
+  const snapshot =
+    options?.athleteSnapshot ?? (await getOrBuildAthleteSnapshot(athleteId, trainingDayId));
   const proposal = evaluateMorningSessionRecalibration({
     wellnessCompleted: true,
     session: {
@@ -235,7 +236,7 @@ export async function ensureMorningRecalibration(
     },
   };
 
-  const decision = await createCoachingDecision({
+  const decision = await createCoachingDecision(athleteId, {
     trainingDayId,
     source: 'PLAN_ADAPTER',
     proposal: gateProposal,
@@ -257,9 +258,10 @@ export async function ensureMorningRecalibration(
 }
 
 export async function acceptMorningRecalibration(
+  athleteId: string,
   decisionId: string,
 ): Promise<{ ok: true; sessionId: string } | { ok: false; error: string }> {
-  const decision = await findCoachingDecisionById(decisionId);
+  const decision = await findCoachingDecisionById(athleteId, decisionId);
   if (!decision?.snapshotContext.morningRecalibration) {
     return { ok: false, error: 'Proposition introuvable' };
   }
@@ -271,14 +273,14 @@ export async function acceptMorningRecalibration(
   const mr = decision.snapshotContext.morningRecalibration;
   if (!sessionId) return { ok: false, error: 'Proposition invalide' };
 
-  await updatePlannedSession(sessionId, {
+  await updatePlannedSession(athleteId, sessionId, {
     intensity: decision.proposal.intensity ?? undefined,
     durationMin: decision.proposal.durationMin ?? undefined,
     load: decision.proposal.load ?? undefined,
     description: mr.toDescription ?? undefined,
   });
 
-  await recordDecisionAction({
+  await recordDecisionAction(athleteId, {
     decisionId,
     actionType: 'ACCEPTED',
     source: 'PLAN_REVIEW_UI',
@@ -290,9 +292,10 @@ export async function acceptMorningRecalibration(
 }
 
 export async function rejectMorningRecalibration(
+  athleteId: string,
   decisionId: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const decision = await findCoachingDecisionById(decisionId);
+  const decision = await findCoachingDecisionById(athleteId, decisionId);
   if (!decision?.snapshotContext.morningRecalibration) {
     return { ok: false, error: 'Proposition introuvable' };
   }
@@ -300,7 +303,7 @@ export async function rejectMorningRecalibration(
     return { ok: false, error: 'Cette proposition n’est plus en attente' };
   }
 
-  await recordDecisionAction({
+  await recordDecisionAction(athleteId, {
     decisionId,
     actionType: 'REJECTED',
     source: 'PLAN_REVIEW_UI',

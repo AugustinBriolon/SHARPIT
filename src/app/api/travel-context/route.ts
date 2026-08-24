@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import {
   applyTravelContextToUpcomingSessions,
   createTravelContext,
@@ -34,10 +35,11 @@ const createSchema = z
 
 export async function GET() {
   try {
+    const athleteId = await getCurrentAthleteId();
     const [active, activeList, all] = await Promise.all([
-      getActiveTravelContext(prisma),
-      listActiveTravelContexts(prisma),
-      listTravelContexts(prisma),
+      getActiveTravelContext(prisma, athleteId),
+      listActiveTravelContexts(prisma, athleteId),
+      listTravelContexts(prisma, athleteId),
     ]);
     return NextResponse.json({ active, activeList, contexts: all });
   } catch (error) {
@@ -60,13 +62,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const travel = await createTravelContext(prisma, parsed.data);
+    const athleteId = await getCurrentAthleteId();
+    const travel = await createTravelContext(prisma, athleteId, parsed.data);
     let updatedSessions = 0;
 
     if (parsed.data.type === 'TRAVEL' && parsed.data.applyToPlannedSessions !== false) {
-      updatedSessions = await applyTravelContextToUpcomingSessions(prisma, travel.id);
+      updatedSessions = await applyTravelContextToUpcomingSessions(prisma, athleteId, travel.id);
       const sessions = await prisma.plannedSession.findMany({
         where: {
+          athleteId,
           date: { gte: travel.startDate, lte: travel.endDate },
           locationLat: travel.locationLat,
           locationLng: travel.locationLng,
@@ -75,7 +79,7 @@ export async function POST(request: NextRequest) {
       });
       for (const session of sessions) {
         try {
-          await refreshAndPersistPlannedSessionContext(session.id);
+          await refreshAndPersistPlannedSessionContext(athleteId, session.id);
         } catch (error) {
           console.error('[travel-context/refresh]', session.id, error);
         }

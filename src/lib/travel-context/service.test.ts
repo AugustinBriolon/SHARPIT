@@ -33,11 +33,13 @@ function fakePrisma(overrides: Record<string, unknown> = {}) {
   } as never;
 }
 
+const ATHLETE_ID = 'default';
+
 describe('createTravelContext', () => {
   it('stores the exact UTC midnight of the requested calendar day, matching the coerced input', async () => {
     const prisma = fakePrisma();
 
-    const travel = await createTravelContext(prisma, {
+    const travel = await createTravelContext(prisma, ATHLETE_ID, {
       locationLabel: 'Stockholm, Suède',
       locationLat: 59.33,
       locationLng: 18.06,
@@ -52,7 +54,7 @@ describe('createTravelContext', () => {
   it('stores a CONSTRAINT entry with no location and never geocodes', async () => {
     const prisma = fakePrisma();
 
-    const constraint = await createTravelContext(prisma, {
+    const constraint = await createTravelContext(prisma, ATHLETE_ID, {
       type: 'CONSTRAINT',
       label: 'Tendinite genou',
       startDate: new Date('2026-08-01'),
@@ -71,7 +73,7 @@ describe('createTravelContext', () => {
     const prisma = fakePrisma();
 
     await expect(
-      createTravelContext(prisma, {
+      createTravelContext(prisma, ATHLETE_ID, {
         startDate: new Date('2026-08-01'),
         endDate: new Date('2026-08-10'),
       }),
@@ -95,7 +97,7 @@ describe('getActiveTravelContext', () => {
     });
     const prisma = fakePrisma({ findFirst });
 
-    const result = await getActiveTravelContext(prisma, new Date('2026-08-05'));
+    const result = await getActiveTravelContext(prisma, ATHLETE_ID, new Date('2026-08-05'));
 
     expect(result?.locationLabel).toBe('Stockholm, Suède');
     expect(findFirst).toHaveBeenCalledTimes(1);
@@ -126,12 +128,12 @@ describe('listActiveTravelContexts', () => {
     ]);
     const prisma = fakePrisma({ findMany });
 
-    const result = await listActiveTravelContexts(prisma, new Date('2026-07-16'));
+    const result = await listActiveTravelContexts(prisma, ATHLETE_ID, new Date('2026-07-16'));
 
     expect(result).toHaveLength(2);
     expect(findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ type: 'TRAVEL' }),
+        where: expect.objectContaining({ athleteId: ATHLETE_ID, type: 'TRAVEL' }),
       }),
     );
   });
@@ -142,11 +144,15 @@ describe('purgeExpiredTravelContexts', () => {
     const deleteMany = vi.fn().mockResolvedValue({ count: 2 });
     const prisma = fakePrisma({ deleteMany });
 
-    const count = await purgeExpiredTravelContexts(prisma, new Date('2026-07-22T15:00:00.000Z'));
+    const count = await purgeExpiredTravelContexts(
+      prisma,
+      ATHLETE_ID,
+      new Date('2026-07-22T15:00:00.000Z'),
+    );
 
     expect(count).toBe(2);
     expect(deleteMany).toHaveBeenCalledWith({
-      where: { endDate: { lt: new Date('2026-07-22T00:00:00.000Z') } },
+      where: { athleteId: ATHLETE_ID, endDate: { lt: new Date('2026-07-22T00:00:00.000Z') } },
     });
   });
 });
@@ -163,13 +169,17 @@ describe('listTravelContexts', () => {
     ]);
     const prisma = fakePrisma({ deleteMany, findMany });
 
-    const result = await listTravelContexts(prisma, new Date('2026-07-22T12:00:00.000Z'));
+    const result = await listTravelContexts(
+      prisma,
+      ATHLETE_ID,
+      new Date('2026-07-22T12:00:00.000Z'),
+    );
 
     expect(deleteMany).toHaveBeenCalledWith({
-      where: { endDate: { lt: new Date('2026-07-22T00:00:00.000Z') } },
+      where: { athleteId: ATHLETE_ID, endDate: { lt: new Date('2026-07-22T00:00:00.000Z') } },
     });
     expect(findMany).toHaveBeenCalledWith({
-      where: { endDate: { gte: new Date('2026-07-22T00:00:00.000Z') } },
+      where: { athleteId: ATHLETE_ID, endDate: { gte: new Date('2026-07-22T00:00:00.000Z') } },
       orderBy: [{ startDate: 'asc' }],
     });
     expect(result).toHaveLength(1);
@@ -179,7 +189,7 @@ describe('listTravelContexts', () => {
 
 describe('applyTravelContextToUpcomingSessions', () => {
   it('never pushes location onto planned sessions for a CONSTRAINT entry', async () => {
-    const findUnique = vi.fn().mockResolvedValue({
+    const findFirst = vi.fn().mockResolvedValue({
       id: 'c1',
       type: 'CONSTRAINT',
       startDate: new Date('2026-08-01T00:00:00.000Z'),
@@ -188,9 +198,9 @@ describe('applyTravelContextToUpcomingSessions', () => {
       locationLat: null,
       locationLng: null,
     });
-    const prisma = fakePrisma({ findUnique });
+    const prisma = fakePrisma({ findFirst });
 
-    const updated = await applyTravelContextToUpcomingSessions(prisma, 'c1');
+    const updated = await applyTravelContextToUpcomingSessions(prisma, ATHLETE_ID, 'c1');
 
     expect(updated).toBe(0);
     expect(

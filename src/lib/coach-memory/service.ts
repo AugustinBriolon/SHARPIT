@@ -18,12 +18,13 @@ export type CoachMemorySnapshot = {
 
 export async function listCoachMemoryEntries(
   prisma: PrismaClient,
+  athleteId: string,
   onDate = new Date(),
 ): Promise<CoachMemorySnapshot> {
   const [active, travels, profile] = await Promise.all([
-    getActiveTravelContext(prisma, onDate),
-    listTravelContexts(prisma),
-    getAthleteProfile().catch(() => null),
+    getActiveTravelContext(prisma, athleteId, onDate),
+    listTravelContexts(prisma, athleteId),
+    getAthleteProfile(athleteId).catch(() => null),
   ]);
 
   return {
@@ -33,22 +34,28 @@ export async function listCoachMemoryEntries(
   };
 }
 
-export async function createTravelMemoryEntry(prisma: PrismaClient, input: TravelMemoryInput) {
-  const travel = await createTravelContext(prisma, input);
+export async function createTravelMemoryEntry(
+  prisma: PrismaClient,
+  athleteId: string,
+  input: TravelMemoryInput,
+) {
+  const travel = await createTravelContext(prisma, athleteId, input);
   return travelContextToEntry(travel);
 }
 
 export async function updateTravelMemoryEntry(
   prisma: PrismaClient,
+  athleteId: string,
   id: string,
   input: Omit<TravelMemoryInput, 'source' | 'applyToPlannedSessions'>,
 ) {
-  const travel = await updateTravelContext(prisma, id, input);
+  const travel = await updateTravelContext(prisma, athleteId, id, input);
+  if (!travel) return null;
   return travelContextToEntry(travel);
 }
 
-export async function deleteCoachMemoryEntry(prisma: PrismaClient, id: string) {
-  await deleteTravelContext(prisma, id);
+export async function deleteCoachMemoryEntry(prisma: PrismaClient, athleteId: string, id: string) {
+  await deleteTravelContext(prisma, athleteId, id);
 }
 
 function travelContextToEntry(

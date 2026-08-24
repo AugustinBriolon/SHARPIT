@@ -13,9 +13,13 @@ import { getUpcomingBusy } from '@/lib/integrations/google/google-sync';
  * Never throws: a calendar outage must degrade to "no agenda" rather than fail
  * the coach turn.
  */
-export async function buildBusySummary(start: Date, days: number): Promise<string> {
+export async function buildBusySummary(
+  athleteId: string,
+  start: Date,
+  days: number,
+): Promise<string> {
   try {
-    const busy = await getUpcomingBusy(days + 1);
+    const busy = await getUpcomingBusy(athleteId, days + 1);
     if (busy.length === 0) return '';
 
     const byDay = new Map<string, string[]>();

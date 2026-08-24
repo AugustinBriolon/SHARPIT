@@ -286,9 +286,9 @@ export interface MultisportStreamsPayload {
   legs: MultisportLegStream[];
 }
 
-async function fetchGarminLegRaw(garminId: string): Promise<RawStreams | null> {
+async function fetchGarminLegRaw(athleteId: string, garminId: string): Promise<RawStreams | null> {
   try {
-    const client = await getGarminClient();
+    const client = await getGarminClient(athleteId);
     const garmin = await fetchGarminActivityStreams(client, garminId);
     if (garmin && rawStreamsHaveSignal(garmin)) return garmin;
   } catch (error) {
@@ -312,14 +312,15 @@ function buildLegStreamPayload(
 
 /** Streams Garmin par jambe sportive d'un triathlon (natation, vélo, course). */
 export async function getMultisportLegStreams(
+  athleteId: string,
   activityId: string,
 ): Promise<MultisportStreamsPayload | null> {
   const [activity, profile] = await Promise.all([
-    prisma.activity.findUnique({
-      where: { id: activityId },
+    prisma.activity.findFirst({
+      where: { id: activityId, athleteId },
       select: { multisportLegs: true, garminId: true },
     }),
-    getAthleteProfile(),
+    getAthleteProfile(athleteId),
   ]);
 
   if (!activity?.multisportLegs || !isMultisportLegArray(activity.multisportLegs)) {
@@ -333,7 +334,7 @@ export async function getMultisportLegStreams(
     const type = legKindToActivityType(leg.kind);
     if (!type || !leg.garminActivityId) continue;
 
-    const raw = await fetchGarminLegRaw(leg.garminActivityId);
+    const raw = await fetchGarminLegRaw(athleteId, leg.garminActivityId);
     if (!raw) continue;
 
     results.push({
@@ -346,14 +347,17 @@ export async function getMultisportLegStreams(
   return results.length > 0 ? { legs: results } : null;
 }
 
-async function fetchRawStreams(activity: {
-  garminId: string | null;
-  stravaId: string | null;
-}): Promise<RawStreams | null> {
+async function fetchRawStreams(
+  athleteId: string,
+  activity: {
+    garminId: string | null;
+    stravaId: string | null;
+  },
+): Promise<RawStreams | null> {
   // Garmin en priorité (ressenti + source de vérité), Strava en complément streams.
   if (activity.garminId) {
     try {
-      const client = await getGarminClient();
+      const client = await getGarminClient(athleteId);
       const garmin = await fetchGarminActivityStreams(client, activity.garminId);
       if (garmin && rawStreamsHaveSignal(garmin)) return garmin;
     } catch (error) {
@@ -363,7 +367,7 @@ async function fetchRawStreams(activity: {
 
   if (activity.stravaId) {
     try {
-      const token = await getValidAccessToken();
+      const token = await getValidAccessToken(athleteId);
       const set = await fetchActivityStreams(token, activity.stravaId);
       if (set) return normalizeStravaStreams(set);
     } catch (error) {
@@ -375,7 +379,11 @@ async function fetchRawStreams(activity: {
   return null;
 }
 
-async function persistStream(activityId: string, raw: RawStreams | null): Promise<boolean> {
+async function persistStream(
+  athleteId: string,
+  activityId: string,
+  raw: RawStreams | null,
+): Promise<boolean> {
   const available = raw != null && rawStreamsHaveSignal(raw);
   const stored = available && raw ? compactRawStreamsForStorage(raw) : null;
   await prisma.activityStream.create({
@@ -387,17 +395,20 @@ async function persistStream(activityId: string, raw: RawStreams | null): Promis
   });
 
   if (available) {
-    await refreshSessionFeaturesAfterStream(activityId);
+    await refreshSessionFeaturesAfterStream(athleteId, activityId);
   }
 
   return available;
 }
 
 /** Features are often extracted before streams arrive — refresh SESSION once cached. */
-export async function refreshSessionFeaturesAfterStream(activityId: string): Promise<void> {
+export async function refreshSessionFeaturesAfterStream(
+  athleteId: string,
+  activityId: string,
+): Promise<void> {
   try {
-    const activity = await prisma.activity.findUnique({
-      where: { id: activityId },
+    const activity = await prisma.activity.findFirst({
+      where: { id: activityId, athleteId },
       select: { garminId: true, stravaId: true },
     });
     if (!activity) return;
@@ -409,7 +420,7 @@ export async function refreshSessionFeaturesAfterStream(activityId: string): Pro
       Boolean(id),
     );
     for (const externalId of externalIds) {
-      await featureEngine.refreshSessionFeaturesForExternalId('default', externalId);
+      await featureEngine.refreshSessionFeaturesForExternalId(athleteId, externalId);
     }
   } catch (error) {
     console.error('[streams] refreshSessionFeaturesAfterStream', activityId, error);
@@ -422,14 +433,15 @@ export async function refreshSessionFeaturesAfterStream(activityId: string): Pro
  * Les erreurs transitoires renvoient `null` sans cacher, pour autoriser une retry.
  */
 export async function getActivityStreams(
+  athleteId: string,
   activityId: string,
 ): Promise<ActivityStreamPayload | null> {
   const [activity, profile] = await Promise.all([
-    prisma.activity.findUnique({
-      where: { id: activityId },
+    prisma.activity.findFirst({
+      where: { id: activityId, athleteId },
       include: { stream: true, bikeMetrics: true },
     }),
-    getAthleteProfile(),
+    getAthleteProfile(athleteId),
   ]);
   if (!activity) return null;
 
@@ -459,8 +471,8 @@ export async function getActivityStreams(
   }
 
   try {
-    const raw = await fetchRawStreams(activity);
-    const available = await persistStream(activityId, raw);
+    const raw = await fetchRawStreams(athleteId, activity);
+    const available = await persistStream(athleteId, activityId, raw);
     return available && raw ? buildPayload(raw, activityCtx, profile) : UNAVAILABLE;
   } catch (error) {
     console.error('getActivityStreams', error);
@@ -473,14 +485,15 @@ export async function getActivityStreams(
  * Used by post-session narrative so analysis stays off the remote critical path.
  */
 export async function getCachedActivityStreams(
+  athleteId: string,
   activityId: string,
 ): Promise<ActivityStreamPayload | null> {
   const [activity, profile] = await Promise.all([
-    prisma.activity.findUnique({
-      where: { id: activityId },
+    prisma.activity.findFirst({
+      where: { id: activityId, athleteId },
       include: { stream: true, bikeMetrics: true },
     }),
-    getAthleteProfile(),
+    getAthleteProfile(athleteId),
   ]);
   if (!activity?.stream?.available || activity.stream.data == null) return null;
 
@@ -497,10 +510,11 @@ export async function getCachedActivityStreams(
 
 /** Utilitaire backfill : récupère et persiste les streams d'une activité. */
 export async function fetchAndCacheActivityStreams(
+  athleteId: string,
   activityId: string,
   sources: { garminId: string | null; stravaId: string | null },
 ): Promise<{ available: boolean; raw: RawStreams | null }> {
-  const raw = await fetchRawStreams(sources);
-  const available = await persistStream(activityId, raw);
+  const raw = await fetchRawStreams(athleteId, sources);
+  const available = await persistStream(athleteId, activityId, raw);
   return { available, raw };
 }

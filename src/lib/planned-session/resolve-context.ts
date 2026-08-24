@@ -45,12 +45,12 @@ import { prisma } from '@/lib/prisma';
 import { computeTrainingDayId } from '@/lib/training/training-day';
 import { fetchForecastPredictions } from '@/lib/planned-session/forecast/forecast-fetch';
 
-const ATHLETE_ID = 'default';
 const CONTEXT_STALE_MS = 3 * 60 * 60 * 1000;
 
 export type PlannedSessionRecord = Pick<
   PlannedSession,
   | 'id'
+  | 'athleteId'
   | 'type'
   | 'date'
   | 'startTime'
@@ -104,6 +104,7 @@ async function resolveSessionGeoLocation(
   session: PlannedSessionRecord,
   sessionDate: Date,
 ): Promise<GeoLocation> {
+  const { athleteId } = session;
   if (session.locationLat != null && session.locationLng != null) {
     return {
       latitude: session.locationLat,
@@ -131,7 +132,7 @@ async function resolveSessionGeoLocation(
     }
   }
 
-  const travel = await getActiveTravelContext(prisma, sessionDate);
+  const travel = await getActiveTravelContext(prisma, athleteId, sessionDate);
   if (travel) {
     return {
       latitude: travel.locationLat,
@@ -140,7 +141,7 @@ async function resolveSessionGeoLocation(
     };
   }
 
-  const home = await resolveHomeLocation(prisma);
+  const home = await resolveHomeLocation(prisma, athleteId);
   return home;
 }
 
@@ -238,7 +239,11 @@ async function buildEnvironmentalProjection(input: {
   }
 
   const trainingDayId = computeTrainingDayId(new Date(intention.scheduledStart));
-  const fallbackLocation = await resolveAthleteGeoLocation(prisma, ATHLETE_ID, trainingDayId);
+  const fallbackLocation = await resolveAthleteGeoLocation(
+    prisma,
+    session.athleteId,
+    trainingDayId,
+  );
   const location =
     intention.location ?? resolveLocationFromRecord(session, fallbackLocation) ?? fallbackLocation;
   const window = parseScheduledWindow(session.date, session.startTime, session.durationMin);
@@ -247,7 +252,7 @@ async function buildEnvironmentalProjection(input: {
     location,
     windowStart: window.start,
     windowEnd: window.end,
-    athleteId: ATHLETE_ID,
+    athleteId: session.athleteId,
     trainingDayId,
   });
 
@@ -270,7 +275,7 @@ async function buildEnvironmentalProjection(input: {
   }
 
   const forecast = buildForecastEnvironment({
-    athleteId: ATHLETE_ID,
+    athleteId: session.athleteId,
     targetWindow: { start: window.start, end: window.end },
     location,
     predictions,
@@ -355,9 +360,10 @@ export async function resolvePlannedSessionContext(
 }
 
 export async function refreshAndPersistPlannedSessionContext(
+  athleteId: string,
   sessionId: string,
 ): Promise<PlannedSessionContext | null> {
-  const session = await prisma.plannedSession.findUnique({ where: { id: sessionId } });
+  const session = await prisma.plannedSession.findFirst({ where: { id: sessionId, athleteId } });
   if (!session) return null;
 
   const context = await resolvePlannedSessionContext(session, { forceRefresh: true });

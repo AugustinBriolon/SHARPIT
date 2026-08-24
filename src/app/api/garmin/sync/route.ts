@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { onProviderSyncCompleted } from '@/lib/athlete-state/orchestrator';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { syncGarminActivities } from '@/lib/integrations/garmin/garmin-activity-sync';
 import { syncGarminHealth } from '@/lib/integrations/garmin/garmin-sync';
 import { filterRecordChangesByActivities, updateRecordsForTypes } from '@/lib/training/records';
@@ -8,6 +9,7 @@ export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   try {
+    const athleteId = await getCurrentAthleteId();
     let full = false;
     try {
       const body = await request.json();
@@ -17,17 +19,18 @@ export async function POST(request: NextRequest) {
     }
 
     const [health, activities] = await Promise.all([
-      syncGarminHealth(full ? { full: true } : {}),
-      syncGarminActivities(full ? { full: true } : {}),
+      syncGarminHealth(athleteId, full ? { full: true } : {}),
+      syncGarminActivities(athleteId, full ? { full: true } : {}),
     ]);
 
     let recordChanges: Awaited<ReturnType<typeof updateRecordsForTypes>> = [];
     if (activities.changedTypes.length > 0) {
-      const allChanges = await updateRecordsForTypes(activities.changedTypes);
+      const allChanges = await updateRecordsForTypes(athleteId, activities.changedTypes);
       recordChanges = filterRecordChangesByActivities(allChanges, activities.changedActivityIds);
     }
 
     await onProviderSyncCompleted(
+      athleteId,
       [
         {
           provider: 'garmin',

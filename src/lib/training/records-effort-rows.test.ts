@@ -41,11 +41,12 @@ describe('effort rows are not records', () => {
   });
 
   it('never surfaces an effort row as an activity record chip', async () => {
-    await getPerformanceRecordsForActivity('activity-1');
+    await getPerformanceRecordsForActivity('default', 'activity-1');
 
     expect(findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
+          athleteId: 'default',
           activityId: 'activity-1',
           rank: 1,
           group: { notIn: ['run-effort', 'bike-effort'] },

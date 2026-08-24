@@ -11,6 +11,10 @@ vi.mock('@/lib/queries', async (importOriginal) => {
   };
 });
 
+vi.mock('@/lib/auth/current-athlete', () => ({
+  getCurrentAthleteId: vi.fn().mockResolvedValue('default'),
+}));
+
 async function importRoute() {
   return await import('./route');
 }
@@ -82,7 +86,7 @@ describe('PATCH /api/hike-trips/[id]', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(updateHikeTrip).toHaveBeenCalledWith('trip-1', { name: 'Renommé' });
+    expect(updateHikeTrip).toHaveBeenCalledWith('default', 'trip-1', { name: 'Renommé' });
   });
 
   it('returns 400 for an empty patch', async () => {
@@ -161,7 +165,7 @@ describe('DELETE /api/hike-trips/[id]', () => {
     );
 
     expect(response.status).toBe(204);
-    expect(deleteHikeTrip).toHaveBeenCalledWith('trip-1');
+    expect(deleteHikeTrip).toHaveBeenCalledWith('default', 'trip-1');
   });
 
   it('returns 404 when the trip does not exist', async () => {

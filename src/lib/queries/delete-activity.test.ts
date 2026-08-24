@@ -6,10 +6,13 @@ vi.mock('@/lib/prisma', () => ({
       findFirst: vi.fn(),
     },
     activity: {
+      findFirst: vi.fn(),
       delete: vi.fn(),
     },
   },
 }));
+
+const ATHLETE_ID = 'default';
 
 vi.mock('@/lib/queries/planned-sessions', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/queries/planned-sessions')>();
@@ -42,17 +45,18 @@ describe('deleteActivity', () => {
     const { linkPlannedSessionActivity } = await import('@/lib/queries/planned-sessions');
     const { deleteActivity } = await import('@/lib/queries/index');
 
+    vi.mocked(prisma.activity.findFirst).mockResolvedValue({ id: 'act-1' } as never);
     vi.mocked(prisma.plannedSession.findFirst).mockResolvedValue({ id: 'ps-1' } as never);
     vi.mocked(linkPlannedSessionActivity).mockResolvedValue({} as never);
     vi.mocked(prisma.activity.delete).mockResolvedValue({ id: 'act-1' } as never);
 
-    await deleteActivity('act-1');
+    await deleteActivity(ATHLETE_ID, 'act-1');
 
     expect(prisma.plannedSession.findFirst).toHaveBeenCalledWith({
-      where: { activityId: 'act-1' },
+      where: { activityId: 'act-1', athleteId: ATHLETE_ID },
       select: { id: true },
     });
-    expect(linkPlannedSessionActivity).toHaveBeenCalledWith('ps-1', null);
+    expect(linkPlannedSessionActivity).toHaveBeenCalledWith(ATHLETE_ID, 'ps-1', null);
     expect(prisma.activity.delete).toHaveBeenCalledWith({ where: { id: 'act-1' } });
   });
 
@@ -61,10 +65,11 @@ describe('deleteActivity', () => {
     const { linkPlannedSessionActivity } = await import('@/lib/queries/planned-sessions');
     const { deleteActivity } = await import('@/lib/queries/index');
 
+    vi.mocked(prisma.activity.findFirst).mockResolvedValue({ id: 'act-2' } as never);
     vi.mocked(prisma.plannedSession.findFirst).mockResolvedValue(null);
     vi.mocked(prisma.activity.delete).mockResolvedValue({ id: 'act-2' } as never);
 
-    await deleteActivity('act-2');
+    await deleteActivity(ATHLETE_ID, 'act-2');
 
     expect(linkPlannedSessionActivity).not.toHaveBeenCalled();
     expect(prisma.activity.delete).toHaveBeenCalledWith({ where: { id: 'act-2' } });
