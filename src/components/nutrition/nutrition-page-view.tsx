@@ -4,7 +4,7 @@ import { NutritionGoalsPanel } from '@/components/nutrition/nutrition-goals-pane
 import { NutritionHero } from '@/components/nutrition/blocks/nutrition-hero';
 import { NutritionMealsSection } from '@/components/nutrition/blocks/nutrition-meals-section';
 import { NutritionTrendSection } from '@/components/nutrition/blocks/nutrition-trend-section';
-import { NutritionMacroTrendSection } from '@/components/nutrition/blocks/nutrition-macro-trend-section';
+import { NutritionMacroBreakdownSection } from '@/components/nutrition/blocks/nutrition-macro-breakdown-section';
 import { MetricDrillDownPage } from '@/components/today/drill-down/metric-drill-down-page';
 import type { NutritionViewModel } from '@/core/presentation/nutrition-view-model';
 
@@ -61,7 +61,7 @@ export function NutritionPageView({
         selectedDate={selectedDate}
         onDateSelect={onDateChange}
       />
-      <NutritionMacroTrendSection />
+      <NutritionMacroBreakdownSection date={date} history={history} loading={loading} />
     </MetricDrillDownPage>
   );
 }

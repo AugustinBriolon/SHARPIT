@@ -8,10 +8,6 @@ import type { AdaptationViewModel } from '@/core/presentation/adaptation-view-mo
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import type { BodyViewModel } from '@/core/presentation/body-view-model';
 import type { NutritionViewModel } from '@/core/presentation/nutrition-view-model';
-import type {
-  NutritionMacroTrendGranularity,
-  NutritionMacroTrendViewModel,
-} from '@/core/presentation/nutrition-macro-trend-view-model';
 import type { PhysicalHealthViewModel } from '@/core/presentation/physical-health-view-model';
 import {
   fetchAdaptationPresentation,
@@ -22,7 +18,6 @@ import {
   fetchSleepPresentation,
   fetchBodyPresentation,
   fetchNutritionPresentation,
-  fetchNutritionMacroTrendPresentation,
 } from '@/lib/query/presentation-fetchers';
 import { queryKeys } from '@/lib/query/keys';
 import { peekShellAthleteRefreshInFlight } from '@/lib/athlete-state/shell-refresh-seed';
@@ -119,15 +114,6 @@ export function useNutritionViewModel(trainingDayId: string) {
     queryKey: ['presentation', 'nutrition', trainingDayId],
     queryFn: () => fetchNutritionPresentation(trainingDayId),
     staleTime: 60_000,
-    placeholderData: keepPreviousData,
-  });
-}
-
-export function useNutritionMacroTrendViewModel(granularity: NutritionMacroTrendGranularity) {
-  return useQuery<NutritionMacroTrendViewModel>({
-    queryKey: queryKeys.nutritionMacroTrend(granularity),
-    queryFn: () => fetchNutritionMacroTrendPresentation(granularity),
-    staleTime: 5 * 60_000,
     placeholderData: keepPreviousData,
   });
 }

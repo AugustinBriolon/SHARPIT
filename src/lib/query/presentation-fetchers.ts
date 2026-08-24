@@ -9,10 +9,6 @@ import type { SleepViewModel } from '@/core/presentation/sleep-view-model';
 import type { BodyViewModel } from '@/core/presentation/body-view-model';
 import type { PhysicalHealthViewModel } from '@/core/presentation/physical-health-view-model';
 import type { NutritionViewModel } from '@/core/presentation/nutrition-view-model';
-import type {
-  NutritionMacroTrendGranularity,
-  NutritionMacroTrendViewModel,
-} from '@/core/presentation/nutrition-macro-trend-view-model';
 
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url);
@@ -82,15 +78,6 @@ export async function fetchNutritionPresentation(
 ): Promise<NutritionViewModel> {
   const { viewModel } = await fetchJson<{ viewModel: NutritionViewModel }>(
     `/api/presentation/nutrition?trainingDayId=${encodeURIComponent(trainingDayId)}`,
-  );
-  return viewModel;
-}
-
-export async function fetchNutritionMacroTrendPresentation(
-  granularity: NutritionMacroTrendGranularity,
-): Promise<NutritionMacroTrendViewModel> {
-  const { viewModel } = await fetchJson<{ viewModel: NutritionMacroTrendViewModel }>(
-    `/api/presentation/nutrition-macro-trend?granularity=${encodeURIComponent(granularity)}`,
   );
   return viewModel;
 }
