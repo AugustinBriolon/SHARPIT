@@ -25,7 +25,7 @@ Two Explore passes mapped the exact chokepoints before writing any code:
 
 ### 1. A cookie-based demo session, not a duplicated route tree
 
-A visitor hits `GET /demo` (`src/app/demo/route.ts`), which sets an httpOnly `sharpit_demo=1` cookie and redirects into the app's real home page (`/`). From there the visitor uses the existing `(app)` route tree exactly as a real athlete would — no parallel `/demo/*` page tree, no duplicated components. The cookie needs no signing: it only ever resolves to one fixed, low-privilege, read-only tenant, so forging it grants nothing beyond what visiting `/demo` already grants for free.
+A visitor hits `GET /demo` (`src/app/demo/route.ts`), which sets a `sharpit_demo=1` cookie and redirects into the app's real home page (`/`). From there the visitor uses the existing `(app)` route tree exactly as a real athlete would — no parallel `/demo/*` page tree, no duplicated components. The cookie needs no signing and isn't `httpOnly`: it only ever resolves to one fixed, low-privilege, read-only tenant, so forging or reading it grants nothing beyond what visiting `/demo` already grants for free — and a client-side hook (`useIsDemoMode()`, Decision 6) needs to read it too.
 
 A route-tree fork (mirroring every `(app)` page under `/demo/*`) was considered and rejected: it would double the maintenance surface for every future page for no benefit, since nothing about the demo experience needs different UI — only a different tenant behind the same UI.
 
@@ -66,6 +66,16 @@ A `<DemoBanner>` (`src/components/demo/demo-banner.tsx`) — an async Server Com
 `prisma/seed-demo.ts` (run via `yarn db:seed:demo`) is a separate file from `prisma/seed.ts` and never touches it. It `upsert`s the `AthleteProfile` on the sentinel `clerkUserId: 'demo'` (real Clerk ids are always `user_...`, so this can never collide), then deletes and recreates everything scoped to that one `athleteId` — safe because of the cascade shape ADR-025 established. Verified empirically, not assumed: running it twice in a row against the real dev database produced identical row counts for the demo tenant and left the real athlete's 312 activities / 546 health rows / 12 nutrition rows / 48 planned sessions / 1 goal completely unchanged both times.
 
 Scope is deliberately narrow — three weeks of activities (bike/run/swim/strength mix), ten days of recovery data, seven days of nutrition (one day left empty on purpose, to exercise the "no data" pill in `NutritionMacroBreakdownSection`), a week of planned sessions, one goal. Coach conversations and integration accounts are left empty: Coach is shown as unavailable per Decision 4, and no fake connected providers sidesteps needing to fake OAuth state entirely.
+
+### 6. Follow-up, same day: rolling freshness, date fencing, and seed credibility
+
+Shipping the above surfaced three real gaps, fixed the same day rather than left open:
+
+- **Staleness.** Every date `seed-demo.ts` writes was computed once, at seed time. A week later, "the last 7 days" in the UI no longer overlaps what's in the DB. Fixed by extracting the seed body into `seedDemoAthlete(prisma)` (`src/lib/demo/seed-demo-data.ts`) and calling it from a new daily cron, `src/app/api/cron/demo-reseed/route.ts` — same `Bearer $CRON_SECRET` auth shape as `cron/sync`, registered in `vercel.json`. Because every date is still computed as `subDays(new Date(), N)` at run time, a daily rerun keeps the window (and the seeded Goal's `targetDate`) genuinely relative to today.
+- **Fencing.** A demo visitor could navigate arbitrarily far into the (also-aging) history via `useTodaySelectedDate()`'s date pickers or `/training/history`'s unbounded `GET /api/activities`. Fixed two ways, matched to where each gap actually lives: `useTodaySelectedDate()` gained a `minDate` (demo-only, `today − 6 days`), clamping `date`/`setDate`/`goToPreviousDay` and threaded through to `TodayDateSelector`'s calendar/prev-day button, disabling earlier days with a short explanation — the future-proofing lever, since every current and future screen built on that one hook is fenced automatically, nothing to remember at the call site. `/api/activities` separately clamps `sinceDays` server-side for a demo session, since `/training/history` bypasses the hook entirely.
+- **Credibility.** The seed gained real Paris-area GPS routes (`ActivityStream` rows matching the exact write shape in `src/lib/streams/streams.ts`, `[lat, lng]` ordering), hand-written narrative text (`Activity.narrativeAnalysis`, no AI call — the field is stored, not generated at render time), a `BodyCompositionMeasurement` trend, and one non-alarming `Condition`/`FunctionalCapacity` row so Corps & Santé isn't empty. One seeded bike session deliberately has **no** `ActivityStream` (a home-trainer ride) — this is the same, confirmed-correct "no GPS on indoor rides" behavior real Zwift/Garmin data has (traced end to end in `src/components/training/activity/insights/activity-insights.tsx` while investigating this feedback) — not a bug, so the demo shows it rather than hides it.
+
+**The `DemoModeProvider` this was originally planned as didn't ship.** A Context needs to wrap `children` synchronously, but `isDemoSession()` is async (`cookies()` + sometimes `auth()`) — resolving it before rendering children would mean either making the whole `(app)` layout dynamic, or wrapping all of `children` (not just a banner sliver) in a blocking `<Suspense>`, reintroducing exactly the `blocking-prerender-runtime` issue Decision 4 already fixed for `DemoBanner`/`SettingsLayout`. Since the cookie is deliberately not security-bearing (Decision 1), the simpler fix was to stop treating it as httpOnly and read it directly client-side: `useIsDemoMode()` (`src/hooks/use-is-demo-mode.ts`) via `useSyncExternalStore` over `document.cookie`, no Provider, no server round-trip, no prerender cost. Trade-off, stated plainly: this hook cannot apply the "real session wins" precedence (that needs `auth()`, server-only) — a real signed-in athlete with a stray demo cookie could see date-range fencing they don't need. Harmless (UI-only, not the write-block, which still goes through the precedence-correct `isDemoSession()`), and self-resolves the moment they visit `/api/demo/exit`.
 
 ---
 
@@ -109,6 +119,11 @@ See Decision 1. Rejected: doubles the page-maintenance surface for zero UI diffe
 - `src/proxy.ts` now duplicates `isDemoSession()`'s precedence logic (real session wins) using Edge-middleware-compatible APIs, since it cannot import the RSC helper directly. This is a real, if small, drift risk if the RSC-side logic changes without the proxy being updated in lockstep — called out here explicitly so it isn't rediscovered as a mystery later.
 - `/settings/**` and Coach's composer are fully unavailable in demo rather than degraded gracefully field-by-field — a deliberate scope cut (Decision 4), not an oversight, but it does mean a demo visitor cannot see what those two sections look like at all.
 - The demo seed's three-week/ten-day/seven-day windows are hand-picked constants tuned to look populated across Today, Training, Nutrition, and Progress; they carry no relationship to what a real athlete's data density looks like and will need re-tuning by hand if those pages' data requirements change.
+- `useIsDemoMode()` cannot apply the real-session-wins precedence client-side (see Decision 6) — a documented, harmless (UI-only) gap, not an oversight.
+
+### Future-proofing — what does and doesn't stay in sync automatically
+
+Demo mode reuses the real `(app)` pages/components untouched (Decision 1), so a **style or layout change costs nothing extra** — already true today, by construction, not by discipline. A **new required DB field** already forces a TypeScript compile error in `seed-demo.ts`/`seed-demo-data.ts` until it's given a value — the type checker is the forcing function, nothing new was built for this. A **new optional field**, or a new section of the product entirely, cannot populate itself with meaningful fake data — there is no way around that without a synthetic-data generator disproportionate to this feature. The honest, cheap mitigation: touching schema for a new user-facing field should also touch `seed-demo-data.ts`, the same discipline the real `seed.ts` already implicitly requires and has no substitute for.
 
 ### Neutral
 
@@ -133,5 +148,7 @@ Per-visitor ephemeral tenants, analytics on demo usage, rate-limiting the demo e
 - `src/proxy.ts`, `src/lib/demo/demo-session.ts`, `src/lib/auth/current-athlete.ts` — implementation.
 - `src/app/demo/route.ts`, `src/app/api/demo/exit/route.ts` — entry/exit.
 - `src/app/(app)/settings/layout.tsx`, `src/app/(app)/coach/page.tsx`, `src/components/demo/demo-banner.tsx` — demo-aware surfaces.
-- `prisma/seed-demo.ts` — the demo dataset.
+- `prisma/seed-demo.ts`, `src/lib/demo/seed-demo-data.ts` — the demo dataset and its cron-reusable form.
+- `src/app/api/cron/demo-reseed/route.ts`, `vercel.json` — the daily reseed keeping the window fresh.
+- `src/hooks/use-is-demo-mode.ts`, `src/hooks/use-today-selected-date.ts`, `src/components/today/drill-down/date-selector.tsx`, `src/app/api/activities/route.ts` — date-range fencing.
 - `src/lib/dev/dev-auth.ts`, `src/components/auth/access-gate.tsx` — the `isDevClerkBypass()` precedent this ADR's bypass pattern follows.

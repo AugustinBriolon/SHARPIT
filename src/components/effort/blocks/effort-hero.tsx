@@ -16,6 +16,7 @@ export function EffortHero({
   onNextDay,
   isToday,
   maxDate,
+  minDate,
   confidencePct,
   loading = false,
 }: {
@@ -34,6 +35,7 @@ export function EffortHero({
   onNextDay?: () => void;
   isToday?: boolean;
   maxDate?: Date;
+  minDate?: Date;
   confidencePct?: number | null;
   loading?: boolean;
 }) {
@@ -60,6 +62,7 @@ export function EffortHero({
       isToday={isToday}
       loading={loading}
       maxDate={maxDate}
+      minDate={minDate}
       quickReadCaption={loading ? undefined : (actionLine ?? undefined)}
       quickReadLabel="aujourd'hui"
       quickReadSuffix=" TSS"

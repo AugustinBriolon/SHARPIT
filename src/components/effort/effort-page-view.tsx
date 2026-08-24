@@ -35,6 +35,7 @@ export type EffortPageViewProps = {
   date: Date;
   isToday?: boolean;
   maxDate?: Date;
+  minDate?: Date;
   onDateChange?: (date: Date) => void;
   onPreviousDay?: () => void;
   onNextDay?: () => void;
@@ -80,6 +81,7 @@ export function EffortPageView(props: EffortPageViewProps) {
     date,
     isToday,
     maxDate,
+    minDate,
     onDateChange,
     onPreviousDay,
     onNextDay,
@@ -131,6 +133,7 @@ export function EffortPageView(props: EffortPageViewProps) {
         isToday={isToday}
         loading={loading}
         maxDate={maxDate}
+        minDate={minDate}
         performancePercent={performancePercent}
         strainStatusClassName={strainStatusClassName}
         strainStatusLabel={strainStatusLabel}

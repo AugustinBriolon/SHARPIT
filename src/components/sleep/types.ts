@@ -12,6 +12,7 @@ export type SleepPageViewProps = {
   date: Date;
   isToday?: boolean;
   maxDate?: Date;
+  minDate?: Date;
   onDateChange?: (date: Date) => void;
   onPreviousDay?: () => void;
   onNextDay?: () => void;

@@ -16,6 +16,7 @@ export type RecoveryPageViewProps = {
   date: Date;
   isToday?: boolean;
   maxDate?: Date;
+  minDate?: Date;
   onDateChange?: (date: Date) => void;
   onPreviousDay?: () => void;
   onNextDay?: () => void;
@@ -57,6 +58,7 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
     date,
     isToday,
     maxDate,
+    minDate,
     onDateChange,
     onPreviousDay,
     onNextDay,
@@ -107,6 +109,7 @@ export function RecoveryPageView(props: RecoveryPageViewProps) {
         limiterLabel={limiterLabel}
         loading={loading}
         maxDate={maxDate}
+        minDate={minDate}
         readinessScore={readinessScore}
         signal={signal}
         onDateChange={onDateChange}

@@ -1,10 +1,9 @@
 import { auth } from '@clerk/nextjs/server';
 import { cookies } from 'next/headers';
 import { isDevClerkBypass } from '@/lib/dev/dev-auth';
+import { DEMO_COOKIE } from '@/lib/demo/demo-cookie';
 
-/** Set by `/demo`, cleared by `/api/demo/exit`. Presence alone grants access — it
- * only ever resolves to one fixed, read-only tenant, so there is nothing to forge. */
-export const DEMO_COOKIE = 'sharpit_demo';
+export { DEMO_COOKIE };
 
 /** Sentinel `AthleteProfile.clerkUserId` for the shared demo tenant. Real Clerk
  * ids are always `user_...`, so this can never collide with a real athlete. */

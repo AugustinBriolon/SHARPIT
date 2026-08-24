@@ -13,6 +13,7 @@ export function SleepHero({
   onNextDay,
   isToday,
   maxDate,
+  minDate,
   confidencePct,
   loading = false,
 }: {
@@ -28,6 +29,7 @@ export function SleepHero({
   onNextDay?: () => void;
   isToday?: boolean;
   maxDate?: Date;
+  minDate?: Date;
   confidencePct?: number | null;
   loading?: boolean;
 }) {
@@ -46,6 +48,7 @@ export function SleepHero({
       isToday={isToday}
       loading={loading}
       maxDate={maxDate}
+      minDate={minDate}
       quickReadCaption={loading ? undefined : (insightLine ?? undefined)}
       quickReadLabel="score sommeil"
       quickReadSuffix="/ 100"

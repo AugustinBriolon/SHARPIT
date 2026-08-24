@@ -8,7 +8,6 @@ export default function TrainingHistoryPage() {
     <div className="space-y-4">
       <MobileBackLink href="/training" label="Ma semaine" showOnDesktop />
       <StickyHeader>
-        <p className="text-label">Ma semaine</p>
         <h1 className="text-page-title mt-1">Historique</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Historique complet des activités enregistrées, du plus récent au plus ancien.

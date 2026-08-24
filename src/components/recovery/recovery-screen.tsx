@@ -13,7 +13,8 @@ import {
 import { recoveryLoadingShell } from '@/lib/presentation/drill-down-loading-shells';
 
 export function RecoveryScreen({ backHref, backLabel }: { backHref?: string; backLabel?: string }) {
-  const { date, isToday, maxDate, setDate, goToNextDay, goToPreviousDay } = useTodaySelectedDate();
+  const { date, isToday, maxDate, minDate, setDate, goToNextDay, goToPreviousDay } =
+    useTodaySelectedDate();
   const trainingDayId = format(date, 'yyyy-MM-dd');
 
   const query = useRecoveryViewModel(trainingDayId);
@@ -45,6 +46,7 @@ export function RecoveryScreen({ backHref, backLabel }: { backHref?: string; bac
         isToday={isToday}
         loading={valuesLoading}
         maxDate={maxDate}
+        minDate={minDate}
         onDateChange={setDate}
         onNextDay={goToNextDay}
         onPreviousDay={goToPreviousDay}

@@ -13,7 +13,8 @@ import {
 import { adaptationLoadingShell } from '@/lib/presentation/drill-down-loading-shells';
 
 export function AdaptationScreen() {
-  const { date, isToday, maxDate, setDate, goToNextDay, goToPreviousDay } = useTodaySelectedDate();
+  const { date, isToday, maxDate, minDate, setDate, goToNextDay, goToPreviousDay } =
+    useTodaySelectedDate();
   const trainingDayId = format(date, 'yyyy-MM-dd');
 
   const query = useAdaptationViewModel(trainingDayId);
@@ -46,6 +47,7 @@ export function AdaptationScreen() {
         isToday={isToday}
         loading={valuesLoading}
         maxDate={maxDate}
+        minDate={minDate}
         onDateChange={setDate}
         onNextDay={goToNextDay}
         onPreviousDay={goToPreviousDay}

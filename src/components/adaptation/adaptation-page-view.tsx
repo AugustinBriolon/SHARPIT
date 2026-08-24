@@ -19,6 +19,7 @@ export type AdaptationPageViewProps = {
   date: Date;
   isToday?: boolean;
   maxDate?: Date;
+  minDate?: Date;
   onDateChange?: (date: Date) => void;
   onPreviousDay?: () => void;
   onNextDay?: () => void;
@@ -60,6 +61,7 @@ export function AdaptationPageView({
   date,
   isToday,
   maxDate,
+  minDate,
   onDateChange,
   onPreviousDay,
   onNextDay,
@@ -140,6 +142,7 @@ export function AdaptationPageView({
         isToday={isToday}
         loading={loading}
         maxDate={maxDate}
+        minDate={minDate}
         quickReadCaption={actionLine ?? undefined}
         quickReadLabel="indice d'adaptation"
         quickReadSuffix="%"

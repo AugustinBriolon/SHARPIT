@@ -5,6 +5,7 @@ import { enrichActivityObservedContext } from '@/lib/activity/detail/enrich-obse
 import { buildActivityCreateData } from '@/lib/activity/activity-service';
 import { runActivityNarrativeAnalysis } from '@/lib/activity/narrative/activity-narrative';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { isDemoSession } from '@/lib/demo/demo-session';
 import { syncManualActivityObservations } from '@/lib/manual-observation-sync';
 import { createActivity, getActivitiesList } from '@/lib/queries';
 import { prisma } from '@/lib/prisma';
@@ -23,10 +24,18 @@ export async function GET(request: NextRequest) {
     // never as a side-effect of listing activities (avoids Neon work on every GET).
     const athleteId = await getCurrentAthleteId();
 
+    // A demo session's `sinceDays` is capped server-side, not just hidden by the
+    // UI's date pickers — /training/history calls this route with no params at
+    // all, which would otherwise return the full seeded history regardless.
+    const requestedSinceDays = sinceDays ? Number(sinceDays) : undefined;
+    const effectiveSinceDays = (await isDemoSession())
+      ? Math.min(requestedSinceDays ?? 7, 7)
+      : requestedSinceDays;
+
     const activities = await getActivitiesList(athleteId, {
       type: type && Object.values(ActivityType).includes(type) ? type : undefined,
       limit: limit ? Number(limit) : undefined,
-      sinceDays: sinceDays ? Number(sinceDays) : undefined,
+      sinceDays: effectiveSinceDays,
     });
 
     return NextResponse.json(activities);

@@ -16,6 +16,7 @@ export function NutritionHero({
   day,
   isToday,
   maxDate,
+  minDate,
   onDateChange,
   onPreviousDay,
   onNextDay,
@@ -26,6 +27,7 @@ export function NutritionHero({
   day: NutritionDaySummary | null;
   isToday: boolean;
   maxDate: Date;
+  minDate?: Date;
   onDateChange: (date: Date) => void;
   onPreviousDay: () => void;
   onNextDay: () => void;
@@ -46,6 +48,7 @@ export function NutritionHero({
       isToday={isToday}
       loading={loading}
       maxDate={maxDate}
+      minDate={minDate}
       quickReadCaption={caption}
       railCaption=""
       railValue={day?.meals.length ?? null}

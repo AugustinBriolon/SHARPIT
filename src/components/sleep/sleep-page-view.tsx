@@ -64,6 +64,7 @@ export function SleepPageView(props: SleepPageViewProps) {
     date,
     isToday,
     maxDate,
+    minDate,
     onDateChange,
     onPreviousDay,
     onNextDay,
@@ -119,6 +120,7 @@ export function SleepPageView(props: SleepPageViewProps) {
         isToday={isToday}
         loading={loading}
         maxDate={maxDate}
+        minDate={minDate}
         sleepScore={sleepScore}
         wakeMin={wakeMin}
         onDateChange={onDateChange}

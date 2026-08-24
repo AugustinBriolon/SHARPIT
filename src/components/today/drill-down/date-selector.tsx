@@ -7,6 +7,7 @@ import {
   endOfWeek,
   format as formatDate,
   isAfter,
+  isBefore,
   isSameDay,
   isSameMonth,
   startOfDay,
@@ -32,6 +33,7 @@ const DATE_PILL_CLASS = 'h-9 w-[15.5rem] shrink-0 justify-center gap-2 rounded-f
 export function TodayDateSelector({
   date,
   maxDate,
+  minDate,
   isToday,
   onChange,
   onPreviousDay,
@@ -39,6 +41,8 @@ export function TodayDateSelector({
 }: {
   date: Date;
   maxDate: Date;
+  /** Set only for a demo session — fences navigation to the rolling seeded window. */
+  minDate?: Date;
   isToday: boolean;
   onChange: (date: Date) => void;
   onPreviousDay: () => void;
@@ -46,6 +50,7 @@ export function TodayDateSelector({
 }) {
   const [open, setOpen] = useState(false);
   const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(date));
+  const isAtMinDate = minDate ? !isAfter(startOfDay(date), minDate) : false;
 
   const monthDays = useMemo(() => {
     const monthStart = startOfMonth(visibleMonth);
@@ -83,6 +88,7 @@ export function TodayDateSelector({
         <Button
           aria-label="Jour précédent"
           className="size-11 sm:size-7"
+          disabled={isAtMinDate}
           size="icon-sm"
           type="button"
           variant="ghost"
@@ -172,7 +178,8 @@ export function TodayDateSelector({
                 const dayStart = startOfDay(day);
                 const isSelected = isSameDay(dayStart, date);
                 const isCurrentMonth = isSameMonth(dayStart, visibleMonth);
-                const isDisabled = isAfter(dayStart, maxDate);
+                const isDisabled =
+                  isAfter(dayStart, maxDate) || (minDate != null && isBefore(dayStart, minDate));
                 const isCurrentDay = isSameDay(dayStart, maxDate);
                 const dayLabel = formatDate(dayStart, 'EEEE d MMMM yyyy', { locale: fr });
 
@@ -203,6 +210,13 @@ export function TodayDateSelector({
                 );
               })}
             </div>
+
+            {minDate ? (
+              <p className="text-muted-foreground mt-4 text-xs">
+                Démo limitée aux {formatDate(minDate, 'd MMMM', { locale: fr })} –{' '}
+                {formatDate(maxDate, 'd MMMM', { locale: fr })}.
+              </p>
+            ) : null}
 
             {!isToday ? (
               <div className="mt-4 flex justify-end">

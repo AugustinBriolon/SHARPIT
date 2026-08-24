@@ -12,6 +12,7 @@ export function NutritionPageView({
   date,
   isToday,
   maxDate,
+  minDate,
   onDateChange,
   onPreviousDay,
   onNextDay,
@@ -24,6 +25,7 @@ export function NutritionPageView({
   date: Date;
   isToday: boolean;
   maxDate: Date;
+  minDate?: Date;
   onDateChange: (date: Date) => void;
   onPreviousDay: () => void;
   onNextDay: () => void;
@@ -44,6 +46,7 @@ export function NutritionPageView({
         isToday={isToday}
         loading={loading}
         maxDate={maxDate}
+        minDate={minDate}
         onDateChange={onDateChange}
         onNextDay={onNextDay}
         onPreviousDay={onPreviousDay}

@@ -14,7 +14,8 @@ import {
 import { effortLoadingShell } from '@/lib/presentation/drill-down-loading-shells';
 
 export function EffortScreen() {
-  const { date, isToday, maxDate, setDate, goToNextDay, goToPreviousDay } = useTodaySelectedDate();
+  const { date, isToday, maxDate, minDate, setDate, goToNextDay, goToPreviousDay } =
+    useTodaySelectedDate();
   const trainingDayId = format(date, 'yyyy-MM-dd');
 
   const query = useEffortViewModel(trainingDayId);
@@ -44,6 +45,7 @@ export function EffortScreen() {
         isToday={isToday}
         loading={valuesLoading}
         maxDate={maxDate}
+        minDate={minDate}
         onDateChange={setDate}
         onNextDay={goToNextDay}
         onPreviousDay={goToPreviousDay}

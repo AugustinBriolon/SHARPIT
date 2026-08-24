@@ -47,6 +47,7 @@ export function PhysioDrillDownHero({
   date,
   isToday = true,
   maxDate,
+  minDate,
   onDateChange,
   onPreviousDay,
   onNextDay,
@@ -71,6 +72,7 @@ export function PhysioDrillDownHero({
   date: Date;
   isToday?: boolean;
   maxDate?: Date;
+  minDate?: Date;
   onDateChange?: (date: Date) => void;
   onPreviousDay?: () => void;
   onNextDay?: () => void;
@@ -106,6 +108,7 @@ export function PhysioDrillDownHero({
             date={date}
             isToday={isToday}
             maxDate={maxDate}
+            minDate={minDate}
             onChange={onDateChange}
             onNextDay={onNextDay}
             onPreviousDay={onPreviousDay}

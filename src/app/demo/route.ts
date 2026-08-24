@@ -6,7 +6,8 @@ import { DEMO_COOKIE } from '@/lib/demo/demo-session';
 export function GET(request: NextRequest) {
   const response = NextResponse.redirect(new URL('/', request.url));
   response.cookies.set(DEMO_COOKIE, '1', {
-    httpOnly: true,
+    // Not httpOnly — useIsDemoMode() reads it client-side for UI-only
+    // date-range fencing. See demo-cookie.ts for why that's safe.
     sameSite: 'lax',
     path: '/',
   });

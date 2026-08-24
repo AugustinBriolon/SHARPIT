@@ -12,7 +12,8 @@ import {
 } from '@/hooks/use-presentation-view-model';
 
 export function NutritionScreen() {
-  const { date, isToday, maxDate, setDate, goToNextDay, goToPreviousDay } = useTodaySelectedDate();
+  const { date, isToday, maxDate, minDate, setDate, goToNextDay, goToPreviousDay } =
+    useTodaySelectedDate();
   const trainingDayId = format(date, 'yyyy-MM-dd');
 
   const query = useNutritionViewModel(trainingDayId);
@@ -53,6 +54,7 @@ export function NutritionScreen() {
         isToday={isToday}
         loading={valuesLoading}
         maxDate={maxDate}
+        minDate={minDate}
         selectedDay={viewModel?.selectedDay ?? null}
         onDateChange={setDate}
         onNextDay={goToNextDay}

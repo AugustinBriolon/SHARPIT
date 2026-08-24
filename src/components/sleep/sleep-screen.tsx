@@ -13,7 +13,8 @@ import {
 import { sleepLoadingShell } from '@/lib/presentation/drill-down-loading-shells';
 
 export function SleepScreen() {
-  const { date, isToday, maxDate, setDate, goToNextDay, goToPreviousDay } = useTodaySelectedDate();
+  const { date, isToday, maxDate, minDate, setDate, goToNextDay, goToPreviousDay } =
+    useTodaySelectedDate();
   const trainingDayId = format(date, 'yyyy-MM-dd');
 
   const query = useSleepViewModel(trainingDayId);
@@ -43,6 +44,7 @@ export function SleepScreen() {
         isToday={isToday}
         loading={valuesLoading}
         maxDate={maxDate}
+        minDate={minDate}
         onDateChange={setDate}
         onNextDay={goToNextDay}
         onPreviousDay={goToPreviousDay}
