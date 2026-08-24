@@ -1,7 +1,7 @@
 'use client';
 
 import { PerformanceCalibrationPanel } from '@/components/settings/profile/performance-calibration-panel';
-import { ExpertOnly } from '@/components/display-mode';
+import { ExpertModeBadge, ExpertOnly } from '@/components/display-mode';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAthleteProfile } from '@/hooks/use-data';
 import { mapAthleteProfileToFormData } from '@/lib/profile/map-athlete-profile';
@@ -26,6 +26,9 @@ export function CalibrationSection() {
 
   return (
     <ExpertOnly>
+      <div className="mb-3 flex justify-end">
+        <ExpertModeBadge />
+      </div>
       <PerformanceCalibrationPanel initial={mapAthleteProfileToFormData(profileQuery.data)} />
     </ExpertOnly>
   );

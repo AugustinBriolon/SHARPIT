@@ -16,11 +16,14 @@ export function MobileDrillDownHeader({
   backHref = '/',
   backLabel = "Aujourd'hui",
   className,
+  titleBadge,
 }: {
   title: string;
   backHref?: string;
   backLabel?: string;
   className?: string;
+  /** Rendered next to the title — e.g. `<ExpertModeBadge />` on pages it affects. */
+  titleBadge?: React.ReactNode;
 }) {
   return (
     <StickyHeader className={cn('mb-3 space-y-1 pt-14 max-lg:py-0 lg:mb-4 lg:pt-0', className)}>
@@ -31,7 +34,10 @@ export function MobileDrillDownHeader({
         <ChevronLeft className="size-4 shrink-0" aria-hidden />
         {backLabel}
       </Link>
-      <h1 className="text-page-title">{title}</h1>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <h1 className="text-page-title">{title}</h1>
+        {titleBadge}
+      </div>
     </StickyHeader>
   );
 }

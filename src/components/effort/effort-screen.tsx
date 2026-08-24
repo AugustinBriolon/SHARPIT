@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { Activity } from 'lucide-react';
 import { MobileDrillDownHeader } from '@/components/layout/mobile-drill-down-header';
 import { EffortPageView } from '@/components/effort/effort-page-view';
+import { ExpertModeBadge } from '@/components/display-mode';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { useTodaySelectedDate } from '@/hooks/use-today-selected-date';
 import {
@@ -37,7 +38,7 @@ export function EffortScreen() {
 
   return (
     <div className="space-y-4">
-      <MobileDrillDownHeader title="Charge" />
+      <MobileDrillDownHeader title="Charge" titleBadge={<ExpertModeBadge />} />
       <EffortPageView
         date={date}
         isToday={isToday}

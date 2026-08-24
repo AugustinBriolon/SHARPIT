@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { ActivityType } from '@prisma/client';
 import { Link2, MoreHorizontal, Mountain, Pencil, Trash2 } from 'lucide-react';
 import { StickyHeader } from '@/components/layout/sticky-header';
+import { ExpertModeBadge } from '@/components/display-mode';
 import { DiscussCoachLink } from './discuss-coach-link';
 import { LinkHikeActivitiesSheet } from '@/components/training/trip/link-hike-activities-sheet';
 import { Button } from '@/components/ui/button';
@@ -127,9 +128,12 @@ export function ActivityDetailHeader({ activity }: { activity: ActivityDetailHea
             <Icon className="size-5 sm:size-6" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-muted-foreground text-sm tracking-wide">
-              {formatActivityDetailMeta(activity)}
-            </p>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <p className="text-muted-foreground text-sm tracking-wide">
+                {formatActivityDetailMeta(activity)}
+              </p>
+              <ExpertModeBadge />
+            </div>
             <h1 className="text-page-title mt-1.5 leading-snug wrap-break-word">
               {activity.title ?? activityTypeLabels[activity.type]}
             </h1>

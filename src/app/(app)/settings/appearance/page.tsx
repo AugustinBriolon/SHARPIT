@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import {
@@ -30,7 +31,14 @@ export default function SettingsAppearancePage() {
           <h2 className="text-section-title">Densité de lecture</h2>
           <p className="text-muted-foreground mt-1 text-sm">
             Choisis la profondeur des données affichées. Le mode Expert révèle la couche technique
-            derrière chaque lecture ; il ne change rien à ce que SHARPIT calcule.
+            derrière chaque lecture ; il ne change rien à ce que SHARPIT calcule.{' '}
+            <Link
+              className="text-foreground underline-offset-2 hover:underline"
+              href="/settings/appearance/expert-mode"
+            >
+              En savoir plus
+            </Link>
+            .
           </p>
         </div>
         <AppearanceDisplayModePicker />
