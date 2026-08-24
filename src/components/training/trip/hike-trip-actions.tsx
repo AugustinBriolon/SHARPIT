@@ -4,7 +4,7 @@ import { Drawer } from '@base-ui/react/drawer';
 import { ActivityType } from '@prisma/client';
 import { MoreHorizontal, Mountain, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
@@ -26,6 +26,7 @@ import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { InstrumentListChip } from '@/components/ui/instruments/instrument-list-chip';
 import { Input } from '@/components/ui/input';
 import { useActivities, useHikeTripMutations } from '@/hooks/use-data';
+import { useDesktopAutofocus } from '@/hooks/use-desktop-autofocus';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import { buildHikeTripMemberMeta } from '@/components/training/trip/hike-trip-timeline';
 import { cn } from '@/lib/utils';
@@ -36,9 +37,11 @@ export function HikeTripActionsMenu({ tripId, tripName }: { tripId: string; trip
   const { patch, remove } = useHikeTripMutations();
   const { confirm, dialog } = useConfirmDialog();
   const [renameOpen, setRenameOpen] = useState(false);
+  const renameRef = useRef<HTMLInputElement>(null);
 
   useResetWhenHidden(() => setRenameOpen(false));
   const [renameValue, setRenameValue] = useState(tripName);
+  useDesktopAutofocus(renameRef, renameOpen);
 
   async function handleDelete() {
     const confirmed = await confirm({
@@ -124,9 +127,9 @@ export function HikeTripActionsMenu({ tripId, tripName }: { tripId: string; trip
               <DialogDescription>Ex. « Queyras · août »</DialogDescription>
             </DialogHeader>
             <Input
+              ref={renameRef}
               className="mt-4"
               value={renameValue}
-              autoFocus
               onChange={(event) => setRenameValue(event.target.value)}
             />
             <DialogFooter className="mt-6">

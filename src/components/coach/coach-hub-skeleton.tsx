@@ -1,11 +1,16 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { ChevronDownIcon, MessageSquarePlus, Send, Trash2 } from 'lucide-react';
+import { ChevronDownIcon, MessageSquarePlus, Trash2 } from 'lucide-react';
+import {
+  CoachComposerChrome,
+  CoachContextTagSkeleton,
+} from '@/components/coach/chat/coach-composer-chrome';
+import { CoachContextChip } from '@/components/coach/chat/coach-context-chip';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
-import { Textarea } from '@/components/ui/textarea';
+import type { CoachDiscussContext } from '@/lib/coach/chat/coach-discuss-context';
 
 const EMPTY_HINT =
   'Pose une question à ton coach. Il connaît ta forme, ta récupération, tes seuils et tes objectifs.';
@@ -60,6 +65,19 @@ export function CoachConversationListSkeleton({ rows = 4 }: { rows?: number }) {
   );
 }
 
+function composerContextSlot(options: {
+  attachedContext?: CoachDiscussContext | null;
+  contextPending?: boolean;
+}): ReactNode {
+  if (options.attachedContext) {
+    return <CoachContextChip context={options.attachedContext} onDetach={() => undefined} />;
+  }
+  if (options.contextPending) {
+    return <CoachContextTagSkeleton />;
+  }
+  return null;
+}
+
 /** Real empty-chat chrome (no skeletons) — landing is always a new draft. */
 export function CoachChatEmptyChrome({ header }: { header?: ReactNode }) {
   return (
@@ -88,32 +106,21 @@ export function CoachChatEmptyChrome({ header }: { header?: ReactNode }) {
           </div>
         </div>
       </div>
-      <div className="border-border/60 flex items-end gap-2 border-t p-3">
-        <Textarea
-          aria-label="Message au coach"
-          className="max-h-40 min-h-11 resize-y"
-          placeholder="Demande conseil à ton coach…"
-          rows={1}
-          value=""
-          disabled
-        />
-        <Button
-          aria-label="Envoyer le message"
-          className="size-11 shrink-0"
-          size="icon"
-          type="button"
-          variant="highlight"
-          disabled
-        >
-          <Send className="size-4" aria-hidden />
-        </Button>
-      </div>
+      <CoachComposerChrome disabled />
     </div>
   );
 }
 
-/** Fetching an existing thread — message values only. */
-export function CoachChatPanelSkeleton({ header }: { header?: ReactNode }) {
+/** Fetching an existing thread — message values only; composer matches live chrome. */
+export function CoachChatPanelSkeleton({
+  header,
+  attachedContext = null,
+  contextPending = false,
+}: {
+  header?: ReactNode;
+  attachedContext?: CoachDiscussContext | null;
+  contextPending?: boolean;
+}) {
   return (
     <div className="rounded-analysis-lg flex h-full min-w-0 flex-1 flex-col lg:border" aria-busy>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
@@ -131,26 +138,10 @@ export function CoachChatPanelSkeleton({ header }: { header?: ReactNode }) {
           </div>
         </div>
       </div>
-      <div className="border-border/60 flex items-end gap-2 border-t p-3">
-        <Textarea
-          aria-label="Message au coach"
-          className="max-h-40 min-h-11 resize-y"
-          placeholder="Demande conseil à ton coach…"
-          rows={1}
-          value=""
-          disabled
-        />
-        <Button
-          aria-label="Envoyer le message"
-          className="size-11 shrink-0"
-          size="icon"
-          type="button"
-          variant="highlight"
-          disabled
-        >
-          <Send className="size-4" aria-hidden />
-        </Button>
-      </div>
+      <CoachComposerChrome
+        contextSlot={composerContextSlot({ attachedContext, contextPending })}
+        disabled
+      />
     </div>
   );
 }

@@ -339,7 +339,7 @@ export function TrainingList() {
       ) : null}
       {weekGroups.length > 0
         ? weekGroups.map((group) => (
-            <section key={group.key}>
+            <section key={group.key} className="cv-auto">
               <p className="text-label mb-2 px-0.5">{group.label}</p>
               <ActivityList
                 activities={group.activities}

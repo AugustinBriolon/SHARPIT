@@ -2,7 +2,7 @@
 
 import { format, parseISO, startOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Check, Loader2, Sparkles } from 'lucide-react';
+import { CalendarPlus, Check, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { ProfileContextBanner } from '@/components/profile/profile-context-banner';
 import { resolveDefaultPlanGoalId } from '@/lib/planned-session/plan-goal';
@@ -72,7 +72,7 @@ function renderGenerateButtonContent(
   if (offline) return offlineLabel;
   return (
     <>
-      <Sparkles className="size-4" />
+      <CalendarPlus className="size-4" />
       {hasPlan ? 'Régénérer' : 'Générer'}
     </>
   );
@@ -200,12 +200,12 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
       <DialogContent className="max-h-[90vh] overflow-x-hidden overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="text-primary size-4" />
+            <CalendarPlus className="text-primary size-4" />
             Remplir ma semaine
           </DialogTitle>
           <DialogDescription>
             Le coach propose de nouvelles séances à ajouter au calendrier, selon ta forme et ton
-            objectif. Tu valides avant insertion — idéal quand la semaine est vide ou incomplète.
+            objectif. Tu valides avant insertion, surtout si la semaine est vide ou incomplète.
           </DialogDescription>
         </DialogHeader>
 
@@ -243,7 +243,7 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
                   <SelectItem key={g.id} value={g.id}>
                     {g.title}
                     {g.targetDate
-                      ? ` — ${format(new Date(g.targetDate as unknown as string), 'd MMM yyyy', { locale: fr })}`
+                      ? ` · ${format(new Date(g.targetDate as unknown as string), 'd MMM yyyy', { locale: fr })}`
                       : ''}
                   </SelectItem>
                 ))}
@@ -261,11 +261,11 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
 
         {planWeek && (
           <p className="text-muted-foreground analysis-panel-alt rounded-analysis p-2 text-xs">
-            Macro-plan : {phaseLabels[planWeek.phase]} — cible{' '}
+            Macro-plan : {phaseLabels[planWeek.phase]} · cible{' '}
             <span className="text-foreground font-mono font-medium">{planWeek.targetLoad} TSS</span>
             {planWeek.isDeload ? ' (semaine de récup)' : ''}
             {goalId !== NO_GOAL
-              ? ` — objectif ${datedGoals.find((g) => g.id === goalId)?.title ?? 'lié'}`
+              ? ` · objectif ${datedGoals.find((g) => g.id === goalId)?.title ?? 'lié'}`
               : ''}
           </p>
         )}

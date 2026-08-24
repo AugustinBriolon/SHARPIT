@@ -2,7 +2,7 @@
 
 import { Mountain } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useHikeTripMutations } from '@/hooks/use-data';
+import { useDesktopAutofocus } from '@/hooks/use-desktop-autofocus';
 
 type CreateHikeTripDialogProps = {
   open: boolean;
@@ -30,7 +31,9 @@ export function CreateHikeTripDialog({
 }: CreateHikeTripDialogProps) {
   const router = useRouter();
   const { create } = useHikeTripMutations();
+  const nameRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState('');
+  useDesktopAutofocus(nameRef, open);
 
   useEffect(() => {
     if (!open) setName('');
@@ -68,10 +71,10 @@ export function CreateHikeTripDialog({
             </DialogDescription>
           </DialogHeader>
           <Input
+            ref={nameRef}
             className="mt-4"
             placeholder="Ex. Queyras · août"
             value={name}
-            autoFocus
             onChange={(event) => setName(event.target.value)}
           />
           <DialogFooter className="mt-6">

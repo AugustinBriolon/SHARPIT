@@ -1,26 +1,28 @@
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { Skeleton } from '@/components/ui/skeleton';
-import { navPillClass } from '@/lib/ui/nav-pill';
 
-const TAB_LABELS = ['Objectifs', 'Performance', 'Corps & santé'];
+const SECTION_LABELS = ['Objectifs', 'Performance', 'Corps & santé'] as const;
 
-/** Stable Progression chrome for Suspense fallback — default Objectifs tab, no search params. */
+/** Stable Progression chrome for Suspense fallback. */
 export function ProgressHubSkeleton() {
   return (
     <div className="space-y-4" aria-busy>
       <StickyHeader>
-        <p className="text-label">Progression</p>
-        <h1 className="text-page-title mt-1">Objectifs</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Ce vers quoi tu construis — courses, échéances et repères.
-        </p>
+        <h1 className="text-page-title">Progression</h1>
 
         <nav
           aria-label="Sections Progression"
-          className="-mx-1 mt-4 flex scrollbar-none gap-1.5 overflow-x-auto pb-0.5"
+          className="border-analysis-border/70 mt-4 flex gap-5 border-b"
         >
-          {TAB_LABELS.map((label, index) => (
-            <span key={label} className={navPillClass(index === 0)}>
+          {SECTION_LABELS.map((label, index) => (
+            <span
+              key={label}
+              className={
+                index === 0
+                  ? 'border-foreground -mb-px min-h-11 border-b-2 px-0 text-sm font-medium lg:min-h-9'
+                  : 'text-muted-foreground -mb-px min-h-11 border-b-2 border-transparent px-0 text-sm lg:min-h-9'
+              }
+            >
               {label}
             </span>
           ))}

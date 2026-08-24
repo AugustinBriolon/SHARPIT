@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { ActivityType } from '@prisma/client';
@@ -26,6 +27,7 @@ import {
   sportIcon,
 } from './activity-detail-helpers';
 import type { ActivityDetail } from './types';
+import { useDisplayMode } from '@/providers/display-mode-provider';
 
 /** Narrow client payload — avoid serializing full activityInclude to this island. */
 export type ActivityDetailHeaderActivity = Pick<
@@ -45,11 +47,12 @@ export type ActivityDetailHeaderActivity = Pick<
 >;
 
 /**
- * Activity detail header — icon + meta → title → durée · TSS · RPE.
+ * Activity detail header — icon + meta → title → durée · charge/TSS · RPE.
  * One primary CTA (coach) + overflow for edit/delete.
  */
 export function ActivityDetailHeader({ activity }: { activity: ActivityDetailHeaderActivity }) {
   const router = useRouter();
+  const { mode } = useDisplayMode();
   const { remove } = useActivityMutations();
   const { confirm, dialog } = useConfirmDialog();
   const [linkHikesOpen, setLinkHikesOpen] = useState(false);
@@ -88,7 +91,11 @@ export function ActivityDetailHeader({ activity }: { activity: ActivityDetailHea
         <MoreHorizontal className="size-4" aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-52">
-        <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => router.push(editHref)}>
+        <DropdownMenuItem
+          className="cursor-pointer gap-2"
+          nativeButton={false}
+          render={<Link href={editHref} />}
+        >
           <Pencil className="size-3.5" aria-hidden />
           Modifier
         </DropdownMenuItem>
@@ -101,7 +108,8 @@ export function ActivityDetailHeader({ activity }: { activity: ActivityDetailHea
         {hikeTrip ? (
           <DropdownMenuItem
             className="cursor-pointer gap-2"
-            onClick={() => router.push(`/training/trips/${hikeTrip.id}`)}
+            nativeButton={false}
+            render={<Link href={`/training/trips/${hikeTrip.id}`} />}
           >
             <Mountain className="size-3.5" aria-hidden />
             Voir le séjour
@@ -138,7 +146,7 @@ export function ActivityDetailHeader({ activity }: { activity: ActivityDetailHea
               {activity.title ?? activityTypeLabels[activity.type]}
             </h1>
             <p className="text-data text-muted-foreground mt-1.5 text-sm tabular-nums">
-              {formatActivityDetailStats(activity)}
+              {formatActivityDetailStats(activity, mode)}
             </p>
           </div>
         </div>

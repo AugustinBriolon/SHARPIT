@@ -22,11 +22,20 @@ export interface HeatmapCell {
   inRange: boolean;
 }
 
+export interface ProgramWeek {
+  weekStart: string;
+  sessionCount: number;
+  isCurrent: boolean;
+}
+
 export interface ActivityConsistencyStats {
   cells: HeatmapCell[];
   weekColumns: HeatmapCell[][];
   currentStreak: number;
   activeThisWeek: boolean;
+  thisWeekSessionCount: number;
+  programWeeks: ProgramWeek[];
+  heldWeeks: number;
   trailingYearActivityCount: number;
   activeDays: number;
   heatmapDays: number;
@@ -39,6 +48,23 @@ export interface ActivityForConsistency {
 
 const HEATMAP_DAYS = 365;
 export const HEATMAP_DAYS_MOBILE = 184;
+/** Fixed week strip length in the regularity panel (visual only). */
+export const PROGRAM_WEEK_COUNT = 8;
+/**
+ * A full training week on the regularity strip: one session a day.
+ * Heights are linear against this floor (or a higher peak in the window),
+ * so 4 sessions and 7 sessions never share a bar.
+ */
+export const PROGRAM_WEEK_BAR_CEILING = 7;
+const EMPTY_WEEK_BAR_PCT = 10;
+const MIN_FILLED_WEEK_BAR_PCT = 14;
+
+/** Bar height 0–100. Empty weeks stay a stub; filled weeks scale with count. */
+export function programWeekBarPct(sessionCount: number, windowPeak: number): number {
+  if (sessionCount <= 0) return EMPTY_WEEK_BAR_PCT;
+  const peak = Math.max(windowPeak, PROGRAM_WEEK_BAR_CEILING, sessionCount);
+  return Math.max(MIN_FILLED_WEEK_BAR_PCT, Math.round((sessionCount / peak) * 100));
+}
 
 function isoWeekKey(date: Date): string {
   return `${getISOWeekYear(date)}-W${String(getISOWeek(date)).padStart(2, '0')}`;
@@ -127,6 +153,32 @@ export function computeWeeklyActivityStreak(
   return { currentStreak: streak, activeThisWeek };
 }
 
+export function buildProgramWeeks(
+  activities: ActivityForConsistency[],
+  refDate: Date = new Date(),
+  weekCount: number = PROGRAM_WEEK_COUNT,
+): ProgramWeek[] {
+  const byWeek = new Map<string, number>();
+  for (const activity of activities) {
+    const start = startOfWeek(startOfDay(new Date(activity.date)), { weekStartsOn: 1 });
+    const key = format(start, 'yyyy-MM-dd');
+    byWeek.set(key, (byWeek.get(key) ?? 0) + 1);
+  }
+
+  const refWeekStart = startOfWeek(startOfDay(refDate), { weekStartsOn: 1 });
+  const weeks: ProgramWeek[] = [];
+  for (let i = weekCount - 1; i >= 0; i -= 1) {
+    const weekStart = subWeeks(refWeekStart, i);
+    const key = format(weekStart, 'yyyy-MM-dd');
+    weeks.push({
+      weekStart: key,
+      sessionCount: byWeek.get(key) ?? 0,
+      isCurrent: i === 0,
+    });
+  }
+  return weeks;
+}
+
 export function buildActivityConsistencyStats(
   activities: ActivityForConsistency[],
   refDate: Date = new Date(),
@@ -159,12 +211,18 @@ export function buildActivityConsistencyStats(
     return date >= rangeStart && date <= ref;
   }).length;
   const { currentStreak, activeThisWeek } = computeWeeklyActivityStreak(activities, ref);
+  const programWeeks = buildProgramWeeks(activities, ref);
+  const thisWeek = programWeeks[programWeeks.length - 1];
 
   return {
     cells,
     weekColumns: buildWeekColumns(cells),
     currentStreak,
     activeThisWeek,
+    thisWeekSessionCount: thisWeek?.sessionCount ?? 0,
+    programWeeks,
+    /** Streak length — not the count of filled bars in the 8-week strip. */
+    heldWeeks: currentStreak,
     trailingYearActivityCount,
     activeDays: inRangeCells.filter((c) => c.count > 0).length,
     heatmapDays,

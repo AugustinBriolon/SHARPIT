@@ -1,4 +1,8 @@
+'use client';
+
 import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
+import { isExpertMode } from '@/lib/preferences/display-mode';
+import { useDisplayMode } from '@/providers/display-mode-provider';
 
 export function EffortHero({
   date,
@@ -39,6 +43,7 @@ export function EffortHero({
   confidencePct?: number | null;
   loading?: boolean;
 }) {
+  const { mode } = useDisplayMode();
   let actionLine: string | null = null;
   if (!loading) {
     if (estimatedDaysToFresh != null && estimatedDaysToFresh > 0) {
@@ -65,7 +70,7 @@ export function EffortHero({
       minDate={minDate}
       quickReadCaption={loading ? undefined : (actionLine ?? undefined)}
       quickReadLabel="aujourd'hui"
-      quickReadSuffix=" TSS"
+      quickReadSuffix={isExpertMode(mode) ? ' TSS' : ''}
       quickReadValue={dailyLoad > 0 ? `${dailyLoad}` : '0'}
       railCaption="charge du jour"
       railMax={100}

@@ -153,11 +153,13 @@ export function TodayDashboard() {
         vm={content}
         onWellnessCompleted={() => void query.refetch()}
       />
-      <ActivityConsistencyPanel
-        activities={activitiesQuery.data ?? []}
-        loading={activitiesQuery.data == null}
-      />
-      <TodayNutritionCard />
+      <div className="grid items-stretch gap-4 lg:grid-cols-2">
+        <ActivityConsistencyPanel
+          activities={activitiesQuery.data ?? []}
+          loading={activitiesQuery.data == null}
+        />
+        <TodayNutritionCard />
+      </div>
     </div>
   );
 }

@@ -232,10 +232,10 @@ export function RecordsPanel() {
 
   function setSportTab(next: SportTab) {
     const params = new URLSearchParams(searchParams.toString());
-    params.set('tab', 'records');
+    params.set('tab', 'performance');
     params.set('sport', next);
     const hash = typeof window !== 'undefined' ? window.location.hash : '';
-    router.replace(`/biology?${params.toString()}${hash}`, { scroll: false });
+    router.replace(`/progress?${params.toString()}${hash}`, { scroll: false });
   }
 
   useEffect(() => {
@@ -245,9 +245,9 @@ export function RecordsPanel() {
       const sport = recordSportTabFromCategory(categoryId);
       if (!sport || sport === tab) return;
       const params = new URLSearchParams(searchParams.toString());
-      params.set('tab', 'records');
+      params.set('tab', 'performance');
       params.set('sport', sport);
-      router.replace(`/biology?${params.toString()}#${categoryId}`, {
+      router.replace(`/progress?${params.toString()}#${categoryId}`, {
         scroll: false,
       });
     }

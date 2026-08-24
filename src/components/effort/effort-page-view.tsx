@@ -170,7 +170,9 @@ export function EffortPageView(props: EffortPageViewProps) {
         <>
           <EffortStrainCompositionSection composition={strainComposition} />
           <EffortDimensionsSection dimensions={dimensions} missingCount={missingDimCount} />
-          <EffortWeeklyTssSection avgWeeklyTss={avgWeeklyTss} data={weeklyTss} />
+          <ExpertOnly>
+            <EffortWeeklyTssSection avgWeeklyTss={avgWeeklyTss} data={weeklyTss} />
+          </ExpertOnly>
           <EffortAlertsSection overreaching={overreaching} />
         </>
       ) : null}

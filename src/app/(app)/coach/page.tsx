@@ -15,8 +15,8 @@ async function CoachDemoDisabled() {
       <div>
         <h1 className="text-page-title">Indisponible en démo</h1>
         <p className="text-muted-foreground mt-1 max-w-sm text-sm">
-          Le Coach échange avec un modèle IA en conditions réelles. Cette conversation est
-          désactivée sur le compte démo partagé.
+          Le Coach n&apos;est pas disponible sur le compte démo partagé. Ouvre un compte personnel
+          pour discuter.
         </p>
       </div>
     </div>

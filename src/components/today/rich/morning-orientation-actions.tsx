@@ -11,8 +11,10 @@ import { formatPlannedDuration } from '@/lib/planned-session/sessions';
 import { queryKeys } from '@/lib/query/keys';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
+import { formatTrainingLoad, type DisplayMode } from '@/lib/preferences/display-mode';
 import { cn } from '@/lib/utils';
 import { useAppModal } from '@/providers/app-modal-provider';
+import { useDisplayMode } from '@/providers/display-mode-provider';
 
 const HOLD_STORAGE_PREFIX = 'sharpit.morning-hold.';
 
@@ -68,16 +70,22 @@ type MorningOrientation = NonNullable<TodayViewModel['morningOrientation']>;
 type Proposal = NonNullable<MorningOrientation['confirmEase']>;
 type SessionSide = Proposal['current'];
 
-function compareMeta(current: SessionSide, proposed: SessionSide): string | null {
+function compareMeta(
+  current: SessionSide,
+  proposed: SessionSide,
+  mode: DisplayMode,
+): string | null {
   const parts: string[] = [];
   const duration = proposed.durationMin ?? current.durationMin;
   if (duration != null) parts.push(formatPlannedDuration(duration));
   if (current.load != null && proposed.load != null && current.load !== proposed.load) {
-    parts.push(`${current.load} → ${proposed.load} TSS`);
+    parts.push(
+      `${formatTrainingLoad(current.load, mode)} → ${formatTrainingLoad(proposed.load, mode)}`,
+    );
   } else if (proposed.load != null) {
-    parts.push(`${proposed.load} TSS`);
+    parts.push(formatTrainingLoad(proposed.load, mode));
   } else if (current.load != null) {
-    parts.push(`${current.load} TSS`);
+    parts.push(formatTrainingLoad(current.load, mode));
   }
   return parts.length > 0 ? parts.join(' · ') : null;
 }
@@ -98,6 +106,7 @@ export function MorningOrientationActions({
   const queryClient = useQueryClient();
   const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
   const { openPlannedSession } = useAppModal();
+  const { mode } = useDisplayMode();
   const [pending, setPending] = useState<'refresh' | 'hold' | 'apply' | null>(null);
   const [, startTransition] = useTransition();
 
@@ -209,7 +218,7 @@ export function MorningOrientationActions({
   const detailSessionId = proposal.sessionId || null;
   const fromLabel = proposal.current.intensityLabel ?? '—';
   const toLabel = proposal.proposed.intensityLabel ?? '—';
-  const meta = compareMeta(proposal.current, proposal.proposed);
+  const meta = compareMeta(proposal.current, proposal.proposed, mode);
   const morningProposal = {
     why: proposal.why,
     changeSummary: proposal.changeSummary,

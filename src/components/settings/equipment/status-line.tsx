@@ -32,13 +32,13 @@ export function EquipmentStatusLine({
 /** Empty-state copy when STRENGTH has no checklist to show. */
 export function strengthInventoryMessage(venue: StrengthVenue | null): string | null {
   if (venue == null) {
-    return "Choisis d'abord un lieu — salle, maison, les deux, ou poids du corps.";
+    return "Choisis d'abord un lieu: salle, maison, les deux, ou poids du corps.";
   }
   if (venue === 'gym') {
     return "Pas besoin d'inventaire salle : le coach part du matériel standard.";
   }
   if (venue === 'bodyweight') {
-    return "Poids du corps — seul le lest portable (gilet, ceinture) peut s'ajouter.";
+    return "Poids du corps: seul le lest portable (gilet, ceinture) peut s'ajouter.";
   }
   return null;
 }

@@ -25,13 +25,13 @@ describe('progress hub loading gate', () => {
 });
 
 describe('ProgressHubSkeleton', () => {
-  it('renders Progression chrome with the three sections and Objectifs active', () => {
+  it('renders Progression chrome with Objectifs, Performance and Corps & santé', () => {
     const html = renderToStaticMarkup(createElement(ProgressHubSkeleton));
 
     expect(html).toContain('Progression');
     expect(html).toContain('Objectifs');
     expect(html).toContain('Performance');
     expect(html).toContain('Corps &amp; santé');
-    expect(html).toContain('!bg-highlight');
+    expect(html).not.toContain('!bg-highlight');
   });
 });

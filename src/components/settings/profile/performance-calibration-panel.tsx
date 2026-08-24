@@ -123,7 +123,7 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
         // A failed request and an empty Garmin profile are different problems.
         if (failed.length > 0) {
           setError(
-            `Garmin n'a pas répondu pour : ${describeFailedSources(failed)}. Ces seuils sont inconnus, pas absents — réessaie.`,
+            `Garmin n'a pas répondu pour : ${describeFailedSources(failed)}. Ces seuils sont inconnus, pas absents: réessaie.`,
           );
         } else {
           setMessage('Aucun seuil trouvé sur ton compte Garmin.');
@@ -405,7 +405,7 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
               onChange={(e) => setSwimCss(e.target.value)}
             />
             <p className="text-muted-foreground/80 text-xs">
-              Estimée depuis tes séances piscine — « Appliquer » la met à jour.
+              Estimée depuis tes séances piscine. « Appliquer » la met à jour.
             </p>
           </div>
           <div className="space-y-1.5">

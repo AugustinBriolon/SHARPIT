@@ -7,7 +7,7 @@ import {
   lastAssistantMessageIsCompleteWithApprovalResponses,
   type UIMessage,
 } from 'ai';
-import { ArrowDown, Send, Square } from 'lucide-react';
+import { ArrowDown, ArrowUp, Square } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CoachMessage } from '@/components/coach/chat/coach-message';
 import { CoachProvenanceChips } from '@/components/coach/chat/coach-provenance-chips';
@@ -53,6 +53,7 @@ import {
 } from '@/lib/coach/chat/coach-input-draft';
 import { reasoningTextOf } from '@/lib/coach/chat/coach-reasoning';
 import { isNearBottom, shouldShowJumpToLatest } from '@/lib/coach/chat/scroll-anchor';
+import { CoachComposerShell } from '@/components/coach/chat/coach-composer-chrome';
 import { CoachContextChip } from '@/components/coach/chat/coach-context-chip';
 import type { CoachDiscussContext } from '@/lib/coach/chat/coach-discuss-context';
 import { createClientId } from '@/lib/client-id';
@@ -63,7 +64,6 @@ const SUGGESTIONS = COACH_CHAT_SUGGESTIONS;
 export function CoachChat({
   conversationId,
   initialMessages,
-  bootstrapPrompt,
   attachedContext,
   onDetachContext,
   isEphemeral = false,
@@ -71,14 +71,12 @@ export function CoachChat({
   header,
   onConversationCreated,
   onAutoReplyStarted,
-  onBootstrapApplied,
 }: {
   conversationId: string;
   initialMessages: UIMessage[];
-  bootstrapPrompt?: string;
   /** Context carried by a contextual conversation, shown above the composer. */
   attachedContext?: CoachDiscussContext | null;
-  /** Drops the attachment: clears the prefilled message and hides the chip. */
+  /** Drops the attachment and hides the chip. */
   onDetachContext?: () => void;
   isEphemeral?: boolean;
   autoReply?: boolean;
@@ -86,8 +84,6 @@ export function CoachChat({
   header?: React.ReactNode;
   onConversationCreated?: (id: string) => void;
   onAutoReplyStarted?: () => void;
-  /** Fired once after a discuss bootstrap has been written into the composer. */
-  onBootstrapApplied?: () => void;
 }) {
   const queryClient = useQueryClient();
   const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
@@ -169,30 +165,18 @@ export function CoachChat({
   messagesRef.current = messages;
   const [input, setInput] = useState('');
   const draftReady = useRef(false);
-  const bootstrapApplied = useRef(false);
-  const onBootstrapAppliedRef = useRef(onBootstrapApplied);
-  onBootstrapAppliedRef.current = onBootstrapApplied;
 
-  // Restore unfinished input, or apply "Discuter avec le coach" once (never overwrite edits).
+  // Restore unfinished input when switching conversations.
   useEffect(() => {
     draftReady.current = false;
-    bootstrapApplied.current = false;
   }, [conversationId]);
 
   useEffect(() => {
-    if (bootstrapPrompt && initialMessages.length === 0 && !bootstrapApplied.current) {
-      bootstrapApplied.current = true;
-      setInput(bootstrapPrompt);
-      writeCoachInputDraft(conversationId, bootstrapPrompt);
-      draftReady.current = true;
-      onBootstrapAppliedRef.current?.();
-      return;
-    }
     if (draftReady.current) return;
     draftReady.current = true;
     const draft = readCoachInputDraft(conversationId);
     if (draft) setInput(draft);
-  }, [bootstrapPrompt, conversationId, initialMessages.length]);
+  }, [conversationId]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const initialScrollDone = useRef(false);
@@ -401,7 +385,7 @@ export function CoachChat({
       : 'Une erreur est survenue. Réessaie dans un instant.';
 
   const inputPlaceholder = (() => {
-    if (guardDisabled) return 'Hors ligne — envoi indisponible';
+    if (guardDisabled) return 'Hors ligne, envoi indisponible';
     if (hasPendingApprovals) {
       return "Réponds à la proposition, ou envoie un nouveau message pour l'ignorer…";
     }
@@ -409,7 +393,7 @@ export function CoachChat({
   })();
 
   return (
-    <div className="rounded-analysis-lg relative flex h-full min-w-0 flex-1 flex-col lg:border">
+    <div className="rounded-analysis-lg relative flex h-full min-w-0 flex-1 flex-col overflow-hidden lg:border">
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto"
@@ -506,12 +490,8 @@ export function CoachChat({
 
           {status === 'submitted' && (
             <div aria-live="polite" className="flex justify-start" role="status">
-              <div className="bg-analysis-surface-alt flex items-center gap-2 rounded-[18px_18px_18px_4px] px-4 py-2.5">
-                <span className="coach-orb" aria-hidden />
-                <span className="coach-thinking-shimmer text-[13px] leading-4.5 font-medium">
-                  Réflexion…
-                </span>
-                <span className="sr-only">Le coach rédige une réponse…</span>
+              <div className="bg-analysis-surface-alt text-muted-foreground rounded-[18px_18px_18px_4px] px-4 py-2.5 text-[13px] leading-4.5 font-medium">
+                Le coach rédige…
               </div>
             </div>
           )}
@@ -572,9 +552,9 @@ export function CoachChat({
       </div>
 
       {showJumpToLatest && (
-        <div className="pointer-events-none absolute right-2.5 bottom-20 flex justify-center">
+        <div className="pointer-events-none absolute right-2.5 bottom-28 flex justify-center">
           <Button
-            className="pointer-events-auto rounded-full px-2 text-xs shadow-sm"
+            className="ring-border pointer-events-auto rounded-full px-2 text-xs shadow-none ring-1"
             size="sm"
             type="button"
             variant="outline"
@@ -585,70 +565,69 @@ export function CoachChat({
         </div>
       )}
 
-      {attachedContext ? (
-        <CoachContextChip
-          context={attachedContext}
-          onDetach={() => {
-            setInput('');
-            writeCoachInputDraft(conversationId, '');
-            onDetachContext?.();
-          }}
-        />
-      ) : null}
-
-      <form
-        className={cn(
-          'flex items-end gap-2 p-3',
-          attachedContext ? 'pt-2' : 'border-border/60 border-t',
-        )}
-        onSubmit={(e) => {
-          e.preventDefault();
-          submit(input);
-        }}
+      <CoachComposerShell
+        contextSlot={
+          attachedContext ? (
+            <CoachContextChip context={attachedContext} onDetach={() => onDetachContext?.()} />
+          ) : null
+        }
       >
-        <Textarea
-          aria-label="Message au coach"
-          className="max-h-40 min-h-11 resize-y"
-          disabled={inputLocked}
-          placeholder={inputPlaceholder}
-          rows={input.includes('\n') || input.length > 120 ? 6 : 1}
-          value={input}
-          onChange={(e) => {
-            const next = e.target.value;
-            setInput(next);
-            writeCoachInputDraft(conversationId, next);
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            submit(input);
           }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              submit(input);
-            }
-          }}
-        />
-        {isBusy ? (
-          <Button
-            aria-label="Arrêter la génération"
-            className="size-11 shrink-0"
-            size="icon"
-            type="button"
-            variant="outline"
-            onClick={() => stop()}
-          >
-            <Square className="size-4" aria-hidden />
-          </Button>
-        ) : (
-          <Button
-            aria-label={offline ? offlineLabel : 'Envoyer le message'}
-            className="size-11 shrink-0"
-            disabled={guardDisabled || !input.trim()}
-            size="icon"
-            type="submit"
-            variant="highlight"
-          >
-            <Send className="size-4" aria-hidden />
-          </Button>
-        )}
-      </form>
+        >
+          <Textarea
+            aria-label="Message au coach"
+            disabled={inputLocked}
+            placeholder={inputPlaceholder}
+            rows={input.includes('\n') || input.length > 90 ? 4 : 1}
+            value={input}
+            className={cn(
+              'max-h-40 min-h-11 resize-none border-0 bg-transparent px-2.5 py-2 shadow-none',
+              'focus-visible:border-transparent focus-visible:ring-0',
+              'placeholder:text-muted-foreground/80',
+            )}
+            onChange={(e) => {
+              const next = e.target.value;
+              setInput(next);
+              writeCoachInputDraft(conversationId, next);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                submit(input);
+              }
+            }}
+          />
+          <div className="mt-1 flex items-center justify-end gap-1.5 px-0.5">
+            {isBusy ? (
+              <Button
+                aria-label="Arrêter la génération"
+                className="size-9 shrink-0 rounded-full"
+                size="icon"
+                type="button"
+                variant="outline"
+                onClick={() => stop()}
+              >
+                <Square className="size-3.5" aria-hidden />
+              </Button>
+            ) : (
+              <Button
+                aria-label={offline ? offlineLabel : 'Envoyer le message'}
+                className="size-9 shrink-0 rounded-full"
+                disabled={guardDisabled || !input.trim()}
+                size="icon"
+                type="submit"
+                variant="highlight"
+              >
+                <ArrowUp className="size-4" strokeWidth={2.5} aria-hidden />
+              </Button>
+            )}
+          </div>
+        </form>
+      </CoachComposerShell>
     </div>
   );
 }

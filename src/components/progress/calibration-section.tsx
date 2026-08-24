@@ -10,12 +10,12 @@ import { mapAthleteProfileToFormData } from '@/lib/profile/map-athlete-profile';
  * Client-side calibration for the Progress hub — expert reading only.
  *
  * A threshold is the yardstick the technical metrics are read against; it means
- * nothing to an athlete who was never shown those metrics. `/settings/calibration`
- * stays reachable so the values remain editable on purpose.
+ * nothing to an athlete who was never shown those metrics (ADR-023). Engines
+ * still use stored values; Essential athletes simply do not edit them here.
+ * Also editable at `/settings/calibration` from Profil.
  *
- * That page reads the profile on the server and hands the panel its initial
- * values. A tabbed hub cannot await inside a section, so the same
- * panel is fed from the query cache instead — the panel itself is unchanged.
+ * A tabbed hub cannot await inside a section, so the panel is fed from the
+ * query cache instead of a server-rendered initial payload.
  */
 export function CalibrationSection() {
   const profileQuery = useAthleteProfile();

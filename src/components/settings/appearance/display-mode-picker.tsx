@@ -26,7 +26,16 @@ const OPTIONS: readonly PreferenceOption<DisplayMode>[] = [
 ];
 
 export function AppearanceDisplayModePicker() {
-  const { mode, setMode } = useDisplayMode();
+  const { mode, setMode, isResolved } = useDisplayMode();
+
+  if (!isResolved) {
+    return (
+      <div aria-label="Densité de lecture" className="space-y-3" aria-busy>
+        <div className="bg-muted/45 h-[4.5rem] animate-pulse rounded-xl" />
+        <div className="bg-muted/45 h-[4.5rem] animate-pulse rounded-xl" />
+      </div>
+    );
+  }
 
   return (
     <PreferenceRadioGroup

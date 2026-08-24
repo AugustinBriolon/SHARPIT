@@ -238,7 +238,7 @@ export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => voi
             <Textarea
               aria-describedby="morning-wellness-notes-hint"
               id="morning-wellness-notes"
-              placeholder="Ex: nuit hachée, pression pro, jambes lourdes..."
+              placeholder="Ex: nuit hachée, pression pro, jambes lourdes…"
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
             />

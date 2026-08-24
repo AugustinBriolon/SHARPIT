@@ -62,7 +62,7 @@ function syncLabel(lastSyncAt: string | null): string {
 }
 
 function integrationStatusLabel(integration: IntegrationDefinition): string {
-  if (integration.needsReconnect) return 'Session expirée — reconnecte';
+  if (integration.needsReconnect) return 'Session expirée, reconnecte';
   if (integration.connected) {
     return syncLabel(integration.account?.lastSyncAt ?? null);
   }

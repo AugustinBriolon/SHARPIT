@@ -282,12 +282,12 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label>Type</Label>
+            <Label htmlFor="activity-type">Type</Label>
             <Select
               value={activityType}
               onValueChange={(value) => form.setValue('type', value as ActivityType)}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full" id="activity-type">
                 <SelectValue placeholder="Choisir un sport" />
               </SelectTrigger>
               <SelectContent className="w-max max-w-[var(--available-width)] min-w-[var(--anchor-width)]">
@@ -312,13 +312,19 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
 
           <div className="space-y-2">
             <Label htmlFor="title">Titre</Label>
-            <Input id="title" {...form.register('title')} placeholder="Z2 endurance" />
+            <Input
+              autoComplete="off"
+              id="title"
+              {...form.register('title')}
+              placeholder="Z2 endurance"
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="duration">Durée (min)</Label>
             <Input
               id="duration"
+              inputMode="decimal"
               type="number"
               value={
                 resolvedDurationSec != null && resolvedDurationSec > 0
@@ -356,14 +362,14 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label>Ressenti</Label>
+              <Label htmlFor="activity-feeling">Ressenti</Label>
               <Select
                 value={feelingValue || '__none__'}
                 onValueChange={(value) =>
                   form.setValue('feeling', value === '__none__' ? '' : value)
                 }
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" id="activity-feeling">
                   <SelectValue placeholder="Non renseigné">
                     {feelingValue
                       ? (feelingOptions.find((option) => option.value === feelingValue)?.label ??
@@ -396,8 +402,9 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
 
             {isOutdoor ? (
               <div className="space-y-2">
-                <Label>Lieu de la séance</Label>
+                <Label htmlFor="activity-location">Lieu de la séance</Label>
                 <LocationPlacePicker
+                  id="activity-location"
                   placeholder="Rechercher une ville ou un lieu…"
                   value={location}
                   onChange={(next) => {

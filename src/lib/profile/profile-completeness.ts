@@ -15,7 +15,7 @@ export type ProfileCompletenessGap = {
 /** Where athletes actually edit gated fields today (not /settings/account). */
 export const PROFILE_COMPLETENESS_DESTINATIONS = {
   thresholds: {
-    href: '/training/progression?tab=calibration',
+    href: '/settings/calibration',
     cta: 'Calibration',
     label: 'seuils physiologiques',
   },

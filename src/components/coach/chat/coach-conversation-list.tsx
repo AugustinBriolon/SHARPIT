@@ -56,10 +56,9 @@ function InlineRenameInput({
   return (
     <input
       ref={ref}
-      className="bg-background ring-primary/40 w-full rounded px-1 py-0.5 text-sm font-medium ring-1 outline-none"
+      className="bg-background ring-primary/40 focus-visible:ring-ring w-full rounded px-1 py-0.5 text-sm font-medium ring-1 outline-none focus-visible:ring-2"
       maxLength={60}
       value={value}
-      autoFocus
       onBlur={commit}
       onChange={(e) => setValue(e.target.value)}
       onKeyDown={(e) => {
@@ -177,7 +176,7 @@ function DesktopConversationList({
           const isEditing = editingId === c.id;
 
           return (
-            <li key={c.id} className="group relative flex items-center">
+            <li key={c.id} className="cv-auto group relative flex items-center">
               <button
                 aria-current={isActive ? 'page' : undefined}
                 type="button"

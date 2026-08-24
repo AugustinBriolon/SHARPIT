@@ -1,15 +1,43 @@
-import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
+import { MobileBackLink } from '@/components/layout/mobile-back-link';
+import { StickyHeader } from '@/components/layout/sticky-header';
+import { PerformanceCalibrationPanel } from '@/components/settings/profile/performance-calibration-panel';
+import { Skeleton } from '@/components/ui/skeleton';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { mapAthleteProfileToFormData } from '@/lib/profile/map-athlete-profile';
+import { getAthleteProfile } from '@/lib/queries';
+
+function CalibrationPanelSkeleton() {
+  return <Skeleton className="h-96 w-full rounded-2xl" aria-busy />;
+}
+
+async function CalibrationPanelWithProfile() {
+  const athleteId = await getCurrentAthleteId();
+  const athleteProfile = await getAthleteProfile(athleteId).catch(() => null);
+
+  return <PerformanceCalibrationPanel initial={mapAthleteProfileToFormData(athleteProfile)} />;
+}
 
 /**
- * Thresholds moved once already, out of a training hub and into Settings, on
- * the argument that the panel is a settings panel. That was right against the
- * destinations that existed then: the only alternatives were a list of sessions
- * and a data domain.
- *
- * A threshold is not a preference — it is a measurement of the athlete, and the
- * yardstick every performance reading is scaled against. With Progression it has
- * somewhere truthful to live, next to the records it explains (ADR-022).
+ * Thresholds are athlete measurements — also surfaced under Progression →
+ * Performance for expert reading (ADR-022 / ADR-023). Settings keeps a direct
+ * edit surface so the Profil entry never dead-ends on a redirect.
  */
-export default function SettingsCalibrationRedirect() {
-  redirect('/progress?tab=performance');
+export default function SettingsCalibrationPage() {
+  return (
+    <div className="space-y-4">
+      <MobileBackLink href="/settings" label="Profil" showOnDesktop />
+      <StickyHeader>
+        <p className="text-label">Profil</p>
+        <h1 className="text-page-title mt-1">Seuils &amp; repères</h1>
+        <p className="text-muted-foreground mt-1 text-sm">
+          FTP, allure seuil, FC max — le yardstick contre lequel la charge est lue.
+        </p>
+      </StickyHeader>
+
+      <Suspense fallback={<CalibrationPanelSkeleton />}>
+        <CalibrationPanelWithProfile />
+      </Suspense>
+    </div>
+  );
 }

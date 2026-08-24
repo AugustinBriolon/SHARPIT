@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_DISPLAY_MODE,
   filterByAudience,
+  formatTrainingLoad,
   isDisplayMode,
   isExpertMode,
   isMetricVisible,
   toDisplayMode,
+  trainingLoadUnit,
 } from '@/lib/preferences/display-mode';
 
 describe('display mode', () => {
@@ -54,5 +56,17 @@ describe('metric audience', () => {
     const metrics = [{ id: 'tss', audience: 'expert' as const }];
     filterByAudience(metrics, 'essential');
     expect(metrics).toHaveLength(1);
+  });
+});
+
+describe('training load labels', () => {
+  it('keeps the TSS acronym on the expert reading', () => {
+    expect(formatTrainingLoad(42.6, 'expert')).toBe('43 TSS');
+    expect(trainingLoadUnit('expert')).toBe('TSS');
+  });
+
+  it('uses plain charge on the essential reading', () => {
+    expect(formatTrainingLoad(42.6, 'essential')).toBe('charge 43');
+    expect(trainingLoadUnit('essential')).toBe('charge');
   });
 });

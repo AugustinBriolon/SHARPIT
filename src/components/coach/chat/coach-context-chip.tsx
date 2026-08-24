@@ -1,44 +1,48 @@
 'use client';
 
-import Link from 'next/link';
-import { Paperclip, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import type { CoachDiscussContext } from '@/lib/coach/chat/coach-discuss-context';
+import { cn } from '@/lib/utils';
 
 /**
- * Names the context a contextual conversation carries, and lets the athlete
- * drop it before sending.
- *
- * The Coach may inform a decision; it never silently acts on one. An athlete
- * who cannot see what the conversation carries cannot judge the answer, so the
- * attachment is stated rather than left implicit in the prefilled message.
+ * Context tag above the composer. The dismiss control appears on hover
+ * (always visible when the pointer cannot hover).
  */
 export function CoachContextChip({
   context,
   onDetach,
+  className,
 }: {
   context: CoachDiscussContext;
   onDetach: () => void;
+  className?: string;
 }) {
   return (
-    <div className="border-border/60 flex items-center gap-2 border-t px-3 pt-2.5">
-      <span className="bg-highlight/40 text-foreground rounded-analysis flex min-w-0 items-center gap-1.5 px-2 py-1 text-xs font-medium">
-        <Paperclip className="size-3 shrink-0" aria-hidden />
-        <span className="truncate">{context.label}</span>
-      </span>
-      <Link
-        className="text-muted-foreground hover:text-foreground shrink-0 text-xs underline underline-offset-2"
-        href={context.sourceHref}
+    <div className={cn('flex min-w-0', className)}>
+      <div
+        className={cn(
+          'group/tag bg-muted/70 text-foreground ring-border/60',
+          'inline-flex max-w-full min-w-0 items-center gap-1 rounded-full py-1 pr-1 pl-2.5',
+          'hover:bg-muted ring-1 transition-colors ring-inset',
+        )}
       >
-        Revoir
-      </Link>
-      <button
-        aria-label={`Retirer le contexte · ${context.label}`}
-        className="text-muted-foreground hover:text-foreground focus-visible:ring-ring ml-auto shrink-0 rounded-full p-1 focus-visible:ring-2 focus-visible:outline-hidden"
-        type="button"
-        onClick={onDetach}
-      >
-        <X className="size-3.5" aria-hidden />
-      </button>
+        <span className="truncate text-xs font-medium tracking-tight">{context.label}</span>
+        <button
+          aria-label={`Retirer le contexte · ${context.label}`}
+          type="button"
+          className={cn(
+            'text-muted-foreground hover:text-foreground hover:bg-foreground/8',
+            'focus-visible:ring-ring shrink-0 rounded-full p-1 transition-opacity',
+            'focus-visible:opacity-100 focus-visible:ring-2 focus-visible:outline-hidden',
+            'opacity-100 [@media(hover:hover)]:opacity-0',
+            '[@media(hover:hover)]:group-hover/tag:opacity-100',
+            '[@media(hover:hover)]:group-focus-within/tag:opacity-100',
+          )}
+          onClick={onDetach}
+        >
+          <X className="size-3.5" aria-hidden />
+        </button>
+      </div>
     </div>
   );
 }

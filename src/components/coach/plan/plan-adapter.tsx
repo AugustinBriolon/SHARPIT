@@ -2,7 +2,7 @@
 
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Check, Loader2, Wand2 } from 'lucide-react';
+import { Check, Loader2, ListRestart } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { ProfileContextBanner } from '@/components/profile/profile-context-banner';
 import { Button } from '@/components/ui/button';
@@ -98,7 +98,7 @@ function renderAdaptButtonContent(
   if (offline) return offlineLabel;
   return (
     <>
-      <Wand2 className="size-4" />
+      <ListRestart className="size-4" />
       {hasResult ? 'Régénérer les propositions' : 'Proposer des ajustements'}
     </>
   );
@@ -284,12 +284,12 @@ export function PlanAdapter({
       <DialogContent className="max-h-[90vh] overflow-x-hidden overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Wand2 className="text-primary size-4" />
+            <ListRestart className="text-primary size-4" />
             Ajuster mon planning
           </DialogTitle>
           <DialogDescription>
             Le coach analyse ce que tu as réellement fait et propose des modifications sur tes
-            séances déjà planifiées (14 prochains jours) — sans tout recréer.
+            séances déjà planifiées (14 prochains jours), sans tout recréer.
           </DialogDescription>
         </DialogHeader>
 

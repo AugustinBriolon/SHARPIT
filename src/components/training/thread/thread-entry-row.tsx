@@ -10,11 +10,17 @@ import { durationDelta, formatDelta, loadDelta } from '@/lib/training/thread/thr
 import type { ThreadEntry } from '@/lib/training/thread/thread-model';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
+import {
+  formatTrainingLoad,
+  trainingLoadUnit,
+  type DisplayMode,
+} from '@/lib/preferences/display-mode';
 import { ThreadEaseDialog } from '@/components/training/thread/thread-ease-dialog';
 import { ThreadShiftDialog } from '@/components/training/thread/thread-shift-dialog';
 import { usePlannedSessionActions } from '@/hooks/use-planned-session-actions';
 import { useSwipeReveal } from '@/hooks/use-swipe-reveal';
 import { useAppModal } from '@/providers/app-modal-provider';
+import { useDisplayMode } from '@/providers/display-mode-provider';
 import { cn } from '@/lib/utils';
 
 /**
@@ -26,21 +32,21 @@ import { cn } from '@/lib/utils';
  * reading a single word.
  *
  * Metrics are mono and right-aligned on wide screens so that figures stack in a
- * column down the list. Comparing Tuesday's TSS with Thursday's then costs a
+ * column down the list. Comparing Tuesday's load with Thursday's then costs a
  * glance rather than two readings.
  */
 
-export function entryMeta(entry: ThreadEntry): string[] {
+export function entryMeta(entry: ThreadEntry, mode: DisplayMode = 'essential'): string[] {
   if (entry.activity) {
     return [
       entry.activity.duration ? formatDuration(entry.activity.duration) : null,
-      entry.activity.load != null ? `${Math.round(entry.activity.load)} TSS` : null,
+      entry.activity.load != null ? formatTrainingLoad(entry.activity.load, mode) : null,
       entry.activity.rpe != null ? `RPE ${entry.activity.rpe}` : null,
     ].filter((part): part is string => Boolean(part));
   }
   return [
     entry.planned?.durationMin ? `${entry.planned.durationMin} min` : null,
-    entry.planned?.load != null ? `${Math.round(entry.planned.load)} TSS` : null,
+    entry.planned?.load != null ? formatTrainingLoad(entry.planned.load, mode) : null,
   ].filter((part): part is string => Boolean(part));
 }
 
@@ -52,6 +58,7 @@ export function entryMeta(entry: ThreadEntry): string[] {
  * was rebuilt to answer.
  */
 export function ComparisonPill({ entry }: { entry: ThreadEntry }) {
+  const { mode } = useDisplayMode();
   if (entry.kind !== 'paired' || !entry.planned) return null;
 
   const duration = durationDelta(entry.activity?.duration, entry.planned.durationMin);
@@ -59,9 +66,10 @@ export function ComparisonPill({ entry }: { entry: ThreadEntry }) {
   const shown = duration ?? load;
   if (!shown) return null;
 
+  const unit = duration ? 'min' : trainingLoadUnit(mode);
   const prescribed = duration
     ? `prévu ${entry.planned.durationMin} min`
-    : `prévu ${Math.round(entry.planned.load ?? 0)} TSS`;
+    : `prévu ${formatTrainingLoad(entry.planned.load ?? 0, mode)}`;
 
   return (
     <span className="inline-flex shrink-0 items-center gap-1.5">
@@ -74,7 +82,7 @@ export function ComparisonPill({ entry }: { entry: ThreadEntry }) {
           shown.verdict === 'over' ? 'text-signal-caution' : 'text-primary',
         )}
       >
-        {formatDelta(shown, duration ? 'min' : 'TSS')}
+        {formatDelta(shown, unit)}
       </span>
     </span>
   );
@@ -258,9 +266,10 @@ export function ThreadEntryRow({
 }) {
   const queryClient = useQueryClient();
   const { openPlannedSession } = useAppModal();
+  const { mode } = useDisplayMode();
 
   const isPlanned = entry.kind === 'planned';
-  const meta = entryMeta(entry);
+  const meta = entryMeta(entry, mode);
 
   const body = (
     <>

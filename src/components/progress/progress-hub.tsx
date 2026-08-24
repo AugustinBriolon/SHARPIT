@@ -1,7 +1,6 @@
 'use client';
 
 import { format } from 'date-fns';
-import { Medal, Scale, Target } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
@@ -20,7 +19,7 @@ import {
   usePhysicalHealthViewModel,
 } from '@/hooks/use-presentation-view-model';
 import { useTodaySelectedDate } from '@/hooks/use-today-selected-date';
-import { navPillClass } from '@/lib/ui/nav-pill';
+import { cn } from '@/lib/utils';
 
 const RecordsPanel = dynamic(
   () => import('@/components/analytics/records/records-panel').then((mod) => mod.RecordsPanel),
@@ -36,34 +35,28 @@ const RecordsPanel = dynamic(
  * athlete is made of. Calibration joins performance for the same reason — a
  * threshold is the yardstick the performance is read against, not a preference.
  */
-const TABS = [
+const SECTIONS = [
   {
     id: 'goals',
     label: 'Objectifs',
-    description: 'Ce vers quoi tu construis — courses, échéances et repères.',
-    icon: Target,
   },
   {
     id: 'performance',
     label: 'Performance',
-    description: 'Records, courbes de référence et seuils qui servent à les lire.',
-    icon: Medal,
   },
   {
     id: 'body',
     label: 'Corps & santé',
-    description: 'Composition, douleurs et points de vigilance.',
-    icon: Scale,
   },
 ] as const;
 
-type TabId = (typeof TABS)[number]['id'];
+type SectionId = (typeof SECTIONS)[number]['id'];
 
-function isTabId(value: string | null): value is TabId {
-  return TABS.some((t) => t.id === value);
+function isSectionId(value: string | null): value is SectionId {
+  return SECTIONS.some((section) => section.id === value);
 }
 
-function BodyTabBody() {
+function BodySection() {
   return (
     <div className="space-y-6">
       <CompositionView embedded />
@@ -72,7 +65,7 @@ function BodyTabBody() {
   );
 }
 
-function PerformanceTabBody() {
+function PerformanceSection() {
   return (
     <div className="space-y-6">
       <RecordsPanel />
@@ -91,12 +84,8 @@ export function ProgressHub({ basePath = '/progress' }: { basePath?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const raw = searchParams.get('tab');
-  const tab: TabId = isTabId(raw) ? raw : 'goals';
-  const activeTab = TABS.find((t) => t.id === tab) ?? TABS[0];
+  const section: SectionId = isSectionId(raw) ? raw : 'goals';
 
-  // Gated at the hub, not per section: an offline athlete opening Progression
-  // lands on Objectifs, and the snapshot is the only athlete state there is —
-  // it must not be reachable solely by knowing to switch tabs first.
   const online = useOnlineStatus();
   const { date } = useTodaySelectedDate();
   const trainingDayId = format(date, 'yyyy-MM-dd');
@@ -108,34 +97,35 @@ export function ProgressHub({ basePath = '/progress' }: { basePath?: string }) {
   const { entry: offlineEntry } = useOfflineSnapshot(!online && hasNoLiveContent);
   const showOfflineSnapshot = !online && hasNoLiveContent && offlineEntry != null;
 
-  function setTab(next: string) {
+  function setSection(next: string) {
     router.replace(`${basePath}?tab=${next}`, { scroll: false });
   }
 
   return (
     <div className="space-y-4">
       <StickyHeader>
-        <p className="text-label">Progression</p>
-        <h1 className="text-page-title mt-1">{activeTab.label}</h1>
-        <p className="text-muted-foreground mt-1 text-sm">{activeTab.description}</p>
+        <h1 className="text-page-title">Progression</h1>
 
         <nav
           aria-label="Sections Progression"
-          className="-mx-1 mt-4 flex scrollbar-none gap-1.5 overflow-x-auto pb-0.5"
+          className="border-analysis-border/70 mt-4 flex gap-5 border-b"
         >
-          {TABS.map((t) => {
-            const Icon = t.icon;
-            const active = tab === t.id;
+          {SECTIONS.map((item) => {
+            const isActive = section === item.id;
             return (
               <button
-                key={t.id}
-                aria-current={active ? 'page' : undefined}
-                className={navPillClass(active)}
+                key={item.id}
+                aria-current={isActive ? 'page' : undefined}
                 type="button"
-                onClick={() => setTab(t.id)}
+                className={cn(
+                  'pressable -mb-px min-h-11 border-b-2 px-0 text-sm lg:min-h-9',
+                  isActive
+                    ? 'border-foreground text-foreground'
+                    : 'text-muted-foreground hover:text-foreground border-transparent',
+                )}
+                onClick={() => setSection(item.id)}
               >
-                <Icon className="size-3.5" aria-hidden />
-                {t.label}
+                {item.label}
               </button>
             );
           })}
@@ -147,9 +137,9 @@ export function ProgressHub({ basePath = '/progress' }: { basePath?: string }) {
           <OfflineSnapshotSummary entry={offlineEntry} />
         ) : (
           <>
-            {tab === 'goals' && <GoalsView embedded />}
-            {tab === 'performance' && <PerformanceTabBody />}
-            {tab === 'body' && <BodyTabBody />}
+            {section === 'goals' && <GoalsView embedded />}
+            {section === 'performance' && <PerformanceSection />}
+            {section === 'body' && <BodySection />}
           </>
         )}
       </div>

@@ -28,6 +28,8 @@ import { activityTypeLabels } from '@/lib/format';
 import { phaseColors, phaseLabels } from '@/lib/training/periodization';
 import { buildPlanningWeeks, resolvePlanningWeek } from '@/lib/planned-session/planning';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
+import { formatTrainingLoad } from '@/lib/preferences/display-mode';
+import { useDisplayMode } from '@/providers/display-mode-provider';
 import type { ClientActivity, ClientPlannedSession, ClientPlanWeek } from '@/lib/query/types';
 import { formatPlannedDuration } from '@/lib/planned-session/sessions';
 import { cn } from '@/lib/utils';
@@ -397,6 +399,7 @@ function WeekSummary({
   weeksToRace: number | null;
   loading?: boolean;
 }) {
+  const { mode } = useDisplayMode();
   if (loading) {
     return (
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -429,8 +432,8 @@ function WeekSummary({
           <span className="opacity-30">·</span>
           <span className="font-mono text-xs">
             {plannedLoad > 0
-              ? `${Math.round(plannedLoad)} / ${planWeek.targetLoad} TSS`
-              : `${planWeek.targetLoad} TSS cible`}
+              ? `${formatTrainingLoad(plannedLoad, mode)} / ${formatTrainingLoad(planWeek.targetLoad, mode)}`
+              : `${formatTrainingLoad(planWeek.targetLoad, mode)} cible`}
           </span>
         </>
       ) : null}

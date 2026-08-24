@@ -7,6 +7,7 @@ import { MotionExpand } from '@/components/motion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useSaveCoachContext } from '@/hooks/use-coach';
+import { useDesktopAutofocus } from '@/hooks/use-desktop-autofocus';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { parseDurablePreferences, shouldRenderAsBullets } from '@/lib/coach-memory/memory-summary';
 import { cn } from '@/lib/utils';
@@ -136,6 +137,8 @@ export function CoachProfileContextSection({
   const [editValue, setEditValue] = useState(savedContext);
   const [justSaved, setJustSaved] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const editRef = useRef<HTMLTextAreaElement>(null);
+  useDesktopAutofocus(editRef, mode === 'edit');
 
   useEffect(() => {
     if (mode === 'read') setEditValue(savedContext);
@@ -181,6 +184,7 @@ export function CoachProfileContextSection({
     if (mode === 'edit') {
       return (
         <Textarea
+          ref={editRef}
           aria-label="Préférences durables pour le coach"
           placeholder={PLACEHOLDER}
           value={editValue}
@@ -188,7 +192,6 @@ export function CoachProfileContextSection({
             EDIT_MAX_CLASS,
             'bg-primary/5 border-primary/30 w-full resize-none overflow-y-auto p-3 text-sm leading-relaxed',
           )}
-          autoFocus
           onChange={(e) => setEditValue(e.target.value)}
         />
       );

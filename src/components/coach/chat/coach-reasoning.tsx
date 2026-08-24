@@ -21,10 +21,5 @@ export function CoachReasoning({
 }) {
   if (!streaming || hasAnswerText) return null;
 
-  return (
-    <div className="flex items-center gap-1.5 py-1.5 text-xs">
-      <span className="coach-orb shrink-0" aria-hidden />
-      <span className="coach-thinking-shimmer font-medium">Le coach réfléchit…</span>
-    </div>
-  );
+  return <div className="text-muted-foreground py-1.5 text-xs font-medium">Le coach rédige…</div>;
 }

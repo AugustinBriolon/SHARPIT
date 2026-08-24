@@ -21,7 +21,7 @@ type DiscussWithCoachButtonProps = {
 };
 
 /**
- * Shared entry point to start a coach chat with a prefilled discuss prompt.
+ * Shared entry point to start a coach chat with attached discuss context.
  * Closes any open planned-session modal before navigating to Coach.
  */
 export function DiscussWithCoachButton({

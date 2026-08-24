@@ -22,6 +22,7 @@ export function SettingsAppearanceStatus() {
 
 /** Read at a glance from the hub — the Mode Expert row owns the density. */
 export function SettingsExpertModeStatus() {
-  const { mode } = useDisplayMode();
+  const { mode, isResolved } = useDisplayMode();
+  if (!isResolved) return <>…</>;
   return <>{DENSITY_LABELS[mode] ?? mode}</>;
 }

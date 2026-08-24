@@ -1,12 +1,13 @@
 'use client';
 
-import { Suspense, useRef } from 'react';
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { UserButton, useUser } from '@clerk/nextjs';
 import { Activity } from 'lucide-react';
 import { LayoutGroup, motion, useReducedMotion } from 'motion/react';
+import { AthleteNavAvatar, AthleteNavAvatarSkeleton } from '@/components/layout/athlete-nav-avatar';
 import { profileNavItem, sidebarPrimaryNavItems, type AppNavItem } from '@/lib/app-navigation';
+import { useAthleteNavIdentity } from '@/hooks/use-athlete-nav-identity';
 import { usePrefetchNavQuery } from '@/hooks/use-prefetch-nav';
 import { springs } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
@@ -85,45 +86,69 @@ function SidebarNavLink({
   );
 }
 
-function AccountMenu() {
-  const { user } = useUser();
-  const triggerWrapRef = useRef<HTMLDivElement>(null);
-  const displayName = user?.fullName ?? user?.firstName ?? 'Mon compte';
-  const email = user?.primaryEmailAddress?.emailAddress ?? '';
-
-  function openClerkMenu() {
-    triggerWrapRef.current?.querySelector('button')?.click();
-  }
+function AthleteIdentityLink({ onPrefetch }: { onPrefetch: (href: string) => void }) {
+  const pathname = usePathname();
+  const identity = useAthleteNavIdentity();
+  const isActive = pathname != null && profileNavItem.match(pathname);
+  const reduce = useReducedMotion();
 
   return (
-    <div
+    <Link
+      aria-current={isActive ? 'page' : undefined}
+      aria-label={identity.fullLabel}
+      href={profileNavItem.href}
       className={cn(
-        'analysis-panel rounded-analysis-lg flex items-center gap-3 p-2.5',
-        'hover:border-primary/20 hover:bg-analysis-surface-alt/80 transition-colors',
+        'group pressable focus-visible:ring-sidebar-ring rounded-analysis-lg relative flex items-center gap-3 p-2.5 text-left focus-visible:ring-2 focus-visible:outline-hidden',
+        isActive ? 'text-highlight-foreground' : 'text-foreground hover:bg-highlight/40',
+        'analysis-panel hover:border-primary/20',
       )}
+      onMouseEnter={() => onPrefetch(profileNavItem.href)}
     >
-      <div ref={triggerWrapRef} className="shrink-0">
-        <UserButton
-          appearance={{
-            elements: {
-              rootBox: 'flex',
-              userButtonTrigger:
-                'rounded-full focus:shadow-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
-              avatarBox: 'size-8 ring-1 ring-border',
-            },
-          }}
+      {isActive && !reduce ? (
+        <motion.span
+          className="bg-highlight rounded-analysis-lg absolute inset-0"
+          layoutId="sidebar-nav-active"
+          transition={springs.snappy}
+          aria-hidden
         />
-      </div>
-      <button
-        aria-label={`Ouvrir le menu compte · ${displayName}`}
-        className="focus-visible:ring-sidebar-ring min-w-0 flex-1 rounded-md text-left focus-visible:ring-2 focus-visible:outline-hidden"
-        type="button"
-        onClick={openClerkMenu}
-      >
-        <p className="truncate text-sm font-medium">{displayName}</p>
-        {email ? <p className="text-muted-foreground truncate text-xs">{email}</p> : null}
-      </button>
-    </div>
+      ) : null}
+      {isActive && reduce ? (
+        <span className="bg-highlight rounded-analysis-lg absolute inset-0" aria-hidden />
+      ) : null}
+      {identity.isReady ? (
+        <AthleteNavAvatar
+          initials={identity.initials}
+          size="md"
+          className={cn(
+            'relative',
+            isActive && 'bg-highlight-foreground/15 text-highlight-foreground',
+          )}
+        />
+      ) : (
+        <AthleteNavAvatarSkeleton className="relative" size="md" />
+      )}
+      <span className="relative min-w-0 flex-1">
+        <span className="block truncate text-sm font-medium">{identity.shortLabel}</span>
+        {identity.email ? (
+          <span className="text-muted-foreground block truncate text-xs">{identity.email}</span>
+        ) : null}
+      </span>
+    </Link>
+  );
+}
+
+function SuspendedAthleteIdentityLink({ onPrefetch }: { onPrefetch: (href: string) => void }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="analysis-panel rounded-analysis-lg flex items-center gap-3 p-2.5">
+          <AthleteNavAvatarSkeleton size="md" />
+          <span className="bg-muted/60 h-4 w-24 animate-pulse rounded-full" aria-hidden />
+        </div>
+      }
+    >
+      <AthleteIdentityLink onPrefetch={onPrefetch} />
+    </Suspense>
   );
 }
 
@@ -156,9 +181,8 @@ export function Sidebar() {
           </div>
         </nav>
 
-        <div className="border-sidebar-border space-y-2 border-t px-3 pt-3 pb-3">
-          <SidebarNavLink item={profileNavItem} onPrefetch={prefetch} />
-          <AccountMenu />
+        <div className="border-sidebar-border border-t px-3 pt-3 pb-3">
+          <SuspendedAthleteIdentityLink onPrefetch={prefetch} />
         </div>
       </LayoutGroup>
     </aside>

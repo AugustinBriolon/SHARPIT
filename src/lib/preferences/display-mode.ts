@@ -47,3 +47,19 @@ export function filterByAudience<T extends { audience?: MetricAudience }>(
 ): T[] {
   return items.filter((item) => isMetricVisible(item.audience ?? 'core', mode));
 }
+
+/**
+ * Training-load figure for the current reading.
+ *
+ * Expert keeps the TSS acronym (the name is the barrier). Essential keeps the
+ * magnitude as plain « charge » so daily surfaces stay readable without the jargon.
+ */
+export function formatTrainingLoad(load: number, mode: DisplayMode): string {
+  const rounded = Math.round(load);
+  return isExpertMode(mode) ? `${rounded} TSS` : `charge ${rounded}`;
+}
+
+/** Unit word for deltas / chart axes that still need a short label. */
+export function trainingLoadUnit(mode: DisplayMode): 'TSS' | 'charge' {
+  return isExpertMode(mode) ? 'TSS' : 'charge';
+}

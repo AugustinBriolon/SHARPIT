@@ -374,16 +374,28 @@ function GarminContent({
         <p className="text-muted-foreground text-sm leading-relaxed">
           {integrationConnectBody(
             integration,
-            'Sommeil, HRV, FC repos et séances Garmin. Mot de passe non stocké — jetons de session uniquement.',
+            'Sommeil, HRV, FC repos et séances Garmin. Mot de passe non stocké, jetons de session uniquement.',
           )}
         </p>
         <div className="space-y-2">
           <Label htmlFor="garmin-username">Email Garmin</Label>
-          <Input id="garmin-username" name="username" type="email" required />
+          <Input
+            autoComplete="username"
+            id="garmin-username"
+            name="username"
+            type="email"
+            required
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="garmin-password">Mot de passe</Label>
-          <Input id="garmin-password" name="password" type="password" required />
+          <Input
+            autoComplete="current-password"
+            id="garmin-password"
+            name="password"
+            type="password"
+            required
+          />
         </div>
         {error && (
           <p aria-live="assertive" className="text-destructive text-sm">
@@ -640,17 +652,23 @@ function RenphoContent({
           {integrationConnectBody(
             integration,
             integration.badge === 'legacy'
-              ? 'Balance Renpho Health — historique conservé. Withings est ta source principale : ses données remplacent Renpho sur les jours en commun.'
-              : 'Balance Renpho Health — historique conservé.',
+              ? 'Balance Renpho Health: historique conservé. Withings est ta source principale : ses données remplacent Renpho sur les jours en commun.'
+              : 'Balance Renpho Health: historique conservé.',
           )}
         </p>
         <div className="space-y-2">
           <Label htmlFor="renpho-email">Email Renpho</Label>
-          <Input id="renpho-email" name="email" type="email" required />
+          <Input autoComplete="username" id="renpho-email" name="email" type="email" required />
         </div>
         <div className="space-y-2">
           <Label htmlFor="renpho-password">Mot de passe</Label>
-          <Input id="renpho-password" name="password" type="password" required />
+          <Input
+            autoComplete="current-password"
+            id="renpho-password"
+            name="password"
+            type="password"
+            required
+          />
         </div>
         {error && (
           <p aria-live="assertive" className="text-destructive text-sm">
@@ -949,11 +967,13 @@ function MfpContent({
         <div className="space-y-2">
           <Label htmlFor="mfp-session-token">Cookie de session MFP</Label>
           <Textarea
+            autoComplete="off"
             className="w-full max-w-full break-all"
             id="mfp-session-token"
             name="sessionToken"
-            placeholder="eyJhbG..."
+            placeholder="eyJhbG…"
             rows={3}
+            spellCheck={false}
             required
           />
           <p className="text-muted-foreground mt-1 text-xs">

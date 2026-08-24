@@ -15,7 +15,7 @@ export const TWIN_DRILL_DOWN = {
   physical: '/progress?tab=body',
   sessions: '/training',
   /** The thresholds every load figure is computed against — a setting, so Settings. */
-  calibration: '/progress?tab=performance',
+  calibration: '/settings/calibration',
   /** Observed best efforts: what the body produced, so Physiologie. */
   records: '/progress?tab=performance',
   planning: '/training/planning',

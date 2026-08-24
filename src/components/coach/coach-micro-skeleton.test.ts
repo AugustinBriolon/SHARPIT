@@ -33,18 +33,30 @@ describe('coach hub micro-skeleton', () => {
     expect(html).not.toContain('Chargement');
   });
 
-  it('empty chrome uses real copy and composer, not suggestion skeletons', () => {
+  it('empty chrome uses the rounded composer card, not the old side-by-side send', () => {
     const html = renderToStaticMarkup(createElement(CoachChatEmptyChrome));
     expect(html).toContain('Demande conseil à ton coach');
     expect(html).toContain('Comment se présente ma forme');
+    expect(html).toContain('rounded-[1.75rem]');
+    expect(html).toContain('size-9 shrink-0 rounded-full');
     expect(html).not.toContain('aria-busy');
+    expect(html).not.toContain('size-11 shrink-0');
   });
 
   it('thread skeleton keeps real composer chrome and coach bubble surface', () => {
     const html = renderToStaticMarkup(createElement(CoachChatPanelSkeleton));
     expect(html).toContain('aria-busy');
     expect(html).toContain('Demande conseil à ton coach');
+    expect(html).toContain('rounded-[1.75rem]');
     expect(html).toContain('bg-analysis-surface-alt');
     expect(html).toContain('rounded-[18px_18px_18px_4px]');
+  });
+
+  it('thread skeleton can show a pending context tag while discuss resolves', () => {
+    const html = renderToStaticMarkup(
+      createElement(CoachChatPanelSkeleton, { contextPending: true }),
+    );
+    expect(html).toContain('animate-pulse');
+    expect(html).toContain('rounded-full');
   });
 });

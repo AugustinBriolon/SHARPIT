@@ -2,7 +2,9 @@
 
 import type { RulerBar } from '@/lib/training/thread/load-ruler';
 import { rulerRangeLabel } from '@/lib/training/thread/load-ruler';
+import { formatTrainingLoad } from '@/lib/preferences/display-mode';
 import { useThreadScrubber } from '@/hooks/use-thread-scrubber';
+import { useDisplayMode } from '@/providers/display-mode-provider';
 import { cn } from '@/lib/utils';
 
 const STATE_READING: Record<RulerBar['state'], string> = {
@@ -11,9 +13,9 @@ const STATE_READING: Record<RulerBar['state'], string> = {
   future: 'prévu',
 };
 
-function barReading(bar: RulerBar): string {
+function barReading(bar: RulerBar, mode: 'essential' | 'expert'): string {
   if (bar.unmeasured) return 'séances faites, charge non mesurée';
-  return `${bar.load} TSS · ${STATE_READING[bar.state]}`;
+  return `${formatTrainingLoad(bar.load, mode)} · ${STATE_READING[bar.state]}`;
 }
 
 /**
@@ -22,7 +24,7 @@ function barReading(bar: RulerBar): string {
  * Solid is what happened, dashed outline is what is planned — the same grammar
  * the thread uses for sessions, so one glance transfers. Deliberately not a
  * chart: there is no axis, no gridline and no tooltip, because the question it
- * answers is "is the block building or falling away", not "how many TSS in S34".
+ * answers is "is the block building or falling away", not "how much load in S34".
  */
 export function ThreadLoadRuler({
   bars,
@@ -36,6 +38,7 @@ export function ThreadLoadRuler({
   anchorWeekKey?: string | null;
   onAnchorChange?: (weekKey: string) => void;
 }) {
+  const { mode } = useDisplayMode();
   const activeIndex = Math.max(
     0,
     bars.findIndex((bar) =>
@@ -124,7 +127,7 @@ export function ThreadLoadRuler({
       <ul className="sr-only">
         {bars.map((bar) => (
           <li key={bar.weekKey}>
-            {bar.label} · {barReading(bar)}
+            {bar.label} · {barReading(bar, mode)}
           </li>
         ))}
       </ul>

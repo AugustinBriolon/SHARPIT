@@ -177,7 +177,7 @@ The selected reading level is a presentation preference, not a physiological set
 
 **How a surface honours it.** By wrapping the technical block in `<ExpertOnly>` (`src/components/display-mode/`), or by filtering a shared metric list with `filterByAudience`. Never by branching inside a ViewModel builder, an API route, or an engine: the level decides what is shown, never what is computed.
 
-**What is expert.** A metric belongs to the Expert level when understanding its name is a prerequisite to reading its value — NP, IF, VI, TSS, efficiency factor, decoupling, zone distributions, the power curve, ACWR, TSB, CTL/ATL and the PMC chart, threshold calibration. Distance, duration, elevation, splits, heart-rate and pace curves, records, body composition and every coach-written sentence stay in the Essential level. `/settings/calibration` stays reachable at both levels: the thresholds still drive what the engines compute, so they remain editable even when the metrics they scale are hidden.
+**What is expert.** A metric belongs to the Expert level when understanding its name is a prerequisite to reading its value — NP, IF, VI, TSS, efficiency factor, decoupling, zone distributions, the power curve, ACWR, TSB, CTL/ATL and the PMC chart, threshold calibration. Distance, duration, elevation, splits, heart-rate and pace curves, records, body composition and every coach-written sentence stay in the Essential level. Training load may appear in Essential as a plain « charge » figure, never as the TSS acronym. Calibration (FTP, LTHR, CSS, …) is Expert-only — a threshold only makes sense beside the metrics it scales; `/settings/calibration` redirects to Progression → Performance behind `<ExpertOnly>`.
 
 ## Canonical route direction
 

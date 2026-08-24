@@ -1,10 +1,12 @@
 import { Eye } from 'lucide-react';
 import { isDemoSession } from '@/lib/demo/demo-session';
+import { awaitRequest } from '@/lib/next/await-request';
 
 /** Tells a public demo visitor they're on seeded, read-only data. Mirrors
  * OfflineBanner's placement in AppShell, passed down as a server-rendered
- * slot since AppShell is a Client Component. */
+ * slot since AppShell is a Client Component. Caller must wrap in `<Suspense>`. */
 export async function DemoBanner() {
+  await awaitRequest();
   if (!(await isDemoSession())) return null;
 
   return (

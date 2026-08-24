@@ -4,7 +4,9 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutGroup, motion, useReducedMotion } from 'motion/react';
-import { bottomNavItems, type AppNavItem } from '@/lib/app-navigation';
+import { AthleteNavAvatar, AthleteNavAvatarSkeleton } from '@/components/layout/athlete-nav-avatar';
+import { bottomNavItems, profileNavItem, type AppNavItem } from '@/lib/app-navigation';
+import { useAthleteNavIdentity } from '@/hooks/use-athlete-nav-identity';
 import { usePrefetchNavQuery } from '@/hooks/use-prefetch-nav';
 import { PAGE_GUTTER } from '@/lib/ui/page-gutter';
 import { springs } from '@/lib/motion/tokens';
@@ -29,10 +31,32 @@ function BottomNavLink({
   const Icon = item.icon;
   const reduce = useReducedMotion();
   const hint = () => onPrefetch(item.href);
+  const isAthleteTab = item.href === profileNavItem.href;
+  const identity = useAthleteNavIdentity();
+  const label = isAthleteTab ? identity.shortLabel : item.label;
+
+  let glyph: React.ReactNode;
+  if (!isAthleteTab) {
+    glyph = <Icon className="relative size-5 shrink-0" aria-hidden />;
+  } else if (identity.isReady) {
+    glyph = (
+      <AthleteNavAvatar
+        initials={identity.initials}
+        size="sm"
+        className={cn(
+          'relative',
+          isActive && 'bg-highlight-foreground/15 text-highlight-foreground',
+        )}
+      />
+    );
+  } else {
+    glyph = <AthleteNavAvatarSkeleton className="relative" size="sm" />;
+  }
 
   return (
     <Link
       aria-current={isActive ? 'page' : undefined}
+      aria-label={isAthleteTab ? identity.fullLabel : undefined}
       href={item.href}
       className={cn(
         'pressable relative flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 text-[10px] font-medium',
@@ -56,8 +80,8 @@ function BottomNavLink({
       {isActive && reduce ? (
         <span className="bg-highlight absolute inset-0 rounded-2xl" aria-hidden />
       ) : null}
-      <Icon className="relative size-5 shrink-0" aria-hidden />
-      <span className="relative truncate">{item.label}</span>
+      {glyph}
+      <span className="relative max-w-full truncate">{label}</span>
     </Link>
   );
 }

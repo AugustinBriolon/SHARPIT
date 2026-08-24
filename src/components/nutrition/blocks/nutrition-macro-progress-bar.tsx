@@ -80,14 +80,14 @@ export function MacroProgressBar({
           <div className="bg-muted h-4 w-24 animate-pulse rounded-full" />
         ) : (
           <span className={cn('text-data text-sm font-semibold tabular-nums', colors.text)}>
-            {Math.round(consumed)} / {goal != null ? `${Math.round(goal)} ${unit}` : '—'}
+            {Math.round(consumed)} / {goal != null ? `${Math.round(goal)} ${unit}` : '-'}
           </span>
         )}
       </div>
-      <div className={cn('h-2.5 overflow-hidden rounded-full', colors.track)}>
+      <div className={cn('h-2.5 w-full overflow-hidden rounded-sm', colors.track)}>
         {!loading && goal != null ? (
           <div
-            className={cn('h-full rounded-full transition-[width] duration-300', colors.bar)}
+            className={cn('h-full rounded-sm transition-[width] duration-300', colors.bar)}
             style={{ width: `${width}%` }}
           />
         ) : null}

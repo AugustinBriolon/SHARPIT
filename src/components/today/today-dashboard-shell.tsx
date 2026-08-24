@@ -30,8 +30,10 @@ export function TodayDashboardShell({ trainingDayId }: { trainingDayId?: string 
         <TodaySignalStrip metricsRow={content.hero.metricsRow} loading />
       </div>
       <TodayActionRow trainingDayId={dayId} vm={content} loading />
-      <ActivityConsistencyPanel activities={[]} loading />
-      <TodayNutritionCardSkeleton />
+      <div className="grid items-stretch gap-4 lg:grid-cols-2">
+        <ActivityConsistencyPanel activities={[]} loading />
+        <TodayNutritionCardSkeleton />
+      </div>
     </div>
   );
 }

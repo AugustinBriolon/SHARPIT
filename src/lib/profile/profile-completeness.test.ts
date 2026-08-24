@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { getProfileCompleteness } from './profile-completeness';
 
 describe('getProfileCompleteness', () => {
-  it('points thresholds gap to progression calibration', () => {
+  it('points thresholds gap to settings calibration', () => {
     const result = getProfileCompleteness(null, 'Dispo le soir');
     expect(result.isComplete).toBe(false);
     expect(result.gaps).toHaveLength(1);
     expect(result.gaps[0]).toMatchObject({
       key: 'thresholds',
-      href: '/training/progression?tab=calibration',
+      href: '/settings/calibration',
     });
   });
 

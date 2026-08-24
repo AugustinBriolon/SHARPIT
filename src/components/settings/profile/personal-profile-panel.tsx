@@ -198,7 +198,7 @@ export function PersonalProfilePanel({
       {showLoadWarning ? (
         <p className="text-destructive text-sm" role="alert">
           {loadError ??
-            'Chargement du profil impossible. Les champs vides ne reflètent pas forcément la base — réessaie avant d’enregistrer.'}
+            'Chargement du profil impossible. Les champs vides ne reflètent pas forcément la base: réessaie avant d’enregistrer.'}
         </p>
       ) : null}
       <ProfileFormSection title="Identité & rythme de vie" compact>

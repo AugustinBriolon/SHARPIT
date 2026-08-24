@@ -12,6 +12,8 @@ import {
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useWeeklyCoachingBriefViewModel } from '@/hooks/use-data';
+import { formatTrainingLoad } from '@/lib/preferences/display-mode';
+import { useDisplayMode } from '@/providers/display-mode-provider';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 
@@ -25,6 +27,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export function WeeklyBrief({ onClose }: { onClose: () => void }) {
+  const { mode } = useDisplayMode();
   const weekStart = format(startOfWeek(new Date(), WEEK_OPTS), 'yyyy-MM-dd');
   const { data: vm, isLoading } = useWeeklyCoachingBriefViewModel(weekStart);
   const showSkeleton = isLoading || !vm;
@@ -40,7 +43,7 @@ export function WeeklyBrief({ onClose }: { onClose: () => void }) {
             Bilan hebdo
           </DialogTitle>
           <DialogDescription>
-            {vm ? `${vm.weekStartLabel} — ${vm.weekEndLabel}` : 'Chargement…'}
+            {vm ? `${vm.weekStartLabel} - ${vm.weekEndLabel}` : 'Chargement…'}
           </DialogDescription>
         </DialogHeader>
 
@@ -66,8 +69,10 @@ export function WeeklyBrief({ onClose }: { onClose: () => void }) {
             {vm.planContext && (
               <Section title="Phase et charge cible">
                 <p>
-                  {vm.planContext.phaseLabel} — cible{' '}
-                  <span className="font-mono">{vm.planContext.targetLoad} TSS</span>
+                  {vm.planContext.phaseLabel} · cible{' '}
+                  <span className="font-mono">
+                    {formatTrainingLoad(vm.planContext.targetLoad, mode)}
+                  </span>
                   {vm.planContext.isDeload ? ' (semaine de récupération)' : ''}
                 </p>
                 {vm.planContext.focus && (
@@ -94,9 +99,9 @@ export function WeeklyBrief({ onClose }: { onClose: () => void }) {
             {vm.load && (
               <Section title="Charge planifiée vs. tolérée">
                 <p>
-                  {vm.load.plannedLoad} TSS planifiés
+                  {formatTrainingLoad(vm.load.plannedLoad, mode)} planifiés
                   {vm.load.toleratedCeiling != null
-                    ? ` sur ~${vm.load.toleratedCeiling} TSS tolérés`
+                    ? ` sur ~${formatTrainingLoad(vm.load.toleratedCeiling, mode)} tolérés`
                     : ''}
                 </p>
               </Section>

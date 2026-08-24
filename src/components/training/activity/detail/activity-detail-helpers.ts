@@ -1,6 +1,11 @@
 import type { HeroActivity } from './activity-hero-stats';
 import { SPORT_IDENTITY_SURFACE } from '@/lib/activity/sport-identity';
 import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
+import {
+  formatTrainingLoad,
+  type DisplayMode,
+  type MetricAudience,
+} from '@/lib/preferences/display-mode';
 import { ActivityType } from '@prisma/client';
 import type { LucideIcon } from 'lucide-react';
 import { Bike, Dumbbell, Footprints, Medal, Mountain, Shapes, Waves } from 'lucide-react';
@@ -81,14 +86,17 @@ export function formatActivityDetailMeta(activity: {
   ].join(' · ');
 }
 
-/** Secondary stats under the title — durée · TSS · RPE. */
-export function formatActivityDetailStats(activity: {
-  duration: number | null;
-  load: number | null;
-  rpe: number | null;
-}): string {
+/** Secondary stats under the title — durée · charge/TSS · RPE. */
+export function formatActivityDetailStats(
+  activity: {
+    duration: number | null;
+    load: number | null;
+    rpe: number | null;
+  },
+  mode: DisplayMode = 'essential',
+): string {
   const parts: string[] = [formatDuration(activity.duration)];
-  if (activity.load != null) parts.push(`${Math.round(activity.load)} TSS`);
+  if (activity.load != null) parts.push(formatTrainingLoad(activity.load, mode));
   if (activity.rpe != null) parts.push(`RPE ${activity.rpe}`);
   return parts.join(' · ');
 }
@@ -151,9 +159,13 @@ export function buildStrengthStats(activity: ActivityDetail): ActivityStat[] {
 
 export function buildActivitySpecs(activity: ActivityDetail): ActivitySpec[] {
   const specs: ActivitySpec[] = [];
-  const push = (label: string, value: string | number | null | undefined) => {
+  const push = (
+    label: string,
+    value: string | number | null | undefined,
+    audience: MetricAudience = 'core',
+  ) => {
     if (value === null || value === undefined || value === '') return;
-    specs.push({ label, value });
+    specs.push({ label, value, audience });
   };
 
   if (activity.type === ActivityType.RUN && activity.runMetrics) {
@@ -165,10 +177,10 @@ export function buildActivitySpecs(activity: ActivityDetail): ActivitySpec[] {
 
   if (activity.type === ActivityType.BIKE && activity.bikeMetrics) {
     const m = activity.bikeMetrics;
-    push('FTP %', m.ftpPercent);
-    push('NP', m.normalizedPower != null ? `${Math.round(m.normalizedPower)} W` : null);
-    push('IF', m.intensityFactor != null ? m.intensityFactor.toFixed(2) : null);
-    push('TSS', m.tss != null ? Math.round(m.tss) : null);
+    push('FTP %', m.ftpPercent, 'expert');
+    push('NP', m.normalizedPower != null ? `${Math.round(m.normalizedPower)} W` : null, 'expert');
+    push('IF', m.intensityFactor != null ? m.intensityFactor.toFixed(2) : null, 'expert');
+    push('TSS', m.tss != null ? Math.round(m.tss) : null, 'expert');
     push('Cadence', m.avgCadence != null ? `${m.avgCadence} rpm` : null);
     push('Calories', m.calories);
     push('Vélo', m.bikeName);
@@ -192,6 +204,7 @@ export function buildActivitySpecs(activity: ActivityDetail): ActivitySpec[] {
             '0',
           )}/100m`
         : null,
+      'expert',
     );
     push('SWOLF', m.swolf);
     push('Drills', m.drills);

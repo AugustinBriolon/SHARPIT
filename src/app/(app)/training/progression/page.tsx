@@ -24,7 +24,7 @@ export default async function TrainingProgressionRedirect({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const { tab } = await searchParams;
-  if (tab === 'calibration') redirect('/progress?tab=performance');
+  if (tab === 'calibration') redirect('/settings/calibration');
   if (tab === 'records') redirect('/progress?tab=performance');
   redirect('/training');
 }

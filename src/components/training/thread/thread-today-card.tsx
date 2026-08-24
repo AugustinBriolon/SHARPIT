@@ -11,6 +11,7 @@ import { ThreadEaseDialog } from '@/components/training/thread/thread-ease-dialo
 import { ThreadShiftDialog } from '@/components/training/thread/thread-shift-dialog';
 import { usePlannedSessionActions } from '@/hooks/use-planned-session-actions';
 import { useAppModal } from '@/providers/app-modal-provider';
+import { useDisplayMode } from '@/providers/display-mode-provider';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -47,12 +48,13 @@ export function ThreadTodayCard({
 }) {
   const queryClient = useQueryClient();
   const { openPlannedSession } = useAppModal();
+  const { mode } = useDisplayMode();
   const { ease, reschedule, pending } = usePlannedSessionActions();
   const [shiftOpen, setShiftOpen] = useState(false);
   const [easeOpen, setEaseOpen] = useState(false);
 
   const sessionId = entry.planned?.id ?? null;
-  const meta = entryMeta(entry);
+  const meta = entryMeta(entry, mode);
 
   const open = () => {
     if (sessionId) openPlannedSession({ sessionId });
@@ -62,16 +64,21 @@ export function ThreadTodayCard({
     <>
       <div
         className={cn(
-          'group chip-surface-lg rounded-analysis-lg px-4 py-4 shadow-[0_1px_2px_rgb(0_0_0/0.04)]',
-          sessionId && 'hover:border-primary/25 cursor-pointer transition-colors',
+          'chip-surface-lg rounded-analysis-lg relative px-4 py-4',
+          sessionId && 'hover:border-primary/25 transition-colors',
         )}
-        /* The whole card opens the session. The arrow stays as the labelled control
-          for keyboard and assistive tech — this is a convenience on top of it, not
-         a replacement, so the card itself is not a fake button wrapping real ones. */
-        onClick={sessionId ? open : undefined}
         onPointerEnter={() => sessionId && prefetchPlannedSessionDetail(queryClient, sessionId)}
       >
-        <div className="flex items-start gap-2.5">
+        {sessionId ? (
+          <button
+            aria-label={`Ouvrir ${entry.title}`}
+            className="focus-visible:ring-primary/35 rounded-analysis-lg absolute inset-0 z-0 cursor-pointer focus-visible:ring-2 focus-visible:outline-hidden"
+            type="button"
+            onClick={open}
+          />
+        ) : null}
+
+        <div className="pointer-events-none relative z-[1] flex items-start gap-2.5">
           <SportDot className="mt-2" entry={entry} />
 
           <div className="min-w-0 flex-1">
@@ -85,29 +92,23 @@ export function ThreadTodayCard({
           </div>
 
           {sessionId ? (
-            <button
-              aria-label={`Ouvrir ${entry.title}`}
-              type="button"
-              className={cn(
-                'bg-highlight text-highlight-foreground inline-flex size-9 shrink-0 items-center justify-center rounded-full',
-                'focus-visible:ring-primary/35 transition-transform focus-visible:ring-2 focus-visible:outline-hidden',
-                'group-hover:scale-105',
-              )}
-              onClick={open}
+            <span
+              className="bg-highlight text-highlight-foreground pointer-events-none inline-flex size-9 shrink-0 items-center justify-center rounded-full"
+              aria-hidden
             >
-              <ArrowRight className="size-4" aria-hidden />
-            </button>
+              <ArrowRight className="size-4" />
+            </span>
           ) : null}
         </div>
 
         {instruction ? (
-          <p className="text-foreground/85 mt-3 pl-3 text-[13.5px] leading-relaxed">
+          <p className="text-foreground/85 pointer-events-none relative z-[1] mt-3 pl-3 text-[13.5px] leading-relaxed">
             {instruction}
           </p>
         ) : null}
 
         {sessionId ? (
-          <div className="mt-3.5 flex flex-wrap gap-2" onClick={swallow}>
+          <div className="relative z-10 mt-3.5 flex flex-wrap gap-2" onClick={swallow}>
             {entry.planned ? (
               <>
                 <ActionPill disabled={pending} label="Décaler" onClick={() => setShiftOpen(true)} />

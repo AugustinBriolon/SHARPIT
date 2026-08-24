@@ -67,10 +67,19 @@ export function useConfirmDialog() {
           }}
         >
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => close(false)}>
+            <Button
+              autoFocus={options.variant === 'destructive'}
+              type="button"
+              variant="outline"
+              onClick={() => close(false)}
+            >
               {options.cancelLabel}
             </Button>
-            <Button type="submit" variant={options.variant} autoFocus>
+            <Button
+              autoFocus={options.variant !== 'destructive'}
+              type="submit"
+              variant={options.variant}
+            >
               {options.confirmLabel}
             </Button>
           </DialogFooter>

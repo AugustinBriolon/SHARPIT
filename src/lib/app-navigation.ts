@@ -52,6 +52,8 @@ export const coachNavItem: AppNavItem = {
 
 export const profileNavItem: AppNavItem = {
   href: '/settings',
+  // Registry fallback for a11y / tests — live nav overwrites with the athlete's
+  // first name via `useAthleteNavIdentity()`.
   label: 'Profil',
   icon: CircleUser,
   match: (p) => p.startsWith('/settings'),

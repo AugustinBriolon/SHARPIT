@@ -13,9 +13,13 @@ export const instant = false;
 export default async function BiologyRedirect({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; sport?: string }>;
 }) {
-  const { tab } = await searchParams;
-  if (tab === 'records') redirect('/progress?tab=performance');
+  const { tab, sport } = await searchParams;
+  if (tab === 'records') {
+    const sportQuery =
+      sport === 'run' || sport === 'bike' || sport === 'swim' ? `&sport=${sport}` : '';
+    redirect(`/progress?tab=performance${sportQuery}`);
+  }
   redirect('/progress?tab=body');
 }

@@ -17,6 +17,8 @@ import {
 import { parseEndurancePrescription } from '@/lib/planned-session/endurance/endurance-prescription';
 import { parseStrengthPrescription } from '@/lib/planned-session/strength/strength-prescription';
 import { easeSession } from '@/lib/training/thread/session-adjust';
+import { formatTrainingLoad } from '@/lib/preferences/display-mode';
+import { useDisplayMode } from '@/providers/display-mode-provider';
 
 /**
  * What easing this session would actually cost, before it costs it.
@@ -39,6 +41,7 @@ export function ThreadEaseDialog({
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
 }) {
+  const { mode } = useDisplayMode();
   const proposal = easeSession(session);
 
   /* The déroulé lines that actually move. Listing an unchanged warm-up beside
@@ -57,8 +60,8 @@ export function ThreadEaseDialog({
 
   const durationBefore = session.durationMin != null ? `${session.durationMin} min` : '—';
   const durationAfter = proposal?.durationMin != null ? `${proposal.durationMin} min` : '—';
-  const loadBefore = session.load != null ? `${Math.round(session.load)} TSS` : '—';
-  const loadAfter = proposal?.load != null ? `${Math.round(proposal.load)} TSS` : '—';
+  const loadBefore = session.load != null ? formatTrainingLoad(session.load, mode) : '—';
+  const loadAfter = proposal?.load != null ? formatTrainingLoad(proposal.load, mode) : '—';
 
   const changesDuration =
     proposal?.durationMin != null && proposal.durationMin !== session.durationMin;
@@ -79,7 +82,7 @@ export function ThreadEaseDialog({
           <>
             {/* A real table, because this is tabular data and the meaning was
                 carried by an arrow that assistive tech never sees. Read linearly
-                the old layout said "Durée 35 min Charge 35 TSS Durée 25 min" —
+                the old layout said "Durée 35 min Charge 35 Durée 25 min" —
                 two figures with the same label and nothing to tell them apart. */}
             <table className="w-full border-collapse text-left">
               <thead>

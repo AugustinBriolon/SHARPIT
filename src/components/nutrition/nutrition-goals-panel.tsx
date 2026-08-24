@@ -26,7 +26,7 @@ function CalorieRing({
   const dash = pct * circ;
 
   return (
-    <div className="relative mx-auto" style={{ width: size, height: size }}>
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg className="-rotate-90" height={size} width={size} aria-hidden>
         <circle
           className="stroke-primary/20"
@@ -49,7 +49,7 @@ function CalorieRing({
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center px-3 text-center">
         <p className={cn('text-data text-2xl font-semibold tabular-nums', CALORIE_RING.text)}>
-          {remaining != null ? Math.abs(Math.round(remaining)).toLocaleString('fr-FR') : '—'}
+          {remaining != null ? Math.abs(Math.round(remaining)).toLocaleString('fr-FR') : '-'}
         </p>
         <p className="text-muted-foreground text-[11px] leading-tight">
           {remaining != null && remaining < 0 ? 'kcal au-dessus' : 'kcal restantes'}
@@ -72,11 +72,13 @@ export function NutritionGoalsPanel({
     return (
       <section className="analysis-panel rounded-analysis-lg space-y-4 p-4 sm:p-5">
         <div className="bg-muted h-4 w-40 animate-pulse rounded-full" />
-        <div className="bg-muted mx-auto size-32 animate-pulse rounded-full" />
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-muted h-10 animate-pulse rounded-xl" />
-          ))}
+        <div className="grid gap-5 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
+          <div className="bg-muted size-32 shrink-0 animate-pulse rounded-full" />
+          <div className="min-w-0 space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-muted h-8 animate-pulse rounded-md" />
+            ))}
+          </div>
         </div>
       </section>
     );
@@ -89,9 +91,7 @@ export function NutritionGoalsPanel({
   return (
     <section className="analysis-panel rounded-analysis-lg space-y-5 p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-section-title">Objectifs MyFitnessPal</p>
-        </div>
+        <p className="text-section-title">Objectifs MyFitnessPal</p>
         <div className="text-right">
           <p className="text-data text-sm font-semibold tabular-nums">
             {calories.consumed.toLocaleString('fr-FR')} / {calorieBudget.toLocaleString('fr-FR')}{' '}
@@ -103,39 +103,40 @@ export function NutritionGoalsPanel({
         </div>
       </div>
 
-      <CalorieRing
-        budget={calorieBudget}
-        consumed={calories.consumed}
-        remaining={calories.remaining}
-      />
-
-      <div className="space-y-4 border-t pt-4">
-        <MacroProgressBar
-          consumed={protein.consumed}
-          densityGPerKg={fuelDensity?.proteinGPerKg}
-          goal={protein.goal}
-          kind="protein"
-          pct={protein.pct}
-          remaining={protein.remaining}
-          unit="g"
+      <div className="grid gap-5 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center sm:gap-8">
+        <CalorieRing
+          budget={calorieBudget}
+          consumed={calories.consumed}
+          remaining={calories.remaining}
         />
-        <MacroProgressBar
-          consumed={carbohydrates.consumed}
-          densityGPerKg={fuelDensity?.carbohydratesGPerKg}
-          goal={carbohydrates.goal}
-          kind="carbs"
-          pct={carbohydrates.pct}
-          remaining={carbohydrates.remaining}
-          unit="g"
-        />
-        <MacroProgressBar
-          consumed={fat.consumed}
-          goal={fat.goal}
-          kind="fat"
-          pct={fat.pct}
-          remaining={fat.remaining}
-          unit="g"
-        />
+        <div className="min-w-0 space-y-3">
+          <MacroProgressBar
+            consumed={protein.consumed}
+            densityGPerKg={fuelDensity?.proteinGPerKg}
+            goal={protein.goal}
+            kind="protein"
+            pct={protein.pct}
+            remaining={protein.remaining}
+            unit="g"
+          />
+          <MacroProgressBar
+            consumed={carbohydrates.consumed}
+            densityGPerKg={fuelDensity?.carbohydratesGPerKg}
+            goal={carbohydrates.goal}
+            kind="carbs"
+            pct={carbohydrates.pct}
+            remaining={carbohydrates.remaining}
+            unit="g"
+          />
+          <MacroProgressBar
+            consumed={fat.consumed}
+            goal={fat.goal}
+            kind="fat"
+            pct={fat.pct}
+            remaining={fat.remaining}
+            unit="g"
+          />
+        </div>
       </div>
 
       {fuelDensity ? (

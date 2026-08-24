@@ -1,7 +1,11 @@
+'use client';
+
 import { formatDate, formatDistance, formatDuration } from '@/lib/format';
 import type { HikeOvernightSummary } from '@/lib/activity/hike/hike-overnight-summary';
 import { SPORT_IDENTITY_PANEL } from '@/lib/activity/sport-identity';
+import { formatTrainingLoad } from '@/lib/preferences/display-mode';
 import { ActivityType } from '@prisma/client';
+import { useDisplayMode } from '@/providers/display-mode-provider';
 import { cn } from '@/lib/utils';
 
 function formatRange(start: Date, end: Date): string {
@@ -16,6 +20,7 @@ function formatRange(start: Date, end: Date): string {
 }
 
 export function ActivityHikeOvernightPanel({ summary }: { summary: HikeOvernightSummary }) {
+  const { mode } = useDisplayMode();
   // Day hikes already surface metrics in hero + specs — panel is overnight-only.
   if (summary.variant !== 'overnight') return null;
 
@@ -35,8 +40,9 @@ export function ActivityHikeOvernightPanel({ summary }: { summary: HikeOvernight
   }
   if (summary.locationLabel) rows.push({ label: 'Lieu', value: summary.locationLabel });
   if (summary.weather) rows.push({ label: 'Météo', value: summary.weather });
-  if (summary.load != null)
-    rows.push({ label: 'Charge', value: `${Math.round(summary.load)} TSS` });
+  if (summary.load != null) {
+    rows.push({ label: 'Charge', value: formatTrainingLoad(summary.load, mode) });
+  }
   const endLabel =
     summary.endPoint != null
       ? `${summary.endPoint.lat.toFixed(4)}, ${summary.endPoint.lng.toFixed(4)}`

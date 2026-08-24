@@ -17,8 +17,7 @@ import {
   NotebookText,
   PenLine,
   Plus,
-  Sparkles,
-  Wand2,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 export type SessionsCoachAction = 'plan' | 'manual' | 'generate' | 'adapt' | 'macro' | 'week-brief';
@@ -33,7 +32,7 @@ export function SessionsCoachMenu({
       <DropdownMenuTrigger
         render={
           <Button className="shrink-0 gap-1.5 font-semibold" size="default" variant="default">
-            <Sparkles className="size-4" />
+            <NotebookText className="size-4" />
             <span className="hidden lg:inline">Coach</span>
             <ChevronDown className="size-3.5 opacity-70 transition-transform duration-150 ease-out group-aria-expanded/button:rotate-180" />
           </Button>
@@ -97,7 +96,7 @@ export function SessionsCoachMenu({
             className="cursor-pointer gap-2.5 py-2"
             onClick={() => onAction('adapt')}
           >
-            <Wand2 className="text-foreground/70 size-4" />
+            <SlidersHorizontal className="text-foreground/70 size-4" />
             <div className="min-w-0">
               <p className="font-medium">Ajuster l&apos;existant</p>
               <p className="text-muted-foreground text-xs">Modifier ce qui est déjà planifié</p>

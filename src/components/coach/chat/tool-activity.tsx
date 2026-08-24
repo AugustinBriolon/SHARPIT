@@ -295,7 +295,7 @@ export function ToolActivity({
     );
     const isDelete = part.type === 'tool-deletePlannedSession';
     return (
-      <div className="border-analysis-border bg-background rounded-analysis overflow-hidden border transition-all duration-200">
+      <div className="border-analysis-border bg-background rounded-analysis overflow-hidden border transition-[color,background-color,border-color] duration-200">
         <div className="space-y-2 px-3 pt-3 pb-2">
           <div className="flex items-center gap-2">
             <span className="bg-primary/10 text-primary inline-flex size-6 items-center justify-center rounded-full">

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildActivityConsistencyStats,
   computeWeeklyActivityStreak,
+  programWeekBarPct,
 } from '@/lib/activity/list/activity-consistency';
 
 const ref = new Date('2026-07-06T12:00:00');
@@ -70,6 +71,38 @@ describe('buildActivityConsistencyStats', () => {
     );
 
     expect(stats.trailingYearActivityCount).toBe(3);
+  });
+
+  it('keeps an 8-week strip while heldWeeks reports the full weekly streak', () => {
+    const stats = buildActivityConsistencyStats(
+      [
+        { date: new Date('2026-07-06'), load: 40 },
+        { date: new Date('2026-06-30'), load: 30 },
+        { date: new Date('2026-06-16'), load: 20 },
+      ],
+      ref,
+    );
+
+    expect(stats.thisWeekSessionCount).toBe(1);
+    expect(stats.programWeeks).toHaveLength(8);
+    expect(stats.programWeeks.at(-1)?.isCurrent).toBe(true);
+    expect(stats.currentStreak).toBe(2);
+    expect(stats.heldWeeks).toBe(2);
+  });
+});
+
+describe('programWeekBarPct', () => {
+  it('keeps 4 sessions shorter than 7 in the same window', () => {
+    expect(programWeekBarPct(4, 7)).toBe(57);
+    expect(programWeekBarPct(7, 7)).toBe(100);
+  });
+
+  it('does not fill the strip when the busiest week is only 4 sessions', () => {
+    expect(programWeekBarPct(4, 4)).toBe(57);
+  });
+
+  it('leaves an empty week as a stub, not a missing column', () => {
+    expect(programWeekBarPct(0, 7)).toBe(10);
   });
 });
 

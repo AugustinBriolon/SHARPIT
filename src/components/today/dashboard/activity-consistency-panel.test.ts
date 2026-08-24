@@ -13,7 +13,7 @@ describe('ActivityConsistencyPanel', () => {
     vi.useRealTimers();
   });
 
-  it('leads with the streak as a reading, not as a sentence', () => {
+  it('puts the 8-week strip under the readings, full width, no fil caption', () => {
     const html = renderToStaticMarkup(
       createElement(ActivityConsistencyPanel, {
         activities: [
@@ -23,48 +23,28 @@ describe('ActivityConsistencyPanel', () => {
       }),
     );
 
-    expect(html).toContain('semaines');
-    expect(html).toContain('de suite, celle-ci comprise');
-    // Sized and faced like every other instrument in the app.
+    expect(html).toContain('faites cette semaine');
+    expect(html).toContain('semaines tenues');
+    expect(html).toContain('de suite');
+    expect(html).toContain('flex-col gap-3');
+    expect(html).toContain('flex-1');
+    expect(html).toContain('rounded-[3px]');
+    expect(html).not.toContain('fil tenu depuis');
+    expect(html).not.toContain('sur 8 semaines');
     expect(html).toContain('text-data');
     expect(html).toContain('text-2xl');
+    expect(html).toContain('Semaine du');
   });
 
-  it('states the density beside it', () => {
-    const html = renderToStaticMarkup(
-      createElement(ActivityConsistencyPanel, {
-        activities: [{ date: new Date('2026-07-28T07:00:00Z'), load: 55 }],
-      }),
-    );
-
-    expect(html).toContain('jours');
-    expect(html).toContain('séances enregistrées');
-  });
-
-  it('renders desktop hover details for in-range cells', () => {
-    const html = renderToStaticMarkup(
-      createElement(ActivityConsistencyPanel, {
-        activities: [{ date: new Date('2026-07-28T07:00:00Z'), load: 55 }],
-      }),
-    );
-
-    expect(html).toContain('mardi 28 juillet 2026');
-    expect(html).toContain('1 séance');
-    expect(html).toContain('55 TSS');
-    expect(html).toContain('group-hover/cell:opacity-100');
-    expect(html).toContain('lg:block');
-  });
-
-  it('marks the current week column visually even if still open', () => {
+  it('keeps an open week readable when today is still empty', () => {
     const html = renderToStaticMarkup(
       createElement(ActivityConsistencyPanel, {
         activities: [{ date: new Date('2026-07-21T07:00:00Z'), load: 40 }],
       }),
     );
 
-    expect(html).toContain('de suite, celle-ci encore ouverte');
-    expect(html).toContain('ring-analysis-border');
-    expect(html).toContain('right-0');
-    expect(html).toContain('top-[calc(100%+0.45rem)]');
+    expect(html).toContain('cette semaine encore ouverte');
+    expect(html).toContain('celle-ci encore ouverte');
+    expect(html).not.toContain('fil tenu depuis');
   });
 });

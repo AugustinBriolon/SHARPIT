@@ -19,9 +19,9 @@ const REMARK_PLUGINS = [remarkGfm, remarkSoftBreaks];
  */
 const markdownComponents: Components = {
   h1: ({ children }) => (
-    <h1 className="font-heading text-foreground text-base font-semibold tracking-[-0.015em]">
+    <p className="font-heading text-foreground markdown-h1 text-base font-semibold tracking-[-0.015em]">
       {children}
-    </h1>
+    </p>
   ),
   h2: ({ children }) => (
     <h2 className="font-heading text-foreground text-[0.9375rem] font-semibold tracking-[-0.01em]">
@@ -117,12 +117,12 @@ const markdownComponents: Components = {
 const RHYTHM = {
   default: cn(
     '[&>*]:mt-3',
-    '[&>h1]:mt-5 [&>h2]:mt-5 [&>h3]:mt-4 [&>h4]:mt-4 [&>h5]:mt-4 [&>h6]:mt-4',
+    '[&>h1]:mt-5 [&>.markdown-h1]:mt-5 [&>h2]:mt-5 [&>h3]:mt-4 [&>h4]:mt-4 [&>h5]:mt-4 [&>h6]:mt-4',
     '[&>hr]:my-4',
   ),
   compact: cn(
     '[&>*]:mt-2',
-    '[&>h1]:mt-3.5 [&>h2]:mt-3.5 [&>h3]:mt-3 [&>h4]:mt-3 [&>h5]:mt-3 [&>h6]:mt-3',
+    '[&>h1]:mt-3.5 [&>.markdown-h1]:mt-3.5 [&>h2]:mt-3.5 [&>h3]:mt-3 [&>h4]:mt-3 [&>h5]:mt-3 [&>h6]:mt-3',
     '[&>hr]:my-3',
   ),
 } as const;

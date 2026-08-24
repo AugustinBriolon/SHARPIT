@@ -9,7 +9,9 @@ import { resolvePlannedSessionDisplay } from '@/lib/planned-session/display/plan
 import { forecastBadgeFromContext } from '@/lib/planned-session/forecast/forecast-badge';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import type { ClientPlannedSession } from '@/lib/query/types';
+import { formatTrainingLoad } from '@/lib/preferences/display-mode';
 import { useAppModal } from '@/providers/app-modal-provider';
+import { useDisplayMode } from '@/providers/display-mode-provider';
 import { cn } from '@/lib/utils';
 
 /**
@@ -26,6 +28,7 @@ import { cn } from '@/lib/utils';
 export function TrainingNextSession({ session }: { session: ClientPlannedSession | null }) {
   const queryClient = useQueryClient();
   const { openPlannedSession } = useAppModal();
+  const { mode } = useDisplayMode();
 
   if (!session) {
     return (
@@ -48,7 +51,7 @@ export function TrainingNextSession({ session }: { session: ClientPlannedSession
     session.durationMin ? `${session.durationMin} min` : null,
     dateStr,
     intensityLabel,
-    session.load != null ? `${Math.round(session.load)} TSS` : null,
+    session.load != null ? formatTrainingLoad(session.load, mode) : null,
   ].filter((part): part is string => Boolean(part));
 
   return (

@@ -32,26 +32,12 @@ import { useIsMobile } from '@/hooks/use-viewport';
 import { useProjectedAthleteViewModel } from '@/hooks/use-projected-athlete-view-model';
 import type { ProjectionHorizonDays } from '@/core/projection/types';
 import {
-  buildActivityDiscussPrompt,
-  buildGoalDiscussPrompt,
-  buildPhysicalConditionDiscussPrompt,
-  buildPlanningDiscussPrompt,
-  buildPlannedSessionDiscussPrompt,
-  buildRecordDiscussPrompt,
-  buildSessionDiscussPrompt,
-  buildTodayDiscussPrompt,
-} from '@/lib/coach/chat/coach-discuss-prompts';
-import {
   describeCoachDiscussContext,
   type CoachDiscussContext,
 } from '@/lib/coach/chat/coach-discuss-context';
 import { clearCoachInputDraft } from '@/lib/coach/chat/coach-input-draft';
 import { warmCoachContext } from '@/lib/coach/warm-coach-context';
 import { createClientId } from '@/lib/client-id';
-import { activityTypeLabels } from '@/lib/format';
-import { exposureLabels } from '@/lib/planned-session/sessions';
-import { parseSessionAnalysis } from '@/lib/planned-session/display/session-analysis-display';
-import type { SessionAnalysis } from '@/lib/validators/coach';
 import type { RecordCategory } from '@/lib/training/records';
 
 const inFlightDiscussBootstraps = new Set<string>();
@@ -122,12 +108,10 @@ export function CoachView() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [ephemeralIds, setEphemeralIds] = useState<Set<string>>(() => new Set());
   const [autoReplyId, setAutoReplyId] = useState<string | null>(null);
-  /** One-shot discuss bootstrap text — latched during render, not via effect→setState. */
-  const latchedBootstrapPromptRef = useRef<string | undefined>(undefined);
-  /** Latched with the prompt: the URL params are stripped once the thread exists. */
+  /** Latched discuss context — URL params are stripped once the thread exists. */
   const latchedContextRef = useRef<CoachDiscussContext | null>(null);
-  const [, setBootstrapLatchEpoch] = useState(0);
-  /** Once the discuss prompt is latched, ignore URL params (avoids re-prefill loops). */
+  const [, setContextLatchEpoch] = useState(0);
+  /** Once the discuss context is latched, ignore URL params (avoids re-attach loops). */
   const discussPromptConsumed = useRef(false);
   const initialized = useRef(false);
   const { confirm, dialog } = useConfirmDialog();
@@ -157,27 +141,20 @@ export function CoachView() {
 
   const discussBootstrapped = useRef(false);
 
-  function clearLatchedBootstrapPrompt() {
-    if (latchedBootstrapPromptRef.current === undefined) return;
-    latchedBootstrapPromptRef.current = undefined;
-    setBootstrapLatchEpoch((n) => n + 1);
-  }
-
   /**
-   * Dropping the attachment is the athlete's choice, not a consequence of the
-   * prompt having been written into the composer — the two are cleared apart.
+   * Dropping the attachment is the athlete's choice — context stays until they
+   * clear the chip, independent of whatever they type in the composer.
    */
   function detachLatchedContext() {
     if (latchedContextRef.current === null) return;
     latchedContextRef.current = null;
-    setBootstrapLatchEpoch((n) => n + 1);
+    setContextLatchEpoch((n) => n + 1);
   }
 
   function openNewConversation() {
     const id = createEphemeralId();
     setEphemeralIds((prev) => new Set(prev).add(id));
     setActiveId(id);
-    clearLatchedBootstrapPrompt();
     detachLatchedContext();
     discussPromptConsumed.current = false;
     return id;
@@ -201,141 +178,22 @@ export function CoachView() {
       });
   }
 
-  const bootstrapPrompt = useMemo(() => {
-    if (discussPromptConsumed.current) return undefined;
-
-    if (discussToday) {
-      const vm = todayQuery.data;
-      if (!vm) return undefined;
-      return buildTodayDiscussPrompt({
-        verdictLabel: vm.hero.headline,
-        phaseQuestion: vm.hero.eyebrow,
-        limitingFactor: vm.hero.twinTrustStrip.limitingCauseText,
-        confidenceLabel: vm.hero.twinTrustStrip.confidenceLabel,
-        sessionTitle: vm.hero.actionLine,
-      });
-    }
-
-    if (discussGoalId) {
-      const goal = (goalsQuery.data ?? []).find((g) => g.id === discussGoalId);
-      if (!goal) return undefined;
-      const targetDate = goal.targetDate ? new Date(goal.targetDate) : null;
-      const daysRemaining = targetDate
-        ? Math.ceil((targetDate.getTime() - Date.now()) / 86_400_000)
-        : null;
-      return buildGoalDiscussPrompt({
-        title: goal.title,
-        targetDate,
-        daysRemaining: daysRemaining != null && daysRemaining >= 0 ? daysRemaining : null,
-        targetPerformance: goal.targetPerformance,
-        currentValue: goal.currentValue,
-        targetValue: goal.targetValue,
-        unit: goal.unit,
-      });
-    }
-
+  const discussDataReady = useMemo(() => {
+    if (!hasDiscussIntent || discussPromptConsumed.current) return false;
+    if (discussToday) return todayQuery.data != null;
+    if (discussGoalId) return (goalsQuery.data ?? []).some((g) => g.id === discussGoalId);
     if (discussConditionId) {
-      const note = (physicalNotesQuery.data ?? []).find((n) => n.id === discussConditionId);
-      if (!note) return undefined;
-      return buildPhysicalConditionDiscussPrompt({
-        title: note.title,
-        bodyPart: note.bodyPart,
-        severity: note.severity,
-        startedOn: note.startDate ? new Date(note.startDate) : null,
-        affectsTraining: note.affectsTraining,
-        description: note.description,
-      });
+      return (physicalNotesQuery.data ?? []).some((n) => n.id === discussConditionId);
     }
-
-    if (discussRecordKey) {
-      const found = findRecordCategory(recordsQuery.data, discussRecordKey);
-      if (!found) return undefined;
-      const best = found.category.entries[0] ?? null;
-      return buildRecordDiscussPrompt({
-        categoryLabel: found.category.label,
-        sportLabel: found.sportLabel,
-        bestLabel: best?.displayValue ?? null,
-        achievedOn: best?.date ? new Date(best.date) : null,
-      });
+    if (discussRecordKey) return findRecordCategory(recordsQuery.data, discussRecordKey) != null;
+    if (discussPlanningHorizon) return projectionQuery.data?.visible === true;
+    if (discussId) return (plannedQuery.data ?? []).some((s) => s.id === discussId);
+    if (discussActivityId) {
+      return (activitiesQuery.data ?? []).some((a) => a.id === discussActivityId);
     }
-
-    if (discussPlanningHorizon) {
-      const projection = projectionQuery.data;
-      if (!projection?.visible) return undefined;
-      return buildPlanningDiscussPrompt({
-        synthesisSentence: projection.synthesisSentence,
-        horizonDays: discussPlanningHorizon,
-        caution: projection.caution,
-      });
-    }
-
-    if (discussId) {
-      const session = (plannedQuery.data ?? []).find((s) => s.id === discussId);
-      if (!session) return undefined;
-
-      if (session.analysis) {
-        return buildSessionDiscussPrompt({
-          title: session.title,
-          sportLabel: activityTypeLabels[session.type],
-          analysis: session.analysis as unknown as SessionAnalysis,
-          planned: {
-            durationMin: session.durationMin,
-            description: session.description,
-            intensity: session.intensity,
-          },
-          actual: session.activity
-            ? {
-                title: session.activity.title,
-                durationSec: session.activity.duration,
-                notes: session.activity.notes,
-              }
-            : undefined,
-        });
-      }
-
-      const exposure = session.exposureSetting as
-        'INDOOR' | 'OUTDOOR' | 'UNKNOWN' | null | undefined;
-
-      return buildPlannedSessionDiscussPrompt({
-        title: session.title,
-        sportLabel: activityTypeLabels[session.type],
-        date: new Date(session.date),
-        startTime: session.startTime,
-        durationMin: session.durationMin,
-        load: session.load,
-        intensity: session.intensity,
-        description: session.description,
-        exposureLabel: exposure ? exposureLabels[exposure] : null,
-        locationLabel: session.locationLabel,
-      });
-    }
-
-    if (!discussActivityId) return undefined;
-    const activity = (activitiesQuery.data ?? []).find((a) => a.id === discussActivityId);
-    if (!activity) return undefined;
-
-    const planned = activity.plannedSession;
-    const analysis = planned ? parseSessionAnalysis(planned.analysis) : null;
-
-    return buildActivityDiscussPrompt({
-      title: activity.title,
-      sportLabel: activityTypeLabels[activity.type],
-      date: activity.date,
-      durationSec: activity.duration,
-      load: activity.load,
-      rpe: activity.rpe,
-      notes: activity.notes,
-      analysis,
-      planned: planned
-        ? {
-            title: planned.title,
-            durationMin: planned.durationMin,
-            description: planned.description,
-            intensity: planned.intensity,
-          }
-        : undefined,
-    });
+    return false;
   }, [
+    hasDiscussIntent,
     discussPlanningHorizon,
     projectionQuery.data,
     discussId,
@@ -408,13 +266,11 @@ export function CoachView() {
     activitiesQuery.data,
   ]);
 
-  // Latch the first non-empty discuss prompt during render (one-shot).
-  if (bootstrapPrompt && !discussPromptConsumed.current) {
+  // Latch discuss context during render once the target data is ready (one-shot).
+  if (discussDataReady && discussContext && !discussPromptConsumed.current) {
     discussPromptConsumed.current = true;
-    latchedBootstrapPromptRef.current = bootstrapPrompt;
     latchedContextRef.current = discussContext;
   }
-  const latchedBootstrapPrompt = latchedBootstrapPromptRef.current;
   const latchedContext = latchedContextRef.current;
 
   useEffect(() => {
@@ -527,7 +383,6 @@ export function CoachView() {
       const nextId = createEphemeralId();
       setEphemeralIds((prev) => new Set(prev).add(nextId));
       setActiveId(nextId);
-      clearLatchedBootstrapPrompt();
       discussPromptConsumed.current = false;
     }
   }
@@ -558,13 +413,11 @@ export function CoachView() {
           key={selectedId}
           attachedContext={latchedContext}
           autoReply={autoReplyId === selectedId}
-          bootstrapPrompt={latchedBootstrapPrompt}
           conversationId={selectedId}
           header={header}
           initialMessages={resolveChatInitialMessages()}
           isEphemeral={isEphemeral}
           onAutoReplyStarted={() => setAutoReplyId(null)}
-          onBootstrapApplied={() => clearLatchedBootstrapPrompt()}
           onDetachContext={() => detachLatchedContext()}
           onConversationCreated={(id) => {
             setEphemeralIds((prev) => {
@@ -579,7 +432,13 @@ export function CoachView() {
       );
     }
 
-    return <CoachChatPanelSkeleton header={header} />;
+    return (
+      <CoachChatPanelSkeleton
+        attachedContext={latchedContext}
+        contextPending={hasDiscussIntent && !latchedContext}
+        header={header}
+      />
+    );
   }
 
   const conversationListEl = (
@@ -607,7 +466,7 @@ export function CoachView() {
           variant="highlight"
           onClick={openNewConversation}
         >
-          <MessageSquarePlus className="size-4.5" />
+          <MessageSquarePlus className="size-4.5" aria-hidden />
         </Button>
       </div>
       {conversationListEl}

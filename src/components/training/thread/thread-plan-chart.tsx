@@ -1,6 +1,8 @@
 'use client';
 
 import type { ThreadAdherence, ThreadWeek } from '@/lib/training/thread/thread-model';
+import { formatTrainingLoad } from '@/lib/preferences/display-mode';
+import { useDisplayMode } from '@/providers/display-mode-provider';
 import { cn } from '@/lib/utils';
 
 /**
@@ -8,7 +10,7 @@ import { cn } from '@/lib/utils';
  *
  * The outline is what was asked, the fill is what happened, and they share a
  * baseline so the gap between them is the reading — no axis, no tooltip, because
- * the question is "am I drifting" and a precise TSS answers a different one.
+ * the question is "am I drifting" and a precise load figure answers a different one.
  */
 export function ThreadPlanChart({
   weeks,
@@ -17,6 +19,7 @@ export function ThreadPlanChart({
   weeks: readonly ThreadWeek[];
   adherence: ThreadAdherence;
 }) {
+  const { mode } = useDisplayMode();
   const window = weeks.slice(-8);
   if (window.length === 0) return null;
 
@@ -55,8 +58,12 @@ export function ThreadPlanChart({
         {window.map((week) => (
           <li key={week.weekKey}>
             {week.label} ·{' '}
-            {week.plannedLoad > 0 ? `prévu ${week.plannedLoad} TSS · ` : 'aucune charge prévue · '}
-            {week.doneLoadKnown ? `réalisé ${week.doneLoad} TSS` : 'charge réalisée non mesurée'}
+            {week.plannedLoad > 0
+              ? `prévu ${formatTrainingLoad(week.plannedLoad, mode)} · `
+              : 'aucune charge prévue · '}
+            {week.doneLoadKnown
+              ? `réalisé ${formatTrainingLoad(week.doneLoad, mode)}`
+              : 'charge réalisée non mesurée'}
           </li>
         ))}
       </ul>

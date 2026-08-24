@@ -150,7 +150,7 @@ export function TrainingThreadView() {
               href="/training/manual"
               className={cn(
                 'bg-highlight text-highlight-foreground inline-flex min-h-9 shrink-0 items-center gap-1.5',
-                'rounded-full px-3.5 text-xs font-medium transition-transform hover:scale-[1.02]',
+                'rounded-full px-3.5 text-xs font-medium',
                 'focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
               )}
             >

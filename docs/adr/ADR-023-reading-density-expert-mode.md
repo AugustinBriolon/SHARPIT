@@ -43,9 +43,11 @@ The alternative — marking each metric's audience inside the ViewModel and lett
 The line is not "advanced" versus "basic", and it is not about precision. A metric belongs to the expert reading when **understanding its name is a prerequisite to reading its value**:
 
 - Expert: NP, IF, VI, TSS, efficiency factor, decoupling, pace variability, HR/power zone distributions, the power curve, ACWR, TSB, CTL/ATL and the PMC chart, threshold calibration (FTP, LTHR, CSS).
-- Essential: distance, duration, elevation, splits, heart rate and pace curves, personal records, body composition, sleep, the narrative and every coach-written sentence.
+- Essential: distance, duration, elevation, splits, heart rate and pace curves, personal records, body composition, sleep, the narrative and every coach-written sentence. Training load may still appear as a plain figure labelled « charge » — never as the TSS acronym.
 
-Splits and stream charts stay in the essential reading on purpose: a kilometre time and a heart-rate curve are read without training literacy. Records stay because a personal best is self-explanatory. `/settings/calibration` stays reachable in both readings — the thresholds still drive what the engines compute, so they must remain editable even when the metrics they scale are hidden.
+Splits and stream charts stay in the essential reading on purpose: a kilometre time and a heart-rate curve are read without training literacy. Records stay because a personal best is self-explanatory.
+
+**Calibration is Expert-only.** A threshold is the yardstick the technical metrics are read against; it means nothing to an athlete who was never shown those metrics. The Progression → Performance calibration panel is wrapped in `<ExpertOnly>`. `/settings/calibration` redirects there. Engines still use whatever thresholds are stored — Essential athletes simply do not edit them until they opt into Expert.
 
 ---
 

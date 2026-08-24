@@ -15,17 +15,43 @@ describe('activity detail header helpers', () => {
     expect(meta).toContain('GARMIN');
   });
 
-  it('formats stats as duration · TSS · RPE when present', () => {
+  it('formats stats as duration · charge · RPE on the essential reading', () => {
+    expect(
+      formatActivityDetailStats(
+        {
+          duration: 2712,
+          load: 32.4,
+          rpe: 3,
+        },
+        'essential',
+      ),
+    ).toBe('45 min · charge 32 · RPE 3');
+  });
+
+  it('formats stats as duration · TSS · RPE on the expert reading', () => {
+    expect(
+      formatActivityDetailStats(
+        {
+          duration: 2712,
+          load: 32.4,
+          rpe: 3,
+        },
+        'expert',
+      ),
+    ).toBe('45 min · 32 TSS · RPE 3');
+  });
+
+  it('defaults to essential when mode is omitted', () => {
     expect(
       formatActivityDetailStats({
         duration: 2712,
         load: 32.4,
         rpe: 3,
       }),
-    ).toBe('45 min · 32 TSS · RPE 3');
+    ).toBe('45 min · charge 32 · RPE 3');
   });
 
-  it('omits TSS and RPE when missing', () => {
+  it('omits load and RPE when missing', () => {
     expect(
       formatActivityDetailStats({
         duration: 1800,

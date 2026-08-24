@@ -1,4 +1,8 @@
+'use client';
+
 import { cn } from '@/lib/utils';
+import { filterByAudience } from '@/lib/preferences/display-mode';
+import { useDisplayMode } from '@/providers/display-mode-provider';
 import type { ActivityDetail, ActivitySpec } from './types';
 
 export function ActivitySpecsNotes({
@@ -8,15 +12,18 @@ export function ActivitySpecsNotes({
   activity: ActivityDetail;
   specs: ActivitySpec[];
 }) {
-  if (specs.length === 0 && !activity.notes) return null;
+  const { mode } = useDisplayMode();
+  const visibleSpecs = filterByAudience(specs, mode);
+
+  if (visibleSpecs.length === 0 && !activity.notes) return null;
 
   return (
     <section className="grid gap-4 lg:grid-cols-3">
-      {specs.length > 0 && (
+      {visibleSpecs.length > 0 && (
         <div className={cn(activity.notes ? 'lg:col-span-2' : 'lg:col-span-3')}>
           <p className="text-label px-0.5">Caractéristiques</p>
           <div className="mt-2 grid gap-x-8 gap-y-1 text-sm sm:grid-cols-2">
-            {specs.map((row) => (
+            {visibleSpecs.map((row) => (
               <div
                 key={row.label}
                 className="border-analysis-border/40 flex justify-between gap-4 border-b py-2 last:border-0 sm:nth-last-2:border-0"
@@ -32,7 +39,7 @@ export function ActivitySpecsNotes({
         <div
           className={cn(
             'analysis-panel-alt rounded-analysis-lg px-5 py-5',
-            specs.length === 0 && 'lg:col-span-3',
+            visibleSpecs.length === 0 && 'lg:col-span-3',
           )}
         >
           <p className="text-label">Notes</p>

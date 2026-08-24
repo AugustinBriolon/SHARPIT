@@ -38,8 +38,10 @@ import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-c
 import { Brain, ClipboardList, MapPin, Pencil, Watch } from 'lucide-react';
 import { EnduranceStepList } from '@/components/planning/session/read/endurance-step-list';
 import { dayLabelFromDayKey } from '@/lib/date/day-key';
+import { formatTrainingLoad } from '@/lib/preferences/display-mode';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { cn } from '@/lib/utils';
+import { useDisplayMode } from '@/providers/display-mode-provider';
 import { ActivityType } from '@prisma/client';
 
 type KeyChip = { label: string; value: string; valueClassName?: string };
@@ -63,13 +65,14 @@ function KeyChipsRow({ chips }: { chips: KeyChip[] }) {
 
 /** Compact planned → done facts for realized sessions. */
 function PlannedVsDoneStrip({ session }: { session: ClientPlannedSession }) {
+  const { mode } = useDisplayMode();
   const { activity } = session;
   if (!activity) return null;
 
   const plannedDuration = session.durationMin != null ? `${session.durationMin} min` : '—';
   const doneDuration = activity.duration != null ? formatDuration(activity.duration) : '—';
-  const plannedLoad = session.load != null ? `${Math.round(session.load)} TSS` : '—';
-  const doneLoad = activity.load != null ? `${Math.round(activity.load)} TSS` : '—';
+  const plannedLoad = session.load != null ? formatTrainingLoad(session.load, mode) : '—';
+  const doneLoad = activity.load != null ? formatTrainingLoad(activity.load, mode) : '—';
   const plannedIntensity = session.intensity ? intensityLabels[session.intensity] : '—';
   let doneFeeling = '—';
   if (activity.rpe != null) doneFeeling = `RPE ${activity.rpe}`;
@@ -127,6 +130,7 @@ export function PlannedSessionReadView({
   omitLinkedActivityNavigation?: boolean;
   morningProposal?: MorningProposalCompareInput;
 }) {
+  const { mode } = useDisplayMode();
   const { pushing, watchPush, alreadyOnWatch, sendToWatch } = useGarminWorkoutPush(session);
   const watchStaleness = useGarminPushStaleness({
     type: session.type,
@@ -172,7 +176,7 @@ export function PlannedSessionReadView({
     { label: 'Durée', value: session.durationMin ? `${session.durationMin} min` : '—' },
     {
       label: 'Charge',
-      value: session.load ? `${Math.round(session.load)} TSS` : '—',
+      value: session.load ? formatTrainingLoad(session.load, mode) : '—',
       valueClassName: 'text-primary',
     },
     { label: 'Intensité', value: session.intensity ? intensityLabels[session.intensity] : '—' },

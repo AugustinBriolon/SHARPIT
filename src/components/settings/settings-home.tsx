@@ -20,6 +20,7 @@ import {
   SettingsExpertModeStatus,
 } from '@/components/settings/settings-appearance-status';
 import { SettingsHomeExtras } from '@/components/settings/settings-home-extras';
+import { SettingsSignOut } from '@/components/settings/settings-sign-out';
 import type { SettingsHubStatus } from '@/lib/settings/hub-status';
 import { cn } from '@/lib/utils';
 
@@ -43,7 +44,7 @@ const GROUPS: SettingsGroup[] = [
   {
     id: 'athlete',
     title: 'Athlète',
-    blurb: 'Identité, matériel et cap de course — ce que le Twin sait de toi.',
+    blurb: 'Identité, matériel et cap de course: ce que le Twin sait de toi.',
     entries: [
       {
         href: '/settings/account',
@@ -65,14 +66,14 @@ const GROUPS: SettingsGroup[] = [
         // look for them, and a pointer costs less than a hunt.
         href: '/progress?tab=goals',
         title: 'Objectifs',
-        description: 'Courses cibles et objectifs chiffrés — dans Progression.',
+        description: 'Courses cibles et objectifs chiffrés, dans Progression.',
         icon: Goal,
         statusKey: 'goals',
       },
       {
-        href: '/progress?tab=performance',
+        href: '/settings/calibration',
         title: 'Seuils & repères',
-        description: 'FTP, allure seuil, FC max — dans Progression.',
+        description: 'FTP, allure seuil, FC max et historique des seuils.',
         icon: SlidersHorizontal,
       },
     ],
@@ -113,7 +114,7 @@ const GROUPS: SettingsGroup[] = [
       {
         href: '/settings/appearance/expert-mode',
         title: 'Mode Expert',
-        description: 'Densité de lecture — révèle ou masque la couche technique.',
+        description: 'Densité de lecture: révèle ou masque la couche technique.',
         icon: Microscope,
         statusKey: 'expertMode',
       },
@@ -224,7 +225,7 @@ export function SettingsHome() {
               Maintenance
             </h2>
             <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-              Outils locaux (cache et rechargement) — aussi via{' '}
+              Outils locaux (cache et rechargement), aussi via{' '}
               <Link
                 className="text-foreground underline-offset-2 hover:underline"
                 href="/settings/maintenance"
@@ -244,6 +245,10 @@ export function SettingsHome() {
           so it can't prerender. It renders nothing when hidden — no fallback. */}
       <Suspense>
         <InstallCard />
+      </Suspense>
+
+      <Suspense>
+        <SettingsSignOut />
       </Suspense>
     </div>
   );
