@@ -29,6 +29,11 @@ export const CHART_COUNTER_STROKE = 'var(--signal-threshold)';
 export const CHART_RISK_STROKE = 'var(--signal-risk)';
 
 export const CHART_REFERENCE_LINE = 'var(--analysis-border)';
+
+/** Macro-composition palette (nutrition trend) — distinct hues, not signal tones. */
+export const MACRO_PROTEIN_COLOR = 'var(--signal-base)';
+export const MACRO_CARB_COLOR = 'var(--signal-threshold)';
+export const MACRO_FAT_COLOR = 'var(--signal-caution)';
 export const CHART_ACTIVE_DOT_FILL = 'var(--card)';
 
 export const CHART_PRIMARY_STROKE = 'var(--primary)';

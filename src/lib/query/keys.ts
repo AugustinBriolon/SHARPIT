@@ -33,6 +33,8 @@ export const queryKeys = {
     ['presentation', 'session-rationale', sessionId] as const,
   weeklyCoachingBrief: (weekStart: string) =>
     ['presentation', 'weekly-coaching-brief', weekStart] as const,
+  nutritionMacroTrend: (granularity: string) =>
+    ['presentation', 'nutrition-macro-trend', granularity] as const,
   hikeTrips: ['hike-trips'] as const,
   hikeTrip: (id: string) => ['hike-trip', id] as const,
 };
