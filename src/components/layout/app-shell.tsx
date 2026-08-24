@@ -14,7 +14,14 @@ import { cn } from '@/lib/utils';
  * `--page-gutter` must stay in sync with `PAGE_GUTTER` in `src/lib/page-gutter.ts`
  * (1rem mobile / 1.5rem desktop).
  */
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  demoBanner,
+}: {
+  children: React.ReactNode;
+  /** Server-rendered slot (AppShell is a Client Component and can't await cookies() itself). */
+  demoBanner?: React.ReactNode;
+}) {
   return (
     <div className="bg-background flex h-dvh flex-col overflow-hidden lg:flex-row">
       <a
@@ -28,6 +35,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        {demoBanner}
         <OfflineBanner />
         <SyncingIndicator className="border-border/40 border-b lg:fixed lg:top-0 lg:right-0 lg:w-[calc(100%-239px)]" />
 

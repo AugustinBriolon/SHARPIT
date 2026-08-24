@@ -5,9 +5,14 @@ const authMock = vi.fn();
 const findUniqueMock = vi.fn();
 const createMock = vi.fn();
 const findUniqueOrThrowMock = vi.fn();
+const cookiesGetMock = vi.fn();
 
 vi.mock('@clerk/nextjs/server', () => ({
   auth: authMock,
+}));
+
+vi.mock('next/headers', () => ({
+  cookies: async () => ({ get: cookiesGetMock }),
 }));
 
 vi.mock('@/lib/prisma', () => ({
@@ -40,6 +45,33 @@ async function importFresh() {
 describe('getCurrentAthleteId', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    cookiesGetMock.mockReturnValue(undefined);
+  });
+
+  it('resolves the fixed demo athlete for an anonymous visitor with the demo cookie set', async () => {
+    authMock.mockResolvedValue({ userId: null });
+    cookiesGetMock.mockReturnValue({ value: '1' });
+    findUniqueOrThrowMock.mockResolvedValue({ id: 'athlete_demo' });
+    const { getCurrentAthleteId } = await importFresh();
+
+    await expect(getCurrentAthleteId()).resolves.toBe('athlete_demo');
+    expect(findUniqueOrThrowMock).toHaveBeenCalledWith({
+      where: { clerkUserId: 'demo' },
+      select: { id: true },
+    });
+  });
+
+  it('prefers a real Clerk session over a stray demo cookie', async () => {
+    authMock.mockResolvedValue({ userId: 'user_known' });
+    cookiesGetMock.mockReturnValue({ value: '1' });
+    findUniqueMock.mockResolvedValue({ id: 'athlete_123' });
+    const { getCurrentAthleteId } = await importFresh();
+
+    await expect(getCurrentAthleteId()).resolves.toBe('athlete_123');
+    expect(findUniqueOrThrowMock).not.toHaveBeenCalledWith({
+      where: { clerkUserId: 'demo' },
+      select: { id: true },
+    });
   });
 
   it('refuses to resolve without a session', async () => {

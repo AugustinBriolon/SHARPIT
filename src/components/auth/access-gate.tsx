@@ -4,6 +4,7 @@ import { ShieldX } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { isAllowedUser } from '@/lib/auth';
+import { isDemoSession } from '@/lib/demo/demo-session';
 import { isDevClerkBypass } from '@/lib/dev/dev-auth';
 
 /**
@@ -20,6 +21,7 @@ import { isDevClerkBypass } from '@/lib/dev/dev-auth';
  */
 export async function AccessGate() {
   if (isDevClerkBypass()) return null;
+  if (await isDemoSession()) return null;
 
   const user = await currentUser();
   if (!user) redirect('/sign-in');

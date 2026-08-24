@@ -9,6 +9,11 @@ export default function SignInPage() {
   return (
     <AuthShell>
       <SignIn appearance={authAppearance} />
+      <p className="text-muted-foreground mt-4 text-center text-sm">
+        <a className="text-foreground underline underline-offset-2" href="/demo">
+          Voir une démo — sans inscription
+        </a>
+      </p>
     </AuthShell>
   );
 }

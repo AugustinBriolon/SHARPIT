@@ -25,6 +25,7 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:demo": "tsx prisma/seed-demo.ts",
     "db:clean:activities": "tsx scripts/clean-activities.ts",
     "db:backfill:narratives": "tsx scripts/backfill-activity-narratives.ts",
     "db:backfill:session-observations": "tsx scripts/backfill-session-observations.ts",

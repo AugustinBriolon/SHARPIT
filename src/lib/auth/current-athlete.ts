@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { prisma } from '@/lib/prisma';
 import { isDevClerkBypass } from '@/lib/dev/dev-auth';
+import { DEMO_CLERK_USER_ID, isDemoSession } from '@/lib/demo/demo-session';
 
 /**
  * Resolves the signed-in Clerk user to their `AthleteProfile.id` (ADR-025).
@@ -23,6 +24,17 @@ export const getCurrentAthleteId = cache(async (): Promise<string> => {
   if (isDevClerkBypass()) {
     const athlete = await prisma.athleteProfile.findFirstOrThrow();
     return athlete.id;
+  }
+
+  // Public read-only demo: isDemoSession() already confirms there is no real
+  // Clerk session, so a signed-in athlete with a stray demo cookie still
+  // resolves to their own profile below, not the demo tenant.
+  if (await isDemoSession()) {
+    const demoAthlete = await prisma.athleteProfile.findUniqueOrThrow({
+      where: { clerkUserId: DEMO_CLERK_USER_ID },
+      select: { id: true },
+    });
+    return demoAthlete.id;
   }
 
   const { userId } = await auth();
