@@ -34,9 +34,9 @@ export async function GET(request: NextRequest) {
     const token = await exchangeWithingsCode(code, redirectUri);
 
     await prisma.withingsAccount.upsert({
-      where: { id: 'default' },
+      where: { athleteId: 'default' },
       create: {
-        id: 'default',
+        athleteId: 'default',
         withingsUserId: String(token.userid),
         accessToken: token.access_token,
         refreshToken: token.refresh_token,

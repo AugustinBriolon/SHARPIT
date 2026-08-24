@@ -32,11 +32,11 @@ async function ingestWithingsMeasurement(measurement: WithingsParsedMeasurement)
 }
 
 export async function getWithingsAccount() {
-  return prisma.withingsAccount.findUnique({ where: { id: ACCOUNT_ID } });
+  return prisma.withingsAccount.findUnique({ where: { athleteId: ACCOUNT_ID } });
 }
 
 export async function disconnectWithings() {
-  await prisma.withingsAccount.deleteMany({ where: { id: ACCOUNT_ID } });
+  await prisma.withingsAccount.deleteMany({ where: { athleteId: ACCOUNT_ID } });
 }
 
 /** Keeps the Withings profile row so the hub can ask for a reconnect. */
@@ -44,7 +44,7 @@ export async function revokeWithingsCredentials() {
   const account = await getWithingsAccount();
   if (!account) return;
   await prisma.withingsAccount.update({
-    where: { id: ACCOUNT_ID },
+    where: { athleteId: ACCOUNT_ID },
     data: {
       accessToken: '',
       refreshToken: '',
@@ -68,7 +68,7 @@ export async function getValidWithingsAccessToken(): Promise<string> {
   try {
     const refreshed = await refreshWithingsToken(account.refreshToken);
     await prisma.withingsAccount.update({
-      where: { id: ACCOUNT_ID },
+      where: { athleteId: ACCOUNT_ID },
       data: {
         accessToken: refreshed.access_token,
         refreshToken: refreshed.refresh_token,
@@ -135,7 +135,7 @@ async function upsertDailyWeightFromWithings(m: WithingsParsedMeasurement) {
   const day = new Date(Date.UTC(local.getFullYear(), local.getMonth(), local.getDate()));
 
   await prisma.dailyHealth.upsert({
-    where: { date: day },
+    where: { athleteId_date: { athleteId: 'default', date: day } },
     create: { date: day, weightKg: m.weightKg },
     update: { weightKg: m.weightKg },
   });
@@ -209,7 +209,8 @@ export async function syncWithingsHealth(options?: {
         updateOps.push(
           prisma.bodyCompositionMeasurement.update({
             where: {
-              source_externalId: {
+              athleteId_source_externalId: {
+                athleteId: 'default',
                 source: BodyCompositionSource.WITHINGS,
                 externalId: measurement.grpid,
               },
@@ -244,7 +245,7 @@ export async function syncWithingsHealth(options?: {
   await Promise.all([...weightByDay.values()].map((m) => upsertDailyWeightFromWithings(m)));
 
   await prisma.withingsAccount.update({
-    where: { id: ACCOUNT_ID },
+    where: { athleteId: ACCOUNT_ID },
     data: { lastSyncAt: new Date() },
   });
 

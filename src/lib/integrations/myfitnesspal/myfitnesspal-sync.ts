@@ -24,7 +24,7 @@ const ACCOUNT_ID = 'default';
 const ATHLETE_ID = 'default';
 
 export async function getMfpAccount() {
-  return prisma.myFitnessPalAccount.findUnique({ where: { id: ACCOUNT_ID } });
+  return prisma.myFitnessPalAccount.findUnique({ where: { athleteId: ACCOUNT_ID } });
 }
 
 export async function connectMfp(sessionToken: string) {
@@ -34,8 +34,8 @@ export async function connectMfp(sessionToken: string) {
   const displayName = await fetchDisplayName(session);
 
   await prisma.myFitnessPalAccount.upsert({
-    where: { id: ACCOUNT_ID },
-    create: { id: ACCOUNT_ID, sessionTokenEnc: encryptSecret(sessionToken), displayName },
+    where: { athleteId: ACCOUNT_ID },
+    create: { athleteId: ACCOUNT_ID, sessionTokenEnc: encryptSecret(sessionToken), displayName },
     update: { sessionTokenEnc: encryptSecret(sessionToken), displayName },
   });
 
@@ -43,14 +43,14 @@ export async function connectMfp(sessionToken: string) {
 }
 
 export async function disconnectMfp() {
-  await prisma.myFitnessPalAccount.deleteMany({ where: { id: ACCOUNT_ID } });
+  await prisma.myFitnessPalAccount.deleteMany({ where: { athleteId: ACCOUNT_ID } });
 }
 
 async function revokeMfpCredentials() {
   const account = await getMfpAccount();
   if (!account) return;
   await prisma.myFitnessPalAccount.update({
-    where: { id: ACCOUNT_ID },
+    where: { athleteId: ACCOUNT_ID },
     data: { sessionTokenEnc: '' },
   });
 }
@@ -66,7 +66,7 @@ async function rollSessionForward(session: MfpSession): Promise<MfpSession> {
   if (!refreshed.rotated) return session;
 
   await prisma.myFitnessPalAccount.update({
-    where: { id: ACCOUNT_ID },
+    where: { athleteId: ACCOUNT_ID },
     data: { sessionTokenEnc: encryptSecret(refreshed.sessionToken) },
   });
 
@@ -162,7 +162,8 @@ export async function syncMfpNutrition(lookbackDays = 7): Promise<MfpSyncResult>
 
       await prisma.dailyNutrition.upsert({
         where: {
-          date_provider: {
+          athleteId_date_provider: {
+            athleteId: 'default',
             date: new Date(`${dateStr}T00:00:00Z`),
             provider: 'myfitnesspal',
           },
@@ -214,7 +215,7 @@ export async function syncMfpNutrition(lookbackDays = 7): Promise<MfpSyncResult>
   }
 
   await prisma.myFitnessPalAccount.update({
-    where: { id: ACCOUNT_ID },
+    where: { athleteId: ACCOUNT_ID },
     data: { lastSyncAt: new Date() },
   });
 

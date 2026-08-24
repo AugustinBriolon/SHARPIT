@@ -180,6 +180,9 @@ model Activity {
   weather  String?
   load     Float?
 
+  athleteId String         @default("default")
+  athlete   AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+
   source   String  @default("manual") // manual | garmin | strava | both
   stravaId String? @unique
   garminId String? @unique
@@ -187,16 +190,16 @@ model Activity {
   /// Jambes et transitions d'un multisport Garmin (natation, T1, vélo, T2, course…)
   multisportLegs Json?
 
-  runMetrics     RunMetrics?
-  bikeMetrics    BikeMetrics?
-  swimMetrics    SwimMetrics?
-  hikeMetrics    HikeMetrics?
-  hikeTripId     String?
-  hikeTrip       HikeTrip? @relation(fields: [hikeTripId], references: [id], onDelete: SetNull)
-  strengthSets   StrengthSet[]
-  stream         ActivityStream?
-  plannedSession PlannedSession?
-  goalAchievements GoalAchievement[]
+  runMetrics            RunMetrics?
+  bikeMetrics           BikeMetrics?
+  swimMetrics           SwimMetrics?
+  hikeMetrics           HikeMetrics?
+  hikeTripId            String?
+  hikeTrip              HikeTrip?              @relation(fields: [hikeTripId], references: [id], onDelete: SetNull)
+  strengthSets          StrengthSet[]
+  stream                ActivityStream?
+  plannedSession        PlannedSession?
+  goalAchievements      GoalAchievement[]
   conditionObservations ConditionObservation[]
 
   /// Analyse narrative coach (figée une fois générée)
@@ -214,10 +217,12 @@ model Activity {
   @@index([date])
   @@index([type])
   @@index([hikeTripId])
+  @@index([athleteId])
 }
 
 model AthleteProfile {
-  id                       String @id @default("default")
+  id                       String    @id @default(cuid())
+  clerkUserId              String    @unique
   heightCm                 Int? // taille (cm) — comparaisons composition (IMC, etc.)
   birthDate                DateTime? @db.Date // date de naissance — âge calculé dynamiquement
   ftpW                     Int? // FTP vélo (W)
@@ -241,7 +246,7 @@ model AthleteProfile {
 
   /// Longueur du bassin habituel (m) — Garmin en a besoin pour rendre une séance
   /// de natation en piscine. Surchargeable séance par séance.
-  defaultPoolLengthM       Int?
+  defaultPoolLengthM Int?
 
   sleepTargetMinutes    Int? // durée de sommeil visée (min)
   sleepBedtimeTargetMin Int? // heure de coucher visée (minutes depuis minuit, locale)
@@ -251,6 +256,40 @@ model AthleteProfile {
   homeLocationLng   Float?
 
   thresholdSnapshots AthleteThresholdSnapshot[]
+
+  // Tenant back-relations — multi-tenant conversion (ADR-025). Root data:
+  activities                  Activity[]
+  dailyNutrition              DailyNutrition[]
+  hikeTrips                   HikeTrip[]
+  dailyHealth                 DailyHealth[]
+  bodyCompositionMeasurements BodyCompositionMeasurement[]
+  goals                       Goal[]
+  trainingPlans               TrainingPlan[]
+  physicalNotes               PhysicalNote[]
+  conditions                  Condition[]
+  conditionObservations       ConditionObservation[]
+  dailyBriefings              DailyBriefing[]
+  weeklyReviews               WeeklyReview[]
+  performanceRecords          PerformanceRecord[]
+  conversations               Conversation[]
+  plannedSessions             PlannedSession[]
+  travelContexts              AthleteTravelContext[]
+  brickAnalyses               BrickAnalysis[]
+  // Integration accounts (one row per provider per athlete):
+  garminAccount               GarminAccount?
+  stravaAccount               StravaAccount?
+  googleAccount               GoogleAccount?
+  renphoAccount               RenphoAccount?
+  withingsAccount             WithingsAccount?
+  myFitnessPalAccount         MyFitnessPalAccount?
+  // Core / Inference layer (already athlete-scoped, gaining the FK only):
+  observations                Observation[]
+  featureSets                 FeatureSet[]
+  digitalTwin                 DigitalTwin?
+  environmentalObservations   EnvironmentalObservationRecord[]
+  decisionRecords             DecisionRecord[]
+  coachingDecisions           CoachingDecision[]
+  snapshotRecords             AthleteSnapshotRecord[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -286,11 +325,12 @@ model ActivityStream {
 }
 
 model GarminAccount {
-  id          String    @id @default("default")
-  displayName String?
-  fullName    String?
-  oauth1Token Json
-  oauth2Token Json
+  athleteId          String         @id
+  athlete            AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  displayName        String?
+  fullName           String?
+  oauth1Token        Json
+  oauth2Token        Json
   lastSyncAt         DateTime?
   lastActivitySyncAt DateTime?
 
@@ -299,23 +339,26 @@ model GarminAccount {
 }
 
 model StravaAccount {
-  id           String    @id @default("default")
-  athleteId    String    @unique
-  firstName    String?
-  lastName     String?
-  avatarUrl    String?
-  accessToken  String
-  refreshToken String
-  expiresAt    DateTime
-  scope        String?
-  lastSyncAt   DateTime?
+  athleteId       String         @id
+  athlete         AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  /// Strava's own external athlete id — unrelated to the tenant `athleteId` PK above.
+  stravaAthleteId String         @unique
+  firstName       String?
+  lastName        String?
+  avatarUrl       String?
+  accessToken     String
+  refreshToken    String
+  expiresAt       DateTime
+  scope           String?
+  lastSyncAt      DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model GoogleAccount {
-  id           String   @id @default("default")
+  athleteId    String         @id
+  athlete      AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   email        String?
   accessToken  String
   refreshToken String
@@ -326,9 +369,9 @@ model GoogleAccount {
   targetCalendarId   String?
   targetCalendarName String?
   // Calendriers Google masqués dans la page Calendrier de l'app
-  hiddenCalendarIds String[] @default([])
+  hiddenCalendarIds  String[] @default([])
   // Fuseau horaire utilisé pour créer les événements
-  timeZone String @default("Europe/Paris")
+  timeZone           String   @default("Europe/Paris")
 
   lastSyncAt DateTime?
 
@@ -337,7 +380,8 @@ model GoogleAccount {
 }
 
 model RenphoAccount {
-  id           String    @id @default("default")
+  athleteId    String         @id
+  athlete      AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   email        String
   passwordEnc  String
   displayName  String?
@@ -349,7 +393,8 @@ model RenphoAccount {
 }
 
 model WithingsAccount {
-  id             String    @id @default("default")
+  athleteId      String         @id
+  athlete        AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   withingsUserId String
   accessToken    String
   refreshToken   String
@@ -362,7 +407,8 @@ model WithingsAccount {
 }
 
 model MyFitnessPalAccount {
-  id              String    @id @default("default")
+  athleteId       String         @id
+  athlete         AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   sessionTokenEnc String
   displayName     String?
   lastSyncAt      DateTime?
@@ -372,10 +418,12 @@ model MyFitnessPalAccount {
 }
 
 model DailyNutrition {
-  id            String   @id @default(cuid())
-  date          DateTime
-  provider      String   @default("myfitnesspal")
-  externalId    String?  @unique
+  id         String         @id @default(cuid())
+  athleteId  String         @default("default")
+  athlete    AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  date       DateTime
+  provider   String         @default("myfitnesspal")
+  externalId String?
 
   calories      Int
   protein       Float
@@ -385,8 +433,8 @@ model DailyNutrition {
   sugar         Float?
   water         Float?
 
-  meals         Json     @default("[]")
-  complete      Boolean  @default(false)
+  meals    Json    @default("[]")
+  complete Boolean @default(false)
 
   goalCalories      Int?
   goalProtein       Float?
@@ -397,8 +445,10 @@ model DailyNutrition {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([date, provider])
+  @@unique([athleteId, date, provider])
+  @@unique([athleteId, externalId])
   @@index([date])
+  @@index([athleteId])
 }
 
 model RunMetrics {
@@ -406,13 +456,13 @@ model RunMetrics {
   activityId String   @unique
   activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
-  distanceM      Float?
-  elevationM     Float?
-  paceSecPerKm   Float?
-  avgHr          Int?
-  avgPower       Float?
-  cadence        Int?
-  shoes          String?
+  distanceM    Float?
+  elevationM   Float?
+  paceSecPerKm Float?
+  avgHr        Int?
+  avgPower     Float?
+  cadence      Int?
+  shoes        String?
 }
 
 model BikeMetrics {
@@ -445,11 +495,15 @@ model SwimMetrics {
 }
 
 model HikeTrip {
-  id         String     @id @default(cuid())
+  id         String         @id @default(cuid())
+  athleteId  String         @default("default")
+  athlete    AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   name       String
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
   activities Activity[]
+
+  @@index([athleteId])
 }
 
 model HikeMetrics {
@@ -470,26 +524,28 @@ model StrengthSet {
   activityId String
   activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
-  exercise String
+  exercise          String
   /// Matched exercises-dataset id (e.g. "0662") — set at sync/enrich when a visual is found.
   exerciseCatalogId String?
-  sets     Int
-  reps     Int
-  durationSec Int?
-  weightKg Float?
-  rpe      Int?
-  restSec  Int?
-  videoUrl String?
-  notes    String?
-  order    Int      @default(0)
+  sets              Int
+  reps              Int
+  durationSec       Int?
+  weightKg          Float?
+  rpe               Int?
+  restSec           Int?
+  videoUrl          String?
+  notes             String?
+  order             Int     @default(0)
 
   @@index([activityId])
   @@index([exerciseCatalogId])
 }
 
 model DailyHealth {
-  id   String   @id @default(cuid())
-  date DateTime @unique @db.Date
+  id        String         @id @default(cuid())
+  athleteId String         @default("default")
+  athlete   AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  date      DateTime       @db.Date
 
   sleepMinutes  Int?
   napMinutes    Int? // sieste (Garmin napTimeSeconds, hors sommeil nocturne)
@@ -502,15 +558,15 @@ model DailyHealth {
   mood          String?
 
   // Sommeil détaillé (Garmin)
-  sleepScore       Int? // score de sommeil Garmin (0-100)
-  sleepDeepMin     Int? // sommeil profond (min)
-  sleepLightMin    Int? // sommeil léger (min)
-  sleepRemMin      Int? // sommeil paradoxal / REM (min)
-  sleepAwakeMin    Int? // éveil pendant la nuit (min)
-  sleepBedtimeMin  Int? // heure de coucher en minutes depuis minuit (heure locale)
-  sleepWakeMin     Int? // heure de réveil en minutes depuis minuit (heure locale)
-  sleepRespiration Float? // respiration moyenne (resp/min)
-  sleepAvgStress   Int? // stress moyen pendant le sommeil
+  sleepScore         Int? // score de sommeil Garmin (0-100)
+  sleepDeepMin       Int? // sommeil profond (min)
+  sleepLightMin      Int? // sommeil léger (min)
+  sleepRemMin        Int? // sommeil paradoxal / REM (min)
+  sleepAwakeMin      Int? // éveil pendant la nuit (min)
+  sleepBedtimeMin    Int? // heure de coucher en minutes depuis minuit (heure locale)
+  sleepWakeMin       Int? // heure de réveil en minutes depuis minuit (heure locale)
+  sleepRespiration   Float? // respiration moyenne (resp/min)
+  sleepAvgStress     Int? // stress moyen pendant le sommeil
   sleepScoreFeedback String? // code feedback qualité Garmin
 
   // Recovery (Garmin)
@@ -525,6 +581,9 @@ model DailyHealth {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([athleteId, date])
+  @@index([athleteId])
 }
 
 enum BodyCompositionSource {
@@ -534,6 +593,8 @@ enum BodyCompositionSource {
 
 model BodyCompositionMeasurement {
   id         String                @id @default(cuid())
+  athleteId  String                @default("default")
+  athlete    AthleteProfile        @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   source     BodyCompositionSource
   externalId String
   measuredAt DateTime
@@ -554,44 +615,47 @@ model BodyCompositionMeasurement {
   heartRate          Int?
 
   // Withings Body Scan — cardio & nerve health
-  vascularAgeYears      Int?
-  pulseWaveVelocity     Float?
-  vo2Max                Float?
-  nerveHealthScore      Float?
-  nerveHealthLeft       Float?
-  nerveHealthRight      Float?
-  nerveResponseScore    Float?
-  skinConductance       Float?
-  metabolicAge          Int?
-  hydrationKg           Float?
-  fatMassKg               Float?
-  extracellularWaterKg    Float?
-  intracellularWaterKg    Float?
-  withingsExtras          Json?
+  vascularAgeYears     Int?
+  pulseWaveVelocity    Float?
+  vo2Max               Float?
+  nerveHealthScore     Float?
+  nerveHealthLeft      Float?
+  nerveHealthRight     Float?
+  nerveResponseScore   Float?
+  skinConductance      Float?
+  metabolicAge         Int?
+  hydrationKg          Float?
+  fatMassKg            Float?
+  extracellularWaterKg Float?
+  intracellularWaterKg Float?
+  withingsExtras       Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([source, externalId])
+  @@unique([athleteId, source, externalId])
   @@index([measuredAt])
   @@index([source, measuredAt])
+  @@index([athleteId])
 }
 
 model Goal {
-  id           String       @id @default(cuid())
-  title        String
-  kind         GoalKind     @default(METRIC)
-  horizon      GoalHorizon?
-  metricKey    String?
-  startValue   Float?
-  currentValue Float?
-  targetValue  Float?
-  unit         String?
-  lowerIsBetter Boolean     @default(false)
-  targetDate   DateTime?
-  location     String?
-  achieved     Boolean      @default(false)
-  notes        String?
+  id            String         @id @default(cuid())
+  athleteId     String         @default("default")
+  athlete       AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  title         String
+  kind          GoalKind       @default(METRIC)
+  horizon       GoalHorizon?
+  metricKey     String?
+  startValue    Float?
+  currentValue  Float?
+  targetValue   Float?
+  unit          String?
+  lowerIsBetter Boolean        @default(false)
+  targetDate    DateTime?
+  location      String?
+  achieved      Boolean        @default(false)
+  notes         String?
 
   // Détails spécifiques aux courses (kind = RACE) — tous optionnels :
   priority          GoalPriority? // importance A/B/C dans la périodisation
@@ -607,14 +671,15 @@ model Goal {
 
   @@index([kind])
   @@index([targetDate])
+  @@index([athleteId])
 }
 
 model GoalAchievement {
-  id          String    @id @default(cuid())
-  goalId      String
-  goal        Goal      @relation(fields: [goalId], references: [id], onDelete: Cascade)
-  activityId  String?
-  activity    Activity? @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  id         String    @id @default(cuid())
+  goalId     String
+  goal       Goal      @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  activityId String?
+  activity   Activity? @relation(fields: [activityId], references: [id], onDelete: SetNull)
 
   source      String // auto | manual
   value       Float?
@@ -632,6 +697,8 @@ model GoalAchievement {
 
 model TrainingPlan {
   id          String             @id @default(cuid())
+  athleteId   String             @default("default")
+  athlete     AthleteProfile     @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   goalId      String?
   goal        Goal?              @relation(fields: [goalId], references: [id], onDelete: SetNull)
   raceDate    DateTime           @db.Date
@@ -647,6 +714,7 @@ model TrainingPlan {
 
   @@index([status])
   @@index([raceDate])
+  @@index([athleteId])
 }
 
 model PlanWeek {
@@ -667,15 +735,17 @@ model PlanWeek {
 }
 
 model PhysicalNote {
-  id          String           @id @default(cuid())
-  category    PhysicalCategory @default(PAIN)
-  status      PhysicalStatus   @default(ACTIVE)
-  title       String // ex: "Tendinite genou droit"
-  bodyPart    String? // ex: "Genou", "Bassin", "Pied"
-  side        BodySide         @default(NA)
-  severity    Int? // 0-10 (sévérité actuelle)
-  description String?
-  affectsTraining Boolean      @default(true) // injecté dans le contexte coach
+  id              String           @id @default(cuid())
+  athleteId       String           @default("default")
+  athlete         AthleteProfile   @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  category        PhysicalCategory @default(PAIN)
+  status          PhysicalStatus   @default(ACTIVE)
+  title           String // ex: "Tendinite genou droit"
+  bodyPart        String? // ex: "Genou", "Bassin", "Pied"
+  side            BodySide         @default(NA)
+  severity        Int? // 0-10 (sévérité actuelle)
+  description     String?
+  affectsTraining Boolean          @default(true) // injecté dans le contexte coach
 
   startDate  DateTime  @default(now())
   resolvedAt DateTime?
@@ -686,6 +756,7 @@ model PhysicalNote {
   updatedAt DateTime @updatedAt
 
   @@index([status])
+  @@index([athleteId])
 }
 
 model PhysicalCheckin {
@@ -707,6 +778,8 @@ model PhysicalCheckin {
 /// Never deleted. Resolved conditions remain in physiological history.
 model Condition {
   id                    String          @id @default(cuid())
+  athleteId             String          @default("default")
+  athlete               AthleteProfile  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   scope                 ConditionScope
   type                  ConditionType
   bodyRegion            String
@@ -739,6 +812,7 @@ model Condition {
   @@index([status])
   @@index([type])
   @@index([bodyRegion, side])
+  @@index([athleteId])
 }
 
 model ConditionEpisode {
@@ -762,6 +836,10 @@ model ConditionEpisode {
 /// Point-in-time evidence. Never replaces condition state directly.
 model ConditionObservation {
   id               String             @id @default(cuid())
+  // Every other relation on this row is optional (SetNull) — it does not
+  // reliably inherit a tenant from any parent, so it carries its own.
+  athleteId        String             @default("default")
+  athlete          AthleteProfile     @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   conditionId      String?
   condition        Condition?         @relation(fields: [conditionId], references: [id], onDelete: SetNull)
   episodeId        String?
@@ -793,6 +871,7 @@ model ConditionObservation {
   @@index([activityId])
   @@index([plannedSessionId])
   @@index([observedAt])
+  @@index([athleteId])
 }
 
 /// Functional capacity distinct from pain severity.
@@ -812,43 +891,53 @@ model FunctionalCapacity {
 
 /// Personalized hypotheses — athlete-specific, never statistical population models.
 model ConditionKnowledge {
-  id              String                   @id @default(cuid())
-  conditionId     String
-  condition       Condition                @relation(fields: [conditionId], references: [id], onDelete: Cascade)
-  hypothesisType  KnowledgeHypothesisType
-  description     String
-  confidence      KnowledgeConfidenceLevel @default(LOW)
-  evidenceCount   Int                      @default(0)
-  isInferred      Boolean                  @default(false)
-  createdAt       DateTime                 @default(now())
-  updatedAt       DateTime                 @updatedAt
+  id             String                   @id @default(cuid())
+  conditionId    String
+  condition      Condition                @relation(fields: [conditionId], references: [id], onDelete: Cascade)
+  hypothesisType KnowledgeHypothesisType
+  description    String
+  confidence     KnowledgeConfidenceLevel @default(LOW)
+  evidenceCount  Int                      @default(0)
+  isInferred     Boolean                  @default(false)
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
 
   @@index([conditionId])
 }
 
 model DailyBriefing {
-  id                String   @id @default(cuid())
-  date              DateTime @unique @db.Date
-  content           String   @db.Text // bilan du jour en markdown généré par le coach IA
+  id                String         @id @default(cuid())
+  athleteId         String         @default("default")
+  athlete           AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  date              DateTime       @db.Date
+  content           String         @db.Text // bilan du jour en markdown généré par le coach IA
   readiness         Int? // readiness Garmin du jour au moment de la génération
   phaseAtGeneration String? // BriefingPhase bucket (morning|midday|afternoon|evening) at generation time — freshness detects phase drift
-  generatedAt       DateTime @default(now())
+  generatedAt       DateTime       @default(now())
 
+  @@unique([athleteId, date])
   @@index([date])
+  @@index([athleteId])
 }
 
 model WeeklyReview {
-  id          String   @id @default(cuid())
-  weekStart   DateTime @unique @db.Date // lundi de la semaine concernée
-  content     String   @db.Text // rétro hebdo en markdown générée par le coach IA
+  id          String         @id @default(cuid())
+  athleteId   String         @default("default")
+  athlete     AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  weekStart   DateTime       @db.Date // lundi de la semaine concernée
+  content     String         @db.Text // rétro hebdo en markdown générée par le coach IA
   stats       Json? // statistiques de la semaine (volume, conformité, sommeil...)
-  generatedAt DateTime @default(now())
+  generatedAt DateTime       @default(now())
 
+  @@unique([athleteId, weekStart])
   @@index([weekStart])
+  @@index([athleteId])
 }
 
 model PerformanceRecord {
-  id            String   @id @default(cuid())
+  id            String         @id @default(cuid())
+  athleteId     String         @default("default")
+  athlete       AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   group         String // "run" | "bike" | "swim" | "power" | "run-best" | "run-effort" | "bike-effort"
   category      String // clé unique du record, ex: "run-distance", "power-300", "run-best-5000"
   label         String
@@ -859,10 +948,11 @@ model PerformanceRecord {
   activityId    String? // séance à l'origine du record (lien)
   activityDate  DateTime
   activityTitle String?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime       @default(now())
 
-  @@unique([category, rank])
+  @@unique([athleteId, category, rank])
   @@index([group])
+  @@index([athleteId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -881,20 +971,21 @@ model PerformanceRecord {
 // read paths have been ported to consume Observation directly.
 
 model Observation {
-  id            String   @id          // UUID assigned by the engine
-  athleteId     String   @default("default")
-  type          String               // ObservationType literal
-  source        String               // ObservationSource literal
-  timestamp     DateTime             // when the observation was physically recorded
-  receivedAt    DateTime             // when SHARPIT received it
-  trainingDayId String               // YYYY-MM-DD in athlete's timezone
-  quality       String               // ObservationQuality literal
-  qualityFlags  Json     @default("[]") // QualityFlag[]
+  id            String         @id // UUID assigned by the engine
+  athleteId     String         @default("default")
+  athlete       AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  type          String // ObservationType literal
+  source        String // ObservationSource literal
+  timestamp     DateTime // when the observation was physically recorded
+  receivedAt    DateTime // when SHARPIT received it
+  trainingDayId String // YYYY-MM-DD in athlete's timezone
+  quality       String // ObservationQuality literal
+  qualityFlags  Json           @default("[]") // QualityFlag[]
   normalizedAt  DateTime
-  externalId    String?              // garminId | stravaId | renphoId (for dedup)
-  data          Json                 // type-specific fields (JSONB)
+  externalId    String? // garminId | stravaId | renphoId (for dedup)
+  data          Json // type-specific fields (JSONB)
 
-  createdAt     DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([athleteId, type])
   @@index([athleteId, trainingDayId])
@@ -922,19 +1013,20 @@ model Observation {
 // Confidence and algorithmId are also persisted for auditability.
 
 model FeatureSet {
-  id             String    @id          // UUID assigned by FeatureEngine
-  athleteId      String    @default("default")
-  category       String                 // 'SESSION' | 'LOAD' | 'RECOVERY' | 'BODY' | 'CONDITION'
-  trainingDayId  String?                // YYYY-MM-DD (null only for legacy compat — always set in v1)
-  sessionObsId   String?                // Observation.id — set for SESSION and BODY categories
-  version        Int       @default(1) // monotonically increasing
-  status         String                 // 'PENDING' | 'COMPUTING' | 'COMPUTED' | 'INVALIDATED'
-  confidence     Float
-  algorithmId    String                 // e.g. 'session-features-v1'
-  data           Json                   // FeatureSet payload
-  sourceObsIds   String[]  @default([]) // Observation IDs that contributed
-  computedAt     DateTime?
-  createdAt      DateTime  @default(now())
+  id            String         @id // UUID assigned by FeatureEngine
+  athleteId     String         @default("default")
+  athlete       AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  category      String // 'SESSION' | 'LOAD' | 'RECOVERY' | 'BODY' | 'CONDITION'
+  trainingDayId String? // YYYY-MM-DD (null only for legacy compat — always set in v1)
+  sessionObsId  String? // Observation.id — set for SESSION and BODY categories
+  version       Int            @default(1) // monotonically increasing
+  status        String // 'PENDING' | 'COMPUTING' | 'COMPUTED' | 'INVALIDATED'
+  confidence    Float
+  algorithmId   String // e.g. 'session-features-v1'
+  data          Json // FeatureSet payload
+  sourceObsIds  String[]       @default([]) // Observation IDs that contributed
+  computedAt    DateTime?
+  createdAt     DateTime       @default(now())
 
   @@index([athleteId, category, trainingDayId])
   @@index([athleteId, category, sessionObsId])
@@ -950,24 +1042,24 @@ model FeatureSet {
 /**
  * One Digital Twin per athlete.
  * Mutable — updated in place by the Inference Orchestrator after each model run.
- *
  * The `recoveryState` column stores the complete RecoveryState JSON.
  * Future models add new nullable columns (e.g. fatigueState) without
  * touching existing data.
  */
 model DigitalTwin {
-  id             String    @id @default(cuid())
-  athleteId      String    @unique
-  recoveryState   Json?     // RecoveryState | null
-  fatigueState    Json?     // FatigueState | null  (Fatigue Intelligence v1)
-  adaptationState Json?     // AdaptationState | null  (Adaptation Intelligence v1)
-  reasoningState  Json?     // ReasoningState | null   (Reasoning Engine v1)
-  physicalHealthState Json? // PhysicalHealthState | null (Physical Health v1)
+  id                       String         @id @default(cuid())
+  athleteId                String         @unique
+  athlete                  AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  recoveryState            Json? // RecoveryState | null
+  fatigueState             Json? // FatigueState | null  (Fatigue Intelligence v1)
+  adaptationState          Json? // AdaptationState | null  (Adaptation Intelligence v1)
+  reasoningState           Json? // ReasoningState | null   (Reasoning Engine v1)
+  physicalHealthState      Json? // PhysicalHealthState | null (Physical Health v1)
   environmentalStressState Json? // EnvironmentalStress | null (Environment v1.1)
   environmentalImpactState Json? // EnvironmentalImpact | null (Environment v1.1)
-  environmentalStateMeta Json? // EnvironmentalStateMeta | null (rebuild metadata)
-  updatedAt       DateTime  @updatedAt
-  createdAt      DateTime  @default(now())
+  environmentalStateMeta   Json? // EnvironmentalStateMeta | null (rebuild metadata)
+  updatedAt                DateTime       @updatedAt
+  createdAt                DateTime       @default(now())
 
   @@index([athleteId])
 }
@@ -975,9 +1067,10 @@ model DigitalTwin {
 /// Immutable environmental evidence — source of truth for environmental inference.
 /// Twin environmental columns are a rebuildable cache derived from these records.
 model EnvironmentalObservationRecord {
-  id               String   @id
+  id               String         @id
   recordVersion    String
   athleteId        String
+  athlete          AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   dimension        String
   payload          Json
   observedAt       DateTime
@@ -1006,27 +1099,26 @@ model EnvironmentalObservationRecord {
 /**
  * Immutable audit trail of every inference pass.
  * Created when any model runs — never updated, never deleted.
- *
  * Stores the complete inference snapshot (signals, state update, decision,
  * recommendation, explanation) for auditability and historical replay.
- *
  * Per ADR-004: ephemeral Signals are embedded here, NOT persisted independently.
  */
 model DecisionRecord {
-  id              String    @id
-  athleteId       String
-  trainingDayId   String
-  modelId         String    // 'recovery-synthesis-v1'
-  modelVersion    String    // 'v1'
-  confidence      Float
-  signals         Json      // { autonomicBalance, sleepAdequacy, ... }
-  stateUpdate     Json      // the RecoveryState written to Digital Twin
-  decision        Json      // { verdict, recommendedIntensity, rationale }
-  recommendation  Json      // { type, title, summary, keyEvidence }
-  explanation     String    // human-readable explanation text
-  inputSummary    Json      // key feature values used for audit/replay
-  computedAt      DateTime
-  createdAt       DateTime  @default(now())
+  id             String         @id
+  athleteId      String
+  athlete        AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  trainingDayId  String
+  modelId        String // 'recovery-synthesis-v1'
+  modelVersion   String // 'v1'
+  confidence     Float
+  signals        Json // { autonomicBalance, sleepAdequacy, ... }
+  stateUpdate    Json // the RecoveryState written to Digital Twin
+  decision       Json // { verdict, recommendedIntensity, rationale }
+  recommendation Json // { type, title, summary, keyEvidence }
+  explanation    String // human-readable explanation text
+  inputSummary   Json // key feature values used for audit/replay
+  computedAt     DateTime
+  createdAt      DateTime       @default(now())
 
   @@index([athleteId, trainingDayId])
   @@index([athleteId, modelId])
@@ -1080,16 +1172,17 @@ enum CoachingOutcomeStatus {
 model CoachingDecision {
   id            String                 @id @default(cuid())
   athleteId     String                 @default("default")
+  athlete       AthleteProfile         @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   trainingDayId String
   source        CoachingDecisionSource
   status        CoachingDecisionStatus @default(PRESENTED)
 
   /// The exact GateProposal as generated — never mutated after insert.
-  proposal Json
+  proposal                   Json
   /// The exact GateSessionResult (status, findings, requiredAssumptions, saferAlternative) — verbatim.
-  gateResult Json
+  gateResult                 Json
   /// Frozen subset of AthleteSnapshot/DecisionState at recommendation time (see ADR-006).
-  snapshotContext Json
+  snapshotContext            Json
   /// Best-effort cross-reference only — AthleteSnapshotRecord is upserted, not append-only.
   /// Never treated as a foreign key or relied on for correctness.
   snapshotIdAtRecommendation String?
@@ -1134,18 +1227,18 @@ model CoachingDecisionOutcome {
   outcomeStatus CoachingOutcomeStatus
 
   /// Planned vs. actual duration/load/intensity — reuses the existing SessionAnalysis shape.
-  executionMatch Json?
+  executionMatch            Json?
   /// RPE, feeling, pain — from the linked Activity + any ConditionObservation.
-  subjectiveResponse Json?
+  subjectiveResponse        Json?
   /// 24-72h readiness/fatigue delta — only populated when the underlying snapshots exist.
   shortTermRecoveryResponse Json?
   /// New or worsening physical-health condition linked to this session.
-  safetySignal Json?
+  safetySignal              Json?
 
   /// Explicit caveats — always populated, even when EVALUATED.
   limitations String[]
   /// 0-1, a deterministic function of evidence completeness — not a model output.
-  confidence Float
+  confidence  Float
 
   @@index([decisionId])
 }
@@ -1155,14 +1248,15 @@ model CoachingDecisionOutcome {
  * Each regeneration replaces the row; snapshotId fingerprints inputs for idempotency.
  */
 model AthleteSnapshotRecord {
-  id            String   @id @default(cuid())
+  id            String         @id @default(cuid())
   athleteId     String
+  athlete       AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   trainingDayId String
   snapshotId    String
   payload       Json
   generatedAt   DateTime
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   @@unique([athleteId, trainingDayId])
   @@index([snapshotId])
@@ -1170,42 +1264,47 @@ model AthleteSnapshotRecord {
 }
 
 model Conversation {
-  id        String   @id @default(cuid())
-  title     String   @default("Nouvelle conversation")
+  id        String         @id @default(cuid())
+  athleteId String         @default("default")
+  athlete   AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  title     String         @default("Nouvelle conversation")
   // Historique complet des messages UI (UIMessage[] du AI SDK), sérialisé en JSON.
-  messages  Json     @default("[]")
+  messages  Json           @default("[]")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([updatedAt])
+  @@index([athleteId])
 }
 
 model PlannedSession {
-  id          String            @id @default(cuid())
-  type        ActivityType
-  date        DateTime          @db.Date
-  startTime   String? // heure de début planifiée "HH:mm" (locale) — choisie pour caser la séance dans l'agenda Google
-  title       String?
-  description String?
+  id                    String            @id @default(cuid())
+  athleteId             String            @default("default")
+  athlete               AthleteProfile    @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  type                  ActivityType
+  date                  DateTime          @db.Date
+  startTime             String? // heure de début planifiée "HH:mm" (locale) — choisie pour caser la séance dans l'agenda Google
+  title                 String?
+  description           String?
   /// Structured strength prescription (sets/reps) — STRENGTH only. Not an engine output.
-  strengthPrescription Json?
+  strengthPrescription  Json?
   /// Structured endurance prescription (steps/targets) — RUN/BIKE/SWIM. Not an engine output.
   /// Targets are stored relative to athlete thresholds and resolved at push time.
   endurancePrescription Json?
   /// Session-specific accessories (EquipmentItemId[]) — athlete prep checklist.
-  accessories Json?
-  durationMin Int? // durée prévue en minutes
-  load        Float? // charge / TSS prévue
-  intensity   SessionIntensity?
-  completed   Boolean           @default(false)
+  accessories           Json?
+  durationMin           Int? // durée prévue en minutes
+  load                  Float? // charge / TSS prévue
+  intensity             SessionIntensity?
+  completed             Boolean           @default(false)
 
   /// Contextual intention — athlete-declared (not engine output).
-  exposureSetting String? // INDOOR | OUTDOOR | UNKNOWN
-  locationLabel   String?
-  locationLat     Float?
-  locationLng     Float?
-  locationType    String? // ROAD | TRAIL | TRAINER | POOL | GYM | TRACK | UNKNOWN
+  exposureSetting      String? // INDOOR | OUTDOOR | UNKNOWN
+  locationLabel        String?
+  locationLat          Float?
+  locationLng          Float?
+  locationType         String? // ROAD | TRAIL | TRAINER | POOL | GYM | TRACK | UNKNOWN
   /// Cached PlannedSessionContext projection (engine outputs + advisories).
   environmentContext   Json?
   environmentContextAt DateTime?
@@ -1220,28 +1319,29 @@ model PlannedSession {
   brickOrder   Int?
 
   // Réalisation : activité Strava/Garmin liée + analyse IA prévu vs réalisé
-  activityId String?   @unique
-  activity   Activity? @relation(fields: [activityId], references: [id], onDelete: SetNull)
-  analysis   Json? // { complianceScore, verdict, summary, remarks[], recommendation }
-  analyzedAt DateTime?
+  activityId            String?                @unique
+  activity              Activity?              @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  analysis              Json? // { complianceScore, verdict, summary, remarks[], recommendation }
+  analyzedAt            DateTime?
   conditionObservations ConditionObservation[]
 
   // Lien vers l'événement créé dans Google Calendar (calendrier SPORT)
   googleEventId String? @unique
 
   /// Dernier workout Garmin Connect poussé depuis cette séance (anti-spam + statut montre).
-  garminWorkoutId String?
+  garminWorkoutId            String?
   garminWorkoutScheduledDate String? // YYYY-MM-DD
-  garminWorkoutPushedAt DateTime?
+  garminWorkoutPushedAt      DateTime?
   /// Seuils athlète utilisés pour résoudre les cibles envoyées — sert à détecter
   /// qu'une séance déjà envoyée est périmée parce que les seuils ont bougé depuis.
-  garminWorkoutThresholds Json?
+  garminWorkoutThresholds    Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([date])
   @@index([brickGroupId])
+  @@index([athleteId])
 }
 
 enum CoachMemorySource {
@@ -1278,6 +1378,8 @@ enum AthleteMemoryEntryType {
 /// renaming would touch every call site for zero functional benefit.
 model AthleteTravelContext {
   id                 String                   @id @default(cuid())
+  athleteId          String                   @default("default")
+  athlete            AthleteProfile           @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   type               AthleteMemoryEntryType   @default(TRAVEL)
   label              String?
   locationLabel      String?
@@ -1296,6 +1398,7 @@ model AthleteTravelContext {
 
   @@index([startDate, endDate])
   @@index([type])
+  @@index([athleteId])
 }
 
 // Analyse globale d'un brick (enchaînement multisport) : agrège les jambes
@@ -1303,7 +1406,11 @@ model AthleteTravelContext {
 // Une analyse par brickGroupId (les jambes gardent par ailleurs leur analyse
 // individuelle dans PlannedSession.analysis).
 model BrickAnalysis {
-  brickGroupId String   @id
+  brickGroupId String         @id
+  athleteId    String         @default("default")
+  athlete      AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   content      Json // { overallScore, summary, transition, remarks[], recommendation }
-  generatedAt  DateTime @default(now())
+  generatedAt  DateTime       @default(now())
+
+  @@index([athleteId])
 }

@@ -32,7 +32,7 @@ async function ingestRenphoMeasurement(measurement: RenphoMeasurement): Promise<
 const ACCOUNT_ID = 'default';
 
 export async function getRenphoAccount() {
-  return prisma.renphoAccount.findUnique({ where: { id: ACCOUNT_ID } });
+  return prisma.renphoAccount.findUnique({ where: { athleteId: ACCOUNT_ID } });
 }
 
 function getRenphoClientFromAccount(account: { email: string; passwordEnc: string }) {
@@ -44,9 +44,9 @@ export async function connectRenpho(email: string, password: string) {
   const user = await client.getCurrentUser();
 
   await prisma.renphoAccount.upsert({
-    where: { id: ACCOUNT_ID },
+    where: { athleteId: ACCOUNT_ID },
     create: {
-      id: ACCOUNT_ID,
+      athleteId: ACCOUNT_ID,
       email,
       passwordEnc: encryptSecret(password),
       displayName: user.account_name ?? user.first_name ?? email,
@@ -64,7 +64,7 @@ export async function connectRenpho(email: string, password: string) {
 }
 
 export async function disconnectRenpho() {
-  await prisma.renphoAccount.deleteMany({ where: { id: ACCOUNT_ID } });
+  await prisma.renphoAccount.deleteMany({ where: { athleteId: ACCOUNT_ID } });
 }
 
 /** Keeps the Renpho profile row so the hub can ask for a reconnect. */
@@ -72,7 +72,7 @@ export async function revokeRenphoCredentials() {
   const account = await getRenphoAccount();
   if (!account) return;
   await prisma.renphoAccount.update({
-    where: { id: ACCOUNT_ID },
+    where: { athleteId: ACCOUNT_ID },
     data: { passwordEnc: '' },
   });
 }
@@ -110,7 +110,7 @@ async function upsertDailyWeightFromMeasurement(m: RenphoMeasurement, withingsDa
   const day = new Date(Date.UTC(local.getFullYear(), local.getMonth(), local.getDate()));
 
   await prisma.dailyHealth.upsert({
-    where: { date: day },
+    where: { athleteId_date: { athleteId: 'default', date: day } },
     create: { date: day, weightKg: m.weight },
     update: { weightKg: m.weight },
   });
@@ -178,7 +178,8 @@ export async function syncRenphoHealth(options?: {
           updateOps.push(
             prisma.bodyCompositionMeasurement.update({
               where: {
-                source_externalId: {
+                athleteId_source_externalId: {
+                  athleteId: 'default',
                   source: BodyCompositionSource.RENPHO,
                   externalId: measurement.id,
                 },
@@ -212,7 +213,7 @@ export async function syncRenphoHealth(options?: {
     );
 
     await prisma.renphoAccount.update({
-      where: { id: ACCOUNT_ID },
+      where: { athleteId: ACCOUNT_ID },
       data: { lastSyncAt: new Date() },
     });
 

@@ -46,8 +46,8 @@ export async function GET(request: NextRequest) {
     };
 
     await prisma.googleAccount.upsert({
-      where: { id: 'default' },
-      create: { id: 'default', ...data },
+      where: { athleteId: 'default' },
+      create: { athleteId: 'default', ...data },
       update: data,
     });
 

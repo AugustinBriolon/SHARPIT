@@ -45,7 +45,7 @@ async function ingestGarminHealth(health: GarminDailyHealth, calendarDate: Date)
 const ACCOUNT_ID = 'default';
 
 export async function getGarminAccount() {
-  return prisma.garminAccount.findUnique({ where: { id: ACCOUNT_ID } });
+  return prisma.garminAccount.findUnique({ where: { athleteId: ACCOUNT_ID } });
 }
 
 /** Client Garmin authentifié (tokens en base). */
@@ -58,7 +58,7 @@ export async function getGarminClient() {
 }
 
 export async function disconnectGarmin() {
-  await prisma.garminAccount.deleteMany({ where: { id: ACCOUNT_ID } });
+  await prisma.garminAccount.deleteMany({ where: { athleteId: ACCOUNT_ID } });
 }
 
 /** Keeps the Garmin profile row so the hub can ask for a reconnect. */
@@ -66,7 +66,7 @@ export async function revokeGarminCredentials() {
   const account = await getGarminAccount();
   if (!account) return;
   await prisma.garminAccount.update({
-    where: { id: ACCOUNT_ID },
+    where: { athleteId: ACCOUNT_ID },
     data: { oauth1Token: {}, oauth2Token: {} },
   });
 }
@@ -87,9 +87,9 @@ export async function connectGarmin(username: string, password: string) {
   const { tokens, profile } = await loginWithCredentials(username, password);
 
   await prisma.garminAccount.upsert({
-    where: { id: ACCOUNT_ID },
+    where: { athleteId: ACCOUNT_ID },
     create: {
-      id: ACCOUNT_ID,
+      athleteId: ACCOUNT_ID,
       displayName: profile.displayName,
       fullName: profile.fullName,
       oauth1Token: tokens.oauth1 as unknown as Prisma.InputJsonValue,
@@ -141,15 +141,16 @@ export async function importGarminThresholds(): Promise<GarminThresholdsImport> 
     if (thresholds.vo2maxRunning != null) data.vo2maxRunning = thresholds.vo2maxRunning;
     if (thresholds.vo2maxCycling != null) data.vo2maxCycling = thresholds.vo2maxCycling;
 
-    await prisma.athleteProfile.upsert({
+    // The migrated profile row always exists — see the same note in
+    // `upsertAthleteProfile` (src/lib/queries/index.ts).
+    await prisma.athleteProfile.update({
       where: { id: 'default' },
-      create: { id: 'default', ...data } as Prisma.AthleteProfileUncheckedCreateInput,
-      update: data,
+      data,
     });
 
     const refreshed = currentTokens(client);
     await prisma.garminAccount.update({
-      where: { id: ACCOUNT_ID },
+      where: { athleteId: ACCOUNT_ID },
       data: {
         oauth1Token: refreshed.oauth1 as unknown as Prisma.InputJsonValue,
         oauth2Token: refreshed.oauth2 as unknown as Prisma.InputJsonValue,
@@ -240,7 +241,7 @@ async function upsertGarminHealthDay(
   if (sleep.sleepScoreFeedback != null) data.sleepScoreFeedback = sleep.sleepScoreFeedback;
 
   await prisma.dailyHealth.upsert({
-    where: { date: day },
+    where: { athleteId_date: { athleteId: 'default', date: day } },
     create: {
       date: day,
       sleepMinutes: health.sleepMinutes,
@@ -317,7 +318,7 @@ export async function syncGarminHealth(options?: {
 
     const refreshed = currentTokens(client);
     await prisma.garminAccount.update({
-      where: { id: ACCOUNT_ID },
+      where: { athleteId: ACCOUNT_ID },
       data: {
         oauth1Token: refreshed.oauth1 as unknown as Prisma.InputJsonValue,
         oauth2Token: refreshed.oauth2 as unknown as Prisma.InputJsonValue,

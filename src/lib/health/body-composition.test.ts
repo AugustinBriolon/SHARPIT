@@ -10,6 +10,7 @@ import {
 function row(source: BodyCompositionSource, day: string, hour: number): BodyCompositionMeasurement {
   return {
     id: `${source}-${day}-${hour}`,
+    athleteId: 'default',
     source,
     externalId: `${source}-${day}`,
     measuredAt: new Date(`${day}T${String(hour).padStart(2, '0')}:00:00`),

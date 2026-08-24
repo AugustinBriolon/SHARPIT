@@ -236,7 +236,9 @@ Rédige la rétrospective hebdomadaire en suivant la structure imposée. Mets l'
 /** Lit la rétro hebdo stockée pour la semaine contenant `refDate`. */
 export async function getWeeklyReview(refDate: Date = new Date()) {
   return prisma.weeklyReview.findUnique({
-    where: { weekStart: utcDateOnly(weekStartFor(refDate)) },
+    where: {
+      athleteId_weekStart: { athleteId: 'default', weekStart: utcDateOnly(weekStartFor(refDate)) },
+    },
   });
 }
 
@@ -256,7 +258,7 @@ export async function generateAndStoreWeeklyReview(
   const { content, stats } = await generateWeeklyReviewContent(weekStart);
   const date = utcDateOnly(weekStart);
   return prisma.weeklyReview.upsert({
-    where: { weekStart: date },
+    where: { athleteId_weekStart: { athleteId: 'default', weekStart: date } },
     create: { weekStart: date, content, stats: stats as object },
     update: { content, stats: stats as object, generatedAt: new Date() },
   });

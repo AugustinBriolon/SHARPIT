@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     }
 
     const data = {
-      athleteId: String(athlete.id),
+      stravaAthleteId: String(athlete.id),
       firstName: athlete.firstname ?? null,
       lastName: athlete.lastname ?? null,
       avatarUrl: athlete.profile ?? null,
@@ -45,8 +45,8 @@ export async function GET(request: NextRequest) {
     };
 
     await prisma.stravaAccount.upsert({
-      where: { id: 'default' },
-      create: { id: 'default', ...data },
+      where: { athleteId: 'default' },
+      create: { athleteId: 'default', ...data },
       update: data,
     });
 

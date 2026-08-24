@@ -130,7 +130,7 @@ Rédige le ${dayCtx.phaseLabel} en suivant la structure imposée et les règles 
 /** Lit le bilan stocké pour une date (null si absent). */
 export async function getDailyBriefing(refDate: Date = new Date()) {
   return prisma.dailyBriefing.findUnique({
-    where: { date: utcDateOnly(refDate) },
+    where: { athleteId_date: { athleteId: 'default', date: utcDateOnly(refDate) } },
   });
 }
 
@@ -142,7 +142,7 @@ export async function generateAndStoreDailyBriefing(refDate: Date = new Date()) 
   const { content, readiness, phaseAtGeneration } = await generateDailyBriefingContent(refDate);
   const date = utcDateOnly(refDate);
   return prisma.dailyBriefing.upsert({
-    where: { date },
+    where: { athleteId_date: { athleteId: 'default', date } },
     create: { date, content, readiness, phaseAtGeneration },
     update: { content, readiness, phaseAtGeneration, generatedAt: new Date() },
   });

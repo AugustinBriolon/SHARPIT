@@ -36,11 +36,11 @@ async function ingestStravaActivity(activity: StravaActivity): Promise<void> {
 const ACCOUNT_ID = 'default';
 
 export async function getStravaAccount() {
-  return prisma.stravaAccount.findUnique({ where: { id: ACCOUNT_ID } });
+  return prisma.stravaAccount.findUnique({ where: { athleteId: ACCOUNT_ID } });
 }
 
 export async function disconnectStrava() {
-  await prisma.stravaAccount.deleteMany({ where: { id: ACCOUNT_ID } });
+  await prisma.stravaAccount.deleteMany({ where: { athleteId: ACCOUNT_ID } });
 }
 
 /** Keeps the Strava profile row so the hub can ask for a reconnect. */
@@ -48,7 +48,7 @@ export async function revokeStravaCredentials() {
   const account = await getStravaAccount();
   if (!account) return;
   await prisma.stravaAccount.update({
-    where: { id: ACCOUNT_ID },
+    where: { athleteId: ACCOUNT_ID },
     data: {
       accessToken: '',
       refreshToken: '',
@@ -70,7 +70,7 @@ export async function getValidAccessToken() {
   try {
     const refreshed = await refreshAccessToken(account.refreshToken);
     await prisma.stravaAccount.update({
-      where: { id: ACCOUNT_ID },
+      where: { athleteId: ACCOUNT_ID },
       data: {
         accessToken: refreshed.access_token,
         refreshToken: refreshed.refresh_token,
@@ -361,7 +361,7 @@ export async function syncStravaActivities(): Promise<SyncResult> {
   }
 
   await prisma.stravaAccount.update({
-    where: { id: ACCOUNT_ID },
+    where: { athleteId: ACCOUNT_ID },
     data: { lastSyncAt: new Date() },
   });
 

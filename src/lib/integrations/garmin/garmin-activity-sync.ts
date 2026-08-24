@@ -396,7 +396,7 @@ export async function syncGarminActivities(options?: {
 
     const refreshed = currentTokens(client);
     await prisma.garminAccount.update({
-      where: { id: ACCOUNT_ID },
+      where: { athleteId: ACCOUNT_ID },
       data: {
         oauth1Token: refreshed.oauth1 as unknown as Prisma.InputJsonValue,
         oauth2Token: refreshed.oauth2 as unknown as Prisma.InputJsonValue,

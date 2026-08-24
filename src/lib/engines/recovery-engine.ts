@@ -16,16 +16,15 @@ import { PrismaDecisionRecordRepository } from '@/infrastructure/inference/prism
 import { featureEngine } from '@/lib/engines/feature-engine';
 import { prisma } from '@/lib/prisma';
 
-/**
- * Legacy DailyHealth bridge — table is currently single-athlete (no athleteId column).
- * `athleteId` is kept for API symmetry with the orchestrator dependency contract.
- */
+/** Legacy DailyHealth bridge. */
 async function loadWearableEnergySignals(
-  _athleteId: string,
+  athleteId: string,
   trainingDayId: string,
 ): Promise<WearableEnergySignals | null> {
   const health = await prisma.dailyHealth.findUnique({
-    where: { date: new Date(`${trainingDayId}T00:00:00.000Z`) },
+    where: {
+      athleteId_date: { athleteId, date: new Date(`${trainingDayId}T00:00:00.000Z`) },
+    },
     select: { stress: true, bodyBattery: true },
   });
   if (!health || (health.stress == null && health.bodyBattery == null)) {

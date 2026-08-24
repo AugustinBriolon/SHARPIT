@@ -222,7 +222,9 @@ export async function getDashboardData() {
       select: { load: true, date: true },
       orderBy: { date: 'desc' },
     }),
-    prisma.dailyHealth.findUnique({ where: { date: today } }),
+    prisma.dailyHealth.findUnique({
+      where: { athleteId_date: { athleteId: 'default', date: today } },
+    }),
     prisma.goal.findFirst({
       where: {
         kind: 'RACE',
@@ -452,10 +454,13 @@ export async function upsertAthleteProfile(data: {
       : {}),
   };
 
-  return prisma.athleteProfile.upsert({
+  // Every AthleteProfile row now carries a required clerkUserId — there is no
+  // longer a placeholder value an upsert's create branch could invent. The
+  // multi-tenant migration guarantees this row already exists; a real create
+  // path belongs to `getCurrentAthleteId()`'s lazy provisioning instead.
+  return prisma.athleteProfile.update({
     where: { id: PROFILE_ID },
-    create: { id: PROFILE_ID, ...payload },
-    update: payload,
+    data: payload,
   });
 }
 

@@ -29,7 +29,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export async function getGoogleAccount() {
-  return prisma.googleAccount.findUnique({ where: { id: ACCOUNT_ID } });
+  return prisma.googleAccount.findUnique({ where: { athleteId: ACCOUNT_ID } });
 }
 
 export function isGoogleConnected(
@@ -43,7 +43,7 @@ export async function revokeGoogleCredentials() {
   const account = await getGoogleAccount();
   if (!account) return;
   await prisma.googleAccount.update({
-    where: { id: ACCOUNT_ID },
+    where: { athleteId: ACCOUNT_ID },
     data: {
       accessToken: '',
       refreshToken: '',
@@ -53,7 +53,7 @@ export async function revokeGoogleCredentials() {
 }
 
 export async function disconnectGoogle() {
-  await prisma.googleAccount.deleteMany({ where: { id: ACCOUNT_ID } });
+  await prisma.googleAccount.deleteMany({ where: { athleteId: ACCOUNT_ID } });
   // On délie les séances : les events Google restent, mais l'app oublie le lien.
   await prisma.plannedSession.updateMany({
     where: { googleEventId: { not: null } },
@@ -63,7 +63,7 @@ export async function disconnectGoogle() {
 
 export async function setTargetCalendar(calendarId: string | null, calendarName: string | null) {
   return prisma.googleAccount.update({
-    where: { id: ACCOUNT_ID },
+    where: { athleteId: ACCOUNT_ID },
     data: { targetCalendarId: calendarId, targetCalendarName: calendarName },
   });
 }
@@ -74,7 +74,7 @@ export async function setHiddenCalendars(ids: string[]) {
     throw new Error('Compte Google non connecté');
   }
   return prisma.googleAccount.update({
-    where: { id: ACCOUNT_ID },
+    where: { athleteId: ACCOUNT_ID },
     data: { hiddenCalendarIds: ids },
   });
 }
@@ -89,7 +89,7 @@ export async function getValidAccessToken() {
   try {
     const refreshed = await refreshAccessToken(account.refreshToken);
     await prisma.googleAccount.update({
-      where: { id: ACCOUNT_ID },
+      where: { athleteId: ACCOUNT_ID },
       data: {
         accessToken: refreshed.access_token,
         expiresAt: new Date(Date.now() + refreshed.expires_in * 1000),
@@ -345,7 +345,7 @@ export async function syncFromGoogle(): Promise<GooglePullResult> {
   }
 
   await prisma.googleAccount.update({
-    where: { id: ACCOUNT_ID },
+    where: { athleteId: ACCOUNT_ID },
     data: { lastSyncAt: new Date() },
   });
 

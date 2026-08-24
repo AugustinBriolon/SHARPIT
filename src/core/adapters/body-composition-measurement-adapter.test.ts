@@ -6,6 +6,7 @@ import { bodyCompositionMeasurementToObservation } from './body-composition-meas
 function row(overrides: Partial<BodyCompositionMeasurement> = {}): BodyCompositionMeasurement {
   return {
     id: 'row-1',
+    athleteId: 'default',
     source: BodyCompositionSource.WITHINGS,
     externalId: 'grp-123',
     measuredAt: new Date('2026-08-11T07:30:00Z'),

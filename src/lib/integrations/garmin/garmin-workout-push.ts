@@ -25,7 +25,7 @@ export class GarminWorkoutAlreadyPushedError extends Error {
 
 export async function persistGarminTokens(tokens: GarminTokens): Promise<void> {
   await prisma.garminAccount.update({
-    where: { id: ACCOUNT_ID },
+    where: { athleteId: ACCOUNT_ID },
     data: {
       oauth1Token: tokens.oauth1 as unknown as never,
       oauth2Token: tokens.oauth2 as unknown as never,
