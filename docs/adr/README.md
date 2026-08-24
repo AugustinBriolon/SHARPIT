@@ -29,6 +29,7 @@
 | [ADR-023](./ADR-023-reading-density-expert-mode.md)              | Reading density — one athlete preference, gated at the surface                    | Accepted |
 | [ADR-024](./ADR-024-route-reveal-motion-exception.md)            | Route reveal — a narrow exception to the 300ms motion cap                         | Accepted |
 | [ADR-025](./ADR-025-multi-tenant-conversion.md)                  | Multi-tenant conversion — Phase 0 (foundation)                                    | Accepted |
+| [ADR-026](./ADR-026-public-demo-mode.md)                         | Public read-only demo mode                                                        | Accepted |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 
