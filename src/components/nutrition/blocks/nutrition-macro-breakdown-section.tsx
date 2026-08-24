@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 const WEEKDAY_LETTER = ['D', 'L', 'M', 'M', 'J', 'V', 'S'] as const;
 
 const BAR_TRACK_HEIGHT = 64;
-const MIN_BAR_HEIGHT = 14;
+const MIN_FILL_HEIGHT = 6;
 
 const ROWS: { kind: MacroKind; field: 'carbohydrates' | 'fat' | 'protein' }[] = [
   { kind: 'carbs', field: 'carbohydrates' },
@@ -27,6 +27,13 @@ function breakdownDays(date: Date, history: NutritionDaySummary[]): BreakdownDay
   });
 }
 
+function goalFor(
+  entry: NutritionDaySummary | null,
+  field: 'carbohydrates' | 'fat' | 'protein',
+): number | null {
+  return entry?.goalsProgress?.[field].goal ?? null;
+}
+
 function MacroRow({
   kind,
   field,
@@ -36,9 +43,9 @@ function MacroRow({
   field: 'carbohydrates' | 'fat' | 'protein';
   days: BreakdownDay[];
 }) {
-  const values = days.map((d) => d.entry?.[field] ?? null);
-  const loggedValues = values.filter((v): v is number => v != null && v > 0);
-  const max = Math.max(...loggedValues, 1);
+  const loggedValues = days
+    .map((d) => d.entry?.[field] ?? null)
+    .filter((v): v is number => v != null && v > 0);
   const average = loggedValues.length
     ? Math.round(loggedValues.reduce((s, v) => s + v, 0) / loggedValues.length)
     : null;
@@ -55,18 +62,29 @@ function MacroRow({
         </p>
       </div>
       <div className="flex items-end gap-2" style={{ height: BAR_TRACK_HEIGHT }}>
-        {days.map((d, i) => {
-          const grams = values[i];
-          const hasData = grams != null && grams > 0;
-          const h = hasData
-            ? Math.max(MIN_BAR_HEIGHT, Math.round((grams / max) * BAR_TRACK_HEIGHT))
-            : BAR_TRACK_HEIGHT;
+        {days.map((d) => {
+          const grams = d.entry?.[field] ?? null;
+          const goal = goalFor(d.entry, field);
+          const hasFill = grams != null && grams > 0 && goal != null && goal > 0;
+          const fillHeight = hasFill
+            ? Math.max(MIN_FILL_HEIGHT, Math.round(Math.min(1, grams / goal) * BAR_TRACK_HEIGHT))
+            : 0;
           return (
             <div key={d.key} className="flex flex-1 flex-col items-center gap-1.5">
               <div
-                className={cn('w-full rounded-full', hasData ? MACRO_COLORS[kind].bar : 'bg-muted')}
-                style={{ height: h }}
-              />
+                className="bg-muted relative w-full overflow-hidden rounded-full"
+                style={{ height: BAR_TRACK_HEIGHT }}
+              >
+                {hasFill ? (
+                  <div
+                    style={{ height: fillHeight }}
+                    className={cn(
+                      'absolute inset-x-0 bottom-0 rounded-full',
+                      MACRO_COLORS[kind].bar,
+                    )}
+                  />
+                ) : null}
+              </div>
               <span className="text-muted-foreground text-[10px]">{d.weekday}</span>
             </div>
           );
