@@ -1,6 +1,7 @@
 import { Lock } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { DemoExitButton } from '@/components/demo/demo-exit';
 import { Button } from '@/components/ui/button';
 import { isDemoSession } from '@/lib/demo/demo-session';
 
@@ -18,9 +19,12 @@ async function SettingsGate({ children }: { children: React.ReactNode }) {
             désactivés sur le compte démo partagé.
           </p>
         </div>
-        <Button nativeButton={false} render={<Link href="/" />} variant="outline">
-          Retour à l&apos;app
-        </Button>
+        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+          <DemoExitButton />
+          <Button nativeButton={false} render={<Link href="/" />} variant="outline">
+            Retour à l&apos;app
+          </Button>
+        </div>
       </div>
     );
   }
@@ -30,7 +34,7 @@ async function SettingsGate({ children }: { children: React.ReactNode }) {
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   // Awaits cookies() at request time without blocking prerender — same
-  // reasoning as AccessGate (src/components/auth/access-gate.tsx).
+  // reasoning as DemoBanner: await cookies()/auth() inside Suspense.
   return (
     <Suspense>
       <SettingsGate>{children}</SettingsGate>

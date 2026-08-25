@@ -17,8 +17,8 @@ export const DEMO_CLERK_USER_ID = 'demo';
  * their own writes would be misread as a demo session and blocked, and every
  * demo-aware surface (banner, disabled Settings/Coach) would misreport their
  * real session as a demo one. Checking this here, once, keeps every call site
- * (proxy, getCurrentAthleteId, AccessGate, SettingsLayout, CoachPage,
- * DemoBanner) consistent without each re-deriving the same precedence.
+ * (proxy, getCurrentAthleteId, SettingsLayout, CoachPage, DemoBanner)
+ * consistent without each re-deriving the same precedence.
  */
 export async function isDemoSession(): Promise<boolean> {
   if (isDevClerkBypass()) return false;

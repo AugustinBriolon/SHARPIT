@@ -1,4 +1,5 @@
 import { Eye } from 'lucide-react';
+import { DemoExitTextLink } from '@/components/demo/demo-exit';
 import { isDemoSession } from '@/lib/demo/demo-session';
 import { awaitRequest } from '@/lib/next/await-request';
 
@@ -16,9 +17,7 @@ export async function DemoBanner() {
     >
       <Eye className="size-3.5 shrink-0" aria-hidden />
       Mode démo — lecture seule, données fictives
-      <a className="underline underline-offset-2" href="/api/demo/exit">
-        Quitter
-      </a>
+      <DemoExitTextLink />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { MessageCircleOff } from 'lucide-react';
 import { Suspense } from 'react';
 import { CoachView } from '@/components/coach/coach-view';
 import { CoachHubSkeleton } from '@/components/coach/coach-hub-skeleton';
+import { DemoExitButton } from '@/components/demo/demo-exit';
 import { isDemoSession } from '@/lib/demo/demo-session';
 
 async function CoachDemoDisabled() {
@@ -19,6 +20,7 @@ async function CoachDemoDisabled() {
           pour discuter.
         </p>
       </div>
+      <DemoExitButton />
     </div>
   );
 }
