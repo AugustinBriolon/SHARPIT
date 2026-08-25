@@ -3,7 +3,9 @@ import { z } from 'zod';
 
 const optionalNumber = z.coerce.number().optional().nullable();
 const optionalInt = z.coerce.number().int().optional().nullable();
-const optionalString = z.string().optional().nullable();
+// 2000 chars is far beyond any real activity note/title — closes an
+// unbounded-payload vector without ever touching real use.
+const optionalString = z.string().max(2000).optional().nullable();
 
 export const activityTypeSchema = z.nativeEnum(ActivityType);
 
@@ -63,7 +65,7 @@ export const hikeMetricsSchema = z.object({
 });
 
 export const strengthSetSchema = z.object({
-  exercise: z.string().min(1),
+  exercise: z.string().min(1).max(200),
   sets: z.coerce.number().int().min(1),
   reps: z.coerce.number().int().min(1),
   weightKg: optionalNumber,
@@ -80,7 +82,7 @@ export const createActivitySchema = baseActivitySchema.extend({
   bikeMetrics: bikeMetricsSchema.optional(),
   swimMetrics: swimMetricsSchema.optional(),
   hikeMetrics: hikeMetricsSchema.optional(),
-  strengthSets: z.array(strengthSetSchema).optional(),
+  strengthSets: z.array(strengthSetSchema).max(50).optional(),
 });
 
 export const updateActivitySchema = createActivitySchema.partial().extend({

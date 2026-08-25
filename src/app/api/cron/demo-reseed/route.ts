@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { seedDemoAthlete } from '@/lib/demo/seed-demo-data';
+import { timingSafeEqualString } from '@/lib/crypto/timing-safe-equal';
 
 export const maxDuration = 60;
 
@@ -9,7 +10,7 @@ export const maxDuration = 60;
  * actually prevents the demo from going stale (see ADR-026). */
 export async function GET(request: Request) {
   const auth = request.headers.get('authorization');
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!auth || !timingSafeEqualString(auth, `Bearer ${process.env.CRON_SECRET}`)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

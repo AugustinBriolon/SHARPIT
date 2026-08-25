@@ -13,6 +13,7 @@ import { CRON_BACKFILL_BATCH, backfillActivityStreams } from '@/lib/streams/stre
 import { getStravaAccount, syncStravaActivities } from '@/lib/integrations/strava/strava-sync';
 import { generateAndStoreWeeklyReview, isSunday } from '@/lib/weekly-review';
 import { isCoachConfigured } from '@/lib/ai';
+import { timingSafeEqualString } from '@/lib/crypto/timing-safe-equal';
 
 export const maxDuration = 300;
 
@@ -197,7 +198,7 @@ async function syncOneAthlete(athleteId: string): Promise<AthleteSyncResult> {
 /** Synchro planifiée (Vercel Cron) : Strava, Garmin, Renpho, Withings, Google, MyFitnessPal si connectés, pour chaque athlète. */
 export async function GET(request: Request) {
   const auth = request.headers.get('authorization');
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!auth || !timingSafeEqualString(auth, `Bearer ${process.env.CRON_SECRET}`)) {
     return unauthorized();
   }
 

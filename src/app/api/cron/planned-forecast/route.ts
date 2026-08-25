@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { refreshUpcomingPlannedSessionForecasts } from '@/lib/planned-session/forecast/refresh-forecasts';
+import { timingSafeEqualString } from '@/lib/crypto/timing-safe-equal';
 
 export const maxDuration = 300;
 
@@ -10,7 +11,7 @@ function unauthorized() {
 /** Rafraîchit les contextes environnementaux des séances outdoor (aujourd'hui + demain). */
 export async function GET(request: Request) {
   const auth = request.headers.get('authorization');
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!auth || !timingSafeEqualString(auth, `Bearer ${process.env.CRON_SECRET}`)) {
     return unauthorized();
   }
 
