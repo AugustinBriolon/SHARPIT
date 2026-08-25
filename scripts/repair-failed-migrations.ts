@@ -1,11 +1,20 @@
 /**
  * Unblocks Prisma migrate deploy when a migration is stuck in "failed" state (P3009).
  * Runs before `prisma migrate deploy` on Vercel — no-op when the database is healthy.
+ *
+ * Handles two cases:
+ * 1. `20260707_add_athlete_snapshot` — folder still exists; use `migrate resolve`.
+ * 2. `20260824_drop_athlete_id_bootstrap_default` — renamed to a timestamped folder;
+ *    `migrate resolve` cannot find the old name, so we mark it rolled-back via SQL.
  */
 import { execSync } from 'node:child_process';
 import { PrismaClient } from '@prisma/client';
-
-const MIGRATION_NAME = '20260707_add_athlete_snapshot';
+import {
+  ORPHAN_DROP_DEFAULT_MIGRATION,
+  SNAPSHOT_MIGRATION,
+  decideOrphanDropDefaultRepair,
+  decideSnapshotRepair,
+} from './repair-failed-migrations-logic';
 
 type FailedMigrationRow = {
   migration_name: string;
@@ -17,14 +26,36 @@ type ExistsRow = {
 
 const prisma = new PrismaClient();
 
-function runResolve(flag: '--applied' | '--rolled-back'): void {
-  execSync(`yarn prisma migrate resolve ${flag} ${MIGRATION_NAME}`, {
+function runResolve(migrationName: string, flag: '--applied' | '--rolled-back'): void {
+  execSync(`yarn prisma migrate resolve ${flag} ${migrationName}`, {
     stdio: 'inherit',
     env: process.env,
   });
 }
 
-async function migrationArtifactsExist(): Promise<boolean> {
+async function isFailed(migrationName: string): Promise<boolean> {
+  const failed = await prisma.$queryRaw<FailedMigrationRow[]>`
+    SELECT migration_name
+    FROM "_prisma_migrations"
+    WHERE migration_name = ${migrationName}
+      AND finished_at IS NULL
+      AND rolled_back_at IS NULL
+      AND started_at IS NOT NULL
+  `;
+  return failed.length > 0;
+}
+
+async function markRolledBackViaSql(migrationName: string): Promise<void> {
+  await prisma.$executeRaw`
+    UPDATE "_prisma_migrations"
+    SET rolled_back_at = NOW()
+    WHERE migration_name = ${migrationName}
+      AND finished_at IS NULL
+      AND rolled_back_at IS NULL
+  `;
+}
+
+async function snapshotArtifactsExist(): Promise<boolean> {
   const [table, uniqueIndex, snapshotIndex, generatedIndex] = await Promise.all([
     prisma.$queryRaw<ExistsRow[]>`
       SELECT EXISTS (
@@ -60,32 +91,42 @@ async function migrationArtifactsExist(): Promise<boolean> {
   );
 }
 
-async function main(): Promise<void> {
-  const failed = await prisma.$queryRaw<FailedMigrationRow[]>`
-    SELECT migration_name
-    FROM "_prisma_migrations"
-    WHERE migration_name = ${MIGRATION_NAME}
-      AND finished_at IS NULL
-      AND rolled_back_at IS NULL
-      AND started_at IS NOT NULL
-  `;
-
-  if (failed.length === 0) {
+async function repairSnapshotMigration(): Promise<void> {
+  if (!(await isFailed(SNAPSHOT_MIGRATION))) {
     return;
   }
 
-  const complete = await migrationArtifactsExist();
+  const action = decideSnapshotRepair(await snapshotArtifactsExist());
 
-  if (complete) {
+  if (action === 'mark-applied') {
     console.info(
-      `[migrate-repair] ${MIGRATION_NAME} failed but schema exists — marking as applied`,
+      `[migrate-repair] ${SNAPSHOT_MIGRATION} failed but schema exists — marking as applied`,
     );
-    runResolve('--applied');
+    runResolve(SNAPSHOT_MIGRATION, '--applied');
     return;
   }
 
-  console.info(`[migrate-repair] ${MIGRATION_NAME} failed — marking as rolled back for retry`);
-  runResolve('--rolled-back');
+  console.info(`[migrate-repair] ${SNAPSHOT_MIGRATION} failed — marking as rolled back for retry`);
+  runResolve(SNAPSHOT_MIGRATION, '--rolled-back');
+}
+
+async function repairOrphanDropDefaultMigration(): Promise<void> {
+  const failed = await isFailed(ORPHAN_DROP_DEFAULT_MIGRATION);
+  const action = decideOrphanDropDefaultRepair(failed);
+
+  if (action === 'noop') {
+    return;
+  }
+
+  console.info(
+    `[migrate-repair] ${ORPHAN_DROP_DEFAULT_MIGRATION} failed under pre-rename name — marking rolled back so timestamped migrations can apply`,
+  );
+  await markRolledBackViaSql(ORPHAN_DROP_DEFAULT_MIGRATION);
+}
+
+async function main(): Promise<void> {
+  await repairOrphanDropDefaultMigration();
+  await repairSnapshotMigration();
 }
 
 main()
