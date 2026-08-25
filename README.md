@@ -111,18 +111,20 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ### Environment variables
 
-| Variable                            | Description                                                                                           |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                      | PostgreSQL or Neon connection string                                                                  |
-| `STRAVA_CLIENT_ID`                  | Strava API client ID                                                                                  |
-| `STRAVA_CLIENT_SECRET`              | Strava API client secret                                                                              |
-| `STRAVA_REDIRECT_URI`               | `http://localhost:3000/api/strava/callback`                                                           |
-| `GARMIN_CONSUMER_KEY`               | Garmin Connect API OAuth key                                                                          |
-| `GARMIN_CONSUMER_SECRET`            | Garmin Connect API OAuth secret                                                                       |
-| `ANTHROPIC_API_KEY`                 | Claude API key for AI coaching                                                                        |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk authentication public key                                                                       |
-| `CLERK_SECRET_KEY`                  | Clerk authentication secret key                                                                       |
-| `DEV_BYPASS_CLERK`                  | Dev only: set `true` to skip Clerk when the corporate proxy blocks `*.clerk.accounts.dev` (see below) |
+| Variable                            | Description                                                                                                  |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `DATABASE_URL`                      | PostgreSQL or Neon connection string                                                                         |
+| `STRAVA_CLIENT_ID`                  | Strava API client ID                                                                                         |
+| `STRAVA_CLIENT_SECRET`              | Strava API client secret                                                                                     |
+| `STRAVA_REDIRECT_URI`               | `http://localhost:3000/api/strava/callback`                                                                  |
+| `GARMIN_CONSUMER_KEY`               | Garmin Connect API OAuth key                                                                                 |
+| `GARMIN_CONSUMER_SECRET`            | Garmin Connect API OAuth secret                                                                              |
+| `ANTHROPIC_API_KEY`                 | Claude API key for AI coaching                                                                               |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk authentication public key                                                                              |
+| `CLERK_SECRET_KEY`                  | Clerk authentication secret key                                                                              |
+| `DEV_BYPASS_CLERK`                  | Dev only: set `true` to skip Clerk when the corporate proxy blocks `*.clerk.accounts.dev` (see below)        |
+| `UPSTASH_REDIS_REST_URL`            | Optional: Upstash Redis REST URL for per-athlete rate limiting. Rate limiting fails open (disabled) if unset |
+| `UPSTASH_REDIS_REST_TOKEN`          | Optional: Upstash Redis REST token, paired with the URL above                                                |
 
 #### Corporate proxy / Wi‑Fi entreprise
 
