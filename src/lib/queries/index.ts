@@ -315,6 +315,12 @@ export async function getNextRace(athleteId: string) {
 }
 
 export async function getHealthEntries(athleteId: string, days = 90, refDate: Date = new Date()) {
+  const { isProviderEnabledForClass } = await import('@/lib/integrations/source-prefs');
+  const { loadResolvedSourcePrefs } = await import('@/lib/integrations/source-prefs-store');
+  const prefs = await loadResolvedSourcePrefs(athleteId);
+  if (!isProviderEnabledForClass(prefs, 'wearable_health', 'garmin')) {
+    return [];
+  }
   const end = endOfDay(refDate);
   const since = startOfDay(addDays(refDate, -(days - 1)));
   return prisma.dailyHealth.findMany({
@@ -324,12 +330,14 @@ export async function getHealthEntries(athleteId: string, days = 90, refDate: Da
 }
 
 export async function getBodyCompositionMeasurements(athleteId: string, days?: number) {
+  const { loadResolvedSourcePrefs } = await import('@/lib/integrations/source-prefs-store');
+  const prefs = await loadResolvedSourcePrefs(athleteId);
   const since = days != null ? startOfDay(addDays(new Date(), -days)) : null;
   const rows = await prisma.bodyCompositionMeasurement.findMany({
     where: since ? { athleteId, measuredAt: { gte: since } } : { athleteId },
     orderBy: { measuredAt: 'desc' },
   });
-  return dedupeBodyCompositionByDay(rows);
+  return dedupeBodyCompositionByDay(rows, prefs.classes.body);
 }
 
 const physicalNoteInclude = {

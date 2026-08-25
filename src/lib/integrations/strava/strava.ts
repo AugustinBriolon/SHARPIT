@@ -1,5 +1,6 @@
 import { ActivityType } from '@prisma/client';
 import { ProviderAuthError } from '@/lib/integrations/shared/connection-status';
+import { normalizeOAuthPublicOrigin } from '@/lib/integrations/oauth-return';
 
 const STRAVA_OAUTH_BASE = 'https://www.strava.com/oauth';
 const STRAVA_API_BASE = 'https://www.strava.com/api/v3';
@@ -9,10 +10,15 @@ export const STRAVA_SCOPE = 'read,activity:read_all';
 /** URL de callback OAuth, déduite du host courant si STRAVA_REDIRECT_URI est absent. */
 export function getStravaRedirectUri(origin?: string) {
   if (process.env.STRAVA_REDIRECT_URI) {
-    return process.env.STRAVA_REDIRECT_URI;
+    try {
+      const url = new URL(process.env.STRAVA_REDIRECT_URI);
+      return `${normalizeOAuthPublicOrigin(url.origin)}${url.pathname}`;
+    } catch {
+      return process.env.STRAVA_REDIRECT_URI;
+    }
   }
   if (origin) {
-    return `${origin}/api/strava/callback`;
+    return `${normalizeOAuthPublicOrigin(origin)}/api/strava/callback`;
   }
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}/api/strava/callback`;

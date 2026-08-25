@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 // No OAuth callback needed — MFP uses credentials-based login.
-// This route is kept as a no-op to avoid 404s.
+// Kept as a no-op bounce to settings integrations.
 export function GET(request: Request) {
-  return NextResponse.redirect(new URL('/settings', request.url));
+  return NextResponse.redirect(new URL('/settings/integrations', request.url));
 }

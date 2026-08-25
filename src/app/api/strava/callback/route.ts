@@ -1,7 +1,8 @@
 import { cookies } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { redirectAfterIntegrationConnect } from '@/lib/integrations/oauth-return';
 import { exchangeCodeForToken } from '@/lib/integrations/strava/strava';
 import { encryptSecret } from '@/lib/secret-box';
 
@@ -11,11 +12,8 @@ export async function GET(request: NextRequest) {
   const state = searchParams.get('state');
   const error = searchParams.get('error');
 
-  const settingsUrl = new URL('/settings', request.url);
-
   if (error) {
-    settingsUrl.searchParams.set('strava', 'denied');
-    return NextResponse.redirect(settingsUrl);
+    return redirectAfterIntegrationConnect(request, 'strava', 'denied');
   }
 
   const cookieStore = await cookies();
@@ -23,8 +21,7 @@ export async function GET(request: NextRequest) {
   cookieStore.delete('strava_oauth_state');
 
   if (!code || !state || state !== storedState) {
-    settingsUrl.searchParams.set('strava', 'invalid_state');
-    return NextResponse.redirect(settingsUrl);
+    return redirectAfterIntegrationConnect(request, 'strava', 'invalid_state');
   }
 
   try {
@@ -33,8 +30,7 @@ export async function GET(request: NextRequest) {
     const { athlete } = token;
 
     if (!athlete) {
-      settingsUrl.searchParams.set('strava', 'no_athlete');
-      return NextResponse.redirect(settingsUrl);
+      return redirectAfterIntegrationConnect(request, 'strava', 'no_athlete');
     }
 
     const data = {
@@ -53,11 +49,9 @@ export async function GET(request: NextRequest) {
       update: data,
     });
 
-    settingsUrl.searchParams.set('strava', 'connected');
-    return NextResponse.redirect(settingsUrl);
+    return redirectAfterIntegrationConnect(request, 'strava', 'connected');
   } catch (err) {
     console.error(err);
-    settingsUrl.searchParams.set('strava', 'error');
-    return NextResponse.redirect(settingsUrl);
+    return redirectAfterIntegrationConnect(request, 'strava', 'error');
   }
 }

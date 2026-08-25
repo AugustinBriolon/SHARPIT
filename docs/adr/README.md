@@ -30,6 +30,7 @@
 | [ADR-024](./ADR-024-route-reveal-motion-exception.md)            | Route reveal — a narrow exception to the 300ms motion cap                         | Accepted |
 | [ADR-025](./ADR-025-multi-tenant-conversion.md)                  | Multi-tenant conversion — Phase 0 (foundation)                                    | Accepted |
 | [ADR-026](./ADR-026-public-demo-mode.md)                         | Public read-only demo mode                                                        | Accepted |
+| [ADR-027](./ADR-027-class-level-integration-sources.md)          | Class-level integration sources of truth                                          | Accepted |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 

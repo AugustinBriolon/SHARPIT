@@ -246,7 +246,10 @@ function StravaContent({
             'Connecte Strava pour importer automatiquement tes activités course, vélo et natation.',
           )}
         </p>
-        <a className={cn(buttonVariants(), 'w-full sm:w-auto')} href="/api/strava/connect">
+        <a
+          className={cn(buttonVariants(), 'w-full sm:w-auto')}
+          href="/api/strava/connect?returnTo=/settings/integrations"
+        >
           {integrationConnectCta(integration)}
         </a>
         {integration.statusMessage && (
@@ -525,7 +528,10 @@ function WithingsContent({
           OAuth Withings exige une URL de redirection HTTPS (pas localhost). Sur Vercel :{' '}
           <code className="text-xs">https://ton-domaine/api/withings/callback</code>
         </p>
-        <a className={cn(buttonVariants(), 'w-full sm:w-auto')} href="/api/withings/connect">
+        <a
+          className={cn(buttonVariants(), 'w-full sm:w-auto')}
+          href="/api/withings/connect?returnTo=/settings/integrations"
+        >
           {integrationConnectCta(integration)}
         </a>
         {integration.statusMessage && (
@@ -807,7 +813,9 @@ function GoogleContent({
 
   if (!integration.connected) {
     const blockedOnLan = isGoogleOAuthBlockedOnCurrentHost();
-    const connectHref = blockedOnLan ? googleOAuthLocalConnectHref() : '/api/google/connect';
+    const connectHref = blockedOnLan
+      ? `${googleOAuthLocalConnectHref()}?returnTo=/settings/integrations`
+      : '/api/google/connect?returnTo=/settings/integrations';
 
     return (
       <div className="space-y-4">
@@ -954,7 +962,7 @@ function MfpContent({
 
   if (!integration.connected) {
     return (
-      <form className="space-y-4" onSubmit={handleConnect}>
+      <form className="min-w-0 space-y-4" onSubmit={handleConnect}>
         <IntegrationModalHeader integration={integration} />
         <p className="text-muted-foreground text-sm leading-relaxed">
           Connecte MyFitnessPal pour importer ton journal alimentaire : calories, protéines,
@@ -964,11 +972,11 @@ function MfpContent({
           Ouvre myfitnesspal.com dans ton navigateur, connecte-toi, puis DevTools → Application →
           Cookies → copie la valeur de <strong>__Secure-next-auth.session-token</strong>.
         </p>
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-2">
           <Label htmlFor="mfp-session-token">Cookie de session MFP</Label>
           <Textarea
             autoComplete="off"
-            className="w-full max-w-full break-all"
+            className="[field-sizing:fixed] max-h-32 min-h-20 w-full max-w-full resize-y overflow-auto break-all"
             id="mfp-session-token"
             name="sessionToken"
             placeholder="eyJhbG…"

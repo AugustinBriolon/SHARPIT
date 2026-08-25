@@ -8,6 +8,7 @@ import { getMfpAccount } from '@/lib/integrations/myfitnesspal/myfitnesspal-sync
 import { isMfpConfigured } from '@/lib/integrations/myfitnesspal/myfitnesspal';
 
 import { getRenphoAccount } from '@/lib/integrations/renpho/renpho-sync';
+import { loadResolvedSourcePrefs } from '@/lib/integrations/source-prefs-store';
 import { isStravaConfigured } from '@/lib/integrations/strava/strava';
 import { getStravaAccount } from '@/lib/integrations/strava/strava-sync';
 import { isWithingsConfigured } from '@/lib/integrations/withings/withings';
@@ -171,6 +172,10 @@ export async function IntegrationsHubSection({
 }: {
   searchParams: IntegrationsSearchParams;
 }) {
-  const payload = await buildIntegrationsPayload(searchParams);
-  return <IntegrationsHub payload={payload} />;
+  const athleteId = await getCurrentAthleteId();
+  const [payload, prefs] = await Promise.all([
+    buildIntegrationsPayload(searchParams),
+    loadResolvedSourcePrefs(athleteId),
+  ]);
+  return <IntegrationsHub initialPrefs={prefs} payload={payload} />;
 }

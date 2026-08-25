@@ -1,9 +1,17 @@
 import { randomBytes } from 'crypto';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  publicOriginFromRequest,
+  redirectIfBindHost,
+  setIntegrationReturnTo,
+} from '@/lib/integrations/oauth-return';
 import { buildAuthorizeUrl, isStravaConfigured } from '@/lib/integrations/strava/strava';
 
 export async function GET(request: NextRequest) {
+  const bindRedirect = redirectIfBindHost(request);
+  if (bindRedirect) return bindRedirect;
+
   if (!isStravaConfigured()) {
     return NextResponse.json(
       {
@@ -12,6 +20,10 @@ export async function GET(request: NextRequest) {
       { status: 400 },
     );
   }
+
+  const returnTo = request.nextUrl.searchParams.get('returnTo');
+  const dataClass = request.nextUrl.searchParams.get('dataClass');
+  await setIntegrationReturnTo(returnTo, dataClass);
 
   const state = randomBytes(16).toString('hex');
   const cookieStore = await cookies();
@@ -22,6 +34,6 @@ export async function GET(request: NextRequest) {
     maxAge: 600,
   });
 
-  const { origin } = new URL(request.url);
+  const origin = publicOriginFromRequest(request);
   return NextResponse.redirect(buildAuthorizeUrl(state, origin));
 }

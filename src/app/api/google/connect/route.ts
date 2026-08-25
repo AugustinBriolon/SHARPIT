@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
 import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { redirectIfBindHost, setIntegrationReturnTo } from '@/lib/integrations/oauth-return';
 import {
   buildAuthorizeUrl,
   getGoogleRedirectUri,
@@ -14,7 +15,10 @@ const OAUTH_COOKIE_OPTS = {
   maxAge: 600,
 };
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const bindRedirect = redirectIfBindHost(request);
+  if (bindRedirect) return bindRedirect;
+
   if (!isGoogleConfigured()) {
     return NextResponse.json(
       {
@@ -23,6 +27,10 @@ export async function GET() {
       { status: 400 },
     );
   }
+
+  const returnTo = request.nextUrl.searchParams.get('returnTo');
+  const dataClass = request.nextUrl.searchParams.get('dataClass');
+  await setIntegrationReturnTo(returnTo, dataClass);
 
   const state = randomBytes(16).toString('hex');
   const redirectUri = getGoogleRedirectUri();

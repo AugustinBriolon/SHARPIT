@@ -58,9 +58,48 @@ describe('dedupeBodyCompositionByDay', () => {
     expect(result[0]?.weightKg).toBe(75);
   });
 
+  it('respects Renpho as primary when prefs say so', () => {
+    const result = dedupeBodyCompositionByDay(
+      [
+        row(BodyCompositionSource.RENPHO, '2026-07-01', 8),
+        row(BodyCompositionSource.WITHINGS, '2026-07-01', 9),
+      ],
+      { primary: 'renpho', enabled: ['withings', 'renpho'] },
+    );
+    expect(result).toHaveLength(1);
+    expect(result[0]?.source).toBe(BodyCompositionSource.RENPHO);
+  });
+
+  it('ignores disabled sources', () => {
+    const result = dedupeBodyCompositionByDay(
+      [
+        row(BodyCompositionSource.RENPHO, '2026-07-01', 8),
+        row(BodyCompositionSource.WITHINGS, '2026-07-01', 9),
+      ],
+      { primary: 'withings', enabled: ['renpho'] },
+    );
+    expect(result[0]?.source).toBe(BodyCompositionSource.RENPHO);
+  });
+
   it('keeps Renpho when Withings is absent', () => {
     const result = dedupeBodyCompositionByDay([row(BodyCompositionSource.RENPHO, '2026-06-01', 8)]);
     expect(result[0]?.source).toBe(BodyCompositionSource.RENPHO);
+  });
+
+  it('returns nothing when the class is disabled for every source (enabled: [])', () => {
+    const result = dedupeBodyCompositionByDay(
+      [
+        row(BodyCompositionSource.RENPHO, '2026-07-01', 8),
+        row(BodyCompositionSource.WITHINGS, '2026-07-01', 9),
+      ],
+      { primary: null, enabled: [] },
+    );
+    expect(result).toHaveLength(0);
+  });
+
+  it('shows everything when prefs are genuinely absent (no filtering info at all)', () => {
+    const result = dedupeBodyCompositionByDay([row(BodyCompositionSource.RENPHO, '2026-06-01', 8)]);
+    expect(result).toHaveLength(1);
   });
 
   it('merges split Withings measure groups on the same day', () => {

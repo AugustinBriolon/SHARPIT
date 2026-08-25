@@ -255,6 +255,13 @@ model AthleteProfile {
   homeLocationLat   Float?
   homeLocationLng   Float?
 
+  /// First-login wizard finished (intention + optional providers). Null = must complete onboarding.
+  onboardingCompletedAt DateTime?
+
+  /// Per data-class source preferences: primary + enabled providers (ADR-027).
+  /// Shape: { version: 1, classes: { activities: { primary, enabled }, ... } }
+  integrationSourcePrefs Json?
+
   thresholdSnapshots AthleteThresholdSnapshot[]
 
   // Tenant back-relations — multi-tenant conversion (ADR-025). Root data:
@@ -290,6 +297,7 @@ model AthleteProfile {
   decisionRecords             DecisionRecord[]
   coachingDecisions           CoachingDecision[]
   snapshotRecords             AthleteSnapshotRecord[]
+  aiUsageEvents               AiUsageEvent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1417,4 +1425,20 @@ model BrickAnalysis {
   generatedAt  DateTime       @default(now())
 
   @@index([athleteId])
+}
+
+/// Per-call AI token usage, for cost visibility — not an enforcement mechanism.
+/// Frequency is capped separately by the rate limiters (see src/lib/rate-limit.ts);
+/// this table exists so real spend-per-athlete can be queried directly.
+model AiUsageEvent {
+  id           String         @id @default(cuid())
+  athleteId    String
+  athlete      AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  feature      String // 'coach' | 'analysis'
+  inputTokens  Int?
+  outputTokens Int?
+  totalTokens  Int?
+  createdAt    DateTime       @default(now())
+
+  @@index([athleteId, createdAt])
 }

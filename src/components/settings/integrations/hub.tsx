@@ -3,19 +3,12 @@
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  CheckCircle2,
-  ChevronRight,
-  CircleDashed,
-  Loader2,
-  RefreshCw,
-  Unplug,
-  XCircle,
-} from 'lucide-react';
+import { CheckCircle2, CircleDashed, Loader2, RefreshCw, Unplug, XCircle } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { FadePresence } from '@/components/motion';
+import { ClassSourceControls } from '@/components/integrations/class-source-controls';
 import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import { IntegrationLogo } from '@/components/settings/integrations/logos';
@@ -35,6 +28,12 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
 import {
+  DATA_CLASSES,
+  getCatalogProviderByIntegration,
+  providersForClass,
+  type DataClassId,
+} from '@/lib/integrations/provider-catalog';
+import {
   runGarminSync,
   runGoogleSync,
   runMfpSync,
@@ -43,6 +42,12 @@ import {
   runWithingsSync,
   type IntegrationId,
 } from '@/lib/integrations/shared/client-sync';
+import {
+  disableProviderForClass,
+  enableProviderForClass,
+  setPrimaryForClass,
+  type IntegrationSourcePrefs,
+} from '@/lib/integrations/source-prefs';
 import { invalidateAfterProviderSync } from '@/lib/query/invalidate-after-provider-sync';
 import { cn } from '@/lib/utils';
 
@@ -125,64 +130,6 @@ function RowSyncBadge({ state }: { state: RowSyncState }) {
   );
 }
 
-function IntegrationCard({
-  integration,
-  onOpen,
-  syncState,
-}: {
-  integration: IntegrationDefinition;
-  onOpen: () => void;
-  syncState?: RowSyncState;
-}) {
-  return (
-    <button
-      className="analysis-panel group hover:border-primary/25 hover:bg-primary/5 focus-visible:ring-primary/35 rounded-analysis-lg pressable-lg flex w-full flex-col p-4 text-left focus-visible:ring-2 focus-visible:outline-hidden"
-      type="button"
-      onClick={onOpen}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <IntegrationLogo className="size-10 shrink-0" id={integration.id} />
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="font-medium">{integration.name}</p>
-              {integration.badge === 'legacy' && (
-                <span className="bg-muted text-muted-foreground text-label rounded-full px-2 py-0.5">
-                  Historique
-                </span>
-              )}
-            </div>
-            <p className="text-muted-foreground text-xs">{integration.tagline}</p>
-          </div>
-        </div>
-        <div className="flex flex-col items-end gap-1">
-          <StatusBadge integration={integration} />
-          <FadePresence
-            className="flex"
-            presenceKey={syncState ?? 'idle'}
-            show={Boolean(syncState)}
-          >
-            {syncState ? <RowSyncBadge state={syncState} /> : null}
-          </FadePresence>
-        </div>
-      </div>
-
-      <div className="mt-4 flex items-end justify-between gap-2">
-        <div>
-          {(integration.connected || integration.needsReconnect) && integration.account?.label && (
-            <p className="text-sm font-medium">{integration.account.label}</p>
-          )}
-          <p className="text-muted-foreground text-xs">{integrationStatusLabel(integration)}</p>
-        </div>
-        <span className="text-primary inline-flex items-center gap-0.5 text-xs font-medium opacity-70 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
-          Gérer
-          <ChevronRight className="size-3.5" aria-hidden />
-        </span>
-      </div>
-    </button>
-  );
-}
-
 async function syncIntegration(id: IntegrationId): Promise<string> {
   switch (id) {
     case 'strava': {
@@ -212,10 +159,121 @@ async function syncIntegration(id: IntegrationId): Promise<string> {
   }
 }
 
-export function IntegrationsHub({ payload }: { payload: IntegrationsPayload }) {
+function ClassProviderRow({
+  integration,
+  dataClass,
+  prefs,
+  syncState,
+  onOpen,
+  onPrefsChange,
+}: {
+  integration: IntegrationDefinition;
+  dataClass: DataClassId;
+  prefs: IntegrationSourcePrefs;
+  syncState?: RowSyncState;
+  onOpen: () => void;
+  onPrefsChange: (next: IntegrationSourcePrefs) => void;
+}) {
+  const classPrefs = prefs.classes[dataClass];
+  const isEnabled = classPrefs.enabled.includes(integration.id);
+  const isPrimary = classPrefs.primary === integration.id;
+  const catalog = getCatalogProviderByIntegration(integration.id);
+  const classTypes = catalog?.dataTypesByClass[dataClass]?.join(' · ');
+
+  async function patch(action: 'enable' | 'disable' | 'setPrimary'): Promise<void> {
+    let optimistic: IntegrationSourcePrefs;
+    if (action === 'enable') {
+      optimistic = enableProviderForClass(prefs, dataClass, integration.id);
+    } else if (action === 'disable') {
+      optimistic = disableProviderForClass(prefs, dataClass, integration.id);
+    } else {
+      optimistic = setPrimaryForClass(prefs, dataClass, integration.id);
+    }
+    onPrefsChange(optimistic);
+    const response = await fetch('/api/integrations/source-prefs', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, dataClass, provider: integration.id }),
+    });
+    if (!response.ok) {
+      onPrefsChange(prefs);
+      toast.error('Impossible de mettre à jour la source');
+      return;
+    }
+    const data = (await response.json()) as { prefs: IntegrationSourcePrefs };
+    onPrefsChange(data.prefs);
+  }
+
+  return (
+    <div className="analysis-panel rounded-analysis-lg flex flex-col gap-3 p-4">
+      <button
+        className="group hover:border-primary/25 focus-visible:ring-primary/35 flex w-full items-start justify-between gap-3 text-left focus-visible:ring-2 focus-visible:outline-hidden"
+        type="button"
+        onClick={onOpen}
+      >
+        <div className="flex items-start gap-3">
+          <IntegrationLogo className="size-10 shrink-0" id={integration.id} />
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-medium">{integration.name}</p>
+              {integration.badge === 'legacy' && (
+                <span className="bg-muted text-muted-foreground text-label rounded-full px-2 py-0.5">
+                  Historique
+                </span>
+              )}
+            </div>
+            <p className="text-muted-foreground text-xs">{classTypes ?? integration.tagline}</p>
+            <p className="text-muted-foreground mt-1 text-xs">
+              {integrationStatusLabel(integration)}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          <StatusBadge integration={integration} />
+          <FadePresence
+            className="flex"
+            presenceKey={syncState ?? 'idle'}
+            show={Boolean(syncState)}
+          >
+            {syncState ? <RowSyncBadge state={syncState} /> : null}
+          </FadePresence>
+        </div>
+      </button>
+
+      {integration.connected ? (
+        <div className="border-analysis-border border-t pt-3">
+          <ClassSourceControls
+            className="mt-0"
+            isEnabled={isEnabled}
+            isPrimary={isPrimary}
+            onSetPrimary={() => void patch('setPrimary')}
+            onToggleEnabled={(next) => void patch(next ? 'enable' : 'disable')}
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export function IntegrationsHub({
+  payload,
+  initialPrefs,
+}: {
+  payload: IntegrationsPayload;
+  initialPrefs: IntegrationSourcePrefs;
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const integrations = useMemo(() => buildIntegrations(payload), [payload]);
+  const byId = useMemo(
+    () =>
+      Object.fromEntries(integrations.map((i) => [i.id, i])) as Record<
+        IntegrationId,
+        IntegrationDefinition
+      >,
+    [integrations],
+  );
+  const [prefs, setPrefs] = useState(initialPrefs);
   const [openId, setOpenId] = useState<IntegrationId | null>(null);
   const [syncingAll, setSyncingAll] = useState(false);
   const [rowSync, setRowSync] = useState<Partial<Record<IntegrationId, RowSyncState>>>({});
@@ -280,13 +338,13 @@ export function IntegrationsHub({ payload }: { payload: IntegrationsPayload }) {
   }
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-6">
       <div className="analysis-panel rounded-analysis-lg flex flex-wrap items-center justify-between gap-3 px-5 py-4">
         <div>
           <p className="text-sm font-medium">Sources de données</p>
           <p className="text-muted-foreground text-xs">
             {connected.length} sur {integrations.length} connectée
-            {connected.length > 1 ? 's' : ''}
+            {connected.length > 1 ? 's' : ''} — un compte, plusieurs classes
           </p>
         </div>
         <Button
@@ -301,16 +359,36 @@ export function IntegrationsHub({ payload }: { payload: IntegrationsPayload }) {
         </Button>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {integrations.map((integration) => (
-          <IntegrationCard
-            key={integration.id}
-            integration={integration}
-            syncState={rowSync[integration.id]}
-            onOpen={() => setOpenId(integration.id)}
-          />
-        ))}
-      </div>
+      {DATA_CLASSES.map((dataClass) => {
+        const providers = providersForClass(dataClass.id).filter(
+          (p) => p.status === 'available' && p.integrationId,
+        );
+        return (
+          <div key={dataClass.id} className="space-y-3">
+            <div>
+              <h2 className="text-sm font-medium">{dataClass.label}</h2>
+              <p className="text-muted-foreground text-xs">{dataClass.description}</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {providers.map((provider) => {
+                const integration = byId[provider.integrationId!];
+                if (!integration) return null;
+                return (
+                  <ClassProviderRow
+                    key={`${dataClass.id}-${integration.id}`}
+                    dataClass={dataClass.id}
+                    integration={integration}
+                    prefs={prefs}
+                    syncState={rowSync[integration.id]}
+                    onOpen={() => setOpenId(integration.id)}
+                    onPrefsChange={setPrefs}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
 
       <Dialog open={openId != null} onOpenChange={(open) => !open && setOpenId(null)}>
         <DialogContent className="max-h-[min(90vh,640px)] overflow-y-auto sm:max-w-md">

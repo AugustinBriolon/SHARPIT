@@ -322,6 +322,23 @@ export async function syncGarminActivities(
     full?: boolean;
   },
 ): Promise<GarminActivitySyncResult> {
+  const { isProviderEnabledForClass } = await import('@/lib/integrations/source-prefs');
+  const { loadResolvedSourcePrefs } = await import('@/lib/integrations/source-prefs-store');
+  const prefs = await loadResolvedSourcePrefs(athleteId);
+  if (!isProviderEnabledForClass(prefs, 'activities', 'garmin')) {
+    return {
+      fetched: 0,
+      imported: 0,
+      updated: 0,
+      merged: 0,
+      skipped: 0,
+      importedTypes: [],
+      importedActivityIds: [],
+      changedTypes: [],
+      changedActivityIds: [],
+    };
+  }
+
   return runGarminCall(athleteId, async () => {
     const account = await getGarminAccount(athleteId);
     if (!account || !isGarminAccountConnected(account)) {

@@ -1,23 +1,23 @@
 import type { IntegrationId } from '@/lib/integrations/shared/client-sync';
+import {
+  getCatalogProviderByIntegration,
+  PROVIDER_CATALOG,
+} from '@/lib/integrations/provider-catalog';
 
 export const INTEGRATION_CATALOG: Array<{
   id: IntegrationId;
   name: string;
   tagline: string;
   badge?: 'recommended' | 'legacy';
-}> = [
-  { id: 'strava', name: 'Strava', tagline: 'Activités & séances' },
-  { id: 'garmin', name: 'Garmin', tagline: 'Santé & wearable' },
-  {
-    id: 'withings',
-    name: 'Withings',
-    tagline: 'Balance & composition corporelle',
-    badge: 'recommended',
-  },
-  { id: 'renpho', name: 'Renpho', tagline: 'Composition corporelle' },
-  { id: 'google', name: 'Google Calendar', tagline: 'Planning & disponibilités' },
-  { id: 'myfitnesspal', name: 'MyFitnessPal', tagline: 'Nutrition & macros' },
-];
+}> = PROVIDER_CATALOG.filter(
+  (p): p is typeof p & { integrationId: IntegrationId } =>
+    p.status === 'available' && p.integrationId != null,
+).map((p) => ({
+  id: p.integrationId,
+  name: p.name,
+  tagline: p.tagline,
+  badge: p.integrationId === 'withings' ? 'recommended' : undefined,
+}));
 
 export type IntegrationAccount = {
   label: string | null;
@@ -104,12 +104,12 @@ export function buildIntegrations(payload: IntegrationsPayload): IntegrationDefi
 
   const withingsConnected = Boolean(payload.withings.account);
 
-  return [
-    {
+  const byId: Record<
+    IntegrationId,
+    Omit<IntegrationDefinition, 'dataTypes' | 'tagline' | 'name'>
+  > = {
+    strava: {
       id: 'strava',
-      name: 'Strava',
-      tagline: 'Activités & séances',
-      dataTypes: ['Course', 'Vélo', 'Natation', 'Records'],
       configured: payload.strava.configured,
       connected: Boolean(payload.strava.account) && !payload.strava.needsReconnect,
       needsReconnect: Boolean(payload.strava.needsReconnect),
@@ -122,11 +122,8 @@ export function buildIntegrations(payload: IntegrationsPayload): IntegrationDefi
         : null,
       statusMessage: payload.strava.statusMessage,
     },
-    {
+    garmin: {
       id: 'garmin',
-      name: 'Garmin',
-      tagline: 'Santé & wearable',
-      dataTypes: ['Sommeil', 'HRV', 'FC repos', 'Stress'],
       configured: true,
       connected: Boolean(payload.garmin.account) && !payload.garmin.needsReconnect,
       needsReconnect: Boolean(payload.garmin.needsReconnect),
@@ -140,11 +137,8 @@ export function buildIntegrations(payload: IntegrationsPayload): IntegrationDefi
           }
         : null,
     },
-    {
+    withings: {
       id: 'withings',
-      name: 'Withings',
-      tagline: 'Balance & composition corporelle',
-      dataTypes: ['Poids', 'Masse grasse', 'Muscle', 'Os'],
       configured: payload.withings.configured,
       connected: withingsConnected && !payload.withings.needsReconnect,
       needsReconnect: Boolean(payload.withings.needsReconnect),
@@ -157,11 +151,8 @@ export function buildIntegrations(payload: IntegrationsPayload): IntegrationDefi
         : null,
       statusMessage: payload.withings.statusMessage,
     },
-    {
+    renpho: {
       id: 'renpho',
-      name: 'Renpho',
-      tagline: withingsConnected ? 'Historique conservé' : 'Composition corporelle',
-      dataTypes: ['Poids', 'Masse grasse', 'Muscle'],
       configured: true,
       connected: Boolean(payload.renpho.account) && !payload.renpho.needsReconnect,
       needsReconnect: Boolean(payload.renpho.needsReconnect),
@@ -173,11 +164,8 @@ export function buildIntegrations(payload: IntegrationsPayload): IntegrationDefi
           }
         : null,
     },
-    {
+    google: {
       id: 'google',
-      name: 'Google Calendar',
-      tagline: 'Planning & disponibilités',
-      dataTypes: ['Agenda', 'Créneaux', 'Séances planifiées'],
       configured: payload.google.configured,
       connected: Boolean(payload.google.account) && !payload.google.needsReconnect,
       needsReconnect: Boolean(payload.google.needsReconnect),
@@ -193,11 +181,8 @@ export function buildIntegrations(payload: IntegrationsPayload): IntegrationDefi
         : null,
       statusMessage: payload.google.statusMessage,
     },
-    {
+    myfitnesspal: {
       id: 'myfitnesspal',
-      name: 'MyFitnessPal',
-      tagline: 'Nutrition & macros',
-      dataTypes: ['Calories', 'Protéines', 'Glucides', 'Lipides'],
       configured: payload.myfitnesspal.configured,
       connected: Boolean(payload.myfitnesspal.account) && !payload.myfitnesspal.needsReconnect,
       needsReconnect: Boolean(payload.myfitnesspal.needsReconnect),
@@ -208,7 +193,23 @@ export function buildIntegrations(payload: IntegrationsPayload): IntegrationDefi
           }
         : null,
     },
-  ];
+  };
+
+  return INTEGRATION_CATALOG.map((entry) => {
+    const catalog = getCatalogProviderByIntegration(entry.id);
+    const base = byId[entry.id];
+    const allTypes = catalog ? Object.values(catalog.dataTypesByClass).flat() : [];
+    return {
+      ...base,
+      name: entry.name,
+      // Renpho's static catalog tagline loses the point once Withings is also
+      // connected — the athlete needs to know why a second body source is
+      // still listed.
+      tagline: entry.id === 'renpho' && withingsConnected ? 'Historique conservé' : entry.tagline,
+      dataTypes: [...new Set(allTypes)],
+      badge: base.badge ?? entry.badge,
+    };
+  });
 }
 
 export function integrationConnectCta(integration: IntegrationDefinition): string {

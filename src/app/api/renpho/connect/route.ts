@@ -1,23 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { sanitizeDataClass } from '@/lib/integrations/oauth-return';
 import { connectRenpho, syncRenphoHealth } from '@/lib/integrations/renpho/renpho-sync';
+import {
+  enableProviderForAllCoveredClasses,
+  enableProviderForClass,
+} from '@/lib/integrations/source-prefs';
+import { persistSourcePrefsMutation } from '@/lib/integrations/source-prefs-store';
 
-const schema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+export const renphoConnectSchema = z.object({
+  email: z.string().email().max(320),
+  password: z.string().min(1).max(200),
+  dataClass: z.string().optional().nullable(),
 });
 
 export async function POST(request: NextRequest) {
   try {
     const athleteId = await getCurrentAthleteId();
     const body = await request.json();
-    const parsed = schema.safeParse(body);
+    const parsed = renphoConnectSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: 'Email et mot de passe requis' }, { status: 400 });
     }
 
     const user = await connectRenpho(athleteId, parsed.data.email, parsed.data.password);
+
+    const dataClass = sanitizeDataClass(parsed.data.dataClass);
+    await persistSourcePrefsMutation(athleteId, (prefs) =>
+      dataClass
+        ? enableProviderForClass(prefs, dataClass, 'renpho')
+        : enableProviderForAllCoveredClasses(prefs, 'renpho'),
+    );
+
     const sync = await syncRenphoHealth(athleteId, { days: 90 });
 
     return NextResponse.json({

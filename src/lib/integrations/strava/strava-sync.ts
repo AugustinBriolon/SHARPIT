@@ -238,6 +238,20 @@ export interface SyncResult {
 }
 
 export async function syncStravaActivities(athleteId: string): Promise<SyncResult> {
+  const { isProviderEnabledForClass } = await import('@/lib/integrations/source-prefs');
+  const { loadResolvedSourcePrefs } = await import('@/lib/integrations/source-prefs-store');
+  const prefs = await loadResolvedSourcePrefs(athleteId);
+  if (!isProviderEnabledForClass(prefs, 'activities', 'strava')) {
+    return {
+      fetched: 0,
+      imported: 0,
+      merged: 0,
+      skipped: 0,
+      importedTypes: [],
+      importedActivityIds: [],
+    };
+  }
+
   const [accessToken, account] = await Promise.all([
     getValidAccessToken(athleteId),
     getStravaAccount(athleteId),

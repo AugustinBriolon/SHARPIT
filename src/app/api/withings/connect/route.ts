@@ -2,12 +2,20 @@ import { randomBytes } from 'crypto';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  publicOriginFromRequest,
+  redirectIfBindHost,
+  setIntegrationReturnTo,
+} from '@/lib/integrations/oauth-return';
+import {
   buildWithingsAuthorizeUrl,
   getWithingsRedirectUri,
   isWithingsConfigured,
 } from '@/lib/integrations/withings/withings';
 
 export async function GET(request: NextRequest) {
+  const bindRedirect = redirectIfBindHost(request);
+  if (bindRedirect) return bindRedirect;
+
   if (!isWithingsConfigured()) {
     return NextResponse.json(
       {
@@ -18,8 +26,12 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const returnTo = request.nextUrl.searchParams.get('returnTo');
+  const dataClass = request.nextUrl.searchParams.get('dataClass');
+  await setIntegrationReturnTo(returnTo, dataClass);
+
   const state = randomBytes(16).toString('hex');
-  const { origin } = new URL(request.url);
+  const origin = publicOriginFromRequest(request);
   const redirectUri = getWithingsRedirectUri(origin);
 
   const cookieStore = await cookies();

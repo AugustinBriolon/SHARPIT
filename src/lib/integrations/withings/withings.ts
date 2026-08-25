@@ -1,4 +1,5 @@
 import { ProviderAuthError } from '@/lib/integrations/shared/connection-status';
+import { normalizeOAuthPublicOrigin } from '@/lib/integrations/oauth-return';
 
 const WITHINGS_OAUTH_AUTHORIZE = 'https://account.withings.com/oauth2_user/authorize2';
 const WITHINGS_OAUTH_TOKEN = 'https://wbsapi.withings.net/v2/oauth2';
@@ -12,7 +13,7 @@ export function getWithingsRedirectUri(origin?: string) {
     return process.env.WITHINGS_REDIRECT_URI;
   }
   if (origin) {
-    return `${origin}/api/withings/callback`;
+    return `${normalizeOAuthPublicOrigin(origin)}/api/withings/callback`;
   }
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}/api/withings/callback`;

@@ -1,7 +1,11 @@
 import { cookies } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import {
+  publicOriginFromRequest,
+  redirectAfterIntegrationConnect,
+} from '@/lib/integrations/oauth-return';
 import { exchangeWithingsCode, getWithingsRedirectUri } from '@/lib/integrations/withings/withings';
 import { syncWithingsHealth } from '@/lib/integrations/withings/withings-sync';
 import { encryptSecret } from '@/lib/secret-box';
@@ -12,11 +16,8 @@ export async function GET(request: NextRequest) {
   const state = searchParams.get('state');
   const error = searchParams.get('error');
 
-  const settingsUrl = new URL('/settings', request.url);
-
   if (error) {
-    settingsUrl.searchParams.set('withings', 'denied');
-    return NextResponse.redirect(settingsUrl);
+    return redirectAfterIntegrationConnect(request, 'withings', 'denied');
   }
 
   const cookieStore = await cookies();
@@ -26,11 +27,10 @@ export async function GET(request: NextRequest) {
   cookieStore.delete('withings_oauth_redirect');
 
   if (!code || !state || state !== storedState) {
-    settingsUrl.searchParams.set('withings', 'invalid_state');
-    return NextResponse.redirect(settingsUrl);
+    return redirectAfterIntegrationConnect(request, 'withings', 'invalid_state');
   }
 
-  const redirectUri = storedRedirectUri ?? getWithingsRedirectUri(new URL(request.url).origin);
+  const redirectUri = storedRedirectUri ?? getWithingsRedirectUri(publicOriginFromRequest(request));
 
   try {
     const athleteId = await getCurrentAthleteId();
@@ -60,13 +60,12 @@ export async function GET(request: NextRequest) {
       console.error('[withings/callback] sync initial:', syncErr);
     }
 
-    settingsUrl.searchParams.set('withings', 'connected');
-    return NextResponse.redirect(settingsUrl);
+    return redirectAfterIntegrationConnect(request, 'withings', 'connected');
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erreur inconnue';
     console.error('[withings/callback]', message, err);
-    settingsUrl.searchParams.set('withings', 'error');
-    settingsUrl.searchParams.set('withingsDetail', message.slice(0, 300));
-    return NextResponse.redirect(settingsUrl);
+    return redirectAfterIntegrationConnect(request, 'withings', 'error', {
+      withingsDetail: message.slice(0, 300),
+    });
   }
 }

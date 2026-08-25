@@ -3,7 +3,8 @@
 **Status:** Accepted  
 **Date:** 2024 (predates knowledge base creation)  
 **Author:** Augustin Briolon  
-**Supersedes:** N/A
+**Supersedes:** N/A  
+**Extended by:** [ADR-027](./ADR-027-class-level-integration-sources.md) (class-level primary/enabled; Garmin not forced for every signal)
 
 ---
 

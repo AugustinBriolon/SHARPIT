@@ -5,25 +5,39 @@ import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { syncGarminActivities } from '@/lib/integrations/garmin/garmin-activity-sync';
 import { connectGarmin, syncGarminHealth } from '@/lib/integrations/garmin/garmin-sync';
 import { GarminLoginError } from '@/lib/integrations/garmin/garmin';
+import { sanitizeDataClass } from '@/lib/integrations/oauth-return';
+import {
+  enableProviderForAllCoveredClasses,
+  enableProviderForClass,
+} from '@/lib/integrations/source-prefs';
+import { persistSourcePrefsMutation } from '@/lib/integrations/source-prefs-store';
 import { updateRecordsForTypes } from '@/lib/training/records';
 
 export const maxDuration = 300;
 
-const schema = z.object({
-  username: z.string().min(1),
-  password: z.string().min(1),
+export const garminConnectSchema = z.object({
+  username: z.string().min(1).max(200),
+  password: z.string().min(1).max(200),
+  dataClass: z.string().optional().nullable(),
 });
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const parsed = schema.safeParse(body);
+    const parsed = garminConnectSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: 'Email et mot de passe requis' }, { status: 400 });
     }
 
     const athleteId = await getCurrentAthleteId();
     const profile = await connectGarmin(athleteId, parsed.data.username, parsed.data.password);
+
+    const dataClass = sanitizeDataClass(parsed.data.dataClass);
+    await persistSourcePrefsMutation(athleteId, (prefs) =>
+      dataClass
+        ? enableProviderForClass(prefs, dataClass, 'garmin')
+        : enableProviderForAllCoveredClasses(prefs, 'garmin'),
+    );
 
     // First pull right after connect — health + activities land without a manual sync.
     after(async () => {

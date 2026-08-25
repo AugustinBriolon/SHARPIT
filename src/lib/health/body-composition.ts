@@ -1,6 +1,7 @@
 import { BodyCompositionSource, type BodyCompositionMeasurement } from '@prisma/client';
 import { addDays, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import type { IntegrationId } from '@/lib/integrations/shared/client-sync';
 
 export interface BodyCompositionEntry {
   id: string;
@@ -37,9 +38,25 @@ export interface CompositionTrend {
   delta: number | null;
 }
 
-/** Withings l'emporte sur Renpho pour une même journée calendaire. */
+export type BodySourcePrefs = {
+  primary: IntegrationId | null;
+  enabled: IntegrationId[];
+};
+
+function integrationToSource(id: IntegrationId): BodyCompositionSource | null {
+  if (id === 'withings') return BodyCompositionSource.WITHINGS;
+  if (id === 'renpho') return BodyCompositionSource.RENPHO;
+  return null;
+}
+
+/**
+ * One measurement per calendar day.
+ * Default (no prefs): Withings wins over Renpho.
+ * With prefs: primary source wins when present; otherwise first enabled source with data.
+ */
 export function dedupeBodyCompositionByDay(
   rows: BodyCompositionMeasurement[],
+  prefs?: BodySourcePrefs | null,
 ): BodyCompositionMeasurement[] {
   const byDay = new Map<string, BodyCompositionMeasurement[]>();
 
@@ -51,12 +68,30 @@ export function dedupeBodyCompositionByDay(
   }
 
   const picked: BodyCompositionMeasurement[] = [];
+  const primarySource = prefs?.primary ? integrationToSource(prefs.primary) : null;
+  // `prefs` presence (not `enabled.length`) decides whether to filter — a caller
+  // that explicitly disabled every source for this class (enabled: []) means
+  // "show nothing", not "no filtering info, show everything". Only a genuinely
+  // absent `prefs` (a caller that never resolved any) means the latter.
+  const enabledSources = prefs
+    ? new Set(
+        prefs.enabled.map(integrationToSource).filter((s): s is BodyCompositionSource => s != null),
+      )
+    : null;
 
   for (const dayRows of byDay.values()) {
-    const withings = dayRows.filter((r) => r.source === BodyCompositionSource.WITHINGS);
-    const pool = withings.length > 0 ? withings : dayRows;
-    if (withings.length > 1) {
-      picked.push(mergeWithingsDayRows(withings));
+    const filtered = enabledSources ? dayRows.filter((r) => enabledSources.has(r.source)) : dayRows;
+    if (filtered.length === 0) continue;
+
+    const preferred =
+      primarySource != null
+        ? filtered.filter((r) => r.source === primarySource)
+        : filtered.filter((r) => r.source === BodyCompositionSource.WITHINGS);
+
+    const pool = preferred.length > 0 ? preferred : filtered;
+
+    if (pool.length > 1 && pool.every((r) => r.source === BodyCompositionSource.WITHINGS)) {
+      picked.push(mergeWithingsDayRows(pool));
     } else {
       pool.sort((a, b) => b.measuredAt.getTime() - a.measuredAt.getTime());
       picked.push(pool[0]!);

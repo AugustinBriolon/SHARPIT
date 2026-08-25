@@ -1,7 +1,8 @@
 import { cookies } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { emailFromIdToken, exchangeCodeForToken } from '@/lib/integrations/google/google';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { redirectAfterIntegrationConnect } from '@/lib/integrations/oauth-return';
 import { prisma } from '@/lib/prisma';
 import { encryptSecret } from '@/lib/secret-box';
 
@@ -11,11 +12,8 @@ export async function GET(request: NextRequest) {
   const state = searchParams.get('state');
   const error = searchParams.get('error');
 
-  const settingsUrl = new URL('/settings', request.url);
-
   if (error) {
-    settingsUrl.searchParams.set('google', 'denied');
-    return NextResponse.redirect(settingsUrl);
+    return redirectAfterIntegrationConnect(request, 'google', 'denied');
   }
 
   const cookieStore = await cookies();
@@ -25,8 +23,7 @@ export async function GET(request: NextRequest) {
   cookieStore.delete('google_oauth_redirect');
 
   if (!code || !state || state !== storedState) {
-    settingsUrl.searchParams.set('google', 'invalid_state');
-    return NextResponse.redirect(settingsUrl);
+    return redirectAfterIntegrationConnect(request, 'google', 'invalid_state');
   }
 
   try {
@@ -34,9 +31,7 @@ export async function GET(request: NextRequest) {
     const token = await exchangeCodeForToken(code, storedRedirect ?? undefined);
 
     if (!token.refresh_token) {
-      // Sans refresh_token on ne peut pas garder l'accès : on force reconsentement.
-      settingsUrl.searchParams.set('google', 'no_refresh');
-      return NextResponse.redirect(settingsUrl);
+      return redirectAfterIntegrationConnect(request, 'google', 'no_refresh');
     }
 
     const email = emailFromIdToken(token.id_token);
@@ -54,16 +49,12 @@ export async function GET(request: NextRequest) {
       update: data,
     });
 
-    settingsUrl.searchParams.set('google', 'connected');
-    return NextResponse.redirect(settingsUrl);
+    return redirectAfterIntegrationConnect(request, 'google', 'connected');
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erreur inconnue';
     console.error('[google/callback]', message, err);
-    settingsUrl.searchParams.set('google', 'error');
-    // En dev, on affiche le détail pour diagnostiquer (redirect_uri, etc.)
-    if (process.env.NODE_ENV === 'development') {
-      settingsUrl.searchParams.set('googleDetail', message.slice(0, 300));
-    }
-    return NextResponse.redirect(settingsUrl);
+    const extra =
+      process.env.NODE_ENV === 'development' ? { googleDetail: message.slice(0, 300) } : undefined;
+    return redirectAfterIntegrationConnect(request, 'google', 'error', extra);
   }
 }
