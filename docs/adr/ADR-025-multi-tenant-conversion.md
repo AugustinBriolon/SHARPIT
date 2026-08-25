@@ -124,7 +124,7 @@ See Decision 1. Rejected: no blast-radius reduction, extra join, no product need
 
 - **Phase 1 — done**: swept every route/RSC boundary that carried a hardcoded `ATHLETE_ID`/`PROFILE_ID`/`ACCOUNT_ID` constant or a literal `'default'` introduced by Phase 0's compile-fix pass, threading `getCurrentAthleteId()` in once at each boundary — never inside a pure presentation builder (extends ADR-007's "no I/O in builders" one hop further upstream). The OAuth/connect callback routes now upsert on the resolved `athleteId` instead of `'default'`. `POST /api/cron/sync` loops every `AthleteProfile` with bounded concurrency (`mapWithConcurrency`, already in `src/lib/integrations/garmin/garmin-sync.ts`).
 - **Phase 1 — still outstanding**: `GET /api/cron/planned-forecast` (`src/app/api/cron/planned-forecast/route.ts`) still calls `refreshUpcomingPlannedSessionForecasts()` with no athlete loop — needs the same multi-athlete sweep as `cron/sync` before a second tenant's forecasts would refresh. Dropping the `@default("default")` bootstrap on the 17 columns is still deferred to its own migration, once a final audit confirms every write path passes `athleteId` explicitly.
-- **Phase 2**: retire or repurpose `ALLOWED_EMAILS` (`src/lib/auth.ts`, `src/components/auth/access-gate.tsx`); design onboarding UX for a genuinely-empty new athlete's first login; revisit the original demo-mode request now that a real, low-privilege second tenant is a normal signup rather than a special-cased fixture; decide whether per-athlete AI/coach cost accounting is needed before opening broadly (`src/lib/ai.ts` currently tags spend by feature only, via one shared `AI_GATEWAY_API_KEY`).
+- **Phase 2 — done (allow-list + first-login onboarding)**: `ALLOWED_EMAILS` / `AccessGate` retired (Clerk `auth.protect()` alone). Forced `/onboarding` wizard (`AthleteProfile.onboardingCompletedAt`) covers intention (race | metric | later) + optional providers. Still open: per-athlete AI/coach cost accounting before broad invite (`src/lib/ai.ts` tags spend by feature only via one shared `AI_GATEWAY_API_KEY`). Demo mode shipped separately as ADR-026.
 
 ## Explicitly deferred, not forgotten
 
@@ -138,4 +138,5 @@ Billing, per-athlete AI usage limits, webhook infrastructure (Clerk `user.create
 - `docs/adr/ADR-007-coaching-explainability-presentation.md` — the I/O-boundary convention this ADR's Phase 1 plan extends.
 - `prisma/schema.prisma`, `prisma/migrations/20260824_multi_tenant_phase_0/migration.sql` — implementation.
 - `src/lib/auth/current-athlete.ts`, `src/lib/auth/current-athlete.test.ts` — `getCurrentAthleteId()`.
-- `src/lib/auth.ts` — `ALLOWED_EMAILS`, the current single-tenant enforcement point Phase 2 revisits.
+- Allow-list (`ALLOWED_EMAILS` / `AccessGate`) removed — tenant access is Clerk session + `getCurrentAthleteId()` lazy provision.
+- First-login onboarding: `src/app/onboarding/`, `src/lib/onboarding/`, `OnboardingGate` in `(app)/layout`.

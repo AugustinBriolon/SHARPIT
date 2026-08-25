@@ -1,20 +1,21 @@
 'use client';
 
-import { SignOutButton } from '@clerk/nextjs';
+import { SignOutButton, useAuth, useUser } from '@clerk/nextjs';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAthleteNavIdentity } from '@/hooks/use-athlete-nav-identity';
-import { useIsDemoMode } from '@/hooks/use-is-demo-mode';
 
 /**
- * Ends the Clerk session. Hidden in demo (no real session) and while identity
- * is still resolving so we never flash a dead control.
+ * Ends the Clerk session. Shown only when there is a real signed-in session —
+ * not gated on the demo cookie alone, so a leftover `/demo` cookie cannot hide
+ * sign-out for a real athlete (SettingsGate already allows that case).
  */
 export function SettingsSignOut() {
-  const isDemo = useIsDemoMode();
-  const { isReady, email } = useAthleteNavIdentity();
+  const { isLoaded: authLoaded, isSignedIn } = useAuth();
+  const { isLoaded: userLoaded, user } = useUser();
 
-  if (!isReady || isDemo) return null;
+  if (!authLoaded || !userLoaded || !isSignedIn) return null;
+
+  const email = user?.primaryEmailAddress?.emailAddress ?? null;
 
   return (
     <section aria-labelledby="settings-session" className="space-y-3">

@@ -17,9 +17,8 @@ import { DEMO_CLERK_USER_ID, isDemoSession } from '@/lib/demo/demo-session';
  * deduped within one request/render tree, not across requests.
  */
 export const getCurrentAthleteId = cache(async (): Promise<string> => {
-  // Mirrors AccessGate's bypass (src/components/auth/access-gate.tsx): when
-  // Clerk's backend is unreachable (corporate proxy / SSL inspection), the
-  // proxy skips auth.protect() entirely — there is no session to resolve.
+  // When Clerk's backend is unreachable (corporate proxy / SSL inspection),
+  // the proxy skips auth.protect() entirely — there is no session to resolve.
   // Single-athlete dev fallback: the one existing profile row.
   if (isDevClerkBypass()) {
     const athlete = await prisma.athleteProfile.findFirstOrThrow();
