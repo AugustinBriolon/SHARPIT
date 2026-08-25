@@ -17,7 +17,7 @@ describe('coach hub micro-skeleton', () => {
     expect(html).toContain('hidden space-y-6 lg:block');
     expect(html).toContain('Fil &amp; conversations');
     expect(html).toContain('Mémoire &amp; contexte');
-    expect(html).toContain('Pose une question à ton coach');
+    expect(html).not.toContain('Comment se présente ma forme');
   });
 
   it('mobile select loading only skeletons the label, keeps chevron and trash', () => {
@@ -33,14 +33,13 @@ describe('coach hub micro-skeleton', () => {
     expect(html).not.toContain('Chargement');
   });
 
-  it('empty chrome uses the rounded composer card, not the old side-by-side send', () => {
+  it('panel shell uses the rounded composer card with beUI prompt send', () => {
     const html = renderToStaticMarkup(createElement(CoachChatEmptyChrome));
     expect(html).toContain('Demande conseil à ton coach');
-    expect(html).toContain('Comment se présente ma forme');
     expect(html).toContain('rounded-[1.75rem]');
-    expect(html).toContain('size-9 shrink-0 rounded-full');
+    expect(html).toContain('size-8 rounded-full');
     expect(html).not.toContain('aria-busy');
-    expect(html).not.toContain('size-11 shrink-0');
+    expect(html).not.toContain('Comment se présente ma forme');
   });
 
   it('thread skeleton keeps real composer chrome and coach bubble surface', () => {

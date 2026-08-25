@@ -45,6 +45,7 @@ import {
   sportSupportsOutdoorContext,
 } from '@/core/planned-session/defaults';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
+import { useDemoPlannedSessionOverlay } from '@/hooks/use-demo-session-link-overlay';
 import {
   usePlannedSessionMutations,
   usePlannedSessionPresentation,
@@ -113,10 +114,12 @@ export function PlannedSessionDialog({
   const { create, createBrick, update, remove } = usePlannedSessionMutations();
   const plannedQuery = usePlannedSessions();
   const planQuery = useTrainingPlan();
-  const liveSession = useMemo(() => {
-    if (!session?.id) return session ?? null;
-    return plannedQuery.data?.find((item) => item.id === session.id) ?? session;
-  }, [plannedQuery.data, session]);
+  const liveSession = useDemoPlannedSessionOverlay(
+    useMemo(() => {
+      if (!session?.id) return session ?? null;
+      return plannedQuery.data?.find((item) => item.id === session.id) ?? session;
+    }, [plannedQuery.data, session]),
+  );
 
   const [mode, setMode] = useState<DialogMode>(isEdit ? 'read' : 'edit');
   const [formKey, setFormKey] = useState(0);

@@ -168,14 +168,7 @@ function MarkdownRenderer({
   );
 
   return (
-    <div
-      className={cn(
-        'min-w-0 text-sm leading-relaxed break-words',
-        RHYTHM[variant],
-        PROSE,
-        streaming && 'coach-streaming',
-      )}
-    >
+    <div className={cn('min-w-0 text-sm leading-relaxed break-words', RHYTHM[variant], PROSE)}>
       {blocks.map((block, index) => (
         <MarkdownBlock key={index} source={block} />
       ))}

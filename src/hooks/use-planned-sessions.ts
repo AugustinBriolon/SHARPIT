@@ -27,6 +27,13 @@ import type { BrickAnalysis } from '@/lib/validators/coach';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import type { ActivityType, SessionIntensity } from '@prisma/client';
 import type { QueryClient } from '@tanstack/react-query';
+import { hasDemoCookieValue } from '@/hooks/use-is-demo-mode';
+import { clearDemoSessionLink, markDemoSessionLinked } from '@/lib/demo/demo-session-link-state';
+import {
+  applyDemoSessionLinkReading,
+  cancelDemoSessionLinkReadingSchedule,
+  scheduleDemoSessionLinkReading,
+} from '@/lib/demo/demo-session-link-reading';
 
 export type { PlannedSessionBatchOp };
 
@@ -278,8 +285,34 @@ export function usePlannedSessionMutations() {
   });
 
   const analyze = useMutation({
-    mutationFn: (id: string) => sendJson(`/api/planned-sessions/${id}/analyze`, 'POST'),
-    onSuccess: invalidate,
+    mutationFn: async (id: string) => {
+      const demoMode = typeof document !== 'undefined' && hasDemoCookieValue(document.cookie);
+      if (demoMode) {
+        const sessions = queryClient.getQueryData<ClientPlannedSession[]>(key) ?? [];
+        const session = sessions.find((item) => item.id === id);
+        const activityId = session?.activityId ?? session?.activity?.id ?? null;
+        if (!activityId) throw new Error('Associe une activité avant d’analyser.');
+        applyDemoSessionLinkReading(queryClient, id, activityId);
+        const updated = queryClient
+          .getQueryData<ClientPlannedSession[]>(key)
+          ?.find((s) => s.id === id);
+        if (!updated) throw new Error('Séance planifiée introuvable');
+        return hydratePlannedSession(updated);
+      }
+
+      return sendJson(`/api/planned-sessions/${id}/analyze`, 'POST');
+    },
+    onSuccess: (data, id) => {
+      const demoMode = typeof document !== 'undefined' && hasDemoCookieValue(document.cookie);
+      if (demoMode) {
+        const hydrated = hydratePlannedSession(data as ClientPlannedSession);
+        queryClient.setQueryData<ClientPlannedSession[]>(key, (prev) =>
+          prev ? prev.map((session) => (session.id === id ? hydrated : session)) : prev,
+        );
+        return;
+      }
+      invalidate();
+    },
     onError: (err: unknown) =>
       toast.error("L'analyse a échoué.", {
         description: err instanceof Error ? err.message : undefined,
@@ -287,10 +320,36 @@ export function usePlannedSessionMutations() {
   });
 
   const link = useMutation({
-    mutationFn: ({ id, activityId }: { id: string; activityId: string | null }) =>
-      sendJson(`/api/planned-sessions/${id}/link`, 'POST', {
+    mutationFn: async ({ id, activityId }: { id: string; activityId: string | null }) => {
+      const demoMode = typeof document !== 'undefined' && hasDemoCookieValue(document.cookie);
+      if (demoMode) {
+        const sessions = queryClient.getQueryData<ClientPlannedSession[]>(key) ?? [];
+        const activities = queryClient.getQueryData<ClientActivity[]>(queryKeys.activities);
+        const patched = applyPlannedSessionLinkOptimistic(sessions, { id, activityId }, activities);
+        const session = patched.find((item) => item.id === id);
+        if (!session) throw new Error('Séance planifiée introuvable');
+        if (activityId) {
+          markDemoSessionLinked(id, activityId, {
+            title: session.title,
+            type: session.type,
+            date:
+              session.date instanceof Date
+                ? session.date.toISOString()
+                : new Date(session.date).toISOString(),
+            durationMin: session.durationMin,
+            intensity: session.intensity,
+            description: session.description,
+          });
+        } else {
+          clearDemoSessionLink(id);
+        }
+        return hydratePlannedSession(session);
+      }
+
+      return sendJson(`/api/planned-sessions/${id}/link`, 'POST', {
         activityId,
-      }) as Promise<ClientPlannedSession>,
+      }) as Promise<ClientPlannedSession>;
+    },
     onMutate: async ({ id, activityId }) => {
       const activitiesKey = queryKeys.activities;
       await Promise.all([
@@ -361,14 +420,22 @@ export function usePlannedSessionMutations() {
       });
 
       // Today / twin day summary is server-built — patch is not local; invalidate derived VMs.
-      void queryClient.invalidateQueries({ queryKey: ['presentation', 'today'] });
-      void queryClient.invalidateQueries({ queryKey: ['athlete-snapshot'] });
-      void queryClient.invalidateQueries({ queryKey: ['today'] });
+      const demoMode = typeof document !== 'undefined' && hasDemoCookieValue(document.cookie);
+      if (!demoMode) {
+        void queryClient.invalidateQueries({ queryKey: ['presentation', 'today'] });
+        void queryClient.invalidateQueries({ queryKey: ['athlete-snapshot'] });
+        void queryClient.invalidateQueries({ queryKey: ['today'] });
+      }
 
       if (variables.activityId) {
-        // Compliance analysis is scheduled server-side in link `after()` — client only polls.
+        if (demoMode) {
+          scheduleDemoSessionLinkReading(queryClient, variables.id, variables.activityId);
+        }
         toast.success('Séance liée');
       } else {
+        if (demoMode && previousActivityId) {
+          cancelDemoSessionLinkReadingSchedule(variables.id, previousActivityId);
+        }
         toast.success('Séance déliée');
       }
     },

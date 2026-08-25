@@ -69,4 +69,60 @@ describe('buildPostSessionLoop', () => {
     expect(loop?.needsFeeling).toBe(false);
     expect(loop?.freshnessLine).toBeNull();
   });
+
+  it('prefers the substantive session over a demo link orphan on the same day', () => {
+    const loop = buildPostSessionLoop({
+      phase: 'SESSION_COMPLETED',
+      overallFresh: true,
+      day: DAY,
+      activities: [
+        {
+          id: 'main',
+          title: 'Sortie longue — Bois de Boulogne',
+          typeLabel: 'Course',
+          date: '2026-08-25T09:00:00',
+          rpe: 6,
+          feeling: 'Solide',
+        },
+        {
+          id: 'demo',
+          title: 'Footing récup — démo liaison (réalisé)',
+          typeLabel: 'Course',
+          date: '2026-08-25T18:00:00',
+          rpe: 4,
+          feeling: 'Facile',
+        },
+      ],
+    });
+    expect(loop?.activityId).toBe('main');
+    expect(loop?.activityTitle).toBe('Sortie longue — Bois de Boulogne');
+  });
+
+  it('skips activities awaiting a link decision', () => {
+    const loop = buildPostSessionLoop({
+      phase: 'SESSION_COMPLETED',
+      overallFresh: true,
+      day: DAY,
+      excludeActivityIds: new Set(['pending']),
+      activities: [
+        {
+          id: 'pending',
+          title: 'Footing club',
+          typeLabel: 'Course',
+          date: '2026-08-25T18:00:00',
+          rpe: 4,
+          feeling: null,
+        },
+        {
+          id: 'main',
+          title: 'Sortie longue',
+          typeLabel: 'Course',
+          date: '2026-08-25T09:00:00',
+          rpe: 6,
+          feeling: 'Solide',
+        },
+      ],
+    });
+    expect(loop?.activityId).toBe('main');
+  });
 });

@@ -1,5 +1,5 @@
 import { ProviderAuthError } from '@/lib/integrations/shared/connection-status';
-import { normalizeOAuthPublicOrigin } from '@/lib/integrations/oauth-return';
+import { normalizeOAuthPublicOrigin } from '@/lib/integrations/oauth-public-origin';
 
 const WITHINGS_OAUTH_AUTHORIZE = 'https://account.withings.com/oauth2_user/authorize2';
 const WITHINGS_OAUTH_TOKEN = 'https://wbsapi.withings.net/v2/oauth2';

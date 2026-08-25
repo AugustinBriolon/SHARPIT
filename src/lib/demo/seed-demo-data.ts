@@ -6,10 +6,14 @@ import {
   ConditionStatus,
   ConditionType,
   GoalHorizon,
+  GoalKind,
+  GoalPriority,
   SessionIntensity,
   TrainingCapacityLevel,
   type PrismaClient,
 } from '@prisma/client';
+import { ensureDemoSessionLinkStory } from '@/lib/demo/demo-session-link-seed';
+import { finalizeDemoSeed, purgeDemoDerivedState } from '@/lib/demo/finalize-demo-seed';
 import { addDays, startOfDay, subDays } from 'date-fns';
 
 export const DEMO_CLERK_USER_ID = 'demo';
@@ -340,11 +344,9 @@ function gpsStreamFor(gps: GpsKey, durationSec: number) {
   return null;
 }
 
-/** Macro grams for a 7-day nutrition window — one day left empty on purpose to
- * exercise the "no data" state in the macro breakdown card. Goals attached so
- * the goal-relative breakdown bars have something to fill against. */
+/** Macro grams for a 7-day nutrition window — all days populated for a credible demo. */
 const NUTRITION_WINDOW = [
-  null,
+  { calories: 2720, protein: 168, carbohydrates: 305, fat: 86 },
   { calories: 2650, protein: 165, carbohydrates: 310, fat: 88 },
   { calories: 2480, protein: 172, carbohydrates: 260, fat: 82 },
   { calories: 2790, protein: 158, carbohydrates: 340, fat: 90 },
@@ -359,17 +361,112 @@ const NUTRITION_GOALS = {
   goalFat: 90,
 };
 
-/** Slow, believable trend over the last month — RENPHO-style scale sync. */
+function demoMealsForDay(index: number) {
+  const variants = [
+    {
+      breakfast: { name: 'Petit-déjeuner', calories: 620, protein: 32, carbs: 78, fat: 20 },
+      lunch: { name: 'Déjeuner', calories: 880, protein: 52, carbs: 95, fat: 28 },
+      dinner: { name: 'Dîner', calories: 920, protein: 58, carbs: 88, fat: 32 },
+      snack: { name: 'Collation', calories: 300, protein: 23, carbs: 44, fat: 10 },
+    },
+    {
+      breakfast: { name: 'Petit-déjeuner', calories: 580, protein: 28, carbs: 72, fat: 18 },
+      lunch: { name: 'Déjeuner', calories: 910, protein: 55, carbs: 102, fat: 26 },
+      dinner: { name: 'Dîner', calories: 840, protein: 50, carbs: 82, fat: 30 },
+      snack: { name: 'Collation', calories: 320, protein: 32, carbs: 54, fat: 14 },
+    },
+  ];
+  const v = variants[index % variants.length]!;
+  return Object.values(v).map((meal) => ({
+    ...meal,
+    label: meal.name,
+    entries: [
+      {
+        name: meal.name,
+        calories: meal.calories,
+        protein: meal.protein,
+        carbs: meal.carbs,
+        fat: meal.fat,
+      },
+    ],
+  }));
+}
+
+/** Seven weigh-ins aligned with the demo's rolling week (J-6 … J0). */
 const BODY_COMPOSITION_TREND = [
-  { daysAgo: 28, weightKg: 80.4, bodyFatPct: 16.8, musclePct: 43.1 },
-  { daysAgo: 24, weightKg: 80.1, bodyFatPct: 16.6, musclePct: 43.2 },
-  { daysAgo: 20, weightKg: 80.0, bodyFatPct: 16.5, musclePct: 43.3 },
-  { daysAgo: 16, weightKg: 79.8, bodyFatPct: 16.3, musclePct: 43.4 },
-  { daysAgo: 12, weightKg: 79.7, bodyFatPct: 16.1, musclePct: 43.5 },
-  { daysAgo: 8, weightKg: 79.7, bodyFatPct: 16.0, musclePct: 43.6 },
-  { daysAgo: 4, weightKg: 79.6, bodyFatPct: 15.9, musclePct: 43.7 },
-  { daysAgo: 1, weightKg: 79.6, bodyFatPct: 15.9, musclePct: 43.7 },
+  { daysAgo: 6, weightKg: 80.2, bodyFatPct: 16.7, musclePct: 43.0, bmi: 25.3 },
+  { daysAgo: 5, weightKg: 80.0, bodyFatPct: 16.6, musclePct: 43.1, bmi: 25.2 },
+  { daysAgo: 4, weightKg: 79.9, bodyFatPct: 16.5, musclePct: 43.2, bmi: 25.2 },
+  { daysAgo: 3, weightKg: 79.8, bodyFatPct: 16.4, musclePct: 43.3, bmi: 25.2 },
+  { daysAgo: 2, weightKg: 79.7, bodyFatPct: 16.2, musclePct: 43.5, bmi: 25.1 },
+  { daysAgo: 1, weightKg: 79.6, bodyFatPct: 16.0, musclePct: 43.6, bmi: 25.1 },
+  { daysAgo: 0, weightKg: 79.6, bodyFatPct: 15.9, musclePct: 43.7, bmi: 25.1 },
 ];
+
+const RECOVERY_SCORES = [82, 78, 85, 90, 74, 88, 92, 80, 86, 87];
+
+function demoReadinessLevel(recoveryScore: number): 'HIGH' | 'MODERATE' | 'LOW' {
+  if (recoveryScore >= 85) return 'HIGH';
+  if (recoveryScore >= 70) return 'MODERATE';
+  return 'LOW';
+}
+
+function sleepFieldsForDemo(daysAgo: number, recoveryScore: number) {
+  const sleepMinutes = 420 + (daysAgo % 3) * 20;
+  const deepMin = 88 + (daysAgo % 4) * 4;
+  const remMin = 82 + (daysAgo % 3) * 5;
+  const lightMin = Math.max(180, sleepMinutes - deepMin - remMin - 22);
+  return {
+    sleepMinutes,
+    sleepScore: Math.min(95, 78 + (daysAgo % 5) * 3),
+    sleepDeepMin: deepMin,
+    sleepLightMin: lightMin,
+    sleepRemMin: remMin,
+    sleepAwakeMin: 18 + (daysAgo % 3) * 2,
+    sleepBedtimeMin: 23 * 60 + 15,
+    sleepWakeMin: 6 * 60 + 30,
+    sleepRespiration: 14.2,
+    sleepAvgStress: 18 + (daysAgo % 4) * 3,
+    sleepScoreFeedback: recoveryScore >= 85 ? 'RESTFUL' : 'FAIR',
+    readinessLevel: demoReadinessLevel(recoveryScore),
+    readinessFeedback: recoveryScore >= 85 ? 'READY' : 'RECOVERING',
+    hrvStatus: 'BALANCED',
+    hrvBaselineLow: 68,
+    hrvBaselineHigh: 92,
+    bodyBattery: 68 + (daysAgo % 6) * 4,
+    totalSteps: 8200 + (daysAgo % 5) * 450,
+  };
+}
+
+async function seedDemoIntegrationStubs(prisma: PrismaClient, athleteId: string): Promise<void> {
+  // Row presence drives source-prefs legacy defaults (Garmin health + Renpho body).
+  // Tokens are placeholders — cron sync no-ops on auth failure, reads still work.
+  await prisma.garminAccount.upsert({
+    where: { athleteId },
+    create: {
+      athleteId,
+      oauth1TokenEnc: 'demo',
+      oauth2TokenEnc: 'demo',
+      displayName: 'Athlète Démo',
+    },
+    update: { displayName: 'Athlète Démo' },
+  });
+  await prisma.renphoAccount.upsert({
+    where: { athleteId },
+    create: {
+      athleteId,
+      email: 'demo@sharpit.app',
+      passwordEnc: 'demo',
+      displayName: 'Athlète Démo',
+    },
+    update: { displayName: 'Athlète Démo' },
+  });
+  await prisma.myFitnessPalAccount.upsert({
+    where: { athleteId },
+    create: { athleteId, sessionTokenEnc: '', displayName: 'Athlète Démo' },
+    update: { displayName: 'Athlète Démo' },
+  });
+}
 
 export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
   const athlete = await prisma.athleteProfile.upsert({
@@ -398,31 +495,26 @@ export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
   await prisma.goal.deleteMany({ where: { athleteId } });
   await prisma.bodyCompositionMeasurement.deleteMany({ where: { athleteId } });
   await prisma.condition.deleteMany({ where: { athleteId } });
+  await purgeDemoDerivedState(prisma, athleteId);
 
   const today = startOfDay(new Date());
 
-  // Nutrition's `connected` gate (src/lib/presentation/nutrition.ts) just checks
-  // this row exists — an empty token is the same "disconnected" shape already
-  // established for wiped credentials elsewhere, and syncMfpNutrition() checks
-  // isMfpAccountConnected() before ever making a network call, so cron/sync's
-  // daily pass over every athlete no-ops cleanly on this one, same as any
-  // athlete's already-expired provider session.
-  await prisma.myFitnessPalAccount.upsert({
-    where: { athleteId },
-    create: { athleteId, sessionTokenEnc: '', displayName: 'Athlète Démo' },
-    update: {},
-  });
+  await seedDemoIntegrationStubs(prisma, athleteId);
 
   await prisma.goal.create({
     data: {
       athleteId,
-      title: 'Ironman < 10h',
+      title: 'Ironman Nice',
+      kind: GoalKind.RACE,
       horizon: GoalHorizon.LONG_TERM,
-      metricKey: 'ironman_time',
-      currentValue: null,
-      targetValue: 36000,
-      unit: 'seconds',
+      priority: GoalPriority.A,
+      raceFormat: 'Ironman',
+      targetPerformance: 'Sub 10h',
+      lowerIsBetter: true,
       targetDate: addDays(today, 94),
+      location: 'Nice, France',
+      notes:
+        'Objectif principal de la saison — viser une exécution maîtrisée sur les trois disciplines.',
     },
   });
 
@@ -432,6 +524,7 @@ export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
       const session = WEEK_PATTERN[dayInWeek];
       if (!session) continue;
       const daysAgo = weekIndex * 7 + (6 - dayInWeek);
+      if (daysAgo === 0) continue;
       const narrative = NARRATIVES[session.narrative];
       const activity = await prisma.activity.create({
         data: {
@@ -458,35 +551,35 @@ export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
     }
   }
 
-  // Recovery trend — last 10 days.
-  const recoveryScores = [82, 78, 85, 90, 74, 88, 92, 80, 86, 87];
+  // Recovery trend — last 10 days (Garmin-style detail for sleep/recovery pages).
   for (let daysAgo = 9; daysAgo >= 0; daysAgo--) {
+    const recoveryScore = RECOVERY_SCORES[9 - daysAgo]!;
     await prisma.dailyHealth.create({
       data: {
         athleteId,
         date: subDays(today, daysAgo),
-        sleepMinutes: 420 + (daysAgo % 3) * 20,
         hrv: 75 + (daysAgo % 4) * 4,
         restingHr: 44 - (daysAgo % 3),
         weightKg: 79.6,
         calories: 3200 + (daysAgo % 5) * 100,
-        recoveryScore: recoveryScores[9 - daysAgo],
+        recoveryScore,
         stress: 2 + (daysAgo % 3),
         mood: 'Bien',
+        ...sleepFieldsForDemo(daysAgo, recoveryScore),
       },
     });
   }
 
-  // Nutrition — last 7 days, one day intentionally empty.
+  // Nutrition — last 7 days, all populated with meal breakdown.
   for (let daysAgo = 6; daysAgo >= 0; daysAgo--) {
-    const macros = NUTRITION_WINDOW[6 - daysAgo];
-    if (!macros) continue;
+    const macros = NUTRITION_WINDOW[6 - daysAgo]!;
     await prisma.dailyNutrition.create({
       data: {
         athleteId,
         date: subDays(today, daysAgo),
         provider: 'myfitnesspal',
         complete: true,
+        meals: demoMealsForDay(6 - daysAgo),
         ...macros,
         ...NUTRITION_GOALS,
       },
@@ -553,7 +646,7 @@ export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
     });
   }
 
-  // Body composition — RENPHO-style slow trend over the last month.
+  // Body composition — RENPHO-style trend on the demo week.
   for (const [index, point] of BODY_COMPOSITION_TREND.entries()) {
     await prisma.bodyCompositionMeasurement.create({
       data: {
@@ -564,6 +657,9 @@ export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
         weightKg: point.weightKg,
         bodyFatPct: point.bodyFatPct,
         musclePct: point.musclePct,
+        bmi: point.bmi,
+        waterPct: 58.5 - index * 0.1,
+        visceralFat: 6.2 - index * 0.05,
       },
     });
   }
@@ -593,4 +689,49 @@ export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
         "Légère gêne à la flexion complète, sans impact sur l'allure — course maintenue à charge modérée.",
     },
   });
+
+  await ensureDemoSessionLinkStory(prisma, athleteId);
+  await finalizeDemoSeed(prisma, athleteId);
+}
+
+/** Reseed when the demo tenant is missing, stale, or polluted (e.g. onboarding test goals). */
+export async function ensureDemoSeedFresh(prisma: PrismaClient): Promise<boolean> {
+  const athlete = await prisma.athleteProfile.findUnique({
+    where: { clerkUserId: DEMO_CLERK_USER_ID },
+    select: { id: true },
+  });
+  if (!athlete) {
+    await seedDemoAthlete(prisma);
+    return true;
+  }
+
+  const today = startOfDay(new Date());
+  const [garmin, renpho, latestHealth, goalCount] = await Promise.all([
+    prisma.garminAccount.findUnique({
+      where: { athleteId: athlete.id },
+      select: { athleteId: true },
+    }),
+    prisma.renphoAccount.findUnique({
+      where: { athleteId: athlete.id },
+      select: { athleteId: true },
+    }),
+    prisma.dailyHealth.findFirst({
+      where: { athleteId: athlete.id },
+      orderBy: { date: 'desc' },
+      select: { date: true },
+    }),
+    prisma.goal.count({ where: { athleteId: athlete.id } }),
+  ]);
+
+  const healthStale =
+    latestHealth == null || startOfDay(latestHealth.date).getTime() !== today.getTime();
+  const needsReseed = !garmin || !renpho || healthStale || goalCount !== 1;
+
+  if (needsReseed) {
+    await seedDemoAthlete(prisma);
+    return true;
+  }
+
+  await ensureDemoSessionLinkStory(prisma, athlete.id);
+  return false;
 }

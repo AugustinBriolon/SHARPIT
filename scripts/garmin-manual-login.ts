@@ -32,9 +32,9 @@ async function main() {
   await client.login();
   const tokens = client.exportToken();
 
-  console.log('\n--- Colle le bloc ci-dessous dans le champ "tokens" de la page Garmin ---\n');
-  console.log(JSON.stringify(tokens));
-  console.log('\n--- fin ---');
+  console.info('\n--- Colle le bloc ci-dessous dans le champ "tokens" de la page Garmin ---\n');
+  console.info(JSON.stringify(tokens));
+  console.info('\n--- fin ---');
 }
 
 main().catch((error) => {

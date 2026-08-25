@@ -5,7 +5,7 @@ import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { syncGarminActivities } from '@/lib/integrations/garmin/garmin-activity-sync';
 import { connectGarmin, syncGarminHealth } from '@/lib/integrations/garmin/garmin-sync';
 import { GarminLoginError } from '@/lib/integrations/garmin/garmin';
-import { sanitizeDataClass } from '@/lib/integrations/oauth-return';
+import { sanitizeDataClass } from '@/lib/integrations/oauth-public-origin';
 import {
   enableProviderForAllCoveredClasses,
   enableProviderForClass,

@@ -9,6 +9,13 @@ import { Loader2, Sparkles } from 'lucide-react';
 import { isEligibleForActivityNarrative } from '@/lib/activity/narrative/activity-narrative-config';
 import { isActivityToday } from '@/lib/activity/list/activity-day';
 import { activityNarrativeSchema, type ActivityNarrative } from '@/lib/validators/coach';
+import { useIsDemoMode } from '@/hooks/use-is-demo-mode';
+import { isDemoSessionLinkActivityTitle } from '@/lib/demo/demo-session-link-markers';
+import { applyDemoSessionLinkReading } from '@/lib/demo/demo-session-link-reading';
+import { findDemoSessionLinkByActivityId } from '@/lib/demo/demo-session-link-state';
+import { useActivities } from '@/hooks/use-data';
+import { useDemoSessionLinksSnapshot } from '@/hooks/use-demo-session-link-overlay';
+import { useQueryClient } from '@tanstack/react-query';
 
 const NARRATIVE_POLL_MS = 3_000;
 const NARRATIVE_POLL_MAX_MS = 120_000;
@@ -67,6 +74,16 @@ export function ActivityNarrativeSection({
   narrativeAnalyzedAt: initialAnalyzedAt,
   coachEnabled,
 }: ActivityNarrativeSectionProps) {
+  const queryClient = useQueryClient();
+  const isDemo = useIsDemoMode();
+  useDemoSessionLinksSnapshot();
+  const activitiesQuery = useActivities();
+  const activityTitle = activitiesQuery.data?.find((item) => item.id === activityId)?.title;
+  const demoLink = findDemoSessionLinkByActivityId(activityId);
+  const isDemoLinkStory =
+    isDemo && (Boolean(demoLink) || isDemoSessionLinkActivityTitle(activityTitle));
+  const demoReading = demoLink?.reading ?? null;
+
   const [polled, setPolled] = useState<{
     analysis: typeof initialAnalysis;
     analyzedAt: typeof initialAnalyzedAt;
@@ -74,18 +91,24 @@ export function ActivityNarrativeSection({
   const [pollTimedOut, setPollTimedOut] = useState(() => readTimedOut(activityId));
   const [generating, setGenerating] = useState(false);
 
-  const narrativeAnalysis = polled?.analysis ?? initialAnalysis;
-  const narrativeAnalyzedAt = polled?.analyzedAt ?? initialAnalyzedAt;
+  const narrativeAnalysis = demoReading?.narrative ?? polled?.analysis ?? initialAnalysis;
+  const narrativeAnalyzedAt = demoReading?.analyzedAt ?? polled?.analyzedAt ?? initialAnalyzedAt;
 
   const hasAnalysis = Boolean(parseNarrative(narrativeAnalysis) && narrativeAnalyzedAt);
   const eligible =
     coachEnabled &&
     NARRATIVE_TYPES.has(activityType) &&
     isEligibleForActivityNarrative(new Date(activityDate));
-  // Only today's sessions are auto-enriched on ingest — poll those. Older = manual button.
   const expectBackgroundIngest = isActivityToday(new Date(activityDate));
+  const demoReadingPending = isDemoLinkStory && Boolean(demoLink) && !demoReading;
   const isPending =
-    eligible && !hasAnalysis && !pollTimedOut && !generating && expectBackgroundIngest;
+    eligible &&
+    !hasAnalysis &&
+    !pollTimedOut &&
+    !generating &&
+    expectBackgroundIngest &&
+    !isDemoLinkStory &&
+    !demoReadingPending;
 
   useEffect(() => {
     setPolled(null);
@@ -144,6 +167,19 @@ export function ActivityNarrativeSection({
   }, [activityId, isPending]);
 
   async function handleGenerate() {
+    if (isDemo && demoLink && !demoReading) {
+      setGenerating(true);
+      const loadingToast = toast.loading('Synthèse en cours');
+      try {
+        applyDemoSessionLinkReading(queryClient, demoLink.plannedSessionId, activityId);
+        toast.success('Synthèse prête');
+      } finally {
+        toast.close(loadingToast);
+        setGenerating(false);
+      }
+      return;
+    }
+
     clearTimedOut(activityId);
     setPollTimedOut(false);
     setGenerating(true);
@@ -195,9 +231,11 @@ export function ActivityNarrativeSection({
     );
   }
 
-  if (!eligible) return null;
+  if (!eligible && !isDemoLinkStory) return null;
 
-  if (isPending || generating) {
+  if (isDemoLinkStory && !demoLink) return null;
+
+  if (demoReadingPending || isPending || generating) {
     return (
       <section className="bg-analysis-surface-alt rounded-analysis-lg flex h-full flex-col px-5 py-5 sm:px-6 sm:py-6">
         <p className="text-label inline-flex items-center gap-2">

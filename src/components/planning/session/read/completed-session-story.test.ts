@@ -69,7 +69,21 @@ describe('CompletedSessionStory', () => {
     expect(html).toContain('88');
     expect(html).toContain('Écarts au plan');
     expect(html).toContain('Allure stable');
+    expect(html).toContain('Orientation');
+    expect(html).toContain('Garder ce rythme mardi.');
     // Compliance summary must not compete as a second coach paragraph.
+    expect(html).not.toContain('Séance exécutée comme prévu.');
+  });
+
+  it('shows an analyzing badge when compliance is pending', () => {
+    const html = renderToStaticMarkup(
+      createElement(CompletedSessionStory, {
+        session: sessionFixture({ analysis: null, analyzedAt: null }),
+        isAnalyzing: true,
+      }),
+    );
+
+    expect(html).toContain('Analyse…');
     expect(html).not.toContain('Séance exécutée comme prévu.');
   });
 

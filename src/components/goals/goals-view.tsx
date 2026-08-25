@@ -96,11 +96,7 @@ export function GoalsView({ embedded = false }: { embedded?: boolean } = {}) {
 
   return (
     <div className="space-y-8">
-      {embedded ? (
-        <div className="flex justify-end">
-          <GoalsToolbar />
-        </div>
-      ) : (
+      {embedded ? null : (
         <>
           <MobileBackLink href="/progress?tab=goals" label="Progression" showOnDesktop />
           <StickyHeader className="flex flex-wrap items-end justify-between gap-4">

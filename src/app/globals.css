@@ -605,29 +605,6 @@
   color: var(--color-ink-surface-foreground);
 }
 
-/* Curseur de frappe du coach — une barre épinglée à la fin du dernier bloc rendu.
-   Un pseudo-élément évite de réécrire l'arbre React à chaque token reçu.
-   La règle globale prefers-reduced-motion plus bas fige le clignotement. */
-.coach-streaming > :last-child:not(ul):not(ol):not(table):not(pre):not(div)::after,
-.coach-streaming > :is(ul, ol):last-child > li:last-child:not(:has(p))::after,
-.coach-streaming > :is(ul, ol):last-child > li:last-child > p:last-child::after {
-  display: inline-block;
-  width: 0.4em;
-  height: 1em;
-  margin-inline-start: 0.15em;
-  background-color: currentcolor;
-  content: '';
-  vertical-align: -0.12em;
-  animation: coach-caret-blink 1.1s steps(2, start) infinite;
-  opacity: 0.55;
-}
-
-@keyframes coach-caret-blink {
-  to {
-    opacity: 0;
-  }
-}
-
 @media (prefers-reduced-motion: no-preference) {
   ::view-transition-old(root) {
     animation: 120ms ease-out both vt-fade-out;
@@ -657,33 +634,24 @@
   }
 }
 
-/* Streaming caret for coach messages */
-.coach-streaming-caret {
-  display: inline-block;
-  width: 7px;
-  height: 1.05em;
-  margin-left: 2px;
-  background: hsl(var(--foreground));
-  vertical-align: text-bottom;
-}
-
-.coach-streaming-caret[data-idle='true'] {
-  animation: coach-caret-blink 1s step-end infinite;
-}
-
-@keyframes coach-caret-blink {
-  0%,
-  100% {
-    opacity: 1;
+@keyframes link-analysis-slide {
+  from {
+    transform: translateX(-120%);
   }
-  50% {
-    opacity: 0;
+  to {
+    transform: translateX(420%);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .link-analysis-bar {
+    animation: link-analysis-slide 1.35s cubic-bezier(0.23, 1, 0.32, 1) infinite;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .coach-streaming-caret {
-    animation: none;
+  .link-analysis-bar {
+    display: none;
   }
 }
 

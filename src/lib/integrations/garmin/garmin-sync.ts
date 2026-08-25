@@ -84,14 +84,20 @@ export async function buildFreshGarminClient(
   account: { oauth1TokenEnc: string; oauth2TokenEnc: string },
 ) {
   let tokens = decryptGarminTokens(account.oauth1TokenEnc, account.oauth2TokenEnc);
-  if (isDiGarminTokens(tokens) && diGarminTokensExpiresAtMs(tokens) - Date.now() < DI_REFRESH_MARGIN_MS) {
+  if (
+    isDiGarminTokens(tokens) &&
+    diGarminTokensExpiresAtMs(tokens) - Date.now() < DI_REFRESH_MARGIN_MS
+  ) {
     try {
       tokens = await refreshDiGarminTokens(tokens);
     } catch (error) {
       await revokeGarminCredentials(athleteId);
-      throw new ProviderAuthError('Session Garmin expirée. Reconnecte Garmin dans les paramètres.', {
-        cause: error,
-      });
+      throw new ProviderAuthError(
+        'Session Garmin expirée. Reconnecte Garmin dans les paramètres.',
+        {
+          cause: error,
+        },
+      );
     }
     await prisma.garminAccount.update({
       where: { athleteId },

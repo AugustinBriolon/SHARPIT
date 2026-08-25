@@ -91,6 +91,21 @@ function MobileSelectLoadingRow() {
   );
 }
 
+const mobileSelectTriggerClassName = cn(
+  'border-input flex min-h-11 w-full min-w-0 items-center justify-between gap-1.5 rounded-lg border',
+  'bg-transparent py-2 pr-2 pl-2.5 text-sm lg:min-h-9',
+);
+
+/** Draft landing — label is known before the conversations query resolves. */
+function MobileDraftConversationRow() {
+  return (
+    <div aria-label="Conversation active" className={mobileSelectTriggerClassName}>
+      <span className="truncate">Nouvelle conversation</span>
+      <ChevronDownIcon className="text-muted-foreground size-4 shrink-0 opacity-50" aria-hidden />
+    </div>
+  );
+}
+
 /** Desktop sidebar — only title/date values skeleton. */
 function DesktopListLoadingRows({ rows = 4 }: { rows?: number }) {
   return (
@@ -227,6 +242,7 @@ function DesktopConversationList({
 
 export function CoachConversationList({
   activeId,
+  activeDraft = false,
   conversations,
   loading,
   newDisabled = false,
@@ -237,6 +253,8 @@ export function CoachConversationList({
 }: {
   conversations: ClientConversationSummary[];
   activeId: string | null;
+  /** Ephemeral draft — label is known; never skeleton the mobile picker for this. */
+  activeDraft?: boolean;
   loading: boolean;
   onNewConversation?: () => void;
   newDisabled?: boolean;
@@ -244,9 +262,87 @@ export function CoachConversationList({
   onDelete: (id: string) => void;
   onRename?: (id: string, title: string) => void;
 }) {
-  const selectedId = activeId ?? conversations[0]?.id ?? '';
-  const selected = conversations.find((c) => c.id === selectedId);
+  const isDraft =
+    activeDraft || (!loading && Boolean(activeId && !conversations.some((c) => c.id === activeId)));
+  const awaitingMobileList = loading && !isDraft;
+  const awaitingDesktopList = loading;
+  const selectedId = isDraft ? '' : (activeId ?? conversations[0]?.id ?? '');
+  const selected = isDraft ? undefined : conversations.find((c) => c.id === selectedId);
   const [mobileRenaming, setMobileRenaming] = useState(false);
+  const showMobilePicker = isDraft || conversations.length > 0;
+  const showDesktopList = !awaitingDesktopList && conversations.length > 0;
+
+  function renderMobilePrimary() {
+    if (mobileRenaming && activeId && selected) {
+      return (
+        <InlineRenameInput
+          initial={conversationLabel(selected)}
+          onCancel={() => setMobileRenaming(false)}
+          onCommit={(title) => {
+            onRename?.(activeId, title);
+            setMobileRenaming(false);
+          }}
+        />
+      );
+    }
+
+    if (isDraft) {
+      if (conversations.length === 0) return <MobileDraftConversationRow />;
+      return (
+        <Select
+          value="__draft__"
+          onValueChange={(value) => {
+            if (value && value !== '__draft__') onSelect(value);
+          }}
+        >
+          <SelectTrigger
+            aria-label="Conversation active"
+            className="min-h-11 w-full min-w-0 lg:h-9"
+          >
+            <SelectValue>Nouvelle conversation</SelectValue>
+          </SelectTrigger>
+          <SelectContent className="max-h-64 w-(--anchor-width) max-w-(--anchor-width)">
+            <SelectItem className="min-w-0" value="__draft__">
+              Nouvelle conversation
+            </SelectItem>
+            {conversations.map((c) => (
+              <SelectItem key={c.id} className="min-w-0" value={c.id}>
+                <span className="block min-w-0 truncate">{conversationLabel(c)}</span>
+                <span className="text-muted-foreground block min-w-0 truncate text-xs">
+                  {formatDistanceToNow(c.updatedAt, { addSuffix: true, locale: fr })}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+
+    return (
+      <Select
+        value={selectedId}
+        onValueChange={(value) => {
+          if (value) onSelect(value);
+        }}
+      >
+        <SelectTrigger aria-label="Conversation active" className="min-h-11 w-full min-w-0 lg:h-9">
+          <SelectValue placeholder="Nouvelle conversation">
+            {selected ? conversationLabel(selected) : 'Nouvelle conversation'}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent className="max-h-64 w-(--anchor-width) max-w-(--anchor-width)">
+          {conversations.map((c) => (
+            <SelectItem key={c.id} className="min-w-0" value={c.id}>
+              <span className="block min-w-0 truncate">{conversationLabel(c)}</span>
+              <span className="text-muted-foreground block min-w-0 truncate text-xs">
+                {formatDistanceToNow(c.updatedAt, { addSuffix: true, locale: fr })}
+              </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  }
 
   return (
     <aside
@@ -266,78 +362,37 @@ export function CoachConversationList({
         </Button>
       ) : null}
 
-      {loading ? (
-        <>
-          <MobileSelectLoadingRow />
-          <DesktopListLoadingRows />
-        </>
-      ) : null}
+      {awaitingMobileList ? <MobileSelectLoadingRow /> : null}
+      {awaitingDesktopList ? <DesktopListLoadingRows /> : null}
 
-      {!loading && conversations.length === 0 ? (
+      {!loading && !isDraft && conversations.length === 0 ? (
         <p className="text-muted-foreground px-3 py-2 text-xs leading-relaxed">
           Aucune conversation. Démarre une discussion pour obtenir un conseil contextualisé.
         </p>
       ) : null}
 
-      {!loading && conversations.length > 0 ? (
-        <>
-          <div className="flex items-center gap-1.5 p-2 lg:hidden">
-            <div className="min-w-0 flex-1">
-              {mobileRenaming && activeId ? (
-                <InlineRenameInput
-                  initial={selected ? conversationLabel(selected) : ''}
-                  onCancel={() => setMobileRenaming(false)}
-                  onCommit={(title) => {
-                    onRename?.(activeId, title);
-                    setMobileRenaming(false);
-                  }}
-                />
-              ) : (
-                <Select
-                  value={selectedId}
-                  onValueChange={(value) => {
-                    if (value) onSelect(value);
-                  }}
-                >
-                  <SelectTrigger
-                    aria-label="Conversation active"
-                    className="min-h-11 w-full min-w-0 lg:h-9"
-                  >
-                    <SelectValue placeholder="Nouvelle conversation">
-                      {selected ? conversationLabel(selected) : 'Nouvelle conversation'}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent className="max-h-64 w-(--anchor-width) max-w-(--anchor-width)">
-                    {conversations.map((c) => (
-                      <SelectItem key={c.id} className="min-w-0" value={c.id}>
-                        <span className="block min-w-0 truncate">{conversationLabel(c)}</span>
-                        <span className="text-muted-foreground block min-w-0 truncate text-xs">
-                          {formatDistanceToNow(c.updatedAt, { addSuffix: true, locale: fr })}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-            {activeId ? (
-              <ConversationOverflowMenu
-                conversationId={activeId}
-                label={selected ? conversationLabel(selected) : 'Conversation'}
-                onDelete={() => onDelete(activeId)}
-                onRename={onRename ? () => setMobileRenaming(true) : undefined}
-              />
-            ) : null}
-          </div>
+      {showMobilePicker ? (
+        <div className="flex items-center gap-1.5 p-2 lg:hidden">
+          <div className="min-w-0 flex-1">{renderMobilePrimary()}</div>
+          {activeId && selected ? (
+            <ConversationOverflowMenu
+              conversationId={activeId}
+              label={conversationLabel(selected)}
+              onDelete={() => onDelete(activeId)}
+              onRename={onRename ? () => setMobileRenaming(true) : undefined}
+            />
+          ) : null}
+        </div>
+      ) : null}
 
-          <DesktopConversationList
-            activeId={activeId}
-            conversations={conversations}
-            onDelete={onDelete}
-            onRename={onRename}
-            onSelect={onSelect}
-          />
-        </>
+      {showDesktopList ? (
+        <DesktopConversationList
+          activeId={activeId}
+          conversations={conversations}
+          onDelete={onDelete}
+          onRename={onRename}
+          onSelect={onSelect}
+        />
       ) : null}
     </aside>
   );

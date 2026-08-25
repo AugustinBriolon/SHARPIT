@@ -4,7 +4,7 @@ import {
   normalizeOAuthPublicOrigin,
   sanitizeDataClass,
   sanitizeIntegrationReturnTo,
-} from '@/lib/integrations/oauth-return';
+} from '@/lib/integrations/oauth-public-origin';
 
 describe('sanitizeIntegrationReturnTo', () => {
   it('defaults when missing', () => {
@@ -52,7 +52,7 @@ describe('normalizeOAuthPublicOrigin', () => {
 
 describe('publicOriginFromRequest', () => {
   it('prefers Host header over nextUrl bind address', async () => {
-    const { publicOriginFromRequest } = await import('@/lib/integrations/oauth-return');
+    const { publicOriginFromRequest } = await import('@/lib/integrations/oauth-public-origin');
     const { NextRequest } = await import('next/server');
     const nextReq = new NextRequest('http://0.0.0.0:3000/api/strava/connect', {
       headers: { host: 'localhost:3000' },

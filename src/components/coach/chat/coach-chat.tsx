@@ -7,24 +7,40 @@ import {
   lastAssistantMessageIsCompleteWithApprovalResponses,
   type UIMessage,
 } from 'ai';
-import { ArrowDown, ArrowUp, Square } from 'lucide-react';
+import { ArrowDown } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AgentActivity } from '@/components/agents/agent-activity';
+import {
+  Message,
+  MessageBubble,
+  MessageBubbleContent,
+  MessageScroller,
+} from '@/components/agents/message';
+import { PromptInput } from '@/components/agents/prompt-input';
+import { StreamingResponse } from '@/components/agents/streaming-response';
+import { coachBeuiCopy } from '@/components/coach/beui/coach-beui-copy';
+import { CoachBeuiLoadingStatus } from '@/components/coach/beui/coach-beui-loading';
+import {
+  collectPendingApprovals,
+  mapCoachMessages,
+  showSubmittedPlaceholder,
+} from '@/components/coach/beui/coach-message-mapper';
+import { coachBeuiTheme } from '@/components/coach/beui/coach-beui-theme';
+import { CoachToolApprovalCard } from '@/components/coach/beui/coach-tool-approval-card';
+import { toolPartsToAgentActivity } from '@/components/coach/beui/coach-tool-activity-items';
 import { CoachMessage } from '@/components/coach/chat/coach-message';
 import { CoachProvenanceChips } from '@/components/coach/chat/coach-provenance-chips';
 import { CoachReasoning } from '@/components/coach/chat/coach-reasoning';
-import { ToolActivityList } from '@/components/coach/chat/tool-activity-list';
-import { ToolActivity } from '@/components/coach/chat/tool-activity';
+import { CoachChatEmptyState } from '@/components/coach/chat/coach-chat-empty-state';
+import { CoachComposerShell } from '@/components/coach/chat/coach-composer-chrome';
+import { CoachContextChip } from '@/components/coach/chat/coach-context-chip';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { useSaveConversation, useCreateConversation } from '@/hooks/use-coach';
 import { usePlannedSessions } from '@/hooks/use-data';
 import { lastStepApprovalResponseFingerprint } from '@/lib/coach/chat/coach-chat-auto-send';
 import { coachApprovalReason } from '@/lib/coach/plan/coach-approval-reason';
-import {
-  buildKnownSessions,
-  COACH_CHAT_SUGGESTIONS,
-} from '@/lib/coach/chat/coach-chat-known-sessions';
+import { buildKnownSessions } from '@/lib/coach/chat/coach-chat-known-sessions';
 import {
   coachMessagesFingerprint,
   hasPersistableAssistant,
@@ -39,7 +55,6 @@ import {
   CALENDAR_MUTATION_TOOL_TYPES,
   dismissUnresolvedCalendarTools,
   hasUnresolvedCalendarTools,
-  type ToolPartLite,
 } from '@/lib/coach/chat/coach-tool-parts';
 import {
   invalidateAfterCoachToolApproval,
@@ -51,15 +66,29 @@ import {
   readCoachInputDraft,
   writeCoachInputDraft,
 } from '@/lib/coach/chat/coach-input-draft';
-import { reasoningTextOf } from '@/lib/coach/chat/coach-reasoning';
-import { isNearBottom, shouldShowJumpToLatest } from '@/lib/coach/chat/scroll-anchor';
-import { CoachComposerShell } from '@/components/coach/chat/coach-composer-chrome';
-import { CoachContextChip } from '@/components/coach/chat/coach-context-chip';
 import type { CoachDiscussContext } from '@/lib/coach/chat/coach-discuss-context';
 import { createClientId } from '@/lib/client-id';
 import { cn } from '@/lib/utils';
 
-const SUGGESTIONS = COACH_CHAT_SUGGESTIONS;
+function AssistantAnswerBody({ live, text }: { live: boolean; text: string }) {
+  if (text) {
+    return (
+      <StreamingResponse
+        announce={false}
+        showActions={false}
+        status={live ? 'streaming' : 'complete'}
+      >
+        <CoachMessage streaming={live}>{text}</CoachMessage>
+      </StreamingResponse>
+    );
+  }
+
+  if (live) {
+    return <CoachBeuiLoadingStatus label={coachBeuiCopy.drafting} />;
+  }
+
+  return null;
+}
 
 export function CoachChat({
   conversationId,
@@ -74,35 +103,31 @@ export function CoachChat({
 }: {
   conversationId: string;
   initialMessages: UIMessage[];
-  /** Context carried by a contextual conversation, shown above the composer. */
   attachedContext?: CoachDiscussContext | null;
-  /** Drops the attachment and hides the chip. */
   onDetachContext?: () => void;
   isEphemeral?: boolean;
   autoReply?: boolean;
-  /** Rendered sticky at the top of the message scroll region (mobile fixed layout). */
   header?: React.ReactNode;
   onConversationCreated?: (id: string) => void;
   onAutoReplyStarted?: () => void;
 }) {
   const queryClient = useQueryClient();
-  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
+  const { guardDisabled } = useOfflineGuard();
   const { mutateAsync: saveMessages } = useSaveConversation();
   const createConversation = useCreateConversation();
   const { data: plannedSessions } = usePlannedSessions();
   const autoReplyStarted = useRef(false);
   const invalidatedToolPartKeys = useRef<Set<string>>(new Set());
-  /** Prevents infinite auto-continue when approval-responded parts stay stuck. */
   const sentApprovalFingerprints = useRef<Set<string>>(new Set());
   const blockAutoSend = useRef(false);
   const lastPersistedFingerprint = useRef<string>('');
   const messagesRef = useRef<UIMessage[]>(initialMessages);
+  const viewportRef = useRef<HTMLElement>(null);
 
   const coachTransport = useMemo(
     () =>
       new DefaultChatTransport({
         api: '/api/coach/chat',
-        // Keep abort controller registered for the whole SSE lifetime (not just TTFB).
         fetch: (input, init) => {
           const signal = replaceChatFetchSignal(conversationId, init?.signal);
           return fetch(input, { ...init, signal });
@@ -147,15 +172,11 @@ export function CoachChat({
       return true;
     },
     onError: () => {
-      // Stop any further auto-continues for this conversation until the athlete acts again.
       blockAutoSend.current = true;
     },
     onFinish: ({ messages: all, isError, isAbort }) => {
       if (isError) return;
-      // An aborted twin request must not auto-continue into another makeRequest.
       if (isAbort) blockAutoSend.current = true;
-      // Persist even on abort: Strict Mode / twin-request cancel can mark isAbort while
-      // the UI already holds a usable assistant turn.
       persistMessages(all);
       if (!isAbort) {
         invalidatePlannedSessionsAfterCoachTurn(queryClient);
@@ -163,38 +184,16 @@ export function CoachChat({
     },
   });
   messagesRef.current = messages;
-  const [input, setInput] = useState('');
-  const draftReady = useRef(false);
 
-  // Restore unfinished input when switching conversations.
-  useEffect(() => {
-    draftReady.current = false;
-  }, [conversationId]);
-
-  useEffect(() => {
-    if (draftReady.current) return;
-    draftReady.current = true;
-    const draft = readCoachInputDraft(conversationId);
-    if (draft) setInput(draft);
-  }, [conversationId]);
-
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const initialScrollDone = useRef(false);
-  /**
-   * Whether new content should still pull the transcript down. Set from the
-   * athlete's own scrolling, never from the stream — scrolling up to re-read
-   * must survive every token that arrives afterwards.
-   */
-  const stickToBottom = useRef(true);
+  const [input, setInput] = useState(() => readCoachInputDraft(conversationId));
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
+  const loadedConversationIdRef = useRef(conversationId);
 
-  const scrollToLatest = useCallback((behavior: ScrollBehavior) => {
-    const el = scrollRef.current;
-    if (!el) return;
-    stickToBottom.current = true;
-    setShowJumpToLatest(false);
-    el.scrollTo({ top: el.scrollHeight, behavior });
-  }, []);
+  useEffect(() => {
+    if (loadedConversationIdRef.current === conversationId) return;
+    loadedConversationIdRef.current = conversationId;
+    setInput(readCoachInputDraft(conversationId));
+  }, [conversationId]);
 
   const isBusy = status === 'submitted' || status === 'streaming';
   const streamIdle = !isBusy;
@@ -204,15 +203,14 @@ export function CoachChat({
     sentApprovalFingerprints.current.clear();
     blockAutoSend.current = false;
     lastPersistedFingerprint.current = '';
+    setShowJumpToLatest(false);
   }, [conversationId]);
 
-  // Flush assistant turns when the stream settles (covers SDK onFinish races on abort).
   useEffect(() => {
     if (status !== 'ready') return;
     persistMessages(messages);
   }, [status, messages, conversationId, isEphemeral]);
 
-  // Leave conversation / Strict Mode remount: save first, then abort in-flight SSE.
   useEffect(() => {
     return () => {
       persistMessages(messagesRef.current);
@@ -234,7 +232,6 @@ export function CoachChat({
         if (!cancelled) onAutoReplyStarted?.();
       });
     return () => {
-      // Strict Mode remount: release lock so the surviving instance can start once.
       cancelled = true;
       endAutoReply(conversationId);
     };
@@ -252,70 +249,37 @@ export function CoachChat({
     return -1;
   }, [messages]);
 
-  const pendingApprovals: ToolPartLite[] = [];
-  for (const message of messages) {
-    if (message.role !== 'assistant') continue;
-    for (const part of message.parts) {
-      if (!part.type.startsWith('tool-')) continue;
-      const lite = part as ToolPartLite;
-      if (lite.state === 'approval-requested' && lite.approval && !lite.approval.isAutomatic) {
-        pendingApprovals.push(lite);
-      }
-    }
-  }
-
+  const pendingApprovals = useMemo(() => collectPendingApprovals(messages), [messages]);
   const hasPendingApprovals = pendingApprovals.length > 0;
-
-  // Seul le streaming bloque l'input — les propositions en attente ne doivent jamais verrouiller la conversation.
   const inputLocked = isBusy || guardDisabled;
 
-  // Re-anchor on conversation switch before any scroll follow (order matters).
-  useEffect(() => {
-    initialScrollDone.current = false;
-    stickToBottom.current = true;
-    setShowJumpToLatest(false);
-  }, [conversationId]);
+  const mappedRows = useMemo(
+    () =>
+      mapCoachMessages({
+        messages,
+        status,
+        lastAssistantIndex,
+      }).filter((row) => row.kind !== 'assistant' || !row.skip),
+    [messages, status, lastAssistantIndex],
+  );
 
-  // Follow the streaming tail only while the athlete has not scrolled away.
-  // Initial jump waits a paint so a freshly mounted conversation lands at the true bottom.
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-
-    if (!initialScrollDone.current) {
-      const jump = () => {
-        el.scrollTo({ top: el.scrollHeight, behavior: 'instant' });
-      };
-      jump();
-      let raf2 = 0;
-      const raf1 = requestAnimationFrame(() => {
-        jump();
-        // One more frame — sticky header / message measure can still settle.
-        raf2 = requestAnimationFrame(() => {
-          jump();
-          initialScrollDone.current = true;
-        });
-      });
-      return () => {
-        cancelAnimationFrame(raf1);
-        cancelAnimationFrame(raf2);
-      };
+  const lastAssistantRowKey = useMemo(() => {
+    for (let i = mappedRows.length - 1; i >= 0; i -= 1) {
+      if (mappedRows[i]?.kind === 'assistant') return mappedRows[i]!.key;
     }
+    return null;
+  }, [mappedRows]);
 
-    if (!stickToBottom.current) {
-      setShowJumpToLatest(messages.length > 0);
-      return;
-    }
-    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-  }, [messages, conversationId]);
-
-  // Pending approval cards grow the transcript — stay pinned if still following.
+  const prevStatusRef = useRef(status);
   useEffect(() => {
-    if (!initialScrollDone.current || !stickToBottom.current) return;
-    const el = scrollRef.current;
-    if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-  }, [hasPendingApprovals]);
+    const previous = prevStatusRef.current;
+    prevStatusRef.current = status;
+    if (previous !== 'streaming' && previous !== 'submitted') return;
+    if (status !== 'ready') return;
+    requestAnimationFrame(() => {
+      viewportRef.current?.scrollTo({ top: viewportRef.current.scrollHeight, behavior: 'auto' });
+    });
+  }, [status]);
 
   useEffect(() => {
     const newlyCompletedKeys: string[] = [];
@@ -323,11 +287,11 @@ export function CoachChat({
       if (m.role !== 'assistant') continue;
       for (const p of m.parts) {
         if (!p.type.startsWith('tool-')) continue;
-        const part = p as ToolPartLite;
+        const part = p as { type: string; state?: string; output?: { ok?: boolean } };
         const completed =
           CALENDAR_MUTATION_TOOL_TYPES.has(part.type) &&
           part.state === 'output-available' &&
-          (part.output as { ok?: boolean } | undefined)?.ok !== false;
+          part.output?.ok !== false;
         if (!completed) continue;
         const key = `${m.id}:${part.type}`;
         if (!invalidatedToolPartKeys.current.has(key)) newlyCompletedKeys.push(key);
@@ -343,9 +307,11 @@ export function CoachChat({
     const value = text.trim();
     if (!value || inputLocked || guardDisabled) return;
 
-    // Sending is an explicit "show me the answer" — re-anchor on the tail.
-    stickToBottom.current = true;
     setShowJumpToLatest(false);
+    const viewport = viewportRef.current;
+    if (viewport) {
+      viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
+    }
 
     if (hasUnresolvedCalendarTools(messages)) {
       const dismissed = dismissUnresolvedCalendarTools(messages);
@@ -379,182 +345,176 @@ export function CoachChat({
     setInput('');
   }
 
+  const scrollToLatest = useCallback((behavior: ScrollBehavior) => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    setShowJumpToLatest(false);
+    viewport.scrollTo({ top: viewport.scrollHeight, behavior });
+  }, []);
+
   const coachErrorMessage =
     error?.message && !error.message.toLowerCase().includes('api key')
       ? error.message
-      : 'Une erreur est survenue. Réessaie dans un instant.';
+      : coachBeuiCopy.genericError;
 
   const inputPlaceholder = (() => {
-    if (guardDisabled) return 'Hors ligne, envoi indisponible';
-    if (hasPendingApprovals) {
-      return "Réponds à la proposition, ou envoie un nouveau message pour l'ignorer…";
-    }
-    return 'Demande conseil à ton coach…';
+    if (guardDisabled) return coachBeuiCopy.composerPlaceholderOffline;
+    if (hasPendingApprovals) return coachBeuiCopy.composerPlaceholderPendingApproval;
+    return coachBeuiCopy.composerPlaceholder;
   })();
 
+  const handleApproval = useCallback(
+    (id: string, approved: boolean) => {
+      blockAutoSend.current = false;
+      clearError();
+      addToolApprovalResponse({
+        id,
+        approved,
+        reason: coachApprovalReason(approved),
+      });
+      if (approved) {
+        const part = pendingApprovals.find((p) => p.approval?.id === id);
+        if (part) invalidateAfterCoachToolApproval(queryClient, part.type);
+      }
+    },
+    [addToolApprovalResponse, clearError, pendingApprovals, queryClient],
+  );
+
   return (
-    <div className="rounded-analysis-lg relative flex h-full min-w-0 flex-1 flex-col overflow-hidden lg:border">
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto"
-        onScroll={(e) => {
-          const stuck = isNearBottom(e.currentTarget);
-          stickToBottom.current = stuck;
-          setShowJumpToLatest(
-            shouldShowJumpToLatest({ stuck, hasMessages: messagesRef.current.length > 0 }),
-          );
+    <div className={coachBeuiTheme.panel}>
+      <MessageScroller
+        busy={isBusy}
+        className={coachBeuiTheme.scrollerViewport}
+        contentClassName={coachBeuiTheme.scrollerContent}
+        followThreshold={56}
+        label={coachBeuiCopy.transcriptLabel}
+        viewportRef={viewportRef}
+        followOutput
+        smooth
+        onFollowChange={(following) => {
+          setShowJumpToLatest(!following && messagesRef.current.length > 0);
         }}
       >
-        {header && <div className="bg-background sticky top-0 z-10">{header}</div>}
-        <div className="space-y-4 p-4">
-          {messages.length === 0 && (
-            <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
-              <p className="text-muted-foreground max-w-sm text-sm">
-                Pose une question à ton coach. Il connaît ta forme, ta récupération, tes seuils et
-                tes objectifs.
-              </p>
-              <div
-                aria-label="Suggestions"
-                className="flex flex-wrap justify-center gap-2"
-                role="group"
-              >
-                {SUGGESTIONS.map((s) => (
-                  <button
-                    key={s}
-                    className="chip-surface text-foreground/80 hover:border-primary/40 hover:text-foreground min-h-11 rounded-full px-3 py-1.5 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-50 lg:min-h-9"
-                    disabled={inputLocked}
-                    type="button"
-                    onClick={() => submit(s)}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+        {header && (
+          <div className="bg-background fixed top-0 right-0 left-0 z-10 px-3 py-2">{header}</div>
+        )}
 
-          {messages.map((message, messageIndex) => {
-            const rowKey = `${message.id}:${messageIndex}`;
-            const isUser = message.role === 'user';
-            const text = message.parts
-              .filter((p) => p.type === 'text')
-              .map((p) => (p as { text: string }).text)
-              .join('');
-            const toolParts = message.parts.filter((p) => p.type.startsWith('tool-'));
-            const reasoning = reasoningTextOf(message.parts);
-            // Skip content-visibility on the live streaming tail — height changes continuously.
-            const isLiveStreamTail =
-              status === 'streaming' && messageIndex === messages.length - 1 && !isUser;
+        {messages.length === 0 ? (
+          <CoachChatEmptyState
+            disabled={inputLocked}
+            onSuggestionClick={(text) => void submit(text)}
+          />
+        ) : null}
 
-            if (isUser) {
-              return (
-                <div
-                  key={rowKey}
-                  className={cn('flex justify-end', !isLiveStreamTail && 'cv-auto')}
-                >
-                  <div className="bg-accent text-foreground max-w-[85%] rounded-[18px_18px_4px_18px] px-4 py-2.5 text-sm whitespace-pre-wrap">
-                    {text}
-                  </div>
-                </div>
-              );
-            }
-
-            const inlineParts = toolParts.filter(
-              (p) => (p as ToolPartLite).state !== 'approval-requested',
-            );
-
-            // The live streaming tail keeps the bubble up even before any part
-            // has arrived — that's the "still thinking" indicator's slot.
-            if (!text && !reasoning && inlineParts.length === 0 && !isLiveStreamTail) return null;
-
+        {mappedRows.map((row) => {
+          if (row.kind === 'user') {
             return (
-              <div
-                key={rowKey}
-                className={cn('flex justify-start', !isLiveStreamTail && 'cv-auto')}
-              >
-                <div className="bg-analysis-surface-alt text-foreground w-full max-w-[90%] min-w-0 space-y-2 overflow-hidden rounded-[18px_18px_18px_4px] px-4 py-3">
-                  <CoachReasoning
-                    hasAnswerText={text.length > 0}
-                    streaming={isLiveStreamTail}
-                    text={reasoning}
-                  />
-                  {text && <CoachMessage streaming={isLiveStreamTail}>{text}</CoachMessage>}
-                  <ToolActivityList parts={inlineParts as ToolPartLite[]} streamIdle={streamIdle} />
-                  {streamIdle && text && messageIndex === lastAssistantIndex && (
-                    <CoachProvenanceChips />
-                  )}
-                </div>
-              </div>
+              <Message key={row.key} className={cn(!row.live && 'cv-auto')} from="user" animateIn>
+                <MessageBubble variant="ghost">
+                  <MessageBubbleContent className={coachBeuiTheme.userBubble}>
+                    {row.text}
+                  </MessageBubbleContent>
+                </MessageBubble>
+              </Message>
             );
-          })}
+          }
 
-          {status === 'submitted' && (
-            <div aria-live="polite" className="flex justify-start" role="status">
-              <div className="bg-analysis-surface-alt text-muted-foreground rounded-[18px_18px_18px_4px] px-4 py-2.5 text-[13px] leading-4.5 font-medium">
-                Le coach rédige…
-              </div>
-            </div>
-          )}
+          const activity = toolPartsToAgentActivity(row.toolParts, streamIdle);
 
-          {pendingApprovals.length > 0 && (
-            <div aria-label="Propositions à valider" className="space-y-2" role="region">
-              <p className="text-muted-foreground flex items-center gap-1.5 px-0.5 text-xs">
-                <span className="bg-primary/10 text-primary inline-flex size-5 items-center justify-center rounded-full text-[10px] font-semibold">
-                  {pendingApprovals.length}
-                </span>
-                {pendingApprovals.length === 1
-                  ? 'Proposition en attente'
-                  : 'Propositions en attente'}
-              </p>
-              {pendingApprovals.map((part, i) => (
-                <ToolActivity
-                  key={part.approval?.id ?? `${part.type}:${i}`}
-                  disabled={guardDisabled}
-                  knownSessions={knownSessions}
-                  part={part}
-                  streamIdle={streamIdle}
-                  onApproval={(id, approved) => {
-                    blockAutoSend.current = false;
-                    clearError();
-                    addToolApprovalResponse({
-                      id,
-                      approved,
-                      reason: coachApprovalReason(approved),
-                    });
-                    if (approved) {
-                      invalidateAfterCoachToolApproval(queryClient, part.type);
-                    }
-                  }}
-                />
-              ))}
-            </div>
-          )}
-
-          {error && (
-            <div
-              className="bg-destructive/10 text-destructive space-y-2 rounded-md p-3 text-sm"
-              role="alert"
+          return (
+            <Message
+              key={row.key}
+              className={cn(!row.live && row.key !== lastAssistantRowKey && 'cv-auto')}
+              from="assistant"
             >
-              <p>{coachErrorMessage}</p>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  blockAutoSend.current = false;
-                  clearError();
-                }}
-              >
-                Réessayer plus tard
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
+              <MessageBubble variant="ghost">
+                <MessageBubbleContent className={coachBeuiTheme.assistantBubble}>
+                  <CoachReasoning
+                    hasAnswerText={row.text.length > 0}
+                    streaming={row.live}
+                    text={row.reasoning}
+                  />
+                  <AssistantAnswerBody live={row.live} text={row.text} />
+                  {activity.items.length > 0 ? (
+                    <AgentActivity
+                      activeLabel={coachBeuiCopy.agentToolsWorking}
+                      className={coachBeuiTheme.agentActivity}
+                      defaultOpen={false}
+                      items={activity.items}
+                      status={activity.status}
+                      summary={coachBeuiCopy.agentToolsComplete(activity.items.length)}
+                      renderWorkingStatus={({ label }) => (
+                        <CoachBeuiLoadingStatus label={String(label)} />
+                      )}
+                      collapseOnComplete
+                    />
+                  ) : null}
+                  {streamIdle && row.showProvenance ? <CoachProvenanceChips /> : null}
+                </MessageBubbleContent>
+              </MessageBubble>
+            </Message>
+          );
+        })}
+
+        {showSubmittedPlaceholder(status, messages) && (
+          <Message from="assistant">
+            <MessageBubble variant="ghost">
+              <MessageBubbleContent className={coachBeuiTheme.typingBubble}>
+                <CoachBeuiLoadingStatus />
+              </MessageBubbleContent>
+            </MessageBubble>
+          </Message>
+        )}
+
+        {pendingApprovals.length > 0 && (
+          <div
+            aria-label={coachBeuiCopy.approvalsRegionLabel}
+            className={coachBeuiTheme.approvalsRegion}
+            role="region"
+          >
+            <p className={coachBeuiTheme.approvalsHeading}>
+              <span className={coachBeuiTheme.approvalsBadge}>{pendingApprovals.length}</span>
+              {pendingApprovals.length === 1
+                ? coachBeuiCopy.pendingApprovalOne
+                : coachBeuiCopy.pendingApprovalMany}
+            </p>
+            {pendingApprovals.map((part, i) => (
+              <CoachToolApprovalCard
+                key={part.approval?.id ?? `${part.type}:${i}`}
+                disabled={guardDisabled}
+                knownSessions={knownSessions}
+                part={part}
+                onApproval={handleApproval}
+              />
+            ))}
+          </div>
+        )}
+
+        {error ? (
+          <div
+            className="bg-destructive/10 text-destructive space-y-2 rounded-md p-3 text-sm"
+            role="alert"
+          >
+            <p>{coachErrorMessage}</p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                blockAutoSend.current = false;
+                clearError();
+              }}
+            >
+              {coachBeuiCopy.retryLater}
+            </Button>
+          </div>
+        ) : null}
+      </MessageScroller>
 
       {showJumpToLatest && (
         <div className="pointer-events-none absolute right-2.5 bottom-28 flex justify-center">
           <Button
-            className="ring-border pointer-events-auto rounded-full px-2 text-xs shadow-none ring-1"
+            aria-label={coachBeuiCopy.jumpToLatest}
+            className={coachBeuiTheme.jumpButton}
             size="sm"
             type="button"
             variant="outline"
@@ -572,61 +532,22 @@ export function CoachChat({
           ) : null
         }
       >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            submit(input);
+        <PromptInput
+          aria-label={coachBeuiCopy.composerAriaLabel}
+          className={coachBeuiTheme.promptInput}
+          disabled={inputLocked}
+          loading={isBusy}
+          maxRows={8}
+          minRows={1}
+          placeholder={inputPlaceholder}
+          value={input}
+          onStop={() => stop()}
+          onSubmit={(value) => void submit(value)}
+          onValueChange={(next) => {
+            setInput(next);
+            writeCoachInputDraft(conversationId, next);
           }}
-        >
-          <Textarea
-            aria-label="Message au coach"
-            disabled={inputLocked}
-            placeholder={inputPlaceholder}
-            rows={input.includes('\n') || input.length > 90 ? 4 : 1}
-            value={input}
-            className={cn(
-              'max-h-40 min-h-11 resize-none border-0 bg-transparent px-2.5 py-2 shadow-none',
-              'focus-visible:border-transparent focus-visible:ring-0',
-              'placeholder:text-muted-foreground/80',
-            )}
-            onChange={(e) => {
-              const next = e.target.value;
-              setInput(next);
-              writeCoachInputDraft(conversationId, next);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                submit(input);
-              }
-            }}
-          />
-          <div className="mt-1 flex items-center justify-end gap-1.5 px-0.5">
-            {isBusy ? (
-              <Button
-                aria-label="Arrêter la génération"
-                className="size-9 shrink-0 rounded-full"
-                size="icon"
-                type="button"
-                variant="outline"
-                onClick={() => stop()}
-              >
-                <Square className="size-3.5" aria-hidden />
-              </Button>
-            ) : (
-              <Button
-                aria-label={offline ? offlineLabel : 'Envoyer le message'}
-                className="size-9 shrink-0 rounded-full"
-                disabled={guardDisabled || !input.trim()}
-                size="icon"
-                type="submit"
-                variant="highlight"
-              >
-                <ArrowUp className="size-4" strokeWidth={2.5} aria-hidden />
-              </Button>
-            )}
-          </div>
-        </form>
+        />
       </CoachComposerShell>
     </div>
   );

@@ -18,6 +18,10 @@ const METRIC_LINE = /^(?:[-*•]|\d+\.)\s*(?:\*\*)?([^*:\n]+?)(?:\*\*)?\s*:\s*(.
 const METRIC_INLINE = /^(?:\*\*)?([^*:\n]+?)(?:\*\*)?\s*:\s*(.+)$/;
 const VALUE_ONLY_LINE = /^(?:[-*•]|\d+\.)\s+(.+)$/;
 
+function cleanMetricText(value: string): string {
+  return value.replace(/\*\*/g, '').trim();
+}
+
 const CONVERSATION_START =
   /^(?:veux-tu|souhaites-tu|puis-je|dois-je|dis-moi|n'hésite|on peut|je peux|tu veux|souhaites|veux)/i;
 
@@ -129,8 +133,8 @@ function parseMetrics(lines: string[]): { metrics: CoachMetricItem[]; proseLines
     const listMetric = line.match(METRIC_LINE);
     if (listMetric) {
       metrics.push({
-        label: listMetric[1]!.trim(),
-        value: listMetric[2]!.trim(),
+        label: cleanMetricText(listMetric[1]!),
+        value: cleanMetricText(listMetric[2]!),
         subsection,
       });
       continue;
@@ -139,18 +143,18 @@ function parseMetrics(lines: string[]): { metrics: CoachMetricItem[]; proseLines
     const inlineMetric = line.match(METRIC_INLINE);
     if (inlineMetric && /\d/.test(inlineMetric[2]!)) {
       metrics.push({
-        label: inlineMetric[1]!.trim(),
-        value: inlineMetric[2]!.trim(),
+        label: cleanMetricText(inlineMetric[1]!),
+        value: cleanMetricText(inlineMetric[2]!),
         subsection,
       });
       continue;
     }
 
     const valueOnly = line.match(VALUE_ONLY_LINE);
-    if (valueOnly && /\d/.test(valueOnly[1]!) && !valueOnly[1]!.includes('**')) {
+    if (valueOnly && subsection && /\d/.test(valueOnly[1]!) && !valueOnly[1]!.includes('**')) {
       metrics.push({
-        label: subsection ?? 'Recommandation',
-        value: valueOnly[1]!.trim(),
+        label: subsection,
+        value: cleanMetricText(valueOnly[1]!),
         subsection,
       });
       continue;

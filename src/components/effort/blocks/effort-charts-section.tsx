@@ -104,12 +104,12 @@ export function EffortPmcSection({ data }: { data: PmcPoint[] }) {
           <Line
             dataKey="atl"
             dot={false}
+            isAnimationActive={false}
             name="Fatigue aiguë"
             // Two series at 1.58:1 cannot be told apart by hue: the dash is the
             // channel that survives a colour-blind reader and a dim screen alike.
             // Recharts animates stroke-dasharray, so its animation must be off or it
             // overwrites the pattern and leaves the line at zero length.
-            isAnimationActive={false}
             stroke={CHART_COUNTER_STROKE}
             strokeDasharray="5 3"
             strokeWidth={2}

@@ -1,6 +1,6 @@
 import { ActivityType } from '@prisma/client';
 import { ProviderAuthError } from '@/lib/integrations/shared/connection-status';
-import { normalizeOAuthPublicOrigin } from '@/lib/integrations/oauth-return';
+import { normalizeOAuthPublicOrigin } from '@/lib/integrations/oauth-public-origin';
 
 const STRAVA_OAUTH_BASE = 'https://www.strava.com/oauth';
 const STRAVA_API_BASE = 'https://www.strava.com/api/v3';

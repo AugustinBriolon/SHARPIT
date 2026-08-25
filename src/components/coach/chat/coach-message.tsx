@@ -24,16 +24,16 @@ function MetricGrid({ metrics }: { metrics: CoachMetricItem[] }) {
   return (
     <div className="space-y-3">
       {[...groups.entries()].map(([subsection, items]) => (
-        <div key={subsection || 'default'} className="space-y-2">
+        <div key={subsection || 'default'} className="space-y-1.5">
           {subsection ? <p className="text-label">{subsection}</p> : null}
-          <dl className="grid gap-2 sm:grid-cols-2">
+          <dl className="space-y-1">
             {items.map((item, index) => (
               <div
                 key={`${item.label}-${index}`}
-                className="bg-background/40 rounded-analysis border-analysis-border/60 border px-2.5 py-2"
+                className="flex flex-wrap items-baseline gap-x-1.5 text-sm leading-relaxed"
               >
-                <dt className="text-muted-foreground text-xs leading-snug">{item.label}</dt>
-                <dd className="mt-0.5 text-sm">
+                <dt className="text-muted-foreground">{item.label}</dt>
+                <dd className="text-foreground m-0">
                   <MetricValue value={item.value} />
                 </dd>
               </div>
@@ -45,44 +45,22 @@ function MetricGrid({ metrics }: { metrics: CoachMetricItem[] }) {
   );
 }
 
-function PhaseBlock({
+function SectionBlock({
   title,
   metrics,
   prose,
   streaming,
+  titleClassName,
 }: {
   title: string;
   metrics: CoachMetricItem[];
   prose?: string;
   streaming?: boolean;
+  titleClassName: string;
 }) {
   return (
-    <section className="analysis-panel rounded-analysis space-y-3 px-3.5 py-3.5">
-      <h3 className="text-section-title">{title}</h3>
-      {metrics.length > 0 ? <MetricGrid metrics={metrics} /> : null}
-      {prose ? (
-        <Markdown streaming={streaming} variant="compact">
-          {prose}
-        </Markdown>
-      ) : null}
-    </section>
-  );
-}
-
-function SynthesisBlock({
-  title,
-  metrics,
-  prose,
-  streaming,
-}: {
-  title: string;
-  metrics: CoachMetricItem[];
-  prose?: string;
-  streaming?: boolean;
-}) {
-  return (
-    <section className="analysis-panel-alt rounded-analysis-lg space-y-3 px-3.5 py-3.5">
-      <h3 className="text-section-title">{title}</h3>
+    <section className="space-y-2">
+      <h3 className={titleClassName}>{title}</h3>
       {metrics.length > 0 ? <MetricGrid metrics={metrics} /> : null}
       {prose ? (
         <Markdown streaming={streaming} variant="compact">
@@ -97,33 +75,31 @@ function renderBlock(block: CoachMessageBlock, index: number, streaming = false)
   switch (block.type) {
     case 'phase':
       return (
-        <PhaseBlock
+        <SectionBlock
           key={index}
           metrics={block.metrics}
           prose={block.prose}
           streaming={streaming}
           title={block.title}
+          titleClassName="text-sm font-semibold"
         />
       );
     case 'synthesis':
       return (
-        <SynthesisBlock
+        <SectionBlock
           key={index}
           metrics={block.metrics}
           prose={block.prose}
           streaming={streaming}
           title={block.title}
+          titleClassName="text-label"
         />
       );
     case 'conversation':
       return (
-        <p
-          key={index}
-          className="text-muted-foreground border-border/50 border-t pt-3 text-sm leading-relaxed"
-        >
+        <Markdown key={index} streaming={streaming} variant="compact">
           {block.content}
-          {streaming && <span className="coach-streaming-caret" aria-hidden />}
-        </p>
+        </Markdown>
       );
     case 'prose':
       return (
@@ -146,7 +122,7 @@ export function CoachMessage({
   const blocks = parseCoachMessage(children);
 
   return (
-    <div className={cn('space-y-3')}>
+    <div className={cn('space-y-3 text-sm leading-relaxed')}>
       {blocks.map((block, index) =>
         renderBlock(block, index, streaming && index === blocks.length - 1),
       )}

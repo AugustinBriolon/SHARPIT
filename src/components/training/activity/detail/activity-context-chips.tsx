@@ -47,10 +47,14 @@ export function ActivityContextChips({
   }
 
   if (activity.plannedSession) {
+    const plannedAnalysisReady = Boolean(
+      activity.plannedSession.analysis && activity.plannedSession.analyzedAt,
+    );
     chips.push(
       <ActivityPlannedSessionChip
         key="planned"
         activityId={activity.id}
+        isAnalyzing={!plannedAnalysisReady}
         planned={activity.plannedSession}
       />,
     );

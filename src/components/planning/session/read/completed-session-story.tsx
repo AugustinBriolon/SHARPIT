@@ -10,7 +10,7 @@ import {
 import type { ClientPlannedSession } from '@/lib/query/types';
 import { activityNarrativeSchema } from '@/lib/validators/coach';
 import { cn } from '@/lib/utils';
-import { Loader2, RefreshCw, Sparkles } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
 
 function parseActivityNarrative(raw: unknown) {
@@ -18,16 +18,50 @@ function parseActivityNarrative(raw: unknown) {
   return parsed.success ? parsed.data : null;
 }
 
-function ReanalyzeButtonIcon({
-  analyzing,
-  hasAnalysis,
-}: {
-  analyzing: boolean;
-  hasAnalysis: boolean;
-}) {
+function ReanalyzeButtonIcon({ analyzing }: { analyzing: boolean }) {
   if (analyzing) return <Loader2 className="size-3.5 animate-spin" />;
-  if (hasAnalysis) return <RefreshCw className="size-3.5" />;
-  return <Sparkles className="size-3.5" />;
+  return <RefreshCw className="size-3.5" />;
+}
+
+function renderComplianceBadge(
+  analysis: ReturnType<typeof parseSessionAnalysis>,
+  isAnalyzing: boolean,
+) {
+  if (analysis) {
+    return (
+      <span
+        aria-label={`Conformité au plan : ${analysis.complianceScore} sur 100, ${SESSION_VERDICT_LABELS[analysis.verdict]}`}
+        className={cn(
+          'text-data inline-flex items-baseline gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold tabular-nums',
+          'border-analysis-border/70 bg-background/70',
+        )}
+      >
+        <span className={sessionScoreColor(analysis.complianceScore)}>
+          {analysis.complianceScore}
+        </span>
+        <span className="text-muted-foreground font-normal">/100</span>
+        <span className="text-muted-foreground mx-0.5 font-normal">·</span>
+        <span className="text-foreground/80 font-medium">
+          {SESSION_VERDICT_LABELS[analysis.verdict]}
+        </span>
+      </span>
+    );
+  }
+
+  if (!isAnalyzing) return null;
+
+  return (
+    <span
+      title="Analyse de conformité"
+      className={cn(
+        'text-data inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
+        'border-analysis-border/70 bg-background/70 text-muted-foreground',
+      )}
+    >
+      <Loader2 className="text-primary size-3.5 shrink-0 animate-spin" aria-hidden />
+      Analyse…
+    </span>
+  );
 }
 
 /**
@@ -56,12 +90,10 @@ export function CompletedSessionStory({
   if (!hasStory && !isAnalyzing && !onReanalyze) return null;
 
   const primaryHeadline = narrative?.headline ?? null;
-  const primaryBody = narrative?.narrative ?? analysis?.summary ?? null;
+  const primaryBody =
+    narrative?.narrative ?? (analysis && !isAnalyzing ? analysis.summary : null) ?? null;
   const showPlanGaps =
-    analysis != null &&
-    (analysis.remarks.length > 0 || Boolean(analysis.recommendation?.trim())) &&
-    // When narrative carries the story, keep plan gaps as secondary evidence only.
-    true;
+    analysis != null && (analysis.remarks.length > 0 || Boolean(analysis.recommendation?.trim()));
 
   return (
     <section
@@ -73,24 +105,7 @@ export function CompletedSessionStory({
           <span className="bg-primary size-2 shrink-0 rounded-full" aria-hidden />
           Lecture de la séance
         </p>
-        {analysis ? (
-          <span
-            title="Conformité au plan"
-            className={cn(
-              'text-data inline-flex items-baseline gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold tabular-nums',
-              'border-analysis-border/70 bg-background/70',
-            )}
-          >
-            <span className={sessionScoreColor(analysis.complianceScore)}>
-              {analysis.complianceScore}
-            </span>
-            <span className="text-muted-foreground font-normal">/100</span>
-            <span className="text-muted-foreground mx-0.5 font-normal">·</span>
-            <span className="text-foreground/80 font-medium">
-              {SESSION_VERDICT_LABELS[analysis.verdict]}
-            </span>
-          </span>
-        ) : null}
+        {renderComplianceBadge(analysis, isAnalyzing)}
       </div>
 
       {isAnalyzing && !hasStory ? (
@@ -136,9 +151,12 @@ export function CompletedSessionStory({
             </ul>
           ) : null}
           {analysis.recommendation?.trim() ? (
-            <p className="border-primary/25 bg-primary/5 text-foreground/90 rounded-md border px-2.5 py-2 text-xs leading-relaxed">
-              {analysis.recommendation}
-            </p>
+            <div className="border-analysis-border/50 bg-analysis-surface-alt/80 space-y-1 rounded-md border px-2.5 py-2">
+              <p className="text-label">Orientation</p>
+              <p className="text-foreground/85 text-xs leading-relaxed">
+                {analysis.recommendation}
+              </p>
+            </div>
           ) : null}
         </div>
       ) : null}
@@ -156,7 +174,7 @@ export function CompletedSessionStory({
             variant={analysis ? 'ghost' : 'outline'}
             onClick={onReanalyze}
           >
-            <ReanalyzeButtonIcon analyzing={isAnalyzing} hasAnalysis={Boolean(analysis)} />
+            <ReanalyzeButtonIcon analyzing={isAnalyzing} />
             {guardedActionLabel(
               offline,
               offlineLabel,

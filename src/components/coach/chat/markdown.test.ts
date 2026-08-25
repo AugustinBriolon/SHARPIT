@@ -57,7 +57,6 @@ describe('Markdown', () => {
       createElement(MarkdownElement, { streaming: true }, 'Ta **séance de seuil'),
     );
 
-    expect(html).toContain('coach-streaming');
     expect(html).toContain('<strong');
     expect(html).not.toContain('**');
   });

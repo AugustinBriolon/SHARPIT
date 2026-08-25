@@ -5,8 +5,8 @@ import type { CoachDiscussTarget } from '@/lib/coach/chat/coach-discuss-href';
  *
  * The Information Architecture requires a contextual conversation to name what
  * it carries, and to let the athlete drop it before sending. The chip built
- * from this is that contract: `label` is what the athlete reads, `sourceHref`
- * is where they go to change it rather than guess.
+ * from this is that contract: `label` is what the athlete reads; dismiss is
+ * always optional. `sourceHref` identifies the originating surface for callers.
  */
 export type CoachDiscussContext = {
   kind: CoachDiscussTarget['kind'];

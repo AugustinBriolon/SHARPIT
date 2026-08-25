@@ -61,7 +61,7 @@ export function ThreadFormReadings({
   return (
     <section className={className}>
       <p className="text-label mb-2">{title}</p>
-      <ul className="chip-surface-lg rounded-analysis-lg divide-analysis-border/50 divide-y">
+      <ul className="chip-surface-lg rounded-analysis-lg divide-analysis-border/50 divide-y overflow-hidden">
         {readings.map((reading) => (
           <li key={reading.key}>
             <Link

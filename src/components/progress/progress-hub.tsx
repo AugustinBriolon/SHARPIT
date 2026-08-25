@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { CompositionView } from '@/components/corps/composition/composition-view';
 import { GoalsView } from '@/components/goals/goals-view';
+import { GoalsToolbar } from '@/components/goals/cards/goal-cards';
 import { useGoals } from '@/hooks/use-data';
 import { CalibrationSection } from '@/components/progress/calibration-section';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -104,7 +105,10 @@ export function ProgressHub({ basePath = '/progress' }: { basePath?: string }) {
   return (
     <div className="space-y-4">
       <StickyHeader>
-        <h1 className="text-page-title">Progression</h1>
+        <div className="flex items-start justify-between gap-4">
+          <h1 className="text-page-title">Progression</h1>
+          {section === 'goals' ? <GoalsToolbar /> : null}
+        </div>
 
         <nav
           aria-label="Sections Progression"

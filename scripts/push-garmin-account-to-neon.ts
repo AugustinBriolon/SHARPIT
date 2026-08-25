@@ -96,7 +96,7 @@ async function main() {
   const envVars = readEnvFile();
   const localKey = resolveLocalKey(envVars);
   const neonUrl = resolveNeonUrl(envVars);
-  const athleteIdArg = process.argv[2];
+  const [, , athleteIdArg] = process.argv;
 
   const local = new PrismaClient({ datasources: { db: { url: LOCAL_URL } } });
   const neon = new PrismaClient({ datasources: { db: { url: neonUrl } } });
@@ -154,7 +154,7 @@ async function main() {
       },
     });
 
-    console.log(`✓ GarminAccount (athleteId=${account.athleteId}) copié vers Neon.`);
+    console.info(`✓ GarminAccount (athleteId=${account.athleteId}) copié vers Neon.`);
   } finally {
     await local.$disconnect();
     await neon.$disconnect();

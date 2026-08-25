@@ -5,6 +5,7 @@ import {
   CoachComposerChrome,
   CoachContextTagSkeleton,
 } from '@/components/coach/chat/coach-composer-chrome';
+import { CoachChatPanelShell } from '@/components/coach/chat/coach-chat-panel-shell';
 import { CoachContextChip } from '@/components/coach/chat/coach-context-chip';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { Button } from '@/components/ui/button';
@@ -12,17 +13,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import type { CoachDiscussContext } from '@/lib/coach/chat/coach-discuss-context';
 
-const EMPTY_HINT =
-  'Pose une question à ton coach. Il connaît ta forme, ta récupération, tes seuils et tes objectifs.';
+/** @deprecated Prefer CoachChatPanelShell — kept as alias for existing imports. */
+export const CoachChatEmptyChrome = CoachChatPanelShell;
 
-const SUGGESTION_LABELS = [
-  "Comment se présente ma forme aujourd'hui ?",
-  'Quelle séance me conseilles-tu pour demain ?',
-  'Décale ma séance de seuil à après-demain',
-  'Ajoute une sortie vélo endurance samedi',
-] as const;
-
-/** Mobile Select chrome — label value only skeletons. */
 export function CoachMobileSelectLoadingRow() {
   return (
     <div className="flex items-center gap-1.5 p-2" aria-busy>
@@ -78,40 +71,7 @@ function composerContextSlot(options: {
   return null;
 }
 
-/** Real empty-chat chrome (no skeletons) — landing is always a new draft. */
-export function CoachChatEmptyChrome({ header }: { header?: ReactNode }) {
-  return (
-    <div className="rounded-analysis-lg flex h-full min-w-0 flex-1 flex-col lg:border">
-      <div className="flex-1 overflow-y-auto">
-        {header ? <div className="bg-background sticky top-0 z-10">{header}</div> : null}
-        <div className="space-y-4 p-4">
-          <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
-            <p className="text-muted-foreground max-w-sm text-sm">{EMPTY_HINT}</p>
-            <div
-              aria-label="Suggestions"
-              className="flex flex-wrap justify-center gap-2"
-              role="group"
-            >
-              {SUGGESTION_LABELS.map((label) => (
-                <button
-                  key={label}
-                  className="chip-surface text-foreground/80 min-h-11 rounded-full px-3 py-1.5 text-xs opacity-70 lg:min-h-9"
-                  type="button"
-                  disabled
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-      <CoachComposerChrome disabled />
-    </div>
-  );
-}
-
-/** Fetching an existing thread — message values only; composer matches live chrome. */
+/** Mobile Select chrome — label value only skeletons. */
 export function CoachChatPanelSkeleton({
   header,
   attachedContext = null,
@@ -124,13 +84,16 @@ export function CoachChatPanelSkeleton({
   return (
     <div className="rounded-analysis-lg flex h-full min-w-0 flex-1 flex-col lg:border" aria-busy>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-        {header ? <div className="bg-background sticky top-0 z-10">{header}</div> : null}
+        {header && (
+          <div className="bg-background fixed top-0 right-0 left-0 z-10 px-3 py-2">{header}</div>
+        )}
         <div className="space-y-4 p-4">
           <div className="flex justify-end">
             <Skeleton className="bg-accent h-10 w-[min(100%,14rem)] rounded-[18px_18px_4px_18px]" />
           </div>
           <div className="flex justify-start">
             <div className="bg-analysis-surface-alt w-full max-w-[90%] space-y-2 rounded-[18px_18px_18px_4px] px-4 py-3">
+              <Skeleton className="h-3 w-24 rounded-full" />
               <Skeleton className="h-4 w-[92%] rounded-full" />
               <Skeleton className="h-4 w-[78%] rounded-full" />
               <Skeleton className="h-4 w-[64%] rounded-full" />
@@ -175,29 +138,7 @@ export function CoachPageHeader({
   );
 }
 
-function CoachMobileLoadingHeader() {
-  return (
-    <div className="flex flex-col gap-2 px-3 pt-2 pb-2">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-page-title truncate">Fil & conversations</h1>
-        <Button
-          aria-label="Nouvelle conversation"
-          className="size-11"
-          size="icon"
-          variant="outline"
-          disabled
-        >
-          <MessageSquarePlus className="size-4" aria-hidden />
-        </Button>
-      </div>
-      <div className="analysis-panel rounded-analysis-lg">
-        <CoachMobileSelectLoadingRow />
-      </div>
-    </div>
-  );
-}
-
-/** Route / Suspense / pre-mount — real chrome; only select/list values skeleton. */
+/** Route / Suspense — real chrome only, no thread or list skeletons. */
 export function CoachHubSkeleton() {
   return (
     <>
@@ -205,18 +146,34 @@ export function CoachHubSkeleton() {
         className="bg-background safe-area-top fixed inset-x-0 top-0 z-30 flex flex-col lg:hidden"
         style={{ bottom: 'var(--bottom-nav-offset)' }}
       >
-        <CoachChatEmptyChrome header={<CoachMobileLoadingHeader />} />
+        <CoachChatEmptyChrome
+          header={
+            <div className="flex flex-col gap-2 py-2">
+              <div className="flex items-center justify-between gap-3">
+                <h1 className="text-page-title truncate">Fil & conversations</h1>
+                <Button
+                  aria-label="Nouvelle conversation"
+                  className="size-11"
+                  size="icon"
+                  variant="highlight"
+                  disabled
+                >
+                  <MessageSquarePlus className="size-4.5" aria-hidden />
+                </Button>
+              </div>
+            </div>
+          }
+        />
       </div>
 
       <div className="hidden space-y-6 lg:block">
-        <CoachPageHeader />
+        <CoachPageHeader newDisabled />
         <div className="flex h-[calc(100dvh-190px)] flex-col gap-3 lg:flex-row lg:gap-4">
           <aside className="flex w-full shrink-0 flex-col gap-2 lg:h-full lg:w-[260px]">
             <Button className="hidden lg:inline-flex" type="button" variant="highlight" disabled>
               <MessageSquarePlus className="size-4" />
               Nouvelle conversation
             </Button>
-            <CoachConversationListSkeleton />
           </aside>
           <CoachChatEmptyChrome />
         </div>

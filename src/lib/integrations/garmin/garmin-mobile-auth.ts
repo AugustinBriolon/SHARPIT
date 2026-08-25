@@ -31,10 +31,7 @@ const NATIVE_HEADERS: Record<string, string> = {
 };
 
 export type GarminMobileAuthFailureKind =
-  | 'invalid_credentials'
-  | 'mfa_required'
-  | 'rate_limited'
-  | 'unknown';
+  'invalid_credentials' | 'mfa_required' | 'rate_limited' | 'unknown';
 
 export class GarminMobileAuthError extends Error {
   constructor(
@@ -132,7 +129,10 @@ export async function loginGarminMobile(
     );
   }
   if (type !== 'SUCCESSFUL' || !data.serviceTicketId) {
-    throw new GarminMobileAuthError('Mobile login rejected (bad credentials?)', 'invalid_credentials');
+    throw new GarminMobileAuthError(
+      'Mobile login rejected (bad credentials?)',
+      'invalid_credentials',
+    );
   }
 
   return exchangeServiceTicket(data.serviceTicketId);

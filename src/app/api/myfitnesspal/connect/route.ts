@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { MfpSessionExpiredError } from '@/lib/integrations/myfitnesspal/myfitnesspal';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { connectMfp, syncMfpNutrition } from '@/lib/integrations/myfitnesspal/myfitnesspal-sync';
-import { sanitizeDataClass } from '@/lib/integrations/oauth-return';
+import { sanitizeDataClass } from '@/lib/integrations/oauth-public-origin';
 import {
   enableProviderForAllCoveredClasses,
   enableProviderForClass,

@@ -2,16 +2,13 @@
 
 import type { UIMessage } from 'ai';
 import { MessageSquarePlus } from 'lucide-react';
-import dynamic from 'next/dynamic';
 import { format } from 'date-fns';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { CoachChat } from '@/components/coach/chat/coach-chat';
+import { CoachChatPanelShell } from '@/components/coach/chat/coach-chat-panel-shell';
 import { CoachConversationList } from '@/components/coach/chat/coach-conversation-list';
-import {
-  CoachChatEmptyChrome,
-  CoachChatPanelSkeleton,
-  CoachPageHeader,
-} from '@/components/coach/coach-hub-skeleton';
+import { CoachPageHeader } from '@/components/coach/coach-hub-skeleton';
 import { OfflineSnapshotSummary } from '@/components/pwa/offline-snapshot-summary';
 import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -58,16 +55,17 @@ function findRecordCategory(
   return null;
 }
 
-const CoachChat = dynamic(
-  () => import('@/components/coach/chat/coach-chat').then((mod) => mod.CoachChat),
-  {
-    ssr: false,
-    loading: () => <CoachChatPanelSkeleton />,
-  },
-);
-
 function createEphemeralId(): string {
   return createClientId();
+}
+
+function getInitialDraftId(
+  hasDiscuss: boolean,
+  cache: { current: string | null | undefined },
+): string | null {
+  if (cache.current !== undefined) return cache.current;
+  cache.current = hasDiscuss ? null : createEphemeralId();
+  return cache.current;
 }
 
 export function CoachView() {
@@ -76,9 +74,8 @@ export function CoachView() {
   const online = useOnlineStatus();
   const { guardDisabled } = useOfflineGuard();
   const isMobile = useIsMobile();
-  // Viewport defaults to desktop (SSR + first paint) — no hub safety skeleton while mounting.
-  const showMobileShell = isMobile;
-  const showDesktopShell = !isMobile;
+  const [viewportReady, setViewportReady] = useState(false);
+  const initialDraftIdRef = useRef<string | null | undefined>(undefined);
   const discussId = searchParams.get('discuss');
   const discussActivityId = searchParams.get('discussActivity');
   const discussPlanningRaw = searchParams.get('discussPlanning');
@@ -105,16 +102,28 @@ export function CoachView() {
   const physicalNotesQuery = usePhysicalNotes();
   const todayQuery = useTodayPresentationViewModel(format(new Date(), 'yyyy-MM-dd'));
   const recordsQuery = useRecords();
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [ephemeralIds, setEphemeralIds] = useState<Set<string>>(() => new Set());
+  const [activeId, setActiveId] = useState<string | null>(() =>
+    getInitialDraftId(hasDiscussIntent, initialDraftIdRef),
+  );
+  const [ephemeralIds, setEphemeralIds] = useState<Set<string>>(() => {
+    const id = getInitialDraftId(hasDiscussIntent, initialDraftIdRef);
+    return id ? new Set([id]) : new Set();
+  });
   const [autoReplyId, setAutoReplyId] = useState<string | null>(null);
   /** Latched discuss context — URL params are stripped once the thread exists. */
   const latchedContextRef = useRef<CoachDiscussContext | null>(null);
-  const [, setContextLatchEpoch] = useState(0);
-  /** Once the discuss context is latched, ignore URL params (avoids re-attach loops). */
-  const discussPromptConsumed = useRef(false);
+  const [contextLatchEpoch, setContextLatchEpoch] = useState(0);
+  /** Blocks re-latch until the athlete dismisses the chip or opens a fresh draft. */
+  const latchedDiscussIntentKey = useRef<string | null>(null);
+  /** One bootstrap per discuss intent — reset on dismiss so re-entry from a surface works. */
+  const bootstrappedDiscussIntentKey = useRef<string | null>(null);
   const initialized = useRef(false);
   const { confirm, dialog } = useConfirmDialog();
+
+  /** Avoid mounting two CoachChat instances — pick the shell once the viewport is known. */
+  useLayoutEffect(() => {
+    setViewportReady(true);
+  }, []);
 
   // Warm coach context cache so the first message hits TTL memory.
   useEffect(() => {
@@ -139,15 +148,34 @@ export function CoachView() {
   const hasNoLiveContent = conversationsQuery.data == null && !activeHasMessages;
   const { entry: offlineEntry } = useOfflineSnapshot(!online && hasNoLiveContent);
 
-  const discussBootstrapped = useRef(false);
+  const discussIntentKey = useMemo(() => {
+    if (discussToday) return 'today';
+    if (discussGoalId) return `goal:${discussGoalId}`;
+    if (discussConditionId) return `condition:${discussConditionId}`;
+    if (discussRecordKey) return `record:${discussRecordKey}`;
+    if (discussPlanningHorizon) return `planning:${discussPlanningHorizon}`;
+    if (discussId) return `session:${discussId}`;
+    if (discussActivityId) return `activity:${discussActivityId}`;
+    return null;
+  }, [
+    discussToday,
+    discussGoalId,
+    discussConditionId,
+    discussRecordKey,
+    discussPlanningHorizon,
+    discussId,
+    discussActivityId,
+  ]);
 
   /**
    * Dropping the attachment is the athlete's choice — context stays until they
    * clear the chip, independent of whatever they type in the composer.
    */
   function detachLatchedContext() {
-    if (latchedContextRef.current === null) return;
+    if (latchedContextRef.current === null && latchedDiscussIntentKey.current === null) return;
     latchedContextRef.current = null;
+    latchedDiscussIntentKey.current = null;
+    bootstrappedDiscussIntentKey.current = null;
     setContextLatchEpoch((n) => n + 1);
   }
 
@@ -156,22 +184,26 @@ export function CoachView() {
     setEphemeralIds((prev) => new Set(prev).add(id));
     setActiveId(id);
     detachLatchedContext();
-    discussPromptConsumed.current = false;
     return id;
   }
 
   function bootstrapDiscussConversation(bootstrapKey: string) {
+    if (!discussIntentKey) return;
     if (inFlightDiscussBootstraps.has(bootstrapKey)) return;
+    if (bootstrappedDiscussIntentKey.current === discussIntentKey) return;
     inFlightDiscussBootstraps.add(bootstrapKey);
-    discussBootstrapped.current = true;
     initialized.current = true;
 
     createConversation
       .mutateAsync({ bootstrapKey })
       .then((c) => {
+        bootstrappedDiscussIntentKey.current = discussIntentKey;
         setActiveId(c.id);
         // Must use the Next router so useSearchParams drops discuss* (replaceState alone does not).
         router.replace('/coach', { scroll: false });
+      })
+      .catch(() => {
+        bootstrappedDiscussIntentKey.current = null;
       })
       .finally(() => {
         inFlightDiscussBootstraps.delete(bootstrapKey);
@@ -179,7 +211,8 @@ export function CoachView() {
   }
 
   const discussDataReady = useMemo(() => {
-    if (!hasDiscussIntent || discussPromptConsumed.current) return false;
+    if (!hasDiscussIntent || !discussIntentKey) return false;
+    if (latchedDiscussIntentKey.current === discussIntentKey) return false;
     if (discussToday) return todayQuery.data != null;
     if (discussGoalId) return (goalsQuery.data ?? []).some((g) => g.id === discussGoalId);
     if (discussConditionId) {
@@ -194,6 +227,8 @@ export function CoachView() {
     return false;
   }, [
     hasDiscussIntent,
+    discussIntentKey,
+    contextLatchEpoch,
     discussPlanningHorizon,
     projectionQuery.data,
     discussId,
@@ -266,15 +301,16 @@ export function CoachView() {
     activitiesQuery.data,
   ]);
 
-  // Latch discuss context during render once the target data is ready (one-shot).
-  if (discussDataReady && discussContext && !discussPromptConsumed.current) {
-    discussPromptConsumed.current = true;
+  // Latch discuss context during render once the target data is ready (one-shot per intent).
+  if (discussDataReady && discussContext && discussIntentKey) {
+    latchedDiscussIntentKey.current = discussIntentKey;
     latchedContextRef.current = discussContext;
   }
   const latchedContext = latchedContextRef.current;
 
   useEffect(() => {
-    if (discussBootstrapped.current) return;
+    if (!discussIntentKey) return;
+    if (bootstrappedDiscussIntentKey.current === discussIntentKey) return;
     if (discussToday) {
       if (todayQuery.isPending) return;
       if (!todayQuery.data) return;
@@ -341,17 +377,8 @@ export function CoachView() {
     recordsQuery.isPending,
     recordsQuery.data,
     createConversation,
+    discussIntentKey,
   ]);
-
-  /** Always land on a blank “Nouvelle conversation” — never an empty selection state. */
-  useLayoutEffect(() => {
-    if (hasDiscussIntent) return;
-    if (initialized.current) return;
-    initialized.current = true;
-    const id = createEphemeralId();
-    setEphemeralIds(new Set([id]));
-    setActiveId(id);
-  }, [hasDiscussIntent]);
 
   /** Deleted / missing thread → open a fresh draft instead of an empty pane. */
   useEffect(() => {
@@ -383,14 +410,8 @@ export function CoachView() {
       const nextId = createEphemeralId();
       setEphemeralIds((prev) => new Set(prev).add(nextId));
       setActiveId(nextId);
-      discussPromptConsumed.current = false;
+      detachLatchedContext();
     }
-  }
-
-  function resolveChatInitialMessages(): UIMessage[] {
-    if (isEphemeral) return [];
-    if (!Array.isArray(activeConversation.data?.messages)) return [];
-    return activeConversation.data.messages as UIMessage[];
   }
 
   function renderChat(header?: React.ReactNode) {
@@ -404,10 +425,10 @@ export function CoachView() {
     }
 
     if (!selectedId) {
-      return <CoachChatEmptyChrome header={header} />;
+      return <CoachChatPanelShell header={header} />;
     }
 
-    if (isEphemeral || activeConversation.data) {
+    if (isEphemeral) {
       return (
         <CoachChat
           key={selectedId}
@@ -415,8 +436,8 @@ export function CoachView() {
           autoReply={autoReplyId === selectedId}
           conversationId={selectedId}
           header={header}
-          initialMessages={resolveChatInitialMessages()}
-          isEphemeral={isEphemeral}
+          initialMessages={[]}
+          isEphemeral
           onAutoReplyStarted={() => setAutoReplyId(null)}
           onDetachContext={() => detachLatchedContext()}
           onConversationCreated={(id) => {
@@ -432,17 +453,37 @@ export function CoachView() {
       );
     }
 
+    if (activeConversation.isPending || activeConversation.isLoading || !activeConversation.data) {
+      return <CoachChatPanelShell header={header} />;
+    }
+
     return (
-      <CoachChatPanelSkeleton
+      <CoachChat
+        key={selectedId}
         attachedContext={latchedContext}
-        contextPending={hasDiscussIntent && !latchedContext}
+        autoReply={autoReplyId === selectedId}
+        conversationId={selectedId}
         header={header}
+        initialMessages={activeConversation.data.messages as UIMessage[]}
+        isEphemeral={false}
+        onAutoReplyStarted={() => setAutoReplyId(null)}
+        onDetachContext={() => detachLatchedContext()}
+        onConversationCreated={(id) => {
+          setEphemeralIds((prev) => {
+            const next = new Set(prev);
+            next.delete(selectedId);
+            return next;
+          });
+          setActiveId(id);
+          setAutoReplyId(id);
+        }}
       />
     );
   }
 
   const conversationListEl = (
     <CoachConversationList
+      activeDraft={isEphemeral}
       activeId={selectedId}
       conversations={conversations}
       loading={conversationsQuery.isPending}
@@ -455,7 +496,7 @@ export function CoachView() {
   );
 
   const mobileHeader = (
-    <div className="flex flex-col gap-2 px-3 pt-2 pb-2">
+    <div className="flex flex-col gap-2 py-2">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-page-title truncate">Fil & conversations</h1>
         <Button
@@ -473,28 +514,35 @@ export function CoachView() {
     </div>
   );
 
+  const mountLiveChat = viewportReady || (!isMobile && isEphemeral);
+
+  const desktopHub = (
+    <div className="hidden space-y-6 lg:block">
+      <CoachPageHeader />
+      <div className="flex h-[calc(100dvh-190px)] flex-col gap-3 lg:flex-row lg:gap-4">
+        {conversationListEl}
+        {mountLiveChat && !isMobile ? renderChat() : <CoachChatPanelShell />}
+      </div>
+    </div>
+  );
+
+  const mobileHub = (
+    <div
+      className="bg-background safe-area-top fixed inset-x-0 top-0 z-30 flex flex-col lg:hidden"
+      style={{ bottom: 'var(--bottom-nav-offset)' }}
+    >
+      {mountLiveChat && isMobile ? (
+        renderChat(mobileHeader)
+      ) : (
+        <CoachChatPanelShell header={mobileHeader} />
+      )}
+    </div>
+  );
+
   return (
     <div>
-      {/* Exactly one CoachChat in the tree (mobile XOR desktop). */}
-      {showMobileShell ? (
-        <div
-          className="bg-background safe-area-top fixed inset-x-0 top-0 z-30 flex flex-col"
-          style={{ bottom: 'var(--bottom-nav-offset)' }}
-        >
-          {renderChat(mobileHeader)}
-        </div>
-      ) : null}
-
-      {showDesktopShell ? (
-        <div className="space-y-6">
-          <CoachPageHeader />
-          <div className="flex h-[calc(100dvh-190px)] flex-col gap-3 lg:flex-row lg:gap-4">
-            {conversationListEl}
-            {renderChat()}
-          </div>
-        </div>
-      ) : null}
-
+      {mobileHub}
+      {desktopHub}
       {dialog}
     </div>
   );

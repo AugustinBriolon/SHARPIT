@@ -28,6 +28,7 @@ import {
 } from './activity-detail-helpers';
 import type { ActivityDetail } from './types';
 import { useDisplayMode } from '@/providers/display-mode-provider';
+import { useDemoActivityPlannedSession } from '@/hooks/use-demo-session-link-overlay';
 
 /** Narrow client payload — avoid serializing full activityInclude to this island. */
 export type ActivityDetailHeaderActivity = Pick<
@@ -53,6 +54,7 @@ export type ActivityDetailHeaderActivity = Pick<
 export function ActivityDetailHeader({ activity }: { activity: ActivityDetailHeaderActivity }) {
   const router = useRouter();
   const { mode } = useDisplayMode();
+  const plannedSession = useDemoActivityPlannedSession(activity.id, activity.plannedSession);
   const { remove } = useActivityMutations();
   const { confirm, dialog } = useConfirmDialog();
   const [linkHikesOpen, setLinkHikesOpen] = useState(false);
@@ -152,10 +154,7 @@ export function ActivityDetailHeader({ activity }: { activity: ActivityDetailHea
         </div>
 
         <div className="flex shrink-0 items-start gap-1 sm:gap-1.5">
-          <DiscussCoachLink
-            activityId={activity.id}
-            plannedSessionId={activity.plannedSession?.id}
-          />
+          <DiscussCoachLink activityId={activity.id} plannedSessionId={plannedSession?.id} />
           {actionsMenu}
         </div>
       </div>

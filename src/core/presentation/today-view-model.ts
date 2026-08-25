@@ -150,6 +150,19 @@ export type TodayViewModel = {
     actionLabel: string;
     daySummaryEmptyText: string;
     daySummaryEmptyHref: string;
+    /** Unlinked same-day pairs the athlete can associate in one action. */
+    sessionLinkSuggestions: Array<{
+      id: string;
+      plannedSessionId: string;
+      activityId: string;
+      activityType: ActivityType;
+      score: number;
+      matchLabel: string;
+      plannedPrimary: string;
+      plannedSecondary?: string | null;
+      activityPrimary: string;
+      activitySecondary?: string | null;
+    }>;
     /** Rendered list already contains resolved links. */
     daySummaryLines: Array<{
       id: string;

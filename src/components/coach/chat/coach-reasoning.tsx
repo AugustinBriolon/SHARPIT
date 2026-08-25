@@ -19,7 +19,8 @@ export function CoachReasoning({
   streaming: boolean;
   hasAnswerText: boolean;
 }) {
-  if (!streaming || hasAnswerText) return null;
-
-  return <div className="text-muted-foreground py-1.5 text-xs font-medium">Le coach rédige…</div>;
+  void streaming;
+  void hasAnswerText;
+  // Drafting state is rendered once via CoachBeuiLoadingStatus in coach-chat.tsx.
+  return null;
 }

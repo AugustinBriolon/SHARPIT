@@ -7,6 +7,24 @@ import { activityTypeLabels } from '@/lib/format';
 import { parseSessionAnalysis } from '@/lib/planned-session/display/session-analysis-display';
 import type { PlannedSessionSummary } from './types';
 
+function plannedChipValue(
+  analysis: ReturnType<typeof parseSessionAnalysis>,
+  isAnalyzing: boolean,
+  planned: PlannedSessionSummary,
+): string {
+  if (analysis) return `${analysis.complianceScore}/100`;
+  if (isAnalyzing) return 'Analyse…';
+  return planned.title ?? activityTypeLabels[planned.type];
+}
+
+function plannedChipLabel(
+  analysis: ReturnType<typeof parseSessionAnalysis>,
+  isAnalyzing: boolean,
+): string {
+  if (analysis || isAnalyzing) return 'Conformité';
+  return 'Liée au plan';
+}
+
 /**
  * Opens the planned-session modal in place (no /planning redirect).
  * Hides the "linked activity" navigation — caller is already on that activity.
@@ -14,21 +32,21 @@ import type { PlannedSessionSummary } from './types';
 export function ActivityPlannedSessionChip({
   planned,
   activityId,
+  isAnalyzing = false,
 }: {
   planned: PlannedSessionSummary;
   /** Current activity id — marks the seeded session as linked. */
   activityId?: string;
+  isAnalyzing?: boolean;
 }) {
   const { openPlannedSession } = useAppModal();
   const analysis = parseSessionAnalysis(planned.analysis);
-  const value = analysis
-    ? `${analysis.complianceScore}/100`
-    : (planned.title ?? activityTypeLabels[planned.type]);
+  const value = plannedChipValue(analysis, isAnalyzing, planned);
 
   return (
     <ActivityMetaChip
       icon={CalendarCheck}
-      label={analysis ? 'Conformité' : 'Liée au plan'}
+      label={plannedChipLabel(analysis, isAnalyzing)}
       value={value}
       onClick={() =>
         openPlannedSession({

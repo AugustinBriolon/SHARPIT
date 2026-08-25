@@ -100,4 +100,38 @@ Voici ton plan nutritionnel stratégique pour la course :
       true,
     );
   });
+
+  it('does not create Recommandation metric tiles for orphan bullet lines', () => {
+    const blocks = parseCoachMessage(`**Hydratation**
+
+- Boire 500ml toutes les 20 minutes
+- Viser 60g de glucides par heure`);
+
+    for (const block of blocks) {
+      if (block.type !== 'phase' && block.type !== 'synthesis') continue;
+      expect(block.metrics.some((m) => m.label === 'Recommandation')).toBe(false);
+    }
+
+    const proseBlocks = blocks.filter((b) => b.type === 'prose' || b.type === 'phase');
+    expect(
+      proseBlocks.some((b) => {
+        const text =
+          b.type === 'prose' ? b.content : [b.prose, ...b.metrics.map((m) => m.value)].join(' ');
+        return text.includes('Boir');
+      }),
+    ).toBe(true);
+  });
+
+  it('strips markdown bold markers from parsed metrics', () => {
+    const blocks = parseCoachMessage(`**B. Vélo**
+
+**Glucides**
+- Apport : 500-750ml par heure`);
+
+    const velo = blocks.find((b) => b.type === 'phase' && b.title.includes('Vélo'));
+    expect(velo?.type).toBe('phase');
+    if (velo?.type !== 'phase') return;
+    expect(velo.metrics[0]?.label).toBe('Apport');
+    expect(velo.metrics[0]?.value).toBe('500-750ml par heure');
+  });
 });

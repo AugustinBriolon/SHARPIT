@@ -1,4 +1,5 @@
 import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
+import { isDemoSessionLinkActivityTitle } from '@/lib/demo/demo-session-link-markers';
 
 export type PostSessionLoopInput = {
   phase: string;
@@ -13,6 +14,8 @@ export type PostSessionLoopInput = {
   }>;
   /** Most recent activity today wins. */
   day: Date;
+  /** Activities awaiting a link decision — no post-session loop for them. */
+  excludeActivityIds?: ReadonlySet<string>;
 };
 
 export type PostSessionLoopView = {
@@ -42,7 +45,11 @@ export function buildPostSessionLoop(input: PostSessionLoopInput): PostSessionLo
     })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  const [latest] = todayActivities;
+  const substantive = todayActivities.filter(
+    (a) =>
+      !isDemoSessionLinkActivityTitle(a.title) && !(input.excludeActivityIds?.has(a.id) ?? false),
+  );
+  const [latest] = substantive.length > 0 ? substantive : todayActivities;
   if (!latest) return null;
 
   const needsFeeling =

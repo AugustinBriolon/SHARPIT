@@ -1,32 +1,14 @@
-import { addDays, differenceInCalendarDays, startOfDay } from 'date-fns';
+import { addDays, startOfDay } from 'date-fns';
 import { isCoachConfigured } from '@/lib/ai';
 import { analyzePlannedSession } from '@/lib/coach/plan/coach-analysis';
-import { linkPlannedSessionActivity, setPlannedSessionAnalysis } from '@/lib/queries';
+import { scorePlannedActivityMatch } from '@/lib/planned-session/linking/session-link-match-score';
+import {
+  linkPlannedSessionActivity,
+  setPlannedSessionAnalysis,
+} from '@/lib/queries/planned-sessions';
 import { prisma } from '@/lib/prisma';
 
-/**
- * Auto-link only on the same calendar day.
- * Adjacent-day matching created false "planned" realizations for spontaneous sessions.
- */
-export function scorePlannedActivityMatch(
-  session: { date: Date; durationMin: number | null },
-  activity: { date: Date; duration: number | null },
-): number {
-  const dayDiff = Math.abs(
-    differenceInCalendarDays(startOfDay(session.date), startOfDay(activity.date)),
-  );
-  if (dayDiff !== 0) return 0;
-
-  let score = 100;
-  if (session.durationMin != null && activity.duration != null && activity.duration > 0) {
-    const plannedSec = session.durationMin * 60;
-    const ratio =
-      Math.abs(plannedSec - activity.duration) / Math.max(plannedSec, activity.duration);
-    if (ratio <= 0.15) score += 25;
-    else if (ratio <= 0.3) score += 10;
-  }
-  return score;
-}
+export { scorePlannedActivityMatch } from '@/lib/planned-session/linking/session-link-match-score';
 
 async function autoLinkOneActivity(
   athleteId: string,

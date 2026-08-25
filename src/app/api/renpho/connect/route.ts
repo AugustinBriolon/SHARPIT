@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { sanitizeDataClass } from '@/lib/integrations/oauth-return';
+import { sanitizeDataClass } from '@/lib/integrations/oauth-public-origin';
 import { connectRenpho, syncRenphoHealth } from '@/lib/integrations/renpho/renpho-sync';
 import {
   enableProviderForAllCoveredClasses,

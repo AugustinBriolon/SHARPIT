@@ -85,6 +85,7 @@ export function todayLoadingShell(now: Date = LOADING_SHELL_REFERENCE): TodayVie
       daySummaryEmptyText: '',
       daySummaryEmptyHref: TWIN_DRILL_DOWN.planning,
       daySummaryLines: [],
+      sessionLinkSuggestions: [],
       morningRecalibration: null,
     },
     insights: [],

@@ -123,8 +123,9 @@ export async function recordManualGoalAchievement(goal: Goal): Promise<void> {
   });
 }
 
-export async function getRecentGoalAchievements(limit = 20) {
+export async function getRecentGoalAchievements(athleteId: string, limit = 20) {
   return prisma.goalAchievement.findMany({
+    where: { goal: { athleteId } },
     take: limit,
     orderBy: { achievedAt: 'desc' },
     include: {

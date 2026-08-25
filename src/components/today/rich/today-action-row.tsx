@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
+import { ExpertModeToggle } from '@/components/display-mode/expert-mode-toggle';
 import { CalendarClock } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
@@ -13,8 +14,26 @@ import type { InstrumentListChipMeta } from '@/components/ui/instruments/instrum
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { MorningOrientationActions } from '@/components/today/rich/morning-orientation-actions';
+import { SessionLinkSuggestionCard } from '@/components/today/rich/session-link-suggestion-card';
 import { ActivityFeelingPrompt } from '@/components/training/activity/detail/activity-feeling-prompt';
 import { useAppModal } from '@/providers/app-modal-provider';
+import { useSyncExternalStore, useMemo } from 'react';
+import {
+  filterDismissedSessionLinkSuggestions,
+  getDismissedSessionLinkIdsSnapshot,
+  subscribeSessionLinkDismissals,
+} from '@/lib/today/session-link-dismissals';
+import {
+  filterDaySummaryForLinkExclusions,
+  idsExcludedByLinkSuggestions,
+  mergeLinkExclusions,
+} from '@/lib/today/session-link-suggestions';
+import {
+  filterDemoLinkedSessionSuggestions,
+  getDemoSessionLinksSnapshot,
+  readDemoSessionLinks,
+  subscribeDemoSessionLinks,
+} from '@/lib/demo/demo-session-link-state';
 
 const MorningWellnessDialog = dynamic(
   () =>
@@ -40,7 +59,66 @@ export function TodayActionRow({
   loading?: boolean;
 }) {
   const { openPlannedSession } = useAppModal();
-  const daySummaryEmpty = !loading && vm.actionRow.daySummaryLines.length === 0;
+  const dismissedSnapshot = useSyncExternalStore(
+    subscribeSessionLinkDismissals,
+    getDismissedSessionLinkIdsSnapshot,
+    () => '',
+  );
+  const demoLinksSnapshot = useSyncExternalStore(
+    subscribeDemoSessionLinks,
+    getDemoSessionLinksSnapshot,
+    () => '',
+  );
+  const dismissedLinkIds = useMemo(
+    () => new Set(dismissedSnapshot ? dismissedSnapshot.split('\0') : []),
+    [dismissedSnapshot],
+  );
+  const demoLinks = useMemo(() => {
+    if (!demoLinksSnapshot) return readDemoSessionLinks();
+    return demoLinksSnapshot
+      .split('\n')
+      .map((line) => {
+        const [plannedSessionId, activityId] = line.split('\0');
+        return { plannedSessionId, activityId };
+      })
+      .filter((entry): entry is { plannedSessionId: string; activityId: string } =>
+        Boolean(entry.plannedSessionId && entry.activityId),
+      );
+  }, [demoLinksSnapshot]);
+  const pendingLinkSuggestions = filterDismissedSessionLinkSuggestions(
+    vm.actionRow.sessionLinkSuggestions,
+    dismissedLinkIds,
+  );
+  const sessionLinkSuggestions = filterDemoLinkedSessionSuggestions(
+    pendingLinkSuggestions,
+    new Set(demoLinks.map((entry) => entry.plannedSessionId)),
+  );
+  const linkExclusions = mergeLinkExclusions(idsExcludedByLinkSuggestions(pendingLinkSuggestions), {
+    activityIds: new Set(demoLinks.map((entry) => entry.activityId)),
+    plannedSessionIds: new Set(demoLinks.map((entry) => entry.plannedSessionId)),
+  });
+
+  const orientation = loading ? null : vm.morningOrientation;
+
+  const proposalSessionId =
+    orientation?.confirmEase?.sessionId ?? orientation?.confirmIncrease?.sessionId ?? null;
+  /** Proposal card replaces the targeted session chip — keep any other day lines. */
+  const baseSessionLines = proposalSessionId
+    ? vm.actionRow.daySummaryLines.filter((line) => line.id !== proposalSessionId)
+    : vm.actionRow.daySummaryLines;
+  /** Pending link suggestions own the pair — hide duplicate chips until link/dismiss. */
+  const sessionLines = filterDaySummaryForLinkExclusions(baseSessionLines, linkExclusions);
+  const primaryIndex = sessionLines.findIndex((line) => line.kind === 'planned' && !line.isDone);
+
+  const postSessionLoop =
+    vm.postSessionLoop?.visible &&
+    pendingLinkSuggestions.length === 0 &&
+    !linkExclusions.activityIds.has(vm.postSessionLoop.activityId)
+      ? vm.postSessionLoop
+      : null;
+
+  const daySummaryEmpty =
+    !loading && sessionLines.length === 0 && sessionLinkSuggestions.length === 0;
   const reminders =
     !loading &&
     !vm.hero.twinTrustStrip.limitingCauseText &&
@@ -49,25 +127,18 @@ export function TodayActionRow({
       ? vm.actionRow.limitingFacts
       : [];
 
-  const orientation = loading ? null : vm.morningOrientation;
-
-  const proposalSessionId =
-    orientation?.confirmEase?.sessionId ?? orientation?.confirmIncrease?.sessionId ?? null;
-  /** Proposal card replaces the targeted session chip — keep any other day lines. */
-  const sessionLines = proposalSessionId
-    ? vm.actionRow.daySummaryLines.filter((line) => line.id !== proposalSessionId)
-    : vm.actionRow.daySummaryLines;
-  const primaryIndex = sessionLines.findIndex((line) => line.kind === 'planned' && !line.isDone);
-
   return (
     <section aria-busy={loading || undefined} className="space-y-3">
       <div className="flex h-8 items-center justify-between gap-2 px-0.5">
         <h2 className="text-label text-balance">{vm.actionRow.actionLabel}</h2>
-        {loading ? (
-          <SkeletonDataValue heightClassName="h-8" widthClassName="w-24" />
-        ) : (
-          <MorningWellnessDialog onCompleted={onWellnessCompleted} />
-        )}
+        <div className="flex shrink-0 items-center gap-2">
+          {!loading ? <ExpertModeToggle /> : null}
+          {loading ? (
+            <SkeletonDataValue heightClassName="h-8" widthClassName="w-24" />
+          ) : (
+            <MorningWellnessDialog onCompleted={onWellnessCompleted} />
+          )}
+        </div>
       </div>
 
       {orientation ? (
@@ -123,7 +194,21 @@ export function TodayActionRow({
         </div>
       ) : null}
 
-      {!loading && !daySummaryEmpty ? (
+      {!loading && sessionLinkSuggestions.length > 0 ? (
+        <ul className="space-y-2">
+          {sessionLinkSuggestions.map((suggestion) => (
+            <li key={suggestion.id}>
+              <SessionLinkSuggestionCard
+                suggestion={suggestion}
+                onLinked={onWellnessCompleted}
+                onOpenPlanned={() => openPlannedSession({ sessionId: suggestion.plannedSessionId })}
+              />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {!loading && sessionLines.length > 0 ? (
         <ul className="space-y-2">
           {sessionLines.map((line, index) => {
             const rawMeta = splitInstrumentMeta(line.secondary);
@@ -155,24 +240,24 @@ export function TodayActionRow({
         </ul>
       ) : null}
 
-      {!loading && vm.postSessionLoop?.visible ? (
+      {!loading && postSessionLoop ? (
         <div className="border-analysis-border/80 bg-background/50 rounded-analysis space-y-2 border px-3 py-3">
-          <p className="text-sm font-medium text-pretty">{vm.postSessionLoop.activityTitle}</p>
-          {vm.postSessionLoop.freshnessLine ? (
+          <p className="text-sm font-medium text-pretty">{postSessionLoop.activityTitle}</p>
+          {postSessionLoop.freshnessLine ? (
             <p className="text-muted-foreground text-xs text-pretty">
-              {vm.postSessionLoop.freshnessLine}
+              {postSessionLoop.freshnessLine}
             </p>
           ) : null}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <Link
               className="text-primary text-xs font-medium hover:underline"
-              href={vm.postSessionLoop.narrativeHref}
+              href={postSessionLoop.narrativeHref}
             >
               Voir le récit de séance
               <span aria-hidden> →</span>
             </Link>
-            {vm.postSessionLoop.needsFeeling ? (
-              <ActivityFeelingPrompt activityId={vm.postSessionLoop.activityId} />
+            {postSessionLoop.needsFeeling ? (
+              <ActivityFeelingPrompt activityId={postSessionLoop.activityId} />
             ) : null}
           </div>
         </div>

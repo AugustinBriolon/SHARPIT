@@ -44,10 +44,10 @@ export function AppShell({
           tabIndex={-1}
           className={cn(
             'min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain',
-            'max-lg:no-scrollbar max-lg:pb-[var(--bottom-nav-offset)]',
+            'max-lg:no-scrollbar max-lg:pb-(--bottom-nav-offset)',
           )}
         >
-          <div className="mx-auto max-w-lg px-4 py-4 [--page-gutter:1rem] lg:max-w-none lg:p-6 lg:[--page-gutter:1.5rem]">
+          <div className="mx-auto px-4 py-4 [--page-gutter:1rem] lg:max-w-none lg:p-6 lg:[--page-gutter:1.5rem]">
             {children}
           </div>
         </main>

@@ -159,7 +159,7 @@ function CompositionDetailList({
       <div className="flex items-baseline justify-between px-4 py-3">
         <p className="text-card-title">Composition détaillée</p>
         <span className="text-muted-foreground text-xs">
-          {cards.length} mesure{cards.length > 1 ? 's' : ''}
+          {cards.length} indicateur{cards.length > 1 ? 's' : ''}
         </span>
       </div>
       {cards.map((card) => (

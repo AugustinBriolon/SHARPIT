@@ -11,13 +11,19 @@ import { severityColor } from '@/lib/physical';
 import { cn } from '@/lib/utils';
 import type { SessionAnalysis } from '@/lib/validators/coach';
 import { useActivities, usePlannedSessionMutations } from '@/hooks/use-data';
+import { useIsDemoMode } from '@/hooks/use-is-demo-mode';
 import { usePhysicalNoteMutations, usePhysicalNotes } from '@/hooks/use-physical';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { queryKeys } from '@/lib/query/keys';
 import { fetchPlannedSessionById } from '@/lib/query/fetchers';
-import { Check, CheckCircle2, HeartPulse, Link2, Loader2, Unlink, X } from 'lucide-react';
+import { LinkAnalysisStatus } from '@/components/planning/session/link-analysis-status';
+import {
+  scorePlannedActivityMatch,
+  formatActivityMatchLabel,
+} from '@/lib/planned-session/linking/session-link-match-score';
+import { Check, HeartPulse, Link2, Loader2, Unlink, X } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { differenceInCalendarDays, startOfDay } from 'date-fns';
 
@@ -116,7 +122,7 @@ function PhysicalReassessmentCard({ item }: { item: PhysicalReassessment }) {
   return (
     <div className="border-analysis-border/60 bg-analysis-surface-alt/80 space-y-2 rounded-md border p-2.5">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-medium">{item.noteTitle}</p>
+        <p className="text-card-title text-sm">{item.noteTitle}</p>
         <button
           aria-label="Ignorer"
           className="text-muted-foreground hover:text-foreground"
@@ -127,19 +133,21 @@ function PhysicalReassessmentCard({ item }: { item: PhysicalReassessment }) {
         </button>
       </div>
       <p className="text-muted-foreground text-xs">{item.question}</p>
-      {contextHint && (
-        <p className="text-muted-foreground/80 border-border/40 bg-muted/30 rounded-md border px-2 py-1.5 text-[11px] leading-relaxed">
+      {contextHint ? (
+        <p className="text-muted-foreground/80 border-border/40 bg-muted/30 text-label rounded-md border px-2 py-1.5 leading-relaxed normal-case">
           Contexte séance : {contextHint}
         </p>
-      )}
+      ) : null}
       <div className="space-y-1">
         <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground">Sévérité ressentie</span>
-          <span className={cn('font-mono font-semibold', severityColor(severity))}>
+          <span className={cn('text-data font-semibold', severityColor(severity))}>
             {severity}/10
           </span>
         </div>
         <input
+          aria-label="Sévérité ressentie"
+          aria-valuetext={`${severity} sur 10`}
           className="accent-primary w-full"
           max={10}
           min={0}
@@ -176,6 +184,7 @@ export function SessionRealization({
   const activitiesQuery = useActivities();
   const notesQuery = usePhysicalNotes();
   const { link, analyze } = usePlannedSessionMutations();
+  const isDemo = useIsDemoMode();
   const { guardDisabled } = useOfflineGuard();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -209,12 +218,12 @@ export function SessionRealization({
 
   const hasAnalysis = Boolean(analysis && analyzedAt);
   const isPendingScheduled = Boolean(
-    isLinked && !hasAnalysis && !analyze.isPending && !pollTimedOut,
+    !isDemo && isLinked && !hasAnalysis && !analyze.isPending && !pollTimedOut,
   );
 
   // Kick a client analyze once if still missing after remount (server `after` may have been killed).
   useEffect(() => {
-    if (!isLinked || hasAnalysis || pollTimedOut || analyze.isPending) return;
+    if (isDemo || !isLinked || hasAnalysis || pollTimedOut || analyze.isPending) return;
     const kickKey = `sharpit.analysis-kick.${session.id}`;
     try {
       if (sessionStorage.getItem(kickKey) === '1') return;
@@ -223,7 +232,7 @@ export function SessionRealization({
       // still attempt once per mount via analyze below
     }
     analyze.mutate(session.id);
-  }, [analyze, hasAnalysis, isLinked, pollTimedOut, session.id]);
+  }, [analyze, hasAnalysis, isDemo, isLinked, pollTimedOut, session.id]);
 
   useEffect(() => {
     if (!isPendingScheduled) return;
@@ -304,17 +313,22 @@ export function SessionRealization({
         a,
         diff: Math.abs(differenceInCalendarDays(a.date, session.date)),
         sameType: a.type === session.type,
+        score: scorePlannedActivityMatch(
+          { date: session.date, durationMin: session.durationMin },
+          { date: a.date, duration: a.duration },
+        ),
       }))
       .sort((x, y) => {
         if (x.sameType !== y.sameType) return x.sameType ? -1 : 1;
+        if (x.score !== y.score) return y.score - x.score;
         return x.diff - y.diff;
       });
     if (showAll) return scored.slice(0, 30);
     return scored.filter((s) => s.sameType && s.diff <= 3).slice(0, 8);
-  }, [activitiesQuery.data, session.date, session.type, showAll]);
+  }, [activitiesQuery.data, session.date, session.durationMin, session.type, showAll]);
 
   const isLinking = link.isPending;
-  const isAnalyzing = analyze.isPending || isPendingScheduled;
+  const isAnalyzing = isDemo ? isLinked && !hasAnalysis : analyze.isPending || isPendingScheduled;
 
   function handleLink(activityId: string) {
     link.mutate({ id: session.id, activityId });
@@ -333,17 +347,75 @@ export function SessionRealization({
     const loadingToast = toast.loading('Analyse de la séance en cours');
     try {
       await analyze.mutateAsync(session.id);
-      toast.success('Analyse de la séance terminée');
     } finally {
       toast.close(loadingToast);
     }
   }
 
+  function renderAnalysisTimeoutBanner() {
+    if (!pollTimedOut || hasAnalysis) return null;
+
+    return (
+      <div
+        aria-live="polite"
+        className="border-analysis-border/60 bg-analysis-surface-alt space-y-2 rounded-md border px-3 py-2.5"
+      >
+        <p className="text-sm font-medium">Analyse indisponible pour le moment</p>
+        <p className="text-muted-foreground text-xs leading-relaxed">
+          La comparaison plan/réel n&apos;a pas abouti dans le délai prévu. Tu peux relancer
+          l&apos;analyse manuellement.
+        </p>
+        <Button
+          disabled={guardDisabled || analyze.isPending}
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={() => void handleManualAnalysis()}
+        >
+          Relancer l&apos;analyse
+        </Button>
+      </div>
+    );
+  }
+
+  function renderLinkedActivityCard(delink: ReactNode) {
+    if (!linked) return null;
+
+    return (
+      <div className="border-analysis-border/60 bg-analysis-surface-alt/50 overflow-hidden rounded-lg border">
+        <div className="border-analysis-border/50 flex items-center justify-between gap-2 border-b px-3 py-2">
+          <p className="text-label">Activité liée</p>
+          {delink}
+        </div>
+        <Link
+          className="hover:bg-analysis-surface-alt/80 chip-surface flex items-center justify-between gap-2 px-3 py-2.5 transition-colors"
+          href={`/training/${linked.id}`}
+        >
+          <div className="flex min-w-0 items-start gap-1.5">
+            <ActivityTypeIndicator type={linked.type} />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">
+                {linked.title ?? activityTypeLabels[linked.type]}
+              </p>
+              <p className="text-muted-foreground text-xs">
+                {formatDate(linked.date)} · {formatDuration(linked.duration)}
+              </p>
+            </div>
+          </div>
+          <span className="text-data text-muted-foreground shrink-0 text-xs">
+            {activityMetric(linked)}
+          </span>
+        </Link>
+      </div>
+    );
+  }
+
   function renderLinkedAnalysisSection() {
     return (
       <div className="space-y-3">
+        {renderAnalysisTimeoutBanner()}
         <CompletedSessionStory
-          isAnalyzing={isAnalyzing || isPendingScheduled}
+          isAnalyzing={isAnalyzing && !pollTimedOut}
           session={{
             ...session,
             analysis: analysis ?? session.analysis,
@@ -352,9 +424,9 @@ export function SessionRealization({
           onReanalyze={() => void handleManualAnalysis()}
         />
         {painReassessments.length > 0 ? (
-          <div className="border-signal-caution/20 bg-signal-caution/5 space-y-2 rounded-md border p-2.5">
-            <p className="text-signal-caution flex items-center gap-1.5 text-xs font-medium">
-              <HeartPulse className="size-3.5" />
+          <div className="border-analysis-border/50 space-y-2 border-t pt-3">
+            <p className="text-label text-signal-caution inline-flex items-center gap-1.5">
+              <HeartPulse className="size-3.5 shrink-0" aria-hidden />
               Réévaluer une douleur ou blessure
             </p>
             {painReassessments.map((item) => (
@@ -363,6 +435,73 @@ export function SessionRealization({
           </div>
         ) : null}
       </div>
+    );
+  }
+
+  function renderActivityPickerBody() {
+    if (isLinking) return <LinkAnalysisStatus phase="linking" />;
+    if (isAnalyzing) return <LinkAnalysisStatus phase="analyzing" />;
+
+    return (
+      <>
+        <div className="max-h-56 space-y-1 overflow-y-auto">
+          {candidates.length === 0 && (
+            <p className="text-muted-foreground py-2 text-center text-xs">
+              Aucune activité trouvée.{' '}
+              <Link className="text-primary hover:underline" href="/settings/integrations">
+                Synchronise Strava
+              </Link>{' '}
+              puis réessaie.
+            </p>
+          )}
+          {candidates.map(({ a, diff, sameType }) => (
+            <button
+              key={a.id}
+              className="border-analysis-border/60 bg-analysis-surface-alt/70 hover:border-primary/40 flex w-full items-center justify-between gap-2 rounded-md border p-2 text-left"
+              type="button"
+              onClick={() => handleLink(a.id)}
+            >
+              <div className="flex min-w-0 items-start gap-1.5">
+                <ActivityTypeIndicator type={a.type} />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">
+                    {a.title ?? activityTypeLabels[a.type]}
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    {formatDate(a.date)} · {formatDuration(a.duration)}
+                    {diff === 0 && sameType ? ' · même jour' : ''}
+                  </p>
+                </div>
+              </div>
+              <span
+                className="text-label text-primary shrink-0 normal-case"
+                title="Correspondance date et durée avec la séance planifiée"
+              >
+                {formatActivityMatchLabel(
+                  { date: session.date, durationMin: session.durationMin },
+                  { date: a.date, duration: a.duration },
+                )}
+              </span>
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center justify-between">
+          <button
+            className="text-muted-foreground hover:text-foreground text-xs"
+            type="button"
+            onClick={() => setShowAll((v) => !v)}
+          >
+            {showAll ? 'Activités proches' : 'Voir toutes les activités'}
+          </button>
+          <button
+            className="text-muted-foreground hover:text-foreground text-xs"
+            type="button"
+            onClick={() => setPickerOpen(false)}
+          >
+            Annuler
+          </button>
+        </div>
+      </>
     );
   }
 
@@ -389,106 +528,31 @@ export function SessionRealization({
 
     return (
       <div className="space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-muted-foreground inline-flex items-center gap-1.5 text-xs">
-            <CheckCircle2 className="text-primary size-3.5" />
-            Liée à une activité
-          </span>
-          {delink}
-        </div>
-
-        {linked ? (
-          <Link
-            className="border-analysis-border/60 hover:border-primary/40 chip-surface flex items-center justify-between gap-2 rounded-lg px-3 py-2.5"
-            href={`/training/${linked.id}`}
-          >
-            <div className="flex min-w-0 items-start gap-1.5">
-              <ActivityTypeIndicator type={linked.type} />
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium">
-                  {linked.title ?? activityTypeLabels[linked.type]}
-                </p>
-                <p className="text-muted-foreground text-xs">
-                  {formatDate(linked.date)} · {formatDuration(linked.duration)}
-                </p>
-              </div>
-            </div>
-            <span className="text-muted-foreground shrink-0 text-xs font-medium">
-              {activityMetric(linked)} →
-            </span>
-          </Link>
-        ) : null}
-
+        {renderLinkedActivityCard(delink)}
         {renderLinkedAnalysisSection()}
       </div>
     );
   }
 
   return (
-    <div className="border-border/60 space-y-2 rounded-lg border border-dashed p-2.5 sm:space-y-3 sm:p-3">
+    <div className="border-analysis-border/60 bg-analysis-surface-alt/30 space-y-3 rounded-lg border border-dashed p-2.5 sm:p-3">
       {!pickerOpen ? (
-        <Button size="sm" type="button" variant="outline" onClick={() => setPickerOpen(true)}>
-          <Link2 className="size-4" /> J&apos;ai fait cette séance
-        </Button>
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Séance planifiée non rapprochée</p>
+          <p className="text-muted-foreground text-xs leading-relaxed text-pretty">
+            Associe-la à l&apos;activité réalisée pour comparer le plan au fait réel et lancer
+            l&apos;analyse de conformité.
+          </p>
+          <Button size="sm" type="button" variant="outline" onClick={() => setPickerOpen(true)}>
+            <Link2 className="size-4" /> Associer une activité
+          </Button>
+        </div>
       ) : (
         <div className="space-y-2">
           <p className="text-muted-foreground text-xs">
-            {isLinking
-              ? 'Liaison et analyse en cours…'
-              : "Choisis l'activité réalisée correspondante :"}
+            Choisis l&apos;activité qui correspond à cette séance planifiée :
           </p>
-          {isLinking ? (
-            <div className="flex items-center justify-center py-4">
-              <Loader2 className="text-primary size-5 animate-spin" />
-            </div>
-          ) : (
-            <>
-              <div className="max-h-56 space-y-1 overflow-y-auto">
-                {candidates.length === 0 && (
-                  <p className="text-muted-foreground py-2 text-center text-xs">
-                    Aucune activité trouvée. Synchronise Strava puis réessaie.
-                  </p>
-                )}
-                {candidates.map(({ a, diff, sameType }) => (
-                  <button
-                    key={a.id}
-                    className="border-analysis-border/60 bg-analysis-surface-alt/70 hover:border-primary/40 flex w-full items-center justify-between gap-2 rounded-md border p-2 text-left"
-                    type="button"
-                    onClick={() => handleLink(a.id)}
-                  >
-                    <div className="flex min-w-0 items-start gap-1.5">
-                      <ActivityTypeIndicator type={a.type} />
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">
-                          {a.title ?? activityTypeLabels[a.type]}
-                        </p>
-                        <p className="text-muted-foreground text-xs">
-                          {formatDate(a.date)} · {formatDuration(a.duration)}
-                          {diff === 0 && sameType ? ' · même jour' : ''}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-              <div className="flex items-center justify-between">
-                <button
-                  className="text-muted-foreground hover:text-foreground text-xs"
-                  type="button"
-                  onClick={() => setShowAll((v) => !v)}
-                >
-                  {showAll ? 'Activités proches' : 'Voir toutes les activités'}
-                </button>
-                <button
-                  className="text-muted-foreground hover:text-foreground text-xs"
-                  type="button"
-                  onClick={() => setPickerOpen(false)}
-                >
-                  Annuler
-                </button>
-              </div>
-            </>
-          )}
+          {renderActivityPickerBody()}
         </div>
       )}
     </div>
