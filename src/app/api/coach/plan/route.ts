@@ -3,6 +3,8 @@ import { fr } from 'date-fns/locale';
 import { NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { recordAiUsage } from '@/lib/ai-usage';
+import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
 import {
   COACH_PROGRESS_HEADERS,
@@ -72,6 +74,11 @@ export async function POST(req: Request) {
   const { startDate, days = 7, focus, goalId, targetLoad, planPhase, planFocus } = parsed.data;
   const start = startOfDay(startDate ?? new Date());
   const athleteId = await getCurrentAthleteId();
+
+  const rateLimit = await checkRateLimit(rateLimiters.coachPlan, athleteId);
+  if (!rateLimit.ok) {
+    return NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), { status: 429 });
+  }
 
   const [ctx, busySummary, goal] = await Promise.all([
     buildCoachContext(athleteId, start, { includeScenario: true }),
@@ -167,13 +174,14 @@ ${contextText}${goalBlock}${macroBlock}${agendaBlock}`;
       };
 
       try {
-        const output = await runStructuredCoachStream({
+        const { output, usage } = await runStructuredCoachStream({
           schema: coachPlanSchema,
           system: SYSTEM_PROMPT,
           prompt,
           onReasoning: (delta) => send({ type: 'reasoning', delta }),
           onPartial: (value) => send({ type: 'partial', value }),
         });
+        void recordAiUsage(athleteId, 'coach', usage);
         send({
           type: 'result',
           value: await finalizePlan(athleteId, output, start, goalId ?? null),

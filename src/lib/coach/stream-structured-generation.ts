@@ -1,4 +1,4 @@
-import { Output, parsePartialJson, streamText } from 'ai';
+import { Output, parsePartialJson, streamText, type LanguageModelUsage } from 'ai';
 import type { z } from 'zod';
 import { COACH_MODEL, COACH_REASONING_LEVEL, coachStructuredGatewayOptions } from '@/lib/ai';
 
@@ -18,7 +18,8 @@ import { COACH_MODEL, COACH_REASONING_LEVEL, coachStructuredGatewayOptions } fro
 const PARTIAL_PARSE_STRIDE_CHARS = 48;
 
 /**
- * Resolves with the raw model output. Callers re-validate with their own
+ * Resolves with the raw model output plus its token usage (for cost logging —
+ * see src/lib/ai-usage.ts). Callers re-validate the output with their own
  * narrower schema (the generation schema the model sees is deliberately looser
  * than the one the app persists), so widening to `unknown` here loses nothing.
  */
@@ -36,7 +37,7 @@ export async function runStructuredCoachStream({
   onReasoning: (delta: string) => void;
   /** Called with the object rebuilt so far, only when it actually changed. */
   onPartial: (value: unknown) => void;
-}): Promise<unknown> {
+}): Promise<{ output: unknown; usage: LanguageModelUsage }> {
   const result = streamText({
     model: COACH_MODEL,
     output: Output.object({ schema }),
@@ -73,5 +74,5 @@ export async function runStructuredCoachStream({
     await emitPartial();
   }
 
-  return result.output;
+  return { output: await result.output, usage: await result.totalUsage };
 }

@@ -8,6 +8,7 @@ import {
 } from '@/lib/activity/narrative/activity-narrative-config';
 import { buildActivityNarrativeFacts } from '@/lib/activity/narrative/activity-narrative-facts';
 import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
+import { recordAiUsage } from '@/lib/ai-usage';
 import { prisma } from '@/lib/prisma';
 import { activityNarrativeSchema, type ActivityNarrative } from '@/lib/validators/coach';
 
@@ -75,13 +76,14 @@ export async function runActivityNarrativeAnalysis(
   const facts = await buildActivityNarrativeFacts(athleteId, activityId);
   if (!facts) return false;
 
-  const { output } = await generateText({
+  const { output, usage } = await generateText({
     model: COACH_MODEL,
     output: Output.object({ schema: activityNarrativeSchema }),
     system: NARRATIVE_SYSTEM,
     prompt: facts,
     providerOptions: coachAnalysisGatewayOptions,
   });
+  void recordAiUsage(athleteId, 'analysis', usage);
 
   if (!output) return false;
 

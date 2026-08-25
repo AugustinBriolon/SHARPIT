@@ -1,5 +1,6 @@
 import { generateText, Output } from 'ai';
 import { COACH_MODEL, coachAnalysisGatewayOptions } from '@/lib/ai';
+import { recordAiUsage } from '@/lib/ai-usage';
 import {
   describeBikeWorkBlocks,
   parsePrescriptionTargets,
@@ -338,13 +339,14 @@ ${
 # Suivi physique actif de l'athlète
 ${describePhysicalNotes(physicalNotes)}`;
 
-  const { output } = await generateText({
+  const { output, usage } = await generateText({
     model: COACH_MODEL,
     output: Output.object({ schema: sessionAnalysisSchema }),
     system: ANALYSIS_SYSTEM,
     prompt,
     providerOptions: coachAnalysisGatewayOptions,
   });
+  void recordAiUsage(athleteId, 'analysis', usage);
 
   if (!output) return null;
 
@@ -473,13 +475,14 @@ ${legBlocks.join('\n\n')}
 # Transitions estimées
 ${transitions.length ? transitions.join('\n') : 'Aucune donnée de transition exploitable.'}`;
 
-  const { output } = await generateText({
+  const { output, usage } = await generateText({
     model: COACH_MODEL,
     output: Output.object({ schema: brickAnalysisSchema }),
     system: BRICK_SYSTEM,
     prompt,
     providerOptions: coachAnalysisGatewayOptions,
   });
+  void recordAiUsage(athleteId, 'analysis', usage);
 
   return output;
 }

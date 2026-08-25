@@ -19,7 +19,9 @@ import { buildBusySummary } from '@/lib/coach/plan/calendar-availability';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
 import { createCoachTools } from '@/lib/coach/chat/coach-tools';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { recordAiUsage } from '@/lib/ai-usage';
 import { formatStrengthSessionRules } from '@/lib/planned-session/strength/strength-session-template';
+import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
 
 /** Horizon de pré-chargement de l'agenda, aligné sur les séances du contexte. */
 const AGENDA_PREFETCH_DAYS = 14;
@@ -91,6 +93,11 @@ export async function POST(req: Request) {
 
   const athleteId = await getCurrentAthleteId();
 
+  const rateLimit = await checkRateLimit(rateLimiters.coachChat, athleteId);
+  if (!rateLimit.ok) {
+    return NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), { status: 429 });
+  }
+
   // The agenda ships with the context rather than behind a tool: a scheduling
   // turn otherwise spent a whole extra step fetching it, resending the entire
   // prefix afterwards. One cheap read here replaces that round trip.
@@ -129,6 +136,9 @@ export async function POST(req: Request) {
     reasoning: COACH_REASONING_LEVEL.conversational,
     maxOutputTokens: COACH_MAX_OUTPUT_TOKENS.conversational,
     providerOptions: coachGatewayOptions,
+    onFinish: ({ totalUsage }) => {
+      void recordAiUsage(athleteId, 'coach', totalUsage);
+    },
   });
 
   return createUIMessageStreamResponse({

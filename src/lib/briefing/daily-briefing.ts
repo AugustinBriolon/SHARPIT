@@ -16,6 +16,7 @@ import {
   formatCoachContext,
   invalidateCoachContext,
 } from '@/lib/coach/context/coach-context';
+import { recordAiUsage } from '@/lib/ai-usage';
 import { prisma } from '@/lib/prisma';
 import { getActivities, getPlannedSessions } from '@/lib/queries';
 import { startOfDay } from 'date-fns';
@@ -115,12 +116,13 @@ ${formatBriefingDayContext(dayCtx)}
 
 Rédige le ${dayCtx.phaseLabel} en suivant la structure imposée et les règles de temporalité.`;
 
-  const { text } = await generateText({
+  const { text, usage } = await generateText({
     model: COACH_MODEL,
     system: buildBriefingSystem(phase),
     prompt,
     providerOptions: coachGatewayOptions,
   });
+  void recordAiUsage(athleteId, 'coach', usage);
 
   const llmContent = text.trim();
   const validation = validateBriefingContent(llmContent, dayCtx, ctx);

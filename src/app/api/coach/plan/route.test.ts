@@ -66,20 +66,23 @@ describe('POST /api/coach/plan', () => {
     const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
 
     vi.mocked(runStructuredCoachStream).mockResolvedValue({
-      summary: 'Bloc de reprise',
-      sessions: [
-        {
-          dayOffset: 1,
-          startTime: null,
-          type: 'RUN',
-          intensity: 'THRESHOLD',
-          title: 'Seuil',
-          description: 'Corps de séance seuil',
-          durationMin: 45,
-          load: 70,
-          rationale: 'Progression',
-        },
-      ],
+      output: {
+        summary: 'Bloc de reprise',
+        sessions: [
+          {
+            dayOffset: 1,
+            startTime: null,
+            type: 'RUN',
+            intensity: 'THRESHOLD',
+            title: 'Seuil',
+            description: 'Corps de séance seuil',
+            durationMin: 45,
+            load: 70,
+            rationale: 'Progression',
+          },
+        ],
+      },
+      usage: { inputTokens: 10, outputTokens: 10, totalTokens: 20 },
     } as never);
 
     vi.mocked(getOrBuildAthleteSnapshot).mockResolvedValue({
@@ -116,20 +119,23 @@ describe('POST /api/coach/plan', () => {
     const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
 
     vi.mocked(runStructuredCoachStream).mockResolvedValue({
-      summary: 'Semaine calme',
-      sessions: [
-        {
-          dayOffset: 1,
-          startTime: null,
-          type: 'RUN',
-          intensity: 'ENDURANCE',
-          title: 'Endurance facile',
-          description: 'Footing',
-          durationMin: 40,
-          load: 35,
-          rationale: 'Reprise progressive',
-        },
-      ],
+      output: {
+        summary: 'Semaine calme',
+        sessions: [
+          {
+            dayOffset: 1,
+            startTime: null,
+            type: 'RUN',
+            intensity: 'ENDURANCE',
+            title: 'Endurance facile',
+            description: 'Footing',
+            durationMin: 40,
+            load: 35,
+            rationale: 'Reprise progressive',
+          },
+        ],
+      },
+      usage: { inputTokens: 10, outputTokens: 10, totalTokens: 20 },
     } as never);
 
     vi.mocked(getOrBuildAthleteSnapshot).mockResolvedValue({
@@ -160,33 +166,36 @@ describe('POST /api/coach/plan', () => {
     const { createCoachingDecision } = await import('@/lib/decision-memory/repository');
 
     vi.mocked(runStructuredCoachStream).mockResolvedValue({
-      summary: 'Bloc seuil',
-      sessions: [
-        {
-          dayOffset: 3,
-          startTime: null,
-          type: 'RUN',
-          intensity: 'THRESHOLD',
-          title: '6×1000 m',
-          description: 'Séance seuil',
-          durationMin: 60,
-          load: 75,
-          rationale: 'Développer le seuil',
-          endurancePrescription: {
-            blocks: [
-              { steps: [{ kind: 'warmup', minutes: 20 }] },
-              {
-                times: 6,
-                steps: [
-                  { kind: 'interval', meters: 1000, effort: 'THRESHOLD' },
-                  { kind: 'recovery', minutes: 2 },
-                ],
-              },
-              { steps: [{ kind: 'cooldown', minutes: 10 }] },
-            ],
+      output: {
+        summary: 'Bloc seuil',
+        sessions: [
+          {
+            dayOffset: 3,
+            startTime: null,
+            type: 'RUN',
+            intensity: 'THRESHOLD',
+            title: '6×1000 m',
+            description: 'Séance seuil',
+            durationMin: 60,
+            load: 75,
+            rationale: 'Développer le seuil',
+            endurancePrescription: {
+              blocks: [
+                { steps: [{ kind: 'warmup', minutes: 20 }] },
+                {
+                  times: 6,
+                  steps: [
+                    { kind: 'interval', meters: 1000, effort: 'THRESHOLD' },
+                    { kind: 'recovery', minutes: 2 },
+                  ],
+                },
+                { steps: [{ kind: 'cooldown', minutes: 10 }] },
+              ],
+            },
           },
-        },
-      ],
+        ],
+      },
+      usage: { inputTokens: 10, outputTokens: 10, totalTokens: 20 },
     } as never);
 
     vi.mocked(getOrBuildAthleteSnapshot).mockResolvedValue({
@@ -219,20 +228,23 @@ describe('POST /api/coach/plan', () => {
     const { createCoachingDecision } = await import('@/lib/decision-memory/repository');
 
     vi.mocked(runStructuredCoachStream).mockResolvedValue({
-      summary: 'Bloc',
-      sessions: [
-        {
-          dayOffset: 2,
-          startTime: null,
-          type: 'BIKE',
-          intensity: 'ENDURANCE',
-          title: 'Vélo',
-          description: 'Sortie',
-          durationMin: 90,
-          load: 60,
-          rationale: 'Volume',
-        },
-      ],
+      output: {
+        summary: 'Bloc',
+        sessions: [
+          {
+            dayOffset: 2,
+            startTime: null,
+            type: 'BIKE',
+            intensity: 'ENDURANCE',
+            title: 'Vélo',
+            description: 'Sortie',
+            durationMin: 90,
+            load: 60,
+            rationale: 'Volume',
+          },
+        ],
+      },
+      usage: { inputTokens: 10, outputTokens: 10, totalTokens: 20 },
     } as never);
 
     vi.mocked(getOrBuildAthleteSnapshot).mockResolvedValue({

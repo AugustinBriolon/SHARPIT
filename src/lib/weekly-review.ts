@@ -10,6 +10,7 @@ import {
 import { fr } from 'date-fns/locale';
 import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from './ai';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
+import { recordAiUsage } from '@/lib/ai-usage';
 import { prisma } from './prisma';
 import { getActivities, getHealthEntries, getPlannedSessions } from './queries';
 import { analyzeSleep, formatClock, formatDuration, type SleepEntryInput } from '@/lib/sleep/sleep';
@@ -224,12 +225,13 @@ ${formatWeeklyStats(stats)}
 
 Rédige la rétrospective hebdomadaire en suivant la structure imposée. Mets l'accent sur l'analyse du sommeil de la semaine et son lien avec la récupération et la performance.`;
 
-  const { text } = await generateText({
+  const { text, usage } = await generateText({
     model: COACH_MODEL,
     system: WEEKLY_SYSTEM,
     prompt,
     providerOptions: coachGatewayOptions,
   });
+  void recordAiUsage(athleteId, 'coach', usage);
 
   return { content: text.trim(), stats };
 }

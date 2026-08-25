@@ -4,6 +4,8 @@ import { fr } from 'date-fns/locale';
 import { NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { recordAiUsage } from '@/lib/ai-usage';
+import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
 import { getActiveTrainingPlan, getGoals, getPlannedSessionsForCoach } from '@/lib/queries';
 import { resolveDefaultPlanGoalId, selectableDatedGoalIds } from '@/lib/planned-session/plan-goal';
@@ -129,6 +131,13 @@ export async function POST(req: Request) {
     const horizon = addDays(today, days);
     const athleteId = await getCurrentAthleteId();
 
+    const rateLimit = await checkRateLimit(rateLimiters.coachAdapt, athleteId);
+    if (!rateLimit.ok) {
+      return NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), {
+        status: 429,
+      });
+    }
+
     const [ctx, upcoming, activePlan, goals] = await Promise.all([
       buildCoachContext(athleteId, today, { includeScenario: true }),
       getPlannedSessionsForCoach(athleteId, { from: today, to: horizon }),
@@ -198,13 +207,14 @@ ${upcomingLines.length ? upcomingLines.join('\n') : 'Aucune séance planifiée �
         };
 
         try {
-          const output = await runStructuredCoachStream({
+          const { output, usage } = await runStructuredCoachStream({
             schema: adaptPlanGenerationSchema,
             system: SYSTEM_PROMPT,
             prompt,
             onReasoning: (delta) => send({ type: 'reasoning', delta }),
             onPartial: (value) => send({ type: 'partial', value }),
           });
+          void recordAiUsage(athleteId, 'coach', usage);
           send({
             type: 'result',
             value: await finalizeAdapt(athleteId, output, upcoming, defaultGoalId, today),

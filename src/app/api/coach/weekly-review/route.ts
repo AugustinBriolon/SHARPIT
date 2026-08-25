@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
 import { generateAndStoreWeeklyReview, getWeeklyReview } from '@/lib/weekly-review';
 
 export const maxDuration = 60;
@@ -39,6 +40,12 @@ export async function POST(request: NextRequest) {
     const date = parseDate((body as { date?: string }).date ?? null);
     // Depuis l'app, on veut la rétro de la semaine EN COURS (current: true).
     const athleteId = await getCurrentAthleteId();
+    const rateLimit = await checkRateLimit(rateLimiters.coachReview, athleteId);
+    if (!rateLimit.ok) {
+      return NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), {
+        status: 429,
+      });
+    }
     const review = await generateAndStoreWeeklyReview(athleteId, date, { current: true });
     return NextResponse.json({ review });
   } catch (error) {

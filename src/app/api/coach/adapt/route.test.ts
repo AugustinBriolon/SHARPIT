@@ -104,21 +104,24 @@ describe('POST /api/coach/adapt', () => {
     await givenUpcomingSession();
 
     vi.mocked(runStructuredCoachStream).mockResolvedValue({
-      summary: 'Suppression d’une séance en trop',
-      changes: [
-        {
-          action: 'REMOVE',
-          sessionId: 'existing-1',
-          date: null,
-          type: null,
-          intensity: null,
-          title: null,
-          description: null,
-          durationMin: null,
-          load: null,
-          reason: 'Fatigue élevée cette semaine',
-        },
-      ],
+      output: {
+        summary: 'Suppression d’une séance en trop',
+        changes: [
+          {
+            action: 'REMOVE',
+            sessionId: 'existing-1',
+            date: null,
+            type: null,
+            intensity: null,
+            title: null,
+            description: null,
+            durationMin: null,
+            load: null,
+            reason: 'Fatigue élevée cette semaine',
+          },
+        ],
+      },
+      usage: { inputTokens: 10, outputTokens: 10, totalTokens: 20 },
     } as never);
 
     vi.mocked(getOrBuildAthleteSnapshot).mockResolvedValue({
@@ -147,21 +150,24 @@ describe('POST /api/coach/adapt', () => {
     await givenUpcomingSession();
 
     vi.mocked(runStructuredCoachStream).mockResolvedValue({
-      summary: 'Ajout d’une séance de seuil',
-      changes: [
-        {
-          action: 'ADD',
-          sessionId: null,
-          date: '2026-07-20',
-          type: 'BIKE',
-          intensity: 'THRESHOLD',
-          title: 'Seuil vélo',
-          description: null,
-          durationMin: 60,
-          load: 75,
-          reason: 'Combler le trou de la semaine',
-        },
-      ],
+      output: {
+        summary: 'Ajout d’une séance de seuil',
+        changes: [
+          {
+            action: 'ADD',
+            sessionId: null,
+            date: '2026-07-20',
+            type: 'BIKE',
+            intensity: 'THRESHOLD',
+            title: 'Seuil vélo',
+            description: null,
+            durationMin: 60,
+            load: 75,
+            reason: 'Combler le trou de la semaine',
+          },
+        ],
+      },
+      usage: { inputTokens: 10, outputTokens: 10, totalTokens: 20 },
     } as never);
 
     vi.mocked(getOrBuildAthleteSnapshot).mockResolvedValue({
@@ -212,21 +218,24 @@ describe('POST /api/coach/adapt', () => {
     ] as never);
 
     vi.mocked(runStructuredCoachStream).mockResolvedValue({
-      summary: 'Allègement de la charge',
-      changes: [
-        {
-          action: 'MODIFY',
-          sessionId: 'existing-1',
-          date: null,
-          type: null,
-          intensity: null,
-          title: null,
-          description: null,
-          durationMin: null,
-          load: 15,
-          reason: 'Fatigue accrue après la dernière séance',
-        },
-      ],
+      output: {
+        summary: 'Allègement de la charge',
+        changes: [
+          {
+            action: 'MODIFY',
+            sessionId: 'existing-1',
+            date: null,
+            type: null,
+            intensity: null,
+            title: null,
+            description: null,
+            durationMin: null,
+            load: 15,
+            reason: 'Fatigue accrue après la dernière séance',
+          },
+        ],
+      },
+      usage: { inputTokens: 10, outputTokens: 10, totalTokens: 20 },
     } as never);
 
     vi.mocked(getOrBuildAthleteSnapshot).mockResolvedValue({
@@ -259,33 +268,36 @@ describe('POST /api/coach/adapt', () => {
     await givenUpcomingSession();
 
     vi.mocked(runStructuredCoachStream).mockResolvedValue({
-      summary: 'Structurer la séance de seuil',
-      changes: [
-        {
-          action: 'ADD',
-          sessionId: null,
-          date: '2026-07-20',
-          type: 'RUN',
-          intensity: 'THRESHOLD',
-          title: '5×5 min seuil',
-          description: null,
-          durationMin: 60,
-          load: 70,
-          reason: 'Bloc qualité de la semaine',
-          endurancePrescription: {
-            blocks: [
-              { steps: [{ kind: 'warmup', minutes: 15 }] },
-              {
-                times: 5,
-                steps: [
-                  { kind: 'interval', minutes: 5, effort: 'THRESHOLD' },
-                  { kind: 'recovery', minutes: 2 },
-                ],
-              },
-            ],
+      output: {
+        summary: 'Structurer la séance de seuil',
+        changes: [
+          {
+            action: 'ADD',
+            sessionId: null,
+            date: '2026-07-20',
+            type: 'RUN',
+            intensity: 'THRESHOLD',
+            title: '5×5 min seuil',
+            description: null,
+            durationMin: 60,
+            load: 70,
+            reason: 'Bloc qualité de la semaine',
+            endurancePrescription: {
+              blocks: [
+                { steps: [{ kind: 'warmup', minutes: 15 }] },
+                {
+                  times: 5,
+                  steps: [
+                    { kind: 'interval', minutes: 5, effort: 'THRESHOLD' },
+                    { kind: 'recovery', minutes: 2 },
+                  ],
+                },
+              ],
+            },
           },
-        },
-      ],
+        ],
+      },
+      usage: { inputTokens: 10, outputTokens: 10, totalTokens: 20 },
     } as never);
 
     vi.mocked(getOrBuildAthleteSnapshot).mockResolvedValue({
@@ -318,21 +330,24 @@ describe('POST /api/coach/adapt', () => {
     const { createCoachingDecision } = await import('@/lib/decision-memory/repository');
 
     vi.mocked(runStructuredCoachStream).mockResolvedValue({
-      summary: 'Ajout',
-      changes: [
-        {
-          action: 'ADD',
-          sessionId: null,
-          date: '2026-07-20',
-          type: 'RUN',
-          intensity: 'VO2MAX',
-          title: 'VO2max',
-          description: null,
-          durationMin: 40,
-          load: 65,
-          reason: 'Test',
-        },
-      ],
+      output: {
+        summary: 'Ajout',
+        changes: [
+          {
+            action: 'ADD',
+            sessionId: null,
+            date: '2026-07-20',
+            type: 'RUN',
+            intensity: 'VO2MAX',
+            title: 'VO2max',
+            description: null,
+            durationMin: 40,
+            load: 65,
+            reason: 'Test',
+          },
+        ],
+      },
+      usage: { inputTokens: 10, outputTokens: 10, totalTokens: 20 },
     } as never);
 
     vi.mocked(getOrBuildAthleteSnapshot).mockResolvedValue({
