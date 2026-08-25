@@ -8,7 +8,6 @@ import { athleteCompositionContext } from '@/lib/profile/athlete-profile-utils';
 import {
   buildCompositionSeries,
   computeCompositionTrend,
-  dedupeBodyCompositionByDay,
   formatCompositionDelta,
   formatWeightKgDisplay,
 } from '@/lib/health/body-composition';
@@ -177,7 +176,7 @@ export async function buildBodyPresentationViewModel(
     chronologicalAgeYears: baseCtx.chronoAge,
   };
 
-  const entriesDedup = dedupeBodyCompositionByDay(entries);
+  const entriesDedup = entries;
 
   const weight = computeCompositionTrend(entriesDedup, 'weightKg');
   const bodyFat = computeCompositionTrend(entriesDedup, 'bodyFatPct');
