@@ -2,17 +2,22 @@
  * Unblocks Prisma migrate deploy when a migration is stuck in "failed" state (P3009).
  * Runs before `prisma migrate deploy` on Vercel — no-op when the database is healthy.
  *
- * Handles two cases:
+ * Handles:
  * 1. `20260707_add_athlete_snapshot` — folder still exists; use `migrate resolve`.
- * 2. `20260824_drop_athlete_id_bootstrap_default` — renamed to a timestamped folder;
- *    `migrate resolve` cannot find the old name, so we mark it rolled-back via SQL.
+ * 2. Orphan pre-rename short names (`20260824_*`) — folders renamed; SQL roll-back.
+ * 3. Renamed multi-tenant stack (`20260824104021_*` …) — schema already applied under
+ *    old names or a failed re-run; mark timestamped migrations as applied.
  */
 import { execSync } from 'node:child_process';
 import { PrismaClient } from '@prisma/client';
 import {
-  ORPHAN_DROP_DEFAULT_MIGRATION,
+  ORPHAN_MULTI_TENANT_STACK,
+  RENAMED_MULTI_TENANT_STACK,
   SNAPSHOT_MIGRATION,
-  decideOrphanDropDefaultRepair,
+  TIMESTAMPED_MULTI_TENANT_MIGRATION,
+  decideFailedTimestampedMultiTenantRepair,
+  decideOrphanFailedRepair,
+  decideRenamedMultiTenantStackRepair,
   decideSnapshotRepair,
 } from './repair-failed-migrations-logic';
 
@@ -43,6 +48,17 @@ async function isFailed(migrationName: string): Promise<boolean> {
       AND started_at IS NOT NULL
   `;
   return failed.length > 0;
+}
+
+async function isSuccessfullyApplied(migrationName: string): Promise<boolean> {
+  const applied = await prisma.$queryRaw<FailedMigrationRow[]>`
+    SELECT migration_name
+    FROM "_prisma_migrations"
+    WHERE migration_name = ${migrationName}
+      AND finished_at IS NOT NULL
+      AND rolled_back_at IS NULL
+  `;
+  return applied.length > 0;
 }
 
 async function markRolledBackViaSql(migrationName: string): Promise<void> {
@@ -91,6 +107,21 @@ async function snapshotArtifactsExist(): Promise<boolean> {
   );
 }
 
+/** Multi-tenant phase 0 left `AthleteProfile.clerkUserId` NOT NULL — reliable probe. */
+async function multiTenantSchemaPresent(): Promise<boolean> {
+  const rows = await prisma.$queryRaw<ExistsRow[]>`
+    SELECT EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'AthleteProfile'
+        AND column_name = 'clerkUserId'
+        AND is_nullable = 'NO'
+    ) AS "exists"
+  `;
+  return rows[0]?.exists === true;
+}
+
 async function repairSnapshotMigration(): Promise<void> {
   if (!(await isFailed(SNAPSHOT_MIGRATION))) {
     return;
@@ -110,30 +141,81 @@ async function repairSnapshotMigration(): Promise<void> {
   runResolve(SNAPSHOT_MIGRATION, '--rolled-back');
 }
 
-async function repairOrphanDropDefaultMigration(): Promise<void> {
-  const failed = await isFailed(ORPHAN_DROP_DEFAULT_MIGRATION);
-  const action = decideOrphanDropDefaultRepair(failed);
+async function repairOrphanShortNameMigrations(): Promise<void> {
+  for (const migrationName of ORPHAN_MULTI_TENANT_STACK) {
+    const failed = await isFailed(migrationName);
+    const action = decideOrphanFailedRepair(failed);
 
-  if (action === 'noop') {
+    if (action === 'noop') {
+      continue;
+    }
+
+    console.info(
+      `[migrate-repair] ${migrationName} failed under pre-rename name — marking rolled back so timestamped migrations can apply`,
+    );
+    await markRolledBackViaSql(migrationName);
+  }
+}
+
+async function repairRenamedMultiTenantStack(): Promise<void> {
+  const schemaPresent = await multiTenantSchemaPresent();
+
+  const unfinished: string[] = [];
+  for (const migrationName of RENAMED_MULTI_TENANT_STACK) {
+    if (!(await isSuccessfullyApplied(migrationName))) {
+      unfinished.push(migrationName);
+    }
+  }
+
+  const stackDecision = decideRenamedMultiTenantStackRepair({
+    multiTenantSchemaPresent: schemaPresent,
+    unfinishedTimestampedMigrations: unfinished,
+  });
+
+  if (stackDecision.action === 'mark-applied') {
+    for (const migrationName of stackDecision.migrations) {
+      if (await isFailed(migrationName)) {
+        console.info(
+          `[migrate-repair] ${migrationName} failed but multi-tenant schema exists — marking as applied`,
+        );
+      } else {
+        console.info(
+          `[migrate-repair] ${migrationName} not recorded but multi-tenant schema exists — marking as applied`,
+        );
+      }
+      runResolve(migrationName, '--applied');
+    }
     return;
   }
 
-  console.info(
-    `[migrate-repair] ${ORPHAN_DROP_DEFAULT_MIGRATION} failed under pre-rename name — marking rolled back so timestamped migrations can apply`,
+  const failedRetry = decideFailedTimestampedMultiTenantRepair(
+    await isFailed(TIMESTAMPED_MULTI_TENANT_MIGRATION),
+    schemaPresent,
   );
-  await markRolledBackViaSql(ORPHAN_DROP_DEFAULT_MIGRATION);
+
+  if (failedRetry === 'mark-rolled-back') {
+    console.info(
+      `[migrate-repair] ${TIMESTAMPED_MULTI_TENANT_MIGRATION} failed — marking as rolled back for retry`,
+    );
+    runResolve(TIMESTAMPED_MULTI_TENANT_MIGRATION, '--rolled-back');
+  }
 }
 
-async function main(): Promise<void> {
-  await repairOrphanDropDefaultMigration();
+export async function main(): Promise<void> {
+  await repairOrphanShortNameMigrations();
+  await repairRenamedMultiTenantStack();
   await repairSnapshotMigration();
 }
 
-main()
-  .catch((error) => {
-    console.error('[migrate-repair] Failed to repair migration state:', error);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+// Guarded so importing this module (e.g. from a test) doesn't trigger a real
+// run — only executing it directly via `tsx scripts/repair-failed-migrations.ts` does.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main()
+    .catch((error) => {
+      console.error('[migrate-repair] Failed to repair migration state:', error);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}
