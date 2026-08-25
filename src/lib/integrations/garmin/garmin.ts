@@ -53,6 +53,7 @@ export type GarminLoginFailureReason =
   | 'account_locked'
   | 'update_phone'
   | 'blocked_or_mfa'
+  | 'rate_limited'
   | 'unknown';
 
 export class GarminLoginError extends Error {
@@ -74,6 +75,9 @@ export class GarminLoginError extends Error {
  */
 function classifyGarminLoginError(error: unknown): GarminLoginError {
   const message = error instanceof Error ? error.message : String(error);
+  if (message.includes('429') || /too many requests|rate limit/i.test(message)) {
+    return new GarminLoginError(message, 'rate_limited');
+  }
   if (message.includes('AccountLocked')) {
     return new GarminLoginError(message, 'account_locked');
   }

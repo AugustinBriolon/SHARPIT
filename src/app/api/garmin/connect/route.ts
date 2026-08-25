@@ -57,13 +57,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, profile, syncStarted: true });
   } catch (error) {
     console.error('[api/garmin/connect]', error);
-    return NextResponse.json({ error: garminConnectErrorMessage(error) }, { status: 401 });
+    const status = error instanceof GarminLoginError && error.reason === 'rate_limited' ? 429 : 401;
+    return NextResponse.json({ error: garminConnectErrorMessage(error) }, { status });
   }
 }
 
 function garminConnectErrorMessage(error: unknown): string {
   if (error instanceof GarminLoginError) {
     switch (error.reason) {
+      case 'rate_limited':
+        return "Garmin limite temporairement les connexions (trop de requêtes sur son service, indépendamment de ton compte). Réessaie dans quelques heures — tes identifiants sont corrects, ce n'est pas la cause.";
       case 'account_locked':
         return 'Ton compte Garmin est verrouillé. Ouvre connect.garmin.com dans un navigateur pour le déverrouiller, puis réessaie ici.';
       case 'update_phone':
