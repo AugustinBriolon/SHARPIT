@@ -48,12 +48,54 @@ export interface GarminDailyHealth {
 
 type GCClient = InstanceType<typeof GarminConnect>;
 
+export type GarminLoginFailureReason =
+  | 'invalid_credentials'
+  | 'account_locked'
+  | 'update_phone'
+  | 'blocked_or_mfa'
+  | 'unknown';
+
+export class GarminLoginError extends Error {
+  constructor(
+    message: string,
+    public readonly reason: GarminLoginFailureReason,
+  ) {
+    super(message);
+    this.name = 'GarminLoginError';
+  }
+}
+
+/**
+ * `@flow-js/garmin-connect` throws a handful of fixed strings from its SSO
+ * scraping — matched here to tell "wrong password" apart from "Garmin's SSO
+ * page didn't return what the library expected" (a CAPTCHA/anti-bot challenge
+ * or an unannounced Garmin-side change both look identical to "Ticket not
+ * found or MFA", so that case can't be narrowed further than blocked_or_mfa).
+ */
+function classifyGarminLoginError(error: unknown): GarminLoginError {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.includes('AccountLocked')) {
+    return new GarminLoginError(message, 'account_locked');
+  }
+  if (message.includes('Update Phone number')) {
+    return new GarminLoginError(message, 'update_phone');
+  }
+  if (message.includes('Ticket not found or MFA')) {
+    return new GarminLoginError(message, 'blocked_or_mfa');
+  }
+  return new GarminLoginError(message, 'unknown');
+}
+
 export async function loginWithCredentials(
   username: string,
   password: string,
 ): Promise<{ client: GCClient; tokens: GarminTokens; profile: ProfileInfo }> {
   const client = new GarminConnect({ username, password });
-  await client.login();
+  try {
+    await client.login();
+  } catch (error) {
+    throw classifyGarminLoginError(error);
+  }
   const tokens = client.exportToken();
   const profile = await safeProfile(client);
   return { client, tokens, profile };
