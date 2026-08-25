@@ -52,6 +52,8 @@
     "@prisma/client": "^6.19.3",
     "@serwist/next": "^9.5.11",
     "@tanstack/react-query": "^5.101.2",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.2",
     "ai": "7.0.32",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

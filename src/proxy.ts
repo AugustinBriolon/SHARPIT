@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { isDevClerkBypass } from '@/lib/dev/dev-auth';
 import { DEMO_COOKIE } from '@/lib/demo/demo-session';
+import { checkRateLimit, rateLimiters, rateLimitResponseBody } from '@/lib/rate-limit';
 
 // Routes accessibles sans session Clerk :
 // - pages de connexion/inscription
@@ -41,6 +42,16 @@ export default clerkMiddleware(async (auth, req) => {
 
   if (!isPublicRoute(req)) {
     await auth.protect();
+  }
+
+  // Flooding backstop for every authenticated API call — generous, catches
+  // raw request-hammering regardless of which route. Skipped for demo
+  // sessions (already fully read-only) and unauthenticated/public routes.
+  if (userId && req.nextUrl.pathname.startsWith('/api/')) {
+    const result = await checkRateLimit(rateLimiters.apiGeneral, userId);
+    if (!result.ok) {
+      return NextResponse.json(rateLimitResponseBody(result.retryAfterSeconds), { status: 429 });
+    }
   }
 });
 
