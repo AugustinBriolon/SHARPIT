@@ -1,9 +1,8 @@
 import { cache } from 'react';
 import { after } from 'next/server';
 import { dedupeBodyCompositionByDay } from '@/lib/health/body-composition';
-import { clientFromTokens } from '@/lib/integrations/garmin/garmin';
 import { fetchGarminMultisportLegs } from '@/lib/integrations/garmin/garmin-multisport';
-import { decryptGarminTokens, getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
+import { buildFreshGarminClient, getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
 import { isMultisportLegArray, type MultisportLeg } from '@/lib/multisport';
 import {
   activityInclude,
@@ -163,9 +162,8 @@ export async function getMultisportLegsForActivity(
   const account = await getGarminAccount(athleteId);
   if (!account) return null;
 
-  const client = clientFromTokens(
-    decryptGarminTokens(account.oauth1TokenEnc, account.oauth2TokenEnc),
-  );
+  const client = await buildFreshGarminClient(athleteId, account).catch(() => null);
+  if (!client) return null;
 
   const legs = await fetchGarminMultisportLegs(client, Number(activity.garminId));
   if (!legs) return null;

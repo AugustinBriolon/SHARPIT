@@ -5,11 +5,14 @@ import { syncSinceFromLastSync, syncWindowDays } from '@/lib/integrations/shared
 import {
   clientFromTokens,
   currentTokens,
+  diGarminTokensExpiresAtMs,
   garminTokensFromStorage,
   fetchAthleteThresholds,
   fetchDailyHealth,
   fetchWeightRange,
+  isDiGarminTokens,
   loginWithCredentials,
+  refreshDiGarminTokens,
   type GarminAthleteThresholds,
   type GarminDailyHealth,
 } from '@/lib/integrations/garmin/garmin';
@@ -63,13 +66,51 @@ export async function getGarminAccount(athleteId: string) {
   return prisma.garminAccount.findUnique({ where: { athleteId } });
 }
 
+/** Refresh a stored DI (mobile-fallback) token once it's close to expiry. */
+const DI_REFRESH_MARGIN_MS = 5 * 60 * 1000;
+
+/**
+ * Decrypts an account's stored tokens into a ready-to-use client, refreshing
+ * first if they came from the mobile DI fallback and are close to expiry.
+ *
+ * That proactive check matters: `@flow-js/garmin-connect`'s own client retries
+ * a 401 by calling its internal oauth1→oauth2 exchange, which is the same
+ * endpoint the DI fallback exists to avoid. Refreshing here, before that can
+ * fire, keeps a DI-authenticated account from silently falling back into the
+ * blocked exchange mid-sync.
+ */
+export async function buildFreshGarminClient(
+  athleteId: string,
+  account: { oauth1TokenEnc: string; oauth2TokenEnc: string },
+) {
+  let tokens = decryptGarminTokens(account.oauth1TokenEnc, account.oauth2TokenEnc);
+  if (isDiGarminTokens(tokens) && diGarminTokensExpiresAtMs(tokens) - Date.now() < DI_REFRESH_MARGIN_MS) {
+    try {
+      tokens = await refreshDiGarminTokens(tokens);
+    } catch (error) {
+      await revokeGarminCredentials(athleteId);
+      throw new ProviderAuthError('Session Garmin expirée. Reconnecte Garmin dans les paramètres.', {
+        cause: error,
+      });
+    }
+    await prisma.garminAccount.update({
+      where: { athleteId },
+      data: {
+        oauth1TokenEnc: encryptGarminToken(tokens.oauth1),
+        oauth2TokenEnc: encryptGarminToken(tokens.oauth2),
+      },
+    });
+  }
+  return clientFromTokens(tokens);
+}
+
 /** Client Garmin authentifié (tokens en base). */
 export async function getGarminClient(athleteId: string) {
   const account = await getGarminAccount(athleteId);
   if (!account || !isGarminAccountConnected(account)) {
     throw new ProviderAuthError('Session Garmin expirée. Reconnecte Garmin dans les paramètres.');
   }
-  return clientFromTokens(decryptGarminTokens(account.oauth1TokenEnc, account.oauth2TokenEnc));
+  return buildFreshGarminClient(athleteId, account);
 }
 
 export async function disconnectGarmin(athleteId: string) {
@@ -137,9 +178,7 @@ export async function importGarminThresholds(athleteId: string): Promise<GarminT
       throw new ProviderAuthError('Session Garmin expirée. Reconnecte Garmin dans les paramètres.');
     }
 
-    const client = clientFromTokens(
-      decryptGarminTokens(account.oauth1TokenEnc, account.oauth2TokenEnc),
-    );
+    const client = await buildFreshGarminClient(athleteId, account);
 
     const thresholds = await fetchAthleteThresholds(client);
 
@@ -306,9 +345,7 @@ export async function syncGarminHealth(
       throw new ProviderAuthError('Session Garmin expirée. Reconnecte Garmin dans les paramètres.');
     }
 
-    const client = clientFromTokens(
-      decryptGarminTokens(account.oauth1TokenEnc, account.oauth2TokenEnc),
-    );
+    const client = await buildFreshGarminClient(athleteId, account);
 
     const fallbackDays = options?.days ?? GARMIN_HEALTH_DEFAULT_FALLBACK_DAYS;
     const today = startOfDay(new Date());

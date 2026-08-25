@@ -14,9 +14,9 @@ import {
 } from '@/lib/integrations/garmin/garmin-activities';
 import { ensureGarminExerciseLabelsFr } from '@/lib/integrations/garmin/garmin-exercise-labels';
 import { fetchGarminMultisportLegs } from '@/lib/integrations/garmin/garmin-multisport';
-import { clientFromTokens, currentTokens } from '@/lib/integrations/garmin/garmin';
+import { currentTokens } from '@/lib/integrations/garmin/garmin';
 import {
-  decryptGarminTokens,
+  buildFreshGarminClient,
   encryptGarminToken,
   getGarminAccount,
   runGarminCall,
@@ -73,7 +73,7 @@ const MAX_PAGES_FULL = 200;
 async function backfillMultisportLegs(
   activityId: string,
   garminId: number,
-  client: ReturnType<typeof clientFromTokens>,
+  client: Awaited<ReturnType<typeof buildFreshGarminClient>>,
 ): Promise<boolean> {
   const existing = await prisma.activity.findUnique({
     where: { id: activityId },
@@ -188,7 +188,7 @@ const EMPTY_OUTCOME: GarminActivityOutcome = {
   changed: [],
 };
 
-type GarminClient = ReturnType<typeof clientFromTokens>;
+type GarminClient = Awaited<ReturnType<typeof buildFreshGarminClient>>;
 type GarminListActivity = Parameters<typeof garminActivityToSession>[0];
 
 async function processOneGarminActivity(
@@ -328,9 +328,7 @@ export async function syncGarminActivities(
       throw new ProviderAuthError('Session Garmin expirée. Reconnecte Garmin dans les paramètres.');
     }
 
-    const client = clientFromTokens(
-      decryptGarminTokens(account.oauth1TokenEnc, account.oauth2TokenEnc),
-    );
+    const client = await buildFreshGarminClient(athleteId, account);
     const exerciseLabelsFr = await ensureGarminExerciseLabelsFr();
 
     const full = options?.full ?? false;

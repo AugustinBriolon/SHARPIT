@@ -1,6 +1,12 @@
 import { GarminConnect, type IGarminTokens } from '@flow-js/garmin-connect';
 import { format } from 'date-fns';
 import { pickCurrentBodyBattery } from '@/lib/integrations/garmin/garmin-body-battery';
+import {
+  GarminMobileAuthError,
+  loginGarminMobile,
+  refreshGarminMobileToken,
+  type GarminMobileTokens,
+} from '@/lib/integrations/garmin/garmin-mobile-auth';
 
 export type GarminTokens = IGarminTokens;
 
@@ -90,6 +96,62 @@ function classifyGarminLoginError(error: unknown): GarminLoginError {
   return new GarminLoginError(message, 'unknown');
 }
 
+/**
+ * Marks tokens minted via the mobile DI fallback so `garmin-sync.ts` knows to
+ * refresh them through `refreshGarminMobileToken` instead of letting
+ * `@flow-js/garmin-connect`'s internal 401 handler retry the (also blocked)
+ * classic oauth1→oauth2 exchange. Stored inside the existing oauth1/oauth2
+ * JSON columns — no schema field for this, deliberately, to avoid adding a
+ * migration for what is a fallback auth path.
+ */
+const DI_MARKER = '__DI__';
+
+export function isDiGarminTokens(tokens: GarminTokens): boolean {
+  return tokens.oauth1?.oauth_token === DI_MARKER;
+}
+
+export function diGarminTokensExpiresAtMs(tokens: GarminTokens): number {
+  return tokens.oauth2.expires_at * 1000;
+}
+
+function diTokensToGarminTokens(mobile: GarminMobileTokens): GarminTokens {
+  const nowIso = new Date().toISOString();
+  return {
+    oauth1: { oauth_token: DI_MARKER, oauth_token_secret: mobile.refreshToken },
+    oauth2: {
+      scope: '',
+      jti: '',
+      access_token: mobile.accessToken,
+      token_type: 'Bearer',
+      refresh_token: mobile.refreshToken,
+      expires_in: Math.max(0, Math.round((mobile.expiresAt - Date.now()) / 1000)),
+      refresh_token_expires_in: 0,
+      expires_at: Math.round(mobile.expiresAt / 1000),
+      refresh_token_expires_at: 0,
+      last_update_date: nowIso,
+      expires_date: new Date(mobile.expiresAt).toISOString(),
+    },
+  };
+}
+
+export async function refreshDiGarminTokens(tokens: GarminTokens): Promise<GarminTokens> {
+  const mobile = await refreshGarminMobileToken(tokens.oauth1.oauth_token_secret);
+  return diTokensToGarminTokens(mobile);
+}
+
+function garminMobileAuthErrorToLoginError(error: GarminMobileAuthError): GarminLoginError {
+  switch (error.kind) {
+    case 'mfa_required':
+      return new GarminLoginError(error.message, 'blocked_or_mfa');
+    case 'invalid_credentials':
+      return new GarminLoginError(error.message, 'invalid_credentials');
+    case 'rate_limited':
+      return new GarminLoginError(error.message, 'rate_limited');
+    default:
+      return new GarminLoginError(error.message, 'unknown');
+  }
+}
+
 export async function loginWithCredentials(
   username: string,
   password: string,
@@ -97,12 +159,33 @@ export async function loginWithCredentials(
   const client = new GarminConnect({ username, password });
   try {
     await client.login();
+    const tokens = client.exportToken();
+    const profile = await safeProfile(client);
+    return { client, tokens, profile };
   } catch (error) {
-    throw classifyGarminLoginError(error);
+    const classified = classifyGarminLoginError(error);
+    if (classified.reason !== 'rate_limited' && classified.reason !== 'blocked_or_mfa') {
+      throw classified;
+    }
+
+    // The web/widget SSO surface is blocked (429 or an opaque "ticket not
+    // found") — fall back to the mobile app's login surface, which Garmin
+    // rate-limits under a separate bucket (see garmin-mobile-auth.ts).
+    let mobile: GarminMobileTokens;
+    try {
+      mobile = await loginGarminMobile(username, password);
+    } catch (mobileError) {
+      if (mobileError instanceof GarminMobileAuthError) {
+        throw garminMobileAuthErrorToLoginError(mobileError);
+      }
+      throw classified;
+    }
+
+    const tokens = diTokensToGarminTokens(mobile);
+    client.loadToken(tokens.oauth1, tokens.oauth2);
+    const profile = await safeProfile(client);
+    return { client, tokens, profile };
   }
-  const tokens = client.exportToken();
-  const profile = await safeProfile(client);
-  return { client, tokens, profile };
 }
 
 export function clientFromTokens(tokens: GarminTokens): GCClient {
