@@ -20,6 +20,9 @@ const DI_GRANT_TYPE = 'https://connectapi.garmin.com/di-oauth2-service/oauth/gra
 
 const NATIVE_HEADERS: Record<string, string> = {
   'User-Agent': 'GCM-Android-5.23',
+  'X-Garmin-User-Agent':
+    'com.garmin.android.apps.connectmobile/5.23; ; Google/sdk_gphone64_arm64/google; Android/33; Dalvik/2.1.0',
+  'X-Garmin-Paired-App-Version': '10861',
   'X-Garmin-Client-Platform': 'Android',
   'X-App-Ver': '10861',
   'X-Lang': 'en',
@@ -57,8 +60,9 @@ async function exchangeServiceTicket(ticket: string): Promise<GarminMobileTokens
   const res = await fetch(DI_TOKEN_URL, {
     method: 'POST',
     headers: {
+      ...NATIVE_HEADERS,
       Authorization: basicAuthHeader(),
-      Accept: 'application/json',
+      Accept: 'application/json,text/html;q=0.9,*/*;q=0.8',
       'Content-Type': 'application/x-www-form-urlencoded',
       'Cache-Control': 'no-cache',
     },
@@ -71,7 +75,11 @@ async function exchangeServiceTicket(ticket: string): Promise<GarminMobileTokens
   });
 
   if (!res.ok) {
-    throw new GarminMobileAuthError(`DI token exchange failed: HTTP ${res.status}`, 'unknown');
+    const body = await res.text().catch(() => '');
+    throw new GarminMobileAuthError(
+      `DI token exchange failed: HTTP ${res.status} ${body.slice(0, 300)}`,
+      'unknown',
+    );
   }
 
   const data = (await res.json().catch(() => ({}))) as {
@@ -137,8 +145,9 @@ export async function refreshGarminMobileToken(refreshToken: string): Promise<Ga
   const res = await fetch(DI_TOKEN_URL, {
     method: 'POST',
     headers: {
+      ...NATIVE_HEADERS,
       Authorization: basicAuthHeader(),
-      Accept: 'application/json',
+      Accept: 'application/json,text/html;q=0.9,*/*;q=0.8',
       'Content-Type': 'application/x-www-form-urlencoded',
       'Cache-Control': 'no-cache',
     },
@@ -150,7 +159,11 @@ export async function refreshGarminMobileToken(refreshToken: string): Promise<Ga
   });
 
   if (!res.ok) {
-    throw new GarminMobileAuthError(`DI token refresh failed: HTTP ${res.status}`, 'unknown');
+    const body = await res.text().catch(() => '');
+    throw new GarminMobileAuthError(
+      `DI token refresh failed: HTTP ${res.status} ${body.slice(0, 300)}`,
+      'unknown',
+    );
   }
 
   const data = (await res.json().catch(() => ({}))) as {
