@@ -11,6 +11,8 @@ import {
   getPlannedSessions,
 } from '@/lib/queries';
 import { computeSharpitSleepScoreForDay, SLEEP_TARGET_MIN } from '@/lib/sleep/sleep-scoring';
+import { activityTypeLabels } from '@/lib/format';
+import { buildPostSessionLoop } from '@/lib/today/post-session-loop';
 import { buildTodayDaySummary, findMissedPlannedSessions } from '@/lib/today/today-day-summary';
 import {
   mapConfidenceToTier,
@@ -37,7 +39,6 @@ import { buildTodayLimitingFacts, buildTodayWhyFacts } from '@/lib/today/today-i
 import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
 import { endOfDay, format as formatDate, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { activityTypeLabels } from '@/lib/format';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import { getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
 import { getGoogleAccount } from '@/lib/integrations/google/google-sync';
@@ -298,6 +299,29 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
   const effectiveStatusMessage = statusMessage;
   const sessionChoice = morningOrientation?.sessionChoice ?? null;
 
+  const postSessionLoop = buildPostSessionLoop({
+    phase,
+    overallFresh: snapshot.freshness.overallFresh,
+    day,
+    activities: (
+      activities as unknown as Array<{
+        id: string;
+        title: string | null;
+        type: keyof typeof activityTypeLabels;
+        date: Date | string;
+        rpe: number | null;
+        feeling: string | null;
+      }>
+    ).map((a) => ({
+      id: a.id,
+      title: a.title,
+      typeLabel: activityTypeLabels[a.type] ?? a.type,
+      date: a.date,
+      rpe: a.rpe,
+      feeling: a.feeling,
+    })),
+  });
+
   return {
     hasContent: snapshotHasDisplayableContent(snapshot),
     emptyState,
@@ -438,6 +462,7 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
     },
     environmentContext: null,
     nutrition: null,
+    postSessionLoop,
     hierarchy: { rootId: 'today', order: ['hero', 'why', 'actionRow'] },
     sections: [],
   };

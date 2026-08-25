@@ -72,7 +72,7 @@ test.describe('navigation shell', () => {
     for (const href of [
       '/settings/account',
       '/settings/equipment',
-      '/settings/goals',
+      '/settings/calibration',
       '/settings/memory',
       '/settings/integrations',
       '/settings/appearance',

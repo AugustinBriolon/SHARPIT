@@ -13,6 +13,7 @@ import type { InstrumentListChipMeta } from '@/components/ui/instruments/instrum
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { MorningOrientationActions } from '@/components/today/rich/morning-orientation-actions';
+import { ActivityFeelingPrompt } from '@/components/training/activity/detail/activity-feeling-prompt';
 import { useAppModal } from '@/providers/app-modal-provider';
 
 const MorningWellnessDialog = dynamic(
@@ -152,6 +153,29 @@ export function TodayActionRow({
             );
           })}
         </ul>
+      ) : null}
+
+      {!loading && vm.postSessionLoop?.visible ? (
+        <div className="border-analysis-border/80 bg-background/50 rounded-analysis space-y-2 border px-3 py-3">
+          <p className="text-sm font-medium text-pretty">{vm.postSessionLoop.activityTitle}</p>
+          {vm.postSessionLoop.freshnessLine ? (
+            <p className="text-muted-foreground text-xs text-pretty">
+              {vm.postSessionLoop.freshnessLine}
+            </p>
+          ) : null}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <Link
+              className="text-primary text-xs font-medium hover:underline"
+              href={vm.postSessionLoop.narrativeHref}
+            >
+              Voir le récit de séance
+              <span aria-hidden> →</span>
+            </Link>
+            {vm.postSessionLoop.needsFeeling ? (
+              <ActivityFeelingPrompt activityId={vm.postSessionLoop.activityId} />
+            ) : null}
+          </div>
+        </div>
       ) : null}
 
       {loading ? null : (

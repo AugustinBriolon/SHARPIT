@@ -91,6 +91,7 @@ export function todayLoadingShell(now: Date = LOADING_SHELL_REFERENCE): TodayVie
     header: { weather: null },
     environmentContext: null,
     nutrition: null,
+    postSessionLoop: null,
     hierarchy: { rootId: 'today', order: [] },
     sections: [],
   };

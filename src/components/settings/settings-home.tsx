@@ -3,7 +3,6 @@ import Link from 'next/link';
 import {
   Brain,
   Dumbbell,
-  Goal,
   Link2,
   Microscope,
   MoonStar,
@@ -44,7 +43,7 @@ const GROUPS: SettingsGroup[] = [
   {
     id: 'athlete',
     title: 'Athlète',
-    blurb: 'Identité, matériel et cap de course: ce que le Twin sait de toi.',
+    blurb: 'Identité, matériel et seuils: ce que le Twin sait de toi.',
     entries: [
       {
         href: '/settings/account',
@@ -59,16 +58,6 @@ const GROUPS: SettingsGroup[] = [
         description: 'Matériel disponible par sport.',
         icon: Dumbbell,
         statusKey: 'equipment',
-      },
-      {
-        // Listed, not owned. Goals and thresholds describe the athlete, so they
-        // live in Progression (ADR-022) — but this is where people learned to
-        // look for them, and a pointer costs less than a hunt.
-        href: '/progress?tab=goals',
-        title: 'Objectifs',
-        description: 'Courses cibles et objectifs chiffrés, dans Progression.',
-        icon: Goal,
-        statusKey: 'goals',
       },
       {
         href: '/settings/calibration',

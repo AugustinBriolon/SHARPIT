@@ -212,6 +212,19 @@ export type TodayViewModel = {
     fat: number;
   } | null;
 
+  /**
+   * Post-effort loop on Today (SESSION_COMPLETED / RECOVERY_WINDOW):
+   * ressenti CTA + récit link + sync freshness affirmation.
+   */
+  postSessionLoop: {
+    visible: true;
+    activityId: string;
+    activityTitle: string;
+    needsFeeling: boolean;
+    narrativeHref: string;
+    freshnessLine: string | null;
+  } | null;
+
   hierarchy: PresentationHierarchy;
   sections: PresentationSection[];
 };

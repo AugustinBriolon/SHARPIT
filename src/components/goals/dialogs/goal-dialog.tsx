@@ -1,8 +1,9 @@
 'use client';
 
 import { GoalHorizon, GoalKind, GoalPriority } from '@prisma/client';
-import { Calendar, Flag, Repeat, Timer } from 'lucide-react';
-import { useId, useRef, useState } from 'react';
+import { Calendar, Timer } from 'lucide-react';
+import { useId, useState } from 'react';
+import { GoalCreateForm } from '@/components/goals/dialogs/goal-create-form';
 import {
   MetricGoalForm,
   type MetricGoalFormResult,
@@ -34,25 +35,11 @@ import {
   priorityOrder,
 } from '@/lib/goals/goals';
 import { parseGoalMetricConfig } from '@/lib/goals/goal-metric-config';
-import { cn } from '@/lib/utils';
 import { useGoalMutations, type GoalPayload } from '@/hooks/use-data';
 
 const NO_PRIORITY = 'none';
 
 type GoalFormVariant = 'race' | 'performance' | 'period' | 'legacy';
-
-const CREATE_VARIANTS: {
-  id: Exclude<GoalFormVariant, 'legacy'>;
-  label: string;
-  icon: typeof Flag;
-}[] = [
-  { id: 'race', label: 'Course', icon: Flag },
-  { id: 'performance', label: 'Temps sur distance', icon: Timer },
-  { id: 'period', label: 'Objectif récurrent', icon: Repeat },
-];
-
-const RADIO_FOCUS =
-  'focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden';
 
 function initialVariant(goal: GoalForEdit | null | undefined): GoalFormVariant {
   if (!goal) return 'race';
@@ -96,10 +83,9 @@ function toDateInput(value: string | Date | null | undefined): string {
   return d.toISOString().slice(0, 10);
 }
 
-function getSubmitButtonLabel(pending: boolean, isEdit: boolean): string {
+function getSubmitButtonLabel(pending: boolean): string {
   if (pending) return 'Enregistrement…';
-  if (isEdit) return 'Enregistrer';
-  return 'Créer';
+  return 'Enregistrer';
 }
 
 function getPriorityLabel(priority: string): string {
@@ -112,9 +98,8 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
   const isEdit = Boolean(goal);
   const metricFormId = useId();
   const { create, update } = useGoalMutations();
-  const variantRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-  const [variant, setVariant] = useState<GoalFormVariant>(initialVariant(goal));
+  const [variant] = useState<GoalFormVariant>(initialVariant(goal));
   const [priority, setPriority] = useState<string>(goal?.priority ?? 'A');
   const [error, setError] = useState<string | null>(null);
 
@@ -124,48 +109,6 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
   const [legacyLowerIsBetter, setLegacyLowerIsBetter] = useState(goal?.lowerIsBetter ?? false);
 
   const pending = create.isPending || update.isPending;
-
-  function focusVariant(index: number) {
-    const clamped = Math.max(0, Math.min(CREATE_VARIANTS.length - 1, index));
-    variantRefs.current[clamped]?.focus();
-  }
-
-  function selectVariantAt(index: number) {
-    const option = CREATE_VARIANTS[index];
-    if (!option) return;
-    setVariant(option.id);
-    focusVariant(index);
-  }
-
-  function onVariantKeyDown(event: React.KeyboardEvent<HTMLButtonElement>, index: number) {
-    switch (event.key) {
-      case 'ArrowDown':
-      case 'ArrowRight':
-        event.preventDefault();
-        selectVariantAt((index + 1) % CREATE_VARIANTS.length);
-        break;
-      case 'ArrowUp':
-      case 'ArrowLeft':
-        event.preventDefault();
-        selectVariantAt((index - 1 + CREATE_VARIANTS.length) % CREATE_VARIANTS.length);
-        break;
-      case 'Home':
-        event.preventDefault();
-        selectVariantAt(0);
-        break;
-      case 'End':
-        event.preventDefault();
-        selectVariantAt(CREATE_VARIANTS.length - 1);
-        break;
-      case ' ':
-      case 'Enter':
-        event.preventDefault();
-        selectVariantAt(index);
-        break;
-      default:
-        break;
-    }
-  }
 
   async function submitPayload(payload: GoalPayload) {
     if (isEdit && goal) {
@@ -197,7 +140,7 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
       return s === '' ? null : s;
     };
 
-    const payload: GoalPayload = {
+    await submitPayload({
       title: (fd.get('title') as string)?.trim() ?? '',
       kind: GoalKind.RACE,
       notes: str('notes'),
@@ -206,9 +149,7 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
       priority: priority === NO_PRIORITY ? null : (priority as GoalPayload['priority']),
       raceFormat: str('raceFormat'),
       targetPerformance: str('targetPerformance'),
-    };
-
-    await submitPayload(payload);
+    });
   }
 
   async function handleLegacyMetricSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -221,7 +162,7 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
       return s === '' ? null : s;
     };
 
-    const payload: GoalPayload = {
+    await submitPayload({
       title: (fd.get('title') as string)?.trim() ?? '',
       kind: GoalKind.METRIC,
       notes: str('notes'),
@@ -233,9 +174,7 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
       targetValue: str('targetValue') ? Number(str('targetValue')) : null,
       lowerIsBetter: legacyLowerIsBetter,
       targetDate: str('targetDate'),
-    };
-
-    await submitPayload(payload);
+    });
   }
 
   async function handleStructuredMetricSubmit(result: MetricGoalFormResult) {
@@ -254,8 +193,6 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
     });
   }
 
-  const useStructuredMetricForm = variant === 'performance' || variant === 'period';
-
   function renderFormActions(submitType: 'submit' | { form: string }) {
     return (
       <div className="flex justify-end gap-2">
@@ -267,124 +204,131 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
           form={typeof submitType === 'object' ? submitType.form : undefined}
           type="submit"
         >
-          {getSubmitButtonLabel(pending, isEdit)}
+          {getSubmitButtonLabel(pending)}
         </Button>
       </div>
     );
   }
 
-  function renderRaceForm() {
-    return (
-      <form className="space-y-4" onSubmit={handleRaceSubmit}>
-        <div className="space-y-2">
-          <Label htmlFor="title">Nom de la course</Label>
-          <Input
-            defaultValue={goal?.title ?? ''}
-            id="title"
-            name="title"
-            placeholder="Half Ironman de Versailles"
-            required
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
+  function renderEditForm() {
+    if (variant === 'race') {
+      return (
+        <form className="space-y-4" onSubmit={(e) => void handleRaceSubmit(e)}>
           <div className="space-y-2">
-            <Label htmlFor="targetDate">Date</Label>
+            <Label htmlFor="title">Nom de la course</Label>
             <Input
-              defaultValue={toDateInput(goal?.targetDate)}
-              id="targetDate"
-              name="targetDate"
-              type="date"
+              defaultValue={goal?.title ?? ''}
+              id="title"
+              name="title"
+              placeholder="Half Ironman de Versailles"
               required
             />
           </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="targetDate">Date</Label>
+              <Input
+                defaultValue={toDateInput(goal?.targetDate)}
+                id="targetDate"
+                name="targetDate"
+                type="date"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="location">Lieu</Label>
+              <Input
+                defaultValue={goal?.location ?? ''}
+                id="location"
+                name="location"
+                placeholder="Versailles"
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
-            <Label htmlFor="location">Lieu</Label>
+            <Label>Priorité</Label>
+            <Select value={priority} onValueChange={(v) => setPriority(v ?? NO_PRIORITY)}>
+              <SelectTrigger className="w-full min-w-0">
+                <SelectValue>{getPriorityLabel(priority)}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {priorityOrder.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {priorityLabels[p]} — {priorityDescriptions[p]}
+                  </SelectItem>
+                ))}
+                <SelectItem value={NO_PRIORITY}>Non définie</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="raceFormat">Format / distance</Label>
             <Input
-              defaultValue={goal?.location ?? ''}
-              id="location"
-              name="location"
-              placeholder="Versailles"
+              defaultValue={goal?.raceFormat ?? ''}
+              id="raceFormat"
+              name="raceFormat"
+              placeholder="Half Ironman, 10 km, Marathon…"
             />
           </div>
-        </div>
 
-        <div className="space-y-2">
-          <Label>Priorité</Label>
-          <Select value={priority} onValueChange={(v) => setPriority(v ?? NO_PRIORITY)}>
-            <SelectTrigger className="w-full min-w-0">
-              <SelectValue>{getPriorityLabel(priority)}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {priorityOrder.map((p) => (
-                <SelectItem key={p} value={p}>
-                  {priorityLabels[p]} — {priorityDescriptions[p]}
-                </SelectItem>
-              ))}
-              <SelectItem value={NO_PRIORITY}>Non définie</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+          <div className="space-y-2">
+            <Label htmlFor="targetPerformance">Objectif visé</Label>
+            <Input
+              defaultValue={goal?.targetPerformance ?? ''}
+              id="targetPerformance"
+              name="targetPerformance"
+              placeholder="Sub 5h00, Top 10, Terminer…"
+            />
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="raceFormat">Format / distance</Label>
-          <Input
-            defaultValue={goal?.raceFormat ?? ''}
-            id="raceFormat"
-            name="raceFormat"
-            placeholder="Half Ironman, 10 km, Marathon…"
-          />
-        </div>
+          <div className="space-y-2">
+            <Label htmlFor="notes">Stratégie &amp; remarques</Label>
+            <Textarea defaultValue={goal?.notes ?? ''} id="notes" name="notes" rows={3} />
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="targetPerformance">Objectif visé</Label>
-          <Input
-            defaultValue={goal?.targetPerformance ?? ''}
-            id="targetPerformance"
-            name="targetPerformance"
-            placeholder="Sub 5h00, Top 10, Terminer…"
-          />
-        </div>
+          {error ? (
+            <p className="text-destructive text-sm" role="alert">
+              {error}
+            </p>
+          ) : null}
+          {renderFormActions('submit')}
+        </form>
+      );
+    }
 
-        <div className="space-y-2">
-          <Label htmlFor="notes">Stratégie &amp; remarques</Label>
-          <Textarea defaultValue={goal?.notes ?? ''} id="notes" name="notes" rows={3} />
-        </div>
-
-        {error && (
-          <p className="text-destructive text-sm" role="alert">
-            {error}
+    if (variant === 'performance' || variant === 'period') {
+      return (
+        <>
+          <p className="text-muted-foreground flex items-center gap-2 text-sm">
+            {variant === 'performance' ? (
+              <Timer className="size-4 shrink-0" aria-hidden />
+            ) : (
+              <Calendar className="size-4 shrink-0" aria-hidden />
+            )}
+            {variant === 'performance' ? 'Temps sur distance' : 'Objectif récurrent'}
           </p>
-        )}
-        {renderFormActions('submit')}
-      </form>
-    );
-  }
+          <MetricGoalForm
+            formId={metricFormId}
+            goal={goal}
+            template={variant === 'performance' ? 'performance' : 'period'}
+            onError={setError}
+            onSubmit={(result) => void handleStructuredMetricSubmit(result)}
+          />
+          {error ? (
+            <p className="text-destructive text-sm" role="alert">
+              {error}
+            </p>
+          ) : null}
+          {renderFormActions({ form: metricFormId })}
+        </>
+      );
+    }
 
-  function renderStructuredMetricForm() {
-    const template = variant === 'performance' ? 'performance' : 'period';
     return (
-      <>
-        <MetricGoalForm
-          formId={metricFormId}
-          goal={goal}
-          template={template}
-          onError={setError}
-          onSubmit={handleStructuredMetricSubmit}
-        />
-        {error && (
-          <p className="text-destructive text-sm" role="alert">
-            {error}
-          </p>
-        )}
-        {renderFormActions({ form: metricFormId })}
-      </>
-    );
-  }
-
-  function renderLegacyMetricForm() {
-    return (
-      <form className="space-y-4" onSubmit={handleLegacyMetricSubmit}>
+      <form className="space-y-4" onSubmit={(e) => void handleLegacyMetricSubmit(e)}>
         <div className="space-y-2">
           <Label htmlFor="title">Titre</Label>
           <Input defaultValue={goal?.title ?? ''} id="title" name="title" required />
@@ -471,20 +415,14 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
           <Textarea defaultValue={goal?.notes ?? ''} id="notes" name="notes" rows={2} />
         </div>
 
-        {error && (
+        {error ? (
           <p className="text-destructive text-sm" role="alert">
             {error}
           </p>
-        )}
+        ) : null}
         {renderFormActions('submit')}
       </form>
     );
-  }
-
-  function renderGoalForm() {
-    if (variant === 'race') return renderRaceForm();
-    if (useStructuredMetricForm) return renderStructuredMetricForm();
-    return renderLegacyMetricForm();
   }
 
   return (
@@ -499,56 +437,19 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        {!isEdit && (
-          <div
-            aria-label="Type d'objectif"
-            className="grid grid-cols-1 gap-2 sm:grid-cols-3"
-            role="radiogroup"
-          >
-            {CREATE_VARIANTS.map(({ id, label, icon: Icon }, index) => {
-              const active = variant === id;
-              return (
-                <button
-                  key={id}
-                  ref={(node) => {
-                    variantRefs.current[index] = node;
-                  }}
-                  aria-checked={active}
-                  role="radio"
-                  tabIndex={active ? 0 : -1}
-                  type="button"
-                  className={cn(
-                    'pressable flex min-h-11 items-start gap-2 rounded-lg border px-3 py-2 text-left text-sm',
-                    RADIO_FOCUS,
-                    active
-                      ? 'border-primary/50 bg-primary/5'
-                      : 'border-border/60 hover:border-border',
-                  )}
-                  onClick={() => setVariant(id)}
-                  onKeyDown={(event) => onVariantKeyDown(event, index)}
-                >
-                  <Icon className="text-primary mt-0.5 size-4 shrink-0" aria-hidden />
-                  <span>
-                    <span className="block font-medium">{label}</span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+        {!isEdit ? (
+          <GoalCreateForm
+            error={error}
+            pending={pending}
+            submitLabel="Créer"
+            onCancel={onClose}
+            onSubmit={async (payload) => {
+              await submitPayload(payload);
+            }}
+          />
+        ) : (
+          renderEditForm()
         )}
-
-        {isEdit && variant !== 'race' && variant !== 'legacy' && (
-          <p className="text-muted-foreground flex items-center gap-2 text-sm">
-            {variant === 'performance' ? (
-              <Timer className="size-4 shrink-0" aria-hidden />
-            ) : (
-              <Calendar className="size-4 shrink-0" aria-hidden />
-            )}
-            {variant === 'performance' ? 'Temps sur distance' : 'Objectif récurrent'}
-          </p>
-        )}
-
-        {renderGoalForm()}
       </DialogContent>
     </Dialog>
   );
