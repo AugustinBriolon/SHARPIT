@@ -168,8 +168,10 @@ export function CoachView() {
   ]);
 
   /**
-   * Dropping the attachment is the athlete's choice — context stays until they
-   * clear the chip, independent of whatever they type in the composer.
+   * The chip frames the message being composed, not the whole conversation —
+   * `CoachChat.submit` calls this right after sending, so it clears itself
+   * once the context has actually traveled with a message. Also callable
+   * directly (X on the chip, new conversation, delete) to drop it earlier.
    */
   function detachLatchedContext() {
     if (latchedContextRef.current === null && latchedDiscussIntentKey.current === null) return;

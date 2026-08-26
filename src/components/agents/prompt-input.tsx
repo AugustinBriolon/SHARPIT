@@ -171,7 +171,7 @@ export function PromptInput({
       <div
         ref={measurementRef}
         aria-hidden="true"
-        className="pointer-events-none invisible absolute inset-x-2 top-0 px-2 pt-1.5 text-sm leading-6 [overflow-wrap:break-word] whitespace-pre-wrap"
+        className="pointer-events-none invisible absolute inset-x-2 top-0 px-2 pt-1.5 text-base leading-6 lg:text-sm [overflow-wrap:break-word] whitespace-pre-wrap"
       >
         {currentValue || '\u00a0'}
       </div>
@@ -183,7 +183,9 @@ export function PromptInput({
         rows={minRows}
         value={currentValue}
         {...textareaProps}
-        className="scrollbar-hide text-foreground placeholder:text-muted-foreground/55 block w-full resize-none overflow-y-auto bg-transparent px-2 pt-1.5 text-sm leading-6 outline-none"
+        // 16px below `lg` \u2014 iOS Safari zooms the page on focus for any input
+        // rendering under 16px, and a chat composer is focused constantly.
+        className="scrollbar-hide text-foreground placeholder:text-muted-foreground/55 block w-full resize-none overflow-y-auto bg-transparent px-2 pt-1.5 text-base leading-6 outline-none lg:text-sm"
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={handleKeyDown}
       />

@@ -333,6 +333,7 @@ export function CoachChat({
         const conversation = await createConversation.mutateAsync({ messages: [userMessage] });
         clearCoachInputDraft(conversationId);
         setInput('');
+        if (attachedContext) onDetachContext?.();
         onConversationCreated?.(conversation.id);
       } catch (err) {
         console.error('[coach-chat] create', err);
@@ -343,6 +344,7 @@ export function CoachChat({
     sendMessage({ text: value });
     clearCoachInputDraft(conversationId);
     setInput('');
+    if (attachedContext) onDetachContext?.();
   }
 
   const scrollToLatest = useCallback((behavior: ScrollBehavior) => {
