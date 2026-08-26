@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Check, ChevronDown, ChevronRight, Layers } from 'lucide-react';
 import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
-import { BrickAnalysisPanel } from '@/components/planning/brick/brick-analysis-panel';
 import { activityTypeLabels } from '@/lib/format';
 import { formatPlannedDuration, intensityLabels } from '@/lib/planned-session/sessions';
 import type { BrickLegSummary } from '@/lib/planned-session/brick/brick-sessions';
@@ -20,14 +19,12 @@ import { cn } from '@/lib/utils';
  */
 export function BrickOverviewCard({
   legs,
-  brickGroupId,
   subtitle,
   badge,
   defaultExpanded = false,
   onOpenLeg,
 }: {
   legs: BrickLegSummary[];
-  brickGroupId: string;
   subtitle?: string | null;
   /** Small pill next to the title — e.g. "Point de bascule". */
   badge?: string | null;
@@ -112,9 +109,6 @@ export function BrickOverviewCard({
               <ChevronRight className="text-muted-foreground/50 size-4 shrink-0" aria-hidden />
             </button>
           ))}
-          <div className="px-3 py-2.5">
-            <BrickAnalysisPanel brickGroupId={brickGroupId} />
-          </div>
         </div>
       ) : null}
     </div>

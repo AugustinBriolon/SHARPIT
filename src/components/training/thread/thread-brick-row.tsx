@@ -19,11 +19,9 @@ import { useAppModal } from '@/providers/app-modal-provider';
 export function ThreadBrickRow({
   entries,
   isPivot = false,
-  expanded = false,
 }: {
   entries: ThreadEntry[];
   isPivot?: boolean;
-  expanded?: boolean;
 }) {
   const queryClient = useQueryClient();
   const { openPlannedSession } = useAppModal();
@@ -48,14 +46,11 @@ export function ThreadBrickRow({
 
   const totalMin = legs.reduce((sum, l) => sum + (l.durationMin ?? 0), 0);
   const subtitle = totalMin > 0 ? `${totalMin} min` : null;
-  const brickGroupId = entries.find((e) => e.planned?.brickGroupId)?.planned?.brickGroupId ?? '';
 
   return (
     <div onPointerEnter={() => prefetchPlannedSessionDetail(queryClient, legs[0]!.id)}>
       <BrickOverviewCard
         badge={isPivot ? 'Point de bascule' : null}
-        brickGroupId={brickGroupId}
-        defaultExpanded={expanded}
         legs={legs}
         subtitle={subtitle}
         onOpenLeg={(legId) => openPlannedSession({ sessionId: legId })}

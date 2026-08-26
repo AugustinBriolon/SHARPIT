@@ -212,12 +212,10 @@ export function TodayActionRow({
       {!loading && sessionLines.length > 0 ? (
         <ul className="space-y-2">
           {sessionLines.map((line, index) => {
-            if (line.brickLegs && line.brickLegs.length > 0 && line.brickGroupId) {
+            if (line.brickLegs && line.brickLegs.length > 0) {
               return (
                 <li key={line.id}>
                   <BrickOverviewCard
-                    brickGroupId={line.brickGroupId}
-                    defaultExpanded={index === primaryIndex && !orientation?.showFirmActions}
                     legs={line.brickLegs}
                     subtitle={line.secondary ?? null}
                     onOpenLeg={(legId) => openPlannedSession({ sessionId: legId })}

@@ -176,7 +176,6 @@ export type TodayViewModel = {
       /** Morning choice annotation on this session (post-choice). */
       morningChoiceLabel?: string | null;
       /** Set for a brick line — render one card with each leg behind a dropdown. */
-      brickGroupId?: string | null;
       brickLegs?: BrickLegSummary[] | null;
     }>;
     primaryAction?: PresentationAction | null;

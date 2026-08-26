@@ -80,11 +80,10 @@ function DayGroup({
         <ol className="min-w-0 flex-1 space-y-2">
           {groupThreadDayEntries(day.entries).map((item) => {
             if (item.kind === 'brick') {
-              const expanded = isToday && item.entries.some((e) => e.id === expandedTodayId);
               const isPivot = item.entries.some((e) => e.id === pivotEntryId);
               return (
                 <li key={item.id}>
-                  <ThreadBrickRow entries={item.entries} expanded={expanded} isPivot={isPivot} />
+                  <ThreadBrickRow entries={item.entries} isPivot={isPivot} />
                 </li>
               );
             }
