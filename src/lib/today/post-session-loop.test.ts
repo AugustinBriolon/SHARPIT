@@ -50,7 +50,9 @@ describe('buildPostSessionLoop', () => {
     });
   });
 
-  it('skips ressenti when RPE or feeling already set', () => {
+  it('stays hidden when there is nothing left to say — RPE known, twin not fresh', () => {
+    // Otherwise the card just repeats the "Voir le récit" link the day summary
+    // already shows for this same activity, with no distinct content of its own.
     const loop = buildPostSessionLoop({
       phase: 'RECOVERY_WINDOW',
       overallFresh: false,
@@ -66,8 +68,7 @@ describe('buildPostSessionLoop', () => {
         },
       ],
     });
-    expect(loop?.needsFeeling).toBe(false);
-    expect(loop?.freshnessLine).toBeNull();
+    expect(loop).toBeNull();
   });
 
   it('prefers the substantive session over a demo link orphan on the same day', () => {

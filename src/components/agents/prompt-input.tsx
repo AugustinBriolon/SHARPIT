@@ -109,17 +109,16 @@ export function PromptInput({
       return;
     }
 
-    const baseline = textarea.offsetHeight;
-    const contentHeight = measurement.scrollHeight;
-    const next = Math.min(Math.max(contentHeight, baseline), maxHeight);
-
-    if (next <= baseline) {
-      textarea.style.removeProperty('height');
-      return;
-    }
-
+    // Derived only from the shadow measurement, never from the textarea's own
+    // (possibly already-adjusted) offsetHeight: comparing against a height this
+    // same effect set on a prior run made the result depend on invocation order —
+    // two effect runs for the same value (Strict Mode double-invokes in dev, but
+    // any repeat render can trigger it) would set it, read that height back as
+    // "baseline", see nothing left to grow, and strip the style back to one row.
+    const minHeight = minRows * LINE_HEIGHT_PX;
+    const next = Math.min(Math.max(measurement.scrollHeight, minHeight), maxHeight);
     textarea.style.height = `${next}px`;
-  }, [currentValue, maxRows]);
+  }, [currentValue, maxRows, minRows]);
 
   useLayoutEffect(() => {
     resizeTextarea();

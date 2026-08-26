@@ -57,6 +57,11 @@ export function buildPostSessionLoop(input: PostSessionLoopInput): PostSessionLo
   /** Positive affirmation only — syncing/stale already surface via SnapshotStatusBanner. */
   const freshnessLine = input.overallFresh ? 'Twin à jour — ta séance est intégrée.' : null;
 
+  // Nothing left to prompt for: RPE/feeling are already in, and freshness isn't
+  // worth a banner on its own. Without one of those the card was just repeating
+  // the "Voir le récit" link the day summary already shows for this activity.
+  if (!needsFeeling && !freshnessLine) return null;
+
   return {
     visible: true,
     activityId: latest.id,
