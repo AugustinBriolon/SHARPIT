@@ -78,6 +78,8 @@ export function applyActivityPlannedSessionLinkOptimistic(
           intensity: linkedSession.intensity,
           analysis: linkedSession.analysis,
           analyzedAt: linkedSession.analyzedAt,
+          brickGroupId: linkedSession.brickGroupId,
+          brickOrder: linkedSession.brickOrder,
         },
       } as ClientActivity;
     }

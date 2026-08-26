@@ -40,6 +40,8 @@ describe('demo-session-link-overlay', () => {
       intensity: SessionIntensity.ENDURANCE,
       analysis: null,
       analyzedAt: null,
+      brickGroupId: null,
+      brickOrder: null,
     };
 
     const summary = resolveDemoLinkedPlannedSessionForActivity('act-demo', server, [], LINKS);

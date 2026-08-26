@@ -52,6 +52,8 @@ export function plannedSessionSummaryFromClient(
     | 'intensity'
     | 'analysis'
     | 'analyzedAt'
+    | 'brickGroupId'
+    | 'brickOrder'
   >,
 ): NonNullable<ActivityDetail['plannedSession']> {
   return {
@@ -64,6 +66,8 @@ export function plannedSessionSummaryFromClient(
     intensity: session.intensity,
     analysis: session.analysis,
     analyzedAt: session.analyzedAt ? toDate(session.analyzedAt) : null,
+    brickGroupId: session.brickGroupId,
+    brickOrder: session.brickOrder,
   };
 }
 
@@ -81,6 +85,9 @@ function plannedSessionSummaryFromSnapshot(
     intensity: snapshot.intensity ?? null,
     analysis: null,
     analyzedAt: null,
+    // Demo snapshots never model a brick — nothing to overlay.
+    brickGroupId: null,
+    brickOrder: null,
   };
 }
 
