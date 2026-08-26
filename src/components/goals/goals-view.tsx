@@ -68,7 +68,7 @@ export function GoalsView({ embedded = false }: { embedded?: boolean } = {}) {
   const goalsQuery = useGoals();
 
   if (goalsQuery.isPending) {
-    return <GoalsViewSkeleton />;
+    return <GoalsViewSkeleton embedded={embedded} />;
   }
 
   if (goalsQuery.isError) {

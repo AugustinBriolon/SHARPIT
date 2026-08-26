@@ -83,9 +83,9 @@ export const priorityDescriptions: Record<GoalPriority, string> = {
 
 export const priorityOrder: GoalPriority[] = [GoalPriority.A, GoalPriority.B, GoalPriority.C];
 
-/** Tokenized badge classes — never inline hex. */
+/** Instrument annotation classes — A uses primary ink; never risk/caution fills. */
 export const priorityBadgeClass: Record<GoalPriority, string> = {
-  A: 'bg-signal-risk/15 text-signal-risk',
-  B: 'bg-signal-caution/15 text-signal-caution',
-  C: 'bg-signal-neutral/15 text-signal-neutral',
+  A: 'text-primary',
+  B: 'text-muted-foreground',
+  C: 'text-muted-foreground',
 };

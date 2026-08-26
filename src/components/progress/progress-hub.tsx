@@ -110,7 +110,7 @@ export function ProgressHub({ basePath = '/progress' }: { basePath?: string }) {
             shrank on every switch away from "Objectifs". */}
         <div className="flex min-h-11 items-start justify-between gap-4 lg:min-h-9">
           <h1 className="text-page-title">Progression</h1>
-          {section === 'goals' ? <GoalsToolbar /> : null}
+          {section === 'goals' && <GoalsToolbar />}
         </div>
 
         <nav

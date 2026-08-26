@@ -1,21 +1,36 @@
 'use client';
 
 import { GoalHorizon, GoalKind, GoalPriority } from '@prisma/client';
-import { Calendar, MapPin, Pencil, Target, Trash2, Trophy } from 'lucide-react';
+import {
+  Calendar,
+  CheckCircle2,
+  MapPin,
+  MoreHorizontal,
+  Pencil,
+  RotateCcw,
+  Trash2,
+} from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { GoalForEdit } from '@/components/goals/dialogs/goal-dialog';
 import { Button } from '@/components/ui/button';
 import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardTitle } from '@/components/ui/card';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   computeGoalProgress,
   daysUntil,
   formatRemaining,
   horizonLabels,
-  priorityBadgeClass,
+  priorityDescriptions,
   priorityLabels,
 } from '@/lib/goals/goals';
 import {
@@ -31,12 +46,14 @@ const GoalDialog = dynamic(
   { ssr: false },
 );
 
-function metricGoalSubtitle(goal: GoalItem, subtitle: string | null): React.ReactNode {
+function metricGoalSubtitle(goal: GoalItem, subtitle: string | null): ReactNode {
   if (subtitle) {
-    return <p className="text-muted-foreground mt-0.5 text-xs">{subtitle}</p>;
+    return <CardDescription className="mt-0.5 text-xs">{subtitle}</CardDescription>;
   }
   if (goal.horizon) {
-    return <p className="text-muted-foreground mt-0.5 text-xs">{horizonLabels[goal.horizon]}</p>;
+    return (
+      <CardDescription className="mt-0.5 text-xs">{horizonLabels[goal.horizon]}</CardDescription>
+    );
   }
   return null;
 }
@@ -91,152 +108,224 @@ function formatValue(value: number | null, unit: string | null, metricKey?: stri
   return formatGoalDisplayValue(value, unit, config);
 }
 
-function PriorityBadge({ priority }: { priority: GoalPriority }) {
-  return (
-    <span
-      className={cn(
-        'text-label inline-flex items-center rounded-full px-2 py-0.5 font-semibold',
-        priorityBadgeClass[priority],
-      )}
-    >
-      {priorityLabels[priority]}
-    </span>
-  );
+function formatShortDate(value: string | Date): string {
+  return new Intl.DateTimeFormat('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(value));
 }
 
-export function RaceCard({ goal }: { goal: GoalItem }) {
-  const { remove } = useGoalMutations();
-  const [editing, setEditing] = useState(false);
-  const { confirm, dialog } = useConfirmDialog();
-  const date = goal.targetDate ? new Date(goal.targetDate) : null;
-  const days = daysUntil(date);
-  const dateLabel = date
-    ? new Intl.DateTimeFormat('fr-FR', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      }).format(date)
-    : null;
+function formatLongDate(value: string | Date): string {
+  return new Intl.DateTimeFormat('fr-FR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(value));
+}
 
-  async function handleDelete() {
-    const confirmed = await confirm({
-      title: `Supprimer « ${goal.title} » ?`,
-      description: 'Cette action est définitive.',
-      confirmLabel: 'Supprimer',
-      variant: 'destructive',
-    });
-    if (!confirmed) return;
-    remove.mutate(goal.id);
-  }
+function countdownLabel(days: number): string {
+  if (days > 0) return `J-${days}`;
+  if (days < 0) return `J+${Math.abs(days)}`;
+  return 'Jour J';
+}
 
-  const urgent = days != null && days <= 14 && days >= 0;
+function deadlineCopy(days: number): string {
+  if (days < 0)
+    return `Échéance dépassée de ${Math.abs(days)} jour${Math.abs(days) > 1 ? 's' : ''}`;
+  if (days === 0) return 'Échéance aujourd’hui';
+  if (days === 1) return 'Échéance demain';
+  return `Échéance dans ${days} jours`;
+}
 
+function taperWindowCopy(days: number | null): string | null {
+  if (days == null || days < 0 || days > 14) return null;
+  if (days === 0) return 'Jour de course';
+  return 'Fenêtre d’affûtage';
+}
+
+/** Lab annotation — rank in primary ink for A, quieter for B/C. */
+function PriorityAnnotation({ priority }: { priority: GoalPriority }) {
   return (
-    <>
-      <Card
+    <p className="text-muted-foreground text-xs leading-snug">
+      <span
         className={cn(
-          urgent
-            ? 'border-signal-caution/40 bg-signal-caution/10'
-            : 'border-primary/20 bg-primary/5',
-          goal.achieved && 'opacity-60',
+          'font-medium',
+          priority === GoalPriority.A ? 'text-primary' : 'text-foreground',
         )}
       >
-        <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="min-w-0 space-y-1.5">
-              <div className="flex flex-wrap items-center gap-2">
-                {goal.priority && <PriorityBadge priority={goal.priority} />}
-                {goal.raceFormat && (
-                  <span className="bg-muted/70 text-muted-foreground text-label rounded-full px-2 py-0.5">
-                    {goal.raceFormat}
-                  </span>
-                )}
-              </div>
-              <h3 className="text-xl font-semibold">{goal.title}</h3>
-              <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                {dateLabel && (
-                  <span className="flex items-center gap-1 capitalize">
-                    <Calendar className="size-3.5" aria-hidden />
-                    {dateLabel}
-                  </span>
-                )}
-                {goal.location && (
-                  <span className="flex items-center gap-1">
-                    <MapPin className="size-3.5" aria-hidden />
-                    {goal.location}
-                  </span>
-                )}
-              </div>
-            </div>
-            {days != null && (
-              <p
-                className={cn(
-                  'font-mono text-3xl font-semibold',
-                  urgent ? 'text-signal-caution' : 'text-primary',
-                )}
-              >
-                {days >= 0 ? `J-${days}` : `J+${Math.abs(days)}`}
-              </p>
-            )}
-          </div>
-
-          {goal.targetPerformance && (
-            <div className="border-primary/20 bg-background/60 flex items-center gap-2 rounded-lg border p-2.5">
-              <Trophy className="text-primary size-4 shrink-0" aria-hidden />
-              <div>
-                <p className="text-label">Objectif visé</p>
-                <p className="text-sm font-medium">{goal.targetPerformance}</p>
-              </div>
-            </div>
-          )}
-
-          {goal.notes && (
-            <p className="text-muted-foreground text-sm whitespace-pre-wrap">{goal.notes}</p>
-          )}
-
-          <div className="border-border/50 flex items-center justify-end gap-1 border-t pt-3">
-            <Button
-              className="text-muted-foreground"
-              variant="ghost"
-              onClick={() => setEditing(true)}
-            >
-              <Pencil className="size-3.5" aria-hidden /> Modifier
-            </Button>
-            <Button
-              className="text-muted-foreground hover:text-destructive"
-              disabled={remove.isPending}
-              variant="ghost"
-              onClick={handleDelete}
-            >
-              <Trash2 className="size-3.5" aria-hidden /> Supprimer
-            </Button>
-            <DiscussWithCoachButton
-              className="ml-auto"
-              label="Discuter"
-              size="sm"
-              target={{ kind: 'goal', goalId: goal.id }}
-              variant="ghost"
-            />
-          </div>
-        </CardContent>
-      </Card>
-      {editing && <GoalDialog goal={toEdit(goal)} onClose={() => setEditing(false)} />}
-      {dialog}
-    </>
+        {priorityLabels[priority]}
+      </span>
+      <span aria-hidden> — </span>
+      {priorityDescriptions[priority]}
+    </p>
   );
 }
 
-export function MetricGoalCard({ goal }: { goal: GoalItem }) {
+function GoalProgressTrack({
+  progress,
+  remaining,
+}: {
+  progress: number;
+  remaining: string | null;
+}) {
+  const clamped = Math.max(0, Math.min(100, progress));
+  return (
+    <div className="space-y-1.5">
+      <div
+        aria-label="Progression vers la cible"
+        aria-valuemax={100}
+        aria-valuemin={0}
+        aria-valuenow={clamped}
+        aria-valuetext={`${clamped} %${remaining ? ` · ${remaining}` : ''}`}
+        className="bg-primary/15 h-1 w-full overflow-hidden rounded-full"
+        role="progressbar"
+      >
+        <div
+          className="bg-primary h-full rounded-full transition-[width] duration-300 ease-out"
+          style={{ width: `${clamped}%` }}
+        />
+      </div>
+      <div className="text-muted-foreground flex justify-between text-xs tabular-nums">
+        <span className="text-primary font-medium">{clamped} %</span>
+        {remaining ? <span>{remaining}</span> : null}
+      </div>
+    </div>
+  );
+}
+
+function AchievedStatus({
+  lastAchievedAt,
+  validatingActivityId,
+  showValidatingLink,
+}: {
+  lastAchievedAt?: string | Date | null;
+  validatingActivityId?: string | null;
+  showValidatingLink?: boolean;
+}) {
+  return (
+    <div className="border-primary space-y-1 border-l pl-3 text-xs">
+      <p className="text-primary font-medium">
+        Objectif atteint
+        {lastAchievedAt ? (
+          <span className="text-muted-foreground font-normal">
+            {' '}
+            · {formatShortDate(lastAchievedAt)}
+          </span>
+        ) : null}
+      </p>
+      {showValidatingLink && validatingActivityId && (
+        <Link
+          className="text-primary font-medium hover:underline"
+          href={`/training/${validatingActivityId}`}
+        >
+          Voir la séance validante →
+        </Link>
+      )}
+    </div>
+  );
+}
+
+function GoalActionsMenu({
+  achieved,
+  onToggleAchieved,
+  updatePending,
+  onEdit,
+  onDelete,
+  deletePending,
+}: {
+  achieved: boolean;
+  onToggleAchieved: () => void;
+  updatePending: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+  deletePending: boolean;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        aria-label="Actions de l’objectif"
+        className={cn(
+          'text-muted-foreground hover:text-foreground inline-flex size-9 items-center justify-center rounded-lg',
+          'focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
+        )}
+      >
+        <MoreHorizontal className="size-4" aria-hidden />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-44">
+        <DropdownMenuItem
+          className="cursor-pointer gap-2"
+          disabled={updatePending}
+          onClick={onToggleAchieved}
+        >
+          {achieved ? (
+            <RotateCcw className="size-3.5" aria-hidden />
+          ) : (
+            <CheckCircle2 className="size-3.5" aria-hidden />
+          )}
+          {achieved ? 'Rouvrir' : 'Marquer atteint'}
+        </DropdownMenuItem>
+        <DropdownMenuItem className="cursor-pointer gap-2" onClick={onEdit}>
+          <Pencil className="size-3.5" aria-hidden />
+          Modifier
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="cursor-pointer gap-2"
+          disabled={deletePending}
+          variant="destructive"
+          onClick={onDelete}
+        >
+          <Trash2 className="size-3.5" aria-hidden />
+          Supprimer
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function GoalCardFooter({
+  goalId,
+  achieved,
+  onToggleAchieved,
+  updatePending,
+  onEdit,
+  onDelete,
+  deletePending,
+}: {
+  goalId: string;
+  achieved: boolean;
+  onToggleAchieved: () => void;
+  updatePending: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+  deletePending: boolean;
+}) {
+  return (
+    <CardFooter className="justify-between gap-2">
+      <DiscussWithCoachButton
+        label="Discuter"
+        size="sm"
+        target={{ kind: 'goal', goalId }}
+        variant="ghost"
+      />
+      <GoalActionsMenu
+        achieved={achieved}
+        deletePending={deletePending}
+        updatePending={updatePending}
+        onDelete={onDelete}
+        onEdit={onEdit}
+        onToggleAchieved={onToggleAchieved}
+      />
+    </CardFooter>
+  );
+}
+
+function useGoalCardControls(goal: GoalItem) {
   const { update, remove } = useGoalMutations();
   const [editing, setEditing] = useState(false);
   const { confirm, dialog } = useConfirmDialog();
-  const metricConfig = parseGoalMetricConfig(goal.metricKey);
-  const subtitle = describeMetricGoal(metricConfig, goal.targetDate);
-  const progress = computeGoalProgress(goal);
-  const remaining = formatRemaining(goal);
-  const days = daysUntil(goal.targetDate ? new Date(goal.targetDate) : null);
-  const isAutoTracked = Boolean(metricConfig);
 
   async function handleDelete() {
     const confirmed = await confirm({
@@ -253,139 +342,190 @@ export function MetricGoalCard({ goal }: { goal: GoalItem }) {
     update.mutate({ id: goal.id, data: { achieved: !goal.achieved } });
   }
 
+  return {
+    editing,
+    setEditing,
+    dialog,
+    handleDelete,
+    toggleAchieved,
+    updatePending: update.isPending,
+    deletePending: remove.isPending,
+  };
+}
+
+export function RaceCard({ goal }: { goal: GoalItem }) {
+  const {
+    editing,
+    setEditing,
+    dialog,
+    handleDelete,
+    toggleAchieved,
+    updatePending,
+    deletePending,
+  } = useGoalCardControls(goal);
+  const date = goal.targetDate ? new Date(goal.targetDate) : null;
+  const days = daysUntil(date);
+  const dateLabel = date ? formatLongDate(date) : null;
+  const taperCopy = taperWindowCopy(days);
+  const metricConfig = parseGoalMetricConfig(goal.metricKey);
+
   return (
     <>
-      <Card className={goal.achieved ? 'opacity-60' : undefined}>
-        <CardContent className="space-y-3 py-5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h3 className="flex items-center gap-1.5 font-medium">
-                <Target className="text-primary size-3.5 shrink-0" aria-hidden />
-                {goal.title}
-              </h3>
-              {metricGoalSubtitle(goal, subtitle)}
+      <Card>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 space-y-1.5">
+              {goal.priority ? <PriorityAnnotation priority={goal.priority} /> : null}
+              {goal.raceFormat ? (
+                <p className="text-primary/80 text-label">{goal.raceFormat}</p>
+              ) : null}
+              <CardTitle>{goal.title}</CardTitle>
+              <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                {dateLabel ? (
+                  <span className="flex items-center gap-1 capitalize">
+                    <Calendar className="text-primary size-3.5" aria-hidden />
+                    {dateLabel}
+                  </span>
+                ) : null}
+                {goal.location ? (
+                  <span className="flex items-center gap-1">
+                    <MapPin className="text-primary size-3.5" aria-hidden />
+                    {goal.location}
+                  </span>
+                ) : null}
+              </div>
+              {taperCopy ? <p className="text-primary text-xs font-medium">{taperCopy}</p> : null}
             </div>
-            <button
-              className="bg-muted/60 text-muted-foreground hover:text-primary focus-visible:ring-primary/35 min-h-11 shrink-0 rounded-full px-2.5 py-1 text-xs focus-visible:ring-2 focus-visible:outline-hidden lg:min-h-9"
-              disabled={update.isPending}
-              type="button"
-              onClick={toggleAchieved}
-            >
-              {goal.achieved ? 'Rouvrir' : 'Marquer atteint'}
-            </button>
+            {days != null ? (
+              <p className="text-data text-primary font-mono text-3xl font-semibold tabular-nums">
+                {countdownLabel(days)}
+              </p>
+            ) : null}
           </div>
 
-          {goal.achieved && isAutoTracked && (
-            <div className="border-primary/20 bg-primary/5 flex flex-col gap-1 rounded-lg border p-2.5 text-xs">
-              <p className="text-primary flex items-center gap-1.5 font-medium">
-                <Trophy className="size-3.5" aria-hidden />
-                Objectif atteint
-                {goal.lastAchievedAt && (
-                  <span className="text-muted-foreground font-normal">
-                    ·{' '}
-                    {new Intl.DateTimeFormat('fr-FR', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    }).format(new Date(goal.lastAchievedAt))}
-                  </span>
-                )}
-              </p>
-              {goal.validatingActivityId && metricConfig?.template === 'performance' && (
-                <Link
-                  className="text-primary font-medium hover:underline"
-                  href={`/training/${goal.validatingActivityId}`}
-                >
-                  Voir la séance validante →
-                </Link>
-              )}
+          {goal.targetPerformance ? (
+            <div className="bg-primary/5 rounded-analysis px-3 py-2">
+              <p className="text-label text-primary">Objectif visé</p>
+              <p className="text-sm font-medium">{goal.targetPerformance}</p>
             </div>
-          )}
+          ) : null}
 
-          {progress != null && !goal.achieved && (
-            <div className="space-y-1.5">
-              <div className="bg-muted h-2 overflow-hidden rounded-full">
-                <div
-                  className="bg-primary h-full rounded-full transition-[width]"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              <div className="text-muted-foreground flex justify-between text-xs">
-                <span>{progress}%</span>
-                {remaining && <span>{remaining}</span>}
-              </div>
-            </div>
-          )}
+          {goal.achieved ? (
+            <AchievedStatus
+              lastAchievedAt={goal.lastAchievedAt}
+              showValidatingLink={metricConfig?.template === 'performance'}
+              validatingActivityId={goal.validatingActivityId}
+            />
+          ) : null}
+
+          {goal.notes ? (
+            <p className="text-muted-foreground line-clamp-3 text-sm whitespace-pre-wrap">
+              {goal.notes}
+            </p>
+          ) : null}
+        </CardContent>
+        <GoalCardFooter
+          achieved={goal.achieved}
+          deletePending={deletePending}
+          goalId={goal.id}
+          updatePending={updatePending}
+          onDelete={handleDelete}
+          onEdit={() => setEditing(true)}
+          onToggleAchieved={toggleAchieved}
+        />
+      </Card>
+      {editing ? <GoalDialog goal={toEdit(goal)} onClose={() => setEditing(false)} /> : null}
+      {dialog}
+    </>
+  );
+}
+
+export function MetricGoalCard({ goal }: { goal: GoalItem }) {
+  const {
+    editing,
+    setEditing,
+    dialog,
+    handleDelete,
+    toggleAchieved,
+    updatePending,
+    deletePending,
+  } = useGoalCardControls(goal);
+  const metricConfig = parseGoalMetricConfig(goal.metricKey);
+  const subtitle = describeMetricGoal(metricConfig, goal.targetDate);
+  const progress = computeGoalProgress(goal);
+  const remaining = formatRemaining(goal);
+  const days = daysUntil(goal.targetDate ? new Date(goal.targetDate) : null);
+  const isAutoTracked = Boolean(metricConfig);
+
+  return (
+    <>
+      <Card>
+        <CardContent className="space-y-3">
+          <div className="min-w-0">
+            <CardTitle>{goal.title}</CardTitle>
+            {metricGoalSubtitle(goal, subtitle)}
+          </div>
+
+          {goal.achieved ? (
+            <AchievedStatus
+              lastAchievedAt={goal.lastAchievedAt}
+              showValidatingLink={isAutoTracked && metricConfig?.template === 'performance'}
+              validatingActivityId={goal.validatingActivityId}
+            />
+          ) : null}
+
+          {progress != null && !goal.achieved ? (
+            <GoalProgressTrack progress={progress} remaining={remaining} />
+          ) : null}
 
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
               {metricConfig?.template === 'performance' ? 'Meilleur' : 'Actuel'}{' '}
-              <span className="text-foreground font-mono">
+              <span className="text-foreground font-mono tabular-nums">
                 {formatValue(goal.currentValue, goal.unit, goal.metricKey)}
               </span>
             </span>
             <span className="text-muted-foreground">
               Cible{' '}
-              <span className="text-primary font-mono">
+              <span className="text-primary font-mono tabular-nums">
                 {formatValue(goal.targetValue, goal.unit, goal.metricKey)}
               </span>
             </span>
           </div>
 
-          {isAutoTracked && (
+          {isAutoTracked ? (
             <p className="text-muted-foreground text-xs">
               Progression calculée depuis tes activités synchronisées.
             </p>
-          )}
+          ) : null}
 
-          {days != null && !isAutoTracked && goal.targetDate && (
+          {days != null && !isAutoTracked && goal.targetDate ? (
+            <p className="text-muted-foreground text-xs">{deadlineCopy(days)}</p>
+          ) : null}
+
+          {isAutoTracked && goal.targetDate ? (
             <p className="text-muted-foreground text-xs">
-              Échéance dans {days} jour{days > 1 ? 's' : ''}
+              Jusqu&apos;au {formatLongDate(goal.targetDate)}
             </p>
-          )}
+          ) : null}
 
-          {isAutoTracked && goal.targetDate && (
-            <p className="text-muted-foreground text-xs">
-              Jusqu&apos;au{' '}
-              {new Intl.DateTimeFormat('fr-FR', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              }).format(new Date(goal.targetDate))}
+          {goal.notes ? (
+            <p className="text-muted-foreground line-clamp-3 text-xs whitespace-pre-wrap">
+              {goal.notes}
             </p>
-          )}
-
-          {goal.notes && (
-            <p className="text-muted-foreground text-xs whitespace-pre-wrap">{goal.notes}</p>
-          )}
-
-          <div className="border-border/50 flex items-center justify-end gap-1 border-t pt-3">
-            <Button
-              className="text-muted-foreground"
-              variant="ghost"
-              onClick={() => setEditing(true)}
-            >
-              <Pencil className="size-3.5" aria-hidden /> Modifier
-            </Button>
-            <Button
-              className="text-muted-foreground hover:text-destructive"
-              disabled={remove.isPending}
-              variant="ghost"
-              onClick={handleDelete}
-            >
-              <Trash2 className="size-3.5" aria-hidden /> Supprimer
-            </Button>
-            <DiscussWithCoachButton
-              className="ml-auto"
-              label="Discuter"
-              size="sm"
-              target={{ kind: 'goal', goalId: goal.id }}
-              variant="ghost"
-            />
-          </div>
+          ) : null}
         </CardContent>
+        <GoalCardFooter
+          achieved={goal.achieved}
+          deletePending={deletePending}
+          goalId={goal.id}
+          updatePending={updatePending}
+          onDelete={handleDelete}
+          onEdit={() => setEditing(true)}
+          onToggleAchieved={toggleAchieved}
+        />
       </Card>
-      {editing && <GoalDialog goal={toEdit(goal)} onClose={() => setEditing(false)} />}
+      {editing ? <GoalDialog goal={toEdit(goal)} onClose={() => setEditing(false)} /> : null}
       {dialog}
     </>
   );
@@ -395,8 +535,10 @@ export function GoalsToolbar() {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button onClick={() => setOpen(true)}>Nouvel objectif</Button>
-      {open && <GoalDialog onClose={() => setOpen(false)} />}
+      <Button type="button" onClick={() => setOpen(true)}>
+        Nouvel objectif
+      </Button>
+      {open ? <GoalDialog onClose={() => setOpen(false)} /> : null}
     </>
   );
 }

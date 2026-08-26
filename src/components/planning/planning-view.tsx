@@ -350,7 +350,6 @@ export function PlanningView({
         })}
       </div>
 
-
       {showPlannedDialog && !isLoading && (
         <PlannedSessionDialog
           defaultDate={isCreateDialog ? createDefaultDate : undefined}
