@@ -18,9 +18,12 @@ export function ExpertModeBadge({ className }: { className?: string }) {
 
   return (
     <Badge
-      className={cn('border-primary/30 text-primary shrink-0', className)}
       render={<Link href="/settings/appearance/expert-mode" />}
       variant="outline"
+      className={cn(
+        'border-primary/30 text-primary focus-visible:ring-ring shrink-0 focus-visible:ring-2 focus-visible:outline-hidden',
+        className,
+      )}
     >
       <Microscope aria-hidden />
       Mode Expert

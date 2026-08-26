@@ -3,6 +3,7 @@
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import { fetchNutritionPresentation } from '@/lib/query/presentation-fetchers';
 import { formatRemainingCalories } from '@/lib/nutrition/goals-progress';
@@ -140,6 +141,15 @@ function budgetCaptionClass(remaining: number | null): string {
   return 'text-muted-foreground';
 }
 
+/** Connected journal, nothing logged yet — show the card shape at zero, not empty copy. */
+const ZERO_DAY = {
+  calories: 0,
+  protein: 0,
+  carbohydrates: 0,
+  fat: 0,
+  goalsProgress: null,
+} as const;
+
 export function TodayNutritionCard() {
   const trainingDayId = format(new Date(), 'yyyy-MM-dd');
 
@@ -150,24 +160,28 @@ export function TodayNutritionCard() {
   });
 
   const today = data?.today;
-  const goals = today?.goalsProgress;
+  const disconnected = !isPending && !isError && data != null && !data.connected;
+  /* Keep the card when connected with nothing logged: zeros beat “rien aujourd’hui”,
+     and the section stops jumping once the first meal lands. */
+  const day = today ?? (!isPending && !isError && data?.connected ? ZERO_DAY : null);
+  const goals = day?.goalsProgress ?? null;
+  const hasMacroIntake = day != null && day.protein + day.carbohydrates + day.fat > 0;
 
-  /* The card stays even with nothing logged. Disappearing on an empty day taught
-     the wrong lesson twice over: the section moved every time the page was
-     opened before lunch, and the one moment worth prompting a log — before
-     anything is eaten — was the moment the prompt was hidden. */
-  const empty = !isPending && !isError && (!data?.connected || !today);
-  const emptyCopy = data?.connected
-    ? 'Rien enregistré aujourd’hui'
-    : 'Journal alimentaire non connecté';
-  const emptyCta = data?.connected ? 'Ouvrir le journal' : 'Connecter';
+  let intakeTrack: ReactNode = null;
+  if (day && goals?.calories.pct != null) {
+    intakeTrack = <CalorieTrack pct={goals.calories.pct} remaining={goals.calories.remaining} />;
+  } else if (day && !goals && hasMacroIntake) {
+    intakeTrack = <MacroStackShare carbs={day.carbohydrates} fat={day.fat} protein={day.protein} />;
+  } else if (day && !goals) {
+    intakeTrack = <CalorieTrack pct={0} remaining={null} />;
+  }
 
   const errorCopy = 'Journal indisponible pour le moment';
   const errorCta = 'Ouvrir le journal';
 
   const linkTitle = (() => {
     if (isError) return 'Ouvrir le journal alimentaire';
-    if (empty && !data?.connected) return 'Connecter le journal alimentaire';
+    if (disconnected) return 'Connecter le journal alimentaire';
     return 'Voir le journal alimentaire';
   })();
 
@@ -187,7 +201,7 @@ export function TodayNutritionCard() {
           <div className="space-y-2">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                {today ? (
+                {day ? (
                   <p className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
                     <span
                       className={cn(
@@ -195,7 +209,7 @@ export function TodayNutritionCard() {
                         CALORIE_RING.text,
                       )}
                     >
-                      {today.calories.toLocaleString('fr-FR')}
+                      {day.calories.toLocaleString('fr-FR')}
                     </span>
                     <span className="text-muted-foreground text-xs">
                       kcal
@@ -203,8 +217,10 @@ export function TodayNutritionCard() {
                     </span>
                   </p>
                 ) : null}
-                {empty ? (
-                  <p className="text-muted-foreground text-sm leading-snug">{emptyCopy}</p>
+                {disconnected ? (
+                  <p className="text-muted-foreground text-sm leading-snug">
+                    Journal alimentaire non connecté
+                  </p>
                 ) : null}
                 {isError ? (
                   <p className="text-muted-foreground text-sm leading-snug">{errorCopy}</p>
@@ -212,7 +228,7 @@ export function TodayNutritionCard() {
                 {isPending ? (
                   <SkeletonDataValue heightClassName="h-7" widthClassName="w-24" />
                 ) : null}
-                {today && goals ? (
+                {day && goals ? (
                   <p
                     className={cn(
                       'text-data mt-1 text-[0.6875rem] tabular-nums',
@@ -223,7 +239,7 @@ export function TodayNutritionCard() {
                   </p>
                 ) : null}
               </div>
-              {!empty && !isError ? (
+              {day && !isError ? (
                 <span
                   className="text-muted-foreground/70 text-data mt-1 shrink-0 text-xs tracking-wider transition-transform duration-150 ease-[cubic-bezier(0.2,0,0,1)] group-hover:translate-x-0.5"
                   aria-hidden
@@ -233,39 +249,32 @@ export function TodayNutritionCard() {
               ) : null}
             </div>
 
-            {today && goals?.calories.pct != null ? (
-              <CalorieTrack pct={goals.calories.pct} remaining={goals.calories.remaining} />
-            ) : null}
-            {today && !goals ? (
-              <MacroStackShare
-                carbs={today.carbohydrates}
-                fat={today.fat}
-                protein={today.protein}
-              />
-            ) : null}
+            {intakeTrack}
             {isPending ? (
               <div className="bg-muted h-1.5 w-full animate-pulse rounded-full" />
             ) : null}
-            {empty || isError ? <div className="bg-muted/40 h-1.5 w-full rounded-full" /> : null}
+            {disconnected || isError ? (
+              <div className="bg-muted/40 h-1.5 w-full rounded-full" />
+            ) : null}
           </div>
 
-          {today ? (
+          {day ? (
             <div className="border-border/50 grid grid-cols-3 gap-2.5 border-t pt-2.5">
               <MacroCell
                 goal={goals?.protein.goal ?? null}
-                grams={today.protein}
+                grams={day.protein}
                 kind="protein"
                 pct={goals?.protein.pct ?? null}
               />
               <MacroCell
                 goal={goals?.carbohydrates.goal ?? null}
-                grams={today.carbohydrates}
+                grams={day.carbohydrates}
                 kind="carbs"
                 pct={goals?.carbohydrates.pct ?? null}
               />
               <MacroCell
                 goal={goals?.fat.goal ?? null}
-                grams={today.fat}
+                grams={day.fat}
                 kind="fat"
                 pct={goals?.fat.pct ?? null}
               />
@@ -284,9 +293,9 @@ export function TodayNutritionCard() {
             </div>
           ) : null}
 
-          {empty ? (
+          {disconnected ? (
             <div className="border-border/50 flex items-end justify-between gap-3 border-t pt-2.5">
-              <p className="text-muted-foreground text-xs leading-snug">{emptyCta}</p>
+              <p className="text-muted-foreground text-xs leading-snug">Connecter</p>
               <span className="text-primary text-xs font-medium">→</span>
             </div>
           ) : null}

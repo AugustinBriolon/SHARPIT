@@ -13,11 +13,11 @@ function render() {
 
 /**
  * The card used to disappear on a day with nothing logged, which moved the whole
- * foot of the page every morning and hid the prompt at the one moment it was
- * worth showing — before anything had been eaten.
+ * foot of the page every morning. Connected + empty now shows zeros so the shape
+ * stays put and the journal is one tap away.
  */
 describe('TodayNutritionCard', () => {
-  it('stays on screen with nothing logged, and says so', () => {
+  it('stays on screen with zeros when nothing is logged', () => {
     useQuery.mockReturnValue({
       data: { connected: true, today: null },
       isPending: false,
@@ -26,8 +26,13 @@ describe('TodayNutritionCard', () => {
     const html = render();
 
     expect(html).toContain('Nutrition');
-    expect(html).toContain('Rien enregistré aujourd’hui');
-    expect(html).toContain('Ouvrir le journal');
+    expect(html).toContain('0');
+    expect(html).toContain('kcal');
+    expect(html).toContain('Protéines');
+    expect(html).toContain('Glucides');
+    expect(html).toContain('Lipides');
+    expect(html).not.toContain('Rien enregistré');
+    expect(html).not.toContain('Ouvrir le journal');
   });
 
   it('offers the connection when there is no journal behind it', () => {

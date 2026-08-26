@@ -20,14 +20,16 @@ export function getDemoDisplayModeOverride(): DisplayMode | null {
 }
 
 /**
- * Segmented Essentiel / Expert control.
- * In demo, persists locally so Settings stay read-only.
+ * Demo-only Essentiel / Expert switch.
+ * Real athletes change density in Settings; demo keeps Settings read-only and
+ * persists the override in localStorage via the display-mode provider.
+ * Renders nothing outside demo — do not mount on production athlete surfaces.
  */
 export function ExpertModeToggle({ className }: { className?: string }) {
   const { mode, setMode, isResolved } = useDisplayMode();
   const isDemo = useIsDemoMode();
 
-  if (!isResolved && !isDemo) return null;
+  if (!isDemo || !isResolved) return null;
 
   const isExpert = mode === 'expert';
 
@@ -36,14 +38,14 @@ export function ExpertModeToggle({ className }: { className?: string }) {
       aria-label="Densité d'affichage"
       role="group"
       className={cn(
-        'border-analysis-border/70 bg-background/80 flex items-center gap-0.5 rounded-full border p-0.5',
+        'border-analysis-border/70 bg-analysis-surface-alt/80 flex items-center gap-0.5 rounded-lg border p-0.5',
         className,
       )}
     >
       <ToggleSegment active={!isExpert} label="Essentiel" onClick={() => setMode('essential')} />
       <ToggleSegment
         active={isExpert}
-        icon={<Microscope className="size-3" aria-hidden />}
+        icon={<Microscope className="size-3.5" aria-hidden />}
         label="Expert"
         onClick={() => setMode('expert')}
       />
@@ -67,8 +69,12 @@ function ToggleSegment({
       aria-pressed={active}
       type="button"
       className={cn(
-        'inline-flex min-h-8 items-center gap-1 rounded-full px-2.5 text-[11px] font-medium tracking-wide transition-[background-color,color] duration-150 ease-out motion-reduce:transition-none',
-        active ? 'bg-primary/12 text-primary' : 'text-muted-foreground hover:text-foreground',
+        'text-label focus-visible:ring-ring inline-flex min-h-9 items-center gap-1.5 rounded-md px-3',
+        'tracking-wide normal-case transition-[background-color,color] duration-150 ease-out',
+        'focus-visible:ring-2 focus-visible:outline-hidden motion-reduce:transition-none',
+        active
+          ? 'bg-background text-foreground shadow-sm'
+          : 'text-muted-foreground hover:text-foreground',
       )}
       onClick={onClick}
     >

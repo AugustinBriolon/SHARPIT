@@ -18,6 +18,7 @@ import { MorningOrientationActions } from '@/components/today/rich/morning-orien
 import { SessionLinkSuggestionCard } from '@/components/today/rich/session-link-suggestion-card';
 import { ActivityFeelingPrompt } from '@/components/training/activity/detail/activity-feeling-prompt';
 import { useAppModal } from '@/providers/app-modal-provider';
+import { useIsDemoMode } from '@/hooks/use-is-demo-mode';
 import { useSyncExternalStore, useMemo } from 'react';
 import {
   filterDismissedSessionLinkSuggestions,
@@ -60,6 +61,7 @@ export function TodayActionRow({
   loading?: boolean;
 }) {
   const { openPlannedSession } = useAppModal();
+  const isDemo = useIsDemoMode();
   const dismissedSnapshot = useSyncExternalStore(
     subscribeSessionLinkDismissals,
     getDismissedSessionLinkIdsSnapshot,
@@ -130,10 +132,10 @@ export function TodayActionRow({
 
   return (
     <section aria-busy={loading || undefined} className="space-y-3">
-      <div className="flex h-8 items-center justify-between gap-2 px-0.5">
+      <div className="flex min-h-8 items-center justify-between gap-2 px-0.5">
         <h2 className="text-label text-balance">{vm.actionRow.actionLabel}</h2>
         <div className="flex shrink-0 items-center gap-2">
-          {!loading ? <ExpertModeToggle /> : null}
+          {!loading && isDemo ? <ExpertModeToggle /> : null}
           {loading ? (
             <SkeletonDataValue heightClassName="h-8" widthClassName="w-24" />
           ) : (

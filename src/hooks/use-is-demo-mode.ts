@@ -1,5 +1,6 @@
 'use client';
 
+import { useAuth } from '@clerk/nextjs';
 import { useSyncExternalStore } from 'react';
 import { DEMO_COOKIE } from '@/lib/demo/demo-cookie';
 
@@ -7,6 +8,20 @@ import { DEMO_COOKIE } from '@/lib/demo/demo-cookie';
  * vitest config runs `.test.ts` files under `environment: 'node'`, no `document`. */
 export function hasDemoCookieValue(cookieString: string): boolean {
   return cookieString.split('; ').includes(`${DEMO_COOKIE}=1`);
+}
+
+/**
+ * Same precedence as server `isDemoSession()`: a real Clerk session always wins
+ * over a leftover `sharpit_demo` cookie (signed-in athlete who once visited /demo).
+ */
+export function resolveIsDemoMode(
+  cookieIsDemo: boolean,
+  userId: string | null | undefined,
+  authLoaded: boolean,
+): boolean {
+  if (!authLoaded) return false;
+  if (userId) return false;
+  return cookieIsDemo;
 }
 
 function hasDemoCookie(): boolean {
@@ -17,17 +32,15 @@ function hasDemoCookie(): boolean {
 const noopSubscribe = () => () => {};
 
 /**
- * UI-only signal for demo-aware client components (date-range fencing, etc).
- * The cookie is set/cleared only via full page loads (`/demo`, `/api/demo/exit`),
- * so no subscription is needed — just a hydration-safe read (server always
- * renders `false`, client corrects on mount).
+ * UI signal for demo-aware client components.
+ * Matches server `isDemoSession()`: demo cookie AND no Clerk `userId`.
+ * Until Clerk has loaded, returns `false` (hydration-safe; avoids flashing
+ * demo chrome for a signed-in athlete with a stray cookie).
  *
- * Not the security boundary — that's `isDemoSession()` (src/lib/demo/demo-session.ts),
- * which also confirms there's no real Clerk session. This hook can't do that
- * check client-side, so a real signed-in athlete with a stray demo cookie may
- * see date-range fencing they don't actually need — harmless (UI-only), and
- * resolves itself the moment they visit /api/demo/exit.
+ * Cookie is set/cleared via full page loads (`/demo`, `/api/demo/exit`).
  */
 export function useIsDemoMode(): boolean {
-  return useSyncExternalStore(noopSubscribe, hasDemoCookie, () => false);
+  const { userId, isLoaded } = useAuth();
+  const cookieIsDemo = useSyncExternalStore(noopSubscribe, hasDemoCookie, () => false);
+  return resolveIsDemoMode(cookieIsDemo, userId, isLoaded);
 }
