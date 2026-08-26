@@ -10,6 +10,10 @@ export const plannedSessionSummarySelect = {
   intensity: true,
   analysis: true,
   analyzedAt: true,
+  // A leg realized and linked to its activity still needs to say which brick it
+  // belongs to — otherwise a completed leg drops out of the group it was planned in.
+  brickGroupId: true,
+  brickOrder: true,
 } satisfies Prisma.PlannedSessionSelect;
 
 export const activityInclude = {

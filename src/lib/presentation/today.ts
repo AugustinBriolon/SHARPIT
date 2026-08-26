@@ -442,7 +442,11 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
               ? sessionChoice.label
               : null;
           return {
-            id: line.id,
+            // For a brick line, `line.id` is the brick group id (grouping key, not a
+            // planned session). Downstream click handlers open a planned session by
+            // id, so this must resolve to the first leg's real session id — the same
+            // id the href below already deep-links to.
+            id: plannedId ?? line.id,
             activityType: line.activityType,
             primary: line.primary,
             secondary: line.secondary ?? null,

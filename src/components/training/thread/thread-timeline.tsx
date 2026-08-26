@@ -3,10 +3,12 @@
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ThreadEntryRow } from '@/components/training/thread/thread-entry-row';
+import { ThreadBrickRow } from '@/components/training/thread/thread-brick-row';
 import { ThreadTodayCard } from '@/components/training/thread/thread-today-card';
 import Link from 'next/link';
 import { dayKeyFromDate } from '@/lib/date/day-key';
 import type { ThreadDay } from '@/lib/training/thread/thread-model';
+import { groupThreadDayEntries } from '@/lib/training/thread/thread-brick-groups';
 import { cn } from '@/lib/utils';
 
 /**
@@ -76,21 +78,34 @@ function DayGroup({
         </p>
 
         <ol className="min-w-0 flex-1 space-y-2">
-          {day.entries.map((entry) => (
-            <li key={entry.id}>
-              {/* One card, not every session of the day: the expanded treatment
-                  means "this is the one to do now", and giving it to three of
-                  them says nothing. */}
-              {isToday && entry.id === expandedTodayId ? (
-                <ThreadTodayCard
-                  entry={entry}
-                  instruction={entry.planned?.description?.trim() || null}
-                />
-              ) : (
-                <ThreadEntryRow entry={entry} isPivot={entry.id === pivotEntryId} />
-              )}
-            </li>
-          ))}
+          {groupThreadDayEntries(day.entries).map((item) => {
+            if (item.kind === 'brick') {
+              const expanded = isToday && item.entries.some((e) => e.id === expandedTodayId);
+              const isPivot = item.entries.some((e) => e.id === pivotEntryId);
+              return (
+                <li key={item.id}>
+                  <ThreadBrickRow entries={item.entries} expanded={expanded} isPivot={isPivot} />
+                </li>
+              );
+            }
+
+            const entry = item.entry;
+            return (
+              <li key={entry.id}>
+                {/* One card, not every session of the day: the expanded treatment
+                    means "this is the one to do now", and giving it to three of
+                    them says nothing. */}
+                {isToday && entry.id === expandedTodayId ? (
+                  <ThreadTodayCard
+                    entry={entry}
+                    instruction={entry.planned?.description?.trim() || null}
+                  />
+                ) : (
+                  <ThreadEntryRow entry={entry} isPivot={entry.id === pivotEntryId} />
+                )}
+              </li>
+            );
+          })}
         </ol>
       </div>
     </li>
