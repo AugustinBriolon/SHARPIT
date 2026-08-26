@@ -457,6 +457,9 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
                 : TWIN_DRILL_DOWN.plannedSession(line.plannedSession?.id ?? line.id),
             isDone: line.kind === 'done',
             morningChoiceLabel: choiceLabel,
+            // For a brick line, `line.id` (pre-override, above) is the brick group id.
+            brickGroupId: line.brickLegs ? line.id : null,
+            brickLegs: line.brickLegs ?? null,
           };
         }),
         ...missedSessions.map((s) => ({

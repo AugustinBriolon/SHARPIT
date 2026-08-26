@@ -8,6 +8,7 @@ import type {
   PresentationNavigationTarget,
   PresentationSection,
 } from '@/core/presentation/types';
+import type { BrickLegSummary } from '@/lib/planned-session/brick/brick-sessions';
 
 export type TodayViewModel = {
   /** Indique si la page peut être rendue (données suffisantes). */
@@ -174,6 +175,9 @@ export type TodayViewModel = {
       isDone: boolean;
       /** Morning choice annotation on this session (post-choice). */
       morningChoiceLabel?: string | null;
+      /** Set for a brick line — render one card with each leg behind a dropdown. */
+      brickGroupId?: string | null;
+      brickLegs?: BrickLegSummary[] | null;
     }>;
     primaryAction?: PresentationAction | null;
     /** Bidirectional morning session adjustment — athlete must confirm. */

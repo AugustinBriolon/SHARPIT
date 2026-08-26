@@ -94,6 +94,8 @@ describe('buildTodayDaySummary', () => {
     expect(summary.lines).toHaveLength(1);
     expect(summary.lines[0].primary).toContain('Brick');
     expect(summary.lines[0].plannedSession?.id).toBe('leg-1');
+    expect(summary.lines[0].brickLegs?.map((l) => l.id)).toEqual(['leg-1', 'leg-2']);
+    expect(summary.lines[0].brickLegs?.map((l) => l.type)).toEqual(['BIKE', 'RUN']);
   });
 
   it('returns empty state when there is no activity or plan', () => {

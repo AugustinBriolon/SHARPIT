@@ -13,6 +13,7 @@ import {
 import type { InstrumentListChipMeta } from '@/components/ui/instruments/instrument-list-chip';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import { BrickOverviewCard } from '@/components/planning/brick/brick-overview-card';
 import { MorningOrientationActions } from '@/components/today/rich/morning-orientation-actions';
 import { SessionLinkSuggestionCard } from '@/components/today/rich/session-link-suggestion-card';
 import { ActivityFeelingPrompt } from '@/components/training/activity/detail/activity-feeling-prompt';
@@ -211,6 +212,20 @@ export function TodayActionRow({
       {!loading && sessionLines.length > 0 ? (
         <ul className="space-y-2">
           {sessionLines.map((line, index) => {
+            if (line.brickLegs && line.brickLegs.length > 0 && line.brickGroupId) {
+              return (
+                <li key={line.id}>
+                  <BrickOverviewCard
+                    brickGroupId={line.brickGroupId}
+                    defaultExpanded={index === primaryIndex && !orientation?.showFirmActions}
+                    legs={line.brickLegs}
+                    subtitle={line.secondary ?? null}
+                    onOpenLeg={(legId) => openPlannedSession({ sessionId: legId })}
+                  />
+                </li>
+              );
+            }
+
             const rawMeta = splitInstrumentMeta(line.secondary);
             const meta: InstrumentListChipMeta[] =
               line.kind === 'missed'

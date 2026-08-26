@@ -1,7 +1,11 @@
 import { isSameDay, startOfDay } from 'date-fns';
 import type { ActivityType } from '@prisma/client';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
-import { groupPlannedSessions } from '@/lib/planned-session/brick/brick-sessions';
+import {
+  brickLegSummaries,
+  groupPlannedSessions,
+  type BrickLegSummary,
+} from '@/lib/planned-session/brick/brick-sessions';
 import { activityTypeLabels, formatDuration } from '@/lib/format';
 import { formatPlannedDuration, intensityLabels } from '@/lib/planned-session/sessions';
 
@@ -13,6 +17,8 @@ export type DaySummaryLine = {
   secondary?: string;
   /** Set for single planned sessions — enables shared label atoms in the UI. */
   plannedSession?: ClientPlannedSession;
+  /** Set for a brick line — the athlete sees one card with each leg behind a dropdown. */
+  brickLegs?: BrickLegSummary[];
 };
 
 export type TodayDaySummary = {
@@ -116,8 +122,9 @@ function buildPlannedLines(
         secondary: [duration, brickGoalTitle ? `Sert ${brickGoalTitle}` : null]
           .filter(Boolean)
           .join(' · '),
-        // Deep-link opens the first leg dialog (brick analysis lives on that session).
+        // First leg backs the deep-link id; the card itself renders every leg.
         plannedSession: group.sessions[0],
+        brickLegs: brickLegSummaries(group.sessions),
       });
     } else {
       const { session } = group;
