@@ -105,7 +105,10 @@ export function ProgressHub({ basePath = '/progress' }: { basePath?: string }) {
   return (
     <div className="space-y-4">
       <StickyHeader>
-        <div className="flex items-start justify-between gap-4">
+        {/* `min-h` matches the default Button size so the header holds its
+            height whether or not the toolbar is mounted — otherwise it
+            shrank on every switch away from "Objectifs". */}
+        <div className="flex min-h-11 items-start justify-between gap-4 lg:min-h-9">
           <h1 className="text-page-title">Progression</h1>
           {section === 'goals' ? <GoalsToolbar /> : null}
         </div>

@@ -309,9 +309,13 @@ export function SessionRealization({
   const candidates = useMemo(() => {
     const all = activitiesQuery.data ?? [];
     const scored = all
+      // An activity realizes a planned session it was scheduled to answer to —
+      // never one still ahead of it. A negative diff means the plan is for a
+      // day after the activity, which the athlete hasn't reached yet.
+      .filter((a) => differenceInCalendarDays(a.date, session.date) >= 0)
       .map((a) => ({
         a,
-        diff: Math.abs(differenceInCalendarDays(a.date, session.date)),
+        diff: differenceInCalendarDays(a.date, session.date),
         sameType: a.type === session.type,
         score: scorePlannedActivityMatch(
           { date: session.date, durationMin: session.durationMin },

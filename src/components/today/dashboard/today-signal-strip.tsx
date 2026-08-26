@@ -54,15 +54,12 @@ function formatStrain(value: number | null): string {
 export function TodaySignalStrip({
   metricsRow,
   limiterHref = null,
-  limiterText = null,
   className,
   loading = false,
 }: {
   metricsRow: MetricsRow;
   /** Drill-down of today's limiting dimension, when the model named one. */
   limiterHref?: string | null;
-  /** Why that dimension is the brake — more specific than the dimension name. */
-  limiterText?: string | null;
   className?: string;
   loading?: boolean;
 }) {
@@ -101,8 +98,6 @@ export function TodaySignalStrip({
       dotClass: DIMENSION_DOT.effort,
     },
   ];
-
-  const reason = loading ? null : limiterText;
 
   return (
     <div className={className}>
@@ -164,19 +159,6 @@ export function TodaySignalStrip({
           );
         })}
       </nav>
-
-      {/* The tag says which dimension; this says why, which is the part that
-        decides what to do about it. */}
-      {reason && limiterHref ? (
-        <Link
-          className="text-muted-foreground hover:text-foreground mt-2 inline-flex items-center gap-1.5 text-xs transition-colors"
-          href={limiterHref}
-        >
-          <span className="text-label text-signal-caution">Frein</span>
-          <span>{reason}</span>
-          <span aria-hidden>→</span>
-        </Link>
-      ) : null}
     </div>
   );
 }

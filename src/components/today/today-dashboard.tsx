@@ -142,7 +142,6 @@ export function TodayDashboard() {
         <TodayVerdictHero loading={valuesLoading} vm={content} />
         <TodaySignalStrip
           limiterHref={content.hero.twinTrustStrip.limitingFactorHref}
-          limiterText={content.hero.twinTrustStrip.limitingCauseText}
           loading={valuesLoading}
           metricsRow={content.hero.metricsRow}
         />

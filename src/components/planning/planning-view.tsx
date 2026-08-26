@@ -8,7 +8,6 @@ function parseCalendarDateParam(value: string | null): Date | null {
 }
 
 import { PageHeader } from '@/components/layout/sticky-header';
-import { ProjectedAthleteCard } from '@/components/planning/scenario/projected-athlete-card';
 import { TravelContextBanner } from '@/components/planning/travel-context-banner';
 import { SessionsCoachMenu, type SessionsCoachAction } from '@/components/coaching/coach-menu';
 import { Button } from '@/components/ui/button';
@@ -109,7 +108,9 @@ export function PlanningView({
   const [weekStart, setWeekStart] = useState(() =>
     startOfWeek(weekFromUrl ?? new Date(), WEEK_OPTS),
   );
-  const [projectionHorizon, setProjectionHorizon] = useState<ProjectionHorizonDays>(7);
+  // Card that read this is gone; the risk-day tint on the week list is the
+  // only remaining consumer, and it never lets the athlete change the horizon.
+  const projectionHorizon: ProjectionHorizonDays = 7;
 
   const activities = activitiesQuery.data ?? [];
   const planned = plannedQuery.data ?? [];
@@ -349,13 +350,6 @@ export function PlanningView({
         })}
       </div>
 
-      {showPlanningIntelligence ? (
-        <ProjectedAthleteCard
-          horizon={projectionHorizon}
-          query={projectionQuery}
-          onHorizonChange={setProjectionHorizon}
-        />
-      ) : null}
 
       {showPlannedDialog && !isLoading && (
         <PlannedSessionDialog
