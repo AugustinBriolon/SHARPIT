@@ -36,5 +36,11 @@ export const motionConfig = {
  * category from interface chrome — ADR-024 exempts them from `motionTokens`'
  * 300ms cap. Nothing here governs hover, press, expand, or any transition
  * `motionTokens.duration` already covers; that cap is untouched.
+ *
+ * Duration scales with route length via `revealDurationMs` (3s–5s).
  */
-export const REVEAL_DURATION_MS = 4000;
+export {
+  REVEAL_DURATION_MAX_MS,
+  REVEAL_DURATION_MIN_MS,
+  revealDurationMs,
+} from '@/lib/motion/route-reveal';

@@ -19,7 +19,7 @@ import {
 import { createPortal } from 'react-dom';
 import { X, Minus, Plus, Locate, Maximize, Loader2 } from 'lucide-react';
 
-import { motionConfig, REVEAL_DURATION_MS } from '@/lib/motion/config';
+import { motionConfig, revealDurationMs } from '@/lib/motion/config';
 import { isRevealComplete, revealedPointCount } from '@/lib/motion/route-reveal';
 import {
   ROUTE_REVEAL_VISIBILITY_RATIO,
@@ -313,7 +313,7 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
   //
   // Require a meaningful fraction of the map (not a mere peek): on activity
   // pages the coach panel sits above the map on mobile, so a 0.2 gate started
-  // the ~4s draw while the athlete was still reading — the line looked
+  // the ~3–5s draw while the athlete was still reading — the line looked
   // static once they looked down.
   useEffect(() => {
     const el = containerRef.current;
@@ -1076,7 +1076,8 @@ type MapRouteProps = {
   /**
    * Draw the line start-to-finish on first appearance instead of setting it
    * whole. ADR-024's reveal exception, not a general animation switch — see
-   * `REVEAL_DURATION_MS`. Skipped under reduced motion or on a low-end device.
+   * `revealDurationMs` (3s–5s by route length). Skipped under reduced motion
+   * or on a low-end device.
    */
   animate?: boolean;
 };
@@ -1173,14 +1174,13 @@ function MapRoute({
 
     let frameId: number;
     const startedAt = performance.now();
+    const durationMs = revealDurationMs(coordinates.length);
 
     const step = (now: number) => {
       const elapsed = now - startedAt;
-      setLine(
-        coordinates.slice(0, revealedPointCount(elapsed, REVEAL_DURATION_MS, coordinates.length)),
-      );
+      setLine(coordinates.slice(0, revealedPointCount(elapsed, durationMs, coordinates.length)));
 
-      if (!isRevealComplete(elapsed, REVEAL_DURATION_MS)) {
+      if (!isRevealComplete(elapsed, durationMs)) {
         frameId = requestAnimationFrame(step);
       }
     };
