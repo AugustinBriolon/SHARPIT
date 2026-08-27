@@ -313,7 +313,7 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
   //
   // Require a meaningful fraction of the map (not a mere peek): on activity
   // pages the coach panel sits above the map on mobile, so a 0.2 gate started
-  // the ~1.8s draw while the athlete was still reading — the line looked
+  // the ~4s draw while the athlete was still reading — the line looked
   // static once they looked down.
   useEffect(() => {
     const el = containerRef.current;

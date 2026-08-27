@@ -37,4 +37,4 @@ export const motionConfig = {
  * 300ms cap. Nothing here governs hover, press, expand, or any transition
  * `motionTokens.duration` already covers; that cap is untouched.
  */
-export const REVEAL_DURATION_MS = 1800;
+export const REVEAL_DURATION_MS = 4000;

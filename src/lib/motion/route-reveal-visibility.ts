@@ -11,7 +11,7 @@ export const ROUTE_REVEAL_VISIBILITY_RATIO = 0.45;
 
 /**
  * True once enough of the map is in the viewport that the athlete can watch
- * the draw. A lower gate (e.g. 0.2) starts the ~1.8s reveal on a mere peek —
+ * the draw. A lower gate (e.g. 0.2) starts the ~4s reveal on a mere peek —
  * by the time they scroll fully onto the map, the line is already complete.
  */
 export function shouldStartRouteReveal(intersectionRatio: number): boolean {
