@@ -21,6 +21,10 @@ import { X, Minus, Plus, Locate, Maximize, Loader2 } from 'lucide-react';
 
 import { motionConfig, REVEAL_DURATION_MS } from '@/lib/motion/config';
 import { isRevealComplete, revealedPointCount } from '@/lib/motion/route-reveal';
+import {
+  ROUTE_REVEAL_VISIBILITY_RATIO,
+  shouldStartRouteReveal,
+} from '@/lib/motion/route-reveal-visibility';
 import { cn } from '@/lib/utils';
 
 const defaultStyles = {
@@ -306,6 +310,11 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
   // unseen — by the time the athlete scrolls to it, the line is already
   // fully drawn. Gate reveal-dependent consumers on actual visibility
   // instead of just mount + load.
+  //
+  // Require a meaningful fraction of the map (not a mere peek): on activity
+  // pages the coach panel sits above the map on mobile, so a 0.2 gate started
+  // the ~1.8s draw while the athlete was still reading — the line looked
+  // static once they looked down.
   useEffect(() => {
     const el = containerRef.current;
     if (!el || typeof IntersectionObserver === 'undefined') {
@@ -315,12 +324,12 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry?.isIntersecting) {
+        if (entry && shouldStartRouteReveal(entry.intersectionRatio)) {
           setIsVisible(true);
           observer.disconnect();
         }
       },
-      { threshold: 0.2 },
+      { threshold: [0, 0.25, ROUTE_REVEAL_VISIBILITY_RATIO, 0.75, 1] },
     );
     observer.observe(el);
 
