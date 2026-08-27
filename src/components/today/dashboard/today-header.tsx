@@ -9,62 +9,109 @@ import {
 } from '@/lib/activity/weather/activity-weather';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toLocalCalendarDate } from '@/lib/date/day-key';
+import {
+  readLastHomeLocationRefreshMs,
+  shouldRefreshHomeLocation,
+  writeLastHomeLocationRefreshMs,
+} from '@/lib/geocoding/home-location-refresh';
+import { invalidateAfterAthleteProfileSave } from '@/lib/query/invalidate-after-athlete-profile-save';
 import { cn } from '@/lib/utils';
 
 /**
- * Ask the device where we are, once, on the athlete's request.
+ * Ask the device where we are.
  *
- * The server can only derive a location from a GPS-tracked activity, a travel
- * context, or a configured home — none of which exist on a fresh install, where
- * it falls back to hard-coded coordinates. The browser is the only source that
- * knows, and it will only say so if asked.
+ * First visit: explicit tap ("Utiliser ma position") — the browser will only
+ * answer if asked. Once permission is granted, Today soft-refreshes on a
+ * throttle so the city does not freeze on the first save forever; the athlete
+ * can also tap the city to force a re-read.
  */
-function useDeviceLocation() {
+function useDeviceLocation(options?: { autoRefresh?: boolean }) {
   const queryClient = useQueryClient();
   const [state, setState] = useState<DeviceLocationState>('idle');
+  const autoTriedRef = useRef(false);
 
-  const ask = useCallback(() => {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setState('unsupported');
-      return;
-    }
-    setState('asking');
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const res = await fetch('/api/athlete-profile/home-location', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-            }),
+  const persist = useCallback(
+    async (latitude: number, longitude: number) => {
+      const res = await fetch('/api/athlete-profile/home-location', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ latitude, longitude }),
+      });
+      if (!res.ok) throw new Error(`save failed: ${res.status}`);
+      writeLastHomeLocationRefreshMs(Date.now());
+      await invalidateAfterAthleteProfileSave(queryClient);
+    },
+    [queryClient],
+  );
+
+  const ask = useCallback(
+    (opts?: { silent?: boolean; maximumAge?: number }) => {
+      if (typeof navigator === 'undefined' || !navigator.geolocation) {
+        if (!opts?.silent) setState('unsupported');
+        return;
+      }
+      if (!opts?.silent) setState('asking');
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            await persist(position.coords.latitude, position.coords.longitude);
+            setState('idle');
+          } catch (error) {
+            console.error('[home-location] save failed', error);
+            if (!opts?.silent) setState('saveFailed');
+          }
+        },
+        (error) => {
+          console.warn('[home-location] geolocation refused', {
+            code: error.code,
+            message: error.message,
           });
-          if (!res.ok) throw new Error(`save failed: ${res.status}`);
-          setState('idle');
-          await queryClient.invalidateQueries();
-        } catch (error) {
-          // Swallowing this cost an afternoon of "no error in the console".
-          console.error('[home-location] save failed', error);
-          setState('saveFailed');
-        }
-      },
-      (error) => {
-        console.warn('[home-location] geolocation refused', {
-          code: error.code,
-          message: error.message,
-        });
-        if (error.code === error.PERMISSION_DENIED) setState('denied');
-        else if (error.code === error.TIMEOUT) setState('timeout');
-        else setState('unavailable');
-      },
-      { timeout: 15_000, maximumAge: 600_000 },
-    );
-  }, [queryClient]);
+          if (opts?.silent) return;
+          if (error.code === error.PERMISSION_DENIED) setState('denied');
+          else if (error.code === error.TIMEOUT) setState('timeout');
+          else setState('unavailable');
+        },
+        { timeout: 15_000, maximumAge: opts?.maximumAge ?? 60_000 },
+      );
+    },
+    [persist],
+  );
+
+  useEffect(() => {
+    if (!options?.autoRefresh || autoTriedRef.current) return;
+    autoTriedRef.current = true;
+
+    const now = Date.now();
+    if (!shouldRefreshHomeLocation(readLastHomeLocationRefreshMs(), now)) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      // Only soft-refresh when the OS already granted access — never re-prompt.
+      const permission = await queryGeolocationPermission();
+      if (cancelled || permission !== 'granted') return;
+      ask({ silent: true, maximumAge: 120_000 });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ask, options?.autoRefresh]);
 
   return { state, ask };
+}
+
+async function queryGeolocationPermission(): Promise<PermissionState | 'unknown'> {
+  if (typeof navigator === 'undefined' || !navigator.permissions?.query) return 'unknown';
+  try {
+    const status = await navigator.permissions.query({ name: 'geolocation' });
+    return status.state;
+  } catch {
+    // Safari historically rejects this query; treat as unknown and skip auto.
+    return 'unknown';
+  }
 }
 
 type DeviceLocationState =
@@ -126,9 +173,31 @@ function LocationPrompt() {
       className="text-muted-foreground/70 hover:text-foreground underline underline-offset-2 disabled:no-underline"
       disabled={state === 'asking'}
       type="button"
-      onClick={ask}
+      onClick={() => ask({ maximumAge: 0 })}
     >
       {PROMPT_COPY[state]}
+    </button>
+  );
+}
+
+/**
+ * Known city — tap refreshes the device reading. Soft auto-refresh runs in the
+ * background when permission is already granted and the throttle window elapsed.
+ */
+function KnownLocation({ city }: { city: string }) {
+  const { state, ask } = useDeviceLocation({ autoRefresh: true });
+  const refreshing = state === 'asking';
+
+  return (
+    <button
+      type="button"
+      className="hover:text-foreground underline-offset-2 hover:underline disabled:no-underline"
+      disabled={refreshing}
+      title="Mettre à jour la position"
+      aria-label={`Localisation ${city}. Mettre à jour la position`}
+      onClick={() => ask({ maximumAge: 0 })}
+    >
+      {refreshing ? 'Localisation…' : city}
     </button>
   );
 }
@@ -173,7 +242,7 @@ export function TodayHeader({
           </span>
           {/* A city we are not sure of would read as knowledge. Rather than admit
               ignorance and stop there, offer the one thing that resolves it. */}
-          {weather.locationKnown ? <span>{weather.city}</span> : <LocationPrompt />}
+          {weather.locationKnown ? <KnownLocation city={weather.city} /> : <LocationPrompt />}
         </p>
       ) : null}
     </div>

@@ -32,6 +32,11 @@ vi.mock('@/hooks/use-wellness-checkin', () => ({
   }),
 }));
 
+/* TodayActionRow gates ExpertModeToggle on demo — no Clerk in node tests. */
+vi.mock('@/hooks/use-is-demo-mode', () => ({
+  useIsDemoMode: () => false,
+}));
+
 function renderTodayShell() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },

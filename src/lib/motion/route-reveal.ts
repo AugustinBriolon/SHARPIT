@@ -7,6 +7,30 @@
  * that can actually be unit-tested.
  */
 
+/** Shortest reveal — still long enough to read as a trace, not a pop. */
+export const REVEAL_DURATION_MIN_MS = 3000;
+
+/** Longest reveal — enough to follow a dense GPS path without dragging. */
+export const REVEAL_DURATION_MAX_MS = 5000;
+
+/** At or below this many points, use the minimum duration. */
+const SHORT_ROUTE_POINTS = 80;
+
+/** At or above this many points, use the maximum duration. */
+const LONG_ROUTE_POINTS = 800;
+
+/**
+ * How long the reveal should run for a route of `totalPoints` samples.
+ * Short jogs stay near 3s; long rides stretch toward 5s so the line stays
+ * watchable either way.
+ */
+export function revealDurationMs(totalPoints: number): number {
+  if (totalPoints <= SHORT_ROUTE_POINTS) return REVEAL_DURATION_MIN_MS;
+  if (totalPoints >= LONG_ROUTE_POINTS) return REVEAL_DURATION_MAX_MS;
+  const t = (totalPoints - SHORT_ROUTE_POINTS) / (LONG_ROUTE_POINTS - SHORT_ROUTE_POINTS);
+  return Math.round(REVEAL_DURATION_MIN_MS + t * (REVEAL_DURATION_MAX_MS - REVEAL_DURATION_MIN_MS));
+}
+
 /** Ease-out cubic — starts fast, settles into the finish. */
 export function easeOutCubic(progress: number): number {
   const clamped = Math.min(1, Math.max(0, progress));
