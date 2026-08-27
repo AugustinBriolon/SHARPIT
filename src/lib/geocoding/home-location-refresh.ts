@@ -4,14 +4,29 @@
  *
  * The first save is explicit ("Utiliser ma position"). After that the city on
  * the morning header must not freeze forever — travel without a travel-context
- * entry would keep showing yesterday's town. Soft refresh is throttled.
+ * entry would keep showing yesterday's town. Soft refresh is throttled (1h)
+ * and attempted silently on Safari when the Permissions API cannot answer.
  */
 
 /** Soft auto-refresh window when visiting Today with permission already granted. */
-export const HOME_LOCATION_REFRESH_MS = 6 * 60 * 60 * 1000;
+export const HOME_LOCATION_REFRESH_MS = 60 * 60 * 1000;
 
 /** Ignore GPS jitter below this distance when deciding whether to persist. */
 export const HOME_LOCATION_MOVE_METERS = 2_000;
+
+/**
+ * Whether a silent `getCurrentPosition` is allowed without risking a prompt.
+ *
+ * - `granted` — safe.
+ * - `unknown` — Safari often cannot answer `permissions.query`; try silently
+ *   (a denial fails the callback without a prompt).
+ * - `denied` / `prompt` — do not call; would either fail or re-prompt.
+ */
+export function canAttemptSilentGeolocation(
+  permission: PermissionState | 'unknown',
+): boolean {
+  return permission === 'granted' || permission === 'unknown';
+}
 
 const EARTH_RADIUS_M = 6_371_000;
 

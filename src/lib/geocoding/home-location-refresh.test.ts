@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   HOME_LOCATION_MOVE_METERS,
   HOME_LOCATION_REFRESH_MS,
+  canAttemptSilentGeolocation,
   distanceMeters,
   hasMovedSignificantly,
   shouldRefreshHomeLocation,
@@ -9,6 +10,10 @@ import {
 
 describe('shouldRefreshHomeLocation', () => {
   const now = 1_700_000_000_000;
+
+  it('refreshes about once an hour so Today does not freeze on the first city', () => {
+    expect(HOME_LOCATION_REFRESH_MS).toBe(60 * 60 * 1000);
+  });
 
   it('refreshes when nothing has been recorded yet', () => {
     expect(shouldRefreshHomeLocation(null, now)).toBe(true);
@@ -21,6 +26,21 @@ describe('shouldRefreshHomeLocation', () => {
   it('refreshes once the window has elapsed', () => {
     expect(shouldRefreshHomeLocation(now - HOME_LOCATION_REFRESH_MS, now)).toBe(true);
     expect(shouldRefreshHomeLocation(now - HOME_LOCATION_REFRESH_MS - 1, now)).toBe(true);
+  });
+});
+
+describe('canAttemptSilentGeolocation', () => {
+  it('allows a silent re-read when the OS already granted access', () => {
+    expect(canAttemptSilentGeolocation('granted')).toBe(true);
+  });
+
+  it('allows a silent attempt when the Permissions API is unknown (Safari)', () => {
+    expect(canAttemptSilentGeolocation('unknown')).toBe(true);
+  });
+
+  it('never re-prompts after an explicit denial or unresolved prompt', () => {
+    expect(canAttemptSilentGeolocation('denied')).toBe(false);
+    expect(canAttemptSilentGeolocation('prompt')).toBe(false);
   });
 });
 

@@ -1,4 +1,5 @@
 import { motionTokens } from '@/lib/motion/tokens';
+import { isLowEndDevice } from '@/lib/motion/device-capability';
 
 /**
  * Runtime motion gates — motion-foundations.
@@ -8,9 +9,10 @@ export const motionConfig = {
   isLowEnd(): boolean {
     if (typeof navigator === 'undefined') return false;
     const nav = navigator as Navigator & { deviceMemory?: number };
-    if (nav.deviceMemory !== undefined && nav.deviceMemory <= 2) return true;
-    if (nav.deviceMemory === undefined && navigator.hardwareConcurrency <= 4) return true;
-    return false;
+    return isLowEndDevice({
+      deviceMemory: nav.deviceMemory,
+      hardwareConcurrency: navigator.hardwareConcurrency,
+    });
   },
 
   prefersReduced(): boolean {
