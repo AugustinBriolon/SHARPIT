@@ -10,6 +10,11 @@ vi.mock('@/providers/app-modal-provider', () => ({
   useAppModal: () => ({ openPlannedSession: vi.fn() }),
 }));
 
+/* TodayActionRow gates ExpertModeToggle on demo — no Clerk in node tests. */
+vi.mock('@/hooks/use-is-demo-mode', () => ({
+  useIsDemoMode: () => false,
+}));
+
 /**
  * The shell has to hold every section the loaded page holds. Anything missing
  * here appears out of nowhere when its data lands and pushes the rest down.
