@@ -15,6 +15,7 @@ import {
   readLastHomeLocationRefreshMs,
   shouldRefreshHomeLocation,
   writeLastHomeLocationRefreshMs,
+  canAttemptSilentGeolocation,
 } from '@/lib/geocoding/home-location-refresh';
 import { invalidateAfterAthleteProfileSave } from '@/lib/query/invalidate-after-athlete-profile-save';
 import { cn } from '@/lib/utils';
@@ -89,10 +90,13 @@ function useDeviceLocation(options?: { autoRefresh?: boolean }) {
     let cancelled = false;
 
     void (async () => {
-      // Only soft-refresh when the OS already granted access — never re-prompt.
+      // Soft-refresh when already granted, or when the Permissions API cannot
+      // answer (Safari). Never call when the OS says denied/prompt — that
+      // would either fail loudly or re-prompt.
       const permission = await queryGeolocationPermission();
-      if (cancelled || permission !== 'granted') return;
-      ask({ silent: true, maximumAge: 120_000 });
+      if (cancelled || !canAttemptSilentGeolocation(permission)) return;
+      // Fresh reading — a cached fix from the first save kept Today stuck.
+      ask({ silent: true, maximumAge: 0 });
     })();
 
     return () => {
