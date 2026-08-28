@@ -2,6 +2,20 @@ import { describe, expect, it } from 'vitest';
 import { normalizeExerciseKey } from './normalize';
 import { exerciseCatalogSize, resolveExerciseMedia } from './resolve';
 
+function expectCatalogId(label: string, id: string) {
+  expect(resolveExerciseMedia(label)?.catalogId, label).toBe(id);
+}
+
+function assertBenchPressMedia() {
+  const bench = resolveExerciseMedia('Développé couché barre');
+  expect(bench?.catalogId).toBe('0025');
+  expect(bench?.thumbUrl).toContain('/images/0025-');
+  expect(bench?.thumbUrl).toContain('.jpg');
+  expect(bench?.gifUrl).toContain('/videos/0025-');
+  expect(bench?.gifUrl).toContain('.gif');
+  expect(bench?.attribution).toContain('Gym visual');
+}
+
 describe('exercise catalog Phase 1', () => {
   it('loads the slim catalog', () => {
     expect(exerciseCatalogSize()).toBe(1324);
@@ -13,16 +27,9 @@ describe('exercise catalog Phase 1', () => {
   });
 
   it('resolves aliases to media URLs', () => {
-    const bench = resolveExerciseMedia('Développé couché barre');
-    expect(bench?.catalogId).toBe('0025');
-    expect(bench?.thumbUrl).toContain('/images/0025-');
-    expect(bench?.thumbUrl).toContain('.jpg');
-    expect(bench?.gifUrl).toContain('/videos/0025-');
-    expect(bench?.gifUrl).toContain('.gif');
-    expect(bench?.attribution).toContain('Gym visual');
-
-    expect(resolveExerciseMedia('GOBLET_SQUAT')?.catalogId).toBe('0534');
-    expect(resolveExerciseMedia('pull-up')?.catalogId).toBe('0652');
+    assertBenchPressMedia();
+    expectCatalogId('GOBLET_SQUAT', '0534');
+    expectCatalogId('pull-up', '0652');
   });
 
   it('resolves French Garmin labels from dogfood sessions', () => {
@@ -41,7 +48,7 @@ describe('exercise catalog Phase 1', () => {
       ['Barbell Hip Thrust With Bench', '3562'],
     ];
     for (const [label, id] of cases) {
-      expect(resolveExerciseMedia(label)?.catalogId, label).toBe(id);
+      expectCatalogId(label, id);
     }
   });
 

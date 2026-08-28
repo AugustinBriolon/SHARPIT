@@ -16,64 +16,92 @@ function sessionLabel(session: ScenarioSessionSlice): string {
   return session.title?.trim() || session.type;
 }
 
+type ScenarioModificationHandler = (
+  baseline: readonly ScenarioSessionSlice[],
+  targetSessionId: string,
+  futureDayIds: readonly string[],
+) => ScenarioSessionSlice[] | null;
+
+function keepPlanModification(baseline: readonly ScenarioSessionSlice[]): ScenarioSessionSlice[] {
+  return [...baseline];
+}
+
+function removeSessionModification(
+  baseline: readonly ScenarioSessionSlice[],
+  targetSessionId: string,
+): ScenarioSessionSlice[] {
+  return baseline.filter((s) => s.sessionId !== targetSessionId);
+}
+
+function reduceIntensityModification(
+  baseline: readonly ScenarioSessionSlice[],
+  targetSessionId: string,
+): ScenarioSessionSlice[] {
+  return baseline.map((s) =>
+    s.sessionId === targetSessionId
+      ? {
+          ...s,
+          tss: Math.round(s.tss * INTENSITY_REDUCTION_TSS_FACTOR),
+          intensity: stepDownIntensity(s.intensity),
+        }
+      : s,
+  );
+}
+
+function indoorModification(
+  baseline: readonly ScenarioSessionSlice[],
+  targetSessionId: string,
+): ScenarioSessionSlice[] {
+  return baseline.map((s) =>
+    s.sessionId === targetSessionId
+      ? { ...s, exposureSetting: 'INDOOR' as const, environmentalImpact: 'NONE' as const }
+      : s,
+  );
+}
+
+function shiftSessionDay(
+  baseline: readonly ScenarioSessionSlice[],
+  targetSessionId: string,
+  dayOffset: number,
+  futureDayIds: readonly string[],
+): ScenarioSessionSlice[] | null {
+  const target = baseline.find((s) => s.sessionId === targetSessionId);
+  if (!target) {
+    return null;
+  }
+  const nextDay = addTrainingDays(target.trainingDayId, dayOffset);
+  if (!futureDayIds.includes(nextDay)) {
+    return null;
+  }
+  return baseline.map((s) =>
+    s.sessionId === targetSessionId ? { ...s, trainingDayId: nextDay } : s,
+  );
+}
+
+const SCENARIO_MODIFIERS: Record<ScenarioKind, ScenarioModificationHandler> = {
+  KEEP_PLAN: (baseline) => keepPlanModification(baseline),
+  REMOVE_SESSION: (baseline, targetSessionId) =>
+    removeSessionModification(baseline, targetSessionId),
+  REDUCE_INTENSITY: (baseline, targetSessionId) =>
+    reduceIntensityModification(baseline, targetSessionId),
+  INDOOR: (baseline, targetSessionId) => indoorModification(baseline, targetSessionId),
+  DELAY_SESSION: (baseline, targetSessionId, futureDayIds) =>
+    shiftSessionDay(baseline, targetSessionId, 1, futureDayIds),
+  MOVE_EARLIER: (baseline, targetSessionId, futureDayIds) =>
+    shiftSessionDay(baseline, targetSessionId, -1, futureDayIds),
+};
+
 export function applyScenarioModification(
   baseline: readonly ScenarioSessionSlice[],
   kind: ScenarioKind,
   targetSessionId: string,
   futureDayIds: readonly string[],
 ): ScenarioSessionSlice[] | null {
-  const allowedDays = new Set(futureDayIds);
   const target = baseline.find((s) => s.sessionId === targetSessionId);
-  if (!target && kind !== 'KEEP_PLAN') return null;
-
-  switch (kind) {
-    case 'KEEP_PLAN':
-      return [...baseline];
-
-    case 'REMOVE_SESSION':
-      return baseline.filter((s) => s.sessionId !== targetSessionId);
-
-    case 'REDUCE_INTENSITY':
-      return baseline.map((s) =>
-        s.sessionId === targetSessionId
-          ? {
-              ...s,
-              tss: Math.round(s.tss * INTENSITY_REDUCTION_TSS_FACTOR),
-              intensity: stepDownIntensity(s.intensity),
-            }
-          : s,
-      );
-
-    case 'INDOOR':
-      return baseline.map((s) =>
-        s.sessionId === targetSessionId
-          ? {
-              ...s,
-              exposureSetting: 'INDOOR' as const,
-              environmentalImpact: 'NONE' as const,
-            }
-          : s,
-      );
-
-    case 'DELAY_SESSION': {
-      const nextDay = addTrainingDays(target!.trainingDayId, 1);
-      if (!allowedDays.has(nextDay)) return null;
-      return baseline.map((s) =>
-        s.sessionId === targetSessionId ? { ...s, trainingDayId: nextDay } : s,
-      );
-    }
-
-    case 'MOVE_EARLIER': {
-      const prevDay = addTrainingDays(target!.trainingDayId, -1);
-      if (!allowedDays.has(prevDay)) return null;
-      return baseline.map((s) =>
-        s.sessionId === targetSessionId ? { ...s, trainingDayId: prevDay } : s,
-      );
-    }
-
-    default:
-      return null;
+  if (!target && kind !== 'KEEP_PLAN') {
+    return null;
   }
+  return SCENARIO_MODIFIERS[kind](baseline, targetSessionId, futureDayIds);
 }
 
 export function buildScenarioDefinition(
@@ -94,12 +122,18 @@ export function buildScenarioDefinition(
     };
   }
 
-  if (!targetSessionId) return null;
+  if (!targetSessionId) {
+    return null;
+  }
   const target = baseline.find((s) => s.sessionId === targetSessionId);
-  if (!target) return null;
+  if (!target) {
+    return null;
+  }
 
   const modified = applyScenarioModification(baseline, kind, targetSessionId, futureDayIds);
-  if (!modified) return null;
+  if (!modified) {
+    return null;
+  }
 
   const name = sessionLabel(target);
   const dayLabel = localDateLabel(target.trainingDayId);
@@ -150,10 +184,14 @@ export function buildScenarioDefinition(
 export function pickFocusSession(
   sessions: readonly ScenarioSessionSlice[],
 ): ScenarioSessionSlice | null {
-  if (sessions.length === 0) return null;
+  if (sessions.length === 0) {
+    return null;
+  }
   return [...sessions].sort((a, b) => {
     const dayCompare = a.trainingDayId.localeCompare(b.trainingDayId);
-    if (dayCompare !== 0) return dayCompare;
+    if (dayCompare !== 0) {
+      return dayCompare;
+    }
     return b.tss - a.tss;
   })[0];
 }

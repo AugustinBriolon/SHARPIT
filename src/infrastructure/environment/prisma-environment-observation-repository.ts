@@ -15,7 +15,9 @@ export class PrismaEnvironmentalObservationRepository implements EnvironmentalOb
   constructor(private readonly prisma: PrismaClient) {}
 
   async saveMany(records: readonly EnvironmentalObservationRecord[]): Promise<void> {
-    if (records.length === 0) return;
+    if (records.length === 0) {
+      return;
+    }
 
     await this.prisma.$transaction(
       records.map((record) =>
@@ -45,7 +47,9 @@ export class PrismaEnvironmentalObservationRepository implements EnvironmentalOb
   }
 
   async findByIds(ids: readonly string[]): Promise<EnvironmentalObservationRecord[]> {
-    if (ids.length === 0) return [];
+    if (ids.length === 0) {
+      return [];
+    }
     const rows = await this.prisma.environmentalObservationRecord.findMany({
       where: { id: { in: [...ids] } },
     });

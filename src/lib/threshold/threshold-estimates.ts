@@ -65,7 +65,9 @@ export function resolveAcceptedFields(
   requested?: ThresholdField[],
 ): ThresholdField[] {
   const offered = new Set(proposed);
-  if (!requested) return [...offered];
+  if (!requested) {
+    return [...offered];
+  }
   return [...new Set(requested.filter((field) => offered.has(field)))];
 }
 
@@ -85,7 +87,9 @@ function ageDays(iso: string, now: Date): number {
 }
 
 function withinWindow(iso: string | undefined, now: Date, windowDays: number): boolean {
-  if (!iso) return false;
+  if (!iso) {
+    return false;
+  }
   const age = ageDays(iso, now);
   return age >= 0 && age <= windowDays;
 }
@@ -117,21 +121,36 @@ export function filterRecordsForThresholdWindow(
   return { powerCurve, runBests, runEfforts, bikeEfforts };
 }
 
+function resolveThresholdOptions(options?: {
+  windowDays?: number;
+  now?: Date;
+  swimSamples?: SwimCssSample[];
+}) {
+  return {
+    windowDays: options?.windowDays ?? THRESHOLD_RECENCY_WINDOW_DAYS,
+    now: options?.now ?? new Date(),
+    swimSamples: options?.swimSamples ?? [],
+  };
+}
+
+function ftpFieldsFromEstimate(ftp: ReturnType<typeof estimateFtp>) {
+  return {
+    ftpW: ftp?.watts ?? null,
+    ftpSource: ftp?.source ?? null,
+  };
+}
+
 export function computeThresholdEstimates(
   records: RecordsPayload,
   options?: { windowDays?: number; now?: Date; swimSamples?: SwimCssSample[] },
 ): ThresholdEstimates {
-  const windowDays = options?.windowDays ?? THRESHOLD_RECENCY_WINDOW_DAYS;
-  const now = options?.now ?? new Date();
+  const { windowDays, now, swimSamples } = resolveThresholdOptions(options);
   const windowed = filterRecordsForThresholdWindow(records, windowDays, now);
   const ftp = estimateFtp(windowed.powerCurve, windowed.bikeEfforts);
   const pace = estimateRunThresholdPace(windowed.runBests, windowed.runEfforts);
-  // Swim CSS comes straight from realised sessions, not from the records pipeline:
-  // Garmin already computes it per session, so there is nothing to rank or fit.
-  const css = estimateSwimCss(options?.swimSamples ?? [], { windowDays, now });
+  const css = estimateSwimCss(swimSamples, { windowDays, now });
   return {
-    ftpW: ftp?.watts ?? null,
-    ftpSource: ftp?.source ?? null,
+    ...ftpFieldsFromEstimate(ftp),
     runThresholdPaceSecPerKm: pace,
     swimCssSecPer100m: css,
     windowDays,
@@ -139,7 +158,7 @@ export function computeThresholdEstimates(
 }
 
 function fmtFtp(w: number | null): string {
-  return w != null ? `${w} W` : '—';
+  return w !== null ? `${w} W` : '—';
 }
 
 /** True when |estimated − current| clears both the relative and absolute FTP gates. */
@@ -155,26 +174,91 @@ export function isMaterialPaceChange(current: number, estimated: number): boolea
 }
 
 function shouldSuggestFtp(current: number | null, estimated: number | null): boolean {
-  if (estimated == null) return false;
-  if (current == null) return true;
+  if (estimated === null) {
+    return false;
+  }
+  if (current === null) {
+    return true;
+  }
   return isMaterialFtpChange(current, estimated);
 }
 
 function shouldSuggestThresholdPace(current: number | null, estimated: number | null): boolean {
-  if (estimated == null) return false;
-  if (current == null) return true;
+  if (estimated === null) {
+    return false;
+  }
+  if (current === null) {
+    return true;
+  }
   return isMaterialPaceChange(current, estimated);
 }
 
 function ftpDirection(current: number | null, estimated: number): ThresholdChangeDirection {
-  if (current == null) return 'set';
+  if (current === null) {
+    return 'set';
+  }
   return estimated > current ? 'up' : 'down';
 }
 
 function paceDirection(current: number | null, estimated: number): ThresholdChangeDirection {
-  if (current == null) return 'set';
+  if (current === null) {
+    return 'set';
+  }
   // Lower s/km = faster = "up" in performance terms
   return estimated < current ? 'up' : 'down';
+}
+
+function buildFtpChange(current: number | null, estimated: number | null): ThresholdChange | null {
+  if (!shouldSuggestFtp(current, estimated) || estimated === null) {
+    return null;
+  }
+  return {
+    field: 'ftpW',
+    label: 'FTP vélo',
+    from: fmtFtp(current),
+    to: fmtFtp(estimated),
+    direction: ftpDirection(current, estimated),
+  };
+}
+
+function buildPaceChange(current: number | null, estimated: number | null): ThresholdChange | null {
+  if (!shouldSuggestThresholdPace(current, estimated) || estimated === null) {
+    return null;
+  }
+  return {
+    field: 'runThresholdPaceSecPerKm',
+    label: 'Allure seuil',
+    from: current ? fmtPaceSecPerKm(current) : '—',
+    to: fmtPaceSecPerKm(estimated),
+    direction: paceDirection(current, estimated),
+  };
+}
+
+function buildSwimCssChange(
+  current: number | null,
+  estimated: number | null,
+): ThresholdChange | null {
+  if (!shouldSuggestSwimCss(current, estimated) || estimated === null) {
+    return null;
+  }
+  return {
+    field: 'swimCssSecPer100m',
+    label: 'Vitesse critique natation',
+    from: current ? fmtCssSecPer100m(current) : '—',
+    to: fmtCssSecPer100m(estimated),
+    direction: paceDirection(current, estimated),
+  };
+}
+
+function buildThresholdChanges(
+  current: ThresholdApplyPreview['current'],
+  estimates: ThresholdEstimates,
+): ThresholdChange[] {
+  return [
+    buildFtpChange(current.ftpW, estimates.ftpW),
+    buildPaceChange(current.runThresholdPaceSecPerKm, estimates.runThresholdPaceSecPerKm),
+    buildSwimCssChange(current.swimCssSecPer100m, estimates.swimCssSecPer100m),
+  ].filter((change): change is ThresholdChange => change !== null);
 }
 
 /** Compare windowed estimates to the athlete's current thresholds. */
@@ -189,53 +273,6 @@ export function previewThresholdApply(
     runThresholdPaceSecPerKm: profile?.runThresholdPaceSecPerKm ?? null,
     swimCssSecPer100m: profile?.swimCssSecPer100m ?? null,
   };
-
-  const changes: ThresholdChange[] = [];
-
-  if (shouldSuggestFtp(current.ftpW, estimates.ftpW) && estimates.ftpW != null) {
-    changes.push({
-      field: 'ftpW',
-      label: 'FTP vélo',
-      from: fmtFtp(current.ftpW),
-      to: fmtFtp(estimates.ftpW),
-      direction: ftpDirection(current.ftpW, estimates.ftpW),
-    });
-  }
-
-  if (
-    shouldSuggestThresholdPace(
-      current.runThresholdPaceSecPerKm,
-      estimates.runThresholdPaceSecPerKm,
-    ) &&
-    estimates.runThresholdPaceSecPerKm != null
-  ) {
-    changes.push({
-      field: 'runThresholdPaceSecPerKm',
-      label: 'Allure seuil',
-      from: current.runThresholdPaceSecPerKm
-        ? fmtPaceSecPerKm(current.runThresholdPaceSecPerKm)
-        : '—',
-      to: fmtPaceSecPerKm(estimates.runThresholdPaceSecPerKm),
-      direction: paceDirection(
-        current.runThresholdPaceSecPerKm,
-        estimates.runThresholdPaceSecPerKm,
-      ),
-    });
-  }
-
-  if (
-    shouldSuggestSwimCss(current.swimCssSecPer100m, estimates.swimCssSecPer100m) &&
-    estimates.swimCssSecPer100m != null
-  ) {
-    changes.push({
-      field: 'swimCssSecPer100m',
-      label: 'Vitesse critique natation',
-      from: current.swimCssSecPer100m ? fmtCssSecPer100m(current.swimCssSecPer100m) : '—',
-      to: fmtCssSecPer100m(estimates.swimCssSecPer100m),
-      // Lower seconds per 100 m is faster, same inversion as running pace.
-      direction: paceDirection(current.swimCssSecPer100m, estimates.swimCssSecPer100m),
-    });
-  }
-
+  const changes = buildThresholdChanges(current, estimates);
   return { estimates, current, changes, hasChanges: changes.length > 0 };
 }

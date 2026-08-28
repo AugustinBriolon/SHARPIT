@@ -21,12 +21,14 @@ function hasThresholds(
     runThresholdPaceSecPerKm: number | null;
   } | null,
 ): boolean {
-  if (!profile) return false;
+  if (!profile) {
+    return false;
+  }
   return (
-    profile.ftpW != null ||
-    profile.lthr != null ||
-    profile.maxHr != null ||
-    profile.runThresholdPaceSecPerKm != null
+    profile.ftpW !== null ||
+    profile.lthr !== null ||
+    profile.maxHr !== null ||
+    profile.runThresholdPaceSecPerKm !== null
   );
 }
 
@@ -39,6 +41,75 @@ function hasThresholds(
  * full AthleteSnapshot (e.g. Decision Memory's frozen snapshotContext) don't have to
  * fetch it a second time.
  */
+function gateWindowBounds(proposals: readonly GateProposal[], now: Date) {
+  const proposalDates = proposals.map((p) => new Date(`${p.date}T00:00:00`));
+  const hasProposalDates = proposalDates.length > 0;
+  const windowStart = hasProposalDates
+    ? addDays(minDate(proposalDates), -WINDOW_PADDING_DAYS)
+    : addDays(now, -WINDOW_PADDING_DAYS);
+  const windowEnd = hasProposalDates
+    ? addDays(maxDate(proposalDates), WINDOW_PADDING_DAYS)
+    : addDays(now, WINDOW_PADDING_DAYS);
+  return { proposalDates, windowStart, windowEnd };
+}
+
+function mapGateExistingSessions(
+  sessions: Awaited<ReturnType<typeof getPlannedSessions>>,
+): GateContext['existingSessions'] {
+  return sessions.map((s) => ({
+    id: s.id,
+    date: new Date(s.date),
+    type: s.type,
+    intensity: s.intensity,
+    completed: s.completed,
+    load: s.load,
+  }));
+}
+
+function buildGateContextPayload(input: {
+  trainingDayId: string;
+  snapshot: AthleteSnapshot;
+  dailyTrainingStress: GateContext['dailyTrainingStress'];
+  existingSessionsRaw: Awaited<ReturnType<typeof getPlannedSessions>>;
+  goal: Awaited<ReturnType<typeof getGoalById>>;
+  trainingPlan: Awaited<ReturnType<typeof getActiveTrainingPlan>>;
+  busyBlocks: GateContext['busyBlocks'];
+  athleteProfile: Awaited<ReturnType<typeof getAthleteProfile>>;
+  now: Date;
+}): GateContext {
+  const {
+    trainingDayId,
+    snapshot,
+    dailyTrainingStress,
+    existingSessionsRaw,
+    goal,
+    trainingPlan,
+    busyBlocks,
+    athleteProfile,
+    now,
+  } = input;
+
+  return {
+    trainingDayId,
+    decision: snapshot.decision,
+    physicalHealth: snapshot.physicalHealth,
+    fatigueTrainingCapacity: snapshot.fatigue?.trainingCapacity ?? null,
+    dailyTrainingStress,
+    existingSessions: mapGateExistingSessions(existingSessionsRaw),
+    goal: goal ? { horizon: goal.horizon, targetDate: goal.targetDate } : null,
+    planWeeks: trainingPlan
+      ? trainingPlan.weeks.map((w) => ({
+          weekStart: w.weekStart,
+          phase: w.phase,
+          targetLoad: w.targetLoad,
+        }))
+      : [],
+    busyBlocks,
+    athleteProfile: { hasThresholds: hasThresholds(athleteProfile) },
+    now,
+  };
+}
+
 export async function buildGateContext(params: {
   athleteId: string;
   trainingDayId: string;
@@ -47,16 +118,7 @@ export async function buildGateContext(params: {
   now?: Date;
 }): Promise<{ context: GateContext; snapshot: AthleteSnapshot }> {
   const { athleteId, trainingDayId, proposals, goalId, now = new Date() } = params;
-
-  const proposalDates = proposals.map((p) => new Date(`${p.date}T00:00:00`));
-  const windowStart =
-    proposalDates.length > 0
-      ? addDays(minDate(proposalDates), -WINDOW_PADDING_DAYS)
-      : addDays(now, -WINDOW_PADDING_DAYS);
-  const windowEnd =
-    proposalDates.length > 0
-      ? addDays(maxDate(proposalDates), WINDOW_PADDING_DAYS)
-      : addDays(now, WINDOW_PADDING_DAYS);
+  const { proposalDates, windowStart, windowEnd } = gateWindowBounds(proposals, now);
 
   const [
     snapshot,
@@ -84,32 +146,17 @@ export async function buildGateContext(params: {
       ).catch(() => [])
     : null;
 
-  const context: GateContext = {
+  const context = buildGateContextPayload({
     trainingDayId,
-    decision: snapshot.decision,
-    physicalHealth: snapshot.physicalHealth,
-    fatigueTrainingCapacity: snapshot.fatigue?.trainingCapacity ?? null,
+    snapshot,
     dailyTrainingStress,
-    existingSessions: existingSessionsRaw.map((s) => ({
-      id: s.id,
-      date: new Date(s.date),
-      type: s.type,
-      intensity: s.intensity,
-      completed: s.completed,
-      load: s.load,
-    })),
-    goal: goal ? { horizon: goal.horizon, targetDate: goal.targetDate } : null,
-    planWeeks: trainingPlan
-      ? trainingPlan.weeks.map((w) => ({
-          weekStart: w.weekStart,
-          phase: w.phase,
-          targetLoad: w.targetLoad,
-        }))
-      : [],
+    existingSessionsRaw,
+    goal,
+    trainingPlan,
     busyBlocks,
-    athleteProfile: { hasThresholds: hasThresholds(athleteProfile) },
+    athleteProfile,
     now,
-  };
+  });
 
   return { context, snapshot };
 }

@@ -31,7 +31,7 @@ async function loadSwimCssSamples(athleteId: string): Promise<SwimCssSample[]> {
   });
 
   return rows.flatMap((row) =>
-    row.avgPaceSecPer100m != null && row.distanceM != null
+    row.avgPaceSecPer100m !== null && row.distanceM !== null
       ? [
           {
             paceSecPer100m: row.avgPaceSecPer100m,
@@ -65,6 +65,36 @@ export async function getThresholdApplyPreview(athleteId: string) {
  * the others — a swim reference can be worth accepting on a day the running one
  * is not.
  */
+function hasAnyThresholdEstimate(
+  estimates: Awaited<ReturnType<typeof previewThresholdApply>>['estimates'],
+) {
+  return Boolean(
+    estimates.ftpW || estimates.runThresholdPaceSecPerKm || estimates.swimCssSecPer100m,
+  );
+}
+
+function buildThresholdUpdate(fields: {
+  ftpW: number | null;
+  runThresholdPaceSecPerKm: number | null;
+  swimCssSecPer100m: number | null;
+}) {
+  const update: {
+    ftpW?: number;
+    runThresholdPaceSecPerKm?: number;
+    swimCssSecPer100m?: number;
+  } = {};
+  if (fields.ftpW !== null) {
+    update.ftpW = fields.ftpW;
+  }
+  if (fields.runThresholdPaceSecPerKm !== null) {
+    update.runThresholdPaceSecPerKm = fields.runThresholdPaceSecPerKm;
+  }
+  if (fields.swimCssSecPer100m !== null) {
+    update.swimCssSecPer100m = fields.swimCssSecPer100m;
+  }
+  return update;
+}
+
 export async function applyEstimatedThresholds(
   athleteId: string,
   options?: { fields?: ThresholdField[] },
@@ -73,7 +103,7 @@ export async function applyEstimatedThresholds(
   const preview = previewThresholdApply(records, profile, { swimSamples });
   const { estimates } = preview;
 
-  if (!estimates.ftpW && !estimates.runThresholdPaceSecPerKm && !estimates.swimCssSecPer100m) {
+  if (!hasAnyThresholdEstimate(estimates)) {
     return { applied: false as const, reason: 'no_estimates' as const, preview };
   }
 
@@ -95,31 +125,16 @@ export async function applyEstimatedThresholds(
   const pick = <T>(field: ThresholdField, value: T | null): T | null =>
     accepted.has(field) ? value : null;
 
-  const ftpW = pick('ftpW', estimates.ftpW);
-  const runThresholdPaceSecPerKm = pick(
-    'runThresholdPaceSecPerKm',
-    estimates.runThresholdPaceSecPerKm,
-  );
-  const swimCssSecPer100m = pick('swimCssSecPer100m', estimates.swimCssSecPer100m);
+  const picked = {
+    ftpW: pick('ftpW', estimates.ftpW),
+    runThresholdPaceSecPerKm: pick('runThresholdPaceSecPerKm', estimates.runThresholdPaceSecPerKm),
+    swimCssSecPer100m: pick('swimCssSecPer100m', estimates.swimCssSecPer100m),
+  };
 
-  const update: {
-    ftpW?: number;
-    runThresholdPaceSecPerKm?: number;
-    swimCssSecPer100m?: number;
-  } = {};
-  if (ftpW != null) update.ftpW = ftpW;
-  if (runThresholdPaceSecPerKm != null) {
-    update.runThresholdPaceSecPerKm = runThresholdPaceSecPerKm;
-  }
-  if (swimCssSecPer100m != null) update.swimCssSecPer100m = swimCssSecPer100m;
-
-  const updated = await upsertAthleteProfile(athleteId, update);
-  // The snapshot records what was applied, not what was offered.
+  const updated = await upsertAthleteProfile(athleteId, buildThresholdUpdate(picked));
   await createThresholdSnapshot(athleteId, {
     source: 'estimated',
-    ftpW,
-    runThresholdPaceSecPerKm,
-    swimCssSecPer100m,
+    ...picked,
   });
 
   return { applied: true as const, profile: updated, preview, appliedFields: [...accepted] };

@@ -23,20 +23,79 @@ export function verdictRiskRank(verdict: OverallVerdict): number {
   return VERDICT_RISK_ORDER[verdict];
 }
 
-export function extractScenarioDecisionSnapshot(
-  projection: ProjectedAthleteState,
-): ScenarioDecisionSnapshot {
-  const { days } = projection;
-  const end = days.at(-1);
-  const verdicts = days.map((d) => d.decision.overallVerdict);
-
+function findWorstVerdict(verdicts: OverallVerdict[]): OverallVerdict {
   let worstVerdict: OverallVerdict = 'RACE_READY';
   for (const verdict of verdicts) {
     if (verdictRiskRank(verdict) > verdictRiskRank(worstVerdict)) {
       worstVerdict = verdict;
     }
   }
+  return worstVerdict;
+}
 
+function resolveLimitingDomain(
+  end: ProjectedAthleteState['days'][number] | undefined,
+): DecisionDomain | null {
+  if (!end) {
+    return null;
+  }
+  if (end.decision.limitingFactor.domain) {
+    return end.decision.limitingFactor.domain as DecisionDomain;
+  }
+  if (end.decision.limitingFactor.system === 'PHYSICAL_HEALTH') {
+    return 'PHYSICAL_HEALTH';
+  }
+  return end.decision.limitingFactor.system as DecisionDomain | null;
+}
+
+function endVerdictFromDay(end: ProjectedAthleteState['days'][number] | undefined) {
+  return end?.decision.overallVerdict ?? 'INSUFFICIENT_DATA';
+}
+
+function endConfidenceFromDay(end: ProjectedAthleteState['days'][number] | undefined) {
+  return end?.decision.confidence ?? 0;
+}
+
+function endConfidenceTierFromDay(end: ProjectedAthleteState['days'][number] | undefined) {
+  return end?.decision.confidenceTier ?? 'INSUFFICIENT';
+}
+
+function endExpectedBenefitFromDay(end: ProjectedAthleteState['days'][number] | undefined) {
+  return end?.decision.primaryDecision.expectedBenefit ?? 0;
+}
+
+function endVerdictFields(end: ProjectedAthleteState['days'][number] | undefined) {
+  return {
+    endVerdict: endVerdictFromDay(end),
+    endConfidence: endConfidenceFromDay(end),
+    endConfidenceTier: endConfidenceTierFromDay(end),
+    endExpectedBenefit: endExpectedBenefitFromDay(end),
+  };
+}
+
+function endDecisionFields(
+  end: ProjectedAthleteState['days'][number] | undefined,
+  worstVerdict: OverallVerdict,
+  riskDayCount: number,
+  horizonMeanConfidence: number,
+): ScenarioDecisionSnapshot {
+  return {
+    ...endVerdictFields(end),
+    endLimitingFactorDomain: resolveLimitingDomain(end),
+    endLimitingFactorPriority: end?.decision.limitingFactor.priority ?? 99,
+    worstVerdict,
+    riskDayCount,
+    horizonMeanConfidence,
+  };
+}
+
+export function extractScenarioDecisionSnapshot(
+  projection: ProjectedAthleteState,
+): ScenarioDecisionSnapshot {
+  const { days } = projection;
+  const end = days.at(-1);
+  const verdicts = days.map((d) => d.decision.overallVerdict);
+  const worstVerdict = findWorstVerdict(verdicts);
   const riskDayCount = days.filter((d) => RISK_VERDICTS.has(d.decision.overallVerdict)).length;
   const horizonMeanConfidence =
     days.length > 0
@@ -44,24 +103,7 @@ export function extractScenarioDecisionSnapshot(
         100
       : 0;
 
-  const limitingDomain =
-    (end?.decision.limitingFactor.domain as DecisionDomain | null) ??
-    (end?.decision.limitingFactor.system === 'PHYSICAL_HEALTH'
-      ? 'PHYSICAL_HEALTH'
-      : end?.decision.limitingFactor.system) ??
-    null;
-
-  return {
-    endVerdict: end?.decision.overallVerdict ?? 'INSUFFICIENT_DATA',
-    endConfidence: end?.decision.confidence ?? 0,
-    endConfidenceTier: end?.decision.confidenceTier ?? 'INSUFFICIENT',
-    endExpectedBenefit: end?.decision.primaryDecision.expectedBenefit ?? 0,
-    endLimitingFactorDomain: limitingDomain,
-    endLimitingFactorPriority: end?.decision.limitingFactor.priority ?? 99,
-    worstVerdict,
-    riskDayCount,
-    horizonMeanConfidence,
-  };
+  return endDecisionFields(end, worstVerdict, riskDayCount, horizonMeanConfidence);
 }
 
 export { VERDICT_RISK_ORDER };

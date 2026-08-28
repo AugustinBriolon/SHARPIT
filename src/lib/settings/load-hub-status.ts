@@ -70,21 +70,39 @@ async function loadIntegrationHubFacts(athleteId: string): Promise<{
 export const getSettingsHubStatus = cache(loadSettingsHubStatus);
 
 /** Server snapshot for settings hub status chips. Failures degrade to neutral copy. */
-export async function loadSettingsHubStatus(athleteId: string): Promise<SettingsHubStatus> {
-  const [profile, goals, memory, integrationFacts] = await Promise.all([
-    getAthleteProfile(athleteId).catch(() => null),
-    getGoals(athleteId).catch(() => []),
-    listCoachMemoryEntries(prisma, athleteId).catch(() => null),
-    loadIntegrationHubFacts(athleteId).catch(() => ({ connectedCount: 0, reconnectNames: [] })),
-  ]);
-
-  const activeEntries = goals.filter((goal) => !goal.achieved);
-  const activeRaces = activeEntries.filter((goal) => goal.kind === 'RACE').length;
-  const activeMemory = memory?.entries.find((entry) => entry.isActive) ?? null;
-  const activeLabel =
+function activeMemoryLabel(
+  activeMemory:
+    NonNullable<Awaited<ReturnType<typeof listCoachMemoryEntries>>>['entries'][number] | null,
+): string | null {
+  return (
     activeMemory?.locationLabel?.trim() ||
     activeMemory?.label?.trim() ||
-    (activeMemory ? 'Actif' : null);
+    (activeMemory ? 'Actif' : null)
+  );
+}
+
+function buildHubGoalsStatus(goals: Awaited<ReturnType<typeof getGoals>>) {
+  const activeEntries = goals.filter((goal) => !goal.achieved);
+  const activeRaces = activeEntries.filter((goal) => goal.kind === 'RACE').length;
+  return goalsStatusLabel({ total: activeEntries.length, activeRaces });
+}
+
+function buildHubMemoryStatus(memory: Awaited<ReturnType<typeof listCoachMemoryEntries>> | null) {
+  const activeMemory = memory?.entries.find((entry) => entry.isActive) ?? null;
+  return memoryStatusLabel({
+    entryCount: memory?.entries.length ?? 0,
+    hasProfileContext: Boolean(memory?.profileContext?.trim()),
+    activeLabel: activeMemoryLabel(activeMemory),
+  });
+}
+
+function assembleSettingsHubStatus(input: {
+  profile: Awaited<ReturnType<typeof getAthleteProfile>> | null;
+  goals: Awaited<ReturnType<typeof getGoals>>;
+  memory: Awaited<ReturnType<typeof listCoachMemoryEntries>> | null;
+  integrationFacts: { connectedCount: number; reconnectNames: string[] };
+}): SettingsHubStatus {
+  const { profile, goals, memory, integrationFacts } = input;
 
   return {
     account: accountStatusLabel({
@@ -94,16 +112,20 @@ export async function loadSettingsHubStatus(athleteId: string): Promise<Settings
       sleepBedtimeTargetMin: profile?.sleepBedtimeTargetMin,
     }),
     equipment: equipmentStatusLabel(equipmentFactsFromRaw(profile?.equipment ?? null)),
-    goals: goalsStatusLabel({
-      total: activeEntries.length,
-      activeRaces,
-    }),
-    memory: memoryStatusLabel({
-      entryCount: memory?.entries.length ?? 0,
-      hasProfileContext: Boolean(memory?.profileContext?.trim()),
-      activeLabel,
-    }),
+    goals: buildHubGoalsStatus(goals),
+    memory: buildHubMemoryStatus(memory),
     integrations: integrationsStatusLabel(integrationFacts),
     about: `v${APP_VERSION}`,
   };
+}
+
+export async function loadSettingsHubStatus(athleteId: string): Promise<SettingsHubStatus> {
+  const [profile, goals, memory, integrationFacts] = await Promise.all([
+    getAthleteProfile(athleteId).catch(() => null),
+    getGoals(athleteId).catch(() => []),
+    listCoachMemoryEntries(prisma, athleteId).catch(() => null),
+    loadIntegrationHubFacts(athleteId).catch(() => ({ connectedCount: 0, reconnectNames: [] })),
+  ]);
+
+  return assembleSettingsHubStatus({ profile, goals, memory, integrationFacts });
 }

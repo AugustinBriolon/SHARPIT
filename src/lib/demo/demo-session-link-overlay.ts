@@ -98,10 +98,14 @@ export function resolveDemoLinkedPlannedSessionForActivity(
   plannedSessions: readonly ClientPlannedSession[] | undefined,
   links: readonly DemoLinkEntry[] = readDemoSessionLinks(),
 ): ActivityDetail['plannedSession'] {
-  if (serverPlannedSession) return serverPlannedSession;
+  if (serverPlannedSession) {
+    return serverPlannedSession;
+  }
 
   const link = findDemoLinkByActivityId(activityId, links);
-  if (!link) return null;
+  if (!link) {
+    return null;
+  }
 
   const session = plannedSessions?.find((item) => item.id === link.plannedSessionId);
   if (session) {
@@ -120,12 +124,66 @@ function withDemoReadingSummary(
   summary: NonNullable<ActivityDetail['plannedSession']>,
   reading: DemoSessionLinkReading | undefined,
 ): NonNullable<ActivityDetail['plannedSession']> {
-  if (!reading) return summary;
+  if (!reading) {
+    return summary;
+  }
   return {
     ...summary,
     analysis: reading.analysis,
     analyzedAt: new Date(reading.analyzedAt),
   };
+}
+
+function resolveDemoActivity(
+  activityId: string,
+  session: ClientPlannedSession,
+  activities: readonly ClientActivity[] | undefined,
+): NonNullable<ClientPlannedSession['activity']> {
+  const activityFromCache = activities?.find((item) => item.id === activityId);
+  if (activityFromCache) {
+    return activityFromCache;
+  }
+  if (session.activity?.id === activityId) {
+    return session.activity;
+  }
+  return { id: activityId } as NonNullable<ClientPlannedSession['activity']>;
+}
+
+function patchSessionActivityLink(
+  session: ClientPlannedSession,
+  link: DemoLinkEntry,
+  activities: readonly ClientActivity[] | undefined,
+): ClientPlannedSession {
+  const { activityId } = link;
+  if (session.activityId === activityId && session.activity?.id === activityId) {
+    return session;
+  }
+
+  return {
+    ...session,
+    activityId,
+    activity: resolveDemoActivity(activityId, session, activities),
+    completed: true,
+  } as ClientPlannedSession;
+}
+
+function patchSessionReading(
+  session: ClientPlannedSession,
+  reading: DemoSessionLinkReading,
+): ClientPlannedSession {
+  const analyzedAt = new Date(reading.analyzedAt);
+  return {
+    ...session,
+    analysis: session.analysis ?? reading.analysis,
+    analyzedAt: session.analyzedAt ?? analyzedAt,
+    activity: session.activity
+      ? ({
+          ...session.activity,
+          narrativeAnalysis: session.activity.narrativeAnalysis ?? reading.narrative,
+          narrativeAnalyzedAt: session.activity.narrativeAnalyzedAt ?? analyzedAt,
+        } as NonNullable<ClientPlannedSession['activity']>)
+      : session.activity,
+  } as ClientPlannedSession;
 }
 
 /** Planned-session modal — keep activityId / nested activity in demo after hard navigation. */
@@ -135,39 +193,13 @@ export function overlayDemoLinkOnPlannedSession(
   links: readonly DemoLinkEntry[] = readDemoSessionLinks(),
 ): ClientPlannedSession {
   const link = findDemoLinkByPlannedSessionId(session.id, links);
-  if (!link) return session;
-
-  const { activityId } = link;
-  let patched = session;
-
-  if (session.activityId !== activityId || session.activity?.id !== activityId) {
-    const activityFromCache = activities?.find((item) => item.id === activityId);
-    const activity =
-      activityFromCache ??
-      (session.activity?.id === activityId ? session.activity : null) ??
-      ({ id: activityId } as NonNullable<ClientPlannedSession['activity']>);
-
-    patched = {
-      ...session,
-      activityId,
-      activity,
-      completed: true,
-    } as ClientPlannedSession;
+  if (!link) {
+    return session;
   }
 
-  if (!link.reading) return patched;
-
-  const analyzedAt = new Date(link.reading.analyzedAt);
-  return {
-    ...patched,
-    analysis: patched.analysis ?? link.reading.analysis,
-    analyzedAt: patched.analyzedAt ?? analyzedAt,
-    activity: patched.activity
-      ? ({
-          ...patched.activity,
-          narrativeAnalysis: patched.activity.narrativeAnalysis ?? link.reading.narrative,
-          narrativeAnalyzedAt: patched.activity.narrativeAnalyzedAt ?? analyzedAt,
-        } as NonNullable<ClientPlannedSession['activity']>)
-      : patched.activity,
-  } as ClientPlannedSession;
+  const patched = patchSessionActivityLink(session, link, activities);
+  if (!link.reading) {
+    return patched;
+  }
+  return patchSessionReading(patched, link.reading);
 }

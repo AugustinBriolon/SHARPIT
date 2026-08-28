@@ -24,21 +24,67 @@ import {
 import { extractScenarioDecisionSnapshot } from '@/lib/scenario/decision-snapshot';
 import { maxImpactAcrossDays } from '@/lib/projection/planning-maps';
 
-function endDay(state: ProjectedAthleteState) {
-  return state.days[state.days.length - 1] ?? null;
+function lastProjectedDay(state: ProjectedAthleteState) {
+  return state.days[state.days.length - 1];
+}
+
+function endDayPhysiology(state: ProjectedAthleteState) {
+  const last = lastProjectedDay(state);
+  if (!last) {
+    return {
+      endReadiness: null,
+      endFatigue: null,
+      endAdaptation: null,
+      endTsb: null,
+    };
+  }
+  return {
+    endReadiness: last.physiology.expectedReadiness,
+    endFatigue: last.physiology.expectedFatigueIndex,
+    endAdaptation: last.physiology.expectedAdaptationIndex,
+    endTsb: last.load.tsb,
+  };
 }
 
 export function extractOutcomeMetrics(
   state: ProjectedAthleteState,
   environmentalImpactByDay: ReadonlyMap<string, TrainingEnvironmentalImpact>,
 ): ScenarioOutcomeMetrics {
-  const last = endDay(state);
   return {
-    endReadiness: last?.physiology.expectedReadiness ?? null,
-    endFatigue: last?.physiology.expectedFatigueIndex ?? null,
-    endAdaptation: last?.physiology.expectedAdaptationIndex ?? null,
+    ...endDayPhysiology(state),
     maxEnvironmentalImpact: maxImpactAcrossDays(environmentalImpactByDay),
-    endTsb: last?.load.tsb ?? null,
+  };
+}
+
+function buildScenarioComparisonEntry(
+  definition: ScenarioDefinition,
+  projection: ProjectedAthleteState,
+  environmentalImpactByDay: ReadonlyMap<string, TrainingEnvironmentalImpact>,
+  baselineDecision: ReturnType<typeof extractScenarioDecisionSnapshot>,
+): ScenarioComparisonEntry {
+  const decision = extractScenarioDecisionSnapshot(projection);
+  const decisionDeltaVsBaseline = computeDecisionDelta(decision, baselineDecision);
+  const compare = compareDecisionSnapshots(decision, baselineDecision);
+  const isPreferredOverBaseline = definition.kind !== 'KEEP_PLAN' && compare > 0;
+
+  return {
+    scenarioId: definition.id,
+    kind: definition.kind,
+    label: definition.label,
+    rationale: definition.rationale,
+    targetSessionId: definition.targetSessionId,
+    triggeredByDomain: definition.triggeredByDomain,
+    decision,
+    decisionDeltaVsBaseline,
+    outcome: extractOutcomeMetrics(projection, environmentalImpactByDay),
+    tradeOffs: buildDecisionTradeOffs(decisionDeltaVsBaseline),
+    preferabilityExplanation: buildPreferabilityExplanation(
+      decisionDeltaVsBaseline,
+      decision,
+      baselineDecision,
+    ),
+    isPreferredOverBaseline,
+    projection,
   };
 }
 
@@ -55,40 +101,25 @@ export function compareScenarioProjections(input: {
     environmentalImpactByDay: ReadonlyMap<string, TrainingEnvironmentalImpact>;
   }[];
 }): ScenarioComparison | null {
-  if (input.scenarios.length === 0) return null;
+  if (input.scenarios.length === 0) {
+    return null;
+  }
 
   const baselineEntry = input.scenarios.find((s) => s.definition.kind === 'KEEP_PLAN');
-  if (!baselineEntry) return null;
+  if (!baselineEntry) {
+    return null;
+  }
 
   const baselineDecision = extractScenarioDecisionSnapshot(baselineEntry.projection);
 
   const entries: ScenarioComparisonEntry[] = input.scenarios.map(
-    ({ definition, projection, environmentalImpactByDay }) => {
-      const decision = extractScenarioDecisionSnapshot(projection);
-      const decisionDeltaVsBaseline = computeDecisionDelta(decision, baselineDecision);
-      const compare = compareDecisionSnapshots(decision, baselineDecision);
-      const isPreferredOverBaseline = definition.kind !== 'KEEP_PLAN' && compare > 0;
-
-      return {
-        scenarioId: definition.id,
-        kind: definition.kind,
-        label: definition.label,
-        rationale: definition.rationale,
-        targetSessionId: definition.targetSessionId,
-        triggeredByDomain: definition.triggeredByDomain,
-        decision,
-        decisionDeltaVsBaseline,
-        outcome: extractOutcomeMetrics(projection, environmentalImpactByDay),
-        tradeOffs: buildDecisionTradeOffs(decisionDeltaVsBaseline),
-        preferabilityExplanation: buildPreferabilityExplanation(
-          decisionDeltaVsBaseline,
-          decision,
-          baselineDecision,
-        ),
-        isPreferredOverBaseline,
+    ({ definition, projection, environmentalImpactByDay }) =>
+      buildScenarioComparisonEntry(
+        definition,
         projection,
-      };
-    },
+        environmentalImpactByDay,
+        baselineDecision,
+      ),
   );
 
   const alternatives = entries.filter((e) => e.kind !== 'KEEP_PLAN' && e.isPreferredOverBaseline);

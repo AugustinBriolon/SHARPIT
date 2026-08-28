@@ -37,6 +37,56 @@ export async function countStreamBackfillCandidates(athleteId: string): Promise<
   return prisma.activity.count({ where: backfillWhere(athleteId) });
 }
 
+async function processBackfillCandidate(
+  athleteId: string,
+  activity: { id: string; garminId: string | null; stravaId: string | null },
+): Promise<{ processed: boolean; withData: boolean }> {
+  if (!activity.garminId && !activity.stravaId) {
+    return { processed: false, withData: false };
+  }
+
+  const { available, raw } = await fetchAndCacheActivityStreams(athleteId, activity.id, {
+    garminId: activity.garminId,
+    stravaId: activity.stravaId,
+  });
+
+  const withData = available && raw !== null && rawStreamsHaveSignal(raw);
+  return { processed: true, withData };
+}
+
+async function runBackfillBatch(
+  athleteId: string,
+  candidates: Array<{ id: string; garminId: string | null; stravaId: string | null }>,
+): Promise<Pick<BackfillResult, 'processed' | 'withData' | 'stopped' | 'activityIdsWithData'>> {
+  const batch: Pick<BackfillResult, 'processed' | 'withData' | 'stopped' | 'activityIdsWithData'> =
+    {
+      processed: 0,
+      withData: 0,
+      stopped: 'done',
+      activityIdsWithData: [],
+    };
+
+  for (const activity of candidates) {
+    try {
+      const outcome = await processBackfillCandidate(athleteId, activity);
+      if (!outcome.processed) {
+        continue;
+      }
+      batch.processed += 1;
+      if (outcome.withData) {
+        batch.withData += 1;
+        batch.activityIdsWithData.push(activity.id);
+      }
+    } catch (error) {
+      console.error('[stream-backfill]', activity.id, error);
+      batch.stopped = 'rate_limited';
+      break;
+    }
+  }
+
+  return batch;
+}
+
 export async function backfillActivityStreams(
   athleteId: string,
   limit = CRON_BACKFILL_BATCH,
@@ -48,38 +98,23 @@ export async function backfillActivityStreams(
     select: { id: true, garminId: true, stravaId: true },
   });
 
-  const result: BackfillResult = {
-    processed: 0,
-    withData: 0,
-    remaining: 0,
-    stopped: 'done',
-    activityIdsWithData: [],
+  if (candidates.length === 0) {
+    return {
+      processed: 0,
+      withData: 0,
+      remaining: 0,
+      stopped: 'done',
+      activityIdsWithData: [],
+    };
+  }
+
+  const batch = await runBackfillBatch(athleteId, candidates);
+  const stopped =
+    batch.stopped === 'done' && candidates.length === limit ? 'batch_full' : batch.stopped;
+
+  return {
+    ...batch,
+    stopped,
+    remaining: await countStreamBackfillCandidates(athleteId),
   };
-
-  if (candidates.length === 0) return result;
-
-  for (const activity of candidates) {
-    if (!activity.garminId && !activity.stravaId) continue;
-    try {
-      const { available, raw } = await fetchAndCacheActivityStreams(athleteId, activity.id, {
-        garminId: activity.garminId,
-        stravaId: activity.stravaId,
-      });
-      result.processed += 1;
-      if (available && raw && rawStreamsHaveSignal(raw)) {
-        result.withData += 1;
-        result.activityIdsWithData.push(activity.id);
-      }
-    } catch (error) {
-      console.error('[stream-backfill]', activity.id, error);
-      result.stopped = 'rate_limited';
-      break;
-    }
-  }
-
-  if (result.stopped === 'done' && candidates.length === limit) {
-    result.stopped = 'batch_full';
-  }
-  result.remaining = await countStreamBackfillCandidates(athleteId);
-  return result;
 }

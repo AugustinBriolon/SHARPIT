@@ -30,7 +30,9 @@ async function loadTwinState<TOutput, TState>(
 ): Promise<TState | null> {
   try {
     const cached = await loader.getLatest(athleteId, trainingDayId);
-    if (cached) return pick(cached.output);
+    if (cached) {
+      return pick(cached.output);
+    }
     const result = await loader.run(athleteId, trainingDayId);
     return pick(result.output);
   } catch (error) {
@@ -64,6 +66,35 @@ export function buildProjectedInputFromBase(
   };
 }
 
+async function loadProjectionTwinStates(athleteId: string, anchorTrainingDayId: string) {
+  const [recovery, fatigue, adaptation, physicalHealth] = await Promise.all([
+    loadTwinState(recoveryEngine, athleteId, anchorTrainingDayId, (o) => o.recoveryState),
+    loadTwinState(fatigueEngine, athleteId, anchorTrainingDayId, (o) => o.fatigueState),
+    loadTwinState(adaptationEngine, athleteId, anchorTrainingDayId, (o) => o.adaptationState),
+    loadTwinState(
+      physicalHealthEngine,
+      athleteId,
+      anchorTrainingDayId,
+      (o) => o.physicalHealthState,
+    ),
+  ]);
+  return { recovery, fatigue, adaptation, physicalHealth };
+}
+
+function projectionBaseConfidence(
+  recovery: ProjectionBaseContext['recovery'],
+  fatigue: ProjectionBaseContext['fatigue'],
+  adaptation: ProjectionBaseContext['adaptation'],
+  decisionConfidence: number | undefined,
+): number {
+  return Math.min(
+    recovery?.confidence ?? 1,
+    fatigue?.confidence ?? 1,
+    adaptation?.confidence ?? 1,
+    decisionConfidence ?? 1,
+  );
+}
+
 export async function buildProjectionBaseContext(
   athleteId: string,
   params?: {
@@ -81,37 +112,31 @@ export async function buildProjectionBaseContext(
   const futureDayIds = buildFutureDayIds(anchorTrainingDayId, horizonDays);
   const horizonEnd = new Date(`${futureDayIds[futureDayIds.length - 1]}T23:59:59.999Z`);
 
-  const [todayState, plannedSessions, recovery, fatigue, adaptation, physicalHealth, anchorPmc] =
-    await Promise.all([
-      loadTodayState({ athleteId, trainingDayId: anchorTrainingDayId }),
-      getPlannedSessions(athleteId, {
-        from: startOfDay(new Date(`${anchorTrainingDayId}T12:00:00`)),
-        to: horizonEnd,
-      }),
-      loadTwinState(recoveryEngine, athleteId, anchorTrainingDayId, (o) => o.recoveryState),
-      loadTwinState(fatigueEngine, athleteId, anchorTrainingDayId, (o) => o.fatigueState),
-      loadTwinState(adaptationEngine, athleteId, anchorTrainingDayId, (o) => o.adaptationState),
-      loadTwinState(
-        physicalHealthEngine,
-        athleteId,
-        anchorTrainingDayId,
-        (o) => o.physicalHealthState,
-      ),
-      loadAthletePmcAnchor(athleteId, {
-        refDate: new Date(`${anchorTrainingDayId}T12:00:00.000Z`),
-      }),
-    ]);
+  const [todayState, plannedSessions, twinStates, anchorPmc] = await Promise.all([
+    loadTodayState({ athleteId, trainingDayId: anchorTrainingDayId }),
+    getPlannedSessions(athleteId, {
+      from: startOfDay(new Date(`${anchorTrainingDayId}T12:00:00`)),
+      to: horizonEnd,
+    }),
+    loadProjectionTwinStates(athleteId, anchorTrainingDayId),
+    loadAthletePmcAnchor(athleteId, {
+      refDate: new Date(`${anchorTrainingDayId}T12:00:00.000Z`),
+    }),
+  ]);
 
   // Full precision on purpose: this value seeds projectPmcForward, so rounding it
   // here would compound across the whole projection horizon.
-  if (!anchorPmc) return null;
+  if (!anchorPmc) {
+    return null;
+  }
 
+  const { recovery, fatigue, adaptation, physicalHealth } = twinStates;
   const sessionSlices = slicePlannedSessions(plannedSessions, futureDayIds);
-  const baseConfidence = Math.min(
-    recovery?.confidence ?? 1,
-    fatigue?.confidence ?? 1,
-    adaptation?.confidence ?? 1,
-    todayState.decision?.confidence ?? 1,
+  const baseConfidence = projectionBaseConfidence(
+    recovery,
+    fatigue,
+    adaptation,
+    todayState.decision?.confidence,
   );
 
   return {
@@ -143,7 +168,9 @@ export async function buildProjectedAthleteInput(
   },
 ): Promise<ProjectedAthleteInput | null> {
   const context = await buildProjectionBaseContext(athleteId, params);
-  if (!context) return null;
+  if (!context) {
+    return null;
+  }
 
   const sessions = params?.sessionOverrides ?? context.sessionSlices;
   return buildProjectedInputFromBase(context.base, sessions, context.futureDayIds);

@@ -107,8 +107,12 @@ function assertNotLinkedElsewhere(
   currentTripId?: string,
 ): void {
   for (const activity of activities) {
-    if (activity.hikeTripId == null) continue;
-    if (currentTripId != null && activity.hikeTripId === currentTripId) continue;
+    if (activity.hikeTripId === null) {
+      continue;
+    }
+    if (currentTripId !== null && activity.hikeTripId === currentTripId) {
+      continue;
+    }
     throw new HikeTripConflictError(
       'Une activité appartient déjà à un autre séjour',
       activity.hikeTrip?.id ?? activity.hikeTripId,
@@ -176,6 +180,46 @@ export async function createHikeTrip(
   return result;
 }
 
+function validateHikeTripRemovals(
+  existing: HikeTripWithActivities,
+  removeIds: string[],
+  addIds: string[],
+): void {
+  if (removeIds.length === 0) {
+    return;
+  }
+
+  const unknownRemove = removeIds.filter(
+    (activityId) => !existing.activities.some((a) => a.id === activityId),
+  );
+  if (unknownRemove.length > 0) {
+    throw new HikeTripValidationError('Une ou plusieurs activités ne font pas partie du dossier');
+  }
+
+  const existingIds = new Set(existing.activities.map((a) => a.id));
+  const newAddIds = addIds.filter((activityId) => !existingIds.has(activityId));
+  const remainingCount = existing.activities.length - removeIds.length + newAddIds.length;
+  if (remainingCount < 1) {
+    throw new HikeTripValidationError(
+      'Impossible de retirer la dernière randonnée — supprimez le dossier',
+    );
+  }
+}
+
+async function validateHikeTripAdditions(
+  athleteId: string,
+  tripId: string,
+  addIds: string[],
+): Promise<void> {
+  if (addIds.length === 0) {
+    return;
+  }
+  const activitiesToAdd = await loadActivitiesForMembership(athleteId, addIds);
+  assertActivitiesExist(addIds, activitiesToAdd);
+  assertAllHikes(activitiesToAdd);
+  assertNotLinkedElsewhere(activitiesToAdd, tripId);
+}
+
 export async function updateHikeTrip(
   athleteId: string,
   id: string,
@@ -193,33 +237,11 @@ export async function updateHikeTrip(
   const removeIds = [...new Set(patch.removeActivityIds ?? [])];
   const addIds = [...new Set(patch.addActivityIds ?? [])];
 
-  if (removeIds.length > 0) {
-    const unknownRemove = removeIds.filter(
-      (activityId) => !existing.activities.some((a) => a.id === activityId),
-    );
-    if (unknownRemove.length > 0) {
-      throw new HikeTripValidationError('Une ou plusieurs activités ne font pas partie du dossier');
-    }
-
-    const existingIds = new Set(existing.activities.map((a) => a.id));
-    const newAddIds = addIds.filter((activityId) => !existingIds.has(activityId));
-    const remainingCount = existing.activities.length - removeIds.length + newAddIds.length;
-    if (remainingCount < 1) {
-      throw new HikeTripValidationError(
-        'Impossible de retirer la dernière randonnée — supprimez le dossier',
-      );
-    }
-  }
-
-  if (addIds.length > 0) {
-    const activitiesToAdd = await loadActivitiesForMembership(athleteId, addIds);
-    assertActivitiesExist(addIds, activitiesToAdd);
-    assertAllHikes(activitiesToAdd);
-    assertNotLinkedElsewhere(activitiesToAdd, id);
-  }
+  validateHikeTripRemovals(existing, removeIds, addIds);
+  await validateHikeTripAdditions(athleteId, id, addIds);
 
   await prisma.$transaction(async (tx) => {
-    if (patch.name != null) {
+    if (patch.name !== null) {
       await tx.hikeTrip.updateMany({ where: { id, athleteId }, data: { name: patch.name } });
     }
     if (removeIds.length > 0) {

@@ -44,7 +44,9 @@ function mapActivityTypeToSport(type: string): SportType {
 }
 
 function mapFeelingToMood(feeling: string | null | undefined): number | undefined {
-  if (!feeling) return undefined;
+  if (!feeling) {
+    return undefined;
+  }
   const moodMap: Record<string, number> = {
     'Très mal': 1,
     Mal: 2,
@@ -56,31 +58,46 @@ function mapFeelingToMood(feeling: string | null | undefined): number | undefine
   return moodMap[feeling] ?? undefined;
 }
 
+function positivePowerData(
+  avgPower: number | null | undefined,
+  extras: Partial<SessionPowerData> = {},
+): SessionPowerData | undefined {
+  if (!avgPower || avgPower <= 0) {
+    return undefined;
+  }
+  return {
+    avgWatts: avgPower,
+    ...extras,
+  };
+}
+
+function buildBikePowerData(
+  activity: NonNullable<Awaited<ReturnType<typeof getActivityById>>>,
+): SessionPowerData | undefined {
+  return positivePowerData(activity.bikeMetrics?.avgPower, {
+    normalizedPower: activity.bikeMetrics?.normalizedPower ?? undefined,
+    intensityFactor: activity.bikeMetrics?.intensityFactor ?? undefined,
+    quality: 'MEASURED_DIRECT',
+  });
+}
+
+function buildRunPowerData(
+  activity: NonNullable<Awaited<ReturnType<typeof getActivityById>>>,
+): SessionPowerData | undefined {
+  return positivePowerData(activity.runMetrics?.avgPower, {
+    quality: 'MEASURED_OPTICAL',
+  });
+}
+
 function buildPowerData(
   activity: NonNullable<Awaited<ReturnType<typeof getActivityById>>>,
 ): SessionPowerData | undefined {
   if (activity.type === 'BIKE' || activity.type === 'TRIATHLON') {
-    const avgPower = activity.bikeMetrics?.avgPower ?? null;
-    if (avgPower && avgPower > 0) {
-      return {
-        avgWatts: avgPower,
-        normalizedPower: activity.bikeMetrics?.normalizedPower ?? undefined,
-        intensityFactor: activity.bikeMetrics?.intensityFactor ?? undefined,
-        quality: 'MEASURED_DIRECT',
-      };
-    }
+    return buildBikePowerData(activity);
   }
-
   if (activity.type === 'RUN') {
-    const avgPower = activity.runMetrics?.avgPower ?? null;
-    if (avgPower && avgPower > 0) {
-      return {
-        avgWatts: avgPower,
-        quality: 'MEASURED_OPTICAL',
-      };
-    }
+    return buildRunPowerData(activity);
   }
-
   return undefined;
 }
 
@@ -99,47 +116,57 @@ function buildHrData(
   return undefined;
 }
 
+function positivePaceData(
+  distanceM: number | null | undefined,
+  paceMinPerKm: number,
+): SessionPaceData | undefined {
+  if (!distanceM || distanceM <= 0 || paceMinPerKm <= 0) {
+    return undefined;
+  }
+  return {
+    avgMinPerKm: paceMinPerKm,
+    distanceM,
+  };
+}
+
+function buildRunPaceData(
+  activity: NonNullable<Awaited<ReturnType<typeof getActivityById>>>,
+): SessionPaceData | undefined {
+  const paceSecPerKm = activity.runMetrics?.paceSecPerKm;
+  return positivePaceData(activity.runMetrics?.distanceM, (paceSecPerKm ?? 0) / 60);
+}
+
+function buildSwimPaceData(
+  activity: NonNullable<Awaited<ReturnType<typeof getActivityById>>>,
+): SessionPaceData | undefined {
+  const avgPaceSecPer100m = activity.swimMetrics?.avgPaceSecPer100m;
+  return positivePaceData(activity.swimMetrics?.distanceM, (avgPaceSecPer100m ?? 0) / 10 / 60);
+}
+
 function buildPaceData(
   activity: NonNullable<Awaited<ReturnType<typeof getActivityById>>>,
 ): SessionPaceData | undefined {
   if (activity.type === 'RUN') {
-    const distanceM = activity.runMetrics?.distanceM ?? null;
-    const paceSecPerKm = activity.runMetrics?.paceSecPerKm ?? null;
-    if (distanceM && distanceM > 0 && paceSecPerKm && paceSecPerKm > 0) {
-      return {
-        avgMinPerKm: paceSecPerKm / 60,
-        distanceM,
-      };
-    }
+    return buildRunPaceData(activity);
   }
-
   if (activity.type === 'SWIM') {
-    const distanceM = activity.swimMetrics?.distanceM ?? null;
-    const avgPaceSecPer100m = activity.swimMetrics?.avgPaceSecPer100m ?? null;
-    if (distanceM && distanceM > 0 && avgPaceSecPer100m && avgPaceSecPer100m > 0) {
-      return {
-        avgMinPerKm: avgPaceSecPer100m / 10 / 60,
-        distanceM,
-      };
-    }
+    return buildSwimPaceData(activity);
   }
-
   return undefined;
+}
+
+function sessionElevationM(
+  activity: NonNullable<Awaited<ReturnType<typeof getActivityById>>>,
+): number | undefined {
+  return activity.runMetrics?.elevationM ?? activity.bikeMetrics?.elevationM ?? undefined;
 }
 
 function buildManualSessionObservation(
   activity: NonNullable<Awaited<ReturnType<typeof getActivityById>>>,
 ): RawSessionObservation | null {
-  if (!activity.duration || activity.duration <= 0) return null;
-
-  const powerData = buildPowerData(activity);
-  const hrData = buildHrData(activity);
-  const paceData = buildPaceData(activity);
-
-  const elevationM =
-    activity.runMetrics?.elevationM ?? activity.bikeMetrics?.elevationM ?? undefined;
-
-  const calories = activity.bikeMetrics?.calories ?? undefined;
+  if (!activity.duration || activity.duration <= 0) {
+    return null;
+  }
 
   return {
     type: 'SESSION',
@@ -151,11 +178,11 @@ function buildManualSessionObservation(
     externalId: manualActivityExternalId(activity.id),
     title: activity.title ?? undefined,
     notes: activity.notes ?? undefined,
-    powerData,
-    hrData,
-    paceData,
-    elevationM,
-    calories,
+    powerData: buildPowerData(activity),
+    hrData: buildHrData(activity),
+    paceData: buildPaceData(activity),
+    elevationM: sessionElevationM(activity),
+    calories: activity.bikeMetrics?.calories ?? undefined,
     // sourceProvidedStress is deliberately omitted: Activity.load coalesced
     // Garmin's TSS with its EPOC training load for every row written before that
     // was separated, so feeding it in would import two mixed scales into the Core,
@@ -167,7 +194,9 @@ function buildManualSubjectiveObservation(
   activity: NonNullable<Awaited<ReturnType<typeof getActivityById>>>,
 ): RawSubjectiveObservation | null {
   const mood = mapFeelingToMood(activity.feeling);
-  if (activity.rpe == null && mood == null) return null;
+  if (activity.rpe === null && mood === null) {
+    return null;
+  }
 
   return {
     type: 'SUBJECTIVE',
@@ -230,7 +259,9 @@ export async function syncManualActivityObservations(
   await removeManualActivityObservations(athleteId, activity.id);
 
   const rawSession = buildManualSessionObservation(activity);
-  if (!rawSession) return;
+  if (!rawSession) {
+    return;
+  }
 
   await observationEngine.ingest(athleteId, rawSession);
 
@@ -252,23 +283,60 @@ function mapBodySide(
   return side ?? 'NA';
 }
 
+function resolveConditionSeverity(
+  note: NonNullable<Awaited<ReturnType<typeof getPhysicalNoteById>>>,
+): number {
+  const latestCheckin = note.checkins[0] ?? null;
+  return note.status === 'RESOLVED' ? 0 : (latestCheckin?.severity ?? note.severity ?? 0);
+}
+
+function physicalConditionTimestamp(
+  note: NonNullable<Awaited<ReturnType<typeof getPhysicalNoteById>>>,
+  latestCheckin:
+    NonNullable<Awaited<ReturnType<typeof getPhysicalNoteById>>>['checkins'][number] | null,
+): Date {
+  if (latestCheckin?.date) {
+    return latestCheckin.date;
+  }
+  if (note.resolvedAt) {
+    return note.resolvedAt;
+  }
+  if (note.startDate) {
+    return note.startDate;
+  }
+  return note.updatedAt;
+}
+
+function physicalConditionDescription(
+  note: NonNullable<Awaited<ReturnType<typeof getPhysicalNoteById>>>,
+  latestCheckin:
+    NonNullable<Awaited<ReturnType<typeof getPhysicalNoteById>>>['checkins'][number] | null,
+): string {
+  if (latestCheckin?.comment) {
+    return latestCheckin.comment;
+  }
+  if (note.description) {
+    return note.description;
+  }
+  return note.title;
+}
+
 function buildPhysicalConditionObservation(
   note: NonNullable<Awaited<ReturnType<typeof getPhysicalNoteById>>>,
 ): RawPhysicalConditionObservation {
   const latestCheckin = note.checkins[0] ?? null;
-  const severity = note.status === 'RESOLVED' ? 0 : (latestCheckin?.severity ?? note.severity ?? 0);
-  const affectsTraining = note.status === 'RESOLVED' ? false : note.affectsTraining;
+  const affectsTraining = note.status !== 'RESOLVED' && note.affectsTraining;
 
   return {
     type: 'PHYSICAL_CONDITION',
     source: 'MANUAL',
-    timestamp: latestCheckin?.date ?? note.resolvedAt ?? note.startDate ?? note.updatedAt,
+    timestamp: physicalConditionTimestamp(note, latestCheckin),
     receivedAt: new Date(),
     category: mapPhysicalCategory(note.category),
     bodyRegion: note.bodyPart ?? note.title,
     bodySide: mapBodySide(note.side),
-    severity,
-    description: latestCheckin?.comment ?? note.description ?? note.title,
+    severity: resolveConditionSeverity(note),
+    description: physicalConditionDescription(note, latestCheckin),
     conditionId: manualConditionExternalId(note.id),
     affectsTraining,
   };

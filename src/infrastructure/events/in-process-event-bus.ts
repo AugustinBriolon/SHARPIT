@@ -45,7 +45,9 @@ export function createFeatureEngineBus(featureEng: FeatureEngine): InProcessEven
   const bus = new InProcessEventBus();
 
   bus.subscribe(async (event) => {
-    if (event.kind !== 'ObservationIngested') return;
+    if (event.kind !== 'ObservationIngested') {
+      return;
+    }
 
     // The event carries only identifiers, so this is a routing envelope, not a
     // usable observation. The FeatureEngine loads the body from its observation

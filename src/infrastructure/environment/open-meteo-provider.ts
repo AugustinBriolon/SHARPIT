@@ -51,7 +51,9 @@ export function createOpenMeteoEnvironmentalProvider(
     priority: 10,
 
     isAvailable(context: ProviderAvailabilityContext): boolean {
-      if (!enabled) return false;
+      if (!enabled) {
+        return false;
+      }
       return isValidCoordinate(context.location.latitude, context.location.longitude);
     },
 

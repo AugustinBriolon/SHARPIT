@@ -197,7 +197,9 @@ export class PrismaFeatureRepository implements FeatureRepository {
       where: { athleteId, category: 'SESSION', sessionObsId, status: 'COMPUTED' },
       orderBy: { version: 'desc' },
     });
-    if (!row) return null;
+    if (!row) {
+      return null;
+    }
     return toSessionRecord(row as PrismaFeatureSetRow);
   }
 
@@ -235,7 +237,9 @@ export class PrismaFeatureRepository implements FeatureRepository {
       where: { athleteId, category: 'LOAD', trainingDayId, status: 'COMPUTED' },
       orderBy: { version: 'desc' },
     });
-    if (!row) return null;
+    if (!row) {
+      return null;
+    }
     return toLoadRecord(row as PrismaFeatureSetRow);
   }
 
@@ -247,7 +251,9 @@ export class PrismaFeatureRepository implements FeatureRepository {
       where: { athleteId, category: 'RECOVERY', trainingDayId, status: 'COMPUTED' },
       orderBy: { version: 'desc' },
     });
-    if (!row) return null;
+    if (!row) {
+      return null;
+    }
     return toRecoveryRecord(row as PrismaFeatureSetRow);
   }
 
@@ -259,7 +265,9 @@ export class PrismaFeatureRepository implements FeatureRepository {
       where: { athleteId, category: 'FUEL', trainingDayId, status: 'COMPUTED' },
       orderBy: { version: 'desc' },
     });
-    if (!row) return null;
+    if (!row) {
+      return null;
+    }
     return toFuelRecord(row as PrismaFeatureSetRow);
   }
 
@@ -271,7 +279,9 @@ export class PrismaFeatureRepository implements FeatureRepository {
       where: { athleteId, category: 'BODY', trainingDayId, status: 'COMPUTED' },
       orderBy: { version: 'desc' },
     });
-    if (!row) return null;
+    if (!row) {
+      return null;
+    }
     return toBodyRecord(row as PrismaFeatureSetRow);
   }
 
@@ -283,7 +293,9 @@ export class PrismaFeatureRepository implements FeatureRepository {
       where: { athleteId, category: 'CONDITION', trainingDayId, status: 'COMPUTED' },
       orderBy: { version: 'desc' },
     });
-    if (!row) return null;
+    if (!row) {
+      return null;
+    }
     return toConditionRecord(row as PrismaFeatureSetRow);
   }
 

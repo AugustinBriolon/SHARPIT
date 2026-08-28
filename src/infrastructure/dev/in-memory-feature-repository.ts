@@ -59,22 +59,11 @@ export class InMemoryFeatureRepository implements FeatureRepository {
     const sessionMap = new Map<string, SessionFeatureSetRecord>();
 
     for (const record of this.store.values()) {
-      if (
-        record.athleteId !== athleteId ||
-        record.category !== 'SESSION' ||
-        record.status !== 'COMPUTED'
-      )
+      const session = this.sessionInRange(record, athleteId, fromTrainingDayId, toTrainingDayId);
+      if (!session) {
         continue;
-
-      const r = record as SessionFeatureSetRecord;
-      if (!r.trainingDayId) continue;
-      if (r.trainingDayId < fromTrainingDayId || r.trainingDayId > toTrainingDayId) continue;
-
-      const key = r.sessionObsId ?? r.id;
-      const existing = sessionMap.get(key);
-      if (!existing || r.version > existing.version) {
-        sessionMap.set(key, r);
       }
+      this.upsertLatestSession(sessionMap, session);
     }
 
     return [...sessionMap.values()].sort((a, b) =>
@@ -260,13 +249,51 @@ export class InMemoryFeatureRepository implements FeatureRepository {
   // Private helpers
   // ─────────────────────────────────────────────────────────────────────────
 
+  private sessionInRange(
+    record: FeatureSetRecord,
+    athleteId: string,
+    fromTrainingDayId: string,
+    toTrainingDayId: string,
+  ): SessionFeatureSetRecord | null {
+    if (
+      record.athleteId !== athleteId ||
+      record.category !== 'SESSION' ||
+      record.status !== 'COMPUTED'
+    ) {
+      return null;
+    }
+
+    const session = record as SessionFeatureSetRecord;
+    if (!session.trainingDayId) {
+      return null;
+    }
+    if (session.trainingDayId < fromTrainingDayId || session.trainingDayId > toTrainingDayId) {
+      return null;
+    }
+
+    return session;
+  }
+
+  private upsertLatestSession(
+    sessionMap: Map<string, SessionFeatureSetRecord>,
+    session: SessionFeatureSetRecord,
+  ): void {
+    const key = session.sessionObsId ?? session.id;
+    const existing = sessionMap.get(key);
+    if (!existing || session.version > existing.version) {
+      sessionMap.set(key, session);
+    }
+  }
+
   private queryLatestComputed<T extends FeatureSetRecord>(
     predicate: (r: FeatureSetRecord) => r is T,
   ): T | undefined {
     let latest: T | undefined;
 
     for (const record of this.store.values()) {
-      if (!predicate(record) || record.status !== 'COMPUTED') continue;
+      if (!predicate(record) || record.status !== 'COMPUTED') {
+        continue;
+      }
       if (!latest || record.version > latest.version) {
         latest = record;
       }

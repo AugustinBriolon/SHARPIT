@@ -9,25 +9,38 @@ import {
 } from '@/lib/activity/detail/activity-analysis';
 import type { RawStreams } from '@/lib/streams/streams';
 
+const SPORT_TO_ACTIVITY_TYPE: Partial<Record<SessionObservation['sportType'], ActivityType>> = {
+  RUN: ActivityType.RUN,
+  TRAIL_RUN: ActivityType.RUN,
+  BIKE: ActivityType.BIKE,
+  MTB: ActivityType.BIKE,
+  SWIM: ActivityType.SWIM,
+  OPEN_WATER: ActivityType.SWIM,
+  STRENGTH: ActivityType.STRENGTH,
+  YOGA: ActivityType.STRENGTH,
+  TRIATHLON: ActivityType.TRIATHLON,
+};
+
 function toActivityType(sportType: SessionObservation['sportType']): ActivityType {
-  switch (sportType) {
-    case 'RUN':
-    case 'TRAIL_RUN':
-      return ActivityType.RUN;
-    case 'BIKE':
-    case 'MTB':
-      return ActivityType.BIKE;
-    case 'SWIM':
-    case 'OPEN_WATER':
-      return ActivityType.SWIM;
-    case 'STRENGTH':
-    case 'YOGA':
-      return ActivityType.STRENGTH;
-    case 'TRIATHLON':
-      return ActivityType.TRIATHLON;
-    default:
-      return ActivityType.OTHER;
-  }
+  return SPORT_TO_ACTIVITY_TYPE[sportType] ?? ActivityType.OTHER;
+}
+
+function profileThresholdInput(ctx: ExtractionContext) {
+  return {
+    ftpW: ctx.ftpW ?? null,
+    maxHr: ctx.maxHr ?? null,
+    lthr: ctx.lthr ?? null,
+    runThresholdPaceSecPerKm: ctx.runThresholdPaceSecPerKm ?? null,
+  };
+}
+
+function sessionAnalysisContext(session: SessionObservation) {
+  return {
+    type: toActivityType(session.sportType),
+    durationSec: session.durationSec,
+    bikeNormalizedPower: session.powerData?.normalizedPower ?? null,
+    bikeIntensityFactor: session.powerData?.intensityFactor ?? null,
+  };
 }
 
 function buildThresholds(
@@ -35,21 +48,7 @@ function buildThresholds(
   raw: RawStreams,
   session: SessionObservation,
 ): AthleteThresholds {
-  return resolveThresholds(
-    {
-      ftpW: ctx.ftpW ?? null,
-      maxHr: ctx.maxHr ?? null,
-      lthr: ctx.lthr ?? null,
-      runThresholdPaceSecPerKm: ctx.runThresholdPaceSecPerKm ?? null,
-    },
-    raw,
-    {
-      type: toActivityType(session.sportType),
-      durationSec: session.durationSec,
-      bikeNormalizedPower: session.powerData?.normalizedPower ?? null,
-      bikeIntensityFactor: session.powerData?.intensityFactor ?? null,
-    },
-  );
+  return resolveThresholds(profileThresholdInput(ctx), raw, sessionAnalysisContext(session));
 }
 
 function findSessionWhere(session: SessionObservation) {
@@ -68,7 +67,9 @@ function findSessionWhere(session: SessionObservation) {
 function mapZonesToFiveBuckets(
   zones: Array<{ id: string; seconds: number }>,
 ): readonly [number, number, number, number, number] | null {
-  if (zones.length === 0) return null;
+  if (zones.length === 0) {
+    return null;
+  }
 
   const buckets = [0, 0, 0, 0, 0];
   for (const zone of zones) {
@@ -94,12 +95,71 @@ function mapZonesToFiveBuckets(
   return buckets.map((v) => Number(v.toFixed(1))) as [number, number, number, number, number];
 }
 
+function computeLoadFactors(
+  timeInZones: readonly [number, number, number, number, number] | null,
+  durationSec: number,
+): { aerobicLoadFactor: number | null; anaerobicLoadFactor: number | null } {
+  if (timeInZones === null) {
+    return { aerobicLoadFactor: null, anaerobicLoadFactor: null };
+  }
+
+  const durationMin = Math.max(durationSec / 60, 1);
+  return {
+    aerobicLoadFactor: Number(((timeInZones[0] + timeInZones[1]) / durationMin || 0).toFixed(3)),
+    anaerobicLoadFactor: Number(((timeInZones[3] + timeInZones[4]) / durationMin || 0).toFixed(3)),
+  };
+}
+
+function buildStreamResult(
+  analysis: NonNullable<ReturnType<typeof analyzeActivityStreams>>,
+  session: SessionObservation,
+) {
+  const zones = analysis.hr.zones.length > 0 ? analysis.hr.zones : (analysis.power?.zones ?? []);
+  const timeInZones = mapZonesToFiveBuckets(zones);
+  const { aerobicLoadFactor, anaerobicLoadFactor } = computeLoadFactors(
+    timeInZones,
+    session.durationSec,
+  );
+
+  return {
+    aerobicLoadFactor,
+    anaerobicLoadFactor,
+    timeInZones,
+    hrDriftPercent: analysis.hr.decouplingPct,
+    paceVariabilityIndex:
+      analysis.run?.paceVariabilityPct !== null
+        ? Number((analysis.run.paceVariabilityPct / 100).toFixed(3))
+        : null,
+  };
+}
+
+function analyzeSessionStream(
+  activity: {
+    type: ActivityType;
+    duration: number;
+    stream: { available: boolean; data: unknown };
+  },
+  session: SessionObservation,
+  ctx: ExtractionContext,
+  raw: RawStreams,
+) {
+  const thresholds = buildThresholds(ctx, raw, session);
+  return analyzeActivityStreams(raw, thresholds, {
+    type: activity.type,
+    durationSec: activity.duration,
+    bikeNormalizedPower: session.powerData?.normalizedPower ?? null,
+    bikeIntensityFactor: session.powerData?.intensityFactor ?? null,
+  });
+}
+
 export class PrismaSessionStreamProvider implements SessionStreamProvider {
   constructor(private readonly prisma: PrismaClient) {}
 
   async getSessionStream(session: SessionObservation, ctx: ExtractionContext) {
     const where = findSessionWhere(session);
-    if (!where) return null;
+    if (!where) {
+      return null;
+    }
 
     const activity = await this.prisma.activity.findFirst({
       where,
@@ -111,47 +171,16 @@ export class PrismaSessionStreamProvider implements SessionStreamProvider {
       },
     });
 
-    if (!activity?.stream?.available || !activity.stream.data) return null;
+    if (!activity?.stream?.available || !activity.stream.data) {
+      return null;
+    }
 
     const raw = activity.stream.data as unknown as RawStreams;
-    const thresholds = buildThresholds(ctx, raw, session);
-    const analysis = analyzeActivityStreams(raw, thresholds, {
-      type: activity.type,
-      durationSec: activity.duration,
-      bikeNormalizedPower: session.powerData?.normalizedPower ?? null,
-      bikeIntensityFactor: session.powerData?.intensityFactor ?? null,
-    });
+    const analysis = analyzeSessionStream(activity, session, ctx, raw);
+    if (!analysis) {
+      return null;
+    }
 
-    if (!analysis) return null;
-
-    const zones = analysis.hr.zones.length > 0 ? analysis.hr.zones : (analysis.power?.zones ?? []);
-    const timeInZones = mapZonesToFiveBuckets(zones);
-    const aerobicLoadFactor =
-      timeInZones == null
-        ? null
-        : Number(
-            (
-              (timeInZones[0] + timeInZones[1]) / Math.max(session.durationSec / 60, 1) || 0
-            ).toFixed(3),
-          );
-    const anaerobicLoadFactor =
-      timeInZones == null
-        ? null
-        : Number(
-            (
-              (timeInZones[3] + timeInZones[4]) / Math.max(session.durationSec / 60, 1) || 0
-            ).toFixed(3),
-          );
-
-    return {
-      aerobicLoadFactor,
-      anaerobicLoadFactor,
-      timeInZones,
-      hrDriftPercent: analysis.hr.decouplingPct,
-      paceVariabilityIndex:
-        analysis.run?.paceVariabilityPct != null
-          ? Number((analysis.run.paceVariabilityPct / 100).toFixed(3))
-          : null,
-    };
+    return buildStreamResult(analysis, session);
   }
 }

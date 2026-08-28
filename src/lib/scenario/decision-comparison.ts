@@ -15,8 +15,12 @@ export const COMPARISON_METHOD =
 type CompareResult = -1 | 0 | 1;
 
 function sign(n: number): CompareResult {
-  if (n > 0) return 1;
-  if (n < 0) return -1;
+  if (n > 0) {
+    return 1;
+  }
+  if (n < 0) {
+    return -1;
+  }
   return 0;
 }
 
@@ -51,7 +55,9 @@ export function compareDecisionSnapshots(
   ];
 
   for (const step of steps) {
-    if (step !== 0) return step;
+    if (step !== 0) {
+      return step;
+    }
   }
   return 0;
 }
@@ -91,21 +97,24 @@ const VERDICT_LABELS: Record<string, string> = {
   INSUFFICIENT_DATA: 'Données insuffisantes',
 };
 
-export function buildPreferabilityExplanation(
+function verdictLabel(verdict: string): string {
+  return VERDICT_LABELS[verdict] ?? verdict;
+}
+
+function preferabilityParts(
   delta: ScenarioDecisionDelta,
   candidate: ScenarioDecisionSnapshot,
   baseline: ScenarioDecisionSnapshot,
-): string {
+): string[] {
   const parts: string[] = [];
-
   if (delta.worstVerdictImproved === true) {
     parts.push(
-      `verdict le plus défavorable amélioré (${VERDICT_LABELS[baseline.worstVerdict] ?? baseline.worstVerdict} → ${VERDICT_LABELS[candidate.worstVerdict] ?? candidate.worstVerdict})`,
+      `verdict le plus défavorable amélioré (${verdictLabel(baseline.worstVerdict)} → ${verdictLabel(candidate.worstVerdict)})`,
     );
   }
   if (delta.endVerdictImproved === true) {
     parts.push(
-      `verdict de fin d’horizon plus favorable (${VERDICT_LABELS[baseline.endVerdict] ?? baseline.endVerdict} → ${VERDICT_LABELS[candidate.endVerdict] ?? candidate.endVerdict})`,
+      `verdict de fin d’horizon plus favorable (${verdictLabel(baseline.endVerdict)} → ${verdictLabel(candidate.endVerdict)})`,
     );
   }
   if (delta.endExpectedBenefitDelta > 0) {
@@ -120,14 +129,21 @@ export function buildPreferabilityExplanation(
   if (delta.endLimitingFactorDomainChanged && candidate.endLimitingFactorDomain) {
     parts.push(`facteur limitant déplacé vers ${candidate.endLimitingFactorDomain}`);
   }
+  return parts;
+}
 
+export function buildPreferabilityExplanation(
+  delta: ScenarioDecisionDelta,
+  candidate: ScenarioDecisionSnapshot,
+  baseline: ScenarioDecisionSnapshot,
+): string {
+  const parts = preferabilityParts(delta, candidate, baseline);
   if (parts.length === 0) {
     if (compareDecisionSnapshots(candidate, baseline) < 0) {
       return 'Moins favorable que le plan actuel selon les sorties Decision Engine.';
     }
     return 'Équivalent au plan actuel sur les sorties Decision Engine comparées.';
   }
-
   return parts.join(' · ');
 }
 

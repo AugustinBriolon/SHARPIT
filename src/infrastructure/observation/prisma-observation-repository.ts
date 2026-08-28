@@ -85,7 +85,9 @@ const TOP_LEVEL_FIELDS = new Set([
 function toData(obs: Observation): Prisma.InputJsonValue {
   const raw: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obs)) {
-    if (TOP_LEVEL_FIELDS.has(key)) continue;
+    if (TOP_LEVEL_FIELDS.has(key)) {
+      continue;
+    }
     raw[key] = value instanceof Date ? value.toISOString() : value;
   }
   // JSON round-trip ensures JSONB-safe output with predictable typing
@@ -127,6 +129,43 @@ function toDomain(row: PrismaObservationRow): Observation {
     normalizedAt: row.normalizedAt,
     ...rehydrated,
   } as Observation;
+}
+
+function buildTimestampFilter(
+  filter: ObservationFilter,
+): Prisma.ObservationWhereInput['timestamp'] {
+  if (!filter.since && !filter.until) {
+    return undefined;
+  }
+  return {
+    ...(filter.since && { gte: filter.since }),
+    ...(filter.until && { lte: filter.until }),
+  };
+}
+
+function buildFindWhere(
+  athleteId: string,
+  filter: ObservationFilter,
+): Prisma.ObservationWhereInput {
+  return {
+    athleteId,
+    ...(filter.types && { type: { in: filter.types } }),
+    ...(filter.sources && { source: { in: filter.sources } }),
+    ...(filter.trainingDayId && { trainingDayId: filter.trainingDayId }),
+    ...(filter.trainingDayIds && { trainingDayId: { in: filter.trainingDayIds } }),
+    ...(buildTimestampFilter(filter) && { timestamp: buildTimestampFilter(filter) }),
+  };
+}
+
+function filterByQualityMin(
+  observations: Observation[],
+  qualityMin: ObservationQuality | undefined,
+): Observation[] {
+  if (!qualityMin) {
+    return observations;
+  }
+  const minRank = QUALITY_RANK[qualityMin];
+  return observations.filter((obs) => QUALITY_RANK[obs.quality] >= minRank);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -174,33 +213,12 @@ export class PrismaObservationRepository implements ObservationRepository {
 
   async find(athleteId: string, filter: ObservationFilter): Promise<Observation[]> {
     const rows = await this.prisma.observation.findMany({
-      where: {
-        athleteId,
-        ...(filter.types && { type: { in: filter.types } }),
-        ...(filter.sources && { source: { in: filter.sources } }),
-        ...(filter.trainingDayId && { trainingDayId: filter.trainingDayId }),
-        ...(filter.trainingDayIds && { trainingDayId: { in: filter.trainingDayIds } }),
-        ...(filter.since || filter.until
-          ? {
-              timestamp: {
-                ...(filter.since && { gte: filter.since }),
-                ...(filter.until && { lte: filter.until }),
-              },
-            }
-          : {}),
-      },
+      where: buildFindWhere(athleteId, filter),
       orderBy: { timestamp: 'desc' },
     });
 
     const observations = rows.map((r) => toDomain(r as PrismaObservationRow));
-
-    // Quality filtering is done in memory (quality is not sortable in Postgres without an ordered enum)
-    if (filter.qualityMin) {
-      const minRank = QUALITY_RANK[filter.qualityMin];
-      return observations.filter((obs) => QUALITY_RANK[obs.quality] >= minRank);
-    }
-
-    return observations;
+    return filterByQualityMin(observations, filter.qualityMin);
   }
 
   async findByExternalId(

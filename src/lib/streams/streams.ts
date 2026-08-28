@@ -71,94 +71,229 @@ const MAX_STORED_SECONDS = 28_800;
  * Les records et l'UI ré-échantillonnent déjà ; le stockage pleine résolution
  * multipliait inutilement le transfert réseau (~5–20×).
  */
-export function compactRawStreamsForStorage(raw: RawStreams): RawStreams {
-  const { time } = raw;
-  if (!time.length) return raw;
-
-  const maxT = Math.floor(time[time.length - 1] ?? 0);
-  if (maxT <= 0) return raw;
-
-  const cap = Math.min(maxT, MAX_STORED_SECONDS);
-  const n = cap + 1;
-
-  const resampleScalar = (values: number[]): number[] => {
-    if (!values.length) return [];
-    const grid = new Array<number>(n).fill(0);
-    let idx = 0;
-    for (let s = 0; s <= cap; s++) {
-      while (idx < time.length - 1 && (time[idx + 1] ?? 0) <= s) idx++;
-      grid[s] = values[idx] ?? 0;
-    }
-    return grid;
-  };
-
-  let latlng = raw.latlng ?? [];
-  if (latlng.length > MAX_PATH_POINTS) {
-    latlng = downsample(latlng, MAX_PATH_POINTS);
+function resampleScalarGrid(values: number[], time: number[], cap: number): number[] {
+  if (!values.length) {
+    return [];
   }
+  const grid = new Array<number>(cap + 1).fill(0);
+  let idx = 0;
+  for (let s = 0; s <= cap; s++) {
+    while (idx < time.length - 1 && (time[idx + 1] ?? 0) <= s) {
+      idx++;
+    }
+    grid[s] = values[idx] ?? 0;
+  }
+  return grid;
+}
 
+function downsampleLatLng(raw: RawStreams): [number, number][] {
+  const latlng = raw.latlng ?? [];
+  if (latlng.length <= MAX_PATH_POINTS) {
+    return latlng;
+  }
+  return downsample(latlng, MAX_PATH_POINTS);
+}
+
+function compactStreamScalars(raw: RawStreams, time: number[], cap: number) {
+  const resampleScalar = (values: number[]) => resampleScalarGrid(values, time, cap);
   return {
-    time: Array.from({ length: n }, (_, i) => i),
     distance: resampleScalar(raw.distance ?? []),
     altitude: resampleScalar(raw.altitude ?? []),
     heartrate: resampleScalar(raw.heartrate ?? []),
     watts: resampleScalar(raw.watts ?? []),
     cadence: resampleScalar(raw.cadence ?? []),
     velocity: resampleScalar(raw.velocity ?? []),
-    latlng,
   };
+}
+
+export function compactRawStreamsForStorage(raw: RawStreams): RawStreams {
+  const { time } = raw;
+  if (!time.length) {
+    return raw;
+  }
+
+  const maxT = Math.floor(time[time.length - 1] ?? 0);
+  if (maxT <= 0) {
+    return raw;
+  }
+
+  const cap = Math.min(maxT, MAX_STORED_SECONDS);
+  const n = cap + 1;
+
+  return {
+    time: Array.from({ length: n }, (_, i) => i),
+    ...compactStreamScalars(raw, time, cap),
+    latlng: downsampleLatLng(raw),
+  };
+}
+
+function normalizeStravaStreamField<T>(field: { data?: T[] } | undefined): T[] {
+  return field?.data ?? [];
 }
 
 function normalizeStravaStreams(set: StravaStreamSet): RawStreams {
   return {
-    time: set.time?.data ?? [],
-    distance: set.distance?.data ?? [],
-    altitude: set.altitude?.data ?? [],
-    heartrate: set.heartrate?.data ?? [],
-    watts: set.watts?.data ?? [],
-    cadence: set.cadence?.data ?? [],
-    velocity: set.velocity_smooth?.data ?? [],
-    latlng: set.latlng?.data ?? [],
+    time: normalizeStravaStreamField(set.time),
+    distance: normalizeStravaStreamField(set.distance),
+    altitude: normalizeStravaStreamField(set.altitude),
+    heartrate: normalizeStravaStreamField(set.heartrate),
+    watts: normalizeStravaStreamField(set.watts),
+    cadence: normalizeStravaStreamField(set.cadence),
+    velocity: normalizeStravaStreamField(set.velocity_smooth),
+    latlng: normalizeStravaStreamField(set.latlng),
   };
 }
 
 function hasSignal(arr: number[]): boolean {
-  return arr.length > 0 && arr.some((v) => v != null && v !== 0);
+  return arr.length > 0 && arr.some((v) => v !== null && v !== 0);
 }
 
 /** Échantillonnage régulier en conservant le dernier point. */
 function downsample<T>(arr: T[], max: number): T[] {
-  if (arr.length <= max) return arr;
+  if (arr.length <= max) {
+    return arr;
+  }
   const step = arr.length / max;
   const out: T[] = [];
-  for (let i = 0; i < max; i++) out.push(arr[Math.floor(i * step)]);
+  for (let i = 0; i < max; i++) {
+    out.push(arr[Math.floor(i * step)]);
+  }
   out.push(arr[arr.length - 1]);
   return out;
 }
 
 function mean(arr: number[]): number | null {
-  const valid = arr.filter((v) => v != null && !Number.isNaN(v));
-  if (!valid.length) return null;
+  const valid = arr.filter((v) => v !== null && !Number.isNaN(v));
+  if (!valid.length) {
+    return null;
+  }
   return valid.reduce((s, v) => s + v, 0) / valid.length;
 }
 
 function max(arr: number[]): number | null {
-  const valid = arr.filter((v) => v != null && !Number.isNaN(v));
-  if (!valid.length) return null;
+  const valid = arr.filter((v) => v !== null && !Number.isNaN(v));
+  if (!valid.length) {
+    return null;
+  }
   return Math.max(...valid);
 }
 
 function computeAscent(alt: number[]): number | null {
-  if (alt.length < 2) return null;
+  if (alt.length < 2) {
+    return null;
+  }
   let gain = 0;
   for (let i = 1; i < alt.length; i++) {
     const diff = alt[i] - alt[i - 1];
-    if (diff > 0) gain += diff;
+    if (diff > 0) {
+      gain += diff;
+    }
   }
   return Math.round(gain);
 }
 
-function buildPayload(
+function buildStreamHas(raw: RawStreams) {
+  return {
+    distance: hasSignal(raw.distance),
+    altitude: hasSignal(raw.altitude),
+    hr: hasSignal(raw.heartrate),
+    watts: hasSignal(raw.watts),
+    cadence: hasSignal(raw.cadence),
+    speed: hasSignal(raw.velocity),
+  };
+}
+
+function roundMeanOrNull(active: boolean, values: number[]): number | null {
+  if (!active) {
+    return null;
+  }
+  return Math.round(mean(values) ?? 0) || null;
+}
+
+function nullableStreamValue(active: boolean, value: number | undefined): number | null {
+  return active ? (value ?? null) : null;
+}
+
+function streamSampleAt(
+  raw: RawStreams,
+  has: ReturnType<typeof buildStreamHas>,
+  index: number,
+): StreamSample {
+  return {
+    t: raw.time[index] ?? 0,
+    d: raw.distance[index] ?? 0,
+    alt: nullableStreamValue(has.altitude, raw.altitude[index]),
+    hr: nullableStreamValue(has.hr, raw.heartrate[index]),
+    watts: nullableStreamValue(has.watts, raw.watts[index]),
+    cadence: nullableStreamValue(has.cadence, raw.cadence[index]),
+    speed: nullableStreamValue(has.speed, raw.velocity[index]),
+  };
+}
+
+function buildStreamSamples(
+  raw: RawStreams,
+  has: ReturnType<typeof buildStreamHas>,
+  length: number,
+) {
+  const indices = downsample(
+    Array.from({ length }, (_, i) => i),
+    MAX_SAMPLES,
+  );
+  return indices.map((index) => streamSampleAt(raw, has, index));
+}
+
+function computeStreamAvgSpeed(
+  has: ReturnType<typeof buildStreamHas>,
+  raw: RawStreams,
+  totalDistance: number | null,
+  lastTime: number | null,
+): number | null {
+  if (has.speed) {
+    return mean(raw.velocity);
+  }
+  if (totalDistance && lastTime) {
+    return totalDistance / lastTime;
+  }
+  return null;
+}
+
+function buildHrStreamStats(raw: RawStreams, has: ReturnType<typeof buildStreamHas>) {
+  return {
+    avgHr: roundMeanOrNull(has.hr, raw.heartrate),
+    maxHr: has.hr ? max(raw.heartrate) : null,
+  };
+}
+
+function buildPowerStreamStats(raw: RawStreams, has: ReturnType<typeof buildStreamHas>) {
+  return {
+    avgWatts: roundMeanOrNull(has.watts, raw.watts),
+    maxWatts: has.watts ? max(raw.watts) : null,
+    avgCadence: roundMeanOrNull(has.cadence, raw.cadence),
+    maxSpeed: has.speed ? max(raw.velocity) : null,
+  };
+}
+
+function buildAltitudeStreamStats(raw: RawStreams, has: ReturnType<typeof buildStreamHas>) {
+  return {
+    totalAscent: has.altitude ? computeAscent(raw.altitude) : null,
+    minAlt: has.altitude ? Math.round(Math.min(...raw.altitude)) : null,
+    maxAlt: has.altitude ? Math.round(Math.max(...raw.altitude)) : null,
+  };
+}
+
+function buildStreamStats(raw: RawStreams, has: ReturnType<typeof buildStreamHas>) {
+  const totalDistance = has.distance ? max(raw.distance) : null;
+  const lastTime = raw.time.length ? max(raw.time) : null;
+  return {
+    ...buildHrStreamStats(raw, has),
+    ...buildPowerStreamStats(raw, has),
+    avgSpeed: computeStreamAvgSpeed(has, raw, totalDistance, lastTime),
+    totalDistance,
+    ...buildAltitudeStreamStats(raw, has),
+  };
+}
+
+function buildStreamAnalysis(
   raw: RawStreams,
   activity: {
     type: ActivityType;
@@ -169,58 +304,7 @@ function buildPayload(
     } | null;
   },
   profile: Awaited<ReturnType<typeof getAthleteProfile>>,
-): ActivityStreamPayload {
-  const length = Math.max(raw.time.length, raw.distance.length, raw.latlng.length);
-
-  const has = {
-    distance: hasSignal(raw.distance),
-    altitude: hasSignal(raw.altitude),
-    hr: hasSignal(raw.heartrate),
-    watts: hasSignal(raw.watts),
-    cadence: hasSignal(raw.cadence),
-    speed: hasSignal(raw.velocity),
-  };
-
-  const indices = downsample(
-    Array.from({ length }, (_, i) => i),
-    MAX_SAMPLES,
-  );
-
-  const samples: StreamSample[] = indices.map((i) => ({
-    t: raw.time[i] ?? 0,
-    d: raw.distance[i] ?? 0,
-    alt: has.altitude ? (raw.altitude[i] ?? null) : null,
-    hr: has.hr ? (raw.heartrate[i] ?? null) : null,
-    watts: has.watts ? (raw.watts[i] ?? null) : null,
-    cadence: has.cadence ? (raw.cadence[i] ?? null) : null,
-    speed: has.speed ? (raw.velocity[i] ?? null) : null,
-  }));
-
-  const path = raw.latlng.length > 0 ? downsample(raw.latlng, MAX_PATH_POINTS) : null;
-
-  const totalDistance = has.distance ? max(raw.distance) : null;
-  const lastTime = raw.time.length ? max(raw.time) : null;
-  let avgSpeed: number | null = null;
-  if (has.speed) {
-    avgSpeed = mean(raw.velocity);
-  } else if (totalDistance && lastTime) {
-    avgSpeed = totalDistance / lastTime;
-  }
-
-  const stats = {
-    avgHr: has.hr ? Math.round(mean(raw.heartrate) ?? 0) || null : null,
-    maxHr: has.hr ? max(raw.heartrate) : null,
-    avgWatts: has.watts ? Math.round(mean(raw.watts) ?? 0) || null : null,
-    maxWatts: has.watts ? max(raw.watts) : null,
-    avgCadence: has.cadence ? Math.round(mean(raw.cadence) ?? 0) || null : null,
-    maxSpeed: has.speed ? max(raw.velocity) : null,
-    avgSpeed,
-    totalDistance,
-    totalAscent: has.altitude ? computeAscent(raw.altitude) : null,
-    minAlt: has.altitude ? Math.round(Math.min(...raw.altitude)) : null,
-    maxAlt: has.altitude ? Math.round(Math.max(...raw.altitude)) : null,
-  };
-
+) {
   const analysisCtx = {
     type: activity.type,
     durationSec: activity.duration,
@@ -239,7 +323,27 @@ function buildPayload(
     raw,
     analysisCtx,
   );
-  const analysis = analyzeActivityStreams(raw, thresholds, analysisCtx);
+  return analyzeActivityStreams(raw, thresholds, analysisCtx);
+}
+
+function buildPayload(
+  raw: RawStreams,
+  activity: {
+    type: ActivityType;
+    duration: number | null;
+    bikeMetrics: {
+      normalizedPower: number | null;
+      intensityFactor: number | null;
+    } | null;
+  },
+  profile: Awaited<ReturnType<typeof getAthleteProfile>>,
+): ActivityStreamPayload {
+  const length = Math.max(raw.time.length, raw.distance.length, raw.latlng.length);
+  const has = buildStreamHas(raw);
+  const samples = buildStreamSamples(raw, has, length);
+  const path = raw.latlng.length > 0 ? downsample(raw.latlng, MAX_PATH_POINTS) : null;
+  const stats = buildStreamStats(raw, has);
+  const analysis = buildStreamAnalysis(raw, activity, profile);
 
   return { available: true, path, samples, has, stats, analysis };
 }
@@ -250,9 +354,13 @@ function buildPayload(
  * analysis reflects the leg itself, not the whole triathlon.
  */
 export function normalizeMultisportLegRawStreams(raw: RawStreams): RawStreams {
-  if (raw.distance.length === 0) return raw;
+  if (raw.distance.length === 0) {
+    return raw;
+  }
   const baseDistance = raw.distance.find((value) => Number.isFinite(value)) ?? 0;
-  if (!Number.isFinite(baseDistance) || Math.abs(baseDistance) < 1) return raw;
+  if (!Number.isFinite(baseDistance) || Math.abs(baseDistance) < 1) {
+    return raw;
+  }
 
   return {
     ...raw,
@@ -290,7 +398,9 @@ async function fetchGarminLegRaw(athleteId: string, garminId: string): Promise<R
   try {
     const client = await getGarminClient(athleteId);
     const garmin = await fetchGarminActivityStreams(client, garminId);
-    if (garmin && rawStreamsHaveSignal(garmin)) return garmin;
+    if (garmin && rawStreamsHaveSignal(garmin)) {
+      return garmin;
+    }
   } catch (error) {
     console.error('fetchGarminLegRaw', garminId, error);
   }
@@ -308,6 +418,28 @@ function buildLegStreamPayload(
     { type, duration: durationSec, bikeMetrics: null },
     profile,
   );
+}
+
+async function buildMultisportLegStream(
+  athleteId: string,
+  leg: MultisportLeg,
+  profile: Awaited<ReturnType<typeof getAthleteProfile>>,
+): Promise<MultisportLegStream | null> {
+  const type = legKindToActivityType(leg.kind);
+  if (!type || !leg.garminActivityId) {
+    return null;
+  }
+
+  const raw = await fetchGarminLegRaw(athleteId, leg.garminActivityId);
+  if (!raw) {
+    return null;
+  }
+
+  return {
+    leg,
+    type,
+    stream: buildLegStreamPayload(raw, type, leg.durationSec, profile),
+  };
 }
 
 /** Streams Garmin par jambe sportive d'un triathlon (natation, vélo, course). */
@@ -328,21 +460,10 @@ export async function getMultisportLegStreams(
   }
 
   const sportLegs = sportLegsOnly(activity.multisportLegs);
-  const results: MultisportLegStream[] = [];
-
-  for (const leg of sportLegs) {
-    const type = legKindToActivityType(leg.kind);
-    if (!type || !leg.garminActivityId) continue;
-
-    const raw = await fetchGarminLegRaw(athleteId, leg.garminActivityId);
-    if (!raw) continue;
-
-    results.push({
-      leg,
-      type,
-      stream: buildLegStreamPayload(raw, type, leg.durationSec, profile),
-    });
-  }
+  const legStreams = await Promise.all(
+    sportLegs.map((leg) => buildMultisportLegStream(athleteId, leg, profile)),
+  );
+  const results = legStreams.filter((stream): stream is MultisportLegStream => stream !== null);
 
   return results.length > 0 ? { legs: results } : null;
 }
@@ -359,7 +480,9 @@ async function fetchRawStreams(
     try {
       const client = await getGarminClient(athleteId);
       const garmin = await fetchGarminActivityStreams(client, activity.garminId);
-      if (garmin && rawStreamsHaveSignal(garmin)) return garmin;
+      if (garmin && rawStreamsHaveSignal(garmin)) {
+        return garmin;
+      }
     } catch (error) {
       console.error('fetchRawStreams garmin', error);
     }
@@ -369,7 +492,9 @@ async function fetchRawStreams(
     try {
       const token = await getValidAccessToken(athleteId);
       const set = await fetchActivityStreams(token, activity.stravaId);
-      if (set) return normalizeStravaStreams(set);
+      if (set) {
+        return normalizeStravaStreams(set);
+      }
     } catch (error) {
       console.error('fetchRawStreams strava', error);
       throw error;
@@ -384,7 +509,7 @@ async function persistStream(
   activityId: string,
   raw: RawStreams | null,
 ): Promise<boolean> {
-  const available = raw != null && rawStreamsHaveSignal(raw);
+  const available = raw !== null && rawStreamsHaveSignal(raw);
   const stored = available && raw ? compactRawStreamsForStorage(raw) : null;
   await prisma.activityStream.create({
     data: {
@@ -411,10 +536,14 @@ export async function refreshSessionFeaturesAfterStream(
       where: { id: activityId, athleteId },
       select: { garminId: true, stravaId: true },
     });
-    if (!activity) return;
+    if (!activity) {
+      return;
+    }
 
     const { featureEngine, isFeatureEngineEnabled } = await import('@/lib/engines/feature-engine');
-    if (!isFeatureEngineEnabled) return;
+    if (!isFeatureEngineEnabled) {
+      return;
+    }
 
     const externalIds = [activity.garminId, activity.stravaId].filter((id): id is string =>
       Boolean(id),
@@ -432,6 +561,32 @@ export async function refreshSessionFeaturesAfterStream(
  * depuis Garmin ou Strava à la première demande puis en les mettant en cache.
  * Les erreurs transitoires renvoient `null` sans cacher, pour autoriser une retry.
  */
+async function loadCachedActivityStream(
+  activity: NonNullable<Awaited<ReturnType<typeof prisma.activity.findFirst>>>,
+  profile: Awaited<ReturnType<typeof getAthleteProfile>>,
+): Promise<ActivityStreamPayload | null> {
+  const activityCtx = {
+    type: activity.type,
+    duration: activity.duration,
+    bikeMetrics: activity.bikeMetrics,
+  };
+
+  if (!activity.stream) {
+    return null;
+  }
+
+  if (activity.stream.available && activity.stream.data) {
+    return buildPayload(activity.stream.data as unknown as RawStreams, activityCtx, profile);
+  }
+
+  if (activity.garminId) {
+    await prisma.activityStream.delete({ where: { id: activity.stream.id } });
+    return null;
+  }
+
+  return UNAVAILABLE;
+}
+
 export async function getActivityStreams(
   athleteId: string,
   activityId: string,
@@ -443,24 +598,13 @@ export async function getActivityStreams(
     }),
     getAthleteProfile(athleteId),
   ]);
-  if (!activity) return null;
+  if (!activity) {
+    return null;
+  }
 
-  const activityCtx = {
-    type: activity.type,
-    duration: activity.duration,
-    bikeMetrics: activity.bikeMetrics,
-  };
-
-  if (activity.stream) {
-    if (activity.stream.available && activity.stream.data) {
-      return buildPayload(activity.stream.data as unknown as RawStreams, activityCtx, profile);
-    }
-    // Cache « indisponible » avant liaison Garmin : retenter le fetch.
-    if (activity.garminId) {
-      await prisma.activityStream.delete({ where: { id: activity.stream.id } });
-    } else {
-      return UNAVAILABLE;
-    }
+  const cached = await loadCachedActivityStream(activity, profile);
+  if (cached !== null) {
+    return cached;
   }
 
   if (!activity.garminId && !activity.stravaId) {
@@ -473,6 +617,11 @@ export async function getActivityStreams(
   try {
     const raw = await fetchRawStreams(athleteId, activity);
     const available = await persistStream(athleteId, activityId, raw);
+    const activityCtx = {
+      type: activity.type,
+      duration: activity.duration,
+      bikeMetrics: activity.bikeMetrics,
+    };
     return available && raw ? buildPayload(raw, activityCtx, profile) : UNAVAILABLE;
   } catch (error) {
     console.error('getActivityStreams', error);
@@ -495,7 +644,9 @@ export async function getCachedActivityStreams(
     }),
     getAthleteProfile(athleteId),
   ]);
-  if (!activity?.stream?.available || activity.stream.data == null) return null;
+  if (!activity?.stream?.available || activity.stream.data === null) {
+    return null;
+  }
 
   return buildPayload(
     activity.stream.data as unknown as RawStreams,

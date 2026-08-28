@@ -112,7 +112,7 @@ function buildGpsStream({
     data.heartrate.push(Math.round(baseHr + 8 * Math.sin(progress * Math.PI * 6)));
     data.cadence.push(Math.round(baseCadence + 3 * Math.sin(progress * Math.PI * 5)));
     data.velocity.push(Math.round((distanceM / durationSec) * 10) / 10);
-    if (baseWatts != null) {
+    if (baseWatts !== null) {
       data.watts.push(Math.round(baseWatts + 15 * Math.sin(progress * Math.PI * 7)));
     }
   }
@@ -406,8 +406,12 @@ const BODY_COMPOSITION_TREND = [
 const RECOVERY_SCORES = [82, 78, 85, 90, 74, 88, 92, 80, 86, 87];
 
 function demoReadinessLevel(recoveryScore: number): 'HIGH' | 'MODERATE' | 'LOW' {
-  if (recoveryScore >= 85) return 'HIGH';
-  if (recoveryScore >= 70) return 'MODERATE';
+  if (recoveryScore >= 85) {
+    return 'HIGH';
+  }
+  if (recoveryScore >= 70) {
+    return 'MODERATE';
+  }
   return 'LOW';
 }
 
@@ -468,26 +472,7 @@ async function seedDemoIntegrationStubs(prisma: PrismaClient, athleteId: string)
   });
 }
 
-export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
-  const athlete = await prisma.athleteProfile.upsert({
-    where: { clerkUserId: DEMO_CLERK_USER_ID },
-    create: {
-      clerkUserId: DEMO_CLERK_USER_ID,
-      heightCm: 178,
-      birthDate: new Date('1992-04-12'),
-      ftpW: 285,
-      maxHr: 188,
-      lthr: 168,
-      runThresholdPaceSecPerKm: 258,
-      swimCssSecPer100m: 96,
-      displayMode: 'essential',
-    },
-    update: {},
-  });
-  const athleteId = athlete.id;
-
-  // Cascade-scoped to this one athlete — never touches any other tenant.
-  // Condition delete cascades its FunctionalCapacity/ConditionKnowledge rows.
+async function purgeDemoAthleteRecords(prisma: PrismaClient, athleteId: string): Promise<void> {
   await prisma.activity.deleteMany({ where: { athleteId } });
   await prisma.dailyHealth.deleteMany({ where: { athleteId } });
   await prisma.dailyNutrition.deleteMany({ where: { athleteId } });
@@ -496,11 +481,9 @@ export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
   await prisma.bodyCompositionMeasurement.deleteMany({ where: { athleteId } });
   await prisma.condition.deleteMany({ where: { athleteId } });
   await purgeDemoDerivedState(prisma, athleteId);
+}
 
-  const today = startOfDay(new Date());
-
-  await seedDemoIntegrationStubs(prisma, athleteId);
-
+async function seedDemoPrimaryGoal(prisma: PrismaClient, athleteId: string, today: Date) {
   await prisma.goal.create({
     data: {
       athleteId,
@@ -517,14 +500,19 @@ export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
         'Objectif principal de la saison — viser une exécution maîtrisée sur les trois disciplines.',
     },
   });
+}
 
-  // 3 past weeks of completed activities, oldest first.
+async function seedDemoPastActivities(prisma: PrismaClient, athleteId: string, today: Date) {
   for (let weekIndex = 2; weekIndex >= 0; weekIndex--) {
     for (let dayInWeek = 0; dayInWeek < 7; dayInWeek++) {
       const session = WEEK_PATTERN[dayInWeek];
-      if (!session) continue;
+      if (!session) {
+        continue;
+      }
       const daysAgo = weekIndex * 7 + (6 - dayInWeek);
-      if (daysAgo === 0) continue;
+      if (daysAgo === 0) {
+        continue;
+      }
       const narrative = NARRATIVES[session.narrative];
       const activity = await prisma.activity.create({
         data: {
@@ -550,8 +538,9 @@ export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
       }
     }
   }
+}
 
-  // Recovery trend — last 10 days (Garmin-style detail for sleep/recovery pages).
+async function seedDemoRecoveryTrend(prisma: PrismaClient, athleteId: string, today: Date) {
   for (let daysAgo = 9; daysAgo >= 0; daysAgo--) {
     const recoveryScore = RECOVERY_SCORES[9 - daysAgo]!;
     await prisma.dailyHealth.create({
@@ -569,8 +558,9 @@ export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
       },
     });
   }
+}
 
-  // Nutrition — last 7 days, all populated with meal breakdown.
+async function seedDemoNutritionWindow(prisma: PrismaClient, athleteId: string, today: Date) {
   for (let daysAgo = 6; daysAgo >= 0; daysAgo--) {
     const macros = NUTRITION_WINDOW[6 - daysAgo]!;
     await prisma.dailyNutrition.create({
@@ -585,55 +575,59 @@ export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
       },
     });
   }
+}
 
-  // Upcoming week — planned, not yet completed.
-  const plannedPattern: Array<{
-    type: ActivityType;
-    title: string;
-    durationMin: number;
-    intensity: SessionIntensity;
-  } | null> = [
-    null,
-    {
-      type: ActivityType.RUN,
-      title: 'Sortie course — club',
-      durationMin: 50,
-      intensity: SessionIntensity.ENDURANCE,
-    },
-    {
-      type: ActivityType.BIKE,
-      title: 'Home trainer — Zwift',
-      durationMin: 60,
-      intensity: SessionIntensity.THRESHOLD,
-    },
-    {
-      type: ActivityType.SWIM,
-      title: 'CSS — Piscine Molitor',
-      durationMin: 45,
-      intensity: SessionIntensity.THRESHOLD,
-    },
-    {
-      type: ActivityType.STRENGTH,
-      title: 'Muscu en extérieur — Parc Monceau',
-      durationMin: 50,
-      intensity: SessionIntensity.TEMPO,
-    },
-    {
-      type: ActivityType.BIKE,
-      title: 'Sortie vélo — Longchamp',
-      durationMin: 150,
-      intensity: SessionIntensity.ENDURANCE,
-    },
-    {
-      type: ActivityType.RUN,
-      title: 'Sortie longue — Bois de Boulogne',
-      durationMin: 80,
-      intensity: SessionIntensity.ENDURANCE,
-    },
-  ];
+const UPCOMING_PLANNED_PATTERN: Array<{
+  type: ActivityType;
+  title: string;
+  durationMin: number;
+  intensity: SessionIntensity;
+} | null> = [
+  null,
+  {
+    type: ActivityType.RUN,
+    title: 'Sortie course — club',
+    durationMin: 50,
+    intensity: SessionIntensity.ENDURANCE,
+  },
+  {
+    type: ActivityType.BIKE,
+    title: 'Home trainer — Zwift',
+    durationMin: 60,
+    intensity: SessionIntensity.THRESHOLD,
+  },
+  {
+    type: ActivityType.SWIM,
+    title: 'CSS — Piscine Molitor',
+    durationMin: 45,
+    intensity: SessionIntensity.THRESHOLD,
+  },
+  {
+    type: ActivityType.STRENGTH,
+    title: 'Muscu en extérieur — Parc Monceau',
+    durationMin: 50,
+    intensity: SessionIntensity.TEMPO,
+  },
+  {
+    type: ActivityType.BIKE,
+    title: 'Sortie vélo — Longchamp',
+    durationMin: 150,
+    intensity: SessionIntensity.ENDURANCE,
+  },
+  {
+    type: ActivityType.RUN,
+    title: 'Sortie longue — Bois de Boulogne',
+    durationMin: 80,
+    intensity: SessionIntensity.ENDURANCE,
+  },
+];
+
+async function seedDemoUpcomingPlanned(prisma: PrismaClient, athleteId: string, today: Date) {
   for (let dayInWeek = 0; dayInWeek < 7; dayInWeek++) {
-    const planned = plannedPattern[dayInWeek];
-    if (!planned) continue;
+    const planned = UPCOMING_PLANNED_PATTERN[dayInWeek];
+    if (!planned) {
+      continue;
+    }
     await prisma.plannedSession.create({
       data: {
         athleteId,
@@ -645,8 +639,9 @@ export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
       },
     });
   }
+}
 
-  // Body composition — RENPHO-style trend on the demo week.
+async function seedDemoBodyComposition(prisma: PrismaClient, athleteId: string, today: Date) {
   for (const [index, point] of BODY_COMPOSITION_TREND.entries()) {
     await prisma.bodyCompositionMeasurement.create({
       data: {
@@ -663,8 +658,9 @@ export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
       },
     });
   }
+}
 
-  // One plausible, non-alarming focus area — Corps & Santé shouldn't be empty.
+async function seedDemoCondition(prisma: PrismaClient, athleteId: string, today: Date) {
   const condition = await prisma.condition.create({
     data: {
       athleteId,
@@ -689,6 +685,38 @@ export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
         "Légère gêne à la flexion complète, sans impact sur l'allure — course maintenue à charge modérée.",
     },
   });
+}
+
+export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
+  const athlete = await prisma.athleteProfile.upsert({
+    where: { clerkUserId: DEMO_CLERK_USER_ID },
+    create: {
+      clerkUserId: DEMO_CLERK_USER_ID,
+      heightCm: 178,
+      birthDate: new Date('1992-04-12'),
+      ftpW: 285,
+      maxHr: 188,
+      lthr: 168,
+      runThresholdPaceSecPerKm: 258,
+      swimCssSecPer100m: 96,
+      displayMode: 'essential',
+    },
+    update: {},
+  });
+  const athleteId = athlete.id;
+
+  await purgeDemoAthleteRecords(prisma, athleteId);
+
+  const today = startOfDay(new Date());
+
+  await seedDemoIntegrationStubs(prisma, athleteId);
+  await seedDemoPrimaryGoal(prisma, athleteId, today);
+  await seedDemoPastActivities(prisma, athleteId, today);
+  await seedDemoRecoveryTrend(prisma, athleteId, today);
+  await seedDemoNutritionWindow(prisma, athleteId, today);
+  await seedDemoUpcomingPlanned(prisma, athleteId, today);
+  await seedDemoBodyComposition(prisma, athleteId, today);
+  await seedDemoCondition(prisma, athleteId, today);
 
   await ensureDemoSessionLinkStory(prisma, athleteId);
   await finalizeDemoSeed(prisma, athleteId);
@@ -724,7 +752,7 @@ export async function ensureDemoSeedFresh(prisma: PrismaClient): Promise<boolean
   ]);
 
   const healthStale =
-    latestHealth == null || startOfDay(latestHealth.date).getTime() !== today.getTime();
+    latestHealth === null || startOfDay(latestHealth.date).getTime() !== today.getTime();
   const needsReseed = !garmin || !renpho || healthStale || goalCount !== 1;
 
   if (needsReseed) {
