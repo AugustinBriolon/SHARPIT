@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ClientPlannedSession } from '@/lib/query/types';
 import type { SessionAnalysis } from '@/lib/validators/coach';
-import { queryKeys } from '@/lib/query/keys';
 import { fetchPlannedSessionById } from '@/lib/query/fetchers';
+import { patchPlannedSessionAnalysisInCaches } from '@/lib/query/patch-planned-session-analysis-cache';
 
 const ANALYSIS_POLL_MS = 3_000;
 const ANALYSIS_POLL_MAX_MS = 120_000;
@@ -69,19 +69,10 @@ async function pollSessionAnalysis({
           analyzedAt: updated.analyzedAt,
         });
         clearAnalysisPollTimedOut(sessionId);
-        queryClient.setQueryData(
-          queryKeys.plannedSessions,
-          (prev: ClientPlannedSession[] | undefined) => {
-            if (!prev) {
-              return prev;
-            }
-            return prev.map((item) =>
-              item.id === updated.id
-                ? { ...item, analysis: updated.analysis, analyzedAt: updated.analyzedAt }
-                : item,
-            );
-          },
-        );
+        patchPlannedSessionAnalysisInCaches(queryClient, sessionId, {
+          analysis: updated.analysis,
+          analyzedAt: updated.analyzedAt,
+        });
         return;
       }
     } catch {
