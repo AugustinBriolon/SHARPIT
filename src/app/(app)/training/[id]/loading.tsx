@@ -3,7 +3,6 @@
 import { usePathname } from 'next/navigation';
 import { Suspense } from 'react';
 import { ActivityDetailSkeleton } from '@/components/training/activity/detail/activity-detail-skeleton';
-import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { ActivityDetailInstantShell } from '@/components/training/activity/detail/activity-detail-instant-shell';
 
 function parseActivityIdFromPathname(pathname: string): string | null {
@@ -15,15 +14,10 @@ function parseActivityIdFromPathname(pathname: string): string | null {
   return segment;
 }
 
-function ActivityDetailInstantShellFromPath({ includeBackLink }: { includeBackLink?: boolean }) {
+function ActivityDetailInstantShellFromPath() {
   const pathname = usePathname();
   const activityId = parseActivityIdFromPathname(pathname);
-  return (
-    <ActivityDetailInstantShell
-      activityId={activityId ?? undefined}
-      includeBackLink={includeBackLink}
-    />
-  );
+  return <ActivityDetailInstantShell activityId={activityId ?? undefined} />;
 }
 
 /** Route loading — pathname id streams inside Suspense (no useParams). */
@@ -34,14 +28,13 @@ export default function ActivityDetailLoading() {
         <div
           aria-busy="true"
           aria-label="Chargement"
-          className="relative z-0 space-y-6 sm:space-y-8"
+          className="relative z-0 space-y-4 sm:space-y-6"
         >
-          <MobileBackLink showOnDesktop />
           <ActivityDetailSkeleton layout="map" />
         </div>
       }
     >
-      <ActivityDetailInstantShellFromPath includeBackLink />
+      <ActivityDetailInstantShellFromPath />
     </Suspense>
   );
 }

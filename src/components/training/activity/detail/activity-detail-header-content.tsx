@@ -1,8 +1,10 @@
 'use client';
 
 import { ExpertModeBadge } from '@/components/display-mode';
-import { DiscussCoachLink } from './discuss-coach-link';
 import { ActivityDetailActionsMenu } from '@/components/training/activity/detail/activity-detail-header-actions';
+import { ActivityDetailBackLink } from '@/components/training/activity/detail/activity-detail-back-link';
+import { ActivityDiscussSessionCta } from '@/components/training/activity/detail/activity-discuss-session-cta';
+import { ActivityHeaderEvaluations } from '@/components/training/activity/detail/activity-header-evaluations';
 import { activityTypeLabels } from '@/lib/format';
 import {
   formatActivityDetailMeta,
@@ -11,6 +13,7 @@ import {
 } from './activity-detail-helpers';
 import type { ActivityDetail } from './types';
 import { useDisplayMode } from '@/providers/display-mode-provider';
+import type { PlannedSessionSummary } from './types';
 
 export type ActivityDetailHeaderActivity = Pick<
   ActivityDetail,
@@ -24,36 +27,29 @@ export type ActivityDetailHeaderActivity = Pick<
   | 'duration'
   | 'load'
   | 'rpe'
+  | 'feeling'
   | 'hikeTrip'
   | 'plannedSession'
 >;
 
-function ActivityHeaderActions({
+function ActivityDetailHeaderToolbar({
   activity,
-  plannedSessionId,
   editHref,
   hikeTrip,
   isHike,
   onDelete,
   onLinkHikes,
-  compact,
 }: {
   activity: ActivityDetailHeaderActivity;
-  plannedSessionId?: string;
   editHref: string;
   hikeTrip: ActivityDetailHeaderActivity['hikeTrip'];
   isHike: boolean;
   onDelete: () => void;
   onLinkHikes: () => void;
-  compact?: boolean;
 }) {
   return (
-    <>
-      <DiscussCoachLink
-        activityId={activity.id}
-        compact={compact}
-        plannedSessionId={plannedSessionId}
-      />
+    <div className="flex items-center justify-between gap-2">
+      <ActivityDetailBackLink />
       <ActivityDetailActionsMenu
         activity={activity}
         editHref={editHref}
@@ -62,37 +58,35 @@ function ActivityHeaderActions({
         onDelete={onDelete}
         onLinkHikes={onLinkHikes}
       />
-    </>
+    </div>
   );
 }
 
-function ActivityHeaderIdentity({
+function ActivityDetailIdentityBlock({
   activity,
   title,
-  mode,
+  summary,
 }: {
   activity: ActivityDetailHeaderActivity;
   title: string;
-  mode: ReturnType<typeof useDisplayMode>['mode'];
+  summary: string;
 }) {
   const Icon = sportIcon[activity.type];
 
   return (
-    <div className="flex min-w-0 flex-1 items-start gap-3">
-      <span className="icon-well size-10 shrink-0 sm:size-12" aria-hidden>
-        <Icon className="size-5 sm:size-6" />
+    <div className="flex items-start gap-3">
+      <span className="icon-well size-9 shrink-0 sm:size-10" aria-hidden>
+        <Icon className="size-4 sm:size-5" />
       </span>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 space-y-1">
+        <p className="text-muted-foreground text-xs tracking-wide">
+          {formatActivityDetailMeta(activity)}
+        </p>
+        <h1 className="text-page-title line-clamp-2 leading-snug wrap-break-word">{title}</h1>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <p className="text-muted-foreground text-xs tracking-wide sm:text-sm">
-            {formatActivityDetailMeta(activity)}
-          </p>
+          <p className="text-data text-muted-foreground text-sm tabular-nums">{summary}</p>
           <ExpertModeBadge />
         </div>
-        <h1 className="text-page-title mt-1 leading-snug wrap-break-word">{title}</h1>
-        <p className="text-data text-muted-foreground mt-1 text-sm tabular-nums">
-          {formatActivityDetailStats(activity, mode)}
-        </p>
       </div>
     </div>
   );
@@ -100,7 +94,7 @@ function ActivityHeaderIdentity({
 
 export function ActivityDetailHeaderContent({
   activity,
-  plannedSessionId,
+  plannedSession,
   editHref,
   isHike,
   hikeTrip,
@@ -108,7 +102,7 @@ export function ActivityDetailHeaderContent({
   onLinkHikes,
 }: {
   activity: ActivityDetailHeaderActivity;
-  plannedSessionId?: string;
+  plannedSession: PlannedSessionSummary | null;
   editHref: string;
   isHike: boolean;
   hikeTrip: ActivityDetailHeaderActivity['hikeTrip'];
@@ -117,27 +111,31 @@ export function ActivityDetailHeaderContent({
 }) {
   const { mode } = useDisplayMode();
   const title = activity.title ?? activityTypeLabels[activity.type];
-  const actions = {
-    activity,
-    plannedSessionId,
-    editHref,
-    hikeTrip,
-    isHike,
-    onDelete,
-    onLinkHikes,
-  };
+  const summary = formatActivityDetailStats(activity, mode);
+  const plannedAnalysisReady = Boolean(plannedSession?.analysis && plannedSession.analyzedAt);
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-end gap-1 lg:hidden">
-        <ActivityHeaderActions {...actions} compact />
-      </div>
-      <div className="flex items-start justify-between gap-3">
-        <ActivityHeaderIdentity activity={activity} mode={mode} title={title} />
-        <div className="hidden shrink-0 items-start gap-1.5 lg:flex">
-          <ActivityHeaderActions {...actions} />
-        </div>
-      </div>
+    <div className="space-y-2.5">
+      <ActivityDetailHeaderToolbar
+        activity={activity}
+        editHref={editHref}
+        hikeTrip={hikeTrip}
+        isHike={isHike}
+        onDelete={onDelete}
+        onLinkHikes={onLinkHikes}
+      />
+
+      <ActivityDetailIdentityBlock activity={activity} summary={summary} title={title} />
+
+      <ActivityDiscussSessionCta activityId={activity.id} />
+
+      <ActivityHeaderEvaluations
+        activityId={activity.id}
+        feeling={activity.feeling}
+        plannedAnalysisReady={plannedAnalysisReady}
+        plannedSession={plannedSession}
+        rpe={activity.rpe}
+      />
     </div>
   );
 }

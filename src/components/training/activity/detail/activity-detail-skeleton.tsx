@@ -242,21 +242,21 @@ export function ActivityStrengthListSkeleton({ rows = 5 }: { rows?: number }) {
 
 function ActivityDetailHeaderSkeleton() {
   return (
-    <StickyHeader>
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-1 items-start gap-3">
-          {/* icon-well is always a circle */}
-          <Skeleton className="size-11 shrink-0 rounded-full border-0 sm:size-12" />
-          <div className="min-w-0 flex-1">
-            <Skeleton className="h-4 w-[min(100%,14rem)] rounded-full border-0" />
-            <Skeleton className="mt-1.5 h-8 w-[min(100%,18rem)] rounded-lg border-0 sm:h-9" />
-            <Skeleton className="mt-1.5 h-4 w-36 rounded-full border-0" />
-          </div>
-        </div>
-        <div className="flex shrink-0 items-start gap-1.5 sm:gap-2">
-          <Skeleton className="h-9 w-[4.75rem] rounded-lg border-0 sm:w-48" />
+    <StickyHeader className="py-2 lg:py-3">
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <Skeleton className="h-4 w-24 rounded-full border-0" />
           <Skeleton className="size-8 rounded-lg border-0" />
         </div>
+        <div className="flex items-start gap-3">
+          <Skeleton className="size-9 shrink-0 rounded-full border-0" />
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <Skeleton className="h-3 w-40 rounded-full border-0" />
+            <Skeleton className="h-8 w-[min(100%,16rem)] rounded-lg border-0" />
+            <Skeleton className="h-4 w-28 rounded-full border-0" />
+          </div>
+        </div>
+        <Skeleton className="h-11 w-full rounded-lg border-0" />
       </div>
     </StickyHeader>
   );

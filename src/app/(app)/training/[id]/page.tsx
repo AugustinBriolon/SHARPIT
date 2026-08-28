@@ -1,7 +1,6 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { TriathlonLegsPanel } from '@/components/training/activity/insights/triathlon-legs-panel';
-import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { ActivityDetailHeader } from '@/components/training/activity/detail/activity-detail-header';
 import { ActivityDetailHero } from '@/components/training/activity/detail/activity-detail-hero';
 import {
@@ -147,6 +146,7 @@ function ActivityDetailContent({
           duration: activity.duration,
           load: activity.load,
           rpe: activity.rpe,
+          feeling: activity.feeling,
           hikeTrip: activity.hikeTrip,
           plannedSession: activity.plannedSession,
         }}
@@ -243,8 +243,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
   // Opening an old activity must stay Instant; coach synthesis is on-demand via the UI.
 
   return (
-    <div className="relative z-0 space-y-6 sm:space-y-8">
-      <MobileBackLink showOnDesktop />
+    <div className="relative z-0 space-y-4 sm:space-y-6">
       <Suspense fallback={<ActivityDetailRouteSkeleton activityId={id} />}>
         <ActivityDetailBody id={id} />
       </Suspense>
