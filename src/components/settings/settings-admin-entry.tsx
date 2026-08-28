@@ -23,7 +23,7 @@ export async function SettingsAdminEntry() {
           entry={{
             href: '/admin',
             title: 'Panneau admin',
-            description: 'Comptes et paliers d’accès (Gratuit / Expert).',
+            description: 'Comptes et paliers d’accès (Gratuit / Pro).',
             icon: UserCog,
           }}
         />

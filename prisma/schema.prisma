@@ -222,7 +222,7 @@ model Activity {
 
 enum AccessTier {
   FREE
-  EXPERT
+  PRO
 }
 
 model AthleteProfile {

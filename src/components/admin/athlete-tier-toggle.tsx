@@ -9,13 +9,13 @@ import { toast } from '@/components/ui/toast';
 
 const TIER_LABEL: Record<AccessTier, string> = {
   FREE: 'Gratuit',
-  EXPERT: 'Expert',
+  PRO: 'Pro',
 };
 
 export function AthleteTierToggle({ athleteId, tier }: { athleteId: string; tier: AccessTier }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const nextTier: AccessTier = tier === 'EXPERT' ? 'FREE' : 'EXPERT';
+  const nextTier: AccessTier = tier === 'PRO' ? 'FREE' : 'PRO';
 
   function toggle() {
     startTransition(async () => {
@@ -38,7 +38,7 @@ export function AthleteTierToggle({ athleteId, tier }: { athleteId: string; tier
 
   return (
     <div className="flex items-center gap-2">
-      <Badge variant={tier === 'EXPERT' ? 'highlight' : 'outline'}>{TIER_LABEL[tier]}</Badge>
+      <Badge variant={tier === 'PRO' ? 'highlight' : 'outline'}>{TIER_LABEL[tier]}</Badge>
       <Button disabled={isPending} size="sm" variant="ghost" onClick={toggle}>
         Passer en {TIER_LABEL[nextTier]}
       </Button>

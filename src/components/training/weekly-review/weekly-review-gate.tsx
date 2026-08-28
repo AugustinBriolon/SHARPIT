@@ -1,6 +1,6 @@
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { getAthleteProfile } from '@/lib/queries';
-import { hasExpertAccess } from '@/lib/access/tier';
+import { hasProAccess } from '@/lib/access/tier';
 import { WeeklyReviewClient } from '@/components/training/weekly-review/weekly-review-client';
 import { WeeklyReviewLocked } from '@/components/training/weekly-review/weekly-review-locked';
 
@@ -10,7 +10,7 @@ export async function WeeklyReviewGate() {
   const athleteId = await getCurrentAthleteId();
   const profile = await getAthleteProfile(athleteId);
 
-  if (!hasExpertAccess(profile?.tier ?? 'FREE')) {
+  if (!hasProAccess(profile?.tier ?? 'FREE')) {
     return <WeeklyReviewLocked />;
   }
 

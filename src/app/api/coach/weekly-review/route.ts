@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
-import { hasExpertAccess } from '@/lib/access/tier';
+import { hasProAccess } from '@/lib/access/tier';
 import { getAthleteProfile } from '@/lib/queries';
 import {
   generateAndStoreWeeklyReview,
@@ -24,13 +24,13 @@ function parseDate(value: string | null): Date {
   return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
 }
 
-/** Le bilan hebdo est un gate Expert — vérifié ici indépendamment de la page,
+/** Le bilan hebdo est un gate Pro — vérifié ici indépendamment de la page,
  * qui n'est qu'une des façons d'atteindre cette route. */
-async function requireExpertAthlete(): Promise<string | NextResponse> {
+async function requireProAthlete(): Promise<string | NextResponse> {
   const athleteId = await getCurrentAthleteId();
   const profile = await getAthleteProfile(athleteId);
-  if (!hasExpertAccess(profile?.tier ?? 'FREE')) {
-    return NextResponse.json({ error: 'Fonctionnalité Expert' }, { status: 403 });
+  if (!hasProAccess(profile?.tier ?? 'FREE')) {
+    return NextResponse.json({ error: 'Fonctionnalité Pro' }, { status: 403 });
   }
   return athleteId;
 }
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
   const date = parseDate(request.nextUrl.searchParams.get('date'));
 
   try {
-    const athleteId = await requireExpertAthlete();
+    const athleteId = await requireProAthlete();
     if (athleteId instanceof NextResponse) {
       return athleteId;
     }
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
     const date = parseDate((body as { date?: string }).date ?? null);
-    const athleteId = await requireExpertAthlete();
+    const athleteId = await requireProAthlete();
     if (athleteId instanceof NextResponse) {
       return athleteId;
     }
