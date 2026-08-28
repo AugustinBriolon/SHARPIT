@@ -3,7 +3,7 @@
 import { Check, Copy, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { StreamingResponseFeedback } from './streaming-response';
-import { ResponseAction } from './streaming-response-actions';
+import { ResponseAction } from './streaming-response-action';
 import { StreamingFeedbackActions } from './streaming-response-feedback';
 import { StreamingSourcesPanel, StreamingSourcesToggle } from './streaming-response-sources';
 

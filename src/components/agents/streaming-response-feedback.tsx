@@ -2,7 +2,7 @@
 
 import { ThumbsDown, ThumbsUp } from 'lucide-react';
 import type { StreamingResponseFeedback } from './streaming-response';
-import { ResponseAction } from './streaming-response-actions';
+import { ResponseAction } from './streaming-response-action';
 
 export function StreamingFeedbackActions({
   currentFeedback,

@@ -1,10 +1,10 @@
-import { parseClockInput } from '@/components/settings/profile/profile-input-format';
+import { parseClockInput, clockToInput } from '@/components/settings/profile/profile-input-format';
 import type { ProfileData } from '@/components/settings/profile/profile-types';
+import { commitProfileSave, saveProfilePatch } from '@/components/settings/profile/profile-save';
 import { changedProfileFields } from '@/lib/profile/profile-patch';
+import { birthDateToInput } from '@/lib/profile/athlete-profile-utils';
 import type { QueryClient } from '@tanstack/react-query';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
-import { commitProfileSave, saveProfilePatch } from '@/components/settings/profile/profile-save';
-import { birthDateToInput, clockToInput } from '@/components/settings/profile/profile-input-format';
 
 export type PersonalFieldKey = 'heightCm' | 'sleepHours' | 'sleepBedtime';
 

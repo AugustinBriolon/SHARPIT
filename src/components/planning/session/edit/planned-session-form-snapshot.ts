@@ -12,16 +12,16 @@ import {
   type LocationSource,
 } from '@/components/planning/session/edit/planned-session-dialog-helpers';
 import type { LocationPlaceValue } from '@/components/ui/location-place-picker';
-import type { StrengthPrescriptionDraftRow } from '@/components/planning/session/edit/strength-prescription-editor';
+import {
+  draftFromStrengthPrescription,
+  type StrengthPrescriptionDraftRow,
+} from '@/components/planning/session/edit/strength-prescription-editor';
 import type { EnduranceDraftBlock } from '@/lib/planned-session/endurance/endurance-draft';
 import type { EquipmentItemId } from '@/lib/equipment/catalog';
 import { draftFromEndurancePrescription } from '@/lib/planned-session/endurance/endurance-draft';
 import { parseEndurancePrescription } from '@/lib/planned-session/endurance/endurance-prescription';
 import { parseSessionAccessories } from '@/lib/planned-session/accessories/session-accessories';
-import {
-  draftFromStrengthPrescription,
-  parseStrengthPrescription,
-} from '@/lib/planned-session/strength/strength-prescription';
+import { parseStrengthPrescription } from '@/lib/planned-session/strength/strength-prescription';
 
 const EMPTY_FORM = {
   formKey: 0,
