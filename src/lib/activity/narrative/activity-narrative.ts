@@ -1,6 +1,7 @@
 import { ActivityType } from '@prisma/client';
 import { generateText, Output } from 'ai';
 import { COACH_MODEL, coachAnalysisGatewayOptions, isCoachConfigured } from '@/lib/ai';
+import { canGenerateNarrativeForActivity } from '@/lib/access/narrative-trial';
 import { isActivityToday } from '@/lib/activity/list/activity-day';
 import {
   isEligibleForActivityNarrative,
@@ -77,7 +78,7 @@ async function shouldSkipNarrativeAnalysis(
   athleteId: string,
   activityId: string,
   options?: { force?: boolean; allowHistorical?: boolean },
-): Promise<{ skip: true } | { skip: false }> {
+): Promise<{ skip: true } | { skip: false; activityDate: Date }> {
   const existing = await prisma.activity.findFirst({
     where: { id: activityId, athleteId },
     select: { narrativeAnalyzedAt: true, date: true, narrativeAnalysis: true },
@@ -91,7 +92,7 @@ async function shouldSkipNarrativeAnalysis(
   if (narrativeBlockedByDatePolicy(existing, options)) {
     return { skip: true };
   }
-  return { skip: false };
+  return { skip: false, activityDate: existing.date };
 }
 
 export async function runActivityNarrativeAnalysis(
@@ -105,6 +106,15 @@ export async function runActivityNarrativeAnalysis(
 
   const gate = await shouldSkipNarrativeAnalysis(athleteId, activityId, options);
   if (gate.skip) {
+    return false;
+  }
+
+  // Pro athletes always pass. FREE athletes only pass on activities dated
+  // after they joined SHARPIT (older imports stay Pro-only), and at most
+  // once a day — applies uniformly to every path (auto sync, manual
+  // "Générer" tap, backfill), no separate spend/credit bookkeeping needed.
+  const access = await canGenerateNarrativeForActivity(athleteId, gate.activityDate);
+  if (!access.allowed) {
     return false;
   }
 

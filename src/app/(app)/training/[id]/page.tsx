@@ -18,6 +18,7 @@ import { ActivityNarrativeSection } from '@/components/training/activity/insight
 import { isEligibleForActivityNarrative } from '@/lib/activity/narrative/activity-narrative-config';
 import { activityDetailExpectsMap } from '@/lib/activity/detail/activity-detail-skeleton-layout';
 import { buildHikeOvernightSummary } from '@/lib/activity/hike/hike-overnight-summary';
+import { canGenerateNarrativeForActivity } from '@/lib/access/narrative-trial';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { getActivityById, getMultisportLegsForActivity } from '@/lib/queries';
 import { getGoalAchievementsForActivity } from '@/lib/goals/goal-achievements';
@@ -56,7 +57,11 @@ function buildHikeSummaryForActivity(activity: ActivityDetail) {
   });
 }
 
-function buildCoachNarrativePanel(activity: ActivityDetail, coachEnabled: boolean) {
+function buildCoachNarrativePanel(
+  activity: ActivityDetail,
+  coachEnabled: boolean,
+  access: { isPro: boolean; allowed: boolean },
+) {
   const showCoachPanel =
     coachEnabled &&
     NARRATIVE_TYPES.has(activity.type) &&
@@ -69,7 +74,9 @@ function buildCoachNarrativePanel(activity: ActivityDetail, coachEnabled: boolea
       activityDate={activity.date}
       activityId={activity.id}
       activityType={activity.type}
+      canGenerate={access.allowed}
       coachEnabled={coachEnabled}
+      isPro={access.isPro}
       narrativeAnalysis={activity.narrativeAnalysis}
       narrativeAnalyzedAt={activity.narrativeAnalyzedAt}
     />
@@ -209,16 +216,17 @@ async function ActivityDetailBody({ id }: { id: string }) {
   const isHike = activity.type === ActivityType.HIKE;
   const hikeSummary = buildHikeSummaryForActivity(activity);
 
-  // Legs depend on activity; goals/records already started above.
-  const [multisportLegs, goalValidations, performanceRecords] = await Promise.all([
+  // Legs and narrative access depend on activity; goals/records already started above.
+  const [multisportLegs, goalValidations, performanceRecords, narrativeAccess] = await Promise.all([
     isTriathlon ? getMultisportLegsForActivity(athleteId, activity) : Promise.resolve(null),
     goalValidationsPromise,
     performanceRecordsPromise,
+    canGenerateNarrativeForActivity(athleteId, activity.date),
   ]);
   const coachEnabled = isCoachConfigured();
   const specs = buildActivitySpecs(activity);
   const strengthStats = buildStrengthStats(activity);
-  const coachPanel = buildCoachNarrativePanel(activity, coachEnabled);
+  const coachPanel = buildCoachNarrativePanel(activity, coachEnabled, narrativeAccess);
 
   return (
     <ActivityDetailContent

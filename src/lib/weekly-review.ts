@@ -15,6 +15,7 @@ import { recordAiUsage } from '@/lib/ai-usage';
 import { prisma } from './prisma';
 import { getActivities, getHealthEntries, getPlannedSessions } from './queries';
 import { analyzeSleep, formatClock, formatDuration, type SleepEntryInput } from '@/lib/sleep/sleep';
+import { loadDailyTrainingStressEntries } from '@/lib/training/pmc-server';
 
 const TYPE_FR: Record<string, string> = {
   RUN: 'Course',
@@ -124,20 +125,26 @@ async function buildWeeklyStats(athleteId: string, weekStart: Date): Promise<Wee
   const weekEnd = addDays(weekStart, 6);
   const prevStart = subDays(weekStart, 7);
 
-  const [activities, planned, health] = await Promise.all([
+  const [activities, planned, health, trainingStress] = await Promise.all([
     getActivities(athleteId, { limit: 200 }),
     getPlannedSessions(athleteId, { from: weekStart, to: weekEnd }),
     getHealthEntries(athleteId, 21),
+    // Same Core-derived TSS as the ACWR gauge and fitness chart (pmc-server.ts) —
+    // raw Activity.load is a bare provider passthrough (Garmin TSS only for
+    // power-based bike sessions, Strava suffer_score only with HR data) and is
+    // null for most run/hike/swim activities, which silently summed to 0 here.
+    loadDailyTrainingStressEntries(athleteId, { refDate: addDays(weekEnd, 1) }),
   ]);
 
   const inWeek = activities.filter((a) => {
     const d = new Date(a.date);
     return d >= weekStart && d <= addDays(weekEnd, 1);
   });
-  const inPrev = activities.filter((a) => {
-    const d = new Date(a.date);
-    return d >= prevStart && d < weekStart;
-  });
+
+  const loadInWeek = trainingStress.filter(
+    (t) => t.date >= weekStart && t.date <= addDays(weekEnd, 1),
+  );
+  const loadInPrev = trainingStress.filter((t) => t.date >= prevStart && t.date < weekStart);
 
   const byTypeMap = new Map<string, { count: number; durationMin: number }>();
   for (const a of inWeek) {
@@ -166,12 +173,12 @@ async function buildWeeklyStats(athleteId: string, weekStart: Date): Promise<Wee
     sessionsDone: inWeek.length,
     sessionsPlanned: planned.length,
     sessionsCompleted: planned.filter((p) => p.completed).length,
-    totalLoad: Math.round(sum(inWeek.map((a) => a.load))),
+    totalLoad: Math.round(sum(loadInWeek.map((t) => t.load))),
     totalDurationMin: Math.round(sum(inWeek.map((a) => a.duration)) / 60),
-    prevTotalLoad: Math.round(sum(inPrev.map((a) => a.load))),
-    dailyLoad: buildDailySeries(weekStart, inWeek, {
-      getDate: (a) => a.date,
-      getValue: (a) => a.load,
+    prevTotalLoad: Math.round(sum(loadInPrev.map((t) => t.load))),
+    dailyLoad: buildDailySeries(weekStart, loadInWeek, {
+      getDate: (t) => t.date,
+      getValue: (t) => t.load,
     }),
     dailySleepScore: buildDailySeries(weekStart, weekHealth, {
       getDate: (h) => h.date,

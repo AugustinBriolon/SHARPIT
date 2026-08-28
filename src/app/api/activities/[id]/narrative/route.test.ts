@@ -23,10 +23,14 @@ vi.mock('@/lib/rate-limit', () => ({
   rateLimiters: { activityNarrative: {} },
 }));
 
+vi.mock('@/lib/access/narrative-trial', () => ({
+  canGenerateNarrativeForActivity: vi.fn().mockResolvedValue({ allowed: true, isPro: true }),
+}));
+
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     activity: {
-      findFirst: vi.fn().mockResolvedValue({ id: 'activity-1' }),
+      findFirst: vi.fn().mockResolvedValue({ id: 'activity-1', date: new Date('2026-08-20') }),
       findUnique: vi.fn().mockResolvedValue({ id: 'activity-1' }),
     },
   },
@@ -46,9 +50,11 @@ function postRequest(body?: unknown) {
 const context = { params: Promise.resolve({ id: 'activity-1' }) };
 
 describe('POST /api/activities/[id]/narrative — force default', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     runActivityNarrativeAnalysisMock.mockResolvedValue(true);
+    const { canGenerateNarrativeForActivity } = await import('@/lib/access/narrative-trial');
+    vi.mocked(canGenerateNarrativeForActivity).mockResolvedValue({ allowed: true, isPro: true });
   });
 
   it('defaults force to false when the body omits it (idempotent by default)', async () => {
@@ -87,5 +93,32 @@ describe('POST /api/activities/[id]/narrative — force default', () => {
 
     expect(response.status).toBe(400);
     expect(runActivityNarrativeAnalysisMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 402 locked when a FREE athlete is outside their free window', async () => {
+    const { canGenerateNarrativeForActivity } = await import('@/lib/access/narrative-trial');
+    vi.mocked(canGenerateNarrativeForActivity).mockResolvedValue({
+      allowed: false,
+      isPro: false,
+    });
+    const { POST } = await importRoute();
+
+    const response = await POST(postRequest({ force: true, wait: true }), context);
+
+    expect(response.status).toBe(402);
+    expect(runActivityNarrativeAnalysisMock).not.toHaveBeenCalled();
+  });
+
+  it('allows a FREE athlete within their free window to generate', async () => {
+    const { canGenerateNarrativeForActivity } = await import('@/lib/access/narrative-trial');
+    vi.mocked(canGenerateNarrativeForActivity).mockResolvedValue({ allowed: true, isPro: false });
+    const { POST } = await importRoute();
+
+    const response = await POST(postRequest({ force: true, wait: true }), context);
+
+    expect(response.status).not.toBe(402);
+    expect(runActivityNarrativeAnalysisMock).toHaveBeenCalledWith('athlete-1', 'activity-1', {
+      force: true,
+    });
   });
 });

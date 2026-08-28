@@ -24,18 +24,18 @@ export const PRO_ONLY_PERKS: ProPerk[] = [
     status: 'pro',
     href: '/training/weekly-review',
   },
-];
-
-/** Déjà là, gratuit, pour tout le monde — pas encore une raison de payer. */
-export const INCLUDED_FOR_EVERYONE: ProPerk[] = [
   {
     icon: Activity,
     title: 'Analyse de séance',
     description:
-      'Interprétation approfondie de chaque entraînement : ce qui a marché, ce qui a coûté cher, ce que ça change pour la suite.',
-    status: 'included',
+      "Interprétation approfondie de chaque entraînement : ce qui a marché, ce qui a coûté cher, ce que ça change pour la suite. Gratuit à raison d'une séance par jour depuis ton inscription ; illimité et sur tes séances passées avec Pro.",
+    status: 'pro',
     href: '/training',
   },
+];
+
+/** Déjà là, gratuit, pour tout le monde — pas encore une raison de payer. */
+export const INCLUDED_FOR_EVERYONE: ProPerk[] = [
   {
     icon: Watch,
     title: 'Envoi vers la montre',
