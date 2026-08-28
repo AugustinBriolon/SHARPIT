@@ -1,4 +1,5 @@
 import type { ActivityType } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import type { SessionFeatureSet } from '@/core/features/types';
 
 export const DAILY_STRAIN_MAX = 21;
@@ -126,7 +127,9 @@ function clamp(value: number, min: number, max: number) {
 }
 
 export function dailyTssToStrainScore(dailyTss: number | null): number | null {
-  if (dailyTss == null || dailyTss <= 0) return 0;
+  if (dailyTss === undefined || dailyTss === null || dailyTss <= 0) {
+    return 0;
+  }
   const normalized =
     Math.log1p(dailyTss / DAILY_TSS_LOG_SCALE) /
     Math.log1p(DAILY_TSS_UPPER_REFERENCE / DAILY_TSS_LOG_SCALE);
@@ -138,20 +141,27 @@ function computePowerTss(
   normalizedPower: number,
   ftpW: number,
 ): number | null {
-  if (durationSec <= 0 || normalizedPower <= 0 || ftpW <= 0) return null;
+  if (durationSec <= 0 || normalizedPower <= 0 || ftpW <= 0) {
+    return null;
+  }
   const durationHr = durationSec / 3600;
   const intensityFactor = normalizedPower / ftpW;
   return intensityFactor * intensityFactor * durationHr * 100;
 }
 
-function computeTrimpTss(
-  durationSec: number,
-  avgBpm: number,
-  maxHr: number,
-  restingHr: number,
-  lthr?: number | null,
-): number | null {
-  if (durationSec <= 0 || avgBpm <= 0 || maxHr <= restingHr) return null;
+type TrimpInput = {
+  durationSec: number;
+  avgBpm: number;
+  maxHr: number;
+  restingHr: number;
+  lthr?: number | null;
+};
+
+function computeTrimpTss(input: TrimpInput): number | null {
+  const { durationSec, avgBpm, maxHr, restingHr, lthr } = input;
+  if (durationSec <= 0 || avgBpm <= 0 || maxHr <= restingHr) {
+    return null;
+  }
 
   const durationMin = durationSec / 60;
   const hrRange = maxHr - restingHr;
@@ -162,7 +172,9 @@ function computeTrimpTss(
   const hrrLt = clamp((effectiveLthr - restingHr) / hrRange, 0, 1);
   const thresholdTrimp = 60 * hrrLt * 0.64 * Math.exp(1.92 * hrrLt);
 
-  if (thresholdTrimp <= 0) return null;
+  if (thresholdTrimp <= 0) {
+    return null;
+  }
   return (trimp / thresholdTrimp) * 100;
 }
 
@@ -215,90 +227,129 @@ function computeFromSessionFeatures(sessions: readonly SessionFeatureSet[]): Com
     .filter((load) => load.tss > 0);
 }
 
+function legacyBikePowerLoad(
+  durationSec: number,
+  activity: LegacyDailyStrainActivity,
+  thresholds: DailyStrainThresholds,
+): ComputedLoad | null {
+  const bikeNormalizedPower = activity.bikeMetrics?.normalizedPower ?? null;
+  if (!isSet(bikeNormalizedPower) || !thresholds.ftpW || thresholds.ftpW <= 0) {
+    return null;
+  }
+  const tss = computePowerTss(durationSec, bikeNormalizedPower, thresholds.ftpW);
+  if (!isSet(tss) || tss <= 0) {
+    return null;
+  }
+  return {
+    tss,
+    tier: 'STRUCTURED_SESSION',
+    source: 'LEGACY_POWER_TSS',
+    confidence: 0.9,
+    contributor: 'TRAINING',
+  };
+}
+
+function legacyBikeSourceLoad(activity: LegacyDailyStrainActivity): ComputedLoad | null {
+  const bikeTss = activity.bikeMetrics?.tss ?? null;
+  if (bikeTss === undefined || bikeTss === null || bikeTss <= 0) {
+    return null;
+  }
+  return {
+    tss: bikeTss,
+    tier: 'STRUCTURED_SESSION',
+    source: 'LEGACY_SOURCE_TSS',
+    confidence: 0.7,
+    contributor: 'TRAINING',
+  };
+}
+
+function legacyStoredLoad(activity: LegacyDailyStrainActivity): ComputedLoad | null {
+  if (activity.load === undefined || activity.load === null || activity.load <= 0) {
+    return null;
+  }
+  return {
+    tss: activity.load,
+    tier: 'STRUCTURED_SESSION',
+    source: 'LEGACY_SOURCE_TSS',
+    confidence: 0.6,
+    contributor: 'TRAINING',
+  };
+}
+
+function hasTrimpInputs(avgHr: number | null, thresholds: DailyStrainThresholds): avgHr is number {
+  return (
+    isSet(avgHr) &&
+    isSet(thresholds.maxHr) &&
+    isSet(thresholds.restingHr) &&
+    thresholds.maxHr > thresholds.restingHr
+  );
+}
+
+function legacyTrimpLoad(
+  durationSec: number,
+  activity: LegacyDailyStrainActivity,
+  thresholds: DailyStrainThresholds,
+): ComputedLoad | null {
+  const avgHr = activity.runMetrics?.avgHr ?? null;
+  if (!hasTrimpInputs(avgHr, thresholds)) {
+    return null;
+  }
+  const tss = computeTrimpTss({
+    durationSec,
+    avgBpm: avgHr,
+    maxHr: thresholds.maxHr!,
+    restingHr: thresholds.restingHr!,
+    lthr: thresholds.lthr,
+  });
+  if (tss === undefined || tss === null || tss <= 0) {
+    return null;
+  }
+  return {
+    tss,
+    tier: 'HEART_RATE',
+    source: 'LEGACY_TRIMP',
+    confidence: 0.65,
+    contributor: 'TRAINING',
+  };
+}
+
+function legacyDurationFallbackLoad(
+  durationSec: number,
+  activity: LegacyDailyStrainActivity,
+): ComputedLoad | null {
+  if (durationSec <= 0) {
+    return null;
+  }
+  return {
+    tss: (durationSec / 3600) * legacyDurationTssPerHour(activity.type),
+    tier: 'MOVEMENT',
+    source: 'LEGACY_DURATION',
+    confidence: 0.25,
+    contributor: 'MOVEMENT',
+  };
+}
+
+function computeLegacyActivityLoad(
+  activity: LegacyDailyStrainActivity,
+  thresholds: DailyStrainThresholds,
+): ComputedLoad | null {
+  const durationSec = activity.duration ?? 0;
+  return (
+    legacyBikePowerLoad(durationSec, activity, thresholds) ??
+    legacyBikeSourceLoad(activity) ??
+    legacyStoredLoad(activity) ??
+    legacyTrimpLoad(durationSec, activity, thresholds) ??
+    legacyDurationFallbackLoad(durationSec, activity)
+  );
+}
+
 function computeFromLegacyActivities(
   activities: readonly LegacyDailyStrainActivity[],
   thresholds: DailyStrainThresholds,
 ): ComputedLoad[] {
   return activities
-    .map((activity): ComputedLoad | null => {
-      const durationSec = activity.duration ?? 0;
-      const bikeNormalizedPower = activity.bikeMetrics?.normalizedPower ?? null;
-      const bikeTss = activity.bikeMetrics?.tss ?? null;
-
-      if (bikeNormalizedPower != null && thresholds.ftpW && thresholds.ftpW > 0) {
-        const tss = computePowerTss(durationSec, bikeNormalizedPower, thresholds.ftpW);
-        if (tss != null && tss > 0) {
-          return {
-            tss,
-            tier: 'STRUCTURED_SESSION',
-            source: 'LEGACY_POWER_TSS',
-            confidence: 0.9,
-            contributor: 'TRAINING',
-          };
-        }
-      }
-
-      if (bikeTss != null && bikeTss > 0) {
-        return {
-          tss: bikeTss,
-          tier: 'STRUCTURED_SESSION',
-          source: 'LEGACY_SOURCE_TSS',
-          confidence: 0.7,
-          contributor: 'TRAINING',
-        };
-      }
-
-      if (activity.load != null && activity.load > 0) {
-        return {
-          tss: activity.load,
-          tier: 'STRUCTURED_SESSION',
-          source: 'LEGACY_SOURCE_TSS',
-          confidence: 0.6,
-          contributor: 'TRAINING',
-        };
-      }
-
-      const avgHr = activity.runMetrics?.avgHr ?? null;
-      if (
-        avgHr != null &&
-        thresholds.maxHr != null &&
-        thresholds.restingHr != null &&
-        thresholds.maxHr > thresholds.restingHr
-      ) {
-        const tss = computeTrimpTss(
-          durationSec,
-          avgHr,
-          thresholds.maxHr,
-          thresholds.restingHr,
-          thresholds.lthr,
-        );
-        if (tss != null && tss > 0) {
-          return {
-            tss,
-            tier: 'HEART_RATE',
-            source: 'LEGACY_TRIMP',
-            confidence: 0.65,
-            contributor: 'TRAINING',
-          };
-        }
-      }
-
-      if (durationSec > 0) {
-        const durationHours = durationSec / 3600;
-        const perHour = legacyDurationTssPerHour(activity.type);
-
-        return {
-          tss: durationHours * perHour,
-          tier: 'MOVEMENT',
-          source: 'LEGACY_DURATION',
-          confidence: 0.25,
-          contributor: 'MOVEMENT',
-        };
-      }
-
-      return null;
-    })
-    .filter((load): load is ComputedLoad => load != null);
+    .map((activity) => computeLegacyActivityLoad(activity, thresholds))
+    .filter((load): load is ComputedLoad => isSet(load));
 }
 
 function emptyContribution(
@@ -319,7 +370,9 @@ function summarizeContribution(
   contributor: Exclude<DailyStrainContributor, 'UNKNOWN'>,
   loads: readonly ComputedLoad[],
 ): DailyStrainContribution {
-  if (loads.length === 0) return emptyContribution(contributor);
+  if (loads.length === 0) {
+    return emptyContribution(contributor);
+  }
   const load = loads.reduce((sum, item) => sum + item.tss, 0);
   const confidence = loads.reduce((sum, item) => sum + item.confidence, 0) / loads.length;
   const source =
@@ -342,41 +395,58 @@ function clampRounded(value: number): number {
   return Math.round(clamp(value, 0, DAILY_TSS_UPPER_REFERENCE) * 10) / 10;
 }
 
+function cardiovascularSignalLoads(health: DailyStrainHealthSignals): {
+  stressLoad: number;
+  recoveryLoad: number;
+  bodyBatteryLoad: number;
+  weights: number[];
+} {
+  const stressLoad = isSet(health.stress) ? (clamp(health.stress, 0, 100) / 100) * 28 : 0;
+  const recoveryLoad = isSet(health.recoveryScore)
+    ? (clamp(100 - health.recoveryScore, 0, 100) / 100) * 18
+    : 0;
+  const bodyBatteryLoad = isSet(health.bodyBattery)
+    ? (clamp(100 - health.bodyBattery, 0, 100) / 100) * 16
+    : 0;
+  const weights = [
+    isSet(health.stress) ? 0.45 : 0,
+    isSet(health.recoveryScore) ? 0.35 : 0,
+    isSet(health.bodyBattery) ? 0.2 : 0,
+  ];
+  return { stressLoad, recoveryLoad, bodyBatteryLoad, weights };
+}
+
+function cardiovascularSource(health: DailyStrainHealthSignals): DailyStrainSource {
+  if (isSet(health.stress)) {
+    return 'DAILY_HEALTH_STRESS';
+  }
+  if (isSet(health.recoveryScore)) {
+    return 'DAILY_HEALTH_RECOVERY';
+  }
+  return 'DAILY_HEALTH_BODY_BATTERY';
+}
+
 function computeCardiovascularLoad(
   health: DailyStrainHealthSignals | null | undefined,
 ): DailyStrainContribution {
-  if (!health) return emptyContribution('CARDIOVASCULAR');
+  if (!health) {
+    return emptyContribution('CARDIOVASCULAR');
+  }
 
-  const stressLoad = health.stress != null ? (clamp(health.stress, 0, 100) / 100) * 28 : 0;
-  const recoveryLoad =
-    health.recoveryScore != null ? (clamp(100 - health.recoveryScore, 0, 100) / 100) * 18 : 0;
-  const bodyBatteryLoad =
-    health.bodyBattery != null ? (clamp(100 - health.bodyBattery, 0, 100) / 100) * 16 : 0;
-
-  const weights = [
-    health.stress != null ? 0.45 : 0,
-    health.recoveryScore != null ? 0.35 : 0,
-    health.bodyBattery != null ? 0.2 : 0,
-  ];
+  const { stressLoad, recoveryLoad, bodyBatteryLoad, weights } = cardiovascularSignalLoads(health);
   const weightTotal = weights.reduce((sum, value) => sum + value, 0);
-
-  if (weightTotal === 0) return emptyContribution('CARDIOVASCULAR');
+  if (weightTotal === 0) {
+    return emptyContribution('CARDIOVASCULAR');
+  }
 
   const normalizedLoad =
     (stressLoad * weights[0] + recoveryLoad * weights[1] + bodyBatteryLoad * weights[2]) /
     weightTotal;
   const confidence =
     0.35 +
-    (health.stress != null ? 0.25 : 0) +
-    (health.recoveryScore != null ? 0.2 : 0) +
-    (health.bodyBattery != null ? 0.1 : 0);
-
-  let source: DailyStrainSource = 'DAILY_HEALTH_BODY_BATTERY';
-  if (health.stress != null) {
-    source = 'DAILY_HEALTH_STRESS';
-  } else if (health.recoveryScore != null) {
-    source = 'DAILY_HEALTH_RECOVERY';
-  }
+    (isSet(health.stress) ? 0.25 : 0) +
+    (isSet(health.recoveryScore) ? 0.2 : 0) +
+    (isSet(health.bodyBattery) ? 0.1 : 0);
 
   return {
     available: normalizedLoad > 0,
@@ -384,7 +454,7 @@ function computeCardiovascularLoad(
     load: clampRounded(normalizedLoad),
     score: dailyTssToStrainScore(normalizedLoad),
     confidence: Math.round(clamp(confidence, 0, 0.9) * 100) / 100,
-    source,
+    source: cardiovascularSource(health),
   };
 }
 
@@ -397,10 +467,14 @@ function computeStepsMovementLoad(
   health: DailyStrainHealthSignals | null | undefined,
 ): DailyStrainContribution {
   const steps = health?.totalSteps;
-  if (steps == null || steps <= 0) return emptyContribution('MOVEMENT');
+  if (steps === undefined || steps === null || steps <= 0) {
+    return emptyContribution('MOVEMENT');
+  }
 
   const load = clampRounded(Math.min(45, (clamp(steps, 0, 30_000) / 10_000) * 20));
-  if (load <= 0) return emptyContribution('MOVEMENT');
+  if (load <= 0) {
+    return emptyContribution('MOVEMENT');
+  }
 
   return {
     available: true,
@@ -422,8 +496,22 @@ function mergeMovementContribution(
     ...legacyLoads.filter((load) => load.contributor === 'MOVEMENT'),
   ];
   const fromSessions = summarizeContribution('MOVEMENT', movementLoads);
-  if (fromSessions.available) return fromSessions;
+  if (fromSessions.available) {
+    return fromSessions;
+  }
   return computeStepsMovementLoad(health);
+}
+
+const CARDIOVASCULAR_TRACE_FIELDS = ['stress', 'recoveryScore', 'bodyBattery', 'calories'] as const;
+
+function cardiovascularTraceSignals(
+  healthSignals: DailyStrainHealthSignals | null | undefined,
+): DailyStrainResult['trace']['cardiovascularSignals'] {
+  const signals = {} as DailyStrainResult['trace']['cardiovascularSignals'];
+  for (const field of CARDIOVASCULAR_TRACE_FIELDS) {
+    signals[field] = healthSignals?.[field] ?? null;
+  }
+  return signals;
 }
 
 function buildTrace(params: {
@@ -435,12 +523,7 @@ function buildTrace(params: {
     sessionCount: params.sessionFeatures.length,
     activityCount: params.legacyActivities?.length ?? 0,
     sessionMethods: params.sessionFeatures.map((session) => session.tssMethod),
-    cardiovascularSignals: {
-      stress: params.healthSignals?.stress ?? null,
-      recoveryScore: params.healthSignals?.recoveryScore ?? null,
-      bodyBattery: params.healthSignals?.bodyBattery ?? null,
-      calories: params.healthSignals?.calories ?? null,
-    },
+    cardiovascularSignals: cardiovascularTraceSignals(params.healthSignals),
     movementSignals: {
       totalSteps: params.healthSignals?.totalSteps ?? null,
     },
@@ -475,6 +558,89 @@ function pickTrainingLoads(
     : { loads: legacyTrainingLoads, usingSessionLoads: false };
 }
 
+function effectiveComplementLoads(
+  trainingLoad: number,
+  cardioLoad: number,
+  movementLoad: number,
+): { cardio: number; movement: number; total: number } {
+  const effectiveCardioComplement =
+    trainingLoad > 0 ? Math.min(cardioLoad * 0.25, trainingLoad * 0.2) : cardioLoad;
+  const effectiveMovementComplement =
+    trainingLoad > 0 ? Math.min(movementLoad * 0.2, trainingLoad * 0.15) : movementLoad;
+  return {
+    cardio: effectiveCardioComplement,
+    movement: effectiveMovementComplement,
+    total: trainingLoad + effectiveCardioComplement + effectiveMovementComplement,
+  };
+}
+
+function resolveStrainTier(
+  trainingLoad: number,
+  cardioComplement: number,
+  movementComplement: number,
+  trainingSource: DailyStrainSource,
+): DailyStrainTier {
+  if (trainingLoad > 0) {
+    return trainingSource === 'SESSION_FEATURE_TRIMP' || trainingSource === 'LEGACY_TRIMP'
+      ? 'HEART_RATE'
+      : 'STRUCTURED_SESSION';
+  }
+  if (cardioComplement > 0) {
+    return 'HEART_RATE';
+  }
+  if (movementComplement > 0) {
+    return 'MOVEMENT';
+  }
+  return 'UNKNOWN';
+}
+
+function dominantDailyContributor(
+  contributions: DailyStrainResult['contributions'],
+  complements: ReturnType<typeof effectiveComplementLoads>,
+): {
+  contributor: DailyStrainContributor;
+  source: DailyStrainSource;
+  load: number;
+} {
+  const [dominant] = [
+    {
+      contributor: 'TRAINING' as const,
+      source: contributions.training.source,
+      load: contributions.training.load ?? 0,
+    },
+    {
+      contributor: 'CARDIOVASCULAR' as const,
+      source: contributions.cardiovascular.source,
+      load: complements.cardio,
+    },
+    {
+      contributor: 'MOVEMENT' as const,
+      source: contributions.movement.source,
+      load: complements.movement,
+    },
+  ].sort((a, b) => b.load - a.load);
+  return dominant;
+}
+
+function blendConfidence(contributions: DailyStrainResult['contributions']): number {
+  const confidenceComponents = [
+    contributions.training.available ? contributions.training.confidence * 0.55 : 0,
+    contributions.cardiovascular.available ? contributions.cardiovascular.confidence * 0.3 : 0,
+    contributions.movement.available ? contributions.movement.confidence * 0.15 : 0,
+  ];
+  return confidenceComponents.reduce((sum, value) => sum + value, 0);
+}
+
+function resolveDominantFields(dominant: ReturnType<typeof dominantDailyContributor>): {
+  dominantContributor: DailyStrainContributor;
+  dominantSource: DailyStrainSource;
+} {
+  return {
+    dominantContributor: dominant?.load > 0 ? dominant.contributor : 'UNKNOWN',
+    dominantSource: dominant?.load > 0 ? dominant.source : 'UNKNOWN',
+  };
+}
+
 function blendDailyLoad(contributions: DailyStrainResult['contributions']): {
   totalLoad: number | null;
   dominantContributor: DailyStrainContributor;
@@ -485,51 +651,85 @@ function blendDailyLoad(contributions: DailyStrainResult['contributions']): {
   const trainingLoad = contributions.training.load ?? 0;
   const cardioLoad = contributions.cardiovascular.load ?? 0;
   const movementLoad = contributions.movement.load ?? 0;
-
-  const effectiveCardioComplement =
-    trainingLoad > 0 ? Math.min(cardioLoad * 0.25, trainingLoad * 0.2) : cardioLoad;
-  const effectiveMovementComplement =
-    trainingLoad > 0 ? Math.min(movementLoad * 0.2, trainingLoad * 0.15) : movementLoad;
-
-  const totalLoad = trainingLoad + effectiveCardioComplement + effectiveMovementComplement;
-  const [dominant] = [
-    { contributor: 'TRAINING' as const, source: contributions.training.source, load: trainingLoad },
-    {
-      contributor: 'CARDIOVASCULAR' as const,
-      source: contributions.cardiovascular.source,
-      load: effectiveCardioComplement,
-    },
-    {
-      contributor: 'MOVEMENT' as const,
-      source: contributions.movement.source,
-      load: effectiveMovementComplement,
-    },
-  ].sort((a, b) => b.load - a.load);
-
-  const confidenceComponents = [
-    contributions.training.available ? contributions.training.confidence * 0.55 : 0,
-    contributions.cardiovascular.available ? contributions.cardiovascular.confidence * 0.3 : 0,
-    contributions.movement.available ? contributions.movement.confidence * 0.15 : 0,
-  ];
-  const confidence = confidenceComponents.reduce((sum, value) => sum + value, 0);
-
-  let tier: DailyStrainTier = 'UNKNOWN';
-  if (trainingLoad > 0)
-    tier =
-      contributions.training.source === 'SESSION_FEATURE_TRIMP' ||
-      contributions.training.source === 'LEGACY_TRIMP'
-        ? 'HEART_RATE'
-        : 'STRUCTURED_SESSION';
-  else if (effectiveCardioComplement > 0) tier = 'HEART_RATE';
-  else if (effectiveMovementComplement > 0) tier = 'MOVEMENT';
+  const complements = effectiveComplementLoads(trainingLoad, cardioLoad, movementLoad);
+  const dominant = dominantDailyContributor(contributions, complements);
+  const { dominantContributor, dominantSource } = resolveDominantFields(dominant);
 
   return {
-    totalLoad: totalLoad > 0 ? Math.round(totalLoad) : null,
-    dominantContributor: dominant?.load > 0 ? dominant.contributor : 'UNKNOWN',
-    dominantSource: dominant?.load > 0 ? dominant.source : 'UNKNOWN',
-    confidence: Math.round(clamp(confidence, 0, 1) * 100) / 100,
-    tier,
+    totalLoad: complements.total > 0 ? Math.round(complements.total) : null,
+    dominantContributor,
+    dominantSource,
+    confidence: Math.round(clamp(blendConfidence(contributions), 0, 1) * 100) / 100,
+    tier: resolveStrainTier(
+      trainingLoad,
+      complements.cardio,
+      complements.movement,
+      contributions.training.source,
+    ),
   };
+}
+
+function buildDailyStrainContributions(input: {
+  sessionLoads: ReturnType<typeof computeFromSessionFeatures>;
+  legacyLoads: ReturnType<typeof computeFromLegacyActivities>;
+  healthSignals?: DailyStrainHealthSignals | null;
+}): DailyStrainResult['contributions'] {
+  const trainingLoads = pickTrainingLoads(input.sessionLoads, input.legacyLoads).loads;
+  return {
+    training: summarizeContribution('TRAINING', trainingLoads),
+    cardiovascular: computeCardiovascularLoad(input.healthSignals),
+    movement: mergeMovementContribution(input.sessionLoads, input.legacyLoads, input.healthSignals),
+  };
+}
+
+function emptyDailyStrainResult(input: {
+  structuredSessionDetected: boolean;
+  contributions: DailyStrainResult['contributions'];
+  trace: DailyStrainResult['trace'];
+}): DailyStrainResult {
+  return {
+    available: false,
+    dailyTss: null,
+    strainScore: null,
+    tier: 'UNKNOWN',
+    source: 'UNKNOWN',
+    dominantContributor: 'UNKNOWN',
+    confidence: 0,
+    structuredSessionDetected: input.structuredSessionDetected,
+    fallbackUsed: false,
+    contributions: input.contributions,
+    trace: input.trace,
+  };
+}
+
+function populatedDailyStrainResult(input: {
+  blended: ReturnType<typeof blendDailyLoad>;
+  structuredSessionDetected: boolean;
+  fallbackUsed: boolean;
+  contributions: DailyStrainResult['contributions'];
+  trace: DailyStrainResult['trace'];
+}): DailyStrainResult {
+  return {
+    available: true,
+    dailyTss: input.blended.totalLoad,
+    strainScore: dailyTssToStrainScore(input.blended.totalLoad),
+    tier: input.blended.tier,
+    source: input.blended.dominantSource,
+    dominantContributor: input.blended.dominantContributor,
+    confidence: input.blended.confidence,
+    structuredSessionDetected: input.structuredSessionDetected,
+    fallbackUsed: input.fallbackUsed,
+    contributions: input.contributions,
+    trace: input.trace,
+  };
+}
+
+function hasStrainContributions(contributions: DailyStrainResult['contributions']): boolean {
+  return (
+    contributions.training.available ||
+    contributions.cardiovascular.available ||
+    contributions.movement.available
+  );
 }
 
 export function computeDailyStrain(params: {
@@ -546,47 +746,23 @@ export function computeDailyStrain(params: {
   const structuredSessionDetected =
     params.sessionFeatures.length > 0 || (params.legacyActivities?.length ?? 0) > 0;
   const trainingSelection = pickTrainingLoads(sessionLoads, legacyLoads);
-  const trainingLoads = trainingSelection.loads;
-  const useSessionLoads = trainingSelection.usingSessionLoads;
-  const contributions: DailyStrainResult['contributions'] = {
-    training: summarizeContribution('TRAINING', trainingLoads),
-    cardiovascular: computeCardiovascularLoad(params.healthSignals),
-    movement: mergeMovementContribution(sessionLoads, legacyLoads, params.healthSignals),
-  };
+  const contributions = buildDailyStrainContributions({
+    sessionLoads,
+    legacyLoads,
+    healthSignals: params.healthSignals,
+  });
   const blended = blendDailyLoad(contributions);
   const trace = buildTrace(params);
 
-  if (
-    !contributions.training.available &&
-    !contributions.cardiovascular.available &&
-    !contributions.movement.available
-  ) {
-    return {
-      available: false,
-      dailyTss: null,
-      strainScore: null,
-      tier: 'UNKNOWN',
-      source: 'UNKNOWN',
-      dominantContributor: 'UNKNOWN',
-      confidence: 0,
-      structuredSessionDetected,
-      fallbackUsed: false,
-      contributions,
-      trace,
-    };
+  if (!hasStrainContributions(contributions)) {
+    return emptyDailyStrainResult({ structuredSessionDetected, contributions, trace });
   }
 
-  return {
-    available: true,
-    dailyTss: blended.totalLoad,
-    strainScore: dailyTssToStrainScore(blended.totalLoad),
-    tier: blended.tier,
-    source: blended.dominantSource,
-    dominantContributor: blended.dominantContributor,
-    confidence: blended.confidence,
+  return populatedDailyStrainResult({
+    blended,
     structuredSessionDetected,
-    fallbackUsed: !useSessionLoads,
+    fallbackUsed: !trainingSelection.usingSessionLoads,
     contributions,
     trace,
-  };
+  });
 }

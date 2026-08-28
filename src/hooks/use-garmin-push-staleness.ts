@@ -54,7 +54,9 @@ export function useGarminPushStaleness(session: {
 
   return useMemo(() => {
     const sport = enduranceSportFromActivityType(session.type);
-    if (!sport || !profile || !session.garminWorkoutId) return FRESH;
+    if (!sport || !profile || !session.garminWorkoutId) {
+      return FRESH;
+    }
 
     const currentThresholds: AthleteThresholds = {
       runThresholdPaceSecPerKm: profile.runThresholdPaceSecPerKm,

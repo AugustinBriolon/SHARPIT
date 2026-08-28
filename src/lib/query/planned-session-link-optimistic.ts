@@ -1,9 +1,45 @@
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
+import { isSet } from '@/lib/util/value';
 
 export type PlannedSessionLinkVars = {
   id: string;
   activityId: string | null;
 };
+
+function unlinkPlannedSession(session: ClientPlannedSession): ClientPlannedSession {
+  return {
+    ...session,
+    activityId: null,
+    activity: null,
+    completed: false,
+    analysis: null,
+    analyzedAt: null,
+    updatedAt: new Date(),
+  } as ClientPlannedSession;
+}
+
+function linkPlannedSession(
+  session: ClientPlannedSession,
+  activityId: string,
+  activities: ClientActivity[] | undefined,
+): ClientPlannedSession {
+  const activityFromCache =
+    activities?.find((item) => item.id === activityId) ??
+    (session.activity?.id === activityId ? session.activity : null);
+
+  const activity = (activityFromCache ??
+    ({ id: activityId } as NonNullable<
+      ClientPlannedSession['activity']
+    >)) as ClientPlannedSession['activity'];
+
+  return {
+    ...session,
+    activityId,
+    activity,
+    completed: true,
+    updatedAt: new Date(),
+  } as ClientPlannedSession;
+}
 
 /** Instant cache patch for link / unlink — must clear nested `activity` + analysis on unlink. */
 export function applyPlannedSessionLinkOptimistic(
@@ -12,38 +48,13 @@ export function applyPlannedSessionLinkOptimistic(
   activities: ClientActivity[] | undefined,
 ): ClientPlannedSession[] {
   return sessions.map((session) => {
-    if (session.id !== id) return session;
-
-    if (activityId == null) {
-      return {
-        ...session,
-        activityId: null,
-        activity: null,
-        completed: false,
-        analysis: null,
-        analyzedAt: null,
-        updatedAt: new Date(),
-      } as ClientPlannedSession;
+    if (session.id !== id) {
+      return session;
     }
-
-    const activityFromCache =
-      activities?.find((item) => item.id === activityId) ??
-      (session.activity?.id === activityId ? session.activity : null);
-
-    // Stub keeps `session.activity` truthy when activities cache is cold —
-    // UI treats nested activity as the linked gate in several places.
-    const activity = (activityFromCache ??
-      ({ id: activityId } as NonNullable<
-        ClientPlannedSession['activity']
-      >)) as ClientPlannedSession['activity'];
-
-    return {
-      ...session,
-      activityId,
-      activity,
-      completed: true,
-      updatedAt: new Date(),
-    } as ClientPlannedSession;
+    if (!isSet(activityId)) {
+      return unlinkPlannedSession(session);
+    }
+    return linkPlannedSession(session, activityId, activities);
   });
 }
 

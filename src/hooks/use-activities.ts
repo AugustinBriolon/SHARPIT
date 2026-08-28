@@ -1,12 +1,14 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { isSet } from '@/lib/util/value';
 import { fetchActivities, fetchActivityStream, fetchMultisportStreams } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 import { listOptimistic, tempId, isTempId } from '@/lib/query/optimistic';
 import { sendJson } from '@/lib/query/send-json';
 import type { ClientActivity } from '@/lib/query/types';
 import type { createActivitySchema } from '@/lib/validators/activity';
+import { nullishFields } from '@/lib/query/nullish-fields';
 import type { z } from 'zod';
 
 export function useActivities() {
@@ -21,33 +23,57 @@ export function useActivities() {
 
 export type ActivityMutationPayload = z.input<typeof createActivitySchema>;
 
+const ACTIVITY_SCALAR_KEYS = [
+  'title',
+  'duration',
+  'load',
+  'rpe',
+  'feeling',
+  'weather',
+  'notes',
+] as const satisfies readonly (keyof ActivityMutationPayload)[];
+
+function activityDate(payload: ActivityMutationPayload): Date {
+  return payload.date instanceof Date ? payload.date : new Date(payload.date as string);
+}
+
+function optimisticRunMetrics(payload: ActivityMutationPayload) {
+  const distanceM = payload.runMetrics?.distanceM;
+  return isSet(distanceM) && distanceM !== undefined ? { distanceM } : null;
+}
+
+function optimisticBikeMetrics(payload: ActivityMutationPayload) {
+  const bike = payload.bikeMetrics;
+  if (
+    !bike ||
+    ((bike.tss === undefined || bike.tss === null) &&
+      (bike.avgPower === undefined || bike.avgPower === null))
+  ) {
+    return null;
+  }
+  return { tss: bike.tss ?? null, avgPower: bike.avgPower ?? null };
+}
+
+function optimisticSwimMetrics(payload: ActivityMutationPayload) {
+  const distanceM = payload.swimMetrics?.distanceM;
+  return isSet(distanceM) && distanceM !== undefined ? { distanceM } : null;
+}
+
 function optimisticActivity(payload: ActivityMutationPayload): ClientActivity {
   const now = new Date();
-  const date = payload.date instanceof Date ? payload.date : new Date(payload.date as string);
   return {
     id: tempId(),
     type: payload.type,
-    date,
-    title: payload.title ?? null,
-    duration: payload.duration ?? null,
-    load: payload.load ?? null,
-    rpe: payload.rpe ?? null,
-    feeling: payload.feeling ?? null,
-    weather: payload.weather ?? null,
-    notes: payload.notes ?? null,
+    date: activityDate(payload),
+    ...nullishFields(payload, ACTIVITY_SCALAR_KEYS),
     source: 'manual',
     stravaId: null,
     garminId: null,
     createdAt: now,
     updatedAt: now,
-    runMetrics:
-      payload.runMetrics?.distanceM != null ? { distanceM: payload.runMetrics.distanceM } : null,
-    bikeMetrics:
-      payload.bikeMetrics?.tss != null || payload.bikeMetrics?.avgPower != null
-        ? { tss: payload.bikeMetrics.tss ?? null, avgPower: payload.bikeMetrics.avgPower ?? null }
-        : null,
-    swimMetrics:
-      payload.swimMetrics?.distanceM != null ? { distanceM: payload.swimMetrics.distanceM } : null,
+    runMetrics: optimisticRunMetrics(payload),
+    bikeMetrics: optimisticBikeMetrics(payload),
+    swimMetrics: optimisticSwimMetrics(payload),
     strengthSets: (payload.strengthSets ?? []).map((s) => ({ exercise: s.exercise })),
     plannedSession: null,
   } as unknown as ClientActivity;
@@ -66,9 +92,13 @@ export function useActivityMutations() {
       apply: (prev, payload) => [optimisticActivity(payload), ...prev],
       reconcile: (prev, data) => {
         const withoutTemp = prev.filter((a) => !isTempId(a.id));
-        if (withoutTemp.some((a) => a.id === data.id)) return withoutTemp;
+        if (withoutTemp.some((a) => a.id === data.id)) {
+          return withoutTemp;
+        }
         const optimistic = prev.find((a) => isTempId(a.id));
-        if (!optimistic) return withoutTemp;
+        if (!optimistic) {
+          return withoutTemp;
+        }
         return [
           { ...optimistic, id: data.id },
           ...withoutTemp.filter((a) => a.id !== optimistic.id),
@@ -95,7 +125,9 @@ export function useActivityMutations() {
       queryKey: key,
       apply: (prev, { id, data }) =>
         prev.map((a) => {
-          if (a.id !== id) return a;
+          if (a.id !== id) {
+            return a;
+          }
           let nextDate = a.date;
           if (data.date) {
             nextDate = data.date instanceof Date ? data.date : new Date(data.date as string);

@@ -137,8 +137,12 @@ export function mapVerdictToDisplay(verdict: OverallVerdict): VerdictDisplay {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function mapConfidenceToTier(confidence: number): ConfidenceTier {
-  if (confidence >= 0.7) return 'high';
-  if (confidence >= 0.4) return 'medium';
+  if (confidence >= 0.7) {
+    return 'high';
+  }
+  if (confidence >= 0.4) {
+    return 'medium';
+  }
   return 'low';
 }
 
@@ -152,7 +156,9 @@ export function resolveVisibleConfidenceLabel(
   confidenceTier: ConfidenceTier | null,
   adviceActionable: boolean,
 ): string | null {
-  if (!adviceActionable || confidenceTier !== 'high') return confidenceLabel;
+  if (!adviceActionable || confidenceTier !== 'high') {
+    return confidenceLabel;
+  }
   return null;
 }
 
@@ -434,6 +440,25 @@ const RISK_RANK: Record<string, number> = {
   CRITICAL: 3,
 };
 
+function resolveDeviationRiskLevel(
+  worst: number,
+  accumulating: boolean,
+): DeviationRiskLevel {
+  if (worst >= 3 || (worst >= 2 && accumulating)) {
+    return 'warning';
+  }
+  if (worst >= 2 || (worst >= 1 && accumulating)) {
+    return 'caution';
+  }
+  return 'safe';
+}
+
+const DEVIATION_RISK_MESSAGE: Record<DeviationRiskLevel, string> = {
+  warning: "Forcer davantage risque le surmenage — la fatigue s'accumule déjà.",
+  caution: 'Dépasser la prescription pourrait retarder ta récupération.',
+  safe: '',
+};
+
 export function mapDeviationRisk(
   overreachingRisk: string,
   functionalOverreachingRisk: string,
@@ -444,20 +469,8 @@ export function mapDeviationRisk(
     RISK_RANK[functionalOverreachingRisk] ?? 0,
   );
   const accumulating = fatigueTrajectory === 'ACCUMULATING' || fatigueTrajectory === 'ACCELERATING';
-
-  if (worst >= 3 || (worst >= 2 && accumulating)) {
-    return {
-      level: 'warning',
-      message: "Forcer davantage risque le surmenage — la fatigue s'accumule déjà.",
-    };
-  }
-  if (worst >= 2 || (worst >= 1 && accumulating)) {
-    return {
-      level: 'caution',
-      message: 'Dépasser la prescription pourrait retarder ta récupération.',
-    };
-  }
-  return { level: 'safe', message: '' };
+  const level = resolveDeviationRiskLevel(worst, accumulating);
+  return { level, message: DEVIATION_RISK_MESSAGE[level] };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -528,10 +541,12 @@ export function mapRecoveryProjection(
   verdict: RecoveryDecisionVerdict,
   overreachingRisk: OverreachingRisk,
 ): string {
-  if (verdict === 'OVERREACHED')
+  if (verdict === 'OVERREACHED') {
     return 'La récupération physiologique nécessite 2 à 3 jours — le repos est la voie la plus rapide.';
-  if (verdict === 'FATIGUED')
+  }
+  if (verdict === 'FATIGUED') {
     return "Une récupération active aujourd'hui accélère la forme pour demain.";
+  }
   if (verdict === 'PARTIALLY_RECOVERED') {
     if (overreachingRisk === 'HIGH' || overreachingRisk === 'CRITICAL') {
       return "La récupération s'améliorera si la charge est maîtrisée aujourd'hui.";
@@ -539,11 +554,32 @@ export function mapRecoveryProjection(
     return 'La forme se rétablira complètement dans 24 à 48 heures.';
   }
   if (verdict === 'RECOVERED') {
-    if (overreachingRisk === 'LOW')
+    if (overreachingRisk === 'LOW') {
       return "La bonne récupération devrait se maintenir jusqu'à demain.";
+    }
     return "La récupération est suffisante — gérez l'intensité de la séance pour la préserver.";
   }
   return '';
+}
+
+function fatigueProjectionForReduce(trajectory: FatigueTrajectory): string {
+  if (trajectory === 'ACCELERATING') {
+    return 'Réduire la charge maintenant prévient le surmenage non fonctionnel.';
+  }
+  return "Lever le pied aujourd'hui évite que la fatigue ne s'aggrave.";
+}
+
+function fatigueProjectionForBuild(
+  trajectory: FatigueTrajectory,
+  capacity: TrainingCapacity,
+): string {
+  if (trajectory === 'RESOLVING') {
+    return "La fatigue se dissipe — une séance bien dosée maintenant maximise l'adaptation.";
+  }
+  if (capacity === 'FULL') {
+    return "La fatigue est gérable — pleine capacité d'entraînement disponible.";
+  }
+  return "Fatigue gérable — capacité d'entraînement dans la plage normale.";
 }
 
 export function mapFatigueProjection(
@@ -555,17 +591,13 @@ export function mapFatigueProjection(
     return 'Le repos permet à la fatigue accumulée de se dissiper complètement.';
   }
   if (verdict === 'REDUCE') {
-    if (trajectory === 'ACCELERATING')
-      return 'Réduire la charge maintenant prévient le surmenage non fonctionnel.';
-    return "Lever le pied aujourd'hui évite que la fatigue ne s'aggrave.";
+    return fatigueProjectionForReduce(trajectory);
   }
-  if (verdict === 'MAINTAIN') return 'La fatigue restera dans la plage fonctionnelle.';
+  if (verdict === 'MAINTAIN') {
+    return 'La fatigue restera dans la plage fonctionnelle.';
+  }
   if (verdict === 'BUILD') {
-    if (trajectory === 'RESOLVING')
-      return "La fatigue se dissipe — une séance bien dosée maintenant maximise l'adaptation.";
-    if (capacity === 'FULL')
-      return "La fatigue est gérable — pleine capacité d'entraînement disponible.";
-    return "Fatigue gérable — capacité d'entraînement dans la plage normale.";
+    return fatigueProjectionForBuild(trajectory, capacity);
   }
   return '';
 }
@@ -574,16 +606,22 @@ export function mapAdaptationProjection(
   verdict: AdaptationDecisionVerdict,
   loadMultiplier: number,
 ): string {
-  if (verdict === 'RECOVERY_PRIORITY')
+  if (verdict === 'RECOVERY_PRIORITY') {
     return "L'investissement en récupération protège ta base de forme à long terme.";
-  if (verdict === 'REDUCE_LOAD')
+  }
+  if (verdict === 'REDUCE_LOAD') {
     return "Réduire la charge maintenant laisse les adaptations récentes s'ancrer.";
-  if (verdict === 'CONSOLIDATE')
+  }
+  if (verdict === 'CONSOLIDATE') {
     return 'Une charge régulière consolide les adaptations des dernières semaines.';
-  if (verdict === 'SUSTAIN') return 'La charge actuelle maintient tes gains de forme.';
+  }
+  if (verdict === 'SUSTAIN') {
+    return 'La charge actuelle maintient tes gains de forme.';
+  }
   if (verdict === 'INCREASE_LOAD') {
-    if (loadMultiplier > 1.1)
+    if (loadMultiplier > 1.1) {
       return "Un stimulus de qualité aujourd'hui entraîne des gains mesurables dans 10 à 14 jours.";
+    }
     return 'Une surcharge progressive se cumulera en gains de forme dans les semaines à venir.';
   }
   return '';
@@ -625,9 +663,15 @@ export function mapFatigueCapacityLabel(capacity: TrainingCapacity): string {
  * In-range stays foreground; color only flags a deviation (caution / risk).
  */
 export function mapScoreToColorClass(score: number | null): string {
-  if (score === null) return 'text-muted-foreground';
-  if (score >= 60) return 'text-foreground';
-  if (score >= 40) return 'text-signal-caution';
+  if ((score === undefined || score === null)) {
+    return 'text-muted-foreground';
+  }
+  if (score >= 60) {
+    return 'text-foreground';
+  }
+  if (score >= 40) {
+    return 'text-signal-caution';
+  }
   return 'text-signal-risk';
 }
 
@@ -636,25 +680,43 @@ export function mapScoreToColorClass(score: number | null): string {
  * Capacity greens first; caution without shame; risk only when critically low.
  */
 export function mapStripScoreToColorClass(score: number | null): string {
-  if (score === null) return 'text-muted-foreground';
-  if (score >= 70) return 'text-primary';
-  if (score >= 50) return 'text-foreground';
-  if (score >= 35) return 'text-signal-caution';
-  if (score >= 20) return 'text-signal-vo2';
+  if ((score === undefined || score === null)) {
+    return 'text-muted-foreground';
+  }
+  if (score >= 70) {
+    return 'text-primary';
+  }
+  if (score >= 50) {
+    return 'text-foreground';
+  }
+  if (score >= 35) {
+    return 'text-signal-caution';
+  }
+  if (score >= 20) {
+    return 'text-signal-vo2';
+  }
   return 'text-signal-risk';
 }
 
 /** Strain / effort index — informational intensity, never a “bad score” red. */
 export function mapStripStrainToColorClass(score: number | null): string {
-  if (score === null) return 'text-muted-foreground';
+  if ((score === undefined || score === null)) {
+    return 'text-muted-foreground';
+  }
   return 'text-signal-threshold dark:text-signal-tempo';
 }
 
 /** Bar fill for score gauges — single accent when OK; signal tokens on deviation. */
 export function mapScoreToBarColorClass(score: number | null): string {
-  if (score === null) return 'bg-muted-foreground/10';
-  if (score >= 60) return 'bg-primary/70';
-  if (score >= 40) return 'bg-signal-caution/80';
+  if ((score === undefined || score === null)) {
+    return 'bg-muted-foreground/10';
+  }
+  if (score >= 60) {
+    return 'bg-primary/70';
+  }
+  if (score >= 40) {
+    return 'bg-signal-caution/80';
+  }
   return 'bg-signal-risk/80';
 }
 
@@ -663,24 +725,42 @@ export function mapScoreToBarColorClass(score: number | null): string {
  * Prefer for adaptation / recovery dimension inventories.
  */
 export function mapScoreToBarColorClassProtective(score: number | null): string {
-  if (score === null) return 'bg-muted-foreground/10';
-  if (score >= 60) return 'bg-primary/70';
-  if (score >= 40) return 'bg-signal-caution/80';
+  if ((score === undefined || score === null)) {
+    return 'bg-muted-foreground/10';
+  }
+  if (score >= 60) {
+    return 'bg-primary/70';
+  }
+  if (score >= 40) {
+    return 'bg-signal-caution/80';
+  }
   return 'bg-signal-caution/55';
 }
 
 export function mapScoreToColorClassProtective(score: number | null): string {
-  if (score === null) return 'text-muted-foreground';
-  if (score >= 60) return 'text-foreground';
+  if ((score === undefined || score === null)) {
+    return 'text-muted-foreground';
+  }
+  if (score >= 60) {
+    return 'text-foreground';
+  }
   return 'text-signal-caution';
 }
 
 /** Fatigue dimension intensity — higher score = more fatigue. */
 export function mapFatigueDimensionIntensity(score: number | null): string | null {
-  if (score === null) return null;
-  if (score <= 15) return 'Faible';
-  if (score <= 40) return 'Modérée';
-  if (score <= 70) return 'Élevée';
+  if ((score === undefined || score === null)) {
+    return null;
+  }
+  if (score <= 15) {
+    return 'Faible';
+  }
+  if (score <= 40) {
+    return 'Modérée';
+  }
+  if (score <= 70) {
+    return 'Élevée';
+  }
   return 'Critique';
 }
 

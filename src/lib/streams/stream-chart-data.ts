@@ -1,4 +1,5 @@
 import type { StreamSample } from '@/lib/streams/streams';
+import { isSet } from '@/lib/util/value';
 
 export interface NormalizedStreamChartPoint {
   xDistanceKm: number;
@@ -17,18 +18,18 @@ export function formatAltitudeMeters(value: number): string {
 
 export function normalizeStreamChartData(samples: StreamSample[]): NormalizedStreamChartPoint[] {
   return samples.map((sample) => {
-    const speedKmh = sample.speed != null ? sample.speed * 3.6 : null;
-    const pace = sample.speed != null && sample.speed > 0.3 ? 1000 / sample.speed : null;
+    const speedKmh = isSet(sample.speed) ? sample.speed * 3.6 : null;
+    const pace = isSet(sample.speed) && sample.speed > 0.3 ? 1000 / sample.speed : null;
 
     return {
       xDistanceKm: Number((sample.d / 1000).toFixed(3)),
       xTimeMin: Number((sample.t / 60).toFixed(2)),
-      alt: sample.alt != null ? Number(sample.alt.toFixed(2)) : null,
+      alt: isSet(sample.alt) ? Number(sample.alt.toFixed(2)) : null,
       hr: sample.hr,
       watts: sample.watts,
       cadence: sample.cadence,
-      speed: speedKmh != null ? Number(speedKmh.toFixed(1)) : null,
-      pace: pace != null ? Math.round(pace) : null,
+      speed: isSet(speedKmh) ? Number(speedKmh.toFixed(1)) : null,
+      pace: isSet(pace) ? Math.round(pace) : null,
     };
   });
 }

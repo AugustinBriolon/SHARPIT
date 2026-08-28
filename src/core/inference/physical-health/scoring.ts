@@ -6,6 +6,7 @@
  */
 
 import type { DataCompleteness } from '@/core/digital-twin/types';
+import { isSet } from '@/lib/util/value';
 import type { I18nItem } from '@/core/inference/shared/types';
 import type {
   ConditionStatus,
@@ -46,7 +47,7 @@ function inferSeverityFromObservations(
   const symptomatic = observations.filter(
     (o) =>
       o.symptomPresent &&
-      o.severityReported != null &&
+      isSet(o.severityReported) &&
       daysBetween(o.observedAt, referenceAt) <= windowDays &&
       daysBetween(o.observedAt, referenceAt) >= 0,
   );
@@ -59,7 +60,7 @@ function inferSeverityFromObservations(
     // - Otherwise, carry the last known severity forward — the athlete
     //   simply hasn't checked in recently, not improved.
     const sorted = [...observations]
-      .filter((o) => o.severityReported != null && daysBetween(o.observedAt, referenceAt) >= 0)
+      .filter((o) => isSet(o.severityReported) && daysBetween(o.observedAt, referenceAt) >= 0)
       .sort((a, b) => b.observedAt.getTime() - a.observedAt.getTime());
 
     if (sorted.length === 0) {
@@ -108,13 +109,15 @@ export function inferTrend(
     .filter(
       (o) =>
         o.symptomPresent &&
-        o.severityReported != null &&
+        isSet(o.severityReported) &&
         daysBetween(o.observedAt, referenceAt) <= 14 &&
         daysBetween(o.observedAt, referenceAt) >= 0,
     )
     .sort((a, b) => a.observedAt.getTime() - b.observedAt.getTime());
 
-  if (points.length < 3) return 'UNKNOWN';
+  if (points.length < 3) {
+    return 'UNKNOWN';
+  }
 
   const t0 = points[0].observedAt.getTime();
   const pairs = points.map((p) => ({
@@ -129,11 +132,17 @@ export function inferTrend(
   const sumX2 = pairs.reduce((a, p) => a + p.x * p.x, 0);
   const denom = n * sumX2 - sumX * sumX;
 
-  if (denom === 0) return 'UNKNOWN';
+  if (denom === 0) {
+    return 'UNKNOWN';
+  }
 
   const slope = (n * sumXY - sumX * sumY) / denom;
-  if (slope < -TREND_SLOPE_THRESHOLD) return 'IMPROVING';
-  if (slope > TREND_SLOPE_THRESHOLD) return 'WORSENING';
+  if (slope < -TREND_SLOPE_THRESHOLD) {
+    return 'IMPROVING';
+  }
+  if (slope > TREND_SLOPE_THRESHOLD) {
+    return 'WORSENING';
+  }
   return 'STABLE';
 }
 
@@ -142,9 +151,15 @@ export function inferTrend(
 // ─────────────────────────────────────────────────────────────────────────────
 
 function inferTrainingCapacityFromSeverity(severity: number): TrainingCapacityLevel {
-  if (severity === 0) return 'FULL';
-  if (severity <= 3) return 'REDUCED';
-  if (severity <= 6) return 'LIMITED';
+  if (severity === 0) {
+    return 'FULL';
+  }
+  if (severity <= 3) {
+    return 'REDUCED';
+  }
+  if (severity <= 6) {
+    return 'LIMITED';
+  }
   return 'UNABLE';
 }
 
@@ -157,8 +172,12 @@ function resolveFunctionalCapacity(
     .filter((fc) => daysBetween(fc.assessedAt, referenceAt) >= 0)
     .sort((a, b) => b.assessedAt.getTime() - a.assessedAt.getTime());
 
-  if (latest) return latest.trainingCapacity;
-  if (!condition.affectsTraining) return 'FULL';
+  if (latest) {
+    return latest.trainingCapacity;
+  }
+  if (!condition.affectsTraining) {
+    return 'FULL';
+  }
   return inferTrainingCapacityFromSeverity(inferredSeverity);
 }
 
@@ -179,40 +198,79 @@ function hasRecentSymptom(
   );
 }
 
+function inferRecurrentStatus(
+  condition: ConditionInferenceInput,
+  veryRecentSymptom: boolean,
+): { status: ConditionStatus; recurrenceCount: number } | null {
+  const wasResolved = isSet(condition.resolvedAt) || condition.episodes.some((e) => e.resolvedAt);
+  if (wasResolved && veryRecentSymptom) {
+    return { status: 'RECURRENT', recurrenceCount: condition.recurrenceCount + 1 };
+  }
+  return null;
+}
+
+function inferResolvedStatus(
+  condition: ConditionInferenceInput,
+  severity: number,
+  recentSymptom: boolean,
+): { status: ConditionStatus; recurrenceCount: number } | null {
+  if (condition.resolvedAt && !recentSymptom && severity < 1) {
+    return { status: 'RESOLVED', recurrenceCount: condition.recurrenceCount };
+  }
+  return null;
+}
+
+function inferTrendStatus(
+  condition: ConditionInferenceInput,
+  trend: ConditionTrend,
+): { status: ConditionStatus; recurrenceCount: number } | null {
+  if (trend === 'IMPROVING') {
+    return { status: 'IMPROVING', recurrenceCount: condition.recurrenceCount };
+  }
+  if (trend === 'WORSENING') {
+    return { status: 'WORSENING', recurrenceCount: condition.recurrenceCount };
+  }
+  return null;
+}
+
+function inferNonRecurrentStatus(
+  condition: ConditionInferenceInput,
+  severity: number,
+  trend: ConditionTrend,
+  recentSymptom: boolean,
+): { status: ConditionStatus; recurrenceCount: number } {
+  const resolved = inferResolvedStatus(condition, severity, recentSymptom);
+  if (resolved) {
+    return resolved;
+  }
+  if (condition.observations.length <= 1) {
+    return { status: 'NEW', recurrenceCount: condition.recurrenceCount };
+  }
+  const trendStatus = inferTrendStatus(condition, trend);
+  if (trendStatus) {
+    return trendStatus;
+  }
+  if (severity < 1 && !recentSymptom) {
+    return { status: 'STABLE', recurrenceCount: condition.recurrenceCount };
+  }
+
+  return { status: severity > 0 ? 'ACTIVE' : 'STABLE', recurrenceCount: condition.recurrenceCount };
+}
+
 function inferStatus(
   condition: ConditionInferenceInput,
   severity: number,
   trend: ConditionTrend,
   referenceAt: Date,
 ): { status: ConditionStatus; recurrenceCount: number } {
-  const wasResolved = condition.resolvedAt != null || condition.episodes.some((e) => e.resolvedAt);
   const recentSymptom = hasRecentSymptom(condition.observations, referenceAt, 14);
   const veryRecentSymptom = hasRecentSymptom(condition.observations, referenceAt, 7);
-
-  if (wasResolved && veryRecentSymptom) {
-    return {
-      status: 'RECURRENT',
-      recurrenceCount: condition.recurrenceCount + 1,
-    };
+  const recurrent = inferRecurrentStatus(condition, veryRecentSymptom);
+  if (recurrent) {
+    return recurrent;
   }
 
-  if (condition.resolvedAt && !recentSymptom && severity < 1) {
-    return { status: 'RESOLVED', recurrenceCount: condition.recurrenceCount };
-  }
-
-  if (condition.observations.length <= 1) {
-    return { status: 'NEW', recurrenceCount: condition.recurrenceCount };
-  }
-
-  if (trend === 'IMPROVING')
-    return { status: 'IMPROVING', recurrenceCount: condition.recurrenceCount };
-  if (trend === 'WORSENING')
-    return { status: 'WORSENING', recurrenceCount: condition.recurrenceCount };
-  if (severity < 1 && !recentSymptom) {
-    return { status: 'STABLE', recurrenceCount: condition.recurrenceCount };
-  }
-
-  return { status: severity > 0 ? 'ACTIVE' : 'STABLE', recurrenceCount: condition.recurrenceCount };
+  return inferNonRecurrentStatus(condition, severity, trend, recentSymptom);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -236,7 +294,9 @@ function inferConfidence(
   }
 
   const onlyAsymptomatic = observations.length > 0 && observations.every((o) => !o.symptomPresent);
-  if (onlyAsymptomatic) confidence -= 0.15;
+  if (onlyAsymptomatic) {
+    confidence -= 0.15;
+  }
 
   const severityCapacity = inferTrainingCapacityFromSeverity(severity);
   if (
@@ -258,8 +318,12 @@ function estimateRecoveryDays(
   trend: ConditionTrend,
   status: ConditionStatus,
 ): number | null {
-  if (status === 'RESOLVED' || severity < 1) return null;
-  if (trend !== 'IMPROVING') return null;
+  if (status === 'RESOLVED' || severity < 1) {
+    return null;
+  }
+  if (trend !== 'IMPROVING') {
+    return null;
+  }
 
   const baseDays = Math.ceil(severity * 2.5);
   return Math.max(1, baseDays);
@@ -329,7 +393,9 @@ export function inferConditionState(
 const CAPACITY_ORDER: TrainingCapacityLevel[] = ['FULL', 'REDUCED', 'LIMITED', 'UNABLE'];
 
 function worstCapacity(capacities: TrainingCapacityLevel[]): TrainingCapacityLevel {
-  if (capacities.length === 0) return 'FULL';
+  if (capacities.length === 0) {
+    return 'FULL';
+  }
   return capacities.reduce((worst, c) =>
     CAPACITY_ORDER.indexOf(c) > CAPACITY_ORDER.indexOf(worst) ? c : worst,
   );
@@ -364,18 +430,28 @@ export function buildPhysicalHealthSignals(
 export function classifyDataCompleteness(
   conditions: readonly ConditionInferenceInput[],
 ): DataCompleteness {
-  if (conditions.length === 0) return 'INSUFFICIENT';
+  if (conditions.length === 0) {
+    return 'INSUFFICIENT';
+  }
   const withObs = conditions.filter((c) => c.observations.length > 0).length;
-  if (withObs === 0) return 'INSUFFICIENT';
-  if (withObs < conditions.length) return 'PARTIAL';
+  if (withObs === 0) {
+    return 'INSUFFICIENT';
+  }
+  if (withObs < conditions.length) {
+    return 'PARTIAL';
+  }
   const avgObs = withObs / conditions.length;
-  if (avgObs >= 3) return 'FULL';
+  if (avgObs >= 3) {
+    return 'FULL';
+  }
   return 'SPARSE';
 }
 
 export function computeAggregateConfidence(conditions: readonly InferredConditionView[]): number {
   const active = conditions.filter((c) => isActiveCondition(c.status));
-  if (active.length === 0) return 0.9;
+  if (active.length === 0) {
+    return 0.9;
+  }
   const avg = active.reduce((s, c) => s + c.confidence, 0) / active.length;
   return Math.round(avg * 100) / 100;
 }

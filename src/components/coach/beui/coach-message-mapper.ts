@@ -41,6 +41,40 @@ function toolPartsOf(message: UIMessage): ToolPartLite[] {
   return message.parts.filter((p) => p.type.startsWith('tool-')) as ToolPartLite[];
 }
 
+function mapAssistantCoachRow(options: {
+  message: UIMessage;
+  rowKey: string;
+  text: string;
+  isLiveStreamTail: boolean;
+  messageIndex: number;
+  lastAssistantIndex: number;
+  status: MapCoachMessagesInput['status'];
+}): CoachMappedAssistantRow {
+  const { message, rowKey, text, isLiveStreamTail, messageIndex, lastAssistantIndex, status } =
+    options;
+  const toolParts = toolPartsOf(message);
+  const reasoning = reasoningTextOf(message.parts);
+  const inlineParts = toolParts.filter((p) => p.state !== 'approval-requested');
+  const hasApprovalPendingOnMessage = toolParts.some((p) => p.state === 'approval-requested');
+  const skip =
+    !text &&
+    !reasoning &&
+    inlineParts.length === 0 &&
+    !hasApprovalPendingOnMessage &&
+    !isLiveStreamTail;
+
+  return {
+    kind: 'assistant',
+    key: rowKey,
+    text,
+    reasoning,
+    toolParts: inlineParts,
+    live: isLiveStreamTail,
+    showProvenance: messageIndex === lastAssistantIndex && Boolean(text) && status === 'ready',
+    skip,
+  };
+}
+
 export function mapCoachMessages({
   messages,
   status,
@@ -60,27 +94,17 @@ export function mapCoachMessages({
       return;
     }
 
-    const toolParts = toolPartsOf(message);
-    const reasoning = reasoningTextOf(message.parts);
-    const inlineParts = toolParts.filter((p) => p.state !== 'approval-requested');
-    const hasApprovalPendingOnMessage = toolParts.some((p) => p.state === 'approval-requested');
-    const skip =
-      !text &&
-      !reasoning &&
-      inlineParts.length === 0 &&
-      !hasApprovalPendingOnMessage &&
-      !isLiveStreamTail;
-
-    rows.push({
-      kind: 'assistant',
-      key: rowKey,
-      text,
-      reasoning,
-      toolParts: inlineParts,
-      live: isLiveStreamTail,
-      showProvenance: messageIndex === lastAssistantIndex && Boolean(text) && status === 'ready',
-      skip,
-    });
+    rows.push(
+      mapAssistantCoachRow({
+        message,
+        rowKey,
+        text,
+        isLiveStreamTail,
+        messageIndex,
+        lastAssistantIndex,
+        status,
+      }),
+    );
   });
 
   return rows;
@@ -89,9 +113,13 @@ export function mapCoachMessages({
 export function collectPendingApprovals(messages: UIMessage[]): ToolPartLite[] {
   const pending: ToolPartLite[] = [];
   for (const message of messages) {
-    if (message.role !== 'assistant') continue;
+    if (message.role !== 'assistant') {
+      continue;
+    }
     for (const part of message.parts) {
-      if (!part.type.startsWith('tool-')) continue;
+      if (!part.type.startsWith('tool-')) {
+        continue;
+      }
       const lite = part as ToolPartLite;
       if (lite.state === 'approval-requested' && lite.approval && !lite.approval.isAutomatic) {
         pending.push(lite);
@@ -105,6 +133,8 @@ export function showSubmittedPlaceholder(
   status: MapCoachMessagesInput['status'],
   messages: UIMessage[],
 ): boolean {
-  if (status !== 'submitted' || messages.length === 0) return false;
+  if (status !== 'submitted' || messages.length === 0) {
+    return false;
+  }
   return messages[messages.length - 1]?.role === 'user';
 }

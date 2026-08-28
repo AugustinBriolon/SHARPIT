@@ -13,6 +13,23 @@ import {
 } from '@/hooks/use-presentation-view-model';
 import { effortLoadingShell } from '@/lib/presentation/drill-down-loading-shells';
 
+function EffortEmptyView({
+  viewModel,
+}: {
+  viewModel: ReturnType<typeof useEffortViewModel>['data'];
+}) {
+  return (
+    <div className="space-y-4">
+      <MobileDrillDownHeader title="Charge" />
+      <InkEmptyState
+        description={viewModel?.emptyState?.description ?? 'Données de charge indisponibles.'}
+        icon={Activity}
+        title={viewModel?.emptyState?.title ?? 'Charge indisponible'}
+      />
+    </div>
+  );
+}
+
 export function EffortScreen() {
   const { date, isToday, maxDate, minDate, setDate, goToNextDay, goToPreviousDay } =
     useTodaySelectedDate();
@@ -23,16 +40,7 @@ export function EffortScreen() {
   const viewModel = query.data ?? null;
 
   if (!valuesLoading && (!viewModel || viewModel.emptyState)) {
-    return (
-      <div className="space-y-4">
-        <MobileDrillDownHeader title="Charge" />
-        <InkEmptyState
-          description={viewModel?.emptyState?.description ?? 'Données de charge indisponibles.'}
-          icon={Activity}
-          title={viewModel?.emptyState?.title ?? 'Charge indisponible'}
-        />
-      </div>
-    );
+    return <EffortEmptyView viewModel={viewModel ?? undefined} />;
   }
 
   const content = viewModel ?? effortLoadingShell();

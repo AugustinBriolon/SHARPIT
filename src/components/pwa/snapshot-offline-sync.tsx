@@ -19,14 +19,18 @@ export function SnapshotOfflineSync() {
   const { snapshot } = useAthleteSnapshot();
 
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded) {
+      return;
+    }
 
     if (!isSignedIn || !user) {
       void clearSnapshot();
       return;
     }
 
-    if (!snapshot) return;
+    if (!snapshot) {
+      return;
+    }
     void saveSnapshot({ ownerKey: user.id, snapshot });
   }, [isLoaded, isSignedIn, user, snapshot]);
 

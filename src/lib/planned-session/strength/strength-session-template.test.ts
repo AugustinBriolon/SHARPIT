@@ -97,7 +97,9 @@ describe('auditStrengthPrescription', () => {
 describe('formatStrengthSessionRules', () => {
   it('names every block for the coach prompt', () => {
     const rules = formatStrengthSessionRules();
-    for (const block of STRENGTH_BLOCKS) expect(rules).toContain(block.label);
+    for (const block of STRENGTH_BLOCKS) {
+      expect(rules).toContain(block.label);
+    }
     expect(rules).toContain('searchWatchExercises');
   });
 });

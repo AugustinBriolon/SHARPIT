@@ -20,7 +20,9 @@ export async function buildBusySummary(
 ): Promise<string> {
   try {
     const busy = await getUpcomingBusy(athleteId, days + 1);
-    if (busy.length === 0) return '';
+    if (busy.length === 0) {
+      return '';
+    }
 
     const byDay = new Map<string, string[]>();
     for (const slot of busy) {

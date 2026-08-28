@@ -17,6 +17,7 @@
  * name is still a reading.
  */
 import { endOfDay, startOfDay } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import type { EnvironmentalPrediction } from '@/core/environment';
 import {
   formatCityFromLocationLabel,
@@ -46,28 +47,42 @@ export type WeatherHour = {
   solarRadiationWm2: number | null;
 };
 
+function predictionTargetAt(prediction: EnvironmentalPrediction): Date | null {
+  if (!prediction.targetAt) {
+    return null;
+  }
+  const at = new Date(prediction.targetAt);
+  return Number.isNaN(at.getTime()) ? null : at;
+}
+
+function mapPredictionToWeatherHour(prediction: EnvironmentalPrediction): WeatherHour[] {
+  const data = readWeatherMeasurements(prediction);
+  const at = predictionTargetAt(prediction);
+  if (!data || !at) {
+    return [];
+  }
+  return [
+    {
+      at,
+      airTemperatureC: data.airTemperatureC ?? null,
+      precipitationMm: data.precipitationMm ?? null,
+      cloudCoverPct: data.cloudCoverPct ?? null,
+      solarRadiationWm2: data.solarRadiationWm2 ?? null,
+    },
+  ];
+}
+
 export function toWeatherHours(predictions: EnvironmentalPrediction[]): WeatherHour[] {
   return predictions
     .filter((prediction) => prediction.dimension === 'WEATHER')
-    .flatMap((prediction) => {
-      const data = readWeatherMeasurements(prediction);
-      const at = prediction.targetAt ? new Date(prediction.targetAt) : null;
-      if (!data || !at || Number.isNaN(at.getTime())) return [];
-      return [
-        {
-          at,
-          airTemperatureC: data.airTemperatureC ?? null,
-          precipitationMm: data.precipitationMm ?? null,
-          cloudCoverPct: data.cloudCoverPct ?? null,
-          solarRadiationWm2: data.solarRadiationWm2 ?? null,
-        },
-      ];
-    })
+    .flatMap(mapPredictionToWeatherHour)
     .sort((a, b) => a.at.getTime() - b.at.getTime());
 }
 
 function mean(values: number[]): number | null {
-  if (values.length === 0) return null;
+  if (values.length === 0) {
+    return null;
+  }
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
@@ -89,10 +104,14 @@ export function selectTodayWeather(
     const time = hour.at.getTime();
     return time >= dayStart && time <= dayEnd;
   });
-  if (today.length === 0) return null;
+  if (today.length === 0) {
+    return null;
+  }
 
-  const withTemp = today.filter((hour) => hour.airTemperatureC != null);
-  if (withTemp.length === 0) return null;
+  const withTemp = today.filter((hour) => isSet(hour.airTemperatureC));
+  if (withTemp.length === 0) {
+    return null;
+  }
 
   const nearest = withTemp.reduce((best, hour) =>
     Math.abs(hour.at.getTime() - now.getTime()) < Math.abs(best.at.getTime() - now.getTime())
@@ -105,7 +124,7 @@ export function selectTodayWeather(
 
   const precipitations = forCondition
     .map((hour) => hour.precipitationMm)
-    .filter((value): value is number => value != null);
+    .filter((value): value is number => isSet(value));
 
   return {
     tempC: nearest.airTemperatureC as number,
@@ -115,12 +134,12 @@ export function selectTodayWeather(
       avgCloudCoverPct: mean(
         forCondition
           .map((hour) => hour.cloudCoverPct)
-          .filter((value): value is number => value != null),
+          .filter((value): value is number => isSet(value)),
       ),
       avgSolarRadiationWm2: mean(
         forCondition
           .map((hour) => hour.solarRadiationWm2)
-          .filter((value): value is number => value != null),
+          .filter((value): value is number => isSet(value)),
       ),
     }),
   };
@@ -139,7 +158,9 @@ export function nameWeatherLocation(location: { label?: string | null; source: s
   locationKnown: boolean;
 } {
   const city = location.label?.trim();
-  if (!city || location.source === 'default') return { city: '', locationKnown: false };
+  if (!city || location.source === 'default') {
+    return { city: '', locationKnown: false };
+  }
   return { city: formatCityFromLocationLabel(city), locationKnown: true };
 }
 
@@ -160,7 +181,9 @@ export async function loadTodayWeather(
     });
 
     const selected = selectTodayWeather(toWeatherHours(predictions), new Date());
-    if (!selected) return null;
+    if (!selected) {
+      return null;
+    }
 
     return {
       ...nameWeatherLocation(location),

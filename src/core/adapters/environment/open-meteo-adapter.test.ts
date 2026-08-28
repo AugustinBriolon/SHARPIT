@@ -6,8 +6,11 @@ describe('parseOpenMeteoHourlyTime', () => {
   const previousTz = process.env.TZ;
 
   afterEach(() => {
-    if (previousTz === undefined) delete process.env.TZ;
-    else process.env.TZ = previousTz;
+    if (previousTz === undefined) {
+      delete process.env.TZ;
+    } else {
+      process.env.TZ = previousTz;
+    }
   });
 
   it('parses offset-less UTC labels identically under Paris and UTC hosts', () => {

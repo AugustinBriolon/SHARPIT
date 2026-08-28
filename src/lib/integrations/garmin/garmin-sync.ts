@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { format, startOfDay, subDays } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import { syncSinceFromLastSync, syncWindowDays } from '@/lib/integrations/shared/sync-since';
@@ -55,7 +56,9 @@ async function ingestGarminHealth(
 ): Promise<void> {
   try {
     const raws = garminHealthToObservations(health, calendarDate, new Date());
-    if (raws.length === 0) return;
+    if (raws.length === 0) {
+      return;
+    }
     await observationEngine.ingestBatch(athleteId, raws);
   } catch (err) {
     console.error('[ObservationEngine] garmin-health ingest failed:', err);
@@ -126,7 +129,9 @@ export async function disconnectGarmin(athleteId: string) {
 /** Keeps the Garmin profile row so the hub can ask for a reconnect. */
 export async function revokeGarminCredentials(athleteId: string) {
   const account = await getGarminAccount(athleteId);
-  if (!account) return;
+  if (!account) {
+    return;
+  }
   await prisma.garminAccount.update({
     where: { athleteId },
     data: { oauth1TokenEnc: '', oauth2TokenEnc: '' },
@@ -177,55 +182,69 @@ export interface GarminThresholdsImport extends GarminAthleteThresholds {
  * profil. Seuls les champs renvoyés par Garmin sont écrits (un champ absent ne
  * remplace pas une valeur existante).
  */
+function buildThresholdProfileUpdate(
+  thresholds: GarminAthleteThresholds,
+): Prisma.AthleteProfileUncheckedUpdateInput {
+  const data: Prisma.AthleteProfileUncheckedUpdateInput =
+    thresholds.failedSources.length === 0 ? { thresholdsSyncedAt: new Date() } : {};
+  const fields: Array<[keyof Prisma.AthleteProfileUncheckedUpdateInput, number | null]> = [
+    ['ftpW', thresholds.ftpW],
+    ['maxHr', thresholds.maxHr],
+    ['lthr', thresholds.lthr],
+    ['runThresholdPaceSecPerKm', thresholds.runThresholdPaceSecPerKm],
+    ['vo2maxRunning', thresholds.vo2maxRunning],
+    ['vo2maxCycling', thresholds.vo2maxCycling],
+  ];
+  for (const [key, value] of fields) {
+    if (isSet(value)) {
+      data[key] = value as never;
+    }
+  }
+  return data;
+}
+
+function thresholdsWereImported(thresholds: GarminAthleteThresholds): boolean {
+  return [
+    thresholds.ftpW,
+    thresholds.maxHr,
+    thresholds.lthr,
+    thresholds.runThresholdPaceSecPerKm,
+    thresholds.vo2maxRunning,
+    thresholds.vo2maxCycling,
+  ].some((value) => isSet(value));
+}
+
+async function importGarminThresholdsForAccount(
+  athleteId: string,
+  account: NonNullable<Awaited<ReturnType<typeof getGarminAccount>>>,
+): Promise<GarminThresholdsImport> {
+  const client = await buildFreshGarminClient(athleteId, account);
+  const thresholds = await fetchAthleteThresholds(client);
+
+  await prisma.athleteProfile.update({
+    where: { id: athleteId },
+    data: buildThresholdProfileUpdate(thresholds),
+  });
+
+  const refreshed = currentTokens(client);
+  await prisma.garminAccount.update({
+    where: { athleteId },
+    data: {
+      oauth1TokenEnc: encryptGarminToken(refreshed.oauth1),
+      oauth2TokenEnc: encryptGarminToken(refreshed.oauth2),
+    },
+  });
+
+  return { ...thresholds, imported: thresholdsWereImported(thresholds) };
+}
+
 export async function importGarminThresholds(athleteId: string): Promise<GarminThresholdsImport> {
   return runGarminCall(athleteId, async () => {
     const account = await getGarminAccount(athleteId);
     if (!account || !isGarminAccountConnected(account)) {
       throw new ProviderAuthError('Session Garmin expirée. Reconnecte Garmin dans les paramètres.');
     }
-
-    const client = await buildFreshGarminClient(athleteId, account);
-
-    const thresholds = await fetchAthleteThresholds(client);
-
-    // Only claim a sync happened when every source answered. A partial import that
-    // stamps the timestamp is how this app spent months reporting "synced" with
-    // ftpW, maxHr and lthr all null.
-    const data: Prisma.AthleteProfileUncheckedUpdateInput =
-      thresholds.failedSources.length === 0 ? { thresholdsSyncedAt: new Date() } : {};
-    if (thresholds.ftpW != null) data.ftpW = thresholds.ftpW;
-    if (thresholds.maxHr != null) data.maxHr = thresholds.maxHr;
-    if (thresholds.lthr != null) data.lthr = thresholds.lthr;
-    if (thresholds.runThresholdPaceSecPerKm != null)
-      data.runThresholdPaceSecPerKm = thresholds.runThresholdPaceSecPerKm;
-    if (thresholds.vo2maxRunning != null) data.vo2maxRunning = thresholds.vo2maxRunning;
-    if (thresholds.vo2maxCycling != null) data.vo2maxCycling = thresholds.vo2maxCycling;
-
-    // The migrated profile row always exists — see the same note in
-    // `upsertAthleteProfile` (src/lib/queries/index.ts).
-    await prisma.athleteProfile.update({
-      where: { id: athleteId },
-      data,
-    });
-
-    const refreshed = currentTokens(client);
-    await prisma.garminAccount.update({
-      where: { athleteId },
-      data: {
-        oauth1TokenEnc: encryptGarminToken(refreshed.oauth1),
-        oauth2TokenEnc: encryptGarminToken(refreshed.oauth2),
-      },
-    });
-
-    const imported =
-      thresholds.ftpW != null ||
-      thresholds.maxHr != null ||
-      thresholds.lthr != null ||
-      thresholds.runThresholdPaceSecPerKm != null ||
-      thresholds.vo2maxRunning != null ||
-      thresholds.vo2maxCycling != null;
-
-    return { ...thresholds, imported };
+    return importGarminThresholdsForAccount(athleteId, account);
   });
 }
 
@@ -237,19 +256,120 @@ export interface GarminSyncResult {
 }
 
 function healthHasData(health: GarminDailyHealth): boolean {
-  return (
-    health.sleepMinutes != null ||
-    health.napMinutes != null ||
-    health.restingHr != null ||
-    health.hrv != null ||
-    health.weightKg != null ||
-    health.readinessScore != null ||
-    health.hrvStatus != null ||
-    health.stress != null ||
-    health.bodyBattery != null ||
-    health.totalSteps != null ||
-    health.sleep.sleepScore != null
-  );
+  const { sleep } = health;
+  return [
+    health.sleepMinutes,
+    health.napMinutes,
+    health.restingHr,
+    health.hrv,
+    health.weightKg,
+    health.readinessScore,
+    health.hrvStatus,
+    health.stress,
+    health.bodyBattery,
+    health.totalSteps,
+    sleep.sleepScore,
+  ].some((value) => isSet(value));
+}
+
+function assignHealthScalars(
+  data: Prisma.DailyHealthUpdateInput,
+  health: GarminDailyHealth,
+  factors: Prisma.InputJsonValue | undefined,
+): void {
+  const scalarFields: Array<[keyof Prisma.DailyHealthUpdateInput, unknown]> = [
+    ['sleepMinutes', health.sleepMinutes],
+    ['napMinutes', health.napMinutes],
+    ['restingHr', health.restingHr],
+    ['hrv', health.hrv],
+    ['weightKg', health.weightKg],
+    ['recoveryScore', health.readinessScore],
+    ['readinessLevel', health.readinessLevel],
+    ['readinessFeedback', health.readinessFeedback],
+    ['readinessFactors', factors],
+    ['hrvStatus', health.hrvStatus],
+    ['hrvBaselineLow', health.hrvBaselineLow],
+    ['hrvBaselineHigh', health.hrvBaselineHigh],
+    ['stress', health.stress],
+    ['bodyBattery', health.bodyBattery],
+    ['totalSteps', health.totalSteps],
+  ];
+  for (const [key, value] of scalarFields) {
+    if (isSet(value) && value !== undefined) {
+      data[key] = value as never;
+    }
+  }
+}
+
+function assignSleepScalars(
+  data: Prisma.DailyHealthUpdateInput,
+  sleep: GarminDailyHealth['sleep'],
+): void {
+  const sleepFields: Array<[keyof Prisma.DailyHealthUpdateInput, unknown]> = [
+    ['sleepScore', sleep.sleepScore],
+    ['sleepDeepMin', sleep.sleepDeepMin],
+    ['sleepLightMin', sleep.sleepLightMin],
+    ['sleepRemMin', sleep.sleepRemMin],
+    ['sleepAwakeMin', sleep.sleepAwakeMin],
+    ['sleepBedtimeMin', sleep.sleepBedtimeMin],
+    ['sleepWakeMin', sleep.sleepWakeMin],
+    ['sleepRespiration', sleep.sleepRespiration],
+    ['sleepAvgStress', sleep.sleepAvgStress],
+    ['sleepScoreFeedback', sleep.sleepScoreFeedback],
+  ];
+  for (const [key, value] of sleepFields) {
+    if (isSet(value)) {
+      data[key] = value as never;
+    }
+  }
+}
+
+function buildGarminHealthUpdateData(health: GarminDailyHealth): Prisma.DailyHealthUpdateInput {
+  const factors = isSet(health.readinessFactors)
+    ? (health.readinessFactors as unknown as Prisma.InputJsonValue)
+    : undefined;
+  const data: Prisma.DailyHealthUpdateInput = {};
+  assignHealthScalars(data, health, factors);
+  assignSleepScalars(data, health.sleep);
+  return data;
+}
+
+function buildGarminHealthCreateData(
+  athleteId: string,
+  day: Date,
+  health: GarminDailyHealth,
+  factors: Prisma.InputJsonValue | undefined,
+): Prisma.DailyHealthUncheckedCreateInput {
+  const { sleep } = health;
+  return {
+    athleteId,
+    date: day,
+    sleepMinutes: health.sleepMinutes,
+    napMinutes: health.napMinutes,
+    restingHr: health.restingHr,
+    hrv: health.hrv,
+    weightKg: health.weightKg,
+    recoveryScore: health.readinessScore,
+    readinessLevel: health.readinessLevel,
+    readinessFeedback: health.readinessFeedback,
+    readinessFactors: factors,
+    hrvStatus: health.hrvStatus,
+    hrvBaselineLow: health.hrvBaselineLow,
+    hrvBaselineHigh: health.hrvBaselineHigh,
+    stress: health.stress,
+    bodyBattery: health.bodyBattery,
+    totalSteps: health.totalSteps,
+    sleepScore: sleep.sleepScore,
+    sleepDeepMin: sleep.sleepDeepMin,
+    sleepLightMin: sleep.sleepLightMin,
+    sleepRemMin: sleep.sleepRemMin,
+    sleepAwakeMin: sleep.sleepAwakeMin,
+    sleepBedtimeMin: sleep.sleepBedtimeMin,
+    sleepWakeMin: sleep.sleepWakeMin,
+    sleepRespiration: sleep.sleepRespiration,
+    sleepAvgStress: sleep.sleepAvgStress,
+    sleepScoreFeedback: sleep.sleepScoreFeedback,
+  };
 }
 
 async function upsertGarminHealthDay(
@@ -259,83 +379,77 @@ async function upsertGarminHealthDay(
   weightKg: number | null,
 ): Promise<'updated' | 'empty'> {
   const health = await fetchDailyHealth(client, date, weightKg);
-  if (!healthHasData(health)) return 'empty';
+  if (!healthHasData(health)) {
+    return 'empty';
+  }
 
-  // Le champ DailyHealth.date est un `@db.Date` : Postgres ne garde que la
-  // partie calendaire et la tronque en UTC. Si on passe un minuit LOCAL
-  // (Europe/Paris = UTC+2), le 29/06 00:00 local devient 28/06 22:00 UTC et
-  // serait stocké au 28/06. On construit donc un minuit UTC à partir des
-  // composantes LOCALES pour stocker le bon jour, quel que soit le fuseau
-  // du serveur (local en dev, UTC sur Vercel).
   const day = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const factors =
-    health.readinessFactors != null
-      ? (health.readinessFactors as unknown as Prisma.InputJsonValue)
-      : undefined;
-
-  const data: Prisma.DailyHealthUpdateInput = {};
-  if (health.sleepMinutes != null) data.sleepMinutes = health.sleepMinutes;
-  if (health.napMinutes != null) data.napMinutes = health.napMinutes;
-  if (health.restingHr != null) data.restingHr = health.restingHr;
-  if (health.hrv != null) data.hrv = health.hrv;
-  if (health.weightKg != null) data.weightKg = health.weightKg;
-  if (health.readinessScore != null) data.recoveryScore = health.readinessScore;
-  if (health.readinessLevel != null) data.readinessLevel = health.readinessLevel;
-  if (health.readinessFeedback != null) data.readinessFeedback = health.readinessFeedback;
-  if (factors != null) data.readinessFactors = factors;
-  if (health.hrvStatus != null) data.hrvStatus = health.hrvStatus;
-  if (health.hrvBaselineLow != null) data.hrvBaselineLow = health.hrvBaselineLow;
-  if (health.hrvBaselineHigh != null) data.hrvBaselineHigh = health.hrvBaselineHigh;
-  if (health.stress != null) data.stress = health.stress;
-  if (health.bodyBattery != null) data.bodyBattery = health.bodyBattery;
-  if (health.totalSteps != null) data.totalSteps = health.totalSteps;
-  const { sleep } = health;
-  if (sleep.sleepScore != null) data.sleepScore = sleep.sleepScore;
-  if (sleep.sleepDeepMin != null) data.sleepDeepMin = sleep.sleepDeepMin;
-  if (sleep.sleepLightMin != null) data.sleepLightMin = sleep.sleepLightMin;
-  if (sleep.sleepRemMin != null) data.sleepRemMin = sleep.sleepRemMin;
-  if (sleep.sleepAwakeMin != null) data.sleepAwakeMin = sleep.sleepAwakeMin;
-  if (sleep.sleepBedtimeMin != null) data.sleepBedtimeMin = sleep.sleepBedtimeMin;
-  if (sleep.sleepWakeMin != null) data.sleepWakeMin = sleep.sleepWakeMin;
-  if (sleep.sleepRespiration != null) data.sleepRespiration = sleep.sleepRespiration;
-  if (sleep.sleepAvgStress != null) data.sleepAvgStress = sleep.sleepAvgStress;
-  if (sleep.sleepScoreFeedback != null) data.sleepScoreFeedback = sleep.sleepScoreFeedback;
+  const factors = isSet(health.readinessFactors)
+    ? (health.readinessFactors as unknown as Prisma.InputJsonValue)
+    : undefined;
 
   await prisma.dailyHealth.upsert({
     where: { athleteId_date: { athleteId, date: day } },
-    create: {
-      athleteId,
-      date: day,
-      sleepMinutes: health.sleepMinutes,
-      napMinutes: health.napMinutes,
-      restingHr: health.restingHr,
-      hrv: health.hrv,
-      weightKg: health.weightKg,
-      recoveryScore: health.readinessScore,
-      readinessLevel: health.readinessLevel,
-      readinessFeedback: health.readinessFeedback,
-      readinessFactors: factors,
-      hrvStatus: health.hrvStatus,
-      hrvBaselineLow: health.hrvBaselineLow,
-      hrvBaselineHigh: health.hrvBaselineHigh,
-      stress: health.stress,
-      bodyBattery: health.bodyBattery,
-      totalSteps: health.totalSteps,
-      sleepScore: sleep.sleepScore,
-      sleepDeepMin: sleep.sleepDeepMin,
-      sleepLightMin: sleep.sleepLightMin,
-      sleepRemMin: sleep.sleepRemMin,
-      sleepAwakeMin: sleep.sleepAwakeMin,
-      sleepBedtimeMin: sleep.sleepBedtimeMin,
-      sleepWakeMin: sleep.sleepWakeMin,
-      sleepRespiration: sleep.sleepRespiration,
-      sleepAvgStress: sleep.sleepAvgStress,
-      sleepScoreFeedback: sleep.sleepScoreFeedback,
-    },
-    update: data,
+    create: buildGarminHealthCreateData(athleteId, day, health, factors),
+    update: buildGarminHealthUpdateData(health),
   });
   await ingestGarminHealth(athleteId, health, day);
   return 'updated';
+}
+
+function buildGarminHealthDateRange(
+  options: { days?: number; full?: boolean } | undefined,
+  lastSyncAt: Date | null,
+): { since: Date; days: number; dates: Date[] } {
+  const fallbackDays = options?.days ?? GARMIN_HEALTH_DEFAULT_FALLBACK_DAYS;
+  const today = startOfDay(new Date());
+  const since = options?.full
+    ? subDays(today, 365)
+    : syncSinceFromLastSync(lastSyncAt, fallbackDays);
+  const days = syncWindowDays(since);
+  const dates: Date[] = [];
+  for (let date = today; date >= since; date = subDays(date, 1)) {
+    dates.push(date);
+  }
+  return { since, days, dates };
+}
+
+async function runGarminHealthSync(
+  athleteId: string,
+  options?: { days?: number; full?: boolean },
+): Promise<GarminSyncResult> {
+  const account = await getGarminAccount(athleteId);
+  if (!account || !isGarminAccountConnected(account)) {
+    throw new ProviderAuthError('Session Garmin expirée. Reconnecte Garmin dans les paramètres.');
+  }
+
+  const client = await buildFreshGarminClient(athleteId, account);
+  const { since, days, dates } = buildGarminHealthDateRange(options, account.lastSyncAt);
+  const weightMap = await fetchWeightRange(client, since, startOfDay(new Date()));
+
+  const outcomes = await mapWithConcurrency(dates, GARMIN_HEALTH_DAY_CONCURRENCY, (date) => {
+    const weightKg = weightMap.get(format(date, 'yyyy-MM-dd')) ?? null;
+    return upsertGarminHealthDay(athleteId, client, date, weightKg);
+  });
+
+  const updated = outcomes.filter((o) => o === 'updated').length;
+  const emptyDays = outcomes.filter((o) => o === 'empty').length;
+
+  const refreshed = currentTokens(client);
+  await prisma.garminAccount.update({
+    where: { athleteId },
+    data: {
+      oauth1TokenEnc: encryptGarminToken(refreshed.oauth1),
+      oauth2TokenEnc: encryptGarminToken(refreshed.oauth2),
+      lastSyncAt: new Date(),
+    },
+  });
+
+  const backfill = await backfillHealthObservationsFromDailyHealth(athleteId, {
+    days: options?.full ? 365 : days,
+  });
+
+  return { days, updated, emptyDays, observationsBackfilled: backfill.ingested };
 }
 
 export async function syncGarminHealth(
@@ -345,54 +459,5 @@ export async function syncGarminHealth(
     full?: boolean;
   },
 ): Promise<GarminSyncResult> {
-  return runGarminCall(athleteId, async () => {
-    const account = await getGarminAccount(athleteId);
-    if (!account || !isGarminAccountConnected(account)) {
-      throw new ProviderAuthError('Session Garmin expirée. Reconnecte Garmin dans les paramètres.');
-    }
-
-    const client = await buildFreshGarminClient(athleteId, account);
-
-    const fallbackDays = options?.days ?? GARMIN_HEALTH_DEFAULT_FALLBACK_DAYS;
-    const today = startOfDay(new Date());
-    const since = options?.full
-      ? subDays(today, 365)
-      : syncSinceFromLastSync(account.lastSyncAt, fallbackDays);
-    const days = syncWindowDays(since);
-
-    const weightMap = await fetchWeightRange(client, since, today);
-
-    const dates: Date[] = [];
-    for (let date = today; date >= since; date = subDays(date, 1)) {
-      dates.push(date);
-    }
-
-    const outcomes = await mapWithConcurrency(
-      dates,
-      GARMIN_HEALTH_DAY_CONCURRENCY,
-      async (date) => {
-        const weightKg = weightMap.get(format(date, 'yyyy-MM-dd')) ?? null;
-        return upsertGarminHealthDay(athleteId, client, date, weightKg);
-      },
-    );
-
-    const updated = outcomes.filter((o) => o === 'updated').length;
-    const emptyDays = outcomes.filter((o) => o === 'empty').length;
-
-    const refreshed = currentTokens(client);
-    await prisma.garminAccount.update({
-      where: { athleteId },
-      data: {
-        oauth1TokenEnc: encryptGarminToken(refreshed.oauth1),
-        oauth2TokenEnc: encryptGarminToken(refreshed.oauth2),
-        lastSyncAt: new Date(),
-      },
-    });
-
-    const backfill = await backfillHealthObservationsFromDailyHealth(athleteId, {
-      days: options?.full ? 365 : fallbackDays,
-    });
-
-    return { days, updated, emptyDays, observationsBackfilled: backfill.ingested };
-  });
+  return runGarminCall(athleteId, () => runGarminHealthSync(athleteId, options));
 }

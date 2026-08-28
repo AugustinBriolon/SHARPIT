@@ -10,6 +10,46 @@ import type {
   EnduranceStep,
 } from '@/lib/planned-session/endurance/endurance-prescription';
 import type { AthleteThresholds } from '@/lib/planned-session/endurance/endurance-targets';
+import { isSet } from '@/lib/util/value';
+
+function hrThresholdKeys(
+  ref: EnduranceStep['target']['hrRef'] | undefined,
+): Array<keyof AthleteThresholds> {
+  if (ref === 'maxhr') {
+    return ['maxHr'];
+  }
+  if (ref === 'lthr') {
+    return ['lthr'];
+  }
+  return ['lthr', 'maxHr'];
+}
+
+function metricThresholdKey(
+  metric: EnduranceStep['target']['metric'],
+): keyof AthleteThresholds | null {
+  if (metric === 'pace') {
+    return 'runThresholdPaceSecPerKm';
+  }
+  if (metric === 'power') {
+    return 'ftpW';
+  }
+  if (metric === 'hr') {
+    return null;
+  }
+  return null;
+}
+
+function keysFromStepTarget(step: EnduranceStep): Array<keyof AthleteThresholds> {
+  const { target } = step;
+  if (isSet(target.absEasy) && isSet(target.absHard)) {
+    return [];
+  }
+  if (target.metric === 'hr') {
+    return hrThresholdKeys(target.hrRef ?? 'auto');
+  }
+  const key = metricThresholdKey(target.metric);
+  return key ? [key] : [];
+}
 
 /** Athlete references a prescription actually depends on, override-aware. */
 export function thresholdKeysUsedBy(
@@ -18,25 +58,15 @@ export function thresholdKeysUsedBy(
   const keys = new Set<keyof AthleteThresholds>();
 
   const visit = (step: EnduranceStep): void => {
-    const { target } = step;
-    // An absolute override does not move when thresholds do.
-    if (target.absEasy != null && target.absHard != null) return;
-    if (target.metric === 'pace') keys.add('runThresholdPaceSecPerKm');
-    else if (target.metric === 'power') keys.add('ftpW');
-    else if (target.metric === 'hr') {
-      const ref = target.hrRef ?? 'auto';
-      if (ref === 'maxhr') keys.add('maxHr');
-      else if (ref === 'lthr') keys.add('lthr');
-      else {
-        keys.add('lthr');
-        keys.add('maxHr');
-      }
-    }
+    keysFromStepTarget(step).forEach((key) => keys.add(key));
   };
 
   for (const block of prescription.blocks) {
-    if (block.kind === 'step') visit(block.step);
-    else block.steps.forEach(visit);
+    if (block.kind === 'step') {
+      visit(block.step);
+    } else {
+      block.steps.forEach(visit);
+    }
   }
   return [...keys];
 }
@@ -68,7 +98,9 @@ export function garminPushStaleness(input: {
   currentThresholds: AthleteThresholds;
   hasPush: boolean;
 }): GarminPushStaleness {
-  if (!input.hasPush || !input.prescription || !input.pushedThresholds) return FRESH;
+  if (!input.hasPush || !input.prescription || !input.pushedThresholds) {
+    return FRESH;
+  }
 
   const changed = thresholdKeysUsedBy(input.prescription)
     .map((key) => ({
@@ -83,7 +115,9 @@ export function garminPushStaleness(input: {
 
 /** Narrow a threshold bag read back from Json — unknown shapes degrade to null. */
 export function parsePushedThresholds(raw: unknown): Partial<AthleteThresholds> | null {
-  if (!raw || typeof raw !== 'object') return null;
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
   const record = raw as Record<string, unknown>;
   const numberOrNull = (value: unknown): number | null =>
     typeof value === 'number' && Number.isFinite(value) ? value : null;

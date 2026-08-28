@@ -48,7 +48,9 @@ const RULE_CATEGORY: Record<string, AdaptTriggerCategory> = {
  * detected triggered it — the athlete or coach initiated it directly.
  */
 export function classifyAdaptTrigger(gateResult: GateSessionResult | null): AdaptTriggerCategory {
-  if (!gateResult || gateResult.findings.length === 0) return 'ATHLETE_ACTION';
+  if (!gateResult || gateResult.findings.length === 0) {
+    return 'ATHLETE_ACTION';
+  }
 
   const categories = gateResult.findings.map((f) => RULE_CATEGORY[f.ruleCode] ?? 'ATHLETE_ACTION');
 
@@ -57,7 +59,9 @@ export function classifyAdaptTrigger(gateResult: GateSessionResult | null): Adap
   const severityOrder = ['REJECTED', 'REQUIRES_CONFIRMATION', 'WARNING'] as const;
   for (const severity of severityOrder) {
     const index = gateResult.findings.findIndex((f) => f.severity === severity);
-    if (index !== -1) return categories[index];
+    if (index !== -1) {
+      return categories[index];
+    }
   }
 
   return categories[0];

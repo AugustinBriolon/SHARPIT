@@ -44,7 +44,9 @@ function findingToEvidence(finding: ReasoningFinding, rank: number): DecisionEvi
 }
 
 function isRedundantWith(existing: DecisionEvidence, candidate: DecisionEvidence): boolean {
-  if (existing.domain !== candidate.domain) return false;
+  if (existing.domain !== candidate.domain) {
+    return false;
+  }
   return severityRank(candidate.severity) >= severityRank(existing.severity);
 }
 
@@ -61,11 +63,15 @@ export function rankAndSuppressEvidence(input: {
 
   const sorted = [...merged].sort((a, b) => {
     const severityDiff = severityRank(a.severity) - severityRank(b.severity);
-    if (severityDiff !== 0) return severityDiff;
+    if (severityDiff !== 0) {
+      return severityDiff;
+    }
     const domainDiff =
       domainPriorityIndex(findingCategoryToDomain(a.category)) -
       domainPriorityIndex(findingCategoryToDomain(b.category));
-    if (domainDiff !== 0) return domainDiff;
+    if (domainDiff !== 0) {
+      return domainDiff;
+    }
     return b.confidence - a.confidence;
   });
 

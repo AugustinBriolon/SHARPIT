@@ -1,4 +1,5 @@
 import { isSameDay, startOfDay } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import type { ActivityType } from '@prisma/client';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import {
@@ -40,7 +41,9 @@ export function findMissedPlannedSessions(
   const cutoff = startOfDay(new Date(refDay.getTime() - lookbackDays * 86_400_000));
   return plannedSessions
     .filter((s) => {
-      if (s.completed || s.activityId) return false;
+      if (s.completed || s.activityId) {
+        return false;
+      }
       const day = startOfDay(new Date(s.date));
       return day < refDay && day >= cutoff;
     })
@@ -64,7 +67,7 @@ export function buildTodayDaySummary(
     [
       ...plannedSessions.map((s) => (s.activityId ? s.id : null)),
       ...activities.map((a) => a.plannedSession?.id ?? null),
-    ].filter((id): id is string => id != null),
+    ].filter((id): id is string => isSet(id)),
   );
 
   const todayPlanned = plannedSessions.filter(
@@ -156,7 +159,9 @@ function resolveSectionLabel(doneCount: number, plannedCount: number): string {
 
 function activityLabel(activity: ClientActivity): string {
   const plannedTitle = activity.plannedSession?.title?.trim();
-  if (plannedTitle) return plannedTitle;
+  if (plannedTitle) {
+    return plannedTitle;
+  }
   const title = activity.title?.trim();
   return title ?? activityTypeLabels[activity.type];
 }
@@ -181,9 +186,15 @@ function plannedLabel(session: ClientPlannedSession): string {
  */
 function activityMeta(activity: ClientActivity): string | undefined {
   const parts: string[] = [];
-  if (activity.duration) parts.push(formatDuration(activity.duration));
-  if (activity.load != null) parts.push(`${Math.round(activity.load)} TSS`);
-  if (activity.rpe != null) parts.push(`RPE ${activity.rpe}`);
+  if (activity.duration) {
+    parts.push(formatDuration(activity.duration));
+  }
+  if (isSet(activity.load)) {
+    parts.push(`${Math.round(activity.load)} TSS`);
+  }
+  if (isSet(activity.rpe)) {
+    parts.push(`RPE ${activity.rpe}`);
+  }
   return parts.length > 0 ? parts.join(' · ') : undefined;
 }
 
@@ -192,12 +203,20 @@ function plannedMeta(
   goalTitleById?: ReadonlyMap<string, string>,
 ): string | undefined {
   const parts: string[] = [];
-  if (session.intensity) parts.push(intensityLabels[session.intensity]);
-  if (session.durationMin) parts.push(formatPlannedDuration(session.durationMin));
-  if (session.load != null) parts.push(`${Math.round(session.load)} TSS`);
+  if (session.intensity) {
+    parts.push(intensityLabels[session.intensity]);
+  }
+  if (session.durationMin) {
+    parts.push(formatPlannedDuration(session.durationMin));
+  }
+  if (isSet(session.load)) {
+    parts.push(`${Math.round(session.load)} TSS`);
+  }
   if (session.goalId) {
     const title = goalTitleById?.get(session.goalId);
-    if (title) parts.push(`Sert ${title}`);
+    if (title) {
+      parts.push(`Sert ${title}`);
+    }
   }
   return parts.length > 0 ? parts.join(' · ') : undefined;
 }

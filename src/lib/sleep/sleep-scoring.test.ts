@@ -60,7 +60,13 @@ describe('buildSleepScoreBreakdown', () => {
   it('combines duration and architecture — debt does not affect sharpitScore', () => {
     // 366 min vs 480 target → 76 duration; 36% restorative → 50 architecture
     // 0.55*76 + 0.45*50 = 41.8 + 22.5 = 64.3 → 64
-    const result = buildSleepScoreBreakdown(105, 28, 366, 300, 480);
+    const result = buildSleepScoreBreakdown({
+      deepMin: 105,
+      remMin: 28,
+      totalMin: 366,
+      debtMin: 300,
+      targetMin: 480,
+    });
     expect(result.restorativeRatio).toBe(36);
     expect(result.durationScore).toBe(76);
     expect(result.architectureScore).toBe(50);
@@ -72,7 +78,13 @@ describe('buildSleepScoreBreakdown', () => {
     // ~36% restorative on 481 min vs 480 target → ~78
     const deep = Math.round(481 * 0.22);
     const rem = Math.round(481 * 0.14);
-    const result = buildSleepScoreBreakdown(deep, rem, 481, null, 480);
+    const result = buildSleepScoreBreakdown({
+      deepMin: deep,
+      remMin: rem,
+      totalMin: 481,
+      debtMin: null,
+      targetMin: 480,
+    });
     expect(result.durationScore).toBe(100);
     expect(result.architectureScore).toBe(50);
     expect(result.sharpitScore).toBe(78);
@@ -91,7 +103,13 @@ describe('computeSharpitSleepScoreForDay', () => {
       },
     ];
     expect(computeSharpitSleepScoreForDay(entries, new Date('2026-07-03'), 480)).toBe(
-      buildSleepScoreBreakdown(105, 28, 366, 450 - 366, 480).sharpitScore,
+      buildSleepScoreBreakdown({
+        deepMin: 105,
+        remMin: 28,
+        totalMin: 366,
+        debtMin: 450 - 366,
+        targetMin: 480,
+      }).sharpitScore,
     );
   });
 });

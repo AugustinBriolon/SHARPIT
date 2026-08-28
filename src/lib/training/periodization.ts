@@ -43,45 +43,57 @@ interface PhaseBlock {
   weeks: number;
 }
 
+function taperWeeksForPlan(totalWeeks: number): number {
+  if (totalWeeks <= 6) {
+    return 1;
+  }
+  if (totalWeeks <= 12) {
+    return 2;
+  }
+  return 3;
+}
+
+function buildShortPlanPhases(taperWeeks: number): PhaseBlock[] {
+  return [
+    ...(taperWeeks > 0 ? [{ phase: 'TAPER' as const, weeks: taperWeeks }] : []),
+    { phase: 'RACE' as const, weeks: 1 },
+  ];
+}
+
+function splitRemainingPhases(totalWeeks: number, remaining: number): {
+  baseWeeks: number;
+  buildWeeks: number;
+  peakWeeks: number;
+} {
+  if (totalWeeks <= 8) {
+    const buildWeeks = Math.max(1, remaining - 1);
+    return { baseWeeks: 0, buildWeeks, peakWeeks: Math.max(0, remaining - buildWeeks) };
+  }
+  if (totalWeeks <= 16) {
+    const baseWeeks = Math.max(2, Math.round(remaining * 0.35));
+    const peakWeeks = Math.max(1, Math.round(remaining * 0.2));
+    return { baseWeeks, buildWeeks: Math.max(1, remaining - baseWeeks - peakWeeks), peakWeeks };
+  }
+  const baseWeeks = Math.max(4, Math.round(remaining * 0.45));
+  const peakWeeks = Math.max(2, Math.round(remaining * 0.15));
+  return { baseWeeks, buildWeeks: remaining - baseWeeks - peakWeeks, peakWeeks };
+}
+
 /** Répartition des phases selon le nombre de semaines avant la course. */
 function distributePhases(totalWeeks: number): PhaseBlock[] {
-  if (totalWeeks <= 0) return [{ phase: 'RACE', weeks: 1 }];
-
-  let taperWeeks: number;
-  if (totalWeeks <= 6) {
-    taperWeeks = 1;
-  } else if (totalWeeks <= 12) {
-    taperWeeks = 2;
-  } else {
-    taperWeeks = 3;
+  if (totalWeeks <= 0) {
+    return [{ phase: 'RACE', weeks: 1 }];
   }
+
+  const taperWeeks = taperWeeksForPlan(totalWeeks);
   const raceWeeks = 1;
   const remaining = Math.max(0, totalWeeks - taperWeeks - raceWeeks);
 
   if (remaining <= 0) {
-    return [
-      ...(taperWeeks > 0 ? [{ phase: 'TAPER' as const, weeks: taperWeeks }] : []),
-      { phase: 'RACE' as const, weeks: raceWeeks },
-    ];
+    return buildShortPlanPhases(taperWeeks);
   }
 
-  let baseWeeks: number;
-  let buildWeeks: number;
-  let peakWeeks: number;
-
-  if (totalWeeks <= 8) {
-    baseWeeks = 0;
-    buildWeeks = Math.max(1, remaining - 1);
-    peakWeeks = Math.max(0, remaining - buildWeeks);
-  } else if (totalWeeks <= 16) {
-    baseWeeks = Math.max(2, Math.round(remaining * 0.35));
-    peakWeeks = Math.max(1, Math.round(remaining * 0.2));
-    buildWeeks = remaining - baseWeeks - peakWeeks;
-  } else {
-    baseWeeks = Math.max(4, Math.round(remaining * 0.45));
-    peakWeeks = Math.max(2, Math.round(remaining * 0.15));
-    buildWeeks = remaining - baseWeeks - peakWeeks;
-  }
+  let { baseWeeks, buildWeeks, peakWeeks } = splitRemainingPhases(totalWeeks, remaining);
 
   if (buildWeeks < 1) {
     buildWeeks = 1;
@@ -89,9 +101,15 @@ function distributePhases(totalWeeks: number): PhaseBlock[] {
   }
 
   const blocks: PhaseBlock[] = [];
-  if (baseWeeks > 0) blocks.push({ phase: 'BASE', weeks: baseWeeks });
-  if (buildWeeks > 0) blocks.push({ phase: 'BUILD', weeks: buildWeeks });
-  if (peakWeeks > 0) blocks.push({ phase: 'PEAK', weeks: peakWeeks });
+  if (baseWeeks > 0) {
+    blocks.push({ phase: 'BASE', weeks: baseWeeks });
+  }
+  if (buildWeeks > 0) {
+    blocks.push({ phase: 'BUILD', weeks: buildWeeks });
+  }
+  if (peakWeeks > 0) {
+    blocks.push({ phase: 'PEAK', weeks: peakWeeks });
+  }
   blocks.push({ phase: 'TAPER', weeks: taperWeeks });
   blocks.push({ phase: 'RACE', weeks: raceWeeks });
   return blocks;
@@ -141,7 +159,9 @@ const PHASE_FOCUS: Record<PlanPhase, string> = {
 };
 
 function taperFactor(weekInTaper: number, totalTaper: number): number {
-  if (totalTaper <= 1) return 0.55;
+  if (totalTaper <= 1) {
+    return 0.55;
+  }
   const progress = weekInTaper / totalTaper;
   return 0.7 - progress * 0.35; // 70% → 35%
 }
@@ -150,6 +170,86 @@ function taperFactor(weekInTaper: number, totalTaper: number): number {
  * Génère un macro-plan périodisé déterministe jusqu'à la date de course.
  * La charge hebdo part de la CTL actuelle (×7 ≈ charge chronique hebdo).
  */
+function computeMacroWeekProgression(
+  phase: PlanPhase,
+  blockIndex: number,
+): number {
+  if (phase === 'BUILD') {
+    return 1 + Math.min(blockIndex, 3) * 0.04;
+  }
+  if (phase === 'BASE') {
+    return 1 + Math.min(blockIndex, 5) * 0.03;
+  }
+  return 1;
+}
+
+function computeMacroWeekLoad(input: {
+  baseWeeklyLoad: number;
+  loadFactor: number;
+  progression: number;
+  isDeload: boolean;
+  phase: PlanPhase;
+}): number {
+  let targetLoad = Math.round(
+    input.baseWeeklyLoad * input.loadFactor * input.progression * (input.isDeload ? 0.72 : 1),
+  );
+  return Math.max(input.phase === 'RACE' ? 20 : 80, Math.min(900, targetLoad));
+}
+
+function buildMacroWeekDraft(input: {
+  weekIndex: number;
+  weekStart: Date;
+  block: ReturnType<typeof distributePhases>[number];
+  blockIndex: number;
+  baseWeeklyLoad: number;
+  taperCounter: number;
+  taperTotal: number;
+  buildWeekCounter: number;
+}): { week: MacroWeekDraft; buildWeekCounter: number; taperCounter: number } {
+  const { block, blockIndex, baseWeeklyLoad, taperTotal } = input;
+  let { taperCounter, buildWeekCounter } = input;
+  let loadFactor = PHASE_LOAD_FACTOR[block.phase];
+
+  if (block.phase === 'TAPER') {
+    taperCounter += 1;
+    loadFactor = taperFactor(taperCounter, taperTotal);
+  }
+
+  const isDeload =
+    (block.phase === 'BASE' || block.phase === 'BUILD') &&
+    buildWeekCounter > 0 &&
+    buildWeekCounter % 4 === 0;
+
+  if (block.phase === 'BASE' || block.phase === 'BUILD') {
+    buildWeekCounter += 1;
+  }
+
+  const progression = computeMacroWeekProgression(block.phase, blockIndex);
+  const targetLoad = computeMacroWeekLoad({
+    baseWeeklyLoad,
+    loadFactor,
+    progression,
+    isDeload,
+    phase: block.phase,
+  });
+
+  return {
+    week: {
+      weekStart: input.weekStart,
+      weekIndex: input.weekIndex,
+      phase: block.phase,
+      targetLoad,
+      targetHours: Number((targetLoad / 55).toFixed(1)),
+      focus: isDeload
+        ? 'Semaine de récupération — volume réduit, maintien léger'
+        : PHASE_FOCUS[block.phase],
+      isDeload,
+    },
+    buildWeekCounter,
+    taperCounter,
+  };
+}
+
 export function generateMacroPlan(params: {
   raceDate: Date;
   startDate?: Date;
@@ -175,71 +275,20 @@ export function generateMacroPlan(params: {
 
   for (const block of phaseBlocks) {
     for (let i = 0; i < block.weeks; i++) {
-      const weekStart = addWeeks(startDate, weekIndex);
-      let loadFactor = PHASE_LOAD_FACTOR[block.phase];
-
-      if (block.phase === 'TAPER') {
-        taperCounter += 1;
-        loadFactor = taperFactor(taperCounter, taperTotal);
-      }
-
-      /**
-       * Semaines de récupération (deload) : toutes les 4 semaines en BASE/BUILD.
-       *
-       * Sources :
-       * - Rhea et al. (2002) "Periodized training for strength"
-       *   J Strength Cond Res, 16(1), 135-139
-       * - Plisk & Stone (2003) "Periodization strategies"
-       *   Strength Cond J, 25(6), 19-37
-       * - Pritchard et al. (2015) Systematic review surcharge + récupération
-       *
-       * Justification :
-       * - Fréquence 3-5 semaines selon littérature (ici : 4 semaines, compromis)
-       * - Réduction 0.72 = 28% de baisse (littérature : 30-50% volume OU intensité)
-       * - Principe validé : surcharge progressive + récupération régulière = adaptation maximale
-       *
-       * LIMITATIONS :
-       * - Rigide (pas d'adaptation signaux individuels : TSB, HRV, compliance)
-       * - Pas de distinction volume vs intensité (réduit charge globale)
-       * - Amélioration future : timing deload adaptatif selon biomarqueurs
-       *
-       * Voir `docs/models/` et `knowledge/recovery.md` (deload).
-       */
-      const isDeload =
-        (block.phase === 'BASE' || block.phase === 'BUILD') &&
-        buildWeekCounter > 0 &&
-        buildWeekCounter % 4 === 0;
-
-      if (block.phase === 'BASE' || block.phase === 'BUILD') {
-        buildWeekCounter += 1;
-      }
-
-      // Progression graduelle au sein d'une phase (éviter pic brutal)
-      let progression = 1;
-      if (block.phase === 'BUILD') {
-        progression = 1 + Math.min(i, 3) * 0.04; // +4% par semaine max 3 semaines
-      } else if (block.phase === 'BASE') {
-        progression = 1 + Math.min(i, 5) * 0.03; // +3% par semaine max 5 semaines
-      }
-
-      let targetLoad = Math.round(
-        baseWeeklyLoad * loadFactor * progression * (isDeload ? 0.72 : 1),
-      );
-      targetLoad = Math.max(block.phase === 'RACE' ? 20 : 80, Math.min(900, targetLoad));
-
-      const targetHours = Number((targetLoad / 55).toFixed(1));
-
-      weeks.push({
-        weekStart,
+      const { week, buildWeekCounter: nextBuildWeekCounter, taperCounter: nextTaperCounter } =
+        buildMacroWeekDraft({
         weekIndex,
-        phase: block.phase,
-        targetLoad,
-        targetHours,
-        focus: isDeload
-          ? 'Semaine de récupération — volume réduit, maintien léger'
-          : PHASE_FOCUS[block.phase],
-        isDeload,
+        weekStart: addWeeks(startDate, weekIndex),
+        block,
+        blockIndex: i,
+        baseWeeklyLoad,
+        taperCounter,
+        taperTotal,
+        buildWeekCounter,
       });
+      weeks.push(week);
+      buildWeekCounter = nextBuildWeekCounter;
+      taperCounter = nextTaperCounter;
       weekIndex += 1;
     }
   }

@@ -109,9 +109,13 @@ export async function findMorningRecalibrationDecision(
 
   for (const row of rows) {
     const ctx = row.snapshotContext as DecisionSnapshotContext | null;
-    if (!ctx?.morningRecalibration) continue;
+    if (!ctx?.morningRecalibration) {
+      continue;
+    }
     const decision = toDomain(row);
-    if (sessionId && decision.proposal.sessionId !== sessionId) continue;
+    if (sessionId && decision.proposal.sessionId !== sessionId) {
+      continue;
+    }
     return decision;
   }
   return null;
@@ -132,7 +136,9 @@ export async function findDecisionForPlannedSession(
     },
     orderBy: { occurredAt: 'desc' },
   });
-  if (!action) return null;
+  if (!action) {
+    return null;
+  }
   return findCoachingDecisionById(athleteId, action.decisionId);
 }
 
@@ -151,7 +157,9 @@ export async function findDecisionWithHistory(
       outcome: true,
     },
   });
-  if (!row) return null;
+  if (!row) {
+    return null;
+  }
 
   const { actions, outcome, ...decisionRow } = row;
   return {
@@ -199,8 +207,12 @@ export async function recordDecisionAction(
   const decision = await prisma.coachingDecision.findFirst({
     where: { id: input.decisionId, athleteId },
   });
-  if (!decision) return null;
-  if (!canRecordAction(decision.status, input.actionType)) return null;
+  if (!decision) {
+    return null;
+  }
+  if (!canRecordAction(decision.status, input.actionType)) {
+    return null;
+  }
 
   const action = await prisma.coachingDecisionAction.create({
     data: {
@@ -294,12 +306,16 @@ export async function findDecisionsPendingOutcomeEvaluation(
   const seen = new Set<string>();
   const pending: { decision: CoachingDecisionRecord; plannedSessionId: string }[] = [];
   for (const action of actions) {
-    if (!action.resultingPlannedSessionId || seen.has(action.decisionId)) continue;
+    if (!action.resultingPlannedSessionId || seen.has(action.decisionId)) {
+      continue;
+    }
     const session = await prisma.plannedSession.findUnique({
       where: { id: action.resultingPlannedSessionId },
       select: { date: true },
     });
-    if (!session || session.date >= cutoff) continue;
+    if (!session || session.date >= cutoff) {
+      continue;
+    }
     seen.add(action.decisionId);
     pending.push({
       decision: toDomain(action.decision),

@@ -1,18 +1,14 @@
 import { buildProductInsightBundle } from '@/core/product-insight/build-product-insight-bundle';
+import { isSet } from '@/lib/util/value';
 import type { EffortInsightInput, ProductInsight } from '@/core/product-insight/types';
 
-export function buildEffortInsightBundle(input: EffortInsightInput) {
-  const primary: ProductInsight[] = [];
-  const supporting: ProductInsight[] = [];
-  const contextual: ProductInsight[] = [];
-
-  primary.push({
+function buildDailyCostInsight(input: EffortInsightInput): ProductInsight {
+  return {
     id: 'effort:daily-cost',
     title: 'Coût du jour',
-    summary:
-      input.strainScore != null
-        ? `${input.strainScore}/21 · ${input.fatigueTypeLabel}`
-        : input.fatigueTypeLabel,
+    summary: isSet(input.strainScore)
+      ? `${input.strainScore}/21 · ${input.fatigueTypeLabel}`
+      : input.fatigueTypeLabel,
     explanation:
       "La lecture utile n'est pas seulement la charge accomplie, mais le type de coût que cette charge impose à ton organisme.",
     evidence: input.rationale,
@@ -20,18 +16,19 @@ export function buildEffortInsightBundle(input: EffortInsightInput) {
     importance: 'HIGH',
     decisionImpact: 'TRAINING_TODAY',
     relatedDimensions: ['DAILY_STRAIN', 'FATIGUE'],
-  });
+  };
+}
 
-  primary.push({
+function buildTrainingCapacityInsight(input: EffortInsightInput): ProductInsight {
+  return {
     id: 'effort:training-capacity',
     title: 'Marge de travail restante',
     summary: input.trainingCapacityLabel,
-    explanation:
-      input.performancePercent != null
-        ? `La capacité utile du jour est estimée autour de ${input.performancePercent} % de ton niveau frais.`
-        : 'La capacité traduit ce que le corps peut encore absorber sans payer trop cher ensuite.',
+    explanation: isSet(input.performancePercent)
+      ? `La capacité utile du jour est estimée autour de ${input.performancePercent} % de ton niveau frais.`
+      : 'La capacité traduit ce que le corps peut encore absorber sans payer trop cher ensuite.',
     evidence: [
-      input.estimatedDaysToFresh != null
+      isSet(input.estimatedDaysToFresh)
         ? `${input.estimatedDaysToFresh} jour(s) pour revenir frais`
         : null,
       input.limitingFactorLabel,
@@ -40,40 +37,55 @@ export function buildEffortInsightBundle(input: EffortInsightInput) {
     importance: 'HIGH',
     decisionImpact: 'TRAINING_TODAY',
     relatedDimensions: ['FATIGUE'],
-  });
+  };
+}
 
-  if (input.dominantDimensionLabel) {
-    supporting.push({
-      id: 'effort:dominant-system',
-      title: 'Système qui paie le plus',
-      summary: input.dominantDimensionLabel,
-      explanation:
-        input.limitingFactorLabel != null
-          ? `Le facteur limitant principal est ${input.limitingFactorLabel.toLowerCase()}.`
-          : 'Identifier le système dominant aide à savoir quoi protéger sur la prochaine séance.',
-      evidence: input.keyEvidence.slice(0, 3),
-      confidence: input.confidence,
-      importance: 'MEDIUM',
-      decisionImpact: 'LOAD_PROGRESSION',
-      relatedDimensions: ['FATIGUE'],
-    });
-  }
+function buildDominantSystemInsight(input: EffortInsightInput): ProductInsight {
+  return {
+    id: 'effort:dominant-system',
+    title: 'Système qui paie le plus',
+    summary: input.dominantDimensionLabel!,
+    explanation: isSet(input.limitingFactorLabel)
+      ? `Le facteur limitant principal est ${input.limitingFactorLabel.toLowerCase()}.`
+      : 'Identifier le système dominant aide à savoir quoi protéger sur la prochaine séance.',
+    evidence: input.keyEvidence.slice(0, 3),
+    confidence: input.confidence,
+    importance: 'MEDIUM',
+    decisionImpact: 'LOAD_PROGRESSION',
+    relatedDimensions: ['FATIGUE'],
+  };
+}
 
-  supporting.push({
+function buildLoadContextInsight(input: EffortInsightInput): ProductInsight {
+  return {
     id: 'effort:load-context',
     title: 'Contexte de charge',
     summary: `ACWR ${input.acwr > 0 ? input.acwr.toFixed(2) : '—'} · ${input.weeklyLoad} TSS / 7j`,
     explanation:
       'Le contexte hebdomadaire sert surtout à juger si le coût du jour reste soutenable dans le bloc actuel.',
     evidence: [
-      input.tsb != null ? `TSB ${input.tsb > 0 ? '+' : ''}${input.tsb}` : null,
+      isSet(input.tsb) ? `TSB ${input.tsb > 0 ? '+' : ''}${input.tsb}` : null,
       input.overreachingLabel,
     ].filter((line): line is string => Boolean(line)),
     confidence: input.confidence,
     importance: 'MEDIUM',
     decisionImpact: 'LOAD_PROGRESSION',
     relatedDimensions: ['FATIGUE', 'ADAPTATION'],
-  });
+  };
+}
 
-  return buildProductInsightBundle({ primary, supporting, contextual });
+function collectSupportingEffortInsights(input: EffortInsightInput): ProductInsight[] {
+  const supporting = [buildLoadContextInsight(input)];
+  if (input.dominantDimensionLabel) {
+    supporting.unshift(buildDominantSystemInsight(input));
+  }
+  return supporting;
+}
+
+export function buildEffortInsightBundle(input: EffortInsightInput) {
+  return buildProductInsightBundle({
+    primary: [buildDailyCostInsight(input), buildTrainingCapacityInsight(input)],
+    supporting: collectSupportingEffortInsights(input),
+    contextual: [],
+  });
 }

@@ -4,10 +4,18 @@ import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
 import { actionRowLabels, whyBlockTitle } from '@/lib/today/today-rich-view';
 
 function shellPhaseFromLocalHour(hour: number): DailyPhase {
-  if (hour >= 22) return 'END_OF_DAY';
-  if (hour >= 18) return 'RECOVERY_WINDOW';
-  if (hour >= 14) return 'SESSION_COMPLETED';
-  if (hour >= 10) return 'BEFORE_SESSION';
+  if (hour >= 22) {
+    return 'END_OF_DAY';
+  }
+  if (hour >= 18) {
+    return 'RECOVERY_WINDOW';
+  }
+  if (hour >= 14) {
+    return 'SESSION_COMPLETED';
+  }
+  if (hour >= 10) {
+    return 'BEFORE_SESSION';
+  }
   return 'MORNING';
 }
 

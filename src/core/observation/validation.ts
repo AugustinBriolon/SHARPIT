@@ -37,13 +37,16 @@ function missingField(field: string): ValidationFailure {
   return { valid: false, reason: { code: 'REQUIRED_FIELD_MISSING', field } };
 }
 
-function checkRange(
-  field: string,
-  value: number | undefined,
-  min: number,
-  max: number,
-  required?: true,
-): ValidationFailure | null {
+type RangeCheckInput = {
+  field: string;
+  value: number | undefined;
+  min: number;
+  max: number;
+  required?: true;
+};
+
+function checkRange(input: RangeCheckInput): ValidationFailure | null {
+  const { field, value, min, max, required } = input;
   if (value === undefined || value === null) {
     return required ? missingField(field) : null;
   }
@@ -57,49 +60,141 @@ function checkRange(
 // Per-type validators
 // ─────────────────────────────────────────────────────────────────────────────
 
-function validateSession(raw: Extract<RawObservation, { type: 'SESSION' }>): ValidationResult {
-  const flags: QualityFlag[] = [];
-
-  const duration = checkRange('durationSec', raw.durationSec, 1, 86400, true);
-  if (duration) return duration;
-
-  if (raw.powerData) {
-    const watts = checkRange('powerData.avgWatts', raw.powerData.avgWatts, 10, 3000, true);
-    if (watts) return watts;
-
-    if (raw.powerData.normalizedPower !== undefined) {
-      const np = checkRange('powerData.normalizedPower', raw.powerData.normalizedPower, 10, 3000);
-      if (np) return np;
+function validateOptionalRanges(
+  checks: Array<{ field: string; value: number | undefined; min: number; max: number }>,
+): ValidationFailure | null {
+  for (const check of checks) {
+    if (check.value === undefined) {
+      continue;
     }
+    const error = checkRange(check);
+    if (error) {
+      return error;
+    }
+  }
+  return null;
+}
 
-    if (raw.powerData.quality === 'MEASURED_OPTICAL') flags.push('OPTICAL_SENSOR');
+function validateSessionPower(
+  raw: Extract<RawObservation, { type: 'SESSION' }>,
+  flags: QualityFlag[],
+): ValidationFailure | null {
+  if (!raw.powerData) {
+    return null;
   }
 
-  if (raw.hrData) {
-    const hr = checkRange('hrData.avgBpm', raw.hrData.avgBpm, 25, 250, true);
-    if (hr) return hr;
-
-    if (raw.hrData.maxBpm !== undefined) {
-      const maxHr = checkRange('hrData.maxBpm', raw.hrData.maxBpm, 25, 250);
-      if (maxHr) return maxHr;
-    }
-
-    if (raw.hrData.quality === 'MEASURED_OPTICAL') flags.push('OPTICAL_SENSOR');
+  const watts = checkRange({
+    field: 'powerData.avgWatts',
+    value: raw.powerData.avgWatts,
+    min: 10,
+    max: 3000,
+    required: true,
+  });
+  if (watts) {
+    return watts;
   }
 
+  const np = validateOptionalRanges([
+    {
+      field: 'powerData.normalizedPower',
+      value: raw.powerData.normalizedPower,
+      min: 10,
+      max: 3000,
+    },
+  ]);
+  if (np) {
+    return np;
+  }
+
+  if (raw.powerData.quality === 'MEASURED_OPTICAL') {
+    flags.push('OPTICAL_SENSOR');
+  }
+
+  return null;
+}
+
+function validateSessionHr(
+  raw: Extract<RawObservation, { type: 'SESSION' }>,
+  flags: QualityFlag[],
+): ValidationFailure | null {
+  if (!raw.hrData) {
+    return null;
+  }
+
+  const hr = checkRange({
+    field: 'hrData.avgBpm',
+    value: raw.hrData.avgBpm,
+    min: 25,
+    max: 250,
+    required: true,
+  });
+  if (hr) {
+    return hr;
+  }
+
+  const maxHr = validateOptionalRanges([
+    { field: 'hrData.maxBpm', value: raw.hrData.maxBpm, min: 25, max: 250 },
+  ]);
+  if (maxHr) {
+    return maxHr;
+  }
+
+  if (raw.hrData.quality === 'MEASURED_OPTICAL') {
+    flags.push('OPTICAL_SENSOR');
+  }
+
+  return null;
+}
+
+function validateSessionStress(
+  raw: Extract<RawObservation, { type: 'SESSION' }>,
+  flags: QualityFlag[],
+): ValidationFailure | null {
   if (raw.sourceProvidedStress) {
-    // TSS of 700 = absolute upper limit (e.g., 12h IRONMAN)
-    const stress = checkRange('sourceProvidedStress.value', raw.sourceProvidedStress.value, 0, 700);
-    if (stress) return stress;
+    const stress = checkRange({
+      field: 'sourceProvidedStress.value',
+      value: raw.sourceProvidedStress.value,
+      min: 0,
+      max: 700,
+    });
+    if (stress) {
+      return stress;
+    }
 
     flags.push(
       raw.sourceProvidedStress.quality === 'ESTIMATED'
         ? 'ESTIMATED_FROM_HR'
         : 'PROPRIETARY_MODEL_OUTPUT',
     );
-  } else if (!raw.powerData && !raw.hrData) {
-    // No power, no HR, no source stress → TSS will be estimated from duration only
+    return null;
+  }
+
+  if (!raw.powerData && !raw.hrData) {
     flags.push('ESTIMATED_FROM_DURATION');
+  }
+
+  return null;
+}
+
+function validateSession(raw: Extract<RawObservation, { type: 'SESSION' }>): ValidationResult {
+  const flags: QualityFlag[] = [];
+
+  const duration = checkRange({
+    field: 'durationSec',
+    value: raw.durationSec,
+    min: 1,
+    max: 86400,
+    required: true,
+  });
+  if (duration) {
+    return duration;
+  }
+
+  for (const validator of [validateSessionPower, validateSessionHr, validateSessionStress]) {
+    const error = validator(raw, flags);
+    if (error) {
+      return error;
+    }
   }
 
   return { valid: true, flags };
@@ -108,10 +203,20 @@ function validateSession(raw: Extract<RawObservation, { type: 'SESSION' }>): Val
 function validateSleep(raw: Extract<RawObservation, { type: 'SLEEP' }>): ValidationResult {
   const flags: QualityFlag[] = [];
 
-  const duration = checkRange('totalMinutes', raw.totalMinutes, 0, 960, true);
-  if (duration) return duration;
+  const duration = checkRange({
+    field: 'totalMinutes',
+    value: raw.totalMinutes,
+    min: 0,
+    max: 960,
+    required: true,
+  });
+  if (duration) {
+    return duration;
+  }
 
-  if (!raw.wakeTimestamp) return missingField('wakeTimestamp');
+  if (!raw.wakeTimestamp) {
+    return missingField('wakeTimestamp');
+  }
 
   if (raw.wakeTimestamp <= raw.timestamp) {
     return {
@@ -130,7 +235,9 @@ function validateSleep(raw: Extract<RawObservation, { type: 'SLEEP' }>): Validat
     flags.push('UNUSUAL_VALUE');
   }
 
-  if (raw.totalMinutes > 600) flags.push('UNUSUALLY_LONG_SLEEP');
+  if (raw.totalMinutes > 600) {
+    flags.push('UNUSUALLY_LONG_SLEEP');
+  }
 
   // Garmin sleep data is always optical sensor + proprietary scoring
   flags.push('OPTICAL_SENSOR');
@@ -141,8 +248,16 @@ function validateSleep(raw: Extract<RawObservation, { type: 'SLEEP' }>): Validat
 function validateHrv(raw: Extract<RawObservation, { type: 'HRV' }>): ValidationResult {
   const flags: QualityFlag[] = [];
 
-  const hrv = checkRange('valueMsRmssd', raw.valueMsRmssd, 10, 250, true);
-  if (hrv) return hrv;
+  const hrv = checkRange({
+    field: 'valueMsRmssd',
+    value: raw.valueMsRmssd,
+    min: 10,
+    max: 250,
+    required: true,
+  });
+  if (hrv) {
+    return hrv;
+  }
 
   if (raw.measurementMethod === 'OVERNIGHT_AVERAGE' || raw.measurementMethod === 'MORNING_SHORT') {
     flags.push('OPTICAL_SENSOR');
@@ -152,8 +267,16 @@ function validateHrv(raw: Extract<RawObservation, { type: 'HRV' }>): ValidationR
 }
 
 function validateRestingHr(raw: Extract<RawObservation, { type: 'RESTING_HR' }>): ValidationResult {
-  const rhr = checkRange('valueBpm', raw.valueBpm, 20, 120, true);
-  if (rhr) return rhr;
+  const rhr = checkRange({
+    field: 'valueBpm',
+    value: raw.valueBpm,
+    min: 20,
+    max: 120,
+    required: true,
+  });
+  if (rhr) {
+    return rhr;
+  }
 
   return { valid: true, flags: ['OPTICAL_SENSOR'] };
 }
@@ -179,25 +302,15 @@ function validateSubjective(
     };
   }
 
-  if (raw.rpe !== undefined) {
-    const rpe = checkRange('rpe', raw.rpe, 0, 10);
-    if (rpe) return rpe;
-  }
-  if (raw.mood !== undefined) {
-    const mood = checkRange('mood', raw.mood, 1, 5);
-    if (mood) return mood;
-  }
-  if (raw.perceivedSoreness !== undefined) {
-    const soreness = checkRange('perceivedSoreness', raw.perceivedSoreness, 0, 10);
-    if (soreness) return soreness;
-  }
-  if (raw.energyLevel !== undefined) {
-    const energy = checkRange('energyLevel', raw.energyLevel, 1, 5);
-    if (energy) return energy;
-  }
-  if (raw.stressLevel !== undefined) {
-    const stress = checkRange('stressLevel', raw.stressLevel, 1, 5);
-    if (stress) return stress;
+  const rangeError = validateOptionalRanges([
+    { field: 'rpe', value: raw.rpe, min: 0, max: 10 },
+    { field: 'mood', value: raw.mood, min: 1, max: 5 },
+    { field: 'perceivedSoreness', value: raw.perceivedSoreness, min: 0, max: 10 },
+    { field: 'energyLevel', value: raw.energyLevel, min: 1, max: 5 },
+    { field: 'stressLevel', value: raw.stressLevel, min: 1, max: 5 },
+  ]);
+  if (rangeError) {
+    return rangeError;
   }
 
   return { valid: true, flags: [] };
@@ -206,8 +319,16 @@ function validateSubjective(
 function validatePhysicalCondition(
   raw: Extract<RawObservation, { type: 'PHYSICAL_CONDITION' }>,
 ): ValidationResult {
-  const severity = checkRange('severity', raw.severity, 0, 10, true);
-  if (severity) return severity;
+  const severity = checkRange({
+    field: 'severity',
+    value: raw.severity,
+    min: 0,
+    max: 10,
+    required: true,
+  });
+  if (severity) {
+    return severity;
+  }
 
   if (!raw.bodyRegion || raw.bodyRegion.trim().length === 0) {
     return missingField('bodyRegion');
@@ -219,22 +340,41 @@ function validatePhysicalCondition(
 function validateBodyComposition(
   raw: Extract<RawObservation, { type: 'BODY_COMPOSITION' }>,
 ): ValidationResult {
-  const weight = checkRange('weightKg', raw.weightKg, 30, 250, true);
-  if (weight) return weight;
+  const weight = checkRange({
+    field: 'weightKg',
+    value: raw.weightKg,
+    min: 30,
+    max: 250,
+    required: true,
+  });
+  if (weight) {
+    return weight;
+  }
 
   if (raw.fatPercent !== undefined) {
-    const fat = checkRange('fatPercent', raw.fatPercent, 1, 60);
-    if (fat) return fat;
+    const fat = checkRange({ field: 'fatPercent', value: raw.fatPercent, min: 1, max: 60 });
+    if (fat) {
+      return fat;
+    }
   }
 
   if (raw.musclePercent !== undefined) {
-    const muscle = checkRange('musclePercent', raw.musclePercent, 1, 70);
-    if (muscle) return muscle;
+    const muscle = checkRange({
+      field: 'musclePercent',
+      value: raw.musclePercent,
+      min: 1,
+      max: 70,
+    });
+    if (muscle) {
+      return muscle;
+    }
   }
 
   if (raw.waterPercent !== undefined) {
-    const water = checkRange('waterPercent', raw.waterPercent, 20, 80);
-    if (water) return water;
+    const water = checkRange({ field: 'waterPercent', value: raw.waterPercent, min: 20, max: 80 });
+    if (water) {
+      return water;
+    }
   }
 
   return { valid: true, flags: [] };
@@ -243,8 +383,10 @@ function validateBodyComposition(
 function validateGarminReadiness(
   raw: Extract<RawObservation, { type: 'GARMIN_READINESS' }>,
 ): ValidationResult {
-  const score = checkRange('score', raw.score, 0, 100, true);
-  if (score) return score;
+  const score = checkRange({ field: 'score', value: raw.score, min: 0, max: 100, required: true });
+  if (score) {
+    return score;
+  }
 
   // Invariant: always PROPRIETARY_MODEL_OUTPUT
   return { valid: true, flags: ['PROPRIETARY_MODEL_OUTPUT'] };
@@ -253,46 +395,62 @@ function validateGarminReadiness(
 function validateGarminBattery(
   raw: Extract<RawObservation, { type: 'GARMIN_BATTERY' }>,
 ): ValidationResult {
-  const peak = checkRange('peakValue', raw.peakValue, 0, 100, true);
-  if (peak) return peak;
+  const peak = checkRange({
+    field: 'peakValue',
+    value: raw.peakValue,
+    min: 0,
+    max: 100,
+    required: true,
+  });
+  if (peak) {
+    return peak;
+  }
 
   if (raw.troughValue !== undefined) {
-    const trough = checkRange('troughValue', raw.troughValue, 0, 100);
-    if (trough) return trough;
+    const trough = checkRange({ field: 'troughValue', value: raw.troughValue, min: 0, max: 100 });
+    if (trough) {
+      return trough;
+    }
   }
 
   // Invariant: always PROPRIETARY_MODEL_OUTPUT
   return { valid: true, flags: ['PROPRIETARY_MODEL_OUTPUT'] };
 }
 
+function validateRequiredNutritionMacros(
+  raw: Extract<RawObservation, { type: 'NUTRITION' }>,
+): ValidationFailure | null {
+  const requiredChecks = [
+    { field: 'energyKcal', value: raw.energyKcal, min: 0, max: 12000 },
+    { field: 'proteinG', value: raw.proteinG, min: 0, max: 500 },
+    { field: 'carbohydratesG', value: raw.carbohydratesG, min: 0, max: 1500 },
+    { field: 'fatG', value: raw.fatG, min: 0, max: 500 },
+  ] as const;
+
+  for (const check of requiredChecks) {
+    const error = checkRange({ ...check, required: true });
+    if (error) {
+      return error;
+    }
+  }
+
+  return null;
+}
+
 function validateNutrition(raw: Extract<RawObservation, { type: 'NUTRITION' }>): ValidationResult {
-  // Upper bounds are deliberately generous: an ultra-endurance fuelling day is a
-  // real 10 000 kcal, and rejecting it would silently drop the most informative
-  // days. The point is to catch unit mistakes, not to police the athlete's diet.
-  const energy = checkRange('energyKcal', raw.energyKcal, 0, 12000, true);
-  if (energy) return energy;
-
-  const protein = checkRange('proteinG', raw.proteinG, 0, 500, true);
-  if (protein) return protein;
-
-  const carbohydrates = checkRange('carbohydratesG', raw.carbohydratesG, 0, 1500, true);
-  if (carbohydrates) return carbohydrates;
-
-  const fat = checkRange('fatG', raw.fatG, 0, 500, true);
-  if (fat) return fat;
-
-  if (raw.goalEnergyKcal !== undefined) {
-    const goal = checkRange('goalEnergyKcal', raw.goalEnergyKcal, 500, 12000);
-    if (goal) return goal;
+  const requiredError = validateRequiredNutritionMacros(raw);
+  if (requiredError) {
+    return requiredError;
   }
 
-  if (raw.exerciseEnergyKcal !== undefined) {
-    const exercise = checkRange('exerciseEnergyKcal', raw.exerciseEnergyKcal, 0, 8000);
-    if (exercise) return exercise;
+  const optionalError = validateOptionalRanges([
+    { field: 'goalEnergyKcal', value: raw.goalEnergyKcal, min: 500, max: 12000 },
+    { field: 'exerciseEnergyKcal', value: raw.exerciseEnergyKcal, min: 0, max: 8000 },
+  ]);
+  if (optionalError) {
+    return optionalError;
   }
 
-  // A day with intake but no entries behind it means the totals were not built
-  // from the diary, so nothing downstream can attribute them to actual food.
   if (raw.entryCount <= 0 && raw.energyKcal > 0) {
     return { valid: true, flags: ['UNUSUAL_VALUE'] };
   }
@@ -304,27 +462,21 @@ function validateNutrition(raw: Extract<RawObservation, { type: 'NUTRITION' }>):
 // Dispatch
 // ─────────────────────────────────────────────────────────────────────────────
 
+const VALIDATORS: {
+  [K in RawObservation['type']]: (raw: Extract<RawObservation, { type: K }>) => ValidationResult;
+} = {
+  SESSION: validateSession,
+  SLEEP: validateSleep,
+  HRV: validateHrv,
+  RESTING_HR: validateRestingHr,
+  SUBJECTIVE: validateSubjective,
+  PHYSICAL_CONDITION: validatePhysicalCondition,
+  BODY_COMPOSITION: validateBodyComposition,
+  GARMIN_READINESS: validateGarminReadiness,
+  GARMIN_BATTERY: validateGarminBattery,
+  NUTRITION: validateNutrition,
+};
+
 export function validate(raw: RawObservation): ValidationResult {
-  switch (raw.type) {
-    case 'SESSION':
-      return validateSession(raw);
-    case 'SLEEP':
-      return validateSleep(raw);
-    case 'HRV':
-      return validateHrv(raw);
-    case 'RESTING_HR':
-      return validateRestingHr(raw);
-    case 'SUBJECTIVE':
-      return validateSubjective(raw);
-    case 'PHYSICAL_CONDITION':
-      return validatePhysicalCondition(raw);
-    case 'BODY_COMPOSITION':
-      return validateBodyComposition(raw);
-    case 'GARMIN_READINESS':
-      return validateGarminReadiness(raw);
-    case 'GARMIN_BATTERY':
-      return validateGarminBattery(raw);
-    case 'NUTRITION':
-      return validateNutrition(raw);
-  }
+  return VALIDATORS[raw.type](raw as never);
 }

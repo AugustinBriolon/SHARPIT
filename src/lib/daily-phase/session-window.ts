@@ -7,7 +7,9 @@ export function isPreSessionWindow(
   refDate: Date,
   trainingDay: Date,
 ): boolean {
-  if (dayContext.remainingPlannedCount === 0) return false;
+  if (dayContext.remainingPlannedCount === 0) {
+    return false;
+  }
 
   if (dayContext.nextPlannedStartAt) {
     const start = new Date(dayContext.nextPlannedStartAt);
@@ -32,13 +34,19 @@ export function isAccomplishmentWindow(
   minutesSinceLastActivity: number | null,
   newSessionSincePriorSnapshot: boolean,
 ): boolean {
-  if (newSessionSincePriorSnapshot) return true;
-  if (minutesSinceLastActivity == null) return false;
+  if (newSessionSincePriorSnapshot) {
+    return true;
+  }
+  if ((minutesSinceLastActivity === undefined || minutesSinceLastActivity === null)) {
+    return false;
+  }
   return minutesSinceLastActivity < 60;
 }
 
 export function minutesSinceActivity(lastActivityAt: string | null, refDate: Date): number | null {
-  if (!lastActivityAt) return null;
+  if (!lastActivityAt) {
+    return null;
+  }
   return minutesBetween(lastActivityAt, refDate);
 }
 

@@ -8,6 +8,7 @@ import {
   type EnvironmentalApplicability,
 } from '@/core/environment';
 import type { ActivityType } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { PrismaEnvironmentalObservationRepository } from '@/infrastructure/environment/prisma-environment-observation-repository';
 import { resolveAthleteGeoLocation } from '@/lib/environment/athlete-location';
 import { activityWeatherWindow } from '@/lib/activity/weather/activity-weather-window';
@@ -55,7 +56,9 @@ function resolveApplicability(activity: {
   title?: string | null;
   notes?: string | null;
 }): EnvironmentalApplicability {
-  if (isIndoorActivitySession(activity)) return 'INDOOR';
+  if (isIndoorActivitySession(activity)) {
+    return 'INDOOR';
+  }
   return 'OUTDOOR';
 }
 
@@ -97,7 +100,7 @@ export async function resolveActivityEnvironmentPresentation(input: {
     ]);
 
     const location =
-      input.activity.observedLocationLat != null && input.activity.observedLocationLng != null
+      isSet(input.activity.observedLocationLat) && isSet(input.activity.observedLocationLng)
         ? {
             latitude: input.activity.observedLocationLat,
             longitude: input.activity.observedLocationLng,

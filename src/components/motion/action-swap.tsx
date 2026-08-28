@@ -7,11 +7,15 @@ import {
   type HTMLMotionProps,
   type Variants,
 } from 'motion/react';
-import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { EASE_OUT, SPRING_PRESS, SPRING_SWAP } from '@/lib/ease';
-import { motionTokens } from '@/lib/motion/tokens';
+import {
+  ActionSwapCascadeLabel,
+  ActionSwapCascadeMeasure,
+} from '@/components/motion/action-swap-cascade';
+import { EASE_OUT, SPRING_SWAP } from '@/lib/ease';
 import { cn } from '@/lib/utils';
+
+export { ActionSwapButton } from './action-swap-button';
 
 export type ActionSwapItem = {
   id: string;
@@ -24,7 +28,6 @@ export type ActionSwapButtonVariant = 'primary' | 'secondary' | 'outline' | 'gho
 export type ActionSwapButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 export type ActionSwapAnimation = 'blur' | 'roll' | 'cascade';
 
-/** Animations with a single-element variant set (cascade animates per letter). */
 type CoreAnimation = 'blur' | 'roll';
 
 export interface ActionSwapButtonProps extends Omit<
@@ -61,28 +64,6 @@ const ROLL_TRANSITION = SPRING_SWAP;
 const ROLL_EXIT_TRANSITION = { duration: 0.14, ease: EASE_OUT } as const;
 const SWAP_BLUR = 'blur(8px)';
 const ROLL_BLUR = 'blur(3px)';
-
-// Cascade rolls the label one letter at a time, left to right. The leaving
-// and landing strings overlap as independent layers (no shared cells), so
-// proportional glyph widths never jitter. Exits cascade at half the enter
-// stagger so the tail of the old label lingers briefly.
-const CASCADE_STAGGER = 0.025;
-
-const CASCADE_LETTER_VARIANTS: Variants = {
-  initial: { opacity: 0, y: '105%', filter: ROLL_BLUR },
-  animate: (delay = 0) => ({
-    opacity: 1,
-    y: '0%',
-    filter: 'blur(0px)',
-    transition: { ...SPRING_SWAP, delay },
-  }),
-  exit: (delay = 0) => ({
-    opacity: 0,
-    y: '-105%',
-    filter: ROLL_BLUR,
-    transition: { duration: 0.16, ease: EASE_OUT, delay: delay * 0.5 },
-  }),
-};
 
 const TEXT_VARIANTS: Record<CoreAnimation, Variants> = {
   blur: {
@@ -150,34 +131,19 @@ const ICON_VARIANTS: Record<CoreAnimation, Variants> = {
   },
 };
 
-const VARIANT_CLASS: Record<ActionSwapButtonVariant, string> = {
-  primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
-  secondary: 'border border-border bg-card text-foreground hover:border-border',
-  outline: 'border border-border bg-transparent text-foreground hover:bg-primary/5',
-  ghost: 'text-muted-foreground hover:bg-primary/5 hover:text-foreground',
-};
-
-const SIZE_CLASS: Record<ActionSwapButtonSize, string> = {
-  sm: 'h-8 gap-1.5 rounded-full px-3 text-xs',
-  md: 'h-10 gap-2 rounded-full px-4 text-sm',
-  lg: 'h-12 gap-2.5 rounded-full px-5 text-base',
-  icon: 'h-10 w-10 rounded-full',
-};
-
-export function ActionSwapText({
+function ActionSwapStandardText({
   value,
   children,
-  animation = 'blur',
+  coreAnimation,
+  reduce,
   className,
-}: ActionSwapTextProps) {
-  const reduce = useReducedMotion();
-
-  // Cascade needs a plain string to split into letters; non-string content
-  // and reduced motion fall back to the closest single-element animation.
-  const label = typeof children === 'string' ? children : null;
-  const cascade = animation === 'cascade' && label !== null && !reduce;
-  const coreAnimation: CoreAnimation = animation === 'cascade' ? 'roll' : animation;
-
+}: {
+  value: string;
+  children: ReactNode;
+  coreAnimation: CoreAnimation;
+  reduce: boolean;
+  className?: string;
+}) {
   return (
     <span
       className={cn(
@@ -190,60 +156,76 @@ export function ActionSwapText({
       }}
     >
       <span className="invisible inline-block whitespace-nowrap" aria-hidden>
-        {cascade
-          ? label.split('').map((char, index) => (
-              <span
-                // biome-ignore lint/suspicious/noArrayIndexKey: position is the slot identity.
-                key={index}
-                className="inline-block whitespace-pre"
-              >
-                {char}
-              </span>
-            ))
-          : children}
+        {children}
       </span>
-      {cascade ? (
-        <>
-          {/* Letters are decorative fragments; readers get the whole label. */}
-          <span className="sr-only">{label}</span>
-          <AnimatePresence initial={false}>
-            <motion.span
-              key={`cascade-${value}`}
-              animate="animate"
-              className="absolute top-[0.08em] left-0 inline-block whitespace-pre"
-              exit="exit"
-              initial="initial"
-              aria-hidden
-            >
-              {label.split('').map((char, i) => (
-                <motion.span
-                  // biome-ignore lint/suspicious/noArrayIndexKey: position is the slot identity — the letter at a position is exactly what rolls.
-                  key={i}
-                  className="inline-block whitespace-pre will-change-[opacity,filter,transform]"
-                  custom={i * CASCADE_STAGGER}
-                  variants={CASCADE_LETTER_VARIANTS}
-                >
-                  {char}
-                </motion.span>
-              ))}
-            </motion.span>
-          </AnimatePresence>
-        </>
-      ) : (
-        <AnimatePresence initial={false}>
-          <motion.span
-            key={`${animation}-${value}`}
-            animate={reduce ? { opacity: 1, filter: 'blur(0px)', scale: 1, y: 0 } : 'animate'}
-            className="absolute top-[0.08em] left-0 inline-block max-w-full truncate will-change-[opacity,filter,transform]"
-            exit={reduce ? undefined : 'exit'}
-            initial={reduce ? false : 'initial'}
-            variants={TEXT_VARIANTS[coreAnimation]}
-          >
-            {children}
-          </motion.span>
-        </AnimatePresence>
-      )}
+      <AnimatePresence initial={false}>
+        <motion.span
+          key={`${coreAnimation}-${value}`}
+          animate={reduce ? { opacity: 1, filter: 'blur(0px)', scale: 1, y: 0 } : 'animate'}
+          className="absolute top-[0.08em] left-0 inline-block max-w-full truncate will-change-[opacity,filter,transform]"
+          exit={reduce ? undefined : 'exit'}
+          initial={reduce ? false : 'initial'}
+          variants={TEXT_VARIANTS[coreAnimation]}
+        >
+          {children}
+        </motion.span>
+      </AnimatePresence>
     </span>
+  );
+}
+
+function ActionSwapCascadeText({
+  value,
+  label,
+  className,
+}: {
+  value: string;
+  label: string;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        'relative -my-[0.08em] inline-block max-w-full py-[0.08em] align-bottom whitespace-nowrap',
+        className,
+      )}
+      style={{
+        clipPath: 'inset(0 -999px)',
+        WebkitClipPath: 'inset(0 -999px)',
+      }}
+    >
+      <span className="invisible inline-block whitespace-nowrap" aria-hidden>
+        <ActionSwapCascadeMeasure label={label} />
+      </span>
+      <ActionSwapCascadeLabel label={label} value={value} />
+    </span>
+  );
+}
+
+export function ActionSwapText({
+  value,
+  children,
+  animation = 'blur',
+  className,
+}: ActionSwapTextProps) {
+  const reduce = Boolean(useReducedMotion());
+  const label = typeof children === 'string' ? children : null;
+  const cascade = animation === 'cascade' && label !== null && !reduce;
+  const coreAnimation: CoreAnimation = animation === 'cascade' ? 'roll' : animation;
+
+  if (cascade) {
+    return <ActionSwapCascadeText className={className} label={label} value={value} />;
+  }
+
+  return (
+    <ActionSwapStandardText
+      className={className}
+      coreAnimation={coreAnimation}
+      reduce={reduce}
+      value={value}
+    >
+      {children}
+    </ActionSwapStandardText>
   );
 }
 
@@ -253,8 +235,7 @@ export function ActionSwapIcon({
   animation = 'blur',
   className,
 }: ActionSwapIconProps) {
-  const reduce = useReducedMotion();
-  // Icons are single elements — cascade maps to its closest motion, roll.
+  const reduce = Boolean(useReducedMotion());
   const coreAnimation: CoreAnimation = animation === 'cascade' ? 'roll' : animation;
 
   return (
@@ -275,73 +256,5 @@ export function ActionSwapIcon({
         </motion.span>
       </AnimatePresence>
     </span>
-  );
-}
-
-export function ActionSwapButton({
-  items,
-  value,
-  defaultValue,
-  onValueChange,
-  variant = 'secondary',
-  size = 'md',
-  animation = 'blur',
-  iconOnly = size === 'icon',
-  cycle = true,
-  className,
-  disabled,
-  onClick,
-  ...rest
-}: ActionSwapButtonProps) {
-  const reduce = useReducedMotion();
-  const [internalValue, setInternalValue] = useState(defaultValue ?? items[0]?.id);
-  const currentValue = value ?? internalValue;
-  const activeIndex = Math.max(
-    0,
-    items.findIndex((item) => item.id === currentValue),
-  );
-  const activeItem = items[activeIndex] ?? items[0];
-  const hasIcon = items.some((item) => item.icon);
-  const nextItem = cycle && items.length > 0 ? items[(activeIndex + 1) % items.length] : undefined;
-
-  if (!activeItem) return null;
-
-  const accessibleLabel =
-    activeItem.ariaLabel ??
-    (iconOnly && typeof activeItem.label === 'string' ? activeItem.label : undefined);
-
-  return (
-    <motion.button
-      aria-label={accessibleLabel}
-      disabled={disabled}
-      transition={SPRING_PRESS}
-      type="button"
-      whileTap={reduce || disabled ? undefined : { scale: motionTokens.scale.pressSmall }}
-      className={cn(
-        'inline-flex items-center justify-center overflow-hidden font-medium transition-colors',
-        'disabled:pointer-events-none disabled:opacity-50',
-        VARIANT_CLASS[variant],
-        SIZE_CLASS[size],
-        className,
-      )}
-      onClick={(event) => {
-        onClick?.(event);
-        if (event.defaultPrevented || disabled || !cycle || !nextItem) return;
-        if (value === undefined) setInternalValue(nextItem.id);
-        onValueChange?.(nextItem.id, nextItem);
-      }}
-      {...rest}
-    >
-      {hasIcon ? (
-        <ActionSwapIcon animation={animation} className="h-4 w-4" value={activeItem.id}>
-          {activeItem.icon ?? null}
-        </ActionSwapIcon>
-      ) : null}
-      {!iconOnly ? (
-        <ActionSwapText animation={animation} value={activeItem.id}>
-          {activeItem.label}
-        </ActionSwapText>
-      ) : null}
-    </motion.button>
   );
 }

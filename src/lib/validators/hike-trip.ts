@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isSet } from '@/lib/util/value';
 
 export const createHikeTripSchema = z
   .object({
@@ -18,7 +19,7 @@ export const patchHikeTripSchema = z
   })
   .refine(
     (v) =>
-      v.name != null ||
+      isSet(v.name) ||
       (v.addActivityIds?.length ?? 0) > 0 ||
       (v.removeActivityIds?.length ?? 0) > 0,
     { message: 'Aucune modification' },

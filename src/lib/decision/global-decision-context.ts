@@ -26,8 +26,39 @@ const DOMAIN_MATCH: Record<DrillDownDomain, readonly string[]> = {
 };
 
 function matchesDomain(candidate: string | null | undefined, domain: DrillDownDomain): boolean {
-  if (!candidate) return false;
+  if (!candidate) {
+    return false;
+  }
   return DOMAIN_MATCH[domain].includes(candidate);
+}
+
+function isDrivingDomain(snapshot: AthleteSnapshot, domain: DrillDownDomain): boolean {
+  const { decision } = snapshot;
+  if (!decision) {
+    return false;
+  }
+  const attention = decision.priority.attentionDomain;
+  const limitingDomain = decision.limitingFactor.domain;
+  const limitingSystem = decision.limitingFactor.system;
+
+  return (
+    matchesDomain(limitingDomain, domain) ||
+    matchesDomain(attention, domain) ||
+    (domain === 'SLEEP' && limitingSystem === 'RECOVERY') ||
+    (domain === 'FATIGUE' && attention === 'FATIGUE')
+  );
+}
+
+function isContributingDomain(snapshot: AthleteSnapshot, domain: DrillDownDomain): boolean {
+  const { decision } = snapshot;
+  if (!decision) {
+    return false;
+  }
+  const attention = decision.priority.attentionDomain;
+  return (
+    decision.supportingEvidence.some((evidence) => matchesDomain(evidence.domain, domain)) ||
+    (domain === 'SLEEP' && attention === 'RECOVERY')
+  );
 }
 
 function resolveDomainRole(
@@ -35,42 +66,35 @@ function resolveDomainRole(
   domain: DrillDownDomain,
 ): GlobalDecisionDomainRole {
   const { decision } = snapshot;
-  if (!decision || !isAdviceActionableFromDecision(decision)) return 'none';
+  if (!decision || !isAdviceActionableFromDecision(decision)) {
+    return 'none';
+  }
 
-  const attention = decision.priority.attentionDomain;
-  const limitingDomain = decision.limitingFactor.domain;
-  const limitingSystem = decision.limitingFactor.system;
-
-  if (
-    matchesDomain(limitingDomain, domain) ||
-    matchesDomain(attention, domain) ||
-    (domain === 'SLEEP' && limitingSystem === 'RECOVERY') ||
-    (domain === 'FATIGUE' && attention === 'FATIGUE')
-  ) {
+  if (isDrivingDomain(snapshot, domain)) {
     return 'driving';
   }
-
-  if (
-    decision.supportingEvidence.some((evidence) => matchesDomain(evidence.domain, domain)) ||
-    (domain === 'SLEEP' && attention === 'RECOVERY')
-  ) {
+  if (isContributingDomain(snapshot, domain)) {
     return 'contributing';
   }
-
-  if (domain === 'BODY') return 'none';
+  if (domain === 'BODY') {
+    return 'none';
+  }
   return 'contextual';
 }
+
+const DRIVING_RELATION_NOTES: Partial<Record<DrillDownDomain, string>> = {
+  RECOVERY: 'Ce domaine pilote la décision du jour.',
+  FATIGUE: 'Charge et fatigue pilotent la décision du jour.',
+  ADAPTATION: "L'adaptation pilote la décision du jour.",
+  SLEEP: 'Le sommeil pèse directement dans la décision du jour.',
+  PHYSICAL_HEALTH: 'La santé physique pilote la décision du jour.',
+};
 
 function relationNote(role: GlobalDecisionDomainRole, domain: DrillDownDomain): string | null {
   // Never echo the verdict label — the strip already shows it once.
   switch (role) {
     case 'driving':
-      if (domain === 'RECOVERY') return 'Ce domaine pilote la décision du jour.';
-      if (domain === 'FATIGUE') return 'Charge et fatigue pilotent la décision du jour.';
-      if (domain === 'ADAPTATION') return "L'adaptation pilote la décision du jour.";
-      if (domain === 'SLEEP') return 'Le sommeil pèse directement dans la décision du jour.';
-      if (domain === 'PHYSICAL_HEALTH') return 'La santé physique pilote la décision du jour.';
-      return 'Ce domaine pilote la décision du jour.';
+      return DRIVING_RELATION_NOTES[domain] ?? 'Ce domaine pilote la décision du jour.';
     case 'contributing':
       return 'Ce domaine contribue à la décision — il ne la pilote pas seul.';
     case 'contextual':

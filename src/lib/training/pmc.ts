@@ -89,7 +89,9 @@ export function runPmc({
 }: RunPmcParams): PmcDayPoint[] {
   const start = startOfDay(from);
   const end = startOfDay(to);
-  if (start > end) return [];
+  if (start > end) {
+    return [];
+  }
 
   let state = initial;
 
@@ -115,7 +117,9 @@ export function slicePmcWindow<T extends { date: string }>(
   const end = refDate ? startOfDay(refDate) : undefined;
   const last = series.at(-1);
   const anchor = end ?? (last ? startOfDay(new Date(`${last.date}T12:00:00.000Z`)) : null);
-  if (!anchor) return [];
+  if (!anchor) {
+    return [];
+  }
 
   const cutoff = toTrainingDayId(subDays(anchor, days));
   return series.filter((point) => point.date >= cutoff);

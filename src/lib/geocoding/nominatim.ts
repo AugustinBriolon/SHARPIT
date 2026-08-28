@@ -1,4 +1,5 @@
 import type { GeocodedPlace } from './types';
+import { isSet } from '@/lib/util/value';
 
 const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org';
 const USER_AGENT = 'SHARPIT/1.0 (training-app; contact@sharpit.local)';
@@ -19,7 +20,9 @@ type NominatimReverseResult = {
 
 function shortLabel(displayName: string): string {
   const parts = displayName.split(',').map((p) => p.trim());
-  if (parts.length <= 2) return displayName;
+  if (parts.length <= 2) {
+    return displayName;
+  }
   return parts.slice(0, 3).join(', ');
 }
 
@@ -31,7 +34,9 @@ function toPlace(row: {
 }): GeocodedPlace | null {
   const latitude = Number(row.lat);
   const longitude = Number(row.lon);
-  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return null;
+  }
   return {
     label: shortLabel(row.display_name),
     latitude,
@@ -57,7 +62,9 @@ async function nominatimFetch(path: string): Promise<Response> {
 
 export async function searchPlaces(query: string, limit = 6): Promise<GeocodedPlace[]> {
   const trimmed = query.trim();
-  if (trimmed.length < 2) return [];
+  if (trimmed.length < 2) {
+    return [];
+  }
 
   const params = new URLSearchParams({
     q: trimmed,
@@ -68,7 +75,7 @@ export async function searchPlaces(query: string, limit = 6): Promise<GeocodedPl
 
   const res = await nominatimFetch(`/search?${params.toString()}`);
   const rows = (await res.json()) as NominatimSearchResult[];
-  return rows.map(toPlace).filter((p): p is GeocodedPlace => p != null);
+  return rows.map(toPlace).filter((p): p is GeocodedPlace => isSet(p));
 }
 
 export async function geocodePlaceLabel(label: string): Promise<GeocodedPlace | null> {

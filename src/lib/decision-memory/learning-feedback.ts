@@ -6,6 +6,7 @@
  */
 
 import type { ActivityType, SessionIntensity } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import type { OutcomeEvaluation } from './types';
 
 /** Below this sample count in a category, there's nothing honest to say about it yet. */
@@ -35,9 +36,13 @@ function categoryKey(type: ActivityType, intensity: SessionIntensity | null): st
 }
 
 function mode<T>(values: T[]): T | null {
-  if (values.length === 0) return null;
+  if (values.length === 0) {
+    return null;
+  }
   const counts = new Map<T, number>();
-  for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1);
+  for (const v of values) {
+    counts.set(v, (counts.get(v) ?? 0) + 1);
+  }
   let best: T | null = null;
   let bestCount = 0;
   for (const [value, count] of counts) {
@@ -50,7 +55,9 @@ function mode<T>(values: T[]): T | null {
 }
 
 function mean(values: number[]): number | null {
-  if (values.length === 0) return null;
+  if (values.length === 0) {
+    return null;
+  }
   return values.reduce((sum, v) => sum + v, 0) / values.length;
 }
 
@@ -60,19 +67,21 @@ function evaluateCategory(
   entries: CategorizedOutcome[],
 ): LearningFeedbackItem | null {
   const evaluated = entries.filter((e) => e.outcome.outcomeStatus === 'EVALUATED');
-  if (evaluated.length < MIN_SAMPLES) return null;
+  if (evaluated.length < MIN_SAMPLES) {
+    return null;
+  }
 
   const complianceScores = evaluated
     .map((e) => e.outcome.executionMatch?.complianceScore)
-    .filter((v): v is number => v != null);
+    .filter((v): v is number => isSet(v));
   const verdicts = evaluated
     .map((e) => e.outcome.executionMatch?.verdict)
-    .filter((v): v is NonNullable<typeof v> => v != null);
+    .filter((v): v is NonNullable<typeof v> => isSet(v));
   const avgCompliance = mean(complianceScores);
   const modalVerdict = mode(verdicts);
 
   if (
-    avgCompliance != null &&
+    isSet(avgCompliance) &&
     avgCompliance < HARDER_COMPLIANCE_THRESHOLD &&
     modalVerdict === 'HARDER'
   ) {
@@ -81,17 +90,19 @@ function evaluateCategory(
 
   const recoveryResponses = evaluated
     .map((e) => e.outcome.shortTermRecoveryResponse)
-    .filter((r): r is NonNullable<typeof r> => r != null);
+    .filter((r): r is NonNullable<typeof r> => isSet(r));
   if (recoveryResponses.length >= MIN_SAMPLES) {
     const deltas = recoveryResponses
       .map((r) => {
-        const readings = r.readinessValues.filter((v): v is number => v != null);
-        if (readings.length < 2) return null;
+        const readings = r.readinessValues.filter((v): v is number => isSet(v));
+        if (readings.length < 2) {
+          return null;
+        }
         return readings[readings.length - 1] - readings[0];
       })
-      .filter((d): d is number => d != null);
+      .filter((d): d is number => isSet(d));
     const avgDelta = mean(deltas);
-    if (avgDelta != null && avgDelta >= -5) {
+    if (isSet(avgDelta) && avgDelta >= -5) {
       return {
         kind: 'RECOVERED_WITHIN_EXPECTED_WINDOW',
         type,
@@ -111,7 +122,9 @@ function evaluateCategory(
  * INSUFFICIENT_EVIDENCE item. Zero outcomes at all → empty array (nothing to say yet).
  */
 export function buildLearningFeedback(outcomes: CategorizedOutcome[]): LearningFeedbackItem[] {
-  if (outcomes.length === 0) return [];
+  if (outcomes.length === 0) {
+    return [];
+  }
 
   const byCategory = new Map<string, CategorizedOutcome[]>();
   for (const entry of outcomes) {
@@ -125,7 +138,9 @@ export function buildLearningFeedback(outcomes: CategorizedOutcome[]): LearningF
   for (const entries of byCategory.values()) {
     const [{ type, intensity }] = entries;
     const item = evaluateCategory(type, intensity, entries);
-    if (item) items.push(item);
+    if (item) {
+      items.push(item);
+    }
   }
 
   if (items.length === 0) {

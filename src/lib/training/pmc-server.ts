@@ -31,7 +31,9 @@ export async function loadAthletePmcSeries(
 ): Promise<PmcDayPoint[]> {
   const refDate = options?.refDate;
   const activities = await getActivitiesForPmc(athleteId);
-  if (activities.length === 0) return [];
+  if (activities.length === 0) {
+    return [];
+  }
 
   const coreSessions = await loadCoreSessionTss(
     athleteId,
@@ -72,7 +74,9 @@ export async function loadDailyTrainingStressEntries(
 ): Promise<{ load: number; date: Date }[]> {
   const refDate = options?.refDate ?? new Date();
   const activities = await getActivitiesForPmc(athleteId);
-  if (activities.length === 0) return [];
+  if (activities.length === 0) {
+    return [];
+  }
 
   const coreSessions = await loadCoreSessionTss(athleteId, activities[0].date, refDate);
   const dailyTss = aggregateDailyTssPreferringCore(activities, coreSessions);
@@ -100,7 +104,7 @@ async function loadCoreSessionTss(
     const tssScore = data?.tssScore;
     // A null score means extraction could not produce one; that day falls back to
     // the per-activity estimate rather than counting the session as zero load.
-    if (trainingDayId == null || typeof tssScore !== 'number' || !Number.isFinite(tssScore)) {
+    if ((trainingDayId === undefined || trainingDayId === null) || typeof tssScore !== 'number' || !Number.isFinite(tssScore)) {
       return [];
     }
     return [{ trainingDayId, tssScore }];

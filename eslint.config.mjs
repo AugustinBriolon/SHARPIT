@@ -203,6 +203,17 @@ const eslintConfig = [
       'react/display-name': 'off',
       'react/prop-types': 'off',
       'prefer-destructuring': 'error',
+
+      // Clean Code — complexité et maintenabilité
+      complexity: ['error', { max: 8 }],
+      'max-depth': ['error', 3],
+      'max-params': ['error', 4],
+      'max-lines-per-function': ['warn', 50],
+      'no-else-return': 'error',
+      'no-unreachable': 'error',
+      'no-constant-condition': 'error',
+      eqeqeq: ['error', 'always'],
+      curly: ['error', 'all'],
     },
     settings: {
       react: {

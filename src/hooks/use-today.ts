@@ -97,7 +97,11 @@ export function useToday(date: Date = new Date()): UseTodayResult {
   const trainingDayId = format(date, 'yyyy-MM-dd');
   const queryClient = useQueryClient();
 
-  const query = useQuery({
+  const query = useQuery<
+    Awaited<ReturnType<typeof fetchAthleteSnapshot>>,
+    Error,
+    AthleteSnapshotProductView
+  >({
     queryKey: queryKeys.athleteSnapshot(trainingDayId),
     queryFn: () => fetchAthleteSnapshot(trainingDayId),
     placeholderData: keepPreviousData,
@@ -113,7 +117,7 @@ export function useToday(date: Date = new Date()): UseTodayResult {
 
   return {
     data: query.data ?? EMPTY_PRODUCT_VIEW,
-    loading: query.isPending && query.data == null,
+    loading: query.isPending && query.data === undefined,
     isPending: query.isPending,
     isFetching: query.isFetching,
     error: query.error instanceof Error ? query.error.message : null,

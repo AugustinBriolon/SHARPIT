@@ -3,6 +3,7 @@
 import { useRef } from 'react';
 import { STRENGTH_VENUE_OPTIONS, type StrengthVenue } from '@/lib/equipment/catalog';
 import { cn } from '@/lib/utils';
+import { handleRadioGroupKeyDown } from '@/components/settings/equipment/radio-group-keydown';
 
 export function StrengthVenuePicker({
   value,
@@ -20,39 +21,15 @@ export function StrengthVenuePicker({
 
   function selectAt(index: number) {
     const option = STRENGTH_VENUE_OPTIONS[index];
-    if (!option) return;
+    if (!option) {
+      return;
+    }
     onSelect(option.id);
     focusOption(index);
   }
 
   function onRadioKeyDown(event: React.KeyboardEvent<HTMLButtonElement>, index: number) {
-    switch (event.key) {
-      case 'ArrowDown':
-      case 'ArrowRight':
-        event.preventDefault();
-        selectAt((index + 1) % STRENGTH_VENUE_OPTIONS.length);
-        break;
-      case 'ArrowUp':
-      case 'ArrowLeft':
-        event.preventDefault();
-        selectAt((index - 1 + STRENGTH_VENUE_OPTIONS.length) % STRENGTH_VENUE_OPTIONS.length);
-        break;
-      case 'Home':
-        event.preventDefault();
-        selectAt(0);
-        break;
-      case 'End':
-        event.preventDefault();
-        selectAt(STRENGTH_VENUE_OPTIONS.length - 1);
-        break;
-      case ' ':
-      case 'Enter':
-        event.preventDefault();
-        selectAt(index);
-        break;
-      default:
-        break;
-    }
+    handleRadioGroupKeyDown(event, index, STRENGTH_VENUE_OPTIONS.length, selectAt);
   }
 
   return (
@@ -60,7 +37,7 @@ export function StrengthVenuePicker({
       <p className="text-sm font-medium">Où t&apos;entraînes-tu en musculation ?</p>
       {STRENGTH_VENUE_OPTIONS.map((option, index) => {
         const active = value === option.id;
-        const tabIndex = active || (value == null && index === 0) ? 0 : -1;
+        const tabIndex = active || (value === null && index === 0) ? 0 : -1;
         return (
           <button
             key={option.id}

@@ -1,4 +1,5 @@
 import { hasConfiguredEquipment, normalizeAthleteEquipment } from '@/lib/equipment/parse';
+import { isSet } from '@/lib/util/value';
 
 export type SettingsHubAccountFacts = {
   heightCm: number | null | undefined;
@@ -31,20 +32,28 @@ export type SettingsHubEquipmentFacts = {
 /** Stable French status chips for the settings hub — pure, testable. */
 export function accountStatusLabel(facts: SettingsHubAccountFacts): string {
   const filled = [
-    facts.heightCm != null,
-    facts.birthDate != null && String(facts.birthDate).length > 0,
-    facts.sleepTargetMinutes != null,
-    facts.sleepBedtimeTargetMin != null,
+    isSet(facts.heightCm),
+    isSet(facts.birthDate) && String(facts.birthDate).length > 0,
+    isSet(facts.sleepTargetMinutes),
+    isSet(facts.sleepBedtimeTargetMin),
   ].filter(Boolean).length;
 
-  if (filled === 0) return 'À compléter';
-  if (filled >= 4) return 'Complet';
+  if (filled === 0) {
+    return 'À compléter';
+  }
+  if (filled >= 4) {
+    return 'Complet';
+  }
   return `${filled}/4 renseignés`;
 }
 
 export function equipmentStatusLabel(facts: SettingsHubEquipmentFacts): string {
-  if (!facts.configured) return 'Non renseigné';
-  if (facts.ownedCount === 0) return 'Lieu défini';
+  if (!facts.configured) {
+    return 'Non renseigné';
+  }
+  if (facts.ownedCount === 0) {
+    return 'Lieu défini';
+  }
   return facts.ownedCount === 1 ? '1 pièce' : `${facts.ownedCount} pièces`;
 }
 
@@ -57,7 +66,9 @@ export function equipmentFactsFromRaw(raw: unknown): SettingsHubEquipmentFacts {
 }
 
 export function goalsStatusLabel(facts: SettingsHubGoalsFacts): string {
-  if (facts.total === 0) return 'Aucun objectif';
+  if (facts.total === 0) {
+    return 'Aucun objectif';
+  }
   if (facts.activeRaces > 0) {
     return facts.activeRaces === 1 ? '1 course' : `${facts.activeRaces} courses`;
   }
@@ -74,7 +85,9 @@ export function memoryStatusLabel(facts: SettingsHubMemoryFacts): string {
   if (facts.hasProfileContext) {
     parts.push(parts.length === 0 ? 'Préférences OK' : 'préférences OK');
   }
-  if (parts.length === 0) return 'Vide';
+  if (parts.length === 0) {
+    return 'Vide';
+  }
   return parts.join(' · ');
 }
 
@@ -85,7 +98,9 @@ export function integrationsStatusLabel(facts: SettingsHubIntegrationsFacts): st
   if (facts.reconnectNames.length > 1) {
     return `${facts.reconnectNames.length} à reconnecter`;
   }
-  if (facts.connectedCount === 0) return 'Aucune connexion';
+  if (facts.connectedCount === 0) {
+    return 'Aucune connexion';
+  }
   return facts.connectedCount === 1 ? '1 connectée' : `${facts.connectedCount} connectées`;
 }
 

@@ -1,4 +1,5 @@
 import { GoalKind } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { format } from 'date-fns';
 import { daysUntil } from '@/lib/goals/goals';
 import { isGoalExpired } from '@/lib/goals/goal-metric-config';
@@ -29,7 +30,7 @@ function goalById(goals: ClientGoal[], id: string): ClientGoal | undefined {
 function toContext(goal: ClientGoal, linkedToTodaySession: boolean): TodayGoalContext {
   const d = daysUntil(goal.targetDate ? new Date(goal.targetDate) : null);
   let badge: string | null = null;
-  if (d != null) {
+  if (isSet(d)) {
     badge = d >= 0 ? `J-${d}` : `J+${Math.abs(d)}`;
   }
   return {
@@ -54,7 +55,9 @@ export function resolveTodayGoalContext(
 ): TodayGoalContext | null {
   const now = new Date();
   const active = (goals ?? []).filter((g) => !g.achieved && !isGoalExpired(g.targetDate, now));
-  if (active.length === 0) return null;
+  if (active.length === 0) {
+    return null;
+  }
 
   const todayPlanned = plannedSessions.filter(
     (s) =>
@@ -62,16 +65,24 @@ export function resolveTodayGoalContext(
   );
 
   for (const session of todayPlanned) {
-    if (!session.goalId) continue;
+    if (!session.goalId) {
+      continue;
+    }
     const goal = goalById(active, session.goalId);
-    if (goal) return toContext(goal, true);
+    if (goal) {
+      return toContext(goal, true);
+    }
   }
 
   const [primary] = selectTodayGoals(active, 1);
-  if (!primary) return null;
+  if (!primary) {
+    return null;
+  }
 
   const goal = goalById(active, primary.id);
-  if (!goal) return null;
+  if (!goal) {
+    return null;
+  }
 
   const linkedToTodaySession = todayPlanned.some((s) => s.goalId === goal.id);
   return toContext(goal, linkedToTodaySession);

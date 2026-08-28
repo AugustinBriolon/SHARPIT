@@ -27,13 +27,17 @@ import { QUALITY_CONFIDENCE } from '../types';
  */
 function regressionSlope(pairs: Array<[number, number]>): number | null {
   const n = pairs.length;
-  if (n < 3) return null;
+  if (n < 3) {
+    return null;
+  }
   const sumX = pairs.reduce((a, [x]) => a + x, 0);
   const sumY = pairs.reduce((a, [, y]) => a + y, 0);
   const sumXY = pairs.reduce((a, [x, y]) => a + x * y, 0);
   const sumX2 = pairs.reduce((a, [x]) => a + x * x, 0);
   const denom = n * sumX2 - sumX * sumX;
-  if (denom === 0) return null;
+  if (denom === 0) {
+    return null;
+  }
   return (n * sumXY - sumX * sumY) / denom;
 }
 
@@ -50,10 +54,15 @@ function computeTrend(
   getValue: (m: BodyHistory['measurements7d'][number]) => number | null,
 ): number | null {
   const valid = measurements
-    .filter((m) => getValue(m) != null)
+    .filter((m) => {
+      const value = getValue(m);
+      return value !== undefined && value !== null;
+    })
     .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
-  if (valid.length < 3) return null;
+  if (valid.length < 3) {
+    return null;
+  }
 
   const t0 = valid[0].timestamp.getTime();
   const pairs: Array<[number, number]> = valid.map((m) => [
@@ -73,13 +82,24 @@ function computeTrend(
  *
  * Pure function — no side effects, no async, fully deterministic.
  */
+function computeBodyMasses(obs: BodyCompositionObservation): {
+  fatMassKg: number | null;
+  leanMassKg: number | null;
+} {
+  if ((obs.fatPercent === undefined || obs.fatPercent === null)) {
+    return { fatMassKg: null, leanMassKg: null };
+  }
+  return {
+    fatMassKg: (obs.weightKg * obs.fatPercent) / 100,
+    leanMassKg: obs.weightKg * (1 - obs.fatPercent / 100),
+  };
+}
+
 export function extractBodyFeatures(
   obs: BodyCompositionObservation,
   history: BodyHistory,
 ): BodyFeatureSet {
-  const fatMassKg = obs.fatPercent != null ? (obs.weightKg * obs.fatPercent) / 100 : null;
-
-  const leanMassKg = obs.fatPercent != null ? obs.weightKg * (1 - obs.fatPercent / 100) : null;
+  const { fatMassKg, leanMassKg } = computeBodyMasses(obs);
 
   // Include current observation in history for trend computation
   const allMeasurements = [

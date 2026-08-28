@@ -2,6 +2,7 @@ const STORAGE_KEY = 'sharpit:demo-session-links';
 const CHANGE_EVENT = 'sharpit:demo-session-links';
 
 import type { DemoLinkPlannedSnapshot } from '@/lib/demo/demo-session-link-overlay';
+import { isSet } from '@/lib/util/value';
 import type { ActivityNarrative, SessionAnalysis } from '@/lib/validators/coach';
 
 export type DemoSessionLinkReading = {
@@ -18,14 +19,18 @@ type DemoLinkEntry = {
 };
 
 function parseStored(raw: string | null): DemoLinkEntry[] {
-  if (!raw) return [];
+  if (!raw) {
+    return [];
+  }
   try {
     const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
     return parsed.filter(
       (item): item is DemoLinkEntry =>
         typeof item === 'object' &&
-        item != null &&
+        isSet(item) &&
         typeof (item as DemoLinkEntry).plannedSessionId === 'string' &&
         typeof (item as DemoLinkEntry).activityId === 'string',
     );
@@ -35,7 +40,9 @@ function parseStored(raw: string | null): DemoLinkEntry[] {
 }
 
 export function readDemoSessionLinks(): DemoLinkEntry[] {
-  if (typeof window === 'undefined') return [];
+  if (typeof window === 'undefined') {
+    return [];
+  }
   return parseStored(window.sessionStorage.getItem(STORAGE_KEY));
 }
 
@@ -48,7 +55,9 @@ export function markDemoSessionLinked(
   activityId: string,
   planned?: DemoLinkPlannedSnapshot,
 ): void {
-  if (typeof window === 'undefined' || !plannedSessionId || !activityId) return;
+  if (typeof window === 'undefined' || !plannedSessionId || !activityId) {
+    return;
+  }
   const next = readDemoSessionLinks().filter(
     (entry) => entry.plannedSessionId !== plannedSessionId,
   );
@@ -58,7 +67,9 @@ export function markDemoSessionLinked(
 }
 
 export function clearDemoSessionLink(plannedSessionId: string): void {
-  if (typeof window === 'undefined' || !plannedSessionId) return;
+  if (typeof window === 'undefined' || !plannedSessionId) {
+    return;
+  }
   const next = readDemoSessionLinks().filter(
     (entry) => entry.plannedSessionId !== plannedSessionId,
   );
@@ -70,10 +81,14 @@ export function updateDemoSessionLinkReading(
   plannedSessionId: string,
   reading: DemoSessionLinkReading,
 ): void {
-  if (typeof window === 'undefined' || !plannedSessionId) return;
+  if (typeof window === 'undefined' || !plannedSessionId) {
+    return;
+  }
   const links = readDemoSessionLinks();
   const index = links.findIndex((entry) => entry.plannedSessionId === plannedSessionId);
-  if (index < 0) return;
+  if (index < 0) {
+    return;
+  }
   const next = links.slice();
   next[index] = { ...next[index]!, reading };
   window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
@@ -85,7 +100,9 @@ export function findDemoSessionLinkByActivityId(activityId: string): DemoLinkEnt
 }
 
 export function subscribeDemoSessionLinks(onStoreChange: () => void): () => void {
-  if (typeof window === 'undefined') return () => undefined;
+  if (typeof window === 'undefined') {
+    return () => undefined;
+  }
   window.addEventListener(CHANGE_EVENT, onStoreChange);
   return () => window.removeEventListener(CHANGE_EVENT, onStoreChange);
 }
@@ -101,6 +118,8 @@ export function filterDemoLinkedSessionSuggestions<T extends { plannedSessionId:
   suggestions: readonly T[],
   linkedPlannedIds: ReadonlySet<string>,
 ): T[] {
-  if (linkedPlannedIds.size === 0) return [...suggestions];
+  if (linkedPlannedIds.size === 0) {
+    return [...suggestions];
+  }
   return suggestions.filter((s) => !linkedPlannedIds.has(s.plannedSessionId));
 }

@@ -31,6 +31,44 @@ import {
   toSystemAttentionPriority,
 } from './priority';
 
+function isSet<T>(value: T | null | undefined): value is T {
+  return value !== undefined && value !== null;
+}
+
+function toLegacyLimitingFactor(
+  limitingFactor: DecisionState['limitingFactor'],
+): ReasoningState['limitingFactor'] {
+  return {
+    system: limitingFactor.system === 'PHYSICAL_HEALTH' ? null : limitingFactor.system,
+    description: limitingFactor.description,
+    actionable: limitingFactor.actionable,
+  };
+}
+
+function freshnessFactorFrom(confidence: number | null | undefined): number {
+  return isSet(confidence) ? Math.min(1, Math.max(0, confidence)) : 1;
+}
+
+function buildDecisionSignals(
+  input: DecisionEngineInput,
+  conflicts: DecisionState['conflicts'],
+  suppressedEvidence: DecisionState['suppressedEvidence'],
+): DecisionEngineOutput['signals'] {
+  const { recovery, fatigue, adaptation, physicalHealth, environment } = input;
+  return {
+    availableModelCount: [recovery, fatigue, adaptation, physicalHealth, environment].filter(
+      Boolean,
+    ).length,
+    hasRecoveryState: isSet(recovery),
+    hasFatigueState: isSet(fatigue),
+    hasAdaptationState: isSet(adaptation),
+    hasPhysicalHealthState: isSet(physicalHealth),
+    hasEnvironmentState: isSet(environment),
+    conflictCount: conflicts.length,
+    suppressedEvidenceCount: suppressedEvidence.length,
+  };
+}
+
 export function runDecisionEngine(input: DecisionEngineInput): DecisionEngineOutput {
   const {
     trainingDayId,
@@ -72,22 +110,18 @@ export function runDecisionEngine(input: DecisionEngineInput): DecisionEngineOut
     verdict: overallVerdict,
   });
 
-  const legacyLimiting: ReasoningState['limitingFactor'] = {
-    system: limitingFactor.system === 'PHYSICAL_HEALTH' ? null : limitingFactor.system,
-    description: limitingFactor.description,
-    actionable: limitingFactor.actionable,
-  };
+  const legacyLimiting = toLegacyLimitingFactor(limitingFactor);
 
-  const rawFindings = buildKeyFindings(
+  const rawFindings = buildKeyFindings({
     recovery,
     fatigue,
     adaptation,
-    reasoningConflicts,
+    conflicts: reasoningConflicts,
     modelDirections,
     physiologicalConsistency,
     overallVerdict,
-    legacyLimiting,
-  );
+    limitingFactor: legacyLimiting,
+  });
 
   const { supportingEvidence, suppressedEvidence, explanationOrder } = rankAndSuppressEvidence({
     findings: rawFindings,
@@ -117,13 +151,13 @@ export function runDecisionEngine(input: DecisionEngineInput): DecisionEngineOut
     expectedBenefit: primaryDecision.expectedBenefit,
   };
 
-  const evidenceGraph = buildEvidenceGraph(
+  const evidenceGraph = buildEvidenceGraph({
     recovery,
     fatigue,
     adaptation,
-    overallVerdict,
-    legacyLimiting,
-  );
+    verdict: overallVerdict,
+    limitingFactor: legacyLimiting,
+  });
 
   const { confidence: modelConfidence, dataCompleteness } = computeReasoningConfidence(
     recovery,
@@ -132,8 +166,7 @@ export function runDecisionEngine(input: DecisionEngineInput): DecisionEngineOut
     physiologicalConsistency,
   );
 
-  const freshnessFactor =
-    freshnessConfidence != null ? Math.min(1, Math.max(0, freshnessConfidence)) : 1;
+  const freshnessFactor = freshnessFactorFrom(freshnessConfidence);
   const confidence = Math.round(modelConfidence * freshnessFactor * 100) / 100;
   const confidenceGated = shouldGateAdvice(confidence, overallVerdict);
   const attentionDomain = resolveAttentionDomain(limitingFactor, overallVerdict);
@@ -165,21 +198,8 @@ export function runDecisionEngine(input: DecisionEngineInput): DecisionEngineOut
     trainingDayId,
   };
 
-  const availableModelCount = [recovery, fatigue, adaptation, physicalHealth, environment].filter(
-    Boolean,
-  ).length;
-
   return {
     decisionState,
-    signals: {
-      availableModelCount,
-      hasRecoveryState: recovery != null,
-      hasFatigueState: fatigue != null,
-      hasAdaptationState: adaptation != null,
-      hasPhysicalHealthState: physicalHealth != null,
-      hasEnvironmentState: environment != null,
-      conflictCount: conflicts.length,
-      suppressedEvidenceCount: suppressedEvidence.length,
-    },
+    signals: buildDecisionSignals(input, conflicts, suppressedEvidence),
   };
 }

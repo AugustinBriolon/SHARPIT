@@ -40,7 +40,9 @@ export const KIND_LABEL_FR: Record<EnduranceStepKind, string> = {
 export const METER_DISPLAY_CEILING_M = 1000;
 
 export function formatDurationLabel(duration: EnduranceDuration): string {
-  if (duration.type === 'lap') return 'Bouton Lap';
+  if (duration.type === 'lap') {
+    return 'Bouton Lap';
+  }
   if (duration.type === 'distance') {
     return duration.meters < METER_DISPLAY_CEILING_M
       ? `${duration.meters} m`
@@ -48,7 +50,9 @@ export function formatDurationLabel(duration: EnduranceDuration): string {
   }
   const minutes = Math.floor(duration.seconds / 60);
   const seconds = duration.seconds % 60;
-  if (minutes === 0) return `${seconds} s`;
+  if (minutes === 0) {
+    return `${seconds} s`;
+  }
   return seconds === 0 ? `${minutes} min` : `${minutes} min ${seconds} s`;
 }
 

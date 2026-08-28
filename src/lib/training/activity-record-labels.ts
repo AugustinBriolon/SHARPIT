@@ -15,6 +15,44 @@ const PR_BADGE_LABELS: Record<string, string> = {
   'swim-duration': 'Record durée',
 };
 
+function claimRunBests(
+  labels: Map<string, string>,
+  claim: (activityId: string | null, label: string) => void,
+  runBests: RecordsPayload['runBests'],
+): void {
+  for (const category of runBests) {
+    const best = category.entries.find((entry) => entry.rank === 1);
+    if (best) {
+      claim(best.activityId, `Record ${category.label}`);
+    }
+  }
+}
+
+function claimPowerCurve(
+  labels: Map<string, string>,
+  claim: (activityId: string | null, label: string) => void,
+  powerCurve: RecordsPayload['powerCurve'],
+): void {
+  for (const point of powerCurve) {
+    claim(point.activityId, `Record ${point.label}`);
+  }
+}
+
+function claimSportPrs(
+  labels: Map<string, string>,
+  claim: (activityId: string | null, label: string) => void,
+  prs: RecordsPayload['prs'],
+): void {
+  for (const categories of [prs.run, prs.bike, prs.swim]) {
+    for (const category of categories) {
+      const best = category.entries.find((entry) => entry.rank === 1);
+      if (best) {
+        claim(best.activityId, PR_BADGE_LABELS[category.key] ?? 'Record');
+      }
+    }
+  }
+}
+
 /**
  * Map activityId → badge label for activities holding a current record
  * (rank 1). One badge per activity — distance references win over power
@@ -24,27 +62,19 @@ export function buildActivityRecordLabels(
   records: RecordsPayload | null | undefined,
 ): Map<string, string> {
   const labels = new Map<string, string>();
-  if (!records) return labels;
+  if (!records) {
+    return labels;
+  }
 
   const claim = (activityId: string | null, label: string) => {
-    if (activityId && !labels.has(activityId)) labels.set(activityId, label);
+    if (activityId && !labels.has(activityId)) {
+      labels.set(activityId, label);
+    }
   };
 
-  for (const category of records.runBests) {
-    const best = category.entries.find((entry) => entry.rank === 1);
-    if (best) claim(best.activityId, `Record ${category.label}`);
-  }
-
-  for (const point of records.powerCurve) {
-    claim(point.activityId, `Record ${point.label}`);
-  }
-
-  for (const categories of [records.prs.run, records.prs.bike, records.prs.swim]) {
-    for (const category of categories) {
-      const best = category.entries.find((entry) => entry.rank === 1);
-      if (best) claim(best.activityId, PR_BADGE_LABELS[category.key] ?? 'Record');
-    }
-  }
+  claimRunBests(labels, claim, records.runBests);
+  claimPowerCurve(labels, claim, records.powerCurve);
+  claimSportPrs(labels, claim, records.prs);
 
   return labels;
 }

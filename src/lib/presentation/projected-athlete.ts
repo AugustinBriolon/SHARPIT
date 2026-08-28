@@ -65,7 +65,9 @@ const DOMAIN_CAUTION: Record<string, ProjectedAthleteCaution> = {
 };
 
 function limitingFactorDomainLabel(domain: string | null): string | null {
-  if (!domain) return null;
+  if (!domain) {
+    return null;
+  }
   const labels: Record<string, string> = {
     RECOVERY: 'récupération',
     FATIGUE: 'fatigue',
@@ -77,32 +79,52 @@ function limitingFactorDomainLabel(domain: string | null): string | null {
   return labels[domain] ?? domain.toLowerCase();
 }
 
+function projectionOpener(tsbEnd: number): string {
+  if (tsbEnd >= 5) {
+    return 'Ta forme devrait remonter';
+  }
+  if (tsbEnd <= -15) {
+    return "La fatigue risque de s'accumuler";
+  }
+  return 'La charge devrait rester équilibrée';
+}
+
+function appendRiskClause(
+  sentence: string,
+  summary: ProjectedAthleteState['summary'],
+  days: ProjectedAthleteState['days'],
+): string {
+  if (!summary.highestRiskDay) {
+    return sentence;
+  }
+  const riskDay = days.find((d) => d.trainingDayId === summary.highestRiskDay);
+  const domain = limitingFactorDomainLabel(
+    riskDay?.decision.limitingFactor.domain ?? summary.mainLimitingFactor,
+  );
+  const vigilance = domain ?? 'récupération';
+  return `${sentence}, mais ${localDateLabel(summary.highestRiskDay)} est un point de vigilance côté ${vigilance}`;
+}
+
 /** Trajectory sentence only — no confidence percentage. */
 export function buildProjectionTrajectory(state: ProjectedAthleteState): string {
   const { summary, days } = state;
   const tsbEnd = days[days.length - 1]?.load.tsb ?? state.anchor.tsb;
 
-  let opener: string;
-  if (tsbEnd >= 5) opener = 'Ta forme devrait remonter';
-  else if (tsbEnd <= -15) opener = "La fatigue risque de s'accumuler";
-  else opener = 'La charge devrait rester équilibrée';
-
+  let sentence = projectionOpener(tsbEnd);
   if (summary.peakReadinessDay) {
-    opener += ` d'ici ${localDateLabel(summary.peakReadinessDay)}`;
+    sentence += ` d'ici ${localDateLabel(summary.peakReadinessDay)}`;
   }
-
-  let sentence = opener;
-
-  if (summary.highestRiskDay) {
-    const riskDay = days.find((d) => d.trainingDayId === summary.highestRiskDay);
-    const domain = limitingFactorDomainLabel(
-      riskDay?.decision.limitingFactor.domain ?? summary.mainLimitingFactor,
-    );
-    const vigilance = domain ?? 'récupération';
-    sentence += `, mais ${localDateLabel(summary.highestRiskDay)} est un point de vigilance côté ${vigilance}`;
-  }
+  sentence = appendRiskClause(sentence, summary, days);
 
   return `${sentence}.`;
+}
+
+function resolveDomainCaution(state: ProjectedAthleteState): ProjectedAthleteCaution | null {
+  const riskDay = state.summary.highestRiskDay
+    ? state.days.find((d) => d.trainingDayId === state.summary.highestRiskDay)
+    : undefined;
+  const domain = riskDay?.decision.limitingFactor.domain ?? state.summary.mainLimitingFactor;
+  return domain ? (DOMAIN_CAUTION[domain] ?? null) : null;
 }
 
 /**
@@ -117,16 +139,7 @@ export function buildProjectionCaution(
   if (limiter && RECOVERY_CAUTION[limiter]) {
     return RECOVERY_CAUTION[limiter];
   }
-
-  const riskDay = state.summary.highestRiskDay
-    ? state.days.find((d) => d.trainingDayId === state.summary.highestRiskDay)
-    : undefined;
-  const domain = riskDay?.decision.limitingFactor.domain ?? state.summary.mainLimitingFactor;
-  if (domain && DOMAIN_CAUTION[domain]) {
-    return DOMAIN_CAUTION[domain];
-  }
-
-  return null;
+  return resolveDomainCaution(state);
 }
 
 export function buildProjectedAthleteViewModel(

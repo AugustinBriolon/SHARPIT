@@ -1,6 +1,7 @@
 'use client';
 
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
+import { isSet } from '@/lib/util/value';
 import { format } from 'date-fns';
 import { useCallback } from 'react';
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
@@ -8,6 +9,25 @@ import { snapshotHasDisplayableContent } from '@/core/athlete-state/snapshot';
 import { shouldRefreshSnapshotForPhaseDrift } from '@/lib/athlete-state/snapshot-phase';
 import { fetchAthleteSnapshot, refreshAthleteSnapshot } from '@/lib/query/athlete-snapshot-fetch';
 import { queryKeys } from '@/lib/query/keys';
+
+const RECOMMENDATION_REFRESH_INTERVAL_MS = 12_000;
+const PHASE_DRIFT_REFRESH_INTERVAL_MS = 60_000;
+
+function snapshotRefetchIntervalMs(snapshot: AthleteSnapshot | undefined): number | false {
+  const rec = snapshot?.freshness.domains.find((d) => d.domain === 'recommendations');
+  if (
+    rec &&
+    (rec.freshness === 'stale' ||
+      rec.freshness === 'awaiting_data' ||
+      rec.freshness === 'computing')
+  ) {
+    return RECOMMENDATION_REFRESH_INTERVAL_MS;
+  }
+  if (snapshot && shouldRefreshSnapshotForPhaseDrift(snapshot)) {
+    return PHASE_DRIFT_REFRESH_INTERVAL_MS;
+  }
+  return false;
+}
 
 export interface UseAthleteSnapshotResult {
   snapshot: AthleteSnapshot | null;
@@ -21,6 +41,13 @@ export interface UseAthleteSnapshotResult {
   refresh: () => Promise<AthleteSnapshot>;
 }
 
+function snapshotHookLoading(
+  isPending: boolean,
+  snapshot: AthleteSnapshot | null | undefined,
+): boolean {
+  return isPending && !isSet(snapshot);
+}
+
 export function useAthleteSnapshot(date: Date = new Date()): UseAthleteSnapshotResult {
   const trainingDayId = format(date, 'yyyy-MM-dd');
   const queryClient = useQueryClient();
@@ -30,26 +57,11 @@ export function useAthleteSnapshot(date: Date = new Date()): UseAthleteSnapshotR
     queryFn: () => fetchAthleteSnapshot(trainingDayId),
     placeholderData: keepPreviousData,
     staleTime: 5 * 60_000,
-    refetchInterval: (query) => {
-      const snap = query.state.data?.snapshot;
-      const rec = snap?.freshness.domains.find((d) => d.domain === 'recommendations');
-      if (
-        rec &&
-        (rec.freshness === 'stale' ||
-          rec.freshness === 'awaiting_data' ||
-          rec.freshness === 'computing')
-      ) {
-        return 12_000;
-      }
-      if (snap && shouldRefreshSnapshotForPhaseDrift(snap)) {
-        return 60_000;
-      }
-      return false;
-    },
+    refetchInterval: (query) => snapshotRefetchIntervalMs(query.state.data?.snapshot),
   });
 
   const snapshot = query.data?.snapshot ?? null;
-  const hasContent = snapshot != null && snapshotHasDisplayableContent(snapshot);
+  const hasContent = isSet(snapshot) && snapshotHasDisplayableContent(snapshot);
 
   const refresh = useCallback(async () => {
     const result = await refreshAthleteSnapshot(trainingDayId);
@@ -59,10 +71,10 @@ export function useAthleteSnapshot(date: Date = new Date()): UseAthleteSnapshotR
 
   return {
     snapshot,
-    loading: query.isPending && snapshot == null,
+    loading: snapshotHookLoading(query.isPending, snapshot),
     isPending: query.isPending,
     isFetching: query.isFetching,
-    isRefreshing: query.isFetching && snapshot != null,
+    isRefreshing: query.isFetching && isSet(snapshot),
     hasContent,
     error: query.error instanceof Error ? query.error.message : null,
     refresh,

@@ -131,12 +131,82 @@ function checksumDay(dayFeatures: DayFeatures): Record<string, string> {
 
 function categoriesFromDayFeatures(dayFeatures: DayFeatures): FeatureCategory[] {
   const cats: FeatureCategory[] = [];
-  if (dayFeatures.sessions.length > 0) cats.push('SESSION');
-  if (dayFeatures.load !== 'PENDING') cats.push('LOAD');
-  if (dayFeatures.recovery !== 'PENDING') cats.push('RECOVERY');
-  if (dayFeatures.body !== 'PENDING') cats.push('BODY');
-  if (dayFeatures.condition !== 'PENDING') cats.push('CONDITION');
+  if (dayFeatures.sessions.length > 0) {
+    cats.push('SESSION');
+  }
+  if (dayFeatures.load !== 'PENDING') {
+    cats.push('LOAD');
+  }
+  if (dayFeatures.recovery !== 'PENDING') {
+    cats.push('RECOVERY');
+  }
+  if (dayFeatures.body !== 'PENDING') {
+    cats.push('BODY');
+  }
+  if (dayFeatures.condition !== 'PENDING') {
+    cats.push('CONDITION');
+  }
   return cats;
+}
+
+async function replayTrainingDay(
+  engine: FeatureEngine,
+  obsRepo: ObservationRepository,
+  athleteId: string,
+  trainingDayId: string,
+): Promise<ReplayDayResult> {
+  const t0 = Date.now();
+  try {
+    const dayObservations = await obsRepo.find(athleteId, { trainingDayId });
+    for (const obs of dayObservations) {
+      await engine.onObservationIngested(obs);
+    }
+
+    const dayFeatures = await engine.computeDayFeatures(athleteId, trainingDayId);
+    return {
+      trainingDayId,
+      sessionCount: dayFeatures.sessions.length,
+      categories: categoriesFromDayFeatures(dayFeatures),
+      checksums: checksumDay(dayFeatures),
+      durationMs: Date.now() - t0,
+    };
+  } catch (err) {
+    return {
+      trainingDayId,
+      sessionCount: 0,
+      categories: [],
+      checksums: {},
+      durationMs: Date.now() - t0,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+function flattenReplayChecksums(dayResults: readonly ReplayDayResult[]): Record<string, string> {
+  const allChecksums: Record<string, string> = {};
+  for (const day of dayResults) {
+    for (const [key, checksum] of Object.entries(day.checksums)) {
+      allChecksums[`${day.trainingDayId}/${key}`] = checksum;
+    }
+  }
+  return allChecksums;
+}
+
+function buildReplaySummary(
+  days: readonly string[],
+  dayResults: readonly ReplayDayResult[],
+  totalDurationMs: number,
+) {
+  const succeeded = dayResults.filter((d) => !d.error);
+  const failed = dayResults.filter((d) => d.error);
+
+  return {
+    daysAttempted: days.length,
+    daysSucceeded: succeeded.length,
+    daysFailed: failed.length,
+    totalFeatureSets: succeeded.reduce((acc, d) => acc + d.categories.length, 0),
+    totalDurationMs,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -185,53 +255,10 @@ export class ReplayEngine {
     const replayStart = Date.now();
 
     for (const trainingDayId of days) {
-      const t0 = Date.now();
-      try {
-        // Step 1: Fire onObservationIngested for every observation on this day.
-        // For SESSION observations this computes and persists session features.
-        // For other types this invalidates the relevant day-level feature sets.
-        // This mirrors the production event flow.
-        const dayObservations = await this.obsRepo.find(athleteId, { trainingDayId });
-        for (const obs of dayObservations) {
-          await engine.onObservationIngested(obs);
-        }
-
-        // Step 2: Compute window features (LOAD, RECOVERY, BODY, CONDITION).
-        // Session features are already in the repository from Step 1.
-        const dayFeatures = await engine.computeDayFeatures(athleteId, trainingDayId);
-        const durationMs = Date.now() - t0;
-        const checksums = checksumDay(dayFeatures);
-        const categories = categoriesFromDayFeatures(dayFeatures);
-
-        dayResults.push({
-          trainingDayId,
-          sessionCount: dayFeatures.sessions.length,
-          categories,
-          checksums,
-          durationMs,
-        });
-      } catch (err) {
-        dayResults.push({
-          trainingDayId,
-          sessionCount: 0,
-          categories: [],
-          checksums: {},
-          durationMs: Date.now() - t0,
-          error: err instanceof Error ? err.message : String(err),
-        });
-      }
+      dayResults.push(await replayTrainingDay(engine, this.obsRepo, athleteId, trainingDayId));
     }
 
     const totalDurationMs = Date.now() - replayStart;
-    const succeeded = dayResults.filter((d) => !d.error);
-    const failed = dayResults.filter((d) => d.error);
-
-    const allChecksums: Record<string, string> = {};
-    for (const day of dayResults) {
-      for (const [key, checksum] of Object.entries(day.checksums)) {
-        allChecksums[`${day.trainingDayId}/${key}`] = checksum;
-      }
-    }
 
     return {
       athleteId,
@@ -239,14 +266,8 @@ export class ReplayEngine {
       toTrainingDayId: toDayId,
       mode,
       days: dayResults,
-      summary: {
-        daysAttempted: days.length,
-        daysSucceeded: succeeded.length,
-        daysFailed: failed.length,
-        totalFeatureSets: succeeded.reduce((acc, d) => acc + d.categories.length, 0),
-        totalDurationMs,
-      },
-      allChecksums,
+      summary: buildReplaySummary(days, dayResults, totalDurationMs),
+      allChecksums: flattenReplayChecksums(dayResults),
     };
   }
 

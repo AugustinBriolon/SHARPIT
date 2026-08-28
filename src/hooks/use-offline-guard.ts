@@ -27,7 +27,11 @@ export function guardedActionLabel(
   idleLabel: string,
   pending?: { active: boolean; label: string },
 ): string {
-  if (pending?.active) return pending.label;
-  if (offline) return offlineLabel;
+  if (pending?.active) {
+    return pending.label;
+  }
+  if (offline) {
+    return offlineLabel;
+  }
   return idleLabel;
 }

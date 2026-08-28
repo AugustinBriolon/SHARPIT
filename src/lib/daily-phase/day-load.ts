@@ -11,8 +11,14 @@ import type { TodayEffortLevel } from '@/lib/today/today-narrative-context';
  * need it, and the latter is imported by the former.
  */
 export function dayLoadLabel(effortLevel: TodayEffortLevel | null, multi: boolean): string {
-  if (multi) return 'Journée chargée';
-  if (effortLevel === 'high') return 'Journée exigeante';
-  if (effortLevel === 'moderate') return 'Journée active';
+  if (multi) {
+    return 'Journée chargée';
+  }
+  if (effortLevel === 'high') {
+    return 'Journée exigeante';
+  }
+  if (effortLevel === 'moderate') {
+    return 'Journée active';
+  }
   return 'Journée engagée';
 }

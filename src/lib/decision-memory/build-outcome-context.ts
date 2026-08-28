@@ -19,7 +19,9 @@ export async function buildOutcomeEvaluationContext(
   now: Date = new Date(),
 ): Promise<OutcomeEvaluationInput | null> {
   const session = await getPlannedSessionById(athleteId, plannedSessionId);
-  if (!session) return null;
+  if (!session) {
+    return null;
+  }
 
   const trainingDayId = computeTrainingDayId(session.date);
   const windowDayIds = RECOVERY_WINDOW_DAYS.map((offset) => addTrainingDays(trainingDayId, offset));

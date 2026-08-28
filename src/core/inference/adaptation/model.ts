@@ -43,10 +43,27 @@ import {
   computeAdaptationTrend,
 } from './scoring';
 import type { I18nItem } from '@/core/inference/shared/types';
+import { isSet } from '@/lib/util/value';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main entry point
-// ─────────────────────────────────────────────────────────────────────────────
+function resolveAdaptationConfidence(input: {
+  baseConfidence: number;
+  historyLength: number;
+  dataCompleteness: string;
+  overreachingWithoutAdaptationDetected: boolean;
+}): number {
+  const historyBonus = Math.min(input.historyLength / 28, 1.0) * 0.15;
+  let confidence = Math.min(input.baseConfidence + historyBonus, 1.0);
+  if (input.historyLength < 7) {
+    confidence = Math.min(confidence, 0.5);
+  }
+  if (input.dataCompleteness === 'INSUFFICIENT') {
+    confidence = 0.1;
+  }
+  if (input.overreachingWithoutAdaptationDetected) {
+    confidence = Math.min(confidence, 0.75);
+  }
+  return confidence;
+}
 
 export function runAdaptationModel(
   features: DayFeatures,
@@ -77,16 +94,22 @@ export function runAdaptationModel(
   );
 
   const historyLength = context.recentAdaptationHistory.length;
+  const overreachingWithoutAdaptationDetected = detectOverreachingWithoutAdaptation(
+    context.fatigueState,
+    dims.autonomicAdaptation,
+    dims.recoveryQuality,
+  );
 
-  // History maturity bonus: +15% at 28 records; see ADAPTATION_MODEL.md §7
-  const historyBonus = Math.min(historyLength / 28, 1.0) * 0.15;
-  let confidence = Math.min(baseConfidence + historyBonus, 1.0);
-  if (historyLength < 7) confidence = Math.min(confidence, 0.5);
-  if (dataCompleteness === 'INSUFFICIENT') confidence = 0.1;
+  const confidence = resolveAdaptationConfidence({
+    baseConfidence,
+    historyLength,
+    dataCompleteness,
+    overreachingWithoutAdaptationDetected,
+  });
 
-  // ── Step 3: Classify ──────────────────────────────────────────────────────
-  const adaptationStatus =
-    adaptationIndex === null ? 'INSUFFICIENT_DATA' : classifyAdaptationStatus(adaptationIndex);
+  const adaptationStatus = isSet(adaptationIndex)
+    ? classifyAdaptationStatus(adaptationIndex)
+    : 'INSUFFICIENT_DATA';
 
   const adaptationTrend = computeAdaptationTrend(context.recentAdaptationHistory);
 
@@ -96,16 +119,6 @@ export function runAdaptationModel(
     adaptationStatus,
     context.recentAdaptationHistory,
   );
-
-  const overreachingWithoutAdaptationDetected = detectOverreachingWithoutAdaptation(
-    context.fatigueState,
-    dims.autonomicAdaptation,
-    dims.recoveryQuality,
-  );
-
-  if (overreachingWithoutAdaptationDetected) {
-    confidence = Math.min(confidence, 0.75);
-  }
 
   // ── Step 5: Estimate adaptation peak ─────────────────────────────────────
   const estimatedAdaptationPeak = estimateAdaptationPeak(adaptationStatus, adaptationTrend);
@@ -133,13 +146,13 @@ export function runAdaptationModel(
   };
 
   // ── Step 8: Build decision ────────────────────────────────────────────────
-  const decision = buildDecision(
-    adaptationStatus,
-    context.fatigueState?.trainingCapacity ?? null,
+  const decision = buildDecision({
+    status: adaptationStatus,
+    trainingCapacity: context.fatigueState?.trainingCapacity ?? null,
     plateauRisk,
-    overreachingWithoutAdaptationDetected,
+    overreaching: overreachingWithoutAdaptationDetected,
     dims,
-  );
+  });
 
   // ── Step 9: Build recommendation ─────────────────────────────────────────
   const recommendation = buildRecommendation(decision, signals);
@@ -174,8 +187,12 @@ export function runAdaptationModel(
 // ─────────────────────────────────────────────────────────────────────────────
 
 function dimensionStatus(d: DimensionScore): string {
-  if (!d.available) return 'unavailable';
-  if (d.score !== null) return `score=${d.score}`;
+  if (!d.available) {
+    return 'unavailable';
+  }
+  if (isSet(d.score)) {
+    return `score=${d.score}`;
+  }
   return 'computed';
 }
 
@@ -193,12 +210,14 @@ function findLimitingFactor(dims: ScoredAdaptationDimensions): AdaptationState['
     { key: 'neuromuscularEfficiency' as const, score: dims.neuromuscularEfficiency.score },
     { key: 'autonomicAdaptation' as const, score: dims.autonomicAdaptation.score },
     { key: 'recoveryQuality' as const, score: dims.recoveryQuality.score },
-  ].filter((c) => c.score !== null) as Array<{
+  ].filter((c) => isSet(c.score)) as Array<{
     key: keyof ScoredAdaptationDimensions;
     score: number;
   }>;
 
-  if (candidates.length === 0) return null;
+  if (candidates.length === 0) {
+    return null;
+  }
   return candidates.reduce((min, c) => (c.score < min.score ? c : min)).key;
 }
 
@@ -207,9 +226,15 @@ function detectPlateauRisk(
   status: AdaptationState['adaptationStatus'],
   history: readonly number[],
 ): boolean {
-  if (history.length < 14) return false;
-  if (status !== 'PLATEAUING') return false;
-  if (!loadDim.available || (loadDim.score ?? 0) <= 60) return false;
+  if (history.length < 14) {
+    return false;
+  }
+  if (status !== 'PLATEAUING') {
+    return false;
+  }
+  if (!loadDim.available || (loadDim.score ?? 0) <= 60) {
+    return false;
+  }
 
   const last14 = history.slice(0, 14);
   const minVal = Math.min(...last14);
@@ -222,9 +247,13 @@ function detectOverreachingWithoutAdaptation(
   autonomic: DimensionScore,
   recoveryQ: DimensionScore,
 ): boolean {
-  if (fatigueState === null) return false;
+  if (!isSet(fatigueState)) {
+    return false;
+  }
   const { fatigueIndex } = fatigueState;
-  if (fatigueIndex === null || fatigueIndex <= 70) return false;
+  if (!isSet(fatigueIndex) || fatigueIndex <= 70) {
+    return false;
+  }
   return (autonomic.score ?? 100) < 40 && (recoveryQ.score ?? 100) < 40;
 }
 
@@ -238,14 +267,80 @@ function estimateAdaptationPeak(
   return null;
 }
 
-function buildDecision(
-  status: AdaptationState['adaptationStatus'],
-  trainingCapacity: import('@/core/digital-twin/types').TrainingCapacity | null,
-  plateauRisk: boolean,
-  overreaching: boolean,
-  dims: ScoredAdaptationDimensions,
-): AdaptationDecision {
-  if (status === 'INSUFFICIENT_DATA') {
+type BuildAdaptationDecisionInput = {
+  status: AdaptationState['adaptationStatus'];
+  trainingCapacity: import('@/core/digital-twin/types').TrainingCapacity | null;
+  plateauRisk: boolean;
+  overreaching: boolean;
+  dims: ScoredAdaptationDimensions;
+};
+
+function plateauDecision(dims: ScoredAdaptationDimensions): AdaptationDecision {
+  const rationale: I18nItem[] = [{ code: 'adaptation.rationale.stalled' }];
+  if (dims.loadProgression.available) {
+    rationale.push({ code: 'adaptation.rationale.loadProgressionLow' });
+  }
+  return { verdict: 'INCREASE_LOAD', loadMultiplier: 1.08, rationale };
+}
+
+function adaptationDecisionForStatus(
+  input: BuildAdaptationDecisionInput,
+): AdaptationDecision | null {
+  const { status, trainingCapacity, plateauRisk, dims } = input;
+
+  if (status === 'POSITIVELY_ADAPTING') {
+    return trainingCapacity === 'FULL'
+      ? {
+          verdict: 'SUSTAIN',
+          loadMultiplier: 1.0,
+          rationale: [{ code: 'adaptation.rationale.supercompensation' }],
+        }
+      : {
+          verdict: 'RECOVERY_PRIORITY',
+          loadMultiplier: 0.7,
+          rationale: [{ code: 'adaptation.rationale.restrictedCapacity' }],
+        };
+  }
+
+  if (status === 'MAINTAINING') {
+    return plateauRisk
+      ? {
+          verdict: 'INCREASE_LOAD',
+          loadMultiplier: 1.07,
+          rationale: [{ code: 'adaptation.rationale.plateauRisk' }],
+        }
+      : {
+          verdict: 'SUSTAIN',
+          loadMultiplier: 1.0,
+          rationale: [{ code: 'adaptation.rationale.stableLoad' }],
+        };
+  }
+
+  if (status === 'PLATEAUING') {
+    return plateauDecision(dims);
+  }
+
+  if (status === 'MALADAPTING') {
+    return {
+      verdict: 'REDUCE_LOAD',
+      loadMultiplier: 0.85,
+      rationale: [{ code: 'adaptation.rationale.maladaptation' }],
+    };
+  }
+
+  if (status === 'DETRAINING') {
+    return {
+      verdict: 'INCREASE_LOAD',
+      loadMultiplier: 1.08,
+      rationale: [{ code: 'adaptation.rationale.detraining' }],
+    };
+  }
+
+  return null;
+}
+
+function buildDecision(input: BuildAdaptationDecisionInput): AdaptationDecision {
+  if (input.status === 'INSUFFICIENT_DATA') {
     return {
       verdict: 'INSUFFICIENT_DATA',
       loadMultiplier: 1.0,
@@ -253,7 +348,7 @@ function buildDecision(
     };
   }
 
-  if (overreaching) {
+  if (input.overreaching) {
     return {
       verdict: 'REDUCE_LOAD',
       loadMultiplier: 0.8,
@@ -265,48 +360,16 @@ function buildDecision(
     };
   }
 
-  let verdict: AdaptationVerdict;
-  let loadMultiplier: number;
-  const rationale: I18nItem[] = [];
-
-  if (status === 'POSITIVELY_ADAPTING') {
-    if (trainingCapacity === 'FULL') {
-      verdict = 'SUSTAIN';
-      loadMultiplier = 1.0;
-      rationale.push({ code: 'adaptation.rationale.supercompensation' });
-    } else {
-      verdict = 'RECOVERY_PRIORITY';
-      loadMultiplier = 0.7;
-      rationale.push({ code: 'adaptation.rationale.restrictedCapacity' });
-    }
-  } else if (status === 'MAINTAINING') {
-    if (plateauRisk) {
-      verdict = 'INCREASE_LOAD';
-      loadMultiplier = 1.07;
-      rationale.push({ code: 'adaptation.rationale.plateauRisk' });
-    } else {
-      verdict = 'SUSTAIN';
-      loadMultiplier = 1.0;
-      rationale.push({ code: 'adaptation.rationale.stableLoad' });
-    }
-  } else if (status === 'PLATEAUING') {
-    verdict = 'INCREASE_LOAD';
-    loadMultiplier = 1.08;
-    rationale.push({ code: 'adaptation.rationale.stalled' });
-    if (dims.loadProgression.available) {
-      rationale.push({ code: 'adaptation.rationale.loadProgressionLow' });
-    }
-  } else if (status === 'MALADAPTING') {
-    verdict = 'REDUCE_LOAD';
-    loadMultiplier = 0.85;
-    rationale.push({ code: 'adaptation.rationale.maladaptation' });
-  } else {
-    verdict = 'INCREASE_LOAD';
-    loadMultiplier = 1.08;
-    rationale.push({ code: 'adaptation.rationale.detraining' });
+  const decision = adaptationDecisionForStatus(input);
+  if (decision) {
+    return { ...decision, rationale: decision.rationale.slice(0, 3) };
   }
 
-  return { verdict, loadMultiplier, rationale: rationale.slice(0, 3) };
+  return {
+    verdict: 'INCREASE_LOAD',
+    loadMultiplier: 1.08,
+    rationale: [{ code: 'adaptation.rationale.detraining' }],
+  };
 }
 
 function buildRecommendation(
@@ -314,7 +377,7 @@ function buildRecommendation(
   signals: AdaptationSignals,
 ): AdaptationRecommendation {
   const keyEvidence: I18nItem[] = [];
-  if (signals.adaptationIndex !== null) {
+  if (isSet(signals.adaptationIndex)) {
     keyEvidence.push({
       code: 'adaptation.evidence.index',
       params: { index: signals.adaptationIndex },

@@ -5,10 +5,34 @@ import type { NutritionDaySummary } from '@/core/presentation/nutrition-view-mod
 import { buildNutritionDayReading } from '@/lib/nutrition/day-reading';
 
 function confidencePctForDay(day: NutritionDaySummary | null): number | null {
-  if (!day) return null;
-  if (day.complete) return 100;
-  if (day.goalsProgress) return 90;
+  if (!day) {
+    return null;
+  }
+  if (day.complete) {
+    return 100;
+  }
+  if (day.goalsProgress) {
+    return 90;
+  }
   return 70;
+}
+
+function nutritionHeroCaption(
+  loading: boolean,
+  reading: ReturnType<typeof buildNutritionDayReading>,
+  day: NutritionDaySummary | null,
+  emptyHint?: string | null,
+) {
+  if (loading) {
+    return undefined;
+  }
+  if (reading.caption) {
+    return reading.caption;
+  }
+  if ((!day || day.meals.length === 0) && emptyHint) {
+    return emptyHint;
+  }
+  return undefined;
 }
 
 export function NutritionHero({
@@ -35,9 +59,7 @@ export function NutritionHero({
   emptyHint?: string | null;
 }) {
   const reading = buildNutritionDayReading(day, isToday);
-  const caption = loading
-    ? undefined
-    : (reading.caption ?? ((!day || day.meals.length === 0) && emptyHint ? emptyHint : undefined));
+  const caption = nutritionHeroCaption(loading, reading, day, emptyHint);
 
   return (
     <PhysioDrillDownHero

@@ -25,6 +25,7 @@ import {
   performanceRatioFromCalibratedIntensity,
 } from './calibration';
 import { getEnvironmentalStressor } from './stress';
+import { isSet } from '@/lib/util/value';
 
 function neutralMultiplier(method: string): MetricValue<number> {
   return {
@@ -83,7 +84,9 @@ function neutralImpact(stress: EnvironmentalStress): EnvironmentalImpact {
 }
 
 function intensityOf(stressor: EnvironmentalStressor | undefined): number | null {
-  if (!stressor?.intensity.available) return null;
+  if (!stressor?.intensity.available) {
+    return null;
+  }
   return stressor.intensity.value;
 }
 
@@ -91,20 +94,22 @@ function confidenceOf(stressor: EnvironmentalStressor | undefined): number {
   return stressor?.confidence ?? 0;
 }
 
-function calibratedMetric(
-  value: number,
-  method: string,
-  basedOn: readonly string[],
-  confidence: number,
-  quality: MetricValue<number>['quality'] = 'ESTIMATED',
-): MetricValue<number> {
+type CalibratedMetricInput = {
+  value: number;
+  method: string;
+  basedOn: readonly string[];
+  confidence: number;
+  quality?: MetricValue<number>['quality'];
+};
+
+function calibratedMetric(input: CalibratedMetricInput): MetricValue<number> {
   return {
     available: true,
-    value,
-    quality,
-    confidence,
-    method,
-    basedOn,
+    value: input.value,
+    quality: input.quality ?? 'ESTIMATED',
+    confidence: input.confidence,
+    method: input.method,
+    basedOn: input.basedOn,
   };
 }
 
@@ -113,20 +118,20 @@ function buildRecoveryAdjustment(stress: EnvironmentalStress): RecoveryAdjustmen
   const thermalIntensity = intensityOf(thermal);
   const curve = ENVIRONMENTAL_IMPACT_CURVES.recovery;
 
-  if (thermalIntensity == null) {
+  if (thermalIntensity === undefined || thermalIntensity === null) {
     return { demandMultiplier: neutralMultiplier('RECOVERY_NEUTRAL_NO_THERMAL') };
   }
 
   const effective = calibratedIntensity(thermalIntensity, curve.activation, curve.exponent);
 
   return {
-    demandMultiplier: calibratedMetric(
-      demandMultiplierFromCalibratedIntensity(effective, curve.maxScale),
-      'THERMAL_RECOVERY_DEMAND_CALIBRATED',
-      ['THERMAL'],
-      confidenceOf(thermal),
-      thermal!.intensity.quality,
-    ),
+    demandMultiplier: calibratedMetric({
+      value: demandMultiplierFromCalibratedIntensity(effective, curve.maxScale),
+      method: 'THERMAL_RECOVERY_DEMAND_CALIBRATED',
+      basedOn: ['THERMAL'],
+      confidence: confidenceOf(thermal),
+      quality: thermal!.intensity.quality,
+    }),
   };
 }
 
@@ -148,12 +153,12 @@ function buildFatigueAdjustment(stress: EnvironmentalStress): FatigueAdjustment 
   }
 
   return {
-    accumulationMultiplier: calibratedMetric(
-      demandMultiplierFromCalibratedIntensity(combined, curve.maxScale),
-      'COMPOSITE_FATIGUE_ACCUMULATION_CALIBRATED',
-      ['THERMAL', 'WIND'],
-      Math.max(confidenceOf(thermal), confidenceOf(wind)),
-    ),
+    accumulationMultiplier: calibratedMetric({
+      value: demandMultiplierFromCalibratedIntensity(combined, curve.maxScale),
+      method: 'COMPOSITE_FATIGUE_ACCUMULATION_CALIBRATED',
+      basedOn: ['THERMAL', 'WIND'],
+      confidence: Math.max(confidenceOf(thermal), confidenceOf(wind)),
+    }),
   };
 }
 
@@ -175,12 +180,12 @@ function buildPerformanceAdjustment(stress: EnvironmentalStress): PerformanceAdj
   }
 
   return {
-    expectedOutputRatio: calibratedMetric(
-      performanceRatioFromCalibratedIntensity(combined, curve.maxPenalty),
-      'COMPOSITE_PERFORMANCE_PENALTY_CALIBRATED',
-      ['THERMAL', 'WIND'],
-      Math.max(confidenceOf(thermal), confidenceOf(wind)),
-    ),
+    expectedOutputRatio: calibratedMetric({
+      value: performanceRatioFromCalibratedIntensity(combined, curve.maxPenalty),
+      method: 'COMPOSITE_PERFORMANCE_PENALTY_CALIBRATED',
+      basedOn: ['THERMAL', 'WIND'],
+      confidence: Math.max(confidenceOf(thermal), confidenceOf(wind)),
+    }),
   };
 }
 
@@ -189,7 +194,7 @@ function buildHydrationAdjustment(stress: EnvironmentalStress): HydrationAdjustm
   const intensity = intensityOf(hydration);
   const curve = ENVIRONMENTAL_IMPACT_CURVES.hydration;
 
-  if (intensity == null) {
+  if (intensity === undefined || intensity === null) {
     return { demandMultiplier: neutralMultiplier('HYDRATION_NEUTRAL') };
   }
 
@@ -200,13 +205,13 @@ function buildHydrationAdjustment(stress: EnvironmentalStress): HydrationAdjustm
   }
 
   return {
-    demandMultiplier: calibratedMetric(
-      demandMultiplierFromCalibratedIntensity(effective, curve.maxScale),
-      'HYDRATION_DEMAND_CALIBRATED',
-      ['HYDRATION'],
-      confidenceOf(hydration),
-      hydration!.intensity.quality,
-    ),
+    demandMultiplier: calibratedMetric({
+      value: demandMultiplierFromCalibratedIntensity(effective, curve.maxScale),
+      method: 'HYDRATION_DEMAND_CALIBRATED',
+      basedOn: ['HYDRATION'],
+      confidence: confidenceOf(hydration),
+      quality: hydration!.intensity.quality,
+    }),
   };
 }
 
@@ -215,32 +220,36 @@ function buildHeatAcclimationDemand(stress: EnvironmentalStress): HeatAcclimatio
   const intensity = intensityOf(thermal);
   const curve = ENVIRONMENTAL_IMPACT_CURVES.heatAcclimation;
 
-  if (intensity == null) {
+  if (intensity === undefined || intensity === null) {
     return { exposureBenefit: zeroBenefit('HEAT_ACCLIMATION_NEUTRAL') };
   }
 
   const effective = calibratedIntensity(intensity, curve.activation, curve.exponent);
 
   return {
-    exposureBenefit: calibratedMetric(
-      benefitFromCalibratedIntensity(effective, curve.maxBenefit),
-      'THERMAL_ACCLIMATION_BENEFIT_CALIBRATED',
-      ['THERMAL'],
-      confidenceOf(thermal),
-    ),
+    exposureBenefit: calibratedMetric({
+      value: benefitFromCalibratedIntensity(effective, curve.maxBenefit),
+      method: 'THERMAL_ACCLIMATION_BENEFIT_CALIBRATED',
+      basedOn: ['THERMAL'],
+      confidence: confidenceOf(thermal),
+    }),
   };
 }
 
 function aggregateImpactConfidence(stress: EnvironmentalStress): number {
   const available = stress.stressors.filter((s) => s.intensity.available);
-  if (available.length === 0) return 0;
+  if (available.length === 0) {
+    return 0;
+  }
   return (
     Math.round((available.reduce((sum, s) => sum + s.confidence, 0) / available.length) * 100) / 100
   );
 }
 
 function compositeIntensityValue(stress: EnvironmentalStress): number | null {
-  if (!stress.compositeIntensity.available) return null;
+  if (!stress.compositeIntensity.available) {
+    return null;
+  }
   return stress.compositeIntensity.value;
 }
 
@@ -249,7 +258,7 @@ export function buildEnvironmentalImpact(input: {
 }): EnvironmentalImpact {
   const { stress } = input;
 
-  if (stress.suppressionReason != null) {
+  if (isSet(stress.suppressionReason)) {
     return unavailableImpact();
   }
 

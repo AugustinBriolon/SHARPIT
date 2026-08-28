@@ -196,7 +196,9 @@ describe('recovery steps mislabelled as work', () => {
     const group = prescription?.blocks[1];
 
     expect(group?.kind).toBe('repeat');
-    if (group?.kind !== 'repeat') return;
+    if (group?.kind !== 'repeat') {
+      return;
+    }
     expect(group.steps.map((step) => step.kind)).toEqual(['interval', 'recovery']);
     // A recovery jog carries no policed band — the watch would alert on nothing.
     expect(group.steps[1].target).toEqual({ metric: 'none' });
@@ -234,7 +236,9 @@ describe('recovery steps mislabelled as work', () => {
     const group = prescription?.blocks[0];
 
     expect(group?.kind).toBe('repeat');
-    if (group?.kind !== 'repeat') return;
+    if (group?.kind !== 'repeat') {
+      return;
+    }
     expect(group.steps.map((step) => step.kind)).toEqual(['interval', 'rest']);
   });
 

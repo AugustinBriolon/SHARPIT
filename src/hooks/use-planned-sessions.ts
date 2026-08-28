@@ -118,9 +118,13 @@ function patchTodayPresentationLines(
   fn: (lines: DaySummaryLine[]) => DaySummaryLine[],
 ) {
   qc.setQueriesData<TodayViewModel>({ queryKey: ['presentation', 'today'] }, (prev) => {
-    if (!prev) return prev;
+    if (!prev) {
+      return prev;
+    }
     const patched = fn(prev.actionRow.daySummaryLines);
-    if (patched === prev.actionRow.daySummaryLines) return prev;
+    if (patched === prev.actionRow.daySummaryLines) {
+      return prev;
+    }
     return { ...prev, actionRow: { ...prev.actionRow, daySummaryLines: patched } };
   });
 }
@@ -131,6 +135,95 @@ export type PlannedSessionUpdateVars = {
   data: Partial<PlannedSessionPayload>;
   silent?: boolean;
 };
+
+function isBrowserDemoMode(): boolean {
+  return typeof document !== 'undefined' && hasDemoCookieValue(document.cookie);
+}
+
+function resolveSessionActivityId(session: ClientPlannedSession | undefined): string | null {
+  if (!session) {
+    return null;
+  }
+  return session.activityId ?? session.activity?.id ?? null;
+}
+
+async function analyzePlannedSessionDemo(
+  queryClient: QueryClient,
+  key: readonly unknown[],
+  id: string,
+): Promise<ClientPlannedSession> {
+  const sessions = queryClient.getQueryData<ClientPlannedSession[]>(key) ?? [];
+  const session = sessions.find((item) => item.id === id);
+  const activityId = resolveSessionActivityId(session);
+  if (!activityId) {
+    throw new Error('Associe une activité avant d’analyser.');
+  }
+  applyDemoSessionLinkReading(queryClient, id, activityId);
+  const updated = queryClient.getQueryData<ClientPlannedSession[]>(key)?.find((s) => s.id === id);
+  if (!updated) {
+    throw new Error('Séance planifiée introuvable');
+  }
+  return hydratePlannedSession(updated);
+}
+
+type LinkSuccessContext = {
+  queryClient: QueryClient;
+  key: readonly unknown[];
+  data: ClientPlannedSession;
+  variables: { id: string; activityId: string | null };
+  previousSessions: ClientPlannedSession[] | undefined;
+};
+
+function invalidateNonDemoTodayQueries(queryClient: QueryClient): void {
+  void queryClient.invalidateQueries({ queryKey: ['presentation', 'today'] });
+  void queryClient.invalidateQueries({ queryKey: ['athlete-snapshot'] });
+  void queryClient.invalidateQueries({ queryKey: ['today'] });
+}
+
+function notifyPlannedSessionLinkOutcome(
+  ctx: LinkSuccessContext,
+  previousActivityId: string | null,
+): void {
+  const demoMode = isBrowserDemoMode();
+  if (ctx.variables.activityId) {
+    if (demoMode) {
+      scheduleDemoSessionLinkReading(ctx.queryClient, ctx.variables.id, ctx.variables.activityId);
+    }
+    toast.success('Séance liée');
+    return;
+  }
+  if (demoMode && previousActivityId) {
+    cancelDemoSessionLinkReadingSchedule(ctx.variables.id, previousActivityId);
+  }
+  toast.success('Séance déliée');
+}
+
+function handlePlannedSessionLinkSuccess(ctx: LinkSuccessContext): void {
+  const hydrated = hydratePlannedSession(ctx.data);
+  ctx.queryClient.setQueryData<ClientPlannedSession[]>(ctx.key, (prev) =>
+    prev ? prev.map((session) => (session.id === ctx.variables.id ? hydrated : session)) : prev,
+  );
+
+  const previousActivityId = resolvePreviousLinkedActivityId(
+    ctx.previousSessions?.find((session) => session.id === ctx.variables.id),
+  );
+  ctx.queryClient.setQueryData<ClientActivity[]>(queryKeys.activities, (prev) => {
+    if (!prev) {
+      return prev;
+    }
+    return applyActivityPlannedSessionLinkOptimistic(
+      prev,
+      [hydrated],
+      { id: ctx.variables.id, activityId: ctx.variables.activityId },
+      previousActivityId,
+    );
+  });
+
+  if (!isBrowserDemoMode()) {
+    invalidateNonDemoTodayQueries(ctx.queryClient);
+  }
+  notifyPlannedSessionLinkOutcome(ctx, previousActivityId);
+}
 
 export function usePlannedSessionMutations() {
   const queryClient = useQueryClient();
@@ -152,7 +245,9 @@ export function usePlannedSessionMutations() {
   /** Batch create — one optimistic patch + one toast (coach « Remplir ma semaine »). */
   const createMany = useMutation({
     mutationFn: async (payloads: PlannedSessionPayload[]) => {
-      if (payloads.length === 0) return [] as ClientPlannedSession[];
+      if (payloads.length === 0) {
+        return [] as ClientPlannedSession[];
+      }
       return Promise.all(
         payloads.map((payload) => sendJson('/api/planned-sessions', 'POST', payload)),
       ) as Promise<ClientPlannedSession[]>;
@@ -286,32 +381,20 @@ export function usePlannedSessionMutations() {
 
   const analyze = useMutation({
     mutationFn: async (id: string) => {
-      const demoMode = typeof document !== 'undefined' && hasDemoCookieValue(document.cookie);
-      if (demoMode) {
-        const sessions = queryClient.getQueryData<ClientPlannedSession[]>(key) ?? [];
-        const session = sessions.find((item) => item.id === id);
-        const activityId = session?.activityId ?? session?.activity?.id ?? null;
-        if (!activityId) throw new Error('Associe une activité avant d’analyser.');
-        applyDemoSessionLinkReading(queryClient, id, activityId);
-        const updated = queryClient
-          .getQueryData<ClientPlannedSession[]>(key)
-          ?.find((s) => s.id === id);
-        if (!updated) throw new Error('Séance planifiée introuvable');
-        return hydratePlannedSession(updated);
+      if (isBrowserDemoMode()) {
+        return analyzePlannedSessionDemo(queryClient, key, id);
       }
-
       return sendJson(`/api/planned-sessions/${id}/analyze`, 'POST');
     },
     onSuccess: (data, id) => {
-      const demoMode = typeof document !== 'undefined' && hasDemoCookieValue(document.cookie);
-      if (demoMode) {
-        const hydrated = hydratePlannedSession(data as ClientPlannedSession);
-        queryClient.setQueryData<ClientPlannedSession[]>(key, (prev) =>
-          prev ? prev.map((session) => (session.id === id ? hydrated : session)) : prev,
-        );
+      if (!isBrowserDemoMode()) {
+        invalidate();
         return;
       }
-      invalidate();
+      const hydrated = hydratePlannedSession(data as ClientPlannedSession);
+      queryClient.setQueryData<ClientPlannedSession[]>(key, (prev) =>
+        prev ? prev.map((session) => (session.id === id ? hydrated : session)) : prev,
+      );
     },
     onError: (err: unknown) =>
       toast.error("L'analyse a échoué.", {
@@ -327,7 +410,9 @@ export function usePlannedSessionMutations() {
         const activities = queryClient.getQueryData<ClientActivity[]>(queryKeys.activities);
         const patched = applyPlannedSessionLinkOptimistic(sessions, { id, activityId }, activities);
         const session = patched.find((item) => item.id === id);
-        if (!session) throw new Error('Séance planifiée introuvable');
+        if (!session) {
+          throw new Error('Séance planifiée introuvable');
+        }
         if (activityId) {
           markDemoSessionLinked(id, activityId, {
             title: session.title,
@@ -401,43 +486,13 @@ export function usePlannedSessionMutations() {
       });
     },
     onSuccess: (data, variables, context) => {
-      const hydrated = hydratePlannedSession(data);
-      queryClient.setQueryData<ClientPlannedSession[]>(key, (prev) =>
-        prev ? prev.map((session) => (session.id === variables.id ? hydrated : session)) : prev,
-      );
-
-      const previousActivityId = resolvePreviousLinkedActivityId(
-        context?.previousSessions?.find((session) => session.id === variables.id),
-      );
-      queryClient.setQueryData<ClientActivity[]>(queryKeys.activities, (prev) => {
-        if (!prev) return prev;
-        return applyActivityPlannedSessionLinkOptimistic(
-          prev,
-          [hydrated],
-          { id: variables.id, activityId: variables.activityId },
-          previousActivityId,
-        );
+      handlePlannedSessionLinkSuccess({
+        queryClient,
+        key,
+        data,
+        variables,
+        previousSessions: context?.previousSessions,
       });
-
-      // Today / twin day summary is server-built — patch is not local; invalidate derived VMs.
-      const demoMode = typeof document !== 'undefined' && hasDemoCookieValue(document.cookie);
-      if (!demoMode) {
-        void queryClient.invalidateQueries({ queryKey: ['presentation', 'today'] });
-        void queryClient.invalidateQueries({ queryKey: ['athlete-snapshot'] });
-        void queryClient.invalidateQueries({ queryKey: ['today'] });
-      }
-
-      if (variables.activityId) {
-        if (demoMode) {
-          scheduleDemoSessionLinkReading(queryClient, variables.id, variables.activityId);
-        }
-        toast.success('Séance liée');
-      } else {
-        if (demoMode && previousActivityId) {
-          cancelDemoSessionLinkReadingSchedule(variables.id, previousActivityId);
-        }
-        toast.success('Séance déliée');
-      }
     },
     onSettled: (_data, _error, variables) => {
       // Hydrated link response is authoritative — avoid refetch flicker on plannedSessions.
@@ -469,7 +524,9 @@ export function useBrickAnalysis(brickGroupId: string | null | undefined) {
       const res = await fetch(
         `/api/planned-sessions/brick/analyze?groupId=${encodeURIComponent(brickGroupId!)}`,
       );
-      if (!res.ok) throw new Error("Impossible de charger l'analyse du brick.");
+      if (!res.ok) {
+        throw new Error("Impossible de charger l'analyse du brick.");
+      }
       const data = (await res.json()) as { analysis: ClientBrickAnalysis | null };
       return data.analysis ?? null;
     },

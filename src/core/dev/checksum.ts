@@ -14,6 +14,7 @@
  */
 
 import { createHash } from 'node:crypto';
+import { isSet } from '@/lib/util/value';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Key sorting for deterministic serialization
@@ -28,7 +29,7 @@ export function sortObjectKeys(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map(sortObjectKeys);
   }
-  if (value !== null && typeof value === 'object') {
+  if (isSet(value) && typeof value === 'object') {
     return Object.fromEntries(
       Object.entries(value as Record<string, unknown>)
         .sort(([a], [b]) => a.localeCompare(b))

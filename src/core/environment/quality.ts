@@ -6,6 +6,7 @@
  */
 
 import type { EnvironmentalEvidenceQuality, FieldQuality } from './types';
+import { isSet } from '@/lib/util/value';
 import { qualityRank } from './record';
 
 const QUALITY_CONFIDENCE: Record<Exclude<EnvironmentalEvidenceQuality, 'MISSING'>, number> = {
@@ -66,7 +67,7 @@ export function weatherFieldQuality(
 ): Partial<Record<string, FieldQuality>> {
   const result: Partial<Record<string, FieldQuality>> = {};
   for (const [field, value] of Object.entries(measurements)) {
-    result[field] = value != null ? fieldQualityExact(providerId) : fieldQualityMissing();
+    result[field] = isSet(value) ? fieldQualityExact(providerId) : fieldQualityMissing();
   }
   return result;
 }
@@ -75,11 +76,15 @@ export function aggregateFieldQuality(
   fieldQuality: Partial<Record<string, FieldQuality>>,
 ): EnvironmentalEvidenceQuality {
   const qualities = Object.values(fieldQuality).map((f) => f?.quality ?? 'MISSING');
-  if (qualities.length === 0 || qualities.every((q) => q === 'MISSING')) return 'MISSING';
+  if (qualities.length === 0 || qualities.every((q) => q === 'MISSING')) {
+    return 'MISSING';
+  }
 
   let worst: EnvironmentalEvidenceQuality = 'EXACT';
   for (const q of qualities) {
-    if (qualityRank(q) < qualityRank(worst)) worst = q;
+    if (qualityRank(q) < qualityRank(worst)) {
+      worst = q;
+    }
   }
   return worst;
 }
@@ -87,14 +92,18 @@ export function aggregateFieldQuality(
 export function confidenceFromFieldQualities(
   fieldQuality: Partial<Record<string, FieldQuality>>,
 ): number {
-  const values = Object.values(fieldQuality).filter((f): f is FieldQuality => f != null);
-  if (values.length === 0) return 0;
+  const values = Object.values(fieldQuality).filter((f): f is FieldQuality => isSet(f));
+  if (values.length === 0) {
+    return 0;
+  }
   const avg = values.reduce((sum, f) => sum + f.confidence, 0) / values.length;
   return Math.round(avg * 100) / 100;
 }
 
 export function confidenceFromRecords(records: readonly { confidence: number }[]): number {
-  if (records.length === 0) return 0;
+  if (records.length === 0) {
+    return 0;
+  }
   const avg = records.reduce((sum, r) => sum + r.confidence, 0) / records.length;
   return Math.round(avg * 100) / 100;
 }

@@ -2,17 +2,12 @@
 
 import { Area, AreaChart, ReferenceDot, ReferenceLine, XAxis, YAxis } from 'recharts';
 import { ResponsiveChartFrame } from '@/components/ui/charts/responsive-chart-frame';
-import {
-  CHART_GRID_COLOR,
-  CHART_INK_GRID_COLOR,
-  CHART_INK_STROKE,
-  CHART_PRIMARY_STROKE,
-  CHART_TICK_COLOR,
-} from '@/lib/theme/chart-theme';
+import { CHART_PRIMARY_STROKE } from '@/lib/theme/chart-theme';
 import {
   formatRelativeGain,
   type HikeTripElevationProfile as Profile,
 } from '@/lib/activity/hike/hike-trip-elevation';
+import { resolveHikeElevationChartTheme } from '@/components/training/trip/hike-trip-elevation-chart-theme';
 import { cn } from '@/lib/utils';
 
 /**
@@ -33,12 +28,8 @@ export function HikeTripElevationProfile({
   className?: string;
 }) {
   const onInk = surface === 'ink';
-  // Recharts splits tick labels on whitespace to fit the axis width — a
-  // non-breaking space keeps “+2273 m” on one line.
+  const theme = resolveHikeElevationChartTheme(onInk);
   const formatTick = (value: number) => formatRelativeGain(value).replace(' ', ' ');
-  const stroke = onInk ? CHART_INK_STROKE : CHART_PRIMARY_STROKE;
-  const gridColor = onInk ? CHART_INK_GRID_COLOR : CHART_GRID_COLOR;
-  const tickColor = onInk ? 'currentColor' : CHART_TICK_COLOR;
 
   return (
     <div className={cn('min-w-0', onInk ? 'text-ink-surface-foreground/60' : null, className)}>
@@ -56,26 +47,26 @@ export function HikeTripElevationProfile({
             dataKey="gain"
             domain={[profile.minGain, profile.maxGain]}
             interval={0}
-            tick={{ fill: tickColor, fontFamily: 'var(--font-data)', fontSize: 10 }}
+            tick={{ fill: theme.tickColor, fontFamily: 'var(--font-data)', fontSize: 10 }}
             tickFormatter={formatTick}
             tickLine={false}
             ticks={[profile.minGain, profile.maxGain]}
             width={60}
           />
           {profile.stepBoundaries.map((x) => (
-            <ReferenceLine key={x} stroke={gridColor} strokeDasharray="3 3" x={x} />
+            <ReferenceLine key={x} stroke={theme.gridColor} strokeDasharray="3 3" x={x} />
           ))}
           <Area
             dataKey="gain"
-            fill={stroke}
-            fillOpacity={onInk ? 0.18 : 0.12}
+            fill={theme.stroke}
+            fillOpacity={theme.fillOpacity}
             isAnimationActive={false}
-            stroke={stroke}
+            stroke={theme.stroke}
             strokeWidth={2}
             type="linear"
           />
           <ReferenceDot
-            fill={stroke}
+            fill={theme.stroke}
             r={3.5}
             stroke="none"
             x={profile.peakX}

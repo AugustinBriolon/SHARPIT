@@ -40,7 +40,9 @@ export function parseCoachProgressChunk<TResult, TPartial>(
 
   for (const frame of frames) {
     const line = frame.split('\n').find((l) => l.startsWith('data: '));
-    if (!line) continue;
+    if (!line) {
+      continue;
+    }
     try {
       events.push(JSON.parse(line.slice(6)) as CoachProgressEvent<TResult, TPartial>);
     } catch {
@@ -65,6 +67,28 @@ export const COACH_PROGRESS_HEADERS = {
  * Rejects on an `error` event, and on a stream that ends without either — a
  * truncated generation must surface as a failure, not as a silent empty result.
  */
+function dispatchCoachProgressEvent<TResult, TPartial>(
+  event: ReturnType<typeof parseCoachProgressChunk<TResult, TPartial>>['events'][number],
+  handlers: {
+    onReasoning?: (delta: string) => void;
+    onPartial?: (value: TPartial) => void;
+  },
+  result: { value: TResult } | null,
+): { value: TResult } | null {
+  switch (event.type) {
+    case 'reasoning':
+      handlers.onReasoning?.(event.delta);
+      return result;
+    case 'partial':
+      handlers.onPartial?.(event.value);
+      return result;
+    case 'result':
+      return { value: event.value };
+    case 'error':
+      throw new Error(event.message);
+  }
+}
+
 export async function consumeCoachProgressStream<TResult, TPartial>(
   response: Response,
   handlers: {
@@ -72,7 +96,9 @@ export async function consumeCoachProgressStream<TResult, TPartial>(
     onPartial?: (value: TPartial) => void;
   } = {},
 ): Promise<TResult> {
-  if (!response.body) throw new Error('Réponse du coach vide.');
+  if (!response.body) {
+    throw new Error('Réponse du coach vide.');
+  }
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -81,29 +107,21 @@ export async function consumeCoachProgressStream<TResult, TPartial>(
 
   while (true) {
     const { done, value } = await reader.read();
-    if (done) break;
+    if (done) {
+      break;
+    }
     buffer += decoder.decode(value, { stream: true });
 
     const parsed = parseCoachProgressChunk<TResult, TPartial>(buffer);
     buffer = parsed.rest;
 
     for (const event of parsed.events) {
-      switch (event.type) {
-        case 'reasoning':
-          handlers.onReasoning?.(event.delta);
-          break;
-        case 'partial':
-          handlers.onPartial?.(event.value);
-          break;
-        case 'result':
-          result = { value: event.value };
-          break;
-        case 'error':
-          throw new Error(event.message);
-      }
+      result = dispatchCoachProgressEvent(event, handlers, result);
     }
   }
 
-  if (!result) throw new Error('La génération a été interrompue. Réessaie dans un instant.');
+  if (!result) {
+    throw new Error('La génération a été interrompue. Réessaie dans un instant.');
+  }
   return result.value;
 }

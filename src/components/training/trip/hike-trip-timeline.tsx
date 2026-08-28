@@ -15,23 +15,29 @@ import { cn } from '@/lib/utils';
 
 export type HikeTripMember = ClientHikeTrip['activities'][number];
 
+function appendPositiveDistance(meta: string[], distanceM: number | null | undefined) {
+  if ((distanceM ?? 0) > 0) {
+    meta.push(formatDistance(distanceM!));
+  }
+}
+
+function appendPositiveElevation(meta: string[], elevationM: number | null | undefined) {
+  if ((elevationM ?? 0) > 0) {
+    meta.push(`D+ ${Math.round(elevationM!)} m`);
+  }
+}
+
+function appendPositiveDuration(meta: string[], duration: number | null | undefined) {
+  if ((duration ?? 0) > 0) {
+    meta.push(formatDuration(duration!));
+  }
+}
+
 export function buildHikeTripMemberMeta(member: HikeTripMember): string[] {
   const meta: string[] = [formatDate(member.date)];
-
-  const distanceM = member.hikeMetrics?.distanceM;
-  if (distanceM != null && distanceM > 0) {
-    meta.push(formatDistance(distanceM));
-  }
-
-  const elevationM = member.hikeMetrics?.elevationM;
-  if (elevationM != null && elevationM > 0) {
-    meta.push(`D+ ${Math.round(elevationM)} m`);
-  }
-
-  if (member.duration != null && member.duration > 0) {
-    meta.push(formatDuration(member.duration));
-  }
-
+  appendPositiveDistance(meta, member.hikeMetrics?.distanceM);
+  appendPositiveElevation(meta, member.hikeMetrics?.elevationM);
+  appendPositiveDuration(meta, member.duration);
   return meta;
 }
 
@@ -57,7 +63,9 @@ export function HikeTripTimelineList({
   members: HikeTripMember[];
   renderTrailing?: (member: HikeTripMember) => ReactNode;
 }) {
-  if (members.length === 0) return null;
+  if (members.length === 0) {
+    return null;
+  }
 
   return (
     <ol
@@ -138,7 +146,9 @@ export function RemoveMemberButton({
       onClick={(event) => {
         event.preventDefault();
         event.stopPropagation();
-        if (!disabled) onRemove();
+        if (!disabled) {
+          onRemove();
+        }
       }}
     >
       <Link2Off className="size-3.5" aria-hidden />
@@ -174,7 +184,9 @@ export function HikeTripTimeline({
       description: `« ${member.title?.trim() || 'Randonnée'} » ne fera plus partie du séjour.`,
       confirmLabel: 'Retirer',
     });
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     patch.mutate(
       { id: tripId, data: { removeActivityIds: [member.id] } },

@@ -36,7 +36,9 @@ export function SleepPhasesSection({
     </DrillDownSectionCard>
   );
 
-  if (!sidePanel) return structure;
+  if (!sidePanel) {
+    return structure;
+  }
 
   return (
     <div className={cn('grid gap-4', 'lg:grid-cols-2 lg:items-stretch')}>

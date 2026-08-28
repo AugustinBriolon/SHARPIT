@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/toast';
 
 async function clearBrowserCaches() {
-  if (typeof window === 'undefined' || typeof caches === 'undefined') return;
+  if (typeof window === 'undefined' || typeof caches === 'undefined') {
+    return;
+  }
   const keys = await caches.keys();
   await Promise.all(keys.map((key) => caches.delete(key)));
 }

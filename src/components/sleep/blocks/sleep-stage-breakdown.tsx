@@ -40,33 +40,37 @@ type StageRow = {
   percent: number;
 };
 
-function buildStageRows(
-  deepMin: number | null,
-  remMin: number | null,
-  lightMin: number | null,
-  awakeMin: number | null,
-  totalMin: number,
-): StageRow[] {
+type StageMinutes = {
+  deepMin: number | null;
+  remMin: number | null;
+  lightMin: number | null;
+  awakeMin: number | null;
+  totalMin: number;
+};
+
+function buildStageRows(minutes: StageMinutes): StageRow[] {
   const entries: { key: StageKey; minutes: number | null }[] = [
-    { key: 'deep', minutes: deepMin },
-    { key: 'rem', minutes: remMin },
-    { key: 'light', minutes: lightMin },
-    { key: 'awake', minutes: awakeMin },
+    { key: 'deep', minutes: minutes.deepMin },
+    { key: 'rem', minutes: minutes.remMin },
+    { key: 'light', minutes: minutes.lightMin },
+    { key: 'awake', minutes: minutes.awakeMin },
   ];
 
   return entries
-    .filter((e) => e.minutes != null && e.minutes > 0)
+    .filter((e) => e.minutes !== null && e.minutes > 0)
     .map((e) => ({
       key: e.key,
       minutes: e.minutes!,
-      percent: Math.round((e.minutes! / totalMin) * 100),
+      percent: Math.round((e.minutes! / minutes.totalMin) * 100),
     }));
 }
 
 /** La couleur ne signale que l'écart — une phase dans la norme reste neutre. */
 function stageStatus(key: StageKey, percent: number): { label: string; className: string } | null {
   const style = STAGE_STYLES[key];
-  if (style.low == null || style.high == null) return null;
+  if (style.low === null || style.high === null) {
+    return null;
+  }
   if (percent < style.low) {
     return { label: 'sous la norme', className: 'text-signal-caution' };
   }
@@ -89,7 +93,7 @@ export function SleepStageBreakdown({
   awakeMin: number | null;
   totalMin: number;
 }) {
-  const rows = buildStageRows(deepMin, remMin, lightMin, awakeMin, totalMin);
+  const rows = buildStageRows({ deepMin, remMin, lightMin, awakeMin, totalMin });
   if (rows.length === 0) {
     return (
       <p className="text-muted-foreground text-sm">

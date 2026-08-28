@@ -3,6 +3,7 @@
  */
 
 import type { EnvironmentalProviderAdapter, AdapterMeta } from '@/core/environment/provider';
+import { isSet } from '@/lib/util/value';
 import type { ExposureSetting, WeatherMeasurements } from '@/core/environment/types';
 import { weatherFieldQuality } from '@/core/environment/quality';
 import type { ObservationRecordDraft } from '@/core/environment/record';
@@ -18,16 +19,20 @@ export type ManualEnvironmentalPayload = {
 };
 
 function isManualPayload(payload: unknown): payload is ManualEnvironmentalPayload {
-  if (!payload || typeof payload !== 'object') return false;
+  if (!payload || typeof payload !== 'object') {
+    return false;
+  }
   const p = payload as ManualEnvironmentalPayload;
-  return p.observedAt != null && typeof p.measurements === 'object';
+  return isSet(p.observedAt) && typeof p.measurements === 'object';
 }
 
 export const manualEnvironmentalAdapter: EnvironmentalProviderAdapter = {
   providerId: 'manual',
 
   adapt(payload: unknown, meta: AdapterMeta): ObservationRecordDraft[] {
-    if (!isManualPayload(payload)) return [];
+    if (!isManualPayload(payload)) {
+      return [];
+    }
 
     const observedAt =
       payload.observedAt instanceof Date ? payload.observedAt : new Date(payload.observedAt);

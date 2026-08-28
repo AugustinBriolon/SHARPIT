@@ -3,6 +3,7 @@ import type {
   EndurancePrescription,
 } from '@/lib/planned-session/endurance/endurance-prescription';
 import type { StrengthPrescription } from '@/lib/planned-session/strength/strength-prescription';
+import { isSet } from '@/lib/util/value';
 
 /**
  * Easing the workout itself, not just the figures above it.
@@ -40,18 +41,24 @@ function easeBlock(block: EnduranceBlock): EnduranceBlock {
   }
 
   const { step } = block;
-  if (!isReducible(step.kind)) return block;
+  if (!isReducible(step.kind)) {
+    return block;
+  }
 
   if (step.duration.type === 'time') {
     // To the nearest 30 s — nobody follows a 337-second interval.
     const seconds = Math.max(30, Math.round((step.duration.seconds * EASE_FACTOR) / 30) * 30);
-    if (seconds === step.duration.seconds) return block;
+    if (seconds === step.duration.seconds) {
+      return block;
+    }
     return { ...block, step: { ...step, duration: { type: 'time', seconds } } };
   }
 
   if (step.duration.type === 'distance') {
     const meters = Math.max(25, Math.round((step.duration.meters * EASE_FACTOR) / 25) * 25);
-    if (meters === step.duration.meters) return block;
+    if (meters === step.duration.meters) {
+      return block;
+    }
     return { ...block, step: { ...step, duration: { type: 'distance', meters } } };
   }
 
@@ -93,11 +100,11 @@ function describeDuration(
     ? never
     : { type: string; seconds?: number; meters?: number },
 ): string {
-  if (duration.type === 'time' && duration.seconds != null) {
+  if (duration.type === 'time' && isSet(duration.seconds)) {
     const minutes = Math.round(duration.seconds / 60);
     return `${minutes} min`;
   }
-  if (duration.type === 'distance' && duration.meters != null) {
+  if (duration.type === 'distance' && isSet(duration.meters)) {
     return duration.meters >= 1000
       ? `${(duration.meters / 1000).toFixed(1).replace('.', ',')} km`
       : `${duration.meters} m`;
@@ -118,14 +125,18 @@ export function describeEnduranceEase(
   const lines: { before: string; after: string }[] = [];
   before.blocks.forEach((block, index) => {
     const next = after.blocks[index];
-    if (!next) return;
+    if (!next) {
+      return;
+    }
 
     /* Compared by what they say, not by identity: the two prescriptions are
        parsed from JSON separately, so an untouched block is an equal object and
        never the same one. Reference equality listed every line as changed. */
     const from = describeBlock(block);
     const to = describeBlock(next);
-    if (from === to) return;
+    if (from === to) {
+      return;
+    }
 
     lines.push({ before: from, after: to });
   });
@@ -140,7 +151,9 @@ export function describeStrengthEase(
   const lines: { label: string; before: string; after: string }[] = [];
   before.sets.forEach((entry, index) => {
     const next = after.sets[index];
-    if (!next || next.sets === entry.sets) return;
+    if (!next || next.sets === entry.sets) {
+      return;
+    }
     lines.push({
       label: entry.exercise,
       before: `${entry.sets} × ${entry.reps}`,

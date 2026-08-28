@@ -7,7 +7,9 @@ const autoReplyInFlight = new Set<string>();
 const chatFetchAbortByConversation = new Map<string, AbortController>();
 
 export function tryBeginAutoReply(conversationId: string): boolean {
-  if (autoReplyInFlight.has(conversationId)) return false;
+  if (autoReplyInFlight.has(conversationId)) {
+    return false;
+  }
   autoReplyInFlight.add(conversationId);
   return true;
 }
@@ -44,7 +46,9 @@ export function replaceChatFetchSignal(
 /** Abort and drop the in-flight controller (unmount / conversation change). */
 export function abortChatFetch(conversationId: string): void {
   const current = chatFetchAbortByConversation.get(conversationId);
-  if (!current) return;
+  if (!current) {
+    return;
+  }
   current.abort();
   chatFetchAbortByConversation.delete(conversationId);
 }

@@ -26,7 +26,9 @@ interface ActivityGoalValidationsCardProps {
 }
 
 export function ActivityGoalValidationsCard({ validations }: ActivityGoalValidationsCardProps) {
-  if (!validations.length) return null;
+  if (!validations.length) {
+    return null;
+  }
 
   return (
     <Card className="border-primary/25 bg-primary/5">

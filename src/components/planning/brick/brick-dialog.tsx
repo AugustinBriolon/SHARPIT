@@ -96,7 +96,7 @@ function BrickLegSection({
             <span className="text-muted-foreground text-xs">
               {activityTypeLabels[session.type]}
             </span>
-            {session.durationMin != null && (
+            {session.durationMin !== null && (
               <span className="text-muted-foreground text-xs tabular-nums">
                 {session.durationMin} min
               </span>

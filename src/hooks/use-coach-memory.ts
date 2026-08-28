@@ -39,9 +39,30 @@ type TravelContextResponse = {
   } | null;
 };
 
+function patchTravelEntryOptimistic(
+  entry: CoachMemoryEntry,
+  payload: TravelMemoryPayload,
+): CoachMemoryEntry {
+  return {
+    ...entry,
+    label: payload.label ?? null,
+    locationLabel: payload.locationLabel ?? null,
+    locationLat: payload.locationLat ?? null,
+    locationLng: payload.locationLng ?? null,
+    startDate: payload.startDate,
+    endDate: payload.endDate,
+    note: payload.note ?? null,
+    trainingConstraint: payload.trainingConstraint ?? entry.trainingConstraint,
+    allowedDisciplines: payload.allowedDisciplines ?? entry.allowedDisciplines,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 async function fetchCoachMemory(): Promise<CoachMemoryResponse> {
   const res = await fetch('/api/coach-memory');
-  if (!res.ok) throw new Error('coach memory fetch failed');
+  if (!res.ok) {
+    throw new Error('coach memory fetch failed');
+  }
   return res.json();
 }
 
@@ -145,7 +166,9 @@ export function useCoachMemoryMutations() {
     },
     onSuccess: (entry, payload) => {
       queryClient.setQueryData<CoachMemoryResponse>(key, (current) => {
-        if (!current) return current;
+        if (!current) {
+          return current;
+        }
         const withoutTemp = current.entries.filter((e) => !isTempId(e.id) && e.id !== entry.id);
         return patchMemoryEntries(current, [entry, ...withoutTemp], entry.id);
       });
@@ -178,23 +201,7 @@ export function useCoachMemoryMutations() {
           key,
           patchMemoryEntries(
             previous,
-            previous.entries.map((e) =>
-              e.id === id
-                ? {
-                    ...e,
-                    label: payload.label ?? null,
-                    locationLabel: payload.locationLabel ?? null,
-                    locationLat: payload.locationLat ?? null,
-                    locationLng: payload.locationLng ?? null,
-                    startDate: payload.startDate,
-                    endDate: payload.endDate,
-                    note: payload.note ?? null,
-                    trainingConstraint: payload.trainingConstraint ?? e.trainingConstraint,
-                    allowedDisciplines: payload.allowedDisciplines ?? e.allowedDisciplines,
-                    updatedAt: new Date().toISOString(),
-                  }
-                : e,
-            ),
+            previous.entries.map((e) => (e.id === id ? patchTravelEntryOptimistic(e, payload) : e)),
           ),
         );
       }
@@ -208,7 +215,9 @@ export function useCoachMemoryMutations() {
     },
     onSuccess: (entry, { payload }) => {
       queryClient.setQueryData<CoachMemoryResponse>(key, (current) => {
-        if (!current) return current;
+        if (!current) {
+          return current;
+        }
         return patchMemoryEntries(
           current,
           current.entries.map((e) => (e.id === entry.id ? entry : e)),

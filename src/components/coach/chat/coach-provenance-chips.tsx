@@ -23,7 +23,9 @@ export function CoachProvenanceChips() {
     [metricsRow?.recoveryScore, metricsRow?.sleepScore],
   );
 
-  if (chips.length === 0) return null;
+  if (chips.length === 0) {
+    return null;
+  }
 
   return (
     <div className="flex flex-wrap gap-1.5 pt-1">

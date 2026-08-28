@@ -30,11 +30,15 @@ export type ThreadReading = {
  * than he was, not what the regression slope is.
  */
 function trendClass(reading: ThreadReading): string {
-  const points = (reading.series ?? []).filter((value): value is number => value != null);
-  if (points.length < 2) return 'text-muted-foreground';
+  const points = (reading.series ?? []).filter((value): value is number => value !== null);
+  if (points.length < 2) {
+    return 'text-muted-foreground';
+  }
 
   const change = points[points.length - 1]! - points[0]!;
-  if (change === 0) return 'text-muted-foreground';
+  if (change === 0) {
+    return 'text-muted-foreground';
+  }
 
   const improved = reading.lowerIsBetter ? change < 0 : change > 0;
   return improved ? 'text-primary' : 'text-signal-caution';
@@ -56,7 +60,9 @@ export function ThreadFormReadings({
   title?: string;
   className?: string;
 }) {
-  if (readings.length === 0) return null;
+  if (readings.length === 0) {
+    return null;
+  }
 
   return (
     <section className={className}>
@@ -75,7 +81,7 @@ export function ThreadFormReadings({
                 {reading.label}
               </span>
 
-              {reading.series && reading.series.filter((v) => v != null).length > 1 ? (
+              {reading.series && reading.series.filter((v) => v !== null).length > 1 ? (
                 <span className={cn('w-14 shrink-0', trendClass(reading))} aria-hidden>
                   <Sparkline h={18} stroke="currentColor" values={[...reading.series]} />
                 </span>

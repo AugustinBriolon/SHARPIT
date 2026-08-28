@@ -75,7 +75,9 @@ export async function loadSnapshot(input: {
     db.close();
   }
 
-  if (raw == null) return null;
+  if ((raw === undefined || raw === null)) {
+    return null;
+  }
 
   const result = validatePersistedSnapshot(raw, {
     currentOwnerKey: input.ownerKey,

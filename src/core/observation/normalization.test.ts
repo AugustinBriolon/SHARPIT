@@ -23,7 +23,13 @@ describe('normalize — training day assignment', () => {
       timestamp: new Date('2026-07-02T05:00:00Z'),
       receivedAt: new Date(),
     };
-    const obs = normalize('id-1', ATHLETE_ID, raw, [], CONFIG);
+    const obs = normalize({
+      id: 'id-1',
+      athleteId: ATHLETE_ID,
+      raw,
+      validationFlags: [],
+      config: CONFIG,
+    });
     expect(obs.trainingDayId).toBe('2026-07-02');
   });
 
@@ -37,7 +43,13 @@ describe('normalize — training day assignment', () => {
       timestamp: new Date('2026-07-02T01:00:00Z'),
       receivedAt: new Date(),
     };
-    const obs = normalize('id-2', ATHLETE_ID, raw, [], CONFIG);
+    const obs = normalize({
+      id: 'id-2',
+      athleteId: ATHLETE_ID,
+      raw,
+      validationFlags: [],
+      config: CONFIG,
+    });
     expect(obs.trainingDayId).toBe('2026-07-01');
   });
 
@@ -54,7 +66,13 @@ describe('normalize — training day assignment', () => {
       wakeTimestamp: wake,
       totalMinutes: 450,
     };
-    const obs = normalize('id-3', ATHLETE_ID, raw, [], CONFIG);
+    const obs = normalize({
+      id: 'id-3',
+      athleteId: ATHLETE_ID,
+      raw,
+      validationFlags: [],
+      config: CONFIG,
+    });
     expect(obs.trainingDayId).toBe('2026-07-02');
   });
 
@@ -70,7 +88,13 @@ describe('normalize — training day assignment', () => {
       wakeTimestamp: wake,
       totalMinutes: 360,
     };
-    const obs = normalize('id-4', ATHLETE_ID, raw, [], CONFIG);
+    const obs = normalize({
+      id: 'id-4',
+      athleteId: ATHLETE_ID,
+      raw,
+      validationFlags: [],
+      config: CONFIG,
+    });
     expect(obs.trainingDayId).toBe('2026-07-01');
   });
 });
@@ -94,7 +118,13 @@ describe('normalize — quality classification', () => {
       ...BASE_SESSION,
       powerData: { avgWatts: 280, quality: 'MEASURED_DIRECT' },
     };
-    const obs = normalize('id-5', ATHLETE_ID, raw, [], CONFIG);
+    const obs = normalize({
+      id: 'id-5',
+      athleteId: ATHLETE_ID,
+      raw,
+      validationFlags: [],
+      config: CONFIG,
+    });
     expect(obs.quality).toBe('MEASURED_DIRECT');
   });
 
@@ -103,13 +133,25 @@ describe('normalize — quality classification', () => {
       ...BASE_SESSION,
       hrData: { avgBpm: 155, quality: 'MEASURED_OPTICAL' },
     };
-    const obs = normalize('id-6', ATHLETE_ID, raw, [], CONFIG);
+    const obs = normalize({
+      id: 'id-6',
+      athleteId: ATHLETE_ID,
+      raw,
+      validationFlags: [],
+      config: CONFIG,
+    });
     expect(obs.quality).toBe('MEASURED_OPTICAL');
   });
 
   it('classifies ESTIMATED when no HR and no power', () => {
     const raw: RawObservation = { ...BASE_SESSION };
-    const obs = normalize('id-7', ATHLETE_ID, raw, [], CONFIG);
+    const obs = normalize({
+      id: 'id-7',
+      athleteId: ATHLETE_ID,
+      raw,
+      validationFlags: [],
+      config: CONFIG,
+    });
     expect(obs.quality).toBe('ESTIMATED');
   });
 
@@ -122,7 +164,13 @@ describe('normalize — quality classification', () => {
       valueMsRmssd: 72,
       measurementMethod: 'CHEST_STRAP',
     };
-    const obs = normalize('id-8', ATHLETE_ID, raw, [], CONFIG);
+    const obs = normalize({
+      id: 'id-8',
+      athleteId: ATHLETE_ID,
+      raw,
+      validationFlags: [],
+      config: CONFIG,
+    });
     expect(obs.quality).toBe('MEASURED_DIRECT');
   });
 
@@ -135,7 +183,13 @@ describe('normalize — quality classification', () => {
       valueMsRmssd: 55,
       measurementMethod: 'OVERNIGHT_AVERAGE',
     };
-    const obs = normalize('id-9', ATHLETE_ID, raw, [], CONFIG);
+    const obs = normalize({
+      id: 'id-9',
+      athleteId: ATHLETE_ID,
+      raw,
+      validationFlags: [],
+      config: CONFIG,
+    });
     expect(obs.quality).toBe('MEASURED_OPTICAL');
   });
 
@@ -147,7 +201,13 @@ describe('normalize — quality classification', () => {
       receivedAt: new Date(),
       score: 70,
     };
-    const obs = normalize('id-10', ATHLETE_ID, raw, [], CONFIG);
+    const obs = normalize({
+      id: 'id-10',
+      athleteId: ATHLETE_ID,
+      raw,
+      validationFlags: [],
+      config: CONFIG,
+    });
     expect(obs.quality).toBe('PROPRIETARY_MODEL');
   });
 
@@ -159,7 +219,13 @@ describe('normalize — quality classification', () => {
       receivedAt: new Date(),
       rpe: 7,
     };
-    const obs = normalize('id-11', ATHLETE_ID, raw, [], CONFIG);
+    const obs = normalize({
+      id: 'id-11',
+      athleteId: ATHLETE_ID,
+      raw,
+      validationFlags: [],
+      config: CONFIG,
+    });
     expect(obs.quality).toBe('MANUAL');
   });
 });
@@ -177,7 +243,13 @@ describe('normalize — metadata assignment', () => {
       receivedAt: new Date(),
       valueBpm: 48,
     };
-    const obs = normalize('my-custom-id', 'athlete-xyz', raw, ['OPTICAL_SENSOR'], CONFIG);
+    const obs = normalize({
+      id: 'my-custom-id',
+      athleteId: 'athlete-xyz',
+      raw,
+      validationFlags: ['OPTICAL_SENSOR'],
+      config: CONFIG,
+    });
     expect(obs.id).toBe('my-custom-id');
     expect(obs.athleteId).toBe('athlete-xyz');
   });
@@ -190,7 +262,13 @@ describe('normalize — metadata assignment', () => {
       receivedAt: new Date(),
       score: 65,
     };
-    const obs = normalize('id-flags', ATHLETE_ID, raw, ['PROPRIETARY_MODEL_OUTPUT'], CONFIG);
+    const obs = normalize({
+      id: 'id-flags',
+      athleteId: ATHLETE_ID,
+      raw,
+      validationFlags: ['PROPRIETARY_MODEL_OUTPUT'],
+      config: CONFIG,
+    });
     expect(obs.qualityFlags).toContain('PROPRIETARY_MODEL_OUTPUT');
   });
 
@@ -203,7 +281,13 @@ describe('normalize — metadata assignment', () => {
       receivedAt: new Date(),
       valueBpm: 52,
     };
-    const obs = normalize('id-time', ATHLETE_ID, raw, [], CONFIG);
+    const obs = normalize({
+      id: 'id-time',
+      athleteId: ATHLETE_ID,
+      raw,
+      validationFlags: [],
+      config: CONFIG,
+    });
     const after = new Date();
     expect(obs.normalizedAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
     expect(obs.normalizedAt.getTime()).toBeLessThanOrEqual(after.getTime());

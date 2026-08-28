@@ -3,6 +3,8 @@
  * Pure so the wording stays testable outside the hook.
  */
 
+import { isSet } from '@/lib/util/value';
+
 export type GarminPushSummaryInput = {
   workoutName?: string;
   scheduledDate?: string | null;
@@ -17,9 +19,13 @@ export type GarminPushSummaryInput = {
   warnings?: string[];
 };
 
+function countApproximatedSteps(mapped: GarminPushSummaryInput['mapped']): number {
+  return mapped?.filter((step) => step.confidence === 'fallback').length ?? 0;
+}
+
 function strengthParts(data: GarminPushSummaryInput): Array<string | null> {
   const mappedCount = data.mapped?.length ?? 0;
-  const approximated = data.mapped?.filter((step) => step.confidence === 'fallback').length ?? 0;
+  const approximated = countApproximatedSteps(data.mapped);
   const skipped = data.skipped?.length ?? 0;
   return [
     mappedCount > 0 ? `${mappedCount} exercices` : null,
@@ -38,7 +44,7 @@ function enduranceParts(data: GarminPushSummaryInput): Array<string | null> {
 }
 
 export function buildPushToastDescription(data: GarminPushSummaryInput): string {
-  const sportParts = data.stepCount != null ? enduranceParts(data) : strengthParts(data);
+  const sportParts = isSet(data.stepCount) ? enduranceParts(data) : strengthParts(data);
   return [
     data.workoutName,
     ...sportParts,

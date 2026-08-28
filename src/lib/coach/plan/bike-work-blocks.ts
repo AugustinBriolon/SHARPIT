@@ -1,4 +1,5 @@
 import type { SessionIntensity } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 
 /** Intensities where whole-session avg/NP are diluted by warm-up & recovery. */
 const QUALITY_INTENSITIES = new Set<SessionIntensity>(['TEMPO', 'THRESHOLD', 'VO2MAX', 'RACE']);
@@ -65,7 +66,7 @@ export function parsePrescriptionTargets(
   const repsMatch = text.match(/(\d{1,2})\s*[x×]\s*(\d{1,3})\s*(?:min|m\b)/i);
   const reps = repsMatch ? clampInt(Number(repsMatch[1]), 1, 30) : null;
   const repDurationMin = repsMatch ? clampInt(Number(repsMatch[2]), 1, 180) : null;
-  const plannedWorkMin = reps != null && repDurationMin != null ? reps * repDurationMin : null;
+  const plannedWorkMin = isSet(reps) && isSet(repDurationMin) ? reps * repDurationMin : null;
 
   return { ftpPct, reps, repDurationMin, plannedWorkMin };
 }
@@ -74,9 +75,11 @@ export function shouldAnalyzeBikeWorkBlocks(input: {
   intensity: SessionIntensity | null | undefined;
   description?: string | null;
 }): boolean {
-  if (input.intensity && QUALITY_INTENSITIES.has(input.intensity)) return true;
+  if (input.intensity && QUALITY_INTENSITIES.has(input.intensity)) {
+    return true;
+  }
   const p = parsePrescriptionTargets(input.description);
-  return p.ftpPct != null || p.plannedWorkMin != null;
+  return isSet(p.ftpPct) || isSet(p.plannedWorkMin);
 }
 
 /**
@@ -84,26 +87,7 @@ export function shouldAnalyzeBikeWorkBlocks(input: {
  * Gaps ≤ MERGE_GAP_SEC inside work are merged; short spikes (< MIN_BLOCK_SEC) are dropped from block list
  * but still counted in totalWorkSec via sample-level floor.
  */
-export function summarizeBikeWorkBlocks(input: {
-  watts: number[];
-  ftpW: number;
-  intensity?: SessionIntensity | null;
-  description?: string | null;
-}): BikeWorkSummary | null {
-  const { watts, ftpW, intensity = null, description = null } = input;
-  if (!(ftpW > 0) || watts.length < 60) return null;
-  if (!shouldAnalyzeBikeWorkBlocks({ intensity, description })) return null;
-
-  const prescription = parsePrescriptionTargets(description);
-  const targetPctFtp =
-    prescription.ftpPct ?? (intensity ? (DEFAULT_TARGET_PCT[intensity] ?? null) : null);
-  const floorPctFtp = resolveFloorPct(intensity, targetPctFtp);
-  const workFloorWatts = Math.round((floorPctFtp / 100) * ftpW);
-  const targetWatts = targetPctFtp != null ? Math.round((targetPctFtp / 100) * ftpW) : null;
-
-  const high = markHighSamples(watts, workFloorWatts);
-  const blocks = extractBlocks(watts, high, ftpW);
-
+function computeWorkSampleStats(watts: number[], workFloorWatts: number) {
   let workSum = 0;
   let workCount = 0;
   for (let i = 0; i < watts.length; i++) {
@@ -113,8 +97,44 @@ export function summarizeBikeWorkBlocks(input: {
       workCount += 1;
     }
   }
-
   const workAvgWatts = workCount > 0 ? Math.round(workSum / workCount) : null;
+  return { workCount, workAvgWatts };
+}
+
+function resolveBikeWorkThresholds(input: {
+  intensity: SessionIntensity | null;
+  description: string | null;
+  ftpW: number;
+}) {
+  const prescription = parsePrescriptionTargets(input.description);
+  const targetPctFtp =
+    prescription.ftpPct ?? (input.intensity ? (DEFAULT_TARGET_PCT[input.intensity] ?? null) : null);
+  const floorPctFtp = resolveFloorPct(input.intensity, targetPctFtp);
+  const workFloorWatts = Math.round((floorPctFtp / 100) * input.ftpW);
+  const targetWatts = isSet(targetPctFtp) ? Math.round((targetPctFtp / 100) * input.ftpW) : null;
+  return { prescription, targetPctFtp, floorPctFtp, workFloorWatts, targetWatts };
+}
+
+export function summarizeBikeWorkBlocks(input: {
+  watts: number[];
+  ftpW: number;
+  intensity?: SessionIntensity | null;
+  description?: string | null;
+}): BikeWorkSummary | null {
+  const { watts, ftpW, intensity = null, description = null } = input;
+  if (!(ftpW > 0) || watts.length < 60) {
+    return null;
+  }
+  if (!shouldAnalyzeBikeWorkBlocks({ intensity, description })) {
+    return null;
+  }
+
+  const { prescription, targetPctFtp, floorPctFtp, workFloorWatts, targetWatts } =
+    resolveBikeWorkThresholds({ intensity, description, ftpW });
+
+  const high = markHighSamples(watts, workFloorWatts);
+  const blocks = extractBlocks(watts, high, ftpW);
+  const { workCount, workAvgWatts } = computeWorkSampleStats(watts, workFloorWatts);
 
   return {
     ftpW,
@@ -124,7 +144,7 @@ export function summarizeBikeWorkBlocks(input: {
     workFloorPctFtp: floorPctFtp,
     totalWorkSec: workCount,
     workAvgWatts,
-    workAvgPctFtp: workAvgWatts != null ? Math.round((workAvgWatts / ftpW) * 100) : null,
+    workAvgPctFtp: isSet(workAvgWatts) ? Math.round((workAvgWatts / ftpW) * 100) : null,
     blocks,
     plannedWorkMin: prescription.plannedWorkMin,
     prescription,
@@ -135,15 +155,15 @@ export function summarizeBikeWorkBlocks(input: {
 export function describeBikeWorkBlocks(summary: BikeWorkSummary): string {
   const lines: string[] = [
     `FTP athlète : ${summary.ftpW} W`,
-    summary.targetWatts != null && summary.targetPctFtp != null
+    isSet(summary.targetWatts) && isSet(summary.targetPctFtp)
       ? `Cible intensité (estimée) : ${summary.targetPctFtp}% FTP ≈ ${summary.targetWatts} W`
       : null,
     `Seuil de détection des blocs de travail : ≥ ${summary.workFloorPctFtp}% FTP (${summary.workFloorWatts} W)`,
     `Temps passé au-dessus de ce seuil : ${fmtMin(summary.totalWorkSec)}`,
-    summary.workAvgWatts != null && summary.workAvgPctFtp != null
+    isSet(summary.workAvgWatts) && isSet(summary.workAvgPctFtp)
       ? `Puissance moyenne sur ce temps de travail : ${summary.workAvgWatts} W (${summary.workAvgPctFtp}% FTP)`
       : null,
-    summary.plannedWorkMin != null
+    isSet(summary.plannedWorkMin)
       ? `Volume de travail suggéré par la consigne (lecture texte) : ~${summary.plannedWorkMin} min — heuristique, pas une preuve structurée`
       : null,
   ].filter(Boolean) as string[];
@@ -168,11 +188,11 @@ export function describeBikeWorkBlocks(summary: BikeWorkSummary): string {
 }
 
 function resolveFloorPct(intensity: SessionIntensity | null, targetPctFtp: number | null): number {
-  if (targetPctFtp != null) {
+  if (isSet(targetPctFtp)) {
     // Allow mild undershoot vs prescription while staying in quality territory.
     return Math.max(70, targetPctFtp - 8);
   }
-  if (intensity && DEFAULT_FLOOR_PCT[intensity] != null) {
+  if (intensity && isSet(DEFAULT_FLOOR_PCT[intensity])) {
     return DEFAULT_FLOOR_PCT[intensity]!;
   }
   return 75;
@@ -194,18 +214,26 @@ function markHighSamples(watts: number[], floorWatts: number): boolean[] {
   return high;
 }
 
-function extractBlocks(watts: number[], high: boolean[], ftpW: number): WorkBlock[] {
+function collectHighSegments(high: boolean[]): Array<{ start: number; end: number }> {
   const raw: { start: number; end: number }[] = [];
   let i = 0;
   while (i < high.length) {
-    while (i < high.length && !high[i]) i++;
-    if (i >= high.length) break;
+    while (i < high.length && !high[i]) {
+      i++;
+    }
+    if (i >= high.length) {
+      break;
+    }
     const start = i;
-    while (i < high.length && high[i]) i++;
+    while (i < high.length && high[i]) {
+      i++;
+    }
     raw.push({ start, end: i - 1 });
   }
+  return raw;
+}
 
-  // Merge gaps ≤ MERGE_GAP_SEC (brief drops inside an interval).
+function mergeHighSegments(raw: Array<{ start: number; end: number }>) {
   const merged: { start: number; end: number }[] = [];
   for (const seg of raw) {
     const prev = merged[merged.length - 1];
@@ -215,35 +243,56 @@ function extractBlocks(watts: number[], high: boolean[], ftpW: number): WorkBloc
       merged.push({ ...seg });
     }
   }
+  return merged;
+}
 
+function workBlockFromSegment(
+  watts: number[],
+  seg: { start: number; end: number },
+  ftpW: number,
+): WorkBlock | null {
+  const durationSec = seg.end - seg.start + 1;
+  if (durationSec < MIN_BLOCK_SEC) {
+    return null;
+  }
+  let sum = 0;
+  let count = 0;
+  for (let t = seg.start; t <= seg.end; t++) {
+    const w = watts[t] ?? 0;
+    if (w > 0) {
+      sum += w;
+      count += 1;
+    }
+  }
+  if (count === 0) {
+    return null;
+  }
+  const avgWatts = Math.round(sum / count);
+  return {
+    startSec: seg.start,
+    endSec: seg.end,
+    durationSec,
+    avgWatts,
+    pctFtp: Math.round((avgWatts / ftpW) * 100),
+  };
+}
+
+function extractBlocks(watts: number[], high: boolean[], ftpW: number): WorkBlock[] {
+  const merged = mergeHighSegments(collectHighSegments(high));
   const blocks: WorkBlock[] = [];
   for (const seg of merged) {
-    const durationSec = seg.end - seg.start + 1;
-    if (durationSec < MIN_BLOCK_SEC) continue;
-    let sum = 0;
-    let count = 0;
-    for (let t = seg.start; t <= seg.end; t++) {
-      const w = watts[t] ?? 0;
-      if (w > 0) {
-        sum += w;
-        count += 1;
-      }
+    const block = workBlockFromSegment(watts, seg, ftpW);
+    if (block) {
+      blocks.push(block);
     }
-    if (count === 0) continue;
-    const avgWatts = Math.round(sum / count);
-    blocks.push({
-      startSec: seg.start,
-      endSec: seg.end,
-      durationSec,
-      avgWatts,
-      pctFtp: Math.round((avgWatts / ftpW) * 100),
-    });
   }
   return blocks;
 }
 
 function clampInt(n: number, min: number, max: number): number | null {
-  if (!Number.isFinite(n)) return null;
+  if (!Number.isFinite(n)) {
+    return null;
+  }
   return Math.min(max, Math.max(min, Math.round(n)));
 }
 

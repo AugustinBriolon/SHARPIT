@@ -57,7 +57,9 @@ export async function enrichStrengthExerciseVisuals(
     );
   }
 
-  if (updates.length > 0) await Promise.all(updates);
+  if (updates.length > 0) {
+    await Promise.all(updates);
+  }
 
   return {
     checked: activity.strengthSets.length,

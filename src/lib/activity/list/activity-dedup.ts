@@ -1,4 +1,4 @@
-import type { ActivityType } from '@prisma/client';
+import type { ActivityType, Prisma } from '@prisma/client';
 import { addHours, subHours } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 
@@ -31,26 +31,53 @@ export interface MatchedActivity {
 
 /** Source unifiée quand les deux plateformes pointent vers la même séance. */
 export function mergedSource(hasGarmin: boolean, hasStrava: boolean): string {
-  if (hasGarmin && hasStrava) return 'both';
-  if (hasGarmin) return 'garmin';
-  if (hasStrava) return 'strava';
+  if (hasGarmin && hasStrava) {
+    return 'both';
+  }
+  if (hasGarmin) {
+    return 'garmin';
+  }
+  if (hasStrava) {
+    return 'strava';
+  }
   return 'manual';
 }
 
 export function activitiesMatch(a: ActivityFingerprint, b: ActivityFingerprint): boolean {
-  if (a.type !== b.type) return false;
+  if (a.type !== b.type) {
+    return false;
+  }
 
   const timeDiff = Math.abs(a.date.getTime() - b.date.getTime());
-  if (timeDiff > TIME_TOLERANCE_MS) return false;
+  if (timeDiff > TIME_TOLERANCE_MS) {
+    return false;
+  }
 
-  if (a.duration == null || b.duration == null) {
+  if ((a.duration === undefined || a.duration === null) || (b.duration === undefined || b.duration === null)) {
     return timeDiff <= 6 * 60 * 1000;
   }
 
   const durDiff = Math.abs(a.duration - b.duration);
   const maxDur = Math.max(a.duration, b.duration, 1);
-  if (durDiff <= DURATION_TOLERANCE_SEC) return true;
+  if (durDiff <= DURATION_TOLERANCE_SEC) {
+    return true;
+  }
   return durDiff / maxDur <= DURATION_TOLERANCE_RATIO;
+}
+
+async function findByExternalId(
+  field: 'garminId' | 'stravaId',
+  value: string,
+  excludeId?: string,
+): Promise<MatchedActivity | null> {
+  const match = await prisma.activity.findUnique({
+    where: { [field]: value } as unknown as Prisma.ActivityWhereUniqueInput,
+    select: matchSelect,
+  });
+  if (!match || match.id === excludeId) {
+    return null;
+  }
+  return match;
 }
 
 /**
@@ -65,22 +92,18 @@ export async function findMatchingActivity(
     excludeId?: string;
   },
 ): Promise<MatchedActivity | null> {
-  // garminId/stravaId are unique in the provider's own id space, not just within
-  // one connected account — no athleteId needed to disambiguate those two.
   if (candidate.garminId) {
-    const byGarmin = await prisma.activity.findUnique({
-      where: { garminId: candidate.garminId },
-      select: matchSelect,
-    });
-    if (byGarmin && byGarmin.id !== candidate.excludeId) return byGarmin;
+    const byGarmin = await findByExternalId('garminId', candidate.garminId, candidate.excludeId);
+    if (byGarmin) {
+      return byGarmin;
+    }
   }
 
   if (candidate.stravaId) {
-    const byStrava = await prisma.activity.findUnique({
-      where: { stravaId: candidate.stravaId },
-      select: matchSelect,
-    });
-    if (byStrava && byStrava.id !== candidate.excludeId) return byStrava;
+    const byStrava = await findByExternalId('stravaId', candidate.stravaId, candidate.excludeId);
+    if (byStrava) {
+      return byStrava;
+    }
   }
 
   const nearby = await prisma.activity.findMany({

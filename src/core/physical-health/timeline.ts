@@ -7,16 +7,19 @@ import type {
   ConditionTimelineEvent,
   FunctionalCapacity,
 } from './types';
+import { isSet } from '@/lib/util/value';
 
 function byDateAsc(a: { at: Date }, b: { at: Date }): number {
   return a.at.getTime() - b.at.getTime();
 }
 
 function observationSeverityLabel(obs: ConditionObservation): string {
-  if (obs.symptomPresent && obs.severityReported != null) {
+  if (obs.symptomPresent && isSet(obs.severityReported)) {
     return `${obs.severityReported}/10`;
   }
-  if (obs.symptomPresent) return 'symptôme présent';
+  if (obs.symptomPresent) {
+    return 'symptôme présent';
+  }
   return 'aucun symptôme';
 }
 

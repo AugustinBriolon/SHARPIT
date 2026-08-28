@@ -19,10 +19,16 @@ export type { SleepPageViewProps } from '@/components/sleep/types';
 
 function pickCoachingLine(props: SleepPageViewProps): string | null {
   // Debt / architecture lines assume tonight's night is known.
-  if ((props.nightStatus ?? 'present') !== 'present') return null;
+  if ((props.nightStatus ?? 'present') !== 'present') {
+    return null;
+  }
   const [insight] = props.coachView.insights;
-  if (insight?.detail) return insight.detail;
-  if (insight?.title) return insight.title;
+  if (insight?.detail) {
+    return insight.detail;
+  }
+  if (insight?.title) {
+    return insight.title;
+  }
   return null;
 }
 
@@ -31,17 +37,19 @@ function sleepActionLine(props: SleepPageViewProps): string | null {
   const bedtime = props.coachView.recommendedBedtimeMin;
 
   // Forward plan is OK even before tonight syncs; debt-as-tonight verdict is not.
-  if (bedtime != null) {
+  if (bedtime !== null) {
     return `Ce soir · coucher conseillé ${formatClock(bedtime)}`;
   }
 
-  if (nightStatus !== 'present') return null;
+  if (nightStatus !== 'present') {
+    return null;
+  }
 
   const debt = props.coachView.debt7Min;
-  if (debt != null && debt > 30) {
+  if (debt !== null && debt > 30) {
     return `Dette 7 jours ${formatDuration(debt)} — rattraper progressivement`;
   }
-  if (props.targetDeltaMin != null && props.targetDeltaMin < 0) {
+  if (props.targetDeltaMin !== null && props.targetDeltaMin < 0) {
     return `Objectif · récupérer ${formatDuration(Math.abs(props.targetDeltaMin))}`;
   }
   return null;
@@ -57,6 +65,59 @@ function sleepActionLine(props: SleepPageViewProps): string | null {
  */
 function pickHeroInsight(props: SleepPageViewProps): string | null {
   return sleepActionLine(props) ?? pickCoachingLine(props);
+}
+
+function buildSleepFooter(
+  loading: boolean,
+  recoveryNote: string | null | undefined,
+): React.ReactNode {
+  if (loading) {
+    return <Skeleton className="mx-auto h-3 w-48 rounded-full" />;
+  }
+  if (recoveryNote) {
+    return (
+      <p className="text-muted-foreground text-center text-xs leading-relaxed">{recoveryNote}</p>
+    );
+  }
+  return undefined;
+}
+
+function SleepPhasesOrTonight({
+  loading,
+  totalSleepMin,
+  tonightPanel,
+  awakeMin,
+  deepMin,
+  lightMin,
+  remMin,
+}: {
+  loading: boolean;
+  totalSleepMin: number | null;
+  tonightPanel: React.ReactNode;
+  awakeMin: number | null;
+  deepMin: number | null;
+  lightMin: number | null;
+  remMin: number | null;
+}) {
+  if (loading) {
+    return null;
+  }
+
+  const hasPhases = totalSleepMin !== null && totalSleepMin > 0;
+  if (hasPhases) {
+    return (
+      <SleepPhasesSection
+        awakeMin={awakeMin}
+        deepMin={deepMin}
+        lightMin={lightMin}
+        remMin={remMin}
+        sidePanel={tonightPanel}
+        totalMin={totalSleepMin!}
+      />
+    );
+  }
+
+  return tonightPanel;
 }
 
 export function SleepPageView(props: SleepPageViewProps) {
@@ -86,16 +147,7 @@ export function SleepPageView(props: SleepPageViewProps) {
     confidencePresentation,
   } = props;
 
-  let footer: React.ReactNode;
-  if (loading) {
-    footer = <Skeleton className="mx-auto h-3 w-48 rounded-full" />;
-  } else if (recoveryNote) {
-    footer = (
-      <p className="text-muted-foreground text-center text-xs leading-relaxed">{recoveryNote}</p>
-    );
-  } else {
-    footer = undefined;
-  }
+  const footer = buildSleepFooter(loading, recoveryNote);
 
   /* The plan now occupies the slot the "Pourquoi" narrative used to hold, beside
      the night structure — what to do tonight, next to how last night went. */
@@ -138,24 +190,17 @@ export function SleepPageView(props: SleepPageViewProps) {
         wakeMin={wakeMin}
       />
 
-      {!loading ? (
-        <>
-          {totalSleepMin != null && totalSleepMin > 0 ? (
-            <SleepPhasesSection
-              awakeMin={awakeMin}
-              deepMin={deepMin}
-              lightMin={lightMin}
-              remMin={remMin}
-              sidePanel={tonightPanel}
-              totalMin={totalSleepMin}
-            />
-          ) : (
-            tonightPanel
-          )}
+      <SleepPhasesOrTonight
+        awakeMin={awakeMin}
+        deepMin={deepMin}
+        lightMin={lightMin}
+        loading={loading}
+        remMin={remMin}
+        tonightPanel={tonightPanel}
+        totalSleepMin={totalSleepMin}
+      />
 
-          <SleepTrendSection data={barData} targetMin={props.sleepTargetMin} />
-        </>
-      ) : null}
+      {!loading ? <SleepTrendSection data={barData} targetMin={props.sleepTargetMin} /> : null}
     </MetricDrillDownPage>
   );
 }

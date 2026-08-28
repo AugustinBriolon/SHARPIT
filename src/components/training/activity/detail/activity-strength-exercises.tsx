@@ -12,20 +12,56 @@ import {
 } from '@/components/sessions/exercise-visual';
 import { toast } from '@/components/ui/toast';
 import { resolveStrengthSetMedia } from '@/lib/exercises';
-import { formatClockDuration } from '@/lib/format';
-import type { ActivityDetail } from './types';
+import type { ActivityDetail } from '@/components/training/activity/detail/types';
+import {
+  formatStrengthSetDetail,
+  sendActivityStrengthToGarmin,
+} from '@/components/training/activity/detail/activity-strength-exercises-helpers';
 
 /** Narrow client payload — id + strength sets only. */
 export type ActivityStrengthExercisesActivity = Pick<ActivityDetail, 'id' | 'strengthSets'>;
 
-function formatStrengthSetDetail(set: ActivityDetail['strengthSets'][number]): string {
-  if (set.durationSec && set.durationSec > 0 && !set.weightKg) {
-    const perSet = formatClockDuration(set.durationSec);
-    return set.sets > 1 ? `${set.sets} × ${perSet}` : perSet;
-  }
+function StrengthSetRow({
+  set,
+  index,
+}: {
+  set: ActivityDetail['strengthSets'][number];
+  index: number;
+}) {
+  const volume = set.sets * set.reps * (set.weightKg ?? 0);
+  const media = resolveStrengthSetMedia(set);
 
-  const base = `${set.sets}×${set.reps}`;
-  return set.weightKg ? `${base} @ ${set.weightKg} kg` : base;
+  return (
+    <div className="border-analysis-border rounded-analysis flex items-start gap-3 border px-3 py-3 sm:items-center sm:px-4">
+      {media ? (
+        <ExerciseVisual label={set.exercise} media={media} />
+      ) : (
+        <ExerciseIndex className="text-muted-foreground" index={index + 1} />
+      )}
+      <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+        <span className="min-w-0 flex-1 font-medium">
+          {set.exercise}
+          {media ? <ExerciseMediaCaption media={media} /> : null}
+          {set.notes ? (
+            <span className="text-muted-foreground block text-xs font-normal wrap-break-word">
+              {set.notes}
+            </span>
+          ) : null}
+        </span>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 sm:justify-end">
+          <span className="font-mono text-sm tabular-nums">{formatStrengthSetDetail(set)}</span>
+          <span className="text-muted-foreground flex items-center gap-2 text-xs">
+            {volume > 0 && <span className="font-mono">{Math.round(volume)} kg</span>}
+            {set.rpe !== null && (
+              <span className="border-border rounded-full border px-2 py-0.5 font-mono">
+                RPE {set.rpe}
+              </span>
+            )}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function ActivityStrengthExercises({
@@ -37,35 +73,13 @@ export function ActivityStrengthExercises({
   const [pushing, setPushing] = useState(false);
 
   async function sendToWatch() {
-    if (pushing || sets.length === 0) return;
+    if (pushing || sets.length === 0) {
+      return;
+    }
     setPushing(true);
     const loadingToast = toast.loading('Envoi vers Garmin…');
     try {
-      const response = await fetch('/api/garmin/workouts/from-activity', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ activityId: activity.id, schedule: true }),
-      });
-      const data = (await response.json()) as {
-        error?: string;
-        workoutName?: string;
-        mappedCount?: number;
-        skipped?: Array<{ exercise: string }>;
-        scheduledDate?: string | null;
-      };
-      if (!response.ok) {
-        throw new Error(data.error || 'Envoi impossible');
-      }
-      const skipped = data.skipped?.length ?? 0;
-      toast.success('Workout envoyé à Garmin', {
-        description: [
-          data.workoutName,
-          data.scheduledDate ? `calendrier ${data.scheduledDate}` : null,
-          skipped > 0 ? `${skipped} omis (hors catalogue)` : null,
-        ]
-          .filter(Boolean)
-          .join(' · '),
-      });
+      await sendActivityStrengthToGarmin(activity.id);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Envoi vers Garmin impossible');
     } finally {
@@ -99,46 +113,9 @@ export function ActivityStrengthExercises({
       <CardContent className="space-y-2">
         {sets.length > 0 ? (
           <>
-            {sets.map((set, i) => {
-              const volume = set.sets * set.reps * (set.weightKg ?? 0);
-              const media = resolveStrengthSetMedia(set);
-              return (
-                <div
-                  key={set.id}
-                  className="border-analysis-border rounded-analysis flex items-start gap-3 border px-3 py-3 sm:items-center sm:px-4"
-                >
-                  {media ? (
-                    <ExerciseVisual label={set.exercise} media={media} />
-                  ) : (
-                    <ExerciseIndex className="text-muted-foreground" index={i + 1} />
-                  )}
-                  <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
-                    <span className="min-w-0 flex-1 font-medium">
-                      {set.exercise}
-                      {media ? <ExerciseMediaCaption media={media} /> : null}
-                      {set.notes ? (
-                        <span className="text-muted-foreground block text-xs font-normal wrap-break-word">
-                          {set.notes}
-                        </span>
-                      ) : null}
-                    </span>
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 sm:justify-end">
-                      <span className="font-mono text-sm tabular-nums">
-                        {formatStrengthSetDetail(set)}
-                      </span>
-                      <span className="text-muted-foreground flex items-center gap-2 text-xs">
-                        {volume > 0 && <span className="font-mono">{Math.round(volume)} kg</span>}
-                        {set.rpe != null && (
-                          <span className="border-border rounded-full border px-2 py-0.5 font-mono">
-                            RPE {set.rpe}
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {sets.map((set, i) => (
+              <StrengthSetRow key={set.id} index={i} set={set} />
+            ))}
             <ExerciseMediaAttribution>
               « Envoyer à la montre » crée un workout Garmin (bibliothèque + calendrier) —
               synchroniser la montre ensuite.

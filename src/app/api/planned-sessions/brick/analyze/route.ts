@@ -7,6 +7,35 @@ import { getBrickAnalysis, getBrickSessions, setBrickAnalysis } from '@/lib/quer
 
 export const maxDuration = 60;
 
+function readBrickGroupId(body: unknown) {
+  return typeof (body as { brickGroupId?: unknown })?.brickGroupId === 'string'
+    ? (body as { brickGroupId: string }).brickGroupId
+    : null;
+}
+
+async function validateBrickLegs(athleteId: string, groupId: string) {
+  const legs = await getBrickSessions(athleteId, groupId);
+  if (legs.length < 2) {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ error: 'Brick introuvable ou incomplet' }, { status: 404 }),
+    };
+  }
+  if (legs.some((l) => !l.activity)) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        {
+          error:
+            "Lie d'abord chaque sport du brick à son activité réalisée avant d'analyser l'enchaînement.",
+        },
+        { status: 400 },
+      ),
+    };
+  }
+  return { ok: true as const, legs };
+}
+
 export async function GET(request: NextRequest) {
   // Read search params before try so Cache Components prerender interrupts propagate.
   const groupId = request.nextUrl.searchParams.get('groupId');
@@ -35,23 +64,14 @@ export async function POST(request: NextRequest) {
 
     const athleteId = await getCurrentAthleteId();
     const body = await request.json().catch(() => ({}));
-    const groupId = typeof body?.brickGroupId === 'string' ? body.brickGroupId : null;
+    const groupId = readBrickGroupId(body);
     if (!groupId) {
       return NextResponse.json({ error: 'brickGroupId requis' }, { status: 400 });
     }
 
-    const legs = await getBrickSessions(athleteId, groupId);
-    if (legs.length < 2) {
-      return NextResponse.json({ error: 'Brick introuvable ou incomplet' }, { status: 404 });
-    }
-    if (legs.some((l) => !l.activity)) {
-      return NextResponse.json(
-        {
-          error:
-            "Lie d'abord chaque sport du brick à son activité réalisée avant d'analyser l'enchaînement.",
-        },
-        { status: 400 },
-      );
+    const validation = await validateBrickLegs(athleteId, groupId);
+    if (!validation.ok) {
+      return validation.response;
     }
 
     const rateLimit = await checkRateLimit(rateLimiters.sessionAnalyze, athleteId);

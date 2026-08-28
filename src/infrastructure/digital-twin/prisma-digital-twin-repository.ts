@@ -55,7 +55,9 @@ export class PrismaDigitalTwinRepository implements DigitalTwinRepository {
       where: { athleteId },
       select: { recoveryState: true },
     });
-    if (!row?.recoveryState || typeof row.recoveryState !== 'object') return null;
+    if (!row?.recoveryState || typeof row.recoveryState !== 'object') {
+      return null;
+    }
     const state = row.recoveryState as { readinessScore?: number | null };
     return state.readinessScore ?? null;
   }
@@ -78,7 +80,9 @@ export class PrismaDigitalTwinRepository implements DigitalTwinRepository {
       where: { athleteId },
       select: { fatigueState: true },
     });
-    if (!row?.fatigueState || typeof row.fatigueState !== 'object') return null;
+    if (!row?.fatigueState || typeof row.fatigueState !== 'object') {
+      return null;
+    }
     return this.deserializeFatigueState(row.fatigueState as Record<string, unknown>);
   }
 
@@ -103,7 +107,9 @@ export class PrismaDigitalTwinRepository implements DigitalTwinRepository {
       where: { athleteId },
       select: { adaptationState: true },
     });
-    if (!row?.adaptationState || typeof row.adaptationState !== 'object') return null;
+    if (!row?.adaptationState || typeof row.adaptationState !== 'object') {
+      return null;
+    }
     return this.deserializeAdaptationState(row.adaptationState as Record<string, unknown>);
   }
 
@@ -125,7 +131,9 @@ export class PrismaDigitalTwinRepository implements DigitalTwinRepository {
       where: { athleteId },
       select: { reasoningState: true },
     });
-    if (!row?.reasoningState || typeof row.reasoningState !== 'object') return null;
+    if (!row?.reasoningState || typeof row.reasoningState !== 'object') {
+      return null;
+    }
     return this.deserializeReasoningState(row.reasoningState as Record<string, unknown>);
   }
 
@@ -154,7 +162,9 @@ export class PrismaDigitalTwinRepository implements DigitalTwinRepository {
       where: { athleteId },
       select: { physicalHealthState: true },
     });
-    if (!row?.physicalHealthState || typeof row.physicalHealthState !== 'object') return null;
+    if (!row?.physicalHealthState || typeof row.physicalHealthState !== 'object') {
+      return null;
+    }
     return this.deserializePhysicalHealthState(row.physicalHealthState as Record<string, unknown>);
   }
 
@@ -237,40 +247,23 @@ export class PrismaDigitalTwinRepository implements DigitalTwinRepository {
     updatedAt: Date;
     createdAt: Date;
   }): DigitalTwin {
-    const recoveryState =
-      row.recoveryState && typeof row.recoveryState === 'object'
-        ? this.deserializeRecoveryState(row.recoveryState as Record<string, unknown>)
-        : null;
-
-    const fatigueState =
-      row.fatigueState && typeof row.fatigueState === 'object'
-        ? this.deserializeFatigueState(row.fatigueState as Record<string, unknown>)
-        : null;
-
-    const adaptationState =
-      row.adaptationState && typeof row.adaptationState === 'object'
-        ? this.deserializeAdaptationState(row.adaptationState as Record<string, unknown>)
-        : null;
-
-    const reasoningState =
-      row.reasoningState && typeof row.reasoningState === 'object'
-        ? this.deserializeReasoningState(row.reasoningState as Record<string, unknown>)
-        : null;
-
-    const physicalHealth =
-      row.physicalHealthState && typeof row.physicalHealthState === 'object'
-        ? this.deserializePhysicalHealthState(row.physicalHealthState as Record<string, unknown>)
-        : null;
-
-    const environmental = this.deserializeEnvironmentalTwinState(row);
-
     const state: AthleteState = {
-      recovery: recoveryState,
-      fatigue: fatigueState,
-      adaptation: adaptationState,
-      reasoning: reasoningState,
-      physicalHealth,
-      environmental,
+      recovery: this.deserializeIfObject(row.recoveryState, (raw) =>
+        this.deserializeRecoveryState(raw),
+      ),
+      fatigue: this.deserializeIfObject(row.fatigueState, (raw) =>
+        this.deserializeFatigueState(raw),
+      ),
+      adaptation: this.deserializeIfObject(row.adaptationState, (raw) =>
+        this.deserializeAdaptationState(raw),
+      ),
+      reasoning: this.deserializeIfObject(row.reasoningState, (raw) =>
+        this.deserializeReasoningState(raw),
+      ),
+      physicalHealth: this.deserializeIfObject(row.physicalHealthState, (raw) =>
+        this.deserializePhysicalHealthState(raw),
+      ),
+      environmental: this.deserializeEnvironmentalTwinState(row),
     };
 
     return {
@@ -280,6 +273,16 @@ export class PrismaDigitalTwinRepository implements DigitalTwinRepository {
       updatedAt: row.updatedAt,
       createdAt: row.createdAt,
     };
+  }
+
+  private deserializeIfObject<T>(
+    raw: unknown,
+    deserialize: (value: Record<string, unknown>) => T,
+  ): T | null {
+    if (!raw || typeof raw !== 'object') {
+      return null;
+    }
+    return deserialize(raw as Record<string, unknown>);
   }
 
   private deserializeRecoveryState(raw: Record<string, unknown>): RecoveryState {

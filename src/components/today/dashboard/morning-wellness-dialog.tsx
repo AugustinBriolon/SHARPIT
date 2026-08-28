@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/components/ui/toast';
 import { useWellnessCheckin } from '@/hooks/use-wellness-checkin';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { cn } from '@/lib/utils';
@@ -152,19 +153,29 @@ export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => voi
   const [stressLevel, setStressLevel] = useState(2);
   const [notes, setNotes] = useState('');
 
-  if (loading || completed) return null;
+  if (loading || completed) {
+    return null;
+  }
 
-  function handleSubmit() {
-    if (guardDisabled) return;
-    submit({
-      mood,
-      energyLevel,
-      perceivedSoreness,
-      stressLevel,
-      notes: notes.trim() || null,
-    });
-    setOpen(false);
-    onCompleted?.();
+  async function handleSubmit() {
+    if (guardDisabled) {
+      return;
+    }
+    try {
+      await submit({
+        mood,
+        energyLevel,
+        perceivedSoreness,
+        stressLevel,
+        notes: notes.trim() || null,
+      });
+      setOpen(false);
+      onCompleted?.();
+    } catch {
+      toast.error("Une erreur est survenue lors de l'enregistrement de ton ressenti.", {
+        description: 'Réessaie plus tard.',
+      });
+    }
   }
 
   return (
@@ -245,12 +256,7 @@ export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => voi
         </div>
 
         <div className="border-border/60 bg-muted/40 shrink-0 border-t px-5 py-4">
-          <Button
-            className="w-full"
-            disabled={guardDisabled}
-            type="button"
-            onClick={handleSubmit}
-          >
+          <Button className="w-full" disabled={guardDisabled} type="button" onClick={handleSubmit}>
             {offline ? offlineLabel : 'Valider mon ressenti'}
           </Button>
         </div>

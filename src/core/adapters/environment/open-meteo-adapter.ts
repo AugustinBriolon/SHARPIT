@@ -3,6 +3,7 @@
  */
 
 import type { EnvironmentalProviderAdapter, AdapterMeta } from '@/core/environment/provider';
+import { isSet } from '@/lib/util/value';
 import type { WeatherMeasurements } from '@/core/environment/types';
 import { weatherFieldQuality } from '@/core/environment/quality';
 import type { ObservationRecordDraft } from '@/core/environment/record';
@@ -29,7 +30,9 @@ export type OpenMeteoHourlyPayload = {
 };
 
 function isOpenMeteoPayload(payload: unknown): payload is OpenMeteoHourlyPayload {
-  if (!payload || typeof payload !== 'object') return false;
+  if (!payload || typeof payload !== 'object') {
+    return false;
+  }
   return Array.isArray((payload as OpenMeteoHourlyPayload).hourly?.time);
 }
 
@@ -48,7 +51,9 @@ function toTrainingDayId(isoTime: string): string {
  */
 export function parseOpenMeteoHourlyTime(time: string, _timezone: string): Date {
   const trimmed = time.trim();
-  if (!trimmed) return new Date(Number.NaN);
+  if (!trimmed) {
+    return new Date(Number.NaN);
+  }
 
   if (/Z$/i.test(trimmed) || /[+-]\d{2}:?\d{2}$/.test(trimmed)) {
     return new Date(trimmed);
@@ -61,62 +66,100 @@ export function parseOpenMeteoHourlyTime(time: string, _timezone: string): Date 
   return new Date(`${withSeconds}Z`);
 }
 
+function hourlyValue(values: (number | null)[] | undefined, index: number): number | null {
+  return values?.[index] ?? null;
+}
+
+function buildHourlyWeatherData(
+  hourly: OpenMeteoHourlyPayload['hourly'],
+  index: number,
+): WeatherMeasurements {
+  return {
+    airTemperatureC: hourlyValue(hourly.temperature_2m, index),
+    apparentTemperatureC: hourlyValue(hourly.apparent_temperature, index),
+    relativeHumidityPct: hourlyValue(hourly.relative_humidity_2m, index),
+    dewPointC: hourlyValue(hourly.dew_point_2m, index),
+    precipitationMm: hourlyValue(hourly.precipitation, index),
+    cloudCoverPct: hourlyValue(hourly.cloud_cover, index),
+    windSpeedMps: hourlyValue(hourly.wind_speed_10m, index),
+    windGustMps: hourlyValue(hourly.wind_gusts_10m, index),
+    windDirectionDeg: hourlyValue(hourly.wind_direction_10m, index),
+    solarRadiationWm2: hourlyValue(hourly.shortwave_radiation, index),
+    uvIndex: hourlyValue(hourly.uv_index, index),
+    atmosphericPressureHpa: hourlyValue(hourly.surface_pressure, index),
+  };
+}
+
+type CreateWeatherDraftInput = {
+  payload: OpenMeteoHourlyPayload;
+  meta: AdapterMeta;
+  data: WeatherMeasurements;
+  observedAt: Date;
+  timeLabel: string;
+};
+
+function createWeatherDraft(input: CreateWeatherDraftInput): ObservationRecordDraft {
+  const { payload, meta, data, observedAt, timeLabel } = input;
+  const externalId = `${meta.externalIdPrefix ?? 'open-meteo'}:${timeLabel}`;
+
+  return {
+    athleteId: meta.athleteId,
+    dimension: 'WEATHER',
+    payload: { dimension: 'WEATHER', data },
+    observedAt,
+    receivedAt: meta.receivedAt,
+    trainingDayId: meta.trainingDayId ?? toTrainingDayId(timeLabel),
+    temporalScope: 'INTERVAL',
+    intervalStart: observedAt,
+    intervalEnd: new Date(observedAt.getTime() + 3_600_000),
+    exposure: 'OUTDOOR',
+    location: {
+      latitude: meta.location.latitude ?? payload.latitude,
+      longitude: meta.location.longitude ?? payload.longitude,
+      altitudeM: meta.location.altitudeM ?? null,
+      label: meta.location.label ?? null,
+    },
+    source: 'PROVIDER',
+    providerId: 'open-meteo',
+    externalId,
+    providerSnapshot: meta.providerSnapshot,
+    fieldQuality: weatherFieldQuality(data, 'open-meteo'),
+  };
+}
+
+function buildHourlyDraft(
+  payload: OpenMeteoHourlyPayload,
+  meta: AdapterMeta,
+  index: number,
+): ObservationRecordDraft | null {
+  const data = buildHourlyWeatherData(payload.hourly, index);
+  if (!Object.values(data).some((value) => isSet(value))) {
+    return null;
+  }
+
+  const timeLabel = payload.hourly.time[index];
+  const observedAt = parseOpenMeteoHourlyTime(timeLabel, payload.timezone);
+  if (Number.isNaN(observedAt.getTime())) {
+    return null;
+  }
+
+  return createWeatherDraft({ payload, meta, data, observedAt, timeLabel });
+}
+
 export const openMeteoEnvironmentalAdapter: EnvironmentalProviderAdapter = {
   providerId: 'open-meteo',
 
   adapt(payload: unknown, meta: AdapterMeta): ObservationRecordDraft[] {
-    if (!isOpenMeteoPayload(payload)) return [];
+    if (!isOpenMeteoPayload(payload)) {
+      return [];
+    }
 
-    const { hourly, latitude, longitude, timezone } = payload;
     const drafts: ObservationRecordDraft[] = [];
-
-    for (let i = 0; i < hourly.time.length; i++) {
-      const data: WeatherMeasurements = {
-        airTemperatureC: hourly.temperature_2m?.[i] ?? null,
-        apparentTemperatureC: hourly.apparent_temperature?.[i] ?? null,
-        relativeHumidityPct: hourly.relative_humidity_2m?.[i] ?? null,
-        dewPointC: hourly.dew_point_2m?.[i] ?? null,
-        precipitationMm: hourly.precipitation?.[i] ?? null,
-        cloudCoverPct: hourly.cloud_cover?.[i] ?? null,
-        windSpeedMps: hourly.wind_speed_10m?.[i] ?? null,
-        windGustMps: hourly.wind_gusts_10m?.[i] ?? null,
-        windDirectionDeg: hourly.wind_direction_10m?.[i] ?? null,
-        solarRadiationWm2: hourly.shortwave_radiation?.[i] ?? null,
-        uvIndex: hourly.uv_index?.[i] ?? null,
-        atmosphericPressureHpa: hourly.surface_pressure?.[i] ?? null,
-      };
-
-      const hasAny = Object.values(data).some((v) => v != null);
-      if (!hasAny) continue;
-
-      const observedAt = parseOpenMeteoHourlyTime(hourly.time[i], timezone);
-      if (Number.isNaN(observedAt.getTime())) continue;
-
-      const externalId = `${meta.externalIdPrefix ?? 'open-meteo'}:${hourly.time[i]}`;
-
-      drafts.push({
-        athleteId: meta.athleteId,
-        dimension: 'WEATHER',
-        payload: { dimension: 'WEATHER', data },
-        observedAt,
-        receivedAt: meta.receivedAt,
-        trainingDayId: meta.trainingDayId ?? toTrainingDayId(hourly.time[i]),
-        temporalScope: 'INTERVAL',
-        intervalStart: observedAt,
-        intervalEnd: new Date(observedAt.getTime() + 3_600_000),
-        exposure: 'OUTDOOR',
-        location: {
-          latitude: meta.location.latitude ?? latitude,
-          longitude: meta.location.longitude ?? longitude,
-          altitudeM: meta.location.altitudeM ?? null,
-          label: meta.location.label ?? null,
-        },
-        source: 'PROVIDER',
-        providerId: 'open-meteo',
-        externalId,
-        providerSnapshot: meta.providerSnapshot,
-        fieldQuality: weatherFieldQuality(data, 'open-meteo'),
-      });
+    for (let i = 0; i < payload.hourly.time.length; i++) {
+      const draft = buildHourlyDraft(payload, meta, i);
+      if (draft) {
+        drafts.push(draft);
+      }
     }
 
     return drafts;

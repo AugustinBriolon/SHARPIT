@@ -15,7 +15,9 @@ export function formatDayRange(start: Date | string, end: Date | string): string
   const to = asDate(end);
   const fullEnd = formatDateFns(to, 'd MMM yyyy', { locale: fr });
 
-  if (from.getTime() === to.getTime()) return fullEnd;
+  if (from.getTime() === to.getTime()) {
+    return fullEnd;
+  }
 
   const sameMonth = from.getFullYear() === to.getFullYear() && from.getMonth() === to.getMonth();
   return sameMonth
@@ -24,45 +26,63 @@ export function formatDayRange(start: Date | string, end: Date | string): string
 }
 
 export function formatDuration(seconds?: number | null): string {
-  if (!seconds) return '—';
+  if (!seconds) {
+    return '—';
+  }
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
-  if (h > 0) return `${h}h${m.toString().padStart(2, '0')}`;
+  if (h > 0) {
+    return `${h}h${m.toString().padStart(2, '0')}`;
+  }
   return `${m} min`;
 }
 
 /** Format mm:ss pour séries chronométrées (muscu, étirements). */
 export function formatClockDuration(seconds?: number | null): string {
-  if (!seconds) return '—';
+  if (!seconds) {
+    return '—';
+  }
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 export function formatPace(secPerKm?: number | null): string {
-  if (!secPerKm) return '—';
+  if (!secPerKm) {
+    return '—';
+  }
   const m = Math.floor(secPerKm / 60);
   const s = Math.round(secPerKm % 60);
   return `${m}'${s.toString().padStart(2, '0')}/km`;
 }
 
 export function formatSwimPace(secPer100m?: number | null): string {
-  if (!secPer100m) return '—';
+  if (!secPer100m) {
+    return '—';
+  }
   const m = Math.floor(secPer100m / 60);
   const s = Math.round(secPer100m % 60);
   return `${m}:${s.toString().padStart(2, '0')}/100m`;
 }
 
 export function formatDistance(meters?: number | null): string {
-  if (!meters) return '—';
-  if (meters >= 1000) return `${(meters / 1000).toFixed(2)} km`;
+  if (!meters) {
+    return '—';
+  }
+  if (meters >= 1000) {
+    return `${(meters / 1000).toFixed(2)} km`;
+  }
   return `${Math.round(meters)} m`;
 }
 
 export function formatDate(date: Date | string | null | undefined): string {
-  if (date == null) return '—';
+  if ((date === undefined || date === null)) {
+    return '—';
+  }
   const value = date instanceof Date ? date : new Date(date);
-  if (Number.isNaN(value.getTime())) return '—';
+  if (Number.isNaN(value.getTime())) {
+    return '—';
+  }
   return new Intl.DateTimeFormat('fr-FR', {
     weekday: 'short',
     day: 'numeric',

@@ -7,6 +7,7 @@
  * a structured one, and both must be able to go stale.
  */
 import type { SessionIntensity } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import {
   NO_TARGET,
   parseEndurancePrescription,
@@ -41,6 +42,54 @@ export type EffectiveEndurancePrescription = {
   warnings: string[];
 };
 
+function swimFallbackTarget(
+  intensity: SessionIntensity | null,
+  thresholds: AthleteThresholds,
+): { target: EnduranceTarget; warnings: string[] } {
+  const paceDefault = defaultTargetForIntensity('SWIM', intensity);
+  if (paceDefault.target.metric === 'pace' && isSet(thresholds.swimCssSecPer100m)) {
+    return paceDefault;
+  }
+  return { target: NO_TARGET, warnings: [...paceDefault.warnings, NO_CSS_WARNING] };
+}
+
+function bikeFallbackTarget(
+  intensity: SessionIntensity | null,
+  thresholds: AthleteThresholds,
+): { target: EnduranceTarget; warnings: string[] } {
+  const powerDefault = defaultTargetForIntensity('BIKE', intensity);
+  if (powerDefault.target.metric === 'power' && isSet(thresholds.ftpW)) {
+    return powerDefault;
+  }
+  return { target: NO_TARGET, warnings: [...powerDefault.warnings, NO_FTP_WARNING] };
+}
+
+function runFallbackTarget(
+  intensity: SessionIntensity | null,
+  thresholds: AthleteThresholds,
+): { target: EnduranceTarget; warnings: string[] } {
+  const paceDefault = defaultTargetForIntensity('RUN', intensity);
+  if (paceDefault.target.metric === 'pace' && isSet(thresholds.runThresholdPaceSecPerKm)) {
+    return paceDefault;
+  }
+  if (isSet(thresholds.lthr) || isSet(thresholds.maxHr)) {
+    return { target: defaultHrTargetForIntensity(intensity), warnings: paceDefault.warnings };
+  }
+  return paceDefault;
+}
+
+const SPORT_FALLBACK: Record<
+  EnduranceSport,
+  (
+    intensity: SessionIntensity | null,
+    thresholds: AthleteThresholds,
+  ) => { target: EnduranceTarget; warnings: string[] }
+> = {
+  SWIM: swimFallbackTarget,
+  BIKE: bikeFallbackTarget,
+  RUN: runFallbackTarget,
+};
+
 /**
  * Target for a session with no structure: pace when a threshold pace is known,
  * heart rate as a fallback, nothing when neither reference exists.
@@ -50,30 +99,7 @@ export function fallbackTarget(
   intensity: SessionIntensity | null,
   thresholds: AthleteThresholds,
 ): { target: EnduranceTarget; warnings: string[] } {
-  if (sport === 'SWIM') {
-    // Heart rate is unusable in the water on most watches, so it is pace or nothing.
-    const paceDefault = defaultTargetForIntensity(sport, intensity);
-    if (paceDefault.target.metric === 'pace' && thresholds.swimCssSecPer100m != null) {
-      return paceDefault;
-    }
-    return { target: NO_TARGET, warnings: [...paceDefault.warnings, NO_CSS_WARNING] };
-  }
-
-  if (sport === 'BIKE') {
-    // Power only: heart rate would be anchored on running references, which are not the bike's.
-    const powerDefault = defaultTargetForIntensity(sport, intensity);
-    if (powerDefault.target.metric === 'power' && thresholds.ftpW != null) return powerDefault;
-    return { target: NO_TARGET, warnings: [...powerDefault.warnings, NO_FTP_WARNING] };
-  }
-
-  const paceDefault = defaultTargetForIntensity(sport, intensity);
-  if (paceDefault.target.metric === 'pace' && thresholds.runThresholdPaceSecPerKm != null) {
-    return paceDefault;
-  }
-  if (thresholds.lthr != null || thresholds.maxHr != null) {
-    return { target: defaultHrTargetForIntensity(intensity), warnings: paceDefault.warnings };
-  }
-  return paceDefault;
+  return SPORT_FALLBACK[sport](intensity, thresholds);
 }
 
 /**
@@ -100,7 +126,7 @@ export function effectiveEndurancePrescription(input: {
   }
 
   const durationMin =
-    input.durationMin != null && input.durationMin > 0 ? input.durationMin : DEFAULT_SESSION_MIN;
+    isSet(input.durationMin) && input.durationMin > 0 ? input.durationMin : DEFAULT_SESSION_MIN;
   const { target, warnings } = fallbackTarget(input.sport, input.intensity, input.thresholds);
 
   return {
@@ -118,7 +144,9 @@ function withPoolLength(
   prescription: EndurancePrescription,
   defaultPoolLengthM: number | null | undefined,
 ): EndurancePrescription {
-  if (prescription.sport !== 'SWIM') return prescription;
+  if (prescription.sport !== 'SWIM') {
+    return prescription;
+  }
   return {
     ...prescription,
     poolLengthM: prescription.poolLengthM ?? defaultPoolLengthM ?? DEFAULT_POOL_LENGTH_M,

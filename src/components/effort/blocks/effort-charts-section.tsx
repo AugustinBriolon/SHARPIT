@@ -29,7 +29,9 @@ const PMC_TITLE = 'Charge vs forme — 28 jours';
 const WEEKLY_TSS_TITLE = 'Charge hebdomadaire — 8 semaines';
 
 export function EffortPmcSection({ data }: { data: PmcPoint[] }) {
-  if (data.length === 0) return null;
+  if (data.length === 0) {
+    return null;
+  }
 
   return (
     <DrillDownSectionCard>
@@ -77,7 +79,9 @@ export function EffortPmcSection({ data }: { data: PmcPoint[] }) {
           <ReferenceLine stroke={CHART_REFERENCE_LINE} y={0} />
           <Tooltip
             content={({ active, payload }) => {
-              if (!active || !payload?.length) return null;
+              if (!active || !payload?.length) {
+                return null;
+              }
               const pt = payload[0]?.payload as PmcPoint;
               return (
                 <ChartTooltipCard>
@@ -129,7 +133,9 @@ export function EffortWeeklyTssSection({
   data: WeeklyTssPoint[];
   avgWeeklyTss: number;
 }) {
-  if (!data.some((w) => w.tss > 0)) return null;
+  if (!data.some((w) => w.tss > 0)) {
+    return null;
+  }
 
   return (
     <DrillDownSectionCard>
@@ -162,7 +168,9 @@ export function EffortWeeklyTssSection({
           )}
           <Tooltip
             content={({ active, payload }) => {
-              if (!active || !payload?.[0]) return null;
+              if (!active || !payload?.[0]) {
+                return null;
+              }
               const pt = payload[0].payload as WeeklyTssPoint;
               return (
                 <ChartTooltipCard>

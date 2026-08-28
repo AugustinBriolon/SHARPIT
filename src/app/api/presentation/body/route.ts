@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   const rawDays = searchParams.get('days');
 
   let days: number | null | undefined = 90;
-  if (rawDays == null) {
+  if (rawDays === null) {
     days = 90;
   } else if (rawDays === 'all') {
     days = null;

@@ -1,4 +1,5 @@
 import { format, subDays } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import { fr } from 'date-fns/locale';
 
 export interface HealthEntry {
@@ -22,7 +23,9 @@ export interface HealthEntry {
 }
 
 export function formatSleep(minutes?: number | null): string {
-  if (minutes == null) return '—';
+  if (minutes === undefined || minutes === null) {
+    return '—';
+  }
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return `${h}h${m.toString().padStart(2, '0')}`;
@@ -46,7 +49,9 @@ export interface TrendStat {
 }
 
 function average(values: number[]): number | null {
-  if (!values.length) return null;
+  if (!values.length) {
+    return null;
+  }
   return values.reduce((s, v) => s + v, 0) / values.length;
 }
 
@@ -55,16 +60,16 @@ export function computeTrend(
   key: keyof Pick<HealthEntry, 'hrv' | 'restingHr' | 'weightKg' | 'sleepMinutes' | 'recoveryScore'>,
 ): TrendStat {
   const sorted = [...entries].sort((a, b) => b.date.getTime() - a.date.getTime());
-  const values = sorted.map((e) => e[key]).filter((v): v is number => v != null);
+  const values = sorted.map((e) => e[key]).filter((v): v is number => isSet(v));
 
   const latest = values[0] ?? null;
   const last7 = values.slice(0, 7);
   const prev7 = values.slice(7, 14);
   const avg7 = average(last7);
   const avgPrev = average(prev7);
-  const delta = avg7 != null && avgPrev != null ? Number((avg7 - avgPrev).toFixed(1)) : null;
+  const delta = isSet(avg7) && isSet(avgPrev) ? Number((avg7 - avgPrev).toFixed(1)) : null;
 
-  return { latest, avg7: avg7 != null ? Number(avg7.toFixed(1)) : null, delta };
+  return { latest, avg7: isSet(avg7) ? Number(avg7.toFixed(1)) : null, delta };
 }
 
 export interface HealthChartPoint {
@@ -109,17 +114,23 @@ export function buildDailyWindowSeries<T extends { date: Date | string }, R>(
   });
 }
 
+function formatSleepHours(totalMinutes: number | null): number | null {
+  return isSet(totalMinutes) ? Number((totalMinutes / 60).toFixed(1)) : null;
+}
+
+function buildHealthChartPoint(day: Date, entry: HealthEntry | null): HealthChartPoint {
+  const total = entry ? effectiveSleepMinutes(entry) : null;
+  return {
+    date: healthDayKey(day),
+    label: format(day, 'd MMM', { locale: fr }),
+    hrv: entry?.hrv ?? null,
+    restingHr: entry?.restingHr ?? null,
+    weightKg: entry?.weightKg ?? null,
+    sleepHours: formatSleepHours(total),
+  };
+}
+
 export function buildHealthSeries(entries: HealthEntry[], days = 60): HealthChartPoint[] {
   const byDay = indexHealthEntriesByDay(entries);
-  return buildDailyWindowSeries(byDay, days, (day, entry) => {
-    const total = entry ? effectiveSleepMinutes(entry) : null;
-    return {
-      date: healthDayKey(day),
-      label: format(day, 'd MMM', { locale: fr }),
-      hrv: entry?.hrv ?? null,
-      restingHr: entry?.restingHr ?? null,
-      weightKg: entry?.weightKg ?? null,
-      sleepHours: total != null ? Number((total / 60).toFixed(1)) : null,
-    };
-  });
+  return buildDailyWindowSeries(byDay, days, buildHealthChartPoint);
 }

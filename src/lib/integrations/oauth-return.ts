@@ -92,7 +92,9 @@ export async function redirectAfterIntegrationConnect(
 
   const target = new URL(returnTo, publicOriginFromRequest(request));
   target.searchParams.set(provider, status);
-  if (dataClass) target.searchParams.set('dataClass', dataClass);
+  if (dataClass) {
+    target.searchParams.set('dataClass', dataClass);
+  }
   if (extra) {
     for (const [key, value] of Object.entries(extra)) {
       target.searchParams.set(key, value);

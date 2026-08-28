@@ -13,9 +13,15 @@ export function classifyInstallPrompt(input: {
   isIOS: boolean;
   hasBeforeInstallPromptEvent: boolean;
 }): InstallPromptKind {
-  if (input.isStandalone) return 'ALREADY_INSTALLED';
-  if (input.hasBeforeInstallPromptEvent) return 'NATIVE_PROMPT';
-  if (input.isIOS) return 'IOS_INSTRUCTIONS';
+  if (input.isStandalone) {
+    return 'ALREADY_INSTALLED';
+  }
+  if (input.hasBeforeInstallPromptEvent) {
+    return 'NATIVE_PROMPT';
+  }
+  if (input.isIOS) {
+    return 'IOS_INSTRUCTIONS';
+  }
   return 'UNSUPPORTED';
 }
 
@@ -27,7 +33,11 @@ export function shouldShowInstallCard(input: {
   dismissedAt: number | null;
   now: number;
 }): boolean {
-  if (input.kind === 'ALREADY_INSTALLED' || input.kind === 'UNSUPPORTED') return false;
-  if (input.dismissedAt == null) return true;
+  if (input.kind === 'ALREADY_INSTALLED' || input.kind === 'UNSUPPORTED') {
+    return false;
+  }
+  if ((input.dismissedAt === undefined || input.dismissedAt === null)) {
+    return true;
+  }
   return input.now - input.dismissedAt >= INSTALL_DISMISSAL_COOLDOWN_MS;
 }

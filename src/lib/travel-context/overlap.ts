@@ -1,4 +1,5 @@
 import { toUtcDateOnly } from '@/lib/travel-context/calendar-date';
+import { isSet } from '@/lib/util/value';
 
 export type TravelDateRange = {
   startDate: Date | string;
@@ -25,7 +26,9 @@ export function filterTravelsOverlappingRange<T extends TravelDateRange & { type
 ): T[] {
   const range = { startDate: rangeStart, endDate: rangeEnd };
   return contexts.filter((context) => {
-    if (context.type != null && context.type !== 'TRAVEL') return false;
+    if (isSet(context.type) && context.type !== 'TRAVEL') {
+      return false;
+    }
     return travelRangesOverlap(context, range);
   });
 }

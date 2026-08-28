@@ -3,6 +3,7 @@
  */
 
 import type { EnvironmentalApplicability, ExposureSetting } from './types';
+import { isSet } from '@/lib/util/value';
 
 export type ApplicabilityInput = {
   readonly sportType:
@@ -24,40 +25,63 @@ export type ApplicabilityInput = {
 
 const INDOOR_SPORTS = new Set(['STRENGTH', 'YOGA']);
 const PARTIAL_EXPOSURE_SPORTS = new Set(['OPEN_WATER', 'TRAIL_RUN', 'MTB']);
+const OUTDOOR_SPORTS = new Set(['RUN', 'BIKE', 'TRIATHLON']);
+const OUTDOOR_LOCATIONS = new Set(['ROAD', 'TRACK']);
+const INDOOR_LOCATIONS = new Set(['GYM', 'TRAINER', 'POOL']);
+
+function isIndoorContext(input: ApplicabilityInput): boolean {
+  if (input.indoorFlag === true || input.athleteDeclaredExposure === 'INDOOR') {
+    return true;
+  }
+  return isSet(input.locationType) && INDOOR_LOCATIONS.has(input.locationType);
+}
+
+function isOutdoorContext(input: ApplicabilityInput): boolean {
+  if (input.athleteDeclaredExposure === 'OUTDOOR' || input.indoorFlag === false) {
+    return true;
+  }
+  return OUTDOOR_SPORTS.has(input.sportType) || OUTDOOR_LOCATIONS.has(input.locationType ?? '');
+}
+
+function indoorSportApplicability(input: ApplicabilityInput): EnvironmentalApplicability | null {
+  if (!INDOOR_SPORTS.has(input.sportType) || input.indoorFlag === false) {
+    return null;
+  }
+  if (input.locationType === 'ROAD' || input.locationType === 'TRAIL') {
+    return 'OUTDOOR';
+  }
+  return 'INDOOR';
+}
+
+function partialExposureApplicability(
+  input: ApplicabilityInput,
+): EnvironmentalApplicability | null {
+  if (PARTIAL_EXPOSURE_SPORTS.has(input.sportType) || input.locationType === 'TRAIL') {
+    return 'PARTIALLY_EXPOSED';
+  }
+  return null;
+}
 
 export function resolveEnvironmentalApplicability(
   input: ApplicabilityInput,
 ): EnvironmentalApplicability {
-  if (input.indoorFlag === true) return 'INDOOR';
-  if (input.athleteDeclaredExposure === 'INDOOR') return 'INDOOR';
-  if (
-    input.locationType === 'GYM' ||
-    input.locationType === 'TRAINER' ||
-    input.locationType === 'POOL'
-  ) {
+  if (isIndoorContext(input)) {
     return 'INDOOR';
   }
 
-  if (INDOOR_SPORTS.has(input.sportType) && input.indoorFlag !== false) {
-    return input.locationType === 'ROAD' || input.locationType === 'TRAIL' ? 'OUTDOOR' : 'INDOOR';
+  const indoorSport = indoorSportApplicability(input);
+  if (indoorSport) {
+    return indoorSport;
   }
 
-  if (PARTIAL_EXPOSURE_SPORTS.has(input.sportType) || input.locationType === 'TRAIL') {
-    return 'PARTIALLY_EXPOSED';
+  const partialExposure = partialExposureApplicability(input);
+  if (partialExposure) {
+    return partialExposure;
   }
 
-  if (
-    input.sportType === 'RUN' ||
-    input.sportType === 'BIKE' ||
-    input.sportType === 'TRIATHLON' ||
-    input.locationType === 'ROAD' ||
-    input.locationType === 'TRACK'
-  ) {
+  if (isOutdoorContext(input)) {
     return 'OUTDOOR';
   }
-
-  if (input.athleteDeclaredExposure === 'OUTDOOR') return 'OUTDOOR';
-  if (input.indoorFlag === false) return 'OUTDOOR';
 
   return 'UNKNOWN';
 }
@@ -69,7 +93,11 @@ export function isEnvironmentApplicable(applicability: EnvironmentalApplicabilit
 export function applicabilityToExposure(
   applicability: EnvironmentalApplicability,
 ): ExposureSetting {
-  if (applicability === 'OUTDOOR' || applicability === 'PARTIALLY_EXPOSED') return 'OUTDOOR';
-  if (applicability === 'INDOOR') return 'INDOOR';
+  if (applicability === 'OUTDOOR' || applicability === 'PARTIALLY_EXPOSED') {
+    return 'OUTDOOR';
+  }
+  if (applicability === 'INDOOR') {
+    return 'INDOOR';
+  }
   return 'UNKNOWN';
 }

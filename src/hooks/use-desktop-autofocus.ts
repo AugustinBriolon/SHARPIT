@@ -17,9 +17,15 @@ export function useDesktopAutofocus<T extends HTMLElement>(
   active: boolean,
 ) {
   useEffect(() => {
-    if (!active) return;
-    if (typeof window === 'undefined') return;
-    if (!isFinePointer((query) => window.matchMedia(query))) return;
+    if (!active) {
+      return;
+    }
+    if (typeof window === 'undefined') {
+      return;
+    }
+    if (!isFinePointer((query) => window.matchMedia(query))) {
+      return;
+    }
     ref.current?.focus();
   }, [active, ref]);
 }

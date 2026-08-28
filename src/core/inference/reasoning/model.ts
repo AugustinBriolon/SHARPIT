@@ -6,6 +6,7 @@
  */
 
 import { runDecisionEngine, decisionStateToReasoningState } from '@/core/decision';
+import { isSet } from '@/lib/util/value';
 import { buildEnvironmentalDecisionSnapshotFromParts } from '@/core/inference/environment/snapshot';
 import { buildModelDirections } from './scoring';
 import type { ReasoningModelInput, ReasoningModelOutput, ReasoningSignals } from './types';
@@ -14,15 +15,14 @@ export function runReasoningModel(input: ReasoningModelInput): ReasoningModelOut
   const { trainingDayId, athleteId, athleteState } = input;
   const { recovery, fatigue, adaptation, physicalHealth, environmental } = athleteState;
 
-  const environmentSnapshot =
-    environmental != null
-      ? buildEnvironmentalDecisionSnapshotFromParts({
-          stress: environmental.stress,
-          impact: environmental.impact,
-          confidence: environmental.meta.confidence,
-          computedAt: environmental.meta.computedAt,
-        })
-      : null;
+  const environmentSnapshot = isSet(environmental)
+    ? buildEnvironmentalDecisionSnapshotFromParts({
+        stress: environmental.stress,
+        impact: environmental.impact,
+        confidence: environmental.meta.confidence,
+        computedAt: environmental.meta.computedAt,
+      })
+    : null;
 
   const { decisionState, signals } = runDecisionEngine({
     trainingDayId,

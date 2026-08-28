@@ -42,8 +42,12 @@ function easeStrengthDescription(raw: string | null): string {
     if (loadedExercise) {
       return 'activation musculaire sans charge lourde (poids du corps ou charge très légère)';
     }
-    if (heavyLoad) return 'charge légère / technique';
-    if (loadedWork) return 'travail technique léger';
+    if (heavyLoad) {
+      return 'charge légère / technique';
+    }
+    if (loadedWork) {
+      return 'travail technique léger';
+    }
     return 'activation sans charge lourde';
   });
   next = next.replace(/\blestés?\b/gi, 'légers / au poids du corps');

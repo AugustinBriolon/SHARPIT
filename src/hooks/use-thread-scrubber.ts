@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { isSet } from '@/lib/util/value';
 
 /**
  * Dragging the load ruler to move where the thread is read from.
@@ -29,9 +30,13 @@ export function useThreadScrubber({
   const indexFromClientX = useCallback(
     (clientX: number) => {
       const track = trackRef.current;
-      if (!track || count === 0) return null;
+      if (!track || count === 0) {
+        return null;
+      }
       const rect = track.getBoundingClientRect();
-      if (rect.width <= 0) return null;
+      if (rect.width <= 0) {
+        return null;
+      }
       const ratio = (clientX - rect.left) / rect.width;
       return Math.min(count - 1, Math.max(0, Math.floor(ratio * count)));
     },
@@ -45,14 +50,20 @@ export function useThreadScrubber({
 
   const schedule = useCallback(
     (index: number) => {
-      if (index === activeIndex) return;
+      if (index === activeIndex) {
+        return;
+      }
       pending.current = index;
-      if (frame.current != null) return;
+      if (isSet(frame.current)) {
+        return;
+      }
       frame.current = requestAnimationFrame(() => {
         frame.current = null;
         const next = pending.current;
         pending.current = null;
-        if (next != null) onChange(next);
+        if (isSet(next)) {
+          onChange(next);
+        }
       });
     },
     [activeIndex, onChange],
@@ -60,14 +71,18 @@ export function useThreadScrubber({
 
   useEffect(() => {
     return () => {
-      if (frame.current != null) cancelAnimationFrame(frame.current);
+      if (isSet(frame.current)) {
+        cancelAnimationFrame(frame.current);
+      }
     };
   }, []);
 
   const onPointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
       const index = indexFromClientX(event.clientX);
-      if (index == null) return;
+      if (index === undefined || index === null) {
+        return;
+      }
       setDragging(true);
       event.currentTarget.setPointerCapture(event.pointerId);
       schedule(index);
@@ -77,9 +92,13 @@ export function useThreadScrubber({
 
   const onPointerMove = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      if (!dragging) return;
+      if (!dragging) {
+        return;
+      }
       const index = indexFromClientX(event.clientX);
-      if (index != null) schedule(index);
+      if (isSet(index)) {
+        schedule(index);
+      }
     },
     [dragging, indexFromClientX, schedule],
   );
@@ -100,7 +119,9 @@ export function useThreadScrubber({
         return;
       }
       const delta = step[event.key];
-      if (delta === undefined) return;
+      if (delta === undefined) {
+        return;
+      }
       event.preventDefault();
       onChange(Math.min(count - 1, Math.max(0, activeIndex + delta)));
     },

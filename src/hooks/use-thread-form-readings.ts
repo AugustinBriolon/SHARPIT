@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { isSet } from '@/lib/util/value';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useAthleteProfile, useRecords, useThresholdHistory } from '@/hooks/use-data';
@@ -30,70 +31,88 @@ function timeLabel(seconds: number): string {
   return `${minutes}:${String(rest).padStart(2, '0')}`;
 }
 
+type ThresholdSnapshot = NonNullable<ReturnType<typeof useThresholdHistory>['data']>[number];
+
+function thresholdSeries(
+  history: ThresholdSnapshot[],
+  pick: (snapshot: ThresholdSnapshot) => number | null | undefined,
+): Array<number | null> | null {
+  const points = history.map((snapshot) => pick(snapshot) ?? null);
+  const known = points.filter((value): value is number => isSet(value));
+  if (known.length < 2) {
+    return null;
+  }
+  if (Math.min(...known) === Math.max(...known)) {
+    return null;
+  }
+  return points;
+}
+
+function tenKReading(
+  records: NonNullable<ReturnType<typeof useRecords>['data']>,
+): ThreadReading | null {
+  const tenK = records.runEfforts
+    ?.filter((effort) => effort.meters >= 9_500 && effort.meters <= 10_500)
+    .sort((a, b) => a.seconds - b.seconds)[0];
+  if (!tenK) {
+    return null;
+  }
+  return {
+    key: 'run-10k',
+    label: 'Record 10 km',
+    value: timeLabel(tenK.seconds),
+    note: tenK.date
+      ? `il y a ${formatDistanceToNowStrict(new Date(tenK.date), { locale: fr })}`
+      : null,
+    href: TWIN_DRILL_DOWN.records,
+  };
+}
+
+function buildThreadReadings(
+  profile: ReturnType<typeof useAthleteProfile>['data'],
+  records: ReturnType<typeof useRecords>['data'],
+  history: ThresholdSnapshot[],
+): ThreadReading[] {
+  const readings: ThreadReading[] = [];
+
+  if (profile?.runThresholdPaceSecPerKm) {
+    readings.push({
+      key: 'run-threshold',
+      label: 'Seuil course',
+      value: paceLabel(profile.runThresholdPaceSecPerKm),
+      lowerIsBetter: true,
+      series: thresholdSeries(history, (snapshot) => snapshot.runThresholdPaceSecPerKm),
+      href: TWIN_DRILL_DOWN.calibration,
+    });
+  }
+
+  if (profile?.ftpW) {
+    readings.push({
+      key: 'ftp',
+      label: 'FTP vélo',
+      value: `${profile.ftpW} W`,
+      series: thresholdSeries(history, (snapshot) => snapshot.ftpW),
+      href: TWIN_DRILL_DOWN.calibration,
+    });
+  }
+
+  if (records) {
+    const tenK = tenKReading(records);
+    if (tenK) {
+      readings.push(tenK);
+    }
+  }
+
+  return readings;
+}
+
 export function useThreadFormReadings(): ThreadReading[] {
   const profileQuery = useAthleteProfile();
   const recordsQuery = useRecords();
   const historyQuery = useThresholdHistory();
 
   return useMemo(() => {
-    /* Snapshots arrive newest first; a trace has to run the other way or every
-       improvement would be drawn as a decline. */
     const history = [...(historyQuery.data ?? [])].reverse();
-    const seriesOf = (pick: (snapshot: (typeof history)[number]) => number | null | undefined) => {
-      const points = history.map((snapshot) => pick(snapshot) ?? null);
-      const known = points.filter((value): value is number => value != null);
-      /* Two readings minimum, and they have to differ. A flat line drawn from
-         twelve identical snapshots claims a stability that was measured, when in
-         fact the figure was simply never revised — and a trace nobody can act on
-         is a number without a decision behind it. */
-      if (known.length < 2) return null;
-      if (Math.min(...known) === Math.max(...known)) return null;
-      return points;
-    };
-
-    const readings: ThreadReading[] = [];
-    const profile = profileQuery.data;
-
-    if (profile?.runThresholdPaceSecPerKm) {
-      readings.push({
-        key: 'run-threshold',
-        label: 'Seuil course',
-        value: paceLabel(profile.runThresholdPaceSecPerKm),
-        // Seconds per kilometre: falling is getting faster.
-        lowerIsBetter: true,
-        series: seriesOf((snapshot) => snapshot.runThresholdPaceSecPerKm),
-        href: TWIN_DRILL_DOWN.calibration,
-      });
-    }
-
-    if (profile?.ftpW) {
-      readings.push({
-        key: 'ftp',
-        label: 'FTP vélo',
-        value: `${profile.ftpW} W`,
-        series: seriesOf((snapshot) => snapshot.ftpW),
-        href: TWIN_DRILL_DOWN.calibration,
-      });
-    }
-
-    /* The 10 km is the effort most athletes recognise as a benchmark, and the one
-       most likely to exist — a marathon PR on a 4-week window would be absent. */
-    const tenK = recordsQuery.data?.runEfforts
-      ?.filter((effort) => effort.meters >= 9_500 && effort.meters <= 10_500)
-      .sort((a, b) => a.seconds - b.seconds)[0];
-
-    if (tenK) {
-      readings.push({
-        key: 'run-10k',
-        label: 'Record 10 km',
-        value: timeLabel(tenK.seconds),
-        note: tenK.date
-          ? `il y a ${formatDistanceToNowStrict(new Date(tenK.date), { locale: fr })}`
-          : null,
-        href: TWIN_DRILL_DOWN.records,
-      });
-    }
-
-    return readings;
+    return buildThreadReadings(profileQuery.data, recordsQuery.data, history);
   }, [profileQuery.data, recordsQuery.data, historyQuery.data]);
 }

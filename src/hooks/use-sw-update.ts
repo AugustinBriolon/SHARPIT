@@ -26,10 +26,14 @@ export function useServiceWorkerUpdate(): UseServiceWorkerUpdateResult {
   const reloadedRef = useRef(false);
 
   useEffect(() => {
-    if (!('serviceWorker' in navigator)) return;
+    if (!('serviceWorker' in navigator)) {
+      return;
+    }
 
     function onWaiting(registration: ServiceWorkerRegistration) {
-      if (!registration.waiting) return;
+      if (!registration.waiting) {
+        return;
+      }
       waitingWorkerRef.current = registration.waiting;
       dispatch({ type: 'WAITING_DETECTED' });
     }
@@ -38,7 +42,9 @@ export function useServiceWorkerUpdate(): UseServiceWorkerUpdateResult {
       onWaiting(registration);
       registration.addEventListener('updatefound', () => {
         const { installing } = registration;
-        if (!installing) return;
+        if (!installing) {
+          return;
+        }
         installing.addEventListener('statechange', () => {
           // "installed" + an existing controller means this is an update to an
           // already-active worker, not the very first install — that's the case
@@ -51,12 +57,16 @@ export function useServiceWorkerUpdate(): UseServiceWorkerUpdateResult {
     }
 
     void navigator.serviceWorker.getRegistration().then((registration) => {
-      if (registration) watchRegistration(registration);
+      if (registration) {
+        watchRegistration(registration);
+      }
     });
 
     function onControllerChange() {
       dispatch({ type: 'CONTROLLER_CHANGED' });
-      if (reloadedRef.current) return;
+      if (reloadedRef.current) {
+        return;
+      }
       reloadedRef.current = true;
       window.location.reload();
     }

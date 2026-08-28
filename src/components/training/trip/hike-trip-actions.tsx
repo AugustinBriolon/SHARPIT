@@ -50,7 +50,9 @@ export function HikeTripActionsMenu({ tripId, tripName }: { tripId: string; trip
       confirmLabel: 'Supprimer',
       variant: 'destructive',
     });
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
     remove.mutate(tripId, {
       onSuccess: () => router.push('/training/trips'),
     });
@@ -117,7 +119,9 @@ export function HikeTripActionsMenu({ tripId, tripName }: { tripId: string; trip
         open={renameOpen}
         onOpenChange={(open) => {
           setRenameOpen(open);
-          if (open) setRenameValue(tripName);
+          if (open) {
+            setRenameValue(tripName);
+          }
         }}
       >
         <DialogContent className="sm:max-w-md">
@@ -159,13 +163,15 @@ export function HikeTripAddStepControl({ tripId }: { tripId: string }) {
   const availableHikes = useMemo(
     () =>
       (activities ?? []).filter(
-        (activity) => activity.type === ActivityType.HIKE && activity.hikeTripId == null,
+        (activity) => activity.type === ActivityType.HIKE && activity.hikeTripId === null,
       ),
     [activities],
   );
 
   function handleAdd() {
-    if (!selectedId) return;
+    if (!selectedId) {
+      return;
+    }
     patch.mutate(
       { id: tripId, data: { addActivityIds: [selectedId] } },
       {

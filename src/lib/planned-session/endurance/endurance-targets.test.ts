@@ -77,7 +77,9 @@ describe('resolveEnduranceTarget — pace', () => {
   it('keeps the speed range ascending, the order Garmin expects', () => {
     const { target } = defaultTargetForIntensity('RUN', 'THRESHOLD');
     const { resolved } = resolveEnduranceTarget(target, THRESHOLDS, 'RUN');
-    if (resolved.metric !== 'pace') throw new Error('expected a pace target');
+    if (resolved.metric !== 'pace') {
+      throw new Error('expected a pace target');
+    }
 
     expect(resolved.speedMsMin).toBeLessThan(resolved.speedMsMax);
     // Speed comes from the unrounded pace (240 / 0.975 = 246.15 s/km), not the
@@ -89,7 +91,9 @@ describe('resolveEnduranceTarget — pace', () => {
   it('keeps an easy band readable on the watch', () => {
     const { target } = defaultTargetForIntensity('RUN', 'RECOVERY');
     const { resolved } = resolveEnduranceTarget(target, THRESHOLDS, 'RUN');
-    if (resolved.metric !== 'pace') throw new Error('expected a pace target');
+    if (resolved.metric !== 'pace') {
+      throw new Error('expected a pace target');
+    }
 
     // 4:00/km threshold, recovery centred on 68 % of speed, ±7.5 %.
     expect(resolved.paceSecFast).toBe(318); // 5:18/km
@@ -229,7 +233,9 @@ describe('resolveEnduranceTarget — swimming', () => {
   it('reads per 100 m, not per kilometre', () => {
     const { target } = defaultTargetForIntensity('SWIM', 'THRESHOLD');
     const { resolved } = resolveEnduranceTarget(target, THRESHOLDS, 'SWIM');
-    if (resolved.metric !== 'pace') throw new Error('expected a pace target');
+    if (resolved.metric !== 'pace') {
+      throw new Error('expected a pace target');
+    }
 
     expect(resolved.paceUnit).toBe('100m');
     // CSS 100 s/100 m, band 97.5–102.5 % of speed.
@@ -243,7 +249,9 @@ describe('resolveEnduranceTarget — swimming', () => {
   it('converts to m/s over 100 m, so the speed stays swimmer-sized', () => {
     const { target } = defaultTargetForIntensity('SWIM', 'THRESHOLD');
     const { resolved } = resolveEnduranceTarget(target, THRESHOLDS, 'SWIM');
-    if (resolved.metric !== 'pace') throw new Error('expected a pace target');
+    if (resolved.metric !== 'pace') {
+      throw new Error('expected a pace target');
+    }
 
     expect(resolved.speedMsMin).toBeLessThan(resolved.speedMsMax);
     expect(resolved.speedMsMin).toBeCloseTo(0.975, 3);

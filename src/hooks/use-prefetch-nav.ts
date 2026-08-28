@@ -23,16 +23,51 @@ import { queryKeys } from '@/lib/query/keys';
 
 const PREFETCH_STALE = 5 * 60_000;
 
-function prefetchTrainingHub(pre: <T>(key: readonly unknown[], fn: () => Promise<T>) => void) {
+type PrefetchFn = <T>(key: readonly unknown[], fn: () => Promise<T>) => void;
+
+function prefetchNavRoute(href: string, pre: PrefetchFn, trainingDayId: string): void {
+  const routes: Record<string, () => void> = {
+    '/': () =>
+      pre(queryKeys.presentationToday(trainingDayId), () => fetchTodayPresentation(trainingDayId)),
+    '/training': () => prefetchTrainingHub(pre),
+    '/progress': () => {
+      pre(queryKeys.goals, fetchGoals);
+      prefetchProgressHub(pre, trainingDayId);
+    },
+    '/settings': () => pre(queryKeys.goals, fetchGoals),
+    '/settings/account': () => pre(queryKeys.goals, fetchGoals),
+    '/coach': () => {
+      pre(queryKeys.plannedSessions, fetchPlannedSessions);
+      pre(queryKeys.activities, fetchActivities);
+      pre(queryKeys.conversations, fetchConversations);
+    },
+    '/training/planning': () => {
+      pre(queryKeys.plannedSessions, fetchPlannedSessions);
+      pre(queryKeys.goals, fetchGoals);
+    },
+    '/today/recovery': () =>
+      pre(['presentation', 'recovery', trainingDayId], () =>
+        fetchRecoveryPresentation(trainingDayId),
+      ),
+    '/today/sleep': () =>
+      pre(['presentation', 'sleep', trainingDayId], () => fetchSleepPresentation(trainingDayId)),
+    '/today/effort': () =>
+      pre(['presentation', 'effort', trainingDayId], () => fetchEffortPresentation(trainingDayId)),
+    '/today/adaptation': () =>
+      pre(['presentation', 'adaptation', trainingDayId], () =>
+        fetchAdaptationPresentation(trainingDayId),
+      ),
+  };
+  routes[href]?.();
+}
+
+function prefetchTrainingHub(pre: PrefetchFn) {
   pre(queryKeys.plannedSessions, fetchPlannedSessions);
   pre(queryKeys.activities, fetchActivities);
   pre(queryKeys.goals, fetchGoals);
 }
 
-function prefetchProgressHub(
-  pre: <T>(key: readonly unknown[], fn: () => Promise<T>) => void,
-  trainingDayId: string,
-) {
+function prefetchProgressHub(pre: PrefetchFn, trainingDayId: string) {
   pre(['presentation', 'recovery', trainingDayId], () => fetchRecoveryPresentation(trainingDayId));
   pre(['presentation', 'body', 'all'], () => fetchBodyPresentation(null));
   pre(['presentation', 'physical-health', trainingDayId], () =>
@@ -59,53 +94,7 @@ export function usePrefetchNavQuery() {
         void queryClient.prefetchQuery({ queryKey: key, queryFn: fn, staleTime: PREFETCH_STALE });
       };
 
-      switch (href) {
-        case '/':
-          pre(queryKeys.presentationToday(trainingDayId), () =>
-            fetchTodayPresentation(trainingDayId),
-          );
-          break;
-        case '/training':
-          prefetchTrainingHub(pre);
-          break;
-        case '/progress':
-          pre(queryKeys.goals, fetchGoals);
-          prefetchProgressHub(pre, trainingDayId);
-          break;
-        case '/settings':
-        case '/settings/account':
-          pre(queryKeys.goals, fetchGoals);
-          break;
-        case '/coach':
-          pre(queryKeys.plannedSessions, fetchPlannedSessions);
-          pre(queryKeys.activities, fetchActivities);
-          pre(queryKeys.conversations, fetchConversations);
-          break;
-        case '/training/planning':
-          pre(queryKeys.plannedSessions, fetchPlannedSessions);
-          pre(queryKeys.goals, fetchGoals);
-          break;
-        case '/today/recovery':
-          pre(['presentation', 'recovery', trainingDayId], () =>
-            fetchRecoveryPresentation(trainingDayId),
-          );
-          break;
-        case '/today/sleep':
-          pre(['presentation', 'sleep', trainingDayId], () =>
-            fetchSleepPresentation(trainingDayId),
-          );
-          break;
-        case '/today/effort':
-          pre(['presentation', 'effort', trainingDayId], () =>
-            fetchEffortPresentation(trainingDayId),
-          );
-          break;
-        case '/today/adaptation':
-          pre(['presentation', 'adaptation', trainingDayId], () =>
-            fetchAdaptationPresentation(trainingDayId),
-          );
-          break;
-      }
+      prefetchNavRoute(href, pre, trainingDayId);
     },
     [queryClient],
   );

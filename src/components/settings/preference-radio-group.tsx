@@ -11,6 +11,39 @@ export type PreferenceOption<TId extends string> = {
   icon: LucideIcon;
 };
 
+function handleArrowKeys(
+  event: React.KeyboardEvent<HTMLButtonElement>,
+  index: number,
+  selectAt: (index: number) => void,
+  length: number,
+) {
+  if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+    event.preventDefault();
+    selectAt((index + 1) % length);
+    return;
+  }
+  if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+    event.preventDefault();
+    selectAt((index - 1 + length) % length);
+  }
+}
+
+function handleHomeEndKeys(
+  event: React.KeyboardEvent<HTMLButtonElement>,
+  selectAt: (index: number) => void,
+  length: number,
+) {
+  if (event.key === 'Home') {
+    event.preventDefault();
+    selectAt(0);
+    return;
+  }
+  if (event.key === 'End') {
+    event.preventDefault();
+    selectAt(length - 1);
+  }
+}
+
 /**
  * The settings radio pattern — one card per option, arrow-key roving focus.
  *
@@ -37,38 +70,19 @@ export function PreferenceRadioGroup<TId extends string>({
 
   function selectAt(index: number) {
     const option = options[index];
-    if (!option) return;
+    if (!option) {
+      return;
+    }
     onChange(option.id);
     focusOption(index);
   }
 
   function onRadioKeyDown(event: React.KeyboardEvent<HTMLButtonElement>, index: number) {
-    switch (event.key) {
-      case 'ArrowDown':
-      case 'ArrowRight':
-        event.preventDefault();
-        selectAt((index + 1) % options.length);
-        break;
-      case 'ArrowUp':
-      case 'ArrowLeft':
-        event.preventDefault();
-        selectAt((index - 1 + options.length) % options.length);
-        break;
-      case 'Home':
-        event.preventDefault();
-        selectAt(0);
-        break;
-      case 'End':
-        event.preventDefault();
-        selectAt(options.length - 1);
-        break;
-      case ' ':
-      case 'Enter':
-        event.preventDefault();
-        selectAt(index);
-        break;
-      default:
-        break;
+    handleArrowKeys(event, index, selectAt, options.length);
+    handleHomeEndKeys(event, selectAt, options.length);
+    if (event.key === ' ' || event.key === 'Enter') {
+      event.preventDefault();
+      selectAt(index);
     }
   }
 

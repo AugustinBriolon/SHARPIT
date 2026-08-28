@@ -16,13 +16,12 @@ import {
   useRef,
   useState,
 } from 'react';
-import { createPortal } from 'react-dom';
 import { usePopoverPortalPosition } from '@/components/motion/popover-position';
-import { EASE_OUT, SPRING_PANEL } from '@/lib/ease';
 import { cn } from '@/lib/utils';
 
-type Side = 'top' | 'bottom';
-type Align = 'start' | 'end';
+import { resolveMorphPopoverPosition } from '@/components/motion/morph-popover-helpers';
+import { MorphPopoverPortal } from '@/components/motion/morph-popover-portal';
+import type { Align, Side } from '@/components/motion/popover-morph-types';
 
 type MorphContextValue = {
   open: boolean;
@@ -40,7 +39,9 @@ const MorphContext = createContext<MorphContextValue | null>(null);
 
 function useMorphContext(component: string) {
   const ctx = useContext(MorphContext);
-  if (!ctx) throw new Error(`${component} must be used within <MorphPopover>`);
+  if (!ctx) {
+    throw new Error(`${component} must be used within <MorphPopover>`);
+  }
   return ctx;
 }
 
@@ -76,7 +77,9 @@ export function MorphPopover({
 
   const setOpen = useCallback(
     (next: boolean) => {
-      if (!controlled) setInternalOpen(next);
+      if (!controlled) {
+        setInternalOpen(next);
+      }
       onOpenChange?.(next);
     },
     [controlled, onOpenChange],
@@ -106,17 +109,23 @@ export function MorphPopover({
     setOpen(false);
     const focused = document.activeElement;
     const inPanel = focused instanceof HTMLElement && contentRef.current?.contains(focused);
-    if (!inPanel) return;
+    if (!inPanel) {
+      return;
+    }
     const restore = trigger ?? (root && root.tabIndex >= 0 ? root : null);
     restore?.focus();
   }, [root, setOpen, trigger]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close();
     const onPointer = (e: PointerEvent) => {
       const target = e.target as Node;
-      if (root && !root.contains(target) && !contentRef.current?.contains(target)) close();
+      if (root && !root.contains(target) && !contentRef.current?.contains(target)) {
+        close();
+      }
     };
     window.addEventListener('keydown', onKey);
     window.addEventListener('pointerdown', onPointer);
@@ -156,9 +165,11 @@ export interface MorphPopoverTriggerProps {
 function mergeRefs<T>(...refs: Array<Ref<T> | undefined>) {
   return (node: T | null) => {
     for (const ref of refs) {
-      if (typeof ref === 'function') ref(node);
-      else if (ref && typeof ref === 'object')
+      if (typeof ref === 'function') {
+        ref(node);
+      } else if (ref && typeof ref === 'object') {
         (ref as React.MutableRefObject<T | null>).current = node;
+      }
     }
   };
 }
@@ -166,7 +177,9 @@ function mergeRefs<T>(...refs: Array<Ref<T> | undefined>) {
 /** Wraps a single element, toggling the popover on click. */
 export function MorphPopoverTrigger({ children }: MorphPopoverTriggerProps) {
   const ctx = useMorphContext('MorphPopoverTrigger');
-  if (!isValidElement(children)) return children;
+  if (!isValidElement(children)) {
+    return children;
+  }
 
   const child = children as ReactElement<Record<string, unknown>>;
   const childOnClick = child.props.onClick as ((e: unknown) => void) | undefined;
@@ -185,31 +198,11 @@ export function MorphPopoverTrigger({ children }: MorphPopoverTriggerProps) {
   });
 }
 
-const originFor = (side: Side, align: Align) =>
-  `${side === 'bottom' ? 'top' : 'bottom'} ${align === 'end' ? 'right' : 'left'}`;
-
-// A clip that hides everything but the corner nearest the trigger, so the
-// panel appears to grow out of it. inset(top right bottom left).
-function clipHidden(side: Side, align: Align, radius: number) {
-  const top = side === 'bottom' ? '0%' : '92%';
-  const bottom = side === 'bottom' ? '92%' : '0%';
-  const right = align === 'end' ? '0%' : '92%';
-  const left = align === 'end' ? '92%' : '0%';
-  return `inset(${top} ${right} ${bottom} ${left} round ${radius}px)`;
-}
-const clipShown = (radius: number) => `inset(0% 0% 0% 0% round ${radius}px)`;
-
-// Preserve the original spring character on the wrapper, but tween the complex
-// clip-path so it cannot snap when the spring resolves its final distance.
-const MORPH_CLIP_TRANSITION = { duration: 0.32, ease: EASE_OUT } as const;
-
 export interface MorphPopoverContentProps {
   children: ReactNode;
   side?: Side;
   align?: Align;
-  /** Gap between trigger and panel, in px. Default 8. */
   sideOffset?: number;
-  /** Panel corner radius, in px. Default 16. */
   radius?: number;
   className?: string;
 }
@@ -228,76 +221,29 @@ export function MorphPopoverContent({
   const layout = usePopoverPortalPosition(ctx.triggerRef, ctx.contentRef, portalReady && ctx.open);
 
   useEffect(() => setPortalReady(true), []);
-  let left = 0;
-  let top = 0;
-  if (layout) {
-    const {
-      trigger: { left: triggerLeft, top: triggerTop, width: triggerWidth, height: triggerHeight },
-      content: { width: contentWidth, height: contentHeight },
-    } = layout;
-    left = align === 'end' ? triggerLeft + triggerWidth - contentWidth : triggerLeft;
-    top =
-      side === 'bottom'
-        ? triggerTop + triggerHeight + sideOffset
-        : triggerTop - contentHeight - sideOffset;
+
+  const position = resolveMorphPopoverPosition({ layout, side, align, sideOffset });
+
+  if (!portalReady) {
+    return null;
   }
 
-  // Both directions travel between the exact same hidden/show states. Exit
-  // targets "hidden" directly instead of introducing separate choreography.
-  const wrap = reduce
-    ? undefined
-    : {
-        hidden: { opacity: 0, scale: 0.96, transition: SPRING_PANEL },
-        show: { opacity: 1, scale: 1, transition: SPRING_PANEL },
-      };
-  const clip = reduce
-    ? undefined
-    : {
-        hidden: {
-          clipPath: clipHidden(side, align, radius),
-          transition: MORPH_CLIP_TRANSITION,
-        },
-        show: {
-          clipPath: clipShown(radius),
-          transition: MORPH_CLIP_TRANSITION,
-        },
-      };
-
-  // Keep the server and first client render identical, then mount the portal.
-  if (!portalReady) return null;
-
-  return createPortal(
-    <AnimatePresence>
-      {ctx.open ? (
-        <motion.div
-          animate={reduce ? { opacity: 1 } : 'show'}
-          className="fixed z-[9999] [filter:drop-shadow(0_10px_18px_rgba(0,0,0,0.14))]"
-          data-morph-popover-portal=""
-          exit={reduce ? { opacity: 0 } : 'hidden'}
-          initial={reduce ? { opacity: 0 } : 'hidden'}
-          transition={reduce ? { duration: 0.12 } : undefined}
-          variants={wrap}
-          style={{
-            left,
-            top,
-            visibility: layout ? 'visible' : 'hidden',
-            transformOrigin: originFor(side, align),
-          }}
-        >
-          <motion.div
-            ref={ctx.contentRef}
-            aria-labelledby={ctx.triggerId}
-            className={cn('border-border bg-background overflow-hidden border', className)}
-            id={ctx.contentId}
-            role="dialog"
-            style={{ borderRadius: radius }}
-            variants={clip}
-          >
-            {children}
-          </motion.div>
-        </motion.div>
-      ) : null}
-    </AnimatePresence>,
-    document.body,
+  return (
+    <MorphPopoverPortal
+      align={align}
+      className={className}
+      contentId={ctx.contentId}
+      contentRef={ctx.contentRef}
+      left={position.left}
+      open={ctx.open}
+      radius={radius}
+      reduce={reduce}
+      side={side}
+      top={position.top}
+      triggerId={ctx.triggerId}
+      visible={position.visible}
+    >
+      {children}
+    </MorphPopoverPortal>
   );
 }

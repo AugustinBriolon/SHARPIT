@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { after } from 'next/server';
 import { tool } from 'ai';
 import { addDays, startOfDay } from 'date-fns';
@@ -59,11 +60,17 @@ function scheduleSessionContextRefresh(athleteId: string, sessionId: string) {
 async function resolveCoachDefaultGoalId(athleteId: string): Promise<string | null> {
   const [plan, goals] = await Promise.all([getActiveTrainingPlan(athleteId), getGoals(athleteId)]);
   const fromPlan = resolveDefaultPlanGoalId(plan?.goalId, selectableDatedGoalIds(goals));
-  if (fromPlan) return fromPlan;
+  if (fromPlan) {
+    return fromPlan;
+  }
   // Fallback: plan goal still exists even if undated / past filter edge cases.
-  if (!plan?.goalId) return null;
+  if (!plan?.goalId) {
+    return null;
+  }
   const goal = await getGoalById(athleteId, plan.goalId);
-  if (!goal || goal.achieved) return null;
+  if (!goal || goal.achieved) {
+    return null;
+  }
   return plan.goalId;
 }
 
@@ -94,8 +101,410 @@ const strengthPrescriptionToolSchema = coachStrengthPrescriptionSchema
     'OBLIGATOIRE si type=STRENGTH : exercices structurés (séries/reps). Omettre pour RUN/BIKE/SWIM.',
   );
 
+function coachToolFailure(prefix: string, error: unknown) {
+  const detail = error instanceof Error ? error.message : String(error);
+  return { ok: false as const, error: `${prefix} : ${detail}` };
+}
+
+function roundOptionalMetric(value: number | null | undefined): number | null {
+  if (value === undefined || value === null || value === undefined) {
+    return null;
+  }
+  return Math.round(value);
+}
+
+type CoachPlannedSessionInput = {
+  type: 'RUN' | 'BIKE' | 'SWIM' | 'STRENGTH';
+  date: string;
+  startTime?: string;
+  title: string;
+  description?: string;
+  strengthPrescription?: z.infer<typeof strengthPrescriptionToolSchema>;
+  endurancePrescription?: z.infer<typeof endurancePrescriptionToolSchema>;
+  durationMin?: number;
+  load?: number;
+  intensity?: z.infer<typeof intensityEnum>;
+  exposureSetting?: z.infer<typeof exposureEnum>;
+  locationLabel?: string;
+  locationLat?: number;
+  locationLng?: number;
+};
+
+type CoachPlannedSessionResolved = {
+  strength: ReturnType<typeof resolveStrengthFieldsForPersist>;
+  endurance: ReturnType<typeof resolveEnduranceFieldsForPersist>;
+  goalId: string | null;
+};
+
+function buildCoachPlannedSessionLocationFields(input: CoachPlannedSessionInput) {
+  return {
+    exposureSetting: input.exposureSetting ?? null,
+    locationLabel: input.locationLabel ?? null,
+    locationLat: input.locationLat ?? null,
+    locationLng: input.locationLng ?? null,
+  };
+}
+
+function buildCoachPlannedSessionPayload(
+  input: CoachPlannedSessionInput,
+  resolved: CoachPlannedSessionResolved,
+) {
+  return {
+    type: input.type,
+    date: toDate(input.date),
+    startTime: input.startTime ?? null,
+    title: input.title,
+    description: resolved.endurance.description,
+    strengthPrescription: resolved.strength.strengthPrescription ?? undefined,
+    endurancePrescription: resolved.endurance.endurancePrescription ?? undefined,
+    durationMin: roundOptionalMetric(input.durationMin),
+    load: roundOptionalMetric(input.load),
+    intensity: input.intensity ?? null,
+    goalId: resolved.goalId,
+    ...buildCoachPlannedSessionLocationFields(input),
+  };
+}
+
+async function createCoachPlannedSessionRecord(
+  athleteId: string,
+  input: CoachPlannedSessionInput,
+  resolved: CoachPlannedSessionResolved,
+) {
+  return createPlannedSession(athleteId, buildCoachPlannedSessionPayload(input, resolved));
+}
+
+async function executeCreatePlannedSessionTool(
+  athleteId: string,
+  input: {
+    type: 'RUN' | 'BIKE' | 'SWIM' | 'STRENGTH';
+    date: string;
+    startTime?: string;
+    title: string;
+    description?: string;
+    strengthPrescription?: z.infer<typeof strengthPrescriptionToolSchema>;
+    endurancePrescription?: z.infer<typeof endurancePrescriptionToolSchema>;
+    durationMin?: number;
+    load?: number;
+    intensity?: z.infer<typeof intensityEnum>;
+    exposureSetting?: z.infer<typeof exposureEnum>;
+    locationLabel?: string;
+    locationLat?: number;
+    locationLng?: number;
+  },
+) {
+  const strength = resolveStrengthFieldsForPersist({
+    type: input.type,
+    description: input.description,
+    strengthPrescription: input.strengthPrescription,
+  });
+  const endurance = resolveEnduranceFieldsForPersist({
+    type: input.type,
+    description: strength.description,
+    intensity: input.intensity ?? null,
+    endurancePrescription: input.endurancePrescription,
+  });
+  const goalId = await resolveCoachDefaultGoalId(athleteId);
+  const s = await createCoachPlannedSessionRecord(athleteId, input, {
+    strength,
+    endurance,
+    goalId,
+  });
+
+  pushSessionToGoogleInBackground(s);
+  scheduleSessionContextRefresh(athleteId, s.id);
+
+  return {
+    ok: true as const,
+    id: s.id,
+    action: 'created' as const,
+    date: input.date,
+    startTime: input.startTime ?? null,
+    type: input.type,
+    title: input.title,
+    addedToGoogle: false,
+    strengthAudit: auditStrengthPrescription({
+      durationMin: input.durationMin,
+      prescription: strength.strengthPrescription,
+    }),
+  };
+}
+
+function applyPlannedSessionScheduleUpdate(
+  input: { date?: string; startTime?: string },
+  data: Prisma.PlannedSessionUncheckedUpdateInput,
+): void {
+  if (input.date) {
+    data.date = toDate(input.date);
+  }
+  if (input.startTime !== undefined) {
+    data.startTime = input.startTime;
+  }
+}
+
+function applyPlannedSessionMetaUpdate(
+  input: {
+    type?: z.infer<typeof typeEnum>;
+    intensity?: z.infer<typeof intensityEnum>;
+    title?: string;
+    description?: string;
+    durationMin?: number;
+    load?: number;
+  },
+  data: Prisma.PlannedSessionUncheckedUpdateInput,
+): void {
+  if (input.type) {
+    data.type = input.type;
+  }
+  if (input.intensity) {
+    data.intensity = input.intensity;
+  }
+  if (input.title !== undefined) {
+    data.title = input.title;
+  }
+  if (input.description !== undefined) {
+    data.description = input.description;
+  }
+  if (input.durationMin !== undefined) {
+    data.durationMin = input.durationMin;
+  }
+  if (input.load !== undefined) {
+    data.load = input.load;
+  }
+}
+
+function applyPlannedSessionLocationUpdate(
+  input: {
+    exposureSetting?: z.infer<typeof exposureEnum>;
+    locationLabel?: string;
+    locationLat?: number;
+    locationLng?: number;
+  },
+  data: Prisma.PlannedSessionUncheckedUpdateInput,
+): void {
+  if (input.exposureSetting !== undefined) {
+    data.exposureSetting = input.exposureSetting;
+  }
+  if (input.locationLabel !== undefined) {
+    data.locationLabel = input.locationLabel;
+  }
+  if (input.locationLat !== undefined) {
+    data.locationLat = input.locationLat;
+  }
+  if (input.locationLng !== undefined) {
+    data.locationLng = input.locationLng;
+  }
+}
+
+function applyScalarPlannedSessionUpdate(
+  input: {
+    date?: string;
+    startTime?: string;
+    type?: z.infer<typeof typeEnum>;
+    intensity?: z.infer<typeof intensityEnum>;
+    title?: string;
+    description?: string;
+    durationMin?: number;
+    load?: number;
+    exposureSetting?: z.infer<typeof exposureEnum>;
+    locationLabel?: string;
+    locationLat?: number;
+    locationLng?: number;
+  },
+  data: Prisma.PlannedSessionUncheckedUpdateInput,
+): void {
+  applyPlannedSessionScheduleUpdate(input, data);
+  applyPlannedSessionMetaUpdate(input, data);
+  applyPlannedSessionLocationUpdate(input, data);
+}
+
+function applyStrengthPrescriptionUpdate(
+  input: {
+    type?: z.infer<typeof typeEnum>;
+    description?: string;
+    strengthPrescription?: z.infer<typeof strengthPrescriptionToolSchema>;
+  },
+  existing: NonNullable<Awaited<ReturnType<typeof getPlannedSessionById>>>,
+  data: Prisma.PlannedSessionUncheckedUpdateInput,
+): void {
+  const nextType = input.type ?? existing.type;
+  if (input.strengthPrescription !== undefined) {
+    const strength = resolveStrengthFieldsForPersist({
+      type: nextType,
+      description: input.description !== undefined ? input.description : existing.description,
+      strengthPrescription: input.strengthPrescription,
+    });
+    data.description = strength.description;
+    data.strengthPrescription =
+      strength.strengthPrescription === undefined || strength.strengthPrescription === null
+        ? Prisma.DbNull
+        : strength.strengthPrescription;
+    return;
+  }
+  if (input.type && input.type !== 'STRENGTH') {
+    data.strengthPrescription = Prisma.DbNull;
+  }
+}
+
+function applyEndurancePrescriptionUpdate(
+  input: {
+    type?: z.infer<typeof typeEnum>;
+    description?: string;
+    intensity?: z.infer<typeof intensityEnum>;
+    endurancePrescription?: z.infer<typeof endurancePrescriptionToolSchema>;
+  },
+  existing: NonNullable<Awaited<ReturnType<typeof getPlannedSessionById>>>,
+  data: Prisma.PlannedSessionUncheckedUpdateInput,
+): void {
+  const nextType = input.type ?? existing.type;
+  if (input.endurancePrescription !== undefined) {
+    const endurance = resolveEnduranceFieldsForPersist({
+      type: nextType,
+      description: typeof data.description === 'string' ? data.description : null,
+      intensity: input.intensity ?? existing.intensity,
+      endurancePrescription: input.endurancePrescription,
+    });
+    data.description = endurance.description;
+    data.endurancePrescription =
+      endurance.endurancePrescription === undefined || endurance.endurancePrescription === null
+        ? Prisma.DbNull
+        : endurance.endurancePrescription;
+    return;
+  }
+  if (input.type === 'STRENGTH') {
+    data.endurancePrescription = Prisma.DbNull;
+  }
+}
+
+function applyPrescriptionUpdates(
+  input: {
+    type?: z.infer<typeof typeEnum>;
+    description?: string;
+    intensity?: z.infer<typeof intensityEnum>;
+    strengthPrescription?: z.infer<typeof strengthPrescriptionToolSchema>;
+    endurancePrescription?: z.infer<typeof endurancePrescriptionToolSchema>;
+    date?: string;
+  },
+  existing: NonNullable<Awaited<ReturnType<typeof getPlannedSessionById>>>,
+  data: Prisma.PlannedSessionUncheckedUpdateInput,
+): void {
+  applyStrengthPrescriptionUpdate(input, existing, data);
+  applyEndurancePrescriptionUpdate(input, existing, data);
+  Object.assign(
+    data,
+    garminPushClearOnSessionChange({
+      ...(input.strengthPrescription !== undefined
+        ? { strengthPrescription: input.strengthPrescription }
+        : {}),
+      ...(input.endurancePrescription !== undefined
+        ? { endurancePrescription: input.endurancePrescription }
+        : {}),
+      ...(input.date ? { date: input.date } : {}),
+    }) ?? {},
+  );
+}
+
+async function executeUpdatePlannedSessionTool(
+  athleteId: string,
+  input: {
+    id: string;
+    date?: string;
+    startTime?: string;
+    type?: z.infer<typeof typeEnum>;
+    intensity?: z.infer<typeof intensityEnum>;
+    title?: string;
+    description?: string;
+    strengthPrescription?: z.infer<typeof strengthPrescriptionToolSchema>;
+    endurancePrescription?: z.infer<typeof endurancePrescriptionToolSchema>;
+    durationMin?: number;
+    load?: number;
+    exposureSetting?: z.infer<typeof exposureEnum>;
+    locationLabel?: string;
+    locationLat?: number;
+    locationLng?: number;
+  },
+) {
+  const existing = await getPlannedSessionById(athleteId, input.id);
+  if (!existing) {
+    return { ok: false as const, error: 'Séance introuvable' };
+  }
+  const data: Prisma.PlannedSessionUncheckedUpdateInput = {};
+  applyScalarPlannedSessionUpdate(input, data);
+  applyPrescriptionUpdates(input, existing, data);
+
+  const s = await updatePlannedSession(athleteId, input.id, data);
+  if (!s) {
+    return { ok: false as const, error: 'Séance introuvable.' };
+  }
+  scheduleSessionContextRefresh(athleteId, s.id);
+  pushSessionToGoogleInBackground(s);
+
+  return {
+    ok: true as const,
+    id: s.id,
+    action: 'updated' as const,
+    date: dayKeyFromDate(s.date),
+    startTime: s.startTime,
+    type: s.type,
+    title: s.title,
+    strengthAudit: auditStrengthPrescription({
+      durationMin: input.durationMin ?? existing.durationMin,
+      prescription: parseStrengthPrescription(s.strengthPrescription),
+    }),
+  };
+}
+
+async function executeCreateBrickSessionTool(
+  athleteId: string,
+  input: {
+    date: string;
+    startTime?: string;
+    title?: string;
+    legs: Array<{
+      type: z.infer<typeof typeEnum>;
+      intensity?: z.infer<typeof intensityEnum>;
+      title: string;
+      description?: string;
+      durationMin?: number;
+      load?: number;
+    }>;
+  },
+) {
+  const goalId = await resolveCoachDefaultGoalId(athleteId);
+  const created = await createBrickSessions(
+    athleteId,
+    input.legs.map((leg) => ({
+      type: leg.type,
+      date: toDate(input.date),
+      startTime: input.startTime ?? null,
+      title: leg.title,
+      description: leg.description ?? null,
+      durationMin: isSet(leg.durationMin) ? Math.round(leg.durationMin) : null,
+      load: isSet(leg.load) ? Math.round(leg.load) : null,
+      intensity: leg.intensity ?? null,
+      goalId,
+    })),
+  );
+
+  for (const s of created) {
+    pushSessionToGoogleInBackground(s);
+  }
+
+  return {
+    ok: true as const,
+    action: 'created' as const,
+    brickGroupId: created[0]?.brickGroupId ?? null,
+    date: input.date,
+    title: input.title ?? created[0]?.title ?? 'Brick',
+    legs: created.map((s) => ({
+      id: s.id,
+      type: s.type,
+      title: s.title,
+      brickOrder: s.brickOrder,
+    })),
+  };
+}
+
 /**
- * Outils donnés au Coach IA pour agir directement sur les séances planifiées.
  * Tous s'exécutent côté serveur et renvoient un résumé compact.
  */
 export function createCoachTools(athleteId: string) {
@@ -212,60 +621,10 @@ export function createCoachTools(athleteId: string) {
       }),
       execute: async (input) => {
         try {
-          const strength = resolveStrengthFieldsForPersist({
-            type: input.type,
-            description: input.description,
-            strengthPrescription: input.strengthPrescription,
-          });
-          const endurance = resolveEnduranceFieldsForPersist({
-            type: input.type,
-            description: strength.description,
-            intensity: input.intensity ?? null,
-            endurancePrescription: input.endurancePrescription,
-          });
-          const goalId = await resolveCoachDefaultGoalId(athleteId);
-          const s = await createPlannedSession(athleteId, {
-            type: input.type,
-            date: toDate(input.date),
-            startTime: input.startTime ?? null,
-            title: input.title,
-            description: endurance.description,
-            strengthPrescription: strength.strengthPrescription ?? undefined,
-            endurancePrescription: endurance.endurancePrescription ?? undefined,
-            durationMin: input.durationMin != null ? Math.round(input.durationMin) : null,
-            load: input.load != null ? Math.round(input.load) : null,
-            intensity: input.intensity ?? null,
-            goalId,
-            exposureSetting: input.exposureSetting ?? null,
-            locationLabel: input.locationLabel ?? null,
-            locationLat: input.locationLat ?? null,
-            locationLng: input.locationLng ?? null,
-          });
-
-          pushSessionToGoogleInBackground(s);
-          scheduleSessionContextRefresh(athleteId, s.id);
-
-          return {
-            ok: true,
-            id: s.id,
-            action: 'created' as const,
-            date: input.date,
-            startTime: input.startTime ?? null,
-            type: input.type,
-            title: input.title,
-            addedToGoogle: false,
-            strengthAudit: auditStrengthPrescription({
-              durationMin: input.durationMin,
-              prescription: strength.strengthPrescription,
-            }),
-          };
+          return await executeCreatePlannedSessionTool(athleteId, input);
         } catch (error) {
           console.error('[coach] createPlannedSession', error);
-          const detail = error instanceof Error ? error.message : String(error);
-          return {
-            ok: false as const,
-            error: `Impossible d'ajouter la séance : ${detail}`,
-          };
+          return coachToolFailure("Impossible d'ajouter la séance", error);
         }
       },
     }),
@@ -299,48 +658,10 @@ export function createCoachTools(athleteId: string) {
       }),
       execute: async (input) => {
         try {
-          const goalId = await resolveCoachDefaultGoalId(athleteId);
-          const created = await createBrickSessions(
-            athleteId,
-            input.legs.map((leg) => ({
-              type: leg.type,
-              date: toDate(input.date),
-              startTime: input.startTime ?? null,
-              title: leg.title,
-              description: leg.description ?? null,
-              durationMin: leg.durationMin != null ? Math.round(leg.durationMin) : null,
-              load: leg.load != null ? Math.round(leg.load) : null,
-              intensity: leg.intensity ?? null,
-              goalId,
-            })),
-          );
-
-          for (const s of created) {
-            pushSessionToGoogleInBackground(s);
-          }
-
-          const brickGroupId = created[0]?.brickGroupId ?? null;
-
-          return {
-            ok: true as const,
-            action: 'created' as const,
-            brickGroupId,
-            date: input.date,
-            title: input.title ?? created[0]?.title ?? 'Brick',
-            legs: created.map((s) => ({
-              id: s.id,
-              type: s.type,
-              title: s.title,
-              brickOrder: s.brickOrder,
-            })),
-          };
+          return await executeCreateBrickSessionTool(athleteId, input);
         } catch (error) {
           console.error('[coach] createBrickSession', error);
-          const detail = error instanceof Error ? error.message : String(error);
-          return {
-            ok: false as const,
-            error: `Impossible de créer le brick : ${detail}`,
-          };
+          return coachToolFailure('Impossible de créer le brick', error);
         }
       },
     }),
@@ -369,99 +690,10 @@ export function createCoachTools(athleteId: string) {
       }),
       execute: async (input) => {
         try {
-          const existing = await getPlannedSessionById(athleteId, input.id);
-          if (!existing) {
-            return { ok: false as const, error: 'Séance introuvable' };
-          }
-          const data: Prisma.PlannedSessionUncheckedUpdateInput = {};
-          if (input.date) data.date = toDate(input.date);
-          if (input.startTime !== undefined) data.startTime = input.startTime;
-          if (input.type) data.type = input.type;
-          if (input.intensity) data.intensity = input.intensity;
-          if (input.title !== undefined) data.title = input.title;
-          if (input.description !== undefined) data.description = input.description;
-          if (input.durationMin !== undefined) data.durationMin = input.durationMin;
-          if (input.load !== undefined) data.load = input.load;
-          if (input.exposureSetting !== undefined) data.exposureSetting = input.exposureSetting;
-          if (input.locationLabel !== undefined) data.locationLabel = input.locationLabel;
-          if (input.locationLat !== undefined) data.locationLat = input.locationLat;
-          if (input.locationLng !== undefined) data.locationLng = input.locationLng;
-
-          const nextType = input.type ?? existing.type;
-          if (input.strengthPrescription !== undefined) {
-            const strength = resolveStrengthFieldsForPersist({
-              type: nextType,
-              description:
-                input.description !== undefined ? input.description : existing.description,
-              strengthPrescription: input.strengthPrescription,
-            });
-            data.description = strength.description;
-            data.strengthPrescription =
-              strength.strengthPrescription === null
-                ? Prisma.DbNull
-                : strength.strengthPrescription;
-          } else if (input.type && input.type !== 'STRENGTH') {
-            data.strengthPrescription = Prisma.DbNull;
-          }
-
-          if (input.endurancePrescription !== undefined) {
-            const endurance = resolveEnduranceFieldsForPersist({
-              type: nextType,
-              description: typeof data.description === 'string' ? data.description : null,
-              intensity: input.intensity ?? existing.intensity,
-              endurancePrescription: input.endurancePrescription,
-            });
-            data.description = endurance.description;
-            data.endurancePrescription =
-              endurance.endurancePrescription === null
-                ? Prisma.DbNull
-                : endurance.endurancePrescription;
-          } else if (input.type === 'STRENGTH') {
-            data.endurancePrescription = Prisma.DbNull;
-          }
-
-          // The watch holds what was pushed, not what the coach just changed.
-          Object.assign(
-            data,
-            garminPushClearOnSessionChange({
-              ...(input.strengthPrescription !== undefined
-                ? { strengthPrescription: input.strengthPrescription }
-                : {}),
-              ...(input.endurancePrescription !== undefined
-                ? { endurancePrescription: input.endurancePrescription }
-                : {}),
-              ...(input.date ? { date: input.date } : {}),
-            }) ?? {},
-          );
-
-          const s = await updatePlannedSession(athleteId, input.id, data);
-          if (!s) {
-            return { ok: false as const, error: 'Séance introuvable.' };
-          }
-          scheduleSessionContextRefresh(athleteId, s.id);
-
-          pushSessionToGoogleInBackground(s);
-
-          return {
-            ok: true,
-            id: s.id,
-            action: 'updated' as const,
-            date: dayKeyFromDate(s.date),
-            startTime: s.startTime,
-            type: s.type,
-            title: s.title,
-            strengthAudit: auditStrengthPrescription({
-              durationMin: input.durationMin ?? existing.durationMin,
-              prescription: parseStrengthPrescription(s.strengthPrescription),
-            }),
-          };
+          return await executeUpdatePlannedSessionTool(athleteId, input);
         } catch (error) {
           console.error('[coach] updatePlannedSession', error);
-          const detail = error instanceof Error ? error.message : String(error);
-          return {
-            ok: false as const,
-            error: `Impossible de modifier la séance : ${detail}`,
-          };
+          return coachToolFailure('Impossible de modifier la séance', error);
         }
       },
     }),

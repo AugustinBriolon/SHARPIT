@@ -19,38 +19,53 @@ const POOL_SWIM_HINTS = /piscine|pool|lap\s*swim|longueur|25\s*m|50\s*m/i;
 
 /** True when swim title/notes clearly indicate open water (GPS-likely). */
 export function isOpenWaterSwimSession(activity: IndoorActivitySignals): boolean {
-  if (activity.type !== ActivityType.SWIM) return false;
+  if (activity.type !== ActivityType.SWIM) {
+    return false;
+  }
   const haystack = [activity.title, activity.notes]
     .map((part) => part?.trim())
     .filter((part): part is string => Boolean(part))
     .join(' ');
-  if (!haystack) return false;
-  if (POOL_SWIM_HINTS.test(haystack)) return false;
+  if (!haystack) {
+    return false;
+  }
+  if (POOL_SWIM_HINTS.test(haystack)) {
+    return false;
+  }
   return OPEN_WATER_SWIM_HINTS.test(haystack);
+}
+
+const MAP_LAYOUT_TYPES = new Set<ActivityType>([
+  ActivityType.TRIATHLON,
+  ActivityType.BIKE,
+  ActivityType.HIKE,
+]);
+
+function resolveSwimSkeletonLayout(activity: IndoorActivitySignals): ActivityDetailSkeletonLayout {
+  return isOpenWaterSwimSession(activity) ? 'map' : 'no-map';
+}
+
+function resolveRunSkeletonLayout(activity: IndoorActivitySignals): ActivityDetailSkeletonLayout {
+  return isIndoorActivitySession(activity) ? 'no-map' : 'map';
 }
 
 /** Resolve which detail skeleton to show before streams resolve. */
 export function resolveActivityDetailSkeletonLayout(
   activity: IndoorActivitySignals,
 ): ActivityDetailSkeletonLayout {
-  switch (activity.type) {
-    case ActivityType.STRENGTH:
-      return 'strength';
-    case ActivityType.TRIATHLON:
-      return 'map';
-    case ActivityType.BIKE:
-      // Bike detail now treats the route plane as the canonical loading layout.
-      // This avoids false "indoor" matches hiding the map skeleton on real rides.
-      return 'map';
-    case ActivityType.SWIM:
-      return isOpenWaterSwimSession(activity) ? 'map' : 'no-map';
-    case ActivityType.RUN:
-      return isIndoorActivitySession(activity) ? 'no-map' : 'map';
-    case ActivityType.HIKE:
-      return 'map';
-    default:
-      return 'no-map';
+  if (activity.type === ActivityType.STRENGTH) {
+    return 'strength';
   }
+  if (MAP_LAYOUT_TYPES.has(activity.type)) {
+    return 'map';
+  }
+  if (activity.type === ActivityType.SWIM) {
+    return resolveSwimSkeletonLayout(activity);
+  }
+  if (activity.type === ActivityType.RUN) {
+    return resolveRunSkeletonLayout(activity);
+  }
+  return 'no-map';
 }
 
 /** Whether ActivityInsights should expect a route map while loading streams. */

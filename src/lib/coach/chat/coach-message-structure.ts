@@ -28,18 +28,30 @@ const CONVERSATION_START =
 function normalizeHeader(line: string): string | null {
   const trimmed = line.trim();
   const heading = trimmed.match(/^#{1,3}\s+(.+)$/);
-  if (heading) return heading[1]!.replace(/\*\*/g, '').trim();
+  if (heading) {
+    return heading[1]!.replace(/\*\*/g, '').trim();
+  }
   const bold = trimmed.match(/^\*\*(.+)\*\*\s*$/);
-  if (bold) return bold[1]!.trim();
-  if (PHASE_TITLE.test(trimmed)) return trimmed.replace(/\*\*/g, '').trim();
-  if (SYNTHESIS_TITLE.test(trimmed)) return trimmed.replace(/\*\*/g, '').trim();
+  if (bold) {
+    return bold[1]!.trim();
+  }
+  if (PHASE_TITLE.test(trimmed)) {
+    return trimmed.replace(/\*\*/g, '').trim();
+  }
+  if (SYNTHESIS_TITLE.test(trimmed)) {
+    return trimmed.replace(/\*\*/g, '').trim();
+  }
   return null;
 }
 
 function isConversationalParagraph(paragraph: string): boolean {
   const text = paragraph.trim();
-  if (!text) return false;
-  if (text.endsWith('?')) return true;
+  if (!text) {
+    return false;
+  }
+  if (text.endsWith('?')) {
+    return true;
+  }
   return CONVERSATION_START.test(text);
 }
 
@@ -52,10 +64,14 @@ export function splitConversationTail(content: string): {
 
   while (paragraphs.length > 0) {
     const last = paragraphs[paragraphs.length - 1]!;
-    if (!isConversationalParagraph(last)) break;
+    if (!isConversationalParagraph(last)) {
+      break;
+    }
     tail.unshift(last);
     paragraphs.pop();
-    if (tail.length >= 2) break;
+    if (tail.length >= 2) {
+      break;
+    }
   }
 
   return {
@@ -70,7 +86,9 @@ type RawSection = {
 };
 
 export function splitIntoSections(body: string): RawSection[] {
-  if (!body.trim()) return [];
+  if (!body.trim()) {
+    return [];
+  }
 
   const lines = body.split('\n');
   const sections: RawSection[] = [];
@@ -102,9 +120,62 @@ export function splitIntoSections(body: string): RawSection[] {
 
 function looksLikeMarkdownProse(line: string): boolean {
   const trimmed = line.trim();
-  if (/^\*\*/.test(trimmed) && !/^\*\*[^*]+\*\*\s*$/.test(trimmed)) return true;
-  if (/^(?:[-*•]|\d+\.)\s+\*\*/.test(trimmed)) return true;
+  if (/^\*\*/.test(trimmed) && !/^\*\*[^*]+\*\*\s*$/.test(trimmed)) {
+    return true;
+  }
+  if (/^(?:[-*•]|\d+\.)\s+\*\*/.test(trimmed)) {
+    return true;
+  }
   return false;
+}
+
+function tryParseListMetricLine(
+  line: string,
+  subsection: string | undefined,
+): CoachMetricItem | null {
+  const listMetric = line.match(METRIC_LINE);
+  if (!listMetric) {
+    return null;
+  }
+  return {
+    label: cleanMetricText(listMetric[1]!),
+    value: cleanMetricText(listMetric[2]!),
+    subsection,
+  };
+}
+
+function tryParseInlineMetricLine(
+  line: string,
+  subsection: string | undefined,
+): CoachMetricItem | null {
+  const inlineMetric = line.match(METRIC_INLINE);
+  if (inlineMetric && /\d/.test(inlineMetric[2]!)) {
+    return {
+      label: cleanMetricText(inlineMetric[1]!),
+      value: cleanMetricText(inlineMetric[2]!),
+      subsection,
+    };
+  }
+  const valueOnly = line.match(VALUE_ONLY_LINE);
+  if (valueOnly && subsection && /\d/.test(valueOnly[1]!) && !valueOnly[1]!.includes('**')) {
+    return {
+      label: subsection,
+      value: cleanMetricText(valueOnly[1]!),
+      subsection,
+    };
+  }
+  return null;
+}
+
+function tryParseMetricLine(
+  line: string,
+  rawLine: string,
+  subsection: string | undefined,
+): CoachMetricItem | 'prose' | null {
+  if (looksLikeMarkdownProse(line)) {
+    return 'prose';
+  }
+  return tryParseListMetricLine(line, subsection) ?? tryParseInlineMetricLine(line, subsection);
 }
 
 function parseMetrics(lines: string[]): { metrics: CoachMetricItem[]; proseLines: string[] } {
@@ -119,44 +190,19 @@ function parseMetrics(lines: string[]): { metrics: CoachMetricItem[]; proseLines
       continue;
     }
 
-    if (looksLikeMarkdownProse(line)) {
-      proseLines.push(rawLine);
-      continue;
-    }
-
     const sub = line.match(SUBSECTION_LINE);
     if (sub) {
       subsection = sub[1]!.trim();
       continue;
     }
 
-    const listMetric = line.match(METRIC_LINE);
-    if (listMetric) {
-      metrics.push({
-        label: cleanMetricText(listMetric[1]!),
-        value: cleanMetricText(listMetric[2]!),
-        subsection,
-      });
+    const parsed = tryParseMetricLine(line, rawLine, subsection);
+    if (parsed === 'prose') {
+      proseLines.push(rawLine);
       continue;
     }
-
-    const inlineMetric = line.match(METRIC_INLINE);
-    if (inlineMetric && /\d/.test(inlineMetric[2]!)) {
-      metrics.push({
-        label: cleanMetricText(inlineMetric[1]!),
-        value: cleanMetricText(inlineMetric[2]!),
-        subsection,
-      });
-      continue;
-    }
-
-    const valueOnly = line.match(VALUE_ONLY_LINE);
-    if (valueOnly && subsection && /\d/.test(valueOnly[1]!) && !valueOnly[1]!.includes('**')) {
-      metrics.push({
-        label: subsection,
-        value: cleanMetricText(valueOnly[1]!),
-        subsection,
-      });
+    if (parsed) {
+      metrics.push(parsed);
       continue;
     }
 
@@ -166,38 +212,51 @@ function parseMetrics(lines: string[]): { metrics: CoachMetricItem[]; proseLines
   return { metrics, proseLines };
 }
 
-function classifySection(section: RawSection): CoachMessageBlock {
-  const { title, lines } = section;
-
-  if (!title) {
-    const { metrics, proseLines } = parseMetrics(lines);
-    const content = proseLines.join('\n').trim();
-    if (metrics.length >= 2) {
-      return { type: 'phase', title: 'Plan', metrics, prose: content || undefined };
-    }
-    return { type: 'prose', content };
+function classifyUntitledSection(
+  metrics: CoachMetricItem[],
+  content: string,
+): CoachMessageBlock {
+  if (metrics.length >= 2) {
+    return { type: 'phase', title: 'Plan', metrics, prose: content || undefined };
   }
+  return { type: 'prose', content };
+}
 
-  const { metrics, proseLines } = parseMetrics(lines);
-  const leftover = proseLines.join('\n').trim();
-
+function classifyTitledSection(
+  title: string,
+  metrics: CoachMetricItem[],
+  leftover: string,
+  lines: string[],
+): CoachMessageBlock {
   if (SYNTHESIS_TITLE.test(title)) {
     return { type: 'synthesis', title, metrics, prose: leftover || undefined };
   }
-
   if (PHASE_TITLE.test(title) || metrics.length > 0) {
     return { type: 'phase', title, metrics, prose: leftover || undefined };
   }
-
   return {
     type: 'prose',
     content: `**${title}**\n\n${lines.join('\n').trim()}`.trim(),
   };
 }
 
+function classifySection(section: RawSection): CoachMessageBlock {
+  const { title, lines } = section;
+  const { metrics, proseLines } = parseMetrics(lines);
+  const content = proseLines.join('\n').trim();
+
+  if (!title) {
+    return classifyUntitledSection(metrics, content);
+  }
+
+  return classifyTitledSection(title, metrics, content, lines);
+}
+
 export function parseCoachMessage(raw: string): CoachMessageBlock[] {
   const trimmed = raw.trim();
-  if (!trimmed) return [];
+  if (!trimmed) {
+    return [];
+  }
 
   const { body, conversation } = splitConversationTail(trimmed);
   const blocks: CoachMessageBlock[] = [];

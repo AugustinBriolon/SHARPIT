@@ -17,6 +17,52 @@ const TRIGGER_LABEL: Record<AdaptTriggerCategory, string> = {
   ATHLETE_ACTION: "l'analyse du coach, sans déclencheur de sécurité spécifique",
 };
 
+function CoachOriginProposal({
+  previous,
+}: {
+  previous: NonNullable<ReturnType<typeof useSessionRationalePresentation>['data']>;
+}) {
+  return (
+    <div className="space-y-1">
+      <p className="text-muted-foreground font-medium tracking-wide uppercase">
+        Proposition initiale
+      </p>
+      <p>
+        {previous.observed.type}
+        {previous.observed.intensityLabel ? ` · ${previous.observed.intensityLabel}` : ''}
+        {previous.observed.durationMin ? ` · ${previous.observed.durationMin} min` : ''}
+        {previous.observed.load ? ` · ${previous.observed.load} TSS` : ''}
+      </p>
+      {previous.suggested?.purpose ? (
+        <p className="text-muted-foreground italic">→ {previous.suggested.purpose}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function PreviousProposalBody({
+  previous,
+  isLoading,
+}: {
+  previous: ReturnType<typeof useSessionRationalePresentation>['data'];
+  isLoading: boolean;
+}) {
+  if (isLoading) {
+    return <p className="text-muted-foreground">Chargement de la proposition initiale…</p>;
+  }
+  if (previous?.origin === 'COACH') {
+    return <CoachOriginProposal previous={previous} />;
+  }
+  if (previous?.origin === 'MANUAL') {
+    return (
+      <p className="text-muted-foreground">
+        Cette séance n&apos;avait pas été proposée par le coach à l&apos;origine.
+      </p>
+    );
+  }
+  return null;
+}
+
 /** Only meaningful for MODIFY changes — an ADD/REMOVE has no "previous proposal" to compare against. */
 export function AdaptationTrigger({
   sessionId,
@@ -60,34 +106,11 @@ export function AdaptationTrigger({
         )}
       </div>
 
-      {expanded && (
+      {expanded ? (
         <div className="border-border/50 mt-1.5 rounded-md border p-2 text-xs">
-          {isLoading && (
-            <p className="text-muted-foreground">Chargement de la proposition initiale…</p>
-          )}
-          {!isLoading && previous?.origin === 'COACH' && (
-            <div className="space-y-1">
-              <p className="text-muted-foreground font-medium tracking-wide uppercase">
-                Proposition initiale
-              </p>
-              <p>
-                {previous.observed.type}
-                {previous.observed.intensityLabel ? ` · ${previous.observed.intensityLabel}` : ''}
-                {previous.observed.durationMin ? ` · ${previous.observed.durationMin} min` : ''}
-                {previous.observed.load ? ` · ${previous.observed.load} TSS` : ''}
-              </p>
-              {previous.suggested?.purpose && (
-                <p className="text-muted-foreground italic">→ {previous.suggested.purpose}</p>
-              )}
-            </div>
-          )}
-          {!isLoading && previous?.origin === 'MANUAL' && (
-            <p className="text-muted-foreground">
-              Cette séance n&apos;avait pas été proposée par le coach à l&apos;origine.
-            </p>
-          )}
+          <PreviousProposalBody isLoading={isLoading} previous={previous} />
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

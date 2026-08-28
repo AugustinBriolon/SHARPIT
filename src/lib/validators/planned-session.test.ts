@@ -59,7 +59,9 @@ describe('createPlannedSessionSchema', () => {
       endurancePrescription: runPrescription('RUN'),
     });
     expect(parsed.success).toBe(true);
-    if (parsed.success) expect(parsed.data.endurancePrescription).toBeNull();
+    if (parsed.success) {
+      expect(parsed.data.endurancePrescription).toBeNull();
+    }
   });
 });
 

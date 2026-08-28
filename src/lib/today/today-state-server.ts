@@ -1,4 +1,5 @@
 import type { AdaptationInferenceResult } from '@/core/inference/adaptation-orchestrator';
+import { isSet } from '@/lib/util/value';
 import type { FatigueInferenceResult } from '@/core/inference/fatigue-orchestrator';
 import type { RecoveryInferenceResult } from '@/core/inference/orchestrator';
 import type { ReasoningInferenceResult } from '@/core/inference/reasoning-orchestrator';
@@ -35,9 +36,13 @@ import type {
 import { prisma } from '@/lib/prisma';
 
 function readStateComputedAt(state: unknown): Date | null {
-  if (!state || typeof state !== 'object') return null;
+  if (!state || typeof state !== 'object') {
+    return null;
+  }
   const raw = (state as { computedAt?: unknown }).computedAt;
-  if (typeof raw !== 'string' && !(raw instanceof Date)) return null;
+  if (typeof raw !== 'string' && !(raw instanceof Date)) {
+    return null;
+  }
   const date = new Date(raw);
   return Number.isNaN(date.getTime()) ? null : date;
 }
@@ -53,7 +58,9 @@ async function isReasoningStale(athleteId: string, reasoningComputedAt: Date): P
       environmentalStateMeta: true,
     },
   });
-  if (!twin) return true;
+  if (!twin) {
+    return true;
+  }
 
   const subModelTimes = [
     readStateComputedAt(twin.recoveryState),
@@ -61,7 +68,7 @@ async function isReasoningStale(athleteId: string, reasoningComputedAt: Date): P
     readStateComputedAt(twin.adaptationState),
     readStateComputedAt(twin.physicalHealthState),
     readStateComputedAt(twin.environmentalStateMeta),
-  ].filter((d): d is Date => d !== null);
+  ].filter((d): d is Date => isSet(d));
 
   return subModelTimes.some((computedAt) => computedAt > reasoningComputedAt);
 }
@@ -224,7 +231,9 @@ async function loadRecoveryState(
   try {
     if (!forceRefresh) {
       const cached = await recoveryEngine.getLatest(athleteId, trainingDayId);
-      if (cached) return formatRecoveryResult(cached);
+      if (cached) {
+        return formatRecoveryResult(cached);
+      }
     }
     const result = await recoveryEngine.run(athleteId, trainingDayId);
     return formatRecoveryResult(result);
@@ -242,7 +251,9 @@ async function loadFatigueState(
   try {
     if (!forceRefresh) {
       const cached = await fatigueEngine.getLatest(athleteId, trainingDayId);
-      if (cached) return formatFatigueResult(cached);
+      if (cached) {
+        return formatFatigueResult(cached);
+      }
     }
     const result = await fatigueEngine.run(athleteId, trainingDayId);
     return formatFatigueResult(result);
@@ -260,7 +271,9 @@ async function loadAdaptationState(
   try {
     if (!forceRefresh) {
       const cached = await adaptationEngine.getLatest(athleteId, trainingDayId);
-      if (cached) return formatAdaptationResult(cached);
+      if (cached) {
+        return formatAdaptationResult(cached);
+      }
     }
     const result = await adaptationEngine.run(athleteId, trainingDayId);
     return formatAdaptationResult(result);
@@ -270,32 +283,75 @@ async function loadAdaptationState(
   }
 }
 
+async function fetchDailyStrainDependencies(athleteId: string, trainingDayId: string) {
+  return Promise.all([
+    featureEngine.getDayFeatures(athleteId, trainingDayId),
+    prisma.activity.findMany({
+      where: {
+        date: approximateTrainingDayUtcRange(trainingDayId),
+      },
+      include: {
+        runMetrics: true,
+        bikeMetrics: true,
+        swimMetrics: true,
+      },
+      orderBy: { date: 'asc' },
+    }),
+    prisma.athleteProfile.findUnique({ where: { id: athleteId } }),
+    prisma.googleAccount.findFirst({ select: { timeZone: true } }),
+    prisma.dailyHealth.findUnique({
+      where: {
+        athleteId_date: { athleteId, date: new Date(`${trainingDayId}T00:00:00.000Z`) },
+      },
+    }),
+  ] as const);
+}
+
+function healthSignalsFromEntry(
+  healthEntry: Awaited<ReturnType<typeof prisma.dailyHealth.findUnique>>,
+) {
+  if (!healthEntry) {
+    return null;
+  }
+  return {
+    calories: healthEntry.calories,
+    recoveryScore: healthEntry.recoveryScore,
+    stress: healthEntry.stress,
+    bodyBattery: healthEntry.bodyBattery,
+    totalSteps: healthEntry.totalSteps,
+    restingHr: healthEntry.restingHr,
+    hrv: healthEntry.hrv,
+  };
+}
+
+function restingHrFromFeatures(
+  features: Awaited<ReturnType<typeof featureEngine.getDayFeatures>>,
+): number | null {
+  if (features.recovery === 'PENDING') {
+    return null;
+  }
+  return features.recovery.rhrAbsolute ?? null;
+}
+
+function strainThresholdsFromProfile(
+  athleteProfile: Awaited<ReturnType<typeof prisma.athleteProfile.findUnique>>,
+  features: Awaited<ReturnType<typeof featureEngine.getDayFeatures>>,
+) {
+  return {
+    ftpW: athleteProfile?.ftpW ?? null,
+    maxHr: athleteProfile?.maxHr ?? null,
+    lthr: athleteProfile?.lthr ?? null,
+    restingHr: restingHrFromFeatures(features),
+  };
+}
+
 async function loadDailyStrainState(
   athleteId: string,
   trainingDayId: string,
 ): Promise<DailyStrainData | null> {
   try {
-    const [features, activities, athleteProfile, googleAccount, healthEntry] = await Promise.all([
-      featureEngine.getDayFeatures(athleteId, trainingDayId),
-      prisma.activity.findMany({
-        where: {
-          date: approximateTrainingDayUtcRange(trainingDayId),
-        },
-        include: {
-          runMetrics: true,
-          bikeMetrics: true,
-          swimMetrics: true,
-        },
-        orderBy: { date: 'asc' },
-      }),
-      prisma.athleteProfile.findUnique({ where: { id: athleteId } }),
-      prisma.googleAccount.findFirst({ select: { timeZone: true } }),
-      prisma.dailyHealth.findUnique({
-        where: {
-          athleteId_date: { athleteId, date: new Date(`${trainingDayId}T00:00:00.000Z`) },
-        },
-      }),
-    ]);
+    const [features, activities, athleteProfile, googleAccount, healthEntry] =
+      await fetchDailyStrainDependencies(athleteId, trainingDayId);
     const trainingDayOptions = {
       timezone: googleAccount?.timeZone ?? DEFAULT_TRAINING_DAY_TIMEZONE,
       trainingDayStartHour: DEFAULT_TRAINING_DAY_START_HOUR,
@@ -307,23 +363,8 @@ async function loadDailyStrainState(
     return computeDailyStrain({
       sessionFeatures: features.sessions,
       legacyActivities: filteredActivities,
-      healthSignals: healthEntry
-        ? {
-            calories: healthEntry.calories,
-            recoveryScore: healthEntry.recoveryScore,
-            stress: healthEntry.stress,
-            bodyBattery: healthEntry.bodyBattery,
-            totalSteps: healthEntry.totalSteps,
-            restingHr: healthEntry.restingHr,
-            hrv: healthEntry.hrv,
-          }
-        : null,
-      thresholds: {
-        ftpW: athleteProfile?.ftpW ?? null,
-        maxHr: athleteProfile?.maxHr ?? null,
-        lthr: athleteProfile?.lthr ?? null,
-        restingHr: features.recovery !== 'PENDING' ? (features.recovery.rhrAbsolute ?? null) : null,
-      },
+      healthSignals: healthSignalsFromEntry(healthEntry),
+      thresholds: strainThresholdsFromProfile(athleteProfile, features),
     });
   } catch (error) {
     console.error('[today-state-server/daily-strain]', error);
@@ -339,7 +380,9 @@ async function loadEnvironmentState(
   try {
     if (!forceRefresh) {
       const cached = await environmentEngine.getLatest(athleteId, trainingDayId);
-      if (cached) return formatEnvironmentResult(cached);
+      if (cached) {
+        return formatEnvironmentResult(cached);
+      }
     }
     const result = await environmentEngine.run(athleteId, trainingDayId, { forceRefresh });
     return formatEnvironmentResult(result);
@@ -367,7 +410,9 @@ async function loadPhysicalHealthState(
   try {
     if (!forceRefresh) {
       const cached = await physicalHealthEngine.getLatest(athleteId, trainingDayId);
-      if (cached) return formatPhysicalHealthResult(cached);
+      if (cached) {
+        return formatPhysicalHealthResult(cached);
+      }
     }
     const result = await physicalHealthEngine.run(athleteId, trainingDayId);
     return formatPhysicalHealthResult(result);
@@ -423,6 +468,20 @@ function formatPhysicalHealthResult(result: PhysicalHealthInferenceResult): Phys
   };
 }
 
+async function isCachedReasoningUsable(
+  athleteId: string,
+  cached: ReasoningInferenceResult,
+): Promise<boolean> {
+  const cachedHasI18nTopAction = isSet(cached.output.reasoningState.topAction?.verbCode);
+  if (cached.output.reasoningState.overallVerdict === 'INSUFFICIENT_DATA') {
+    return false;
+  }
+  if (!cachedHasI18nTopAction) {
+    return false;
+  }
+  return !(await isReasoningStale(athleteId, cached.computedAt));
+}
+
 async function loadReasoningState(
   athleteId: string,
   trainingDayId: string,
@@ -431,14 +490,7 @@ async function loadReasoningState(
   try {
     if (!forceRefresh) {
       const cached = await reasoningEngine.getLatest(athleteId, trainingDayId);
-      const cachedHasI18nTopAction = cached?.output.reasoningState.topAction?.verbCode != null;
-      const stale = cached != null && (await isReasoningStale(athleteId, cached.computedAt));
-      if (
-        cached &&
-        cached.output.reasoningState.overallVerdict !== 'INSUFFICIENT_DATA' &&
-        cachedHasI18nTopAction &&
-        !stale
-      ) {
+      if (cached && (await isCachedReasoningUsable(athleteId, cached))) {
         return {
           reasoning: formatReasoningResult(cached),
           decision: formatDecisionResult(cached),

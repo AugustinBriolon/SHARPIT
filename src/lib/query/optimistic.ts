@@ -77,7 +77,9 @@ export function listOptimistic<TItem extends { id: string }, TVars, TData = unkn
         );
       }
       const message = typeof success === 'function' ? success(vars) : success;
-      if (message) toast.success(message);
+      if (message) {
+        toast.success(message);
+      }
     },
     onSettled: () => {
       if (invalidateOnSettle) {

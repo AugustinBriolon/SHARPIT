@@ -1,7 +1,7 @@
 'use client';
 
 import { ActivityType } from '@prisma/client';
-import { SlidersHorizontal, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@ import {
 } from '@/lib/training/history-filters';
 import { useIsMobile } from '@/hooks/use-viewport';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
+import { HistoryFilterTrigger } from '@/components/training/hub/history-filters/history-filter-trigger';
 
 const DesktopFilterMenu = dynamic(
   () => import('./desktop-filter-menu').then((mod) => mod.DesktopFilterMenu),
@@ -37,32 +38,23 @@ export function HistoryFilters({
   useResetWhenHidden(() => setOpen(false));
   const activeCount = countActiveTrainingHistoryFilters(filters);
   const isActive = activeCount > 0;
-  let ariaControls: string | undefined;
-  if (open) ariaControls = isMobile ? 'history-filter-drawer' : 'history-filter-menu';
+  const ariaControls = open
+    ? isMobile
+      ? 'history-filter-drawer'
+      : 'history-filter-menu'
+    : undefined;
 
   return (
     <div className="flex items-center gap-2">
       {/* Trigger — anchors the desktop floating menu */}
       <div className="relative">
-        <button
-          aria-controls={ariaControls}
-          aria-expanded={open}
-          aria-haspopup={isMobile ? 'dialog' : 'true'}
-          type="button"
-          className={cn(
-            'pressable inline-flex min-h-11 items-center gap-1.5 rounded-md px-2.5 py-2 text-sm lg:min-h-9 lg:py-1.5',
-            isActive
-              ? 'text-foreground font-medium'
-              : 'text-muted-foreground hover:text-foreground',
-          )}
+        <HistoryFilterTrigger
+          activeCount={activeCount}
+          ariaControls={ariaControls}
+          isActive={isActive}
+          open={open}
           onClick={() => (isMobile ? setOpen(true) : setOpen((v) => !v))}
-        >
-          <SlidersHorizontal className="size-3.5" aria-hidden />
-          Filtres
-          {isActive ? (
-            <span className="text-highlight text-data text-xs font-bold">{activeCount}</span>
-          ) : null}
-        </button>
+        />
 
         {/* Desktop floating menu — anchored to the trigger */}
         {!isMobile && open ? (

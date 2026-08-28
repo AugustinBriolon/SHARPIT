@@ -31,9 +31,11 @@ function SleepTrendBars({ data, targetMin }: { data: SleepBarPoint[]; targetMin:
         <Tooltip
           cursor={{ fill: 'color-mix(in oklch, var(--muted) 35%, transparent)' }}
           content={({ active, payload }) => {
-            if (!active || !payload?.[0]) return null;
+            if (!active || !payload?.[0]) {
+              return null;
+            }
             const pt = payload[0].payload as SleepBarPoint;
-            const above = pt.minutes != null && pt.minutes >= targetMin;
+            const above = pt.minutes !== null && pt.minutes >= targetMin;
             return (
               <div className="analysis-panel rounded-analysis px-3 py-2 text-xs shadow-none">
                 <p className="text-data font-semibold tabular-nums">

@@ -1,4 +1,5 @@
 import type { ClientPlannedSession } from '@/lib/query/types';
+import { isSet } from '@/lib/util/value';
 import {
   easeEndurancePrescription,
   easeStrengthPrescription,
@@ -71,36 +72,57 @@ export function shiftByOneDay(session: Pick<ClientPlannedSession, 'date'>): Sess
  * Cutting one without the other would leave the plan claiming an hour of work at
  * the original cost, and every load figure downstream would inherit the lie.
  */
-export function easeSession(
+function buildEaseAdjustment(
   session: Pick<
     ClientPlannedSession,
     'durationMin' | 'load' | 'endurancePrescription' | 'strengthPrescription'
   >,
-): SessionAdjustment | null {
-  const hasDuration = session.durationMin != null && session.durationMin > 0;
-  const hasLoad = session.load != null && session.load > 0;
-
-  /* The déroulé is the part the athlete follows. Shrinking the summary while it
-     still spells out the original workout would leave the card and the plan
-     disagreeing about the same session. */
-  const endurance = parseEndurancePrescription(session.endurancePrescription);
-  const easedEndurance = endurance ? easeEndurancePrescription(endurance) : null;
-  const strength = parseStrengthPrescription(session.strengthPrescription);
-  const easedStrength = strength ? easeStrengthPrescription(strength) : null;
-
-  // Nothing to reduce anywhere — refuse rather than write a no-op the athlete
-  // would have to undo without anything having changed.
-  if (!hasDuration && !hasLoad && !easedEndurance && !easedStrength) return null;
-
+  easedEndurance: ReturnType<typeof easeEndurancePrescription>,
+  easedStrength: ReturnType<typeof easeStrengthPrescription>,
+): SessionAdjustment {
+  const hasDuration = isSet(session.durationMin) && session.durationMin > 0;
+  const hasLoad = isSet(session.load) && session.load > 0;
   const adjustment: SessionAdjustment = {
     durationMin: hasDuration
       ? roundMinutes(session.durationMin! * EASE_FACTOR)
       : session.durationMin,
     load: hasLoad ? Math.round(session.load! * EASE_FACTOR) : session.load,
   };
-  if (easedEndurance) Object.assign(adjustment, { endurancePrescription: easedEndurance });
-  if (easedStrength) Object.assign(adjustment, { strengthPrescription: easedStrength });
+  if (easedEndurance) {
+    Object.assign(adjustment, { endurancePrescription: easedEndurance });
+  }
+  if (easedStrength) {
+    Object.assign(adjustment, { strengthPrescription: easedStrength });
+  }
   return adjustment;
+}
+
+function hasEaseableContent(
+  session: Pick<ClientPlannedSession, 'durationMin' | 'load'>,
+  easedEndurance: unknown,
+  easedStrength: unknown,
+): boolean {
+  const hasDuration = isSet(session.durationMin) && session.durationMin > 0;
+  const hasLoad = isSet(session.load) && session.load > 0;
+  return Boolean(hasDuration || hasLoad || easedEndurance || easedStrength);
+}
+
+export function easeSession(
+  session: Pick<
+    ClientPlannedSession,
+    'durationMin' | 'load' | 'endurancePrescription' | 'strengthPrescription'
+  >,
+): SessionAdjustment | null {
+  const endurance = parseEndurancePrescription(session.endurancePrescription);
+  const easedEndurance = endurance ? easeEndurancePrescription(endurance) : null;
+  const strength = parseStrengthPrescription(session.strengthPrescription);
+  const easedStrength = strength ? easeStrengthPrescription(strength) : null;
+
+  if (!hasEaseableContent(session, easedEndurance, easedStrength)) {
+    return null;
+  }
+
+  return buildEaseAdjustment(session, easedEndurance, easedStrength);
 }
 
 /**
@@ -123,11 +145,17 @@ export function rescheduleSession(
   const sameTime = (startTime ?? null) === (session.startTime ?? null);
 
   // Confirming what is already true is not a move.
-  if (sameDay && sameTime) return null;
+  if (sameDay && sameTime) {
+    return null;
+  }
 
   const adjustment: SessionAdjustment = {};
-  if (!sameDay) Object.assign(adjustment, { date: next });
-  if (!sameTime) Object.assign(adjustment, { startTime });
+  if (!sameDay) {
+    Object.assign(adjustment, { date: next });
+  }
+  if (!sameTime) {
+    Object.assign(adjustment, { startTime });
+  }
   return adjustment;
 }
 
@@ -140,14 +168,18 @@ export function undoOf(
   applied: SessionAdjustment,
 ): SessionAdjustment {
   const previous: SessionAdjustment = {};
-  if (applied.date !== undefined) Object.assign(previous, { date: utcDayOf(session.date) });
+  if (applied.date !== undefined) {
+    Object.assign(previous, { date: utcDayOf(session.date) });
+  }
   if (applied.startTime !== undefined) {
     Object.assign(previous, { startTime: session.startTime ?? null });
   }
   if (applied.durationMin !== undefined) {
     Object.assign(previous, { durationMin: session.durationMin });
   }
-  if (applied.load !== undefined) Object.assign(previous, { load: session.load });
+  if (applied.load !== undefined) {
+    Object.assign(previous, { load: session.load });
+  }
   if (applied.endurancePrescription !== undefined) {
     Object.assign(previous, {
       endurancePrescription: parseEndurancePrescription(session.endurancePrescription),

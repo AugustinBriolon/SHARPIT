@@ -1,48 +1,14 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { TodayDateSelector } from '@/components/today/drill-down/date-selector';
-import { ConfidenceBars, confidenceBarsFromPct } from '@/components/ui/instruments/confidence-bars';
-import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
-import { format as formatDate } from 'date-fns';
-import { fr } from 'date-fns/locale';
-
-function quickReadBadge({
-  loading,
-  quickReadValue,
-  quickReadLabel,
-  quickReadSuffix,
-}: {
-  loading: boolean;
-  quickReadValue: string | null | undefined;
-  quickReadLabel?: string | null;
-  quickReadSuffix?: string | null;
-}): ReactNode {
-  if (loading && quickReadValue != null) {
-    return <SkeletonDataValue heightClassName="h-7" widthClassName="w-12" />;
-  }
-  if (quickReadValue != null) {
-    return (
-      <span
-        className="bg-highlight text-highlight-foreground text-data inline-flex items-baseline gap-1 rounded-full px-3 py-1 text-sm font-semibold"
-        title={quickReadLabel ?? undefined}
-      >
-        {quickReadValue}
-        {quickReadSuffix ? <span className="text-xs font-normal">{quickReadSuffix}</span> : null}
-      </span>
-    );
-  }
-  return null;
-}
+import {
+  PhysioDrillDownDateHeader,
+  PhysioDrillDownVerdictSection,
+} from '@/components/today/drill-down/physio-drill-down-hero-parts';
 
 /**
  * Physio drill-down plate — one dominant verdict.
- * Score/duration as a mono instrument line — no PhysioRail, no inset %, no chrome.
- * Mobile: iOS-native header rhythm — centered date, accessory confiance.
  */
-/* Hallmark · designed-as-app · design-system: design.md · genre: instrument-editorial */
 export function PhysioDrillDownHero({
   date,
   isToday = true,
@@ -55,7 +21,6 @@ export function PhysioDrillDownHero({
   headline,
   headlineClassName,
   subline,
-  /** Kept for call-site compatibility; no longer drives a rail. */
   railValue: _railValue,
   railMax: _railMax = 100,
   railCaption: _railCaption,
@@ -93,95 +58,31 @@ export function PhysioDrillDownHero({
   footer?: ReactNode;
   loading?: boolean;
 }) {
-  const showDateNav =
-    onDateChange != null && onPreviousDay != null && onNextDay != null && maxDate != null;
-  const bars =
-    !loading && confidencePct != null && Number.isFinite(confidencePct)
-      ? confidenceBarsFromPct(confidencePct)
-      : null;
-
   return (
     <div className="space-y-4">
-      <div className="flex flex-col items-center">
-        {showDateNav ? (
-          <TodayDateSelector
-            date={date}
-            isToday={isToday}
-            maxDate={maxDate}
-            minDate={minDate}
-            onChange={onDateChange}
-            onNextDay={onNextDay}
-            onPreviousDay={onPreviousDay}
-          />
-        ) : (
-          <p className="text-muted-foreground text-xs capitalize">
-            {formatDate(date, 'EEEE d MMMM', { locale: fr })}
-          </p>
-        )}
-        {!loading && subline ? (
-          <p className="text-muted-foreground mt-1.5 text-center text-xs tabular-nums">{subline}</p>
-        ) : null}
-        {loading ? <Skeleton className="mt-1.5 h-4 w-21 rounded-full" /> : null}
-
-        <div className="mt-2 flex items-center justify-center gap-2">
-          <div
-            className="text-muted-foreground inline-flex items-center gap-1.5"
-            title={confidencePct != null ? `Confiance ${Math.round(confidencePct)} %` : 'Confiance'}
-          >
-            <ConfidenceBars filled={bars ?? 0} />
-            <span className="text-label">Confiance</span>
-          </div>
-        </div>
-      </div>
-
-      <section
-        aria-busy={loading || undefined}
-        className={cn(
-          'bg-accent text-foreground border-analysis-border/13 relative overflow-hidden border',
-          'sm:rounded-analysis-lg rounded-xl px-4 py-6 sm:px-8 sm:py-8',
-        )}
-      >
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-label inline-flex items-center gap-2">
-            <span className="bg-primary h-2.5 w-2.5 shrink-0 rounded-full" aria-hidden />
-            {eyebrow}
-          </p>
-
-          {quickReadBadge({ loading, quickReadValue, quickReadLabel, quickReadSuffix })}
-        </div>
-
-        {loading ? (
-          <Skeleton
-            className={cn('mt-4 h-9 w-[min(100%,18rem)] rounded-lg sm:h-10', !eyebrow && 'mt-6')}
-          />
-        ) : (
-          <p
-            className={cn(
-              'text-verdict mt-4 max-w-3xl text-[1.75rem] leading-[1.15] sm:text-[2.125rem]',
-              !eyebrow && 'mt-6',
-              headlineClassName ?? 'text-foreground',
-            )}
-          >
-            {headline}
-          </p>
-        )}
-
-        {loading ? (
-          <div className="mt-4 sm:mt-5">
-            <Skeleton className="h-4 w-[min(100%,16rem)] rounded-full" />
-          </div>
-        ) : (
-          quickReadCaption && (
-            <p className="text-foreground/85 mt-4 max-w-2xl text-sm leading-relaxed sm:mt-5">
-              {quickReadCaption}
-            </p>
-          )
-        )}
-
-        {footer && !loading ? (
-          <div className="text-muted-foreground mt-3 text-xs leading-relaxed">{footer}</div>
-        ) : null}
-      </section>
+      <PhysioDrillDownDateHeader
+        confidencePct={confidencePct}
+        date={date}
+        isToday={isToday}
+        loading={loading}
+        maxDate={maxDate}
+        minDate={minDate}
+        subline={subline}
+        onDateChange={onDateChange}
+        onNextDay={onNextDay}
+        onPreviousDay={onPreviousDay}
+      />
+      <PhysioDrillDownVerdictSection
+        eyebrow={eyebrow}
+        footer={footer}
+        headline={headline}
+        headlineClassName={headlineClassName}
+        loading={loading}
+        quickReadCaption={quickReadCaption}
+        quickReadLabel={quickReadLabel}
+        quickReadSuffix={quickReadSuffix}
+        quickReadValue={quickReadValue}
+      />
     </div>
   );
 }

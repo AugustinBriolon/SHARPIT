@@ -19,6 +19,31 @@ import type { CoachingDecisionRecord } from '@/lib/decision-memory/types';
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 const LEARNING_FEEDBACK_WINDOW_DAYS = 90;
 
+function resolveBriefGoal(
+  activePlan: Awaited<ReturnType<typeof getActiveTrainingPlan>>,
+  goals: Awaited<ReturnType<typeof getGoals>>,
+  weekStart: Date,
+) {
+  const planGoal =
+    activePlan !== null && activePlan.goalId !== null
+      ? (goals.find((g) => g.id === activePlan.goalId && !g.achieved) ?? null)
+      : null;
+  return planGoal ?? goals.find((g) => !g.achieved && g.targetDate && g.targetDate >= weekStart) ?? null;
+}
+
+async function loadSessionDecisions(athleteId: string, plannedSessions: { id: string }[]) {
+  const sessionDecisions = new Map<string, CoachingDecisionRecord>();
+  await Promise.all(
+    plannedSessions.map(async (session) => {
+      const decision = await findDecisionForPlannedSession(athleteId, session.id);
+      if (decision) {
+        sessionDecisions.set(session.id, decision);
+      }
+    }),
+  );
+  return sessionDecisions;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const weekStartParam = searchParams.get('weekStart');
@@ -38,24 +63,9 @@ export async function GET(request: NextRequest) {
     ]);
 
   const planWeek = activePlan ? (findPlanWeekForDate(activePlan.weeks, weekStart) ?? null) : null;
-
-  // Prefer the active plan's linked race/goal (option B fil directeur), then nearest dated goal.
-  const planGoal =
-    activePlan?.goalId != null
-      ? (goals.find((g) => g.id === activePlan.goalId && !g.achieved) ?? null)
-      : null;
-  const goal =
-    planGoal ?? goals.find((g) => !g.achieved && g.targetDate && g.targetDate >= weekStart) ?? null;
+  const goal = resolveBriefGoal(activePlan, goals, weekStart);
   const goalTitleById = new Map(goals.map((g) => [g.id, g.title] as const));
-
-  const sessionDecisions = new Map<string, CoachingDecisionRecord>();
-  await Promise.all(
-    plannedSessions.map(async (session) => {
-      const decision = await findDecisionForPlannedSession(athleteId, session.id);
-      if (decision) sessionDecisions.set(session.id, decision);
-    }),
-  );
-
+  const sessionDecisions = await loadSessionDecisions(athleteId, plannedSessions);
   const learningFeedback = buildLearningFeedbackViewModel(buildLearningFeedback(recentOutcomes));
 
   const viewModel = buildWeeklyCoachingBriefViewModel({

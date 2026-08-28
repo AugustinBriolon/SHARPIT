@@ -1,4 +1,5 @@
 import { format, subDays } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import { fr } from 'date-fns/locale';
 
 export type CoachProvenanceChip = {
@@ -23,7 +24,7 @@ export function buildCoachProvenanceChips({
 }): CoachProvenanceChip[] {
   const chips: CoachProvenanceChip[] = [];
 
-  if (recoveryScore != null) {
+  if (isSet(recoveryScore)) {
     chips.push({
       key: 'recovery',
       label: `Récup ${Math.round(recoveryScore)}`,
@@ -31,7 +32,7 @@ export function buildCoachProvenanceChips({
     });
   }
 
-  if (sleepScore != null) {
+  if (isSet(sleepScore)) {
     // Last night is conventionally "la nuit du <veille>".
     const night = subDays(now, 1);
     chips.push({

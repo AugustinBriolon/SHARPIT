@@ -42,7 +42,9 @@ export function ThreadBrickRow({
       activityId: e.activity?.id ?? null,
     }));
 
-  if (legs.length === 0) return null;
+  if (legs.length === 0) {
+    return null;
+  }
 
   const totalMin = legs.reduce((sum, l) => sum + (l.durationMin ?? 0), 0);
   const subtitle = totalMin > 0 ? `${totalMin} min` : null;

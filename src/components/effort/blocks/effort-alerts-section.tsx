@@ -5,7 +5,9 @@ export function EffortAlertsSection({
 }: {
   overreaching?: { label: string; colorClass: string };
 }) {
-  if (!overreaching) return null;
+  if (!overreaching) {
+    return null;
+  }
 
   return (
     <DrillDownAlertSection

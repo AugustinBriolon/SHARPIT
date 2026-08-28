@@ -114,15 +114,20 @@ export type AthleteSnapshotEnvelope = {
   isRefreshing: boolean;
 };
 
+function hasRecoveryDisplaySignal(snapshot: AthleteSnapshot): boolean {
+  const readiness = snapshot.recovery?.readinessScore;
+  return (
+    readiness !== undefined &&
+    readiness !== null &&
+    snapshot.recovery?.readinessCategory !== 'INSUFFICIENT_DATA'
+  );
+}
+
 export function snapshotHasDisplayableContent(snapshot: AthleteSnapshot): boolean {
-  if (snapshot.adviceActionable) return true;
-  if (snapshot.briefing?.content) return true;
-  if (
-    snapshot.recovery?.readinessScore != null &&
-    snapshot.recovery.readinessCategory !== 'INSUFFICIENT_DATA'
-  ) {
-    return true;
-  }
-  if (snapshot.primaryProductMessage || snapshot.insufficientDataMessage) return true;
-  return false;
+  return (
+    snapshot.adviceActionable ||
+    Boolean(snapshot.briefing?.content) ||
+    hasRecoveryDisplaySignal(snapshot) ||
+    Boolean(snapshot.primaryProductMessage || snapshot.insufficientDataMessage)
+  );
 }

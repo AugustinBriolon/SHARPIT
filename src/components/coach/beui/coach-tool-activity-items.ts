@@ -45,22 +45,53 @@ const TOOL_LABELS: Record<string, { running: string; done: string }> = {
   },
 };
 
+function isStepComplete(part: ToolPartLite, streamIdle: boolean): boolean {
+  if (isToolSuccess(part) || part.state === 'output-denied') {
+    return true;
+  }
+  if (isToolFailure(part)) {
+    return true;
+  }
+  if (part.state === 'approval-responded' && streamIdle) {
+    return true;
+  }
+  return false;
+}
+
+function isStepActive(part: ToolPartLite, streamIdle: boolean): boolean {
+  if (part.state === 'approval-responded' && !streamIdle) {
+    return true;
+  }
+  return !streamIdle && !isToolSuccess(part) && !isToolFailure(part);
+}
+
 function stepStatus(part: ToolPartLite, streamIdle: boolean): 'pending' | 'active' | 'complete' {
-  if (isToolSuccess(part) || part.state === 'output-denied') return 'complete';
-  if (isToolFailure(part)) return 'complete';
-  if (part.state === 'approval-responded' && streamIdle) return 'complete';
-  if (part.state === 'approval-responded') return 'active';
-  if (!streamIdle && !isToolSuccess(part) && !isToolFailure(part)) return 'active';
+  if (isStepComplete(part, streamIdle)) {
+    return 'complete';
+  }
+  if (isStepActive(part, streamIdle)) {
+    return 'active';
+  }
   return 'complete';
 }
 
 function labelForPart(part: ToolPartLite, streamIdle: boolean): string {
   const meta = TOOL_LABELS[part.type];
-  if (!meta) return part.type.replace(/^tool-/, '');
-  if (isToolFailure(part)) return failureLabelForPart(part);
-  if (isToolSuccess(part)) return meta.done;
-  if (part.state === 'output-denied') return meta.done;
-  if (!streamIdle) return meta.running;
+  if (!meta) {
+    return part.type.replace(/^tool-/, '');
+  }
+  if (isToolFailure(part)) {
+    return failureLabelForPart(part);
+  }
+  if (isToolSuccess(part)) {
+    return meta.done;
+  }
+  if (part.state === 'output-denied') {
+    return meta.done;
+  }
+  if (!streamIdle) {
+    return meta.running;
+  }
   return meta.done;
 }
 

@@ -3,6 +3,7 @@
  */
 
 import type { EnvironmentalDimension, EnvironmentalProviderId, WeatherField } from './types';
+import { isSet } from '@/lib/util/value';
 import type { ObservationRecordDraft } from './record';
 import { qualityRank } from './record';
 
@@ -32,7 +33,9 @@ function providerIndex(
   providerId: EnvironmentalProviderId,
   priorityList: readonly EnvironmentalProviderId[] | undefined,
 ): number {
-  if (!priorityList) return 999;
+  if (!priorityList) {
+    return 999;
+  }
   const idx = priorityList.indexOf(providerId);
   return idx === -1 ? 999 : idx;
 }
@@ -49,7 +52,9 @@ function pickBetterDraft(
   b: ObservationRecordDraft,
   policy: MergePolicy,
 ): ObservationRecordDraft {
-  if (policy.conflictStrategy === 'FIRST_WINS') return a;
+  if (policy.conflictStrategy === 'FIRST_WINS') {
+    return a;
+  }
 
   const aRank = qualityRank(Object.values(a.fieldQuality)[0]?.quality ?? 'MISSING');
   const bRank = qualityRank(Object.values(b.fieldQuality)[0]?.quality ?? 'MISSING');
@@ -60,13 +65,145 @@ function hourBucket(at: Date): string {
   return at.toISOString().slice(0, 13);
 }
 
+function sortWeatherCandidates(group: ObservationRecordDraft[]): ObservationRecordDraft[] {
+  return [...group].sort((a, b) => {
+    if (a.providerId === 'manual') {
+      return -1;
+    }
+    if (b.providerId === 'manual') {
+      return 1;
+    }
+    return (a.providerId ?? '').localeCompare(b.providerId ?? '');
+  });
+}
+
+function collectWeatherFields(candidates: ObservationRecordDraft[]): Set<WeatherField> {
+  const allFields = new Set<WeatherField>();
+  for (const candidate of candidates) {
+    if (candidate.payload.dimension !== 'WEATHER') {
+      continue;
+    }
+    for (const field of Object.keys(candidate.payload.data) as WeatherField[]) {
+      if (isSet(candidate.payload.data[field])) {
+        allFields.add(field);
+      }
+    }
+  }
+  return allFields;
+}
+
+function shouldReplaceFieldWinner(
+  winner: ObservationRecordDraft,
+  candidate: ObservationRecordDraft,
+  field: WeatherField,
+  policy: MergePolicy,
+): boolean {
+  const currentPriority = providerIndex(
+    winner.providerId ?? 'open-meteo',
+    policy.fieldPriority[field],
+  );
+  const candidatePriority = providerIndex(
+    candidate.providerId ?? 'open-meteo',
+    policy.fieldPriority[field],
+  );
+  return candidatePriority < currentPriority;
+}
+
+function mergeWeatherCandidate(
+  winner: ObservationRecordDraft,
+  candidate: ObservationRecordDraft,
+  field: WeatherField,
+  policy: MergePolicy,
+): ObservationRecordDraft {
+  if (shouldReplaceFieldWinner(winner, candidate, field, policy)) {
+    return candidate;
+  }
+
+  const currentPriority = providerIndex(
+    winner.providerId ?? 'open-meteo',
+    policy.fieldPriority[field],
+  );
+  const candidatePriority = providerIndex(
+    candidate.providerId ?? 'open-meteo',
+    policy.fieldPriority[field],
+  );
+  if (candidatePriority === currentPriority) {
+    return pickBetterDraft(winner, candidate, policy);
+  }
+
+  return winner;
+}
+
+function pickFieldWinner(
+  field: WeatherField,
+  sorted: ObservationRecordDraft[],
+  policy: MergePolicy,
+): { value: number | null; quality: ObservationRecordDraft['fieldQuality'][WeatherField] } | null {
+  let winner: ObservationRecordDraft | null = null;
+
+  for (const candidate of sorted) {
+    if (candidate.payload.dimension !== 'WEATHER') {
+      continue;
+    }
+
+    const candidateValue = candidate.payload.data[field];
+    if (!isSet(candidateValue)) {
+      continue;
+    }
+
+    if (!isSet(winner)) {
+      winner = candidate;
+    } else {
+      winner = mergeWeatherCandidate(winner, candidate, field, policy);
+    }
+  }
+
+  if (!isSet(winner) || winner.payload.dimension !== 'WEATHER') {
+    return null;
+  }
+
+  return {
+    value: winner.payload.data[field] ?? null,
+    quality: winner.fieldQuality[field],
+  };
+}
+
+function mergeWeatherGroup(
+  group: ObservationRecordDraft[],
+  policy: MergePolicy,
+): ObservationRecordDraft {
+  const sorted = sortWeatherCandidates(group);
+  const [base] = sorted;
+  const data: Record<string, number | null | undefined> = {};
+  const fieldQuality: ObservationRecordDraft['fieldQuality'] = {};
+
+  for (const field of collectWeatherFields(sorted)) {
+    const winner = pickFieldWinner(field, sorted, policy);
+    if (!winner) {
+      continue;
+    }
+    data[field] = winner.value;
+    fieldQuality[field] = winner.quality;
+  }
+
+  return {
+    ...base,
+    payload: { dimension: 'WEATHER', data },
+    fieldQuality,
+    providerId:
+      sorted.find((draft) => draft.providerId === 'manual')?.providerId ?? base.providerId,
+  };
+}
+
 function mergeWeatherDrafts(
   drafts: readonly ObservationRecordDraft[],
   policy: MergePolicy,
 ): ObservationRecordDraft[] {
   const byTime = new Map<string, ObservationRecordDraft[]>();
   for (const draft of drafts) {
-    if (draft.dimension !== 'WEATHER' || draft.payload.dimension !== 'WEATHER') continue;
+    if (draft.dimension !== 'WEATHER' || draft.payload.dimension !== 'WEATHER') {
+      continue;
+    }
     const key = hourBucket(draft.observedAt);
     const list = byTime.get(key) ?? [];
     list.push(draft);
@@ -74,75 +211,12 @@ function mergeWeatherDrafts(
   }
 
   const merged: ObservationRecordDraft[] = [];
-
   for (const [, group] of byTime) {
     if (group.length === 1) {
       merged.push(group[0]);
       continue;
     }
-
-    const sorted = [...group].sort((a, b) => {
-      if (a.providerId === 'manual') return -1;
-      if (b.providerId === 'manual') return 1;
-      return (a.providerId ?? '').localeCompare(b.providerId ?? '');
-    });
-
-    const [base] = sorted;
-    const data: Record<string, number | null | undefined> = {};
-    const fieldQuality: ObservationRecordDraft['fieldQuality'] = {};
-
-    const allFields = new Set<WeatherField>();
-    for (const candidate of sorted) {
-      if (candidate.payload.dimension !== 'WEATHER') continue;
-      for (const field of Object.keys(candidate.payload.data) as WeatherField[]) {
-        if (candidate.payload.data[field] != null) allFields.add(field);
-      }
-    }
-
-    for (const field of allFields) {
-      let winner: ObservationRecordDraft | null = null;
-
-      for (const candidate of sorted) {
-        if (candidate.payload.dimension !== 'WEATHER') continue;
-        const value = candidate.payload.data[field];
-        if (value == null) continue;
-
-        if (winner == null) {
-          winner = candidate;
-          data[field] = value;
-          fieldQuality[field] = candidate.fieldQuality[field];
-          continue;
-        }
-
-        const currentPriority = providerIndex(
-          winner.providerId ?? 'open-meteo',
-          policy.fieldPriority[field],
-        );
-        const candidatePriority = providerIndex(
-          candidate.providerId ?? 'open-meteo',
-          policy.fieldPriority[field],
-        );
-
-        if (candidatePriority < currentPriority) {
-          winner = candidate;
-          data[field] = value;
-          fieldQuality[field] = candidate.fieldQuality[field];
-        } else if (candidatePriority === currentPriority) {
-          winner = pickBetterDraft(winner, candidate, policy);
-          if (winner.payload.dimension === 'WEATHER') {
-            data[field] = winner.payload.data[field];
-            fieldQuality[field] = winner.fieldQuality[field];
-          }
-        }
-      }
-    }
-
-    merged.push({
-      ...base,
-      payload: { dimension: 'WEATHER', data },
-      fieldQuality,
-      providerId: sorted.find((d) => d.providerId === 'manual')?.providerId ?? base.providerId,
-    });
+    merged.push(mergeWeatherGroup(group, policy));
   }
 
   return merged;
@@ -153,7 +227,9 @@ export function mergeObservationDrafts(
   policy: MergePolicy = DEFAULT_MERGE_POLICY,
 ): ObservationRecordDraft[] {
   const allDrafts = bundles.flatMap((b) => [...b.drafts]);
-  if (allDrafts.length === 0) return [];
+  if (allDrafts.length === 0) {
+    return [];
+  }
 
   const weatherDrafts = allDrafts.filter((d) => d.dimension === 'WEATHER');
   const nonWeatherDrafts = allDrafts.filter((d) => d.dimension !== 'WEATHER');
@@ -164,8 +240,11 @@ export function mergeObservationDrafts(
   for (const draft of nonWeatherDrafts) {
     const key = draftKey(draft);
     const existing = deduped.get(key);
-    if (!existing) deduped.set(key, draft);
-    else deduped.set(key, pickBetterDraft(existing, draft, policy));
+    if (!existing) {
+      deduped.set(key, draft);
+    } else {
+      deduped.set(key, pickBetterDraft(existing, draft, policy));
+    }
   }
 
   return [...weatherMerged, ...deduped.values()].sort(

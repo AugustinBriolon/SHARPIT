@@ -18,6 +18,28 @@ const createPlanSchema = z.object({
   goalId: z.string().min(1),
 });
 
+async function buildTravelAdjustedPlan(athleteId: string, raceDate: Date, baselineCtl: number) {
+  const draft = generateMacroPlan({ raceDate, baselineCtl });
+  const travels = await listTravelContexts(prisma, athleteId);
+  const weeks = applyTravelConstraintsToMacroWeeks(
+    draft.weeks,
+    travels.map((t) => ({
+      startDate: t.startDate,
+      endDate: t.endDate,
+      label: t.label,
+      trainingConstraint: t.trainingConstraint,
+      allowedDisciplines: t.allowedDisciplines,
+    })),
+  );
+  const travelAdjusted = weeks.some(
+    (w, i) => w.targetLoad !== draft.weeks[i]?.targetLoad || w.focus !== draft.weeks[i]?.focus,
+  );
+  const summary = travelAdjusted
+    ? `${draft.summary} Semaines ajustées selon les déplacements (contrainte d’entraînement).`
+    : draft.summary;
+  return { draft, weeks, summary };
+}
+
 export async function GET() {
   try {
     const athleteId = await getCurrentAthleteId();
@@ -56,24 +78,11 @@ export async function POST(request: Request) {
     const anchor = await loadAthletePmcAnchor(athleteId);
     const baselineCtl = anchor ? Math.round(anchor.ctl) : 40;
 
-    const draft = generateMacroPlan({ raceDate, baselineCtl });
-    const travels = await listTravelContexts(prisma, athleteId);
-    const weeks = applyTravelConstraintsToMacroWeeks(
-      draft.weeks,
-      travels.map((t) => ({
-        startDate: t.startDate,
-        endDate: t.endDate,
-        label: t.label,
-        trainingConstraint: t.trainingConstraint,
-        allowedDisciplines: t.allowedDisciplines,
-      })),
+    const { draft, weeks, summary } = await buildTravelAdjustedPlan(
+      athleteId,
+      raceDate,
+      baselineCtl,
     );
-    const travelAdjusted = weeks.some(
-      (w, i) => w.targetLoad !== draft.weeks[i]?.targetLoad || w.focus !== draft.weeks[i]?.focus,
-    );
-    const summary = travelAdjusted
-      ? `${draft.summary} Semaines ajustées selon les déplacements (contrainte d’entraînement).`
-      : draft.summary;
 
     await archiveActiveTrainingPlans(athleteId);
 

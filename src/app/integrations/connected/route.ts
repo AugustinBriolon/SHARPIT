@@ -13,7 +13,9 @@ export async function GET(request: NextRequest) {
   const status = request.nextUrl.searchParams.get(provider) ?? 'connected';
   const extra: Record<string, string> = {};
   for (const [key, value] of request.nextUrl.searchParams.entries()) {
-    if (key !== provider) extra[key] = value;
+    if (key !== provider) {
+      extra[key] = value;
+    }
   }
   return redirectAfterIntegrationConnect(request, provider, status, extra);
 }

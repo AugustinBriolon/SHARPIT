@@ -36,12 +36,24 @@ export function resolveAttentionDomain(
   limitingFactor: DecisionLimitingFactor,
   verdict: OverallVerdict,
 ): DecisionPriority['attentionDomain'] {
-  if (limitingFactor.domain === 'PHYSICAL_HEALTH') return 'PHYSICAL_HEALTH';
-  if (limitingFactor.domain === 'ENVIRONMENT') return 'ENVIRONMENT';
-  if (limitingFactor.system === 'RECOVERY') return 'RECOVERY';
-  if (limitingFactor.system === 'FATIGUE') return 'FATIGUE';
-  if (limitingFactor.system === 'ADAPTATION') return 'ADAPTATION';
-  if (verdict === 'TRAIN_HARD' || verdict === 'TRAIN_SMART') return 'BALANCED';
+  if (limitingFactor.domain === 'PHYSICAL_HEALTH') {
+    return 'PHYSICAL_HEALTH';
+  }
+  if (limitingFactor.domain === 'ENVIRONMENT') {
+    return 'ENVIRONMENT';
+  }
+  if (limitingFactor.system === 'RECOVERY') {
+    return 'RECOVERY';
+  }
+  if (limitingFactor.system === 'FATIGUE') {
+    return 'FATIGUE';
+  }
+  if (limitingFactor.system === 'ADAPTATION') {
+    return 'ADAPTATION';
+  }
+  if (verdict === 'TRAIN_HARD' || verdict === 'TRAIN_SMART') {
+    return 'BALANCED';
+  }
   return 'BALANCED';
 }
 
@@ -63,9 +75,15 @@ export function toSystemAttentionPriority(
 export function resolveConfidenceTier(
   confidence: number,
 ): import('./decision-state').DecisionConfidenceTier {
-  if (confidence >= 0.75) return 'HIGH';
-  if (confidence >= 0.6) return 'MEDIUM';
-  if (confidence > 0) return 'LOW';
+  if (confidence >= 0.75) {
+    return 'HIGH';
+  }
+  if (confidence >= 0.6) {
+    return 'MEDIUM';
+  }
+  if (confidence > 0) {
+    return 'LOW';
+  }
   return 'INSUFFICIENT';
 }
 

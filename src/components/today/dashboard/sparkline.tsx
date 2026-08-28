@@ -4,7 +4,9 @@ export function buildSparkPaths(
   H: number,
 ): { line: string; area: string } {
   const valid = values.filter((v): v is number => v !== null);
-  if (valid.length < 2) return { line: '', area: '' };
+  if (valid.length < 2) {
+    return { line: '', area: '' };
+  }
 
   const minV = Math.min(...valid);
   const maxV = Math.max(...valid);
@@ -37,7 +39,9 @@ export function buildSparkPaths(
     lastX = x;
   });
 
-  if (area) area += ` L ${lastX} ${H} Z`;
+  if (area) {
+    area += ` L ${lastX} ${H} Z`;
+  }
   return { line, area };
 }
 
@@ -52,7 +56,9 @@ export function Sparkline({
 }) {
   const W = 200;
   const { line, area } = buildSparkPaths(values, W, h);
-  if (!line) return null;
+  if (!line) {
+    return null;
+  }
 
   return (
     <svg height={h} preserveAspectRatio="none" viewBox={`0 0 ${W} ${h}`} width="100%" aria-hidden>

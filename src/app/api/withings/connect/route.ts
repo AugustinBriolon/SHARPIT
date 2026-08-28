@@ -14,7 +14,9 @@ import {
 
 export async function GET(request: NextRequest) {
   const bindRedirect = redirectIfBindHost(request);
-  if (bindRedirect) return bindRedirect;
+  if (bindRedirect) {
+    return bindRedirect;
+  }
 
   if (!isWithingsConfigured()) {
     return NextResponse.json(

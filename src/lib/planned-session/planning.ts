@@ -1,4 +1,5 @@
 import { ActivityType } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import {
   addWeeks,
   differenceInCalendarWeeks,
@@ -28,8 +29,12 @@ export function estimatePlannedLoad(session: {
   load: number | null;
   durationMin: number | null;
 }): number {
-  if (session.load != null && session.load > 0) return session.load;
-  if (!session.durationMin) return 0;
+  if (isSet(session.load) && session.load > 0) {
+    return session.load;
+  }
+  if (!session.durationMin) {
+    return 0;
+  }
   return Math.round(session.durationMin * PLANNED_LOAD_FACTOR[session.type]);
 }
 
@@ -61,7 +66,9 @@ export function buildPlanningWeeks(
   let lastWeekStart = startOfWeek(addWeeks(new Date(), minWeeks - 1), WEEK_OPTS);
   if (raceDate) {
     const raceWeek = startOfWeek(raceDate, WEEK_OPTS);
-    if (raceWeek > lastWeekStart) lastWeekStart = raceWeek;
+    if (raceWeek > lastWeekStart) {
+      lastWeekStart = raceWeek;
+    }
   }
 
   const weekStarts = eachWeekOfInterval({ start, end: lastWeekStart }, WEEK_OPTS);
@@ -97,16 +104,19 @@ export function buildPlanningWeeks(
 }
 
 /** Données d'une semaine (lundi) : réutilise buildPlanningWeeks ou calcule à la volée. */
-export function resolvePlanningWeek(
-  weekStart: Date,
-  activities: ClientActivity[],
-  planned: ClientPlannedSession[],
-  raceDate: Date | null,
-  builtWeeks?: PlanningWeek[],
-): PlanningWeek {
+export function resolvePlanningWeek(input: {
+  weekStart: Date;
+  activities: ClientActivity[];
+  planned: ClientPlannedSession[];
+  raceDate: Date | null;
+  builtWeeks?: PlanningWeek[];
+}): PlanningWeek {
+  const { weekStart, activities, planned, raceDate, builtWeeks } = input;
   const key = format(startOfWeek(weekStart, WEEK_OPTS), 'yyyy-MM-dd');
   const existing = builtWeeks?.find((w) => format(w.start, 'yyyy-MM-dd') === key);
-  if (existing) return existing;
+  if (existing) {
+    return existing;
+  }
 
   const ws = startOfWeek(weekStart, WEEK_OPTS);
   const we = endOfWeek(ws, WEEK_OPTS);

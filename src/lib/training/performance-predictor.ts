@@ -159,7 +159,9 @@ function bestReferenceFor(
   refs: RunReference[],
   target: number,
 ): { ref: RunReference; seconds: number } | null {
-  if (refs.length === 0) return null;
+  if (refs.length === 0) {
+    return null;
+  }
 
   const band = refs.filter((r) => r.meters >= 0.7 * target && r.meters <= 3 * target);
   const pool = band.length > 0 ? band : [refs[refs.length - 1]];
@@ -174,8 +176,12 @@ function bestReferenceFor(
 
 function confidenceFromRatio(ratio: number): PredictionConfidence {
   const r = ratio >= 1 ? ratio : 1 / ratio;
-  if (r <= 1.6) return 'high';
-  if (r <= 3) return 'medium';
+  if (r <= 1.6) {
+    return 'high';
+  }
+  if (r <= 3) {
+    return 'medium';
+  }
   return 'low';
 }
 
@@ -188,7 +194,9 @@ export function predictRunRaces(
   runEfforts: RunEffort[] = [],
 ): RunPrediction[] {
   const refs = collectRunReferences(runBests, runEfforts);
-  if (refs.length === 0) return [];
+  if (refs.length === 0) {
+    return [];
+  }
 
   return RACE_TARGETS.map(({ meters, label }) => {
     const picked = bestReferenceFor(refs, meters)!;
@@ -222,7 +230,9 @@ export function estimateRunThresholdPace(
   runEfforts: RunEffort[] = [],
 ): number | null {
   const refs = gatherRunReferences(runBests, runEfforts);
-  if (refs.length === 0) return null;
+  if (refs.length === 0) {
+    return null;
+  }
 
   // Pour l'allure seuil, on cherche l'enveloppe de performance démontrée autour
   // d'un effort ~1 h, pas l'effort de distance la plus proche. Sinon un long run
@@ -242,7 +252,9 @@ export function estimateRunThresholdPace(
   for (const ref of candidates) {
     const predictedSeconds = ref.seconds * (THRESHOLD_PROXY_METERS / ref.meters) ** RIEGEL_EXPONENT;
     const predictedPace = Math.round((predictedSeconds / THRESHOLD_PROXY_METERS) * 1000);
-    if (bestPace == null || predictedPace < bestPace) bestPace = predictedPace;
+    if ((bestPace === undefined || bestPace === null) || predictedPace < bestPace) {
+      bestPace = predictedPace;
+    }
   }
 
   return bestPace;
@@ -275,10 +287,18 @@ function ftpFromPowerCurve(powerCurve: PowerCurvePoint[]): FtpEstimate | null {
 
 /** Facteur appliqué à la puissance normalisée d'un ride entier selon sa durée. */
 function rideFtpFactor(seconds: number): number | null {
-  if (seconds >= 3600) return 0.97;
-  if (seconds >= 2400) return 0.94;
-  if (seconds >= 1800) return 0.92;
-  if (seconds >= 1200) return 0.9;
+  if (seconds >= 3600) {
+    return 0.97;
+  }
+  if (seconds >= 2400) {
+    return 0.94;
+  }
+  if (seconds >= 1800) {
+    return 0.92;
+  }
+  if (seconds >= 1200) {
+    return 0.9;
+  }
   return null;
 }
 
@@ -287,7 +307,9 @@ function ftpFromBikeEfforts(bikeEfforts: BikeEffort[]): FtpEstimate | null {
   let best: FtpEstimate | null = null;
   for (const e of bikeEfforts) {
     const factor = rideFtpFactor(e.seconds);
-    if (factor == null || e.watts <= 0) continue;
+    if ((factor === undefined || factor === null) || e.watts <= 0) {
+      continue;
+    }
     const watts = Math.round(e.watts * factor);
     if (!best || watts > best.watts) {
       const mins = Math.round(e.seconds / 60);

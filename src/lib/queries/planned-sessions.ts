@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { prisma } from '@/lib/prisma';
 import { activityInclude, plannedSessionCoachSelect } from '@/lib/queries/activity-include';
 
@@ -48,11 +49,15 @@ export async function linkPlannedSessionActivity(
     where: { id, athleteId },
     data: {
       activityId,
-      completed: activityId != null,
-      ...(activityId == null ? { analysis: Prisma.DbNull, analyzedAt: null } : {}),
+      completed: isSet(activityId),
+      ...(activityId === undefined || activityId === null
+        ? { analysis: Prisma.DbNull, analyzedAt: null }
+        : {}),
     },
   });
-  if (count === 0) return null;
+  if (count === 0) {
+    return null;
+  }
   return prisma.plannedSession.findUnique({ where: { id }, include: plannedSessionInclude });
 }
 
@@ -65,7 +70,9 @@ export async function setPlannedSessionAnalysis(
     where: { id, athleteId },
     data: { analysis, analyzedAt: new Date() },
   });
-  if (count === 0) return null;
+  if (count === 0) {
+    return null;
+  }
   return prisma.plannedSession.findUnique({ where: { id }, include: plannedSessionInclude });
 }
 
@@ -128,7 +135,9 @@ export async function updatePlannedSession(
   data: Prisma.PlannedSessionUncheckedUpdateInput,
 ) {
   const { count } = await prisma.plannedSession.updateMany({ where: { id, athleteId }, data });
-  if (count === 0) return null;
+  if (count === 0) {
+    return null;
+  }
   return prisma.plannedSession.findUnique({ where: { id } });
 }
 
@@ -137,6 +146,8 @@ export async function deletePlannedSession(athleteId: string, id: string) {
     where: { id, athleteId },
     select: { id: true },
   });
-  if (!owned) return null;
+  if (!owned) {
+    return null;
+  }
   return prisma.plannedSession.delete({ where: { id } });
 }

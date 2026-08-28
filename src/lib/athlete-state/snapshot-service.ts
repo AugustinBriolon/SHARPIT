@@ -28,11 +28,18 @@ import { prisma } from '@/lib/prisma';
 
 function phaseNarrativeNeedsUpgrade(snapshot: AthleteSnapshot): boolean {
   const phase = snapshot.dailyPhase?.phase;
-  if (!phase || !snapshot.phaseNarrative) return false;
-  if (!snapshot.phaseNarrative.posture) return true;
-  if (/à protéger|demain à protéger|demain : ménage/i.test(snapshot.phaseNarrative.heroHeadline))
+  if (!phase || !snapshot.phaseNarrative) {
+    return false;
+  }
+  if (!snapshot.phaseNarrative.posture) {
     return true;
-  if (isForwardAdvicePhase(phase)) return false;
+  }
+  if (/à protéger|demain à protéger|demain : ménage/i.test(snapshot.phaseNarrative.heroHeadline)) {
+    return true;
+  }
+  if (isForwardAdvicePhase(phase)) {
+    return false;
+  }
   return /entraîne-toi|train hard/i.test(snapshot.phaseNarrative.heroSubline);
 }
 
@@ -42,7 +49,9 @@ async function loadBriefingForDay(
 ): Promise<AthleteSnapshotBriefing | null> {
   const refDate = new Date(`${trainingDayId}T12:00:00.000Z`);
   const row = await getDailyBriefing(athleteId, refDate);
-  if (!row) return null;
+  if (!row) {
+    return null;
+  }
   return {
     content: row.content,
     generatedAt: row.generatedAt.toISOString(),
@@ -171,13 +180,57 @@ export async function generateAthleteSnapshot(
 
   const snapshot = buildAthleteSnapshot(buildInput);
   const existing = await getSnapshotByFingerprint(athleteId, trainingDayId, snapshot.snapshotId);
-  if (existing) return existing;
+  if (existing) {
+    return existing;
+  }
 
   if (!options.skipPersist) {
     await saveAthleteSnapshot(snapshot);
   }
 
   return snapshot;
+}
+
+function briefingChangedSincePersisted(
+  persisted: AthleteSnapshot,
+  latestBriefing: AthleteSnapshotBriefing | null | undefined,
+): boolean {
+  return (
+    latestBriefing?.generatedAt !== persisted.briefing?.generatedAt ||
+    Boolean(latestBriefing && !persisted.briefing)
+  );
+}
+
+function persistedSnapshotNeedsRegeneration(
+  persisted: AthleteSnapshot,
+  latestBriefing: AthleteSnapshotBriefing | null | undefined,
+): boolean {
+  if (briefingChangedSincePersisted(persisted, latestBriefing)) {
+    return true;
+  }
+  if (typeof persisted.adviceActionable !== 'boolean') {
+    return true;
+  }
+  if (!persisted.dailyPhase || !persisted.phaseNarrative) {
+    return true;
+  }
+  if (shouldRefreshSnapshotForPhaseDrift(persisted)) {
+    return true;
+  }
+  return phaseNarrativeNeedsUpgrade(persisted);
+}
+
+function todayStateFromPersistedSnapshot(persisted: AthleteSnapshot): TodayState {
+  return {
+    reasoning: persisted.reasoning,
+    decision: persisted.decision ?? null,
+    recovery: persisted.recovery,
+    fatigue: persisted.fatigue,
+    adaptation: persisted.adaptation,
+    physicalHealth: persisted.physicalHealth,
+    environment: persisted.environment ?? null,
+    dailyStrain: persisted.dailyStrain,
+  };
 }
 
 export async function getOrBuildAthleteSnapshot(
@@ -192,38 +245,15 @@ export async function getOrBuildAthleteSnapshot(
     loadBriefingForDay(athleteId, trainingDayId),
   ]);
 
+  if (persisted && !persistedSnapshotNeedsRegeneration(persisted, latestBriefing)) {
+    return persisted;
+  }
+
   if (persisted) {
-    const briefingChanged =
-      latestBriefing?.generatedAt !== persisted.briefing?.generatedAt ||
-      (latestBriefing && !persisted.briefing);
-    const needsTruthfulnessUpgrade = typeof persisted.adviceActionable !== 'boolean';
-    const needsDailyPhase = !persisted.dailyPhase || !persisted.phaseNarrative;
-    const needsPhaseDrift = shouldRefreshSnapshotForPhaseDrift(persisted);
-    const needsNarrativeUpgrade = phaseNarrativeNeedsUpgrade(persisted);
-
-    if (
-      !briefingChanged &&
-      !needsTruthfulnessUpgrade &&
-      !needsDailyPhase &&
-      !needsPhaseDrift &&
-      !needsNarrativeUpgrade
-    ) {
-      return persisted;
-    }
-
     return generateAthleteSnapshot({
       athleteId,
       trainingDayId,
-      todayState: {
-        reasoning: persisted.reasoning,
-        decision: persisted.decision ?? null,
-        recovery: persisted.recovery,
-        fatigue: persisted.fatigue,
-        adaptation: persisted.adaptation,
-        physicalHealth: persisted.physicalHealth,
-        environment: persisted.environment ?? null,
-        dailyStrain: persisted.dailyStrain,
-      },
+      todayState: todayStateFromPersistedSnapshot(persisted),
       forceRefresh: false,
     });
   }
@@ -254,7 +284,9 @@ export async function regenerateAthleteSnapshotAfterBriefing(
     athleteId,
     trainingDayId: dayId,
   });
-  if (!existing) return null;
+  if (!existing) {
+    return null;
+  }
 
   return generateAthleteSnapshot({
     athleteId,

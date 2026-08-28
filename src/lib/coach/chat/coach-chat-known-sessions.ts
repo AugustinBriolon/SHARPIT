@@ -11,6 +11,32 @@ export const COACH_CHAT_SUGGESTIONS = [
   'Ajoute une sortie vélo endurance samedi',
 ] as const;
 
+function ingestToolSessions(part: ToolPartLite, known: Record<string, KnownSession>): void {
+  const { output } = part;
+  if (!Array.isArray(output)) {
+    return;
+  }
+  for (const session of output as KnownSession[]) {
+    if (session?.id) {
+      known[session.id] = session;
+    }
+  }
+}
+
+function ingestPlannedSessions(
+  plannedSessions: { id: string; title: string | null; date: Date; type: ActivityType }[],
+  known: Record<string, KnownSession>,
+): void {
+  for (const session of plannedSessions) {
+    known[session.id] = {
+      id: session.id,
+      title: session.title,
+      date: format(new Date(session.date), 'yyyy-MM-dd'),
+      type: session.type,
+    };
+  }
+}
+
 export function buildKnownSessions(
   messages: UIMessage[],
   plannedSessions:
@@ -19,24 +45,19 @@ export function buildKnownSessions(
   const known: Record<string, KnownSession> = {};
 
   for (const message of messages) {
-    if (message.role !== 'assistant') continue;
+    if (message.role !== 'assistant') {
+      continue;
+    }
     for (const part of message.parts) {
-      if (part.type !== 'tool-listPlannedSessions') continue;
-      const { output } = part as ToolPartLite;
-      if (!Array.isArray(output)) continue;
-      for (const s of output as KnownSession[]) {
-        if (s?.id) known[s.id] = s;
+      if (part.type !== 'tool-listPlannedSessions') {
+        continue;
       }
+      ingestToolSessions(part as ToolPartLite, known);
     }
   }
 
-  for (const session of plannedSessions ?? []) {
-    known[session.id] = {
-      id: session.id,
-      title: session.title,
-      date: format(new Date(session.date), 'yyyy-MM-dd'),
-      type: session.type,
-    };
+  if (plannedSessions) {
+    ingestPlannedSessions(plannedSessions, known);
   }
 
   return known;

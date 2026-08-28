@@ -51,18 +51,20 @@ export function usePhysicalNotes() {
 
 function optimisticNote(payload: PhysicalNotePayload): ClientPhysicalNote {
   const now = new Date();
+  const defaults = {
+    status: 'ACTIVE' as PhysicalStatus,
+    side: 'NA' as BodySide,
+    affectsTraining: true,
+    startDate: now,
+    resolvedAt: null as Date | null,
+    bodyPart: null as string | null,
+    severity: null as number | null,
+    description: null as string | null,
+  };
   return {
     id: tempId(),
-    category: payload.category,
-    status: payload.status ?? 'ACTIVE',
-    title: payload.title,
-    bodyPart: payload.bodyPart ?? null,
-    side: payload.side ?? 'NA',
-    severity: payload.severity ?? null,
-    description: payload.description ?? null,
-    affectsTraining: payload.affectsTraining ?? true,
-    startDate: payload.startDate ?? now,
-    resolvedAt: payload.resolvedAt ?? null,
+    ...defaults,
+    ...payload,
     createdAt: now,
     updatedAt: now,
     checkins: [],
@@ -117,7 +119,9 @@ export function usePhysicalNoteMutations() {
       queryKey: key,
       apply: (prev, { id, data }) =>
         prev.map((n) => {
-          if (n.id !== id) return n;
+          if (n.id !== id) {
+            return n;
+          }
           const checkin = {
             id: tempId(),
             noteId: id,

@@ -1,20 +1,27 @@
 import type { GateContext, GateProposal, PlanGateRule, RuleFinding } from '../types';
+import { isSet } from '@/lib/util/value';
 
 function toMinutes(hhmm: string): number {
   const [h, m] = hhmm.split(':').map(Number);
   return h * 60 + m;
 }
 
-/** Only runs when a calendar is actually connected (busyBlocks !== null) — never guesses availability. */
+/** Only runs when a calendar is actually connected (isSet(busyBlocks)) — never guesses availability. */
 export const calendarConflictRule: PlanGateRule = (
   context: GateContext,
   proposal: GateProposal,
 ): RuleFinding[] => {
-  if (context.busyBlocks === null) return [];
-  if (!proposal.startTime || proposal.durationMin == null) return [];
+  if (context.busyBlocks === undefined || context.busyBlocks === null) {
+    return [];
+  }
+  if (!proposal.startTime || proposal.durationMin === undefined || proposal.durationMin === null) {
+    return [];
+  }
 
   const dayBlocks = context.busyBlocks.filter((b) => b.dayKey === proposal.date);
-  if (dayBlocks.length === 0) return [];
+  if (dayBlocks.length === 0) {
+    return [];
+  }
 
   const start = toMinutes(proposal.startTime);
   const end = start + proposal.durationMin;

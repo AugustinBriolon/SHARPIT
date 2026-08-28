@@ -10,7 +10,9 @@ function stubClient(responses: Record<string, unknown>) {
     get: async (url: string) => {
       const match = Object.entries(responses).find(([key]) => url.includes(key));
       const value = match?.[1];
-      if (value instanceof Error) throw value;
+      if (value instanceof Error) {
+        throw value;
+      }
       return value ?? null;
     },
   } as never;

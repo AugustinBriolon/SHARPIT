@@ -61,7 +61,9 @@ const MIN_FILLED_WEEK_BAR_PCT = 14;
 
 /** Bar height 0–100. Empty weeks stay a stub; filled weeks scale with count. */
 export function programWeekBarPct(sessionCount: number, windowPeak: number): number {
-  if (sessionCount <= 0) return EMPTY_WEEK_BAR_PCT;
+  if (sessionCount <= 0) {
+    return EMPTY_WEEK_BAR_PCT;
+  }
   const peak = Math.max(windowPeak, PROGRAM_WEEK_BAR_CEILING, sessionCount);
   return Math.max(MIN_FILLED_WEEK_BAR_PCT, Math.round((sessionCount / peak) * 100));
 }
@@ -71,10 +73,18 @@ function isoWeekKey(date: Date): string {
 }
 
 function loadToLevel(count: number, load: number): HeatmapLevel {
-  if (count === 0) return 0;
-  if (count >= 3 || load >= 200) return 4;
-  if (count >= 2 || load >= 100) return 3;
-  if (load >= 40) return 2;
+  if (count === 0) {
+    return 0;
+  }
+  if (count >= 3 || load >= 200) {
+    return 4;
+  }
+  if (count >= 2 || load >= 100) {
+    return 3;
+  }
+  if (load >= 40) {
+    return 2;
+  }
   return 1;
 }
 
@@ -106,7 +116,9 @@ function buildWeekColumns(cells: HeatmapCell[]): HeatmapCell[][] {
     column.push(cell);
   }
 
-  if (column.length > 0) columns.push(column);
+  if (column.length > 0) {
+    columns.push(column);
+  }
   return columns;
 }
 
@@ -230,7 +242,9 @@ export function buildActivityConsistencyStats(
 }
 
 export function formatHeatmapRangeLabel(days: number): string {
-  if (days >= 360) return '12 mois';
+  if (days >= 360) {
+    return '12 mois';
+  }
   const weeks = Math.round(days / 7);
   return weeks === 1 ? '1 semaine' : `${weeks} semaines`;
 }

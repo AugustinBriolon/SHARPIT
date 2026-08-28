@@ -1,4 +1,5 @@
 import { format as formatDate } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import { addTrainingDays, computeTrainingDayId } from './training-day';
 
 /**
@@ -64,12 +65,16 @@ function isWithinWindow(trainingDayId: string, anchorDayId: string, windowDays: 
 }
 
 function mean(values: number[]) {
-  if (values.length === 0) return 0;
+  if (values.length === 0) {
+    return 0;
+  }
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
 function stdDev(values: number[]) {
-  if (values.length === 0) return 0;
+  if (values.length === 0) {
+    return 0;
+  }
   const avg = mean(values);
   const variance = values.reduce((sum, value) => sum + (value - avg) ** 2, 0) / values.length;
   return Math.sqrt(variance);
@@ -84,6 +89,64 @@ function stdDev(values: number[]) {
  * runs on a column that mixed Garmin's TSS with its EPOC training load for every
  * row written before the two were separated. See ADR-011.
  */
+function fatigueFromAcwr(acwr: number): 'Low' | 'Medium' | 'High' {
+  if (acwr >= ACWR_THRESHOLDS.OVERLOAD_MODERATE) {
+    return 'High';
+  }
+  if (acwr >= ACWR_THRESHOLDS.UNDERLOAD) {
+    return 'Medium';
+  }
+  return 'Low';
+}
+
+function sumLoadInWindow(
+  loadByTrainingDay: Map<string, number>,
+  refTrainingDayId: string,
+  windowDays: number,
+): number {
+  return Array.from(loadByTrainingDay.entries())
+    .filter(([trainingDayId]) => isWithinWindow(trainingDayId, refTrainingDayId, windowDays))
+    .reduce((sum, [, load]) => sum + load, 0);
+}
+
+export type TrainingLoadResult = {
+  dailyLoad: number;
+  weeklyLoad: number;
+  acwr: number;
+  fatigue: 'Low' | 'Medium' | 'High';
+  loadMonotony: number | null;
+  loadStrain: number | null;
+};
+
+function buildTrainingLoadResult(input: {
+  loadByTrainingDay: Map<string, number>;
+  refTrainingDayId: string;
+  acuteLoad: number;
+  dailyLoad: number;
+  chronicWeeklyAvg: number;
+}): TrainingLoadResult {
+  const { loadByTrainingDay, refTrainingDayId, acuteLoad, dailyLoad, chronicWeeklyAvg } = input;
+  const dailyLoads7d = Array.from({ length: ACUTE_DAYS }, (_, index) => {
+    const dayId = addTrainingDays(refTrainingDayId, -(ACUTE_DAYS - 1 - index));
+    return loadByTrainingDay.get(dayId) ?? 0;
+  });
+
+  const avgDailyLoad = mean(dailyLoads7d);
+  const sdDailyLoad = stdDev(dailyLoads7d);
+  const loadMonotony = sdDailyLoad > 0 ? avgDailyLoad / sdDailyLoad : null;
+  const loadStrain = isSet(loadMonotony) ? acuteLoad * loadMonotony : null;
+  const acwr = chronicWeeklyAvg > 0 ? acuteLoad / chronicWeeklyAvg : 0;
+
+  return {
+    dailyLoad: Math.round(dailyLoad),
+    weeklyLoad: Math.round(acuteLoad),
+    acwr: Number(acwr.toFixed(2)),
+    fatigue: fatigueFromAcwr(acwr),
+    loadMonotony: isSet(loadMonotony) ? Number(loadMonotony.toFixed(2)) : null,
+    loadStrain: isSet(loadStrain) ? Math.round(loadStrain) : null,
+  };
+}
+
 export function computeTrainingLoad(
   activities: { load: number | null; date: Date }[],
   refDate: Date = new Date(),
@@ -98,44 +161,18 @@ export function computeTrainingLoad(
     );
   }
 
-  const acuteLoad = Array.from(loadByTrainingDay.entries())
-    .filter(([trainingDayId]) => isWithinWindow(trainingDayId, refTrainingDayId, ACUTE_DAYS))
-    .reduce((sum, [, load]) => sum + load, 0);
-
+  const acuteLoad = sumLoadInWindow(loadByTrainingDay, refTrainingDayId, ACUTE_DAYS);
   const dailyLoad = loadByTrainingDay.get(refTrainingDayId) ?? 0;
-
-  const chronicTotalLoad = Array.from(loadByTrainingDay.entries())
-    .filter(([trainingDayId]) => isWithinWindow(trainingDayId, refTrainingDayId, CHRONIC_DAYS))
-    .reduce((sum, [, load]) => sum + load, 0);
-
+  const chronicTotalLoad = sumLoadInWindow(loadByTrainingDay, refTrainingDayId, CHRONIC_DAYS);
   const chronicWeeklyAvg = chronicTotalLoad / CHRONIC_WEEKS;
 
-  const dailyLoads7d = Array.from({ length: ACUTE_DAYS }, (_, index) => {
-    const dayId = addTrainingDays(refTrainingDayId, -(ACUTE_DAYS - 1 - index));
-    return loadByTrainingDay.get(dayId) ?? 0;
+  return buildTrainingLoadResult({
+    loadByTrainingDay,
+    refTrainingDayId,
+    acuteLoad,
+    dailyLoad,
+    chronicWeeklyAvg,
   });
-
-  const avgDailyLoad = mean(dailyLoads7d);
-  const sdDailyLoad = stdDev(dailyLoads7d);
-  const loadMonotony = sdDailyLoad > 0 ? avgDailyLoad / sdDailyLoad : null;
-  const loadStrain = loadMonotony != null ? acuteLoad * loadMonotony : null;
-
-  // ACWR : ratio de la charge aiguë (7j) sur la charge chronique moyenne hebdo
-  const acwr = chronicWeeklyAvg > 0 ? acuteLoad / chronicWeeklyAvg : 0;
-
-  // Classification du niveau de fatigue / risque selon seuils validés
-  let fatigue: 'Low' | 'Medium' | 'High' = 'Low';
-  if (acwr >= ACWR_THRESHOLDS.OVERLOAD_MODERATE) fatigue = 'High';
-  else if (acwr >= ACWR_THRESHOLDS.UNDERLOAD) fatigue = 'Medium';
-
-  return {
-    dailyLoad: Math.round(dailyLoad),
-    weeklyLoad: Math.round(acuteLoad),
-    acwr: Number(acwr.toFixed(2)),
-    fatigue,
-    loadMonotony: loadMonotony != null ? Number(loadMonotony.toFixed(2)) : null,
-    loadStrain: loadStrain != null ? Math.round(loadStrain) : null,
-  };
 }
 
 type FatigueDimensionResult = {
@@ -150,7 +187,9 @@ export function enrichFatigueLoadDimension<T extends Record<string, FatigueDimen
   acwr: number,
 ): T {
   const { load } = dimensions;
-  if (!load || load.available || acwr <= 0) return dimensions;
+  if (!load || load.available || acwr <= 0) {
+    return dimensions;
+  }
 
   const score = Math.round(Math.max(Math.min((acwr / 1.5) * 100, 100), 0));
   return {

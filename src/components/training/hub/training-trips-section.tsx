@@ -17,7 +17,9 @@ export function TrainingTripsSection({
   renderHeader: (props: { title: string; href: string; cta: string }) => React.ReactNode;
 }) {
   const { data: trips } = useHikeTrips();
-  if (!trips || trips.length === 0) return null;
+  if (!trips || trips.length === 0) {
+    return null;
+  }
 
   return (
     <section className="min-w-0">

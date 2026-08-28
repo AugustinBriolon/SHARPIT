@@ -46,7 +46,9 @@ export function twinDrillDownHref(dimension: TwinDimension): string {
  * scattered through whatever component needs to know.
  */
 export function twinDimensionFromHref(href: string | null): TwinDimension | null {
-  if (!href) return null;
+  if (!href) {
+    return null;
+  }
   const match = (Object.keys(TWIN_DIMENSION_LABEL) as TwinDimension[]).find(
     (dimension) => TWIN_DRILL_DOWN[dimension] === href,
   );

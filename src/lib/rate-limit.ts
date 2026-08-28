@@ -27,7 +27,9 @@ if (!redis) {
 }
 
 function limiter(requests: number, window: `${number} ${'s' | 'm' | 'h'}`, prefix: string) {
-  if (!redis) return null;
+  if (!redis) {
+    return null;
+  }
   return new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(requests, window),
@@ -54,11 +56,15 @@ export async function checkRateLimit(
   limiter: Ratelimit | null,
   key: string,
 ): Promise<RateLimitResult> {
-  if (!limiter) return { ok: true };
+  if (!limiter) {
+    return { ok: true };
+  }
 
   try {
     const result = await limiter.limit(key);
-    if (result.success) return { ok: true };
+    if (result.success) {
+      return { ok: true };
+    }
     const retryAfterSeconds = Math.max(1, Math.ceil((result.reset - Date.now()) / 1000));
     return { ok: false, retryAfterSeconds };
   } catch (error) {

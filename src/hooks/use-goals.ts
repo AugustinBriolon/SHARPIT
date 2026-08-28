@@ -7,6 +7,7 @@ import { listOptimistic, tempId } from '@/lib/query/optimistic';
 import { sendJson } from '@/lib/query/send-json';
 import type { ClientGoal } from '@/lib/query/types';
 import type { GoalHorizon, GoalPriority } from '@prisma/client';
+import { nullishFields } from '@/lib/query/nullish-fields';
 
 export function useGoals() {
   return useQuery({
@@ -43,6 +44,18 @@ export interface GoalPayload {
   targetPerformance?: string | null;
 }
 
+const GOAL_NULLABLE_KEYS = [
+  'metricKey',
+  'startValue',
+  'currentValue',
+  'targetValue',
+  'unit',
+  'location',
+  'notes',
+  'raceFormat',
+  'targetPerformance',
+] as const satisfies readonly (keyof GoalPayload)[];
+
 function optimisticGoal(payload: GoalPayload): ClientGoal {
   const now = new Date();
   return {
@@ -50,19 +63,11 @@ function optimisticGoal(payload: GoalPayload): ClientGoal {
     title: payload.title,
     kind: payload.kind,
     horizon: (payload.horizon as GoalHorizon | null) ?? null,
-    metricKey: payload.metricKey ?? null,
-    startValue: payload.startValue ?? null,
-    currentValue: payload.currentValue ?? null,
-    targetValue: payload.targetValue ?? null,
-    unit: payload.unit ?? null,
+    ...nullishFields(payload as unknown as Record<string, unknown>, GOAL_NULLABLE_KEYS),
     lowerIsBetter: payload.lowerIsBetter ?? false,
     targetDate: payload.targetDate ? new Date(payload.targetDate) : null,
-    location: payload.location ?? null,
     achieved: payload.achieved ?? false,
-    notes: payload.notes ?? null,
     priority: (payload.priority as GoalPriority | null) ?? null,
-    raceFormat: payload.raceFormat ?? null,
-    targetPerformance: payload.targetPerformance ?? null,
     createdAt: now,
     updatedAt: now,
   } as ClientGoal;

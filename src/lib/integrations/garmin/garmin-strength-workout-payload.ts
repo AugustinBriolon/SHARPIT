@@ -3,6 +3,7 @@ import type {
   GarminMatchConfidence,
 } from '@/lib/integrations/garmin/garmin-exercise-map';
 import { canonicalizeGarminExerciseRef } from '@/lib/integrations/garmin/garmin-exercise-map';
+import { isSet } from '@/lib/util/value';
 import { getGarminTaxonomyEntry } from '@/lib/integrations/garmin/garmin-exercise-taxonomy';
 import type { StrengthRestMode } from '@/lib/planned-session/strength/strength-prescription';
 import {
@@ -71,6 +72,40 @@ function kgToLbs(kg: number): number {
   return Math.round(kg * 2.2046226218 * 10) / 10;
 }
 
+function usesDurationForSet(set: StrengthWorkoutSetInput, garmin: GarminExerciseRef): boolean {
+  return (
+    set.reps === undefined ||
+    set.reps === null ||
+    set.reps <= 0 ||
+    (garmin.category === MOBILITY_CATEGORY && set.reps <= 1)
+  );
+}
+
+function applyDurationEndCondition(
+  step: StepBag,
+  set: StrengthWorkoutSetInput,
+  garmin: GarminExerciseRef,
+): void {
+  const defaultSec =
+    garmin.category === MOBILITY_CATEGORY ? DEFAULT_MOBILITY_SEC : DEFAULT_ISOMETRIC_SEC;
+  step.endCondition = TIME_CONDITION;
+  step.endConditionValue =
+    isSet(set.durationSec) && set.durationSec > 0 ? set.durationSec : defaultSec;
+}
+
+function applyExerciseEndCondition(
+  step: StepBag,
+  set: StrengthWorkoutSetInput,
+  garmin: GarminExerciseRef,
+): void {
+  if (usesDurationForSet(set, garmin)) {
+    applyDurationEndCondition(step, set, garmin);
+    return;
+  }
+  step.endCondition = REPS_CONDITION;
+  step.endConditionValue = Math.max(1, set.reps || 1);
+}
+
 function buildExerciseStep(
   order: StepOrder,
   childStepId: number | null,
@@ -84,21 +119,9 @@ function buildExerciseStep(
   const notes = set.notes?.trim();
   step.description = notes ? `${exerciseLabel} — ${notes}` : exerciseLabel;
 
-  // Stretches and massage are held for a time; "1 rep" would end the step instantly.
-  const isMobility = garmin.category === MOBILITY_CATEGORY;
-  const useDuration = set.reps == null || set.reps <= 0 || (isMobility && set.reps <= 1);
+  applyExerciseEndCondition(step, set, garmin);
 
-  if (useDuration) {
-    const defaultSec = isMobility ? DEFAULT_MOBILITY_SEC : DEFAULT_ISOMETRIC_SEC;
-    step.endCondition = TIME_CONDITION;
-    step.endConditionValue =
-      set.durationSec != null && set.durationSec > 0 ? set.durationSec : defaultSec;
-  } else {
-    step.endCondition = REPS_CONDITION;
-    step.endConditionValue = Math.max(1, set.reps || 1);
-  }
-
-  if (set.weightKg != null && set.weightKg > 0) {
+  if (isSet(set.weightKg) && set.weightKg > 0) {
     step.weightValue = kgToLbs(set.weightKg);
     step.weightUnit = POUND_UNIT;
   }
@@ -107,7 +130,9 @@ function buildExerciseStep(
 }
 
 function resolveRestMode(set: StrengthWorkoutSetInput): StrengthRestMode {
-  if (set.restMode === 'time' && set.restSec != null && set.restSec > 0) return 'time';
+  if (set.restMode === 'time' && isSet(set.restSec) && set.restSec > 0) {
+    return 'time';
+  }
   return 'lap';
 }
 
@@ -119,7 +144,7 @@ function buildRestStep(
 ): StepBag {
   const step = baseExecutableStep(order.nextOrder(), STEP_REST, childStepId);
   const mode = resolveRestMode(set);
-  if (mode === 'time' && set.restSec != null && set.restSec > 0) {
+  if (mode === 'time' && isSet(set.restSec) && set.restSec > 0) {
     step.endCondition = TIME_CONDITION;
     step.endConditionValue = set.restSec;
     step.description = `Repos ${set.restSec}s`;
@@ -140,6 +165,50 @@ function buildRestStep(
  * Rest is mandatory after every set (including the last) so transitions between
  * exercises also get a Lap/timed rest. Default rest ends on Lap button press.
  */
+function appendStrengthSetGroup(input: {
+  set: BuildStrengthWorkoutInput['sets'][number];
+  order: StepOrder;
+  workoutSteps: StepBag[];
+  skipped: BuildStrengthWorkoutResult['skipped'];
+  mapped: StrengthWorkoutMappedStep[];
+}): void {
+  const garmin = canonicalizeGarminExerciseRef(input.set.garmin);
+  if (!garmin) {
+    input.skipped.push({
+      exercise: input.set.exercise,
+      reason: 'hors catalogue montre (catégorie Garmin invalide ou inconnue)',
+    });
+    return;
+  }
+
+  const iterations = Math.max(1, input.set.sets || 1);
+  const childId = input.order.nextChildId();
+  const groupOrder = input.order.nextOrder();
+  const children: StepBag[] = [
+    buildExerciseStep(input.order, childId, input.set, garmin),
+    buildRestStep(input.order, childId, input.set),
+  ];
+  input.workoutSteps.push({
+    type: 'RepeatGroupDTO',
+    stepOrder: groupOrder,
+    stepType: STEP_REPEAT,
+    childStepId: childId,
+    numberOfIterations: iterations,
+    workoutSteps: children,
+    endCondition: ITERATIONS_CONDITION,
+    endConditionValue: iterations,
+    smartRepeat: false,
+    skipLastRestStep: false,
+  });
+  input.mapped.push({
+    exercise: input.set.exercise,
+    watchLabel: getGarminTaxonomyEntry(garmin.exerciseName)?.labelFr ?? garmin.exerciseName,
+    category: garmin.category,
+    exerciseName: garmin.exerciseName,
+    confidence: input.set.garmin?.confidence ?? 'fuzzy',
+  });
+}
+
 export function buildStrengthWorkoutPayload(
   input: BuildStrengthWorkoutInput,
 ): BuildStrengthWorkoutResult {
@@ -149,42 +218,7 @@ export function buildStrengthWorkoutPayload(
   const mapped: StrengthWorkoutMappedStep[] = [];
 
   for (const set of input.sets) {
-    const garmin = canonicalizeGarminExerciseRef(set.garmin);
-    if (!garmin) {
-      skipped.push({
-        exercise: set.exercise,
-        reason: 'hors catalogue montre (catégorie Garmin invalide ou inconnue)',
-      });
-      continue;
-    }
-
-    const iterations = Math.max(1, set.sets || 1);
-    const childId = order.nextChildId();
-    const groupOrder = order.nextOrder();
-    const children: StepBag[] = [
-      buildExerciseStep(order, childId, set, garmin),
-      buildRestStep(order, childId, set),
-    ];
-    workoutSteps.push({
-      type: 'RepeatGroupDTO',
-      stepOrder: groupOrder,
-      stepType: STEP_REPEAT,
-      childStepId: childId,
-      numberOfIterations: iterations,
-      workoutSteps: children,
-      endCondition: ITERATIONS_CONDITION,
-      endConditionValue: iterations,
-      smartRepeat: false,
-      // Keep rest after the last set too (inter-exercise transition + end buffer).
-      skipLastRestStep: false,
-    });
-    mapped.push({
-      exercise: set.exercise,
-      watchLabel: getGarminTaxonomyEntry(garmin.exerciseName)?.labelFr ?? garmin.exerciseName,
-      category: garmin.category,
-      exerciseName: garmin.exerciseName,
-      confidence: set.garmin?.confidence ?? 'fuzzy',
-    });
+    appendStrengthSetGroup({ set, order, workoutSteps, skipped, mapped });
   }
 
   const payload: Record<string, unknown> = {

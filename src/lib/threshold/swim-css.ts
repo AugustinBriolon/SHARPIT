@@ -68,15 +68,21 @@ export function estimateSwimCss(
     .map((sample) => sample.paceSecPer100m)
     .sort((a, b) => a - b);
 
-  if (usable.length === 0) return null;
+  if (usable.length === 0) {
+    return null;
+  }
   const chosen = usable.length >= MIN_SAMPLES_TO_TRIM ? usable[1] : usable[0];
   return Math.round(chosen * 10) / 10;
 }
 
 /** Only suggest a revision the athlete would actually feel in the water. */
 export function shouldSuggestSwimCss(current: number | null, estimate: number | null): boolean {
-  if (estimate == null) return false;
-  if (current == null) return true;
+  if ((estimate === undefined || estimate === null)) {
+    return false;
+  }
+  if ((current === undefined || current === null)) {
+    return true;
+  }
   return Math.abs(current - estimate) >= CSS_MATERIALITY_SEC_PER_100M;
 }
 

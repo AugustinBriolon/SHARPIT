@@ -1,4 +1,5 @@
 import { startOfDay, subDays } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 
 import { bodyCompositionMeasurementToObservation } from '@/core/adapters/body-composition-measurement-adapter';
 import type { RawObservation } from '@/core/observation/types';
@@ -10,6 +11,31 @@ export type BodyCompositionObservationBackfillResult = {
   ingested: number;
   skipped: number;
 };
+
+function collectMissingObservations(
+  rows: Awaited<ReturnType<typeof prisma.bodyCompositionMeasurement.findMany>>,
+  existingIds: Set<string>,
+): { raws: RawObservation[]; skipped: number } {
+  const raws: RawObservation[] = [];
+  let skipped = 0;
+
+  for (const row of rows) {
+    if (existingIds.has(row.externalId)) {
+      skipped += 1;
+      continue;
+    }
+
+    const raw = bodyCompositionMeasurementToObservation(row);
+    if (!raw) {
+      skipped += 1;
+      continue;
+    }
+
+    raws.push(raw);
+  }
+
+  return { raws, skipped };
+}
 
 /**
  * Backfills Observation records from BodyCompositionMeasurement rows that
@@ -46,26 +72,10 @@ export async function backfillBodyCompositionObservationsFromMeasurements(
     select: { externalId: true },
   });
   const existingIds = new Set(
-    existing.map((row) => row.externalId).filter((id): id is string => id != null),
+    existing.map((row) => row.externalId).filter((id): id is string => isSet(id)),
   );
 
-  const raws: RawObservation[] = [];
-  let skipped = 0;
-
-  for (const row of rows) {
-    if (existingIds.has(row.externalId)) {
-      skipped += 1;
-      continue;
-    }
-
-    const raw = bodyCompositionMeasurementToObservation(row);
-    if (!raw) {
-      skipped += 1;
-      continue;
-    }
-
-    raws.push(raw);
-  }
+  const { raws, skipped } = collectMissingObservations(rows, existingIds);
 
   if (raws.length === 0) {
     return { scanned: rows.length, ingested: 0, skipped };

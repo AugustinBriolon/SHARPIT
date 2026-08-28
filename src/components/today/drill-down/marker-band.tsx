@@ -43,7 +43,9 @@ const MARKER_MAX_PCT = 96;
 
 function markerPositionPct(value: number, range: MarkerRange): number {
   const span = range.high - range.low;
-  if (span <= 0) return 50;
+  if (span <= 0) {
+    return 50;
+  }
   const ratio = (value - range.low) / span;
   return Math.min(
     MARKER_MAX_PCT,
@@ -53,30 +55,28 @@ function markerPositionPct(value: number, range: MarkerRange): number {
 
 type Position = 'below' | 'inside' | 'above';
 
-function positionOf(value: number, range: MarkerRange): Position {
-  if (value < range.low) return 'below';
-  if (value > range.high) return 'above';
+export function positionOf(value: number, range: MarkerRange): Position {
+  if (value < range.low) {
+    return 'below';
+  }
+  if (value > range.high) {
+    return 'above';
+  }
   return 'inside';
 }
 
-const POSITION_WORD: Record<Position, string> = {
+export const POSITION_WORD: Record<Position, string> = {
   below: 'sous',
   inside: 'dans',
   above: 'au-dessus',
 };
 
-function isConcerning(position: Position, lowerIsBetter: boolean): boolean {
-  if (position === 'inside') return false;
+export function isConcerning(position: Position, lowerIsBetter: boolean): boolean {
+  if (position === 'inside') {
+    return false;
+  }
   return lowerIsBetter ? position === 'above' : position === 'below';
 }
-
-/**
- * The card states the reading; the working lives behind it.
- *
- * Label, value, and where that value sits — nothing else. The scale, the trend
- * and the sentence explaining what the marker measures open on demand, so a
- * screen read every morning is not carrying an explanation nobody rereads.
- */
 
 /**
  * Where the value sits, drawn on a full rail with the reference interval marked.
@@ -98,8 +98,6 @@ export function MarkerScale({
 }) {
   return (
     <div className={cn('relative h-3 w-full', className)}>
-      {/* Full rail first: a value outside its interval must sit on something, or it
-          reads as detached rather than as low. */}
       <div className="bg-muted-foreground/20 absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full" />
       <div
         className="bg-muted-foreground/60 absolute top-1/2 h-1 -translate-y-1/2 rounded-full"
@@ -117,73 +115,4 @@ export function MarkerScale({
   );
 }
 
-export function MarkerCard({
-  label,
-  value,
-  unit,
-  lowerIsBetter = false,
-  range = null,
-  format = defaultFormat,
-  onOpen,
-}: {
-  label: string;
-  value: number | null;
-  unit: string;
-  lowerIsBetter?: boolean;
-  range?: MarkerRange | null;
-  /** Ratios and signed balances need their own rendering; counts do not. */
-  format?: (value: number) => string;
-  onOpen: () => void;
-}) {
-  const position = value != null && range != null ? positionOf(value, range) : null;
-  const concerning = position != null && isConcerning(position, lowerIsBetter);
-  const rangeWord = range?.kind === 'baseline' ? 'norme' : '14 j';
-
-  return (
-    <button
-      type="button"
-      className={cn(
-        'border-analysis-border/60 bg-background/40 rounded-analysis w-full border p-3 text-left',
-        'hover:border-analysis-border focus-visible:outline-ring transition-colors',
-        'focus-visible:outline-2 focus-visible:outline-offset-2',
-      )}
-      onClick={onOpen}
-    >
-      <span className="text-muted-foreground block truncate text-sm">{label}</span>
-
-      <span className="mt-1 flex items-baseline gap-1">
-        <span
-          className={cn(
-            'text-data text-2xl font-semibold tabular-nums',
-            concerning ? 'text-signal-caution' : 'text-primary',
-          )}
-        >
-          {value != null ? format(value) : '—'}
-        </span>
-        <span className="text-muted-foreground text-xs">{unit}</span>
-      </span>
-
-      {range && value != null ? (
-        <MarkerScale className="mt-2" concerning={concerning} range={range} value={value} />
-      ) : null}
-
-      <span
-        className={cn(
-          'mt-1.5 block text-xs first-letter:uppercase',
-          concerning ? 'text-signal-caution' : 'text-muted-foreground',
-        )}
-      >
-        {position ? `${POSITION_WORD[position]} ${rangeWord}` : 'Pas de référence'}
-      </span>
-    </button>
-  );
-}
-
-export {
-  positionOf,
-  isConcerning,
-  POSITION_WORD,
-  markerPositionPct,
-  BAND_START_PCT,
-  BAND_WIDTH_PCT,
-};
+export { markerPositionPct, BAND_START_PCT, BAND_WIDTH_PCT };

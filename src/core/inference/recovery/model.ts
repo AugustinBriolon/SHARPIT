@@ -27,6 +27,7 @@ import type {
   RecoveryState,
 } from '@/core/digital-twin/types';
 import type { DayFeatures, LoadFeatureSet, RecoveryFeatureSet } from '@/core/features/types';
+import { isSet } from '@/lib/util/value';
 import type {
   RecommendedIntensity,
   RecoveryDecision,
@@ -53,36 +54,72 @@ import { applyWearableEnergyCorroboration } from './wearable-energy';
 // ─────────────────────────────────────────────────────────────────────────────
 
 function classifyAutonomicBalance(score: number | null): RecoverySignals['autonomicBalance'] {
-  if (score === null) return 'SUPPRESSED'; // treat unknown as suppressed (conservative)
-  if (score >= 85) return 'ENHANCED';
-  if (score >= 65) return 'NORMAL';
-  if (score >= 45) return 'MILDLY_SUPPRESSED';
-  if (score >= 25) return 'SUPPRESSED';
+  if (score === undefined || score === null) {
+    return 'SUPPRESSED';
+  } // treat unknown as suppressed (conservative)
+  if (score >= 85) {
+    return 'ENHANCED';
+  }
+  if (score >= 65) {
+    return 'NORMAL';
+  }
+  if (score >= 45) {
+    return 'MILDLY_SUPPRESSED';
+  }
+  if (score >= 25) {
+    return 'SUPPRESSED';
+  }
   return 'CRITICALLY_SUPPRESSED';
 }
 
 function classifySleepAdequacy(score: number | null): RecoverySignals['sleepAdequacy'] {
-  if (score === null) return 'INSUFFICIENT';
-  if (score >= 90) return 'EXCELLENT';
-  if (score >= 70) return 'ADEQUATE';
-  if (score >= 40) return 'INSUFFICIENT';
+  if (score === undefined || score === null) {
+    return 'INSUFFICIENT';
+  }
+  if (score >= 90) {
+    return 'EXCELLENT';
+  }
+  if (score >= 70) {
+    return 'ADEQUATE';
+  }
+  if (score >= 40) {
+    return 'INSUFFICIENT';
+  }
   return 'SEVERELY_INSUFFICIENT';
 }
 
 function classifySubjectiveWellness(score: number | null): RecoverySignals['subjectiveWellness'] {
-  if (score === null) return 'NORMAL'; // unknown = neutral
-  if (score >= 75) return 'HIGH';
-  if (score >= 50) return 'NORMAL';
-  if (score >= 25) return 'LOW';
+  if (score === undefined || score === null) {
+    return 'NORMAL';
+  } // unknown = neutral
+  if (score >= 75) {
+    return 'HIGH';
+  }
+  if (score >= 50) {
+    return 'NORMAL';
+  }
+  if (score >= 25) {
+    return 'LOW';
+  }
   return 'VERY_LOW';
 }
 
 function classifyLoadContext(score: number | null): RecoverySignals['loadStressContext'] {
-  if (score === null) return 'OPTIMAL';
-  if (score >= 85) return 'UNDERTRAINED';
-  if (score >= 75) return 'OPTIMAL';
-  if (score >= 55) return 'ELEVATED';
-  if (score >= 25) return 'HIGH';
+  if (score === undefined || score === null) {
+    return 'OPTIMAL';
+  }
+  if (score >= 85) {
+    return 'UNDERTRAINED';
+  }
+  if (score >= 75) {
+    return 'OPTIMAL';
+  }
+  if (score >= 55) {
+    return 'ELEVATED';
+  }
+  if (score >= 25) {
+    return 'HIGH';
+  }
   return 'CRITICAL';
 }
 
@@ -92,19 +129,44 @@ function computeOverreachingRisk(
   subjective: number | null,
   loadContext: number | null,
 ): OverreachingRisk {
-  const scores = [autonomic, sleep, subjective, loadContext].filter((s): s is number => s !== null);
+  const scores = [autonomic, sleep, subjective, loadContext].filter((s): s is number => isSet(s));
 
   // CRITICAL: 3+ dimensions < 30 (OTS territory — Meeusen et al. 2013)
-  if (scores.filter((s) => s < 30).length >= 3) return 'CRITICAL';
+  if (scores.filter((s) => s < 30).length >= 3) {
+    return 'CRITICAL';
+  }
 
   // HIGH: autonomic < 30 AND sleep < 40 simultaneously (autonomic + sleep crisis)
-  if (autonomic !== null && autonomic < 30 && sleep !== null && sleep < 40) return 'HIGH';
+  if (isSet(autonomic) && autonomic < 30 && isSet(sleep) && sleep < 40) {
+    return 'HIGH';
+  }
 
   // MODERATE: any 2 primary dimensions < 45
-  const primaryScores = [autonomic, sleep, subjective].filter((s): s is number => s !== null);
-  if (primaryScores.filter((s) => s < 45).length >= 2) return 'MODERATE';
+  const primaryScores = [autonomic, sleep, subjective].filter((s): s is number => isSet(s));
+  if (primaryScores.filter((s) => s < 45).length >= 2) {
+    return 'MODERATE';
+  }
 
   return 'LOW';
+}
+
+function illnessRiskFromHrvDrop(
+  hrvDeltaFromBaseline: number,
+  acuteLoad: number | null,
+  chronicLoad: number | null,
+): IllnessRisk | null {
+  if (
+    hrvDeltaFromBaseline < -30 &&
+    isSet(acuteLoad) &&
+    isSet(chronicLoad) &&
+    acuteLoad < chronicLoad * 0.7
+  ) {
+    return 'HIGH';
+  }
+  if (hrvDeltaFromBaseline < -20) {
+    return 'ELEVATED';
+  }
+  return null;
 }
 
 function computeIllnessRisk(
@@ -112,25 +174,13 @@ function computeIllnessRisk(
   load: LoadFeatureSet | 'PENDING',
 ): IllnessRisk {
   const { hrvDeltaFromBaseline } = recovery;
-  if (hrvDeltaFromBaseline === null) return 'LOW';
+  if (hrvDeltaFromBaseline === undefined || hrvDeltaFromBaseline === null) {
+    return 'LOW';
+  }
 
   const acuteLoad = load !== 'PENDING' ? load.acuteLoad : null;
   const chronicLoad = load !== 'PENDING' ? load.chronicLoad : null;
-
-  // HIGH: HRV drop > 30% without training load explanation (immune activation pattern)
-  if (
-    hrvDeltaFromBaseline < -30 &&
-    acuteLoad !== null &&
-    chronicLoad !== null &&
-    acuteLoad < chronicLoad * 0.7
-  ) {
-    return 'HIGH';
-  }
-
-  // ELEVATED: HRV drop > 20%
-  if (hrvDeltaFromBaseline < -20) return 'ELEVATED';
-
-  return 'LOW';
+  return illnessRiskFromHrvDrop(hrvDeltaFromBaseline, acuteLoad, chronicLoad) ?? 'LOW';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -138,13 +188,21 @@ function computeIllnessRisk(
 // ─────────────────────────────────────────────────────────────────────────────
 
 function mapScoreToCategory(score: number | null, availableCount: number): ReadinessCategory {
-  if (score === null) {
+  if (score === undefined || score === null) {
     return availableCount === 0 ? 'INSUFFICIENT_DATA' : 'BASELINE_PENDING';
   }
-  if (score >= 85) return 'OPTIMAL';
-  if (score >= 70) return 'ADEQUATE';
-  if (score >= 50) return 'REDUCED';
-  if (score >= 30) return 'LOW';
+  if (score >= 85) {
+    return 'OPTIMAL';
+  }
+  if (score >= 70) {
+    return 'ADEQUATE';
+  }
+  if (score >= 50) {
+    return 'REDUCED';
+  }
+  if (score >= 30) {
+    return 'LOW';
+  }
   return 'VERY_LOW';
 }
 
@@ -152,15 +210,25 @@ function capScoreForHighIllnessRisk(
   illnessRisk: IllnessRisk,
   finalScore: number | null,
 ): number | null {
-  if (illnessRisk !== 'HIGH') return finalScore;
-  if (finalScore === null) return 25;
+  if (illnessRisk !== 'HIGH') {
+    return finalScore;
+  }
+  if (finalScore === undefined || finalScore === null) {
+    return 25;
+  }
   return Math.min(finalScore, 25);
 }
 
 function classifyDataCompleteness(availableCount: number): DataCompleteness {
-  if (availableCount >= 4) return 'FULL';
-  if (availableCount >= 2) return 'PARTIAL';
-  if (availableCount === 1) return 'SPARSE';
+  if (availableCount >= 4) {
+    return 'FULL';
+  }
+  if (availableCount >= 2) {
+    return 'PARTIAL';
+  }
+  if (availableCount === 1) {
+    return 'SPARSE';
+  }
   return 'INSUFFICIENT';
 }
 
@@ -177,12 +245,15 @@ function findPrimaryLimitingFactor(scores: {
   loadContext: number | null;
 }): DimensionKey | null {
   const entries = Object.entries(scores) as Array<[DimensionKey, number | null]>;
-  const available = entries.filter(([, s]) => s !== null);
-  if (available.length === 0) return null;
+  const available = entries.filter(([, s]) => isSet(s));
+  if (available.length === 0) {
+    return null;
+  }
 
   return available.reduce((lowest, [key, score]) => {
     const lowestScore = scores[lowest];
-    return score !== null && (lowestScore === null || score < (lowestScore ?? Infinity))
+    return isSet(score) &&
+      (lowestScore === undefined || lowestScore === null || score < (lowestScore ?? Infinity))
       ? key
       : lowest;
   }, available[0][0]);
@@ -192,71 +263,57 @@ function findPrimaryLimitingFactor(scores: {
 // Decision
 // ─────────────────────────────────────────────────────────────────────────────
 
-function makeDecision(
-  category: ReadinessCategory,
+type CategoryDecision = Pick<RecoveryDecision, 'verdict' | 'recommendedIntensity' | 'rationale'>;
+
+const CATEGORY_DECISIONS: Record<ReadinessCategory, CategoryDecision> = {
+  OPTIMAL: {
+    verdict: 'RECOVERED',
+    recommendedIntensity: 'MODERATE',
+    rationale: [{ code: 'recovery.rationale.excellent' }],
+  },
+  ADEQUATE: {
+    verdict: 'PARTIALLY_RECOVERED',
+    recommendedIntensity: 'MODERATE',
+    rationale: [{ code: 'recovery.rationale.good' }],
+  },
+  REDUCED: {
+    verdict: 'PARTIALLY_RECOVERED',
+    recommendedIntensity: 'EASY',
+    rationale: [{ code: 'recovery.rationale.partial' }],
+  },
+  LOW: {
+    verdict: 'FATIGUED',
+    recommendedIntensity: 'VERY_EASY',
+    rationale: [{ code: 'recovery.rationale.incomplete' }],
+  },
+  VERY_LOW: {
+    verdict: 'FATIGUED',
+    recommendedIntensity: 'REST',
+    rationale: [{ code: 'recovery.rationale.insufficient' }],
+  },
+  BASELINE_PENDING: {
+    verdict: 'INSUFFICIENT_DATA',
+    recommendedIntensity: 'EASY',
+    rationale: [{ code: 'recovery.rationale.noData' }],
+  },
+  INSUFFICIENT_DATA: {
+    verdict: 'INSUFFICIENT_DATA',
+    recommendedIntensity: 'EASY',
+    rationale: [{ code: 'recovery.rationale.noData' }],
+  },
+};
+
+function optimalIntensity(
   signals: RecoverySignals,
   dissonanceType: 'OBJECTIVE_POOR_SUBJECTIVE_GOOD' | 'OBJECTIVE_GOOD_SUBJECTIVE_POOR' | 'NONE',
-): RecoveryDecision {
-  const rationale: I18nItem[] = [];
-
-  if (signals.illnessRisk === 'HIGH') {
-    return {
-      verdict: 'OVERREACHED',
-      recommendedIntensity: 'REST',
-      rationale: [
-        { code: 'recovery.rationale.illnessRisk.acute' },
-        { code: 'recovery.rationale.illnessRisk.mandatory' },
-        { code: 'recovery.rationale.illnessRisk.consult' },
-      ],
-    };
+): RecommendedIntensity {
+  if (signals.overreachingRisk === 'LOW' && dissonanceType !== 'OBJECTIVE_POOR_SUBJECTIVE_GOOD') {
+    return 'HARD';
   }
+  return 'MODERATE';
+}
 
-  let verdict: RecoveryVerdict;
-  let recommendedIntensity: RecommendedIntensity;
-
-  switch (category) {
-    case 'OPTIMAL':
-      verdict = 'RECOVERED';
-      recommendedIntensity =
-        signals.overreachingRisk === 'LOW' && dissonanceType !== 'OBJECTIVE_POOR_SUBJECTIVE_GOOD'
-          ? 'HARD'
-          : 'MODERATE';
-      rationale.push({ code: 'recovery.rationale.excellent' });
-      break;
-
-    case 'ADEQUATE':
-      verdict = 'PARTIALLY_RECOVERED';
-      recommendedIntensity = 'MODERATE';
-      rationale.push({ code: 'recovery.rationale.good' });
-      break;
-
-    case 'REDUCED':
-      verdict = 'PARTIALLY_RECOVERED';
-      recommendedIntensity = 'EASY';
-      rationale.push({ code: 'recovery.rationale.partial' });
-      break;
-
-    case 'LOW':
-      verdict = 'FATIGUED';
-      recommendedIntensity = 'VERY_EASY';
-      rationale.push({ code: 'recovery.rationale.incomplete' });
-      break;
-
-    case 'VERY_LOW':
-      verdict = 'FATIGUED';
-      recommendedIntensity = 'REST';
-      rationale.push({ code: 'recovery.rationale.insufficient' });
-      break;
-
-    case 'BASELINE_PENDING':
-    case 'INSUFFICIENT_DATA':
-    default:
-      verdict = 'INSUFFICIENT_DATA';
-      recommendedIntensity = 'EASY';
-      rationale.push({ code: 'recovery.rationale.noData' });
-      break;
-  }
-
+function appendSignalRationale(rationale: I18nItem[], signals: RecoverySignals): void {
   if (
     signals.autonomicBalance === 'SUPPRESSED' ||
     signals.autonomicBalance === 'CRITICALLY_SUPPRESSED'
@@ -275,8 +332,37 @@ function makeDecision(
   if (signals.dissonanceDetected) {
     rationale.push({ code: 'recovery.rationale.dissonance' });
   }
+}
 
-  return { verdict, recommendedIntensity, rationale: rationale.slice(0, 3) };
+function makeDecision(
+  category: ReadinessCategory,
+  signals: RecoverySignals,
+  dissonanceType: 'OBJECTIVE_POOR_SUBJECTIVE_GOOD' | 'OBJECTIVE_GOOD_SUBJECTIVE_POOR' | 'NONE',
+): RecoveryDecision {
+  if (signals.illnessRisk === 'HIGH') {
+    return {
+      verdict: 'OVERREACHED',
+      recommendedIntensity: 'REST',
+      rationale: [
+        { code: 'recovery.rationale.illnessRisk.acute' },
+        { code: 'recovery.rationale.illnessRisk.mandatory' },
+        { code: 'recovery.rationale.illnessRisk.consult' },
+      ],
+    };
+  }
+
+  const base = CATEGORY_DECISIONS[category];
+  const rationale = [...base.rationale];
+  const recommendedIntensity =
+    category === 'OPTIMAL' ? optimalIntensity(signals, dissonanceType) : base.recommendedIntensity;
+
+  appendSignalRationale(rationale, signals);
+
+  return {
+    verdict: base.verdict,
+    recommendedIntensity,
+    rationale: rationale.slice(0, 3),
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -289,7 +375,7 @@ function makeRecommendation(
   confidence: number,
 ): RecoveryRecommendation {
   const keyEvidence: I18nItem[] = [];
-  if (score !== null) {
+  if (isSet(score)) {
     keyEvidence.push({ code: 'recovery.evidence.score', params: { score } });
   }
   keyEvidence.push(...decision.rationale.slice(0, 2));
@@ -306,7 +392,9 @@ function makeRecommendation(
 // ─────────────────────────────────────────────────────────────────────────────
 
 function estimateTimeToFullRecovery(score: number | null): number | null {
-  if (score === null || score >= 70) return null; // already recovered
+  if (score === undefined || score === null || score >= 70) {
+    return null;
+  } // already recovered
   return Math.ceil((70 - score) / 10); // rough: ~1 day per 10 points below threshold
 }
 
@@ -321,6 +409,43 @@ function estimateTimeToFullRecovery(score: number | null): number | null {
  * @param context - Non-feature inputs (previous score from Digital Twin).
  * @returns Complete model output including state update, decision, and recommendation.
  */
+function resolveDissonanceType(
+  dissonanceDetected: boolean,
+  autonomicScore: number | null,
+  sleepScore: number | null,
+  subjectiveScore: number | null,
+): 'OBJECTIVE_POOR_SUBJECTIVE_GOOD' | 'OBJECTIVE_GOOD_SUBJECTIVE_POOR' | 'NONE' {
+  if (
+    !dissonanceDetected ||
+    autonomicScore === undefined ||
+    autonomicScore === null ||
+    subjectiveScore === undefined ||
+    subjectiveScore === null
+  ) {
+    return 'NONE';
+  }
+
+  const objectiveScores = [autonomicScore, sleepScore].filter((s): s is number => isSet(s));
+  const objectiveAvg = objectiveScores.reduce((a, b) => a + b, 0) / objectiveScores.length;
+  return objectiveAvg > subjectiveScore
+    ? 'OBJECTIVE_GOOD_SUBJECTIVE_POOR'
+    : 'OBJECTIVE_POOR_SUBJECTIVE_GOOD';
+}
+
+function applyDissonanceScoreAdjustment(
+  score: number | null,
+  dissonanceType: 'OBJECTIVE_POOR_SUBJECTIVE_GOOD' | 'OBJECTIVE_GOOD_SUBJECTIVE_POOR' | 'NONE',
+): number | null {
+  if (
+    score === undefined ||
+    score === null ||
+    dissonanceType !== 'OBJECTIVE_POOR_SUBJECTIVE_GOOD'
+  ) {
+    return score;
+  }
+  return Math.round(score * 0.9);
+}
+
 export function runRecoveryModel(
   features: DayFeatures,
   context: RecoveryModelContext,
@@ -354,29 +479,18 @@ export function runRecoveryModel(
     dims.subjective.score,
   );
 
-  // Adjust for dissonance direction
-  let dissonanceType: 'OBJECTIVE_POOR_SUBJECTIVE_GOOD' | 'OBJECTIVE_GOOD_SUBJECTIVE_POOR' | 'NONE' =
-    'NONE';
-  if (dissonanceDetected && dims.autonomic.score !== null && dims.subjective.score !== null) {
-    const objAvg = [dims.autonomic.score, dims.sleep.score].filter((s): s is number => s !== null);
-    const objectiveAvg = objAvg.reduce((a, b) => a + b, 0) / objAvg.length;
-    dissonanceType =
-      objectiveAvg > dims.subjective.score
-        ? 'OBJECTIVE_GOOD_SUBJECTIVE_POOR'
-        : 'OBJECTIVE_POOR_SUBJECTIVE_GOOD';
-  }
+  const dissonanceType = resolveDissonanceType(
+    dissonanceDetected,
+    dims.autonomic.score,
+    dims.sleep.score,
+    dims.subjective.score,
+  );
 
   const finalConfidence =
     Math.round(Math.min(synthesis.confidence * maturity * consistency, 1.0) * 100) / 100;
 
-  // ── Score adjustment for dissonance ───────────────────────────────────────
-  // Per RECOVERY_MODEL.md §9.1: conservative bias when "objective poor, subjective good"
-  let finalScore = synthesis.score;
-  if (finalScore !== null && dissonanceType === 'OBJECTIVE_POOR_SUBJECTIVE_GOOD') {
-    finalScore = Math.round(finalScore * 0.9);
-  }
+  const finalScore = applyDissonanceScoreAdjustment(synthesis.score, dissonanceType);
 
-  // ── Illness risk detection ─────────────────────────────────────────────────
   const illnessRisk: IllnessRisk = recovery ? computeIllnessRisk(recovery, load) : 'LOW';
 
   // Soft Garmin stress / Body Battery corroboration (bounded, never primary)

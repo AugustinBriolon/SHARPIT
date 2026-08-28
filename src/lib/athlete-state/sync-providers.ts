@@ -1,4 +1,5 @@
 import type { DataProvider } from '@/core/athlete-state/events';
+import { isSet } from '@/lib/util/value';
 import {
   isGarminAccountConnected,
   isOAuthAccountConnected,
@@ -35,7 +36,9 @@ export async function syncProviders(
   athleteId: string,
   providers: readonly DataProvider[],
 ): Promise<ProviderSyncResult[]> {
-  if (providers.length === 0) return [];
+  if (providers.length === 0) {
+    return [];
+  }
 
   const settled = await Promise.all(
     providers.map(async (provider) => {
@@ -48,82 +51,106 @@ export async function syncProviders(
     }),
   );
 
-  return settled.filter((r): r is ProviderSyncResult => r != null);
+  return settled.filter((r): r is ProviderSyncResult => isSet(r));
 }
+
+async function syncGarminProvider(athleteId: string): Promise<ProviderSyncResult | null> {
+  const account = await getGarminAccount(athleteId);
+  if (!account) {
+    return null;
+  }
+  const [health, activities] = await Promise.all([
+    syncGarminHealth(athleteId, { days: GARMIN_HEALTH_OPEN_PATH_FALLBACK_DAYS }),
+    syncGarminActivities(athleteId),
+  ]);
+  return {
+    provider: 'garmin',
+    imported: activities.imported,
+    updated: activities.updated + activities.merged,
+    observationCount: health.updated,
+    activityIds: activities.importedActivityIds,
+  };
+}
+
+async function syncStravaProvider(athleteId: string): Promise<ProviderSyncResult | null> {
+  const account = await getStravaAccount(athleteId);
+  if (!account) {
+    return null;
+  }
+  const strava = await syncStravaActivities(athleteId);
+  return {
+    provider: 'strava',
+    imported: strava.imported,
+    updated: strava.merged,
+    observationCount: await countRecentObservations('strava'),
+    activityIds: strava.importedActivityIds,
+  };
+}
+
+async function syncRenphoProvider(athleteId: string): Promise<ProviderSyncResult | null> {
+  const account = await getRenphoAccount(athleteId);
+  if (!account) {
+    return null;
+  }
+  const renpho = await syncRenphoHealth(athleteId);
+  return {
+    provider: 'renpho',
+    imported: renpho.imported,
+    updated: renpho.updated,
+    observationCount: renpho.imported + renpho.updated,
+    activityIds: [],
+  };
+}
+
+async function syncWithingsProvider(athleteId: string): Promise<ProviderSyncResult | null> {
+  const account = await getWithingsAccount(athleteId);
+  if (!account) {
+    return null;
+  }
+  const withings = await syncWithingsHealth(athleteId);
+  return {
+    provider: 'withings',
+    imported: withings.imported,
+    updated: withings.updated,
+    observationCount: withings.imported + withings.updated,
+    activityIds: [],
+  };
+}
+
+async function syncGoogleProvider(athleteId: string): Promise<ProviderSyncResult | null> {
+  const account = await getGoogleAccount(athleteId);
+  if (!account?.targetCalendarId) {
+    return null;
+  }
+  const google = await syncFromGoogle(athleteId);
+  return {
+    provider: 'google',
+    imported: google.pushed,
+    updated: google.updated,
+    observationCount: 0,
+    activityIds: [],
+  };
+}
+
+const PROVIDER_SYNC_HANDLERS: Partial<
+  Record<DataProvider, (athleteId: string) => Promise<ProviderSyncResult | null>>
+> = {
+  garmin: syncGarminProvider,
+  strava: syncStravaProvider,
+  renpho: syncRenphoProvider,
+  withings: syncWithingsProvider,
+  google: syncGoogleProvider,
+};
 
 async function syncSingleProvider(
   athleteId: string,
   provider: DataProvider,
 ): Promise<ProviderSyncResult | null> {
-  switch (provider) {
-    case 'garmin': {
-      const account = await getGarminAccount(athleteId);
-      if (!account) return null;
-      // Health ∥ activities — open path uses a short health fallback window;
-      // cron / manual keep the wider default (60d / full).
-      const [health, activities] = await Promise.all([
-        syncGarminHealth(athleteId, { days: GARMIN_HEALTH_OPEN_PATH_FALLBACK_DAYS }),
-        syncGarminActivities(athleteId),
-      ]);
-      return {
-        provider,
-        imported: activities.imported,
-        updated: activities.updated + activities.merged,
-        observationCount: health.updated,
-        activityIds: activities.importedActivityIds,
-      };
-    }
-    case 'strava': {
-      const account = await getStravaAccount(athleteId);
-      if (!account) return null;
-      const strava = await syncStravaActivities(athleteId);
-      return {
-        provider,
-        imported: strava.imported,
-        updated: strava.merged,
-        observationCount: await countRecentObservations(provider),
-        activityIds: strava.importedActivityIds,
-      };
-    }
-    case 'renpho': {
-      const account = await getRenphoAccount(athleteId);
-      if (!account) return null;
-      const renpho = await syncRenphoHealth(athleteId);
-      return {
-        provider,
-        imported: renpho.imported,
-        updated: renpho.updated,
-        observationCount: renpho.imported + renpho.updated,
-        activityIds: [],
-      };
-    }
-    case 'withings': {
-      const account = await getWithingsAccount(athleteId);
-      if (!account) return null;
-      const withings = await syncWithingsHealth(athleteId);
-      return {
-        provider,
-        imported: withings.imported,
-        updated: withings.updated,
-        observationCount: withings.imported + withings.updated,
-        activityIds: [],
-      };
-    }
-    case 'google': {
-      const account = await getGoogleAccount(athleteId);
-      if (!account?.targetCalendarId) return null;
-      const google = await syncFromGoogle(athleteId);
-      return {
-        provider,
-        imported: google.pushed,
-        updated: google.updated,
-        observationCount: 0,
-        activityIds: [],
-      };
-    }
-    default:
-      return null;
+  const handler = PROVIDER_SYNC_HANDLERS[provider];
+  if (!handler) {
+    return null;
   }
+  return handler(athleteId);
 }
 
 export async function listConnectedProviders(athleteId: string): Promise<DataProvider[]> {
@@ -136,10 +163,20 @@ export async function listConnectedProviders(athleteId: string): Promise<DataPro
   ]);
 
   const connected: DataProvider[] = [];
-  if (isGarminAccountConnected(garmin)) connected.push('garmin');
-  if (isOAuthAccountConnected(strava)) connected.push('strava');
-  if (isRenphoAccountConnected(renpho)) connected.push('renpho');
-  if (isOAuthAccountConnected(withings)) connected.push('withings');
-  if (isOAuthAccountConnected(google) && google?.targetCalendarId) connected.push('google');
+  if (isGarminAccountConnected(garmin)) {
+    connected.push('garmin');
+  }
+  if (isOAuthAccountConnected(strava)) {
+    connected.push('strava');
+  }
+  if (isRenphoAccountConnected(renpho)) {
+    connected.push('renpho');
+  }
+  if (isOAuthAccountConnected(withings)) {
+    connected.push('withings');
+  }
+  if (isOAuthAccountConnected(google) && google?.targetCalendarId) {
+    connected.push('google');
+  }
   return connected;
 }

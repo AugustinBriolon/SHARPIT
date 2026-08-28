@@ -27,7 +27,9 @@ const TREND_SLOPE_THRESHOLD = 0.3;
  */
 function severityRegressionSlope(history: ConditionHistory['severityHistory14d']): number | null {
   const sorted = [...history].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-  if (sorted.length < 3) return null;
+  if (sorted.length < 3) {
+    return null;
+  }
 
   const n = sorted.length;
   const t0 = sorted[0].timestamp.getTime();
@@ -42,14 +44,22 @@ function severityRegressionSlope(history: ConditionHistory['severityHistory14d']
   const sumX2 = pairs.reduce((a, p) => a + p.x * p.x, 0);
   const denom = n * sumX2 - sumX * sumX;
 
-  if (denom === 0) return null;
+  if (denom === 0) {
+    return null;
+  }
   return (n * sumXY - sumX * sumY) / denom;
 }
 
 function classifyTrend(slope: number | null): ConditionTrend | null {
-  if (slope == null) return null;
-  if (slope < -TREND_SLOPE_THRESHOLD) return 'IMPROVING'; // severity decreasing
-  if (slope > TREND_SLOPE_THRESHOLD) return 'WORSENING'; // severity increasing
+  if ((slope === undefined || slope === null)) {
+    return null;
+  }
+  if (slope < -TREND_SLOPE_THRESHOLD) {
+    return 'IMPROVING';
+  } // severity decreasing
+  if (slope > TREND_SLOPE_THRESHOLD) {
+    return 'WORSENING';
+  } // severity increasing
   return 'STABLE';
 }
 

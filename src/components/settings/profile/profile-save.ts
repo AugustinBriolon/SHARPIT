@@ -9,10 +9,25 @@ export function saveProfilePatch(
 ) {
   const previousProfile = queryClient.getQueryData(queryKeys.athleteProfile);
   queryClient.setQueryData(queryKeys.athleteProfile, (current: unknown) => {
-    if (!current || typeof current !== 'object') return current;
+    if (!current || typeof current !== 'object') {
+      return current;
+    }
     return { ...current, ...patch };
   });
   return previousProfile;
+}
+
+function profileFieldErrorMessage(
+  data: {
+    error?: string;
+    detail?: string;
+    details?: { fieldErrors?: Record<string, string[]> };
+  } | null,
+): string | null {
+  if (!data?.details?.fieldErrors) {
+    return null;
+  }
+  return Object.values(data.details.fieldErrors).flat().join(' · ') || null;
 }
 
 async function parseProfileError(res: Response): Promise<string> {
@@ -21,9 +36,7 @@ async function parseProfileError(res: Response): Promise<string> {
     detail?: string;
     details?: { fieldErrors?: Record<string, string[]> };
   } | null;
-  const fieldMsg = data?.details?.fieldErrors
-    ? Object.values(data.details.fieldErrors).flat().join(' · ')
-    : null;
+  const fieldMsg = profileFieldErrorMessage(data);
   return fieldMsg || data?.detail || data?.error || 'Erreur';
 }
 
@@ -42,7 +55,9 @@ export async function commitProfileSave(
   const saved = (await res.json().catch(() => null)) as Record<string, unknown> | null;
   if (saved && typeof saved === 'object') {
     queryClient.setQueryData(queryKeys.athleteProfile, (current: unknown) => {
-      if (!current || typeof current !== 'object') return saved;
+      if (!current || typeof current !== 'object') {
+        return saved;
+      }
       return { ...current, ...saved };
     });
   }

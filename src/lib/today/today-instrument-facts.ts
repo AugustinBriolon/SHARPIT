@@ -60,19 +60,27 @@ function limiterFromDescription(
   description: LimitingFactor['description'] | DecisionData['limitingFactor']['description'],
 ): string | null {
   const raw = description?.params?.limiter;
-  if (raw == null) return null;
+  if ((raw === undefined || raw === null)) {
+    return null;
+  }
   return LIMITER_LABEL[String(raw)] ?? String(raw);
 }
 
 function systemLabel(system: string | null | undefined, domain?: string | null): string | null {
-  if (system && SYSTEM_LABEL[system]) return SYSTEM_LABEL[system];
-  if (domain && SYSTEM_LABEL[domain]) return SYSTEM_LABEL[domain];
+  if (system && SYSTEM_LABEL[system]) {
+    return SYSTEM_LABEL[system];
+  }
+  if (domain && SYSTEM_LABEL[domain]) {
+    return SYSTEM_LABEL[domain];
+  }
   return null;
 }
 
 function shortText(text: string, max = 72): string {
   const cleaned = text.replace(/\s+/g, ' ').trim();
-  if (cleaned.length <= max) return cleaned;
+  if (cleaned.length <= max) {
+    return cleaned;
+  }
   return `${cleaned.slice(0, max - 1).trimEnd()}…`;
 }
 
@@ -85,10 +93,65 @@ export function verdictFactValue(verdict: OverallVerdict | null | undefined): {
   value: string;
   hint: string | null;
 } | null {
-  if (!verdict || verdict === 'INSUFFICIENT_DATA') return null;
+  if (!verdict || verdict === 'INSUFFICIENT_DATA') {
+    return null;
+  }
   const why = VERDICT_WHY[verdict];
-  if (!why) return null;
+  if (!why) {
+    return null;
+  }
   return { value: why.value, hint: why.hint };
+}
+
+const WHY_EVIDENCE_ORDER: Record<DailyPhaseWhyFocus, string[]> = {
+  readiness: ['RECOVERY', 'ENVIRONMENT', 'PHYSICAL_HEALTH'],
+  session_prep: ['FATIGUE', 'RECOVERY', 'DAILY_STRAIN'],
+  session_review: ['DAILY_STRAIN', 'FATIGUE', 'ADAPTATION'],
+  adaptation_recovery: ['RECOVERY', 'FATIGUE', 'ADAPTATION'],
+  tomorrow_impact: ['ADAPTATION', 'RECOVERY', 'ENVIRONMENT'],
+};
+
+function sortEvidenceForFocus(
+  evidence: NonNullable<DecisionData['supportingEvidence']>,
+  whyFocus: DailyPhaseWhyFocus,
+) {
+  const prefs = WHY_EVIDENCE_ORDER[whyFocus];
+  return [...evidence].sort((a, b) => {
+    const rankDiff = (a.rank ?? 99) - (b.rank ?? 99);
+    if (rankDiff !== 0) {
+      return rankDiff;
+    }
+    const ai = prefs.indexOf(a.domain);
+    const bi = prefs.indexOf(b.domain);
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  });
+}
+
+function resolveEvidenceDetail(
+  item: NonNullable<DecisionData['supportingEvidence']>[number],
+): string | null {
+  const [firstItem] = item.evidenceItems;
+  if (!firstItem) {
+    return null;
+  }
+  const detailRaw = resolve(firstItem);
+  if (!detailRaw || detailRaw === firstItem.code || looksLikeScoreRestatement(detailRaw)) {
+    return null;
+  }
+  return shortText(detailRaw, 64);
+}
+
+function evidenceItemToFact(item: NonNullable<DecisionData['supportingEvidence']>[number]): TodayFactRow | null {
+  const title = resolve(item.title);
+  if (!title || title === item.title.code || looksLikeScoreRestatement(title)) {
+    return null;
+  }
+
+  return {
+    label: 'À noter',
+    value: shortText(title, 40),
+    hint: resolveEvidenceDetail(item),
+  };
 }
 
 function pickWhyEvidence(
@@ -96,51 +159,51 @@ function pickWhyEvidence(
   whyFocus: DailyPhaseWhyFocus,
 ): TodayFactRow | null {
   const evidence = decision?.supportingEvidence;
-  if (!evidence?.length) return null;
+  if (!evidence?.length) {
+    return null;
+  }
 
-  const order: Record<DailyPhaseWhyFocus, string[]> = {
-    readiness: ['RECOVERY', 'ENVIRONMENT', 'PHYSICAL_HEALTH'],
-    session_prep: ['FATIGUE', 'RECOVERY', 'DAILY_STRAIN'],
-    session_review: ['DAILY_STRAIN', 'FATIGUE', 'ADAPTATION'],
-    adaptation_recovery: ['RECOVERY', 'FATIGUE', 'ADAPTATION'],
-    tomorrow_impact: ['ADAPTATION', 'RECOVERY', 'ENVIRONMENT'],
-  };
-  const prefs = order[whyFocus];
-  const sorted = [...evidence].sort((a, b) => {
-    const ai = prefs.indexOf(a.domain);
-    const bi = prefs.indexOf(b.domain);
-    const rankDiff = (a.rank ?? 99) - (b.rank ?? 99);
-    if (rankDiff !== 0) return rankDiff;
-    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-  });
-
-  for (const item of sorted.slice(0, 3)) {
-    const title = resolve(item.title);
-    if (!title || title === item.title.code) continue;
-    if (looksLikeScoreRestatement(title)) continue;
-
-    const detailRaw = item.evidenceItems[0] ? resolve(item.evidenceItems[0]) : null;
-    const detail =
-      detailRaw &&
-      detailRaw !== item.evidenceItems[0]?.code &&
-      !looksLikeScoreRestatement(detailRaw)
-        ? shortText(detailRaw, 64)
-        : null;
-
-    return {
-      label: 'À noter',
-      value: shortText(title, 40),
-      hint: detail,
-    };
+  for (const item of sortEvidenceForFocus(evidence, whyFocus).slice(0, 3)) {
+    const fact = evidenceItemToFact(item);
+    if (fact) {
+      return fact;
+    }
   }
 
   return null;
 }
 
-/**
- * Why panel = interpretive signal only.
- * Does not emit sleep / recovery / effort / adaptation scores (hero already owns them).
- */
+function addPostureWhyFact(
+  facts: TodayFactRow[],
+  verdict: OverallVerdict | null | undefined,
+  decision?: DecisionData | null,
+): void {
+  const posture = verdictFactValue(verdict);
+  if (posture) {
+    facts.push({ label: 'Pourquoi', value: posture.value, hint: posture.hint });
+    return;
+  }
+
+  const top = decisionTopAction(decision);
+  if (!top) {
+    return;
+  }
+  const rationale = resolveCode(top.rationaleCode);
+  if (rationale && rationale !== top.rationaleCode && !looksLikeScoreRestatement(rationale)) {
+    facts.push({ label: 'Pourquoi', value: shortText(rationale, 48) });
+  }
+}
+
+function shouldSkipEvidenceNote(
+  note: TodayFactRow,
+  consistency: PhysiologicalConsistency | null | undefined,
+): boolean {
+  return (
+    consistency === 'CONFLICTING' &&
+    /divergent|contradictoire|align/i.test(`${note.value} ${note.hint ?? ''}`)
+  );
+}
+
 export function buildTodayWhyFacts(input: {
   verdict: OverallVerdict | null | undefined;
   consistency: PhysiologicalConsistency | null | undefined;
@@ -150,25 +213,7 @@ export function buildTodayWhyFacts(input: {
   const facts: TodayFactRow[] = [];
   const whyFocus = input.whyFocus ?? 'readiness';
 
-  const posture = verdictFactValue(input.verdict);
-  if (posture) {
-    facts.push({
-      label: 'Pourquoi',
-      value: posture.value,
-      hint: posture.hint,
-    });
-  } else {
-    const top = decisionTopAction(input.decision);
-    if (top) {
-      const rationale = resolveCode(top.rationaleCode);
-      if (rationale && rationale !== top.rationaleCode && !looksLikeScoreRestatement(rationale)) {
-        facts.push({
-          label: 'Pourquoi',
-          value: shortText(rationale, 48),
-        });
-      }
-    }
-  }
+  addPostureWhyFact(facts, input.verdict, input.decision);
 
   if (input.consistency && input.consistency !== 'ALIGNED') {
     facts.push({
@@ -179,14 +224,8 @@ export function buildTodayWhyFacts(input: {
   }
 
   const note = pickWhyEvidence(input.decision ?? null, whyFocus);
-  if (note) {
-    // Avoid echoing the same dissonance twice when consistency already covers it.
-    const overlapsConsistency =
-      input.consistency === 'CONFLICTING' &&
-      /divergent|contradictoire|align/i.test(`${note.value} ${note.hint ?? ''}`);
-    if (!overlapsConsistency) {
-      facts.push(note);
-    }
+  if (note && !shouldSkipEvidenceNote(note, input.consistency)) {
+    facts.push(note);
   }
 
   return facts.slice(0, 3);

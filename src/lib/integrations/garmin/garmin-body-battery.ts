@@ -1,3 +1,4 @@
+import { isSet } from '@/lib/util/value';
 /**
  * Pick the Body Battery level that matches Garmin Connect’s “current” reading.
  *
@@ -13,14 +14,20 @@ export type GarminBodyBatteryPayload = {
 
 function finiteLevel(value: unknown): number | null {
   const n = typeof value === 'number' ? value : Number(value);
-  if (!Number.isFinite(n) || n < 0 || n > 100) return null;
+  if (!Number.isFinite(n) || n < 0 || n > 100) {
+    return null;
+  }
   return Math.round(n);
 }
 
 /** Level from one array entry — supports [ts, level] and [ts, status, level, version]. */
 function levelFromEntry(entry: Array<number | string> | null | undefined): number | null {
-  if (!entry || entry.length === 0) return null;
-  if (entry.length === 2) return finiteLevel(entry[1]);
+  if (!entry || entry.length === 0) {
+    return null;
+  }
+  if (entry.length === 2) {
+    return finiteLevel(entry[1]);
+  }
   return finiteLevel(entry[2]);
 }
 
@@ -30,15 +37,21 @@ function levelFromEntry(entry: Array<number | string> | null | undefined): numbe
 export function pickCurrentBodyBattery(
   payload: GarminBodyBatteryPayload | null | undefined,
 ): number | null {
-  if (!payload) return null;
+  if (!payload) {
+    return null;
+  }
 
   const recent = finiteLevel(payload.bodyBatteryMostRecentValue);
-  if (recent != null) return recent;
+  if (isSet(recent)) {
+    return recent;
+  }
 
   let last: number | null = null;
   for (const entry of payload.bodyBatteryValuesArray ?? []) {
     const level = levelFromEntry(entry);
-    if (level != null) last = level;
+    if (isSet(level)) {
+      last = level;
+    }
   }
   return last;
 }

@@ -52,7 +52,9 @@ describe('coach-message-structure', () => {
     const blocks = parseCoachMessage(SAMPLE);
     const velo = blocks.find((b) => b.type === 'phase' && b.title.includes('Vélo'));
     expect(velo?.type).toBe('phase');
-    if (velo?.type !== 'phase') return;
+    if (velo?.type !== 'phase') {
+      return;
+    }
     expect(velo.metrics.some((m) => m.label === 'Apport' && m.value.includes('500'))).toBe(true);
     expect(velo.metrics.some((m) => m.subsection === 'Hydratation')).toBe(true);
   });
@@ -74,7 +76,9 @@ Voici ton plan nutritionnel stratégique pour la course :
     const blocks = parseCoachMessage(intro);
     const prose = blocks.find((b) => b.type === 'prose');
     expect(prose?.type).toBe('prose');
-    if (prose?.type !== 'prose') return;
+    if (prose?.type !== 'prose') {
+      return;
+    }
     expect(prose.content.match(/C'est une excellente cible/g)?.length).toBe(1);
     expect(prose.content.match(/Voici ton plan nutritionnel/g)?.length).toBe(1);
   });
@@ -92,7 +96,9 @@ Voici ton plan nutritionnel stratégique pour la course :
     const blocks = parseCoachMessage(plan);
     const velo = blocks.find((b) => b.type === 'phase' && b.title.includes('Vélo'));
     expect(velo?.type).toBe('phase');
-    if (velo?.type !== 'phase') return;
+    if (velo?.type !== 'phase') {
+      return;
+    }
     expect(velo.prose).toContain('**Bois 1,5L');
     expect(velo.prose).toContain('**250-400ml');
     expect(velo.prose).toContain('**Glucides simples**');
@@ -108,7 +114,9 @@ Voici ton plan nutritionnel stratégique pour la course :
 - Viser 60g de glucides par heure`);
 
     for (const block of blocks) {
-      if (block.type !== 'phase' && block.type !== 'synthesis') continue;
+      if (block.type !== 'phase' && block.type !== 'synthesis') {
+        continue;
+      }
       expect(block.metrics.some((m) => m.label === 'Recommandation')).toBe(false);
     }
 
@@ -130,7 +138,9 @@ Voici ton plan nutritionnel stratégique pour la course :
 
     const velo = blocks.find((b) => b.type === 'phase' && b.title.includes('Vélo'));
     expect(velo?.type).toBe('phase');
-    if (velo?.type !== 'phase') return;
+    if (velo?.type !== 'phase') {
+      return;
+    }
     expect(velo.metrics[0]?.label).toBe('Apport');
     expect(velo.metrics[0]?.value).toBe('500-750ml par heure');
   });

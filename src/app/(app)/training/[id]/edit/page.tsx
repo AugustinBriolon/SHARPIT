@@ -12,7 +12,9 @@ export default async function EditTrainingPage({ params }: PageProps) {
   const athleteId = await getCurrentAthleteId();
   const activity = await getActivityById(athleteId, id);
 
-  if (!activity) notFound();
+  if (!activity) {
+    notFound();
+  }
 
   return (
     <div className="space-y-8">

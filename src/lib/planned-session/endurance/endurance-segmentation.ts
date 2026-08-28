@@ -86,7 +86,9 @@ function sampleAtTime(
 ): { sample: StreamSample; index: number } {
   for (let i = fromIndex; i < samples.length; i += 1) {
     const sample = samples[i] as StreamSample;
-    if (sample.t >= seconds) return { sample, index: i };
+    if (sample.t >= seconds) {
+      return { sample, index: i };
+    }
   }
   const index = samples.length - 1;
   return { sample: samples[index] as StreamSample, index };
@@ -100,7 +102,9 @@ function sampleAtDistance(
 ): { sample: StreamSample; index: number } | null {
   for (let i = fromIndex; i < samples.length; i += 1) {
     const sample = samples[i] as StreamSample;
-    if (sample.d >= metres) return { sample, index: i };
+    if (sample.d >= metres) {
+      return { sample, index: i };
+    }
   }
   return null;
 }
@@ -112,18 +116,84 @@ function sampleAtDistance(
  */
 function lapShareSeconds(steps: readonly PrescribedStepRef[], last: StreamSample): number {
   const lapCount = steps.filter((ref) => ref.step.duration.type === 'lap').length;
-  if (lapCount === 0) return 0;
+  if (lapCount === 0) {
+    return 0;
+  }
 
   const avgSpeed = last.t > 0 && last.d > 0 ? last.d / last.t : 0;
 
   let accounted = 0;
   for (const ref of steps) {
     const { duration } = ref.step;
-    if (duration.type === 'time') accounted += duration.seconds;
-    else if (duration.type === 'distance' && avgSpeed > 0) accounted += duration.meters / avgSpeed;
+    if (duration.type === 'time') {
+      accounted += duration.seconds;
+    } else if (duration.type === 'distance' && avgSpeed > 0) {
+      accounted += duration.meters / avgSpeed;
+    }
   }
 
   return Math.max(0, (last.t - accounted) / lapCount);
+}
+
+function resolveStepEnd(input: {
+  ref: PrescribedStepRef;
+  samples: readonly StreamSample[];
+  cursorSec: number;
+  cursorIndex: number;
+  lapShare: number;
+  lastT: number;
+}): { endSec: number; boundary: SegmentBoundary; startIndex: number; startSample: StreamSample } {
+  const start = sampleAtTime(input.samples, input.cursorIndex, input.cursorSec);
+  const { duration } = input.ref.step;
+  let endSec: number;
+  let boundary: SegmentBoundary;
+
+  if (duration.type === 'time') {
+    endSec = input.cursorSec + duration.seconds;
+    boundary = 'time';
+  } else if (duration.type === 'distance') {
+    const reached = sampleAtDistance(
+      input.samples,
+      start.index,
+      start.sample.d + duration.meters,
+    );
+    endSec = reached ? reached.sample.t : input.lastT;
+    boundary = reached ? 'distance' : 'truncated';
+  } else {
+    endSec = input.cursorSec + input.lapShare;
+    boundary = 'lap-share';
+  }
+
+  if (endSec > input.lastT) {
+    endSec = input.lastT;
+    boundary = 'truncated';
+  }
+
+  return { endSec, boundary, startIndex: start.index, startSample: start.sample };
+}
+
+function buildStepSegment(input: {
+  ref: PrescribedStepRef;
+  samples: readonly StreamSample[];
+  cursorSec: number;
+  cursorIndex: number;
+  lapShare: number;
+  lastT: number;
+}): { segment: StepSegment; nextCursorSec: number; nextCursorIndex: number } {
+  const resolved = resolveStepEnd(input);
+  const end = sampleAtTime(input.samples, resolved.startIndex, resolved.endSec);
+  return {
+    segment: {
+      ref: input.ref,
+      startSec: Math.round(resolved.startSample.t),
+      endSec: Math.round(resolved.endSec),
+      startM: Number.isFinite(resolved.startSample.d) ? Math.round(resolved.startSample.d) : null,
+      endM: Number.isFinite(end.sample.d) ? Math.round(end.sample.d) : null,
+      boundary: resolved.boundary,
+    },
+    nextCursorSec: resolved.endSec,
+    nextCursorIndex: end.index,
+  };
 }
 
 /**
@@ -139,7 +209,9 @@ export function segmentEnduranceActivity(input: {
 }): EnduranceSegmentation | null {
   const steps = flattenEnduranceSteps(input.prescription);
   const last = lastSample(input.samples);
-  if (steps.length === 0 || !last || last.t <= 0) return null;
+  if (steps.length === 0 || !last || last.t <= 0) {
+    return null;
+  }
 
   const lapShare = lapShareSeconds(steps, last);
   const segments: StepSegment[] = [];
@@ -154,49 +226,22 @@ export function segmentEnduranceActivity(input: {
       break;
     }
 
-    const start = sampleAtTime(input.samples, cursorIndex, cursorSec);
-    const { duration } = ref.step;
-    let endSec: number;
-    let boundary: SegmentBoundary;
-
-    if (duration.type === 'time') {
-      endSec = cursorSec + duration.seconds;
-      boundary = 'time';
-    } else if (duration.type === 'distance') {
-      const reached = sampleAtDistance(
-        input.samples,
-        start.index,
-        start.sample.d + duration.meters,
-      );
-      endSec = reached ? reached.sample.t : last.t;
-      boundary = reached ? 'distance' : 'truncated';
-    } else {
-      endSec = cursorSec + lapShare;
-      boundary = 'lap-share';
-    }
-
-    // Strictly beyond the stream, not merely reaching its end: a step that lands
-    // on the last sample was completed, not cut off.
-    if (endSec > last.t) {
-      endSec = last.t;
-      boundary = 'truncated';
-    }
-
-    const end = sampleAtTime(input.samples, start.index, endSec);
-    segments.push({
+    const built = buildStepSegment({
       ref,
-      startSec: Math.round(start.sample.t),
-      endSec: Math.round(endSec),
-      startM: Number.isFinite(start.sample.d) ? Math.round(start.sample.d) : null,
-      endM: Number.isFinite(end.sample.d) ? Math.round(end.sample.d) : null,
-      boundary,
+      samples: input.samples,
+      cursorSec,
+      cursorIndex,
+      lapShare,
+      lastT: last.t,
     });
-
-    cursorSec = endSec;
-    cursorIndex = end.index;
+    segments.push(built.segment);
+    cursorSec = built.nextCursorSec;
+    cursorIndex = built.nextCursorIndex;
   }
 
-  if (segments.length < steps.length) truncated = true;
+  if (segments.length < steps.length) {
+    truncated = true;
+  }
 
   const lastSegment = segments[segments.length - 1];
   const residualSec = lastSegment ? Math.max(0, Math.round(last.t - lastSegment.endSec)) : 0;

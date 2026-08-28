@@ -1,3 +1,4 @@
+import { isSet } from '@/lib/util/value';
 /**
  * Phase 1 legacy migration — pure transforms.
  * Produces insert payloads without side effects (testable, reviewable).
@@ -24,8 +25,12 @@ import {
 } from '@/core/physical-health/legacy-mapping';
 
 function legacyConfidenceFromCheckins(count: number): number {
-  if (count >= 3) return 0.75;
-  if (count > 0) return 0.6;
+  if (count >= 3) {
+    return 0.75;
+  }
+  if (count > 0) {
+    return 0.6;
+  }
   return 0.45;
 }
 
@@ -83,15 +88,17 @@ export type MigrationReportRow = {
 function peakSeverity(note: LegacyPhysicalNote): number | null {
   const values = [
     note.severity,
-    ...note.checkins.map((c) => c.severity).filter((s): s is number => s != null),
-  ].filter((s): s is number => s != null);
+    ...note.checkins.map((c) => c.severity).filter((s): s is number => isSet(s)),
+  ].filter((s): s is number => isSet(s));
 
   return values.length > 0 ? Math.max(...values) : null;
 }
 
 function lastObservationAt(note: LegacyPhysicalNote): Date | null {
   const dates = note.checkins.map((c) => c.date);
-  if (dates.length === 0) return note.updatedAt;
+  if (dates.length === 0) {
+    return note.updatedAt;
+  }
   return new Date(Math.max(...dates.map((d) => d.getTime())));
 }
 
@@ -110,6 +117,146 @@ function findReassessmentForCheckin(
   });
 }
 
+function buildMigrationCondition(
+  note: LegacyPhysicalNote,
+  ids: {
+    conditionId: string;
+    type: ReturnType<typeof mapLegacyCategoryToConditionType>;
+    scope: ReturnType<typeof resolveConditionScope>;
+    bodyRegion: ReturnType<typeof resolveBodyRegion>;
+    status: ReturnType<typeof mapLegacyStatusToConditionStatus>;
+  },
+): MigrationConditionBundle['condition'] {
+  return {
+    id: ids.conditionId,
+    scope: ids.scope,
+    type: ids.type,
+    bodyRegion: ids.bodyRegion,
+    side: note.side,
+    label: note.title,
+    diagnosis: note.description,
+    status: ids.status,
+    severity: note.severity ?? peakSeverity(note) ?? 0,
+    confidence: legacyConfidenceFromCheckins(note.checkins.length),
+    affectsTraining: note.affectsTraining,
+    startedAt: note.startDate,
+    resolvedAt: note.resolvedAt,
+    lastObservationAt: lastObservationAt(note),
+    recurrenceCount: 0,
+    observationCount: note.checkins.length,
+    estimatedRecoveryDays: null,
+    primaryTriggerManual: null,
+    legacyPhysicalNoteId: note.id,
+  };
+}
+
+function buildLegacyObservation(input: {
+  obsId: string;
+  checkin: LegacyPhysicalCheckin;
+  note: LegacyPhysicalNote;
+  context: ReturnType<typeof resolveLegacyCheckinContext>;
+  reassessment: LegacySessionReassessment | undefined;
+  conditionId: string;
+  episodeId: string;
+  bodyRegion: ReturnType<typeof resolveBodyRegion>;
+  type: ReturnType<typeof mapLegacyCategoryToConditionType>;
+}): MigrationConditionBundle['observations'][number] {
+  return {
+    id: input.obsId,
+    conditionId: input.conditionId,
+    episodeId: input.episodeId,
+    observedAt: input.checkin.date,
+    context: input.context,
+    source: 'SYSTEM_MIGRATION',
+    symptomPresent: inferSymptomPresentFromLegacySeverity(input.checkin.severity),
+    severityReported: input.checkin.severity,
+    functionalImpact: inferFunctionalImpactFromLegacySeverity(input.checkin.severity),
+    bodyRegion: input.bodyRegion,
+    side: input.note.side,
+    type: input.type,
+    comment: input.checkin.comment,
+    activityId: input.reassessment?.activityId ?? null,
+    plannedSessionId: input.reassessment?.plannedSessionId ?? null,
+    trainingDayId: null,
+    externalId: `legacy:checkin:${input.checkin.id}`,
+    legacyPhysicalCheckinId: input.checkin.id,
+  };
+}
+
+function legacyCheckinReport(
+  checkinId: string,
+  obsId: string,
+  context: ReturnType<typeof resolveLegacyCheckinContext>,
+): MigrationReportRow {
+  return {
+    legacySource: 'PhysicalCheckin',
+    legacyId: checkinId,
+    destination: 'ConditionObservation',
+    destinationId: obsId,
+    transformation:
+      context === 'AFTER_SESSION'
+        ? 'checkin → post-session observation'
+        : 'checkin → manual observation',
+    preserved: ['date→observedAt', 'severity→severityReported', 'comment'],
+    inferred: ['symptomPresent', 'functionalImpact', 'trainingCapacity snapshot'],
+    discarded: [],
+  };
+}
+
+function migrateLegacyCheckin(input: {
+  checkin: LegacyPhysicalCheckin;
+  note: LegacyPhysicalNote;
+  reassessments: LegacySessionReassessment[];
+  conditionId: string;
+  episodeId: string;
+  bodyRegion: ReturnType<typeof resolveBodyRegion>;
+  type: ReturnType<typeof mapLegacyCategoryToConditionType>;
+  idFactory: (prefix: string) => string;
+}): {
+  observation: MigrationConditionBundle['observations'][number];
+  capacity: MigrationConditionBundle['functionalCapacities'][number] | null;
+  report: MigrationReportRow;
+} {
+  const reassessment = findReassessmentForCheckin(input.checkin, input.reassessments);
+  const obsId = input.idFactory('obs');
+  const context = resolveLegacyCheckinContext({
+    checkinDate: input.checkin.date,
+    analyzedAt: reassessment?.analyzedAt ?? null,
+    activityDate: reassessment?.activityDate ?? null,
+    reassessmentNoteIds: reassessment?.noteIds ?? [],
+    noteId: input.note.id,
+  });
+  const observation = buildLegacyObservation({
+    obsId,
+    checkin: input.checkin,
+    note: input.note,
+    context,
+    reassessment,
+    conditionId: input.conditionId,
+    episodeId: input.episodeId,
+    bodyRegion: input.bodyRegion,
+    type: input.type,
+  });
+
+  const capacity = isSet(input.checkin.severity)
+    ? {
+        id: input.idFactory('fc'),
+        conditionId: input.conditionId,
+        observationId: obsId,
+        assessedAt: input.checkin.date,
+        painSeverity: input.checkin.severity,
+        trainingCapacity: inferTrainingCapacityFromSeverity(input.checkin.severity),
+        comment: null,
+      }
+    : null;
+
+  return {
+    observation,
+    capacity,
+    report: legacyCheckinReport(input.checkin.id, obsId, context),
+  };
+}
+
 export function migrateLegacyPhysicalNote(
   note: LegacyPhysicalNote,
   reassessments: LegacySessionReassessment[],
@@ -121,30 +268,8 @@ export function migrateLegacyPhysicalNote(
   const scope = resolveConditionScope(type, note.bodyPart);
   const bodyRegion = resolveBodyRegion(scope, note.bodyPart, note.title, type);
   const status = mapLegacyStatusToConditionStatus(note.status);
-  const lastObs = lastObservationAt(note);
 
-  const condition: MigrationConditionBundle['condition'] = {
-    id: conditionId,
-    scope,
-    type,
-    bodyRegion,
-    side: note.side,
-    label: note.title,
-    diagnosis: note.description,
-    status,
-    severity: note.severity ?? peakSeverity(note) ?? 0,
-    confidence: legacyConfidenceFromCheckins(note.checkins.length),
-    affectsTraining: note.affectsTraining,
-    startedAt: note.startDate,
-    resolvedAt: note.resolvedAt,
-    lastObservationAt: lastObs,
-    recurrenceCount: 0,
-    observationCount: note.checkins.length,
-    estimatedRecoveryDays: null,
-    primaryTriggerManual: null,
-    legacyPhysicalNoteId: note.id,
-  };
-
+  const condition = buildMigrationCondition(note, { conditionId, type, scope, bodyRegion, status });
   const episode: MigrationConditionBundle['episode'] = {
     id: episodeId,
     conditionId,
@@ -184,64 +309,21 @@ export function migrateLegacyPhysicalNote(
   ];
 
   for (const checkin of note.checkins) {
-    const reassessment = findReassessmentForCheckin(checkin, reassessments);
-    const context = resolveLegacyCheckinContext({
-      checkinDate: checkin.date,
-      analyzedAt: reassessment?.analyzedAt ?? null,
-      activityDate: reassessment?.activityDate ?? null,
-      reassessmentNoteIds: reassessment?.noteIds ?? [],
-      noteId: note.id,
-    });
-
-    const symptomPresent = inferSymptomPresentFromLegacySeverity(checkin.severity);
-    const obsId = idFactory('obs');
-
-    observations.push({
-      id: obsId,
+    const migrated = migrateLegacyCheckin({
+      checkin,
+      note,
+      reassessments,
       conditionId,
       episodeId,
-      observedAt: checkin.date,
-      context,
-      source: 'SYSTEM_MIGRATION',
-      symptomPresent,
-      severityReported: checkin.severity,
-      functionalImpact: inferFunctionalImpactFromLegacySeverity(checkin.severity),
       bodyRegion,
-      side: note.side,
       type,
-      comment: checkin.comment,
-      activityId: reassessment?.activityId ?? null,
-      plannedSessionId: reassessment?.plannedSessionId ?? null,
-      trainingDayId: null,
-      externalId: `legacy:checkin:${checkin.id}`,
-      legacyPhysicalCheckinId: checkin.id,
+      idFactory,
     });
-
-    if (checkin.severity != null) {
-      functionalCapacities.push({
-        id: idFactory('fc'),
-        conditionId,
-        observationId: obsId,
-        assessedAt: checkin.date,
-        painSeverity: checkin.severity,
-        trainingCapacity: inferTrainingCapacityFromSeverity(checkin.severity),
-        comment: null,
-      });
+    observations.push(migrated.observation);
+    if (migrated.capacity) {
+      functionalCapacities.push(migrated.capacity);
     }
-
-    report.push({
-      legacySource: 'PhysicalCheckin',
-      legacyId: checkin.id,
-      destination: 'ConditionObservation',
-      destinationId: obsId,
-      transformation:
-        context === 'AFTER_SESSION'
-          ? 'checkin → post-session observation'
-          : 'checkin → manual observation',
-      preserved: ['date→observedAt', 'severity→severityReported', 'comment'],
-      inferred: ['symptomPresent', 'functionalImpact', 'trainingCapacity snapshot'],
-      discarded: [],
-    });
+    report.push(migrated.report);
   }
 
   return {
@@ -262,12 +344,16 @@ export function extractReassessmentsFromPlannedSessions(
   const result: LegacySessionReassessment[] = [];
 
   for (const session of sessions) {
-    if (!session.analysis || typeof session.analysis !== 'object') continue;
+    if (!session.analysis || typeof session.analysis !== 'object') {
+      continue;
+    }
     const analysis = session.analysis as {
       physicalReassessments?: Array<{ noteId: string }>;
     };
     const items = analysis.physicalReassessments ?? [];
-    if (items.length === 0) continue;
+    if (items.length === 0) {
+      continue;
+    }
 
     result.push({
       plannedSessionId: session.id,

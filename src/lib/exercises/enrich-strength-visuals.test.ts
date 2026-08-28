@@ -7,7 +7,9 @@ function makePrisma(
   const update = vi.fn(
     async ({ where, data }: { where: { id: string }; data: { exerciseCatalogId: string } }) => {
       const row = sets.find((s) => s.id === where.id);
-      if (row) row.exerciseCatalogId = data.exerciseCatalogId;
+      if (row) {
+        row.exerciseCatalogId = data.exerciseCatalogId;
+      }
     },
   );
 

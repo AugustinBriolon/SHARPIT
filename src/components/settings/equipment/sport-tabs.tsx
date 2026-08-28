@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import { EQUIPMENT_SPORT_LABELS, type EquipmentSport } from '@/lib/equipment/catalog';
 import { cn } from '@/lib/utils';
 import { Bike, Dumbbell, Footprints, StretchHorizontal, Waves } from 'lucide-react';
+import { handleRadioGroupKeyDown } from '@/components/settings/equipment/radio-group-keydown';
 
 const SPORT_TABS: {
   id: EquipmentSport;
@@ -42,39 +43,15 @@ export function EquipmentSportTabs({
 
   function selectAt(index: number) {
     const option = SPORT_TABS[index];
-    if (!option) return;
+    if (!option) {
+      return;
+    }
     onSportChange(option.id);
     focusOption(index);
   }
 
   function onRadioKeyDown(event: React.KeyboardEvent<HTMLButtonElement>, index: number) {
-    switch (event.key) {
-      case 'ArrowDown':
-      case 'ArrowRight':
-        event.preventDefault();
-        selectAt((index + 1) % SPORT_TABS.length);
-        break;
-      case 'ArrowUp':
-      case 'ArrowLeft':
-        event.preventDefault();
-        selectAt((index - 1 + SPORT_TABS.length) % SPORT_TABS.length);
-        break;
-      case 'Home':
-        event.preventDefault();
-        selectAt(0);
-        break;
-      case 'End':
-        event.preventDefault();
-        selectAt(SPORT_TABS.length - 1);
-        break;
-      case ' ':
-      case 'Enter':
-        event.preventDefault();
-        selectAt(index);
-        break;
-      default:
-        break;
-    }
+    handleRadioGroupKeyDown(event, index, SPORT_TABS.length, selectAt);
   }
 
   return (

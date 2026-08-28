@@ -18,11 +18,17 @@ function FitBounds({ coordinates }: { coordinates: LngLat[] }) {
   const { map, isLoaded } = useMap();
 
   useEffect(() => {
-    if (!isLoaded || !map) return;
-    if (coordinates.length < 2) return;
+    if (!isLoaded || !map) {
+      return;
+    }
+    if (coordinates.length < 2) {
+      return;
+    }
 
     const bounds = new MapLibreGL.LngLatBounds(coordinates[0], coordinates[0]);
-    for (const [lng, lat] of coordinates) bounds.extend([lng, lat]);
+    for (const [lng, lat] of coordinates) {
+      bounds.extend([lng, lat]);
+    }
 
     map.fitBounds(bounds, { padding: 24, maxZoom: 15 });
   }, [coordinates, isLoaded, map]);

@@ -19,7 +19,9 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function confirm(question: string): Promise<boolean> {
-  if (process.argv.includes('--yes') || process.argv.includes('-y')) return true;
+  if (process.argv.includes('--yes') || process.argv.includes('-y')) {
+    return true;
+  }
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   const answer = await rl.question(`${question} [oui/non] `);
   rl.close();
@@ -50,7 +52,9 @@ async function main() {
   ]);
 
   console.log(`Activités en base : ${activityCount}`);
-  if (withHealth) console.log(`Jours de santé en base : ${healthCount}`);
+  if (withHealth) {
+    console.log(`Jours de santé en base : ${healthCount}`);
+  }
 
   const ok = await confirm(
     withHealth

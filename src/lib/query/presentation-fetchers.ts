@@ -51,7 +51,7 @@ export async function fetchAdaptationPresentation(
 export async function fetchBodyPresentation(
   days: number | null | undefined,
 ): Promise<BodyViewModel> {
-  const param = days == null ? 'all' : String(days);
+  const param = (days === undefined || days === null) ? 'all' : String(days);
   const url = `/api/presentation/body?days=${encodeURIComponent(param)}`;
   const { viewModel } = await fetchJson<{ viewModel: BodyViewModel }>(url);
   return viewModel;
@@ -116,7 +116,9 @@ export async function fetchProjectedAthletePresentation(
   import('@/core/presentation/projected-athlete-view-model').ProjectedAthleteCardViewModel
 > {
   const params = new URLSearchParams({ horizon: String(horizonDays) });
-  if (trainingDayId) params.set('trainingDayId', trainingDayId);
+  if (trainingDayId) {
+    params.set('trainingDayId', trainingDayId);
+  }
   const { viewModel } = await fetchJson<{
     viewModel: import('@/core/presentation/projected-athlete-view-model').ProjectedAthleteCardViewModel;
   }>(`/api/presentation/projected-athlete?${params.toString()}`);
@@ -130,7 +132,9 @@ export async function fetchScenarioComparisonPresentation(
   import('@/core/presentation/scenario-comparison-view-model').ScenarioComparisonViewModel
 > {
   const params = new URLSearchParams({ horizon: String(horizonDays) });
-  if (trainingDayId) params.set('trainingDayId', trainingDayId);
+  if (trainingDayId) {
+    params.set('trainingDayId', trainingDayId);
+  }
   const { viewModel } = await fetchJson<{
     viewModel: import('@/core/presentation/scenario-comparison-view-model').ScenarioComparisonViewModel;
   }>(`/api/presentation/scenario-comparison?${params.toString()}`);

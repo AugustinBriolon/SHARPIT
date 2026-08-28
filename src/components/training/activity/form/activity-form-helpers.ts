@@ -51,13 +51,19 @@ export const ACTIVITY_FEELING_OPTIONS: Array<{ value: string; label: string }> =
 ];
 
 export function strengthSetsForForm(initialData: ActivityWithRelations) {
-  if (initialData.type !== ActivityType.STRENGTH) return [];
+  if (initialData.type !== ActivityType.STRENGTH) {
+    return [];
+  }
   return initialData.strengthSets.length ? initialData.strengthSets : [defaultStrengthSet];
 }
 
 export function resolveWatchedDate(value: unknown): Date {
-  if (value instanceof Date) return value;
-  if (typeof value === 'string' || typeof value === 'number') return new Date(value);
+  if (value instanceof Date) {
+    return value;
+  }
+  if (typeof value === 'string' || typeof value === 'number') {
+    return new Date(value);
+  }
   return new Date();
 }
 
@@ -70,8 +76,12 @@ export function resolveWatchedRpe(value: unknown): number | null {
 }
 
 export function emptyToUndefined(value: unknown) {
-  if (value === '' || value === null || value === undefined) return undefined;
-  if (typeof value === 'number' && Number.isNaN(value)) return undefined;
+  if (value === '' || value === null || value === undefined) {
+    return undefined;
+  }
+  if (typeof value === 'number' && Number.isNaN(value)) {
+    return undefined;
+  }
   return value;
 }
 
@@ -105,35 +115,94 @@ export function sanitizeActivityPayload(values: ActivityFormValues): ActivityFor
 }
 
 export function initialLocationFromData(data?: ActivityWithRelations): LocationPlaceValue {
-  if (
-    data?.observedLocationLat != null &&
-    data.observedLocationLng != null &&
-    data.observedLocationLabel
-  ) {
-    return {
-      label: data.observedLocationLabel,
-      latitude: data.observedLocationLat,
-      longitude: data.observedLocationLng,
-    };
+  if (!data?.observedLocationLabel) {
+    return null;
   }
-  return null;
+  const { observedLocationLabel: label, observedLocationLat: lat, observedLocationLng: lng } = data;
+  if (lat === null || lat === undefined || lng === null || lng === undefined) {
+    return null;
+  }
+  return { label, latitude: lat, longitude: lng };
+}
+
+function pushRecordMessage(record: Record<string, unknown>, path: string, messages: string[]) {
+  if (typeof record.message === 'string') {
+    messages.push(path ? `${path} : ${record.message}` : record.message);
+  }
+}
+
+function walkValidationChildren(record: Record<string, unknown>, path: string, messages: string[]) {
+  for (const [key, value] of Object.entries(record)) {
+    if (key === 'message' || key === 'type' || key === 'ref') {
+      continue;
+    }
+    collectValidationMessages(value, path ? `${path}.${key}` : key, messages);
+  }
+}
+
+function collectValidationMessages(node: unknown, path: string, messages: string[]) {
+  if (!node || typeof node !== 'object') {
+    return;
+  }
+  const record = node as Record<string, unknown>;
+  pushRecordMessage(record, path, messages);
+  walkValidationChildren(record, path, messages);
 }
 
 export function formatValidationErrors(errors: Record<string, unknown>): string {
   const messages: string[] = [];
-
-  function walk(node: unknown, path: string) {
-    if (!node || typeof node !== 'object') return;
-    const record = node as Record<string, unknown>;
-    if (typeof record.message === 'string') {
-      messages.push(path ? `${path} : ${record.message}` : record.message);
-    }
-    for (const [key, value] of Object.entries(record)) {
-      if (key === 'message' || key === 'type' || key === 'ref') continue;
-      walk(value, path ? `${path}.${key}` : key);
-    }
-  }
-
-  walk(errors, '');
+  collectValidationMessages(errors, '', messages);
   return messages[0] ?? 'Vérifie les champs du formulaire.';
+}
+
+function mapInitialDataCoreFields(initialData: ActivityWithRelations) {
+  return {
+    type: initialData.type,
+    date: new Date(initialData.date),
+    title: initialData.title ?? '',
+    duration: initialData.duration ?? undefined,
+    rpe: initialData.rpe ?? undefined,
+    feeling: initialData.feeling ?? '',
+    notes: initialData.notes ?? '',
+    weather: initialData.weather ?? '',
+  };
+}
+
+function mapInitialDataLocationFields(initialData: ActivityWithRelations) {
+  return {
+    observedLocationLabel: initialData.observedLocationLabel ?? '',
+    observedLocationLat: initialData.observedLocationLat ?? undefined,
+    observedLocationLng: initialData.observedLocationLng ?? undefined,
+    load: initialData.load ?? undefined,
+  };
+}
+
+function mapInitialDataMetricsFields(initialData: ActivityWithRelations) {
+  return {
+    runMetrics: initialData.runMetrics ?? undefined,
+    bikeMetrics: initialData.bikeMetrics ?? undefined,
+    swimMetrics: initialData.swimMetrics ?? undefined,
+    strengthSets: strengthSetsForForm(initialData),
+  };
+}
+
+export function mapInitialDataToFormValues(initialData: ActivityWithRelations): ActivityFormValues {
+  return {
+    ...mapInitialDataCoreFields(initialData),
+    ...mapInitialDataLocationFields(initialData),
+    ...mapInitialDataMetricsFields(initialData),
+  } as ActivityFormValues;
+}
+
+export function buildActivityFormDefaultValues(
+  initialData?: ActivityWithRelations,
+): ActivityFormValues {
+  if (!initialData) {
+    return {
+      type: ActivityType.RUN,
+      date: new Date(),
+      strengthSets: [defaultStrengthSet],
+    };
+  }
+  return mapInitialDataToFormValues(initialData);
 }

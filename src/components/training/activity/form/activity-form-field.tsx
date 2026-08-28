@@ -33,7 +33,9 @@ export function ActivityFormField({
                 const groupValue = form.getValues(group as keyof ActivityFormValues) as
                   Record<string, number> | undefined;
                 const val = groupValue?.[key];
-                if (val === undefined || val === null) return undefined;
+                if (val === undefined || val === null) {
+                  return undefined;
+                }
                 return factor ? val / factor : val;
               })()
             : undefined

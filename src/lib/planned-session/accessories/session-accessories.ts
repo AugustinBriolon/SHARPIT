@@ -69,19 +69,31 @@ function catalogLabel(id: EquipmentItemId): string {
 
 function sportAllows(id: EquipmentItemId, type: ActivityType): boolean {
   const item = EQUIPMENT_CATALOG.find((entry) => entry.id === id);
-  if (!item) return false;
-  if (type === 'SWIM') return item.sport === 'SWIM';
-  if (type === 'BIKE') return item.sport === 'BIKE';
+  if (!item) {
+    return false;
+  }
+  if (type === 'SWIM') {
+    return item.sport === 'SWIM';
+  }
+  if (type === 'BIKE') {
+    return item.sport === 'BIKE';
+  }
   // Portable load is catalogued under STRENGTH but packs for a run (hill reps, rucking).
-  if (type === 'RUN') return item.sport === 'RUN' || id === 'strength_weighted_vest';
-  if (type === 'STRENGTH') return item.sport === 'STRENGTH' || item.sport === 'MOBILITY';
+  if (type === 'RUN') {
+    return item.sport === 'RUN' || id === 'strength_weighted_vest';
+  }
+  if (type === 'STRENGTH') {
+    return item.sport === 'STRENGTH' || item.sport === 'MOBILITY';
+  }
   // OTHER / TRIATHLON — allow session props across sports
   return SESSION_PROP_IDS.includes(id);
 }
 
 /** Soft-parse persisted accessories JSON → catalog ids. */
 export function parseSessionAccessories(raw: unknown): EquipmentItemId[] {
-  if (!Array.isArray(raw)) return [];
+  if (!Array.isArray(raw)) {
+    return [];
+  }
   const ids: EquipmentItemId[] = [];
   for (const value of raw) {
     if (typeof value === 'string' && isEquipmentItemId(value) && !ids.includes(value)) {
@@ -89,6 +101,38 @@ export function parseSessionAccessories(raw: unknown): EquipmentItemId[] {
     }
   }
   return ids;
+}
+
+function exerciseNamesFromPrescription(
+  strengthPrescription: unknown,
+): string[] {
+  const prescription = parseStrengthPrescription(strengthPrescription);
+  if (prescription) {
+    return prescription.sets.map((set) => set.exercise);
+  }
+  const rawSets = (strengthPrescription as { sets?: unknown } | null)?.sets;
+  if (!Array.isArray(rawSets)) {
+    return [];
+  }
+  return (rawSets as Array<{ exercise?: string }>).map((set) => set.exercise ?? '');
+}
+
+function inferAccessoriesFromHaystack(
+  haystack: string,
+  type: ActivityType,
+): SessionAccessoryView[] {
+  const found = new Set<EquipmentItemId>();
+  for (const rule of KEYWORD_TO_IDS) {
+    if (!rule.pattern.test(haystack)) {
+      continue;
+    }
+    for (const id of rule.ids) {
+      if (sportAllows(id, type) && SESSION_PROP_IDS.includes(id)) {
+        found.add(id);
+      }
+    }
+  }
+  return [...found].map((id) => ({ id, label: catalogLabel(id) }));
 }
 
 /**
@@ -109,32 +153,15 @@ export function resolveSessionAccessories(input: {
     return explicit.map((id) => ({ id, label: catalogLabel(id) }));
   }
 
-  const prescription = parseStrengthPrescription(input.strengthPrescription);
-  const exerciseNames =
-    prescription?.sets.map((set) => set.exercise) ??
-    (Array.isArray((input.strengthPrescription as { sets?: unknown } | null)?.sets)
-      ? ((input.strengthPrescription as { sets: Array<{ exercise?: string }> }).sets ?? []).map(
-          (set) => set.exercise ?? '',
-        )
-      : []);
-
-  const haystack = [input.title ?? '', input.description ?? '', ...exerciseNames]
+  const haystack = [input.title ?? '', input.description ?? '', ...exerciseNamesFromPrescription(input.strengthPrescription)]
     .join(' · ')
     .toLowerCase();
 
-  if (!haystack.trim()) return [];
-
-  const found = new Set<EquipmentItemId>();
-  for (const rule of KEYWORD_TO_IDS) {
-    if (!rule.pattern.test(haystack)) continue;
-    for (const id of rule.ids) {
-      if (sportAllows(id, input.type) && SESSION_PROP_IDS.includes(id)) {
-        found.add(id);
-      }
-    }
+  if (!haystack.trim()) {
+    return [];
   }
 
-  return [...found].map((id) => ({ id, label: catalogLabel(id) }));
+  return inferAccessoriesFromHaystack(haystack, input.type);
 }
 
 /** Catalog choices for the session editor, filtered by sport. */

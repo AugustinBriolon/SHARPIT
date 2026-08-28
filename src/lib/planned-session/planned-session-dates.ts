@@ -7,6 +7,7 @@ import {
   startOfDay,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { isSet } from '@/lib/util/value';
 import type { ClientPlannedSession } from '@/lib/query/types';
 
 type PlannedSessionLike = Pick<ClientPlannedSession, 'date' | 'completed' | 'activityId'>;
@@ -18,7 +19,9 @@ export function isUpcomingPlannedSession(
   session: PlannedSessionLike,
   ref: Date = new Date(),
 ): boolean {
-  if (session.completed || session.activityId) return false;
+  if (session.completed || session.activityId) {
+    return false;
+  }
   const sessionDay = startOfDay(new Date(session.date));
   const refDay = startOfDay(ref);
   return sessionDay.getTime() >= refDay.getTime();
@@ -30,15 +33,63 @@ export function filterUpcomingPlannedSessions<T extends PlannedSessionLike>(
   options?: { horizonDays?: number },
 ): T[] {
   const horizonDays = options?.horizonDays;
-  const horizonEnd = horizonDays != null ? startOfDay(addDays(startOfDay(ref), horizonDays)) : null;
+  const horizonEnd = isSet(horizonDays) ? startOfDay(addDays(startOfDay(ref), horizonDays)) : null;
 
   return sessions
     .filter((s) => {
-      if (!isUpcomingPlannedSession(s, ref)) return false;
-      if (horizonEnd == null) return true;
+      if (!isUpcomingPlannedSession(s, ref)) {
+        return false;
+      }
+      if (horizonEnd === undefined || horizonEnd === null) {
+        return true;
+      }
       return startOfDay(new Date(s.date)).getTime() <= horizonEnd.getTime();
     })
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+}
+
+function partitionUpcomingByWeek<T extends PlannedSessionLike>(
+  upcoming: T[],
+  ref: Date,
+): { remainingThisWeek: T[]; nextWeek: T[] } {
+  const thisWeekEnd = startOfDay(endOfWeek(ref, WEEK_OPTS));
+  const nextWeekEnd = startOfDay(endOfWeek(addWeeks(ref, 1), WEEK_OPTS));
+  const remainingThisWeek: T[] = [];
+  const nextWeek: T[] = [];
+
+  for (const session of upcoming) {
+    const day = startOfDay(new Date(session.date)).getTime();
+    if (day <= thisWeekEnd.getTime()) {
+      remainingThisWeek.push(session);
+    } else if (day <= nextWeekEnd.getTime()) {
+      nextWeek.push(session);
+    }
+  }
+
+  return { remainingThisWeek, nextWeek };
+}
+
+function fillPreviewToLimit<T extends PlannedSessionLike>(
+  selected: T[],
+  upcoming: T[],
+  limit: number,
+): T[] {
+  if (selected.length >= limit) {
+    return selected;
+  }
+  const selectedSet = new Set(selected);
+  const filled = [...selected];
+  for (const session of upcoming) {
+    if (filled.length >= limit) {
+      break;
+    }
+    if (selectedSet.has(session)) {
+      continue;
+    }
+    filled.push(session);
+    selectedSet.add(session);
+  }
+  return filled;
 }
 
 /**
@@ -56,20 +107,14 @@ export function selectUpcomingPlannedPreview<T extends PlannedSessionLike>(
   limit = 4,
 ): T[] {
   const upcoming = filterUpcomingPlannedSessions(sessions, ref);
-  if (upcoming.length <= limit) return upcoming;
-  if (limit < 4) return upcoming.slice(0, limit);
-
-  const thisWeekEnd = startOfDay(endOfWeek(ref, WEEK_OPTS));
-  const nextWeekEnd = startOfDay(endOfWeek(addWeeks(ref, 1), WEEK_OPTS));
-
-  const remainingThisWeek: T[] = [];
-  const nextWeek: T[] = [];
-
-  for (const session of upcoming) {
-    const day = startOfDay(new Date(session.date)).getTime();
-    if (day <= thisWeekEnd.getTime()) remainingThisWeek.push(session);
-    else if (day <= nextWeekEnd.getTime()) nextWeek.push(session);
+  if (upcoming.length <= limit) {
+    return upcoming;
   }
+  if (limit < 4) {
+    return upcoming.slice(0, limit);
+  }
+
+  const { remainingThisWeek, nextWeek } = partitionUpcomingByWeek(upcoming, ref);
 
   if (nextWeek.length === 0) {
     return upcoming.slice(0, limit);
@@ -79,17 +124,7 @@ export function selectUpcomingPlannedPreview<T extends PlannedSessionLike>(
   const thisWeekBudget = Math.max(0, limit - reservedForNextWeek);
   const fromThisWeek = remainingThisWeek.slice(0, thisWeekBudget);
   const fromNextWeek = nextWeek.slice(0, limit - fromThisWeek.length);
-  const selected = [...fromThisWeek, ...fromNextWeek];
-
-  if (selected.length < limit) {
-    const selectedSet = new Set(selected);
-    for (const session of upcoming) {
-      if (selected.length >= limit) break;
-      if (selectedSet.has(session)) continue;
-      selected.push(session);
-      selectedSet.add(session);
-    }
-  }
+  const selected = fillPreviewToLimit([...fromThisWeek, ...fromNextWeek], upcoming, limit);
 
   return selected.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 }
@@ -103,8 +138,14 @@ export function formatPlannedSessionRelativeDay(
   const today = startOfDay(ref);
   const diff = differenceInCalendarDays(day, today);
 
-  if (diff === 0) return "Aujourd'hui";
-  if (diff === 1) return 'Demain';
-  if (diff < 7) return `dans ${diff} jours`;
+  if (diff === 0) {
+    return "Aujourd'hui";
+  }
+  if (diff === 1) {
+    return 'Demain';
+  }
+  if (diff < 7) {
+    return `dans ${diff} jours`;
+  }
   return format(day, 'EEEE d MMMM', { locale: fr });
 }

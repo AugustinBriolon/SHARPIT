@@ -160,11 +160,15 @@ function SearchRow({ item }: { item: AgentActivitySearch }) {
 }
 
 function ActionIcon({ action }: { action: string }) {
-  if (action === 'read') return <FileText className="size-4" />;
+  if (action === 'read') {
+    return <FileText className="size-4" />;
+  }
   if (action === 'edit' || action === 'write') {
     return <PencilLine className="size-4" />;
   }
-  if (action === 'run') return <SquareTerminal className="size-4" />;
+  if (action === 'run') {
+    return <SquareTerminal className="size-4" />;
+  }
   return <Wrench className="size-4" />;
 }
 
@@ -198,11 +202,21 @@ function ToolRow({ item }: { item: AgentActivityTool }) {
 }
 
 function TraceIcon({ kind }: { kind: AgentActivityTrace['kind'] }) {
-  if (kind === 'thinking') return <Sparkles className="size-4" />;
-  if (kind === 'message') return <MessageSquare className="size-4" />;
-  if (kind === 'write') return <PencilLine className="size-4" />;
-  if (kind === 'run') return <SquareTerminal className="size-4" />;
-  if (kind === 'read') return <ImageIcon className="size-4" />;
+  if (kind === 'thinking') {
+    return <Sparkles className="size-4" />;
+  }
+  if (kind === 'message') {
+    return <MessageSquare className="size-4" />;
+  }
+  if (kind === 'write') {
+    return <PencilLine className="size-4" />;
+  }
+  if (kind === 'run') {
+    return <SquareTerminal className="size-4" />;
+  }
+  if (kind === 'read') {
+    return <ImageIcon className="size-4" />;
+  }
   return <Wrench className="size-4" />;
 }
 
@@ -225,9 +239,17 @@ function TraceRow({ item }: { item: AgentActivityTrace }) {
 }
 
 export function ActivityRow({ item }: { item: AgentActivityItem }) {
-  if (item.type === 'text') return <TextRow item={item} />;
-  if (item.type === 'search') return <SearchRow item={item} />;
-  if (item.type === 'tool') return <ToolRow item={item} />;
-  if (item.type === 'trace') return <TraceRow item={item} />;
+  if (item.type === 'text') {
+    return <TextRow item={item} />;
+  }
+  if (item.type === 'search') {
+    return <SearchRow item={item} />;
+  }
+  if (item.type === 'tool') {
+    return <ToolRow item={item} />;
+  }
+  if (item.type === 'trace') {
+    return <TraceRow item={item} />;
+  }
   return <StepRow item={item} />;
 }

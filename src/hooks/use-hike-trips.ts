@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { isSet } from '@/lib/util/value';
 import { toast } from '@/components/ui/toast';
 import { buildHikeTripSummary } from '@/lib/activity/hike/hike-trip-summary';
 import { fetchHikeTrip, fetchHikeTrips, hydrateHikeTrip } from '@/lib/query/fetchers';
@@ -66,7 +67,7 @@ function applyPatchOptimistic(
     activities: [...trip.activities],
   };
 
-  if (patch.name != null) {
+  if (isSet(patch.name)) {
     next = { ...next, name: patch.name };
   }
 
@@ -83,7 +84,7 @@ function applyPatchOptimistic(
     const added = patch.addActivityIds
       .filter((activityId) => !existingIds.has(activityId))
       .map((activityId) => activitiesCache.find((activity) => activity.id === activityId))
-      .filter((activity): activity is ClientActivity => activity != null)
+      .filter((activity): activity is ClientActivity => isSet(activity))
       .map(toHikeTripMember);
 
     next = {
@@ -160,7 +161,9 @@ export function useHikeTripMutations() {
         queryClient.setQueryData<ClientHikeTripListItem[]>(
           listKey,
           previousList.map((item) => {
-            if (item.id !== id) return item;
+            if (item.id !== id) {
+              return item;
+            }
             return toListItem(applyPatchOptimistic(item, data, activitiesCache));
           }),
         );

@@ -1,4 +1,5 @@
 import { ActivityType } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { NEUROMUSCULAR_EFFICIENCY_LOOKBACK_DAYS } from '@/core/inference/adaptation/constants';
 import { prisma } from '@/lib/prisma';
 import { fetchAndCacheActivityStreams } from '@/lib/streams/streams';
@@ -64,7 +65,9 @@ export async function ensureStreamsForNeuromuscularEfficiency(
   };
 
   for (const activity of candidates) {
-    if (!activity.garminId && !activity.stravaId) continue;
+    if (!activity.garminId && !activity.stravaId) {
+      continue;
+    }
 
     try {
       const { available } = await fetchAndCacheActivityStreams(athleteId, activity.id, {
@@ -72,7 +75,9 @@ export async function ensureStreamsForNeuromuscularEfficiency(
         stravaId: activity.stravaId,
       });
       result.fetched += 1;
-      if (available) result.withData += 1;
+      if (available) {
+        result.withData += 1;
+      }
     } catch (error) {
       console.error('[nme-streams]', activity.id, error);
       break;
@@ -88,30 +93,26 @@ export async function ensureStreamsForNeuromuscularEfficiency(
  * - SESSION features already have hrDrift in the 14-day window but NME is still empty
  *   (heals the old "today-only sessions" bug without looping when drift is genuinely absent).
  */
-export async function shouldRecomputeNeuromuscularAdaptation(
+type AdaptationTwinState = {
+  dimensions?: {
+    neuromuscularEfficiency?: { available?: boolean };
+  };
+  trainingDayId?: string;
+} | null;
+
+function readAdaptationTwinState(twin: { adaptationState: unknown } | null): AdaptationTwinState {
+  return twin?.adaptationState as AdaptationTwinState;
+}
+
+function neuromuscularEfficiencyAvailable(adaptation: AdaptationTwinState): boolean {
+  return adaptation?.dimensions?.neuromuscularEfficiency?.available === true;
+}
+
+async function sessionFeaturesHaveHrDrift(
   athleteId: string,
+  fromDayId: string,
   trainingDayId: string,
 ): Promise<boolean> {
-  const twin = await prisma.digitalTwin.findUnique({
-    where: { athleteId },
-    select: { adaptationState: true },
-  });
-
-  const adaptation = twin?.adaptationState as
-    | {
-        dimensions?: {
-          neuromuscularEfficiency?: { available?: boolean };
-        };
-        trainingDayId?: string;
-      }
-    | null
-    | undefined;
-
-  const nmeAvailable = adaptation?.dimensions?.neuromuscularEfficiency?.available === true;
-  if (nmeAvailable && adaptation?.trainingDayId === trainingDayId) return false;
-
-  const fromDayId = addTrainingDays(trainingDayId, -(NEUROMUSCULAR_EFFICIENCY_LOOKBACK_DAYS - 1));
-
   const sessionFeatures = await prisma.featureSet.findMany({
     where: {
       athleteId,
@@ -123,19 +124,16 @@ export async function shouldRecomputeNeuromuscularAdaptation(
     take: 60,
   });
 
-  const hasHrDrift = sessionFeatures.some((record) => {
+  return sessionFeatures.some((record) => {
     const data = record.data as { hrDriftPercent?: number | null } | null;
-    return data?.hrDriftPercent != null && Number.isFinite(data.hrDriftPercent);
+    return isSet(data?.hrDriftPercent) && Number.isFinite(data.hrDriftPercent);
   });
+}
 
-  if (hasHrDrift) {
-    return !nmeAvailable || adaptation?.trainingDayId !== trainingDayId;
-  }
-
-  // No hrDrift features yet — only nudge when Adaptation is for another day
-  // and streamed endurance sessions exist (features may refresh during recompute).
-  if (adaptation?.trainingDayId === trainingDayId) return false;
-
+async function hasStreamedEligibleActivities(
+  athleteId: string,
+  fromDayId: string,
+): Promise<boolean> {
   const { gte } = approximateTrainingDayUtcRange(fromDayId);
   const streamedEligible = await prisma.activity.count({
     where: {
@@ -146,6 +144,41 @@ export async function shouldRecomputeNeuromuscularAdaptation(
       stream: { available: true },
     },
   });
-
   return streamedEligible > 0;
+}
+
+function shouldRecomputeFromHrDrift(
+  nmeAvailable: boolean,
+  adaptation: AdaptationTwinState,
+  trainingDayId: string,
+): boolean {
+  return !nmeAvailable || adaptation?.trainingDayId !== trainingDayId;
+}
+
+export async function shouldRecomputeNeuromuscularAdaptation(
+  athleteId: string,
+  trainingDayId: string,
+): Promise<boolean> {
+  const twin = await prisma.digitalTwin.findUnique({
+    where: { athleteId },
+    select: { adaptationState: true },
+  });
+
+  const adaptation = readAdaptationTwinState(twin);
+  const nmeAvailable = neuromuscularEfficiencyAvailable(adaptation);
+  if (nmeAvailable && adaptation?.trainingDayId === trainingDayId) {
+    return false;
+  }
+
+  const fromDayId = addTrainingDays(trainingDayId, -(NEUROMUSCULAR_EFFICIENCY_LOOKBACK_DAYS - 1));
+  const hasHrDrift = await sessionFeaturesHaveHrDrift(athleteId, fromDayId, trainingDayId);
+  if (hasHrDrift) {
+    return shouldRecomputeFromHrDrift(nmeAvailable, adaptation, trainingDayId);
+  }
+
+  if (adaptation?.trainingDayId === trainingDayId) {
+    return false;
+  }
+
+  return hasStreamedEligibleActivities(athleteId, fromDayId);
 }

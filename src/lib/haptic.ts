@@ -8,6 +8,8 @@ const PATTERNS: Record<HapticPattern, number | number[]> = {
 
 /** Fires a haptic pulse via the Web Vibration API (Android Chrome only — iOS Safari does not support it). */
 export function haptic(pattern: HapticPattern = 'tap'): void {
-  if (typeof navigator === 'undefined' || !navigator.vibrate) return;
+  if (typeof navigator === 'undefined' || !navigator.vibrate) {
+    return;
+  }
   navigator.vibrate(PATTERNS[pattern]);
 }

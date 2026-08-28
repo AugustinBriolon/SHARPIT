@@ -1,3 +1,5 @@
+import { isSet } from '@/lib/util/value';
+
 const MFP_BASE = 'https://www.myfitnesspal.com';
 const SESSION_COOKIE_NAME = '__Secure-next-auth.session-token';
 
@@ -36,7 +38,9 @@ type SetCookieCapableHeaders = Headers & { getSetCookie?: () => string[] };
 
 function readSetCookieHeaders(res: Response): string[] {
   const headers = res.headers as SetCookieCapableHeaders;
-  if (typeof headers.getSetCookie === 'function') return headers.getSetCookie();
+  if (typeof headers.getSetCookie === 'function') {
+    return headers.getSetCookie();
+  }
 
   const single = headers.get('set-cookie');
   return single ? [single] : [];
@@ -66,10 +70,14 @@ export function parseRotatedSessionToken(setCookieHeaders: string[]): string | n
   for (const header of setCookieHeaders) {
     const [pair] = header.split(';');
     const separator = pair.indexOf('=');
-    if (separator === -1) continue;
+    if (separator === -1) {
+      continue;
+    }
 
     const name = pair.slice(0, separator).trim();
-    if (name !== SESSION_COOKIE_NAME) continue;
+    if (name !== SESSION_COOKIE_NAME) {
+      continue;
+    }
 
     const value = pair.slice(separator + 1).trim();
     return value.length > 0 ? value : null;
@@ -217,73 +225,99 @@ export function nutrientGoalDayKey(dateStr: string): string {
   return keys[weekday];
 }
 
+function selectNutrientGoalBundle(
+  bundles: MfpNutrientGoalBundle[],
+  dateStr: string,
+): MfpNutrientGoalBundle {
+  return (
+    bundles.find((item) => {
+      if (!item.valid_from) {
+        return true;
+      }
+      return (
+        item.valid_from <= dateStr &&
+        (item.valid_to === undefined || item.valid_to === null || item.valid_to >= dateStr)
+      );
+    }) ?? bundles[0]!
+  );
+}
+
+function nutrientGoalsFromDayGoal(
+  dayGoal:
+    | NonNullable<MfpNutrientGoalBundle['daily_goals']>[number]
+    | MfpNutrientGoalBundle['default_goal'],
+): MfpNutrientGoals | null {
+  if (!dayGoal?.energy?.value) {
+    return null;
+  }
+  return {
+    calories: Math.round(dayGoal.energy.value),
+    protein: Math.round(num(dayGoal.protein)),
+    carbohydrates: Math.round(num(dayGoal.carbohydrates)),
+    fat: Math.round(num(dayGoal.fat)),
+    fiber: isSet(dayGoal.fiber) ? Math.round(dayGoal.fiber) : null,
+    sugar: isSet(dayGoal.sugar) ? Math.round(dayGoal.sugar) : null,
+  };
+}
+
 /** Pure parser — unit-tested against live MFP nutrient-goals payloads. */
 export function parseNutrientGoalsForDate(
   bundles: MfpNutrientGoalBundle[],
   dateStr: string,
 ): MfpNutrientGoals | null {
-  if (!Array.isArray(bundles) || bundles.length === 0) return null;
+  if (!Array.isArray(bundles) || bundles.length === 0) {
+    return null;
+  }
 
-  const bundle =
-    bundles.find((item) => {
-      if (!item.valid_from) return true;
-      return item.valid_from <= dateStr && (item.valid_to == null || item.valid_to >= dateStr);
-    }) ?? bundles[0];
-
+  const bundle = selectNutrientGoalBundle(bundles, dateStr);
   const dayKey = nutrientGoalDayKey(dateStr);
   const dayGoal =
     bundle.daily_goals?.find((goal) => goal.day_of_week?.toLowerCase() === dayKey) ??
     bundle.default_goal ??
     null;
 
-  if (!dayGoal?.energy?.value) return null;
+  if (!dayGoal) {
+    return null;
+  }
 
-  return {
-    calories: Math.round(dayGoal.energy.value),
-    protein: Math.round(num(dayGoal.protein)),
-    carbohydrates: Math.round(num(dayGoal.carbohydrates)),
-    fat: Math.round(num(dayGoal.fat)),
-    fiber: dayGoal.fiber != null ? Math.round(dayGoal.fiber) : null,
-    sugar: dayGoal.sugar != null ? Math.round(dayGoal.sugar) : null,
-  };
+  return nutrientGoalsFromDayGoal(dayGoal);
 }
 
 export function sumExerciseCalories(entries: MfpExerciseEntry[]): number {
   return entries.reduce((sum, entry) => {
-    if (entry.exercise?.deleted) return sum;
+    if (entry.exercise?.deleted) {
+      return sum;
+    }
     return sum + num(entry.energy?.value);
   }, 0);
 }
 
-/** Pure grouping/aggregation, kept separate from fetching so it can be unit-tested with fixtures. */
-export function buildDayResult(
-  entries: MfpDiaryEntry[],
-  dayStatus: MfpDayStatus | null,
-  dateStr: string,
-): MfpDayResult {
-  const mealsByName = new Map<string, MfpScrapedMeal>();
+function diaryEntryToMealEntry(entry: MfpDiaryEntry): MfpScrapedMeal['entries'][number] {
+  const nutrients = entry.nutritional_contents ?? {};
+  return {
+    name: entry.food?.description ?? '',
+    calories: num(nutrients.energy?.value),
+    fat: num(nutrients.fat),
+    carbohydrates: num(nutrients.carbohydrates),
+    protein: num(nutrients.protein),
+    sugar: num(nutrients.sugar),
+    fiber: num(nutrients.fiber),
+  };
+}
 
+function groupDiaryEntriesByMeal(entries: MfpDiaryEntry[]): Map<string, MfpScrapedMeal> {
+  const mealsByName = new Map<string, MfpScrapedMeal>();
   for (const entry of entries) {
     const mealName = (entry.meal_name ?? '').toLowerCase();
-    const nutrients = entry.nutritional_contents ?? {};
-
     if (!mealsByName.has(mealName)) {
       mealsByName.set(mealName, { name: mealName, entries: [] });
     }
-
-    mealsByName.get(mealName)!.entries.push({
-      name: entry.food?.description ?? '',
-      calories: num(nutrients.energy?.value),
-      fat: num(nutrients.fat),
-      carbohydrates: num(nutrients.carbohydrates),
-      protein: num(nutrients.protein),
-      sugar: num(nutrients.sugar),
-      fiber: num(nutrients.fiber),
-    });
+    mealsByName.get(mealName)!.entries.push(diaryEntryToMealEntry(entry));
   }
+  return mealsByName;
+}
 
-  const meals = Array.from(mealsByName.values());
-
+function sumMealTotals(meals: MfpScrapedMeal[]) {
   const totals = { calories: 0, fat: 0, carbohydrates: 0, protein: 0, sugar: 0, fiber: 0 };
   for (const meal of meals) {
     for (const entry of meal.entries) {
@@ -295,6 +329,17 @@ export function buildDayResult(
       totals.fiber += entry.fiber;
     }
   }
+  return totals;
+}
+
+/** Pure grouping/aggregation, kept separate from fetching so it can be unit-tested with fixtures. */
+export function buildDayResult(
+  entries: MfpDiaryEntry[],
+  dayStatus: MfpDayStatus | null,
+  dateStr: string,
+): MfpDayResult {
+  const meals = Array.from(groupDiaryEntriesByMeal(entries).values());
+  const totals = sumMealTotals(meals);
 
   return {
     date: dateStr,
@@ -315,7 +360,9 @@ export async function fetchNutrientGoals(
     session,
   ).catch(() => null);
 
-  if (!bundles) return null;
+  if (!bundles) {
+    return null;
+  }
   return parseNutrientGoalsForDate(bundles, dateStr);
 }
 

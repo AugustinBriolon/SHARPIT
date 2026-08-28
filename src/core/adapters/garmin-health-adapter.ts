@@ -20,6 +20,7 @@
  */
 
 import type { GarminDailyHealth } from '@/lib/integrations/garmin/garmin';
+import { isSet } from '@/lib/util/value';
 
 import type {
   RawSleepObservation,
@@ -67,6 +68,36 @@ function bedtimeToDate(calendarDate: Date, sleepBedtimeMin: number): Date {
 // Per-signal converters
 // ─────────────────────────────────────────────────────────────────────────────
 
+function resolveSleepTimestamps(
+  calendarDate: Date,
+  sleep: GarminDailyHealth['sleep'],
+  nightMinutes: number,
+): { timestamp: Date; wakeTimestamp: Date } {
+  if (isSet(sleep.sleepBedtimeMin) && isSet(sleep.sleepWakeMin)) {
+    return {
+      timestamp: bedtimeToDate(calendarDate, sleep.sleepBedtimeMin),
+      wakeTimestamp: addMinutes(calendarDate, sleep.sleepWakeMin),
+    };
+  }
+
+  if (isSet(sleep.sleepWakeMin)) {
+    const wakeTimestamp = addMinutes(calendarDate, sleep.sleepWakeMin);
+    return {
+      timestamp: new Date(wakeTimestamp.getTime() - nightMinutes * 60_000),
+      wakeTimestamp,
+    };
+  }
+
+  return {
+    wakeTimestamp: calendarDate,
+    timestamp: new Date(calendarDate.getTime() - nightMinutes * 60_000),
+  };
+}
+
+function undefinedIfNull<T>(value: T | null | undefined): T | undefined {
+  return value ?? undefined;
+}
+
 function toSleepObservation(
   health: GarminDailyHealth,
   calendarDate: Date,
@@ -75,26 +106,12 @@ function toSleepObservation(
   const nightMinutes = health.sleepMinutes ?? 0;
   const napMinutes = health.napMinutes ?? health.sleep.napMinutes ?? 0;
   const totalMinutes = nightMinutes + napMinutes;
-  if (totalMinutes <= 0) return null;
+  if (totalMinutes <= 0) {
+    return null;
+  }
 
   const { sleep } = health;
-
-  // Reconstruct bedtime and wake timestamps
-  let timestamp: Date;
-  let wakeTimestamp: Date;
-
-  if (sleep.sleepBedtimeMin != null && sleep.sleepWakeMin != null) {
-    timestamp = bedtimeToDate(calendarDate, sleep.sleepBedtimeMin);
-    wakeTimestamp = addMinutes(calendarDate, sleep.sleepWakeMin);
-  } else if (sleep.sleepWakeMin != null) {
-    // Know wake time, estimate bedtime from night sleep duration
-    wakeTimestamp = addMinutes(calendarDate, sleep.sleepWakeMin);
-    timestamp = new Date(wakeTimestamp.getTime() - nightMinutes * 60_000);
-  } else {
-    // No timing data: use midnight as wake time, estimate bedtime from night sleep
-    wakeTimestamp = calendarDate;
-    timestamp = new Date(calendarDate.getTime() - nightMinutes * 60_000);
-  }
+  const { timestamp, wakeTimestamp } = resolveSleepTimestamps(calendarDate, sleep, nightMinutes);
 
   return {
     type: 'SLEEP',
@@ -103,17 +120,25 @@ function toSleepObservation(
     receivedAt,
     wakeTimestamp,
     totalMinutes,
-    deepMin: sleep.sleepDeepMin ?? undefined,
-    remMin: sleep.sleepRemMin ?? undefined,
-    lightMin: sleep.sleepLightMin ?? undefined,
-    awakeMin: sleep.sleepAwakeMin ?? undefined,
-    garminScore: sleep.sleepScore ?? undefined,
-    avgRespirationRate: sleep.sleepRespiration ?? undefined,
-    avgStressDuringSleep: sleep.sleepAvgStress ?? undefined,
-    bedtimeMinFromMidnight: sleep.sleepBedtimeMin ?? undefined,
-    wakeMinFromMidnight: sleep.sleepWakeMin ?? undefined,
-    scoreFeedbackCode: sleep.sleepScoreFeedback ?? undefined,
+    deepMin: undefinedIfNull(sleep.sleepDeepMin),
+    remMin: undefinedIfNull(sleep.sleepRemMin),
+    lightMin: undefinedIfNull(sleep.sleepLightMin),
+    awakeMin: undefinedIfNull(sleep.sleepAwakeMin),
+    garminScore: undefinedIfNull(sleep.sleepScore),
+    avgRespirationRate: undefinedIfNull(sleep.sleepRespiration),
+    avgStressDuringSleep: undefinedIfNull(sleep.sleepAvgStress),
+    bedtimeMinFromMidnight: undefinedIfNull(sleep.sleepBedtimeMin),
+    wakeMinFromMidnight: undefinedIfNull(sleep.sleepWakeMin),
+    scoreFeedbackCode: undefinedIfNull(sleep.sleepScoreFeedback),
   };
+}
+
+function hrvObservationTimestamp(health: GarminDailyHealth, calendarDate: Date): Date {
+  const wakeMin = health.sleep.sleepWakeMin;
+  if (isSet(wakeMin)) {
+    return addMinutes(calendarDate, wakeMin);
+  }
+  return addMinutes(calendarDate, 360);
 }
 
 function toHrvObservation(
@@ -121,16 +146,11 @@ function toHrvObservation(
   calendarDate: Date,
   receivedAt: Date,
 ): RawHrvObservation | null {
-  if (health.hrv == null || health.hrv <= 0) return null;
+  if (health.hrv === undefined || health.hrv === null || health.hrv <= 0) {
+    return null;
+  }
 
-  // HRV is measured overnight — we use the wake time as the observation timestamp
-  // (this is the point at which the overnight HRV becomes a "readiness indicator")
-  const { sleep } = health;
-  const timestamp =
-    sleep.sleepWakeMin != null
-      ? addMinutes(calendarDate, sleep.sleepWakeMin)
-      : // Fallback: 06:00 on the report day (typical morning measurement)
-        addMinutes(calendarDate, 360);
+  const timestamp = hrvObservationTimestamp(health, calendarDate);
 
   return {
     type: 'HRV',
@@ -150,14 +170,15 @@ function toRestingHrObservation(
   calendarDate: Date,
   receivedAt: Date,
 ): RawRestingHrObservation | null {
-  if (health.restingHr == null || health.restingHr <= 0) return null;
+  if (health.restingHr === undefined || health.restingHr === null || health.restingHr <= 0) {
+    return null;
+  }
 
   // Resting HR is typically measured in the early morning
   const { sleep } = health;
-  const timestamp =
-    sleep.sleepWakeMin != null
-      ? addMinutes(calendarDate, sleep.sleepWakeMin)
-      : addMinutes(calendarDate, 360); // fallback: 06:00
+  const timestamp = isSet(sleep.sleepWakeMin)
+    ? addMinutes(calendarDate, sleep.sleepWakeMin)
+    : addMinutes(calendarDate, 360); // fallback: 06:00
 
   return {
     type: 'RESTING_HR',
@@ -173,7 +194,9 @@ function toReadinessObservation(
   calendarDate: Date,
   receivedAt: Date,
 ): RawGarminReadinessObservation | null {
-  if (health.readinessScore == null) return null;
+  if (health.readinessScore === undefined || health.readinessScore === null) {
+    return null;
+  }
 
   // Readiness is computed at the start of the day
   const timestamp = addMinutes(calendarDate, 360); // 06:00
@@ -197,7 +220,9 @@ function toBodyBatteryObservation(
   calendarDate: Date,
   receivedAt: Date,
 ): RawBodyBatteryObservation | null {
-  if (health.bodyBattery == null) return null;
+  if (health.bodyBattery === undefined || health.bodyBattery === null) {
+    return null;
+  }
 
   // Stored value is the current/most-recent reading (not the morning peak).
   const timestamp = addMinutes(calendarDate, 360);
@@ -236,5 +261,5 @@ export function garminHealthToObservations(
     toBodyBatteryObservation(health, calendarDate, receivedAt),
   ];
 
-  return observations.filter((o): o is RawObservation => o !== null);
+  return observations.filter((o): o is RawObservation => isSet(o));
 }

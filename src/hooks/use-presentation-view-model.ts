@@ -1,6 +1,7 @@
 'use client';
 
 import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { isSet } from '@/lib/util/value';
 import type { RecoveryViewModel } from '@/core/presentation/recovery-view-model';
 import type { SleepViewModel } from '@/core/presentation/sleep-view-model';
 import type { EffortViewModel } from '@/core/presentation/effort-view-model';
@@ -77,7 +78,7 @@ export function useTodayPresentationViewModel(trainingDayId: string) {
       if (inFlight) {
         const seed = await inFlight;
         if (seed?.trainingDayId === trainingDayId) {
-          if (seed.todayPresentation != null) {
+          if (isSet(seed.todayPresentation)) {
             return seed.todayPresentation;
           }
           // Soft open skipped rebuild and there was no warm cache — fall through to GET.

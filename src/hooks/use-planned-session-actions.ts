@@ -80,7 +80,9 @@ export function usePlannedSessionActions() {
     ) => {
       const adjustment = rescheduleSession(session, day, startTime);
       // Confirming the session's own slot is a no-op; announcing it would be noise.
-      if (!adjustment) return;
+      if (!adjustment) {
+        return;
+      }
 
       const movedTo = new Date(day.year, day.month - 1, day.day);
       const dayChanged = adjustment.date !== undefined;

@@ -20,6 +20,7 @@
  */
 
 import type { SessionFeatureSet, TssMethod, SessionExtractorInput } from '../types';
+import { isSet } from '@/lib/util/value';
 import type { ExtractionContext } from '../context';
 import { canUsePowerTss, canUseTrimpTss, canUsePaceTss } from '../context';
 import type { SportType } from '@/core/observation/types';
@@ -68,6 +69,10 @@ const ELEVATION_STRESS_FACTOR: Record<SportType, number> = {
   OTHER: 0.06,
 };
 
+const PACE_TSS_SPORTS: SportType[] = ['RUN', 'TRAIL_RUN', 'OPEN_WATER'];
+const POWER_TSS_SPORTS: SportType[] = ['BIKE', 'MTB'];
+const PACE_IF_SPORTS: SportType[] = ['RUN', 'TRAIL_RUN'];
+
 // ─────────────────────────────────────────────────────────────────────────────
 // TSS computation — 5-tier hierarchy
 // ─────────────────────────────────────────────────────────────────────────────
@@ -100,6 +105,16 @@ function computePowerTss(
   return { tssScore, method: 'POWER_BASED', confidence };
 }
 
+type TrimpTssInput = {
+  durationSec: number;
+  avgBpm: number;
+  maxHr: number;
+  restingHr: number;
+  lthr: number | undefined;
+  hrQuality: 'MEASURED_DIRECT' | 'MEASURED_OPTICAL';
+  sportType: SportType;
+};
+
 /**
  * Tier 2 — TRIMP-HR (Banister method normalized to TSS scale).
  *
@@ -113,15 +128,8 @@ function computePowerTss(
  * Known limitation: assumes male physiology (coefficient 1.92).
  * See TRAINING_STRESS_MODEL.md Scientific Debt SD-013.
  */
-function computeTrimpTss(
-  durationSec: number,
-  avgBpm: number,
-  maxHr: number,
-  restingHr: number,
-  lthr: number | undefined,
-  hrQuality: 'MEASURED_DIRECT' | 'MEASURED_OPTICAL',
-  sportType: SportType,
-): TssResult {
+function computeTrimpTss(input: TrimpTssInput): TssResult {
+  const { durationSec, avgBpm, maxHr, restingHr, lthr, hrQuality, sportType } = input;
   const durationMin = durationSec / 60;
   const hrRange = maxHr - restingHr;
 
@@ -203,69 +211,110 @@ function durationFactorFallback(durationSec: number, sportType: SportType): TssR
   };
 }
 
+function tryPowerTss(input: SessionExtractorInput, ctx: ExtractionContext): TssResult | null {
+  const { session } = input;
+  const { durationSec } = session;
+  const normalizedPower = session.powerData?.normalizedPower;
+  if (
+    !POWER_TSS_SPORTS.includes(session.sportType) ||
+    !canUsePowerTss(ctx) ||
+    normalizedPower === undefined ||
+    normalizedPower === null ||
+    normalizedPower === undefined ||
+    normalizedPower <= 0
+  ) {
+    return null;
+  }
+
+  return computePowerTss(durationSec, normalizedPower, ctx.ftpW!, session.powerData!.quality);
+}
+
+function tryTrimpTss(input: SessionExtractorInput, ctx: ExtractionContext): TssResult | null {
+  const { session } = input;
+  const { durationSec } = session;
+  const avgBpm = session.hrData?.avgBpm;
+  if (!canUseTrimpTss(ctx) || avgBpm === undefined || avgBpm === null || avgBpm === undefined) {
+    return null;
+  }
+
+  return computeTrimpTss({
+    durationSec,
+    avgBpm,
+    maxHr: ctx.maxHr!,
+    restingHr: ctx.restingHr!,
+    lthr: ctx.lthr,
+    hrQuality: session.hrData!.quality,
+    sportType: session.sportType,
+  });
+}
+
+function hasPaceData(session: SessionExtractorInput['session']): boolean {
+  const pace = session.paceData;
+  return (
+    pace?.avgMinPerKm !== undefined &&
+    pace.avgMinPerKm !== null &&
+    pace.distanceM !== undefined &&
+    pace.distanceM !== null
+  );
+}
+
+function hasPaceTssInputs(
+  session: SessionExtractorInput['session'],
+  ctx: ExtractionContext,
+): boolean {
+  if (!canUsePaceTss(ctx) || !PACE_TSS_SPORTS.includes(session.sportType)) {
+    return false;
+  }
+  return hasPaceData(session);
+}
+
+function tryPaceTss(input: SessionExtractorInput, ctx: ExtractionContext): TssResult | null {
+  const { session } = input;
+  const { durationSec } = session;
+  if (!hasPaceTssInputs(session, ctx)) {
+    return null;
+  }
+
+  return computePaceTss(
+    durationSec,
+    session.paceData!.avgMinPerKm!,
+    session.paceData!.distanceM!,
+    ctx.runThresholdPaceSecPerKm!,
+  );
+}
+
+function tryRpeTss(input: SessionExtractorInput): TssResult | null {
+  const { linkedSubjective, session } = input;
+  const { durationSec } = session;
+  if (
+    linkedSubjective?.rpe === undefined ||
+    linkedSubjective?.rpe === null ||
+    linkedSubjective?.rpe === undefined
+  ) {
+    return null;
+  }
+  return computeRpeTss(durationSec, linkedSubjective.rpe);
+}
+
 /**
  * Main TSS dispatcher — selects the highest-confidence method available.
  */
 function selectBestTss(input: SessionExtractorInput, ctx: ExtractionContext): TssResult {
-  const { session, linkedSubjective } = input;
-  const { durationSec, sportType } = session;
+  const tierAttempts = [
+    () => tryPowerTss(input, ctx),
+    () => tryTrimpTss(input, ctx),
+    () => tryPaceTss(input, ctx),
+    () => tryRpeTss(input),
+  ];
 
-  // Tier 1: Power-based (requires NP + FTP)
-  //
-  // Cycling only: ctx.ftpW is a cycling FTP, and Garmin's running power sits on a
-  // different scale, so dividing one by the other produced intensity factors above
-  // 1 for ordinary runs and TSS up to 438/h. Running power needs its own threshold
-  // before it can be used here; until then runs fall through to TRIMP, which is
-  // sport-agnostic.
-  if (
-    (sportType === 'BIKE' || sportType === 'MTB') &&
-    canUsePowerTss(ctx) &&
-    session.powerData?.normalizedPower != null &&
-    session.powerData.normalizedPower > 0
-  ) {
-    return computePowerTss(
-      durationSec,
-      session.powerData.normalizedPower,
-      ctx.ftpW!,
-      session.powerData.quality,
-    );
+  for (const attempt of tierAttempts) {
+    const result = attempt();
+    if (result) {
+      return result;
+    }
   }
 
-  // Tier 2: TRIMP-HR (requires avgHr + maxHr + restingHr)
-  if (canUseTrimpTss(ctx) && session.hrData?.avgBpm != null) {
-    return computeTrimpTss(
-      durationSec,
-      session.hrData.avgBpm,
-      ctx.maxHr!,
-      ctx.restingHr!,
-      ctx.lthr,
-      session.hrData.quality,
-      sportType,
-    );
-  }
-
-  // Tier 3: Pace-based (run / open water only, requires threshold pace)
-  if (
-    canUsePaceTss(ctx) &&
-    session.paceData?.avgMinPerKm != null &&
-    session.paceData?.distanceM != null &&
-    (sportType === 'RUN' || sportType === 'TRAIL_RUN' || sportType === 'OPEN_WATER')
-  ) {
-    return computePaceTss(
-      durationSec,
-      session.paceData.avgMinPerKm,
-      session.paceData.distanceM,
-      ctx.runThresholdPaceSecPerKm!,
-    );
-  }
-
-  // Tier 4: RPE-based (requires linked subjective observation with RPE)
-  if (linkedSubjective?.rpe != null) {
-    return computeRpeTss(durationSec, linkedSubjective.rpe);
-  }
-
-  // Tier 5: Duration × sport factor (always succeeds)
-  return durationFactorFallback(durationSec, sportType);
+  return durationFactorFallback(input.session.durationSec, input.session.sportType);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -273,7 +322,9 @@ function selectBestTss(input: SessionExtractorInput, ctx: ExtractionContext): Ts
 // ─────────────────────────────────────────────────────────────────────────────
 
 function computeMechanicalLoad(durationSec: number, avgWatts: number | undefined): number | null {
-  if (avgWatts == null || avgWatts <= 0) return null;
+  if (avgWatts === undefined || avgWatts === null || avgWatts <= 0) {
+    return null;
+  }
   return (avgWatts * durationSec) / 1000; // kJ
 }
 
@@ -281,9 +332,13 @@ function computeElevationStressScore(
   elevationM: number | undefined,
   sportType: SportType,
 ): number | null {
-  if (elevationM == null || elevationM <= 0) return null;
+  if (elevationM === undefined || elevationM === null || elevationM <= 0) {
+    return null;
+  }
   const factor = ELEVATION_STRESS_FACTOR[sportType];
-  if (factor === 0) return null; // sport has no elevation cost (SWIM, YOGA, STRENGTH)
+  if (factor === 0) {
+    return null;
+  } // sport has no elevation cost (SWIM, YOGA, STRENGTH)
   return elevationM * factor;
 }
 
@@ -291,30 +346,40 @@ function computeElevationStressScore(
 // Intensity factor
 // ─────────────────────────────────────────────────────────────────────────────
 
+function computePowerIntensityFactor(
+  session: SessionExtractorInput['session'],
+  ctx: ExtractionContext,
+): number | null {
+  const normalizedPower = session.powerData?.normalizedPower;
+  if (ctx.ftpW && ctx.ftpW > 0 && normalizedPower) {
+    return normalizedPower / ctx.ftpW;
+  }
+  return session.powerData?.intensityFactor ?? null;
+}
+
+function computePaceIntensityFactor(
+  session: SessionExtractorInput['session'],
+  ctx: ExtractionContext,
+): number | null {
+  if (
+    !ctx.runThresholdPaceSecPerKm ||
+    !session.paceData?.avgMinPerKm ||
+    !PACE_IF_SPORTS.includes(session.sportType)
+  ) {
+    return null;
+  }
+  const avgPaceSecPerKm = session.paceData.avgMinPerKm * 60;
+  return ctx.runThresholdPaceSecPerKm / avgPaceSecPerKm;
+}
+
 function computeIntensityFactor(
   input: SessionExtractorInput,
   ctx: ExtractionContext,
 ): number | null {
-  const { session } = input;
-
-  // Power IF (preferred)
-  if (ctx.ftpW && ctx.ftpW > 0 && session.powerData?.normalizedPower) {
-    return session.powerData.normalizedPower / ctx.ftpW;
-  }
-  // Pre-computed by source
-  if (session.powerData?.intensityFactor != null) {
-    return session.powerData.intensityFactor;
-  }
-  // Pace IF for running
-  if (
-    ctx.runThresholdPaceSecPerKm &&
-    session.paceData?.avgMinPerKm &&
-    (session.sportType === 'RUN' || session.sportType === 'TRAIL_RUN')
-  ) {
-    const avgPaceSecPerKm = session.paceData.avgMinPerKm * 60;
-    return ctx.runThresholdPaceSecPerKm / avgPaceSecPerKm;
-  }
-  return null;
+  return (
+    computePowerIntensityFactor(input.session, ctx) ??
+    computePaceIntensityFactor(input.session, ctx)
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -324,7 +389,9 @@ function computeIntensityFactor(
 function computeEfficiencyFactor(input: SessionExtractorInput): number | null {
   const { session } = input;
   const avgHr = session.hrData?.avgBpm;
-  if (!avgHr || avgHr <= 0) return null;
+  if (!avgHr || avgHr <= 0) {
+    return null;
+  }
 
   // Power EF (NP ÷ avgHR)
   if (session.powerData?.normalizedPower) {
@@ -340,6 +407,17 @@ function computeEfficiencyFactor(input: SessionExtractorInput): number | null {
   return null;
 }
 
+function collectSourceObsIds(
+  sessionId: string,
+  linkedSubjective: SessionExtractorInput['linkedSubjective'],
+): string[] {
+  const ids = [sessionId];
+  if (linkedSubjective) {
+    ids.push(linkedSubjective.id);
+  }
+  return ids;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Main extractor
 // ─────────────────────────────────────────────────────────────────────────────
@@ -349,50 +427,92 @@ function computeEfficiencyFactor(input: SessionExtractorInput): number | null {
  *
  * Pure function — no side effects, no async, fully deterministic.
  */
-export function extractSessionFeatures(
+type SessionMetrics = {
+  tssResult: TssResult;
+  intensityFactor: number | null;
+  mechanicalLoad: number | null;
+  elevationStressScore: number | null;
+  efficiencyFactor: number | null;
+};
+
+function computeSessionMetrics(
   input: SessionExtractorInput,
   ctx: ExtractionContext,
+): SessionMetrics {
+  const { session } = input;
+  return {
+    tssResult: selectBestTss(input, ctx),
+    intensityFactor: computeIntensityFactor(input, ctx),
+    mechanicalLoad: computeMechanicalLoad(session.durationSec, session.powerData?.avgWatts),
+    elevationStressScore: computeElevationStressScore(session.elevationM, session.sportType),
+    efficiencyFactor: computeEfficiencyFactor(input),
+  };
+}
+
+const EMPTY_STREAM_FEATURES = {
+  aerobicLoadFactor: null,
+  anaerobicLoadFactor: null,
+  timeInZones: null,
+  hrDriftPercent: null,
+  paceVariabilityIndex: null,
+} as const;
+
+function streamFeatureFields(
+  stream: SessionExtractorInput['stream'],
+): Pick<
+  SessionFeatureSet,
+  | 'aerobicLoadFactor'
+  | 'anaerobicLoadFactor'
+  | 'timeInZones'
+  | 'hrDriftPercent'
+  | 'paceVariabilityIndex'
+> {
+  if (!stream) {
+    return { ...EMPTY_STREAM_FEATURES };
+  }
+
+  return {
+    aerobicLoadFactor: stream.aerobicLoadFactor ?? null,
+    anaerobicLoadFactor: stream.anaerobicLoadFactor ?? null,
+    timeInZones: stream.timeInZones ?? null,
+    hrDriftPercent: stream.hrDriftPercent ?? null,
+    paceVariabilityIndex: stream.paceVariabilityIndex ?? null,
+  };
+}
+
+function buildSessionFeatureSet(
+  input: SessionExtractorInput,
+  metrics: SessionMetrics,
 ): SessionFeatureSet {
-  const { session, linkedSubjective, stream } = input;
-
-  const tssResult = selectBestTss(input, ctx);
-  const intensityFactor = computeIntensityFactor(input, ctx);
-  const mechanicalLoad = computeMechanicalLoad(session.durationSec, session.powerData?.avgWatts);
-  const elevationStressScore = computeElevationStressScore(session.elevationM, session.sportType);
-  const efficiencyFactor = computeEfficiencyFactor(input);
-
-  const sourceObsIds: string[] = [session.id];
-  if (linkedSubjective) sourceObsIds.push(linkedSubjective.id);
+  const { session, linkedSubjective } = input;
+  const subjectiveRpe = linkedSubjective?.rpe ?? null;
 
   return {
     sessionObsId: session.id,
     trainingDayId: session.trainingDayId,
     sportType: session.sportType,
     durationSec: session.durationSec,
-
-    tssScore: tssResult.tssScore,
-    tssMethod: tssResult.method,
-
-    intensityFactor,
-    aerobicLoadFactor: stream?.aerobicLoadFactor ?? null,
-    anaerobicLoadFactor: stream?.anaerobicLoadFactor ?? null,
-    timeInZones: stream?.timeInZones ?? null,
-    hrDriftPercent: stream?.hrDriftPercent ?? null,
-    paceVariabilityIndex: stream?.paceVariabilityIndex ?? null,
-
-    mechanicalLoad,
-    elevationStressScore,
-    efficiencyFactor,
-
-    subjectiveRpe: linkedSubjective?.rpe ?? null,
-    fosterSessionLoad:
-      linkedSubjective?.rpe != null
-        ? computeFosterSessionLoad(session.durationSec, linkedSubjective.rpe)
-        : null,
+    tssScore: metrics.tssResult.tssScore,
+    tssMethod: metrics.tssResult.method,
+    intensityFactor: metrics.intensityFactor,
+    ...streamFeatureFields(input.stream),
+    mechanicalLoad: metrics.mechanicalLoad,
+    elevationStressScore: metrics.elevationStressScore,
+    efficiencyFactor: metrics.efficiencyFactor,
+    subjectiveRpe,
+    fosterSessionLoad: isSet(subjectiveRpe)
+      ? computeFosterSessionLoad(session.durationSec, subjectiveRpe)
+      : null,
     sourceProvidedTss: session.sourceProvidedStress?.value ?? null,
-
-    confidence: tssResult.confidence,
+    confidence: metrics.tssResult.confidence,
     algorithmId: 'session-features-v1',
-    sourceObsIds,
+    sourceObsIds: collectSourceObsIds(session.id, linkedSubjective),
   } satisfies SessionFeatureSet;
+}
+
+export function extractSessionFeatures(
+  input: SessionExtractorInput,
+  ctx: ExtractionContext,
+): SessionFeatureSet {
+  return buildSessionFeatureSet(input, computeSessionMetrics(input, ctx));
 }

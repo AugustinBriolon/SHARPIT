@@ -1,12 +1,13 @@
 'use client';
 
-import { format, parseISO, startOfWeek } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { CalendarPlus, Check, Loader2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { CalendarPlus, Loader2 } from 'lucide-react';
 import { ProfileContextBanner } from '@/components/profile/profile-context-banner';
-import { resolveDefaultPlanGoalId } from '@/lib/planned-session/plan-goal';
-import { warmCoachContext } from '@/lib/coach/warm-coach-context';
+import {
+  formatGoalOptionLabel,
+  PlanGeneratorMacroHint,
+  PlanGeneratorResults,
+} from '@/components/coach/plan/plan-generator-results';
+import { usePlanGenerator } from '@/components/coach/plan/use-plan-generator';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -24,28 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { activityTypeLabels } from '@/lib/format';
-import {
-  formatPlannedDuration,
-  intensityAccent,
-  intensityLabels,
-} from '@/lib/planned-session/sessions';
-import { cn } from '@/lib/utils';
-import { phaseLabels } from '@/lib/training/periodization';
-import {
-  useCoachPlan,
-  type CoachGenerationProgress,
-  type GeneratedSession,
-} from '@/hooks/use-coach';
 import { CoachGenerationProgressPanel } from '@/components/coach/plan/generation-progress';
-import { useGoals, usePlannedSessionMutations, useTrainingPlan } from '@/hooks/use-data';
-import { useOfflineGuard } from '@/hooks/use-offline-guard';
-import type { GateSessionResult } from '@/lib/plan-gate/types';
-import { GateStatusBadge, GateFindingsList } from '@/components/coach/plan/gate-status-badge';
-import { resolveEnduranceFieldsForPersist } from '@/lib/planned-session/endurance/coach-endurance-prescription';
-import { resolveStrengthFieldsForPersist } from '@/lib/planned-session/strength/strength-prescription';
-
-const WEEK_OPTS = { weekStartsOn: 1 as const };
 
 const DAYS_OPTIONS = [
   { value: '7', label: '1 semaine' },
@@ -69,7 +49,9 @@ function renderGenerateButtonContent(
       </>
     );
   }
-  if (offline) return offlineLabel;
+  if (offline) {
+    return offlineLabel;
+  }
   return (
     <>
       <CalendarPlus className="size-4" />
@@ -79,121 +61,12 @@ function renderGenerateButtonContent(
 }
 
 interface PlanGeneratorProps {
-  startDate?: string; // yyyy-MM-dd
+  startDate?: string;
   onClose: () => void;
 }
 
 export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
-  const [days, setDays] = useState('7');
-  const [focus, setFocus] = useState('');
-  const [goalId, setGoalId] = useState<string>(NO_GOAL);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
-
-  useEffect(() => {
-    warmCoachContext({ includeScenario: true });
-  }, []);
-
-  const [progress, setProgress] = useState<CoachGenerationProgress | null>(null);
-  const coachPlan = useCoachPlan(setProgress);
-  const { createMany } = usePlannedSessionMutations();
-  const goalsQuery = useGoals();
-  const planQuery = useTrainingPlan();
-  const plan = coachPlan.data;
-
-  const planWeek = useMemo(() => {
-    const active = planQuery.data;
-    if (!active?.weeks?.length) return null;
-    const blockStart = startDate ? parseISO(startDate) : new Date();
-    const ws = format(startOfWeek(blockStart, WEEK_OPTS), 'yyyy-MM-dd');
-    return active.weeks.find((w) => format(new Date(w.weekStart), 'yyyy-MM-dd') === ws);
-  }, [planQuery.data, startDate]);
-
-  // Objectifs datés (courses à venir) sélectionnables comme cible du bloc.
-  const datedGoals = useMemo(() => {
-    const now = new Date();
-    return (goalsQuery.data ?? [])
-      .filter((g) => !g.achieved && g.targetDate)
-      .filter((g) => new Date(g.targetDate as unknown as string) >= now);
-  }, [goalsQuery.data]);
-
-  const selectableGoalIds = useMemo(() => datedGoals.map((g) => g.id), [datedGoals]);
-
-  // Inherit active macro-plan goal so « Remplir ma semaine » stamps goalId on insert.
-  useEffect(() => {
-    const fromPlan = resolveDefaultPlanGoalId(planQuery.data?.goalId, selectableGoalIds);
-    if (!fromPlan) return;
-    setGoalId((current) => (current === NO_GOAL ? fromPlan : current));
-  }, [planQuery.data?.goalId, selectableGoalIds]);
-
-  async function handleGenerate() {
-    if (guardDisabled) return;
-    setProgress(null);
-    const result = await coachPlan.mutateAsync({
-      days: Number(days),
-      focus: focus.trim() || undefined,
-      startDate,
-      goalId: goalId === NO_GOAL ? null : goalId,
-      targetLoad: planWeek?.targetLoad ?? null,
-      planPhase: planWeek ? phaseLabels[planWeek.phase] : null,
-      planFocus: planWeek?.focus ?? null,
-    });
-    // Pre-select everything except sessions the Gate rejected outright.
-    setSelected(
-      new Set(
-        result.sessions
-          .map((_, i) => i)
-          .filter((i) => result.gate.sessions[i]?.status !== 'REJECTED'),
-      ),
-    );
-  }
-
-  function toggle(index: number) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(index)) next.delete(index);
-      else next.add(index);
-      return next;
-    });
-  }
-
-  /** Instant UX: optimistic batch + close immediately; toast comes from the mutation. */
-  function handleInsert() {
-    if (guardDisabled || !plan || selected.size === 0) return;
-    const payloads = plan.sessions
-      .filter((_, i) => selected.has(i))
-      .map((s) => {
-        const strength = resolveStrengthFieldsForPersist({
-          type: s.type,
-          description: s.description,
-          strengthPrescription: s.strengthPrescription,
-        });
-        const endurance = resolveEnduranceFieldsForPersist({
-          type: s.type,
-          description: strength.description,
-          intensity: s.intensity,
-          endurancePrescription: s.endurancePrescription,
-        });
-        return {
-          type: s.type,
-          date: new Date(`${s.date}T12:00:00`),
-          startTime: s.startTime,
-          title: s.title,
-          description: endurance.description,
-          strengthPrescription: strength.strengthPrescription,
-          endurancePrescription: endurance.endurancePrescription,
-          durationMin: s.durationMin,
-          load: s.load,
-          intensity: s.intensity,
-          goalId: goalId === NO_GOAL ? null : goalId,
-          decisionId: s.decisionId,
-        };
-      });
-    createMany.mutate(payloads);
-    onClose();
-  }
-
-  const isGenerating = coachPlan.isPending;
-  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
+  const generator = usePlanGenerator(startDate, onClose);
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -214,9 +87,11 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
         <div className="flex min-w-0 flex-wrap items-end gap-3">
           <div className="min-w-0 flex-1 space-y-2 sm:flex-none">
             <Label>Durée du bloc</Label>
-            <Select value={days} onValueChange={(v) => setDays(v ?? '7')}>
+            <Select value={generator.days} onValueChange={(v) => generator.setDays(v ?? '7')}>
               <SelectTrigger className="w-full min-w-0 sm:w-40">
-                <SelectValue>{DAYS_OPTIONS.find((o) => o.value === days)?.label}</SelectValue>
+                <SelectValue>
+                  {DAYS_OPTIONS.find((o) => o.value === generator.days)?.label}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {DAYS_OPTIONS.map((o) => (
@@ -229,22 +104,23 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
           </div>
           <div className="min-w-0 flex-1 space-y-2 sm:flex-none">
             <Label>Objectif ciblé</Label>
-            <Select value={goalId} onValueChange={(v) => setGoalId(v ?? NO_GOAL)}>
+            <Select
+              value={generator.goalId}
+              onValueChange={(v) => generator.setGoalId(v ?? NO_GOAL)}
+            >
               <SelectTrigger className="w-full min-w-0 sm:w-56">
                 <SelectValue>
-                  {goalId === NO_GOAL
+                  {generator.goalId === NO_GOAL
                     ? 'Aucun (forme générale)'
-                    : (datedGoals.find((g) => g.id === goalId)?.title ?? 'Aucun')}
+                    : (generator.datedGoals.find((g) => g.id === generator.goalId)?.title ??
+                      'Aucun')}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={NO_GOAL}>Aucun (forme générale)</SelectItem>
-                {datedGoals.map((g) => (
+                {generator.datedGoals.map((g) => (
                   <SelectItem key={g.id} value={g.id}>
-                    {g.title}
-                    {g.targetDate
-                      ? ` · ${format(new Date(g.targetDate as unknown as string), 'd MMM yyyy', { locale: fr })}`
-                      : ''}
+                    {formatGoalOptionLabel(g)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -252,23 +128,23 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
           </div>
           <Button
             className="mb-2"
-            disabled={guardDisabled || isGenerating}
-            onClick={handleGenerate}
+            disabled={generator.guardDisabled || generator.isGenerating}
+            onClick={() => void generator.handleGenerate()}
           >
-            {renderGenerateButtonContent(isGenerating, offline, offlineLabel, Boolean(plan))}
+            {renderGenerateButtonContent(
+              generator.isGenerating,
+              generator.offline,
+              generator.offlineLabel,
+              Boolean(generator.plan),
+            )}
           </Button>
         </div>
 
-        {planWeek && (
-          <p className="text-muted-foreground analysis-panel-alt rounded-analysis p-2 text-xs">
-            Macro-plan : {phaseLabels[planWeek.phase]} · cible{' '}
-            <span className="text-foreground font-mono font-medium">{planWeek.targetLoad} TSS</span>
-            {planWeek.isDeload ? ' (semaine de récup)' : ''}
-            {goalId !== NO_GOAL
-              ? ` · objectif ${datedGoals.find((g) => g.id === goalId)?.title ?? 'lié'}`
-              : ''}
-          </p>
-        )}
+        <PlanGeneratorMacroHint
+          datedGoals={generator.datedGoals}
+          goalId={generator.goalId}
+          planWeek={generator.planWeek}
+        />
 
         <div className="space-y-2">
           <Label htmlFor="focus">Demande spécifique (optionnel)</Label>
@@ -276,128 +152,37 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
             id="focus"
             placeholder="Ex : je veux deux grosses séances vélo, repos le vendredi, je pars en voyage samedi…"
             rows={2}
-            value={focus}
-            onChange={(e) => setFocus(e.target.value)}
+            value={generator.focus}
+            onChange={(e) => generator.setFocus(e.target.value)}
           />
         </div>
 
-        {isGenerating && <CoachGenerationProgressPanel itemNoun="séance" progress={progress} />}
+        {generator.isGenerating ? (
+          <CoachGenerationProgressPanel itemNoun="séance" progress={generator.progress} />
+        ) : null}
 
-        {coachPlan.error && (
+        {generator.coachPlan.error ? (
           <p className="bg-destructive/10 text-destructive rounded-md p-3 text-sm" role="alert">
-            {coachPlan.error.message}
-          </p>
-        )}
-
-        {plan && (
-          <div className="space-y-3">
-            <p className="border-primary/20 bg-primary/5 text-muted-foreground rounded-md border p-3 text-sm">
-              {plan.summary}
-            </p>
-
-            <div className="space-y-2">
-              {plan.sessions.map((s, i) => (
-                <SessionRow
-                  key={i}
-                  gateResult={plan.gate.sessions[i]}
-                  selected={selected.has(i)}
-                  session={s}
-                  onToggle={() => toggle(i)}
-                />
-              ))}
-            </div>
-
-            <div className="border-border/60 flex items-center justify-between gap-2 border-t pt-3">
-              <span className="text-muted-foreground text-xs">
-                {selected.size} séance(s) sélectionnée(s)
-              </span>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={onClose}>
-                  Fermer
-                </Button>
-                <Button disabled={guardDisabled || selected.size === 0} onClick={handleInsert}>
-                  {offline ? offlineLabel : 'Ajouter au planning'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function SessionRow({
-  session,
-  selected,
-  onToggle,
-  gateResult,
-}: {
-  session: GeneratedSession;
-  selected: boolean;
-  onToggle: () => void;
-  gateResult?: GateSessionResult;
-}) {
-  const accent = intensityAccent[session.intensity];
-  const date = parseISO(session.date);
-  const rejected = gateResult?.status === 'REJECTED';
-
-  return (
-    <button
-      aria-pressed={selected && !rejected}
-      disabled={rejected}
-      type="button"
-      className={cn(
-        'pressable-lg flex w-full gap-3 rounded-lg border p-3 text-left',
-        rejected && 'border-signal-risk/30 bg-signal-risk/5 cursor-not-allowed opacity-80',
-        !rejected && selected
-          ? 'border-primary/40 bg-primary/5'
-          : !rejected &&
-              'border-analysis-border/60 bg-analysis-surface-alt/50 opacity-60 hover:opacity-100',
-      )}
-      onClick={rejected ? undefined : onToggle}
-    >
-      <span
-        className={cn(
-          'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border',
-          selected && !rejected
-            ? 'border-primary bg-primary text-primary-foreground'
-            : 'border-border',
-        )}
-      >
-        {selected && !rejected && <Check className="size-3.5" aria-hidden />}
-      </span>
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-            {format(date, 'EEE d MMM', { locale: fr })}
-          </span>
-          <span
-            className="rounded-full px-1.5 py-0.5 text-[10px] font-medium"
-            style={{ backgroundColor: `${accent}22`, color: accent }}
-          >
-            {intensityLabels[session.intensity]}
-          </span>
-          <span className="text-muted-foreground text-xs">
-            {session.startTime ? `${session.startTime} · ` : ''}
-            {activityTypeLabels[session.type]} · {formatPlannedDuration(session.durationMin)} ·{' '}
-            {session.load} TSS
-          </span>
-          {gateResult && <GateStatusBadge status={gateResult.status} />}
-        </div>
-        <p className="mt-1 text-sm font-medium">{session.title}</p>
-        <p className="text-muted-foreground mt-0.5 text-xs">{session.description}</p>
-        {session.strengthPrescription?.sets?.length ? (
-          <p className="text-muted-foreground mt-0.5 text-xs">
-            {session.strengthPrescription.sets.length} exercice
-            {session.strengthPrescription.sets.length > 1 ? 's' : ''} pour la montre
+            {generator.coachPlan.error.message}
           </p>
         ) : null}
-        {session.rationale && (
-          <p className="text-muted-foreground/80 mt-1 text-xs italic">→ {session.rationale}</p>
-        )}
-        {gateResult && <GateFindingsList result={gateResult} />}
-      </div>
-    </button>
+
+        <PlanGeneratorResults
+          datedGoals={generator.datedGoals}
+          goalId={generator.goalId}
+          guardDisabled={generator.guardDisabled}
+          isGenerating={generator.isGenerating}
+          offline={generator.offline}
+          offlineLabel={generator.offlineLabel}
+          plan={generator.plan}
+          planWeek={generator.planWeek}
+          progress={generator.progress}
+          selected={generator.selected}
+          onClose={onClose}
+          onInsert={generator.handleInsert}
+          onToggle={generator.toggle}
+        />
+      </DialogContent>
+    </Dialog>
   );
 }

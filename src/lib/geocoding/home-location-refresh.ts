@@ -22,9 +22,7 @@ export const HOME_LOCATION_MOVE_METERS = 2_000;
  *   (a denial fails the callback without a prompt).
  * - `denied` / `prompt` — do not call; would either fail or re-prompt.
  */
-export function canAttemptSilentGeolocation(
-  permission: PermissionState | 'unknown',
-): boolean {
+export function canAttemptSilentGeolocation(permission: PermissionState | 'unknown'): boolean {
   return permission === 'granted' || permission === 'unknown';
 }
 
@@ -35,17 +33,14 @@ export function shouldRefreshHomeLocation(
   nowMs: number,
   intervalMs = HOME_LOCATION_REFRESH_MS,
 ): boolean {
-  if (lastRefreshAtMs == null) return true;
+  if ((lastRefreshAtMs === undefined || lastRefreshAtMs === null)) {
+    return true;
+  }
   return nowMs - lastRefreshAtMs >= intervalMs;
 }
 
 /** Great-circle distance in metres (haversine). */
-export function distanceMeters(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number,
-): number {
+export function distanceMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const toRad = (deg: number) => (deg * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
   const dLng = toRad(lng2 - lng1);
@@ -56,13 +51,11 @@ export function distanceMeters(
 }
 
 export function hasMovedSignificantly(
-  prevLat: number,
-  prevLng: number,
-  nextLat: number,
-  nextLng: number,
+  prev: { lat: number; lng: number },
+  next: { lat: number; lng: number },
   minMeters = HOME_LOCATION_MOVE_METERS,
 ): boolean {
-  return distanceMeters(prevLat, prevLng, nextLat, nextLng) >= minMeters;
+  return distanceMeters(prev.lat, prev.lng, next.lat, next.lng) >= minMeters;
 }
 
 export const HOME_LOCATION_REFRESH_STORAGE_KEY = 'sharpit:home-location:last-refresh-ms';
@@ -72,9 +65,13 @@ export function readLastHomeLocationRefreshMs(
     ? localStorage
     : null,
 ): number | null {
-  if (!storage) return null;
+  if (!storage) {
+    return null;
+  }
   const raw = storage.getItem(HOME_LOCATION_REFRESH_STORAGE_KEY);
-  if (!raw) return null;
+  if (!raw) {
+    return null;
+  }
   const value = Number(raw);
   return Number.isFinite(value) ? value : null;
 }

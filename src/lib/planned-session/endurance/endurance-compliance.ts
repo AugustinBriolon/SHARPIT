@@ -11,6 +11,7 @@
  * into a failed session.
  */
 import type { EndurancePrescription } from '@/lib/planned-session/endurance/endurance-prescription';
+import { isSet } from '@/lib/util/value';
 import type { StepSegment } from '@/lib/planned-session/endurance/endurance-segmentation';
 import { segmentEnduranceActivity } from '@/lib/planned-session/endurance/endurance-segmentation';
 import {
@@ -70,12 +71,16 @@ function executedRatioOf(
   actualSec: number,
   plannedSec: number | null,
 ): number {
-  if (segment.boundary !== 'truncated') return 1;
+  if (segment.boundary !== 'truncated') {
+    return 1;
+  }
 
-  if (plannedSec != null && plannedSec > 0) return Math.min(1, actualSec / plannedSec);
+  if (isSet(plannedSec) && plannedSec > 0) {
+    return Math.min(1, actualSec / plannedSec);
+  }
 
   const { duration } = segment.ref.step;
-  if (duration.type === 'distance' && segment.startM != null && segment.endM != null) {
+  if (duration.type === 'distance' && isSet(segment.startM) && isSet(segment.endM)) {
     return Math.min(1, Math.max(0, segment.endM - segment.startM) / duration.meters);
   }
 
@@ -83,26 +88,49 @@ function executedRatioOf(
   return 1;
 }
 
+const METRIC_BAND_CHECKERS: Record<
+  ResolvedTarget['metric'],
+  (sample: StreamSample, target: ResolvedTarget) => boolean | null
+> = {
+  pace: (sample, target) => {
+    if (target.metric !== 'pace') {
+      return null;
+    }
+    if (sample.speed === undefined || sample.speed === null || sample.speed <= 0) {
+      return null;
+    }
+    return sample.speed >= target.speedMsMin && sample.speed <= target.speedMsMax;
+  },
+  hr: (sample, target) => {
+    if (target.metric !== 'hr') {
+      return null;
+    }
+    return sample.hr === undefined || sample.hr === null
+      ? null
+      : sample.hr >= target.bpmMin && sample.hr <= target.bpmMax;
+  },
+  power: (sample, target) => {
+    if (target.metric !== 'power') {
+      return null;
+    }
+    return sample.watts === undefined || sample.watts === null
+      ? null
+      : sample.watts >= target.wattsMin && sample.watts <= target.wattsMax;
+  },
+  cadence: (sample, target) => {
+    if (target.metric !== 'cadence') {
+      return null;
+    }
+    return sample.cadence === undefined || sample.cadence === null
+      ? null
+      : sample.cadence >= target.min && sample.cadence <= target.max;
+  },
+  none: () => null,
+};
+
 /** Is this sample inside the band? Null when the sample carries no usable signal. */
 function sampleInBand(sample: StreamSample, target: ResolvedTarget): boolean | null {
-  switch (target.metric) {
-    case 'pace': {
-      if (sample.speed == null || sample.speed <= 0) return null;
-      return sample.speed >= target.speedMsMin && sample.speed <= target.speedMsMax;
-    }
-    case 'hr':
-      return sample.hr == null ? null : sample.hr >= target.bpmMin && sample.hr <= target.bpmMax;
-    case 'power':
-      return sample.watts == null
-        ? null
-        : sample.watts >= target.wattsMin && sample.watts <= target.wattsMax;
-    case 'cadence':
-      return sample.cadence == null
-        ? null
-        : sample.cadence >= target.min && sample.cadence <= target.max;
-    default:
-      return null;
-  }
+  return METRIC_BAND_CHECKERS[target.metric](sample, target);
 }
 
 function samplesWithin(
@@ -119,19 +147,27 @@ function judgeStep(
   sport: EndurancePrescription['sport'],
 ): { inBandRatio: number | null; unjudgedReason: StepCompliance['unjudgedReason'] } {
   const { resolved } = resolveEnduranceTarget(segment.ref.step.target, thresholds, sport);
-  if (resolved.metric === 'none') return { inBandRatio: null, unjudgedReason: 'no-target' };
+  if (resolved.metric === 'none') {
+    return { inBandRatio: null, unjudgedReason: 'no-target' };
+  }
 
   const window = samplesWithin(samples, segment);
   let usable = 0;
   let inside = 0;
   for (const sample of window) {
     const verdict = sampleInBand(sample, resolved);
-    if (verdict == null) continue;
+    if (verdict === undefined || verdict === null) {
+      continue;
+    }
     usable += 1;
-    if (verdict) inside += 1;
+    if (verdict) {
+      inside += 1;
+    }
   }
 
-  if (usable === 0) return { inBandRatio: null, unjudgedReason: 'no-signal' };
+  if (usable === 0) {
+    return { inBandRatio: null, unjudgedReason: 'no-signal' };
+  }
   return { inBandRatio: inside / usable, unjudgedReason: null };
 }
 
@@ -150,7 +186,9 @@ export function computeEnduranceCompliance(input: {
     prescription: input.prescription,
     samples: input.samples,
   });
-  if (!segmentation) return null;
+  if (!segmentation) {
+    return null;
+  }
 
   const steps: StepCompliance[] = segmentation.segments.map((segment) => {
     const actualSec = Math.max(0, segment.endSec - segment.startSec);
@@ -182,7 +220,7 @@ export function computeEnduranceCompliance(input: {
     segmentation.prescribedCount > 0 ? executedWork / segmentation.prescribedCount : 0;
 
   // Weighted by time: a twenty-second stride should not weigh like a five-minute block.
-  const judged = steps.filter((step) => step.inBandRatio != null);
+  const judged = steps.filter((step) => isSet(step.inBandRatio));
   const judgedSeconds = judged.reduce((total, step) => total + Math.max(1, step.actualSec), 0);
   const adherence =
     judged.length > 0
@@ -193,7 +231,7 @@ export function computeEnduranceCompliance(input: {
       : null;
 
   const score =
-    adherence == null
+    adherence === undefined || adherence === null
       ? Math.round(coverage * 100)
       : Math.round((WEIGHT_COVERAGE * coverage + WEIGHT_ADHERENCE * adherence) * 100);
 

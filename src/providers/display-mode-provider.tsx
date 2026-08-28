@@ -42,7 +42,9 @@ export function DisplayModeProvider({ children }: { children: ReactNode }) {
 
   const demoOverride = useSyncExternalStore(
     (onStoreChange) => {
-      if (typeof window === 'undefined') return () => {};
+      if (typeof window === 'undefined') {
+        return () => {};
+      }
       const handler = () => onStoreChange();
       window.addEventListener('sharpit:demo-display-mode', handler);
       window.addEventListener('storage', handler);

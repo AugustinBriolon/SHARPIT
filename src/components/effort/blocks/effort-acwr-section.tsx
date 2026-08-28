@@ -96,7 +96,9 @@ export function EffortAcwrSection({
   weeklyLoad: number;
   chronicWeeklyAvg: number | null;
 }) {
-  if (acwr <= 0) return null;
+  if (acwr <= 0) {
+    return null;
+  }
 
   return (
     <DrillDownSectionCard>
@@ -110,7 +112,7 @@ export function EffortAcwrSection({
             {weeklyLoad > 0 ? `${weeklyLoad} TSS` : '—'}
           </p>
         </li>
-        {chronicWeeklyAvg != null ? (
+        {chronicWeeklyAvg !== null ? (
           <li className="flex items-baseline justify-between gap-4 py-3">
             <p className="text-foreground text-sm font-medium">Base 42j</p>
             <p className="text-data text-foreground text-sm font-semibold tabular-nums">

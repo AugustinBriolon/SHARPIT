@@ -11,7 +11,9 @@ export function ActivityNarrativeCard({
   analysis,
   narrativeAnalyzedAt,
 }: ActivityNarrativeCardProps) {
-  if (!narrativeAnalyzedAt) return null;
+  if (!narrativeAnalyzedAt) {
+    return null;
+  }
 
   return (
     <section className="bg-analysis-surface-alt rounded-analysis-lg flex h-full flex-col space-y-3 px-5 py-5 sm:px-6 sm:py-6">

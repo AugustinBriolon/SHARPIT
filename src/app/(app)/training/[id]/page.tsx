@@ -35,51 +35,37 @@ const NARRATIVE_TYPES = new Set<ActivityType>([
   ActivityType.SWIM,
 ]);
 
-async function ActivityDetailBody({ id }: { id: string }) {
-  const athleteId = await getCurrentAthleteId();
-  // Start independent fetches immediately — do not wait for activity first.
-  const activityPromise = getActivityById(athleteId, id);
-  const goalValidationsPromise = getGoalAchievementsForActivity(id);
-  const performanceRecordsPromise = getPerformanceRecordsForActivity(athleteId, id);
+type ActivityDetail = NonNullable<Awaited<ReturnType<typeof getActivityById>>>;
 
-  const activity = await activityPromise;
-  if (!activity) notFound();
+function buildHikeSummaryForActivity(activity: ActivityDetail) {
+  if (activity.type !== ActivityType.HIKE) {
+    return null;
+  }
+  return buildHikeOvernightSummary({
+    date: activity.date,
+    duration: activity.duration,
+    weather: activity.weather,
+    load: activity.load,
+    observedLocationLabel: activity.observedLocationLabel,
+    hikeMetrics: activity.hikeMetrics
+      ? {
+          distanceM: activity.hikeMetrics.distanceM,
+          elevationM: activity.hikeMetrics.elevationM,
+          elevationLossM: activity.hikeMetrics.elevationLossM,
+        }
+      : null,
+  });
+}
 
-  const isStrength = activity.type === ActivityType.STRENGTH;
-  const isTriathlon = activity.type === ActivityType.TRIATHLON;
-  const isHike = activity.type === ActivityType.HIKE;
-  const hikeSummary = isHike
-    ? buildHikeOvernightSummary({
-        date: activity.date,
-        duration: activity.duration,
-        weather: activity.weather,
-        load: activity.load,
-        observedLocationLabel: activity.observedLocationLabel,
-        hikeMetrics: activity.hikeMetrics
-          ? {
-              distanceM: activity.hikeMetrics.distanceM,
-              elevationM: activity.hikeMetrics.elevationM,
-              elevationLossM: activity.hikeMetrics.elevationLossM,
-            }
-          : null,
-      })
-    : null;
-
-  // Legs depend on activity; goals/records already started above.
-  const [multisportLegs, goalValidations, performanceRecords] = await Promise.all([
-    isTriathlon ? getMultisportLegsForActivity(athleteId, activity) : Promise.resolve(null),
-    goalValidationsPromise,
-    performanceRecordsPromise,
-  ]);
-  const coachEnabled = isCoachConfigured();
-  const specs = buildActivitySpecs(activity);
-  const strengthStats = buildStrengthStats(activity);
+function buildCoachNarrativePanel(activity: ActivityDetail, coachEnabled: boolean) {
   const showCoachPanel =
     coachEnabled &&
     NARRATIVE_TYPES.has(activity.type) &&
     isEligibleForActivityNarrative(new Date(activity.date));
-
-  const coachPanel = showCoachPanel ? (
+  if (!showCoachPanel) {
+    return undefined;
+  }
+  return (
     <ActivityNarrativeSection
       activityDate={activity.date}
       activityId={activity.id}
@@ -88,8 +74,65 @@ async function ActivityDetailBody({ id }: { id: string }) {
       narrativeAnalysis={activity.narrativeAnalysis}
       narrativeAnalyzedAt={activity.narrativeAnalyzedAt}
     />
-  ) : undefined;
+  );
+}
 
+function ActivityDetailInsightsSection({
+  activity,
+  coachPanel,
+  isTriathlon,
+}: {
+  activity: ActivityDetail;
+  coachPanel: ReturnType<typeof buildCoachNarrativePanel>;
+  isTriathlon: boolean;
+}) {
+  if (isTriathlon) {
+    return (
+      <>
+        {coachPanel}
+        <ActivityDetailInsights activityId={activity.id} type={activity.type} isTriathlon />
+      </>
+    );
+  }
+  if (activity.type === ActivityType.STRENGTH) {
+    return null;
+  }
+  return (
+    <ActivityDetailInsights
+      activityId={activity.id}
+      coachPanel={coachPanel}
+      expectMap={activityDetailExpectsMap(activity)}
+      isTriathlon={false}
+      type={activity.type}
+    />
+  );
+}
+
+function ActivityDetailContent({
+  activity,
+  isStrength,
+  isTriathlon,
+  isHike,
+  hikeSummary,
+  multisportLegs,
+  goalValidations,
+  performanceRecords,
+  strengthStats,
+  coachPanel,
+  specs,
+}: {
+  activity: ActivityDetail;
+  isStrength: boolean;
+  isTriathlon: boolean;
+  isHike: boolean;
+  hikeSummary: ReturnType<typeof buildHikeSummaryForActivity>;
+  multisportLegs: Awaited<ReturnType<typeof getMultisportLegsForActivity>> | null;
+  goalValidations: Awaited<ReturnType<typeof getGoalAchievementsForActivity>>;
+  performanceRecords: Awaited<ReturnType<typeof getPerformanceRecordsForActivity>>;
+  strengthStats: ReturnType<typeof buildStrengthStats>;
+  coachPanel: ReturnType<typeof buildCoachNarrativePanel>;
+  specs: ReturnType<typeof buildActivitySpecs>;
+}) {
   return (
     <>
       <ActivityDetailHeader
@@ -122,7 +165,6 @@ async function ActivityDetailBody({ id }: { id: string }) {
           strengthStats={strengthStats}
         />
 
-        {/* Strength: exercises are the main visual plane (map equivalent). */}
         {isStrength ? (
           <ActivityStrengthExercises
             activity={{ id: activity.id, strengthSets: activity.strengthSets }}
@@ -136,27 +178,61 @@ async function ActivityDetailBody({ id }: { id: string }) {
         <ActivityGoalValidationsCard validations={goalValidations} />
       </div>
 
-      {isTriathlon && multisportLegs && <TriathlonLegsPanel legs={multisportLegs} />}
+      {isTriathlon && multisportLegs ? <TriathlonLegsPanel legs={multisportLegs} /> : null}
 
-      {isTriathlon ? (
-        <>
-          {coachPanel}
-          <ActivityDetailInsights activityId={activity.id} type={activity.type} isTriathlon />
-        </>
-      ) : (
-        !isStrength && (
-          <ActivityDetailInsights
-            activityId={activity.id}
-            coachPanel={coachPanel}
-            expectMap={activityDetailExpectsMap(activity)}
-            isTriathlon={false}
-            type={activity.type}
-          />
-        )
-      )}
+      <ActivityDetailInsightsSection
+        activity={activity}
+        coachPanel={coachPanel}
+        isTriathlon={isTriathlon}
+      />
 
       <ActivitySpecsNotes activity={activity} specs={specs} />
     </>
+  );
+}
+
+async function ActivityDetailBody({ id }: { id: string }) {
+  const athleteId = await getCurrentAthleteId();
+  // Start independent fetches immediately — do not wait for activity first.
+  const activityPromise = getActivityById(athleteId, id);
+  const goalValidationsPromise = getGoalAchievementsForActivity(id);
+  const performanceRecordsPromise = getPerformanceRecordsForActivity(athleteId, id);
+
+  const activity = await activityPromise;
+  if (!activity) {
+    notFound();
+  }
+
+  const isStrength = activity.type === ActivityType.STRENGTH;
+  const isTriathlon = activity.type === ActivityType.TRIATHLON;
+  const isHike = activity.type === ActivityType.HIKE;
+  const hikeSummary = buildHikeSummaryForActivity(activity);
+
+  // Legs depend on activity; goals/records already started above.
+  const [multisportLegs, goalValidations, performanceRecords] = await Promise.all([
+    isTriathlon ? getMultisportLegsForActivity(athleteId, activity) : Promise.resolve(null),
+    goalValidationsPromise,
+    performanceRecordsPromise,
+  ]);
+  const coachEnabled = isCoachConfigured();
+  const specs = buildActivitySpecs(activity);
+  const strengthStats = buildStrengthStats(activity);
+  const coachPanel = buildCoachNarrativePanel(activity, coachEnabled);
+
+  return (
+    <ActivityDetailContent
+      activity={activity}
+      isStrength={isStrength}
+      isTriathlon={isTriathlon}
+      isHike={isHike}
+      hikeSummary={hikeSummary}
+      multisportLegs={multisportLegs}
+      goalValidations={goalValidations}
+      performanceRecords={performanceRecords}
+      strengthStats={strengthStats}
+      coachPanel={coachPanel}
+      specs={specs}
+    />
   );
 }
 

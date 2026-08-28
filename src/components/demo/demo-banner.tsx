@@ -8,7 +8,9 @@ import { awaitRequest } from '@/lib/next/await-request';
  * slot since AppShell is a Client Component. Caller must wrap in `<Suspense>`. */
 export async function DemoBanner() {
   await awaitRequest();
-  if (!(await isDemoSession())) return null;
+  if (!(await isDemoSession())) {
+    return null;
+  }
 
   return (
     <div

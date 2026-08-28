@@ -15,8 +15,12 @@ export function parseSessionAnalysis(value: unknown): SessionAnalysis | null {
 }
 
 export function sessionScoreColor(score: number): string {
-  if (score >= 85) return 'text-primary';
-  if (score >= 60) return 'text-signal-caution';
+  if (score >= 85) {
+    return 'text-primary';
+  }
+  if (score >= 60) {
+    return 'text-signal-caution';
+  }
   return 'text-signal-risk';
 }
 

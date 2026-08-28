@@ -5,7 +5,9 @@ import type { SettingsHubStatus } from '@/lib/settings/hub-status';
 
 async function fetchHubStatus(): Promise<SettingsHubStatus> {
   const res = await fetch('/api/presentation/settings-hub');
-  if (!res.ok) throw new Error('Failed to load settings hub status');
+  if (!res.ok) {
+    throw new Error('Failed to load settings hub status');
+  }
   return res.json();
 }
 

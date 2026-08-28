@@ -18,7 +18,9 @@ type CatalogIndex = {
 let cachedIndex: CatalogIndex | null = null;
 
 function getIndex(): CatalogIndex {
-  if (cachedIndex) return cachedIndex;
+  if (cachedIndex) {
+    return cachedIndex;
+  }
   const byId = new Map<string, ExerciseCatalogEntry>();
   const byName = new Map<string, ExerciseCatalogEntry>();
   for (const entry of CATALOG) {
@@ -44,48 +46,36 @@ function toResolved(entry: ExerciseCatalogEntry): ResolvedExerciseMedia {
 
 function tokenScore(queryTokens: string[], candidateName: string): number {
   const cand = new Set(exerciseTokens(candidateName));
-  if (cand.size === 0 || queryTokens.length === 0) return 0;
+  if (cand.size === 0 || queryTokens.length === 0) {
+    return 0;
+  }
   let hit = 0;
   for (const t of queryTokens) {
-    if (cand.has(t)) hit += 1;
+    if (cand.has(t)) {
+      hit += 1;
+    }
   }
   return hit / Math.max(queryTokens.length, cand.size);
 }
 
-/**
- * Resolve a free-text / Garmin exercise label to catalog media.
- * Soft-fail: returns null when confidence is too low.
- */
-export function resolveExerciseMedia(rawLabel: string): ResolvedExerciseMedia | null {
-  const key = normalizeExerciseKey(rawLabel);
-  if (!key) return null;
-
-  const { byId, byName } = getIndex();
-
+function lookupCatalogEntry(
+  key: string,
+  byId: Map<string, ExerciseCatalogEntry>,
+  byName: Map<string, ExerciseCatalogEntry>,
+): ResolvedExerciseMedia | null {
   const aliasId = EXERCISE_ALIASES[key];
   if (aliasId) {
     const aliased = byId.get(aliasId);
-    if (aliased) return toResolved(aliased);
+    if (aliased) {
+      return toResolved(aliased);
+    }
   }
 
   const exact = byName.get(key);
-  if (exact) return toResolved(exact);
+  return exact ? toResolved(exact) : null;
+}
 
-  // Drop leading "exercise type" noise from rare raw codes
-  const stripped = key.replace(/^exercise type /, '');
-  if (stripped !== key) {
-    const alias2 = EXERCISE_ALIASES[stripped];
-    if (alias2) {
-      const aliased = byId.get(alias2);
-      if (aliased) return toResolved(aliased);
-    }
-    const exact2 = byName.get(stripped);
-    if (exact2) return toResolved(exact2);
-  }
-
-  const tokens = exerciseTokens(key);
-  if (tokens.length < 2) return null;
-
+function resolveByTokenScore(tokens: string[]): ResolvedExerciseMedia | null {
   let best: ExerciseCatalogEntry | null = null;
   let bestScore = 0;
   for (const entry of CATALOG) {
@@ -96,9 +86,38 @@ export function resolveExerciseMedia(rawLabel: string): ResolvedExerciseMedia | 
     }
   }
 
-  // Require solid overlap — prefer null over wrong GIF
-  if (!best || bestScore < 0.6) return null;
+  if (!best || bestScore < 0.6) {
+    return null;
+  }
   return toResolved(best);
+}
+
+export function resolveExerciseMedia(rawLabel: string): ResolvedExerciseMedia | null {
+  const key = normalizeExerciseKey(rawLabel);
+  if (!key) {
+    return null;
+  }
+
+  const { byId, byName } = getIndex();
+  const direct = lookupCatalogEntry(key, byId, byName);
+  if (direct) {
+    return direct;
+  }
+
+  const stripped = key.replace(/^exercise type /, '');
+  if (stripped !== key) {
+    const strippedMatch = lookupCatalogEntry(stripped, byId, byName);
+    if (strippedMatch) {
+      return strippedMatch;
+    }
+  }
+
+  const tokens = exerciseTokens(key);
+  if (tokens.length < 2) {
+    return null;
+  }
+
+  return resolveByTokenScore(tokens);
 }
 
 /** Test helper — catalog size without bundling concerns. */
@@ -110,7 +129,9 @@ export function exerciseCatalogSize(): number {
 export function getExerciseMediaByCatalogId(
   catalogId: string | null | undefined,
 ): ResolvedExerciseMedia | null {
-  if (!catalogId) return null;
+  if (!catalogId) {
+    return null;
+  }
   const entry = getIndex().byId.get(catalogId);
   return entry ? toResolved(entry) : null;
 }

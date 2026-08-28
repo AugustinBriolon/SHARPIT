@@ -1,5 +1,13 @@
 import { IntegrationsHub } from '@/components/settings/integrations/hub';
 import type { IntegrationsPayload } from '@/components/settings/integrations/types';
+import {
+  buildGarminPayloadSection,
+  buildGooglePayloadSection,
+  buildMfpPayloadSection,
+  buildRenphoPayloadSection,
+  buildStravaPayloadSection,
+  buildWithingsPayloadSection,
+} from '@/components/settings/integrations/hub-payload-helpers';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
 import { isGoogleConfigured } from '@/lib/integrations/google/google';
@@ -83,87 +91,42 @@ async function buildIntegrationsPayload(
   const { strava, google, googleDetail, withings, withingsDetail } = params;
 
   return {
-    strava: {
+    strava: buildStravaPayloadSection({
+      account: stravaAccount,
       configured,
-      account: stravaAccount
-        ? {
-            firstName: stravaAccount.firstName,
-            lastName: stravaAccount.lastName,
-            avatarUrl: stravaAccount.avatarUrl,
-            lastSyncAt: stravaAccount.lastSyncAt?.toISOString() ?? null,
-          }
-        : null,
       needsReconnect: Boolean(stravaAccount) && !isOAuthAccountConnected(stravaAccount),
-      statusMessage: strava ? statusMessages[strava] : undefined,
-    },
-    garmin: {
-      account: garminAccount
-        ? {
-            displayName: garminAccount.displayName,
-            fullName: garminAccount.fullName,
-            lastSyncAt: garminAccount.lastSyncAt?.toISOString() ?? null,
-          }
-        : null,
-      needsReconnect: Boolean(garminAccount) && !isGarminAccountConnected(garminAccount),
-    },
-    withings: {
+      status: strava,
+      statusMessages,
+    }),
+    garmin: buildGarminPayloadSection(
+      garminAccount,
+      Boolean(garminAccount) && !isGarminAccountConnected(garminAccount),
+    ),
+    withings: buildWithingsPayloadSection({
+      account: withingsAccount,
       configured: withingsConfigured,
-      account: withingsAccount
-        ? {
-            displayName: withingsAccount.displayName,
-            lastSyncAt: withingsAccount.lastSyncAt?.toISOString() ?? null,
-          }
-        : null,
       needsReconnect: Boolean(withingsAccount) && !isOAuthAccountConnected(withingsAccount),
-      statusMessage: withings
-        ? [
-            withingsStatusMessages[withings],
-            withings === 'error' && withingsDetail ? `Détail : ${withingsDetail}` : null,
-          ]
-            .filter(Boolean)
-            .join(' ')
-        : undefined,
-    },
-    renpho: {
-      account: renphoAccount
-        ? {
-            email: renphoAccount.email,
-            displayName: renphoAccount.displayName,
-            lastSyncAt: renphoAccount.lastSyncAt?.toISOString() ?? null,
-          }
-        : null,
-      needsReconnect: Boolean(renphoAccount) && !isRenphoAccountConnected(renphoAccount),
-    },
-    google: {
+      status: withings,
+      detail: withingsDetail,
+      statusMessages: withingsStatusMessages,
+    }),
+    renpho: buildRenphoPayloadSection(
+      renphoAccount,
+      Boolean(renphoAccount) && !isRenphoAccountConnected(renphoAccount),
+    ),
+    google: buildGooglePayloadSection({
+      account: googleAccount,
       configured: googleConfigured,
-      account: googleAccount
-        ? {
-            email: googleAccount.email,
-            targetCalendarId: googleAccount.targetCalendarId,
-            targetCalendarName: googleAccount.targetCalendarName,
-            lastSyncAt: googleAccount.lastSyncAt?.toISOString() ?? null,
-          }
-        : null,
       needsReconnect: Boolean(googleAccount) && !isGoogleConnected(googleAccount),
-      statusMessage: google
-        ? [
-            googleStatusMessages[google],
-            google === 'error' && googleDetail ? `Détail : ${googleDetail}` : null,
-          ]
-            .filter(Boolean)
-            .join(' ')
-        : undefined,
-    },
-    myfitnesspal: {
-      configured: mfpConfigured,
-      account: mfpAccount
-        ? {
-            displayName: mfpAccount.displayName,
-            lastSyncAt: mfpAccount.lastSyncAt?.toISOString() ?? null,
-          }
-        : null,
-      needsReconnect: Boolean(mfpAccount) && !isMfpAccountConnected(mfpAccount),
-    },
+      status: google,
+      detail: googleDetail,
+      statusMessages: googleStatusMessages,
+    }),
+    myfitnesspal: buildMfpPayloadSection(
+      mfpAccount,
+      mfpConfigured,
+      Boolean(mfpAccount) && !isMfpAccountConnected(mfpAccount),
+    ),
   };
 }
 

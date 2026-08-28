@@ -8,6 +8,7 @@
  */
 
 import type { ActivityType, SessionIntensity } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { adaptMorningSessionDescription } from '@/lib/morning-recalibration/adapt-session-description';
 import {
   isEnduranceMorningSport,
@@ -63,79 +64,386 @@ export function isMorningRecalibrationEligibleSport(type: ActivityType): boolean
 
 function stepIntensity(current: SessionIntensity, delta: -1 | 1): SessionIntensity | null {
   const idx = intensityOrder.indexOf(current);
-  if (idx < 0) return null;
+  if (idx < 0) {
+    return null;
+  }
   const next = intensityOrder[idx + delta];
   return next ?? null;
 }
 
-function summarizeChange(
+type ChangeSummaryInput = {
+  type: ActivityType;
+  from: SessionIntensity | null;
+  to: SessionIntensity | null;
+  fromLoad: number | null;
+  toLoad: number | null;
+  fromDuration: number | null;
+  toDuration: number | null;
+  structureChanged: boolean;
+};
+
+function summarizeIntensityChange(
   type: ActivityType,
-  from: SessionIntensity | null,
-  to: SessionIntensity | null,
-  fromLoad: number | null,
-  toLoad: number | null,
+  from: SessionIntensity,
+  to: SessionIntensity,
+): string {
+  const fromLabel = morningIntensityLabel(type, from) ?? from;
+  const toLabel = morningIntensityLabel(type, to) ?? to;
+  return `${fromLabel} → ${toLabel}`;
+}
+
+function summarizeLoadChange(fromLoad: number | null, toLoad: number | null): string | null {
+  if (
+    fromLoad === undefined ||
+    fromLoad === null ||
+    toLoad === undefined ||
+    toLoad === null ||
+    fromLoad === toLoad
+  ) {
+    return null;
+  }
+  return `charge ${Math.round(fromLoad)} → ${Math.round(toLoad)}`;
+}
+
+function summarizeDurationChange(
   fromDuration: number | null,
   toDuration: number | null,
-  structureChanged: boolean,
-): string {
+): string | null {
+  if (
+    fromDuration === undefined ||
+    fromDuration === null ||
+    toDuration === undefined ||
+    toDuration === null ||
+    fromDuration === toDuration
+  ) {
+    return null;
+  }
+  return `${fromDuration} → ${toDuration} min`;
+}
+
+function summarizeChange(input: ChangeSummaryInput): string {
   const parts: string[] = [];
-  if (from && to && from !== to) {
-    const fromLabel = morningIntensityLabel(type, from) ?? from;
-    const toLabel = morningIntensityLabel(type, to) ?? to;
-    parts.push(`${fromLabel} → ${toLabel}`);
+  if (input.from && input.to && input.from !== input.to) {
+    parts.push(summarizeIntensityChange(input.type, input.from, input.to));
   }
-  if (fromLoad != null && toLoad != null && fromLoad !== toLoad) {
-    parts.push(`charge ${Math.round(fromLoad)} → ${Math.round(toLoad)}`);
+  const loadPart = summarizeLoadChange(input.fromLoad, input.toLoad);
+  if (loadPart) {
+    parts.push(loadPart);
   }
-  if (fromDuration != null && toDuration != null && fromDuration !== toDuration) {
-    parts.push(`${fromDuration} → ${toDuration} min`);
+  const durationPart = summarizeDurationChange(input.fromDuration, input.toDuration);
+  if (durationPart) {
+    parts.push(durationPart);
   }
-  if (structureChanged) parts.push('déroulé adapté');
+  if (input.structureChanged) {
+    parts.push('déroulé adapté');
+  }
   return parts.join(' · ') || 'Ajustement de séance';
 }
 
-function withDescriptions(
-  type: ActivityType,
-  direction: MorningRecalibrationDirection,
-  fromDescription: string | null,
-  base: Omit<
-    MorningRecalibrationProposal,
-    'fromDescription' | 'toDescription' | 'changeSummary'
-  > & {
-    changeSummaryParts?: never;
-  },
-  changeSummaryArgs: {
-    from: SessionIntensity | null;
-    to: SessionIntensity | null;
-    fromLoad: number | null;
-    toLoad: number | null;
-    fromDuration: number | null;
-    toDuration: number | null;
-  },
-): MorningRecalibrationProposal {
+type ProposalDraft = Omit<
+  MorningRecalibrationProposal,
+  'fromDescription' | 'toDescription' | 'changeSummary'
+>;
+
+type WithDescriptionsInput = {
+  type: ActivityType;
+  direction: MorningRecalibrationDirection;
+  fromDescription: string | null;
+  base: ProposalDraft;
+  changeSummary: Omit<ChangeSummaryInput, 'type' | 'structureChanged'>;
+};
+
+function withDescriptions(input: WithDescriptionsInput): MorningRecalibrationProposal {
   const toDescription = adaptMorningSessionDescription({
-    type,
-    description: fromDescription,
-    direction,
+    type: input.type,
+    description: input.fromDescription,
+    direction: input.direction,
   });
   const structureChanged =
-    isStrengthLikeMorningSport(type) && (toDescription ?? '') !== (fromDescription?.trim() || '');
+    isStrengthLikeMorningSport(input.type) &&
+    (toDescription ?? '') !== (input.fromDescription?.trim() || '');
 
   return {
-    ...base,
-    fromDescription: fromDescription?.trim() || null,
+    ...input.base,
+    fromDescription: input.fromDescription?.trim() || null,
     toDescription,
-    changeSummary: summarizeChange(
-      type,
-      changeSummaryArgs.from,
-      changeSummaryArgs.to,
-      changeSummaryArgs.fromLoad,
-      changeSummaryArgs.toLoad,
-      changeSummaryArgs.fromDuration,
-      changeSummaryArgs.toDuration,
+    changeSummary: summarizeChange({
+      type: input.type,
       structureChanged,
-    ),
+      ...input.changeSummary,
+    }),
   };
+}
+
+type BuildProposalInput = {
+  session: MorningRecalibrationSessionInput;
+  direction: MorningRecalibrationDirection;
+  toIntensity: SessionIntensity;
+  toDuration: number | null;
+  toLoad: number | null;
+  why: string;
+};
+
+function buildProposal(input: BuildProposalInput): MorningRecalibrationProposal {
+  const { session, direction, toIntensity, toDuration, toLoad, why } = input;
+  return withDescriptions({
+    type: session.type,
+    direction,
+    fromDescription: session.description,
+    base: {
+      sessionId: session.id,
+      direction,
+      fromIntensity: session.intensity,
+      toIntensity,
+      fromDurationMin: session.durationMin,
+      toDurationMin: toDuration,
+      fromLoad: session.load,
+      toLoad,
+      why,
+    },
+    changeSummary: {
+      from: session.intensity,
+      to: toIntensity,
+      fromLoad: session.load,
+      toLoad,
+      fromDuration: session.durationMin,
+      toDuration,
+    },
+  });
+}
+
+function hasEligibleSession(
+  session: MorningRecalibrationSessionInput | null,
+): session is MorningRecalibrationSessionInput {
+  if (!session || session.completed || session.activityId) {
+    return false;
+  }
+  return isMorningRecalibrationEligibleSport(session.type) && isSet(session.intensity);
+}
+
+function hasEligibleDecision(
+  decision: MorningRecalibrationDecisionInput | null,
+): decision is MorningRecalibrationDecisionInput & {
+  overallVerdict: string;
+  confidenceTier: string;
+} {
+  return Boolean(decision?.overallVerdict && decision.confidenceTier !== 'INSUFFICIENT');
+}
+
+function isEligibleForRecalibration(input: {
+  wellnessCompleted: boolean;
+  session: MorningRecalibrationSessionInput | null;
+  decision: MorningRecalibrationDecisionInput | null;
+}): input is {
+  wellnessCompleted: true;
+  session: MorningRecalibrationSessionInput;
+  decision: MorningRecalibrationDecisionInput & {
+    overallVerdict: string;
+    confidenceTier: string;
+  };
+} {
+  return (
+    input.wellnessCompleted &&
+    hasEligibleSession(input.session) &&
+    hasEligibleDecision(input.decision)
+  );
+}
+
+function protectWhy(strengthLike: boolean, verdict: string, capacity: string | null): string {
+  const protectVerdict = verdict === 'RECOVER' || verdict === 'CAUTION';
+  if (strengthLike && protectVerdict) {
+    return `Verdict du matin « ${verdict} » — alléger les charges et prioriser le contrôle du mouvement.`;
+  }
+  if (strengthLike) {
+    return 'Capacité légère uniquement — pas de travail exigeant aujourd’hui.';
+  }
+  if (protectVerdict) {
+    return `Verdict du matin « ${verdict} » — baisser l’intensité protège le risque blessure sans abandonner le plan.`;
+  }
+  return 'Capacité légère uniquement — la haute intensité n’est pas cohérente aujourd’hui.';
+}
+
+function buildRestOnlyProposal(
+  session: MorningRecalibrationSessionInput,
+  capacity: string | null,
+): MorningRecalibrationProposal | null {
+  if (capacity !== 'REST_ONLY' || session.intensity === 'RECOVERY') {
+    return null;
+  }
+  const strengthLike = isStrengthLikeMorningSport(session.type);
+  const toDuration = isSet(session.durationMin)
+    ? Math.min(session.durationMin, strengthLike ? 35 : 30)
+    : session.durationMin;
+  const toLoad = isSet(session.load)
+    ? Math.min(Math.round(session.load * 0.35), strengthLike ? 18 : 25)
+    : null;
+  return buildProposal({
+    session,
+    direction: 'DOWN',
+    toIntensity: 'RECOVERY',
+    toDuration,
+    toLoad,
+    why: strengthLike
+      ? 'Capacité du jour limitée au repos — garder mobilité / technique légère, pas de charges.'
+      : 'Capacité du jour limitée au repos — la séance prévue est trop exigeante.',
+  });
+}
+
+function buildHighIntensityDowngrade(
+  session: MorningRecalibrationSessionInput,
+  verdict: string,
+  capacity: string | null,
+): MorningRecalibrationProposal | null {
+  const { intensity, load } = session;
+  if (!intensity || !HIGH_INTENSITY.has(intensity)) {
+    return null;
+  }
+  if (capacity !== 'LIGHT_ONLY' && !PROTECT_VERDICTS.has(verdict)) {
+    return null;
+  }
+  const toLoad = isSet(load) ? Math.round(load * 0.6) : null;
+  return buildProposal({
+    session,
+    direction: 'DOWN',
+    toIntensity: 'ENDURANCE',
+    toDuration: session.durationMin,
+    toLoad,
+    why: protectWhy(isStrengthLikeMorningSport(session.type), verdict, capacity),
+  });
+}
+
+function buildTempoDowngrade(
+  session: MorningRecalibrationSessionInput,
+  verdict: string,
+): MorningRecalibrationProposal | null {
+  if (!PROTECT_VERDICTS.has(verdict) || session.intensity !== 'TEMPO') {
+    return null;
+  }
+  const toIntensity = stepIntensity(session.intensity!, -1);
+  if (!toIntensity) {
+    return null;
+  }
+  const toLoad = isSet(session.load) ? Math.round(session.load * 0.75) : null;
+  const strengthLike = isStrengthLikeMorningSport(session.type);
+  return buildProposal({
+    session,
+    direction: 'DOWN',
+    toIntensity,
+    toDuration: session.durationMin,
+    toLoad,
+    why: strengthLike
+      ? 'Sommeil / récup / ressenti orientent vers la prudence — un cran plus léger, sans exercices lourds.'
+      : 'Sommeil / récup / ressenti orientent vers la prudence — un cran en dessous conserve l’objectif.',
+  });
+}
+
+function buildStrengthEnduranceDowngrade(
+  session: MorningRecalibrationSessionInput,
+  verdict: string,
+): MorningRecalibrationProposal | null {
+  if (
+    !isStrengthLikeMorningSport(session.type) ||
+    !PROTECT_VERDICTS.has(verdict) ||
+    session.intensity !== 'ENDURANCE'
+  ) {
+    return null;
+  }
+  const toLoad = isSet(session.load) ? Math.round(session.load * 0.7) : null;
+  return buildProposal({
+    session,
+    direction: 'DOWN',
+    toIntensity: 'RECOVERY',
+    toDuration: session.durationMin,
+    toLoad,
+    why: 'Prudence du matin — garder mobilité et posture, retirer le travail lesté.',
+  });
+}
+
+function buildRecoveryUpgrade(
+  session: MorningRecalibrationSessionInput,
+  verdict: string,
+): MorningRecalibrationProposal | null {
+  if (!PUSH_VERDICTS.has(verdict) || session.intensity !== 'RECOVERY') {
+    return null;
+  }
+  const strengthLike = isStrengthLikeMorningSport(session.type);
+  const toLoad = isSet(session.load) ? Math.round(session.load * 1.15) : null;
+  return buildProposal({
+    session,
+    direction: 'UP',
+    toIntensity: 'ENDURANCE',
+    toDuration: session.durationMin,
+    toLoad,
+    why: strengthLike
+      ? 'État du matin solide — tu peux viser un travail léger un cran au-dessus de la pure récupération.'
+      : 'État du matin excellent — tu peux viser un cran au-dessus de la récupération prévue.',
+  });
+}
+
+function buildEnduranceUpgrade(
+  session: MorningRecalibrationSessionInput,
+  verdict: string,
+): MorningRecalibrationProposal | null {
+  if (!PUSH_VERDICTS.has(verdict) || session.intensity !== 'ENDURANCE') {
+    return null;
+  }
+  const strengthLike = isStrengthLikeMorningSport(session.type);
+  const toLoad = isSet(session.load) ? Math.round(session.load * 1.12) : null;
+  return buildProposal({
+    session,
+    direction: 'UP',
+    toIntensity: 'TEMPO',
+    toDuration: session.durationMin,
+    toLoad,
+    why: strengthLike
+      ? 'Sommeil et ressenti solides — un cran en modéré reste cadré ; progression de charge seulement si la technique est propre.'
+      : 'Sommeil et ressenti solides — un tempo léger reste cadré par l’objectif long terme.',
+  });
+}
+
+function buildSmartRecoveryUpgrade(
+  session: MorningRecalibrationSessionInput,
+  decision: MorningRecalibrationDecisionInput,
+): MorningRecalibrationProposal | null {
+  if (
+    !SMART_VERDICTS.has(decision.overallVerdict ?? '') ||
+    session.intensity !== 'RECOVERY' ||
+    decision.confidenceTier !== 'HIGH'
+  ) {
+    return null;
+  }
+  const strengthLike = isStrengthLikeMorningSport(session.type);
+  return buildProposal({
+    session,
+    direction: 'UP',
+    toIntensity: 'ENDURANCE',
+    toDuration: session.durationMin,
+    toLoad: session.load,
+    why: strengthLike
+      ? 'État fiable et séance très légère — un passage en travail léger reste prudent.'
+      : 'État fiable et séance très légère — un passage en endurance reste prudent.',
+  });
+}
+
+function resolveMorningProposal(
+  session: MorningRecalibrationSessionInput,
+  decision: MorningRecalibrationDecisionInput & {
+    overallVerdict: string;
+    confidenceTier: string;
+  },
+): MorningRecalibrationProposal | null {
+  const verdict = decision.overallVerdict;
+  const capacity = decision.fatigueTrainingCapacity ?? null;
+
+  return (
+    buildRestOnlyProposal(session, capacity) ??
+    buildHighIntensityDowngrade(session, verdict, capacity) ??
+    buildTempoDowngrade(session, verdict) ??
+    buildStrengthEnduranceDowngrade(session, verdict) ??
+    buildRecoveryUpgrade(session, verdict) ??
+    buildEnduranceUpgrade(session, verdict) ??
+    buildSmartRecoveryUpgrade(session, decision)
+  );
 }
 
 /**
@@ -146,258 +454,11 @@ export function evaluateMorningSessionRecalibration(input: {
   session: MorningRecalibrationSessionInput | null;
   decision: MorningRecalibrationDecisionInput | null;
 }): MorningRecalibrationProposal | null {
-  const { wellnessCompleted, session, decision } = input;
-
-  if (!wellnessCompleted) return null;
-  if (!session || session.completed || session.activityId) return null;
-  if (!isMorningRecalibrationEligibleSport(session.type)) return null;
-  if (!decision?.overallVerdict || decision.confidenceTier === 'INSUFFICIENT') return null;
-  if (session.intensity == null) return null;
-
-  const verdict = decision.overallVerdict;
-  const capacity = decision.fatigueTrainingCapacity ?? null;
-  const { type, intensity, load, durationMin } = session;
-  const fromDescription = session.description;
-  const strengthLike = isStrengthLikeMorningSport(type);
-
-  // ── Downgrade (protect) ─────────────────────────────────────────────
-  if (capacity === 'REST_ONLY' && intensity !== 'RECOVERY') {
-    const toIntensity: SessionIntensity = 'RECOVERY';
-    const toDuration =
-      durationMin != null ? Math.min(durationMin, strengthLike ? 35 : 30) : durationMin;
-    const toLoad = load != null ? Math.min(Math.round(load * 0.35), strengthLike ? 18 : 25) : null;
-    return withDescriptions(
-      type,
-      'DOWN',
-      fromDescription,
-      {
-        sessionId: session.id,
-        direction: 'DOWN',
-        fromIntensity: intensity,
-        toIntensity,
-        fromDurationMin: durationMin,
-        toDurationMin: toDuration,
-        fromLoad: load,
-        toLoad,
-        why: strengthLike
-          ? 'Capacité du jour limitée au repos — garder mobilité / technique légère, pas de charges.'
-          : 'Capacité du jour limitée au repos — la séance prévue est trop exigeante.',
-      },
-      {
-        from: intensity,
-        to: toIntensity,
-        fromLoad: load,
-        toLoad,
-        fromDuration: durationMin,
-        toDuration,
-      },
-    );
+  if (!isEligibleForRecalibration(input)) {
+    return null;
   }
 
-  if (
-    (capacity === 'LIGHT_ONLY' || PROTECT_VERDICTS.has(verdict)) &&
-    HIGH_INTENSITY.has(intensity)
-  ) {
-    const toIntensity: SessionIntensity = 'ENDURANCE';
-    const toLoad = load != null ? Math.round(load * 0.6) : null;
-    const protectVerdict = verdict === 'RECOVER' || verdict === 'CAUTION';
-    let why: string;
-    if (strengthLike && protectVerdict) {
-      why = `Verdict du matin « ${verdict} » — alléger les charges et prioriser le contrôle du mouvement.`;
-    } else if (strengthLike) {
-      why = 'Capacité légère uniquement — pas de travail exigeant aujourd’hui.';
-    } else if (protectVerdict) {
-      why = `Verdict du matin « ${verdict} » — baisser l’intensité protège le risque blessure sans abandonner le plan.`;
-    } else {
-      why = 'Capacité légère uniquement — la haute intensité n’est pas cohérente aujourd’hui.';
-    }
-    return withDescriptions(
-      type,
-      'DOWN',
-      fromDescription,
-      {
-        sessionId: session.id,
-        direction: 'DOWN',
-        fromIntensity: intensity,
-        toIntensity,
-        fromDurationMin: durationMin,
-        toDurationMin: durationMin,
-        fromLoad: load,
-        toLoad,
-        why,
-      },
-      {
-        from: intensity,
-        to: toIntensity,
-        fromLoad: load,
-        toLoad,
-        fromDuration: durationMin,
-        toDuration: durationMin,
-      },
-    );
-  }
-
-  if (PROTECT_VERDICTS.has(verdict) && intensity === 'TEMPO') {
-    const toIntensity = stepIntensity(intensity, -1);
-    if (!toIntensity) return null;
-    const toLoad = load != null ? Math.round(load * 0.75) : null;
-    return withDescriptions(
-      type,
-      'DOWN',
-      fromDescription,
-      {
-        sessionId: session.id,
-        direction: 'DOWN',
-        fromIntensity: intensity,
-        toIntensity,
-        fromDurationMin: durationMin,
-        toDurationMin: durationMin,
-        fromLoad: load,
-        toLoad,
-        why: strengthLike
-          ? 'Sommeil / récup / ressenti orientent vers la prudence — un cran plus léger, sans exercices lourds.'
-          : 'Sommeil / récup / ressenti orientent vers la prudence — un cran en dessous conserve l’objectif.',
-      },
-      {
-        from: intensity,
-        to: toIntensity,
-        fromLoad: load,
-        toLoad,
-        fromDuration: durationMin,
-        toDuration: durationMin,
-      },
-    );
-  }
-
-  // Strength often sits on ENDURANCE (“Léger”) while still carrying loaded work in the text.
-  if (strengthLike && PROTECT_VERDICTS.has(verdict) && intensity === 'ENDURANCE') {
-    const toIntensity: SessionIntensity = 'RECOVERY';
-    const toLoad = load != null ? Math.round(load * 0.7) : null;
-    return withDescriptions(
-      type,
-      'DOWN',
-      fromDescription,
-      {
-        sessionId: session.id,
-        direction: 'DOWN',
-        fromIntensity: intensity,
-        toIntensity,
-        fromDurationMin: durationMin,
-        toDurationMin: durationMin,
-        fromLoad: load,
-        toLoad,
-        why: 'Prudence du matin — garder mobilité et posture, retirer le travail lesté.',
-      },
-      {
-        from: intensity,
-        to: toIntensity,
-        fromLoad: load,
-        toLoad,
-        fromDuration: durationMin,
-        toDuration: durationMin,
-      },
-    );
-  }
-
-  // ── Upgrade (push, conservative) ────────────────────────────────────
-  if (PUSH_VERDICTS.has(verdict) && intensity === 'RECOVERY') {
-    const toIntensity: SessionIntensity = 'ENDURANCE';
-    const toLoad = load != null ? Math.round(load * 1.15) : null;
-    return withDescriptions(
-      type,
-      'UP',
-      fromDescription,
-      {
-        sessionId: session.id,
-        direction: 'UP',
-        fromIntensity: intensity,
-        toIntensity,
-        fromDurationMin: durationMin,
-        toDurationMin: durationMin,
-        fromLoad: load,
-        toLoad,
-        why: strengthLike
-          ? 'État du matin solide — tu peux viser un travail léger un cran au-dessus de la pure récupération.'
-          : 'État du matin excellent — tu peux viser un cran au-dessus de la récupération prévue.',
-      },
-      {
-        from: intensity,
-        to: toIntensity,
-        fromLoad: load,
-        toLoad,
-        fromDuration: durationMin,
-        toDuration: durationMin,
-      },
-    );
-  }
-
-  if (PUSH_VERDICTS.has(verdict) && intensity === 'ENDURANCE') {
-    const toIntensity: SessionIntensity = 'TEMPO';
-    const toLoad = load != null ? Math.round(load * 1.12) : null;
-    return withDescriptions(
-      type,
-      'UP',
-      fromDescription,
-      {
-        sessionId: session.id,
-        direction: 'UP',
-        fromIntensity: intensity,
-        toIntensity,
-        fromDurationMin: durationMin,
-        toDurationMin: durationMin,
-        fromLoad: load,
-        toLoad,
-        why: strengthLike
-          ? 'Sommeil et ressenti solides — un cran en modéré reste cadré ; progression de charge seulement si la technique est propre.'
-          : 'Sommeil et ressenti solides — un tempo léger reste cadré par l’objectif long terme.',
-      },
-      {
-        from: intensity,
-        to: toIntensity,
-        fromLoad: load,
-        toLoad,
-        fromDuration: durationMin,
-        toDuration: durationMin,
-      },
-    );
-  }
-
-  // TRAIN_SMART + very easy session: soft upgrade Recovery → Endurance only
-  if (
-    SMART_VERDICTS.has(verdict) &&
-    intensity === 'RECOVERY' &&
-    decision.confidenceTier === 'HIGH'
-  ) {
-    const toIntensity: SessionIntensity = 'ENDURANCE';
-    return withDescriptions(
-      type,
-      'UP',
-      fromDescription,
-      {
-        sessionId: session.id,
-        direction: 'UP',
-        fromIntensity: intensity,
-        toIntensity,
-        fromDurationMin: durationMin,
-        toDurationMin: durationMin,
-        fromLoad: load,
-        toLoad: load,
-        why: strengthLike
-          ? 'État fiable et séance très légère — un passage en travail léger reste prudent.'
-          : 'État fiable et séance très légère — un passage en endurance reste prudent.',
-      },
-      {
-        from: intensity,
-        to: toIntensity,
-        fromLoad: load,
-        toLoad: load,
-        fromDuration: durationMin,
-        toDuration: durationMin,
-      },
-    );
-  }
-
-  return null;
+  return resolveMorningProposal(input.session, input.decision);
 }
 
 export {

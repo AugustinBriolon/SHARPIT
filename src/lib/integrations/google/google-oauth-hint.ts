@@ -9,9 +9,13 @@ function devPort(): string {
 
 /** True si l'app est ouverte via une IP LAN (Google OAuth HTTP interdit hors localhost). */
 export function isGoogleOAuthBlockedOnCurrentHost(): boolean {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === 'undefined') {
+    return false;
+  }
   const { hostname } = window.location;
-  if (hostname === 'localhost' || hostname === '127.0.0.1') return false;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return false;
+  }
   return /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname);
 }
 

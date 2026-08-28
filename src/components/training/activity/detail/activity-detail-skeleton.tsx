@@ -103,32 +103,20 @@ function ZonesSkeleton() {
   );
 }
 
-/**
- * Coach ± map composition skeleton.
- * Mobile: coach first when both. Desktop: map left, coach right.
- */
-export function ActivityCompositionSkeleton({
-  withCoach = true,
-  withMap = true,
-}: {
-  withCoach?: boolean;
-  withMap?: boolean;
-}) {
-  if (!withCoach && !withMap) return null;
+function CoachOnlyCompositionSkeleton() {
+  return (
+    <div className="flex min-h-0 flex-col gap-4">
+      <CoachReadingSkeleton />
+      <ZonesSkeleton />
+    </div>
+  );
+}
 
-  if (withCoach && !withMap) {
-    return (
-      <div className="flex min-h-0 flex-col gap-4">
-        <CoachReadingSkeleton />
-        <ZonesSkeleton />
-      </div>
-    );
-  }
+function MapOnlyCompositionSkeleton() {
+  return <Skeleton className="h-80 w-full rounded-xl sm:h-96" />;
+}
 
-  if (!withCoach && withMap) {
-    return <Skeleton className="h-80 w-full rounded-xl sm:h-96" />;
-  }
-
+function FullCompositionSkeleton() {
   return (
     <div className="grid gap-4 lg:grid-cols-2 lg:items-stretch">
       <div className="order-1 flex min-h-0 flex-col gap-4 lg:order-2">
@@ -138,6 +126,44 @@ export function ActivityCompositionSkeleton({
       <Skeleton className="order-2 h-80 w-full rounded-xl sm:h-96 lg:order-1 lg:min-h-full" />
     </div>
   );
+}
+
+/**
+ * Coach ± map composition skeleton.
+ * Mobile: coach first when both. Desktop: map left, coach right.
+ */
+function resolveCompositionSkeletonVariant(withCoach: boolean, withMap: boolean) {
+  if (!withCoach && !withMap) {
+    return 'none' as const;
+  }
+  if (withCoach && !withMap) {
+    return 'coach' as const;
+  }
+  if (!withCoach && withMap) {
+    return 'map' as const;
+  }
+  return 'full' as const;
+}
+
+const COMPOSITION_SKELETON_BY_VARIANT = {
+  coach: CoachOnlyCompositionSkeleton,
+  map: MapOnlyCompositionSkeleton,
+  full: FullCompositionSkeleton,
+} as const;
+
+export function ActivityCompositionSkeleton({
+  withCoach = true,
+  withMap = true,
+}: {
+  withCoach?: boolean;
+  withMap?: boolean;
+}) {
+  const variant = resolveCompositionSkeletonVariant(withCoach, withMap);
+  if (variant === 'none') {
+    return null;
+  }
+  const SkeletonComponent = COMPOSITION_SKELETON_BY_VARIANT[variant];
+  return <SkeletonComponent />;
 }
 
 /** Stream body after hero — composition → Performance → Profils → Splits. */

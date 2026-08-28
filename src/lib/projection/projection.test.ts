@@ -16,7 +16,7 @@ import type {
   DimensionResult,
 } from '@/core/digital-twin/types';
 
-function dim(score: number | null, available = score != null): DimensionResult {
+function dim(score: number | null, available = score !== null): DimensionResult {
   return { score, status: available ? 'OK' : 'UNAVAILABLE', available };
 }
 
@@ -42,7 +42,9 @@ describe('pmc-forward', () => {
     const projected = projectPmcForward(50, 40, horizon).at(-1)!;
 
     let state = { ctl: 50, atl: 40 };
-    for (const tss of horizon) state = stepPmc(state, tss);
+    for (const tss of horizon) {
+      state = stepPmc(state, tss);
+    }
 
     expect(projected.ctl).toBeCloseTo(state.ctl, 1);
     expect(projected.atl).toBeCloseTo(state.atl, 1);

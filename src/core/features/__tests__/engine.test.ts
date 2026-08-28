@@ -215,7 +215,9 @@ describe('FeatureEngine fuel extraction', () => {
     const result = await engine.computeDayFeatures('athlete-1', '2026-08-19');
 
     expect(result.fuel).not.toBe('PENDING');
-    if (result.fuel === 'PENDING') throw new Error('Fuel features should have been computed');
+    if (result.fuel === 'PENDING') {
+      throw new Error('Fuel features should have been computed');
+    }
     expect(result.fuel.proteinGPerKg).toBe(1.83);
     expect(result.fuel.carbohydratesGPerKg).toBe(2.96);
   });

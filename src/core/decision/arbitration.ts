@@ -12,6 +12,7 @@ import type {
   ReasoningState,
 } from '@/core/digital-twin/types';
 import type { PhysicalHealthState } from '@/core/inference/physical-health/types';
+import { isSet } from '@/lib/util/value';
 import type { EnvironmentalDecisionSnapshot } from '@/core/inference/environment/types';
 import {
   buildTopAction,
@@ -21,11 +22,63 @@ import {
 import type { DecisionDomain, DecisionLimitingFactor, PrimaryDecision } from './decision-state';
 import { domainPriorityIndex } from './priority';
 
+function primaryPhysicalHealthCondition(
+  physicalHealth: PhysicalHealthState,
+): PhysicalHealthState['conditions'][number] | undefined {
+  return physicalHealth.conditions.find(
+    (c) => c.conditionId === physicalHealth.primaryLimitingConditionId,
+  );
+}
+
+function physicalHealthLimitCode(mode: 'blocked' | 'reduced', hasPrimary: boolean): string {
+  if (mode === 'blocked') {
+    return hasPrimary
+      ? 'decision.limitingFactor.physicalHealth.blocked'
+      : 'decision.limitingFactor.physicalHealth.blockedGeneric';
+  }
+  return hasPrimary
+    ? 'decision.limitingFactor.physicalHealth.reduced'
+    : 'decision.limitingFactor.physicalHealth.reducedGeneric';
+}
+
+function physicalHealthLimitingFactor(
+  physicalHealth: PhysicalHealthState,
+  mode: 'blocked' | 'reduced',
+): DecisionLimitingFactor {
+  const primary = primaryPhysicalHealthCondition(physicalHealth);
+  const code = physicalHealthLimitCode(mode, Boolean(primary));
+
+  return {
+    domain: 'PHYSICAL_HEALTH',
+    system: 'PHYSICAL_HEALTH',
+    description: primary ? { code, params: { condition: primary.label } } : { code },
+    actionable: true,
+    priority: domainPriorityIndex('PHYSICAL_HEALTH'),
+  };
+}
+
+function hasReducedPhysicalHealthLimit(
+  physicalHealth: PhysicalHealthState,
+  verdict: OverallVerdict,
+): boolean {
+  return (
+    physicalHealth.activeConditionCount > 0 &&
+    physicalHealth.aggregateTrainingCapacity === 'REDUCED' &&
+    isReducedCapacityVerdict(verdict)
+  );
+}
+
+function isReducedCapacityVerdict(verdict: OverallVerdict): boolean {
+  return verdict !== 'TRAIN_HARD' && verdict !== 'RACE_READY';
+}
+
 export function applyPhysicalHealthSafetyOverride(
   verdict: OverallVerdict,
   physicalHealth: PhysicalHealthState | null,
 ): { verdict: OverallVerdict; safetyOverrideApplied: boolean } {
-  if (!physicalHealth) return { verdict, safetyOverrideApplied: false };
+  if (!physicalHealth) {
+    return { verdict, safetyOverrideApplied: false };
+  }
 
   if (physicalHealth.trainingBlockedByCondition) {
     return { verdict: 'RECOVER', safetyOverrideApplied: true };
@@ -49,11 +102,17 @@ export function applyEnvironmentalModeration(
   verdict: OverallVerdict,
   environment: EnvironmentalDecisionSnapshot | null,
 ): OverallVerdict {
-  if (!environment || environment.trainingImpact === 'NONE') return verdict;
+  if (!environment || environment.trainingImpact === 'NONE') {
+    return verdict;
+  }
 
   if (environment.trainingImpact === 'SIGNIFICANT') {
-    if (verdict === 'TRAIN_HARD') return 'TRAIN_EASY';
-    if (verdict === 'RACE_READY') return 'TRAIN_SMART';
+    if (verdict === 'TRAIN_HARD') {
+      return 'TRAIN_EASY';
+    }
+    if (verdict === 'RACE_READY') {
+      return 'TRAIN_SMART';
+    }
   }
 
   if (environment.trainingImpact === 'MODERATE' && verdict === 'TRAIN_HARD') {
@@ -61,6 +120,42 @@ export function applyEnvironmentalModeration(
   }
 
   return verdict;
+}
+
+function environmentLimitingFactor(): DecisionLimitingFactor {
+  return {
+    domain: 'ENVIRONMENT',
+    system: null,
+    description: { code: 'decision.limitingFactor.environment.significant' },
+    actionable: true,
+    priority: domainPriorityIndex('ENVIRONMENT'),
+  };
+}
+
+function fromBaseLimitingFactor(
+  base: ReturnType<typeof selectLimitingFactor>,
+): DecisionLimitingFactor {
+  const domain: DecisionDomain | null = base.system ?? null;
+  return {
+    domain,
+    system: base.system,
+    description: base.description,
+    actionable: base.actionable,
+    priority: isSet(domain) ? domainPriorityIndex(domain) : 99,
+  };
+}
+
+function tryPhysicalHealthLimiting(
+  physicalHealth: PhysicalHealthState | null,
+  verdict: OverallVerdict,
+): DecisionLimitingFactor | null {
+  if (physicalHealth?.trainingBlockedByCondition) {
+    return physicalHealthLimitingFactor(physicalHealth, 'blocked');
+  }
+  if (physicalHealth && hasReducedPhysicalHealthLimit(physicalHealth, verdict)) {
+    return physicalHealthLimitingFactor(physicalHealth, 'reduced');
+  }
+  return null;
 }
 
 export function arbitrateLimitingFactor(input: {
@@ -71,77 +166,37 @@ export function arbitrateLimitingFactor(input: {
   environment: EnvironmentalDecisionSnapshot | null;
   verdict: OverallVerdict;
 }): DecisionLimitingFactor {
-  const { recovery, fatigue, adaptation, physicalHealth, environment, verdict } = input;
-
-  if (physicalHealth?.trainingBlockedByCondition) {
-    const primary = physicalHealth.conditions.find(
-      (c) => c.conditionId === physicalHealth.primaryLimitingConditionId,
-    );
-    return {
-      domain: 'PHYSICAL_HEALTH',
-      system: 'PHYSICAL_HEALTH',
-      description: primary
-        ? {
-            code: 'decision.limitingFactor.physicalHealth.blocked',
-            params: { condition: primary.label },
-          }
-        : { code: 'decision.limitingFactor.physicalHealth.blockedGeneric' },
-      actionable: true,
-      priority: domainPriorityIndex('PHYSICAL_HEALTH'),
-    };
+  const physicalHealthLimit = tryPhysicalHealthLimiting(input.physicalHealth, input.verdict);
+  if (physicalHealthLimit) {
+    return physicalHealthLimit;
   }
 
+  const base = selectLimitingFactor(input.recovery, input.fatigue, input.adaptation, input.verdict);
   if (
-    physicalHealth &&
-    physicalHealth.activeConditionCount > 0 &&
-    physicalHealth.aggregateTrainingCapacity === 'REDUCED' &&
-    verdict !== 'TRAIN_HARD' &&
-    verdict !== 'RACE_READY'
+    input.environment?.trainingImpact === 'SIGNIFICANT' &&
+    (base.system === undefined || base.system === null) &&
+    isReducedCapacityVerdict(input.verdict)
   ) {
-    const primary = physicalHealth.conditions.find(
-      (c) => c.conditionId === physicalHealth.primaryLimitingConditionId,
-    );
-    return {
-      domain: 'PHYSICAL_HEALTH',
-      system: 'PHYSICAL_HEALTH',
-      description: primary
-        ? {
-            code: 'decision.limitingFactor.physicalHealth.reduced',
-            params: { condition: primary.label },
-          }
-        : { code: 'decision.limitingFactor.physicalHealth.reducedGeneric' },
-      actionable: true,
-      priority: domainPriorityIndex('PHYSICAL_HEALTH'),
-    };
+    return environmentLimitingFactor();
   }
 
-  const base = selectLimitingFactor(recovery, fatigue, adaptation, verdict);
-
-  if (
-    environment?.trainingImpact === 'SIGNIFICANT' &&
-    base.system == null &&
-    verdict !== 'TRAIN_HARD' &&
-    verdict !== 'RACE_READY'
-  ) {
-    return {
-      domain: 'ENVIRONMENT',
-      system: null,
-      description: { code: 'decision.limitingFactor.environment.significant' },
-      actionable: true,
-      priority: domainPriorityIndex('ENVIRONMENT'),
-    };
-  }
-
-  const domain: DecisionDomain | null = base.system ?? null;
-
-  return {
-    domain,
-    system: base.system,
-    description: base.description,
-    actionable: base.actionable,
-    priority: domain != null ? domainPriorityIndex(domain) : 99,
-  };
+  return fromBaseLimitingFactor(base);
 }
+
+const RECOVER_HEADLINE_BY_SYSTEM: Partial<
+  Record<NonNullable<DecisionLimitingFactor['system']>, string>
+> = {
+  FATIGUE: 'decision.primary.headline.recover.fatigue',
+  RECOVERY: 'decision.primary.headline.recover.recovery',
+};
+
+const HEADLINE_BY_VERDICT: Partial<Record<OverallVerdict, string>> = {
+  TRAIN_HARD: 'decision.primary.headline.trainHard',
+  RACE_READY: 'decision.primary.headline.raceReady',
+  CAUTION: 'decision.primary.headline.caution',
+  TRAIN_EASY: 'decision.primary.headline.trainEasy',
+  TRAIN_SMART: 'decision.primary.headline.trainSmart',
+};
 
 function resolveHeadlineCode(
   verdict: OverallVerdict,
@@ -153,25 +208,14 @@ function resolveHeadlineCode(
   if (limitingFactor.domain === 'ENVIRONMENT') {
     return 'decision.primary.headline.environment';
   }
-
-  switch (verdict) {
-    case 'RECOVER':
-      if (limitingFactor.system === 'FATIGUE') return 'decision.primary.headline.recover.fatigue';
-      if (limitingFactor.system === 'RECOVERY') return 'decision.primary.headline.recover.recovery';
-      return 'decision.primary.headline.recover';
-    case 'TRAIN_HARD':
-      return 'decision.primary.headline.trainHard';
-    case 'RACE_READY':
-      return 'decision.primary.headline.raceReady';
-    case 'CAUTION':
-      return 'decision.primary.headline.caution';
-    case 'TRAIN_EASY':
-      return 'decision.primary.headline.trainEasy';
-    case 'TRAIN_SMART':
-      return 'decision.primary.headline.trainSmart';
-    default:
-      return 'decision.primary.headline.insufficient';
+  if (verdict === 'RECOVER') {
+    return (
+      (limitingFactor.system && RECOVER_HEADLINE_BY_SYSTEM[limitingFactor.system]) ??
+      'decision.primary.headline.recover'
+    );
   }
+
+  return HEADLINE_BY_VERDICT[verdict] ?? 'decision.primary.headline.insufficient';
 }
 
 export function synthesizeCanonicalVerdict(input: {
@@ -198,25 +242,73 @@ export function synthesizeCanonicalVerdict(input: {
   };
 }
 
+function toLegacyLimitingFactor(
+  limitingFactor: DecisionLimitingFactor,
+): ReasoningState['limitingFactor'] {
+  return {
+    system: limitingFactor.system === 'PHYSICAL_HEALTH' ? null : limitingFactor.system,
+    description: limitingFactor.description,
+    actionable: limitingFactor.actionable,
+  };
+}
+
+function defaultPrimaryDecisionFields(): Pick<
+  PrimaryDecision,
+  'verbCode' | 'focusCode' | 'rationaleCode' | 'expectedBenefit'
+> {
+  return {
+    verbCode: 'decision.primary.insufficient.verb',
+    focusCode: 'decision.primary.insufficient.focus',
+    rationaleCode: 'decision.primary.insufficient.rationale',
+    expectedBenefit: 0,
+  };
+}
+
+function mergePrimaryActionCodes(
+  topAction: ReturnType<typeof buildTopAction>,
+  defaults: ReturnType<typeof defaultPrimaryDecisionFields>,
+): Pick<PrimaryDecision, 'verbCode' | 'focusCode'> {
+  return {
+    verbCode: topAction?.verbCode ?? defaults.verbCode,
+    focusCode: topAction?.focusCode ?? defaults.focusCode,
+  };
+}
+
+function mergePrimaryActionRationale(
+  topAction: ReturnType<typeof buildTopAction>,
+  defaults: ReturnType<typeof defaultPrimaryDecisionFields>,
+): Pick<PrimaryDecision, 'rationaleCode' | 'expectedBenefit'> {
+  return {
+    rationaleCode: topAction?.rationaleCode ?? defaults.rationaleCode,
+    expectedBenefit: topAction?.expectedBenefit ?? defaults.expectedBenefit,
+  };
+}
+
+function mergePrimaryDecisionFields(
+  topAction: ReturnType<typeof buildTopAction>,
+  defaults: ReturnType<typeof defaultPrimaryDecisionFields>,
+): Pick<PrimaryDecision, 'verbCode' | 'focusCode' | 'rationaleCode' | 'expectedBenefit'> {
+  return {
+    ...mergePrimaryActionCodes(topAction, defaults),
+    ...mergePrimaryActionRationale(topAction, defaults),
+  };
+}
+
 export function buildPrimaryDecision(input: {
   verdict: OverallVerdict;
   limitingFactor: DecisionLimitingFactor;
   adaptation: AdaptationState | null;
 }): PrimaryDecision {
-  const legacyLimiting: ReasoningState['limitingFactor'] = {
-    system: input.limitingFactor.system === 'PHYSICAL_HEALTH' ? null : input.limitingFactor.system,
-    description: input.limitingFactor.description,
-    actionable: input.limitingFactor.actionable,
-  };
-
-  const topAction = buildTopAction(input.verdict, legacyLimiting, input.adaptation);
+  const topAction = buildTopAction(
+    input.verdict,
+    toLegacyLimitingFactor(input.limitingFactor),
+    input.adaptation,
+  );
+  const defaults = defaultPrimaryDecisionFields();
 
   return {
     verdict: input.verdict,
     headlineCode: resolveHeadlineCode(input.verdict, input.limitingFactor),
-    verbCode: topAction?.verbCode ?? 'decision.primary.insufficient.verb',
-    focusCode: topAction?.focusCode ?? 'decision.primary.insufficient.focus',
-    rationaleCode: topAction?.rationaleCode ?? 'decision.primary.insufficient.rationale',
-    expectedBenefit: topAction?.expectedBenefit ?? 0,
+    ...mergePrimaryDecisionFields(topAction, defaults),
   };
 }

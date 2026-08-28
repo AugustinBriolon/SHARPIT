@@ -1,4 +1,5 @@
 import type { AdaptationData, TopAction } from '@/hooks/use-today';
+import { isSet } from '@/lib/util/value';
 import type { DailyPhase } from '@/lib/daily-phase/types';
 import { isForwardAdvicePhase } from '@/lib/daily-phase/resolve';
 import { resolveCode } from '@/lib/french';
@@ -6,10 +7,14 @@ import { mapVerdictToDisplay, type OverallVerdict } from '@/lib/today/today-mapp
 import { ADAPTATION_STATUS_SIGNAL } from '@/lib/today/today-dashboard-labels';
 
 export function buildTopActionLine(topAction: TopAction | null): string | null {
-  if (!topAction) return null;
+  if (!topAction) {
+    return null;
+  }
   const verb = resolveCode(topAction.verbCode);
   const focus = resolveCode(topAction.focusCode);
-  if (!verb || verb === topAction.verbCode) return null;
+  if (!verb || verb === topAction.verbCode) {
+    return null;
+  }
   return focus && focus !== topAction.focusCode ? `${verb} — ${focus}` : verb;
 }
 
@@ -78,14 +83,22 @@ export function shouldShowForwardTrainingCopy(phase: DailyPhase): boolean {
 }
 
 function adaptationTrendArrow(trend: AdaptationData['adaptationTrend']): string {
-  if (trend === 'IMPROVING') return '↑';
-  if (trend === 'DECLINING') return '↓';
+  if (trend === 'IMPROVING') {
+    return '↑';
+  }
+  if (trend === 'DECLINING') {
+    return '↓';
+  }
   return '→';
 }
 
 function adaptationTrendClass(trend: AdaptationData['adaptationTrend']): string {
-  if (trend === 'IMPROVING') return 'text-primary';
-  if (trend === 'DECLINING') return 'text-signal-caution';
+  if (trend === 'IMPROVING') {
+    return 'text-primary';
+  }
+  if (trend === 'DECLINING') {
+    return 'text-signal-caution';
+  }
   return 'text-muted-foreground';
 }
 
@@ -115,7 +128,7 @@ export function buildProgressionSummary(
   const trendClass = adaptationTrendClass(adaptation.adaptationTrend);
 
   const headline = status?.label ?? adaptation.adaptationStatus;
-  const index = adaptation.adaptationIndex != null ? ` · indice ${adaptation.adaptationIndex}` : '';
+  const index = isSet(adaptation.adaptationIndex) ? ` · indice ${adaptation.adaptationIndex}` : '';
   const load = weeklyLoad > 0 ? `${weeklyLoad} TSS cette semaine` : null;
 
   return {
@@ -127,7 +140,9 @@ export function buildProgressionSummary(
 }
 
 export function verdictHeadline(verdict: OverallVerdict, adviceActionable: boolean): string {
-  if (!adviceActionable) return 'Pas encore de verdict fiable';
+  if (!adviceActionable) {
+    return 'Pas encore de verdict fiable';
+  }
   return mapVerdictToDisplay(verdict).label;
 }
 

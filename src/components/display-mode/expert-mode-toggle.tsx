@@ -10,7 +10,9 @@ import { Microscope } from 'lucide-react';
 export const DEMO_DISPLAY_MODE_KEY = 'sharpit_demo_display_mode';
 
 export function getDemoDisplayModeOverride(): DisplayMode | null {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === 'undefined') {
+    return null;
+  }
   try {
     const raw = localStorage.getItem(DEMO_DISPLAY_MODE_KEY);
     return isDisplayMode(raw) ? raw : null;
@@ -29,7 +31,9 @@ export function ExpertModeToggle({ className }: { className?: string }) {
   const { mode, setMode, isResolved } = useDisplayMode();
   const isDemo = useIsDemoMode();
 
-  if (!isDemo || !isResolved) return null;
+  if (!isDemo || !isResolved) {
+    return null;
+  }
 
   const isExpert = mode === 'expert';
 

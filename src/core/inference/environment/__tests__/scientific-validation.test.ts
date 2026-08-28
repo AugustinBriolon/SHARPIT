@@ -6,6 +6,7 @@
  */
 
 import { readFileSync } from 'node:fs';
+import { isSet } from '@/lib/util/value';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { getEnvironmentalStressor } from '@/core/environment';
@@ -39,7 +40,9 @@ function isImpactNeutral(impact: ReturnType<typeof buildScenarioOutput>['impact'
 
 function scenarioById(id: string) {
   const scenario = ENVIRONMENTAL_VALIDATION_SCENARIOS.find((s) => s.id === id);
-  if (!scenario) throw new Error(`Unknown scenario: ${id}`);
+  if (!scenario) {
+    throw new Error(`Unknown scenario: ${id}`);
+  }
   return scenario;
 }
 
@@ -59,8 +62,12 @@ function assertRange(value: number | null, min?: number, max?: number) {
     expect(min).toBeUndefined();
     return;
   }
-  if (min != null) expect(value).toBeGreaterThanOrEqual(min);
-  if (max != null) expect(value).toBeLessThanOrEqual(max);
+  if (isSet(min)) {
+    expect(value).toBeGreaterThanOrEqual(min);
+  }
+  if (isSet(max)) {
+    expect(value).toBeLessThanOrEqual(max);
+  }
 }
 
 describe('environment scientific validation — scenario catalog', () => {
@@ -119,13 +126,13 @@ describe('environment scientific validation — scenario catalog', () => {
         expect(isImpactSignificant(impact)).toBe(false);
       }
 
-      if (expected.significanceExpected != null) {
+      if (expected.significanceExpected !== null) {
         expect(isImpactSignificant(impact)).toBe(expected.significanceExpected);
       }
 
       const thermal = stressorIntensity(stress, 'THERMAL');
       const recoveryDemand = readImpactMultiplier(impact, 'recovery');
-      if (thermal != null && thermal >= 0.85 && recoveryDemand != null) {
+      if (thermal !== null && thermal >= 0.85 && recoveryDemand !== null) {
         expect(recoveryDemand).toBeGreaterThanOrEqual(1.1);
       }
     },
@@ -138,7 +145,7 @@ describe('environment scientific validation — Phase 2.6 calibration', () => {
       const { stress, impact } = runScenario(id).output;
       const composite = compositeIntensity(stress);
       expect(composite).not.toBeNull();
-      if (composite != null) {
+      if (composite !== null) {
         expect(composite).toBeLessThan(ENVIRONMENTAL_NEUTRAL_ZONE.compositeCeiling);
       }
       expect(isImpactNeutral(impact)).toBe(true);
@@ -207,7 +214,7 @@ describe('environment scientific validation — monotonicity', () => {
     const combined = compositeIntensity(runScenario('COMBINED_STRESSORS').output.stress);
     expect(hot).not.toBeNull();
     expect(combined).not.toBeNull();
-    if (hot != null && combined != null) {
+    if (hot !== null && combined !== null) {
       expect(combined).toBeGreaterThan(hot);
     }
   });
@@ -217,7 +224,7 @@ describe('environment scientific validation — monotonicity', () => {
     const humid = stressorIntensity(runScenario('HIGH_HUMIDITY').output.stress, 'HYDRATION');
     expect(dryHot).not.toBeNull();
     expect(humid).not.toBeNull();
-    if (dryHot != null && humid != null) {
+    if (dryHot !== null && humid !== null) {
       expect(humid).toBeGreaterThanOrEqual(dryHot);
     }
   });
@@ -227,7 +234,7 @@ describe('environment scientific validation — monotonicity', () => {
     const humid = readImpactMultiplier(runScenario('HIGH_HUMIDITY').output.impact, 'recovery');
     expect(dryHot).not.toBeNull();
     expect(humid).not.toBeNull();
-    if (dryHot != null && humid != null) {
+    if (dryHot !== null && humid !== null) {
       expect(humid).toBeGreaterThan(dryHot);
     }
   });
@@ -269,7 +276,7 @@ describe('environment scientific validation — downstream overlay behavior', ()
     const hotAdjusted = applyEnvironmentalImpactToReadiness(base, hotImpact);
     expect(coolAdjusted).not.toBeNull();
     expect(hotAdjusted).not.toBeNull();
-    if (coolAdjusted != null && hotAdjusted != null) {
+    if (coolAdjusted !== null && hotAdjusted !== null) {
       expect(hotAdjusted).toBeLessThanOrEqual(coolAdjusted);
     }
   });

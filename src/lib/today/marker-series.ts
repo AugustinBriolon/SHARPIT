@@ -1,3 +1,4 @@
+import { isSet } from '@/lib/util/value';
 /**
  * Reading a marker against its own recent history.
  *
@@ -7,8 +8,10 @@
 
 /** Change between the latest value and the mean of the seven before it. */
 export function deltaVsTrailingWeek(series: (number | null)[]): number | null {
-  const valid = series.filter((value): value is number => value != null);
-  if (valid.length < 8) return null;
+  const valid = series.filter((value): value is number => isSet(value));
+  if (valid.length < 8) {
+    return null;
+  }
 
   const last = valid[valid.length - 1];
   const previous = valid.slice(-8, -1);
@@ -23,11 +26,15 @@ export function deltaVsTrailingWeek(series: (number | null)[]): number | null {
  * observed fortnight starts passing for a baseline.
  */
 export function observedRange(series: (number | null)[]): { low: number; high: number } | null {
-  const valid = series.filter((value): value is number => value != null);
-  if (valid.length < 3) return null;
+  const valid = series.filter((value): value is number => isSet(value));
+  if (valid.length < 3) {
+    return null;
+  }
 
   const low = Math.min(...valid);
   const high = Math.max(...valid);
-  if (low === high) return null;
+  if (low === high) {
+    return null;
+  }
   return { low: Math.round(low), high: Math.round(high) };
 }

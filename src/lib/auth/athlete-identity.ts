@@ -13,7 +13,9 @@ export type NameParts = {
 
 function firstLetter(value: string): string {
   const trimmed = value.trim();
-  if (!trimmed) return '';
+  if (!trimmed) {
+    return '';
+  }
   return trimmed[0]!.toLocaleUpperCase('fr-FR');
 }
 
@@ -22,37 +24,49 @@ function firstWord(value: string): string {
   return match?.[0] ?? '';
 }
 
+function initialsFromFirstLast(first: string, last: string): string | null {
+  const joined = `${firstLetter(first)}${firstLetter(last)}`;
+  return joined || null;
+}
+
+function initialsFromFullName(full: string): string | null {
+  const parts = full.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${firstLetter(parts[0]!)}${firstLetter(parts[parts.length - 1]!)}`;
+  }
+  const letter = firstLetter(parts[0] ?? '');
+  return letter || null;
+}
+
+function initialsFromOptionalFullName(fullName?: string | null): string | null {
+  const trimmed = fullName?.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return initialsFromFullName(trimmed);
+}
+
+function resolveInitialsFromNameParts(parts: NameParts): string {
+  const fromNames = initialsFromFirstLast(parts.firstName?.trim() ?? '', parts.lastName?.trim() ?? '');
+  return fromNames ?? initialsFromOptionalFullName(parts.fullName) ?? '?';
+}
+
 /** 1–2 uppercase initials for the nav avatar. */
-export function initialsFromName({ firstName, lastName, fullName }: NameParts): string {
-  const first = firstName?.trim() ?? '';
-  const last = lastName?.trim() ?? '';
-  if (first || last) {
-    const a = firstLetter(first);
-    const b = firstLetter(last);
-    const joined = `${a}${b}`;
-    if (joined) return joined;
-  }
-
-  const full = fullName?.trim() ?? '';
-  if (full) {
-    const parts = full.split(/\s+/).filter(Boolean);
-    if (parts.length >= 2) {
-      return `${firstLetter(parts[0]!)}${firstLetter(parts[parts.length - 1]!)}`;
-    }
-    const letter = firstLetter(parts[0] ?? '');
-    if (letter) return letter;
-  }
-
-  return '?';
+export function initialsFromName(parts: NameParts): string {
+  return resolveInitialsFromNameParts(parts);
 }
 
 /** Bottom-nav / sidebar primary label — first name when known. */
 export function shortLabelFromName({ firstName, fullName }: NameParts): string {
   const first = firstName?.trim();
-  if (first) return first;
+  if (first) {
+    return first;
+  }
 
   const fromFull = fullName?.trim() ? firstWord(fullName) : '';
-  if (fromFull) return fromFull;
+  if (fromFull) {
+    return fromFull;
+  }
 
   return 'Profil';
 }

@@ -1,3 +1,4 @@
+import { isSet } from '@/lib/util/value';
 /**
  * Helpers de rendu Markdown pour les messages du coach.
  *
@@ -33,25 +34,35 @@ function fenceMarker(line: string): string | null {
 
 function closesFence(line: string, open: string): boolean {
   const marker = fenceMarker(line);
-  return marker !== null && marker[0] === open[0] && marker.length >= open.length;
+  return isSet(marker) && marker[0] === open[0] && marker.length >= open.length;
 }
 
 function lineKind(line: string): BlockKind {
-  if (LIST_ITEM.test(line)) return 'list';
-  if (/^\s{0,3}>/.test(line)) return 'quote';
+  if (LIST_ITEM.test(line)) {
+    return 'list';
+  }
+  if (/^\s{0,3}>/.test(line)) {
+    return 'quote';
+  }
   return 'other';
 }
 
 /** Une ligne qui prolonge le bloc courant par-dessus une ligne vide (item de liste espacé, citation multi-paragraphes). */
 function continuesBlock(kind: BlockKind, line: string): boolean {
-  if (kind === 'list') return LIST_ITEM.test(line) || /^\s{2,}\S/.test(line);
-  if (kind === 'quote') return /^\s{0,3}>/.test(line);
+  if (kind === 'list') {
+    return LIST_ITEM.test(line) || /^\s{2,}\S/.test(line);
+  }
+  if (kind === 'quote') {
+    return /^\s{0,3}>/.test(line);
+  }
   return false;
 }
 
 function nextContentLine(lines: string[], from: number): string | null {
   for (let index = from; index < lines.length; index += 1) {
-    if (lines[index]!.trim() !== '') return lines[index]!;
+    if (lines[index]!.trim() !== '') {
+      return lines[index]!;
+    }
   }
   return null;
 }
@@ -61,10 +72,84 @@ function nextContentLine(lines: string[], from: number): string | null {
  * l'identique. Les listes espacées, les citations et les blocs de code restent
  * entiers : couper une liste en deux relancerait la numérotation.
  */
+function findUnclosedFence(source: string): string | null {
+  let openFence: string | null = null;
+  for (const line of source.split('\n')) {
+    const marker = fenceMarker(line);
+    if (marker === undefined || marker === null) {
+      continue;
+    }
+    if (openFence === undefined || openFence === null) {
+      openFence = marker;
+    } else if (marker[0] === openFence[0] && marker.length >= openFence.length) {
+      openFence = null;
+    }
+  }
+  return openFence;
+}
+
+function closeInlineMarkdownTokens(text: string): string {
+  let cleaned = text.replace(/!?\[[^\]\n]*\]\([^)\n]*$/, '').replace(/!?\[[^\]\n]*$/, '');
+  const lastLine = cleaned.slice(cleaned.lastIndexOf('\n') + 1);
+  if ((lastLine.match(/`/g)?.length ?? 0) % 2 === 1) {
+    cleaned += '`';
+  }
+  if ((cleaned.match(/\*\*/g)?.length ?? 0) % 2 === 1) {
+    cleaned += '**';
+  }
+  return cleaned;
+}
+
+function processMarkdownBlankLine(input: {
+  lines: string[];
+  index: number;
+  kind: BlockKind;
+  flush: () => void;
+  buffer: string[];
+}): boolean {
+  const next = nextContentLine(input.lines, input.index + 1);
+  if (next === undefined || next === null) {
+    return true;
+  }
+  if (continuesBlock(input.kind, next)) {
+    input.buffer.push('');
+    return false;
+  }
+  input.flush();
+  return false;
+}
+
+function appendMarkdownLine(input: {
+  line: string;
+  openFence: string | null;
+  buffer: string[];
+  kind: BlockKind;
+}): { openFence: string | null; kind: BlockKind } {
+  if (isSet(input.openFence)) {
+    input.buffer.push(input.line);
+    const marker = fenceMarker(input.line);
+    if (marker && closesFence(input.line, input.openFence)) {
+      return { openFence: null, kind: input.kind };
+    }
+    return { openFence: input.openFence, kind: input.kind };
+  }
+
+  let { kind } = input;
+  if (input.buffer.length === 0) {
+    kind = lineKind(input.line);
+  }
+  input.buffer.push(input.line);
+  return { openFence: fenceMarker(input.line), kind };
+}
+
 export function splitMarkdownBlocks(source: string): string[] {
   const trimmed = source.trim();
-  if (!trimmed) return [];
-  if (CROSS_BLOCK_REFERENCE.test(trimmed)) return [trimmed];
+  if (!trimmed) {
+    return [];
+  }
+  if (CROSS_BLOCK_REFERENCE.test(trimmed)) {
+    return [trimmed];
+  }
 
   const lines = trimmed.split('\n');
   const blocks: string[] = [];
@@ -74,7 +159,9 @@ export function splitMarkdownBlocks(source: string): string[] {
 
   const flush = () => {
     const text = buffer.join('\n').trim();
-    if (text) blocks.push(text);
+    if (text) {
+      blocks.push(text);
+    }
     buffer = [];
     kind = 'other';
   };
@@ -82,26 +169,19 @@ export function splitMarkdownBlocks(source: string): string[] {
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index]!;
 
-    if (openFence !== null) {
-      buffer.push(line);
-      if (closesFence(line, openFence)) openFence = null;
+    if (isSet(openFence)) {
+      ({ openFence, kind } = appendMarkdownLine({ line, openFence, buffer, kind }));
       continue;
     }
 
     if (line.trim() === '') {
-      const next = nextContentLine(lines, index + 1);
-      if (next === null) break;
-      if (continuesBlock(kind, next)) {
-        buffer.push('');
-        continue;
+      if (processMarkdownBlankLine({ lines, index, kind, flush, buffer })) {
+        break;
       }
-      flush();
       continue;
     }
 
-    if (buffer.length === 0) kind = lineKind(line);
-    buffer.push(line);
-    openFence = fenceMarker(line);
+    ({ openFence, kind } = appendMarkdownLine({ line, openFence, buffer, kind }));
   }
 
   flush();
@@ -113,26 +193,16 @@ export function splitMarkdownBlocks(source: string): string[] {
  * masque un lien encore incomplet plutôt que d'afficher sa syntaxe brute.
  */
 export function closeOpenMarkdown(source: string): string {
-  if (!source) return source;
-
-  let openFence: string | null = null;
-  for (const line of source.split('\n')) {
-    const marker = fenceMarker(line);
-    if (marker === null) continue;
-    if (openFence === null) openFence = marker;
-    else if (marker[0] === openFence[0] && marker.length >= openFence.length) openFence = null;
+  if (!source) {
+    return source;
   }
-  if (openFence !== null) {
+
+  const openFence = findUnclosedFence(source);
+  if (isSet(openFence)) {
     return `${source}${source.endsWith('\n') ? '' : '\n'}${openFence}`;
   }
 
-  let text = source.replace(/!?\[[^\]\n]*\]\([^)\n]*$/, '').replace(/!?\[[^\]\n]*$/, '');
-
-  const lastLine = text.slice(text.lastIndexOf('\n') + 1);
-  if ((lastLine.match(/`/g)?.length ?? 0) % 2 === 1) text += '`';
-  if ((text.match(/\*\*/g)?.length ?? 0) % 2 === 1) text += '**';
-
-  return text;
+  return closeInlineMarkdownTokens(source);
 }
 
 /**
@@ -143,14 +213,20 @@ export function closeOpenMarkdown(source: string): string {
 export function remarkSoftBreaks() {
   return (tree: MarkdownNode) => {
     const walk = (node: MarkdownNode) => {
-      if (!node.children) return;
+      if (!node.children) {
+        return;
+      }
       const rewritten: MarkdownNode[] = [];
       for (const child of node.children) {
         if (child.type === 'text' && child.value?.includes('\n')) {
           const segments = child.value.split('\n');
           segments.forEach((segment, index) => {
-            if (index > 0) rewritten.push({ type: 'break' });
-            if (segment) rewritten.push({ type: 'text', value: segment });
+            if (index > 0) {
+              rewritten.push({ type: 'break' });
+            }
+            if (segment) {
+              rewritten.push({ type: 'text', value: segment });
+            }
           });
           continue;
         }

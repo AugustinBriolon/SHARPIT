@@ -23,9 +23,11 @@ const dryRun = process.argv.includes('--dry-run');
 const ATHLETE_ID = 'default';
 
 function isUnusable(data: unknown): boolean {
-  if (!data || typeof data !== 'object') return true;
+  if (!data || typeof data !== 'object') {
+    return true;
+  }
   const d = data as Record<string, unknown>;
-  return d.tssScore == null || d.durationSec == null || d.sportType == null;
+  return d.tssScore === null || d.durationSec === null || d.sportType === null;
 }
 
 async function main() {
@@ -56,8 +58,11 @@ async function main() {
   for (const { externalId } of observations) {
     try {
       const ok = await featureEngine.refreshSessionFeaturesForExternalId(ATHLETE_ID, externalId!);
-      if (ok) refreshed += 1;
-      else missing += 1;
+      if (ok) {
+        refreshed += 1;
+      } else {
+        missing += 1;
+      }
     } catch (error) {
       failed += 1;
       console.error(`[recompute] failed for externalId ${externalId}`, error);

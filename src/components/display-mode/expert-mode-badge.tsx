@@ -14,7 +14,9 @@ import { cn } from '@/lib/utils';
  */
 export function ExpertModeBadge({ className }: { className?: string }) {
   const { isExpert, isResolved } = useDisplayMode();
-  if (!isResolved || !isExpert) return null;
+  if (!isResolved || !isExpert) {
+    return null;
+  }
 
   return (
     <Badge

@@ -86,7 +86,9 @@ export function newEnduranceDraftBlock(
  * absolute override, and reads back as `auto` rather than as a wrong label.
  */
 function effortFromTarget(sport: EnduranceSport, target: EnduranceTarget): EnduranceDraftEffort {
-  if (target.metric === 'none') return 'auto';
+  if (target.metric === 'none') {
+    return 'auto';
+  }
   for (const effort of MATCHABLE_EFFORTS) {
     const candidate = defaultTargetForIntensity(sport, effort).target;
     if (
@@ -104,8 +106,12 @@ function draftStepFrom(step: EnduranceStep, sport: EnduranceSport): EnduranceDra
   const { duration } = step;
   const mode: EnduranceDraftMode = duration.type === 'lap' ? 'lap' : duration.type;
   let value = '';
-  if (duration.type === 'time') value = String(Math.round((duration.seconds / 60) * 10) / 10);
-  if (duration.type === 'distance') value = String(duration.meters);
+  if (duration.type === 'time') {
+    value = String(Math.round((duration.seconds / 60) * 10) / 10);
+  }
+  if (duration.type === 'distance') {
+    value = String(duration.meters);
+  }
 
   return newEnduranceDraftStep({
     kind: step.kind,
@@ -121,7 +127,9 @@ function draftStepFrom(step: EnduranceStep, sport: EnduranceSport): EnduranceDra
 export function draftFromEndurancePrescription(
   prescription: EndurancePrescription | null | undefined,
 ): EnduranceDraftBlock[] {
-  if (!prescription?.blocks.length) return [];
+  if (!prescription?.blocks.length) {
+    return [];
+  }
 
   return prescription.blocks.map((block) => {
     if (block.kind === 'step') {
@@ -137,15 +145,24 @@ export function draftFromEndurancePrescription(
   });
 }
 
+function coachStepDurationFields(step: EnduranceDraftStep, numeric: number) {
+  if (step.mode === 'time' && numeric > 0) {
+    return { minutes: numeric };
+  }
+  if (step.mode === 'distance' && numeric > 0) {
+    return { meters: Math.round(numeric) };
+  }
+  return {};
+}
+
 function coachStepFrom(step: EnduranceDraftStep) {
   const numeric = Number(step.value);
   const usable = Number.isFinite(numeric) && numeric > 0;
+  const isLap = step.mode === 'lap' || !usable;
 
   return {
     kind: step.kind,
-    ...(step.mode === 'lap' || !usable ? { lap: true } : {}),
-    ...(step.mode === 'time' && usable ? { minutes: numeric } : {}),
-    ...(step.mode === 'distance' && usable ? { meters: Math.round(numeric) } : {}),
+    ...(isLap ? { lap: true } : coachStepDurationFields(step, numeric)),
     ...(step.effort === 'auto' ? {} : { effort: step.effort }),
     ...(step.stroke === 'auto' ? {} : { stroke: step.stroke }),
     ...(step.notes.trim() ? { notes: step.notes.trim() } : {}),
@@ -172,7 +189,9 @@ export function endurancePrescriptionFromDraft(
       }),
   };
 
-  if (authored.blocks.length === 0) return null;
+  if (authored.blocks.length === 0) {
+    return null;
+  }
 
   return normalizeCoachEndurancePrescription({
     prescription: authored,

@@ -36,9 +36,14 @@ async function main() {
     let inconclusive = 0;
     for (const { decision, plannedSessionId } of pending) {
       const outcome = await evaluateAndSaveDecisionOutcome(decision.id, plannedSessionId, now);
-      if (!outcome) continue;
-      if (outcome.outcomeStatus === 'EVALUATED') evaluated += 1;
-      else inconclusive += 1;
+      if (!outcome) {
+        continue;
+      }
+      if (outcome.outcomeStatus === 'EVALUATED') {
+        evaluated += 1;
+      } else {
+        inconclusive += 1;
+      }
     }
     console.log(`Outcomes recorded: ${evaluated} evaluated, ${inconclusive} inconclusive.`);
   }

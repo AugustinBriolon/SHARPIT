@@ -17,6 +17,22 @@ import { cn } from '@/lib/utils';
  * A dated constraint. Only two states are possible here — the API keeps current
  * and upcoming windows only — so anything not active is still ahead.
  */
+function coachMemoryEntryLabels(entry: CoachMemoryEntry) {
+  const typeLabel = coachMemoryTypeLabel(entry.type);
+  const sourceLabel = coachMemorySourceLabel(entry.source);
+  const constraintLabel =
+    entry.trainingConstraint !== 'FULL'
+      ? travelTrainingConstraintLabel(entry.trainingConstraint)
+      : null;
+  const disciplineText =
+    entry.allowedDisciplines.length > 0
+      ? travelDisciplineLabels(entry.allowedDisciplines).join(' · ')
+      : null;
+  const title = entry.label?.trim() || typeLabel || 'Déplacement';
+  const metaText = [formatEntryDateRange(entry), disciplineText].filter(Boolean).join(' · ');
+  return { typeLabel, sourceLabel, constraintLabel, title, metaText };
+}
+
 export function CoachMemoryEntryCard({
   entry,
   highlighted,
@@ -30,18 +46,7 @@ export function CoachMemoryEntryCard({
   onDelete: () => void;
   deleting?: boolean;
 }) {
-  const typeLabel = coachMemoryTypeLabel(entry.type);
-  const sourceLabel = coachMemorySourceLabel(entry.source);
-  const constraintLabel =
-    entry.trainingConstraint !== 'FULL'
-      ? travelTrainingConstraintLabel(entry.trainingConstraint)
-      : null;
-  const disciplineText =
-    entry.allowedDisciplines.length > 0
-      ? travelDisciplineLabels(entry.allowedDisciplines).join(' · ')
-      : null;
-  const title = entry.label?.trim() || typeLabel || 'Déplacement';
-  const metaText = [formatEntryDateRange(entry), disciplineText].filter(Boolean).join(' · ');
+  const { sourceLabel, constraintLabel, title, metaText } = coachMemoryEntryLabels(entry);
 
   return (
     <article

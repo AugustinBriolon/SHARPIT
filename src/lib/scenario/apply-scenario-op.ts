@@ -4,6 +4,7 @@
  */
 
 import type { SessionIntensity } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import {
   INTENSITY_REDUCTION_TSS_FACTOR,
   type ScenarioDefinition,
@@ -34,11 +35,56 @@ const INTENSITY_ORDER: SessionIntensity[] = [
 ];
 
 export function stepDownIntensity(intensity: SessionIntensity | null): SessionIntensity | null {
-  if (!intensity) return intensity;
+  if (!intensity) {
+    return intensity;
+  }
   const index = INTENSITY_ORDER.indexOf(intensity);
-  if (index <= 0) return intensity;
+  if (index <= 0) {
+    return intensity;
+  }
   return INTENSITY_ORDER[index - 1];
 }
+
+function buildReduceIntensityOp(
+  targetSessionId: string,
+  modified: ScenarioDefinition['modifiedSessions'][number],
+): ScenarioApplyOp {
+  return {
+    op: 'update',
+    sessionId: targetSessionId,
+    data: { intensity: modified.intensity, load: modified.tss },
+  };
+}
+
+function buildIndoorOp(targetSessionId: string): ScenarioApplyOp {
+  return { op: 'update', sessionId: targetSessionId, data: { exposureSetting: 'INDOOR' } };
+}
+
+function buildRescheduleOp(
+  targetSessionId: string,
+  modified: ScenarioDefinition['modifiedSessions'][number],
+): ScenarioApplyOp {
+  return {
+    op: 'update',
+    sessionId: targetSessionId,
+    data: { date: trainingDayIdToDate(modified.trainingDayId) },
+  };
+}
+
+const APPLY_OP_BUILDERS: Partial<
+  Record<
+    ScenarioKind,
+    (
+      targetSessionId: string,
+      modified: ScenarioDefinition['modifiedSessions'][number],
+    ) => ScenarioApplyOp
+  >
+> = {
+  REDUCE_INTENSITY: buildReduceIntensityOp,
+  INDOOR: (targetSessionId) => buildIndoorOp(targetSessionId),
+  DELAY_SESSION: buildRescheduleOp,
+  MOVE_EARLIER: buildRescheduleOp,
+};
 
 /** Build the DB mutation implied by a generated scenario definition. */
 export function buildScenarioApplyOp(definition: ScenarioDefinition): ScenarioApplyOp {
@@ -53,37 +99,12 @@ export function buildScenarioApplyOp(definition: ScenarioDefinition): ScenarioAp
   const modified = definition.modifiedSessions.find(
     (s) => s.sessionId === definition.targetSessionId,
   );
-  if (!modified) return { op: 'none' };
-
-  switch (definition.kind) {
-    case 'REDUCE_INTENSITY':
-      return {
-        op: 'update',
-        sessionId: definition.targetSessionId,
-        data: {
-          intensity: modified.intensity,
-          load: modified.tss,
-        },
-      };
-
-    case 'INDOOR':
-      return {
-        op: 'update',
-        sessionId: definition.targetSessionId,
-        data: { exposureSetting: 'INDOOR' },
-      };
-
-    case 'DELAY_SESSION':
-    case 'MOVE_EARLIER':
-      return {
-        op: 'update',
-        sessionId: definition.targetSessionId,
-        data: { date: trainingDayIdToDate(modified.trainingDayId) },
-      };
-
-    default:
-      return { op: 'none' };
+  if (!modified) {
+    return { op: 'none' };
   }
+
+  const builder = APPLY_OP_BUILDERS[definition.kind];
+  return builder ? builder(definition.targetSessionId, modified) : { op: 'none' };
 }
 
 /** Client-side optimistic patch when modified slices are not available. */
@@ -103,8 +124,9 @@ export function optimisticSessionFieldsForKind(
     case 'REDUCE_INTENSITY':
       return {
         intensity: stepDownIntensity(current.intensity),
-        load:
-          current.load != null ? Math.round(current.load * INTENSITY_REDUCTION_TSS_FACTOR) : null,
+        load: isSet(current.load)
+          ? Math.round(current.load * INTENSITY_REDUCTION_TSS_FACTOR)
+          : null,
       };
     case 'INDOOR':
       return { exposureSetting: 'INDOOR' };

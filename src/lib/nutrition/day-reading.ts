@@ -1,3 +1,4 @@
+import { isSet } from '@/lib/util/value';
 import type {
   NutritionDaySummary,
   NutritionGoalsProgress,
@@ -27,7 +28,9 @@ function missingMealLabels(day: NutritionDaySummary): string[] {
 }
 
 function formatMissingMeals(labels: string[]): string | null {
-  if (labels.length === 0) return null;
+  if (labels.length === 0) {
+    return null;
+  }
   if (labels.length === 1) {
     const label = labels[0].charAt(0).toUpperCase() + labels[0].slice(1);
     return `${label} absent du journal`;
@@ -40,10 +43,14 @@ function formatMissingMeals(labels: string[]): string | null {
 }
 
 function dominantMealInsight(day: NutritionDaySummary): string | null {
-  if (day.calories <= 0 || day.meals.length === 0) return null;
+  if (day.calories <= 0 || day.meals.length === 0) {
+    return null;
+  }
 
   const activeMeals = day.meals.filter((meal) => meal.calories > 0);
-  if (activeMeals.length < 2) return null;
+  if (activeMeals.length < 2) {
+    return null;
+  }
 
   const top = activeMeals.reduce((best, meal) => (meal.calories > best.calories ? meal : best));
   const share = top.calories / day.calories;
@@ -58,10 +65,14 @@ function dominantMealInsight(day: NutritionDaySummary): string | null {
 }
 
 function proteinMealInsight(day: NutritionDaySummary): string | null {
-  if (day.protein <= 0 || day.meals.length === 0) return null;
+  if (day.protein <= 0 || day.meals.length === 0) {
+    return null;
+  }
 
   const activeMeals = day.meals.filter((meal) => meal.protein > 0);
-  if (activeMeals.length < 2) return null;
+  if (activeMeals.length < 2) {
+    return null;
+  }
 
   const top = activeMeals.reduce((best, meal) => (meal.protein > best.protein ? meal : best));
   const share = top.protein / day.protein;
@@ -72,28 +83,123 @@ function proteinMealInsight(day: NutritionDaySummary): string | null {
   return null;
 }
 
+function calorieGoalHeadline(remaining: number | null): string | null {
+  if (isSet(remaining) && remaining < 0) {
+    return remaining < -200 ? 'Apports généreux' : 'Légèrement au-dessus';
+  }
+  if (remaining === 0) {
+    return 'Objectif calorique atteint';
+  }
+  return null;
+}
+
+function todayProgressHeadline(
+  isToday: boolean,
+  missingCount: number,
+  loggedCount: number,
+  complete: boolean,
+): string | null {
+  if (isToday && missingCount >= 2 && loggedCount <= 2) {
+    return 'Journal incomplet';
+  }
+  if (isToday && loggedCount > 0 && !complete) {
+    return 'Journal en cours';
+  }
+  return null;
+}
+
+function ratioProgressHeadline(
+  consumedRatio: number,
+  proteinOver: boolean,
+  isToday: boolean,
+): string | null {
+  if (proteinOver && consumedRatio >= 0.75) {
+    return 'Bonne couverture protéique';
+  }
+  if (consumedRatio >= 0.85) {
+    return 'Journée bien avancée';
+  }
+  if (consumedRatio < 0.35 && isToday) {
+    return 'Journée légère';
+  }
+  return null;
+}
+
+function progressGoalHeadline(input: {
+  consumedRatio: number;
+  proteinOver: boolean;
+  isToday: boolean;
+  missingCount: number;
+  loggedCount: number;
+  complete: boolean;
+}): string | null {
+  return (
+    ratioProgressHeadline(input.consumedRatio, input.proteinOver, input.isToday) ??
+    todayProgressHeadline(input.isToday, input.missingCount, input.loggedCount, input.complete)
+  );
+}
+
+function headlineWithGoals(
+  day: NutritionDaySummary,
+  goals: NutritionGoalsProgress,
+  isToday: boolean,
+): string {
+  const calorieHeadline = calorieGoalHeadline(goals.calories.remaining);
+  if (calorieHeadline) {
+    return calorieHeadline;
+  }
+  if (day.complete) {
+    return 'Journée couverte';
+  }
+
+  const consumedRatio = goals.calorieBudget > 0 ? goals.calories.consumed / goals.calorieBudget : 0;
+  const progressHeadline = progressGoalHeadline({
+    consumedRatio,
+    proteinOver: isSet(goals.protein.remaining) && goals.protein.remaining < 0,
+    isToday,
+    missingCount: missingMealLabels(day).length,
+    loggedCount: day.meals.filter((meal) => meal.calories > 0).length,
+    complete: day.complete,
+  });
+  return progressHeadline ?? 'Apports en bonne voie';
+}
+
+function journalCaptionToday(
+  loggedCount: number,
+  missing: string[],
+  isToday: boolean,
+): string | null {
+  if (loggedCount === 1 && isToday) {
+    return "Un seul repas enregistré pour l'instant";
+  }
+  if (isToday && missing.length > 0 && missing.length <= 2) {
+    return formatMissingMeals(missing);
+  }
+  return null;
+}
+
 function journalCaption(
   day: NutritionDaySummary,
   isToday: boolean,
   headline: string,
 ): string | null {
-  const loggedCount = day.meals.filter((meal) => meal.calories > 0).length;
   const missing = missingMealLabels(day);
-
-  if (loggedCount === 1 && isToday) {
-    return "Un seul repas enregistré pour l'instant";
-  }
-
-  if (isToday && missing.length > 0 && missing.length <= 2) {
-    return formatMissingMeals(missing);
+  const loggedCount = day.meals.filter((meal) => meal.calories > 0).length;
+  const todayCaption = journalCaptionToday(loggedCount, missing, isToday);
+  if (todayCaption) {
+    return todayCaption;
   }
 
   const dominant = dominantMealInsight(day);
-  if (dominant) return dominant;
+  if (dominant) {
+    return dominant;
+  }
 
   if (!/protéin/i.test(headline)) {
     const protein = proteinMealInsight(day);
-    if (protein) return protein;
+    if (protein) {
+      return protein;
+    }
   }
 
   const entryCount = day.meals.reduce((sum, meal) => sum + meal.entries.length, 0);
@@ -108,40 +214,13 @@ function journalCaption(
   return null;
 }
 
-function headlineWithGoals(
-  day: NutritionDaySummary,
-  goals: NutritionGoalsProgress,
-  isToday: boolean,
-): string {
-  const { remaining } = goals.calories;
-  const consumedRatio = goals.calorieBudget > 0 ? goals.calories.consumed / goals.calorieBudget : 0;
-  const proteinOver = goals.protein.remaining != null && goals.protein.remaining < 0;
-  const missing = missingMealLabels(day);
-  const loggedCount = day.meals.filter((meal) => meal.calories > 0).length;
-
-  if (remaining != null && remaining < 0) {
-    return remaining < -200 ? 'Apports généreux' : 'Légèrement au-dessus';
-  }
-  if (remaining === 0) return 'Objectif calorique atteint';
-  if (day.complete) return 'Journée couverte';
-
-  if (proteinOver && consumedRatio >= 0.75) return 'Bonne couverture protéique';
-  if (consumedRatio >= 0.85) return 'Journée bien avancée';
-  if (consumedRatio < 0.35 && isToday) return 'Journée légère';
-
-  if (isToday && missing.length >= 2 && loggedCount <= 2) {
-    return 'Journal incomplet';
-  }
-  if (isToday && loggedCount > 0 && !day.complete) {
-    return 'Journal en cours';
-  }
-
-  return 'Apports en bonne voie';
-}
-
 function headlineWithoutGoals(day: NutritionDaySummary, isToday: boolean): string {
-  if (day.complete) return 'Journée couverte';
-  if (day.meals.length > 0) return isToday ? 'Journal en cours' : 'Repas enregistrés';
+  if (day.complete) {
+    return 'Journée couverte';
+  }
+  if (day.meals.length > 0) {
+    return isToday ? 'Journal en cours' : 'Repas enregistrés';
+  }
   return isToday ? 'Journal vide' : 'Aucune donnée';
 }
 

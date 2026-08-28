@@ -131,7 +131,9 @@ describe('extractLoadFeatures — ACWR', () => {
     const anchor = '2026-07-02';
     const history = emptyHistory(anchor);
     // 7 days of 80 TSS = acuteLoad 560
-    for (let i = 0; i < 7; i++) history.dailyLoad42d[i].tssScore = 80;
+    for (let i = 0; i < 7; i++) {
+      history.dailyLoad42d[i].tssScore = 80;
+    }
     // Total 42d = 7 × 80 = 560; chronic = 560 / 6 ≈ 93.33
     const result = extractLoadFeatures(history, anchor);
     // ACWR = 560 / 93.33 ≈ 6.0 (high: only last 7 days had load)
@@ -147,7 +149,9 @@ describe('extractLoadFeatures — ACWR', () => {
     const anchor = '2026-07-02';
     const history = emptyHistory(anchor);
     // Uniform 100 TSS/day across all 42 days
-    for (let i = 0; i < 42; i++) history.dailyLoad42d[i].tssScore = 100;
+    for (let i = 0; i < 42; i++) {
+      history.dailyLoad42d[i].tssScore = 100;
+    }
     const result = extractLoadFeatures(history, anchor);
     // acuteLoad = 700, chronicLoad = 4200/6 = 700 → ACWR = 1.0
     expect(result.acwr).toBeCloseTo(1.0, 2);
@@ -162,7 +166,9 @@ describe('extractLoadFeatures — load monotony and strain', () => {
   it('returns null monotony when all days have the same load (stdDev = 0)', () => {
     const anchor = '2026-07-02';
     const history = emptyHistory(anchor);
-    for (let i = 0; i < 7; i++) history.dailyLoad42d[i].tssScore = 100; // identical
+    for (let i = 0; i < 7; i++) {
+      history.dailyLoad42d[i].tssScore = 100;
+    } // identical
     const result = extractLoadFeatures(history, anchor);
     expect(result.loadMonotony).toBeNull();
     expect(result.loadStrain).toBeNull();
@@ -172,7 +178,9 @@ describe('extractLoadFeatures — load monotony and strain', () => {
     const anchor = '2026-07-02';
     const history = emptyHistory(anchor);
     // 4 days of 100, 3 days of 0 → mean=57.14, stdDev≈42.6
-    for (let i = 0; i < 4; i++) history.dailyLoad42d[i].tssScore = 100;
+    for (let i = 0; i < 4; i++) {
+      history.dailyLoad42d[i].tssScore = 100;
+    }
 
     const result = extractLoadFeatures(history, anchor);
     expect(result.loadMonotony).toBeGreaterThan(0);
@@ -182,10 +190,12 @@ describe('extractLoadFeatures — load monotony and strain', () => {
   it('computes strain = acuteLoad × monotony', () => {
     const anchor = '2026-07-02';
     const history = emptyHistory(anchor);
-    for (let i = 0; i < 4; i++) history.dailyLoad42d[i].tssScore = 100;
+    for (let i = 0; i < 4; i++) {
+      history.dailyLoad42d[i].tssScore = 100;
+    }
 
     const result = extractLoadFeatures(history, anchor);
-    if (result.loadMonotony != null && result.loadStrain != null) {
+    if (result.loadMonotony !== null && result.loadStrain !== null) {
       expect(result.loadStrain).toBeCloseTo(result.acuteLoad * result.loadMonotony, 4);
     }
   });
@@ -268,7 +278,9 @@ describe('extractLoadFeatures — confidence', () => {
   it('has higher confidence when 7d window has ≥ 3 data points', () => {
     const anchor = '2026-07-02';
     const history = emptyHistory(anchor);
-    for (let i = 0; i < 7; i++) history.dailyLoad42d[i].tssScore = 80;
+    for (let i = 0; i < 7; i++) {
+      history.dailyLoad42d[i].tssScore = 80;
+    }
 
     const result = extractLoadFeatures(history, anchor);
     expect(result.confidence).toBeGreaterThan(0.5);

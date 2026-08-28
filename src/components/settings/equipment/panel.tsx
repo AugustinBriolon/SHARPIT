@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { EquipmentItemChecklist } from '@/components/settings/equipment/item-checklist';
 import { EquipmentSportTabs } from '@/components/settings/equipment/sport-tabs';
@@ -21,6 +20,53 @@ import { equipmentSportHint } from '@/lib/equipment/format';
 import { setStrengthVenue, toggleOwnedItem } from '@/lib/equipment/parse';
 import type { AthleteEquipment } from '@/lib/equipment/types';
 
+function EquipmentStrengthSection({
+  equipment,
+  onSelectVenue,
+}: {
+  equipment: AthleteEquipment;
+  onSelectVenue: (venue: StrengthVenue) => void;
+}) {
+  const venueNote = strengthInventoryMessage(equipment.strengthVenue);
+  return (
+    <>
+      <StrengthVenuePicker value={equipment.strengthVenue} onSelect={onSelectVenue} />
+      {venueNote ? <p className="text-muted-foreground text-sm">{venueNote}</p> : null}
+    </>
+  );
+}
+
+function EquipmentInventorySection({
+  sport,
+  equipment,
+  items,
+  onToggleItem,
+}: {
+  sport: EquipmentSport;
+  equipment: AthleteEquipment;
+  items: ReturnType<typeof catalogItemsForSport>;
+  onToggleItem: (itemId: EquipmentItemId, enabled: boolean) => void;
+}) {
+  const hint = equipmentSportHint(equipment, sport);
+  const showHomeGearCaption =
+    sport === 'STRENGTH' &&
+    (equipment.strengthVenue === 'home' || equipment.strengthVenue === 'both');
+
+  return (
+    <>
+      {showHomeGearCaption ? (
+        <p className="text-muted-foreground text-xs">Matériel maison à fort impact</p>
+      ) : null}
+
+      {items.length > 0 ? (
+        <EquipmentItemChecklist items={items} owned={equipment.owned} onToggle={onToggleItem} />
+      ) : null}
+
+      {hint ? <p className="text-muted-foreground text-xs leading-relaxed">{hint}</p> : null}
+    </>
+  );
+}
+
 export function EquipmentPanel({ initial }: { initial: AthleteEquipment }) {
   const { equipment, message, error, saving, dirty, update } = useEquipmentPersist(initial);
   const [sport, setSport] = useState<EquipmentSport>('BIKE');
@@ -34,17 +80,6 @@ export function EquipmentPanel({ initial }: { initial: AthleteEquipment }) {
   }
 
   const items = catalogItemsForSport(sport, equipment.strengthVenue);
-  const hint = equipmentSportHint(equipment, sport);
-  const showHomeGearCaption =
-    sport === 'STRENGTH' &&
-    (equipment.strengthVenue === 'home' || equipment.strengthVenue === 'both');
-
-  const venueNote = sport === 'STRENGTH' ? strengthInventoryMessage(equipment.strengthVenue) : null;
-
-  const inventoryBody: ReactNode =
-    items.length > 0 ? (
-      <EquipmentItemChecklist items={items} owned={equipment.owned} onToggle={onToggleItem} />
-    ) : null;
 
   return (
     <div className="space-y-4">
@@ -58,18 +93,15 @@ export function EquipmentPanel({ initial }: { initial: AthleteEquipment }) {
       </div>
 
       {sport === 'STRENGTH' ? (
-        <StrengthVenuePicker value={equipment.strengthVenue} onSelect={onSelectVenue} />
+        <EquipmentStrengthSection equipment={equipment} onSelectVenue={onSelectVenue} />
       ) : null}
 
-      {venueNote ? <p className="text-muted-foreground text-sm">{venueNote}</p> : null}
-
-      {showHomeGearCaption ? (
-        <p className="text-muted-foreground text-xs">Matériel maison à fort impact</p>
-      ) : null}
-
-      {inventoryBody}
-
-      {hint ? <p className="text-muted-foreground text-xs leading-relaxed">{hint}</p> : null}
+      <EquipmentInventorySection
+        equipment={equipment}
+        items={items}
+        sport={sport}
+        onToggleItem={onToggleItem}
+      />
 
       <EquipmentStatusLine dirty={dirty} error={error} message={message} saving={saving} />
     </div>

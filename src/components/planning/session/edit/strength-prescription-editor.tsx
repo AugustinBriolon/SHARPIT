@@ -48,7 +48,9 @@ function newRow(partial?: Partial<StrengthPrescriptionDraftRow>): StrengthPrescr
 export function draftFromStrengthPrescription(
   prescription: StrengthPrescription | null | undefined,
 ): StrengthPrescriptionDraftRow[] {
-  if (!prescription?.sets.length) return [newRow()];
+  if (!prescription?.sets.length) {
+    return [newRow()];
+  }
   return prescription.sets
     .slice()
     .sort((a, b) => a.order - b.order)
@@ -57,10 +59,10 @@ export function draftFromStrengthPrescription(
         exercise: set.exercise,
         sets: String(set.sets),
         reps: String(set.reps),
-        weightKg: set.weightKg != null ? String(set.weightKg) : '',
+        weightKg: set.weightKg !== null ? String(set.weightKg) : '',
         restMode: set.restMode === 'time' ? 'time' : 'lap',
-        restSec: set.restSec != null ? String(set.restSec) : '90',
-        durationSec: set.durationSec != null ? String(set.durationSec) : '',
+        restSec: set.restSec !== null ? String(set.restSec) : '90',
+        durationSec: set.durationSec !== null ? String(set.durationSec) : '',
       }),
     );
 }
@@ -69,42 +71,22 @@ export function strengthPrescriptionFromDraft(
   rows: StrengthPrescriptionDraftRow[],
 ): StrengthPrescription | null {
   const sets = rows
-    .map((row, order) => {
-      const exercise = row.exercise.trim();
-      if (!exercise) return null;
-      const setsCount = Number(row.sets);
-      const reps = Number(row.reps);
-      if (!Number.isFinite(setsCount) || setsCount < 1) return null;
-      const durationSec = row.durationSec.trim() ? Number(row.durationSec) : null;
-      const weightKg = row.weightKg.trim() ? Number(row.weightKg) : null;
-      const restMode: StrengthRestMode = row.restMode === 'time' ? 'time' : 'lap';
-      const restSecRaw = row.restSec.trim() ? Number(row.restSec) : null;
-      const restSec =
-        restMode === 'time' && restSecRaw != null && Number.isFinite(restSecRaw)
-          ? Math.max(0, restSecRaw)
-          : null;
-      return {
-        exercise,
-        exerciseCatalogId: null,
-        sets: setsCount,
-        reps: Number.isFinite(reps) ? Math.max(0, reps) : 0,
-        durationSec: durationSec != null && Number.isFinite(durationSec) ? durationSec : null,
-        weightKg: weightKg != null && Number.isFinite(weightKg) ? weightKg : null,
-        restMode,
-        restSec,
-        notes: null,
-        order,
-      };
-    })
-    .filter((s): s is NonNullable<typeof s> => s != null);
+    .map((row, order) => parseStrengthDraftRow(row, order))
+    .filter((s): s is NonNullable<ReturnType<typeof parseStrengthDraftRow>> => s !== null);
 
-  if (sets.length === 0) return null;
+  if (sets.length === 0) {
+    return null;
+  }
   return attachGarminRefsToPrescription({ version: 1, sets });
 }
 
+import { parseStrengthDraftRow } from '@/components/planning/session/edit/strength-draft-row-parser';
+
 function draftWatchHint(exercise: string): string | null {
   const trimmed = exercise.trim();
-  if (!trimmed) return null;
+  if (!trimmed) {
+    return null;
+  }
   const match = resolveGarminExerciseMatch({ exercise: trimmed });
   return strengthSetWatchCompat({
     garmin: match
@@ -119,9 +101,12 @@ function draftWatchHint(exercise: string): string | null {
 }
 
 function watchHintClassName(hint: string): string {
-  if (hint.startsWith('Hors')) return 'text-muted-foreground/80 text-xs';
-  if (hint.startsWith('Approx') || hint.startsWith('Générique'))
+  if (hint.startsWith('Hors')) {
+    return 'text-muted-foreground/80 text-xs';
+  }
+  if (hint.startsWith('Approx') || hint.startsWith('Générique')) {
     return 'text-xs text-amber-700/90 dark:text-amber-400/90';
+  }
   return 'text-muted-foreground text-xs';
 }
 

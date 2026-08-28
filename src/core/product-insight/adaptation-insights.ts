@@ -1,4 +1,5 @@
 import { buildProductInsightBundle } from '@/core/product-insight/build-product-insight-bundle';
+import { isSet } from '@/lib/util/value';
 import type { AdaptationInsightInput, ProductInsight } from '@/core/product-insight/types';
 
 export function buildAdaptationInsightBundle(input: AdaptationInsightInput) {
@@ -9,10 +10,9 @@ export function buildAdaptationInsightBundle(input: AdaptationInsightInput) {
   primary.push({
     id: 'adaptation:block-reading',
     title: 'Lecture du bloc',
-    summary:
-      input.adaptationIndex != null
-        ? `${input.adaptationIndex}/100 · ${input.statusLabel}`
-        : input.statusLabel,
+    summary: isSet(input.adaptationIndex)
+      ? `${input.adaptationIndex}/100 · ${input.statusLabel}`
+      : input.statusLabel,
     explanation:
       "Le modèle cherche à dire si la charge récente est en train de produire un gain utile, de stagner, ou de coûter plus qu'elle ne rapporte.",
     evidence: [input.trendLabel, ...input.keyEvidence.slice(0, 2)],

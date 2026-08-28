@@ -22,7 +22,7 @@ function NavLink({
   pathname: string | null;
   onPrefetch: (href: string) => void;
 }) {
-  const isActive = pathname != null && item.match(pathname);
+  const isActive = pathname !== null && item.match(pathname);
   const Icon = item.icon;
   const reduce = useReducedMotion();
 
@@ -86,10 +86,57 @@ function SidebarNavLink({
   );
 }
 
+function NavActiveBackdrop({
+  isActive,
+  reduce,
+  className,
+}: {
+  isActive: boolean;
+  reduce: boolean | null;
+  className: string;
+}) {
+  if (!isActive) {
+    return null;
+  }
+  if (!reduce) {
+    return (
+      <motion.span
+        className={className}
+        layoutId="sidebar-nav-active"
+        transition={springs.snappy}
+        aria-hidden
+      />
+    );
+  }
+  return <span className={className} aria-hidden />;
+}
+
+function AthleteIdentityAvatar({
+  identity,
+  isActive,
+}: {
+  identity: ReturnType<typeof useAthleteNavIdentity>;
+  isActive: boolean;
+}) {
+  if (identity.isReady) {
+    return (
+      <AthleteNavAvatar
+        initials={identity.initials}
+        size="md"
+        className={cn(
+          'relative',
+          isActive && 'bg-highlight-foreground/15 text-highlight-foreground',
+        )}
+      />
+    );
+  }
+  return <AthleteNavAvatarSkeleton className="relative" size="md" />;
+}
+
 function AthleteIdentityLink({ onPrefetch }: { onPrefetch: (href: string) => void }) {
   const pathname = usePathname();
   const identity = useAthleteNavIdentity();
-  const isActive = pathname != null && profileNavItem.match(pathname);
+  const isActive = pathname !== null && profileNavItem.match(pathname);
   const reduce = useReducedMotion();
 
   return (
@@ -104,29 +151,12 @@ function AthleteIdentityLink({ onPrefetch }: { onPrefetch: (href: string) => voi
       )}
       onMouseEnter={() => onPrefetch(profileNavItem.href)}
     >
-      {isActive && !reduce ? (
-        <motion.span
-          className="bg-highlight rounded-analysis-lg absolute inset-0"
-          layoutId="sidebar-nav-active"
-          transition={springs.snappy}
-          aria-hidden
-        />
-      ) : null}
-      {isActive && reduce ? (
-        <span className="bg-highlight rounded-analysis-lg absolute inset-0" aria-hidden />
-      ) : null}
-      {identity.isReady ? (
-        <AthleteNavAvatar
-          initials={identity.initials}
-          size="md"
-          className={cn(
-            'relative',
-            isActive && 'bg-highlight-foreground/15 text-highlight-foreground',
-          )}
-        />
-      ) : (
-        <AthleteNavAvatarSkeleton className="relative" size="md" />
-      )}
+      <NavActiveBackdrop
+        className="bg-highlight rounded-analysis-lg absolute inset-0"
+        isActive={isActive}
+        reduce={reduce}
+      />
+      <AthleteIdentityAvatar identity={identity} isActive={isActive} />
       <span className="relative min-w-0 flex-1">
         <span className="block truncate text-sm font-medium">{identity.shortLabel}</span>
         {identity.email ? (

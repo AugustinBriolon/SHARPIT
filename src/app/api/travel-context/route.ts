@@ -51,6 +51,51 @@ export async function GET() {
   }
 }
 
+async function refreshSessionContexts(input: {
+  athleteId: string;
+  startDate: Date;
+  endDate: Date;
+  locationLat: number | null;
+  locationLng: number | null;
+}) {
+  const { athleteId, startDate, endDate, locationLat, locationLng } = input;
+  const sessions = await prisma.plannedSession.findMany({
+    where: {
+      athleteId,
+      date: { gte: startDate, lte: endDate },
+      locationLat,
+      locationLng,
+    },
+    select: { id: true },
+  });
+  for (const session of sessions) {
+    try {
+      await refreshAndPersistPlannedSessionContext(athleteId, session.id);
+    } catch (error) {
+      console.error('[travel-context/refresh]', session.id, error);
+    }
+  }
+}
+
+async function applyTravelToPlannedSessions(
+  athleteId: string,
+  travel: Awaited<ReturnType<typeof createTravelContext>>,
+  applyToPlannedSessions: boolean | undefined,
+) {
+  if (travel.type !== 'TRAVEL' || applyToPlannedSessions === false) {
+    return 0;
+  }
+  const updatedSessions = await applyTravelContextToUpcomingSessions(prisma, athleteId, travel.id);
+  await refreshSessionContexts({
+    athleteId,
+    startDate: travel.startDate,
+    endDate: travel.endDate,
+    locationLat: travel.locationLat,
+    locationLng: travel.locationLng,
+  });
+  return updatedSessions;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -64,27 +109,11 @@ export async function POST(request: NextRequest) {
 
     const athleteId = await getCurrentAthleteId();
     const travel = await createTravelContext(prisma, athleteId, parsed.data);
-    let updatedSessions = 0;
-
-    if (parsed.data.type === 'TRAVEL' && parsed.data.applyToPlannedSessions !== false) {
-      updatedSessions = await applyTravelContextToUpcomingSessions(prisma, athleteId, travel.id);
-      const sessions = await prisma.plannedSession.findMany({
-        where: {
-          athleteId,
-          date: { gte: travel.startDate, lte: travel.endDate },
-          locationLat: travel.locationLat,
-          locationLng: travel.locationLng,
-        },
-        select: { id: true },
-      });
-      for (const session of sessions) {
-        try {
-          await refreshAndPersistPlannedSessionContext(athleteId, session.id);
-        } catch (error) {
-          console.error('[travel-context/refresh]', session.id, error);
-        }
-      }
-    }
+    const updatedSessions = await applyTravelToPlannedSessions(
+      athleteId,
+      travel,
+      parsed.data.applyToPlannedSessions,
+    );
 
     return NextResponse.json({ travel, updatedSessions }, { status: 201 });
   } catch (error) {

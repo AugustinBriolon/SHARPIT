@@ -6,8 +6,22 @@ import {
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { deletePhysicalNote, getPhysicalNoteById, updatePhysicalNote } from '@/lib/queries';
 import { updatePhysicalNoteSchema } from '@/lib/validators/physical-note';
+import type { z } from 'zod';
 
 type RouteContext = { params: Promise<{ id: string }> };
+
+function applyResolvedAtPatch(
+  data: Parameters<typeof updatePhysicalNote>[2],
+  parsed: z.infer<typeof updatePhysicalNoteSchema>,
+  existing: NonNullable<Awaited<ReturnType<typeof getPhysicalNoteById>>>,
+) {
+  if (parsed.status === 'RESOLVED' && parsed.resolvedAt === undefined && !existing.resolvedAt) {
+    (data as { resolvedAt?: Date }).resolvedAt = new Date();
+  }
+  if (parsed.status && parsed.status !== 'RESOLVED') {
+    (data as { resolvedAt?: Date | null }).resolvedAt = null;
+  }
+}
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
@@ -28,17 +42,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     const data = { ...parsed.data } as Parameters<typeof updatePhysicalNote>[2];
-    // si on passe en résolu et pas de date fournie, on la pose
-    if (
-      parsed.data.status === 'RESOLVED' &&
-      parsed.data.resolvedAt === undefined &&
-      !existing.resolvedAt
-    ) {
-      (data as { resolvedAt?: Date }).resolvedAt = new Date();
-    }
-    if (parsed.data.status && parsed.data.status !== 'RESOLVED') {
-      (data as { resolvedAt?: Date | null }).resolvedAt = null;
-    }
+    applyResolvedAtPatch(data, parsed.data, existing);
 
     const note = await updatePhysicalNote(athleteId, id, data);
     if (!note) {

@@ -25,24 +25,26 @@ export function EffortDailySignalsCards({ signals }: { signals: EffortDailySigna
     {
       key: 'steps',
       label: 'Pas',
-      value: signals.steps != null ? signals.steps.toLocaleString('fr-FR') : null,
+      value: signals.steps !== null ? signals.steps.toLocaleString('fr-FR') : null,
       unit: null,
     },
     {
       key: 'stress',
       label: 'Stress',
-      value: signals.stress != null ? String(Math.round(signals.stress)) : null,
+      value: signals.stress !== null ? String(Math.round(signals.stress)) : null,
       unit: '/100',
     },
     {
       key: 'bodyBattery',
       label: 'Batterie',
-      value: signals.bodyBattery != null ? String(Math.round(signals.bodyBattery)) : null,
+      value: signals.bodyBattery !== null ? String(Math.round(signals.bodyBattery)) : null,
       unit: 'énergie',
     },
   ];
 
-  if (cards.every((card) => card.value == null)) return null;
+  if (cards.every((card) => card.value === null)) {
+    return null;
+  }
 
   return (
     <div className="grid grid-cols-3 gap-2 sm:gap-3">

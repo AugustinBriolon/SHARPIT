@@ -22,7 +22,9 @@ export type BackTargetResolution = BackTarget & {
 const NAV_STACK_EVENT = 'sharpit:nav-stack-changed';
 
 function subscribe(callback: () => void): () => void {
-  if (typeof window === 'undefined') return () => undefined;
+  if (typeof window === 'undefined') {
+    return () => undefined;
+  }
   window.addEventListener(NAV_STACK_EVENT, callback);
   return () => window.removeEventListener(NAV_STACK_EVENT, callback);
 }
@@ -31,7 +33,9 @@ function subscribe(callback: () => void): () => void {
  * Notify subscribers that the stack changed. Called by the tracker after each push.
  */
 export function emitNavStackChanged(): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') {
+    return;
+  }
   window.dispatchEvent(new Event(NAV_STACK_EVENT));
 }
 
@@ -40,7 +44,9 @@ export function resolveBackTargetWithoutStack(
   currentHref: string,
   overrideFallback?: BackTarget,
 ): BackTargetResolution {
-  if (overrideFallback) return { ...overrideFallback, fromStack: false };
+  if (overrideFallback) {
+    return { ...overrideFallback, fromStack: false };
+  }
   return { ...resolveRouteFallback(currentHref), fromStack: false };
 }
 
@@ -50,7 +56,9 @@ export function resolveBackTarget(
   overrideFallback?: BackTarget,
 ): BackTargetResolution {
   const previous = navStack.peekBackFrom(currentHref);
-  if (previous) return { href: previous.href, label: previous.label, fromStack: true };
+  if (previous) {
+    return { href: previous.href, label: previous.label, fromStack: true };
+  }
   return resolveBackTargetWithoutStack(currentHref, overrideFallback);
 }
 

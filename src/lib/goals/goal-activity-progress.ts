@@ -72,9 +72,13 @@ function periodBounds(period: GoalPeriod, ref = new Date()): { start: Date; end:
 }
 
 function streamMaxDistanceM(stream: { data: unknown } | null): number | null {
-  if (!stream?.data || typeof stream.data !== 'object') return null;
+  if (!stream?.data || typeof stream.data !== 'object') {
+    return null;
+  }
   const { distance } = stream.data as { distance?: number[] };
-  if (!Array.isArray(distance) || distance.length === 0) return null;
+  if (!Array.isArray(distance) || distance.length === 0) {
+    return null;
+  }
   const max = Math.max(...distance.filter((v) => typeof v === 'number' && v > 0));
   return Number.isFinite(max) && max > 0 ? max : null;
 }
@@ -97,24 +101,51 @@ function activityElevationM(activity: ActivityRow): number | null {
 }
 
 function activityDurationSec(activity: ActivityRow): number | null {
-  if (activity.duration && activity.duration > 0) return activity.duration;
+  if (activity.duration && activity.duration > 0) {
+    return activity.duration;
+  }
   if (activity.type === ActivityType.RUN) {
     const meters = activity.runMetrics?.distanceM;
     const pace = activity.runMetrics?.paceSecPerKm;
-    if (meters && pace) return (pace * meters) / 1000;
+    if (meters && pace) {
+      return (pace * meters) / 1000;
+    }
   }
   return null;
 }
 
 function matchesSport(activity: ActivityRow, sport: ActivityType | null): boolean {
-  if (sport == null) return true;
-  if (sport === ActivityType.RUN && activity.type === ActivityType.TRIATHLON) return true;
+  if ((sport === undefined || sport === null)) {
+    return true;
+  }
+  if (sport === ActivityType.RUN && activity.type === ActivityType.TRIATHLON) {
+    return true;
+  }
   return activity.type === sport;
 }
 
 function distanceWithinTolerance(actualM: number, targetM: number): boolean {
   const delta = targetM * PERFORMANCE_DISTANCE_TOLERANCE;
   return actualM >= targetM - delta && actualM <= targetM + delta;
+}
+
+function isPerformanceCandidate(
+  activity: ActivityRow,
+  sport: ActivityType,
+  distanceM: number,
+): { seconds: number; activityId: string } | null {
+  if (!matchesSport(activity, sport)) {
+    return null;
+  }
+  const meters = activityDistanceM(activity);
+  if (!meters || !distanceWithinTolerance(meters, distanceM)) {
+    return null;
+  }
+  const seconds = activityDurationSec(activity);
+  if (!seconds || seconds <= 0) {
+    return null;
+  }
+  return { seconds, activityId: activity.id };
 }
 
 export function computePerformanceBest(
@@ -125,57 +156,55 @@ export function computePerformanceBest(
   let best: { seconds: number; activityId: string } | null = null;
 
   for (const activity of activities) {
-    if (!matchesSport(activity, sport)) continue;
-    const meters = activityDistanceM(activity);
-    if (!meters || !distanceWithinTolerance(meters, distanceM)) continue;
-    const seconds = activityDurationSec(activity);
-    if (!seconds || seconds <= 0) continue;
-    if (best == null || seconds < best.seconds) {
-      best = { seconds, activityId: activity.id };
+    const candidate = isPerformanceCandidate(activity, sport, distanceM);
+    if (!candidate) {
+      continue;
+    }
+    if ((best === undefined || best === null) || candidate.seconds < best.seconds) {
+      best = candidate;
     }
   }
 
   return best;
 }
 
-function aggregatePeriodMeasure(
-  activities: ActivityRow[],
-  measure: PeriodMeasure,
-  sport: ActivityType | null,
-  period: GoalPeriod,
-  ref = new Date(),
-): number {
+type PeriodAggregationParams = {
+  activities: ActivityRow[];
+  measure: PeriodMeasure;
+  sport: ActivityType | null;
+  period: GoalPeriod;
+  ref?: Date;
+};
+
+function accumulateMeasureValue(activity: ActivityRow, measure: PeriodMeasure): number {
+  switch (measure) {
+    case 'activity_count':
+      return 1;
+    case 'duration':
+      return activityDurationSec(activity) ?? 0;
+    case 'distance':
+      return activityDistanceM(activity) ?? 0;
+    case 'elevation':
+      return activityElevationM(activity) ?? 0;
+  }
+}
+
+function aggregatePeriodMeasure(params: PeriodAggregationParams): number {
+  const { activities, measure, sport, period, ref = new Date() } = params;
   const { start, end } = periodBounds(period, ref);
   let total = 0;
-  let count = 0;
 
   for (const activity of activities) {
-    if (activity.date < start || activity.date > end) continue;
-    if (!matchesSport(activity, sport)) continue;
-
-    switch (measure) {
-      case 'activity_count':
-        count += 1;
-        break;
-      case 'duration': {
-        const sec = activityDurationSec(activity);
-        if (sec) total += sec;
-        break;
-      }
-      case 'distance': {
-        const meters = activityDistanceM(activity);
-        if (meters) total += meters;
-        break;
-      }
-      case 'elevation': {
-        const elev = activityElevationM(activity);
-        if (elev) total += elev;
-        break;
-      }
+    if (activity.date < start || activity.date > end) {
+      continue;
     }
+    if (!matchesSport(activity, sport)) {
+      continue;
+    }
+    total += accumulateMeasureValue(activity, measure);
   }
 
-  return measure === 'activity_count' ? count : total;
+  return total;
 }
 
 export function computeMetricCurrentValue(
@@ -186,7 +215,13 @@ export function computeMetricCurrentValue(
   if (config.template === 'performance') {
     return computePerformanceBest(activities, config.sport, config.distanceM)?.seconds ?? null;
   }
-  return aggregatePeriodMeasure(activities, config.measure, config.sport, config.period, ref);
+  return aggregatePeriodMeasure({
+    activities,
+    measure: config.measure,
+    sport: config.sport,
+    period: config.period,
+    ref,
+  });
 }
 
 export async function loadActivitiesForGoals(athleteId: string): Promise<ActivityRow[]> {

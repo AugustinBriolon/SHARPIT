@@ -31,37 +31,41 @@ export type PostSessionLoopView = {
  * Closes the post-effort UX loop on Today (PRODUCT moments 7–8):
  * light ressenti CTA + link to activity narrative + sync freshness line.
  */
-export function buildPostSessionLoop(input: PostSessionLoopInput): PostSessionLoopView {
-  if (input.phase !== 'SESSION_COMPLETED' && input.phase !== 'RECOVERY_WINDOW') {
-    return null;
-  }
-
-  const dayStart = startOfLocalDay(input.day).getTime();
+function activitiesToday(
+  activities: PostSessionLoopInput['activities'],
+  day: Date,
+): PostSessionLoopInput['activities'] {
+  const dayStart = startOfLocalDay(day).getTime();
   const dayEnd = dayStart + 86_400_000;
-  const todayActivities = input.activities
-    .filter((a) => {
-      const t = new Date(a.date).getTime();
-      return t >= dayStart && t < dayEnd;
+  return activities
+    .filter((activity) => {
+      const time = new Date(activity.date).getTime();
+      return time >= dayStart && time < dayEnd;
     })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
 
+function pickLatestActivity(
+  todayActivities: PostSessionLoopInput['activities'],
+  excludeActivityIds?: ReadonlySet<string>,
+): PostSessionLoopInput['activities'][number] | undefined {
   const substantive = todayActivities.filter(
-    (a) =>
-      !isDemoSessionLinkActivityTitle(a.title) && !(input.excludeActivityIds?.has(a.id) ?? false),
+    (activity) =>
+      !isDemoSessionLinkActivityTitle(activity.title) &&
+      !(excludeActivityIds?.has(activity.id) ?? false),
   );
-  const [latest] = substantive.length > 0 ? substantive : todayActivities;
-  if (!latest) return null;
+  return (substantive.length > 0 ? substantive : todayActivities)[0];
+}
 
-  const needsFeeling =
-    latest.rpe == null && (latest.feeling == null || latest.feeling.trim() === '');
-  /** Positive affirmation only — syncing/stale already surface via SnapshotStatusBanner. */
-  const freshnessLine = input.overallFresh ? 'Twin à jour — ta séance est intégrée.' : null;
+function activityNeedsFeeling(activity: PostSessionLoopInput['activities'][number]): boolean {
+  return (activity.rpe === undefined || activity.rpe === null) && ((activity.feeling === undefined || activity.feeling === null) || activity.feeling.trim() === '');
+}
 
-  // Nothing left to prompt for: RPE/feeling are already in, and freshness isn't
-  // worth a banner on its own. Without one of those the card was just repeating
-  // the "Voir le récit" link the day summary already shows for this activity.
-  if (!needsFeeling && !freshnessLine) return null;
-
+function buildVisiblePostSessionLoop(
+  latest: PostSessionLoopInput['activities'][number],
+  needsFeeling: boolean,
+  freshnessLine: string | null,
+): PostSessionLoopView {
   return {
     visible: true,
     activityId: latest.id,
@@ -70,6 +74,25 @@ export function buildPostSessionLoop(input: PostSessionLoopInput): PostSessionLo
     narrativeHref: TWIN_DRILL_DOWN.activity(latest.id),
     freshnessLine,
   };
+}
+
+export function buildPostSessionLoop(input: PostSessionLoopInput): PostSessionLoopView {
+  if (input.phase !== 'SESSION_COMPLETED' && input.phase !== 'RECOVERY_WINDOW') {
+    return null;
+  }
+
+  const latest = pickLatestActivity(activitiesToday(input.activities, input.day), input.excludeActivityIds);
+  if (!latest) {
+    return null;
+  }
+
+  const needsFeeling = activityNeedsFeeling(latest);
+  const freshnessLine = input.overallFresh ? 'Twin à jour — ta séance est intégrée.' : null;
+  if (!needsFeeling && !freshnessLine) {
+    return null;
+  }
+
+  return buildVisiblePostSessionLoop(latest, needsFeeling, freshnessLine);
 }
 
 function startOfLocalDay(day: Date): Date {

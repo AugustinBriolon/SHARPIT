@@ -54,9 +54,13 @@ export async function runStructuredCoachStream({
 
   const emitPartial = async () => {
     const parsed = await parsePartialJson(jsonText);
-    if (parsed.state !== 'successful-parse' && parsed.state !== 'repaired-parse') return;
+    if (parsed.state !== 'successful-parse' && parsed.state !== 'repaired-parse') {
+      return;
+    }
     const snapshot = JSON.stringify(parsed.value);
-    if (snapshot === lastEmitted) return;
+    if (snapshot === lastEmitted) {
+      return;
+    }
     lastEmitted = snapshot;
     onPartial(parsed.value);
   };
@@ -66,10 +70,14 @@ export async function runStructuredCoachStream({
       onReasoning(part.text);
       continue;
     }
-    if (part.type !== 'text-delta') continue;
+    if (part.type !== 'text-delta') {
+      continue;
+    }
 
     jsonText += part.text;
-    if (jsonText.length - parsedUpTo < PARTIAL_PARSE_STRIDE_CHARS) continue;
+    if (jsonText.length - parsedUpTo < PARTIAL_PARSE_STRIDE_CHARS) {
+      continue;
+    }
     parsedUpTo = jsonText.length;
     await emitPartial();
   }

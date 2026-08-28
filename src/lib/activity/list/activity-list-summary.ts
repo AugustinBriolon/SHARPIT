@@ -1,4 +1,5 @@
 import { ActivityType } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 
 import { formatDistance } from '@/lib/format';
 
@@ -14,46 +15,49 @@ type ActivityMetricSource = {
 
 /** Unique exercise count for list density — never dump exercise names in lists. */
 export function formatStrengthListMetric(sets: { exercise: string }[]): string | undefined {
-  if (!sets.length) return undefined;
+  if (!sets.length) {
+    return undefined;
+  }
   const unique = new Set(sets.map((s) => s.exercise.trim()).filter(Boolean));
   const count = unique.size > 0 ? unique.size : sets.length;
   return count === 1 ? '1 exercice' : `${count} exercices`;
 }
+
+function formatDistanceMetric(distanceM: number | null | undefined): string | undefined {
+  return isSet(distanceM) && distanceM !== undefined && distanceM > 0
+    ? formatDistance(distanceM)
+    : undefined;
+}
+
+const LIST_METRIC_HANDLERS: Record<
+  ActivityType,
+  (activity: ActivityMetricSource) => string | undefined
+> = {
+  [ActivityType.RUN]: (activity) => formatDistanceMetric(activity.runMetrics?.distanceM),
+  [ActivityType.BIKE]: (activity) =>
+    activity.bikeMetrics?.tss ? `${Math.round(activity.bikeMetrics.tss)} TSS` : undefined,
+  [ActivityType.SWIM]: (activity) => formatDistanceMetric(activity.swimMetrics?.distanceM),
+  [ActivityType.STRENGTH]: (activity) => formatStrengthListMetric(activity.strengthSets),
+  [ActivityType.HIKE]: (activity) => formatDistanceMetric(activity.hikeMetrics?.distanceM),
+  [ActivityType.TRIATHLON]: (activity) =>
+    isSet(activity.load) ? `${Math.round(activity.load)} TSS` : 'Multisport',
+  [ActivityType.OTHER]: (activity) =>
+    isSet(activity.load) ? `${Math.round(activity.load)} TSS` : undefined,
+};
 
 /**
  * One short list metric per activity type.
  * Strength: exercise count only (detail lives on the activity page).
  */
 export function getActivityListMetric(activity: ActivityMetricSource): string | undefined {
-  switch (activity.type) {
-    case ActivityType.RUN: {
-      const distanceM = activity.runMetrics?.distanceM;
-      return distanceM != null && distanceM > 0 ? formatDistance(distanceM) : undefined;
-    }
-    case ActivityType.BIKE:
-      return activity.bikeMetrics?.tss ? `${Math.round(activity.bikeMetrics.tss)} TSS` : undefined;
-    case ActivityType.SWIM: {
-      const distanceM = activity.swimMetrics?.distanceM;
-      return distanceM != null && distanceM > 0 ? formatDistance(distanceM) : undefined;
-    }
-    case ActivityType.STRENGTH:
-      return formatStrengthListMetric(activity.strengthSets);
-    case ActivityType.HIKE: {
-      const distanceM = activity.hikeMetrics?.distanceM;
-      return distanceM != null && distanceM > 0 ? formatDistance(distanceM) : undefined;
-    }
-    case ActivityType.TRIATHLON:
-      return activity.load != null ? `${Math.round(activity.load)} TSS` : 'Multisport';
-    case ActivityType.OTHER:
-      return activity.load != null ? `${Math.round(activity.load)} TSS` : undefined;
-    default:
-      return undefined;
-  }
+  return LIST_METRIC_HANDLERS[activity.type]?.(activity);
 }
 
 /** Whether list load would duplicate the primary metric (bike/triathlon TSS). */
 export function shouldShowActivityListLoad(activity: ActivityMetricSource): boolean {
-  if (activity.load == null) return false;
+  if (activity.load === undefined || activity.load === null) {
+    return false;
+  }
   if (activity.type === ActivityType.BIKE || activity.type === ActivityType.TRIATHLON) {
     return false;
   }

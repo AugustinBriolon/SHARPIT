@@ -43,7 +43,9 @@ export function ColoredMacroStackBar({
   className?: string;
 }) {
   const total = protein + carbs + fat;
-  if (total === 0) return null;
+  if (total === 0) {
+    return null;
+  }
 
   const segments: Array<{ kind: MacroKind; grams: number }> = [
     { kind: 'protein', grams: protein },

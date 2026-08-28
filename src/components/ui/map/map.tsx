@@ -26,6 +26,15 @@ import {
   shouldStartRouteReveal,
 } from '@/lib/motion/route-reveal-visibility';
 import { cn } from '@/lib/utils';
+import {
+  requestMapLocation,
+  setRouteLineData,
+  startRouteRevealAnimation,
+  syncControlledViewport,
+  syncMapGeoJsonLayerVisibility,
+  syncMarkerFromOptions,
+  toggleMapFullscreen,
+} from '@/components/ui/map/map-sync-helpers';
 
 const defaultStyles = {
   dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
@@ -54,10 +63,14 @@ function mergeHoverPaint<T extends Record<string, unknown>>(
   paint: T,
   hoverPaint: T | undefined,
 ): T {
-  if (!hoverPaint) return paint;
+  if (!hoverPaint) {
+    return paint;
+  }
   const merged: Record<string, unknown> = { ...paint };
   for (const [key, hoverValue] of Object.entries(hoverPaint)) {
-    if (hoverValue === undefined) continue;
+    if (hoverValue === undefined) {
+      continue;
+    }
     const baseValue = merged[key];
     merged[key] =
       baseValue === undefined
@@ -74,7 +87,9 @@ type Theme = 'light' | 'dark';
 // no class at all, so "no `dark` class" means light — never fall back to the
 // OS preference here or the map diverges from the app theme.
 function getDocumentTheme(): Theme {
-  if (typeof document === 'undefined') return 'light';
+  if (typeof document === 'undefined') {
+    return 'light';
+  }
   return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 }
 
@@ -82,7 +97,9 @@ function useResolvedTheme(themeProp?: 'light' | 'dark'): Theme {
   const [detectedTheme, setDetectedTheme] = useState<Theme>(() => getDocumentTheme());
 
   useEffect(() => {
-    if (themeProp) return; // Skip detection if theme is provided via prop
+    if (themeProp) {
+      return;
+    } // Skip detection if theme is provided via prop
 
     // Watch for document class changes (ThemeProvider toggling the dark class)
     const observer = new MutationObserver(() => {
@@ -253,7 +270,9 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
 
   // Initialize the map
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current) {
+      return;
+    }
 
     const initialStyle = resolvedTheme === 'dark' ? mapStyles.dark : mapStyles.light;
     currentStyleRef.current = initialStyle;
@@ -285,7 +304,9 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
 
     // Viewport change handler - skip if triggered by internal update
     const handleMove = () => {
-      if (internalUpdateRef.current) return;
+      if (internalUpdateRef.current) {
+        return;
+      }
       onViewportChangeRef.current?.(getViewport(map));
     };
 
@@ -338,39 +359,23 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
 
   // Sync controlled viewport to map
   useEffect(() => {
-    if (!mapInstance || !isControlled || !viewport) return;
-    if (mapInstance.isMoving()) return;
-
-    const current = getViewport(mapInstance);
-    const next = {
-      center: viewport.center ?? current.center,
-      zoom: viewport.zoom ?? current.zoom,
-      bearing: viewport.bearing ?? current.bearing,
-      pitch: viewport.pitch ?? current.pitch,
-    };
-
-    if (
-      next.center[0] === current.center[0] &&
-      next.center[1] === current.center[1] &&
-      next.zoom === current.zoom &&
-      next.bearing === current.bearing &&
-      next.pitch === current.pitch
-    ) {
+    if (!mapInstance || !isControlled || !viewport) {
       return;
     }
-
-    internalUpdateRef.current = true;
-    mapInstance.jumpTo(next);
-    internalUpdateRef.current = false;
+    syncControlledViewport(mapInstance, viewport, getViewport, internalUpdateRef);
   }, [mapInstance, isControlled, viewport]);
 
   // Handle style change
   useEffect(() => {
-    if (!mapInstance || !resolvedTheme) return;
+    if (!mapInstance || !resolvedTheme) {
+      return;
+    }
 
     const newStyle = resolvedTheme === 'dark' ? mapStyles.dark : mapStyles.light;
 
-    if (currentStyleRef.current === newStyle) return;
+    if (currentStyleRef.current === newStyle) {
+      return;
+    }
 
     clearStyleTimeout();
     currentStyleRef.current = newStyle;
@@ -381,7 +386,9 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
 
   // Sync projection when the prop changes after mount.
   useEffect(() => {
-    if (!mapInstance || !isStyleLoaded || !projection) return;
+    if (!mapInstance || !isStyleLoaded || !projection) {
+      return;
+    }
     mapInstance.setProjection(projection);
   }, [mapInstance, isStyleLoaded, projection]);
 
@@ -510,7 +517,9 @@ function MapMarker({
   }, []);
 
   useEffect(() => {
-    if (!map) return;
+    if (!map) {
+      return;
+    }
 
     marker.addTo(map);
 
@@ -522,33 +531,13 @@ function MapMarker({
   const { offset, rotation, rotationAlignment, pitchAlignment } = markerOptions;
 
   useEffect(() => {
-    const current = marker.getLngLat();
-    if (current.lng !== longitude || current.lat !== latitude) {
-      marker.setLngLat([longitude, latitude]);
-    }
-
-    if (marker.isDraggable() !== draggable) {
-      marker.setDraggable(draggable);
-    }
-
-    const currentOffset = marker.getOffset();
-    const newOffset = offset ?? [0, 0];
-    const [newOffsetX, newOffsetY] = Array.isArray(newOffset)
-      ? newOffset
-      : [newOffset.x, newOffset.y];
-    if (currentOffset.x !== newOffsetX || currentOffset.y !== newOffsetY) {
-      marker.setOffset(newOffset);
-    }
-
-    if (marker.getRotation() !== (rotation ?? 0)) {
-      marker.setRotation(rotation ?? 0);
-    }
-    if (marker.getRotationAlignment() !== (rotationAlignment ?? 'auto')) {
-      marker.setRotationAlignment(rotationAlignment ?? 'auto');
-    }
-    if (marker.getPitchAlignment() !== (pitchAlignment ?? 'auto')) {
-      marker.setPitchAlignment(pitchAlignment ?? 'auto');
-    }
+    syncMarkerFromOptions({
+      marker,
+      longitude,
+      latitude,
+      draggable,
+      markerOptions: { offset, rotation, rotationAlignment, pitchAlignment },
+    });
   }, [marker, longitude, latitude, draggable, offset, rotation, rotationAlignment, pitchAlignment]);
 
   return <MarkerContext.Provider value={{ marker, map }}>{children}</MarkerContext.Provider>;
@@ -623,7 +612,9 @@ function MarkerPopup({
   }, []);
 
   useEffect(() => {
-    if (!map) return;
+    if (!map) {
+      return;
+    }
 
     popup.setDOMContent(container);
     marker.setPopup(popup);
@@ -682,7 +673,9 @@ function MarkerTooltip({ children, className, ...popupOptions }: MarkerTooltipPr
   }, []);
 
   useEffect(() => {
-    if (!map) return;
+    if (!map) {
+      return;
+    }
 
     tooltip.setDOMContent(container);
 
@@ -815,6 +808,68 @@ function ControlButton({
   );
 }
 
+function MapControlGroups({
+  showZoom,
+  showCompass,
+  showLocate,
+  showFullscreen,
+  waitingForLocation,
+  onZoomIn,
+  onZoomOut,
+  onResetBearing,
+  onLocate,
+  onFullscreen,
+}: {
+  showZoom: boolean;
+  showCompass: boolean;
+  showLocate: boolean;
+  showFullscreen: boolean;
+  waitingForLocation: boolean;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onResetBearing: () => void;
+  onLocate: () => void;
+  onFullscreen: () => void;
+}) {
+  return (
+    <>
+      {showZoom ? (
+        <ControlGroup>
+          <ControlButton label="Zoom in" onClick={onZoomIn}>
+            <Plus className="size-4" />
+          </ControlButton>
+          <ControlButton label="Zoom out" onClick={onZoomOut}>
+            <Minus className="size-4" />
+          </ControlButton>
+        </ControlGroup>
+      ) : null}
+      {showCompass ? (
+        <ControlGroup>
+          <CompassButton onClick={onResetBearing} />
+        </ControlGroup>
+      ) : null}
+      {showLocate ? (
+        <ControlGroup>
+          <ControlButton disabled={waitingForLocation} label="Find my location" onClick={onLocate}>
+            {waitingForLocation ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Locate className="size-4" />
+            )}
+          </ControlButton>
+        </ControlGroup>
+      ) : null}
+      {showFullscreen ? (
+        <ControlGroup>
+          <ControlButton label="Toggle fullscreen" onClick={onFullscreen}>
+            <Maximize className="size-4" />
+          </ControlButton>
+        </ControlGroup>
+      ) : null}
+    </>
+  );
+}
+
 function MapControls({
   position = 'bottom-right',
   showZoom = true,
@@ -840,81 +895,29 @@ function MapControls({
   }, [map]);
 
   const handleLocate = useCallback(() => {
-    setWaitingForLocation(true);
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const coords = {
-            longitude: pos.coords.longitude,
-            latitude: pos.coords.latitude,
-          };
-          map?.flyTo({
-            center: [coords.longitude, coords.latitude],
-            zoom: 14,
-            duration: 1500,
-          });
-          onLocate?.(coords);
-          setWaitingForLocation(false);
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-          setWaitingForLocation(false);
-        },
-      );
-    }
+    requestMapLocation(map, onLocate, setWaitingForLocation);
   }, [map, onLocate]);
 
   const handleFullscreen = useCallback(() => {
-    const container = map?.getContainer();
-    if (!container) return;
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
-    } else {
-      container.requestFullscreen();
-    }
+    toggleMapFullscreen(map);
   }, [map]);
 
   return (
     <div
       className={cn('absolute z-10 flex flex-col gap-1.5', positionClasses[position], className)}
     >
-      {showZoom && (
-        <ControlGroup>
-          <ControlButton label="Zoom in" onClick={handleZoomIn}>
-            <Plus className="size-4" />
-          </ControlButton>
-          <ControlButton label="Zoom out" onClick={handleZoomOut}>
-            <Minus className="size-4" />
-          </ControlButton>
-        </ControlGroup>
-      )}
-      {showCompass && (
-        <ControlGroup>
-          <CompassButton onClick={handleResetBearing} />
-        </ControlGroup>
-      )}
-      {showLocate && (
-        <ControlGroup>
-          <ControlButton
-            disabled={waitingForLocation}
-            label="Find my location"
-            onClick={handleLocate}
-          >
-            {waitingForLocation ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Locate className="size-4" />
-            )}
-          </ControlButton>
-        </ControlGroup>
-      )}
-      {showFullscreen && (
-        <ControlGroup>
-          <ControlButton label="Toggle fullscreen" onClick={handleFullscreen}>
-            <Maximize className="size-4" />
-          </ControlButton>
-        </ControlGroup>
-      )}
+      <MapControlGroups
+        showCompass={showCompass}
+        showFullscreen={showFullscreen}
+        showLocate={showLocate}
+        showZoom={showZoom}
+        waitingForLocation={waitingForLocation}
+        onFullscreen={handleFullscreen}
+        onLocate={handleLocate}
+        onResetBearing={handleResetBearing}
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+      />
     </div>
   );
 }
@@ -924,7 +927,9 @@ function CompassButton({ onClick }: { onClick: () => void }) {
   const compassRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
-    if (!map || !compassRef.current) return;
+    if (!map || !compassRef.current) {
+      return;
+    }
 
     const compass = compassRef.current;
 
@@ -1004,7 +1009,9 @@ function MapPopup({
   }, []);
 
   useEffect(() => {
-    if (!map) return;
+    if (!map) {
+      return;
+    }
 
     const onCloseProp = () => onCloseRef.current?.();
 
@@ -1109,7 +1116,9 @@ function MapRoute({
 
   // Add source and layer when the map is ready.
   useEffect(() => {
-    if (!isLoaded || !map) return;
+    if (!isLoaded || !map) {
+      return;
+    }
 
     const paint = initialPaintRef.current;
 
@@ -1137,8 +1146,12 @@ function MapRoute({
 
     return () => {
       try {
-        if (map.getLayer(layerId)) map.removeLayer(layerId);
-        if (map.getSource(sourceId)) map.removeSource(sourceId);
+        if (map.getLayer(layerId)) {
+          map.removeLayer(layerId);
+        }
+        if (map.getSource(sourceId)) {
+          map.removeSource(sourceId);
+        }
       } catch {
         // ignore
       }
@@ -1153,44 +1166,33 @@ function MapRoute({
   // in view, the line is already fully drawn. `animate` runs wait for `isVisible`
   // too, so the trace only starts once there's actually someone to see it.
   useEffect(() => {
-    if (!isLoaded || !map || coordinates.length < 2) return;
-    if (animate && !isVisible) return;
-
-    const source = map.getSource(sourceId) as MapLibreGL.GeoJSONSource;
-    if (!source) return;
-
-    const setLine = (points: [number, number][]) => {
-      source.setData({
-        type: 'Feature',
-        properties: {},
-        geometry: { type: 'LineString', coordinates: points },
-      });
-    };
-
-    if (!animate || !motionConfig.shouldAnimate({ essential: false })) {
-      setLine(coordinates);
+    if (!isLoaded || !map || coordinates.length < 2) {
+      return;
+    }
+    if (animate && !isVisible) {
       return;
     }
 
-    let frameId: number;
-    const startedAt = performance.now();
-    const durationMs = revealDurationMs(coordinates.length);
+    const source = map.getSource(sourceId) as MapLibreGL.GeoJSONSource;
+    if (!source) {
+      return;
+    }
 
-    const step = (now: number) => {
-      const elapsed = now - startedAt;
-      setLine(coordinates.slice(0, revealedPointCount(elapsed, durationMs, coordinates.length)));
-
-      if (!isRevealComplete(elapsed, durationMs)) {
-        frameId = requestAnimationFrame(step);
-      }
-    };
-
-    frameId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(frameId);
+    return startRouteRevealAnimation({
+      source,
+      coordinates,
+      animate,
+      shouldAnimateMotion: motionConfig.shouldAnimate({ essential: false }),
+      durationMs: revealDurationMs,
+      revealedCount: revealedPointCount,
+      isComplete: isRevealComplete,
+    });
   }, [isLoaded, isVisible, map, coordinates, sourceId, animate]);
 
   useEffect(() => {
-    if (!isLoaded || !map || !map.getLayer(layerId)) return;
+    if (!isLoaded || !map || !map.getLayer(layerId)) {
+      return;
+    }
 
     map.setPaintProperty(layerId, 'line-color', color);
     map.setPaintProperty(layerId, 'line-width', width);
@@ -1202,7 +1204,9 @@ function MapRoute({
 
   // Handle click and hover events
   useEffect(() => {
-    if (!isLoaded || !map || !interactive) return;
+    if (!isLoaded || !map || !interactive) {
+      return;
+    }
 
     const handleClick = () => {
       onClick?.();
@@ -1351,7 +1355,9 @@ function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonPropert
 
   // Add source on mount.
   useEffect(() => {
-    if (!isLoaded || !map) return;
+    if (!isLoaded || !map) {
+      return;
+    }
 
     map.addSource(sourceId, {
       type: 'geojson',
@@ -1361,9 +1367,15 @@ function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonPropert
 
     return () => {
       try {
-        if (map.getLayer(lineLayerId)) map.removeLayer(lineLayerId);
-        if (map.getLayer(fillLayerId)) map.removeLayer(fillLayerId);
-        if (map.getSource(sourceId)) map.removeSource(sourceId);
+        if (map.getLayer(lineLayerId)) {
+          map.removeLayer(lineLayerId);
+        }
+        if (map.getLayer(fillLayerId)) {
+          map.removeLayer(fillLayerId);
+        }
+        if (map.getSource(sourceId)) {
+          map.removeSource(sourceId);
+        }
       } catch {
         // style may be mid-reload
       }
@@ -1372,56 +1384,35 @@ function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonPropert
 
   // Sync data when it changes.
   useEffect(() => {
-    if (!isLoaded || !map) return;
+    if (!isLoaded || !map) {
+      return;
+    }
     const source = map.getSource(sourceId) as MapLibreGL.GeoJSONSource | undefined;
     source?.setData(data as never);
   }, [isLoaded, map, data, sourceId]);
 
   // Sync layers and paint when visibility or styling changes.
   useEffect(() => {
-    if (!isLoaded || !map) return;
+    if (!isLoaded || !map) {
+      return;
+    }
 
     const source = map.getSource(sourceId);
-    if (!source) return;
-
-    if (showFill && !map.getLayer(fillLayerId)) {
-      map.addLayer(
-        {
-          id: fillLayerId,
-          type: 'fill',
-          source: sourceId,
-          paint: mergedFillPaint,
-        },
-        beforeId,
-      );
-    } else if (!showFill && map.getLayer(fillLayerId)) {
-      map.removeLayer(fillLayerId);
+    if (!source) {
+      return;
     }
 
-    if (showLine && !map.getLayer(lineLayerId)) {
-      map.addLayer(
-        {
-          id: lineLayerId,
-          type: 'line',
-          source: sourceId,
-          paint: mergedLinePaint,
-        },
-        beforeId,
-      );
-    } else if (!showLine && map.getLayer(lineLayerId)) {
-      map.removeLayer(lineLayerId);
-    }
-
-    if (showFill && map.getLayer(fillLayerId)) {
-      for (const [key, value] of Object.entries(mergedFillPaint)) {
-        map.setPaintProperty(fillLayerId, key as keyof MapFillPaint, value as never);
-      }
-    }
-    if (showLine && map.getLayer(lineLayerId)) {
-      for (const [key, value] of Object.entries(mergedLinePaint)) {
-        map.setPaintProperty(lineLayerId, key as keyof MapLinePaint, value as never);
-      }
-    }
+    syncMapGeoJsonLayerVisibility({
+      map,
+      sourceId,
+      fillLayerId,
+      lineLayerId,
+      showFill,
+      showLine,
+      mergedFillPaint,
+      mergedLinePaint,
+      beforeId,
+    });
   }, [
     isLoaded,
     map,
@@ -1437,29 +1428,37 @@ function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonPropert
 
   // Interaction handlers (bound to the fill layer).
   useEffect(() => {
-    if (!isLoaded || !map || !interactive || !showFill) return;
+    if (!isLoaded || !map || !interactive || !showFill) {
+      return;
+    }
 
     let hoveredId: string | number | null = null;
 
     const setHover = (next: string | number | null) => {
-      if (next === hoveredId) return;
+      if (next === hoveredId) {
+        return;
+      }
       const sourceExists = !!map.getSource(sourceId);
-      if (hoveredId != null && sourceExists) {
+      if (hoveredId !== null && sourceExists) {
         map.setFeatureState({ source: sourceId, id: hoveredId }, { hover: false });
       }
       hoveredId = next;
-      if (next != null && sourceExists) {
+      if (next !== null && sourceExists) {
         map.setFeatureState({ source: sourceId, id: next }, { hover: true });
       }
     };
 
     const handleMouseMove = (e: MapLibreGL.MapLayerMouseEvent) => {
       const feature = e.features?.[0];
-      if (!feature) return;
+      if (!feature) {
+        return;
+      }
       map.getCanvas().style.cursor = 'pointer';
 
       const featureId = feature.id;
-      if (featureId === hoveredId) return;
+      if (featureId === hoveredId) {
+        return;
+      }
       setHover(featureId ?? null);
       latestRef.current.onHover?.({
         feature: feature as unknown as MapGeoJSONFeature<P>,
@@ -1477,7 +1476,9 @@ function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonPropert
 
     const handleClick = (e: MapLibreGL.MapLayerMouseEvent) => {
       const feature = e.features?.[0];
-      if (!feature) return;
+      if (!feature) {
+        return;
+      }
       latestRef.current.onClick?.({
         feature: feature as unknown as MapGeoJSONFeature<P>,
         longitude: e.lngLat.lng,
@@ -1602,13 +1603,18 @@ function buildArcCoordinates(
   // on the globe projection, and on mercator when world copies are enabled.
   const rawDx = xTo - x0;
   let x2 = xTo;
-  if (rawDx > 180) x2 = xTo - 360;
-  else if (rawDx < -180) x2 = xTo + 360;
+  if (rawDx > 180) {
+    x2 = xTo - 360;
+  } else if (rawDx < -180) {
+    x2 = xTo + 360;
+  }
   const dx = x2 - x0;
   const dy = y2 - y0;
   const distance = Math.hypot(dx, dy);
 
-  if (distance === 0 || curvature === 0) return [from, [x2, y2]];
+  if (distance === 0 || curvature === 0) {
+    return [from, [x2, y2]];
+  }
 
   const mx = (x0 + x2) / 2;
   const my = (y0 + y2) / 2;
@@ -1683,7 +1689,9 @@ function MapArc<T extends MapArcDatum = MapArcDatum>({
 
   // Add source and layers on mount.
   useEffect(() => {
-    if (!isLoaded || !map) return;
+    if (!isLoaded || !map) {
+      return;
+    }
 
     map.addSource(sourceId, {
       type: 'geojson',
@@ -1719,9 +1727,15 @@ function MapArc<T extends MapArcDatum = MapArcDatum>({
 
     return () => {
       try {
-        if (map.getLayer(layerId)) map.removeLayer(layerId);
-        if (map.getLayer(hitLayerId)) map.removeLayer(hitLayerId);
-        if (map.getSource(sourceId)) map.removeSource(sourceId);
+        if (map.getLayer(layerId)) {
+          map.removeLayer(layerId);
+        }
+        if (map.getLayer(hitLayerId)) {
+          map.removeLayer(hitLayerId);
+        }
+        if (map.getSource(sourceId)) {
+          map.removeSource(sourceId);
+        }
       } catch {
         // ignore
       }
@@ -1730,14 +1744,18 @@ function MapArc<T extends MapArcDatum = MapArcDatum>({
 
   // Sync features when data / curvature / samples change.
   useEffect(() => {
-    if (!isLoaded || !map) return;
+    if (!isLoaded || !map) {
+      return;
+    }
     const source = map.getSource(sourceId) as MapLibreGL.GeoJSONSource | undefined;
     source?.setData(geoJSON);
   }, [isLoaded, map, geoJSON, sourceId]);
 
   // Sync paint/layout when they change.
   useEffect(() => {
-    if (!isLoaded || !map || !map.getLayer(layerId)) return;
+    if (!isLoaded || !map || !map.getLayer(layerId)) {
+      return;
+    }
     for (const [key, value] of Object.entries(mergedPaint)) {
       map.setPaintProperty(layerId, key as keyof MapArcLinePaint, value as never);
     }
@@ -1751,32 +1769,38 @@ function MapArc<T extends MapArcDatum = MapArcDatum>({
 
   // Interaction handlers
   useEffect(() => {
-    if (!isLoaded || !map || !interactive) return;
+    if (!isLoaded || !map || !interactive) {
+      return;
+    }
 
     let hoveredId: string | number | null = null;
 
     const setHover = (next: string | number | null) => {
-      if (next === hoveredId) return;
+      if (next === hoveredId) {
+        return;
+      }
       const sourceExists = !!map.getSource(sourceId);
-      if (hoveredId != null && sourceExists) {
+      if (hoveredId !== null && sourceExists) {
         map.setFeatureState({ source: sourceId, id: hoveredId }, { hover: false });
       }
       hoveredId = next;
-      if (next != null && sourceExists) {
+      if (next !== null && sourceExists) {
         map.setFeatureState({ source: sourceId, id: next }, { hover: true });
       }
     };
 
     const findArc = (featureId: string | number | undefined) =>
-      featureId == null
+      featureId === null
         ? undefined
         : latestRef.current.data.find((arc) => String(arc.id) === String(featureId));
 
     const handleMouseMove = (e: MapLibreGL.MapLayerMouseEvent) => {
       const featureId = e.features?.[0]?.id as string | number | undefined;
-      if (featureId == null || featureId === hoveredId) return;
+      if (featureId === null || featureId === hoveredId) {
+        return;
+      }
 
-      setHover(featureId);
+      setHover(featureId ?? null);
       map.getCanvas().style.cursor = 'pointer';
 
       const arc = findArc(featureId);
@@ -1798,7 +1822,9 @@ function MapArc<T extends MapArcDatum = MapArcDatum>({
 
     const handleClick = (e: MapLibreGL.MapLayerMouseEvent) => {
       const arc = findArc(e.features?.[0]?.id as string | number | undefined);
-      if (!arc) return;
+      if (!arc) {
+        return;
+      }
       latestRef.current.onClick?.({
         arc: arc as T,
         longitude: e.lngLat.lng,
@@ -1873,7 +1899,9 @@ function MapClusterLayer<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonPr
 
   // Add source and layers on mount
   useEffect(() => {
-    if (!isLoaded || !map) return;
+    if (!isLoaded || !map) {
+      return;
+    }
 
     // Add clustered GeoJSON source
     map.addSource(sourceId, {
@@ -1947,10 +1975,18 @@ function MapClusterLayer<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonPr
 
     return () => {
       try {
-        if (map.getLayer(clusterCountLayerId)) map.removeLayer(clusterCountLayerId);
-        if (map.getLayer(unclusteredLayerId)) map.removeLayer(unclusteredLayerId);
-        if (map.getLayer(clusterLayerId)) map.removeLayer(clusterLayerId);
-        if (map.getSource(sourceId)) map.removeSource(sourceId);
+        if (map.getLayer(clusterCountLayerId)) {
+          map.removeLayer(clusterCountLayerId);
+        }
+        if (map.getLayer(unclusteredLayerId)) {
+          map.removeLayer(unclusteredLayerId);
+        }
+        if (map.getLayer(clusterLayerId)) {
+          map.removeLayer(clusterLayerId);
+        }
+        if (map.getSource(sourceId)) {
+          map.removeSource(sourceId);
+        }
       } catch {
         // ignore
       }
@@ -1959,7 +1995,9 @@ function MapClusterLayer<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonPr
 
   // Update source data when data prop changes (only for non-URL data)
   useEffect(() => {
-    if (!isLoaded || !map || typeof data === 'string') return;
+    if (!isLoaded || !map || typeof data === 'string') {
+      return;
+    }
 
     const source = map.getSource(sourceId) as MapLibreGL.GeoJSONSource;
     if (source) {
@@ -1969,7 +2007,9 @@ function MapClusterLayer<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonPr
 
   // Update layer styles when props change
   useEffect(() => {
-    if (!isLoaded || !map) return;
+    if (!isLoaded || !map) {
+      return;
+    }
 
     const prev = stylePropsRef.current;
     const colorsChanged =
@@ -2015,7 +2055,9 @@ function MapClusterLayer<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonPr
 
   // Handle click events
   useEffect(() => {
-    if (!isLoaded || !map) return;
+    if (!isLoaded || !map) {
+      return;
+    }
 
     // Cluster click handler - zoom into cluster
     const handleClusterClick = async (
@@ -2026,7 +2068,9 @@ function MapClusterLayer<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonPr
       const features = map.queryRenderedFeatures(e.point, {
         layers: [clusterLayerId],
       });
-      if (!features.length) return;
+      if (!features.length) {
+        return;
+      }
 
       const [feature] = features;
       const clusterId = feature.properties?.cluster_id as number;
@@ -2052,7 +2096,9 @@ function MapClusterLayer<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonPr
         features?: MapLibreGL.MapGeoJSONFeature[];
       },
     ) => {
-      if (!onPointClick || !e.features?.length) return;
+      if (!onPointClick || !e.features?.length) {
+        return;
+      }
 
       const [feature] = e.features;
       const coordinates = (feature.geometry as GeoJSON.Point).coordinates.slice() as [

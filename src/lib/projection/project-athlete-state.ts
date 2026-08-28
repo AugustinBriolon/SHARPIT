@@ -6,6 +6,7 @@
  */
 
 import { runProjectedDecision } from '@/core/decision/projected-decision';
+import { isSet } from '@/lib/util/value';
 import type {
   ProjectionAssumption,
   ProjectedAthleteState,
@@ -75,58 +76,33 @@ function buildFutureDayIds(anchorTrainingDayId: string, horizonDays: number): st
   );
 }
 
-function buildSummary(
-  days: readonly ProjectedDayState[],
-  anchor: ProjectedAthleteState['anchor'],
-): ProjectedAthleteSummary {
-  if (days.length === 0) {
-    return {
-      peakReadinessDay: null,
-      highestRiskDay: null,
-      mainLimitingFactor: null,
-      planningConfidence: 0,
-      headline:
-        'Aucune projection disponible — planifie des séances pour voir l’évolution attendue.',
-      riskLines: [],
-    };
+function findPeakReadinessDay(days: readonly ProjectedDayState[]): string | null {
+  const withReadiness = days.filter((d) => isSet(d.physiology.expectedReadiness));
+  if (withReadiness.length === 0) {
+    return null;
   }
+  return withReadiness.reduce((best, day) =>
+    (day.physiology.expectedReadiness ?? 0) > (best.physiology.expectedReadiness ?? 0) ? day : best,
+  ).trainingDayId;
+}
 
-  const withReadiness = days.filter((d) => d.physiology.expectedReadiness != null);
-  const peakDay =
-    withReadiness.length > 0
-      ? withReadiness.reduce((best, day) =>
-          (day.physiology.expectedReadiness ?? 0) > (best.physiology.expectedReadiness ?? 0)
-            ? day
-            : best,
-        ).trainingDayId
-      : null;
-
+function findHighestRiskDay(days: readonly ProjectedDayState[]): string | null {
   const riskVerdicts = new Set(['RECOVER', 'CAUTION', 'INSUFFICIENT_DATA']);
   const riskDays = days.filter((d) => riskVerdicts.has(d.decision.overallVerdict));
-  const highestRiskDay =
-    riskDays.length > 0
-      ? riskDays.reduce((worst, day) =>
-          (day.physiology.expectedReadiness ?? 100) < (worst.physiology.expectedReadiness ?? 100)
-            ? day
-            : worst,
-        ).trainingDayId
-      : null;
-
-  const factorCounts = new Map<string, number>();
-  for (const day of days) {
-    const domain = day.decision.limitingFactor.domain ?? day.decision.limitingFactor.system;
-    if (domain) factorCounts.set(domain, (factorCounts.get(domain) ?? 0) + 1);
+  if (riskDays.length === 0) {
+    return null;
   }
-  const mainLimitingFactor =
-    [...factorCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  return riskDays.reduce((worst, day) =>
+    (day.physiology.expectedReadiness ?? 100) < (worst.physiology.expectedReadiness ?? 100)
+      ? day
+      : worst,
+  ).trainingDayId;
+}
 
-  const planningConfidence =
-    Math.round((days.reduce((sum, d) => sum + d.projectionConfidence, 0) / days.length) * 100) /
-    100;
-
-  const tsbEnd = days[days.length - 1]?.load.tsb ?? anchor.tsb;
-  const headline = projectionHeadlineFromTsb(tsbEnd);
-
+function buildSummaryRiskLines(
+  days: readonly ProjectedDayState[],
+  highestRiskDay: string | null,
+): string[] {
   const riskLines: string[] = [];
   if (highestRiskDay) {
     const riskDay = days.find((d) => d.trainingDayId === highestRiskDay);
@@ -144,142 +120,256 @@ function buildSummary(
   if (overloadDay) {
     riskLines.push(`${overloadDay.dateLabel} : surcharge probable (TSB ${overloadDay.load.tsb}).`);
   }
+  return riskLines.slice(0, 3);
+}
+
+function computeMainLimitingFactor(days: readonly ProjectedDayState[]): string | null {
+  const factorCounts = new Map<string, number>();
+  for (const day of days) {
+    const domain = day.decision.limitingFactor.domain ?? day.decision.limitingFactor.system;
+    if (domain) {
+      factorCounts.set(domain, (factorCounts.get(domain) ?? 0) + 1);
+    }
+  }
+  return [...factorCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+}
+
+function computePlanningConfidence(days: readonly ProjectedDayState[]): number {
+  const total = days.reduce((sum, d) => sum + d.projectionConfidence, 0);
+  return Math.round((total / days.length) * 100) / 100;
+}
+
+function buildSummary(
+  days: readonly ProjectedDayState[],
+  anchor: ProjectedAthleteState['anchor'],
+): ProjectedAthleteSummary {
+  if (days.length === 0) {
+    return {
+      peakReadinessDay: null,
+      highestRiskDay: null,
+      mainLimitingFactor: null,
+      planningConfidence: 0,
+      headline:
+        'Aucune projection disponible — planifie des séances pour voir l’évolution attendue.',
+      riskLines: [],
+    };
+  }
+
+  const peakDay = findPeakReadinessDay(days);
+  const highestRiskDay = findHighestRiskDay(days);
+  const tsbEnd = days[days.length - 1]?.load.tsb ?? anchor.tsb;
 
   return {
     peakReadinessDay: peakDay,
     highestRiskDay,
-    mainLimitingFactor,
-    planningConfidence,
-    headline,
-    riskLines: riskLines.slice(0, 3),
+    mainLimitingFactor: computeMainLimitingFactor(days),
+    planningConfidence: computePlanningConfidence(days),
+    headline: projectionHeadlineFromTsb(tsbEnd),
+    riskLines: buildSummaryRiskLines(days, highestRiskDay),
+  };
+}
+
+type ProjectedDayBuildContext = {
+  athleteId: string;
+  anchorTsb: number;
+  initialAtl: number;
+  initialCtl: number;
+  anchorReadiness: number | null;
+  anchorFatigue: number | null;
+  anchorAdaptation: number | null;
+  recovery: ProjectedAthleteInput['recovery'];
+  fatigue: ProjectedAthleteInput['fatigue'];
+  adaptation: ProjectedAthleteInput['adaptation'];
+  physicalHealth: ProjectedAthleteInput['physicalHealth'];
+  environment: ProjectedAthleteInput['environment'];
+  plannedTssByDay: ProjectedAthleteInput['plannedTssByDay'];
+  environmentalImpactByDay: ProjectedAthleteInput['environmentalImpactByDay'];
+  plannedSessionCountByDay: ProjectedAthleteInput['plannedSessionCountByDay'];
+  baseFreshnessConfidence: number;
+};
+
+function synthesizeProjectedTwinStates(input: {
+  ctx: ProjectedDayBuildContext;
+  trainingDayId: string;
+  expectedReadiness: number | null;
+  expectedFatigueIndex: number | null;
+  expectedAdaptationIndex: number | null;
+  tsb: number;
+}) {
+  const {
+    ctx,
+    trainingDayId,
+    expectedReadiness,
+    expectedFatigueIndex,
+    expectedAdaptationIndex,
+    tsb,
+  } = input;
+  const projectedRecovery = isSet(ctx.recovery)
+    ? synthesizeProjectedRecovery(ctx.recovery, expectedReadiness, trainingDayId)
+    : null;
+  const projectedFatigue = isSet(ctx.fatigue)
+    ? synthesizeProjectedFatigue(ctx.fatigue, expectedFatigueIndex, trainingDayId, tsb)
+    : null;
+  const projectedAdaptation = isSet(ctx.adaptation)
+    ? synthesizeProjectedAdaptation(ctx.adaptation, expectedAdaptationIndex, trainingDayId)
+    : null;
+  return { projectedRecovery, projectedFatigue, projectedAdaptation };
+}
+
+function buildProjectedPhysiology(input: {
+  expectedReadiness: number | null;
+  expectedFatigueIndex: number | null;
+  expectedAdaptationIndex: number | null;
+  projectedRecovery: ReturnType<typeof synthesizeProjectedRecovery> | null;
+  projectedFatigue: ReturnType<typeof synthesizeProjectedFatigue> | null;
+  projectedAdaptation: ReturnType<typeof synthesizeProjectedAdaptation> | null;
+}) {
+  const {
+    expectedReadiness,
+    expectedFatigueIndex,
+    expectedAdaptationIndex,
+    projectedRecovery,
+    projectedFatigue,
+    projectedAdaptation,
+  } = input;
+  return {
+    expectedReadiness,
+    expectedFatigueIndex,
+    expectedAdaptationIndex,
+    readinessCategory: projectedRecovery?.readinessCategory ?? null,
+    fatigueLevel: projectedFatigue?.fatigueLevel ?? null,
+    adaptationStatus: projectedAdaptation?.adaptationStatus ?? null,
+  };
+}
+
+function buildProjectedDayState(
+  trainingDayId: string,
+  index: number,
+  pmcForward: ReturnType<typeof projectPmcForward>,
+  ctx: ProjectedDayBuildContext,
+): ProjectedDayState {
+  const dayOffset = index + 1;
+  const load = pmcForward[index];
+  const tsbDelta = load.tsb - ctx.anchorTsb;
+  const atlDelta = load.atl - ctx.initialAtl;
+  const ctlDelta = load.ctl - ctx.initialCtl;
+
+  const expectedReadiness = projectReadinessScore(ctx.anchorReadiness, tsbDelta);
+  const expectedFatigueIndex = projectFatigueIndex(ctx.anchorFatigue, atlDelta);
+  const expectedAdaptationIndex = projectAdaptationIndex(ctx.anchorAdaptation, ctlDelta);
+
+  const twins = synthesizeProjectedTwinStates({
+    ctx,
+    trainingDayId,
+    expectedReadiness,
+    expectedFatigueIndex,
+    expectedAdaptationIndex,
+    tsb: load.tsb,
+  });
+
+  const envImpact = ctx.environmentalImpactByDay.get(trainingDayId) ?? 'NONE';
+  const sessionCount = ctx.plannedSessionCountByDay.get(trainingDayId) ?? 0;
+  const { decisionState } = runProjectedDecision({
+    trainingDayId,
+    athleteId: ctx.athleteId,
+    recovery: twins.projectedRecovery,
+    fatigue: twins.projectedFatigue,
+    adaptation: twins.projectedAdaptation,
+    physicalHealth: ctx.physicalHealth,
+    environment: ctx.environment,
+    dayOffset,
+    baseFreshnessConfidence: ctx.baseFreshnessConfidence,
+  });
+
+  const plannedTss = ctx.plannedTssByDay.get(trainingDayId) ?? 0;
+  const dayAssumptions: ProjectionAssumption[] =
+    plannedTss === 0
+      ? [{ code: 'rest-day', label: 'Jour sans séance planifiée — charge TSS = 0.' }]
+      : [];
+
+  return {
+    trainingDayId,
+    dayOffset,
+    dateLabel: localDateLabel(trainingDayId),
+    load: {
+      trainingDayId,
+      plannedTss: load.tss,
+      ctl: load.ctl,
+      atl: load.atl,
+      tsb: load.tsb,
+    },
+    physiology: buildProjectedPhysiology({
+      expectedReadiness,
+      expectedFatigueIndex,
+      expectedAdaptationIndex,
+      projectedRecovery: twins.projectedRecovery,
+      projectedFatigue: twins.projectedFatigue,
+      projectedAdaptation: twins.projectedAdaptation,
+    }),
+    environment: {
+      trainingImpact: envImpact,
+      sessionCount,
+      dominantConstraint: ENV_CONSTRAINT_LABELS[envImpact] ?? null,
+    },
+    decision: {
+      overallVerdict: decisionState.overallVerdict,
+      limitingFactor: decisionState.limitingFactor,
+      confidence: decisionState.confidence,
+      confidenceTier: decisionState.confidenceTier,
+      priority: decisionState.priority,
+      primaryDecision: decisionState.primaryDecision,
+    },
+    projectionConfidence: projectionConfidenceForDay(ctx.baseFreshnessConfidence, dayOffset),
+    assumptions: dayAssumptions,
+  };
+}
+
+function buildProjectedDayContext(input: ProjectedAthleteInput): ProjectedDayBuildContext {
+  const anchorTsb = Math.round((input.initialCtl - input.initialAtl) * 10) / 10;
+  return {
+    athleteId: input.athleteId,
+    anchorTsb,
+    initialAtl: input.initialAtl,
+    initialCtl: input.initialCtl,
+    anchorReadiness: input.recovery?.readinessScore ?? null,
+    anchorFatigue: input.fatigue?.fatigueIndex ?? null,
+    anchorAdaptation: input.adaptation?.adaptationIndex ?? null,
+    recovery: input.recovery,
+    fatigue: input.fatigue,
+    adaptation: input.adaptation,
+    physicalHealth: input.physicalHealth,
+    environment: input.environment,
+    plannedTssByDay: input.plannedTssByDay,
+    environmentalImpactByDay: input.environmentalImpactByDay,
+    plannedSessionCountByDay: input.plannedSessionCountByDay,
+    baseFreshnessConfidence: input.baseFreshnessConfidence,
   };
 }
 
 export function projectAthleteState(input: ProjectedAthleteInput): ProjectedAthleteState | null {
-  const {
-    athleteId,
-    anchorTrainingDayId,
-    horizonDays,
-    recovery,
-    fatigue,
-    adaptation,
-    physicalHealth,
-    environment,
-    initialCtl,
-    initialAtl,
-    plannedTssByDay,
-    environmentalImpactByDay,
-    plannedSessionCountByDay,
-    baseFreshnessConfidence,
-  } = input;
-
-  if (!recovery && !fatigue && !adaptation) {
+  if (!input.recovery && !input.fatigue && !input.adaptation) {
     return null;
   }
 
+  const { athleteId, anchorTrainingDayId, horizonDays, initialCtl, initialAtl } = input;
+
   const futureDayIds = buildFutureDayIds(anchorTrainingDayId, horizonDays);
-  const dailyTss = futureDayIds.map((dayId) => plannedTssByDay.get(dayId) ?? 0);
+  const dailyTss = futureDayIds.map((dayId) => input.plannedTssByDay.get(dayId) ?? 0);
   const pmcForward = projectPmcForward(initialCtl, initialAtl, dailyTss);
+  const dayContext = buildProjectedDayContext(input);
 
-  const anchorTsb = Math.round((initialCtl - initialAtl) * 10) / 10;
-  const anchorReadiness = recovery?.readinessScore ?? null;
-  const anchorFatigue = fatigue?.fatigueIndex ?? null;
-  const anchorAdaptation = adaptation?.adaptationIndex ?? null;
+  const days: ProjectedDayState[] = futureDayIds.map((trainingDayId, index) =>
+    buildProjectedDayState(trainingDayId, index, pmcForward, dayContext),
+  );
 
-  const days: ProjectedDayState[] = futureDayIds.map((trainingDayId, index) => {
-    const dayOffset = index + 1;
-    const load = pmcForward[index];
-    const tsbDelta = load.tsb - anchorTsb;
-    const atlDelta = load.atl - initialAtl;
-    const ctlDelta = load.ctl - initialCtl;
-
-    const expectedReadiness = projectReadinessScore(anchorReadiness, tsbDelta);
-    const expectedFatigueIndex = projectFatigueIndex(anchorFatigue, atlDelta);
-    const expectedAdaptationIndex = projectAdaptationIndex(anchorAdaptation, ctlDelta);
-
-    const projectedRecovery =
-      recovery != null
-        ? synthesizeProjectedRecovery(recovery, expectedReadiness, trainingDayId)
-        : null;
-    const projectedFatigue =
-      fatigue != null
-        ? synthesizeProjectedFatigue(fatigue, expectedFatigueIndex, trainingDayId, load.tsb)
-        : null;
-    const projectedAdaptation =
-      adaptation != null
-        ? synthesizeProjectedAdaptation(adaptation, expectedAdaptationIndex, trainingDayId)
-        : null;
-
-    const envImpact = environmentalImpactByDay.get(trainingDayId) ?? 'NONE';
-    const sessionCount = plannedSessionCountByDay.get(trainingDayId) ?? 0;
-
-    const { decisionState } = runProjectedDecision({
-      trainingDayId,
-      athleteId,
-      recovery: projectedRecovery,
-      fatigue: projectedFatigue,
-      adaptation: projectedAdaptation,
-      physicalHealth,
-      environment,
-      dayOffset,
-      baseFreshnessConfidence,
-    });
-
-    const projectionConfidence = projectionConfidenceForDay(baseFreshnessConfidence, dayOffset);
-
-    const dayAssumptions: ProjectionAssumption[] = [];
-    if ((plannedTssByDay.get(trainingDayId) ?? 0) === 0) {
-      dayAssumptions.push({
-        code: 'rest-day',
-        label: 'Jour sans séance planifiée — charge TSS = 0.',
-      });
-    }
-
-    return {
-      trainingDayId,
-      dayOffset,
-      dateLabel: localDateLabel(trainingDayId),
-      load: {
-        trainingDayId,
-        plannedTss: load.tss,
-        ctl: load.ctl,
-        atl: load.atl,
-        tsb: load.tsb,
-      },
-      physiology: {
-        expectedReadiness,
-        expectedFatigueIndex,
-        expectedAdaptationIndex,
-        readinessCategory: projectedRecovery?.readinessCategory ?? null,
-        fatigueLevel: projectedFatigue?.fatigueLevel ?? null,
-        adaptationStatus: projectedAdaptation?.adaptationStatus ?? null,
-      },
-      environment: {
-        trainingImpact: envImpact,
-        sessionCount,
-        dominantConstraint: ENV_CONSTRAINT_LABELS[envImpact] ?? null,
-      },
-      decision: {
-        overallVerdict: decisionState.overallVerdict,
-        limitingFactor: decisionState.limitingFactor,
-        confidence: decisionState.confidence,
-        confidenceTier: decisionState.confidenceTier,
-        priority: decisionState.priority,
-        primaryDecision: decisionState.primaryDecision,
-      },
-      projectionConfidence,
-      assumptions: dayAssumptions,
-    };
-  });
-
-  const summary = buildSummary(days, {
-    readiness: anchorReadiness,
-    fatigueIndex: anchorFatigue,
-    adaptationIndex: anchorAdaptation,
+  const anchor = {
+    readiness: dayContext.anchorReadiness,
+    fatigueIndex: dayContext.anchorFatigue,
+    adaptationIndex: dayContext.anchorAdaptation,
     ctl: initialCtl,
     atl: initialAtl,
-    tsb: anchorTsb,
-  });
+    tsb: dayContext.anchorTsb,
+  };
 
   return {
     modelId: PROJECTION_MODEL_ID,
@@ -287,16 +377,9 @@ export function projectAthleteState(input: ProjectedAthleteInput): ProjectedAthl
     anchorTrainingDayId,
     horizonDays,
     computedAt: new Date().toISOString(),
-    anchor: {
-      readiness: anchorReadiness,
-      fatigueIndex: anchorFatigue,
-      adaptationIndex: anchorAdaptation,
-      ctl: initialCtl,
-      atl: initialAtl,
-      tsb: anchorTsb,
-    },
+    anchor,
     days,
-    summary,
+    summary: buildSummary(days, anchor),
     assumptions: GLOBAL_ASSUMPTIONS,
   };
 }
@@ -305,6 +388,8 @@ export function limitingFactorLabel(
   limitingFactor: ProjectedDayState['decision']['limitingFactor'],
 ): string | null {
   const { description } = limitingFactor;
-  if (!description) return null;
+  if (!description) {
+    return null;
+  }
   return resolve(description);
 }

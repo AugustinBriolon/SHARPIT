@@ -26,7 +26,9 @@ describe('movement taxonomy data', () => {
 
   it('keeps mobility off the load axis entirely', () => {
     for (const entry of movementTaxonomyIndex().entries) {
-      if (entry.intent !== 'MOBILITY') continue;
+      if (entry.intent !== 'MOBILITY') {
+        continue;
+      }
       expect(entry.modality).toBe('NONE');
       expect(entry.pattern).toBeNull();
       expect(bearsLoadAxis(entry)).toBe(false);
@@ -45,7 +47,9 @@ describe('movement taxonomy data', () => {
 
   it('lets only strength movements feed a pattern strength scalar', () => {
     for (const entry of movementTaxonomyIndex().entries) {
-      if (informsPatternStrength(entry)) expect(entry.intent).toBe('STRENGTH');
+      if (informsPatternStrength(entry)) {
+        expect(entry.intent).toBe('STRENGTH');
+      }
     }
   });
 });

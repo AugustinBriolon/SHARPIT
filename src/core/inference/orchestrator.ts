@@ -122,7 +122,9 @@ async function loadWearableEnergySignalsSafely(
   athleteId: string,
   trainingDayId: string,
 ): Promise<WearableEnergySignals | null> {
-  if (!loader) return null;
+  if (!loader) {
+    return null;
+  }
   try {
     return await loader(athleteId, trainingDayId);
   } catch (err) {
@@ -231,7 +233,9 @@ export class RecoveryInferenceOrchestrator {
       'recovery-synthesis-v1',
       trainingDayId,
     );
-    if (!record) return null;
+    if (!record) {
+      return null;
+    }
 
     // Reconstruct output from the stored record
     const output: RecoveryModelOutput = {

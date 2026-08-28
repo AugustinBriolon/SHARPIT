@@ -29,12 +29,16 @@ const DIMENSION_DOT: Record<SignalKey, string> = {
 };
 
 function formatPercent(value: number | null): string {
-  if (value == null) return '—';
+  if (value === null) {
+    return '—';
+  }
   return String(Math.round(value));
 }
 
 function formatStrain(value: number | null): string {
-  if (value == null) return '—';
+  if (value === null) {
+    return '—';
+  }
   return value.toFixed(1).replace('.', ',');
 }
 

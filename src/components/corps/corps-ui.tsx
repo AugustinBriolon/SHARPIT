@@ -101,7 +101,7 @@ export function CorpsDivider({ label, count }: { label: string; count?: number }
     <div className="flex items-center gap-3">
       <EyebrowLabel variant="corps">
         {label}
-        {count != null && (
+        {count !== null && (
           <span className="text-data text-foreground/60 ml-1.5 text-xs tabular-nums">{count}</span>
         )}
       </EyebrowLabel>

@@ -5,6 +5,8 @@
  * and non-null on a provider account row.
  */
 
+import { isSet } from '@/lib/util/value';
+
 // ---------------------------------------------------------------------------
 // Auth error
 // ---------------------------------------------------------------------------
@@ -43,7 +45,9 @@ export const RENPHO_CONNECTION_SELECT = { email: true, passwordEnc: true } as co
 export const MFP_CONNECTION_SELECT = { sessionTokenEnc: true } as const;
 
 export function isOAuthAccountConnected(account: MaybeAccount): boolean {
-  if (!account) return false;
+  if (!account) {
+    return false;
+  }
   return (
     typeof account.accessTokenEnc === 'string' &&
     account.accessTokenEnc.length > 0 &&
@@ -53,7 +57,9 @@ export function isOAuthAccountConnected(account: MaybeAccount): boolean {
 }
 
 export function isGarminAccountConnected(account: MaybeAccount): boolean {
-  if (!account) return false;
+  if (!account) {
+    return false;
+  }
   return (
     typeof account.oauth1TokenEnc === 'string' &&
     account.oauth1TokenEnc.length > 0 &&
@@ -63,16 +69,20 @@ export function isGarminAccountConnected(account: MaybeAccount): boolean {
 }
 
 export function isRenphoAccountConnected(account: MaybeAccount): boolean {
-  if (!account) return false;
+  if (!account) {
+    return false;
+  }
   return (
-    account.email != null &&
+    isSet(account.email) &&
     typeof account.passwordEnc === 'string' &&
     account.passwordEnc.length > 0
   );
 }
 
 export function isMfpAccountConnected(account: MaybeAccount): boolean {
-  if (!account) return false;
+  if (!account) {
+    return false;
+  }
   return typeof account.sessionTokenEnc === 'string' && account.sessionTokenEnc.length > 0;
 }
 
@@ -91,24 +101,34 @@ interface ProviderAccounts {
   myfitnesspal?: MaybeAccount;
 }
 
+const RECONNECT_CHECKS: Array<{
+  accountKey: keyof ProviderAccounts;
+  label: string;
+  isConnected: (account: MaybeAccount) => boolean;
+}> = [
+  { accountKey: 'strava', label: 'Strava', isConnected: isOAuthAccountConnected },
+  { accountKey: 'garmin', label: 'Garmin', isConnected: isGarminAccountConnected },
+  { accountKey: 'withings', label: 'Withings', isConnected: isOAuthAccountConnected },
+  { accountKey: 'renpho', label: 'Renpho', isConnected: isRenphoAccountConnected },
+  { accountKey: 'google', label: 'Google', isConnected: isOAuthAccountConnected },
+  { accountKey: 'myfitnesspal', label: 'MyFitnessPal', isConnected: isMfpAccountConnected },
+];
+
 /**
  * Returns names of providers that have an account row but whose credentials are
  * no longer valid (need reconnection).
  */
 export function reconnectProviderNames(accounts: ProviderAccounts): string[] {
-  const names: string[] = [];
-  if (accounts.strava && !isOAuthAccountConnected(accounts.strava)) names.push('Strava');
-  if (accounts.garmin && !isGarminAccountConnected(accounts.garmin)) names.push('Garmin');
-  if (accounts.withings && !isOAuthAccountConnected(accounts.withings)) names.push('Withings');
-  if (accounts.renpho && !isRenphoAccountConnected(accounts.renpho)) names.push('Renpho');
-  if (accounts.google && !isOAuthAccountConnected(accounts.google)) names.push('Google');
-  if (accounts.myfitnesspal && !isMfpAccountConnected(accounts.myfitnesspal))
-    names.push('MyFitnessPal');
-  return names;
+  return RECONNECT_CHECKS.filter(({ accountKey, isConnected }) => {
+    const account = accounts[accountKey];
+    return account && !isConnected(account);
+  }).map(({ label }) => label);
 }
 
 export function reconnectProductMessage(names: string[]): string | null {
-  if (names.length === 0) return null;
+  if (names.length === 0) {
+    return null;
+  }
   const joined = names.join(', ');
   return names.length === 1
     ? `La connexion ${joined} a expiré. Reconnecte-la dans les paramètres.`

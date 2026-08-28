@@ -6,7 +6,9 @@ import { DemoExitButton } from '@/components/demo/demo-exit';
 import { isDemoSession } from '@/lib/demo/demo-session';
 
 async function CoachDemoDisabled() {
-  if (!(await isDemoSession())) return <CoachView />;
+  if (!(await isDemoSession())) {
+    return <CoachView />;
+  }
 
   return (
     <div className="flex flex-col items-center gap-4 py-16 text-center">

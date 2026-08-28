@@ -38,9 +38,15 @@ export function shouldForceInferenceOnRefresh(input: {
   forceSync?: boolean;
   syncedProviderCount: number;
 }): boolean {
-  if (input.forceSync) return true;
-  if (input.source === 'today_refresh' || input.source === 'cron') return true;
-  if (input.syncedProviderCount > 0) return true;
+  if (input.forceSync) {
+    return true;
+  }
+  if (input.source === 'today_refresh' || input.source === 'cron') {
+    return true;
+  }
+  if (input.syncedProviderCount > 0) {
+    return true;
+  }
   return false;
 }
 
@@ -56,11 +62,21 @@ export function shouldSkipTodayPresentationRebuild(input: {
   snapshotChanged: boolean;
   morningRecalibrationCreated: boolean;
 }): boolean {
-  if (input.forceSync) return false;
-  if (input.source !== 'app_shell') return false;
-  if (input.syncedProviderCount > 0) return false;
-  if (input.snapshotChanged) return false;
-  if (input.morningRecalibrationCreated) return false;
+  if (input.forceSync) {
+    return false;
+  }
+  if (input.source !== 'app_shell') {
+    return false;
+  }
+  if (input.syncedProviderCount > 0) {
+    return false;
+  }
+  if (input.snapshotChanged) {
+    return false;
+  }
+  if (input.morningRecalibrationCreated) {
+    return false;
+  }
   return true;
 }
 
@@ -68,7 +84,9 @@ async function autoLinkAndCollectSessionIds(
   athleteId: string,
   activityIds: string[],
 ): Promise<string[]> {
-  if (activityIds.length === 0) return [];
+  if (activityIds.length === 0) {
+    return [];
+  }
   try {
     const { autoLinkActivities } = await import('@/lib/planned-session/linking/session-linking');
     const result = await autoLinkActivities(athleteId, activityIds);
@@ -86,6 +104,23 @@ async function autoLinkAndCollectSessionIds(
  * Freshness is computed twice only: once to decide sync, once for the response
  * (mid-sync / mid-compute snapshots were never returned to the client).
  */
+async function syncProvidersOnOpen(
+  athleteId: string,
+  freshness: Awaited<ReturnType<typeof computeFreshnessSnapshot>>,
+  options?: { forceSync?: boolean; skipSync?: boolean },
+): Promise<{ syncedProviders: DataProvider[]; activityIds: string[] }> {
+  if (options?.skipSync || !(options?.forceSync || shouldSyncOnOpen(freshness))) {
+    return { syncedProviders: [], activityIds: [] };
+  }
+
+  const toSync = providersNeedingSync(freshness, { force: options?.forceSync }) as DataProvider[];
+  const results = await syncProviders(athleteId, toSync);
+  return {
+    syncedProviders: results.map((r) => r.provider),
+    activityIds: results.flatMap((r) => r.activityIds),
+  };
+}
+
 export async function refreshAthleteState(
   athleteId: string,
   options?: {
@@ -99,18 +134,7 @@ export async function refreshAthleteState(
   const trainingDayId = options?.trainingDayId ?? trainingDayIdNow();
 
   let freshness = await computeFreshnessSnapshot({ trainingDayId, athleteId });
-
-  const syncedProviders: DataProvider[] = [];
-  let activityIds: string[] = [];
-
-  if (!options?.skipSync && (options?.forceSync || shouldSyncOnOpen(freshness))) {
-    const toSync = providersNeedingSync(freshness, { force: options?.forceSync }) as DataProvider[];
-    const results = await syncProviders(athleteId, toSync);
-    for (const r of results) {
-      syncedProviders.push(r.provider);
-      activityIds.push(...r.activityIds);
-    }
-  }
+  const { syncedProviders, activityIds } = await syncProvidersOnOpen(athleteId, freshness, options);
 
   const forceRefresh = shouldForceInferenceOnRefresh({
     source: options?.source,

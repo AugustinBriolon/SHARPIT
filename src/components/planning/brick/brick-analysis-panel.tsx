@@ -20,7 +20,9 @@ function renderAnalyzeButtonContent(isAnalyzing: boolean, offline: boolean, offl
       </>
     );
   }
-  if (offline) return offlineLabel;
+  if (offline) {
+    return offlineLabel;
+  }
   return (
     <>
       <Sparkles className="size-4" /> Analyser l&apos;enchaînement
@@ -28,17 +30,103 @@ function renderAnalyzeButtonContent(isAnalyzing: boolean, offline: boolean, offl
   );
 }
 
-function renderAnalysisContent(
-  allLinked: boolean,
-  analysis: BrickAnalysis | null,
-  linkedCount: number,
-  legs: ClientPlannedSession[],
-  isAnalyzing: boolean,
-  onAnalyze: () => void,
-  offline: boolean,
-  guardDisabled: boolean,
-  offlineLabel: string,
-) {
+type AnalysisContentProps = {
+  allLinked: boolean;
+  analysis: BrickAnalysis | null;
+  linkedCount: number;
+  legs: ClientPlannedSession[];
+  isAnalyzing: boolean;
+  onAnalyze: () => void;
+  offline: boolean;
+  guardDisabled: boolean;
+  offlineLabel: string;
+};
+
+function BrickAnalysisDetails({
+  analysis,
+  isAnalyzing,
+  onAnalyze,
+  offline,
+  guardDisabled,
+  offlineLabel,
+}: {
+  analysis: BrickAnalysis;
+  isAnalyzing: boolean;
+  onAnalyze: () => void;
+  offline: boolean;
+  guardDisabled: boolean;
+  offlineLabel: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <span
+          className={cn(
+            'font-mono text-2xl font-semibold',
+            sessionScoreColor(analysis.overallScore),
+          )}
+        >
+          {analysis.overallScore}
+        </span>
+        <span className="text-muted-foreground text-xs">/100</span>
+      </div>
+      <p className="text-muted-foreground text-sm">{analysis.summary}</p>
+
+      <div className="border-primary/20 bg-background/60 rounded-md border p-2.5">
+        <p className="text-primary flex items-center gap-1.5 text-xs font-medium">
+          <ArrowLeftRight className="size-3.5" />
+          Transition
+        </p>
+        <p className="text-muted-foreground mt-1 text-xs">{analysis.transition}</p>
+      </div>
+
+      {analysis.remarks.length > 0 ? (
+        <ul className="space-y-1">
+          {analysis.remarks.map((remark, index) => (
+            <li key={index} className="text-muted-foreground flex gap-1.5 text-xs">
+              <span className="text-primary">•</span>
+              <span>{remark}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {analysis.recommendation ? (
+        <p className="border-primary/20 bg-primary/5 rounded-md border p-2 text-xs">
+          💡 {analysis.recommendation}
+        </p>
+      ) : null}
+
+      <button
+        className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
+        disabled={isAnalyzing || guardDisabled}
+        type="button"
+        onClick={onAnalyze}
+      >
+        {isAnalyzing ? (
+          <Loader2 className="size-3 animate-spin" />
+        ) : (
+          <RefreshCw className="size-3" />
+        )}
+        {offline ? offlineLabel : "Ré-analyser l'enchaînement"}
+      </button>
+    </div>
+  );
+}
+
+function renderAnalysisContent(props: AnalysisContentProps) {
+  const {
+    allLinked,
+    analysis,
+    linkedCount,
+    legs,
+    isAnalyzing,
+    onAnalyze,
+    offline,
+    guardDisabled,
+    offlineLabel,
+  } = props;
+
   if (!allLinked) {
     return (
       <p className="text-muted-foreground text-xs">
@@ -51,59 +139,14 @@ function renderAnalysisContent(
 
   if (analysis) {
     return (
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              'font-mono text-2xl font-semibold',
-              sessionScoreColor(analysis.overallScore),
-            )}
-          >
-            {analysis.overallScore}
-          </span>
-          <span className="text-muted-foreground text-xs">/100</span>
-        </div>
-        <p className="text-muted-foreground text-sm">{analysis.summary}</p>
-
-        <div className="border-primary/20 bg-background/60 rounded-md border p-2.5">
-          <p className="text-primary flex items-center gap-1.5 text-xs font-medium">
-            <ArrowLeftRight className="size-3.5" />
-            Transition
-          </p>
-          <p className="text-muted-foreground mt-1 text-xs">{analysis.transition}</p>
-        </div>
-
-        {analysis.remarks.length > 0 && (
-          <ul className="space-y-1">
-            {analysis.remarks.map((r, i) => (
-              <li key={i} className="text-muted-foreground flex gap-1.5 text-xs">
-                <span className="text-primary">•</span>
-                <span>{r}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {analysis.recommendation && (
-          <p className="border-primary/20 bg-primary/5 rounded-md border p-2 text-xs">
-            💡 {analysis.recommendation}
-          </p>
-        )}
-
-        <button
-          className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
-          disabled={isAnalyzing || guardDisabled}
-          type="button"
-          onClick={onAnalyze}
-        >
-          {isAnalyzing ? (
-            <Loader2 className="size-3 animate-spin" />
-          ) : (
-            <RefreshCw className="size-3" />
-          )}
-          {offline ? offlineLabel : "Ré-analyser l'enchaînement"}
-        </button>
-      </div>
+      <BrickAnalysisDetails
+        analysis={analysis}
+        guardDisabled={guardDisabled}
+        isAnalyzing={isAnalyzing}
+        offline={offline}
+        offlineLabel={offlineLabel}
+        onAnalyze={onAnalyze}
+      />
     );
   }
 
@@ -141,7 +184,9 @@ export function BrickAnalysisPanel({ brickGroupId }: { brickGroupId: string }) {
   const isAnalyzing = analyzeBrick.isPending;
 
   async function handleAnalyze() {
-    if (guardDisabled) return;
+    if (guardDisabled) {
+      return;
+    }
     setError(null);
     const loadingToast = toast.loading("Analyse de l'enchaînement en cours");
     try {
@@ -165,17 +210,17 @@ export function BrickAnalysisPanel({ brickGroupId }: { brickGroupId: string }) {
         </span>
       </div>
 
-      {renderAnalysisContent(
+      {renderAnalysisContent({
         allLinked,
         analysis,
         linkedCount,
         legs,
         isAnalyzing,
-        handleAnalyze,
+        onAnalyze: handleAnalyze,
         offline,
         guardDisabled,
         offlineLabel,
-      )}
+      })}
 
       {error && <p className="text-destructive text-xs">{error}</p>}
     </div>

@@ -26,7 +26,7 @@ async function main() {
     select: { legacyPhysicalNoteId: true },
   });
   const migratedNoteIds = new Set(
-    existing.map((c) => c.legacyPhysicalNoteId).filter((id): id is string => id != null),
+    existing.map((c) => c.legacyPhysicalNoteId).filter((id): id is string => id !== null),
   );
 
   const notes = await prisma.physicalNote.findMany({

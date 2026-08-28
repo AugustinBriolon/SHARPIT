@@ -35,14 +35,20 @@ export function useShouldAnimate({ essential = false }: { essential?: boolean } 
     () => motionConfig.isLowEnd(),
     () => false,
   );
-  if (reduce) return false;
-  if (!essential && lowEnd) return false;
+  if (reduce) {
+    return false;
+  }
+  if (!essential && lowEnd) {
+    return false;
+  }
   return true;
 }
 
 /** Duration in seconds respecting reduced / low-end gates. */
 export function useMotionDuration(token: keyof typeof motionTokens.duration = 'normal'): number {
   const reduce = useReducedMotion();
-  if (reduce) return motionTokens.duration.instant;
+  if (reduce) {
+    return motionTokens.duration.instant;
+  }
   return motionTokens.duration[token];
 }

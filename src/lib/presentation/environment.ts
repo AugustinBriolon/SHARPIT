@@ -3,6 +3,7 @@
  */
 
 import type { EnvironmentalDecisionSnapshot } from '@/core/inference/environment/types';
+import { isSet } from '@/lib/util/value';
 import type {
   TrainingEnvironmentalImpact,
   ThermalStressLevel,
@@ -32,6 +33,27 @@ const IMPACT_SUMMARY: Record<TrainingEnvironmentalImpact, string | null> = {
     "L'environnement pèse sur la récupération et la performance — à intégrer dans l'interprétation de la séance.",
 };
 
+function buildEnvironmentDetailLine(
+  recoveryDemandAdjustment: number | null,
+  performanceAdjustment: number | null,
+): string | null {
+  const detailParts: string[] = [];
+  const recoveryPct = isSet(recoveryDemandAdjustment)
+    ? Math.round(recoveryDemandAdjustment * 100)
+    : null;
+  const performancePct = isSet(performanceAdjustment)
+    ? Math.round(Math.abs(performanceAdjustment) * 100)
+    : null;
+
+  if (isSet(recoveryPct) && recoveryPct > 0) {
+    detailParts.push(`demande de récupération +${recoveryPct} %`);
+  }
+  if (isSet(performancePct) && performancePct > 0) {
+    detailParts.push(`performance attendue −${performancePct} %`);
+  }
+  return detailParts.length > 0 ? detailParts.join(' · ') : null;
+}
+
 export function buildEnvironmentPresentationContext(
   environment: EnvironmentalDecisionSnapshot | null | undefined,
 ): EnvironmentPresentationContext {
@@ -55,30 +77,14 @@ export function buildEnvironmentPresentationContext(
     };
   }
 
-  const thermalLabel = THERMAL_LABELS[environment.thermalStressLevel];
-  const summaryLine = IMPACT_SUMMARY[environment.trainingImpact];
-  const recoveryPct =
-    environment.recoveryDemandAdjustment != null
-      ? Math.round(environment.recoveryDemandAdjustment * 100)
-      : null;
-  const performancePct =
-    environment.performanceAdjustment != null
-      ? Math.round(Math.abs(environment.performanceAdjustment) * 100)
-      : null;
-
-  const detailParts: string[] = [];
-  if (recoveryPct != null && recoveryPct > 0) {
-    detailParts.push(`demande de récupération +${recoveryPct} %`);
-  }
-  if (performancePct != null && performancePct > 0) {
-    detailParts.push(`performance attendue −${performancePct} %`);
-  }
-
   return {
     visible: true,
-    summaryLine,
-    detailLine: detailParts.length > 0 ? detailParts.join(' · ') : null,
-    thermalLabel,
+    summaryLine: IMPACT_SUMMARY[environment.trainingImpact],
+    detailLine: buildEnvironmentDetailLine(
+      environment.recoveryDemandAdjustment,
+      environment.performanceAdjustment,
+    ),
+    thermalLabel: THERMAL_LABELS[environment.thermalStressLevel],
     trainingImpact: environment.trainingImpact,
   };
 }
@@ -97,10 +103,12 @@ export function resolveEnvironmentalExplanation(
   };
 
   const template = templates[code];
-  if (!template) return code;
+  if (!template) {
+    return code;
+  }
 
   return template.replace(/\{(\w+)\}/g, (_, key: string) => {
     const value = params?.[key];
-    return value != null ? String(value) : '';
+    return isSet(value) ? String(value) : '';
   });
 }

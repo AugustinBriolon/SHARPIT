@@ -70,6 +70,99 @@ export function ScenarioComparisonDialog({
   );
 }
 
+function ScenarioComparisonLoading() {
+  return (
+    <div className="space-y-3">
+      <Skeleton className="h-6 w-full" />
+      <Skeleton className="h-20 w-full rounded-lg" />
+      <Skeleton className="h-20 w-full rounded-lg" />
+    </div>
+  );
+}
+
+function ScenarioComparisonEmpty() {
+  return (
+    <p className="text-muted-foreground text-sm">
+      Aucune alternative strictement meilleure que le plan actuel sur cet horizon.
+    </p>
+  );
+}
+
+function applyScenarioSelection(input: {
+  selected: ScenarioComparisonViewModel['scenarios'][number] | null;
+  comparison: ScenarioComparisonViewModel;
+  applyMutation: ReturnType<typeof useApplyScenarioComparison>;
+  anchorTrainingDayId?: string;
+  onClose: () => void;
+}) {
+  if (!input.selected) {
+    return;
+  }
+  if (!input.selected.canApply) {
+    input.onClose();
+    toast.success('Plan conservé');
+    return;
+  }
+  input.applyMutation.mutate({
+    scenarioId: input.selected.scenarioId,
+    kind: input.selected.kind,
+    targetSessionId: input.selected.targetSessionId,
+    horizonDays: input.comparison.horizonDays,
+    anchorTrainingDayId: input.anchorTrainingDayId,
+    label: input.selected.label,
+  });
+  input.onClose();
+}
+
+function ScenarioComparisonActive({
+  comparison,
+  selectedId,
+  applyMutation,
+  anchorTrainingDayId,
+  onClose,
+  onSelect,
+}: {
+  comparison: ScenarioComparisonViewModel;
+  selectedId: string | null;
+  applyMutation: ReturnType<typeof useApplyScenarioComparison>;
+  anchorTrainingDayId?: string;
+  onClose: () => void;
+  onSelect: (scenarioId: string) => void;
+}) {
+  const selected =
+    comparison.scenarios.find((s) => s.scenarioId === selectedId) ??
+    comparison.scenarios.find((s) => s.isRecommended) ??
+    null;
+
+  return (
+    <div className="space-y-4">
+      <ScenarioComparisonHeader viewModel={comparison} />
+      <ScenarioComparisonList
+        scenarios={comparison.scenarios}
+        selectedId={selected?.scenarioId ?? null}
+        onSelect={onSelect}
+      />
+      <DialogFooter>
+        <Button
+          disabled={!selected || applyMutation.isPending}
+          type="button"
+          onClick={() =>
+            applyScenarioSelection({
+              selected,
+              comparison,
+              applyMutation,
+              anchorTrainingDayId,
+              onClose,
+            })
+          }
+        >
+          Appliquer
+        </Button>
+      </DialogFooter>
+    </div>
+  );
+}
+
 function ScenarioComparisonBody({
   isLoading,
   viewModel,
@@ -88,69 +181,22 @@ function ScenarioComparisonBody({
   const selectedId = userSelectedId ?? defaultSelectedId;
 
   if (isLoading) {
-    return (
-      <div className="space-y-3">
-        <Skeleton className="h-6 w-full" />
-        <Skeleton className="h-20 w-full rounded-lg" />
-        <Skeleton className="h-20 w-full rounded-lg" />
-      </div>
-    );
+    return <ScenarioComparisonLoading />;
   }
 
   if (!viewModel?.visible) {
-    return (
-      <p className="text-muted-foreground text-sm">
-        Aucune alternative strictement meilleure que le plan actuel sur cet horizon.
-      </p>
-    );
-  }
-
-  // Nested callbacks don't inherit control-flow narrowing — capture after the guard.
-  const comparison = viewModel;
-
-  const selected =
-    comparison.scenarios.find((s) => s.scenarioId === selectedId) ??
-    comparison.scenarios.find((s) => s.isRecommended) ??
-    null;
-
-  function applySelected() {
-    if (!selected) return;
-
-    if (!selected.canApply) {
-      onClose();
-      toast.success('Plan conservé');
-      return;
-    }
-
-    applyMutation.mutate({
-      scenarioId: selected.scenarioId,
-      kind: selected.kind,
-      targetSessionId: selected.targetSessionId,
-      horizonDays: comparison.horizonDays,
-      anchorTrainingDayId,
-      label: selected.label,
-    });
-    onClose();
+    return <ScenarioComparisonEmpty />;
   }
 
   return (
-    <div className="space-y-4">
-      <ScenarioComparisonHeader viewModel={comparison} />
-      <ScenarioComparisonList
-        scenarios={comparison.scenarios}
-        selectedId={selected?.scenarioId ?? null}
-        onSelect={setUserSelectedId}
-      />
-      <DialogFooter>
-        <Button
-          disabled={!selected || applyMutation.isPending}
-          type="button"
-          onClick={applySelected}
-        >
-          Appliquer
-        </Button>
-      </DialogFooter>
-    </div>
+    <ScenarioComparisonActive
+      anchorTrainingDayId={anchorTrainingDayId}
+      applyMutation={applyMutation}
+      comparison={viewModel}
+      selectedId={selectedId}
+      onClose={onClose}
+      onSelect={setUserSelectedId}
+    />
   );
 }
 
@@ -195,8 +241,12 @@ function ScenarioComparisonList({
   onSelect: (scenarioId: string) => void;
 }) {
   const ordered = [...scenarios].sort((a, b) => {
-    if (a.isRecommended !== b.isRecommended) return a.isRecommended ? -1 : 1;
-    if (a.isBaseline !== b.isBaseline) return a.isBaseline ? 1 : -1;
+    if (a.isRecommended !== b.isRecommended) {
+      return a.isRecommended ? -1 : 1;
+    }
+    if (a.isBaseline !== b.isBaseline) {
+      return a.isBaseline ? 1 : -1;
+    }
     return 0;
   });
 

@@ -41,12 +41,16 @@ export function useSwipeReveal(panelWidth: number) {
      emit a scroll event at the same position, which closed the panel in the same
      tick it opened — the gesture appeared to do nothing at all. */
   useEffect(() => {
-    if (offset === 0) return;
+    if (offset === 0) {
+      return;
+    }
 
     const anchor = new Map<EventTarget, number>();
     const onScroll = (event: Event) => {
       const { target } = event;
-      if (!target) return;
+      if (!target) {
+        return;
+      }
       const top =
         target === document
           ? window.scrollY
@@ -56,7 +60,9 @@ export function useSwipeReveal(panelWidth: number) {
         anchor.set(target, top);
         return;
       }
-      if (Math.abs(top - previous) > 2) close();
+      if (Math.abs(top - previous) > 2) {
+        close();
+      }
     };
 
     window.addEventListener('scroll', onScroll, { capture: true, passive: true });
@@ -65,7 +71,9 @@ export function useSwipeReveal(panelWidth: number) {
 
   const onPointerDown = useCallback(
     (event: React.PointerEvent) => {
-      if (event.pointerType === 'mouse') return;
+      if (event.pointerType === 'mouse') {
+        return;
+      }
       start.current = { x: event.clientX, y: event.clientY, base: offset };
       captured.current = false;
     },
@@ -75,14 +83,18 @@ export function useSwipeReveal(panelWidth: number) {
   const onPointerMove = useCallback(
     (event: React.PointerEvent) => {
       const origin = start.current;
-      if (!origin) return;
+      if (!origin) {
+        return;
+      }
 
       const dx = event.clientX - origin.x;
       const dy = event.clientY - origin.y;
 
       if (!captured.current) {
         // Vertical wins ties: scrolling is the more common intent by far.
-        if (Math.abs(dx) < INTENT_PX || Math.abs(dx) <= Math.abs(dy)) return;
+        if (Math.abs(dx) < INTENT_PX || Math.abs(dx) <= Math.abs(dy)) {
+          return;
+        }
         captured.current = true;
         setDragging(true);
       }
@@ -118,7 +130,9 @@ export function useSwipeReveal(panelWidth: number) {
     },
     /** A swipe that opened the panel must not also fire the row's own tap. */
     swallowClick: (event: React.MouseEvent) => {
-      if (offset === 0) return false;
+      if (offset === 0) {
+        return false;
+      }
       event.preventDefault();
       event.stopPropagation();
       close();

@@ -14,7 +14,9 @@ export async function getLatestAthleteSnapshot(params: {
     },
   });
 
-  if (!row) return null;
+  if (!row) {
+    return null;
+  }
   return row.payload as unknown as AthleteSnapshot;
 }
 
@@ -53,6 +55,8 @@ export async function getSnapshotByFingerprint(
       athleteId_trainingDayId: { athleteId, trainingDayId },
     },
   });
-  if (!row || row.snapshotId !== snapshotId) return null;
+  if (!row || row.snapshotId !== snapshotId) {
+    return null;
+  }
   return row.payload as unknown as AthleteSnapshot;
 }

@@ -19,6 +19,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
+import { isSet } from '@/lib/util/value';
 
 import type { ObservationRepository } from '@/core/observation/repository';
 import type {
@@ -148,7 +149,7 @@ function hasValidSessionFeatureShape(data: Record<string, unknown> | null | unde
   hrDriftPercent?: number | null;
 } {
   return (
-    data != null &&
+    isSet(data) &&
     typeof data.trainingDayId === 'string' &&
     typeof data.sportType === 'string' &&
     typeof data.durationSec === 'number' &&
@@ -168,10 +169,126 @@ const STREAM_HR_DRIFT_SPORTS = new Set(['RUN', 'TRAIL_RUN', 'BIKE', 'MTB']);
 function sessionFeaturesNeedStreamRefresh(
   data: Record<string, unknown> | null | undefined,
 ): boolean {
-  if (!hasValidSessionFeatureShape(data)) return true;
-  if (!STREAM_HR_DRIFT_SPORTS.has(data.sportType)) return false;
-  if (data.durationSec < 30 * 60) return false;
-  return data.hrDriftPercent == null;
+  if (!hasValidSessionFeatureShape(data)) {
+    return true;
+  }
+  if (!STREAM_HR_DRIFT_SPORTS.has(data.sportType)) {
+    return false;
+  }
+  if (data.durationSec < 30 * 60) {
+    return false;
+  }
+  return data.hrDriftPercent === undefined || data.hrDriftPercent === null;
+}
+
+type SaveFeatureSetInput = {
+  athleteId: string;
+  category: 'LOAD' | 'RECOVERY' | 'BODY' | 'CONDITION' | 'FUEL';
+  trainingDayId: string;
+  sessionObsId: string | null;
+  data:
+    | LoadFeatureSet
+    | ReturnType<typeof extractRecoveryFeatures>
+    | ReturnType<typeof extractBodyFeatures>
+    | ReturnType<typeof extractConditionFeatures>
+    | ReturnType<typeof extractFuelFeatures>;
+};
+
+type DailyTssEntry = { tssScore: number; run: number; bike: number; other: number };
+
+function createEmptyDailyTssMap(fromDayId: string, toDayId: string): Map<string, DailyTssEntry> {
+  const tssMap = new Map<string, DailyTssEntry>();
+  for (const day of enumerateDays(fromDayId, toDayId)) {
+    tssMap.set(day, { tssScore: 0, run: 0, bike: 0, other: 0 });
+  }
+  return tssMap;
+}
+
+function addSessionTssToMap(
+  tssMap: Map<string, DailyTssEntry>,
+  trainingDayId: string,
+  tss: number,
+  sport: string,
+): void {
+  const entry = tssMap.get(trainingDayId) ?? { tssScore: 0, run: 0, bike: 0, other: 0 };
+  const isRun = ['RUN', 'TRAIL_RUN'].includes(sport);
+  const isBike = ['BIKE', 'MTB'].includes(sport);
+
+  tssMap.set(trainingDayId, {
+    tssScore: entry.tssScore + tss,
+    run: entry.run + (isRun ? tss : 0),
+    bike: entry.bike + (isBike ? tss : 0),
+    other: entry.other + (!isRun && !isBike ? tss : 0),
+  });
+}
+
+function needsFuelRecompute(
+  fuelRecord: FeatureSetRecord | null | undefined,
+  nutritionObs: NutritionObservation | null,
+  latestWeightKg: number | null,
+): boolean {
+  if (!nutritionObs) {
+    return false;
+  }
+  const fuelData = fuelRecord?.data as { proteinGPerKg?: number | null } | undefined;
+  const proteinMissing = !isSet(fuelData?.proteinGPerKg);
+  return !fuelRecord || (proteinMissing && isSet(latestWeightKg));
+}
+
+function needsDayFeaturesRecompute(input: {
+  loadRecord: FeatureSetRecord | null | undefined;
+  recoveryRecord: FeatureSetRecord | null | undefined;
+  conditionRecord: FeatureSetRecord | null | undefined;
+  sessionObsCount: number;
+  sessionRecords: FeatureSetRecord[];
+  fuelRecord: FeatureSetRecord | null | undefined;
+  nutritionObs: NutritionObservation | null;
+  latestWeightKg: number | null;
+}): boolean {
+  const hasSessionMismatch =
+    input.sessionObsCount !== input.sessionRecords.length ||
+    input.sessionRecords.some(
+      (record) => !hasValidSessionFeatureShape(record.data as Record<string, unknown>),
+    );
+
+  return (
+    !input.loadRecord ||
+    !input.recoveryRecord ||
+    !input.conditionRecord ||
+    hasSessionMismatch ||
+    needsFuelRecompute(input.fuelRecord, input.nutritionObs, input.latestWeightKg)
+  );
+}
+
+function cachedFeature<T>(record: FeatureSetRecord | null | undefined): T | 'PENDING' {
+  if (!record?.data) {
+    return 'PENDING';
+  }
+  return record.data as T;
+}
+
+function cachedDayFeatureFields(
+  sessions: FeatureSetRecord[],
+  records: {
+    loadRecord: FeatureSetRecord | null | undefined;
+    recoveryRecord: FeatureSetRecord | null | undefined;
+    bodyRecord: FeatureSetRecord | null | undefined;
+    conditionRecord: FeatureSetRecord | null | undefined;
+    fuelRecord: FeatureSetRecord | null | undefined;
+  },
+) {
+  return {
+    sessions: sessions.map((r) => r.data as import('@/core/features/types').SessionFeatureSet),
+    load: cachedFeature<import('@/core/features/types').LoadFeatureSet>(records.loadRecord),
+    recovery: cachedFeature<import('@/core/features/types').RecoveryFeatureSet>(
+      records.recoveryRecord,
+    ),
+    body: cachedFeature<import('@/core/features/types').BodyFeatureSet>(records.bodyRecord),
+    condition: cachedFeature<import('@/core/features/types').ConditionFeatureSet>(
+      records.conditionRecord,
+    ),
+    fuel: cachedFeature<import('@/core/features/types').FuelFeatureSet>(records.fuelRecord),
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -216,54 +333,73 @@ export class FeatureEngine {
     this.metrics?.recordObservationIngested();
 
     try {
-      switch (type) {
-        case 'SESSION': {
-          await this.featureRepo.invalidateForTrainingDay(athleteId, trainingDayId, ['LOAD']);
-          await this.featureRepo.invalidateLoadWindow(athleteId, trainingDayId);
-          // The event bus dispatches a routing-only observation carrying just the
-          // ids, so the body has to be loaded here. Extracting from the argument
-          // silently yielded a null TSS for every session ingested this way.
-          const full = await this.obsRepo.findById(observation.id);
-          const session = (full ?? observation) as SessionObservation;
-          if (session.durationSec == null || session.sportType == null) {
-            console.error(
-              `[FeatureEngine] SESSION ${observation.id} has no sportType/durationSec — skipping extraction`,
-            );
-            break;
-          }
-          await this.computeSessionFeatures(athleteId, session);
-          break;
-        }
-
-        case 'SLEEP':
-        case 'HRV':
-        case 'RESTING_HR':
-        case 'SUBJECTIVE':
-          await this.featureRepo.invalidateForTrainingDay(athleteId, trainingDayId, ['RECOVERY']);
-          break;
-
-        case 'BODY_COMPOSITION':
-          await Promise.all([
-            this.featureRepo.invalidateForTrainingDay(athleteId, trainingDayId, ['BODY']),
-            this.featureRepo.invalidateFuelWindow(athleteId, trainingDayId),
-          ]);
-          break;
-        case 'NUTRITION':
-          await this.featureRepo.invalidateForTrainingDay(athleteId, trainingDayId, ['FUEL']);
-          break;
-
-        case 'PHYSICAL_CONDITION':
-          await this.featureRepo.invalidateForTrainingDay(athleteId, trainingDayId, ['CONDITION']);
-          break;
-
-        case 'GARMIN_READINESS':
-        case 'GARMIN_BATTERY':
-          // Proprietary model outputs — not used by feature extractors
-          break;
+      if (type === 'SESSION') {
+        await this.handleSessionObservationIngested(observation, athleteId, trainingDayId);
+        return;
       }
+
+      await this.invalidateFeaturesForObservationType(type, athleteId, trainingDayId);
     } catch (err) {
-      // Non-fatal: log but do not throw (legacy pipeline continues)
       console.error(`[FeatureEngine] onObservationIngested failed for ${type}:`, err);
+    }
+  }
+
+  private async handleSessionObservationIngested(
+    observation: Observation,
+    athleteId: string,
+    trainingDayId: string,
+  ): Promise<void> {
+    await this.featureRepo.invalidateForTrainingDay(athleteId, trainingDayId, ['LOAD']);
+    await this.featureRepo.invalidateLoadWindow(athleteId, trainingDayId);
+
+    const full = await this.obsRepo.findById(observation.id);
+    const session = (full ?? observation) as SessionObservation;
+    if (
+      session.durationSec === undefined ||
+      session.durationSec === null ||
+      session.sportType === undefined ||
+      session.sportType === null
+    ) {
+      console.error(
+        `[FeatureEngine] SESSION ${observation.id} has no sportType/durationSec — skipping extraction`,
+      );
+      return;
+    }
+
+    await this.computeSessionFeatures(athleteId, session);
+  }
+
+  private async invalidateFeaturesForObservationType(
+    type: Observation['type'],
+    athleteId: string,
+    trainingDayId: string,
+  ): Promise<void> {
+    const recoveryTypes = new Set<Observation['type']>([
+      'SLEEP',
+      'HRV',
+      'RESTING_HR',
+      'SUBJECTIVE',
+    ]);
+    if (recoveryTypes.has(type)) {
+      await this.featureRepo.invalidateForTrainingDay(athleteId, trainingDayId, ['RECOVERY']);
+      return;
+    }
+
+    if (type === 'BODY_COMPOSITION') {
+      await Promise.all([
+        this.featureRepo.invalidateForTrainingDay(athleteId, trainingDayId, ['BODY']),
+        this.featureRepo.invalidateFuelWindow(athleteId, trainingDayId),
+      ]);
+      return;
+    }
+
+    if (type === 'NUTRITION') {
+      await this.featureRepo.invalidateForTrainingDay(athleteId, trainingDayId, ['FUEL']);
+      return;
+    }
+
+    if (type === 'PHYSICAL_CONDITION') {
+      await this.featureRepo.invalidateForTrainingDay(athleteId, trainingDayId, ['CONDITION']);
     }
   }
 
@@ -331,7 +467,9 @@ export class FeatureEngine {
     externalId: string,
   ): Promise<boolean> {
     const observation = await this.obsRepo.findByExternalId(athleteId, 'SESSION', externalId);
-    if (!observation || observation.type !== 'SESSION') return false;
+    if (!observation || observation.type !== 'SESSION') {
+      return false;
+    }
     await this.computeSessionFeatures(athleteId, observation as SessionObservation);
     return true;
   }
@@ -353,6 +491,27 @@ export class FeatureEngine {
     return records.map((record) => record.data);
   }
 
+  private async shouldRecomputeSessionFeatures(
+    athleteId: string,
+    observation: SessionObservation,
+    existing: FeatureSetRecord | undefined,
+  ): Promise<boolean> {
+    const data = existing?.data as Record<string, unknown> | undefined;
+    if (!existing || !hasValidSessionFeatureShape(data)) {
+      return true;
+    }
+    if (!sessionFeaturesNeedStreamRefresh(data)) {
+      return false;
+    }
+    if (!this.sessionStreamProvider) {
+      return false;
+    }
+
+    const ctx = await this.ctxProvider.getContext(athleteId, observation.trainingDayId);
+    const stream = await this.sessionStreamProvider.getSessionStream(observation, ctx);
+    return isSet(stream?.hrDriftPercent);
+  }
+
   private async ensureSessionFeaturesInRange(
     athleteId: string,
     fromTrainingDayId: string,
@@ -370,31 +529,27 @@ export class FeatureEngine {
     let repaired = false;
 
     for (const observation of sessionObs) {
-      if (observation.type !== 'SESSION') continue;
-      const existing = latestBySessionObsId.get(observation.id);
-      const data = existing?.data as Record<string, unknown> | undefined;
-
-      if (
-        existing &&
-        hasValidSessionFeatureShape(data) &&
-        !sessionFeaturesNeedStreamRefresh(data)
-      ) {
+      if (observation.type !== 'SESSION') {
         continue;
       }
 
-      // Shape-valid but missing hrDrift: only retry when the stream can now supply it.
-      if (existing && hasValidSessionFeatureShape(data) && sessionFeaturesNeedStreamRefresh(data)) {
-        if (!this.sessionStreamProvider) continue;
-        const ctx = await this.ctxProvider.getContext(athleteId, observation.trainingDayId);
-        const stream = await this.sessionStreamProvider.getSessionStream(observation, ctx);
-        if (stream?.hrDriftPercent == null) continue;
+      const existing = latestBySessionObsId.get(observation.id);
+      const shouldRecompute = await this.shouldRecomputeSessionFeatures(
+        athleteId,
+        observation,
+        existing,
+      );
+      if (!shouldRecompute) {
+        continue;
       }
 
       await this.computeSessionFeatures(athleteId, observation);
       repaired = true;
     }
 
-    if (!repaired) return sessionRecords;
+    if (!repaired) {
+      return sessionRecords;
+    }
 
     return this.featureRepo.findSessionFeaturesByRange(
       athleteId,
@@ -407,7 +562,9 @@ export class FeatureEngine {
     athleteId: string,
     session: SessionObservation,
   ): Promise<SubjectiveObservation | null> {
-    if (!session.externalId) return null;
+    if (!session.externalId) {
+      return null;
+    }
 
     // Find subjective observations for the same training day with a matching sessionExternalId
     const candidates = await this.obsRepo.find(athleteId, {
@@ -435,16 +592,10 @@ export class FeatureEngine {
    *
    * Returns the freshly computed DayFeatures.
    */
-  async computeDayFeatures(athleteId: string, trainingDayId: string): Promise<DayFeatures> {
-    const [ctx, sessionRecords] = await Promise.all([
-      this.ctxProvider.getContext(athleteId, trainingDayId),
-      this.ensureSessionFeaturesInRange(athleteId, trainingDayId, trainingDayId),
-    ]);
-
-    // ── Session features (may already be COMPUTED from event handler) ─────
-    const sessionFeatures = sessionRecords.map((r) => r.data);
-
-    // ── Load features ─────────────────────────────────────────────────────
+  private async computeAndSaveLoadFeatures(
+    athleteId: string,
+    trainingDayId: string,
+  ): Promise<LoadFeatureSet> {
     const loadHistory = await this.buildLoadHistory(athleteId, trainingDayId);
     const t0Load = Date.now();
     const loadFeatureSet = extractLoadFeatures(loadHistory, trainingDayId);
@@ -456,26 +607,38 @@ export class FeatureEngine {
       success: true,
       confidence: loadFeatureSet.confidence,
     });
-    await this.saveFeatureSet(athleteId, 'LOAD', trainingDayId, null, loadFeatureSet);
+    await this.saveFeatureSet({
+      athleteId,
+      category: 'LOAD',
+      trainingDayId,
+      sessionObsId: null,
+      data: loadFeatureSet,
+    });
+    return loadFeatureSet;
+  }
 
-    // ── Recovery features ─────────────────────────────────────────────────
+  private async computeAndSaveRecoveryFeatures(
+    athleteId: string,
+    trainingDayId: string,
+    ctx: ExtractionContext,
+    sessionFeatures: SessionFeatureSet[],
+  ) {
     const [recoveryObs, recoveryHistory] = await Promise.all([
       this.loadRecoveryObservations(athleteId, trainingDayId),
       this.buildRecoveryHistory(athleteId, trainingDayId),
     ]);
     const t0Recovery = Date.now();
-    let recoveryFeatureSet = extractRecoveryFeatures(
-      recoveryObs.hrv,
-      recoveryObs.rhr,
-      recoveryObs.sleep,
-      recoveryObs.subjective,
-      recoveryHistory,
+    let recoveryFeatureSet = extractRecoveryFeatures({
+      hrv: recoveryObs.hrv,
+      rhr: recoveryObs.rhr,
+      sleep: recoveryObs.sleep,
+      subjective: recoveryObs.subjective,
+      history: recoveryHistory,
       ctx,
-    );
+    });
 
-    // Second pass: enrich rpeVsTargetZone if sessions had RPE
     const [primarySession] = sessionFeatures;
-    if (primarySession?.subjectiveRpe != null) {
+    if (isSet(primarySession?.subjectiveRpe)) {
       recoveryFeatureSet = {
         ...recoveryFeatureSet,
         rpeVsTargetZone: computeRpeVsTargetZone(
@@ -494,27 +657,45 @@ export class FeatureEngine {
       confidence: recoveryFeatureSet.confidence,
     });
 
-    await this.saveFeatureSet(athleteId, 'RECOVERY', trainingDayId, null, recoveryFeatureSet);
+    await this.saveFeatureSet({
+      athleteId,
+      category: 'RECOVERY',
+      trainingDayId,
+      sessionObsId: null,
+      data: recoveryFeatureSet,
+    });
 
-    // ── Body features ─────────────────────────────────────────────────────
+    return recoveryFeatureSet;
+  }
+
+  private async computeAndSaveBodyFeatures(athleteId: string, trainingDayId: string) {
     const bodyObs = await this.loadBodyObservation(athleteId, trainingDayId);
-    let bodyFeatureSet = null;
-    if (bodyObs) {
-      const bodyHistory = await this.buildBodyHistory(athleteId, trainingDayId);
-      const t0Body = Date.now();
-      bodyFeatureSet = extractBodyFeatures(bodyObs, bodyHistory);
-      this.metrics?.recordExtraction({
-        category: 'BODY',
-        athleteId,
-        trainingDayId,
-        durationMs: Date.now() - t0Body,
-        success: true,
-        confidence: bodyFeatureSet.confidence,
-      });
-      await this.saveFeatureSet(athleteId, 'BODY', trainingDayId, bodyObs.id, bodyFeatureSet);
+    if (!bodyObs) {
+      return null;
     }
 
-    // ── Condition features ────────────────────────────────────────────────
+    const bodyHistory = await this.buildBodyHistory(athleteId, trainingDayId);
+    const t0Body = Date.now();
+    const bodyFeatureSet = extractBodyFeatures(bodyObs, bodyHistory);
+    this.metrics?.recordExtraction({
+      category: 'BODY',
+      athleteId,
+      trainingDayId,
+      durationMs: Date.now() - t0Body,
+      success: true,
+      confidence: bodyFeatureSet.confidence,
+    });
+    await this.saveFeatureSet({
+      athleteId,
+      category: 'BODY',
+      trainingDayId,
+      sessionObsId: bodyObs.id,
+      data: bodyFeatureSet,
+    });
+    return bodyFeatureSet;
+  }
+
+  private async computeAndSaveConditionFeatures(athleteId: string, trainingDayId: string) {
     const conditionHistory = await this.buildConditionHistory(athleteId, trainingDayId);
     const t0Condition = Date.now();
     const conditionFeatureSet = extractConditionFeatures(trainingDayId, conditionHistory);
@@ -526,25 +707,63 @@ export class FeatureEngine {
       success: true,
       confidence: conditionFeatureSet.confidence,
     });
-    await this.saveFeatureSet(athleteId, 'CONDITION', trainingDayId, null, conditionFeatureSet);
+    await this.saveFeatureSet({
+      athleteId,
+      category: 'CONDITION',
+      trainingDayId,
+      sessionObsId: null,
+      data: conditionFeatureSet,
+    });
+    return conditionFeatureSet;
+  }
 
-    // ── Fuel features ─────────────────────────────────────────────────────
+  private async computeAndSaveFuelFeatures(athleteId: string, trainingDayId: string) {
     const nutritionObs = await this.loadNutritionObservation(athleteId, trainingDayId);
-    let fuelFeatureSet = null;
-    if (nutritionObs) {
-      const weightKg = await this.loadLatestWeightKg(athleteId, trainingDayId);
-      const t0Fuel = Date.now();
-      fuelFeatureSet = extractFuelFeatures({ observation: nutritionObs, weightKg });
-      this.metrics?.recordExtraction({
-        category: 'FUEL',
-        athleteId,
-        trainingDayId,
-        durationMs: Date.now() - t0Fuel,
-        success: true,
-        confidence: fuelFeatureSet.confidence,
-      });
-      await this.saveFeatureSet(athleteId, 'FUEL', trainingDayId, nutritionObs.id, fuelFeatureSet);
+    if (!nutritionObs) {
+      return null;
     }
+
+    const weightKg = await this.loadLatestWeightKg(athleteId, trainingDayId);
+    const t0Fuel = Date.now();
+    const fuelFeatureSet = extractFuelFeatures({ observation: nutritionObs, weightKg });
+    this.metrics?.recordExtraction({
+      category: 'FUEL',
+      athleteId,
+      trainingDayId,
+      durationMs: Date.now() - t0Fuel,
+      success: true,
+      confidence: fuelFeatureSet.confidence,
+    });
+    await this.saveFeatureSet({
+      athleteId,
+      category: 'FUEL',
+      trainingDayId,
+      sessionObsId: nutritionObs.id,
+      data: fuelFeatureSet,
+    });
+    return fuelFeatureSet;
+  }
+
+  async computeDayFeatures(athleteId: string, trainingDayId: string): Promise<DayFeatures> {
+    const [ctx, sessionRecords] = await Promise.all([
+      this.ctxProvider.getContext(athleteId, trainingDayId),
+      this.ensureSessionFeaturesInRange(athleteId, trainingDayId, trainingDayId),
+    ]);
+
+    const sessionFeatures = sessionRecords.map((r) => r.data);
+    const [
+      loadFeatureSet,
+      recoveryFeatureSet,
+      bodyFeatureSet,
+      conditionFeatureSet,
+      fuelFeatureSet,
+    ] = await Promise.all([
+      this.computeAndSaveLoadFeatures(athleteId, trainingDayId),
+      this.computeAndSaveRecoveryFeatures(athleteId, trainingDayId, ctx, sessionFeatures),
+      this.computeAndSaveBodyFeatures(athleteId, trainingDayId),
+      this.computeAndSaveConditionFeatures(athleteId, trainingDayId),
+      this.computeAndSaveFuelFeatures(athleteId, trainingDayId),
+    ]);
 
     return {
       athleteId,
@@ -568,6 +787,37 @@ export class FeatureEngine {
    * Returns COMPUTED records from cache, or triggers lazy computation when stale.
    * Models should call this — not computeDayFeatures — to benefit from caching.
    */
+  private async loadNutritionContext(
+    athleteId: string,
+    trainingDayId: string,
+    nutritionObs: NutritionObservation | null,
+  ): Promise<number | null> {
+    if (!nutritionObs) {
+      return null;
+    }
+    return this.loadLatestWeightKg(athleteId, trainingDayId);
+  }
+
+  private buildCachedDayFeatures(
+    athleteId: string,
+    trainingDayId: string,
+    sessions: FeatureSetRecord[],
+    records: {
+      loadRecord: FeatureSetRecord | null | undefined;
+      recoveryRecord: FeatureSetRecord | null | undefined;
+      bodyRecord: FeatureSetRecord | null | undefined;
+      conditionRecord: FeatureSetRecord | null | undefined;
+      fuelRecord: FeatureSetRecord | null | undefined;
+    },
+  ): DayFeatures {
+    return {
+      athleteId,
+      trainingDayId,
+      retrievedAt: new Date(),
+      ...cachedDayFeatureFields(sessions, records),
+    };
+  }
+
   async getDayFeatures(athleteId: string, trainingDayId: string): Promise<DayFeatures> {
     // Check if we have fresh COMPUTED records for all categories
     const [
@@ -588,53 +838,40 @@ export class FeatureEngine {
       this.featureRepo.findFuelFeatures(athleteId, trainingDayId),
     ]);
 
-    const hasSessionMismatch =
-      sessionObs.length !== sessionRecords.length ||
-      sessionRecords.some(
-        (record) => !hasValidSessionFeatureShape(record.data as Record<string, unknown>),
-      );
-
     const hasStaleStreamFeatures = sessionRecords.some((record) =>
       sessionFeaturesNeedStreamRefresh(record.data as Record<string, unknown>),
     );
 
-    // Stream arrived after first extraction: refresh SESSION only when the stream can help.
     let sessions = sessionRecords;
     if (hasStaleStreamFeatures) {
       sessions = await this.ensureSessionFeaturesInRange(athleteId, trainingDayId, trainingDayId);
     }
 
     const nutritionObs = await this.loadNutritionObservation(athleteId, trainingDayId);
-    const latestWeightKg = nutritionObs
-      ? await this.loadLatestWeightKg(athleteId, trainingDayId)
-      : null;
-    const fuelData = fuelRecord?.data as { proteinGPerKg?: number | null } | undefined;
-    const needsFuelRecompute =
-      nutritionObs != null &&
-      (!fuelRecord || (fuelData?.proteinGPerKg == null && latestWeightKg != null));
+    const latestWeightKg = await this.loadNutritionContext(athleteId, trainingDayId, nutritionObs);
 
-    // If any window feature is missing or cached session features are malformed, trigger lazy computation
     if (
-      !loadRecord ||
-      !recoveryRecord ||
-      !conditionRecord ||
-      hasSessionMismatch ||
-      needsFuelRecompute
+      needsDayFeaturesRecompute({
+        loadRecord,
+        recoveryRecord,
+        conditionRecord,
+        sessionObsCount: sessionObs.length,
+        sessionRecords,
+        fuelRecord,
+        nutritionObs,
+        latestWeightKg,
+      })
     ) {
       return this.computeDayFeatures(athleteId, trainingDayId);
     }
 
-    return {
-      athleteId,
-      trainingDayId,
-      retrievedAt: new Date(),
-      sessions: sessions.map((r) => r.data),
-      load: loadRecord.data,
-      recovery: recoveryRecord.data,
-      body: bodyRecord?.data ?? 'PENDING',
-      condition: conditionRecord.data,
-      fuel: fuelRecord?.data ?? 'PENDING',
-    };
+    return this.buildCachedDayFeatures(athleteId, trainingDayId, sessions, {
+      loadRecord,
+      recoveryRecord,
+      bodyRecord,
+      conditionRecord,
+      fuelRecord,
+    });
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -682,43 +919,24 @@ export class FeatureEngine {
 
   private async buildLoadHistory(athleteId: string, trainingDayId: string): Promise<LoadHistory> {
     const fromDayId = subtractDays(trainingDayId, 42);
-
-    // Get all session features in the 42-day window
     const sessionRecords = await this.ensureSessionFeaturesInRange(
       athleteId,
       fromDayId,
       trainingDayId,
     );
 
-    // Build per-day TSS aggregation (including zero-TSS days)
-    const tssMap = new Map<
-      string,
-      { tssScore: number; run: number; bike: number; other: number }
-    >();
+    const tssMap = createEmptyDailyTssMap(fromDayId, trainingDayId);
 
-    // Initialize all 42 days with zero
-    const days = enumerateDays(fromDayId, trainingDayId);
-    for (const day of days) {
-      tssMap.set(day, { tssScore: 0, run: 0, bike: 0, other: 0 });
-    }
-
-    // Aggregate session TSS per day
     for (const record of sessionRecords) {
-      if (!hasValidSessionFeatureShape(record.data as Record<string, unknown>)) continue;
-      const day = record.data.trainingDayId;
-      const entry = tssMap.get(day) ?? { tssScore: 0, run: 0, bike: 0, other: 0 };
-      const tss = record.data.tssScore;
-      const sport = record.data.sportType;
-
-      const isRun = ['RUN', 'TRAIL_RUN'].includes(sport);
-      const isBike = ['BIKE', 'MTB'].includes(sport);
-
-      tssMap.set(day, {
-        tssScore: entry.tssScore + tss,
-        run: entry.run + (isRun ? tss : 0),
-        bike: entry.bike + (isBike ? tss : 0),
-        other: entry.other + (!isRun && !isBike ? tss : 0),
-      });
+      if (!hasValidSessionFeatureShape(record.data as Record<string, unknown>)) {
+        continue;
+      }
+      addSessionTssToMap(
+        tssMap,
+        record.data.trainingDayId,
+        record.data.tssScore,
+        record.data.sportType,
+      );
     }
 
     return {
@@ -781,12 +999,16 @@ export class FeatureEngine {
   private pickDailySubjectiveObservation(
     observations: SubjectiveObservation[],
   ): SubjectiveObservation | null {
-    if (observations.length === 0) return null;
+    if (observations.length === 0) {
+      return null;
+    }
 
     const sorted = [...observations].sort((a, b) => {
       const aMorning = a.sessionExternalId ? 0 : 1;
       const bMorning = b.sessionExternalId ? 0 : 1;
-      if (aMorning !== bMorning) return bMorning - aMorning;
+      if (aMorning !== bMorning) {
+        return bMorning - aMorning;
+      }
       return b.timestamp.getTime() - a.timestamp.getTime();
     });
 
@@ -833,7 +1055,9 @@ export class FeatureEngine {
       types: ['NUTRITION'],
       trainingDayId,
     });
-    if (obs.length === 0) return null;
+    if (obs.length === 0) {
+      return null;
+    }
 
     const [newest] = [...obs].sort((a, b) => b.receivedAt.getTime() - a.receivedAt.getTime());
     return newest as NutritionObservation;
@@ -856,7 +1080,9 @@ export class FeatureEngine {
       since: new Date(`${from}T00:00:00Z`),
       until: new Date(`${trainingDayId}T23:59:59Z`),
     });
-    if (obs.length === 0) return null;
+    if (obs.length === 0) {
+      return null;
+    }
 
     const [newest] = [...obs].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
     return (newest as BodyCompositionObservation).weightKg ?? null;
@@ -947,18 +1173,8 @@ export class FeatureEngine {
   // Persistence helpers
   // ─────────────────────────────────────────────────────────────────────────
 
-  private async saveFeatureSet(
-    athleteId: string,
-    category: 'LOAD' | 'RECOVERY' | 'BODY' | 'CONDITION' | 'FUEL',
-    trainingDayId: string,
-    sessionObsId: string | null,
-    data:
-      | LoadFeatureSet
-      | ReturnType<typeof extractRecoveryFeatures>
-      | ReturnType<typeof extractBodyFeatures>
-      | ReturnType<typeof extractConditionFeatures>
-      | ReturnType<typeof extractFuelFeatures>,
-  ): Promise<FeatureSetRecord> {
+  private async saveFeatureSet(input: SaveFeatureSetInput): Promise<FeatureSetRecord> {
+    const { athleteId, category, trainingDayId, sessionObsId, data } = input;
     const version = await this.featureRepo.nextVersion(
       athleteId,
       category,

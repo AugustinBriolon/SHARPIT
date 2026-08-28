@@ -13,6 +13,17 @@ type InkEmptyStateProps = {
   bleed?: boolean;
 };
 
+function emptyStateClassName(bleed: boolean, compact: boolean, className?: string) {
+  return cn(
+    'flex flex-col gap-2.5',
+    bleed
+      ? 'border-analysis-border/60 bg-analysis-surface-alt/35 rounded-lg border border-dashed px-(--page-gutter,1rem)'
+      : 'analysis-panel rounded-analysis-lg border-dashed',
+    compact ? 'px-4 py-4' : 'px-5 py-5',
+    className,
+  );
+}
+
 /**
  * Quiet empty / known-nothing surface.
  * Continuity with analysis panels: muted icon, reading hierarchy, no ink band.
@@ -27,16 +38,7 @@ export function InkEmptyState({
   bleed = false,
 }: InkEmptyStateProps) {
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-2.5',
-        bleed
-          ? 'border-analysis-border/60 bg-analysis-surface-alt/35 rounded-lg border border-dashed px-(--page-gutter,1rem)'
-          : 'analysis-panel rounded-analysis-lg border-dashed',
-        compact ? 'px-4 py-4' : 'px-5 py-5',
-        className,
-      )}
-    >
+    <div className={emptyStateClassName(bleed, compact, className)}>
       {Icon ? (
         <Icon
           aria-hidden={true}

@@ -12,6 +12,7 @@ import {
   type WeatherMeasurements,
 } from '@/core/environment';
 import type { EnvironmentalApplicability } from '@/core/environment';
+import { isSet } from '@/lib/util/value';
 import { environmentalImpactIsSignificant } from './apply-impact';
 
 export type ScenarioOutput = {
@@ -34,37 +35,35 @@ export function stressorIntensity(
   id: EnvironmentalStressorId,
 ): number | null {
   const stressor = getEnvironmentalStressor(stress, id);
-  if (!stressor?.intensity.available) return null;
+  if (!stressor?.intensity.available) {
+    return null;
+  }
   return stressor.intensity.value;
 }
 
 export function compositeIntensity(stress: EnvironmentalStress): number | null {
-  if (!stress.compositeIntensity.available) return null;
+  if (!stress.compositeIntensity.available) {
+    return null;
+  }
   return stress.compositeIntensity.value;
+}
+
+function readAvailableMetricValue(metric: { available: boolean; value?: number }): number | null {
+  return metric.available ? (metric.value ?? null) : null;
 }
 
 export function readImpactMultiplier(
   impact: EnvironmentalImpact,
   field: 'recovery' | 'fatigue' | 'performance' | 'hydration',
 ): number | null {
-  switch (field) {
-    case 'recovery':
-      return impact.recovery.demandMultiplier.available
-        ? impact.recovery.demandMultiplier.value
-        : null;
-    case 'fatigue':
-      return impact.fatigue.accumulationMultiplier.available
-        ? impact.fatigue.accumulationMultiplier.value
-        : null;
-    case 'performance':
-      return impact.performance.expectedOutputRatio.available
-        ? impact.performance.expectedOutputRatio.value
-        : null;
-    case 'hydration':
-      return impact.hydration.demandMultiplier.available
-        ? impact.hydration.demandMultiplier.value
-        : null;
-  }
+  const readers: Record<typeof field, () => number | null> = {
+    recovery: () => readAvailableMetricValue(impact.recovery.demandMultiplier),
+    fatigue: () => readAvailableMetricValue(impact.fatigue.accumulationMultiplier),
+    performance: () => readAvailableMetricValue(impact.performance.expectedOutputRatio),
+    hydration: () => readAvailableMetricValue(impact.hydration.demandMultiplier),
+  };
+
+  return readers[field]();
 }
 
 export function isImpactSignificant(impact: EnvironmentalImpact): boolean {
@@ -74,17 +73,27 @@ export function isImpactSignificant(impact: EnvironmentalImpact): boolean {
 export function intensityBand(
   value: number | null,
 ): 'LOW' | 'MODERATE' | 'HIGH' | 'EXTREME' | 'SUPPRESSED' | 'UNKNOWN' {
-  if (value === null) return 'SUPPRESSED';
-  if (value < 0.35) return 'LOW';
-  if (value < 0.55) return 'MODERATE';
-  if (value < 0.8) return 'HIGH';
+  if (value === undefined || value === null) {
+    return 'SUPPRESSED';
+  }
+  if (value < 0.35) {
+    return 'LOW';
+  }
+  if (value < 0.55) {
+    return 'MODERATE';
+  }
+  if (value < 0.8) {
+    return 'HIGH';
+  }
   return 'EXTREME';
 }
 
 export function assertMonotonicIncreasing(values: readonly (number | null)[]): boolean {
-  const available = values.filter((v): v is number => v !== null);
+  const available = values.filter((v): v is number => isSet(v));
   for (let i = 1; i < available.length; i++) {
-    if (available[i] < available[i - 1]) return false;
+    if (available[i] < available[i - 1]) {
+      return false;
+    }
   }
   return available.length >= 2;
 }

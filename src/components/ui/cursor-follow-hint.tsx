@@ -20,22 +20,35 @@ function asHintLine(line: string | CursorHintLine): CursorHintLine {
   return typeof line === 'string' ? { text: line } : line;
 }
 
+type PlaceCursorHintOptions = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  viewport: { w: number; h: number };
+};
+
 /** Keep the probe readout next to the cursor, never off-screen. */
-export function placeCursorHint(
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  viewport: { w: number; h: number },
-): { left: number; top: number } {
+export function placeCursorHint({ x, y, width, height, viewport }: PlaceCursorHintOptions): {
+  left: number;
+  top: number;
+} {
   const gap = 12;
   const pad = 8;
   let left = x + gap;
   let top = y - height - gap;
-  if (left + width > viewport.w - pad) left = x - width - gap;
-  if (left < pad) left = pad;
-  if (top < pad) top = y + gap;
-  if (top + height > viewport.h - pad) top = Math.max(pad, viewport.h - height - pad);
+  if (left + width > viewport.w - pad) {
+    left = x - width - gap;
+  }
+  if (left < pad) {
+    left = pad;
+  }
+  if (top < pad) {
+    top = y + gap;
+  }
+  if (top + height > viewport.h - pad) {
+    top = Math.max(pad, viewport.h - height - pad);
+  }
   return { left, top };
 }
 
@@ -51,14 +64,19 @@ export function CursorFollowHint({ hint }: { hint: CursorHintState }) {
     const node = ref.current;
     const width = node?.offsetWidth ?? 160;
     const height = node?.offsetHeight ?? 48;
-    const placed = placeCursorHint(hint.x, hint.y, width, height, {
-      w: window.innerWidth,
-      h: window.innerHeight,
+    const placed = placeCursorHint({
+      x: hint.x,
+      y: hint.y,
+      width,
+      height,
+      viewport: { w: window.innerWidth, h: window.innerHeight },
     });
     setBox({ ...placed, ready: true });
   }, [hint]);
 
-  if (!hint || typeof document === 'undefined') return null;
+  if (!hint || typeof document === 'undefined') {
+    return null;
+  }
 
   return createPortal(
     <div

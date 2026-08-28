@@ -25,26 +25,20 @@ export function scheduleBackgroundTasks(params: {
   const { athleteId, activityIds, regenerateBriefing, trainingDayId, plannedSessionIdsToAnalyze } =
     params;
 
-  void runBackgroundTasks(
-    athleteId,
-    activityIds,
-    regenerateBriefing,
-    trainingDayId,
-    plannedSessionIdsToAnalyze,
-  ).catch((error) => {
+  void runBackgroundTasks(params).catch((error) => {
     console.error('[athlete-state/background]', error);
   });
 }
 
-async function runBackgroundTasks(
-  athleteId: string,
-  activityIds: string[],
-  regenerateBriefing: boolean,
-  trainingDayId?: string,
-  plannedSessionIdsToAnalyze?: string[],
-): Promise<void> {
-  const dayId = trainingDayId ?? trainingDayIdNow();
+type BackgroundTaskParams = {
+  athleteId: string;
+  activityIds: string[];
+  regenerateBriefing: boolean;
+  trainingDayId?: string;
+  plannedSessionIdsToAnalyze?: string[];
+};
 
+async function enrichTodayContext(athleteId: string): Promise<void> {
   try {
     const { enrichTodayActivitiesContext } =
       await import('@/lib/activity/detail/enrich-observed-context');
@@ -52,18 +46,26 @@ async function runBackgroundTasks(
   } catch (error) {
     console.error('[athlete-state/background/enrich-today]', error);
   }
+}
 
-  if (plannedSessionIdsToAnalyze && plannedSessionIdsToAnalyze.length > 0) {
-    try {
-      const { analyzeLinkedPlannedSessions } =
-        await import('@/lib/planned-session/linking/session-linking');
-      await analyzeLinkedPlannedSessions(athleteId, plannedSessionIdsToAnalyze);
-    } catch (error) {
-      console.error('[athlete-state/background/compliance-analyze]', error);
-    }
+async function analyzeLinkedSessions(
+  athleteId: string,
+  plannedSessionIdsToAnalyze: string[],
+): Promise<void> {
+  try {
+    const { analyzeLinkedPlannedSessions } =
+      await import('@/lib/planned-session/linking/session-linking');
+    await analyzeLinkedPlannedSessions(athleteId, plannedSessionIdsToAnalyze);
+  } catch (error) {
+    console.error('[athlete-state/background/compliance-analyze]', error);
   }
+}
 
-  // Streams → hrDrift → neuromuscular efficiency (no need to open the activity).
+async function recomputeNeuromuscularIfNeeded(
+  athleteId: string,
+  activityIds: string[],
+  dayId: string,
+): Promise<void> {
   try {
     const { ensureStreamsForNeuromuscularEfficiency, shouldRecomputeNeuromuscularAdaptation } =
       await import('@/lib/streams/ensure-streams-for-neuromuscular');
@@ -77,18 +79,34 @@ async function runBackgroundTasks(
       streamResult.fetched > 0 ||
       (await shouldRecomputeNeuromuscularAdaptation(athleteId, dayId));
 
-    if (needsNmeRecompute) {
-      const { loadTodayState } = await import('@/lib/today/today-state-server');
-      const todayState = await loadTodayState({
-        athleteId,
-        trainingDayId: dayId,
-        forceRefresh: true,
-      });
-      await regenerateAthleteSnapshotAfterInference(athleteId, dayId, todayState);
+    if (!needsNmeRecompute) {
+      return;
     }
+
+    const { loadTodayState } = await import('@/lib/today/today-state-server');
+    const todayState = await loadTodayState({
+      athleteId,
+      trainingDayId: dayId,
+      forceRefresh: true,
+    });
+    await regenerateAthleteSnapshotAfterInference(athleteId, dayId, todayState);
   } catch (error) {
     console.error('[athlete-state/background/nme-streams]', error);
   }
+}
+
+async function runBackgroundTasks(params: BackgroundTaskParams): Promise<void> {
+  const { athleteId, activityIds, regenerateBriefing, trainingDayId, plannedSessionIdsToAnalyze } =
+    params;
+  const dayId = trainingDayId ?? trainingDayIdNow();
+
+  await enrichTodayContext(athleteId);
+
+  if (plannedSessionIdsToAnalyze && plannedSessionIdsToAnalyze.length > 0) {
+    await analyzeLinkedSessions(athleteId, plannedSessionIdsToAnalyze);
+  }
+
+  await recomputeNeuromuscularIfNeeded(athleteId, activityIds, dayId);
 
   if (activityIds.length > 0 && isCoachConfigured()) {
     const { runActivityNarrativeForIds } =

@@ -1,4 +1,5 @@
 import { ActivityType } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { differenceInCalendarDays, startOfDay, subDays } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import {
@@ -70,14 +71,18 @@ type ActivityRow = PeerRow & {
 };
 
 function fmtPace(secPerKm?: number | null): string | null {
-  if (secPerKm == null || secPerKm <= 0) return null;
+  if (secPerKm === undefined || secPerKm === null || secPerKm <= 0) {
+    return null;
+  }
   const m = Math.floor(secPerKm / 60);
   const s = Math.round(secPerKm % 60);
   return `${m}:${s.toString().padStart(2, '0')}/km`;
 }
 
 function fmtPace100(secPer100m?: number | null): string | null {
-  if (secPer100m == null || secPer100m <= 0) return null;
+  if (secPer100m === undefined || secPer100m === null || secPer100m <= 0) {
+    return null;
+  }
   const m = Math.floor(secPer100m / 60);
   const s = Math.round(secPer100m % 60);
   return `${m}:${s.toString().padStart(2, '0')}/100m`;
@@ -96,59 +101,182 @@ function distanceM(activity: PeerRow): number | null {
 }
 
 function avg(values: number[]): number | null {
-  if (!values.length) return null;
+  if (!values.length) {
+    return null;
+  }
   return values.reduce((a, b) => a + b, 0) / values.length;
 }
 
 function weatherFact(raw: string | null): string | null {
-  if (!raw?.trim()) return null;
+  if (!raw?.trim()) {
+    return null;
+  }
   const parsed = parseActivityWeather(raw);
-  if (parsed) return `Météo : ${formatActivityWeatherNarrative(parsed)}`;
+  if (parsed) {
+    return `Météo : ${formatActivityWeatherNarrative(parsed)}`;
+  }
   return `Météo : ${raw.trim()}`;
 }
 
-/** Faits séance : métriques brutes pour référence interne du modèle (ne pas tout répéter en prose). */
-function describeActivity(activity: ActivityRow, extras?: { streamAvgHr?: number | null }): string {
-  const bits = [
+function activityEnvironmentLine(activity: ActivityRow): string | null {
+  if (isIndoorActivitySession(activity)) {
+    return 'Environnement : intérieur / virtual (pas de météo outdoor)';
+  }
+  return weatherFact(activity.weather);
+}
+
+function describeActivityCoreBits(activity: ActivityRow): string[] {
+  return [
     `Sport : ${TYPE_FR[activity.type] ?? activity.type}`,
     activity.title ? `Titre : ${activity.title}` : null,
     `Date : ${activity.date.toISOString().slice(0, 10)}`,
     activity.duration ? `Durée : ${formatDuration(activity.duration)}` : null,
-    activity.load != null ? `Charge : ${Math.round(activity.load)} TSS` : null,
-    activity.rpe != null ? `RPE : ${activity.rpe}/10` : null,
+    isSet(activity.load) ? `Charge : ${Math.round(activity.load)} TSS` : null,
+    isSet(activity.rpe) ? `RPE : ${activity.rpe}/10` : null,
     activity.feeling ? `Ressenti déclaré : ${activity.feeling}` : null,
-    isIndoorActivitySession(activity)
-      ? 'Environnement : intérieur / virtual (pas de météo outdoor)'
-      : weatherFact(activity.weather),
+    activityEnvironmentLine(activity),
     activity.notes ? `Notes athlète : ${activity.notes}` : null,
   ].filter(Boolean) as string[];
+}
 
+function appendDistanceAndPaceBits(bits: string[], activity: ActivityRow): void {
   const dist = distanceM(activity);
-  if (dist) bits.push(`Distance : ${formatDistance(dist)}`);
+  if (dist) {
+    bits.push(`Distance : ${formatDistance(dist)}`);
+  }
   const pace = paceSecPerKm(activity);
-  if (pace) bits.push(`Allure moyenne : ${fmtPace(pace)}`);
+  if (pace) {
+    bits.push(`Allure moyenne : ${fmtPace(pace)}`);
+  }
   const swimPace = fmtPace100(activity.swimMetrics?.avgPaceSecPer100m);
-  if (swimPace) bits.push(`Allure moyenne : ${swimPace}`);
-  if (activity.swimMetrics?.swolf != null) {
+  if (swimPace) {
+    bits.push(`Allure moyenne : ${swimPace}`);
+  }
+  if (isSet(activity.swimMetrics?.swolf)) {
     bits.push(`SWOLF : ${Math.round(activity.swimMetrics.swolf)}`);
   }
+}
+
+function appendHrBit(
+  bits: string[],
+  activity: ActivityRow,
+  extras?: { streamAvgHr?: number | null },
+): void {
   const hr = avgHr(activity) ?? extras?.streamAvgHr ?? null;
-  if (hr) bits.push(`FC moyenne : ${Math.round(hr)} bpm`);
-  if (activity.runMetrics?.cadence != null) {
+  if (hr) {
+    bits.push(`FC moyenne : ${Math.round(hr)} bpm`);
+  }
+}
+
+function appendCadenceBits(bits: string[], activity: ActivityRow): void {
+  if (isSet(activity.runMetrics?.cadence)) {
     bits.push(`Cadence : ${Math.round(activity.runMetrics.cadence)} spm`);
   }
-  if (activity.bikeMetrics?.avgCadence != null) {
+  if (isSet(activity.bikeMetrics?.avgCadence)) {
     bits.push(`Cadence : ${Math.round(activity.bikeMetrics.avgCadence)} rpm`);
   }
+}
+
+function appendHrAndCadenceBits(
+  bits: string[],
+  activity: ActivityRow,
+  extras?: { streamAvgHr?: number | null },
+): void {
+  appendHrBit(bits, activity, extras);
+  appendCadenceBits(bits, activity);
+}
+
+function appendPowerAndElevationBits(bits: string[], activity: ActivityRow): void {
   if (activity.bikeMetrics?.avgPower) {
     bits.push(`Puissance moyenne : ${Math.round(activity.bikeMetrics.avgPower)} W`);
   }
-  if (activity.runMetrics?.elevationM ?? activity.bikeMetrics?.elevationM) {
-    const elevation = activity.runMetrics?.elevationM ?? activity.bikeMetrics?.elevationM ?? 0;
+  const elevation = activity.runMetrics?.elevationM ?? activity.bikeMetrics?.elevationM;
+  if (elevation) {
     bits.push(`D+ : ${Math.round(elevation)} m`);
   }
+}
 
+function appendPerformanceMetricBits(
+  bits: string[],
+  activity: ActivityRow,
+  extras?: { streamAvgHr?: number | null },
+): void {
+  appendDistanceAndPaceBits(bits, activity);
+  appendHrAndCadenceBits(bits, activity, extras);
+  appendPowerAndElevationBits(bits, activity);
+}
+
+/** Faits séance : métriques brutes pour référence interne du modèle (ne pas tout répéter en prose). */
+function describeActivity(activity: ActivityRow, extras?: { streamAvgHr?: number | null }): string {
+  const bits = describeActivityCoreBits(activity);
+  appendPerformanceMetricBits(bits, activity, extras);
   return bits.join('\n');
+}
+
+function comparePeerPaceLine(activity: ActivityRow, peers: PeerRow[]): string | null {
+  const peerPaces = peers.map(paceSecPerKm).filter((v): v is number => isSet(v) && v > 0);
+  const actPace = paceSecPerKm(activity);
+  const avgPace = avg(peerPaces);
+  if (!actPace || !avgPace) {
+    return null;
+  }
+  const deltaPct = Math.round(((avgPace - actPace) / avgPace) * 100);
+  if (deltaPct > 2) {
+    return `- Allure plus rapide que la moyenne 30j (~${fmtPace(avgPace)}) d'environ ${deltaPct} %.`;
+  }
+  if (deltaPct < -2) {
+    return `- Allure plus lente que la moyenne 30j (~${fmtPace(avgPace)}) d'environ ${Math.abs(deltaPct)} %.`;
+  }
+  return `- Allure proche de la moyenne 30j (~${fmtPace(avgPace)}).`;
+}
+
+function comparePeerHrLine(activity: ActivityRow, peers: PeerRow[]): string | null {
+  const peerHrs = peers.map(avgHr).filter((v): v is number => isSet(v) && v > 0);
+  const actHr = avgHr(activity);
+  const avgHr30 = avg(peerHrs);
+  if (!actHr || !avgHr30) {
+    return null;
+  }
+  const diff = Math.round(actHr - avgHr30);
+  if (Math.abs(diff) < 3) {
+    return null;
+  }
+  return `- FC moyenne ${diff > 0 ? 'supérieure' : 'inférieure'} à la moyenne 30j (${Math.round(avgHr30)} bpm) d'environ ${Math.abs(diff)} bpm.`;
+}
+
+function comparePeerHrPeakLine(activity: ActivityRow, peers: PeerRow[]): string | null {
+  const actHr = avgHr(activity);
+  if (!actHr) {
+    return null;
+  }
+  const lastHigher = peers.find((p) => {
+    const hr = avgHr(p);
+    return isSet(hr) && hr > actHr;
+  });
+  if (lastHigher) {
+    const days = differenceInCalendarDays(startOfDay(activity.date), startOfDay(lastHigher.date));
+    return `- FC moyenne la plus élevée depuis ${days} jour(s) (parmi les séances comparables récentes).`;
+  }
+  if (peers.length >= 2) {
+    return '- FC moyenne la plus élevée sur la fenêtre 30 jours comparée.';
+  }
+  return null;
+}
+
+function comparePeerDurationLine(activity: ActivityRow, peers: PeerRow[]): string | null {
+  const peerLoads = peers.map((p) => p.duration).filter((v): v is number => isSet(v) && v > 0);
+  const avgDur = avg(peerLoads);
+  if (!activity.duration || !avgDur) {
+    return null;
+  }
+  const ratio = activity.duration / avgDur;
+  if (ratio >= 1.15) {
+    return '- Durée nettement plus longue que la moyenne habituelle.';
+  }
+  if (ratio <= 0.85) {
+    return '- Durée plus courte que la moyenne habituelle.';
+  }
+  return null;
 }
 
 function buildComparativeFacts(activity: ActivityRow, peers: PeerRow[]): string {
@@ -156,62 +284,13 @@ function buildComparativeFacts(activity: ActivityRow, peers: PeerRow[]): string 
     return 'Comparatif 30 jours : pas assez de séances précédentes du même sport pour comparer.';
   }
 
-  const lines: string[] = [
+  const lines = [
     `Comparatif sur ${peers.length} séance(s) du même sport dans les 30 jours précédant celle-ci :`,
-  ];
-
-  const peerPaces = peers.map(paceSecPerKm).filter((v): v is number => v != null && v > 0);
-  const actPace = paceSecPerKm(activity);
-  const avgPace = avg(peerPaces);
-  if (actPace && avgPace) {
-    const deltaPct = Math.round(((avgPace - actPace) / avgPace) * 100);
-    if (deltaPct > 2) {
-      lines.push(
-        `- Allure plus rapide que la moyenne 30j (~${fmtPace(avgPace)}) d'environ ${deltaPct} %.`,
-      );
-    } else if (deltaPct < -2) {
-      lines.push(
-        `- Allure plus lente que la moyenne 30j (~${fmtPace(avgPace)}) d'environ ${Math.abs(deltaPct)} %.`,
-      );
-    } else {
-      lines.push(`- Allure proche de la moyenne 30j (~${fmtPace(avgPace)}).`);
-    }
-  }
-
-  const peerHrs = peers.map(avgHr).filter((v): v is number => v != null && v > 0);
-  const actHr = avgHr(activity);
-  const avgHr30 = avg(peerHrs);
-  if (actHr && avgHr30) {
-    const diff = Math.round(actHr - avgHr30);
-    if (Math.abs(diff) >= 3) {
-      lines.push(
-        `- FC moyenne ${diff > 0 ? 'supérieure' : 'inférieure'} à la moyenne 30j (${Math.round(avgHr30)} bpm) d'environ ${Math.abs(diff)} bpm.`,
-      );
-    }
-  }
-
-  if (actHr) {
-    const lastHigher = peers.find((p) => {
-      const hr = avgHr(p);
-      return hr != null && hr > actHr;
-    });
-    if (lastHigher) {
-      const days = differenceInCalendarDays(startOfDay(activity.date), startOfDay(lastHigher.date));
-      lines.push(
-        `- FC moyenne la plus élevée depuis ${days} jour(s) (parmi les séances comparables récentes).`,
-      );
-    } else if (peers.length >= 2) {
-      lines.push('- FC moyenne la plus élevée sur la fenêtre 30 jours comparée.');
-    }
-  }
-
-  const peerLoads = peers.map((p) => p.duration).filter((v): v is number => v != null && v > 0);
-  const avgDur = avg(peerLoads);
-  if (activity.duration && avgDur) {
-    const ratio = activity.duration / avgDur;
-    if (ratio >= 1.15) lines.push('- Durée nettement plus longue que la moyenne habituelle.');
-    else if (ratio <= 0.85) lines.push('- Durée plus courte que la moyenne habituelle.');
-  }
+    comparePeerPaceLine(activity, peers),
+    comparePeerHrLine(activity, peers),
+    comparePeerHrPeakLine(activity, peers),
+    comparePeerDurationLine(activity, peers),
+  ].filter(Boolean) as string[];
 
   return lines.join('\n');
 }
@@ -231,6 +310,10 @@ function mapPhysicalNotes(
     affectsTraining: note.affectsTraining,
     checkins: note.checkins.map((c) => ({ severity: c.severity, date: c.date })),
   }));
+}
+
+function isEnduranceNarrativeActivity(type: ActivityType): boolean {
+  return type === ActivityType.RUN || type === ActivityType.BIKE || type === ActivityType.SWIM;
 }
 
 export async function buildActivityNarrativeFacts(
@@ -278,12 +361,10 @@ export async function buildActivityNarrativeFacts(
     },
   });
 
-  if (!activity) return null;
-  if (
-    activity.type !== ActivityType.RUN &&
-    activity.type !== ActivityType.BIKE &&
-    activity.type !== ActivityType.SWIM
-  ) {
+  if (!activity) {
+    return null;
+  }
+  if (!isEnduranceNarrativeActivity(activity.type)) {
     return null;
   }
 
@@ -399,64 +480,124 @@ export async function buildActivityNarrativeFacts(
     weather: activity.weather,
   };
 
-  const environmentLines: string[] = [];
-  if (environmentPresentation?.visible) {
-    for (const item of environmentPresentation.correction.narrative) {
-      environmentLines.push(
-        resolveEnvironmentalExplanation(item.code, item.params ? { ...item.params } : undefined),
-      );
-    }
-    for (const factor of environmentPresentation.correction.factors) {
-      if (factor.explanation?.trim()) environmentLines.push(factor.explanation.trim());
-    }
-    const effect = environmentPresentation.correction.totalAttributedEffect;
-    if (effect.available && effect.value != null && effect.value > 0) {
-      environmentLines.push(
-        `Effet environnemental total attribué : ~${Math.round(effect.value * 100)} % sur la performance perçue.`,
-      );
+  return assembleActivityNarrativeSections({
+    activity: activity as ActivityRow,
+    streamAvgHr,
+    peers: peers as PeerRow[],
+    healthContext,
+    dailyStress,
+    pmcAnchor,
+    metrics,
+    athleteProfile,
+    physicalNotes,
+    environmentLines: buildEnvironmentNarrativeLines(environmentPresentation),
+    streamPayload,
+    goalLines: buildGoalNarrativeLines(goalHits),
+  });
+}
+
+function appendEnvironmentEffectLine(
+  environmentPresentation: NonNullable<
+    Awaited<ReturnType<typeof resolveActivityEnvironmentPresentation>>
+  >,
+  lines: string[],
+): void {
+  const effect = environmentPresentation.correction.totalAttributedEffect;
+  if (effect.available && isSet(effect.value) && effect.value > 0) {
+    lines.push(
+      `Effet environnemental total attribué : ~${Math.round(effect.value * 100)} % sur la performance perçue.`,
+    );
+  }
+}
+
+function buildEnvironmentNarrativeLines(
+  environmentPresentation: Awaited<
+    ReturnType<typeof resolveActivityEnvironmentPresentation>
+  > | null,
+): string[] {
+  if (!environmentPresentation?.visible) {
+    return [];
+  }
+  const lines: string[] = [];
+  for (const item of environmentPresentation.correction.narrative) {
+    lines.push(
+      resolveEnvironmentalExplanation(item.code, item.params ? { ...item.params } : undefined),
+    );
+  }
+  for (const factor of environmentPresentation.correction.factors) {
+    if (factor.explanation?.trim()) {
+      lines.push(factor.explanation.trim());
     }
   }
+  appendEnvironmentEffectLine(environmentPresentation, lines);
+  return lines;
+}
 
-  const goalLines =
-    goalHits.length > 0
-      ? [
-          'Objectifs validés par cette séance :',
-          ...goalHits.map((g) => {
-            const cfg = parseGoalMetricConfig(g.goal.metricKey);
-            const val = formatGoalDisplayValue(g.value, g.goal.unit, cfg);
-            return `- ${g.goal.title} (${val})`;
-          }),
-        ]
-      : [];
+type GoalHitWithGoal = Awaited<
+  ReturnType<
+    typeof prisma.goalAchievement.findMany<{
+      include: {
+        goal: { select: { title: true; unit: true; metricKey: true; targetValue: true } };
+      };
+    }>
+  >
+>[number];
 
+function buildGoalNarrativeLines(goalHits: GoalHitWithGoal[]): string[] {
+  if (goalHits.length === 0) {
+    return [];
+  }
+  return [
+    'Objectifs validés par cette séance :',
+    ...goalHits.map((g) => {
+      const cfg = parseGoalMetricConfig(g.goal.metricKey);
+      const val = formatGoalDisplayValue(g.value, g.goal.unit, cfg);
+      return `- ${g.goal.title} (${val})`;
+    }),
+  ];
+}
+
+function assembleActivityNarrativeSections(input: {
+  activity: ActivityRow;
+  streamAvgHr: number | null;
+  peers: PeerRow[];
+  healthContext: NarrativeHealthRow[];
+  dailyStress: Awaited<ReturnType<typeof loadDailyTrainingStressEntries>>;
+  pmcAnchor: Awaited<ReturnType<typeof loadAthletePmcAnchor>>;
+  metrics: NarrativeActivityMetrics;
+  athleteProfile: NarrativeAthleteProfile | null;
+  physicalNotes: Awaited<ReturnType<typeof getActivePhysicalNotes>>;
+  environmentLines: string[];
+  streamPayload: Awaited<ReturnType<typeof getCachedActivityStreams>>;
+  goalLines: string[];
+}): string {
   const technicalLines = buildTechnicalSessionFacts({
-    sport: activity.type as 'RUN' | 'BIKE' | 'SWIM',
-    analysis: streamPayload?.analysis ?? null,
+    sport: input.activity.type as 'RUN' | 'BIKE' | 'SWIM',
+    analysis: input.streamPayload?.analysis ?? null,
   });
 
   const sections = [
     '# Cette séance (données brutes — ne pas toutes répéter en prose)',
-    describeActivity(activity as ActivityRow, { streamAvgHr }),
+    describeActivity(input.activity, { streamAvgHr: input.streamAvgHr }),
     '',
     '# Comparatif historique même sport (30 jours)',
-    buildComparativeFacts(activity as ActivityRow, peers),
+    buildComparativeFacts(input.activity, input.peers),
     '',
     '# Récupération & sommeil (avant la séance)',
-    ...buildRecoveryContextFacts(activity.date, healthContext),
+    ...buildRecoveryContextFacts(input.activity.date, input.healthContext),
     '',
     '# Charge d’entraînement (contexte au jour de la séance)',
-    // Core Training Stress, so this ACWR matches the dashboard's.
-    ...buildTrainingLoadFacts(activity.date, dailyStress),
-    ...buildPmcFacts(pmcAnchor),
+    ...buildTrainingLoadFacts(input.activity.date, input.dailyStress),
+    ...buildPmcFacts(input.pmcAnchor),
     '',
     '# Seuils personnels & interprétation de la performance',
-    ...buildThresholdPerformanceFacts(metrics, athleteProfile),
+    ...buildThresholdPerformanceFacts(input.metrics, input.athleteProfile),
     '',
     '# Conditions physiques actives',
-    ...buildPhysicalConditionFacts(mapPhysicalNotes(physicalNotes)),
+    ...buildPhysicalConditionFacts(mapPhysicalNotes(input.physicalNotes)),
     '',
     '# Environnement',
-    ...buildEnvironmentFacts(activity.weather, environmentLines),
+    ...buildEnvironmentFacts(input.activity.weather, input.environmentLines),
   ];
 
   if (technicalLines.length) {
@@ -468,8 +609,8 @@ export async function buildActivityNarrativeFacts(
     );
   }
 
-  if (goalLines.length) {
-    sections.push('', '# Objectifs', ...goalLines);
+  if (input.goalLines.length) {
+    sections.push('', '# Objectifs', ...input.goalLines);
   }
 
   return sections.join('\n');

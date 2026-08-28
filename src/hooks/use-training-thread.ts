@@ -57,7 +57,9 @@ export function useTrainingThread() {
   );
 
   const filtered = useMemo<ThreadWeek[]>(() => {
-    if (sport === 'ALL') return weeks;
+    if (sport === 'ALL') {
+      return weeks;
+    }
     return weeks
       .map((week) => ({
         ...week,
@@ -98,6 +100,6 @@ export function useTrainingThread() {
     loading: isAnyInitialQueryLoad([activitiesQuery, plannedQuery, goalsQuery]),
     /** Every cache cold — nothing to render, offline or not. */
     hasNoLiveData:
-      activitiesQuery.data == null && plannedQuery.data == null && goalsQuery.data == null,
+      (activitiesQuery.data === undefined || activitiesQuery.data === null) && (plannedQuery.data === undefined || plannedQuery.data === null) && (goalsQuery.data === undefined || goalsQuery.data === null),
   };
 }

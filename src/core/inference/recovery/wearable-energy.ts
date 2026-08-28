@@ -24,10 +24,18 @@ function clamp(value: number, min: number, max: number): number {
  * Thresholds aligned with product interpretation in knowledge/garmin.md.
  */
 function stressDownwardDelta(stress: number | null): number {
-  if (stress == null) return 0;
-  if (stress >= 75) return 10;
-  if (stress >= 60) return 6;
-  if (stress >= ELEVATED_STRESS_THRESHOLD) return 3;
+  if (stress === undefined || stress === null) {
+    return 0;
+  }
+  if (stress >= 75) {
+    return 10;
+  }
+  if (stress >= 60) {
+    return 6;
+  }
+  if (stress >= ELEVATED_STRESS_THRESHOLD) {
+    return 3;
+  }
   return 0;
 }
 
@@ -36,11 +44,21 @@ function stressDownwardDelta(stress: number | null): number {
  * Low battery → downward; high battery → small upward cushion only.
  */
 function bodyBatteryDelta(bodyBattery: number | null): number {
-  if (bodyBattery == null) return 0;
-  if (bodyBattery < 25) return -10;
-  if (bodyBattery < 40) return -6;
-  if (bodyBattery >= 80) return 4;
-  if (bodyBattery >= 70) return 2;
+  if (bodyBattery === undefined || bodyBattery === null) {
+    return 0;
+  }
+  if (bodyBattery < 25) {
+    return -10;
+  }
+  if (bodyBattery < 40) {
+    return -6;
+  }
+  if (bodyBattery >= 80) {
+    return 4;
+  }
+  if (bodyBattery >= 70) {
+    return 2;
+  }
   return 0;
 }
 
@@ -48,20 +66,34 @@ function bodyBatteryDelta(bodyBattery: number | null): number {
  * Apply bounded wearable corroboration to a synthesized readiness score.
  * Returns the original score when no wearable signals are available.
  */
+import { isSet } from '@/lib/util/value';
+
+function clampBatteryDeltaWhenStressed(
+  stress: number | null | undefined,
+  batteryDelta: number,
+): number {
+  if (isSet(stress) && stress >= ELEVATED_STRESS_THRESHOLD && batteryDelta > 0) {
+    return 0;
+  }
+  return batteryDelta;
+}
+
 export function applyWearableEnergyCorroboration(
   readinessScore: number | null,
   signals: WearableEnergySignals | null | undefined,
 ): number | null {
-  if (readinessScore === null || signals == null) return readinessScore;
-  if (signals.stress == null && signals.bodyBattery == null) return readinessScore;
+  if (!isSet(readinessScore) || !isSet(signals)) {
+    return readinessScore;
+  }
+  if (!isSet(signals.stress) && !isSet(signals.bodyBattery)) {
+    return readinessScore;
+  }
 
   const stressDelta = -stressDownwardDelta(signals.stress);
-  let batteryDelta = bodyBatteryDelta(signals.bodyBattery);
-
-  // Never uplift when stress is meaningfully elevated.
-  if (signals.stress != null && signals.stress >= ELEVATED_STRESS_THRESHOLD && batteryDelta > 0) {
-    batteryDelta = 0;
-  }
+  const batteryDelta = clampBatteryDeltaWhenStressed(
+    signals.stress,
+    bodyBatteryDelta(signals.bodyBattery),
+  );
 
   const delta = clamp(stressDelta + batteryDelta, -MAX_DOWNWARD_DELTA, MAX_UPWARD_DELTA);
   return Math.round(clamp(readinessScore + delta, 0, 100));

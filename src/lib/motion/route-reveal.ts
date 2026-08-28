@@ -25,8 +25,12 @@ const LONG_ROUTE_POINTS = 800;
  * watchable either way.
  */
 export function revealDurationMs(totalPoints: number): number {
-  if (totalPoints <= SHORT_ROUTE_POINTS) return REVEAL_DURATION_MIN_MS;
-  if (totalPoints >= LONG_ROUTE_POINTS) return REVEAL_DURATION_MAX_MS;
+  if (totalPoints <= SHORT_ROUTE_POINTS) {
+    return REVEAL_DURATION_MIN_MS;
+  }
+  if (totalPoints >= LONG_ROUTE_POINTS) {
+    return REVEAL_DURATION_MAX_MS;
+  }
   const t = (totalPoints - SHORT_ROUTE_POINTS) / (LONG_ROUTE_POINTS - SHORT_ROUTE_POINTS);
   return Math.round(REVEAL_DURATION_MIN_MS + t * (REVEAL_DURATION_MAX_MS - REVEAL_DURATION_MIN_MS));
 }
@@ -49,7 +53,9 @@ export function revealedPointCount(
   durationMs: number,
   totalPoints: number,
 ): number {
-  if (totalPoints < 2) return totalPoints;
+  if (totalPoints < 2) {
+    return totalPoints;
+  }
 
   const progress = durationMs <= 0 ? 1 : elapsedMs / durationMs;
   const eased = easeOutCubic(progress);

@@ -65,7 +65,9 @@ function recordNarrative(entry: RecordEntry): string {
   if (daysSince <= 120) {
     return `il y a ${formatDistanceToNowStrict(new Date(entry.date), { locale: fr })}`;
   }
-  if (daysSince <= 365) return 'record de la saison';
+  if (daysSince <= 365) {
+    return 'record de la saison';
+  }
   return `il y a ${formatDistanceToNowStrict(new Date(entry.date), { locale: fr })}`;
 }
 
@@ -101,7 +103,9 @@ function RecordHero({ entry }: { entry: RecordEntry }) {
     </div>
   );
 
-  if (!entry.activityId) return content;
+  if (!entry.activityId) {
+    return content;
+  }
   return (
     <Link
       className="rounded-analysis hover:bg-analysis-surface-alt/40 pressable-lg block"
@@ -128,7 +132,9 @@ function LeaderboardRow({ entry }: { entry: RecordEntry }) {
     </div>
   );
 
-  if (!entry.activityId) return content;
+  if (!entry.activityId) {
+    return content;
+  }
   return (
     <Link className="pressable-lg rounded-analysis block" href={`/training/${entry.activityId}`}>
       {content}
@@ -183,9 +189,15 @@ function PrGrid({ categories }: { categories: RecordCategory[] }) {
   const filled = categories.filter((c) => c.entries.length > 0).length;
 
   function getGridCols(count: number): string {
-    if (count <= 1) return 'grid-cols-1';
-    if (count === 2) return 'xl:grid-cols-2';
-    if (count === 3) return 'xl:grid-cols-2';
+    if (count <= 1) {
+      return 'grid-cols-1';
+    }
+    if (count === 2) {
+      return 'xl:grid-cols-2';
+    }
+    if (count === 3) {
+      return 'xl:grid-cols-2';
+    }
     return 'xl:grid-cols-2';
   }
 
@@ -205,7 +217,9 @@ function GpsAnalysisSection({
 }: {
   powerCurve: import('@/lib/training/records').PowerCurvePoint[];
 }) {
-  if (powerCurve.length === 0) return null;
+  if (powerCurve.length === 0) {
+    return null;
+  }
 
   return (
     <ExpertOnly>
@@ -241,9 +255,13 @@ export function RecordsPanel() {
   useEffect(() => {
     function syncSportFromHash() {
       const categoryId = window.location.hash.replace(/^#/, '');
-      if (!categoryId) return;
+      if (!categoryId) {
+        return;
+      }
       const sport = recordSportTabFromCategory(categoryId);
-      if (!sport || sport === tab) return;
+      if (!sport || sport === tab) {
+        return;
+      }
       const params = new URLSearchParams(searchParams.toString());
       params.set('tab', 'performance');
       params.set('sport', sport);
@@ -258,9 +276,13 @@ export function RecordsPanel() {
   }, [router, searchParams, tab]);
 
   useEffect(() => {
-    if (isPending || !data) return;
+    if (isPending || !data) {
+      return;
+    }
     const categoryId = window.location.hash.replace(/^#/, '');
-    if (!categoryId) return;
+    if (!categoryId) {
+      return;
+    }
 
     const frame = requestAnimationFrame(() => {
       document.getElementById(categoryId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -272,12 +294,18 @@ export function RecordsPanel() {
     return <RecordsSkeleton />;
   }
 
-  if (!data) return null;
+  if (!data) {
+    return null;
+  }
 
   const activeTab = TABS.find((item) => item.id === tab) ?? TABS[0];
   let activeCategories = data.prs.run;
-  if (tab === 'bike') activeCategories = data.prs.bike;
-  if (tab === 'swim') activeCategories = data.prs.swim;
+  if (tab === 'bike') {
+    activeCategories = data.prs.bike;
+  }
+  if (tab === 'swim') {
+    activeCategories = data.prs.swim;
+  }
 
   return (
     <section className="space-y-4" id="records">

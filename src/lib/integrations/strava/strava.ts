@@ -138,7 +138,9 @@ export async function fetchActivities(
     per_page: String(options.perPage ?? 100),
     page: String(options.page ?? 1),
   });
-  if (options.after) params.set('after', String(options.after));
+  if (options.after) {
+    params.set('after', String(options.after));
+  }
 
   const response = await fetch(`${STRAVA_API_BASE}/athlete/activities?${params.toString()}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -169,7 +171,9 @@ export async function fetchActivityDetail(
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: 'no-store',
   });
-  if (!response.ok) return null;
+  if (!response.ok) {
+    return null;
+  }
   return response.json();
 }
 
@@ -229,7 +233,9 @@ export async function fetchActivityStreams(
     },
   );
 
-  if (response.status === 404) return null;
+  if (response.status === 404) {
+    return null;
+  }
   if (!response.ok) {
     throw new Error(`Récupération des streams Strava échouée (${response.status})`);
   }
@@ -237,20 +243,19 @@ export async function fetchActivityStreams(
   return response.json();
 }
 
+const STRAVA_TYPE_RULES: Array<{ pattern: RegExp; type: ActivityType }> = [
+  { pattern: /run/, type: ActivityType.RUN },
+  { pattern: /ride|bike|cycling|velomobile/, type: ActivityType.BIKE },
+  { pattern: /swim/, type: ActivityType.SWIM },
+  { pattern: /weighttraining|workout|crossfit/, type: ActivityType.STRENGTH },
+];
+
 export function mapStravaType(stravaType: string): ActivityType | null {
   const type = stravaType.toLowerCase();
-  if (type.includes('run')) return ActivityType.RUN;
-  if (
-    type.includes('ride') ||
-    type.includes('bike') ||
-    type.includes('cycling') ||
-    type.includes('velomobile')
-  ) {
-    return ActivityType.BIKE;
-  }
-  if (type.includes('swim')) return ActivityType.SWIM;
-  if (type.includes('weighttraining') || type.includes('workout') || type.includes('crossfit')) {
-    return ActivityType.STRENGTH;
+  for (const rule of STRAVA_TYPE_RULES) {
+    if (rule.pattern.test(type)) {
+      return rule.type;
+    }
   }
   return null;
 }

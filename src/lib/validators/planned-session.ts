@@ -1,5 +1,6 @@
 import { ActivityType, SessionIntensity } from '@prisma/client';
 import { z } from 'zod';
+import { isSet } from '@/lib/util/value';
 import { isEquipmentItemId } from '@/lib/equipment/catalog';
 import { endurancePrescriptionSchema } from '@/lib/planned-session/endurance/endurance-prescription';
 import { strengthPrescriptionSchema } from '@/lib/planned-session/strength/strength-prescription';
@@ -37,8 +38,12 @@ const optionalStrengthPrescription = strengthPrescriptionSchema
   .nullable()
   .optional()
   .transform((v) => {
-    if (v == null) return null;
-    if (v.sets.length === 0) return null;
+    if (v === undefined || v === null) {
+      return null;
+    }
+    if (v.sets.length === 0) {
+      return null;
+    }
     return v;
   });
 
@@ -46,8 +51,12 @@ const optionalEndurancePrescription = endurancePrescriptionSchema
   .nullable()
   .optional()
   .transform((v) => {
-    if (v == null) return null;
-    if (v.blocks.length === 0) return null;
+    if (v === undefined || v === null) {
+      return null;
+    }
+    if (v.blocks.length === 0) {
+      return null;
+    }
     return v;
   });
 
@@ -57,7 +66,9 @@ const optionalAccessories = z
   .nullable()
   .optional()
   .transform((v) => {
-    if (v == null) return null;
+    if (v === undefined || v === null) {
+      return null;
+    }
     const ids = v.filter(isEquipmentItemId);
     return ids.length > 0 ? ids : null;
   });
@@ -89,8 +100,12 @@ function requireMatchingEnduranceSport(data: {
 }) {
   const sport = data.endurancePrescription?.sport;
   // Strength sessions drop the endurance prescription in the transform below.
-  if (!sport || data.type === ActivityType.STRENGTH) return null;
-  if (sport === data.type) return null;
+  if (!sport || data.type === ActivityType.STRENGTH) {
+    return null;
+  }
+  if (sport === data.type) {
+    return null;
+  }
   return {
     message: `Le déroulé structuré est en ${sport} mais la séance est en ${data.type}.`,
     path: ['endurancePrescription', 'sport'] as const,
@@ -123,7 +138,9 @@ function requireSessionDetails(data: {
 export const createPlannedSessionSchema = basePlannedSessionSchema
   .superRefine((data, ctx) => {
     for (const issue of [requireSessionDetails(data), requireMatchingEnduranceSport(data)]) {
-      if (!issue) continue;
+      if (!issue) {
+        continue;
+      }
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: issue.message, path: [...issue.path] });
     }
   })
@@ -133,34 +150,49 @@ export const createPlannedSessionSchema = basePlannedSessionSchema
     endurancePrescription: data.type === ActivityType.STRENGTH ? null : data.endurancePrescription,
   }));
 
+function shouldSkipSessionPatchRefine(data: {
+  type?: ActivityType | null;
+  description?: string | null;
+  strengthPrescription?: unknown;
+}): boolean {
+  return (
+    !isSet(data.type) && data.description === undefined && data.strengthPrescription === undefined
+  );
+}
+
 export const updatePlannedSessionSchema = basePlannedSessionSchema
   .partial()
   .superRefine((data, ctx) => {
-    // Only enforce when type/description/prescription are part of the patch.
-    if (
-      data.type == null &&
-      data.description === undefined &&
-      data.strengthPrescription === undefined
-    ) {
+    if (shouldSkipSessionPatchRefine(data)) {
       return;
     }
     const { type } = data;
-    if (type == null) return;
+    if (!isSet(type)) {
+      return;
+    }
+    const sessionType = type;
     const issues = [
       requireSessionDetails({
-        type,
+        type: sessionType,
         description: data.description,
         strengthPrescription: data.strengthPrescription,
       }),
-      requireMatchingEnduranceSport({ type, endurancePrescription: data.endurancePrescription }),
+      requireMatchingEnduranceSport({
+        type: sessionType,
+        endurancePrescription: data.endurancePrescription,
+      }),
     ];
     for (const issue of issues) {
-      if (!issue) continue;
+      if (!issue) {
+        continue;
+      }
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: issue.message, path: [...issue.path] });
     }
   })
   .transform((data) => {
-    if (data.type == null) return data;
+    if (data.type === undefined || data.type === null) {
+      return data;
+    }
     return data.type === ActivityType.STRENGTH
       ? { ...data, endurancePrescription: null }
       : { ...data, strengthPrescription: null };

@@ -1,4 +1,5 @@
 import { BodyCompositionSource, Prisma } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import {
   isOAuthAccountConnected,
   isProviderAuthFailure,
@@ -25,7 +26,9 @@ async function ingestWithingsMeasurement(
 ): Promise<void> {
   try {
     const raw = withingsMeasurementToBodyComposition(measurement, new Date());
-    if (!raw) return;
+    if (!raw) {
+      return;
+    }
     await observationEngine.ingest(athleteId, raw);
   } catch (err) {
     console.error('[ObservationEngine] withings ingest failed:', err);
@@ -43,7 +46,9 @@ export async function disconnectWithings(athleteId: string) {
 /** Keeps the Withings profile row so the hub can ask for a reconnect. */
 export async function revokeWithingsCredentials(athleteId: string) {
   const account = await getWithingsAccount(athleteId);
-  if (!account) return;
+  if (!account) {
+    return;
+  }
   await prisma.withingsAccount.update({
     where: { athleteId },
     data: {
@@ -56,7 +61,9 @@ export async function revokeWithingsCredentials(athleteId: string) {
 
 export async function getValidWithingsAccessToken(athleteId: string): Promise<string> {
   const account = await getWithingsAccount(athleteId);
-  if (!account) throw new Error('Compte Withings non connecté');
+  if (!account) {
+    throw new Error('Compte Withings non connecté');
+  }
   if (!isOAuthAccountConnected(account)) {
     throw new ProviderAuthError(
       'Session Withings expirée. Reconnecte Withings dans les paramètres.',
@@ -64,7 +71,9 @@ export async function getValidWithingsAccessToken(athleteId: string): Promise<st
   }
 
   const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
-  if (!expiresSoon) return decryptSecret(account.accessTokenEnc);
+  if (!expiresSoon) {
+    return decryptSecret(account.accessTokenEnc);
+  }
 
   try {
     const refreshed = await refreshWithingsToken(decryptSecret(account.refreshTokenEnc));
@@ -89,14 +98,22 @@ export async function getValidWithingsAccessToken(athleteId: string): Promise<st
   }
 }
 
+function computeMusclePct(m: WithingsParsedMeasurement): number | null {
+  if (
+    m.muscleKg === undefined ||
+    m.muscleKg === null ||
+    m.weightKg === undefined ||
+    m.weightKg === null ||
+    m.weightKg <= 0
+  ) {
+    return null;
+  }
+  return (m.muscleKg / m.weightKg) * 100;
+}
+
 function measurementToPrisma(
   m: WithingsParsedMeasurement,
 ): Omit<Prisma.BodyCompositionMeasurementUncheckedCreateInput, 'athleteId'> {
-  const musclePct =
-    m.muscleKg != null && m.weightKg != null && m.weightKg > 0
-      ? (m.muscleKg / m.weightKg) * 100
-      : null;
-
   return {
     source: BodyCompositionSource.WITHINGS,
     externalId: m.grpid,
@@ -104,15 +121,15 @@ function measurementToPrisma(
     weightKg: m.weightKg,
     bmi: m.bmi,
     bodyFatPct: m.bodyFatPct,
-    musclePct,
+    musclePct: computeMusclePct(m),
     boneKg: m.boneKg,
     bmr: m.bmr,
     visceralFat: m.visceralFat,
     waterPct: m.waterPct,
     fatFreeWeightKg: m.fatFreeWeightKg,
-    heartRate: m.heartRate != null ? Math.round(m.heartRate) : null,
-    bodyAge: m.metabolicAge != null ? Math.round(m.metabolicAge) : null,
-    vascularAgeYears: m.vascularAgeYears != null ? Math.round(m.vascularAgeYears) : null,
+    heartRate: isSet(m.heartRate) ? Math.round(m.heartRate) : null,
+    bodyAge: isSet(m.metabolicAge) ? Math.round(m.metabolicAge) : null,
+    vascularAgeYears: isSet(m.vascularAgeYears) ? Math.round(m.vascularAgeYears) : null,
     pulseWaveVelocity: m.pulseWaveVelocity,
     vo2Max: m.vo2Max,
     nerveHealthScore: m.nerveHealthScore,
@@ -120,7 +137,7 @@ function measurementToPrisma(
     nerveHealthRight: m.nerveHealthRight,
     nerveResponseScore: m.nerveResponseScore,
     skinConductance: m.skinConductance,
-    metabolicAge: m.metabolicAge != null ? Math.round(m.metabolicAge) : null,
+    metabolicAge: isSet(m.metabolicAge) ? Math.round(m.metabolicAge) : null,
     hydrationKg: m.hydrationKg,
     fatMassKg: m.fatMassKg,
     extracellularWaterKg: m.extracellularWaterKg,
@@ -130,7 +147,9 @@ function measurementToPrisma(
 }
 
 async function upsertDailyWeightFromWithings(athleteId: string, m: WithingsParsedMeasurement) {
-  if (m.weightKg == null) return;
+  if (m.weightKg === undefined || m.weightKg === null) {
+    return;
+  }
 
   const local = m.measuredAt;
   const day = new Date(Date.UTC(local.getFullYear(), local.getMonth(), local.getDate()));
@@ -149,6 +168,122 @@ export interface WithingsSyncResult {
   observationsBackfilled?: number;
 }
 
+async function persistWithingsMeasurements(
+  athleteId: string,
+  measurements: WithingsParsedMeasurement[],
+): Promise<{
+  imported: number;
+  updated: number;
+  weightByDay: Map<string, WithingsParsedMeasurement>;
+}> {
+  const weightByDay = new Map<string, WithingsParsedMeasurement>();
+  if (measurements.length === 0) {
+    return { imported: 0, updated: 0, weightByDay };
+  }
+
+  const externalIds = measurements.map((m) => m.grpid);
+  const existingRows = await prisma.bodyCompositionMeasurement.findMany({
+    where: {
+      athleteId,
+      source: BodyCompositionSource.WITHINGS,
+      externalId: { in: externalIds },
+    },
+    select: { externalId: true },
+  });
+  const existingIds = new Set(
+    existingRows.map((r) => r.externalId).filter((id): id is string => isSet(id)),
+  );
+
+  const toCreate: Prisma.BodyCompositionMeasurementCreateManyInput[] = [];
+  const updateOps: Promise<unknown>[] = [];
+
+  for (const measurement of measurements) {
+    const data = measurementToPrisma(measurement);
+    const dayKey = format(measurement.measuredAt, 'yyyy-MM-dd');
+    const prev = weightByDay.get(dayKey);
+    if (!prev || measurement.measuredAt.getTime() > prev.measuredAt.getTime()) {
+      weightByDay.set(dayKey, measurement);
+    }
+
+    if (existingIds.has(measurement.grpid)) {
+      updateOps.push(
+        prisma.bodyCompositionMeasurement.update({
+          where: {
+            athleteId_source_externalId: {
+              athleteId,
+              source: BodyCompositionSource.WITHINGS,
+              externalId: measurement.grpid,
+            },
+          },
+          data,
+        }),
+      );
+    } else {
+      toCreate.push({ ...data, athleteId } as Prisma.BodyCompositionMeasurementCreateManyInput);
+    }
+  }
+
+  let imported = 0;
+  if (toCreate.length > 0) {
+    const result = await prisma.bodyCompositionMeasurement.createMany({
+      data: toCreate,
+      skipDuplicates: true,
+    });
+    imported = result.count;
+  }
+
+  let updated = 0;
+  if (updateOps.length > 0) {
+    await Promise.all(updateOps);
+    updated = updateOps.length;
+  }
+
+  await Promise.all(measurements.map((m) => ingestWithingsMeasurement(athleteId, m)));
+  return { imported, updated, weightByDay };
+}
+
+async function loadWithingsMeasurementsForSync(
+  accessToken: string,
+  range: { startdate: number; enddate: number },
+) {
+  const measurementsRaw = await fetchWithingsMeasurements(accessToken, range);
+  try {
+    const heartRecords = await fetchWithingsHeartList(accessToken, range);
+    return enrichMeasurementsWithHeartEcg(measurementsRaw, heartRecords);
+  } catch (err) {
+    console.warn(
+      '[withings-sync] Heart v2 list unavailable, ECG classification from getmeas only:',
+      err,
+    );
+    return measurementsRaw;
+  }
+}
+
+async function finalizeWithingsSync(input: {
+  athleteId: string;
+  since: Date;
+  full?: boolean;
+  imported: number;
+  updated: number;
+  days: number;
+}): Promise<WithingsSyncResult> {
+  await prisma.withingsAccount.update({
+    where: { athleteId: input.athleteId },
+    data: { lastSyncAt: new Date() },
+  });
+
+  const backfill = await backfillBodyCompositionObservationsFromMeasurements(input.athleteId, {
+    since: input.full ? subDays(startOfDay(new Date()), 365 * 3) : input.since,
+  });
+
+  return {
+    imported: input.imported,
+    updated: input.updated,
+    days: input.days,
+    observationsBackfilled: backfill.ingested,
+  };
+}
+
 export async function syncWithingsHealth(
   athleteId: string,
   options?: {
@@ -157,7 +292,9 @@ export async function syncWithingsHealth(
   },
 ): Promise<WithingsSyncResult> {
   const account = await getWithingsAccount(athleteId);
-  if (!account) throw new Error('Compte Withings non connecté');
+  if (!account) {
+    throw new Error('Compte Withings non connecté');
+  }
 
   const accessToken = await getValidWithingsAccessToken(athleteId);
   const since = options?.full
@@ -169,98 +306,25 @@ export async function syncWithingsHealth(
     enddate: Math.floor(Date.now() / 1000),
   };
 
-  const measurementsRaw = await fetchWithingsMeasurements(accessToken, range);
-  let measurements = measurementsRaw;
-  try {
-    const heartRecords = await fetchWithingsHeartList(accessToken, range);
-    measurements = enrichMeasurementsWithHeartEcg(measurementsRaw, heartRecords);
-  } catch (err) {
-    console.warn(
-      '[withings-sync] Heart v2 list unavailable, ECG classification from getmeas only:',
-      err,
-    );
-  }
+  const measurements = await loadWithingsMeasurementsForSync(accessToken, range);
 
-  let imported = 0;
-  let updated = 0;
-  const weightByDay = new Map<string, WithingsParsedMeasurement>();
-
-  if (measurements.length > 0) {
-    const externalIds = measurements.map((m) => m.grpid);
-    const existingRows = await prisma.bodyCompositionMeasurement.findMany({
-      where: {
-        athleteId,
-        source: BodyCompositionSource.WITHINGS,
-        externalId: { in: externalIds },
-      },
-      select: { externalId: true },
-    });
-    const existingIds = new Set(
-      existingRows.map((r) => r.externalId).filter((id): id is string => id != null),
-    );
-
-    const toCreate: Prisma.BodyCompositionMeasurementCreateManyInput[] = [];
-    const updateOps: Promise<unknown>[] = [];
-
-    for (const measurement of measurements) {
-      const data = measurementToPrisma(measurement);
-      const dayKey = format(measurement.measuredAt, 'yyyy-MM-dd');
-      const prev = weightByDay.get(dayKey);
-      if (!prev || measurement.measuredAt.getTime() > prev.measuredAt.getTime()) {
-        weightByDay.set(dayKey, measurement);
-      }
-
-      if (existingIds.has(measurement.grpid)) {
-        updateOps.push(
-          prisma.bodyCompositionMeasurement.update({
-            where: {
-              athleteId_source_externalId: {
-                athleteId,
-                source: BodyCompositionSource.WITHINGS,
-                externalId: measurement.grpid,
-              },
-            },
-            data,
-          }),
-        );
-      } else {
-        toCreate.push({ ...data, athleteId } as Prisma.BodyCompositionMeasurementCreateManyInput);
-      }
-    }
-
-    if (toCreate.length > 0) {
-      const result = await prisma.bodyCompositionMeasurement.createMany({
-        data: toCreate,
-        skipDuplicates: true,
-      });
-      imported = result.count;
-    }
-
-    if (updateOps.length > 0) {
-      await Promise.all(updateOps);
-      updated = updateOps.length;
-    }
-
-    // Ingest every measurement in the sync window — not only new rows. Existing
-    // provider rows that predate the observation pipeline are updates here;
-    // dedup by externalId makes this safe to re-run.
-    await Promise.all(measurements.map((m) => ingestWithingsMeasurement(athleteId, m)));
-  }
+  const { imported, updated, weightByDay } = await persistWithingsMeasurements(
+    athleteId,
+    measurements,
+  );
 
   await Promise.all(
     [...weightByDay.values()].map((m) => upsertDailyWeightFromWithings(athleteId, m)),
   );
 
-  await prisma.withingsAccount.update({
-    where: { athleteId },
-    data: { lastSyncAt: new Date() },
+  return finalizeWithingsSync({
+    athleteId,
+    since,
+    full: options?.full,
+    imported,
+    updated,
+    days,
   });
-
-  const backfill = await backfillBodyCompositionObservationsFromMeasurements(athleteId, {
-    since: options?.full ? subDays(startOfDay(new Date()), 365 * 3) : since,
-  });
-
-  return { imported, updated, days, observationsBackfilled: backfill.ingested };
 }
 
 /** Jours où Withings a une pesée (priorité sur Renpho pour DailyHealth). */

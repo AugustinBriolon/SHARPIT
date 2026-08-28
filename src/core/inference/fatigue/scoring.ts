@@ -26,6 +26,8 @@ import type {
   DataCompleteness,
 } from './types';
 import type { LoadFeatureSet, RecoveryFeatureSet, SessionFeatureSet } from '@/core/features/types';
+import { isSet } from '@/lib/util/value';
+import type { SubjectiveWellnessComponents } from '@/core/features/types';
 import type { RecoveryState } from '@/core/digital-twin/types';
 import type { SportType } from '@/core/observation/types';
 
@@ -45,14 +47,22 @@ const DIMENSION_WEIGHTS = {
 const ACCUMULATION_THRESHOLD = 55;
 
 function accumulationQualityFactor(consecutiveAccumulationDays: number): number {
-  if (consecutiveAccumulationDays >= 7) return 0.85;
-  if (consecutiveAccumulationDays >= 3) return 0.6;
+  if (consecutiveAccumulationDays >= 7) {
+    return 0.85;
+  }
+  if (consecutiveAccumulationDays >= 3) {
+    return 0.6;
+  }
   return 0.3;
 }
 
 function classifyFatigueDataCompleteness(dimensionCount: number): DataCompleteness {
-  if (dimensionCount >= 5) return 'FULL';
-  if (dimensionCount >= 3) return 'PARTIAL';
+  if (dimensionCount >= 5) {
+    return 'FULL';
+  }
+  if (dimensionCount >= 3) {
+    return 'PARTIAL';
+  }
   return 'SPARSE';
 }
 
@@ -61,25 +71,19 @@ function classifyFatigueDataCompleteness(dimensionCount: number): DataCompletene
 // Higher values → more eccentric / mechanical loading per TSS unit
 // ─────────────────────────────────────────────────────────────────────────────
 
+const MECHANICAL_STRESS_BY_SPORT: Partial<Record<SportType, number>> = {
+  TRAIL_RUN: 1.5,
+  RUN: 1.4,
+  STRENGTH: 1.3,
+  TRIATHLON: 1.0,
+  BIKE: 0.8,
+  MTB: 0.8,
+  SWIM: 0.7,
+  OPEN_WATER: 0.7,
+};
+
 function getMechanicalStressFactor(sport: SportType): number {
-  switch (sport) {
-    case 'TRAIL_RUN':
-      return 1.5;
-    case 'RUN':
-      return 1.4;
-    case 'STRENGTH':
-      return 1.3;
-    case 'TRIATHLON':
-      return 1.0;
-    case 'BIKE':
-    case 'MTB':
-      return 0.8;
-    case 'SWIM':
-    case 'OPEN_WATER':
-      return 0.7;
-    default:
-      return 1.0;
-  }
+  return MECHANICAL_STRESS_BY_SPORT[sport] ?? 1.0;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -99,7 +103,7 @@ function getMechanicalStressFactor(sport: SportType): number {
  *   ACWR = 1.5 → 100 (critical overload)
  */
 export function scoreLoadFatigue(load: LoadFeatureSet | 'PENDING'): DimensionScore {
-  if (load === 'PENDING' || load.acwr === null) {
+  if (load === 'PENDING' || load.acwr === undefined || load.acwr === null) {
     return { score: null, available: false, qualityFactor: 0 };
   }
 
@@ -107,7 +111,7 @@ export function scoreLoadFatigue(load: LoadFeatureSet | 'PENDING'): DimensionSco
   let score = Math.round(Math.max(Math.min((load.acwr / 1.5) * 100, 100), 0));
 
   // Monotony amplifier (Foster et al. 1998)
-  if (load.loadMonotony !== null) {
+  if (isSet(load.loadMonotony)) {
     if (load.loadMonotony > 2.0) {
       score = Math.round(Math.min(score * 1.1, 100));
     } else if (load.loadMonotony < 1.3) {
@@ -131,54 +135,53 @@ export function scoreLoadFatigue(load: LoadFeatureSet | 'PENDING'): DimensionSco
  *   - Central component: autonomic score from Recovery Model (HRV proxy)
  *   - Peripheral component: mechanical load (session sport × TSS) + soreness
  */
+function scoreCentralNeuromuscularComponent(recoveryState: RecoveryState | null): {
+  component: number | null;
+  quality: number;
+} {
+  if (
+    recoveryState?.dimensions.autonomic.available &&
+    isSet(recoveryState.dimensions.autonomic.score)
+  ) {
+    return {
+      component: 100 - recoveryState.dimensions.autonomic.score,
+      quality: 0.9,
+    };
+  }
+  return { component: null, quality: 0 };
+}
+
+function scorePeripheralNeuromuscularComponent(
+  recovery: RecoveryFeatureSet | null,
+  sessions: readonly SessionFeatureSet[],
+): { component: number; quality: number } {
+  const recentMechanicalLoad = sessions.reduce((sum, session) => {
+    return sum + session.tssScore * getMechanicalStressFactor(session.sportType);
+  }, 0);
+  const mechanicalComponent = Math.min((recentMechanicalLoad / 150) * 100, 100);
+  const perceivedSoreness = recovery?.subjectiveWellnessComponents?.perceivedSoreness ?? null;
+  const sorenessComponent = isSet(perceivedSoreness) ? perceivedSoreness * 10 : mechanicalComponent;
+  return {
+    component: 0.55 * mechanicalComponent + 0.45 * sorenessComponent,
+    quality: isSet(perceivedSoreness) ? 0.75 : 0.55,
+  };
+}
+
 export function scoreNeuromuscularFatigue(
   recovery: RecoveryFeatureSet | 'PENDING' | null,
   recoveryState: RecoveryState | null,
   sessions: readonly SessionFeatureSet[],
 ): DimensionScore {
   const rf = recovery !== 'PENDING' ? recovery : null;
+  const central = scoreCentralNeuromuscularComponent(recoveryState);
+  const peripheral = scorePeripheralNeuromuscularComponent(rf, sessions);
 
-  // ── Central component (HRV-derived autonomic score) ─────────────────────
-  let centralComponent: number | null = null;
-  let centralQuality = 0;
-  if (
-    recoveryState?.dimensions.autonomic.available &&
-    recoveryState.dimensions.autonomic.score !== null
-  ) {
-    centralComponent = 100 - recoveryState.dimensions.autonomic.score;
-    centralQuality = 0.9;
-  }
-
-  // ── Peripheral component (mechanical + soreness) ─────────────────────────
-  // recentMechanicalLoad = Σ(tss × mechanicalStressFactor) for today's sessions
-  const recentMechanicalLoad = sessions.reduce((sum, s) => {
-    return sum + s.tssScore * getMechanicalStressFactor(s.sportType);
-  }, 0);
-  // Normalization reference: 150 (heavy 2h run ≈ 100 TSS × 1.4 × ≈107, ~140)
-  const mechanicalComponent = Math.min((recentMechanicalLoad / 150) * 100, 100);
-
-  const perceivedSoreness = rf?.subjectiveWellnessComponents?.perceivedSoreness ?? null;
-  const sorenessComponent =
-    perceivedSoreness !== null
-      ? perceivedSoreness * 10 // 0-10 scale → 0-100
-      : mechanicalComponent; // fallback: mechanical proxy
-
-  const peripheralComponent = 0.55 * mechanicalComponent + 0.45 * sorenessComponent;
-  const peripheralQuality = perceivedSoreness !== null ? 0.75 : 0.55;
-
-  // ── Synthesis ────────────────────────────────────────────────────────────
-  let score: number;
-  let qualityFactor: number;
-
-  if (centralComponent !== null) {
-    // Both components available: weighted synthesis
-    score = centralComponent * 0.4 + peripheralComponent * 0.6;
-    qualityFactor = centralQuality * 0.4 + peripheralQuality * 0.6;
-  } else {
-    // No autonomic data — peripheral only
-    score = peripheralComponent;
-    qualityFactor = peripheralQuality;
-  }
+  const score = isSet(central.component)
+    ? central.component * 0.4 + peripheral.component * 0.6
+    : peripheral.component;
+  const qualityFactor = isSet(central.component)
+    ? central.quality * 0.4 + peripheral.quality * 0.6
+    : peripheral.quality;
 
   return {
     score: Math.round(Math.max(0, Math.min(100, score))),
@@ -199,6 +202,16 @@ export function scoreNeuromuscularFatigue(
  *
  * Formula: MetabolicFatigue = clamp(Σ(anaerobicFactor × TSS) / 100 × 100, 0, 100)
  */
+function applyHrDriftModifier(score: number, maxHrDrift: number): number {
+  if (maxHrDrift > 15) {
+    return Math.min(score * 1.3, 100);
+  }
+  if (maxHrDrift > 8) {
+    return Math.min(score * 1.15, 100);
+  }
+  return score;
+}
+
 export function scoreMetabolicFatigue(sessions: readonly SessionFeatureSet[]): DimensionScore {
   if (sessions.length === 0) {
     return { score: 0, available: true, qualityFactor: 0.5 };
@@ -216,33 +229,22 @@ export function scoreMetabolicFatigue(sessions: readonly SessionFeatureSet[]): D
     DURATION_FACTOR: 0.25,
   };
 
-  for (const s of sessions) {
-    // Default anaerobic factor: 0.3 (30%) when zone data unavailable
-    const anaerobicFactor = s.anaerobicLoadFactor ?? 0.3;
-    totalMetabolicStress += anaerobicFactor * s.tssScore;
-
-    if (s.hrDriftPercent !== null && s.hrDriftPercent > maxHrDrift) {
-      maxHrDrift = s.hrDriftPercent;
+  for (const session of sessions) {
+    const anaerobicFactor = session.anaerobicLoadFactor ?? 0.3;
+    totalMetabolicStress += anaerobicFactor * session.tssScore;
+    if (isSet(session.hrDriftPercent) && session.hrDriftPercent > maxHrDrift) {
+      maxHrDrift = session.hrDriftPercent;
     }
-    sumMethodConfidence += TSS_METHOD_CONFIDENCE[s.tssMethod] ?? 0.4;
+    sumMethodConfidence += TSS_METHOD_CONFIDENCE[session.tssMethod] ?? 0.4;
   }
 
-  let score = Math.min((totalMetabolicStress / 100) * 100, 100);
-  score = Math.max(score, 0);
-
-  // HR drift modifier — glycogen depletion marker (FATIGUE_MODEL.md §4.4)
-  if (maxHrDrift > 15) {
-    score = Math.min(score * 1.3, 100);
-  } else if (maxHrDrift > 8) {
-    score = Math.min(score * 1.15, 100);
-  }
-
-  const qualityFactor = sumMethodConfidence / sessions.length;
+  const baseScore = Math.max(Math.min((totalMetabolicStress / 100) * 100, 100), 0);
+  const score = applyHrDriftModifier(baseScore, maxHrDrift);
 
   return {
     score: Math.round(score),
     available: true,
-    qualityFactor,
+    qualityFactor: sumMethodConfidence / sessions.length,
   };
 }
 
@@ -265,14 +267,14 @@ export function scoreCumulativeTrajectory(
   const accumulationPressure = Math.min(consecutiveAccumulationDays * 7, 70);
 
   // Sleep debt: 480 min (8h) → full 30 pt contribution
-  const sleepDebtContribution = sleepDebtMin !== null ? Math.min((sleepDebtMin / 480) * 30, 30) : 0;
+  const sleepDebtContribution = isSet(sleepDebtMin) ? Math.min((sleepDebtMin / 480) * 30, 30) : 0;
 
   // Dissonance penalty: objective/subjective split during accumulation
   const dissonancePenalty = dissonanceDetected && consecutiveAccumulationDays > 3 ? 10 : 0;
 
   const score = Math.min(accumulationPressure + sleepDebtContribution + dissonancePenalty, 100);
 
-  const hasData = sleepDebtMin !== null || consecutiveAccumulationDays > 0;
+  const hasData = isSet(sleepDebtMin) || consecutiveAccumulationDays > 0;
   const qualityFactor = accumulationQualityFactor(consecutiveAccumulationDays);
 
   return {
@@ -293,24 +295,36 @@ export function scoreCumulativeTrajectory(
  *   mood = 1 → PsychFatigue = 90 (severe)
  *   mood = 5 → PsychFatigue = 50 (none)
  */
+function scoreFromMoodAndEnergy(mood: number | null, energyLevel: number | null): number | null {
+  if (isSet(mood) && isSet(energyLevel)) {
+    return 100 - (mood * 10 + energyLevel * 10) / 2;
+  }
+  if (isSet(mood)) {
+    return 100 - mood * 20;
+  }
+  if (isSet(energyLevel)) {
+    return 100 - energyLevel * 20;
+  }
+  return null;
+}
+
+function readWellnessComponents(
+  recovery: RecoveryFeatureSet | 'PENDING' | null,
+): SubjectiveWellnessComponents | null {
+  if (recovery === 'PENDING' || !recovery) {
+    return null;
+  }
+  return recovery.subjectiveWellnessComponents ?? null;
+}
+
 export function scorePsychologicalFatigue(
   recovery: RecoveryFeatureSet | 'PENDING' | null,
 ): DimensionScore {
-  const rf = recovery !== 'PENDING' ? recovery : null;
-  const mood = rf?.subjectiveWellnessComponents?.mood ?? null;
-  const energyLevel = rf?.subjectiveWellnessComponents?.energyLevel ?? null;
+  const components = readWellnessComponents(recovery);
+  const score = scoreFromMoodAndEnergy(components?.mood ?? null, components?.energyLevel ?? null);
 
-  if (mood === null && energyLevel === null) {
+  if (score === undefined || score === null) {
     return { score: null, available: false, qualityFactor: 0 };
-  }
-
-  let score: number;
-  if (mood !== null && energyLevel !== null) {
-    score = 100 - (mood * 10 + energyLevel * 10) / 2;
-  } else if (mood !== null) {
-    score = 100 - mood * 20;
-  } else {
-    score = 100 - energyLevel! * 20;
   }
 
   return {
@@ -340,7 +354,7 @@ export type SynthesisResult = {
  */
 export function synthesizeFatigueIndex(dims: ScoredFatigueDimensions): SynthesisResult {
   const entries = Object.entries(dims) as Array<[keyof typeof DIMENSION_WEIGHTS, DimensionScore]>;
-  const available = entries.filter(([, d]) => d.available && d.score !== null);
+  const available = entries.filter(([, d]) => d.available && isSet(d.score));
 
   if (available.length < 2) {
     return { score: null, confidence: 0, dataCompleteness: 'INSUFFICIENT' };
@@ -367,99 +381,160 @@ export function synthesizeFatigueIndex(dims: ScoredFatigueDimensions): Synthesis
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function classifyFatigueLevel(index: number | null): FatigueLevel {
-  if (index === null) return 'INSUFFICIENT_DATA';
-  if (index <= 20) return 'FRESH';
-  if (index <= 40) return 'FUNCTIONAL_LOW';
-  if (index <= 60) return 'FUNCTIONAL_HIGH';
-  if (index <= 75) return 'ACCUMULATED';
-  if (index <= 88) return 'NON_FUNCTIONAL_RISK';
+  if (index === undefined || index === null) {
+    return 'INSUFFICIENT_DATA';
+  }
+  if (index <= 20) {
+    return 'FRESH';
+  }
+  if (index <= 40) {
+    return 'FUNCTIONAL_LOW';
+  }
+  if (index <= 60) {
+    return 'FUNCTIONAL_HIGH';
+  }
+  if (index <= 75) {
+    return 'ACCUMULATED';
+  }
+  if (index <= 88) {
+    return 'NON_FUNCTIONAL_RISK';
+  }
   return 'OVERREACHING_RISK';
 }
 
+type LabeledFatigueDimension = { name: FatigueDominantDimension; score: number; weight?: number };
+
+function collectLabeledDimensions(
+  dims: ScoredFatigueDimensions,
+  includeWeights = false,
+): LabeledFatigueDimension[] {
+  const entries: Array<[FatigueDominantDimension, DimensionScore, number?]> = [
+    ['LOAD', dims.load, 0.3],
+    ['NEUROMUSCULAR', dims.neuromuscular, 0.25],
+    ['METABOLIC', dims.metabolic, 0.2],
+    ['CUMULATIVE', dims.cumulative, 0.15],
+    ['PSYCHOLOGICAL', dims.psychological, 0.1],
+  ];
+
+  return entries.flatMap(([name, dimension, weight]) => {
+    if (!dimension.available || dimension.score === undefined || dimension.score === null) {
+      return [];
+    }
+    return includeWeights
+      ? [{ name, score: dimension.score, weight }]
+      : [{ name, score: dimension.score }];
+  });
+}
+
+function fatigueTypeForDominant(name: FatigueDominantDimension): FatigueType {
+  const typeByDimension: Record<FatigueDominantDimension, FatigueType> = {
+    LOAD: 'LOAD_DOMINANT',
+    NEUROMUSCULAR: 'NEUROMUSCULAR_DOMINANT',
+    METABOLIC: 'METABOLIC_DOMINANT',
+    PSYCHOLOGICAL: 'PSYCHOLOGICAL_DOMINANT',
+    CUMULATIVE: 'MIXED',
+  };
+  return typeByDimension[name];
+}
+
+function isCumulativeMultiSystem(labeled: LabeledFatigueDimension[]): boolean {
+  return labeled.length >= 3 && labeled.every((dimension) => dimension.score > 70);
+}
+
+function hasCloseRunnerUp(sorted: LabeledFatigueDimension[]): boolean {
+  const [highest, runnerUp] = sorted;
+  return Boolean(highest && runnerUp && highest.score - runnerUp.score <= 10);
+}
+
 export function classifyFatigueType(dims: ScoredFatigueDimensions): FatigueType {
-  const labeled: Array<{ name: FatigueDominantDimension; score: number }> = [];
-
-  if (dims.load.available && dims.load.score !== null)
-    labeled.push({ name: 'LOAD', score: dims.load.score });
-  if (dims.neuromuscular.available && dims.neuromuscular.score !== null)
-    labeled.push({ name: 'NEUROMUSCULAR', score: dims.neuromuscular.score });
-  if (dims.metabolic.available && dims.metabolic.score !== null)
-    labeled.push({ name: 'METABOLIC', score: dims.metabolic.score });
-  if (dims.cumulative.available && dims.cumulative.score !== null)
-    labeled.push({ name: 'CUMULATIVE', score: dims.cumulative.score });
-  if (dims.psychological.available && dims.psychological.score !== null)
-    labeled.push({ name: 'PSYCHOLOGICAL', score: dims.psychological.score });
-
-  if (labeled.length === 0) return 'UNDETERMINED';
+  const labeled = collectLabeledDimensions(dims);
+  if (labeled.length === 0) {
+    return 'UNDETERMINED';
+  }
 
   const sorted = [...labeled].sort((a, b) => b.score - a.score);
   const [highest] = sorted;
-
-  if (!highest || highest.score < 40) return 'UNDETERMINED';
-
-  // If all dimensions > 70 → CUMULATIVE_MULTI_SYSTEM
-  if (labeled.length >= 3 && labeled.every((d) => d.score > 70)) return 'CUMULATIVE_MULTI_SYSTEM';
-
-  // If top two are within 10 points → MIXED
-  if (sorted.length >= 2 && sorted[1] && highest.score - sorted[1].score <= 10) return 'MIXED';
-
-  switch (highest.name) {
-    case 'LOAD':
-      return 'LOAD_DOMINANT';
-    case 'NEUROMUSCULAR':
-      return 'NEUROMUSCULAR_DOMINANT';
-    case 'METABOLIC':
-      return 'METABOLIC_DOMINANT';
-    case 'PSYCHOLOGICAL':
-      return 'PSYCHOLOGICAL_DOMINANT';
-    default:
-      return 'MIXED';
+  if (!highest || highest.score < 40) {
+    return 'UNDETERMINED';
   }
+
+  if (isCumulativeMultiSystem(labeled)) {
+    return 'CUMULATIVE_MULTI_SYSTEM';
+  }
+
+  if (hasCloseRunnerUp(sorted)) {
+    return 'MIXED';
+  }
+
+  return fatigueTypeForDominant(highest.name);
 }
 
 export function getDominantDimension(dims: ScoredFatigueDimensions): FatigueDominantDimension {
-  const candidates: Array<{ name: FatigueDominantDimension; score: number; weight: number }> = [];
-  if (dims.load.available && dims.load.score !== null)
-    candidates.push({ name: 'LOAD', score: dims.load.score, weight: 0.3 });
-  if (dims.neuromuscular.available && dims.neuromuscular.score !== null)
-    candidates.push({ name: 'NEUROMUSCULAR', score: dims.neuromuscular.score, weight: 0.25 });
-  if (dims.metabolic.available && dims.metabolic.score !== null)
-    candidates.push({ name: 'METABOLIC', score: dims.metabolic.score, weight: 0.2 });
-  if (dims.cumulative.available && dims.cumulative.score !== null)
-    candidates.push({ name: 'CUMULATIVE', score: dims.cumulative.score, weight: 0.15 });
-  if (dims.psychological.available && dims.psychological.score !== null)
-    candidates.push({ name: 'PSYCHOLOGICAL', score: dims.psychological.score, weight: 0.1 });
+  const candidates = collectLabeledDimensions(dims, true) as Array<{
+    name: FatigueDominantDimension;
+    score: number;
+    weight: number;
+  }>;
 
-  if (candidates.length === 0) return 'LOAD';
+  if (candidates.length === 0) {
+    return 'LOAD';
+  }
 
-  // Sort by score descending, break ties by weight descending
   return [...candidates].sort((a, b) => b.score - a.score || b.weight - a.weight)[0]!.name;
 }
+
+const TRAINING_CAPACITY_BY_LEVEL: Record<FatigueLevel, TrainingCapacity> = {
+  FRESH: 'FULL',
+  INSUFFICIENT_DATA: 'FULL',
+  FUNCTIONAL_LOW: 'FULL',
+  FUNCTIONAL_HIGH: 'REDUCED',
+  ACCUMULATED: 'LIGHT_ONLY',
+  NON_FUNCTIONAL_RISK: 'REST_ONLY',
+  OVERREACHING_RISK: 'REST_ONLY',
+};
 
 export function classifyTrainingCapacity(
   level: FatigueLevel,
   trainingBlockedByCondition: boolean,
 ): TrainingCapacity {
-  if (trainingBlockedByCondition) return 'LIGHT_ONLY';
-
-  switch (level) {
-    case 'FRESH':
-    case 'INSUFFICIENT_DATA':
-      return 'FULL';
-    case 'FUNCTIONAL_LOW':
-      return 'FULL';
-    case 'FUNCTIONAL_HIGH':
-      return 'REDUCED';
-    case 'ACCUMULATED':
-      return 'LIGHT_ONLY';
-    case 'NON_FUNCTIONAL_RISK':
-    case 'OVERREACHING_RISK':
-      return 'REST_ONLY';
+  if (trainingBlockedByCondition) {
+    return 'LIGHT_ONLY';
   }
+  return TRAINING_CAPACITY_BY_LEVEL[level];
+}
+
+function dimensionRecoveryDays(score: number | null, halfLife: number): number {
+  return isSet(score) ? (score / 100) * halfLife : 0;
+}
+
+export function estimateTimeToFresh(
+  dims: ScoredFatigueDimensions,
+  level: FatigueLevel,
+): number | null {
+  if (level === 'FRESH' || level === 'INSUFFICIENT_DATA') {
+    return null;
+  }
+  if (level === 'OVERREACHING_RISK') {
+    return 14;
+  }
+
+  const days = Math.ceil(
+    Math.max(
+      dimensionRecoveryDays(dims.load.score, 5.0),
+      dimensionRecoveryDays(dims.neuromuscular.score, 2.5),
+      dimensionRecoveryDays(dims.metabolic.score, 1.0),
+      dimensionRecoveryDays(dims.cumulative.score, 7.0),
+      dimensionRecoveryDays(dims.psychological.score, 2.0),
+    ),
+  );
+
+  return days > 0 ? days : null;
 }
 
 export function computeFatigueTrajectory(history: readonly number[]): FatigueTrajectory {
-  if (history.length < 6) return 'STABLE';
+  if (history.length < 6) {
+    return 'STABLE';
+  }
 
   // history is ordered newest-first
   const recent3 = history.slice(0, 3);
@@ -476,7 +551,9 @@ export function computeFatigueTrajectory(history: readonly number[]): FatigueTra
     const recentRate = (recent3[0]! - recent3[recent3.length - 1]!) / (recent3.length - 1);
     return recentRate > 3 ? 'ACCELERATING' : 'ACCUMULATING';
   }
-  if (delta < -5) return 'RESOLVING';
+  if (delta < -5) {
+    return 'RESOLVING';
+  }
   return 'STABLE';
 }
 
@@ -488,31 +565,13 @@ export function computeFatigueTrajectory(history: readonly number[]): FatigueTra
 export function computeConsecutiveAccumulationDays(history: readonly number[]): number {
   let count = 0;
   for (const v of history) {
-    if (v > ACCUMULATION_THRESHOLD) count++;
-    else break;
+    if (v > ACCUMULATION_THRESHOLD) {
+      count++;
+    } else {
+      break;
+    }
   }
   return count;
-}
-
-/**
- * Estimate time (days) to reach FRESH level.
- * Based on per-dimension resolution half-lives from FATIGUE_MODEL.md §5.
- */
-export function estimateTimeToFresh(
-  dims: ScoredFatigueDimensions,
-  level: FatigueLevel,
-): number | null {
-  if (level === 'FRESH' || level === 'INSUFFICIENT_DATA') return null;
-  if (level === 'OVERREACHING_RISK') return 14;
-
-  const loadDays = dims.load.score !== null ? (dims.load.score / 100) * 5.0 : 0;
-  const neuroDays = dims.neuromuscular.score !== null ? (dims.neuromuscular.score / 100) * 2.5 : 0;
-  const metabDays = dims.metabolic.score !== null ? (dims.metabolic.score / 100) * 1.0 : 0;
-  const cumulDays = dims.cumulative.score !== null ? (dims.cumulative.score / 100) * 7.0 : 0;
-  const psychDays = dims.psychological.score !== null ? (dims.psychological.score / 100) * 2.0 : 0;
-
-  const days = Math.ceil(Math.max(loadDays, neuroDays, metabDays, cumulDays, psychDays));
-  return days > 0 ? days : null;
 }
 
 /**
@@ -525,7 +584,9 @@ export function applyDissonanceBias(
   consecutiveAccumulationDays: number,
   dissonanceDetected: boolean,
 ): ScoredFatigueDimensions {
-  if (!dissonanceDetected || consecutiveAccumulationDays < 3) return dims;
+  if (!dissonanceDetected || consecutiveAccumulationDays < 3) {
+    return dims;
+  }
 
   // Reduce psychological weight signal (note: we dampen the qualityFactor as a proxy)
   return {

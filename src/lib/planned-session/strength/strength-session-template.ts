@@ -1,3 +1,4 @@
+import { isSet } from '@/lib/util/value';
 /**
  * Shape of a strength / prehab session: how many exercises a duration actually
  * holds, and which blocks must be present.
@@ -92,7 +93,7 @@ export type StrengthSessionShape = {
 export function planStrengthSessionShape(
   durationMin: number | null | undefined,
 ): StrengthSessionShape {
-  const minutes = durationMin != null && durationMin > 0 ? durationMin : DEFAULT_SESSION_MINUTES;
+  const minutes = isSet(durationMin) && durationMin > 0 ? durationMin : DEFAULT_SESSION_MINUTES;
   const target = Math.round(minutes / MINUTES_PER_EXERCISE);
   const minExercises = Math.max(3, target - 2);
   const maxExercises = Math.max(minExercises, target + 2);
@@ -122,11 +123,11 @@ type EstimatableSet = {
 
 function setSeconds(set: EstimatableSet): number {
   const workSec =
-    set.durationSec != null && set.durationSec > 0
+    isSet(set.durationSec) && set.durationSec > 0
       ? set.durationSec
       : Math.max(1, set.reps) * SECONDS_PER_REP;
   const restSec =
-    set.restMode === 'time' && set.restSec != null && set.restSec > 0
+    set.restMode === 'time' && isSet(set.restSec) && set.restSec > 0
       ? set.restSec
       : DEFAULT_LAP_REST_SEC;
   return Math.max(1, set.sets) * (workSec + restSec) + TRANSITION_SEC;
@@ -162,7 +163,9 @@ export function auditStrengthPrescription(input: {
   prescription: StrengthPrescription | CoachStrengthPrescription | null | undefined;
 }): StrengthPrescriptionAudit | null {
   const sets = input.prescription?.sets;
-  if (!sets || sets.length === 0) return null;
+  if (!sets || sets.length === 0) {
+    return null;
+  }
 
   const shape = planStrengthSessionShape(input.durationMin);
   const estimatedMin = estimateStrengthPrescriptionMinutes(sets);

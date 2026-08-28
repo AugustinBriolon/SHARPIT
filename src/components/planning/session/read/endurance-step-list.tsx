@@ -12,7 +12,9 @@ import { cn } from '@/lib/utils';
  * design (ADR-020), and a dash would read as missing data instead of intent.
  */
 export function EnduranceStepList({ steps }: { steps: EndurancePreviewStep[] }) {
-  if (steps.length === 0) return null;
+  if (steps.length === 0) {
+    return null;
+  }
 
   return (
     <ul className="min-w-0 space-y-1.5">

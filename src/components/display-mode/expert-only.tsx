@@ -20,6 +20,8 @@ export function ExpertOnly({
 }) {
   const { isExpert, isResolved } = useDisplayMode();
 
-  if (!isResolved) return <>{fallback}</>;
+  if (!isResolved) {
+    return <>{fallback}</>;
+  }
   return isExpert ? <>{children}</> : <>{fallback}</>;
 }

@@ -58,7 +58,7 @@ export function buildWeeklyDeltaPresentation(
   delta7d: number | null | undefined,
   formatDelta: (delta: number) => string | undefined,
 ): WeeklyDeltaPresentation {
-  if (delta7d == null) {
+  if ((delta7d === undefined || delta7d === null)) {
     return { deltaDisplay: null, deltaTone: 'ok', deltaHint: null };
   }
   const { tone, measurementHint } = resolveWeeklyDeltaStatus(metricId, delta7d);
@@ -89,6 +89,62 @@ export function toWeeklyDeltaMetricId(metricId: CompositionMetricId): WeeklyDelt
   }
 }
 
+function resolveWeightDeltaStatus(delta7d: number): WeeklyDeltaStatus {
+  const abs = Math.abs(delta7d);
+  if (abs < WEEKLY_DRIFT_MIN) {
+    return { tone: 'ok', measurementHint: null };
+  }
+  if (delta7d > 0) {
+    return {
+      tone: delta7d >= WEEKLY_DRIFT_STRONG ? 'attention' : 'watch',
+      measurementHint: null,
+    };
+  }
+  return { tone: 'ok', measurementHint: null };
+}
+
+function resolveFatDeltaStatus(delta7d: number): WeeklyDeltaStatus {
+  if (delta7d < WEEKLY_DRIFT_MIN) {
+    return { tone: 'ok', measurementHint: null };
+  }
+  return {
+    tone: delta7d >= WEEKLY_DRIFT_STRONG ? 'attention' : 'watch',
+    measurementHint: null,
+  };
+}
+
+function resolveMuscleDeltaStatus(delta7d: number): WeeklyDeltaStatus {
+  if (delta7d > -WEEKLY_DRIFT_MIN) {
+    return { tone: 'ok', measurementHint: null };
+  }
+  return {
+    tone: delta7d <= -WEEKLY_DRIFT_STRONG ? 'attention' : 'watch',
+    measurementHint: null,
+  };
+}
+
+function resolveBmiDeltaStatus(delta7d: number): WeeklyDeltaStatus {
+  const abs = Math.abs(delta7d);
+  if (abs < WEEKLY_DRIFT_MIN) {
+    return { tone: 'ok', measurementHint: null };
+  }
+  return {
+    tone: abs >= WEEKLY_DRIFT_STRONG ? 'attention' : 'watch',
+    measurementHint: null,
+  };
+}
+
+const WEEKLY_DELTA_STATUS_BY_METRIC: Record<
+  WeeklyDeltaMetricId,
+  (delta7d: number) => WeeklyDeltaStatus
+> = {
+  weightKg: resolveWeightDeltaStatus,
+  bodyFatPct: resolveFatDeltaStatus,
+  visceralFat: resolveFatDeltaStatus,
+  musclePct: resolveMuscleDeltaStatus,
+  bmi: resolveBmiDeltaStatus,
+};
+
 /**
  * Statut unique à partir d'un delta 7j : ampleur, direction, plausibilité physiologique.
  * Utilisé pour le texte « vs 7j préc. » et pour élever le ton de la valeur affichée.
@@ -103,42 +159,7 @@ export function resolveWeeklyDeltaStatus(
     return { tone: 'verify', measurementHint: MEASUREMENT_VERIFY_HINT };
   }
 
-  switch (metricId) {
-    case 'weightKg': {
-      if (abs < WEEKLY_DRIFT_MIN) return { tone: 'ok', measurementHint: null };
-      if (delta7d > 0) {
-        return {
-          tone: delta7d >= WEEKLY_DRIFT_STRONG ? 'attention' : 'watch',
-          measurementHint: null,
-        };
-      }
-      return { tone: 'ok', measurementHint: null };
-    }
-    case 'bodyFatPct':
-    case 'visceralFat': {
-      if (delta7d < WEEKLY_DRIFT_MIN) return { tone: 'ok', measurementHint: null };
-      return {
-        tone: delta7d >= WEEKLY_DRIFT_STRONG ? 'attention' : 'watch',
-        measurementHint: null,
-      };
-    }
-    case 'musclePct': {
-      if (delta7d > -WEEKLY_DRIFT_MIN) return { tone: 'ok', measurementHint: null };
-      return {
-        tone: delta7d <= -WEEKLY_DRIFT_STRONG ? 'attention' : 'watch',
-        measurementHint: null,
-      };
-    }
-    case 'bmi': {
-      if (abs < WEEKLY_DRIFT_MIN) return { tone: 'ok', measurementHint: null };
-      return {
-        tone: abs >= WEEKLY_DRIFT_STRONG ? 'attention' : 'watch',
-        measurementHint: null,
-      };
-    }
-    default:
-      return { tone: 'ok', measurementHint: null };
-  }
+  return WEEKLY_DELTA_STATUS_BY_METRIC[metricId](delta7d);
 }
 
 export function resolveMetricValueTone(
@@ -147,7 +168,9 @@ export function resolveMetricValueTone(
   delta7d: number | null | undefined,
 ): CorpsTone {
   const weeklyId = toWeeklyDeltaMetricId(metricId);
-  if (weeklyId == null || delta7d == null) return zoneTone;
+  if ((weeklyId === undefined || weeklyId === null) || (delta7d === undefined || delta7d === null)) {
+    return zoneTone;
+  }
   const { tone: deltaTone } = resolveWeeklyDeltaStatus(weeklyId, delta7d);
   return maxCorpsTone(zoneTone, deltaTone);
 }
@@ -157,17 +180,29 @@ export function corpsToneFromAgeDelta(
   metricAge: number,
   chronologicalAgeYears: number | null,
 ): CorpsTone | null {
-  if (chronologicalAgeYears == null) return null;
+  if ((chronologicalAgeYears === undefined || chronologicalAgeYears === null)) {
+    return null;
+  }
   const delta = metricAge - chronologicalAgeYears;
-  if (delta >= AGE_DELTA_ATTENTION_YEARS) return 'attention';
-  if (delta >= AGE_DELTA_WATCH_YEARS) return 'watch';
+  if (delta >= AGE_DELTA_ATTENTION_YEARS) {
+    return 'attention';
+  }
+  if (delta >= AGE_DELTA_WATCH_YEARS) {
+    return 'watch';
+  }
   return 'ok';
 }
 
 /** Statut visuel d'une note de sévérité 0–10 (Suivi physique). */
 export function corpsToneFromPhysicalSeverity(severity: number | null | undefined): CorpsTone {
-  if (severity == null) return 'neutral';
-  if (severity >= PHYSICAL_SEVERITY_ATTENTION_MIN) return 'attention';
-  if (severity >= PHYSICAL_SEVERITY_WATCH_MIN) return 'watch';
+  if ((severity === undefined || severity === null)) {
+    return 'neutral';
+  }
+  if (severity >= PHYSICAL_SEVERITY_ATTENTION_MIN) {
+    return 'attention';
+  }
+  if (severity >= PHYSICAL_SEVERITY_WATCH_MIN) {
+    return 'watch';
+  }
   return 'ok';
 }

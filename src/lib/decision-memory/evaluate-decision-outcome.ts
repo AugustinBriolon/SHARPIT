@@ -11,7 +11,9 @@ export async function evaluateAndSaveDecisionOutcome(
   now: Date = new Date(),
 ): Promise<OutcomeEvaluation | null> {
   const context = await buildOutcomeEvaluationContext(athleteId, plannedSessionId, now);
-  if (!context) return null;
+  if (!context) {
+    return null;
+  }
   const evaluation = evaluateOutcome(context);
   await saveOutcome(decisionId, evaluation);
   return evaluation;

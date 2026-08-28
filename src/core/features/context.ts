@@ -55,6 +55,7 @@ export type ExtractionContext = {
 };
 
 import { SLEEP_TARGET_MIN } from '@/lib/sleep/sleep-scoring';
+import { isSet } from '@/lib/util/value';
 
 /** Effective sleep target — defaults to 7h30 if athlete has not set one. */
 export function effectiveSleepTarget(ctx: ExtractionContext): number {
@@ -63,15 +64,15 @@ export function effectiveSleepTarget(ctx: ExtractionContext): number {
 
 /** Whether context has enough data for power-based TSS. */
 export function canUsePowerTss(ctx: ExtractionContext): boolean {
-  return ctx.ftpW != null && ctx.ftpW > 0;
+  return isSet(ctx.ftpW) && ctx.ftpW > 0;
 }
 
 /** Whether context has enough data for TRIMP-based TSS. */
 export function canUseTrimpTss(ctx: ExtractionContext): boolean {
-  return ctx.maxHr != null && ctx.maxHr > 0 && ctx.restingHr != null && ctx.restingHr >= 0;
+  return isSet(ctx.maxHr) && ctx.maxHr > 0 && isSet(ctx.restingHr) && ctx.restingHr >= 0;
 }
 
 /** Whether context has enough data for pace-based TSS. */
 export function canUsePaceTss(ctx: ExtractionContext): boolean {
-  return ctx.runThresholdPaceSecPerKm != null && ctx.runThresholdPaceSecPerKm > 0;
+  return isSet(ctx.runThresholdPaceSecPerKm) && ctx.runThresholdPaceSecPerKm > 0;
 }

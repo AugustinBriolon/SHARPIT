@@ -24,7 +24,9 @@ export function ThreadSportFilters({
     .filter(([, count]) => count > 0)
     .sort((a, b) => b[1] - a[1]);
 
-  if (present.length <= 1) return null;
+  if (present.length <= 1) {
+    return null;
+  }
 
   const options: { key: ThreadSportFilter; label: string; count: number }[] = [
     { key: 'ALL', label: 'Tout', count: counts.all },

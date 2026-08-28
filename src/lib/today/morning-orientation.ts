@@ -4,6 +4,7 @@
  */
 
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import { isSet } from '@/lib/util/value';
 import type { FreshnessLevel } from '@/core/athlete-state/freshness';
 import { isForwardAdvicePhase } from '@/lib/daily-phase/resolve';
 import type { DailyPhase } from '@/lib/daily-phase/types';
@@ -96,11 +97,15 @@ function domainFreshness(
 /** Night proofs ready enough for a firm morning orientation. */
 export function nightEvidenceReady(snapshot: AthleteSnapshot): boolean {
   const garmin = snapshot.freshness.providers.find((p) => p.provider === 'garmin');
-  if (garmin?.connected && garmin.syncing) return false;
+  if (garmin?.connected && garmin.syncing) {
+    return false;
+  }
 
   for (const domain of ['sleep', 'recovery'] as const) {
     const level = domainFreshness(snapshot, domain);
-    if (level != null && BLOCKING_EVIDENCE.has(level)) return false;
+    if (isSet(level) && BLOCKING_EVIDENCE.has(level)) {
+      return false;
+    }
   }
 
   return true;
@@ -133,18 +138,20 @@ export function acceptedChoiceKind(direction: 'DOWN' | 'UP'): MorningSessionChoi
   return direction === 'DOWN' ? 'EASING_CONFIRMED' : 'INCREASE_CONFIRMED';
 }
 
-function sessionSide(
-  sessionType: string,
-  intensity: string | null,
-  durationMin: number | null,
-  load: number | null,
-  description: string | null,
-): MorningSessionSide {
+type SessionSideInput = {
+  sessionType: string;
+  intensity: string | null;
+  durationMin: number | null;
+  load: number | null;
+  description: string | null;
+};
+
+function sessionSide(input: SessionSideInput): MorningSessionSide {
   return {
-    intensityLabel: morningIntensityLabel(sessionType as ActivityType, intensity),
-    durationMin,
-    load: load != null ? Math.round(load) : null,
-    description: description?.trim() || null,
+    intensityLabel: morningIntensityLabel(input.sessionType as ActivityType, input.intensity),
+    durationMin: input.durationMin,
+    load: isSet(input.load) ? Math.round(input.load) : null,
+    description: input.description?.trim() || null,
   };
 }
 
@@ -154,20 +161,114 @@ function confirmProposalFrom(recalibration: MorningRecalibrationInput): MorningC
     sessionId: recalibration.sessionId,
     changeSummary: recalibration.changeSummary,
     why: recalibration.why,
-    current: sessionSide(
-      recalibration.sessionType,
-      recalibration.fromIntensity,
-      recalibration.fromDurationMin,
-      recalibration.fromLoad,
-      recalibration.fromDescription,
-    ),
-    proposed: sessionSide(
-      recalibration.sessionType,
-      recalibration.toIntensity,
-      recalibration.toDurationMin,
-      recalibration.toLoad,
-      recalibration.toDescription,
-    ),
+    current: sessionSide({
+      sessionType: recalibration.sessionType,
+      intensity: recalibration.fromIntensity,
+      durationMin: recalibration.fromDurationMin,
+      load: recalibration.fromLoad,
+      description: recalibration.fromDescription,
+    }),
+    proposed: sessionSide({
+      sessionType: recalibration.sessionType,
+      intensity: recalibration.toIntensity,
+      durationMin: recalibration.toDurationMin,
+      load: recalibration.toLoad,
+      description: recalibration.toDescription,
+    }),
+  };
+}
+
+function buildPostChoiceBase(): Omit<MorningOrientationResolved, 'sessionChoice'> {
+  return {
+    phase: 'POST_CHOICE',
+    evidenceLine: null,
+    showRefreshEvidence: false,
+    showFirmActions: false,
+    hideHeroConfidence: true,
+    heroHeadline: null,
+    heroSubline: null,
+    confirmEase: null,
+    confirmIncrease: null,
+    holdDecisionId: null,
+  };
+}
+
+function resolveAcceptedOrientation(
+  recalibration: MorningRecalibrationInput,
+): MorningOrientationResolved {
+  const kind = acceptedChoiceKind(recalibration.direction);
+  return {
+    ...buildPostChoiceBase(),
+    sessionChoice: {
+      sessionId: recalibration.sessionId,
+      kind,
+      label: sessionChoiceLabel(kind),
+    },
+  };
+}
+
+function resolveHoldOrientation(input: {
+  recalibration: MorningRecalibrationInput | null;
+  clientHoldSessionId?: string | null;
+}): MorningOrientationResolved {
+  const sessionId = input.recalibration?.sessionId ?? input.clientHoldSessionId ?? '';
+  return {
+    ...buildPostChoiceBase(),
+    sessionChoice: sessionId
+      ? {
+          sessionId,
+          kind: 'HOLD',
+          label: sessionChoiceLabel('HOLD'),
+        }
+      : null,
+  };
+}
+
+function resolveEvidencePendingOrientation(snapshot: AthleteSnapshot): MorningOrientationResolved {
+  return {
+    phase: 'EVIDENCE_PENDING',
+    evidenceLine: nightEvidenceLine(snapshot),
+    showRefreshEvidence: true,
+    showFirmActions: false,
+    hideHeroConfidence: false,
+    heroHeadline: null,
+    heroSubline: null,
+    confirmEase: null,
+    confirmIncrease: null,
+    holdDecisionId: null,
+    sessionChoice: null,
+  };
+}
+
+function confirmProposalIfPresented(
+  recalibration: MorningRecalibrationInput | null,
+  direction: 'DOWN' | 'UP',
+): MorningConfirmProposal | null {
+  if (recalibration?.status !== 'PRESENTED' || recalibration.direction !== direction) {
+    return null;
+  }
+  return confirmProposalFrom(recalibration);
+}
+
+function resolveOrientationReady(
+  recalibration: MorningRecalibrationInput | null,
+): MorningOrientationResolved {
+  const confirmEase = confirmProposalIfPresented(recalibration, 'DOWN');
+  const confirmIncrease = confirmProposalIfPresented(recalibration, 'UP');
+  const holdDecisionId = recalibration?.status === 'PRESENTED' ? recalibration.decisionId : null;
+
+  return {
+    phase: 'ORIENTATION_READY',
+    evidenceLine: null,
+    showRefreshEvidence: false,
+    showFirmActions: isSet(confirmEase) || isSet(confirmIncrease),
+    hideHeroConfidence: false,
+    heroHeadline: null,
+    heroSubline: null,
+    confirmEase,
+    confirmIncrease,
+    holdDecisionId,
+    sessionChoice: null,
   };
 }
 
@@ -183,102 +284,20 @@ export function resolveMorningOrientation(input: {
   /** Session id for client-only hold annotation. */
   clientHoldSessionId?: string | null;
 }): MorningOrientationResolved | null {
-  if (!isForwardAdvicePhase(input.phase)) return null;
+  if (!isForwardAdvicePhase(input.phase)) {
+    return null;
+  }
 
   const { snapshot, recalibration, clientHold, clientHoldSessionId } = input;
-  const evidenceReady = nightEvidenceReady(snapshot);
 
   if (recalibration?.status === 'ACCEPTED') {
-    const kind = acceptedChoiceKind(recalibration.direction);
-    return {
-      phase: 'POST_CHOICE',
-      evidenceLine: null,
-      showRefreshEvidence: false,
-      showFirmActions: false,
-      hideHeroConfidence: true,
-      heroHeadline: null,
-      heroSubline: null,
-      confirmEase: null,
-      confirmIncrease: null,
-      holdDecisionId: null,
-      sessionChoice: {
-        sessionId: recalibration.sessionId,
-        kind,
-        label: sessionChoiceLabel(kind),
-      },
-    };
+    return resolveAcceptedOrientation(recalibration);
   }
-
   if (recalibration?.status === 'REJECTED' || clientHold) {
-    const sessionId = recalibration?.sessionId ?? clientHoldSessionId ?? '';
-    return {
-      phase: 'POST_CHOICE',
-      evidenceLine: null,
-      showRefreshEvidence: false,
-      showFirmActions: false,
-      hideHeroConfidence: true,
-      heroHeadline: null,
-      heroSubline: null,
-      confirmEase: null,
-      confirmIncrease: null,
-      holdDecisionId: null,
-      sessionChoice: sessionId
-        ? {
-            sessionId,
-            kind: 'HOLD',
-            label: sessionChoiceLabel('HOLD'),
-          }
-        : null,
-    };
+    return resolveHoldOrientation({ recalibration, clientHoldSessionId });
   }
-
-  // Missing night proofs: keep the day instrument (verdict, metrics, sessions,
-  // trajectory). Only withhold firm morning recalibration — refresh stays available.
-  // Overwriting the hero with "Orientation pas encore prête" felt like a bug
-  // past midnight before sleep lands.
-  if (!evidenceReady) {
-    return {
-      phase: 'EVIDENCE_PENDING',
-      evidenceLine: nightEvidenceLine(snapshot),
-      showRefreshEvidence: true,
-      showFirmActions: false,
-      hideHeroConfidence: false,
-      heroHeadline: null,
-      heroSubline: null,
-      confirmEase: null,
-      confirmIncrease: null,
-      holdDecisionId: null,
-      sessionChoice: null,
-    };
+  if (!nightEvidenceReady(snapshot)) {
+    return resolveEvidencePendingOrientation(snapshot);
   }
-
-  const confirmEase =
-    recalibration?.status === 'PRESENTED' && recalibration.direction === 'DOWN'
-      ? confirmProposalFrom(recalibration)
-      : null;
-
-  const confirmIncrease =
-    recalibration?.status === 'PRESENTED' && recalibration.direction === 'UP'
-      ? confirmProposalFrom(recalibration)
-      : null;
-
-  const holdDecisionId = recalibration?.status === 'PRESENTED' ? recalibration.decisionId : null;
-  // Firm actions only when there is something to decide — lonely "Tenir" is noise.
-  const showFirmActions = confirmEase != null || confirmIncrease != null;
-
-  return {
-    phase: 'ORIENTATION_READY',
-    evidenceLine: null,
-    showRefreshEvidence: false,
-    showFirmActions,
-    // Twin trust strip is useful once orientation is ready — hide only while
-    // evidence is pending or after the athlete has already locked a choice.
-    hideHeroConfidence: false,
-    heroHeadline: null,
-    heroSubline: null,
-    confirmEase,
-    confirmIncrease,
-    holdDecisionId,
-    sessionChoice: null,
-  };
+  return resolveOrientationReady(recalibration);
 }

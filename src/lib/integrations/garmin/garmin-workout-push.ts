@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import { currentTokens, type GarminTokens } from '@/lib/integrations/garmin/garmin';
 import { encryptGarminToken, getGarminClient } from '@/lib/integrations/garmin/garmin-sync';
 import {
@@ -48,7 +49,9 @@ export async function workoutActiveOnCalendar(
   workoutId: string,
   scheduledDate: string | null,
 ): Promise<boolean | null> {
-  if (!scheduledDate || !/^\d{4}-\d{2}-\d{2}$/.test(scheduledDate)) return null;
+  if (!scheduledDate || !/^\d{4}-\d{2}-\d{2}$/.test(scheduledDate)) {
+    return null;
+  }
   const [year, month] = scheduledDate.split('-').map(Number);
   try {
     const calendar = await client.getMonthCalendarEvents(year, month - 1);
@@ -56,7 +59,7 @@ export async function workoutActiveOnCalendar(
     return calendar.calendarItems.some(
       (item) =>
         item.date === scheduledDate &&
-        item.workoutId != null &&
+        isSet(item.workoutId) &&
         (String(item.workoutId) === workoutId || item.workoutId === idNumber),
     );
   } catch {
@@ -77,7 +80,9 @@ export async function assertNotAlreadyPushed(
     garminWorkoutPushedAt: Date | null;
   },
 ): Promise<void> {
-  if (!session.garminWorkoutId) return;
+  if (!session.garminWorkoutId) {
+    return;
+  }
 
   const receipt: GarminPushReceipt = {
     workoutId: session.garminWorkoutId,
@@ -143,7 +148,7 @@ export async function createAndScheduleWorkout(
   const workoutId = created.workoutId ?? null;
   let scheduledDate: string | null = null;
 
-  if (options.schedule !== false && workoutId != null) {
+  if (options.schedule !== false && isSet(workoutId)) {
     scheduledDate = options.scheduleDate?.trim() || format(new Date(), 'yyyy-MM-dd');
     await client.scheduleWorkout({ workoutId: String(workoutId) }, scheduledDate);
   }

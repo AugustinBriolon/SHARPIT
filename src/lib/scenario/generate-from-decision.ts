@@ -34,7 +34,9 @@ const DOMAIN_LABELS: Record<DecisionDomain, string> = {
 export function resolveAnchorDecisionDomain(
   anchorDecision: SerializedDecisionState | null,
 ): DecisionDomain | null {
-  if (!anchorDecision) return null;
+  if (!anchorDecision) {
+    return null;
+  }
 
   if (anchorDecision.limitingFactor.domain) {
     return anchorDecision.limitingFactor.domain;
@@ -46,11 +48,55 @@ export function resolveAnchorDecisionDomain(
   if (anchorDecision.priority.attentionDomain === 'PHYSICAL_HEALTH') {
     return 'PHYSICAL_HEALTH';
   }
-  if (anchorDecision.limitingFactor.system === 'RECOVERY') return 'RECOVERY';
-  if (anchorDecision.limitingFactor.system === 'FATIGUE') return 'FATIGUE';
-  if (anchorDecision.limitingFactor.system === 'ADAPTATION') return 'ADAPTATION';
+  if (anchorDecision.limitingFactor.system === 'RECOVERY') {
+    return 'RECOVERY';
+  }
+  if (anchorDecision.limitingFactor.system === 'FATIGUE') {
+    return 'FATIGUE';
+  }
+  if (anchorDecision.limitingFactor.system === 'ADAPTATION') {
+    return 'ADAPTATION';
+  }
 
   return null;
+}
+
+function recoveryContextCopy(
+  definition: ScenarioDefinition,
+  domainLabel: string,
+): Pick<ScenarioDefinition, 'label' | 'rationale'> {
+  if (definition.kind === 'REMOVE_SESSION') {
+    return {
+      label: definition.label.replace(/^Retirer/, 'Jour de récupération — retirer'),
+      rationale: `Facteur limitant : ${domainLabel}. ${definition.rationale}`,
+    };
+  }
+  if (definition.kind === 'REDUCE_INTENSITY') {
+    return {
+      label: definition.label.replace(/^Réduire l’intensité/, 'Endurance facile — réduire'),
+      rationale: `Facteur limitant : ${domainLabel}. Allège la séance tout en maintenant le mouvement.`,
+    };
+  }
+  return { label: definition.label, rationale: definition.rationale };
+}
+
+function environmentContextCopy(
+  definition: ScenarioDefinition,
+  domainLabel: string,
+): Pick<ScenarioDefinition, 'label' | 'rationale'> {
+  if (definition.kind === 'INDOOR') {
+    return {
+      label: definition.label,
+      rationale: `Facteur limitant : ${domainLabel}. Alternative intérieure sans stress thermique prévu.`,
+    };
+  }
+  if (definition.kind === 'MOVE_EARLIER') {
+    return {
+      label: definition.label,
+      rationale: `Facteur limitant : ${domainLabel}. Créneau plus tôt pour limiter la contrainte environnementale.`,
+    };
+  }
+  return { label: definition.label, rationale: definition.rationale };
 }
 
 function contextualizeDefinition(
@@ -62,34 +108,21 @@ function contextualizeDefinition(
   }
 
   const domainLabel = DOMAIN_LABELS[domain];
-  let { label, rationale } = definition;
+  const copy =
+    domain === 'RECOVERY'
+      ? recoveryContextCopy(definition, domainLabel)
+      : domain === 'ENVIRONMENT'
+        ? environmentContextCopy(definition, domainLabel)
+        : { label: definition.label, rationale: definition.rationale };
 
-  if (domain === 'RECOVERY') {
-    if (definition.kind === 'REMOVE_SESSION') {
-      label = label.replace(/^Retirer/, 'Jour de récupération — retirer');
-      rationale = `Facteur limitant : ${domainLabel}. ${rationale}`;
-    }
-    if (definition.kind === 'REDUCE_INTENSITY') {
-      label = label.replace(/^Réduire l’intensité/, 'Endurance facile — réduire');
-      rationale = `Facteur limitant : ${domainLabel}. Allège la séance tout en maintenant le mouvement.`;
-    }
-  }
-
-  if (domain === 'ENVIRONMENT') {
-    if (definition.kind === 'INDOOR') {
-      rationale = `Facteur limitant : ${domainLabel}. Alternative intérieure sans stress thermique prévu.`;
-    }
-    if (definition.kind === 'MOVE_EARLIER') {
-      rationale = `Facteur limitant : ${domainLabel}. Créneau plus tôt pour limiter la contrainte environnementale.`;
-    }
-  }
+  const rationale = copy.rationale.startsWith('Facteur limitant')
+    ? copy.rationale
+    : `Facteur limitant : ${domainLabel}. ${copy.rationale}`;
 
   return {
     ...definition,
-    label,
-    rationale: rationale.startsWith('Facteur limitant')
-      ? rationale
-      : `Facteur limitant : ${domainLabel}. ${rationale}`,
+    label: copy.label,
+    rationale,
     triggeredByDomain: domain,
   };
 }
@@ -106,17 +139,23 @@ export function generateScenariosFromDecision(
   }
 
   const focus = pickFocusSession(baseline);
-  if (!focus) return scenarios;
+  if (!focus) {
+    return scenarios;
+  }
 
   const domain = resolveAnchorDecisionDomain(anchorDecision);
   const kinds = domain ? DOMAIN_SCENARIO_KINDS[domain] : DOMAIN_SCENARIO_KINDS.PLANNING;
 
   const seen = new Set<ScenarioKind>(['KEEP_PLAN']);
   for (const kind of kinds) {
-    if (seen.has(kind)) continue;
+    if (seen.has(kind)) {
+      continue;
+    }
     seen.add(kind);
     const raw = buildScenarioDefinition(kind, baseline, focus.sessionId, futureDayIds);
-    if (!raw) continue;
+    if (!raw) {
+      continue;
+    }
     scenarios.push(contextualizeDefinition(raw, domain));
   }
 

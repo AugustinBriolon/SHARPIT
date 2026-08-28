@@ -14,7 +14,7 @@ import type { PhysicalHealthState } from '@/core/inference/physical-health/types
 
 const BASE_TRAINING_DAY = '2026-07-10';
 
-function dim(score: number | null, available = score != null): DimensionResult {
+function dim(score: number | null, available = score !== null): DimensionResult {
   return { score, status: available ? 'OK' : 'UNAVAILABLE', available };
 }
 

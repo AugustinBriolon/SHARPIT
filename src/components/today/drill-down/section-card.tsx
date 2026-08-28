@@ -1,8 +1,12 @@
 import { cn } from '@/lib/utils';
 
 function sectionPaddingClass(padding: 'default' | 'none' | 'hero'): string {
-  if (padding === 'none') return '';
-  if (padding === 'hero') return 'px-4 py-6 sm:px-6 sm:py-8';
+  if (padding === 'none') {
+    return '';
+  }
+  if (padding === 'hero') {
+    return 'px-4 py-6 sm:px-6 sm:py-8';
+  }
   return 'px-4 py-4 sm:px-5 sm:py-5';
 }
 

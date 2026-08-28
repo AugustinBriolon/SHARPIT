@@ -55,13 +55,23 @@ export function recoveryToneToCorpsTone(tone: RecoveryTone): CorpsTone {
 
 /** Classe un code feedback Garmin (GOOD / VERY_GOOD / MODERATE / LOW...). */
 export function feedbackTone(feedback: string | null): RecoveryTone {
-  if (!feedback) return 'neutral';
+  if (!feedback) {
+    return 'neutral';
+  }
   const f = feedback.toUpperCase();
-  if (f.includes('VERY_GOOD') || f.includes('GOOD') || f.includes('EXCELLENT')) return 'good';
-  if (f.includes('MODERATE') || f.includes('FAIR') || f.includes('MEDIUM')) return 'moderate';
-  if (f.includes('LOW') || f.includes('POOR') || f.includes('BAD')) return 'low';
+  for (const { patterns, tone } of FEEDBACK_TONE_RULES) {
+    if (patterns.some((pattern) => f.includes(pattern))) {
+      return tone;
+    }
+  }
   return 'neutral';
 }
+
+const FEEDBACK_TONE_RULES: Array<{ patterns: string[]; tone: RecoveryTone }> = [
+  { patterns: ['VERY_GOOD', 'GOOD', 'EXCELLENT'], tone: 'good' },
+  { patterns: ['MODERATE', 'FAIR', 'MEDIUM'], tone: 'moderate' },
+  { patterns: ['LOW', 'POOR', 'BAD'], tone: 'low' },
+];
 
 const FEEDBACK_LABELS: Record<string, string> = {
   VERY_GOOD: 'Très bon',
@@ -73,10 +83,14 @@ const FEEDBACK_LABELS: Record<string, string> = {
 };
 
 export function feedbackLabel(feedback: string | null): string {
-  if (!feedback) return '—';
+  if (!feedback) {
+    return '—';
+  }
   const f = feedback.toUpperCase();
   for (const key of Object.keys(FEEDBACK_LABELS)) {
-    if (f.includes(key)) return FEEDBACK_LABELS[key];
+    if (f.includes(key)) {
+      return FEEDBACK_LABELS[key];
+    }
   }
   return '—';
 }
@@ -113,9 +127,15 @@ const READINESS_THRESHOLDS = {
 } as const;
 
 function scoreTone(score: number | null): RecoveryTone {
-  if (score == null) return 'neutral';
-  if (score >= READINESS_THRESHOLDS.GOOD) return 'good';
-  if (score >= READINESS_THRESHOLDS.MODERATE) return 'moderate';
+  if ((score === undefined || score === null)) {
+    return 'neutral';
+  }
+  if (score >= READINESS_THRESHOLDS.GOOD) {
+    return 'good';
+  }
+  if (score >= READINESS_THRESHOLDS.MODERATE) {
+    return 'moderate';
+  }
   return 'low';
 }
 
@@ -129,12 +149,14 @@ const LEVEL_LABELS: Record<string, string> = {
 };
 
 export function levelLabel(level: string | null): string {
-  if (!level) return '—';
+  if (!level) {
+    return '—';
+  }
   return LEVEL_LABELS[level.toUpperCase()] ?? level;
 }
 
 function buildRecommendation(score: number | null, tone: RecoveryTone): string {
-  if (score == null) {
+  if ((score === undefined || score === null)) {
     return "Pas de données de readiness pour aujourd'hui. Fie-toi à ton ressenti et à ta charge.";
   }
   if (tone === 'good') {
@@ -176,7 +198,9 @@ const HRV_STATUS_LABELS: Record<string, { label: string; tone: RecoveryTone }> =
 };
 
 export function buildHrvStatusView(status: string | null): HrvStatusView {
-  if (!status) return { status: null, label: '—', tone: 'neutral' };
+  if (!status) {
+    return { status: null, label: '—', tone: 'neutral' };
+  }
   const entry = HRV_STATUS_LABELS[status.toUpperCase()];
   return {
     status,
@@ -230,7 +254,7 @@ const TSB_THRESHOLDS = {
 
 export function buildFormView(pmc: PmcPoint[]): FormView {
   const tsb = pmc.length ? pmc[pmc.length - 1].tsb : null;
-  if (tsb == null) {
+  if ((tsb === undefined || tsb === null)) {
     return { tsb: null, label: '—', tone: 'neutral', description: '' };
   }
   if (tsb > TSB_THRESHOLDS.FRESH) {
@@ -268,17 +292,29 @@ export function buildFormView(pmc: PmcPoint[]): FormView {
 // ---- Body Battery ----
 
 export function bodyBatteryTone(value: number | null): RecoveryTone {
-  if (value == null) return 'neutral';
-  if (value >= 70) return 'good';
-  if (value >= 40) return 'moderate';
+  if ((value === undefined || value === null)) {
+    return 'neutral';
+  }
+  if (value >= 70) {
+    return 'good';
+  }
+  if (value >= 40) {
+    return 'moderate';
+  }
   return 'low';
 }
 
 // ---- Stress ----
 
 export function stressTone(value: number | null): RecoveryTone {
-  if (value == null) return 'neutral';
-  if (value <= 25) return 'good';
-  if (value <= 50) return 'moderate';
+  if ((value === undefined || value === null)) {
+    return 'neutral';
+  }
+  if (value <= 25) {
+    return 'good';
+  }
+  if (value <= 50) {
+    return 'moderate';
+  }
   return 'low';
 }

@@ -1,4 +1,5 @@
 import type { NutritionGoalsProgress } from '@/core/presentation/nutrition-view-model';
+import { isSet } from '@/lib/util/value';
 
 export function buildGoalsProgress(input: {
   consumedCalories: number;
@@ -11,7 +12,9 @@ export function buildGoalsProgress(input: {
   goalFat: number | null;
   exerciseCalories?: number | null;
 }): NutritionGoalsProgress | null {
-  if (input.goalCalories == null) return null;
+  if (input.goalCalories === undefined || input.goalCalories === null) {
+    return null;
+  }
 
   const exercise = Math.max(0, Math.round(input.exerciseCalories ?? 0));
   const calorieBudget = input.goalCalories + exercise;
@@ -32,9 +35,9 @@ function progressLine(
   unit: 'kcal' | 'g',
 ): NutritionGoalsProgress['calories'] {
   const normalizedConsumed = Math.max(0, Math.round(consumed));
-  const normalizedGoal = goal != null && goal > 0 ? Math.round(goal) : null;
+  const normalizedGoal = isSet(goal) && goal > 0 ? Math.round(goal) : null;
 
-  if (normalizedGoal == null) {
+  if (normalizedGoal === undefined || normalizedGoal === null) {
     return {
       consumed: normalizedConsumed,
       goal: null,
@@ -57,15 +60,27 @@ function progressLine(
 }
 
 export function formatRemainingCalories(remaining: number | null): string {
-  if (remaining == null) return '—';
-  if (remaining > 0) return `${remaining.toLocaleString('fr-FR')} kcal restantes`;
-  if (remaining === 0) return 'Objectif atteint';
+  if (remaining === undefined || remaining === null) {
+    return '—';
+  }
+  if (remaining > 0) {
+    return `${remaining.toLocaleString('fr-FR')} kcal restantes`;
+  }
+  if (remaining === 0) {
+    return 'Objectif atteint';
+  }
   return `${Math.abs(remaining).toLocaleString('fr-FR')} kcal au-dessus`;
 }
 
 export function formatRemainingMacro(remaining: number | null, unit: 'g'): string {
-  if (remaining == null) return '—';
-  if (remaining > 0) return `${remaining} ${unit} restants`;
-  if (remaining === 0) return 'Objectif atteint';
+  if (remaining === undefined || remaining === null) {
+    return '—';
+  }
+  if (remaining > 0) {
+    return `${remaining} ${unit} restants`;
+  }
+  if (remaining === 0) {
+    return 'Objectif atteint';
+  }
   return `${Math.abs(remaining)} ${unit} au-dessus`;
 }

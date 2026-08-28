@@ -27,6 +27,33 @@ function metricActivity(input: {
   };
 }
 
+function durationCategory(
+  prs: ReturnType<typeof buildMetricPrCategories>,
+  sport: 'run' | 'bike' | 'swim',
+) {
+  const key = `${sport}-duration`;
+  return prs[sport].find((c) => c.key === key);
+}
+
+function assertDurationLeader(
+  prs: ReturnType<typeof buildMetricPrCategories>,
+  sport: 'run' | 'bike' | 'swim',
+  expectedId: string,
+): void {
+  expect(durationCategory(prs, sport)?.entries[0]?.activityId).toBe(expectedId);
+}
+
+function assertSportDurationLeaders(
+  prs: ReturnType<typeof buildMetricPrCategories>,
+  leaders: { run: string; bike: string; swim: string },
+): void {
+  assertDurationLeader(prs, 'run', leaders.run);
+  assertDurationLeader(prs, 'bike', leaders.bike);
+  assertDurationLeader(prs, 'swim', leaders.swim);
+  expect(durationCategory(prs, 'bike')?.entries[0]?.activityId).not.toBe(leaders.run);
+  expect(durationCategory(prs, 'swim')?.entries[0]?.activityId).not.toBe(leaders.run);
+}
+
 describe('buildMetricPrCategories duration PRs', () => {
   it('scopes longest-duration records to each sport (not cross-sport)', () => {
     const metrics = [
@@ -35,19 +62,11 @@ describe('buildMetricPrCategories duration PRs', () => {
       metricActivity({ id: 'mid-swim', type: ActivityType.SWIM, duration: 3600 }),
     ];
 
-    const prs = buildMetricPrCategories(metrics);
-
-    const runDuration = prs.run.find((c) => c.key === 'run-duration');
-    const bikeDuration = prs.bike.find((c) => c.key === 'bike-duration');
-    const swimDuration = prs.swim.find((c) => c.key === 'swim-duration');
-
-    expect(runDuration?.entries[0]?.activityId).toBe('long-run');
-    expect(bikeDuration?.entries[0]?.activityId).toBe('short-bike');
-    expect(swimDuration?.entries[0]?.activityId).toBe('mid-swim');
-
-    // Same session must not appear as #1 duration across every sport tab.
-    expect(bikeDuration?.entries[0]?.activityId).not.toBe('long-run');
-    expect(swimDuration?.entries[0]?.activityId).not.toBe('long-run');
+    assertSportDurationLeaders(buildMetricPrCategories(metrics), {
+      run: 'long-run',
+      bike: 'short-bike',
+      swim: 'mid-swim',
+    });
   });
 
   it('uses sport-specific labels for duration categories', () => {

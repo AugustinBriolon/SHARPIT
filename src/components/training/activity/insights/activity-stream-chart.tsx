@@ -20,8 +20,11 @@ import {
   type NormalizedStreamChartPoint,
 } from '@/lib/streams/stream-chart-data';
 import { cn } from '@/lib/utils';
+import { buildStreamMetricOptions, type StreamMetricOption } from './activity-stream-chart-helpers';
 
-type MetricKey = 'alt' | 'hr' | 'watts' | 'cadence' | 'speed' | 'pace';
+export { buildStreamMetricOptions, type StreamMetricOption } from './activity-stream-chart-helpers';
+
+type MetricKey = StreamMetricOption['key'];
 
 type StreamChartPoint = {
   x: number;
@@ -32,94 +35,6 @@ type StreamChartPoint = {
   speed: number | null;
   pace: number | null;
 };
-
-export type StreamMetricOption = {
-  key: MetricKey;
-  label: string;
-  shortLabel: string;
-  color: string;
-  unit: string;
-  formatter?: (v: number) => string;
-  reversed?: boolean;
-};
-
-function paceFmt(secPerKm: number): string {
-  const m = Math.floor(secPerKm / 60);
-  const s = Math.round(secPerKm % 60);
-  return `${m}'${s.toString().padStart(2, '0')}`;
-}
-
-export function buildStreamMetricOptions(
-  has: {
-    altitude: boolean;
-    hr: boolean;
-    watts: boolean;
-    cadence: boolean;
-    speed: boolean;
-  },
-  type: ActivityType,
-): StreamMetricOption[] {
-  const metrics: StreamMetricOption[] = [];
-
-  if (has.hr) {
-    metrics.push({
-      key: 'hr',
-      label: 'Fréquence cardiaque',
-      shortLabel: 'FC',
-      color: CHART_RISK_STROKE,
-      unit: 'bpm',
-    });
-  }
-  if (has.watts) {
-    metrics.push({
-      key: 'watts',
-      label: 'Puissance',
-      shortLabel: 'Puissance',
-      color: CHART_THRESHOLD_STROKE,
-      unit: 'W',
-    });
-  }
-  if (has.speed && type === ActivityType.RUN) {
-    metrics.push({
-      key: 'pace',
-      label: 'Allure',
-      shortLabel: 'Allure',
-      color: CHART_VO2_STROKE,
-      unit: '/km',
-      formatter: paceFmt,
-      reversed: true,
-    });
-  } else if (has.speed) {
-    metrics.push({
-      key: 'speed',
-      label: 'Vitesse',
-      shortLabel: 'Vitesse',
-      color: CHART_BASE_STROKE,
-      unit: 'km/h',
-    });
-  }
-  if (has.altitude) {
-    metrics.push({
-      key: 'alt',
-      label: 'Dénivelé',
-      shortLabel: 'Dénivelé',
-      color: CHART_RECOVERY_STROKE,
-      unit: 'm',
-      formatter: formatAltitudeMeters,
-    });
-  }
-  if (has.cadence) {
-    metrics.push({
-      key: 'cadence',
-      label: 'Cadence',
-      shortLabel: 'Cadence',
-      color: CHART_TEMPO_STROKE,
-      unit: type === ActivityType.RUN ? 'spm' : 'rpm',
-    });
-  }
-
-  return metrics;
-}
 
 export function pickDefaultStreamMetricKeys(
   metrics: StreamMetricOption[],
@@ -137,7 +52,9 @@ export function pickDefaultStreamMetricKeys(
   };
 
   const defaults = priorities[type].filter((key) => available.has(key)).slice(0, 2);
-  if (defaults.length > 0) return defaults;
+  if (defaults.length > 0) {
+    return defaults;
+  }
   return metrics.slice(0, 2).map((metric) => metric.key);
 }
 
@@ -189,7 +106,9 @@ function ActivityStreamChartComponent({
 
   const selectedMetrics = metrics.filter((metric) => selectedKeys.includes(metric.key));
 
-  if (!metrics.length || !selectedMetrics.length) return null;
+  if (!metrics.length || !selectedMetrics.length) {
+    return null;
+  }
 
   const xLabel = useDistance ? 'km' : 'min';
   const xFmt = (v: number) => (useDistance ? `${v.toFixed(0)}` : `${Math.round(v)}`);
@@ -199,10 +118,14 @@ function ActivityStreamChartComponent({
       const base = current ?? defaultSelected;
       const isSelected = base.includes(key);
       if (isSelected) {
-        if (base.length === 1) return base;
+        if (base.length === 1) {
+          return base;
+        }
         return base.filter((entry) => entry !== key);
       }
-      if (base.length >= 2) return base;
+      if (base.length >= 2) {
+        return base;
+      }
       return [...base, key];
     });
   }
@@ -291,7 +214,9 @@ function ActivityStreamChartComponent({
             ))}
             <Tooltip
               content={({ active, payload, label }) => {
-                if (!active || !payload?.length) return null;
+                if (!active || !payload?.length) {
+                  return null;
+                }
                 return (
                   <ChartTooltipCard>
                     <p className="text-muted-foreground mb-1">
@@ -299,7 +224,9 @@ function ActivityStreamChartComponent({
                     </p>
                     {selectedMetrics.map((metric) => {
                       const datum = payload.find((entry) => entry.dataKey === metric.key);
-                      if (!datum || datum.value == null) return null;
+                      if (!datum || datum.value === null) {
+                        return null;
+                      }
                       return (
                         <p key={metric.key} style={{ color: metric.color }}>
                           {metric.shortLabel}:{' '}

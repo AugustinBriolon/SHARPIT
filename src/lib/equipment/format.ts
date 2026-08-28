@@ -13,7 +13,9 @@ const PORTABLE_LOAD_ID = 'strength_weighted_vest';
 const PORTABLE_LOAD_RUN_NOTE = 'Lest portable disponible (côtes lestées, rucking)';
 
 function venueLabel(venue: AthleteEquipment['strengthVenue']): string | null {
-  if (venue == null) return null;
+  if ((venue === undefined || venue === null)) {
+    return null;
+  }
   return STRENGTH_VENUE_OPTIONS.find((option) => option.id === venue)?.title ?? venue;
 }
 
@@ -63,11 +65,51 @@ export function formatEquipmentForCoach(equipment: AthleteEquipment | null | und
 
   for (const sport of EQUIPMENT_SPORTS) {
     const sportLines = linesForSport(equipment, sport);
-    if (!sportLines.length) continue;
+    if (!sportLines.length) {
+      continue;
+    }
     lines.push(`- ${EQUIPMENT_SPORT_LABELS[sport]} : ${sportLines.join(' · ')}`);
   }
 
   return lines.join('\n');
+}
+
+function strengthEquipmentHint(equipment: AthleteEquipment): string | null {
+  if (equipment.strengthVenue === 'gym' || equipment.strengthVenue === 'both') {
+    return 'Avec une salle, SHARPIT peut proposer du renfo machines / racks / câbles.';
+  }
+  if (equipment.strengthVenue === 'home') {
+    return equipment.owned.some((id) => id.startsWith('strength_'))
+      ? 'Séances adaptées à ton matériel maison.'
+      : 'Précise ton matériel maison pour débloquer des séances chargées.';
+  }
+  if (equipment.strengthVenue === 'bodyweight') {
+    return 'Séances au poids du corps uniquement.';
+  }
+  return null;
+}
+
+const SPORT_EQUIPMENT_HINTS: Partial<Record<EquipmentSport, { itemId: string; hint: string }>> = {
+  BIKE: { itemId: 'bike_home_trainer', hint: 'Plan B indoor possible via home trainer.' },
+  SWIM: { itemId: 'swim_pool', hint: 'Natation structurée possible avec accès piscine.' },
+  RUN: { itemId: 'run_treadmill', hint: 'Course indoor possible sur tapis.' },
+};
+
+function genericEquipmentCountHint(count: number): string {
+  const plural = count > 1 ? 's' : '';
+  return `${count} capacité${plural} prise${plural} en compte pour la génération.`;
+}
+
+function sportSpecificEquipmentHint(
+  sport: EquipmentSport,
+  equipment: AthleteEquipment,
+  count: number,
+): string | null {
+  const configured = SPORT_EQUIPMENT_HINTS[sport];
+  if (configured && equipment.owned.includes(configured.itemId as (typeof equipment.owned)[number])) {
+    return configured.hint;
+  }
+  return genericEquipmentCountHint(count);
 }
 
 /** One-line coach hint under a sport section in the UI. */
@@ -76,18 +118,7 @@ export function equipmentSportHint(
   sport: EquipmentSport,
 ): string | null {
   if (sport === 'STRENGTH') {
-    if (equipment.strengthVenue === 'gym' || equipment.strengthVenue === 'both') {
-      return 'Avec une salle, SHARPIT peut proposer du renfo machines / racks / câbles.';
-    }
-    if (equipment.strengthVenue === 'home') {
-      return equipment.owned.some((id) => id.startsWith('strength_'))
-        ? 'Séances adaptées à ton matériel maison.'
-        : 'Précise ton matériel maison pour débloquer des séances chargées.';
-    }
-    if (equipment.strengthVenue === 'bodyweight') {
-      return 'Séances au poids du corps uniquement.';
-    }
-    return null;
+    return strengthEquipmentHint(equipment);
   }
 
   if (sport === 'RUN' && equipment.owned.includes(PORTABLE_LOAD_ID)) {
@@ -97,16 +128,9 @@ export function equipmentSportHint(
   const count = EQUIPMENT_CATALOG.filter(
     (item) => item.sport === sport && equipment.owned.includes(item.id),
   ).length;
-  if (count === 0) return null;
+  if (count === 0) {
+    return null;
+  }
 
-  if (sport === 'BIKE' && equipment.owned.includes('bike_home_trainer')) {
-    return 'Plan B indoor possible via home trainer.';
-  }
-  if (sport === 'SWIM' && equipment.owned.includes('swim_pool')) {
-    return 'Natation structurée possible avec accès piscine.';
-  }
-  if (sport === 'RUN' && equipment.owned.includes('run_treadmill')) {
-    return 'Course indoor possible sur tapis.';
-  }
-  return `${count} capacité${count > 1 ? 's' : ''} prise${count > 1 ? 's' : ''} en compte pour la génération.`;
+  return sportSpecificEquipmentHint(sport, equipment, count);
 }

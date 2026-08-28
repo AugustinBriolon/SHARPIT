@@ -41,7 +41,9 @@ function readEnvFile(): Record<string, string> {
     const vars: Record<string, string> = {};
     for (const line of content.split('\n')) {
       const match = line.match(/^#?\s*([A-Z_][A-Z0-9_]*)=(.+)$/);
-      if (match) vars[match[1]] = match[2].trim().replace(/^["']|["']$/g, '');
+      if (match) {
+        vars[match[1]] = match[2].trim().replace(/^["']|["']$/g, '');
+      }
     }
     return vars;
   } catch {
@@ -50,8 +52,12 @@ function readEnvFile(): Record<string, string> {
 }
 
 function resolveNeonUrl(envVars: Record<string, string>): string {
-  if (process.env.NEON_DIRECT_URL) return process.env.NEON_DIRECT_URL;
-  if (envVars.DIRECT_URL?.includes('neon.tech')) return envVars.DIRECT_URL;
+  if (process.env.NEON_DIRECT_URL) {
+    return process.env.NEON_DIRECT_URL;
+  }
+  if (envVars.DIRECT_URL?.includes('neon.tech')) {
+    return envVars.DIRECT_URL;
+  }
   throw new Error(
     'Définis NEON_DIRECT_URL, ou garde une ligne DIRECT_URL=...neon.tech... (même commentée) dans .env',
   );
@@ -79,8 +85,11 @@ function withEncryptionKey<T>(key: string, fn: () => T): T {
   try {
     return fn();
   } finally {
-    if (previous === undefined) delete process.env.SECRET_ENCRYPTION_KEY;
-    else process.env.SECRET_ENCRYPTION_KEY = previous;
+    if (previous === undefined) {
+      delete process.env.SECRET_ENCRYPTION_KEY;
+    } else {
+      process.env.SECRET_ENCRYPTION_KEY = previous;
+    }
   }
 }
 

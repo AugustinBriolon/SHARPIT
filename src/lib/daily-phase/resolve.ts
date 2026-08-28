@@ -6,6 +6,7 @@ import {
   REST_DAY_PREP_SNAPSHOT_AGE_MINUTES,
 } from '@/lib/daily-phase/constants';
 import { isAccomplishmentWindow, isPreSessionWindow } from '@/lib/daily-phase/session-window';
+import { isSet } from '@/lib/util/value';
 import {
   DAILY_PHASE_BRIEFING_BUCKET,
   DAILY_PHASE_LABEL,
@@ -47,55 +48,76 @@ function toResolution(input: DailyPhaseInput, result: ResolveResult): DailyPhase
   };
 }
 
-function shouldEndOfDay(input: DailyPhaseInput): ResolveResult | null {
-  const { dayContext, athlete, localHour } = input;
-
-  if (athlete.sleepLoggedTonight) {
-    return { phase: 'END_OF_DAY', because: 'sleep_logged_tonight' };
-  }
-
+function endOfDayFromTrainingDone(input: DailyPhaseInput): ResolveResult | null {
+  const { dayContext, athlete } = input;
   const trainingDone =
     dayContext.completedSessionCount > 0 && dayContext.remainingPlannedCount === 0;
-  const restDay = dayContext.sessionStatus === 'NONE_TODAY';
-
-  if (trainingDone && athlete.minutesSinceLastActivity != null) {
-    if (athlete.minutesSinceLastActivity >= RECOVERY_TO_END_OF_DAY_MINUTES) {
-      if (athlete.priorPhase === 'RECOVERY_WINDOW' || athlete.dailyStrainAvailable) {
-        return { phase: 'END_OF_DAY', because: 'recovery_window_exhausted' };
-      }
-    }
+  if (
+    !trainingDone ||
+    athlete.minutesSinceLastActivity === undefined ||
+    athlete.minutesSinceLastActivity === null
+  ) {
+    return null;
   }
-
-  if (restDay && athlete.priorPhase === 'RECOVERY_WINDOW') {
-    if (
-      athlete.newInferenceSincePriorSnapshot ||
-      (athlete.minutesSinceSnapshotGenerated != null &&
-        athlete.minutesSinceSnapshotGenerated >= REST_DAY_PREP_SNAPSHOT_AGE_MINUTES * 2)
-    ) {
-      return { phase: 'END_OF_DAY', because: 'rest_day_preparation_complete' };
-    }
+  if (athlete.minutesSinceLastActivity < RECOVERY_TO_END_OF_DAY_MINUTES) {
+    return null;
   }
+  if (athlete.priorPhase === 'RECOVERY_WINDOW' || athlete.dailyStrainAvailable) {
+    return { phase: 'END_OF_DAY', because: 'recovery_window_exhausted' };
+  }
+  return null;
+}
 
+function endOfDayFromRestDay(input: DailyPhaseInput): ResolveResult | null {
+  const { dayContext, athlete } = input;
+  if (dayContext.sessionStatus !== 'NONE_TODAY' || athlete.priorPhase !== 'RECOVERY_WINDOW') {
+    return null;
+  }
+  const preparationComplete =
+    athlete.newInferenceSincePriorSnapshot ||
+    (isSet(athlete.minutesSinceSnapshotGenerated) &&
+      athlete.minutesSinceSnapshotGenerated >= REST_DAY_PREP_SNAPSHOT_AGE_MINUTES * 2);
+  if (preparationComplete) {
+    return { phase: 'END_OF_DAY', because: 'rest_day_preparation_complete' };
+  }
+  return null;
+}
+
+function endOfDayFromTimeFallback(input: DailyPhaseInput): ResolveResult | null {
+  const { dayContext, athlete, localHour } = input;
   if (localHour >= END_OF_DAY_HOUR_FALLBACK) {
     return { phase: 'END_OF_DAY', because: 'time_fallback_late_night' };
   }
 
+  const trainingDone =
+    dayContext.completedSessionCount > 0 && dayContext.remainingPlannedCount === 0;
   if (
     localHour >= LATE_DAY_HOUR_FALLBACK &&
     trainingDone &&
-    athlete.minutesSinceLastActivity != null &&
+    isSet(athlete.minutesSinceLastActivity) &&
     athlete.minutesSinceLastActivity >= ACCOMPLISHMENT_WINDOW_MINUTES
   ) {
     return { phase: 'END_OF_DAY', because: 'time_fallback_late_day_post_training' };
   }
-
   return null;
+}
+
+function shouldEndOfDay(input: DailyPhaseInput): ResolveResult | null {
+  if (input.athlete.sleepLoggedTonight) {
+    return { phase: 'END_OF_DAY', because: 'sleep_logged_tonight' };
+  }
+
+  return (
+    endOfDayFromTrainingDone(input) ?? endOfDayFromRestDay(input) ?? endOfDayFromTimeFallback(input)
+  );
 }
 
 function resolveWithCompletedSession(input: DailyPhaseInput, refDate: Date): ResolveResult | null {
   const { dayContext, athlete } = input;
 
-  if (dayContext.completedSessionCount === 0) return null;
+  if (dayContext.completedSessionCount === 0) {
+    return null;
+  }
 
   const accomplishment = isAccomplishmentWindow(
     athlete.minutesSinceLastActivity,
@@ -120,7 +142,9 @@ function resolveWithCompletedSession(input: DailyPhaseInput, refDate: Date): Res
 function resolvePlannedOnly(input: DailyPhaseInput, refDate: Date): ResolveResult | null {
   const { dayContext } = input;
 
-  if (dayContext.sessionStatus !== 'PLANNED_ONLY') return null;
+  if (dayContext.sessionStatus !== 'PLANNED_ONLY') {
+    return null;
+  }
 
   if (isPreSessionWindow(dayContext, refDate, refDate)) {
     return { phase: 'BEFORE_SESSION', because: 'planned_session_pre_window' };
@@ -129,23 +153,31 @@ function resolvePlannedOnly(input: DailyPhaseInput, refDate: Date): ResolveResul
   return { phase: 'MORNING', because: 'planned_session_later_today' };
 }
 
+function restDayInferenceReady(athlete: DailyPhaseInput['athlete']): boolean {
+  return (
+    athlete.newInferenceSincePriorSnapshot ||
+    athlete.newObservationsSincePriorSnapshot ||
+    (athlete.recommendationAvailable && athlete.adviceActionable)
+  );
+}
+
+function restDayEvolvedPastMorning(athlete: DailyPhaseInput['athlete']): boolean {
+  return (
+    athlete.priorPhase === 'MORNING' ||
+    athlete.priorPhase === 'RECOVERY_WINDOW' ||
+    (isSet(athlete.minutesSinceSnapshotGenerated) &&
+      athlete.minutesSinceSnapshotGenerated >= REST_DAY_PREP_SNAPSHOT_AGE_MINUTES)
+  );
+}
+
 function resolveRestDay(input: DailyPhaseInput): ResolveResult | null {
   const { dayContext, athlete } = input;
 
-  if (dayContext.sessionStatus !== 'NONE_TODAY') return null;
+  if (dayContext.sessionStatus !== 'NONE_TODAY') {
+    return null;
+  }
 
-  const inferenceReady =
-    athlete.newInferenceSincePriorSnapshot ||
-    athlete.newObservationsSincePriorSnapshot ||
-    (athlete.recommendationAvailable && athlete.adviceActionable);
-
-  const evolvedPastMorning =
-    athlete.priorPhase === 'MORNING' ||
-    athlete.priorPhase === 'RECOVERY_WINDOW' ||
-    (athlete.minutesSinceSnapshotGenerated != null &&
-      athlete.minutesSinceSnapshotGenerated >= REST_DAY_PREP_SNAPSHOT_AGE_MINUTES);
-
-  if (inferenceReady && evolvedPastMorning) {
+  if (restDayInferenceReady(athlete) && restDayEvolvedPastMorning(athlete)) {
     return { phase: 'RECOVERY_WINDOW', because: 'rest_day_recovery_preparation' };
   }
 
@@ -162,16 +194,24 @@ export function resolveDailyPhase(
   refDate: Date = new Date(),
 ): DailyPhaseResolution {
   const endOfDay = shouldEndOfDay(input);
-  if (endOfDay) return toResolution(input, endOfDay);
+  if (endOfDay) {
+    return toResolution(input, endOfDay);
+  }
 
   const postSession = resolveWithCompletedSession(input, refDate);
-  if (postSession) return toResolution(input, postSession);
+  if (postSession) {
+    return toResolution(input, postSession);
+  }
 
   const planned = resolvePlannedOnly(input, refDate);
-  if (planned) return toResolution(input, planned);
+  if (planned) {
+    return toResolution(input, planned);
+  }
 
   const restDay = resolveRestDay(input);
-  if (restDay) return toResolution(input, restDay);
+  if (restDay) {
+    return toResolution(input, restDay);
+  }
 
   return toResolution(input, { phase: 'MORNING', because: 'default_morning' });
 }

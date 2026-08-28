@@ -1,4 +1,5 @@
 import { cache } from 'react';
+import { isSet } from '@/lib/util/value';
 import { after } from 'next/server';
 import { dedupeBodyCompositionByDay } from '@/lib/health/body-composition';
 import { isMultisportLegArray, type MultisportLeg } from '@/lib/multisport';
@@ -62,7 +63,9 @@ export async function getActivitiesList(
   },
 ) {
   const where: Prisma.ActivityWhereInput = { athleteId };
-  if (params?.type) where.type = params.type;
+  if (params?.type) {
+    where.type = params.type;
+  }
   if (params?.sinceDays) {
     where.date = { gte: startOfDay(addDays(new Date(), -params.sinceDays)) };
   }
@@ -149,26 +152,36 @@ export async function getMultisportLegsForActivity(
     multisportLegs: unknown;
   },
 ): Promise<MultisportLeg[] | null> {
-  if (activity.type !== ActivityType.TRIATHLON) return null;
+  if (activity.type !== ActivityType.TRIATHLON) {
+    return null;
+  }
 
   if (isMultisportLegArray(activity.multisportLegs)) {
     return activity.multisportLegs;
   }
 
-  if (!activity.garminId) return null;
+  if (!activity.garminId) {
+    return null;
+  }
 
   const { getGarminAccount, buildFreshGarminClient } =
     await import('@/lib/integrations/garmin/garmin-sync');
   const { fetchGarminMultisportLegs } = await import('@/lib/integrations/garmin/garmin-multisport');
 
   const account = await getGarminAccount(athleteId);
-  if (!account) return null;
+  if (!account) {
+    return null;
+  }
 
   const client = await buildFreshGarminClient(athleteId, account).catch(() => null);
-  if (!client) return null;
+  if (!client) {
+    return null;
+  }
 
   const legs = await fetchGarminMultisportLegs(client, Number(activity.garminId));
-  if (!legs) return null;
+  if (!legs) {
+    return null;
+  }
 
   const persist = () =>
     prisma.activity
@@ -206,13 +219,17 @@ export async function updateActivity(
   data: Prisma.ActivityUpdateInput,
 ) {
   const { count } = await prisma.activity.updateMany({ where: { id, athleteId }, data });
-  if (count === 0) return null;
+  if (count === 0) {
+    return null;
+  }
   return prisma.activity.findUnique({ where: { id }, include: activityInclude });
 }
 
 export async function deleteActivity(athleteId: string, id: string) {
   const owned = await prisma.activity.findFirst({ where: { id, athleteId }, select: { id: true } });
-  if (!owned) return null;
+  if (!owned) {
+    return null;
+  }
 
   // Prisma onDelete:SetNull only clears activityId — completed/analysis stay.
   // Reuse the full unlink path so the planned session returns to "planned".
@@ -294,13 +311,17 @@ export async function createGoal(athleteId: string, data: Prisma.GoalUncheckedCr
 
 export async function updateGoal(athleteId: string, id: string, data: Prisma.GoalUpdateInput) {
   const { count } = await prisma.goal.updateMany({ where: { id, athleteId }, data });
-  if (count === 0) return null;
+  if (count === 0) {
+    return null;
+  }
   return prisma.goal.findUnique({ where: { id } });
 }
 
 export async function deleteGoal(athleteId: string, id: string) {
   const owned = await prisma.goal.findFirst({ where: { id, athleteId }, select: { id: true } });
-  if (!owned) return null;
+  if (!owned) {
+    return null;
+  }
   return prisma.goal.delete({ where: { id } });
 }
 
@@ -334,7 +355,7 @@ export async function getHealthEntries(athleteId: string, days = 90, refDate: Da
 export async function getBodyCompositionMeasurements(athleteId: string, days?: number) {
   const { loadResolvedSourcePrefs } = await import('@/lib/integrations/source-prefs-store');
   const prefs = await loadResolvedSourcePrefs(athleteId);
-  const since = days != null ? startOfDay(addDays(new Date(), -days)) : null;
+  const since = isSet(days) ? startOfDay(addDays(new Date(), -days)) : null;
   const rows = await prisma.bodyCompositionMeasurement.findMany({
     where: since ? { athleteId, measuredAt: { gte: since } } : { athleteId },
     orderBy: { measuredAt: 'desc' },
@@ -382,7 +403,9 @@ export async function updatePhysicalNote(
   data: Prisma.PhysicalNoteUncheckedUpdateInput,
 ) {
   const { count } = await prisma.physicalNote.updateMany({ where: { id, athleteId }, data });
-  if (count === 0) return null;
+  if (count === 0) {
+    return null;
+  }
   return prisma.physicalNote.findUnique({ where: { id }, include: physicalNoteInclude });
 }
 
@@ -391,8 +414,67 @@ export async function deletePhysicalNote(athleteId: string, id: string) {
     where: { id, athleteId },
     select: { id: true },
   });
-  if (!owned) return null;
+  if (!owned) {
+    return null;
+  }
   return prisma.physicalNote.delete({ where: { id } });
+}
+
+function severityToFunctionalImpact(severity: number | null | undefined) {
+  if (severity === undefined || severity === null || severity === undefined) {
+    return null;
+  }
+  if (severity === 0) {
+    return 'NONE';
+  }
+  if (severity <= 3) {
+    return 'MILD';
+  }
+  if (severity <= 6) {
+    return 'MODERATE';
+  }
+  if (severity <= 8) {
+    return 'LIMITING';
+  }
+  return 'STOPPED';
+}
+
+async function recordConditionObservationForCheckin(input: {
+  athleteId: string;
+  noteId: string;
+  condition: NonNullable<Awaited<ReturnType<typeof prisma.condition.findFirst>>>;
+  checkin: Awaited<ReturnType<typeof prisma.physicalCheckin.create>>;
+  data: { severity?: number | null; comment?: string | null; date?: Date };
+}) {
+  const { athleteId, condition, checkin, data } = input;
+  const observedAt = data.date ?? new Date();
+  const symptomPresent = isSet(data.severity) ? data.severity > 0 : true;
+
+  await prisma.conditionObservation.create({
+    data: {
+      athleteId,
+      conditionId: condition.id,
+      observedAt,
+      context: 'MANUAL',
+      source: 'ATHLETE',
+      symptomPresent,
+      severityReported: data.severity ?? null,
+      functionalImpact: severityToFunctionalImpact(data.severity),
+      bodyRegion: condition.bodyRegion,
+      side: condition.side,
+      type: condition.type,
+      comment: data.comment ?? null,
+      legacyPhysicalCheckinId: checkin.id,
+    },
+  });
+
+  await prisma.condition.update({
+    where: { id: condition.id },
+    data: {
+      lastObservationAt: observedAt,
+      observationCount: { increment: 1 },
+    },
+  });
 }
 
 export async function addPhysicalCheckin(
@@ -404,7 +486,9 @@ export async function addPhysicalCheckin(
     where: { id: noteId, athleteId },
     select: { id: true },
   });
-  if (!note) return null;
+  if (!note) {
+    return null;
+  }
 
   const checkin = await prisma.physicalCheckin.create({
     data: {
@@ -415,7 +499,7 @@ export async function addPhysicalCheckin(
     },
   });
 
-  if (data.severity != null) {
+  if (isSet(data.severity)) {
     await prisma.physicalNote.update({
       where: { id: noteId },
       data: { severity: data.severity },
@@ -427,40 +511,12 @@ export async function addPhysicalCheckin(
   });
 
   if (condition) {
-    const symptomPresent = data.severity != null ? data.severity > 0 : true;
-    await prisma.conditionObservation.create({
-      data: {
-        athleteId,
-        conditionId: condition.id,
-        observedAt: data.date ?? new Date(),
-        context: 'MANUAL',
-        source: 'ATHLETE',
-        symptomPresent,
-        severityReported: data.severity ?? null,
-        functionalImpact:
-          data.severity == null
-            ? null
-            : (() => {
-                if (data.severity === 0) return 'NONE';
-                if (data.severity <= 3) return 'MILD';
-                if (data.severity <= 6) return 'MODERATE';
-                if (data.severity <= 8) return 'LIMITING';
-                return 'STOPPED';
-              })(),
-        bodyRegion: condition.bodyRegion,
-        side: condition.side,
-        type: condition.type,
-        comment: data.comment ?? null,
-        legacyPhysicalCheckinId: checkin.id,
-      },
-    });
-
-    await prisma.condition.update({
-      where: { id: condition.id },
-      data: {
-        lastObservationAt: data.date ?? new Date(),
-        observationCount: { increment: 1 },
-      },
+    await recordConditionObservationForCheckin({
+      athleteId,
+      noteId,
+      condition,
+      checkin,
+      data,
     });
   }
 
@@ -472,7 +528,9 @@ export async function deletePhysicalCheckin(athleteId: string, id: string) {
     where: { id, note: { athleteId } },
     select: { id: true },
   });
-  if (!owned) return null;
+  if (!owned) {
+    return null;
+  }
   return prisma.physicalCheckin.delete({ where: { id } });
 }
 
@@ -507,7 +565,7 @@ export async function upsertAthleteProfile(
   const payload = {
     ...rest,
     ...(equipment !== undefined
-      ? { equipment: equipment === null ? Prisma.JsonNull : equipment }
+      ? { equipment: equipment === undefined || equipment === null ? Prisma.JsonNull : equipment }
       : {}),
   };
 
@@ -583,6 +641,8 @@ export async function archiveTrainingPlan(athleteId: string, id: string) {
     where: { id, athleteId },
     data: { status: 'ARCHIVED' },
   });
-  if (count === 0) return null;
+  if (count === 0) {
+    return null;
+  }
   return prisma.trainingPlan.findUnique({ where: { id }, include: planWeekInclude });
 }

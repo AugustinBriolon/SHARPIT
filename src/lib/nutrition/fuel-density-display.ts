@@ -2,10 +2,18 @@ import type { FuelFeatureSet } from '@/core/features/types';
 import type { NutritionFuelDensity } from '@/core/presentation/nutrition-view-model';
 import { formatWeightKgDisplay } from '@/lib/health/body-composition';
 
+import { isSet } from '@/lib/util/value';
+
 export function fuelFeatureSetToDensity(fuel: FuelFeatureSet): NutritionFuelDensity | null {
-  if (!fuel.logged) return null;
-  if (fuel.referenceWeightKg == null || fuel.referenceWeightKg <= 0) return null;
-  if (fuel.proteinGPerKg == null && fuel.carbohydratesGPerKg == null) return null;
+  if (!fuel.logged) {
+    return null;
+  }
+  if (!isSet(fuel.referenceWeightKg) || fuel.referenceWeightKg <= 0) {
+    return null;
+  }
+  if (!isSet(fuel.proteinGPerKg) && !isSet(fuel.carbohydratesGPerKg)) {
+    return null;
+  }
 
   return {
     proteinGPerKg: fuel.proteinGPerKg ?? 0,

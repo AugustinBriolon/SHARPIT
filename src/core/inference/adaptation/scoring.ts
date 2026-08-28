@@ -26,21 +26,35 @@ const WEIGHTS = {
 } as const;
 
 function scoreFromRhrDeltaOnly(rhrDeltaFromBaseline: number): number {
-  if (rhrDeltaFromBaseline < -2) return 65;
-  if (rhrDeltaFromBaseline > 2) return 35;
+  if (rhrDeltaFromBaseline < -2) {
+    return 65;
+  }
+  if (rhrDeltaFromBaseline > 2) {
+    return 35;
+  }
   return 50;
 }
 
 function scoreFromCapacityOnly(capacity: FatigueState['trainingCapacity']): number {
-  if (capacity === 'FULL') return 65;
-  if (capacity === 'REDUCED') return 50;
+  if (capacity === 'FULL') {
+    return 65;
+  }
+  if (capacity === 'REDUCED') {
+    return 50;
+  }
   return 30;
 }
 
 function classifyDataCompleteness(availableDimensionCount: number): DataCompleteness {
-  if (availableDimensionCount === 4) return 'FULL';
-  if (availableDimensionCount >= 2) return 'PARTIAL';
-  if (availableDimensionCount === 1) return 'SPARSE';
+  if (availableDimensionCount === 4) {
+    return 'FULL';
+  }
+  if (availableDimensionCount >= 2) {
+    return 'PARTIAL';
+  }
+  if (availableDimensionCount === 1) {
+    return 'SPARSE';
+  }
   return 'INSUFFICIENT';
 }
 
@@ -48,67 +62,117 @@ function classifyDataCompleteness(availableDimensionCount: number): DataComplete
 // Individual dimension scorers
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function scoreLoadProgression(load: LoadFeatureSet | 'PENDING'): DimensionScore {
-  if (load === 'PENDING') return { score: null, available: false, reason: 'load features pending' };
-
-  const { acwr, acuteChronicLoadTrend, chronicLoad } = load;
-
-  if (chronicLoad < 20) {
-    const score = lerp(0, 20, 0, chronicLoad / 20);
-    return {
-      score: Math.round(score),
-      available: true,
-      reason: 'detraining territory (chronicLoad < 20)',
-    };
+function scoreDetrainingLoad(chronicLoad: number): DimensionScore | null {
+  if (chronicLoad >= 20) {
+    return null;
   }
+  return {
+    score: Math.round(lerp(0, 20, 0, chronicLoad / 20)),
+    available: true,
+    reason: 'detraining territory (chronicLoad < 20)',
+  };
+}
 
-  if (acwr !== null && acwr > 1.5) {
-    const score = lerp(0, 30, 1.5, Math.min(acwr, 2.5));
-    return {
-      score: Math.round(30 - score),
-      available: true,
-      reason: 'excessive ACWR — no adaptive benefit',
-    };
+function scoreExcessiveAcwr(acwr: number | null): DimensionScore | null {
+  if (acwr === undefined || acwr === null || acwr <= 1.5) {
+    return null;
   }
+  return {
+    score: Math.round(30 - lerp(0, 30, 1.5, Math.min(acwr, 2.5))),
+    available: true,
+    reason: 'excessive ACWR — no adaptive benefit',
+  };
+}
 
-  if (
-    acuteChronicLoadTrend !== null &&
+import { isSet } from '@/lib/util/value';
+
+function isProgressiveOverloadCandidate(
+  acuteChronicLoadTrend: number | null,
+  acwr: number | null,
+): acuteChronicLoadTrend is number {
+  return (
+    isSet(acuteChronicLoadTrend) &&
     acuteChronicLoadTrend > 0.02 &&
-    acwr !== null &&
+    isSet(acwr) &&
     acwr >= 0.8 &&
     acwr <= 1.3
-  ) {
-    const trendBonus = Math.min((acuteChronicLoadTrend - 0.02) / 0.08, 1.0) * 25;
-    const acwrBonus = acwr >= 0.95 && acwr <= 1.15 ? 5 : 0;
-    const score = Math.min(75 + trendBonus + acwrBonus, 100);
-    return {
-      score: Math.round(score),
-      available: true,
-      reason: 'progressive overload in optimal zone',
-    };
+  );
+}
+
+function scoreProgressiveOverload(
+  acuteChronicLoadTrend: number | null,
+  acwr: number | null,
+): DimensionScore | null {
+  if (!isProgressiveOverloadCandidate(acuteChronicLoadTrend, acwr) || !isSet(acwr)) {
+    return null;
   }
 
-  if (acwr !== null && acwr >= 0.7 && acwr <= 1.3) {
-    const trend = acuteChronicLoadTrend ?? 0;
-    const score = trend >= 0 ? 60 : 50 + (trend / -0.02) * -10;
-    return {
-      score: Math.round(Math.max(45, Math.min(70, score))),
-      available: true,
-      reason: 'maintaining load',
-    };
-  }
+  const trendBonus = Math.min((acuteChronicLoadTrend - 0.02) / 0.08, 1.0) * 25;
+  const acwrBonus = acwr >= 0.95 && acwr <= 1.15 ? 5 : 0;
+  return {
+    score: Math.round(Math.min(75 + trendBonus + acwrBonus, 100)),
+    available: true,
+    reason: 'progressive overload in optimal zone',
+  };
+}
 
+function scoreMaintainingLoad(
+  acuteChronicLoadTrend: number | null,
+  acwr: number | null,
+): DimensionScore | null {
+  if (acwr === undefined || acwr === null || acwr < 0.7 || acwr > 1.3) {
+    return null;
+  }
+  const trend = acuteChronicLoadTrend ?? 0;
+  const score = trend >= 0 ? 60 : 50 + (trend / -0.02) * -10;
+  return {
+    score: Math.round(Math.max(45, Math.min(70, score))),
+    available: true,
+    reason: 'maintaining load',
+  };
+}
+
+function scoreDecliningLoad(
+  acuteChronicLoadTrend: number | null,
+  acwr: number | null,
+): DimensionScore | null {
   if (
-    acuteChronicLoadTrend !== null &&
-    acuteChronicLoadTrend < -0.02 &&
-    (acwr === null || acwr < 0.8)
+    acuteChronicLoadTrend === undefined ||
+    acuteChronicLoadTrend === null ||
+    acuteChronicLoadTrend >= -0.02
   ) {
-    const declineScore = Math.max(5, 30 + (acuteChronicLoadTrend / -0.02) * 5);
-    return {
-      score: Math.round(Math.min(30, declineScore)),
-      available: true,
-      reason: 'load declining',
-    };
+    return null;
+  }
+  if (isSet(acwr) && acwr >= 0.8) {
+    return null;
+  }
+  const declineScore = Math.max(5, 30 + (acuteChronicLoadTrend / -0.02) * 5);
+  return {
+    score: Math.round(Math.min(30, declineScore)),
+    available: true,
+    reason: 'load declining',
+  };
+}
+
+export function scoreLoadProgression(load: LoadFeatureSet | 'PENDING'): DimensionScore {
+  if (load === 'PENDING') {
+    return { score: null, available: false, reason: 'load features pending' };
+  }
+
+  const { acwr, acuteChronicLoadTrend, chronicLoad } = load;
+  const strategies = [
+    () => scoreDetrainingLoad(chronicLoad),
+    () => scoreExcessiveAcwr(acwr),
+    () => scoreProgressiveOverload(acuteChronicLoadTrend, acwr),
+    () => scoreMaintainingLoad(acuteChronicLoadTrend, acwr),
+    () => scoreDecliningLoad(acuteChronicLoadTrend, acwr),
+  ];
+
+  for (const strategy of strategies) {
+    const result = strategy();
+    if (result) {
+      return result;
+    }
   }
 
   return { score: 40, available: true, reason: 'default — insufficient trend signal' };
@@ -117,7 +181,7 @@ export function scoreLoadProgression(load: LoadFeatureSet | 'PENDING'): Dimensio
 export function scoreNeuromuscularEfficiency(
   sessions: readonly SessionFeatureSet[],
 ): DimensionScore {
-  const eligible = sessions.filter((s) => s.hrDriftPercent !== null);
+  const eligible = sessions.filter((s) => isSet(s.hrDriftPercent));
   if (eligible.length === 0) {
     return { score: null, available: false, reason: 'no sessions with hrDriftPercent' };
   }
@@ -125,11 +189,11 @@ export function scoreNeuromuscularEfficiency(
   const meanDrift =
     eligible.reduce((sum, s) => sum + (s.hrDriftPercent as number), 0) / eligible.length;
   const meanIF =
-    sessions.filter((s) => s.intensityFactor !== null).length > 0
+    sessions.filter((s) => isSet(s.intensityFactor)).length > 0
       ? sessions
-          .filter((s) => s.intensityFactor !== null)
+          .filter((s) => isSet(s.intensityFactor))
           .reduce((sum, s) => sum + (s.intensityFactor as number), 0) /
-        sessions.filter((s) => s.intensityFactor !== null).length
+        sessions.filter((s) => isSet(s.intensityFactor)).length
       : null;
 
   let base: number;
@@ -143,7 +207,7 @@ export function scoreNeuromuscularEfficiency(
     base = Math.max(0, 40 - (meanDrift - 10) * 3);
   }
 
-  const ifBonus = meanIF !== null && meanIF > 0.85 ? 10 : 0;
+  const ifBonus = isSet(meanIF) && meanIF > 0.85 ? 10 : 0;
 
   return {
     score: Math.round(Math.min(100, base + ifBonus)),
@@ -152,47 +216,114 @@ export function scoreNeuromuscularEfficiency(
   };
 }
 
+function scoreAutonomicFromBothSignals(
+  hrvDeltaFromBaseline: number,
+  rhrDeltaFromBaseline: number,
+): number {
+  if (hrvDeltaFromBaseline > 5 && rhrDeltaFromBaseline < -2) {
+    const hrvBonus = Math.min((hrvDeltaFromBaseline - 5) / 10, 1.0) * 20;
+    return Math.min(80 + hrvBonus, 100);
+  }
+  if (hrvDeltaFromBaseline >= -5 && hrvDeltaFromBaseline <= 5) {
+    return lerp(50, 70, -5, hrvDeltaFromBaseline + 5);
+  }
+  if (hrvDeltaFromBaseline < -10) {
+    return Math.max(0, 30 + (hrvDeltaFromBaseline + 10) * 2);
+  }
+  return 40;
+}
+
+function scoreAutonomicFromHrvOnly(hrvDeltaFromBaseline: number): number {
+  if (hrvDeltaFromBaseline > 5) {
+    return 70;
+  }
+  if (hrvDeltaFromBaseline >= -5) {
+    return 50;
+  }
+  return Math.max(10, 30 + (hrvDeltaFromBaseline + 10) * 2);
+}
+
+function resolveAutonomicScore(
+  hrvDeltaFromBaseline: number | null,
+  rhrDeltaFromBaseline: number | null,
+): { score: number; partial: boolean } {
+  if (isSet(hrvDeltaFromBaseline) && isSet(rhrDeltaFromBaseline)) {
+    return {
+      score: scoreAutonomicFromBothSignals(hrvDeltaFromBaseline, rhrDeltaFromBaseline),
+      partial: false,
+    };
+  }
+  if (isSet(hrvDeltaFromBaseline)) {
+    return { score: scoreAutonomicFromHrvOnly(hrvDeltaFromBaseline), partial: true };
+  }
+  return { score: scoreFromRhrDeltaOnly(rhrDeltaFromBaseline!), partial: true };
+}
+
 export function scoreAutonomicAdaptation(recovery: RecoveryFeatureSet | 'PENDING'): DimensionScore {
   if (recovery === 'PENDING') {
     return { score: null, available: false, reason: 'recovery features pending' };
   }
 
   const { hrvDeltaFromBaseline, rhrDeltaFromBaseline } = recovery;
-
-  if (hrvDeltaFromBaseline === null && rhrDeltaFromBaseline === null) {
+  if (
+    (hrvDeltaFromBaseline === undefined || hrvDeltaFromBaseline === null) &&
+    (rhrDeltaFromBaseline === undefined || rhrDeltaFromBaseline === null)
+  ) {
     return { score: null, available: false, reason: 'HRV and RHR delta both unavailable' };
   }
 
-  let score: number;
-  let partial = false;
-
-  if (hrvDeltaFromBaseline !== null && rhrDeltaFromBaseline !== null) {
-    if (hrvDeltaFromBaseline > 5 && rhrDeltaFromBaseline < -2) {
-      const hrvBonus = Math.min((hrvDeltaFromBaseline - 5) / 10, 1.0) * 20;
-      score = Math.min(80 + hrvBonus, 100);
-    } else if (hrvDeltaFromBaseline >= -5 && hrvDeltaFromBaseline <= 5) {
-      score = lerp(50, 70, -5, hrvDeltaFromBaseline + 5);
-    } else if (hrvDeltaFromBaseline < -10) {
-      score = Math.max(0, 30 + (hrvDeltaFromBaseline + 10) * 2);
-    } else {
-      score = 40;
-    }
-  } else if (hrvDeltaFromBaseline !== null) {
-    partial = true;
-    if (hrvDeltaFromBaseline > 5) score = 70;
-    else if (hrvDeltaFromBaseline >= -5) score = 50;
-    else score = Math.max(10, 30 + (hrvDeltaFromBaseline + 10) * 2);
-  } else {
-    partial = true;
-    score = scoreFromRhrDeltaOnly(rhrDeltaFromBaseline!);
-  }
-
-  if (partial) score = Math.max(0, score - 20);
+  const { score, partial } = resolveAutonomicScore(hrvDeltaFromBaseline, rhrDeltaFromBaseline);
+  const adjusted = partial ? Math.max(0, score - 20) : score;
 
   return {
-    score: Math.round(Math.max(0, Math.min(100, score))),
+    score: Math.round(Math.max(0, Math.min(100, adjusted))),
     available: true,
     reason: partial ? 'partial ANS data' : 'full ANS data',
+  };
+}
+
+function scoreRecoveryFromReadiness(
+  readiness: number,
+  capacity: FatigueState['trainingCapacity'] | null,
+): number {
+  if (readiness >= 75 && capacity === 'FULL') {
+    return lerp(80, 100, 75, readiness - 75);
+  }
+  if (readiness >= 50) {
+    return lerp(50, 75, 50, readiness - 50);
+  }
+  return lerp(20, 50, 0, readiness);
+}
+
+function baseRecoveryQualityScore(
+  readiness: number | null,
+  capacity: FatigueState['trainingCapacity'] | null,
+): number {
+  if (capacity === 'REST_ONLY') {
+    return isSet(readiness) ? Math.min(30, readiness * 0.3) : 10;
+  }
+  if (isSet(readiness)) {
+    return scoreRecoveryFromReadiness(readiness, capacity);
+  }
+  return scoreFromCapacityOnly(capacity!);
+}
+
+function applyAccumulationPenalty(score: number, accumulationDays: number): number {
+  return accumulationDays > 7 ? Math.max(0, score - 20) : score;
+}
+
+function readRecoveryQualityInputs(
+  recoveryState: RecoveryState | null,
+  fatigueState: FatigueState | null,
+): {
+  readiness: number | null;
+  capacity: FatigueState['trainingCapacity'] | null;
+  accumulationDays: number;
+} {
+  return {
+    readiness: recoveryState?.readinessScore ?? null,
+    capacity: fatigueState?.trainingCapacity ?? null,
+    accumulationDays: fatigueState?.consecutiveAccumulationDays ?? 0,
   };
 }
 
@@ -200,7 +331,10 @@ export function scoreRecoveryQuality(
   recoveryState: RecoveryState | null,
   fatigueState: FatigueState | null,
 ): DimensionScore {
-  if (recoveryState === null && fatigueState === null) {
+  if (
+    (recoveryState === undefined || recoveryState === null) &&
+    (fatigueState === undefined || fatigueState === null)
+  ) {
     return {
       score: null,
       available: false,
@@ -208,27 +342,14 @@ export function scoreRecoveryQuality(
     };
   }
 
-  const readiness = recoveryState?.readinessScore ?? null;
-  const capacity = fatigueState?.trainingCapacity ?? null;
-  const accumulationDays = fatigueState?.consecutiveAccumulationDays ?? 0;
-
-  let score: number;
-
-  if (capacity === 'REST_ONLY') {
-    score = readiness !== null ? Math.min(30, readiness * 0.3) : 10;
-  } else if (readiness !== null && readiness >= 75 && capacity === 'FULL') {
-    score = lerp(80, 100, 75, readiness - 75);
-  } else if (readiness !== null && readiness >= 50) {
-    score = lerp(50, 75, 50, readiness - 50);
-  } else if (readiness !== null) {
-    score = lerp(20, 50, 0, readiness);
-  } else {
-    score = scoreFromCapacityOnly(capacity!);
-  }
-
-  if (accumulationDays > 7) {
-    score = Math.max(0, score - 20);
-  }
+  const { readiness, capacity, accumulationDays } = readRecoveryQualityInputs(
+    recoveryState,
+    fatigueState,
+  );
+  const score = applyAccumulationPenalty(
+    baseRecoveryQualityScore(readiness, capacity),
+    accumulationDays,
+  );
 
   return {
     score: Math.round(Math.max(0, Math.min(100, score))),
@@ -255,7 +376,7 @@ export function synthesizeAdaptationIndex(dims: ScoredAdaptationDimensions): {
     { key: 'recoveryQuality' as const, weight: WEIGHTS.recoveryQuality },
   ];
 
-  const available = entries.filter((e) => dims[e.key].available && dims[e.key].score !== null);
+  const available = entries.filter((e) => dims[e.key].available && isSet(dims[e.key].score));
   const totalAvailableWeight = available.reduce((s, e) => s + e.weight, 0);
   const availableDimensionCount = available.length;
 
@@ -292,15 +413,25 @@ export function synthesizeAdaptationIndex(dims: ScoredAdaptationDimensions): {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function classifyAdaptationStatus(index: number): AdaptationStatus {
-  if (index >= 70) return 'POSITIVELY_ADAPTING';
-  if (index >= 50) return 'MAINTAINING';
-  if (index >= 30) return 'PLATEAUING';
-  if (index >= 15) return 'MALADAPTING';
+  if (index >= 70) {
+    return 'POSITIVELY_ADAPTING';
+  }
+  if (index >= 50) {
+    return 'MAINTAINING';
+  }
+  if (index >= 30) {
+    return 'PLATEAUING';
+  }
+  if (index >= 15) {
+    return 'MALADAPTING';
+  }
   return 'DETRAINING';
 }
 
 export function computeAdaptationTrend(recentHistory: readonly number[]): AdaptationTrend {
-  if (recentHistory.length < 7) return 'STABLE';
+  if (recentHistory.length < 7) {
+    return 'STABLE';
+  }
 
   const n = recentHistory.length;
   const mean = recentHistory.reduce((s, v) => s + v, 0) / n;
@@ -316,8 +447,12 @@ export function computeAdaptationTrend(recentHistory: readonly number[]): Adapta
 
   const slope = denominator === 0 ? 0 : numerator / denominator;
 
-  if (slope > 1.0) return 'IMPROVING';
-  if (slope < -1.0) return 'DECLINING';
+  if (slope > 1.0) {
+    return 'IMPROVING';
+  }
+  if (slope < -1.0) {
+    return 'DECLINING';
+  }
   return 'STABLE';
 }
 

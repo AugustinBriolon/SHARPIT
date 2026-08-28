@@ -1,4 +1,5 @@
 import { format, parseISO, subDays } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import type { FuelFeatureSet } from '@/core/features/types';
 import type {
   NutritionDaySummary,
@@ -46,7 +47,9 @@ type NutritionRow = {
 };
 
 function normalizeMeals(raw: unknown): NutritionMealSummary[] {
-  if (!Array.isArray(raw)) return [];
+  if (!Array.isArray(raw)) {
+    return [];
+  }
 
   return (raw as StoredMeal[])
     .map((meal) => ({
@@ -98,12 +101,14 @@ async function fallbackFuelDensity(
 ): Promise<NutritionFuelDensity | null> {
   const meals = normalizeMeals(row.meals);
   const entryCount = meals.reduce((sum, meal) => sum + meal.entries.length, 0);
-  if (entryCount === 0 || row.protein <= 0) return null;
+  if (entryCount === 0 || row.protein <= 0) {
+    return null;
+  }
 
   const referenceWeightKg = await getLatestBodyWeightKg(athleteId, trainingDayId);
   const proteinGPerKg = macroGPerKg(row.protein, referenceWeightKg);
   const carbohydratesGPerKg = macroGPerKg(row.carbohydrates, referenceWeightKg);
-  if (referenceWeightKg == null || proteinGPerKg == null || carbohydratesGPerKg == null) {
+  if (!isSet(referenceWeightKg) || !isSet(proteinGPerKg) || !isSet(carbohydratesGPerKg)) {
     return null;
   }
 
@@ -119,13 +124,17 @@ async function loadFuelDensity(
     const dayFeatures = await featureEngine.computeDayFeatures(athleteId, trainingDayId);
     if (dayFeatures.fuel !== 'PENDING') {
       const fromEngine = fuelFeatureSetToDensity(dayFeatures.fuel as FuelFeatureSet);
-      if (fromEngine) return fromEngine;
+      if (fromEngine) {
+        return fromEngine;
+      }
     }
   } catch (error) {
     console.error('[nutrition] fuel density lookup failed:', error);
   }
 
-  if (!row) return null;
+  if (!row) {
+    return null;
+  }
   return fallbackFuelDensity(athleteId, trainingDayId, row);
 }
 
@@ -135,10 +144,14 @@ async function resolveGoalsProgress(
   fetchLive: boolean,
 ): Promise<NutritionGoalsProgress | null> {
   const cached = goalsFromRow(row);
-  if (cached || !fetchLive) return cached;
+  if (cached || !fetchLive) {
+    return cached;
+  }
 
   const live = await getLiveNutrientGoals(athleteId, format(row.date, 'yyyy-MM-dd'));
-  if (!live) return null;
+  if (!live) {
+    return null;
+  }
 
   return buildGoalsProgress({
     consumedCalories: row.calories,
@@ -159,12 +172,87 @@ async function enrichSelectedDay(
   row: NutritionRow | undefined,
   fetchLiveGoals: boolean,
 ): Promise<NutritionDaySummary> {
-  if (!row) return { ...day, goalsProgress: null, fuelDensity: null };
+  if (!row) {
+    return { ...day, goalsProgress: null, fuelDensity: null };
+  }
   const [goalsProgress, fuelDensity] = await Promise.all([
     resolveGoalsProgress(athleteId, row, fetchLiveGoals),
     loadFuelDensity(athleteId, day.date, row),
   ]);
   return { ...day, goalsProgress, fuelDensity };
+}
+
+function computeNutritionAverages(history: NutritionDaySummary[]) {
+  if (history.length === 0) {
+    return null;
+  }
+  const count = history.length;
+  return {
+    calories: Math.round(history.reduce((s, d) => s + d.calories, 0) / count),
+    protein: Math.round((history.reduce((s, d) => s + d.protein, 0) / count) * 10) / 10,
+    carbohydrates: Math.round((history.reduce((s, d) => s + d.carbohydrates, 0) / count) * 10) / 10,
+    fat: Math.round((history.reduce((s, d) => s + d.fat, 0) / count) * 10) / 10,
+  };
+}
+
+function buildNutritionEmptyState(
+  selectedDay: NutritionDaySummary | null,
+  selectedDayId: string,
+  todayId: string,
+) {
+  if (isSet(selectedDay)) {
+    return null;
+  }
+  return {
+    title: 'Aucune donnée ce jour-là',
+    description:
+      selectedDayId === todayId
+        ? 'Synchronise MyFitnessPal ou enregistre tes repas pour voir tes apports.'
+        : 'Aucun journal alimentaire synchronisé pour cette date.',
+  };
+}
+
+async function enrichDayIfPresent(
+  athleteId: string,
+  day: NutritionDaySummary | null | undefined,
+  row: NutritionRow | undefined,
+): Promise<NutritionDaySummary | null> {
+  if (!day) {
+    return null;
+  }
+  return enrichSelectedDay(athleteId, day, row, !isSet(row?.goalCalories));
+}
+
+async function buildConnectedNutritionViewModel(
+  athleteId: string,
+  trainingDayId?: string,
+): Promise<NutritionViewModel> {
+  const referenceDate = trainingDayId ? parseISO(trainingDayId) : new Date();
+  const selectedDayId = format(referenceDate, 'yyyy-MM-dd');
+  const todayId = format(new Date(), 'yyyy-MM-dd');
+  const from = subDays(referenceDate, 6);
+
+  const rows = (await prisma.dailyNutrition.findMany({
+    where: {
+      athleteId,
+      date: { gte: new Date(`${format(from, 'yyyy-MM-dd')}T00:00:00Z`) },
+    },
+    orderBy: { date: 'desc' },
+  })) as NutritionRow[];
+
+  const history: NutritionDaySummary[] = rows.map(mapRow);
+  const selectedRow = rows.find((d) => format(d.date, 'yyyy-MM-dd') === selectedDayId);
+  const selectedDayBase = history.find((d) => d.date === selectedDayId) ?? null;
+  const selectedDay = await enrichDayIfPresent(athleteId, selectedDayBase, selectedRow);
+
+  const todayRow = rows.find((d) => format(d.date, 'yyyy-MM-dd') === todayId);
+  const todayBase = history.find((d) => d.date === todayId) ?? null;
+  const today = await enrichDayIfPresent(athleteId, todayBase, todayRow);
+
+  const averages = computeNutritionAverages(history);
+  const emptyState = buildNutritionEmptyState(selectedDay, selectedDayId, todayId);
+
+  return { connected: true, selectedDay, today, history, averages, emptyState };
 }
 
 export async function buildNutritionViewModel(
@@ -188,60 +276,5 @@ export async function buildNutritionViewModel(
     };
   }
 
-  const referenceDate = trainingDayId ? parseISO(trainingDayId) : new Date();
-  const selectedDayId = format(referenceDate, 'yyyy-MM-dd');
-  const todayId = format(new Date(), 'yyyy-MM-dd');
-  const from = subDays(referenceDate, 6);
-
-  const rows = (await prisma.dailyNutrition.findMany({
-    where: {
-      athleteId,
-      date: { gte: new Date(`${format(from, 'yyyy-MM-dd')}T00:00:00Z`) },
-    },
-    orderBy: { date: 'desc' },
-  })) as NutritionRow[];
-
-  const history: NutritionDaySummary[] = rows.map(mapRow);
-  const selectedRow = rows.find((d) => format(d.date, 'yyyy-MM-dd') === selectedDayId);
-  const selectedDayBase = history.find((d) => d.date === selectedDayId) ?? null;
-  const selectedDay = selectedDayBase
-    ? await enrichSelectedDay(
-        athleteId,
-        selectedDayBase,
-        selectedRow,
-        selectedRow?.goalCalories == null,
-      )
-    : null;
-
-  const todayRow = rows.find((d) => format(d.date, 'yyyy-MM-dd') === todayId);
-  const todayBase = history.find((d) => d.date === todayId) ?? null;
-  const today = todayBase
-    ? await enrichSelectedDay(athleteId, todayBase, todayRow, todayRow?.goalCalories == null)
-    : null;
-
-  const averages =
-    history.length > 0
-      ? {
-          calories: Math.round(history.reduce((s, d) => s + d.calories, 0) / history.length),
-          protein:
-            Math.round((history.reduce((s, d) => s + d.protein, 0) / history.length) * 10) / 10,
-          carbohydrates:
-            Math.round((history.reduce((s, d) => s + d.carbohydrates, 0) / history.length) * 10) /
-            10,
-          fat: Math.round((history.reduce((s, d) => s + d.fat, 0) / history.length) * 10) / 10,
-        }
-      : null;
-
-  const emptyState =
-    selectedDay == null
-      ? {
-          title: 'Aucune donnée ce jour-là',
-          description:
-            selectedDayId === todayId
-              ? 'Synchronise MyFitnessPal ou enregistre tes repas pour voir tes apports.'
-              : 'Aucun journal alimentaire synchronisé pour cette date.',
-        }
-      : null;
-
-  return { connected, selectedDay, today, history, averages, emptyState };
+  return buildConnectedNutritionViewModel(athleteId, trainingDayId);
 }

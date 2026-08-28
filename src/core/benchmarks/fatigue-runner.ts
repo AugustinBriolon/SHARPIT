@@ -8,6 +8,7 @@
  */
 
 import { runFatigueModel } from '@/core/inference/fatigue/model';
+import { isSet } from '@/lib/util/value';
 import type { FatigueModelOutput } from '@/core/inference/fatigue/types';
 import type {
   FatigueBenchmarkScenario,
@@ -109,7 +110,7 @@ function evaluateExpectations(
   if (exp.fatigueType) {
     results.push(evaluateValue('fatigueType', exp.fatigueType, fatigueState.fatigueType));
   }
-  if (exp.fatigueIndexRange && fatigueState.fatigueIndex !== null) {
+  if (exp.fatigueIndexRange && isSet(fatigueState.fatigueIndex)) {
     results.push(
       evaluateRange('fatigueIndexRange', exp.fatigueIndexRange, fatigueState.fatigueIndex),
     );

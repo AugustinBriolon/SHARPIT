@@ -8,6 +8,7 @@
  */
 
 import { addDays, format } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import { fr } from 'date-fns/locale';
 import type { ActivityType, GoalHorizon, PlanPhase, SessionIntensity } from '@prisma/client';
 import { activityTypeLabels } from '@/lib/format';
@@ -57,10 +58,51 @@ type WeeklyCoachingBriefInput = {
 };
 
 function median(values: number[]): number {
-  if (values.length === 0) return 0;
+  if (values.length === 0) {
+    return 0;
+  }
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+}
+
+function toWeeklyBriefKeySession(
+  s: WeeklyCoachingBriefInput['plannedSessions'][number],
+  sessionDecisions: WeeklyCoachingBriefInput['sessionDecisions'],
+  goalTitleById: ReadonlyMap<string, string> | undefined,
+): WeeklyBriefKeySession {
+  const decision = sessionDecisions.get(s.id);
+  const goalTitle = resolveWeeklyBriefGoalTitle(s, decision, goalTitleById);
+  return {
+    sessionId: s.id,
+    dateLabel: format(s.date, 'EEE d MMM', { locale: fr }),
+    typeLabel: activityTypeLabels[s.type],
+    intensityLabel: s.intensity ? intensityLabels[s.intensity] : null,
+    purpose: decision?.proposal.rationale ?? null,
+    goalTitle,
+  };
+}
+
+function lookupGoalTitle(
+  goalId: string | null | undefined,
+  goalTitleById: ReadonlyMap<string, string> | undefined,
+): string | null {
+  if (!goalId || !goalTitleById) {
+    return null;
+  }
+  return goalTitleById.get(goalId) ?? null;
+}
+
+function resolveWeeklyBriefGoalTitle(
+  session: WeeklyCoachingBriefInput['plannedSessions'][number],
+  decision: CoachingDecisionRecord | undefined,
+  goalTitleById: ReadonlyMap<string, string> | undefined,
+): string | null {
+  const fromSession = lookupGoalTitle(session.goalId, goalTitleById);
+  if (fromSession) {
+    return fromSession;
+  }
+  return lookupGoalTitle(decision?.proposal.goalId, goalTitleById);
 }
 
 function buildKeySessions(
@@ -69,7 +111,7 @@ function buildKeySessions(
   goalTitleById: ReadonlyMap<string, string> | undefined,
 ): WeeklyBriefKeySession[] {
   const durationMedian = median(
-    plannedSessions.map((s) => s.durationMin).filter((d): d is number => d != null),
+    plannedSessions.map((s) => s.durationMin).filter((d): d is number => isSet(d)),
   );
 
   return plannedSessions
@@ -77,21 +119,7 @@ function buildKeySessions(
       (s) =>
         (s.intensity && KEY_INTENSITIES.has(s.intensity)) || (s.durationMin ?? 0) > durationMedian,
     )
-    .map((s) => {
-      const decision = sessionDecisions.get(s.id);
-      const goalTitle =
-        (s.goalId && goalTitleById?.get(s.goalId)) ||
-        (decision?.proposal.goalId && goalTitleById?.get(decision.proposal.goalId)) ||
-        null;
-      return {
-        sessionId: s.id,
-        dateLabel: format(s.date, 'EEE d MMM', { locale: fr }),
-        typeLabel: activityTypeLabels[s.type],
-        intensityLabel: s.intensity ? intensityLabels[s.intensity] : null,
-        purpose: decision?.proposal.rationale ?? null,
-        goalTitle,
-      };
-    });
+    .map((s) => toWeeklyBriefKeySession(s, sessionDecisions, goalTitleById));
 }
 
 function buildRecoveryDays(
@@ -113,7 +141,9 @@ function buildRecoveryDays(
     const daySessions = sessionsByDay.get(key) ?? [];
     const isProtected =
       daySessions.length === 0 || daySessions.every((s) => s.intensity === 'RECOVERY');
-    if (isProtected) protectedDayLabels.push(format(day, 'EEEE', { locale: fr }));
+    if (isProtected) {
+      protectedDayLabels.push(format(day, 'EEEE', { locale: fr }));
+    }
   }
 
   const note =
@@ -152,7 +182,6 @@ function buildLoad(
   };
 }
 
-/** Only stated when a Gate rule for one of this week's sessions already found something to say. */
 const WHAT_WOULD_CHANGE_RULE_CODES = new Set([
   'WEEKLY_LOAD_EXCEEDED',
   'INTENSITY_DISTRIBUTION_EXCEEDED',
@@ -160,6 +189,73 @@ const WHAT_WOULD_CHANGE_RULE_CODES = new Set([
   'FATIGUE_LIGHT_ONLY',
   'DECISION_INTENSITY_CONFLICT',
 ]);
+
+function collectWeeklyBriefGateSignals(
+  sessionDecisions: WeeklyCoachingBriefInput['sessionDecisions'],
+) {
+  const assumptions = new Set<string>();
+  const dataGaps = new Set<string>();
+  const whatWouldChange = new Set<string>();
+  for (const decision of sessionDecisions.values()) {
+    for (const assumption of decision.gateResult.requiredAssumptions) {
+      assumptions.add(assumption);
+    }
+    for (const finding of decision.gateResult.findings) {
+      if (finding.severity === 'REQUIRES_CONFIRMATION') {
+        dataGaps.add(finding.rationale);
+      }
+      if (WHAT_WOULD_CHANGE_RULE_CODES.has(finding.ruleCode)) {
+        whatWouldChange.add(finding.rationale);
+      }
+    }
+  }
+  return {
+    assumptions: [...assumptions],
+    dataGaps: [...dataGaps],
+    whatWouldChange: [...whatWouldChange],
+  };
+}
+
+function buildWeeklyBriefGoalContext(
+  goal: NonNullable<WeeklyCoachingBriefInput['goal']>,
+  now: Date,
+): NonNullable<WeeklyCoachingBriefViewModel['goalContext']> {
+  return {
+    title: goal.title,
+    targetDateLabel: goal.targetDate ? format(goal.targetDate, 'd MMM yyyy', { locale: fr }) : null,
+    daysToGo: goal.targetDate
+      ? Math.round((goal.targetDate.getTime() - now.getTime()) / 86_400_000)
+      : null,
+    horizonLabel: goal.horizon ? horizonLabels[goal.horizon] : null,
+  };
+}
+
+function buildWeeklyBriefEmptyViewModel(input: {
+  weekStartLabel: string;
+  weekEndLabel: string;
+  learningFeedback: WeeklyCoachingBriefInput['learningFeedback'];
+}): WeeklyCoachingBriefViewModel {
+  return {
+    weekStartLabel: input.weekStartLabel,
+    weekEndLabel: input.weekEndLabel,
+    visible: true,
+    planContext: null,
+    goalContext: null,
+    load: null,
+    keySessions: [],
+    recovery: null,
+    limitingFactor: null,
+    assumptions: [],
+    dataGaps: [],
+    whatWouldChange: [],
+    learningFeedback: input.learningFeedback,
+    emptyState: {
+      title: 'Pas de plan structuré pour cette semaine',
+      description: 'Génère un plan avec le coach pour voir ta semaine expliquée ici.',
+      action: { label: 'Remplir ma semaine', href: '/training/planning?create=1' },
+    },
+  };
+}
 
 export function buildWeeklyCoachingBriefViewModel(
   input: WeeklyCoachingBriefInput,
@@ -179,39 +275,14 @@ export function buildWeeklyCoachingBriefViewModel(
 
   const hasNothing = !planWeek && !goal && plannedSessions.length === 0;
   if (hasNothing) {
-    return {
+    return buildWeeklyBriefEmptyViewModel({
       weekStartLabel,
       weekEndLabel,
-      visible: true,
-      planContext: null,
-      goalContext: null,
-      load: null,
-      keySessions: [],
-      recovery: null,
-      limitingFactor: null,
-      assumptions: [],
-      dataGaps: [],
-      whatWouldChange: [],
       learningFeedback: input.learningFeedback,
-      emptyState: {
-        title: 'Pas de plan structuré pour cette semaine',
-        description: 'Génère un plan avec le coach pour voir ta semaine expliquée ici.',
-        action: { label: 'Remplir ma semaine', href: '/training/planning?create=1' },
-      },
-    };
+    });
   }
 
-  const assumptions = new Set<string>();
-  const dataGaps = new Set<string>();
-  const whatWouldChange = new Set<string>();
-  for (const decision of sessionDecisions.values()) {
-    for (const assumption of decision.gateResult.requiredAssumptions) assumptions.add(assumption);
-    for (const finding of decision.gateResult.findings) {
-      if (finding.severity === 'REQUIRES_CONFIRMATION') dataGaps.add(finding.rationale);
-      if (WHAT_WOULD_CHANGE_RULE_CODES.has(finding.ruleCode))
-        whatWouldChange.add(finding.rationale);
-    }
-  }
+  const gateSignals = collectWeeklyBriefGateSignals(sessionDecisions);
 
   const limitingFactor = todaysSnapshotContext
     ? {
@@ -233,25 +304,14 @@ export function buildWeeklyCoachingBriefViewModel(
           focus: planWeek.focus,
         }
       : null,
-    goalContext: goal
-      ? {
-          title: goal.title,
-          targetDateLabel: goal.targetDate
-            ? format(goal.targetDate, 'd MMM yyyy', { locale: fr })
-            : null,
-          daysToGo: goal.targetDate
-            ? Math.round((goal.targetDate.getTime() - now.getTime()) / 86_400_000)
-            : null,
-          horizonLabel: goal.horizon ? horizonLabels[goal.horizon] : null,
-        }
-      : null,
+    goalContext: goal ? buildWeeklyBriefGoalContext(goal, now) : null,
     load: buildLoad(weekStart, plannedSessions, planWeek, input.dailyTrainingStress),
     keySessions: buildKeySessions(plannedSessions, sessionDecisions, input.goalTitleById),
     recovery: buildRecoveryDays(weekStart, plannedSessions),
     limitingFactor,
-    assumptions: [...assumptions],
-    dataGaps: [...dataGaps],
-    whatWouldChange: [...whatWouldChange],
+    assumptions: gateSignals.assumptions,
+    dataGaps: gateSignals.dataGaps,
+    whatWouldChange: gateSignals.whatWouldChange,
     learningFeedback: input.learningFeedback,
     emptyState: null,
   };

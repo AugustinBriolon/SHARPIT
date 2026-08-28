@@ -23,7 +23,9 @@ export function ZoneDistribution({
   zones: ZoneBucket[];
 }) {
   const active = zones.filter((z) => z.seconds > 0);
-  if (!active.length) return null;
+  if (!active.length) {
+    return null;
+  }
 
   return (
     <section className="space-y-3">

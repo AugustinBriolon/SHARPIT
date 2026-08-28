@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -6,6 +7,58 @@ import type { ChipTone } from './types';
 
 const DEFAULT_LINK_SURFACE =
   'border-primary/30 bg-muted/20 hover:border-primary/50 hover:bg-muted/50';
+
+function ActivityMetaChipBody({
+  showDot,
+  tone,
+  iconEl,
+  label,
+  value,
+}: {
+  showDot: boolean;
+  tone?: ChipTone;
+  iconEl: ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <>
+      {showDot ? <span className={cn('size-2 shrink-0 rounded-full', chipDot[tone!])} /> : iconEl}
+      <span className="text-muted-foreground shrink-0 font-medium tracking-wider uppercase">
+        {label}
+      </span>
+      <span className="text-foreground min-w-0 font-medium wrap-break-word">{value}</span>
+    </>
+  );
+}
+
+function ActivityMetaChipShell({
+  chipClass,
+  href,
+  onClick,
+  children,
+}: {
+  chipClass: string;
+  href?: string;
+  onClick?: () => void;
+  children: ReactNode;
+}) {
+  if (onClick) {
+    return (
+      <button className={chipClass} type="button" onClick={onClick}>
+        {children}
+      </button>
+    );
+  }
+  if (href) {
+    return (
+      <Link className={chipClass} href={href}>
+        {children}
+      </Link>
+    );
+  }
+  return <span className={chipClass}>{children}</span>;
+}
 
 export function ActivityMetaChip({
   href,
@@ -36,30 +89,18 @@ export function ActivityMetaChip({
   );
 
   const content = (
-    <>
-      {showDot ? <span className={cn('size-2 shrink-0 rounded-full', chipDot[tone!])} /> : iconEl}
-      <span className="text-muted-foreground shrink-0 font-medium tracking-wider uppercase">
-        {label}
-      </span>
-      <span className="text-foreground min-w-0 font-medium wrap-break-word">{value}</span>
-    </>
+    <ActivityMetaChipBody
+      iconEl={iconEl}
+      label={label}
+      showDot={showDot}
+      tone={tone}
+      value={value}
+    />
   );
 
-  if (onClick) {
-    return (
-      <button className={chipClass} type="button" onClick={onClick}>
-        {content}
-      </button>
-    );
-  }
-
-  if (href) {
-    return (
-      <Link className={chipClass} href={href}>
-        {content}
-      </Link>
-    );
-  }
-
-  return <span className={chipClass}>{content}</span>;
+  return (
+    <ActivityMetaChipShell chipClass={chipClass} href={href} onClick={onClick}>
+      {content}
+    </ActivityMetaChipShell>
+  );
 }

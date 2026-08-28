@@ -59,7 +59,9 @@ async function HikeTripDetail({ params }: PageProps) {
   const athleteId = await getCurrentAthleteId();
   const trip = await getHikeTripById(athleteId, id);
 
-  if (!trip) notFound();
+  if (!trip) {
+    notFound();
+  }
 
   const summary = buildHikeTripSummary(trip.activities);
   const profile = buildHikeTripElevationProfile(trip.activities);

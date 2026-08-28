@@ -43,7 +43,7 @@ export function RecoveryMarkers({
       points: toPoints(sparkHrv),
       // A computed baseline, unlike the two below — the wording must not blur that.
       range:
-        baselineLow != null && baselineHigh != null
+        baselineLow !== null && baselineHigh !== null
           ? { low: Math.round(baselineLow), high: Math.round(baselineHigh), kind: 'baseline' }
           : null,
       explanation: GLOSSARY.hrv.definition,

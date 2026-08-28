@@ -1,9 +1,11 @@
 import type { Goal } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import {
   inferPerformanceEndMode,
   isGoalExpired,
   parseGoalMetricConfig,
   type GoalMetricConfig,
+  type PerformanceMetricConfig,
 } from '@/lib/goals/goal-metric-config';
 import { prisma } from '@/lib/prisma';
 import {
@@ -22,7 +24,14 @@ function isReached(
   targetValue: number | null,
   lowerIsBetter: boolean,
 ): boolean {
-  if (currentValue == null || targetValue == null) return false;
+  if (
+    currentValue === undefined ||
+    currentValue === null ||
+    targetValue === undefined ||
+    targetValue === null
+  ) {
+    return false;
+  }
   return lowerIsBetter ? currentValue <= targetValue : currentValue >= targetValue;
 }
 
@@ -55,48 +64,69 @@ export async function recordGoalAchievement(params: {
   });
 }
 
-async function syncAchievementForGoal(
+type SyncAchievementParams = {
+  goal: Goal;
+  config: GoalMetricConfig;
+  currentValue: number | null;
+  activities: ActivityRow[];
+  ref?: Date;
+};
+
+async function hasExistingPerformanceAchievement(goalId: string): Promise<boolean> {
+  const existing = await prisma.goalAchievement.findUnique({
+    where: {
+      goalId_periodKey: { goalId, periodKey: PERFORMANCE_PERIOD_KEY },
+    },
+  });
+  return isSet(existing);
+}
+
+async function shouldSkipPerformanceSync(
   goal: Goal,
-  config: GoalMetricConfig,
-  currentValue: number | null,
-  activities: ActivityRow[],
-  ref = new Date(),
-): Promise<void> {
-  if (!isReached(currentValue, goal.targetValue, goal.lowerIsBetter)) return;
-  if (isGoalExpired(goal.targetDate, ref)) return;
+  config: PerformanceMetricConfig,
+  ref: Date,
+): Promise<boolean> {
+  const endMode = inferPerformanceEndMode(config, goal.targetDate);
+  const expiredOnDate = endMode === 'on_date' && isGoalExpired(goal.targetDate, ref);
+  return expiredOnDate || (await hasExistingPerformanceAchievement(goal.id));
+}
 
-  if (config.template === 'performance') {
-    const endMode = inferPerformanceEndMode(config, goal.targetDate);
-    if (endMode === 'on_date' && isGoalExpired(goal.targetDate, ref)) return;
-
-    const existing = await prisma.goalAchievement.findUnique({
-      where: {
-        goalId_periodKey: { goalId: goal.id, periodKey: PERFORMANCE_PERIOD_KEY },
-      },
-    });
-    if (existing) return;
-
-    const best = computePerformanceBest(activities, config.sport, config.distanceM);
-    await recordGoalAchievement({
-      goalId: goal.id,
-      periodKey: PERFORMANCE_PERIOD_KEY,
-      source: 'auto',
-      value: best?.seconds ?? currentValue,
-      targetValue: goal.targetValue,
-      activityId: best?.activityId ?? null,
-    });
-    await prisma.goal.update({
-      where: { id: goal.id },
-      data: { achieved: true, currentValue },
-    });
+async function syncPerformanceAchievement(params: SyncAchievementParams): Promise<void> {
+  const { goal, config, currentValue, activities, ref = new Date() } = params;
+  if (config.template !== 'performance') {
+    return;
+  }
+  if (await shouldSkipPerformanceSync(goal, config, ref)) {
     return;
   }
 
+  const best = computePerformanceBest(activities, config.sport, config.distanceM);
+  await recordGoalAchievement({
+    goalId: goal.id,
+    periodKey: PERFORMANCE_PERIOD_KEY,
+    source: 'auto',
+    value: best?.seconds ?? currentValue,
+    targetValue: goal.targetValue,
+    activityId: best?.activityId ?? null,
+  });
+  await prisma.goal.update({
+    where: { id: goal.id },
+    data: { achieved: true, currentValue },
+  });
+}
+
+async function syncPeriodAchievement(params: SyncAchievementParams): Promise<void> {
+  const { goal, config, currentValue, ref = new Date() } = params;
+  if (config.template !== 'period') {
+    return;
+  }
   const periodKey = buildPeriodKey(config.period, ref);
   const existing = await prisma.goalAchievement.findUnique({
     where: { goalId_periodKey: { goalId: goal.id, periodKey } },
   });
-  if (existing) return;
+  if (existing) {
+    return;
+  }
 
   await recordGoalAchievement({
     goalId: goal.id,
@@ -105,6 +135,23 @@ async function syncAchievementForGoal(
     value: currentValue,
     targetValue: goal.targetValue,
   });
+}
+
+async function syncAchievementForGoal(params: SyncAchievementParams): Promise<void> {
+  const { goal, config, currentValue, ref = new Date() } = params;
+  if (!isReached(currentValue, goal.targetValue, goal.lowerIsBetter)) {
+    return;
+  }
+  if (isGoalExpired(goal.targetDate, ref)) {
+    return;
+  }
+
+  if (config.template === 'performance') {
+    await syncPerformanceAchievement(params);
+    return;
+  }
+
+  await syncPeriodAchievement(params);
 }
 
 export async function recordManualGoalAchievement(goal: Goal): Promise<void> {
@@ -157,19 +204,70 @@ export async function getLatestAchievementForGoal(goalId: string) {
   });
 }
 
+type EnrichedGoal<T extends Goal> = T & {
+  currentValue: number | null;
+  achieved: boolean;
+  validatingActivityId: string | null;
+  lastAchievedAt: Date | null;
+};
+
+function selectGoalActivities(
+  config: GoalMetricConfig,
+  periodActivities: ActivityRow[],
+  performanceActivities: ActivityRow[],
+): ActivityRow[] {
+  return config.template === 'performance' ? performanceActivities : periodActivities;
+}
+
+async function loadGoalAchievementState(goalId: string, goal: Goal) {
+  const latest = await getLatestAchievementForGoal(goalId);
+  const refreshed = await prisma.goal.findUnique({ where: { id: goalId } });
+  return {
+    achieved: refreshed?.achieved ?? goal.achieved,
+    validatingActivityId: latest?.activityId ?? null,
+    lastAchievedAt: latest?.achievedAt ?? null,
+  };
+}
+
+async function enrichSingleGoal<T extends Goal>(
+  goal: T,
+  periodActivities: ActivityRow[],
+  performanceActivities: ActivityRow[],
+  ref: Date,
+): Promise<EnrichedGoal<T>> {
+  const config = parseGoalMetricConfig(goal.metricKey);
+  if (!config || goal.kind !== 'METRIC') {
+    return {
+      ...goal,
+      validatingActivityId: null,
+      lastAchievedAt: null,
+    };
+  }
+
+  const expired = isGoalExpired(goal.targetDate, ref);
+  const activities = selectGoalActivities(config, periodActivities, performanceActivities);
+  const currentValue = expired
+    ? goal.currentValue
+    : computeMetricCurrentValue(config, activities, ref);
+
+  if (!expired) {
+    await syncAchievementForGoal({ goal, config, currentValue, activities, ref });
+  }
+
+  const achievementState = await loadGoalAchievementState(goal.id, goal);
+  return {
+    ...goal,
+    currentValue,
+    ...achievementState,
+  };
+}
+
 export async function enrichGoalsWithProgress<T extends Goal>(
   athleteId: string,
   goals: T[],
-): Promise<
-  (T & {
-    currentValue: number | null;
-    achieved: boolean;
-    validatingActivityId: string | null;
-    lastAchievedAt: Date | null;
-  })[]
-> {
-  const hasPerformance = goals.some((g) => {
-    const cfg = parseGoalMetricConfig(g.metricKey);
+): Promise<EnrichedGoal<T>[]> {
+  const hasPerformance = goals.some((goal) => {
+    const cfg = parseGoalMetricConfig(goal.metricKey);
     return cfg?.template === 'performance';
   });
 
@@ -181,45 +279,7 @@ export async function enrichGoalsWithProgress<T extends Goal>(
   ]);
 
   const ref = new Date();
-  const enriched: (T & {
-    currentValue: number | null;
-    achieved: boolean;
-    validatingActivityId: string | null;
-    lastAchievedAt: Date | null;
-  })[] = [];
-
-  for (const goal of goals) {
-    const config = parseGoalMetricConfig(goal.metricKey);
-    if (!config || goal.kind !== 'METRIC') {
-      enriched.push({
-        ...goal,
-        validatingActivityId: null,
-        lastAchievedAt: null,
-      });
-      continue;
-    }
-
-    const expired = isGoalExpired(goal.targetDate, ref);
-    const activities = config.template === 'performance' ? performanceActivities : periodActivities;
-    const currentValue = expired
-      ? goal.currentValue
-      : computeMetricCurrentValue(config, activities, ref);
-
-    if (!expired) {
-      await syncAchievementForGoal(goal, config, currentValue, activities, ref);
-    }
-
-    const latest = await getLatestAchievementForGoal(goal.id);
-    const refreshed = await prisma.goal.findUnique({ where: { id: goal.id } });
-
-    enriched.push({
-      ...goal,
-      currentValue,
-      achieved: refreshed?.achieved ?? goal.achieved,
-      validatingActivityId: latest?.activityId ?? null,
-      lastAchievedAt: latest?.achievedAt ?? null,
-    });
-  }
-
-  return enriched;
+  return Promise.all(
+    goals.map((goal) => enrichSingleGoal(goal, periodActivities, performanceActivities, ref)),
+  );
 }

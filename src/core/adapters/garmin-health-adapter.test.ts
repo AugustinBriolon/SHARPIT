@@ -82,7 +82,9 @@ describe('garminHealthToObservations — SLEEP', () => {
     const sleep = observations.find((o) => o.type === 'SLEEP');
 
     expect(sleep).toBeDefined();
-    if (sleep?.type !== 'SLEEP') return;
+    if (sleep?.type !== 'SLEEP') {
+      return;
+    }
 
     expect(sleep.totalMinutes).toBe(450);
     expect(sleep.deepMin).toBe(90);
@@ -110,7 +112,9 @@ describe('garminHealthToObservations — SLEEP', () => {
     });
     const [sleep] = garminHealthToObservations(health, CALENDAR_DATE, RECEIVED_AT);
     expect(sleep?.type).toBe('SLEEP');
-    if (sleep?.type !== 'SLEEP') return;
+    if (sleep?.type !== 'SLEEP') {
+      return;
+    }
     // Bedtime: 2026-07-02 00:30 UTC (same day, < 720)
     expect(sleep.timestamp.toISOString()).toBe('2026-07-02T00:30:00.000Z');
     // Wake: 2026-07-02 05:30 UTC
@@ -130,7 +134,9 @@ describe('garminHealthToObservations — SLEEP', () => {
     const observations = garminHealthToObservations(health, CALENDAR_DATE, RECEIVED_AT);
     const sleep = observations.find((o) => o.type === 'SLEEP');
     expect(sleep?.type).toBe('SLEEP');
-    if (sleep?.type !== 'SLEEP') return;
+    if (sleep?.type !== 'SLEEP') {
+      return;
+    }
     expect(sleep.totalMinutes).toBe(450);
   });
 
@@ -143,7 +149,9 @@ describe('garminHealthToObservations — SLEEP', () => {
     const observations = garminHealthToObservations(health, CALENDAR_DATE, RECEIVED_AT);
     const sleep = observations.find((o) => o.type === 'SLEEP');
     expect(sleep?.type).toBe('SLEEP');
-    if (sleep?.type !== 'SLEEP') return;
+    if (sleep?.type !== 'SLEEP') {
+      return;
+    }
     expect(sleep.totalMinutes).toBe(25);
   });
 });
@@ -165,7 +173,9 @@ describe('garminHealthToObservations — HRV', () => {
     const hrv = observations.find((o) => o.type === 'HRV');
 
     expect(hrv).toBeDefined();
-    if (hrv?.type !== 'HRV') return;
+    if (hrv?.type !== 'HRV') {
+      return;
+    }
     expect(hrv.valueMsRmssd).toBe(58);
     expect(hrv.measurementMethod).toBe('OVERNIGHT_AVERAGE');
     expect(hrv.garminStatus).toBe('BALANCED');
@@ -193,7 +203,9 @@ describe('garminHealthToObservations — RESTING_HR', () => {
     const observations = garminHealthToObservations(health, CALENDAR_DATE, RECEIVED_AT);
     const rhr = observations.find((o) => o.type === 'RESTING_HR');
     expect(rhr).toBeDefined();
-    if (rhr?.type !== 'RESTING_HR') return;
+    if (rhr?.type !== 'RESTING_HR') {
+      return;
+    }
     expect(rhr.valueBpm).toBe(48);
   });
 
@@ -223,7 +235,9 @@ describe('garminHealthToObservations — GARMIN_READINESS', () => {
     const readiness = observations.find((o) => o.type === 'GARMIN_READINESS');
 
     expect(readiness).toBeDefined();
-    if (readiness?.type !== 'GARMIN_READINESS') return;
+    if (readiness?.type !== 'GARMIN_READINESS') {
+      return;
+    }
     expect(readiness.score).toBe(72);
     expect(readiness.level).toBe('HIGH');
     expect(readiness.feedbackCode).toBe('READY');
@@ -242,7 +256,9 @@ describe('garminHealthToObservations — GARMIN_BATTERY', () => {
     const battery = observations.find((o) => o.type === 'GARMIN_BATTERY');
 
     expect(battery).toBeDefined();
-    if (battery?.type !== 'GARMIN_BATTERY') return;
+    if (battery?.type !== 'GARMIN_BATTERY') {
+      return;
+    }
     expect(battery.peakValue).toBe(85);
   });
 });

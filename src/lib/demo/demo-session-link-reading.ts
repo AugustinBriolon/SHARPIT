@@ -54,9 +54,13 @@ export function applyDemoSessionLinkReading(
   const activitiesKey = queryKeys.activities;
 
   queryClient.setQueryData<ClientPlannedSession[]>(sessionsKey, (prev) => {
-    if (!prev) return prev;
+    if (!prev) {
+      return prev;
+    }
     return prev.map((session) => {
-      if (session.id !== plannedSessionId) return session;
+      if (session.id !== plannedSessionId) {
+        return session;
+      }
       const activityFromCache = queryClient
         .getQueryData<ClientActivity[]>(activitiesKey)
         ?.find((item) => item.id === activityId);
@@ -81,11 +85,15 @@ export function applyDemoSessionLinkReading(
   });
 
   queryClient.setQueryData<ClientActivity[]>(activitiesKey, (prev) => {
-    if (!prev) return prev;
+    if (!prev) {
+      return prev;
+    }
     const sessions = queryClient.getQueryData<ClientPlannedSession[]>(sessionsKey);
     const linkedSession = sessions?.find((item) => item.id === plannedSessionId);
     return prev.map((activity) => {
-      if (activity.id !== activityId) return activity;
+      if (activity.id !== activityId) {
+        return activity;
+      }
       return {
         ...activity,
         narrativeAnalysis: reading.narrative,
@@ -112,7 +120,9 @@ export function scheduleDemoSessionLinkReading(
 ): void {
   const key = `${plannedSessionId}:${activityId}`;
   const existing = pendingTimers.get(key);
-  if (existing) clearTimeout(existing);
+  if (existing) {
+    clearTimeout(existing);
+  }
 
   const timer = setTimeout(() => {
     pendingTimers.delete(key);

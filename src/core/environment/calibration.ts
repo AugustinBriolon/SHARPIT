@@ -81,15 +81,21 @@ export function calibratedIntensity(
   activation: number,
   exponent: number,
 ): number {
-  if (rawIntensity <= activation) return 0;
+  if (rawIntensity <= activation) {
+    return 0;
+  }
   const span = 1 - activation;
-  if (span <= 0) return 0;
+  if (span <= 0) {
+    return 0;
+  }
   const normalized = clamp01((rawIntensity - activation) / span);
   return Math.pow(normalized, exponent);
 }
 
 export function isWithinImpactNeutralZone(compositeIntensity: number | null): boolean {
-  if (compositeIntensity === null) return true;
+  if ((compositeIntensity === undefined || compositeIntensity === null)) {
+    return true;
+  }
   return compositeIntensity < ENVIRONMENTAL_NEUTRAL_ZONE.compositeCeiling;
 }
 
@@ -101,7 +107,9 @@ export function demandMultiplierFromCalibratedIntensity(
   effectiveIntensity: number,
   maxScale: number,
 ): number {
-  if (effectiveIntensity <= 0) return 1;
+  if (effectiveIntensity <= 0) {
+    return 1;
+  }
   return roundImpact(1 + effectiveIntensity * maxScale);
 }
 
@@ -109,7 +117,9 @@ export function performanceRatioFromCalibratedIntensity(
   effectiveIntensity: number,
   maxPenalty: number,
 ): number {
-  if (effectiveIntensity <= 0) return 1;
+  if (effectiveIntensity <= 0) {
+    return 1;
+  }
   return Math.max(0.5, roundImpact(1 - effectiveIntensity * maxPenalty));
 }
 
@@ -117,6 +127,8 @@ export function benefitFromCalibratedIntensity(
   effectiveIntensity: number,
   maxBenefit: number,
 ): number {
-  if (effectiveIntensity <= 0) return 0;
+  if (effectiveIntensity <= 0) {
+    return 0;
+  }
   return roundImpact(effectiveIntensity * maxBenefit);
 }

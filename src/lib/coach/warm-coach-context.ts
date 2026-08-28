@@ -3,7 +3,9 @@
  * Call when opening Coach chat, Plan generator, or Plan adapter.
  */
 export function warmCoachContext(options?: { includeScenario?: boolean }): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') {
+    return;
+  }
   const includeScenario = options?.includeScenario === true;
   void fetch('/api/coach/prepare', {
     method: 'POST',

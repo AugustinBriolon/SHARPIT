@@ -1,4 +1,5 @@
 import type { SessionIntensity } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import type {
   EnduranceSport,
   EnduranceTarget,
@@ -111,6 +112,33 @@ function bandAround(centrePct: number, intensity: SessionIntensity) {
  * Returns a pace band when the sport is running, since pace is what the watch
  * guides best; callers fall back to heart rate when no threshold pace exists.
  */
+function defaultBikeTarget(
+  effective: SessionIntensity,
+  warnings: string[],
+): { target: EnduranceTarget; warnings: string[] } {
+  const centre = BIKE_POWER_ANCHOR_PCT[effective];
+  if (!isSet(centre)) {
+    return { target: { metric: 'none' }, warnings };
+  }
+  return {
+    target: { metric: 'power', ...bandAround(centre, effective) },
+    warnings,
+  };
+}
+
+function defaultPaceTarget(
+  sport: EnduranceSport,
+  effective: SessionIntensity,
+  warnings: string[],
+): { target: EnduranceTarget; warnings: string[] } {
+  const anchors = sport === 'SWIM' ? SWIM_SPEED_ANCHOR_PCT : RUN_SPEED_ANCHOR_PCT;
+  const centre = anchors[effective];
+  if (!isSet(centre)) {
+    return { target: { metric: 'none' }, warnings };
+  }
+  return { target: { metric: 'pace', ...bandAround(centre, effective) }, warnings };
+}
+
 export function defaultTargetForIntensity(
   sport: EnduranceSport,
   intensity: SessionIntensity | null,
@@ -123,19 +151,10 @@ export function defaultTargetForIntensity(
   }
 
   if (sport === 'BIKE') {
-    const centre = BIKE_POWER_ANCHOR_PCT[effective];
-    if (centre == null) return { target: { metric: 'none' }, warnings };
-    return {
-      target: { metric: 'power', ...bandAround(centre, effective) },
-      warnings,
-    };
+    return defaultBikeTarget(effective, warnings);
   }
 
-  const anchors = sport === 'SWIM' ? SWIM_SPEED_ANCHOR_PCT : RUN_SPEED_ANCHOR_PCT;
-  const centre = anchors[effective];
-  if (centre == null) return { target: { metric: 'none' }, warnings };
-
-  return { target: { metric: 'pace', ...bandAround(centre, effective) }, warnings };
+  return defaultPaceTarget(sport, effective, warnings);
 }
 
 /**
@@ -154,8 +173,12 @@ function anchorTableFor(
   sport: EnduranceSport,
   metric: 'pace' | 'hr' | 'power',
 ): Partial<Record<SessionIntensity, number>> {
-  if (metric === 'power') return BIKE_POWER_ANCHOR_PCT;
-  if (metric === 'hr') return RUN_HR_ANCHOR_PCT;
+  if (metric === 'power') {
+    return BIKE_POWER_ANCHOR_PCT;
+  }
+  if (metric === 'hr') {
+    return RUN_HR_ANCHOR_PCT;
+  }
   return sport === 'SWIM' ? SWIM_SPEED_ANCHOR_PCT : RUN_SPEED_ANCHOR_PCT;
 }
 
@@ -163,25 +186,34 @@ export function intensityFromTarget(
   sport: EnduranceSport,
   target: EnduranceTarget,
 ): SessionIntensity | null {
-  if (target.metric === 'none' || target.metric === 'cadence') return null;
+  if (target.metric === 'none' || target.metric === 'cadence') {
+    return null;
+  }
 
   const anchors = anchorTableFor(sport, target.metric);
 
   // An absolute override carries no percentages, and neither does a hand-typed band.
-  if (target.pctMin == null || target.pctMax == null) return null;
+  if (!isSet(target.pctMin) || !isSet(target.pctMax)) {
+    return null;
+  }
 
   const centre = (target.pctMin + target.pctMax) / 2;
   for (const [intensity, anchor] of Object.entries(anchors)) {
-    if (anchor != null && Math.abs(anchor - centre) < 0.01) return intensity as SessionIntensity;
+    if (isSet(anchor) && Math.abs(anchor - centre) < 0.01) {
+      return intensity as SessionIntensity;
+    }
   }
   return null;
 }
 
 /** Heart-rate equivalent of `defaultTargetForIntensity`, used when pace is unavailable. */
 export function defaultHrTargetForIntensity(intensity: SessionIntensity | null): EnduranceTarget {
-  const effective = intensity === 'RACE' || intensity == null ? 'THRESHOLD' : intensity;
+  const effective =
+    intensity === 'RACE' || intensity === undefined || intensity === null ? 'THRESHOLD' : intensity;
   const centre = RUN_HR_ANCHOR_PCT[effective];
-  if (centre == null) return { metric: 'none' };
+  if (centre === undefined || centre === null) {
+    return { metric: 'none' };
+  }
   return {
     metric: 'hr',
     hrRef: 'lthr',
@@ -199,6 +231,38 @@ const UNUSABLE_BAND_WARNING =
 
 type Bounds = { easy: number; hard: number };
 
+function mergeBothOverrides(easyOverride: number, hardOverride: number): Bounds {
+  return { easy: easyOverride, hard: hardOverride };
+}
+
+function mergeDerivedBounds(target: EnduranceTarget, derived: Bounds): Bounds {
+  return {
+    easy: target.absEasy ?? derived.easy,
+    hard: target.absHard ?? derived.hard,
+  };
+}
+
+function mergeSingleOverride(
+  target: EnduranceTarget,
+  derive: () => Bounds | null,
+  warnings: string[],
+): Bounds | null {
+  const easyOverride = target.absEasy ?? null;
+  const hardOverride = target.absHard ?? null;
+  if (isSet(easyOverride) && isSet(hardOverride)) {
+    return mergeBothOverrides(easyOverride, hardOverride);
+  }
+
+  const derived = derive();
+  if (!derived) {
+    if (isSet(easyOverride) || isSet(hardOverride)) {
+      warnings.push(UNUSABLE_BAND_WARNING);
+    }
+    return null;
+  }
+  return mergeDerivedBounds(target, derived);
+}
+
 /**
  * Merge the athlete's absolute overrides with the relative band, side by side.
  * A single-sided override wins on its own side and keeps the derived value on
@@ -209,18 +273,7 @@ function mergeBounds(
   derive: () => Bounds | null,
   warnings: string[],
 ): Bounds | null {
-  const easyOverride = target.absEasy ?? null;
-  const hardOverride = target.absHard ?? null;
-  if (easyOverride != null && hardOverride != null) {
-    return { easy: easyOverride, hard: hardOverride };
-  }
-
-  const derived = derive();
-  if (!derived) {
-    if (easyOverride != null || hardOverride != null) warnings.push(UNUSABLE_BAND_WARNING);
-    return null;
-  }
-  return { easy: easyOverride ?? derived.easy, hard: hardOverride ?? derived.hard };
+  return mergeSingleOverride(target, derive, warnings);
 }
 
 /** Relative bounds are unusable without both percentages — say so rather than dropping silently. */
@@ -229,7 +282,12 @@ function relativeBand(
   compute: (pctMin: number, pctMax: number) => Bounds,
   warnings: string[],
 ): Bounds | null {
-  if (target.pctMin == null || target.pctMax == null) {
+  if (
+    target.pctMin === undefined ||
+    target.pctMin === null ||
+    target.pctMax === undefined ||
+    target.pctMax === null
+  ) {
     warnings.push(UNUSABLE_BAND_WARNING);
     return null;
   }
@@ -247,7 +305,7 @@ function resolvePace(
     () => {
       const threshold =
         sport === 'SWIM' ? thresholds.swimCssSecPer100m : thresholds.runThresholdPaceSecPerKm;
-      if (threshold == null || threshold <= 0) {
+      if (threshold === undefined || threshold === null || threshold <= 0) {
         warnings.push(
           sport === 'SWIM'
             ? 'Vitesse critique (CSS) inconnue — cible allure impossible.'
@@ -267,7 +325,9 @@ function resolvePace(
     },
     warnings,
   );
-  if (!bounds) return null;
+  if (!bounds) {
+    return null;
+  }
 
   const paceSecSlow = Math.max(bounds.easy, bounds.hard);
   const paceSecFast = Math.min(bounds.easy, bounds.hard);
@@ -292,8 +352,12 @@ function resolvePace(
 
 function hrReference(target: EnduranceTarget, thresholds: AthleteThresholds): number | null {
   const ref = target.hrRef ?? 'auto';
-  if (ref === 'maxhr') return thresholds.maxHr;
-  if (ref === 'lthr') return thresholds.lthr;
+  if (ref === 'maxhr') {
+    return thresholds.maxHr;
+  }
+  if (ref === 'lthr') {
+    return thresholds.lthr;
+  }
   return thresholds.lthr ?? thresholds.maxHr;
 }
 
@@ -306,7 +370,7 @@ function resolveHr(
     target,
     () => {
       const reference = hrReference(target, thresholds);
-      if (reference == null || reference <= 0) {
+      if (reference === undefined || reference === null || reference <= 0) {
         warnings.push('FC seuil et FC max inconnues — cible FC impossible.');
         return null;
       }
@@ -321,7 +385,9 @@ function resolveHr(
     },
     warnings,
   );
-  if (!bounds) return null;
+  if (!bounds) {
+    return null;
+  }
 
   return {
     metric: 'hr',
@@ -339,7 +405,7 @@ function resolvePower(
     target,
     () => {
       const ftp = thresholds.ftpW;
-      if (ftp == null || ftp <= 0) {
+      if (ftp === undefined || ftp === null || ftp <= 0) {
         warnings.push('FTP inconnue — cible puissance impossible.');
         return null;
       }
@@ -351,7 +417,9 @@ function resolvePower(
     },
     warnings,
   );
-  if (!bounds) return null;
+  if (!bounds) {
+    return null;
+  }
 
   return {
     metric: 'power',
@@ -364,7 +432,7 @@ function resolvePower(
 function resolveCadence(target: EnduranceTarget, warnings: string[]): ResolvedTarget | null {
   const min = target.absEasy;
   const max = target.absHard;
-  if (min == null || max == null) {
+  if (min === undefined || min === null || max === undefined || max === null) {
     warnings.push(UNUSABLE_BAND_WARNING);
     return null;
   }
@@ -388,10 +456,15 @@ export function resolveEnduranceTarget(
   const warnings: string[] = [];
   let resolved: ResolvedTarget | null = null;
 
-  if (target.metric === 'pace') resolved = resolvePace(target, thresholds, sport, warnings);
-  else if (target.metric === 'hr') resolved = resolveHr(target, thresholds, warnings);
-  else if (target.metric === 'power') resolved = resolvePower(target, thresholds, warnings);
-  else if (target.metric === 'cadence') resolved = resolveCadence(target, warnings);
+  if (target.metric === 'pace') {
+    resolved = resolvePace(target, thresholds, sport, warnings);
+  } else if (target.metric === 'hr') {
+    resolved = resolveHr(target, thresholds, warnings);
+  } else if (target.metric === 'power') {
+    resolved = resolvePower(target, thresholds, warnings);
+  } else if (target.metric === 'cadence') {
+    resolved = resolveCadence(target, warnings);
+  }
 
   return { resolved: resolved ?? { metric: 'none' }, warnings };
 }

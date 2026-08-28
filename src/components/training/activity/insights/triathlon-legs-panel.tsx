@@ -29,7 +29,9 @@ const kindToActivityType: Record<'swim' | 'bike' | 'run', ActivityType> = {
 };
 
 function formatLegPace(leg: MultisportLeg): string | null {
-  if (leg.avgSpeedMs == null || leg.avgSpeedMs <= 0) return null;
+  if (leg.avgSpeedMs === null || leg.avgSpeedMs <= 0) {
+    return null;
+  }
   switch (leg.kind) {
     case 'swim':
       return formatSwimPace(100 / leg.avgSpeedMs);
@@ -48,11 +50,19 @@ function SportLegRow({ leg }: { leg: MultisportLeg }) {
   const pace = formatLegPace(leg);
   const metrics: string[] = [];
 
-  if (leg.distanceM != null) metrics.push(formatDistance(leg.distanceM));
+  if (leg.distanceM !== null) {
+    metrics.push(formatDistance(leg.distanceM));
+  }
   metrics.push(formatDuration(leg.durationSec));
-  if (pace) metrics.push(pace);
-  if (leg.avgHr != null) metrics.push(`FC ${leg.avgHr}`);
-  if (leg.elevationM != null && leg.elevationM > 0) metrics.push(`D+${leg.elevationM} m`);
+  if (pace) {
+    metrics.push(pace);
+  }
+  if (leg.avgHr !== null) {
+    metrics.push(`FC ${leg.avgHr}`);
+  }
+  if (leg.elevationM !== null && leg.elevationM > 0) {
+    metrics.push(`D+${leg.elevationM} m`);
+  }
 
   return (
     <div
@@ -109,7 +119,9 @@ function TransitionRow({ leg }: { leg: MultisportLeg }) {
 }
 
 export function TriathlonLegsPanel({ legs }: { legs: MultisportLeg[] }) {
-  if (legs.length === 0) return null;
+  if (legs.length === 0) {
+    return null;
+  }
 
   const transitionTotal = totalTransitionSec(legs);
 

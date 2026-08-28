@@ -7,6 +7,7 @@
  */
 
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import { isSet } from '@/lib/util/value';
 
 /** Bump when AthleteSnapshot's shape changes incompatibly with older persisted entries. */
 export const OFFLINE_SNAPSHOT_SCHEMA_VERSION = 1;
@@ -32,17 +33,22 @@ export type SnapshotInvalidReason =
 export type SnapshotValidationResult =
   { readonly valid: true } | { readonly valid: false; readonly reason: SnapshotInvalidReason };
 
+function isPersistedEntryRecord(entry: unknown): entry is Record<string, unknown> {
+  return typeof entry === 'object' && isSet(entry);
+}
+
 function hasPersistedEntryShape(entry: unknown): entry is PersistedSnapshotEntry {
-  if (typeof entry !== 'object' || entry === null) return false;
-  const candidate = entry as Record<string, unknown>;
+  if (!isPersistedEntryRecord(entry)) {
+    return false;
+  }
   return (
-    typeof candidate.schemaVersion === 'number' &&
-    typeof candidate.ownerKey === 'string' &&
-    typeof candidate.snapshot === 'object' &&
-    candidate.snapshot !== null &&
-    typeof candidate.generatedAt === 'string' &&
-    typeof candidate.freshnessComputedAt === 'string' &&
-    typeof candidate.cachedAt === 'string'
+    typeof entry.schemaVersion === 'number' &&
+    typeof entry.ownerKey === 'string' &&
+    typeof entry.snapshot === 'object' &&
+    isSet(entry.snapshot) &&
+    typeof entry.generatedAt === 'string' &&
+    typeof entry.freshnessComputedAt === 'string' &&
+    typeof entry.cachedAt === 'string'
   );
 }
 
@@ -50,7 +56,9 @@ export function validatePersistedSnapshot(
   entry: unknown,
   context: { readonly currentOwnerKey: string; readonly now: Date },
 ): SnapshotValidationResult {
-  if (!hasPersistedEntryShape(entry)) return { valid: false, reason: 'MALFORMED' };
+  if (!hasPersistedEntryShape(entry)) {
+    return { valid: false, reason: 'MALFORMED' };
+  }
   if (entry.schemaVersion !== OFFLINE_SNAPSHOT_SCHEMA_VERSION) {
     return { valid: false, reason: 'SCHEMA_MISMATCH' };
   }
@@ -59,10 +67,14 @@ export function validatePersistedSnapshot(
   }
 
   const cachedAtMs = new Date(entry.cachedAt).getTime();
-  if (!Number.isFinite(cachedAtMs)) return { valid: false, reason: 'MALFORMED' };
+  if (!Number.isFinite(cachedAtMs)) {
+    return { valid: false, reason: 'MALFORMED' };
+  }
 
   const ageHours = (context.now.getTime() - cachedAtMs) / 3_600_000;
-  if (ageHours > OFFLINE_SNAPSHOT_MAX_AGE_HOURS) return { valid: false, reason: 'EXPIRED' };
+  if (ageHours > OFFLINE_SNAPSHOT_MAX_AGE_HOURS) {
+    return { valid: false, reason: 'EXPIRED' };
+  }
 
   return { valid: true };
 }

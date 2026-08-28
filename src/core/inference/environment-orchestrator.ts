@@ -81,6 +81,110 @@ export function rebuildEnvironmentalTwinStateFromRecords(input: {
   return buildTwinState(input.trainingDayId, todayEnvironment, computedAt);
 }
 
+async function refreshEnvironmentalRecordsIfNeeded(
+  deps: EnvironmentOrchestratorDeps,
+  input: {
+    athleteId: string;
+    trainingDayId: string;
+    location: GeoLocation;
+    forceRefresh: boolean;
+    records: readonly EnvironmentalObservationRecord[];
+  },
+): Promise<readonly EnvironmentalObservationRecord[]> {
+  if (!input.forceRefresh && input.records.length > 0) {
+    return input.records;
+  }
+
+  const { gte: from, lte: to } = approximateTrainingDayUtcRange(input.trainingDayId);
+  const outcome = await fetchAndIngestEnvironmentalRecords(deps.providerRegistry, {
+    athleteId: input.athleteId,
+    location: input.location,
+    from,
+    to,
+    trainingDayId: input.trainingDayId,
+  });
+  if (outcome.records.length === 0) {
+    return input.records;
+  }
+
+  await deps.observationRepo.saveMany(outcome.records);
+  return deps.observationRepo.findActiveForTrainingDay(input.athleteId, input.trainingDayId);
+}
+
+function buildEnvironmentDecisionRecord(input: {
+  recordId: string;
+  athleteId: string;
+  trainingDayId: string;
+  twinState: EnvironmentalTwinState;
+  records: readonly EnvironmentalObservationRecord[];
+  location: GeoLocation;
+  computedAt: Date;
+}): DecisionRecord {
+  return {
+    id: input.recordId,
+    athleteId: input.athleteId,
+    trainingDayId: input.trainingDayId,
+    modelId: 'environment-v1.1',
+    modelVersion: 'v1.1',
+    confidence: input.twinState.meta.confidence,
+    signals: {
+      observationCount: input.records.length,
+      dataCompleteness: input.twinState.meta.dataCompleteness,
+    },
+    stateUpdate: {
+      stress: input.twinState.stress,
+      impact: input.twinState.impact,
+      meta: {
+        ...input.twinState.meta,
+        computedAt: input.twinState.meta.computedAt.toISOString(),
+      },
+    } as unknown as Record<string, unknown>,
+    decision: {
+      trainingImpact:
+        input.twinState.impact.confidence > 0 ? 'ENVIRONMENT_ACTIVE' : 'ENVIRONMENT_SUPPRESSED',
+    },
+    recommendation: {
+      hydrationDemandMultiplier: input.twinState.impact.hydration.demandMultiplier,
+    } as unknown as Record<string, unknown>,
+    inputSummary: {
+      trainingDayId: input.trainingDayId,
+      observationRecordIds: input.twinState.meta.observationRecordIds,
+      location: input.location,
+    },
+    computedAt: input.computedAt,
+    createdAt: input.computedAt,
+  };
+}
+
+async function persistEnvironmentInferenceOutputs(
+  deps: EnvironmentOrchestratorDeps,
+  input: {
+    athleteId: string;
+    record: DecisionRecord;
+    twinState: EnvironmentalTwinState;
+    recordId: string;
+  },
+): Promise<{ decisionRecordId: string | null; digitalTwinUpdated: boolean }> {
+  let decisionRecordId: string | null = input.recordId;
+  let digitalTwinUpdated = false;
+
+  try {
+    await deps.decisionRecordRepo.save(input.record);
+  } catch (err) {
+    console.error('[EnvironmentOrchestrator] Failed to persist DecisionRecord:', err);
+    decisionRecordId = null;
+  }
+
+  try {
+    await deps.digitalTwinRepo.updateEnvironmentalState(input.athleteId, input.twinState);
+    digitalTwinUpdated = true;
+  } catch (err) {
+    console.error('[EnvironmentOrchestrator] Failed to update Digital Twin:', err);
+  }
+
+  return { decisionRecordId, digitalTwinUpdated };
+}
+
 export class EnvironmentInferenceOrchestrator {
   constructor(private readonly deps: EnvironmentOrchestratorDeps) {}
 
@@ -94,28 +198,17 @@ export class EnvironmentInferenceOrchestrator {
     const location = await this.deps.resolveLocation(athleteId, trainingDayId);
     const referenceAt = new Date(`${trainingDayId}T12:00:00.000Z`);
 
-    let records = await this.deps.observationRepo.findActiveForTrainingDay(
+    const initialRecords = await this.deps.observationRepo.findActiveForTrainingDay(
       athleteId,
       trainingDayId,
     );
-
-    if (forceRefresh || records.length === 0) {
-      const { gte: from, lte: to } = approximateTrainingDayUtcRange(trainingDayId);
-      const outcome = await fetchAndIngestEnvironmentalRecords(this.deps.providerRegistry, {
-        athleteId,
-        location,
-        from,
-        to,
-        trainingDayId,
-      });
-      if (outcome.records.length > 0) {
-        await this.deps.observationRepo.saveMany(outcome.records);
-        records = await this.deps.observationRepo.findActiveForTrainingDay(
-          athleteId,
-          trainingDayId,
-        );
-      }
-    }
+    const records = await refreshEnvironmentalRecordsIfNeeded(this.deps, {
+      athleteId,
+      trainingDayId,
+      location,
+      forceRefresh,
+      records: initialRecords,
+    });
 
     const twinState = rebuildEnvironmentalTwinStateFromRecords({
       athleteId,
@@ -127,57 +220,19 @@ export class EnvironmentInferenceOrchestrator {
     });
 
     const recordId = randomUUID();
-    let decisionRecordId: string | null = recordId;
-    let digitalTwinUpdated = false;
-
-    const record: DecisionRecord = {
-      id: recordId,
+    const record = buildEnvironmentDecisionRecord({
+      recordId,
       athleteId,
       trainingDayId,
-      modelId: 'environment-v1.1',
-      modelVersion: 'v1.1',
-      confidence: twinState.meta.confidence,
-      signals: {
-        observationCount: records.length,
-        dataCompleteness: twinState.meta.dataCompleteness,
-      },
-      stateUpdate: {
-        stress: twinState.stress,
-        impact: twinState.impact,
-        meta: {
-          ...twinState.meta,
-          computedAt: twinState.meta.computedAt.toISOString(),
-        },
-      } as unknown as Record<string, unknown>,
-      decision: {
-        trainingImpact:
-          twinState.impact.confidence > 0 ? 'ENVIRONMENT_ACTIVE' : 'ENVIRONMENT_SUPPRESSED',
-      },
-      recommendation: {
-        hydrationDemandMultiplier: twinState.impact.hydration.demandMultiplier,
-      } as unknown as Record<string, unknown>,
-      inputSummary: {
-        trainingDayId,
-        observationRecordIds: twinState.meta.observationRecordIds,
-        location,
-      },
+      twinState,
+      records,
+      location,
       computedAt,
-      createdAt: computedAt,
-    };
-
-    try {
-      await this.deps.decisionRecordRepo.save(record);
-    } catch (err) {
-      console.error('[EnvironmentOrchestrator] Failed to persist DecisionRecord:', err);
-      decisionRecordId = null;
-    }
-
-    try {
-      await this.deps.digitalTwinRepo.updateEnvironmentalState(athleteId, twinState);
-      digitalTwinUpdated = true;
-    } catch (err) {
-      console.error('[EnvironmentOrchestrator] Failed to update Digital Twin:', err);
-    }
+    });
+    const { decisionRecordId, digitalTwinUpdated } = await persistEnvironmentInferenceOutputs(
+      this.deps,
+      { athleteId, record, twinState, recordId },
+    );
 
     return {
       athleteId,
@@ -216,7 +271,9 @@ export class EnvironmentInferenceOrchestrator {
     trainingDayId: string,
   ): Promise<EnvironmentInferenceResult | null> {
     const cached = await this.deps.digitalTwinRepo.getEnvironmentalState(athleteId);
-    if (!cached || cached.meta.trainingDayId !== trainingDayId) return null;
+    if (!cached || cached.meta.trainingDayId !== trainingDayId) {
+      return null;
+    }
 
     return {
       athleteId,

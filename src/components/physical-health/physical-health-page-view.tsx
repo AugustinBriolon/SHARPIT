@@ -1,44 +1,17 @@
 'use client';
 
-import {
-  CorpsDisclaimer,
-  CorpsDivider,
-  CorpsEmptyState,
-  CorpsSectionHeader,
-  CorpsStatCard,
-} from '@/components/corps/corps-ui';
-import { HeartPulse, Plus } from 'lucide-react';
-import Link from 'next/link';
+import { CorpsDisclaimer } from '@/components/corps/corps-ui';
 import { useState } from 'react';
-
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import type { PhysicalHealthViewModel } from '@/core/presentation/physical-health-view-model';
 import { usePhysicalNotes } from '@/hooks/use-physical';
-import { corpsToneFromPhysicalSeverity } from '@/lib/health/health-status';
-import type { CorpsTone } from '@/lib/ui/metric-tone';
 import type { ClientPhysicalNote } from '@/lib/query/types';
-import { PhysicalHealthConditionCardView } from './cards/condition-card';
 import { PhysicalNoteDialog } from './dialogs/physical-note-dialog';
+import { aggregateDisplayValues } from '@/components/physical-health/physical-health-page-helpers';
+import { PhysicalHealthPageHeader } from '@/components/physical-health/physical-health-page-header';
+import { PhysicalHealthConditionSections } from '@/components/physical-health/physical-health-condition-sections';
+import { PhysicalHealthStatsGrid } from '@/components/physical-health/physical-health-page-sections';
 
 type DialogState = { mode: 'create' } | { mode: 'edit'; note: ClientPhysicalNote } | null;
-
-function confidenceToneClass(tone: string): 'ok' | 'watch' | 'neutral' {
-  if (tone === 'good') return 'ok';
-  if (tone === 'warn') return 'watch';
-  return 'neutral';
-}
-
-function ConditionCardSkeleton() {
-  return (
-    <div className="analysis-panel rounded-analysis-lg min-h-48 space-y-3 px-5 py-5">
-      <Skeleton className="h-4 w-32 rounded-full border-0" />
-      <Skeleton className="h-4 w-full rounded-full border-0" />
-      <Skeleton className="h-4 w-[83%] rounded-full border-0" />
-      <Skeleton className="mt-2 h-8 w-28 rounded-lg" />
-    </div>
-  );
-}
 
 export function PhysicalHealthPageView({
   embedded = false,
@@ -52,155 +25,35 @@ export function PhysicalHealthPageView({
   const notesQuery = usePhysicalNotes();
   const [dialog, setDialog] = useState<DialogState>(null);
 
-  const headerAction = (
-    <Button
-      className="min-h-11 px-4 lg:min-h-9 lg:px-3.5"
-      disabled={loading}
-      size="sm"
-      variant="highlight"
-      onClick={() => setDialog({ mode: 'create' })}
-    >
-      <Plus className="size-4" />
-      Nouvelle condition
-    </Button>
-  );
-
   function openLegacyCheckin(legacyNoteId: string) {
     const note = notesQuery.data?.find((n) => n.id === legacyNoteId);
-    if (note) setDialog({ mode: 'edit', note });
+    if (note) {
+      setDialog({ mode: 'edit', note });
+    }
   }
 
-  const { aggregate, activeConditions, resolvedConditions } = viewModel;
-  const hasAny = !loading && (activeConditions.length > 0 || resolvedConditions.length > 0);
-
-  let capacityValue = '';
-  if (!loading) capacityValue = aggregate.trainingBlocked ? 'Limitée' : 'OK';
-
-  let verdictValue = '';
-  if (!loading) {
-    verdictValue = aggregate.maxSeverity > 0 ? `${aggregate.maxSeverity.toFixed(1)}/10` : '—';
-  }
-
-  let activesTone: CorpsTone = 'ok';
-  if (!loading && aggregate.activeCount > 0) {
-    activesTone = corpsToneFromPhysicalSeverity(aggregate.maxSeverity);
-  }
+  const display = aggregateDisplayValues(loading, viewModel.aggregate);
 
   return (
     <div aria-busy={loading || undefined} className="space-y-4">
-      {!embedded && (
-        <CorpsSectionHeader
-          action={headerAction}
-          description="État inféré à partir de tes observations — symptômes et capacité fonctionnelle sont distincts."
-          label="Progression"
-          title="Santé physique"
-        />
-      )}
+      <PhysicalHealthPageHeader
+        embedded={embedded}
+        loading={loading}
+        onCreate={() => setDialog({ mode: 'create' })}
+      />
 
-      {embedded && (
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            Conditions actives, capacité d&apos;entraînement et évolution inférées.
-          </p>
-          {headerAction}
-        </div>
-      )}
+      <PhysicalHealthStatsGrid
+        aggregate={viewModel.aggregate}
+        display={display}
+        loading={loading}
+      />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <CorpsStatCard
-          label="Actives"
-          loading={loading}
-          tone={activesTone}
-          value={String(aggregate.activeCount)}
-        />
-        <CorpsStatCard
-          label="Capacité"
-          loading={loading}
-          sublabel={loading ? undefined : aggregate.aggregateTrainingCapacityLabel}
-          tone={!loading && aggregate.trainingBlocked ? 'attention' : 'ok'}
-          value={capacityValue}
-        />
-        <CorpsStatCard
-          label="Verdict modèle"
-          loading={loading}
-          sublabel={loading ? undefined : aggregate.decisionLabel}
-          tone={!loading && aggregate.trainingBlocked ? 'watch' : 'neutral'}
-          value={verdictValue}
-        />
-        <CorpsStatCard
-          label="Confiance"
-          loading={loading}
-          tone={loading ? 'neutral' : confidenceToneClass(aggregate.confidenceTone)}
-          value={loading ? '' : `${aggregate.confidencePct}%`}
-        />
-      </div>
-
-      {!loading && !hasAny && viewModel.emptyState ? (
-        <CorpsEmptyState
-          description={viewModel.emptyState.description ?? ''}
-          icon={HeartPulse}
-          title={viewModel.emptyState.title}
-          action={
-            viewModel.emptyState.action ? (
-              <Link
-                className="text-primary inline-flex min-h-11 items-center text-sm font-medium hover:underline lg:min-h-9"
-                href={viewModel.emptyState.action.href}
-              >
-                {viewModel.emptyState.action.label}
-              </Link>
-            ) : undefined
-          }
-        />
-      ) : null}
-
-      {loading ? (
-        <section className="space-y-3">
-          <h3 className="text-section-title text-base">Conditions actives</h3>
-          <div className="grid gap-3 md:grid-cols-2">
-            <ConditionCardSkeleton />
-            <ConditionCardSkeleton />
-          </div>
-        </section>
-      ) : null}
-
-      {!loading && activeConditions.length > 0 ? (
-        <section className="space-y-3">
-          <h3 className="text-section-title text-base">Conditions actives</h3>
-          <div className="grid gap-3 md:grid-cols-2">
-            {activeConditions.map((c) => (
-              <PhysicalHealthConditionCardView
-                key={c.conditionId}
-                compact={embedded}
-                condition={c}
-                onEditLegacy={openLegacyCheckin}
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {!loading && resolvedConditions.length > 0 ? (
-        <>
-          <CorpsDivider count={resolvedConditions.length} label="Historique" />
-          <section className="space-y-3">
-            <h3 className="text-section-title text-muted-foreground text-base">
-              Historique résolu
-            </h3>
-            <p className="text-muted-foreground text-sm">
-              Le Digital Twin ne supprime jamais une condition — l&apos;historique reste disponible.
-            </p>
-            <div className="grid gap-3 md:grid-cols-2">
-              {resolvedConditions.map((c) => (
-                <PhysicalHealthConditionCardView
-                  key={c.conditionId}
-                  condition={c}
-                  onEditLegacy={openLegacyCheckin}
-                />
-              ))}
-            </div>
-          </section>
-        </>
-      ) : null}
+      <PhysicalHealthConditionSections
+        embedded={embedded}
+        loading={loading}
+        viewModel={viewModel}
+        onEditLegacy={openLegacyCheckin}
+      />
 
       <CorpsDisclaimer title="Aide à la décision, pas un avis médical">
         {viewModel.medicalDisclaimer}

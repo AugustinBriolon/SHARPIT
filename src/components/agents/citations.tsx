@@ -201,7 +201,9 @@ export function Citations({
   const currentOpen = open ?? internalOpen;
   const setOpen = useCallback(
     (next: boolean) => {
-      if (open === undefined) setInternalOpen(next);
+      if (open === undefined) {
+        setInternalOpen(next);
+      }
       onOpenChange?.(next);
     },
     [onOpenChange, open],

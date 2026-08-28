@@ -25,7 +25,9 @@ export function Magnetic({ children, strength = 0.35, className }: MagneticProps
 
   const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const el = ref.current;
-    if (!el || !enabled) return;
+    if (!el || !enabled) {
+      return;
+    }
     const rect = el.getBoundingClientRect();
     x.set((e.clientX - rect.left - rect.width / 2) * strength);
     y.set((e.clientY - rect.top - rect.height / 2) * strength);

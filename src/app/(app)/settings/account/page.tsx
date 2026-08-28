@@ -25,7 +25,9 @@ async function ProfilePanelWithData() {
     const athleteId = await getCurrentAthleteId();
     athleteProfile = await getAthleteProfile(athleteId);
   } catch (error) {
-    if (isHangingPromiseRejection(error)) throw error;
+    if (isHangingPromiseRejection(error)) {
+      throw error;
+    }
     console.error('[settings/account] getAthleteProfile failed', error);
     loadError =
       'Chargement du profil impossible. Réessaie avant d’enregistrer — un enregistrement à vide effacerait tes données.';

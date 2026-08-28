@@ -8,7 +8,9 @@ import { useBackTarget } from '@/hooks/use-back-target';
 import { cn } from '@/lib/utils';
 
 function canUseHistoryBack(): boolean {
-  if (typeof performance === 'undefined') return false;
+  if (typeof performance === 'undefined') {
+    return false;
+  }
   const entry = performance.getEntriesByType('navigation')[0] as
     PerformanceNavigationTiming | undefined;
   // After a full reload the browser history stack is shallow — prefer Link.
@@ -80,7 +82,9 @@ function DynamicBackLink({
       label={target.label}
       showOnDesktop={showOnDesktop}
       onClick={(event) => {
-        if (!preferHistoryBack) return;
+        if (!preferHistoryBack) {
+          return;
+        }
         event.preventDefault();
         router.back();
       }}

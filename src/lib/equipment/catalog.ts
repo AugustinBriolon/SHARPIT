@@ -236,9 +236,15 @@ export function catalogItemsForSport(
   strengthVenue: StrengthVenue | null,
 ): EquipmentCatalogItem[] {
   return EQUIPMENT_CATALOG.filter((item) => {
-    if (item.sport !== sport) return false;
-    if (!item.requiresStrengthVenue) return true;
-    if (strengthVenue == null) return false;
+    if (item.sport !== sport) {
+      return false;
+    }
+    if (!item.requiresStrengthVenue) {
+      return true;
+    }
+    if ((strengthVenue === undefined || strengthVenue === null)) {
+      return false;
+    }
     return item.requiresStrengthVenue.includes(strengthVenue as 'home' | 'both');
   });
 }

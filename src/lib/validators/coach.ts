@@ -162,7 +162,9 @@ const nullableAdaptString = z.preprocess(
 );
 
 const nullableAdaptInt = z.preprocess((v) => {
-  if (v === null || v === undefined || v === '') return null;
+  if ((v === undefined || v === null) || v === undefined || v === '') {
+    return null;
+  }
   const n = Number(v);
   return Number.isFinite(n) ? Math.round(n) : null;
 }, z.number().int().nullable());

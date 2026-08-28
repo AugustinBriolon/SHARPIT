@@ -36,13 +36,17 @@ export function CreateHikeTripDialog({
   useDesktopAutofocus(nameRef, open);
 
   useEffect(() => {
-    if (!open) setName('');
+    if (!open) {
+      setName('');
+    }
   }, [open]);
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     const trimmed = name.trim();
-    if (!trimmed) return;
+    if (!trimmed) {
+      return;
+    }
 
     create.mutate(
       { name: trimmed, activityIds },

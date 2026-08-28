@@ -8,6 +8,7 @@
  */
 
 import { runAdaptationModel } from '@/core/inference/adaptation/model';
+import { isSet } from '@/lib/util/value';
 import type { AdaptationModelOutput } from '@/core/inference/adaptation/types';
 import type {
   AdaptationBenchmarkScenario,
@@ -105,7 +106,7 @@ function evaluateExpectations(
   results.push(evaluateValue('verdict', exp.verdict, decision.verdict));
   results.push(evaluateRange('confidenceRange', exp.confidenceRange, adaptationState.confidence));
 
-  if (adaptationState.adaptationIndex !== null) {
+  if (isSet(adaptationState.adaptationIndex)) {
     results.push(
       evaluateRange(
         'adaptationIndexRange',

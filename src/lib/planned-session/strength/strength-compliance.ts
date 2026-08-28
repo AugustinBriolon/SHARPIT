@@ -7,6 +7,7 @@
  * much volume — and this score is the floor the AI verdict may not go under.
  */
 import { parseExercisePhrase } from '@/lib/exercises/lexicon';
+import { isSet } from '@/lib/util/value';
 import type { SessionAnalysis } from '@/lib/validators/coach';
 import { normalizeExerciseKey } from '@/lib/exercises/normalize';
 
@@ -41,22 +42,49 @@ const WEIGHT_VOLUME = 0.3;
 
 function workUnits(set: ComparableStrengthSet): number {
   const perSet =
-    set.durationSec != null && set.durationSec > 0
+    isSet(set.durationSec) && set.durationSec > 0
       ? set.durationSec
       : Math.max(1, set.reps) * SECONDS_PER_REP;
   return Math.max(1, set.sets) * perSet;
 }
 
 function similarity(a: string, b: string): number {
-  if (normalizeExerciseKey(a) === normalizeExerciseKey(b)) return 1;
+  if (normalizeExerciseKey(a) === normalizeExerciseKey(b)) {
+    return 1;
+  }
   const left = new Set(parseExercisePhrase(a).concepts);
   const right = new Set(parseExercisePhrase(b).concepts);
-  if (left.size === 0 || right.size === 0) return 0;
+  if (left.size === 0 || right.size === 0) {
+    return 0;
+  }
   let shared = 0;
   for (const concept of left) {
-    if (right.has(concept)) shared += 1;
+    if (right.has(concept)) {
+      shared += 1;
+    }
   }
   return shared / Math.min(left.size, right.size);
+}
+
+function findBestRealizedMatch(
+  plannedSet: ComparableStrengthSet,
+  availableRealized: Array<{ set: ComparableStrengthSet; index: number }>,
+  usedRealized: Set<number>,
+): { index: number; score: number } | null {
+  let best: { index: number; score: number } | null = null;
+  for (const candidate of availableRealized) {
+    if (usedRealized.has(candidate.index)) {
+      continue;
+    }
+    const score = similarity(plannedSet.exercise, candidate.set.exercise);
+    if (score < MATCH_THRESHOLD) {
+      continue;
+    }
+    if (!best || score > best.score) {
+      best = { index: candidate.index, score };
+    }
+  }
+  return best;
 }
 
 /**
@@ -68,7 +96,9 @@ export function computeStrengthCompliance(
   prescribed: readonly ComparableStrengthSet[],
   realized: readonly ComparableStrengthSet[],
 ): StrengthCompliance | null {
-  if (prescribed.length === 0 || realized.length === 0) return null;
+  if (prescribed.length === 0 || realized.length === 0) {
+    return null;
+  }
 
   const availableRealized = realized.map((set, index) => ({ set, index }));
   const usedRealized = new Set<number>();
@@ -76,13 +106,7 @@ export function computeStrengthCompliance(
   const volumeRatios: number[] = [];
 
   for (const plannedSet of prescribed) {
-    let best: { index: number; score: number } | null = null;
-    for (const candidate of availableRealized) {
-      if (usedRealized.has(candidate.index)) continue;
-      const score = similarity(plannedSet.exercise, candidate.set.exercise);
-      if (score < MATCH_THRESHOLD) continue;
-      if (!best || score > best.score) best = { index: candidate.index, score };
-    }
+    const best = findBestRealizedMatch(plannedSet, availableRealized, usedRealized);
 
     if (!best) {
       missing.push(plannedSet.exercise);
@@ -141,12 +165,13 @@ export function applyStrengthScoringGuards(
   type: string,
   compliance: StrengthCompliance | null,
 ): SessionAnalysis {
-  if (type !== 'STRENGTH') return analysis;
+  if (type !== 'STRENGTH') {
+    return analysis;
+  }
 
-  const complianceScore =
-    compliance != null
-      ? Math.max(analysis.complianceScore, compliance.score)
-      : analysis.complianceScore;
+  const complianceScore = isSet(compliance)
+    ? Math.max(analysis.complianceScore, compliance.score)
+    : analysis.complianceScore;
 
   const isDurationVerdict = analysis.verdict === 'SHORTER' || analysis.verdict === 'LONGER';
   const replacement = complianceScore >= AS_PLANNED_SCORE ? 'AS_PLANNED' : 'DIFFERENT';

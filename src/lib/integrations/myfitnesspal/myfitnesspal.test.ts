@@ -12,7 +12,7 @@ import {
 // Fixtures — shaped exactly like MFP's real read_diary response.
 // ─────────────────────────────────────────────────────────────────────────────
 
-function buildEntry(overrides: {
+type EntryOverrides = {
   meal_name?: string;
   description?: string;
   energy?: number;
@@ -21,18 +21,25 @@ function buildEntry(overrides: {
   protein?: number | null;
   sugar?: number | null;
   fiber?: number | null;
-}) {
+};
+
+function buildNutritionalContents(energy: number, nutrients: Omit<EntryOverrides, 'meal_name' | 'description' | 'energy'>) {
   return {
-    meal_name: overrides.meal_name ?? 'Lunch',
-    food: { description: overrides.description ?? 'Test food' },
-    nutritional_contents: {
-      energy: { value: overrides.energy ?? 0, unit: 'calories' },
-      fat: overrides.fat ?? null,
-      carbohydrates: overrides.carbohydrates ?? null,
-      protein: overrides.protein ?? null,
-      sugar: overrides.sugar ?? null,
-      fiber: overrides.fiber ?? null,
-    },
+    energy: { value: energy, unit: 'calories' },
+    fat: nutrients.fat ?? null,
+    carbohydrates: nutrients.carbohydrates ?? null,
+    protein: nutrients.protein ?? null,
+    sugar: nutrients.sugar ?? null,
+    fiber: nutrients.fiber ?? null,
+  };
+}
+
+function buildEntry(overrides: EntryOverrides) {
+  const { meal_name = 'Lunch', description = 'Test food', energy = 0, ...nutrients } = overrides;
+  return {
+    meal_name,
+    food: { description },
+    nutritional_contents: buildNutritionalContents(energy, nutrients),
   };
 }
 
@@ -211,7 +218,9 @@ describe('refreshMfpSession', () => {
 
   function mockSessionResponse(body: unknown, setCookie: string[] = []) {
     const headers = new Headers();
-    for (const cookie of setCookie) headers.append('set-cookie', cookie);
+    for (const cookie of setCookie) {
+      headers.append('set-cookie', cookie);
+    }
 
     globalThis.fetch = (async () =>
       new Response(JSON.stringify(body), { status: 200, headers })) as typeof fetch;

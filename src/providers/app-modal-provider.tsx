@@ -87,14 +87,22 @@ export function AppModalProvider({ children }: { children: ReactNode }) {
   );
 
   const session = useMemo(() => {
-    if (!plannedModal) return null;
+    if (!plannedModal) {
+      return null;
+    }
     return plannedQuery.data?.find((item) => item.id === plannedModal.sessionId) ?? null;
   }, [plannedModal, plannedQuery.data]);
 
   useEffect(() => {
-    if (!plannedModal) return;
-    if (plannedQuery.isLoading || plannedQuery.isFetching) return;
-    if (!session) setPlannedModal(null);
+    if (!plannedModal) {
+      return;
+    }
+    if (plannedQuery.isLoading || plannedQuery.isFetching) {
+      return;
+    }
+    if (!session) {
+      setPlannedModal(null);
+    }
   }, [plannedModal, plannedQuery.isFetching, plannedQuery.isLoading, session]);
 
   const value = useMemo(

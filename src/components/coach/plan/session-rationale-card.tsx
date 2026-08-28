@@ -30,6 +30,57 @@ function Section({
  * Rendered inside the "Pourquoi cette séance" collapsible of the planned-session modal,
  * which already carries that label — no repeated heading/card chrome here.
  */
+function SuggestedRationale({
+  suggested,
+}: {
+  suggested: NonNullable<ReturnType<typeof useSessionRationalePresentation>['data']>['suggested'];
+}) {
+  if (!suggested) {
+    return null;
+  }
+  return (
+    <div className="text-foreground space-y-1.5 text-sm leading-relaxed">
+      {suggested.purpose ? <p>{suggested.purpose}</p> : null}
+      {suggested.weeklyObjectiveRelation ? (
+        <p className="text-muted-foreground text-xs">{suggested.weeklyObjectiveRelation}</p>
+      ) : null}
+      {suggested.gate.status !== 'ACCEPTED' ? (
+        <div className="flex items-center gap-1.5">
+          <GateStatusBadge status={suggested.gate.status} />
+        </div>
+      ) : null}
+      {suggested.gate.findings.length > 0 ? (
+        <ul className="space-y-0.5">
+          {suggested.gate.findings.map((f) => (
+            <li key={f.rationale} className="text-muted-foreground text-xs leading-snug">
+              {f.rationale}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
+function OutcomeRationale({
+  outcome,
+}: {
+  outcome: NonNullable<ReturnType<typeof useSessionRationalePresentation>['data']>['outcome'];
+}) {
+  if (!outcome) {
+    return null;
+  }
+  return (
+    <Section icon={Eye} label="Ce qui s'est passé">
+      {outcome.wording.map((line) => (
+        <p key={line} className="text-muted-foreground text-xs leading-relaxed">
+          {line}
+        </p>
+      ))}
+    </Section>
+  );
+}
+
 export function SessionRationaleCard({ sessionId }: { sessionId: string }) {
   const { data: vm, isPending } = useSessionRationalePresentation(sessionId);
 
@@ -41,49 +92,19 @@ export function SessionRationaleCard({ sessionId }: { sessionId: string }) {
       </div>
     );
   }
-  if (!vm) return null;
-  if (vm.origin === 'MANUAL') return null;
+  if (!vm || vm.origin === 'MANUAL') {
+    return null;
+  }
 
-  const { suggested, outcome } = vm;
-  const hasSuggested = Boolean(suggested);
-  const hasOutcome = Boolean(outcome);
-
-  if (!hasSuggested && !hasOutcome) return null;
+  const hasContent = Boolean(vm.suggested) || Boolean(vm.outcome);
+  if (!hasContent) {
+    return null;
+  }
 
   return (
     <div className="space-y-3">
-      {suggested ? (
-        <div className="text-foreground space-y-1.5 text-sm leading-relaxed">
-          {suggested.purpose && <p>{suggested.purpose}</p>}
-          {suggested.weeklyObjectiveRelation && (
-            <p className="text-muted-foreground text-xs">{suggested.weeklyObjectiveRelation}</p>
-          )}
-          {suggested.gate.status !== 'ACCEPTED' && (
-            <div className="flex items-center gap-1.5">
-              <GateStatusBadge status={suggested.gate.status} />
-            </div>
-          )}
-          {suggested.gate.findings.length > 0 && (
-            <ul className="space-y-0.5">
-              {suggested.gate.findings.map((f) => (
-                <li key={f.rationale} className="text-muted-foreground text-xs leading-snug">
-                  {f.rationale}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      ) : null}
-
-      {outcome ? (
-        <Section icon={Eye} label="Ce qui s'est passé">
-          {outcome.wording.map((line) => (
-            <p key={line} className="text-muted-foreground text-xs leading-relaxed">
-              {line}
-            </p>
-          ))}
-        </Section>
-      ) : null}
+      <SuggestedRationale suggested={vm.suggested} />
+      <OutcomeRationale outcome={vm.outcome} />
     </div>
   );
 }

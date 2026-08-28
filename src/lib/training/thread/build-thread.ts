@@ -1,4 +1,5 @@
 import { startOfWeek } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import { activityTypeLabels } from '@/lib/format';
 import { dayKeyFromDate } from '@/lib/date/day-key';
@@ -59,7 +60,9 @@ function buildEntries(
 
   const performed = activities.map((activity): ThreadEntry => {
     const planned = activity.plannedSession ?? null;
-    if (planned) claimedPlannedIds.add(planned.id);
+    if (planned) {
+      claimedPlannedIds.add(planned.id);
+    }
     return {
       id: activity.id,
       dayKey: localDayKey(activity.date),
@@ -92,6 +95,60 @@ function loadOf(entry: ThreadEntry): { done: number; planned: number } {
   return { done, planned };
 }
 
+function buildThreadWeek(input: {
+  weekKey: string;
+  entries: ThreadEntry[];
+  pivotWeekStart: Date;
+  pivotDayKey: string;
+  currentWeekKey: string;
+}): ThreadWeek {
+  const byDay = new Map<string, ThreadEntry[]>();
+  for (const entry of input.entries) {
+    const bucket = byDay.get(entry.dayKey);
+    if (bucket) {
+      bucket.push(entry);
+    } else {
+      byDay.set(entry.dayKey, [entry]);
+    }
+  }
+
+  const days: ThreadDay[] = [...byDay.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([dayKey, dayEntries]) => {
+      const [year, month, day] = dayKey.split('-').map(Number);
+      return {
+        dayKey,
+        date: new Date(year!, (month ?? 1) - 1, day ?? 1),
+        entries: dayEntries,
+      };
+    });
+
+  const totals = input.entries.reduce(
+    (acc, entry) => {
+      const { done, planned } = loadOf(entry);
+      return {
+        done: acc.done + done,
+        planned: acc.planned + planned,
+        doneKnown: acc.doneKnown || isSet(entry.activity?.load),
+      };
+    },
+    { done: 0, planned: 0, doneKnown: false },
+  );
+
+  const start = days[0]?.date ?? input.pivotWeekStart;
+  return {
+    weekKey: input.weekKey,
+    label: weekLabel(input.weekKey),
+    start: weekStart(start),
+    days,
+    doneLoad: Math.round(totals.done),
+    doneLoadKnown: totals.doneKnown,
+    plannedLoad: Math.round(totals.planned),
+    isCurrent: input.weekKey === input.currentWeekKey,
+    isFuture: days.every((d) => d.dayKey > input.pivotDayKey),
+  };
+}
+
 export function buildThread({
   activities,
   plannedSessions,
@@ -116,57 +173,29 @@ export function buildThread({
   for (const entry of buildEntries(activities, plannedSessions)) {
     const [year, month, day] = entry.dayKey.split('-').map(Number);
     const date = new Date(year!, (month ?? 1) - 1, day ?? 1);
-    if (date < floor) continue;
+    if (date < floor) {
+      continue;
+    }
     const key = isoWeekKeyOf(date);
     const bucket = byWeek.get(key);
-    if (bucket) bucket.push(entry);
-    else byWeek.set(key, [entry]);
+    if (bucket) {
+      bucket.push(entry);
+    } else {
+      byWeek.set(key, [entry]);
+    }
   }
 
   const weeks: ThreadWeek[] = [];
   for (const [weekKey, entries] of byWeek) {
-    const byDay = new Map<string, ThreadEntry[]>();
-    for (const entry of entries) {
-      const bucket = byDay.get(entry.dayKey);
-      if (bucket) bucket.push(entry);
-      else byDay.set(entry.dayKey, [entry]);
-    }
-
-    const days: ThreadDay[] = [...byDay.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([dayKey, dayEntries]) => {
-        const [year, month, day] = dayKey.split('-').map(Number);
-        return {
-          dayKey,
-          date: new Date(year!, (month ?? 1) - 1, day ?? 1),
-          entries: dayEntries,
-        };
-      });
-
-    const totals = entries.reduce(
-      (acc, entry) => {
-        const { done, planned } = loadOf(entry);
-        return {
-          done: acc.done + done,
-          planned: acc.planned + planned,
-          doneKnown: acc.doneKnown || entry.activity?.load != null,
-        };
-      },
-      { done: 0, planned: 0, doneKnown: false },
+    weeks.push(
+      buildThreadWeek({
+        weekKey,
+        entries,
+        pivotWeekStart,
+        pivotDayKey,
+        currentWeekKey,
+      }),
     );
-
-    const start = days[0]?.date ?? pivotWeekStart;
-    weeks.push({
-      weekKey,
-      label: weekLabel(weekKey),
-      start: weekStart(start),
-      days,
-      doneLoad: Math.round(totals.done),
-      doneLoadKnown: totals.doneKnown,
-      plannedLoad: Math.round(totals.planned),
-      isCurrent: weekKey === currentWeekKey,
-      isFuture: days.every((d) => d.dayKey > pivotDayKey),
-    });
   }
 
   return weeks.sort((a, b) => a.weekKey.localeCompare(b.weekKey));

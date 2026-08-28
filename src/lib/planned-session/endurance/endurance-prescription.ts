@@ -105,17 +105,25 @@ export const NO_TARGET: EnduranceTarget = { metric: 'none' };
 
 /** Soft-parse Json from DB — invalid / empty → null. */
 export function parseEndurancePrescription(raw: unknown): EndurancePrescription | null {
-  if (raw == null) return null;
+  if ((raw === undefined || raw === null)) {
+    return null;
+  }
   const parsed = endurancePrescriptionSchema.safeParse(raw);
-  if (!parsed.success) return null;
-  if (parsed.data.blocks.length === 0) return null;
+  if (!parsed.success) {
+    return null;
+  }
+  if (parsed.data.blocks.length === 0) {
+    return null;
+  }
   return parsed.data;
 }
 
 /** Flatten blocks into executable steps, repeat groups expanded. */
 export function enduranceStepCount(prescription: EndurancePrescription): number {
   return prescription.blocks.reduce((total, block) => {
-    if (block.kind === 'step') return total + 1;
+    if (block.kind === 'step') {
+      return total + 1;
+    }
     return total + block.iterations * block.steps.length;
   }, 0);
 }
@@ -126,7 +134,9 @@ export function endurancePlannedSeconds(prescription: EndurancePrescription): nu
     step.duration.type === 'time' ? step.duration.seconds : 0;
 
   return prescription.blocks.reduce((total, block) => {
-    if (block.kind === 'step') return total + stepSeconds(block.step);
+    if (block.kind === 'step') {
+      return total + stepSeconds(block.step);
+    }
     const perIteration = block.steps.reduce((sum, step) => sum + stepSeconds(step), 0);
     return total + block.iterations * perIteration;
   }, 0);
@@ -138,7 +148,9 @@ export function endurancePlannedMeters(prescription: EndurancePrescription): num
     step.duration.type === 'distance' ? step.duration.meters : 0;
 
   return prescription.blocks.reduce((total, block) => {
-    if (block.kind === 'step') return total + stepMeters(block.step);
+    if (block.kind === 'step') {
+      return total + stepMeters(block.step);
+    }
     const perIteration = block.steps.reduce((sum, step) => sum + stepMeters(step), 0);
     return total + block.iterations * perIteration;
   }, 0);
@@ -180,6 +192,8 @@ export function singleStepPrescription(input: {
 
 /** Map the app's ActivityType onto a sport Garmin can render, or null. */
 export function enduranceSportFromActivityType(type: string): EnduranceSport | null {
-  if (type === 'RUN' || type === 'BIKE' || type === 'SWIM') return type;
+  if (type === 'RUN' || type === 'BIKE' || type === 'SWIM') {
+    return type;
+  }
   return null;
 }

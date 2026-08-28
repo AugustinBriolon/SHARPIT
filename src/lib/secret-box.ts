@@ -12,7 +12,9 @@ import crypto from 'crypto';
 function encryptionKey(): Buffer {
   const secret =
     process.env.SECRET_ENCRYPTION_KEY ?? process.env.CRON_SECRET ?? process.env.DATABASE_URL;
-  if (secret) return crypto.createHash('sha256').update(secret).digest();
+  if (secret) {
+    return crypto.createHash('sha256').update(secret).digest();
+  }
   if (process.env.NODE_ENV === 'development') {
     return crypto.createHash('sha256').update('sharpit-dev-insecure').digest();
   }

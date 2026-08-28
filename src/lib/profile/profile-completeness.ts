@@ -26,18 +26,19 @@ export const PROFILE_COMPLETENESS_DESTINATIONS = {
   },
 } as const;
 
-export function getProfileCompleteness(
-  profile: ProfileThresholds | null | undefined,
-  context: string | null | undefined,
-) {
-  const hasThresholds = !!(
+function hasAnyThreshold(profile: ProfileThresholds | null | undefined): boolean {
+  return !!(
     profile?.ftpW ||
     profile?.maxHr ||
     profile?.lthr ||
     profile?.runThresholdPaceSecPerKm
   );
-  const contextText = (context ?? '').trim();
-  const hasContext = contextText.length > 0;
+}
+
+function buildCompletenessGaps(
+  hasThresholds: boolean,
+  hasContext: boolean,
+): ProfileCompletenessGap[] {
   const gaps: ProfileCompletenessGap[] = [];
   if (!hasThresholds) {
     gaps.push({
@@ -55,6 +56,17 @@ export function getProfileCompleteness(
       cta: PROFILE_COMPLETENESS_DESTINATIONS.context.cta,
     });
   }
+  return gaps;
+}
+
+export function getProfileCompleteness(
+  profile: ProfileThresholds | null | undefined,
+  context: string | null | undefined,
+) {
+  const hasThresholds = hasAnyThreshold(profile);
+  const contextText = (context ?? '').trim();
+  const hasContext = contextText.length > 0;
+  const gaps = buildCompletenessGaps(hasThresholds, hasContext);
 
   return {
     hasThresholds,

@@ -24,10 +24,14 @@ export function StickyHeader({
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
 
     const mq = window.matchMedia('(min-width: 1024px)');
-    if (!mq.matches) return;
+    if (!mq.matches) {
+      return;
+    }
 
     // root: null (viewport) assumes the header's sticky point sits at
     // viewport y≈0 — false whenever something persistent renders above
@@ -41,7 +45,9 @@ export function StickyHeader({
     observer.observe(el);
 
     const onBreakpoint = () => {
-      if (!mq.matches) setStuck(false);
+      if (!mq.matches) {
+        setStuck(false);
+      }
     };
     mq.addEventListener('change', onBreakpoint);
 

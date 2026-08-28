@@ -87,6 +87,58 @@ export type DayTrace = {
 // Warning / missing-input derivation
 // ─────────────────────────────────────────────────────────────────────────────
 
+function sessionWarnings(session: SessionFeatureSet): Warning[] {
+  const warnings: Warning[] = [];
+  if (session.tssMethod === 'DURATION_FACTOR') {
+    warnings.push({
+      code: 'TSS_DURATION_FACTOR_FALLBACK',
+      message: 'TSS computed via duration × sport constant (last resort). Low confidence.',
+      severity: 'WARN',
+    });
+  }
+  if (session.tssMethod === 'RPE_BASED') {
+    warnings.push({
+      code: 'TSS_RPE_BASED_FALLBACK',
+      message: 'TSS computed from subjective RPE. High uncertainty (±50%).',
+      severity: 'WARN',
+    });
+  }
+  if (session.confidence < 0.5) {
+    warnings.push({
+      code: 'LOW_TSS_CONFIDENCE',
+      message: `Session TSS confidence is ${(session.confidence * 100).toFixed(0)}% — provide power or HR data for accuracy.`,
+      severity: 'WARN',
+    });
+  }
+  return warnings;
+}
+
+function recoveryWarnings(recovery: RecoveryFeatureSet): Warning[] {
+  const warnings: Warning[] = [];
+  if (recovery.confidence < 0.5) {
+    warnings.push({
+      code: 'LOW_RECOVERY_CONFIDENCE',
+      message: 'Recovery features rely on limited data. Connect HRV or sleep tracking.',
+      severity: 'WARN',
+    });
+  }
+  if ((recovery.sleepEfficiencyPercent === undefined || recovery.sleepEfficiencyPercent === null)) {
+    warnings.push({
+      code: 'SLEEP_DATA_MISSING',
+      message: 'No sleep observation for this day. Sleep features are unavailable.',
+      severity: 'INFO',
+    });
+  }
+  if ((recovery.hrvAbsolute === undefined || recovery.hrvAbsolute === null)) {
+    warnings.push({
+      code: 'HRV_DATA_MISSING',
+      message: 'No HRV observation for this day. HRV-based recovery assessment unavailable.',
+      severity: 'INFO',
+    });
+  }
+  return warnings;
+}
+
 function warningsFromFeatureSet(record: FeatureSetRecord): Warning[] {
   const warnings: Warning[] = [];
 
@@ -99,32 +151,9 @@ function warningsFromFeatureSet(record: FeatureSetRecord): Warning[] {
   }
 
   const data = record.data as Record<string, unknown>;
-
   if (record.category === 'SESSION') {
-    const session = data as SessionFeatureSet;
-    if (session.tssMethod === 'DURATION_FACTOR') {
-      warnings.push({
-        code: 'TSS_DURATION_FACTOR_FALLBACK',
-        message: 'TSS computed via duration × sport constant (last resort). Low confidence.',
-        severity: 'WARN',
-      });
-    }
-    if (session.tssMethod === 'RPE_BASED') {
-      warnings.push({
-        code: 'TSS_RPE_BASED_FALLBACK',
-        message: 'TSS computed from subjective RPE. High uncertainty (±50%).',
-        severity: 'WARN',
-      });
-    }
-    if (session.confidence < 0.5) {
-      warnings.push({
-        code: 'LOW_TSS_CONFIDENCE',
-        message: `Session TSS confidence is ${(session.confidence * 100).toFixed(0)}% — provide power or HR data for accuracy.`,
-        severity: 'WARN',
-      });
-    }
+    warnings.push(...sessionWarnings(data as SessionFeatureSet));
   }
-
   if (record.category === 'LOAD') {
     const load = data as LoadFeatureSet;
     if (load.confidence < 0.5) {
@@ -134,7 +163,7 @@ function warningsFromFeatureSet(record: FeatureSetRecord): Warning[] {
         severity: 'WARN',
       });
     }
-    if (load.acwr === null) {
+    if ((load.acwr === undefined || load.acwr === null)) {
       warnings.push({
         code: 'ACWR_UNAVAILABLE',
         message: 'ACWR cannot be computed (insufficient acute or chronic baseline).',
@@ -142,81 +171,62 @@ function warningsFromFeatureSet(record: FeatureSetRecord): Warning[] {
       });
     }
   }
-
   if (record.category === 'RECOVERY') {
-    const recovery = data as RecoveryFeatureSet;
-    if (recovery.confidence < 0.5) {
-      warnings.push({
-        code: 'LOW_RECOVERY_CONFIDENCE',
-        message: 'Recovery features rely on limited data. Connect HRV or sleep tracking.',
-        severity: 'WARN',
-      });
-    }
-    if (recovery.sleepEfficiencyPercent === null) {
-      warnings.push({
-        code: 'SLEEP_DATA_MISSING',
-        message: 'No sleep observation for this day. Sleep features are unavailable.',
-        severity: 'INFO',
-      });
-    }
-    if (recovery.hrvAbsolute === null) {
-      warnings.push({
-        code: 'HRV_DATA_MISSING',
-        message: 'No HRV observation for this day. HRV-based recovery assessment unavailable.',
-        severity: 'INFO',
-      });
-    }
+    warnings.push(...recoveryWarnings(data as RecoveryFeatureSet));
   }
 
   return warnings;
 }
 
-function missingInputsFromFeatureSet(record: FeatureSetRecord): MissingInput[] {
+function sessionMissingInputs(session: SessionFeatureSet): MissingInput[] {
   const inputs: MissingInput[] = [];
-  const data = record.data as Record<string, unknown>;
-
-  if (record.category === 'SESSION') {
-    const session = data as SessionFeatureSet;
-    // mechanicalLoad null ↔ no power data provided
-    if (session.mechanicalLoad === null) {
-      inputs.push({
-        field: 'powerData.normalizedPower',
-        impact: 'Power-based TSS unavailable → lower confidence tier used',
-        fallback: `tssMethod=${session.tssMethod}`,
-      });
-    }
-    // efficiencyFactor null ↔ no HR data provided
-    if (session.efficiencyFactor === null) {
-      inputs.push({
-        field: 'hrData.avgBpm',
-        impact: 'TRIMP TSS unavailable → lower confidence tier used',
-        fallback:
-          session.tssMethod !== 'POWER_BASED' ? `tssMethod=${session.tssMethod}` : undefined,
-      });
-    }
-    if (session.subjectiveRpe === null) {
-      inputs.push({
-        field: 'subjectiveRpe',
-        impact: 'RPE-based TSS unavailable; rpeVsTargetZone not computable',
-        fallback: undefined,
-      });
-    }
+  if ((session.mechanicalLoad === undefined || session.mechanicalLoad === null)) {
+    inputs.push({
+      field: 'powerData.normalizedPower',
+      impact: 'Power-based TSS unavailable → lower confidence tier used',
+      fallback: `tssMethod=${session.tssMethod}`,
+    });
   }
-
-  if (record.category === 'RECOVERY') {
-    const recovery = data as RecoveryFeatureSet;
-    if (recovery.sleepEfficiencyPercent === null) {
-      inputs.push({ field: 'sleep.efficiency', impact: 'Sleep quality unassessable' });
-    }
-    if (recovery.hrvAbsolute === null) {
-      inputs.push({ field: 'hrv.rmssd', impact: 'Autonomic nervous system readiness unknown' });
-    }
-    if (recovery.rhrAbsolute === null) {
-      inputs.push({ field: 'restingHr.bpm', impact: 'RHR trend unavailable' });
-    }
+  if ((session.efficiencyFactor === undefined || session.efficiencyFactor === null)) {
+    inputs.push({
+      field: 'hrData.avgBpm',
+      impact: 'TRIMP TSS unavailable → lower confidence tier used',
+      fallback: session.tssMethod !== 'POWER_BASED' ? `tssMethod=${session.tssMethod}` : undefined,
+    });
   }
-
+  if ((session.subjectiveRpe === undefined || session.subjectiveRpe === null)) {
+    inputs.push({
+      field: 'subjectiveRpe',
+      impact: 'RPE-based TSS unavailable; rpeVsTargetZone not computable',
+      fallback: undefined,
+    });
+  }
   return inputs;
+}
+
+function recoveryMissingInputs(recovery: RecoveryFeatureSet): MissingInput[] {
+  const inputs: MissingInput[] = [];
+  if ((recovery.sleepEfficiencyPercent === undefined || recovery.sleepEfficiencyPercent === null)) {
+    inputs.push({ field: 'sleep.efficiency', impact: 'Sleep quality unassessable' });
+  }
+  if ((recovery.hrvAbsolute === undefined || recovery.hrvAbsolute === null)) {
+    inputs.push({ field: 'hrv.rmssd', impact: 'Autonomic nervous system readiness unknown' });
+  }
+  if ((recovery.rhrAbsolute === undefined || recovery.rhrAbsolute === null)) {
+    inputs.push({ field: 'restingHr.bpm', impact: 'RHR trend unavailable' });
+  }
+  return inputs;
+}
+
+function missingInputsFromFeatureSet(record: FeatureSetRecord): MissingInput[] {
+  const data = record.data as Record<string, unknown>;
+  if (record.category === 'SESSION') {
+    return sessionMissingInputs(data as SessionFeatureSet);
+  }
+  if (record.category === 'RECOVERY') {
+    return recoveryMissingInputs(data as RecoveryFeatureSet);
+  }
+  return [];
 }
 
 function sourceFromObservation(obs: Observation): string {
@@ -270,7 +280,9 @@ export class PipelineInspector {
    */
   async inspectObservation(observationId: string): Promise<ObservationTrace | null> {
     const obs = await this.obsRepo.findById(observationId);
-    if (!obs) return null;
+    if (!obs) {
+      return null;
+    }
 
     const dayFeatureSets = await this.loadFeatureSetsForDay(obs.athleteId, obs.trainingDayId);
 
@@ -313,7 +325,9 @@ export class PipelineInspector {
       );
       const traces = (relevant.length > 0 ? relevant : []).map(traceFromRecord);
       const warnings: Warning[] = [];
-      for (const t of traces) warnings.push(...t.warnings);
+      for (const t of traces) {
+        warnings.push(...t.warnings);
+      }
 
       return {
         observation: obs,

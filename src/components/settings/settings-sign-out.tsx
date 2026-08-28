@@ -13,7 +13,9 @@ export function SettingsSignOut() {
   const { isLoaded: authLoaded, isSignedIn } = useAuth();
   const { isLoaded: userLoaded, user } = useUser();
 
-  if (!authLoaded || !userLoaded || !isSignedIn) return null;
+  if (!authLoaded || !userLoaded || !isSignedIn) {
+    return null;
+  }
 
   const email = user?.primaryEmailAddress?.emailAddress ?? null;
 

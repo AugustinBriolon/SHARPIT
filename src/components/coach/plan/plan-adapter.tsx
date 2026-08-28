@@ -1,8 +1,6 @@
 'use client';
 
-import { format, parseISO } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { Check, Loader2, ListRestart } from 'lucide-react';
+import { Loader2, ListRestart } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { ProfileContextBanner } from '@/components/profile/profile-context-banner';
 import { Button } from '@/components/ui/button';
@@ -15,9 +13,6 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import type { ClientPlannedSession } from '@/lib/query/types';
-import { activityTypeLabels } from '@/lib/format';
-import { intensityLabels } from '@/lib/planned-session/sessions';
-import { cn } from '@/lib/utils';
 import {
   useAdaptPlan,
   type AdaptChange,
@@ -25,20 +20,13 @@ import {
   type CoachGenerationProgress,
 } from '@/hooks/use-coach';
 import { CoachGenerationProgressPanel } from '@/components/coach/plan/generation-progress';
-import {
-  usePlannedSessions,
-  usePlannedSessionMutations,
-  useTrainingPlan,
-  type PlannedSessionBatchOp,
-  type PlannedSessionPayload,
-} from '@/hooks/use-data';
+import { usePlannedSessions, usePlannedSessionMutations, useTrainingPlan } from '@/hooks/use-data';
 import type { GateSessionResult } from '@/lib/plan-gate/types';
-import { GateStatusBadge, GateFindingsList } from '@/components/coach/plan/gate-status-badge';
-import { AdaptationTrigger } from '@/components/coach/plan/adaptation-trigger';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
-import { resolveEnduranceFieldsForPersist } from '@/lib/planned-session/endurance/coach-endurance-prescription';
-import { resolveStrengthFieldsForPersist } from '@/lib/planned-session/strength/strength-prescription';
 import { warmCoachContext } from '@/lib/coach/warm-coach-context';
+import { AdaptChangeRow } from '@/components/coach/plan/adapt-change-row';
+import { buildAdaptBatchOps } from '@/components/coach/plan/plan-adapter-apply';
+import { Check } from 'lucide-react';
 
 /** REMOVE changes bypass the Gate (see coach/adapt/route.ts) — only ADD/MODIFY changes have a gate result. */
 function gateKey(change: Pick<AdaptChange, 'action' | 'sessionId' | 'date' | 'type'>): string {
@@ -57,31 +45,6 @@ function buildGateResultLookup(result: AdaptPlanResult): Map<string, GateSession
   return map;
 }
 
-const ACTION_LABEL: Record<AdaptChange['action'], string> = {
-  MODIFY: 'Modifier',
-  REMOVE: 'Supprimer',
-  ADD: 'Ajouter',
-};
-
-const ACTION_STYLE: Record<AdaptChange['action'], string> = {
-  MODIFY: 'bg-signal-caution/15 text-signal-caution',
-  REMOVE: 'bg-signal-risk/15 text-signal-risk',
-  ADD: 'bg-primary/15 text-primary',
-};
-
-function formatChangeDate(
-  date: string | null | undefined,
-  existing: ClientPlannedSession | null | undefined,
-): string {
-  if (date) {
-    return format(parseISO(date), 'EEE d MMM', { locale: fr });
-  }
-  if (existing?.date) {
-    return format(existing.date, 'EEE d MMM', { locale: fr });
-  }
-  return '';
-}
-
 function renderAdaptButtonContent(
   isAdapting: boolean,
   offline: boolean,
@@ -95,7 +58,9 @@ function renderAdaptButtonContent(
       </>
     );
   }
-  if (offline) return offlineLabel;
+  if (offline) {
+    return offlineLabel;
+  }
   return (
     <>
       <ListRestart className="size-4" />
@@ -110,7 +75,9 @@ function renderApplyButtonContent(
   offline: boolean,
   offlineLabel: string,
 ) {
-  if (offline) return offlineLabel;
+  if (offline) {
+    return offlineLabel;
+  }
   if (applied) {
     return (
       <>
@@ -126,6 +93,91 @@ function renderApplyButtonContent(
     );
   }
   return 'Appliquer';
+}
+
+function PlanAdapterResults({
+  applyError,
+  applied,
+  gateResults,
+  guardDisabled,
+  isApplying,
+  offline,
+  offlineLabel,
+  onApply,
+  onClose,
+  result,
+  selected,
+  sessionsById,
+  toggle,
+}: {
+  applyError: string | null;
+  applied: boolean;
+  gateResults: Map<string, GateSessionResult>;
+  guardDisabled: boolean;
+  isApplying: boolean;
+  offline: boolean;
+  offlineLabel: string;
+  onApply: () => void;
+  onClose: () => void;
+  result: AdaptPlanResult;
+  selected: Set<number>;
+  sessionsById: Map<string, ClientPlannedSession>;
+  toggle: (i: number) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <p className="border-primary/20 bg-primary/5 text-muted-foreground rounded-md border p-3 text-sm">
+        {result.summary}
+      </p>
+
+      {result.changes.length === 0 && (
+        <p className="text-muted-foreground text-sm">
+          Aucun ajustement nécessaire : ton plan est cohérent. 👍
+        </p>
+      )}
+
+      <div className="space-y-2">
+        {result.changes.map((change, i) => {
+          const existing = change.sessionId ? sessionsById.get(change.sessionId) : null;
+          const gateResult = gateResults.get(gateKey(change));
+          const rejected = gateResult?.status === 'REJECTED';
+          return (
+            <AdaptChangeRow
+              key={i}
+              change={change}
+              existing={existing ?? null}
+              gateResult={gateResult}
+              index={i}
+              rejected={rejected}
+              selected={selected.has(i)}
+              onToggle={toggle}
+            />
+          );
+        })}
+      </div>
+
+      {applyError && <p className="text-destructive text-sm">{applyError}</p>}
+
+      {result.changes.length > 0 && (
+        <div className="border-border/60 flex items-center justify-between gap-2 border-t pt-3">
+          <span className="text-muted-foreground text-xs">
+            {selected.size} ajustement(s) sélectionné(s)
+          </span>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose}>
+              Fermer
+            </Button>
+            <Button
+              disabled={guardDisabled || isApplying || selected.size === 0 || applied}
+              onClick={onApply}
+            >
+              {renderApplyButtonContent(applied, isApplying, offline, offlineLabel)}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function PlanAdapter({
@@ -154,14 +206,20 @@ export function PlanAdapter({
 
   const sessionsById = useMemo(() => {
     const map = new Map<string, ClientPlannedSession>();
-    for (const s of plannedQuery.data ?? []) map.set(s.id, s);
+    for (const s of plannedQuery.data ?? []) {
+      map.set(s.id, s);
+    }
     return map;
   }, [plannedQuery.data]);
 
   const gateResults = useMemo(() => (result ? buildGateResultLookup(result) : new Map()), [result]);
 
+  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
+
   async function handleAdapt() {
-    if (guardDisabled) return;
+    if (guardDisabled) {
+      return;
+    }
     setApplyError(null);
     setApplied(false);
     setProgress(null);
@@ -180,91 +238,27 @@ export function PlanAdapter({
   function toggle(i: number) {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(i)) next.delete(i);
-      else next.add(i);
+      if (next.has(i)) {
+        next.delete(i);
+      } else {
+        next.add(i);
+      }
       return next;
     });
   }
 
   function handleApply() {
-    if (guardDisabled || !result) return;
+    if (guardDisabled || !result) {
+      return;
+    }
     setApplyError(null);
     const changes = result.changes.filter((_, i) => selected.has(i));
-    const ops: PlannedSessionBatchOp[] = [];
+    const ops = buildAdaptBatchOps(changes, sessionsById, defaultGoalId);
 
-    for (const c of changes) {
-      if (c.action === 'REMOVE' && c.sessionId) {
-        ops.push({ op: 'remove', id: c.sessionId });
-        continue;
-      }
-      if (c.action === 'MODIFY' && c.sessionId) {
-        const data: Partial<PlannedSessionPayload> = {};
-        if (c.type) data.type = c.type;
-        if (c.intensity) data.intensity = c.intensity;
-        if (c.title != null) data.title = c.title;
-        if (c.description != null) data.description = c.description;
-        if (c.durationMin != null) data.durationMin = c.durationMin;
-        if (c.load != null) data.load = c.load;
-        if (c.date) data.date = new Date(`${c.date}T12:00:00`);
-        if (c.strengthPrescription != null || (c.type != null && c.type !== 'STRENGTH')) {
-          const existing = sessionsById.get(c.sessionId);
-          const strength = resolveStrengthFieldsForPersist({
-            type: c.type ?? existing?.type ?? 'STRENGTH',
-            description: c.description ?? existing?.description,
-            strengthPrescription: c.strengthPrescription,
-          });
-          data.description = strength.description;
-          data.strengthPrescription = strength.strengthPrescription;
-        }
-        if (c.endurancePrescription != null) {
-          const existing = sessionsById.get(c.sessionId);
-          const endurance = resolveEnduranceFieldsForPersist({
-            type: c.type ?? existing?.type ?? 'RUN',
-            description: data.description ?? c.description ?? existing?.description,
-            intensity: c.intensity ?? existing?.intensity,
-            endurancePrescription: c.endurancePrescription,
-          });
-          data.description = endurance.description;
-          data.endurancePrescription = endurance.endurancePrescription;
-        }
-        data.decisionId = c.decisionId;
-        ops.push({ op: 'update', id: c.sessionId, data });
-        continue;
-      }
-      if (c.action === 'ADD' && c.date && c.type) {
-        const strength = resolveStrengthFieldsForPersist({
-          type: c.type,
-          description: c.description,
-          strengthPrescription: c.strengthPrescription,
-        });
-        const endurance = resolveEnduranceFieldsForPersist({
-          type: c.type,
-          description: strength.description,
-          intensity: c.intensity,
-          endurancePrescription: c.endurancePrescription,
-        });
-        ops.push({
-          op: 'create',
-          payload: {
-            type: c.type,
-            date: new Date(`${c.date}T12:00:00`),
-            title: c.title,
-            description: endurance.description,
-            strengthPrescription: strength.strengthPrescription,
-            endurancePrescription: endurance.endurancePrescription,
-            durationMin: c.durationMin,
-            load: c.load,
-            intensity: c.intensity,
-            goalId: defaultGoalId,
-            decisionId: c.decisionId,
-          },
-        });
-      }
+    if (ops.length === 0) {
+      return;
     }
 
-    if (ops.length === 0) return;
-
-    // Instant: one cache patch + one toast in applyBatch; close without awaiting network.
     setApplied(true);
     applyBatch.mutate(ops, {
       onError: (err) => {
@@ -277,7 +271,6 @@ export function PlanAdapter({
 
   const isAdapting = adapt.isPending;
   const isApplying = applyBatch.isPending;
-  const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -314,121 +307,23 @@ export function PlanAdapter({
           </p>
         )}
 
-        {result && (
-          <div className="space-y-3">
-            <p className="border-primary/20 bg-primary/5 text-muted-foreground rounded-md border p-3 text-sm">
-              {result.summary}
-            </p>
-
-            {result.changes.length === 0 && (
-              <p className="text-muted-foreground text-sm">
-                Aucun ajustement nécessaire : ton plan est cohérent. 👍
-              </p>
-            )}
-
-            <div className="space-y-2">
-              {result.changes.map((c, i) => {
-                const existing = c.sessionId ? sessionsById.get(c.sessionId) : null;
-                const dateStr = formatChangeDate(c.date, existing);
-                const fields = [
-                  c.type ? activityTypeLabels[c.type] : null,
-                  c.intensity ? intensityLabels[c.intensity] : null,
-                  c.durationMin != null ? `${c.durationMin} min` : null,
-                  c.load != null ? `${c.load} TSS` : null,
-                ]
-                  .filter(Boolean)
-                  .join(' · ');
-                const gateResult = gateResults.get(gateKey(c));
-                const rejected = gateResult?.status === 'REJECTED';
-                return (
-                  <button
-                    key={i}
-                    disabled={rejected}
-                    type="button"
-                    className={cn(
-                      'pressable-lg flex w-full gap-3 rounded-lg border p-3 text-left',
-                      rejected &&
-                        'border-signal-risk/30 bg-signal-risk/5 cursor-not-allowed opacity-80',
-                      !rejected && selected.has(i)
-                        ? 'border-primary/40 bg-primary/5'
-                        : !rejected &&
-                            'border-analysis-border/60 bg-analysis-surface-alt/50 opacity-60 hover:opacity-100',
-                    )}
-                    onClick={rejected ? undefined : () => toggle(i)}
-                  >
-                    <span
-                      className={cn(
-                        'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border',
-                        selected.has(i) && !rejected
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-border',
-                      )}
-                    >
-                      {selected.has(i) && !rejected && <Check className="size-3.5" />}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span
-                          className={cn(
-                            'rounded-full px-1.5 py-0.5 text-[10px] font-medium',
-                            ACTION_STYLE[c.action],
-                          )}
-                        >
-                          {ACTION_LABEL[c.action]}
-                        </span>
-                        {dateStr && (
-                          <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                            {dateStr}
-                          </span>
-                        )}
-                        {(c.title ?? existing?.title) && (
-                          <span className="text-sm font-medium">{c.title ?? existing?.title}</span>
-                        )}
-                        {gateResult && <GateStatusBadge status={gateResult.status} />}
-                      </div>
-                      {fields && <p className="text-muted-foreground mt-1 text-xs">{fields}</p>}
-                      {c.description && (
-                        <p className="text-muted-foreground mt-0.5 text-xs">{c.description}</p>
-                      )}
-                      {c.strengthPrescription?.sets?.length ? (
-                        <p className="text-muted-foreground mt-0.5 text-xs">
-                          {c.strengthPrescription.sets.length} exercice
-                          {c.strengthPrescription.sets.length > 1 ? 's' : ''} prescrits
-                        </p>
-                      ) : null}
-                      <p className="text-muted-foreground/80 mt-1 text-xs italic">→ {c.reason}</p>
-                      {gateResult && <GateFindingsList result={gateResult} />}
-                      {c.action === 'MODIFY' && c.sessionId && (
-                        <AdaptationTrigger gateResult={gateResult} sessionId={c.sessionId} />
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-
-            {applyError && <p className="text-destructive text-sm">{applyError}</p>}
-
-            {result.changes.length > 0 && (
-              <div className="border-border/60 flex items-center justify-between gap-2 border-t pt-3">
-                <span className="text-muted-foreground text-xs">
-                  {selected.size} ajustement(s) sélectionné(s)
-                </span>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={onClose}>
-                    Fermer
-                  </Button>
-                  <Button
-                    disabled={guardDisabled || isApplying || selected.size === 0 || applied}
-                    onClick={handleApply}
-                  >
-                    {renderApplyButtonContent(applied, isApplying, offline, offlineLabel)}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        {result ? (
+          <PlanAdapterResults
+            applied={applied}
+            applyError={applyError}
+            gateResults={gateResults}
+            guardDisabled={guardDisabled}
+            isApplying={isApplying}
+            offline={offline}
+            offlineLabel={offlineLabel}
+            result={result}
+            selected={selected}
+            sessionsById={sessionsById}
+            toggle={toggle}
+            onApply={handleApply}
+            onClose={onClose}
+          />
+        ) : null}
       </DialogContent>
     </Dialog>
   );

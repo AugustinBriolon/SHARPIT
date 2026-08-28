@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { MarkerCard } from '@/components/today/drill-down/marker-card';
 import {
-  MarkerCard,
   POSITION_WORD,
   isConcerning,
   positionOf,
@@ -34,10 +34,19 @@ export type MarkerSpec = {
   action?: { label: string; href: string } | null;
 };
 
+function buildMarkerPositionWord(value: number | null, range: MarkerRange | null): string | null {
+  if (value === null || range === null) {
+    return null;
+  }
+  const position = positionOf(value, range);
+  const rangeWord = range.kind === 'baseline' ? 'ta norme' : 'la plage 14 j';
+  return `${POSITION_WORD[position]} ${rangeWord}`;
+}
+
 function toDetail(spec: MarkerSpec): MarkerDetail {
   const position =
-    spec.value != null && spec.range != null ? positionOf(spec.value, spec.range) : null;
-  const rangeWord = spec.range?.kind === 'baseline' ? 'ta norme' : 'la plage 14 j';
+    spec.value !== null && spec.range !== null ? positionOf(spec.value, spec.range) : null;
+  const positionWord = buildMarkerPositionWord(spec.value, spec.range);
 
   return {
     label: spec.label,
@@ -50,8 +59,8 @@ function toDetail(spec: MarkerSpec): MarkerDetail {
     reading: spec.reading ?? null,
     format: spec.format,
     action: spec.action ?? null,
-    concerning: position != null && isConcerning(position, spec.lowerIsBetter ?? false),
-    positionWord: position ? `${POSITION_WORD[position]} ${rangeWord}` : null,
+    concerning: position !== null && isConcerning(position, spec.lowerIsBetter ?? false),
+    positionWord,
   };
 }
 
@@ -64,7 +73,9 @@ function toDetail(spec: MarkerSpec): MarkerDetail {
  */
 export function MarkerCardGrid({ specs }: { specs: MarkerSpec[] }) {
   const [openKey, setOpenKey] = useState<string | null>(null);
-  if (specs.length === 0) return null;
+  if (specs.length === 0) {
+    return null;
+  }
 
   const open = specs.find((spec) => spec.key === openKey) ?? null;
 

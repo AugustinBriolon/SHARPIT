@@ -1,4 +1,5 @@
 import type { TodayGoalContext } from '@/lib/daily-phase/goal-context';
+import { isSet } from '@/lib/util/value';
 import {
   buildEndOfDayNarrativeCopy,
   isRecoveryStress,
@@ -64,7 +65,9 @@ function isRestDayRecoveryWindow(input: PhaseNarrativeInput): boolean {
 }
 
 function postureLabelForPhase(posture: TodayPosture, phase: DailyPhase): string | null {
-  if (phase === 'END_OF_DAY' || phase === 'SESSION_COMPLETED') return null;
+  if (phase === 'END_OF_DAY' || phase === 'SESSION_COMPLETED') {
+    return null;
+  }
 
   switch (posture) {
     case 'protect':
@@ -106,9 +109,43 @@ function phaseOf(input: PhaseNarrativeInput): DailyPhase {
   return input.resolution.phase;
 }
 
+function postureFromGoalContext(input: PhaseNarrativeInput): TodayPosture | null {
+  const { verdict, goalContext } = input;
+  if (!goalContext?.linkedToTodaySession || !isForwardAdvicePhase(phaseOf(input))) {
+    return null;
+  }
+  if (verdict === 'RECOVER' || verdict === 'CAUTION') {
+    return 'protect';
+  }
+  return 'push';
+}
+
+function trainHardPostureForPhase(phase: DailyPhase): TodayPosture {
+  return phase === 'END_OF_DAY' || phase === 'RECOVERY_WINDOW' ? 'steady' : 'push';
+}
+
+function postureFromVerdict(input: PhaseNarrativeInput): TodayPosture {
+  const { verdict } = input;
+  const phase = phaseOf(input);
+
+  if (verdict === 'RECOVER' || verdict === 'CAUTION') {
+    return 'protect';
+  }
+  if (verdict === 'RACE_READY') {
+    return 'push';
+  }
+  if (verdict === 'TRAIN_HARD') {
+    return trainHardPostureForPhase(phase);
+  }
+  if (verdict === 'TRAIN_EASY' || verdict === 'TRAIN_SMART') {
+    return 'steady';
+  }
+  return 'uncertain';
+}
+
 function resolvePosture(input: PhaseNarrativeInput): TodayPosture {
   const phase = phaseOf(input);
-  const { verdict, goalContext, limitingFactorMessage } = input;
+  const { limitingFactorMessage } = input;
 
   if (
     phase === 'END_OF_DAY' &&
@@ -118,25 +155,7 @@ function resolvePosture(input: PhaseNarrativeInput): TodayPosture {
     return 'protect';
   }
 
-  if (goalContext?.linkedToTodaySession && isForwardAdvicePhase(phase)) {
-    if (verdict === 'RECOVER' || verdict === 'CAUTION') return 'protect';
-    return 'push';
-  }
-
-  switch (verdict) {
-    case 'RECOVER':
-    case 'CAUTION':
-      return 'protect';
-    case 'RACE_READY':
-      return 'push';
-    case 'TRAIN_HARD':
-      return phase === 'END_OF_DAY' || phase === 'RECOVERY_WINDOW' ? 'steady' : 'push';
-    case 'TRAIN_EASY':
-    case 'TRAIN_SMART':
-      return 'steady';
-    default:
-      return 'uncertain';
-  }
+  return postureFromGoalContext(input) ?? postureFromVerdict(input);
 }
 
 function goalSuffix(goalContext: TodayGoalContext): string {
@@ -145,13 +164,15 @@ function goalSuffix(goalContext: TodayGoalContext): string {
 
 function goalLineForPhase(input: PhaseNarrativeInput): string | null {
   const { goalContext } = input;
-  if (!goalContext) return null;
+  if (!goalContext) {
+    return null;
+  }
 
   if (goalContext.isPrimaryRace) {
     return `${goalContext.title}${goalSuffix(goalContext)}`;
   }
 
-  if (goalContext.daysUntil != null && goalContext.daysUntil <= 21) {
+  if (isSet(goalContext.daysUntil) && goalContext.daysUntil <= 21) {
     return `${goalContext.title}${goalSuffix(goalContext)}`;
   }
 
@@ -171,42 +192,56 @@ function adaptationRemindersForInput(input: PhaseNarrativeInput): string[] {
   return [];
 }
 
+function forwardPhaseFocusPriority(input: PhaseNarrativeInput): string | null {
+  const { actionLine, goalContext, verdict } = input;
+  if (!actionLine) {
+    return null;
+  }
+  if (goalContext?.linkedToTodaySession && verdict === 'RECOVER') {
+    return `Allège la séance — elle sert ${goalContext.title}`;
+  }
+  if (goalContext?.linkedToTodaySession && verdict === 'CAUTION') {
+    return `Reste sous contrôle — qualité pour ${goalContext.title}`;
+  }
+  return actionLine;
+}
+
+function sessionCompletedFocusPriority(input: PhaseNarrativeInput): string | null {
+  const { goalContext } = input;
+  if (goalContext?.linkedToTodaySession) {
+    return `Récupère dans les 2 h — consolide ce que tu as fait pour ${goalContext.title}`;
+  }
+  return 'Récupère dans les 2 h avant le prochain signal';
+}
+
 function focusPriorityForPhase(
   input: PhaseNarrativeInput,
   adaptationReminders: string[],
 ): string | null {
   const phase = phaseOf(input);
-  const { actionLine, goalContext, verdict } = input;
 
-  if (isForwardAdvicePhase(phase) && actionLine) {
-    if (goalContext?.linkedToTodaySession && verdict === 'RECOVER') {
-      return `Allège la séance — elle sert ${goalContext.title}`;
-    }
-    if (goalContext?.linkedToTodaySession && verdict === 'CAUTION') {
-      return `Reste sous contrôle — qualité pour ${goalContext.title}`;
-    }
-    return actionLine;
+  if (isForwardAdvicePhase(phase)) {
+    return forwardPhaseFocusPriority(input);
   }
-
   if (phase === 'SESSION_COMPLETED') {
-    if (goalContext?.linkedToTodaySession) {
-      return `Récupère dans les 2 h — consolide ce que tu as fait pour ${goalContext.title}`;
-    }
-    return 'Récupère dans les 2 h avant le prochain signal';
+    return sessionCompletedFocusPriority(input);
   }
-
-  if (phase === 'RECOVERY_WINDOW' || phase === 'END_OF_DAY') {
-    if (phase === 'END_OF_DAY') return null;
+  if (phase === 'RECOVERY_WINDOW') {
     return adaptationReminders[0] ?? null;
   }
-
   return null;
 }
 
 function inferEffortFromTss(totalTssToday: number | null): TodayEffortLevel | null {
-  if (totalTssToday == null) return null;
-  if (totalTssToday >= 65) return 'high';
-  if (totalTssToday >= 30) return 'moderate';
+  if (totalTssToday === undefined || totalTssToday === null) {
+    return null;
+  }
+  if (totalTssToday >= 65) {
+    return 'high';
+  }
+  if (totalTssToday >= 30) {
+    return 'moderate';
+  }
   return 'light';
 }
 
@@ -221,6 +256,43 @@ function restDayRecoveryHeadline(posture: TodayPosture): string {
     : 'Jour de repos — fenêtre d’adaptation ouverte';
 }
 
+function sessionCompletedHeadline(input: {
+  goalContext: PhaseNarrativeInput['goalContext'];
+  load: string;
+  effortLevel: TodayEffortLevel | null;
+  recoveryStress: boolean;
+  posture: TodayPosture;
+}): string {
+  if (input.goalContext?.linkedToTodaySession) {
+    return `${input.load} — au service de ${input.goalContext.title}`;
+  }
+  if (input.recoveryStress || input.posture === 'protect') {
+    return `${input.load} — récupération prioritaire maintenant`;
+  }
+  if (input.effortLevel === 'high') {
+    return `${input.load} — laisse le corps digérer`;
+  }
+  if (input.effortLevel === 'moderate') {
+    return `${input.load} — place à la récupération`;
+  }
+  return `${input.load} — séance dans les jambes`;
+}
+
+function recoveryWindowHeadline(
+  load: string,
+  effortLevel: TodayEffortLevel | null,
+  recoveryStress: boolean,
+  posture: TodayPosture,
+): string {
+  if (recoveryStress || posture === 'protect') {
+    return `${load} — récupération à consolider`;
+  }
+  if (effortLevel === 'high') {
+    return `${load} — nutrition et sommeil d'abord`;
+  }
+  return `${load} — fenêtre d’adaptation ouverte`;
+}
+
 function postTrainingHeadline(
   phase: 'SESSION_COMPLETED' | 'RECOVERY_WINDOW',
   input: PhaseNarrativeInput,
@@ -228,116 +300,140 @@ function postTrainingHeadline(
 ): string {
   const effortLevel = resolveEffortLevel(input);
   const recoveryStress = isRecoveryStress(input.limitingFactorMessage);
-  const multi = (input.evening?.completedSessionCount ?? 1) >= 2;
-  const goal = input.goalContext;
-  const load = dayLoadLabel(effortLevel, multi);
+  const load = dayLoadLabel(effortLevel, (input.evening?.completedSessionCount ?? 1) >= 2);
 
   if (phase === 'SESSION_COMPLETED') {
-    if (goal?.linkedToTodaySession) {
-      return `${load} — au service de ${goal.title}`;
-    }
-    if (recoveryStress || posture === 'protect') {
-      return `${load} — récupération prioritaire maintenant`;
-    }
-    if (effortLevel === 'high') {
-      return `${load} — laisse le corps digérer`;
-    }
-    if (effortLevel === 'moderate') {
-      return `${load} — place à la récupération`;
-    }
-    return `${load} — séance dans les jambes`;
+    return sessionCompletedHeadline({
+      goalContext: input.goalContext,
+      load,
+      effortLevel,
+      recoveryStress,
+      posture,
+    });
   }
-
-  if (recoveryStress || posture === 'protect') {
-    return `${load} — récupération à consolider`;
-  }
-
-  if (effortLevel === 'high') {
-    return `${load} — nutrition et sommeil d'abord`;
-  }
-
-  return `${load} — fenêtre d’adaptation ouverte`;
+  return recoveryWindowHeadline(load, effortLevel, recoveryStress, posture);
 }
 
-function headlineForPhase(input: PhaseNarrativeInput, posture: TodayPosture): string {
-  const { resolution, verdict, adviceActionable, sportLabel } = input;
-  const { phase } = resolution;
+function morningHeadline(verdict: OverallVerdict): string {
+  switch (verdict) {
+    case 'RECOVER':
+      return 'Récupération prioritaire';
+    case 'TRAIN_HARD':
+    case 'RACE_READY':
+      return 'Journée propice à l’effort';
+    case 'TRAIN_EASY':
+      return 'Journée modérée';
+    case 'CAUTION':
+      return 'Journée à ménager';
+    case 'TRAIN_SMART':
+      return 'Journée ciblée';
+    default:
+      return 'Lis ton état avant d’agir';
+  }
+}
 
-  // No directional verdict at all — withhold.
+function insufficientDataHeadline(input: PhaseNarrativeInput): string | null {
+  const { resolution, verdict, adviceActionable } = input;
   if (
     !adviceActionable &&
-    isForwardAdvicePhase(phase) &&
+    isForwardAdvicePhase(resolution.phase) &&
     (verdict === 'INSUFFICIENT_DATA' || !verdict)
   ) {
     return 'Pas encore de verdict fiable';
   }
+  return null;
+}
 
-  switch (phase) {
+function phaseHeadlineForPostTraining(
+  input: PhaseNarrativeInput,
+  posture: TodayPosture,
+): string | null {
+  const phase = phaseOf(input);
+  if (phase === 'SESSION_COMPLETED') {
+    return postTrainingHeadline('SESSION_COMPLETED', input, posture);
+  }
+  if (phase === 'RECOVERY_WINDOW') {
+    return isRestDayRecoveryWindow(input)
+      ? restDayRecoveryHeadline(posture)
+      : postTrainingHeadline('RECOVERY_WINDOW', input, posture);
+  }
+  return null;
+}
+
+function headlineForPhase(input: PhaseNarrativeInput, posture: TodayPosture): string {
+  const withheld = insufficientDataHeadline(input);
+  if (withheld) {
+    return withheld;
+  }
+
+  const { resolution, sportLabel } = input;
+  const postTraining = phaseHeadlineForPostTraining(input, posture);
+  if (postTraining) {
+    return postTraining;
+  }
+
+  switch (resolution.phase) {
     case 'MORNING':
-      if (verdict === 'RECOVER') return 'Récupération prioritaire';
-      if (verdict === 'TRAIN_HARD' || verdict === 'RACE_READY') return 'Journée propice à l’effort';
-      if (verdict === 'TRAIN_EASY') return 'Journée modérée';
-      if (verdict === 'CAUTION') return 'Journée à ménager';
-      if (verdict === 'TRAIN_SMART') return 'Journée ciblée';
-      return 'Lis ton état avant d’agir';
-
+      return morningHeadline(input.verdict);
     case 'BEFORE_SESSION':
       return sportLabel ? `Séance ${sportLabel} à venir` : 'Séance à venir';
-
-    case 'SESSION_COMPLETED':
-      return postTrainingHeadline('SESSION_COMPLETED', input, posture);
-
-    case 'RECOVERY_WINDOW':
-      return isRestDayRecoveryWindow(input)
-        ? restDayRecoveryHeadline(posture)
-        : postTrainingHeadline('RECOVERY_WINDOW', input, posture);
-
     case 'END_OF_DAY':
       return 'Bilan de la journée';
-
     default:
       return 'Aujourd’hui';
   }
 }
 
-function sublineForPhase(input: PhaseNarrativeInput, focusPriority: string | null): string {
-  const { dailyStrainAvailable, sportLabel, adviceActionable, verdict } = input;
-  const phase = phaseOf(input);
+function morningSubline(input: PhaseNarrativeInput): string {
+  const { adviceActionable, verdict } = input;
+  if (!adviceActionable) {
+    if (verdict === 'INSUFFICIENT_DATA' || !verdict) {
+      return 'Synchronise ton état avant de décider.';
+    }
+    return 'Lecture prudente — confiance partielle sur les signaux du jour.';
+  }
+  return 'Lis ton orientation, puis décide pour la séance.';
+}
 
+function postTrainingSubline(
+  phase: DailyPhase,
+  focusPriority: string | null,
+  dailyStrainAvailable: boolean,
+): string {
+  if (focusPriority) {
+    return '';
+  }
+  if (phase === 'SESSION_COMPLETED') {
+    if (!dailyStrainAvailable) {
+      return 'Charge en cours de calcul — le débrief s’affine sous peu.';
+    }
+    return 'La séance est dans les jambes — place à la récupération.';
+  }
+  if (phase === 'RECOVERY_WINDOW') {
+    return 'Nutrition, hydratation et sommeil : les leviers d’adaptation.';
+  }
+  return 'La fenêtre de sommeil de ce soir oriente demain.';
+}
+
+function defaultPhaseSubline(input: PhaseNarrativeInput): string {
+  return isForwardAdvicePhase(phaseOf(input)) && input.sportLabel ? input.sportLabel : '';
+}
+
+function sublineForPhase(input: PhaseNarrativeInput, focusPriority: string | null): string {
+  const phase = phaseOf(input);
   if (focusPriority && phase !== 'SESSION_COMPLETED') {
     return '';
   }
-
-  switch (phase) {
-    case 'MORNING':
-      // Evidence may already be in — do not blame sync when the gate is confidence.
-      if (!adviceActionable) {
-        if (verdict === 'INSUFFICIENT_DATA' || !verdict) {
-          return 'Synchronise ton état avant de décider.';
-        }
-        return 'Lecture prudente — confiance partielle sur les signaux du jour.';
-      }
-      return 'Lis ton orientation, puis décide pour la séance.';
-
-    case 'BEFORE_SESSION':
-      return 'Adapte l’intensité à ta forme du moment.';
-
-    case 'SESSION_COMPLETED':
-      if (!dailyStrainAvailable) {
-        return 'Charge en cours de calcul — le débrief s’affine sous peu.';
-      }
-      return focusPriority ? '' : 'La séance est dans les jambes — place à la récupération.';
-
-    case 'RECOVERY_WINDOW':
-      return focusPriority ? '' : 'Nutrition, hydratation et sommeil : les leviers d’adaptation.';
-
-    case 'END_OF_DAY':
-      return focusPriority ? '' : 'La fenêtre de sommeil de ce soir oriente demain.';
-
-    default:
-      if (isForwardAdvicePhase(phase) && sportLabel) return sportLabel;
-      return '';
+  if (phase === 'MORNING') {
+    return morningSubline(input);
   }
+  if (phase === 'BEFORE_SESSION') {
+    return 'Adapte l’intensité à ta forme du moment.';
+  }
+  if (phase === 'SESSION_COMPLETED' || phase === 'RECOVERY_WINDOW' || phase === 'END_OF_DAY') {
+    return postTrainingSubline(phase, focusPriority, input.dailyStrainAvailable);
+  }
+  return defaultPhaseSubline(input);
 }
 
 export function buildPhaseNarrative(input: PhaseNarrativeInput): PhaseNarrative {
@@ -383,7 +479,9 @@ export function buildPhaseNarrative(input: PhaseNarrativeInput): PhaseNarrative 
 }
 
 export function assertPhaseNarrativeConsistency(phase: DailyPhase, heroEyebrow: string): void {
-  if (!isPostTrainingPhase(phase)) return;
+  if (!isPostTrainingPhase(phase)) {
+    return;
+  }
 
   const forbidden = /entraîner fort|train hard|peux-tu t/i;
   if (forbidden.test(heroEyebrow)) {
@@ -398,6 +496,8 @@ export function pickAdaptationReminders(phase: DailyPhase, limit = 2, isRestDay 
       limit,
     );
   }
-  if (phase === 'END_OF_DAY') return ADAPTATION_REMINDERS.END_OF_DAY.slice(0, limit);
+  if (phase === 'END_OF_DAY') {
+    return ADAPTATION_REMINDERS.END_OF_DAY.slice(0, limit);
+  }
   return [];
 }

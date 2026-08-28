@@ -36,8 +36,12 @@ export function partitionThread(
     const behind = week.days.filter((day) => day.dayKey < pivotDayKey);
 
     // A week straddling today appears on both sides, holding only its own days.
-    if (ahead.length > 0) upcoming.push({ ...week, days: ahead });
-    if (behind.length > 0) past.push(reverseWeek({ ...week, days: behind }));
+    if (ahead.length > 0) {
+      upcoming.push({ ...week, days: ahead });
+    }
+    if (behind.length > 0) {
+      past.push(reverseWeek({ ...week, days: behind }));
+    }
   }
 
   return { upcoming, past: past.reverse() };
@@ -61,7 +65,9 @@ export function takeThreadDays(weeks: readonly ThreadWeek[], limit: number): rea
 
   for (const week of weeks) {
     for (const day of week.days) {
-      if (taken >= limit) return days;
+      if (taken >= limit) {
+        return days;
+      }
       days.push(day);
       taken += day.entries.length;
     }

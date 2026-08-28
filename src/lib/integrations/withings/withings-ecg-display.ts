@@ -1,4 +1,5 @@
 import { WITHINGS_MEASURE } from '@/lib/integrations/withings/withings-measures';
+import { isSet } from '@/lib/util/value';
 import type { CompositionMetricId } from '@/lib/health/composition-metric-guides';
 import type { CorpsTone } from '@/components/corps/corps-ui';
 
@@ -109,8 +110,12 @@ const LEGACY_ECG: Record<number, WithingsEcgClassification> = {
 
 export function resolveWithingsEcgClassification(code: number): WithingsEcgClassification {
   const rounded = Math.round(code);
-  if (BODY_SCAN_ECG_1_BASED[rounded]) return BODY_SCAN_ECG_1_BASED[rounded]!;
-  if (LEGACY_ECG[rounded]) return LEGACY_ECG[rounded]!;
+  if (BODY_SCAN_ECG_1_BASED[rounded]) {
+    return BODY_SCAN_ECG_1_BASED[rounded]!;
+  }
+  if (LEGACY_ECG[rounded]) {
+    return LEGACY_ECG[rounded]!;
+  }
   return {
     label: `Résultat ECG (code ${rounded})`,
     tone: 'neutral',
@@ -154,9 +159,15 @@ export function getAfibInterpretation(value: number): {
 /** Position sur l'échelle 0–100 pour l'explainer (3 zones : normal / non concluant / FA). */
 export function afibToScaleValue(value: number): number {
   const { tone } = resolveWithingsEcgClassification(value);
-  if (tone === 'ok') return 15;
-  if (tone === 'attention') return 85;
-  if (tone === 'watch') return 50;
+  if (tone === 'ok') {
+    return 15;
+  }
+  if (tone === 'attention') {
+    return 85;
+  }
+  if (tone === 'watch') {
+    return 50;
+  }
   return 25;
 }
 
@@ -195,44 +206,79 @@ function isAfibType(type: number): boolean {
   );
 }
 
-export function parseWithingsEcgStats(extras: unknown): WithingsEcgStat[] {
-  if (extras == null || typeof extras !== 'object') return [];
-  const parsed = extras as {
+function pushAfibClassification(
+  stats: WithingsEcgStat[],
+  skipAfibKeys: Set<string>,
+  ecgAfibClassification: number,
+): void {
+  stats.push({
+    type: WITHINGS_MEASURE.AFIB_ECG,
+    label: ECG_LABELS[WITHINGS_MEASURE.AFIB_ECG]!,
+    guideId: 'afibEcg',
+    value: ecgAfibClassification,
+    displayValue: formatAfibResult(ecgAfibClassification),
+  });
+  skipAfibKeys.add(String(WITHINGS_MEASURE.AFIB_ECG));
+  skipAfibKeys.add(String(WITHINGS_MEASURE.AFIB_ECG_CLASS));
+}
+
+function parseEcgMeasureEntry(
+  typeKey: string,
+  rawValue: number,
+  skipAfibKeys: Set<string>,
+): WithingsEcgStat | null {
+  if (skipAfibKeys.has(typeKey)) {
+    return null;
+  }
+  const type = Number(typeKey);
+  const guideId = ECG_GUIDE_IDS[type];
+  if (!guideId) {
+    return null;
+  }
+  const label = ECG_LABELS[type] ?? `ECG type ${typeKey}`;
+  const displayValue = isAfibType(type) ? formatAfibResult(rawValue) : `${Math.round(rawValue)} ms`;
+  return { type, label, guideId, value: rawValue, displayValue };
+}
+
+function parseEcgExtras(extras: unknown): {
+  ecg?: Record<string, number>;
+  ecgAfibClassification?: number;
+} | null {
+  if (extras === undefined || extras === null || typeof extras !== 'object') {
+    return null;
+  }
+  return extras as {
     ecg?: Record<string, number>;
     ecgAfibClassification?: number;
   };
+}
+
+export function parseWithingsEcgStats(extras: unknown): WithingsEcgStat[] {
+  const parsed = parseEcgExtras(extras);
+  if (!parsed) {
+    return [];
+  }
   const { ecg, ecgAfibClassification } = parsed;
-  if (!ecg && ecgAfibClassification == null) return [];
+  if (!ecg && !isSet(ecgAfibClassification)) {
+    return [];
+  }
 
   const stats: WithingsEcgStat[] = [];
   const skipAfibKeys = new Set<string>();
 
-  if (ecgAfibClassification != null) {
-    stats.push({
-      type: WITHINGS_MEASURE.AFIB_ECG,
-      label: ECG_LABELS[WITHINGS_MEASURE.AFIB_ECG]!,
-      guideId: 'afibEcg',
-      value: ecgAfibClassification,
-      displayValue: formatAfibResult(ecgAfibClassification),
-    });
-    skipAfibKeys.add(String(WITHINGS_MEASURE.AFIB_ECG));
-    skipAfibKeys.add(String(WITHINGS_MEASURE.AFIB_ECG_CLASS));
+  if (isSet(ecgAfibClassification)) {
+    pushAfibClassification(stats, skipAfibKeys, ecgAfibClassification);
   }
 
-  if (!ecg) return stats;
+  if (!ecg) {
+    return stats;
+  }
 
   for (const [typeKey, rawValue] of Object.entries(ecg)) {
-    if (skipAfibKeys.has(typeKey)) continue;
-    const type = Number(typeKey);
-    const guideId = ECG_GUIDE_IDS[type];
-    if (!guideId) continue;
-
-    const label = ECG_LABELS[type] ?? `ECG type ${typeKey}`;
-    const displayValue = isAfibType(type)
-      ? formatAfibResult(rawValue)
-      : `${Math.round(rawValue)} ms`;
-
-    stats.push({ type, label, guideId, value: rawValue, displayValue });
+    const stat = parseEcgMeasureEntry(typeKey, rawValue, skipAfibKeys);
+    if (stat) {
+      stats.push(stat);
+    }
   }
 
   return stats;

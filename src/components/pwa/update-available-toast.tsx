@@ -19,7 +19,9 @@ export function UpdateAvailableToast() {
   const shownRef = useRef(false);
 
   useEffect(() => {
-    if (!updateAvailable || shownRef.current) return;
+    if (!updateAvailable || shownRef.current) {
+      return;
+    }
     shownRef.current = true;
     toast.info('Nouvelle version disponible', {
       description: (

@@ -5,7 +5,11 @@ import { isCoachConfigured } from '@/lib/ai';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { recordAiUsage } from '@/lib/ai-usage';
 import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
-import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
+import {
+  buildCoachContext,
+  formatCoachContext,
+  type CoachContext,
+} from '@/lib/coach/context/coach-context';
 import {
   COACH_PROGRESS_HEADERS,
   encodeCoachProgressEvent,
@@ -15,6 +19,7 @@ import { runStructuredCoachStream } from '@/lib/coach/stream-structured-generati
 import { buildBusySummary } from '@/lib/coach/plan/calendar-availability';
 import { getGoalById } from '@/lib/queries';
 import { coachPlanRequestSchema, coachPlanSchema, type CoachPlan } from '@/lib/validators/coach';
+import type { z } from 'zod';
 import { buildGateContext } from '@/lib/plan-gate/build-context';
 import { evaluatePlan } from '@/lib/plan-gate/evaluate-plan';
 import type { GateProposal } from '@/lib/plan-gate/types';
@@ -54,6 +59,160 @@ ${formatStrengthSessionRules()}
 
 Sortie : le schéma fait autorité pour les noms de champs, les types et les valeurs d'énumération — jamais ce texte. N'ajoute aucun champ hors schéma. Séance STRENGTH : strengthPrescription obligatoire (noms français, blocs et volume ci-dessus) ; RUN/BIKE/SWIM : null. Séance RUN ou BIKE structurée (fractionné, blocs au seuil, progressif) : remplis endurancePrescription — étapes et groupes répétés avec leur intensité, jamais d'allure ni de watts, l'app les dérive des seuils.`;
 
+function buildGoalBlock(goal: NonNullable<Awaited<ReturnType<typeof getGoalById>>>, start: Date) {
+  const daysToGo = goal.targetDate
+    ? Math.round((startOfDay(goal.targetDate).getTime() - start.getTime()) / 86400_000)
+    : null;
+  const bits = [
+    `Objectif ciblé : ${goal.title}`,
+    goal.location ? `lieu ${goal.location}` : null,
+    goal.targetDate ? `date ${format(goal.targetDate, 'd MMMM yyyy', { locale: fr })}` : null,
+    daysToGo !== null ? `dans ${daysToGo} jours (~${Math.round(daysToGo / 7)} semaines)` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  return `\n\n## Objectif prioritaire pour ce bloc
+${bits}
+Périodise IMPÉRATIVEMENT ce bloc en fonction de cette échéance (base → spécifique → affûtage selon les semaines restantes). Oriente le contenu des séances vers les exigences de cet objectif.`;
+}
+
+function appendTravelConstraintRule(
+  macroBlock: string,
+  travelResolved: ReturnType<typeof resolvePlanTargetUnderTravel>,
+) {
+  if (!travelResolved.constraint && travelResolved.allowedDisciplines.length === 0) {
+    return macroBlock;
+  }
+  return `${macroBlock}\n${formatTravelConstraintPromptRule(
+    travelResolved.constraint,
+    travelResolved.allowedDisciplines,
+  )}`;
+}
+
+function buildMacroBlock(input: {
+  effectiveTargetLoad: number | null;
+  planPhase: string | undefined;
+  effectivePlanFocus: string | null;
+  travelResolved: ReturnType<typeof resolvePlanTargetUnderTravel>;
+}) {
+  const { effectiveTargetLoad, planPhase, effectivePlanFocus, travelResolved } = input;
+  if (effectiveTargetLoad === null && !planPhase && !effectivePlanFocus) {
+    return '';
+  }
+  const bits = [
+    planPhase ? `Phase du macro-plan : ${planPhase}` : null,
+    effectiveTargetLoad !== null
+      ? `Charge hebdomadaire cible : ${effectiveTargetLoad} TSS (répartis sur les séances du bloc)`
+      : null,
+    effectivePlanFocus ? `Focus de la semaine : ${effectivePlanFocus}` : null,
+  ].filter(Boolean);
+  const macroBlock = `\n\n## Macro-plan de la semaine
+${bits.join('\n')}
+Calibre le volume et l'intensité des séances pour approcher cette charge cible sans la dépasser de plus de 10 %.`;
+  return appendTravelConstraintRule(macroBlock, travelResolved);
+}
+
+function buildAgendaBlock(busySummary: string | null) {
+  if (busySummary) {
+    return `\n\n## Agenda de l'athlète (créneaux occupés à éviter)
+Place chaque séance à une heure LIBRE ('startTime' au format HH:mm), entre 06:00 et 21:00, jamais la nuit. Ne surcharge pas un jour déjà très occupé : si une journée est pleine, allège ou déplace la séance. Vérifie que la durée de la séance tient dans un créneau libre.
+${busySummary}`;
+  }
+  return `\n\n## Agenda
+Aucun agenda connecté : propose des heures réalistes ('startTime' entre 06:00 et 21:00) ou laisse 'startTime' à null.`;
+}
+
+function buildPlanPrompt(input: {
+  days: number;
+  start: Date;
+  focus: string | undefined;
+  contextText: string;
+  goalBlock: string;
+  macroBlock: string;
+  agendaBlock: string;
+}) {
+  const { days, start, focus, contextText, goalBlock, macroBlock, agendaBlock } = input;
+  return `Génère un plan d'entraînement couvrant ${days} jour(s) à partir du ${format(
+    start,
+    'EEEE d MMMM yyyy',
+    { locale: fr },
+  )} (dayOffset 0 = ce jour-là, dayOffset 1 = lendemain, etc.).
+
+${focus ? `Demande spécifique de l'athlète : ${focus}\n\n` : ''}Données de l'athlète :
+
+${contextText}${goalBlock}${macroBlock}${agendaBlock}`;
+}
+
+async function buildPlanGenerationContext(
+  athleteId: string,
+  parsed: z.infer<typeof coachPlanRequestSchema>,
+  start: Date,
+) {
+  const { days = 7, focus, goalId, targetLoad, planPhase, planFocus } = parsed;
+  const [ctx, busySummary, goal] = await Promise.all([
+    buildCoachContext(athleteId, start, { includeScenario: true }),
+    buildBusySummary(athleteId, start, days),
+    goalId ? getGoalById(athleteId, goalId) : Promise.resolve(null),
+  ]);
+
+  const travelWindows = (ctx.travel ?? []).map((t: CoachContext['travel'][number]) => ({
+    startDate: new Date(`${t.startDate}T00:00:00`),
+    endDate: new Date(`${t.endDate}T00:00:00`),
+    label: t.label,
+    trainingConstraint: t.trainingConstraint,
+    allowedDisciplines: t.allowedDisciplines ?? [],
+  }));
+  const travelResolved = resolvePlanTargetUnderTravel({
+    startDate: start,
+    days,
+    targetLoad,
+    planFocus,
+    travels: travelWindows,
+  });
+
+  return { ctx, busySummary, goal, days, focus, goalId, travelResolved, planPhase };
+}
+
+async function preparePlanGeneration(
+  athleteId: string,
+  parsed: z.infer<typeof coachPlanRequestSchema>,
+) {
+  const start = startOfDay(parsed.startDate ?? new Date());
+
+  const rateLimit = await checkRateLimit(rateLimiters.coachPlan, athleteId);
+  if (!rateLimit.ok) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), {
+        status: 429,
+      }),
+    };
+  }
+
+  const { ctx, busySummary, goal, days, focus, goalId, travelResolved, planPhase } =
+    await buildPlanGenerationContext(athleteId, parsed, start);
+
+  const goalBlock = goal ? buildGoalBlock(goal, start) : '';
+  const macroBlock = buildMacroBlock({
+    effectiveTargetLoad: travelResolved.targetLoad,
+    planPhase: planPhase ?? undefined,
+    effectivePlanFocus: travelResolved.planFocus,
+    travelResolved,
+  });
+  const agendaBlock = buildAgendaBlock(busySummary);
+  const prompt = buildPlanPrompt({
+    days,
+    start,
+    focus: focus ?? undefined,
+    contextText: formatCoachContext(ctx),
+    goalBlock,
+    macroBlock,
+    agendaBlock,
+  });
+
+  return { ok: true as const, start, goalId: goalId ?? null, prompt };
+}
+
 export async function POST(req: Request) {
   if (!isCoachConfigured()) {
     return NextResponse.json(
@@ -71,100 +230,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Paramètres invalides.' }, { status: 400 });
   }
 
-  const { startDate, days = 7, focus, goalId, targetLoad, planPhase, planFocus } = parsed.data;
-  const start = startOfDay(startDate ?? new Date());
   const athleteId = await getCurrentAthleteId();
-
-  const rateLimit = await checkRateLimit(rateLimiters.coachPlan, athleteId);
-  if (!rateLimit.ok) {
-    return NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), { status: 429 });
+  const prepared = await preparePlanGeneration(athleteId, parsed.data);
+  if (!prepared.ok) {
+    return prepared.response;
   }
-
-  const [ctx, busySummary, goal] = await Promise.all([
-    buildCoachContext(athleteId, start, { includeScenario: true }),
-    buildBusySummary(athleteId, start, days),
-    goalId ? getGoalById(athleteId, goalId) : Promise.resolve(null),
-  ]);
-  const contextText = formatCoachContext(ctx);
-
-  const travelWindows = (ctx.travel ?? []).map((t) => ({
-    startDate: new Date(`${t.startDate}T00:00:00`),
-    endDate: new Date(`${t.endDate}T00:00:00`),
-    label: t.label,
-    trainingConstraint: t.trainingConstraint,
-    allowedDisciplines: t.allowedDisciplines ?? [],
-  }));
-  const travelResolved = resolvePlanTargetUnderTravel({
-    startDate: start,
-    days,
-    targetLoad,
-    planFocus,
-    travels: travelWindows,
-  });
-  const effectiveTargetLoad = travelResolved.targetLoad;
-  const effectivePlanFocus = travelResolved.planFocus;
-
-  let goalBlock = '';
-  if (goal) {
-    const daysToGo = goal.targetDate
-      ? Math.round((startOfDay(goal.targetDate).getTime() - start.getTime()) / 86400_000)
-      : null;
-    const bits = [
-      `Objectif ciblé : ${goal.title}`,
-      goal.location ? `lieu ${goal.location}` : null,
-      goal.targetDate ? `date ${format(goal.targetDate, 'd MMMM yyyy', { locale: fr })}` : null,
-      daysToGo != null ? `dans ${daysToGo} jours (~${Math.round(daysToGo / 7)} semaines)` : null,
-    ]
-      .filter(Boolean)
-      .join(' · ');
-    goalBlock = `\n\n## Objectif prioritaire pour ce bloc
-${bits}
-Périodise IMPÉRATIVEMENT ce bloc en fonction de cette échéance (base → spécifique → affûtage selon les semaines restantes). Oriente le contenu des séances vers les exigences de cet objectif.`;
-  }
-
-  let macroBlock = '';
-  if (effectiveTargetLoad != null || planPhase || effectivePlanFocus) {
-    const bits = [
-      planPhase ? `Phase du macro-plan : ${planPhase}` : null,
-      effectiveTargetLoad != null
-        ? `Charge hebdomadaire cible : ${effectiveTargetLoad} TSS (répartis sur les séances du bloc)`
-        : null,
-      effectivePlanFocus ? `Focus de la semaine : ${effectivePlanFocus}` : null,
-    ].filter(Boolean);
-    macroBlock = `\n\n## Macro-plan de la semaine
-${bits.join('\n')}
-Calibre le volume et l'intensité des séances pour approcher cette charge cible sans la dépasser de plus de 10 %.`;
-    if (travelResolved.constraint || travelResolved.allowedDisciplines.length > 0) {
-      macroBlock += `\n${formatTravelConstraintPromptRule(
-        travelResolved.constraint,
-        travelResolved.allowedDisciplines,
-      )}`;
-    }
-  }
-
-  const agendaBlock = busySummary
-    ? `\n\n## Agenda de l'athlète (créneaux occupés à éviter)
-Place chaque séance à une heure LIBRE ('startTime' au format HH:mm), entre 06:00 et 21:00, jamais la nuit. Ne surcharge pas un jour déjà très occupé : si une journée est pleine, allège ou déplace la séance. Vérifie que la durée de la séance tient dans un créneau libre.
-${busySummary}`
-    : `\n\n## Agenda
-Aucun agenda connecté : propose des heures réalistes ('startTime' entre 06:00 et 21:00) ou laisse 'startTime' à null.`;
-
-  const prompt = `Génère un plan d'entraînement couvrant ${days} jour(s) à partir du ${format(
-    start,
-    'EEEE d MMMM yyyy',
-    { locale: fr },
-  )} (dayOffset 0 = ce jour-là, dayOffset 1 = lendemain, etc.).
-
-${focus ? `Demande spécifique de l'athlète : ${focus}\n\n` : ''}Données de l'athlète :
-
-${contextText}${goalBlock}${macroBlock}${agendaBlock}`;
+  const { start, goalId, prompt } = prepared;
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       let closed = false;
       const send = (event: CoachProgressEvent<PlanPayload, unknown>) => {
-        if (closed) return;
+        if (closed) {
+          return;
+        }
         try {
           controller.enqueue(encoder.encode(encodeCoachProgressEvent(event)));
         } catch {

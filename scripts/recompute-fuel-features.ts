@@ -43,7 +43,9 @@ async function main() {
   for (const { trainingDayId } of nutritionDays) {
     try {
       const day = await featureEngine.computeDayFeatures(ATHLETE_ID, trainingDayId);
-      if (day.fuel !== 'PENDING') recomputed += 1;
+      if (day.fuel !== 'PENDING') {
+        recomputed += 1;
+      }
     } catch (error) {
       failed += 1;
       console.error(`[recompute] failed for ${trainingDayId}`, error);

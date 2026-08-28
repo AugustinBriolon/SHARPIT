@@ -30,7 +30,9 @@ export function AthleteStateInitializer() {
     refresh();
 
     const onVisible = () => {
-      if (document.visibilityState !== 'visible') return;
+      if (document.visibilityState !== 'visible') {
+        return;
+      }
       refresh(SHELL_REFRESH_MIN_INTERVAL_MS);
     };
 

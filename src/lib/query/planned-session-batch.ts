@@ -30,27 +30,8 @@ export type PlannedSessionBatchOp =
   | { op: 'update'; id: string; data: Partial<PlannedSessionBatchPayload> }
   | { op: 'remove'; id: string };
 
-export function optimisticPlannedSession(
-  payload: PlannedSessionBatchPayload,
-  brick?: { groupId: string; order: number },
-): ClientPlannedSession {
-  const now = new Date();
+function plannedSessionDefaults(now: Date) {
   return {
-    id: tempId(),
-    type: payload.type,
-    date: payload.date,
-    startTime: payload.startTime ?? null,
-    title: payload.title ?? null,
-    description: payload.description ?? null,
-    strengthPrescription: payload.strengthPrescription ?? null,
-    accessories: payload.accessories ?? null,
-    durationMin: payload.durationMin ?? null,
-    load: payload.load ?? null,
-    intensity: payload.intensity ?? null,
-    completed: payload.completed ?? false,
-    goalId: payload.goalId ?? null,
-    brickGroupId: brick?.groupId ?? null,
-    brickOrder: brick?.order ?? null,
     activityId: null,
     analysis: null,
     analyzedAt: null,
@@ -61,6 +42,41 @@ export function optimisticPlannedSession(
     createdAt: now,
     updatedAt: now,
     activity: null,
+  };
+}
+
+function asNull<T>(value: T | null | undefined): T | null {
+  return value ?? null;
+}
+
+function payloadSessionFields(payload: PlannedSessionBatchPayload) {
+  return {
+    startTime: asNull(payload.startTime),
+    title: asNull(payload.title),
+    description: asNull(payload.description),
+    strengthPrescription: asNull(payload.strengthPrescription),
+    accessories: asNull(payload.accessories),
+    durationMin: asNull(payload.durationMin),
+    load: asNull(payload.load),
+    intensity: asNull(payload.intensity),
+    completed: payload.completed ?? false,
+    goalId: asNull(payload.goalId),
+  };
+}
+
+export function optimisticPlannedSession(
+  payload: PlannedSessionBatchPayload,
+  brick?: { groupId: string; order: number },
+): ClientPlannedSession {
+  const now = new Date();
+  return {
+    id: tempId(),
+    type: payload.type,
+    date: payload.date,
+    ...payloadSessionFields(payload),
+    brickGroupId: brick?.groupId ?? null,
+    brickOrder: brick?.order ?? null,
+    ...plannedSessionDefaults(now),
   } as unknown as ClientPlannedSession;
 }
 
@@ -88,7 +104,11 @@ export function applyPlannedSessionBatchOps(
 
 export function plannedSessionBatchSuccessMessage(ops: PlannedSessionBatchOp[]): string {
   const n = ops.length;
-  if (n <= 0) return 'Planning mis à jour';
-  if (n === 1) return '1 ajustement appliqué';
+  if (n <= 0) {
+    return 'Planning mis à jour';
+  }
+  if (n === 1) {
+    return '1 ajustement appliqué';
+  }
   return `${n} ajustements appliqués`;
 }

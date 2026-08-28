@@ -2,6 +2,82 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDevTools, isDevToolsEnabled } from '@/lib/dev/dev-tools';
 import type { FeatureCategory } from '@/core/features/types';
 
+const VALID_CATEGORIES: FeatureCategory[] = ['SESSION', 'LOAD', 'RECOVERY', 'BODY', 'CONDITION'];
+
+async function handleDayView(
+  featureExplorer: ReturnType<typeof getDevTools>['featureExplorer'],
+  athleteId: string,
+  trainingDayId: string,
+) {
+  const view = await featureExplorer.getDayView(athleteId, trainingDayId);
+  return NextResponse.json(view);
+}
+
+async function handleCategoryHistory(input: {
+  featureExplorer: ReturnType<typeof getDevTools>['featureExplorer'];
+  athleteId: string;
+  category: FeatureCategory;
+  days: string | null;
+  trainingDayId: string | null;
+}) {
+  const { featureExplorer, athleteId, category, days, trainingDayId } = input;
+  if (!VALID_CATEGORIES.includes(category)) {
+    return NextResponse.json(
+      { error: `Invalid category. Use one of: ${VALID_CATEGORIES.join(', ')}` },
+      { status: 400 },
+    );
+  }
+  const history = await featureExplorer.getHistory(athleteId, category, {
+    days: days ? Number(days) : 30,
+    toTrainingDayId: trainingDayId ?? undefined,
+  });
+  return NextResponse.json(history);
+}
+
+async function handleRangeSummary(
+  featureExplorer: ReturnType<typeof getDevTools>['featureExplorer'],
+  athleteId: string,
+  from: string,
+  to: string,
+) {
+  const rangeSummary = await featureExplorer.getRangeSummary(athleteId, from, to);
+  return NextResponse.json(rangeSummary);
+}
+
+async function resolveFeatureExplorerRequest(input: {
+  featureExplorer: ReturnType<typeof getDevTools>['featureExplorer'];
+  athleteId: string;
+  trainingDayId: string | null;
+  category: FeatureCategory | null;
+  days: string | null;
+  from: string | null;
+  to: string | null;
+  summary: boolean;
+}) {
+  const { featureExplorer, athleteId, trainingDayId, category, days, from, to, summary } = input;
+  if (trainingDayId && !category) {
+    return handleDayView(featureExplorer, athleteId, trainingDayId);
+  }
+  if (category) {
+    return handleCategoryHistory({
+      featureExplorer,
+      athleteId,
+      category,
+      days,
+      trainingDayId,
+    });
+  }
+  if (from && to && summary) {
+    return handleRangeSummary(featureExplorer, athleteId, from, to);
+  }
+  return NextResponse.json(
+    {
+      error: 'Provide one of: ?trainingDayId, ?category, or ?from=...&to=...&summary=true',
+    },
+    { status: 400 },
+  );
+}
+
 /**
  * Feature Explorer API
  *
@@ -23,61 +99,22 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const athleteId = searchParams.get('athleteId');
-  const trainingDayId = searchParams.get('trainingDayId');
-  const category = searchParams.get('category') as FeatureCategory | null;
-  const days = searchParams.get('days');
-  const from = searchParams.get('from');
-  const to = searchParams.get('to');
-  const summary = searchParams.get('summary') === 'true';
-
   if (!athleteId) {
     return NextResponse.json({ error: 'athleteId is required.' }, { status: 400 });
   }
 
   try {
     const { featureExplorer } = getDevTools();
-
-    // Mode 1: Single day view
-    if (trainingDayId && !category) {
-      const view = await featureExplorer.getDayView(athleteId, trainingDayId);
-      return NextResponse.json(view);
-    }
-
-    // Mode 2: Historical trend for a category
-    if (category) {
-      const validCategories: FeatureCategory[] = [
-        'SESSION',
-        'LOAD',
-        'RECOVERY',
-        'BODY',
-        'CONDITION',
-      ];
-      if (!validCategories.includes(category)) {
-        return NextResponse.json(
-          { error: `Invalid category. Use one of: ${validCategories.join(', ')}` },
-          { status: 400 },
-        );
-      }
-
-      const history = await featureExplorer.getHistory(athleteId, category, {
-        days: days ? Number(days) : 30,
-        toTrainingDayId: trainingDayId ?? undefined,
-      });
-      return NextResponse.json(history);
-    }
-
-    // Mode 3: Range summary
-    if (from && to && summary) {
-      const rangeSummary = await featureExplorer.getRangeSummary(athleteId, from, to);
-      return NextResponse.json(rangeSummary);
-    }
-
-    return NextResponse.json(
-      {
-        error: 'Provide one of: ?trainingDayId, ?category, or ?from=...&to=...&summary=true',
-      },
-      { status: 400 },
-    );
+    return resolveFeatureExplorerRequest({
+      featureExplorer,
+      athleteId,
+      trainingDayId: searchParams.get('trainingDayId'),
+      category: searchParams.get('category') as FeatureCategory | null,
+      days: searchParams.get('days'),
+      from: searchParams.get('from'),
+      to: searchParams.get('to'),
+      summary: searchParams.get('summary') === 'true',
+    });
   } catch (error) {
     console.error('[dev/features]', error);
     return NextResponse.json({ error: 'Feature exploration failed.' }, { status: 500 });

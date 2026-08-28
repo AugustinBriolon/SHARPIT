@@ -45,7 +45,9 @@ export const getCurrentAthleteId = cache(async (): Promise<string> => {
     where: { clerkUserId: userId },
     select: { id: true },
   });
-  if (existing) return existing.id;
+  if (existing) {
+    return existing.id;
+  }
 
   try {
     const created = await prisma.athleteProfile.create({ data: { clerkUserId: userId } });
