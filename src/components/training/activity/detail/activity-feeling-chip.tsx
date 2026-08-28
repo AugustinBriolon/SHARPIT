@@ -74,7 +74,7 @@ export function ActivityFeelingChip({
   rpe: number | null;
 }) {
   const editor = useActivityFeelingEditor({ activityId, feeling, rpe });
-  const chipValue = rpe !== null ? `${feeling} · RPE ${rpe}` : feeling;
+  const chipValue = feeling;
 
   return (
     <>

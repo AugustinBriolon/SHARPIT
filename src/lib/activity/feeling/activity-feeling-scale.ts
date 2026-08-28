@@ -5,25 +5,13 @@ export type ActivityFeelingOption = {
   hint: string;
 };
 
-/** Session feeling scale — shared by form, chip modal, and prompt. */
+/** Session feeling scale — left (pire) → right (meilleur) in pickers. */
 export const ACTIVITY_FEELING_SCALE: ActivityFeelingOption[] = [
   {
-    value: 'Très bien',
-    label: 'Très bien',
-    icon: '😄',
-    hint: 'Fluide, énergie au rendez-vous.',
-  },
-  {
-    value: 'Bien',
-    label: 'Bien',
-    icon: '🙂',
-    hint: 'Bon ressenti, effort maîtrisé.',
-  },
-  {
-    value: 'Correct',
-    label: 'Correct',
-    icon: '😐',
-    hint: 'Séance faite, sans plus ni moins.',
+    value: 'Très mal',
+    label: 'Très mal',
+    icon: '😞',
+    hint: 'Très dur — signes de surmenage ou inconfort.',
   },
   {
     value: 'Mal',
@@ -32,14 +20,29 @@ export const ACTIVITY_FEELING_SCALE: ActivityFeelingOption[] = [
     hint: 'Difficile, jambes lourdes ou manque d’énergie.',
   },
   {
-    value: 'Très mal',
-    label: 'Très mal',
-    icon: '😞',
-    hint: 'Très dur — signes de surmenage ou inconfort.',
+    value: 'Correct',
+    label: 'Correct',
+    icon: '😐',
+    hint: 'Séance faite, sans plus ni moins.',
+  },
+  {
+    value: 'Bien',
+    label: 'Bien',
+    icon: '🙂',
+    hint: 'Bon ressenti, effort maîtrisé.',
+  },
+  {
+    value: 'Très bien',
+    label: 'Très bien',
+    icon: '😄',
+    hint: 'Fluide, énergie au rendez-vous.',
   },
 ];
 
-export const ACTIVITY_FEELING_OPTIONS = ACTIVITY_FEELING_SCALE.map(({ value, label }) => ({
-  value,
-  label,
-}));
+/** Select / form order — meilleur en premier. */
+export const ACTIVITY_FEELING_OPTIONS = [...ACTIVITY_FEELING_SCALE]
+  .reverse()
+  .map(({ value, label }) => ({
+    value,
+    label,
+  }));
