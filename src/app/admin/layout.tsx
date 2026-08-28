@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import Link from 'next/link';
 import { requireAdmin } from '@/lib/auth/admin';
 
 /**
@@ -17,7 +18,15 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   return (
     <div className="bg-background text-foreground min-h-full">
-      <div className="mx-auto max-w-3xl px-5 py-10">{children}</div>
+      <div className="mx-auto max-w-3xl space-y-4 px-5 py-10">
+        <Link
+          className="text-muted-foreground hover:text-foreground text-data inline-flex items-center gap-1.5 text-xs transition-colors"
+          href="/"
+        >
+          ← Retour à l&apos;app
+        </Link>
+        {children}
+      </div>
     </div>
   );
 }
