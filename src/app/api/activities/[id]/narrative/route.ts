@@ -2,6 +2,7 @@ import { NextRequest, NextResponse, after } from 'next/server';
 import { z } from 'zod';
 import { isCoachConfigured } from '@/lib/ai';
 import { runActivityNarrativeAnalysis } from '@/lib/activity/narrative/activity-narrative';
+import { getNarrativeAccessStatus } from '@/lib/access/narrative-trial';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
 import { prisma } from '@/lib/prisma';
@@ -30,7 +31,7 @@ async function checkNarrativeRateLimit(
 }
 
 async function runNarrativeAndRespond(athleteId: string, id: string, force: boolean) {
-  const ok = await runActivityNarrativeAnalysis(athleteId, id, { force });
+  const ok = await runActivityNarrativeAnalysis(athleteId, id, { force, spendTrialCredit: true });
   if (!ok) {
     return NextResponse.json({ error: 'Synthèse impossible' }, { status: 500 });
   }
@@ -78,6 +79,15 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
     const { force, wait } = validated;
 
+    // This route is athlete-initiated (the "Générer" tap) — the only place a
+    // FREE athlete's trial credit gets spent. Pre-check so a FREE athlete
+    // with no credits left gets a clean "locked" response instead of a
+    // generic 500 from deep inside runActivityNarrativeAnalysis.
+    const access = await getNarrativeAccessStatus(athleteId);
+    if (!access.isPro && access.trialCreditsLeft <= 0) {
+      return NextResponse.json({ error: 'locked', trialCreditsLeft: 0 }, { status: 402 });
+    }
+
     // A real re-roll (force) is rate-limited per activity — the auto-triggered,
     // non-force path (new imports) is unaffected.
     if (force) {
@@ -93,7 +103,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     after(async () => {
       try {
-        await runActivityNarrativeAnalysis(athleteId, id, { force });
+        await runActivityNarrativeAnalysis(athleteId, id, { force, spendTrialCredit: true });
       } catch (error) {
         console.error('[activities/narrative]', id, error);
       }

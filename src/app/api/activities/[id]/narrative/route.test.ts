@@ -23,6 +23,10 @@ vi.mock('@/lib/rate-limit', () => ({
   rateLimiters: { activityNarrative: {} },
 }));
 
+vi.mock('@/lib/access/narrative-trial', () => ({
+  getNarrativeAccessStatus: vi.fn().mockResolvedValue({ isPro: true, trialCreditsLeft: 0 }),
+}));
+
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     activity: {
@@ -46,9 +50,11 @@ function postRequest(body?: unknown) {
 const context = { params: Promise.resolve({ id: 'activity-1' }) };
 
 describe('POST /api/activities/[id]/narrative — force default', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     runActivityNarrativeAnalysisMock.mockResolvedValue(true);
+    const { getNarrativeAccessStatus } = await import('@/lib/access/narrative-trial');
+    vi.mocked(getNarrativeAccessStatus).mockResolvedValue({ isPro: true, trialCreditsLeft: 0 });
   });
 
   it('defaults force to false when the body omits it (idempotent by default)', async () => {
@@ -58,6 +64,7 @@ describe('POST /api/activities/[id]/narrative — force default', () => {
 
     expect(runActivityNarrativeAnalysisMock).toHaveBeenCalledWith('athlete-1', 'activity-1', {
       force: false,
+      spendTrialCredit: true,
     });
   });
 
@@ -77,6 +84,7 @@ describe('POST /api/activities/[id]/narrative — force default', () => {
 
     expect(runActivityNarrativeAnalysisMock).toHaveBeenCalledWith('athlete-1', 'activity-1', {
       force: true,
+      spendTrialCredit: true,
     });
   });
 
@@ -87,5 +95,30 @@ describe('POST /api/activities/[id]/narrative — force default', () => {
 
     expect(response.status).toBe(400);
     expect(runActivityNarrativeAnalysisMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 402 locked when a FREE athlete has no trial credits left', async () => {
+    const { getNarrativeAccessStatus } = await import('@/lib/access/narrative-trial');
+    vi.mocked(getNarrativeAccessStatus).mockResolvedValue({ isPro: false, trialCreditsLeft: 0 });
+    const { POST } = await importRoute();
+
+    const response = await POST(postRequest({ force: true, wait: true }), context);
+
+    expect(response.status).toBe(402);
+    expect(runActivityNarrativeAnalysisMock).not.toHaveBeenCalled();
+  });
+
+  it('allows a FREE athlete with trial credits left to generate', async () => {
+    const { getNarrativeAccessStatus } = await import('@/lib/access/narrative-trial');
+    vi.mocked(getNarrativeAccessStatus).mockResolvedValue({ isPro: false, trialCreditsLeft: 2 });
+    const { POST } = await importRoute();
+
+    const response = await POST(postRequest({ force: true, wait: true }), context);
+
+    expect(response.status).not.toBe(402);
+    expect(runActivityNarrativeAnalysisMock).toHaveBeenCalledWith('athlete-1', 'activity-1', {
+      force: true,
+      spendTrialCredit: true,
+    });
   });
 });
