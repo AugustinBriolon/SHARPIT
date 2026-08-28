@@ -3,6 +3,7 @@ import Link from 'next/link';
 import {
   Brain,
   Dumbbell,
+  Gauge,
   Link2,
   Microscope,
   MoonStar,
@@ -107,6 +108,12 @@ const GROUPS: SettingsGroup[] = [
         description: 'Densité de lecture: révèle ou masque la couche technique.',
         icon: Microscope,
         statusKey: 'expertMode',
+      },
+      {
+        href: '/settings/pro',
+        title: 'Pro',
+        description: 'Ce que le palier payant débloque.',
+        icon: Gauge,
       },
       {
         href: '/settings/about',

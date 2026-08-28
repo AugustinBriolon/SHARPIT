@@ -319,6 +319,7 @@ export function useGenerateWeeklyReview() {
         id: r.id,
         weekStart: new Date(r.weekStart),
         content: r.content,
+        stats: r.stats ?? null,
         generatedAt: new Date(r.generatedAt),
       } as ClientWeeklyReview;
     },

@@ -1,6 +1,6 @@
 'use client';
 
-import { format, formatDistanceToNow } from 'date-fns';
+import { addDays, format, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { Markdown } from '@/components/coach/chat/markdown';
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
+import { WeeklyReviewStatsStrip } from '@/components/training/weekly-review/weekly-review-stats-strip';
 import { useGenerateWeeklyReview, useLatestWeeklyReview } from '@/hooks/use-coach';
 
 export function WeeklyReviewClient() {
@@ -44,8 +45,17 @@ export function WeeklyReviewClient() {
     );
   }
 
+  const weekEnd = addDays(review.weekStart, 6);
+
   return (
     <div className="space-y-3">
+      <p className="text-label">
+        Semaine du {format(review.weekStart, 'd MMM', { locale: fr })} au{' '}
+        {format(weekEnd, 'd MMM', { locale: fr })}
+      </p>
+
+      {review.stats ? <WeeklyReviewStatsStrip stats={review.stats} /> : null}
+
       <div className="analysis-panel rounded-analysis-lg px-5 py-5">
         <Markdown>{review.content}</Markdown>
       </div>
