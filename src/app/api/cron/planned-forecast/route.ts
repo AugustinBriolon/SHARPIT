@@ -8,7 +8,7 @@ function unauthorized() {
   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 }
 
-/** Rafraîchit les contextes environnementaux des séances outdoor (aujourd'hui + demain). */
+/** Rafraîchit les contextes environnementaux des séances outdoor (aujourd'hui + demain), chaque matin. */
 export async function GET(request: Request) {
   const auth = request.headers.get('authorization');
   if (!auth || !timingSafeEqualString(auth, `Bearer ${process.env.CRON_SECRET}`)) {

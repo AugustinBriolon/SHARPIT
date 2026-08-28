@@ -16,7 +16,7 @@
     },
     {
       "path": "/api/cron/planned-forecast",
-      "schedule": "0 19 * * *"
+      "schedule": "0 7 * * *"
     },
     {
       "path": "/api/cron/demo-reseed",
