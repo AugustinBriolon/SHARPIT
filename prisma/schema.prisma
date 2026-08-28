@@ -220,11 +220,18 @@ model Activity {
   @@index([athleteId])
 }
 
+enum AccessTier {
+  FREE
+  EXPERT
+}
+
 model AthleteProfile {
-  id                       String    @id @default(cuid())
-  clerkUserId              String    @unique
+  id                       String     @id @default(cuid())
+  clerkUserId              String     @unique
+  /// Palier d'accès (paiement géré hors Prisma pour l'instant — bascule manuelle via /admin).
+  tier                     AccessTier @default(FREE)
   heightCm                 Int? // taille (cm) — comparaisons composition (IMC, etc.)
-  birthDate                DateTime? @db.Date // date de naissance — âge calculé dynamiquement
+  birthDate                DateTime?  @db.Date // date de naissance — âge calculé dynamiquement
   ftpW                     Int? // FTP vélo (W)
   maxHr                    Int? // FC max (bpm)
   lthr                     Int? // FC seuil lactique (bpm)
