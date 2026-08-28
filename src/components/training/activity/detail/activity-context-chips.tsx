@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { Smile, Trophy } from 'lucide-react';
+import { Trophy } from 'lucide-react';
+import { ActivityFeelingChip } from '@/components/training/activity/detail/activity-feeling-chip';
 import {
   activityWeatherIcon,
   activityWeatherIconClassName,
@@ -16,11 +17,16 @@ import type { ActivityDetail, ActivityPerformanceRecordChip } from './types';
 const EMPTY_RECORDS: ActivityPerformanceRecordChip[] = [];
 
 function pushFeelingChip(chips: ReactNode[], activity: ActivityDetail) {
-  if (!activity.feeling) {
+  if (!activity.feeling?.trim()) {
     return;
   }
   chips.push(
-    <ActivityMetaChip key="feeling" icon={Smile} label="Ressenti" value={activity.feeling} />,
+    <ActivityFeelingChip
+      key="feeling"
+      activityId={activity.id}
+      feeling={activity.feeling}
+      rpe={activity.rpe}
+    />,
   );
 }
 

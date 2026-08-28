@@ -33,7 +33,7 @@ export function shouldRefreshHomeLocation(
   nowMs: number,
   intervalMs = HOME_LOCATION_REFRESH_MS,
 ): boolean {
-  if ((lastRefreshAtMs === undefined || lastRefreshAtMs === null)) {
+  if (lastRefreshAtMs === undefined || lastRefreshAtMs === null) {
     return true;
   }
   return nowMs - lastRefreshAtMs >= intervalMs;
@@ -59,6 +59,28 @@ export function hasMovedSignificantly(
 }
 
 export const HOME_LOCATION_REFRESH_STORAGE_KEY = 'sharpit:home-location:last-refresh-ms';
+
+/** Set after a successful device-position save — enables silent refresh on return visits. */
+export const HOME_LOCATION_EVER_GRANTED_STORAGE_KEY = 'sharpit:home-location:ever-granted';
+
+export function readHomeLocationEverGranted(
+  storage: Pick<Storage, 'getItem'> | null | undefined = typeof localStorage !== 'undefined'
+    ? localStorage
+    : null,
+): boolean {
+  if (!storage) {
+    return false;
+  }
+  return storage.getItem(HOME_LOCATION_EVER_GRANTED_STORAGE_KEY) === '1';
+}
+
+export function writeHomeLocationEverGranted(
+  storage: Pick<Storage, 'setItem'> | null | undefined = typeof localStorage !== 'undefined'
+    ? localStorage
+    : null,
+): void {
+  storage?.setItem(HOME_LOCATION_EVER_GRANTED_STORAGE_KEY, '1');
+}
 
 export function readLastHomeLocationRefreshMs(
   storage: Pick<Storage, 'getItem'> | null | undefined = typeof localStorage !== 'undefined'

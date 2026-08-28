@@ -52,7 +52,7 @@ function LocationPrompt() {
       className="text-muted-foreground/70 hover:text-foreground underline underline-offset-2 disabled:no-underline"
       disabled={state === 'asking'}
       type="button"
-      onClick={() => ask({ maximumAge: 0 })}
+      onClick={() => ask({ maximumAge: 60_000 })}
     >
       {PROMPT_COPY[state]}
     </button>
@@ -60,7 +60,7 @@ function LocationPrompt() {
 }
 
 function KnownLocation({ city }: { city: string }) {
-  const { state, ask } = useDeviceLocation({ autoRefresh: true });
+  const { state, ask } = useDeviceLocation();
   const refreshing = state === 'asking';
 
   return (
@@ -70,7 +70,7 @@ function KnownLocation({ city }: { city: string }) {
       disabled={refreshing}
       title="Mettre à jour la position"
       type="button"
-      onClick={() => ask({ maximumAge: 0 })}
+      onClick={() => ask({ maximumAge: 300_000 })}
     >
       {refreshing ? 'Localisation…' : city}
     </button>

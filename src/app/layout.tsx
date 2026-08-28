@@ -9,6 +9,7 @@ import { SnapshotOfflineSync } from '@/components/pwa/snapshot-offline-sync';
 import { Toaster } from '@/components/ui/toast';
 import { QueryProvider } from '@/providers/query-provider';
 import { AppModalProvider } from '@/providers/app-modal-provider';
+import { DeviceLocationProvider } from '@/components/today/dashboard/device-location-provider';
 import { THEME_INIT_SCRIPT, THEME_DARK_COLOR, THEME_LIGHT_COLOR } from '@/lib/theme/theme';
 import { cn } from '@/lib/utils';
 import './globals.css';
@@ -125,15 +126,17 @@ export default function RootLayout({
         <body className="bg-background text-foreground min-h-full font-sans">
           <ThemeProvider>
             <QueryProvider>
-              <AppModalProvider>
-                {children}
-                {/* Keyed on the current training day, so it must stay out of the
-                    prerendered shell. It renders nothing, so the boundary costs
-                    no UI — there is deliberately no fallback. */}
-                <Suspense>
-                  <SnapshotOfflineSync />
-                </Suspense>
-              </AppModalProvider>
+              <DeviceLocationProvider>
+                <AppModalProvider>
+                  {children}
+                  {/* Keyed on the current training day, so it must stay out of the
+                      prerendered shell. It renders nothing, so the boundary costs
+                      no UI — there is deliberately no fallback. */}
+                  <Suspense>
+                    <SnapshotOfflineSync />
+                  </Suspense>
+                </AppModalProvider>
+              </DeviceLocationProvider>
             </QueryProvider>
           </ThemeProvider>
           <Toaster />

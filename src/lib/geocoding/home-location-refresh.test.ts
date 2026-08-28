@@ -5,7 +5,9 @@ import {
   canAttemptSilentGeolocation,
   distanceMeters,
   hasMovedSignificantly,
+  readHomeLocationEverGranted,
   shouldRefreshHomeLocation,
+  writeHomeLocationEverGranted,
 } from '@/lib/geocoding/home-location-refresh';
 
 describe('shouldRefreshHomeLocation', () => {
@@ -60,5 +62,20 @@ describe('distanceMeters / hasMovedSignificantly', () => {
       true,
     );
     expect(HOME_LOCATION_MOVE_METERS).toBeGreaterThan(500);
+  });
+});
+
+describe('home location ever-granted flag', () => {
+  it('persists a marker after the athlete saves device position once', () => {
+    const backing = new Map<string, string>();
+    const storage = {
+      getItem: (key: string) => backing.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        backing.set(key, value);
+      },
+    };
+    expect(readHomeLocationEverGranted(storage)).toBe(false);
+    writeHomeLocationEverGranted(storage);
+    expect(readHomeLocationEverGranted(storage)).toBe(true);
   });
 });

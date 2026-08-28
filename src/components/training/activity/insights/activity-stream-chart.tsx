@@ -20,9 +20,17 @@ import {
   type NormalizedStreamChartPoint,
 } from '@/lib/streams/stream-chart-data';
 import { cn } from '@/lib/utils';
-import { buildStreamMetricOptions, type StreamMetricOption } from './activity-stream-chart-helpers';
+import {
+  buildStreamMetricOptions,
+  nextSelectedStreamMetricKeys,
+  type StreamMetricOption,
+} from './activity-stream-chart-helpers';
 
-export { buildStreamMetricOptions, type StreamMetricOption } from './activity-stream-chart-helpers';
+export {
+  buildStreamMetricOptions,
+  nextSelectedStreamMetricKeys,
+  type StreamMetricOption,
+} from './activity-stream-chart-helpers';
 
 type MetricKey = StreamMetricOption['key'];
 
@@ -116,31 +124,16 @@ function ActivityStreamChartComponent({
   function toggleMetric(key: MetricKey) {
     setUserSelectedKeys((current) => {
       const base = current ?? defaultSelected;
-      const isSelected = base.includes(key);
-      if (isSelected) {
-        if (base.length === 1) {
-          return base;
-        }
-        return base.filter((entry) => entry !== key);
-      }
-      if (base.length >= 2) {
-        return base;
-      }
-      return [...base, key];
+      return nextSelectedStreamMetricKeys(base, key);
     });
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3 px-1 sm:px-2">
-        <div>
-          <h2 className="text-label">Comparer les courbes</h2>
-          <p className="text-muted-foreground mt-1 text-sm text-pretty">
-            Active 1 ou 2 séries pour garder des axes lisibles.
-          </p>
-        </div>
-        <p className="text-muted-foreground text-data text-xs tabular-nums" role="status">
-          {selectedMetrics.length}/{metrics.length} actives
+      <div className="px-1 sm:px-2">
+        <h2 className="text-label">Comparer les courbes</h2>
+        <p className="text-muted-foreground mt-1 text-sm text-pretty">
+          Active 1 ou 2 séries pour garder des axes lisibles.
         </p>
       </div>
 
@@ -151,14 +144,12 @@ function ActivityStreamChartComponent({
       >
         {metrics.map((metric) => {
           const selected = selectedKeys.includes(metric.key);
-          const disabled = !selected && selectedKeys.length >= 2;
 
           return (
             <button
               key={metric.key}
               aria-label={metric.label}
               aria-pressed={selected}
-              disabled={disabled}
               type="button"
               className={cn(
                 'pressable min-h-11 rounded-lg border px-3 py-2 text-left sm:min-h-0',
@@ -166,7 +157,6 @@ function ActivityStreamChartComponent({
                 selected
                   ? 'border-primary/35 bg-analysis-surface-alt text-foreground'
                   : 'border-analysis-border bg-background text-muted-foreground',
-                disabled && 'cursor-not-allowed opacity-45',
               )}
               onClick={() => toggleMetric(metric.key)}
             >
