@@ -8,8 +8,34 @@ import { Button } from '@/components/ui/button';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
-import { WeeklyReviewStatsStrip } from '@/components/training/weekly-review/weekly-review-stats-strip';
+import { WeeklyReviewIllustration } from '@/components/training/weekly-review/weekly-review-illustration';
+import {
+  matchIllustrationKind,
+  splitWeeklyReviewSections,
+} from '@/components/training/weekly-review/weekly-review-sections';
 import { useGenerateWeeklyReview, useLatestWeeklyReview } from '@/hooks/use-coach';
+import type { WeeklyStats } from '@/lib/weekly-review';
+
+/** Each chart sits directly above the paragraph it illustrates — reading the
+ * numbers and reading the coach's take on them is the same motion, not two
+ * separate things the athlete has to connect themselves. */
+function WeeklyReviewNarrative({ content, stats }: { content: string; stats: WeeklyStats | null }) {
+  const sections = splitWeeklyReviewSections(content);
+
+  return (
+    <div className="space-y-5">
+      {sections.map((section, index) => {
+        const kind = stats ? matchIllustrationKind(section.heading) : null;
+        return (
+          <div key={`${section.heading}-${index}`}>
+            {kind ? <WeeklyReviewIllustration kind={kind} stats={stats!} /> : null}
+            <Markdown>{section.body}</Markdown>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export function WeeklyReviewClient() {
   const { data: review, isLoading } = useLatestWeeklyReview();
@@ -54,11 +80,10 @@ export function WeeklyReviewClient() {
         {format(weekEnd, 'd MMM', { locale: fr })}
       </p>
 
-      {review.stats ? <WeeklyReviewStatsStrip stats={review.stats} /> : null}
-
       <div className="analysis-panel rounded-analysis-lg px-5 py-5">
-        <Markdown>{review.content}</Markdown>
+        <WeeklyReviewNarrative content={review.content} stats={review.stats} />
       </div>
+
       <div className="flex items-center justify-between gap-3">
         <p className="text-muted-foreground text-xs">
           Généré {formatDistanceToNow(review.generatedAt, { addSuffix: true, locale: fr })}
