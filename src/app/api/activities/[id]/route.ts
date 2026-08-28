@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { buildActivityUpdateData } from '@/lib/activity/activity-service';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import {
@@ -59,10 +59,16 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     if (!activity) {
       return NextResponse.json({ error: 'Séance introuvable' }, { status: 404 });
     }
-    await syncManualActivityObservations(activity);
 
-    // L'ancien et le nouveau type peuvent différer : on recalcule les deux.
-    await updateRecordsForTypesSafe(athleteId, [existing.type, newType]);
+    // Instant UX: return the updated row immediately; twin sync must not block PATCH.
+    after(async () => {
+      try {
+        await syncManualActivityObservations(activity);
+        await updateRecordsForTypesSafe(athleteId, [existing.type, newType]);
+      } catch (error) {
+        console.error('[activities/PATCH] background sync', error);
+      }
+    });
 
     return NextResponse.json(activity);
   } catch (error) {

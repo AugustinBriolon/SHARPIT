@@ -3,6 +3,7 @@
 import { ActivityFeelingChip } from '@/components/training/activity/detail/activity-feeling-chip';
 import { ActivityFeelingPrompt } from '@/components/training/activity/detail/activity-feeling-prompt';
 import { ActivityPlannedSessionChip } from '@/components/training/activity/detail/activity-planned-session-chip';
+import { useActivityHeaderEvaluations } from '@/components/training/activity/detail/use-activity-header-evaluations';
 import type { PlannedSessionSummary } from '@/components/training/activity/detail/types';
 
 function resolveHeaderChipVisibility({
@@ -38,16 +39,25 @@ export function ActivityHeaderContextChips({
   plannedSession: PlannedSessionSummary | null;
   plannedAnalysisReady: boolean;
 }) {
-  const chips = resolveHeaderChipVisibility({ feeling, rpe, plannedSession });
+  const evaluations = useActivityHeaderEvaluations(activityId, { feeling, rpe });
+  const chips = resolveHeaderChipVisibility({
+    feeling: evaluations.feeling,
+    rpe: evaluations.rpe,
+    plannedSession,
+  });
 
   if (!chips.visible) {
     return null;
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
       {chips.hasFeeling ? (
-        <ActivityFeelingChip activityId={activityId} feeling={feeling!} rpe={rpe} />
+        <ActivityFeelingChip
+          activityId={activityId}
+          feeling={evaluations.feeling!}
+          rpe={evaluations.rpe}
+        />
       ) : null}
       {chips.showFeelingPrompt ? <ActivityFeelingPrompt activityId={activityId} /> : null}
       {chips.showConformity && plannedSession ? (

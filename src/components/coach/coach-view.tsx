@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState, useCallback } from 'react';
 import { CoachViewLayout } from '@/components/coach/coach-view-layout';
 import { useCoachDiscussBootstrap } from '@/components/coach/use-coach-discuss-bootstrap';
 import {
@@ -16,6 +16,7 @@ import { useIsMobile } from '@/hooks/use-viewport';
 import { clearCoachInputDraft } from '@/lib/coach/chat/coach-input-draft';
 import { warmCoachContext } from '@/lib/coach/warm-coach-context';
 import { createClientId } from '@/lib/client-id';
+import type { CoachDiscussContext } from '@/lib/coach/chat/coach-discuss-context';
 
 function createEphemeralId(): string {
   return createClientId();
@@ -32,9 +33,18 @@ export function CoachView() {
   const renameConversation = useRenameConversation();
   const deleteConversation = useDeleteConversation();
 
-  const { latchedContext, detachLatchedContext, createConversation } = useCoachDiscussBootstrap(
+  const handleDiscussReady = useCallback(
+    (_context: CoachDiscussContext) => {
+      const id = createEphemeralId();
+      selection.setEphemeralIds((prev) => new Set(prev).add(id));
+      selection.setActiveId(id);
+    },
+    [selection.setActiveId, selection.setEphemeralIds],
+  );
+
+  const { latchedContext, detachLatchedContext } = useCoachDiscussBootstrap(
     discussParams,
-    selection.setActiveId,
+    handleDiscussReady,
   );
 
   useLayoutEffect(() => {
@@ -96,7 +106,7 @@ export function CoachView() {
       isEphemeral={selection.isEphemeral}
       isMobile={isMobile}
       mountLiveChat={mountLiveChat}
-      newDisabled={createConversation.isPending || guardDisabled}
+      newDisabled={guardDisabled}
       renderChat={renderChat}
       selectedId={selection.selectedId}
       viewportReady={viewportReady}
