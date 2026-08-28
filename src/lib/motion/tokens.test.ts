@@ -17,8 +17,25 @@ describe('motionTokens (DESIGN_LANGUAGE §9)', () => {
     expect(motionTokens.duration.slow).toBeLessThanOrEqual(0.3);
   });
 
-  it('uses SHARPIT press scale 0.96', () => {
-    expect(motionTokens.scale.press).toBe(0.96);
+  it('exposes semantic press presets (ADR-028)', () => {
+    expect(motionTokens.scale.pressMicro).toBe(0.95);
+    expect(motionTokens.scale.pressSmall).toBe(0.96);
+    expect(motionTokens.scale.pressLarge).toBe(0.98);
+    expect(motionTokens.scale.pressSurface).toBe(0.988);
+    expect(motionTokens.scale.pressMinimal).toBe(1);
+    expect(motionTokens.scale.press).toBe(motionTokens.scale.pressSmall);
+  });
+
+  it('never sets press scale below 0.95', () => {
+    const scales = [
+      motionTokens.scale.pressMicro,
+      motionTokens.scale.pressSmall,
+      motionTokens.scale.pressLarge,
+      motionTokens.scale.pressSurface,
+    ];
+    for (const scale of scales) {
+      expect(scale).toBeGreaterThanOrEqual(0.95);
+    }
   });
 
   it('keeps stagger children between 50–100ms', () => {

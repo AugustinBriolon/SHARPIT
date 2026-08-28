@@ -149,7 +149,7 @@ export function ThresholdSuggestionCard({
           transition={springs.snappy}
           whileTap={
             animate && !reduce && !disabled && !pending
-              ? { scale: motionTokens.scale.press }
+              ? { scale: motionTokens.scale.pressSmall }
               : undefined
           }
         >

@@ -26,9 +26,19 @@ export const motionTokens = {
     lg: 16,
   },
   scale: {
-    subtle: 0.98,
-    /** better-ui / SHARPIT press — always 0.96, never below 0.95 */
+    /** Micro control — icon buttons, compact toggles (ADR-028) */
+    pressMicro: 0.95,
+    /** Small button — default compact controls; alias: press */
+    pressSmall: 0.96,
+    /** Large button — wide CTAs, full-width actions */
+    pressLarge: 0.98,
+    /** Large clickable surface — cards, list rows (pressable-lg) */
+    pressSurface: 0.988,
+    /** High-frequency control — no scale; color/opacity only */
+    pressMinimal: 1,
+    /** @deprecated use pressSmall */
     press: 0.96,
+    subtle: 0.98,
     pop: 1.02,
   },
   stagger: {

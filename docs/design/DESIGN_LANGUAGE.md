@@ -337,6 +337,33 @@ All animations respect `prefers-reduced-motion`. When reduced motion is set:
 
 §9.2's 300ms cap governs interface chrome: tooltips, expand/collapse, page transitions, skeletons. It does not extend to a **reveal** — a one-time animation of an already-complete, non-interactive dataset on its first appearance, communicating a fact the data already carries (a GPS track is a record of movement through time, not a static shape). [ADR-024](../adr/ADR-024-route-reveal-motion-exception.md) defines the category and its sole current instance, the route trace on `RouteMap`. It is not a general license — a slower badge, expand, or transition is still prohibited. A new candidate for this category needs its own argument, not a citation of this section.
 
+### 9.7 Animation Technology — Simplest Capable Tool
+
+Do not introduce an animation library by default. Use the simplest technology that produces the desired interaction with equivalent quality.
+
+**CSS (default)** — hover, focus, active/press, opacity, transform, color, border, simple state transitions. Prefer `pressable` / `pressable-lg` utilities and token-backed custom properties before bespoke rules.
+
+**Motion (`motion` package, already in tree)** — when animation is tightly coupled to application state or component lifecycle: mount/unmount, exit animations, layout transitions, gestures, springs, React state-driven transitions. Never use Motion when CSS alone achieves the same result.
+
+**GSAP (not a dependency today)** — only for advanced choreography: timelines, multi-element sequences, precise synchronization, complex interaction-driven animation, scroll-driven animation, SVG/WebGL/immersive experiences. Requires explicit justification; never add by default.
+
+See [ADR-028](../adr/ADR-028-animation-technology-and-press-feedback.md).
+
+### 9.8 Press Feedback — Semantic Presets, Not Universal Scale
+
+Never apply a single `scale()` to every interactive component. Calibrate press feedback by dimensions, surface area, interaction frequency, hierarchy, physicality, and action importance. Large surfaces compress less than small controls; high-frequency controls use minimal or no scale.
+
+| Preset | Scale | Use |
+| ------ | ----- | --- |
+| Micro control | 0.95 | Icon buttons, compact toggles |
+| Small button | 0.96 | Default compact controls (`pressable`, `chip-surface`) |
+| Large button | 0.98 | Wide CTAs |
+| Large surface | 0.988 | Clickable cards and rows (`pressable-lg`, `chip-surface-lg`) |
+| High-frequency | none | Tabs, scrubbers — color/opacity only |
+| Gesture-driven | spring | Motion `whileTap` + `springs.*`, not CSS `:active` scale |
+
+Floor: never below **0.95** on `:active` scale. Deviations from a preset require a comment naming the override and why. Canonical values: `motionTokens.scale.press*` in `src/lib/motion/tokens.ts`, mirrored as `--press-scale-*` in `src/app/globals.css`.
+
 ---
 
 ## 10. Color Philosophy
