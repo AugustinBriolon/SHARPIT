@@ -28,7 +28,7 @@ export const PRO_ONLY_PERKS: ProPerk[] = [
     icon: Activity,
     title: 'Analyse de séance',
     description:
-      'Interprétation approfondie de chaque entraînement : ce qui a marché, ce qui a coûté cher, ce que ça change pour la suite. 3 essais gratuits offerts, sur les séances de ton choix.',
+      "Interprétation approfondie de chaque entraînement : ce qui a marché, ce qui a coûté cher, ce que ça change pour la suite. Gratuit à raison d'une séance par jour depuis ton inscription ; illimité et sur tes séances passées avec Pro.",
     status: 'pro',
     href: '/training',
   },

@@ -30,11 +30,11 @@ function NarrativeLoadingSection() {
 function NarrativeGenerateSection({
   generating,
   onGenerate,
-  trialCreditsLeft,
+  showFreeTierHint,
 }: {
   generating: boolean;
   onGenerate: () => void;
-  trialCreditsLeft?: number;
+  showFreeTierHint: boolean;
 }) {
   return (
     <section className="bg-analysis-surface-alt rounded-analysis-lg flex h-full flex-col space-y-3 px-5 py-5 sm:px-6 sm:py-6">
@@ -45,10 +45,9 @@ function NarrativeGenerateSection({
       <p className="text-muted-foreground text-sm leading-relaxed">
         La synthèse n’est pas encore disponible. Tu peux la relancer.
       </p>
-      {trialCreditsLeft !== undefined ? (
+      {showFreeTierHint ? (
         <p className="text-muted-foreground text-xs">
-          Essai gratuit — {trialCreditsLeft} synthèse{trialCreditsLeft > 1 ? 's' : ''} restante
-          {trialCreditsLeft > 1 ? 's' : ''}
+          Essai gratuit — 1 synthèse par jour sur tes séances depuis ton inscription.
         </p>
       ) : null}
       <Button disabled={generating} size="sm" type="button" variant="outline" onClick={onGenerate}>
@@ -62,7 +61,7 @@ function NarrativeGenerateSection({
 function NarrativeLockedSection() {
   return (
     <InkEmptyState
-      description="L'analyse de séance approfondie fait partie de Pro. Tu as déjà utilisé tes essais gratuits."
+      description="L'analyse de séance approfondie fait partie de Pro. Sur le palier gratuit : une synthèse par jour, sur tes séances depuis ton inscription."
       icon={Lock}
       title="Fonctionnalité Pro"
       action={
@@ -82,7 +81,7 @@ interface ActivityNarrativeSectionProps {
   narrativeAnalyzedAt: Date | string | null;
   coachEnabled: boolean;
   isPro?: boolean;
-  trialCreditsLeft?: number;
+  canGenerate?: boolean;
 }
 
 function isNarrativeLoadingState(state: ReturnType<typeof useActivityNarrativeSection>): boolean {
@@ -92,14 +91,14 @@ function isNarrativeLoadingState(state: ReturnType<typeof useActivityNarrativeSe
 /** Demo shows canned data — never gate it, real athletes only. */
 function isNarrativeLockedForTrial(
   state: ReturnType<typeof useActivityNarrativeSection>,
-  access: { isPro: boolean; trialCreditsLeft: number },
+  access: { isPro: boolean; canGenerate: boolean },
 ): boolean {
-  return !state.isDemoLinkStory && !access.isPro && access.trialCreditsLeft <= 0;
+  return !state.isDemoLinkStory && !access.isPro && !access.canGenerate;
 }
 
 function resolveNarrativeView(
   state: ReturnType<typeof useActivityNarrativeSection>,
-  access: { isPro: boolean; trialCreditsLeft: number },
+  access: { isPro: boolean; canGenerate: boolean },
 ) {
   if (state.hasAnalysis) {
     return 'card' as const;
@@ -129,8 +128,8 @@ export function ActivityNarrativeSection(props: ActivityNarrativeSectionProps) {
     coachEnabled: props.coachEnabled,
   });
   const isPro = props.isPro ?? false;
-  const trialCreditsLeft = props.trialCreditsLeft ?? 0;
-  const view = resolveNarrativeView(state, { isPro, trialCreditsLeft });
+  const canGenerate = props.canGenerate ?? false;
+  const view = resolveNarrativeView(state, { isPro, canGenerate });
 
   if (view === 'hidden') {
     return null;
@@ -158,7 +157,7 @@ export function ActivityNarrativeSection(props: ActivityNarrativeSectionProps) {
   return (
     <NarrativeGenerateSection
       generating={state.generating}
-      trialCreditsLeft={isPro ? undefined : trialCreditsLeft}
+      showFreeTierHint={!isPro}
       onGenerate={() => void state.handleGenerate()}
     />
   );

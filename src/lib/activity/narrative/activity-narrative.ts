@@ -1,8 +1,7 @@
 import { ActivityType } from '@prisma/client';
 import { generateText, Output } from 'ai';
 import { COACH_MODEL, coachAnalysisGatewayOptions, isCoachConfigured } from '@/lib/ai';
-import { hasProAccess } from '@/lib/access/tier';
-import { narrativeTrialCreditsLeft } from '@/lib/access/narrative-trial';
+import { canGenerateNarrativeForActivity } from '@/lib/access/narrative-trial';
 import { isActivityToday } from '@/lib/activity/list/activity-day';
 import {
   isEligibleForActivityNarrative,
@@ -79,7 +78,7 @@ async function shouldSkipNarrativeAnalysis(
   athleteId: string,
   activityId: string,
   options?: { force?: boolean; allowHistorical?: boolean },
-): Promise<{ skip: true } | { skip: false }> {
+): Promise<{ skip: true } | { skip: false; activityDate: Date }> {
   const existing = await prisma.activity.findFirst({
     where: { id: activityId, athleteId },
     select: { narrativeAnalyzedAt: true, date: true, narrativeAnalysis: true },
@@ -93,44 +92,13 @@ async function shouldSkipNarrativeAnalysis(
   if (narrativeBlockedByDatePolicy(existing, options)) {
     return { skip: true };
   }
-  return { skip: false };
-}
-
-/**
- * Pro athletes always pass. FREE athletes only pass — and only spend a trial
- * credit — on the deliberate "Générer" tap (`spendTrialCredit: true`, the API
- * route). Every automatic path (background sync, ingest-time enrichment,
- * backfill) leaves `spendTrialCredit` unset, so it never silently spends a
- * FREE athlete's trial on an activity they didn't choose — it just no-ops.
- */
-async function ensureNarrativeAccess(
-  athleteId: string,
-  spendTrialCredit?: boolean,
-): Promise<boolean> {
-  const profile = await prisma.athleteProfile.findUnique({
-    where: { id: athleteId },
-    select: { tier: true, freeNarrativeCreditsUsed: true },
-  });
-  if (!profile) {
-    return false;
-  }
-  if (hasProAccess(profile.tier)) {
-    return true;
-  }
-  if (!spendTrialCredit || narrativeTrialCreditsLeft(profile.freeNarrativeCreditsUsed) <= 0) {
-    return false;
-  }
-  await prisma.athleteProfile.update({
-    where: { id: athleteId },
-    data: { freeNarrativeCreditsUsed: { increment: 1 } },
-  });
-  return true;
+  return { skip: false, activityDate: existing.date };
 }
 
 export async function runActivityNarrativeAnalysis(
   athleteId: string,
   activityId: string,
-  options?: { force?: boolean; allowHistorical?: boolean; spendTrialCredit?: boolean },
+  options?: { force?: boolean; allowHistorical?: boolean },
 ): Promise<boolean> {
   if (!isCoachConfigured()) {
     return false;
@@ -141,8 +109,12 @@ export async function runActivityNarrativeAnalysis(
     return false;
   }
 
-  const allowed = await ensureNarrativeAccess(athleteId, options?.spendTrialCredit);
-  if (!allowed) {
+  // Pro athletes always pass. FREE athletes only pass on activities dated
+  // after they joined SHARPIT (older imports stay Pro-only), and at most
+  // once a day — applies uniformly to every path (auto sync, manual
+  // "Générer" tap, backfill), no separate spend/credit bookkeeping needed.
+  const access = await canGenerateNarrativeForActivity(athleteId, gate.activityDate);
+  if (!access.allowed) {
     return false;
   }
 

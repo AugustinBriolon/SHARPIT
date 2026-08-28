@@ -230,8 +230,6 @@ model AthleteProfile {
   clerkUserId              String     @unique
   /// Palier d'accès (paiement géré hors Prisma pour l'instant — bascule manuelle via /admin).
   tier                     AccessTier @default(FREE)
-  /// Nombre d'analyses de séance gratuites déjà consommées par un athlète FREE (essai — voir src/lib/access/narrative-trial.ts).
-  freeNarrativeCreditsUsed Int        @default(0)
   heightCm                 Int? // taille (cm) — comparaisons composition (IMC, etc.)
   birthDate                DateTime?  @db.Date // date de naissance — âge calculé dynamiquement
   ftpW                     Int? // FTP vélo (W)
