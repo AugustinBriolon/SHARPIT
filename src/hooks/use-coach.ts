@@ -190,7 +190,7 @@ export function useCoachContext() {
 
 export function useSaveCoachContext() {
   const queryClient = useQueryClient();
-  return useMutation<string, Error, string>({
+  return useMutation<string, Error, string, { previous: string | undefined }>({
     mutationFn: async (context) => {
       const res = await fetch('/api/coach/context', {
         method: 'PUT',
@@ -202,6 +202,25 @@ export function useSaveCoachContext() {
         throw new Error(data?.error ?? 'Enregistrement impossible.');
       }
       return (data as { context: string }).context ?? '';
+    },
+    onMutate: async (context) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.coachContext });
+      const previous = queryClient.getQueryData<string>(queryKeys.coachContext);
+      queryClient.setQueryData(queryKeys.coachContext, context);
+      queryClient.setQueryData<CoachMemoryResponse>(queryKeys.coachMemory, (current) =>
+        current
+          ? { ...current, profileContext: context }
+          : { entries: [], activeId: null, profileContext: context },
+      );
+      return { previous };
+    },
+    onError: (_err, _context, rollback) => {
+      if (rollback?.previous !== undefined) {
+        queryClient.setQueryData(queryKeys.coachContext, rollback.previous);
+        queryClient.setQueryData<CoachMemoryResponse>(queryKeys.coachMemory, (current) =>
+          current ? { ...current, profileContext: rollback.previous ?? '' } : current,
+        );
+      }
     },
     onSuccess: (context) => {
       queryClient.setQueryData(queryKeys.coachContext, context);

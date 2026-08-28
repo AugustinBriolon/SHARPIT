@@ -159,11 +159,16 @@ export function CoachProfileContextSection({
 
   function handleSave() {
     if (guardDisabled) return;
-    save.mutate(editValue, {
+    const savedValue = editValue;
+    setMode('read');
+    save.mutate(savedValue, {
       onSuccess: () => {
         setJustSaved(true);
-        setMode('read');
         setTimeout(() => setJustSaved(false), 2000);
+      },
+      onError: () => {
+        setEditValue(savedValue);
+        setMode('edit');
       },
     });
   }
@@ -222,12 +227,7 @@ export function CoachProfileContextSection({
         <Button type="button" variant="outline" onClick={handleCancel}>
           Annuler
         </Button>
-        <Button
-          disabled={guardDisabled || !dirty || save.isPending}
-          type="button"
-          onClick={handleSave}
-        >
-          {save.isPending ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : null}
+        <Button disabled={guardDisabled || !dirty} type="button" onClick={handleSave}>
           {offline ? offlineLabel : 'Enregistrer'}
         </Button>
       </div>

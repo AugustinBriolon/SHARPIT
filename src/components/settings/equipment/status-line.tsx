@@ -15,7 +15,6 @@ export function EquipmentStatusLine({
   let content: ReactNode = null;
   if (error) content = <span className="text-destructive">{error}</span>;
   else if (message) content = <span>{message}</span>;
-  else if (saving) content = <span>Enregistrement…</span>;
   else if (dirty) content = <span>Modifications en cours…</span>;
 
   return (

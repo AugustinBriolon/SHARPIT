@@ -58,35 +58,28 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
     setFormOpen(true);
   }
 
-  async function handleSubmit(payload: Parameters<typeof create.mutateAsync>[0]) {
+  function handleSubmit(payload: Parameters<typeof create.mutate>[0]) {
     if (guardDisabled) return;
-    try {
-      if (editingEntry) {
-        await update.mutateAsync({ id: editingEntry.id, payload });
-        toast.success('Entrée mise à jour');
-      } else {
-        await create.mutateAsync(payload);
-        toast.success('Entrée ajoutée à la mémoire du coach');
-      }
-      setFormOpen(false);
-      setEditingEntry(null);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Action impossible');
+    setFormOpen(false);
+    setEditingEntry(null);
+    if (editingEntry) {
+      update.mutate(
+        { id: editingEntry.id, payload },
+        { onSuccess: () => toast.success('Entrée mise à jour') },
+      );
+      return;
     }
+    create.mutate(payload, {
+      onSuccess: () => toast.success('Entrée ajoutée à la mémoire du coach'),
+    });
   }
 
-  async function confirmDelete() {
+  function confirmDelete() {
     if (!deleteTarget || guardDisabled) return;
-    try {
-      await remove.mutateAsync(deleteTarget.id);
-      toast.success('Entrée supprimée');
-      setDeleteTarget(null);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Suppression impossible');
-    }
+    const id = deleteTarget.id;
+    setDeleteTarget(null);
+    remove.mutate(id, { onSuccess: () => toast.success('Entrée supprimée') });
   }
-
-  const saving = create.isPending || update.isPending;
   const loadError = query.isError
     ? 'Impossible de charger la mémoire. Recharge la page ou réessaie dans un instant.'
     : null;
@@ -196,7 +189,6 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
         key={editingEntry?.id ?? (formOpen ? 'new' : 'closed')}
         entry={editingEntry}
         open={formOpen}
-        saving={saving}
         onOpenChange={setFormOpen}
         onSubmit={handleSubmit}
       />

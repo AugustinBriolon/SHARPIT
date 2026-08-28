@@ -83,11 +83,6 @@ function toDateInput(value: string | Date | null | undefined): string {
   return d.toISOString().slice(0, 10);
 }
 
-function getSubmitButtonLabel(pending: boolean): string {
-  if (pending) return 'Enregistrement…';
-  return 'Enregistrer';
-}
-
 function getPriorityLabel(priority: string): string {
   if (priority === NO_PRIORITY) return 'Non définie';
   const p = priority as GoalPriority;
@@ -107,8 +102,6 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
     goal?.horizon ?? GoalHorizon.MEDIUM_TERM,
   );
   const [legacyLowerIsBetter, setLegacyLowerIsBetter] = useState(goal?.lowerIsBetter ?? false);
-
-  const pending = create.isPending || update.isPending;
 
   async function submitPayload(payload: GoalPayload) {
     if (isEdit && goal) {
@@ -200,11 +193,10 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
           Annuler
         </Button>
         <Button
-          disabled={pending}
           form={typeof submitType === 'object' ? submitType.form : undefined}
           type="submit"
         >
-          {getSubmitButtonLabel(pending)}
+          Enregistrer
         </Button>
       </div>
     );
@@ -440,11 +432,10 @@ export function GoalDialog({ goal, onClose }: GoalDialogProps) {
         {!isEdit ? (
           <GoalCreateForm
             error={error}
-            pending={pending}
             submitLabel="Créer"
             onCancel={onClose}
-            onSubmit={async (payload) => {
-              await submitPayload(payload);
+            onSubmit={(payload) => {
+              void submitPayload(payload);
             }}
           />
         ) : (

@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/toast';
 import { useAthleteProfile } from '@/hooks/use-data';
-import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { athleteAgeYears, birthDateToInput } from '@/lib/profile/athlete-profile-utils';
 import {
   mapAthleteProfileToFormData,
@@ -303,10 +303,7 @@ export function PersonalProfilePanel({
       {/* A diff needs a baseline. Saving against one that never loaded is how
           the fields were emptied in the first place. */}
       <Button disabled={guardDisabled || saving || !dirty || showLoadWarning} type="submit">
-        {guardedActionLabel(offline, offlineLabel, 'Enregistrer', {
-          active: saving,
-          label: 'Enregistrement…',
-        })}
+        {offline ? offlineLabel : 'Enregistrer'}
       </Button>
     </form>
   );

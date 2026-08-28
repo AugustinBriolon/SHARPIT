@@ -64,12 +64,7 @@ export function brickLegTitlePlaceholder(type: ActivityType): string {
   return activityTypeLabels[type];
 }
 
-export function submitButtonLabel(
-  pending: boolean,
-  isEdit: boolean,
-  createMode: CreateMode,
-): string {
-  if (pending) return 'Enregistrement…';
+export function submitButtonLabel(isEdit: boolean, createMode: CreateMode): string {
   if (isEdit) return 'Mettre à jour';
   if (createMode === 'brick') return 'Créer le brick';
   return 'Planifier';

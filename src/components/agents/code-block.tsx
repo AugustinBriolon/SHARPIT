@@ -18,6 +18,7 @@ import {
   useAgentCodeTokens,
 } from '@/components/agents/agent-code';
 import { SPRING_PRESS } from '@/lib/ease';
+import { motionTokens } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
 
 export type CodeBlockStatus = 'streaming' | 'complete';
@@ -137,7 +138,7 @@ export function CodeBlock({
             title={copied ? 'Copied' : 'Copy code'}
             transition={SPRING_PRESS}
             type="button"
-            whileTap={reduce ? undefined : { scale: 0.9 }}
+            whileTap={reduce ? undefined : { scale: motionTokens.scale.pressMicro }}
             onClick={handleCopy}
           >
             {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}

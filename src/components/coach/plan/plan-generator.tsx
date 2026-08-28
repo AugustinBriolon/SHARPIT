@@ -348,7 +348,7 @@ function SessionRow({
       disabled={rejected}
       type="button"
       className={cn(
-        'pressable flex w-full gap-3 rounded-lg border p-3 text-left',
+        'pressable-lg flex w-full gap-3 rounded-lg border p-3 text-left',
         rejected && 'border-signal-risk/30 bg-signal-risk/5 cursor-not-allowed opacity-80',
         !rejected && selected
           ? 'border-primary/40 bg-primary/5'

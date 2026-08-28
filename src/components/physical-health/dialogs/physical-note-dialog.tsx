@@ -57,9 +57,7 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
     return parts;
   }, [bodyPart]);
 
-  const pending = create.isPending || update.isPending || remove.isPending;
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (guardDisabled) return;
     setError(null);
@@ -79,16 +77,24 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
       setError('Le titre est requis');
       return;
     }
-    try {
-      if (isEdit && note) {
-        await update.mutateAsync({ id: note.id, data: payload });
-      } else {
-        await create.mutateAsync(payload);
-      }
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur');
+
+    onClose();
+    if (isEdit && note) {
+      update.mutate(
+        { id: note.id, data: payload },
+        {
+          onError: (err) => {
+            setError(err instanceof Error ? err.message : 'Erreur');
+          },
+        },
+      );
+      return;
     }
+    create.mutate(payload, {
+      onError: (err) => {
+        setError(err instanceof Error ? err.message : 'Erreur');
+      },
+    });
   }
 
   async function handleDelete() {
@@ -100,18 +106,17 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
       variant: 'destructive',
     });
     if (!confirmed) return;
-    try {
-      await remove.mutateAsync(note.id);
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur');
-    }
+    onClose();
+    remove.mutate(note.id, {
+      onError: (err) => {
+        setError(err instanceof Error ? err.message : 'Erreur');
+      },
+    });
   }
 
   const initialDate = note?.startDate ? new Date(note.startDate) : new Date();
 
   function getSubmitButtonLabel(): string {
-    if (pending) return 'Enregistrement…';
     if (offline) return offlineLabel;
     if (isEdit) return 'Mettre à jour';
     return 'Créer';
@@ -263,7 +268,7 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
               <div>
                 {isEdit && (
                   <Button
-                    disabled={guardDisabled || pending}
+                    disabled={guardDisabled}
                     type="button"
                     variant="destructive"
                     onClick={handleDelete}
@@ -273,10 +278,10 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
                 )}
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button disabled={pending} type="button" variant="outline" onClick={onClose}>
+                <Button type="button" variant="outline" onClick={onClose}>
                   Annuler
                 </Button>
-                <Button disabled={guardDisabled || pending} type="submit">
+                <Button disabled={guardDisabled} type="submit">
                   {getSubmitButtonLabel()}
                 </Button>
               </div>

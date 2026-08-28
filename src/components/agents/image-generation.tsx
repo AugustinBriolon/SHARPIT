@@ -6,6 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { CSSProperties, ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
 import { EASE_IN_OUT, EASE_OUT, SPRING_PRESS } from '@/lib/ease';
+import { motionTokens } from '@/lib/motion/tokens';
 import { useHoverCapable } from '@/lib/hooks/use-hover-capable';
 import { cn } from '@/lib/utils';
 
@@ -348,7 +349,7 @@ export function ImageGeneration({
             className="text-foreground hover:bg-muted focus-visible:ring-ring mt-3 inline-flex min-h-10 items-center gap-2 rounded-full px-3 text-sm font-medium transition-colors outline-none focus-visible:ring-2"
             transition={SPRING_PRESS}
             type="button"
-            whileTap={reduce ? undefined : { scale: 0.96 }}
+            whileTap={reduce ? undefined : { scale: motionTokens.scale.pressSmall }}
             onClick={onRetry}
           >
             <RotateCcw aria-hidden="true" className="size-4" />
