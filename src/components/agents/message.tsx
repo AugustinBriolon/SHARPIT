@@ -103,6 +103,25 @@ function messageMotionInitial(
   return false;
 }
 
+function messageArticleClassName(from: MessageFrom, className?: string) {
+  return cn(
+    'group/message flex w-full items-start gap-2',
+    from === 'user' ? 'flex-row-reverse' : 'flex-row',
+    className,
+  );
+}
+
+function messageArticleStyle(from: MessageFrom, style: MessageProps['style']) {
+  return {
+    transformOrigin: from === 'user' ? '100% 100%' : '0% 100%',
+    ...style,
+  };
+}
+
+function messageArticleTransition(transition: MessageProps['transition'], reduce: boolean) {
+  return transition ?? (reduce ? { duration: 0.12 } : MESSAGE_POP_UP);
+}
+
 function MessageArticle({
   from,
   animateIn,
@@ -124,16 +143,9 @@ function MessageArticle({
       data-slot="message"
       exit={messageMotionExit(reduce, exit)}
       initial={messageMotionInitial(animateIn ?? false, reduce, initial)}
-      transition={transition ?? (reduce ? { duration: 0.12 } : MESSAGE_POP_UP)}
-      className={cn(
-        'group/message flex w-full items-start gap-2',
-        from === 'user' ? 'flex-row-reverse' : 'flex-row',
-        className,
-      )}
-      style={{
-        transformOrigin: from === 'user' ? '100% 100%' : '0% 100%',
-        ...style,
-      }}
+      transition={messageArticleTransition(transition, reduce)}
+      className={messageArticleClassName(from, className)}
+      style={messageArticleStyle(from, style)}
       {...props}
     >
       {children}

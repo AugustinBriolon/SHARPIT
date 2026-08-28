@@ -22,21 +22,21 @@ export function InstrumentListChipMetaRow({
   activityType?: ActivityType;
   meta: InstrumentListChipMeta[];
 }) {
-  const hasMetaRow = activityType !== null || meta.length > 0;
+  const hasMetaRow = activityType !== undefined || meta.length > 0;
   if (!hasMetaRow) {
     return null;
   }
 
   return (
     <span className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs">
-      {activityType !== null ? (
+      {activityType !== undefined ? (
         <span className="shrink-0">
           <ActivityTypeIndicator type={activityType} />
         </span>
       ) : null}
       {meta.map((item, index) => (
         <span key={`meta-${index}-${metaText(item)}`} className="contents">
-          {activityType !== null || index > 0 ? (
+          {activityType !== undefined || index > 0 ? (
             <span className="shrink-0 opacity-30" aria-hidden>
               ·
             </span>

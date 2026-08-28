@@ -79,7 +79,14 @@ function resolveNarrativeView(state: ReturnType<typeof useActivityNarrativeSecti
 }
 
 export function ActivityNarrativeSection(props: ActivityNarrativeSectionProps) {
-  const state = useActivityNarrativeSection(props);
+  const state = useActivityNarrativeSection({
+    activityId: props.activityId,
+    activityType: props.activityType,
+    activityDate: props.activityDate,
+    initialAnalysis: props.narrativeAnalysis,
+    initialAnalyzedAt: props.narrativeAnalyzedAt,
+    coachEnabled: props.coachEnabled,
+  });
   const view = resolveNarrativeView(state);
 
   if (view === 'hidden') {

@@ -55,7 +55,12 @@ export function useMetricGoalFormState(goal?: GoalForEdit | null) {
     return '';
   });
   const [chronoTarget, setChronoTarget] = useState(() => {
-    if (existing?.template === 'performance' && goal != null && goal.targetValue !== null) {
+    if (
+      existing?.template === 'performance' &&
+      goal !== null &&
+      goal !== undefined &&
+      goal.targetValue !== null
+    ) {
       return formatChronoSeconds(goal.targetValue);
     }
     return '';
@@ -88,7 +93,12 @@ export function useMetricGoalFormState(goal?: GoalForEdit | null) {
     return ALL_SPORTS;
   });
   const [periodTarget, setPeriodTarget] = useState(() => {
-    if (existing?.template === 'period' && goal != null && goal.targetValue !== null) {
+    if (
+      existing?.template === 'period' &&
+      goal !== null &&
+      goal !== undefined &&
+      goal.targetValue !== null
+    ) {
       return targetInputFromStored(existing.measure, goal.targetValue);
     }
     return '';

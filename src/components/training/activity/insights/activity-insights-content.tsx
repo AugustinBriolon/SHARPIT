@@ -36,7 +36,7 @@ function ActivityInsightsAnalysis({
   coachPanel?: ReactNode;
   hrZones: ActivityAnalysis['hr']['zones'];
   powerZones: NonNullable<ActivityAnalysis['power']>['zones'] | [];
-  has: boolean;
+  has: StreamPayload['has'];
   normalizedSamples: ReturnType<typeof normalizeStreamChartData>;
   type: ActivityType;
 }) {

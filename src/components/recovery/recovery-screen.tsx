@@ -10,6 +10,7 @@ import {
   useRecoveryViewModel,
 } from '@/hooks/use-presentation-view-model';
 import { recoveryLoadingShell } from '@/lib/presentation/drill-down-loading-shells';
+import type { RecoveryViewModel } from '@/core/presentation/recovery-view-model';
 
 export function RecoveryScreen({ backHref, backLabel }: { backHref?: string; backLabel?: string }) {
   const { date, isToday, maxDate, minDate, setDate, goToNextDay, goToPreviousDay } =
@@ -35,12 +36,12 @@ export function RecoveryScreen({ backHref, backLabel }: { backHref?: string; bac
     <RecoveryScreenBody
       backHref={backHref}
       backLabel={backLabel}
-      content={viewModel ?? recoveryLoadingShell()}
+      content={(viewModel ?? recoveryLoadingShell()) as RecoveryViewModel}
       date={date}
       isToday={isToday}
       loading={valuesLoading}
       maxDate={maxDate}
-      minDate={minDate}
+      minDate={minDate ?? date}
       onDateChange={setDate}
       onNextDay={goToNextDay}
       onPreviousDay={goToPreviousDay}

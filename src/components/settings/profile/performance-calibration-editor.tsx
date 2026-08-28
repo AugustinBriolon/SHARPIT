@@ -1,6 +1,7 @@
 import { Download } from 'lucide-react';
 import { ProfileFormSection } from '@/components/settings/profile/profile-form-section';
 import { NUMERIC_INPUT_CLASS } from '@/components/settings/profile/profile-input-format';
+import type { ClientThresholdSnapshot } from '@/lib/query/types';
 import { ThresholdHistoryPanel } from '@/components/settings/profile/threshold-history-panel';
 import { Vo2maxIndicators } from '@/components/settings/profile/vo2max-indicators';
 import { ThresholdSuggestionCard } from '@/components/threshold/threshold-suggestion-card';
@@ -168,7 +169,7 @@ export type CalibrationEditorProps = {
   vo2maxRunning: number | null;
   vo2maxCycling: number | null;
   preview: ThresholdApplyPreview | undefined;
-  history: { id: string }[];
+  history: ClientThresholdSnapshot[];
   offline: boolean;
   offlineLabel: string;
   guardDisabled: boolean;

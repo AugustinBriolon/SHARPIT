@@ -1,4 +1,4 @@
-import type { Map as MapLibreMap, Marker } from 'maplibre-gl';
+import type { AddLayerObject, Map as MapLibreMap, Marker } from 'maplibre-gl';
 
 type ViewportState = {
   center: [number, number];
@@ -69,7 +69,7 @@ function syncMarkerOffset(marker: Marker, offset?: MarkerOptions['offset']) {
     ? newOffset
     : [newOffset.x, newOffset.y];
   if (currentOffset.x !== newOffsetX || currentOffset.y !== newOffsetY) {
-    marker.setOffset(newOffset);
+    marker.setOffset([newOffsetX, newOffsetY]);
   }
 }
 
@@ -230,7 +230,10 @@ type LayerEnsureOptions = {
 function ensureGeoJsonLayer(options: LayerEnsureOptions) {
   const { map, sourceId, layerId, show, paint, type, beforeId } = options;
   if (show && !map.getLayer(layerId)) {
-    map.addLayer({ id: layerId, type, source: sourceId, paint: paint as never }, beforeId);
+    map.addLayer(
+      { id: layerId, type, source: sourceId, paint: paint as never } as AddLayerObject,
+      beforeId,
+    );
     return;
   }
   if (!show && map.getLayer(layerId)) {

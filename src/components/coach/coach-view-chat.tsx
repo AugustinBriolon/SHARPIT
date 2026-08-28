@@ -128,13 +128,13 @@ function renderActiveCoachChat(options: RenderCoachChatOptions & { selectedId: s
 }
 
 export function renderCoachChat(options: RenderCoachChatOptions) {
-  if (!options.online && options.hasNoLiveContent && options.offlineEntry) {
-    return <OfflineCoachChat header={options.header} offlineEntry={options.offlineEntry} />;
+  const { header, offlineEntry, selectedId } = options;
+  if (!options.online && options.hasNoLiveContent && offlineEntry) {
+    return <OfflineCoachChat header={header} offlineEntry={offlineEntry} />;
   }
 
-  const selectedId = options.selectedId;
   if (!selectedId) {
-    return <CoachChatPanelShell header={options.header} />;
+    return <CoachChatPanelShell header={header} />;
   }
 
   return renderActiveCoachChat({ ...options, selectedId });

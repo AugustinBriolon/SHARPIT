@@ -119,6 +119,38 @@ export function buildPlannedSessionDerouleFlags({
   return { hasStrengthPlan, hasEndurancePlan, hasStructuredDeroule, freeTextDeroule };
 }
 
+function isPresentRationaleVm(
+  rationaleVm: SessionRationaleViewModel | null | undefined,
+): rationaleVm is SessionRationaleViewModel {
+  return rationaleVm !== null && rationaleVm !== undefined;
+}
+
+function hasNonManualRationale(
+  rationalePending: boolean,
+  rationaleVm: SessionRationaleViewModel | null | undefined,
+) {
+  if (rationalePending) {
+    return true;
+  }
+  if (!isPresentRationaleVm(rationaleVm) || rationaleVm.origin === 'MANUAL') {
+    return false;
+  }
+  return Boolean(rationaleVm.suggested) || Boolean(rationaleVm.outcome);
+}
+
+function isRationaleOpenByDefault(
+  isRealized: boolean,
+  rationaleVm: SessionRationaleViewModel | null | undefined,
+) {
+  if (isRealized) {
+    return false;
+  }
+  if (!rationaleVm?.suggested) {
+    return true;
+  }
+  return rationaleVm.suggested.gate.status !== 'ACCEPTED';
+}
+
 export function buildPlannedSessionRationaleFlags({
   isRealized,
   rationaleVm,
@@ -128,14 +160,8 @@ export function buildPlannedSessionRationaleFlags({
   rationaleVm: SessionRationaleViewModel | null | undefined;
   rationalePending: boolean;
 }) {
-  const hasRationale =
-    rationalePending ||
-    (rationaleVm != null &&
-      rationaleVm.origin !== 'MANUAL' &&
-      (Boolean(rationaleVm.suggested) || Boolean(rationaleVm.outcome)));
-  const rationaleOpenByDefault =
-    !isRealized &&
-    (rationaleVm?.suggested ? rationaleVm.suggested.gate.status !== 'ACCEPTED' : true);
-
-  return { hasRationale, rationaleOpenByDefault };
+  return {
+    hasRationale: hasNonManualRationale(rationalePending, rationaleVm),
+    rationaleOpenByDefault: isRationaleOpenByDefault(isRealized, rationaleVm),
+  };
 }

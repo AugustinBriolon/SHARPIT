@@ -98,7 +98,7 @@ export function useActivityNarrativeSection({
   const handleGenerate = useNarrativeGenerateHandler({
     activityId,
     isDemo: overlay.isDemo,
-    demoLink: overlay.demoLink,
+    demoLink: overlay.demoLink ?? null,
     demoReading: overlay.demoReading,
     setGenerating,
     setPollTimedOut,

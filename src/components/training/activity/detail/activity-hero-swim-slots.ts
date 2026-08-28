@@ -6,29 +6,43 @@ type StreamStats = {
   avgHr: number | null;
 };
 
+function swimDistanceSlot(m: HeroActivity['swimMetrics']): HeroStatSlot {
+  const distanceM = m?.distanceM ?? null;
+  return {
+    label: 'Distance',
+    value: distanceM !== null ? formatDistance(distanceM) : null,
+  };
+}
+
+function swimDurationSlot(activity: HeroActivity): HeroStatSlot {
+  const duration = activity.duration ?? null;
+  return {
+    label: 'Temps',
+    value: duration !== null ? formatDuration(duration) : null,
+  };
+}
+
+function swimPaceSlot(m: HeroActivity['swimMetrics']): HeroStatSlot {
+  const avgPaceSecPer100m = m?.avgPaceSecPer100m ?? null;
+  return {
+    label: 'Allure moy.',
+    value: avgPaceSecPer100m !== null ? formatSwimPace(avgPaceSecPer100m) : null,
+  };
+}
+
+function swimHrSlot(stream: StreamStats | null): HeroStatSlot {
+  const avgHr = stream?.avgHr ?? null;
+  return {
+    label: 'FC moy.',
+    value: avgHr !== null ? `${avgHr} bpm` : null,
+    needsStream: true,
+  };
+}
+
 export function buildSwimHeroSlots(
   activity: HeroActivity,
   stream: StreamStats | null,
 ): HeroStatSlot[] {
-  const duration = activity.duration ?? null;
   const m = activity.swimMetrics;
-  const distanceM = m?.distanceM ?? null;
-  const avgPaceSecPer100m = m?.avgPaceSecPer100m ?? null;
-  const avgHr = stream?.avgHr ?? null;
-  return [
-    {
-      label: 'Distance',
-      value: distanceM !== null ? formatDistance(distanceM) : null,
-    },
-    { label: 'Temps', value: duration !== null ? formatDuration(duration) : null },
-    {
-      label: 'Allure moy.',
-      value: avgPaceSecPer100m !== null ? formatSwimPace(avgPaceSecPer100m) : null,
-    },
-    {
-      label: 'FC moy.',
-      value: avgHr !== null ? `${avgHr} bpm` : null,
-      needsStream: true,
-    },
-  ];
+  return [swimDistanceSlot(m), swimDurationSlot(activity), swimPaceSlot(m), swimHrSlot(stream)];
 }

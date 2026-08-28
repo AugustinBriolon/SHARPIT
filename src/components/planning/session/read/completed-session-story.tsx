@@ -9,14 +9,25 @@ import {
 import { ComplianceBadge } from '@/components/planning/session/read/completed-session-story-parts';
 import { CompletedSessionStoryActions } from '@/components/planning/session/read/completed-session-story-actions';
 
+function readActivityNarrative(activity: ClientPlannedSession['activity']) {
+  if (!activity) {
+    return null;
+  }
+  if (activity.narrativeAnalyzedAt === null || activity.narrativeAnalyzedAt === undefined) {
+    return null;
+  }
+  return parseActivityNarrative(activity.narrativeAnalysis);
+}
+
+function readActivityNotes(activity: ClientPlannedSession['activity']) {
+  return activity?.notes?.trim() || null;
+}
+
 function parseSessionStory(session: ClientPlannedSession) {
-  const analysis = parseSessionAnalysis(session.analysis);
-  const activity = session.activity;
-  const narrative =
-    activity?.narrativeAnalyzedAt != null
-      ? parseActivityNarrative(activity.narrativeAnalysis)
-      : null;
-  const notes = activity?.notes?.trim() || null;
+  const { activity, analysis: analysisRaw } = session;
+  const analysis = parseSessionAnalysis(analysisRaw);
+  const narrative = readActivityNarrative(activity);
+  const notes = readActivityNotes(activity);
   const hasStory = Boolean(narrative || analysis || notes);
   return { analysis, narrative, notes, hasStory };
 }

@@ -40,7 +40,7 @@ export function SportLegStreamSections({
       ) : null}
       {chart}
       <SportLegSplits
-        analysis={analysis}
+        analysis={analysis ?? null}
         bikeSplits={bikeSplits}
         entry={entry}
         runSplits={runSplits}

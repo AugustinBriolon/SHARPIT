@@ -1800,7 +1800,7 @@ function MapArc<T extends MapArcDatum = MapArcDatum>({
         return;
       }
 
-      setHover(featureId);
+      setHover(featureId ?? null);
       map.getCanvas().style.cursor = 'pointer';
 
       const arc = findArc(featureId);

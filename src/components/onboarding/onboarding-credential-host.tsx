@@ -19,7 +19,7 @@ export function OnboardingCredentialHost({
       dataClass={credentialTarget?.dataClass ?? null}
       open={credentialTarget !== null}
       provider={credentialTarget?.provider ?? null}
-      onConnected={onConnected}
+      onConnected={(id, prefs) => onConnected(id, prefs ?? undefined)}
       onOpenChange={(open) => {
         if (!open) {
           onTargetChange(null);

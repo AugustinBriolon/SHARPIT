@@ -73,7 +73,10 @@ export const MotionInputField = forwardRef<HTMLInputElement, InputProps>(
             onFocus={onFocus}
             onFocusChange={(focused) => field.setFocused(focused)}
             onValueChange={field.handleChange}
-            {...rest}
+            {...(rest as Omit<
+              React.InputHTMLAttributes<HTMLInputElement>,
+              'value' | 'defaultValue' | 'onChange'
+            >)}
           />
         </InputFieldShell>
 

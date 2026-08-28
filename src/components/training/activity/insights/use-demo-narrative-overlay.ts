@@ -9,12 +9,12 @@ import { useDemoSessionLinksSnapshot } from '@/hooks/use-demo-session-link-overl
 function isDemoLinkStory(
   isDemo: boolean,
   demoLink: ReturnType<typeof findDemoSessionLinkByActivityId>,
-  activityTitle: string | undefined,
+  activityTitle: string | null | undefined,
 ): boolean {
   if (!isDemo) {
     return false;
   }
-  return Boolean(demoLink) || isDemoSessionLinkActivityTitle(activityTitle);
+  return Boolean(demoLink) || isDemoSessionLinkActivityTitle(activityTitle ?? undefined);
 }
 
 export function useDemoNarrativeOverlay(activityId: string) {

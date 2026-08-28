@@ -191,7 +191,7 @@ export function ActivityRow({
   const metric = getActivityListMetric(activity);
   const weatherLine = formatActivityWeatherLine(activity);
   const loadValue = activity.load !== null ? Math.round(activity.load) : null;
-  const metaParts = buildRowMetaParts({ activity, compact, metric, weatherLine });
+  const metaParts = buildRowMetaParts({ activity, compact, metric: metric ?? null, weatherLine });
   const selectable = isSelectableHike(activity);
   const railLabel = buildRailLabel(loadValue);
 

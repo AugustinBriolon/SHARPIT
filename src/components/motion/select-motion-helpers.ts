@@ -43,13 +43,13 @@ export function selectTriggerRadiusTransition(isTop: boolean, open: boolean, red
   };
 }
 
-export function selectContentGapTransition(open: boolean) {
+export function selectContentGapTransition(open: boolean): Transition {
   return open
     ? { type: 'spring', duration: 0.6, bounce: 0.5, delay: 0.12 }
     : { type: 'spring', duration: 0.3, bounce: 0.1 };
 }
 
-export function selectContentRadiusTransition(open: boolean) {
+export function selectContentRadiusTransition(open: boolean): Transition {
   return open ? { duration: 0.3, ease: EASE_OUT, delay: 0.14 } : { duration: 0.16, ease: EASE_OUT };
 }
 
@@ -114,7 +114,7 @@ export function selectContentAnimate({
   return selectContentFullAnimate({ open, height, isTop, nearGap, nearRadius });
 }
 
-function selectContentReduceTransition() {
+function selectContentReduceTransition(): Transition {
   return { duration: 0.12 };
 }
 
@@ -134,7 +134,7 @@ function selectContentFullTransition(
   isTop: boolean,
   gapT: Transition,
   radiusT: Transition,
-) {
+): Transition {
   return {
     opacity: open ? { duration: 0.18 } : { duration: 0.16, delay: 0.12 },
     height: open
@@ -156,7 +156,7 @@ export function selectContentPanelTransition({
   isTop: boolean;
   gapT: Transition;
   radiusT: Transition;
-}) {
+}): Transition {
   if (reduce) {
     return selectContentReduceTransition();
   }

@@ -1,3 +1,4 @@
+import type { ComponentProps } from 'react';
 import { ChartTooltipCard } from '@/components/ui/charts/chart-tooltip';
 import { ChartFigure } from '@/components/ui/charts/chart-figure';
 import { CHART_RECOVERY_STROKE } from '@/lib/theme/chart-theme';
@@ -122,7 +123,17 @@ export function MiniSparkline({
         <LineChart data={data} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
           <XAxis dataKey="date" hide />
           <YAxis domain={['auto', 'auto']} hide />
-          <Tooltip content={(props) => <SparklineTooltip {...props} unit={unit} />} />
+          <Tooltip
+            content={
+              (({ active, payload }) => (
+                <SparklineTooltip
+                  active={active}
+                  payload={payload as unknown as { payload: SparkPoint }[] | undefined}
+                  unit={unit}
+                />
+              )) as ComponentProps<typeof Tooltip>['content']
+            }
+          />
           {baselineLow !== null && baselineHigh !== null ? (
             <ReferenceArea
               fill={CHART_RECOVERY_STROKE}

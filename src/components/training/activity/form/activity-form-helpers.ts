@@ -115,16 +115,14 @@ export function sanitizeActivityPayload(values: ActivityFormValues): ActivityFor
 }
 
 export function initialLocationFromData(data?: ActivityWithRelations): LocationPlaceValue {
-  const lat = data?.observedLocationLat ?? null;
-  const lng = data?.observedLocationLng ?? null;
-  if (lat !== null && lng !== null && data?.observedLocationLabel) {
-    return {
-      label: data.observedLocationLabel,
-      latitude: lat,
-      longitude: lng,
-    };
+  if (!data?.observedLocationLabel) {
+    return null;
   }
-  return null;
+  const { observedLocationLabel: label, observedLocationLat: lat, observedLocationLng: lng } = data;
+  if (lat === null || lat === undefined || lng === null || lng === undefined) {
+    return null;
+  }
+  return { label, latitude: lat, longitude: lng };
 }
 
 function pushRecordMessage(record: Record<string, unknown>, path: string, messages: string[]) {
@@ -193,7 +191,7 @@ export function mapInitialDataToFormValues(initialData: ActivityWithRelations): 
     ...mapInitialDataCoreFields(initialData),
     ...mapInitialDataLocationFields(initialData),
     ...mapInitialDataMetricsFields(initialData),
-  };
+  } as ActivityFormValues;
 }
 
 export function buildActivityFormDefaultValues(

@@ -140,6 +140,24 @@ function AdaptationDimensionList({
   );
 }
 
+function deriveNeuromuscularMissing(
+  isLoading: boolean,
+  dimensions: AdaptationPageViewProps['dimensions'],
+): boolean {
+  if (isLoading) {
+    return false;
+  }
+  const neuromuscular = dimensions.find((d) => d.key === 'neuromuscularEfficiency');
+  return neuromuscular !== undefined && !neuromuscular.dim.available;
+}
+
+function deriveActionLine(isLoading: boolean, trendLabel: string): string | null {
+  if (isLoading || !trendLabel || trendLabel === '—') {
+    return null;
+  }
+  return trendLabel;
+}
+
 function deriveAdaptationPageState(props: AdaptationPageViewProps) {
   const {
     loading,
@@ -156,23 +174,19 @@ function deriveAdaptationPageState(props: AdaptationPageViewProps) {
     plateauRisk ?? false,
     overreachingWithoutAdaptation ?? false,
   );
-  const neuromuscular = dimensions.find((d) => d.key === 'neuromuscularEfficiency');
-  const neuromuscularMissing =
-    !isLoading && neuromuscular !== undefined && !neuromuscular.dim.available;
   const displayDimensions = filterDisplayDimensions(dimensions, isLoading);
   const { freinDimension, otherDimensions } = resolveFreinDimensions(
     displayDimensions,
     isLoading,
     limitingFactor,
   );
-  const actionLine = !isLoading && trendLabel && trendLabel !== '—' ? trendLabel : null;
   return {
     limitingScore,
     alerts,
-    neuromuscularMissing,
+    neuromuscularMissing: deriveNeuromuscularMissing(isLoading, dimensions),
     freinDimension,
     otherDimensions,
-    actionLine,
+    actionLine: deriveActionLine(isLoading, trendLabel),
   };
 }
 

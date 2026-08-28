@@ -16,7 +16,10 @@ export function ThreadTodayCardDialogs({
   easeOpen: boolean;
   entry: ThreadEntry;
   onEase: () => void;
-  onReschedule: (day: string, startTime: string | null) => void;
+  onReschedule: (
+    day: { year: number; month: number; day: number },
+    startTime: string | null,
+  ) => void;
   onSetEaseOpen: (open: boolean) => void;
   onSetShiftOpen: (open: boolean) => void;
   shiftOpen: boolean;

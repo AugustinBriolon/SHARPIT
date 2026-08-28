@@ -26,29 +26,48 @@ function intensityFactorSublabel(
   return thresholds.lthr ? `LTHR ${thresholds.lthr} bpm` : undefined;
 }
 
+function pushNormalizedPowerRow(rows: PerformanceRow[], power: ActivityAnalysis['power']) {
+  if (!power?.normalized) {
+    return;
+  }
+  rows.push({
+    label: 'NP',
+    value: `${power.normalized} W`,
+    note: power.avg ? `moy ${power.avg} W` : undefined,
+  });
+}
+
+function pushIntensityFactorRow(
+  rows: PerformanceRow[],
+  load: ActivityAnalysis['load'],
+  thresholds: ActivityAnalysis['thresholds'],
+) {
+  if (load.intensityFactor === null) {
+    return;
+  }
+  rows.push({
+    label: 'IF',
+    value: load.intensityFactor.toFixed(2),
+    note: intensityFactorSublabel(load.method, thresholds),
+  });
+}
+
+function pushVariabilityIndexRow(rows: PerformanceRow[], power: ActivityAnalysis['power']) {
+  if (power?.variabilityIndex === undefined || power.variabilityIndex === null) {
+    return;
+  }
+  rows.push({
+    label: 'VI',
+    value: power.variabilityIndex.toFixed(2),
+    note: power.variabilityIndex > 1.1 ? 'effort variable' : 'effort régulier',
+  });
+}
+
 function pushPowerRows(rows: PerformanceRow[], analysis: ActivityAnalysis) {
   const { power, load, thresholds } = analysis;
-  if (power?.normalized) {
-    rows.push({
-      label: 'NP',
-      value: `${power.normalized} W`,
-      note: power.avg ? `moy ${power.avg} W` : undefined,
-    });
-  }
-  if (load.intensityFactor !== null) {
-    rows.push({
-      label: 'IF',
-      value: load.intensityFactor.toFixed(2),
-      note: intensityFactorSublabel(load.method, thresholds),
-    });
-  }
-  if (power?.variabilityIndex !== undefined && power.variabilityIndex !== null) {
-    rows.push({
-      label: 'VI',
-      value: power.variabilityIndex.toFixed(2),
-      note: power.variabilityIndex > 1.1 ? 'effort variable' : 'effort régulier',
-    });
-  }
+  pushNormalizedPowerRow(rows, power);
+  pushIntensityFactorRow(rows, load, thresholds);
+  pushVariabilityIndexRow(rows, power);
 }
 
 function pushLoadRows(rows: PerformanceRow[], analysis: ActivityAnalysis) {

@@ -63,6 +63,32 @@ function ProviderIdentity({
   );
 }
 
+function providerRowClassName({
+  soon,
+  isPrimary,
+}: {
+  soon: boolean;
+  isPrimary: boolean;
+}) {
+  return cn(
+    'rounded-analysis w-full border px-3 py-3 text-left',
+    soon && 'border-analysis-border/60 opacity-55',
+    !soon && 'border-analysis-border',
+    isPrimary && 'bg-muted/20',
+  );
+}
+
+function providerConnectionFlags(
+  integrationId: IntegrationId | null,
+  connected: Set<string>,
+  classPrefs: IntegrationSourcePrefs['classes'][DataClassId],
+) {
+  const isConnected = integrationId !== null && connected.has(integrationId);
+  const isEnabled = integrationId !== null && classPrefs.enabled.includes(integrationId);
+  const isPrimary = integrationId !== null && classPrefs.primary === integrationId;
+  return { isConnected, isEnabled, isPrimary };
+}
+
 export function OnboardingProviderRow({
   provider,
   dataClassId,
@@ -82,20 +108,15 @@ export function OnboardingProviderRow({
 }) {
   const soon = provider.status === 'coming_soon';
   const integrationId = provider.integrationId ?? null;
-  const isConnected = integrationId !== null && connected.has(integrationId);
-  const isEnabled = integrationId !== null && classPrefs.enabled.includes(integrationId);
-  const isPrimary = integrationId !== null && classPrefs.primary === integrationId;
+  const { isConnected, isEnabled, isPrimary } = providerConnectionFlags(
+    integrationId,
+    connected,
+    classPrefs,
+  );
 
   return (
     <li>
-      <div
-        className={cn(
-          'rounded-analysis w-full border px-3 py-3 text-left',
-          soon && 'border-analysis-border/60 opacity-55',
-          !soon && 'border-analysis-border',
-          isPrimary && 'bg-muted/20',
-        )}
-      >
+      <div className={providerRowClassName({ soon, isPrimary })}>
         <div className="flex items-start justify-between gap-3">
           <ProviderIdentity
             dataClassId={dataClassId}
