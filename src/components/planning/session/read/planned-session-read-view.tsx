@@ -12,7 +12,6 @@ import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-c
 import { ClipboardList } from 'lucide-react';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { cn } from '@/lib/utils';
-import { PlannedVsDoneStrip } from '@/components/planning/session/read/planned-vs-done-strip';
 import { usePlannedSessionReadData } from '@/components/planning/session/read/use-planned-session-read-data';
 import { PlannedSessionReadHeader } from '@/components/planning/session/read/planned-session-read-header';
 import { PlannedSessionDeroulePanel } from '@/components/planning/session/read/planned-session-deroule-panel';
@@ -140,15 +139,12 @@ export function PlannedSessionReadView({
     return (
       <div className="min-w-0 space-y-4">
         {header}
+        {!morningProposal ? <KeyChipsRow chips={readData.realizedChips} /> : null}
         <SessionRealization
           omitLinkedActivityNavigation={omitLinkedActivityNavigation}
           session={session}
         />
-        {morningProposal ? (
-          <MorningProposalCompare proposal={morningProposal} />
-        ) : (
-          <PlannedVsDoneStrip session={session} />
-        )}
+        {morningProposal ? <MorningProposalCompare proposal={morningProposal} /> : null}
         <PrescribedPlanCollapsible
           deroulePanel={deroulePanel}
           secondaryDetails={secondaryDetails}

@@ -12,12 +12,14 @@ import {
 import dynamic from 'next/dynamic';
 import { useQueryClient } from '@tanstack/react-query';
 import { useGoals, usePlannedSessions } from '@/hooks/use-data';
+import { fetchPlannedSessionById } from '@/lib/query/fetchers';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import { queryKeys } from '@/lib/query/keys';
 import {
   seedPlannedSessionIntoCache,
   type PlannedSessionCacheSeed,
 } from '@/lib/query/seed-planned-session-cache';
+import type { ClientPlannedSession } from '@/lib/query/types';
 import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-compare';
 import { EMPTY_GOALS } from '@/components/planning/session/session-defaults';
 
@@ -64,9 +66,13 @@ export function AppModalProvider({ children }: { children: ReactNode }) {
   const plannedQuery = usePlannedSessions();
   const goalsQuery = useGoals();
   const [plannedModal, setPlannedModal] = useState<OpenPlannedSessionOptions | null>(null);
+  const [fetchedSession, setFetchedSession] = useState<ClientPlannedSession | null>(null);
+  const [fetchingSession, setFetchingSession] = useState(false);
 
   const closePlannedSession = useCallback(() => {
     setPlannedModal(null);
+    setFetchedSession(null);
+    setFetchingSession(false);
   }, []);
 
   const openPlannedSession = useCallback(
@@ -78,6 +84,8 @@ export function AppModalProvider({ children }: { children: ReactNode }) {
         });
       }
       prefetchPlannedSessionDetail(queryClient, options.sessionId);
+      setFetchedSession(null);
+      setFetchingSession(false);
       setPlannedModal(options);
       if (!queryClient.getQueryData(queryKeys.plannedSessions)) {
         void plannedQuery.refetch();
@@ -86,24 +94,46 @@ export function AppModalProvider({ children }: { children: ReactNode }) {
     [plannedQuery, queryClient],
   );
 
-  const session = useMemo(() => {
+  const sessionFromList = useMemo(() => {
     if (!plannedModal) {
       return null;
     }
     return plannedQuery.data?.find((item) => item.id === plannedModal.sessionId) ?? null;
   }, [plannedModal, plannedQuery.data]);
 
+  const session = sessionFromList ?? fetchedSession;
+
   useEffect(() => {
-    if (!plannedModal) {
+    if (!plannedModal || sessionFromList || fetchingSession) {
       return;
     }
-    if (plannedQuery.isLoading || plannedQuery.isFetching) {
-      return;
-    }
-    if (!session) {
-      setPlannedModal(null);
-    }
-  }, [plannedModal, plannedQuery.isFetching, plannedQuery.isLoading, session]);
+
+    let cancelled = false;
+    setFetchingSession(true);
+
+    void fetchPlannedSessionById(plannedModal.sessionId)
+      .then((loaded) => {
+        if (cancelled) {
+          return;
+        }
+        seedPlannedSessionIntoCache(queryClient, loaded);
+        setFetchedSession(loaded);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPlannedModal(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setFetchingSession(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchingSession, plannedModal, queryClient, sessionFromList]);
 
   const value = useMemo(
     () => ({ openPlannedSession, closePlannedSession }),

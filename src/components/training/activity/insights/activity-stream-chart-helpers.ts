@@ -109,3 +109,23 @@ export function buildStreamMetricOptions(
 
   return metrics;
 }
+
+export type StreamMetricKey = StreamMetricOption['key'];
+
+/** Toggle metric chips — at most `max` active; adding a third drops the oldest selection. */
+export function nextSelectedStreamMetricKeys(
+  current: StreamMetricKey[],
+  key: StreamMetricKey,
+  max = 2,
+): StreamMetricKey[] {
+  if (current.includes(key)) {
+    if (current.length === 1) {
+      return current;
+    }
+    return current.filter((entry) => entry !== key);
+  }
+  if (current.length < max) {
+    return [...current, key];
+  }
+  return [current[1]!, key];
+}
