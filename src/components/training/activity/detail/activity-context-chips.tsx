@@ -1,38 +1,11 @@
 import type { ReactNode } from 'react';
 import { Trophy } from 'lucide-react';
-import {
-  activityWeatherIcon,
-  activityWeatherIconClassName,
-  formatActivityWeatherChip,
-  parseActivityWeather,
-} from '@/lib/activity/weather/activity-weather';
-import { isIndoorActivitySession } from '@/lib/activity/location/indoor-activity';
 import { recordCategoryHref } from '@/lib/training/records';
 import { ActivityMetaChip } from './activity-meta-chip';
 import type { ActivityDetail, ActivityPerformanceRecordChip } from './types';
 
 /** Stable empty default — avoids a new [] identity every render when records is omitted. */
 const EMPTY_RECORDS: ActivityPerformanceRecordChip[] = [];
-
-function pushWeatherChip(chips: ReactNode[], activity: ActivityDetail) {
-  if (isIndoorActivitySession(activity)) {
-    return;
-  }
-  const weather = parseActivityWeather(activity.weather);
-  if (!weather) {
-    return;
-  }
-  const WeatherIcon = activityWeatherIcon(weather.condition);
-  chips.push(
-    <ActivityMetaChip
-      key="weather"
-      icon={WeatherIcon}
-      iconClassName={activityWeatherIconClassName(weather.condition)}
-      label="Météo"
-      value={formatActivityWeatherChip(weather)}
-    />,
-  );
-}
 
 function pushRecordChips(chips: ReactNode[], records: ActivityPerformanceRecordChip[]) {
   for (const record of records) {
@@ -50,27 +23,23 @@ function pushRecordChips(chips: ReactNode[], records: ActivityPerformanceRecordC
   }
 }
 
-function collectActivityContextChips(
-  activity: ActivityDetail,
-  records: ActivityPerformanceRecordChip[],
-): ReactNode[] {
+function collectActivityContextChips(records: ActivityPerformanceRecordChip[]): ReactNode[] {
   const chips: ReactNode[] = [];
-  pushWeatherChip(chips, activity);
   pushRecordChips(chips, records);
   return chips;
 }
 
 export function ActivityContextChips({
-  activity,
+  activity: _activity,
   records = EMPTY_RECORDS,
 }: {
   activity: ActivityDetail;
   records?: ActivityPerformanceRecordChip[];
 }) {
-  const chips = collectActivityContextChips(activity, records);
+  const chips = collectActivityContextChips(records);
 
   if (chips.length === 0) {
     return null;
   }
-  return <>{chips}</>;
+  return <div className="flex flex-wrap items-center gap-x-2 gap-y-1">{chips}</div>;
 }

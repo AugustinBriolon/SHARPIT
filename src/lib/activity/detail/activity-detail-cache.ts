@@ -18,6 +18,7 @@ export function clientActivityToHeaderActivity(
     load: activity.load,
     rpe: activity.rpe,
     feeling: activity.feeling,
+    weather: activity.weather,
     hikeTrip: null,
     plannedSession: activity.plannedSession,
   };
