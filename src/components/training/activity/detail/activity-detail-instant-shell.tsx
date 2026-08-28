@@ -2,7 +2,6 @@
 
 import { ActivityType } from '@prisma/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { ActivityDetailHeader } from '@/components/training/activity/detail/activity-detail-header';
 import { ActivityDetailHero } from '@/components/training/activity/detail/activity-detail-hero';
 import { ActivityDetailSkeleton } from '@/components/training/activity/detail/activity-detail-skeleton';
@@ -18,16 +17,9 @@ import {
 import { activityDetailExpectsMap } from '@/lib/activity/detail/activity-detail-skeleton-layout';
 import type { ClientActivity } from '@/lib/query/types';
 
-function InstantShellFrame({
-  includeBackLink,
-  children,
-}: {
-  includeBackLink: boolean;
-  children: React.ReactNode;
-}) {
+function InstantShellFrame({ children }: { children: React.ReactNode }) {
   return (
-    <div aria-busy="true" aria-label="Chargement" className="relative z-0 space-y-6 sm:space-y-8">
-      {includeBackLink ? <MobileBackLink showOnDesktop /> : null}
+    <div aria-busy="true" aria-label="Chargement" className="relative z-0 space-y-4 sm:space-y-6">
       {children}
     </div>
   );
@@ -82,23 +74,21 @@ function useCachedActivity(id: string | null | undefined): ClientActivity | unde
  */
 export function ActivityDetailInstantShell({
   activityId: activityIdProp,
-  includeBackLink = false,
 }: {
   activityId?: string;
-  includeBackLink?: boolean;
 }) {
   const cached = useCachedActivity(activityIdProp);
 
   if (!cached) {
     return (
-      <InstantShellFrame includeBackLink={includeBackLink}>
+      <InstantShellFrame>
         <ActivityDetailSkeleton layout="map" />
       </InstantShellFrame>
     );
   }
 
   return (
-    <InstantShellFrame includeBackLink={includeBackLink}>
+    <InstantShellFrame>
       <CachedActivityInstantBody cached={cached} />
     </InstantShellFrame>
   );
