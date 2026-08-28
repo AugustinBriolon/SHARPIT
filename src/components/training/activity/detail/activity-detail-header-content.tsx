@@ -1,10 +1,10 @@
 'use client';
 
 import { ExpertModeBadge } from '@/components/display-mode';
+import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
 import { ActivityDetailActionsMenu } from '@/components/training/activity/detail/activity-detail-header-actions';
 import { ActivityDetailBackLink } from '@/components/training/activity/detail/activity-detail-back-link';
-import { ActivityDiscussSessionCta } from '@/components/training/activity/detail/activity-discuss-session-cta';
-import { ActivityHeaderEvaluations } from '@/components/training/activity/detail/activity-header-evaluations';
+import { ActivityHeaderContextChips } from '@/components/training/activity/detail/activity-header-context-chips';
 import { activityTypeLabels } from '@/lib/format';
 import {
   formatActivityDetailMeta,
@@ -92,6 +92,38 @@ function ActivityDetailIdentityBlock({
   );
 }
 
+function ActivityDetailHeaderCoachSection({
+  activityId,
+  feeling,
+  rpe,
+  plannedSession,
+  plannedAnalysisReady,
+}: {
+  activityId: string;
+  feeling: string | null;
+  rpe: number | null;
+  plannedSession: PlannedSessionSummary | null;
+  plannedAnalysisReady: boolean;
+}) {
+  return (
+    <>
+      <DiscussWithCoachButton
+        className="w-full"
+        label="Discuter de cette séance"
+        size="sm"
+        target={{ kind: 'activity', activityId }}
+      />
+      <ActivityHeaderContextChips
+        activityId={activityId}
+        feeling={feeling}
+        plannedAnalysisReady={plannedAnalysisReady}
+        plannedSession={plannedSession}
+        rpe={rpe}
+      />
+    </>
+  );
+}
+
 export function ActivityDetailHeaderContent({
   activity,
   plannedSession,
@@ -127,9 +159,7 @@ export function ActivityDetailHeaderContent({
 
       <ActivityDetailIdentityBlock activity={activity} summary={summary} title={title} />
 
-      <ActivityDiscussSessionCta activityId={activity.id} />
-
-      <ActivityHeaderEvaluations
+      <ActivityDetailHeaderCoachSection
         activityId={activity.id}
         feeling={activity.feeling}
         plannedAnalysisReady={plannedAnalysisReady}
