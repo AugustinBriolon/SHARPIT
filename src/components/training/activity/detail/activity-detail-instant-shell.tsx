@@ -1,6 +1,5 @@
 'use client';
 
-import { useParams } from 'next/navigation';
 import { ActivityType } from '@prisma/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
@@ -68,12 +67,7 @@ function CachedActivityInstantBody({ cached }: { cached: ClientActivity }) {
   );
 }
 
-function useCachedActivityId(): string | null {
-  const params = useParams();
-  return typeof params.id === 'string' ? params.id : null;
-}
-
-function useCachedActivity(id: string | null): ClientActivity | undefined {
+function useCachedActivity(id: string | null | undefined): ClientActivity | undefined {
   const { data: activities } = useActivities();
   if (!id || !activities) {
     return undefined;
@@ -87,12 +81,13 @@ function useCachedActivity(id: string | null): ClientActivity | undefined {
  * (header, meta, hero) instead of a skeleton — revisit stays Instant.
  */
 export function ActivityDetailInstantShell({
+  activityId: activityIdProp,
   includeBackLink = false,
 }: {
+  activityId?: string;
   includeBackLink?: boolean;
 }) {
-  const id = useCachedActivityId();
-  const cached = useCachedActivity(id);
+  const cached = useCachedActivity(activityIdProp);
 
   if (!cached) {
     return (
