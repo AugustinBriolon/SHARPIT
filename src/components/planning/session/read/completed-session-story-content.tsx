@@ -29,9 +29,9 @@ function StoryBody({ body }: { body: string }) {
 
 function StoryNotes({ notes }: { notes: string }) {
   return (
-    <div className="border-analysis-border/50 min-w-0 space-y-1 border-t pt-3">
-      <p className="text-label">Note</p>
-      <p className="text-foreground/85 text-sm leading-relaxed wrap-break-word whitespace-pre-wrap">
+    <div className="border-analysis-border/60 bg-analysis-surface-alt/80 min-w-0 space-y-1 rounded-md border px-3 py-2.5">
+      <p className="text-label">Ta note</p>
+      <p className="text-foreground text-sm leading-relaxed wrap-break-word whitespace-pre-wrap">
         {notes}
       </p>
     </div>
