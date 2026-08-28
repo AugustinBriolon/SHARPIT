@@ -63,15 +63,6 @@ export function buildActivityCreateData(input: CreateActivityInput) {
   };
 }
 
-const UPDATE_METRIC_KEYS: Partial<
-  Record<ActivityType, 'runMetrics' | 'bikeMetrics' | 'swimMetrics' | 'hikeMetrics'>
-> = {
-  [ActivityType.RUN]: 'runMetrics',
-  [ActivityType.BIKE]: 'bikeMetrics',
-  [ActivityType.SWIM]: 'swimMetrics',
-  [ActivityType.HIKE]: 'hikeMetrics',
-};
-
 export function buildActivityUpdateData(input: UpdateActivityInput) {
   const { runMetrics, bikeMetrics, swimMetrics, hikeMetrics, strengthSets, type, ...base } = input;
 
@@ -80,16 +71,17 @@ export function buildActivityUpdateData(input: UpdateActivityInput) {
     data.type = type;
   }
 
-  const metricsByType = {
-    [ActivityType.RUN]: runMetrics,
-    [ActivityType.BIKE]: bikeMetrics,
-    [ActivityType.SWIM]: swimMetrics,
-    [ActivityType.HIKE]: hikeMetrics,
-  } as const;
-
-  const metricKey = type ? UPDATE_METRIC_KEYS[type] : undefined;
-  if (metricKey && type && type in metricsByType) {
-    data[metricKey] = upsertMetricRelation(metricsByType[type as keyof typeof metricsByType]);
+  if (runMetrics !== undefined) {
+    data.runMetrics = upsertMetricRelation(runMetrics);
+  }
+  if (bikeMetrics !== undefined) {
+    data.bikeMetrics = upsertMetricRelation(bikeMetrics);
+  }
+  if (swimMetrics !== undefined) {
+    data.swimMetrics = upsertMetricRelation(swimMetrics);
+  }
+  if (hikeMetrics !== undefined) {
+    data.hikeMetrics = upsertMetricRelation(hikeMetrics);
   }
 
   if (type === ActivityType.STRENGTH && strengthSets) {

@@ -48,13 +48,12 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     const newType = parsed.data.type ?? existing.type;
+    const updateInput =
+      parsed.data.type !== undefined ? { ...parsed.data, type: newType } : parsed.data;
     const activity = await updateActivity(
       athleteId,
       id,
-      buildActivityUpdateData({
-        ...parsed.data,
-        type: newType,
-      }) as Parameters<typeof updateActivity>[2],
+      buildActivityUpdateData(updateInput) as Parameters<typeof updateActivity>[2],
     );
     if (!activity) {
       return NextResponse.json({ error: 'Séance introuvable' }, { status: 404 });

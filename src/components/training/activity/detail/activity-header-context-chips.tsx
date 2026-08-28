@@ -81,7 +81,7 @@ export function ActivityHeaderContextChips({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
       {chips.hasFeeling ? (
         <ActivityFeelingChip
           activityId={activityId}
