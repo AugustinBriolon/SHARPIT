@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import { NotebookText } from 'lucide-react';
 import { ThreadTimeline } from '@/components/training/thread/thread-timeline';
 import { ThreadFormReadings } from '@/components/training/thread/thread-form-readings';
 import { ThreadLoadRuler } from '@/components/training/thread/thread-load-ruler';
@@ -62,6 +64,20 @@ export function TrainingThreadMainColumn({
       ) : null}
 
       <div className="lg:hidden">{loading ? null : filters}</div>
+
+      {/* Desktop reaches this from the header ("Bilan") — a PWA has no address
+          bar to type into, so mobile needs its own visible entry point too. */}
+      <Link
+        href="/training/weekly-review"
+        className={cn(
+          'text-primary hover:text-foreground text-data inline-flex items-center gap-1.5',
+          'text-xs transition-colors lg:hidden',
+          'focus-visible:ring-primary/35 rounded-sm focus-visible:ring-2 focus-visible:outline-hidden',
+        )}
+      >
+        <NotebookText className="size-3.5" aria-hidden />
+        Bilan de la semaine
+      </Link>
 
       {loading ? (
         timelineSkeleton
