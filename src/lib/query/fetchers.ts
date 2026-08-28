@@ -1,4 +1,5 @@
 import type { RecordsPayload } from '@/lib/training/records';
+import type { WeeklyStats } from '@/lib/weekly-review';
 import { isSet } from '@/lib/util/value';
 import type { ActivityStreamPayload, MultisportStreamsPayload } from '@/lib/streams/streams';
 import type {
@@ -324,6 +325,7 @@ export interface ClientWeeklyReview {
   id: string;
   weekStart: Date;
   content: string;
+  stats: WeeklyStats | null;
   generatedAt: Date;
 }
 
@@ -339,6 +341,7 @@ export async function fetchWeeklyReview(date: string): Promise<ClientWeeklyRevie
     id: r.id,
     weekStart: toDate(r.weekStart),
     content: r.content,
+    stats: r.stats ?? null,
     generatedAt: toDate(r.generatedAt),
   };
 }
@@ -356,6 +359,7 @@ export async function fetchLatestWeeklyReview(): Promise<ClientWeeklyReview | nu
     id: r.id,
     weekStart: toDate(r.weekStart),
     content: r.content,
+    stats: r.stats ?? null,
     generatedAt: toDate(r.generatedAt),
   };
 }
