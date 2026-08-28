@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { useActivityMutations } from '@/hooks/use-data';
 import { toast } from '@/components/ui/toast';
 
@@ -14,12 +13,19 @@ export function useActivityFeelingEditor({
   feeling: string;
   rpe: number | null;
 }) {
-  const router = useRouter();
   const { update } = useActivityMutations();
   const [open, setOpen] = useState(false);
   const [editRpe, setEditRpe] = useState(rpe ?? 5);
   const [editFeeling, setEditFeeling] = useState(feeling);
   const [feelingError, setFeelingError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      return;
+    }
+    setEditRpe(rpe ?? 5);
+    setEditFeeling(feeling);
+  }, [feeling, open, rpe]);
 
   function openDialog() {
     setEditRpe(rpe ?? 5);
@@ -40,7 +46,6 @@ export function useActivityFeelingEditor({
       {
         onSuccess: () => {
           toast.success('Ressenti enregistré');
-          router.refresh();
         },
       },
     );
